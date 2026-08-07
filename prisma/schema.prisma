@@ -91,6 +91,12 @@ model User {
   songComments  SongComment[]
   songScores    SongLeaderboard[]
   songPlays     SongPlay[]
+  sliceRuns     SliceRun[]
+  authoredCharts Chart[]           @relation("ChartAuthor")
+  chartReviews  ChartReview[]
+  sliceDailyEntries SliceDailyEntry[]
+  sliceSetlists     SliceSetlist[]
+  curatedChartPacks ChartPack[]       @relation("ChartPackCurator")
 
   // RmhTube Relations
   rmhtubeHostedRooms RmhTubeRoom[]       @relation("RmhTubeHostedRooms")
@@ -727,16 +733,47 @@ model DailyPuzzle {
 
 // Slice It Player Model
 model Player {
-  id          String   @id @default(cuid())
-  username    String   @unique
-  totalScore  Int      @default(0)
-  gamesPlayed Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id       String @id @default(cuid())
+  username String @unique
+
+  /// **Lifetime volume, not skill.** The sum of every score this account has
+  /// ever submitted, incremented on every run forever.
+  ///
+  /// It is kept exactly as it was, and deliberately NOT repurposed: it is a real
+  /// statistic ("how much have I played"), it is what the profile card shows,
+  /// and rewriting its meaning under a shipped column would silently change
+  /// every number already displayed. `skillRating` is the ranking axis; this is
+  /// the odometer. See `lib/slice-it/ranking.server.ts`.
+  totalScore  Int @default(0)
+  gamesPlayed Int @default(0)
+
+  /// R2 — the global skill rating. Best performance per **ranked** chart,
+  /// weighted by the chart's computed rating (C3) and by accuracy, summed with
+  /// geometric decay so the top ~50 dominate and grinding cannot substitute for
+  /// playing well. Computed by `recomputeSkillRating()`.
+  ///
+  /// Zero means "never computed, or no scores on ranked charts" — the two are
+  /// indistinguishable and do not need distinguishing, because both rank last.
+  skillRating Float @default(0)
+
+  /// How many ranked charts contributed to `skillRating`, so the board can show
+  /// "42 ranked charts" beside the number and a player can tell a small rating
+  /// from an unrecomputed one.
+  rankedPlays Int @default(0)
+
+  /// When `skillRating` was last recomputed. Null until the first recompute.
+  /// The re-rate sweep uses it to find rows stale against a weight change.
+  skillRatedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Link to Auth User
   userId String? @unique
   user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// The global skill board's only read: order by rating, page.
+  @@index([skillRating(sort: Desc)])
 }
 
 model VegaPlayer {
@@ -871,10 +908,40 @@ model Song {
   id          String  @id @default(cuid())
   title       String
   artist      String
+
+  /// L15 — the normalised grouping key for {@link artist}.
+  ///
+  /// `artist` stays the display string the uploader typed; this is the only
+  /// thing an equality filter or an index is ever built on. Two columns because
+  /// "MOTHER3" and "Mother 3" are one artist and only one of them is what
+  /// should be shown. Computed by `artistKeyOf()` in `lib/slice-it/artist.ts`
+  /// at write time — never at read time, or the index is unusable.
+  ///
+  /// Nullable: an artist tag that is entirely punctuation has no key, and
+  /// Postgres treats NULLs as distinct, so those rows stay separate rather than
+  /// all joining one artist page called "".
+  artistKey   String? @db.VarChar(200)
+
   album       String?
   description String?
   duration    Float
   bpm         Float?
+
+  /// L1 — a CURATED genre, not free text.
+  ///
+  /// A facet with four hundred spellings of "drum and bass" is not a facet, so
+  /// the vocabulary is `SONG_GENRES` in `lib/slice-it/taxonomy.ts` and is
+  /// validated on the way in. A string rather than an enum so adding one does
+  /// not need a migration on a 66-enum schema.
+  genre String? @db.VarChar(32)
+
+  /// L1 — free-form tags, normalised lowercase, capped at 8 per song by the API.
+  ///
+  /// Free-form is right here and wrong for `genre` above: a tag is how a
+  /// community names things the curated list did not anticipate ("anime",
+  /// "speedcore", "charted-by-hand"), and a facet built on tags is additive
+  /// rather than exclusive.
+  tags String[] @default([])
 
   audioUrl      String
   coverUrl      String?
@@ -894,20 +961,113 @@ model Song {
   // Audio Analysis Data (JSON for beatmap generation)
   analysisData Json?
 
+  /// C7 — where the library's 20-second preview starts, in seconds.
+  ///
+  /// Defaulted at analysis time to the start of the highest-energy section
+  /// (`C5` already computes that map), and editable by the uploader — which is
+  /// the reason it is a stored column rather than derived on read: "the loudest
+  /// section" is a good heuristic and the uploader knows the song.
+  ///
+  /// Null means "not chosen", which `resolvePreviewStart` reads as 0. Not
+  /// defaulted to 0 in the database, because "the uploader picked the very
+  /// start" and "nobody has picked" are different facts and only one of them
+  /// should be overwritten by a re-analysis.
+  previewStart Float?
+
+  /// O3 — where charting got to. `'ready' | 'pending' | 'failed'`.
+  ///
+  /// Beatmap generation used to run **inline in the upload route**: two seconds
+  /// of CPU-bound work blocking an SSR worker on the container that also serves
+  /// every page. It is a queued job now, and this column is what the library
+  /// reads to show "Charting…" rather than hiding the row — a song that
+  /// vanishes for two minutes after upload reads as a failed upload.
+  ///
+  /// Defaults to `'ready'` so every existing row keeps its meaning: those songs
+  /// either have a chart or have the null that the client's local-generation
+  /// fallback already handles. A string rather than an enum so a fourth state
+  /// does not need a migration on a 66-enum schema.
+  analysisState String @default("ready") @db.VarChar(16)
+
+  /// V8 — a 64-value note-density histogram over the chart's duration.
+  ///
+  /// Stored rather than derived per request, and stored *separately from*
+  /// `analysisData` on purpose: `songSelect` in `lib/slice-it/songs.server.ts`
+  /// deliberately excludes `analysisData` because a chart is hundreds of
+  /// kilobytes and the list endpoint returns thirty rows at a time. Sending the
+  /// chart just to animate a hover strip would undo exactly that. 64 small
+  /// integers ride in a list response for nothing.
+  ///
+  /// Written by `songDensityStrip()` wherever `analysisData` is written. Null
+  /// for a row uploaded before this column, until it is next re-analysed — the
+  /// strip simply does not render, which is what `<DensityStrip>` already does
+  /// with an absent value.
+  densityStrip Json?
+
   uploadedBy String
   uploader   User   @relation("SongUploader", fields: [uploadedBy], references: [id])
 
   isPublic Boolean @default(true)
   plays    Int     @default(0)
 
+  /// L9 — when this song was taken down, and why.
+  ///
+  /// **Tombstone, never delete.** `onDelete: Cascade` on `SongLeaderboard`
+  /// means deleting a song for a DMCA claim silently erases every score anyone
+  /// ever set on it — a punishment aimed at one uploader that lands on hundreds
+  /// of players who did nothing. A takedown sets these, flips `isPublic`, and
+  /// removes the audio object; the row, its charts and every score survive.
+  takenDownAt    DateTime?
+  takedownReason String?   @db.VarChar(500)
+
+  /// L12 — when the audio was moved to cold storage.
+  ///
+  /// The chart is what makes a song a game; the audio is what makes it
+  /// expensive. Archiving the audio while keeping the chart leaves the library
+  /// entry browsable and its leaderboard intact, and costs one restore to play.
+  /// Null is the normal state.
+  archivedAt DateTime?
+
+  /// C3 — the highest computed rating among this song's playable charts,
+  /// denormalised so the library can sort by difficulty.
+  ///
+  /// Denormalised rather than joined because the library list is a paged,
+  /// filtered, cursor-sorted read over the whole table: sorting it by an
+  /// aggregate over a related table means a join and a GROUP BY on every page
+  /// of every browse, and the value changes only when a chart is saved.
+  /// Maintained by `syncSongChartRating()` in `lib/slice-it/rating.server.ts`.
+  ///
+  /// Null means "no chart of this song has been rated", which is every song
+  /// today — the generated `Song.analysisData` fallback is not a `Chart` row and
+  /// has no rating. A null must sort last, not as a zero.
+  chartRating Float?
+
+  /// L14 — the weighted full-text document this row is searched by.
+  ///
+  /// A **generated** column (`GENERATED ALWAYS AS … STORED`, see the migration),
+  /// not a trigger-maintained one: a trigger has to be re-run over the whole
+  /// table every time the expression changes, and a generated column simply
+  /// cannot drift from its source fields. Prisma has no first-class generated
+  /// columns, so it is declared `Unsupported` and is invisible to the client —
+  /// which is correct, because nothing should ever write it and the only reader
+  /// is the raw query in `lib/slice-it/songs.server.ts#searchSongs`.
+  ///
+  /// The weights are the ranking: title A, artist B, album C, description D. A
+  /// title match beating a description match is the entire point — before this
+  /// they were the same `ILIKE '%…%'` and therefore indistinguishable.
+  searchVector Unsupported("tsvector")? @default(dbgenerated())
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  packItems ChartPackItem[]
   ratings   SongRating[]
   comments  SongComment[]
   scores    SongLeaderboard[]
   likes     SongLike[]
   songPlays SongPlay[]
+  charts    Chart[]
+  runs      SliceRun[]
+  dailyEntries SliceDailyEntry[]
 
   @@unique([uploadedBy, contentHash])
   @@index([title])
@@ -916,6 +1076,62 @@ model Song {
   /// The library's default sort is `createdAt desc`; without this it was a full
   /// scan and sort of the table on every open.
   @@index([isPublic, createdAt(sort: Desc)])
+  /// C3's "sort by difficulty" over the same filtered set.
+  @@index([isPublic, chartRating(sort: Desc)])
+  /// L15 — "everything by this artist, newest first". The plain `@@index([artist])`
+  /// above cannot serve it: that question was a substring match, which no
+  /// B-tree on the display string can answer.
+  @@index([artistKey, createdAt(sort: Desc)])
+  /// L14 — the full-text index. GIN over the generated `tsvector`; the trigram
+  /// index that backs the typo path is on `(title, artist)` and is created in
+  /// the migration, because `gin_trgm_ops` is an operator class Prisma's schema
+  /// language has no way to name.
+  @@index([searchVector], type: Gin)
+  /// L1 — the genre facet, in the library's default order. Without the
+  /// composite the planner falls back to a scan the moment a second facet is
+  /// active alongside it.
+  @@index([isPublic, genre, createdAt(sort: Desc)])
+  /// L1 — the tag facet. GIN, because the query is array containment
+  /// (`hasEvery`), which no B-tree can serve.
+  @@index([tags], type: Gin)
+}
+
+/// **L3 — a review of a CHART, not of a song.**
+///
+/// `SongRating` exists in this schema and is explicitly marked dead ("zero code
+/// references. Drop scheduled R1-T3; do not add writers"), so this is a new
+/// model rather than a revival — and it is a different thing anyway.
+///
+/// Two axes, because "this chart is bad" and "this song is bad" are different
+/// complaints with different remedies: `fit` asks whether the notes represent
+/// the music, `fun` asks whether playing them is any good. A single star rating
+/// collapses those into a number nobody can act on.
+///
+/// Only from players who cleared the chart — enforced in the route, not here,
+/// because it is a check against `SliceRun` rather than a constraint. A review
+/// from somebody who failed at 0:20 is a review of the first twenty seconds.
+model ChartReview {
+  chartId String @db.Uuid
+  chart   Chart  @relation(fields: [chartId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// 1–5: does the chart represent the music?
+  fit Int
+  /// 1–5: is it fun to play?
+  fun Int
+
+  body String? @db.VarChar(2000)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// One review per player per chart; editing replaces it.
+  @@id([chartId, userId])
+  /// The chart's review list, newest first.
+  @@index([chartId, createdAt(sort: Desc)])
+  @@map("chart_review")
 }
 
 model SongLike {
@@ -949,6 +1165,15 @@ model SongComment {
   songId    String
   userId    String
   content   String
+
+  /// L5 — the position in the track this comment is about, in seconds.
+  ///
+  /// PARSED from the body (`01:42`) rather than collected by a separate field:
+  /// osu! modding taught a generation of players to type timestamps, and a
+  /// field nobody fills is worse than a convention they already have. Null
+  /// means the comment is about the song rather than a moment in it.
+  atSeconds Float?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -960,23 +1185,158 @@ model SongComment {
   @@index([songId, createdAt(sort: Desc)])
 }
 
+/// A player's BEST run on one (song, difficulty, mod pool). The materialised
+/// "best" pointer over `SliceRun` — see that model for the append-only history.
+///
+/// ## Why the key changed (R1)
+///
+/// This was `@@unique([songId, userId])`: **one row per player per song**,
+/// across all four difficulties and every modifier combination. Two consequences,
+/// both silent:
+///
+///  - Setting a personal best on `normal` **overwrote** your `expert` record,
+///    because the upsert matched on the pair and replaced whatever it found.
+///  - An `easy` run with six modifiers ranked against an `expert` full combo.
+///    `calculateScoreMultiplier` partly compensated and could not do more than
+///    that — it prices a modifier, it cannot make two different charts one
+///    contest.
+///
+/// The key is now `(songId, difficulty, modPool, userId)`. `songId` and not
+/// `chartId` is load-bearing: `chartId` is nullable for every row predating the
+/// `Chart` model, and Postgres treats NULLs in a unique index as distinct — a
+/// key over a nullable column would enforce nothing at all on exactly the rows
+/// that exist today.
 model SongLeaderboard {
-  id        String @id @default(cuid())
-  songId    String
-  userId    String
+  id     String @id @default(cuid())
+  songId String
+  userId String
+
+  /// Which chart this best was set on (C2/C12). Nullable, and null on every row
+  /// written before the `Chart` model existed — those runs played
+  /// `Song.analysisData`, which has no identity, and inventing one would be a
+  /// claim about which notes were played that nothing can support.
+  chartId String? @db.Uuid
+  chart   Chart?  @relation(fields: [chartId], references: [id], onDelete: SetNull)
+  /// The chart's content hash at the time of the run, so a later edit is visible
+  /// as an edit rather than as everyone's scores silently becoming incomparable.
+  chartHash String? @db.Char(64)
+
+  /// Board dimension 1: the tier the run was played on. Backfilled from
+  /// `modifiers->>'difficulty'`, defaulting to `normal` exactly as
+  /// `ModifiersZ` does for a blob that never carried one.
+  difficulty String @default("normal") @db.VarChar(16)
+  /// Board dimension 2: the canonical modifier pool (`lib/slice-it/pools.ts`).
+  /// Three buckets rather than 2^7 boards of one entry each.
+  modPool String @default("none") @db.VarChar(16)
+
   score     Int
   maxCombo  Int
   accuracy  Float?
   speedMod  Float  @default(1.0)
   modifiers Json?
 
+  /// Did the run reach the end without the gauge killing it (R9)? Defaults true
+  /// because every row written before the gauge existed was, by construction, a
+  /// run that finished — there was no other way to submit one.
+  cleared Boolean @default(true)
+  /// Denormalised from the run so the badge survives into the board without a
+  /// join back to a `SliceRun` row that may not exist (H7).
+  ///
+  /// **Client-declared and therefore decorative.** A full combo is a claim about
+  /// a judgement histogram the server never sees. These must never influence
+  /// score, ranking, rewards or the plausibility ceiling.
+  isFullCombo Boolean @default(false)
+  isPerfect   Boolean @default(false)
+
   createdAt DateTime @default(now())
 
   song Song @relation(fields: [songId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([songId, userId], name: "songId_userId")
+  @@unique([songId, difficulty, modPool, userId])
+  /// The board read: one song, one tier, one pool, ordered by score.
+  @@index([songId, difficulty, modPool, score(sort: Desc)])
+  /// Kept: the "every score on this song" count and the legacy all-tier view.
   @@index([songId, score(sort: Desc)])
+  /// The player page (X12) reads a single account's bests, best first.
+  @@index([userId, score(sort: Desc)])
+  @@index([chartId, score(sort: Desc)])
+}
+
+/// Every submitted run, append-only (R6).
+///
+/// `SongLeaderboard` keeps only your best — the upsert overwrote `score`,
+/// `maxCombo`, `accuracy` and `createdAt` whenever a run beat it, so **every
+/// previous attempt was destroyed on submit**, including the Welford timing
+/// statistics the engine collects and the integrity verdict the server computes.
+/// No progress over time was visible anywhere, and none of it could be: the data
+/// was deleted at the moment it was created.
+///
+/// Time-sortable `BigInt` identity rather than `cuid()`, per the new-table PK
+/// policy in `lib/CLAUDE.md` §Database — this is the highest-volume table in the
+/// game (one row per run, not one per personal best) and every read of it is
+/// ordered by insertion.
+model SliceRun {
+  id BigInt @id @default(autoincrement())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  songId String
+  song   Song   @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  /// Null for a run of the generated `Song.analysisData` fallback — see the note
+  /// on `SongLeaderboard.chartId`.
+  chartId   String? @db.Uuid
+  chart     Chart?  @relation(fields: [chartId], references: [id], onDelete: SetNull)
+  chartHash String? @db.Char(64)
+
+  score         Int
+  accuracy      Float
+  maxCombo      Int
+  notesResolved Int?
+
+  difficulty String  @db.VarChar(16)
+  modPool    String  @db.VarChar(16)
+  modifiers  Json
+  /// True when the run came out of a multiplayer match, for attribution.
+  multiplayer Boolean @default(false)
+
+  cleared     Boolean @default(true)
+  /// Client-declared; decorative only. See `SongLeaderboard.isFullCombo`.
+  isFullCombo Boolean @default(false)
+  isPerfect   Boolean @default(false)
+
+  /// From `getTimingSummary()` — already computed by the engine and already
+  /// submitted with every score, and until now thrown away on arrival.
+  timingCount  Int?
+  timingMeanMs Float?
+  timingSdMs   Float?
+
+  /// R7's statistical flag, 0–1. **Null = not evaluated, 0 = clean.**
+  ///
+  /// Recorded and never acted on automatically: `integrity.ts` is explicit that
+  /// its statistical layer flags rather than rejects, because a false positive
+  /// on a legitimate record run costs a real person their record. Escalation is
+  /// a decision about a *pattern*, made by a human, and there is no code here
+  /// that makes it.
+  suspicion Float?
+  /// The `SuspicionCode`s behind `suspicion`. The evidence, not the verdict — a
+  /// moderator who cannot see why something is flagged cannot judge it.
+  suspicions String[] @default([])
+
+  createdAt DateTime @default(now())
+
+  /// The two hot reads: "my history on this chart" and "this chart's telemetry"
+  /// (R9's clear rate). `id desc` is the same order as `createdAt desc` here, so
+  /// neither needs a separate index.
+  @@index([userId, chartId, createdAt(sort: Desc)])
+  @@index([chartId, createdAt(sort: Desc)])
+  /// The player page's recent-runs list, and per-song telemetry for charts that
+  /// have no `Chart` row yet.
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([songId, createdAt(sort: Desc)])
+  @@map("slice_run")
 }
 
 model SongPlay {
@@ -990,6 +1350,388 @@ model SongPlay {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([songId, userId])
+}
+
+/// A playable Slice It chart. One row per (song, difficulty, key count, author).
+///
+/// See `docs/slice-it-chart-editor.md` §1.1. `Song.analysisData` remains the
+/// generated fallback and is NOT migrated into this table — a song with no Chart
+/// row plays exactly as it does today. That keeps the editor additive: nothing
+/// breaks for the ~all songs that never get hand-edited, and regeneration (C8)
+/// can overwrite `analysisData` freely because no human work is in it.
+model Chart {
+  /// UUID, `@db.Uuid` — the new-table PK policy in `lib/CLAUDE.md` §Database
+  /// wants a time-sortable key rather than `cuid()`. The design doc asks for
+  /// `uuid_generate_v7()`; that function is not installed in this database and
+  /// creating it needs a hand-written migration, so the *value* is generated
+  /// application-side by `uuidv7()` in `lib/slice-it/editor/uuid.ts` (which IS
+  /// time-sortable) and this default is only the fallback for a row inserted
+  /// without one.
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  songId String
+  song   Song   @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation("ChartAuthor", fields: [authorId], references: [id])
+
+  difficulty String @db.VarChar(16) // 'easy' | 'normal' | 'hard' | 'expert'
+  /// 2 today. G2 (4K/6K) is the reason this is a column and not an assumption.
+  keys       Int    @default(2)
+
+  /// Display name — "Expert", but also "Expert (Vocal)" for an alternate take.
+  name String @db.VarChar(64)
+
+  /// The note list. Shape is `Slice[]`, NOT the `Record<Difficulty, Slice[]>`
+  /// that `analysisData` uses: one row is one difficulty, so the record wrapper
+  /// would be a single-key object on every row.
+  notes Json
+
+  /// Timing points (C6) and scroll-velocity points (G10). Null falls back to
+  /// the song's single `bpm`, which is what every generated chart uses today.
+  timingPoints Json?
+  svPoints     Json?
+
+  /// SHA-256 over the canonicalised note list — C12. Leaderboard rows will carry
+  /// it so a chart edit is visible as a chart edit rather than as everyone's
+  /// scores silently becoming incomparable.
+  chartHash String @db.Char(64)
+
+  /// Computed difficulty rating (C3), 0–20. Null until the rater has run.
+  /// Produced by `rateChart()` in `lib/slice-it/rating.ts` — read the header of
+  /// that file before treating this number as authoritative; the weights behind
+  /// it are a starting point awaiting calibration against clear-rate data.
+  rating Float?
+
+  /// `RATING_VERSION` of the algorithm that produced `rating`, so a library
+  /// holding ratings from three different weight sets can be found and re-rated
+  /// instead of being silently unsortable.
+  ratingVersion Int?
+  ratedAt       DateTime?
+
+  /// **Visibility.** 'draft' → only the author can see or play it. 'public' →
+  /// in the library, own leaderboard.
+  ///
+  /// 'ranked' was originally listed here too. It is now `rankStatus` below: the
+  /// two are orthogonal axes (a chart can be public and unranked, and every
+  /// public chart starts that way), and collapsing them meant a single column
+  /// that four call sites already read as visibility — `player.server.ts`,
+  /// `api/slice-it/charts.ts`, `charts/$id.ts`, `editor/seed.server.ts`. Those
+  /// still match `status: { in: ['public', 'ranked'] }`, which stays correct
+  /// and becomes redundant; nothing writes 'ranked' here any more.
+  status String @default("draft") @db.VarChar(16)
+
+  /// **R10 — the ranked pool.** 'unranked' → 'qualified' → 'ranked'.
+  ///
+  /// Only `ranked` charts feed the R2 skill rating. Without this axis every
+  /// uploaded chart feeds the global total, and a player can upload a
+  /// 15-minute track that charts into an enormous note count and farm it — the
+  /// plausibility bound in `scoring.ts` scales WITH duration, so it does not
+  /// stop this. The pool is the structural fix.
+  ///
+  /// `qualified` is awarded automatically by `evaluateQualification()` and is
+  /// reversible; `ranked` is only ever set by a human. See
+  /// `lib/slice-it/ranking.server.ts`.
+  rankStatus String @default("unranked") @db.VarChar(16)
+
+  /// When `rankStatus` last changed, and who changed it — null for the
+  /// automatic qualify/unqualify transitions, which have no actor.
+  rankStatusAt DateTime?
+  rankStatusBy String?
+
+  /// True when this row was seeded from the generator and has not been edited
+  /// since. Drives the "Auto" badge and lets C8 regenerate it in place.
+  isGenerated Boolean @default(true)
+
+  /// BEATMAP_VERSION the seed came from, so C8 can find stale generated rows.
+  generatorVersion Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  revisions ChartRevision[]
+  noteStats SliceNoteStat[]
+  reviews   ChartReview[]
+  /// Back-relations for R1/R6. Omitted when the model shipped, because giving
+  /// `SongLeaderboard` a `chartId` meant re-keying it, and re-keying it meant
+  /// touching the score route — see `docs/_handoff/chart-editor-requests.md` §3.
+  scores    SongLeaderboard[]
+  runs      SliceRun[]
+  /// L16 — pack membership. Optional on the item side: an album pack built at
+  /// upload names songs, because no `Chart` row exists yet at that point.
+  packItems ChartPackItem[]
+
+  @@unique([songId, authorId, difficulty, keys, name])
+  @@index([songId, status])
+  @@index([authorId, updatedAt(sort: Desc)])
+  /// The R2 aggregation: every ranked chart, and only those.
+  @@index([rankStatus, rating])
+  /// The library's "sort by difficulty" (C3), and the re-rate sweep's
+  /// "everything rated by an old version".
+  @@index([rating(sort: Desc)])
+  @@index([ratingVersion])
+}
+
+/// **O1 — per-note miss aggregate.**
+///
+/// Nothing records WHERE in a chart players fail. `SongLeaderboard` keeps a
+/// final score and `SliceRun` keeps totals, so a chart with one unplayable bar
+/// is indistinguishable from a hard chart — including to whoever is tuning the
+/// charter, for whom this is the only ground truth about whether it places
+/// notes people can actually hit.
+///
+/// **Per-note aggregate, not per-run rows.** A run's worth of note results is
+/// ~1200 rows; at the volume `SliceRun` already sees this table would be the
+/// largest in the database inside a month. Counters, incremented in batch, and
+/// only for a sampled tenth of runs (`NOTE_STAT_SAMPLE_RATE`) — a chart with
+/// too few plays for a tenth to converge is one nobody is complaining about.
+model SliceNoteStat {
+  chartId String @db.Uuid
+  chart   Chart  @relation(fields: [chartId], references: [id], onDelete: Cascade)
+
+  /// Note time in milliseconds. Integer rather than the float seconds the chart
+  /// stores, because this is half a composite primary key and a float key that
+  /// round-trips through JSON is a key that occasionally does not match.
+  ///
+  /// Stable across a regeneration only WITHIN a `chartHash` — which is why that
+  /// column exists (C12) and why `chartHash` is part of the key here too. A
+  /// chart edit must start a fresh histogram rather than inheriting counts for
+  /// notes that have moved.
+  noteMs Int
+
+  /// The chart revision these counts describe. See above: without it, an edit
+  /// silently merges two different charts' failure data.
+  chartHash String @db.Char(64)
+
+  attempts Int @default(0)
+  misses   Int @default(0)
+
+  updatedAt DateTime @updatedAt
+
+  @@id([chartId, chartHash, noteMs])
+  /// The heatmap read: one chart revision, in time order.
+  @@index([chartId, chartHash, noteMs])
+  @@map("slice_note_stat")
+}
+
+/// **L16 — a pack: an ordered, curated set of charts.**
+///
+/// `Song.album` was a free-text field that was displayed and nothing else.
+/// There was no way to upload an album as a unit, no way to group charts you
+/// did not upload, and no authoring surface for the pack model the course
+/// (`S2`), shelf (`L2`) and setlist (`S8`) features all expect to consume.
+///
+/// A pack is that unit. It is intentionally *not* an album table: an album is
+/// one `kind` of pack, the one that gets created automatically from a
+/// multi-track upload, and it shares its storage with hand-curated packs so
+/// that everything downstream reads one shape.
+model ChartPack {
+  /// UUID rather than `cuid()`, matching `Chart` and the new-table PK policy in
+  /// `lib/CLAUDE.md` §Database. `gen_random_uuid()` for the same reason `Chart`
+  /// uses it: `uuid_generate_v7()` is not installed in this database.
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  curatorId String
+  curator   User   @relation("ChartPackCurator", fields: [curatorId], references: [id], onDelete: Cascade)
+
+  title       String  @db.VarChar(120)
+  description String? @db.VarChar(2000)
+  coverUrl    String?
+
+  /// 'album'  — auto-created from a multi-track upload, curator = uploader.
+  /// 'pack'   — hand-curated, may contain other people's charts.
+  /// 'course' — ordered and gated; S2 reads these.
+  ///
+  /// A string rather than an enum so a fourth kind does not need a migration on
+  /// a 66-enum schema; the vocabulary is `PACK_KINDS` in
+  /// `lib/slice-it/packs.ts` and is validated on the way in.
+  kind String @default("pack") @db.VarChar(16)
+
+  isPublic Boolean @default(false)
+
+  /// Set only for `kind = 'album'`: the normalised artist the album belongs to,
+  /// so an artist page can list that artist's albums without joining through
+  /// every member song. Same normalisation as `Song.artistKey`.
+  artistKey String? @db.VarChar(200)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items ChartPackItem[]
+
+  /// The public browse: newest published packs first.
+  @@index([isPublic, createdAt(sort: Desc)])
+  /// "my packs", including the unpublished ones the builder is working on.
+  @@index([curatorId, updatedAt(sort: Desc)])
+  @@index([artistKey])
+}
+
+/// **L16 — one member of a pack.**
+///
+/// Keyed on `(packId, songId)` rather than the sketch's `(packId, chartId)`.
+/// The reason is the album path: a multi-track upload creates `Song` rows and
+/// no `Chart` rows at all — charts are authored later, in the editor, and a
+/// generated chart lives in `Song.analysisData` which is not a `Chart` row
+/// either. Keying on `chartId` would have made every auto-created album pack
+/// empty on the day it was created. `chartId` is kept as an optional pin for
+/// the case a curator means one specific difficulty rather than "this song".
+model ChartPackItem {
+  packId String    @db.Uuid
+  pack   ChartPack @relation(fields: [packId], references: [id], onDelete: Cascade)
+
+  songId String
+  song   Song   @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  /// Optional pin to one specific chart of that song. `SetNull` rather than
+  /// `Cascade`: deleting a difficulty should drop the pin, not silently drop
+  /// the song out of somebody's pack.
+  chartId String? @db.Uuid
+  chart   Chart?  @relation(fields: [chartId], references: [id], onDelete: SetNull)
+
+  /// Explicit and **sparse** (10, 20, 30 …), so inserting between two items is
+  /// one UPDATE of one row rather than renumbering everything after it. A pack
+  /// whose gaps have been used up is renormalised by `resequencePack()` in
+  /// `lib/slice-it/packs.server.ts`, which is the only operation that ever
+  /// rewrites more than one row.
+  position Int
+
+  addedAt DateTime @default(now())
+
+  @@id([packId, songId])
+  /// The read: one pack, in order.
+  @@index([packId, position])
+  /// The reverse: "which packs is this song in", for the song details panel.
+  @@index([songId])
+}
+
+/// **S1 — one ranked attempt at the daily challenge.**
+///
+/// The day's song, difficulty and modifier set are NOT stored anywhere: they are
+/// a pure function of the day key (`lib/slice-it/daily.server.ts`), so every web
+/// process, every worker and the client agree on them without a coordinating
+/// table and without a write ever happening at midnight. What has to be stored
+/// is the thing a function cannot derive — who played, what they scored, and
+/// that they only got one go.
+///
+/// `@@unique([dayKey, userId])` **is** the one-attempt rule. A UI that hides the
+/// Play button is a suggestion; a second `INSERT` failing is the rule. The
+/// submit path therefore uses a plain `create` and treats P2002 as "already
+/// played today" rather than checking first — a check-then-insert loses the race
+/// with a second tab, which is exactly the client that would be trying.
+///
+/// Time-sortable `BigInt` identity rather than `cuid()`, per the new-table PK
+/// policy in `lib/CLAUDE.md` §Database: one row per player per day forever, and
+/// every read of it is ordered by day.
+model SliceDailyEntry {
+  id BigInt @id @default(autoincrement())
+
+  /// UTC "YYYY-MM-DD" — the same key `arcadeDayKey()` produces, so the daily
+  /// challenge and the Arcade Pass roll over at the same instant.
+  dayKey String @db.VarChar(10)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Denormalised from the day key's selection at submit time. Derivable, but
+  /// stored so a board row can be rendered without re-running the selection for
+  /// a past day whose eligible pool has since changed — the pool is a live
+  /// query, so yesterday's answer is not reproducible tomorrow.
+  songId String
+  song   Song   @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  /// Null when the day's pick resolved to a song with no `Chart` row (the
+  /// generated `analysisData` fallback) — see `SongLeaderboard.chartId`.
+  chartId String? @db.Uuid
+
+  score    Int
+  accuracy Float
+  maxCombo Int
+  /// Did the run reach the end? The daily's fixed modifier set includes the
+  /// gauge, so a failed attempt is a real outcome and still consumes the day.
+  cleared  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  /// The rule, not a UI check.
+  @@unique([dayKey, userId])
+  /// The board: one day, ordered by score.
+  @@index([dayKey, score(sort: Desc)])
+  @@map("slice_daily_entry")
+}
+
+/// **S8 — a user-made, ordered collection of songs.**
+///
+/// ## Why an array column and not a join table
+///
+/// A setlist is read whole (you open it and see all of it), written whole (the
+/// editor sends the new order), and its **order is the data**. A join table
+/// would need a `position` column, a transaction to reorder, and a `GROUP BY`
+/// to read one list — three mechanisms to express what an array expresses by
+/// existing. The cost is that a deleted song leaves a dangling id; readers
+/// filter to the songs that resolve, which is also what you want visually (a
+/// setlist quietly shrinks rather than 500ing).
+///
+/// ## Why `songIds` and not `chartIds`
+///
+/// The plan sketch says `chartIds`. Everything that actually starts a run in
+/// this game takes a **song** id — `useStartRun(songId)`, `/api/slice-it/songs/
+/// $id`, the library's `onSelect`. A setlist of chart ids would not be playable
+/// without a new run path, and the difficulty a player wants is the one already
+/// selected in their modifiers. Song ids are `cuid()`, so this is `String[]`
+/// with no `@db.Uuid`.
+model SliceSetlist {
+  /// UUID rather than `cuid()` per the new-table PK policy. Same compromise the
+  /// `Chart` model documents: `uuid_generate_v7()` is not installed in this
+  /// database, so the time-sortable value is generated application-side by
+  /// `uuidv7()` and this default is only the fallback for a row inserted
+  /// without one.
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  name        String  @db.VarChar(80)
+  description String? @db.VarChar(300)
+
+  /// Shared by URL. Private is the default: a collection you made is yours
+  /// until you say otherwise.
+  isPublic Boolean @default(false)
+
+  /// Ordered song ids. The order IS the data — see the model doc.
+  songIds String[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// "My setlists", newest first.
+  @@index([ownerId, createdAt(sort: Desc)])
+  /// The public browse.
+  @@index([isPublic, createdAt(sort: Desc)])
+  @@map("slice_setlist")
+}
+
+/// Autosave + undo across sessions + a restore path. Append-only.
+///
+/// Bounded by a trigger-free sweep in the jobs worker rather than by a count
+/// check on write: keeping the last 50 per chart means the sweep is one
+/// DELETE ... WHERE id NOT IN (...) per chart per day, not a read-modify-write
+/// on the hot path of every autosave.
+model ChartRevision {
+  id      BigInt @id @default(autoincrement())
+  chartId String @db.Uuid
+  chart   Chart  @relation(fields: [chartId], references: [id], onDelete: Cascade)
+
+  /// Full note list. Charts are small (a 1200-note Expert is ~90 KB of JSON,
+  /// ~12 KB gzipped); a diff format would be a correctness liability for a
+  /// space saving nobody needs at this scale.
+  notes Json
+
+  /// 'autosave' | 'manual' | 'publish'
+  kind      String   @db.VarChar(16)
+  label     String?  @db.VarChar(120)
+  createdAt DateTime @default(now())
+
+  @@index([chartId, createdAt(sort: Desc)])
 }
 
 model SynapseStormPlayer {

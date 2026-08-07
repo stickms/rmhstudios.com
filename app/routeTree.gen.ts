@@ -141,6 +141,7 @@ import { Route as DailyLightsOutRouteImport } from './routes/daily/lights-out'
 import { Route as DailyOutcastRouteImport } from './routes/daily/outcast'
 import { Route as DailySpectrumRouteImport } from './routes/daily/spectrum'
 import { Route as DeeplinkPageRouteImport } from './routes/deeplink.$page'
+import { Route as DiscordIndexRouteImport } from './routes/discord/index'
 import { Route as DiscordLightsOutRouteImport } from './routes/discord/lights-out'
 import { Route as DiscordRmhboxRouteImport } from './routes/discord/rmhbox'
 import { Route as ForestExplorerIndexRouteImport } from './routes/forest-explorer/index'
@@ -208,6 +209,8 @@ import { Route as SiteAdminRedemptionsRouteImport } from './routes/_site/admin/r
 import { Route as SiteAdminReportsRouteImport } from './routes/_site/admin/reports'
 import { Route as SiteAdminRideshareRouteImport } from './routes/_site/admin/rideshare'
 import { Route as SiteAdminSecurityReportsRouteImport } from './routes/_site/admin/security-reports'
+import { Route as SiteAdminSliceItRouteImport } from './routes/_site/admin/slice-it'
+import { Route as SiteAdminSliceItContentRouteImport } from './routes/_site/admin/slice-it-content'
 import { Route as SiteAdminUserBuildsRouteImport } from './routes/_site/admin/user-builds'
 import { Route as SiteAdminUsersRouteImport } from './routes/_site/admin/users'
 import { Route as SiteAppsIndexRouteImport } from './routes/_site/apps/index'
@@ -220,6 +223,7 @@ import { Route as SiteCreateIndexRouteImport } from './routes/_site/create/index
 import { Route as SiteDeveloperIndexRouteImport } from './routes/_site/developer/index'
 import { Route as SiteGamesIndexRouteImport } from './routes/_site/games/index'
 import { Route as SiteGamesGameIdRouteImport } from './routes/_site/games/$gameId'
+import { Route as SiteGamesSliceItRouteImport } from './routes/_site/games/slice-it'
 import { Route as SiteGroupsIndexRouteImport } from './routes/_site/groups/index'
 import { Route as SiteGroupsIdRouteImport } from './routes/_site/groups/$id'
 import { Route as SiteHomesIndexRouteImport } from './routes/_site/homes/index'
@@ -503,9 +507,14 @@ import { Route as ApiSignalForgeLeaderboardRouteImport } from './routes/api/sign
 import { Route as ApiSignalForgeLoadRouteImport } from './routes/api/signal-forge/load'
 import { Route as ApiSignalForgeSaveRouteImport } from './routes/api/signal-forge/save'
 import { Route as ApiSignalForgeScoreRouteImport } from './routes/api/signal-forge/score'
+import { Route as ApiSliceItChartsRouteImport } from './routes/api/slice-it/charts'
 import { Route as ApiSliceItLeaderboardRouteImport } from './routes/api/slice-it/leaderboard'
+import { Route as ApiSliceItReplayRouteImport } from './routes/api/slice-it/replay'
 import { Route as ApiSliceItScoreRouteImport } from './routes/api/slice-it/score'
+import { Route as ApiSliceItShelvesRouteImport } from './routes/api/slice-it/shelves'
+import { Route as ApiSliceItShowcaseRouteImport } from './routes/api/slice-it/showcase'
 import { Route as ApiSliceItSongsRouteImport } from './routes/api/slice-it/songs'
+import { Route as ApiSliceItUploaderStatsRouteImport } from './routes/api/slice-it/uploader-stats'
 import { Route as ApiSpacesIndexRouteImport } from './routes/api/spaces/index'
 import { Route as ApiSpacesLiveRouteImport } from './routes/api/spaces/live'
 import { Route as ApiSpeedrunCategoriesRouteImport } from './routes/api/speedrun/categories'
@@ -566,6 +575,9 @@ import { Route as EmbedReplayIdRouteImport } from './routes/embed.replay.$id'
 import { Route as LibraryAlbumsAlbumIdRouteImport } from './routes/library.albums.$albumId'
 import { Route as RmhboxMinigamesIndexRouteImport } from './routes/rmhbox/minigames/index'
 import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/cursed-logic/index'
+import { Route as SliceItArtistKeyRouteImport } from './routes/slice-it/artist.$key'
+import { Route as SliceItEditSongIdRouteImport } from './routes/slice-it/edit.$songId'
+import { Route as SliceItPlayerHandleRouteImport } from './routes/slice-it/player.$handle'
 import { Route as StrategiesProfileIndexRouteImport } from './routes/strategies/profile/index'
 import { Route as StrategiesProfileReputationRouteImport } from './routes/strategies/profile/reputation'
 import { Route as StrategiesProfileSettingsRouteImport } from './routes/strategies/profile/settings'
@@ -738,7 +750,20 @@ import { Route as ApiRmhtubeSubscribeChannelIdRouteImport } from './routes/api/r
 import { Route as ApiSavesFoldersIdRouteImport } from './routes/api/saves/folders.$id'
 import { Route as ApiScheduledIdPublishRouteImport } from './routes/api/scheduled/$id/publish'
 import { Route as ApiSearchSavedIdRouteImport } from './routes/api/search/saved.$id'
+import { Route as ApiSliceItAdminContentRouteImport } from './routes/api/slice-it/admin/content'
+import { Route as ApiSliceItAdminReviewRouteImport } from './routes/api/slice-it/admin/review'
+import { Route as ApiSliceItAdminTakedownRouteImport } from './routes/api/slice-it/admin/takedown'
+import { Route as ApiSliceItChartsIdRouteImport } from './routes/api/slice-it/charts/$id'
+import { Route as ApiSliceItChartsRankingRouteImport } from './routes/api/slice-it/charts/ranking'
+import { Route as ApiSliceItDailyIndexRouteImport } from './routes/api/slice-it/daily/index'
+import { Route as ApiSliceItDailySubmitRouteImport } from './routes/api/slice-it/daily/submit'
+import { Route as ApiSliceItPacksIndexRouteImport } from './routes/api/slice-it/packs/index'
+import { Route as ApiSliceItPacksIdRouteImport } from './routes/api/slice-it/packs/$id'
+import { Route as ApiSliceItReplayIdRouteImport } from './routes/api/slice-it/replay/$id'
+import { Route as ApiSliceItSetlistsIndexRouteImport } from './routes/api/slice-it/setlists/index'
+import { Route as ApiSliceItSetlistsIdRouteImport } from './routes/api/slice-it/setlists/$id'
 import { Route as ApiSliceItSongsIdRouteImport } from './routes/api/slice-it/songs/$id'
+import { Route as ApiSliceItSongsArtistsRouteImport } from './routes/api/slice-it/songs/artists'
 import { Route as ApiSliceItSongsUploadRouteImport } from './routes/api/slice-it/songs/upload'
 import { Route as ApiSpacesIdIndexRouteImport } from './routes/api/spaces/$id/index'
 import { Route as ApiSpacesIdEndRouteImport } from './routes/api/spaces/$id/end'
@@ -767,6 +792,8 @@ import { Route as ApiV1MeFollowingRouteImport } from './routes/api/v1/me/followi
 import { Route as ApiV1MeNotificationsRouteImport } from './routes/api/v1/me/notifications'
 import { Route as ApiV1NewsSlugRouteImport } from './routes/api/v1/news/$slug'
 import { Route as ApiV1PostsIdRouteImport } from './routes/api/v1/posts/$id'
+import { Route as ApiV1SliceItChartsRouteImport } from './routes/api/v1/slice-it/charts'
+import { Route as ApiV1SliceItLeaderboardRouteImport } from './routes/api/v1/slice-it/leaderboard'
 import { Route as ApiV1UsersHandleRouteImport } from './routes/api/v1/users/$handle'
 import { Route as ApiV1WebhooksIdRouteImport } from './routes/api/v1/webhooks/$id'
 import { Route as ApiVibePkgFileRouteImport } from './routes/api/vibe/pkg/$file'
@@ -811,11 +838,18 @@ import { Route as ApiRmhladderResumeIdAnalyzeRouteImport } from './routes/api/rm
 import { Route as ApiRmhladderResumeIdConfirmRouteImport } from './routes/api/rmhladder/resume/$id/confirm'
 import { Route as ApiRmhmusicGuessIdIndexRouteImport } from './routes/api/rmhmusic/guess/$id/index'
 import { Route as ApiRmhmusicGuessIdAttemptRouteImport } from './routes/api/rmhmusic/guess/$id/attempt'
+import { Route as ApiSliceItChartsIdReviewsRouteImport } from './routes/api/slice-it/charts/$id/reviews'
+import { Route as ApiSliceItChartsIdRevisionsRouteImport } from './routes/api/slice-it/charts/$id/revisions'
+import { Route as ApiSliceItPacksIdItemsRouteImport } from './routes/api/slice-it/packs/$id/items'
+import { Route as ApiSliceItSongsIdChartsRouteImport } from './routes/api/slice-it/songs/$id/charts'
 import { Route as ApiSliceItSongsIdCommentsRouteImport } from './routes/api/slice-it/songs/$id/comments'
 import { Route as ApiSliceItSongsIdCoverRouteImport } from './routes/api/slice-it/songs/$id/cover'
+import { Route as ApiSliceItSongsIdImportChartRouteImport } from './routes/api/slice-it/songs/$id/import-chart'
 import { Route as ApiSliceItSongsIdLikeRouteImport } from './routes/api/slice-it/songs/$id/like'
 import { Route as ApiSliceItSongsIdPatchAnalysisRouteImport } from './routes/api/slice-it/songs/$id/patch-analysis'
 import { Route as ApiSliceItSongsIdPlayRouteImport } from './routes/api/slice-it/songs/$id/play'
+import { Route as ApiSliceItSongsIdRegenerateRouteImport } from './routes/api/slice-it/songs/$id/regenerate'
+import { Route as ApiSliceItSongsArtistKeyRouteImport } from './routes/api/slice-it/songs/artist.$key'
 import { Route as ApiSliceItSongsStreamIdRouteImport } from './routes/api/slice-it/songs/stream/$id'
 import { Route as ApiStorefrontProductsIdIndexRouteImport } from './routes/api/storefront/products/$id/index'
 import { Route as ApiStorefrontProductsIdBuyRouteImport } from './routes/api/storefront/products/$id/buy'
@@ -1498,6 +1532,11 @@ const DeeplinkPageRoute = DeeplinkPageRouteImport.update({
   path: '/$page',
   getParentRoute: () => DeeplinkRoute,
 } as any)
+const DiscordIndexRoute = DiscordIndexRouteImport.update({
+  id: '/discord/',
+  path: '/discord/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DiscordLightsOutRoute = DiscordLightsOutRouteImport.update({
   id: '/discord/lights-out',
   path: '/discord/lights-out',
@@ -1834,6 +1873,16 @@ const SiteAdminSecurityReportsRoute =
     path: '/security-reports',
     getParentRoute: () => SiteAdminRouteRoute,
   } as any)
+const SiteAdminSliceItRoute = SiteAdminSliceItRouteImport.update({
+  id: '/slice-it',
+  path: '/slice-it',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
+const SiteAdminSliceItContentRoute = SiteAdminSliceItContentRouteImport.update({
+  id: '/slice-it-content',
+  path: '/slice-it-content',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
 const SiteAdminUserBuildsRoute = SiteAdminUserBuildsRouteImport.update({
   id: '/user-builds',
   path: '/user-builds',
@@ -1892,6 +1941,11 @@ const SiteGamesIndexRoute = SiteGamesIndexRouteImport.update({
 const SiteGamesGameIdRoute = SiteGamesGameIdRouteImport.update({
   id: '/games/$gameId',
   path: '/games/$gameId',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteGamesSliceItRoute = SiteGamesSliceItRouteImport.update({
+  id: '/games/slice-it',
+  path: '/games/slice-it',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteGroupsIndexRoute = SiteGroupsIndexRouteImport.update({
@@ -3330,9 +3384,19 @@ const ApiSignalForgeScoreRoute = ApiSignalForgeScoreRouteImport.update({
   path: '/api/signal-forge/score',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSliceItChartsRoute = ApiSliceItChartsRouteImport.update({
+  id: '/api/slice-it/charts',
+  path: '/api/slice-it/charts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSliceItLeaderboardRoute = ApiSliceItLeaderboardRouteImport.update({
   id: '/api/slice-it/leaderboard',
   path: '/api/slice-it/leaderboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSliceItReplayRoute = ApiSliceItReplayRouteImport.update({
+  id: '/api/slice-it/replay',
+  path: '/api/slice-it/replay',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSliceItScoreRoute = ApiSliceItScoreRouteImport.update({
@@ -3340,9 +3404,24 @@ const ApiSliceItScoreRoute = ApiSliceItScoreRouteImport.update({
   path: '/api/slice-it/score',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSliceItShelvesRoute = ApiSliceItShelvesRouteImport.update({
+  id: '/api/slice-it/shelves',
+  path: '/api/slice-it/shelves',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSliceItShowcaseRoute = ApiSliceItShowcaseRouteImport.update({
+  id: '/api/slice-it/showcase',
+  path: '/api/slice-it/showcase',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSliceItSongsRoute = ApiSliceItSongsRouteImport.update({
   id: '/api/slice-it/songs',
   path: '/api/slice-it/songs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSliceItUploaderStatsRoute = ApiSliceItUploaderStatsRouteImport.update({
+  id: '/api/slice-it/uploader-stats',
+  path: '/api/slice-it/uploader-stats',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSpacesIndexRoute = ApiSpacesIndexRouteImport.update({
@@ -3645,6 +3724,21 @@ const SecretCursedLogicIndexRoute = SecretCursedLogicIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => SecretCursedLogicRoute,
+} as any)
+const SliceItArtistKeyRoute = SliceItArtistKeyRouteImport.update({
+  id: '/artist/$key',
+  path: '/artist/$key',
+  getParentRoute: () => SliceItRoute,
+} as any)
+const SliceItEditSongIdRoute = SliceItEditSongIdRouteImport.update({
+  id: '/edit/$songId',
+  path: '/edit/$songId',
+  getParentRoute: () => SliceItRoute,
+} as any)
+const SliceItPlayerHandleRoute = SliceItPlayerHandleRouteImport.update({
+  id: '/player/$handle',
+  path: '/player/$handle',
+  getParentRoute: () => SliceItRoute,
 } as any)
 const StrategiesProfileIndexRoute = StrategiesProfileIndexRouteImport.update({
   id: '/profile/',
@@ -4560,9 +4654,74 @@ const ApiSearchSavedIdRoute = ApiSearchSavedIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiSearchSavedRoute,
 } as any)
+const ApiSliceItAdminContentRoute = ApiSliceItAdminContentRouteImport.update({
+  id: '/api/slice-it/admin/content',
+  path: '/api/slice-it/admin/content',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSliceItAdminReviewRoute = ApiSliceItAdminReviewRouteImport.update({
+  id: '/api/slice-it/admin/review',
+  path: '/api/slice-it/admin/review',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSliceItAdminTakedownRoute = ApiSliceItAdminTakedownRouteImport.update({
+  id: '/api/slice-it/admin/takedown',
+  path: '/api/slice-it/admin/takedown',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSliceItChartsIdRoute = ApiSliceItChartsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiSliceItChartsRoute,
+} as any)
+const ApiSliceItChartsRankingRoute = ApiSliceItChartsRankingRouteImport.update({
+  id: '/ranking',
+  path: '/ranking',
+  getParentRoute: () => ApiSliceItChartsRoute,
+} as any)
+const ApiSliceItDailyIndexRoute = ApiSliceItDailyIndexRouteImport.update({
+  id: '/api/slice-it/daily/',
+  path: '/api/slice-it/daily/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSliceItDailySubmitRoute = ApiSliceItDailySubmitRouteImport.update({
+  id: '/api/slice-it/daily/submit',
+  path: '/api/slice-it/daily/submit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSliceItPacksIndexRoute = ApiSliceItPacksIndexRouteImport.update({
+  id: '/api/slice-it/packs/',
+  path: '/api/slice-it/packs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSliceItPacksIdRoute = ApiSliceItPacksIdRouteImport.update({
+  id: '/api/slice-it/packs/$id',
+  path: '/api/slice-it/packs/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSliceItReplayIdRoute = ApiSliceItReplayIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiSliceItReplayRoute,
+} as any)
+const ApiSliceItSetlistsIndexRoute = ApiSliceItSetlistsIndexRouteImport.update({
+  id: '/api/slice-it/setlists/',
+  path: '/api/slice-it/setlists/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSliceItSetlistsIdRoute = ApiSliceItSetlistsIdRouteImport.update({
+  id: '/api/slice-it/setlists/$id',
+  path: '/api/slice-it/setlists/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSliceItSongsIdRoute = ApiSliceItSongsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
+  getParentRoute: () => ApiSliceItSongsRoute,
+} as any)
+const ApiSliceItSongsArtistsRoute = ApiSliceItSongsArtistsRouteImport.update({
+  id: '/artists',
+  path: '/artists',
   getParentRoute: () => ApiSliceItSongsRoute,
 } as any)
 const ApiSliceItSongsUploadRoute = ApiSliceItSongsUploadRouteImport.update({
@@ -4708,6 +4867,16 @@ const ApiV1PostsIdRoute = ApiV1PostsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => ApiV1PostsRoute,
+} as any)
+const ApiV1SliceItChartsRoute = ApiV1SliceItChartsRouteImport.update({
+  id: '/api/v1/slice-it/charts',
+  path: '/api/v1/slice-it/charts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1SliceItLeaderboardRoute = ApiV1SliceItLeaderboardRouteImport.update({
+  id: '/api/v1/slice-it/leaderboard',
+  path: '/api/v1/slice-it/leaderboard',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1UsersHandleRoute = ApiV1UsersHandleRouteImport.update({
   id: '/api/v1/users/$handle',
@@ -4952,6 +5121,28 @@ const ApiRmhmusicGuessIdAttemptRoute =
     path: '/api/rmhmusic/guess/$id/attempt',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiSliceItChartsIdReviewsRoute =
+  ApiSliceItChartsIdReviewsRouteImport.update({
+    id: '/reviews',
+    path: '/reviews',
+    getParentRoute: () => ApiSliceItChartsIdRoute,
+  } as any)
+const ApiSliceItChartsIdRevisionsRoute =
+  ApiSliceItChartsIdRevisionsRouteImport.update({
+    id: '/revisions',
+    path: '/revisions',
+    getParentRoute: () => ApiSliceItChartsIdRoute,
+  } as any)
+const ApiSliceItPacksIdItemsRoute = ApiSliceItPacksIdItemsRouteImport.update({
+  id: '/items',
+  path: '/items',
+  getParentRoute: () => ApiSliceItPacksIdRoute,
+} as any)
+const ApiSliceItSongsIdChartsRoute = ApiSliceItSongsIdChartsRouteImport.update({
+  id: '/charts',
+  path: '/charts',
+  getParentRoute: () => ApiSliceItSongsIdRoute,
+} as any)
 const ApiSliceItSongsIdCommentsRoute =
   ApiSliceItSongsIdCommentsRouteImport.update({
     id: '/comments',
@@ -4963,6 +5154,12 @@ const ApiSliceItSongsIdCoverRoute = ApiSliceItSongsIdCoverRouteImport.update({
   path: '/cover',
   getParentRoute: () => ApiSliceItSongsIdRoute,
 } as any)
+const ApiSliceItSongsIdImportChartRoute =
+  ApiSliceItSongsIdImportChartRouteImport.update({
+    id: '/import-chart',
+    path: '/import-chart',
+    getParentRoute: () => ApiSliceItSongsIdRoute,
+  } as any)
 const ApiSliceItSongsIdLikeRoute = ApiSliceItSongsIdLikeRouteImport.update({
   id: '/like',
   path: '/like',
@@ -4979,6 +5176,18 @@ const ApiSliceItSongsIdPlayRoute = ApiSliceItSongsIdPlayRouteImport.update({
   path: '/play',
   getParentRoute: () => ApiSliceItSongsIdRoute,
 } as any)
+const ApiSliceItSongsIdRegenerateRoute =
+  ApiSliceItSongsIdRegenerateRouteImport.update({
+    id: '/regenerate',
+    path: '/regenerate',
+    getParentRoute: () => ApiSliceItSongsIdRoute,
+  } as any)
+const ApiSliceItSongsArtistKeyRoute =
+  ApiSliceItSongsArtistKeyRouteImport.update({
+    id: '/artist/$key',
+    path: '/artist/$key',
+    getParentRoute: () => ApiSliceItSongsRoute,
+  } as any)
 const ApiSliceItSongsStreamIdRoute = ApiSliceItSongsStreamIdRouteImport.update({
   id: '/stream/$id',
   path: '/stream/$id',
@@ -5259,6 +5468,7 @@ export interface FileRoutesByFullPath {
   '/v/new': typeof VNewRoute
   '/altair/': typeof AltairIndexRoute
   '/daily/': typeof DailyIndexRoute
+  '/discord/': typeof DiscordIndexRoute
   '/forest-explorer/': typeof ForestExplorerIndexRoute
   '/kowloon-knockout/': typeof KowloonKnockoutIndexRoute
   '/rmh-capital/': typeof RmhCapitalIndexRoute
@@ -5288,12 +5498,15 @@ export interface FileRoutesByFullPath {
   '/admin/reports': typeof SiteAdminReportsRoute
   '/admin/rideshare': typeof SiteAdminRideshareRoute
   '/admin/security-reports': typeof SiteAdminSecurityReportsRoute
+  '/admin/slice-it': typeof SiteAdminSliceItRoute
+  '/admin/slice-it-content': typeof SiteAdminSliceItContentRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
   '/blog/$slug': typeof SiteBlogSlugRoute
   '/builds/$slug': typeof SiteBuildsSlugRoute
   '/c/$slug': typeof SiteCSlugRoute
   '/games/$gameId': typeof SiteGamesGameIdRoute
+  '/games/slice-it': typeof SiteGamesSliceItRoute
   '/groups/$id': typeof SiteGroupsIdRoute
   '/homes/manage': typeof SiteHomesManageRoute
   '/homes/saved': typeof SiteHomesSavedRoute
@@ -5529,9 +5742,14 @@ export interface FileRoutesByFullPath {
   '/api/signal-forge/load': typeof ApiSignalForgeLoadRoute
   '/api/signal-forge/save': typeof ApiSignalForgeSaveRoute
   '/api/signal-forge/score': typeof ApiSignalForgeScoreRoute
+  '/api/slice-it/charts': typeof ApiSliceItChartsRouteWithChildren
   '/api/slice-it/leaderboard': typeof ApiSliceItLeaderboardRoute
+  '/api/slice-it/replay': typeof ApiSliceItReplayRouteWithChildren
   '/api/slice-it/score': typeof ApiSliceItScoreRoute
+  '/api/slice-it/shelves': typeof ApiSliceItShelvesRoute
+  '/api/slice-it/showcase': typeof ApiSliceItShowcaseRoute
   '/api/slice-it/songs': typeof ApiSliceItSongsRouteWithChildren
+  '/api/slice-it/uploader-stats': typeof ApiSliceItUploaderStatsRoute
   '/api/spaces/live': typeof ApiSpacesLiveRoute
   '/api/speedrun/categories': typeof ApiSpeedrunCategoriesRoute
   '/api/speedrun/leaderboard': typeof ApiSpeedrunLeaderboardRoute
@@ -5582,6 +5800,9 @@ export interface FileRoutesByFullPath {
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/embed/replay/$id': typeof EmbedReplayIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
+  '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
+  '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
+  '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
   '/strategies/profile/reputation': typeof StrategiesProfileReputationRoute
   '/strategies/profile/settings': typeof StrategiesProfileSettingsRoute
   '/strategies/puzzles/$mode': typeof StrategiesPuzzlesModeRoute
@@ -5797,7 +6018,17 @@ export interface FileRoutesByFullPath {
   '/api/saves/folders/$id': typeof ApiSavesFoldersIdRoute
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/search/saved/$id': typeof ApiSearchSavedIdRoute
+  '/api/slice-it/admin/content': typeof ApiSliceItAdminContentRoute
+  '/api/slice-it/admin/review': typeof ApiSliceItAdminReviewRoute
+  '/api/slice-it/admin/takedown': typeof ApiSliceItAdminTakedownRoute
+  '/api/slice-it/charts/$id': typeof ApiSliceItChartsIdRouteWithChildren
+  '/api/slice-it/charts/ranking': typeof ApiSliceItChartsRankingRoute
+  '/api/slice-it/daily/submit': typeof ApiSliceItDailySubmitRoute
+  '/api/slice-it/packs/$id': typeof ApiSliceItPacksIdRouteWithChildren
+  '/api/slice-it/replay/$id': typeof ApiSliceItReplayIdRoute
+  '/api/slice-it/setlists/$id': typeof ApiSliceItSetlistsIdRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
+  '/api/slice-it/songs/artists': typeof ApiSliceItSongsArtistsRoute
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
   '/api/spaces/$id/end': typeof ApiSpacesIdEndRoute
   '/api/spaces/$id/start': typeof ApiSpacesIdStartRoute
@@ -5823,6 +6054,8 @@ export interface FileRoutesByFullPath {
   '/api/v1/me/notifications': typeof ApiV1MeNotificationsRoute
   '/api/v1/news/$slug': typeof ApiV1NewsSlugRoute
   '/api/v1/posts/$id': typeof ApiV1PostsIdRouteWithChildren
+  '/api/v1/slice-it/charts': typeof ApiV1SliceItChartsRoute
+  '/api/v1/slice-it/leaderboard': typeof ApiV1SliceItLeaderboardRoute
   '/api/v1/users/$handle': typeof ApiV1UsersHandleRouteWithChildren
   '/api/v1/webhooks/$id': typeof ApiV1WebhooksIdRoute
   '/api/vibe/pkg/$file': typeof ApiVibePkgFileRoute
@@ -5853,6 +6086,9 @@ export interface FileRoutesByFullPath {
   '/api/profile-links/$id/': typeof ApiProfileLinksIdIndexRoute
   '/api/rmhladder/resume/': typeof ApiRmhladderResumeIndexRoute
   '/api/rmhmusic/guess/': typeof ApiRmhmusicGuessIndexRoute
+  '/api/slice-it/daily/': typeof ApiSliceItDailyIndexRoute
+  '/api/slice-it/packs/': typeof ApiSliceItPacksIndexRoute
+  '/api/slice-it/setlists/': typeof ApiSliceItSetlistsIndexRoute
   '/api/spaces/$id/': typeof ApiSpacesIdIndexRoute
   '/api/storefront/products/': typeof ApiStorefrontProductsIndexRoute
   '/api/study/decks/': typeof ApiStudyDecksIndexRoute
@@ -5889,11 +6125,18 @@ export interface FileRoutesByFullPath {
   '/api/rmhladder/resume/$id/analyze': typeof ApiRmhladderResumeIdAnalyzeRoute
   '/api/rmhladder/resume/$id/confirm': typeof ApiRmhladderResumeIdConfirmRoute
   '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
+  '/api/slice-it/charts/$id/reviews': typeof ApiSliceItChartsIdReviewsRoute
+  '/api/slice-it/charts/$id/revisions': typeof ApiSliceItChartsIdRevisionsRoute
+  '/api/slice-it/packs/$id/items': typeof ApiSliceItPacksIdItemsRoute
+  '/api/slice-it/songs/$id/charts': typeof ApiSliceItSongsIdChartsRoute
   '/api/slice-it/songs/$id/comments': typeof ApiSliceItSongsIdCommentsRoute
   '/api/slice-it/songs/$id/cover': typeof ApiSliceItSongsIdCoverRoute
+  '/api/slice-it/songs/$id/import-chart': typeof ApiSliceItSongsIdImportChartRoute
   '/api/slice-it/songs/$id/like': typeof ApiSliceItSongsIdLikeRoute
   '/api/slice-it/songs/$id/patch-analysis': typeof ApiSliceItSongsIdPatchAnalysisRoute
   '/api/slice-it/songs/$id/play': typeof ApiSliceItSongsIdPlayRoute
+  '/api/slice-it/songs/$id/regenerate': typeof ApiSliceItSongsIdRegenerateRoute
+  '/api/slice-it/songs/artist/$key': typeof ApiSliceItSongsArtistKeyRoute
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
   '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
   '/api/study/cards/$id/review': typeof ApiStudyCardsIdReviewRoute
@@ -6063,6 +6306,7 @@ export interface FileRoutesByTo {
   '/': typeof SiteIndexRoute
   '/altair': typeof AltairIndexRoute
   '/daily': typeof DailyIndexRoute
+  '/discord': typeof DiscordIndexRoute
   '/forest-explorer': typeof ForestExplorerIndexRoute
   '/kowloon-knockout': typeof KowloonKnockoutIndexRoute
   '/rmh-capital': typeof RmhCapitalIndexRoute
@@ -6092,12 +6336,15 @@ export interface FileRoutesByTo {
   '/admin/reports': typeof SiteAdminReportsRoute
   '/admin/rideshare': typeof SiteAdminRideshareRoute
   '/admin/security-reports': typeof SiteAdminSecurityReportsRoute
+  '/admin/slice-it': typeof SiteAdminSliceItRoute
+  '/admin/slice-it-content': typeof SiteAdminSliceItContentRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
   '/blog/$slug': typeof SiteBlogSlugRoute
   '/builds/$slug': typeof SiteBuildsSlugRoute
   '/c/$slug': typeof SiteCSlugRoute
   '/games/$gameId': typeof SiteGamesGameIdRoute
+  '/games/slice-it': typeof SiteGamesSliceItRoute
   '/groups/$id': typeof SiteGroupsIdRoute
   '/homes/manage': typeof SiteHomesManageRoute
   '/homes/saved': typeof SiteHomesSavedRoute
@@ -6333,9 +6580,14 @@ export interface FileRoutesByTo {
   '/api/signal-forge/load': typeof ApiSignalForgeLoadRoute
   '/api/signal-forge/save': typeof ApiSignalForgeSaveRoute
   '/api/signal-forge/score': typeof ApiSignalForgeScoreRoute
+  '/api/slice-it/charts': typeof ApiSliceItChartsRouteWithChildren
   '/api/slice-it/leaderboard': typeof ApiSliceItLeaderboardRoute
+  '/api/slice-it/replay': typeof ApiSliceItReplayRouteWithChildren
   '/api/slice-it/score': typeof ApiSliceItScoreRoute
+  '/api/slice-it/shelves': typeof ApiSliceItShelvesRoute
+  '/api/slice-it/showcase': typeof ApiSliceItShowcaseRoute
   '/api/slice-it/songs': typeof ApiSliceItSongsRouteWithChildren
+  '/api/slice-it/uploader-stats': typeof ApiSliceItUploaderStatsRoute
   '/api/spaces/live': typeof ApiSpacesLiveRoute
   '/api/speedrun/categories': typeof ApiSpeedrunCategoriesRoute
   '/api/speedrun/leaderboard': typeof ApiSpeedrunLeaderboardRoute
@@ -6386,6 +6638,9 @@ export interface FileRoutesByTo {
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/embed/replay/$id': typeof EmbedReplayIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
+  '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
+  '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
+  '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
   '/strategies/profile/reputation': typeof StrategiesProfileReputationRoute
   '/strategies/profile/settings': typeof StrategiesProfileSettingsRoute
   '/strategies/puzzles/$mode': typeof StrategiesPuzzlesModeRoute
@@ -6601,7 +6856,17 @@ export interface FileRoutesByTo {
   '/api/saves/folders/$id': typeof ApiSavesFoldersIdRoute
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/search/saved/$id': typeof ApiSearchSavedIdRoute
+  '/api/slice-it/admin/content': typeof ApiSliceItAdminContentRoute
+  '/api/slice-it/admin/review': typeof ApiSliceItAdminReviewRoute
+  '/api/slice-it/admin/takedown': typeof ApiSliceItAdminTakedownRoute
+  '/api/slice-it/charts/$id': typeof ApiSliceItChartsIdRouteWithChildren
+  '/api/slice-it/charts/ranking': typeof ApiSliceItChartsRankingRoute
+  '/api/slice-it/daily/submit': typeof ApiSliceItDailySubmitRoute
+  '/api/slice-it/packs/$id': typeof ApiSliceItPacksIdRouteWithChildren
+  '/api/slice-it/replay/$id': typeof ApiSliceItReplayIdRoute
+  '/api/slice-it/setlists/$id': typeof ApiSliceItSetlistsIdRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
+  '/api/slice-it/songs/artists': typeof ApiSliceItSongsArtistsRoute
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
   '/api/spaces/$id/end': typeof ApiSpacesIdEndRoute
   '/api/spaces/$id/start': typeof ApiSpacesIdStartRoute
@@ -6627,6 +6892,8 @@ export interface FileRoutesByTo {
   '/api/v1/me/notifications': typeof ApiV1MeNotificationsRoute
   '/api/v1/news/$slug': typeof ApiV1NewsSlugRoute
   '/api/v1/posts/$id': typeof ApiV1PostsIdRouteWithChildren
+  '/api/v1/slice-it/charts': typeof ApiV1SliceItChartsRoute
+  '/api/v1/slice-it/leaderboard': typeof ApiV1SliceItLeaderboardRoute
   '/api/v1/users/$handle': typeof ApiV1UsersHandleRouteWithChildren
   '/api/v1/webhooks/$id': typeof ApiV1WebhooksIdRoute
   '/api/vibe/pkg/$file': typeof ApiVibePkgFileRoute
@@ -6657,6 +6924,9 @@ export interface FileRoutesByTo {
   '/api/profile-links/$id': typeof ApiProfileLinksIdIndexRoute
   '/api/rmhladder/resume': typeof ApiRmhladderResumeIndexRoute
   '/api/rmhmusic/guess': typeof ApiRmhmusicGuessIndexRoute
+  '/api/slice-it/daily': typeof ApiSliceItDailyIndexRoute
+  '/api/slice-it/packs': typeof ApiSliceItPacksIndexRoute
+  '/api/slice-it/setlists': typeof ApiSliceItSetlistsIndexRoute
   '/api/spaces/$id': typeof ApiSpacesIdIndexRoute
   '/api/storefront/products': typeof ApiStorefrontProductsIndexRoute
   '/api/study/decks': typeof ApiStudyDecksIndexRoute
@@ -6693,11 +6963,18 @@ export interface FileRoutesByTo {
   '/api/rmhladder/resume/$id/analyze': typeof ApiRmhladderResumeIdAnalyzeRoute
   '/api/rmhladder/resume/$id/confirm': typeof ApiRmhladderResumeIdConfirmRoute
   '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
+  '/api/slice-it/charts/$id/reviews': typeof ApiSliceItChartsIdReviewsRoute
+  '/api/slice-it/charts/$id/revisions': typeof ApiSliceItChartsIdRevisionsRoute
+  '/api/slice-it/packs/$id/items': typeof ApiSliceItPacksIdItemsRoute
+  '/api/slice-it/songs/$id/charts': typeof ApiSliceItSongsIdChartsRoute
   '/api/slice-it/songs/$id/comments': typeof ApiSliceItSongsIdCommentsRoute
   '/api/slice-it/songs/$id/cover': typeof ApiSliceItSongsIdCoverRoute
+  '/api/slice-it/songs/$id/import-chart': typeof ApiSliceItSongsIdImportChartRoute
   '/api/slice-it/songs/$id/like': typeof ApiSliceItSongsIdLikeRoute
   '/api/slice-it/songs/$id/patch-analysis': typeof ApiSliceItSongsIdPatchAnalysisRoute
   '/api/slice-it/songs/$id/play': typeof ApiSliceItSongsIdPlayRoute
+  '/api/slice-it/songs/$id/regenerate': typeof ApiSliceItSongsIdRegenerateRoute
+  '/api/slice-it/songs/artist/$key': typeof ApiSliceItSongsArtistKeyRoute
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
   '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
   '/api/study/cards/$id/review': typeof ApiStudyCardsIdReviewRoute
@@ -6893,6 +7170,7 @@ export interface FileRoutesById {
   '/_site/': typeof SiteIndexRoute
   '/altair/': typeof AltairIndexRoute
   '/daily/': typeof DailyIndexRoute
+  '/discord/': typeof DiscordIndexRoute
   '/forest-explorer/': typeof ForestExplorerIndexRoute
   '/kowloon-knockout/': typeof KowloonKnockoutIndexRoute
   '/rmh-capital/': typeof RmhCapitalIndexRoute
@@ -6922,12 +7200,15 @@ export interface FileRoutesById {
   '/_site/admin/reports': typeof SiteAdminReportsRoute
   '/_site/admin/rideshare': typeof SiteAdminRideshareRoute
   '/_site/admin/security-reports': typeof SiteAdminSecurityReportsRoute
+  '/_site/admin/slice-it': typeof SiteAdminSliceItRoute
+  '/_site/admin/slice-it-content': typeof SiteAdminSliceItContentRoute
   '/_site/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/_site/admin/users': typeof SiteAdminUsersRoute
   '/_site/blog/$slug': typeof SiteBlogSlugRoute
   '/_site/builds/$slug': typeof SiteBuildsSlugRoute
   '/_site/c/$slug': typeof SiteCSlugRoute
   '/_site/games/$gameId': typeof SiteGamesGameIdRoute
+  '/_site/games/slice-it': typeof SiteGamesSliceItRoute
   '/_site/groups/$id': typeof SiteGroupsIdRoute
   '/_site/homes/manage': typeof SiteHomesManageRoute
   '/_site/homes/saved': typeof SiteHomesSavedRoute
@@ -7163,9 +7444,14 @@ export interface FileRoutesById {
   '/api/signal-forge/load': typeof ApiSignalForgeLoadRoute
   '/api/signal-forge/save': typeof ApiSignalForgeSaveRoute
   '/api/signal-forge/score': typeof ApiSignalForgeScoreRoute
+  '/api/slice-it/charts': typeof ApiSliceItChartsRouteWithChildren
   '/api/slice-it/leaderboard': typeof ApiSliceItLeaderboardRoute
+  '/api/slice-it/replay': typeof ApiSliceItReplayRouteWithChildren
   '/api/slice-it/score': typeof ApiSliceItScoreRoute
+  '/api/slice-it/shelves': typeof ApiSliceItShelvesRoute
+  '/api/slice-it/showcase': typeof ApiSliceItShowcaseRoute
   '/api/slice-it/songs': typeof ApiSliceItSongsRouteWithChildren
+  '/api/slice-it/uploader-stats': typeof ApiSliceItUploaderStatsRoute
   '/api/spaces/live': typeof ApiSpacesLiveRoute
   '/api/speedrun/categories': typeof ApiSpeedrunCategoriesRoute
   '/api/speedrun/leaderboard': typeof ApiSpeedrunLeaderboardRoute
@@ -7216,6 +7502,9 @@ export interface FileRoutesById {
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/embed/replay/$id': typeof EmbedReplayIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
+  '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
+  '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
+  '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
   '/strategies/profile/reputation': typeof StrategiesProfileReputationRoute
   '/strategies/profile/settings': typeof StrategiesProfileSettingsRoute
   '/strategies/puzzles/$mode': typeof StrategiesPuzzlesModeRoute
@@ -7431,7 +7720,17 @@ export interface FileRoutesById {
   '/api/saves/folders/$id': typeof ApiSavesFoldersIdRoute
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/search/saved/$id': typeof ApiSearchSavedIdRoute
+  '/api/slice-it/admin/content': typeof ApiSliceItAdminContentRoute
+  '/api/slice-it/admin/review': typeof ApiSliceItAdminReviewRoute
+  '/api/slice-it/admin/takedown': typeof ApiSliceItAdminTakedownRoute
+  '/api/slice-it/charts/$id': typeof ApiSliceItChartsIdRouteWithChildren
+  '/api/slice-it/charts/ranking': typeof ApiSliceItChartsRankingRoute
+  '/api/slice-it/daily/submit': typeof ApiSliceItDailySubmitRoute
+  '/api/slice-it/packs/$id': typeof ApiSliceItPacksIdRouteWithChildren
+  '/api/slice-it/replay/$id': typeof ApiSliceItReplayIdRoute
+  '/api/slice-it/setlists/$id': typeof ApiSliceItSetlistsIdRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
+  '/api/slice-it/songs/artists': typeof ApiSliceItSongsArtistsRoute
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
   '/api/spaces/$id/end': typeof ApiSpacesIdEndRoute
   '/api/spaces/$id/start': typeof ApiSpacesIdStartRoute
@@ -7457,6 +7756,8 @@ export interface FileRoutesById {
   '/api/v1/me/notifications': typeof ApiV1MeNotificationsRoute
   '/api/v1/news/$slug': typeof ApiV1NewsSlugRoute
   '/api/v1/posts/$id': typeof ApiV1PostsIdRouteWithChildren
+  '/api/v1/slice-it/charts': typeof ApiV1SliceItChartsRoute
+  '/api/v1/slice-it/leaderboard': typeof ApiV1SliceItLeaderboardRoute
   '/api/v1/users/$handle': typeof ApiV1UsersHandleRouteWithChildren
   '/api/v1/webhooks/$id': typeof ApiV1WebhooksIdRoute
   '/api/vibe/pkg/$file': typeof ApiVibePkgFileRoute
@@ -7487,6 +7788,9 @@ export interface FileRoutesById {
   '/api/profile-links/$id/': typeof ApiProfileLinksIdIndexRoute
   '/api/rmhladder/resume/': typeof ApiRmhladderResumeIndexRoute
   '/api/rmhmusic/guess/': typeof ApiRmhmusicGuessIndexRoute
+  '/api/slice-it/daily/': typeof ApiSliceItDailyIndexRoute
+  '/api/slice-it/packs/': typeof ApiSliceItPacksIndexRoute
+  '/api/slice-it/setlists/': typeof ApiSliceItSetlistsIndexRoute
   '/api/spaces/$id/': typeof ApiSpacesIdIndexRoute
   '/api/storefront/products/': typeof ApiStorefrontProductsIndexRoute
   '/api/study/decks/': typeof ApiStudyDecksIndexRoute
@@ -7523,11 +7827,18 @@ export interface FileRoutesById {
   '/api/rmhladder/resume/$id/analyze': typeof ApiRmhladderResumeIdAnalyzeRoute
   '/api/rmhladder/resume/$id/confirm': typeof ApiRmhladderResumeIdConfirmRoute
   '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
+  '/api/slice-it/charts/$id/reviews': typeof ApiSliceItChartsIdReviewsRoute
+  '/api/slice-it/charts/$id/revisions': typeof ApiSliceItChartsIdRevisionsRoute
+  '/api/slice-it/packs/$id/items': typeof ApiSliceItPacksIdItemsRoute
+  '/api/slice-it/songs/$id/charts': typeof ApiSliceItSongsIdChartsRoute
   '/api/slice-it/songs/$id/comments': typeof ApiSliceItSongsIdCommentsRoute
   '/api/slice-it/songs/$id/cover': typeof ApiSliceItSongsIdCoverRoute
+  '/api/slice-it/songs/$id/import-chart': typeof ApiSliceItSongsIdImportChartRoute
   '/api/slice-it/songs/$id/like': typeof ApiSliceItSongsIdLikeRoute
   '/api/slice-it/songs/$id/patch-analysis': typeof ApiSliceItSongsIdPatchAnalysisRoute
   '/api/slice-it/songs/$id/play': typeof ApiSliceItSongsIdPlayRoute
+  '/api/slice-it/songs/$id/regenerate': typeof ApiSliceItSongsIdRegenerateRoute
+  '/api/slice-it/songs/artist/$key': typeof ApiSliceItSongsArtistKeyRoute
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
   '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
   '/api/study/cards/$id/review': typeof ApiStudyCardsIdReviewRoute
@@ -7723,6 +8034,7 @@ export interface FileRouteTypes {
     | '/v/new'
     | '/altair/'
     | '/daily/'
+    | '/discord/'
     | '/forest-explorer/'
     | '/kowloon-knockout/'
     | '/rmh-capital/'
@@ -7752,12 +8064,15 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/rideshare'
     | '/admin/security-reports'
+    | '/admin/slice-it'
+    | '/admin/slice-it-content'
     | '/admin/user-builds'
     | '/admin/users'
     | '/blog/$slug'
     | '/builds/$slug'
     | '/c/$slug'
     | '/games/$gameId'
+    | '/games/slice-it'
     | '/groups/$id'
     | '/homes/manage'
     | '/homes/saved'
@@ -7993,9 +8308,14 @@ export interface FileRouteTypes {
     | '/api/signal-forge/load'
     | '/api/signal-forge/save'
     | '/api/signal-forge/score'
+    | '/api/slice-it/charts'
     | '/api/slice-it/leaderboard'
+    | '/api/slice-it/replay'
     | '/api/slice-it/score'
+    | '/api/slice-it/shelves'
+    | '/api/slice-it/showcase'
     | '/api/slice-it/songs'
+    | '/api/slice-it/uploader-stats'
     | '/api/spaces/live'
     | '/api/speedrun/categories'
     | '/api/speedrun/leaderboard'
@@ -8046,6 +8366,9 @@ export interface FileRouteTypes {
     | '/embed/post/$id'
     | '/embed/replay/$id'
     | '/library/albums/$albumId'
+    | '/slice-it/artist/$key'
+    | '/slice-it/edit/$songId'
+    | '/slice-it/player/$handle'
     | '/strategies/profile/reputation'
     | '/strategies/profile/settings'
     | '/strategies/puzzles/$mode'
@@ -8261,7 +8584,17 @@ export interface FileRouteTypes {
     | '/api/saves/folders/$id'
     | '/api/scheduled/$id/publish'
     | '/api/search/saved/$id'
+    | '/api/slice-it/admin/content'
+    | '/api/slice-it/admin/review'
+    | '/api/slice-it/admin/takedown'
+    | '/api/slice-it/charts/$id'
+    | '/api/slice-it/charts/ranking'
+    | '/api/slice-it/daily/submit'
+    | '/api/slice-it/packs/$id'
+    | '/api/slice-it/replay/$id'
+    | '/api/slice-it/setlists/$id'
     | '/api/slice-it/songs/$id'
+    | '/api/slice-it/songs/artists'
     | '/api/slice-it/songs/upload'
     | '/api/spaces/$id/end'
     | '/api/spaces/$id/start'
@@ -8287,6 +8620,8 @@ export interface FileRouteTypes {
     | '/api/v1/me/notifications'
     | '/api/v1/news/$slug'
     | '/api/v1/posts/$id'
+    | '/api/v1/slice-it/charts'
+    | '/api/v1/slice-it/leaderboard'
     | '/api/v1/users/$handle'
     | '/api/v1/webhooks/$id'
     | '/api/vibe/pkg/$file'
@@ -8317,6 +8652,9 @@ export interface FileRouteTypes {
     | '/api/profile-links/$id/'
     | '/api/rmhladder/resume/'
     | '/api/rmhmusic/guess/'
+    | '/api/slice-it/daily/'
+    | '/api/slice-it/packs/'
+    | '/api/slice-it/setlists/'
     | '/api/spaces/$id/'
     | '/api/storefront/products/'
     | '/api/study/decks/'
@@ -8353,11 +8691,18 @@ export interface FileRouteTypes {
     | '/api/rmhladder/resume/$id/analyze'
     | '/api/rmhladder/resume/$id/confirm'
     | '/api/rmhmusic/guess/$id/attempt'
+    | '/api/slice-it/charts/$id/reviews'
+    | '/api/slice-it/charts/$id/revisions'
+    | '/api/slice-it/packs/$id/items'
+    | '/api/slice-it/songs/$id/charts'
     | '/api/slice-it/songs/$id/comments'
     | '/api/slice-it/songs/$id/cover'
+    | '/api/slice-it/songs/$id/import-chart'
     | '/api/slice-it/songs/$id/like'
     | '/api/slice-it/songs/$id/patch-analysis'
     | '/api/slice-it/songs/$id/play'
+    | '/api/slice-it/songs/$id/regenerate'
+    | '/api/slice-it/songs/artist/$key'
     | '/api/slice-it/songs/stream/$id'
     | '/api/storefront/products/$id/buy'
     | '/api/study/cards/$id/review'
@@ -8527,6 +8872,7 @@ export interface FileRouteTypes {
     | '/'
     | '/altair'
     | '/daily'
+    | '/discord'
     | '/forest-explorer'
     | '/kowloon-knockout'
     | '/rmh-capital'
@@ -8556,12 +8902,15 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/rideshare'
     | '/admin/security-reports'
+    | '/admin/slice-it'
+    | '/admin/slice-it-content'
     | '/admin/user-builds'
     | '/admin/users'
     | '/blog/$slug'
     | '/builds/$slug'
     | '/c/$slug'
     | '/games/$gameId'
+    | '/games/slice-it'
     | '/groups/$id'
     | '/homes/manage'
     | '/homes/saved'
@@ -8797,9 +9146,14 @@ export interface FileRouteTypes {
     | '/api/signal-forge/load'
     | '/api/signal-forge/save'
     | '/api/signal-forge/score'
+    | '/api/slice-it/charts'
     | '/api/slice-it/leaderboard'
+    | '/api/slice-it/replay'
     | '/api/slice-it/score'
+    | '/api/slice-it/shelves'
+    | '/api/slice-it/showcase'
     | '/api/slice-it/songs'
+    | '/api/slice-it/uploader-stats'
     | '/api/spaces/live'
     | '/api/speedrun/categories'
     | '/api/speedrun/leaderboard'
@@ -8850,6 +9204,9 @@ export interface FileRouteTypes {
     | '/embed/post/$id'
     | '/embed/replay/$id'
     | '/library/albums/$albumId'
+    | '/slice-it/artist/$key'
+    | '/slice-it/edit/$songId'
+    | '/slice-it/player/$handle'
     | '/strategies/profile/reputation'
     | '/strategies/profile/settings'
     | '/strategies/puzzles/$mode'
@@ -9065,7 +9422,17 @@ export interface FileRouteTypes {
     | '/api/saves/folders/$id'
     | '/api/scheduled/$id/publish'
     | '/api/search/saved/$id'
+    | '/api/slice-it/admin/content'
+    | '/api/slice-it/admin/review'
+    | '/api/slice-it/admin/takedown'
+    | '/api/slice-it/charts/$id'
+    | '/api/slice-it/charts/ranking'
+    | '/api/slice-it/daily/submit'
+    | '/api/slice-it/packs/$id'
+    | '/api/slice-it/replay/$id'
+    | '/api/slice-it/setlists/$id'
     | '/api/slice-it/songs/$id'
+    | '/api/slice-it/songs/artists'
     | '/api/slice-it/songs/upload'
     | '/api/spaces/$id/end'
     | '/api/spaces/$id/start'
@@ -9091,6 +9458,8 @@ export interface FileRouteTypes {
     | '/api/v1/me/notifications'
     | '/api/v1/news/$slug'
     | '/api/v1/posts/$id'
+    | '/api/v1/slice-it/charts'
+    | '/api/v1/slice-it/leaderboard'
     | '/api/v1/users/$handle'
     | '/api/v1/webhooks/$id'
     | '/api/vibe/pkg/$file'
@@ -9121,6 +9490,9 @@ export interface FileRouteTypes {
     | '/api/profile-links/$id'
     | '/api/rmhladder/resume'
     | '/api/rmhmusic/guess'
+    | '/api/slice-it/daily'
+    | '/api/slice-it/packs'
+    | '/api/slice-it/setlists'
     | '/api/spaces/$id'
     | '/api/storefront/products'
     | '/api/study/decks'
@@ -9157,11 +9529,18 @@ export interface FileRouteTypes {
     | '/api/rmhladder/resume/$id/analyze'
     | '/api/rmhladder/resume/$id/confirm'
     | '/api/rmhmusic/guess/$id/attempt'
+    | '/api/slice-it/charts/$id/reviews'
+    | '/api/slice-it/charts/$id/revisions'
+    | '/api/slice-it/packs/$id/items'
+    | '/api/slice-it/songs/$id/charts'
     | '/api/slice-it/songs/$id/comments'
     | '/api/slice-it/songs/$id/cover'
+    | '/api/slice-it/songs/$id/import-chart'
     | '/api/slice-it/songs/$id/like'
     | '/api/slice-it/songs/$id/patch-analysis'
     | '/api/slice-it/songs/$id/play'
+    | '/api/slice-it/songs/$id/regenerate'
+    | '/api/slice-it/songs/artist/$key'
     | '/api/slice-it/songs/stream/$id'
     | '/api/storefront/products/$id/buy'
     | '/api/study/cards/$id/review'
@@ -9356,6 +9735,7 @@ export interface FileRouteTypes {
     | '/_site/'
     | '/altair/'
     | '/daily/'
+    | '/discord/'
     | '/forest-explorer/'
     | '/kowloon-knockout/'
     | '/rmh-capital/'
@@ -9385,12 +9765,15 @@ export interface FileRouteTypes {
     | '/_site/admin/reports'
     | '/_site/admin/rideshare'
     | '/_site/admin/security-reports'
+    | '/_site/admin/slice-it'
+    | '/_site/admin/slice-it-content'
     | '/_site/admin/user-builds'
     | '/_site/admin/users'
     | '/_site/blog/$slug'
     | '/_site/builds/$slug'
     | '/_site/c/$slug'
     | '/_site/games/$gameId'
+    | '/_site/games/slice-it'
     | '/_site/groups/$id'
     | '/_site/homes/manage'
     | '/_site/homes/saved'
@@ -9626,9 +10009,14 @@ export interface FileRouteTypes {
     | '/api/signal-forge/load'
     | '/api/signal-forge/save'
     | '/api/signal-forge/score'
+    | '/api/slice-it/charts'
     | '/api/slice-it/leaderboard'
+    | '/api/slice-it/replay'
     | '/api/slice-it/score'
+    | '/api/slice-it/shelves'
+    | '/api/slice-it/showcase'
     | '/api/slice-it/songs'
+    | '/api/slice-it/uploader-stats'
     | '/api/spaces/live'
     | '/api/speedrun/categories'
     | '/api/speedrun/leaderboard'
@@ -9679,6 +10067,9 @@ export interface FileRouteTypes {
     | '/embed/post/$id'
     | '/embed/replay/$id'
     | '/library/albums/$albumId'
+    | '/slice-it/artist/$key'
+    | '/slice-it/edit/$songId'
+    | '/slice-it/player/$handle'
     | '/strategies/profile/reputation'
     | '/strategies/profile/settings'
     | '/strategies/puzzles/$mode'
@@ -9894,7 +10285,17 @@ export interface FileRouteTypes {
     | '/api/saves/folders/$id'
     | '/api/scheduled/$id/publish'
     | '/api/search/saved/$id'
+    | '/api/slice-it/admin/content'
+    | '/api/slice-it/admin/review'
+    | '/api/slice-it/admin/takedown'
+    | '/api/slice-it/charts/$id'
+    | '/api/slice-it/charts/ranking'
+    | '/api/slice-it/daily/submit'
+    | '/api/slice-it/packs/$id'
+    | '/api/slice-it/replay/$id'
+    | '/api/slice-it/setlists/$id'
     | '/api/slice-it/songs/$id'
+    | '/api/slice-it/songs/artists'
     | '/api/slice-it/songs/upload'
     | '/api/spaces/$id/end'
     | '/api/spaces/$id/start'
@@ -9920,6 +10321,8 @@ export interface FileRouteTypes {
     | '/api/v1/me/notifications'
     | '/api/v1/news/$slug'
     | '/api/v1/posts/$id'
+    | '/api/v1/slice-it/charts'
+    | '/api/v1/slice-it/leaderboard'
     | '/api/v1/users/$handle'
     | '/api/v1/webhooks/$id'
     | '/api/vibe/pkg/$file'
@@ -9950,6 +10353,9 @@ export interface FileRouteTypes {
     | '/api/profile-links/$id/'
     | '/api/rmhladder/resume/'
     | '/api/rmhmusic/guess/'
+    | '/api/slice-it/daily/'
+    | '/api/slice-it/packs/'
+    | '/api/slice-it/setlists/'
     | '/api/spaces/$id/'
     | '/api/storefront/products/'
     | '/api/study/decks/'
@@ -9986,11 +10392,18 @@ export interface FileRouteTypes {
     | '/api/rmhladder/resume/$id/analyze'
     | '/api/rmhladder/resume/$id/confirm'
     | '/api/rmhmusic/guess/$id/attempt'
+    | '/api/slice-it/charts/$id/reviews'
+    | '/api/slice-it/charts/$id/revisions'
+    | '/api/slice-it/packs/$id/items'
+    | '/api/slice-it/songs/$id/charts'
     | '/api/slice-it/songs/$id/comments'
     | '/api/slice-it/songs/$id/cover'
+    | '/api/slice-it/songs/$id/import-chart'
     | '/api/slice-it/songs/$id/like'
     | '/api/slice-it/songs/$id/patch-analysis'
     | '/api/slice-it/songs/$id/play'
+    | '/api/slice-it/songs/$id/regenerate'
+    | '/api/slice-it/songs/artist/$key'
     | '/api/slice-it/songs/stream/$id'
     | '/api/storefront/products/$id/buy'
     | '/api/study/cards/$id/review'
@@ -10110,6 +10523,7 @@ export interface RootRouteChildren {
   SitemapsNameRoute: typeof SitemapsNameRoute
   VSlugRoute: typeof VSlugRoute
   VNewRoute: typeof VNewRoute
+  DiscordIndexRoute: typeof DiscordIndexRoute
   ApiAccountDeleteRoute: typeof ApiAccountDeleteRoute
   ApiAccountExportRoute: typeof ApiAccountExportRoute
   ApiAccountStandingRoute: typeof ApiAccountStandingRoute
@@ -10283,9 +10697,14 @@ export interface RootRouteChildren {
   ApiSignalForgeLoadRoute: typeof ApiSignalForgeLoadRoute
   ApiSignalForgeSaveRoute: typeof ApiSignalForgeSaveRoute
   ApiSignalForgeScoreRoute: typeof ApiSignalForgeScoreRoute
+  ApiSliceItChartsRoute: typeof ApiSliceItChartsRouteWithChildren
   ApiSliceItLeaderboardRoute: typeof ApiSliceItLeaderboardRoute
+  ApiSliceItReplayRoute: typeof ApiSliceItReplayRouteWithChildren
   ApiSliceItScoreRoute: typeof ApiSliceItScoreRoute
+  ApiSliceItShelvesRoute: typeof ApiSliceItShelvesRoute
+  ApiSliceItShowcaseRoute: typeof ApiSliceItShowcaseRoute
   ApiSliceItSongsRoute: typeof ApiSliceItSongsRouteWithChildren
+  ApiSliceItUploaderStatsRoute: typeof ApiSliceItUploaderStatsRoute
   ApiSpacesLiveRoute: typeof ApiSpacesLiveRoute
   ApiSpeedrunCategoriesRoute: typeof ApiSpeedrunCategoriesRoute
   ApiSpeedrunLeaderboardRoute: typeof ApiSpeedrunLeaderboardRoute
@@ -10457,12 +10876,20 @@ export interface RootRouteChildren {
   ApiRmhladderResumeIdRoute: typeof ApiRmhladderResumeIdRouteWithChildren
   ApiRmhmusicSpotifySearchRoute: typeof ApiRmhmusicSpotifySearchRoute
   ApiRmhtubeSubscribeChannelIdRoute: typeof ApiRmhtubeSubscribeChannelIdRoute
+  ApiSliceItAdminContentRoute: typeof ApiSliceItAdminContentRoute
+  ApiSliceItAdminReviewRoute: typeof ApiSliceItAdminReviewRoute
+  ApiSliceItAdminTakedownRoute: typeof ApiSliceItAdminTakedownRoute
+  ApiSliceItDailySubmitRoute: typeof ApiSliceItDailySubmitRoute
+  ApiSliceItPacksIdRoute: typeof ApiSliceItPacksIdRouteWithChildren
+  ApiSliceItSetlistsIdRoute: typeof ApiSliceItSetlistsIdRoute
   ApiSpacesIdEndRoute: typeof ApiSpacesIdEndRoute
   ApiSpacesIdStartRoute: typeof ApiSpacesIdStartRoute
   ApiStorefrontCreatorUseridRoute: typeof ApiStorefrontCreatorUseridRoute
   ApiTrashKindIdRoute: typeof ApiTrashKindIdRoute
   ApiUsersIdWishlistRoute: typeof ApiUsersIdWishlistRoute
   ApiV1LeaderboardsGameRoute: typeof ApiV1LeaderboardsGameRoute
+  ApiV1SliceItChartsRoute: typeof ApiV1SliceItChartsRoute
+  ApiV1SliceItLeaderboardRoute: typeof ApiV1SliceItLeaderboardRoute
   ApiV1UsersHandleRoute: typeof ApiV1UsersHandleRouteWithChildren
   ApiVibePkgFileRoute: typeof ApiVibePkgFileRoute
   ApiVibeThumbSlugRoute: typeof ApiVibeThumbSlugRoute
@@ -10485,6 +10912,9 @@ export interface RootRouteChildren {
   ApiProfileLinksIdIndexRoute: typeof ApiProfileLinksIdIndexRoute
   ApiRmhladderResumeIndexRoute: typeof ApiRmhladderResumeIndexRoute
   ApiRmhmusicGuessIndexRoute: typeof ApiRmhmusicGuessIndexRoute
+  ApiSliceItDailyIndexRoute: typeof ApiSliceItDailyIndexRoute
+  ApiSliceItPacksIndexRoute: typeof ApiSliceItPacksIndexRoute
+  ApiSliceItSetlistsIndexRoute: typeof ApiSliceItSetlistsIndexRoute
   ApiSpacesIdIndexRoute: typeof ApiSpacesIdIndexRoute
   ApiStorefrontProductsIndexRoute: typeof ApiStorefrontProductsIndexRoute
   ApiStudyDecksIndexRoute: typeof ApiStudyDecksIndexRoute
@@ -11432,6 +11862,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DeeplinkPageRouteImport
       parentRoute: typeof DeeplinkRoute
     }
+    '/discord/': {
+      id: '/discord/'
+      path: '/discord'
+      fullPath: '/discord/'
+      preLoaderRoute: typeof DiscordIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/discord/lights-out': {
       id: '/discord/lights-out'
       path: '/discord/lights-out'
@@ -11901,6 +12338,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminSecurityReportsRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
+    '/_site/admin/slice-it': {
+      id: '/_site/admin/slice-it'
+      path: '/slice-it'
+      fullPath: '/admin/slice-it'
+      preLoaderRoute: typeof SiteAdminSliceItRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
+    '/_site/admin/slice-it-content': {
+      id: '/_site/admin/slice-it-content'
+      path: '/slice-it-content'
+      fullPath: '/admin/slice-it-content'
+      preLoaderRoute: typeof SiteAdminSliceItContentRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
     '/_site/admin/user-builds': {
       id: '/_site/admin/user-builds'
       path: '/user-builds'
@@ -11983,6 +12434,13 @@ declare module '@tanstack/react-router' {
       path: '/games/$gameId'
       fullPath: '/games/$gameId'
       preLoaderRoute: typeof SiteGamesGameIdRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/games/slice-it': {
+      id: '/_site/games/slice-it'
+      path: '/games/slice-it'
+      fullPath: '/games/slice-it'
+      preLoaderRoute: typeof SiteGamesSliceItRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/groups/': {
@@ -13966,11 +14424,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSignalForgeScoreRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/slice-it/charts': {
+      id: '/api/slice-it/charts'
+      path: '/api/slice-it/charts'
+      fullPath: '/api/slice-it/charts'
+      preLoaderRoute: typeof ApiSliceItChartsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/slice-it/leaderboard': {
       id: '/api/slice-it/leaderboard'
       path: '/api/slice-it/leaderboard'
       fullPath: '/api/slice-it/leaderboard'
       preLoaderRoute: typeof ApiSliceItLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/slice-it/replay': {
+      id: '/api/slice-it/replay'
+      path: '/api/slice-it/replay'
+      fullPath: '/api/slice-it/replay'
+      preLoaderRoute: typeof ApiSliceItReplayRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/slice-it/score': {
@@ -13980,11 +14452,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSliceItScoreRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/slice-it/shelves': {
+      id: '/api/slice-it/shelves'
+      path: '/api/slice-it/shelves'
+      fullPath: '/api/slice-it/shelves'
+      preLoaderRoute: typeof ApiSliceItShelvesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/slice-it/showcase': {
+      id: '/api/slice-it/showcase'
+      path: '/api/slice-it/showcase'
+      fullPath: '/api/slice-it/showcase'
+      preLoaderRoute: typeof ApiSliceItShowcaseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/slice-it/songs': {
       id: '/api/slice-it/songs'
       path: '/api/slice-it/songs'
       fullPath: '/api/slice-it/songs'
       preLoaderRoute: typeof ApiSliceItSongsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/slice-it/uploader-stats': {
+      id: '/api/slice-it/uploader-stats'
+      path: '/api/slice-it/uploader-stats'
+      fullPath: '/api/slice-it/uploader-stats'
+      preLoaderRoute: typeof ApiSliceItUploaderStatsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/spaces/': {
@@ -14406,6 +14899,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/secret/cursed-logic/'
       preLoaderRoute: typeof SecretCursedLogicIndexRouteImport
       parentRoute: typeof SecretCursedLogicRoute
+    }
+    '/slice-it/artist/$key': {
+      id: '/slice-it/artist/$key'
+      path: '/artist/$key'
+      fullPath: '/slice-it/artist/$key'
+      preLoaderRoute: typeof SliceItArtistKeyRouteImport
+      parentRoute: typeof SliceItRoute
+    }
+    '/slice-it/edit/$songId': {
+      id: '/slice-it/edit/$songId'
+      path: '/edit/$songId'
+      fullPath: '/slice-it/edit/$songId'
+      preLoaderRoute: typeof SliceItEditSongIdRouteImport
+      parentRoute: typeof SliceItRoute
+    }
+    '/slice-it/player/$handle': {
+      id: '/slice-it/player/$handle'
+      path: '/player/$handle'
+      fullPath: '/slice-it/player/$handle'
+      preLoaderRoute: typeof SliceItPlayerHandleRouteImport
+      parentRoute: typeof SliceItRoute
     }
     '/strategies/profile/': {
       id: '/strategies/profile/'
@@ -15611,11 +16125,102 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSearchSavedIdRouteImport
       parentRoute: typeof ApiSearchSavedRoute
     }
+    '/api/slice-it/admin/content': {
+      id: '/api/slice-it/admin/content'
+      path: '/api/slice-it/admin/content'
+      fullPath: '/api/slice-it/admin/content'
+      preLoaderRoute: typeof ApiSliceItAdminContentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/slice-it/admin/review': {
+      id: '/api/slice-it/admin/review'
+      path: '/api/slice-it/admin/review'
+      fullPath: '/api/slice-it/admin/review'
+      preLoaderRoute: typeof ApiSliceItAdminReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/slice-it/admin/takedown': {
+      id: '/api/slice-it/admin/takedown'
+      path: '/api/slice-it/admin/takedown'
+      fullPath: '/api/slice-it/admin/takedown'
+      preLoaderRoute: typeof ApiSliceItAdminTakedownRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/slice-it/charts/$id': {
+      id: '/api/slice-it/charts/$id'
+      path: '/$id'
+      fullPath: '/api/slice-it/charts/$id'
+      preLoaderRoute: typeof ApiSliceItChartsIdRouteImport
+      parentRoute: typeof ApiSliceItChartsRoute
+    }
+    '/api/slice-it/charts/ranking': {
+      id: '/api/slice-it/charts/ranking'
+      path: '/ranking'
+      fullPath: '/api/slice-it/charts/ranking'
+      preLoaderRoute: typeof ApiSliceItChartsRankingRouteImport
+      parentRoute: typeof ApiSliceItChartsRoute
+    }
+    '/api/slice-it/daily/': {
+      id: '/api/slice-it/daily/'
+      path: '/api/slice-it/daily'
+      fullPath: '/api/slice-it/daily/'
+      preLoaderRoute: typeof ApiSliceItDailyIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/slice-it/daily/submit': {
+      id: '/api/slice-it/daily/submit'
+      path: '/api/slice-it/daily/submit'
+      fullPath: '/api/slice-it/daily/submit'
+      preLoaderRoute: typeof ApiSliceItDailySubmitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/slice-it/packs/': {
+      id: '/api/slice-it/packs/'
+      path: '/api/slice-it/packs'
+      fullPath: '/api/slice-it/packs/'
+      preLoaderRoute: typeof ApiSliceItPacksIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/slice-it/packs/$id': {
+      id: '/api/slice-it/packs/$id'
+      path: '/api/slice-it/packs/$id'
+      fullPath: '/api/slice-it/packs/$id'
+      preLoaderRoute: typeof ApiSliceItPacksIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/slice-it/replay/$id': {
+      id: '/api/slice-it/replay/$id'
+      path: '/$id'
+      fullPath: '/api/slice-it/replay/$id'
+      preLoaderRoute: typeof ApiSliceItReplayIdRouteImport
+      parentRoute: typeof ApiSliceItReplayRoute
+    }
+    '/api/slice-it/setlists/': {
+      id: '/api/slice-it/setlists/'
+      path: '/api/slice-it/setlists'
+      fullPath: '/api/slice-it/setlists/'
+      preLoaderRoute: typeof ApiSliceItSetlistsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/slice-it/setlists/$id': {
+      id: '/api/slice-it/setlists/$id'
+      path: '/api/slice-it/setlists/$id'
+      fullPath: '/api/slice-it/setlists/$id'
+      preLoaderRoute: typeof ApiSliceItSetlistsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/slice-it/songs/$id': {
       id: '/api/slice-it/songs/$id'
       path: '/$id'
       fullPath: '/api/slice-it/songs/$id'
       preLoaderRoute: typeof ApiSliceItSongsIdRouteImport
+      parentRoute: typeof ApiSliceItSongsRoute
+    }
+    '/api/slice-it/songs/artists': {
+      id: '/api/slice-it/songs/artists'
+      path: '/artists'
+      fullPath: '/api/slice-it/songs/artists'
+      preLoaderRoute: typeof ApiSliceItSongsArtistsRouteImport
       parentRoute: typeof ApiSliceItSongsRoute
     }
     '/api/slice-it/songs/upload': {
@@ -15813,6 +16418,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/v1/posts/$id'
       preLoaderRoute: typeof ApiV1PostsIdRouteImport
       parentRoute: typeof ApiV1PostsRoute
+    }
+    '/api/v1/slice-it/charts': {
+      id: '/api/v1/slice-it/charts'
+      path: '/api/v1/slice-it/charts'
+      fullPath: '/api/v1/slice-it/charts'
+      preLoaderRoute: typeof ApiV1SliceItChartsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/slice-it/leaderboard': {
+      id: '/api/v1/slice-it/leaderboard'
+      path: '/api/v1/slice-it/leaderboard'
+      fullPath: '/api/v1/slice-it/leaderboard'
+      preLoaderRoute: typeof ApiV1SliceItLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/v1/users/$handle': {
       id: '/api/v1/users/$handle'
@@ -16122,6 +16741,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmhmusicGuessIdAttemptRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/slice-it/charts/$id/reviews': {
+      id: '/api/slice-it/charts/$id/reviews'
+      path: '/reviews'
+      fullPath: '/api/slice-it/charts/$id/reviews'
+      preLoaderRoute: typeof ApiSliceItChartsIdReviewsRouteImport
+      parentRoute: typeof ApiSliceItChartsIdRoute
+    }
+    '/api/slice-it/charts/$id/revisions': {
+      id: '/api/slice-it/charts/$id/revisions'
+      path: '/revisions'
+      fullPath: '/api/slice-it/charts/$id/revisions'
+      preLoaderRoute: typeof ApiSliceItChartsIdRevisionsRouteImport
+      parentRoute: typeof ApiSliceItChartsIdRoute
+    }
+    '/api/slice-it/packs/$id/items': {
+      id: '/api/slice-it/packs/$id/items'
+      path: '/items'
+      fullPath: '/api/slice-it/packs/$id/items'
+      preLoaderRoute: typeof ApiSliceItPacksIdItemsRouteImport
+      parentRoute: typeof ApiSliceItPacksIdRoute
+    }
+    '/api/slice-it/songs/$id/charts': {
+      id: '/api/slice-it/songs/$id/charts'
+      path: '/charts'
+      fullPath: '/api/slice-it/songs/$id/charts'
+      preLoaderRoute: typeof ApiSliceItSongsIdChartsRouteImport
+      parentRoute: typeof ApiSliceItSongsIdRoute
+    }
     '/api/slice-it/songs/$id/comments': {
       id: '/api/slice-it/songs/$id/comments'
       path: '/comments'
@@ -16134,6 +16781,13 @@ declare module '@tanstack/react-router' {
       path: '/cover'
       fullPath: '/api/slice-it/songs/$id/cover'
       preLoaderRoute: typeof ApiSliceItSongsIdCoverRouteImport
+      parentRoute: typeof ApiSliceItSongsIdRoute
+    }
+    '/api/slice-it/songs/$id/import-chart': {
+      id: '/api/slice-it/songs/$id/import-chart'
+      path: '/import-chart'
+      fullPath: '/api/slice-it/songs/$id/import-chart'
+      preLoaderRoute: typeof ApiSliceItSongsIdImportChartRouteImport
       parentRoute: typeof ApiSliceItSongsIdRoute
     }
     '/api/slice-it/songs/$id/like': {
@@ -16156,6 +16810,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/slice-it/songs/$id/play'
       preLoaderRoute: typeof ApiSliceItSongsIdPlayRouteImport
       parentRoute: typeof ApiSliceItSongsIdRoute
+    }
+    '/api/slice-it/songs/$id/regenerate': {
+      id: '/api/slice-it/songs/$id/regenerate'
+      path: '/regenerate'
+      fullPath: '/api/slice-it/songs/$id/regenerate'
+      preLoaderRoute: typeof ApiSliceItSongsIdRegenerateRouteImport
+      parentRoute: typeof ApiSliceItSongsIdRoute
+    }
+    '/api/slice-it/songs/artist/$key': {
+      id: '/api/slice-it/songs/artist/$key'
+      path: '/artist/$key'
+      fullPath: '/api/slice-it/songs/artist/$key'
+      preLoaderRoute: typeof ApiSliceItSongsArtistKeyRouteImport
+      parentRoute: typeof ApiSliceItSongsRoute
     }
     '/api/slice-it/songs/stream/$id': {
       id: '/api/slice-it/songs/stream/$id'
@@ -16313,6 +16981,8 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminReportsRoute: typeof SiteAdminReportsRoute
   SiteAdminRideshareRoute: typeof SiteAdminRideshareRoute
   SiteAdminSecurityReportsRoute: typeof SiteAdminSecurityReportsRoute
+  SiteAdminSliceItRoute: typeof SiteAdminSliceItRoute
+  SiteAdminSliceItContentRoute: typeof SiteAdminSliceItContentRoute
   SiteAdminUserBuildsRoute: typeof SiteAdminUserBuildsRoute
   SiteAdminUsersRoute: typeof SiteAdminUsersRoute
   SiteAdminIndexRoute: typeof SiteAdminIndexRoute
@@ -16336,6 +17006,8 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminReportsRoute: SiteAdminReportsRoute,
   SiteAdminRideshareRoute: SiteAdminRideshareRoute,
   SiteAdminSecurityReportsRoute: SiteAdminSecurityReportsRoute,
+  SiteAdminSliceItRoute: SiteAdminSliceItRoute,
+  SiteAdminSliceItContentRoute: SiteAdminSliceItContentRoute,
   SiteAdminUserBuildsRoute: SiteAdminUserBuildsRoute,
   SiteAdminUsersRoute: SiteAdminUsersRoute,
   SiteAdminIndexRoute: SiteAdminIndexRoute,
@@ -16444,6 +17116,7 @@ interface SiteRouteChildren {
   SiteBuildsSlugRoute: typeof SiteBuildsSlugRoute
   SiteCSlugRoute: typeof SiteCSlugRoute
   SiteGamesGameIdRoute: typeof SiteGamesGameIdRoute
+  SiteGamesSliceItRoute: typeof SiteGamesSliceItRoute
   SiteGroupsIdRoute: typeof SiteGroupsIdRoute
   SiteHomesManageRoute: typeof SiteHomesManageRoute
   SiteHomesSavedRoute: typeof SiteHomesSavedRoute
@@ -16550,6 +17223,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteBuildsSlugRoute: SiteBuildsSlugRoute,
   SiteCSlugRoute: SiteCSlugRoute,
   SiteGamesGameIdRoute: SiteGamesGameIdRoute,
+  SiteGamesSliceItRoute: SiteGamesSliceItRoute,
   SiteGroupsIdRoute: SiteGroupsIdRoute,
   SiteHomesManageRoute: SiteHomesManageRoute,
   SiteHomesSavedRoute: SiteHomesSavedRoute,
@@ -16888,10 +17562,16 @@ const SecretRouteWithChildren =
 
 interface SliceItRouteChildren {
   SliceItIndexRoute: typeof SliceItIndexRoute
+  SliceItArtistKeyRoute: typeof SliceItArtistKeyRoute
+  SliceItEditSongIdRoute: typeof SliceItEditSongIdRoute
+  SliceItPlayerHandleRoute: typeof SliceItPlayerHandleRoute
 }
 
 const SliceItRouteChildren: SliceItRouteChildren = {
   SliceItIndexRoute: SliceItIndexRoute,
+  SliceItArtistKeyRoute: SliceItArtistKeyRoute,
+  SliceItEditSongIdRoute: SliceItEditSongIdRoute,
+  SliceItPlayerHandleRoute: SliceItPlayerHandleRoute,
 }
 
 const SliceItRouteWithChildren =
@@ -17461,20 +18141,63 @@ const ApiScheduledIdRouteWithChildren = ApiScheduledIdRoute._addFileChildren(
   ApiScheduledIdRouteChildren,
 )
 
+interface ApiSliceItChartsIdRouteChildren {
+  ApiSliceItChartsIdReviewsRoute: typeof ApiSliceItChartsIdReviewsRoute
+  ApiSliceItChartsIdRevisionsRoute: typeof ApiSliceItChartsIdRevisionsRoute
+}
+
+const ApiSliceItChartsIdRouteChildren: ApiSliceItChartsIdRouteChildren = {
+  ApiSliceItChartsIdReviewsRoute: ApiSliceItChartsIdReviewsRoute,
+  ApiSliceItChartsIdRevisionsRoute: ApiSliceItChartsIdRevisionsRoute,
+}
+
+const ApiSliceItChartsIdRouteWithChildren =
+  ApiSliceItChartsIdRoute._addFileChildren(ApiSliceItChartsIdRouteChildren)
+
+interface ApiSliceItChartsRouteChildren {
+  ApiSliceItChartsIdRoute: typeof ApiSliceItChartsIdRouteWithChildren
+  ApiSliceItChartsRankingRoute: typeof ApiSliceItChartsRankingRoute
+}
+
+const ApiSliceItChartsRouteChildren: ApiSliceItChartsRouteChildren = {
+  ApiSliceItChartsIdRoute: ApiSliceItChartsIdRouteWithChildren,
+  ApiSliceItChartsRankingRoute: ApiSliceItChartsRankingRoute,
+}
+
+const ApiSliceItChartsRouteWithChildren =
+  ApiSliceItChartsRoute._addFileChildren(ApiSliceItChartsRouteChildren)
+
+interface ApiSliceItReplayRouteChildren {
+  ApiSliceItReplayIdRoute: typeof ApiSliceItReplayIdRoute
+}
+
+const ApiSliceItReplayRouteChildren: ApiSliceItReplayRouteChildren = {
+  ApiSliceItReplayIdRoute: ApiSliceItReplayIdRoute,
+}
+
+const ApiSliceItReplayRouteWithChildren =
+  ApiSliceItReplayRoute._addFileChildren(ApiSliceItReplayRouteChildren)
+
 interface ApiSliceItSongsIdRouteChildren {
+  ApiSliceItSongsIdChartsRoute: typeof ApiSliceItSongsIdChartsRoute
   ApiSliceItSongsIdCommentsRoute: typeof ApiSliceItSongsIdCommentsRoute
   ApiSliceItSongsIdCoverRoute: typeof ApiSliceItSongsIdCoverRoute
+  ApiSliceItSongsIdImportChartRoute: typeof ApiSliceItSongsIdImportChartRoute
   ApiSliceItSongsIdLikeRoute: typeof ApiSliceItSongsIdLikeRoute
   ApiSliceItSongsIdPatchAnalysisRoute: typeof ApiSliceItSongsIdPatchAnalysisRoute
   ApiSliceItSongsIdPlayRoute: typeof ApiSliceItSongsIdPlayRoute
+  ApiSliceItSongsIdRegenerateRoute: typeof ApiSliceItSongsIdRegenerateRoute
 }
 
 const ApiSliceItSongsIdRouteChildren: ApiSliceItSongsIdRouteChildren = {
+  ApiSliceItSongsIdChartsRoute: ApiSliceItSongsIdChartsRoute,
   ApiSliceItSongsIdCommentsRoute: ApiSliceItSongsIdCommentsRoute,
   ApiSliceItSongsIdCoverRoute: ApiSliceItSongsIdCoverRoute,
+  ApiSliceItSongsIdImportChartRoute: ApiSliceItSongsIdImportChartRoute,
   ApiSliceItSongsIdLikeRoute: ApiSliceItSongsIdLikeRoute,
   ApiSliceItSongsIdPatchAnalysisRoute: ApiSliceItSongsIdPatchAnalysisRoute,
   ApiSliceItSongsIdPlayRoute: ApiSliceItSongsIdPlayRoute,
+  ApiSliceItSongsIdRegenerateRoute: ApiSliceItSongsIdRegenerateRoute,
 }
 
 const ApiSliceItSongsIdRouteWithChildren =
@@ -17482,13 +18205,17 @@ const ApiSliceItSongsIdRouteWithChildren =
 
 interface ApiSliceItSongsRouteChildren {
   ApiSliceItSongsIdRoute: typeof ApiSliceItSongsIdRouteWithChildren
+  ApiSliceItSongsArtistsRoute: typeof ApiSliceItSongsArtistsRoute
   ApiSliceItSongsUploadRoute: typeof ApiSliceItSongsUploadRoute
+  ApiSliceItSongsArtistKeyRoute: typeof ApiSliceItSongsArtistKeyRoute
   ApiSliceItSongsStreamIdRoute: typeof ApiSliceItSongsStreamIdRoute
 }
 
 const ApiSliceItSongsRouteChildren: ApiSliceItSongsRouteChildren = {
   ApiSliceItSongsIdRoute: ApiSliceItSongsIdRouteWithChildren,
+  ApiSliceItSongsArtistsRoute: ApiSliceItSongsArtistsRoute,
   ApiSliceItSongsUploadRoute: ApiSliceItSongsUploadRoute,
+  ApiSliceItSongsArtistKeyRoute: ApiSliceItSongsArtistKeyRoute,
   ApiSliceItSongsStreamIdRoute: ApiSliceItSongsStreamIdRoute,
 }
 
@@ -17807,6 +18534,17 @@ const ApiRmhladderResumeIdRouteChildren: ApiRmhladderResumeIdRouteChildren = {
 const ApiRmhladderResumeIdRouteWithChildren =
   ApiRmhladderResumeIdRoute._addFileChildren(ApiRmhladderResumeIdRouteChildren)
 
+interface ApiSliceItPacksIdRouteChildren {
+  ApiSliceItPacksIdItemsRoute: typeof ApiSliceItPacksIdItemsRoute
+}
+
+const ApiSliceItPacksIdRouteChildren: ApiSliceItPacksIdRouteChildren = {
+  ApiSliceItPacksIdItemsRoute: ApiSliceItPacksIdItemsRoute,
+}
+
+const ApiSliceItPacksIdRouteWithChildren =
+  ApiSliceItPacksIdRoute._addFileChildren(ApiSliceItPacksIdRouteChildren)
+
 interface ApiV1UsersHandleRouteChildren {
   ApiV1UsersHandleFollowRoute: typeof ApiV1UsersHandleFollowRoute
   ApiV1UsersHandleFollowersRoute: typeof ApiV1UsersHandleFollowersRoute
@@ -17919,6 +18657,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapsNameRoute: SitemapsNameRoute,
   VSlugRoute: VSlugRoute,
   VNewRoute: VNewRoute,
+  DiscordIndexRoute: DiscordIndexRoute,
   ApiAccountDeleteRoute: ApiAccountDeleteRoute,
   ApiAccountExportRoute: ApiAccountExportRoute,
   ApiAccountStandingRoute: ApiAccountStandingRoute,
@@ -18092,9 +18831,14 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSignalForgeLoadRoute: ApiSignalForgeLoadRoute,
   ApiSignalForgeSaveRoute: ApiSignalForgeSaveRoute,
   ApiSignalForgeScoreRoute: ApiSignalForgeScoreRoute,
+  ApiSliceItChartsRoute: ApiSliceItChartsRouteWithChildren,
   ApiSliceItLeaderboardRoute: ApiSliceItLeaderboardRoute,
+  ApiSliceItReplayRoute: ApiSliceItReplayRouteWithChildren,
   ApiSliceItScoreRoute: ApiSliceItScoreRoute,
+  ApiSliceItShelvesRoute: ApiSliceItShelvesRoute,
+  ApiSliceItShowcaseRoute: ApiSliceItShowcaseRoute,
   ApiSliceItSongsRoute: ApiSliceItSongsRouteWithChildren,
+  ApiSliceItUploaderStatsRoute: ApiSliceItUploaderStatsRoute,
   ApiSpacesLiveRoute: ApiSpacesLiveRoute,
   ApiSpeedrunCategoriesRoute: ApiSpeedrunCategoriesRoute,
   ApiSpeedrunLeaderboardRoute: ApiSpeedrunLeaderboardRoute,
@@ -18267,12 +19011,20 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhladderResumeIdRoute: ApiRmhladderResumeIdRouteWithChildren,
   ApiRmhmusicSpotifySearchRoute: ApiRmhmusicSpotifySearchRoute,
   ApiRmhtubeSubscribeChannelIdRoute: ApiRmhtubeSubscribeChannelIdRoute,
+  ApiSliceItAdminContentRoute: ApiSliceItAdminContentRoute,
+  ApiSliceItAdminReviewRoute: ApiSliceItAdminReviewRoute,
+  ApiSliceItAdminTakedownRoute: ApiSliceItAdminTakedownRoute,
+  ApiSliceItDailySubmitRoute: ApiSliceItDailySubmitRoute,
+  ApiSliceItPacksIdRoute: ApiSliceItPacksIdRouteWithChildren,
+  ApiSliceItSetlistsIdRoute: ApiSliceItSetlistsIdRoute,
   ApiSpacesIdEndRoute: ApiSpacesIdEndRoute,
   ApiSpacesIdStartRoute: ApiSpacesIdStartRoute,
   ApiStorefrontCreatorUseridRoute: ApiStorefrontCreatorUseridRoute,
   ApiTrashKindIdRoute: ApiTrashKindIdRoute,
   ApiUsersIdWishlistRoute: ApiUsersIdWishlistRoute,
   ApiV1LeaderboardsGameRoute: ApiV1LeaderboardsGameRoute,
+  ApiV1SliceItChartsRoute: ApiV1SliceItChartsRoute,
+  ApiV1SliceItLeaderboardRoute: ApiV1SliceItLeaderboardRoute,
   ApiV1UsersHandleRoute: ApiV1UsersHandleRouteWithChildren,
   ApiVibePkgFileRoute: ApiVibePkgFileRoute,
   ApiVibeThumbSlugRoute: ApiVibeThumbSlugRoute,
@@ -18295,6 +19047,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiProfileLinksIdIndexRoute: ApiProfileLinksIdIndexRoute,
   ApiRmhladderResumeIndexRoute: ApiRmhladderResumeIndexRoute,
   ApiRmhmusicGuessIndexRoute: ApiRmhmusicGuessIndexRoute,
+  ApiSliceItDailyIndexRoute: ApiSliceItDailyIndexRoute,
+  ApiSliceItPacksIndexRoute: ApiSliceItPacksIndexRoute,
+  ApiSliceItSetlistsIndexRoute: ApiSliceItSetlistsIndexRoute,
   ApiSpacesIdIndexRoute: ApiSpacesIdIndexRoute,
   ApiStorefrontProductsIndexRoute: ApiStorefrontProductsIndexRoute,
   ApiStudyDecksIndexRoute: ApiStudyDecksIndexRoute,

@@ -1,6 +1,11 @@
 {
   "connecting-to-discord": "Discordに接続中...",
   "connection-failed": "接続に失敗しました",
+  "gateway-follow": "Pick the same game as whoever started this Activity to play together.",
+  "gateway-follow-named": "{{name}} started this Activity — pick the same game to play together.",
+  "gateway-participant-count_other": "{{count}} people in this Activity",
+  "gateway-players-hint": "{{range}} players",
+  "gateway-title": "What are we playing?",
   "loading-game": "ゲームを読み込み中...",
   "loading-rmhbox": "RMHBoxを読み込み中...",
   "run-inside-discord-activity": "Discordアクティビティ内で実行していることを確認してください。"

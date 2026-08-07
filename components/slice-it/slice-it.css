@@ -86,3 +86,60 @@
     transform: scale(1);
   }
 }
+
+/* ─── chart editor ─────────────────────────────────────────────────────────
+ *
+ * `docs/slice-it-chart-editor.md` §12.2. The editor gets no separate stylesheet,
+ * because a second file means a second set of shadow values that drift from the
+ * pair above.
+ *
+ * The rule that makes neumorphism read correctly: raised = interactive, inset =
+ * a container or a value. A button is `.neumorphic`; the track it slides along
+ * is `.neumorphic-inset`; the timeline the notes sit in is `.editor-timeline`.
+ */
+
+/* Pressed state. Neumorphism's affordance is depth, so "active" is the
+   raised surface becoming inset — the button physically goes down. */
+.neumorphic-pressed {
+  background: var(--slice-bg);
+  box-shadow:
+    inset 4px 4px 8px var(--slice-shadow-dark),
+    inset -4px -4px 8px var(--slice-shadow-light);
+  border-radius: 15px;
+}
+
+/* Toolbar buttons: smaller radius and shadow so a row of them does not read as
+   a row of pillows. Scale the offsets with the element, not a fixed 9px. */
+.neumorphic-sm {
+  background: var(--slice-bg);
+  box-shadow:
+    4px 4px 8px var(--slice-shadow-dark),
+    -4px -4px 8px var(--slice-shadow-light);
+  border-radius: 12px;
+}
+
+/* The timeline well. Inset, because notes sit *inside* it. */
+.editor-timeline {
+  background: var(--slice-bg);
+  box-shadow:
+    inset 8px 8px 14px var(--slice-shadow-dark),
+    inset -8px -8px 14px var(--slice-shadow-light);
+  border-radius: 18px;
+}
+
+/* Selected tool / active difficulty tab. Neumorphism has no borders to
+   highlight, so selection is the accent colour plus the pressed depth. */
+.neumorphic-active {
+  color: var(--slice-primary);
+  box-shadow:
+    inset 4px 4px 8px var(--slice-shadow-dark),
+    inset -4px -4px 8px var(--slice-shadow-light);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .neumorphic,
+  .neumorphic-sm,
+  .neumorphic-pressed {
+    transition: none;
+  }
+}

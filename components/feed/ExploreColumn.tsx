@@ -146,7 +146,15 @@ export function ExploreColumn({
       setTabState(next);
       void navigate({
         to: '/explore',
-        search: (prev) => ({ ...prev, q: prev.q ?? '', tab: next }),
+        // `prev` comes back loosely typed (`Record<string, unknown>`), so
+        // `prev.q ?? ''` widens to `{}` and fails the route's `q: string`.
+        // Narrowing here rather than casting keeps it honest about the case
+        // that actually occurs: a URL carrying `?q=` with no value.
+        search: (prev) => ({
+          ...prev,
+          q: typeof prev.q === 'string' ? prev.q : '',
+          tab: next,
+        }),
         replace: true,
       });
     },

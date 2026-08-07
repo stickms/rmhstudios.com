@@ -1,6 +1,11 @@
 {
   "connecting-to-discord": "正在连接到 Discord...",
   "connection-failed": "连接失败",
+  "gateway-follow": "Pick the same game as whoever started this Activity to play together.",
+  "gateway-follow-named": "{{name}} started this Activity — pick the same game to play together.",
+  "gateway-participant-count_other": "{{count}} people in this Activity",
+  "gateway-players-hint": "{{range}} players",
+  "gateway-title": "What are we playing?",
   "loading-game": "正在加载游戏...",
   "loading-rmhbox": "正在加载 RMHBox...",
   "run-inside-discord-activity": "确保你在 Discord 活动中运行此内容。"

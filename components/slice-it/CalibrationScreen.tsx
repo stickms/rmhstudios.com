@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { outputLatencyMs } from '@/lib/shared/platform';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import { AudioManager } from '@/lib/audio/AudioManager';
 
@@ -20,10 +21,26 @@ export function CalibrationScreen({ onBack }: { onBack: () => void }) {
   // Metronome logic
   const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
   const lastBeatTime = React.useRef<number>(0);
+  /** Above this, the delay is almost certainly a wireless link rather than a
+   *  buffer, and no offset setting fixes how it feels to play. */
+  const BLUETOOTH_LATENCY_HINT_MS = 80;
+  /** The store clamps to +/-500ms; mirror it so the button cannot offer a value
+   *  the setter will silently refuse. */
+  const clampOffset = (ms: number) => Math.max(-500, Math.min(500, Math.round(ms)));
   const BPM = 120;
   const BEAT_MS = 60000 / BPM;
 
   const [beatFlash, setBeatFlash] = React.useState(false);
+
+  /**
+   * A6 — the latency the audio stack reports about itself.
+   *
+   * Read once on mount rather than per render: it is a property of the output
+   * device, and re-reading it every frame would be a `getContext()` call on a
+   * screen that is otherwise idle. Null when the browser will not say (Safari
+   * reports 0, which is not the same as "none" and is treated as unknown).
+   */
+  const [detectedLatency] = React.useState(() => outputLatencyMs());
 
   const startMetronome = () => {
     if (isPlaying) return;
@@ -150,6 +167,38 @@ export function CalibrationScreen({ onBack }: { onBack: () => void }) {
             <div className="text-3xl font-mono font-bold text-slice-text">{tempOffset} ms</div>
             <div className="text-xs text-slice-text-light font-bold uppercase">{message}</div>
           </div>
+
+          {/* A6 — what the audio stack is costing, before the player guesses at
+              it. Bluetooth adds 100-300ms and there is otherwise nothing on
+              this screen that would tell them that is what is wrong. */}
+          {detectedLatency !== null && (
+            <div className="neumorphic-inset px-4 py-3 text-left text-xs space-y-2">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-slice-text-muted">
+                  {t('detected-output-latency', { defaultValue: 'Detected audio output delay' })}
+                </span>
+                <span className="font-mono font-bold text-slice-text">{detectedLatency} ms</span>
+              </div>
+              {detectedLatency > BLUETOOTH_LATENCY_HINT_MS && (
+                <p className="text-slice-text-light">
+                  {t('bluetooth-latency-hint', {
+                    defaultValue:
+                      'That is wireless-headphone territory. Wired output will feel much tighter than any offset can compensate for.',
+                  })}
+                </p>
+              )}
+              <button
+                type="button"
+                className="neumorphic-sm w-full px-3 py-2 font-bold text-slice-primary"
+                onClick={() => setTempOffset(clampOffset(-detectedLatency))}
+              >
+                {t('use-detected-latency', {
+                  defaultValue: 'Start from this ({{ms}} ms)',
+                  ms: -detectedLatency,
+                })}
+              </button>
+            </div>
+          )}
 
           <div className="flex gap-4">
             <Button

@@ -1,6 +1,14 @@
 {
   "connecting-to-discord": "Connecting to Discord...",
   "connection-failed": "Connection Failed",
+  "gateway-follow": "Pick the same game as whoever started this Activity to play together.",
+  "gateway-follow-named": "{{name}} started this Activity — pick the same game to play together.",
+  "gateway-participant-count_one": "{{count}} people in this Activity",
+  "gateway-participant-count_few": "{{count}} people in this Activity",
+  "gateway-participant-count_many": "{{count}} people in this Activity",
+  "gateway-participant-count_other": "{{count}} people in this Activity",
+  "gateway-players-hint": "{{range}} players",
+  "gateway-title": "What are we playing?",
   "loading-game": "Loading game...",
   "loading-rmhbox": "Loading RMHBox...",
   "run-inside-discord-activity": "Make sure you're running this inside a Discord Activity."

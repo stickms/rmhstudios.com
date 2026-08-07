@@ -154,9 +154,22 @@ export const config = {
     'slice:join': { max: 30, windowMs: 60_000 },
     'slice:quickplay': { max: 20, windowMs: 60_000 },
     'slice:browse': { max: 30, windowMs: 60_000 },
+    // Spectating is a join that takes no seat, so it gets a join's budget.
+    'slice:spectate': { max: 30, windowMs: 60_000 },
     'slice:leave': { max: 30, windowMs: 60_000 },
     'slice:ready': { max: 60, windowMs: 60_000 },
     'slice:song': { max: 60, windowMs: 60_000 },
+    // Teams (N2): picking a side is a toggle a player flips while making up
+    // their mind, so it gets a modifier-sized budget; balancing is a host
+    // control and a rarer one.
+    'slice:team': { max: 60, windowMs: 60_000 },
+    'slice:balance': { max: 30, windowMs: 60_000 },
+    // Song voting (N7). One nomination per seat per ballot and one (changeable)
+    // vote, so these track the number of ballots a lobby can run, not the number
+    // of players in it. `slice:nominate` reads a song row, which is why it is
+    // the tighter of the two.
+    'slice:nominate': { max: 30, windowMs: 60_000 },
+    'slice:vote': { max: 60, windowMs: 60_000 },
     'slice:settings': { max: 60, windowMs: 60_000 },
     'slice:mods': { max: 120, windowMs: 60_000 },
     'slice:start': { max: 20, windowMs: 60_000 },
@@ -166,6 +179,17 @@ export const config = {
     'slice:rematch': { max: 30, windowMs: 60_000 },
     'slice:chat': { max: 30, windowMs: 60_000 },
     'slice:kick': { max: 20, windowMs: 60_000 },
+    // Attack mode (N4). Charges cap at 3 and are earned at combo milestones, so
+    // the server's own tally is the real limit — this is the flood guard for a
+    // client that spams the event without any, which costs a lookup per call.
+    'slice:attack': { max: 60, windowMs: 60_000 },
+    // The session queue (N8). `slice:queue` reads a song row, so it is the
+    // tighter of the pair, exactly as `slice:nominate` is.
+    'slice:queue': { max: 30, windowMs: 60_000 },
+    'slice:unqueue': { max: 60, windowMs: 60_000 },
+    // Rejoin (N12) is a join, and a client in a reconnect loop is the failure
+    // mode this bounds.
+    'slice:rejoin': { max: 20, windowMs: 60_000 },
     'dr:create': { max: 10, windowMs: 60_000 },
     'dr:join': { max: 30, windowMs: 60_000 },
     'dr:quickplay': { max: 20, windowMs: 60_000 },
@@ -259,6 +283,16 @@ export const config = {
 
   // ─── Database ───
   DATABASE_URL: envString('DATABASE_URL', ''),
+
+  // ─── Discord Activity auth ───
+  //
+  // The *same* application id `app/routes/api/discord/token.ts` exchanges codes
+  // for. The hub needs only the id, never the secret: the code→token exchange
+  // (the one operation that requires the secret) happens on the web tier, and
+  // the hub only ever *verifies* an already-issued token. Leaving this unset
+  // disables the Discord auth path entirely rather than accepting tokens the
+  // hub cannot check the audience of — see `softAuthMiddleware`.
+  DISCORD_ACTIVITY_CLIENT_ID: envString('DISCORD_ACTIVITY_CLIENT_ID', ''),
 
   // ─── Disconnect Grace Period ───
   DISCONNECT_GRACE_PERIOD_MS: envInt('SOCKET_GRACE_MS', 120_000),

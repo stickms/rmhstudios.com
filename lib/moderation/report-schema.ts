@@ -25,8 +25,14 @@ import { z } from 'zod';
 /**
  * What can be reported. `dm` is here and deliberately has no owner lookup in
  * the route — a DM's author is not resolvable from the id alone.
+ *
+ * `song` is Slice It's uploads (`L9`). Uploads are user-supplied audio, which
+ * the catalog already declares with `descriptors: ['user-content']`, and the
+ * game had no path to this queue at all — so the one category of content on the
+ * site most likely to attract a copyright claim was the one with no report
+ * button.
  */
-export const REPORT_ENTITY_TYPES = ['rmhark', 'comment', 'user', 'build', 'dm'] as const;
+export const REPORT_ENTITY_TYPES = ['rmhark', 'comment', 'user', 'build', 'dm', 'song'] as const;
 export type ReportEntityType = (typeof REPORT_ENTITY_TYPES)[number];
 
 /**

@@ -10,6 +10,7 @@ import {
   ChevronDown,
   ChevronUp,
   Crown,
+  Eye,
   EyeOff,
   Globe,
   Info,
@@ -18,6 +19,7 @@ import {
   Minus,
   Moon,
   RotateCw,
+  Scale,
   Send,
   Settings,
   Share2,
@@ -25,6 +27,8 @@ import {
   Sun,
   Target,
   UserX,
+  Vote,
+  Users,
   Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -35,12 +39,14 @@ import { useSession } from '@/components/Providers';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import { calculateScoreMultiplier } from '@/lib/slice-it/scoring';
 import { forMultiplayer } from '@/lib/slice-it/modifiers';
+import { prefetchRun } from '@/lib/slice-it/prefetch';
 import { MAX_LOBBY_PLAYERS, MAX_SPEED, MULTIPLAYER_MIN_SPEED } from '@/lib/slice-it/constants';
 import type { Modifiers, SliceSong } from '@/lib/slice-it/types';
-import type { LobbyPlayer } from '@/lib/slice-it/net/events';
+import type { LobbyPlayer, TeamId, VoteState } from '@/lib/slice-it/net/events';
 import * as net from '@/lib/slice-it/net/client';
 import { SongLibrary } from './SongLibrary';
 import { SongDetailsPanel } from './SongDetailsPanel';
+import { SpectatorView } from './spectate/SpectatorView';
 
 interface MultiplayerLobbyProps {
   onBack: () => void;
@@ -61,6 +67,16 @@ interface MultiplayerLobbyProps {
  */
 export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyProps) {
   const { t } = useTranslation('c-game');
+  /**
+   * The Slice It page namespace, for everything this wave added.
+   *
+   * Two translators rather than one because the existing lobby copy is already
+   * shipped under `c-game` and moving it would change every key — and a changed
+   * key is a new string in every one of the sixteen locales. The multiplayer
+   * mode copy (`N1`, `N2`, `N7`, `N9`) lives in `r-slice-it` with the rest of
+   * this game's own strings.
+   */
+  const { t: ts } = useTranslation('r-slice-it');
   const { data: session, isPending } = useSession();
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as Record<string, string | undefined>;
@@ -83,6 +99,14 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
   const [showModifiers, setShowModifiers] = React.useState(false);
   const [chatDraft, setChatDraft] = React.useState('');
   const [connecting, setConnecting] = React.useState(false);
+  /**
+   * The lobby being watched (`N1`), or null.
+   *
+   * Local, not in the store: a spectator's store holds an ordinary
+   * `LobbySnapshot` — that is the whole point of the role — so "am I watching or
+   * seated" is a question only the component that made the choice can answer.
+   */
+  const [spectatingCode, setSpectatingCode] = React.useState<string | null>(null);
 
   const me = lobby?.players.find((p) => p.socketId === selfSocketId) ?? null;
   const isHost = Boolean(me?.isHost);
@@ -110,16 +134,68 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
     };
   }, [session, t]);
 
-  // Auto-join from an invite link once the socket is up. Guarded on `!lobby` so
-  // a reconnect — which re-joins internally — does not fire a second join.
+  /**
+   * Drop `?lobby=`/`?watch=` from the URL.
+   *
+   * Both a cleanup and a fix: leaving the parameters on means a refresh — or the
+   * back button — re-runs the auto-join against a lobby the player has just
+   * decided to leave, and against a *dead* code that is the loop `N9` exists to
+   * stop. Declared above the effect that calls it so the React Compiler can see
+   * the dependency it is holding.
+   */
+  const clearInviteParams = React.useCallback(() => {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has('lobby') && !url.searchParams.has('watch')) return;
+    url.searchParams.delete('lobby');
+    url.searchParams.delete('watch');
+    void navigate({ to: url.pathname + (url.search || ''), replace: true });
+  }, [navigate]);
+
+  /**
+   * Act on an invite link (`N9`).
+   *
+   * The code is validated *before* anything is emitted. A stale link — a lobby
+   * that ended last week, a code a chat client line-wrapped — used to be sent
+   * verbatim, which set the client's reconnect code as a side effect: every
+   * subsequent reconnect re-sent the same dead join and got the same
+   * `not_found` back, one error toast at a time. A malformed code now lands the
+   * player in the menu with one message and the parameter stripped, which is the
+   * only state they can act from.
+   *
+   * `?watch=1` sends them to the spectator view instead of a seat, so a link
+   * shared after the match started is still worth following.
+   */
   const autoJoinedRef = React.useRef(false);
   React.useEffect(() => {
-    const code = search.lobby;
-    if (!code || autoJoinedRef.current) return;
+    // Read the URL as well as the router's parsed search. `/slice-it`'s
+    // `validateSearch` is the library's filter schema, and a zod object strips
+    // the keys it does not declare — so `?lobby=` reaches `window.location` and
+    // stops there. Asking both means the link works today, and keeps working the
+    // moment the route declares the parameter (see
+    // `docs/_handoff/multiplayer-requests.md`).
+    const params =
+      typeof window === 'undefined' ? null : new URLSearchParams(window.location.search);
+    const raw = search.lobby ?? params?.get('lobby') ?? null;
+    const watch = search.watch ?? params?.get('watch') ?? null;
+    if (!raw || autoJoinedRef.current) return;
     if (connection !== 'connected' || lobby) return;
     autoJoinedRef.current = true;
-    net.joinLobby(code);
-  }, [search.lobby, connection, lobby]);
+
+    const code = net.normalizeLobbyCode(raw);
+    if (!code) {
+      toast.error(
+        ts('mp-invite-invalid', { defaultValue: 'That invite link is not a valid lobby code.' }),
+      );
+      clearInviteParams();
+      return;
+    }
+    if (watch) {
+      setSpectatingCode(code);
+      net.spectateLobby(code);
+    } else {
+      net.joinLobby(code);
+    }
+  }, [search.lobby, search.watch, connection, lobby, ts, clearInviteParams]);
 
   // Refresh the public list while outside a lobby.
   React.useEffect(() => {
@@ -139,9 +215,29 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
 
   React.useEffect(() => {
     if (!lobbyError) return;
-    toast.error(errorMessage(lobbyError, t));
+    toast.error(errorMessage(lobbyError, t, ts));
     useSliceItStore.getState().setLobbyError(null);
-  }, [lobbyError, t]);
+  }, [lobbyError, t, ts]);
+
+  // O5 — start fetching the moment the host picks a song, not when the match
+  // does. The lobby has known the song since `slice:song` fired, which is
+  // usually minutes of people reading the song list before anyone readies up;
+  // spending that time on the download turns most of `LOAD_TIMEOUT_MS` into
+  // time the player was going to be idle anyway.
+  //
+  // Aborted on song change, so a host flicking through the list does not leave
+  // four audio downloads racing on someone's phone.
+  const lobbySongId = lobby?.song?.id ?? null;
+  const lobbyDifficulty = modifiers.difficulty;
+  React.useEffect(() => {
+    if (!lobbySongId) return;
+    const controller = new AbortController();
+    void prefetchRun(lobbySongId, {
+      signal: controller.signal,
+      difficulty: lobbyDifficulty,
+    });
+    return () => controller.abort();
+  }, [lobbySongId, lobbyDifficulty]);
 
   // A closed tab frees the seat at once rather than making everyone sit through
   // the disconnect grace window for someone who is not coming back.
@@ -154,20 +250,27 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
   const handleLeave = React.useCallback(() => {
     net.leaveLobby();
     net.disconnectSliceIt();
-    if (search.lobby) {
-      const url = new URL(window.location.href);
-      url.searchParams.delete('lobby');
-      void navigate({ to: url.pathname + (url.search || ''), replace: true });
-    }
+    setSpectatingCode(null);
+    clearInviteParams();
     onBack();
-  }, [navigate, onBack, search.lobby]);
+  }, [clearInviteParams, onBack]);
 
-  const handleCopyInvite = () => {
+  /** Stop watching without leaving multiplayer — back to the menu, not the game. */
+  const handleStopWatching = React.useCallback(() => {
+    net.leaveLobby();
+    setSpectatingCode(null);
+    clearInviteParams();
+  }, [clearInviteParams]);
+
+  const handleCopyInvite = (watch = false) => {
     if (!lobby) return;
-    const url = `${window.location.origin}${window.location.pathname}?lobby=${lobby.code}`;
-    void navigator.clipboard.writeText(url).then(() => {
+    void navigator.clipboard.writeText(net.inviteLink(lobby.code, watch)).then(() => {
       setCopied(true);
-      toast.success(t('invite-link-copied', { defaultValue: 'Invite link copied to clipboard!' }));
+      toast.success(
+        watch
+          ? ts('mp-watch-link-copied', { defaultValue: 'Spectator link copied to clipboard!' })
+          : t('invite-link-copied', { defaultValue: 'Invite link copied to clipboard!' }),
+      );
       setTimeout(() => setCopied(false), 2000);
     });
   };
@@ -216,14 +319,27 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
     );
   }
 
-  /* ── Song picker (host only) ─────────────────────────────────────────── */
+  /* ── Watching (`N1`) ─────────────────────────────────────────────────── */
 
-  if (lobby && showSongSelect && isHost) {
+  // Checked before the seated branches: a spectator's snapshot looks exactly
+  // like a player's, so the ordinary lobby card would render for them and offer
+  // a READY button the server would ignore.
+  if (spectatingCode) {
+    return <SpectatorView code={spectatingCode} onLeave={handleStopWatching} />;
+  }
+
+  /* ── Song picker ─────────────────────────────────────────────────────── */
+
+  // Open to everyone while a ballot is running (`N7`) — nominating is the whole
+  // point — and to the host alone the rest of the time.
+  if (lobby && showSongSelect && (isHost || lobby.vote)) {
     return (
       <div className="absolute inset-0 z-60 bg-slice-bg p-4 flex flex-col">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-slice-text-darker">
-            {t('select-a-song', { defaultValue: 'SELECT A SONG' })}
+            {lobby.vote
+              ? ts('mp-nominate-a-song', { defaultValue: 'NOMINATE A SONG' })
+              : t('select-a-song', { defaultValue: 'SELECT A SONG' })}
           </h2>
           <Button variant="ghost" onClick={() => setShowSongSelect(false)}>
             {t('cancel', { defaultValue: 'CANCEL' })}
@@ -233,8 +349,10 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
           <SongLibrary
             selectedSongId={lobby.song?.id ?? null}
             onSelect={(song) => {
-              // Only the id crosses the wire; the server resolves the row.
-              net.selectSong(song.id);
+              // Only the id crosses the wire; the server resolves the row —
+              // whichever of the two things it is being asked to do with it.
+              if (lobby.vote) net.nominateSong(song.id);
+              else net.selectSong(song.id);
               setShowSongSelect(false);
             }}
             onHighlight={setBrowsedSong}
@@ -273,7 +391,14 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
 
   if (lobby) {
     const readyCount = lobby.players.filter((p) => p.isHost || p.ready).length;
-    const canStart = Boolean(lobby.song) && readyCount === lobby.players.length;
+    // Mirrors the server's own check (`N2`): a team match with an empty side is
+    // a free-for-all whose results card claims a winner by forfeit. Shown here
+    // so the host can see *why* Start is disabled rather than pressing it and
+    // reading an error toast.
+    const sidesFilled =
+      !lobby.teamsEnabled ||
+      (['a', 'b'] as const).every((team) => lobby.players.some((p) => p.team === team));
+    const canStart = Boolean(lobby.song) && readyCount === lobby.players.length && sidesFilled;
 
     return (
       <div className="absolute inset-0 z-60 flex items-center-safe justify-center-safe overflow-y-auto bg-slice-bg p-4 text-slice-text">
@@ -313,7 +438,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
                   size="icon"
                   variant="ghost"
                   className="h-12 w-12 shrink-0 rounded-2xl shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)]"
-                  onClick={handleCopyInvite}
+                  onClick={() => handleCopyInvite()}
                   title={t('copy-invite-link', { defaultValue: 'Copy Invite Link' })}
                   aria-label={t('copy-invite-link', { defaultValue: 'Copy Invite Link' })}
                 >
@@ -323,24 +448,59 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
                     <Share2 className="w-6 h-6 text-slice-text-darker" />
                   )}
                 </Button>
+                {/* A seat is not always the useful thing to offer: once a match
+                    is under way the only link worth sending is one that watches
+                    it (`N1`, `N9`). */}
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-12 w-12 shrink-0 rounded-2xl shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)]"
+                  onClick={() => handleCopyInvite(true)}
+                  title={ts('mp-copy-watch-link', { defaultValue: 'Copy Spectator Link' })}
+                  aria-label={ts('mp-copy-watch-link', { defaultValue: 'Copy Spectator Link' })}
+                >
+                  <Eye className="w-6 h-6 text-slice-text-darker" />
+                </Button>
               </span>
               {isHost && (
-                <button
-                  className="text-[11px] font-bold uppercase tracking-widest text-slice-text-muted hover:text-blue-500 flex items-center gap-1.5"
-                  onClick={() => net.setLobbySettings(!lobby.isPublic)}
-                >
-                  {lobby.isPublic ? (
-                    <>
-                      <Globe className="w-3 h-3" aria-hidden />
-                      {t('lobby-public', { defaultValue: 'Public — listed in Quick Play' })}
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="w-3 h-3" aria-hidden />
-                      {t('lobby-private', { defaultValue: 'Private — invite only' })}
-                    </>
-                  )}
-                </button>
+                <span className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+                  <button
+                    className="text-[11px] font-bold uppercase tracking-widest text-slice-text-muted hover:text-blue-500 flex items-center gap-1.5"
+                    onClick={() => net.setLobbySettings(!lobby.isPublic)}
+                  >
+                    {lobby.isPublic ? (
+                      <>
+                        <Globe className="w-3 h-3" aria-hidden />
+                        {t('lobby-public', { defaultValue: 'Public — listed in Quick Play' })}
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="w-3 h-3" aria-hidden />
+                        {t('lobby-private', { defaultValue: 'Private — invite only' })}
+                      </>
+                    )}
+                  </button>
+                  <ModeToggle
+                    on={lobby.teamsEnabled}
+                    onClick={() => net.setTeamMode(!lobby.teamsEnabled)}
+                    Icon={Users}
+                    label={
+                      lobby.teamsEnabled
+                        ? ts('mp-teams-on', { defaultValue: 'Teams — on' })
+                        : ts('mp-teams-off', { defaultValue: 'Teams — off' })
+                    }
+                  />
+                  <ModeToggle
+                    on={lobby.votingEnabled}
+                    onClick={() => net.setVoteMode(!lobby.votingEnabled)}
+                    Icon={Vote}
+                    label={
+                      lobby.votingEnabled
+                        ? ts('mp-voting-on', { defaultValue: 'Song vote — on' })
+                        : ts('mp-voting-off', { defaultValue: 'Song vote — off' })
+                    }
+                  />
+                </span>
               )}
             </CardTitle>
           </CardHeader>
@@ -365,7 +525,25 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
                   />
                 ))}
               </ul>
+
+              {lobby.teamsEnabled && (
+                <TeamControls
+                  myTeam={me?.team ?? null}
+                  isHost={isHost}
+                  players={lobby.players}
+                  disabled={connection !== 'connected' || lobby.state !== 'waiting'}
+                />
+              )}
             </section>
+
+            {lobby.vote && (
+              <VotePanel
+                vote={lobby.vote}
+                selfSocketId={selfSocketId}
+                disabled={connection !== 'connected'}
+                onNominate={() => setShowSongSelect(true)}
+              />
+            )}
 
             <section className="space-y-2">
               <h3 className="font-bold text-xs text-slice-text-light uppercase tracking-widest">
@@ -387,14 +565,16 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
                 )}
                 <Button
                   size="sm"
-                  variant={isHost ? 'default' : 'outline'}
+                  variant={isHost || lobby.vote ? 'default' : 'outline'}
                   onClick={() => setShowSongSelect(true)}
-                  disabled={!isHost}
+                  disabled={!isHost && !lobby.vote}
                   className="shrink-0"
                 >
-                  {isHost
-                    ? t('change', { defaultValue: 'CHANGE' })
-                    : t('host-picks', { defaultValue: 'HOST PICKS' })}
+                  {lobby.vote
+                    ? ts('mp-nominate', { defaultValue: 'NOMINATE' })
+                    : isHost
+                      ? t('change', { defaultValue: 'CHANGE' })
+                      : t('host-picks', { defaultValue: 'HOST PICKS' })}
                 </Button>
               </div>
             </section>
@@ -444,13 +624,15 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
                 >
                   {!lobby.song
                     ? t('select-a-song', { defaultValue: 'SELECT A SONG' })
-                    : !canStart
-                      ? t('waiting-ready', {
-                          defaultValue: 'WAITING ({{ready}}/{{total}} READY)',
-                          ready: readyCount,
-                          total: lobby.players.length,
-                        })
-                      : t('start-game', { defaultValue: 'START GAME' })}
+                    : !sidesFilled
+                      ? ts('mp-both-teams-needed', { defaultValue: 'BOTH TEAMS NEED A PLAYER' })
+                      : !canStart
+                        ? t('waiting-ready', {
+                            defaultValue: 'WAITING ({{ready}}/{{total}} READY)',
+                            ready: readyCount,
+                            total: lobby.players.length,
+                          })
+                        : t('start-game', { defaultValue: 'START GAME' })}
                 </Button>
               ) : (
                 <Button
@@ -510,7 +692,16 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
               value={codeInput}
               onChange={(e) => setCodeInput(e.target.value.toUpperCase().slice(0, 6))}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && codeInput) net.joinLobby(codeInput);
+                if (e.key !== 'Enter') return;
+                // `joinLobby` refuses a code that is not one (`N9`) and says so,
+                // rather than sending it and letting the socket answer.
+                if (!net.joinLobby(codeInput)) {
+                  toast.error(
+                    ts('mp-code-invalid', {
+                      defaultValue: 'A lobby code is 6 letters and numbers.',
+                    }),
+                  );
+                }
               }}
               placeholder={t('lobby-code-placeholder', { defaultValue: 'Lobby Code' })}
               className="bg-(--slice-input-bg) border-(--slice-input-border) text-slice-text shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] rounded-xl uppercase text-center font-mono tracking-widest h-12"
@@ -519,7 +710,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
             <Button
               className="bg-slice-bg text-blue-500 font-bold shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] rounded-xl px-6"
               onClick={() => net.joinLobby(codeInput)}
-              disabled={codeInput.length < 4 || connection !== 'connected'}
+              disabled={!net.normalizeLobbyCode(codeInput) || connection !== 'connected'}
             >
               {t('join', { defaultValue: 'JOIN' })}
             </Button>
@@ -541,9 +732,9 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
               </h3>
               <ul className="space-y-2 max-h-48 overflow-y-auto pr-1">
                 {publicLobbies.map((row) => (
-                  <li key={row.code}>
+                  <li key={row.code} className="flex items-stretch gap-2">
                     <button
-                      className="w-full flex items-center justify-between gap-3 p-3 rounded-xl bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] hover:text-blue-500 text-left"
+                      className="flex-1 flex items-center justify-between gap-3 p-3 rounded-xl bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] hover:text-blue-500 text-left"
                       onClick={() => net.joinLobby(row.code)}
                     >
                       <span className="min-w-0">
@@ -557,6 +748,20 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
                         {row.playerCount}/{row.maxPlayers}
                       </span>
                     </button>
+                    {/* Watching takes no seat (`N1`), so it stays available when
+                        joining would not — a full lobby, or one mid-match. */}
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-auto w-11 shrink-0 rounded-xl shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]"
+                      onClick={() => {
+                        if (net.spectateLobby(row.code)) setSpectatingCode(row.code);
+                      }}
+                      title={ts('mp-watch', { defaultValue: 'Watch' })}
+                      aria-label={ts('mp-watch', { defaultValue: 'Watch' })}
+                    >
+                      <Eye className="w-4 h-4 text-slice-text-muted" />
+                    </Button>
                   </li>
                 ))}
               </ul>
@@ -631,6 +836,217 @@ function ConnectionPill({ connection }: { connection: string }) {
   );
 }
 
+/** A host-only lobby mode switch — teams (`N2`), song voting (`N7`). */
+function ModeToggle({
+  on,
+  onClick,
+  Icon,
+  label,
+}: {
+  on: boolean;
+  onClick: () => void;
+  Icon: React.ComponentType<{ className?: string; 'aria-hidden'?: boolean }>;
+  label: string;
+}) {
+  return (
+    <button
+      className={`text-[11px] font-bold uppercase tracking-widest flex items-center gap-1.5 ${
+        on ? 'text-blue-500' : 'text-slice-text-muted hover:text-blue-500'
+      }`}
+      onClick={onClick}
+      aria-pressed={on}
+    >
+      <Icon className="w-3 h-3" aria-hidden />
+      {label}
+    </button>
+  );
+}
+
+const TEAM_STYLES: Record<TeamId, string> = {
+  a: 'bg-blue-500/20 text-blue-500',
+  b: 'bg-orange-500/20 text-orange-500',
+};
+
+function TeamBadge({ team }: { team: TeamId }) {
+  const { t } = useTranslation('r-slice-it');
+  return (
+    <span
+      className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full shrink-0 ${TEAM_STYLES[team]}`}
+    >
+      {team === 'a'
+        ? t('mp-team-a', { defaultValue: 'Team A' })
+        : t('mp-team-b', { defaultValue: 'Team B' })}
+    </span>
+  );
+}
+
+/**
+ * Pick a side, and — for the host — even the sides out (`N2`).
+ *
+ * Self-service: the host's balance control exists for the room that cannot sort
+ * itself out, not as the only way in. The counts beside each side are the reason
+ * the control is worth having on screen at all, because 5-v-1 is the failure
+ * this mode has and it is invisible in a flat roster.
+ */
+function TeamControls({
+  myTeam,
+  isHost,
+  players,
+  disabled,
+}: {
+  myTeam: TeamId | null;
+  isHost: boolean;
+  players: LobbyPlayer[];
+  disabled: boolean;
+}) {
+  const { t } = useTranslation('r-slice-it');
+  const count = (team: TeamId) => players.filter((player) => player.team === team).length;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 pt-1">
+      {(['a', 'b'] as const).map((team) => (
+        <button
+          key={team}
+          onClick={() => net.setTeam(team)}
+          disabled={disabled}
+          aria-pressed={myTeam === team}
+          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-black uppercase tracking-widest disabled:opacity-50 ${
+            myTeam === team
+              ? `${TEAM_STYLES[team]} shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)]`
+              : 'bg-slice-bg text-slice-text-muted shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]'
+          }`}
+        >
+          {team === 'a'
+            ? t('mp-team-a', { defaultValue: 'Team A' })
+            : t('mp-team-b', { defaultValue: 'Team B' })}
+          <span className="tabular-nums opacity-70">{count(team)}</span>
+        </button>
+      ))}
+
+      {isHost && (
+        <Button
+          size="sm"
+          variant="ghost"
+          className="ml-auto text-xs font-bold text-slice-text-muted"
+          onClick={() => net.balanceTeams()}
+          disabled={disabled}
+        >
+          <Scale className="w-3.5 h-3.5 mr-1.5" aria-hidden />
+          {t('mp-balance-teams', { defaultValue: 'Balance' })}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The open ballot (`N7`).
+ *
+ * The countdown is rendered from `vote.closesAt` — an absolute server timestamp
+ * — rather than a duration the client counts down from its own arrival time.
+ * Two players whose clocks disagree would otherwise each run a perfectly smooth
+ * timer and watch the vote close at two different moments, one of them
+ * apparently early.
+ */
+function VotePanel({
+  vote,
+  selfSocketId,
+  disabled,
+  onNominate,
+}: {
+  vote: VoteState;
+  selfSocketId: string | null;
+  disabled: boolean;
+  onNominate: () => void;
+}) {
+  const { t } = useTranslation('r-slice-it');
+  const remaining = useCountdown(vote.closesAt);
+
+  return (
+    <section className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="flex items-center gap-2 font-bold text-xs text-slice-text-light uppercase tracking-widest">
+          <Vote className="w-3.5 h-3.5" aria-hidden />
+          {t('mp-vote-title', { defaultValue: 'Song vote' })}
+        </h3>
+        <span className="text-xs font-black tabular-nums text-blue-500" role="timer">
+          {t('mp-vote-closes-in', { defaultValue: '{{seconds}}s left', seconds: remaining })}
+        </span>
+      </div>
+
+      <ul className="space-y-2">
+        {vote.nominations.length === 0 && (
+          <li className="text-xs text-slice-text-light italic">
+            {t('mp-vote-empty', { defaultValue: 'Nothing nominated yet.' })}
+          </li>
+        )}
+        {vote.nominations.map((nomination) => {
+          const mine = selfSocketId ? nomination.voters.includes(selfSocketId) : false;
+          return (
+            <li key={nomination.song.id}>
+              <button
+                className={`w-full flex items-center justify-between gap-3 p-3 rounded-xl text-left disabled:opacity-50 ${
+                  mine
+                    ? 'bg-blue-500/10 shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]'
+                    : 'bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]'
+                }`}
+                onClick={() => net.voteForSong(nomination.song.id)}
+                disabled={disabled}
+                aria-pressed={mine}
+              >
+                <span className="min-w-0">
+                  <span className="block font-bold truncate">{nomination.song.title}</span>
+                  <span className="block text-[11px] text-slice-text-muted truncate">
+                    {t('mp-vote-nominated-by', {
+                      defaultValue: 'by {{name}}',
+                      name: nomination.nominatedBy,
+                    })}
+                  </span>
+                </span>
+                <span className="text-sm font-black tabular-nums text-blue-500 shrink-0">
+                  {nomination.voters.length}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+
+      <Button
+        size="sm"
+        variant="outline"
+        className="w-full rounded-xl"
+        onClick={onNominate}
+        disabled={disabled}
+      >
+        {t('mp-nominate-a-track', { defaultValue: 'Nominate a track' })}
+      </Button>
+    </section>
+  );
+}
+
+/**
+ * Seconds left until an absolute server deadline.
+ *
+ * Recomputed from `Date.now()` on every tick rather than decremented, so a tab
+ * that was backgrounded — where timers are throttled to once a minute — shows
+ * the truth on its first frame back instead of resuming a count that fell
+ * behind while nobody was looking.
+ */
+function useCountdown(deadline: number): number {
+  const [remaining, setRemaining] = React.useState(() =>
+    Math.max(0, Math.ceil((deadline - Date.now()) / 1000)),
+  );
+  React.useEffect(() => {
+    setRemaining(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)));
+    const interval = setInterval(() => {
+      setRemaining(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)));
+    }, 500);
+    return () => clearInterval(interval);
+  }, [deadline]);
+  return remaining;
+}
+
 function MultiplierBadge({ value }: { value: number }) {
   if (Math.abs(value - 1) < 0.005) return null;
   return (
@@ -686,6 +1102,7 @@ function PlayerRow({
           </span>
         )}
         {player.isHost && <Crown className="w-3.5 h-3.5 text-yellow-500 shrink-0" aria-hidden />}
+        {player.team && <TeamBadge team={player.team} />}
         {player.spectating && (
           <span className="text-[9px] font-bold text-slice-text-light uppercase shrink-0">
             {t('spectating', { defaultValue: 'Spectating' })}
@@ -971,9 +1388,16 @@ function formatDuration(seconds: number): string {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
 
+/**
+ * @param t the shared `c-game` namespace, where the original lobby errors live.
+ * @param ts the game's own `r-slice-it` namespace, where this wave's do (`N2`,
+ *   `N7`). Two translators rather than one because moving the existing keys
+ *   would retranslate them in sixteen locales to say the same thing.
+ */
 function errorMessage(
   code: string,
   t: (key: string, opts: { defaultValue: string }) => string,
+  ts: (key: string, opts: { defaultValue: string }) => string,
 ): string {
   switch (code) {
     case 'not_found':
@@ -998,6 +1422,10 @@ function errorMessage(
       });
     case 'song_unavailable':
       return t('err-song-gone', { defaultValue: 'That track is no longer available.' });
+    case 'vote_closed':
+      return ts('mp-err-vote-closed', { defaultValue: 'That vote has already closed.' });
+    case 'teams_disabled':
+      return ts('mp-err-teams-off', { defaultValue: 'This lobby is not in team mode.' });
     default:
       return t('err-generic', { defaultValue: 'Something went wrong.' });
   }

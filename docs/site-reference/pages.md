@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 250 routes. 130 render inside the standard site shell (sidebar, nav, context rail); 120 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 257 routes. 133 render inside the standard site shell (sidebar, nav, context rail); 124 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -38,6 +38,8 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/reports` | Moderation Queue | admin | `app/routes/_site/admin/reports.tsx` |
 | `/admin/rideshare` | Rideshare Applications | admin | `app/routes/_site/admin/rideshare.tsx` |
 | `/admin/security-reports` | Security Reports | admin | `app/routes/_site/admin/security-reports.tsx` |
+| `/admin/slice-it` | Slice It ranked pool | admin | `app/routes/_site/admin/slice-it.tsx` |
+| `/admin/slice-it-content` | Slice It content & storage | admin | `app/routes/_site/admin/slice-it-content.tsx` |
 | `/admin/user-builds` | — | admin | `app/routes/_site/admin/user-builds.tsx` |
 | `/admin/users` | — | admin | `app/routes/_site/admin/users.tsx` |
 | `/alexdebtcounter` | redirects to `/kaikaidebtcounter` | public | `app/routes/_site/alexdebtcounter.tsx` |
@@ -61,6 +63,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/games` | Games | public | `app/routes/_site/games/index.tsx` |
 | `/games/:gameId` | — | public | `app/routes/_site/games/$gameId.tsx` |
 | `/games/:gameId/guides/:guideId` | — | public | `app/routes/_site/games/$gameId_.guides.$guideId.tsx` |
+| `/games/slice-it` | Slice It! — charts, records and uploaders | public | `app/routes/_site/games/slice-it.tsx` |
 | `/groups` | Group Chats | public | `app/routes/_site/groups/index.tsx` |
 | `/groups/:id` | Group Chat | public | `app/routes/_site/groups/$id.tsx` |
 | `/help` | Help & Concierge | public | `app/routes/_site/help.tsx` |
@@ -178,6 +181,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/deeplink` | — | public | `app/routes/deeplink.ts` |
 | `/deeplink/:page` | — | public | `app/routes/deeplink.$page.ts` |
 | `/design` | Spatial Minimalism | public | `app/routes/design.tsx` |
+| `/discord` | RMHBox | public | `app/routes/discord/index.tsx` |
 | `/discord/lights-out` | — | public | `app/routes/discord/lights-out.tsx` |
 | `/discord/rmhbox` | — | public | `app/routes/discord/rmhbox.tsx` |
 | `/dream-rift` | — | public | `app/routes/dream-rift.tsx` |
@@ -249,7 +253,10 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/security` | Security | public | `app/routes/security.tsx` |
 | `/sitemap.xml` | — | public | `app/routes/sitemap[.]xml.ts` |
 | `/sitemaps/:name` | — | public | `app/routes/sitemaps.$name.ts` |
-| `/slice-it` | — | public | `app/routes/slice-it/index.tsx` |
+| `/slice-it` | Slice It! | public | `app/routes/slice-it/index.tsx` |
+| `/slice-it/artist/:key` | — | public | `app/routes/slice-it/artist.$key.tsx` |
+| `/slice-it/edit/:songId` | Chart editor — Slice It! | public | `app/routes/slice-it/edit.$songId.tsx` |
+| `/slice-it/player/:handle` | — | public | `app/routes/slice-it/player.$handle.tsx` |
 | `/sohumbum` | Is Sohum Joshi A Bum Yet? | public | `app/routes/sohumbum.tsx` |
 | `/strategies` | — | public | `app/routes/strategies/index.tsx` |
 | `/strategies/incidents` | — | public | `app/routes/strategies/incidents.tsx` |

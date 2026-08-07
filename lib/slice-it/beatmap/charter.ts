@@ -25,7 +25,7 @@
  */
 
 import type { Difficulty, Slice } from '../types';
-import { createSeededRandom } from '../chart';
+import { CHART_MINE_ID_PREFIX, createSeededRandom } from '../chart';
 import type { Onset } from './onsets';
 
 /* ─── Quantisation ───────────────────────────────────────────────────────── */
@@ -52,6 +52,45 @@ export interface QuantizedNote {
   fraction: number;
   /** Length of the beat this note sits in, seconds. */
   beatLength: number;
+}
+
+/**
+ * Beat subdivision each snap position represents, as a denominator: 1 on the
+ * beat, 2 on the eighth, 3 on a triplet, 4 on the sixteenth.
+ *
+ * This is the highest-value readability signal the analyser produces and it used
+ * to be computed and thrown away one function before it could be used. The
+ * renderer colours notes by it (`Slice.quant`), which is how every game in this
+ * genre communicates rhythm.
+ */
+const QUANT_BY_FRACTION: readonly { fraction: number; quant: number }[] = [
+  { fraction: 0, quant: 1 },
+  { fraction: 1 / 4, quant: 4 },
+  { fraction: 1 / 3, quant: 3 },
+  { fraction: 1 / 2, quant: 2 },
+  { fraction: 2 / 3, quant: 3 },
+  { fraction: 3 / 4, quant: 4 },
+];
+
+/**
+ * The subdivision denominator for a snapped within-beat position.
+ *
+ * Nearest match rather than an exact lookup, because two of the six positions
+ * are thirds: `{[1/3]: 3}` is a key of `"0.3333333333333333"` and any arithmetic
+ * that produces a different last bit misses it silently, which would tag every
+ * triplet in the chart as a downbeat.
+ */
+export function quantOf(fraction: number): number {
+  let quant = 1;
+  let bestError = Infinity;
+  for (const entry of QUANT_BY_FRACTION) {
+    const error = Math.abs(fraction - entry.fraction);
+    if (error < bestError) {
+      bestError = error;
+      quant = entry.quant;
+    }
+  }
+  return quant;
 }
 
 /** Index of the last beat at or before `time`, or -1. */
@@ -155,7 +194,7 @@ function mergeCoincident(notes: QuantizedNote[]): QuantizedNote[] {
 
 /* ─── Difficulty tiers ───────────────────────────────────────────────────── */
 
-interface Tier {
+export interface Tier {
   /** Notes per second the chart aims for. */
   targetNps: number;
   /** Closest two notes may ever be, seconds. */
@@ -193,6 +232,38 @@ const TIER_ORDER: readonly Difficulty[] = ['expert', 'hard', 'normal', 'easy'];
  * charter breaks the same tie: the note on the beat is the one the player is
  * already counting.
  */
+/** A detected section, as `beatmap/sections.ts` produces them. */
+export interface Section {
+  start: number;
+  end: number;
+  energy: number;
+}
+
+/** G14 — bounds on how far section energy may move a note's priority. */
+const SECTION_WEIGHT_MIN = 0.7;
+const SECTION_WEIGHT_MAX = 1.45;
+
+/**
+ * Build the G14 priority multiplier: a function from time to a bounded weight.
+ *
+ * Returns a constant 1 when there is no section data — every chart generated
+ * before `sections.ts` existed, and any track whose novelty curve was too flat
+ * to segment. That is the correct fallback rather than a defect: a track with
+ * no discernible structure genuinely has no loud part to favour.
+ */
+function sectionEnergyWeighter(sections?: Section[]): (time: number) => number {
+  if (!sections || sections.length < 2) return () => 1;
+  const mean = sections.reduce((sum, s) => sum + s.energy, 0) / sections.length;
+  if (!(mean > 0)) return () => 1;
+
+  return (time: number) => {
+    const section = sections.find((s) => time >= s.start && time < s.end);
+    if (!section) return 1;
+    const ratio = section.energy / mean;
+    return Math.max(SECTION_WEIGHT_MIN, Math.min(SECTION_WEIGHT_MAX, ratio));
+  };
+}
+
 function metricWeight(note: QuantizedNote): number {
   const onBeat = note.fraction < 0.001;
   if (onBeat) return note.beatIndex % 4 === 0 ? 1.6 : 1.35;
@@ -204,17 +275,63 @@ function metricWeight(note: QuantizedNote): number {
 }
 
 /**
+ * C10 — the uploader's density thumb on the scale.
+ *
+ * Density budgets are per-tier constants, so an analyser that over-charts a
+ * sparse ambient track leaves the uploader with no recourse but deletion. This
+ * is the most common upload complaint, expressed as a slider.
+ *
+ * **Exponential, not linear.** −1 has to mean "noticeably sparser" and −2 "about
+ * half as many"; linear steps of 0.25 deliver neither, because a 25% cut at the
+ * sparse end is a handful of notes. 1.45^±2 is 0.48× and 2.1×, which is the
+ * range that actually spans "too busy" to "too empty" on the tracks people
+ * complain about.
+ *
+ * The floor of 8 is not part of the bias: a chart with three notes in it is not
+ * a chart, however sparse the uploader asked for.
+ */
+export function biasedBudget(base: number, bias: number): number {
+  const clamped = Math.max(-2, Math.min(2, Number.isFinite(bias) ? bias : 0));
+  return Math.max(8, Math.floor(base * Math.pow(1.45, clamped)));
+}
+
+/**
  * Pick the notes for one tier out of a candidate pool.
  *
  * Greedy by weighted strength subject to a minimum gap, stopping at the density
  * budget. Because it always draws from the tier above, the result is a strict
  * subset — which is what makes the four difficulties feel like the same chart.
  */
-function selectTier(candidates: QuantizedNote[], tier: Tier, duration: number): QuantizedNote[] {
-  const budget = Math.max(8, Math.floor(tier.targetNps * Math.max(1, duration)));
+function selectTier(
+  candidates: QuantizedNote[],
+  tier: Tier,
+  duration: number,
+  sections?: Section[],
+  densityBias = 0,
+): QuantizedNote[] {
+  const budget = biasedBudget(tier.targetNps * Math.max(1, duration), densityBias);
+
+  // G14 — spend the budget where the music is.
+  //
+  // A single notes-per-second target spread flat over the track over-charts a
+  // quiet intro and under-charts the drop, because greedy-by-strength alone
+  // cannot see that a section is quiet ON PURPOSE. Weighting by the section's
+  // energy relative to the track's mean pushes notes toward the loud parts
+  // without changing the total, so the tier's density guarantee is untouched.
+  //
+  // A WEIGHT rather than a per-section quota, deliberately: a hard quota with a
+  // floor and a ceiling has to decide what to do when a section cannot spend
+  // its allocation, and every answer to that reintroduces the flat behaviour
+  // somewhere. Bounded so a near-silent intro still gets notes and a drop
+  // cannot swallow the whole budget.
+  const energyWeight = sectionEnergyWeighter(sections);
 
   const ranked = candidates
-    .map((note, index) => ({ note, index, priority: note.strength * metricWeight(note) }))
+    .map((note, index) => ({
+      note,
+      index,
+      priority: note.strength * metricWeight(note) * energyWeight(note.time),
+    }))
     // Ties broken by original index rather than by anything derived from
     // floating-point time, so the selection is byte-for-byte reproducible.
     .sort((a, b) => b.priority - a.priority || a.index - b.index);
@@ -255,6 +372,20 @@ function lowerBound(sorted: number[], value: number): number {
 /* ─── Lane assignment and note types ─────────────────────────────────────── */
 
 /** Below this is kick/bass territory; above the other threshold is hats/cymbals. */
+/**
+ * G12 — which register a note's attack sat in.
+ *
+ * Deliberately reuses `LOW_LANE_BIAS`/`HIGH_LANE_BIAS` rather than picking its
+ * own thresholds: the sound and the lane should agree about what a note IS, and
+ * two sets of numbers drifting apart would produce a chart whose left hand
+ * stops matching the low sample.
+ */
+function registerOf(note: QuantizedNote): 'low' | 'mid' | 'high' {
+  if (note.lowRatio >= LOW_LANE_BIAS) return 'low';
+  if (note.highRatio >= HIGH_LANE_BIAS) return 'high';
+  return 'mid';
+}
+
 const LOW_LANE_BIAS = 0.42;
 const HIGH_LANE_BIAS = 0.3;
 /** A run of this many notes in one lane forces an alternation. */
@@ -334,6 +465,11 @@ function buildSlices(
       time: Number(note.time.toFixed(4)),
       type,
       lane,
+      quant: quantOf(note.fraction),
+      // G12 — the register this attack sat in, from the SAME ratios step 1
+      // above used to pick a lane. Free: the analysis is already done, and it
+      // was being thrown away one line later.
+      sound: registerOf(note),
       ...(duration !== undefined ? { duration: Number(duration.toFixed(4)) } : {}),
     });
 
@@ -357,11 +493,239 @@ function findNextTime(notes: QuantizedNote[], from: number, after: number): numb
   return Infinity;
 }
 
+/* ─── G7: chart-native mines ─────────────────────────────────────────────── */
+
+/**
+ * Share of a difficulty's notes that may become mines.
+ *
+ * **`easy` is zero and must stay zero.** A mine is a note you are punished for
+ * playing, which inverts the only rule a beginner has learned so far ("a thing
+ * arrives, you hit it"). Every game in the genre withholds the hazard vocabulary
+ * from its lowest tier for the same reason.
+ *
+ * The other three are small on purpose. A mine is a rest made *legible* — its
+ * job is to make the silence after a run feel like a place you must not go, and
+ * one every twenty notes reads as a hazard while one every five reads as a
+ * different game. The stored chart is the composed density; the `bombs`
+ * modifier's own random conversion (`BOMB_CONVERSION_RATE`) still runs on top
+ * for players who want more.
+ */
+const MINE_SHARE: Record<Difficulty, number> = {
+  easy: 0,
+  normal: 0.015,
+  hard: 0.03,
+  expert: 0.045,
+};
+
+/** Seconds between two mines. Two mines in one phrase is one mine twice. */
+const MINE_MIN_SPACING_SECONDS = 3;
+
+/** Consecutive notes at run spacing before the pattern counts as a "run". */
+const MINE_RUN_MIN_LENGTH = 4;
+
+/** Gap, as a fraction of the beat, at or under which notes read as a run. */
+const MINE_RUN_MAX_GAP_BEATS = 0.55;
+
+/**
+ * The lead-in a mine must clear, seconds.
+ *
+ * `lintNotes`' own `too-early` rule warns about anything before 2s, and a
+ * generator that emits notes its linter warns about trains authors to ignore
+ * the panel. Same number, deliberately.
+ */
+const MINE_LEAD_IN_SECONDS = 2;
+
+interface MineCandidate {
+  time: number;
+  lane: number;
+  /** Beat subdivision of the slot, for the renderer's quant colouring. */
+  quant: number;
+}
+
+/** The beat a quantised note sits in, recovered from its stored fraction. */
+function beatFrameAt(
+  notes: readonly QuantizedNote[],
+  time: number,
+): { start: number; length: number } | null {
+  if (notes.length === 0) return null;
+  let lo = 0;
+  let hi = notes.length - 1;
+  let best = 0;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (notes[mid].time <= time) {
+      best = mid;
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  const near = notes[best];
+  if (!(near.beatLength > 0)) return null;
+  return { start: near.time - near.fraction * near.beatLength, length: near.beatLength };
+}
+
+/**
+ * Place mines at the rests the chart wants you **not** to hit (`G7`).
+ *
+ * A mine is only interesting where the music has already told the player to
+ * press. Two such places, and only two, because a mine anywhere else is a
+ * random punishment rather than a reading test:
+ *
+ * 1. **The step after a run ends.** A stream of four or more notes builds a
+ *    cadence the hands are already committed to; the note that does not come is
+ *    the hardest thing in the genre to *not* play. The mine goes exactly where
+ *    the next note of the run would have been, in the lane the alternation was
+ *    heading for.
+ * 2. **The downbeat a syncopation skips.** When a note lands off the beat and
+ *    the beat itself is empty, the empty beat is the one the player's internal
+ *    metronome is counting. The mine goes on that beat, in the same lane as the
+ *    syncopated note — the lane the hand is already on.
+ *
+ * Everything after that is refusal. A candidate is dropped unless it clears the
+ * tier's own spacing rules in its own lane and in both, sits outside every hold,
+ * clears the lead-in, and is far enough from the previous mine to be read as its
+ * own event. What survives is sampled evenly across the track so a chart's mines
+ * are spread through it rather than clustered where the runs happen to be.
+ *
+ * The result is `BOMB` slices carrying {@link CHART_MINE_ID_PREFIX} on their
+ * `id`. That prefix is load-bearing: it is what `applyChartModifiers` in
+ * `chart.ts` matches to **strip them when the `bombs` modifier is off**, which
+ * is the only reason placing them in the stored chart is safe at all. Placed
+ * without that gate they would be unavoidable bombs on every run for every
+ * player, including everyone who never opted in.
+ */
+export function placeMines(
+  slices: readonly Slice[],
+  notes: readonly QuantizedNote[],
+  tier: Tier,
+  difficulty: Difficulty,
+  duration: number,
+  random: () => number,
+): Slice[] {
+  const share = MINE_SHARE[difficulty] ?? 0;
+  const budget = Math.floor(slices.length * share);
+  if (budget < 1 || slices.length < MINE_RUN_MIN_LENGTH) return [];
+
+  const ordered = [...slices].sort((a, b) => a.time - b.time);
+  const first = ordered[0].time;
+  const last = ordered[ordered.length - 1].time;
+
+  // A mine must be a rest, so the bar for "something is already here" is higher
+  // than the bar for two ordinary notes: 2x the tier's own minimum in either
+  // lane. At the fastest spacings that rejects every candidate, which is the
+  // intended answer — a 16th-note stream at Expert has no rests in it to mark.
+  const anyLaneGuard = Math.max(tier.minGap * 2, 0.15);
+  const sameLaneGuard = Math.max(tier.laneMinGap, 0.18);
+
+  const candidates: MineCandidate[] = [];
+
+  /* 1. The step after a run ends. */
+  let runStart = 0;
+  for (let i = 1; i <= ordered.length; i++) {
+    const frame = beatFrameAt(notes, ordered[i - 1].time);
+    const beatLength = frame?.length ?? 0.5;
+    const gap = i < ordered.length ? ordered[i].time - ordered[i - 1].time : Infinity;
+    const continues = gap <= beatLength * MINE_RUN_MAX_GAP_BEATS;
+    if (continues) continue;
+
+    const runLength = i - runStart;
+    runStart = i;
+    if (runLength < MINE_RUN_MIN_LENGTH) continue;
+
+    const tail = ordered[i - 1];
+    const before = ordered[i - 2];
+    const step = tail.time - before.time;
+    if (!(step > 0)) continue;
+    // The lane the run was heading for: alternate if it was alternating, hold
+    // the lane if it was a jack. Either way it is where the hand is going.
+    const lane = tail.lane === before.lane ? tail.lane : 1 - tail.lane;
+    const time = Number((tail.time + step).toFixed(4));
+    const tailFrame = beatFrameAt(notes, time);
+    const fraction = tailFrame ? ((time - tailFrame.start) / tailFrame.length) % 1 : 0;
+    candidates.push({ time, lane, quant: quantOf(fraction < 0 ? fraction + 1 : fraction) });
+  }
+
+  /* 2. The downbeat a syncopation skips. */
+  for (const slice of ordered) {
+    if (slice.quant === undefined || slice.quant === 1) continue;
+    const frame = beatFrameAt(notes, slice.time);
+    if (!frame) continue;
+    const time = Number(frame.start.toFixed(4));
+    if (time >= slice.time) continue;
+    candidates.push({ time, lane: slice.lane, quant: 1 });
+  }
+
+  /* 3. Refusal. */
+  const holds = ordered.filter((s) => s.type === 'LONG' && (s.duration ?? 0) > 0);
+  const viable = candidates
+    .filter((candidate) => {
+      if (candidate.time < Math.max(MINE_LEAD_IN_SECONDS, first)) return false;
+      if (candidate.time > Math.min(last, duration)) return false;
+      for (const slice of ordered) {
+        const distance = Math.abs(slice.time - candidate.time);
+        if (distance < anyLaneGuard) return false;
+        if (slice.lane === candidate.lane && distance < sameLaneGuard) return false;
+      }
+      for (const hold of holds) {
+        if (hold.lane !== candidate.lane) continue;
+        const end = hold.time + (hold.duration ?? 0);
+        if (candidate.time >= hold.time - sameLaneGuard && candidate.time <= end + sameLaneGuard) {
+          return false;
+        }
+      }
+      return true;
+    })
+    .sort((a, b) => a.time - b.time || a.lane - b.lane);
+
+  // Two rules found the same rest — keep one.
+  const deduped: MineCandidate[] = [];
+  for (const candidate of viable) {
+    const previous = deduped[deduped.length - 1];
+    if (previous && candidate.time - previous.time < anyLaneGuard) continue;
+    deduped.push(candidate);
+  }
+  if (deduped.length === 0) return [];
+
+  /* 4. Spread, then spend the budget. */
+  // Stride sampling rather than "the first N": a chart's runs cluster, and
+  // taking candidates in time order until the budget runs out would put every
+  // mine in the first chorus and none in the last. The offset is the one place
+  // the seeded PRNG is consulted, so two difficulties of the same song do not
+  // pick the same phrases.
+  const stride = Math.max(1, deduped.length / budget);
+  const offset = random() * stride;
+  const picked: MineCandidate[] = [];
+  for (let i = 0; picked.length < budget; i++) {
+    const index = Math.floor(offset + i * stride);
+    if (index >= deduped.length) break;
+    const candidate = deduped[index];
+    const previous = picked[picked.length - 1];
+    if (previous && candidate.time - previous.time < MINE_MIN_SPACING_SECONDS) continue;
+    picked.push(candidate);
+  }
+
+  return picked.map((candidate, index) => ({
+    id: `${CHART_MINE_ID_PREFIX}${difficulty}-${index}-${Math.round(candidate.time * 1000)}`,
+    time: candidate.time,
+    type: 'BOMB' as const,
+    lane: candidate.lane,
+    quant: candidate.quant,
+  }));
+}
+
 /* ─── Entry point ────────────────────────────────────────────────────────── */
 
 export interface ChartResult {
   slices: Record<Difficulty, Slice[]>;
-  /** Notes per difficulty, for the library card and for tests. */
+  /**
+   * Notes per difficulty, for the library card and for tests.
+   *
+   * **Playable notes, not stored slices.** G7's mines are stored in the same
+   * array but are never hit, never scored and vanish entirely unless the player
+   * turns `bombs` on — counting them would advertise a note count no run of the
+   * chart can ever produce.
+   */
   noteCounts: Record<Difficulty, number>;
 }
 
@@ -372,19 +736,39 @@ export interface ChartResult {
  * clear frequency bias) reproducible, so re-analysing a song yields the same
  * chart and two clients that generate locally agree.
  */
-export function buildCharts(notes: QuantizedNote[], duration: number, seed: string): ChartResult {
+export function buildCharts(
+  notes: QuantizedNote[],
+  duration: number,
+  seed: string,
+  sections?: Section[],
+  /** C10 — the uploader's −2…2 density bias. 0 is the shipped behaviour. */
+  densityBias = 0,
+): ChartResult {
   const slices = {} as Record<Difficulty, Slice[]>;
   const noteCounts = {} as Record<Difficulty, number>;
 
   let pool = notes;
   for (const difficulty of TIER_ORDER) {
     const tier = TIERS[difficulty];
-    const selected = selectTier(pool, tier, duration);
+    const selected = selectTier(pool, tier, duration, sections, densityBias);
     // The next (easier) tier draws from this one — that is the nesting.
     pool = selected;
     const random = createSeededRandom(`${seed}:${difficulty}`);
     const built = buildSlices(selected, tier, difficulty, random);
-    slices[difficulty] = built;
+
+    // G7. A separate PRNG stream, so a chart generated with mines has exactly
+    // the same notes as one generated before mines existed — the mine sampler
+    // cannot pull the lane assignments out from under `buildSlices`.
+    const mines = placeMines(
+      built,
+      selected,
+      tier,
+      difficulty,
+      duration,
+      createSeededRandom(`${seed}:${difficulty}:mines`),
+    );
+
+    slices[difficulty] = [...built, ...mines].sort((a, b) => a.time - b.time);
     noteCounts[difficulty] = built.length;
   }
 

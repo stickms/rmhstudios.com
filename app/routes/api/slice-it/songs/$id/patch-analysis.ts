@@ -1,8 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { Prisma } from '@prisma/client';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { AnalysisBackfillZ } from '@/lib/slice-it/api-schemas';
 import { BEATMAP_VERSION, isStaleAnalysis } from '@/lib/slice-it/beatmap';
+import { songDensityStrip } from '@/lib/slice-it/songs.server';
 
 /**
  * Backfill a chart for a song that has none, or upgrade a stale one.
@@ -53,6 +55,10 @@ export const Route = createFileRoute('/api/slice-it/songs/$id/patch-analysis')({
               isPublic: true,
               analysisData: true,
               bpm: true,
+              // V8 — the density strip is recomputed from whatever chart wins
+              // below, so this read is only here to keep the select honest
+              // about what the row carries.
+              duration: true,
             },
           });
           if (!song || (!song.isPublic && song.uploadedBy !== userId)) {
@@ -104,6 +110,13 @@ export const Route = createFileRoute('/api/slice-it/songs/$id/patch-analysis')({
               // pin it to the row so a chart cannot claim to belong to another
               // song.
               analysisData: { ...incoming, id: song.id } as never,
+              // V8 — recomputed in the same write as the chart it describes.
+              // A strip that is updated by a follow-up call is a strip that is
+              // wrong for however long that call takes to not happen; the whole
+              // reason it is a stored column is that the list endpoint must not
+              // load `analysisData` to derive it.
+              densityStrip:
+                songDensityStrip(incoming as never, song.duration) ?? Prisma.DbNull,
               // A song uploaded with no BPM gets one the first time it is
               // charted, so the library card stops reading "0 BPM".
               ...(!song.bpm && incoming.bpm > 0 ? { bpm: incoming.bpm } : {}),
