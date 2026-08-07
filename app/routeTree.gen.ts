@@ -505,6 +505,7 @@ import { Route as ApiSliceItChartsRouteImport } from './routes/api/slice-it/char
 import { Route as ApiSliceItLeaderboardRouteImport } from './routes/api/slice-it/leaderboard'
 import { Route as ApiSliceItReplayRouteImport } from './routes/api/slice-it/replay'
 import { Route as ApiSliceItScoreRouteImport } from './routes/api/slice-it/score'
+import { Route as ApiSliceItShowcaseRouteImport } from './routes/api/slice-it/showcase'
 import { Route as ApiSliceItSongsRouteImport } from './routes/api/slice-it/songs'
 import { Route as ApiSpacesIndexRouteImport } from './routes/api/spaces/index'
 import { Route as ApiSpacesLiveRouteImport } from './routes/api/spaces/live'
@@ -3356,6 +3357,11 @@ const ApiSliceItScoreRoute = ApiSliceItScoreRouteImport.update({
   path: '/api/slice-it/score',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSliceItShowcaseRoute = ApiSliceItShowcaseRouteImport.update({
+  id: '/api/slice-it/showcase',
+  path: '/api/slice-it/showcase',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSliceItSongsRoute = ApiSliceItSongsRouteImport.update({
   id: '/api/slice-it/songs',
   path: '/api/slice-it/songs',
@@ -5629,6 +5635,7 @@ export interface FileRoutesByFullPath {
   '/api/slice-it/leaderboard': typeof ApiSliceItLeaderboardRoute
   '/api/slice-it/replay': typeof ApiSliceItReplayRouteWithChildren
   '/api/slice-it/score': typeof ApiSliceItScoreRoute
+  '/api/slice-it/showcase': typeof ApiSliceItShowcaseRoute
   '/api/slice-it/songs': typeof ApiSliceItSongsRouteWithChildren
   '/api/spaces/live': typeof ApiSpacesLiveRoute
   '/api/speedrun/categories': typeof ApiSpeedrunCategoriesRoute
@@ -6449,6 +6456,7 @@ export interface FileRoutesByTo {
   '/api/slice-it/leaderboard': typeof ApiSliceItLeaderboardRoute
   '/api/slice-it/replay': typeof ApiSliceItReplayRouteWithChildren
   '/api/slice-it/score': typeof ApiSliceItScoreRoute
+  '/api/slice-it/showcase': typeof ApiSliceItShowcaseRoute
   '/api/slice-it/songs': typeof ApiSliceItSongsRouteWithChildren
   '/api/spaces/live': typeof ApiSpacesLiveRoute
   '/api/speedrun/categories': typeof ApiSpeedrunCategoriesRoute
@@ -7295,6 +7303,7 @@ export interface FileRoutesById {
   '/api/slice-it/leaderboard': typeof ApiSliceItLeaderboardRoute
   '/api/slice-it/replay': typeof ApiSliceItReplayRouteWithChildren
   '/api/slice-it/score': typeof ApiSliceItScoreRoute
+  '/api/slice-it/showcase': typeof ApiSliceItShowcaseRoute
   '/api/slice-it/songs': typeof ApiSliceItSongsRouteWithChildren
   '/api/spaces/live': typeof ApiSpacesLiveRoute
   '/api/speedrun/categories': typeof ApiSpeedrunCategoriesRoute
@@ -8141,6 +8150,7 @@ export interface FileRouteTypes {
     | '/api/slice-it/leaderboard'
     | '/api/slice-it/replay'
     | '/api/slice-it/score'
+    | '/api/slice-it/showcase'
     | '/api/slice-it/songs'
     | '/api/spaces/live'
     | '/api/speedrun/categories'
@@ -8961,6 +8971,7 @@ export interface FileRouteTypes {
     | '/api/slice-it/leaderboard'
     | '/api/slice-it/replay'
     | '/api/slice-it/score'
+    | '/api/slice-it/showcase'
     | '/api/slice-it/songs'
     | '/api/spaces/live'
     | '/api/speedrun/categories'
@@ -9806,6 +9817,7 @@ export interface FileRouteTypes {
     | '/api/slice-it/leaderboard'
     | '/api/slice-it/replay'
     | '/api/slice-it/score'
+    | '/api/slice-it/showcase'
     | '/api/slice-it/songs'
     | '/api/spaces/live'
     | '/api/speedrun/categories'
@@ -10477,6 +10489,7 @@ export interface RootRouteChildren {
   ApiSliceItLeaderboardRoute: typeof ApiSliceItLeaderboardRoute
   ApiSliceItReplayRoute: typeof ApiSliceItReplayRouteWithChildren
   ApiSliceItScoreRoute: typeof ApiSliceItScoreRoute
+  ApiSliceItShowcaseRoute: typeof ApiSliceItShowcaseRoute
   ApiSliceItSongsRoute: typeof ApiSliceItSongsRouteWithChildren
   ApiSpacesLiveRoute: typeof ApiSpacesLiveRoute
   ApiSpeedrunCategoriesRoute: typeof ApiSpeedrunCategoriesRoute
@@ -14176,6 +14189,13 @@ declare module '@tanstack/react-router' {
       path: '/api/slice-it/score'
       fullPath: '/api/slice-it/score'
       preLoaderRoute: typeof ApiSliceItScoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/slice-it/showcase': {
+      id: '/api/slice-it/showcase'
+      path: '/api/slice-it/showcase'
+      fullPath: '/api/slice-it/showcase'
+      preLoaderRoute: typeof ApiSliceItShowcaseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/slice-it/songs': {
@@ -18462,6 +18482,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSliceItLeaderboardRoute: ApiSliceItLeaderboardRoute,
   ApiSliceItReplayRoute: ApiSliceItReplayRouteWithChildren,
   ApiSliceItScoreRoute: ApiSliceItScoreRoute,
+  ApiSliceItShowcaseRoute: ApiSliceItShowcaseRoute,
   ApiSliceItSongsRoute: ApiSliceItSongsRouteWithChildren,
   ApiSpacesLiveRoute: ApiSpacesLiveRoute,
   ApiSpeedrunCategoriesRoute: ApiSpeedrunCategoriesRoute,
@@ -18692,3 +18713,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

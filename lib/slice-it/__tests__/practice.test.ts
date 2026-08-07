@@ -28,7 +28,7 @@ const audio = {
   setVolume: vi.fn(),
   getCurrentTime: vi.fn(() => 0),
   getDuration: vi.fn(() => 0),
-  getContext: vi.fn(() => null),
+  getContext: vi.fn((): AudioContext | null => null),
   playSfX: vi.fn(),
   scheduleSfx: vi.fn(),
   playHitSoundFile: vi.fn(),
@@ -176,7 +176,7 @@ describe('P3 — autoplay', () => {
 describe('P4 — guide sounds', () => {
   it('schedules nothing when both guides are off', () => {
     const engine = engineAt(0);
-    audio.getContext.mockReturnValue({ currentTime: 0 } as unknown as AudioContext);
+    audio.getContext.mockReturnValue({ currentTime: 0 } as AudioContext);
     engine.update();
     expect(audio.scheduleSfx).not.toHaveBeenCalled();
   });
@@ -184,7 +184,7 @@ describe('P4 — guide sounds', () => {
   it('schedules ahead on the audio clock when the metronome is on', () => {
     useSliceItStore.setState({ metronome: true });
     const engine = engineAt(0);
-    audio.getContext.mockReturnValue({ currentTime: 10 } as unknown as AudioContext);
+    audio.getContext.mockReturnValue({ currentTime: 10 } as AudioContext);
     engine.update();
     expect(audio.scheduleSfx).toHaveBeenCalled();
     // Every scheduled beat is in the future relative to the context clock —
@@ -197,7 +197,7 @@ describe('P4 — guide sounds', () => {
   it('does not re-schedule a beat it has already handed to the clock', () => {
     useSliceItStore.setState({ metronome: true });
     const engine = engineAt(0);
-    audio.getContext.mockReturnValue({ currentTime: 0 } as unknown as AudioContext);
+    audio.getContext.mockReturnValue({ currentTime: 0 } as AudioContext);
     engine.update();
     const first = audio.scheduleSfx.mock.calls.length;
     engine.update();
