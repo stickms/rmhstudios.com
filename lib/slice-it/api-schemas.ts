@@ -183,6 +183,14 @@ export const UploadFieldsZ = z.object({
     .string()
     .optional()
     .transform((v) => v !== 'false'),
+  /**
+   * C10 — the uploader's density thumb on the scale, −2…2.
+   *
+   * `.catch(undefined)` rather than failing the upload: a bad value here means
+   * the default density, which is what the uploader had before the slider
+   * existed. Refusing a 50 MB upload over a malformed number would be absurd.
+   */
+  densityBias: z.coerce.number().min(-2).max(2).optional().catch(undefined),
 });
 
 /* ─── Beatmap backfill ──────────────────────────────────────────────────── */

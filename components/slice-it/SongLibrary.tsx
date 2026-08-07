@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/dialog';
 import { useSession } from '@/components/Providers';
 import { useSliceItStore } from '@/lib/slice-it/store';
+import { PREVIEW_SECONDS, previewFragment } from '@/lib/slice-it/preview';
 import { timeAgoShort } from '@/lib/utils';
 import {
   AUDIO_MAX_BYTES,
@@ -399,9 +400,27 @@ export function SongLibrary({
     }
     previewRef.current?.pause();
 
-    const audio = new Audio(song.audioUrl);
+    // C7 — start at the song's preview point rather than at 0. Previewing the
+    // first 20 seconds of a track is previewing its intro, which is the part
+    // least likely to tell anyone whether they want to play it.
+    //
+    // The `#t=` media fragment rather than a `currentTime` seek: the fragment
+    // is part of the URL, so the browser issues ONE range request for the bytes
+    // it needs instead of fetching the head of the file and seeking into it.
+    // That is what makes previewing a 6 MB track affordable at all.
+    const start = song.previewStart ?? 0;
+    const audio = new Audio(previewFragment(song.audioUrl, start));
     audio.volume = volume / 100;
     audio.onended = () => setPreviewId(null);
+    // The fragment's END bound is honoured inconsistently across browsers, so
+    // the stop is enforced here too. Without it a preview on an engine that
+    // ignores it plays the rest of the song.
+    audio.ontimeupdate = () => {
+      if (audio.currentTime >= start + PREVIEW_SECONDS) {
+        audio.pause();
+        setPreviewId(null);
+      }
+    };
     void audio.play().catch(() => setPreviewId(null));
     previewRef.current = audio;
     setPreviewId(song.id);

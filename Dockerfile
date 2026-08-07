@@ -181,6 +181,12 @@ COPY lib/slice-it/beatmap ./lib/slice-it/beatmap/
 COPY lib/slice-it/chart.ts ./lib/slice-it/chart.ts
 COPY lib/slice-it/songs.server.ts ./lib/slice-it/songs.server.ts
 COPY lib/slice-it/analysis-queue.server.ts ./lib/slice-it/analysis-queue.server.ts
+# C7 — the preview point the analysis job defaults from the section map.
+COPY lib/slice-it/preview.ts ./lib/slice-it/preview.ts
+# C8 — the hourly sweep that brings stale generated charts to the current
+# generator, and the chart hash it rewrites when it does.
+COPY lib/slice-it/regen.server.ts ./lib/slice-it/regen.server.ts
+COPY lib/slice-it/editor/hash.server.ts ./lib/slice-it/editor/hash.server.ts
 # ffmpeg wrapper: `songs.server.ts` reads a stored file's content type from it.
 COPY lib/audio/transcode.server.ts ./lib/audio/transcode.server.ts
 # Massive March goes in whole, unlike the games above, because for this one the

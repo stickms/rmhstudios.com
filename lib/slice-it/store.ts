@@ -159,6 +159,16 @@ interface SliceItState {
    * score so the server can tell how long the run took by its own clock.
    */
   runToken: string | null;
+  /**
+   * C2 — which chart of the selected song is about to be played, or `null` for
+   * the generated fallback.
+   *
+   * Transient (not persisted) on purpose: it is a property of the song you are
+   * looking at right now, and restoring a chart id from local storage after the
+   * chart was deleted, unpublished or re-authored is a run that fails at load
+   * for a reason the player cannot see.
+   */
+  selectedChartId: string | null;
   score: number;
   combo: number;
   maxCombo: number;
@@ -229,6 +239,7 @@ interface SliceItState {
   setStatus: (status: GameStatus) => void;
   setSongId: (songId: string) => void;
   setRunToken: (token: string | null) => void;
+  setSelectedChartId: (chartId: string | null) => void;
   setScore: (score: number, combo: number, multiplier?: number) => void;
   setMaxCombo: (maxCombo: number) => void;
   setAccuracy: (accuracy: number) => void;
@@ -271,6 +282,7 @@ const runDefaults = {
   status: 'MENU' as GameStatus,
   songId: '',
   runToken: null,
+  selectedChartId: null,
   score: 0,
   combo: 0,
   maxCombo: 0,
@@ -392,6 +404,7 @@ export const useSliceItStore = create<SliceItState>()(
       setStatus: (status) => set({ status }),
       setSongId: (songId) => set({ songId }),
       setRunToken: (runToken) => set({ runToken }),
+      setSelectedChartId: (selectedChartId) => set({ selectedChartId }),
       setScore: (score, combo, multiplier) =>
         set((state) => ({ score, combo, multiplier: multiplier ?? state.multiplier })),
       setMaxCombo: (maxCombo) => set({ maxCombo }),

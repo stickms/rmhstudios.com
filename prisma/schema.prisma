@@ -940,6 +940,19 @@ model Song {
   // Audio Analysis Data (JSON for beatmap generation)
   analysisData Json?
 
+  /// C7 — where the library's 20-second preview starts, in seconds.
+  ///
+  /// Defaulted at analysis time to the start of the highest-energy section
+  /// (`C5` already computes that map), and editable by the uploader — which is
+  /// the reason it is a stored column rather than derived on read: "the loudest
+  /// section" is a good heuristic and the uploader knows the song.
+  ///
+  /// Null means "not chosen", which `resolvePreviewStart` reads as 0. Not
+  /// defaulted to 0 in the database, because "the uploader picked the very
+  /// start" and "nobody has picked" are different facts and only one of them
+  /// should be overwritten by a re-analysis.
+  previewStart Float?
+
   /// O3 — where charting got to. `'ready' | 'pending' | 'failed'`.
   ///
   /// Beatmap generation used to run **inline in the upload route**: two seconds

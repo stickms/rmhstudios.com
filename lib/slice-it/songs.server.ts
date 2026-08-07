@@ -41,6 +41,7 @@ import { resolveUserDisplay } from '@/lib/user-display';
 import { SONG_AUDIO_PREFIX, SONG_COVER_PREFIX } from './constants';
 import type { Difficulty } from './constants';
 import type { BeatMap, Lamp, Slice, SliceSong } from './types';
+import { resolvePreviewStart } from './preview';
 
 /* ─── Keys ──────────────────────────────────────────────────────────────── */
 
@@ -219,6 +220,8 @@ export const songSelect = {
    * upload reads as a failed upload.
    */
   analysisState: true,
+  /** C7 — where the library's 20-second hover preview starts. */
+  previewStart: true,
   description: true,
   duration: true,
   bpm: true,
@@ -317,6 +320,7 @@ type SongRow = {
   chartRating?: number | null;
   densityStrip?: unknown;
   analysisState?: string | null;
+  previewStart?: number | null;
   description: string | null;
   duration: number;
   bpm: number | null;
@@ -387,6 +391,9 @@ export function toSliceSong(
       row.analysisState === 'pending' || row.analysisState === 'failed'
         ? row.analysisState
         : 'ready',
+    // C7 — clamped against the real duration here rather than trusted, because
+    // a re-analysis can shorten a song and leave a preview point past its end.
+    previewStart: resolvePreviewStart(row.previewStart, row.duration),
     ...(options.includeAnalysis
       ? { analysisData: (row.analysisData as BeatMap | null) ?? null }
       : {}),

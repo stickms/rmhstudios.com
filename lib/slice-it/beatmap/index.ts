@@ -130,6 +130,15 @@ export interface GenerateOptions {
    * actually does.
    */
   bpmHint?: number;
+  /**
+   * C10 — the uploader's density bias, −2…2, applied to every tier's budget.
+   *
+   * 0 is the shipped behaviour, so an absent value cannot change any existing
+   * chart. The most common upload complaint is that a sparse ambient track gets
+   * charted like a drum track, and this is the only lever on that which does
+   * not involve deleting the upload.
+   */
+  densityBias?: number;
 }
 
 /** How close a hint must be to the detection to be trusted, fractionally. */
@@ -218,7 +227,13 @@ export function generateBeatmap(audio: AudioLike, options: GenerateOptions): Gen
   // step after the spectrogram itself.
   const sections = detectSections(spec, beats, duration);
 
-  const { slices, noteCounts } = buildCharts(quantized, duration, options.id, sections);
+  const { slices, noteCounts } = buildCharts(
+    quantized,
+    duration,
+    options.id,
+    sections,
+    options.densityBias,
+  );
 
   return {
     id: options.id,

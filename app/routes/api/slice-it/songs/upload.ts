@@ -144,6 +144,7 @@ export const Route = createFileRoute('/api/slice-it/songs/upload')({
           artist: formData.get('artist') ?? '',
           description: formData.get('description') ?? '',
           bpm: formData.get('bpm') ?? undefined,
+          densityBias: formData.get('densityBias') ?? undefined,
           duration: formData.get('duration') ?? undefined,
           isPublic: formData.get('isPublic') ?? undefined,
         });
@@ -454,7 +455,11 @@ export const Route = createFileRoute('/api/slice-it/songs/upload')({
           // where the two seconds went, and the upload still has to produce a
           // chart before anyone plays it.
           for (const song of result.songs) {
-            await enqueueAnalysis({ songId: song.id, bpmHint: fields.data.bpm }).catch((error) => {
+            await enqueueAnalysis({
+              songId: song.id,
+              bpmHint: fields.data.bpm,
+              densityBias: fields.data.densityBias,
+            }).catch((error) => {
               // Both paths already failed if we get here. The song exists and
               // is playable — the client generates a chart locally and POSTs it
               // back — so this is a log, not a 500.

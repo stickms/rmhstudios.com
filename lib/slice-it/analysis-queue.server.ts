@@ -28,6 +28,7 @@ import decode from '@audio/decode';
 import { getBoss } from '@/lib/jobs/boss.server';
 import { prisma } from '@/lib/prisma.server';
 import { BEATMAP_VERSION, decodedToAudioLike, generateBeatmap } from './beatmap';
+import { defaultPreviewStart } from './preview';
 import { readSongAudio, songDensityStrip } from './songs.server';
 
 export const ANALYSIS_QUEUE = 'slice-it.analyse';
@@ -36,6 +37,8 @@ export interface AnalysisJob {
   songId: string;
   /** The uploader's typed BPM, used only as a prior. */
   bpmHint?: number;
+  /** C10 — the uploader's −2…2 density bias. */
+  densityBias?: number;
 }
 
 export type AnalysisState = 'ready' | 'pending' | 'failed';
@@ -81,7 +84,15 @@ export async function enqueueAnalysis(job: AnalysisJob): Promise<'queued' | 'inl
 export async function runAnalysis(job: AnalysisJob): Promise<void> {
   const song = await prisma.song.findUnique({
     where: { id: job.songId },
-    select: { id: true, title: true, artist: true, bpm: true, duration: true, audioUrl: true },
+    select: {
+      id: true,
+      title: true,
+      artist: true,
+      bpm: true,
+      duration: true,
+      audioUrl: true,
+      previewStart: true,
+    },
   });
   // Deleted between upload and job. Not an error — the row going away is the
   // uploader's decision, and throwing here would retry it three times.
@@ -98,6 +109,7 @@ export async function runAnalysis(job: AnalysisJob): Promise<void> {
       name: song.title,
       artist: song.artist,
       bpmHint: job.bpmHint ?? (song.bpm > 0 ? song.bpm : undefined),
+      densityBias: job.densityBias,
     });
 
     await prisma.song.update({
@@ -109,6 +121,16 @@ export async function runAnalysis(job: AnalysisJob): Promise<void> {
         densityStrip: songDensityStrip(analysis, song.duration) ?? undefined,
         bpm: analysis.bpm || song.bpm,
         analysisState: 'ready',
+        // C7 — the loudest section, but only when nobody has chosen one. A
+        // re-analysis must not move a preview point somebody set by hand.
+        ...(song.previewStart === null
+          ? {
+              previewStart: defaultPreviewStart(
+                analysis.artefacts?.sections ?? [],
+                song.duration,
+              ),
+            }
+          : {}),
       },
     });
   } catch (error) {

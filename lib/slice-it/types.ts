@@ -257,6 +257,11 @@ export interface SliceSong {
    * queue, so a client that ignores this field behaves exactly as before.
    */
   analysisState?: 'ready' | 'pending' | 'failed';
+  /**
+   * C7 — where the library's 20-second hover preview starts, in seconds.
+   * Already clamped against the song's duration by the server.
+   */
+  previewStart?: number;
   /** Present only on the single-song read. */
   analysisData?: BeatMap | null;
   /**

@@ -275,6 +275,27 @@ function metricWeight(note: QuantizedNote): number {
 }
 
 /**
+ * C10 — the uploader's density thumb on the scale.
+ *
+ * Density budgets are per-tier constants, so an analyser that over-charts a
+ * sparse ambient track leaves the uploader with no recourse but deletion. This
+ * is the most common upload complaint, expressed as a slider.
+ *
+ * **Exponential, not linear.** −1 has to mean "noticeably sparser" and −2 "about
+ * half as many"; linear steps of 0.25 deliver neither, because a 25% cut at the
+ * sparse end is a handful of notes. 1.45^±2 is 0.48× and 2.1×, which is the
+ * range that actually spans "too busy" to "too empty" on the tracks people
+ * complain about.
+ *
+ * The floor of 8 is not part of the bias: a chart with three notes in it is not
+ * a chart, however sparse the uploader asked for.
+ */
+export function biasedBudget(base: number, bias: number): number {
+  const clamped = Math.max(-2, Math.min(2, Number.isFinite(bias) ? bias : 0));
+  return Math.max(8, Math.floor(base * Math.pow(1.45, clamped)));
+}
+
+/**
  * Pick the notes for one tier out of a candidate pool.
  *
  * Greedy by weighted strength subject to a minimum gap, stopping at the density
@@ -286,8 +307,9 @@ function selectTier(
   tier: Tier,
   duration: number,
   sections?: Section[],
+  densityBias = 0,
 ): QuantizedNote[] {
-  const budget = Math.max(8, Math.floor(tier.targetNps * Math.max(1, duration)));
+  const budget = biasedBudget(tier.targetNps * Math.max(1, duration), densityBias);
 
   // G14 — spend the budget where the music is.
   //
@@ -719,6 +741,8 @@ export function buildCharts(
   duration: number,
   seed: string,
   sections?: Section[],
+  /** C10 — the uploader's −2…2 density bias. 0 is the shipped behaviour. */
+  densityBias = 0,
 ): ChartResult {
   const slices = {} as Record<Difficulty, Slice[]>;
   const noteCounts = {} as Record<Difficulty, number>;
@@ -726,7 +750,7 @@ export function buildCharts(
   let pool = notes;
   for (const difficulty of TIER_ORDER) {
     const tier = TIERS[difficulty];
-    const selected = selectTier(pool, tier, duration, sections);
+    const selected = selectTier(pool, tier, duration, sections, densityBias);
     // The next (easier) tier draws from this one — that is the nesting.
     pool = selected;
     const random = createSeededRandom(`${seed}:${difficulty}`);

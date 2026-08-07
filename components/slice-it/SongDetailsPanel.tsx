@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
 import { calculateScoreMultiplier } from '@/lib/slice-it/scoring';
+import { ChartPicker, type ChartOption } from './ChartPicker';
 import { useTranslation } from 'react-i18next';
 
 interface SongDetailsPanelProps {
@@ -85,6 +86,47 @@ export function SongDetailsPanel({
   const artistLinkKey = React.useMemo(() => artistKeyOf(song?.artist), [song?.artist]);
   /** L16 — the add-to-pack dialog. */
   const [packOpen, setPackOpen] = React.useState(false);
+
+  /* ── C2 — which chart of this song ─────────────────────────────────────── */
+
+  // Fetched separately from the song, and lazily: the picker is opened by a
+  // fraction of the people who open a song, and folding it into the song read
+  // would put a second query and an author join on the critical path to
+  // starting a run.
+  const [charts, setCharts] = React.useState<ChartOption[]>([]);
+  const selectedChartId = useSliceItStore((state) => state.selectedChartId);
+  const setSelectedChartId = useSliceItStore((state) => state.setSelectedChartId);
+  const songId = song?.id ?? null;
+
+  React.useEffect(() => {
+    if (!songId) {
+      setCharts([]);
+      return;
+    }
+    let cancelled = false;
+    // Reset on song change rather than leaving the previous song's charts on
+    // screen while this resolves — a picker showing another song's charts for
+    // 200 ms is worse than no picker.
+    setCharts([]);
+    setSelectedChartId(null);
+    void fetch(`/api/slice-it/songs/${songId}/charts`)
+      .then((res) => (res.ok ? res.json() : { charts: [] }))
+      .then((data: { charts?: ChartOption[] }) => {
+        if (cancelled) return;
+        const list = data.charts ?? [];
+        setCharts(list);
+        // Default to the first, which `chartsForSong` has already sorted to
+        // ranked-then-public-then-hardest.
+        if (list.length > 0) setSelectedChartId(list[0].id);
+      })
+      .catch(() => {
+        // A failed chart list is not a failed song: the generated fallback is
+        // still playable, and that is what an empty picker means.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [songId, setSelectedChartId]);
 
   // Edit state
   const [showEdit, setShowEdit] = React.useState(false);
@@ -527,6 +569,10 @@ export function SongDetailsPanel({
             </Link>
           )}
         </div>
+
+        {/* C2 — renders nothing when there is one chart, which is every song
+            today. A picker with one option teaches a concept nobody needs. */}
+        <ChartPicker charts={charts} selectedId={selectedChartId} onSelect={setSelectedChartId} />
 
         {/* Modifiers Section */}
         <div className="p-4 border-b border-slice-shadow-dark/30">
