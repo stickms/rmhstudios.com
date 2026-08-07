@@ -21,6 +21,7 @@ import viCGame from "@/locales/vi/c-game.json";
 import viCHistory from "@/locales/vi/c-history.json";
 import viCHouseAlwaysWins from "@/locales/vi/c-house-always-wins.json";
 import viCIsleworks from "@/locales/vi/c-isleworks.json";
+import viCKaikaiDebt from "@/locales/vi/c-kaikai-debt.json";
 import viCKowloonKnockout from "@/locales/vi/c-kowloon-knockout.json";
 import viCLaundrySort from "@/locales/vi/c-laundry-sort.json";
 import viCLayout from "@/locales/vi/c-layout.json";
@@ -64,6 +65,7 @@ import viCVoidBreaker from "@/locales/vi/c-void-breaker.json";
 import viCWager from "@/locales/vi/c-wager.json";
 import viCWishlist from "@/locales/vi/c-wishlist.json";
 import viCommon from "@/locales/vi/common.json";
+import viErrors from "@/locales/vi/errors.json";
 import viFeed from "@/locales/vi/feed.json";
 import viGamesHub from "@/locales/vi/games-hub.json";
 import viGroups from "@/locales/vi/groups.json";
@@ -77,6 +79,7 @@ import viRRmhbox from "@/locales/vi/r-rmhbox.json";
 import viRRmhcode from "@/locales/vi/r-rmhcode.json";
 import viRSecret from "@/locales/vi/r-secret.json";
 import viRSliceIt from "@/locales/vi/r-slice-it.json";
+import viRSohumbum from "@/locales/vi/r-sohumbum.json";
 import viRStrategies from "@/locales/vi/r-strategies.json";
 import viRStudio from "@/locales/vi/r-studio.json";
 import viRideshare from "@/locales/vi/rideshare.json";
@@ -111,6 +114,7 @@ const viResources = {
   "c-history": viCHistory,
   "c-house-always-wins": viCHouseAlwaysWins,
   "c-isleworks": viCIsleworks,
+  "c-kaikai-debt": viCKaikaiDebt,
   "c-kowloon-knockout": viCKowloonKnockout,
   "c-laundry-sort": viCLaundrySort,
   "c-layout": viCLayout,
@@ -154,6 +158,7 @@ const viResources = {
   "c-wager": viCWager,
   "c-wishlist": viCWishlist,
   "common": viCommon,
+  "errors": viErrors,
   "feed": viFeed,
   "games-hub": viGamesHub,
   "groups": viGroups,
@@ -167,6 +172,7 @@ const viResources = {
   "r-rmhcode": viRRmhcode,
   "r-secret": viRSecret,
   "r-slice-it": viRSliceIt,
+  "r-sohumbum": viRSohumbum,
   "r-strategies": viRStrategies,
   "r-studio": viRStudio,
   "rideshare": viRideshare,

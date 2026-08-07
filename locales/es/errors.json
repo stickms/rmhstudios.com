@@ -1,0 +1,18 @@
+{
+  "aiBudget": "Has usado el límite de IA de este mes",
+  "aiUnavailable": "Las funciones de IA están fuera de línea",
+  "conflict": "Otra persona cambió esto primero",
+  "forbidden": "No tienes acceso a esto",
+  "gone": "Eso ha expirado",
+  "insufficientCoins": "No tienes suficientes monedas",
+  "internal": "Algo salió mal en nuestro lado",
+  "invalidInput": "Revisa el formulario e inténtalo de nuevo",
+  "notFound": "Eso no existe (o fue eliminado)",
+  "queryBudget": "Esa solicitud fue demasiado costosa de procesar",
+  "quotaExceeded": "Te has quedado sin almacenamiento",
+  "rateLimited": "Ve más despacio por un momento",
+  "stakeLimit": "Has alcanzado el límite que estableciste",
+  "storageUnavailable": "Las subidas no están disponibles temporalmente",
+  "unauthorized": "Inicia sesión para continuar",
+  "upgradeRequired": "Esta función requiere una membresía"
+}

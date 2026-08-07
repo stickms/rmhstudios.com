@@ -21,6 +21,7 @@ import jaCGame from "@/locales/ja/c-game.json";
 import jaCHistory from "@/locales/ja/c-history.json";
 import jaCHouseAlwaysWins from "@/locales/ja/c-house-always-wins.json";
 import jaCIsleworks from "@/locales/ja/c-isleworks.json";
+import jaCKaikaiDebt from "@/locales/ja/c-kaikai-debt.json";
 import jaCKowloonKnockout from "@/locales/ja/c-kowloon-knockout.json";
 import jaCLaundrySort from "@/locales/ja/c-laundry-sort.json";
 import jaCLayout from "@/locales/ja/c-layout.json";
@@ -64,6 +65,7 @@ import jaCVoidBreaker from "@/locales/ja/c-void-breaker.json";
 import jaCWager from "@/locales/ja/c-wager.json";
 import jaCWishlist from "@/locales/ja/c-wishlist.json";
 import jaCommon from "@/locales/ja/common.json";
+import jaErrors from "@/locales/ja/errors.json";
 import jaFeed from "@/locales/ja/feed.json";
 import jaGamesHub from "@/locales/ja/games-hub.json";
 import jaGroups from "@/locales/ja/groups.json";
@@ -77,6 +79,7 @@ import jaRRmhbox from "@/locales/ja/r-rmhbox.json";
 import jaRRmhcode from "@/locales/ja/r-rmhcode.json";
 import jaRSecret from "@/locales/ja/r-secret.json";
 import jaRSliceIt from "@/locales/ja/r-slice-it.json";
+import jaRSohumbum from "@/locales/ja/r-sohumbum.json";
 import jaRStrategies from "@/locales/ja/r-strategies.json";
 import jaRStudio from "@/locales/ja/r-studio.json";
 import jaRideshare from "@/locales/ja/rideshare.json";
@@ -111,6 +114,7 @@ const jaResources = {
   "c-history": jaCHistory,
   "c-house-always-wins": jaCHouseAlwaysWins,
   "c-isleworks": jaCIsleworks,
+  "c-kaikai-debt": jaCKaikaiDebt,
   "c-kowloon-knockout": jaCKowloonKnockout,
   "c-laundry-sort": jaCLaundrySort,
   "c-layout": jaCLayout,
@@ -154,6 +158,7 @@ const jaResources = {
   "c-wager": jaCWager,
   "c-wishlist": jaCWishlist,
   "common": jaCommon,
+  "errors": jaErrors,
   "feed": jaFeed,
   "games-hub": jaGamesHub,
   "groups": jaGroups,
@@ -167,6 +172,7 @@ const jaResources = {
   "r-rmhcode": jaRRmhcode,
   "r-secret": jaRSecret,
   "r-slice-it": jaRSliceIt,
+  "r-sohumbum": jaRSohumbum,
   "r-strategies": jaRStrategies,
   "r-studio": jaRStudio,
   "rideshare": jaRideshare,
