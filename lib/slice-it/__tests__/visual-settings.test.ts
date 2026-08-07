@@ -15,6 +15,12 @@
 import { describe, expect, it } from 'vitest';
 import { approachSeconds, reactionWindowMs, useSliceItStore } from '../store';
 import { BASE_APPROACH_SEC, MAX_LANE_COVER, MAX_SCROLL_SPEED, MIN_SCROLL_SPEED } from '../constants';
+import {
+  DEFAULT_LINE_POSITION,
+  MAX_LINE_POSITION,
+  MIN_LINE_POSITION,
+  clampLinePosition,
+} from '../constants';
 
 describe('approachSeconds (G9)', () => {
   it('reproduces the old fixed ~3-second window at the default setting', () => {
@@ -111,5 +117,30 @@ describe('store v3→v4 defaults', () => {
     useSliceItStore.getState().setMirror(false);
     useSliceItStore.getState().setVisibilityMode('fadeOut');
     useSliceItStore.getState().setScrollMode('constant');
+  });
+});
+
+/* ─── G11 — judgement-line position ──────────────────────────────────────── */
+
+describe('clampLinePosition', () => {
+  it('reproduces the shipped geometry at its default', () => {
+    // The renderer used `h * 0.85` in portrait and `w * 0.15` in landscape.
+    // Both are "15% of the axis remains after the line", which is why one
+    // number expresses both orientations.
+    expect(DEFAULT_LINE_POSITION).toBe(0.15);
+    expect(1 - DEFAULT_LINE_POSITION).toBeCloseTo(0.85, 5);
+  });
+
+  it('clamps to a range a player can still read', () => {
+    expect(clampLinePosition(0)).toBe(MIN_LINE_POSITION);
+    expect(clampLinePosition(1)).toBe(MAX_LINE_POSITION);
+    expect(clampLinePosition(0.25)).toBe(0.25);
+  });
+
+  it('falls back rather than propagating a NaN into the geometry', () => {
+    // A NaN here would put the judgement line at NaN pixels and blank the
+    // playfield — the failure would look like the renderer dying, not like a
+    // bad setting.
+    expect(clampLinePosition(Number.NaN)).toBe(DEFAULT_LINE_POSITION);
   });
 });

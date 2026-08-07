@@ -1,6 +1,7 @@
 'use client';
 
 import { laneColor, resolvePalette } from '@/lib/slice-it/palettes';
+import { clampLinePosition } from '@/lib/slice-it/constants';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { fadeRise, popIn } from '@/lib/motion';
@@ -1088,7 +1089,17 @@ export function GameCanvas() {
     // In mobile vertical mode, notes scroll top-to-bottom with lanes left/right.
     // In desktop mode, notes scroll right-to-left with lanes top/bottom.
     const PPS = isMobileV ? (h / approachSec) * speedMod : (w / approachSec) * speedMod;
-    const CURSOR_MAIN = isMobileV ? h * 0.85 : w * 0.15;
+    // G11 — the judgement line's position, as runway left AFTER the line.
+    //
+    // The shipped values were 0.85 down a portrait canvas and 0.15 across a
+    // landscape one; both are "15% of the axis remains", so one setting
+    // expresses both orientations and the default reproduces each exactly.
+    //
+    // Cosmetic only: `approachSec` (G9) decides how LONG a note is on screen,
+    // and this decides where that time is spent — moving the line does not
+    // give or take reading time, which is why it carries no score implication.
+    const linePos = clampLinePosition(runState.linePosition);
+    const CURSOR_MAIN = isMobileV ? h * (1 - linePos) : w * linePos;
     const LANE_POS = isMobileV
       ? isOneTrack
         ? [w * 0.5]

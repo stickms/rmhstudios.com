@@ -532,3 +532,27 @@ export const TICK_FREQ_NOTE = 1800;
 
 /** Guides sit under the music — they are a reference, not a part. */
 export const TICK_VOLUME_SCALE = 0.35;
+
+/* ─── Playfield layout (G11) ─────────────────────────────────────────────── */
+
+/**
+ * Where the judgement line sits, as a fraction of the scroll axis measured
+ * FROM THE FAR EDGE — i.e. how much runway a note gets before it must be hit.
+ *
+ * The shipped geometry is 0.85 down a portrait canvas and 0.15 across a
+ * landscape one; both are "15% of the axis left after the line", so one number
+ * expresses both and `MIN`/`MAX` keep it somewhere a player can actually read.
+ *
+ * Purely cosmetic: `approachSeconds` (G9) decides how long a note is visible,
+ * and moving the line changes where that time is spent on screen, not how much
+ * of it there is.
+ */
+export const DEFAULT_LINE_POSITION = 0.15;
+export const MIN_LINE_POSITION = 0.08;
+export const MAX_LINE_POSITION = 0.4;
+
+/** Clamp a persisted judgement-line position back into the readable range. */
+export function clampLinePosition(value: number): number {
+  if (!Number.isFinite(value)) return DEFAULT_LINE_POSITION;
+  return Math.max(MIN_LINE_POSITION, Math.min(MAX_LINE_POSITION, value));
+}

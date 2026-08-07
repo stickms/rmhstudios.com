@@ -28,6 +28,8 @@ import {
   MAX_SCROLL_SPEED,
   MIN_LANE_COVER,
   MIN_SCROLL_SPEED,
+  DEFAULT_LINE_POSITION,
+  clampLinePosition,
   type ScrollMode,
   type VisibilityMode,
 } from './constants';
@@ -124,6 +126,12 @@ interface SliceItState {
   visibilityMode: VisibilityMode;
   /** V10 — the lane cover's height, as a fraction of the approach distance. */
   laneCoverHeight: number;
+  /**
+   * G11 — where the judgement line sits, as a fraction of the scroll axis
+   * measured from the far edge. Cosmetic: G9 decides how LONG a note is
+   * visible, this decides where on screen that time is spent.
+   */
+  linePosition: number;
 
   /* ── Run state ────────────────────────────────────────────────────── */
   status: GameStatus;
@@ -195,6 +203,7 @@ interface SliceItState {
   setScrollMode: (mode: ScrollMode) => void;
   setVisibilityMode: (mode: VisibilityMode) => void;
   setLaneCoverHeight: (value: number) => void;
+  setLinePosition: (value: number) => void;
 
   setStatus: (status: GameStatus) => void;
   setSongId: (songId: string) => void;
@@ -293,6 +302,7 @@ export const useSliceItStore = create<SliceItState>()(
       scrollMode: 'constant',
       visibilityMode: 'fadeOut',
       laneCoverHeight: 0.3,
+      linePosition: DEFAULT_LINE_POSITION,
 
       ...runDefaults,
       ...multiplayerDefaults,
@@ -351,6 +361,7 @@ export const useSliceItStore = create<SliceItState>()(
       setVisibilityMode: (visibilityMode) => set({ visibilityMode }),
       setLaneCoverHeight: (laneCoverHeight) =>
         set({ laneCoverHeight: clampLaneCover(laneCoverHeight) }),
+      setLinePosition: (linePosition) => set({ linePosition: clampLinePosition(linePosition) }),
 
       setStatus: (status) => set({ status }),
       setSongId: (songId) => set({ songId }),
@@ -419,6 +430,7 @@ export const useSliceItStore = create<SliceItState>()(
         scrollMode: state.scrollMode,
         visibilityMode: state.visibilityMode,
         laneCoverHeight: state.laneCoverHeight,
+        linePosition: state.linePosition,
       }),
       /**
        * Every migration here has the same job: carry the old keys forward
@@ -487,6 +499,7 @@ export const useSliceItStore = create<SliceItState>()(
             judgementOpacity: 1,
             comboPosition: 'center',
             modifierPresets: [],
+            linePosition: DEFAULT_LINE_POSITION,
           };
         }
         return state;
