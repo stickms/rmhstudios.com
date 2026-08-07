@@ -45,7 +45,18 @@ const written: { songId: string; userId: string; score: number; maxCombo: number
 
 vi.mock('../../../server/socket-server/prisma-client', () => ({
   getPrismaClient: () => ({
-    song: { findFirst: async () => song },
+    song: {
+      // Id-aware, because the song vote (`N7`) needs a *ballot* — two seats
+      // nominating two different ids that both resolved to one row would be a
+      // duplicate nomination, not a choice. `song-1` stays byte-identical to the
+      // fixture so the tests that assert the room was told the row verbatim
+      // still mean what they meant.
+      findFirst: async ({ where }: { where: { id: string } }) => {
+        if (where.id === song.id) return song;
+        if (!/^song-\d+$/.test(where.id)) return null;
+        return { ...song, id: where.id, title: `Track ${where.id}` };
+      },
+    },
     songLeaderboard: {
       findUnique: async () => null,
       create: async ({ data }: { data: (typeof written)[number] }) => {
@@ -939,6 +950,271 @@ describe('spectating', () => {
     // Otherwise they would be both watched and waited on — counted in the
     // ready check for a match they are no longer playing.
     expect(snapshot(room.host).players).toHaveLength(1);
+  });
+});
+
+/* ─── Teams (N2) ─────────────────────────────────────────────────────────── */
+
+/**
+ * The one property worth protecting here is *where the arithmetic happens*.
+ *
+ * A team match is decided by a sum, and if the client did the summing then two
+ * clients with slightly different rosters — one a packet behind, one that saw a
+ * seat leave — would each add up their own view honestly and announce different
+ * winners of the same match. So the totals ride the wire, and these tests read
+ * them off `MatchResults` rather than recomputing them from the standings.
+ */
+describe('teams', () => {
+  /** Turn team mode on; the server balances the room by join order. */
+  const enableTeams = (room: Room) => room.host.send(C2S.SETTINGS, { teams: true });
+
+  it('balances by join order, and says so in the snapshot', async () => {
+    const room = await makeLobby(2);
+    enableTeams(room);
+
+    const players = snapshot(room.host).players;
+    expect(players.map((p) => p.team)).toEqual(['a', 'b', 'a']);
+    expect(snapshot(room.host).teamsEnabled).toBe(true);
+  });
+
+  it('computes each side’s total on the server, and places them', async () => {
+    const room = await makeLobby(2);
+    enableTeams(room);
+    startMatch(room);
+
+    // Sides after the balance: Host + P3 on `a`, P2 alone on `b`.
+    room.host.send(C2S.FINISH, { score: 100, combo: 0, maxCombo: 5, accuracy: 0.8, health: 100 });
+    room.guests[0].send(C2S.FINISH, {
+      score: 500,
+      combo: 0,
+      maxCombo: 9,
+      accuracy: 1,
+      health: 100,
+    });
+    room.guests[1].send(C2S.FINISH, {
+      score: 200,
+      combo: 0,
+      maxCombo: 7,
+      accuracy: 0.6,
+      health: 100,
+    });
+
+    const teams = room.host.last<MatchResults>(S2C.RESULTS)!.teams!;
+    const a = teams.find((team) => team.team === 'a')!;
+    const b = teams.find((team) => team.team === 'b')!;
+
+    expect(a.score).toBe(300);
+    expect(a.players).toBe(2);
+    // The mean over the side's racers, not a sum — a summed accuracy is not a
+    // quantity anybody can read.
+    expect(a.accuracy).toBeCloseTo(0.7, 5);
+    expect(b.score).toBe(500);
+    // 500 beats 300, and the placing comes off the wire rather than off a
+    // client's own comparison.
+    expect(b.place).toBe(1);
+    expect(a.place).toBe(2);
+  });
+
+  it('gives both sides first place on an exact draw', async () => {
+    const room = await makeLobby(1);
+    enableTeams(room);
+    startMatch(room);
+
+    const report = { score: 400, combo: 0, maxCombo: 4, accuracy: 0.9, health: 100 };
+    for (const seat of room.seats) seat.send(C2S.FINISH, report);
+
+    const teams = room.host.last<MatchResults>(S2C.RESULTS)!.teams!;
+    expect(teams.map((team) => team.place)).toEqual([1, 1]);
+  });
+
+  it('carries no team block at all in a free-for-all', async () => {
+    const room = await makeLobby(1);
+    startMatch(room);
+    const report = { score: 10, combo: 0, maxCombo: 1, accuracy: 1, health: 100 };
+    for (const seat of room.seats) seat.send(C2S.FINISH, report);
+
+    // Absent, not empty: a results card that has to tell "no teams" from "two
+    // empty teams" has been handed the wrong shape.
+    expect(room.host.last<MatchResults>(S2C.RESULTS)!.teams).toBeUndefined();
+    expect(room.host.last<MatchResults>(S2C.RESULTS)!.standings[0].team).toBeNull();
+  });
+
+  it('refuses to start a team match with an empty side', async () => {
+    const room = await makeLobby(1);
+    enableTeams(room);
+    // Everyone on one side is not a team match — it is a free-for-all whose
+    // results card claims a winner by forfeit.
+    room.guests[0].send(C2S.TEAM, { team: 'a' });
+    room.host.send(C2S.START);
+
+    expect(room.host.last<LobbyError>(S2C.ERROR)?.code).toBe('too_few_players');
+    expect(snapshot(room.host).state).toBe('waiting');
+  });
+
+  it('refuses a team pick in a lobby that is not in team mode', async () => {
+    const room = await makeLobby(1);
+    room.guests[0].send(C2S.TEAM, { team: 'b' });
+    expect(room.guests[0].last<LobbyError>(S2C.ERROR)?.code).toBe('teams_disabled');
+  });
+
+  it('drops every side when the mode is turned back off', async () => {
+    const room = await makeLobby(1);
+    enableTeams(room);
+    room.host.send(C2S.SETTINGS, { teams: false });
+
+    const players = snapshot(room.host).players;
+    expect(players.every((p) => p.team === null)).toBe(true);
+    expect(snapshot(room.host).teamsEnabled).toBe(false);
+  });
+
+  it('seats a late arrival on the smaller side', async () => {
+    const room = await makeLobby(1);
+    enableTeams(room);
+    // Host `a`, P2 `b`; P2 switches to `a`, so `b` is now the thin side.
+    room.guests[0].send(C2S.TEAM, { team: 'a' });
+
+    const late = connect(room.io, 'Late');
+    late.send(C2S.JOIN, { code: room.code });
+    expect(snapshot(room.host).players.find((p) => p.name === 'Late')?.team).toBe('b');
+  });
+});
+
+/* ─── Song voting (N7) ───────────────────────────────────────────────────── */
+
+describe('song voting', () => {
+  const nominate = async (socket: FakeSocket, songId: string) => {
+    socket.send(C2S.NOMINATE, { songId });
+    // `slice:nominate` reads the row before it touches the ballot.
+    await flush();
+  };
+
+  it('opens a ballot with an absolute deadline, not a duration', async () => {
+    const room = await makeLobby(1);
+    room.host.send(C2S.SETTINGS, { voting: true });
+
+    const vote = snapshot(room.host).vote!;
+    expect(vote).toBeTruthy();
+    // The client counts down *to* this. A duration would have each client start
+    // its own timer at a different moment and disagree about when it shut.
+    expect(vote.closesAt).toBeGreaterThan(Date.now());
+    expect(vote.nominations).toEqual([]);
+  });
+
+  it('adopts the winner once everybody has voted', async () => {
+    const room = await makeLobby(1);
+    room.host.send(C2S.SETTINGS, { voting: true });
+    await nominate(room.host, 'song-2');
+    await nominate(room.guests[0], 'song-3');
+
+    room.host.send(C2S.VOTE, { songId: 'song-3' });
+    room.guests[0].send(C2S.VOTE, { songId: 'song-3' });
+
+    const after = snapshot(room.host);
+    // Resolved early: there was nobody left to wait for.
+    expect(after.vote).toBeNull();
+    expect(after.song?.id).toBe('song-3');
+    // Agreeing on a track is not agreeing to start, the same rule `slice:song`
+    // follows.
+    expect(after.players.every((p) => !p.ready)).toBe(true);
+  });
+
+  it('replaces a seat’s own nomination rather than letting it flood the ballot', async () => {
+    const room = await makeLobby(1);
+    room.host.send(C2S.SETTINGS, { voting: true });
+    await nominate(room.host, 'song-2');
+    await nominate(room.host, 'song-4');
+
+    const nominations = snapshot(room.host).vote!.nominations;
+    expect(nominations).toHaveLength(1);
+    expect(nominations[0].song.id).toBe('song-4');
+  });
+
+  it('refuses a vote for something that is not on the ballot', async () => {
+    const room = await makeLobby(1);
+    room.host.send(C2S.SETTINGS, { voting: true });
+    await nominate(room.host, 'song-2');
+
+    room.guests[0].send(C2S.VOTE, { songId: 'song-9' });
+    expect(room.guests[0].last<LobbyError>(S2C.ERROR)?.code).toBe('song_unavailable');
+  });
+
+  it('answers vote_closed when there is no ballot open', async () => {
+    const room = await makeLobby(1);
+    room.host.send(C2S.VOTE, { songId: 'song-2' });
+    expect(room.host.last<LobbyError>(S2C.ERROR)?.code).toBe('vote_closed');
+  });
+
+  it('closes the ballot at its deadline even if nobody voted', async () => {
+    const room = await makeLobby(1);
+    room.host.send(C2S.SETTINGS, { voting: true });
+    await nominate(room.host, 'song-2');
+
+    // Nobody votes. The deadline is the server's, so it fires regardless.
+    vi.advanceTimersByTime(120_000);
+    const after = snapshot(room.host);
+    expect(after.vote).toBeNull();
+    // One nomination, zero votes: it is still the only thing standing.
+    expect(after.song?.id).toBe('song-2');
+  });
+
+  it('opens a fresh ballot on the rematch — the case the feature exists for', async () => {
+    const room = await makeLobby(1);
+    room.host.send(C2S.SETTINGS, { voting: true });
+    room.host.send(C2S.SETTINGS, { voting: false });
+
+    startMatch(room);
+    const report = { score: 1, combo: 0, maxCombo: 1, accuracy: 1, health: 100 };
+    for (const seat of room.seats) seat.send(C2S.FINISH, report);
+
+    // Voting back on, then a rematch: the room picks the next track itself
+    // rather than waiting for the host to pick again.
+    room.host.send(C2S.SETTINGS, { voting: true });
+    room.host.send(C2S.REMATCH);
+    expect(snapshot(room.host).vote).toBeTruthy();
+  });
+
+  /**
+   * The tie-break.
+   *
+   * `Math.random()` would decide this in a way the server cannot restate
+   * afterwards and that two processes given the same room and the same votes
+   * would answer differently. Seeded from the lobby code and the ballot number,
+   * the same room voting the same way resolves the same way — which is exactly
+   * what this test asserts, by running the identical lobby twice under a
+   * *preferred* code so both rounds share a seed.
+   */
+  it('breaks a tie deterministically, from the lobby’s own seed', async () => {
+    const play = async (): Promise<string> => {
+      const io = new FakeServer();
+      const host = connect(io, 'Host');
+      host.send(C2S.CREATE, { isPublic: false, code: 'VOTE01' });
+      const other = connect(io, 'P2');
+      other.send(C2S.JOIN, { code: 'VOTE01' });
+
+      host.send(C2S.SETTINGS, { voting: true });
+      host.send(C2S.NOMINATE, { songId: 'song-2' });
+      await flush();
+      other.send(C2S.NOMINATE, { songId: 'song-3' });
+      await flush();
+
+      // One vote each, for their own nomination: a dead heat.
+      host.send(C2S.VOTE, { songId: 'song-2' });
+      other.send(C2S.VOTE, { songId: 'song-3' });
+
+      const winner = host.last<LobbySnapshot>(S2C.LOBBY)!.song!.id;
+      __resetSliceItLobbies();
+      return winner;
+    };
+
+    const random = vi.spyOn(Math, 'random');
+    const first = await play();
+    const second = await play();
+
+    expect(['song-2', 'song-3']).toContain(first);
+    expect(second).toBe(first);
+    // Not merely reproducible by luck — nothing in the resolution consulted the
+    // process-wide random source at all.
+    expect(random).not.toHaveBeenCalled();
   });
 });
 

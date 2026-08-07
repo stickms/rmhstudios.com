@@ -8,6 +8,7 @@ import {
   Heart,
   History,
   Image as ImageIcon,
+  Layers,
   LayoutGrid,
   Loader2,
   Pause,
@@ -52,19 +53,21 @@ import {
   type RandomConstraints,
 } from '@/lib/slice-it/library-filters';
 import type { SliceSong } from '@/lib/slice-it/types';
+import { artistPath } from '@/lib/slice-it/artist';
 import { NeumorphicModal } from './NeumorphicModal';
 import { SongTable } from './SongTable';
+import { PackPanel } from './packs/PackPanel';
 
 /**
- * V8 — a song carrying its precomputed density strip.
- *
- * A local extension rather than a change to `types.ts` or `library-filters.ts`
- * (neither owned by this change), matching the pattern `LibrarySong` itself
- * already uses. No response populates `densityStrip` yet — see
- * `docs/_handoff/presentation-requests.md` — so `<DensityStrip>` below always
- * renders nothing today; this is the shape it lights up for once one does.
+ * One entry of the artist facet (L15), as `/api/slice-it/songs/artists`
+ * returns it. A structural type rather than an import of `ArtistSummary`,
+ * which lives in a `.server` module.
  */
-type SongWithDensity = LibrarySong & { densityStrip?: number[] };
+interface ArtistChip {
+  key: string;
+  display: string;
+  songCount: number;
+}
 
 /**
  * V8 — the hover density strip: sixty-four bars, one per bucket of
@@ -175,6 +178,7 @@ export function SongLibrary({
   const [loading, setLoading] = React.useState(true);
 
   const [uploadOpen, setUploadOpen] = React.useState(false);
+  const [packsOpen, setPacksOpen] = React.useState(false);
   const [likingId, setLikingId] = React.useState<string | null>(null);
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
 
@@ -212,6 +216,10 @@ export function SongLibrary({
         const params = new URLSearchParams({ sort: filters.sort });
         if (filters.dir) params.set('dir', filters.dir);
         if (filters.q) params.set('q', filters.q);
+        // L15 — the artist facet. A normalised key, never the display string:
+        // the whole point of the key is that this is an indexed equality
+        // filter rather than the substring search it replaces.
+        if (filters.artist) params.set('artist', filters.artist);
         if (cursor) params.set('cursor', cursor);
         // The table is scanned, not paged — a bigger page means fewer
         // round-trips while scrolling instead of a "Load more" click.
@@ -233,7 +241,7 @@ export function SongLibrary({
         setLoading(false);
       }
     },
-    [filters.sort, filters.dir, filters.q, filters.view, t],
+    [filters.sort, filters.dir, filters.q, filters.artist, filters.view, t],
   );
 
   React.useEffect(() => {
@@ -241,6 +249,40 @@ export function SongLibrary({
     // Re-fetches whenever the *server-relevant* filters change — `view` is
     // included because table view asks for a bigger page.
   }, [load]);
+
+  /* ── Artist facet (L15) ─────────────────────────────────────────────────── */
+
+  /**
+   * The chips come from a grouped aggregate over the whole library
+   * (`/api/slice-it/songs/artists`), NOT from the page of songs currently
+   * loaded. Deriving them from `songs` would list the artists on page 1 rather
+   * than the artists in the library, and would change every time you scrolled.
+   *
+   * Fetched once per mount: the facet is viewer-independent and changes only on
+   * upload, and the response is cacheable for exactly that reason.
+   */
+  const [artistFacet, setArtistFacet] = React.useState<ArtistChip[]>([]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    fetch('/api/slice-it/songs/artists?limit=12')
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error())))
+      .then((data: { artists: ArtistChip[] }) => {
+        if (!cancelled) setArtistFacet(data.artists);
+      })
+      .catch(() => {
+        // A missing facet is a missing row of chips, not a broken library.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /** The chip for the artist currently filtered on, when it is in the facet. */
+  const activeArtist = React.useMemo(
+    () => artistFacet.find((a) => a.key === filters.artist) ?? null,
+    [artistFacet, filters.artist],
+  );
 
   /* ── Recently played shelf (L17) ────────────────────────────────────────── */
 
@@ -515,6 +557,31 @@ export function SongLibrary({
           </Dialog>
         )}
 
+        {/* L16 — the pack builder's entry point. Without one, `ChartPack` is a
+            model nothing can reach: two features shipped dormant on this branch
+            already. */}
+        {!readOnly && session && (
+          <Dialog open={packsOpen} onOpenChange={setPacksOpen}>
+            <DialogTrigger asChild>
+              <Button
+                variant="ghost"
+                className="h-9 w-9 shrink-0 rounded-lg text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark/30 p-0 touch-target"
+                aria-label={ts('packs-title', { defaultValue: 'Packs' })}
+              >
+                <Layers className="w-4 h-4" aria-hidden />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-slice-bg border-none shadow-2xl rounded-2xl max-w-lg">
+              <DialogHeader>
+                <DialogTitle className="text-slice-text font-black">
+                  {ts('packs-title', { defaultValue: 'Packs' })}
+                </DialogTitle>
+              </DialogHeader>
+              <PackPanel />
+            </DialogContent>
+          </Dialog>
+        )}
+
         {!readOnly && session && (
           <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
             <DialogTrigger asChild>
@@ -579,6 +646,57 @@ export function SongLibrary({
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* L15 — the artist facet. Hidden while a search is running: chips are a
+          way to browse, and a query is a statement that you already know what
+          you want. */}
+      {!filters.q && (filters.artist || artistFacet.length > 0) && (
+        <div className="shrink-0 border-b border-slice-shadow-dark/50 px-3 py-2">
+          {filters.artist ? (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] font-bold uppercase tracking-wide text-slice-text-light">
+                {ts('filtered-by-artist', { defaultValue: 'Artist' })}
+              </span>
+              <span className="text-xs font-black text-slice-text truncate max-w-48">
+                {activeArtist?.display ?? filters.artist}
+              </span>
+              <a
+                href={artistPath(filters.artist)}
+                className="text-[11px] font-bold text-blue-500 hover:underline"
+              >
+                {ts('open-artist-page', { defaultValue: 'Artist page' })}
+              </a>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-[11px] font-bold text-slice-text-muted hover:text-slice-text"
+                onClick={() => setFilters({ artist: undefined })}
+              >
+                {ts('clear-artist-filter', { defaultValue: 'Clear' })}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+              {artistFacet.map((artist) => (
+                <button
+                  key={artist.key}
+                  type="button"
+                  onClick={() => setFilters({ artist: artist.key })}
+                  className="neumorphic-sm shrink-0 px-2.5 py-1 text-[11px] font-bold text-slice-text-muted hover:text-slice-text touch-target"
+                >
+                  <span className="truncate max-w-32 inline-block align-middle">
+                    {artist.display}
+                  </span>
+                  <span className="ml-1.5 text-slice-text-light tabular-nums">
+                    {artist.songCount}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -675,7 +793,7 @@ export function SongLibrary({
                           {song.title.charAt(0)}
                         </span>
                       )}
-                      <DensityStrip density={(song as SongWithDensity).densityStrip} />
+                      <DensityStrip density={song.densityStrip} />
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -683,9 +801,25 @@ export function SongLibrary({
                         {song.title}
                       </div>
                       <div className="text-xs text-slice-text-muted truncate">
-                        {song.artist}
+                        {/* L15 — the first thing anyone tries after playing a
+                            track they liked. `artistKey` comes off the row, so
+                            the client never re-derives it and the two cannot
+                            disagree about what a key is. `stopPropagation`
+                            because the whole row is also a button. */}
+                        {song.artistKey ? (
+                          <a
+                            href={artistPath(song.artistKey)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="hover:text-slice-text hover:underline"
+                          >
+                            {song.artist}
+                          </a>
+                        ) : (
+                          song.artist
+                        )}
                         {song.bpm > 0 ? ` • ${Math.round(song.bpm)} BPM` : ''} •{' '}
                         {formatSongDuration(song.duration)}
+                        {song.chartRating !== null && ` • ★ ${song.chartRating.toFixed(1)}`}
                       </div>
                       <div className="flex items-center gap-3 mt-0.5">
                         <span className="flex items-center gap-1 text-[10px] text-slice-text-light">
@@ -903,9 +1037,21 @@ function RandomForm({
 
 function UploadForm({ onDone }: { onDone: () => void }) {
   const { t } = useTranslation('c-game');
+  const { t: ts } = useTranslation('r-slice-it');
   const { data: session } = useSession();
 
   const [file, setFile] = React.useState<File | null>(null);
+  /**
+   * L16 — tracks 2..n of an album upload.
+   *
+   * A separate list rather than making `file` an array: `file` is the track
+   * whose ID3 tags seed the title/artist/cover fields, and every existing
+   * reference in this form means "the primary track". Keeping that meaning
+   * intact is what let the album path be additive rather than a rewrite of the
+   * one form on the site that is exercised on every single upload.
+   */
+  const [extraFiles, setExtraFiles] = React.useState<File[]>([]);
+  const [album, setAlbum] = React.useState('');
   const [cover, setCover] = React.useState<File | null>(null);
   const [coverPreview, setCoverPreview] = React.useState<string | null>(null);
   const [title, setTitle] = React.useState('');
@@ -925,14 +1071,16 @@ function UploadForm({ onDone }: { onDone: () => void }) {
   }, [coverPreview]);
 
   const pickAudio = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const picked = event.target.files?.[0];
+    const chosen = Array.from(event.target.files ?? []);
+    const picked = chosen[0];
     if (!picked) return;
 
-    if (picked.size > AUDIO_MAX_BYTES) {
+    const oversize = chosen.find((f) => f.size > AUDIO_MAX_BYTES);
+    if (oversize) {
       toast.error(
         t('audio-too-large', {
           defaultValue: 'Audio file too large ({{sizeMb}} MB). Maximum size is 50 MB.',
-          sizeMb: (picked.size / 1024 / 1024).toFixed(1),
+          sizeMb: (oversize.size / 1024 / 1024).toFixed(1),
         }),
       );
       event.target.value = '';
@@ -940,6 +1088,11 @@ function UploadForm({ onDone }: { onDone: () => void }) {
     }
 
     setFile(picked);
+    // Sorted by name so the album's track order is the order the files are
+    // named in, which is what a ripped or downloaded album already gives you.
+    // Upload order becomes pack position, and "shuffled because the OS returned
+    // them that way" would be a strange album.
+    setExtraFiles(chosen.slice(1).sort((a, b) => a.name.localeCompare(b.name)));
     setTitle(picked.name.replace(/\.[^/.]+$/, ''));
     setArtist(session?.user?.name ?? 'Unknown');
 
@@ -963,6 +1116,9 @@ function UploadForm({ onDone }: { onDone: () => void }) {
       const tags = await parseBlob(picked);
       if (tags.common.title) setTitle(tags.common.title);
       if (tags.common.artist) setArtist(tags.common.artist);
+      // The album tag is what makes a multi-file pick an album rather than a
+      // batch — and it is already in the file, so nobody has to type it.
+      if (tags.common.album) setAlbum(tags.common.album);
       const picture = tags.common.picture?.[0];
       if (picture && !cover) {
         // `picture.data` is a view over a possibly-shared buffer; copy it into
@@ -1011,14 +1167,30 @@ function UploadForm({ onDone }: { onDone: () => void }) {
       return;
     }
 
+    // The pack this upload creates is titled with the album, so there has to be
+    // one. Checked here as well as on the server so the answer arrives before
+    // fifty megabytes do.
+    if (extraFiles.length > 0 && !album.trim()) {
+      toast.error(
+        ts('album-title-required', { defaultValue: 'An album upload needs an album title.' }),
+      );
+      return;
+    }
+
     setUploading(true);
     setProgress(0);
     setStatusText(t('status-uploading', { defaultValue: 'Uploading track…' }));
 
     const form = new FormData();
     form.append('file', file);
+    // L16 — every extra track rides in the same request, so the songs and the
+    // album pack they belong to are created in one transaction. Twelve
+    // sequential uploads cannot be: the eighth failing leaves seven songs and
+    // no album.
+    for (const extra of extraFiles) form.append('file', extra);
     form.append('title', title);
     form.append('artist', artist);
+    if (album.trim()) form.append('album', album.trim());
     form.append('description', description);
     form.append('duration', String(duration));
     if (cover) form.append('cover', cover);
@@ -1081,6 +1253,9 @@ function UploadForm({ onDone }: { onDone: () => void }) {
           <input
             type="file"
             accept="audio/*"
+            // L16 — picking several files is what makes an album upload; the
+            // one-file case is unchanged and is still what happens by default.
+            multiple
             className="absolute inset-0 opacity-0 cursor-pointer"
             onChange={(e) => void pickAudio(e)}
           />
@@ -1091,12 +1266,36 @@ function UploadForm({ onDone }: { onDone: () => void }) {
           <span className="text-sm text-slice-text-light mt-2">
             {t('supported-formats', { defaultValue: 'MP3, WAV, OGG and FLAC — up to 50 MB' })}
           </span>
+          <span className="text-xs text-slice-text-light mt-1">
+            {ts('select-album-hint', {
+              defaultValue: 'Pick several files to upload a whole album at once.',
+            })}
+          </span>
         </label>
       ) : (
         <div className="space-y-4">
           <div className="p-3 bg-slice-card-bg rounded-xl border border-slice-shadow-dark/50 flex items-center justify-between gap-2">
-            <span className="font-bold text-blue-600 truncate">{file.name}</span>
-            <Button type="button" variant="ghost" size="sm" onClick={() => setFile(null)}>
+            <span className="font-bold text-blue-600 truncate">
+              {file.name}
+              {extraFiles.length > 0 && (
+                <span className="text-slice-text-light font-normal">
+                  {' '}
+                  {ts('plus-more-tracks', {
+                    defaultValue: '+ {{count}} more',
+                    count: extraFiles.length,
+                  })}
+                </span>
+              )}
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setFile(null);
+                setExtraFiles([]);
+              }}
+            >
               {t('change', { defaultValue: 'Change' })}
             </Button>
           </div>
@@ -1120,15 +1319,29 @@ function UploadForm({ onDone }: { onDone: () => void }) {
             </label>
 
             <div className="flex-1 space-y-3 min-w-0">
-              <Field
-                label={t('label-title', { defaultValue: 'Title' })}
-                value={title}
-                onChange={setTitle}
-              />
+              {/* An album takes each track's title from its filename — there is
+                  one title field and twelve tracks — so the field only appears
+                  when there is exactly one of them. */}
+              {extraFiles.length === 0 && (
+                <Field
+                  label={t('label-title', { defaultValue: 'Title' })}
+                  value={title}
+                  onChange={setTitle}
+                />
+              )}
               <Field
                 label={t('label-artist', { defaultValue: 'Artist' })}
                 value={artist}
                 onChange={setArtist}
+              />
+              <Field
+                label={
+                  extraFiles.length > 0
+                    ? ts('label-album-required', { defaultValue: 'Album' })
+                    : ts('label-album', { defaultValue: 'Album (Optional)' })
+                }
+                value={album}
+                onChange={setAlbum}
               />
             </div>
           </div>
@@ -1210,5 +1423,9 @@ function sortLabel(sort: SongSort, t: (key: string, opts: { defaultValue: string
       return t('sort-title', { defaultValue: 'Title' });
     case 'duration':
       return t('sort-duration', { defaultValue: 'Shortest' });
+    case 'difficulty':
+      // C3 — `Song.chartRating`, the hardest rated chart of the song. Populated
+      // and, until now, unreachable: see `docs/_handoff/rating-requests.md` §1.
+      return t('sort-difficulty', { defaultValue: 'Hardest' });
   }
 }

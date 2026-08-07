@@ -6,12 +6,15 @@ import {
   DEFAULT_SORT_DIRECTION,
   LibrarySongsQueryZ,
   RECENTLY_PLAYED_LIMIT,
+  effectiveLibrarySort,
   type LibrarySong,
   type LibrarySongPage,
   type LibrarySort,
   type SortDirection,
 } from '@/lib/slice-it/library-filters';
-import { songSelect, toSliceSong } from '@/lib/slice-it/songs.server';
+import { libraryFieldsOf, songSelect, toSliceSong } from '@/lib/slice-it/songs.server';
+import { countSearchMatches, searchSongIds } from '@/lib/slice-it/library-query.server';
+import { packSongIds } from '@/lib/slice-it/packs.server';
 
 /**
  * The song library — list, random pick, and recently-played shelf.
@@ -58,7 +61,11 @@ import { songSelect, toSliceSong } from '@/lib/slice-it/songs.server';
  *   unindexed sort over one user's rows until that index lands.
  */
 
-type SortableColumn = Exclude<LibrarySort, 'yourScore'>;
+/**
+ * The sorts a plain `orderBy` can express. `yourScore` needs a filtered join
+ * and `relevance` needs a ranking expression; both run as raw SQL below.
+ */
+type SortableColumn = Exclude<LibrarySort, 'yourScore' | 'relevance'>;
 
 /**
  * `id` is the tiebreaker on every sort so a page boundary is stable — two songs
@@ -74,6 +81,11 @@ const ORDER_BY: Record<
   liked: (dir) => [{ likes: { _count: dir } }, { id: 'desc' }],
   title: (dir) => [{ title: dir }, { id: 'asc' }],
   duration: (dir) => [{ duration: dir }, { id: 'asc' }],
+  // C3 — `docs/_handoff/rating-requests.md` §1. NULLS LAST is the whole
+  // subtlety: a song with no rated chart is not a trivially easy song, and
+  // Postgres sorts NULLs FIRST on DESC by default, which would fill the top of
+  // "hardest first" with every unrated song in the library.
+  difficulty: (dir) => [{ chartRating: { sort: dir, nulls: 'last' } }, { id: 'asc' }],
   artist: (dir) => [{ artist: dir }, { id: 'asc' }],
   bpm: (dir) => [{ bpm: dir }, { id: 'asc' }],
   plays: (dir) => [{ plays: dir }, { id: 'desc' }],
@@ -118,6 +130,7 @@ export const Route = createFileRoute('/api/slice-it/songs')({
 
             const songs: LibrarySong[] = plays.map((p) => ({
               ...toSliceSong(p.song, userId),
+              ...libraryFieldsOf(p.song),
               bestScore: bestScoreOf(p.song),
               lastPlayedAt: p.lastPlayedAt.toISOString(),
             }));
@@ -160,17 +173,27 @@ export const Route = createFileRoute('/api/slice-it/songs')({
             });
 
             const song: LibrarySong | null = pick
-              ? { ...toSliceSong(pick, userId), bestScore: bestScoreOf(pick) }
+              ? {
+                  ...toSliceSong(pick, userId),
+                  ...libraryFieldsOf(pick),
+                  bestScore: bestScoreOf(pick),
+                }
               : null;
             return Response.json({ song } satisfies { song: LibrarySong | null });
           }
 
           /* ── The paged, sorted, searched list ───────────────────────── */
-          const { q, sort, dir, cursor, limit, mine } = query;
+          const { q, sort, dir, cursor, limit, mine, artist, packId } = query;
           // `yourScore` with nobody signed in has nothing to sort by — fall
           // back rather than run a join keyed on a null userId (every row would
           // simply go unmatched, making the "sort" a no-op).
-          const effectiveSort: LibrarySort = sort === 'yourScore' && !userId ? 'recent' : sort;
+          //
+          // `effectiveLibrarySort` then applies L14's two rules: a typed query
+          // with the default sort still selected means "rank these by
+          // relevance", and `relevance` with no query degrades to `recent`
+          // because there is nothing to be relevant to.
+          const authSort: LibrarySort = sort === 'yourScore' && !userId ? 'recent' : sort;
+          const effectiveSort: LibrarySort = effectiveLibrarySort(authSort, q);
           const effectiveDir: SortDirection = dir ?? DEFAULT_SORT_DIRECTION[effectiveSort];
 
           const where: Record<string, unknown> = {};
@@ -180,7 +203,34 @@ export const Route = createFileRoute('/api/slice-it/songs')({
           } else {
             where.isPublic = true;
           }
-          if (q) {
+          // L15 — the artist facet is an equality filter on the normalised key,
+          // not a substring match on the display string. That is the entire
+          // difference between "everything by this artist" and "every artist
+          // whose name contains these letters".
+          if (artist) where.artistKey = artist;
+          // L16 — restrict to one pack's members. The pack read is separate
+          // (`/api/slice-it/packs/$id`); this is the library filtered by it, so
+          // the same card, lamp and score machinery serves a pack view.
+          // Read once and reused by all three branches below — the raw-SQL
+          // sorts build their own WHERE and would otherwise each re-fetch the
+          // same membership list.
+          const packIds = packId ? await packSongIds(packId) : null;
+          if (packIds) {
+            if (packIds.length === 0) {
+              return Response.json({
+                songs: [],
+                nextCursor: null,
+                total: 0,
+              } satisfies LibrarySongPage);
+            }
+            where.id = { in: packIds };
+          }
+          if (q && effectiveSort !== 'relevance') {
+            // A non-relevance sort still has to *filter*. Kept as the original
+            // substring predicate rather than reusing the full-text recall: the
+            // two would disagree about what matched depending on which column
+            // you happened to be sorting by, and "the result set changed
+            // because I clicked BPM" is a worse bug than an unindexed scan.
             where.OR = [
               { title: { contains: q, mode: 'insensitive' } },
               { artist: { contains: q, mode: 'insensitive' } },
@@ -189,6 +239,60 @@ export const Route = createFileRoute('/api/slice-it/songs')({
           }
 
           const select = { ...songSelect, ...viewerSelect(userId) };
+
+          /* ── L14: ranked search ─────────────────────────────────────── */
+          if (effectiveSort === 'relevance' && q) {
+            const scope = {
+              query: q,
+              mine: Boolean(mine && userId),
+              viewerId: userId,
+              artistKey: artist ?? null,
+            };
+            const skip = cursor ? Number(cursor) || 0 : 0;
+
+            // Ranking runs in Postgres and returns ids; the rows are then
+            // fetched normally and re-threaded onto that order. Same two-step
+            // as `yourScore` below and as `lib/search/posts.server.ts` — JS
+            // restores an order SQL computed, it never sorts.
+            const [ranked, total] = await Promise.all([
+              searchSongIds(scope, limit + 1, skip),
+              cursor ? Promise.resolve(null) : countSearchMatches(scope),
+            ]);
+
+            const hasMore = ranked.length > limit;
+            const window = hasMore ? ranked.slice(0, limit) : ranked;
+            // A pack filter narrows the ranked set rather than the other way
+            // round: the ranking is over the library and the pack is a view of
+            // it, so intersecting after ranking keeps the order meaningful.
+            const packFilter = packIds ? new Set(packIds) : null;
+            const picked = packFilter ? window.filter((r) => packFilter.has(r.id)) : window;
+
+            const rows = await prisma.song.findMany({
+              where: { id: { in: picked.map((r) => r.id) } },
+              select,
+            });
+            const byId = new Map(rows.map((r) => [r.id, r]));
+
+            // Re-threaded onto the SQL-computed order — a lookup, not a sort.
+            const songs: LibrarySong[] = [];
+            for (const { id, relevance } of picked) {
+              const row = byId.get(id);
+              if (!row) continue;
+              songs.push({
+                ...toSliceSong(row, userId),
+                ...libraryFieldsOf(row),
+                bestScore: bestScoreOf(row),
+                relevance,
+              });
+            }
+
+            const body: LibrarySongPage = {
+              songs,
+              nextCursor: hasMore ? String(skip + limit) : null,
+              ...(total === null ? {} : { total }),
+            };
+            return Response.json(body);
+          }
 
           if (effectiveSort === 'yourScore') {
             // Non-null by construction — see the fallback assigned above.
@@ -205,6 +309,13 @@ export const Route = createFileRoute('/api/slice-it/songs')({
                 Prisma.sql`(s.title ILIKE ${like} OR s.artist ILIKE ${like} OR s.album ILIKE ${like})`,
               );
             }
+            // The two facets have to be repeated here rather than read off
+            // `where`: this branch bypasses `findMany` entirely, and a filter
+            // that exists in only one of the two paths is a filter that
+            // silently stops applying when you sort by your best score.
+            if (artist) filters.push(Prisma.sql`s."artistKey" = ${artist}`);
+            // Non-empty by construction — an empty pack returned above.
+            if (packIds) filters.push(Prisma.sql`s.id IN (${Prisma.join(packIds)})`);
             const orderDirection =
               effectiveDir === 'asc' ? Prisma.sql`ASC NULLS FIRST` : Prisma.sql`DESC NULLS LAST`;
 
@@ -236,6 +347,7 @@ export const Route = createFileRoute('/api/slice-it/songs')({
             const body: LibrarySongPage = {
               songs: page.map((row) => ({
                 ...toSliceSong(row, userId),
+                ...libraryFieldsOf(row),
                 bestScore: bestScoreOf(row),
               })),
               nextCursor: hasMore ? String(skip + limit) : null,
@@ -266,7 +378,10 @@ export const Route = createFileRoute('/api/slice-it/songs')({
           const [rows, total] = await Promise.all([
             prisma.song.findMany({
               where,
-              orderBy: ORDER_BY[effectiveSort](effectiveDir),
+              // `relevance` and `yourScore` both returned above, so what is
+              // left is exactly the set `ORDER_BY` covers. The cast is what
+              // says so; the two `if`s above are what make it true.
+              orderBy: ORDER_BY[effectiveSort as SortableColumn](effectiveDir),
               take: limit + 1,
               skip,
               select,
@@ -278,7 +393,11 @@ export const Route = createFileRoute('/api/slice-it/songs')({
           const page = hasMore ? rows.slice(0, limit) : rows;
 
           const body: LibrarySongPage = {
-            songs: page.map((row) => ({ ...toSliceSong(row, userId), bestScore: bestScoreOf(row) })),
+            songs: page.map((row) => ({
+              ...toSliceSong(row, userId),
+              ...libraryFieldsOf(row),
+              bestScore: bestScoreOf(row),
+            })),
             nextCursor: hasMore
               ? useKeyset
                 ? page[page.length - 1].createdAt.toISOString()

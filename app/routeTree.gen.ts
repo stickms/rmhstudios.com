@@ -566,6 +566,7 @@ import { Route as EmbedReplayIdRouteImport } from './routes/embed.replay.$id'
 import { Route as LibraryAlbumsAlbumIdRouteImport } from './routes/library.albums.$albumId'
 import { Route as RmhboxMinigamesIndexRouteImport } from './routes/rmhbox/minigames/index'
 import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/cursed-logic/index'
+import { Route as SliceItArtistKeyRouteImport } from './routes/slice-it/artist.$key'
 import { Route as SliceItEditSongIdRouteImport } from './routes/slice-it/edit.$songId'
 import { Route as SliceItPlayerHandleRouteImport } from './routes/slice-it/player.$handle'
 import { Route as StrategiesProfileIndexRouteImport } from './routes/strategies/profile/index'
@@ -744,10 +745,13 @@ import { Route as ApiSliceItChartsIdRouteImport } from './routes/api/slice-it/ch
 import { Route as ApiSliceItChartsRankingRouteImport } from './routes/api/slice-it/charts/ranking'
 import { Route as ApiSliceItDailyIndexRouteImport } from './routes/api/slice-it/daily/index'
 import { Route as ApiSliceItDailySubmitRouteImport } from './routes/api/slice-it/daily/submit'
+import { Route as ApiSliceItPacksIndexRouteImport } from './routes/api/slice-it/packs/index'
+import { Route as ApiSliceItPacksIdRouteImport } from './routes/api/slice-it/packs/$id'
 import { Route as ApiSliceItReplayIdRouteImport } from './routes/api/slice-it/replay/$id'
 import { Route as ApiSliceItSetlistsIndexRouteImport } from './routes/api/slice-it/setlists/index'
 import { Route as ApiSliceItSetlistsIdRouteImport } from './routes/api/slice-it/setlists/$id'
 import { Route as ApiSliceItSongsIdRouteImport } from './routes/api/slice-it/songs/$id'
+import { Route as ApiSliceItSongsArtistsRouteImport } from './routes/api/slice-it/songs/artists'
 import { Route as ApiSliceItSongsUploadRouteImport } from './routes/api/slice-it/songs/upload'
 import { Route as ApiSpacesIdIndexRouteImport } from './routes/api/spaces/$id/index'
 import { Route as ApiSpacesIdEndRouteImport } from './routes/api/spaces/$id/end'
@@ -821,11 +825,13 @@ import { Route as ApiRmhladderResumeIdConfirmRouteImport } from './routes/api/rm
 import { Route as ApiRmhmusicGuessIdIndexRouteImport } from './routes/api/rmhmusic/guess/$id/index'
 import { Route as ApiRmhmusicGuessIdAttemptRouteImport } from './routes/api/rmhmusic/guess/$id/attempt'
 import { Route as ApiSliceItChartsIdRevisionsRouteImport } from './routes/api/slice-it/charts/$id/revisions'
+import { Route as ApiSliceItPacksIdItemsRouteImport } from './routes/api/slice-it/packs/$id/items'
 import { Route as ApiSliceItSongsIdCommentsRouteImport } from './routes/api/slice-it/songs/$id/comments'
 import { Route as ApiSliceItSongsIdCoverRouteImport } from './routes/api/slice-it/songs/$id/cover'
 import { Route as ApiSliceItSongsIdLikeRouteImport } from './routes/api/slice-it/songs/$id/like'
 import { Route as ApiSliceItSongsIdPatchAnalysisRouteImport } from './routes/api/slice-it/songs/$id/patch-analysis'
 import { Route as ApiSliceItSongsIdPlayRouteImport } from './routes/api/slice-it/songs/$id/play'
+import { Route as ApiSliceItSongsArtistKeyRouteImport } from './routes/api/slice-it/songs/artist.$key'
 import { Route as ApiSliceItSongsStreamIdRouteImport } from './routes/api/slice-it/songs/stream/$id'
 import { Route as ApiStorefrontProductsIdIndexRouteImport } from './routes/api/storefront/products/$id/index'
 import { Route as ApiStorefrontProductsIdBuyRouteImport } from './routes/api/storefront/products/$id/buy'
@@ -3656,6 +3662,11 @@ const SecretCursedLogicIndexRoute = SecretCursedLogicIndexRouteImport.update({
   path: '/',
   getParentRoute: () => SecretCursedLogicRoute,
 } as any)
+const SliceItArtistKeyRoute = SliceItArtistKeyRouteImport.update({
+  id: '/artist/$key',
+  path: '/artist/$key',
+  getParentRoute: () => SliceItRoute,
+} as any)
 const SliceItEditSongIdRoute = SliceItEditSongIdRouteImport.update({
   id: '/edit/$songId',
   path: '/edit/$songId',
@@ -4600,6 +4611,16 @@ const ApiSliceItDailySubmitRoute = ApiSliceItDailySubmitRouteImport.update({
   path: '/api/slice-it/daily/submit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSliceItPacksIndexRoute = ApiSliceItPacksIndexRouteImport.update({
+  id: '/api/slice-it/packs/',
+  path: '/api/slice-it/packs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSliceItPacksIdRoute = ApiSliceItPacksIdRouteImport.update({
+  id: '/api/slice-it/packs/$id',
+  path: '/api/slice-it/packs/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSliceItReplayIdRoute = ApiSliceItReplayIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -4618,6 +4639,11 @@ const ApiSliceItSetlistsIdRoute = ApiSliceItSetlistsIdRouteImport.update({
 const ApiSliceItSongsIdRoute = ApiSliceItSongsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
+  getParentRoute: () => ApiSliceItSongsRoute,
+} as any)
+const ApiSliceItSongsArtistsRoute = ApiSliceItSongsArtistsRouteImport.update({
+  id: '/artists',
+  path: '/artists',
   getParentRoute: () => ApiSliceItSongsRoute,
 } as any)
 const ApiSliceItSongsUploadRoute = ApiSliceItSongsUploadRouteImport.update({
@@ -5013,6 +5039,11 @@ const ApiSliceItChartsIdRevisionsRoute =
     path: '/revisions',
     getParentRoute: () => ApiSliceItChartsIdRoute,
   } as any)
+const ApiSliceItPacksIdItemsRoute = ApiSliceItPacksIdItemsRouteImport.update({
+  id: '/items',
+  path: '/items',
+  getParentRoute: () => ApiSliceItPacksIdRoute,
+} as any)
 const ApiSliceItSongsIdCommentsRoute =
   ApiSliceItSongsIdCommentsRouteImport.update({
     id: '/comments',
@@ -5040,6 +5071,12 @@ const ApiSliceItSongsIdPlayRoute = ApiSliceItSongsIdPlayRouteImport.update({
   path: '/play',
   getParentRoute: () => ApiSliceItSongsIdRoute,
 } as any)
+const ApiSliceItSongsArtistKeyRoute =
+  ApiSliceItSongsArtistKeyRouteImport.update({
+    id: '/artist/$key',
+    path: '/artist/$key',
+    getParentRoute: () => ApiSliceItSongsRoute,
+  } as any)
 const ApiSliceItSongsStreamIdRoute = ApiSliceItSongsStreamIdRouteImport.update({
   id: '/stream/$id',
   path: '/stream/$id',
@@ -5643,6 +5680,7 @@ export interface FileRoutesByFullPath {
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/embed/replay/$id': typeof EmbedReplayIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
+  '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
   '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
   '/strategies/profile/reputation': typeof StrategiesProfileReputationRoute
@@ -5863,9 +5901,11 @@ export interface FileRoutesByFullPath {
   '/api/slice-it/charts/$id': typeof ApiSliceItChartsIdRouteWithChildren
   '/api/slice-it/charts/ranking': typeof ApiSliceItChartsRankingRoute
   '/api/slice-it/daily/submit': typeof ApiSliceItDailySubmitRoute
+  '/api/slice-it/packs/$id': typeof ApiSliceItPacksIdRouteWithChildren
   '/api/slice-it/replay/$id': typeof ApiSliceItReplayIdRoute
   '/api/slice-it/setlists/$id': typeof ApiSliceItSetlistsIdRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
+  '/api/slice-it/songs/artists': typeof ApiSliceItSongsArtistsRoute
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
   '/api/spaces/$id/end': typeof ApiSpacesIdEndRoute
   '/api/spaces/$id/start': typeof ApiSpacesIdStartRoute
@@ -5922,6 +5962,7 @@ export interface FileRoutesByFullPath {
   '/api/rmhladder/resume/': typeof ApiRmhladderResumeIndexRoute
   '/api/rmhmusic/guess/': typeof ApiRmhmusicGuessIndexRoute
   '/api/slice-it/daily/': typeof ApiSliceItDailyIndexRoute
+  '/api/slice-it/packs/': typeof ApiSliceItPacksIndexRoute
   '/api/slice-it/setlists/': typeof ApiSliceItSetlistsIndexRoute
   '/api/spaces/$id/': typeof ApiSpacesIdIndexRoute
   '/api/storefront/products/': typeof ApiStorefrontProductsIndexRoute
@@ -5960,11 +6001,13 @@ export interface FileRoutesByFullPath {
   '/api/rmhladder/resume/$id/confirm': typeof ApiRmhladderResumeIdConfirmRoute
   '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
   '/api/slice-it/charts/$id/revisions': typeof ApiSliceItChartsIdRevisionsRoute
+  '/api/slice-it/packs/$id/items': typeof ApiSliceItPacksIdItemsRoute
   '/api/slice-it/songs/$id/comments': typeof ApiSliceItSongsIdCommentsRoute
   '/api/slice-it/songs/$id/cover': typeof ApiSliceItSongsIdCoverRoute
   '/api/slice-it/songs/$id/like': typeof ApiSliceItSongsIdLikeRoute
   '/api/slice-it/songs/$id/patch-analysis': typeof ApiSliceItSongsIdPatchAnalysisRoute
   '/api/slice-it/songs/$id/play': typeof ApiSliceItSongsIdPlayRoute
+  '/api/slice-it/songs/artist/$key': typeof ApiSliceItSongsArtistKeyRoute
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
   '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
   '/api/study/cards/$id/review': typeof ApiStudyCardsIdReviewRoute
@@ -6457,6 +6500,7 @@ export interface FileRoutesByTo {
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/embed/replay/$id': typeof EmbedReplayIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
+  '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
   '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
   '/strategies/profile/reputation': typeof StrategiesProfileReputationRoute
@@ -6677,9 +6721,11 @@ export interface FileRoutesByTo {
   '/api/slice-it/charts/$id': typeof ApiSliceItChartsIdRouteWithChildren
   '/api/slice-it/charts/ranking': typeof ApiSliceItChartsRankingRoute
   '/api/slice-it/daily/submit': typeof ApiSliceItDailySubmitRoute
+  '/api/slice-it/packs/$id': typeof ApiSliceItPacksIdRouteWithChildren
   '/api/slice-it/replay/$id': typeof ApiSliceItReplayIdRoute
   '/api/slice-it/setlists/$id': typeof ApiSliceItSetlistsIdRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
+  '/api/slice-it/songs/artists': typeof ApiSliceItSongsArtistsRoute
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
   '/api/spaces/$id/end': typeof ApiSpacesIdEndRoute
   '/api/spaces/$id/start': typeof ApiSpacesIdStartRoute
@@ -6736,6 +6782,7 @@ export interface FileRoutesByTo {
   '/api/rmhladder/resume': typeof ApiRmhladderResumeIndexRoute
   '/api/rmhmusic/guess': typeof ApiRmhmusicGuessIndexRoute
   '/api/slice-it/daily': typeof ApiSliceItDailyIndexRoute
+  '/api/slice-it/packs': typeof ApiSliceItPacksIndexRoute
   '/api/slice-it/setlists': typeof ApiSliceItSetlistsIndexRoute
   '/api/spaces/$id': typeof ApiSpacesIdIndexRoute
   '/api/storefront/products': typeof ApiStorefrontProductsIndexRoute
@@ -6774,11 +6821,13 @@ export interface FileRoutesByTo {
   '/api/rmhladder/resume/$id/confirm': typeof ApiRmhladderResumeIdConfirmRoute
   '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
   '/api/slice-it/charts/$id/revisions': typeof ApiSliceItChartsIdRevisionsRoute
+  '/api/slice-it/packs/$id/items': typeof ApiSliceItPacksIdItemsRoute
   '/api/slice-it/songs/$id/comments': typeof ApiSliceItSongsIdCommentsRoute
   '/api/slice-it/songs/$id/cover': typeof ApiSliceItSongsIdCoverRoute
   '/api/slice-it/songs/$id/like': typeof ApiSliceItSongsIdLikeRoute
   '/api/slice-it/songs/$id/patch-analysis': typeof ApiSliceItSongsIdPatchAnalysisRoute
   '/api/slice-it/songs/$id/play': typeof ApiSliceItSongsIdPlayRoute
+  '/api/slice-it/songs/artist/$key': typeof ApiSliceItSongsArtistKeyRoute
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
   '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
   '/api/study/cards/$id/review': typeof ApiStudyCardsIdReviewRoute
@@ -7297,6 +7346,7 @@ export interface FileRoutesById {
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/embed/replay/$id': typeof EmbedReplayIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
+  '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
   '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
   '/strategies/profile/reputation': typeof StrategiesProfileReputationRoute
@@ -7517,9 +7567,11 @@ export interface FileRoutesById {
   '/api/slice-it/charts/$id': typeof ApiSliceItChartsIdRouteWithChildren
   '/api/slice-it/charts/ranking': typeof ApiSliceItChartsRankingRoute
   '/api/slice-it/daily/submit': typeof ApiSliceItDailySubmitRoute
+  '/api/slice-it/packs/$id': typeof ApiSliceItPacksIdRouteWithChildren
   '/api/slice-it/replay/$id': typeof ApiSliceItReplayIdRoute
   '/api/slice-it/setlists/$id': typeof ApiSliceItSetlistsIdRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
+  '/api/slice-it/songs/artists': typeof ApiSliceItSongsArtistsRoute
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
   '/api/spaces/$id/end': typeof ApiSpacesIdEndRoute
   '/api/spaces/$id/start': typeof ApiSpacesIdStartRoute
@@ -7576,6 +7628,7 @@ export interface FileRoutesById {
   '/api/rmhladder/resume/': typeof ApiRmhladderResumeIndexRoute
   '/api/rmhmusic/guess/': typeof ApiRmhmusicGuessIndexRoute
   '/api/slice-it/daily/': typeof ApiSliceItDailyIndexRoute
+  '/api/slice-it/packs/': typeof ApiSliceItPacksIndexRoute
   '/api/slice-it/setlists/': typeof ApiSliceItSetlistsIndexRoute
   '/api/spaces/$id/': typeof ApiSpacesIdIndexRoute
   '/api/storefront/products/': typeof ApiStorefrontProductsIndexRoute
@@ -7614,11 +7667,13 @@ export interface FileRoutesById {
   '/api/rmhladder/resume/$id/confirm': typeof ApiRmhladderResumeIdConfirmRoute
   '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
   '/api/slice-it/charts/$id/revisions': typeof ApiSliceItChartsIdRevisionsRoute
+  '/api/slice-it/packs/$id/items': typeof ApiSliceItPacksIdItemsRoute
   '/api/slice-it/songs/$id/comments': typeof ApiSliceItSongsIdCommentsRoute
   '/api/slice-it/songs/$id/cover': typeof ApiSliceItSongsIdCoverRoute
   '/api/slice-it/songs/$id/like': typeof ApiSliceItSongsIdLikeRoute
   '/api/slice-it/songs/$id/patch-analysis': typeof ApiSliceItSongsIdPatchAnalysisRoute
   '/api/slice-it/songs/$id/play': typeof ApiSliceItSongsIdPlayRoute
+  '/api/slice-it/songs/artist/$key': typeof ApiSliceItSongsArtistKeyRoute
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
   '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
   '/api/study/cards/$id/review': typeof ApiStudyCardsIdReviewRoute
@@ -8137,6 +8192,7 @@ export interface FileRouteTypes {
     | '/embed/post/$id'
     | '/embed/replay/$id'
     | '/library/albums/$albumId'
+    | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
     | '/slice-it/player/$handle'
     | '/strategies/profile/reputation'
@@ -8357,9 +8413,11 @@ export interface FileRouteTypes {
     | '/api/slice-it/charts/$id'
     | '/api/slice-it/charts/ranking'
     | '/api/slice-it/daily/submit'
+    | '/api/slice-it/packs/$id'
     | '/api/slice-it/replay/$id'
     | '/api/slice-it/setlists/$id'
     | '/api/slice-it/songs/$id'
+    | '/api/slice-it/songs/artists'
     | '/api/slice-it/songs/upload'
     | '/api/spaces/$id/end'
     | '/api/spaces/$id/start'
@@ -8416,6 +8474,7 @@ export interface FileRouteTypes {
     | '/api/rmhladder/resume/'
     | '/api/rmhmusic/guess/'
     | '/api/slice-it/daily/'
+    | '/api/slice-it/packs/'
     | '/api/slice-it/setlists/'
     | '/api/spaces/$id/'
     | '/api/storefront/products/'
@@ -8454,11 +8513,13 @@ export interface FileRouteTypes {
     | '/api/rmhladder/resume/$id/confirm'
     | '/api/rmhmusic/guess/$id/attempt'
     | '/api/slice-it/charts/$id/revisions'
+    | '/api/slice-it/packs/$id/items'
     | '/api/slice-it/songs/$id/comments'
     | '/api/slice-it/songs/$id/cover'
     | '/api/slice-it/songs/$id/like'
     | '/api/slice-it/songs/$id/patch-analysis'
     | '/api/slice-it/songs/$id/play'
+    | '/api/slice-it/songs/artist/$key'
     | '/api/slice-it/songs/stream/$id'
     | '/api/storefront/products/$id/buy'
     | '/api/study/cards/$id/review'
@@ -8951,6 +9012,7 @@ export interface FileRouteTypes {
     | '/embed/post/$id'
     | '/embed/replay/$id'
     | '/library/albums/$albumId'
+    | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
     | '/slice-it/player/$handle'
     | '/strategies/profile/reputation'
@@ -9171,9 +9233,11 @@ export interface FileRouteTypes {
     | '/api/slice-it/charts/$id'
     | '/api/slice-it/charts/ranking'
     | '/api/slice-it/daily/submit'
+    | '/api/slice-it/packs/$id'
     | '/api/slice-it/replay/$id'
     | '/api/slice-it/setlists/$id'
     | '/api/slice-it/songs/$id'
+    | '/api/slice-it/songs/artists'
     | '/api/slice-it/songs/upload'
     | '/api/spaces/$id/end'
     | '/api/spaces/$id/start'
@@ -9230,6 +9294,7 @@ export interface FileRouteTypes {
     | '/api/rmhladder/resume'
     | '/api/rmhmusic/guess'
     | '/api/slice-it/daily'
+    | '/api/slice-it/packs'
     | '/api/slice-it/setlists'
     | '/api/spaces/$id'
     | '/api/storefront/products'
@@ -9268,11 +9333,13 @@ export interface FileRouteTypes {
     | '/api/rmhladder/resume/$id/confirm'
     | '/api/rmhmusic/guess/$id/attempt'
     | '/api/slice-it/charts/$id/revisions'
+    | '/api/slice-it/packs/$id/items'
     | '/api/slice-it/songs/$id/comments'
     | '/api/slice-it/songs/$id/cover'
     | '/api/slice-it/songs/$id/like'
     | '/api/slice-it/songs/$id/patch-analysis'
     | '/api/slice-it/songs/$id/play'
+    | '/api/slice-it/songs/artist/$key'
     | '/api/slice-it/songs/stream/$id'
     | '/api/storefront/products/$id/buy'
     | '/api/study/cards/$id/review'
@@ -9790,6 +9857,7 @@ export interface FileRouteTypes {
     | '/embed/post/$id'
     | '/embed/replay/$id'
     | '/library/albums/$albumId'
+    | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
     | '/slice-it/player/$handle'
     | '/strategies/profile/reputation'
@@ -10010,9 +10078,11 @@ export interface FileRouteTypes {
     | '/api/slice-it/charts/$id'
     | '/api/slice-it/charts/ranking'
     | '/api/slice-it/daily/submit'
+    | '/api/slice-it/packs/$id'
     | '/api/slice-it/replay/$id'
     | '/api/slice-it/setlists/$id'
     | '/api/slice-it/songs/$id'
+    | '/api/slice-it/songs/artists'
     | '/api/slice-it/songs/upload'
     | '/api/spaces/$id/end'
     | '/api/spaces/$id/start'
@@ -10069,6 +10139,7 @@ export interface FileRouteTypes {
     | '/api/rmhladder/resume/'
     | '/api/rmhmusic/guess/'
     | '/api/slice-it/daily/'
+    | '/api/slice-it/packs/'
     | '/api/slice-it/setlists/'
     | '/api/spaces/$id/'
     | '/api/storefront/products/'
@@ -10107,11 +10178,13 @@ export interface FileRouteTypes {
     | '/api/rmhladder/resume/$id/confirm'
     | '/api/rmhmusic/guess/$id/attempt'
     | '/api/slice-it/charts/$id/revisions'
+    | '/api/slice-it/packs/$id/items'
     | '/api/slice-it/songs/$id/comments'
     | '/api/slice-it/songs/$id/cover'
     | '/api/slice-it/songs/$id/like'
     | '/api/slice-it/songs/$id/patch-analysis'
     | '/api/slice-it/songs/$id/play'
+    | '/api/slice-it/songs/artist/$key'
     | '/api/slice-it/songs/stream/$id'
     | '/api/storefront/products/$id/buy'
     | '/api/study/cards/$id/review'
@@ -10577,6 +10650,7 @@ export interface RootRouteChildren {
   ApiRmhmusicSpotifySearchRoute: typeof ApiRmhmusicSpotifySearchRoute
   ApiRmhtubeSubscribeChannelIdRoute: typeof ApiRmhtubeSubscribeChannelIdRoute
   ApiSliceItDailySubmitRoute: typeof ApiSliceItDailySubmitRoute
+  ApiSliceItPacksIdRoute: typeof ApiSliceItPacksIdRouteWithChildren
   ApiSliceItSetlistsIdRoute: typeof ApiSliceItSetlistsIdRoute
   ApiSpacesIdEndRoute: typeof ApiSpacesIdEndRoute
   ApiSpacesIdStartRoute: typeof ApiSpacesIdStartRoute
@@ -10607,6 +10681,7 @@ export interface RootRouteChildren {
   ApiRmhladderResumeIndexRoute: typeof ApiRmhladderResumeIndexRoute
   ApiRmhmusicGuessIndexRoute: typeof ApiRmhmusicGuessIndexRoute
   ApiSliceItDailyIndexRoute: typeof ApiSliceItDailyIndexRoute
+  ApiSliceItPacksIndexRoute: typeof ApiSliceItPacksIndexRoute
   ApiSliceItSetlistsIndexRoute: typeof ApiSliceItSetlistsIndexRoute
   ApiSpacesIdIndexRoute: typeof ApiSpacesIdIndexRoute
   ApiStorefrontProductsIndexRoute: typeof ApiStorefrontProductsIndexRoute
@@ -14530,6 +14605,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SecretCursedLogicIndexRouteImport
       parentRoute: typeof SecretCursedLogicRoute
     }
+    '/slice-it/artist/$key': {
+      id: '/slice-it/artist/$key'
+      path: '/artist/$key'
+      fullPath: '/slice-it/artist/$key'
+      preLoaderRoute: typeof SliceItArtistKeyRouteImport
+      parentRoute: typeof SliceItRoute
+    }
     '/slice-it/edit/$songId': {
       id: '/slice-it/edit/$songId'
       path: '/edit/$songId'
@@ -15776,6 +15858,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSliceItDailySubmitRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/slice-it/packs/': {
+      id: '/api/slice-it/packs/'
+      path: '/api/slice-it/packs'
+      fullPath: '/api/slice-it/packs/'
+      preLoaderRoute: typeof ApiSliceItPacksIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/slice-it/packs/$id': {
+      id: '/api/slice-it/packs/$id'
+      path: '/api/slice-it/packs/$id'
+      fullPath: '/api/slice-it/packs/$id'
+      preLoaderRoute: typeof ApiSliceItPacksIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/slice-it/replay/$id': {
       id: '/api/slice-it/replay/$id'
       path: '/$id'
@@ -15802,6 +15898,13 @@ declare module '@tanstack/react-router' {
       path: '/$id'
       fullPath: '/api/slice-it/songs/$id'
       preLoaderRoute: typeof ApiSliceItSongsIdRouteImport
+      parentRoute: typeof ApiSliceItSongsRoute
+    }
+    '/api/slice-it/songs/artists': {
+      id: '/api/slice-it/songs/artists'
+      path: '/artists'
+      fullPath: '/api/slice-it/songs/artists'
+      preLoaderRoute: typeof ApiSliceItSongsArtistsRouteImport
       parentRoute: typeof ApiSliceItSongsRoute
     }
     '/api/slice-it/songs/upload': {
@@ -16315,6 +16418,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSliceItChartsIdRevisionsRouteImport
       parentRoute: typeof ApiSliceItChartsIdRoute
     }
+    '/api/slice-it/packs/$id/items': {
+      id: '/api/slice-it/packs/$id/items'
+      path: '/items'
+      fullPath: '/api/slice-it/packs/$id/items'
+      preLoaderRoute: typeof ApiSliceItPacksIdItemsRouteImport
+      parentRoute: typeof ApiSliceItPacksIdRoute
+    }
     '/api/slice-it/songs/$id/comments': {
       id: '/api/slice-it/songs/$id/comments'
       path: '/comments'
@@ -16349,6 +16459,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/slice-it/songs/$id/play'
       preLoaderRoute: typeof ApiSliceItSongsIdPlayRouteImport
       parentRoute: typeof ApiSliceItSongsIdRoute
+    }
+    '/api/slice-it/songs/artist/$key': {
+      id: '/api/slice-it/songs/artist/$key'
+      path: '/artist/$key'
+      fullPath: '/api/slice-it/songs/artist/$key'
+      preLoaderRoute: typeof ApiSliceItSongsArtistKeyRouteImport
+      parentRoute: typeof ApiSliceItSongsRoute
     }
     '/api/slice-it/songs/stream/$id': {
       id: '/api/slice-it/songs/stream/$id'
@@ -17085,12 +17202,14 @@ const SecretRouteWithChildren =
 
 interface SliceItRouteChildren {
   SliceItIndexRoute: typeof SliceItIndexRoute
+  SliceItArtistKeyRoute: typeof SliceItArtistKeyRoute
   SliceItEditSongIdRoute: typeof SliceItEditSongIdRoute
   SliceItPlayerHandleRoute: typeof SliceItPlayerHandleRoute
 }
 
 const SliceItRouteChildren: SliceItRouteChildren = {
   SliceItIndexRoute: SliceItIndexRoute,
+  SliceItArtistKeyRoute: SliceItArtistKeyRoute,
   SliceItEditSongIdRoute: SliceItEditSongIdRoute,
   SliceItPlayerHandleRoute: SliceItPlayerHandleRoute,
 }
@@ -17718,13 +17837,17 @@ const ApiSliceItSongsIdRouteWithChildren =
 
 interface ApiSliceItSongsRouteChildren {
   ApiSliceItSongsIdRoute: typeof ApiSliceItSongsIdRouteWithChildren
+  ApiSliceItSongsArtistsRoute: typeof ApiSliceItSongsArtistsRoute
   ApiSliceItSongsUploadRoute: typeof ApiSliceItSongsUploadRoute
+  ApiSliceItSongsArtistKeyRoute: typeof ApiSliceItSongsArtistKeyRoute
   ApiSliceItSongsStreamIdRoute: typeof ApiSliceItSongsStreamIdRoute
 }
 
 const ApiSliceItSongsRouteChildren: ApiSliceItSongsRouteChildren = {
   ApiSliceItSongsIdRoute: ApiSliceItSongsIdRouteWithChildren,
+  ApiSliceItSongsArtistsRoute: ApiSliceItSongsArtistsRoute,
   ApiSliceItSongsUploadRoute: ApiSliceItSongsUploadRoute,
+  ApiSliceItSongsArtistKeyRoute: ApiSliceItSongsArtistKeyRoute,
   ApiSliceItSongsStreamIdRoute: ApiSliceItSongsStreamIdRoute,
 }
 
@@ -18042,6 +18165,17 @@ const ApiRmhladderResumeIdRouteChildren: ApiRmhladderResumeIdRouteChildren = {
 
 const ApiRmhladderResumeIdRouteWithChildren =
   ApiRmhladderResumeIdRoute._addFileChildren(ApiRmhladderResumeIdRouteChildren)
+
+interface ApiSliceItPacksIdRouteChildren {
+  ApiSliceItPacksIdItemsRoute: typeof ApiSliceItPacksIdItemsRoute
+}
+
+const ApiSliceItPacksIdRouteChildren: ApiSliceItPacksIdRouteChildren = {
+  ApiSliceItPacksIdItemsRoute: ApiSliceItPacksIdItemsRoute,
+}
+
+const ApiSliceItPacksIdRouteWithChildren =
+  ApiSliceItPacksIdRoute._addFileChildren(ApiSliceItPacksIdRouteChildren)
 
 interface ApiV1UsersHandleRouteChildren {
   ApiV1UsersHandleFollowRoute: typeof ApiV1UsersHandleFollowRoute
@@ -18502,6 +18636,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhmusicSpotifySearchRoute: ApiRmhmusicSpotifySearchRoute,
   ApiRmhtubeSubscribeChannelIdRoute: ApiRmhtubeSubscribeChannelIdRoute,
   ApiSliceItDailySubmitRoute: ApiSliceItDailySubmitRoute,
+  ApiSliceItPacksIdRoute: ApiSliceItPacksIdRouteWithChildren,
   ApiSliceItSetlistsIdRoute: ApiSliceItSetlistsIdRoute,
   ApiSpacesIdEndRoute: ApiSpacesIdEndRoute,
   ApiSpacesIdStartRoute: ApiSpacesIdStartRoute,
@@ -18532,6 +18667,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhladderResumeIndexRoute: ApiRmhladderResumeIndexRoute,
   ApiRmhmusicGuessIndexRoute: ApiRmhmusicGuessIndexRoute,
   ApiSliceItDailyIndexRoute: ApiSliceItDailyIndexRoute,
+  ApiSliceItPacksIndexRoute: ApiSliceItPacksIndexRoute,
   ApiSliceItSetlistsIndexRoute: ApiSliceItSetlistsIndexRoute,
   ApiSpacesIdIndexRoute: ApiSpacesIdIndexRoute,
   ApiStorefrontProductsIndexRoute: ApiStorefrontProductsIndexRoute,
@@ -18556,12 +18692,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

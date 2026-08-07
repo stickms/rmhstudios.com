@@ -32,7 +32,7 @@ import type { Socket } from 'socket.io-client';
 import { authClient } from '@/lib/auth-client';
 import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
 import { useSliceItStore } from '../store';
-import { C2S, S2C } from './events';
+import { C2S, S2C, isLobbyCode } from './events';
 import type {
   ChatMessage,
   CountdownPayload,
@@ -46,6 +46,7 @@ import type {
   PublicLobbyInfo,
   ResumePayload,
   ScoreReport,
+  TeamId,
 } from './events';
 import type { Modifiers } from '../types';
 
@@ -57,6 +58,18 @@ let client: RealtimeClient | null = null;
  * during the results screen still needs to know which lobby to rejoin.
  */
 let pendingCode: string | null = null;
+
+/**
+ * The lobby this client is *watching* (`N1`), if any.
+ *
+ * Held separately from {@link pendingCode} because the reconnect path treats the
+ * two oppositely: a player re-joins and reclaims a seat, a spectator re-enters
+ * the spectator room and must **not** be seated. The store cannot answer this —
+ * a spectator's store holds a perfectly normal `LobbySnapshot`, which is the
+ * whole point of the role — so a reconnect that read the store would silently
+ * turn every watcher into a player the moment their wifi blinked.
+ */
+let spectatingCode: string | null = null;
 
 /**
  * A Discord Activity access token, when the game is running inside one.
@@ -167,11 +180,19 @@ export async function connectSliceIt(): Promise<Socket> {
     onStatus: (status) => store().setConnection(status),
     onConnect: (socket, { isReconnect }) => {
       store().setSelfSocketId(socket.id ?? null);
+      if (!isReconnect) return;
+      // A watcher goes back to watching (`N1`). Checked first: a spectator's
+      // store holds an ordinary snapshot, so the join below would read it, seat
+      // them, and turn a blip into a player nobody invited.
+      if (spectatingCode) {
+        socket.emit(C2S.SPECTATE, { code: spectatingCode });
+        return;
+      }
       // A reconnect means a new socket id, so the lobby has forgotten this seat
       // — unless the grace window is still holding it, in which case the join
       // re-binds the seat rather than creating one.
       const code = store().lobby?.code ?? pendingCode;
-      if (isReconnect && code) socket.emit(C2S.JOIN, { code });
+      if (code) socket.emit(C2S.JOIN, { code });
     },
     bind: registerHandlers,
   });
@@ -183,6 +204,7 @@ export function disconnectSliceIt(): void {
   client?.destroy();
   client = null;
   pendingCode = null;
+  spectatingCode = null;
   // Deliberately NOT cleared: the Discord Activity's own probe disconnects and
   // reconnects while deciding whether multiplayer is reachable, and dropping
   // the credential here would make the second attempt fail for a reason the
@@ -304,14 +326,73 @@ export function createLobby(isPublic: boolean, code?: string): void {
   emit(C2S.CREATE, { isPublic, code: code?.toUpperCase() }, true);
 }
 
-export function joinLobby(code: string): void {
-  pendingCode = code.toUpperCase();
-  emit(C2S.JOIN, { code: pendingCode }, true);
+/**
+ * Join a lobby by code.
+ *
+ * The shape is checked **here**, before anything reaches the socket (`N9`).
+ * `pendingCode` is what the reconnect path re-joins with, so a malformed code
+ * accepted at this line is not one bad round-trip — it is one per reconnect, for
+ * as long as the tab is open, each answering `not_found` into the error toast.
+ * A stale invite link is exactly how that used to happen.
+ *
+ * @returns false when the code is not a lobby code at all. Whether a well-formed
+ *   code names a *live* lobby is a question only the server can answer.
+ */
+export function joinLobby(code: string): boolean {
+  const normalized = normalizeLobbyCode(code);
+  if (!normalized) return false;
+  pendingCode = normalized;
+  spectatingCode = null;
+  emit(C2S.JOIN, { code: normalized }, true);
+  return true;
 }
 
-/** Watch a lobby without taking one of its eight seats (`N1`). */
-export function spectateLobby(code: string): void {
-  emit(C2S.SPECTATE, { code: code.toUpperCase() }, true);
+/**
+ * Watch a lobby without taking one of its eight seats (`N1`).
+ *
+ * Deliberately does **not** set `pendingCode`: that is the seat the reconnect
+ * path reclaims, and a spectator has no seat. Reconnecting straight back into
+ * the spectator room is the caller's job — it re-emits this on `connected`.
+ */
+export function spectateLobby(code: string): boolean {
+  const normalized = normalizeLobbyCode(code);
+  if (!normalized) return false;
+  pendingCode = null;
+  spectatingCode = normalized;
+  emit(C2S.SPECTATE, { code: normalized }, true);
+  return true;
+}
+
+/** The lobby being watched (`N1`), or null when this client holds a seat. */
+export function spectatingLobbyCode(): string | null {
+  return spectatingCode;
+}
+
+/**
+ * The link that gets somebody else into this lobby (`N9`).
+ *
+ * `?watch=1` sends them to the spectator view instead of a seat, which is the
+ * only useful thing to send once a match is under way.
+ */
+export function inviteLink(code: string, watch = false): string {
+  const url = new URL(window.location.href);
+  url.search = '';
+  url.hash = '';
+  url.searchParams.set('lobby', code);
+  if (watch) url.searchParams.set('watch', '1');
+  return url.toString();
+}
+
+/**
+ * Upper-case a code and check it is one, or null (`N9`).
+ *
+ * The shape check itself is `isLobbyCode` in the wire contract, shared with the
+ * hub so the browser and the server cannot disagree about what a code is.
+ */
+export function normalizeLobbyCode(code: unknown): string | null {
+  if (typeof code !== 'string') return null;
+  const normalized = code.trim().toUpperCase();
+  return isLobbyCode(normalized) ? normalized : null;
 }
 
 export function quickplay(): void {
@@ -325,6 +406,8 @@ export function browseLobbies(): void {
 export function leaveLobby(): void {
   emit(C2S.LEAVE, {});
   pendingCode = null;
+  // `slice:leave` gives up a seat *and* a spectator slot, so this clears both.
+  spectatingCode = null;
   store().resetMultiplayer();
 }
 
@@ -338,6 +421,36 @@ export function selectSong(songId: string): void {
 
 export function setLobbySettings(isPublic: boolean): void {
   emit(C2S.SETTINGS, { isPublic }, true);
+}
+
+/** Host: turn team mode on or off (`N2`). Turning it on balances the room. */
+export function setTeamMode(teams: boolean): void {
+  emit(C2S.SETTINGS, { teams }, true);
+}
+
+/** Pick a side, or `null` to sit on neither (`N2`). */
+export function setTeam(team: TeamId | null): void {
+  emit(C2S.TEAM, { team }, true);
+}
+
+/** Host: spread the seats evenly across the two sides (`N2`). */
+export function balanceTeams(): void {
+  emit(C2S.BALANCE, {}, true);
+}
+
+/** Host: hand song choice to the room, or take it back (`N7`). */
+export function setVoteMode(voting: boolean): void {
+  emit(C2S.SETTINGS, { voting }, true);
+}
+
+/** Put a track on the ballot (`N7`). One nomination per seat. */
+export function nominateSong(songId: string): void {
+  emit(C2S.NOMINATE, { songId }, true);
+}
+
+/** Back a nominated track (`N7`). Changeable until the ballot closes. */
+export function voteForSong(songId: string): void {
+  emit(C2S.VOTE, { songId }, true);
 }
 
 export function setLobbyModifiers(modifiers: Modifiers): void {

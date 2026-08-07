@@ -202,7 +202,17 @@ export const songSelect = {
   id: true,
   title: true,
   artist: true,
+  /** L15 — the grouping key, so a card can link to the artist page. */
+  artistKey: true,
   album: true,
+  /** C3 — for the difficulty sort's badge; null on most of the library. */
+  chartRating: true,
+  /**
+   * V8 — 64 small integers. Included here on purpose while `analysisData` is
+   * excluded a few lines down: that is the whole reason the strip is a
+   * separate column rather than something derived from the chart at read time.
+   */
+  densityStrip: true,
   description: true,
   duration: true,
   bpm: true,
@@ -296,7 +306,10 @@ type SongRow = {
   id: string;
   title: string;
   artist: string;
+  artistKey?: string | null;
   album: string | null;
+  chartRating?: number | null;
+  densityStrip?: unknown;
   description: string | null;
   duration: number;
   bpm: number | null;
@@ -462,4 +475,40 @@ export function songDensityStrip(
 
   if (!notes || notes.length === 0) return null;
   return densityStrip(notes, duration);
+}
+
+/**
+ * Narrow a stored `densityStrip` JSON value back to the array the client
+ * contract promises.
+ *
+ * `Json?` in Prisma is `JsonValue`, which is "anything" — a row written by an
+ * older version of this code, or by hand, could hold a string or an object. A
+ * malformed strip renders as no strip, which is a supported state; letting it
+ * through as `unknown[]` and having the component index into it is not.
+ */
+export function readDensityStrip(value: unknown): number[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  if (!value.every((n) => typeof n === 'number' && Number.isFinite(n))) return undefined;
+  return value as number[];
+}
+
+/**
+ * The three library-only fields that hang off a row but are not part of
+ * `SliceSong`.
+ *
+ * A helper rather than three spreads at each call site: the list route, the
+ * artist page and the pack read all build a `LibrarySong`, and the one that
+ * forgets `artistKey` is the one whose artist links silently stop working.
+ */
+export function libraryFieldsOf(row: SongRow): {
+  artistKey: string | null;
+  chartRating: number | null;
+  densityStrip?: number[];
+} {
+  const strip = readDensityStrip(row.densityStrip);
+  return {
+    artistKey: row.artistKey ?? null,
+    chartRating: row.chartRating ?? null,
+    ...(strip ? { densityStrip: strip } : {}),
+  };
 }

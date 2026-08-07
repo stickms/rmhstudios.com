@@ -4,7 +4,16 @@ import * as React from 'react';
 import { Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Play, Settings, X, Check, ImagePlus, Heart, SlidersHorizontal } from 'lucide-react';
+import { Play, Settings, X, Check, ImagePlus, Heart, Layers, SlidersHorizontal } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { artistKeyOf, artistPath } from '@/lib/slice-it/artist';
+import { PackPanel } from './packs/PackPanel';
 import { Leaderboard } from './Leaderboard';
 import { SongComments } from './SongComments';
 import { useSliceItStore } from '@/lib/slice-it/store';
@@ -71,6 +80,11 @@ export function SongDetailsPanel({
   // is a worse bug than a stray link.
   const canEditChart =
     isOwner || Boolean((session.data?.user as { isAdmin?: boolean } | undefined)?.isAdmin);
+
+  /** L15 — the artist page link target, or null for an unkeyable artist tag. */
+  const artistLinkKey = React.useMemo(() => artistKeyOf(song?.artist), [song?.artist]);
+  /** L16 — the add-to-pack dialog. */
+  const [packOpen, setPackOpen] = React.useState(false);
 
   // Edit state
   const [showEdit, setShowEdit] = React.useState(false);
@@ -350,7 +364,21 @@ export function SongDetailsPanel({
                   </button>
                 )}
               </div>
-              <div className="text-blue-500 font-bold text-lg mb-3">{song.artist}</div>
+              {/* L15 — "everything by this artist" from the panel you are
+                  already looking at. The key is derived here rather than read
+                  off the row because `SliceSong` (in `types.ts`) has no
+                  `artistKey` field; `artistKeyOf` is the same function the
+                  server writes the column with, which is the point of it being
+                  client-safe. */}
+              <div className="text-blue-500 font-bold text-lg mb-3">
+                {artistLinkKey ? (
+                  <a href={artistPath(artistLinkKey)} className="hover:underline">
+                    {song.artist}
+                  </a>
+                ) : (
+                  song.artist
+                )}
+              </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="flex flex-col">
@@ -453,6 +481,30 @@ export function SongDetailsPanel({
                   className={`w-6 h-6 transition-transform ${song.isLiked ? 'fill-current scale-110' : 'group-hover:scale-110'}`}
                 />
               </Button>
+              {/* L16 — the add-to-pack entry point. A pack builder reachable
+                  only from the library toolbar can create packs and never fill
+                  them; this is the half that puts a track into one. */}
+              {session.data?.user && (
+                <Dialog open={packOpen} onOpenChange={setPackOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="h-14 w-14 rounded-lg border bg-slice-card-bg border-slice-shadow-dark/50 text-slice-text-light hover:text-blue-400 hover:border-blue-400/50 flex items-center justify-center transition-colors"
+                      aria-label={t('add-to-pack', { defaultValue: 'Add to pack' })}
+                    >
+                      <Layers className="w-6 h-6" aria-hidden />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-slice-bg border-none shadow-2xl rounded-2xl max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle className="text-slice-text font-black">
+                        {t('add-to-pack', { defaultValue: 'Add to pack' })}
+                      </DialogTitle>
+                    </DialogHeader>
+                    <PackPanel addSongId={song.id} onAdded={() => setPackOpen(false)} />
+                  </DialogContent>
+                </Dialog>
+              )}
               <div className="flex flex-col items-center px-4 py-2 bg-slice-card-bg rounded-lg border border-slice-shadow-dark/50">
                 <div className="text-[10px] font-bold text-slice-text-light uppercase">
                   {t('multiplier', { defaultValue: 'Multiplier' })}

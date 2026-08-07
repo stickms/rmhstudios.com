@@ -429,7 +429,17 @@ export const SONGS_PAGE_SIZE_MAX = 60;
 export const LEADERBOARD_PAGE_SIZE = 25;
 export const LEADERBOARD_PAGE_SIZE_MAX = 100;
 
-export const SONG_SORTS = ['recent', 'popular', 'liked', 'title', 'duration'] as const;
+/**
+ * `difficulty` sorts by `Song.chartRating` — the C3 computed rating of a song's
+ * hardest public chart, denormalised onto the song row. The column and its
+ * `(isPublic, chartRating DESC)` index shipped with C3 and had no reader:
+ * `docs/_handoff/rating-requests.md` §1 asked for exactly this value. NULLS
+ * LAST is the whole subtlety and lives with the ORDER BY in
+ * `app/routes/api/slice-it/songs.ts` — a song with no rated chart is not a
+ * trivially easy song, and Postgres sorts NULLs FIRST on DESC by default, which
+ * would put every unrated song at the top of "hardest first".
+ */
+export const SONG_SORTS = ['recent', 'popular', 'liked', 'title', 'duration', 'difficulty'] as const;
 export type SongSort = (typeof SONG_SORTS)[number];
 
 /**

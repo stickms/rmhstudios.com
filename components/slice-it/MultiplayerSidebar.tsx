@@ -79,6 +79,9 @@ function PlayerLink({
 
 export function MultiplayerSidebar() {
   const { t } = useTranslation('c-game');
+  // The team badge's strings live in `r-slice-it` alongside the rest of the
+  // multiplayer mode copy (`N2`), not in the shared game namespace.
+  const { t: ts } = useTranslation('r-slice-it');
   const liveScores = useSliceItStore((s) => s.liveScores);
   const lobby = useSliceItStore((s) => s.lobby);
   const selfSocketId = useSliceItStore((s) => s.selfSocketId);
@@ -91,7 +94,14 @@ export function MultiplayerSidebar() {
         const seat = seatOf(entry.socketId);
         // `userId` is what makes the name a link (X11). Null for a guest seat,
         // which is exactly the case that has no page to link to.
-        return { ...entry, name: seat?.name ?? 'Player', userId: seat?.userId ?? null };
+        return {
+          ...entry,
+          name: seat?.name ?? 'Player',
+          userId: seat?.userId ?? null,
+          // Null outside team mode (`N2`) — the server already reports it that
+          // way, so the board never has to ask two questions to draw a badge.
+          team: seat?.team ?? null,
+        };
       })
       .sort((a, b) => b.score - a.score);
   }, [liveScores, lobby, selfSocketId]);
@@ -152,6 +162,19 @@ export function MultiplayerSidebar() {
                 <span className="font-bold text-slice-text text-sm truncate" title={row.name}>
                   <span className="text-slice-text-light mr-1">#{index + 1}</span>
                   <PlayerLink userId={row.userId} name={row.name} className="" />
+                  {row.team && (
+                    <span
+                      className={`ml-1.5 text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full ${
+                        row.team === 'a'
+                          ? 'bg-blue-500/20 text-blue-500'
+                          : 'bg-orange-500/20 text-orange-500'
+                      }`}
+                    >
+                      {row.team === 'a'
+                        ? ts('mp-team-a-short', { defaultValue: 'A' })
+                        : ts('mp-team-b-short', { defaultValue: 'B' })}
+                    </span>
+                  )}
                 </span>
                 {row.done ? (
                   <span className="inline-flex items-center gap-1 text-[10px] font-black text-green-500 shrink-0">

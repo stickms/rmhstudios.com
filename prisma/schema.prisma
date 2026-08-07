@@ -95,6 +95,7 @@ model User {
   authoredCharts Chart[]           @relation("ChartAuthor")
   sliceDailyEntries SliceDailyEntry[]
   sliceSetlists     SliceSetlist[]
+  curatedChartPacks ChartPack[]       @relation("ChartPackCurator")
 
   // RmhTube Relations
   rmhtubeHostedRooms RmhTubeRoom[]       @relation("RmhTubeHostedRooms")
@@ -902,6 +903,20 @@ model Song {
   id          String  @id @default(cuid())
   title       String
   artist      String
+
+  /// L15 — the normalised grouping key for {@link artist}.
+  ///
+  /// `artist` stays the display string the uploader typed; this is the only
+  /// thing an equality filter or an index is ever built on. Two columns because
+  /// "MOTHER3" and "Mother 3" are one artist and only one of them is what
+  /// should be shown. Computed by `artistKeyOf()` in `lib/slice-it/artist.ts`
+  /// at write time — never at read time, or the index is unusable.
+  ///
+  /// Nullable: an artist tag that is entirely punctuation has no key, and
+  /// Postgres treats NULLs as distinct, so those rows stay separate rather than
+  /// all joining one artist page called "".
+  artistKey   String? @db.VarChar(200)
+
   album       String?
   description String?
   duration    Float
@@ -925,6 +940,21 @@ model Song {
   // Audio Analysis Data (JSON for beatmap generation)
   analysisData Json?
 
+  /// V8 — a 64-value note-density histogram over the chart's duration.
+  ///
+  /// Stored rather than derived per request, and stored *separately from*
+  /// `analysisData` on purpose: `songSelect` in `lib/slice-it/songs.server.ts`
+  /// deliberately excludes `analysisData` because a chart is hundreds of
+  /// kilobytes and the list endpoint returns thirty rows at a time. Sending the
+  /// chart just to animate a hover strip would undo exactly that. 64 small
+  /// integers ride in a list response for nothing.
+  ///
+  /// Written by `songDensityStrip()` wherever `analysisData` is written. Null
+  /// for a row uploaded before this column, until it is next re-analysed — the
+  /// strip simply does not render, which is what `<DensityStrip>` already does
+  /// with an absent value.
+  densityStrip Json?
+
   uploadedBy String
   uploader   User   @relation("SongUploader", fields: [uploadedBy], references: [id])
 
@@ -945,9 +975,25 @@ model Song {
   /// has no rating. A null must sort last, not as a zero.
   chartRating Float?
 
+  /// L14 — the weighted full-text document this row is searched by.
+  ///
+  /// A **generated** column (`GENERATED ALWAYS AS … STORED`, see the migration),
+  /// not a trigger-maintained one: a trigger has to be re-run over the whole
+  /// table every time the expression changes, and a generated column simply
+  /// cannot drift from its source fields. Prisma has no first-class generated
+  /// columns, so it is declared `Unsupported` and is invisible to the client —
+  /// which is correct, because nothing should ever write it and the only reader
+  /// is the raw query in `lib/slice-it/songs.server.ts#searchSongs`.
+  ///
+  /// The weights are the ranking: title A, artist B, album C, description D. A
+  /// title match beating a description match is the entire point — before this
+  /// they were the same `ILIKE '%…%'` and therefore indistinguishable.
+  searchVector Unsupported("tsvector")? @default(dbgenerated())
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  packItems ChartPackItem[]
   ratings   SongRating[]
   comments  SongComment[]
   scores    SongLeaderboard[]
@@ -966,6 +1012,15 @@ model Song {
   @@index([isPublic, createdAt(sort: Desc)])
   /// C3's "sort by difficulty" over the same filtered set.
   @@index([isPublic, chartRating(sort: Desc)])
+  /// L15 — "everything by this artist, newest first". The plain `@@index([artist])`
+  /// above cannot serve it: that question was a substring match, which no
+  /// B-tree on the display string can answer.
+  @@index([artistKey, createdAt(sort: Desc)])
+  /// L14 — the full-text index. GIN over the generated `tsvector`; the trigram
+  /// index that backs the typo path is on `(title, artist)` and is created in
+  /// the migration, because `gin_trgm_ops` is an operator class Prisma's schema
+  /// language has no way to name.
+  @@index([searchVector], type: Gin)
 }
 
 model SongLike {
@@ -1280,6 +1335,9 @@ model Chart {
   /// touching the score route — see `docs/_handoff/chart-editor-requests.md` §3.
   scores    SongLeaderboard[]
   runs      SliceRun[]
+  /// L16 — pack membership. Optional on the item side: an album pack built at
+  /// upload names songs, because no `Chart` row exists yet at that point.
+  packItems ChartPackItem[]
 
   @@unique([songId, authorId, difficulty, keys, name])
   @@index([songId, status])
@@ -1290,6 +1348,96 @@ model Chart {
   /// "everything rated by an old version".
   @@index([rating(sort: Desc)])
   @@index([ratingVersion])
+}
+
+/// **L16 — a pack: an ordered, curated set of charts.**
+///
+/// `Song.album` was a free-text field that was displayed and nothing else.
+/// There was no way to upload an album as a unit, no way to group charts you
+/// did not upload, and no authoring surface for the pack model the course
+/// (`S2`), shelf (`L2`) and setlist (`S8`) features all expect to consume.
+///
+/// A pack is that unit. It is intentionally *not* an album table: an album is
+/// one `kind` of pack, the one that gets created automatically from a
+/// multi-track upload, and it shares its storage with hand-curated packs so
+/// that everything downstream reads one shape.
+model ChartPack {
+  /// UUID rather than `cuid()`, matching `Chart` and the new-table PK policy in
+  /// `lib/CLAUDE.md` §Database. `gen_random_uuid()` for the same reason `Chart`
+  /// uses it: `uuid_generate_v7()` is not installed in this database.
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  curatorId String
+  curator   User   @relation("ChartPackCurator", fields: [curatorId], references: [id], onDelete: Cascade)
+
+  title       String  @db.VarChar(120)
+  description String? @db.VarChar(2000)
+  coverUrl    String?
+
+  /// 'album'  — auto-created from a multi-track upload, curator = uploader.
+  /// 'pack'   — hand-curated, may contain other people's charts.
+  /// 'course' — ordered and gated; S2 reads these.
+  ///
+  /// A string rather than an enum so a fourth kind does not need a migration on
+  /// a 66-enum schema; the vocabulary is `PACK_KINDS` in
+  /// `lib/slice-it/packs.ts` and is validated on the way in.
+  kind String @default("pack") @db.VarChar(16)
+
+  isPublic Boolean @default(false)
+
+  /// Set only for `kind = 'album'`: the normalised artist the album belongs to,
+  /// so an artist page can list that artist's albums without joining through
+  /// every member song. Same normalisation as `Song.artistKey`.
+  artistKey String? @db.VarChar(200)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items ChartPackItem[]
+
+  /// The public browse: newest published packs first.
+  @@index([isPublic, createdAt(sort: Desc)])
+  /// "my packs", including the unpublished ones the builder is working on.
+  @@index([curatorId, updatedAt(sort: Desc)])
+  @@index([artistKey])
+}
+
+/// **L16 — one member of a pack.**
+///
+/// Keyed on `(packId, songId)` rather than the sketch's `(packId, chartId)`.
+/// The reason is the album path: a multi-track upload creates `Song` rows and
+/// no `Chart` rows at all — charts are authored later, in the editor, and a
+/// generated chart lives in `Song.analysisData` which is not a `Chart` row
+/// either. Keying on `chartId` would have made every auto-created album pack
+/// empty on the day it was created. `chartId` is kept as an optional pin for
+/// the case a curator means one specific difficulty rather than "this song".
+model ChartPackItem {
+  packId String    @db.Uuid
+  pack   ChartPack @relation(fields: [packId], references: [id], onDelete: Cascade)
+
+  songId String
+  song   Song   @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  /// Optional pin to one specific chart of that song. `SetNull` rather than
+  /// `Cascade`: deleting a difficulty should drop the pin, not silently drop
+  /// the song out of somebody's pack.
+  chartId String? @db.Uuid
+  chart   Chart?  @relation(fields: [chartId], references: [id], onDelete: SetNull)
+
+  /// Explicit and **sparse** (10, 20, 30 …), so inserting between two items is
+  /// one UPDATE of one row rather than renumbering everything after it. A pack
+  /// whose gaps have been used up is renormalised by `resequencePack()` in
+  /// `lib/slice-it/packs.server.ts`, which is the only operation that ever
+  /// rewrites more than one row.
+  position Int
+
+  addedAt DateTime @default(now())
+
+  @@id([packId, songId])
+  /// The read: one pack, in order.
+  @@index([packId, position])
+  /// The reverse: "which packs is this song in", for the song details panel.
+  @@index([songId])
 }
 
 /// **S1 — one ranked attempt at the daily challenge.**

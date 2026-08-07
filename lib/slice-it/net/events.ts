@@ -64,7 +64,22 @@ export const C2S = {
   READY: 'slice:ready',
   /** Host picks a track. Payload is an id; the server resolves the row. */
   SONG: 'slice:song',
-  /** Host toggles lobby-level settings (public listing). */
+  /**
+   * Pick a side in team mode (`N2`). `null` leaves the seat unassigned, which is
+   * a real state: the host can start a team match with a straggler on neither
+   * side and the server simply scores them into no total.
+   */
+  TEAM: 'slice:team',
+  /** Host spreads the seats evenly across the two sides (`N2`). */
+  BALANCE: 'slice:balance',
+  /**
+   * Put a track up for the lobby's vote (`N7`). One nomination per seat — a
+   * second replaces the first, rather than letting one player flood the ballot.
+   */
+  NOMINATE: 'slice:nominate',
+  /** Back one of the nominated tracks (`N7`). One vote per seat, changeable. */
+  VOTE: 'slice:vote',
+  /** Host toggles lobby-level settings (public listing, teams, song voting). */
   SETTINGS: 'slice:settings',
   /** A player's own modifiers — per-seat, not lobby-wide. */
   MODS: 'slice:mods',
@@ -111,6 +126,15 @@ export const S2C = {
 export type LobbyState = 'waiting' | 'loading' | 'countdown' | 'playing' | 'results';
 
 /**
+ * A side in team mode (`N2`).
+ *
+ * Two sides, not N: the whole feature is a sum over a partition, and every part
+ * of the UI that shows a total — the lobby roster, the live board, the results
+ * card — has room for exactly two of them. A third side is a different feature.
+ */
+export type TeamId = 'a' | 'b';
+
+/**
  * A guest identity, as it exists for exactly one session.
  *
  * Sourced from a Discord Activity token the hub verified against Discord; held
@@ -147,6 +171,12 @@ export interface LobbyPlayer {
    * try later") or was seated into a song already 90 seconds in.
    */
   spectating: boolean;
+  /**
+   * Their side in team mode (`N2`), or null when they have not picked one — and
+   * always null while the lobby is not in team mode, so a client never has to
+   * ask two questions to know whether to draw a badge.
+   */
+  team: TeamId | null;
   modifiers: Modifiers;
   /** What their modifier set is worth, so the lobby can show it without maths. */
   scoreMultiplier: number;
@@ -168,6 +198,36 @@ export interface LobbySong {
   bpm: number;
 }
 
+/**
+ * One track on the ballot (`N7`).
+ *
+ * Carries the resolved {@link LobbySong}, not the id it was nominated by: the
+ * server reads the row anyway to check the track exists, and a ballot rendered
+ * from ids would need every client to look up six songs it is about to throw
+ * away. It is the same reasoning as `slice:song` — the client names a track, the
+ * server decides what that means.
+ */
+export interface VoteNomination {
+  song: LobbySong;
+  /** Display name of whoever put it up. */
+  nominatedBy: string;
+  /** Socket ids of the seats backing it — enough to show "you voted for this". */
+  voters: string[];
+}
+
+/**
+ * An open song vote (`N7`).
+ *
+ * `closesAt` is an absolute server timestamp for the same reason every other
+ * deadline in this contract is: a duration would have each client start its own
+ * timer at a slightly different moment and disagree about when the ballot shut.
+ */
+export interface VoteState {
+  /** Server epoch-ms the vote closes. */
+  closesAt: number;
+  nominations: VoteNomination[];
+}
+
 export interface LobbySnapshot {
   code: string;
   hostSocketId: string;
@@ -176,6 +236,12 @@ export interface LobbySnapshot {
   players: LobbyPlayer[];
   maxPlayers: number;
   song: LobbySong | null;
+  /** Team mode is on (`N2`) — seats carry a side and results carry totals. */
+  teamsEnabled: boolean;
+  /** The host has handed song choice to the room (`N7`). */
+  votingEnabled: boolean;
+  /** The ballot, while one is open (`N7`). Null the rest of the time. */
+  vote: VoteState | null;
 }
 
 export interface PublicLobbyInfo {
@@ -241,11 +307,38 @@ export interface FinalStanding {
   place: number;
   /** False when they never reported a finish — a drop or a load timeout. */
   finished: boolean;
+  /** Their side in team mode (`N2`); null in a free-for-all. */
+  team: TeamId | null;
+}
+
+/**
+ * A side's total (`N2`).
+ *
+ * Summed on the server, and the placing with it. The client is not asked to add
+ * up the standings itself because two clients that disagree about the arithmetic
+ * — one holding a stale roster, one that dropped a late `slice:score` — would
+ * announce two different winners of the same match, and both would be showing
+ * numbers they derived honestly.
+ */
+export interface TeamTotal {
+  team: TeamId;
+  score: number;
+  /** 0–1. The mean over the side's racers, not a sum. */
+  accuracy: number;
+  /** How many racers were on this side — a total of 3 vs 5 is worth seeing. */
+  players: number;
+  /** 1-based. Both sides share place 1 on an exact tie. */
+  place: number;
 }
 
 export interface MatchResults {
   standings: FinalStanding[];
   song: LobbySong | null;
+  /**
+   * Present only in team mode. Computed server-side so two clients cannot
+   * disagree about who won — see {@link TeamTotal}.
+   */
+  teams?: TeamTotal[];
 }
 
 /**
@@ -300,7 +393,15 @@ export type LobbyErrorCode =
    */
   | 'code_taken'
   /** The requested code is not a well-formed lobby code. Nothing was created. */
-  | 'invalid_code';
+  | 'invalid_code'
+  /**
+   * A nomination or a vote arrived with no ballot open (`N7`) — the vote closed
+   * while the click was in flight, or the host never opened one. Distinct from
+   * `not_host`: the caller was allowed to do this, a moment ago.
+   */
+  | 'vote_closed'
+  /** A team action in a lobby that is not in team mode (`N2`). */
+  | 'teams_disabled';
 
 export interface LobbyError {
   code: LobbyErrorCode;
@@ -362,7 +463,25 @@ const CodeZ = z.unknown().transform((raw) =>
  */
 const IgnoredZ = z.unknown();
 
-const LobbySettingsShape = z.object({ isPublic: z.boolean().optional().catch(undefined) });
+const LobbySettingsShape = z.object({
+  isPublic: z.boolean().optional().catch(undefined),
+  /** Team mode (`N2`). Absent means "leave it as it is", not "turn it off". */
+  teams: z.boolean().optional().catch(undefined),
+  /** Song voting (`N7`). True opens a ballot; false cancels the open one. */
+  voting: z.boolean().optional().catch(undefined),
+});
+
+/**
+ * A side, as a client asks for one.
+ *
+ * Anything that is not `'a'` or `'b'` — including the omitted field an older
+ * bundle sends — means "no side", which is a legal seat state. Rejecting would
+ * disconnect the caller over a field whose worst outcome is a badge not drawn.
+ */
+const TeamZ = z
+  .unknown()
+  .optional()
+  .transform((raw) => (raw === 'a' || raw === 'b' ? raw : null));
 
 const LobbySettingsPatchZ = LobbySettingsShape.catch({});
 
@@ -406,8 +525,20 @@ const LobbyPlayerZ = z.object({
   isHost: z.boolean(),
   disconnected: z.boolean(),
   spectating: z.boolean(),
+  team: z.enum(['a', 'b']).nullable(),
   modifiers: ModifiersZ,
   scoreMultiplier: z.number(),
+});
+
+const VoteStateZ = z.object({
+  closesAt: z.number(),
+  nominations: z.array(
+    z.object({
+      song: LobbySongZ,
+      nominatedBy: z.string(),
+      voters: z.array(z.string()),
+    }),
+  ),
 });
 
 const LobbySnapshotZ = z.object({
@@ -418,6 +549,9 @@ const LobbySnapshotZ = z.object({
   players: z.array(LobbyPlayerZ),
   maxPlayers: z.number().int(),
   song: LobbySongZ.nullable(),
+  teamsEnabled: z.boolean(),
+  votingEnabled: z.boolean(),
+  vote: VoteStateZ.nullable(),
 });
 
 const PublicLobbyInfoZ = z.object({
@@ -462,11 +596,21 @@ const FinalStandingZ = z.object({
   scoreMultiplier: z.number(),
   place: z.number().int(),
   finished: z.boolean(),
+  team: z.enum(['a', 'b']).nullable(),
+});
+
+const TeamTotalZ = z.object({
+  team: z.enum(['a', 'b']),
+  score: z.number(),
+  accuracy: z.number(),
+  players: z.number().int(),
+  place: z.number().int(),
 });
 
 const MatchResultsZ = z.object({
   standings: z.array(FinalStandingZ),
   song: LobbySongZ.nullable(),
+  teams: z.array(TeamTotalZ).optional(),
 });
 
 const ChatMessageZ = z.object({
@@ -491,6 +635,8 @@ const LobbyErrorZ = z.object({
     'song_unavailable',
     'code_taken',
     'invalid_code',
+    'vote_closed',
+    'teams_disabled',
   ]),
   message: z.string(),
 });
@@ -528,6 +674,10 @@ export const EVENTS = defineEvents({
   'slice:leave': { c2s: IgnoredZ },
   'slice:ready': { c2s: z.object({ ready: z.boolean().optional() }).catch({}) },
   'slice:song': { c2s: z.object({ songId: z.string().max(64) }) },
+  'slice:team': { c2s: z.object({ team: TeamZ }).catch({ team: null }) },
+  'slice:balance': { c2s: IgnoredZ },
+  'slice:nominate': { c2s: z.object({ songId: z.string().max(64) }) },
+  'slice:vote': { c2s: z.object({ songId: z.string().max(64) }) },
   'slice:settings': { c2s: LobbySettingsPatchZ },
   'slice:mods': { c2s: z.object({ modifiers: ModifiersZ }) },
   'slice:loaded': { c2s: IgnoredZ },
@@ -566,6 +716,24 @@ export const EVENTS = defineEvents({
 export type SliceC2S = ClientToServer<typeof EVENTS>;
 /** Typed `on` for the browser client. */
 export type SliceS2C = ServerToClient<typeof EVENTS>;
+
+/**
+ * Is this the shape of a lobby code the server mints? (`N9`)
+ *
+ * Lives here rather than in the client or the handler because both need the
+ * same answer: an invite link (`/slice-it?lobby=CODE`) is checked in the browser
+ * *before* a join is attempted, so a stale or mangled link lands the player in
+ * the menu with a message instead of a socket round-trip per reconnect, and the
+ * server checks the same shape before minting a lobby under a preferred code.
+ * Two copies of this regex would eventually disagree about which of them is the
+ * real code space.
+ *
+ * Shape only. Whether a well-formed code names a *live* lobby is a question only
+ * the server can answer, and it answers it with `not_found`.
+ */
+export function isLobbyCode(code: unknown): code is string {
+  return typeof code === 'string' && code.length === LOBBY_CODE_LENGTH && /^[A-Z0-9]+$/.test(code);
+}
 
 /** Every player in a lobby shares a socket.io room named for its code. */
 export function lobbyRoom(code: string): string {

@@ -55,6 +55,23 @@
  * in `lobby.seats`, so they are counted by nothing: not the capacity check, not
  * the ready check, not the set of players a match waits for.
  *
+ * ## Teams (`N2`)
+ *
+ * A seat can hold a side, and a team match's totals are summed **here** and
+ * shipped in `MatchResults.teams`. Deliberately not left to the client: a total
+ * is the one number a team match is decided by, and two clients with slightly
+ * different rosters would each add up their own view honestly and announce
+ * different winners of the same match.
+ *
+ * ## Song voting (`N7`)
+ *
+ * With voting on, the room nominates and votes instead of the host picking, and
+ * a fresh ballot opens on every return to the lobby — the rematch is the case
+ * the feature exists for. Ties break with {@link lobbyRng}, seeded from the
+ * lobby code and the ballot number, rather than `Math.random()`: the server can
+ * then say *why* a track won, and the same room with the same votes resolves the
+ * same way on any process that runs it.
+ *
  * NOTE: server code imports `lib/` RELATIVELY — `@/lib/...` is not resolvable
  * in the esbuild server bundle (see `server/CLAUDE.md` §Gotchas 7).
  */
@@ -71,7 +88,6 @@ import {
   COUNTDOWN_SECONDS,
   FINISH_GRACE_MS,
   LOAD_TIMEOUT_MS,
-  LOBBY_CODE_LENGTH,
   LOBBY_DISCONNECT_GRACE_MS,
   LOBBY_IDLE_TIMEOUT_MS,
   MATCH_DISCONNECT_GRACE_MS,
@@ -94,6 +110,7 @@ import type { Modifiers } from '../../../lib/slice-it/types';
 import {
   EVENTS,
   S2C,
+  isLobbyCode,
   lobbyRoom,
   specRoom,
   type ChatMessage,
@@ -108,6 +125,9 @@ import {
   type LobbyState,
   type PublicLobbyInfo,
   type ScoreReport,
+  type TeamId,
+  type TeamTotal,
+  type VoteState,
 } from '../../../lib/slice-it/net/events';
 
 /* ─── Constants ─────────────────────────────────────────────────────────── */
@@ -117,6 +137,17 @@ const BROWSE_CAP = 30;
 const GC_INTERVAL_MS = 60_000;
 /** Attempts to mint a non-colliding code before giving up. */
 const CODE_ATTEMPTS = 12;
+/**
+ * How long a song vote stays open (`N7`).
+ *
+ * Long enough to read six titles, short enough that one player who wandered off
+ * cannot hold the lobby — the ballot resolves early anyway the moment every
+ * connected seat has voted, so this bound is only ever paid by a room that is
+ * waiting on somebody who is not there.
+ */
+const VOTE_DURATION_MS = 45_000;
+/** Both sides of a team match (`N2`). */
+const TEAMS: readonly TeamId[] = ['a', 'b'];
 
 const EMPTY_REPORT: ScoreReport = { score: 0, combo: 0, maxCombo: 0, accuracy: 0, health: 100 };
 
@@ -136,6 +167,8 @@ interface Seat {
   ready: boolean;
   /** Joined mid-match: watching this round, playing the next. */
   spectating: boolean;
+  /** Their side in team mode (`N2`). Always null while team mode is off. */
+  team: TeamId | null;
   modifiers: Modifiers;
   report: ScoreReport;
   /** Their client has decoded the audio and built its chart. */
@@ -146,6 +179,28 @@ interface Seat {
   disconnectedAt: number | null;
   /** Timer that removes the seat when the grace window expires. */
   graceTimer: ReturnType<typeof setTimeout> | null;
+}
+
+/**
+ * One track on the ballot (`N7`), as the server holds it.
+ *
+ * The nominator is remembered by **seat key**, not socket id, for the same
+ * reason seats are: a reconnect mints a new socket and the room would otherwise
+ * decide the player who blinked had never nominated anything, freeing them to
+ * put a second track up.
+ */
+interface Nomination {
+  song: LobbySong;
+  byKey: string;
+  byName: string;
+}
+
+interface Ballot {
+  /** Server epoch-ms the ballot closes. Absolute, like every other deadline. */
+  closesAt: number;
+  nominations: Nomination[];
+  /** Seat key → the song id that seat is backing. One vote each, changeable. */
+  votes: Map<string, string>;
 }
 
 interface Lobby {
@@ -165,6 +220,23 @@ interface Lobby {
   chat: ChatMessage[];
   createdAt: number;
   lastActivityAt: number;
+
+  /* Modes */
+  /** Team mode (`N2`): seats carry a side and results carry per-side totals. */
+  teamsEnabled: boolean;
+  /** Song voting (`N7`): the room picks the track instead of the host. */
+  votingEnabled: boolean;
+  /** The open ballot, or null. */
+  vote: Ballot | null;
+  /**
+   * How many ballots this lobby has run.
+   *
+   * Part of the vote's RNG seed, so two ballots in the same lobby do not break
+   * their ties the same way — and so a tie-break is reproducible from facts the
+   * server can state out loud rather than from `Math.random()`.
+   */
+  voteRound: number;
+  voteTimer: ReturnType<typeof setTimeout> | null;
 
   /* Match */
   matchStartedAt: number;
@@ -287,6 +359,10 @@ function toPlayer(seat: Seat, lobby: Lobby): LobbyPlayer {
     isHost: seat.key === lobby.hostKey,
     disconnected: seat.disconnectedAt !== null,
     spectating: seat.spectating,
+    // Reported as null while team mode is off even if the seat still remembers a
+    // side from a previous round, so a client never has to ask two questions to
+    // know whether to draw a badge.
+    team: lobby.teamsEnabled ? seat.team : null,
     modifiers: seat.modifiers,
     scoreMultiplier: Number(calculateScoreMultiplier(seat.modifiers).toFixed(2)),
   };
@@ -301,6 +377,39 @@ function snapshot(lobby: Lobby): LobbySnapshot {
     players: Array.from(lobby.seats.values()).map((seat) => toPlayer(seat, lobby)),
     maxPlayers: MAX_LOBBY_PLAYERS,
     song: lobby.song,
+    teamsEnabled: lobby.teamsEnabled,
+    votingEnabled: lobby.votingEnabled,
+    vote: voteSnapshot(lobby),
+  };
+}
+
+/**
+ * The ballot as the wire carries it (`N7`).
+ *
+ * Voters are published as **socket ids** while the server holds them as seat
+ * keys: a seat key is a `userId`, and broadcasting the roster's user ids to
+ * everyone in the room would hand out an identifier the snapshot does not
+ * otherwise expose for a disconnected seat. The socket id is what every other
+ * per-player field in {@link LobbySnapshot} is addressed by, so "did I vote for
+ * this" stays one comparison on the client.
+ */
+function voteSnapshot(lobby: Lobby): VoteState | null {
+  const ballot = lobby.vote;
+  if (!ballot) return null;
+  const socketOf = new Map<string, string>();
+  for (const seat of lobby.seats.values()) {
+    if (seat.socketId) socketOf.set(seat.key, seat.socketId);
+  }
+  return {
+    closesAt: ballot.closesAt,
+    nominations: ballot.nominations.map((nomination) => ({
+      song: nomination.song,
+      nominatedBy: nomination.byName,
+      voters: Array.from(ballot.votes)
+        .filter(([, songId]) => songId === nomination.song.id)
+        .map(([key]) => socketOf.get(key))
+        .filter((id): id is string => Boolean(id)),
+    })),
   };
 }
 
@@ -336,6 +445,10 @@ function connectedSeats(lobby: Lobby): Seat[] {
 }
 
 function clearTimers(lobby: Lobby): void {
+  if (lobby.voteTimer) {
+    clearTimeout(lobby.voteTimer);
+    lobby.voteTimer = null;
+  }
   if (lobby.loadTimer) clearTimeout(lobby.loadTimer);
   if (lobby.countdownTimer) clearTimeout(lobby.countdownTimer);
   if (lobby.scoreTimer) clearInterval(lobby.scoreTimer);
@@ -370,9 +483,15 @@ function mintCode(): string | null {
   return null;
 }
 
-/** A well-formed lobby code — the shape {@link mintCode} produces. */
+/**
+ * A well-formed lobby code — the shape {@link mintCode} produces.
+ *
+ * Delegates to the contract's own {@link isLobbyCode} so the browser's
+ * invite-link check (`N9`) and this one cannot drift into disagreeing about
+ * which strings are codes.
+ */
 function isWellFormedCode(code: string): boolean {
-  return code.length === LOBBY_CODE_LENGTH && /^[A-Z0-9]+$/.test(code);
+  return isLobbyCode(code);
 }
 
 /**
@@ -382,11 +501,7 @@ function isWellFormedCode(code: string): boolean {
  *   because "your code was not honoured" is a different outcome from "the
  *   server ran out of codes" and only the caller can tell the client which.
  */
-function createLobby(
-  host: Who,
-  isPublic: boolean,
-  preferredCode?: string,
-): Lobby | null {
+function createLobby(host: Who, isPublic: boolean, preferredCode?: string): Lobby | null {
   const code = preferredCode ?? mintCode();
   if (!code) return null;
   const now = Date.now();
@@ -400,6 +515,11 @@ function createLobby(
     chat: [],
     createdAt: now,
     lastActivityAt: now,
+    teamsEnabled: false,
+    votingEnabled: false,
+    vote: null,
+    voteRound: 0,
+    voteTimer: null,
     matchStartedAt: 0,
     deadline: 0,
     pausedAt: null,
@@ -466,6 +586,10 @@ function seatPlayer(io: Server, lobby: Lobby, socket: Socket, who: Who): Seat {
     // the old behaviour and it made an invite link useless the moment the host
     // pressed start.
     spectating: lobby.state !== 'waiting',
+    // A late arrival in team mode lands on the *smaller* side rather than on no
+    // side: an unassigned seat scores into no total, so the default has to be
+    // the one that keeps the match a match.
+    team: lobby.teamsEnabled ? smallerTeam(lobby) : null,
     modifiers: { ...DEFAULT_MODIFIERS },
     report: { ...EMPTY_REPORT },
     loaded: false,
@@ -513,7 +637,233 @@ function removeSeat(io: Server, lobby: Lobby, key: string, reason: string): void
 
   releasePauseIfSettled(io, lobby);
   maybeFinishMatch(io, lobby);
+  // A ballot the room was only waiting on this seat for can now close (`N7`).
+  // Their own vote goes with them: counting a vote from a seat that is gone
+  // would let a player leave and still decide the next song.
+  if (lobby.vote) {
+    lobby.vote.votes.delete(key);
+    maybeCloseVote(io, lobby);
+  }
   broadcast(io, lobby);
+}
+
+/* ─── Teams (`N2`) ──────────────────────────────────────────────────────── */
+
+/** Seats currently on a side. Spectators included — they play the next round. */
+function seatsOn(lobby: Lobby, team: TeamId): Seat[] {
+  return Array.from(lobby.seats.values()).filter((seat) => seat.team === team);
+}
+
+/** The side with fewer seats; `'a'` on a draw, so the choice is never random. */
+function smallerTeam(lobby: Lobby): TeamId {
+  return seatsOn(lobby, 'b').length < seatsOn(lobby, 'a').length ? 'b' : 'a';
+}
+
+/**
+ * Spread every seat evenly across the two sides — the host's balance control.
+ *
+ * Alternates in **seat order**, which is join order, so the result is a function
+ * of who is in the room and nothing else: pressing balance twice gives the same
+ * two sides, and the host can explain why anyone ended up where they did. A
+ * shuffle here would make the control feel like a reroll and would put the
+ * outcome of a team match partly in the hands of an unseeded `Math.random()`.
+ */
+function balanceTeams(lobby: Lobby): void {
+  let index = 0;
+  for (const seat of lobby.seats.values()) {
+    seat.team = TEAMS[index % TEAMS.length];
+    index++;
+  }
+}
+
+function clearTeams(lobby: Lobby): void {
+  for (const seat of lobby.seats.values()) seat.team = null;
+}
+
+/**
+ * Add up each side, and place them (`N2`).
+ *
+ * Summed here rather than on the client because a total is the one number a
+ * team match is decided by: two clients holding slightly different rosters —
+ * one that missed a late `slice:score`, one that saw a seat leave — would each
+ * add up their own view honestly and announce different winners of the same
+ * match. Accuracy is the **mean** over the side's racers, not a sum, because a
+ * sum of accuracies is not a quantity anybody can read.
+ */
+function buildTeamTotals(standings: FinalStanding[]): TeamTotal[] {
+  const totals = TEAMS.map((team) => {
+    const rows = standings.filter((row) => row.team === team);
+    const score = rows.reduce((sum, row) => sum + row.score, 0);
+    const accuracy = rows.length
+      ? rows.reduce((sum, row) => sum + row.accuracy, 0) / rows.length
+      : 0;
+    return { team, score, accuracy, players: rows.length, place: 1 };
+  });
+
+  // Both sides share first place on an exact tie — the same rule the individual
+  // standings use, and the only honest answer to two equal sums.
+  const ranked = [...totals].sort((a, b) => b.score - a.score || b.accuracy - a.accuracy);
+  if (ranked[0].score !== ranked[1].score) ranked[1].place = 2;
+  return totals;
+}
+
+/* ─── Song voting (`N7`) ────────────────────────────────────────────────── */
+
+/**
+ * A message from the room itself.
+ *
+ * The vote is the one thing in this handler that decides something on the
+ * players' behalf, so it says why: which track won, with how many votes, and
+ * whether a tie had to be broken. An empty `socketId` is what marks it as not
+ * having come from a player.
+ */
+function announce(io: Server, lobby: Lobby, text: string): void {
+  const message: ChatMessage = {
+    id: `system-${lobby.code}-${Date.now()}`,
+    socketId: '',
+    name: 'Lobby',
+    text,
+    at: Date.now(),
+  };
+  lobby.chat.push(message);
+  if (lobby.chat.length > CHAT_HISTORY) lobby.chat.shift();
+  emitAll(io, lobby.code, S2C.CHAT, message);
+}
+
+/**
+ * A deterministic random source for this lobby's current ballot.
+ *
+ * `Math.random()` would decide a tie in a way the server cannot restate
+ * afterwards ("why did it pick that one?" has no answer) and that two servers
+ * given the same room and the same votes would answer differently. Seeded from
+ * the lobby code and the ballot number, the tie-break is a fact about the room
+ * rather than an accident of the process — reproducible in a test, explainable
+ * in a log line, and still unpredictable to a player who cannot know either
+ * input's effect in advance.
+ *
+ * FNV-1a into mulberry32: both are three lines, neither is a dependency, and
+ * the quality bar for choosing between two equally-voted songs is low.
+ */
+function lobbyRng(lobby: Lobby): () => number {
+  const input = `${lobby.code}:${lobby.voteRound}`;
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  let state = hash >>> 0;
+  return () => {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Pick the winning song id from a tally.
+ *
+ * @param votes song id → count, in nomination order.
+ * @param rng the lobby's seeded source — see {@link lobbyRng}.
+ * @returns the winner and how many nominations were tied for it, so the caller
+ *   can say whether a tie was broken at all.
+ */
+function resolveVote(
+  votes: Map<string, number>,
+  rng: () => number,
+): { songId: string; tied: number } {
+  const max = Math.max(...votes.values());
+  // Sorted, so the candidate list does not depend on Map insertion order — the
+  // same votes must resolve the same way whichever order the nominations
+  // happened to arrive in.
+  const winners = Array.from(votes)
+    .filter(([, count]) => count === max)
+    .map(([songId]) => songId)
+    .sort();
+  return { songId: winners[Math.floor(rng() * winners.length)], tied: winners.length };
+}
+
+function cancelVote(lobby: Lobby): void {
+  if (lobby.voteTimer) {
+    clearTimeout(lobby.voteTimer);
+    lobby.voteTimer = null;
+  }
+  lobby.vote = null;
+}
+
+/** Open a fresh ballot, and arm the deadline that closes it. */
+function openVote(io: Server, lobby: Lobby): void {
+  cancelVote(lobby);
+  lobby.voteRound++;
+  lobby.vote = { closesAt: Date.now() + VOTE_DURATION_MS, nominations: [], votes: new Map() };
+  lobby.voteTimer = setTimeout(() => {
+    const current = lobbies.get(lobby.code);
+    if (current) closeVote(io, current);
+  }, VOTE_DURATION_MS);
+  broadcast(io, lobby);
+}
+
+/**
+ * Close the ballot and adopt its winner.
+ *
+ * A ballot nobody nominated to leaves the lobby's song exactly as it was — the
+ * alternative, clearing it, would punish a room for not voting by taking away
+ * the track it already had.
+ */
+function closeVote(io: Server, lobby: Lobby): void {
+  const ballot = lobby.vote;
+  if (!ballot) return;
+  cancelVote(lobby);
+
+  if (ballot.nominations.length === 0) {
+    announce(io, lobby, 'Nobody nominated a track, so the song is unchanged.');
+    broadcast(io, lobby);
+    return;
+  }
+
+  const tally = new Map<string, number>();
+  for (const nomination of ballot.nominations) tally.set(nomination.song.id, 0);
+  for (const songId of ballot.votes.values()) {
+    const current = tally.get(songId);
+    if (current !== undefined) tally.set(songId, current + 1);
+  }
+
+  const { songId, tied } = resolveVote(tally, lobbyRng(lobby));
+  const winner = ballot.nominations.find((nomination) => nomination.song.id === songId);
+  if (!winner) return;
+
+  lobby.song = winner.song;
+  // The room agreed to a track, not to starting: the same rule `slice:song`
+  // follows, for the same reason.
+  for (const seat of lobby.seats.values()) seat.ready = false;
+
+  const count = tally.get(songId) ?? 0;
+  announce(
+    io,
+    lobby,
+    tied > 1
+      ? `Vote: “${winner.song.title}” wins with ${count} vote${count === 1 ? '' : 's'}, after a ${tied}-way tie.`
+      : `Vote: “${winner.song.title}” wins with ${count} vote${count === 1 ? '' : 's'}.`,
+  );
+  logger.info({
+    event: 'slice_vote_resolved',
+    code: lobby.code,
+    round: lobby.voteRound,
+    songId,
+    votes: count,
+    tied,
+  });
+  broadcast(io, lobby);
+}
+
+/** Close the ballot early once every connected racer has voted. */
+function maybeCloseVote(io: Server, lobby: Lobby): void {
+  const ballot = lobby.vote;
+  if (!ballot) return;
+  const voters = connectedSeats(lobby);
+  if (voters.length === 0) return;
+  if (voters.every((seat) => ballot.votes.has(seat.key))) closeVote(io, lobby);
 }
 
 /* ─── Pause / resume ────────────────────────────────────────────────────── */
@@ -844,7 +1194,13 @@ function finishMatch(io: Server, lobby: Lobby): void {
   lobby.pausedAt = null;
 
   const standings = buildStandings(lobby);
-  emitAll(io, lobby.code, S2C.RESULTS, { standings, song: lobby.song });
+  emitAll(io, lobby.code, S2C.RESULTS, {
+    standings,
+    song: lobby.song,
+    // Absent, not empty, outside team mode: a results card that has to tell
+    // "no teams" from "two empty teams" has been handed the wrong shape.
+    teams: lobby.teamsEnabled ? buildTeamTotals(standings) : undefined,
+  });
   broadcast(io, lobby);
 
   void persistResults(lobby, standings);
@@ -864,6 +1220,7 @@ function buildStandings(lobby: Lobby): FinalStanding[] {
       scoreMultiplier: Number(calculateScoreMultiplier(seat.modifiers).toFixed(2)),
       place: 0,
       finished: seat.done,
+      team: lobby.teamsEnabled ? seat.team : null,
     }))
     .sort((a, b) => b.score - a.score || b.accuracy - a.accuracy);
 
@@ -990,6 +1347,7 @@ async function persistResults(lobby: Lobby, standings: FinalStanding[]): Promise
 /** Back to the lobby: spectators become players, everything resets. */
 function returnToLobby(io: Server, lobby: Lobby): void {
   clearTimers(lobby);
+  cancelVote(lobby);
   lobby.state = 'waiting';
   lobby.pausedAt = null;
   lobby.pausedTotalMs = 0;
@@ -1003,6 +1361,10 @@ function returnToLobby(io: Server, lobby: Lobby): void {
     seat.report = { ...EMPTY_REPORT };
   }
   broadcast(io, lobby);
+
+  // The whole point of `N7` is the rematch: with voting on, the room picks the
+  // next track itself rather than waiting for the host to pick again.
+  if (lobby.votingEnabled) openVote(io, lobby);
 }
 
 /* ─── Song resolution ───────────────────────────────────────────────────── */
@@ -1230,6 +1592,13 @@ export function registerSliceItHandlers(io: Server, socket: Socket): void {
 
       const live = lobbies.get(lobby.code);
       if (!live) return;
+      // A host who picks a track while a ballot is open has overruled it. The
+      // ballot is closed rather than left running, because letting it resolve
+      // later would silently overwrite the pick the host just made.
+      if (live.vote) {
+        cancelVote(live);
+        announce(io, live, 'The host picked a track, so the vote was cancelled.');
+      }
       live.song = song;
       // A new song invalidates everyone's ready state — you agreed to play a
       // different track.
@@ -1244,8 +1613,126 @@ export function registerSliceItHandlers(io: Server, socket: Socket): void {
       const { lobby, seat } = found;
       if (!isHost(lobby, seat)) return fail(sock, 'not_host', 'Only the host can change settings.');
       if (typeof payload?.isPublic === 'boolean') lobby.isPublic = payload.isPublic;
+
+      // Teams (`N2`). Turning the mode on balances the room straight away: an
+      // all-unassigned team match scores into no total at all, which looks
+      // exactly like the feature being broken.
+      if (typeof payload?.teams === 'boolean' && payload.teams !== lobby.teamsEnabled) {
+        lobby.teamsEnabled = payload.teams;
+        if (payload.teams) balanceTeams(lobby);
+        else clearTeams(lobby);
+      }
+
+      // Voting (`N7`). Only meaningful in the lobby: a ballot opened mid-match
+      // would close onto a song nobody can switch to.
+      if (typeof payload?.voting === 'boolean' && payload.voting !== lobby.votingEnabled) {
+        lobby.votingEnabled = payload.voting;
+        if (payload.voting && lobby.state === 'waiting') {
+          openVote(io, lobby);
+        } else if (!payload.voting && lobby.vote) {
+          cancelVote(lobby);
+          announce(io, lobby, 'The host cancelled the vote.');
+        }
+      }
+
       touch(lobby);
       broadcast(io, lobby);
+    },
+
+    /**
+     * Pick a side (`N2`).
+     *
+     * Self-service rather than host-assigned: the host has the balance control
+     * for the case where the room cannot sort itself out, and making every
+     * switch go through one person is how a two-minute lobby becomes a
+     * five-minute one.
+     */
+    'slice:team': (payload, sock) => {
+      const found = lobbyOf(sock);
+      if (!found) return;
+      const { lobby, seat } = found;
+      if (!lobby.teamsEnabled)
+        return fail(sock, 'teams_disabled', 'This lobby is not in team mode.');
+      if (lobby.state !== 'waiting') return fail(sock, 'in_progress', 'A match is in progress.');
+      seat.team = payload.team;
+      touch(lobby);
+      broadcast(io, lobby);
+    },
+
+    'slice:balance': (_payload, sock) => {
+      const found = lobbyOf(sock);
+      if (!found) return;
+      const { lobby, seat } = found;
+      if (!isHost(lobby, seat)) return fail(sock, 'not_host', 'Only the host can balance teams.');
+      if (!lobby.teamsEnabled)
+        return fail(sock, 'teams_disabled', 'This lobby is not in team mode.');
+      if (lobby.state !== 'waiting') return fail(sock, 'in_progress', 'A match is in progress.');
+      balanceTeams(lobby);
+      touch(lobby);
+      broadcast(io, lobby);
+    },
+
+    /**
+     * Put a track on the ballot (`N7`).
+     *
+     * One nomination per seat, and a second replaces the first: the alternative
+     * is one enthusiastic player filling the ballot with six of their own tracks
+     * and the vote being over before anyone else has read it.
+     */
+    'slice:nominate': async (payload, sock) => {
+      const found = lobbyOf(sock);
+      if (!found) return;
+      const { lobby, seat } = found;
+      if (!lobby.vote) return fail(sock, 'vote_closed', 'There is no vote open.');
+
+      const song = await resolveSong(payload.songId);
+      if (!song) return fail(sock, 'song_unavailable', 'That track is no longer available.');
+
+      // Re-read: `resolveSong` awaited a database round-trip, and the ballot may
+      // have closed — or the whole lobby gone — while it was in flight.
+      const live = lobbies.get(lobby.code);
+      const ballot = live?.vote;
+      if (!live || !ballot) return fail(sock, 'vote_closed', 'That vote has closed.');
+      if (!live.seats.has(seat.key)) return;
+
+      const already = ballot.nominations.findIndex((nomination) => nomination.byKey === seat.key);
+      const duplicate = ballot.nominations.some(
+        (nomination, index) => nomination.song.id === song.id && index !== already,
+      );
+      if (duplicate) return fail(sock, 'song_unavailable', 'That track is already on the ballot.');
+
+      const nomination: Nomination = { song, byKey: seat.key, byName: seat.name };
+      if (already >= 0) {
+        // Their old track leaves the ballot, so every vote cast for it goes with
+        // it — a vote for a track that is no longer standing is not a vote.
+        const dropped = ballot.nominations[already].song.id;
+        for (const [key, songId] of ballot.votes) {
+          if (songId === dropped) ballot.votes.delete(key);
+        }
+        ballot.nominations[already] = nomination;
+      } else {
+        ballot.nominations.push(nomination);
+      }
+
+      touch(live);
+      broadcast(io, live);
+    },
+
+    'slice:vote': (payload, sock) => {
+      const found = lobbyOf(sock);
+      if (!found) return;
+      const { lobby, seat } = found;
+      const ballot = lobby.vote;
+      if (!ballot) return fail(sock, 'vote_closed', 'There is no vote open.');
+      if (!ballot.nominations.some((nomination) => nomination.song.id === payload.songId)) {
+        return fail(sock, 'song_unavailable', 'That track is not on the ballot.');
+      }
+
+      ballot.votes.set(seat.key, payload.songId);
+      touch(lobby);
+      broadcast(io, lobby);
+      // Everyone connected has voted — there is nothing left to wait for.
+      maybeCloseVote(io, lobby);
     },
 
     'slice:mods': (payload, sock) => {
@@ -1276,6 +1763,18 @@ export function registerSliceItHandlers(io: Server, socket: Socket): void {
       const waiting = racers.filter((s) => !isHost(lobby, s) && !s.ready);
       if (waiting.length > 0) {
         return fail(sock, 'too_few_players', 'Not everyone is ready yet.');
+      }
+
+      // A team match with everyone on one side is not a team match — it is a
+      // free-for-all whose results card claims a winner by forfeit.
+      if (lobby.teamsEnabled && TEAMS.some((team) => !racers.some((s) => s.team === team))) {
+        return fail(sock, 'too_few_players', 'Both teams need at least one player.');
+      }
+
+      // Starting settles the question the ballot was asking.
+      if (lobby.vote) {
+        cancelVote(lobby);
+        announce(io, lobby, 'The match started, so the vote was closed.');
       }
 
       // A player still inside a disconnect window does not get dragged into a

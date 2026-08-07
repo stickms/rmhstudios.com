@@ -18,8 +18,13 @@
  * metrics can all be satisfied by any run of any chart, which is what made the
  * old Slice It entry a participation trophy — there was no vocabulary here for
  * "the specific thing everyone is playing today".
+ *
+ * `accuracy` and `fullCombo` (X2) exist for the same reason `daily` does: a
+ * rhythm/typing game's central metric is not always its score. `accuracy` is
+ * `0–1` and tracks the best seen, like `score`/`clear`; `fullCombo` is
+ * terminal, like `win`/`daily` — either the run was a full combo or it was not.
  */
-export type ArcadeMetric = 'score' | 'win' | 'plays' | 'clear' | 'daily';
+export type ArcadeMetric = 'score' | 'win' | 'plays' | 'clear' | 'daily' | 'accuracy' | 'fullCombo';
 
 export interface ArcadeChallengeDef {
   /** Game id — must match an `id` in `lib/games.ts`. */
@@ -148,6 +153,24 @@ const POOL: ArcadeChallengeDef[] = [
     target: 1,
     xp: 70,
     coins: 20,
+  },
+  {
+    // X2. Addresses the metric a rhythm game is actually about, rather than
+    // the raw score every difficulty and every modifier set can inflate.
+    game: 'slice-it',
+    title: 'Finish a Slice It! song above 95% accuracy',
+    metric: 'accuracy',
+    target: 0.95,
+    xp: 55,
+    coins: 14,
+  },
+  {
+    game: 'slice-it',
+    title: 'Full combo any Slice It! song',
+    metric: 'fullCombo',
+    target: 1,
+    xp: 60,
+    coins: 16,
   },
   {
     game: 'synapse-storm',

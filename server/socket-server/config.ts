@@ -132,6 +132,17 @@ export const config = {
     'slice:leave': { max: 30, windowMs: 60_000 },
     'slice:ready': { max: 60, windowMs: 60_000 },
     'slice:song': { max: 60, windowMs: 60_000 },
+    // Teams (N2): picking a side is a toggle a player flips while making up
+    // their mind, so it gets a modifier-sized budget; balancing is a host
+    // control and a rarer one.
+    'slice:team': { max: 60, windowMs: 60_000 },
+    'slice:balance': { max: 30, windowMs: 60_000 },
+    // Song voting (N7). One nomination per seat per ballot and one (changeable)
+    // vote, so these track the number of ballots a lobby can run, not the number
+    // of players in it. `slice:nominate` reads a song row, which is why it is
+    // the tighter of the two.
+    'slice:nominate': { max: 30, windowMs: 60_000 },
+    'slice:vote': { max: 60, windowMs: 60_000 },
     'slice:settings': { max: 60, windowMs: 60_000 },
     'slice:mods': { max: 120, windowMs: 60_000 },
     'slice:start': { max: 20, windowMs: 60_000 },

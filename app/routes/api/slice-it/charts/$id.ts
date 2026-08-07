@@ -23,6 +23,7 @@ import type { TimingPoint } from '@/lib/slice-it/editor/types';
 import { chartHashOf } from '@/lib/slice-it/editor/hash.server';
 import { toChartDto } from '@/lib/slice-it/editor/seed.server';
 import { rateAndStoreChart } from '@/lib/slice-it/rating.server';
+import { recordChartPublished } from '@/lib/slice-it/progression.server';
 
 /** `POST /api/slice-it/charts/$id` — the §9 publish gate. */
 const PublishZ = z.object({
@@ -241,6 +242,14 @@ export const Route = createFileRoute('/api/slice-it/charts/$id')({
             }
             return row;
           });
+
+          // X1 — "Charter". Exactly the draft→public transition, not every
+          // save: a chart can be edited many times before it is ever published,
+          // and a re-publish after pulling it back to draft is not a second
+          // hand-edited chart. Best-effort, after the transaction commits.
+          if (body.status === 'public' && chart.status !== 'public') {
+            await recordChartPublished(userId);
+          }
 
           // C3. `syncSongChartRating` counts `public` charts only, so both
           // directions of this transition move `Song.chartRating` — publishing

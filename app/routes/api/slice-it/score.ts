@@ -20,6 +20,7 @@ import { poolOf } from '@/lib/slice-it/pools';
 import { evaluateQualification, toRankStatus } from '@/lib/slice-it/ranking.server';
 import { scheduleSkillRecompute } from '@/lib/slice-it/rating.server';
 import { gradeFor } from '@/lib/slice-it/scoring';
+import { getPracticeStreak, reportSliceItRun } from '@/lib/slice-it/progression.server';
 import type { Difficulty } from '@/lib/slice-it/constants';
 import type { SuspicionCode } from '@/lib/slice-it/integrity';
 
@@ -327,11 +328,40 @@ export const Route = createFileRoute('/api/slice-it/score')({
           // Progression is best-effort: a quest engine hiccup must not turn a
           // successful run into a 500 and lose the score the player just set.
           // The qualification pass joins them for the same reason.
+          //
+          // `isFirstClear` — no prior board row for this exact
+          // (song, difficulty, modPool) — is derived here rather than
+          // recomputed in `reportSliceItRun`: `previous` is already in hand
+          // from the personal-best lookup above, and querying it twice would
+          // cost a second round trip for data this handler already has.
           await Promise.allSettled([
             recordGamePlay(userId),
-            reportGameResult(userId, { game: 'slice-it', score }),
+            reportGameResult(userId, {
+              game: 'slice-it',
+              score,
+              accuracy,
+              isFullCombo: body.isFullCombo,
+            }),
             chart ? evaluateQualification(chart.id) : Promise.resolve(null),
+            reportSliceItRun({
+              userId,
+              songId: song.id,
+              difficulty,
+              modPool,
+              score,
+              accuracy,
+              cleared: body.cleared,
+              isFullCombo: body.isFullCombo,
+              modifiers,
+              isFirstClear: !previous && body.cleared,
+              isNewBest,
+            }),
           ]);
+
+          // X14 — read, not written here: see `getPracticeStreak`. Best-effort
+          // like everything else on this path; a failed read must not cost the
+          // response, only the number in it.
+          const practiceStreak = await getPracticeStreak(userId).catch(() => null);
 
           return Response.json({
             success: true,
@@ -348,6 +378,8 @@ export const Route = createFileRoute('/api/slice-it/score')({
             previousBest: previous?.score ?? null,
             totalScore: profile.totalScore,
             gamesPlayed: profile.gamesPlayed,
+            /** X14 — consecutive UTC days with a ranked run, including today. */
+            practiceStreak: practiceStreak?.current ?? null,
           });
         },
       ),

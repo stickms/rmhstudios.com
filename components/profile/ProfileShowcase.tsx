@@ -23,6 +23,7 @@ import {
 } from '@/lib/profile/modules';
 import type { UserStatus } from '@/lib/profile/status';
 import type { WishlistItemView } from '@/lib/wishlist/types';
+import { SliceItModule } from '@/components/profile/modules/SliceItModule';
 
 export interface ShowcaseProfile {
   id: string;
@@ -286,6 +287,10 @@ function ModuleBlock({ module, profile }: { module: ProfileModule; profile: Show
 
   if (module.kind === 'wishlist') {
     return <WishlistModule title={title} userId={profile.id} />;
+  }
+
+  if (module.kind === 'slice-it') {
+    return <SliceItModule title={title} userId={profile.id} />;
   }
 
   return null;

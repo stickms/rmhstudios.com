@@ -9,7 +9,7 @@ import { useSliceItStore } from '@/lib/slice-it/store';
 import { useRunSummary, useSubmitScore } from '@/lib/slice-it/useSubmitScore';
 import { gradeFor } from '@/lib/slice-it/scoring';
 import * as net from '@/lib/slice-it/net/client';
-import type { FinalStanding } from '@/lib/slice-it/net/events';
+import type { FinalStanding, TeamId, TeamTotal } from '@/lib/slice-it/net/events';
 import type { GameEngine } from '@/lib/slice-it/engine';
 
 /**
@@ -76,6 +76,8 @@ export function MatchResults({
             </p>
           )}
         </header>
+
+        {results?.teams && <TeamScoreboard teams={results.teams} />}
 
         <ul className="px-6 pb-4 space-y-3 max-h-[50vh] overflow-y-auto">
           {standings.map((standing) => (
@@ -149,6 +151,75 @@ function PlayerLink({
   );
 }
 
+const TEAM_STYLES: Record<TeamId, string> = {
+  a: 'bg-blue-500/20 text-blue-500',
+  b: 'bg-orange-500/20 text-orange-500',
+};
+
+function TeamBadge({ team }: { team: TeamId }) {
+  const { t } = useTranslation('r-slice-it');
+  return (
+    <span
+      className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full shrink-0 ${TEAM_STYLES[team]}`}
+    >
+      {team === 'a'
+        ? t('mp-team-a', { defaultValue: 'Team A' })
+        : t('mp-team-b', { defaultValue: 'Team B' })}
+    </span>
+  );
+}
+
+/**
+ * Who won, in team mode (`N2`).
+ *
+ * Every number here is rendered exactly as the server sent it — the totals, the
+ * mean accuracy and the placing. Nothing is re-derived from `standings`, and
+ * that is the point: two clients adding up their own view of the roster is how
+ * one screen congratulates Team A while the screen beside it congratulates Team
+ * B, each from arithmetic it did correctly on a roster that was a packet behind.
+ */
+function TeamScoreboard({ teams }: { teams: TeamTotal[] }) {
+  const { t } = useTranslation('r-slice-it');
+  const drawn = teams.every((team) => team.place === 1);
+
+  return (
+    <section className="px-6 pb-4">
+      <ul className="grid grid-cols-2 gap-3">
+        {teams.map((team) => (
+          <li
+            key={team.team}
+            className={`p-4 rounded-xl bg-slice-bg shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] ${
+              team.place === 1 && !drawn ? 'ring-2 ring-yellow-500/50' : ''
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <TeamBadge team={team.team} />
+              {team.place === 1 && !drawn && (
+                <Crown className="w-4 h-4 text-yellow-500" aria-hidden />
+              )}
+            </span>
+            <span className="block mt-1 text-2xl font-black tabular-nums text-slice-text">
+              {team.score.toLocaleString()}
+            </span>
+            <span className="block text-[10px] font-bold text-slice-text-light font-mono">
+              {(team.accuracy * 100).toFixed(1)}% ·{' '}
+              {t('mp-team-players', {
+                defaultValue: '{{count}} players',
+                count: team.players,
+              })}
+            </span>
+          </li>
+        ))}
+      </ul>
+      {drawn && (
+        <p className="text-center text-[10px] font-black uppercase tracking-widest text-slice-text-light mt-2">
+          {t('mp-team-draw', { defaultValue: 'Drawn' })}
+        </p>
+      )}
+    </section>
+  );
+}
+
 function StandingRow({ standing, isSelf }: { standing: FinalStanding; isSelf: boolean }) {
   const { t } = useTranslation('c-game');
   const place = standing.place;
@@ -185,6 +256,7 @@ function StandingRow({ standing, isSelf }: { standing: FinalStanding; isSelf: bo
               {t('you-badge', { defaultValue: 'YOU' })}
             </span>
           )}
+          {standing.team && <TeamBadge team={standing.team} />}
         </span>
         <span className="flex items-center gap-2 mt-0.5">
           {standing.finished ? (

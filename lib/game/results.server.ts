@@ -34,6 +34,14 @@ export interface GameResultPayload {
    * a quantity and cannot be inferred from one.
    */
   daily?: boolean;
+  /**
+   * 0–1 (X2). Rhythm and typing games are accuracy games, and neither can
+   * express its central metric through `score` alone — a perfect run and a
+   * scraped-through one can post the same number on an easy chart.
+   */
+  accuracy?: number;
+  /** Client-declared, like `isFullCombo` everywhere else it flows through. */
+  isFullCombo?: boolean;
 }
 
 /**
@@ -68,6 +76,17 @@ function evaluate(
       // not. A free play must not creep this bar upward, so `prevProgress` is
       // returned untouched when the flag is absent.
       const completed = payload.daily === true;
+      return { progress: completed ? challenge.target : prevProgress, completed };
+    }
+    case 'accuracy': {
+      // Best-so-far, like `score`/`clear` — `target` is a fraction (e.g. 0.95),
+      // not a count, but the same "keep the best attempt" logic applies.
+      const best = Math.max(prevProgress, Math.min(payload.accuracy ?? 0, challenge.target));
+      return { progress: best, completed: best >= challenge.target };
+    }
+    case 'fullCombo': {
+      // Terminal, like `win`/`daily`.
+      const completed = payload.isFullCombo === true;
       return { progress: completed ? challenge.target : prevProgress, completed };
     }
     default:
