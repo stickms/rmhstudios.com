@@ -52,11 +52,29 @@ interface SliceItState {
   /* ── Settings (persisted) ─────────────────────────────────────────── */
   userName: string;
   keybinds: Keybinds;
+  /**
+   * I1 — additional keys bound to each lane, indexed by lane.
+   *
+   * Additive rather than reshaping `keybinds` into arrays: that object is in
+   * every existing player's local storage and read by four call sites, and a
+   * migration that goes wrong silently drops someone's bindings. See
+   * `lib/slice-it/input.ts`.
+   */
+  extraBinds: string[][];
   volume: number;
   sfxVolume: number;
   hitSound: string;
   /** Milliseconds. Positive means the audio runs ahead of the visuals. */
   audioOffset: number;
+  /**
+   * I5 — the input pipeline's own delay, ms, measured WITHOUT audio.
+   *
+   * A separate number from `audioOffset` because they are separate faults:
+   * one is how late the sound is, the other is how late the keypress is. Folded
+   * into a single offset they cancel and mask each other, which is why
+   * "calibrating did not help" is such a common complaint in this genre.
+   */
+  inputOffset: number;
   isDarkMode: boolean;
   /**
    * Colour notes by the beat subdivision they snapped to (`Slice.quant`) rather
@@ -179,6 +197,9 @@ interface SliceItState {
   /* ── Actions ──────────────────────────────────────────────────────── */
   setUserName: (name: string) => void;
   setKeybinds: (keybinds: Keybinds) => void;
+  setExtraBinds: (binds: string[][]) => void;
+  /** I5 — input-pipeline delay, ms. Separate from `audioOffset`. */
+  setInputOffset: (ms: number) => void;
   setVolume: (volume: number) => void;
   setSfxVolume: (volume: number) => void;
   setHitSound: (hitSound: string) => void;
@@ -280,6 +301,8 @@ export const useSliceItStore = create<SliceItState>()(
     (set) => ({
       userName: '',
       keybinds: { lane1: 'ArrowLeft', lane2: 'ArrowRight' },
+      extraBinds: [[], []],
+      inputOffset: 0,
       volume: 100,
       sfxVolume: 80,
       hitSound: 'default',
@@ -310,6 +333,9 @@ export const useSliceItStore = create<SliceItState>()(
 
       setUserName: (userName) => set({ userName }),
       setKeybinds: (keybinds) => set({ keybinds }),
+      setExtraBinds: (extraBinds) => set({ extraBinds }),
+      setInputOffset: (inputOffset) =>
+        set({ inputOffset: Math.max(-200, Math.min(200, Math.round(inputOffset))) }),
       setVolume: (volume) => set({ volume: clampPercent(volume) }),
       setSfxVolume: (sfxVolume) => set({ sfxVolume: clampPercent(sfxVolume) }),
       setHitSound: (hitSound) => set({ hitSound }),
@@ -408,6 +434,8 @@ export const useSliceItStore = create<SliceItState>()(
       partialize: (state) => ({
         userName: state.userName,
         keybinds: state.keybinds,
+        extraBinds: state.extraBinds,
+        inputOffset: state.inputOffset,
         volume: state.volume,
         sfxVolume: state.sfxVolume,
         hitSound: state.hitSound,
@@ -500,6 +528,8 @@ export const useSliceItStore = create<SliceItState>()(
             comboPosition: 'center',
             modifierPresets: [],
             linePosition: DEFAULT_LINE_POSITION,
+            extraBinds: [[], []],
+            inputOffset: 0,
           };
         }
         return state;

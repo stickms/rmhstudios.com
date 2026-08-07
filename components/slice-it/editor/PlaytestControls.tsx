@@ -23,6 +23,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Play, Repeat, Square } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { laneForKey } from '@/lib/slice-it/input';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import { editorState, useEditorStore } from '@/lib/slice-it/editor/store';
 import {
@@ -35,6 +36,7 @@ export function PlaytestControls() {
   const { t } = useTranslation('r-slice-it');
   const playtesting = useEditorStore((s) => s.playtesting);
   const keybinds = useSliceItStore((s) => s.keybinds);
+  const extraBinds = useSliceItStore((s) => s.extraBinds);
   const [judgement, setJudgement] = useState('');
   const held = useRef(new Set<number>());
 
@@ -71,8 +73,10 @@ export function PlaytestControls() {
   useEffect(() => {
     if (!playtesting) return;
     const laneFor = (key: string): number | null => {
-      if (key === keybinds.lane1) return 0;
-      if (key === keybinds.lane2) return 1;
+      // I1 — same resolver the live game uses, so a lane bound to two keys
+      // behaves identically in playtest and in a real run.
+      const lane = laneForKey(keybinds, extraBinds, key);
+      if (lane !== null) return lane;
       return null;
     };
     const heldLanes = held.current;
@@ -100,7 +104,7 @@ export function PlaytestControls() {
       for (const lane of heldLanes) activePlaytest()?.release(lane);
       heldLanes.clear();
     };
-  }, [playtesting, keybinds.lane1, keybinds.lane2]);
+  }, [playtesting, keybinds, extraBinds]);
 
   /* A playtest must not outlive the editor: the engine holds the shared
    * AudioManager, and leaving it playing would follow the author to the next

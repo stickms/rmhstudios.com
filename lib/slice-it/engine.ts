@@ -633,7 +633,14 @@ export class GameEngine {
    */
   private now(): number {
     if (this.replayInput !== null) return this.replayTime;
-    const offsetSeconds = (useSliceItStore.getState().audioOffset || 0) / 1000;
+    const store = useSliceItStore.getState();
+    // I5 — the two offsets COMPOSE, they do not substitute for each other.
+    // `audioOffset` is how late the sound is; `inputOffset` is how late the
+    // keypress is. Folded into one number they cancel and mask each other,
+    // which is why "I calibrated and it still feels wrong" is the most common
+    // complaint in this genre — the player was tuning one knob against two
+    // faults.
+    const offsetSeconds = ((store.audioOffset || 0) + (store.inputOffset || 0)) / 1000;
     return this.audioManager.getCurrentTime() - offsetSeconds;
   }
 

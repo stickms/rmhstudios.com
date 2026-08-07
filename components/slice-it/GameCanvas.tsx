@@ -3,6 +3,7 @@
 import { laneColor, resolvePalette } from '@/lib/slice-it/palettes';
 import { clampLinePosition } from '@/lib/slice-it/constants';
 import { rumble } from '@/lib/shared/platform';
+import { laneForKey } from '@/lib/slice-it/input';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { fadeRise, popIn } from '@/lib/motion';
@@ -280,6 +281,7 @@ export function GameCanvas() {
   const {
     status,
     keybinds,
+    extraBinds,
     isPaused,
     setIsPaused,
     isLoadingSong,
@@ -837,16 +839,19 @@ export function GameCanvas() {
       if (status !== 'PLAYING') return;
       if (useSliceItStore.getState().countdown > 0) return;
       if (e.repeat) return; // Block held-key repeats: one press = one note
-      if (e.code === keybinds.lane1) handleInput(0, e.timeStamp);
-      else if (e.code === keybinds.lane2) handleInput(1, e.timeStamp);
+      // I1 — a lane can carry more than one key. Alternating two keys on one
+      // lane is how a fast jack is played, and one-binding-per-lane made that
+      // physically impossible.
+      const pressedLane = laneForKey(keybinds, extraBinds, e.code);
+      if (pressedLane !== null) handleInput(pressedLane, e.timeStamp);
       if (e.code === 'Space') e.preventDefault();
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
       if (useSliceItStore.getState().isPaused) return;
       if (status !== 'PLAYING') return;
-      if (e.code === keybinds.lane1) handleInputRelease(0);
-      else if (e.code === keybinds.lane2) handleInputRelease(1);
+      const releasedLane = laneForKey(keybinds, extraBinds, e.code);
+      if (releasedLane !== null) handleInputRelease(releasedLane);
     };
 
     let lastTouchTime = 0;
