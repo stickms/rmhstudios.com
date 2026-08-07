@@ -32,6 +32,15 @@ export interface Slice {
    * lane colours instead of silently claiming everything is a downbeat.
    */
   quant?: number;
+  /**
+   * G12 — which register this note's attack sat in, from the same
+   * `lowRatio`/`highRatio` the charter already computes to pick a lane.
+   *
+   * Drives a pitch shift on the hit sound so a chart SOUNDS like the drum
+   * pattern it is charting rather than one sample repeated. Optional: charts
+   * generated before this carry nothing and fall back to `mid`.
+   */
+  sound?: 'low' | 'mid' | 'high';
   hit?: boolean;
   /** `performance.now()` when it was resolved, for the fade-out. */
   hitTime?: number;

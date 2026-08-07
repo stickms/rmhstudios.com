@@ -211,7 +211,13 @@ export function generateBeatmap(audio: AudioLike, options: GenerateOptions): Gen
     );
   }
 
-  const { slices, noteCounts } = buildCharts(quantized, duration, options.id);
+  // Computed once and used twice: G14 weights the density budget by section
+  // energy, and the same array is persisted in `artefacts` for the editor's
+  // timeline. Detecting it twice would double the cost of the most expensive
+  // step after the spectrogram itself.
+  const sections = detectSections(spec, beats, duration);
+
+  const { slices, noteCounts } = buildCharts(quantized, duration, options.id, sections);
 
   return {
     id: options.id,
@@ -237,7 +243,7 @@ export function generateBeatmap(audio: AudioLike, options: GenerateOptions): Gen
         h: Number(onset.highRatio.toFixed(2)),
         k: keptFrames.has(onset.frame),
       })),
-      sections: detectSections(spec, beats, duration),
+      sections,
     },
   };
 }

@@ -113,6 +113,20 @@ const HAPTIC_MS: Record<Exclude<HitResult, 'NONE'>, number> = {
  */
 const OFFSET_RING_SIZE = 64;
 
+/**
+ * G12 — pitch multiplier per register.
+ *
+ * A perfect fifth either side of unison (2:3 and 3:2). Wide enough to hear as a
+ * different drum, narrow enough that the sample does not turn into a chipmunk
+ * or a growl — the file is a percussive tick, and playbackRate resampling
+ * degrades fast past about an octave.
+ */
+const REGISTER_PITCH: Record<'low' | 'mid' | 'high', number> = {
+  low: 0.667,
+  mid: 1,
+  high: 1.5,
+};
+
 /** A blank judgement histogram. */
 function emptyJudgements(): Record<Exclude<HitResult, 'NONE'>, number> {
   const out = {} as Record<Exclude<HitResult, 'NONE'>, number>;
@@ -1023,14 +1037,18 @@ export class GameEngine {
       const sfxVolume = store.sfxVolume / 100;
       const hitSound = store.hitSound;
       const clean = result === 'MARVELOUS' || result === 'PERFECT';
+      // G12 — pitch the hit sound by the note's own register, so a chart sounds
+      // like the drum pattern it charts instead of one sample N times. A chart
+      // with no `sound` (generated before G12) reads as `mid` and is unchanged.
+      const register = REGISTER_PITCH[slice.sound ?? 'mid'];
       if (hitSound && hitSound !== 'default') {
         this.audioManager.playHitSoundFile(
           asset(`/music/slice-it/sounds/${hitSound}`),
           sfxVolume,
-          clean ? 1.0 : 0.85,
+          (clean ? 1.0 : 0.85) * register,
         );
       } else {
-        this.audioManager.playSfX(clean ? 880 : 440, 'triangle', 0.1, sfxVolume);
+        this.audioManager.playSfX((clean ? 880 : 440) * register, 'triangle', 0.1, sfxVolume);
       }
     }
 

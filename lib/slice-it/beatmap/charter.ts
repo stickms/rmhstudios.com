@@ -232,6 +232,38 @@ const TIER_ORDER: readonly Difficulty[] = ['expert', 'hard', 'normal', 'easy'];
  * charter breaks the same tie: the note on the beat is the one the player is
  * already counting.
  */
+/** A detected section, as `beatmap/sections.ts` produces them. */
+export interface Section {
+  start: number;
+  end: number;
+  energy: number;
+}
+
+/** G14 — bounds on how far section energy may move a note's priority. */
+const SECTION_WEIGHT_MIN = 0.7;
+const SECTION_WEIGHT_MAX = 1.45;
+
+/**
+ * Build the G14 priority multiplier: a function from time to a bounded weight.
+ *
+ * Returns a constant 1 when there is no section data — every chart generated
+ * before `sections.ts` existed, and any track whose novelty curve was too flat
+ * to segment. That is the correct fallback rather than a defect: a track with
+ * no discernible structure genuinely has no loud part to favour.
+ */
+function sectionEnergyWeighter(sections?: Section[]): (time: number) => number {
+  if (!sections || sections.length < 2) return () => 1;
+  const mean = sections.reduce((sum, s) => sum + s.energy, 0) / sections.length;
+  if (!(mean > 0)) return () => 1;
+
+  return (time: number) => {
+    const section = sections.find((s) => time >= s.start && time < s.end);
+    if (!section) return 1;
+    const ratio = section.energy / mean;
+    return Math.max(SECTION_WEIGHT_MIN, Math.min(SECTION_WEIGHT_MAX, ratio));
+  };
+}
+
 function metricWeight(note: QuantizedNote): number {
   const onBeat = note.fraction < 0.001;
   if (onBeat) return note.beatIndex % 4 === 0 ? 1.6 : 1.35;
@@ -249,11 +281,35 @@ function metricWeight(note: QuantizedNote): number {
  * budget. Because it always draws from the tier above, the result is a strict
  * subset — which is what makes the four difficulties feel like the same chart.
  */
-function selectTier(candidates: QuantizedNote[], tier: Tier, duration: number): QuantizedNote[] {
+function selectTier(
+  candidates: QuantizedNote[],
+  tier: Tier,
+  duration: number,
+  sections?: Section[],
+): QuantizedNote[] {
   const budget = Math.max(8, Math.floor(tier.targetNps * Math.max(1, duration)));
 
+  // G14 — spend the budget where the music is.
+  //
+  // A single notes-per-second target spread flat over the track over-charts a
+  // quiet intro and under-charts the drop, because greedy-by-strength alone
+  // cannot see that a section is quiet ON PURPOSE. Weighting by the section's
+  // energy relative to the track's mean pushes notes toward the loud parts
+  // without changing the total, so the tier's density guarantee is untouched.
+  //
+  // A WEIGHT rather than a per-section quota, deliberately: a hard quota with a
+  // floor and a ceiling has to decide what to do when a section cannot spend
+  // its allocation, and every answer to that reintroduces the flat behaviour
+  // somewhere. Bounded so a near-silent intro still gets notes and a drop
+  // cannot swallow the whole budget.
+  const energyWeight = sectionEnergyWeighter(sections);
+
   const ranked = candidates
-    .map((note, index) => ({ note, index, priority: note.strength * metricWeight(note) }))
+    .map((note, index) => ({
+      note,
+      index,
+      priority: note.strength * metricWeight(note) * energyWeight(note.time),
+    }))
     // Ties broken by original index rather than by anything derived from
     // floating-point time, so the selection is byte-for-byte reproducible.
     .sort((a, b) => b.priority - a.priority || a.index - b.index);
@@ -294,6 +350,20 @@ function lowerBound(sorted: number[], value: number): number {
 /* ─── Lane assignment and note types ─────────────────────────────────────── */
 
 /** Below this is kick/bass territory; above the other threshold is hats/cymbals. */
+/**
+ * G12 — which register a note's attack sat in.
+ *
+ * Deliberately reuses `LOW_LANE_BIAS`/`HIGH_LANE_BIAS` rather than picking its
+ * own thresholds: the sound and the lane should agree about what a note IS, and
+ * two sets of numbers drifting apart would produce a chart whose left hand
+ * stops matching the low sample.
+ */
+function registerOf(note: QuantizedNote): 'low' | 'mid' | 'high' {
+  if (note.lowRatio >= LOW_LANE_BIAS) return 'low';
+  if (note.highRatio >= HIGH_LANE_BIAS) return 'high';
+  return 'mid';
+}
+
 const LOW_LANE_BIAS = 0.42;
 const HIGH_LANE_BIAS = 0.3;
 /** A run of this many notes in one lane forces an alternation. */
@@ -374,6 +444,10 @@ function buildSlices(
       type,
       lane,
       quant: quantOf(note.fraction),
+      // G12 — the register this attack sat in, from the SAME ratios step 1
+      // above used to pick a lane. Free: the analysis is already done, and it
+      // was being thrown away one line later.
+      sound: registerOf(note),
       ...(duration !== undefined ? { duration: Number(duration.toFixed(4)) } : {}),
     });
 
@@ -640,14 +714,19 @@ export interface ChartResult {
  * clear frequency bias) reproducible, so re-analysing a song yields the same
  * chart and two clients that generate locally agree.
  */
-export function buildCharts(notes: QuantizedNote[], duration: number, seed: string): ChartResult {
+export function buildCharts(
+  notes: QuantizedNote[],
+  duration: number,
+  seed: string,
+  sections?: Section[],
+): ChartResult {
   const slices = {} as Record<Difficulty, Slice[]>;
   const noteCounts = {} as Record<Difficulty, number>;
 
   let pool = notes;
   for (const difficulty of TIER_ORDER) {
     const tier = TIERS[difficulty];
-    const selected = selectTier(pool, tier, duration);
+    const selected = selectTier(pool, tier, duration, sections);
     // The next (easier) tier draws from this one — that is the nesting.
     pool = selected;
     const random = createSeededRandom(`${seed}:${difficulty}`);
