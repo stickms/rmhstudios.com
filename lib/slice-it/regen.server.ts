@@ -67,7 +67,7 @@ export async function regenerateSong(
     id: song.id,
     name: song.title,
     artist: song.artist,
-    bpmHint: song.bpm > 0 ? song.bpm : undefined,
+    bpmHint: song.bpm && song.bpm > 0 ? song.bpm : undefined,
     densityBias: options.densityBias,
   });
 
@@ -82,7 +82,7 @@ export async function regenerateSong(
       data: {
         analysisData: { ...analysis, analysisVersion: BEATMAP_VERSION } as never,
         densityStrip: songDensityStrip(analysis, song.duration) ?? undefined,
-        bpm: analysis.bpm || song.bpm,
+        bpm: analysis.bpm || song.bpm || 0,
         analysisState: 'ready',
         // Only when the uploader has not chosen one. A re-analysis must not
         // move a preview point somebody set by hand.

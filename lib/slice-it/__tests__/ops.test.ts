@@ -31,7 +31,7 @@ import type { Difficulty } from '../constants';
 import type { BeatMap, Slice } from '../types';
 
 function note(id: string, time: number): Slice {
-  return { id, time, type: 'NORMAL', lane: id.charCodeAt(id.length - 1) % 2 };
+  return { id, time, type: 'STANDARD', lane: id.charCodeAt(id.length - 1) % 2 };
 }
 
 /** Nested by construction: Easy ⊆ Normal ⊆ Hard ⊆ Expert. */

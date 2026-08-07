@@ -172,6 +172,11 @@ COPY lib/slice-it/scoring.ts ./lib/slice-it/scoring.ts
 # depending on which door it came through.
 COPY lib/slice-it/pools.ts ./lib/slice-it/pools.ts
 COPY lib/slice-it/net/events.ts ./lib/slice-it/net/events.ts
+# N3–N12 — the mode policies (co-op split, attack resolution, elimination
+# checkpoints, matchmaking band, queue rotation, rejoin). The socket hub applies
+# every one of these, and they live outside the handler so they are testable
+# without standing up a hub.
+COPY lib/slice-it/net/modes.ts ./lib/slice-it/net/modes.ts
 # O3 — the jobs worker charts uploaded songs now, so the analyser is no longer
 # "web-tier only" as the comment above described it. That pulls in the whole
 # beatmap directory (STFT, onsets, tempo, charter, sections) plus `chart.ts`

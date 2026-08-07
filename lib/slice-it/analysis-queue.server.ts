@@ -108,7 +108,7 @@ export async function runAnalysis(job: AnalysisJob): Promise<void> {
       id: song.id,
       name: song.title,
       artist: song.artist,
-      bpmHint: job.bpmHint ?? (song.bpm > 0 ? song.bpm : undefined),
+      bpmHint: job.bpmHint ?? (song.bpm && song.bpm > 0 ? song.bpm : undefined),
       densityBias: job.densityBias,
     });
 
@@ -119,7 +119,7 @@ export async function runAnalysis(job: AnalysisJob): Promise<void> {
         // V8 — written wherever `analysisData` is written, or the hover strip
         // silently stops rendering for every song charted by the worker.
         densityStrip: songDensityStrip(analysis, song.duration) ?? undefined,
-        bpm: analysis.bpm || song.bpm,
+        bpm: analysis.bpm || song.bpm || 0,
         analysisState: 'ready',
         // C7 — the loudest section, but only when nobody has chosen one. A
         // re-analysis must not move a preview point somebody set by hand.

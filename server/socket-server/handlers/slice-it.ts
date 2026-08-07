@@ -119,6 +119,7 @@ import {
   type LiveScore,
   type LobbyError,
   type LobbyErrorCode,
+  type LobbyMode,
   type LobbyPlayer,
   type LobbySnapshot,
   type LobbySong,
@@ -129,6 +130,18 @@ import {
   type TeamTotal,
   type VoteState,
 } from '../../../lib/slice-it/net/events';
+import {
+  MAX_ATTACK_CHARGES,
+  chargesEarned,
+  dequeueChart,
+  elimination,
+  enqueueChart,
+  nextPicker,
+  resolveAttack,
+  resolveRejoin,
+  type AttackKind,
+  type CoopMode,
+} from '../../../lib/slice-it/net/modes';
 
 /* ─── Constants ─────────────────────────────────────────────────────────── */
 
@@ -179,6 +192,31 @@ interface Seat {
   disconnectedAt: number | null;
   /** Timer that removes the seat when the grace window expires. */
   graceTimer: ReturnType<typeof setTimeout> | null;
+
+  /* ── Mode state (N4/N5/N12) ─────────────────────────────────────────── */
+
+  /**
+   * N4 — attack charges the server has granted, and the highest combo milestone
+   * already paid for.
+   *
+   * Server-authoritative. A client that says it has five is not asked; the
+   * count moves only when a `slice:score` report crosses a milestone the server
+   * has not yet paid, which is why the milestone is tracked rather than
+   * recomputed from the combo (a combo that breaks and rebuilds past 50 must
+   * not pay twice).
+   */
+  charges: number;
+  lastChargeMilestone: number;
+  /** N5 — knocked out at a checkpoint; watching the rest. */
+  eliminated: boolean;
+  /**
+   * N12 — the second of the song this seat started at, for a mid-match rejoin.
+   *
+   * 0 for everyone who was there from the countdown. Non-zero marks the run
+   * partial, which the standings carry through so a partial score is never
+   * silently comparable to a full one.
+   */
+  joinedAtSeconds: number;
 }
 
 /**
@@ -237,6 +275,23 @@ interface Lobby {
    */
   voteRound: number;
   voteTimer: ReturnType<typeof setTimeout> | null;
+
+  /* Modes (N3/N4/N5/N8) */
+  /** The competitive mode. `standard` is what every lobby did before these. */
+  mode: LobbyMode;
+  /** N3 — how a co-op chart is split between the two seats. */
+  coopSplit: CoopMode;
+  /** N8 — tracks queued for this session. Survives `results → waiting`. */
+  queue: LobbySong[];
+  /**
+   * N8 — index into the seat list of whoever picks next.
+   *
+   * By SEAT INDEX, not socket id: a reconnect mints a new socket id, so
+   * rotating on that would hand the pick to whoever last had a wifi blip.
+   */
+  pickerSeat: number;
+  /** N5 — how many elimination checkpoints have been evaluated this match. */
+  checkpointsPassed: number;
 
   /* Match */
   matchStartedAt: number;
@@ -380,6 +435,12 @@ function snapshot(lobby: Lobby): LobbySnapshot {
     teamsEnabled: lobby.teamsEnabled,
     votingEnabled: lobby.votingEnabled,
     vote: voteSnapshot(lobby),
+    queue: lobby.queue,
+    // Clamped on the way out rather than maintained on every seat change: a
+    // player leaving shrinks the seat list under the index, and a client that
+    // received an out-of-range index would draw the pick badge on nobody.
+    pickerSeat: lobby.seats.size === 0 ? 0 : lobby.pickerSeat % lobby.seats.size,
+    mode: lobby.mode,
   };
 }
 
@@ -519,6 +580,11 @@ function createLobby(host: Who, isPublic: boolean, preferredCode?: string): Lobb
     votingEnabled: false,
     vote: null,
     voteRound: 0,
+    mode: 'standard',
+    coopSplit: 'lane',
+    queue: [],
+    pickerSeat: 0,
+    checkpointsPassed: 0,
     voteTimer: null,
     matchStartedAt: 0,
     deadline: 0,
@@ -596,6 +662,10 @@ function seatPlayer(io: Server, lobby: Lobby, socket: Socket, who: Who): Seat {
     done: false,
     disconnectedAt: null,
     graceTimer: null,
+    charges: 0,
+    lastChargeMilestone: 0,
+    eliminated: false,
+    joinedAtSeconds: 0,
   };
   lobby.seats.set(key, seat);
   socket.join(lobbyRoom(lobby.code));
@@ -1353,18 +1423,84 @@ function returnToLobby(io: Server, lobby: Lobby): void {
   lobby.pausedTotalMs = 0;
   lobby.pauseCount = 0;
   lobby.droppedNames = [];
+  lobby.checkpointsPassed = 0;
   for (const seat of lobby.seats.values()) {
     seat.ready = false;
     seat.loaded = false;
     seat.done = false;
     seat.spectating = false;
     seat.report = { ...EMPTY_REPORT };
+    // Mode state resets with the match. Carrying charges across a rematch would
+    // let a player bank a song's worth of them and open the next one with three.
+    seat.charges = 0;
+    seat.lastChargeMilestone = 0;
+    seat.eliminated = false;
+    seat.joinedAtSeconds = 0;
   }
+
+  // N8 — the queue survives the match, so the session continues without anyone
+  // picking again. The pick then rotates: a lobby is a session, not one host's
+  // playlist.
+  const { next, rest } = dequeueChart(lobby.queue.map((entry) => entry.id));
+  if (next) {
+    lobby.song = lobby.queue.find((entry) => entry.id === next) ?? lobby.song;
+    lobby.queue = lobby.queue.filter((entry) => rest.includes(entry.id));
+  }
+  lobby.pickerSeat = nextPicker(lobby.pickerSeat, lobby.seats.size);
+
   broadcast(io, lobby);
 
   // The whole point of `N7` is the rematch: with voting on, the room picks the
-  // next track itself rather than waiting for the host to pick again.
-  if (lobby.votingEnabled) openVote(io, lobby);
+  // next track itself rather than waiting for the host to pick again. Skipped
+  // when the queue already supplied one — a ballot to replace a track the room
+  // queued is the room voting against itself.
+  if (lobby.votingEnabled && !next) openVote(io, lobby);
+}
+
+/**
+ * N5 — evaluate the elimination checkpoints.
+ *
+ * Called from the score handler, so it runs on every report and costs a
+ * comparison when no checkpoint is due. `elapsedFraction` comes from the
+ * server's own clock minus the paused time; a client's own progress claim is
+ * never consulted, because a client that claims to be at 74% forever would
+ * never face a checkpoint.
+ */
+function checkElimination(io: Server, lobby: Lobby): void {
+  const duration = lobby.song?.duration ?? 0;
+  if (duration <= 0 || lobby.state !== 'playing') return;
+
+  const elapsed = (Date.now() - lobby.matchStartedAt - lobby.pausedTotalMs) / 1000;
+  const seats = Array.from(lobby.seats.values());
+  const result = elimination(
+    seats.map((seat) => ({
+      id: seat.key,
+      score: seat.report.score,
+      eliminated: seat.eliminated,
+    })),
+    lobby.checkpointsPassed,
+    elapsed / duration,
+  );
+  lobby.checkpointsPassed = result.checkpointsPassed;
+  if (!result.eliminate) return;
+
+  const seat = lobby.seats.get(result.eliminate);
+  if (!seat) return;
+  seat.eliminated = true;
+
+  const rank = seats.filter((other) => !other.eliminated).length + 1;
+  io.to(lobbyRoom(lobby.code)).emit(S2C.ELIMINATED, {
+    socketId: seat.socketId ?? '',
+    name: seat.name,
+    rank,
+  });
+  // Dropped to spectator rather than disconnected: they keep watching the room
+  // they were in, which is `N1`'s seat and costs nothing.
+  if (seat.socketId) {
+    const sock = io.sockets.sockets.get(seat.socketId);
+    void sock?.join(specRoom(lobby.code));
+  }
+  broadcast(io, lobby);
 }
 
 /* ─── Song resolution ───────────────────────────────────────────────────── */
@@ -1635,6 +1771,24 @@ export function registerSliceItHandlers(io: Server, socket: Socket): void {
         }
       }
 
+      // The competitive mode (`N3`/`N4`/`N5`). Only in the lobby: switching
+      // mid-match would change what the seats mean while they are being scored,
+      // and elimination in particular removes seats a running match is counting.
+      if (payload?.mode && payload.mode !== lobby.mode) {
+        if (lobby.state !== 'waiting') {
+          return fail(sock, 'in_progress', 'A match is in progress.');
+        }
+        lobby.mode = payload.mode;
+        // Modes are mutually exclusive with teams: co-op has one shared score,
+        // elimination removes seats, attack lets players interfere. None of
+        // those composes with a two-side partition into anything coherent.
+        if (payload.mode !== 'standard' && lobby.teamsEnabled) {
+          lobby.teamsEnabled = false;
+          clearTeams(lobby);
+        }
+      }
+      if (payload?.coopSplit) lobby.coopSplit = payload.coopSplit as CoopMode;
+
       touch(lobby);
       broadcast(io, lobby);
     },
@@ -1808,6 +1962,26 @@ export function registerSliceItHandlers(io: Server, socket: Socket): void {
       // Stored, not broadcast: the ticker publishes the whole room at once.
       seat.report = payload;
       lobby.lastActivityAt = Date.now();
+
+      // N4 — charges are granted HERE, from the server's own tally, and never
+      // read off the wire. The milestone is tracked rather than recomputed from
+      // the combo so a combo that breaks and rebuilds past 50 cannot pay twice.
+      if (lobby.mode === 'attack' && !seat.eliminated) {
+        const earned = chargesEarned(payload.maxCombo, seat.lastChargeMilestone);
+        if (earned > 0) {
+          seat.lastChargeMilestone = payload.maxCombo;
+          const before = seat.charges;
+          seat.charges = Math.min(MAX_ATTACK_CHARGES, seat.charges + earned);
+          if (seat.charges !== before && seat.socketId) {
+            io.to(seat.socketId).emit(S2C.CHARGES, { charges: seat.charges });
+          }
+        }
+      }
+
+      // N5 — checkpoints on the SERVER's clock. Evaluating them on
+      // client-reported progress would let a client claim to be at 74% forever
+      // and never face one.
+      if (lobby.mode === 'elimination') checkElimination(io, lobby);
     },
 
     'slice:finish': (payload, sock) => {
@@ -1851,6 +2025,146 @@ export function registerSliceItHandlers(io: Server, socket: Socket): void {
       if (lobby.chat.length > CHAT_HISTORY) lobby.chat.shift();
       touch(lobby);
       io.to(lobbyRoom(lobby.code)).emit(S2C.CHAT, message);
+    },
+
+    /**
+     * N4 — spend a charge on an opponent.
+     *
+     * Everything about this is decided server-side: whether the attacker has
+     * the charges, and which attack the target actually receives. A blackout
+     * aimed at a player with reduced flash on (`A2`) arrives as a lane cover —
+     * the attacker still pays, and nobody's accessibility setting is overridden
+     * by another player's item.
+     */
+    'slice:attack': (payload, sock) => {
+      const found = lobbyOf(sock);
+      if (!found) return;
+      const { lobby, seat } = found;
+      if (lobby.mode !== 'attack') return fail(sock, 'not_allowed', 'This lobby is not in attack mode.');
+      if (lobby.state !== 'playing') return;
+      if (seat.eliminated) return;
+
+      const target = Array.from(lobby.seats.values()).find(
+        (other) => other.socketId === payload.target,
+      );
+      if (!target || target.key === seat.key || !target.socketId) return;
+
+      const result = resolveAttack({
+        kind: payload.kind as AttackKind,
+        charges: seat.charges,
+        now: Date.now(),
+        attackerId: seat.key,
+        targetId: target.key,
+        // The target's own setting, taken from the modifiers they published.
+        // A client that lies about it only makes its own game harder.
+        targetReducedFlash: Boolean(target.modifiers.invisible),
+      });
+      if (!result.ok) return;
+
+      seat.charges = result.chargesLeft;
+      sock.emit(S2C.CHARGES, { charges: seat.charges });
+      io.to(target.socketId).emit(S2C.ATTACKED, {
+        kind: result.kind,
+        from: seat.name,
+        untilMs: result.untilMs,
+      });
+    },
+
+    /**
+     * N8 — add a track to the session queue.
+     *
+     * Anyone may queue; the seat holding the pick decides what plays next. That
+     * split is the point of the feature: a lobby stops being one host's
+     * playlist and becomes a session everybody contributes to.
+     */
+    'slice:queue': async (payload, sock) => {
+      const found = lobbyOf(sock);
+      if (!found) return;
+      const { lobby } = found;
+      const song = await resolveSong(payload.songId);
+      if (!song) return fail(sock, 'song_not_found', 'That track is unavailable.');
+
+      const before = lobby.queue.length;
+      lobby.queue = enqueueChart(
+        lobby.queue.map((entry) => entry.id),
+        song.id,
+      ).map((id) => (id === song.id ? song : lobby.queue.find((entry) => entry.id === id)!));
+      if (lobby.queue.length === before) {
+        return fail(sock, 'not_allowed', 'That track is already queued, or the queue is full.');
+      }
+      touch(lobby);
+      broadcast(io, lobby);
+    },
+
+    'slice:unqueue': (payload, sock) => {
+      const found = lobbyOf(sock);
+      if (!found) return;
+      const { lobby } = found;
+      lobby.queue = lobby.queue.filter((entry) => entry.id !== payload.songId);
+      touch(lobby);
+      broadcast(io, lobby);
+    },
+
+    /**
+     * N12 — take a seat back after a drop.
+     *
+     * Nothing about the other seats changes, which is what keeps the room's
+     * timing guarantees intact: the returning player is a NEW participant in an
+     * existing match, not a rewind of it. A rejoin that paused or restarted the
+     * room would punish six people for one person's wifi.
+     */
+    'slice:rejoin': (payload, sock) => {
+      const lobby = lobbies.get(payload.code.toUpperCase());
+      if (!lobby) return fail(sock, 'not_found', 'That lobby is gone.');
+
+      const who = identity(sock);
+      if (!who) return fail(sock, 'auth_required', 'Sign in to rejoin.');
+      const key = seatKey(who);
+      const seat = lobby.seats.get(key);
+
+      const elapsed = (Date.now() - lobby.matchStartedAt - lobby.pausedTotalMs) / 1000;
+      const outcome = resolveRejoin({
+        hadSeat: Boolean(seat),
+        state: lobby.state,
+        elapsedSeconds: elapsed,
+        songDuration: lobby.song?.duration ?? 0,
+      });
+
+      if (outcome.kind === 'refused') {
+        return fail(sock, 'not_found', 'There is no seat to return to.');
+      }
+      if (outcome.kind === 'spectate') {
+        void sock.join(specRoom(lobby.code));
+        socketSpectating.set(sock.id, lobby.code);
+        sock.emit(S2C.JOINED, { code: lobby.code, socketId: sock.id });
+        broadcast(io, lobby);
+        return;
+      }
+
+      // Competing. Re-attach the socket to the seat that was being held, and
+      // mark where they came in so the standings can say the run was partial.
+      const held = seat!;
+      if (held.graceTimer) clearTimeout(held.graceTimer);
+      held.graceTimer = null;
+      held.socketId = sock.id;
+      held.disconnectedAt = null;
+      held.joinedAtSeconds = outcome.fromSeconds;
+      socketLobby.set(sock.id, { code: lobby.code, key });
+      void sock.join(lobbyRoom(lobby.code));
+
+      sock.emit(S2C.JOINED, { code: lobby.code, socketId: sock.id });
+      sock.emit(S2C.START, {
+        song: lobby.song!,
+        startedAt: lobby.matchStartedAt,
+        roster: Array.from(lobby.seats.values()).map((other) => ({
+          socketId: other.socketId ?? '',
+          userId: other.userId,
+          name: other.name,
+          avatarUrl: other.avatarUrl,
+        })),
+      });
+      touch(lobby);
+      broadcast(io, lobby);
     },
 
     'slice:kick': (payload, sock) => {

@@ -92,6 +92,24 @@ export const C2S = {
   FINISH: 'slice:finish',
   /** Host sends everyone back to the lobby after results. */
   REMATCH: 'slice:rematch',
+  /**
+   * Spend a charge on an opponent (`N4`). Strictly cosmetic and time-boxed —
+   * an attack that changed the target's chart would make their score
+   * incomparable, which defeats the leaderboard the match writes to.
+   */
+  ATTACK: 'slice:attack',
+  /**
+   * Add a track to the lobby's session queue (`N8`). Anyone may queue; only the
+   * seat holding the pick decides what plays next.
+   */
+  QUEUE: 'slice:queue',
+  /** Remove a track from the queue (`N8`). Its nominator or the host. */
+  UNQUEUE: 'slice:unqueue',
+  /**
+   * Take a seat back after a drop (`N12`). Inside the first 20% of the song the
+   * player rejoins the match; after that they land in the spectator room.
+   */
+  REJOIN: 'slice:rejoin',
   CHAT: 'slice:chat',
   KICK: 'slice:kick',
 } as const;
@@ -119,6 +137,16 @@ export const S2C = {
   PAUSE: 'slice:pause',
   /** The hold is over. Carries the moment play actually restarts. */
   RESUME: 'slice:resume',
+  /**
+   * An attack landed on you (`N4`). The `kind` is what the server DELIVERED,
+   * which may differ from what was thrown: a blackout aimed at a player with
+   * reduced flash on arrives as a lane cover.
+   */
+  ATTACKED: 'slice:attacked',
+  /** Your charge count changed (`N4`). Server-authoritative, never inferred. */
+  CHARGES: 'slice:charges',
+  /** Somebody was knocked out at a checkpoint (`N5`). */
+  ELIMINATED: 'slice:eliminated',
 } as const;
 
 /* ─── Shapes ─────────────────────────────────────────────────────────────── */
@@ -133,6 +161,18 @@ export type LobbyState = 'waiting' | 'loading' | 'countdown' | 'playing' | 'resu
  * card — has room for exactly two of them. A third side is a different feature.
  */
 export type TeamId = 'a' | 'b';
+
+/**
+ * What kind of match this lobby runs.
+ *
+ * `standard` is what every lobby did before these existed and stays the
+ * default. The other three are mutually exclusive by construction: co-op has
+ * one shared score, elimination removes seats mid-song, and attack lets players
+ * interfere with each other — no two of those compose into something coherent.
+ */
+export type LobbyMode = 'standard' | 'coop' | 'elimination' | 'attack';
+
+export const LOBBY_MODES = ['standard', 'coop', 'elimination', 'attack'] as const;
 
 /**
  * A guest identity, as it exists for exactly one session.
@@ -236,6 +276,17 @@ export interface LobbySnapshot {
   players: LobbyPlayer[];
   maxPlayers: number;
   song: LobbySong | null;
+  /**
+   * N8 — the session queue, and whose turn it is to pick.
+   *
+   * `pickerSeat` is an index into `players`, not a socket id: a reconnect mints
+   * a new socket id, so rotating on that would hand the pick to whoever last
+   * had a wifi blip.
+   */
+  queue: LobbySong[];
+  pickerSeat: number;
+  /** The competitive mode this lobby runs (`N3`/`N4`/`N5`). */
+  mode: LobbyMode;
   /** Team mode is on (`N2`) — seats carry a side and results carry totals. */
   teamsEnabled: boolean;
   /** The host has handed song choice to the room (`N7`). */
@@ -401,7 +452,15 @@ export type LobbyErrorCode =
    */
   | 'vote_closed'
   /** A team action in a lobby that is not in team mode (`N2`). */
-  | 'teams_disabled';
+  | 'teams_disabled'
+  /**
+   * The action is real but not available here: an attack in a lobby that is not
+   * in attack mode (`N4`), or a queue push onto a full or duplicate queue
+   * (`N8`). Distinct from `not_host` — the caller's role is not the problem.
+   */
+  | 'not_allowed'
+  /** A queued or nominated track that no longer resolves (`N8`). */
+  | 'song_not_found';
 
 export interface LobbyError {
   code: LobbyErrorCode;
@@ -469,6 +528,14 @@ const LobbySettingsShape = z.object({
   teams: z.boolean().optional().catch(undefined),
   /** Song voting (`N7`). True opens a ballot; false cancels the open one. */
   voting: z.boolean().optional().catch(undefined),
+  /**
+   * The competitive mode (`N3`/`N4`/`N5`). `.catch(undefined)` for the same
+   * reason every other field here has it: an older bundle sending a mode this
+   * build does not know must leave the lobby alone, not disconnect the host.
+   */
+  mode: z.enum(LOBBY_MODES).optional().catch(undefined),
+  /** N3 — how a co-op chart is split. Ignored outside `coop`. */
+  coopSplit: z.enum(['lane', 'section']).optional().catch(undefined),
 });
 
 /**
@@ -552,6 +619,9 @@ const LobbySnapshotZ = z.object({
   teamsEnabled: z.boolean(),
   votingEnabled: z.boolean(),
   vote: VoteStateZ.nullable(),
+  queue: z.array(LobbySongZ),
+  pickerSeat: z.number().int(),
+  mode: z.enum(LOBBY_MODES),
 });
 
 const PublicLobbyInfoZ = z.object({
@@ -690,6 +760,17 @@ export const EVENTS = defineEvents({
   },
   'slice:kick': { c2s: z.object({ socketId: z.string().max(64) }) },
 
+  // ─── N4 / N8 / N12 ─────────────────────────────────────────────────────
+  'slice:attack': {
+    c2s: z.object({
+      target: z.string().max(64),
+      kind: z.enum(['laneCover', 'blackout', 'shake']),
+    }),
+  },
+  'slice:queue': { c2s: z.object({ songId: z.string().max(64) }) },
+  'slice:unqueue': { c2s: z.object({ songId: z.string().max(64) }) },
+  'slice:rejoin': { c2s: z.object({ code: CodeZ }) },
+
   /**
    * Bidirectional. The host pressing Start and the server announcing the match
    * share one name — declared as one event carrying both directions so
@@ -710,6 +791,18 @@ export const EVENTS = defineEvents({
   'slice:kicked': { s2c: z.object({ reason: z.string() }) },
   'slice:pause': { s2c: PauseZ },
   'slice:resume': { s2c: ResumeZ },
+  'slice:attacked': {
+    s2c: z.object({
+      /** What was DELIVERED, which may differ from what was thrown (`N4`). */
+      kind: z.enum(['laneCover', 'blackout', 'shake']),
+      from: z.string(),
+      untilMs: z.number(),
+    }),
+  },
+  'slice:charges': { s2c: z.object({ charges: z.number().int() }) },
+  'slice:eliminated': {
+    s2c: z.object({ socketId: z.string(), name: z.string(), rank: z.number().int() }),
+  },
 });
 
 /** Typed `emit` for the browser client. */

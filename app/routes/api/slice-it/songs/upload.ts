@@ -22,7 +22,11 @@ import { validateAudioBuffer, validateImageBuffer } from '@/lib/slice-it/upload-
 import { deleteSongAssets, storeSongAudio, storeSongCover } from '@/lib/slice-it/songs.server';
 import { artistKeyOf } from '@/lib/slice-it/artist';
 import { createAlbumPack } from '@/lib/slice-it/packs.server';
-import { decodedToAudioLike, type generateBeatmap } from '@/lib/slice-it/beatmap';
+import {
+  decodedToAudioLike,
+  type AudioLike,
+  type generateBeatmap,
+} from '@/lib/slice-it/beatmap';
 import { enqueueAnalysis } from '@/lib/slice-it/analysis-queue.server';
 import { recordSongUploaded } from '@/lib/slice-it/progression.server';
 
