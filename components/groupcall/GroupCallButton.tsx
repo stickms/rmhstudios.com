@@ -28,7 +28,7 @@ import {
   GroupCallInviteDialog,
   type InvitablePerson,
 } from '@/components/groupcall/GroupCallInviteDialog';
-import { groupCallSupported } from '@/lib/groupcall/mesh';
+import { groupCallSupported } from '@/lib/groupcall/support';
 import { isGroupCallBusy } from '@/lib/groupcall/state';
 import { startGroupCall, useGroupCallStore } from '@/lib/groupcall/store';
 import { cn } from '@/lib/utils';

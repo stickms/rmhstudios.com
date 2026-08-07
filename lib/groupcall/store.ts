@@ -73,7 +73,12 @@ import {
   type GroupCallEvent,
   type GroupCallState,
 } from '@/lib/groupcall/state';
-import { GroupCallMesh, describeMicrophoneError, groupCallSupported } from '@/lib/groupcall/mesh';
+// The mesh is loaded on DEMAND — see `bindMesh`. Only the type is imported
+// statically, which erases at compile time and leaves no edge in the bundle
+// graph. `describeMicrophoneError`/`groupCallSupported` live in `support.ts`
+// precisely so needing them does not drag the mesh onto the critical path.
+import type { GroupCallMesh } from '@/lib/groupcall/mesh';
+import { describeMicrophoneError, groupCallSupported } from '@/lib/groupcall/support';
 import type {
   GroupCallPeerStatus,
   GroupCallPeerView,
@@ -352,9 +357,21 @@ export function openRoomKey(origin: OpenRoomOrigin, originId: string): string {
 /* The mesh, bound to the socket                                              */
 /* -------------------------------------------------------------------------- */
 
-function bindMesh(): GroupCallMesh {
+/**
+ * Build the mesh, loading its module on first use.
+ *
+ * The import is dynamic because `mesh.ts` is a thousand lines of WebRTC that
+ * only matters once somebody is actually in a call, while this store is reached
+ * from route modules — and `routeTree.gen.ts` imports every route module
+ * statically, so anything they touch at top level lands in the entry chunk of
+ * every page. Deferring it to here is what keeps the mesh off the critical path
+ * without changing when it is available: the only caller already awaits, on the
+ * same tick it asks for the microphone.
+ */
+async function bindMesh(): Promise<GroupCallMesh> {
+  const { GroupCallMesh: Mesh } = await import('@/lib/groupcall/mesh');
   mesh?.close();
-  const bound = new GroupCallMesh(iceServers, {
+  const bound = new Mesh(iceServers, {
     onDescription: (toUserId, description) => {
       const { callId } = store();
       if (callId) client?.emit(GCALL_C2S.SIGNAL, { callId, to: toUserId, description });
@@ -403,7 +420,7 @@ async function openLocalMedia(): Promise<boolean> {
   store().setSelf({ micDenied: false });
   try {
     iceServers = await loadIceServers();
-    const bound = bindMesh();
+    const bound = await bindMesh();
     await bound.openMicrophone();
     bound.setMuted(store().muted);
     store().setSelf({ micAvailable: true });

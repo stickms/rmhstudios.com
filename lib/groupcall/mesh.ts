@@ -229,40 +229,6 @@ interface MeshLeg {
   closed: boolean;
 }
 
-/** How a `getUserMedia` rejection should be read. */
-export type MicrophoneFailure =
-  /** The user (or a policy) refused the prompt. Show the permission hint. */
-  | 'denied'
-  /** There is no capture device, or the constraints cannot be met. */
-  | 'missing'
-  /** Anything else — a device already in exclusive use, an internal error. */
-  | 'unknown';
-
-/**
- * Classify a `getUserMedia` rejection.
- *
- * Lives here rather than in the store because it is knowledge about the DOM's
- * error taxonomy, and because "denied" and "missing" want completely different
- * copy: one is a permission the user can grant, the other is a device they do
- * not have.
- */
-export function describeMicrophoneError(error: unknown): MicrophoneFailure {
-  const name =
-    typeof error === 'object' && error !== null ? (error as { name?: unknown }).name : '';
-  switch (name) {
-    case 'NotAllowedError':
-    case 'SecurityError':
-    case 'PermissionDeniedError':
-      return 'denied';
-    case 'NotFoundError':
-    case 'DevicesNotFoundError':
-    case 'OverconstrainedError':
-      return 'missing';
-    default:
-      return 'unknown';
-  }
-}
-
 /* -------------------------------------------------------------------------- */
 /* The mesh                                                                   */
 /* -------------------------------------------------------------------------- */
@@ -344,7 +310,7 @@ export class GroupCallMesh {
    * on seven other people's rosters who will never make a sound.
    *
    * Rejects with the raw `getUserMedia` error so the caller can tell "denied"
-   * from "no such device" — see {@link describeMicrophoneError}.
+   * from "no such device" — see `describeMicrophoneError` in ./support.
    */
   async openMicrophone(): Promise<void> {
     if (this.closed || this.localStream) return;
@@ -999,20 +965,4 @@ function smoothLevel(previous: number, rms: number): number {
   const target = Math.min(1, rms / LEVEL_FULL_SCALE_RMS);
   if (target >= previous) return target;
   return previous + (target - previous) * LEVEL_RELEASE;
-}
-
-/**
- * Whether this browser can be in a group call at all.
- *
- * Mirrors `callSupported()` from `lib/call/peer.ts`, and is checked before
- * anything reaches the server: a tab that cannot hold an `RTCPeerConnection`
- * joining a room would occupy one of eight slots and be silent in both
- * directions.
- */
-export function groupCallSupported(): boolean {
-  return (
-    typeof window !== 'undefined' &&
-    typeof RTCPeerConnection !== 'undefined' &&
-    Boolean(navigator.mediaDevices?.getUserMedia)
-  );
 }

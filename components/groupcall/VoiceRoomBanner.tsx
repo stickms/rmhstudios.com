@@ -36,7 +36,7 @@ import { AsyncReveal } from '@/components/motion';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { MAX_GROUP_CALL_PARTICIPANTS, type OpenRoomOrigin } from '@/lib/groupcall/events';
-import { groupCallSupported } from '@/lib/groupcall/mesh';
+import { groupCallSupported } from '@/lib/groupcall/support';
 import { isGroupCallBusy } from '@/lib/groupcall/state';
 import {
   joinGroupCall,
