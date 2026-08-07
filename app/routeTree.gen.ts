@@ -747,6 +747,7 @@ import { Route as ApiSavesFoldersIdRouteImport } from './routes/api/saves/folder
 import { Route as ApiScheduledIdPublishRouteImport } from './routes/api/scheduled/$id/publish'
 import { Route as ApiSearchSavedIdRouteImport } from './routes/api/search/saved.$id'
 import { Route as ApiSliceItAdminContentRouteImport } from './routes/api/slice-it/admin/content'
+import { Route as ApiSliceItAdminReviewRouteImport } from './routes/api/slice-it/admin/review'
 import { Route as ApiSliceItAdminTakedownRouteImport } from './routes/api/slice-it/admin/takedown'
 import { Route as ApiSliceItChartsIdRouteImport } from './routes/api/slice-it/charts/$id'
 import { Route as ApiSliceItChartsRankingRouteImport } from './routes/api/slice-it/charts/ranking'
@@ -787,6 +788,8 @@ import { Route as ApiV1MeFollowingRouteImport } from './routes/api/v1/me/followi
 import { Route as ApiV1MeNotificationsRouteImport } from './routes/api/v1/me/notifications'
 import { Route as ApiV1NewsSlugRouteImport } from './routes/api/v1/news/$slug'
 import { Route as ApiV1PostsIdRouteImport } from './routes/api/v1/posts/$id'
+import { Route as ApiV1SliceItChartsRouteImport } from './routes/api/v1/slice-it/charts'
+import { Route as ApiV1SliceItLeaderboardRouteImport } from './routes/api/v1/slice-it/leaderboard'
 import { Route as ApiV1UsersHandleRouteImport } from './routes/api/v1/users/$handle'
 import { Route as ApiV1WebhooksIdRouteImport } from './routes/api/v1/webhooks/$id'
 import { Route as ApiVibePkgFileRouteImport } from './routes/api/vibe/pkg/$file'
@@ -4632,6 +4635,11 @@ const ApiSliceItAdminContentRoute = ApiSliceItAdminContentRouteImport.update({
   path: '/api/slice-it/admin/content',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSliceItAdminReviewRoute = ApiSliceItAdminReviewRouteImport.update({
+  id: '/api/slice-it/admin/review',
+  path: '/api/slice-it/admin/review',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSliceItAdminTakedownRoute = ApiSliceItAdminTakedownRouteImport.update({
   id: '/api/slice-it/admin/takedown',
   path: '/api/slice-it/admin/takedown',
@@ -4835,6 +4843,16 @@ const ApiV1PostsIdRoute = ApiV1PostsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => ApiV1PostsRoute,
+} as any)
+const ApiV1SliceItChartsRoute = ApiV1SliceItChartsRouteImport.update({
+  id: '/api/v1/slice-it/charts',
+  path: '/api/v1/slice-it/charts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1SliceItLeaderboardRoute = ApiV1SliceItLeaderboardRouteImport.update({
+  id: '/api/v1/slice-it/leaderboard',
+  path: '/api/v1/slice-it/leaderboard',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1UsersHandleRoute = ApiV1UsersHandleRouteImport.update({
   id: '/api/v1/users/$handle',
@@ -5973,6 +5991,7 @@ export interface FileRoutesByFullPath {
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/search/saved/$id': typeof ApiSearchSavedIdRoute
   '/api/slice-it/admin/content': typeof ApiSliceItAdminContentRoute
+  '/api/slice-it/admin/review': typeof ApiSliceItAdminReviewRoute
   '/api/slice-it/admin/takedown': typeof ApiSliceItAdminTakedownRoute
   '/api/slice-it/charts/$id': typeof ApiSliceItChartsIdRouteWithChildren
   '/api/slice-it/charts/ranking': typeof ApiSliceItChartsRankingRoute
@@ -6007,6 +6026,8 @@ export interface FileRoutesByFullPath {
   '/api/v1/me/notifications': typeof ApiV1MeNotificationsRoute
   '/api/v1/news/$slug': typeof ApiV1NewsSlugRoute
   '/api/v1/posts/$id': typeof ApiV1PostsIdRouteWithChildren
+  '/api/v1/slice-it/charts': typeof ApiV1SliceItChartsRoute
+  '/api/v1/slice-it/leaderboard': typeof ApiV1SliceItLeaderboardRoute
   '/api/v1/users/$handle': typeof ApiV1UsersHandleRouteWithChildren
   '/api/v1/webhooks/$id': typeof ApiV1WebhooksIdRoute
   '/api/vibe/pkg/$file': typeof ApiVibePkgFileRoute
@@ -6804,6 +6825,7 @@ export interface FileRoutesByTo {
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/search/saved/$id': typeof ApiSearchSavedIdRoute
   '/api/slice-it/admin/content': typeof ApiSliceItAdminContentRoute
+  '/api/slice-it/admin/review': typeof ApiSliceItAdminReviewRoute
   '/api/slice-it/admin/takedown': typeof ApiSliceItAdminTakedownRoute
   '/api/slice-it/charts/$id': typeof ApiSliceItChartsIdRouteWithChildren
   '/api/slice-it/charts/ranking': typeof ApiSliceItChartsRankingRoute
@@ -6838,6 +6860,8 @@ export interface FileRoutesByTo {
   '/api/v1/me/notifications': typeof ApiV1MeNotificationsRoute
   '/api/v1/news/$slug': typeof ApiV1NewsSlugRoute
   '/api/v1/posts/$id': typeof ApiV1PostsIdRouteWithChildren
+  '/api/v1/slice-it/charts': typeof ApiV1SliceItChartsRoute
+  '/api/v1/slice-it/leaderboard': typeof ApiV1SliceItLeaderboardRoute
   '/api/v1/users/$handle': typeof ApiV1UsersHandleRouteWithChildren
   '/api/v1/webhooks/$id': typeof ApiV1WebhooksIdRoute
   '/api/vibe/pkg/$file': typeof ApiVibePkgFileRoute
@@ -7661,6 +7685,7 @@ export interface FileRoutesById {
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/search/saved/$id': typeof ApiSearchSavedIdRoute
   '/api/slice-it/admin/content': typeof ApiSliceItAdminContentRoute
+  '/api/slice-it/admin/review': typeof ApiSliceItAdminReviewRoute
   '/api/slice-it/admin/takedown': typeof ApiSliceItAdminTakedownRoute
   '/api/slice-it/charts/$id': typeof ApiSliceItChartsIdRouteWithChildren
   '/api/slice-it/charts/ranking': typeof ApiSliceItChartsRankingRoute
@@ -7695,6 +7720,8 @@ export interface FileRoutesById {
   '/api/v1/me/notifications': typeof ApiV1MeNotificationsRoute
   '/api/v1/news/$slug': typeof ApiV1NewsSlugRoute
   '/api/v1/posts/$id': typeof ApiV1PostsIdRouteWithChildren
+  '/api/v1/slice-it/charts': typeof ApiV1SliceItChartsRoute
+  '/api/v1/slice-it/leaderboard': typeof ApiV1SliceItLeaderboardRoute
   '/api/v1/users/$handle': typeof ApiV1UsersHandleRouteWithChildren
   '/api/v1/webhooks/$id': typeof ApiV1WebhooksIdRoute
   '/api/vibe/pkg/$file': typeof ApiVibePkgFileRoute
@@ -8518,6 +8545,7 @@ export interface FileRouteTypes {
     | '/api/scheduled/$id/publish'
     | '/api/search/saved/$id'
     | '/api/slice-it/admin/content'
+    | '/api/slice-it/admin/review'
     | '/api/slice-it/admin/takedown'
     | '/api/slice-it/charts/$id'
     | '/api/slice-it/charts/ranking'
@@ -8552,6 +8580,8 @@ export interface FileRouteTypes {
     | '/api/v1/me/notifications'
     | '/api/v1/news/$slug'
     | '/api/v1/posts/$id'
+    | '/api/v1/slice-it/charts'
+    | '/api/v1/slice-it/leaderboard'
     | '/api/v1/users/$handle'
     | '/api/v1/webhooks/$id'
     | '/api/vibe/pkg/$file'
@@ -9349,6 +9379,7 @@ export interface FileRouteTypes {
     | '/api/scheduled/$id/publish'
     | '/api/search/saved/$id'
     | '/api/slice-it/admin/content'
+    | '/api/slice-it/admin/review'
     | '/api/slice-it/admin/takedown'
     | '/api/slice-it/charts/$id'
     | '/api/slice-it/charts/ranking'
@@ -9383,6 +9414,8 @@ export interface FileRouteTypes {
     | '/api/v1/me/notifications'
     | '/api/v1/news/$slug'
     | '/api/v1/posts/$id'
+    | '/api/v1/slice-it/charts'
+    | '/api/v1/slice-it/leaderboard'
     | '/api/v1/users/$handle'
     | '/api/v1/webhooks/$id'
     | '/api/vibe/pkg/$file'
@@ -10205,6 +10238,7 @@ export interface FileRouteTypes {
     | '/api/scheduled/$id/publish'
     | '/api/search/saved/$id'
     | '/api/slice-it/admin/content'
+    | '/api/slice-it/admin/review'
     | '/api/slice-it/admin/takedown'
     | '/api/slice-it/charts/$id'
     | '/api/slice-it/charts/ranking'
@@ -10239,6 +10273,8 @@ export interface FileRouteTypes {
     | '/api/v1/me/notifications'
     | '/api/v1/news/$slug'
     | '/api/v1/posts/$id'
+    | '/api/v1/slice-it/charts'
+    | '/api/v1/slice-it/leaderboard'
     | '/api/v1/users/$handle'
     | '/api/v1/webhooks/$id'
     | '/api/vibe/pkg/$file'
@@ -10788,6 +10824,7 @@ export interface RootRouteChildren {
   ApiRmhmusicSpotifySearchRoute: typeof ApiRmhmusicSpotifySearchRoute
   ApiRmhtubeSubscribeChannelIdRoute: typeof ApiRmhtubeSubscribeChannelIdRoute
   ApiSliceItAdminContentRoute: typeof ApiSliceItAdminContentRoute
+  ApiSliceItAdminReviewRoute: typeof ApiSliceItAdminReviewRoute
   ApiSliceItAdminTakedownRoute: typeof ApiSliceItAdminTakedownRoute
   ApiSliceItDailySubmitRoute: typeof ApiSliceItDailySubmitRoute
   ApiSliceItPacksIdRoute: typeof ApiSliceItPacksIdRouteWithChildren
@@ -10798,6 +10835,8 @@ export interface RootRouteChildren {
   ApiTrashKindIdRoute: typeof ApiTrashKindIdRoute
   ApiUsersIdWishlistRoute: typeof ApiUsersIdWishlistRoute
   ApiV1LeaderboardsGameRoute: typeof ApiV1LeaderboardsGameRoute
+  ApiV1SliceItChartsRoute: typeof ApiV1SliceItChartsRoute
+  ApiV1SliceItLeaderboardRoute: typeof ApiV1SliceItLeaderboardRoute
   ApiV1UsersHandleRoute: typeof ApiV1UsersHandleRouteWithChildren
   ApiVibePkgFileRoute: typeof ApiVibePkgFileRoute
   ApiVibeThumbSlugRoute: typeof ApiVibeThumbSlugRoute
@@ -16012,6 +16051,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSliceItAdminContentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/slice-it/admin/review': {
+      id: '/api/slice-it/admin/review'
+      path: '/api/slice-it/admin/review'
+      fullPath: '/api/slice-it/admin/review'
+      preLoaderRoute: typeof ApiSliceItAdminReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/slice-it/admin/takedown': {
       id: '/api/slice-it/admin/takedown'
       path: '/api/slice-it/admin/takedown'
@@ -16291,6 +16337,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/v1/posts/$id'
       preLoaderRoute: typeof ApiV1PostsIdRouteImport
       parentRoute: typeof ApiV1PostsRoute
+    }
+    '/api/v1/slice-it/charts': {
+      id: '/api/v1/slice-it/charts'
+      path: '/api/v1/slice-it/charts'
+      fullPath: '/api/v1/slice-it/charts'
+      preLoaderRoute: typeof ApiV1SliceItChartsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/slice-it/leaderboard': {
+      id: '/api/v1/slice-it/leaderboard'
+      path: '/api/v1/slice-it/leaderboard'
+      fullPath: '/api/v1/slice-it/leaderboard'
+      preLoaderRoute: typeof ApiV1SliceItLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/v1/users/$handle': {
       id: '/api/v1/users/$handle'
@@ -18868,6 +18928,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhmusicSpotifySearchRoute: ApiRmhmusicSpotifySearchRoute,
   ApiRmhtubeSubscribeChannelIdRoute: ApiRmhtubeSubscribeChannelIdRoute,
   ApiSliceItAdminContentRoute: ApiSliceItAdminContentRoute,
+  ApiSliceItAdminReviewRoute: ApiSliceItAdminReviewRoute,
   ApiSliceItAdminTakedownRoute: ApiSliceItAdminTakedownRoute,
   ApiSliceItDailySubmitRoute: ApiSliceItDailySubmitRoute,
   ApiSliceItPacksIdRoute: ApiSliceItPacksIdRouteWithChildren,
@@ -18878,6 +18939,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTrashKindIdRoute: ApiTrashKindIdRoute,
   ApiUsersIdWishlistRoute: ApiUsersIdWishlistRoute,
   ApiV1LeaderboardsGameRoute: ApiV1LeaderboardsGameRoute,
+  ApiV1SliceItChartsRoute: ApiV1SliceItChartsRoute,
+  ApiV1SliceItLeaderboardRoute: ApiV1SliceItLeaderboardRoute,
   ApiV1UsersHandleRoute: ApiV1UsersHandleRouteWithChildren,
   ApiVibePkgFileRoute: ApiVibePkgFileRoute,
   ApiVibeThumbSlugRoute: ApiVibeThumbSlugRoute,
