@@ -4,6 +4,7 @@ import {
   GetObjectCommand,
   DeleteObjectCommand,
   HeadObjectCommand,
+  ListObjectsV2Command,
   NoSuchKey,
 } from "@aws-sdk/client-s3";
 import fs from "node:fs/promises";
@@ -94,6 +95,22 @@ async function localExists(key: string): Promise<boolean> {
     return true;
   } catch {
     return false;
+  }
+}
+
+async function localList(prefix: string, limit: number): Promise<string[]> {
+  const root = localPath(prefix.endsWith("/") ? prefix : `${prefix}/`);
+  try {
+    const entries = await fs.readdir(root, { withFileTypes: true });
+    return entries
+      .filter((entry) => entry.isFile())
+      .slice(0, limit)
+      .map((entry) => `${prefix.replace(/\/?$/, "/")}${entry.name}`);
+  } catch (err) {
+    // A prefix nothing has been written under yet is an empty listing, not an
+    // error — which is exactly the state a fresh local checkout is in.
+    if ((err as { code?: string })?.code === "ENOENT") return [];
+    throw err;
   }
 }
 
@@ -347,6 +364,39 @@ export async function deleteObject(key: string): Promise<void> {
   await getClient().send(
     new DeleteObjectCommand({ Bucket: getBucket(), Key: key })
   );
+}
+
+/**
+ * Every key under a prefix.
+ *
+ * For operational reads — the orphan scan in `lib/slice-it/ops.server.ts`
+ * compares storage keys against database rows and needs no object bodies at
+ * all. **Bounded**, and the bound is not a nicety: a bucket with a million
+ * objects under one prefix would otherwise page forever inside a request.
+ * A caller that hits `limit` is seeing a truncated listing and must treat the
+ * result as "at least these", never as "exactly these" — which is why nothing
+ * downstream is allowed to delete from it.
+ */
+export async function listObjects(prefix: string, limit = 5000): Promise<string[]> {
+  if (!s3Configured()) return localList(prefix, limit);
+
+  const keys: string[] = [];
+  let token: string | undefined;
+  do {
+    const page = await getClient().send(
+      new ListObjectsV2Command({
+        Bucket: getBucket(),
+        Prefix: prefix,
+        ContinuationToken: token,
+        MaxKeys: Math.min(1000, limit - keys.length),
+      })
+    );
+    for (const object of page.Contents ?? []) {
+      if (object.Key) keys.push(object.Key);
+    }
+    token = page.IsTruncated ? page.NextContinuationToken : undefined;
+  } while (token && keys.length < limit);
+  return keys;
 }
 
 export async function objectExists(key: string): Promise<boolean> {

@@ -206,6 +206,16 @@ function AdminDashboardPage() {
           </Link>
 
           <Link
+            to="/admin/slice-it-content"
+            className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
+          >
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{tSlice("admin-content-card-title", { defaultValue: "Slice It Content & Storage" })}</h2>
+            <p className="text-site-text-muted text-sm mt-2">
+              {tSlice("admin-content-card-description", { defaultValue: "Quota headroom, upload rate, charts whose telemetry says they generated badly, and storage objects no song points at." })}
+            </p>
+          </Link>
+
+          <Link
             to="/admin/audit"
             className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
           >

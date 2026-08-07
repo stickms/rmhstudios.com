@@ -19,6 +19,7 @@ import { runProgression, type ProgressionJob } from '@/lib/social/engagement-eff
 import { registerEventReminderWorker } from '@/lib/events.server';
 import { registerDigestCron } from '@/lib/digest/pipeline.server';
 import { registerMaintenanceCrons } from '@/lib/jobs/maintenance.server';
+import { ANALYSIS_QUEUE, registerAnalysisWorker } from '@/lib/slice-it/analysis-queue.server';
 
 const log = createLogger('jobs');
 
@@ -64,6 +65,22 @@ async function main() {
     log.error({
       event: 'jobs.register_failed',
       queue: 'email.weekly-digest',
+      err: (e as Error)?.message,
+    });
+  }
+
+  // O3 — Slice It! beatmap generation. It ran inline in the upload route,
+  // blocking an SSR worker for seconds per track on the container that also
+  // serves every page. `enqueueAnalysis` falls back to running inline when this
+  // worker is not up, so a registration failure here is slow uploads, never
+  // chartless songs.
+  try {
+    await registerAnalysisWorker(boss);
+    log.info({ event: 'jobs.started', queue: ANALYSIS_QUEUE });
+  } catch (e) {
+    log.error({
+      event: 'jobs.register_failed',
+      queue: ANALYSIS_QUEUE,
       err: (e as Error)?.message,
     });
   }

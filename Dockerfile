@@ -172,6 +172,17 @@ COPY lib/slice-it/scoring.ts ./lib/slice-it/scoring.ts
 # depending on which door it came through.
 COPY lib/slice-it/pools.ts ./lib/slice-it/pools.ts
 COPY lib/slice-it/net/events.ts ./lib/slice-it/net/events.ts
+# O3 — the jobs worker charts uploaded songs now, so the analyser is no longer
+# "web-tier only" as the comment above described it. That pulls in the whole
+# beatmap directory (STFT, onsets, tempo, charter, sections) plus `chart.ts`
+# for the difficulty resolution the charter's output is validated against, and
+# `songs.server.ts` to read the stored audio and write the density strip.
+COPY lib/slice-it/beatmap ./lib/slice-it/beatmap/
+COPY lib/slice-it/chart.ts ./lib/slice-it/chart.ts
+COPY lib/slice-it/songs.server.ts ./lib/slice-it/songs.server.ts
+COPY lib/slice-it/analysis-queue.server.ts ./lib/slice-it/analysis-queue.server.ts
+# ffmpeg wrapper: `songs.server.ts` reads a stored file's content type from it.
+COPY lib/audio/transcode.server.ts ./lib/audio/transcode.server.ts
 # Massive March goes in whole, unlike the games above, because for this one the
 # hub IS the simulation: the island's height field, its collision, the audibility
 # rule, the puzzle engine, the item catalogue and the campaign save are all

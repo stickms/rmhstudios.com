@@ -821,6 +821,24 @@ export function SongLibrary({
                         {formatSongDuration(song.duration)}
                         {song.chartRating !== null && ` • ★ ${song.chartRating.toFixed(1)}`}
                       </div>
+                      {/* O3 — the row stays visible while the worker charts it.
+                          Hiding a pending song would read as a failed upload,
+                          and it is playable either way: with no stored chart
+                          the client generates one locally and patches it back,
+                          which is exactly what a `failed` state falls through
+                          to as well. */}
+                      {song.analysisState === 'pending' && (
+                        <div className="text-[10px] text-slice-text-light">
+                          {t('charting', { defaultValue: 'Charting…' })}
+                        </div>
+                      )}
+                      {song.analysisState === 'failed' && (
+                        <div className="text-[10px] text-slice-text-light">
+                          {t('charting-failed', {
+                            defaultValue: 'Charting failed — a chart is generated on play',
+                          })}
+                        </div>
+                      )}
                       <div className="flex items-center gap-3 mt-0.5">
                         <span className="flex items-center gap-1 text-[10px] text-slice-text-light">
                           <Play className="w-2.5 h-2.5 fill-current" aria-hidden />

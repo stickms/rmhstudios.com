@@ -49,6 +49,7 @@ import { computeEnvelope, type PeakEnvelope } from './envelope';
 import { detectSections, type Section } from './sections';
 
 export type { AudioLike } from './audio';
+export { decodedToAudioLike } from './audio';
 export type { PeakEnvelope } from './envelope';
 export type { Section } from './sections';
 

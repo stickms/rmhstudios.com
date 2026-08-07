@@ -39,6 +39,7 @@ import { useSession } from '@/components/Providers';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import { calculateScoreMultiplier } from '@/lib/slice-it/scoring';
 import { forMultiplayer } from '@/lib/slice-it/modifiers';
+import { prefetchRun } from '@/lib/slice-it/prefetch';
 import { MAX_LOBBY_PLAYERS, MAX_SPEED, MULTIPLAYER_MIN_SPEED } from '@/lib/slice-it/constants';
 import type { Modifiers, SliceSong } from '@/lib/slice-it/types';
 import type { LobbyPlayer, TeamId, VoteState } from '@/lib/slice-it/net/events';
@@ -217,6 +218,26 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
     toast.error(errorMessage(lobbyError, t, ts));
     useSliceItStore.getState().setLobbyError(null);
   }, [lobbyError, t, ts]);
+
+  // O5 — start fetching the moment the host picks a song, not when the match
+  // does. The lobby has known the song since `slice:song` fired, which is
+  // usually minutes of people reading the song list before anyone readies up;
+  // spending that time on the download turns most of `LOAD_TIMEOUT_MS` into
+  // time the player was going to be idle anyway.
+  //
+  // Aborted on song change, so a host flicking through the list does not leave
+  // four audio downloads racing on someone's phone.
+  const lobbySongId = lobby?.song?.id ?? null;
+  const lobbyDifficulty = modifiers.difficulty;
+  React.useEffect(() => {
+    if (!lobbySongId) return;
+    const controller = new AbortController();
+    void prefetchRun(lobbySongId, {
+      signal: controller.signal,
+      difficulty: lobbyDifficulty,
+    });
+    return () => controller.abort();
+  }, [lobbySongId, lobbyDifficulty]);
 
   // A closed tab frees the seat at once rather than making everyone sit through
   // the disconnect grace window for someone who is not coming back.

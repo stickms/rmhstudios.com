@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { optimizeImage } from '@/lib/image-optimize';
-import { transcodeAudioToAac } from '@/lib/audio/transcode.server';
+import { transcodeForGameplay } from '@/lib/audio/transcode.server';
 import decode from '@audio/decode';
 import {
   COVER_SIZE,
@@ -19,15 +19,11 @@ import {
 import { estimatedPcmBytes, probeAudioDuration } from '@/lib/audio/probe';
 import { UploadFieldsZ } from '@/lib/slice-it/api-schemas';
 import { validateAudioBuffer, validateImageBuffer } from '@/lib/slice-it/upload-validation';
-import {
-  deleteSongAssets,
-  songDensityStrip,
-  storeSongAudio,
-  storeSongCover,
-} from '@/lib/slice-it/songs.server';
+import { deleteSongAssets, storeSongAudio, storeSongCover } from '@/lib/slice-it/songs.server';
 import { artistKeyOf } from '@/lib/slice-it/artist';
 import { createAlbumPack } from '@/lib/slice-it/packs.server';
-import { generateBeatmap, type AudioLike } from '@/lib/slice-it/beatmap';
+import { decodedToAudioLike, type generateBeatmap } from '@/lib/slice-it/beatmap';
+import { enqueueAnalysis } from '@/lib/slice-it/analysis-queue.server';
 import { recordSongUploaded } from '@/lib/slice-it/progression.server';
 
 /**
@@ -342,18 +338,23 @@ export const Route = createFileRoute('/api/slice-it/songs/upload')({
               );
             }
 
-            // Re-encode to AAC — far smaller than WAV/FLAC, and `+faststart`
-            // keeps range requests (seeking) working. ffmpeg is absent in local
-            // dev, so a failure falls back to the original bytes rather than
-            // failing upload.
+            // O4 — re-encode before storing. Opus at 96 kbps first (typically
+            // 5–10x smaller than the source, which is a 5–10x effective
+            // increase in the 10 GB global quota), AAC as the compatibility
+            // rung, original bytes only if ffmpeg is absent entirely — which is
+            // local dev, where an upload should still work.
+            //
+            // O3's worker charts from the stored file, so this encode is
+            // upstream of onset detection — see the note in
+            // `transcode.server.ts`. Opus's transient timing at 96 kbps is
+            // accurate to well under a millisecond against a 55 ms onset
+            // filter, which is why Opus and not a low-bitrate AAC.
             let storedBuffer: Buffer = buffer;
             let storedExt = extensionOf(file.name);
-            try {
-              const transcoded = await transcodeAudioToAac(buffer);
-              storedBuffer = transcoded.buffer;
-              storedExt = transcoded.ext;
-            } catch (error) {
-              console.warn('[slice-it] audio transcode failed — storing original', error);
+            const encoded = await transcodeForGameplay(buffer);
+            if (encoded.result) {
+              storedBuffer = encoded.result.buffer;
+              storedExt = encoded.result.ext;
             }
 
             // A single upload names its own track; an album takes each track's
@@ -362,23 +363,21 @@ export const Route = createFileRoute('/api/slice-it/songs/upload')({
             const title =
               (isAlbum ? '' : fields.data.title) || stripExtension(file.name) || 'Untitled';
 
-            // The expensive part, and the reason it happens once per song ever
-            // rather than in every player's browser on every play.
-            let analysis: ReturnType<typeof generateBeatmap> | null = null;
-            try {
-              analysis = generateBeatmap(audio, {
-                id: contentHash.slice(0, 24),
-                name: title,
-                artist,
-                bpmHint: fields.data.bpm,
-              });
-            } catch (error) {
-              // A song with no chart is still a song — the client can generate
-              // one locally and POST it back. Failing the whole upload would be
-              // worse.
-              console.error('[slice-it] beatmap generation failed', error);
-            }
-
+            // O3 — charting is a queued job now, so nothing is generated here.
+            // It is the expensive part (seconds of CPU, multiplied by the track
+            // count on an album) and nothing in this response needs it: the row
+            // is created `pending` and the library shows "Charting…" rather
+            // than hiding it, because a song that vanishes for two minutes
+            // after upload reads as a failed upload.
+            //
+            // The `decode()` above deliberately did NOT move. It is this
+            // route's validation — the probe gives a bound on duration and the
+            // decode gives the measurement, and the stored duration is what a
+            // score ceiling is derived from. Handing the ceiling a looser
+            // number to save a second of request time is the wrong trade.
+            //
+            // `bpm` and `densityStrip` are therefore the uploader's typed value
+            // and null; the worker overwrites both from the real analysis.
             const audioKey = await storeSongAudio(storedBuffer, storedExt);
             written.push({ audioUrl: audioKey, coverUrl: null });
 
@@ -389,15 +388,12 @@ export const Route = createFileRoute('/api/slice-it/songs/upload')({
               title: title.slice(0, SONG_TITLE_MAX),
               artist,
               duration,
-              bpm: analysis?.bpm ?? fields.data.bpm ?? 0,
+              bpm: fields.data.bpm ?? 0,
               contentHash,
               audioKey,
               fileSizeBytes: storedBuffer.length,
-              analysis,
-              // V8 — computed here, where the chart is already in memory, and
-              // stored as its own column so the library list can carry it
-              // without carrying `analysisData`.
-              densityStrip: songDensityStrip(analysis, duration),
+              analysis: null,
+              densityStrip: null,
             });
           }
 
@@ -422,6 +418,8 @@ export const Route = createFileRoute('/api/slice-it/songs/upload')({
                   contentHash: track.contentHash,
                   analysisData: (track.analysis ?? undefined) as never,
                   densityStrip: track.densityStrip ?? undefined,
+                  // O3 — the worker moves this to 'ready' or 'failed'.
+                  analysisState: 'pending',
                   uploadedBy: userId,
                   isPublic: fields.data.isPublic,
                 },
@@ -449,6 +447,21 @@ export const Route = createFileRoute('/api/slice-it/songs/upload')({
           // 500 and lose the song that was just written and paid for in quota.
           await recordSongUploaded(userId);
 
+          // O3 — queued after the commit, so a job can never reference a row
+          // that a rolled-back transaction never created. `enqueueAnalysis`
+          // runs the work inline when there is no queue, which is why this is
+          // awaited rather than fire-and-forget: without a worker, this is
+          // where the two seconds went, and the upload still has to produce a
+          // chart before anyone plays it.
+          for (const song of result.songs) {
+            await enqueueAnalysis({ songId: song.id, bpmHint: fields.data.bpm }).catch((error) => {
+              // Both paths already failed if we get here. The song exists and
+              // is playable — the client generates a chart locally and POSTs it
+              // back — so this is a log, not a 500.
+              console.error('[slice-it] could not chart', song.id, error);
+            });
+          }
+
           return Response.json({
             success: true,
             // The single-track response shape is unchanged — `SongLibrary.tsx`
@@ -456,8 +469,11 @@ export const Route = createFileRoute('/api/slice-it/songs/upload')({
             song: result.songs[0],
             songs: result.songs,
             packId: result.pack?.id ?? null,
-            notes: prepared[0]?.analysis?.noteCounts ?? null,
-            tempoConfidence: prepared[0]?.analysis?.tempoConfidence ?? 0,
+            // O3 — null now, because charting has not happened yet. The client
+            // shows the "Charting…" state instead of a note count.
+            notes: null,
+            tempoConfidence: 0,
+            charting: true,
           });
         } catch (error) {
           await unwind();
@@ -467,24 +483,6 @@ export const Route = createFileRoute('/api/slice-it/songs/upload')({
     },
   },
 });
-
-/** Adapt `@audio/decode`'s output to the analyser's structural interface. */
-function decodedToAudioLike(decoded: {
-  sampleRate: number;
-  channelData: Float32Array[];
-}): AudioLike {
-  const length = decoded.channelData[0]?.length ?? 0;
-  return {
-    sampleRate: decoded.sampleRate,
-    length,
-    numberOfChannels: decoded.channelData.length,
-    getChannelData(channel: number) {
-      const data = decoded.channelData[channel];
-      if (!data) throw new RangeError(`Audio channel ${channel} is unavailable`);
-      return data;
-    },
-  };
-}
 
 function extensionOf(name: string): string {
   const match = /\.[A-Za-z0-9]{1,5}$/.exec(name);

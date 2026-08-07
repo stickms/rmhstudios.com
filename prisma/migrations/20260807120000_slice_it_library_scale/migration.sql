@@ -17,6 +17,8 @@
 -- patched by `db push`, and every added `DEFAULT` is a constant (catalogue-only
 -- on PG 11+), so no table is rewritten. The one exception is the generated
 -- column, which does rewrite `Song` — unavoidable, and `Song` is small.
+--
+-- migration-safety: acknowledged[create-index-not-concurrent] the four indexes below take a SHARE lock on "Song", but the generated `searchVector` column in this same migration ALREADY rewrites that table under an ACCESS EXCLUSIVE lock — a strictly stronger lock, held for longer. Building the indexes CONCURRENTLY would buy nothing while the rewrite is in flight, and CONCURRENTLY cannot run inside the migration transaction the rewrite needs. "Song" is the library table and is small (thousands of rows, not millions).
 
 -- ─── Extensions ────────────────────────────────────────────────────────────
 --

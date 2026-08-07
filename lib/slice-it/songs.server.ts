@@ -213,6 +213,12 @@ export const songSelect = {
    * separate column rather than something derived from the chart at read time.
    */
   densityStrip: true,
+  /**
+   * O3 — 'ready' | 'pending' | 'failed'. The library shows "Charting…" rather
+   * than hiding a pending row: a song that vanishes for two minutes after
+   * upload reads as a failed upload.
+   */
+  analysisState: true,
   description: true,
   duration: true,
   bpm: true,
@@ -310,6 +316,7 @@ type SongRow = {
   album: string | null;
   chartRating?: number | null;
   densityStrip?: unknown;
+  analysisState?: string | null;
   description: string | null;
   duration: number;
   bpm: number | null;
@@ -373,6 +380,13 @@ export function toSliceSong(
     userPlays: Array.isArray(row.songPlays) ? (row.songPlays[0]?.count ?? 0) : 0,
     ...lampsFor(row.scores),
     createdAt: row.createdAt.toISOString(),
+    // O3 — narrowed rather than passed through: the column is a VarChar so a
+    // hand-written UPDATE could put anything in it, and a client switching on
+    // an unknown state would silently render nothing.
+    analysisState:
+      row.analysisState === 'pending' || row.analysisState === 'failed'
+        ? row.analysisState
+        : 'ready',
     ...(options.includeAnalysis
       ? { analysisData: (row.analysisData as BeatMap | null) ?? null }
       : {}),

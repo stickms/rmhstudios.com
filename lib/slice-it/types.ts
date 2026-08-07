@@ -252,6 +252,11 @@ export interface SliceSong {
   /** Best lamp per difficulty, for a card that breaks the tiers out. */
   lampByDifficulty?: Partial<Record<Difficulty, Lamp>>;
   createdAt: string;
+  /**
+   * O3 — where charting got to. `'ready'` for every song that predates the
+   * queue, so a client that ignores this field behaves exactly as before.
+   */
+  analysisState?: 'ready' | 'pending' | 'failed';
   /** Present only on the single-song read. */
   analysisData?: BeatMap | null;
   /**

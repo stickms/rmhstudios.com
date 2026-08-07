@@ -940,6 +940,20 @@ model Song {
   // Audio Analysis Data (JSON for beatmap generation)
   analysisData Json?
 
+  /// O3 — where charting got to. `'ready' | 'pending' | 'failed'`.
+  ///
+  /// Beatmap generation used to run **inline in the upload route**: two seconds
+  /// of CPU-bound work blocking an SSR worker on the container that also serves
+  /// every page. It is a queued job now, and this column is what the library
+  /// reads to show "Charting…" rather than hiding the row — a song that
+  /// vanishes for two minutes after upload reads as a failed upload.
+  ///
+  /// Defaults to `'ready'` so every existing row keeps its meaning: those songs
+  /// either have a chart or have the null that the client's local-generation
+  /// fallback already handles. A string rather than an enum so a fourth state
+  /// does not need a migration on a 66-enum schema.
+  analysisState String @default("ready") @db.VarChar(16)
+
   /// V8 — a 64-value note-density histogram over the chart's duration.
   ///
   /// Stored rather than derived per request, and stored *separately from*
@@ -1330,6 +1344,7 @@ model Chart {
   updatedAt DateTime @updatedAt
 
   revisions ChartRevision[]
+  noteStats SliceNoteStat[]
   /// Back-relations for R1/R6. Omitted when the model shipped, because giving
   /// `SongLeaderboard` a `chartId` meant re-keying it, and re-keying it meant
   /// touching the score route — see `docs/_handoff/chart-editor-requests.md` §3.
@@ -1348,6 +1363,48 @@ model Chart {
   /// "everything rated by an old version".
   @@index([rating(sort: Desc)])
   @@index([ratingVersion])
+}
+
+/// **O1 — per-note miss aggregate.**
+///
+/// Nothing records WHERE in a chart players fail. `SongLeaderboard` keeps a
+/// final score and `SliceRun` keeps totals, so a chart with one unplayable bar
+/// is indistinguishable from a hard chart — including to whoever is tuning the
+/// charter, for whom this is the only ground truth about whether it places
+/// notes people can actually hit.
+///
+/// **Per-note aggregate, not per-run rows.** A run's worth of note results is
+/// ~1200 rows; at the volume `SliceRun` already sees this table would be the
+/// largest in the database inside a month. Counters, incremented in batch, and
+/// only for a sampled tenth of runs (`NOTE_STAT_SAMPLE_RATE`) — a chart with
+/// too few plays for a tenth to converge is one nobody is complaining about.
+model SliceNoteStat {
+  chartId String @db.Uuid
+  chart   Chart  @relation(fields: [chartId], references: [id], onDelete: Cascade)
+
+  /// Note time in milliseconds. Integer rather than the float seconds the chart
+  /// stores, because this is half a composite primary key and a float key that
+  /// round-trips through JSON is a key that occasionally does not match.
+  ///
+  /// Stable across a regeneration only WITHIN a `chartHash` — which is why that
+  /// column exists (C12) and why `chartHash` is part of the key here too. A
+  /// chart edit must start a fresh histogram rather than inheriting counts for
+  /// notes that have moved.
+  noteMs Int
+
+  /// The chart revision these counts describe. See above: without it, an edit
+  /// silently merges two different charts' failure data.
+  chartHash String @db.Char(64)
+
+  attempts Int @default(0)
+  misses   Int @default(0)
+
+  updatedAt DateTime @updatedAt
+
+  @@id([chartId, chartHash, noteMs])
+  /// The heatmap read: one chart revision, in time order.
+  @@index([chartId, chartHash, noteMs])
+  @@map("slice_note_stat")
 }
 
 /// **L16 — a pack: an ordered, curated set of charts.**

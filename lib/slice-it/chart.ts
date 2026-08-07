@@ -113,13 +113,22 @@ export function chartSeed(songId: string, modifiers: Modifiers): string {
  * Charts are stored in two shapes: a flat array (everything generated before
  * per-difficulty charts existed) and a record keyed by difficulty. Both are
  * still in the `Song` table, so both have to keep loading.
+ *
+ * Since `O7` the record may legitimately carry only ONE key — the server trims
+ * the response to the difficulty the client asked for. So the last resort is
+ * whatever difficulty is actually present rather than an empty chart: if the
+ * request and the store ever disagree about the tier, the honest failure is
+ * "you played the wrong difficulty", not "the song had no notes in it".
  */
 export function resolveSlices(map: BeatMap, difficulty: Difficulty): Slice[] {
   const source = map.slices;
   if (Array.isArray(source)) return source.map((s) => ({ ...s }));
 
   const byDifficulty = source as Partial<Record<Difficulty, Slice[]>>;
-  const picked = byDifficulty[difficulty] ?? byDifficulty.normal;
+  const picked =
+    byDifficulty[difficulty] ??
+    byDifficulty.normal ??
+    Object.values(byDifficulty).find((list) => Array.isArray(list));
   if (!Array.isArray(picked)) return [];
   return picked.map((s) => ({ ...s }));
 }

@@ -243,6 +243,10 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/v/new': 'auth-gated',
   '/login': 'noindex',
   '/rmhcode/auth': 'auth-gated',
+  // X8 — the Discord Activity gateway. It only functions inside a Discord
+  // client (it reads the Activity SDK handshake), so a crawler that indexed it
+  // would be advertising a page that renders nothing anywhere else.
+  '/discord': 'noindex',
 
   // ── admin ──
   '/admin': 'admin',
@@ -261,6 +265,8 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/admin/reports': 'admin',
   '/admin/rideshare': 'admin',
   '/admin/security-reports': 'admin',
+  '/admin/slice-it': 'admin',
+  '/admin/slice-it-content': 'admin',
   '/admin/user-builds': 'admin',
   '/admin/users': 'admin',
 
@@ -384,6 +390,18 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/tournaments/$id': 'community',
   '/homes/listing/$id': 'homes',
   '/rmhladder/jobs/$jobId': 'jobs',
+
+  // Slice It's two public per-entity pages (L15, X12). Dynamic and deliberately
+  // unlisted rather than sectioned: both are unbounded in the library's own
+  // data (every artist tag anyone ever typed; every player who set a score) and
+  // neither has a `SITEMAP_SECTIONS` supplier. They are reachable by crawl from
+  // `/games/slice-it` and the leaderboards, which is the right amount of
+  // discoverability for them.
+  '/slice-it/artist/$key': null,
+  '/slice-it/player/$handle': null,
+  // C1 — the chart editor. Auth-gated, and a chart's public surface is
+  // `/games/slice-it` and the song's page, not its editing view.
+  '/slice-it/edit/$songId': null,
 
   // Dynamic and deliberately unlisted.
   '/deeplink/$page': null, // sub-pages of the raw-HTML Deeplink microsite
