@@ -10,7 +10,7 @@ import { z } from 'zod';
 
 export const MAX_MODULES = 6;
 
-export const MODULE_KINDS = ['about', 'stats', 'status', 'wishlist'] as const;
+export const MODULE_KINDS = ['about', 'stats', 'status', 'wishlist', 'slice-it'] as const;
 export type ModuleKind = (typeof MODULE_KINDS)[number];
 
 // Per-kind config (kept small + serializable).
@@ -19,6 +19,7 @@ const configByKind = {
   stats: z.object({}).strip(),
   status: z.object({}).strip(),
   wishlist: z.object({}).strip(),
+  'slice-it': z.object({}).strip(),
 } as const;
 
 export const moduleSchema = z.discriminatedUnion('kind', [
@@ -26,6 +27,7 @@ export const moduleSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('stats'), config: configByKind.stats.optional().default({}) }),
   z.object({ kind: z.literal('status'), config: configByKind.status.optional().default({}) }),
   z.object({ kind: z.literal('wishlist'), config: configByKind.wishlist.optional().default({}) }),
+  z.object({ kind: z.literal('slice-it'), config: configByKind['slice-it'].optional().default({}) }),
 ]);
 
 export type ProfileModule = z.infer<typeof moduleSchema>;
@@ -54,4 +56,5 @@ export const MODULE_LABELS: Record<ModuleKind, string> = {
   stats: 'Stats',
   status: 'Status',
   wishlist: 'Wishlist',
+  'slice-it': 'Slice It!',
 };

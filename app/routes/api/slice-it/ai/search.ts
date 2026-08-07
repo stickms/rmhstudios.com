@@ -19,7 +19,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { assertAiBudget } from '@/lib/ai/budget.server';
 import { SearchRequestZ } from '@/lib/slice-it/ai/api-schemas';
-import { interpretSearch, runSearch } from '@/lib/slice-it/ai/library.server';
+import { interpretSearch, runSearch } from '@/lib/slice-it/ai/discovery.server';
 import { isAiConfigured } from '@/lib/slice-it/ai/run.server';
 import type { SearchQuery } from '@/lib/slice-it/ai/types';
 

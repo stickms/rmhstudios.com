@@ -37,6 +37,7 @@ A request whose key lacks the required scope fails with `403 insufficient_scope`
 | `read:builds` | Content | Read the public builds marketplace. |
 | `read:content` | Content | Read blog posts and news articles. |
 | `read:leaderboards` | Content | Read public game leaderboards. |
+| `read:slice-it` | Content | Read Slice It! charts, leaderboards and public player stats. |
 | `manage:webhooks` | Webhooks | Create and manage webhook subscriptions. |
 
 <!-- END GENERATED: scopes -->

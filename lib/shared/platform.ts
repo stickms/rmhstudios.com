@@ -83,6 +83,26 @@ export function canPlayWebAudio(): boolean {
   return Boolean(w.AudioContext ?? w.webkitAudioContext);
 }
 
+/**
+ * The page's output audio latency, in milliseconds, or `null` when unknown.
+ *
+ * `outputLatency` is the real end-to-end number and is Firefox/Chrome-only;
+ * `baseLatency` (the processing buffer) is available almost everywhere but is
+ * a fraction of the real figure. Prefer the former, fall back to the latter,
+ * and treat `0` as "unknown" rather than "none" — Safari reports 0 and it is
+ * not true.
+ *
+ * Does not create an `AudioContext` — call `getAudioContext()` first (or let a
+ * caller that already did, like `AudioManager`) so this never has the side
+ * effect of spinning one up just to measure it.
+ */
+export function outputLatencyMs(): number | null {
+  const ctx = sharedContext;
+  if (!ctx) return null;
+  const latency = ctx.outputLatency || ctx.baseLatency || 0;
+  return latency > 0 ? Math.round(latency * 1000) : null;
+}
+
 /* ─── Haptics ───────────────────────────────────────────────────────────── */
 
 /**
@@ -98,6 +118,65 @@ export function vibrate(pattern: number | number[]): void {
     navigator.vibrate(pattern);
   } catch {
     // Some engines throw on an out-of-range pattern rather than clamping it.
+  }
+}
+
+/* ─── Haptic preferences ────────────────────────────────────────────────── */
+
+const HAPTICS_ENABLED_KEY = 'rmh:haptics:enabled';
+const HAPTICS_INTENSITY_KEY = 'rmh:haptics:intensity';
+
+/**
+ * Whether hit haptics are enabled, from the last explicit choice.
+ *
+ * Defaults to on: `vibrate()` already no-ops on every device without a motor
+ * (all of desktop, iOS Safari), so getting the default "wrong" there costs
+ * nothing, and a phone player with a motor generally wants to feel a hit.
+ *
+ * No settings surface exists for this yet (A8) — see
+ * `docs/_handoff/presentation-requests.md`. Once a toggle lands, write
+ * through {@link setHapticsEnabled} rather than the key directly, so every
+ * reader keeps agreeing on the storage format.
+ */
+export function hapticsEnabled(): boolean {
+  if (typeof localStorage === 'undefined') return true;
+  try {
+    const raw = localStorage.getItem(HAPTICS_ENABLED_KEY);
+    return raw === null ? true : raw === '1';
+  } catch {
+    return true;
+  }
+}
+
+export function setHapticsEnabled(enabled: boolean): void {
+  try {
+    localStorage.setItem(HAPTICS_ENABLED_KEY, enabled ? '1' : '0');
+  } catch {
+    // Private browsing / storage full — the in-memory default still applies
+    // for the rest of this tab's life, which is a fine place for this to fail.
+  }
+}
+
+/**
+ * 0–1. Defaults to 0.7 rather than 1: full-strength `vibrate()` reads as
+ * harsh on most phones, and the judgement-scaled durations in
+ * `lib/slice-it/engine.ts` are already tuned against that default.
+ */
+export function hapticsIntensity(): number {
+  if (typeof localStorage === 'undefined') return 0.7;
+  try {
+    const raw = Number(localStorage.getItem(HAPTICS_INTENSITY_KEY));
+    return Number.isFinite(raw) && raw > 0 && raw <= 1 ? raw : 0.7;
+  } catch {
+    return 0.7;
+  }
+}
+
+export function setHapticsIntensity(value: number): void {
+  try {
+    localStorage.setItem(HAPTICS_INTENSITY_KEY, String(Math.max(0, Math.min(1, value))));
+  } catch {
+    // See setHapticsEnabled.
   }
 }
 
@@ -276,4 +355,30 @@ export function isLowPowerDevice(): boolean {
   if (typeof nav.deviceMemory === 'number' && nav.deviceMemory <= 2) return true;
   if (typeof nav.hardwareConcurrency === 'number' && nav.hardwareConcurrency <= 2) return true;
   return false;
+}
+
+/**
+ * I2 — gamepad rumble, scaled by the same haptics settings the touch path uses.
+ *
+ * `playEffect` returns a promise that must NOT be awaited on the input path,
+ * and whose rejection must be swallowed: a pad without an actuator rejects, and
+ * an unhandled rejection per note is a console full of noise on exactly the
+ * hardware that cannot do anything about it.
+ */
+export function rumble(pad: Gamepad | null, durationMs: number, strong = 0.2): void {
+  if (!pad || !hapticsEnabled()) return;
+  const actuator = (pad as Gamepad & { vibrationActuator?: GamepadHapticActuator })
+    .vibrationActuator as (GamepadHapticActuator & {
+    playEffect?: (type: string, params: Record<string, number>) => Promise<unknown>;
+  }) | undefined;
+  if (!actuator?.playEffect) return;
+
+  const intensity = hapticsIntensity();
+  void actuator
+    .playEffect('dual-rumble', {
+      duration: Math.max(1, Math.round(durationMs)),
+      weakMagnitude: 0.4 * intensity,
+      strongMagnitude: strong * intensity,
+    })
+    .catch(() => {});
 }

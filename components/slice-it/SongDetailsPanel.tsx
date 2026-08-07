@@ -1,9 +1,28 @@
 'use client';
 
 import * as React from 'react';
+import { Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Play, Settings, X, Check, ImagePlus, Heart } from 'lucide-react';
+import {
+  Play,
+  Settings,
+  X,
+  Check,
+  ImagePlus,
+  Heart,
+  Layers,
+  SlidersHorizontal,
+} from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { artistKeyOf, artistPath } from '@/lib/slice-it/artist';
+import { PackPanel } from './packs/PackPanel';
 import { Leaderboard } from './Leaderboard';
 import { SongComments } from './SongComments';
 import { ChartBriefPanel } from './ai/ChartBriefPanel';
@@ -16,6 +35,7 @@ import { toast } from 'sonner';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
 import { calculateScoreMultiplier } from '@/lib/slice-it/scoring';
+import { ChartPicker, type ChartOption } from './ChartPicker';
 import { useTranslation } from 'react-i18next';
 
 interface SongDetailsPanelProps {
@@ -66,6 +86,58 @@ export function SongDetailsPanel({
   // user id to every anonymous visitor just so the owner could see an edit
   // button.
   const isOwner = Boolean(session.data?.user?.id) && Boolean(song?.isOwner);
+  // The chart editor's own authorisation (POST /api/slice-it/charts) allows the
+  // song's uploader *and* admins, so the entry point matches it rather than
+  // being narrower — an admin who can save a chart but cannot reach the editor
+  // is a worse bug than a stray link.
+  const canEditChart =
+    isOwner || Boolean((session.data?.user as { isAdmin?: boolean } | undefined)?.isAdmin);
+
+  /** L15 — the artist page link target, or null for an unkeyable artist tag. */
+  const artistLinkKey = React.useMemo(() => artistKeyOf(song?.artist), [song?.artist]);
+  /** L16 — the add-to-pack dialog. */
+  const [packOpen, setPackOpen] = React.useState(false);
+
+  /* ── C2 — which chart of this song ─────────────────────────────────────── */
+
+  // Fetched separately from the song, and lazily: the picker is opened by a
+  // fraction of the people who open a song, and folding it into the song read
+  // would put a second query and an author join on the critical path to
+  // starting a run.
+  const [charts, setCharts] = React.useState<ChartOption[]>([]);
+  const selectedChartId = useSliceItStore((state) => state.selectedChartId);
+  const setSelectedChartId = useSliceItStore((state) => state.setSelectedChartId);
+  const songId = song?.id ?? null;
+
+  React.useEffect(() => {
+    if (!songId) {
+      setCharts([]);
+      return;
+    }
+    let cancelled = false;
+    // Reset on song change rather than leaving the previous song's charts on
+    // screen while this resolves — a picker showing another song's charts for
+    // 200 ms is worse than no picker.
+    setCharts([]);
+    setSelectedChartId(null);
+    void fetch(`/api/slice-it/songs/${songId}/charts`)
+      .then((res) => (res.ok ? res.json() : { charts: [] }))
+      .then((data: { charts?: ChartOption[] }) => {
+        if (cancelled) return;
+        const list = data.charts ?? [];
+        setCharts(list);
+        // Default to the first, which `chartsForSong` has already sorted to
+        // ranked-then-public-then-hardest.
+        if (list.length > 0) setSelectedChartId(list[0].id);
+      })
+      .catch(() => {
+        // A failed chart list is not a failed song: the generated fallback is
+        // still playable, and that is what an empty picker means.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [songId, setSelectedChartId]);
 
   // Edit state
   const [showEdit, setShowEdit] = React.useState(false);
@@ -345,7 +417,21 @@ export function SongDetailsPanel({
                   </button>
                 )}
               </div>
-              <div className="text-blue-500 font-bold text-lg mb-3">{song.artist}</div>
+              {/* L15 — "everything by this artist" from the panel you are
+                  already looking at. The key is derived here rather than read
+                  off the row because `SliceSong` (in `types.ts`) has no
+                  `artistKey` field; `artistKeyOf` is the same function the
+                  server writes the column with, which is the point of it being
+                  client-safe. */}
+              <div className="text-blue-500 font-bold text-lg mb-3">
+                {artistLinkKey ? (
+                  <a href={artistPath(artistLinkKey)} className="hover:underline">
+                    {song.artist}
+                  </a>
+                ) : (
+                  song.artist
+                )}
+              </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="flex flex-col">
@@ -448,6 +534,30 @@ export function SongDetailsPanel({
                   className={`w-6 h-6 transition-transform ${song.isLiked ? 'fill-current scale-110' : 'group-hover:scale-110'}`}
                 />
               </Button>
+              {/* L16 — the add-to-pack entry point. A pack builder reachable
+                  only from the library toolbar can create packs and never fill
+                  them; this is the half that puts a track into one. */}
+              {session.data?.user && (
+                <Dialog open={packOpen} onOpenChange={setPackOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="h-14 w-14 rounded-lg border bg-slice-card-bg border-slice-shadow-dark/50 text-slice-text-light hover:text-blue-400 hover:border-blue-400/50 flex items-center justify-center transition-colors"
+                      aria-label={t('add-to-pack', { defaultValue: 'Add to pack' })}
+                    >
+                      <Layers className="w-6 h-6" aria-hidden />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-slice-bg border-none shadow-2xl rounded-2xl max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle className="text-slice-text font-black">
+                        {t('add-to-pack', { defaultValue: 'Add to pack' })}
+                      </DialogTitle>
+                    </DialogHeader>
+                    <PackPanel addSongId={song.id} onAdded={() => setPackOpen(false)} />
+                  </DialogContent>
+                </Dialog>
+              )}
               <div className="flex flex-col items-center px-4 py-2 bg-slice-card-bg rounded-lg border border-slice-shadow-dark/50">
                 <div className="text-[10px] font-bold text-slice-text-light uppercase">
                   {t('multiplier', { defaultValue: 'Multiplier' })}
@@ -458,7 +568,22 @@ export function SongDetailsPanel({
               </div>
             </div>
           )}
+
+          {!readOnly && canEditChart && (
+            <Link
+              to="/slice-it/edit/$songId"
+              params={{ songId: song.id }}
+              className="mt-3 flex items-center justify-center gap-2 h-10 rounded-lg border border-slice-shadow-dark/50 bg-slice-card-bg text-slice-text-light hover:text-slice-text text-xs font-bold uppercase tracking-wide transition-colors"
+            >
+              <SlidersHorizontal className="w-4 h-4" aria-hidden />
+              {t('edit-chart', { defaultValue: 'Edit chart' })}
+            </Link>
+          )}
         </div>
+
+        {/* C2 — renders nothing when there is one chart, which is every song
+            today. A picker with one option teaches a concept nobody needs. */}
+        <ChartPicker charts={charts} selectedId={selectedChartId} onSelect={setSelectedChartId} />
 
         {/* Modifiers Section */}
         <div className="p-4 border-b border-slice-shadow-dark/30">

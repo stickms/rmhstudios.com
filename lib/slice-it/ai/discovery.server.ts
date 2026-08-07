@@ -1,5 +1,10 @@
 /**
- * Slice It — the library features. Server-only. (Features 6 and 7.)
+ * Slice It — AI discovery: natural-language search and setlist building.
+ * Server-only. (Features 6 and 7.)
+ *
+ * Named `discovery` rather than `library` because `lib/slice-it/library.server.ts`
+ * already exists and means something else — the editorial shelves. Two files
+ * called `library.server` in one game is a coin flip at every import.
  *
  * ## Feature 6: natural-language search
  *
@@ -49,9 +54,9 @@ import {
   type Setlist,
 } from './types';
 import { mmss } from './facts';
-import { songSelect, toSliceSong } from '../songs.server';
+import { libraryFieldsOf, songSelect, toSliceSong } from '../songs.server';
 import { SONGS_PAGE_SIZE, type Difficulty } from '../constants';
-import type { SliceSong } from '../types';
+import type { LibrarySong } from '../library-filters';
 
 /* -------------------------------------------------------------------------- */
 /* 6. Natural-language search                                                 */
@@ -114,7 +119,7 @@ export async function runSearch(
   query: SearchQuery,
   userId: string | null,
   limit = SONGS_PAGE_SIZE,
-): Promise<SliceSong[]> {
+): Promise<LibrarySong[]> {
   const where: Prisma.SongWhereInput =
     query.mineOnly && userId ? { uploadedBy: userId } : { isPublic: true };
 
@@ -164,12 +169,28 @@ export async function runSearch(
         ? {
             likes: { where: { userId }, select: { id: true } },
             songPlays: { where: { userId }, select: { count: true } },
+            // The viewer's own best, so an AI result card carries the same
+            // score badge the ordinary library card does.
+            scores: {
+              where: { userId },
+              orderBy: { score: 'desc' },
+              take: 1,
+              select: { score: true },
+            },
           }
         : {}),
     },
   });
 
-  return rows.map((row) => toSliceSong(row, userId));
+  // `LibrarySong`, not `SliceSong`: the library renders these rows through the
+  // same card as its own, and that card reads `artistKey`, `chartRating` and the
+  // density strip. Returning the narrower shape would make AI results render as
+  // visibly poorer cards than the ones beside them.
+  return rows.map((row) => ({
+    ...toSliceSong(row, userId),
+    ...libraryFieldsOf(row),
+    bestScore: row.scores?.[0]?.score ?? null,
+  }));
 }
 
 /* -------------------------------------------------------------------------- */

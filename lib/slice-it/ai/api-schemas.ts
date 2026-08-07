@@ -23,6 +23,7 @@
 
 import { z } from 'zod';
 import { DIFFICULTIES, MAX_SONG_DURATION_SEC } from '../constants';
+import { MOD_POOLS } from '../pools';
 import { ModifiersZ } from '../modifiers';
 
 /** A song id, as the route will look it up. */
@@ -165,4 +166,14 @@ export const RivalRequestZ = z.object({
    * The client says which position it is looking at; the server says who is in it.
    */
   rivalRank: z.number().int().min(1).max(1_000),
+  /**
+   * Which board that rank is on.
+   *
+   * A song has one board per `(difficulty, modPool)`, so a bare rank is
+   * ambiguous — rank 2 on Expert and rank 2 on Normal are different people. The
+   * client sends the board it is displaying; omitting either means the caller is
+   * looking at the combined view, and the server ranks the same way.
+   */
+  difficulty: z.enum(DIFFICULTIES).optional(),
+  modPool: z.enum(MOD_POOLS).optional(),
 });

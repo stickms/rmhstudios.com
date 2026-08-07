@@ -51,8 +51,13 @@ export const Route = createFileRoute('/api/slice-it/ai/coach')({
           // whether this run was progress. Read here rather than sent, because
           // "am I improving" is the one claim a client could make about itself
           // that would change the advice's tone entirely.
-          const best = await prisma.songLeaderboard.findUnique({
-            where: { songId_userId: { songId: song.id, userId } },
+          const best = await prisma.songLeaderboard.findFirst({
+            // Scoped to the difficulty just played: a song has one board per
+            // `(difficulty, modPool)` now, and comparing an Expert run against
+            // an Easy personal best would make the coach congratulate or
+            // console a player over a number from a different chart.
+            where: { songId: song.id, userId, difficulty: body.modifiers.difficulty },
+            orderBy: { score: 'desc' },
             select: { score: true },
           });
 

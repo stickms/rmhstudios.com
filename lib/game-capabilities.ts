@@ -180,7 +180,12 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     demanding: false,
     save: 'none',
     // The only game wired to a gamepad today (components/slice-it/GameCanvas.tsx).
-    accessibility: [],
+    //
+    // A1-A9: assist mode and no-fail (both unranked, both worth no score
+    // bonus), colour-blind-safe lane palettes, a photosensitivity mode that is
+    // independent of the performance tier, per-effect intensity, adjustable
+    // judgement windows, one-handed play, and haptic hit feedback.
+    accessibility: ['assist-mode', 'reduced-flashing', 'colorblind-safe', 'remappable-input'],
     descriptors: ['flashing', 'user-content'],
   },
   velum2099: {

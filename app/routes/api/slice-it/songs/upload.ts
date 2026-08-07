@@ -1,9 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createHash } from 'node:crypto';
+import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { optimizeImage } from '@/lib/image-optimize';
-import { transcodeAudioToAac } from '@/lib/audio/transcode.server';
+import { transcodeForGameplay } from '@/lib/audio/transcode.server';
 import decode from '@audio/decode';
 import {
   COVER_SIZE,
@@ -11,6 +12,7 @@ import {
   MAX_SONG_DURATION_SEC,
   MIN_SONG_DURATION_SEC,
   PER_USER_STORAGE_LIMIT_BYTES,
+  SONG_TITLE_MAX,
   TOTAL_STORAGE_LIMIT_BYTES,
   UPLOAD_BODY_MAX_BYTES,
 } from '@/lib/slice-it/constants';
@@ -18,7 +20,11 @@ import { estimatedPcmBytes, probeAudioDuration } from '@/lib/audio/probe';
 import { UploadFieldsZ } from '@/lib/slice-it/api-schemas';
 import { validateAudioBuffer, validateImageBuffer } from '@/lib/slice-it/upload-validation';
 import { deleteSongAssets, storeSongAudio, storeSongCover } from '@/lib/slice-it/songs.server';
-import { generateBeatmap, type AudioLike } from '@/lib/slice-it/beatmap';
+import { artistKeyOf } from '@/lib/slice-it/artist';
+import { createAlbumPack } from '@/lib/slice-it/packs.server';
+import { decodedToAudioLike, type AudioLike, type generateBeatmap } from '@/lib/slice-it/beatmap';
+import { enqueueAnalysis } from '@/lib/slice-it/analysis-queue.server';
+import { recordSongUploaded } from '@/lib/slice-it/progression.server';
 
 /**
  * Song upload.
@@ -53,7 +59,56 @@ import { generateBeatmap, type AudioLike } from '@/lib/slice-it/beatmap';
  *   length-checked before `decode()` allocates it. Both were previously checked
  *   only after the allocation they were meant to prevent — see the decode guard
  *   below for what that cost.
+ *
+ * ## What changed (L16 — album upload)
+ *
+ * The route accepted exactly one `file`. Uploading an album meant twelve
+ * requests, twelve rows with a hand-retyped `album` string, and no object
+ * anywhere that said those twelve were one thing.
+ *
+ * It now accepts **many** `file` entries plus an `album` field, and when there
+ * is more than one track it creates a `ChartPack` of `kind: 'album'` **in the
+ * same transaction as the songs**. That is the whole design constraint: a pack
+ * created by a follow-up call is a pack that does not exist when the upload
+ * fails half way, and an album upload that dies on track 9 must leave either a
+ * complete album or nothing — never eight songs and no album, and never an
+ * album pointing at eight songs and a hole.
+ *
+ * Everything expensive — decode, analysis, transcode, object writes — happens
+ * **before** the transaction opens, per track. A `$transaction` that holds a
+ * database connection open across a minute of ffmpeg is a connection-pool
+ * outage wearing an atomicity costume; the transaction here is a handful of
+ * INSERTs and nothing else. Object writes are unwound by hand on failure,
+ * because storage is not transactional and pretending otherwise is how the
+ * orphaned-object bug above happened the first time.
  */
+
+/**
+ * How many tracks one album upload may carry.
+ *
+ * A bound, because every track costs a decode and an analysis pass inside one
+ * request. The site-wide 62 MB body ceiling already bounds the bytes; this
+ * bounds the CPU.
+ */
+const MAX_ALBUM_TRACKS = 16;
+
+const AlbumFieldsZ = z.object({
+  album: z.string().trim().max(200).optional(),
+});
+
+/** One track, fully prepared and stored, waiting only to be written as a row. */
+interface PreparedTrack {
+  title: string;
+  artist: string;
+  duration: number;
+  bpm: number;
+  contentHash: string;
+  audioKey: string;
+  fileSizeBytes: number;
+  analysis: ReturnType<typeof generateBeatmap> | null;
+  densityStrip: number[] | null;
+}
+
 export const Route = createFileRoute('/api/slice-it/songs/upload')({
   server: {
     handlers: {
@@ -67,9 +122,21 @@ export const Route = createFileRoute('/api/slice-it/songs/upload')({
 
         const formData = await request.formData();
 
-        const file = formData.get('file');
-        if (!(file instanceof File) || file.size === 0) {
+        // `getAll` rather than `get`: a single-track upload is the one-element
+        // case of an album upload, not a different code path. One pipeline
+        // means the album path cannot drift away from the one that is
+        // exercised on every upload.
+        const files = formData
+          .getAll('file')
+          .filter((f): f is File => f instanceof File && f.size > 0);
+        if (files.length === 0) {
           return Response.json({ error: 'No audio file provided.' }, { status: 400 });
+        }
+        if (files.length > MAX_ALBUM_TRACKS) {
+          return Response.json(
+            { error: `An album upload can carry at most ${MAX_ALBUM_TRACKS} tracks.` },
+            { status: 400 },
+          );
         }
 
         const fields = UploadFieldsZ.safeParse({
@@ -77,18 +144,26 @@ export const Route = createFileRoute('/api/slice-it/songs/upload')({
           artist: formData.get('artist') ?? '',
           description: formData.get('description') ?? '',
           bpm: formData.get('bpm') ?? undefined,
+          densityBias: formData.get('densityBias') ?? undefined,
+          genre: formData.get('genre') ?? undefined,
+          tags: formData.get('tags') ?? undefined,
           duration: formData.get('duration') ?? undefined,
           isPublic: formData.get('isPublic') ?? undefined,
         });
         if (!fields.success) {
           return Response.json({ error: 'Invalid track details.' }, { status: 400 });
         }
-
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const audioCheck = validateAudioBuffer(buffer);
-        if (!audioCheck.ok) {
-          return Response.json({ error: audioCheck.error }, { status: 400 });
+        const albumFields = AlbumFieldsZ.safeParse({ album: formData.get('album') ?? undefined });
+        if (!albumFields.success) {
+          return Response.json({ error: 'Invalid album details.' }, { status: 400 });
         }
+        const album = albumFields.data.album || null;
+        const isAlbum = files.length > 1;
+        if (isAlbum && !album) {
+          return Response.json({ error: 'An album upload needs an album title.' }, { status: 400 });
+        }
+
+        const artist = fields.data.artist || 'Unknown Artist';
 
         const coverFile = formData.get('cover');
         let coverBuffer: Buffer | null = null;
@@ -100,146 +175,28 @@ export const Route = createFileRoute('/api/slice-it/songs/upload')({
           }
         }
 
-        // Hash the *original* bytes, before transcoding: the same source file
-        // must hash the same whether or not ffmpeg was available that day.
-        const contentHash = createHash('sha256').update(buffer).digest('hex');
-
-        const [globals, mine, duplicate] = await Promise.all([
+        const [globals, mine] = await Promise.all([
           prisma.song.aggregate({ _sum: { fileSizeBytes: true } }),
           prisma.song.aggregate({
             where: { uploadedBy: userId },
             _sum: { fileSizeBytes: true },
           }),
-          prisma.song.findFirst({
-            where: { uploadedBy: userId, contentHash },
-            select: { id: true, title: true },
-          }),
         ]);
+        let globalUsed = globals._sum.fileSizeBytes ?? 0;
+        let mineUsed = mine._sum.fileSizeBytes ?? 0;
 
-        if (duplicate) {
-          return Response.json(
-            {
-              error: `You already uploaded this track as "${duplicate.title}".`,
-              songId: duplicate.id,
-            },
-            { status: 409 },
-          );
-        }
-        if ((globals._sum.fileSizeBytes ?? 0) + buffer.length > TOTAL_STORAGE_LIMIT_BYTES) {
-          return Response.json({ error: 'The song library is full.' }, { status: 507 });
-        }
-        if ((mine._sum.fileSizeBytes ?? 0) + buffer.length > PER_USER_STORAGE_LIMIT_BYTES) {
-          const limitMb = Math.round(PER_USER_STORAGE_LIMIT_BYTES / 1024 / 1024);
-          return Response.json(
-            {
-              error: `You have reached your ${limitMb} MB upload limit. Delete a track to free space.`,
-            },
-            { status: 507 },
-          );
-        }
+        const prepared: PreparedTrack[] = [];
+        /** Every object written so far, so a late failure can unwind all of them. */
+        const written: { audioUrl: string | null; coverUrl: string | null }[] = [];
+        const unwind = async () => {
+          for (const asset of written) await deleteSongAssets(asset);
+        };
+        /** Hashes seen in THIS request — the same file twice in one album. */
+        const batchHashes = new Set<string>();
 
-        // ── Decode guard ──────────────────────────────────────────────────
-        //
-        // The length check has to happen HERE, from the container headers,
-        // because `decode()` allocates the whole waveform before it returns and
-        // compressed audio expands without bound: a valid 8 kbps MPEG-2.5 file
-        // decodes to 32x its own size, so 4 MB of upload measured 128 MB of PCM
-        // and 530 MB of RSS, and the 50 MB ceiling bought 14.6 hours of audio —
-        // about 1.6 GB — from one request. Checking `MAX_SONG_DURATION_SEC`
-        // against the decoder's answer, as this did, is checking it after the
-        // allocation the check exists to prevent.
-        //
-        // A file we cannot read a length from is refused rather than decoded
-        // hopefully. Every format the magic-byte check just accepted is one the
-        // probe understands, so `null` here means the headers are damaged.
-        const probe = probeAudioDuration(buffer);
-        if (!probe) {
-          return Response.json(
-            { error: 'That file could not be read. Try MP3, WAV, OGG or FLAC.' },
-            { status: 400 },
-          );
-        }
-        if (probe.durationSec > MAX_SONG_DURATION_SEC) {
-          return Response.json(
-            { error: `Tracks must be under ${MAX_SONG_DURATION_SEC / 60} minutes.` },
-            { status: 400 },
-          );
-        }
-        if (estimatedPcmBytes(probe) > MAX_DECODED_PCM_BYTES) {
-          // Short but enormous — a high sample rate, many channels, or both.
-          return Response.json(
-            { error: 'That file is too large to process. Try a standard stereo mixdown.' },
-            { status: 400 },
-          );
-        }
-
-        // A file that passes the magic-byte check but cannot actually be
-        // decoded should fail here, rather than leaving an unplayable row and
-        // an orphaned object behind it.
-        let audio: AudioLike;
-        try {
-          audio = decodedToAudioLike(await decode(buffer));
-        } catch {
-          return Response.json(
-            { error: 'That file could not be decoded. Try MP3, WAV, OGG or FLAC.' },
-            { status: 400 },
-          );
-        }
-
-        // Re-checked against the decoded truth. The probe is a bound, not a
-        // measurement — a CBR estimate can be a little off, and the value
-        // stored on the row is the one a score ceiling gets derived from.
-        const duration = audio.length / (audio.sampleRate || 44100);
-        if (!(duration >= MIN_SONG_DURATION_SEC)) {
-          return Response.json(
-            { error: `Tracks must be at least ${MIN_SONG_DURATION_SEC} seconds long.` },
-            { status: 400 },
-          );
-        }
-        if (duration > MAX_SONG_DURATION_SEC) {
-          return Response.json(
-            { error: `Tracks must be under ${MAX_SONG_DURATION_SEC / 60} minutes.` },
-            { status: 400 },
-          );
-        }
-
-        // Re-encode to AAC — far smaller than WAV/FLAC, and `+faststart` keeps
-        // range requests (seeking) working. ffmpeg is absent in local dev, so a
-        // failure falls back to the original bytes rather than failing upload.
-        let storedBuffer: Buffer = buffer;
-        let storedExt = extensionOf(file.name);
-        try {
-          const transcoded = await transcodeAudioToAac(buffer);
-          storedBuffer = transcoded.buffer;
-          storedExt = transcoded.ext;
-        } catch (error) {
-          console.warn('[slice-it] audio transcode failed — storing original', error);
-        }
-
-        const title = fields.data.title || stripExtension(file.name) || 'Untitled';
-        const artist = fields.data.artist || 'Unknown Artist';
-
-        // The expensive part, and the reason it happens once per song ever
-        // rather than in every player's browser on every play.
-        let analysis: ReturnType<typeof generateBeatmap> | null = null;
-        try {
-          analysis = generateBeatmap(audio, {
-            id: contentHash.slice(0, 24),
-            name: title,
-            artist,
-            bpmHint: fields.data.bpm,
-          });
-        } catch (error) {
-          // A song with no chart is still a song — the client can generate one
-          // locally and POST it back. Failing the whole upload would be worse.
-          console.error('[slice-it] beatmap generation failed', error);
-        }
-
-        let audioKey: string | null = null;
         let coverKey: string | null = null;
-        try {
-          audioKey = await storeSongAudio(storedBuffer, storedExt);
 
+        try {
           if (coverBuffer) {
             const { buffer: webp } = await optimizeImage(coverBuffer, {
               width: COVER_SIZE,
@@ -249,58 +206,288 @@ export const Route = createFileRoute('/api/slice-it/songs/upload')({
               autoOrient: true,
             });
             coverKey = await storeSongCover(webp);
+            written.push({ audioUrl: null, coverUrl: coverKey });
           }
 
-          const song = await prisma.song.create({
-            data: {
-              title,
+          for (const file of files) {
+            const buffer = Buffer.from(await file.arrayBuffer());
+            const audioCheck = validateAudioBuffer(buffer);
+            if (!audioCheck.ok) {
+              await unwind();
+              return Response.json({ error: `${file.name}: ${audioCheck.error}` }, { status: 400 });
+            }
+
+            // Hash the *original* bytes, before transcoding: the same source
+            // file must hash the same whether or not ffmpeg was available.
+            const contentHash = createHash('sha256').update(buffer).digest('hex');
+            if (batchHashes.has(contentHash)) {
+              await unwind();
+              return Response.json(
+                { error: `${file.name} appears twice in this upload.` },
+                { status: 409 },
+              );
+            }
+            batchHashes.add(contentHash);
+
+            const duplicate = await prisma.song.findFirst({
+              where: { uploadedBy: userId, contentHash },
+              select: { id: true, title: true },
+            });
+            if (duplicate) {
+              await unwind();
+              return Response.json(
+                {
+                  error: `You already uploaded this track as "${duplicate.title}".`,
+                  songId: duplicate.id,
+                },
+                { status: 409 },
+              );
+            }
+
+            // Quotas accumulate across the batch. Checking each track against
+            // the totals as they were when the request started would let a
+            // 16-track album walk straight past a limit it exceeds by track 3.
+            if (globalUsed + buffer.length > TOTAL_STORAGE_LIMIT_BYTES) {
+              await unwind();
+              return Response.json({ error: 'The song library is full.' }, { status: 507 });
+            }
+            if (mineUsed + buffer.length > PER_USER_STORAGE_LIMIT_BYTES) {
+              await unwind();
+              const limitMb = Math.round(PER_USER_STORAGE_LIMIT_BYTES / 1024 / 1024);
+              return Response.json(
+                {
+                  error: `You have reached your ${limitMb} MB upload limit. Delete a track to free space.`,
+                },
+                { status: 507 },
+              );
+            }
+
+            // ── Decode guard ────────────────────────────────────────────
+            //
+            // The length check has to happen HERE, from the container headers,
+            // because `decode()` allocates the whole waveform before it returns
+            // and compressed audio expands without bound: a valid 8 kbps
+            // MPEG-2.5 file decodes to 32x its own size, so 4 MB of upload
+            // measured 128 MB of PCM and 530 MB of RSS, and the 50 MB ceiling
+            // bought 14.6 hours of audio — about 1.6 GB — from one request.
+            // Checking `MAX_SONG_DURATION_SEC` against the decoder's answer, as
+            // this did, is checking it after the allocation the check exists to
+            // prevent.
+            //
+            // A file we cannot read a length from is refused rather than
+            // decoded hopefully. Every format the magic-byte check just
+            // accepted is one the probe understands, so `null` here means the
+            // headers are damaged.
+            const probe = probeAudioDuration(buffer);
+            if (!probe) {
+              await unwind();
+              return Response.json(
+                { error: `${file.name} could not be read. Try MP3, WAV, OGG or FLAC.` },
+                { status: 400 },
+              );
+            }
+            if (probe.durationSec > MAX_SONG_DURATION_SEC) {
+              await unwind();
+              return Response.json(
+                { error: `Tracks must be under ${MAX_SONG_DURATION_SEC / 60} minutes.` },
+                { status: 400 },
+              );
+            }
+            if (estimatedPcmBytes(probe) > MAX_DECODED_PCM_BYTES) {
+              // Short but enormous — a high sample rate, many channels, or both.
+              await unwind();
+              return Response.json(
+                { error: `${file.name} is too large to process. Try a standard stereo mixdown.` },
+                { status: 400 },
+              );
+            }
+
+            // A file that passes the magic-byte check but cannot actually be
+            // decoded should fail here, rather than leaving an unplayable row
+            // and an orphaned object behind it.
+            let audio: AudioLike;
+            try {
+              audio = decodedToAudioLike(await decode(buffer));
+            } catch {
+              await unwind();
+              return Response.json(
+                { error: `${file.name} could not be decoded. Try MP3, WAV, OGG or FLAC.` },
+                { status: 400 },
+              );
+            }
+
+            // Re-checked against the decoded truth. The probe is a bound, not a
+            // measurement — a CBR estimate can be a little off, and the value
+            // stored on the row is the one a score ceiling gets derived from.
+            const duration = audio.length / (audio.sampleRate || 44100);
+            if (!(duration >= MIN_SONG_DURATION_SEC)) {
+              await unwind();
+              return Response.json(
+                { error: `Tracks must be at least ${MIN_SONG_DURATION_SEC} seconds long.` },
+                { status: 400 },
+              );
+            }
+            if (duration > MAX_SONG_DURATION_SEC) {
+              await unwind();
+              return Response.json(
+                { error: `Tracks must be under ${MAX_SONG_DURATION_SEC / 60} minutes.` },
+                { status: 400 },
+              );
+            }
+
+            // O4 — re-encode before storing. Opus at 96 kbps first (typically
+            // 5–10x smaller than the source, which is a 5–10x effective
+            // increase in the 10 GB global quota), AAC as the compatibility
+            // rung, original bytes only if ffmpeg is absent entirely — which is
+            // local dev, where an upload should still work.
+            //
+            // O3's worker charts from the stored file, so this encode is
+            // upstream of onset detection — see the note in
+            // `transcode.server.ts`. Opus's transient timing at 96 kbps is
+            // accurate to well under a millisecond against a 55 ms onset
+            // filter, which is why Opus and not a low-bitrate AAC.
+            let storedBuffer: Buffer = buffer;
+            let storedExt = extensionOf(file.name);
+            const encoded = await transcodeForGameplay(buffer);
+            if (encoded.result) {
+              storedBuffer = encoded.result.buffer;
+              storedExt = encoded.result.ext;
+            }
+
+            // A single upload names its own track; an album takes each track's
+            // name from its filename, because there is one title field and
+            // twelve tracks.
+            const title =
+              (isAlbum ? '' : fields.data.title) || stripExtension(file.name) || 'Untitled';
+
+            // O3 — charting is a queued job now, so nothing is generated here.
+            // It is the expensive part (seconds of CPU, multiplied by the track
+            // count on an album) and nothing in this response needs it: the row
+            // is created `pending` and the library shows "Charting…" rather
+            // than hiding it, because a song that vanishes for two minutes
+            // after upload reads as a failed upload.
+            //
+            // The `decode()` above deliberately did NOT move. It is this
+            // route's validation — the probe gives a bound on duration and the
+            // decode gives the measurement, and the stored duration is what a
+            // score ceiling is derived from. Handing the ceiling a looser
+            // number to save a second of request time is the wrong trade.
+            //
+            // `bpm` and `densityStrip` are therefore the uploader's typed value
+            // and null; the worker overwrites both from the real analysis.
+            const audioKey = await storeSongAudio(storedBuffer, storedExt);
+            written.push({ audioUrl: audioKey, coverUrl: null });
+
+            globalUsed += storedBuffer.length;
+            mineUsed += storedBuffer.length;
+
+            prepared.push({
+              title: title.slice(0, SONG_TITLE_MAX),
               artist,
-              description: fields.data.description || null,
               duration,
-              bpm: analysis?.bpm ?? fields.data.bpm ?? 0,
-              audioUrl: audioKey,
-              coverUrl: coverKey,
-              fileSizeBytes: storedBuffer.length,
+              bpm: fields.data.bpm ?? 0,
               contentHash,
-              analysisData: (analysis ?? undefined) as never,
-              uploadedBy: userId,
-              isPublic: fields.data.isPublic,
-            },
-            select: { id: true, title: true, artist: true, duration: true, bpm: true },
+              audioKey,
+              fileSizeBytes: storedBuffer.length,
+              analysis: null,
+              densityStrip: null,
+            });
+          }
+
+          /* ── The only database writes, and they are one unit ────────── */
+          const result = await prisma.$transaction(async (tx) => {
+            const songs = [];
+            for (const track of prepared) {
+              const song = await tx.song.create({
+                data: {
+                  title: track.title,
+                  artist: track.artist,
+                  // L15 — computed at write time, never at read time. A null
+                  // key here is an artist tag that normalises to nothing.
+                  artistKey: artistKeyOf(track.artist),
+                  album,
+                  description: fields.data.description || null,
+                  duration: track.duration,
+                  bpm: track.bpm,
+                  audioUrl: track.audioKey,
+                  coverUrl: coverKey,
+                  fileSizeBytes: track.fileSizeBytes,
+                  contentHash: track.contentHash,
+                  analysisData: (track.analysis ?? undefined) as never,
+                  densityStrip: track.densityStrip ?? undefined,
+                  // O3 — the worker moves this to 'ready' or 'failed'.
+                  analysisState: 'pending',
+                  // L1 — validated and normalised by `UploadFieldsZ`, so a
+                  // 401st spelling of "drum and bass" never reaches the facet.
+                  genre: fields.data.genre ?? null,
+                  tags: fields.data.tags,
+                  uploadedBy: userId,
+                  isPublic: fields.data.isPublic,
+                },
+                select: { id: true, title: true, artist: true, duration: true, bpm: true },
+              });
+              songs.push(song);
+            }
+
+            // The pack and the songs commit together or not at all — see the
+            // module doc. `album` is non-null here by the guard above.
+            const pack = isAlbum
+              ? await createAlbumPack(
+                  tx,
+                  { album: album as string, artist, coverUrl: coverKey },
+                  songs.map((s) => s.id),
+                  userId,
+                )
+              : null;
+
+            return { songs, pack };
           });
+
+          // X1 — "DJ". Best-effort and after the transaction commits: an
+          // achievement-grant hiccup must not turn a successful upload into a
+          // 500 and lose the song that was just written and paid for in quota.
+          await recordSongUploaded(userId);
+
+          // O3 — queued after the commit, so a job can never reference a row
+          // that a rolled-back transaction never created. `enqueueAnalysis`
+          // runs the work inline when there is no queue, which is why this is
+          // awaited rather than fire-and-forget: without a worker, this is
+          // where the two seconds went, and the upload still has to produce a
+          // chart before anyone plays it.
+          for (const song of result.songs) {
+            await enqueueAnalysis({
+              songId: song.id,
+              bpmHint: fields.data.bpm,
+              densityBias: fields.data.densityBias,
+            }).catch((error) => {
+              // Both paths already failed if we get here. The song exists and
+              // is playable — the client generates a chart locally and POSTs it
+              // back — so this is a log, not a 500.
+              console.error('[slice-it] could not chart', song.id, error);
+            });
+          }
 
           return Response.json({
             success: true,
-            song,
-            notes: analysis?.noteCounts ?? null,
-            tempoConfidence: analysis?.tempoConfidence ?? 0,
+            // The single-track response shape is unchanged — `SongLibrary.tsx`
+            // reads `song` and `notes` and predates the album path.
+            song: result.songs[0],
+            songs: result.songs,
+            packId: result.pack?.id ?? null,
+            // O3 — null now, because charting has not happened yet. The client
+            // shows the "Charting…" state instead of a note count.
+            notes: null,
+            tempoConfidence: 0,
+            charting: true,
           });
         } catch (error) {
-          await deleteSongAssets({ audioUrl: audioKey, coverUrl: coverKey });
+          await unwind();
           throw error;
         }
       }),
     },
   },
 });
-
-/** Adapt `@audio/decode`'s output to the analyser's structural interface. */
-function decodedToAudioLike(decoded: {
-  sampleRate: number;
-  channelData: Float32Array[];
-}): AudioLike {
-  const length = decoded.channelData[0]?.length ?? 0;
-  return {
-    sampleRate: decoded.sampleRate,
-    length,
-    numberOfChannels: decoded.channelData.length,
-    getChannelData(channel: number) {
-      const data = decoded.channelData[channel];
-      if (!data) throw new RangeError(`Audio channel ${channel} is unavailable`);
-      return data;
-    },
-  };
-}
 
 function extensionOf(name: string): string {
   const match = /\.[A-Za-z0-9]{1,5}$/.exec(name);

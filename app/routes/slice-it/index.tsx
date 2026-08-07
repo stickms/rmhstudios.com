@@ -6,6 +6,8 @@ import { ArrowLeft } from 'lucide-react';
 import { DarkModeWrapper } from '@/components/slice-it/DarkModeWrapper';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
+import { librarySearchSchema } from '@/lib/slice-it/library-filters';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 
 const GameCanvas = lazy(() =>
   import('@/components/slice-it/GameCanvas').then((m) => ({ default: m.GameCanvas })),
@@ -52,5 +54,25 @@ function SliceItPage() {
 }
 
 export const Route = createFileRoute('/slice-it/')({
+  // L18 — the library's search/sort/view state lives here now instead of in
+  // component state, so it survives navigation, is shareable, and is
+  // back-button correct. `librarySearchSchema` passes through `?lobby=` (the
+  // multiplayer join-code param `MultiplayerLobby.tsx` reads) untouched.
+  validateSearch: librarySearchSchema,
+  /**
+   * The game itself is `authGate: true`, so a crawler sees a sign-in gate
+   * rather than the library — which is exactly why `V12` added `/games/slice-it`
+   * as the indexable surface, and why the canonical here points there rather
+   * than at this URL. This head exists so the browser tab says what the page is;
+   * the SEO lives on the hub.
+   */
+  head: () => ({
+    meta: buildMeta({
+      title: 'Slice It! | RMH Studios',
+      description: 'Upload any track, get a chart, race up to eight players.',
+      path: '/games/slice-it',
+    }),
+    links: [buildCanonical('/games/slice-it')],
+  }),
   component: SliceItPage,
 });

@@ -42,10 +42,21 @@ export const Route = createFileRoute('/api/slice-it/ai/rival')({
           const song = await loadSongFacts(body.songId, userId);
           if (!song) return Response.json({ error: 'Song not found' }, { status: 404 });
 
+          // A song has one board per `(difficulty, modPool)`, so the rank the
+          // client is pointing at only means something on the board it is
+          // displaying. Both filters are applied exactly as the leaderboard
+          // route applies them — an omitted one means the combined view, and
+          // ranking has to match or the "row above you" is somebody else.
+          const board = {
+            songId: body.songId,
+            ...(body.difficulty ? { difficulty: body.difficulty } : {}),
+            ...(body.modPool ? { modPool: body.modPool } : {}),
+          };
+
           // `rivalRank` is 1-based and the row above the player is what the UI
           // points at, so the offset is rank - 1.
           const rows = await prisma.songLeaderboard.findMany({
-            where: { songId: body.songId },
+            where: board,
             orderBy: [{ score: 'desc' }, { id: 'asc' }],
             skip: Math.max(0, body.rivalRank - 1),
             take: 1,
@@ -66,8 +77,9 @@ export const Route = createFileRoute('/api/slice-it/ai/rival')({
             return Response.json({ error: 'That row is your own' }, { status: 400 });
           }
 
-          const mine = await prisma.songLeaderboard.findUnique({
-            where: { songId_userId: { songId: body.songId, userId } },
+          const mine = await prisma.songLeaderboard.findFirst({
+            where: { ...board, userId },
+            orderBy: { score: 'desc' },
             select: {
               score: true,
               maxCombo: true,

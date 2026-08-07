@@ -45,7 +45,18 @@ const written: { songId: string; userId: string; score: number; maxCombo: number
 
 vi.mock('../../../server/socket-server/prisma-client', () => ({
   getPrismaClient: () => ({
-    song: { findFirst: async () => song },
+    song: {
+      // Id-aware, because the song vote (`N7`) needs a *ballot* — two seats
+      // nominating two different ids that both resolved to one row would be a
+      // duplicate nomination, not a choice. `song-1` stays byte-identical to the
+      // fixture so the tests that assert the room was told the row verbatim
+      // still mean what they meant.
+      findFirst: async ({ where }: { where: { id: string } }) => {
+        if (where.id === song.id) return song;
+        if (!/^song-\d+$/.test(where.id)) return null;
+        return { ...song, id: where.id, title: `Track ${where.id}` };
+      },
+    },
     songLeaderboard: {
       findUnique: async () => null,
       create: async ({ data }: { data: (typeof written)[number] }) => {
@@ -102,6 +113,22 @@ class FakeSocket {
     userName: string,
   ) {
     this.data = { userId, userName, avatarUrl: null };
+  }
+
+  /**
+   * Re-cast this socket as a Discord guest: no `userId` at all, a display name
+   * and avatar on `socket.data.discordGuest`.
+   *
+   * That is exactly the shape `server/socket-server/index.ts`'s soft-auth
+   * middleware leaves behind after verifying a Discord Activity token whose
+   * account is not linked — the verification itself needs a live Discord API
+   * and is not what these tests are about.
+   */
+  asGuest(name: string, avatarUrl: string | null = null): this {
+    this.data.userId = undefined;
+    this.data.userName = undefined;
+    this.data.discordGuest = { name, avatarUrl };
+    return this;
   }
 
   on(event: string, fn: (payload: unknown) => void): void {
@@ -175,6 +202,15 @@ let nextSocket = 0;
 function connect(io: FakeServer, name: string, userId?: string): FakeSocket {
   nextSocket++;
   const socket = new FakeSocket(`s${nextSocket}`, userId ?? `user-${nextSocket}`, name);
+  io.sockets.sockets.set(socket.id, socket);
+  registerSliceItHandlers(io as never, socket as never);
+  return socket;
+}
+
+/** A Discord Activity guest: verified by the hub, but with no site account. */
+function connectGuest(io: FakeServer, name: string): FakeSocket {
+  nextSocket++;
+  const socket = new FakeSocket(`s${nextSocket}`, '', name).asGuest(name);
   io.sockets.sockets.set(socket.id, socket);
   registerSliceItHandlers(io as never, socket as never);
   return socket;
@@ -662,6 +698,523 @@ describe('match', () => {
     startMatch(room);
     room.guests[0].send(C2S.REMATCH);
     expect(room.guests[0].last<LobbyError>(S2C.ERROR)?.code).toBe('not_host');
+  });
+});
+
+/* ─── Guests (X10) ───────────────────────────────────────────────────────── */
+
+/**
+ * A Discord Activity player with no linked site account.
+ *
+ * Three properties, and the third is the one worth the file: a guest can play
+ * (they used to get `auth_required` on every action), a guest's seat does not
+ * survive a reconnect (the deliberate downgrade — the seat key is a socket id,
+ * because the alternative is remembering them), and a guest's score is never
+ * written anywhere. The last one is a privacy claim, and a privacy claim that
+ * nothing checks is a comment.
+ */
+describe('guests', () => {
+  it('lets a guest create a lobby and be seated with no userId', () => {
+    const io = new FakeServer();
+    const guest = connectGuest(io, 'Nyx');
+    guest.send(C2S.CREATE, { isPublic: false });
+
+    const snap = guest.last<LobbySnapshot>(S2C.LOBBY)!;
+    expect(snap.players).toHaveLength(1);
+    const seat = snap.players[0];
+    expect(seat.userId).toBeNull();
+    // The Discord display name and avatar, carried for the session only.
+    expect(seat.guest).toEqual({ name: 'Nyx', avatarUrl: null });
+    expect(seat.name).toBe('Nyx');
+    // A guest who created the room still hosts it.
+    expect(seat.isHost).toBe(true);
+  });
+
+  it('lets a guest join an account holder’s lobby, and seats them separately', async () => {
+    const room = await makeLobby(0);
+    const guest = connectGuest(room.io, 'Nyx');
+    guest.send(C2S.JOIN, { code: room.code });
+
+    const after = snapshot(room.host);
+    expect(after.players).toHaveLength(2);
+    expect(after.players.map((p) => p.name).sort()).toEqual(['Host', 'Nyx']);
+    expect(after.players.find((p) => p.name === 'Nyx')?.userId).toBeNull();
+    expect(after.players.find((p) => p.name === 'Host')?.userId).toBeTruthy();
+  });
+
+  it('seats two guests separately rather than collapsing them onto one key', async () => {
+    const room = await makeLobby(0);
+    connectGuest(room.io, 'Nyx').send(C2S.JOIN, { code: room.code });
+    connectGuest(room.io, 'Vex').send(C2S.JOIN, { code: room.code });
+
+    // Both have `userId: null`; keying seats on the userId alone would have
+    // made the second guest overwrite the first.
+    expect(snapshot(room.host).players).toHaveLength(3);
+  });
+
+  it('does NOT hold a guest seat across a reconnect', async () => {
+    const room = await makeLobby(0);
+    const guest = connectGuest(room.io, 'Nyx');
+    guest.send(C2S.JOIN, { code: room.code });
+    expect(snapshot(room.host).players).toHaveLength(2);
+
+    drop(room.io, guest);
+
+    // Gone at once, not held: a guest seat is keyed by socket id, so a
+    // returning guest could never be matched back to it anyway. Holding it
+    // would park a phantom the room waits on — and remembering them well
+    // enough to do better is the thing X10 exists not to do.
+    const after = snapshot(room.host);
+    expect(after.players).toHaveLength(1);
+    expect(after.players.find((p) => p.name === 'Nyx')).toBeUndefined();
+
+    // And no grace timer fires later to remove an already-removed seat.
+    vi.advanceTimersByTime(MATCH_DISCONNECT_GRACE_MS + 1000);
+    expect(snapshot(room.host).players).toHaveLength(1);
+  });
+
+  it('does not pause a live match for a guest who drops', async () => {
+    const room = await makeLobby(1);
+    const guest = connectGuest(room.io, 'Nyx');
+    guest.send(C2S.JOIN, { code: room.code });
+    guest.send(C2S.READY, { ready: true });
+    startMatch(room);
+    room.host.clear();
+
+    drop(room.io, guest);
+
+    // There is nobody to wait for — the seat is already gone. Pausing would
+    // hold four people for a player who cannot come back.
+    expect(room.host.last<PausePayload>(S2C.PAUSE)).toBeUndefined();
+  });
+
+  it('writes no leaderboard row for a guest, and still writes one for the account beside them', async () => {
+    const room = await makeLobby(0);
+    const guest = connectGuest(room.io, 'Nyx');
+    guest.send(C2S.JOIN, { code: room.code });
+    guest.send(C2S.READY, { ready: true });
+    startMatch({ ...room, seats: [room.host, guest] });
+
+    const report = { score: 4000, combo: 0, maxCombo: 40, accuracy: 1, health: 100 };
+    room.host.send(C2S.FINISH, report);
+    guest.send(C2S.FINISH, { ...report, score: 9000 });
+    await flush();
+
+    // The guest placed first and it is shown…
+    const results = room.host.last<MatchResults>(S2C.RESULTS)!;
+    expect(results.standings[0].name).toBe('Nyx');
+    expect(results.standings[0].place).toBe(1);
+    expect(results.standings[0].score).toBe(9000);
+    expect(results.standings[0].userId).toBeNull();
+
+    // …and nothing about them was written down. Not a row with a null userId,
+    // not a shadow account: no row at all.
+    expect(written).toHaveLength(1);
+    expect(written[0].score).toBe(4000);
+    expect(written.every((row) => typeof row.userId === 'string' && row.userId)).toBe(true);
+  });
+
+  it('still refuses a socket with neither a session nor a Discord identity', () => {
+    const io = new FakeServer();
+    const anon = new FakeSocket('anon-2', '', 'Anon');
+    anon.data.userId = undefined;
+    io.sockets.sockets.set(anon.id, anon);
+    registerSliceItHandlers(io as never, anon as never);
+
+    // Guests widened who may play; they did not remove the check.
+    anon.send(C2S.CREATE, {});
+    expect(anon.last<LobbyError>(S2C.ERROR)?.code).toBe('auth_required');
+  });
+});
+
+/* ─── Preferred lobby codes (X9) ─────────────────────────────────────────── */
+
+/**
+ * `slice:create` can be asked for a specific code.
+ *
+ * A Discord Activity derives one deterministically from its voice channel id so
+ * a whole call lands in one lobby with nothing typed. The interesting case is
+ * the collision: two participants racing to create the same derived code. It
+ * has to be *answered*, because silently minting a random code instead looks
+ * like success while leaving everyone else retrying a code that will never
+ * exist — which was the pre-existing behaviour this replaces.
+ */
+describe('preferred lobby code', () => {
+  it('honours a well-formed code that is free', () => {
+    const io = new FakeServer();
+    const host = connect(io, 'Host');
+    host.send(C2S.CREATE, { isPublic: false, code: 'ABC123' });
+    expect(host.last<LobbySnapshot>(S2C.LOBBY)!.code).toBe('ABC123');
+  });
+
+  it('answers code_taken rather than quietly minting a different code', () => {
+    const io = new FakeServer();
+    connect(io, 'First').send(C2S.CREATE, { isPublic: false, code: 'DUPES1' });
+
+    const second = connect(io, 'Second');
+    second.send(C2S.CREATE, { isPublic: false, code: 'DUPES1' });
+
+    expect(second.last<LobbyError>(S2C.ERROR)?.code).toBe('code_taken');
+    // Nothing was created: the caller wanted *that* room, and the useful next
+    // move is to join it, not to sit alone in a room nobody else can find.
+    expect(second.last<LobbySnapshot>(S2C.LOBBY)).toBeUndefined();
+  });
+
+  it('lets the loser of that race join the winner’s lobby', () => {
+    const io = new FakeServer();
+    connect(io, 'First').send(C2S.CREATE, { isPublic: false, code: 'RACE01' });
+
+    const second = connect(io, 'Second');
+    second.send(C2S.CREATE, { isPublic: false, code: 'RACE01' });
+    second.send(C2S.JOIN, { code: 'RACE01' });
+
+    expect(second.last<LobbySnapshot>(S2C.LOBBY)!.players).toHaveLength(2);
+  });
+
+  it('rejects a malformed code instead of falling back to a random one', () => {
+    const io = new FakeServer();
+    const host = connect(io, 'Host');
+    // The schema strips to [A-Z0-9] and truncates, so this arrives as 'AB' —
+    // short, not six characters, and therefore not a lobby code.
+    host.send(C2S.CREATE, { isPublic: false, code: 'ab!' });
+
+    expect(host.last<LobbyError>(S2C.ERROR)?.code).toBe('invalid_code');
+    expect(host.last<LobbySnapshot>(S2C.LOBBY)).toBeUndefined();
+  });
+
+  it('still mints a random code when none is asked for', () => {
+    const io = new FakeServer();
+    const host = connect(io, 'Host');
+    host.send(C2S.CREATE, { isPublic: false });
+    expect(host.last<LobbySnapshot>(S2C.LOBBY)!.code).toMatch(/^[A-Z0-9]{6}$/);
+  });
+});
+
+/* ─── Spectating (N1) ────────────────────────────────────────────────────── */
+
+describe('spectating', () => {
+  it('sends a snapshot immediately and takes no seat', async () => {
+    const room = await makeLobby(1);
+    const watcher = connect(room.io, 'Watcher');
+    watcher.send(C2S.SPECTATE, { code: room.code });
+
+    // They missed every transition that built this room, so they get the
+    // current state rather than waiting for the next one.
+    expect(watcher.last<LobbySnapshot>(S2C.LOBBY)!.code).toBe(room.code);
+    // …and the roster is unchanged: a spectator is not a ninth player.
+    expect(snapshot(room.host).players).toHaveLength(2);
+  });
+
+  it('receives the live score tick without occupying a slot', async () => {
+    const room = await makeLobby(1);
+    const watcher = connect(room.io, 'Watcher');
+    watcher.send(C2S.SPECTATE, { code: room.code });
+    startMatch(room);
+    watcher.clear();
+
+    for (const seat of room.seats) {
+      seat.send(C2S.SCORE, { score: 700, combo: 7, maxCombo: 7, accuracy: 1, health: 100 });
+    }
+    vi.advanceTimersByTime(SCORE_TICK_MS + 10);
+
+    const ticks = watcher.all<LiveScore[]>(S2C.SCORES);
+    expect(ticks).toHaveLength(1);
+    expect(ticks[0]).toHaveLength(2);
+  });
+
+  it('sees the results without being in them', async () => {
+    const room = await makeLobby(1);
+    const watcher = connect(room.io, 'Watcher');
+    watcher.send(C2S.SPECTATE, { code: room.code });
+    startMatch(room);
+
+    const report = { score: 100, combo: 0, maxCombo: 1, accuracy: 1, health: 100 };
+    for (const seat of room.seats) seat.send(C2S.FINISH, report);
+
+    const results = watcher.last<MatchResults>(S2C.RESULTS)!;
+    expect(results.standings).toHaveLength(2);
+    expect(results.standings.map((s) => s.name)).not.toContain('Watcher');
+  });
+
+  it('refuses to spectate a lobby that does not exist', () => {
+    const io = new FakeServer();
+    const watcher = connect(io, 'Watcher');
+    watcher.send(C2S.SPECTATE, { code: 'NOPE12' });
+    expect(watcher.last<LobbyError>(S2C.ERROR)?.code).toBe('not_found');
+  });
+
+  it('gives up a seat when a seated player starts spectating', async () => {
+    const room = await makeLobby(1);
+    room.guests[0].send(C2S.SPECTATE, { code: room.code });
+
+    // Otherwise they would be both watched and waited on — counted in the
+    // ready check for a match they are no longer playing.
+    expect(snapshot(room.host).players).toHaveLength(1);
+  });
+});
+
+/* ─── Teams (N2) ─────────────────────────────────────────────────────────── */
+
+/**
+ * The one property worth protecting here is *where the arithmetic happens*.
+ *
+ * A team match is decided by a sum, and if the client did the summing then two
+ * clients with slightly different rosters — one a packet behind, one that saw a
+ * seat leave — would each add up their own view honestly and announce different
+ * winners of the same match. So the totals ride the wire, and these tests read
+ * them off `MatchResults` rather than recomputing them from the standings.
+ */
+describe('teams', () => {
+  /** Turn team mode on; the server balances the room by join order. */
+  const enableTeams = (room: Room) => room.host.send(C2S.SETTINGS, { teams: true });
+
+  it('balances by join order, and says so in the snapshot', async () => {
+    const room = await makeLobby(2);
+    enableTeams(room);
+
+    const players = snapshot(room.host).players;
+    expect(players.map((p) => p.team)).toEqual(['a', 'b', 'a']);
+    expect(snapshot(room.host).teamsEnabled).toBe(true);
+  });
+
+  it('computes each side’s total on the server, and places them', async () => {
+    const room = await makeLobby(2);
+    enableTeams(room);
+    startMatch(room);
+
+    // Sides after the balance: Host + P3 on `a`, P2 alone on `b`.
+    room.host.send(C2S.FINISH, { score: 100, combo: 0, maxCombo: 5, accuracy: 0.8, health: 100 });
+    room.guests[0].send(C2S.FINISH, {
+      score: 500,
+      combo: 0,
+      maxCombo: 9,
+      accuracy: 1,
+      health: 100,
+    });
+    room.guests[1].send(C2S.FINISH, {
+      score: 200,
+      combo: 0,
+      maxCombo: 7,
+      accuracy: 0.6,
+      health: 100,
+    });
+
+    const teams = room.host.last<MatchResults>(S2C.RESULTS)!.teams!;
+    const a = teams.find((team) => team.team === 'a')!;
+    const b = teams.find((team) => team.team === 'b')!;
+
+    expect(a.score).toBe(300);
+    expect(a.players).toBe(2);
+    // The mean over the side's racers, not a sum — a summed accuracy is not a
+    // quantity anybody can read.
+    expect(a.accuracy).toBeCloseTo(0.7, 5);
+    expect(b.score).toBe(500);
+    // 500 beats 300, and the placing comes off the wire rather than off a
+    // client's own comparison.
+    expect(b.place).toBe(1);
+    expect(a.place).toBe(2);
+  });
+
+  it('gives both sides first place on an exact draw', async () => {
+    const room = await makeLobby(1);
+    enableTeams(room);
+    startMatch(room);
+
+    const report = { score: 400, combo: 0, maxCombo: 4, accuracy: 0.9, health: 100 };
+    for (const seat of room.seats) seat.send(C2S.FINISH, report);
+
+    const teams = room.host.last<MatchResults>(S2C.RESULTS)!.teams!;
+    expect(teams.map((team) => team.place)).toEqual([1, 1]);
+  });
+
+  it('carries no team block at all in a free-for-all', async () => {
+    const room = await makeLobby(1);
+    startMatch(room);
+    const report = { score: 10, combo: 0, maxCombo: 1, accuracy: 1, health: 100 };
+    for (const seat of room.seats) seat.send(C2S.FINISH, report);
+
+    // Absent, not empty: a results card that has to tell "no teams" from "two
+    // empty teams" has been handed the wrong shape.
+    expect(room.host.last<MatchResults>(S2C.RESULTS)!.teams).toBeUndefined();
+    expect(room.host.last<MatchResults>(S2C.RESULTS)!.standings[0].team).toBeNull();
+  });
+
+  it('refuses to start a team match with an empty side', async () => {
+    const room = await makeLobby(1);
+    enableTeams(room);
+    // Everyone on one side is not a team match — it is a free-for-all whose
+    // results card claims a winner by forfeit.
+    room.guests[0].send(C2S.TEAM, { team: 'a' });
+    room.host.send(C2S.START);
+
+    expect(room.host.last<LobbyError>(S2C.ERROR)?.code).toBe('too_few_players');
+    expect(snapshot(room.host).state).toBe('waiting');
+  });
+
+  it('refuses a team pick in a lobby that is not in team mode', async () => {
+    const room = await makeLobby(1);
+    room.guests[0].send(C2S.TEAM, { team: 'b' });
+    expect(room.guests[0].last<LobbyError>(S2C.ERROR)?.code).toBe('teams_disabled');
+  });
+
+  it('drops every side when the mode is turned back off', async () => {
+    const room = await makeLobby(1);
+    enableTeams(room);
+    room.host.send(C2S.SETTINGS, { teams: false });
+
+    const players = snapshot(room.host).players;
+    expect(players.every((p) => p.team === null)).toBe(true);
+    expect(snapshot(room.host).teamsEnabled).toBe(false);
+  });
+
+  it('seats a late arrival on the smaller side', async () => {
+    const room = await makeLobby(1);
+    enableTeams(room);
+    // Host `a`, P2 `b`; P2 switches to `a`, so `b` is now the thin side.
+    room.guests[0].send(C2S.TEAM, { team: 'a' });
+
+    const late = connect(room.io, 'Late');
+    late.send(C2S.JOIN, { code: room.code });
+    expect(snapshot(room.host).players.find((p) => p.name === 'Late')?.team).toBe('b');
+  });
+});
+
+/* ─── Song voting (N7) ───────────────────────────────────────────────────── */
+
+describe('song voting', () => {
+  const nominate = async (socket: FakeSocket, songId: string) => {
+    socket.send(C2S.NOMINATE, { songId });
+    // `slice:nominate` reads the row before it touches the ballot.
+    await flush();
+  };
+
+  it('opens a ballot with an absolute deadline, not a duration', async () => {
+    const room = await makeLobby(1);
+    room.host.send(C2S.SETTINGS, { voting: true });
+
+    const vote = snapshot(room.host).vote!;
+    expect(vote).toBeTruthy();
+    // The client counts down *to* this. A duration would have each client start
+    // its own timer at a different moment and disagree about when it shut.
+    expect(vote.closesAt).toBeGreaterThan(Date.now());
+    expect(vote.nominations).toEqual([]);
+  });
+
+  it('adopts the winner once everybody has voted', async () => {
+    const room = await makeLobby(1);
+    room.host.send(C2S.SETTINGS, { voting: true });
+    await nominate(room.host, 'song-2');
+    await nominate(room.guests[0], 'song-3');
+
+    room.host.send(C2S.VOTE, { songId: 'song-3' });
+    room.guests[0].send(C2S.VOTE, { songId: 'song-3' });
+
+    const after = snapshot(room.host);
+    // Resolved early: there was nobody left to wait for.
+    expect(after.vote).toBeNull();
+    expect(after.song?.id).toBe('song-3');
+    // Agreeing on a track is not agreeing to start, the same rule `slice:song`
+    // follows.
+    expect(after.players.every((p) => !p.ready)).toBe(true);
+  });
+
+  it('replaces a seat’s own nomination rather than letting it flood the ballot', async () => {
+    const room = await makeLobby(1);
+    room.host.send(C2S.SETTINGS, { voting: true });
+    await nominate(room.host, 'song-2');
+    await nominate(room.host, 'song-4');
+
+    const nominations = snapshot(room.host).vote!.nominations;
+    expect(nominations).toHaveLength(1);
+    expect(nominations[0].song.id).toBe('song-4');
+  });
+
+  it('refuses a vote for something that is not on the ballot', async () => {
+    const room = await makeLobby(1);
+    room.host.send(C2S.SETTINGS, { voting: true });
+    await nominate(room.host, 'song-2');
+
+    room.guests[0].send(C2S.VOTE, { songId: 'song-9' });
+    expect(room.guests[0].last<LobbyError>(S2C.ERROR)?.code).toBe('song_unavailable');
+  });
+
+  it('answers vote_closed when there is no ballot open', async () => {
+    const room = await makeLobby(1);
+    room.host.send(C2S.VOTE, { songId: 'song-2' });
+    expect(room.host.last<LobbyError>(S2C.ERROR)?.code).toBe('vote_closed');
+  });
+
+  it('closes the ballot at its deadline even if nobody voted', async () => {
+    const room = await makeLobby(1);
+    room.host.send(C2S.SETTINGS, { voting: true });
+    await nominate(room.host, 'song-2');
+
+    // Nobody votes. The deadline is the server's, so it fires regardless.
+    vi.advanceTimersByTime(120_000);
+    const after = snapshot(room.host);
+    expect(after.vote).toBeNull();
+    // One nomination, zero votes: it is still the only thing standing.
+    expect(after.song?.id).toBe('song-2');
+  });
+
+  it('opens a fresh ballot on the rematch — the case the feature exists for', async () => {
+    const room = await makeLobby(1);
+    room.host.send(C2S.SETTINGS, { voting: true });
+    room.host.send(C2S.SETTINGS, { voting: false });
+
+    startMatch(room);
+    const report = { score: 1, combo: 0, maxCombo: 1, accuracy: 1, health: 100 };
+    for (const seat of room.seats) seat.send(C2S.FINISH, report);
+
+    // Voting back on, then a rematch: the room picks the next track itself
+    // rather than waiting for the host to pick again.
+    room.host.send(C2S.SETTINGS, { voting: true });
+    room.host.send(C2S.REMATCH);
+    expect(snapshot(room.host).vote).toBeTruthy();
+  });
+
+  /**
+   * The tie-break.
+   *
+   * `Math.random()` would decide this in a way the server cannot restate
+   * afterwards and that two processes given the same room and the same votes
+   * would answer differently. Seeded from the lobby code and the ballot number,
+   * the same room voting the same way resolves the same way — which is exactly
+   * what this test asserts, by running the identical lobby twice under a
+   * *preferred* code so both rounds share a seed.
+   */
+  it('breaks a tie deterministically, from the lobby’s own seed', async () => {
+    const play = async (): Promise<string> => {
+      const io = new FakeServer();
+      const host = connect(io, 'Host');
+      host.send(C2S.CREATE, { isPublic: false, code: 'VOTE01' });
+      const other = connect(io, 'P2');
+      other.send(C2S.JOIN, { code: 'VOTE01' });
+
+      host.send(C2S.SETTINGS, { voting: true });
+      host.send(C2S.NOMINATE, { songId: 'song-2' });
+      await flush();
+      other.send(C2S.NOMINATE, { songId: 'song-3' });
+      await flush();
+
+      // One vote each, for their own nomination: a dead heat.
+      host.send(C2S.VOTE, { songId: 'song-2' });
+      other.send(C2S.VOTE, { songId: 'song-3' });
+
+      const winner = host.last<LobbySnapshot>(S2C.LOBBY)!.song!.id;
+      __resetSliceItLobbies();
+      return winner;
+    };
+
+    const random = vi.spyOn(Math, 'random');
+    const first = await play();
+    const second = await play();
+
+    expect(['song-2', 'song-3']).toContain(first);
+    expect(second).toBe(first);
+    // Not merely reproducible by luck — nothing in the resolution consulted the
+    // process-wide random source at all.
+    expect(random).not.toHaveBeenCalled();
   });
 });
 

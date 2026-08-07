@@ -54,8 +54,11 @@ export const Route = createFileRoute('/api/slice-it/ai/loadout')({
               take: HISTORY_ROWS,
               select: { accuracy: true, modifiers: true },
             }),
-            prisma.songLeaderboard.findUnique({
-              where: { songId_userId: { songId: song.id, userId } },
+            prisma.songLeaderboard.findFirst({
+              // Their best on the difficulty being asked about, not their best
+              // on the song across every board.
+              where: { songId: song.id, userId, difficulty: body.difficulty },
+              orderBy: { score: 'desc' },
               select: { score: true, accuracy: true, modifiers: true },
             }),
           ]);

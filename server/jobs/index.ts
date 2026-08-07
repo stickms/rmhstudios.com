@@ -19,6 +19,8 @@ import { runProgression, type ProgressionJob } from '@/lib/social/engagement-eff
 import { registerEventReminderWorker } from '@/lib/events.server';
 import { registerDigestCron } from '@/lib/digest/pipeline.server';
 import { registerMaintenanceCrons } from '@/lib/jobs/maintenance.server';
+import { ANALYSIS_QUEUE, registerAnalysisWorker } from '@/lib/slice-it/analysis-queue.server';
+import { REGEN_QUEUE, registerRegenCron } from '@/lib/slice-it/regen.server';
 
 const log = createLogger('jobs');
 
@@ -66,6 +68,33 @@ async function main() {
       queue: 'email.weekly-digest',
       err: (e as Error)?.message,
     });
+  }
+
+  // O3 — Slice It! beatmap generation. It ran inline in the upload route,
+  // blocking an SSR worker for seconds per track on the container that also
+  // serves every page. `enqueueAnalysis` falls back to running inline when this
+  // worker is not up, so a registration failure here is slow uploads, never
+  // chartless songs.
+  try {
+    await registerAnalysisWorker(boss);
+    log.info({ event: 'jobs.started', queue: ANALYSIS_QUEUE });
+  } catch (e) {
+    log.error({
+      event: 'jobs.register_failed',
+      queue: ANALYSIS_QUEUE,
+      err: (e as Error)?.message,
+    });
+  }
+
+  // C8 — bring stale generated charts up to the current generator, 25 songs an
+  // hour. Never touches a chart with `isGenerated: false`; that flag is the
+  // whole safety property, because the alternative is silently overwriting
+  // somebody's hand-edited chart in bulk, at night, with nothing to trace it to.
+  try {
+    await registerRegenCron(boss);
+    log.info({ event: 'jobs.started', queue: REGEN_QUEUE });
+  } catch (e) {
+    log.error({ event: 'jobs.register_failed', queue: REGEN_QUEUE, err: (e as Error)?.message });
   }
 
   // Platform maintenance (2026-08-05 batch): the outbox drain (E4), the hourly

@@ -14,6 +14,8 @@
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { RivalPlan } from '@/lib/slice-it/ai/types';
+import type { Difficulty } from '@/lib/slice-it/constants';
+import type { ModPool } from '@/lib/slice-it/pools';
 import { AiLine, AiPanel } from './AiPanel';
 import { useSliceAi } from './useSliceAi';
 
@@ -26,11 +28,29 @@ interface RunDiff {
   multiplierGap: number;
 }
 
-export function RivalPanel({ songId, rivalRank }: { songId: string; rivalRank: number }) {
+/**
+ * @param difficulty  The board being displayed, when it is narrowed to one. A
+ *                    rank only means something on a specific board — see the
+ *                    note in `api-schemas.ts`.
+ */
+export function RivalPanel({
+  songId,
+  rivalRank,
+  difficulty,
+  modPool,
+}: {
+  songId: string;
+  rivalRank: number;
+  difficulty?: Difficulty;
+  modPool?: ModPool;
+}) {
   const { t } = useTranslation('c-game');
   const [diff, setDiff] = React.useState<RunDiff | null>(null);
 
-  const ai = useSliceAi<RivalPlan, { songId: string; rivalRank: number }>('rival', (body) => {
+  const ai = useSliceAi<
+    RivalPlan,
+    { songId: string; rivalRank: number; difficulty?: Difficulty; modPool?: ModPool }
+  >('rival', (body) => {
     const payload = body as { diff: RunDiff | null; plan: RivalPlan | null };
     setDiff(payload.diff);
     return payload.plan;
@@ -56,7 +76,14 @@ export function RivalPanel({ songId, rivalRank }: { songId: string; rivalRank: n
       title={t('ai-rival-title', { defaultValue: 'Catch the row above' })}
       actionLabel={t('ai-rival-action', { defaultValue: 'How?' })}
       state={ai.state}
-      onRun={() => ai.run({ songId, rivalRank })}
+      onRun={() =>
+        ai.run({
+          songId,
+          rivalRank,
+          ...(difficulty ? { difficulty } : {}),
+          ...(modPool ? { modPool } : {}),
+        })
+      }
       {...(fallback ? { fallback } : {})}
     >
       {ai.data ? (

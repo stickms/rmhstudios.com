@@ -15,7 +15,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { assertAiBudget } from '@/lib/ai/budget.server';
 import { SetlistRequestZ } from '@/lib/slice-it/ai/api-schemas';
-import { buildSetlist } from '@/lib/slice-it/ai/library.server';
+import { buildSetlist } from '@/lib/slice-it/ai/discovery.server';
 import { isAiConfigured } from '@/lib/slice-it/ai/run.server';
 
 export const Route = createFileRoute('/api/slice-it/ai/setlist')({

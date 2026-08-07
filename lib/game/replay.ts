@@ -122,17 +122,74 @@ function verifyLightsOut(data: unknown): { score: number } | null {
  * beat-map / track data isn't importable as pure logic), so verify() validates
  * the log's *shape and internal consistency* and re-derives the score from the
  * judgment log with a fixed scoring rule. It CANNOT prove the judgments
- * themselves are honest against the track — that requires the beat-map and is
- * future work (see design §7). This is the "shape-validated + bounded" tier.
+ * themselves are honest against the track — that requires the beat-map. This is
+ * the "shape-validated + bounded" tier.
+ *
+ * The tier above it now exists and lives where the beat-map does:
+ * `lib/slice-it/verify.server.ts` reads `Song.analysisData`, rebuilds the exact
+ * chart from `mods`, and re-judges every input with the game's own `judge()`.
+ * It is deliberately NOT wired in here — this module is pure by contract, and
+ * the check needs the database — so it runs asynchronously after submission
+ * (`R8`) and never on the request path.
  * ------------------------------------------------------------------ */
 
 export const SLICE_IT_VERSION = 'si-1';
 
 const sliceItJudgment = z.enum(['perfect', 'great', 'good', 'miss']);
 
+/**
+ * The four-value judgement vocabulary this schema stores.
+ *
+ * Slice It's engine judges in six (`MARVELOUS … MISS`). It maps down to these
+ * four on the way in — see `lib/slice-it/replay.ts`, which owns that mapping and
+ * documents what the narrowing costs. **This enum is a contract**: it is read by
+ * the speedrun verifier and by every game-agnostic consumer of a replay, so it
+ * does not grow to fit one game's judgement ladder.
+ */
+export type SliceItJudgment = z.infer<typeof sliceItJudgment>;
+
+/**
+ * Hard cap on the input log, and the size the recorder pre-allocates.
+ *
+ * 20 000 resolutions is ~11 minutes at `MAX_NOTES_PER_SECOND` (20), i.e. beyond
+ * any chart the generator can produce for a track anyone uploads. A run that
+ * would exceed it is truncated at the source rather than sent whole and rejected
+ * whole — a partial replay of a real run is worth more than a 422.
+ */
+export const SLICE_IT_MAX_INPUTS = 20_000;
+
+/**
+ * The chart- and judgement-determining settings of the run.
+ *
+ * Optional because the field is newer than the schema, but in practice always
+ * present: without it a replay cannot be played back, because Slice It's chart
+ * is *generated* — bombs and lane-switches are placed by a PRNG seeded on
+ * `(songId, difficulty, bombs, switching, oneTrack)` — and a viewer that
+ * rebuilds the chart under different modifiers is showing different notes than
+ * the run played. `speed` and `strictTiming` are here for the same reason on the
+ * judging side: they scale every hit window.
+ */
+const sliceItMods = z.object({
+  difficulty: z.enum(['easy', 'normal', 'hard', 'expert']).optional(),
+  speed: z.number().min(0.25).max(4).optional(),
+  bombs: z.boolean().optional(),
+  switching: z.boolean().optional(),
+  oneTrack: z.boolean().optional(),
+  strictTiming: z.boolean().optional(),
+});
+
 const sliceItSchema = z.object({
   track: z.string().min(1).max(64),
+  /**
+   * Fingerprint of the run's chart seed. Slice It's real seed is a string; this
+   * is it hashed into the numeric range the cross-game field allows, and is used
+   * as a checksum against a chart rebuilt from `mods` — see
+   * `lib/slice-it/replay.ts#replaySeed`.
+   */
   seed: z.number().int().min(0).max(99_999_999).optional(),
+  mods: sliceItMods.optional(),
+  /** The chart's content hash at the time of the run (`C12`), when it had one. */
+  chartHash: z.string().length(64).optional(),
   inputs: z
     .array(
       z.object({
@@ -145,12 +202,27 @@ const sliceItSchema = z.object({
       }),
     )
     .min(1)
-    .max(20_000),
+    .max(SLICE_IT_MAX_INPUTS),
 });
+
+/**
+ * Exported so Slice It's own routes can compose it (`z.object({ replay: … })`)
+ * instead of re-declaring the payload shape a second time and letting the two
+ * drift. The registry entry below is the same object.
+ */
+export const sliceItReplaySchema = sliceItSchema;
 
 export type SliceItReplay = z.infer<typeof sliceItSchema>;
 
-/** Base points per judgment; a combo multiplier grows up to 2× at 100-combo. */
+/**
+ * Base points per judgment; a combo multiplier grows up to 2× at 100-combo.
+ *
+ * **This is not the game's scoring rule** and the number it produces is not
+ * comparable to a `SongLeaderboard.score`. It is a monotone function of the
+ * judgement log whose only job is to be recomputable from the log, so a
+ * tampered `GameReplay.score` disagrees with its own inputs. Anything showing a
+ * player a score must read the leaderboard row, never this.
+ */
 const SLICE_IT_POINTS: Record<z.infer<typeof sliceItJudgment>, number> = {
   perfect: 100,
   great: 70,

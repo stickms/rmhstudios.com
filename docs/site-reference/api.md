@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 557 files across 134 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 584 files across 134 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -1183,10 +1183,13 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/slice-it`
 
-20 routes.
+45 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
+| `/api/slice-it/admin/content` | `GET` | `app/routes/api/slice-it/admin/content.ts` |
+| `/api/slice-it/admin/review` | `GET` | `app/routes/api/slice-it/admin/review.ts` |
+| `/api/slice-it/admin/takedown` | `GET` `POST` | `app/routes/api/slice-it/admin/takedown.ts` |
 | `/api/slice-it/ai/calibration` | `POST` | `app/routes/api/slice-it/ai/calibration.ts` |
 | `/api/slice-it/ai/chart-brief` | `POST` | `app/routes/api/slice-it/ai/chart-brief.ts` |
 | `/api/slice-it/ai/coach` | `POST` | `app/routes/api/slice-it/ai/coach.ts` |
@@ -1196,17 +1199,39 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/slice-it/ai/rival` | `POST` | `app/routes/api/slice-it/ai/rival.ts` |
 | `/api/slice-it/ai/search` | `POST` | `app/routes/api/slice-it/ai/search.ts` |
 | `/api/slice-it/ai/setlist` | `POST` | `app/routes/api/slice-it/ai/setlist.ts` |
+| `/api/slice-it/charts` | `GET` `POST` | `app/routes/api/slice-it/charts.ts` |
+| `/api/slice-it/charts/:id` | `DELETE` `GET` `PATCH` `POST` | `app/routes/api/slice-it/charts/$id.ts` |
+| `/api/slice-it/charts/:id/reviews` | `DELETE` `GET` `PUT` | `app/routes/api/slice-it/charts/$id/reviews.ts` |
+| `/api/slice-it/charts/:id/revisions` | `GET` | `app/routes/api/slice-it/charts/$id/revisions.ts` |
+| `/api/slice-it/charts/ranking` | `GET` `POST` | `app/routes/api/slice-it/charts/ranking.ts` |
+| `/api/slice-it/daily` | `GET` | `app/routes/api/slice-it/daily/index.ts` |
+| `/api/slice-it/daily/submit` | `POST` | `app/routes/api/slice-it/daily/submit.ts` |
 | `/api/slice-it/leaderboard` | `GET` | `app/routes/api/slice-it/leaderboard.ts` |
+| `/api/slice-it/packs` | `GET` `POST` | `app/routes/api/slice-it/packs/index.ts` |
+| `/api/slice-it/packs/:id` | `DELETE` `GET` `PATCH` | `app/routes/api/slice-it/packs/$id.ts` |
+| `/api/slice-it/packs/:id/items` | `PATCH` | `app/routes/api/slice-it/packs/$id/items.ts` |
+| `/api/slice-it/replay` | `GET` `POST` | `app/routes/api/slice-it/replay.ts` |
+| `/api/slice-it/replay/:id` | `GET` | `app/routes/api/slice-it/replay/$id.ts` |
 | `/api/slice-it/score` | `POST` | `app/routes/api/slice-it/score.ts` |
+| `/api/slice-it/setlists` | `GET` `POST` | `app/routes/api/slice-it/setlists/index.ts` |
+| `/api/slice-it/setlists/:id` | `DELETE` `GET` `PATCH` | `app/routes/api/slice-it/setlists/$id.ts` |
+| `/api/slice-it/shelves` | `GET` | `app/routes/api/slice-it/shelves.ts` |
+| `/api/slice-it/showcase` | `GET` | `app/routes/api/slice-it/showcase.ts` |
 | `/api/slice-it/songs` | `GET` | `app/routes/api/slice-it/songs.ts` |
 | `/api/slice-it/songs/:id` | `DELETE` `GET` `PATCH` | `app/routes/api/slice-it/songs/$id.ts` |
+| `/api/slice-it/songs/:id/charts` | `GET` | `app/routes/api/slice-it/songs/$id/charts.ts` |
 | `/api/slice-it/songs/:id/comments` | `DELETE` `GET` `POST` | `app/routes/api/slice-it/songs/$id/comments.ts` |
 | `/api/slice-it/songs/:id/cover` | `GET` | `app/routes/api/slice-it/songs/$id/cover.ts` |
+| `/api/slice-it/songs/:id/import-chart` | `POST` | `app/routes/api/slice-it/songs/$id/import-chart.ts` |
 | `/api/slice-it/songs/:id/like` | `POST` | `app/routes/api/slice-it/songs/$id/like.ts` |
 | `/api/slice-it/songs/:id/patch-analysis` | `POST` | `app/routes/api/slice-it/songs/$id/patch-analysis.ts` |
 | `/api/slice-it/songs/:id/play` | `POST` | `app/routes/api/slice-it/songs/$id/play.ts` |
+| `/api/slice-it/songs/:id/regenerate` | `POST` | `app/routes/api/slice-it/songs/$id/regenerate.ts` |
+| `/api/slice-it/songs/artist/:key` | `GET` | `app/routes/api/slice-it/songs/artist.$key.ts` |
+| `/api/slice-it/songs/artists` | `GET` | `app/routes/api/slice-it/songs/artists.ts` |
 | `/api/slice-it/songs/stream/:id` | `GET` | `app/routes/api/slice-it/songs/stream/$id.ts` |
 | `/api/slice-it/songs/upload` | `POST` | `app/routes/api/slice-it/songs/upload.ts` |
+| `/api/slice-it/uploader-stats` | `GET` | `app/routes/api/slice-it/uploader-stats.ts` |
 
 ## `/api/spaces`
 
@@ -1395,7 +1420,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/v1`
 
-27 routes.
+29 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -1419,6 +1444,8 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/v1/posts/:id/bookmark` | `DELETE` `OPTIONS` `POST` | `app/routes/api/v1/posts/$id/bookmark.ts` |
 | `/api/v1/posts/:id/comments` | `GET` `OPTIONS` `POST` | `app/routes/api/v1/posts/$id/comments.ts` |
 | `/api/v1/posts/:id/like` | `DELETE` `OPTIONS` `POST` | `app/routes/api/v1/posts/$id/like.ts` |
+| `/api/v1/slice-it/charts` | `GET` `OPTIONS` | `app/routes/api/v1/slice-it/charts.ts` |
+| `/api/v1/slice-it/leaderboard` | `GET` `OPTIONS` | `app/routes/api/v1/slice-it/leaderboard.ts` |
 | `/api/v1/users/:handle` | `GET` `OPTIONS` | `app/routes/api/v1/users/$handle.ts` |
 | `/api/v1/users/:handle/follow` | `DELETE` `OPTIONS` `POST` | `app/routes/api/v1/users/$handle/follow.ts` |
 | `/api/v1/users/:handle/followers` | `GET` `OPTIONS` | `app/routes/api/v1/users/$handle/followers.ts` |

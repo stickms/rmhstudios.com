@@ -1,0 +1,12 @@
+-- Slice It — C7's preview point.
+--
+-- HAND-WRITTEN, and verified statement-for-statement against
+-- `prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script`.
+-- It has never been executed. Review it as SQL, not as generated output.
+--
+-- Nullable with no default on purpose. "The uploader picked 0.0" and "nobody
+-- has picked" are different facts, and only the second one should be
+-- overwritten by a re-analysis — see `regenerateSong` in
+-- `lib/slice-it/regen.server.ts`. Adding a nullable column with no default is
+-- catalogue-only, so "Song" is not rewritten.
+ALTER TABLE "Song" ADD COLUMN IF NOT EXISTS "previewStart" DOUBLE PRECISION;

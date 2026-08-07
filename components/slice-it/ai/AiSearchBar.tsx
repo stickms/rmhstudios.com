@@ -20,13 +20,13 @@ import { useTranslation } from 'react-i18next';
 import { Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import type { SliceSong } from '@/lib/slice-it/types';
+import type { LibrarySong } from '@/lib/slice-it/library-filters';
 import type { SearchQuery } from '@/lib/slice-it/ai/types';
 import { useSliceAi } from './useSliceAi';
 
 interface SearchResponse {
   query: SearchQuery;
-  songs: SliceSong[];
+  songs: LibrarySong[];
   interpreted: boolean;
 }
 
@@ -35,7 +35,7 @@ export function AiSearchBar({
   onClear,
 }: {
   /** Hand the matched songs to the library to render in place of its own list. */
-  onResults: (songs: SliceSong[]) => void;
+  onResults: (songs: LibrarySong[]) => void;
   onClear: () => void;
 }) {
   const { t } = useTranslation('c-game');

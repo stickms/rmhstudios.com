@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma.server';
 import { resolveUserDisplay, userDisplaySelect } from '@/lib/user-display';
 import { CommentBodyZ } from '@/lib/slice-it/api-schemas';
 import { triageComment } from '@/lib/slice-it/ai/moderation.server';
+import { extractTimestamp } from '@/lib/slice-it/taxonomy';
 
 const CommentQueryZ = z.object({
   cursor: z.string().max(64).optional(),
@@ -49,6 +50,7 @@ export const Route = createFileRoute('/api/slice-it/songs/$id/comments')({
             select: {
               id: true,
               content: true,
+              atSeconds: true,
               createdAt: true,
               userId: true,
               user: { select: userDisplaySelect },
@@ -73,17 +75,30 @@ export const Route = createFileRoute('/api/slice-it/songs/$id/comments')({
         async ({ params, body, userId }) => {
           const song = await prisma.song.findUnique({
             where: { id: params.id },
-            select: { isPublic: true, uploadedBy: true },
+            // `duration` for L5: a timestamp past the end of the track is
+            // somebody writing about something else, and the parser needs the
+            // length to tell the difference.
+            select: { isPublic: true, uploadedBy: true, duration: true },
           });
           if (!song || (!song.isPublic && song.uploadedBy !== userId)) {
             return Response.json({ error: 'Song not found' }, { status: 404 });
           }
 
           const comment = await prisma.songComment.create({
-            data: { content: body.content, songId: params.id, userId },
+            data: {
+              content: body.content,
+              songId: params.id,
+              userId,
+              // L5 — parsed from the body rather than collected by a separate
+              // field. osu! modding taught a generation of players to type
+              // `1:42`, and a field nobody fills is worse than a convention
+              // they already have.
+              atSeconds: extractTimestamp(body.content, song.duration),
+            },
             select: {
               id: true,
               content: true,
+              atSeconds: true,
               createdAt: true,
               userId: true,
               user: { select: userDisplaySelect },
@@ -163,6 +178,7 @@ function format(
   row: {
     id: string;
     content: string;
+    atSeconds: number | null;
     createdAt: Date;
     userId: string;
     user: Parameters<typeof resolveUserDisplay>[0];
@@ -173,6 +189,8 @@ function format(
   return {
     id: row.id,
     content: row.content,
+    /** L5 — seconds into the track, or null for a comment about the song. */
+    atSeconds: row.atSeconds,
     createdAt: row.createdAt.toISOString(),
     isOwn: viewerId !== null && row.userId === viewerId,
     user: { name: display.name || 'Unknown', image: display.image ?? null },
