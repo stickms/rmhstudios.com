@@ -507,3 +507,22 @@ export const QUANT_COLORS: Record<number, string> = {
   3: '#a855f7',
   4: '#eab308',
 };
+
+/* ─── Practice guides (P4) ───────────────────────────────────────────────── */
+
+/**
+ * How far ahead of the playhead guide sounds are handed to the audio clock.
+ *
+ * Long enough that a stuttering frame loop cannot miss a beat, short enough
+ * that a seek or a loop rewind does not leave a second of already-scheduled
+ * ticks playing over the new position.
+ */
+export const TICK_LOOKAHEAD_SEC = 0.35;
+
+/** Metronome: on the beat. Assist tick: on every note. Pitched apart so a
+ *  player running both can tell which is which. */
+export const TICK_FREQ_BEAT = 1200;
+export const TICK_FREQ_NOTE = 1800;
+
+/** Guides sit under the music — they are a reference, not a part. */
+export const TICK_VOLUME_SCALE = 0.35;

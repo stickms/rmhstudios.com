@@ -63,6 +63,10 @@ interface SliceItState {
    * is a real change to what the playfield looks like.
    */
   quantColors: boolean;
+  /** P4 — a click on every beat. A learning tool, not a challenge setting. */
+  metronome: boolean;
+  /** P4 — a click on every NOTE, whether or not you hit it. */
+  assistTick: boolean;
   modifiers: Modifiers;
   /**
    * M1 — Mirror. Swaps lanes for every run until turned off again.
@@ -138,6 +142,8 @@ interface SliceItState {
   setAudioOffset: (offset: number) => void;
   setIsDarkMode: (isDark: boolean) => void;
   setQuantColors: (value: boolean) => void;
+  setMetronome: (value: boolean) => void;
+  setAssistTick: (value: boolean) => void;
   setModifiers: (modifiers: Modifiers) => void;
   setMirror: (value: boolean) => void;
   setScrollSpeed: (value: number) => void;
@@ -226,6 +232,8 @@ export const useSliceItStore = create<SliceItState>()(
       audioOffset: 0,
       isDarkMode: true,
       quantColors: true,
+      metronome: false,
+      assistTick: false,
       modifiers: { ...DEFAULT_MODIFIERS },
       mirror: false,
       scrollSpeed: 1.0,
@@ -246,6 +254,8 @@ export const useSliceItStore = create<SliceItState>()(
         set({ audioOffset: Math.max(-500, Math.min(500, Math.round(audioOffset))) }),
       setIsDarkMode: (isDarkMode) => set({ isDarkMode }),
       setQuantColors: (quantColors) => set({ quantColors }),
+      setMetronome: (metronome) => set({ metronome }),
+      setAssistTick: (assistTick) => set({ assistTick }),
       setModifiers: (modifiers) => set({ modifiers: applyExclusions(modifiers) }),
       setMirror: (mirror) => set({ mirror }),
       setScrollSpeed: (scrollSpeed) => set({ scrollSpeed: clampScrollSpeed(scrollSpeed) }),
@@ -293,7 +303,7 @@ export const useSliceItStore = create<SliceItState>()(
     }),
     {
       name: 'slice-it-storage',
-      version: 4,
+      version: 5,
       // Settings only. Run and lobby state are per-session by definition, and
       // persisting a lobby snapshot would restore a room that no longer exists.
       partialize: (state) => ({
@@ -305,6 +315,8 @@ export const useSliceItStore = create<SliceItState>()(
         audioOffset: state.audioOffset,
         isDarkMode: state.isDarkMode,
         quantColors: state.quantColors,
+        metronome: state.metronome,
+        assistTick: state.assistTick,
         modifiers: state.modifiers,
         mirror: state.mirror,
         scrollSpeed: state.scrollSpeed,
@@ -357,6 +369,12 @@ export const useSliceItStore = create<SliceItState>()(
             visibilityMode: 'fadeOut',
             laneCoverHeight: 0.3,
           };
+        }
+        if (version < 5) {
+          // P4. Both default OFF: a guide sound nobody asked for, arriving on
+          // top of the music the first time a returning player presses play, is
+          // indistinguishable from a bug.
+          state = { ...state, metronome: false, assistTick: false };
         }
         return state;
       },

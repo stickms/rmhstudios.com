@@ -240,6 +240,50 @@ export class AudioManager {
     osc.stop(t + duration);
   }
 
+  /**
+   * Schedule a tick at an absolute AudioContext time (P4).
+   *
+   * `playSfX` fires now; a metronome cannot. Driven from the frame loop, a beat
+   * lands whenever `update()` next notices it has passed — so the guide inherits
+   * the frame jitter, and a guide that wobbles is worse than none because the
+   * player calibrates against it. Handing the beat to the audio clock ahead of
+   * time makes it exact regardless of what the main thread is doing.
+   *
+   * A `when` already in the past is dropped rather than clamped to `now`: a late
+   * beat played on time is a beat in the wrong place, which is the failure this
+   * exists to avoid.
+   */
+  public scheduleSfx(
+    freq: number,
+    type: OscillatorType,
+    duration: number,
+    volume: number,
+    when: number,
+  ) {
+    if (!this.audioContext) this.initialize();
+    if (!this.audioContext) return;
+    if (this.audioContext.state === 'suspended') this.audioContext.resume();
+
+    const ctx = this.audioContext;
+    if (when < ctx.currentTime) return;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, when);
+
+    // Same soft attack as playSfX — a hard gate on a square wave pops, and a
+    // pop every beat is its own kind of distracting.
+    gain.gain.setValueAtTime(0, when);
+    gain.gain.linearRampToValueAtTime(volume, when + 0.004);
+    gain.gain.exponentialRampToValueAtTime(0.0001, when + duration);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(when);
+    osc.stop(when + duration + 0.02);
+  }
+
   // ── Hit Sound File Playback ──────────────────────────────────────────────
   private hitSoundCache: Map<string, AudioBuffer> = new Map();
   private hitSoundLoading: Map<string, Promise<AudioBuffer>> = new Map();

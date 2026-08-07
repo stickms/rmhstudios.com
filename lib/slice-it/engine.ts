@@ -44,6 +44,10 @@ import {
   JUDGEMENT_COLORS,
   JUDGEMENT_ORDER,
   RELEASE_WINDOW_SCALE,
+  TICK_FREQ_BEAT,
+  TICK_FREQ_NOTE,
+  TICK_LOOKAHEAD_SEC,
+  TICK_VOLUME_SCALE,
 } from './constants';
 import type { BeatMap, HitResult, RunStats, Slice } from './types';
 import { MIN_TIMING_SAMPLES, type TimingSummary } from './integrity';
@@ -279,8 +283,63 @@ export class GameEngine {
    */
   private replayTime = 0;
 
+  /* ── Practice, autoplay and the metronome (P1, P3, P4) ─────────────────── */
+
+  /**
+   * True while this run is a practice run or an autoplay demo.
+   *
+   * Both are *unrankable by construction*, and the guard lives here rather
+   * than in the UI for the same reason the editor's does: a hidden submit
+   * button is a convention, and a convention is one refactor away from being
+   * wrong. `useRunSummary` refuses to build a summary at all while this is set,
+   * so there is nothing for `useSubmitScore` to send.
+   */
+  private unrankable = false;
+
+  /** P1 — A/B loop. Non-null means `update()` rewinds at `end`. */
+  private practiceLoop: { start: number; end: number } | null = null;
+
+  /** P3 — resolve every note perfectly at its own time, taking no input. */
+  private autoplay = false;
+
+  /**
+   * P4 — beat times already handed to the audio clock, so a beat is scheduled
+   * once rather than every frame until it passes.
+   *
+   * Ticks are SCHEDULED ahead on the AudioContext clock, never fired from
+   * `update()`. A tick triggered when the frame loop notices the time has gone
+   * by inherits that frame's jitter, and a metronome that wobbles by a frame is
+   * worse than no metronome at all — the player calibrates against it.
+   */
+  private tickScheduledTo = 0;
+
   constructor() {
     this.audioManager = AudioManager.getInstance();
+  }
+
+  /** P1/P3 — enter practice. Unrankable for as long as it is set. */
+  setPractice(enabled: boolean, loop: { start: number; end: number } | null = null): void {
+    this.unrankable = enabled || this.autoplay;
+    this.practiceLoop = enabled ? loop : null;
+  }
+
+  /** P3 — autoplay. Also unrankable; also structural rather than cosmetic. */
+  setAutoplay(enabled: boolean): void {
+    this.autoplay = enabled;
+    this.unrankable = enabled || this.practiceLoop !== null;
+  }
+
+  /** True when nothing this run produces may reach a leaderboard. */
+  isUnrankable(): boolean {
+    return this.unrankable || this.replayInput !== null;
+  }
+
+  isAutoplay(): boolean {
+    return this.autoplay;
+  }
+
+  getPracticeLoop(): { start: number; end: number } | null {
+    return this.practiceLoop;
   }
 
   getActiveMap(): BeatMap | null {
@@ -457,6 +516,99 @@ export class GameEngine {
   }
 
   /**
+   * P1 — rewind to an earlier point, re-arming everything after it.
+   *
+   * `seek()` walks FORWARD and marks what it passed as processed, which is
+   * right for skipping a lead-in and wrong for a loop: rewinding has to make
+   * notes hittable again. A slice carries `hit`/`hitTime` as runtime state, so
+   * a note left saying `hit: true` never re-arms and the player watches it go
+   * by; and `processedSliceIds` would swallow it even if it did.
+   */
+  private seekBackTo(seconds: number): void {
+    const target = Math.max(0, seconds);
+    this.audioManager.seek(target);
+
+    let cursor = this.slices.length;
+    for (let i = 0; i < this.slices.length; i++) {
+      const slice = this.slices[i];
+      if (slice.time >= target - this.missWindow) {
+        cursor = i;
+        break;
+      }
+    }
+    for (let i = cursor; i < this.slices.length; i++) {
+      const slice = this.slices[i];
+      this.processedSliceIds.delete(slice.id);
+      slice.hit = false;
+      slice.hitTime = undefined;
+    }
+    this.cursor = cursor;
+
+    // A combo across a rewind is not a combo. Everything else — score,
+    // accuracy, the histogram — is left alone: practice is for reading the
+    // section, and zeroing the tally every lap would make the numbers useless.
+    this.combo = 0;
+    this.activeHolds.clear();
+    this.holdBilledTo.clear();
+    // Beats before the rewind point are already scheduled and in the past;
+    // re-arm from here or the metronome stays silent for the rest of the loop.
+    this.tickScheduledTo = target;
+  }
+
+  /** P4 — is either audible guide switched on? */
+  private tickEnabled(): boolean {
+    const store = useSliceItStore.getState();
+    return store.metronome || store.assistTick;
+  }
+
+  /**
+   * P4 — schedule guide sounds ahead on the AudioContext clock.
+   *
+   * `when` is derived from the context's own clock rather than
+   * `performance.now()`, because the two drift and the whole point of a guide
+   * is that it agrees with the music.
+   */
+  private scheduleTicks(currentTime: number): void {
+    const context = this.audioManager.getContext();
+    if (!context) return;
+
+    const horizon = currentTime + TICK_LOOKAHEAD_SEC;
+    if (this.tickScheduledTo >= horizon) return;
+    const from = Math.max(this.tickScheduledTo, currentTime);
+
+    const store = useSliceItStore.getState();
+    const rate = this.speedMultiplier || 1;
+    const volume = (store.sfxVolume / 100) * TICK_VOLUME_SCALE;
+    const atContext = (trackTime: number) => context.currentTime + (trackTime - currentTime) / rate;
+
+    if (store.metronome) {
+      const bpm = this.beatMap?.bpm && this.beatMap.bpm > 0 ? this.beatMap.bpm : 120;
+      const beat = 60 / bpm;
+      const first = Math.ceil(from / beat) * beat;
+      for (let t = first; t < horizon; t += beat) {
+        this.audioManager.scheduleSfx(TICK_FREQ_BEAT, 'square', 0.03, volume, atContext(t));
+      }
+    }
+
+    if (store.assistTick) {
+      for (let i = this.cursor; i < this.slices.length; i++) {
+        const slice = this.slices[i];
+        if (slice.time >= horizon) break;
+        if (slice.time < from || slice.type === 'BOMB') continue;
+        this.audioManager.scheduleSfx(
+          TICK_FREQ_NOTE,
+          'triangle',
+          0.02,
+          volume,
+          atContext(slice.time),
+        );
+      }
+    }
+
+    this.tickScheduledTo = horizon;
+  }
+
+  /**
    * Current playback position, adjusted by the player's calibration offset.
    *
    * During playback the position is the viewer's, and the calibration offset is
@@ -541,6 +693,37 @@ export class GameEngine {
     // resolve its note while the note still exists, or the sweep expires it and
     // the replay shows a miss the run never had.
     if (this.replayInput !== null) this.stepReplay(currentTime);
+
+    // P1 — rewind at the loop end. Before anything resolves, so a note sitting
+    // exactly on the boundary is judged in the pass it belongs to rather than
+    // twice.
+    if (this.practiceLoop !== null && currentTime >= this.practiceLoop.end) {
+      this.seekBackTo(this.practiceLoop.start);
+      return;
+    }
+
+    // P4 — top the tick schedule up. Cheap: it walks only the beats inside the
+    // lookahead that have not been scheduled yet, which is normally none.
+    if (this.tickEnabled()) this.scheduleTicks(currentTime);
+
+    // P3 — autoplay resolves in `update()` rather than by synthesising input
+    // events. A fake keydown would go through the same dispatch-latency
+    // reconstruction a real one does and land a fraction late, which is exactly
+    // the artefact a reference playthrough must not have.
+    if (this.autoplay) {
+      for (let i = this.cursor; i < this.slices.length; i++) {
+        const slice = this.slices[i];
+        if (slice.time > currentTime) break;
+        if (this.processedSliceIds.has(slice.id)) continue;
+        // Never slice a bomb — the demo has to model correct play, and a
+        // reference run that eats every mine teaches the opposite.
+        if (slice.type === 'BOMB') {
+          this.processedSliceIds.add(slice.id);
+          continue;
+        }
+        this.resolve(slice, 'MARVELOUS', slice.lane, 0);
+      }
+    }
 
     const scoreMultiplier = this.runMultiplier();
     const missWindow = this.missWindow;

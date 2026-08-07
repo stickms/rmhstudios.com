@@ -184,6 +184,11 @@ export function useRunSummary(multiplayer: boolean, engine?: GameEngine | null):
   const runToken = useSliceItStore((s) => s.runToken);
 
   if (status !== 'FINISHED' || !songId) return null;
+  // P1/P3/R4 — practice, autoplay and replay playback are unrankable BY
+  // CONSTRUCTION. The guard is here, at the only place a submittable summary is
+  // built, rather than on a hidden button: a hidden button is a convention, and
+  // a convention is one refactor away from posting a demo run to a leaderboard.
+  if (engine?.isUnrankable()) return null;
   return {
     songId,
     score,
