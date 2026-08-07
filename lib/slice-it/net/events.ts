@@ -54,11 +54,32 @@ export const C2S = {
   JOIN: 'slice:join',
   QUICKPLAY: 'slice:quickplay',
   BROWSE: 'slice:browse',
+  /**
+   * Watch a lobby without taking one of its eight seats (`N1`). A spectator
+   * joins a parallel `:spec` room and receives the same broadcasts; they never
+   * appear in the roster and never affect whether a match can start.
+   */
+  SPECTATE: 'slice:spectate',
   LEAVE: 'slice:leave',
   READY: 'slice:ready',
   /** Host picks a track. Payload is an id; the server resolves the row. */
   SONG: 'slice:song',
-  /** Host toggles lobby-level settings (public listing). */
+  /**
+   * Pick a side in team mode (`N2`). `null` leaves the seat unassigned, which is
+   * a real state: the host can start a team match with a straggler on neither
+   * side and the server simply scores them into no total.
+   */
+  TEAM: 'slice:team',
+  /** Host spreads the seats evenly across the two sides (`N2`). */
+  BALANCE: 'slice:balance',
+  /**
+   * Put a track up for the lobby's vote (`N7`). One nomination per seat — a
+   * second replaces the first, rather than letting one player flood the ballot.
+   */
+  NOMINATE: 'slice:nominate',
+  /** Back one of the nominated tracks (`N7`). One vote per seat, changeable. */
+  VOTE: 'slice:vote',
+  /** Host toggles lobby-level settings (public listing, teams, song voting). */
   SETTINGS: 'slice:settings',
   /** A player's own modifiers — per-seat, not lobby-wide. */
   MODS: 'slice:mods',
@@ -71,6 +92,24 @@ export const C2S = {
   FINISH: 'slice:finish',
   /** Host sends everyone back to the lobby after results. */
   REMATCH: 'slice:rematch',
+  /**
+   * Spend a charge on an opponent (`N4`). Strictly cosmetic and time-boxed —
+   * an attack that changed the target's chart would make their score
+   * incomparable, which defeats the leaderboard the match writes to.
+   */
+  ATTACK: 'slice:attack',
+  /**
+   * Add a track to the lobby's session queue (`N8`). Anyone may queue; only the
+   * seat holding the pick decides what plays next.
+   */
+  QUEUE: 'slice:queue',
+  /** Remove a track from the queue (`N8`). Its nominator or the host. */
+  UNQUEUE: 'slice:unqueue',
+  /**
+   * Take a seat back after a drop (`N12`). Inside the first 20% of the song the
+   * player rejoins the match; after that they land in the spectator room.
+   */
+  REJOIN: 'slice:rejoin',
   CHAT: 'slice:chat',
   KICK: 'slice:kick',
 } as const;
@@ -98,15 +137,68 @@ export const S2C = {
   PAUSE: 'slice:pause',
   /** The hold is over. Carries the moment play actually restarts. */
   RESUME: 'slice:resume',
+  /**
+   * An attack landed on you (`N4`). The `kind` is what the server DELIVERED,
+   * which may differ from what was thrown: a blackout aimed at a player with
+   * reduced flash on arrives as a lane cover.
+   */
+  ATTACKED: 'slice:attacked',
+  /** Your charge count changed (`N4`). Server-authoritative, never inferred. */
+  CHARGES: 'slice:charges',
+  /** Somebody was knocked out at a checkpoint (`N5`). */
+  ELIMINATED: 'slice:eliminated',
 } as const;
 
 /* ─── Shapes ─────────────────────────────────────────────────────────────── */
 
 export type LobbyState = 'waiting' | 'loading' | 'countdown' | 'playing' | 'results';
 
+/**
+ * A side in team mode (`N2`).
+ *
+ * Two sides, not N: the whole feature is a sum over a partition, and every part
+ * of the UI that shows a total — the lobby roster, the live board, the results
+ * card — has room for exactly two of them. A third side is a different feature.
+ */
+export type TeamId = 'a' | 'b';
+
+/**
+ * What kind of match this lobby runs.
+ *
+ * `standard` is what every lobby did before these existed and stays the
+ * default. The other three are mutually exclusive by construction: co-op has
+ * one shared score, elimination removes seats mid-song, and attack lets players
+ * interfere with each other — no two of those compose into something coherent.
+ */
+export type LobbyMode = 'standard' | 'coop' | 'elimination' | 'attack';
+
+export const LOBBY_MODES = ['standard', 'coop', 'elimination', 'attack'] as const;
+
+/**
+ * A guest identity, as it exists for exactly one session.
+ *
+ * Sourced from a Discord Activity token the hub verified against Discord; held
+ * in the lobby's memory and gone the moment the seat is. Nothing here is ever
+ * written to a table or copied into object storage — see `X10` in
+ * `docs/plans/2026-08-06-slice-it-feature-ideas.md` for why a shadow `User` row
+ * is the wrong answer to "let them play".
+ */
+export interface GuestIdentity {
+  /** Discord display name, shown as-is. Never written to any table. */
+  name: string;
+  /** Discord CDN avatar URL. Referenced, never copied into our storage. */
+  avatarUrl: string | null;
+}
+
 export interface LobbyPlayer {
   socketId: string;
-  userId: string;
+  /**
+   * Null for a guest seat — see {@link LobbyPlayer.guest}. A guest has no site
+   * account, so there is no id to give them and nothing to attribute a score to.
+   */
+  userId: string | null;
+  /** Present exactly when `userId` is null. */
+  guest?: GuestIdentity;
   name: string;
   avatarUrl: string | null;
   ready: boolean;
@@ -119,6 +211,12 @@ export interface LobbyPlayer {
    * try later") or was seated into a song already 90 seconds in.
    */
   spectating: boolean;
+  /**
+   * Their side in team mode (`N2`), or null when they have not picked one — and
+   * always null while the lobby is not in team mode, so a client never has to
+   * ask two questions to know whether to draw a badge.
+   */
+  team: TeamId | null;
   modifiers: Modifiers;
   /** What their modifier set is worth, so the lobby can show it without maths. */
   scoreMultiplier: number;
@@ -140,6 +238,36 @@ export interface LobbySong {
   bpm: number;
 }
 
+/**
+ * One track on the ballot (`N7`).
+ *
+ * Carries the resolved {@link LobbySong}, not the id it was nominated by: the
+ * server reads the row anyway to check the track exists, and a ballot rendered
+ * from ids would need every client to look up six songs it is about to throw
+ * away. It is the same reasoning as `slice:song` — the client names a track, the
+ * server decides what that means.
+ */
+export interface VoteNomination {
+  song: LobbySong;
+  /** Display name of whoever put it up. */
+  nominatedBy: string;
+  /** Socket ids of the seats backing it — enough to show "you voted for this". */
+  voters: string[];
+}
+
+/**
+ * An open song vote (`N7`).
+ *
+ * `closesAt` is an absolute server timestamp for the same reason every other
+ * deadline in this contract is: a duration would have each client start its own
+ * timer at a slightly different moment and disagree about when the ballot shut.
+ */
+export interface VoteState {
+  /** Server epoch-ms the vote closes. */
+  closesAt: number;
+  nominations: VoteNomination[];
+}
+
 export interface LobbySnapshot {
   code: string;
   hostSocketId: string;
@@ -148,6 +276,23 @@ export interface LobbySnapshot {
   players: LobbyPlayer[];
   maxPlayers: number;
   song: LobbySong | null;
+  /**
+   * N8 — the session queue, and whose turn it is to pick.
+   *
+   * `pickerSeat` is an index into `players`, not a socket id: a reconnect mints
+   * a new socket id, so rotating on that would hand the pick to whoever last
+   * had a wifi blip.
+   */
+  queue: LobbySong[];
+  pickerSeat: number;
+  /** The competitive mode this lobby runs (`N3`/`N4`/`N5`). */
+  mode: LobbyMode;
+  /** Team mode is on (`N2`) — seats carry a side and results carry totals. */
+  teamsEnabled: boolean;
+  /** The host has handed song choice to the room (`N7`). */
+  votingEnabled: boolean;
+  /** The ballot, while one is open (`N7`). Null the rest of the time. */
+  vote: VoteState | null;
 }
 
 export interface PublicLobbyInfo {
@@ -174,7 +319,7 @@ export interface MatchStartPayload {
   song: LobbySong;
   /** Server epoch-ms the match began. Display only, never used for scoring. */
   startedAt: number;
-  roster: { socketId: string; userId: string; name: string; avatarUrl: string | null }[];
+  roster: { socketId: string; userId: string | null; name: string; avatarUrl: string | null }[];
 }
 
 /** A player's own claim about their run, published on a timer. */
@@ -196,7 +341,12 @@ export interface LiveScore extends ScoreReport {
 
 export interface FinalStanding {
   socketId: string;
-  userId: string;
+  /**
+   * Null for a guest. Their placing, score and accuracy are real and are shown;
+   * the row simply has nowhere to be written down, and `persistResults` skips
+   * it for exactly that reason.
+   */
+  userId: string | null;
   name: string;
   avatarUrl: string | null;
   score: number;
@@ -208,11 +358,38 @@ export interface FinalStanding {
   place: number;
   /** False when they never reported a finish — a drop or a load timeout. */
   finished: boolean;
+  /** Their side in team mode (`N2`); null in a free-for-all. */
+  team: TeamId | null;
+}
+
+/**
+ * A side's total (`N2`).
+ *
+ * Summed on the server, and the placing with it. The client is not asked to add
+ * up the standings itself because two clients that disagree about the arithmetic
+ * — one holding a stale roster, one that dropped a late `slice:score` — would
+ * announce two different winners of the same match, and both would be showing
+ * numbers they derived honestly.
+ */
+export interface TeamTotal {
+  team: TeamId;
+  score: number;
+  /** 0–1. The mean over the side's racers, not a sum. */
+  accuracy: number;
+  /** How many racers were on this side — a total of 3 vs 5 is worth seeing. */
+  players: number;
+  /** 1-based. Both sides share place 1 on an exact tie. */
+  place: number;
 }
 
 export interface MatchResults {
   standings: FinalStanding[];
   song: LobbySong | null;
+  /**
+   * Present only in team mode. Computed server-side so two clients cannot
+   * disagree about who won — see {@link TeamTotal}.
+   */
+  teams?: TeamTotal[];
 }
 
 /**
@@ -225,7 +402,7 @@ export interface MatchResults {
  * flapping player is about to stop being waited for.
  */
 export interface PausePayload {
-  peers: { userId: string; userName: string }[];
+  peers: { userId: string | null; userName: string }[];
   /** Server epoch-ms at which the room stops waiting and plays on. */
   kickAt: number;
   pausesLeft: number;
@@ -258,7 +435,32 @@ export type LobbyErrorCode =
   | 'auth_required'
   | 'rate_limited'
   | 'lobby_limit'
-  | 'song_unavailable';
+  | 'song_unavailable'
+  /**
+   * `slice:create` was asked for a specific code and somebody already holds it.
+   * Answered explicitly rather than by quietly minting a random one, because
+   * the caller asked for that code for a reason (a Discord voice channel
+   * derives it from its own id) and the useful next move is to *join* it.
+   */
+  | 'code_taken'
+  /** The requested code is not a well-formed lobby code. Nothing was created. */
+  | 'invalid_code'
+  /**
+   * A nomination or a vote arrived with no ballot open (`N7`) — the vote closed
+   * while the click was in flight, or the host never opened one. Distinct from
+   * `not_host`: the caller was allowed to do this, a moment ago.
+   */
+  | 'vote_closed'
+  /** A team action in a lobby that is not in team mode (`N2`). */
+  | 'teams_disabled'
+  /**
+   * The action is real but not available here: an attack in a lobby that is not
+   * in attack mode (`N4`), or a queue push onto a full or duplicate queue
+   * (`N8`). Distinct from `not_host` — the caller's role is not the problem.
+   */
+  | 'not_allowed'
+  /** A queued or nominated track that no longer resolves (`N8`). */
+  | 'song_not_found';
 
 export interface LobbyError {
   code: LobbyErrorCode;
@@ -320,9 +522,51 @@ const CodeZ = z.unknown().transform((raw) =>
  */
 const IgnoredZ = z.unknown();
 
-const LobbySettingsPatchZ = z
-  .object({ isPublic: z.boolean().optional().catch(undefined) })
-  .catch({});
+const LobbySettingsShape = z.object({
+  isPublic: z.boolean().optional().catch(undefined),
+  /** Team mode (`N2`). Absent means "leave it as it is", not "turn it off". */
+  teams: z.boolean().optional().catch(undefined),
+  /** Song voting (`N7`). True opens a ballot; false cancels the open one. */
+  voting: z.boolean().optional().catch(undefined),
+  /**
+   * The competitive mode (`N3`/`N4`/`N5`). `.catch(undefined)` for the same
+   * reason every other field here has it: an older bundle sending a mode this
+   * build does not know must leave the lobby alone, not disconnect the host.
+   */
+  mode: z.enum(LOBBY_MODES).optional().catch(undefined),
+  /** N3 — how a co-op chart is split. Ignored outside `coop`. */
+  coopSplit: z.enum(['lane', 'section']).optional().catch(undefined),
+});
+
+/**
+ * A side, as a client asks for one.
+ *
+ * Anything that is not `'a'` or `'b'` — including the omitted field an older
+ * bundle sends — means "no side", which is a legal seat state. Rejecting would
+ * disconnect the caller over a field whose worst outcome is a badge not drawn.
+ */
+const TeamZ = z
+  .unknown()
+  .optional()
+  .transform((raw) => (raw === 'a' || raw === 'b' ? raw : null));
+
+const LobbySettingsPatchZ = LobbySettingsShape.catch({});
+
+/**
+ * `slice:create`, with an optional *preferred* code (`X9`).
+ *
+ * A Discord Activity derives one deterministic code from its voice channel id
+ * so a whole call converges on one lobby with nothing typed; without a way to
+ * ask for it, only whoever created the room first ever landed there. The
+ * preference is a request, not a claim: the server still owns the code space
+ * and answers `code_taken` when the code is already held (see
+ * {@link LobbyErrorCode}).
+ *
+ * `.catch({})` for the same reason the settings patch has it — `slice:create`
+ * is routinely emitted with `{}` or with nothing at all, and a schema that can
+ * fail on a payload the server barely reads is a disconnect waiting to happen.
+ */
+const LobbyCreateZ = LobbySettingsShape.extend({ code: CodeZ.optional() }).catch({});
 
 const LobbySongZ = z.object({
   id: z.string(),
@@ -333,17 +577,35 @@ const LobbySongZ = z.object({
   bpm: z.number(),
 });
 
+const GuestIdentityZ = z.object({ name: z.string(), avatarUrl: z.string().nullable() });
+
 const LobbyPlayerZ = z.object({
   socketId: z.string(),
-  userId: z.string(),
+  // Nullable, not removed: a guest seat is a real seat with no account behind
+  // it. Every other field keeps the strictness it had — this relaxation is
+  // exactly one field wide.
+  userId: z.string().nullable(),
+  guest: GuestIdentityZ.optional(),
   name: z.string(),
   avatarUrl: z.string().nullable(),
   ready: z.boolean(),
   isHost: z.boolean(),
   disconnected: z.boolean(),
   spectating: z.boolean(),
+  team: z.enum(['a', 'b']).nullable(),
   modifiers: ModifiersZ,
   scoreMultiplier: z.number(),
+});
+
+const VoteStateZ = z.object({
+  closesAt: z.number(),
+  nominations: z.array(
+    z.object({
+      song: LobbySongZ,
+      nominatedBy: z.string(),
+      voters: z.array(z.string()),
+    }),
+  ),
 });
 
 const LobbySnapshotZ = z.object({
@@ -354,6 +616,12 @@ const LobbySnapshotZ = z.object({
   players: z.array(LobbyPlayerZ),
   maxPlayers: z.number().int(),
   song: LobbySongZ.nullable(),
+  teamsEnabled: z.boolean(),
+  votingEnabled: z.boolean(),
+  vote: VoteStateZ.nullable(),
+  queue: z.array(LobbySongZ),
+  pickerSeat: z.number().int(),
+  mode: z.enum(LOBBY_MODES),
 });
 
 const PublicLobbyInfoZ = z.object({
@@ -377,7 +645,7 @@ const MatchStartZ = z.object({
   roster: z.array(
     z.object({
       socketId: z.string(),
-      userId: z.string(),
+      userId: z.string().nullable(),
       name: z.string(),
       avatarUrl: z.string().nullable(),
     }),
@@ -388,7 +656,7 @@ const LiveScoreZ = ScoreReportZ.extend({ socketId: z.string(), done: z.boolean()
 
 const FinalStandingZ = z.object({
   socketId: z.string(),
-  userId: z.string(),
+  userId: z.string().nullable(),
   name: z.string(),
   avatarUrl: z.string().nullable(),
   score: z.number(),
@@ -398,11 +666,21 @@ const FinalStandingZ = z.object({
   scoreMultiplier: z.number(),
   place: z.number().int(),
   finished: z.boolean(),
+  team: z.enum(['a', 'b']).nullable(),
+});
+
+const TeamTotalZ = z.object({
+  team: z.enum(['a', 'b']),
+  score: z.number(),
+  accuracy: z.number(),
+  players: z.number().int(),
+  place: z.number().int(),
 });
 
 const MatchResultsZ = z.object({
   standings: z.array(FinalStandingZ),
   song: LobbySongZ.nullable(),
+  teams: z.array(TeamTotalZ).optional(),
 });
 
 const ChatMessageZ = z.object({
@@ -425,12 +703,16 @@ const LobbyErrorZ = z.object({
     'rate_limited',
     'lobby_limit',
     'song_unavailable',
+    'code_taken',
+    'invalid_code',
+    'vote_closed',
+    'teams_disabled',
   ]),
   message: z.string(),
 });
 
 const PauseZ = z.object({
-  peers: z.array(z.object({ userId: z.string(), userName: z.string() })),
+  peers: z.array(z.object({ userId: z.string().nullable(), userName: z.string() })),
   kickAt: z.number(),
   pausesLeft: z.number().int(),
 });
@@ -454,13 +736,18 @@ const ResumeZ = z.object({
  */
 export const EVENTS = defineEvents({
   // ─── Client → server ──────────────────────────────────────────────────
-  'slice:create': { c2s: LobbySettingsPatchZ },
+  'slice:create': { c2s: LobbyCreateZ },
   'slice:join': { c2s: z.object({ code: CodeZ }) },
   'slice:quickplay': { c2s: IgnoredZ },
   'slice:browse': { c2s: IgnoredZ },
+  'slice:spectate': { c2s: z.object({ code: CodeZ }) },
   'slice:leave': { c2s: IgnoredZ },
   'slice:ready': { c2s: z.object({ ready: z.boolean().optional() }).catch({}) },
   'slice:song': { c2s: z.object({ songId: z.string().max(64) }) },
+  'slice:team': { c2s: z.object({ team: TeamZ }).catch({ team: null }) },
+  'slice:balance': { c2s: IgnoredZ },
+  'slice:nominate': { c2s: z.object({ songId: z.string().max(64) }) },
+  'slice:vote': { c2s: z.object({ songId: z.string().max(64) }) },
   'slice:settings': { c2s: LobbySettingsPatchZ },
   'slice:mods': { c2s: z.object({ modifiers: ModifiersZ }) },
   'slice:loaded': { c2s: IgnoredZ },
@@ -472,6 +759,17 @@ export const EVENTS = defineEvents({
     s2c: ChatMessageZ,
   },
   'slice:kick': { c2s: z.object({ socketId: z.string().max(64) }) },
+
+  // ─── N4 / N8 / N12 ─────────────────────────────────────────────────────
+  'slice:attack': {
+    c2s: z.object({
+      target: z.string().max(64),
+      kind: z.enum(['laneCover', 'blackout', 'shake']),
+    }),
+  },
+  'slice:queue': { c2s: z.object({ songId: z.string().max(64) }) },
+  'slice:unqueue': { c2s: z.object({ songId: z.string().max(64) }) },
+  'slice:rejoin': { c2s: z.object({ code: CodeZ }) },
 
   /**
    * Bidirectional. The host pressing Start and the server announcing the match
@@ -493,6 +791,18 @@ export const EVENTS = defineEvents({
   'slice:kicked': { s2c: z.object({ reason: z.string() }) },
   'slice:pause': { s2c: PauseZ },
   'slice:resume': { s2c: ResumeZ },
+  'slice:attacked': {
+    s2c: z.object({
+      /** What was DELIVERED, which may differ from what was thrown (`N4`). */
+      kind: z.enum(['laneCover', 'blackout', 'shake']),
+      from: z.string(),
+      untilMs: z.number(),
+    }),
+  },
+  'slice:charges': { s2c: z.object({ charges: z.number().int() }) },
+  'slice:eliminated': {
+    s2c: z.object({ socketId: z.string(), name: z.string(), rank: z.number().int() }),
+  },
 });
 
 /** Typed `emit` for the browser client. */
@@ -500,9 +810,40 @@ export type SliceC2S = ClientToServer<typeof EVENTS>;
 /** Typed `on` for the browser client. */
 export type SliceS2C = ServerToClient<typeof EVENTS>;
 
+/**
+ * Is this the shape of a lobby code the server mints? (`N9`)
+ *
+ * Lives here rather than in the client or the handler because both need the
+ * same answer: an invite link (`/slice-it?lobby=CODE`) is checked in the browser
+ * *before* a join is attempted, so a stale or mangled link lands the player in
+ * the menu with a message instead of a socket round-trip per reconnect, and the
+ * server checks the same shape before minting a lobby under a preferred code.
+ * Two copies of this regex would eventually disagree about which of them is the
+ * real code space.
+ *
+ * Shape only. Whether a well-formed code names a *live* lobby is a question only
+ * the server can answer, and it answers it with `not_found`.
+ */
+export function isLobbyCode(code: unknown): code is string {
+  return typeof code === 'string' && code.length === LOBBY_CODE_LENGTH && /^[A-Z0-9]+$/.test(code);
+}
+
 /** Every player in a lobby shares a socket.io room named for its code. */
 export function lobbyRoom(code: string): string {
   return `${ROOM_PREFIX}${code}`;
+}
+
+/**
+ * Spectators of a lobby share a second room (`N1`).
+ *
+ * A separate room rather than a flag on the seat: the score broadcast already
+ * targets a room, so fanning out to watchers is one extra `emit` per tick
+ * instead of a filter over the roster on every tick. It also keeps a spectator
+ * out of `MAX_LOBBY_PLAYERS`, out of the ready check, and out of the set of
+ * people a match waits for — which is the whole point of the role.
+ */
+export function specRoom(code: string): string {
+  return `${ROOM_PREFIX}${code}:spec`;
 }
 
 export { MAX_LOBBY_PLAYERS };

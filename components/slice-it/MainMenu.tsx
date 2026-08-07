@@ -5,11 +5,18 @@ import { scaleIn } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
-import { Moon, Sun } from 'lucide-react';
+import { CalendarDays, ListMusic, Moon, Sun } from 'lucide-react';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import { GameEngine } from '@/lib/slice-it/engine';
 import { asset } from '@/lib/storage/asset';
 import { Slider } from '@/components/ui/slider';
+import {
+  HIT_WINDOWS,
+  JUDGEMENT_COLORS,
+  MAX_SCROLL_SPEED,
+  MIN_SCROLL_SPEED,
+} from '@/lib/slice-it/constants';
+import { timingScale } from '@/lib/slice-it/scoring';
 import { AudioManager } from '@/lib/audio/AudioManager';
 import { addMatchListener } from '@/lib/slice-it/net/client';
 import { useStartRun } from '@/lib/slice-it/useStartRun';
@@ -20,6 +27,19 @@ import { SongLibrary } from '@/components/slice-it/SongLibrary';
 import { CalibrationScreen } from '@/components/slice-it/CalibrationScreen';
 import { MultiplayerLobby } from '@/components/slice-it/MultiplayerLobby';
 import { SongDetailsPanel } from '@/components/slice-it/SongDetailsPanel';
+import { DailyPanel } from '@/components/slice-it/modes/DailyPanel';
+import { SetlistPanel } from '@/components/slice-it/modes/SetlistPanel';
+
+/**
+ * Which solo surface the menu is showing.
+ *
+ * The library is the default and always has been; `daily` (S1) and `setlists`
+ * (S8, which also hosts S2's courses) are the two modes that need an entry
+ * point here. A mode nothing links to is a mode nobody plays — `R2` and `R10`
+ * shipped without one and sat dormant, which is the mistake this exists to
+ * avoid repeating.
+ */
+type SoloMode = 'library' | 'daily' | 'setlists';
 
 interface MainMenuProps {
   engine: GameEngine | null;
@@ -101,10 +121,112 @@ const KeybindInput = ({
   );
 };
 
+/**
+ * A settings row that is a single on/off decision.
+ *
+ * Neumorphic depth rule (chart-editor doc §12.1): the container is inset, the
+ * thing you can press is raised — and pressed-in when it is on, so the state is
+ * legible from the shadow rather than from a colour alone.
+ */
+const ToggleRow = ({
+  label,
+  description,
+  value,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  value: boolean;
+  onChange: (next: boolean) => void;
+}) => (
+  <button
+    type="button"
+    aria-pressed={value}
+    onClick={() => onChange(!value)}
+    className={`w-full flex items-center justify-between gap-4 text-left p-4 rounded-2xl bg-slice-bg transition-shadow ${
+      value
+        ? 'shadow-[inset_4px_4px_8px_var(--slice-shadow-dark),inset_-4px_-4px_8px_var(--slice-shadow-light)]'
+        : 'shadow-[4px_4px_10px_var(--slice-shadow-dark),-4px_-4px_10px_var(--slice-shadow-light)]'
+    }`}
+  >
+    <span className="min-w-0">
+      <span className="block text-sm font-black text-slice-text-darker">{label}</span>
+      <span className="block text-[10px] text-slice-text-light font-bold leading-snug mt-0.5">
+        {description}
+      </span>
+    </span>
+    <span
+      className={`shrink-0 text-[10px] font-black uppercase tracking-[0.2em] ${
+        value ? 'text-blue-500' : 'text-slice-text-light'
+      }`}
+    >
+      {value ? 'ON' : 'OFF'}
+    </span>
+  </button>
+);
+
+/**
+ * A settings row that picks one of several options — the segmented-choice
+ * sibling of `ToggleRow` above. Independent `aria-pressed` buttons, not a tab
+ * strip: no tablist role, no selected-state ARIA attribute, because there is
+ * no shared panel being switched, only N buttons where turning one on means
+ * the others are understood to be off.
+ */
+const ChoiceRow = <T extends string>({
+  label,
+  description,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  value: T;
+  options: { id: T; label: string }[];
+  onChange: (next: T) => void;
+}) => (
+  <div className="space-y-2">
+    <span className="block text-sm font-black text-slice-text-darker">{label}</span>
+    <span className="block text-[10px] text-slice-text-light font-bold leading-snug">
+      {description}
+    </span>
+    <div className="flex flex-wrap gap-2" role="group" aria-label={label}>
+      {options.map((opt) => (
+        <button
+          key={opt.id}
+          type="button"
+          aria-pressed={value === opt.id}
+          onClick={() => onChange(opt.id)}
+          className={`px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wide transition-shadow ${
+            value === opt.id
+              ? 'bg-blue-500 text-white shadow-[inset_3px_3px_6px_rgba(0,0,0,0.25)]'
+              : 'bg-slice-bg text-slice-text-darker shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]'
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
 export function MainMenu({ engine: propEngine }: MainMenuProps) {
   const { t } = useTranslation('c-game');
+  const { t: ts } = useTranslation('r-slice-it');
   const { setUserName, userName, keybinds, setKeybinds, volume, setVolume, hitSound, setHitSound } =
     useSliceItStore();
+  const modifiers = useSliceItStore((state) => state.modifiers);
+  const setModifiers = useSliceItStore((state) => state.setModifiers);
+  const quantColors = useSliceItStore((state) => state.quantColors);
+  const setQuantColors = useSliceItStore((state) => state.setQuantColors);
+  const mirror = useSliceItStore((state) => state.mirror);
+  const setMirror = useSliceItStore((state) => state.setMirror);
+  const scrollSpeed = useSliceItStore((state) => state.scrollSpeed);
+  const setScrollSpeed = useSliceItStore((state) => state.setScrollSpeed);
+  const scrollMode = useSliceItStore((state) => state.scrollMode);
+  const setScrollMode = useSliceItStore((state) => state.setScrollMode);
+  const visibilityMode = useSliceItStore((state) => state.visibilityMode);
+  const setVisibilityMode = useSliceItStore((state) => state.setVisibilityMode);
   const setSongId = useSliceItStore((state) => state.setSongId);
   const setIsMultiplayer = useSliceItStore((state) => state.setIsMultiplayer);
   const isDarkMode = useSliceItStore((state) => state.isDarkMode);
@@ -117,6 +239,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
   const [showSettings, setShowSettings] = React.useState(false);
   const [showCalibration, setShowCalibration] = React.useState(false);
   const [showMultiplayer, setShowMultiplayer] = React.useState(false);
+  const [soloMode, setSoloMode] = React.useState<SoloMode>('library');
   const [previewingSound, setPreviewingSound] = React.useState<string | null>(null);
   const [loadingSound, setLoadingSound] = React.useState<string | null>(null);
 
@@ -321,6 +444,37 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             </div>
 
             <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+              {/* S1 / S8 entry points. Plain buttons rather than a tab strip:
+                  each one swaps the whole stage for a different mode, and only
+                  one of the three is ever the current view. */}
+              <Button
+                variant="ghost"
+                className={`h-10 shrink-0 rounded-lg font-black px-2.5 sm:px-4 uppercase tracking-wide text-xs transition-colors ${
+                  soloMode === 'daily'
+                    ? 'neumorphic-inset text-slice-text'
+                    : 'text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark/20'
+                }`}
+                onClick={() => setSoloMode(soloMode === 'daily' ? 'library' : 'daily')}
+              >
+                <CalendarDays className="w-4 h-4 sm:mr-1.5" />
+                <span className="hidden sm:inline">
+                  {ts('daily-challenge', { defaultValue: 'Daily Challenge' })}
+                </span>
+              </Button>
+              <Button
+                variant="ghost"
+                className={`h-10 shrink-0 rounded-lg font-black px-2.5 sm:px-4 uppercase tracking-wide text-xs transition-colors ${
+                  soloMode === 'setlists'
+                    ? 'neumorphic-inset text-slice-text'
+                    : 'text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark/20'
+                }`}
+                onClick={() => setSoloMode(soloMode === 'setlists' ? 'library' : 'setlists')}
+              >
+                <ListMusic className="w-4 h-4 sm:mr-1.5" />
+                <span className="hidden sm:inline">
+                  {ts('setlists', { defaultValue: 'Setlists' })}
+                </span>
+              </Button>
               <Button
                 variant="outline"
                 className="h-10 shrink-0 bg-linear-to-r from-violet-500 to-blue-500 text-white border-none hover:from-violet-400 hover:to-blue-400 font-black px-3 sm:px-5 rounded-lg transition-colors uppercase tracking-wide text-xs shadow-[0_0_12px_rgba(139,92,246,0.5)] hover:shadow-[0_0_20px_rgba(139,92,246,0.7)] animate-pulse hover:animate-none"
@@ -427,14 +581,32 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
               </div>
             )}
 
-            {/* Song Library - Full Width */}
+            {/* The stage: library, daily challenge (S1), or setlists/courses
+                (S8/S2). One at a time — each is a different mode, not a filter
+                over the same list. */}
             <div className="w-full flex flex-col overflow-hidden">
-              <SongLibrary
-                onSelect={handleStartGame}
-                onHighlight={handleSelectSong}
-                selectedSongId={selectedSong?.id ?? null}
-                onStopPreviewRef={stopPreviewRef}
-              />
+              {soloMode === 'daily' && (
+                <DailyPanel
+                  engine={engine}
+                  onPlay={(songId) => startRun(songId)}
+                  onBack={() => setSoloMode('library')}
+                />
+              )}
+              {soloMode === 'setlists' && (
+                <SetlistPanel
+                  engine={engine}
+                  onPlay={(songId) => startRun(songId)}
+                  onBack={() => setSoloMode('library')}
+                />
+              )}
+              {soloMode === 'library' && (
+                <SongLibrary
+                  onSelect={handleStartGame}
+                  onHighlight={handleSelectSong}
+                  selectedSongId={selectedSong?.id ?? null}
+                  onStopPreviewRef={stopPreviewRef}
+                />
+              )}
             </div>
 
             {/* Sidebar - Song Details */}
@@ -586,6 +758,178 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                 </div>
               </div>
             </div>
+
+            {/* Gameplay toggles */}
+            <div className="space-y-4">
+              <label className="text-[10px] text-slice-text-light uppercase tracking-[0.4em] font-black ml-4">
+                {ts('gameplay', { defaultValue: 'Gameplay' })}
+              </label>
+              <div className="space-y-3">
+                <ToggleRow
+                  label={ts('health-gauge', { defaultValue: 'Health Gauge' })}
+                  description={ts('health-gauge-hint', {
+                    defaultValue:
+                      'Misses drain a gauge. Solo, emptying it ends the run; in a match it only costs the bonus. Worth a score multiplier.',
+                  })}
+                  value={modifiers.healthGauge}
+                  onChange={(next) => setModifiers({ ...modifiers, healthGauge: next })}
+                />
+                <ToggleRow
+                  label={ts('quant-colors', { defaultValue: 'Rhythm Colours' })}
+                  description={ts('quant-colors-hint', {
+                    defaultValue:
+                      'Colour notes by where they land in the beat — red on the beat, blue on eighths, purple on triplets, yellow on sixteenths.',
+                  })}
+                  value={quantColors}
+                  onChange={setQuantColors}
+                />
+                <ToggleRow
+                  label={ts('mod-mirror', { defaultValue: 'Mirror' })}
+                  description={ts('mod-mirror-hint', {
+                    defaultValue:
+                      'Swap every lane. Not harder, so it earns no score bonus — it just turns every chart into a second chart to practise on.',
+                  })}
+                  value={mirror}
+                  onChange={setMirror}
+                />
+                {/* M6 — same family as Health Gauge above: a fail condition the
+                    player opts into, not a thing that happens to them. */}
+                <ToggleRow
+                  label={ts('mod-perfectionist', { defaultValue: 'Perfectionist' })}
+                  description={ts('mod-perfectionist-hint', {
+                    defaultValue:
+                      'Anything short of PERFECT ends the run — not just a MISS. Same family as Sudden Death, and mutually exclusive with it: turning this on turns that off. The biggest score bonus in the game.',
+                  })}
+                  value={!!modifiers.perfectionist}
+                  onChange={(next) => setModifiers({ ...modifiers, perfectionist: next })}
+                />
+              </div>
+            </div>
+
+            {/* A9 — Lenient Timing and the windows it produces. Kept as its own
+                section rather than folded into Gameplay: the whole point is to
+                make the abstraction visible, and a toggle sitting right above
+                the numbers it changes is what makes that legible. */}
+            <div className="space-y-4">
+              <label className="text-[10px] text-slice-text-light uppercase tracking-[0.4em] font-black ml-4">
+                {ts('timing-windows', { defaultValue: 'Judgement Windows' })}
+              </label>
+              <div className="space-y-3">
+                <ToggleRow
+                  label={ts('mod-lenient-timing', { defaultValue: 'Lenient Timing' })}
+                  description={ts('mod-lenient-timing-hint', {
+                    defaultValue:
+                      'Widens every window instead of shrinking it — the mirror of Strict Timing. Unranked: a run played on wider windows is not comparable to one played on the stock ones, not because it is any less real.',
+                  })}
+                  value={!!modifiers.lenientTiming}
+                  onChange={(next) => setModifiers({ ...modifiers, lenientTiming: next })}
+                />
+                <div className="bg-slice-bg p-6 rounded-3xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]">
+                  <div className="text-[10px] text-slice-text-light font-bold leading-snug mb-3">
+                    {ts('timing-windows-hint', {
+                      defaultValue:
+                        'The actual size of each window right now, at this speed and these modifiers.',
+                    })}
+                  </div>
+                  <dl className="space-y-1.5">
+                    {Object.entries(HIT_WINDOWS).map(([name, seconds]) => (
+                      <div key={name} className="flex items-center justify-between gap-3">
+                        <dt
+                          className="text-[10px] font-black uppercase tracking-wider"
+                          style={{ color: JUDGEMENT_COLORS[name as keyof typeof JUDGEMENT_COLORS] }}
+                        >
+                          {name}
+                        </dt>
+                        <dd className="font-mono text-xs font-bold text-slice-text-darker tabular-nums">
+                          ±{Math.round(seconds * timingScale(modifiers) * 1000)} ms
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              </div>
+            </div>
+
+            {/* Scroll Speed (G9) */}
+            <div className="space-y-4">
+              <label className="text-[10px] text-slice-text-light uppercase tracking-[0.4em] font-black ml-4">
+                {ts('scroll-speed', { defaultValue: 'Scroll Speed' })}
+              </label>
+              <div className="bg-slice-bg p-6 rounded-3xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] space-y-5">
+                <ChoiceRow
+                  label={ts('scroll-speed-mode', { defaultValue: 'Mode' })}
+                  description={ts('scroll-speed-mode-hint', {
+                    defaultValue:
+                      "Constant keeps the same pace on every song. BPM-locked scales the pace with each song's tempo, so beat spacing looks the same everywhere.",
+                  })}
+                  value={scrollMode}
+                  options={[
+                    {
+                      id: 'constant' as const,
+                      label: ts('scroll-speed-mode-constant', { defaultValue: 'Constant' }),
+                    },
+                    {
+                      id: 'bpm' as const,
+                      label: ts('scroll-speed-mode-bpm', { defaultValue: 'BPM-Locked' }),
+                    },
+                  ]}
+                  onChange={setScrollMode}
+                />
+                <div>
+                  <div className="flex justify-between text-sm font-black text-slice-text-darker">
+                    <span>{ts('scroll-speed-value', { defaultValue: 'Speed' })}</span>
+                    <span className="text-blue-500 font-mono">x{scrollSpeed.toFixed(1)}</span>
+                  </div>
+                  <Slider
+                    value={[scrollSpeed]}
+                    min={MIN_SCROLL_SPEED}
+                    max={MAX_SCROLL_SPEED}
+                    step={0.1}
+                    onValueChange={(vals) => setScrollSpeed(vals[0])}
+                    className="mt-3"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Visibility (M3) — only meaningful while Invisible is on; the
+                toggle itself lives in the per-song modifier picker. */}
+            {modifiers.invisible && (
+              <div className="space-y-4">
+                <label className="text-[10px] text-slice-text-light uppercase tracking-[0.4em] font-black ml-4">
+                  {ts('visibility-mode', { defaultValue: 'Visibility' })}
+                </label>
+                <div className="bg-slice-bg p-6 rounded-3xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]">
+                  <ChoiceRow
+                    label={ts('visibility-mode-label', { defaultValue: 'Effect' })}
+                    description={ts('visibility-mode-hint', {
+                      defaultValue:
+                        'Which way the Invisible modifier hides notes. Lane Cover is tuned live from the in-run pause menu, where the reaction window is shown in milliseconds.',
+                    })}
+                    value={visibilityMode}
+                    options={[
+                      {
+                        id: 'fadeOut' as const,
+                        label: ts('visibility-mode-fadeout', { defaultValue: 'Fade Out' }),
+                      },
+                      {
+                        id: 'fadeIn' as const,
+                        label: ts('visibility-mode-fadein', { defaultValue: 'Fade In' }),
+                      },
+                      {
+                        id: 'flashlight' as const,
+                        label: ts('visibility-mode-flashlight', { defaultValue: 'Flashlight' }),
+                      },
+                      {
+                        id: 'laneCover' as const,
+                        label: ts('visibility-mode-lanecover', { defaultValue: 'Lane Cover' }),
+                      },
+                    ]}
+                    onChange={setVisibilityMode}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Hit Sound Selector */}
             <div className="space-y-4">

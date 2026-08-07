@@ -1,6 +1,16 @@
 {
   "connecting-to-discord": "جارٍ الاتصال بـ Discord...",
   "connection-failed": "فشل الاتصال",
+  "gateway-follow": "Pick the same game as whoever started this Activity to play together.",
+  "gateway-follow-named": "{{name}} started this Activity — pick the same game to play together.",
+  "gateway-participant-count_few": "{{count}} people in this Activity",
+  "gateway-participant-count_many": "{{count}} people in this Activity",
+  "gateway-participant-count_one": "{{count}} people in this Activity",
+  "gateway-participant-count_other": "{{count}} people in this Activity",
+  "gateway-participant-count_two": "{{count}} people in this Activity",
+  "gateway-participant-count_zero": "{{count}} people in this Activity",
+  "gateway-players-hint": "{{range}} players",
+  "gateway-title": "What are we playing?",
   "loading-game": "جاري تحميل اللعبة...",
   "loading-rmhbox": "جارٍ تحميل RMHBox...",
   "run-inside-discord-activity": "تأكد من أنك تقوم بتشغيل هذا داخل نشاط ديسكورد."

@@ -1,6 +1,12 @@
 {
   "connecting-to-discord": "Discord से कनेक्ट हो रहा है...",
   "connection-failed": "कनेक्शन विफल",
+  "gateway-follow": "Pick the same game as whoever started this Activity to play together.",
+  "gateway-follow-named": "{{name}} started this Activity — pick the same game to play together.",
+  "gateway-participant-count_one": "{{count}} people in this Activity",
+  "gateway-participant-count_other": "{{count}} people in this Activity",
+  "gateway-players-hint": "{{range}} players",
+  "gateway-title": "What are we playing?",
   "loading-game": "गेम लोड हो रहा है...",
   "loading-rmhbox": "RMHBox लोड हो रहा है...",
   "run-inside-discord-activity": "सुनिश्चित करें कि आप इसे Discord Activity के अंदर चला रहे हैं।"

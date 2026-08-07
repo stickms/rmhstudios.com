@@ -16,7 +16,13 @@ import {
   type IntegrityVerdict,
 } from '@/lib/slice-it/integrity';
 import { verifyRunToken } from '@/lib/slice-it/run-token.server';
+import { poolOf } from '@/lib/slice-it/pools';
+import { evaluateQualification, toRankStatus } from '@/lib/slice-it/ranking.server';
+import { scheduleSkillRecompute } from '@/lib/slice-it/rating.server';
+import { gradeFor } from '@/lib/slice-it/scoring';
+import { getPracticeStreak, reportSliceItRun } from '@/lib/slice-it/progression.server';
 import type { Difficulty } from '@/lib/slice-it/constants';
+import type { SuspicionCode } from '@/lib/slice-it/integrity';
 
 /**
  * Score submission.
@@ -49,6 +55,13 @@ export const Route = createFileRoute('/api/slice-it/score')({
     handlers: {
       POST: defineHandler(
         {
+          // `optional`, for the guest half of X10. A Discord Activity player
+          // with no linked account has no Better Auth session; the old default
+          // ('required') 401'd them before the handler body ran, so the only way
+          // to play was for the client to skip the submission entirely and show
+          // nothing. See the guard immediately below, and
+          // `docs/_handoff/discord-requests.md` §2.
+          auth: 'optional',
           body: ScoreSubmissionZ,
           // Per user *and* per IP: the old bucket was per-IP only, which meant
           // a shared connection (a library, a household, a campus) had five
@@ -57,6 +70,31 @@ export const Route = createFileRoute('/api/slice-it/score')({
         },
         async ({ userId, body }) => {
           const modifiers = applyExclusions(body.modifiers);
+
+          if (!userId) {
+            // ── Guest: computed, shown, and discarded ──────────────────────
+            //
+            // No `SliceRun`, no `SongLeaderboard` row, no `Player` row, no
+            // `User` row. The alternative — a shadow account per guest — creates
+            // accounts nobody asked for, holds a third party's display name and
+            // avatar URL indefinitely, and turns "I tried a game in a voice
+            // call" into a data-retention question. Not storing it is both the
+            // simpler code and the correct privacy answer.
+            //
+            // Nothing below this point is reachable without a session, which is
+            // the property that matters: the guard is a return, not a flag some
+            // later branch has to remember to check.
+            return Response.json({
+              success: true,
+              ranked: false,
+              stored: false,
+              isNewBest: false,
+              previousBest: null,
+              score: Math.round(body.score),
+              accuracy: Math.max(0, Math.min(1, body.accuracy)),
+              grade: gradeFor(Math.max(0, Math.min(1, body.accuracy))),
+            });
+          }
 
           if (modifiers.speed < RANKED_MIN_SPEED) {
             return Response.json(
@@ -143,6 +181,66 @@ export const Route = createFileRoute('/api/slice-it/score')({
           const maxCombo = Math.round(body.maxCombo);
           const accuracy = Math.max(0, Math.min(1, body.accuracy));
 
+          // ── The board this run belongs on (R1) ────────────────────────────
+          //
+          // Three coordinates, and the server derives all three. `difficulty`
+          // and `modPool` come from the modifier set it already re-parsed and
+          // clamped; `chartId` is checked against the song rather than trusted,
+          // so a submission cannot attribute itself to a chart it did not play
+          // — or to somebody else's song entirely.
+          const difficulty: Difficulty = modifiers.difficulty;
+          const modPool = poolOf(modifiers);
+          const chart = await resolveChart(body.chartId, song.id);
+
+          // ── R6: the run, appended before anything is overwritten ──────────
+          //
+          // Every attempt used to be destroyed by the personal-best upsert, and
+          // with it the timing distribution the engine computes and the
+          // integrity verdict the server just computed. This row is the history;
+          // the leaderboard row below is a pointer into it.
+          //
+          // Best-effort on purpose: a failed history write must not cost the
+          // player the personal best they just set. It is logged, not raised.
+          await prisma.sliceRun
+            .create({
+              data: {
+                userId,
+                songId: song.id,
+                chartId: chart?.id ?? null,
+                chartHash: chart?.chartHash ?? null,
+                score,
+                accuracy,
+                maxCombo,
+                notesResolved: body.notesResolved ?? null,
+                difficulty,
+                modPool,
+                modifiers: modifiers as unknown as Prisma.InputJsonValue,
+                multiplayer: body.multiplayer,
+                // Client-declared (H7/R9). Stored for the badge and the clear
+                // rate; never read by anything that decides a rank or a reward.
+                cleared: body.cleared,
+                isFullCombo: body.isFullCombo,
+                isPerfect: body.isPerfect,
+                timingCount: body.timing?.samples ?? null,
+                timingMeanMs: body.timing?.meanMs ?? null,
+                timingSdMs: body.timing?.stdDevMs ?? null,
+                // R7: recorded, never acted on. See `suspicionScore`.
+                suspicion: suspicionScore(verdict.suspicions),
+                suspicions: verdict.suspicions,
+              },
+              // Never select the row back. `id` is a `BigInt`, which
+              // `JSON.stringify` throws on — and there is nothing here the
+              // caller needs.
+              select: { id: true },
+            })
+            .catch((error: unknown) => {
+              console.warn('[slice-it] run history write failed', {
+                userId,
+                songId: song.id,
+                error: error instanceof Error ? error.message : String(error),
+              });
+            });
+
           // Career totals. `upsert` on the unique `userId` replaces a
           // findFirst-then-branch that raced itself: two runs finishing at once
           // both saw "no profile" and both tried to create one.
@@ -161,59 +259,179 @@ export const Route = createFileRoute('/api/slice-it/score')({
             select: { totalScore: true, gamesPlayed: true },
           });
 
-          // Per-song personal best. The unique `(songId, userId)` makes this one
-          // statement; the old code did findMany → pick highest → update → then
-          // deleteMany the duplicates it had itself created by not using the
-          // constraint in the first place.
+          // ── The personal best, per board (R1) ─────────────────────────────
+          //
+          // The key was `(songId, userId)`: one row per player per song, so a
+          // personal best on `normal` overwrote an `expert` record and an `easy`
+          // run with six modifiers sat on the same board as an `expert` full
+          // combo. It is `(songId, difficulty, modPool, userId)` now — four
+          // coordinates, all of them the server's, and a run can only ever
+          // replace a run of the same shape.
+          const boardKey = {
+            songId_difficulty_modPool_userId: { songId: song.id, difficulty, modPool, userId },
+          };
+
           const previous = await prisma.songLeaderboard.findUnique({
-            where: { songId_userId: { songId: song.id, userId } },
+            where: boardKey,
             select: { score: true },
           });
           const isNewBest = !previous || score > previous.score;
 
           if (isNewBest) {
+            const best = {
+              score,
+              maxCombo,
+              accuracy,
+              speedMod: modifiers.speed,
+              modifiers: modifiers as unknown as Prisma.InputJsonValue,
+              chartId: chart?.id ?? null,
+              chartHash: chart?.chartHash ?? null,
+              // Denormalised from the run so `H8`'s lamp survives into the board
+              // without a join back to a `SliceRun` row. Decorative — see
+              // `ScoreSubmissionZ`.
+              cleared: body.cleared,
+              isFullCombo: body.isFullCombo,
+              isPerfect: body.isPerfect,
+            };
             await prisma.songLeaderboard.upsert({
-              where: { songId_userId: { songId: song.id, userId } },
-              create: {
-                songId: song.id,
-                userId,
-                score,
-                maxCombo,
-                accuracy,
-                speedMod: modifiers.speed,
-                modifiers: modifiers as unknown as Prisma.InputJsonValue,
-              },
-              update: {
-                score,
-                maxCombo,
-                accuracy,
-                speedMod: modifiers.speed,
-                modifiers: modifiers as unknown as Prisma.InputJsonValue,
-                createdAt: new Date(),
-              },
+              where: boardKey,
+              create: { songId: song.id, userId, difficulty, modPool, ...best },
+              update: { ...best, createdAt: new Date() },
+              // Explicit `select`, because the default returns the whole row —
+              // including the `modifiers` blob — into a variable nobody reads.
+              select: { id: true },
             });
+          }
+
+          // ── R2/R10: the ranking axis ──────────────────────────────────────
+          //
+          // Two separate things happen here, and neither is on the response's
+          // critical path.
+          //
+          // **The skill rating (R2)** is recomputed only on a NEW BEST, and only
+          // on a ranked chart in the `none` pool. That is the whole anti-grind
+          // property in one condition: a run that did not improve on the
+          // player's best for that chart cannot move their rating, so replaying
+          // a chart you have already beaten is worth exactly nothing. It is
+          // fired and not awaited — the score is already stored, and a slow
+          // aggregate must not turn a successful submission into a 500.
+          //
+          // **Qualification (R10)** is re-evaluated on every run, best or not,
+          // because the gates it reads (play count, distinct players, clear
+          // rate) move on every run and not only on good ones. It is reversible
+          // in both directions, so a stale evaluation self-corrects.
+          const chartRankStatus = toRankStatus(chart?.rankStatus);
+          if (isNewBest && modPool === 'none' && chartRankStatus === 'ranked') {
+            scheduleSkillRecompute(userId);
           }
 
           // Progression is best-effort: a quest engine hiccup must not turn a
           // successful run into a 500 and lose the score the player just set.
+          // The qualification pass joins them for the same reason.
+          //
+          // `isFirstClear` — no prior board row for this exact
+          // (song, difficulty, modPool) — is derived here rather than
+          // recomputed in `reportSliceItRun`: `previous` is already in hand
+          // from the personal-best lookup above, and querying it twice would
+          // cost a second round trip for data this handler already has.
           await Promise.allSettled([
             recordGamePlay(userId),
-            reportGameResult(userId, { game: 'slice-it', score }),
+            reportGameResult(userId, {
+              game: 'slice-it',
+              score,
+              accuracy,
+              isFullCombo: body.isFullCombo,
+            }),
+            chart ? evaluateQualification(chart.id) : Promise.resolve(null),
+            reportSliceItRun({
+              userId,
+              songId: song.id,
+              difficulty,
+              modPool,
+              score,
+              accuracy,
+              cleared: body.cleared,
+              isFullCombo: body.isFullCombo,
+              modifiers,
+              isFirstClear: !previous && body.cleared,
+              isNewBest,
+            }),
           ]);
+
+          // X14 — read, not written here: see `getPracticeStreak`. Best-effort
+          // like everything else on this path; a failed read must not cost the
+          // response, only the number in it.
+          const practiceStreak = await getPracticeStreak(userId).catch(() => null);
 
           return Response.json({
             success: true,
+            ranked: true,
+            stored: true,
             isNewBest,
             score,
+            accuracy,
+            grade: gradeFor(accuracy),
+            difficulty,
+            modPool,
+            /** R10 — whether this run counted toward the global skill rating. */
+            rankStatus: chartRankStatus,
             previousBest: previous?.score ?? null,
             totalScore: profile.totalScore,
             gamesPlayed: profile.gamesPlayed,
+            /** X14 — consecutive UTC days with a ranked run, including today. */
+            practiceStreak: practiceStreak?.current ?? null,
           });
         },
       ),
     },
   },
 });
+
+/**
+ * Resolve a submitted `chartId` to a chart that belongs to this song.
+ *
+ * Returns null for a submission that named no chart (every run today: the engine
+ * plays `Song.analysisData`, which has no identity) **and** for one that named a
+ * chart belonging to a different song. The second case is the reason this is a
+ * query rather than a pass-through: `chartId` reaches the leaderboard row and
+ * the run history, and an unchecked one would let a submission file itself under
+ * somebody else's chart — which is a claim about which notes were played, on a
+ * board where that is the whole point.
+ *
+ * `chartHash` comes back with it so the run records *which version* of the chart
+ * it was, and a later edit reads as an edit rather than as everyone's scores
+ * silently becoming incomparable (C12).
+ */
+async function resolveChart(
+  chartId: string | undefined,
+  songId: string,
+): Promise<{ id: string; chartHash: string; rankStatus: string } | null> {
+  if (!chartId) return null;
+  const chart = await prisma.chart.findFirst({
+    where: { id: chartId, songId },
+    select: { id: true, chartHash: true, rankStatus: true },
+  });
+  return chart ?? null;
+}
+
+/**
+ * A 0–1 score from the integrity codes, for `SliceRun.suspicion`.
+ *
+ * The scale is deliberately coarse and deliberately written down: **one code is
+ * 0.5, two independent codes are 1.0.** R7's escalation threshold is `> 0.8`,
+ * so under this scale that means "two different checks fired on the same run",
+ * which is the "a pattern, not one run" framing that separates a review queue
+ * from an accusation machine.
+ *
+ * Nothing acts on the number here — not the response, not the ranking, not the
+ * reward. `integrity.ts` is explicit that its statistical layer flags rather
+ * than rejects because a false positive on a legitimate record run costs a real
+ * person their record; storing the verdict is what gives that flag somewhere to
+ * go, and a human is still the thing on the other end.
+ */
+function suspicionScore(codes: SuspicionCode[]): number {
+  return Math.min(1, codes.length * 0.5);
+}
 
 /**
  * A display name for a first-time `Player` row.
@@ -287,10 +505,31 @@ function checkRunTiming(
  */
 function chartNoteCount(analysis: unknown, difficulty: Difficulty | undefined): number | undefined {
   const slices = (analysis as { slices?: unknown } | null)?.slices;
-  if (Array.isArray(slices)) return slices.length;
+  if (Array.isArray(slices)) return judgedEvents(slices);
   if (slices && typeof slices === 'object') {
     const tier = (slices as Record<string, unknown>)[difficulty ?? 'normal'];
-    if (Array.isArray(tier)) return tier.length;
+    if (Array.isArray(tier)) return judgedEvents(tier);
   }
   return undefined;
+}
+
+/**
+ * How many judgements a chart can produce — not how many notes it holds.
+ *
+ * Since G5 a LONG note is judged twice: once on the head, once on the release.
+ * `checkConsistency` bounds `notesResolved` against this number, so counting
+ * heads only rejects honest runs on hold-heavy charts. An 800-note chart that
+ * is 30% LONG resolves 1040 judgements against a head-only ceiling of 848, and
+ * the player sees a 422 for playing the chart as written.
+ *
+ * Deliberately counts the release even for a note the player never released:
+ * the hold-timeout sweep judges that as a MISS, which is still a judgement.
+ */
+function judgedEvents(slices: unknown[]): number {
+  let total = 0;
+  for (const slice of slices) {
+    total += 1;
+    if ((slice as { type?: unknown } | null)?.type === 'LONG') total += 1;
+  }
+  return total;
 }

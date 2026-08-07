@@ -1,8 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
+import type { Prisma } from '@prisma/client';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { resolveUserDisplay, userDisplaySelect } from '@/lib/user-display';
-import { LeaderboardQueryZ } from '@/lib/slice-it/api-schemas';
+import { resolveUser, userDisplaySelect } from '@/lib/user-display';
+import { LEADERBOARD_WINDOW_DAYS, LeaderboardQueryZ } from '@/lib/slice-it/api-schemas';
+import type { LeaderboardQuery } from '@/lib/slice-it/api-schemas';
+import { toModPool } from '@/lib/slice-it/pools';
+import type { Difficulty } from '@/lib/slice-it/constants';
 import type { LeaderboardEntry, Modifiers } from '@/lib/slice-it/types';
 
 /**
@@ -19,6 +23,27 @@ import type { LeaderboardEntry, Modifiers } from '@/lib/slice-it/types';
  * - **No self row.** A player outside the top ten had no way to see their own
  *   standing, which is the single thing a leaderboard is for once you are not
  *   winning. `self` is returned alongside the page.
+ *
+ * ## Boards, scopes and windows (R1, R5)
+ *
+ * A song's board is now addressed by `(songId, difficulty, modPool)` rather than
+ * by song alone — see the note on `SongLeaderboard` in the schema for why one
+ * row per player per song was a correctness bug and not merely a coarse ranking.
+ * Both are optional here: omitting them merges every tier and pool, which is
+ * exactly the old response, so a client that has not been updated sees no
+ * change in shape or content.
+ *
+ * On top of that, `scope` narrows the *population* (everyone / accounts you
+ * follow / accounts sharing your location) and `window` narrows the *age* of the
+ * best. Neither is a different query — both are `where` fragments on the same
+ * indexed read, and the cursor paging and self-row logic are untouched.
+ *
+ * ## What the rows carry (X11)
+ *
+ * Every entry now carries `handle`, so every row can link to a player page.
+ * It is null for an account that has none — and the UI branches on that null
+ * rather than constructing a URL from `username`, which is display text, is not
+ * unique, and changes whenever its owner changes it.
  */
 export const Route = createFileRoute('/api/slice-it/leaderboard')({
   server: {
@@ -26,82 +51,93 @@ export const Route = createFileRoute('/api/slice-it/leaderboard')({
       GET: defineHandler(
         { auth: 'optional', query: LeaderboardQueryZ, rateLimit: 'read' },
         async ({ query, userId }) => {
-          const { songId, cursor, limit } = query;
+          const { songId, cursor, limit, difficulty, modPool } = query;
 
           if (songId) {
+            const audience = await resolveAudience(query, userId);
+            if (audience.unavailable) {
+              // The caller asked for a population we cannot name for them —
+              // `friends` while signed out, `country` with no location set. An
+              // empty board plus the reason beats silently answering with the
+              // global one, which looks identical to a working country board
+              // and is not one.
+              return Response.json({
+                entries: [],
+                total: 0,
+                nextCursor: null,
+                self: null,
+                scopeUnavailable: audience.unavailable,
+              });
+            }
+
+            const where: Prisma.SongLeaderboardWhereInput = {
+              songId,
+              ...(difficulty ? { difficulty } : {}),
+              ...(modPool ? { modPool } : {}),
+              ...windowFilter(query.window),
+              ...audience.where,
+            };
+
             const [rows, total] = await Promise.all([
               prisma.songLeaderboard.findMany({
-                where: { songId },
+                where,
                 orderBy: [{ score: 'desc' }, { createdAt: 'asc' }],
                 skip: cursor,
                 take: limit,
-                select: {
-                  userId: true,
-                  score: true,
-                  maxCombo: true,
-                  accuracy: true,
-                  speedMod: true,
-                  modifiers: true,
-                  createdAt: true,
-                  user: { select: userDisplaySelect },
-                },
+                select: BOARD_SELECT,
               }),
-              prisma.songLeaderboard.count({ where: { songId } }),
+              prisma.songLeaderboard.count({ where }),
             ]);
 
-            const entries: LeaderboardEntry[] = rows.map((row, index) => ({
-              rank: cursor + index + 1,
-              userId: row.userId,
-              username: resolveUserDisplay(row.user).name || 'Unknown',
-              image: resolveUserDisplay(row.user).image ?? null,
-              score: row.score,
-              maxCombo: row.maxCombo,
-              accuracy: row.accuracy,
-              speedMod: row.speedMod,
-              modifiers: (row.modifiers as Partial<Modifiers> | null) ?? null,
-              achievedAt: row.createdAt.toISOString(),
-              isSelf: row.userId === userId,
-            }));
+            const entries: LeaderboardEntry[] = rows.map((row, index) =>
+              toEntry(row, cursor + index + 1, userId),
+            );
 
             return Response.json({
               entries,
               total,
               nextCursor: cursor + rows.length < total ? cursor + rows.length : null,
-              self: userId ? await selfSongRank(songId, userId) : null,
+              self: userId ? await selfSongRank(songId, userId, query) : null,
             });
           }
 
-          // Global career board — total score across every song.
+          // ── The global board: skill, not volume (R2) ──────────────────────
+          //
+          // This used to be `ORDER BY "totalScore" DESC` — the sum of every
+          // score the account has ever submitted. That ranks **how much you
+          // have played**, not how well: an account grinding an easy chart four
+          // hundred times outranks a better player who does not, permanently,
+          // because the quantity being summed grows without bound with time
+          // spent and has no term for difficulty in it at all.
+          //
+          // `skillRating` is each player's best per **ranked** chart, weighted
+          // by the chart's C3 rating and by accuracy, decayed geometrically
+          // (`lib/slice-it/rating.server.ts`). `totalScore` is still here, still
+          // means exactly what it always meant, and is still returned on every
+          // row — it moved from being the ranking to being a statistic.
+          //
+          // **The tie-break is the migration path.** No chart is `ranked` on the
+          // day this ships, so every `skillRating` is 0 and the board falls
+          // through to `totalScore` — byte-for-byte the old ordering. As charts
+          // enter the pool the board becomes a skill board, player by player,
+          // with no flag day and no moment where it is empty. Filtering on
+          // `skillRating > 0` instead would have shipped an empty global
+          // leaderboard.
+          const globalWhere = { totalScore: { gt: 0 } };
           const [rows, total] = await Promise.all([
             prisma.player.findMany({
-              where: { totalScore: { gt: 0 } },
-              orderBy: [{ totalScore: 'desc' }, { id: 'asc' }],
+              where: globalWhere,
+              orderBy: [{ skillRating: 'desc' }, { totalScore: 'desc' }, { id: 'asc' }],
               skip: cursor,
               take: limit,
-              select: {
-                userId: true,
-                username: true,
-                totalScore: true,
-                gamesPlayed: true,
-                user: { select: userDisplaySelect },
-              },
+              select: GLOBAL_SELECT,
             }),
-            prisma.player.count({ where: { totalScore: { gt: 0 } } }),
+            prisma.player.count({ where: globalWhere }),
           ]);
 
-          const entries: LeaderboardEntry[] = rows.map((row, index) => ({
-            rank: cursor + index + 1,
-            userId: row.userId ?? '',
-            username: (row.user ? resolveUserDisplay(row.user).name : null) || row.username,
-            image: row.user ? (resolveUserDisplay(row.user).image ?? null) : null,
-            score: row.totalScore,
-            maxCombo: 0,
-            accuracy: null,
-            speedMod: 1,
-            modifiers: null,
-            achievedAt: new Date(0).toISOString(),
-            isSelf: Boolean(userId) && row.userId === userId,
-          }));
+          const entries: GlobalEntry[] = rows.map((row, index) =>
+            toGlobalEntry(row, cursor + index + 1, userId),
+          );
 
           return Response.json({
             entries,
@@ -116,71 +152,250 @@ export const Route = createFileRoute('/api/slice-it/leaderboard')({
 });
 
 /**
- * The caller's own row and rank on a song.
+ * The columns a board row is built from.
  *
- * Rank is a `count` of strictly-better scores rather than a window function,
- * because Prisma has no portable one and this is a single indexed count against
- * `(songId, score desc)`.
+ * Declared once and shared by the page read and the self-row read, because the
+ * two were drifting — the self row was always one field behind whatever the page
+ * had most recently gained. Note what is absent: anything off the `chart`
+ * relation. A board needs to know that a chart *changed* (the hash), never the
+ * notes themselves, and selecting a relation "because it is there" is how a
+ * hundred-kilobyte blob ends up in a paginated list response.
  */
-async function selfSongRank(
-  songId: string,
-  userId: string,
-): Promise<(LeaderboardEntry & { rank: number }) | null> {
-  const row = await prisma.songLeaderboard.findUnique({
-    where: { songId_userId: { songId, userId } },
-    select: {
-      score: true,
-      maxCombo: true,
-      accuracy: true,
-      speedMod: true,
-      modifiers: true,
-      createdAt: true,
-      user: { select: userDisplaySelect },
-    },
-  });
-  if (!row) return null;
+const BOARD_SELECT = {
+  userId: true,
+  score: true,
+  maxCombo: true,
+  accuracy: true,
+  speedMod: true,
+  modifiers: true,
+  difficulty: true,
+  modPool: true,
+  isFullCombo: true,
+  isPerfect: true,
+  createdAt: true,
+  user: { select: userDisplaySelect },
+} as const satisfies Prisma.SongLeaderboardSelect;
 
-  const better = await prisma.songLeaderboard.count({
-    where: { songId, score: { gt: row.score } },
-  });
+type BoardRow = Prisma.SongLeaderboardGetPayload<{ select: typeof BOARD_SELECT }>;
 
-  const display = resolveUserDisplay(row.user);
+function toEntry(row: BoardRow, rank: number, viewerId: string | null): LeaderboardEntry {
+  const display = resolveUser(row.user);
   return {
-    rank: better + 1,
-    userId,
-    username: display.name || 'You',
+    rank,
+    userId: row.userId,
+    username: display.name || display.username || 'Unknown',
+    handle: display.handle,
     image: display.image ?? null,
     score: row.score,
     maxCombo: row.maxCombo,
     accuracy: row.accuracy,
     speedMod: row.speedMod,
     modifiers: (row.modifiers as Partial<Modifiers> | null) ?? null,
+    difficulty: row.difficulty as Difficulty,
+    modPool: toModPool(row.modPool),
+    isFullCombo: row.isFullCombo,
+    isPerfect: row.isPerfect,
     achievedAt: row.createdAt.toISOString(),
-    isSelf: true,
+    isSelf: row.userId === viewerId,
   };
 }
 
-async function selfGlobalRank(userId: string): Promise<LeaderboardEntry | null> {
-  const row = await prisma.player.findUnique({
-    where: { userId },
-    select: { username: true, totalScore: true, user: { select: userDisplaySelect } },
+/** `window` as a `createdAt` filter. `all` contributes nothing. */
+function windowFilter(window: LeaderboardQuery['window']): Prisma.SongLeaderboardWhereInput {
+  if (window === 'all') return {};
+  const days = LEADERBOARD_WINDOW_DAYS[window];
+  return { createdAt: { gte: new Date(Date.now() - days * 86_400_000) } };
+}
+
+/**
+ * Turn a `scope` into the `where` fragment naming the population it means.
+ *
+ * Two of the three need something the caller has and might not: a follow graph,
+ * and a location. Rather than degrade to global — which produces a "Country"
+ * board full of strangers and no way to tell that is what happened — an
+ * unresolvable scope reports `unavailable` and the route answers with an empty
+ * board and the reason.
+ *
+ * `friends` is "accounts you follow, plus you". Not mutuals: a leaderboard is
+ * something you read to see how you compare to people you are interested in,
+ * and requiring them to be interested back shortens the list for no benefit.
+ */
+async function resolveAudience(
+  query: LeaderboardQuery,
+  viewerId: string | null,
+): Promise<{
+  where: Prisma.SongLeaderboardWhereInput;
+  unavailable?: 'signed-out' | 'no-location';
+}> {
+  if (query.scope === 'global') return { where: {} };
+  if (!viewerId) return { where: {}, unavailable: 'signed-out' };
+
+  if (query.scope === 'friends') {
+    const follows = await prisma.follow.findMany({
+      where: { followerId: viewerId },
+      select: { followingId: true },
+      // A board page is at most 100 rows. A follow list longer than this cannot
+      // change who is at the top of it, and an unbounded `IN (...)` from an
+      // account that follows fifty thousand people is a query plan nobody wants
+      // on a read path.
+      take: 5_000,
+    });
+    return { where: { userId: { in: [viewerId, ...follows.map((f) => f.followingId)] } } };
+  }
+
+  // `country`. The platform has no country column: `UserProfile.location` is the
+  // only geographic thing a user tells us and it is free text. Matching it
+  // case-insensitively is an approximation, and it is labelled as one in the UI.
+  // Adding a `User.country` column that nothing populates would be a worse
+  // approximation wearing a better name.
+  const profile = await prisma.userProfile.findUnique({
+    where: { userId: viewerId },
+    select: { location: true },
+  });
+  const location = profile?.location?.trim();
+  if (!location) return { where: {}, unavailable: 'no-location' };
+
+  return {
+    where: { user: { profile: { location: { equals: location, mode: 'insensitive' } } } },
+  };
+}
+
+/**
+ * The caller's own row and rank on a song.
+ *
+ * Rank is a `count` of strictly-better scores rather than a window function,
+ * because Prisma has no portable one and this is a single indexed count against
+ * `(songId, difficulty, modPool, score desc)`.
+ *
+ * It counts within **the board being viewed** — scope, window, tier and pool
+ * included. A self row reading "rank 4" on a friends board where the caller is
+ * first would be worse than no self row at all.
+ *
+ * `findFirst` rather than `findUnique`, because the caller may now hold several
+ * rows on one song (one per tier per pool — that is the whole point of R1) and
+ * a query that omits `difficulty` is asking about all of them. The best one wins,
+ * ordered exactly as the page is.
+ */
+async function selfSongRank(
+  songId: string,
+  userId: string,
+  query: LeaderboardQuery,
+): Promise<LeaderboardEntry | null> {
+  const audience = await resolveAudience(query, userId);
+  if (audience.unavailable) return null;
+
+  const scoped: Prisma.SongLeaderboardWhereInput = {
+    songId,
+    ...(query.difficulty ? { difficulty: query.difficulty } : {}),
+    ...(query.modPool ? { modPool: query.modPool } : {}),
+    ...windowFilter(query.window),
+    ...audience.where,
+  };
+
+  const row = await prisma.songLeaderboard.findFirst({
+    where: { ...scoped, userId },
+    orderBy: [{ score: 'desc' }, { createdAt: 'asc' }],
+    select: BOARD_SELECT,
   });
   if (!row) return null;
 
-  const better = await prisma.player.count({ where: { totalScore: { gt: row.totalScore } } });
-  const display = row.user ? resolveUserDisplay(row.user) : null;
+  const better = await prisma.songLeaderboard.count({
+    where: { ...scoped, score: { gt: row.score } },
+  });
 
+  return toEntry(row, better + 1, userId);
+}
+
+/**
+ * The columns the global board is built from.
+ *
+ * `userId` is nullable on `Player` — the model predates the account link — so
+ * every consumer has to cope with a row that belongs to nobody.
+ */
+const GLOBAL_SELECT = {
+  id: true,
+  userId: true,
+  username: true,
+  totalScore: true,
+  gamesPlayed: true,
+  skillRating: true,
+  rankedPlays: true,
+  user: { select: userDisplaySelect },
+} as const satisfies Prisma.PlayerSelect;
+
+type GlobalRow = Prisma.PlayerGetPayload<{ select: typeof GLOBAL_SELECT }>;
+
+/**
+ * A global-board row.
+ *
+ * It extends `LeaderboardEntry` rather than changing it: the shared type is the
+ * contract for a *song* board, where `score` is a score, and the two boards are
+ * rendered by the same component. `score` stays the ranking quantity — that is
+ * what every consumer sorts, formats and highlights by — and the three fields
+ * below are what a global row additionally has.
+ *
+ * `score` therefore carries the **rounded skill rating** on this board. The
+ * unrounded value is beside it, and `totalScore` — which `score` used to hold —
+ * is now explicit rather than implied.
+ */
+type GlobalEntry = LeaderboardEntry & {
+  skillRating: number;
+  totalScore: number;
+  rankedPlays: number;
+  gamesPlayed: number;
+};
+
+function toGlobalEntry(row: GlobalRow, rank: number, viewerId: string | null): GlobalEntry {
+  const display = row.user ? resolveUser(row.user) : null;
   return {
-    rank: better + 1,
-    userId,
+    rank,
+    userId: row.userId ?? '',
     username: display?.name || row.username,
+    handle: display?.handle ?? null,
     image: display?.image ?? null,
-    score: row.totalScore,
+    score: Math.round(row.skillRating),
+    skillRating: row.skillRating,
+    totalScore: row.totalScore,
+    rankedPlays: row.rankedPlays,
+    gamesPlayed: row.gamesPlayed,
     maxCombo: 0,
     accuracy: null,
     speedMod: 1,
     modifiers: null,
+    // The board is an aggregate over every run, so there is no single moment it
+    // was "achieved". Epoch rather than `now()`, so a client sorting or
+    // displaying it cannot mistake it for a fresh timestamp.
     achievedAt: new Date(0).toISOString(),
-    isSelf: true,
+    isSelf: Boolean(viewerId) && row.userId === viewerId,
   };
+}
+
+/**
+ * The caller's own rank on the global board.
+ *
+ * The comparison has to mirror the page's `ORDER BY` exactly or the self row
+ * disagrees with the list it sits under — a player shown as rank 40 while
+ * standing at position 12 in the same response. Since the ordering is
+ * `(skillRating DESC, totalScore DESC)`, "better than me" is a strictly greater
+ * skill rating **or** an equal one with a greater lifetime total.
+ *
+ * The `id ASC` third key is deliberately not mirrored: it only separates players
+ * identical on both, and counting it would make a player's own rank depend on
+ * their row id, which is not a thing to show anybody.
+ */
+async function selfGlobalRank(userId: string): Promise<GlobalEntry | null> {
+  const row = await prisma.player.findUnique({ where: { userId }, select: GLOBAL_SELECT });
+  if (!row) return null;
+
+  const better = await prisma.player.count({
+    where: {
+      totalScore: { gt: 0 },
+      OR: [
+        { skillRating: { gt: row.skillRating } },
+        { skillRating: row.skillRating, totalScore: { gt: row.totalScore } },
+      ],
+    },
+  });
+
+  return { ...toGlobalEntry(row, better + 1, userId), isSelf: true };
 }

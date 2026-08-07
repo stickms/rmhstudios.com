@@ -5,10 +5,25 @@ import { useSliceItStore } from '@/lib/slice-it/store';
 import type { GameEngine } from '@/lib/slice-it/engine';
 import { useRunSummary, useSubmitScore } from '@/lib/slice-it/useSubmitScore';
 import { gradeFor } from '@/lib/slice-it/scoring';
-import { RANKED_MIN_SPEED } from '@/lib/slice-it/constants';
+import { JUDGEMENT_COLORS, JUDGEMENT_ORDER, RANKED_MIN_SPEED } from '@/lib/slice-it/constants';
+import type { RunStats } from '@/lib/slice-it/types';
+import type { TimingSummary } from '@/lib/slice-it/integrity';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { RotateCcw, Home, Trophy } from 'lucide-react';
+import { RotateCcw, Home, Trophy, Wand2 } from 'lucide-react';
+
+/**
+ * The offset suggestion's three gates.
+ *
+ * Below {@link OFFSET_MIN_SAMPLES} notes the mean is noise. Under
+ * {@link OFFSET_MIN_MEAN_MS} the bias is inside the MARVELOUS window (20 ms) and
+ * not worth chasing. Above {@link OFFSET_MAX_STDDEV_MS} the run was *inconsistent*
+ * rather than *shifted*, and moving the offset on that evidence would make it
+ * worse — which is the failure mode that makes players stop trusting the feature.
+ */
+const OFFSET_MIN_SAMPLES = 30;
+const OFFSET_MIN_MEAN_MS = 8;
+const OFFSET_MAX_STDDEV_MS = 60;
 
 interface GameOverProps {
   onRetry?: () => void;
@@ -22,13 +37,21 @@ interface GameOverProps {
 
 export function GameOver({ onRetry, engine }: GameOverProps) {
   const { t } = useTranslation('c-game');
+  const { t: ts } = useTranslation('r-slice-it');
   const { score, multiplier, maxCombo, accuracy, modifiers, resetRun } = useSliceItStore();
+  const audioOffset = useSliceItStore((s) => s.audioOffset);
+  const setAudioOffset = useSliceItStore((s) => s.setAudioOffset);
 
   // Submission (and its once-only guard) lives in one place now — both results
   // screens used to carry their own copy with different guards.
   const summary = useRunSummary(false, engine);
   const { isNewBest, previousBest } = useSubmitScore(summary);
   const isUnranked = modifiers.speed < RANKED_MIN_SPEED;
+
+  // Read once per render, not per section: `getRunStats()` copies the histogram,
+  // and four callers would be four copies of it a frame.
+  const stats: RunStats | null = engine?.getRunStats() ?? null;
+  const timing: TimingSummary | null = engine?.getTimingStats() ?? null;
 
   const accuracyPct = (accuracy * 100).toFixed(2);
   const accuracyColor =
@@ -40,12 +63,34 @@ export function GameOver({ onRetry, engine }: GameOverProps) {
           ? 'text-yellow-500'
           : 'text-slice-text-muted';
 
+  // The delta against your own best is the most motivating single number here,
+  // and it is the one that decides whether the player presses Retry.
+  const bestDelta = previousBest !== null ? score - previousBest : null;
+
+  const suggestedOffset =
+    timing &&
+    timing.samples >= OFFSET_MIN_SAMPLES &&
+    Math.abs(timing.meanMs) > OFFSET_MIN_MEAN_MS &&
+    timing.stdDevMs < OFFSET_MAX_STDDEV_MS
+      ? Math.round(-timing.meanMs)
+      : null;
+
+  const judgementPeak = stats ? Math.max(1, ...JUDGEMENT_ORDER.map((j) => stats.judgements[j])) : 1;
+
   return (
     <div className="absolute inset-0 z-50 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain bg-slice-bg/80 backdrop-blur-sm p-4">
       <Card className="w-full max-w-md bg-slice-bg text-slice-text shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] border-none rounded-[2rem] overflow-hidden">
         <CardHeader className="text-center pb-2 pt-8">
-          <CardTitle className="text-4xl sm:text-5xl font-black tracking-tight text-blue-500">
-            {t('complete', { defaultValue: 'COMPLETE' })}
+          <CardTitle
+            className={`text-4xl sm:text-5xl font-black tracking-tight ${
+              stats?.failed ? 'text-red-500' : 'text-blue-500'
+            }`}
+          >
+            {stats?.failed
+              ? stats.failReason === 'perfectionist'
+                ? ts('perfectionist-failed', { defaultValue: 'NOT PERFECT' })
+                : ts('gauge-failed', { defaultValue: 'GAUGE EMPTY' })
+              : t('complete', { defaultValue: 'COMPLETE' })}
           </CardTitle>
           {isUnranked && (
             <div className="mt-2 inline-flex items-center gap-1.5 bg-orange-500/20 text-orange-400 text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full mx-auto">
@@ -53,6 +98,21 @@ export function GameOver({ onRetry, engine }: GameOverProps) {
               <span className="text-[9px] font-normal normal-case tracking-normal text-orange-400">
                 {t('speed-below', { defaultValue: 'Speed below 1.0x' })}
               </span>
+            </div>
+          )}
+          {/* Full-combo and all-marvellous lamps, in the genre's escalation. */}
+          {stats && stats.notesResolved > 0 && (stats.isFullCombo || stats.isPerfect) && (
+            <div className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.3em] px-3 py-1.5 rounded-full mx-auto bg-slice-bg shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]">
+              <span className={stats.isPerfect ? 'text-cyan-500' : 'text-emerald-500'}>
+                {stats.isPerfect
+                  ? ts('lamp-perfect', { defaultValue: 'Perfect' })
+                  : ts('lamp-full-combo', { defaultValue: 'Full Combo' })}
+              </span>
+            </div>
+          )}
+          {stats?.gaugeBroken && !stats.failed && (
+            <div className="mt-2 text-[10px] font-bold uppercase tracking-widest text-slice-text-light">
+              {ts('gauge-bonus-lost', { defaultValue: 'Gauge broke — bonus forfeited' })}
             </div>
           )}
         </CardHeader>
@@ -86,6 +146,23 @@ export function GameOver({ onRetry, engine }: GameOverProps) {
                 </motion.div>
               )}
             </div>
+            {bestDelta !== null && (
+              <div
+                className={`text-xs font-bold tabular-nums ${
+                  bestDelta > 0 ? 'text-emerald-500' : 'text-slice-text-light'
+                }`}
+              >
+                {bestDelta > 0
+                  ? ts('best-delta-up', {
+                      defaultValue: '+{{delta}} on your best',
+                      delta: bestDelta.toLocaleString(),
+                    })
+                  : ts('best-delta-down', {
+                      defaultValue: '{{delta}} from your best',
+                      delta: Math.abs(bestDelta).toLocaleString(),
+                    })}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-3 gap-4">
@@ -115,6 +192,87 @@ export function GameOver({ onRetry, engine }: GameOverProps) {
               </div>
             </div>
           </div>
+
+          {/* Judgement histogram.
+              Bars are scaled to the largest count, not to the note total: on a
+              good run MARVELOUS dwarfs everything and a total-scaled chart is one
+              bar and five slivers, which hides exactly the distribution the
+              player came to read. */}
+          {stats && stats.notesResolved > 0 && (
+            <dl className="bg-slice-bg px-4 py-3 rounded-2xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] space-y-1.5 text-left">
+              {JUDGEMENT_ORDER.map((judgement) => (
+                <div key={judgement} className="flex items-center gap-2">
+                  <dt
+                    className="w-20 shrink-0 text-[10px] font-black uppercase tracking-wider"
+                    style={{ color: JUDGEMENT_COLORS[judgement] }}
+                  >
+                    {judgement}
+                  </dt>
+                  <div className="flex-1 h-2 rounded-full bg-slice-shadow-dark/25 overflow-hidden">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${(stats.judgements[judgement] / judgementPeak) * 100}%`,
+                        background: JUDGEMENT_COLORS[judgement],
+                      }}
+                    />
+                  </div>
+                  <dd className="w-10 shrink-0 text-right font-mono text-xs text-slice-text-darker tabular-nums">
+                    {stats.judgements[judgement]}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          )}
+
+          {/* Timing distribution.
+              Unstable rate is stdDev x 10 by convention (osu!), which puts a
+              typical run in the 60–200 range instead of 6–20 — a scale players
+              in this genre already read. */}
+          {timing && timing.samples > 0 && (
+            <div className="bg-slice-bg px-4 py-3 rounded-2xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] text-left">
+              <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                <dt className="text-slice-text-light font-bold uppercase tracking-wider text-[10px]">
+                  {ts('unstable-rate', { defaultValue: 'Unstable rate' })}
+                </dt>
+                <dd className="font-mono text-right text-slice-text-darker tabular-nums">
+                  {(timing.stdDevMs * 10).toFixed(0)}
+                </dd>
+                <dt className="text-slice-text-light font-bold uppercase tracking-wider text-[10px]">
+                  {ts('timing-bias', { defaultValue: 'Bias' })}
+                </dt>
+                <dd className="font-mono text-right text-slice-text-darker tabular-nums">
+                  {Math.abs(timing.meanMs).toFixed(1)} ms{' '}
+                  {timing.meanMs < 0
+                    ? ts('timing-early', { defaultValue: 'early' })
+                    : ts('timing-late', { defaultValue: 'late' })}
+                </dd>
+              </dl>
+
+              {/* One-tap calibration. The measurement already exists — it is
+                  submitted with every score for the integrity check — so the
+                  only thing standing between the player and a correct offset was
+                  nobody offering it to them. */}
+              {suggestedOffset !== null && (
+                <Button
+                  variant="ghost"
+                  className="mt-3 w-full h-auto py-2.5 bg-slice-bg text-slice-text-darker text-[11px] font-bold normal-case tracking-normal rounded-xl shadow-[4px_4px_10px_var(--slice-shadow-dark),-4px_-4px_10px_var(--slice-shadow-light)] active:shadow-inner border-none flex items-center justify-center gap-2 whitespace-normal"
+                  onClick={() => setAudioOffset(audioOffset + suggestedOffset)}
+                >
+                  <Wand2 className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                  {suggestedOffset > 0
+                    ? ts('apply-offset-late', {
+                        defaultValue: 'You hit late by {{ms}} ms on average — apply offset?',
+                        ms: Math.abs(suggestedOffset),
+                      })
+                    : ts('apply-offset-early', {
+                        defaultValue: 'You hit early by {{ms}} ms on average — apply offset?',
+                        ms: Math.abs(suggestedOffset),
+                      })}
+                </Button>
+              )}
+            </div>
+          )}
 
           <div className="flex gap-4">
             <Button

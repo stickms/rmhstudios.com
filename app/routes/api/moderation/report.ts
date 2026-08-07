@@ -36,6 +36,15 @@ async function resolveTargetUser(entityType: string, entityId: string): Promise<
         });
         return b?.userId ?? null;
       }
+      case 'song': {
+        // L9 — Slice It uploads. The uploader is the person a claim is about,
+        // so triage needs them on the row like every other entity type.
+        const song = await prisma.song.findUnique({
+          where: { id: entityId },
+          select: { uploadedBy: true },
+        });
+        return song?.uploadedBy ?? null;
+      }
       case 'user':
         return entityId;
       default:

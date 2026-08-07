@@ -1,11 +1,17 @@
 'use client';
 
+import { laneColor, resolvePalette } from '@/lib/slice-it/palettes';
+import { clampLinePosition } from '@/lib/slice-it/constants';
+import { rumble } from '@/lib/shared/platform';
+import { laneForKey } from '@/lib/slice-it/input';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { fadeRise, popIn } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
-import { GameEngine } from '@/lib/slice-it/engine';
-import { useSliceItStore } from '@/lib/slice-it/store';
+import { COMBO_MILESTONES, GameEngine } from '@/lib/slice-it/engine';
+import { requestScreenWakeLock } from '@/lib/shared/platform';
+import { useSliceItStore, approachSeconds, reactionWindowMs } from '@/lib/slice-it/store';
+import { visibilityAlpha } from '@/lib/slice-it/modifiers';
 import { AudioManager } from '@/lib/audio/AudioManager';
 import type { Slice } from '@/lib/slice-it/types';
 import { longestHoldSeconds, visibleSliceRange } from '@/lib/slice-it/visible-window';
@@ -14,7 +20,7 @@ import { GameOver } from './GameOver';
 import { MainMenu } from './MainMenu';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Settings, X } from 'lucide-react';
+import { RotateCcw, Settings, SkipForward, X } from 'lucide-react';
 import { MultiplayerSidebar } from './MultiplayerSidebar';
 import { MatchResults } from './MatchResults';
 import { addMatchListener, leaveLobby } from '@/lib/slice-it/net/client';
@@ -22,6 +28,15 @@ import type { PausePayload } from '@/lib/slice-it/net/events';
 import { toast } from 'sonner';
 import { canvasGlowEnabled } from '@/lib/render/canvas2d-fx';
 import { gameSurfaceDpr } from '@/lib/display-scale';
+import {
+  COMBO_BREAK_FEEDBACK_MS,
+  HIT_WINDOWS,
+  JUDGEMENT_COLORS,
+  QUANT_COLORS,
+  MAX_LANE_COVER,
+  MIN_LANE_COVER,
+} from '@/lib/slice-it/constants';
+import { judge } from '@/lib/slice-it/scoring';
 
 // Neumorphic Palette (dark-mode-aware colors are read from CSS vars at render time)
 const COLORS = {
@@ -53,6 +68,135 @@ function interpolateHex(hex1: string, hex2: string, ratio: number): string {
   const b = Math.round(b1 + (b2 - b1) * ratio);
 
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+/**
+ * M1 — Mirror, applied at the render/input boundary rather than to the chart.
+ *
+ * `render` below draws directly from `map.slices` (`engine.getActiveMap()`),
+ * a different array from the one `GameEngine.loadMap` judges against
+ * (`prepareChart` copies it) — see `chart.ts`'s `applyMirror` for why
+ * rewriting the judged copy isn't reachable this wave, and for the reference
+ * transform this is the visual equivalent of. Flipping BOTH what a note is
+ * drawn at (`mirrorLane` applied to `slice.lane` in `render`) and which
+ * engine lane a keypress targets (`mirrorLane` applied in `handleInput`) is
+ * the same involution applied twice, so composing them reproduces exactly
+ * what swapping the chart itself would look like: a note that started life
+ * in lane 0 is drawn in, and only hittable from, the visual position for
+ * lane 1.
+ *
+ * A no-op under One Track — there is only one lane to mirror into, and
+ * mirroring it anyway would send every keypress to a lane nothing is ever
+ * queued on.
+ */
+function mirrorLane(lane: number): number {
+  const state = useSliceItStore.getState();
+  return state.mirror && !state.modifiers.oneTrack ? 1 - lane : lane;
+}
+
+/**
+ * How long a tick stays on the hit-error bar, ms.
+ *
+ * Long enough to read a cloud out of, short enough that the cloud describes what
+ * you are doing now rather than what you did at the start of the song — which is
+ * the difference between a feedback loop and a statistic.
+ */
+const ERROR_BAR_FADE_MS = 2000;
+
+/**
+ * H6 — how long the restart key must be held, ms.
+ *
+ * HOLD, not press. A tap-to-restart bound near the lane keys costs someone a
+ * 300-combo run the first time they fat-finger it, and they will not come
+ * back to find out whether it was their fault.
+ */
+const RESTART_HOLD_MS = 600;
+
+/** H6 — a lead-in shorter than this is not worth a skip button for. */
+const SKIPPABLE_LEAD_IN_SEC = 5;
+
+/** H6 — a skip always lands this far before the first note, never into it. */
+const SKIP_TARGET_LEAD_SEC = 2;
+
+/**
+ * V5 — how long a combo-milestone crossing stays on screen, ms. Longer than a
+ * judgement popup (it is a rarer, bigger event) but still gone well before
+ * the next one could plausibly land, even on a dense Expert 1000-combo chart.
+ */
+const COMBO_MILESTONE_FEEDBACK_MS = 1100;
+
+/** V5 — one colour per tier, escalating with `COMBO_MILESTONES`' own order. */
+const MILESTONE_COLORS = ['#38bdf8', '#a78bfa', '#f472b6', '#facc15', '#fb7185'];
+
+/**
+ * The early/late hit-error bar.
+ *
+ * A tick per recent hit at its signed offset, fading out, plus a marker at the
+ * run's mean error. The engine has computed the signed offset since input
+ * judging moved onto the event's own `timeStamp` — this only draws it.
+ *
+ * The bar spans ±BAD, the widest window, so a tick's distance from the centre is
+ * directly comparable to the judgement it produced. Scaling to ±GREAT would look
+ * livelier and would clip every GOOD to the edge, which teaches nothing.
+ *
+ * The mean marker is the actionable half: the tick cloud tells you your spread,
+ * the marker tells you which way to move your audio offset — and it is the same
+ * number the results screen offers to apply for you.
+ */
+function drawErrorBar(
+  ctx: CanvasRenderingContext2D,
+  engine: GameEngine,
+  w: number,
+  y: number,
+  glow: number,
+  markerColor: string,
+): void {
+  const timing = engine.getTimingStats();
+  if (timing.samples === 0) return;
+
+  const { offsets, times } = engine.getRecentOffsets();
+  const scale = engine.getTimingScale();
+  const halfWidth = Math.min(w * 0.18, 180);
+  const pxPerSecond = halfWidth / (HIT_WINDOWS.BAD * scale);
+  const now = performance.now();
+
+  ctx.save();
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+
+  // The track, and a centre notch for "exactly on time".
+  ctx.globalAlpha = 0.35;
+  ctx.fillStyle = markerColor;
+  ctx.fillRect(w / 2 - halfWidth, y - 1, halfWidth * 2, 2);
+  ctx.globalAlpha = 0.6;
+  ctx.fillRect(w / 2 - 1, y - 7, 2, 14);
+
+  for (let i = 0; i < offsets.length; i++) {
+    const at = times[i];
+    if (at === 0) continue;
+    const age = (now - at) / ERROR_BAR_FADE_MS;
+    if (age < 0 || age >= 1) continue;
+
+    const offset = offsets[i];
+    const x = w / 2 + Math.max(-halfWidth, Math.min(halfWidth, offset * pxPerSecond));
+    ctx.globalAlpha = 0.15 + 0.75 * (1 - age);
+    ctx.fillStyle = JUDGEMENT_COLORS[judge(offset, scale)];
+    ctx.fillRect(x - 1, y - 6, 2, 12);
+  }
+
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = markerColor;
+  if (glow) {
+    ctx.shadowColor = markerColor;
+    ctx.shadowBlur = glow * 4;
+  }
+  const meanX =
+    w / 2 + Math.max(-halfWidth, Math.min(halfWidth, (timing.meanMs / 1000) * pxPerSecond));
+  ctx.fillRect(meanX - 1, y - 10, 2, 20);
+  ctx.restore();
+  ctx.globalAlpha = 1;
 }
 
 // Gamepad button indices (Standard Gamepad mapping)
@@ -133,9 +277,11 @@ export function GameCanvas() {
   const [hasTouch, setHasTouch] = useState(false);
 
   const { t } = useTranslation('c-game');
+  const { t: ts } = useTranslation('r-slice-it');
   const {
     status,
     keybinds,
+    extraBinds,
     isPaused,
     setIsPaused,
     isLoadingSong,
@@ -149,6 +295,8 @@ export function GameCanvas() {
     audioOffset,
     setAudioOffset,
     setKeybinds,
+    laneCoverHeight,
+    setLaneCoverHeight,
   } = useSliceItStore();
 
   // Per-player chart-load progress, from the server's `slice:loading` tick.
@@ -292,7 +440,7 @@ export function GameCanvas() {
       } else if (audio.getCurrentTime() === 0) {
         engine.start();
       }
-      engine.submitInput(lane, pressTime);
+      engine.submitInput(mirrorLane(lane), pressTime);
     },
     [engine],
   );
@@ -300,7 +448,7 @@ export function GameCanvas() {
   const handleInputRelease = useCallback(
     (lane: number) => {
       if (!engine) return;
-      engine.submitRelease(lane);
+      engine.submitRelease(mirrorLane(lane));
     },
     [engine],
   );
@@ -349,6 +497,13 @@ export function GameCanvas() {
           // next frame and `gamepad.timestamp` is neither in `performance.now()`
           // units nor consistent across browsers. Pad players pay up to one
           // frame; keyboard and touch do not.
+          // I2 — the pad that pressed gets the feedback. Short and fixed
+          // rather than judgement-scaled: the judgement is not known until the
+          // engine resolves, and waiting for it would put the rumble a frame
+          // after the press, which reads as lag rather than as confirmation.
+          if (GAMEPAD_LANE0_BUTTONS.includes(btnIdx) || GAMEPAD_LANE1_BUTTONS.includes(btnIdx)) {
+            rumble(gp, 8);
+          }
           if (GAMEPAD_LANE0_BUTTONS.includes(btnIdx)) handleInput(0);
           else if (GAMEPAD_LANE1_BUTTONS.includes(btnIdx)) handleInput(1);
         });
@@ -540,6 +695,117 @@ export function GameCanvas() {
     engine.reset();
   }, [lobbyState, engine]);
 
+  // ── I10: session guards ─────────────────────────────────────────────────
+  //
+  // Wake lock, acquired at run start and released on finish. `PLAYING` covers
+  // a pause too — a paused run is still "a run sitting in a browser tab",
+  // which is the situation this exists for. `requestScreenWakeLock` already
+  // re-acquires itself on `visibilitychange` (see `lib/shared/platform.ts`):
+  // the browser drops the lock the instant the tab is hidden and does not
+  // restore it, so a run that only acquired once would keep the screen awake
+  // until the first notification banner and never again after.
+  useEffect(() => {
+    if (status !== 'PLAYING') return;
+    return requestScreenWakeLock();
+  }, [status]);
+
+  // Guard navigation during a run — the browser-level half of the same care
+  // the multiplayer pause handler already takes about not losing someone's
+  // run. This only reaches actual browser navigation (refresh, close tab, an
+  // outbound link); an in-app router guard would need to live wherever
+  // `app/routes/**` is owned this wave — see
+  // `docs/_handoff/presentation-requests.md`.
+  useEffect(() => {
+    if (status !== 'PLAYING' || countdown > 0) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [status, countdown]);
+
+  // ── H6: hold-to-restart ──────────────────────────────────────────────────
+  //
+  // Disabled in multiplayer — restarting is a solo notion; the match clock is
+  // the server's. `e.code` rather than `e.key`: every other keybind in this
+  // file is compared by `code` (see `keybinds`), and `key` is what a dead-key
+  // layout or a Shift held for another reason would rewrite.
+  const [restartHolding, setRestartHolding] = useState(false);
+  useEffect(() => {
+    if (isMultiplayer || status !== 'PLAYING' || !engine) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const down = (e: KeyboardEvent) => {
+      if (e.code !== 'Backquote' || timer !== undefined) return;
+      if (useSliceItStore.getState().isPaused) return;
+      setRestartHolding(true);
+      timer = setTimeout(() => {
+        timer = undefined;
+        setRestartHolding(false);
+        engine.reset();
+        engine.start();
+      }, RESTART_HOLD_MS);
+    };
+    const up = (e: KeyboardEvent) => {
+      if (e.code !== 'Backquote') return;
+      if (timer) {
+        clearTimeout(timer);
+        timer = undefined;
+      }
+      setRestartHolding(false);
+    };
+    window.addEventListener('keydown', down);
+    window.addEventListener('keyup', up);
+    return () => {
+      if (timer) clearTimeout(timer);
+      window.removeEventListener('keydown', down);
+      window.removeEventListener('keyup', up);
+    };
+  }, [engine, isMultiplayer, status]);
+
+  // ── H6: lead-in skip ─────────────────────────────────────────────────────
+  //
+  // Only offered while there is still a skip left to take: past
+  // `leadIn - SKIP_TARGET_LEAD_SEC` the button would either do nothing or jump
+  // backwards, neither of which is a skip. Polled on a plain interval rather
+  // than `requestAnimationFrame` — a button's visibility does not need frame
+  // precision, and a `setInterval` that clears itself the moment the window
+  // closes never becomes a loop this screen has to justify keeping.
+  const [canSkipLeadIn, setCanSkipLeadIn] = useState(false);
+  useEffect(() => {
+    setCanSkipLeadIn(false);
+    if (isMultiplayer || status !== 'PLAYING' || !engine) return;
+
+    const map = engine.getActiveMap();
+    const slices = map?.slices;
+    const first = Array.isArray(slices) ? slices[0] : undefined;
+    const leadIn = first?.time ?? 0;
+    if (leadIn <= SKIPPABLE_LEAD_IN_SEC) return;
+
+    const id = window.setInterval(() => {
+      const store = useSliceItStore.getState();
+      const stillSkippable =
+        !store.isPaused &&
+        store.countdown === 0 &&
+        AudioManager.getInstance().getCurrentTime() < leadIn - SKIP_TARGET_LEAD_SEC;
+      setCanSkipLeadIn(stillSkippable);
+      // Settle: nothing in a song ever makes the window valid again once it
+      // has closed, so the interval has no more work to do.
+      if (!stillSkippable) window.clearInterval(id);
+    }, 200);
+    return () => window.clearInterval(id);
+  }, [engine, isMultiplayer, status]);
+
+  const skipLeadIn = useCallback(() => {
+    if (!engine) return;
+    const map = engine.getActiveMap();
+    const slices = map?.slices;
+    const first = Array.isArray(slices) ? slices[0] : undefined;
+    if (!first) return;
+    engine.seek(Math.max(0, first.time - SKIP_TARGET_LEAD_SEC));
+    setCanSkipLeadIn(false);
+  }, [engine]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // If waiting for a keybind assignment, capture any key (ESC cancels)
@@ -573,16 +839,19 @@ export function GameCanvas() {
       if (status !== 'PLAYING') return;
       if (useSliceItStore.getState().countdown > 0) return;
       if (e.repeat) return; // Block held-key repeats: one press = one note
-      if (e.code === keybinds.lane1) handleInput(0, e.timeStamp);
-      else if (e.code === keybinds.lane2) handleInput(1, e.timeStamp);
+      // I1 — a lane can carry more than one key. Alternating two keys on one
+      // lane is how a fast jack is played, and one-binding-per-lane made that
+      // physically impossible.
+      const pressedLane = laneForKey(keybinds, extraBinds, e.code);
+      if (pressedLane !== null) handleInput(pressedLane, e.timeStamp);
       if (e.code === 'Space') e.preventDefault();
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
       if (useSliceItStore.getState().isPaused) return;
       if (status !== 'PLAYING') return;
-      if (e.code === keybinds.lane1) handleInputRelease(0);
-      else if (e.code === keybinds.lane2) handleInputRelease(1);
+      const releasedLane = laneForKey(keybinds, extraBinds, e.code);
+      if (releasedLane !== null) handleInputRelease(releasedLane);
     };
 
     let lastTouchTime = 0;
@@ -807,17 +1076,43 @@ export function GameCanvas() {
     }
 
     // Constants - SCALING UPDATE
-    // We want ~3 seconds visibility at 1.0x speed.
-    // PPS = scroll-axis-length / 3.0, scaled by speed modifier.
-    const speedMod = useSliceItStore.getState().modifiers.speed || 1.0;
-    const isOneTrack = useSliceItStore.getState().modifiers.oneTrack;
+    // G9: the approach distance used to be a hard-coded ~3 seconds at 1.0x
+    // speed. `approachSeconds` reproduces that exactly at the setting's
+    // default (`scrollSpeed: 1.0`, `scrollMode: 'constant'`) and generalises
+    // it into the player-tunable "green number" — see `store.ts`.
+    const runState = useSliceItStore.getState();
+    const speedMod = runState.modifiers.speed || 1.0;
+    const isOneTrack = runState.modifiers.oneTrack;
+    const quantColorsOn = runState.quantColors;
+    // A3 — the lane palette. Resolved per frame from the store rather than
+    // captured, so switching palettes in settings takes effect without a reload.
+    const palette = resolvePalette(runState.lanePalette);
+    const laneA = laneColor(palette, 0);
+    const laneB = laneColor(palette, 1);
+    // A2 — photosensitivity. Distinct from `canvasGlowEnabled()`, which is the
+    // PERFORMANCE tier: a fast machine still gets every flash without this.
+    const flashOff = runState.reducedFlash;
+    const fx = runState.effectIntensity; // A7
+    const mirrorOn = runState.mirror && !isOneTrack;
     const isMobileV = h > w; // portrait canvas = mobile vertical mode
     const currentTime = AudioManager.getInstance().getCurrentTime();
+    const activeBpm = engine.getActiveMap()?.bpm || 120;
+    const approachSec = approachSeconds(activeBpm, runState.scrollSpeed, runState.scrollMode);
 
     // In mobile vertical mode, notes scroll top-to-bottom with lanes left/right.
     // In desktop mode, notes scroll right-to-left with lanes top/bottom.
-    const PPS = isMobileV ? (h / 3.0) * speedMod : (w / 3.0) * speedMod;
-    const CURSOR_MAIN = isMobileV ? h * 0.85 : w * 0.15;
+    const PPS = isMobileV ? (h / approachSec) * speedMod : (w / approachSec) * speedMod;
+    // G11 — the judgement line's position, as runway left AFTER the line.
+    //
+    // The shipped values were 0.85 down a portrait canvas and 0.15 across a
+    // landscape one; both are "15% of the axis remains", so one setting
+    // expresses both orientations and the default reproduces each exactly.
+    //
+    // Cosmetic only: `approachSec` (G9) decides how LONG a note is on screen,
+    // and this decides where that time is spent — moving the line does not
+    // give or take reading time, which is why it carries no score implication.
+    const linePos = clampLinePosition(runState.linePosition);
+    const CURSOR_MAIN = isMobileV ? h * (1 - linePos) : w * linePos;
     const LANE_POS = isMobileV
       ? isOneTrack
         ? [w * 0.5]
@@ -896,7 +1191,8 @@ export function GameCanvas() {
         latestFeedback.text !== 'BAD' &&
         latestFeedback.text !== 'RELEASED'
       ) {
-        const particleLaneIdx = Math.max(0, Math.min(latestFeedback.lane, LANE_POS.length - 1));
+        const rawParticleLane = mirrorOn ? 1 - latestFeedback.lane : latestFeedback.lane;
+        const particleLaneIdx = Math.max(0, Math.min(rawParticleLane, LANE_POS.length - 1));
         const particleLaneVal = isOneTrack ? LANE_POS[0] : LANE_POS[particleLaneIdx];
 
         // Offset particle emission based on timing offset
@@ -949,6 +1245,11 @@ export function GameCanvas() {
 
       for (let si = from; si < to; si++) {
         const slice = slices[si];
+        // M1 — Mirror: the lane this note is DRAWN in and hittable from. Every
+        // downstream read of "which lane" (position, colour, switch/arrow
+        // direction) uses this instead of the raw `slice.lane` so the whole
+        // note stays self-consistent under the flip — see `mirrorLane` above.
+        const laneIdx = mirrorOn ? 1 - slice.lane : slice.lane;
         ctx.globalAlpha = 1;
 
         // Compute scroll position along the movement axis
@@ -990,7 +1291,7 @@ export function GameCanvas() {
         }
 
         // Compute effective lane (SWITCH notes flip lanes near the hit line)
-        let effectiveLane = slice.lane;
+        let effectiveLane = laneIdx;
         let switchProgress = 0; // 0 = original lane, 1 = switched lane
         if (slice.type === 'SWITCH') {
           const switchLeadTime = 0.8 / speedMod;
@@ -999,44 +1300,42 @@ export function GameCanvas() {
           const animDuration = 0.15 / speedMod;
           if (currentTime >= switchTime) {
             switchProgress = 1;
-            effectiveLane = slice.lane === 0 ? 1 : 0;
+            effectiveLane = laneIdx === 0 ? 1 : 0;
           } else if (timeUntilSwitch < animDuration) {
             switchProgress = 1 - timeUntilSwitch / animDuration;
-            effectiveLane = slice.lane;
+            effectiveLane = laneIdx;
           }
         }
 
         // Interpolate lane position for switch animation
-        const origLane = isOneTrack ? LANE_POS[0] : LANE_POS[slice.lane];
-        const destLane = isOneTrack ? LANE_POS[0] : LANE_POS[slice.lane === 0 ? 1 : 0];
+        const origLane = isOneTrack ? LANE_POS[0] : LANE_POS[laneIdx];
+        const destLane = isOneTrack ? LANE_POS[0] : LANE_POS[laneIdx === 0 ? 1 : 0];
         const laneVal =
           slice.type === 'SWITCH' && !isOneTrack
             ? origLane + (destLane - origLane) * switchProgress
             : isOneTrack
               ? LANE_POS[0]
-              : LANE_POS[slice.lane];
+              : LANE_POS[laneIdx];
 
         // Convert to canvas coordinates
         const { x: nx, y: ny } = toCanvas(scrollVal, laneVal);
 
-        // Invisible modifier: notes fade out as they approach the hit line
-        // Similar to osu! Hidden — notes appear, then fade to invisible
-        // Fade starts at ~60% of the visible distance, fully invisible at ~30%
-        const isInvisibleMod = useSliceItStore.getState().modifiers.invisible;
+        // M3 — the visibility family. `modifiers.invisible` still just gates
+        // whether ANY of the four effects plays (same field, same score
+        // weight as before the split); `visibilityMode` picks which one.
+        // Bombs always render — hiding the one note you must NOT hit is not
+        // a reading test, it is a trap.
+        const isInvisibleMod = runState.modifiers.invisible;
         if (isInvisibleMod && slice.type !== 'BOMB') {
           const timeUntilHit = slice.time - currentTime; // audio-seconds until hit
-          const visibleWindow = 3.0 / speedMod; // total visible window in audio-seconds
+          const visibleWindow = approachSec / speedMod; // total visible window, audio-seconds
           const travelRatio = timeUntilHit / visibleWindow; // 1.0 = just spawned, 0.0 = at hit line
-          // Fade: fully visible from 1.0 to 0.20, fade from 0.20 to 0.08, invisible below 0.08
-          if (travelRatio < 0.08) {
+          const alpha = visibilityAlpha(travelRatio, runState.visibilityMode, runState.laneCoverHeight);
+          if (alpha <= 0) {
             ctx.globalAlpha = 0;
-            // Skip rendering entirely
-            continue;
-          } else if (travelRatio < 0.2) {
-            ctx.globalAlpha = noteAlpha * ((travelRatio - 0.08) / 0.12); // 0→1 over the fade range
-          } else {
-            ctx.globalAlpha = noteAlpha;
+            continue; // Skip rendering entirely
           }
+          ctx.globalAlpha = noteAlpha * alpha;
         } else {
           ctx.globalAlpha = noteAlpha;
         }
@@ -1045,16 +1344,23 @@ export function GameCanvas() {
         let color = '#475569';
         if (slice.type === 'BOMB') color = '#ef4444';
         // Hold notes and standard notes match their lane color
-        else if (slice.type === 'LONG') color = slice.lane === 0 ? COLORS.lane1 : COLORS.lane2;
+        else if (slice.type === 'LONG') color = laneIdx === 0 ? laneA : laneB;
         else if (slice.type === 'SWITCH') {
-          const startCol = slice.lane === 0 ? COLORS.lane1 : COLORS.lane2;
-          const endCol = slice.lane === 0 ? COLORS.lane2 : COLORS.lane1;
+          const startCol = laneIdx === 0 ? laneA : laneB;
+          const endCol = laneIdx === 0 ? laneB : laneA;
           color = interpolateHex(startCol, endCol, switchProgress);
         }
         // @ts-expect-error — COLORS.slice is typed loosely
         else if (COLORS.slice[slice.type]) color = COLORS.slice[slice.type];
-        else if (slice.lane === 0) color = COLORS.lane1;
-        else color = COLORS.lane2;
+        // Quantisation colour, when the chart carries one and the player has not
+        // turned it off. Applied only to plain taps: BOMB, SWITCH, SPEED and
+        // LONG each already use colour to say what KIND of note they are, and
+        // that meaning outranks the rhythm one. A tap has no such claim on it,
+        // so on a tap the colour is free to say "this is the sixteenth".
+        else if (quantColorsOn && slice.quant && QUANT_COLORS[slice.quant]) {
+          color = QUANT_COLORS[slice.quant];
+        } else if (laneIdx === 0) color = laneA;
+        else color = laneB;
 
         ctx.fillStyle = color;
 
@@ -1184,10 +1490,10 @@ export function GameCanvas() {
           const arrow =
             switchProgress < 1
               ? isMobileV
-                ? slice.lane === 0
+                ? laneIdx === 0
                   ? '→'
                   : '←' // mobile: lanes are left/right
-                : slice.lane === 0
+                : laneIdx === 0
                   ? '↓'
                   : '↑' // desktop: lanes are top/bottom
               : '⇄';
@@ -1208,6 +1514,67 @@ export function GameCanvas() {
         }
       }
       ctx.shadowColor = 'transparent'; // Reset
+    }
+
+    // 3b. Combo break — the colour drains out of the playfield.
+    //
+    // A grey wash rather than `ctx.filter = 'saturate(…)'`, which is what the
+    // effect literally wants: setting `ctx.filter` makes the browser rasterise
+    // every subsequent draw to a scratch surface and composite it, on the one
+    // screen in the app where frame timing IS the gameplay. This is one
+    // `fillRect` and reads the same way — the field goes flat for a moment.
+    //
+    // Gated on `theme.glow`, which is false under reduced motion and on
+    // `perf-lite` devices: a screen-wide tint appearing on a miss is exactly the
+    // kind of thing that preference is asking not to happen.
+    const comboBreak = glow && !flashOff ? engine.getComboBreak() : null;
+    if (comboBreak) {
+      const age = (nowMs - comboBreak.at) / COMBO_BREAK_FEEDBACK_MS;
+      if (age >= 0 && age < 1) {
+        ctx.save();
+        ctx.globalAlpha = 0.2 * comboBreak.magnitude * (1 - age) * fx;
+        ctx.fillStyle = theme.shadowDark;
+        ctx.fillRect(0, 0, w, h);
+        ctx.restore();
+      }
+    }
+
+    // 3c. V5 — combo milestones: an escalating flash + label at 50/100/250/
+    // 500/1000. Gated on `glow` exactly like the combo-break wash above — a
+    // screen flash tied to hitting a number is precisely what A2's
+    // photosensitivity mode (and reduced motion / perf-lite, which fold into
+    // the same flag) turns off.
+    const milestone = glow && !flashOff ? engine.getComboMilestone() : null;
+    if (milestone) {
+      const age = (nowMs - milestone.at) / COMBO_MILESTONE_FEEDBACK_MS;
+      if (age >= 0 && age < 1) {
+        const tier = Math.max(
+          0,
+          COMBO_MILESTONES.indexOf(milestone.value as (typeof COMBO_MILESTONES)[number]),
+        );
+        const tierColor = MILESTONE_COLORS[tier] ?? MILESTONE_COLORS[MILESTONE_COLORS.length - 1];
+        const tierRatio = tier / (COMBO_MILESTONES.length - 1);
+
+        ctx.save();
+        ctx.globalAlpha = (0.1 + tierRatio * 0.16) * (1 - age) * fx;
+        ctx.fillStyle = tierColor;
+        ctx.fillRect(0, 0, w, h);
+        ctx.restore();
+
+        ctx.save();
+        ctx.globalAlpha = 1 - age;
+        ctx.textAlign = 'center';
+        ctx.fillStyle = tierColor;
+        ctx.font = `900 ${26 + tier * 5}px sans-serif`;
+        ctx.shadowColor = tierColor;
+        ctx.shadowBlur = glow * (6 + tier * 3);
+        ctx.fillText(
+          ts('combo-milestone', { defaultValue: '{{n}} COMBO', n: milestone.value }),
+          w / 2,
+          h * 0.32,
+        );
+        ctx.restore();
+      }
     }
 
     // 4. Update & Draw Particles
@@ -1342,8 +1709,27 @@ export function GameCanvas() {
       });
     }
 
+    // 6. Hit-error bar
+    //
+    // Drawn below the playfield rather than on the judgement line: the eye that
+    // is reading notes must not have to also read a moving tick cloud in the
+    // same place, and the bar is for glancing at between phrases.
+    drawErrorBar(ctx, engine, w, isMobileV ? h * 0.955 : h * 0.93, glow, theme.textColor);
+
     ctx.restore();
   };
+
+  // V10 — the "green number": how long a note is visible before it must be
+  // hit, given the current song's tempo and every setting that touches the
+  // approach window. Recomputed every render this component is part of,
+  // which is exactly when it needs to be current — the player is dragging
+  // the lane-cover slider below while this is on screen.
+  const reactionMs = (() => {
+    const st = useSliceItStore.getState();
+    const bpm = engine?.getActiveMap()?.bpm || 120;
+    const approach = approachSeconds(bpm, st.scrollSpeed, st.scrollMode) / (st.modifiers.speed || 1);
+    return reactionWindowMs(approach, laneCoverHeight);
+  })();
 
   return (
     // Column below `lg` so the opponent board can sit as a strip ABOVE the
@@ -1465,6 +1851,37 @@ export function GameCanvas() {
             </button>
           )}
 
+          {/* H6 — skip a long lead-in, straight to 2s before the first note.
+              Disabled in multiplayer: the clock and the countdown both belong
+              to the server there. */}
+          {canSkipLeadIn && (
+            <button
+              className="absolute top-14 right-3 z-50 h-8 px-3 rounded-full bg-slice-bg shadow-[4px_4px_8px_var(--slice-shadow-dark),-4px_-4px_8px_var(--slice-shadow-light)] flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide text-slice-text-muted hover:text-slice-text transition-colors active:shadow-[inset_4px_4px_8px_var(--slice-shadow-dark),inset_-4px_-4px_8px_var(--slice-shadow-light)]"
+              data-mobile-btn
+              onClick={skipLeadIn}
+            >
+              <SkipForward className="w-3.5 h-3.5" aria-hidden />
+              {ts('skip-intro', { defaultValue: 'Skip' })}
+            </button>
+          )}
+
+          {/* H6 — hold-to-restart feedback. Shown only while the key is
+              actually held, so it never competes with the HUD during
+              ordinary play; a tap alone never reaches this, only a hold past
+              `RESTART_HOLD_MS`. */}
+          {restartHolding && (
+            <div
+              className="absolute top-3 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-slice-bg rounded-full px-4 py-2 shadow-[4px_4px_8px_var(--slice-shadow-dark),-4px_-4px_8px_var(--slice-shadow-light)]"
+              role="status"
+              aria-live="polite"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-amber-500 animate-spin" aria-hidden />
+              <span className="text-xs font-black uppercase tracking-wide text-slice-text">
+                {ts('restarting', { defaultValue: 'Restarting…' })}
+              </span>
+            </div>
+          )}
+
           {/* Singleplayer Pause Overlay (with settings) */}
           {isPaused && status === 'PLAYING' && !isMultiplayer && (
             <div className="absolute inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center-safe justify-center-safe overflow-y-auto">
@@ -1536,6 +1953,31 @@ export function GameCanvas() {
                         +
                       </button>
                     </div>
+                  </div>
+
+                  {/* Lane Cover (V10) — the readout is the point: IIDX players
+                      tune the "green number" (the reaction window in ms), not
+                      a percentage they cannot feel. */}
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[11px] font-black text-slice-text-muted uppercase tracking-wider">
+                        {ts('lane-cover', { defaultValue: 'Lane Cover' })}
+                      </span>
+                      <span className="text-sm font-bold text-blue-500 font-mono">
+                        {ts('lane-cover-reaction', {
+                          defaultValue: '{{ms}}ms',
+                          ms: reactionMs,
+                        })}
+                      </span>
+                    </div>
+                    <Slider
+                      value={[laneCoverHeight]}
+                      min={MIN_LANE_COVER}
+                      max={MAX_LANE_COVER}
+                      step={0.01}
+                      onValueChange={([v]) => setLaneCoverHeight(v)}
+                      className="w-full"
+                    />
                   </div>
 
                   {/* Keybinds */}
@@ -1683,6 +2125,26 @@ export function GameCanvas() {
                   </div>
                 </div>
 
+                {/* Lane Cover (V10) */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-black text-slice-text-muted uppercase tracking-wider">
+                      {ts('lane-cover', { defaultValue: 'Lane Cover' })}
+                    </span>
+                    <span className="text-xs font-bold text-blue-500 font-mono">
+                      {ts('lane-cover-reaction', { defaultValue: '{{ms}}ms', ms: reactionMs })}
+                    </span>
+                  </div>
+                  <Slider
+                    value={[laneCoverHeight]}
+                    min={MIN_LANE_COVER}
+                    max={MAX_LANE_COVER}
+                    step={0.01}
+                    onValueChange={([v]) => setLaneCoverHeight(v)}
+                    className="w-full"
+                  />
+                </div>
+
                 {/* Keybinds */}
                 <div className="flex flex-col gap-1.5">
                   <span className="text-[10px] font-black text-slice-text-muted uppercase tracking-wider">
@@ -1744,7 +2206,7 @@ export function GameCanvas() {
             </div>
           )}
 
-          {status === 'PLAYING' && <HUD />}
+          {status === 'PLAYING' && <HUD engine={engine} />}
 
           {/* Synchronized Loading Overlay */}
           {status === 'PLAYING' && isLoadingSong && (

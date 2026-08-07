@@ -16,6 +16,7 @@ export default defineConfig({
       'lib/massive-march/__tests__/**/*.test.ts',
       'lib/rmhark-ai/__tests__/**/*.test.ts',
       'lib/slice-it/__tests__/**/*.test.ts',
+      'lib/slice-it/editor/__tests__/**/*.test.ts',
       'lib/rmhladder/**/*.test.ts',
       'lib/homes/**/*.test.ts',
       'lib/isleworks/__tests__/**/*.test.ts',

@@ -45,6 +45,10 @@ export const SCOPES: ScopeDetail[] = [
   { id: 'read:builds', action: 'read', group: 'Content', description: 'Read the public builds marketplace.' },
   { id: 'read:content', action: 'read', group: 'Content', description: 'Read blog posts and news articles.' },
   { id: 'read:leaderboards', action: 'read', group: 'Content', description: 'Read public game leaderboards.' },
+  // X13 — Slice It's chart metadata and boards. Its own scope rather than
+  // folding into `read:leaderboards`: a chart's metadata is not a leaderboard,
+  // and a community stat site should be grantable one without the other.
+  { id: 'read:slice-it', action: 'read', group: 'Content', description: 'Read Slice It! charts, leaderboards and public player stats.' },
   { id: 'manage:webhooks', action: 'manage', group: 'Webhooks', description: 'Create and manage webhook subscriptions.' },
 ];
 

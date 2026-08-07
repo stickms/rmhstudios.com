@@ -133,6 +133,17 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'game.daily.streak_7', name: 'Daily Grind', description: 'Complete the daily puzzle 7 days in a row.', icon: '🔂', category: 'games', tier: 'silver', coinReward: 40, target: 7, group: 'Daily Puzzles' },
   { id: 'game.daily.all_in_day', name: 'Clean Sweep', description: 'Complete every daily puzzle in one day.', icon: '🧹', category: 'games', tier: 'gold', coinReward: 75, target: 1, group: 'Daily Puzzles' },
   { id: 'game.slice_it.full_combo', name: 'Full Combo', description: 'Clear a song with a full combo.', icon: '🎼', category: 'games', tier: 'gold', coinReward: 75, target: 1, group: 'Slice It!' },
+  // X1 — the rest of the ladder. Unlock checks live in `lib/achievements/slice-it.ts`
+  // (pure, per-run logic) and `lib/slice-it/progression.server.ts` (the Prisma
+  // orchestration), called from `score.ts`. `charted` is granted from
+  // `app/routes/api/slice-it/charts/$id.ts` on the draft→public transition —
+  // the only place a chart's publish state actually changes.
+  { id: 'game.slice_it.s_rank', name: 'Sharp', description: 'Finish a song with an S rank.', icon: '🔪', category: 'games', tier: 'silver', coinReward: 25, target: 1, group: 'Slice It!' },
+  { id: 'game.slice_it.ss_rank', name: 'Flawless', description: 'Finish a song with 100% accuracy.', icon: '💎', category: 'games', tier: 'gold', coinReward: 100, target: 1, group: 'Slice It!' },
+  { id: 'game.slice_it.expert_fc', name: 'No Mercy', description: 'Full combo an Expert chart.', icon: '⚔️', category: 'games', tier: 'gold', coinReward: 100, target: 1, group: 'Slice It!' },
+  { id: 'game.slice_it.stacked', name: 'Stacked', description: 'Clear a song with four modifiers active.', icon: '🎛️', category: 'games', tier: 'silver', coinReward: 30, target: 1, group: 'Slice It!' },
+  { id: 'game.slice_it.centurion', name: 'Centurion', description: 'Play 100 different songs.', icon: '💯', category: 'games', tier: 'gold', coinReward: 75, target: 100, group: 'Slice It!' },
+  { id: 'game.slice_it.charted', name: 'Charter', description: 'Publish a hand-edited chart.', icon: '✏️', category: 'games', tier: 'silver', coinReward: 40, target: 1, group: 'Slice It!' },
   { id: 'game.rmhtube.host_room', name: 'Now Showing', description: 'Host an RMHTube watch room.', icon: '📺', category: 'games', tier: 'bronze', coinReward: 10, target: 1, group: 'RMHTube' },
   { id: 'game.rmhmusic.host_room', name: 'On the Decks', description: 'Host an RMHMusic listening room.', icon: '🎚️', category: 'games', tier: 'bronze', coinReward: 10, target: 1, group: 'RMHMusic' },
   { id: 'game.rmhstudy.session', name: 'Study Buddy', description: 'Complete a focus session in RMHStudy.', icon: '📖', category: 'games', tier: 'bronze', coinReward: 10, target: 1, group: 'RMHStudy' },

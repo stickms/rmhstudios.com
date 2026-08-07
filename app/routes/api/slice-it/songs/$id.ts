@@ -1,9 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { optimizeImage } from '@/lib/image-optimize';
-import { COVER_MAX_BYTES, COVER_SIZE } from '@/lib/slice-it/constants';
+import { COVER_MAX_BYTES, COVER_SIZE, DIFFICULTIES } from '@/lib/slice-it/constants';
 import { SongPatchZ } from '@/lib/slice-it/api-schemas';
+import { trimToDifficulty } from '@/lib/slice-it/nested-chart';
 import { validateImageBuffer } from '@/lib/slice-it/upload-validation';
 import {
   deleteSongAssets,
@@ -12,6 +14,17 @@ import {
   toSliceSong,
 } from '@/lib/slice-it/songs.server';
 import { issueRunToken } from '@/lib/slice-it/run-token.server';
+
+/**
+ * O7 — which single difficulty to send.
+ *
+ * Optional, and absent means "all four", because the editor, the linter and
+ * every client older than this parameter need the whole chart. A caller that
+ * knows what it is about to play should always pass it.
+ */
+const SongQueryZ = z.object({
+  difficulty: z.enum(DIFFICULTIES).optional(),
+});
 
 /**
  * A single song: read, edit, delete.
@@ -24,33 +37,48 @@ import { issueRunToken } from '@/lib/slice-it/run-token.server';
 export const Route = createFileRoute('/api/slice-it/songs/$id')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional', rateLimit: 'read' }, async ({ params, userId }) => {
-        const song = await prisma.song.findUnique({
-          where: { id: params.id },
-          select: {
-            ...songSelect,
-            analysisData: true,
-            ...(userId
-              ? {
-                  likes: { where: { userId }, select: { id: true } },
-                  songPlays: { where: { userId }, select: { count: true } },
-                }
-              : {}),
-          },
-        });
+      GET: defineHandler(
+        { auth: 'optional', rateLimit: 'read', query: SongQueryZ },
+        async ({ params, userId, query }) => {
+          const song = await prisma.song.findUnique({
+            where: { id: params.id },
+            select: {
+              ...songSelect,
+              analysisData: true,
+              ...(userId
+                ? {
+                    likes: { where: { userId }, select: { id: true } },
+                    songPlays: { where: { userId }, select: { count: true } },
+                  }
+                : {}),
+            },
+          });
 
-        if (!song || (!song.isPublic && userId !== song.uploadedBy)) {
-          return Response.json({ error: 'Song not found' }, { status: 404 });
-        }
+          if (!song || (!song.isPublic && userId !== song.uploadedBy)) {
+            return Response.json({ error: 'Song not found' }, { status: 404 });
+          }
 
-        // Mint the run receipt here rather than from a dedicated endpoint:
-        // every run performs this read, so it costs no extra round trip on the
-        // path to starting a song. See `run-token.server.ts`.
-        return Response.json({
-          ...toSliceSong(song, userId, { includeAnalysis: true }),
-          ...(userId ? { runToken: issueRunToken(userId, song.id) } : {}),
-        });
-      }),
+          const payload = toSliceSong(song, userId, { includeAnalysis: true });
+
+          // O7 — send one difficulty, not four. The `select` cannot narrow
+          // inside a Json column, so the trim happens after the read: the win
+          // is on the wire, not in the query, and the wire is where
+          // `LOAD_TIMEOUT_MS` is spent. Since the tiers are nested
+          // (easy ⊆ normal ⊆ hard ⊆ expert), three of the four lists are mostly
+          // the same notes repeated.
+          if (query.difficulty && payload.analysisData) {
+            payload.analysisData = trimToDifficulty(payload.analysisData, query.difficulty);
+          }
+
+          // Mint the run receipt here rather than from a dedicated endpoint:
+          // every run performs this read, so it costs no extra round trip on
+          // the path to starting a song. See `run-token.server.ts`.
+          return Response.json({
+            ...payload,
+            ...(userId ? { runToken: issueRunToken(userId, song.id) } : {}),
+          });
+        },
+      ),
 
       PATCH: defineHandler(
         { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'slice-patch', scope: 'user' } },

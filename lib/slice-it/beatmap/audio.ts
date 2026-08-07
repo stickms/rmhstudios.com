@@ -19,6 +19,30 @@ export interface AudioLike {
 }
 
 /**
+ * Adapt `@audio/decode`'s output to {@link AudioLike}.
+ *
+ * Here rather than beside its first caller because there are two now — the
+ * upload route and `O3`'s analysis worker — and two copies of this would drift
+ * on exactly the channel-count edge case the throw below exists for.
+ */
+export function decodedToAudioLike(decoded: {
+  sampleRate: number;
+  channelData: Float32Array[];
+}): AudioLike {
+  const length = decoded.channelData[0]?.length ?? 0;
+  return {
+    sampleRate: decoded.sampleRate,
+    length,
+    numberOfChannels: decoded.channelData.length,
+    getChannelData(channel: number) {
+      const data = decoded.channelData[channel];
+      if (!data) throw new RangeError(`Audio channel ${channel} is unavailable`);
+      return data;
+    },
+  };
+}
+
+/**
  * Analysis sample rate.
  *
  * 22.05 kHz keeps everything up to 11 kHz, which covers every band that

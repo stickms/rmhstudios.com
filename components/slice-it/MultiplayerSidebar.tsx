@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from '@tanstack/react-router';
 import { CheckCircle2 } from 'lucide-react';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
@@ -43,18 +44,65 @@ import { AnimatedCount } from '@/components/ui/AnimatedCount';
  */
 const SCORE_TWEEN_MS = 200;
 
+/**
+ * An opponent's name, linked to their Slice It player page (`X11`).
+ *
+ * Linked by **user id**, not by handle: `LobbyPlayer` comes off the wire with
+ * `userId` and a display name and no handle, and its shape lives in
+ * `lib/slice-it/net/events.ts`, which this wave does not own. The player page
+ * resolves either form and emits the handle version as its canonical.
+ *
+ * A null `userId` is a guest seat (`X10`) and renders as plain text — which is
+ * the honest rendering, because a guest has no page precisely on account of
+ * nothing about them being stored.
+ */
+function PlayerLink({
+  userId,
+  name,
+  className,
+}: {
+  userId: string | null;
+  name: string;
+  className: string;
+}) {
+  if (!userId) return <span className={className}>{name}</span>;
+  return (
+    <Link
+      to="/slice-it/player/$handle"
+      params={{ handle: userId }}
+      className={`${className} hover:underline`}
+    >
+      {name}
+    </Link>
+  );
+}
+
 export function MultiplayerSidebar() {
   const { t } = useTranslation('c-game');
+  // The team badge's strings live in `r-slice-it` alongside the rest of the
+  // multiplayer mode copy (`N2`), not in the shared game namespace.
+  const { t: ts } = useTranslation('r-slice-it');
   const liveScores = useSliceItStore((s) => s.liveScores);
   const lobby = useSliceItStore((s) => s.lobby);
   const selfSocketId = useSliceItStore((s) => s.selfSocketId);
 
   const rows = React.useMemo(() => {
-    const nameOf = (socketId: string) =>
-      lobby?.players.find((p) => p.socketId === socketId)?.name ?? 'Player';
+    const seatOf = (socketId: string) => lobby?.players.find((p) => p.socketId === socketId);
     return Object.values(liveScores)
       .filter((entry) => entry.socketId !== selfSocketId)
-      .map((entry) => ({ ...entry, name: nameOf(entry.socketId) }))
+      .map((entry) => {
+        const seat = seatOf(entry.socketId);
+        // `userId` is what makes the name a link (X11). Null for a guest seat,
+        // which is exactly the case that has no page to link to.
+        return {
+          ...entry,
+          name: seat?.name ?? 'Player',
+          userId: seat?.userId ?? null,
+          // Null outside team mode (`N2`) — the server already reports it that
+          // way, so the board never has to ask two questions to draw a badge.
+          team: seat?.team ?? null,
+        };
+      })
       .sort((a, b) => b.score - a.score);
   }, [liveScores, lobby, selfSocketId]);
 
@@ -82,7 +130,11 @@ export function MultiplayerSidebar() {
           >
             <span className="flex items-center gap-1.5 text-[10px] font-bold text-slice-text-light">
               <span>#{index + 1}</span>
-              <span className="max-w-24 truncate text-slice-text">{row.name}</span>
+              <PlayerLink
+                userId={row.userId}
+                name={row.name}
+                className="max-w-24 truncate text-slice-text"
+              />
               {row.done && <CheckCircle2 className="w-3 h-3 text-green-500" aria-hidden />}
             </span>
             <AnimatedCount
@@ -109,7 +161,20 @@ export function MultiplayerSidebar() {
               <div className="flex justify-between items-center mb-1 gap-2">
                 <span className="font-bold text-slice-text text-sm truncate" title={row.name}>
                   <span className="text-slice-text-light mr-1">#{index + 1}</span>
-                  {row.name}
+                  <PlayerLink userId={row.userId} name={row.name} className="" />
+                  {row.team && (
+                    <span
+                      className={`ml-1.5 text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full ${
+                        row.team === 'a'
+                          ? 'bg-blue-500/20 text-blue-500'
+                          : 'bg-orange-500/20 text-orange-500'
+                      }`}
+                    >
+                      {row.team === 'a'
+                        ? ts('mp-team-a-short', { defaultValue: 'A' })
+                        : ts('mp-team-b-short', { defaultValue: 'B' })}
+                    </span>
+                  )}
                 </span>
                 {row.done ? (
                   <span className="inline-flex items-center gap-1 text-[10px] font-black text-green-500 shrink-0">

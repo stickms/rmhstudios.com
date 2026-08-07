@@ -57,7 +57,20 @@ export function useStartRun(engine: GameEngine | null) {
 
       try {
         store.setLoadingProgressText('FETCHING TRACK…');
-        const response = await fetch(`/api/slice-it/songs/${songId}`);
+        // O7 — ask for the one difficulty this run will play. The tiers are
+        // nested (easy ⊆ normal ⊆ hard ⊆ expert), so the untrimmed response is
+        // mostly the same notes four times, on the exact path
+        // `LOAD_TIMEOUT_MS` exists to accommodate.
+        //
+        // Safe to pin here because the difficulty cannot change between this
+        // read and `loadMap`: it is chosen in the menu before `startRun`, and
+        // `engine.reset()` (H6's restart) reuses the slices it already
+        // resolved rather than re-reading the map.
+        const response = await fetch(
+          `/api/slice-it/songs/${songId}?difficulty=${encodeURIComponent(
+            store.modifiers.difficulty,
+          )}`,
+        );
         if (!response.ok) throw new Error(`Song fetch failed: ${response.status}`);
         const song = (await response.json()) as SliceSong;
         // The run's receipt, minted by that read. Null for a signed-out player,

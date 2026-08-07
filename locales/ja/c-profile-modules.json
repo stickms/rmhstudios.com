@@ -1,15 +1,23 @@
 {
   "about-placeholder": "A few words about you…",
+  "best-accuracy": "Best accuracy",
+  "charts-cleared": "Charts cleared",
   "edit-showcase": "Edit showcase",
   "empty-editor": "Add blocks to build your showcase.",
   "error": "Couldn't save your showcase",
   "followers": "Followers",
   "following": "Following",
+  "lamp-cleared": "{{count}} cleared",
+  "lamp-fc": "{{count}} FC",
+  "lamp-perfect": "{{count}} perfect",
   "module-about": "About",
+  "module-slice-it": "Slice It!",
+  "no-slice-it": "No Slice It! runs yet",
   "no-status": "No status set",
   "no-wishlist": "Wishlist is private or empty",
   "posts": "Posts",
   "remove": "Remove",
   "save": "Save",
-  "saved": "Showcase saved"
+  "saved": "Showcase saved",
+  "skill-rating": "Skill rating"
 }
