@@ -1504,6 +1504,19 @@ export class GameEngine {
   }
 
   private pushFeedback(text: string, lane: number, color: string, offset?: number): void {
+    // H9 — suppress popups the player has asked not to see.
+    //
+    // Filtered here rather than in the renderer so a hidden judgement costs
+    // nothing at all: on a dense chart the queue is the allocation, and an
+    // expert hiding everything above GREAT is hiding the ones that fire most.
+    // Non-judgement text ("BOMB!") is never suppressed — it is not a grade.
+    const rank = JUDGEMENT_ORDER.indexOf(text as Exclude<HitResult, 'NONE'>);
+    if (rank !== -1) {
+      const floor = JUDGEMENT_ORDER.indexOf(
+        useSliceItStore.getState().showJudgementsBelow as Exclude<HitResult, 'NONE'>,
+      );
+      if (floor !== -1 && rank < floor) return;
+    }
     this.feedbackQueue.push({
       id: this.feedbackIdCounter++,
       text,

@@ -1,5 +1,6 @@
 'use client';
 
+import { laneColor, resolvePalette } from '@/lib/slice-it/palettes';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { fadeRise, popIn } from '@/lib/motion';
@@ -1069,6 +1070,15 @@ export function GameCanvas() {
     const speedMod = runState.modifiers.speed || 1.0;
     const isOneTrack = runState.modifiers.oneTrack;
     const quantColorsOn = runState.quantColors;
+    // A3 — the lane palette. Resolved per frame from the store rather than
+    // captured, so switching palettes in settings takes effect without a reload.
+    const palette = resolvePalette(runState.lanePalette);
+    const laneA = laneColor(palette, 0);
+    const laneB = laneColor(palette, 1);
+    // A2 — photosensitivity. Distinct from `canvasGlowEnabled()`, which is the
+    // PERFORMANCE tier: a fast machine still gets every flash without this.
+    const flashOff = runState.reducedFlash;
+    const fx = runState.effectIntensity; // A7
     const mirrorOn = runState.mirror && !isOneTrack;
     const isMobileV = h > w; // portrait canvas = mobile vertical mode
     const currentTime = AudioManager.getInstance().getCurrentTime();
@@ -1310,10 +1320,10 @@ export function GameCanvas() {
         let color = '#475569';
         if (slice.type === 'BOMB') color = '#ef4444';
         // Hold notes and standard notes match their lane color
-        else if (slice.type === 'LONG') color = laneIdx === 0 ? COLORS.lane1 : COLORS.lane2;
+        else if (slice.type === 'LONG') color = laneIdx === 0 ? laneA : laneB;
         else if (slice.type === 'SWITCH') {
-          const startCol = laneIdx === 0 ? COLORS.lane1 : COLORS.lane2;
-          const endCol = laneIdx === 0 ? COLORS.lane2 : COLORS.lane1;
+          const startCol = laneIdx === 0 ? laneA : laneB;
+          const endCol = laneIdx === 0 ? laneB : laneA;
           color = interpolateHex(startCol, endCol, switchProgress);
         }
         // @ts-expect-error — COLORS.slice is typed loosely
@@ -1325,8 +1335,8 @@ export function GameCanvas() {
         // so on a tap the colour is free to say "this is the sixteenth".
         else if (quantColorsOn && slice.quant && QUANT_COLORS[slice.quant]) {
           color = QUANT_COLORS[slice.quant];
-        } else if (laneIdx === 0) color = COLORS.lane1;
-        else color = COLORS.lane2;
+        } else if (laneIdx === 0) color = laneA;
+        else color = laneB;
 
         ctx.fillStyle = color;
 
@@ -1493,12 +1503,12 @@ export function GameCanvas() {
     // Gated on `theme.glow`, which is false under reduced motion and on
     // `perf-lite` devices: a screen-wide tint appearing on a miss is exactly the
     // kind of thing that preference is asking not to happen.
-    const comboBreak = glow ? engine.getComboBreak() : null;
+    const comboBreak = glow && !flashOff ? engine.getComboBreak() : null;
     if (comboBreak) {
       const age = (nowMs - comboBreak.at) / COMBO_BREAK_FEEDBACK_MS;
       if (age >= 0 && age < 1) {
         ctx.save();
-        ctx.globalAlpha = 0.2 * comboBreak.magnitude * (1 - age);
+        ctx.globalAlpha = 0.2 * comboBreak.magnitude * (1 - age) * fx;
         ctx.fillStyle = theme.shadowDark;
         ctx.fillRect(0, 0, w, h);
         ctx.restore();
@@ -1510,7 +1520,7 @@ export function GameCanvas() {
     // screen flash tied to hitting a number is precisely what A2's
     // photosensitivity mode (and reduced motion / perf-lite, which fold into
     // the same flag) turns off.
-    const milestone = glow ? engine.getComboMilestone() : null;
+    const milestone = glow && !flashOff ? engine.getComboMilestone() : null;
     if (milestone) {
       const age = (nowMs - milestone.at) / COMBO_MILESTONE_FEEDBACK_MS;
       if (age >= 0 && age < 1) {
@@ -1522,7 +1532,7 @@ export function GameCanvas() {
         const tierRatio = tier / (COMBO_MILESTONES.length - 1);
 
         ctx.save();
-        ctx.globalAlpha = (0.1 + tierRatio * 0.16) * (1 - age);
+        ctx.globalAlpha = (0.1 + tierRatio * 0.16) * (1 - age) * fx;
         ctx.fillStyle = tierColor;
         ctx.fillRect(0, 0, w, h);
         ctx.restore();

@@ -103,6 +103,26 @@ export interface Modifiers {
    * store-migration reason as {@link lenientTiming}.
    */
   perfectionist?: boolean;
+
+  /**
+   * A1 — never end the run, whatever the gauge says.
+   *
+   * Optional for the same store-migration reason as the two above. Belongs to
+   * the assist family: unranked, and worth NO bonus. A modifier that makes the
+   * game easier and charges a score penalty punishes the player for needing it.
+   */
+  noFail?: boolean;
+
+  /**
+   * A1 — assist: 0.75x speed with the visuals intact. Unranked, no bonus.
+   *
+   * Distinct from the `speed` slider, which is a ranked-below-1.0x setting a
+   * player chooses for challenge reasons. This one is framed and grouped as
+   * accessibility and is exempt from the "slow is unranked" messaging, because
+   * being told your assist run is unranked twice is being told you should not
+   * have used it.
+   */
+  assist?: boolean;
 }
 
 /** The tally the engine keeps and the score route re-derives its checks from. */

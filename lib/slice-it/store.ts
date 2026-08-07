@@ -63,6 +63,34 @@ interface SliceItState {
    * is a real change to what the playfield looks like.
    */
   quantColors: boolean;
+  /** A3 — lane palette id. See `lib/slice-it/palettes.ts`. */
+  lanePalette: string;
+  /**
+   * A2 — cap how much the screen may brighten per frame, and drop the
+   * decorative flashes entirely.
+   *
+   * Separate from `canvasGlowEnabled()`, which degrades blur for PERFORMANCE:
+   * a fast machine still gets the full flash. This is the photosensitivity
+   * axis, and the game declares `descriptors: ['flashing']` with nothing to
+   * turn it off until now.
+   */
+  reducedFlash: boolean;
+  /** A7 — per-effect intensity, 0..1. Scales shake, rotation and particles. */
+  effectIntensity: number;
+  /**
+   * H9 — the WORST judgement that still gets a popup, by rank.
+   *
+   * `JUDGEMENT_ORDER` runs best-to-worst, so `'MARVELOUS'` (rank 0) is the
+   * permissive floor and shows everything — the default, because that is
+   * today's behaviour. Setting it to `'GREAT'` hides MARVELOUS and PERFECT,
+   * which is the common expert configuration: on a good run those two fire
+   * constantly and carry no information, while obscuring the notes behind them.
+   */
+  showJudgementsBelow: string;
+  /** H9 — popup scale and opacity, and where the combo counter sits. */
+  judgementScale: number;
+  judgementOpacity: number;
+  comboPosition: 'center' | 'left' | 'right' | 'hidden';
   /** P4 — a click on every beat. A learning tool, not a challenge setting. */
   metronome: boolean;
   /** P4 — a click on every NOTE, whether or not you hit it. */
@@ -142,6 +170,13 @@ interface SliceItState {
   setAudioOffset: (offset: number) => void;
   setIsDarkMode: (isDark: boolean) => void;
   setQuantColors: (value: boolean) => void;
+  setLanePalette: (value: string) => void;
+  setReducedFlash: (value: boolean) => void;
+  setEffectIntensity: (value: number) => void;
+  setShowJudgementsBelow: (value: string) => void;
+  setJudgementScale: (value: number) => void;
+  setJudgementOpacity: (value: number) => void;
+  setComboPosition: (value: 'center' | 'left' | 'right' | 'hidden') => void;
   setMetronome: (value: boolean) => void;
   setAssistTick: (value: boolean) => void;
   setModifiers: (modifiers: Modifiers) => void;
@@ -232,6 +267,13 @@ export const useSliceItStore = create<SliceItState>()(
       audioOffset: 0,
       isDarkMode: true,
       quantColors: true,
+      lanePalette: 'default',
+      reducedFlash: false,
+      effectIntensity: 1,
+      showJudgementsBelow: 'MARVELOUS',
+      judgementScale: 1,
+      judgementOpacity: 1,
+      comboPosition: 'center' as const,
       metronome: false,
       assistTick: false,
       modifiers: { ...DEFAULT_MODIFIERS },
@@ -254,6 +296,13 @@ export const useSliceItStore = create<SliceItState>()(
         set({ audioOffset: Math.max(-500, Math.min(500, Math.round(audioOffset))) }),
       setIsDarkMode: (isDarkMode) => set({ isDarkMode }),
       setQuantColors: (quantColors) => set({ quantColors }),
+      setLanePalette: (lanePalette) => set({ lanePalette }),
+      setReducedFlash: (reducedFlash) => set({ reducedFlash }),
+      setEffectIntensity: (v) => set({ effectIntensity: Math.max(0, Math.min(1, v)) }),
+      setShowJudgementsBelow: (showJudgementsBelow) => set({ showJudgementsBelow }),
+      setJudgementScale: (v) => set({ judgementScale: Math.max(0.5, Math.min(1.5, v)) }),
+      setJudgementOpacity: (v) => set({ judgementOpacity: Math.max(0.2, Math.min(1, v)) }),
+      setComboPosition: (comboPosition) => set({ comboPosition }),
       setMetronome: (metronome) => set({ metronome }),
       setAssistTick: (assistTick) => set({ assistTick }),
       setModifiers: (modifiers) => set({ modifiers: applyExclusions(modifiers) }),
@@ -303,7 +352,7 @@ export const useSliceItStore = create<SliceItState>()(
     }),
     {
       name: 'slice-it-storage',
-      version: 5,
+      version: 6,
       // Settings only. Run and lobby state are per-session by definition, and
       // persisting a lobby snapshot would restore a room that no longer exists.
       partialize: (state) => ({
@@ -315,6 +364,13 @@ export const useSliceItStore = create<SliceItState>()(
         audioOffset: state.audioOffset,
         isDarkMode: state.isDarkMode,
         quantColors: state.quantColors,
+        lanePalette: state.lanePalette,
+        reducedFlash: state.reducedFlash,
+        effectIntensity: state.effectIntensity,
+        showJudgementsBelow: state.showJudgementsBelow,
+        judgementScale: state.judgementScale,
+        judgementOpacity: state.judgementOpacity,
+        comboPosition: state.comboPosition,
         metronome: state.metronome,
         assistTick: state.assistTick,
         modifiers: state.modifiers,
@@ -375,6 +431,22 @@ export const useSliceItStore = create<SliceItState>()(
           // top of the music the first time a returning player presses play, is
           // indistinguishable from a bug.
           state = { ...state, metronome: false, assistTick: false };
+        }
+        if (version < 6) {
+          // A2/A3/A7/H9. Every default reproduces today's behaviour exactly, so
+          // an existing player notices nothing until they go looking — an
+          // accessibility release that changes how the game looks unprompted is
+          // its own accessibility problem.
+          state = {
+            ...state,
+            lanePalette: 'default',
+            reducedFlash: false,
+            effectIntensity: 1,
+            showJudgementsBelow: 'MARVELOUS',
+            judgementScale: 1,
+            judgementOpacity: 1,
+            comboPosition: 'center',
+          };
         }
         return state;
       },

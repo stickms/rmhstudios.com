@@ -58,6 +58,8 @@ export const DEFAULT_MODIFIERS = {
   // player opts into.
   lenientTiming: false,
   perfectionist: false,
+  noFail: false,
+  assist: false,
 } satisfies Modifiers;
 
 /**
@@ -111,6 +113,8 @@ export const ModifiersZ: z.ZodType<Modifiers> = z
     // behaviour a new field needs to avoid a `store.ts` migration.
     lenientTiming: BoolZ,
     perfectionist: BoolZ,
+    noFail: BoolZ,
+    assist: BoolZ,
   })
   .catch(() => ({ ...DEFAULT_MODIFIERS }));
 
@@ -155,7 +159,37 @@ export function applyExclusions(modifiers: Modifiers): Modifiers {
   if (result.perfectionist && result.suddenDeath) {
     result = { ...result, suddenDeath: false };
   }
+  // A1 — No Fail says "nothing ends this run early"; Sudden Death and
+  // Perfectionist say the opposite. The assist wins rather than the challenge:
+  // a player who ticked No Fail asked for a run they can finish, and silently
+  // honouring the mod that ends it at note one would be the cruellest possible
+  // reading of the two.
+  if (result.noFail) {
+    result = { ...result, suddenDeath: false, perfectionist: false };
+  }
   return result;
+}
+
+/**
+ * A1 — the assist family.
+ *
+ * These make the game easier and are worth NOTHING. They are deliberately
+ * absent from `MODIFIER_BONUSES` and they make a run unranked, and those are
+ * two different statements: unranked because a widened window or a removed fail
+ * state is not comparable to a run without one, not because using them is
+ * illegitimate. A mod that eases the game and then charges a score penalty
+ * punishes the player for needing it, which is the design mistake this list
+ * exists to avoid.
+ */
+export const ASSIST_MODIFIERS = [
+  'noFail',
+  'assist',
+  'lenientTiming',
+] as const satisfies readonly (keyof Modifiers)[];
+
+/** True when a run's settings allow it onto a leaderboard at all. */
+export function isRankedModifierSet(modifiers: Partial<Modifiers>): boolean {
+  return !ASSIST_MODIFIERS.some((key) => modifiers[key] === true);
 }
 
 /**
