@@ -45,7 +45,13 @@ describe('sliceItAchievementsForRun', () => {
       cleared: false,
       accuracy: 1,
       isFullCombo: true,
-      modifiers: { ...DEFAULT_MODIFIERS, invisible: true, bombs: true, spin: true, switching: true },
+      modifiers: {
+        ...DEFAULT_MODIFIERS,
+        invisible: true,
+        bombs: true,
+        spin: true,
+        switching: true,
+      },
     });
     expect(ids).toEqual(['game.slice_it.first_play']);
   });
@@ -71,17 +77,29 @@ describe('sliceItAchievementsForRun', () => {
   });
 
   it('grants full_combo on any difficulty but expert_fc only on Expert', () => {
-    const normalFc = sliceItAchievementsForRun({ ...baseFacts, isFullCombo: true, difficulty: 'normal' });
+    const normalFc = sliceItAchievementsForRun({
+      ...baseFacts,
+      isFullCombo: true,
+      difficulty: 'normal',
+    });
     expect(normalFc).toContain('game.slice_it.full_combo');
     expect(normalFc).not.toContain('game.slice_it.expert_fc');
 
-    const expertFc = sliceItAchievementsForRun({ ...baseFacts, isFullCombo: true, difficulty: 'expert' });
+    const expertFc = sliceItAchievementsForRun({
+      ...baseFacts,
+      isFullCombo: true,
+      difficulty: 'expert',
+    });
     expect(expertFc).toContain('game.slice_it.full_combo');
     expect(expertFc).toContain('game.slice_it.expert_fc');
   });
 
   it('does not grant expert_fc for an Expert run that was not a full combo', () => {
-    const ids = sliceItAchievementsForRun({ ...baseFacts, difficulty: 'expert', isFullCombo: false });
+    const ids = sliceItAchievementsForRun({
+      ...baseFacts,
+      difficulty: 'expert',
+      isFullCombo: false,
+    });
     expect(ids).not.toContain('game.slice_it.expert_fc');
   });
 
@@ -181,7 +199,12 @@ describe('awardRunCoins (via reportSliceItRun)', () => {
   });
 
   it('scales the award up on a harder difficulty', async () => {
-    await reportSliceItRun({ ...baseRun, difficulty: 'expert', isFirstClear: true, isNewBest: true });
+    await reportSliceItRun({
+      ...baseRun,
+      difficulty: 'expert',
+      isFirstClear: true,
+      isNewBest: true,
+    });
     expect(runCoinCalls()[0].amount).toBe(Math.round(15 * 1.5)); // expert multiplier
   });
 
@@ -191,7 +214,9 @@ describe('awardRunCoins (via reportSliceItRun)', () => {
   });
 
   it('caps the award at whatever is left of the daily budget', async () => {
-    prismaMock.coinTransaction.aggregate.mockResolvedValue({ _sum: { amount: COIN_DAILY_CAP - 3 } });
+    prismaMock.coinTransaction.aggregate.mockResolvedValue({
+      _sum: { amount: COIN_DAILY_CAP - 3 },
+    });
     await reportSliceItRun({ ...baseRun, isFirstClear: true, isNewBest: true });
     expect(runCoinCalls()[0].amount).toBe(3);
   });

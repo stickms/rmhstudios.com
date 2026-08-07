@@ -45,10 +45,7 @@ export const Route = createFileRoute('/api/slice-it/charts/$id/reviews')({
         }
 
         if (!(await hasClearedChart(params.id, userId))) {
-          return Response.json(
-            { error: 'Clear the chart before reviewing it.' },
-            { status: 403 },
-          );
+          return Response.json({ error: 'Clear the chart before reviewing it.' }, { status: 403 });
         }
 
         // Upsert, not create: one review per player per chart, and editing

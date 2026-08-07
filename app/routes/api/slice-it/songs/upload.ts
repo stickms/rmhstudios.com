@@ -22,11 +22,7 @@ import { validateAudioBuffer, validateImageBuffer } from '@/lib/slice-it/upload-
 import { deleteSongAssets, storeSongAudio, storeSongCover } from '@/lib/slice-it/songs.server';
 import { artistKeyOf } from '@/lib/slice-it/artist';
 import { createAlbumPack } from '@/lib/slice-it/packs.server';
-import {
-  decodedToAudioLike,
-  type AudioLike,
-  type generateBeatmap,
-} from '@/lib/slice-it/beatmap';
+import { decodedToAudioLike, type AudioLike, type generateBeatmap } from '@/lib/slice-it/beatmap';
 import { enqueueAnalysis } from '@/lib/slice-it/analysis-queue.server';
 import { recordSongUploaded } from '@/lib/slice-it/progression.server';
 
@@ -164,10 +160,7 @@ export const Route = createFileRoute('/api/slice-it/songs/upload')({
         const album = albumFields.data.album || null;
         const isAlbum = files.length > 1;
         if (isAlbum && !album) {
-          return Response.json(
-            { error: 'An album upload needs an album title.' },
-            { status: 400 },
-          );
+          return Response.json({ error: 'An album upload needs an album title.' }, { status: 400 });
         }
 
         const artist = fields.data.artist || 'Unknown Artist';
@@ -221,10 +214,7 @@ export const Route = createFileRoute('/api/slice-it/songs/upload')({
             const audioCheck = validateAudioBuffer(buffer);
             if (!audioCheck.ok) {
               await unwind();
-              return Response.json(
-                { error: `${file.name}: ${audioCheck.error}` },
-                { status: 400 },
-              );
+              return Response.json({ error: `${file.name}: ${audioCheck.error}` }, { status: 400 });
             }
 
             // Hash the *original* bytes, before transcoding: the same source

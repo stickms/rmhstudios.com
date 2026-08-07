@@ -110,10 +110,7 @@ export function HUD({ engine }: HUDProps) {
   // new song via `loadMap`), so this only recomputes when it actually
   // changes rather than on every one of the frame ticks above.
   const activeMap = engine?.getActiveMap() as MapWithSections | null | undefined;
-  const sections = useMemo(
-    () => activeMap?.artefacts?.sections ?? NO_SECTIONS,
-    [activeMap],
-  );
+  const sections = useMemo(() => activeMap?.artefacts?.sections ?? NO_SECTIONS, [activeMap]);
 
   const grade = gradeFor(sample.accuracy);
   const next = nextGradeAbove(sample.accuracy);

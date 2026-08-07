@@ -55,9 +55,7 @@ describe('V3 — the spectrum envelope', () => {
     // A quiet master and a loud one must both fill the backdrop.
     const quiet = ramp(60).map((f) => f.map((v) => v * 0.01) as Float32Array);
     const loud = ramp(60).map((f) => f.map((v) => v * 100) as Float32Array);
-    expect(Math.max(...spectrumEnvelope(quiet, 30))).toBe(
-      Math.max(...spectrumEnvelope(loud, 30)),
-    );
+    expect(Math.max(...spectrumEnvelope(quiet, 30))).toBe(Math.max(...spectrumEnvelope(loud, 30)));
   });
 
   it('keeps transients by peaking, not averaging', () => {

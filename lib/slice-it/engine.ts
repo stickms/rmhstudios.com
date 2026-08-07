@@ -51,6 +51,7 @@ import {
 } from './constants';
 import type { BeatMap, HitResult, RunStats, Slice } from './types';
 import { MIN_TIMING_SAMPLES, type TimingSummary } from './integrity';
+import { SECTION_SECONDS, type SectionResult } from './ai/facts';
 import { prepareChart, scorableNoteCount } from './chart';
 import {
   buildReplayInputs,
@@ -223,6 +224,19 @@ export class GameEngine {
   private offsetCount = 0;
   private offsetMean = 0;
   private offsetM2 = 0;
+
+  /**
+   * Per-section tally, keyed by `floor(noteTime / SECTION_SECONDS)`.
+   *
+   * Keyed on the note's time in the CHART, not on the wall clock, so a run at
+   * 1.5x speed reports the same sections as one at 1.0x — "the bit at 1:40" has
+   * to mean the same place in the song however fast it was played.
+   *
+   * The judgement histogram that used to sit beside this is gone: `getRunStats()`
+   * already publishes one, and two counters incremented from the same `resolve()`
+   * are two things to keep in step for no gain.
+   */
+  private sections = new Map<number, { hit: number; missed: number; weight: number }>();
 
   /**
    * The last {@link OFFSET_RING_SIZE} signed hit offsets and when each landed,
@@ -461,6 +475,7 @@ export class GameEngine {
     this.offsetCount = 0;
     this.offsetMean = 0;
     this.offsetM2 = 0;
+    this.sections.clear();
     this.offsetRing.offsets.fill(0);
     this.offsetRing.times.fill(0);
     this.offsetHead = 0;
@@ -1005,7 +1020,9 @@ export class GameEngine {
     const scoreMultiplier = this.runMultiplier();
 
     this.notesResolved++;
-    this.hitPoints += accuracyWeight(result);
+    const weight = accuracyWeight(result);
+    this.hitPoints += weight;
+    this.recordSection(slice.time, result, weight);
     if (result !== 'NONE') this.judgements[result] += 1;
 
     if (result === 'MISS' || result === 'BAD') {
@@ -1526,6 +1543,45 @@ export class GameEngine {
       isFullCombo: this.isFullCombo,
       isPerfect: this.isPerfect,
     };
+  }
+
+  /**
+   * Tally one resolved note into the section of the chart it belongs to.
+   *
+   * A tally rather than a list of notes, for the reason `integrity.ts` gives
+   * about timing samples: three counters per ten seconds of song is a handful
+   * of numbers on the wire, while per-note results are a payload proportional
+   * to the chart. It is enough to answer the only question the coach asks of
+   * it — *where* in the song did this run come apart.
+   */
+  private recordSection(noteTime: number, result: HitResult, weight: number): void {
+    if (!Number.isFinite(noteTime)) return;
+    const index = Math.max(0, Math.floor(noteTime / SECTION_SECONDS));
+    const bucket = this.sections.get(index) ?? { hit: 0, missed: 0, weight: 0 };
+    if (result === 'MISS') bucket.missed++;
+    else bucket.hit++;
+    bucket.weight += weight;
+    this.sections.set(index, bucket);
+  }
+
+  /**
+   * How each section of the chart went, ascending by section.
+   *
+   * Sections the run never reached are absent rather than reported as 0% — an
+   * abandoned run should not read as one that missed the whole back half.
+   */
+  getSectionResults(): SectionResult[] {
+    return [...this.sections.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([index, bucket]) => {
+        const notes = bucket.hit + bucket.missed;
+        return {
+          index,
+          hit: bucket.hit,
+          missed: bucket.missed,
+          accuracy: notes > 0 ? bucket.weight / (notes * 100) : 0,
+        };
+      });
   }
 
   private pushFeedback(text: string, lane: number, color: string, offset?: number): void {

@@ -70,9 +70,7 @@ describe('goal evaluation', () => {
   it('gates accuracy and score on not failing too', () => {
     expect(meetsGoal({ kind: 'accuracy', min: 0.95 }, stats(), mods())).toBe(true);
     expect(meetsGoal({ kind: 'accuracy', min: 0.99 }, stats(), mods())).toBe(false);
-    expect(
-      meetsGoal({ kind: 'accuracy', min: 0.5 }, stats({ failed: true }), mods()),
-    ).toBe(false);
+    expect(meetsGoal({ kind: 'accuracy', min: 0.5 }, stats({ failed: true }), mods())).toBe(false);
     expect(meetsGoal({ kind: 'score', min: 50_000 }, stats(), mods())).toBe(true);
   });
 
@@ -123,7 +121,10 @@ describe('goal evaluation', () => {
 
 describe('S6 — per-chart missions', () => {
   const plain = Array.from({ length: 100 }, (_, i) => note(`n${i}`, i));
-  const withHolds = [...plain.slice(0, 90), ...Array.from({ length: 10 }, (_, i) => note(`h${i}`, 90 + i, 'LONG'))];
+  const withHolds = [
+    ...plain.slice(0, 90),
+    ...Array.from({ length: 10 }, (_, i) => note(`h${i}`, 90 + i, 'LONG')),
+  ];
 
   it('never offers a hold mission on a chart with no holds', () => {
     // A mission that cannot be completed reads as the game being broken, not
@@ -172,7 +173,10 @@ describe('S6 — per-chart missions', () => {
   });
 
   it('scales the combo targets to the chart', () => {
-    const short = missionsFor(Array.from({ length: 12 }, (_, i) => note(`s${i}`, i)), 'abc');
+    const short = missionsFor(
+      Array.from({ length: 12 }, (_, i) => note(`s${i}`, i)),
+      'abc',
+    );
     for (const mission of short) {
       if (mission.goal.kind === 'combo') expect(mission.goal.min).toBeLessThanOrEqual(12);
     }

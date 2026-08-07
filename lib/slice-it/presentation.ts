@@ -99,9 +99,7 @@ export function sampleEnvelope(
 export function encodeEnvelope(envelope: Uint8Array): string {
   let binary = '';
   for (const byte of envelope) binary += String.fromCharCode(byte);
-  return typeof btoa === 'function'
-    ? btoa(binary)
-    : Buffer.from(envelope).toString('base64');
+  return typeof btoa === 'function' ? btoa(binary) : Buffer.from(envelope).toString('base64');
 }
 
 export function decodeEnvelope(encoded: string | null | undefined): Uint8Array {

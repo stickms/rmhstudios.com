@@ -149,7 +149,9 @@ export function packedSavings(byDifficulty: Record<Difficulty, Slice[]>): number
 export function isNestedChart(value: unknown): value is NestedChart {
   if (!value || typeof value !== 'object') return false;
   const candidate = value as Partial<NestedChart>;
-  return Array.isArray(candidate.expert) && !!candidate.masks && typeof candidate.masks === 'object';
+  return (
+    Array.isArray(candidate.expert) && !!candidate.masks && typeof candidate.masks === 'object'
+  );
 }
 
 function bytesToBase64(bytes: Uint8Array): string {

@@ -77,9 +77,7 @@ export function ChartPicker({
                   {chart.isGenerated && chart.id === null
                     ? ` · ${t('chart-auto', { defaultValue: 'Auto' })}`
                     : ''}
-                  {chart.author
-                    ? ` · ${chart.author.name ?? chart.author.username ?? ''}`
-                    : ''}
+                  {chart.author ? ` · ${chart.author.name ?? chart.author.username ?? ''}` : ''}
                   {chart.status === 'draft'
                     ? ` · ${t('chart-draft', { defaultValue: 'Draft' })}`
                     : ''}

@@ -14,7 +14,12 @@
 
 import { describe, expect, it } from 'vitest';
 import { approachSeconds, reactionWindowMs, useSliceItStore } from '../store';
-import { BASE_APPROACH_SEC, MAX_LANE_COVER, MAX_SCROLL_SPEED, MIN_SCROLL_SPEED } from '../constants';
+import {
+  BASE_APPROACH_SEC,
+  MAX_LANE_COVER,
+  MAX_SCROLL_SPEED,
+  MIN_SCROLL_SPEED,
+} from '../constants';
 import {
   DEFAULT_LINE_POSITION,
   MAX_LINE_POSITION,

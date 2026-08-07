@@ -248,10 +248,7 @@ export function lintWireChart(input: {
  * comparisons a frame, which is exactly the shape of cost that turns a 3 ms
  * draw into a 30 ms one.
  */
-export function issuesByNote(
-  result: LintResult,
-  difficulty: Difficulty,
-): Map<string, LintIssue[]> {
+export function issuesByNote(result: LintResult, difficulty: Difficulty): Map<string, LintIssue[]> {
   const map = new Map<string, LintIssue[]>();
   for (const finding of result.findings as ScopedFinding[]) {
     if (finding.difficulty !== difficulty) continue;
@@ -280,16 +277,18 @@ export interface LintGroup {
  * §9's panel design: one row per rule with a count, expandable. Forty separate
  * "off-grid" rows is a list nobody reads; "off-grid × 40" is a decision.
  */
-export function groupFindings(
-  result: LintResult,
-  difficulty?: Difficulty,
-): LintGroup[] {
+export function groupFindings(result: LintResult, difficulty?: Difficulty): LintGroup[] {
   const groups = new Map<LintCode, LintGroup>();
   for (const finding of result.findings as ScopedFinding[]) {
     if (difficulty && finding.difficulty !== difficulty) continue;
     const existing = groups.get(finding.code);
     if (existing) existing.findings.push(finding);
-    else groups.set(finding.code, { code: finding.code, severity: finding.severity, findings: [finding] });
+    else
+      groups.set(finding.code, {
+        code: finding.code,
+        severity: finding.severity,
+        findings: [finding],
+      });
   }
   return [...groups.values()].sort((a, b) => {
     if (a.severity !== b.severity) return a.severity === 'error' ? -1 : 1;

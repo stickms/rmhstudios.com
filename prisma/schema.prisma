@@ -1173,12 +1173,27 @@ model SongComment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  /// AI triage verdict (`lib/slice-it/ai/moderation.server.ts`). Advisory only:
+  /// nothing here hides a comment or blocks a post, it only orders a queue for a
+  /// human. NULL means "not triaged" — an outage or an unconfigured key — which
+  /// must stay distinguishable from a triaged-and-clean `none`, or a provider
+  /// being down reads as a clean bill of health for everything posted during it.
+  aiSeverity   String?   @db.VarChar(16)
+  aiCategories String[]
+  aiRationale  String?   @db.VarChar(200)
+  aiTriagedAt  DateTime?
+
   song Song @relation(fields: [songId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // The song comment list is `where songId orderBy createdAt desc` and this model
   // carried no index at all, so every song page scanned and sorted the whole table.
   @@index([songId, createdAt(sort: Desc)])
+  /// The moderation queue: `where aiSeverity in (...) order by createdAt desc`.
+  /// Leading on the low-cardinality column is correct here because the queue
+  /// always filters on it first, and NULL (untriaged) is itself one of the
+  /// buckets an operator needs to list.
+  @@index([aiSeverity, createdAt(sort: Desc)])
 }
 
 /// A player's BEST run on one (song, difficulty, mod pool). The materialised

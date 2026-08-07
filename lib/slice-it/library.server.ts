@@ -305,10 +305,7 @@ export async function uploaderStats(userId: string, days = 90): Promise<Uploader
  * Returns whether it changed anything, so a double-submitted takedown is a
  * no-op rather than a second storage delete.
  */
-export async function takeDownSong(
-  songId: string,
-  reason: string,
-): Promise<{ tookDown: boolean }> {
+export async function takeDownSong(songId: string, reason: string): Promise<{ tookDown: boolean }> {
   const song = await prisma.song.findUnique({
     where: { id: songId },
     select: { id: true, audioUrl: true, takenDownAt: true },

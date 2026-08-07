@@ -125,7 +125,10 @@ export function LintPanel({
           {t('editor-lint-title', { defaultValue: 'Chart checks' })}
         </h2>
         <span className="ml-auto flex items-center gap-3 text-xs tabular-nums">
-          <span className="flex items-center gap-1" title={t('editor-lint-errors', { defaultValue: 'Errors' })}>
+          <span
+            className="flex items-center gap-1"
+            title={t('editor-lint-errors', { defaultValue: 'Errors' })}
+          >
             <OctagonAlert className="h-3.5 w-3.5 text-[var(--slice-danger,#dc2626)]" aria-hidden />
             {errors}
             <span className="sr-only">{t('editor-lint-errors', { defaultValue: 'Errors' })}</span>
@@ -134,7 +137,10 @@ export function LintPanel({
             className="flex items-center gap-1"
             title={t('editor-lint-warnings', { defaultValue: 'Warnings' })}
           >
-            <AlertTriangle className="h-3.5 w-3.5 text-[var(--slice-warning,#d97706)]" aria-hidden />
+            <AlertTriangle
+              className="h-3.5 w-3.5 text-[var(--slice-warning,#d97706)]"
+              aria-hidden
+            />
             {warnings}
             <span className="sr-only">
               {t('editor-lint-warnings', { defaultValue: 'Warnings' })}

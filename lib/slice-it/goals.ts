@@ -93,9 +93,7 @@ export function describeGoal(goal: Goal): string {
     case 'combo':
       return `${goal.min} combo`;
     case 'fc':
-      return goal.modifiers?.length
-        ? `Full combo with ${goal.modifiers.join(', ')}`
-        : 'Full combo';
+      return goal.modifiers?.length ? `Full combo with ${goal.modifiers.join(', ')}` : 'Full combo';
     case 'perfect':
       return 'Perfect — nothing below MARVELOUS';
     case 'no-hold-drops':
@@ -142,9 +140,7 @@ export function missionsFor(chart: readonly Slice[], chartHash: string): Mission
       reward: 20,
     },
     { id: 'fc', goal: { kind: 'fc' }, reward: 40 },
-    ...(hasHolds
-      ? [{ id: 'holds', goal: { kind: 'no-hold-drops' } as Goal, reward: 20 }]
-      : []),
+    ...(hasHolds ? [{ id: 'holds', goal: { kind: 'no-hold-drops' } as Goal, reward: 20 }] : []),
   ];
 
   const rng = createSeededRandom(`slice-missions:${chartHash}`);

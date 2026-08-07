@@ -46,9 +46,7 @@ export async function prefetchRun(songId: string, options: PrefetchOptions = {})
   options.signal?.addEventListener('abort', onAbort, { once: true });
 
   try {
-    const query = options.difficulty
-      ? `?difficulty=${encodeURIComponent(options.difficulty)}`
-      : '';
+    const query = options.difficulty ? `?difficulty=${encodeURIComponent(options.difficulty)}` : '';
     const response = await fetch(`/api/slice-it/songs/${songId}${query}`, {
       signal: controller.signal,
       // `no-store` would defeat the entire purpose; be explicit rather than

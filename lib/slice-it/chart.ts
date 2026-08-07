@@ -169,9 +169,7 @@ export function applyChartModifiers(
   // would make an accessibility modifier harder than the chart it simplifies.
   if (modifiers.tapHolds) {
     out = out.map((slice) =>
-      slice.type === 'LONG'
-        ? { ...slice, type: 'STANDARD' as const, duration: undefined }
-        : slice,
+      slice.type === 'LONG' ? { ...slice, type: 'STANDARD' as const, duration: undefined } : slice,
     );
   }
 
@@ -188,7 +186,10 @@ export function applyChartModifiers(
   // Runs after `oneTrack` so the two do not fight: collapsing to one lane and
   // then re-scattering would quietly undo an explicit choice.
   if (modifiers.sRandom && !modifiers.oneTrack) {
-    const laneCount = Math.max(2, out.reduce((n, s) => Math.max(n, s.lane + 1), 0));
+    const laneCount = Math.max(
+      2,
+      out.reduce((n, s) => Math.max(n, s.lane + 1), 0),
+    );
     const byTime = new Map<number, Slice[]>();
     for (const slice of out) {
       const key = Math.round(slice.time * 1000);

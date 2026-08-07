@@ -19,7 +19,9 @@ import { describe, expect, it } from 'vitest';
 import { bestLamp, lampOf } from '../songs.server';
 import { LAMPS } from '../types';
 
-const row = (over: Partial<{ cleared: boolean; isFullCombo: boolean; isPerfect: boolean }> = {}) => ({
+const row = (
+  over: Partial<{ cleared: boolean; isFullCombo: boolean; isPerfect: boolean }> = {},
+) => ({
   cleared: true,
   isFullCombo: false,
   isPerfect: false,

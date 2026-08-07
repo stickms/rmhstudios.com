@@ -134,8 +134,9 @@ describe('lint rules', () => {
     expect(findings[0].code).toBe('nesting-violation');
     expect(findings[0].noteId).toBe('e1');
     // Identity is time+lane, not id: a note cascaded into two tiers has two ids.
-    expect(lintNesting(lower, { difficulty: 'normal', notes: [note({ id: 'other', time: 4 })] }))
-      .toEqual([]);
+    expect(
+      lintNesting(lower, { difficulty: 'normal', notes: [note({ id: 'other', time: 4 })] }),
+    ).toEqual([]);
   });
 });
 

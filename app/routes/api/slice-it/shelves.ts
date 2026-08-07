@@ -19,12 +19,12 @@ const QueryZ = z.object({
 export const Route = createFileRoute('/api/slice-it/shelves')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional', rateLimit: 'read', query: QueryZ }, async ({
-        query,
-        userId,
-      }) => {
-        return Response.json(await shelf(query.shelf, userId));
-      }),
+      GET: defineHandler(
+        { auth: 'optional', rateLimit: 'read', query: QueryZ },
+        async ({ query, userId }) => {
+          return Response.json(await shelf(query.shelf, userId));
+        },
+      ),
     },
   },
 });
