@@ -12,6 +12,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   lowerBoundByTime,
   longestHoldSeconds,
@@ -99,7 +101,7 @@ describe('visibleSliceRange', () => {
     const notes = chart(2000, 300, { holds: true });
     const geomWithHold = (g: ViewGeometry) => ({
       ...g,
-      longestHold: longestHoldSeconds({}, notes),
+      longestHold: longestHoldSeconds(notes),
     });
 
     for (const base of cases) {
@@ -176,17 +178,90 @@ describe('lowerBoundByTime', () => {
 });
 
 describe('longestHoldSeconds', () => {
-  it('finds the longest hold and caches it per chart', () => {
+  it('finds the longest hold', () => {
     const notes: TimedSlice[] = [{ time: 0 }, { time: 1, duration: 2.5 }, { time: 2, duration: 1 }];
-    const key = {};
-    expect(longestHoldSeconds(key, notes)).toBe(2.5);
-    // Cached on the chart object: a different note list under the same key is
-    // not re-scanned, which is what makes it free per frame.
-    expect(longestHoldSeconds(key, [{ time: 0, duration: 99 }])).toBe(2.5);
-    expect(longestHoldSeconds({}, [{ time: 0, duration: 99 }])).toBe(99);
+    expect(longestHoldSeconds(notes)).toBe(2.5);
+  });
+
+  it('caches on the array identity, which is what makes it free per frame', () => {
+    const notes: TimedSlice[] = [{ time: 0 }, { time: 1, duration: 2.5 }];
+    expect(longestHoldSeconds(notes)).toBe(2.5);
+    // Mutating in place does NOT invalidate — the contract is that a prepared
+    // slice array is immutable and gets REPLACED when the chart changes, never
+    // edited underneath the renderer.
+    notes.push({ time: 3, duration: 99 });
+    expect(longestHoldSeconds(notes)).toBe(2.5);
+    // A genuinely different array is scanned on its own terms.
+    expect(longestHoldSeconds([{ time: 0, duration: 99 }])).toBe(99);
   });
 
   it('is zero for a chart with no holds', () => {
-    expect(longestHoldSeconds({}, [{ time: 0 }, { time: 1 }])).toBe(0);
+    expect(longestHoldSeconds([{ time: 0 }, { time: 1 }])).toBe(0);
+  });
+});
+
+/* ─── The record-form trap ───────────────────────────────────────────────── */
+
+/**
+ * The bug this guards against shipped, and it made Slice It unplayable while
+ * looking like it worked.
+ *
+ * `BeatMap.slices` is `Slice[] | Record<Difficulty, Slice[]>`. `GameCanvas`
+ * rendered `map.slices as Slice[]` — a cast, not a conversion — so on every
+ * chart stored in the record form the renderer was handed a plain object.
+ * `object.length` is `undefined`, both binary searches below collapse to 0, and
+ * the draw loop runs zero times. The engine meanwhile resolves the difficulty
+ * properly and keeps judging, so audio plays and misses accumulate against
+ * notes that were never drawn.
+ *
+ * The fix is that the renderer draws `engine.getSlices()` — the prepared,
+ * difficulty-resolved, modifier-applied array the engine actually judges. These
+ * two tests pin both halves: the trap is real, and an array is what escapes it.
+ */
+describe('a per-difficulty record is not a renderable note list', () => {
+  const geom: ViewGeometry = {
+    pixelsPerSecond: 300,
+    axisLength: 800,
+    cursorPosition: 120,
+    vertical: false,
+    longestHold: 0,
+  };
+
+  it('collapses to an empty range, drawing nothing at all', () => {
+    // Exactly the shape the charter writes and `trimToDifficulty` returns.
+    const record = {
+      normal: [
+        { time: 1, duration: 0 },
+        { time: 2, duration: 0 },
+      ],
+    } as unknown as readonly TimedSlice[];
+
+    const { from, to } = visibleSliceRange(record, 1, geom);
+    expect(to - from).toBe(0);
+  });
+
+  it('draws the notes once the same chart is a flat array', () => {
+    const resolved: TimedSlice[] = [{ time: 1 }, { time: 2 }];
+    const { from, to } = visibleSliceRange(resolved, 1, geom);
+    expect(to - from).toBe(2);
+  });
+
+  /**
+   * The trap above is only reachable through one line of code, and it is a cast
+   * — so the type checker cannot hold this line and neither can the two tests
+   * above. This can.
+   */
+  it('the renderer sources its notes from the engine, never from the raw map', () => {
+    const source = readFileSync(join(process.cwd(), 'components/slice-it/GameCanvas.tsx'), 'utf8');
+    const code = source
+      .split('\n')
+      .filter((line) => !line.trimStart().startsWith('*') && !line.trimStart().startsWith('//'))
+      .join('\n');
+
+    expect(code).toContain('engine.getSlices()');
+    // `?.` too: the second and third instances of this bug were `map?.slices`
+    // behind an `Array.isArray` guard, which does not crash and does not draw
+    // — it just decided every per-difficulty chart had no lead-in to skip.
+    expect(code).not.toMatch(/map\??\.slices/);
   });
 });
