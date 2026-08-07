@@ -460,6 +460,7 @@
   "table-sort-signin-required": "Sign in to sort by this column",
   "timing-windows": "Judgement Windows",
   "timing-windows-hint": "The actual size of each window right now, at this speed and these modifiers.",
+  "upload-success-charting": "트랙을 업로드했습니다. 채보를 생성하는 중입니다 — 잠시 걸립니다.",
   "view-grid": "Grid",
   "view-table": "Table",
   "view-toggle": "Library view",

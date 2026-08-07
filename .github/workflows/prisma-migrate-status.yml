@@ -87,15 +87,27 @@ jobs:
           pnpm exec prisma migrate status
           pnpm exec prisma migrate diff \
             --from-config-datasource --to-schema prisma/schema.prisma --script > drift.sql
-          # `rmheet.content_tsv` and its GIN index are raw-SQL search
-          # infrastructure from 20260717110700_add_search_trgm_fts. Prisma cannot
-          # model a generated tsvector column, so it proposes dropping them on
-          # every diff — and that migration says in as many words never to apply
-          # those DROPs. They are the ONLY expected difference; anything else is
-          # a model without a migration.
+          # Raw-SQL search infrastructure Prisma's schema language cannot
+          # express, so `migrate diff` proposes dropping it on every run. Each
+          # entry below is an index or column created by a migration that says
+          # in as many words never to apply the DROP. These are the ONLY
+          # expected differences; anything else is a model without a migration.
+          #
+          #  - `rmheet.content_tsv` + its GIN index — a GENERATED tsvector
+          #    column, from 20260717110700_add_search_trgm_fts.
+          #  - `Song_title_trgm_idx` / `Song_artist_trgm_idx` — GIN indexes
+          #    using the `gin_trgm_ops` operator class, from
+          #    20260807120000_slice_it_library_scale. They back L14's typo
+          #    path (`similarity()`); an operator class has no schema syntax,
+          #    so the indexes are invisible to the model and the diff wants
+          #    them gone. Dropping them would not break search — it would make
+          #    every fuzzy query a sequential scan computing a trigram set per
+          #    row, which is the thing the index exists to avoid.
           grep -vE '^(--.*)?$' drift.sql \
             | grep -vxF 'DROP INDEX "rmheet_content_tsv_idx";' \
             | grep -vxF 'ALTER TABLE "rmheet" DROP COLUMN "content_tsv";' \
+            | grep -vxF 'DROP INDEX "Song_title_trgm_idx";' \
+            | grep -vxF 'DROP INDEX "Song_artist_trgm_idx";' \
             > unexpected.sql || true
           if [ -s unexpected.sql ]; then
             {

@@ -477,6 +477,7 @@
   "table-sort-signin-required": "Sign in to sort by this column",
   "timing-windows": "Judgement Windows",
   "timing-windows-hint": "The actual size of each window right now, at this speed and these modifiers.",
+  "upload-success-charting": "Track uploaded. Charting it now — this takes a moment.",
   "view-grid": "Grid",
   "view-table": "Table",
   "view-toggle": "Library view",
