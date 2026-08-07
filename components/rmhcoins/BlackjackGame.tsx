@@ -2,11 +2,13 @@
 
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLobbyInviteJoin } from '@/hooks/useLobbyLink';
 import { Circle, Loader2 } from 'lucide-react';
 import { connectToBlackjack, disconnectFromBlackjack, getBlackjackSocket, onBalanceUpdate } from '@/lib/blackjack/socket';
 import { useBlackjackStore } from '@/lib/blackjack/store';
 import { C2S } from '@/lib/blackjack/events';
 import { BlackjackLobby } from './BlackjackLobby';
+import { TableInvite } from './TableInvite';
 import { BlackjackTable } from './BlackjackTable';
 import { BlackjackControls } from './BlackjackControls';
 import { BlackjackSessionStats } from './BlackjackSessionStats';
@@ -47,6 +49,13 @@ export function BlackjackGame({ coins, setCoins }: Props) {
       disconnectFromBlackjack();
     };
   }, []);
+
+  // Arrived on a table invite link — sit down at the named table instead of
+  // showing the room list. The server rejects a code that no longer exists, and
+  // the lobby's own error path says so.
+  useLobbyInviteJoin(connectionStatus === 'connected' && !roomInfo, (code) => {
+    getBlackjackSocket()?.emit(C2S.JOIN_ROOM, { joinCode: code.toUpperCase() });
+  });
 
   useEffect(() => {
     return onBalanceUpdate((newBalance) => {
@@ -112,11 +121,7 @@ export function BlackjackGame({ coins, setCoins }: Props) {
           </h3>
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {roomInfo.joinCode && (
-            <span className="text-[10px] sm:text-xs text-site-text-dim hidden sm:inline">
-              {t("code-label", { defaultValue: "Code:" })} <span className="font-mono font-bold text-site-accent">{roomInfo.joinCode}</span>
-            </span>
-          )}
+          {roomInfo.joinCode && <TableInvite game="blackjack" joinCode={roomInfo.joinCode} />}
           <span className="text-[10px] sm:text-xs text-site-text-dim">
             {players.length}/{roomInfo.maxPlayers}
           </span>

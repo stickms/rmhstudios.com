@@ -55,12 +55,65 @@ pnpm format                  # prettier
 pnpm exec vitest run         # main test suite (includes the UI consistency gate)
 pnpm build                   # vibe-packages → vite build → esbuild 6 server bundles
 pnpm i18n:extract            # after adding t() strings
+pnpm check:consistency       # THE COMMIT GATE — run before every commit (see below)
 make gazelle && make test    # Go: regenerate BUILD files, run Bazel tests
 ```
 
 Local ports: web 7005 · socket-server 7001 · rmhtube 7003 · rmhbox 7676 ·
 status 7008 · assets 7007. Env: see `.env.example`; minimum is
 `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`.
+
+## The commit gate — run this before EVERY commit
+
+This repo's recurring failure mode is not broken code; it is code that works
+and looks like it came from a different site. One page hardcodes a radius,
+one route skips `defineHandler`, one string never reaches `t()` — each is
+invisible alone, and together they are why §5.2, §12 and the CI gates exist.
+So consistency is checked at the same moment every time: **the commit.**
+
+```bash
+pnpm check:consistency          # gate the staged change (what the commit will contain)
+pnpm check:consistency --fast   # design/style gates + eslint only (what the hooks run)
+pnpm check:consistency --base main   # gate the whole branch before a PR
+pnpm check:consistency:full     # + the complete vitest suite
+```
+
+`scripts/check-consistency.sh` runs, in order: a scan of the **added lines**
+for the rules CI already fails on (raw palette colours, hardcoded radii,
+`transition-all`, dead `tailwindcss-animate` classes, hand-rolled tab strips) ·
+the executable gates in `lib/__tests__/` that are the **authority** for
+`docs/design-language.md` §13 · eslint on the changed files · `tsc --noEmit` ·
+the generated-docs freshness checks. Then it prints the handful of things no
+script can check — the three themes, the role-less switcher that is really a
+tab strip — because a green gate means you did not regress an enforced rule,
+never that the change looks right.
+
+It is wired to fire on its own, so "I forgot" is not a failure mode:
+
+- **Agent sessions:** `.claude/settings.json` runs
+  `.claude/hooks/commit-gate.sh` before any Bash `git commit`. A failing gate
+  blocks the commit and hands the reasons back to the agent to fix. (Both files
+  are checked in on purpose — `.gitignore` keeps the rest of `.claude/` local.
+  Claude Code asks you to trust project hooks the first time they run.)
+- **Humans:** `pnpm hooks:install` once per clone points `core.hooksPath` at
+  `.githooks/`, whose `pre-commit` runs the same gate (skipping it if an agent
+  already gated that exact staged tree).
+
+Two rules about the gate itself:
+
+1. **A failing gate is fixed, not bypassed.** `--no-verify` and
+   `RMH_SKIP_COMMIT_GATE=1` exist for emergencies and leave a trace — if you
+   use one, say why in the commit message.
+2. **If a rule is genuinely wrong for your change, change the rule** in the
+   same commit (the allowlists in `lib/__tests__/design-consistency.test.ts`
+   are documented and one-directional — entries come out, they do not go in),
+   and say so in the message. Silently working around a gate is how the
+   inconsistency it prevents comes back.
+
+Every commit also carries the smaller invariants: no secrets, no hand-edited
+generated files (`app/routeTree.gen.ts`, `lib/i18n/resources.<locale>.ts`), no
+new type or lint warnings versus the base branch, and a message that explains
+*why*.
 
 ## Cross-cutting conventions (the ones agents break most)
 
@@ -98,7 +151,8 @@ status 7008 · assets 7007. Env: see `.env.example`; minimum is
    CI-enforced — `lib/__tests__/design-consistency.test.ts` fails the build on
    hand-rolled tab strips, raw palette colours, hardcoded radii, floating UI
    below L4, `transition-all`, and `tailwindcss-animate` classes (that plugin
-   is not installed, so they compile to nothing).
+   is not installed, so they compile to nothing) — and `pnpm check:consistency`
+   is how you find that out **before** you commit rather than in CI.
 5. **i18n:** all user-facing strings through `t("key", { defaultValue })`;
    then `pnpm i18n:extract`. English is authoritative. Two silent failure modes
    to know: **(a)** `defaultValue` is only used when a key is MISSING, so
@@ -130,6 +184,7 @@ status 7008 · assets 7007. Env: see `.env.example`; minimum is
    `make gazelle` after adding files.
 10. **Quality bar (from CONTRIBUTING.md):** don't add new type/lint warnings
     relative to the base branch; keep commits focused; never commit secrets.
+    Every commit passes `pnpm check:consistency` — see the commit gate above.
 
 ## Runtime & deploy reality (summary — details in docs/architecture.md)
 

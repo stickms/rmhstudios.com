@@ -90,6 +90,8 @@ const SHOW_MIN_PLAYS = 50;
 const SHOW_MIN_CLEAR_RATE = 0.05;
 
 export const Route = createFileRoute('/_site/admin/slice-it')({
+  // Unindexed (`admin` in `lib/sitemap.ts`), so a title and nothing else.
+  head: () => ({ meta: [{ title: 'Slice It ranked pool | RMH Studios' }] }),
   component: AdminSliceItRankingPage,
 });
 

@@ -3,10 +3,14 @@ import {
   adsAllowed,
   adsPersonalized,
   isAdExcludedPath,
+  isAdFreeTier,
   parseSlotMap,
+  resolveTier,
   AD_PLACEMENTS,
   type AdGateInput,
 } from '@/lib/ads/adsense';
+import { canUse } from '@/lib/entitlements/features';
+import { hasAdFree, type Tier } from '@/lib/entitlements/tiers';
 
 /**
  * The ad gate is the one piece of the AdSense integration whose bugs are
@@ -20,6 +24,7 @@ const base: AdGateInput = {
   clientId: 'ca-pub-0000000000000000',
   pathname: '/library',
   tier: 'free',
+  sessionResolved: true,
   consent: 'all',
 };
 
@@ -53,6 +58,24 @@ describe('adsAllowed', () => {
     expect(adsAllowed({ ...base, tier: 'free' })).toBe(true);
   });
 
+  it('is off while the session — and so the tier — is still unknown', () => {
+    // The window this closes: the session resolves after the first client
+    // render, so for a moment a member looks exactly like a signed-out visitor.
+    // Rounding that down to "free" requests an ad on a paying member's behalf,
+    // and the request is not recallable once fired.
+    expect(adsAllowed({ ...base, sessionResolved: false })).toBe(false);
+    expect(adsAllowed({ ...base, tier: null, sessionResolved: false })).toBe(false);
+    expect(adsAllowed({ ...base, tier: 'free', sessionResolved: false })).toBe(false);
+  });
+
+  it('is off for a tier string it does not recognise', () => {
+    // A renamed plan id or a stale persisted session snapshot lands here. It is
+    // not evidence of a free account, and guessing wrong bills a paying member
+    // in ads — so an unknown value costs an impression instead.
+    expect(adsAllowed({ ...base, tier: 'hard-r' })).toBe(false);
+    expect(adsAllowed({ ...base, tier: 'legacy-supporter' })).toBe(false);
+  });
+
   it('is off inside a Discord Activity iframe', () => {
     expect(adsAllowed({ ...base, discordActivity: true })).toBe(false);
   });
@@ -81,6 +104,72 @@ describe('adsAllowed', () => {
     expect(isAdExcludedPath('/settings-guide')).toBe(false);
     expect(isAdExcludedPath('/settings')).toBe(true);
     expect(isAdExcludedPath('/settings/')).toBe(true);
+  });
+});
+
+describe('resolveTier', () => {
+  it('prefers the live session, which is the authoritative one', () => {
+    // A sign-out, a sign-in or an upgrade shows up here first; the document's
+    // copy can be up to the root loader's staleTime old.
+    expect(resolveTier('free', 'pro')).toEqual({ tier: 'free', sessionResolved: true });
+    expect(resolveTier(null, 'pro')).toEqual({ tier: null, sessionResolved: true });
+    expect(resolveTier('pro', null)).toEqual({ tier: 'pro', sessionResolved: true });
+  });
+
+  it("falls back to the server's answer while the live session is in flight", () => {
+    // The whole point of the fallback: a signed-out visitor gets their ad on the
+    // first render instead of a round trip later, and a member is already known
+    // to be a member by then.
+    expect(resolveTier(undefined, null)).toEqual({ tier: null, sessionResolved: true });
+    expect(resolveTier(undefined, 'pro')).toEqual({ tier: 'pro', sessionResolved: true });
+  });
+
+  it('is unresolved only when neither source has an answer', () => {
+    expect(resolveTier(undefined, undefined)).toEqual({ tier: null, sessionResolved: false });
+  });
+
+  it('does not confuse "signed out" with "not known yet"', () => {
+    // Both would produce `tier: null`, and only one of them may show an ad.
+    expect(resolveTier(null, undefined).sessionResolved).toBe(true);
+    expect(resolveTier(undefined, undefined).sessionResolved).toBe(false);
+  });
+});
+
+describe('isAdFreeTier', () => {
+  const TIERS: Tier[] = ['free', 'starter', 'pro', 'enterprise'];
+
+  it('is the entitlement registry, not a second opinion about it', () => {
+    // Two independent lists of "which tiers are paid" is how the membership
+    // page ends up advertising an ad-free plan that still serves ads. The gate
+    // must agree with both the predicate and the feature card, for every tier.
+    for (const tier of TIERS) {
+      expect({ tier, adFree: isAdFreeTier(tier) }).toEqual({ tier, adFree: hasAdFree(tier) });
+      expect({ tier, adFree: isAdFreeTier(tier) }).toEqual({
+        tier,
+        adFree: canUse(tier, 'ad-free'),
+      });
+    }
+  });
+
+  it('treats an absent tier as a signed-out visitor, who does see ads', () => {
+    expect(isAdFreeTier(null)).toBe(false);
+    expect(isAdFreeTier(undefined)).toBe(false);
+    expect(isAdFreeTier('')).toBe(false);
+  });
+
+  it('fails closed on a tier it cannot parse', () => {
+    expect(isAdFreeTier('pro ')).toBe(true);
+    expect(isAdFreeTier('Pro')).toBe(true);
+    expect(isAdFreeTier('whatever-comes-next')).toBe(true);
+  });
+
+  it('covers a future paid tier without being told about it', () => {
+    // `hasAdFree` is a rank comparison, so anything ranked at or above starter
+    // is ad-free the day it is added. A hardcoded set of names would not be,
+    // and the failure would be silent.
+    for (const tier of TIERS) {
+      expect({ tier, adFree: isAdFreeTier(tier) }).toEqual({ tier, adFree: tier !== 'free' });
+    }
   });
 });
 

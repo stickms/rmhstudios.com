@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import { useLobbyInviteJoin, useLobbyLink } from '@/hooks/useLobbyLink';
 import { useDreamRift } from '@/lib/dream-rift/store';
 import { CHARACTERS, PLAYER_IDS } from '@/lib/dream-rift/render/sprites';
 import { DIFFICULTIES } from '@/lib/dream-rift/constants';
@@ -235,6 +236,10 @@ export function LobbyBrowser({ onBack }: { onBack: () => void }) {
         };
     }, []);
 
+    // Someone followed an invite link here rather than reading a code off the
+    // browser list — join it as soon as the socket is up.
+    useLobbyInviteJoin(connection === 'connected', (code) => joinLobby(code.toUpperCase()));
+
     return (
         <div className="flex min-h-full flex-col bg-gradient-to-b from-[#0a0612] to-[#120a20] p-6">
             <div className="mb-4 flex items-center justify-between">
@@ -323,6 +328,7 @@ export function LobbyRoom({ onLeave }: { onLeave: () => void }) {
     const me = useMemo(() => lobby?.players.find((p) => p.socketId === selfSocketId), [lobby, selfSocketId]);
     const isHost = !!me?.isHost;
     const allReady = !!lobby && lobby.players.filter((p) => !p.isHost).every((p) => p.ready);
+    const { copied: linkCopied, copyLink } = useLobbyLink({ code: lobby?.code });
 
     useEffect(() => {
         // sync our preferred character to the lobby once on entering
@@ -340,6 +346,13 @@ export function LobbyRoom({ onLeave }: { onLeave: () => void }) {
                     <div className="text-sm text-[color:var(--dr-cream-dim)]">
                         Code <span className="font-mono text-lg tracking-widest text-[color:var(--dr-crimson)]">{lobby.code}</span> · {lobby.isPublic ? 'Public' : 'Private'}
                     </div>
+                    <button
+                        type="button"
+                        onClick={() => void copyLink()}
+                        className="dr-inset mt-2 rounded-sm px-3 py-1.5 text-xs font-semibold tracking-wide text-[color:var(--dr-cream-dim)] transition hover:border-[rgba(231,205,140,0.5)] hover:text-[color:var(--dr-cream)]"
+                    >
+                        {linkCopied ? 'Invite link copied' : 'Copy invite link'}
+                    </button>
                 </div>
                 <div className="text-right text-xs text-[color:var(--dr-cream-dim)]">
                     Difficulty

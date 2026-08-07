@@ -165,6 +165,37 @@ failures keep the shell.
 time), `scrollRestoration`, `RoutePending` as the default pending component
 (150ms delay / 300ms min display).
 
+## Before you commit a route
+
+`pnpm check:consistency` is the gate (repo `CLAUDE.md` → "The commit gate"); it
+runs automatically before `git commit` through `.claude/hooks/commit-gate.sh`
+and `.githooks/pre-commit`. For routes it checks the mechanical part — an API
+route that never mentions `defineHandler`, a page with no `head()`, a stale
+generated docs/site reference, a hand-edited `routeTree.gen.ts`. Confirm the
+rest yourself:
+
+- [ ] **Placement decides chrome.** `_site/` for a standard page (radial shell,
+      `PageLayout`), top level for a full-screen experience. Games, `/login`,
+      `secret/*`, `discord/*` and the legal pages are intentionally top-level.
+- [ ] **`head()` on every page** — at minimum `meta: [{ title: "X | RMH
+      Studios" }]`; public pages use `buildMeta()` + `buildCanonical()` and let
+      `buildMeta` own the whole `og:*` block; content pages add JSON-LD via
+      `jsonLdScript()`.
+- [ ] **Every handler is a `defineHandler`** with the right `auth` and a
+      `rateLimit` wherever it writes, uploads or costs money — and never echoes
+      a caught error to the caller. `/api/v1/**` uses `withDeveloperApi`.
+      (`lib/__tests__/api-handler-adoption.test.ts` holds the line; its
+      backlog list only ever shrinks.)
+- [ ] **Loading, empty, error and signed-out states exist** — `RoutePending`
+      covers router-level pending, but a page still needs its `<Skeleton>` /
+      `<EmptyState>` / `notFound()` / sign-in prompt.
+- [ ] **Strings through `t()`** (namespace `site` for standard pages) with
+      `pnpm i18n:extract` run afterwards.
+- [ ] **Ran the dev server or a build once** so `routeTree.gen.ts` regenerated
+      — and did not hand-edit it.
+- [ ] Walked [`docs/page-consistency.md`](../docs/page-consistency.md) §3
+      against the finished diff.
+
 ## Gotchas
 
 1. **Never edit `routeTree.gen.ts`** — regenerate via dev/build.

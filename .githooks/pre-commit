@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# The commit gate, wired into git. Install once per clone:
+#
+#   pnpm hooks:install      # git config core.hooksPath .githooks
+#
+# It runs `scripts/check-consistency.sh --staged --fast` — the design/style
+# gates plus eslint on the staged files. `tsc` and the docs-freshness checks are
+# left out on purpose: they are slow enough to make people reach for
+# --no-verify, which is worse than not gating at all. Run the full sweep before
+# you push: `pnpm check:consistency`.
+set -uo pipefail
+
+ROOT=$(git rev-parse --show-toplevel)
+GATE="$ROOT/scripts/check-consistency.sh"
+[ -x "$GATE" ] || [ -f "$GATE" ] || exit 0
+
+# If an agent session already gated this exact staged tree (see
+# .claude/hooks/commit-gate.sh), don't pay for it twice.
+STAMP="$ROOT/.git/rmh-commit-gate-ok"
+CURRENT=$(git diff --cached | sha1sum | cut -d' ' -f1)
+if [ -f "$STAMP" ] && [ "$(cat "$STAMP")" = "$CURRENT" ]; then
+  printf '\033[2m[gate]\033[0m staged tree already passed the consistency gate.\n'
+  exit 0
+fi
+
+bash "$GATE" --staged --fast || exit 1
+printf '%s' "$CURRENT" > "$STAMP"

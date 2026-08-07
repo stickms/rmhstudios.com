@@ -10,6 +10,7 @@
 
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLobbyLink } from '@/hooks/useLobbyLink';
 import {
   Crown,
   Copy,
@@ -50,8 +51,10 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
   const { t } = useTranslation('c-altair');
   const lobby = useAltairMultiplayerStore((s) => s.lobby);
   const classSelections = useAltairMultiplayerStore((s) => s.classSelections);
-  const [codeCopied, setCodeCopied] = useState(false);
   const [editingSettings, setEditingSettings] = useState(false);
+  const { copied: codeCopied, copyLink } = useLobbyLink({
+    path: `/altair/multiplayer/${lobbyId}`,
+  });
 
   // Adapt lobby chat messages to shared ChatPanel format. Computed before the
   // early return below so the hooks run in a stable order (rules-of-hooks).
@@ -74,11 +77,11 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
   const isHost = lobby.hostUserId === lobby.myUserId;
   const players = lobby.players;
 
+  // The lobby is already its own route, so the invite link is simply that route.
+  // (It used to hand out `/altair/multiplayer?join=<id>`, which no screen ever
+  // read — the link copied fine and then did nothing on the other end.)
   const handleCopyCode = () => {
-    const url = `${window.location.origin}/altair/multiplayer?join=${lobbyId}`;
-    navigator.clipboard.writeText(url);
-    setCodeCopied(true);
-    setTimeout(() => setCodeCopied(false), 2000);
+    void copyLink();
   };
 
   const handleKick = (targetUserId: string) => {

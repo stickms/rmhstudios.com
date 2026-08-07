@@ -4,8 +4,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Copy, Check, Crown, Users } from 'lucide-react';
+import { ArrowLeft, Copy, Check, Crown, Link2, Users } from 'lucide-react';
 import { NDWMultiplayerClient } from '@/lib/neon-driftway/multiplayer';
+import { useLobbyInviteJoin, useLobbyLink } from '@/hooks/useLobbyLink';
 import { authClient } from '@/lib/auth-client';
 import type { LevelId, NDWLobbyPlayer, NDWLobbyState } from '@/lib/neon-driftway/types';
 import { LEVELS } from '@/lib/neon-driftway/constants';
@@ -23,16 +24,27 @@ export function NDWMultiplayerLobby({ onBack, onGameStart }: NDWMultiplayerLobby
     const [copied, setCopied] = useState(false);
     const [selectedLevel, setSelectedLevel] = useState<LevelId>(1);
     const [countdown, setCountdown] = useState<number | null>(null);
+    const [clientReady, setClientReady] = useState(false);
 
     const { t } = useTranslation("c-neon-driftway");
     const clientRef = useRef<NDWMultiplayerClient | null>(null);
     const session = authClient.useSession();
     const playerName = session.data?.user?.name || 'Driver';
+    const { copied: linkCopied, copyLink } = useLobbyLink({ code: roomId });
+
+    // Arrived on an invite link. Waiting on the session first is what stops the
+    // lobby announcing a driver called "Driver" to everyone already in it.
+    useLobbyInviteJoin(clientReady && !session.isPending, (code) => {
+        setRoomId(code);
+        setPhase('lobby');
+        clientRef.current?.joinLobby(code, playerName);
+    });
 
     useEffect(() => {
         const client = NDWMultiplayerClient.getInstance();
         clientRef.current = client;
         client.connect();
+        setClientReady(true);
 
         const onLobbyState = (data: NDWLobbyState) => {
             setLobby(data);
@@ -184,8 +196,19 @@ export function NDWMultiplayerLobby({ onBack, onGameStart }: NDWMultiplayerLobby
                 <div className="flex items-center justify-center gap-2 bg-zinc-900/80 border border-zinc-700 rounded-lg p-3">
                     <span className="text-zinc-400 text-xs">{t("code-label", { defaultValue: "Code:" })}</span>
                     <span className="text-cyan-400 font-mono font-bold text-sm">{roomId}</span>
-                    <button onClick={handleCopy} className="text-zinc-400 hover:text-white transition-colors">
+                    <button
+                        onClick={handleCopy}
+                        aria-label={t("copy-code", { defaultValue: "Copy lobby code" })}
+                        className="text-zinc-400 hover:text-white transition-colors"
+                    >
                         {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                    <button
+                        onClick={() => void copyLink()}
+                        aria-label={t("copy-invite-link", { defaultValue: "Copy invite link" })}
+                        className="text-zinc-400 hover:text-white transition-colors"
+                    >
+                        {linkCopied ? <Check className="w-4 h-4 text-green-400" /> : <Link2 className="w-4 h-4" />}
                     </button>
                 </div>
 

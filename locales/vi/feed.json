@@ -392,6 +392,8 @@
   "failed-to-upload-image": "Tải hình ảnh lên thất bại",
   "failed-upload-avatar": "Không thể tải lên ảnh đại diện",
   "failed-upload-banner": "Tải ảnh bìa lên thất bại",
+  "feature-ad-free": "No ads",
+  "feature-ad-free-blurb": "Free accounts are paid for by ads. A membership removes them everywhere — and the ad script is never even fetched, so nothing is loaded to be blocked.",
   "feature-api-access": "Developer API",
   "feature-api-access-blurb": "Programmatic access to the platform, with webhooks and image upload.",
   "feature-bulk-content": "Bulk content tools",

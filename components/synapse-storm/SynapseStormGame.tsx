@@ -8,6 +8,7 @@ import { MultiplayerGame } from './MultiplayerGame';
 import { MultiplayerProvider } from '../../lib/synapse-storm/MultiplayerProvider';
 import type { ScoreSaveData } from '../../lib/synapse-storm/persistence';
 import { useKeyboardInset } from '@/hooks/useKeyboardInset';
+import { useLobbyInvite } from '@/hooks/useLobbyLink';
 import './SynapseStorm.css';
 
 interface SynapseStormGameProps {
@@ -27,6 +28,13 @@ export const SynapseStormGame: React.FC<SynapseStormGameProps> = ({ onSaveScore,
     // begins — which is what stops the browser magnifying the playfield to
     // reveal a field it thinks is hidden. See `hooks/useKeyboardInset`.
     useKeyboardInset();
+
+    // An invite link opens on the multiplayer side of the game; the menu there
+    // does the joining once the neural link is up.
+    const invite = useLobbyInvite();
+    useEffect(() => {
+        if (invite) setTopView('multiplayer');
+    }, [invite]);
 
     useEffect(() => {
         if (state.status === 'gameover' && onSaveScore) {

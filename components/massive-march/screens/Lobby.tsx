@@ -14,7 +14,8 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Copy, Crown, Mic, MicOff } from 'lucide-react';
+import { Check, Copy, Crown, Link2, Mic, MicOff } from 'lucide-react';
+import { useLobbyLink } from '@/hooks/useLobbyLink';
 import { MIN_PLAYERS } from '@/lib/massive-march/constants';
 import { avatarColor } from '@/lib/massive-march/palette';
 import { LAND } from '@/lib/massive-march/palette';
@@ -32,6 +33,7 @@ export function Lobby() {
   const textOnly = useMmSettings((s) => s.textOnly);
   const setSetting = useMmSettings((s) => s.set);
   const [copied, setCopied] = useState(false);
+  const { copied: linkCopied, copyLink } = useLobbyLink({ code: session?.code });
 
   useEffect(() => {
     if (!copied) return;
@@ -69,18 +71,30 @@ export function Lobby() {
               </span>
               <span className="block text-4xl font-black tracking-[0.3em]">{session.code}</span>
             </div>
-            <MarchButton
-              onClick={() => {
-                void navigator.clipboard?.writeText(session.code).then(() => setCopied(true));
-              }}
-            >
-              {copied ? (
-                <Check aria-hidden className="mr-1 inline size-4" />
-              ) : (
-                <Copy aria-hidden className="mr-1 inline size-4" />
-              )}
-              {copied ? t('copied', { defaultValue: 'Copied' }) : t('copy', { defaultValue: 'Copy' })}
-            </MarchButton>
+            <div className="flex flex-wrap gap-2">
+              <MarchButton
+                onClick={() => {
+                  void navigator.clipboard?.writeText(session.code).then(() => setCopied(true));
+                }}
+              >
+                {copied ? (
+                  <Check aria-hidden className="mr-1 inline size-4" />
+                ) : (
+                  <Copy aria-hidden className="mr-1 inline size-4" />
+                )}
+                {copied ? t('copied', { defaultValue: 'Copied' }) : t('copy', { defaultValue: 'Copy' })}
+              </MarchButton>
+              <MarchButton onClick={() => void copyLink()}>
+                {linkCopied ? (
+                  <Check aria-hidden className="mr-1 inline size-4" />
+                ) : (
+                  <Link2 aria-hidden className="mr-1 inline size-4" />
+                )}
+                {linkCopied
+                  ? t('copied', { defaultValue: 'Copied' })
+                  : t('copy-link', { defaultValue: 'Copy link' })}
+              </MarchButton>
+            </div>
           </div>
           <p className="text-xs opacity-70">
             {t('code-note', {

@@ -11,6 +11,7 @@ and deploy pipeline see [`architecture.md`](./architecture.md) §2–3 and
 ## TL;DR — run tests locally
 
 ```bash
+pnpm check:consistency                     # the commit gate (guard tests + lint + tsc + docs freshness)
 pnpm exec vitest run                       # main suite (vitest.config.ts)
 pnpm exec vitest run testing/rmhbox/phase-6   # one directory
 pnpm exec vitest                           # watch mode
@@ -20,6 +21,16 @@ make test                                  # Go (Bazel) + the frontend vitest su
 
 The pre-push checks that actually gate CI are `pnpm exec tsc --noEmit` and
 `pnpm lint` (see [CI](#ci) below).
+
+**Per-commit:** `pnpm check:consistency` (`scripts/check-consistency.sh`) runs
+the subset of the suite that encodes the site's conventions — the design/tab
+gate, the game-viewport contract, the filter-cost budget, the theme-token and
+colour-vision contracts, the API-handler adoption backlog, the i18n catalog and
+namespace integrity, the rAF-loop allowlist and the server-bundle copy check —
+plus eslint on the changed files, `tsc`, and the generated-docs freshness
+checks. It is wired into `git commit` by `.githooks/pre-commit`
+(`pnpm hooks:install`) and by `.claude/hooks/commit-gate.sh` in agent sessions.
+A new guard test belongs in that list in `scripts/check-consistency.sh`.
 
 ## The suites
 

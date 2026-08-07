@@ -22,6 +22,10 @@ const ChartEditor = lazy(() =>
 );
 
 export const Route = createFileRoute('/slice-it/edit/$songId')({
+  // Auth-gated and unindexed. The song's own title is not used here: it would
+  // need a loader on a route whose entire content is a client-side editor, and
+  // the tab is for the person who opened it, not for a crawler.
+  head: () => ({ meta: [{ title: 'Chart editor — Slice It! | RMH Studios' }] }),
   component: EditorPage,
 });
 

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { DarkModeWrapper } from '@/components/slice-it/DarkModeWrapper';
 import { formatSongDuration, type LibrarySong } from '@/lib/slice-it/library-filters';
 import { packLibraryPath, type PackSummary } from '@/lib/slice-it/packs';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 
 /**
  * L15 — the artist page.
@@ -236,5 +237,27 @@ function ArtistPage() {
 }
 
 export const Route = createFileRoute('/slice-it/artist/$key')({
+  /**
+   * L15 — the artist page's own head.
+   *
+   * Built from the route param rather than from a loader: the page fetches its
+   * songs client-side, and adding a loader purely for a title would put a
+   * database round trip on the critical path of a page that already renders
+   * without one. The key is the normalised artist string, so it is a
+   * serviceable title on its own.
+   *
+   * `buildCanonical` because this IS a public page — `lib/sitemap.ts` leaves it
+   * out of the sitemap (the artist space is unbounded) but it is reachable by
+   * crawl from every song card, and a reachable page without a canonical is a
+   * duplicate-content report waiting to happen.
+   */
+  head: ({ params }: { params: { key: string } }) => ({
+    meta: buildMeta({
+      title: `${params.key} — Slice It! | RMH Studios`,
+      description: `Every Slice It! chart by ${params.key}.`,
+      path: `/slice-it/artist/${params.key}`,
+    }),
+    links: [buildCanonical(`/slice-it/artist/${params.key}`)],
+  }),
   component: ArtistPage,
 });

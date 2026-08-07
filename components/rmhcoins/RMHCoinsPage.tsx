@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Loader2, TrendingUp, Gamepad2 } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
@@ -19,12 +19,20 @@ export function RMHCoinsPage() {
   const [coins, setCoins] = useState(0);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
-  const [tab, setTab] = useState<'markets' | 'games'>('markets');
+  // A table invite link (`?tab=games&game=holdem&lobby=…`) has to open on the
+  // games side, or the person who followed it lands on prediction markets.
+  const search = useSearch({ strict: false }) as Record<string, unknown>;
+  const [tab, setTab] = useState<'markets' | 'games'>(
+    search.tab === 'games' ? 'games' : 'markets',
+  );
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated, keeping the invite so login comes back to it.
   useEffect(() => {
     if (!isPending && !session?.user) {
-      navigate({ to: '/login', search: { callbackURL: '/predictions' } });
+      navigate({
+        to: '/login',
+        search: { callbackURL: `/predictions${window.location.search}` },
+      });
     }
   }, [isPending, session, navigate]);
 

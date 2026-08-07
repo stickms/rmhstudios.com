@@ -260,5 +260,15 @@ function DiscordGatewayPage() {
 }
 
 export const Route = createFileRoute('/discord/')({
+  /**
+   * X8 — the Activity gateway. A title and nothing else, on purpose.
+   *
+   * `__root.tsx` gives every `/discord/*` route a MINIMAL head (Discord's CSP
+   * blocks inline scripts and external fonts), and `lib/sitemap.ts` classifies
+   * this `noindex` because the page only functions inside a Discord client.
+   * Adding `buildMeta`/`buildCanonical` here would be advertising a URL that
+   * renders nothing anywhere else.
+   */
+  head: () => ({ meta: [{ title: 'Pick a game — RMH Studios' }] }),
   component: DiscordGatewayPage,
 });

@@ -2,11 +2,13 @@
 
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLobbyInviteJoin } from '@/hooks/useLobbyLink';
 import { Circle, Loader2 } from 'lucide-react';
 import { connectToRoulette, disconnectFromRoulette, getRouletteSocket, onRouletteBalanceUpdate } from '@/lib/roulette/socket';
 import { useRouletteStore } from '@/lib/roulette/store';
 import { C2S } from '@/lib/roulette/events';
 import { RouletteLobby } from './RouletteLobby';
+import { TableInvite } from './TableInvite';
 import { RouletteTable } from './RouletteTable';
 import { RouletteControls } from './RouletteControls';
 
@@ -45,6 +47,13 @@ export function RouletteGame({ coins, setCoins }: Props) {
       disconnectFromRoulette();
     };
   }, []);
+
+  // Arrived on a table invite link — sit down at the named table instead of
+  // showing the room list. The server rejects a code that no longer exists, and
+  // the lobby's own error path says so.
+  useLobbyInviteJoin(connectionStatus === 'connected' && !roomInfo, (code) => {
+    getRouletteSocket()?.emit(C2S.JOIN_ROOM, { joinCode: code.toUpperCase() });
+  });
 
   useEffect(() => {
     return onRouletteBalanceUpdate((newBalance) => {
@@ -110,11 +119,7 @@ export function RouletteGame({ coins, setCoins }: Props) {
           </h3>
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {roomInfo.joinCode && (
-            <span className="text-[10px] sm:text-xs text-site-text-dim hidden sm:inline">
-              {t("join-code-label", { defaultValue: "Code:" })} <span className="font-mono font-bold text-site-accent">{roomInfo.joinCode}</span>
-            </span>
-          )}
+          {roomInfo.joinCode && <TableInvite game="roulette" joinCode={roomInfo.joinCode} />}
           <span className="text-[10px] sm:text-xs text-site-text-dim">
             {players.length}/{roomInfo.maxPlayers}
           </span>
