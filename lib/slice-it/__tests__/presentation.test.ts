@@ -1,281 +1,223 @@
 /**
- * The 2026-08-06 presentation/session wave: combo milestones (`V5`), haptic
- * hit feedback (`A8`), and the lead-in skip's engine half (`H6`).
+ * V2, V3 and V7 — hit sound sets, the spectrum envelope and the backdrop.
  *
- * Three invariants this file exists to pin down:
- *
- * - **A milestone fires once per crossing, not once per frame it sits on the
- *   number.** `resolve()` runs once per judged note, so this is really about
- *   not re-firing when a broken combo climbs back through a number it already
- *   celebrated in this run.
- * - **Haptic durations are looked up per judgement, not computed from it.**
- *   MISS is the longest, and the lookup is disabled outright — not just
- *   silenced — while the setting is off.
- * - **A lead-in skip never leaves the miss sweep something to flag.** Seeking
- *   past a stretch with no notes in it must not touch the ones just beyond it.
+ * The envelope tests are about SIZE and about not lying: a backdrop that keeps
+ * pulsing through a silent outro, or that costs more bytes than the cover it
+ * sits behind, is a feature nobody would ship.
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import {
+  ENVELOPE_BANDS,
+  ENVELOPE_HZ,
+  backdropState,
+  backdropVisible,
+  decodeEnvelope,
+  encodeEnvelope,
+  sampleEnvelope,
+  spectrumEnvelope,
+} from '../presentation';
+import {
+  HIT_SOUND_MAX_BYTES,
+  HIT_SOUND_MAX_PER_USER,
+  HIT_SOUND_MAX_SECONDS,
+  STOCK_HIT_SOUND_SETS,
+  preloadList,
+  resolveHitSoundSet,
+  sampleForJudgement,
+  validateHitSound,
+} from '../hit-sounds';
 
-/** A clock the test moves by hand, standing in for the audio context. */
-const clock = { time: 0, duration: 600 };
-
-vi.mock('../../audio/AudioManager', () => {
-  const instance = {
-    getCurrentTime: () => clock.time,
-    getDuration: () => clock.duration,
-    setPlaybackRate: () => {},
-    loadFromBuffer: () => {},
-    loadTrack: async () => {},
-    play: () => {},
-    pause: () => {},
-    stop: () => {},
-    playSfX: () => {},
-    playHitSoundFile: () => {},
-    preloadHitSound: async () => {},
-    getContext: () => null,
-    seek: (seconds: number) => {
-      clock.time = Math.max(0, seconds);
-    },
-  };
-  return { AudioManager: { getInstance: () => instance } };
-});
-
-vi.mock('../net/client', () => ({
-  reportScore: vi.fn(),
-  reportFinish: vi.fn(),
-}));
-
-// `vi.hoisted` so the object exists before `vi.mock`'s factory — which is
-// itself hoisted above every import in this file — tries to close over it.
-const platformMock = vi.hoisted(() => ({
-  vibrate: vi.fn(),
-  hapticsEnabled: vi.fn(() => true),
-  hapticsIntensity: vi.fn(() => 1),
-}));
-vi.mock('@/lib/shared/platform', () => platformMock);
-
-import { COMBO_MILESTONES, GameEngine } from '../engine';
-import { useSliceItStore } from '../store';
-import { DEFAULT_MODIFIERS } from '../modifiers';
-import type { BeatMap, Modifiers } from '../types';
-
-const base = (patch: Partial<Modifiers> = {}): Modifiers => ({ ...DEFAULT_MODIFIERS, ...patch });
-
-function tapChart(count: number, startAt = 1): BeatMap {
-  return {
-    id: 'song-presentation',
-    name: 'Presentation',
-    artist: 'Test',
-    audioUrl: '',
-    bpm: 120,
-    slices: Array.from({ length: count }, (_, i) => ({
-      id: `n${i}`,
-      time: startAt + i * 0.5,
-      type: 'STANDARD' as const,
-      lane: i % 2,
-    })),
-  } as unknown as BeatMap;
+function ramp(frameCount: number, bins = 64): Float32Array[] {
+  return Array.from({ length: frameCount }, (_, i) => {
+    const frame = new Float32Array(bins);
+    for (let bin = 0; bin < bins; bin++) frame[bin] = ((i % 10) + 1) * (bin / bins);
+    return frame;
+  });
 }
 
-const noteTime = (index: number, startAt = 1) => startAt + index * 0.5;
+describe('V3 — the spectrum envelope', () => {
+  it('resamples to the target rate', () => {
+    // 200 analysis frames at 100 Hz is 2 seconds, which is 60 frames at 30 Hz.
+    const envelope = spectrumEnvelope(ramp(200), 100);
+    expect(envelope.length).toBe(60 * ENVELOPE_BANDS);
+  });
 
-function startedEngine(map: BeatMap, modifiers: Modifiers): GameEngine {
-  const engine = new GameEngine();
-  clock.time = 0;
-  vi.spyOn(performance, 'now').mockImplementation(() => clock.time * 1000);
-  useSliceItStore.setState({ modifiers, audioOffset: 0, isPaused: false });
-  void engine.loadMap(map);
-  engine.reset();
-  useSliceItStore.getState().setStatus('PLAYING');
-  return engine;
-}
+  it('stays under the cover image for a four-minute track', () => {
+    // The claim that makes this shippable at all: smaller than the artwork it
+    // sits behind. 240s × 30 Hz × 8 bands ≈ 57 KB.
+    const frames = 240 * 100;
+    const bytes = Math.round((frames / 100) * ENVELOPE_HZ) * ENVELOPE_BANDS;
+    expect(bytes).toBeLessThan(64 * 1024);
+  });
 
-function hitNotes(engine: GameEngine, from: number, to: number, startAt = 1): void {
-  for (let i = from; i < to; i++) {
-    clock.time = noteTime(i, startAt);
-    engine.submitInput(i % 2);
-  }
-}
+  it('normalises against the track, not an absolute scale', () => {
+    // A quiet master and a loud one must both fill the backdrop.
+    const quiet = ramp(60).map((f) => f.map((v) => v * 0.01) as Float32Array);
+    const loud = ramp(60).map((f) => f.map((v) => v * 100) as Float32Array);
+    expect(Math.max(...spectrumEnvelope(quiet, 30))).toBe(
+      Math.max(...spectrumEnvelope(loud, 30)),
+    );
+  });
 
-function missNotes(engine: GameEngine, from: number, to: number, startAt = 1): void {
-  for (let i = from; i < to; i++) {
-    clock.time = noteTime(i, startAt) + 0.25;
-    engine.update();
-  }
-}
+  it('keeps transients by peaking, not averaging', () => {
+    // One loud analysis frame inside an otherwise silent output frame must
+    // survive the downsample — a mean would erase exactly the thing a 30 Hz
+    // backdrop can show.
+    const frames = Array.from({ length: 30 }, () => new Float32Array(8));
+    frames[3][4] = 1;
+    const envelope = spectrumEnvelope(frames, 300);
+    expect(Math.max(...envelope)).toBe(255);
+  });
 
-beforeEach(() => {
-  clock.time = 0;
-  clock.duration = 600;
-  platformMock.vibrate.mockClear();
-  platformMock.hapticsEnabled.mockReturnValue(true);
-  platformMock.hapticsIntensity.mockReturnValue(1);
-  useSliceItStore.setState({
-    modifiers: { ...DEFAULT_MODIFIERS },
-    audioOffset: 0,
-    status: 'PLAYING',
-    isPaused: false,
+  it('survives an empty analysis', () => {
+    expect(spectrumEnvelope([], 100).length).toBe(0);
+    expect(spectrumEnvelope(ramp(10), 0).length).toBe(0);
+  });
+
+  it('reads silence past the end rather than freezing on the last frame', () => {
+    // A backdrop stuck on the final chord through a long outro reads as the
+    // renderer having died.
+    const envelope = spectrumEnvelope(ramp(60), 30);
+    const past = sampleEnvelope(envelope, 999);
+    expect([...past]).toEqual(new Array(ENVELOPE_BANDS).fill(0));
+    expect([...sampleEnvelope(envelope, -1)]).toEqual(new Array(ENVELOPE_BANDS).fill(0));
+  });
+
+  it('writes into the caller’s scratch array', () => {
+    // Per-frame allocation would be the visible cost of the whole feature.
+    const envelope = spectrumEnvelope(ramp(60), 30);
+    const scratch = new Uint8Array(ENVELOPE_BANDS);
+    expect(sampleEnvelope(envelope, 0.5, scratch)).toBe(scratch);
+  });
+
+  it('round-trips through base64', () => {
+    const envelope = spectrumEnvelope(ramp(90), 45);
+    expect([...decodeEnvelope(encodeEnvelope(envelope))]).toEqual([...envelope]);
+  });
+
+  it('treats a corrupt envelope as a missing backdrop, not an error', () => {
+    expect(decodeEnvelope('not base64 !!!').length).toBe(0);
+    expect(decodeEnvelope(null).length).toBe(0);
   });
 });
 
-afterEach(() => {
-  vi.restoreAllMocks();
-});
+describe('V7 — stage backdrops', () => {
+  it('rises with combo and falls with health', () => {
+    const healthy = backdropState({ health: 100, healthMax: 100, combo: 0, healthEnabled: true });
+    const dying = backdropState({ health: 10, healthMax: 100, combo: 0, healthEnabled: true });
+    expect(dying.intensity).toBeLessThan(healthy.intensity);
+    expect(dying.danger).toBeGreaterThan(healthy.danger);
 
-/* ─── V5 — combo milestones ───────────────────────────────────────────────── */
-
-describe('V5 combo milestones', () => {
-  it('is exactly the escalation the plan named', () => {
-    expect(COMBO_MILESTONES).toEqual([50, 100, 250, 500, 1000]);
+    const combo = backdropState({ health: 100, healthMax: 100, combo: 200, healthEnabled: true });
+    expect(combo.intensity).toBeGreaterThan(healthy.intensity);
   });
 
-  it('says nothing before the first milestone', () => {
-    const engine = startedEngine(tapChart(60), base());
-    hitNotes(engine, 0, 49);
-    expect(engine.getComboMilestone()).toBeNull();
+  it('lets combo carry the whole signal when the gauge is off', () => {
+    // The gauge is off by default, and a backdrop pinned at 60% forever is not
+    // a backdrop.
+    const off = backdropState({ health: 0, healthMax: 100, combo: 0, healthEnabled: false });
+    expect(off.intensity).toBe(0);
+    expect(off.danger).toBe(0);
+    const hot = backdropState({ health: 0, healthMax: 100, combo: 200, healthEnabled: false });
+    expect(hot.intensity).toBe(1);
   });
 
-  it('fires the instant combo crosses 50', () => {
-    const engine = startedEngine(tapChart(60), base());
-    hitNotes(engine, 0, 50);
-    const milestone = engine.getComboMilestone();
-    expect(milestone).not.toBeNull();
-    expect(milestone!.value).toBe(50);
+  it('stays inside 0–1 for absurd inputs', () => {
+    const wild = backdropState({
+      health: 1e9,
+      healthMax: 0,
+      combo: -50,
+      healthEnabled: true,
+    });
+    expect(wild.intensity).toBeGreaterThanOrEqual(0);
+    expect(wild.intensity).toBeLessThanOrEqual(1);
+    expect(wild.danger).toBeGreaterThanOrEqual(0);
   });
 
-  it('does not refire while the combo climbs past it toward the next one', () => {
-    const engine = startedEngine(tapChart(120), base());
-    hitNotes(engine, 0, 50);
-    const first = engine.getComboMilestone();
-
-    hitNotes(engine, 50, 60); // combo now 60 — nowhere near 100
-    expect(engine.getComboMilestone()).toBe(first);
-  });
-
-  it('does not refire a milestone already celebrated this run, even after a break rebuilds to it', () => {
-    const engine = startedEngine(tapChart(120), base());
-    hitNotes(engine, 0, 50);
-    const first = engine.getComboMilestone();
-    expect(first?.value).toBe(50);
-
-    missNotes(engine, 50, 51); // breaks the combo to 0
-    hitNotes(engine, 51, 101); // 50 clean hits climbs it back to exactly 50
-
-    expect(engine.getState().combo).toBe(50);
-    expect(engine.getComboMilestone()).toBe(first);
-  });
-
-  it('clears between runs, so a new attempt can celebrate 50 again', () => {
-    const engine = startedEngine(tapChart(60), base());
-    hitNotes(engine, 0, 50);
-    expect(engine.getComboMilestone()).not.toBeNull();
-
-    engine.reset();
-    expect(engine.getComboMilestone()).toBeNull();
-
-    void engine.loadMap(tapChart(60));
-    engine.reset();
-    hitNotes(engine, 0, 50);
-    expect(engine.getComboMilestone()?.value).toBe(50);
+  it('is off unless all three switches allow it', () => {
+    // A2's photosensitivity mode is not a suggestion, and a full-screen
+    // luminance change is precisely what it exists to stop.
+    expect(backdropVisible({ backdrop: 'pulse', glow: true, reducedFlash: false })).toBe(true);
+    expect(backdropVisible({ backdrop: 'pulse', glow: true, reducedFlash: true })).toBe(false);
+    expect(backdropVisible({ backdrop: 'pulse', glow: false, reducedFlash: false })).toBe(false);
+    expect(backdropVisible({ backdrop: 'none', glow: true, reducedFlash: false })).toBe(false);
   });
 });
 
-/* ─── A8 — haptic hit feedback ────────────────────────────────────────────── */
-
-describe('A8 haptic hit feedback', () => {
-  it('vibrates on a clean hit, scaled by the intensity setting', () => {
-    platformMock.hapticsIntensity.mockReturnValue(0.5);
-    const engine = startedEngine(tapChart(5), base());
-    hitNotes(engine, 0, 1);
-
-    // MARVELOUS is 6ms at full intensity; 0.5 halves it.
-    expect(platformMock.vibrate).toHaveBeenCalledWith(3);
+describe('V2 — hit sounds', () => {
+  it('keeps the default file-less so hit feedback survives a dropped network', () => {
+    expect(STOCK_HIT_SOUND_SETS[0].id).toBe('default');
+    expect(preloadList(STOCK_HIT_SOUND_SETS[0])).toEqual([]);
   });
 
-  it('uses a longer, distinct duration for a miss than for a clean hit', () => {
-    const engine = startedEngine(tapChart(5), base());
-    hitNotes(engine, 0, 1);
-    const hitMs = platformMock.vibrate.mock.calls.at(-1)?.[0] as number;
-
-    platformMock.vibrate.mockClear();
-    missNotes(engine, 1, 2);
-    const missMs = platformMock.vibrate.mock.calls.at(-1)?.[0] as number;
-
-    expect(missMs).toBeGreaterThan(hitMs);
+  it('falls back to the default set for an unknown id', () => {
+    expect(resolveHitSoundSet('deleted-set').id).toBe('default');
+    expect(resolveHitSoundSet(null).id).toBe('default');
   });
 
-  it('does nothing at all when haptics are switched off', () => {
-    platformMock.hapticsEnabled.mockReturnValue(false);
-    const engine = startedEngine(tapChart(5), base());
-    hitNotes(engine, 0, 1);
-    missNotes(engine, 1, 2);
-
-    expect(platformMock.vibrate).not.toHaveBeenCalled();
+  it('prefers a custom set over a stock one with the same id', () => {
+    const mine = {
+      ...STOCK_HIT_SOUND_SETS[1],
+      base: 'mine.wav',
+      ownerId: 'u1',
+    };
+    expect(resolveHitSoundSet(mine.id, [mine]).base).toBe('mine.wav');
   });
 
-  it('fires on a judged hold release too, not only the head', () => {
-    const holdSeconds = 2;
-    const map = {
-      id: 'song-hold',
-      name: 'Hold',
-      artist: 'Test',
-      audioUrl: '',
-      bpm: 120,
-      slices: [{ id: 'n1', time: 1, type: 'LONG', lane: 0, duration: holdSeconds }],
-    } as unknown as BeatMap;
-    const engine = startedEngine(map, base());
-
-    clock.time = 1;
-    engine.submitInput(0);
-    platformMock.vibrate.mockClear();
-
-    clock.time = 1 + holdSeconds;
-    engine.submitRelease(0);
-
-    expect(platformMock.vibrate).toHaveBeenCalledTimes(1);
+  it('never plays a sample on a miss', () => {
+    // A hit sound on a miss is the most confusing thing this system could do.
+    const graded = STOCK_HIT_SOUND_SETS.find((s) => s.id === 'graded-bell')!;
+    expect(sampleForJudgement(graded, 'MISS')).toBeNull();
+    expect(sampleForJudgement(graded, 'MARVELOUS')).toBe('graded-bell-marvelous.wav');
+    // No GOOD variant, so the base carries it.
+    expect(sampleForJudgement(graded, 'GOOD')).toBe('graded-bell.wav');
   });
 
-  it('never vibrates while stepping a replay back — this is feedback for a hand on a device right now', () => {
-    const engine = startedEngine(tapChart(5), base());
-    hitNotes(engine, 0, 3);
-    const log = engine.getReplayLog();
-    expect(log.length).toBeGreaterThan(0);
-
-    platformMock.vibrate.mockClear();
-
-    const viewer = startedEngine(tapChart(5), base());
-    viewer.loadReplay(log);
-    for (let at = 0; at <= 3; at += 1 / 60) viewer.advanceReplay(at);
-
-    expect(platformMock.vibrate).not.toHaveBeenCalled();
-  });
-});
-
-/* ─── H6 — the lead-in skip's engine half ─────────────────────────────────── */
-
-describe('H6 GameEngine.seek', () => {
-  it('moves the audio clock to the requested position', () => {
-    const engine = startedEngine(tapChart(20, 10), base());
-    engine.seek(8);
-    expect(engine.getState().currentTime).toBeCloseTo(8, 5);
+  it('de-duplicates the preload list', () => {
+    const graded = STOCK_HIT_SOUND_SETS.find((s) => s.id === 'graded-clap')!;
+    expect(new Set(preloadList(graded)).size).toBe(preloadList(graded).length);
   });
 
-  it('leaves every note reachable when the skip lands before them all', () => {
-    // A 10s lead-in before the first note — the only situation H6 actually
-    // uses this for.
-    const engine = startedEngine(tapChart(10, 10), base());
-    engine.seek(8); // 2s before the first note, per the skip's own rule
-
-    hitNotes(engine, 0, 10, 10);
-    expect(engine.getRunStats().judgements.MISS).toBe(0);
-    expect(engine.getRunStats().notesResolved).toBe(10);
+  it('refuses an unreadable file rather than passing it through', () => {
+    // Every format the upload route accepts is one the prober can read, so
+    // "unreadable" means "not that format".
+    const result = validateHitSound({ byteLength: 1000, durationSec: null, existingCount: 0 });
+    expect(result).toMatchObject({ ok: false, reason: 'unreadable' });
   });
 
-  it('never resolves a note itself — a skip is silent, not a hit', () => {
-    const engine = startedEngine(tapChart(10, 10), base());
-    engine.seek(8);
-    expect(engine.getRunStats().notesResolved).toBe(0);
-    expect(engine.getState().combo).toBe(0);
+  it('enforces size, duration and quota', () => {
+    expect(
+      validateHitSound({ byteLength: HIT_SOUND_MAX_BYTES + 1, durationSec: 1, existingCount: 0 }),
+    ).toMatchObject({ ok: false, reason: 'too-large' });
+    expect(
+      validateHitSound({
+        byteLength: 1000,
+        durationSec: HIT_SOUND_MAX_SECONDS + 0.1,
+        existingCount: 0,
+      }),
+    ).toMatchObject({ ok: false, reason: 'too-long' });
+    expect(
+      validateHitSound({
+        byteLength: 1000,
+        durationSec: 1,
+        existingCount: HIT_SOUND_MAX_PER_USER,
+      }),
+    ).toMatchObject({ ok: false, reason: 'quota' });
+    expect(validateHitSound({ byteLength: 1000, durationSec: 1, existingCount: 0 })).toEqual({
+      ok: true,
+    });
+  });
+
+  it('checks the quota before anything else', () => {
+    // A player at quota uploading an oversized file should be told the thing
+    // they have to act on, not the thing they could fix and still be refused.
+    expect(
+      validateHitSound({
+        byteLength: HIT_SOUND_MAX_BYTES * 10,
+        durationSec: 60,
+        existingCount: HIT_SOUND_MAX_PER_USER,
+      }),
+    ).toMatchObject({ reason: 'quota' });
   });
 });
