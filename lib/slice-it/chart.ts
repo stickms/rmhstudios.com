@@ -154,8 +154,50 @@ export function applyChartModifiers(
   // unless the player asked for bombs.
   let out = modifiers.bombs ? slices : withoutChartMines(slices);
 
+  // M5 — before every lane transform below, because a hold that has become a
+  // tap is a different shape for the switching/one-track passes to reason
+  // about. The tail is DROPPED, never converted to a second tap: adding notes
+  // would make an accessibility modifier harder than the chart it simplifies.
+  if (modifiers.tapHolds) {
+    out = out.map((slice) =>
+      slice.type === 'LONG'
+        ? { ...slice, type: 'STANDARD' as const, duration: undefined }
+        : slice,
+    );
+  }
+
   if (modifiers.oneTrack) {
     out = out.map((slice) => ({ ...slice, lane: 0 }));
+  }
+
+  // M2 — S-Random. Grouped by TIMESTAMP, not applied per slice: a chord is two
+  // notes at one instant, and drawing each a lane independently would put both
+  // in the same lane, which at best silently drops one and at worst is
+  // unhittable. Drawing without replacement inside the group keeps a chord a
+  // chord.
+  //
+  // Runs after `oneTrack` so the two do not fight: collapsing to one lane and
+  // then re-scattering would quietly undo an explicit choice.
+  if (modifiers.sRandom && !modifiers.oneTrack) {
+    const laneCount = Math.max(2, out.reduce((n, s) => Math.max(n, s.lane + 1), 0));
+    const byTime = new Map<number, Slice[]>();
+    for (const slice of out) {
+      const key = Math.round(slice.time * 1000);
+      byTime.set(key, [...(byTime.get(key) ?? []), slice]);
+    }
+    const reassigned = new Map<string, number>();
+    for (const group of byTime.values()) {
+      const lanes = [...Array(laneCount).keys()];
+      // Fisher-Yates from the run's own seeded stream, so the same settings
+      // twice produce the same chart — `chartSeed` already folds the modifier
+      // set in, and a replay could not otherwise be verified against it.
+      for (let i = lanes.length - 1; i > 0; i--) {
+        const j = Math.floor(random() * (i + 1));
+        [lanes[i], lanes[j]] = [lanes[j], lanes[i]];
+      }
+      group.forEach((slice, index) => reassigned.set(slice.id, lanes[index % lanes.length]));
+    }
+    out = out.map((slice) => ({ ...slice, lane: reassigned.get(slice.id) ?? slice.lane }));
   }
 
   if (modifiers.switching && !modifiers.oneTrack) {

@@ -218,6 +218,12 @@ export const DIFFICULTY_MULTIPLIERS: Record<Difficulty, number> = {
  * becomes a modifier-stacking contest rather than a rhythm game.
  */
 export const MODIFIER_BONUSES = {
+  /**
+   * M2 — S-Random. Priced with `switching` (0.15): both rewrite where your
+   * hands go without touching the timing, and neither hides anything. It is
+   * NOT priced with Strict Timing, which shrinks the window itself.
+   */
+  sRandom: 0.15,
   invisible: 0.2,
   bombs: 0.15,
   switching: 0.15,

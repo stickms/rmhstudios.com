@@ -56,6 +56,7 @@ export function calculateScoreMultiplier(
   if (modifiers.invisible) mult += MODIFIER_BONUSES.invisible;
   if (modifiers.bombs) mult += MODIFIER_BONUSES.bombs;
   if (modifiers.switching) mult += MODIFIER_BONUSES.switching;
+  if (modifiers.sRandom) mult += MODIFIER_BONUSES.sRandom;
   if (modifiers.spin) mult += MODIFIER_BONUSES.spin;
   if (modifiers.strictTiming) mult += MODIFIER_BONUSES.strictTiming;
   if (modifiers.oneTrack) mult += MODIFIER_BONUSES.oneTrack;

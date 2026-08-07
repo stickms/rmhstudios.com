@@ -97,6 +97,13 @@ interface SliceItState {
   assistTick: boolean;
   modifiers: Modifiers;
   /**
+   * M7 — named modifier presets.
+   *
+   * Persisted with the settings, because the whole point is not re-toggling
+   * nine switches every session to get back to "my practice setup".
+   */
+  modifierPresets: { id: string; name: string; modifiers: Modifiers }[];
+  /**
    * M1 — Mirror. Swaps lanes for every run until turned off again.
    *
    * A player preference rather than a per-run `Modifiers` field on purpose:
@@ -180,6 +187,9 @@ interface SliceItState {
   setMetronome: (value: boolean) => void;
   setAssistTick: (value: boolean) => void;
   setModifiers: (modifiers: Modifiers) => void;
+  saveModifierPreset: (name: string) => void;
+  applyModifierPreset: (id: string) => void;
+  deleteModifierPreset: (id: string) => void;
   setMirror: (value: boolean) => void;
   setScrollSpeed: (value: number) => void;
   setScrollMode: (mode: ScrollMode) => void;
@@ -277,6 +287,7 @@ export const useSliceItStore = create<SliceItState>()(
       metronome: false,
       assistTick: false,
       modifiers: { ...DEFAULT_MODIFIERS },
+      modifierPresets: [],
       mirror: false,
       scrollSpeed: 1.0,
       scrollMode: 'constant',
@@ -306,6 +317,34 @@ export const useSliceItStore = create<SliceItState>()(
       setMetronome: (metronome) => set({ metronome }),
       setAssistTick: (assistTick) => set({ assistTick }),
       setModifiers: (modifiers) => set({ modifiers: applyExclusions(modifiers) }),
+      saveModifierPreset: (name) =>
+        set((state) => {
+          const trimmed = name.trim().slice(0, 40);
+          if (!trimmed) return {};
+          // Saving over an existing name REPLACES it rather than making a
+          // second entry with the same label — a preset list with two
+          // "Practice"s is a list you cannot use.
+          const rest = state.modifierPresets.filter((preset) => preset.name !== trimmed);
+          return {
+            modifierPresets: [
+              ...rest,
+              { id: `${Date.now().toString(36)}`, name: trimmed, modifiers: state.modifiers },
+            ].slice(-12),
+          };
+        }),
+      applyModifierPreset: (id) =>
+        set((state) => {
+          const preset = state.modifierPresets.find((entry) => entry.id === id);
+          if (!preset) return {};
+          // Re-normalised on the way out: a preset saved before a modifier
+          // existed is missing that key, and a preset saved before an exclusion
+          // rule existed may hold a pair that is now contradictory.
+          return { modifiers: applyExclusions({ ...DEFAULT_MODIFIERS, ...preset.modifiers }) };
+        }),
+      deleteModifierPreset: (id) =>
+        set((state) => ({
+          modifierPresets: state.modifierPresets.filter((preset) => preset.id !== id),
+        })),
       setMirror: (mirror) => set({ mirror }),
       setScrollSpeed: (scrollSpeed) => set({ scrollSpeed: clampScrollSpeed(scrollSpeed) }),
       setScrollMode: (scrollMode) => set({ scrollMode }),
@@ -374,6 +413,7 @@ export const useSliceItStore = create<SliceItState>()(
         metronome: state.metronome,
         assistTick: state.assistTick,
         modifiers: state.modifiers,
+        modifierPresets: state.modifierPresets,
         mirror: state.mirror,
         scrollSpeed: state.scrollSpeed,
         scrollMode: state.scrollMode,
@@ -446,6 +486,7 @@ export const useSliceItStore = create<SliceItState>()(
             judgementScale: 1,
             judgementOpacity: 1,
             comboPosition: 'center',
+            modifierPresets: [],
           };
         }
         return state;

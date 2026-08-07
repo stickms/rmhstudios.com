@@ -46,6 +46,17 @@ export interface Slice {
  * single place that knows the difference.
  */
 export interface BeatMap {
+  /**
+   * M10 — modifiers this chart declares it does not survive.
+   *
+   * Advisory, and deliberately DECLARED rather than silently enforced: the UI
+   * greys the toggle out with the chart's own reason, so a player who wonders
+   * why Spin is unavailable here gets an answer instead of a dead switch. A
+   * charter knows things the generator cannot — that a chart's readability
+   * depends on lane position, or that it is built around chords One Track would
+   * collapse.
+   */
+  incompatible?: { key: string; reason: string }[];
   id: string;
   name: string;
   artist: string;
@@ -123,6 +134,28 @@ export interface Modifiers {
    * have used it.
    */
   assist?: boolean;
+
+  /**
+   * M2 — S-Random: re-draw which lane each note sits in, per note.
+   *
+   * Distinct from `switching`, which changes what a note DOES. This changes
+   * which lane the chart uses, destroying the alternation the charter builds in
+   * and manufacturing jacks — genuinely harder, so it pays a bonus.
+   *
+   * The plain IIDX `RANDOM` (one permutation for the whole chart) is
+   * deliberately absent: at two lanes a permutation is either identity or
+   * mirror, and mirror already exists and is free.
+   */
+  sRandom?: boolean;
+
+  /**
+   * M5 — hold heads become taps and the tails are dropped.
+   *
+   * Assist, unranked, no bonus. The tail is DROPPED rather than converted to a
+   * second tap: converting would add notes, which would make an accessibility
+   * modifier harder than the chart it is meant to simplify.
+   */
+  tapHolds?: boolean;
 }
 
 /** The tally the engine keeps and the score route re-derives its checks from. */

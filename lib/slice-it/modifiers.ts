@@ -60,6 +60,8 @@ export const DEFAULT_MODIFIERS = {
   perfectionist: false,
   noFail: false,
   assist: false,
+  sRandom: false,
+  tapHolds: false,
 } satisfies Modifiers;
 
 /**
@@ -115,6 +117,8 @@ export const ModifiersZ: z.ZodType<Modifiers> = z
     perfectionist: BoolZ,
     noFail: BoolZ,
     assist: BoolZ,
+    sRandom: BoolZ,
+    tapHolds: BoolZ,
   })
   .catch(() => ({ ...DEFAULT_MODIFIERS }));
 
@@ -185,6 +189,7 @@ export const ASSIST_MODIFIERS = [
   'noFail',
   'assist',
   'lenientTiming',
+  'tapHolds',
 ] as const satisfies readonly (keyof Modifiers)[];
 
 /** True when a run's settings allow it onto a leaderboard at all. */
@@ -281,4 +286,34 @@ export function activeModifierKeys(modifiers: Modifiers): (keyof Modifiers)[] {
   if (modifiers.perfectionist) keys.push('perfectionist');
   if (modifiers.speed !== 1) keys.push('speed');
   return keys;
+}
+
+/**
+ * M10 — the modifier set a given chart will actually accept.
+ *
+ * Boolean flags the chart names are turned OFF rather than left on-and-inert,
+ * for the same reason `applyExclusions` does it: a badge or a toggle reading
+ * "on" must never describe something the run is not doing. Non-boolean fields
+ * (`speed`, `difficulty`) are never touched — a chart does not get to dictate
+ * how fast you play it.
+ */
+export function legalFor(
+  modifiers: Modifiers,
+  map: { incompatible?: { key: string; reason: string }[] } | null | undefined,
+): Modifiers {
+  let out = modifiers;
+  for (const { key } of map?.incompatible ?? []) {
+    if (typeof out[key as keyof Modifiers] === 'boolean' && out[key as keyof Modifiers]) {
+      out = { ...out, [key]: false };
+    }
+  }
+  return applyExclusions(out);
+}
+
+/** The reason a chart gives for refusing a modifier, for the UI to show. */
+export function incompatibleReason(
+  key: keyof Modifiers,
+  map: { incompatible?: { key: string; reason: string }[] } | null | undefined,
+): string | null {
+  return map?.incompatible?.find((entry) => entry.key === key)?.reason ?? null;
 }
