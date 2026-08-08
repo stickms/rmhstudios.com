@@ -135,10 +135,11 @@ jobs:
           restore-keys: |
             tsc-eslint-${{ runner.os }}-
 
+      # Native (Go) TypeScript compiler — see the same step in web-ci.yml.
       - name: Typecheck
         run: |
           mkdir -p .cache/tsc
-          pnpm exec tsc --noEmit --incremental --tsBuildInfoFile .cache/tsc/app.tsbuildinfo
+          pnpm run typecheck
 
       - name: Lint
         run: |

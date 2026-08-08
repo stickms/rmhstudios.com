@@ -40,6 +40,15 @@ function init(): void {
 
   try {
     const opts = {
+      // Pin RESP2. ioredis 6 made RESP3 the default, which changes the SHAPE of
+      // some replies (map-typed responses arrive as objects rather than flat
+      // field/value arrays). Every consumer in this file — the rate-limit
+      // counters, the view/counter buffers, the presence sets and the dirty-set
+      // drains — was written against RESP2, and a reshaped reply there is a
+      // silent wrong answer rather than a crash. Staying on 2 makes the ioredis
+      // 6 upgrade a no-op at the protocol level; moving to RESP3 is its own
+      // change, with the reply parsing audited command by command.
+      protocol: 2 as const,
       // Cap reconnect/backoff so a Redis outage never wedges a request path.
       maxRetriesPerRequest: 2,
       retryStrategy: (times: number) => Math.min(times * 200, 2000),

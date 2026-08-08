@@ -47,14 +47,20 @@ const OUT_DIR = path.join(ROOT, '.output', 'public');
  * into `public/vibe-packages` by `scripts/build-vibe-packages.ts`); it stays
  * listed so that importing it into the app graph trips the wire.
  * `zod` is a live violation — see KNOWN_VIOLATIONS.
+ *
+ * 2026-08-08: `twemoji-parser` came OFF this list because the package is gone,
+ * not because the rule relaxed. It was the archived second Twemoji library, kept
+ * only for `lib/rmhbox/emoji-cinema/twemoji-url.ts`; that helper now uses
+ * `@twemoji/api`, whose entry below still guards the same payload. A tripwire
+ * naming a package that is no longer a dependency can never fire, and a rule
+ * that cannot fire is worse than no rule — it reads as coverage.
  */
 const FORBIDDEN: Record<string, string> = {
   '@discord/embedded-app-sdk': 'Discord Activity only — /discord/* loads it itself',
   three: 'route-only 3D — must stay behind a lazy() boundary',
   'pixi.js': 'route-only 2D renderer',
   tone: 'route-only audio engine',
-  'twemoji-parser': 'one minigame history view',
-  '@twemoji/api': 'post-hydration only',
+  '@twemoji/api': 'post-hydration only — incl. the emoji-cinema URL helper',
   'web-vitals': 'dynamically imported by lib/rum.ts on purpose',
   zod: 'validators belong in *-schema.ts split points, not the shell',
   'emoji-picker-react': 'composer-only',

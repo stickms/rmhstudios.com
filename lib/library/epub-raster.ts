@@ -5,8 +5,8 @@
  * it opens the archive, paginates by character "locations" (a stable page model
  * independent of font size), exposes the table of contents, and lays each page out
  * in a hidden, fixed-size rendition. We snapshot that rendition to a canvas with
- * html2canvas, turn it into a GPU texture, and hand it to BookCanvas exactly like a
- * rasterised PDF page.
+ * modern-screenshot, turn it into a GPU texture, and hand it to BookCanvas exactly
+ * like a rasterised PDF page.
  *
  * Because a single epub.js rendition is shared, page rasterisation is serialised
  * (one navigation + snapshot at a time), nearest-the-current-page first, with the
@@ -62,7 +62,7 @@ export class EpubRasterStore {
   private book: any;
   private rendition: any;
   private host: HTMLDivElement;
-  private html2canvas: (el: HTMLElement, opts: any) => Promise<HTMLCanvasElement>;
+  private domToCanvas: (el: HTMLElement, opts: any) => Promise<HTMLCanvasElement>;
   readonly numPages: number;
   readonly aspect = PAGE_ASPECT;
 
@@ -79,18 +79,23 @@ export class EpubRasterStore {
   private notifyScheduled = false;
   private onChange: () => void = () => {};
 
-  private constructor(book: any, rendition: any, host: HTMLDivElement, h2c: any, numPages: number) {
+  private constructor(book: any, rendition: any, host: HTMLDivElement, snap: any, numPages: number) {
     this.book = book;
     this.rendition = rendition;
     this.host = host;
-    this.html2canvas = h2c;
+    this.domToCanvas = snap;
     this.numPages = numPages;
   }
 
   /** Open an EPUB and prepare it for rasterised 3D rendering. */
   static async open(data: ArrayBuffer, opts: { theme?: EpubTheme; onChange?: () => void } = {}): Promise<EpubInit> {
     const ePub = (await import('epubjs')).default as any;
-    const h2c = (await import('html2canvas')).default as any;
+    // modern-screenshot replaced html2canvas here (unmaintained since 2022). It
+    // clones an iframe via `iframe.contentDocument.documentElement`, which is
+    // what makes it usable at all for this: epub.js renders each page into a
+    // same-origin iframe, and a snapshotter that only serialised the <iframe>
+    // element would capture an empty box.
+    const snap = (await import('modern-screenshot')).domToCanvas as any;
 
     const host = document.createElement('div');
     Object.assign(host.style, {
@@ -120,7 +125,7 @@ export class EpubRasterStore {
     await book.locations.generate(LOCATION_CHARS);
     const numPages = Math.max(1, book.locations.length());
 
-    const store = new EpubRasterStore(book, rendition, host, h2c, numPages);
+    const store = new EpubRasterStore(book, rendition, host, snap, numPages);
     store.onChange = opts.onChange ?? (() => {});
     store.applyTheme(opts.theme ?? 'dark');
 
@@ -268,15 +273,15 @@ export class EpubRasterStore {
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
     if (this.destroyed) return;
 
-    const canvas = await this.html2canvas(this.host, {
+    // `windowWidth`/`windowHeight` and `useCORS` were html2canvas-isms with no
+    // counterpart here: the host div is already fixed at PAGE_W × PAGE_H, and
+    // modern-screenshot fetches and inlines remote assets itself (cross-origin
+    // cover art included) rather than relying on a tainted-canvas opt-out.
+    const canvas = await this.domToCanvas(this.host, {
       backgroundColor: THEME_COLORS[this.theme].bg,
       width: PAGE_W,
       height: PAGE_H,
-      windowWidth: PAGE_W,
-      windowHeight: PAGE_H,
       scale: SNAP_SCALE,
-      useCORS: true,
-      logging: false,
     });
     if (this.destroyed) return;
 

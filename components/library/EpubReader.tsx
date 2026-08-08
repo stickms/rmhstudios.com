@@ -2,7 +2,7 @@
  * EpubReader — reads an EPUB inside the same 3D page-curl book as PDFs.
  *
  * EPUBs are reflowable, so they can't be dropped into the fixed-page 3D book
- * directly. Instead the EpubRasterStore (epub.js + html2canvas) paginates the book
+ * directly. Instead the EpubRasterStore (epub.js + modern-screenshot) paginates the book
  * and rasterises each page to a GPU texture, which we hand to <BookCanvas> — the
  * exact same drag-follow curl renderer the PDF reader uses. The reader therefore
  * shares the PDF toolbar, navigation, scrubber and personalization (resume,
