@@ -11,8 +11,7 @@ import type { TimingSummary } from '@/lib/slice-it/integrity';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { RotateCcw, Home, Trophy, Wand2 } from 'lucide-react';
-import { offsetAdvice } from '@/lib/slice-it/ai/facts';
-import { CoachPanel } from './ai/CoachPanel';
+import { offsetAdvice } from '@/lib/slice-it/timing-advice';
 
 interface GameOverProps {
   onRetry?: () => void;
@@ -27,7 +26,7 @@ interface GameOverProps {
 export function GameOver({ onRetry, engine }: GameOverProps) {
   const { t } = useTranslation('c-game');
   const { t: ts } = useTranslation('r-slice-it');
-  const { score, songId, multiplier, maxCombo, accuracy, modifiers, resetRun } = useSliceItStore();
+  const { score, multiplier, maxCombo, accuracy, modifiers, resetRun } = useSliceItStore();
   const audioOffset = useSliceItStore((s) => s.audioOffset);
   const setAudioOffset = useSliceItStore((s) => s.setAudioOffset);
 
@@ -57,16 +56,14 @@ export function GameOver({ onRetry, engine }: GameOverProps) {
   const bestDelta = previousBest !== null ? score - previousBest : null;
 
   /**
-   * The one-tap offset suggestion, from the SAME rule the calibration screen
-   * uses — `offsetAdvice()` in `lib/slice-it/ai/facts.ts`.
+   * The one-tap offset suggestion — `offsetAdvice()` in
+   * `lib/slice-it/timing-advice.ts`.
    *
    * This used to be three local constants (min samples, min mean, max stdDev).
-   * They were reasonable numbers and they were a *second* answer to "is this
-   * bias real", sitting one screen away from the calibration advisor's. Two
-   * rules for one judgement, both writing the same persisted setting, is the
-   * drift `lib/CLAUDE.md` exists to prevent — so the fixed spread cap is gone
-   * and both surfaces now compare the mean against its own standard error,
-   * which is the honest test and does not need a magic ceiling.
+   * They were reasonable numbers, but they were a second answer to "is this
+   * bias real" for a setting the calibration screen also writes. The shared
+   * rule compares the mean against its own standard error, which is the honest
+   * test and does not need a magic spread ceiling.
    */
   const advice = offsetAdvice(timing);
   const suggestedOffset = advice?.confident ? advice.suggestedDeltaMs : null;
@@ -269,29 +266,6 @@ export function GameOver({ onRetry, engine }: GameOverProps) {
               )}
             </div>
           )}
-
-          {/*
-            Coaching is opt-in on a press, never fetched on mount: it is a
-            metered model call against a per-user monthly budget, and a results
-            card that spent it automatically would charge every player for
-            advice most of them scroll straight past.
-
-            It reads the same `stats` and `timing` the panels above render, so
-            the numbers it cites are the numbers on screen.
-          */}
-          {songId ? (
-            <CoachPanel
-              songId={songId}
-              score={score}
-              maxCombo={maxCombo}
-              accuracy={accuracy}
-              notesResolved={stats?.notesResolved ?? 0}
-              modifiers={modifiers}
-              timing={timing}
-              sections={engine?.getSectionResults() ?? null}
-              judgements={stats?.judgements ?? null}
-            />
-          ) : null}
 
           <div className="flex gap-4">
             <Button

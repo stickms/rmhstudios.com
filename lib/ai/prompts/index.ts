@@ -25,7 +25,6 @@
  */
 
 import type { AiTask } from '@/lib/ai/provider.server';
-import { SLICE_IT_PROMPTS } from './slice-it';
 
 /**
  * The framing every prompt inherits.
@@ -301,16 +300,6 @@ export const KAIKAI_DEBT_RECEIPTS: PromptSpec = {
   forbid: ['As an AI', 'Here is', "Here's"],
 };
 
-/* --- Slice It (/slice-it) ------------------------------------------------- */
-
-/**
- * Ten specs, filed in their own module because one game's prompts outnumbering
- * the platform's would make this file unscannable. They are ordinary members of
- * the registry below — `systemFor()`, the frame, and both suites apply to them
- * exactly as they do to everything above.
- */
-export * from './slice-it';
-
 /** Everything registered. The injection and contract suites iterate this. */
 export const ALL_PROMPTS: readonly PromptSpec[] = [
   TOOL_SELECT,
@@ -325,5 +314,4 @@ export const ALL_PROMPTS: readonly PromptSpec[] = [
   KAIKAI_DEBT_APPRAISE,
   KAIKAI_DEBT_ANSWER,
   KAIKAI_DEBT_RECEIPTS,
-  ...SLICE_IT_PROMPTS,
 ] as const;

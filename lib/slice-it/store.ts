@@ -22,7 +22,6 @@ import { persist } from 'zustand/middleware';
 import type { RealtimeStatus } from '@/lib/shared/realtime/types';
 import { DEFAULT_MODIFIERS, applyExclusions } from './modifiers';
 import type { Modifiers } from './types';
-import type { TimingSummary } from './integrity';
 import {
   BASE_APPROACH_SEC,
   MAX_LANE_COVER,
@@ -48,32 +47,6 @@ export interface Keybinds {
 }
 
 export type GameStatus = 'MENU' | 'PLAYING' | 'FINISHED';
-
-/**
- * One finished run's hit timing, kept for the calibration advisor.
- *
- * Persisted **locally**, alongside the settings, rather than sent to the server
- * — and that is the correct home for it rather than a convenience. Audio
- * latency is a property of this machine: its output device, its buffer size,
- * whether the player is on bluetooth headphones today. An account-level history
- * pooled across a desktop and a phone would average two different latencies
- * into one number that is wrong for both.
- */
-export interface TimingSample {
-  songTitle: string;
-  durationSec: number;
-  /** 0–1. */
-  accuracy: number;
-  timing: TimingSummary;
-  /** Epoch ms, so the newest runs can be preferred. */
-  at: number;
-}
-
-/**
- * How many samples to keep. Enough that the pooled statistic means something,
- * few enough that a change of headphones works its way out within an evening.
- */
-const TIMING_SAMPLES_KEPT = 8;
 
 interface SliceItState {
   /* ── Settings (persisted) ─────────────────────────────────────────── */
@@ -143,8 +116,6 @@ interface SliceItState {
   /** P4 — a click on every NOTE, whether or not you hit it. */
   assistTick: boolean;
   modifiers: Modifiers;
-  /** Recent runs' hit timing, newest last. See {@link TimingSample}. */
-  recentTiming: TimingSample[];
   /**
    * M7 — named modifier presets.
    *
@@ -255,7 +226,6 @@ interface SliceItState {
   setMetronome: (value: boolean) => void;
   setAssistTick: (value: boolean) => void;
   setModifiers: (modifiers: Modifiers) => void;
-  recordTiming: (sample: TimingSample) => void;
   saveModifierPreset: (name: string) => void;
   applyModifierPreset: (id: string) => void;
   deleteModifierPreset: (id: string) => void;
@@ -361,7 +331,6 @@ export const useSliceItStore = create<SliceItState>()(
       metronome: false,
       assistTick: false,
       modifiers: { ...DEFAULT_MODIFIERS },
-      recentTiming: [],
       modifierPresets: [],
       mirror: false,
       scrollSpeed: 1.0,
@@ -396,10 +365,6 @@ export const useSliceItStore = create<SliceItState>()(
       setMetronome: (metronome) => set({ metronome }),
       setAssistTick: (assistTick) => set({ assistTick }),
       setModifiers: (modifiers) => set({ modifiers: applyExclusions(modifiers) }),
-      recordTiming: (sample) =>
-        set((state) => ({
-          recentTiming: [...state.recentTiming, sample].slice(-TIMING_SAMPLES_KEPT),
-        })),
       saveModifierPreset: (name) =>
         set((state) => {
           const trimmed = name.trim().slice(0, 40);
@@ -500,7 +465,6 @@ export const useSliceItStore = create<SliceItState>()(
         metronome: state.metronome,
         assistTick: state.assistTick,
         modifiers: state.modifiers,
-        recentTiming: state.recentTiming,
         modifierPresets: state.modifierPresets,
         mirror: state.mirror,
         scrollSpeed: state.scrollSpeed,
@@ -531,10 +495,10 @@ export const useSliceItStore = create<SliceItState>()(
        *   continue to render exactly as it always has for a player whose mod
        *   set already had `invisible: true` — the "alias" the split promises,
        *   done by leaving the old field alone rather than renaming it.
-       * - **v6 → v7** added `recentTiming`, the local hit-timing history the
-       *   calibration advisor pools. It starts empty rather than synthesised:
-       *   the advisor refuses to answer below its sample threshold, which is
-       *   the correct answer for a player with no measured runs yet.
+       * - **v6 → v7** added `recentTiming` for the calibration advisor. That
+       *   feature is gone and so is the field; the step is kept as a no-op
+       *   because the version numbers are a ratchet — renumbering them would
+       *   re-run later steps on blobs that already had them applied.
        */
       migrate: (persisted, version) => {
         let state = (persisted ?? {}) as Record<string, unknown>;
@@ -586,7 +550,9 @@ export const useSliceItStore = create<SliceItState>()(
           };
         }
         if (version < 7) {
-          state = { ...state, recentTiming: [] };
+          // No-op: `recentTiming` left with the AI tier. A v6 blob needs
+          // nothing added, and the stale key a v7 blob still carries is
+          // ignored — `partialize` decides what is written back.
         }
         return state;
       },

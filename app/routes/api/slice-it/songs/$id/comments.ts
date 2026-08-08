@@ -4,7 +4,6 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { resolveUserDisplay, userDisplaySelect } from '@/lib/user-display';
 import { CommentBodyZ } from '@/lib/slice-it/api-schemas';
-import { triageComment } from '@/lib/slice-it/ai/moderation.server';
 import { extractTimestamp } from '@/lib/slice-it/taxonomy';
 
 const CommentQueryZ = z.object({
@@ -104,20 +103,6 @@ export const Route = createFileRoute('/api/slice-it/songs/$id/comments')({
               user: { select: userDisplaySelect },
             },
           });
-
-          // AI triage (feature 11) runs AFTER the row is written and is not
-          // awaited. Two reasons it must not sit in front of the create:
-          //
-          //  1. A model call in the write path is a comment box that hangs for
-          //     two seconds, and that fails to post when the provider is down.
-          //  2. The verdict never blocks anything — it orders a moderation
-          //     queue for a human. Nothing downstream reads it to decide
-          //     whether this response should be returned.
-          //
-          // An untriaged row keeps `aiTriagedAt = NULL`, which is deliberately
-          // distinguishable from a clean verdict. See the schema comment.
-          void triageAndRecord(comment.id, body.content, userId);
-
           return Response.json(format(comment, userId));
         },
       ),
@@ -148,31 +133,6 @@ export const Route = createFileRoute('/api/slice-it/songs/$id/comments')({
   },
 });
 
-/**
- * Triage a posted comment and store the verdict. Never throws into the request.
- *
- * Fire-and-forget: the comment is already written and already returned by the
- * time this runs, so a provider outage costs a triage record and nothing else.
- * The row it updates may have been deleted in the meantime — by its author, in
- * the seconds this takes — so the update is guarded rather than assumed.
- */
-async function triageAndRecord(commentId: string, content: string, userId: string): Promise<void> {
-  try {
-    const verdict = await triageComment(content, { userId });
-    if (!verdict) return;
-    await prisma.songComment.updateMany({
-      where: { id: commentId },
-      data: {
-        aiSeverity: verdict.severity,
-        aiCategories: verdict.categories,
-        aiRationale: verdict.rationale,
-        aiTriagedAt: new Date(),
-      },
-    });
-  } catch (err) {
-    console.warn('[slice-it] comment triage failed:', (err as Error)?.message);
-  }
-}
 
 function format(
   row: {
