@@ -33,10 +33,8 @@ export const Route = createFileRoute('/_site/study/')({
 function StudyPage() {
   const { decks } = Route.useLoaderData();
   return (
-    <>
-      <PageFrame>
-        <FlashcardsColumn initialData={decks} />
-      </PageFrame>
-    </>
+    <PageFrame>
+      <FlashcardsColumn initialData={decks} />
+    </PageFrame>
   );
 }

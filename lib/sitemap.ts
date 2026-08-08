@@ -120,7 +120,6 @@ export const STATIC_ROUTES: SitemapEntry[] = [
 
   // Engineering/design write-ups. Real content, and the kind that earns links.
   { loc: '/design', changefreq: 'monthly', priority: 0.5 },
-  { loc: '/liquid-glass', changefreq: 'monthly', priority: 0.4 },
   { loc: '/optimization', changefreq: 'monthly', priority: 0.4 },
   { loc: '/security', changefreq: 'monthly', priority: 0.4 },
 
@@ -215,9 +214,9 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/wrapped': 'personal',
   '/creator-studio': 'personal',
   '/homes/manage': 'personal',
-  '/homes/saved': 'personal',
+  '/homes/saved': 'redirect', // → /homes/manage?tab=saved
   '/homes/submit': 'auth-gated',
-  '/homes/watches': 'personal',
+  '/homes/watches': 'redirect', // → /homes/manage?tab=alerts
   '/rideshare/drive': 'auth-gated',
   '/rideshare/ride': 'auth-gated',
   '/rmhladder/alerts': 'personal',
@@ -258,8 +257,9 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/admin/blog': 'admin',
   '/admin/blog/new': 'admin',
   '/admin/economy': 'admin',
-  '/admin/library-quota': 'admin',
-  '/admin/library-storage': 'admin',
+  '/admin/library': 'admin',
+  '/admin/library-quota': 'redirect', // → /admin/library?tab=appeals
+  '/admin/library-storage': 'redirect', // → /admin/library?tab=storage
   '/admin/predictions': 'admin',
   '/admin/redemptions': 'admin',
   '/admin/reports': 'admin',
@@ -302,6 +302,12 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/music-trivia': 'noindex', // an in-page widget, not a destination
   '/discord/lights-out': 'noindex', // Discord Activity surface, minimal head
   '/discord/rmhbox': 'noindex',
+  // The Liquid Glass lab: a live gallery of every elevation tier and primitive,
+  // for reviewing the material. It was listed in the sitemap at priority 0.4
+  // with no inbound link anywhere in the running UI — an indexable page a
+  // visitor had no way to reach, competing with `/design` (the actual public
+  // write-up) for the same queries. It is tooling; developers reach it by URL.
+  '/liquid-glass': 'noindex',
   '/rmh-internal-affairs': 'noindex', // internal microsite
   '/secret': 'noindex', // easter eggs — indexing them defeats the point
   '/secret/cursed-logic': 'noindex',

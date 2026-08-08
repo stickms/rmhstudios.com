@@ -156,7 +156,8 @@ export function WatchButton({ filters, center }: WatchButtonProps) {
                 Create alert
               </Button>
               <Link
-                to="/homes/watches"
+                to="/homes/manage"
+                search={{ tab: 'alerts' }}
                 className="text-sm text-site-text-muted hover:text-site-text"
               >
                 Manage alerts

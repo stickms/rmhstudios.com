@@ -2,10 +2,8 @@
  * Admin Blog Dashboard Route
  */
 
-import { createFileRoute, Link, redirect } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
-import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { getAllPosts } from '@/lib/blog';
 import { Plus, Edit, FileText } from 'lucide-react';
@@ -14,13 +12,12 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useTranslation } from 'react-i18next';
 
+// No admin check here: `/_site/admin/route.tsx` gates the whole subtree in its
+// `beforeLoad`, which runs before any child loader. Re-checking cost a second
+// session resolution on every navigation into the section and was one more copy
+// of the rule to keep in sync with the real one.
 const fetchBlogData = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session || !(session.user as any).isAdmin) {
-    throw redirect({ to: '/' });
-  }
-  const posts = await getAllPosts(["title", "slug", "date"]);
+  const posts = await getAllPosts(['title', 'slug', 'date']);
   return { posts };
 });
 
