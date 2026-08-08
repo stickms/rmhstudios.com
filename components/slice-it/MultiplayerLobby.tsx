@@ -208,10 +208,22 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
   // Push the local modifier choice up whenever it changes while seated. The
   // server clamps it and echoes the result back in the snapshot, which is what
   // the roster renders — so what you see beside your name is what will be used.
+  //
+  // The dependency is `isSeated`, a boolean, and NOT the `lobby` object. That
+  // distinction is the whole reason this comment exists: `slice:mods` makes the
+  // server broadcast a fresh snapshot, a fresh snapshot is a new object
+  // identity, and a new identity re-ran this effect — which emitted
+  // `slice:mods` again. Every seat in the room drove its own copy of that loop,
+  // against each other's broadcasts, for as long as anyone sat in the lobby.
+  // Nothing bounded it except the rate limiter, so the lobby's real behaviour
+  // was a permanent flood that answered `rate_limited` to whatever the player
+  // actually pressed — which is what made changing a setting look like every
+  // control in the lobby was broken.
+  const isSeated = Boolean(lobby);
   React.useEffect(() => {
-    if (!lobby) return;
+    if (!isSeated) return;
     net.setLobbyModifiers(modifiers);
-  }, [lobby, modifiers]);
+  }, [isSeated, modifiers]);
 
   React.useEffect(() => {
     if (!lobbyError) return;
@@ -348,12 +360,23 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
         <div className="flex-1 min-h-0 overflow-hidden rounded-2xl shadow-[inset_10px_10px_20px_var(--slice-shadow-dark),inset_-10px_-10px_20px_var(--slice-shadow-light)]">
           <SongLibrary
             selectedSongId={lobby.song?.id ?? null}
+            // Picking here puts the track on the lobby (or on the ballot); it
+            // starts nothing. The library's default label is PLAY, which read
+            // as "start the match now" to every host who used this screen.
+            selectAction="add"
             onSelect={(song) => {
               // Only the id crosses the wire; the server resolves the row —
               // whichever of the two things it is being asked to do with it.
               if (lobby.vote) net.nominateSong(song.id);
               else net.selectSong(song.id);
               setShowSongSelect(false);
+              // Back to the lobby, which is what picking a track is FOR. Tapping
+              // a row on the way to the button highlights it, and a highlighted
+              // song is rendered by the branch immediately below this one — so
+              // closing only the picker dropped the host onto the track's
+              // details panel (a screenful of per-song settings) instead of the
+              // lobby they had just changed.
+              setBrowsedSong(null);
             }}
             onHighlight={setBrowsedSong}
           />
@@ -1308,15 +1331,24 @@ function ModifierPanel({
               <Info className="w-3 h-3" aria-hidden />
             </span>
           </span>
+          {/* The knob is anchored with `left-0.5` and travels `translate-x-3`.
+              Both halves of that matter: an absolutely positioned box with no
+              `left` falls back to its *static* position, so the offsets below
+              were being applied from wherever the layout happened to put it
+              rather than from the track's left edge, and the switch rendered
+              with its knob hanging off the right-hand end whenever it was on.
+              With the anchor, the geometry is arithmetic the track can hold —
+              2px inset + 12px travel + a 16px knob is exactly the 32px of
+              `w-8`, so it sits flush inside the track at both ends. */}
           <span
-            className={`w-8 h-5 rounded-full relative ${
+            className={`w-8 h-5 shrink-0 rounded-full relative ${
               modifiers[key] ? 'bg-blue-500' : 'bg-slice-shadow-dark'
             }`}
             aria-hidden
           >
             <span
-              className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
-                modifiers[key] ? 'translate-x-3.5' : 'translate-x-0.5'
+              className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                modifiers[key] ? 'translate-x-3' : 'translate-x-0'
               }`}
             />
           </span>

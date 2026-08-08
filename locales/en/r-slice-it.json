@@ -1,5 +1,6 @@
 {
   "accessibility": "Accessibility & Comfort",
+  "add-song": "Add {{title}}",
   "admin-content-broken": "Charts that look broken",
   "admin-content-card-description": "Quota headroom, upload rate, charts whose telemetry says they generated badly, and storage objects no song points at.",
   "admin-content-card-title": "Slice It Content & Storage",
@@ -326,6 +327,7 @@
   "lane-palette-hint": "Colour-vision-safe lane pairs. Each one is separated in brightness as well as hue, because two mid-tone blobs moving at speed are hard to tell apart however different their colour is. Overrides the skin.",
   "lane-palette-monochrome": "Brightness only",
   "lane-palette-tritanopia": "Amber / Teal",
+  "library-add": "ADD",
   "lifetime-total-chip": "lifetime {{total}}",
   "lifetime-total-tooltip": "Lifetime score: every point ever submitted. It measures how much you have played, not how well, which is why it no longer sets the rank.",
   "line-position": "Judgement line",

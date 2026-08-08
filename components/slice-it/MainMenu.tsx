@@ -11,7 +11,7 @@ import { useSliceItStore } from '@/lib/slice-it/store';
 import { GameEngine } from '@/lib/slice-it/engine';
 import { asset } from '@/lib/storage/asset';
 import { AudioManager } from '@/lib/audio/AudioManager';
-import { addMatchListener } from '@/lib/slice-it/net/client';
+import { addMatchListener, spectatingLobbyCode } from '@/lib/slice-it/net/client';
 import { useStartRun } from '@/lib/slice-it/useStartRun';
 import type { SliceSong } from '@/lib/slice-it/types';
 import { useStableSession } from '@/hooks/useStableSession';
@@ -148,20 +148,55 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
   );
 
   /**
-   * The server said the match is live: load the chart and report back.
+   * The server said the match is loading: load the chart and report back.
    *
    * The server runs the countdown once everybody has reported, so no client
    * decides when play begins — which is what stops a fast machine starting
    * three seconds before a slow one.
+   *
+   * The trigger is `slice:loading`, and it has to be: the server's order is
+   * loading → countdown → start, and it will not count down until every seat
+   * has answered `slice:loaded`. Hanging the load off `onStart` therefore made
+   * each client wait for an event that could not be sent until that client had
+   * already loaded, and the deadlock was silent — pressing START left the lobby
+   * exactly as it was, and pressing it again answered "a match is in progress".
+   * `onStart` keeps a call of its own for the rejoin path (`N12`), where the
+   * server sends START straight to a returning socket with no loading phase.
    */
+  const matchLoadStartedRef = React.useRef(false);
+  const lobbyState = useSliceItStore((s) => s.lobby?.state ?? null);
+  // One load per match. `loading` repeats — the server re-emits it as each seat
+  // reports in — so the guard is cleared by the lobby going back to `waiting`
+  // (or the player leaving it), which is the only thing that means "next match".
+  React.useEffect(() => {
+    if (lobbyState === null || lobbyState === 'waiting') matchLoadStartedRef.current = false;
+  }, [lobbyState]);
+
   React.useEffect(() => {
     if (!engine) return;
+    const beginMatch = (songId: string) => {
+      // A watcher has no seat and no chart to load — `N1` is a view of someone
+      // else's match, and the loading events reach the spectator room too.
+      if (spectatingLobbyCode()) return;
+      if (matchLoadStartedRef.current) return;
+      matchLoadStartedRef.current = true;
+      setIsMultiplayer(true);
+      setShowMultiplayer(false);
+      void startRun(songId, { countPlay: false, multiplayer: true }).catch(() => {
+        // Let the next `loading` retry rather than stranding this client as the
+        // one seat the room is waiting on.
+        matchLoadStartedRef.current = false;
+      });
+    };
+
     return addMatchListener({
-      onStart: (payload) => {
-        setIsMultiplayer(true);
-        setShowMultiplayer(false);
-        void startRun(payload.song.id, { countPlay: false, multiplayer: true }).catch(() => {});
+      onLoading: () => {
+        // The song has been in the snapshot since the host picked it; the
+        // loading payload only carries who has reported in so far.
+        const songId = useSliceItStore.getState().lobby?.song?.id;
+        if (songId) beginMatch(songId);
       },
+      onStart: (payload) => beginMatch(payload.song.id),
     });
   }, [engine, startRun, setIsMultiplayer]);
 
