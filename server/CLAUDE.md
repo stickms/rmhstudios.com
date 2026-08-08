@@ -188,11 +188,14 @@ history if a rollback ever needs it.
    — every casino table and multiplayer game unreachable — off one
    `@/lib/economy/ledger-core`. A relative specifier fails loudly at build time
    instead, which is the entire reason for this rule.
-8. **A new `lib/` import needs a matching `COPY` in the Dockerfile.** The
-   `server-builder` stage copies a curated subset of `lib/` so unrelated edits
-   don't bust its layer cache, which means `pnpm build` (whole working tree)
-   can pass while the image build fails with "Could not resolve" — or, via
-   gotcha 7, doesn't fail at all and ships a bundle that crashes on boot.
+8. **Don't import outside `server/` and `lib/`.** The `server-builder` stage
+   copies exactly those two trees, so `pnpm build` (whole working tree) can
+   pass while the image build fails with "Could not resolve" — or, via gotcha
+   7, doesn't fail at all and ships a bundle that crashes on boot. A new
+   `lib/` import is now free (the stage copies `lib/` wholesale; it used to be
+   a curated per-module `COPY` list, and adding one import to a handler was a
+   deploy-time build break). Reaching into `components/`, `stores/` or
+   `hooks/` is still the old failure, so shared code belongs in `lib/`.
    `lib/__tests__/server-bundle-copies.test.ts` walks the real import graph
    (following `@/…` as well as relative specifiers) and catches this in
    `web-ci`, before it reaches main.
@@ -207,8 +210,9 @@ on boot. Also confirm:
 - [ ] **Relative imports into `lib/`, never `@/`** (gotcha 7) — a relative
       specifier fails loudly at build time; `@/` can ship a bundle that throws
       `MODULE_NOT_FOUND` on start.
-- [ ] **A new `lib/` import has its matching `COPY` in the Dockerfile**
-      (gotcha 8) — `pnpm build` passing says nothing about the image build.
+- [ ] **Nothing is imported from outside `server/` and `lib/`** (gotcha 8) —
+      those are the only trees the image's build context carries, and
+      `pnpm build` passing says nothing about the image build.
 - [ ] **The event name lives in `lib/<app>/events.ts`** and both sides use it;
       per-socket rate-limit rule maps in each `config.ts` are the de-facto
       event allowlist, so a new event needs an entry or it is silently dropped.

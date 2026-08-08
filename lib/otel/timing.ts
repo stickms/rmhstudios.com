@@ -55,12 +55,14 @@
  * adoption reads honestly in DevTools and in RUM.
  *
  * NOTE for the `db` call site: `lib/prisma.server.ts` is bundled into the
- * standalone Node services by esbuild, and the Dockerfile's `server-builder`
- * stage copies only a curated subset of `lib/`. Importing this module from
- * there needs a matching `COPY lib/otel ./lib/otel/` in that stage —
- * `lib/__tests__/server-bundle-copies.test.ts` fails the build if it is
- * missing, and see `server/CLAUDE.md` gotchas 7 and 8 for why the failure mode
- * without it is a service that dies on boot.
+ * standalone Node services by esbuild, whose build context is `server/` + `lib/`
+ * — so importing this module from there resolves with no Dockerfile change.
+ * (It used to need a matching `COPY lib/otel ./lib/otel/` in the `server-builder`
+ * stage, back when that stage copied a curated per-module subset of `lib/`.)
+ * `lib/__tests__/server-bundle-copies.test.ts` still walks the import graph and
+ * fails the build on anything reached OUTSIDE those two trees; see
+ * `server/CLAUDE.md` gotchas 7 and 8 for why that failure mode is a service
+ * that dies on boot rather than a build error.
  *
  * @see server/nitro/otel.ts — opens the scope, marks `total`, sends the header
  * @see lib/otel/trace.ts — the scope this writes into
