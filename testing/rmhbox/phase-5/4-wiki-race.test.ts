@@ -28,54 +28,25 @@ import {
   type MockContextData,
 } from './setup';
 
+// ─── Module mocks ────────────────────────────────────────────────
+// A race fetches Wikipedia and reads the bundled article-pair dataset on
+// start(); neither belongs in a unit test. Both factories live in
+// ./wiki-race-mocks so this file and security-state-masking.test.ts stub the
+// same article titles. `vi.mock` is hoisted, so these run before the imports
+// above regardless of where they are written — writing them here says so.
+vi.mock('../../../lib/rmhbox/wiki-race/wikipedia-proxy', async () => {
+  const { wikipediaProxyMock } = await import('./wiki-race-mocks');
+  return wikipediaProxyMock();
+});
+vi.mock('../../../lib/rmhbox/wiki-race/data-loader', async () => {
+  const { dataLoaderMock } = await import('./wiki-race-mocks');
+  return dataLoaderMock();
+});
+
 // ─── Helpers ─────────────────────────────────────────────────────
 
 function createGame(ctxData?: MockContextData) {
   const ctx = ctxData ?? createMockContext();
-  // Mock the Wikipedia proxy to avoid real HTTP calls
-  vi.mock('../../../lib/rmhbox/wiki-race/wikipedia-proxy', () => ({
-    createArticleCache: () => {
-      // Return a mock LRU cache
-      const cache = new Map();
-      return {
-        get: (key: string) => cache.get(key),
-        set: (key: string, val: unknown) => cache.set(key, val),
-        has: (key: string) => cache.has(key),
-        delete: (key: string) => cache.delete(key),
-        clear: () => cache.clear(),
-        size: cache.size,
-      };
-    },
-    fetchArticle: vi.fn().mockResolvedValue({
-      title: 'Mock_Article',
-      sanitizedHtml: '<p>Mock article content. <a data-wiki-target="Target_Article">Link</a></p>',
-      links: new Set(['Target_Article', 'Other_Article', 'Another_Article']),
-    }),
-  }));
-
-  // Mock the data loader
-  vi.mock('../../../lib/rmhbox/wiki-race/data-loader', () => ({
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    selectArticlePair: (_usedPairKeys: string[] = []) => ({
-      id: 'test-pair-001',
-      startArticle: {
-        title: 'Start_Article',
-        url: 'https://en.wikipedia.org/wiki/Start_Article',
-        description: 'The starting article for this race',
-      },
-      targetArticle: {
-        title: 'Target_Article',
-        url: 'https://en.wikipedia.org/wiki/Target_Article',
-        description: 'The target article to reach',
-      },
-      optimalPathLength: 4,
-      difficulty: 'medium' as const,
-      tags: ['test'],
-    }),
-    pairKey: (pair: { startArticle: { title: string }; targetArticle: { title: string } }) =>
-      `${pair.startArticle.title}::${pair.targetArticle.title}`,
-  }));
-
   const game = new WikiRaceMinigame(ctx.context);
   return { game, ...ctx };
 }

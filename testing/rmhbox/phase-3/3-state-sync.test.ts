@@ -57,20 +57,18 @@ afterEach(() => {
 
 // ─── §3.1: StateSyncService Instantiation ────────────────────────
 
-describe('StateSyncService Instantiation (§3.1)', () => {
-  it('should instantiate with no errors', () => {
-    expect(stateSyncService).toBeDefined();
-  });
-});
-
 // ─── §3.2: Heartbeat ────────────────────────────────────────────
 
 describe('Heartbeat (§3.2)', () => {
-  it('should start and stop heartbeat', () => {
-    stateSyncService.startHeartbeat();
-    stateSyncService.stopHeartbeat();
-    // No crash
-    expect(true).toBe(true);
+  it('starts and stops the heartbeat without throwing, and leaves no timer behind', () => {
+    expect(() => {
+      stateSyncService.startHeartbeat();
+      stateSyncService.stopHeartbeat();
+    }).not.toThrow();
+    // The point of stop(): a heartbeat that outlives the service keeps emitting
+    // into a dead lobby. `expect(true).toBe(true)` used to stand here and would
+    // have passed with the interval still running.
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   it('should send state snapshots during PLAYING state', () => {

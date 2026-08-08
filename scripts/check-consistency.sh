@@ -366,9 +366,10 @@ else
     lib/__tests__/i18n-config.test.ts
     lib/__tests__/game-registry-consistency.test.ts
     lib/__tests__/server-bundle-copies.test.ts
+    lib/__tests__/test-discovery.test.ts
   )
   if [ "$FULL" = 1 ]; then
-    if pnpm exec vitest run; then pass "full vitest suite"; else fail "vitest suite"; fi
+    if pnpm test; then pass "full vitest suite"; else fail "vitest suite"; fi
   else
     if pnpm exec vitest run "${GATE_TESTS[@]}"; then
       pass "consistency gates"

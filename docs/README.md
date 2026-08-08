@@ -130,3 +130,11 @@ itself: `game-design.md` describes the current economy, and the four docs that
 described the superseded one (`patch-1.md`, `patch-2.md`,
 `content-expansion.md`, `implementation-plan.md`) were deleted. The repo-root `specs/` directory this file used to point at no longer
 exists — the reference was removed rather than repaired.
+
+Fixed in the 2026-08-08 testing audit: `testing.md` was rewritten. It had
+described a `vitest-coverage.yml`, an `epic-tests.yml` and a
+`typecheck-server.yml` that did not exist, counted "~45 workflows" and "~227
+test files" against a tree with 10 and 427, and called the epic suite CI-gated
+when nothing ran it. The workflow count and the epic gate are now real
+(`epic-tests.yml` was written rather than the claim deleted); the rest is
+measured against the tree and dated in the doc's header.

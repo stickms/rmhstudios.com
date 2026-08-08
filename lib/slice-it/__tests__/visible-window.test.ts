@@ -104,20 +104,25 @@ describe('visibleSliceRange', () => {
       longestHold: longestHoldSeconds(notes),
     });
 
-    for (const base of cases) {
+    // ~20M note-checks. `expect()` builds an assertion context on every call,
+    // so calling it per check costs more than the property it is checking —
+    // the loop records the first counter-example instead and asserts once.
+    // A passing run and a failing run report exactly what they did before.
+    let counterexample: string | null = null;
+    outer: for (const base of cases) {
       const geom = geomWithHold(base);
       // Sweep the whole song, including before the first note and after the last.
       for (let t = -5; t <= 305; t += 0.37) {
         const { from, to } = visibleSliceRange(notes, t, geom);
         for (let i = 0; i < notes.length; i++) {
+          if (i >= from && i < to) continue;
           if (!rendererWouldDraw(notes[i], t, geom)) continue;
-          expect(
-            i >= from && i < to,
-            `note ${i} (t=${notes[i].time.toFixed(2)}) drawn at ${t.toFixed(2)} but outside [${from}, ${to})`,
-          ).toBe(true);
+          counterexample = `note ${i} (t=${notes[i].time.toFixed(2)}) drawn at ${t.toFixed(2)} but outside [${from}, ${to})`;
+          break outer;
         }
       }
     }
+    expect(counterexample).toBe(null);
   });
 
   it('actually narrows the work — that is the entire point', () => {

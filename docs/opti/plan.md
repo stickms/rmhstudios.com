@@ -258,7 +258,7 @@ Then consider `depcheck`/`knip` for a fuller unused-export and unused-file sweep
 ## Verification per change
 - `pnpm lint` and a typecheck (`tsc -p tsconfig.json --noEmit`) after each batch.
 - `pnpm build` and diff the client chunk list / sizes before vs after route-splitting.
-- `pnpm epic:test` / `vitest` where the touched area has coverage.
+- `pnpm test:epic` / `pnpm test` where the touched area has coverage.
 - For asset removals: grep the path across the repo (literal **and** string-constructed URLs)
   before deleting; assets are frequently referenced via interpolated paths.
 - For dep removals: install clean (`pnpm install`) and run `pnpm build` to catch transitive use.

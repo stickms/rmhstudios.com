@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import type { Chapter, Passage } from './manuscript/types';
 import { renderPassageZh, renderPassageEn } from './render/typeset';
 import type { LeafPair } from './render/types';
+import { launchOptions } from './browser';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const CSS = readFileSync(join(__dir, 'render/epic.css'), 'utf8');
@@ -45,7 +46,7 @@ async function fits(page: Page, side: 'verso' | 'recto', innerHtml: string): Pro
 }
 
 export async function paginate(chapters: Chapter[]): Promise<LeafPair[]> {
-  const browser: Browser = await chromium.launch();
+  const browser: Browser = await chromium.launch(launchOptions());
   const page = await browser.newPage({ viewport: { width: 800, height: 1100 } });
   await page.setContent(
     `<!doctype html><html><head><meta charset="utf-8"><style>${CSS}

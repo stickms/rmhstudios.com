@@ -2,15 +2,47 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { afterEach, describe, expect, it } from 'vitest';
+import { buildSync } from 'esbuild';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { classifyRumRoute, getRumRouteLabel, getRumThreshold } from '@/lib/rum-slo';
 
 const repoRoot = process.cwd();
-const bundleBudgetScript = path.join(repoRoot, 'scripts/ci/bundle-budget.ts');
+const bundleBudgetSource = path.join(repoRoot, 'scripts/ci/bundle-budget.ts');
 const syntheticScript = path.join(repoRoot, 'scripts/ci/synthetic-perf-report.mjs');
 const cloudflareScript = path.join(repoRoot, 'scripts/ci/verify-cloudflare-cache-rules.mjs');
 const rumReportScript = path.join(repoRoot, 'scripts/ci/rum-slo-report.mjs');
 const tempDirs: string[] = [];
+
+/**
+ * The only TypeScript script here, transpiled once so its two runs are bare
+ * node processes. `--import=tsx` costs ~350ms of loader boot per spawn; the
+ * other three scripts are already `.mjs` and pay nothing. It reads its root
+ * from `BUNDLE_BUDGET_ROOT`, so running the bundle from a scratch directory
+ * measures exactly what running the source would.
+ *
+ * Its directory is deliberately NOT in `tempDirs` — that list is wiped after
+ * every test.
+ */
+let bundleBudgetScript: string;
+let buildDir: string;
+
+beforeAll(() => {
+  buildDir = mkdtempSync(path.join(tmpdir(), 'rmh-perf-guardrails-build-'));
+  bundleBudgetScript = path.join(buildDir, 'bundle-budget.mjs');
+  buildSync({
+    entryPoints: [bundleBudgetSource],
+    outfile: bundleBudgetScript,
+    bundle: true,
+    platform: 'node',
+    format: 'esm',
+    target: 'node24',
+    packages: 'external',
+  });
+});
+
+afterAll(() => {
+  if (buildDir) rmSync(buildDir, { recursive: true, force: true });
+});
 
 function makeTempDir(): string {
   const dir = mkdtempSync(path.join(tmpdir(), 'rmh-perf-guardrails-'));
@@ -84,7 +116,7 @@ describe('RUM route SLOs', () => {
 describe('bundle budget', () => {
   it('fails closed in strict mode when build output is missing', () => {
     const dir = makeTempDir();
-    const result = spawnSync(process.execPath, ['--import=tsx', bundleBudgetScript, '--strict'], {
+    const result = spawnSync(process.execPath, [bundleBudgetScript, '--strict'], {
       cwd: repoRoot,
       encoding: 'utf8',
       env: { ...process.env, BUNDLE_BUDGET_ROOT: dir },
@@ -121,7 +153,7 @@ describe('bundle budget', () => {
       }),
     );
 
-    const result = spawnSync(process.execPath, ['--import=tsx', bundleBudgetScript, '--strict'], {
+    const result = spawnSync(process.execPath, [bundleBudgetScript, '--strict'], {
       cwd: repoRoot,
       encoding: 'utf8',
       env: { ...process.env, BUNDLE_BUDGET_ROOT: dir },

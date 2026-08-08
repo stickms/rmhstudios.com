@@ -1426,7 +1426,7 @@ subtree, not about the rule that sizes it.
 ## 13. What is enforced automatically
 
 Most of this document is convention. A slice of it is executable, and runs in
-the normal suite (`pnpm exec vitest run`, gated by `web-ci.yml`) — and, so that
+the normal suite (`pnpm test`, gated by `web-ci.yml`) — and, so that
 you meet it at the keyboard rather than in CI, on **every commit** through
 `pnpm check:consistency` (`scripts/check-consistency.sh`, wired into
 `git commit` by `.githooks/pre-commit` and, for agent sessions, by
