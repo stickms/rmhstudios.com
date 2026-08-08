@@ -1,7 +1,7 @@
 /**
  * EmojiSentence — Displays the emoji sequence in a constant-width wrapping grid.
  * Up to 6 emojis per line, max 2 lines (12 total).
- * Uses twemoji-parser for reliable emoji → Twemoji URL conversion.
+ * Uses @twemoji/api for reliable emoji → Twemoji URL conversion.
  */
 'use client';
 
