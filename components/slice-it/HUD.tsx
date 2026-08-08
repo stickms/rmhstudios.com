@@ -26,6 +26,20 @@ interface MapWithSections extends BeatMap {
 /** Stable empty reference so a songless HUD render never allocates a new array. */
 const NO_SECTIONS: Section[] = [];
 
+/**
+ * H9 — where the combo counter anchors inside the score/speed row.
+ *
+ * `hidden` maps to the centre classes and is never rendered; keeping it in the
+ * record means the lookup is total, so the anchor cannot be `undefined` for a
+ * value the store is allowed to hold.
+ */
+const COMBO_ANCHOR: Record<'center' | 'left' | 'right' | 'hidden', string> = {
+  center: 'left-1/2 -translate-x-1/2',
+  left: 'left-0',
+  right: 'right-0',
+  hidden: 'left-1/2 -translate-x-1/2',
+};
+
 function fmt(s: number) {
   const m = Math.floor(s / 60);
   const sec = Math.floor(s % 60);
@@ -74,6 +88,7 @@ export function HUD({ engine }: HUDProps) {
   const { t } = useTranslation('c-game');
   const { t: ts } = useTranslation('r-slice-it');
   const { score, combo, modifiers } = useSliceItStore();
+  const comboPosition = useSliceItStore((s) => s.comboPosition);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [sample, setSample] = useState<EngineSample>(EMPTY_SAMPLE);
@@ -173,11 +188,13 @@ export function HUD({ engine }: HUDProps) {
           </div>
         </div>
 
-        {/* Combo — center, above score/speed row */}
-        {combo > 5 && (
+        {/* Combo — H9 puts it where the player asked. `hidden` is a real
+            choice, not an accident: at speed the counter sits directly over the
+            approach lane, and some players would rather read the notes. */}
+        {combo > 5 && comboPosition !== 'hidden' && (
           <div
             key={combo}
-            className="absolute left-1/2 -translate-x-1/2 top-1 sm:top-2"
+            className={`absolute top-1 sm:top-2 ${COMBO_ANCHOR[comboPosition]}`}
             style={{ animation: 'combo-bounce 0.15s ease-out' }}
           >
             <span className="text-3xl sm:text-5xl font-black italic text-slice-text soft-glow-text drop-shadow-lg">
@@ -186,11 +203,14 @@ export function HUD({ engine }: HUDProps) {
           </div>
         )}
 
-        {/* Full-combo / all-marvellous lamp. Sits under the combo counter so the
-            two read as one column, and disappears the instant it stops being
-            true — which is the feedback. */}
+        {/* Full-combo / all-marvellous lamp. Tracks the combo counter's own
+            anchor so the two still read as one column wherever it has been
+            moved to, and disappears the instant it stops being true — which is
+            the feedback. */}
         {showChain && (
-          <div className="absolute left-1/2 -translate-x-1/2 top-12 sm:top-16 flex flex-col items-center">
+          <div
+            className={`absolute top-12 sm:top-16 flex flex-col items-center ${COMBO_ANCHOR[comboPosition]}`}
+          >
             <span
               className={`text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] ${
                 sample.isPerfect ? 'text-cyan-500' : 'text-slice-text-muted'
