@@ -58,13 +58,6 @@ export default defineConfig({
       // needs 60s timeouts, so it is its own suite: `pnpm test:epic`
       // (vitest.epic.config.ts), gated by .github/workflows/epic-tests.yml.
       'scripts/epic/**',
-      // Not a test — a harness that writes standalone HTML to a scratch dir for
-      // eyeballing the Temple of Joy layout at three widths. It guards its own
-      // body with `describe.runIf(process.env.TOJ_SNAPSHOT)`, but the guard runs
-      // *after* the module's imports, so a default run still paid to load the
-      // whole component tree to skip one describe. Run it deliberately:
-      //   TOJ_SNAPSHOT=1 pnpm test lib/temple-of-joy/__tests__/snapshot-html.test.tsx
-      ...(process.env.TOJ_SNAPSHOT ? [] : ['lib/temple-of-joy/__tests__/snapshot-html.test.tsx']),
     ],
     environment: 'node',
     globals: true,

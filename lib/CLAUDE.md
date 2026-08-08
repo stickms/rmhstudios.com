@@ -173,12 +173,18 @@ don't remove that plugin.
 
 ## Testing
 
-- Main suite: `pnpm test` (config `vitest.config.ts`, ~37s). Discovery is a
+- Main suite: `pnpm test` (config `vitest.config.ts`, ~20s). Discovery is a
   **glob** — every `*.test.ts(x)` in the repo runs, and there is nothing to
   register. (It used to be a curated `include` list, and two test files sat in
   the repo for months without ever running because of it;
   `lib/__tests__/test-discovery.test.ts` is the gate that keeps that from
   recurring.) `pnpm test <path>` takes any file or directory.
+- **Scope: mission critical only.** On 2026-08-08 the suite was narrowed to what
+  breaks money, user data, privacy, auth or a deploy; 180 files covering *how
+  the games play* were deleted to get the run from ~37s to ~20s. Before adding a
+  test, check it meets one of the five criteria in
+  [`docs/testing.md`](../docs/testing.md) §What is not tested — a correct,
+  passing gameplay test is still the wrong thing to add here.
 - Separate: `pnpm test:epic` (`vitest.epic.config.ts`, 60s timeout, launches
   Chromium) for `scripts/epic/`, gated by `.github/workflows/epic-tests.yml`.
 - Coverage: `pnpm test:coverage` — informational, never a gate.

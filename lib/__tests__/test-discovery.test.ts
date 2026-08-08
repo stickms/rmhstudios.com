@@ -28,17 +28,13 @@ const ROOT = resolve(__dirname, '../..');
  * Files that are deliberately in no suite. One-directional, like the other
  * backlogs in this directory: an entry may be deleted, and adding one means
  * arguing in review for why a test file should never run.
+ *
+ * Currently empty, and the two tests below keep it that way honestly — the one
+ * entry it held (a Temple of Joy layout harness) went out with the gameplay
+ * suites. A file that should not run is a file that should not be named
+ * `*.test.ts`; prefer deleting it or renaming it over adding it here.
  */
-const UNCOLLECTED_BY_DESIGN: Array<{ file: string; why: string }> = [
-  {
-    file: 'lib/temple-of-joy/__tests__/snapshot-html.test.tsx',
-    why:
-      'Not a test — a harness that writes standalone HTML to a scratch dir for eyeballing ' +
-      'the layout at three widths. Guarded by describe.runIf(TOJ_SNAPSHOT); excluded from the ' +
-      'default run so it does not pay to import the whole component tree in order to skip. ' +
-      'Run with TOJ_SNAPSHOT=1 pnpm test <path>.',
-  },
-];
+const UNCOLLECTED_BY_DESIGN: Array<{ file: string; why: string }> = [];
 
 /** Directories a test file never lives in — mirrors `exclude` in the configs. */
 const SKIP_DIRS = new Set([
@@ -99,10 +95,12 @@ describe('test discovery', () => {
   const excused = new Set(UNCOLLECTED_BY_DESIGN.map((entry) => entry.file));
 
   it('finds test files at all — guards the walker itself', () => {
-    // A broken walk would make every assertion below vacuously true.
-    expect(onDisk.length).toBeGreaterThan(400);
+    // A broken walk would make every assertion below vacuously true. The floor
+    // is well under the current count (248 + 11 epic) on purpose: it is here to
+    // catch a walker that returns nothing, not to police the suite's size.
+    expect(onDisk.length).toBeGreaterThan(200);
     expect(onDisk).toContain('lib/__tests__/test-discovery.test.ts');
-    expect(collected.size).toBeGreaterThan(400);
+    expect(collected.size).toBeGreaterThan(200);
   });
 
   it('collects every test file in the repo into a suite', () => {

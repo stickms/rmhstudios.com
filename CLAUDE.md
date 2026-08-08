@@ -40,7 +40,7 @@ locales, RTL for `ar`/`ur`). Node ≥24.18, pnpm workspace.
 | `scripts/`     | Seeding, i18n pipeline, OG/icon generation, ladder pipeline, news pipeline, epic build.                                                                               | `docs/README.md`                                 |
 | `deploy/`      | Apache vhosts, blue/green hotswap, DB backups, Terraform (DNS), runbooks.                                                                                             | [`docs/architecture.md`](docs/architecture.md)   |
 | `docs/`        | Reference docs, design docs, plans, runbooks — also **published** as a Sphinx/MyST Read the Docs site in 16 languages.                                                | [`docs/README.md`](docs/README.md)               |
-| `testing/`     | RMHBox phase tests + shared fixtures (`factories.ts`) + the unwired browser smoke. Most other suites are colocated under `lib/`; discovery is a glob, nothing to register. | [`docs/testing.md`](docs/testing.md)             |
+| `testing/`     | RMHBox phase tests (the mission-critical remainder) + the unwired browser smoke. Most other suites are colocated under `lib/`; discovery is a glob, nothing to register. | [`docs/testing.md`](docs/testing.md)             |
 | `cli/`         | `rmhcode` CLI (wraps Claude Code; publishes User Builds).                                                                                                             | —                                                |
 
 ## Commands
@@ -52,7 +52,7 @@ pnpm dev                     # Vite (7005) + socket/rmhbox/rmhtube hubs + ladder
 pnpm exec tsc --noEmit       # typecheck
 pnpm lint                    # eslint (jsx-a11y at warn — add no new warnings)
 pnpm format                  # prettier
-pnpm test                    # main test suite (~37s; includes the UI consistency gate)
+pnpm test                    # main test suite (~20s; mission-critical scope — docs/testing.md)
 pnpm test:epic               # epic content-build suite (needs Chromium)
 pnpm build                   # vibe-packages → vite build → esbuild 6 server bundles
 pnpm i18n:extract            # after adding t() strings

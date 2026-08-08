@@ -2,15 +2,19 @@
  * The two Wiki-Race module mocks, in one place.
  *
  * `WikiRaceMinigame` reaches the network on `start()` (article fetch) and reads
- * the bundled article-pair dataset, so every test that starts a race has to
- * replace both. Two files needed them and each had grown its own copy —
- * four blocks of the same factory, two of them drifting on the article titles.
+ * the bundled article-pair dataset, so any test that starts a race has to
+ * replace both. Two files needed them and each had grown its own copy — four
+ * blocks of the same factory, two of them drifting on the article titles. Only
+ * `security-state-masking.test.ts` still starts a race (the Wiki-Race rules
+ * tests went out with the gameplay suites), but the mocks stay here rather than
+ * inline: they are the reason that file can assert on masked state without
+ * touching Wikipedia.
  *
  * They also lived INSIDE test bodies, which reads as "mock this for this test"
  * but is not what happens: `vi.mock` is hoisted to the top of the module and
  * runs before any test does. Vitest warns about that today and will make it an
- * error. Calling it once at the top of a file — as both callers now do — makes
- * the code say what it actually means.
+ * error. Calling it once at the top of the file makes the code say what it
+ * actually means.
  *
  * Use with a dynamic import so the factory body can't be evaluated before the
  * hoisted `vi.mock` call:

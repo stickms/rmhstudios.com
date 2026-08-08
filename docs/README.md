@@ -131,6 +131,15 @@ described the superseded one (`patch-1.md`, `patch-2.md`,
 `content-expansion.md`, `implementation-plan.md`) were deleted. The repo-root `specs/` directory this file used to point at no longer
 exists — the reference was removed rather than repaired.
 
+Narrowed in the 2026-08-08 testing audit: the vitest suite no longer covers
+gameplay. 180 test files — Slice It's judgement engine, the RMHBox minigame
+rules, and the whole gameplay suites for cookgame / Kowloon Knockout / Dream
+Rift / Temple of Joy / Versecraft / Kaikai / laundry-sort / massive-march /
+isleworks / nightrail / daily-puzzles / Void Breaker — were deleted to take the
+run from ~37s to ~20s. **Any game design doc that describes a behaviour as
+"covered by tests" is now stale.** What survived and why:
+[`testing.md`](./testing.md) §What is not tested.
+
 Fixed in the 2026-08-08 testing audit: `testing.md` was rewritten. It had
 described a `vitest-coverage.yml`, an `epic-tests.yml` and a
 `typecheck-server.yml` that did not exist, counted "~45 workflows" and "~227

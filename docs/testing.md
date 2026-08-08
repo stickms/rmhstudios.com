@@ -8,17 +8,22 @@ and deploy pipeline see [`architecture.md`](./architecture.md) §2–3 and
 > tree, `go-services/**/*_test.go`, and the `.github/workflows/*` files. When a
 > doc disagrees with those, the files win.
 >
-> Last verified against the tree on **2026-08-08** (the testing audit): 438
-> `*.test.ts(x)` files — 426 in the main suite, 11 in the epic suite, and one
-> deliberate harness in neither. ~8.9k tests; a full main run is ~37s on 4
-> cores. `lib/__tests__/test-discovery.test.ts` keeps that accounting honest.
+> Last verified against the tree on **2026-08-08** (the testing audit): 258
+> `*.test.ts(x)` files — 247 in the main suite, 11 in the epic suite. ~6.0k
+> tests; a full main run is ~20s on 4 cores.
+> `lib/__tests__/test-discovery.test.ts` keeps that accounting honest.
+>
+> The suite is deliberately **narrow**: it covers what costs money, data, or
+> access if it breaks, and does not cover how the games play. Read
+> [What is not tested](#what-is-not-tested) before assuming a green run means
+> a working feature.
 
 ## TL;DR — run tests locally
 
 ```bash
 pnpm check:consistency        # the commit gate (guard tests + lint + tsc + docs freshness)
-pnpm test                     # main suite (vitest.config.ts) — ~37s
-pnpm test testing/rmhbox/phase-6   # one file or directory
+pnpm test                     # main suite (vitest.config.ts) — ~20s
+pnpm test lib/slice-it        # one file or directory
 pnpm test:watch               # watch mode
 pnpm test:coverage            # V8 coverage → text + coverage/index.html + lcov
 pnpm test:epic                # epic content-build suite (needs Chromium)
@@ -51,24 +56,29 @@ the `GATE_TESTS` list in `scripts/check-consistency.sh`.
 API, or filesystem writes outside a temp dir. External dependencies are mocked;
 shared mock helpers live in per-phase `setup.ts` files
 (`testing/rmhbox/phase-N/setup.ts`), each building on the previous phase's
-helpers (`MOCK_USERS`, `createPlayer`, default settings, …), and deterministic
-model fixtures in `testing/factories.ts` (fixed epoch, no `Date.now()`, no
-`Math.random()` — read its header before writing a fixture).
+helpers (`MOCK_USERS`, `createPlayer`, default settings, …).
 
 What's in it:
 
-- **`testing/rmhbox/phase-1…6/`** — the largest single set: match persistence,
-  the REST API, game registration, per-minigame logic (Rhyme Time, Undercover
-  Editor, Emoji Cinema, Fact or Friction, Wiki-Race, …), security
-  state-masking, the design/sound systems, and cross-game integration.
-- **Per-feature `__tests__` across `lib/` and `components/`** — `lib/slice-it`
-  (50 files), `lib/cookgame`, `lib/rmhladder` (the pipeline contract),
-  `lib/dream-rift`, `lib/homes`, `lib/temple-of-joy`, `lib/kowloon-knockout`,
-  `lib/versecraft/gen`, `components/motion`, `components/rmhladder`, and the
-  rest.
-- **`lib/__tests__/`** — the executable conventions. See `lib/CLAUDE.md`
-  §Testing; these are the authority for `docs/design-language.md` §13 and most
-  of them are in the commit gate.
+- **`lib/__tests__/`** (149 files) — the bulk of the suite and the executable
+  conventions: auth and the API-handler contract, the coin economy and the
+  ledger, entitlements and membership tiers, media upload/quota/sweep, storage
+  keys and compression, SSRF, rate limits, sessions, migration safety, the
+  server-bundle copy check, i18n catalog integrity, sitemap/SEO, and the
+  design/theme/colour-vision gates. See `lib/CLAUDE.md` §Testing; these are the
+  authority for `docs/design-language.md` §13 and 16 of them are in the commit
+  gate.
+- **`lib/rmhladder/` + `lib/homes/`** (52 files) — the job/listing discovery
+  pipelines. Kept whole: they fetch third-party sites (robots compliance, URL
+  allowlists) and write to the database, and `lib/CLAUDE.md` calls this suite
+  the contract for the pipeline.
+- **A short list of game-tier files that guard something real** — Slice It's
+  coin cap and idempotency, its anti-cheat and run-token forgery checks, its
+  ranked-pool state machine, the guest-submission "persists nothing" property;
+  RMHBox's cross-player state masking (all six phases), match persistence and
+  REST surface; game-save conflict resolution; market creator earnings; the
+  prediction-market pricing math. These survive the trim below because a bug in
+  them costs coins, data or privacy.
 
 #### Discovery
 
@@ -82,31 +92,74 @@ silently matched nothing; `lib/http-body.server.test.ts` was written at the top
 of `lib/` where no glob reached. Both files passed, both were committed, and
 neither had ever run. `lib/__tests__/test-discovery.test.ts` now asks vitest
 itself which files each config collects and fails if any `*.test.ts(x)` on disk
-is in no suite. The one deliberate opt-out (`UNCOLLECTED_BY_DESIGN` in that
-file) is the Temple of Joy snapshot **harness**, which is not a test.
+is in no suite. Its opt-out list is empty and two of its assertions keep it that
+way: a file that should not run should not be named `*.test.ts`.
 
 #### Speed
 
-~37s for 426 files / ~8.9k tests on 4 cores, down from ~50s. What moved it, in
+~20s for 247 files / ~6.0k tests on 4 cores, down from ~50s. What moved it, in
 order:
 
 | Change                                         | Why                                                                                                                                                               |
 | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Deleting 180 gameplay test files               | The single biggest lever, and the only one that trades something away. 37s → 20s. See [What is not tested](#what-is-not-tested).                                  |
+| `maxWorkers` at 1.5× cores                     | Files are import-bound, so one worker per core leaves cores idle. Measured on the pre-trim suite: 3 → 46s, 4 → 41s, **6 → 37s**, 8 → 38s + flakes.                |
 | `pool: 'threads'`                              | Nothing needs a process boundary; a worker thread starts far cheaper than a child process. ~8%.                                                                   |
-| `maxWorkers` at 1.5× cores                     | Files are import-bound, so one worker per core leaves cores idle. Measured 3 → 46s, 4 → 41s, **6 → 37s**, 8 → 38s + flakes.                                       |
 | `LOG_LEVEL=silent` (`test.env`)                | A green run used to print ~10,000 JSON log lines (1.4 MB). Set via `env`, not `setupFiles` — a setup file is a module load per test file, 4.7s at this size.      |
 | Compiling scripts under test once, not per-run | `migration-safety` booted `tsx` 15 times (~350ms each) to check 428 lines. esbuild compiles it once; each run is bare node. 5.5s → 1.4s.                          |
 | Asserting once, not 20M times                  | `slice-it/visible-window` called `expect()` inside a triple loop. Recording the first counter-example and asserting once: 2.2s → 0.2s, identical failure message. |
-| Simulating to the event, not to a round number | The laundry-sort drops settled in 82 physics ticks and ran a flat 480 "to be sure".                                                                               |
 
-**Isolation stays on**, and that is deliberate. `--no-isolate` runs the suite in
-~20s, and it was measured: nine files fail outright (shared `vi.mock`
-registry), and `lib/rmhladder/pipeline/{run,process-source}.test.ts` fail
-_differently on every seed_ under `--sequence.shuffle`, because their in-memory
-Prisma doubles are module state. Order-dependent red is worse than slow green.
-Don't re-litigate this without re-running the shuffle.
+Per-file overhead (transform + module graph) dominates, which is why deleting
+whole files moved the needle and micro-optimising the slowest ones did not:
+after the six fastest-file fixes the suite was still 37s, and it was file
+_count_ that took it to 20s.
+
+**Isolation stays on**, and that is deliberate. Measured on the pre-trim suite,
+`--no-isolate` took it from ~37s to ~20s — and nine files failed outright
+(shared `vi.mock` registry), while `lib/rmhladder/pipeline/{run,process-source}.test.ts`
+failed _on a different set of seeds every_ `--sequence.shuffle`, because their
+in-memory Prisma doubles are module state. Order-dependent red is worse than
+slow green, and the trim bought that time without the flakes. Don't
+re-litigate this without re-running the shuffle.
 
 To get logs back while debugging: `LOG_LEVEL=debug pnpm test <path>`.
+
+#### What is not tested
+
+On **2026-08-08** the suite was deliberately narrowed to what is mission
+critical, to cut the run from ~37s to ~20s. 180 test files were deleted. This
+section is the record of what that bought and what it cost; a green run does
+**not** mean the games work.
+
+The line, applied file by file. A test was kept if the bug it catches would:
+
+1. move coins, real money or entitlements;
+2. lose or corrupt a user's saved data;
+3. leak one user's private state to another;
+4. break auth/authz, or let a forged score reach a public leaderboard;
+5. take a service down, or break a deploy or migration.
+
+Everything whose worst case is **"the game plays wrong"** went. In full:
+
+| Gone                                                                                                                                                                                                                   | Was                                                                          |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `lib/slice-it/**` (49 of 58) and `lib/slice-it/editor/**`                                                                                                                                                              | judgement windows, note vocabulary, beatmaps, FFT, chart-editor tools        |
+| `testing/rmhbox/phase-1…6` (49 of 57)                                                                                                                                                                                  | lobby FSM, voting, per-minigame rules, chat, spectator flow                  |
+| `lib/cookgame`, `lib/kowloon-knockout`, `lib/dream-rift`, `lib/temple-of-joy`, `lib/versecraft/gen`, `lib/kaikai-debt`, `lib/laundry-sort`, `lib/massive-march`, `lib/isleworks`, `lib/nightrail`, `lib/daily-puzzles` | whole gameplay suites — simulation, scoring curves, world/content generation |
+| `lib/__tests__/void-breaker-*` (7), `altair-enemy-navigation`, `desk-*` (3), `speedrun`                                                                                                                                | per-game logic that happened to live in the shared directory                 |
+| `lib/__tests__/whats-new`                                                                                                                                                                                              | the release-announcement modal's copy and grid layout                        |
+| `testing/factories.ts`                                                                                                                                                                                                 | deterministic model fixtures — **already had zero importers** at HEAD        |
+
+**What this means in practice.** A regression in how any of the 18 games plays
+— wrong score, broken physics, a minigame that never advances a round — now
+reaches production unless a human plays it. Games are the majority of this
+site's surface area, so that is not a small exposure; it is a deliberate trade
+of coverage for a suite fast enough to run on every commit.
+
+Everything deleted is one `git revert` away (see the commit that references this
+section), and a file can come back on its own if it earns one of the five
+criteria. If a game grows a coin payout, a leaderboard, or anything that reads
+another player's state, it needs a test again.
 
 ### 2. Epic suite (`vitest.epic.config.ts`)
 
@@ -198,10 +251,14 @@ Plus SAST/quality gates that aren't tests but run on PRs: `senior-review.yml`
 
 ## Writing a test
 
+- **First: does it need to exist?** Since 2026-08-08 this suite is scoped to the
+  five criteria in [What is not tested](#what-is-not-tested). A test of how a
+  game plays will be correct, will pass, and will still be the wrong thing to
+  add — that coverage was deliberately traded for a suite fast enough to run on
+  every commit. Adding one back means arguing that it meets a criterion.
 - **Main suite:** put it in a feature `__tests__/` dir (or next to the module,
   or under `testing/`) and it runs. Keep it environment-agnostic: mock
-  DB/network/FS, reuse the `setup.ts` helpers for RMHBox and `testing/factories.ts`
-  for model fixtures.
+  DB/network/FS, reuse the `setup.ts` helpers for RMHBox.
 - **Assert what the code must do, not that it exists.** A test that checks a
   file is present and has a default export is a slower restatement of
   `tsc --noEmit`; one of those (28 assertions over 14 rmhbox components, ~1s of
