@@ -30,7 +30,7 @@ make bootstrap        # runs scripts/preflight.sh — installs bazelisk, pnpm, n
 ```bash
 make gazelle          # regenerate go-services BUILD.bazel files (after adding/moving Go files)
 make build            # bazel build //go-services/cmd/...  +  bazel run //:frontend  (→ .output/)
-make test             # bazel test //go-services/...  +  pnpm exec vitest run
+make test             # bazel test //go-services/...  +  pnpm test
 make images           # build + load all 9 service images locally (rmhstudios-go-<svc>:dev)
 make clean            # bazel clean
 ```
@@ -56,7 +56,7 @@ make clean            # bazel clean
 | `images` | guard → for each service: `bazel run --config=$(PLATFORM) //go-services/images:<svc>_load` |
 | `push` | requires `REGISTRY` → `bazel run --config=$(PLATFORM) //go-services/images:<svc>_push -- --repository=$REGISTRY/rmhstudios-go-<svc> --tag=$SHA` |
 | `prod` | requires `REGISTRY` → `make push` → `helm upgrade --install rmhstudios-go deploy/helm/rmhstudios-go -f values-prod.yaml --set image.tag=$SHA --set image.registry=$REGISTRY --atomic --wait` |
-| `test` | guard → `bazel test --build_tests_only //go-services/...` → `pnpm exec vitest run` |
+| `test` | guard → `bazel test --build_tests_only //go-services/...` → `pnpm test` |
 | `test-e2e` | `cd go-services && bash scripts/e2e/run.sh` |
 | `clean` | `bazel clean` |
 

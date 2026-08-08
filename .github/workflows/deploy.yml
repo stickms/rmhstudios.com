@@ -145,15 +145,18 @@ jobs:
           mkdir -p .cache/eslint
           pnpm exec eslint --cache --cache-location .cache/eslint/eslintcache --cache-strategy content
 
-      # Advisory (warn, don't block) by owner decision: a failing test no longer
-      # gates the deploy — typecheck + lint above stay hard gates, and the image
+      # Advisory (warn, don't block) by owner decision: a failing test does not
+      # gate the deploy — typecheck + lint above stay hard gates, and the image
       # build in `build` still blocks on any build-time breakage. A red test
       # turns this step's annotation red and shows in the run summary, but `ci`
-      # still succeeds so `deploy-gate` proceeds. To heal i18n-catalogs drift
-      # specifically, run `pnpm i18n:translate && pnpm i18n:resources` or extend
-      # the allowlist in lib/__tests__/i18n-catalogs.test.ts.
+      # still succeeds so `deploy-gate` proceeds.
+      #
+      # This is coherent because ENFORCEMENT LIVES ON THE PR: `main` is reached
+      # only through a pull request, and web-ci's Test step is a hard gate as of
+      # the 2026-08-08 testing audit. So a red test stops the change before it
+      # merges; this run is a second look at the merge result, not the gate.
       - name: Test
-        run: pnpm exec vitest run
+        run: pnpm test
         continue-on-error: true
 
   build:

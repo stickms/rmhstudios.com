@@ -83,27 +83,28 @@ The root `Dockerfile` builds both production images; `vite build` runs once:
 
 ## 4. CI
 
-~45 workflows live in `.github/workflows/`. The load-bearing gates:
+**Eleven** workflows live in `.github/workflows/` — the fleet was consolidated in
+the rewrite, and this table used to describe the ~45-workflow one that preceded
+it (`typecheck-server.yml`, `vitest-coverage.yml`, `codeql.yml` and the granular
+linter/scanner set are all gone). `ls .github/workflows/` is the truth; this is
+what each one gates:
 
-| Workflow                                   | Gates                                                                                                                                                                                       |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `deploy.yml`                               | CD — push to `main` → build + push images to GHCR → trigger VPS listener (above)                                                                                                            |
-| `web-ci.yml`                               | Frontend gate: `tsc --noEmit` + `pnpm lint` + advisory `vitest run` (check job), `build:frontend` (build job), and a `pnpm audit --prod` (audit job)                                             |
-| `typecheck-server.yml`                     | Typechecks the Node service tier against `tsconfig.server.json`                                                                                                                             |
-| `vitest-coverage.yml`                      | Test run with coverage                                                                                                                                                                      |
-| `go-microservices.yml`                     | Go fleet: `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**`. (The Postgres-backed e2e + `helm lint` jobs were removed with the Go realtime/Helm topology — design §5.2.) |
-| `codeql.yml`                               | CodeQL SAST for JS/TS + Go                                                                                                                                                                  |
-| `senior-review.yml`                        | LLM review gate on PRs (Claude Opus over the diff; fails on a FAIL verdict; short-circuits green for non-owner authors)                                                                     |
+| Workflow                 | Gates                                                                                                                                                                                                          |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `deploy.yml`             | CD — push to `main` → build + push images to GHCR → trigger VPS listener (above). Its in-workflow `ci` job re-runs typecheck/lint/tests; the test step is advisory there because the PR already gated it.       |
+| `web-ci.yml`             | Frontend gate on PRs: `tsc --noEmit` + `eslint` + docs freshness + `pnpm test` (check job — **all blocking**), `build:frontend:sourcemap` + the two size gates (build job), `pnpm audit --prod` (audit job)     |
+| `epic-tests.yml`         | The epic content-build suite (`pnpm test:epic`) with a Chromium install; path-filtered to `scripts/epic/**`                                                                                                     |
+| `go-microservices.yml`   | Go fleet: `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**`. (The Postgres-backed e2e + `helm lint` jobs were removed with the Go realtime/Helm topology — design §5.2.) |
+| `senior-review.yml`      | LLM review gate on PRs (Claude Opus over the diff; fails on a FAIL verdict; short-circuits green for non-owner authors)                                                                                        |
+| `synthetic-perf.yml`     | Lighthouse runs against the deployed site, scored by `scripts/ci/synthetic-perf-report.mjs`                                                                                                                     |
+| `i18n-translate.yml`     | Machine-translates new `en` keys into the other 15 locales                                                                                                                                                     |
+| `build-vibe-packages.yml`, `compose-validate.yml`, `prisma-validate.yml`, `prisma-migrate-status.yml` | Build/deploy guards — the vibe package bundle, `docker compose config`, `prisma validate`, and migration drift                                              |
 
-Plus many granular linters/scanners: `prettier`, `eslint`/`markdownlint`/
-`yamllint`/`actionlint`/`shellcheck`/`shfmt`/`hadolint`/`editorconfig-check`,
-`prisma-*` (format/validate/migrate-status), `i18n-*` (extract-check/json-valid),
-security scanners (`semgrep`, `trivy-fs`, `trufflehog`, `checkov`, `zizmor`,
-`go-gosec`/`go-vuln`/`go-licenses`), `license-check-js`, `pnpm-audit-full`,
-`compose-validate`, `terraform-fmt`/`terraform-validate`, and `secret-file-guard`.
 Dependabot (`.github/dependabot.yml`) covers npm (root), gomod (`go-services/`),
 and github-actions weekly. Run at least `pnpm exec tsc --noEmit`, `pnpm lint`,
-and `pnpm exec vitest run` locally before pushing.
+and `pnpm test` locally before pushing — or just `pnpm check:consistency`, which
+runs the changed-file subset of all three. Test suites and what gates them:
+[`testing.md`](./testing.md).
 
 ## 5. Ports reference
 

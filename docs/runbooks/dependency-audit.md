@@ -24,7 +24,7 @@ GHSA-52cp-r559-cp3m and fast-uri GHSA-4c8g-83qw-93j6).
    `>=4.3.0 <5`).
 3. `pnpm install` → `pnpm audit --prod --audit-level=high` locally until only
    sub-high findings remain.
-4. Run the full suite (`pnpm exec tsc --noEmit && pnpm exec vitest run`) —
+4. Run the full suite (`pnpm exec tsc --noEmit && pnpm test`) —
    an override changes resolved versions at runtime; treat it like a dep
    upgrade, not a config tweak.
 5. Commit `package.json` + `pnpm-lock.yaml` together.

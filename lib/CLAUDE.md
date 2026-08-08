@@ -173,13 +173,25 @@ don't remove that plugin.
 
 ## Testing
 
-- Main suite: `pnpm exec vitest run` (config `vitest.config.ts`) — covers
-  `testing/` (RMHBox phases) and colocated tests under `lib/rmhladder`,
-  `lib/cookgame`, `lib/dream-rift`, `lib/rmhark-ai`, `lib/personas`,
-  `lib/predictions`, `lib/versecraft/gen`, `lib/kowloon-knockout`, and some
-  `components/`.
-- Separate: `pnpm epic:test` (`vitest.epic.config.ts`, 60s timeout, spawns
-  Chromium) for `scripts/epic/`.
+- Main suite: `pnpm test` (config `vitest.config.ts`, ~20s). Discovery is a
+  **glob** — every `*.test.ts(x)` in the repo runs, and there is nothing to
+  register. (It used to be a curated `include` list, and two test files sat in
+  the repo for months without ever running because of it;
+  `lib/__tests__/test-discovery.test.ts` is the gate that keeps that from
+  recurring.) `pnpm test <path>` takes any file or directory.
+- **Scope: mission critical only.** On 2026-08-08 the suite was narrowed to what
+  breaks money, user data, privacy, auth or a deploy; 180 files covering *how
+  the games play* were deleted to get the run from ~37s to ~20s. Before adding a
+  test, check it meets one of the five criteria in
+  [`docs/testing.md`](../docs/testing.md) §What is not tested — a correct,
+  passing gameplay test is still the wrong thing to add here.
+- Separate: `pnpm test:epic` (`vitest.epic.config.ts`, 60s timeout, launches
+  Chromium) for `scripts/epic/`, gated by `.github/workflows/epic-tests.yml`.
+- Coverage: `pnpm test:coverage` — informational, never a gate.
+- **Isolation is on and stays on.** `--no-isolate` is ~40% faster and produces
+  order-dependent failures (`lib/rmhladder/pipeline/*` fail on a different set
+  of seeds each shuffle). Details and the rest of the speed work:
+  [`docs/testing.md`](../docs/testing.md) §Speed.
 - **`lib/__tests__/` is where the repo's consistency is executable.** The
   design/tab-strip gate, the game-viewport contract, the filter-cost budget,
   the theme-token and colour-vision contracts, the API-handler adoption
