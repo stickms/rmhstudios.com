@@ -34,6 +34,7 @@ interface User {
 }
 
 export const Route = createFileRoute('/_site/admin/users')({
+  head: () => ({ meta: [{ title: 'Users | Admin | RMH Studios' }] }),
   component: AdminUsersPage,
 });
 

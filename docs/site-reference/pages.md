@@ -41,8 +41,8 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/security-reports` | Security Reports | admin | `app/routes/_site/admin/security-reports.tsx` |
 | `/admin/slice-it` | Slice It ranked pool | admin | `app/routes/_site/admin/slice-it.tsx` |
 | `/admin/slice-it-content` | Slice It content & storage | admin | `app/routes/_site/admin/slice-it-content.tsx` |
-| `/admin/user-builds` | — | admin | `app/routes/_site/admin/user-builds.tsx` |
-| `/admin/users` | — | admin | `app/routes/_site/admin/users.tsx` |
+| `/admin/user-builds` | All User Builds \| Admin | admin | `app/routes/_site/admin/user-builds.tsx` |
+| `/admin/users` | Users \| Admin | admin | `app/routes/_site/admin/users.tsx` |
 | `/alexdebtcounter` | redirects to `/kaikaidebtcounter` | public | `app/routes/_site/alexdebtcounter.tsx` |
 | `/analytics` | Creator Analytics | public | `app/routes/_site/analytics.tsx` |
 | `/apps` | Apps | public | `app/routes/_site/apps/index.tsx` |
@@ -81,7 +81,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/lists/:id` | List | public | `app/routes/_site/lists/$id.tsx` |
 | `/market` | redirects to `/store?tab=market` | public | `app/routes/_site/market.tsx` |
 | `/messages` | Inbox | public | `app/routes/_site/messages/index.tsx` |
-| `/messages/:conversationId` | — | public | `app/routes/_site/messages/$conversationId.tsx` |
+| `/messages/:conversationId` | Conversation | public | `app/routes/_site/messages/$conversationId.tsx` |
 | `/moments/:id` | — | public | `app/routes/_site/moments.$id.tsx` |
 | `/music-trivia` | Guess the Song | public | `app/routes/_site/music-trivia.tsx` |
 | `/news` | News | public | `app/routes/_site/news/index.tsx` |
@@ -143,8 +143,8 @@ Standard pages, rendered inside the sidebar shell.
 | `/u/:userid/post/:postid` | Post Not Found \| RMH | public | `app/routes/_site/u/$userid/post/$postid.tsx` |
 | `/user-builds` | redirects to `/builds` | public | `app/routes/_site/user-builds/index.tsx` |
 | `/user-builds/:slug` | — | public | `app/routes/_site/user-builds/$slug.tsx` |
-| `/user-builds/manage` | — | public | `app/routes/_site/user-builds/manage.tsx` |
-| `/user-builds/submit` | — | public | `app/routes/_site/user-builds/submit.tsx` |
+| `/user-builds/manage` | Manage builds | public | `app/routes/_site/user-builds/manage.tsx` |
+| `/user-builds/submit` | Submit a build | public | `app/routes/_site/user-builds/submit.tsx` |
 | `/v` | redirects to `/create?tab=pages` | public | `app/routes/_site/v/index.tsx` |
 | `/ventures` | RMH Ventures | public | `app/routes/_site/ventures.tsx` |
 | `/wager` | Wager Matches | public | `app/routes/_site/wager.index.tsx` |
@@ -247,9 +247,9 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/rmhtype/multiplayer` | — | sign-in | `app/routes/rmhtype/multiplayer.tsx` |
 | `/rmhtype/solo` | — | sign-in | `app/routes/rmhtype/solo.tsx` |
 | `/rochester-offensive` | — | public | `app/routes/rochester-offensive.tsx` |
-| `/secret` | — | public | `app/routes/secret/index.tsx` |
+| `/secret` | Secret | public | `app/routes/secret/index.tsx` |
 | `/secret/cursed-logic` | — | public | `app/routes/secret/cursed-logic/index.tsx` |
-| `/secret/signal-forge` | — | public | `app/routes/secret/signal-forge.tsx` |
+| `/secret/signal-forge` | Signal Forge | public | `app/routes/secret/signal-forge.tsx` |
 | `/secret/vega` | Project Vega | public | `app/routes/secret/vega.tsx` |
 | `/security` | Security | public | `app/routes/security.tsx` |
 | `/sitemap.xml` | — | public | `app/routes/sitemap[.]xml.ts` |
