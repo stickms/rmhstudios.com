@@ -79,10 +79,16 @@ jobs:
             tsc-eslint-${{ runner.os }}-
       # `mkdir -p` so a cold cache (miss on the restore above) still has the dirs
       # tsc/eslint write their cache files into.
+      # `pnpm run typecheck` runs the NATIVE (Go) TypeScript compiler, which
+      # typechecks this repo in ~68s cold / ~7s warm against ~218s / ~17s for the
+      # JavaScript compiler, with identical results. It is invoked by explicit
+      # path in the script because `typescript` and `typescript-native` both ship
+      # a `tsc` bin. `typescript` 5.9 stays installed — typescript-eslint imports
+      # the compiler API from it, and TS 7 does not expose one.
       - name: Typecheck
         run: |
           mkdir -p .cache/tsc
-          pnpm exec tsc --noEmit --incremental --tsBuildInfoFile .cache/tsc/app.tsbuildinfo
+          pnpm run typecheck
       - name: Lint
         run: |
           mkdir -p .cache/eslint

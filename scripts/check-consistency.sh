@@ -400,7 +400,13 @@ else
   else
     if has '\.(ts|tsx)$'; then
       mkdir -p .cache/tsc
-      if pnpm exec tsc --noEmit --incremental --tsBuildInfoFile .cache/tsc/app.tsbuildinfo; then
+      # `pnpm run typecheck`, never bare `tsc`. Two packages in this workspace
+      # ship a `tsc` bin — `typescript` (5.9, the module typescript-eslint
+      # imports) and `typescript-native` (7.x, the Go compiler) — so
+      # node_modules/.bin/tsc is whichever pnpm linked last. The script pins the
+      # native one by path, and its .tsbuildinfo is a separate file because the
+      # two compilers' formats are not interchangeable.
+      if pnpm run typecheck; then
         pass "tsc --noEmit"
       else
         fail "tsc --noEmit"

@@ -221,6 +221,20 @@ export default tseslint.config(
   // ── Project-wide rule overrides ───────────────────────────────────────────
   {
     rules: {
+      // New in ESLint 10's recommended set, where it ships as an ERROR. It
+      // fires 39 times across `lib/`, `components/`, `server/` and `scripts/`,
+      // and almost every hit is the same deliberate shape: a defensive
+      // initializer before a conditional assignment (`let ok = false` guarding
+      // a try/catch, `let localBossDamage = 0` before the branches of a sim
+      // step). Those initializers are load-bearing for readability and for TS's
+      // definite-assignment analysis — dropping them to satisfy the rule would
+      // make the code worse, not better.
+      //
+      // So this follows the jsx-a11y backlog convention above: surface as a
+      // warning, promote when clean. A handful of the 39 ARE genuinely useless
+      // (e.g. `return (h ^= h >>> 16) >>> 0` in lib/versecraft/gen/rng.ts, where
+      // nothing reads `h` again) and are worth fixing in their own change.
+      'no-useless-assignment': 'warn',
       // Downgrade from error to warning so the build isn't blocked.
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unsafe-function-type': 'warn',
