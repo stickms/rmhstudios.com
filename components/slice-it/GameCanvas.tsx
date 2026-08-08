@@ -164,6 +164,42 @@ function drawSpikedDisc(
   ctx.closePath();
 }
 
+/**
+ * Trace one half of a rounded square's outline — the lit half or the shaded
+ * half of a neumorphic surface.
+ *
+ * `topLeft` runs from the bottom-left corner up around the top-left and along
+ * to the top-right; `bottomRight` is the complement. Split at the two corners
+ * the light source does NOT favour, so neither stroke ends in the middle of an
+ * edge where the join would show.
+ *
+ * Inset by the caller's `lineWidth` is not needed: the stroke straddles the
+ * path and the extrusion beneath is the same shape, so the outer half lands on
+ * the note's own edge.
+ */
+function traceCornerArc(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  size: number,
+  radius: number,
+  half: 'topLeft' | 'bottomRight',
+): void {
+  const r = Math.min(radius, size / 2);
+  ctx.beginPath();
+  if (half === 'topLeft') {
+    ctx.moveTo(x, y + size - r);
+    ctx.lineTo(x, y + r);
+    ctx.arcTo(x, y, x + r, y, r);
+    ctx.lineTo(x + size - r, y);
+  } else {
+    ctx.moveTo(x + size, y + r);
+    ctx.lineTo(x + size, y + size - r);
+    ctx.arcTo(x + size, y + size, x + size - r, y + size, r);
+    ctx.lineTo(x + r, y + size);
+  }
+}
+
 /** A note body's bevel and under-edge, derived from its own colour. */
 interface NoteShades {
   bevel: string;
@@ -1302,31 +1338,38 @@ export function GameCanvas() {
       // the playfield that ignores the setting.
       const railColor = isOneTrack ? laneA : laneColor(palette, i);
 
+      // The trough's offsets are gated on `glow` alongside its blur, for the
+      // same reason the notes' are: `shadowBlur: 0` with a live offset still
+      // paints a hard-edged copy, so on `perf-lite` and under reduced motion
+      // each lane was drawing two crisp duplicate bars 6px apart instead of
+      // one flat trough. The comment on `glow` above claimed "offsets are
+      // always 0 here" — this is the code that made that untrue.
+      const troughLift = glow * 3;
       if (isMobileV) {
         // Vertical tracks running top-to-bottom
         ctx.shadowColor = shadowDark;
         ctx.shadowBlur = glow * 10;
-        ctx.shadowOffsetX = 3;
-        ctx.shadowOffsetY = 3;
+        ctx.shadowOffsetX = troughLift;
+        ctx.shadowOffsetY = troughLift;
         ctx.fillStyle = bgColor;
         ctx.fillRect(laneVal - trackThickness / 2, 0, trackThickness, h);
         ctx.shadowColor = shadowLight;
         ctx.shadowBlur = glow * 10;
-        ctx.shadowOffsetX = -3;
-        ctx.shadowOffsetY = -3;
+        ctx.shadowOffsetX = -troughLift;
+        ctx.shadowOffsetY = -troughLift;
         ctx.fillRect(laneVal - trackThickness / 2, 0, trackThickness, h);
       } else {
         // Horizontal tracks running left-to-right (desktop)
         ctx.shadowColor = shadowDark;
         ctx.shadowBlur = glow * 10;
-        ctx.shadowOffsetX = 3;
-        ctx.shadowOffsetY = 3;
+        ctx.shadowOffsetX = troughLift;
+        ctx.shadowOffsetY = troughLift;
         ctx.fillStyle = bgColor;
         ctx.fillRect(0, laneVal - trackThickness / 2, w, trackThickness);
         ctx.shadowColor = shadowLight;
         ctx.shadowBlur = glow * 10;
-        ctx.shadowOffsetX = -3;
-        ctx.shadowOffsetY = -3;
+        ctx.shadowOffsetX = -troughLift;
+        ctx.shadowOffsetY = -troughLift;
         ctx.fillRect(0, laneVal - trackThickness / 2, w, trackThickness);
       }
 
@@ -1658,9 +1701,21 @@ export function GameCanvas() {
           // The outline is the theme's text colour rather than the bomb's own:
           // three of the four palettes specify a BLACK bomb, which on the dark
           // theme's near-black playfield is an invisible object that ends runs.
-          drawSpikedDisc(ctx, nx, ny, CURSOR_R * 1.35, CURSOR_R * 0.62);
-          ctx.fill();
+          // Raised out of the trough on the same pair of shadows as a tap, so
+          // the one note you must not touch sits in the same world as the ones
+          // you must.
+          const bombLift = glow ? Math.max(2, CURSOR_R * 0.22) : 0;
           ctx.save();
+          drawSpikedDisc(ctx, nx, ny, CURSOR_R * 1.35, CURSOR_R * 0.62);
+          ctx.shadowColor = shadowDark;
+          ctx.shadowBlur = glow * 9;
+          ctx.shadowOffsetX = bombLift;
+          ctx.shadowOffsetY = bombLift;
+          ctx.fill();
+          ctx.shadowColor = shadowLight;
+          ctx.shadowOffsetX = -bombLift;
+          ctx.shadowOffsetY = -bombLift;
+          ctx.fill();
           ctx.shadowColor = 'transparent';
           ctx.strokeStyle = theme.textColor;
           ctx.lineWidth = 2;
@@ -1813,31 +1868,57 @@ export function GameCanvas() {
             ctx.restore();
           }
 
-          // Under-edge, offset toward the trailing corner.
-          ctx.fillStyle = shades.shade;
-          ctx.beginPath();
-          ctx.roundRect(nx - half + 1.5, ny - half + 1.5, size, size, 9);
-          ctx.fill();
-
-          // Body.
+          // ── The neumorphic extrusion ─────────────────────────────────────
+          //
+          // The note is RAISED out of the trough it travels in, in the same
+          // language the trough and the receptors already speak: one light
+          // source at the top-left, a light shadow on that side and a dark one
+          // opposite. `.neumorphic` in slice-it.css is the same pair of offsets.
+          //
+          // A single drop shadow — what this had, and what the first pass at
+          // this restyle kept — reads as a sticker lying ON the playfield
+          // rather than a key standing out of it, and it is the one thing on
+          // screen that would have been lit from a different direction than
+          // everything around it.
+          //
+          // The offset is gated on `glow` as well as the blur. A canvas shadow
+          // with `shadowBlur: 0` and a NON-zero offset still draws — as a hard
+          // edged copy of the shape. Zeroing only the blur (which is what the
+          // rest of this renderer does) would hand `perf-lite` and reduced
+          // motion two crisp duplicates per note instead of one calm note.
+          const lift = glow ? Math.max(2, size * 0.1) : 0;
+          ctx.save();
           ctx.fillStyle = color;
           ctx.beginPath();
           ctx.roundRect(nx - half, ny - half, size, size, 9);
+          ctx.shadowColor = shadowDark;
+          ctx.shadowBlur = glow * 9;
+          ctx.shadowOffsetX = lift;
+          ctx.shadowOffsetY = lift;
           ctx.fill();
+          // Same path, opposite side. Neumorphism is the PAIR — either shadow
+          // alone is just a bevel.
+          ctx.shadowColor = shadowLight;
+          ctx.shadowOffsetX = -lift;
+          ctx.shadowOffsetY = -lift;
+          ctx.fill();
+          ctx.restore();
 
-          // Bevel: a thin lip along the leading edge — the edge that reaches
-          // the judgement line first. It gives the note a direction, which a
-          // symmetric square never had. Thin on purpose: at a third of the note
-          // this stopped reading as a lit edge and started reading as a stripe,
-          // which is a different (and wrong) claim about what the note is.
-          ctx.fillStyle = shades.bevel;
-          ctx.beginPath();
-          if (isMobileV) {
-            ctx.roundRect(nx - half + 3, ny + half - size * 0.19, size - 6, size * 0.12, 3);
-          } else {
-            ctx.roundRect(nx - half + 3, ny - half + 3, size * 0.12, size - 6, 3);
-          }
-          ctx.fill();
+          // The soft inner lip that makes the surface read as moulded rather
+          // than cut: lit along the top-left arc, shaded along the bottom-right
+          // one. Same light source as the extrusion above, which is the whole
+          // reason it works — two thin strokes, no gradient, no allocation.
+          ctx.save();
+          ctx.shadowColor = 'transparent';
+          ctx.lineWidth = Math.max(1.5, size * 0.09);
+          ctx.globalAlpha = ctx.globalAlpha * 0.85;
+          ctx.strokeStyle = shades.bevel;
+          traceCornerArc(ctx, nx - half, ny - half, size, 9, 'topLeft');
+          ctx.stroke();
+          ctx.strokeStyle = shades.shade;
+          traceCornerArc(ctx, nx - half, ny - half, size, 9, 'bottomRight');
+          ctx.stroke();
+          ctx.restore();
 
           // The rhythm signal (see `quantAccent` above), as the note's OUTLINE.
           //
