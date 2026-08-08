@@ -657,14 +657,25 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
   );
 
   return (
-    <div className="absolute inset-0 z-80 bg-slice-bg p-5 sm:p-12 flex flex-col overflow-y-auto">
-      <div className="flex items-center justify-between mb-5 sm:mb-12">
-        <h2 className="text-2xl sm:text-5xl font-black text-slice-text tracking-tighter uppercase italic">
+    <div className="absolute inset-0 z-80 bg-slice-bg p-5 sm:p-12 flex flex-col overflow-y-auto overflow-x-hidden">
+      {/* `gap-3` + `min-w-0` + `shrink-0`, and the big type gated on width AND
+          height — all four are one bug.
+
+          `sm:text-5xl` alone is a WIDTH test, and a landscape phone (852×393)
+          passes it with 393px of stage. "System Configuration" at `text-5xl` is
+          ~564px of unbreakable words against a 144px CLOSE button, which
+          overflowed the drawer horizontally: the heading ran under the button,
+          both were clipped, and the whole panel scrolled sideways with its left
+          edge — the operator field, the section labels — off screen. The auth
+          splash in `MainMenu.tsx` carries the same width-AND-height guard for
+          exactly this viewport. */}
+      <div className="flex items-center justify-between gap-3 mb-5 sm:mb-12">
+        <h2 className="min-w-0 text-xl [@media(min-width:640px)_and_(min-height:620px)]:text-5xl font-black text-slice-text tracking-tighter uppercase italic text-balance">
           {t('c-game:system-configuration', { defaultValue: 'System Configuration' })}
         </h2>
         <Button
           variant="ghost"
-          className="bg-slice-bg shadow-[5px_5px_12px_var(--slice-shadow-dark),-5px_-5px_12px_var(--slice-shadow-light)] active:shadow-inner text-slice-text-muted hover:text-slice-text font-black uppercase tracking-[0.2em] px-5 sm:px-10 h-10 sm:h-16 rounded-2xl text-sm"
+          className="shrink-0 bg-slice-bg shadow-[5px_5px_12px_var(--slice-shadow-dark),-5px_-5px_12px_var(--slice-shadow-light)] active:shadow-inner text-slice-text-muted hover:text-slice-text font-black uppercase tracking-[0.2em] px-5 [@media(min-width:640px)_and_(min-height:620px)]:px-10 h-10 [@media(min-width:640px)_and_(min-height:620px)]:h-16 rounded-2xl text-sm"
           onClick={onClose}
         >
           {t('c-game:close', { defaultValue: 'CLOSE' })}

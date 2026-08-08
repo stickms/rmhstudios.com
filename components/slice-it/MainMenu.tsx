@@ -177,7 +177,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
           )}
 
           {/* Header Bar */}
-          <div className="flex items-center justify-between shrink-0 bg-slice-bg px-4 py-3 border-b border-slice-shadow-dark/50">
+          <div className="flex items-center justify-between gap-2 min-w-0 shrink-0 bg-slice-bg px-4 py-3 border-b border-slice-shadow-dark/50">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 shrink-0 rounded-full bg-slice-shadow-dark shadow-inner flex items-center justify-center text-slice-text-muted font-black text-xl">
                 {userName ? userName.charAt(0).toUpperCase() : '?'}
@@ -191,7 +191,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                   buttons that need it. `min-w-0` + truncate still hold from
                   `sm` up, where a long display name would otherwise push those
                   buttons off the right edge. */}
-              <div className="hidden sm:flex flex-col min-w-0">
+              <div className="hidden [@media(min-width:640px)_and_(min-height:620px)]:flex flex-col min-w-0">
                 <span className="text-[10px] font-black text-slice-text-light uppercase tracking-wider">
                   {t('system-operator', { defaultValue: 'System Operator' })}
                 </span>
@@ -214,8 +214,8 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                 }`}
                 onClick={() => setSoloMode(soloMode === 'daily' ? 'library' : 'daily')}
               >
-                <CalendarDays className="w-4 h-4 sm:mr-1.5" />
-                <span className="hidden sm:inline">
+                <CalendarDays className="w-4 h-4 [@media(min-width:640px)_and_(min-height:620px)]:mr-1.5" />
+                <span className="hidden [@media(min-width:640px)_and_(min-height:620px)]:inline">
                   {ts('daily-challenge', { defaultValue: 'Daily Challenge' })}
                 </span>
               </Button>
@@ -228,8 +228,8 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                 }`}
                 onClick={() => setSoloMode(soloMode === 'setlists' ? 'library' : 'setlists')}
               >
-                <ListMusic className="w-4 h-4 sm:mr-1.5" />
-                <span className="hidden sm:inline">
+                <ListMusic className="w-4 h-4 [@media(min-width:640px)_and_(min-height:620px)]:mr-1.5" />
+                <span className="hidden [@media(min-width:640px)_and_(min-height:620px)]:inline">
                   {ts('setlists', { defaultValue: 'Setlists' })}
                 </span>
               </Button>
@@ -248,14 +248,14 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="mr-1.5"
+                  className="[@media(min-width:640px)_and_(min-height:620px)]:mr-1.5"
                 >
                   <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                   <circle cx="9" cy="7" r="4" />
                   <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
                   <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                 </svg>
-                <span className="hidden sm:inline">
+                <span className="hidden [@media(min-width:640px)_and_(min-height:620px)]:inline">
                   {t('multiplayer', { defaultValue: 'MULTIPLAYER' })}
                 </span>
               </Button>
