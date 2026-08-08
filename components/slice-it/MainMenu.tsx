@@ -5,6 +5,7 @@ import { APPLE_SPRING, DURATION, EASE, scaleIn } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 import { CalendarDays, ListMusic, Moon, Sun } from 'lucide-react';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import { GameEngine } from '@/lib/slice-it/engine';
@@ -108,6 +109,8 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
     }
   }, [session.data, userName, setUserName]);
 
+  const avatarUrl = (session.data?.user as { image?: string | null } | undefined)?.image ?? null;
+
   /**
    * Open a track's details panel.
    *
@@ -190,9 +193,22 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
           {/* Header Bar */}
           <div className="flex items-center justify-between gap-2 min-w-0 shrink-0 bg-slice-bg px-4 py-3 border-b border-slice-shadow-dark/50">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 shrink-0 rounded-full bg-slice-shadow-dark shadow-inner flex items-center justify-center text-slice-text-muted font-black text-xl">
-                {userName ? userName.charAt(0).toUpperCase() : '?'}
-              </div>
+              {/* The player's actual avatar. This was a `<div>` printing the
+                  first letter of their name and nothing else — the session
+                  carries `user.image` and it was never read, so everyone was a
+                  grey initial. `UserAvatar` is the shared primitive: it proxies
+                  a remote avatar through the image optimizer and falls back to
+                  the default asset if that fetch fails, which a hand-rolled
+                  `<img>` here would not. The neumorphic ring keeps it in the
+                  game's material rather than sitting on the surface as a flat
+                  circle. */}
+              <UserAvatar
+                src={avatarUrl}
+                alt={userName || 'Player'}
+                size={40}
+                fallbackName={userName || undefined}
+                className="shrink-0 shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]"
+              />
               {/* Hidden below `sm`, not truncated. Truncating kept the name in
                   the layout while the five buttons opposite squeezed it to 24px
                   — one letter and an ellipsis, directly beside an avatar
@@ -202,10 +218,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                   buttons that need it. `min-w-0` + truncate still hold from
                   `sm` up, where a long display name would otherwise push those
                   buttons off the right edge. */}
-              <div className="hidden [@media(min-width:640px)_and_(min-height:620px)]:flex flex-col min-w-0">
-                <span className="text-[10px] font-black text-slice-text-light uppercase tracking-wider">
-                  {t('system-operator', { defaultValue: 'System Operator' })}
-                </span>
+              <div className="hidden [@media(min-width:640px)_and_(min-height:620px)]:flex min-w-0 items-center">
                 <div className="font-black text-slice-text text-base uppercase tracking-tight truncate">
                   {userName || 'GUEST'}
                 </div>
@@ -406,72 +419,76 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                 null. A spring, not a duration: this is a surface that travels.
                 The global `MotionConfig reducedMotion="user"` already collapses
                 both to an instant swap for anyone who asks. */}
+            {/* Two KEYED siblings, not a fragment.
+                `AnimatePresence` tracks its direct children by key; a bare `<>`
+                is one untracked child, so the backdrop and the panel were not
+                individually presence-managed and the pair flashed on open —
+                the fade would start, then snap as the group re-rendered. An
+                array of keyed motion elements is the shape it actually
+                supports. */}
             <AnimatePresence>
-              {selectedSong && (
-                <>
-                  {/* Backdrop */}
-                  <motion.button
-                    type="button"
-                    className="absolute inset-0 bg-black/20 z-65"
-                    onClick={() => setSelectedSong(null)}
-                    aria-label={t('close-song-details', { defaultValue: 'Close song details' })}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: DURATION.base, ease: EASE.standard }}
-                  />
-
-                  {/* Sidebar Panel */}
-                  <motion.div
-                    className="absolute top-0 right-0 bottom-0 w-full sm:max-w-2xl bg-slice-bg shadow-2xl z-70 flex flex-col overflow-hidden"
-                    initial={{ x: '100%' }}
-                    animate={{ x: 0 }}
-                    exit={{ x: '100%' }}
-                    transition={APPLE_SPRING.smooth}
-                  >
-                    {/* Sidebar Header */}
-                    <div className="flex items-center justify-between p-4 border-b border-slice-shadow-dark/50 bg-slice-shadow-dark/20">
-                      <h2 className="text-lg font-black text-slice-text">
-                        {t('song-details', { defaultValue: 'Song Details' })}
-                      </h2>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark rounded-lg"
-                        onClick={() => setSelectedSong(null)}
+              {selectedSong && [
+                <motion.button
+                  key="song-details-backdrop"
+                  type="button"
+                  className="absolute inset-0 bg-black/20 z-65"
+                  onClick={() => setSelectedSong(null)}
+                  aria-label={t('close-song-details', { defaultValue: 'Close song details' })}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: DURATION.base, ease: EASE.standard }}
+                />,
+                <motion.div
+                  key="song-details-panel"
+                  className="absolute top-0 right-0 bottom-0 w-full sm:max-w-2xl bg-slice-bg shadow-2xl z-70 flex flex-col overflow-hidden"
+                  initial={{ x: '100%' }}
+                  animate={{ x: 0 }}
+                  exit={{ x: '100%' }}
+                  transition={APPLE_SPRING.smooth}
+                >
+                  {/* Sidebar Header */}
+                  <div className="flex items-center justify-between p-4 border-b border-slice-shadow-dark/50 bg-slice-shadow-dark/20">
+                    <h2 className="text-lg font-black text-slice-text">
+                      {t('song-details', { defaultValue: 'Song Details' })}
+                    </h2>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark rounded-lg"
+                      onClick={() => setSelectedSong(null)}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="20"
-                          height="20"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <line x1="18" y1="6" x2="6" y2="18" />
-                          <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                      </Button>
-                    </div>
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </Button>
+                  </div>
 
-                    {/* Sidebar Content */}
-                    <div className="flex-1 overflow-y-auto">
-                      <SongDetailsPanel
-                        song={selectedSong}
-                        onPlay={handleStartGame}
-                        onSongUpdated={(updates) =>
-                          setSelectedSong((current) =>
-                            current ? { ...current, ...updates } : current,
-                          )
-                        }
-                      />
-                    </div>
-                  </motion.div>
-                </>
-              )}
+                  {/* Sidebar Content */}
+                  <div className="flex-1 overflow-y-auto">
+                    <SongDetailsPanel
+                      song={selectedSong}
+                      onPlay={handleStartGame}
+                      onSongUpdated={(updates) =>
+                        setSelectedSong((current) =>
+                          current ? { ...current, ...updates } : current,
+                        )
+                      }
+                    />
+                  </div>
+                </motion.div>,
+              ]}
             </AnimatePresence>
           </div>
         </>

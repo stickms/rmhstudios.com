@@ -506,11 +506,20 @@ export function SongDetailsPanel({
             </div>
           </div>
 
-          {/* Play Button & Multiplier */}
+          {/* Play Button & Multiplier.
+              The row WRAPS. Four items — a button that will not shrink below
+              its label, two 56px squares and the multiplier chip — need ~300px
+              of fixed width plus gaps, which a 393px phone does not have once
+              the panel's padding is off. It overflowed instead, and the overflow
+              ran off the right edge of a panel that is `w-full` at that width:
+              the chip read "MULTIPL… x1.0". Below `sm` the play button takes the
+              whole first line (`basis-full`) so the wrap lands somewhere
+              deliberate — the two icon buttons and the chip on one row — rather
+              than leaving the chip stranded alone under a half-empty line. */}
           {!readOnly && (
-            <div className="mt-4 flex items-center gap-3">
+            <div className="mt-4 flex flex-wrap items-center gap-3">
               <Button
-                className="flex-1 h-14 bg-blue-500 hover:bg-blue-600 text-white font-bold text-base rounded-lg active:scale-95 transition-colors flex items-center justify-center gap-3 group"
+                className="basis-full sm:flex-1 min-w-48 h-14 bg-blue-500 hover:bg-blue-600 text-white font-bold text-base rounded-lg active:scale-95 transition-colors flex items-center justify-center gap-3 group"
                 onClick={() => onPlay(song)}
               >
                 <Play className="w-6 h-6 fill-current group-hover:scale-110 transition-transform" />
@@ -556,7 +565,7 @@ export function SongDetailsPanel({
                   </DialogContent>
                 </Dialog>
               )}
-              <div className="flex flex-col items-center px-4 py-2 bg-slice-card-bg rounded-lg border border-slice-shadow-dark/50">
+              <div className="ml-auto shrink-0 flex flex-col items-center px-4 py-2 bg-slice-card-bg rounded-lg border border-slice-shadow-dark/50">
                 <div className="text-[10px] font-bold text-slice-text-light uppercase">
                   {t('multiplier', { defaultValue: 'Multiplier' })}
                 </div>
