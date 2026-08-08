@@ -13,20 +13,17 @@
  */
 
 /**
- * How many flags a notehead carries for a subdivision, or `null` when the chart
- * does not say.
+ * How many flags a notehead carries for a subdivision.
  *
  * `Slice.quant` is the denominator the note snapped to: 1 = on the beat,
  * 2 = eighth, 3 = triplet, 4 = sixteenth. Flags follow notation — a quarter has
  * none, an eighth one, a sixteenth two — and a triplet is drawn as an eighth
  * (which is what a triplet's members are) with the 3 that says so.
  *
- * `null` rather than 0 for an unknown quant, and the caller draws a bare head
- * for it. A chart with no rhythm data must not be able to CLAIM everything is a
- * quarter note; that is the same "missing is not on-beat" contract `Slice.quant`
- * documents, and drawing a stem would break it.
+ * An unknown or absent subdivision falls back to a quarter — see the default
+ * branch for why that is the honest reading rather than the loud one.
  */
-export function flagsForQuant(quant: number | undefined): { flags: number; triplet: boolean } | null {
+export function flagsForQuant(quant: number | undefined): { flags: number; triplet: boolean } {
   switch (quant) {
     case 1:
       return { flags: 0, triplet: false };
@@ -37,7 +34,18 @@ export function flagsForQuant(quant: number | undefined): { flags: number; tripl
     case 4:
       return { flags: 2, triplet: false };
     default:
-      return null;
+      // A chart with no subdivision still gets a NOTE — head and stem, no flag.
+      //
+      // The first version returned null here and the renderer drew a bare head,
+      // on the reasoning that an unknown value must not claim to be on the
+      // beat. That reasoning was right and the drawing was wrong: a bare oval
+      // head is a whole note, which is a louder rhythmic claim than the quarter
+      // it was avoiding. A stem with no flag is notation's neutral note, and
+      // for a tap — which has no duration at all — it claims nothing.
+      //
+      // `Slice.quant`'s contract still holds where it was written to: the quant
+      // COLOUR is still only applied when the chart actually carries one.
+      return { flags: 0, triplet: false };
   }
 }
 

@@ -49,13 +49,28 @@ describe('flags per subdivision', () => {
     expect(flagsForQuant(4)).toEqual({ flags: 2, triplet: false });
   });
 
-  it('says nothing for a chart that says nothing', () => {
-    // Not `{flags: 0}` — that is a quarter note, and `Slice.quant` documents
-    // that a missing value must NOT be read as "on the beat". The renderer
-    // draws a bare head for null, which claims nothing.
-    expect(flagsForQuant(undefined)).toBeNull();
-    expect(flagsForQuant(0)).toBeNull();
-    expect(flagsForQuant(7)).toBeNull();
+  it('falls back to a quarter when the chart says nothing', () => {
+    // A quarter, not a bare head. The bare oval this used to draw is a WHOLE
+    // note — a louder rhythmic claim than the quarter it was trying to avoid
+    // making. A stem with no flag is notation's neutral note.
+    for (const unknown of [undefined, 0, 7, -1, Number.NaN]) {
+      expect(flagsForQuant(unknown as number | undefined)).toEqual({
+        flags: 0,
+        triplet: false,
+      });
+    }
+  });
+
+  it('never beams a note whose subdivision the chart did not give', () => {
+    // The quarter fallback is about how a note is DRAWN. It must not become a
+    // claim the beam grouping then acts on — a run of unknowns is not a run of
+    // quarters, and beaming them would invent a rhythm.
+    const unknowns: BeamCandidate[] = Array.from({ length: 4 }, (_, i) => ({
+      lane: 0,
+      time: (i * BEAT) / 4,
+      type: 'STANDARD',
+    }));
+    expect(beamNeighbour(unknowns, 0, 1, BEAT)).toBe(-1);
   });
 });
 

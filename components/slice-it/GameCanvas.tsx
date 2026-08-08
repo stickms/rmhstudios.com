@@ -278,41 +278,6 @@ function drawNoteStem(
   }
 }
 
-/**
- * Trace one half of a rounded square's outline — the lit half or the shaded
- * half of a neumorphic surface.
- *
- * `topLeft` runs from the bottom-left corner up around the top-left and along
- * to the top-right; `bottomRight` is the complement. Split at the two corners
- * the light source does NOT favour, so neither stroke ends in the middle of an
- * edge where the join would show.
- *
- * Inset by the caller's `lineWidth` is not needed: the stroke straddles the
- * path and the extrusion beneath is the same shape, so the outer half lands on
- * the note's own edge.
- */
-function traceCornerArc(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  size: number,
-  radius: number,
-  half: 'topLeft' | 'bottomRight',
-): void {
-  const r = Math.min(radius, size / 2);
-  ctx.beginPath();
-  if (half === 'topLeft') {
-    ctx.moveTo(x, y + size - r);
-    ctx.lineTo(x, y + r);
-    ctx.arcTo(x, y, x + r, y, r);
-    ctx.lineTo(x + size - r, y);
-  } else {
-    ctx.moveTo(x + size, y + r);
-    ctx.lineTo(x + size, y + size - r);
-    ctx.arcTo(x + size, y + size, x + size - r, y + size, r);
-    ctx.lineTo(x + r, y + size);
-  }
-}
 
 /**
  * Trace a tap note's BODY for a given skin shape, centred on `(cx, cy)`.
@@ -2024,7 +1989,6 @@ export function GameCanvas() {
           // would mean a `createLinearGradient` per note per frame, which is
           // the one allocation the draw loop cannot have.
           const size = BAR_H;
-          const half = size / 2;
           const shades = noteShades(noteShadesRef.current, color);
 
           // V13 — the energy trail. Behind the note, in the direction it came
@@ -2098,42 +2062,37 @@ export function GameCanvas() {
           ctx.fill();
           ctx.restore();
 
-          // The soft inner lip that makes the surface read as moulded rather
-          // than cut: lit along the top-left arc, shaded along the bottom-right
-          // one. Same light source as the extrusion above, which is the whole
-          // reason it works — no gradient, no allocation.
+          // ── The rim that actually makes it read as raised ────────────────
           //
-          // The square-cornered version is only correct for the `pill` body;
-          // every other shape gets the lip by stroking its own outline with a
-          // clip, which costs one extra path and keeps one light source across
-          // all five skins.
+          // The dual shadow above is the game's neumorphic language, and on a
+          // COLOURED object it is nearly all it can do: `.neumorphic` works
+          // because the surface is the same colour as the ground behind it, so
+          // the shadows are the entire effect. A note is not — and in the dark
+          // theme `--slice-shadow-light` (#222228) sits so close to
+          // `--slice-bg` (#16161a) that the lit side had nothing to show.
+          //
+          // So the extrusion is carried by the note's OWN tones: the same
+          // shape drawn three times, lit tone at full size, shade offset down
+          // the light axis, and the body inset over both. What is left visible
+          // is a thick lit rim at the top-left and a shaded one at the
+          // bottom-right — one light source, the same one the trough uses.
+          //
+          // Three solid fills of a path already being traced; no gradient (a
+          // `createLinearGradient` per note per frame is the one allocation
+          // this loop cannot have) and no per-shape special-casing.
           if (skin.neumorphic) {
+            const relief = Math.max(1.5, size * 0.07);
             ctx.save();
             ctx.shadowColor = 'transparent';
-            ctx.lineWidth = Math.max(1.5, size * 0.09);
-            ctx.globalAlpha = ctx.globalAlpha * 0.85;
-            if (skin.noteShape === 'pill') {
-              ctx.strokeStyle = shades.bevel;
-              traceCornerArc(ctx, nx - half, ny - half, size, 9, 'topLeft');
-              ctx.stroke();
-              ctx.strokeStyle = shades.shade;
-              traceCornerArc(ctx, nx - half, ny - half, size, 9, 'bottomRight');
-              ctx.stroke();
-            } else {
-              // Clip to the body, then stroke it twice offset along the light
-              // axis: the half that survives the clip on each pass is exactly
-              // the lit arc and the shaded arc.
-              traceNoteBody(ctx, skin.noteShape, nx, ny, size, isMobileV);
-              ctx.clip();
-              const nudge = Math.max(1, size * 0.06);
-              ctx.lineWidth = Math.max(2, size * 0.14);
-              ctx.strokeStyle = shades.bevel;
-              traceNoteBody(ctx, skin.noteShape, nx + nudge, ny + nudge, size, isMobileV);
-              ctx.stroke();
-              ctx.strokeStyle = shades.shade;
-              traceNoteBody(ctx, skin.noteShape, nx - nudge, ny - nudge, size, isMobileV);
-              ctx.stroke();
-            }
+            ctx.fillStyle = shades.bevel;
+            traceNoteBody(ctx, skin.noteShape, nx, ny, size, isMobileV);
+            ctx.fill();
+            ctx.fillStyle = shades.shade;
+            traceNoteBody(ctx, skin.noteShape, nx + relief, ny + relief, size, isMobileV);
+            ctx.fill();
+            ctx.fillStyle = color;
+            traceNoteBody(ctx, skin.noteShape, nx, ny, size - relief * 2.2, isMobileV);
+            ctx.fill();
             ctx.restore();
           }
 
@@ -2146,9 +2105,8 @@ export function GameCanvas() {
           // a channel that is not colour. It was hue-only before, which is the
           // thing `palettes.ts` exists to stop being the only channel.
           //
-          // Flat and un-extruded (see `drawNoteStem`), and drawn in the quant
-          // colour where there is one so shape and hue agree, falling back to
-          // the note's own colour on the accessibility palettes.
+          // The tail is flat and un-extruded (see `drawNoteStem`) and takes the
+          // head's colour: it is part of the note, not an annotation on it.
           const notation = skin.noteShape === 'notation' ? flagsForQuant(slice.quant) : null;
           if (notation) {
             // Beaming. A run of eighths or sixteenths is joined by a bar rather
@@ -2156,9 +2114,9 @@ export function GameCanvas() {
             // actually looks like written down and, on a dense chart, the
             // difference between a readable phrase and a hedge.
             //
-            // The group is capped at `BEAM_MAX_GROUP`: an uncapped chain draws
-            // one unbroken bar across an entire sixteenth run, and notation
-            // breaks at the beat for the same reason.
+            // Group boundaries come from the subdivision index — see
+            // `beamNeighbour`, which is also where the phase bug that made
+            // every triplet render as a lone note plus a pair is written down.
             const beatSeconds = activeBpm > 0 ? 60 / activeBpm : 0;
             let beamLength = 0;
             let beamedIn = false;
