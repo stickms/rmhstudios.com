@@ -116,7 +116,10 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname),
+      // `import.meta.dirname`, not `__dirname`: Vite 8.2's native config loader
+      // warns on the CJS global and will drop it when `configLoader: 'native'`
+      // becomes the default.
+      '@': path.resolve(import.meta.dirname),
     },
   },
 });
