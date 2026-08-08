@@ -298,7 +298,7 @@ importers:
         version: 15.1.22
       undici:
         specifier: ^8.9.0
-        version: 8.9.0
+        version: 8.10.0
       uuid:
         specifier: ^14.0.1
         version: 14.0.1
@@ -6816,6 +6816,11 @@ packages:
     engines: {node: '>=20.16.0'}
     hasBin: true
 
+  srvx@0.12.5:
+    resolution: {integrity: sha512-IuvtDNQg5EIwv3c6dleyau7u8hCyGQ7D6+V/QM799Aud07z0wCUcurKLTRfyG33C8oUY+UWcVBFkfHMcbtmRLA==}
+    engines: {node: '>=20.16.0'}
+    hasBin: true
+
   stackback@0.0.2:
     resolution: {integrity: sha512-1XMJE5fQo1jGH6Y/7ebnwPOBEkIEnT4QF32d5R1+VXdXveM0IBMJt8zfaxX1P3QhVwrYe+576+jkANtSS2mBbw==}
 
@@ -7155,8 +7160,8 @@ packages:
   undici-types@7.18.2:
     resolution: {integrity: sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w==}
 
-  undici@8.9.0:
-    resolution: {integrity: sha512-aWZpUj7XoGonMClx4gdDRfgBjqeA+F473aDmROQQbM9n6PRfK/u1q/a0X4wMTgcHfT8H6fpbt98PFuDUwFg2YA==}
+  undici@8.10.0:
+    resolution: {integrity: sha512-HvltHd7avK13QIw/oLe4qoOLyoVSoafqJ2jYOrtMRBkbYT31eiBQ8O0ehRKZiEZCMEyLFQNIADpgCWC5fALvYQ==}
     engines: {node: '>=22.19.0'}
 
   unenv@2.0.0-rc.24:
@@ -11071,7 +11076,7 @@ snapshots:
       parse5: 7.3.0
       parse5-htmlparser2-tree-adapter: 7.1.0
       parse5-parser-stream: 7.1.2
-      undici: 8.9.0
+      undici: 8.10.0
       whatwg-mimetype: 4.0.0
 
   chokidar@5.0.0:
@@ -12317,7 +12322,7 @@ snapshots:
   h3@2.0.1-rc.20(crossws@0.4.10(srvx@0.12.2)):
     dependencies:
       rou3: 0.8.1
-      srvx: 0.12.4
+      srvx: 0.12.5
     optionalDependencies:
       crossws: 0.4.10(srvx@0.12.2)
 
@@ -14403,6 +14408,8 @@ snapshots:
 
   srvx@0.12.4: {}
 
+  srvx@0.12.5: {}
+
   stackback@0.0.2: {}
 
   standard-as-callback@2.1.0: {}
@@ -14801,7 +14808,7 @@ snapshots:
 
   undici-types@7.18.2: {}
 
-  undici@8.9.0: {}
+  undici@8.10.0: {}
 
   unenv@2.0.0-rc.24:
     dependencies:
