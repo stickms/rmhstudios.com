@@ -120,7 +120,18 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
    */
   const handleSelectSong = React.useCallback((song: SliceSong) => {
     stopPreviewRef.current?.();
-    setSelectedSong(song);
+    // `startTransition`, because this update is what was eating the opening
+    // animation. Measured: the click ran a ~250ms task on the main thread —
+    // React rendering the whole panel subtree synchronously — and the panel's
+    // entrance spring is integrated on that same thread. A spring that misses
+    // 120ms does not slow down, it jumps: the slide covered 636px→106px in one
+    // frame gap, which is the "the fade plays and then restarts" this looked
+    // like. Nothing remounts; the animation loses its middle.
+    //
+    // Marking the open as a transition lets React render that subtree in
+    // interruptible slices and yield between them, so the frames the animation
+    // needs keep landing.
+    React.startTransition(() => setSelectedSong(song));
   }, []);
 
   const handleStartGame = React.useCallback(
@@ -398,7 +409,16 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                   )}
                   {soloMode === 'library' && (
                     <SongLibrary
-                      onSelect={handleStartGame}
+                      /* PLAY opens the details panel; it does not start the run.
+                         Starting straight from the row dropped the player into a
+                         chart at whatever difficulty and modifiers were left over
+                         from the last song, with nothing in between to look at —
+                         and those controls, plus the score multiplier they add up
+                         to, all live in the panel. `START GAME` there is the
+                         control that commits. The lobby keeps its own meaning for
+                         `onSelect` (nominate this song), which is why this is
+                         decided here and not inside `SongLibrary`. */
+                      onSelect={handleSelectSong}
                       onHighlight={handleSelectSong}
                       selectedSongId={selectedSong?.id ?? null}
                       onStopPreviewRef={stopPreviewRef}

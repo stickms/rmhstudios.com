@@ -34,15 +34,22 @@ export function NeumorphicModal({
   return (
     <DialogPrimitive.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogPrimitive.Portal>
+        {/* `slice-tokens` on BOTH portalled elements. Radix portals to
+            `<body>`, which is outside every `.slice-theme` in the tree, so
+            `bg-slice-bg` and the shadow pairs below resolved to nothing — the
+            modal rendered in browser defaults and looked the same in light and
+            dark, which is exactly what a themed dialog must not do. It is
+            `slice-tokens` rather than `slice-theme` because the latter also
+            paints, and an opaque scrim is not a scrim. */}
         <DialogPrimitive.Overlay
           data-motion="fade"
-          className="fixed inset-0 z-100 bg-black/40 backdrop-blur-sm"
+          className="slice-tokens fixed inset-0 z-100 bg-black/40 backdrop-blur-sm"
         />
         <DialogPrimitive.Content
           data-motion="rise"
           className={cn(
-            'fixed left-[50%] top-[50%] z-101 w-[90%] max-w-md translate-x-[-50%] translate-y-[-50%] p-8 outline-none',
-            'bg-slice-bg rounded-[2.5rem]',
+            'slice-tokens fixed left-[50%] top-[50%] z-101 w-[90%] max-w-md translate-x-[-50%] translate-y-[-50%] p-8 outline-none',
+            'bg-slice-bg font-[Outfit,sans-serif] rounded-[2.5rem]',
             'shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)]',
             'border border-slice-shadow-light/20',
           )}

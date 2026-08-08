@@ -117,7 +117,13 @@ export function SongTable({
   return (
     <div ref={scrollRef} className={cn('overflow-y-auto overflow-x-auto', className)}>
       <table className="w-full text-sm border-collapse">
-        <thead className="neumorphic-inset sticky top-0 z-10">
+        {/* `.neumorphic-chrome`, not `.neumorphic-inset`. The head is the one
+            surface here that stands ABOVE the list — inset is the pressed
+            recipe, so it was drawn as a well sunk into the rows it labels. The
+            chrome recipe also drops the radius and casts downward only, because
+            this element is pinned to a scroller's top edge and anything it threw
+            upward or sideways was clipped off in a straight line. */}
+        <thead className="neumorphic-chrome sticky top-0 z-10">
           <tr>
             {LIBRARY_TABLE_COLUMNS.map((col) => {
               const disabled = col.requiresAuth && !authed;
