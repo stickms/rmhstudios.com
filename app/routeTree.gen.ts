@@ -753,15 +753,6 @@ import { Route as ApiSearchSavedIdRouteImport } from './routes/api/search/saved.
 import { Route as ApiSliceItAdminContentRouteImport } from './routes/api/slice-it/admin/content'
 import { Route as ApiSliceItAdminReviewRouteImport } from './routes/api/slice-it/admin/review'
 import { Route as ApiSliceItAdminTakedownRouteImport } from './routes/api/slice-it/admin/takedown'
-import { Route as ApiSliceItAiCalibrationRouteImport } from './routes/api/slice-it/ai/calibration'
-import { Route as ApiSliceItAiChartBriefRouteImport } from './routes/api/slice-it/ai/chart-brief'
-import { Route as ApiSliceItAiCoachRouteImport } from './routes/api/slice-it/ai/coach'
-import { Route as ApiSliceItAiLoadoutRouteImport } from './routes/api/slice-it/ai/loadout'
-import { Route as ApiSliceItAiMatchRecapRouteImport } from './routes/api/slice-it/ai/match-recap'
-import { Route as ApiSliceItAiMetadataRouteImport } from './routes/api/slice-it/ai/metadata'
-import { Route as ApiSliceItAiRivalRouteImport } from './routes/api/slice-it/ai/rival'
-import { Route as ApiSliceItAiSearchRouteImport } from './routes/api/slice-it/ai/search'
-import { Route as ApiSliceItAiSetlistRouteImport } from './routes/api/slice-it/ai/setlist'
 import { Route as ApiSliceItChartsIdRouteImport } from './routes/api/slice-it/charts/$id'
 import { Route as ApiSliceItChartsRankingRouteImport } from './routes/api/slice-it/charts/ranking'
 import { Route as ApiSliceItDailyIndexRouteImport } from './routes/api/slice-it/daily/index'
@@ -4678,51 +4669,6 @@ const ApiSliceItAdminTakedownRoute = ApiSliceItAdminTakedownRouteImport.update({
   path: '/api/slice-it/admin/takedown',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiSliceItAiCalibrationRoute = ApiSliceItAiCalibrationRouteImport.update({
-  id: '/api/slice-it/ai/calibration',
-  path: '/api/slice-it/ai/calibration',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiSliceItAiChartBriefRoute = ApiSliceItAiChartBriefRouteImport.update({
-  id: '/api/slice-it/ai/chart-brief',
-  path: '/api/slice-it/ai/chart-brief',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiSliceItAiCoachRoute = ApiSliceItAiCoachRouteImport.update({
-  id: '/api/slice-it/ai/coach',
-  path: '/api/slice-it/ai/coach',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiSliceItAiLoadoutRoute = ApiSliceItAiLoadoutRouteImport.update({
-  id: '/api/slice-it/ai/loadout',
-  path: '/api/slice-it/ai/loadout',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiSliceItAiMatchRecapRoute = ApiSliceItAiMatchRecapRouteImport.update({
-  id: '/api/slice-it/ai/match-recap',
-  path: '/api/slice-it/ai/match-recap',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiSliceItAiMetadataRoute = ApiSliceItAiMetadataRouteImport.update({
-  id: '/api/slice-it/ai/metadata',
-  path: '/api/slice-it/ai/metadata',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiSliceItAiRivalRoute = ApiSliceItAiRivalRouteImport.update({
-  id: '/api/slice-it/ai/rival',
-  path: '/api/slice-it/ai/rival',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiSliceItAiSearchRoute = ApiSliceItAiSearchRouteImport.update({
-  id: '/api/slice-it/ai/search',
-  path: '/api/slice-it/ai/search',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiSliceItAiSetlistRoute = ApiSliceItAiSetlistRouteImport.update({
-  id: '/api/slice-it/ai/setlist',
-  path: '/api/slice-it/ai/setlist',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiSliceItChartsIdRoute = ApiSliceItChartsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -6075,15 +6021,6 @@ export interface FileRoutesByFullPath {
   '/api/slice-it/admin/content': typeof ApiSliceItAdminContentRoute
   '/api/slice-it/admin/review': typeof ApiSliceItAdminReviewRoute
   '/api/slice-it/admin/takedown': typeof ApiSliceItAdminTakedownRoute
-  '/api/slice-it/ai/calibration': typeof ApiSliceItAiCalibrationRoute
-  '/api/slice-it/ai/chart-brief': typeof ApiSliceItAiChartBriefRoute
-  '/api/slice-it/ai/coach': typeof ApiSliceItAiCoachRoute
-  '/api/slice-it/ai/loadout': typeof ApiSliceItAiLoadoutRoute
-  '/api/slice-it/ai/match-recap': typeof ApiSliceItAiMatchRecapRoute
-  '/api/slice-it/ai/metadata': typeof ApiSliceItAiMetadataRoute
-  '/api/slice-it/ai/rival': typeof ApiSliceItAiRivalRoute
-  '/api/slice-it/ai/search': typeof ApiSliceItAiSearchRoute
-  '/api/slice-it/ai/setlist': typeof ApiSliceItAiSetlistRoute
   '/api/slice-it/charts/$id': typeof ApiSliceItChartsIdRouteWithChildren
   '/api/slice-it/charts/ranking': typeof ApiSliceItChartsRankingRoute
   '/api/slice-it/daily/submit': typeof ApiSliceItDailySubmitRoute
@@ -6922,15 +6859,6 @@ export interface FileRoutesByTo {
   '/api/slice-it/admin/content': typeof ApiSliceItAdminContentRoute
   '/api/slice-it/admin/review': typeof ApiSliceItAdminReviewRoute
   '/api/slice-it/admin/takedown': typeof ApiSliceItAdminTakedownRoute
-  '/api/slice-it/ai/calibration': typeof ApiSliceItAiCalibrationRoute
-  '/api/slice-it/ai/chart-brief': typeof ApiSliceItAiChartBriefRoute
-  '/api/slice-it/ai/coach': typeof ApiSliceItAiCoachRoute
-  '/api/slice-it/ai/loadout': typeof ApiSliceItAiLoadoutRoute
-  '/api/slice-it/ai/match-recap': typeof ApiSliceItAiMatchRecapRoute
-  '/api/slice-it/ai/metadata': typeof ApiSliceItAiMetadataRoute
-  '/api/slice-it/ai/rival': typeof ApiSliceItAiRivalRoute
-  '/api/slice-it/ai/search': typeof ApiSliceItAiSearchRoute
-  '/api/slice-it/ai/setlist': typeof ApiSliceItAiSetlistRoute
   '/api/slice-it/charts/$id': typeof ApiSliceItChartsIdRouteWithChildren
   '/api/slice-it/charts/ranking': typeof ApiSliceItChartsRankingRoute
   '/api/slice-it/daily/submit': typeof ApiSliceItDailySubmitRoute
@@ -7795,15 +7723,6 @@ export interface FileRoutesById {
   '/api/slice-it/admin/content': typeof ApiSliceItAdminContentRoute
   '/api/slice-it/admin/review': typeof ApiSliceItAdminReviewRoute
   '/api/slice-it/admin/takedown': typeof ApiSliceItAdminTakedownRoute
-  '/api/slice-it/ai/calibration': typeof ApiSliceItAiCalibrationRoute
-  '/api/slice-it/ai/chart-brief': typeof ApiSliceItAiChartBriefRoute
-  '/api/slice-it/ai/coach': typeof ApiSliceItAiCoachRoute
-  '/api/slice-it/ai/loadout': typeof ApiSliceItAiLoadoutRoute
-  '/api/slice-it/ai/match-recap': typeof ApiSliceItAiMatchRecapRoute
-  '/api/slice-it/ai/metadata': typeof ApiSliceItAiMetadataRoute
-  '/api/slice-it/ai/rival': typeof ApiSliceItAiRivalRoute
-  '/api/slice-it/ai/search': typeof ApiSliceItAiSearchRoute
-  '/api/slice-it/ai/setlist': typeof ApiSliceItAiSetlistRoute
   '/api/slice-it/charts/$id': typeof ApiSliceItChartsIdRouteWithChildren
   '/api/slice-it/charts/ranking': typeof ApiSliceItChartsRankingRoute
   '/api/slice-it/daily/submit': typeof ApiSliceItDailySubmitRoute
@@ -8668,15 +8587,6 @@ export interface FileRouteTypes {
     | '/api/slice-it/admin/content'
     | '/api/slice-it/admin/review'
     | '/api/slice-it/admin/takedown'
-    | '/api/slice-it/ai/calibration'
-    | '/api/slice-it/ai/chart-brief'
-    | '/api/slice-it/ai/coach'
-    | '/api/slice-it/ai/loadout'
-    | '/api/slice-it/ai/match-recap'
-    | '/api/slice-it/ai/metadata'
-    | '/api/slice-it/ai/rival'
-    | '/api/slice-it/ai/search'
-    | '/api/slice-it/ai/setlist'
     | '/api/slice-it/charts/$id'
     | '/api/slice-it/charts/ranking'
     | '/api/slice-it/daily/submit'
@@ -9515,15 +9425,6 @@ export interface FileRouteTypes {
     | '/api/slice-it/admin/content'
     | '/api/slice-it/admin/review'
     | '/api/slice-it/admin/takedown'
-    | '/api/slice-it/ai/calibration'
-    | '/api/slice-it/ai/chart-brief'
-    | '/api/slice-it/ai/coach'
-    | '/api/slice-it/ai/loadout'
-    | '/api/slice-it/ai/match-recap'
-    | '/api/slice-it/ai/metadata'
-    | '/api/slice-it/ai/rival'
-    | '/api/slice-it/ai/search'
-    | '/api/slice-it/ai/setlist'
     | '/api/slice-it/charts/$id'
     | '/api/slice-it/charts/ranking'
     | '/api/slice-it/daily/submit'
@@ -10387,15 +10288,6 @@ export interface FileRouteTypes {
     | '/api/slice-it/admin/content'
     | '/api/slice-it/admin/review'
     | '/api/slice-it/admin/takedown'
-    | '/api/slice-it/ai/calibration'
-    | '/api/slice-it/ai/chart-brief'
-    | '/api/slice-it/ai/coach'
-    | '/api/slice-it/ai/loadout'
-    | '/api/slice-it/ai/match-recap'
-    | '/api/slice-it/ai/metadata'
-    | '/api/slice-it/ai/rival'
-    | '/api/slice-it/ai/search'
-    | '/api/slice-it/ai/setlist'
     | '/api/slice-it/charts/$id'
     | '/api/slice-it/charts/ranking'
     | '/api/slice-it/daily/submit'
@@ -10987,15 +10879,6 @@ export interface RootRouteChildren {
   ApiSliceItAdminContentRoute: typeof ApiSliceItAdminContentRoute
   ApiSliceItAdminReviewRoute: typeof ApiSliceItAdminReviewRoute
   ApiSliceItAdminTakedownRoute: typeof ApiSliceItAdminTakedownRoute
-  ApiSliceItAiCalibrationRoute: typeof ApiSliceItAiCalibrationRoute
-  ApiSliceItAiChartBriefRoute: typeof ApiSliceItAiChartBriefRoute
-  ApiSliceItAiCoachRoute: typeof ApiSliceItAiCoachRoute
-  ApiSliceItAiLoadoutRoute: typeof ApiSliceItAiLoadoutRoute
-  ApiSliceItAiMatchRecapRoute: typeof ApiSliceItAiMatchRecapRoute
-  ApiSliceItAiMetadataRoute: typeof ApiSliceItAiMetadataRoute
-  ApiSliceItAiRivalRoute: typeof ApiSliceItAiRivalRoute
-  ApiSliceItAiSearchRoute: typeof ApiSliceItAiSearchRoute
-  ApiSliceItAiSetlistRoute: typeof ApiSliceItAiSetlistRoute
   ApiSliceItDailySubmitRoute: typeof ApiSliceItDailySubmitRoute
   ApiSliceItPacksIdRoute: typeof ApiSliceItPacksIdRouteWithChildren
   ApiSliceItSetlistsIdRoute: typeof ApiSliceItSetlistsIdRoute
@@ -16263,69 +16146,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSliceItAdminTakedownRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/slice-it/ai/calibration': {
-      id: '/api/slice-it/ai/calibration'
-      path: '/api/slice-it/ai/calibration'
-      fullPath: '/api/slice-it/ai/calibration'
-      preLoaderRoute: typeof ApiSliceItAiCalibrationRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/slice-it/ai/chart-brief': {
-      id: '/api/slice-it/ai/chart-brief'
-      path: '/api/slice-it/ai/chart-brief'
-      fullPath: '/api/slice-it/ai/chart-brief'
-      preLoaderRoute: typeof ApiSliceItAiChartBriefRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/slice-it/ai/coach': {
-      id: '/api/slice-it/ai/coach'
-      path: '/api/slice-it/ai/coach'
-      fullPath: '/api/slice-it/ai/coach'
-      preLoaderRoute: typeof ApiSliceItAiCoachRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/slice-it/ai/loadout': {
-      id: '/api/slice-it/ai/loadout'
-      path: '/api/slice-it/ai/loadout'
-      fullPath: '/api/slice-it/ai/loadout'
-      preLoaderRoute: typeof ApiSliceItAiLoadoutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/slice-it/ai/match-recap': {
-      id: '/api/slice-it/ai/match-recap'
-      path: '/api/slice-it/ai/match-recap'
-      fullPath: '/api/slice-it/ai/match-recap'
-      preLoaderRoute: typeof ApiSliceItAiMatchRecapRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/slice-it/ai/metadata': {
-      id: '/api/slice-it/ai/metadata'
-      path: '/api/slice-it/ai/metadata'
-      fullPath: '/api/slice-it/ai/metadata'
-      preLoaderRoute: typeof ApiSliceItAiMetadataRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/slice-it/ai/rival': {
-      id: '/api/slice-it/ai/rival'
-      path: '/api/slice-it/ai/rival'
-      fullPath: '/api/slice-it/ai/rival'
-      preLoaderRoute: typeof ApiSliceItAiRivalRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/slice-it/ai/search': {
-      id: '/api/slice-it/ai/search'
-      path: '/api/slice-it/ai/search'
-      fullPath: '/api/slice-it/ai/search'
-      preLoaderRoute: typeof ApiSliceItAiSearchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/slice-it/ai/setlist': {
-      id: '/api/slice-it/ai/setlist'
-      path: '/api/slice-it/ai/setlist'
-      fullPath: '/api/slice-it/ai/setlist'
-      preLoaderRoute: typeof ApiSliceItAiSetlistRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/slice-it/charts/$id': {
       id: '/api/slice-it/charts/$id'
       path: '/$id'
@@ -19194,15 +19014,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSliceItAdminContentRoute: ApiSliceItAdminContentRoute,
   ApiSliceItAdminReviewRoute: ApiSliceItAdminReviewRoute,
   ApiSliceItAdminTakedownRoute: ApiSliceItAdminTakedownRoute,
-  ApiSliceItAiCalibrationRoute: ApiSliceItAiCalibrationRoute,
-  ApiSliceItAiChartBriefRoute: ApiSliceItAiChartBriefRoute,
-  ApiSliceItAiCoachRoute: ApiSliceItAiCoachRoute,
-  ApiSliceItAiLoadoutRoute: ApiSliceItAiLoadoutRoute,
-  ApiSliceItAiMatchRecapRoute: ApiSliceItAiMatchRecapRoute,
-  ApiSliceItAiMetadataRoute: ApiSliceItAiMetadataRoute,
-  ApiSliceItAiRivalRoute: ApiSliceItAiRivalRoute,
-  ApiSliceItAiSearchRoute: ApiSliceItAiSearchRoute,
-  ApiSliceItAiSetlistRoute: ApiSliceItAiSetlistRoute,
   ApiSliceItDailySubmitRoute: ApiSliceItDailySubmitRoute,
   ApiSliceItPacksIdRoute: ApiSliceItPacksIdRouteWithChildren,
   ApiSliceItSetlistsIdRoute: ApiSliceItSetlistsIdRoute,

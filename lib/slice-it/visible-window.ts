@@ -94,20 +94,28 @@ export function visibleSliceRange(
 }
 
 /**
- * The longest hold in a chart, cached on the chart object.
+ * The longest hold in a note list, cached on the list itself.
  *
  * It is what makes {@link maxBehindSeconds} correct, and scanning for it every
- * frame would undo the scan this module exists to avoid. Charts are immutable
- * once prepared, so identity is a safe cache key.
+ * frame would undo the scan this module exists to avoid. A prepared slice array
+ * is immutable and is rebuilt whenever anything about it could change — a new
+ * difficulty, a new modifier set, a fresh `loadMap` — so its identity is a safe
+ * cache key.
+ *
+ * Keyed on the ARRAY rather than on the owning chart, because those two do not
+ * track each other: one `BeatMap` prepares into a different array per difficulty
+ * and per modifier set, and the editor's playtest loop re-prepares the same map
+ * object every run. Keying on the map there would pin the first playtest's hold
+ * length for the rest of the session.
  */
 const holdCache = new WeakMap<object, number>();
-export function longestHoldSeconds(chart: object, slices: readonly TimedSlice[]): number {
-  const cached = holdCache.get(chart);
+export function longestHoldSeconds(slices: readonly TimedSlice[]): number {
+  const cached = holdCache.get(slices);
   if (cached !== undefined) return cached;
   let longest = 0;
   for (const slice of slices) {
     if (slice.duration && slice.duration > longest) longest = slice.duration;
   }
-  holdCache.set(chart, longest);
+  holdCache.set(slices, longest);
   return longest;
 }

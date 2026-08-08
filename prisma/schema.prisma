@@ -1177,11 +1177,20 @@ model SongComment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  /// AI triage verdict (`lib/slice-it/ai/moderation.server.ts`). Advisory only:
-  /// nothing here hides a comment or blocks a post, it only orders a queue for a
-  /// human. NULL means "not triaged" — an outage or an unconfigured key — which
-  /// must stay distinguishable from a triaged-and-clean `none`, or a provider
-  /// being down reads as a clean bill of health for everything posted during it.
+  /// ORPHANED — kept on purpose, pending a contract migration.
+  ///
+  /// These four held the Slice It AI triage verdict. That feature is gone and
+  /// nothing reads or writes them any more, but the columns stay because
+  /// production deploys blue/green: during the swap the OLD image is still
+  /// serving, and its Prisma client still names these columns in its SELECT
+  /// list for this table. Dropping them in the same deploy that removes the
+  /// code makes every comment read fail until the swap finishes, and a
+  /// rollback cannot bring the rows back.
+  ///
+  /// So this is the expand/contract split, and this is the expand half: the
+  /// code stopped reading them here, and a later migration drops them once no
+  /// running image remembers they existed. `scripts/check-migration-safety.ts`
+  /// is what insists on that order, and it is right to.
   aiSeverity   String?   @db.VarChar(16)
   aiCategories String[]
   aiRationale  String?   @db.VarChar(200)
@@ -1193,10 +1202,7 @@ model SongComment {
   // The song comment list is `where songId orderBy createdAt desc` and this model
   // carried no index at all, so every song page scanned and sorted the whole table.
   @@index([songId, createdAt(sort: Desc)])
-  /// The moderation queue: `where aiSeverity in (...) order by createdAt desc`.
-  /// Leading on the low-cardinality column is correct here because the queue
-  /// always filters on it first, and NULL (untriaged) is itself one of the
-  /// buckets an operator needs to list.
+  /// Goes with the orphaned columns above, and leaves in the same migration.
   @@index([aiSeverity, createdAt(sort: Desc)])
 }
 

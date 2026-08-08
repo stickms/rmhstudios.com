@@ -148,6 +148,17 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   // pnpm i18n:resources` has been run and the catalogs committed.
   'c-ui': ['move-down', 'move-up'],
   feed: [
+    // ── Explore's Library and Games & Apps discovery (2026-08-08) ────────
+    // Section headings for the two Explore tabs that had no discovery content
+    // and fell back to the Top mix. English-only until `pnpm i18n:translate &&
+    // pnpm i18n:resources` runs — the pipeline needs DEEPSEEK_API_KEY, which is
+    // not available in this environment. Runtime falls back to English per key.
+    'apps-heading',
+    'games-heading',
+    'library-book',
+    'library-heading',
+    'search-library-hint',
+    'see-all',
     // ── The Next 100 (2026-08-05) ────────────────────────────────────────
     // Resume-rail strings (B2). English-only until the DeepSeek translate
     // pipeline runs; the runtime falls back to English per key.
@@ -330,6 +341,10 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'settings-premium-themes-or',
   ],
   site: [
+    // The accessible name of the Games ⇄ Apps catalog strip (2026-08-08). Same
+    // pipeline caveat as the `feed` block above — English-only until
+    // `pnpm i18n:translate && pnpm i18n:resources` runs.
+    'catalog-tabs-aria-label',
     // 2026-07-28 UI audit fixes; see the note below.
     'get-started-free',
     'ladder-awaiting-first-run',

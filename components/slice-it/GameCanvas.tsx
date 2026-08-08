@@ -13,7 +13,6 @@ import { requestScreenWakeLock } from '@/lib/shared/platform';
 import { useSliceItStore, approachSeconds, reactionWindowMs } from '@/lib/slice-it/store';
 import { visibilityAlpha } from '@/lib/slice-it/modifiers';
 import { AudioManager } from '@/lib/audio/AudioManager';
-import type { Slice } from '@/lib/slice-it/types';
 import { longestHoldSeconds, visibleSliceRange } from '@/lib/slice-it/visible-window';
 import { HUD } from './HUD';
 import { GameOver } from './GameOver';
@@ -73,17 +72,16 @@ function interpolateHex(hex1: string, hex2: string, ratio: number): string {
 /**
  * M1 — Mirror, applied at the render/input boundary rather than to the chart.
  *
- * `render` below draws directly from `map.slices` (`engine.getActiveMap()`),
- * a different array from the one `GameEngine.loadMap` judges against
- * (`prepareChart` copies it) — see `chart.ts`'s `applyMirror` for why
- * rewriting the judged copy isn't reachable this wave, and for the reference
- * transform this is the visual equivalent of. Flipping BOTH what a note is
- * drawn at (`mirrorLane` applied to `slice.lane` in `render`) and which
- * engine lane a keypress targets (`mirrorLane` applied in `handleInput`) is
- * the same involution applied twice, so composing them reproduces exactly
- * what swapping the chart itself would look like: a note that started life
- * in lane 0 is drawn in, and only hittable from, the visual position for
- * lane 1.
+ * `render` below draws the engine's own prepared slices (`engine.getSlices()`),
+ * which `prepareChart` deliberately leaves un-mirrored — see `chart.ts`'s
+ * `applyMirror` for why rewriting the judged chart isn't reachable this wave,
+ * and for the reference transform this is the visual equivalent of. Flipping
+ * BOTH what a note is drawn at (`mirrorLane` applied to `slice.lane` in
+ * `render`) and which engine lane a keypress targets (`mirrorLane` applied in
+ * `handleInput`) is the same involution applied twice, so composing them
+ * reproduces exactly what swapping the chart itself would look like: a note
+ * that started life in lane 0 is drawn in, and only hittable from, the visual
+ * position for lane 1.
  *
  * A no-op under One Track — there is only one lane to mirror into, and
  * mirroring it anyway would send every keypress to a lane nothing is ever
@@ -776,9 +774,10 @@ export function GameCanvas() {
     setCanSkipLeadIn(false);
     if (isMultiplayer || status !== 'PLAYING' || !engine) return;
 
-    const map = engine.getActiveMap();
-    const slices = map?.slices;
-    const first = Array.isArray(slices) ? slices[0] : undefined;
+    // The engine's prepared slices, for the same reason `render` uses them: on
+    // a per-difficulty chart `map.slices` is a record, `Array.isArray` is false,
+    // and this quietly decided every song had no lead-in to skip.
+    const first = engine.getSlices()[0];
     const leadIn = first?.time ?? 0;
     if (leadIn <= SKIPPABLE_LEAD_IN_SEC) return;
 
@@ -798,9 +797,7 @@ export function GameCanvas() {
 
   const skipLeadIn = useCallback(() => {
     if (!engine) return;
-    const map = engine.getActiveMap();
-    const slices = map?.slices;
-    const first = Array.isArray(slices) ? slices[0] : undefined;
+    const first = engine.getSlices()[0];
     if (!first) return;
     engine.seek(Math.max(0, first.time - SKIP_TARGET_LEAD_SEC));
     setCanSkipLeadIn(false);
@@ -1221,6 +1218,36 @@ export function GameCanvas() {
       const targeted0 = engine.getTargetedSlice(0)?.id;
       const targeted1 = engine.getTargetedSlice(1)?.id;
 
+      // ── What gets drawn ───────────────────────────────────────────────────
+      //
+      // The ENGINE's slices, not `map.slices`. This used to be
+      // `map.slices as Slice[]`, and that cast was a lie in three ways:
+      //
+      //  1. `BeatMap.slices` is `Slice[] | Record<Difficulty, Slice[]>`. For
+      //     every chart stored in the record form — which is every chart the
+      //     current charter writes, and every response `trimToDifficulty`
+      //     touches (`O7` keys its trim by difficulty) — the cast handed a
+      //     plain OBJECT to the binary search below. `slices.length` is then
+      //     `undefined`, `lowerBoundByTime` returns 0 for both bounds, and the
+      //     loop draws NOTHING. The engine meanwhile resolved the chart
+      //     correctly and went on judging it, so the song played, the audio
+      //     ran and the misses counted while the playfield stayed empty.
+      //  2. `prepareChart` hands back fresh copies (`{...slice}`), so the
+      //     objects in `map.slices` are never the ones the engine marks `hit`.
+      //     The hit fade and the held-LONG clamp below read a flag that could
+      //     not change.
+      //  3. Modifiers ADD notes — `applyChartModifiers` converts taps to bombs
+      //     and switches. Those exist only in the prepared array, so a bomb the
+      //     engine would punish you for hitting was never drawn.
+      //
+      // `getSlices()` is the array `loadMap` prepared and the array the engine
+      // judges: difficulty already resolved, modifiers already applied, and the
+      // same object identities it mutates. Draw what is being judged.
+      //
+      // Mirror is unaffected: `prepareChart` deliberately does not apply it
+      // (see `applyMirror`'s note), so these lanes are raw and `mirrorLane`
+      // below is still the whole of M1.
+      //
       // ── Visible window ────────────────────────────────────────────────────
       //
       // The loop below walked EVERY note in the chart on EVERY frame and let
@@ -1228,19 +1255,19 @@ export function GameCanvas() {
       // ~120 000 scroll-position computations a second to draw the twenty that
       // are actually on screen — paid on the weakest device running the game.
       //
-      // `slices` is sorted by time (`charter.ts` sorts it, `prepareChart`
-      // preserves the order), so the visible span is a contiguous range and
-      // binary search finds it. The bounds come from the same thresholds the
-      // per-note cull uses, widened by the longest hold in the chart and a
-      // second of slack — a note wrongly skipped is a note that does not
-      // render, so the window errs outward and the per-note culls still decide.
-      const slices = map.slices as Slice[];
+      // `slices` is sorted by time (`loadMap` sorts the prepared array), so the
+      // visible span is a contiguous range and binary search finds it. The
+      // bounds come from the same thresholds the per-note cull uses, widened by
+      // the longest hold in the chart and a second of slack — a note wrongly
+      // skipped is a note that does not render, so the window errs outward and
+      // the per-note culls still decide.
+      const slices = engine.getSlices();
       const { from, to } = visibleSliceRange(slices, currentTime, {
         pixelsPerSecond: PPS,
         axisLength: isMobileV ? h : w,
         cursorPosition: CURSOR_MAIN,
         vertical: isMobileV,
-        longestHold: longestHoldSeconds(map, slices),
+        longestHold: longestHoldSeconds(slices),
       });
 
       for (let si = from; si < to; si++) {

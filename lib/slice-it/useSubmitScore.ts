@@ -20,7 +20,7 @@ import { RANKED_MIN_SPEED } from './constants';
 import type { GameEngine } from './engine';
 import { useSliceItStore } from './store';
 import type { Modifiers } from './types';
-import { MIN_TIMING_SAMPLES, type TimingSummary } from './integrity';
+import { type TimingSummary } from './integrity';
 import type { SliceItReplay } from '@/lib/game/replay';
 
 export interface SubmitResult {
@@ -169,20 +169,6 @@ export function useSubmitScore(run: RunSummary | null): SubmitResult {
 
     const key = `${run.songId}:${run.score}:${run.multiplayer}`;
     const isNewRun = submittedKey.current !== key;
-
-    // Recorded before the unranked check, and for every run: a slowed-down run
-    // still measures this device's audio latency perfectly well, and the whole
-    // point of a local timing history is to have enough samples to pool. It is
-    // the leaderboard that cares about speed, not the calibration advisor.
-    if (isNewRun && run.timing && run.timing.samples >= MIN_TIMING_SAMPLES) {
-      useSliceItStore.getState().recordTiming({
-        songTitle: run.songTitle || 'a run',
-        durationSec: run.durationSec ?? 0,
-        accuracy: run.accuracy,
-        timing: run.timing,
-        at: Date.now(),
-      });
-    }
 
     // Below 1.0x is unranked, which the server also enforces — checked here too
     // so an unranked run does not spend a rate-limit slot to be told so.
