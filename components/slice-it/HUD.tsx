@@ -146,38 +146,47 @@ export function HUD({ engine }: HUDProps) {
       {/* Score + Speed row */}
       <div className="flex justify-between items-start relative px-1">
         <div className="flex flex-col gap-2 items-start">
+          {/* The grade rides with the score rather than with the accuracy.
+              It is the headline the player glances at, so it belongs on the
+              raised card beside the number it summarises — and moving it up
+              here is what lets the accuracy row below collapse to a single
+              line, which is a line of height the progress bar was being pushed
+              down by. */}
           <div className="bg-slice-bg shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] rounded-2xl px-4 py-2">
             <div className="text-[10px] sm:text-xs text-slice-text-muted uppercase tracking-wider font-bold leading-none mb-1">
               {t('score', { defaultValue: 'Score' })}
             </div>
-            <div className="text-xl sm:text-2xl font-bold text-slice-text leading-tight">
-              {score.toLocaleString()}
+            <div className="flex items-baseline gap-2.5">
+              <span className="text-xl sm:text-2xl font-bold text-slice-text leading-tight tabular-nums">
+                {score.toLocaleString()}
+              </span>
+              {engine && (
+                <span className="text-lg sm:text-xl font-black text-slice-text-darker soft-glow-text leading-tight">
+                  {grade}
+                </span>
+              )}
             </div>
           </div>
 
-          {/* Live accuracy, live grade, and what it costs to keep the next one.
-              The engine has tracked accuracy continuously since it existed and
-              the grade is defined purely by it, so a player used to find out
-              which grade they were on course for at the results screen. */}
+          {/* Live accuracy and what it costs to keep the next grade.
+              One row from `sm` up and wrapping to two below it, so a 320px
+              phone never has to choose between the number and the hint. */}
           {engine && (
-            <div className="bg-slice-bg shadow-[inset_4px_4px_8px_var(--slice-shadow-dark),inset_-4px_-4px_8px_var(--slice-shadow-light)] rounded-2xl px-3 py-1.5 min-w-28">
-              <div className="flex items-baseline gap-2">
+            <div className="bg-slice-bg shadow-[inset_4px_4px_8px_var(--slice-shadow-dark),inset_-4px_-4px_8px_var(--slice-shadow-light)] rounded-2xl px-3 py-1.5 min-w-28 max-w-[60vw]">
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                 <span className="font-mono text-sm sm:text-base font-bold text-slice-text tabular-nums">
                   {(sample.accuracy * 100).toFixed(2)}%
                 </span>
-                <span className="text-base sm:text-lg font-black text-slice-text-darker soft-glow-text ml-auto">
-                  {grade}
-                </span>
+                {next && missesLeft !== null && (
+                  <span className="text-[9px] sm:text-[10px] text-slice-text-light font-bold uppercase tracking-wider leading-tight">
+                    {ts('misses-for-grade', {
+                      defaultValue: '{{n}} misses left for {{grade}}',
+                      n: missesLeft,
+                      grade: next.grade,
+                    })}
+                  </span>
+                )}
               </div>
-              {next && missesLeft !== null && (
-                <div className="text-[9px] sm:text-[10px] text-slice-text-light font-bold uppercase tracking-wider leading-tight">
-                  {ts('misses-for-grade', {
-                    defaultValue: '{{n}} misses left for {{grade}}',
-                    n: missesLeft,
-                    grade: next.grade,
-                  })}
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -259,10 +268,17 @@ export function HUD({ engine }: HUDProps) {
         </div>
       )}
 
-      {/* Song progress bar — bottom of HUD */}
+      {/* Song progress bar.
+          A normal child of the HUD column, not `absolute bottom-0
+          translate-y-full`. Hanging it a full bar-height BELOW a box whose
+          height grows with the score stack meant every extra line up there —
+          the accuracy card, the misses hint, the health gauge — pushed the bar
+          further down, and at full height it landed on top of the first lane
+          and clipped the notes travelling along it. Inline, it sits inside the
+          HUD's own padding and the lane below stays clear. */}
       {duration > 0 && (
-        <div className="absolute bottom-0 left-0 right-0 translate-y-full pt-2 px-4 pointer-events-none">
-          <div className="flex items-center gap-3">
+        <div className="px-1 pointer-events-none">
+          <div className="flex items-center gap-2 sm:gap-3">
             <span className="text-xs font-bold text-slice-text-muted w-10 text-right shrink-0">
               {fmt(elapsed)}
             </span>

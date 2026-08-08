@@ -820,7 +820,18 @@ export function GameCanvas() {
         // live — and the `update()` call was duplicated below it, so everything
         // in the engine that accumulates over time ran twice per frame.
         newEngine.update();
-        render(ctx, newEngine, keybindsRef.current);
+
+        // Nothing to draw behind an opaque menu. `MainMenu` is
+        // `absolute inset-0 bg-slice-bg` over this canvas, so every frame drawn
+        // in `MENU` was a full playfield repaint — lanes, receptors, the whole
+        // note sweep — composited and then completely covered. It was already
+        // waste; now that the stage fills the viewport outside a run it would
+        // be a full-screen waste at device DPR, on the menu, forever. `update()`
+        // still runs (it early-returns on status itself) so nothing about the
+        // engine's lifecycle changes.
+        if (useSliceItStore.getState().status !== 'MENU') {
+          render(ctx, newEngine, keybindsRef.current);
+        }
       } catch (e: any) {
         console.error('GameCanvas Render Error:', e);
         setDebugInfo((prev) => ({ ...prev, error: e.message || 'Unknown Error' }));
@@ -2499,6 +2510,15 @@ export function GameCanvas() {
     return reactionWindowMs(approach, laneCoverHeight);
   })();
 
+  /**
+   * Is the playfield the thing on screen?
+   *
+   * `FINISHED` counts: the results screen is drawn over a still playfield, and
+   * unlocking the ratio underneath it would resize the canvas at the exact
+   * moment the player is reading their score off it.
+   */
+  const lockAspect = status === 'PLAYING' || status === 'FINISHED';
+
   return (
     // Column below `lg` so the opponent board can sit as a strip ABOVE the
     // playfield; a row above it so the board is the familiar right-hand column.
@@ -2524,16 +2544,36 @@ export function GameCanvas() {
           playfield and the whole menu inside it to zero on any landscape phone.
           In row mode `flex-1`'s `flex-basis: 0%` wins over `width`, so this is
           inert there. */}
+      {/* The 16:9 lock is a FAIRNESS constraint on the playfield, and it now
+          applies to the playfield only.
+          Every screen in this game used to live inside the aspect-locked stage,
+          so the menu, the library, the lobby and the results were letterboxed
+          along with it — a floating island in a mat of dead space, and on a
+          landscape phone an 852px viewport laid the menu out in 530px, which is
+          what pushed its header into overflowing. None of those screens is a
+          playfield and none of them can be cheated by having more room, so
+          outside a run the stage fills its container: no ratio, no mat, no
+          border, no radius. Inside a run every one of those comes back, because
+          seeing further up the lane than an opponent is exactly the advantage
+          the lock exists to deny. */}
       <div
-        className={`w-full min-w-0 flex-1 bg-slice-shadow-dark/30 ${
-          isPortrait
-            ? 'flex items-center justify-center p-1'
-            : 'app-stage-fit mx-auto max-w-[1400px] p-4'
+        className={`w-full min-w-0 flex-1 ${
+          !lockAspect
+            ? ''
+            : isPortrait
+              ? 'bg-slice-shadow-dark/30 flex items-center justify-center p-1'
+              : 'bg-slice-shadow-dark/30 app-stage-fit mx-auto max-w-[1400px] p-4'
         }`}
       >
         <div
           ref={wrapperRef}
-          className={`relative bg-slice-bg overflow-hidden border-4 border-slice-shadow-light/40 shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] ${isPortrait ? 'h-full w-full rounded-2xl' : 'app-stage rounded-[2rem]'}`}
+          className={`relative bg-slice-bg overflow-hidden ${
+            !lockAspect
+              ? 'h-full w-full'
+              : `border-4 border-slice-shadow-light/40 shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] ${
+                  isPortrait ? 'h-full w-full rounded-2xl' : 'app-stage rounded-[2rem]'
+                }`
+          }`}
         >
           <canvas ref={canvasRef} className="w-full h-full cursor-pointer block" />
 
