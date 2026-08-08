@@ -560,33 +560,12 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 
-  /* Slice It Game UI - Light Mode Variables */
-  --slice-bg: #e0e5ec;
-  --slice-text: #334155;
-  /* slate-700 */
-  --slice-text-darker: #475569;
-  /* slate-600 */
-  --slice-text-muted: #64748b;
-  /* slate-500 */
-  --slice-text-light: #94a3b8;
-  /* slate-400 */
-
-  --slice-shadow-dark: #a3b1c6;
-  --slice-shadow-light: #ffffff;
-  --slice-card-bg: #e0e5ec;
-}
-
-.dark {
-  /* Slice It Game UI - Dark Mode Variables */
-  --slice-bg: #16161a;
-  --slice-text: #f0f0f0;
-  --slice-text-darker: #e4e4e7;
-  --slice-text-muted: #a1a1aa;
-  --slice-text-light: #71717a;
-
-  --slice-shadow-dark: #0b0b0d;
-  --slice-shadow-light: #222228;
-  --slice-card-bg: #1e1e24;
+  /* Slice It's palette is NOT here. It lives on `.slice-theme` in
+     `components/slice-it/slice-it.css`, which is the only definition.
+     There used to be a second copy in this file, on `:root` and `.dark`, and
+     the two had already drifted — different `--slice-text`, a `--slice-shadow-light`
+     that stayed opaque white after the scoped one was softened. A token with two
+     homes is a token whose value depends on which selector happens to win. */
 }
 
 /* ==================== SITE STYLE THEMES ==================== */

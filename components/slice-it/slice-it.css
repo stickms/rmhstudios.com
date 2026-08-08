@@ -1,5 +1,28 @@
 @layer base {
-  .slice-theme {
+  /*
+   * `html[data-app-dark='0'] .slice-theme` repeats this block at a higher
+   * specificity than `.slice-theme.dark`, and that is the whole point.
+   *
+   * The game's light/dark toggle lives in a persisted zustand store, so the
+   * SERVER cannot know it: SSR renders `DarkModeWrapper` with the store default
+   * (dark) and hydration corrects it a beat later. The pre-paint script in
+   * `__root.tsx` DOES know it — it already reads that store to pick the root
+   * background — and publishes the answer as `data-app-dark` before first paint.
+   * Keying the tokens off the attribute as well as the class means the two never
+   * disagree: a player who chose light gets light in the very first frame
+   * instead of a dark one that flips.
+   *
+   * It also fixes the routes with no `DarkModeWrapper` at all (the chart editor,
+   * the player page): they inherit their tokens from the layout wrapper in
+   * `app/routes/slice-it.tsx`, which never carried `dark`, so they rendered
+   * light for a dark-mode player permanently — not for a frame.
+   *
+   * With no attribute (script blocked, or the Discord Activity, which ships a
+   * minimal head with no inline script) nothing matches and the class alone
+   * decides, exactly as before.
+   */
+  .slice-theme,
+  html[data-app-dark='0'] .slice-theme {
     --slice-bg: #e0e5ec;
     --slice-text: #4a5568;
     /*
@@ -28,6 +51,13 @@
     --slice-lane-top: #3b82f6;
     --slice-lane-bottom: #f472b6;
     --slice-text-muted: #64748b;
+    /* Both of these used to come from the duplicate block in `globals.css` —
+       the light theme here never declared them, so removing that copy would
+       have left them undefined. Declared now, so this block is complete. */
+    --slice-text-light: #94a3b8;
+    /* A card is the same ground as the page in light mode: the material's
+       depth comes from the shadow pair, not from a fill that differs. */
+    --slice-card-bg: #e0e5ec;
     --slice-text-shadow: rgba(0, 0, 0, 0.3);
     --slice-hold-trail: rgba(30, 30, 50, 0.65);
     --slice-text-darker: #2d3748;
@@ -47,16 +77,20 @@
   }
 
   /*
-   * Two selectors, two sources of "dark".
+   * Three selectors, three sources of "dark".
    *
    * `.dark .slice-theme` is the site theme, inherited from <html>.
    * `.slice-theme.dark` is the game's own toggle, which `DarkModeWrapper` puts
    * on its wrapper — it used to write to <html> instead, overriding the
    * player's site-wide theme for as long as the game was open and clearing it
    * on the way out.
+   * `html[data-app-dark='1'] .slice-theme` is that same toggle as the pre-paint
+   * script read it, which is the only one of the three that exists before
+   * hydration — see the note on the light block above.
    */
   .dark .slice-theme,
-  .slice-theme.dark {
+  .slice-theme.dark,
+  html[data-app-dark='1'] .slice-theme {
     --slice-bg: #16161a;
     --slice-text: #f0f0f0;
     --slice-text-darker: #ffffff;

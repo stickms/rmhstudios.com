@@ -6,7 +6,6 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import {
   Heart,
-  History,
   Image as ImageIcon,
   Layers,
   LayoutGrid,
@@ -21,6 +20,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
 import {
@@ -136,8 +136,6 @@ interface SongLibraryProps {
  *   navigation is a smaller version of the same bug. They are now
  *   `/slice-it/`'s validated search params (`lib/slice-it/library-filters.ts`),
  *   so a shared link, a refresh, or the back button all land on the same view.
- * - **A recently-played shelf (L17).** Reads the `SongPlay` rows that were
- *   already written on every play and never read back as a list.
  * - **A random/roulette pick (S9).** Constrained by duration range, unplayed,
  *   or liked-only; picked server-side via `random=1` on the same route.
  */
@@ -336,63 +334,15 @@ export function SongLibrary({
     [artistFacet, filters.artist],
   );
 
-  /* ── Recently played shelf (L17) ────────────────────────────────────────── */
-
-  const [recentSongs, setRecentSongs] = React.useState<LibrarySong[]>([]);
-  /**
-   * Whether the shelf request is still out — the same reservation the artist
-   * facet needs, and for the same reason.
+  /* ── Recently played shelf (L17) — removed ───────────────────────────────
    *
-   * Measured: mounting this band only once its rows arrived shifted everything
-   * below it by the shelf's full height, for a CLS of 0.156 on a phone. It is
-   * the larger half of the load flicker and it only appears when SIGNED IN,
-   * which is why a signed-out pass reports a clean zero and proves nothing.
-   * Starts false so a signed-out visitor — who never fetches — reserves nothing.
+   * Dropped as not useful: it repeated the top of a list already sorted by
+   * recency, cost a request on every signed-in load, and took a band of height
+   * from the browsing surface underneath it on exactly the screens with least
+   * of it. The `shelf=recent` branch of `/api/slice-it/songs` is left in place —
+   * it is a generic query with its own tests, and a future "resume where you
+   * left off" is the shape that would actually use it.
    */
-  const [recentLoading, setRecentLoading] = React.useState(false);
-
-  // The id, not the session object: Better Auth hands back a fresh object on
-  // unrelated refreshes, and re-fetching a twelve-row shelf on every one of
-  // those is wasted work. Reading the id here rather than inside the effect is
-  // what lets the dependency array say what the effect actually depends on.
-  const sessionUserId = session?.user?.id;
-
-  React.useEffect(() => {
-    if (!sessionUserId) {
-      setRecentSongs([]);
-      setRecentLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setRecentLoading(true);
-    fetch('/api/slice-it/songs?shelf=recent')
-      .then((response) => (response.ok ? response.json() : Promise.reject(new Error())))
-      .then((data: { songs: LibrarySong[] }) => {
-        if (!cancelled) setRecentSongs(data.songs);
-      })
-      .catch(() => {
-        if (!cancelled) setRecentSongs([]);
-      })
-      .finally(() => {
-        if (!cancelled) setRecentLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [sessionUserId]);
-
-  /**
-   * The shelf band is present while the request is out, so its height is
-   * settled on the first paint a signed-in player sees. It disappears only if
-   * the answer is genuinely "nothing played yet" — a one-off collapse on an
-   * empty history, not a push-down on every load.
-   */
-  const showRecentShelf =
-    !readOnly &&
-    session &&
-    filters.view === 'grid' &&
-    !filters.q &&
-    (recentSongs.length > 0 || recentLoading);
 
   /* ── Random / roulette (S9) ─────────────────────────────────────────────── */
 
@@ -631,10 +581,19 @@ export function SongLibrary({
         </div>
 
         {filters.view === 'grid' && (
-          <select
+          /* The shared `Select`, on its new `slice` tier — not a bare
+             `<select>`. A native one renders the OS's own dropdown: unstyled,
+             unanimated, and in the platform's palette rather than the game's,
+             which is the one control on this row that looked like it belonged
+             to a different application. The tier portals its popup inside
+             `.slice-theme` so the neumorphic tokens resolve; see
+             `ui/select.tsx`. */
+          <Select
+            tier="slice"
             value={filters.sort}
             onChange={(e) => setFilters({ sort: e.target.value as SongSort, dir: undefined })}
-            className="h-9 pointer-coarse:h-11 shrink-0 max-w-28 rounded-lg bg-slice-card-bg border border-slice-shadow-dark/50 text-xs font-bold text-slice-text px-2"
+            className="h-9 pointer-coarse:h-11 text-xs font-bold"
+            containerClassName="shrink-0 w-32"
             aria-label={t('sort-by', { defaultValue: 'Sort by' })}
           >
             {SONG_SORTS.map((option) => (
@@ -642,7 +601,7 @@ export function SongLibrary({
                 {sortLabel(option, t)}
               </option>
             ))}
-          </select>
+          </Select>
         )}
 
         {/* L13 — grid/table view toggle. `LiquidTabs` (not a hand-rolled
@@ -752,54 +711,7 @@ export function SongLibrary({
         )}
       </div>
 
-      {showRecentShelf && (
-        <div className="shrink-0 border-b border-slice-shadow-dark/50 p-3">
-          <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-slice-text-light mb-2">
-            <History className="w-3 h-3" aria-hidden />
-            {ts('recently-played', { defaultValue: 'Recently played' })}
-          </div>
-          <div className="flex gap-3 overflow-x-auto scroll-fade-x pb-1">
-            {recentLoading &&
-              recentSongs.length === 0 &&
-              Array.from({ length: 6 }, (_, i) => (
-                <div key={`skeleton-${i}`} className="shrink-0 w-24 space-y-1.5" aria-hidden>
-                  <div className="slice-skeleton aspect-square w-24 rounded-xl" />
-                  <div className="slice-skeleton h-3 w-20" />
-                  <div className="slice-skeleton h-2.5 w-10" />
-                </div>
-              ))}
-            {recentSongs.map((song) => (
-              <button
-                key={song.id}
-                type="button"
-                onClick={() => onHighlight(song)}
-                className="neumorphic-sm shrink-0 w-24 p-1.5 text-left touch-target"
-              >
-                <div className="w-full aspect-square rounded-md bg-slice-shadow-dark overflow-hidden relative mb-1">
-                  {song.coverUrl ? (
-                    <img
-                      src={song.coverUrl}
-                      alt=""
-                      loading="lazy"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="absolute inset-0 flex items-center justify-center text-slice-text-muted font-bold text-xs">
-                      {song.title.charAt(0)}
-                    </span>
-                  )}
-                </div>
-                <div className="text-[11px] font-bold text-slice-text truncate">{song.title}</div>
-                {song.lastPlayedAt && (
-                  <div className="text-[10px] text-slice-text-light truncate">
-                    {timeAgoShort(song.lastPlayedAt)}
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+
 
       {/* L15 — the artist facet. Hidden while a search is running: chips are a
           way to browse, and a query is a statement that you already know what

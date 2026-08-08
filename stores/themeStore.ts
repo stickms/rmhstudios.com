@@ -30,6 +30,38 @@ export type SiteStyle = (typeof SITE_STYLES)[number]['id'];
 export const APP_THEME_BG = '#0b0b0b';
 
 /**
+ * Games whose own palette is NOT the near-black `APP_THEME_BG` ground.
+ *
+ * The pre-paint script paints `APP_THEME_BG` for every excluded route, which is
+ * right for a game that is dark and wrong for one that is not: Slice It's light
+ * theme is `#e0e5ec`, so opening it painted the document near-black and then
+ * flipped to near-white as soon as `.slice-theme` resolved. A full-screen
+ * black-to-white flash on every load.
+ *
+ * Keyed by route prefix. Each entry names the game's own persisted preference so
+ * the script can pre-paint the SAME colour the game is about to use:
+ *
+ * - `key` — the localStorage key the game persists under.
+ * - `darkFlag` — the boolean inside that JSON (zustand `persist` nests it under
+ *   `state`) which is true when the game is in its dark theme.
+ * - `dark` / `light` — the two grounds, mirroring `slice-it.css`.
+ *
+ * A game with no entry keeps `APP_THEME_BG`, which is the correct default for
+ * the dark `--app-*` tier that most of them use.
+ */
+export const APP_ROUTE_THEME_BG: Record<
+  string,
+  { key: string; darkFlag: string; dark: string; light: string }
+> = {
+  '/slice-it': {
+    key: 'slice-it-storage',
+    darkFlag: 'isDarkMode',
+    dark: '#16161a',
+    light: '#e0e5ec',
+  },
+};
+
+/**
  * Theme → document background color, derived from SITE_STYLES. Used to paint the
  * document synchronously (before CSS resolves) so there is no flash, and — off
  * iOS — to tint the browser's own chrome via `<meta name="theme-color">`.

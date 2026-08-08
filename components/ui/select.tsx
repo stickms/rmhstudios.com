@@ -57,8 +57,16 @@ import { cn } from '@/lib/utils';
  * `.app-theme` shell element, not on `:root`, so a popup portalled to `<body>`
  * would resolve every one of those variables to nothing. It portals into the
  * shell instead — which also keeps the `data-app-theme` appearance variant.
+ *
+ * `slice` is Slice It's neumorphic tier and portals for the same reason:
+ * `--slice-*` is scoped to `.slice-theme`, so a popup on `<body>` would render
+ * with none of the game's palette. Its own tier rather than a `className`
+ * override at the call site because a select is a TRIGGER PLUS A POPUP and the
+ * popup is not in the caller's tree — there is nowhere for a class to reach it
+ * from. Material, not colour: this tier's rows and panel are the raised/inset
+ * shadow pair, which no amount of token swapping on the site tier produces.
  */
-export type SelectTier = 'site' | 'app';
+export type SelectTier = 'site' | 'app' | 'slice';
 
 /**
  * Stands in for `''`, which Radix will not accept as an item value. Long and
@@ -188,6 +196,20 @@ const TIER_CLASSES = {
     scrollButton: 'text-site-text-dim',
     chevron: 'text-site-text-dim',
   },
+  slice: {
+    // Inset trigger — the neumorphic rule is that a value you read out of a
+    // control is recessed, and the thing you press is raised.
+    trigger:
+      'rounded-xl border-0 bg-(--slice-bg) text-(--slice-text) text-sm shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] focus-visible:ring-2 focus-visible:ring-(--slice-primary)',
+    // The popup is a raised panel sitting above the surface, so it takes the
+    // outward pair — the mirror of the trigger it came out of.
+    content:
+      'rounded-2xl border-0 bg-(--slice-bg) text-(--slice-text) shadow-[6px_6px_14px_var(--slice-shadow-dark),-6px_-6px_14px_var(--slice-shadow-light)]',
+    item: 'rounded-lg text-sm text-(--slice-text) data-[highlighted]:bg-(--slice-shadow-dark)/30 data-[state=checked]:text-(--slice-primary) data-[state=checked]:font-bold',
+    label: 'text-(--slice-text-light)',
+    scrollButton: 'text-(--slice-text-muted)',
+    chevron: 'text-(--slice-text-muted)',
+  },
   app: {
     trigger:
       'rounded-[var(--app-radius-sm)] border border-(--app-border) bg-(--app-surface) text-(--app-text) text-sm hover:border-(--app-border-bright) focus-visible:border-(--app-accent) focus-visible:ring-2 focus-visible:ring-(--app-accent)',
@@ -226,10 +248,14 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
     // portalled inside it or every token resolves to nothing. Resolved after
     // mount (there is no DOM during SSR) and left null for the site tier, where
     // Radix's default `<body>` container is correct.
+    // Both scoped tiers portal into the element their tokens are declared on.
+    // `site` stays null so Radix uses its `<body>` default, which is correct
+    // there because `--site-*` lives on `:root`.
     const [appContainer, setAppContainer] = React.useState<HTMLElement | null>(null);
     React.useEffect(() => {
-      if (tier !== 'app') return;
-      setAppContainer(document.querySelector<HTMLElement>('.app-theme'));
+      const host = tier === 'app' ? '.app-theme' : tier === 'slice' ? '.slice-theme' : null;
+      if (!host) return;
+      setAppContainer(document.querySelector<HTMLElement>(host));
     }, [tier]);
 
     const handleValueChange = React.useCallback(
