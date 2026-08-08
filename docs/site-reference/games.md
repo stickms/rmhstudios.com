@@ -34,14 +34,7 @@ Generated from `lib/games.ts`, the single source of truth every card on the site
 | **Gabriel's Horn** | [`/gabriels-horn`](https://rmhstudios.com/gabriels-horn) | Playable | required | `Multiplayer` `Card Game` `Bluffing` `Party` |
 | **Nightrail** | [`/nightrail`](https://rmhstudios.com/nightrail) | Playable | required | `Arcade` `Racing` `3D` `Trick Scoring` |
 | **Massive March** | [`/massive-march`](https://rmhstudios.com/massive-march) | Playable | required | `Multiplayer` `Co-op` `3D` `Exploration` `Puzzle` |
-
-## Unlisted
-
-Reachable by URL but deliberately absent from the browse pages — hidden games and internal or staged experiences. They are documented here because "undocumented" and "unlisted" are not the same thing.
-
-| | Route | Status |
-| --- | ----- | ------ |
-| **Bum's Rush** | `/bums-rush` | In development |
+| **Bum's Rush** | [`/bums-rush`](https://rmhstudios.com/bums-rush) | Beta | — | `Party` `Multiplayer` `Physics` `Platformer` |
 
 ## Detail
 
@@ -181,4 +174,4 @@ A first-person cooperative campaign with no combat, no health bar and no quest m
 
 You are a head with two enormous arms and no legs whatsoever. Grab a ledge, swing, let go at exactly the wrong moment, and paint the wall. Bum's Rush is a hand-drawn physics party game for one to four players: link hands into a living rope, haul each other over gaps none of you could cross alone, and argue about whose fault it was. Eight themed worlds with hidden objectives, and a Showdown mode for when co-operation has run its course. Plays online, on one screen, or both at once — with a gamepad, a keyboard, or two thumbs.
 
-**Route:** `/bums-rush` · **Catalog id:** `bums-rush` · **Status:** In development · **Sign-in:** not required · **Unlisted**
+**Route:** `/bums-rush` · **Catalog id:** `bums-rush` · **Status:** Beta · **Sign-in:** not required

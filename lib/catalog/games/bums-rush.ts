@@ -16,12 +16,12 @@ const entry: GameInfo = {
   color: 'from-amber-400/20 to-rose-500/20 hover:border-amber-400/50',
   tags: ['Party', 'Multiplayer', 'Physics', 'Platformer'],
   authGate: false,
-  // Hidden from /games until it is playable — the route currently renders a
-  // title screen while the engine, worlds and multiplayer land. Reachable by
-  // direct link so it can be reviewed. Remove this line in the commit that
-  // makes the game playable, along with the `status` badge below.
-  unlisted: true,
-  status: 'In development',
+  // Listed now that the campaign path is verified end to end in a browser —
+  // title → world map → a playable level — on desktop, tablet and phone, with
+  // keyboard, mouse and touch. `Beta` rather than nothing because World 1 is
+  // the only world authored and online play has not been exercised against a
+  // running socket hub yet.
+  status: 'Beta',
 };
 
 export default entry;

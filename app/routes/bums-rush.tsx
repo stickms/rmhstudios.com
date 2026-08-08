@@ -34,7 +34,9 @@ function BumsRushPage() {
      * that switch, because it is the only thing that knows which screen is up.
      */
     <div className="bums-theme min-h-[100svh] bg-bum-paper text-bum-ink">
-      <GameBackLink to="/games" />
+      {/* `light` because this game's ground is cream paper, not the near-black
+          every other full-screen game uses. */}
+      <GameBackLink to="/games" tone="light" />
       <GameErrorBoundary gameName="Bum's Rush">
         <Suspense fallback={<GameLoadingFallback />}>
           <BumsRushGame initialRoomCode={room ?? null} />
