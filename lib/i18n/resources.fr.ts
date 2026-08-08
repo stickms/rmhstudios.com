@@ -21,6 +21,7 @@ import frCGame from "@/locales/fr/c-game.json";
 import frCHistory from "@/locales/fr/c-history.json";
 import frCHouseAlwaysWins from "@/locales/fr/c-house-always-wins.json";
 import frCIsleworks from "@/locales/fr/c-isleworks.json";
+import frCKaikaiDebt from "@/locales/fr/c-kaikai-debt.json";
 import frCKowloonKnockout from "@/locales/fr/c-kowloon-knockout.json";
 import frCLaundrySort from "@/locales/fr/c-laundry-sort.json";
 import frCLayout from "@/locales/fr/c-layout.json";
@@ -77,6 +78,7 @@ import frRRmhbox from "@/locales/fr/r-rmhbox.json";
 import frRRmhcode from "@/locales/fr/r-rmhcode.json";
 import frRSecret from "@/locales/fr/r-secret.json";
 import frRSliceIt from "@/locales/fr/r-slice-it.json";
+import frRSohumbum from "@/locales/fr/r-sohumbum.json";
 import frRStrategies from "@/locales/fr/r-strategies.json";
 import frRStudio from "@/locales/fr/r-studio.json";
 import frRideshare from "@/locales/fr/rideshare.json";
@@ -111,6 +113,7 @@ const frResources = {
   "c-history": frCHistory,
   "c-house-always-wins": frCHouseAlwaysWins,
   "c-isleworks": frCIsleworks,
+  "c-kaikai-debt": frCKaikaiDebt,
   "c-kowloon-knockout": frCKowloonKnockout,
   "c-laundry-sort": frCLaundrySort,
   "c-layout": frCLayout,
@@ -167,6 +170,7 @@ const frResources = {
   "r-rmhcode": frRRmhcode,
   "r-secret": frRSecret,
   "r-slice-it": frRSliceIt,
+  "r-sohumbum": frRSohumbum,
   "r-strategies": frRStrategies,
   "r-studio": frRStudio,
   "rideshare": frRideshare,

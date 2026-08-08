@@ -28,6 +28,7 @@ import { CalibrationScreen } from '@/components/slice-it/CalibrationScreen';
 import { MultiplayerLobby } from '@/components/slice-it/MultiplayerLobby';
 import { SongDetailsPanel } from '@/components/slice-it/SongDetailsPanel';
 import { DailyPanel } from '@/components/slice-it/modes/DailyPanel';
+import { FREE_SKIN_IDS } from '@/lib/slice-it/skins';
 import { SetlistPanel } from '@/components/slice-it/modes/SetlistPanel';
 
 /**
@@ -219,6 +220,8 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
   const setModifiers = useSliceItStore((state) => state.setModifiers);
   const quantColors = useSliceItStore((state) => state.quantColors);
   const setQuantColors = useSliceItStore((state) => state.setQuantColors);
+  const noteSkin = useSliceItStore((state) => state.noteSkin);
+  const setNoteSkin = useSliceItStore((state) => state.setNoteSkin);
   const mirror = useSliceItStore((state) => state.mirror);
   const setMirror = useSliceItStore((state) => state.setMirror);
   const scrollSpeed = useSliceItStore((state) => state.scrollSpeed);
@@ -936,6 +939,30 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                 </div>
               </div>
             )}
+
+            <div className="space-y-4">
+              <label className="text-[10px] text-slice-text-light uppercase tracking-[0.4em] font-black ml-4">
+                {ts('note-skin', { defaultValue: 'Note Skin' })}
+              </label>
+              <div className="bg-slice-bg p-6 rounded-3xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]">
+                <ChoiceRow
+                  label={ts('note-skin-label', { defaultValue: 'Note style' })}
+                  description={ts('note-skin-hint', {
+                    defaultValue:
+                      'Notation draws each tap as the note it is — a head, a stem, and a flag per subdivision — so the rhythm reads from the shape and not only from the colour. Every skin keeps the same hit target.',
+                  })}
+                  value={noteSkin}
+                  options={[
+                    { id: 'default', label: ts('skin-notation', { defaultValue: 'Notation' }) },
+                    { id: 'keys', label: ts('skin-keys', { defaultValue: 'Keys' }) },
+                    { id: 'orbs', label: ts('skin-orbs', { defaultValue: 'Orbs' }) },
+                    { id: 'arrows', label: ts('skin-arrows', { defaultValue: 'Arrows' }) },
+                    { id: 'minimal', label: ts('skin-minimal', { defaultValue: 'Minimal' }) },
+                  ].filter((option) => FREE_SKIN_IDS.includes(option.id))}
+                  onChange={setNoteSkin}
+                />
+              </div>
+            </div>
 
             {/* Hit Sound Selector */}
             <div className="space-y-4">

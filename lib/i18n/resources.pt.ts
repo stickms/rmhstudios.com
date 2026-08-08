@@ -21,6 +21,7 @@ import ptCGame from "@/locales/pt/c-game.json";
 import ptCHistory from "@/locales/pt/c-history.json";
 import ptCHouseAlwaysWins from "@/locales/pt/c-house-always-wins.json";
 import ptCIsleworks from "@/locales/pt/c-isleworks.json";
+import ptCKaikaiDebt from "@/locales/pt/c-kaikai-debt.json";
 import ptCKowloonKnockout from "@/locales/pt/c-kowloon-knockout.json";
 import ptCLaundrySort from "@/locales/pt/c-laundry-sort.json";
 import ptCLayout from "@/locales/pt/c-layout.json";
@@ -77,6 +78,7 @@ import ptRRmhbox from "@/locales/pt/r-rmhbox.json";
 import ptRRmhcode from "@/locales/pt/r-rmhcode.json";
 import ptRSecret from "@/locales/pt/r-secret.json";
 import ptRSliceIt from "@/locales/pt/r-slice-it.json";
+import ptRSohumbum from "@/locales/pt/r-sohumbum.json";
 import ptRStrategies from "@/locales/pt/r-strategies.json";
 import ptRStudio from "@/locales/pt/r-studio.json";
 import ptRideshare from "@/locales/pt/rideshare.json";
@@ -111,6 +113,7 @@ const ptResources = {
   "c-history": ptCHistory,
   "c-house-always-wins": ptCHouseAlwaysWins,
   "c-isleworks": ptCIsleworks,
+  "c-kaikai-debt": ptCKaikaiDebt,
   "c-kowloon-knockout": ptCKowloonKnockout,
   "c-laundry-sort": ptCLaundrySort,
   "c-layout": ptCLayout,
@@ -167,6 +170,7 @@ const ptResources = {
   "r-rmhcode": ptRRmhcode,
   "r-secret": ptRSecret,
   "r-slice-it": ptRSliceIt,
+  "r-sohumbum": ptRSohumbum,
   "r-strategies": ptRStrategies,
   "r-studio": ptRStudio,
   "rideshare": ptRideshare,

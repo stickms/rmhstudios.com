@@ -9,11 +9,36 @@
 
 import { LANE_PALETTES, type LanePalette, contrastRatio } from './palettes';
 
+/**
+ * What a tap note is drawn as.
+ *
+ * `notation` is the default and the reason the rest of these exist as choices
+ * rather than as one look: it draws each tap as the note it actually IS — a
+ * head, a stem, and a flag per subdivision, read straight off `Slice.quant`.
+ * Notation has spent several centuries solving "same object, different
+ * duration", and its answer (identical head, differing flags) is exactly what a
+ * rhythm game needs: the hit target never changes size or position, and the
+ * rhythm rides on a channel that is not colour.
+ *
+ * That last part is why this is the default rather than a novelty. The
+ * subdivision used to be carried by hue alone, which is the thing `palettes.ts`
+ * exists to stop being the only channel.
+ */
+export type NoteShape = 'notation' | 'pill' | 'circle' | 'bar' | 'arrow';
+
 export interface Skin {
   id: string;
-  /** Palette id from `palettes.ts`, or `'cover'` for V4's extracted pair. */
+  /**
+   * Palette id from `palettes.ts`, or `'cover'` for V4's extracted pair.
+   *
+   * A SUGGESTION, not an override: the renderer takes the player's own
+   * `lanePalette` setting first. A cosmetic that could quietly replace a
+   * colour-vision setting is a cosmetic that can make the game unreadable, and
+   * "I bought a skin and now I cannot tell the bombs apart" is not a trade
+   * anyone opted into.
+   */
   palette: string;
-  noteShape: 'pill' | 'circle' | 'bar' | 'arrow';
+  noteShape: NoteShape;
   judgementLine: 'solid' | 'glow' | 'inset';
   hitBurst: 'particles' | 'ring' | 'none';
   /**
@@ -32,7 +57,35 @@ export const SKINS: Record<string, Skin> = {
   default: {
     id: 'default',
     palette: 'default',
+    noteShape: 'notation',
+    judgementLine: 'inset',
+    hitBurst: 'particles',
+    neumorphic: true,
+    unlock: null,
+  },
+  /** The soft key the notation shape replaced, for anyone who preferred it. */
+  keys: {
+    id: 'keys',
+    palette: 'default',
     noteShape: 'pill',
+    judgementLine: 'inset',
+    hitBurst: 'particles',
+    neumorphic: true,
+    unlock: null,
+  },
+  orbs: {
+    id: 'orbs',
+    palette: 'default',
+    noteShape: 'circle',
+    judgementLine: 'glow',
+    hitBurst: 'ring',
+    neumorphic: true,
+    unlock: null,
+  },
+  arrows: {
+    id: 'arrows',
+    palette: 'default',
+    noteShape: 'arrow',
     judgementLine: 'inset',
     hitBurst: 'particles',
     neumorphic: true,
@@ -66,6 +119,11 @@ export const SKINS: Record<string, Skin> = {
     unlock: { kind: 'coins', ref: 'slice-skin-cover' },
   },
 };
+
+/** The skins anybody can pick right now — i.e. everything with no unlock. */
+export const FREE_SKIN_IDS = Object.values(SKINS)
+  .filter((skin) => skin.unlock === null)
+  .map((skin) => skin.id);
 
 export function resolveSkin(id: string | null | undefined): Skin {
   if (!id) return SKINS.default;

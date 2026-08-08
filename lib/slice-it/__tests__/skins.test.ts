@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 import { contrastRatio, LANE_PALETTES } from '../palettes';
 import {
   CosmeticOnlyViolation,
+  FREE_SKIN_IDS,
   SKINS,
   assertCosmeticOnly,
   coverLanePair,
@@ -18,6 +19,7 @@ import {
   resolveSkin,
   seasonFor,
   type Hsl,
+  type NoteShape,
 } from '../skins';
 
 describe('V1 — skins', () => {
@@ -43,6 +45,38 @@ describe('V1 — skins', () => {
 
   it('keys every entry by its own id', () => {
     for (const [key, skin] of Object.entries(SKINS)) expect(skin.id).toBe(key);
+  });
+
+  it('defaults to notation, which is the only shape that carries the rhythm', () => {
+    // The subdivision used to be hue-only — and `QUANT_COLORS[1]` is the bomb's
+    // exact colour. Notation puts it on shape instead (identical head, a flag
+    // per subdivision), so this default is an accessibility property, not a
+    // taste one, and moving it should be a deliberate act.
+    expect(SKINS.default.noteShape).toBe('notation');
+  });
+
+  it('offers a real choice without an unlock', () => {
+    // A skin picker whose only free entry is the default is not a picker.
+    expect(FREE_SKIN_IDS).toContain('default');
+    expect(FREE_SKIN_IDS.length).toBeGreaterThanOrEqual(4);
+    for (const id of FREE_SKIN_IDS) expect(SKINS[id].unlock).toBeNull();
+  });
+
+  it('lists only skins that exist, and every unlock-free skin', () => {
+    for (const id of FREE_SKIN_IDS) expect(SKINS[id]).toBeDefined();
+    const free = Object.values(SKINS)
+      .filter((skin) => skin.unlock === null)
+      .map((skin) => skin.id);
+    expect([...FREE_SKIN_IDS].sort()).toEqual(free.sort());
+  });
+
+  it('keeps every skin on a shape the renderer knows how to draw', () => {
+    // `traceNoteBody` switches on this and falls back to `pill`; a typo would
+    // silently give a skin the default body rather than failing.
+    const drawable: NoteShape[] = ['notation', 'pill', 'circle', 'bar', 'arrow'];
+    for (const skin of Object.values(SKINS)) {
+      expect(drawable, `${skin.id} → ${skin.noteShape}`).toContain(skin.noteShape);
+    }
   });
 });
 

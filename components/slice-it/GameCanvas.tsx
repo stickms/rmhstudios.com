@@ -2,6 +2,7 @@
 
 import { laneColor, resolvePalette } from '@/lib/slice-it/palettes';
 import { approachEnergy, comboEnergy } from '@/lib/slice-it/presentation';
+import { resolveSkin, type NoteShape } from '@/lib/slice-it/skins';
 import { clampLinePosition } from '@/lib/slice-it/constants';
 import { rumble } from '@/lib/shared/platform';
 import { laneForKey } from '@/lib/slice-it/input';
@@ -165,6 +166,57 @@ function drawSpikedDisc(
 }
 
 /**
+ * Draw the stem and flags of a notation notehead.
+ *
+ * The stem rises from the head's right side, as it does on a notehead whose
+ * pitch sits below the middle line — the direction is fixed rather than derived
+ * from the lane, because a stem that flips between lanes reads as two different
+ * note kinds instead of one note in two places.
+ *
+ * Flat, not extruded: these are 2-3 px wide and the neumorphic shadow pair that
+ * makes the head sit up off the trough would turn them into a smear.
+ */
+function drawNoteStem(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  size: number,
+  flags: number,
+  triplet: boolean,
+  color: string,
+): void {
+  const stemW = Math.max(2, size * 0.11);
+  const stemH = size * 1.5;
+  const stemX = cx + size * 0.5 - stemW / 2;
+  const top = cy - size * 0.2 - stemH;
+
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.roundRect(stemX, top, stemW, stemH, stemW / 2);
+  ctx.fill();
+
+  // Flags hang off the stem top, each below the last, curved the way an
+  // engraved flag is rather than drawn as a triangle.
+  for (let i = 0; i < flags; i++) {
+    const y = top + i * size * 0.34;
+    ctx.beginPath();
+    ctx.moveTo(stemX + stemW, y);
+    ctx.quadraticCurveTo(stemX + size * 0.95, y + size * 0.2, stemX + size * 0.5, y + size * 0.62);
+    ctx.quadraticCurveTo(stemX + size * 0.78, y + size * 0.22, stemX + stemW, y + size * 0.26);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  if (triplet) {
+    ctx.font = `bold ${Math.round(size * 0.44)}px ui-monospace, monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('3', stemX + size * 0.62, top - size * 0.18);
+    ctx.textBaseline = 'alphabetic';
+  }
+}
+
+/**
  * Trace one half of a rounded square's outline — the lit half or the shaded
  * half of a neumorphic surface.
  *
@@ -197,6 +249,96 @@ function traceCornerArc(
     ctx.lineTo(x + size, y + size - r);
     ctx.arcTo(x + size, y + size, x + size - r, y + size, r);
     ctx.lineTo(x + r, y + size);
+  }
+}
+
+/**
+ * Trace a tap note's BODY for a given skin shape, centred on `(cx, cy)`.
+ *
+ * Only the body — the notation skin's stem and flags are drawn separately,
+ * because they must not take the neumorphic extrusion (a stem two pixels wide
+ * with a six-pixel shadow pair is a smudge, not a stem).
+ *
+ * Every shape is the same nominal size and centred on the same point, so the
+ * hit target a player learns does not move when they change skin. That is the
+ * one thing a cosmetic may never do.
+ */
+function traceNoteBody(
+  ctx: CanvasRenderingContext2D,
+  shape: NoteShape,
+  cx: number,
+  cy: number,
+  size: number,
+  vertical: boolean,
+): void {
+  const half = size / 2;
+  ctx.beginPath();
+  switch (shape) {
+    case 'notation':
+      // The head: an ellipse tilted the way an engraved notehead is, so it
+      // reads as notation rather than as a circle that happens to be squashed.
+      ctx.ellipse(cx, cy, size * 0.58, size * 0.42, -0.36, 0, Math.PI * 2);
+      break;
+    case 'circle':
+      ctx.arc(cx, cy, half, 0, Math.PI * 2);
+      break;
+    case 'bar':
+      // Across the lane, not along it: a bar along the travel axis is
+      // indistinguishable from a hold tail at speed.
+      if (vertical) ctx.roundRect(cx - size * 0.7, cy - size * 0.22, size * 1.4, size * 0.44, 3);
+      else ctx.roundRect(cx - size * 0.22, cy - size * 0.7, size * 0.44, size * 1.4, 3);
+      break;
+    case 'arrow': {
+      // Points the way it travels, which is the only direction an arrow here
+      // could honestly mean.
+      const t = size * 0.62;
+      if (vertical) {
+        ctx.moveTo(cx, cy + t);
+        ctx.lineTo(cx - t, cy - t * 0.55);
+        ctx.lineTo(cx, cy - t * 0.15);
+        ctx.lineTo(cx + t, cy - t * 0.55);
+      } else {
+        ctx.moveTo(cx - t, cy);
+        ctx.lineTo(cx + t * 0.55, cy - t);
+        ctx.lineTo(cx + t * 0.15, cy);
+        ctx.lineTo(cx + t * 0.55, cy + t);
+      }
+      ctx.closePath();
+      break;
+    }
+    case 'pill':
+    default:
+      ctx.roundRect(cx - half, cy - half, size, size, 9);
+      break;
+  }
+}
+
+/**
+ * How many flags a notehead carries for a subdivision, or `null` when the chart
+ * does not say.
+ *
+ * `Slice.quant` is the denominator the note snapped to: 1 = on the beat,
+ * 2 = eighth, 3 = triplet, 4 = sixteenth. Flags follow notation — a quarter has
+ * none, an eighth one, a sixteenth two — and a triplet is drawn as an eighth
+ * (which is what a triplet's members are) with the 3 that says so.
+ *
+ * `null` rather than 0 for an unknown quant, and the caller draws a bare head
+ * for it. A chart with no rhythm data must not be able to CLAIM everything is a
+ * quarter note; that is the same "missing is not on-beat" contract `Slice.quant`
+ * documents, and drawing a stem would break it.
+ */
+function flagsForQuant(quant: number | undefined): { flags: number; triplet: boolean } | null {
+  switch (quant) {
+    case 1:
+      return { flags: 0, triplet: false };
+    case 2:
+      return { flags: 1, triplet: false };
+    case 3:
+      return { flags: 1, triplet: true };
+    case 4:
+      return { flags: 2, triplet: false };
+    default:
+      return null;
   }
 }
 
@@ -1238,6 +1380,12 @@ export function GameCanvas() {
     // A3 — the lane palette. Resolved per frame from the store rather than
     // captured, so switching palettes in settings takes effect without a reload.
     const palette = resolvePalette(runState.lanePalette);
+    // V1 — the note/playfield skin. Resolved per frame from the store for the
+    // same reason the palette is: changing it in settings takes effect without
+    // a reload. Note that `skin.palette` is deliberately NOT applied — the
+    // player's own `lanePalette` is a colour-vision setting and a cosmetic does
+    // not get to overrule one.
+    const skin = resolveSkin(runState.noteSkin);
     const laneA = laneColor(palette, 0);
     const laneB = laneColor(palette, 1);
     // A2 — photosensitivity. Distinct from `canvasGlowEnabled()`, which is the
@@ -1435,7 +1583,11 @@ export function GameCanvas() {
           : CURSOR_MAIN - offsetPixels; // late = left of cursor in horizontal
         const { x: particleX, y: particleY } = toCanvas(particleScroll, particleLaneVal);
 
-        spawnParticles(particleX, particleY, latestFeedback.color, latestFeedback.text);
+        // V1 — `hitBurst` decides which half of the hit feedback plays: this
+        // burst, the ring that leaves the receptor (section 5), or neither.
+        if (skin.hitBurst === 'particles') {
+          spawnParticles(particleX, particleY, latestFeedback.color, latestFeedback.text);
+        }
       }
     }
 
@@ -1644,13 +1796,17 @@ export function GameCanvas() {
         // Suppressed entirely on the accessibility palettes: someone who has
         // chosen Okabe-Ito or monochrome has told us which hues they can
         // separate, and `QUANT_COLORS` is not one of the sets they picked.
+        const quantColor =
+          quantColorsOn && palette.id === 'default' && slice.type === 'STANDARD' && slice.quant
+            ? (QUANT_COLORS[slice.quant] ?? null)
+            : null;
+        // The downbeat keeps its conventional red on the NOTATION skin, where a
+        // quarter note is unmistakably a different shape from a bomb, and loses
+        // it on the outline skins, where a bomb-red ring around a pill is the
+        // collision this whole paragraph is about.
         const quantAccent =
-          quantColorsOn &&
-          palette.id === 'default' &&
-          slice.type === 'STANDARD' &&
-          slice.quant &&
-          slice.quant > 1
-            ? QUANT_COLORS[slice.quant]
+          quantColor && (skin.noteShape === 'notation' || (slice.quant ?? 0) > 1)
+            ? quantColor
             : null;
 
         ctx.fillStyle = color;
@@ -1875,69 +2031,115 @@ export function GameCanvas() {
           // source at the top-left, a light shadow on that side and a dark one
           // opposite. `.neumorphic` in slice-it.css is the same pair of offsets.
           //
-          // A single drop shadow — what this had, and what the first pass at
-          // this restyle kept — reads as a sticker lying ON the playfield
-          // rather than a key standing out of it, and it is the one thing on
-          // screen that would have been lit from a different direction than
-          // everything around it.
+          // A single drop shadow — what this had before the restyle — reads as
+          // a sticker lying ON the playfield rather than an object standing out
+          // of it, and it was the one thing on screen lit from a different
+          // direction than everything around it.
+          //
+          // `skin.neumorphic` can turn it off, and that is a stated flat look
+          // rather than a broken one — which is exactly why `Skin` carries the
+          // flag instead of the renderer guessing from the shape.
           //
           // The offset is gated on `glow` as well as the blur. A canvas shadow
           // with `shadowBlur: 0` and a NON-zero offset still draws — as a hard
           // edged copy of the shape. Zeroing only the blur (which is what the
           // rest of this renderer does) would hand `perf-lite` and reduced
           // motion two crisp duplicates per note instead of one calm note.
-          const lift = glow ? Math.max(2, size * 0.1) : 0;
+          const lift = glow && skin.neumorphic ? Math.max(2, size * 0.1) : 0;
           ctx.save();
           ctx.fillStyle = color;
-          ctx.beginPath();
-          ctx.roundRect(nx - half, ny - half, size, size, 9);
-          ctx.shadowColor = shadowDark;
-          ctx.shadowBlur = glow * 9;
-          ctx.shadowOffsetX = lift;
-          ctx.shadowOffsetY = lift;
-          ctx.fill();
-          // Same path, opposite side. Neumorphism is the PAIR — either shadow
-          // alone is just a bevel.
-          ctx.shadowColor = shadowLight;
-          ctx.shadowOffsetX = -lift;
-          ctx.shadowOffsetY = -lift;
+          traceNoteBody(ctx, skin.noteShape, nx, ny, size, isMobileV);
+          if (lift > 0) {
+            ctx.shadowColor = shadowDark;
+            ctx.shadowBlur = glow * 9;
+            ctx.shadowOffsetX = lift;
+            ctx.shadowOffsetY = lift;
+            ctx.fill();
+            // Same path, opposite side. Neumorphism is the PAIR — either shadow
+            // alone is just a bevel.
+            ctx.shadowColor = shadowLight;
+            ctx.shadowOffsetX = -lift;
+            ctx.shadowOffsetY = -lift;
+          }
           ctx.fill();
           ctx.restore();
 
           // The soft inner lip that makes the surface read as moulded rather
           // than cut: lit along the top-left arc, shaded along the bottom-right
           // one. Same light source as the extrusion above, which is the whole
-          // reason it works — two thin strokes, no gradient, no allocation.
-          ctx.save();
-          ctx.shadowColor = 'transparent';
-          ctx.lineWidth = Math.max(1.5, size * 0.09);
-          ctx.globalAlpha = ctx.globalAlpha * 0.85;
-          ctx.strokeStyle = shades.bevel;
-          traceCornerArc(ctx, nx - half, ny - half, size, 9, 'topLeft');
-          ctx.stroke();
-          ctx.strokeStyle = shades.shade;
-          traceCornerArc(ctx, nx - half, ny - half, size, 9, 'bottomRight');
-          ctx.stroke();
-          ctx.restore();
-
-          // The rhythm signal (see `quantAccent` above), as the note's OUTLINE.
+          // reason it works — no gradient, no allocation.
           //
-          // A stripe across the body was the first attempt and it looked like a
-          // flag: bevel, body and stripe read as three equal bands, and the
-          // note stopped being an object. An outline sits at the boundary the
-          // eye already uses to find the note, so it costs no interior area and
-          // does not compete with the lane colour it surrounds.
-          if (quantAccent) {
+          // The square-cornered version is only correct for the `pill` body;
+          // every other shape gets the lip by stroking its own outline with a
+          // clip, which costs one extra path and keeps one light source across
+          // all five skins.
+          if (skin.neumorphic) {
             ctx.save();
             ctx.shadowColor = 'transparent';
-            const rim = Math.max(1.5, size * 0.07);
+            ctx.lineWidth = Math.max(1.5, size * 0.09);
+            ctx.globalAlpha = ctx.globalAlpha * 0.85;
+            if (skin.noteShape === 'pill') {
+              ctx.strokeStyle = shades.bevel;
+              traceCornerArc(ctx, nx - half, ny - half, size, 9, 'topLeft');
+              ctx.stroke();
+              ctx.strokeStyle = shades.shade;
+              traceCornerArc(ctx, nx - half, ny - half, size, 9, 'bottomRight');
+              ctx.stroke();
+            } else {
+              // Clip to the body, then stroke it twice offset along the light
+              // axis: the half that survives the clip on each pass is exactly
+              // the lit arc and the shaded arc.
+              traceNoteBody(ctx, skin.noteShape, nx, ny, size, isMobileV);
+              ctx.clip();
+              const nudge = Math.max(1, size * 0.06);
+              ctx.lineWidth = Math.max(2, size * 0.14);
+              ctx.strokeStyle = shades.bevel;
+              traceNoteBody(ctx, skin.noteShape, nx + nudge, ny + nudge, size, isMobileV);
+              ctx.stroke();
+              ctx.strokeStyle = shades.shade;
+              traceNoteBody(ctx, skin.noteShape, nx - nudge, ny - nudge, size, isMobileV);
+              ctx.stroke();
+            }
+            ctx.restore();
+          }
+
+          // ── The rhythm ───────────────────────────────────────────────────
+          //
+          // On the notation skin the subdivision is the note's own SHAPE: a
+          // stem and a flag per subdivision, straight off `Slice.quant`. That
+          // is the whole reason it is the default — the head never changes size
+          // or position, so the hit target is constant, and the rhythm rides on
+          // a channel that is not colour. It was hue-only before, which is the
+          // thing `palettes.ts` exists to stop being the only channel.
+          //
+          // Flat and un-extruded (see `drawNoteStem`), and drawn in the quant
+          // colour where there is one so shape and hue agree, falling back to
+          // the note's own colour on the accessibility palettes.
+          const notation = skin.noteShape === 'notation' ? flagsForQuant(slice.quant) : null;
+          if (notation) {
+            ctx.save();
+            ctx.shadowColor = 'transparent';
+            drawNoteStem(
+              ctx,
+              nx,
+              ny,
+              size,
+              notation.flags,
+              notation.triplet,
+              quantAccent ?? shades.bevel,
+            );
+            ctx.restore();
+          } else if (quantAccent) {
+            // Every other skin keeps the rhythm as the note's OUTLINE. A stripe
+            // across the body was the first attempt and it looked like a flag:
+            // bevel, body and stripe read as three equal bands and the note
+            // stopped being an object. An outline sits at the boundary the eye
+            // already uses to find the note.
+            ctx.save();
+            ctx.shadowColor = 'transparent';
             ctx.strokeStyle = quantAccent;
-            ctx.lineWidth = rim;
-            ctx.beginPath();
-            // Inset by half the stroke so the rim sits ON the note's edge
-            // rather than straddling it — straddling ate a visible band of the
-            // lane colour, which is the one thing the body has to say.
-            ctx.roundRect(nx - half + rim / 2, ny - half + rim / 2, size - rim, size - rim, 8);
+            ctx.lineWidth = Math.max(1.5, size * 0.07);
+            traceNoteBody(ctx, skin.noteShape, nx, ny, size, isMobileV);
             ctx.stroke();
             ctx.restore();
           }
@@ -2119,7 +2321,13 @@ export function GameCanvas() {
       //
       // Not on a MISS: nothing was struck, so a ring leaving the receptor would
       // be the playfield reacting to an input that never happened.
-      if (latestFeedback && latestFeedback.text !== 'MISS' && glow && !flashOff) {
+      if (
+        latestFeedback &&
+        latestFeedback.text !== 'MISS' &&
+        skin.hitBurst !== 'none' &&
+        glow &&
+        !flashOff
+      ) {
         const pulseAge = (nowMs - latestFeedback.time) / HIT_PULSE_MS;
         const pulseLane = mirrorOn ? 1 - latestFeedback.lane : latestFeedback.lane;
         const pulseVal = isOneTrack ? LANE_POS[0] : LANE_POS[Math.max(0, Math.min(pulseLane, LANE_POS.length - 1))];
@@ -2140,20 +2348,39 @@ export function GameCanvas() {
         }
       }
 
-      ctx.shadowColor = shadowLight;
-      ctx.shadowBlur = glow * 5;
-      ctx.shadowOffsetX = -2;
-      ctx.shadowOffsetY = -2;
-      ctx.strokeStyle = bgColor;
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.arc(cx, cy, CURSOR_R * 1.5, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.shadowColor = shadowDark;
-      ctx.shadowBlur = glow * 5;
-      ctx.shadowOffsetX = 2;
-      ctx.shadowOffsetY = 2;
-      ctx.stroke();
+      // V1 — `judgementLine`. `inset` is the neumorphic receptor the game
+      // shipped with (a ring pressed INTO the trough, drawn as the same shadow
+      // pair the trough uses); `glow` trades that for a lit halo; `solid` is a
+      // bare ring for the flat skins. The offsets ride `glow` for the reason
+      // spelled out on the note extrusion — a zero blur with a live offset
+      // still paints a hard duplicate.
+      if (skin.judgementLine === 'inset') {
+        const seat = glow * 2;
+        ctx.shadowColor = shadowLight;
+        ctx.shadowBlur = glow * 5;
+        ctx.shadowOffsetX = -seat;
+        ctx.shadowOffsetY = -seat;
+        ctx.strokeStyle = bgColor;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(cx, cy, CURSOR_R * 1.5, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.shadowColor = shadowDark;
+        ctx.shadowBlur = glow * 5;
+        ctx.shadowOffsetX = seat;
+        ctx.shadowOffsetY = seat;
+        ctx.stroke();
+      } else if (skin.judgementLine === 'glow') {
+        ctx.shadowColor = color;
+        ctx.shadowBlur = glow * 12;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(cx, cy, CURSOR_R * 1.5, 0, Math.PI * 2);
+        ctx.stroke();
+      }
       ctx.shadowColor = 'transparent';
       ctx.strokeStyle = color;
       ctx.lineWidth = 3;

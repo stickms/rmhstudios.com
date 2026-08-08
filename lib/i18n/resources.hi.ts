@@ -21,6 +21,7 @@ import hiCGame from "@/locales/hi/c-game.json";
 import hiCHistory from "@/locales/hi/c-history.json";
 import hiCHouseAlwaysWins from "@/locales/hi/c-house-always-wins.json";
 import hiCIsleworks from "@/locales/hi/c-isleworks.json";
+import hiCKaikaiDebt from "@/locales/hi/c-kaikai-debt.json";
 import hiCKowloonKnockout from "@/locales/hi/c-kowloon-knockout.json";
 import hiCLaundrySort from "@/locales/hi/c-laundry-sort.json";
 import hiCLayout from "@/locales/hi/c-layout.json";
@@ -77,6 +78,7 @@ import hiRRmhbox from "@/locales/hi/r-rmhbox.json";
 import hiRRmhcode from "@/locales/hi/r-rmhcode.json";
 import hiRSecret from "@/locales/hi/r-secret.json";
 import hiRSliceIt from "@/locales/hi/r-slice-it.json";
+import hiRSohumbum from "@/locales/hi/r-sohumbum.json";
 import hiRStrategies from "@/locales/hi/r-strategies.json";
 import hiRStudio from "@/locales/hi/r-studio.json";
 import hiRideshare from "@/locales/hi/rideshare.json";
@@ -111,6 +113,7 @@ const hiResources = {
   "c-history": hiCHistory,
   "c-house-always-wins": hiCHouseAlwaysWins,
   "c-isleworks": hiCIsleworks,
+  "c-kaikai-debt": hiCKaikaiDebt,
   "c-kowloon-knockout": hiCKowloonKnockout,
   "c-laundry-sort": hiCLaundrySort,
   "c-layout": hiCLayout,
@@ -167,6 +170,7 @@ const hiResources = {
   "r-rmhcode": hiRRmhcode,
   "r-secret": hiRSecret,
   "r-slice-it": hiRSliceIt,
+  "r-sohumbum": hiRSohumbum,
   "r-strategies": hiRStrategies,
   "r-studio": hiRStudio,
   "rideshare": hiRideshare,
