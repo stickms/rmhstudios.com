@@ -94,6 +94,38 @@ variable "NITRO_PRESET" {
   default = "node-cluster"
 }
 
+# ── Whether to re-export the GHCR layer cache on this build ──────────────────
+# "true" exports; anything else skips the export entirely.
+#
+# WHY THIS IS A SWITCH AND NOT ALWAYS-ON (measured, deploy run 31265996205):
+# the `cache-to` export is the LAST thing in the build and runs AFTER both
+# images are already in GHCR — 43.4s "preparing build cache for export" + 29.2s
+# "sending cache export" = 72.6s total, of which ~62s lands after the final image
+# push. The `build` job cannot finish until it completes, `deploy-gate` waits on
+# `build`, and the VPS webhook fires from `deploy-gate` — so every second of that
+# tail is a second the new code is not live, for an artifact that is only ever
+# read by a LATER build.
+#
+# And on the overwhelmingly common deploy, that artifact is worth nothing. The
+# stages a re-export could refresh are either (a) unchanged since the last
+# export — deps, prisma-generate, prod-deps, vibe-builder, go mod download — so
+# the existing `:buildcache` already carries them and rewriting it is a no-op
+# with a 72s price tag, or (b) keyed to this exact commit's source tree
+# (vite-builder, runner), so no future build can ever hit them.
+#
+# So the export is worth its cost exactly when an input to a cached stage moved.
+# deploy.yml diffs the push for that path set and sets EXPORT_CACHE=true; see the
+# "Decide whether to refresh" step there for the list and the reasoning behind
+# what is deliberately NOT in it.
+#
+# Fail-soft in both directions: skipping leaves the previous `:buildcache` in
+# place (still a valid `cache-from` source — BuildKit resolves cache by layer
+# digest, not by commit), and a stale or missing cache only ever costs a colder
+# build, never a wrong one.
+variable "EXPORT_CACHE" {
+  default = "false"
+}
+
 # The full frontend build args, shared by both targets so the in-graph
 # vite-builder stage they both depend on resolves to ONE cache key.
 function "frontend_args" {
@@ -146,7 +178,10 @@ target "web" {
   # green; the only cost is a colder layer cache on the next run. The image PUSH is
   # unaffected — a genuine push failure still fails the build, as it must.
   cache-from = ["type=registry,ref=${IMAGE_WEB}:buildcache"]
-  cache-to   = ["type=registry,ref=${IMAGE_WEB}:buildcache,mode=max,image-manifest=true,oci-mediatypes=true,ignore-error=true"]
+  # Exported only when EXPORT_CACHE=true — see that variable for why this is not
+  # unconditional (it is a ~62s tail on the deploy critical path that the common
+  # deploy gets nothing back from).
+  cache-to = EXPORT_CACHE == "true" ? ["type=registry,ref=${IMAGE_WEB}:buildcache,mode=max,image-manifest=true,oci-mediatypes=true,ignore-error=true"] : []
 }
 
 # ── Full image (runner-full): supervisor, status — + Go bins + Chromium ──────

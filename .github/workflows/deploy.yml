@@ -177,7 +177,12 @@ jobs:
       commit_author: ${{ steps.commit.outputs.author }}
       discord_msg_id: ${{ steps.discord_out.outputs.id }}
     steps:
+      # fetch-depth: 2 so the layer-cache gate below can diff this push against
+      # the previous tip (`HEAD^1`). Depth 1 would leave HEAD parentless and the
+      # gate would fall back to exporting on every build.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
 
       - name: Resolve commit info (for Discord pipeline embed)
         id: commit
@@ -253,54 +258,101 @@ jobs:
           set -euo pipefail
           printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-      # ── Persist the vite-builder cache mounts across CI runs (audit §2) ───────
-      # BuildKit `--mount=type=cache` dirs are builder-local scratch: the GHCR
-      # registry LAYER cache does not carry them, and setup-buildx spins up a FRESH,
-      # empty builder every run — so the always-re-run vite-builder stage starts its
-      # `.vinxi` module-graph cache and its build-vibe-packages output cache COLD
-      # each build. These two steps extract those mounts to the workspace after the
-      # build and restore them before the next one, so the incremental caches
-      # survive between runs.
+      # ── Should this build re-export the GHCR layer cache? ────────────────────
+      # The export is a ~62s tail AFTER both images are pushed, and `deploy-gate`
+      # (which fires the VPS webhook) cannot start until this job ends — so it is
+      # ~62s of the new code not being live. See EXPORT_CACHE in docker-bake.hcl
+      # for the full argument; the short version is that the export only pays for
+      # itself when an input to a CACHED, EXPENSIVE, CROSS-COMMIT-REUSABLE stage
+      # moved. Everything else is either already in `:buildcache` unchanged, or
+      # keyed to this commit's source and unusable by any later build.
       #
-      # SAFETY (this is on the production deploy path): the inject step is
-      # `continue-on-error`, and the dance action's extraction runs as a
-      # `post-if: success()` hook — it NEVER runs on a failed build and cannot turn
-      # a green build red. Worst case it no-ops and we are back to today's cold
-      # mounts; it can never block a deploy.
+      # In the path list below:
+      #   package.json / pnpm-lock.yaml / pnpm-workspace.yaml / .npmrc
+      #                          → `deps` + `prod-deps` (pnpm install, ~70s each)
+      #   prisma/ + prisma.config.ts               → `prisma-generate`
+      #   tsconfig{,.server}.json                  → base of server-/vibe-builder
+      #   scripts/build-vibe-packages.ts,
+      #   lib/rmhvibe/vibe-packages.ts             → `vibe-builder` (~35s esbuild)
+      #   go-services/go.{mod,sum}                 → `go mod download` (network)
+      #   Dockerfile / docker-bake.hcl             → the whole graph's shape
       #
-      # CORRECTNESS: BuildKit keys cache mounts by `id`, not target path, so the id
-      # below MUST equal the Dockerfile's `id=vinxi-cache-${COMPOSE_PROJECT_NAME}`
-      # with COMPOSE_PROJECT_NAME=rmhstudios-prod (the bake env below). A mismatch
-      # makes this silently cache nothing (still safe). (The vibe-packages bundle
-      # cache moved out of a cache-mount into the dedicated, layer-cached
-      # vibe-builder Docker stage, so only the vite .vinxi module graph is danced here.)
+      # DELIBERATELY ABSENT, and this is the interesting half: `server/**`,
+      # `lib/**` and the rest of `go-services/**`. They do invalidate stages
+      # (`server-builder`, `go-builder`), but those stages are a ~3s esbuild and a
+      # ~25s Go build that BuildKit runs CONCURRENTLY with the ~90s+ vite-builder.
+      # Caching work that finishes inside someone else's critical path saves zero
+      # wall-clock, so paying 62s of serial export to preserve it is strictly a
+      # loss. Only stages that would otherwise extend the critical path are here.
       #
-      # TO REVERT (if a measured before/after doesn't beat the dance's own extract
-      # overhead): delete these two steps — nothing else depends on them — and drop
-      # the `.buildkit-cache` / `.buildkit-scratch` entries from .dockerignore.
-      - name: Restore vite build-cache mounts
-        id: vite-cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          path: .buildkit-cache
-          key: buildkit-vite-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            buildkit-vite-${{ runner.os }}-
-      - name: Inject vite build-cache into BuildKit
-        uses: reproducible-containers/buildkit-cache-dance@5422eac04292c961a382e0f584ea0f03ad9da723 # v3.4.0
-        continue-on-error: true
-        with:
-          scratch-dir: .buildkit-scratch
-          skip-extraction: ${{ steps.vite-cache.outputs.cache-hit }}
-          cache-map: |
-            {
-              ".buildkit-cache/vinxi": { "target": "/app/.vinxi", "id": "vinxi-cache-rmhstudios-prod" }
-            }
+      # Force an export by hand any time with a `workflow_dispatch` run (the
+      # `github.event_name != 'push'` branch below always exports).
+      - name: Decide whether to refresh the BuildKit layer cache
+        id: cachegate
+        run: |
+          set -uo pipefail
+
+          # Anything that is not an ordinary push (workflow_dispatch, re-run of a
+          # first commit, …) exports unconditionally — it is either a manual
+          # "rebuild the cache" run or a case where the diff below is unreliable.
+          if [ "${{ github.event_name }}" != "push" ]; then
+            echo "Not a push event — exporting cache."
+            echo "export=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # HEAD^1 is the previous tip of this branch (for a PR merge commit, the
+          # main tip it merged into) — so this diff is exactly "what this push
+          # introduced". If it is unavailable (shallow fetch too shallow, root
+          # commit), fail OPEN and export: a needless 62s beats silently letting
+          # the cache rot.
+          if ! git rev-parse --verify --quiet HEAD^1 >/dev/null; then
+            echo "No HEAD^1 (root commit or shallow checkout) — exporting cache."
+            echo "export=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # `|| diff_failed=1` rather than `set -e`: a git failure here must fail
+          # OPEN too. An empty `$changed` is the SKIP signal, so a diff that
+          # errored out would otherwise read as "nothing changed" and quietly
+          # stop refreshing the cache forever — the one failure mode of this gate
+          # that would not announce itself.
+          diff_failed=0
+          changed=$(git diff --name-only HEAD^1 HEAD -- \
+            package.json \
+            pnpm-lock.yaml \
+            pnpm-workspace.yaml \
+            .npmrc \
+            prisma \
+            prisma.config.ts \
+            tsconfig.json \
+            tsconfig.server.json \
+            scripts/build-vibe-packages.ts \
+            lib/rmhvibe/vibe-packages.ts \
+            go-services/go.mod \
+            go-services/go.sum \
+            Dockerfile \
+            docker-bake.hcl) || diff_failed=1
+
+          if [ "$diff_failed" -ne 0 ]; then
+            echo "git diff failed — exporting cache (fail-open)."
+            echo "export=true" >> "$GITHUB_OUTPUT"
+          elif [ -n "$changed" ]; then
+            echo "Cached-stage inputs changed — exporting cache:"
+            # Intentional word splitting: $changed is a newline-separated path list.
+            # shellcheck disable=SC2086
+            printf '  %s\n' $changed
+            echo "export=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No cached-stage inputs changed — skipping the cache export (saves ~62s of deploy latency)."
+            echo "export=false" >> "$GITHUB_OUTPUT"
+          fi
 
       # Build + push BOTH images in a single BuildKit graph (docker-bake.hcl).
       # Vite (the ~5 min long pole) is a shared stage built once; the Go build +
       # Chromium layer for runner-full run in parallel with it. Registry-backed
-      # layer cache on GHCR (no 10 GB GHA-cache eviction cap).
+      # layer cache on GHCR (no 10 GB GHA-cache eviction cap), read every build
+      # and rewritten only when the gate above says it would buy something.
       - name: Build + push both images (bake, single graph)
         env:
           GIT_SHA: ${{ github.sha }}
@@ -315,6 +367,9 @@ jobs:
           VITE_DISCORD_ACTIVITY_CLIENT_ID: ${{ vars.PROD_VITE_DISCORD_ACTIVITY_CLIENT_ID }}
           VITE_CDN_BASE_URL: ${{ vars.PROD_VITE_CDN_BASE_URL }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          # Read by the EXPORT_CACHE bake variable — "true" keeps the cache-to
+          # export, anything else drops it from the graph entirely.
+          EXPORT_CACHE: ${{ steps.cachegate.outputs.export }}
         run: |
           set -euo pipefail
           docker buildx bake -f docker-bake.hcl --push web full

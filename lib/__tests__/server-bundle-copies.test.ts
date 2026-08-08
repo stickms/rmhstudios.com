@@ -1,23 +1,38 @@
 /**
- * The Dockerfile's `server-builder` stage copies a *curated subset* of `lib/`
- * — deliberately, so that editing a component doesn't bust the layer cache for
- * a bundle that never imported it.
+ * The Dockerfile's `server-builder` stage builds the six Node service bundles
+ * from a SUBSET of the repo — `server/` and `lib/`, not the whole tree. That
+ * subset is a build-context boundary nothing else in the toolchain sees:
+ * `pnpm build` runs esbuild against the full working tree, so it resolves every
+ * import regardless of what the image would have contained. A server file can
+ * gain an import of a module outside the copied set, pass typecheck, pass lint,
+ * pass the test suite, pass `pnpm build` — and then break on main, after the PR
+ * has already merged.
  *
- * The cost of that is a gap nothing else covers: `pnpm build` runs esbuild
- * against the whole working tree, so it resolves every import regardless of
- * what the image would have contained. A server file can gain an import of a
- * `lib/` module that isn't copied, pass typecheck, pass lint, pass the test
- * suite, pass `pnpm build` — and then fail the image build on main, after the
- * PR has already merged. That is exactly how it failed once.
+ * And the breakage is not loud. An `@/…` import of an uncopied module doesn't
+ * stop esbuild: the `paths` map misses, the specifier falls back to looking like
+ * a bare package name, and `--packages=external` emits a literal
+ * `require("@/…")` into the bundle. Nothing is reported at build time; the
+ * module throws `MODULE_NOT_FOUND` the moment it is loaded, which for a
+ * top-level import is the instant the service starts. That is how the whole
+ * socket hub — every casino table, every multiplayer game — once shipped dead.
+ * (A relative specifier fails loudly instead, with "Could not resolve", which is
+ * why server code should prefer one. The graph has to be walked either way,
+ * because a single `@/…` hop hides everything below it too.)
  *
- * Worse than a failed build is one that succeeds: an `@/…` import of an
- * uncopied module doesn't stop esbuild, it becomes a literal
- * `require("@/lib/…")` that throws on load. See `resolveImport` below.
+ * So this walks the real import graph from the Dockerfile's own entrypoints and
+ * asserts every repo file it reaches is covered by a COPY in that stage. It
+ * reads the entrypoints AND the COPY list out of the Dockerfile rather than
+ * duplicating either, which is what makes it strategy-agnostic: the stage used
+ * to copy a curated per-module list of ~83 `lib/` paths and now copies `lib/`
+ * wholesale, and this check is the correct check under both. If someone narrows
+ * it back for cache-granularity reasons, the walk starts failing on whatever
+ * that narrowing orphans — no edit needed here.
  *
- * So this walks the real import graph from the Dockerfile's own entrypoints
- * and asserts every `lib/` file it reaches is covered by a COPY in that stage.
- * It reads the entrypoints and the COPY list out of the Dockerfile rather than
- * duplicating either, so the check can't drift from what actually gets built.
+ * Note the scope is every reached file, not just `lib/`. Copying `lib/` whole
+ * makes an uncopied `lib/` module impossible, but it does nothing about a server
+ * file importing `@/components/…`, `@/stores/…` or `@/hooks/…` — which is the
+ * same silent `require("@/…")` failure, out of a directory this stage has never
+ * copied and never should.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -44,19 +59,17 @@ const stage = serverBuilderStage();
  * Repo-relative source paths the stage copies in.
  *
  * Three forms appear, and the parser has to handle all of them or it silently
- * under-reports and this check starts failing on files that ARE copied:
- * a directory (`COPY lib/rmhbox ./lib/rmhbox/`), a single file
- * (`COPY lib/url.ts ./lib/url.ts`), and several sources into one destination
+ * under-reports and this check starts failing on files that ARE copied: a
+ * directory (`COPY lib ./lib/`), a single file (`COPY lib/url.ts ./lib/url.ts`),
+ * and several sources into one destination
  * (`COPY tsconfig.json tsconfig.server.json ./`). In Docker's form the LAST
  * token is always the destination and everything before it is a source.
  */
-const copied: string[] = [...stage.matchAll(/^COPY\s+(.+)$/gm)]
-  .flatMap((m) => {
-    const tokens = m[1].trim().split(/\s+/);
-    // Skip flags like `--from=…`, then drop the destination.
-    return tokens.filter((t) => !t.startsWith('--')).slice(0, -1);
-  })
-  .filter((src) => src.startsWith('lib/') || src === 'server');
+const copied: string[] = [...stage.matchAll(/^COPY\s+(.+)$/gm)].flatMap((m) => {
+  const tokens = m[1].trim().split(/\s+/);
+  // Skip flags like `--from=…`, then drop the destination.
+  return tokens.filter((t) => !t.startsWith('--')).slice(0, -1);
+});
 
 /** The entrypoints this stage actually bundles, read off its esbuild command. */
 const entrypoints: string[] = [...stage.matchAll(/(server\/[\w-]+\/index\.ts)/g)].map((m) => m[1]);
@@ -67,26 +80,11 @@ const EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts', '.js'];
 
 /**
  * Resolve a specifier the way the image build's esbuild does, or `null` when
- * the import never enters the bundle.
+ * the import never enters the bundle (a real package, a `node:` builtin).
  *
- * Relative specifiers are bundled, and so are `@/…` ones: esbuild applies the
- * `paths` map in `tsconfig.server.json` (it no longer needs a `baseUrl` for
- * that), so `@/lib/x` resolves to `lib/x.ts` and gets pulled in exactly like
- * `../../lib/x` would.
- *
- * Following `@/…` here is the whole point of this check rather than a detail of
- * it. When the file is missing from the build context, esbuild does not fail:
- * the path map misses, the specifier falls back to looking like a package name,
- * and `--packages=external` emits a literal `require("@/lib/x")` into the
- * bundle. Nothing is reported at build time; the module throws
- * `MODULE_NOT_FOUND` the moment it is loaded, which for a top-level import is
- * the instant the service starts. That is how the whole socket hub — every
- * casino table, every multiplayer game — shipped dead: `@/lib/economy/ledger-core`
- * with no matching COPY.
- *
- * A relative specifier fails loudly instead ("Could not resolve"), which is why
- * server code should prefer one. But the graph has to be walked either way,
- * because a single `@/…` hop hides everything below it too.
+ * `@/…` is followed because esbuild applies the `paths` map in
+ * `tsconfig.server.json`, so `@/lib/x` resolves to `lib/x.ts` and is pulled in
+ * exactly like `../../lib/x` would be.
  */
 function resolveImport(fromFile: string, specifier: string): string | null {
   const base = specifier.startsWith('@/')
@@ -154,26 +152,27 @@ describe('Dockerfile server-builder copies everything the bundles import', () =>
     // empty graph — which is worse than failing.
     expect(entrypoints.length).toBeGreaterThan(0);
     expect(copied).toContain('server');
-    expect(copied.filter((c) => c.startsWith('lib/')).length).toBeGreaterThan(0);
+    expect(copied.length).toBeGreaterThan(1);
   });
 
-  it('copies every lib/ module the server bundles reach', () => {
+  it('copies every module the server bundles reach', () => {
     const missing = [...reachableFiles()]
       .map((file) => relative(ROOT, file).split('\\').join('/'))
-      .filter((rel) => rel.startsWith('lib/'))
       .filter((rel) => !isCopied(rel))
       .sort();
 
     expect(
       missing,
       missing.length
-        ? `\nThese lib/ modules are imported by a server bundle but are NOT copied into\n` +
-            `the Dockerfile's \`server-builder\` stage, so the production image build will\n` +
-            `fail with "Could not resolve" even though every local check passes:\n\n` +
+        ? `\nThese modules are imported by a server bundle but are NOT copied into\n` +
+            `the Dockerfile's \`server-builder\` stage. An \`@/…\` import of one does not\n` +
+            `fail the image build — it becomes a literal require() that throws\n` +
+            `MODULE_NOT_FOUND when the service starts:\n\n` +
             missing.map((m) => `  • ${m}`).join('\n') +
-            `\n\nAdd a COPY for each in Dockerfile (a single file if the module is\n` +
-            `import-free, the directory if it pulls in siblings), and keep the comment\n` +
-            `explaining which service needs it.\n`
+            `\n\nEither add a COPY for each in Dockerfile, or (usually better) move the\n` +
+            `shared code into lib/ — the stage copies server/ and lib/ wholesale, so a\n` +
+            `hit here almost always means a server file reached into components/,\n` +
+            `stores/ or hooks/, which the image has never carried.\n`
         : '',
     ).toEqual([]);
   });

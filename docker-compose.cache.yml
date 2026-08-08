@@ -6,8 +6,8 @@
 # supervisor (full `runner-full`) image builds so a fresh — or disk-pressure
 # cache-wiped — host repopulates the BuildKit layer cache from a registry
 # instead of rebuilding cold. That cold path is exactly what deploy.sh warns
-# about: a full cache wipe evicts the BuildKit layer cache AND the .vinxi/pnpm
-# cache mounts, turning the next `vite build` into a slow cold build. A shared
+# about: a full cache wipe evicts the BuildKit layer cache AND the pnpm store
+# cache mount, turning the next build into a slow cold build. A shared
 # registry cache lets the wiped host pull those stages back instead.
 #
 # Requires a buildx / docker-container builder: the default `docker` driver

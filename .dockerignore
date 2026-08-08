@@ -13,10 +13,12 @@ dist-server
 # CI incremental caches (tsc/eslint) — never part of the image, and keeping a
 # stray local copy out of the context avoids busting the vite COPY layer.
 .cache
-# buildkit-cache-dance staging dirs (deploy.yml persists the vite cache mounts
-# through these). They exist in the CI workspace DURING the build, so they MUST be
-# excluded or the `COPY --exclude … . .` layer would ingest them and bust the very
-# vite cache we're trying to warm. Removing #2 from deploy.yml? Drop these too.
+# buildkit-cache-dance staging dirs. The dance itself is GONE (it carried a
+# `.vinxi` mount that TanStack Start 1.168 never writes — see the long note above
+# the vite RUN in the Dockerfile), so nothing creates these anymore. The entries
+# stay as cheap insurance: if a future change reintroduces a cache-dance, a stray
+# staging dir in the CI workspace would otherwise be ingested by the
+# `COPY --exclude … . .` layer and bust the vite cache on every build.
 .buildkit-cache
 .buildkit-scratch
 # Deploy state written on the HOST by deploy.sh (the content-hash file + the

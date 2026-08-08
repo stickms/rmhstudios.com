@@ -26,8 +26,10 @@
  * island down for a week and pick it up where they left it.
  *
  * Note the import style: relative specifiers into `lib/`, never `@/` — see
- * `server/CLAUDE.md` gotchas 7 and 8, and the matching `COPY lib/massive-march`
- * in the Dockerfile without which this file bundles into a crash on boot.
+ * `server/CLAUDE.md` gotchas 7 and 8. A relative specifier fails loudly at build
+ * time; an `@/…` one that misses bundles into a literal require() and crashes on
+ * boot. (`lib/` is copied wholesale into the `server-builder` stage, so the
+ * per-module `COPY lib/massive-march` this note used to point at is gone.)
  */
 
 import type { Server, Socket } from 'socket.io';
