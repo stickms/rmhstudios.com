@@ -642,7 +642,7 @@ export function SongLibrary({
                 <Shuffle className="w-4 h-4" aria-hidden />
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-slice-bg border-none shadow-2xl rounded-2xl max-w-sm">
+            <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none shadow-2xl rounded-2xl max-w-sm">
               <DialogHeader>
                 <DialogTitle className="text-slice-text font-black">
                   {ts('random-title', { defaultValue: 'Surprise Me' })}
@@ -673,7 +673,7 @@ export function SongLibrary({
                 <Layers className="w-4 h-4" aria-hidden />
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-slice-bg border-none shadow-2xl rounded-2xl max-w-lg">
+            <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none shadow-2xl rounded-2xl max-w-lg">
               <DialogHeader>
                 <DialogTitle className="text-slice-text font-black">
                   {ts('packs-title', { defaultValue: 'Packs' })}
@@ -694,7 +694,7 @@ export function SongLibrary({
                 <Upload className="w-4 h-4" />
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-slice-bg border-none shadow-2xl rounded-2xl max-w-lg">
+            <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none shadow-2xl rounded-2xl max-w-lg">
               <DialogHeader>
                 <DialogTitle className="text-slice-text font-black">
                   {t('upload-track-title', { defaultValue: 'UPLOAD TRACK' })}
@@ -748,7 +748,7 @@ export function SongLibrary({
                Same row classes as the real one — an empty `flex` row here
                instead would leave the band a couple of pixels short and put a
                smaller version of the same shift back. */
-            <div className="flex gap-1.5 overflow-x-auto pb-0.5" aria-hidden>
+            <div className="flex gap-1.5 overflow-x-auto -m-1.5 p-1.5" aria-hidden>
               {[64, 88, 72, 96].map((w, i) => (
                 <div
                   key={i}
@@ -758,7 +758,16 @@ export function SongLibrary({
               ))}
             </div>
           ) : (
-            <div className="flex gap-1.5 overflow-x-auto scroll-fade-x pb-0.5">
+            /* `-m-1.5 p-1.5` is the halo's room, not spacing.
+               `overflow-x: auto` makes the OTHER axis compute to `auto` too, so
+               this scroller clips on all four sides — and `.neumorphic-chip`
+               reaches 6px past its box (2px offset + 4px blur). Every chip's
+               highlight was being sliced flat against the scroller's edge, which
+               is the hard vertical cut where a soft corner should be. The
+               padding gives the halo somewhere to land inside the clip and the
+               equal negative margin keeps the band's metrics exactly where they
+               were, so nothing below it moves. */
+            <div className="flex gap-1.5 overflow-x-auto scroll-fade-x -m-1.5 p-1.5">
               {artistFacet.map((artist) => (
                 <button
                   key={artist.key}
@@ -1056,6 +1065,12 @@ export function SongLibrary({
                         "Rust Bloom" included. The word PLAY is the most
                         expendable 35px in the row: the glyph is the same
                         control, and the accessible name is unchanged. */}
+                    {/* `onSelect` is "the row's primary action", and what that
+                        IS belongs to the caller: the solo menu opens the details
+                        panel so a run is confirmed before it starts, and the
+                        multiplayer lobby nominates the song. Deciding here would
+                        have made the lobby's picker open a details drawer
+                        instead of picking. */}
                     {!readOnly && (
                       <Button
                         onClick={(e) => {

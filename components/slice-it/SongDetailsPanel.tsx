@@ -35,6 +35,24 @@ import { AnimatedCount } from '@/components/ui/AnimatedCount';
 import { calculateScoreMultiplier } from '@/lib/slice-it/scoring';
 import { ChartPicker, type ChartOption } from './ChartPicker';
 import { useTranslation } from 'react-i18next';
+import { whenIdle } from '@/lib/shared/platform';
+
+/**
+ * Holds a deferred section's height while it is still deferred.
+ *
+ * Not decoration: without it the leaderboard and the comments would land into a
+ * zero-height box and push everything under them down — trading a stutter
+ * during the open for a layout shift after it.
+ */
+function FoldPlaceholder({ rows }: { rows: number }) {
+  return (
+    <div className="space-y-2" role="status" aria-hidden>
+      {Array.from({ length: rows }, (_, i) => (
+        <div key={i} className="slice-skeleton h-8 rounded-lg" />
+      ))}
+    </div>
+  );
+}
 
 interface SongDetailsPanelProps {
   song: SliceSong | null;
@@ -91,6 +109,28 @@ export function SongDetailsPanel({
   const canEditChart =
     isOwner || Boolean((session.data?.user as { isAdmin?: boolean } | undefined)?.isAdmin);
 
+  /**
+   * Whether the two below-the-fold sections have been allowed to mount yet.
+   *
+   * Measured: opening this panel ran a **290 ms** long task on the main thread,
+   * starting one frame after the click. The panel's entrance is a spring, and a
+   * spring driven across a blocked main thread does not slow down — it jumps
+   * when the thread comes back. The slide covered 636px→106px in a single
+   * 120 ms gap, which is what reads as the fade "playing and then restarting":
+   * nothing remounts, the animation simply loses the middle of itself.
+   *
+   * The leaderboard and the comments are the expensive half of this subtree and
+   * both are below the fold — you scroll to reach either — so neither needs to
+   * exist during the ~400 ms the panel takes to arrive. `whenIdle` mounts them
+   * on the first idle gap after that, with its own timeout as the backstop, and
+   * a layout-matched placeholder holds their height so nothing below moves when
+   * they land.
+   *
+   * Keyed on the song so switching tracks re-defers rather than paying the same
+   * cost inside the next open.
+   */
+  const [belowFold, setBelowFold] = React.useState(false);
+
   /** L15 — the artist page link target, or null for an unkeyable artist tag. */
   const artistLinkKey = React.useMemo(() => artistKeyOf(song?.artist), [song?.artist]);
   /** L16 — the add-to-pack dialog. */
@@ -106,6 +146,12 @@ export function SongDetailsPanel({
   const selectedChartId = useSliceItStore((state) => state.selectedChartId);
   const setSelectedChartId = useSliceItStore((state) => state.setSelectedChartId);
   const songId = song?.id ?? null;
+
+  React.useEffect(() => {
+    if (!songId) return;
+    setBelowFold(false);
+    return whenIdle(() => setBelowFold(true), 900);
+  }, [songId]);
 
   React.useEffect(() => {
     if (!songId) {
@@ -555,7 +601,7 @@ export function SongDetailsPanel({
                       <Layers className="w-6 h-6" aria-hidden />
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="bg-slice-bg border-none shadow-2xl rounded-2xl max-w-lg">
+                  <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none shadow-2xl rounded-2xl max-w-lg">
                     <DialogHeader>
                       <DialogTitle className="text-slice-text font-black">
                         {t('add-to-pack', { defaultValue: 'Add to pack' })}
@@ -787,7 +833,7 @@ export function SongDetailsPanel({
             {t('leaderboard', { defaultValue: 'Leaderboard' })}
           </h3>
           <div className="bg-slice-shadow-dark/20 rounded-lg border border-slice-shadow-dark/50 p-3 max-h-[300px] overflow-y-auto">
-            <Leaderboard songId={song.id} />
+            {belowFold ? <Leaderboard songId={song.id} /> : <FoldPlaceholder rows={5} />}
           </div>
         </div>
 
@@ -797,7 +843,7 @@ export function SongDetailsPanel({
             {t('comments', { defaultValue: 'Comments' })}
           </h3>
           <div className="bg-slice-shadow-dark/20 rounded-lg border border-slice-shadow-dark/50 p-3 min-h-[200px]">
-            <SongComments songId={song.id} />
+            {belowFold ? <SongComments songId={song.id} /> : <FoldPlaceholder rows={3} />}
           </div>
         </div>
       </div>

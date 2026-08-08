@@ -110,6 +110,16 @@ export const Route = createFileRoute('/api/slice-it/songs/$id/patch-analysis')({
               // pin it to the row so a chart cannot claim to belong to another
               // song.
               analysisData: { ...incoming, id: song.id } as never,
+              // The song HAS a chart now, so it is not `pending` and it is not
+              // `failed`. Leaving this out is why a song whose worker job died
+              // still read "Charting failed — a chart is generated on play"
+              // after a player had generated one and posted it back: the row
+              // carried a current chart and a state that said it had none, and
+              // nothing else ever revisits that column. The invariant is that
+              // every writer of `analysisData` writes `analysisState` in the
+              // same statement — `analysis-queue.server.ts` and
+              // `regen.server.ts` both do; this route was the one that did not.
+              analysisState: 'ready',
               // V8 — recomputed in the same write as the chart it describes.
               // A strip that is updated by a follow-up call is a strip that is
               // wrong for however long that call takes to not happen; the whole
