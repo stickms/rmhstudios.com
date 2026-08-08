@@ -1,7 +1,7 @@
 'use client';
 import * as React from 'react';
-import { motion } from 'framer-motion';
-import { scaleIn } from '@/lib/motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { APPLE_SPRING, DURATION, EASE, scaleIn } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
@@ -379,61 +379,83 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             </div>
 
             {/* Sidebar - Song Details */}
-            {selectedSong && (
-              <>
-                {/* Backdrop */}
-                <button
-                  type="button"
-                  className="absolute inset-0 bg-black/20 z-65"
-                  onClick={() => setSelectedSong(null)}
-                  aria-label={t('close-song-details', { defaultValue: 'Close song details' })}
-                />
+            {/* The details sidebar slides; it used to appear and vanish.
+                `duration-300` was on the panel with no `transition-*` property
+                to drive and no exit path at all — `{selectedSong && …}` unmounts
+                synchronously, so a close is a hard cut however the panel is
+                styled. `AnimatePresence` is what gives the exit somewhere to
+                happen, and it keeps rendering the OUTGOING element, so the panel
+                still has its song on the way out even though state is already
+                null. A spring, not a duration: this is a surface that travels.
+                The global `MotionConfig reducedMotion="user"` already collapses
+                both to an instant swap for anyone who asks. */}
+            <AnimatePresence>
+              {selectedSong && (
+                <>
+                  {/* Backdrop */}
+                  <motion.button
+                    type="button"
+                    className="absolute inset-0 bg-black/20 z-65"
+                    onClick={() => setSelectedSong(null)}
+                    aria-label={t('close-song-details', { defaultValue: 'Close song details' })}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: DURATION.base, ease: EASE.standard }}
+                  />
 
-                {/* Sidebar Panel */}
-                <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-2xl bg-slice-bg shadow-2xl z-70 duration-300 flex flex-col overflow-hidden">
-                  {/* Sidebar Header */}
-                  <div className="flex items-center justify-between p-4 border-b border-slice-shadow-dark/50 bg-slice-shadow-dark/20">
-                    <h2 className="text-lg font-black text-slice-text">
-                      {t('song-details', { defaultValue: 'Song Details' })}
-                    </h2>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark rounded-lg"
-                      onClick={() => setSelectedSong(null)}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+                  {/* Sidebar Panel */}
+                  <motion.div
+                    className="absolute top-0 right-0 bottom-0 w-full sm:max-w-2xl bg-slice-bg shadow-2xl z-70 flex flex-col overflow-hidden"
+                    initial={{ x: '100%' }}
+                    animate={{ x: 0 }}
+                    exit={{ x: '100%' }}
+                    transition={APPLE_SPRING.smooth}
+                  >
+                    {/* Sidebar Header */}
+                    <div className="flex items-center justify-between p-4 border-b border-slice-shadow-dark/50 bg-slice-shadow-dark/20">
+                      <h2 className="text-lg font-black text-slice-text">
+                        {t('song-details', { defaultValue: 'Song Details' })}
+                      </h2>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark rounded-lg"
+                        onClick={() => setSelectedSong(null)}
                       >
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
-                    </Button>
-                  </div>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </Button>
+                    </div>
 
-                  {/* Sidebar Content */}
-                  <div className="flex-1 overflow-y-auto">
-                    <SongDetailsPanel
-                      song={selectedSong}
-                      onPlay={handleStartGame}
-                      onSongUpdated={(updates) =>
-                        setSelectedSong((current) =>
-                          current ? { ...current, ...updates } : current,
-                        )
-                      }
-                    />
-                  </div>
-                </div>
-              </>
-            )}
+                    {/* Sidebar Content */}
+                    <div className="flex-1 overflow-y-auto">
+                      <SongDetailsPanel
+                        song={selectedSong}
+                        onPlay={handleStartGame}
+                        onSongUpdated={(updates) =>
+                          setSelectedSong((current) =>
+                            current ? { ...current, ...updates } : current,
+                          )
+                        }
+                      />
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </div>
         </>
       )}

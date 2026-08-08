@@ -541,9 +541,38 @@ export function SongLibrary({
 
   /* ── Render ──────────────────────────────────────────────────────────── */
 
+  /**
+   * In the grid, the WHOLE column scrolls; in the table, only the table does.
+   *
+   * Everything above the list — the recently-played shelf (`L17`), the artist
+   * chips (`L15`) — was `shrink-0` in a `flex-col`, so it was pinned and the
+   * list got whatever height was left. With both shelves up it left a window a
+   * couple of rows tall on a phone, and the browsing surface was the smallest
+   * thing on screen. Making the container the scroll port lets the shelves
+   * scroll away and hands their height back to the list.
+   *
+   * The table keeps the old arrangement because `SongTable` is its own scroll
+   * container — it needs a bounded `flex-1 min-h-0` parent to size against, and
+   * nesting that inside a second scroller gives two scrollbars and a header
+   * that sticks to the wrong box.
+   */
+  const scrollsAsOneColumn = filters.view !== 'table';
+
   return (
-    <div className="w-full h-full bg-slice-bg flex flex-col">
-      <div className="flex flex-wrap gap-2 items-center shrink-0 p-3 border-b border-slice-shadow-dark/50">
+    <div
+      className={`w-full h-full bg-slice-bg flex flex-col ${
+        scrollsAsOneColumn ? 'overflow-y-auto overscroll-contain' : 'overflow-hidden'
+      }`}
+    >
+      {/* Sticky only in the scrolling arrangement: the search box, the sort and
+          the view toggle are how you change what you are looking at, so they
+          stay reachable while the shelves scroll past them. `bg-slice-bg` is
+          load-bearing — without it the rows show through as they pass under. */}
+      <div
+        className={`flex flex-wrap gap-2 items-center shrink-0 p-3 border-b border-slice-shadow-dark/50 bg-slice-bg ${
+          scrollsAsOneColumn ? 'sticky top-0 z-20' : ''
+        }`}
+      >
         <div className="relative flex-1 min-w-[10rem]">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 text-slice-text-light w-4 h-4"
@@ -780,11 +809,11 @@ export function SongLibrary({
           {visibleSongs.length === 0 && !loading && (
             <p className="text-center text-slice-text-light py-12 text-sm font-bold">
               {filters.q
-                  ? t('no-search-results', {
-                      defaultValue: 'Nothing matches "{{query}}".',
-                      query: filters.q,
-                    })
-                  : t('library-empty', { defaultValue: 'No tracks yet — upload the first one.' })}
+                ? t('no-search-results', {
+                    defaultValue: 'Nothing matches "{{query}}".',
+                    query: filters.q,
+                  })
+                : t('library-empty', { defaultValue: 'No tracks yet — upload the first one.' })}
             </p>
           )}
           {(visibleSongs.length > 0 || loading) && (
@@ -813,11 +842,11 @@ export function SongLibrary({
           {visibleSongs.length === 0 && !loading && (
             <p className="text-center text-slice-text-light py-12 text-sm font-bold">
               {filters.q
-                  ? t('no-search-results', {
-                      defaultValue: 'Nothing matches "{{query}}".',
-                      query: filters.q,
-                    })
-                  : t('library-empty', { defaultValue: 'No tracks yet — upload the first one.' })}
+                ? t('no-search-results', {
+                    defaultValue: 'Nothing matches "{{query}}".',
+                    query: filters.q,
+                  })
+                : t('library-empty', { defaultValue: 'No tracks yet — upload the first one.' })}
             </p>
           )}
 
@@ -836,12 +865,23 @@ export function SongLibrary({
               aria-hidden
               data-testid="library-skeleton"
             >
+              {/* The real row's metrics, not a generic placeholder: `p-2`, the
+                  8px preview button, the 10px cover, the same two text lines
+                  and the same `border-l-4` gutter the selected state uses. A
+                  skeleton of a different height is a second layout the page has
+                  to jump out of when the rows land. */}
               {Array.from({ length: 6 }, (_, i) => (
-                <li key={i} className="flex items-center gap-3 py-3">
-                  <div className="slice-skeleton h-12 w-12 shrink-0" />
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <div className="slice-skeleton h-3.5 w-1/2 max-w-64" />
-                    <div className="slice-skeleton h-2.5 w-1/3 max-w-40" />
+                <li
+                  key={i}
+                  className="p-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-l-4 border-l-transparent"
+                >
+                  <div className="flex items-center gap-3 w-full sm:w-auto sm:flex-1 min-w-0">
+                    <div className="slice-skeleton h-8 w-8 shrink-0 rounded-full" />
+                    <div className="slice-skeleton h-10 w-10 shrink-0 rounded-md" />
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <div className="slice-skeleton h-3.5 w-1/2 max-w-56" />
+                      <div className="slice-skeleton h-2.5 w-1/3 max-w-40" />
+                    </div>
                   </div>
                 </li>
               ))}
@@ -1526,7 +1566,6 @@ function UploadForm({ onDone }: { onDone: () => void }) {
               defaultValue: 'Tell us about this track…',
             })}
           />
-
         </div>
       )}
 
