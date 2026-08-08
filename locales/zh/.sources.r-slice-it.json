@@ -1,3 +1,20 @@
 {
-  "back-to-builds": "Back to Builds"
+  "admin-content-orphan-count_one": "{{count}} object with no song pointing at it.",
+  "admin-content-unmeasured_one": "{{count}} song has no recorded size, so the total above is a floor.",
+  "back-to-builds": "Back to Builds",
+  "editor-announce-deleted_one": "Deleted {{count}} notes",
+  "editor-announce-moved_one": "Moved {{count}} notes",
+  "editor-generate-confirm_one": "I understand this deletes {{count}} note I edited myself.",
+  "editor-lint-more_one": "+{{count}} more",
+  "editor-nesting-violations_one": "{{count}} notes break Easy ⊆ Normal ⊆ Hard ⊆ Expert",
+  "hub-plays_one": "{{count}} play",
+  "hub-total-runs_one": "{{count}} score set",
+  "hub-total-songs_one": "{{count}} chart",
+  "hub-uploads_one": "{{count}} upload",
+  "mp-team-players_one": "{{count}} player",
+  "player-charts_one": "{{count}} chart authored",
+  "player-lamp-cleared_one": "{{count}} cleared",
+  "player-lamp-fc_one": "{{count}} full combo",
+  "player-lamp-perfect_one": "{{count}} perfect",
+  "player-uploads_one": "{{count}} song uploaded"
 }
