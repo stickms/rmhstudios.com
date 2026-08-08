@@ -27,8 +27,17 @@ import {
   type SearchTab,
 } from '@/lib/search/types';
 
-/** Tabs the discovery panel understands; the rest fall back to its `top` mix. */
-const EXPLORE_TABS: ReadonlySet<string> = new Set(['top', 'people', 'posts', 'builds', 'blog']);
+/**
+ * Tabs the discovery panel understands; the rest fall back to its `top` mix.
+ *
+ * This is every tab in `SEARCH_TABS`, and it has to stay that way. When it held
+ * only the first five, Library and Games & Apps fell through to `top` with an
+ * empty field — so two of the seven filters swapped the URL and the underline
+ * and then rendered the identical social mix. `ExploreTab` in
+ * `ExploreRecommendations` is the paired half: a new search tab does not
+ * typecheck there until it has a discovery section.
+ */
+const EXPLORE_TABS: ReadonlySet<string> = new Set(SEARCH_TABS);
 
 const EMPTY: SearchResponse = {
   people: [],

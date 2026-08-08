@@ -21,7 +21,7 @@ export const Route = createFileRoute('/api/explore')({
           );
         } catch (error) {
           console.error('Explore error:', error);
-          return Response.json({ trendingTags: [], hotPosts: [], suggestedUsers: [], communities: [] });
+          return Response.json({ trendingTags: [], hotPosts: [], suggestedUsers: [], communities: [], libraryDocs: [] });
         }
       },
     },

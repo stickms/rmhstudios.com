@@ -24,6 +24,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { CuratedBuildsTab } from '@/components/creator-studio/BuildsTab';
+import { CatalogTabs } from '@/components/creator-studio/CatalogTabs';
 import { listCuratedBuilds } from '@/lib/builds/curated';
 import { definePage } from '@/lib/route/define-page';
 import { breadcrumbSchema } from '@/lib/schema';
@@ -55,7 +56,8 @@ function GamesIndexPage() {
       })}
       wide
     >
-      <div className="px-4 pt-4 pb-12">
+      <CatalogTabs active="/games" />
+      <div className="px-4 pb-12">
         <CuratedBuildsTab
           curated={games}
           seed={0}

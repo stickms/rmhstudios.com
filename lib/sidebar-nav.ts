@@ -25,6 +25,7 @@ import {
   Terminal,
   LayoutGrid,
   Rocket,
+  Gamepad2,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -80,6 +81,16 @@ export const SIDEBAR_NAV: NavItem[] = [
     badge: 'inbox',
   },
   { id: '/create', href: '/create', tKey: 'nav-create', label: 'Create', icon: Wand2 },
+  // The player's counterpart to Create. `/games` and `/apps` are two indexable
+  // catalogs, but they are one destination — "show me what was made here" — so
+  // they cost the globe ONE pin, the same trade Services and Ventures make
+  // below. The pin lands on `/games`, and the two catalogs carry a shared
+  // link-tab strip (`components/creator-studio/CatalogTabs`) that crosses
+  // between them, so Apps is one visible tap from the pin rather than a second
+  // one. Before this they had no pin at all: `/create` dropped its Apps tab
+  // when the catalogs became their own pages, which left `/apps` reachable only
+  // from search and the `?tab=apps` redirect.
+  { id: '/games', href: '/games', tKey: 'nav-games', label: 'Games & Apps', icon: Gamepad2 },
   { id: '/library', href: '/library', tKey: 'nav-library', label: 'Library', icon: Library },
   { id: '/communities', href: '/communities', tKey: 'nav-communities', label: 'Communities', icon: Users },
   { id: '/store', href: '/store', tKey: 'nav-store', label: 'Store', icon: ShoppingBag },

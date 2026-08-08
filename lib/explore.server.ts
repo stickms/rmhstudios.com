@@ -20,12 +20,25 @@ export interface ExploreResult {
     color: string | null;
     memberCount: number;
   }>;
+  /**
+   * Books to open, for Explore's Library tab. Curated entries first, then the
+   * newest community uploads — the same "Curated above Community" order `/library`
+   * itself shelves them in, so the discovery panel is a preview of that page
+   * rather than a differently-sorted second opinion.
+   */
+  libraryDocs: Array<{
+    id: string;
+    slug: string;
+    title: string;
+    description: string;
+  }>;
 }
 
 /** The viewer-independent, shareable slice of the explore payload. */
 type ExploreBase = {
   trendingTags: ExploreResult['trendingTags'];
   communities: ExploreResult['communities'];
+  libraryDocs: ExploreResult['libraryDocs'];
   /** A pool of top candidates; per-viewer excludes are applied after. */
   userPool: ExploreResult['suggestedUsers'];
 };
@@ -34,16 +47,18 @@ type ExploreBase = {
 const HOT_POSTS_TAKE = 15;
 const SUGGESTED_TAKE = 8;
 const USER_POOL_TAKE = 50;
+/** Books shown on the Library tab before it hands off to `/library`. */
+const LIBRARY_TAKE = 8;
 
 /**
  * The parts of explore that don't depend on the viewer: trending tags (from the
- * denormalized `hashtag` table), public communities, and a pool of popular users
- * to suggest. Shared across all viewers and cached ~120s so it isn't recomputed
- * per request. Per-viewer work (hot posts, exclude-self/followed) is applied by
- * the caller on top of this.
+ * denormalized `hashtag` table), public communities, library books, and a pool
+ * of popular users to suggest. Shared across all viewers and cached ~120s so it
+ * isn't recomputed per request. Per-viewer work (hot posts,
+ * exclude-self/followed) is applied by the caller on top of this.
  */
 async function loadExploreBase(): Promise<ExploreBase> {
-  const [trending, communities, userPool] = await Promise.all([
+  const [trending, communities, libraryDocs, userPool] = await Promise.all([
     // Trending: indexed order by the denormalized post count — no content scan.
     prisma.hashtag.findMany({
       orderBy: { postCount: 'desc' },
@@ -65,6 +80,15 @@ async function loadExploreBase(): Promise<ExploreBase> {
         memberCount: true,
       },
     }),
+    // Books to open. Hidden rows are excluded exactly as the library search
+    // corpus excludes them (`lib/search/docs.server.ts`), so a book that cannot
+    // be found also cannot be recommended.
+    prisma.libraryDocument.findMany({
+      where: { hidden: false },
+      orderBy: [{ official: 'desc' }, { createdAt: 'desc' }],
+      take: LIBRARY_TAKE,
+      select: { id: true, slug: true, title: true, description: true },
+    }),
     // Popular real users; the per-viewer exclude (self/followed/hidden) is a
     // small filter applied after, so we cache a slightly larger pool than we
     // ultimately show.
@@ -79,6 +103,7 @@ async function loadExploreBase(): Promise<ExploreBase> {
   return {
     trendingTags: trending.map((t) => ({ tag: t.tag, count: t.postCount })),
     communities,
+    libraryDocs,
     userPool: userPool.map((u) => ({ ...resolveUser(u), followerCount: u.followerCount })),
   };
 }
@@ -176,5 +201,6 @@ export async function listExplore(viewerId: string | null): Promise<ExploreResul
     hotPosts,
     suggestedUsers,
     communities: base.communities,
+    libraryDocs: base.libraryDocs,
   };
 }

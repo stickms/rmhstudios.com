@@ -1,10 +1,20 @@
 'use client';
 
-import { useEffect, useRef, useState } from'react';
+import { useEffect, useMemo, useRef, useState } from'react';
 import { Link } from'@tanstack/react-router';
-import { Hash, TrendingUp, Users, Package, BookOpen, Coins } from'lucide-react';
+import {
+ Hash,
+ TrendingUp,
+ Users,
+ Package,
+ BookOpen,
+ Coins,
+ Gamepad2,
+ type LucideIcon,
+} from'lucide-react';
 import { useTranslation } from'react-i18next';
 import { RMHarkCard } from'./RMHarkCard';
+import { listCuratedBuilds } from'@/lib/builds/curated';
 import { RevealGroup, RevealItem } from'@/components/motion';
 import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
@@ -29,7 +39,22 @@ export interface DiscoveryData {
  hotPosts: FeedItem[];
  suggestedUsers: { id: string; name: string | null; image: string | null; handle: string | null; followerCount: number }[];
  communities: Community[];
+ libraryDocs: LibraryDoc[];
 }
+
+interface LibraryDoc {
+ id: string;
+ slug: string;
+ title: string;
+ description: string;
+}
+
+/**
+ * Titles per kind on the Games & Apps tab before it hands off to the catalog
+ * page. A preview, not a second copy of `/games` — the "See all" link is the
+ * whole point of keeping it short.
+ */
+const CATALOG_PREVIEW = 6;
 
 interface TipLeader {
  user: { id: string; name: string | null; image: string | null; handle: string | null };
@@ -57,7 +82,14 @@ export interface DiscoveryBlogPost {
  date: string;
 }
 
-export type ExploreTab ='top'|'people'|'posts'|'builds'|'blog';
+/**
+ * Every tab `SEARCH_TAB_KINDS` declares. This list used to stop at `blog`, and
+ * `ExploreColumn` mapped the two it was missing onto `top` — so with the field
+ * empty, Library and Games & Apps rendered the social discovery mix and read as
+ * filters that did nothing. Adding a search tab means adding a discovery
+ * section for it here; the type is what makes that non-optional.
+ */
+export type ExploreTab ='top'|'people'|'posts'|'builds'|'blog'|'library'|'places';
 
 interface ExploreRecommendationsProps {
  /** Active search tab — discovery content is filtered to match it. */
@@ -77,8 +109,9 @@ interface ExploreRecommendationsProps {
  * Discovery content shown on the Explore page when no query is active.
  * The active tab filters which sections appear, so the tab bar stays functional
  * even before the user types: People → who to follow + communities, Posts →
- * trending tags + hot posts, Builds → builds to try, Blog → recent writing, and
- * Top shows the social discovery mix.
+ * trending tags + hot posts, Builds → builds to try, Blog → recent writing,
+ * Library → books to open, Games & Apps → the curated catalog, and Top shows
+ * the social discovery mix.
  */
 export function ExploreRecommendations({
  tab ='top',
@@ -94,9 +127,11 @@ export function ExploreRecommendations({
  const [tipLeaders, setTipLeaders] = useState<TipLeader[]>([]);
 
  // The social discovery sections (trending/people/communities/hot) come from
- // /api/explore; the Builds and Blog tabs render from props, so they don't need
- // to wait on that request.
- const needsExploreData = tab ==='top'|| tab ==='people'|| tab ==='posts';
+ // /api/explore, and so do the library books; the Builds and Blog tabs render
+ // from props and Games & Apps from the static catalog, so those three don't
+ // need to wait on that request.
+ const needsExploreData =
+ tab ==='top'|| tab ==='people'|| tab ==='posts'|| tab ==='library';
 
  useEffect(() => {
  let active = true;
@@ -125,6 +160,36 @@ export function ExploreRecommendations({
  const showHot = tab ==='top'|| tab ==='posts';
  const showBuilds = tab ==='builds';
  const showBlog = tab ==='blog';
+ const showLibrary = tab ==='library';
+ const showPlaces = tab ==='places';
+
+ // The catalog is a pure, static import (lib/games.ts + lib/apps.ts) — no
+ // request, so the Games & Apps tab paints with the rest of the page.
+ const catalog = useMemo(() => {
+ const all = listCuratedBuilds();
+ return {
+ game: all.filter((b) => b.kind ==='game').slice(0, CATALOG_PREVIEW),
+ app: all.filter((b) => b.kind ==='app').slice(0, CATALOG_PREVIEW),
+ };
+ }, []);
+
+ // Both headings are STATIC t() calls, not ``t(`${kind}-heading`)`` — a computed
+ // key is invisible to i18next-parser, so it would never reach locales/ and
+ // every non-English locale would silently serve the English default.
+ const catalogSections = [
+ {
+ kind:'game'as const,
+ to:'/games'as const,
+ heading: t('games-heading', { defaultValue:'Games to play'}),
+ icon: Gamepad2,
+ },
+ {
+ kind:'app'as const,
+ to:'/apps'as const,
+ heading: t('apps-heading', { defaultValue:'Apps to try'}),
+ icon: Package,
+ },
+ ];
 
  if (needsExploreData && loading) {
  return (
@@ -315,6 +380,76 @@ export function ExploreRecommendations({
  )
  )}
 
+ {/* Books to open. `data &&` guards the whole block, not just the list: with
+ no payload at all the catch-all empty state at the bottom already speaks,
+ and an inner fallback here would stack a second one under it. */}
+ {showLibrary && data && (
+ data.libraryDocs.length > 0 ? (
+ <RevealItem as="section"className="p-4">
+ <SectionHeading
+ icon={BookOpen}
+ label={t('library-heading', { defaultValue:'Books to open'})}
+ to="/library"
+ seeAll={t('see-all', { defaultValue:'See all'})}
+ />
+ <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+ {data.libraryDocs.map((doc) => (
+ <Link
+ key={doc.id}
+ to={`/library/${doc.slug}`as string}
+ className={`glass-fill flex items-center gap-3 rounded-site p-2.5 ${LIFT_CARD}`}
+ >
+ <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-site bg-site-surface-hover">
+ <BookOpen className="h-4 w-4 text-site-accent"aria-hidden />
+ </div>
+ <div className="min-w-0">
+ <p className="truncate text-sm font-semibold text-site-text">{doc.title}</p>
+ <p className="truncate text-xs text-site-text-muted">
+ {doc.description || t('library-book', { defaultValue:'In the library'})}
+ </p>
+ </div>
+ </Link>
+ ))}
+ </div>
+ </RevealItem>
+ ) : (
+ <EmptyState description={t('search-library-hint', { defaultValue:'Type to search the library.'})} />
+ )
+ )}
+
+ {/* Games & Apps — the curated catalog, previewed. Cards link straight into
+ the game or app (top-level full-screen routes, hence <a> and not <Link>),
+ and each heading links to the catalog page holding the rest. */}
+ {showPlaces && (
+ <RevealItem as="section"className="space-y-5 p-4">
+ {catalogSections.map(({ kind, to, heading, icon }) => (
+ <div key={kind}>
+ <SectionHeading
+ icon={icon}
+ label={heading}
+ to={to}
+ seeAll={t('see-all', { defaultValue:'See all'})}
+ />
+ <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+ {catalog[kind].map((b) => (
+ <a
+ key={b.id}
+ href={b.href}
+ className={`glass-fill flex items-center gap-3 rounded-site p-2.5 ${LIFT_CARD}`}
+ >
+ <BuildThumb src={b.thumbnailUrl} title={b.title} />
+ <div className="min-w-0">
+ <p className="truncate text-sm font-semibold text-site-text">{b.title}</p>
+ <p className="truncate text-xs text-site-text-muted">{b.description}</p>
+ </div>
+ </a>
+ ))}
+ </div>
+ </div>
+ ))}
+ </RevealItem>
+ )}
+
  {/* Hot posts — feed cards keep their own entrance; the block reveals once. */}
  {showHot && data && data.hotPosts.length > 0 && (
  <RevealItem as="section">
@@ -332,6 +467,41 @@ export function ExploreRecommendations({
  <EmptyState description={t('explore-empty-hint', { defaultValue:'Start typing to search across people, posts, builds, and the blog.'})} />
  )}
  </RevealGroup>
+ );
+}
+
+/**
+ * A discovery section heading with a link to the page that holds the rest.
+ *
+ * The tabs that hand off to a real destination (Library → /library, Games &
+ * Apps → /games and /apps) need that link to be visible: the panel is a
+ * preview, and without the "see all" the preview reads as the whole set. The
+ * heading itself keeps the same uppercase/dim treatment every other section
+ * here uses, so this is placement, not a second style.
+ */
+function SectionHeading({
+ icon: Icon,
+ label,
+ to,
+ seeAll,
+}: {
+ icon: LucideIcon;
+ label: string;
+ to: string;
+ seeAll: string;
+}) {
+ return (
+ <div className="mb-2 flex items-baseline justify-between gap-3">
+ <h2 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <Icon className="h-3.5 w-3.5"aria-hidden /> {label}
+ </h2>
+ <Link
+ to={to as string}
+ className="shrink-0 text-xs font-semibold text-site-accent hover:underline"
+ >
+ {seeAll}
+ </Link>
+ </div>
  );
 }
 

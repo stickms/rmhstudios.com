@@ -33,18 +33,32 @@
  */
 
 import type { ReactNode } from 'react';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import {
+  LiquidTabs,
+  type LiquidTab,
+  type LiquidTabRenderProps,
+} from '@/components/ui/liquid-tabs';
 
 interface PageTabsProps {
   tabs: LiquidTab[];
   value: string;
-  onChange: (id: string) => void;
+  /** Tablist mode. Omit only in link mode, where the `<Link>` navigates. */
+  onChange?: (id: string) => void;
   /**
    * ARIA panel wiring — with it, tabs get `${idBase}-tab-${id}` /
    * `aria-controls="${idBase}-panel-${id}"` and the page renders matching
    * `role="tabpanel"` elements. Pass it unless the tabs switch whole routes.
    */
   idBase?: string;
+  /**
+   * Link mode (§16.2) — render each tab as the caller's element, typically a
+   * TanStack `<Link>`, so route tabs stay crawlable and prefetched.
+   * `LiquidTabs` still owns the sheet, capsule and morph; this component still
+   * owns the gutter. Without the passthrough a page whose tabs switch routes
+   * had to drop to `LiquidTabs` directly and re-type the placement by hand,
+   * which is the exact drift this component exists to end.
+   */
+  renderTab?: (tab: LiquidTab, props: LiquidTabRenderProps) => ReactNode;
   /** Accessible name for the tablist (already translated). */
   'aria-label'?: string;
   /** Optional search field, rendered in a matching gutter below the strip. */
@@ -59,6 +73,7 @@ export function PageTabs({
   value,
   onChange,
   idBase,
+  renderTab,
   'aria-label': ariaLabel,
   search,
 }: PageTabsProps) {
@@ -70,6 +85,7 @@ export function PageTabs({
           value={value}
           onChange={onChange}
           idBase={idBase}
+          renderTab={renderTab}
           aria-label={ariaLabel}
         />
       </div>
