@@ -353,29 +353,46 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             {/* The stage: library, daily challenge (S1), or setlists/courses
                 (S8/S2). One at a time — each is a different mode, not a filter
                 over the same list. */}
+            {/* Cross-faded, and `mode="wait"` so the outgoing mode is gone
+                before the next one measures itself — overlapping two full-height
+                stages in the same box makes the incoming one lay out against a
+                container that is still twice as tall, which lands as a jump on
+                the frame the old one unmounts. A fade rather than a slide: these
+                three are peers, not a stack with a direction. */}
             <div className="w-full flex flex-col overflow-hidden">
-              {soloMode === 'daily' && (
-                <DailyPanel
-                  engine={engine}
-                  onPlay={(songId) => startRun(songId)}
-                  onBack={() => setSoloMode('library')}
-                />
-              )}
-              {soloMode === 'setlists' && (
-                <SetlistPanel
-                  engine={engine}
-                  onPlay={(songId) => startRun(songId)}
-                  onBack={() => setSoloMode('library')}
-                />
-              )}
-              {soloMode === 'library' && (
-                <SongLibrary
-                  onSelect={handleStartGame}
-                  onHighlight={handleSelectSong}
-                  selectedSongId={selectedSong?.id ?? null}
-                  onStopPreviewRef={stopPreviewRef}
-                />
-              )}
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={soloMode}
+                  className="flex min-h-0 flex-1 flex-col"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: DURATION.fast, ease: EASE.standard }}
+                >
+                  {soloMode === 'daily' && (
+                    <DailyPanel
+                      engine={engine}
+                      onPlay={(songId) => startRun(songId)}
+                      onBack={() => setSoloMode('library')}
+                    />
+                  )}
+                  {soloMode === 'setlists' && (
+                    <SetlistPanel
+                      engine={engine}
+                      onPlay={(songId) => startRun(songId)}
+                      onBack={() => setSoloMode('library')}
+                    />
+                  )}
+                  {soloMode === 'library' && (
+                    <SongLibrary
+                      onSelect={handleStartGame}
+                      onHighlight={handleSelectSong}
+                      selectedSongId={selectedSong?.id ?? null}
+                      onStopPreviewRef={stopPreviewRef}
+                    />
+                  )}
+                </motion.div>
+              </AnimatePresence>
             </div>
 
             {/* Sidebar - Song Details */}
