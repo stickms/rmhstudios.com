@@ -126,6 +126,35 @@ variable "EXPORT_CACHE" {
   default = "false"
 }
 
+# ── Image layer compression ─────────────────────────────────────────────────
+# Measured on deploy run 31265996205: "exporting layers" is 38.3s for `web` and
+# 31.2s for `full`, and since the two run concurrently that phase costs ~42s of
+# critical path. Most of it is gzip. Switching to zstd typically cuts compression
+# time substantially at a similar ratio, and speeds the VPS `docker pull` too —
+# it is the single biggest remaining lever on this pipeline.
+#
+# It is left at gzip by DEFAULT, and that is a deliberate refusal to guess. zstd
+# layers use the OCI media type `application/vnd.oci.image.layer.v1.tar+zstd`,
+# which the PULLING daemon has to understand — Docker Engine ≥ 23.0. GHCR is
+# fine; the production VPS's engine version could not be verified from the
+# environment this was written in, and the failure mode is not a slow deploy, it
+# is `docker pull` failing on the host with every image already built and pushed.
+#
+# TO TURN IT ON (one command's worth of verification first):
+#
+#   1. On the VPS:  docker version --format '{{.Server.Version}}'
+#   2. If that is 23.0 or newer, set IMAGE_COMPRESSION=zstd in the bake step's
+#      env in .github/workflows/deploy.yml.
+#   3. Watch the first deploy's "exporting layers" and the VPS pull, and keep the
+#      previous image tagged for rollback (deploy.sh already tags ${GIT_SHA}).
+#
+# force-compression is required: without it BuildKit reuses already-compressed
+# layers from the cache as-is and only NEW layers get the new algorithm, so a
+# mixed-format image is what actually ships.
+variable "IMAGE_COMPRESSION" {
+  default = "gzip"
+}
+
 # The full frontend build args, shared by both targets so the in-graph
 # vite-builder stage they both depend on resolves to ONE cache key.
 function "frontend_args" {
@@ -166,6 +195,11 @@ target "web" {
     "${IMAGE_WEB}:latest",
   ]
   args = frontend_args()
+  # Layer compression — gzip unless IMAGE_COMPRESSION says otherwise. See that
+  # variable for what to verify on the VPS before switching it to zstd.
+  output = [
+    "type=image,compression=${IMAGE_COMPRESSION},force-compression=${IMAGE_COMPRESSION != "gzip"}",
+  ]
   # Registry-backed layer cache on GHCR — no 10 GB GHA-cache eviction cap, no
   # cross-workflow contention, arm64-native, shareable with other builders.
   #
@@ -202,6 +236,11 @@ target "full" {
   args = merge(frontend_args(), {
     WEB_IMAGE = "runner"
   })
+  # Same compression as `web` — these two images share layers on the VPS, so a
+  # split algorithm would defeat that dedupe as well as being half a migration.
+  output = [
+    "type=image,compression=${IMAGE_COMPRESSION},force-compression=${IMAGE_COMPRESSION != "gzip"}",
+  ]
   # Read the web buildcache too (shared base layers). Keep reading the existing
   # full cache while it is useful, but do not export it on every deploy.
   cache-from = [

@@ -22,14 +22,27 @@ are already sitting in GHCR**, with the webhook that ships them held behind it.
 | 1 | The GHCR cache export runs **after** both images are pushed and blocks the deploy trigger | **~62 s every deploy** | ✅ fixed — now conditional |
 | 2 | The `.vinxi` build cache mount + its CI cache-dance cache **nothing** (Vinxi is not in this stack) | ~3–5 s + 3 steps + a moving part on the deploy path | ✅ fixed — removed |
 | 3 | `server-builder` spends 85 COPY layers protecting a 3-second esbuild that runs in parallel with Vite | layer/manifest overhead + a deploy-time footgun | ✅ fixed — collapsed to 3 |
-| 4 | `ci`'s typecheck (56 s) becomes the critical path once #1 lands | — | ⏳ next lever, not done |
-| 5 | Image layer export is 38.3 s (web) + 31.2 s (full) under gzip | ~30–40 s | ⏳ needs a VPS Docker version check |
+| 4 | `check`'s typecheck (54 s) runs serially ahead of lint/test and makes it the **PR gate's** long pole | ~35 s per PR run | ✅ fixed — split into parallel jobs |
+| 5 | Image layer export is 38.3 s (web) + 31.2 s (full) under gzip | ~20 s + faster VPS pull | ⚠️ made a one-word flip, gated on a VPS check — see §5 |
 | 6 | `runner-full` carries a full Node runtime its three Go services never execute | ~0 (layers dedupe with `web`) | ⛔ not worth it — see §6 |
 
-**Measured effect of what shipped:** the `build` job's critical path drops from
+**Measured effect on the deploy:** the `build` job's critical path drops from
 **4 m 20 s → ~3 m 18 s**, and push-to-webhook from **~4 m 30 s → ~3 m 28 s**, on
 every deploy that doesn't touch the lockfile, Prisma schema, vibe-package
 registry, `go.mod` or the Dockerfile — which is the overwhelming majority.
+
+**Measured effect on the PR gate:** `web-ci` wall-clock drops from **~2 m 17 s →
+~1 m 45 s**, where the production build (1 m 38 s) is now the pole rather than a
+serial typecheck-then-lint-then-test job.
+
+> ### ⚠️ Required manual follow-up — branch protection
+>
+> §4 renames a job, which renames a status check. **`web-ci / check` no longer
+> exists**; it is now `web-ci / typecheck` and `web-ci / test`. If `web-ci /
+> check` is marked required in Settings → Branches, PRs will wedge after this
+> merges (a required check that never runs blocks merge). Remove `web-ci /
+> check` and add `web-ci / typecheck` + `web-ci / test`. Every other check name
+> is unchanged.
 
 ---
 
@@ -176,26 +189,84 @@ Verified: the graph reaches 202 `lib/` + 105 `server/` files; 0 uncovered.
 
 ---
 
-## Not done, and why
+## 4. The typecheck is real work, and it was serialized ✅
 
-### 4. `ci`'s typecheck is the next critical path ⏳
+The obvious suspicion was a broken incremental cache: `check`'s typecheck ran
+54 s despite a restored `.tsbuildinfo`, against the "~7 s warm" claim in
+`web-ci.yml`'s own comment. Measured directly against this tree
+(`typescript-native`, 4-core box):
 
-With #1 landed, `build` ≈ 3 m 18 s and `ci` = 2 m 21 s. `ci` is still not
-binding, but it is close, and typecheck is 56 s of it — barely better than the
-~68 s cold figure quoted in `web-ci.yml`, despite a restored `.tsbuildinfo`.
-Worth investigating why the incremental cache is not paying off on merge commits
-before splitting `ci` into parallel typecheck / lint / test jobs (which would
-take it to ~1 m 10 s). Deliberately left alone here: it is not on the critical
-path today, and this audit's changes should be measured on their own first.
+| Scenario | Time |
+|---|---|
+| Cold (no `.tsbuildinfo`) | **91 s** |
+| Warm, nothing changed | **8 s** |
+| Warm, one leaf file re-saved (no content change) | 7 s |
+| Warm, **content** change to `lib/utils.ts` (widely imported) | **34 s** |
+| Warm, reverted | 8 s |
 
-### 5. zstd image compression ⏳
+So the cache works exactly as advertised, and the buildinfo (3.2 MB) is written
+and reused. CI's ~54 s is simply what a merge commit costs: it changes many
+files, several of them widely imported, and tsc re-checks the whole downstream
+cone. **There is no cache bug to fix** — which also means no amount of cache
+tuning will move this number. Parallelism is the only lever left.
 
-Layer export is 38.3 s + 31.2 s under buildx's default gzip. `compression=zstd,
-force-compression=true` typically cuts that substantially and speeds the VPS
-pull too. **Not applied**: it requires the production VPS's Docker to support
-zstd pulls (Engine ≥ 23), which cannot be verified from here, and a wrong guess
-breaks `docker pull` on the host at deploy time. Check the daemon version first,
-then flip it on the `web` target and measure.
+(Note the third row. An earlier version of this measurement used `touch`, which
+proves nothing: tsc invalidates by content hash, so a re-saved file with
+identical bytes is correctly a no-op. Only the content-change row is a real
+test.)
+
+**Fix.** `web-ci`'s `check` job is split into `typecheck` and `test` (lint +
+docs freshness + unit suite), which now run concurrently. `check` was 2 m 07 s —
+longer than the production `build` job (1 m 38 s) it is supposed to be cheaper
+than — and becomes ~1 m 32 s / ~1 m 10 s in parallel, putting `build` back as
+the PR gate's pole.
+
+`deploy.yml`'s `ci` job is deliberately **not** split. There, `build` is the
+critical path (~3 m 18 s vs `ci`'s 2 m 21 s), so a second runner's
+checkout+install would buy zero deploy latency. Worth revisiting only if
+`build` ever drops below ~2 m 30 s.
+
+One coupling this required: the tsc and eslint caches used to share a single
+`tsc-eslint-*` key holding both directories. With the work in two jobs, that
+entry would be raced by two writers and half-ignored by each reader, so they are
+now separate `tsc-*` / `eslint-*` entries. `deploy.yml`'s `ci` still writes
+**both**, which is load-bearing: a PR restores from the base branch's cache
+scope, so if `main` stopped publishing a prefix every new PR would pay the 91 s
+cold typecheck. Expect one cold run per prefix as the old combined entries age
+out.
+
+---
+
+## Not done (or not fully), and why
+
+### 5. zstd image compression ⚠️ armed, not fired
+
+Layer export is 38.3 s (web) + 31.2 s (full); since they run concurrently that
+phase is ~42 s of critical path, most of it gzip. `compression=zstd` typically
+cuts that substantially and speeds the VPS `docker pull` too. It is the biggest
+single lever left.
+
+**It is wired up but left off.** `docker-bake.hcl` now takes an
+`IMAGE_COMPRESSION` variable (default `gzip`, i.e. today's exact behavior), read
+from a one-word `IMAGE_COMPRESSION: gzip` line in the deploy workflow.
+
+It is off because turning it on is a guess I could not check. zstd layers use
+`application/vnd.oci.image.layer.v1.tar+zstd`, which the **pulling** daemon must
+understand — Docker Engine ≥ 23.0. GHCR is fine; the production VPS's engine
+version is not verifiable from a CI container, and the failure mode is not a
+slow deploy but `docker pull` failing on the host *after* both images are built
+and pushed. One command settles it:
+
+```bash
+# on the VPS
+docker version --format '{{.Server.Version}}'
+```
+
+≥ 23.0 → change `gzip` to `zstd` in `.github/workflows/deploy.yml` and watch the
+first deploy's "exporting layers" and pull. `deploy.sh` already tags
+`${GIT_SHA}` for rollback. (`force-compression` is switched on with it —
+without it BuildKit reuses already-gzipped cached layers and ships a
+mixed-format image, which is the worst of both.)
 
 ### 6. `runner-full` carrying an unused Node runtime ⛔
 
@@ -216,9 +287,27 @@ better attacked by #5.
 
 ## What this leaves
 
-A deploy that reaches the VPS webhook in ~3 m 28 s instead of ~4 m 30 s, where
-~2 m 08 s of that is genuine building and the remaining ~1 m 20 s is image
-export and push. The next 30–40 s is #5; the next structural win after that is
-#4. There is no longer a large, obvious block of waste on the deploy path — the
-remaining items are each worth under a minute and carry real verification
-requirements.
+A deploy that reaches the VPS webhook in **~3 m 28 s instead of ~4 m 30 s**, and
+a PR gate that answers in **~1 m 45 s instead of ~2 m 17 s**.
+
+Of the remaining deploy time, ~2 m 08 s is genuine building and ~1 m 20 s is
+image export and push. The next ~20 s is §5, and it is one word behind one
+command on the VPS. After that there is no large, obvious block of waste left on
+this pipeline: the build is the build, and shaving it further means making Vite
+itself faster (see `docs/performance-audit-2026-08-04.md` on why
+`routeTree.gen.ts`'s 739 static route imports are the shape of that problem)
+rather than removing overhead around it.
+
+### How to verify this landed
+
+On the first deploy after merge, in the `build` job's bake log:
+
+- The step "Decide whether to refresh the BuildKit layer cache" should say
+  **"Cached-stage inputs changed"** — this PR touches `Dockerfile` and
+  `docker-bake.hcl`, so the first run correctly *does* export. The run after it
+  (assuming an ordinary app-only change) should say "skipping the cache export".
+- On that second run, `#… exporting cache to registry` should be **absent
+  entirely**, and the job should end within a few seconds of the last
+  `pushing manifest`.
+- `deploy-gate`'s webhook trigger timestamp should sit ~60 s closer to the image
+  push than it did in run 31265996205.
