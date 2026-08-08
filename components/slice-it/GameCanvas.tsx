@@ -1584,14 +1584,12 @@ export function GameCanvas() {
           COMBO_MILESTONES.indexOf(milestone.value as (typeof COMBO_MILESTONES)[number]),
         );
         const tierColor = MILESTONE_COLORS[tier] ?? MILESTONE_COLORS[MILESTONE_COLORS.length - 1];
-        const tierRatio = tier / (COMBO_MILESTONES.length - 1);
 
-        ctx.save();
-        ctx.globalAlpha = (0.1 + tierRatio * 0.16) * (1 - age) * fx;
-        ctx.fillStyle = tierColor;
-        ctx.fillRect(0, 0, w, h);
-        ctx.restore();
-
+        // No full-screen wash. This used to paint the whole canvas in the tier
+        // colour at 10-26% alpha every time a combo crossed 50/100/250/500/
+        // 1000 — a strobe over the playfield at exactly the moment the player
+        // is reading notes, and the most-complained-about thing in the game.
+        // The label below says the same thing without touching the lanes.
         ctx.save();
         ctx.globalAlpha = 1 - age;
         ctx.textAlign = 'center';

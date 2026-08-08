@@ -1026,11 +1026,16 @@ export class GameEngine {
         this.lastMilestone = this.combo;
         this.comboMilestone = { value: this.combo, at: performance.now() };
         const tier = COMBO_MILESTONES.indexOf(this.combo as (typeof COMBO_MILESTONES)[number]);
+        // Deliberately quiet and short. This is a garnish on top of the hit
+        // sound the player is already hearing on every note, and at the old
+        // 0.16-0.24s and full SFX volume it cut straight across the track.
+        // A third of the gain and half the length still reads as "milestone"
+        // without competing with the music it is celebrating.
         this.audioManager.playSfX(
           660 + tier * 110,
           'sine',
-          0.16 + tier * 0.02,
-          useSliceItStore.getState().sfxVolume / 100,
+          0.08 + tier * 0.01,
+          (useSliceItStore.getState().sfxVolume / 100) * 0.35,
         );
       }
     }
