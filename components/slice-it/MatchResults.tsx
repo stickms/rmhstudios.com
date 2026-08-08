@@ -11,7 +11,6 @@ import { gradeFor } from '@/lib/slice-it/scoring';
 import * as net from '@/lib/slice-it/net/client';
 import type { FinalStanding, TeamId, TeamTotal } from '@/lib/slice-it/net/events';
 import type { GameEngine } from '@/lib/slice-it/engine';
-import { MatchRecapPanel } from './ai/MatchRecapPanel';
 
 /**
  * The multiplayer results card.
@@ -48,7 +47,6 @@ export function MatchResults({
 
   const standings = results?.standings ?? [];
   const pending = standings.filter((s) => !s.finished).length;
-  const finishers = standings.filter((s) => s.finished);
 
   return (
     <div className="absolute inset-0 z-70 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain bg-slice-bg/90 backdrop-blur-md p-4">
@@ -101,21 +99,6 @@ export function MatchResults({
           dropped is not a match to write up, and a recap that narrated a
           disconnection as a result would read as mockery.
         */}
-        {results?.song?.id && finishers.length >= 2 ? (
-          <div className="px-6 pb-4">
-            <MatchRecapPanel
-              songId={results.song.id}
-              standings={finishers.map((standing) => ({
-                name: standing.name,
-                rank: standing.place,
-                score: standing.score,
-                maxCombo: standing.maxCombo,
-                accuracy: standing.accuracy,
-              }))}
-            />
-          </div>
-        ) : null}
-
         <footer className="px-6 py-5 flex gap-3">
           <Button variant="ghost" className="flex-1 text-slice-text-muted" onClick={onBack}>
             {t('leave', { defaultValue: 'LEAVE' })}

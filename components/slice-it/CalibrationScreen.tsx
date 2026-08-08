@@ -7,12 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { outputLatencyMs } from '@/lib/shared/platform';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import { AudioManager } from '@/lib/audio/AudioManager';
-import { CalibrationAdvisor } from './ai/CalibrationAdvisor';
 
 export function CalibrationScreen({ onBack }: { onBack: () => void }) {
   const { t } = useTranslation('c-game');
   const { audioOffset, setAudioOffset } = useSliceItStore();
-  const recentTiming = useSliceItStore((s) => s.recentTiming);
   const [isPlaying, setIsPlaying] = React.useState(false);
   const [beats, setBeats] = React.useState<number[]>([]);
   const [tempOffset, setTempOffset] = React.useState(audioOffset);
@@ -229,17 +227,6 @@ export function CalibrationScreen({ onBack }: { onBack: () => void }) {
             is the more honest measurement — it is taken under the conditions
             the offset has to be right for.
           */}
-          <div className="pt-4 border-t border-slice-shadow-dark/30">
-            <CalibrationAdvisor
-              runs={recentTiming.map((sample) => ({
-                songTitle: sample.songTitle,
-                durationSec: sample.durationSec,
-                accuracy: sample.accuracy,
-                timing: sample.timing,
-              }))}
-            />
-          </div>
-
           <div className="flex gap-4 pt-4 border-t border-slice-shadow-dark/30">
             <Button variant="ghost" className="flex-1 text-slice-text-muted" onClick={onBack}>
               {t('cancel', { defaultValue: 'CANCEL' })}
