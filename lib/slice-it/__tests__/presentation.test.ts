@@ -8,10 +8,14 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+  ENERGY_FALL_TAU,
+  ENERGY_RISE_TAU,
   ENVELOPE_BANDS,
   ENVELOPE_HZ,
+  approachEnergy,
   backdropState,
   backdropVisible,
+  comboEnergy,
   decodeEnvelope,
   encodeEnvelope,
   sampleEnvelope,
@@ -140,6 +144,96 @@ describe('V7 — stage backdrops', () => {
     expect(backdropVisible({ backdrop: 'pulse', glow: true, reducedFlash: true })).toBe(false);
     expect(backdropVisible({ backdrop: 'pulse', glow: false, reducedFlash: false })).toBe(false);
     expect(backdropVisible({ backdrop: 'none', glow: true, reducedFlash: false })).toBe(false);
+  });
+});
+
+describe('V13 — playfield energy', () => {
+  it('is zero at zero combo and never leaves 0–1', () => {
+    expect(comboEnergy(0)).toBe(0);
+    for (const combo of [-1, 0, 1, 50, 200, 600, 5000, Number.NaN, Infinity]) {
+      const value = comboEnergy(combo);
+      expect(value).toBeGreaterThanOrEqual(0);
+      expect(value).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('rises continuously — no step at any combo milestone', () => {
+    // The whole point of the curve. `COMBO_MILESTONES` are 50/100/250/500/1000
+    // and the effect this replaces fired AT them; if any of those combos
+    // produced a jump, we would have rebuilt the thing that was removed.
+    for (const milestone of [50, 100, 250, 500, 1000]) {
+      const before = comboEnergy(milestone - 1);
+      const at = comboEnergy(milestone);
+      const after = comboEnergy(milestone + 1);
+      expect(at).toBeGreaterThan(before);
+      expect(after).toBeGreaterThan(at);
+      // A crossing is worth no more than any other single note.
+      expect(at - before).toBeCloseTo(after - at, 4);
+    }
+  });
+
+  it('is strictly increasing and saturating', () => {
+    let previous = comboEnergy(0);
+    let previousGain = Infinity;
+    for (let combo = 10; combo <= 2000; combo += 10) {
+      const value = comboEnergy(combo);
+      expect(value).toBeGreaterThan(previous);
+      // Decelerating: each further 10 combo buys less than the last, which is
+      // what keeps headroom at the bottom where the run is still being built.
+      const gain = value - previous;
+      expect(gain).toBeLessThan(previousGain);
+      previous = value;
+      previousGain = gain;
+    }
+    expect(previous).toBeGreaterThan(0.99);
+  });
+
+  it('spends most of its range on the combos a player actually climbs', () => {
+    expect(comboEnergy(50)).toBeGreaterThan(0.1);
+    expect(comboEnergy(200)).toBeGreaterThan(0.45);
+    expect(comboEnergy(600)).toBeGreaterThan(0.85);
+  });
+
+  it('approaches its target at a rate that cannot read as a flash', () => {
+    // A first-order lag: no overshoot, no oscillation, and a bounded slope.
+    let energy = 0;
+    const dt = 1 / 60;
+    for (let frame = 0; frame < 600; frame++) {
+      const next = approachEnergy(energy, 1, dt);
+      expect(next).toBeGreaterThanOrEqual(energy);
+      expect(next).toBeLessThanOrEqual(1);
+      // Per-frame change small enough that the ramp is a ramp, not an edge.
+      expect(next - energy).toBeLessThan(0.05);
+      energy = next;
+    }
+    expect(energy).toBeGreaterThan(0.99);
+  });
+
+  it('is frame-rate independent', () => {
+    // Same wall-clock second, different refresh rates, same place.
+    const at = (hz: number) => {
+      let energy = 0;
+      for (let frame = 0; frame < hz; frame++) energy = approachEnergy(energy, 1, 1 / hz);
+      return energy;
+    };
+    expect(at(144)).toBeCloseTo(at(60), 3);
+    expect(at(30)).toBeCloseTo(at(60), 3);
+  });
+
+  it('drains slower than it fills, so a combo break is not a cut to black', () => {
+    expect(ENERGY_FALL_TAU).toBeGreaterThan(ENERGY_RISE_TAU);
+    // One frame after a break at full energy, most of the light is still there.
+    expect(approachEnergy(1, 0, 1 / 60)).toBeGreaterThan(0.98);
+    // And it is actually gone a couple of seconds later, not lingering.
+    let energy = 1;
+    for (let frame = 0; frame < 300; frame++) energy = approachEnergy(energy, 0, 1 / 60);
+    expect(energy).toBeLessThan(0.01);
+  });
+
+  it('survives a nonsense frame delta rather than teleporting', () => {
+    expect(approachEnergy(0.5, 1, 0)).toBe(0.5);
+    expect(approachEnergy(0.5, 1, Number.NaN)).toBe(0.5);
+    expect(approachEnergy(0.5, 1, -1)).toBe(0.5);
   });
 });
 

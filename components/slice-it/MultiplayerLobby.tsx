@@ -390,15 +390,24 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
   /* ── Inside a lobby ──────────────────────────────────────────────────── */
 
   if (lobby) {
-    const readyCount = lobby.players.filter((p) => p.isHost || p.ready).length;
+    // Only CONNECTED seats, because that is what the server counts
+    // (`connectedSeats`) when it decides whether to honour a start. Counting
+    // every seat here meant one player dropping mid-lobby pinned the button on
+    // "WAITING (1/2 READY)" for as long as their disconnect grace window held
+    // the seat open — the host could not start a match the server would have
+    // started happily, and nothing on screen said why.
+    const present = lobby.players.filter((p) => !p.disconnected);
+    const readyCount = present.filter((p) => p.isHost || p.ready).length;
     // Mirrors the server's own check (`N2`): a team match with an empty side is
     // a free-for-all whose results card claims a winner by forfeit. Shown here
     // so the host can see *why* Start is disabled rather than pressing it and
     // reading an error toast.
     const sidesFilled =
       !lobby.teamsEnabled ||
-      (['a', 'b'] as const).every((team) => lobby.players.some((p) => p.team === team));
-    const canStart = Boolean(lobby.song) && readyCount === lobby.players.length && sidesFilled;
+      (['a', 'b'] as const).every((team) => present.some((p) => p.team === team));
+    // A solo lobby CAN start — the server only refuses when nobody is
+    // connected at all — so there is no minimum-player condition here.
+    const canStart = Boolean(lobby.song) && readyCount === present.length && sidesFilled;
 
     return (
       <div className="absolute inset-0 z-60 flex items-center-safe justify-center-safe overflow-y-auto bg-slice-bg p-4 text-slice-text">
@@ -630,7 +639,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
                         ? t('waiting-ready', {
                             defaultValue: 'WAITING ({{ready}}/{{total}} READY)',
                             ready: readyCount,
-                            total: lobby.players.length,
+                            total: present.length,
                           })
                         : t('start-game', { defaultValue: 'START GAME' })}
                 </Button>

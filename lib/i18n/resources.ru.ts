@@ -21,6 +21,7 @@ import ruCGame from "@/locales/ru/c-game.json";
 import ruCHistory from "@/locales/ru/c-history.json";
 import ruCHouseAlwaysWins from "@/locales/ru/c-house-always-wins.json";
 import ruCIsleworks from "@/locales/ru/c-isleworks.json";
+import ruCKaikaiDebt from "@/locales/ru/c-kaikai-debt.json";
 import ruCKowloonKnockout from "@/locales/ru/c-kowloon-knockout.json";
 import ruCLaundrySort from "@/locales/ru/c-laundry-sort.json";
 import ruCLayout from "@/locales/ru/c-layout.json";
@@ -77,6 +78,7 @@ import ruRRmhbox from "@/locales/ru/r-rmhbox.json";
 import ruRRmhcode from "@/locales/ru/r-rmhcode.json";
 import ruRSecret from "@/locales/ru/r-secret.json";
 import ruRSliceIt from "@/locales/ru/r-slice-it.json";
+import ruRSohumbum from "@/locales/ru/r-sohumbum.json";
 import ruRStrategies from "@/locales/ru/r-strategies.json";
 import ruRStudio from "@/locales/ru/r-studio.json";
 import ruRideshare from "@/locales/ru/rideshare.json";
@@ -111,6 +113,7 @@ const ruResources = {
   "c-history": ruCHistory,
   "c-house-always-wins": ruCHouseAlwaysWins,
   "c-isleworks": ruCIsleworks,
+  "c-kaikai-debt": ruCKaikaiDebt,
   "c-kowloon-knockout": ruCKowloonKnockout,
   "c-laundry-sort": ruCLaundrySort,
   "c-layout": ruCLayout,
@@ -167,6 +170,7 @@ const ruResources = {
   "r-rmhcode": ruRRmhcode,
   "r-secret": ruRSecret,
   "r-slice-it": ruRSliceIt,
+  "r-sohumbum": ruRSohumbum,
   "r-strategies": ruRStrategies,
   "r-studio": ruRStudio,
   "rideshare": ruRideshare,
