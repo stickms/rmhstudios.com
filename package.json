@@ -174,7 +174,7 @@
     "@types/howler": "^2.2.13",
     "@types/lodash-es": "^4.17.12",
     "@types/matter-js": "^0.20.2",
-    "@types/node": "^24.13.3",
+    "@types/node": "^26.1.2",
     "@types/pg": "^8.21.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
