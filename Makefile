@@ -62,7 +62,7 @@ push: ## push every service image to $REGISTRY (REGISTRY required)
 test: ## run Go tests (Bazel) + frontend tests (vitest)
 	@$(GUARD)
 	$(BAZEL) test --build_tests_only //go-services/...
-	pnpm exec vitest run
+	pnpm test
 
 clean: ## remove Bazel outputs
 	$(BAZEL) clean

@@ -6,6 +6,7 @@ import { dirname, join } from 'node:path';
 import type { Bible, Chapter } from './manuscript/types';
 import { validateChapter } from './manuscript/validate';
 import { paginate } from './paginate';
+import { launchOptions } from './browser';
 import type { LeafPair } from './render/types';
 import { blockFrame, columnRules } from './ornaments/frame';
 import { centerStrip } from './ornaments/center-strip';
@@ -64,7 +65,7 @@ export async function buildEpic(opts: { manuscriptDir: string; outPdf: string; o
     <style>${css}.leaf.plate{padding:0}.leaf.plate svg{display:block}</style></head>
     <body>${frontPlate}${galleryPlates}${leafSections}${backPlate}</body></html>`;
 
-  const browser = await chromium.launch();
+  const browser = await chromium.launch(launchOptions());
   try {
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle' });

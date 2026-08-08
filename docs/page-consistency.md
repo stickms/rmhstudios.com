@@ -270,7 +270,7 @@ Work through this for every new or edited page:
       in agent sessions, `.claude/hooks/commit-gate.sh`. Fix what it reports —
       don't reach for `--no-verify`.
 - [ ] `pnpm exec tsc --noEmit` and `pnpm lint` introduce no _new_ warnings.
-- [ ] `pnpm exec vitest run` — the full suite, before you push.
+- [ ] `pnpm test` — the full suite, before you push.
 - [ ] Dev server run once so `app/routeTree.gen.ts` regenerates (never edit it
       by hand).
 - [ ] Walk design-language.md §0 (definition of done) once more against the

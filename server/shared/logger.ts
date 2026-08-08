@@ -7,13 +7,45 @@
  * Usage:
  *   import { createLogger } from '../shared/logger';
  *   const logger = createLogger('rmhbox');
+ *
+ * ## Levels
+ *
+ * `LOG_LEVEL` (`debug` | `info` | `warn` | `error` | `silent`) sets the floor.
+ * Unset, it is `debug` outside production and `info` in production — which is
+ * what this logger did before the level existed, so nothing about a deploy
+ * changes by adding it.
+ *
+ * The threshold is read on **every call** rather than captured when the logger
+ * is built. That costs an env lookup per line and buys two things: a process
+ * can raise its own verbosity at runtime, and a test can turn the logger down
+ * around an assertion without re-importing the module (`testing/setup/`
+ * silences the whole suite this way — the rmhbox phase tests drive real game
+ * loops, and at `info` they bury a run's output under ~10k JSON lines).
  */
 
 type LogLevel = 'info' | 'warn' | 'error' | 'debug';
 
+/** Ordered severities. `silent` sits above every real level, so nothing clears it. */
+const SEVERITY: Record<LogLevel | 'silent', number> = {
+  debug: 10,
+  info: 20,
+  warn: 30,
+  error: 40,
+  silent: 100,
+};
+
 export interface LogEntry {
   event: string;
   [key: string]: unknown;
+}
+
+/** The minimum severity that gets written, from `LOG_LEVEL`. */
+function threshold(): number {
+  const configured = process.env.LOG_LEVEL?.toLowerCase();
+  if (configured && configured in SEVERITY) {
+    return SEVERITY[configured as keyof typeof SEVERITY];
+  }
+  return process.env.NODE_ENV === 'production' ? SEVERITY.info : SEVERITY.debug;
 }
 
 function formatLog(level: LogLevel, service: string, entry: LogEntry): string {
@@ -33,20 +65,23 @@ export interface Logger {
 }
 
 export function createLogger(service: string): Logger {
+  const write = (level: LogLevel, sink: (line: string) => void, entry: LogEntry): void => {
+    if (SEVERITY[level] < threshold()) return;
+    sink(formatLog(level, service, entry));
+  };
+
   return {
     info(entry: LogEntry): void {
-      console.log(formatLog('info', service, entry));
+      write('info', (line) => console.log(line), entry);
     },
     warn(entry: LogEntry): void {
-      console.warn(formatLog('warn', service, entry));
+      write('warn', (line) => console.warn(line), entry);
     },
     error(entry: LogEntry): void {
-      console.error(formatLog('error', service, entry));
+      write('error', (line) => console.error(line), entry);
     },
     debug(entry: LogEntry): void {
-      if (process.env.NODE_ENV !== 'production') {
-        console.debug(formatLog('debug', service, entry));
-      }
+      write('debug', (line) => console.debug(line), entry);
     },
   };
 }

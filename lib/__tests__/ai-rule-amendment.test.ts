@@ -1,10 +1,10 @@
 /**
  * `proposeRuleAmendment` — the DeepSeek arm of the house-rules feature.
  *
- * The deterministic balancer is tested next to the game
- * (`lib/gabriels-horn/__tests__/house-rules.test.ts`). This covers the half
- * that talks to a model, which is the half that cannot be exercised by simply
- * running the app: without a `DEEPSEEK_API_KEY` the endpoint takes the fallback
+ * The deterministic balancer's own tests went out with the gameplay suites in
+ * the 2026-08-08 trim (`docs/testing.md` §What is not tested). This covers the
+ * half that talks to a model, which is the half that cannot be exercised by
+ * simply running the app: without a `DEEPSEEK_API_KEY` the endpoint takes the fallback
  * and says so, so a broken AI arm would look exactly like an unconfigured one
  * and could ship unnoticed.
  *

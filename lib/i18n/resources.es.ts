@@ -21,6 +21,7 @@ import esCGame from "@/locales/es/c-game.json";
 import esCHistory from "@/locales/es/c-history.json";
 import esCHouseAlwaysWins from "@/locales/es/c-house-always-wins.json";
 import esCIsleworks from "@/locales/es/c-isleworks.json";
+import esCKaikaiDebt from "@/locales/es/c-kaikai-debt.json";
 import esCKowloonKnockout from "@/locales/es/c-kowloon-knockout.json";
 import esCLaundrySort from "@/locales/es/c-laundry-sort.json";
 import esCLayout from "@/locales/es/c-layout.json";
@@ -77,6 +78,7 @@ import esRRmhbox from "@/locales/es/r-rmhbox.json";
 import esRRmhcode from "@/locales/es/r-rmhcode.json";
 import esRSecret from "@/locales/es/r-secret.json";
 import esRSliceIt from "@/locales/es/r-slice-it.json";
+import esRSohumbum from "@/locales/es/r-sohumbum.json";
 import esRStrategies from "@/locales/es/r-strategies.json";
 import esRStudio from "@/locales/es/r-studio.json";
 import esRideshare from "@/locales/es/rideshare.json";
@@ -111,6 +113,7 @@ const esResources = {
   "c-history": esCHistory,
   "c-house-always-wins": esCHouseAlwaysWins,
   "c-isleworks": esCIsleworks,
+  "c-kaikai-debt": esCKaikaiDebt,
   "c-kowloon-knockout": esCKowloonKnockout,
   "c-laundry-sort": esCLaundrySort,
   "c-layout": esCLayout,
@@ -167,6 +170,7 @@ const esResources = {
   "r-rmhcode": esRRmhcode,
   "r-secret": esRSecret,
   "r-slice-it": esRSliceIt,
+  "r-sohumbum": esRSohumbum,
   "r-strategies": esRStrategies,
   "r-studio": esRStudio,
   "rideshare": esRideshare,

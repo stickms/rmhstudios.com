@@ -419,6 +419,83 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'stat-streak',
     'view-results-short',
   ],
+  // ── Slice It settings that had no control (2026-08-08) ─────────────────
+  // The accessibility (`A2`/`A3`/`A7`), HUD (`H9`), practice-aid (`P4`),
+  // input (`I1`/`A6`), judgement-line (`G11`) and modifier-preset (`M7`)
+  // controls, plus the assist and challenge modifiers below. English-only
+  // until `pnpm i18n:translate && pnpm i18n:resources` runs — the pipeline
+  // needs DEEPSEEK_API_KEY, which is not available in this environment.
+  // Runtime falls back to English per key.
+  //
+  // `gameplay`, `health-gauge`, `health-gauge-hint`, `quant-colors` and
+  // `quant-colors-hint` are here despite having shipped in `MainMenu.tsx`
+  // months ago: they were written as `ts('…')` behind a renamed `t`, which
+  // `i18next-parser` does not recognise as a translation call, so they never
+  // reached ANY catalog — including English. Moving them into
+  // `SettingsPanel.tsx` under a plain `t` is what finally extracted them.
+  'r-slice-it': [
+    'accessibility',
+    'assist-tick',
+    'assist-tick-hint',
+    'combo-center',
+    'combo-hidden',
+    'combo-left',
+    'combo-position',
+    'combo-position-hint',
+    'combo-right',
+    'effect-intensity',
+    'effect-intensity-hint',
+    'extra-binds-add',
+    'extra-binds-conflict',
+    'extra-binds-hint',
+    'extra-binds-lane-a',
+    'extra-binds-lane-b',
+    'extra-binds-listening',
+    'extra-binds-remove',
+    'gameplay',
+    'health-gauge',
+    'health-gauge-hint',
+    'hud',
+    'input-offset',
+    'input-offset-hint',
+    'judgement-floor',
+    'judgement-floor-hint',
+    'judgement-opacity',
+    'judgement-scale',
+    'lane-palette',
+    'lane-palette-default',
+    'lane-palette-deuteranopia',
+    'lane-palette-hint',
+    'lane-palette-monochrome',
+    'lane-palette-tritanopia',
+    'line-position',
+    'line-position-hint',
+    'metronome',
+    'metronome-hint',
+    'modifier-presets',
+    'modifier-presets-hint',
+    'practice-aids',
+    'preset-delete',
+    'preset-empty',
+    'preset-name-label',
+    'preset-name-placeholder',
+    'preset-save',
+    'quant-colors',
+    'quant-colors-hint',
+    'reduced-flash',
+    'reduced-flash-hint',
+  ],
+  // Slice It's assist family (`A1`/`M5`) and the two challenge modifiers
+  // (`M2` and Sudden Death) that the engine honoured with no toggle. Same
+  // pipeline caveat as above.
+  'c-game': [
+    'assists',
+    'assists-hint',
+    'mod-assist',
+    'mod-no-fail',
+    'mod-s-random',
+    'mod-tap-holds',
+  ],
 };
 
 // ─── Registry parity ────────────────────────────────────────────────────────

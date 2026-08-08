@@ -69,8 +69,9 @@ function isTwemojiExempt(el: HTMLElement): boolean {
  *
  * **`@twemoji/api` is loaded in its own chunk, not imported at module scope.**
  * This provider wraps the whole `<Outlet/>` in `__root.tsx`, so a static import
- * put twemoji + twemoji-parser — 32.9 KB — into the entry chunk of every page,
- * parsed before hydration could begin. Nothing here needs it until the mount
+ * put twemoji — 32.9 KB, back when the archived `twemoji-parser` was still a
+ * second copy alongside it — into the entry chunk of every page, parsed before
+ * hydration could begin. Nothing here needs it until the mount
  * effect runs, and the first thing that effect does is a full-subtree parse, so
  * whatever rendered while the chunk was in flight is picked up anyway. Native
  * glyphs (correct, just OS-styled) show for those few frames.

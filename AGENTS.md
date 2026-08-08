@@ -90,6 +90,6 @@ change, change the rule in the same commit and say so in the message.
 pnpm install && pnpm db:push && pnpm dev   # run locally → http://localhost:7005
 pnpm check:consistency                     # the commit gate — before EVERY commit
 pnpm exec tsc --noEmit && pnpm lint        # gated by web-ci.yml — run them before pushing
-pnpm exec vitest run                       # tests (also run in web-ci.yml)
+pnpm test                                  # tests — a hard gate in web-ci.yml
 make gazelle && make test                  # Go fleet (Bazel)
 ```

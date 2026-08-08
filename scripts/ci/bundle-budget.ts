@@ -77,6 +77,7 @@ async function brotliSizes(files: string[]): Promise<Map<string, number>> {
             `unable to measure ${path.relative(ROOT, file)}: ${
               error instanceof Error ? error.message : String(error)
             }`,
+            { cause: error },
           );
         }
         console.warn(`bundle-budget: unable to measure ${path.relative(ROOT, file)} (using 0 KB)`);

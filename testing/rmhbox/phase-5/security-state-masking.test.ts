@@ -19,6 +19,18 @@ import {
   findLastActionBroadcast,
 } from './setup';
 
+// ─── Module mocks ────────────────────────────────────────────────
+// See 4-wiki-race.test.ts — same two stubs, shared factories, hoisted to where
+// they actually run.
+vi.mock('../../../lib/rmhbox/wiki-race/wikipedia-proxy', async () => {
+  const { wikipediaProxyMock } = await import('./wiki-race-mocks');
+  return wikipediaProxyMock();
+});
+vi.mock('../../../lib/rmhbox/wiki-race/data-loader', async () => {
+  const { dataLoaderMock } = await import('./wiki-race-mocks');
+  return dataLoaderMock();
+});
+
 // ─── Tests ───────────────────────────────────────────────────────
 
 describe('Security — State Masking (Phase 5)', () => {
@@ -142,47 +154,6 @@ describe('Security — State Masking (Phase 5)', () => {
 
   describe('Wiki-Race — Navigation Privacy', () => {
     it('player progress broadcasts should NOT include currentArticleTitle', () => {
-      vi.mock('../../../lib/rmhbox/wiki-race/wikipedia-proxy', () => ({
-        createArticleCache: () => {
-          const cache = new Map();
-          return {
-            get: (key: string) => cache.get(key),
-            set: (key: string, val: unknown) => cache.set(key, val),
-            has: (key: string) => cache.has(key),
-            delete: (key: string) => cache.delete(key),
-            clear: () => cache.clear(),
-            size: cache.size,
-          };
-        },
-        fetchArticle: vi.fn().mockResolvedValue({
-          title: 'Test_Article',
-          sanitizedHtml: '<p>Test</p>',
-          links: new Set(['Target_Article']),
-        }),
-      }));
-
-      vi.mock('../../../lib/rmhbox/wiki-race/data-loader', () => ({
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        selectArticlePair: (_usedPairKeys: string[] = []) => ({
-          id: 'test-pair-001',
-          startArticle: {
-            title: 'Start_Article',
-            url: 'https://en.wikipedia.org/wiki/Start_Article',
-            description: 'Start',
-          },
-          targetArticle: {
-            title: 'Target_Article',
-            url: 'https://en.wikipedia.org/wiki/Target_Article',
-            description: 'Target',
-          },
-          optimalPathLength: 4,
-          difficulty: 'medium' as const,
-          tags: ['test'],
-        }),
-        pairKey: (pair: { startArticle: { title: string }; targetArticle: { title: string } }) =>
-          `${pair.startArticle.title}::${pair.targetArticle.title}`,
-      }));
-
       const ctx = createMockContext();
       const game = new WikiRaceMinigame(ctx.context);
       game.start();
@@ -201,47 +172,6 @@ describe('Security — State Masking (Phase 5)', () => {
     });
 
     it('optimalPathLength should never be exposed in player state', () => {
-      vi.mock('../../../lib/rmhbox/wiki-race/wikipedia-proxy', () => ({
-        createArticleCache: () => {
-          const cache = new Map();
-          return {
-            get: (key: string) => cache.get(key),
-            set: (key: string, val: unknown) => cache.set(key, val),
-            has: (key: string) => cache.has(key),
-            delete: (key: string) => cache.delete(key),
-            clear: () => cache.clear(),
-            size: cache.size,
-          };
-        },
-        fetchArticle: vi.fn().mockResolvedValue({
-          title: 'Test_Article',
-          sanitizedHtml: '<p>Test</p>',
-          links: new Set(['Target_Article']),
-        }),
-      }));
-
-      vi.mock('../../../lib/rmhbox/wiki-race/data-loader', () => ({
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        selectArticlePair: (_usedPairKeys: string[] = []) => ({
-          id: 'test-pair-001',
-          startArticle: {
-            title: 'Start_Article',
-            url: 'https://en.wikipedia.org/wiki/Start_Article',
-            description: 'Start',
-          },
-          targetArticle: {
-            title: 'Target_Article',
-            url: 'https://en.wikipedia.org/wiki/Target_Article',
-            description: 'Target',
-          },
-          optimalPathLength: 4,
-          difficulty: 'medium' as const,
-          tags: ['test'],
-        }),
-        pairKey: (pair: { startArticle: { title: string }; targetArticle: { title: string } }) =>
-          `${pair.startArticle.title}::${pair.targetArticle.title}`,
-      }));
-
       const ctx = createMockContext(undefined, { gameSettings: { totalRounds: 1 } });
       const game = new WikiRaceMinigame(ctx.context);
       game.start();

@@ -1,7 +1,4 @@
-import { createFileRoute, redirect } from '@tanstack/react-router';
-import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
-import { auth } from '@/lib/auth';
+import { createFileRoute } from '@tanstack/react-router';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -26,18 +23,8 @@ import {
   type SecurityReportStatus,
 } from '@/lib/security-report-schema';
 
-const getAdminSession = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
-    throw redirect({ to: '/' });
-  }
-  return null;
-});
-
 export const Route = createFileRoute('/_site/admin/security-reports')({
   head: () => ({ meta: [{ title: 'Security Reports | RMH Studios' }] }),
-  beforeLoad: () => getAdminSession(),
   component: AdminSecurityReportsPage,
 });
 

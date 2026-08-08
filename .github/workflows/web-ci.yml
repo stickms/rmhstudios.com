@@ -6,9 +6,10 @@
 # their own frozen install off the shared pnpm store cache (~10s warm). This
 # means:
 #   • the full production Build runs on EVERY PR regardless of the test result —
-#     it used to sit AFTER the test step in one job, so a red test (or the known
-#     i18n-catalogs drift) skipped it and pre-merge build breakage slipped
-#     through to the deploy;
+#     it used to sit AFTER the test step in one job, so a red test (once, a
+#     long-lived i18n-catalogs drift) skipped it and pre-merge build breakage
+#     slipped through to the deploy. That separation is also what let the test
+#     step go back to being a hard gate in the 2026-08-08 testing audit;
 #   • wall-clock ≈ the slowest single job (~the build), not the sum of all four.
 # ─────────────────────────────────────────────────────────────────────────────
 name: web-ci
@@ -78,10 +79,16 @@ jobs:
             tsc-eslint-${{ runner.os }}-
       # `mkdir -p` so a cold cache (miss on the restore above) still has the dirs
       # tsc/eslint write their cache files into.
+      # `pnpm run typecheck` runs the NATIVE (Go) TypeScript compiler, which
+      # typechecks this repo in ~68s cold / ~7s warm against ~218s / ~17s for the
+      # JavaScript compiler, with identical results. It is invoked by explicit
+      # path in the script because `typescript` and `typescript-native` both ship
+      # a `tsc` bin. `typescript` 5.9 stays installed — typescript-eslint imports
+      # the compiler API from it, and TS 7 does not expose one.
       - name: Typecheck
         run: |
           mkdir -p .cache/tsc
-          pnpm exec tsc --noEmit --incremental --tsBuildInfoFile .cache/tsc/app.tsbuildinfo
+          pnpm run typecheck
       - name: Lint
         run: |
           mkdir -p .cache/eslint
@@ -94,13 +101,17 @@ jobs:
         run: |
           pnpm run docs:api:check
           pnpm run docs:site:check
-      # Advisory (warn, don't block): a red test surfaces in the step summary and
-      # turns this step's own annotation red, but no longer fails the `check` job
-      # — typecheck + lint above remain hard gates. Keep real regressions honest
-      # by reading the run; this trades enforcement for not stopping the pipeline.
+      # A HARD GATE again, as of the 2026-08-08 testing audit.
+      #
+      # This step was `continue-on-error: true` because `i18n-catalogs` was
+      # permanently red and a blocking test step meant the `build` job never
+      # ran on a PR. Both halves of that are gone: the catalogs test passes,
+      # `build` is its own job so a red test cannot hide a build failure, and
+      # the suite is green at 426 files / ~8.9k tests. An advisory test step is
+      # a suite nobody has to keep green — which is how the permanently-red
+      # test got to stay permanently red. If this goes red, fix the test.
       - name: Test
-        run: pnpm exec vitest run
-        continue-on-error: true
+        run: pnpm test
 
   # Full frontend build (vibe packages → vite). Catches build-time breakage that
   # typecheck alone misses. Runs independently of `check` so a red test never

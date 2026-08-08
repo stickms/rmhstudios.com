@@ -48,6 +48,7 @@ writing, not necessarily the current code).
 | [`albums-storage.md`](./albums-storage.md)                         | Albums storage architecture (DB + R2/S3)                                                                                                                                                                                                                                                                                                                   |
 | [`coins.md`](./coins.md)                                           | Coin economy design (implementation plan, largely shipped)                                                                                                                                                                                                                                                                                                 |
 | [`slice-it.md`](./slice-it.md)                                     | **Slice It**: the beatmap analyser (SuperFlux onsets, comb-filtered tempo, DP beat tracking, nested difficulty budgets), the multiplayer state machine and its two disconnect grace windows, the pause/resume rules, storage and quotas, and the scoring the score endpoint bounds submissions against                                                     |
+| [`slice-it-visibility-audit-2026-08-08.md`](./slice-it-visibility-audit-2026-08-08.md) | **What of Slice It you can actually reach.** `_handoff/implementation-status.md` records 155 of the 162 ideas as shipped; this is the second count, of how many have a path to them from the running game. Seven API routes with zero client callers (`L2` shelves, `L3` chart reviews, `L6` uploader dashboard, `R7` integrity review, `L9`/`L12` takedowns, `C8`/`C10` regeneration, `C9` chart import), seven logic modules imported only by their own tests (`goals.ts`, `session.ts`, `drill.ts`, `patterns.ts`, `note-vocab.ts`, `hit-sounds.ts`, `frame-timing.ts`), `setPractice`/`setAutoplay` called only from a test (`P1`/`P3`), four wire events the server handles and the client never sends (`N3`/`N4`/`N5` match modes, `N8` queue, `N12` rejoin), and `L1`'s genre/tag facets unreachable from both ends at once. §D and §E — fourteen persisted settings and five modifiers with no control anywhere — were closed by the same change that wrote this. §H is a third silent i18n failure mode: `i18next-parser` does not recognise the `const { t: ts } = useTranslation(…)` alias this game uses everywhere, so those strings reach no catalog and every non-English locale serves the English default |
 | [`slice-it-chart-editor.md`](./slice-it-chart-editor.md)           | **Slice It chart editor** design (idea `C1`): the `Chart`/`ChartRevision` models kept beside `Song.analysisData` so regeneration never eats human work, the canvas timeline with quantisation colour and the three kinds of hit highlight, the command-pattern undo stack, the enforced Easy ⊆ Normal ⊆ Hard ⊆ Expert nesting invariant, playtest through the real `GameEngine`, onset ghosts from the analyser's rejected candidates, the linter, the four auto-generate scopes (including `auto-only`, which never touches an edited note), and §12's full neumorphic UI spec |
 
 ## Operations
@@ -130,3 +131,20 @@ itself: `game-design.md` describes the current economy, and the four docs that
 described the superseded one (`patch-1.md`, `patch-2.md`,
 `content-expansion.md`, `implementation-plan.md`) were deleted. The repo-root `specs/` directory this file used to point at no longer
 exists — the reference was removed rather than repaired.
+
+Narrowed in the 2026-08-08 testing audit: the vitest suite no longer covers
+gameplay. 180 test files — Slice It's judgement engine, the RMHBox minigame
+rules, and the whole gameplay suites for cookgame / Kowloon Knockout / Dream
+Rift / Temple of Joy / Versecraft / Kaikai / laundry-sort / massive-march /
+isleworks / nightrail / daily-puzzles / Void Breaker — were deleted to take the
+run from ~37s to ~20s. **Any game design doc that describes a behaviour as
+"covered by tests" is now stale.** What survived and why:
+[`testing.md`](./testing.md) §What is not tested.
+
+Fixed in the 2026-08-08 testing audit: `testing.md` was rewritten. It had
+described a `vitest-coverage.yml`, an `epic-tests.yml` and a
+`typecheck-server.yml` that did not exist, counted "~45 workflows" and "~227
+test files" against a tree with 10 and 427, and called the epic suite CI-gated
+when nothing ran it. The workflow count and the epic gate are now real
+(`epic-tests.yml` was written rather than the claim deleted); the rest is
+measured against the tree and dated in the doc's header.

@@ -40,7 +40,7 @@ locales, RTL for `ar`/`ur`). Node ≥24.18, pnpm workspace.
 | `scripts/`     | Seeding, i18n pipeline, OG/icon generation, ladder pipeline, news pipeline, epic build.                                                                               | `docs/README.md`                                 |
 | `deploy/`      | Apache vhosts, blue/green hotswap, DB backups, Terraform (DNS), runbooks.                                                                                             | [`docs/architecture.md`](docs/architecture.md)   |
 | `docs/`        | Reference docs, design docs, plans, runbooks — also **published** as a Sphinx/MyST Read the Docs site in 16 languages.                                                | [`docs/README.md`](docs/README.md)               |
-| `testing/`     | Vitest tests (RMHBox phases). Most other suites are colocated under `lib/`.                                                                                           | `lib/CLAUDE.md` §Testing                         |
+| `testing/`     | RMHBox phase tests (the mission-critical remainder) + the unwired browser smoke. Most other suites are colocated under `lib/`; discovery is a glob, nothing to register. | [`docs/testing.md`](docs/testing.md)             |
 | `cli/`         | `rmhcode` CLI (wraps Claude Code; publishes User Builds).                                                                                                             | —                                                |
 
 ## Commands
@@ -52,7 +52,8 @@ pnpm dev                     # Vite (7005) + socket/rmhbox/rmhtube hubs + ladder
 pnpm exec tsc --noEmit       # typecheck
 pnpm lint                    # eslint (jsx-a11y at warn — add no new warnings)
 pnpm format                  # prettier
-pnpm exec vitest run         # main test suite (includes the UI consistency gate)
+pnpm test                    # main test suite (~20s; mission-critical scope — docs/testing.md)
+pnpm test:epic               # epic content-build suite (needs Chromium)
 pnpm build                   # vibe-packages → vite build → esbuild 6 server bundles
 pnpm i18n:extract            # after adding t() strings
 pnpm check:consistency       # THE COMMIT GATE — run before every commit (see below)
@@ -201,12 +202,15 @@ from one Dockerfile + pushes them to GHCR → an HMAC-signed request wakes the V
 webhook listener (`webhook-server.cjs`) → `./deploy.sh production <sha>` pulls
 those images → prisma migrate → blue/green web hotswap (port 7005/7015 flip).
 
-CI is 10 workflows: `web-ci.yml` (typecheck, lint, tests, build, production
-dependency audit), `go-microservices.yml` (Bazel test), `senior-review.yml`
-(LLM review gate), `deploy.yml`, `synthetic-perf.yml`, `i18n-translate.yml`,
-and the build/deploy guards `build-vibe-packages`, `compose-validate`,
-`prisma-validate`, `prisma-migrate-status`. Run the core checks locally before
-opening a pull request.
+CI is 11 workflows: `web-ci.yml` (typecheck, lint, tests, build, production
+dependency audit — **all blocking**), `epic-tests.yml` (the epic content-build
+suite, path-filtered to `scripts/epic/**`), `go-microservices.yml` (Bazel test),
+`senior-review.yml` (LLM review gate), `deploy.yml`, `synthetic-perf.yml`,
+`i18n-translate.yml`, and the build/deploy guards `build-vibe-packages`,
+`compose-validate`, `prisma-validate`, `prisma-migrate-status`. Run the core
+checks locally before opening a pull request. Which suite runs where, and why
+the deploy's own test step is advisory while the PR's is not:
+[`docs/testing.md`](docs/testing.md) §CI.
 
 ## Trust order for conflicting information
 

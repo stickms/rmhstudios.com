@@ -242,7 +242,13 @@ export function SongLibrary({
         setLoading(false);
       }
     },
-    [filters.sort, filters.dir, filters.q, filters.artist, filters.view, t],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` intentionally
+    // excluded. i18next hands back a NEW `t` identity every time a namespace
+    // finishes loading, and this callback is the dependency of the fetch effect
+    // below — so including it made the library fetch itself four times on a
+    // single page load, three of them for nothing. `t` is read only in the
+    // catch, where a one-render-stale translator is not a defect.
+    [filters.sort, filters.dir, filters.q, filters.artist, filters.view],
   );
 
   React.useEffect(() => {
@@ -258,14 +264,29 @@ export function SongLibrary({
   // the badge is a dead end: it says "Charting…" and stays that way until the
   // player reloads by hand, which reads exactly like the notes failing to load.
   //
-  // Polls only while something is actually pending, and stops the moment
-  // nothing is — an idle library issues no requests at all. 5s because charting
-  // a track takes single-digit seconds, so this is one or two polls in practice.
+  // BOUNDED, and that is the important part. The first version polled every 5s
+  // for as long as anything was pending, which is fine when the worker is up
+  // and charting finishes in seconds — and a permanent 12 requests/minute when
+  // the worker is down and the row never leaves `pending`. Every `read` route
+  // on the site shares one rate-limit bucket per IP, so that one stuck row
+  // spent the whole budget and started 429-ing unrelated pages.
+  //
+  // So: back off, and give up. Ten attempts over about three minutes, then
+  // stop and leave the badge — a reload picks it up, and a chart that has not
+  // landed in three minutes is a worker problem that polling cannot fix.
   const hasPending = songs.some((song) => song.analysisState === 'pending');
   React.useEffect(() => {
     if (!hasPending) return;
-    const timer = setInterval(() => void load(null, false), 5000);
-    return () => clearInterval(timer);
+    let attempts = 0;
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      if (attempts >= 10) return;
+      attempts++;
+      void load(null, false);
+      timer = setTimeout(tick, Math.min(30_000, 5_000 * 1.5 ** attempts));
+    };
+    timer = setTimeout(tick, 5_000);
+    return () => clearTimeout(timer);
   }, [hasPending, load]);
 
   /* ── Artist facet (L15) ─────────────────────────────────────────────────── */
@@ -798,6 +819,33 @@ export function SongLibrary({
                     })
                   : t('library-empty', { defaultValue: 'No tracks yet — upload the first one.' })}
             </p>
+          )}
+
+          {/* The first page, in the shape it will arrive in.
+              This branch used to render NOTHING while `loading` was true with
+              nothing yet fetched — the chrome around it was live and the list
+              area was blank, so the library read as empty right up until the
+              rows appeared, and a slow query looked like a broken page. The
+              table view opposite already passes `loading` down to `SongTable`;
+              the grid had no equivalent. Rows only, no controls: a skeleton
+              that draws buttons invites a click on a button that is not there
+              yet. */}
+          {visibleSongs.length === 0 && loading && (
+            <ul
+              className="divide-y divide-slice-shadow-dark/40"
+              aria-hidden
+              data-testid="library-skeleton"
+            >
+              {Array.from({ length: 6 }, (_, i) => (
+                <li key={i} className="flex items-center gap-3 py-3">
+                  <div className="slice-skeleton h-12 w-12 shrink-0" />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="slice-skeleton h-3.5 w-1/2 max-w-64" />
+                    <div className="slice-skeleton h-2.5 w-1/3 max-w-40" />
+                  </div>
+                </li>
+              ))}
+            </ul>
           )}
 
           {/* Dividers, because the row wraps on a phone: with the controls on

@@ -9,7 +9,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';
 import { useState, useRef, useEffect } from 'react';
-import { FaDiscord, FaGoogle, FaGithub } from 'react-icons/fa';
+import { DiscordIcon, GoogleIcon, GithubIcon } from '@/components/ui/brand-icons';
 import { Mail, Lock, User, Camera, Fingerprint, Loader2, ArrowLeft } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { ImageCropModal } from '@/components/feed/ImageCropModal';
@@ -278,17 +278,17 @@ function LoginPage() {
     {
       id: 'discord' as const,
       label: t('continue-with-discord', { defaultValue: 'Continue with Discord' }),
-      icon: <FaDiscord className="size-5 text-[#5865F2]" />,
+      icon: <DiscordIcon className="size-5" />,
     },
     {
       id: 'google' as const,
       label: t('continue-with-google', { defaultValue: 'Continue with Google' }),
-      icon: <FaGoogle className="size-5 text-[#ea4335]" />,
+      icon: <GoogleIcon className="size-5" />,
     },
     {
       id: 'github' as const,
       label: t('continue-with-github', { defaultValue: 'Continue with GitHub' }),
-      icon: <FaGithub className="size-5" />,
+      icon: <GithubIcon className="size-5" />,
     },
   ];
 

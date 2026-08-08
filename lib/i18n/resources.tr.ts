@@ -21,6 +21,7 @@ import trCGame from "@/locales/tr/c-game.json";
 import trCHistory from "@/locales/tr/c-history.json";
 import trCHouseAlwaysWins from "@/locales/tr/c-house-always-wins.json";
 import trCIsleworks from "@/locales/tr/c-isleworks.json";
+import trCKaikaiDebt from "@/locales/tr/c-kaikai-debt.json";
 import trCKowloonKnockout from "@/locales/tr/c-kowloon-knockout.json";
 import trCLaundrySort from "@/locales/tr/c-laundry-sort.json";
 import trCLayout from "@/locales/tr/c-layout.json";
@@ -77,6 +78,7 @@ import trRRmhbox from "@/locales/tr/r-rmhbox.json";
 import trRRmhcode from "@/locales/tr/r-rmhcode.json";
 import trRSecret from "@/locales/tr/r-secret.json";
 import trRSliceIt from "@/locales/tr/r-slice-it.json";
+import trRSohumbum from "@/locales/tr/r-sohumbum.json";
 import trRStrategies from "@/locales/tr/r-strategies.json";
 import trRStudio from "@/locales/tr/r-studio.json";
 import trRideshare from "@/locales/tr/rideshare.json";
@@ -111,6 +113,7 @@ const trResources = {
   "c-history": trCHistory,
   "c-house-always-wins": trCHouseAlwaysWins,
   "c-isleworks": trCIsleworks,
+  "c-kaikai-debt": trCKaikaiDebt,
   "c-kowloon-knockout": trCKowloonKnockout,
   "c-laundry-sort": trCLaundrySort,
   "c-layout": trCLayout,
@@ -167,6 +170,7 @@ const trResources = {
   "r-rmhcode": trRRmhcode,
   "r-secret": trRSecret,
   "r-slice-it": trRSliceIt,
+  "r-sohumbum": trRSohumbum,
   "r-strategies": trRStrategies,
   "r-studio": trRStudio,
   "rideshare": trRideshare,

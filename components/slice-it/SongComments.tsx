@@ -46,8 +46,13 @@ export function SongComments({ songId }: SongCommentsProps) {
     try {
       const res = await fetch(`/api/slice-it/songs/${songId}/comments`);
       if (res.ok) {
-        const data = await res.json();
-        setComments(data);
+        // The endpoint answers `{ comments, nextCursor }`, not a bare array.
+        // This used to hand the envelope straight to `setComments`, so the
+        // render below called `.map` on an object — which threw inside the
+        // game's error boundary and took the WHOLE game down the moment a
+        // song was selected, not just this panel.
+        const data = (await res.json()) as { comments?: Comment[] };
+        setComments(Array.isArray(data.comments) ? data.comments : []);
       }
     } catch (e) {
       console.error('Failed comments', e);

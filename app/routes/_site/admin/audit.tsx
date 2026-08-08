@@ -1,7 +1,4 @@
-import { createFileRoute, redirect } from '@tanstack/react-router';
-import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
-import { auth } from '@/lib/auth';
+import { createFileRoute } from '@tanstack/react-router';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
@@ -10,16 +7,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useTranslation } from 'react-i18next';
 
-const getAdminSession = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) throw redirect({ to: '/' });
-  return null;
-});
-
 export const Route = createFileRoute('/_site/admin/audit')({
   head: () => ({ meta: [{ title: 'Audit Log | RMH Studios' }] }),
-  beforeLoad: () => getAdminSession(),
   component: AuditLogPage,
 });
 

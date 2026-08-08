@@ -7,15 +7,12 @@
  * caused; that happens server-side in POST /api/admin/appeals/$id.
  */
 
-import { createFileRoute, redirect } from '@tanstack/react-router';
-import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
+import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { Gavel, ShieldCheck, ShieldX, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
 import { Spinner } from '@/components/ui/spinner';
@@ -25,18 +22,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 
-const getAdminSession = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
-    throw redirect({ to: '/' });
-  }
-  return null;
-});
-
 export const Route = createFileRoute('/_site/admin/appeals')({
   head: () => ({ meta: [{ title: 'Strike Appeals | RMH Studios' }] }),
-  beforeLoad: () => getAdminSession(),
   component: AdminAppealsPage,
 });
 

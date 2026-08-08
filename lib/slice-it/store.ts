@@ -86,6 +86,14 @@ interface SliceItState {
   /** A3 — lane palette id. See `lib/slice-it/palettes.ts`. */
   lanePalette: string;
   /**
+   * V1 — note/playfield skin id. See `lib/slice-it/skins.ts`.
+   *
+   * Purely cosmetic, and `assertCosmeticOnly` is the thing that keeps it that
+   * way. Note that a skin names a palette but does NOT get to apply it —
+   * `lanePalette` above is a colour-vision setting and outranks a look.
+   */
+  noteSkin: string;
+  /**
    * A2 — cap how much the screen may brighten per frame, and drop the
    * decorative flashes entirely.
    *
@@ -217,6 +225,7 @@ interface SliceItState {
   setIsDarkMode: (isDark: boolean) => void;
   setQuantColors: (value: boolean) => void;
   setLanePalette: (value: string) => void;
+  setNoteSkin: (value: string) => void;
   setReducedFlash: (value: boolean) => void;
   setEffectIntensity: (value: number) => void;
   setShowJudgementsBelow: (value: string) => void;
@@ -322,6 +331,7 @@ export const useSliceItStore = create<SliceItState>()(
       isDarkMode: true,
       quantColors: true,
       lanePalette: 'default',
+      noteSkin: 'default',
       reducedFlash: false,
       effectIntensity: 1,
       showJudgementsBelow: 'MARVELOUS',
@@ -356,6 +366,7 @@ export const useSliceItStore = create<SliceItState>()(
       setIsDarkMode: (isDarkMode) => set({ isDarkMode }),
       setQuantColors: (quantColors) => set({ quantColors }),
       setLanePalette: (lanePalette) => set({ lanePalette }),
+      setNoteSkin: (noteSkin) => set({ noteSkin }),
       setReducedFlash: (reducedFlash) => set({ reducedFlash }),
       setEffectIntensity: (v) => set({ effectIntensity: Math.max(0, Math.min(1, v)) }),
       setShowJudgementsBelow: (showJudgementsBelow) => set({ showJudgementsBelow }),
@@ -456,6 +467,7 @@ export const useSliceItStore = create<SliceItState>()(
         isDarkMode: state.isDarkMode,
         quantColors: state.quantColors,
         lanePalette: state.lanePalette,
+        noteSkin: state.noteSkin,
         reducedFlash: state.reducedFlash,
         effectIntensity: state.effectIntensity,
         showJudgementsBelow: state.showJudgementsBelow,
@@ -537,6 +549,7 @@ export const useSliceItStore = create<SliceItState>()(
           state = {
             ...state,
             lanePalette: 'default',
+            noteSkin: 'default',
             reducedFlash: false,
             effectIntensity: 1,
             showJudgementsBelow: 'MARVELOUS',

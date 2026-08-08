@@ -15,7 +15,9 @@
  *
  * They drive the real script as a subprocess against fixture migrations in a
  * temp directory, so they test what CI actually runs rather than a re-import of
- * its internals.
+ * its internals. The script is compiled once with esbuild rather than launched
+ * fifteen times through `tsx` — same source, same subprocess boundary, one
+ * compile instead of fifteen (see `compiled` below).
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
@@ -23,14 +25,25 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, cpSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { buildSync } from 'esbuild';
 
 const ROOT = resolve(__dirname, '../..');
 const SCRIPT = join(ROOT, 'scripts/check-migration-safety.ts');
-// The .bin shim is an executable shell wrapper, not a JS entry — run it directly
-// rather than through `node`, which cannot load it.
-const TSX = join(ROOT, 'node_modules/.bin/tsx');
 
 let sandbox: string;
+/**
+ * The script, transpiled once into the sandbox and then run with plain `node`.
+ *
+ * There are 15 runs in this file. Booting `tsx` for each of them costs ~350ms
+ * of loader startup apiece — over five seconds of the suite spent compiling the
+ * same 428 lines fifteen times. esbuild does that compile once (~30ms) and each
+ * run is then a bare node process (~40ms).
+ *
+ * The script imports nothing but `node:fs` and `node:path`, so the bundle is a
+ * faithful copy of what `tsx scripts/check-migration-safety.ts` executes in
+ * CI — same source, same semantics, one compile.
+ */
+let compiled: string;
 
 /**
  * Run the script against a sandbox whose `prisma/migrations` we control.
@@ -46,9 +59,14 @@ function run(migrations: Record<string, string>): { code: number; out: string } 
     mkdirSync(join(dir, name), { recursive: true });
     writeFileSync(join(dir, name, 'migration.sql'), sql);
   }
+  return exec(['--baseline', '__fixture_base__'], sandbox);
+}
+
+/** Run the compiled script with `args`, from `cwd`, capturing both streams. */
+function exec(args: string[], cwd: string): { code: number; out: string } {
   try {
-    const out = execFileSync(TSX, [SCRIPT, '--baseline', '__fixture_base__'], {
-      cwd: sandbox,
+    const out = execFileSync(process.execPath, [compiled, ...args], {
+      cwd,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
     });
@@ -65,6 +83,16 @@ beforeAll(() => {
   // The script is run from the sandbox, so it needs the repo's node_modules on
   // the resolution path. A symlink is enough and costs nothing.
   cpSync(join(ROOT, 'package.json'), join(sandbox, 'package.json'));
+
+  compiled = join(sandbox, 'check-migration-safety.mjs');
+  buildSync({
+    entryPoints: [SCRIPT],
+    outfile: compiled,
+    bundle: true,
+    platform: 'node',
+    format: 'esm',
+    target: 'node24',
+  });
 });
 
 afterAll(() => {
@@ -192,7 +220,8 @@ describe('the real migration history', () => {
   it('passes today', () => {
     // Guards against someone advancing BASELINE to silence a finding, and
     // against a fixture-only pass masking a broken real run.
-    const out = execFileSync(TSX, [SCRIPT, '--check'], { cwd: ROOT, encoding: 'utf8' });
+    const { code, out } = exec(['--check'], ROOT);
+    expect(code).toBe(0);
     expect(out).toContain('no unsafe statements found');
   });
 });

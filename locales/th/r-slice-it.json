@@ -78,6 +78,9 @@
   "link-discord": "Link your Discord account to keep scores",
   "linked-badge": "Linked",
   "linked-session-not-saved": "Signed in as {{name}} on Discord, but this session isn't connected to your rmhstudios.com account — this score was not saved.",
+  "note-skin": "Note Skin",
+  "note-skin-hint": "Notation draws each tap as the note it is — a head, a stem, and a flag per subdivision — so the rhythm reads from the shape and not only from the colour. Every skin keeps the same hit target.",
+  "note-skin-label": "Note style",
   "pairing-code-hint": "Shared lobby code: {{code}}",
   "pairing-failed-generic": "Couldn't join the group lobby — playing solo.",
   "pairing-full": "This channel's lobby is full (8 players) — playing solo.",
@@ -91,5 +94,10 @@
   "presence-solo-browsing": "Choosing a track",
   "presence-solo-playing": "Playing solo",
   "presence-waiting": "In the lobby",
-  "sign-in-to-sync": "Sign in to sync scores"
+  "sign-in-to-sync": "Sign in to sync scores",
+  "skin-arrows": "Arrows",
+  "skin-keys": "Keys",
+  "skin-minimal": "Minimal",
+  "skin-notation": "Notation",
+  "skin-orbs": "Orbs"
 }

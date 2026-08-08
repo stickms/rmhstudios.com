@@ -14,7 +14,8 @@
  * imports every route module statically — so whatever this file pulls in ends up
  * in the SHARED CLIENT ENTRY that every page of the site loads before it can
  * hydrate. Importing the nine detail views eagerly put **46.9 KB of
- * `components/rmhbox`** there, plus `twemoji-parser` (13.6 KB) which only
+ * `components/rmhbox`** there, plus a Twemoji library (13.6 KB — then the
+ * archived `twemoji-parser`, now `@twemoji/api`) which only
  * `EmojiCinemaHistoryDetail` reaches, on the homepage's critical path.
  *
  * A detail view renders only when a visitor expands one row of one minigame's

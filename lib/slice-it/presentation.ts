@@ -177,3 +177,74 @@ function clamp01(value: number): number {
   if (!Number.isFinite(value)) return 0;
   return Math.max(0, Math.min(1, value));
 }
+
+/* ─── V13 — playfield energy ─────────────────────────────────────────────── */
+
+/**
+ * The combo at which the curve below has spent ~63% of its range.
+ *
+ * Picked against the shape of a real run rather than a round number: 50 is
+ * "you have started", 200 is "this is going well", 600 is "do not breathe".
+ * At 260 those land at 0.17 / 0.54 / 0.90, which keeps visible headroom
+ * exactly where the player is still climbing and stops spending it long
+ * before a 1000-combo chart runs out of playfield to light up.
+ */
+export const ENERGY_HALF_COMBO = 260;
+
+/**
+ * How lit the playfield is, as a pure function of the current combo. 0 → 1.
+ *
+ * **Continuous and thresholdless, and that is the entire point.** The combo
+ * feedback this replaces was a full-screen colour wash fired at 50/100/250/
+ * 500/1000 — five interruptions per song, at the precise moments the player is
+ * reading notes, and the most-complained-about thing in the game (removed in
+ * `f35a003f`). A smaller flash on the same thresholds would have been the same
+ * mistake with a smaller radius.
+ *
+ * So this is a curve, not a ladder: every note you hit moves it a little, which
+ * means the playfield rewards the streak you are *in* rather than announcing
+ * the ones you have finished. Nothing here has a timeline, a period or a pulse
+ * — the only thing that moves it is the combo, and {@link approachEnergy}
+ * bounds how fast it may follow.
+ *
+ * Saturating rather than linear because the interesting range is the bottom:
+ * the difference between 20 and 80 combo is a run finding its feet and should
+ * be visible, while the difference between 800 and 900 is not information.
+ */
+export function comboEnergy(combo: number): number {
+  if (!Number.isFinite(combo) || combo <= 0) return 0;
+  return 1 - Math.exp(-combo / ENERGY_HALF_COMBO);
+}
+
+/** Seconds for the lit state to close ~63% of a gap while the combo climbs. */
+export const ENERGY_RISE_TAU = 0.45;
+
+/**
+ * The same, falling. Deliberately slower than the rise.
+ *
+ * A combo break takes {@link comboEnergy} from (say) 0.9 to 0 in one frame. Cut
+ * straight, that is a full-playfield luminance step — the exact shape of the
+ * flash this feature exists to not be. Draining it over about a second reads as
+ * the field going out, which is also the truer description of what happened.
+ */
+export const ENERGY_FALL_TAU = 0.9;
+
+/**
+ * Move `current` toward `target` by one frame's worth of first-order lag.
+ *
+ * Exponential rather than a fixed step so it is frame-rate independent: the
+ * same wall-clock second produces the same approach at 60 Hz and at 144 Hz.
+ *
+ * This is also what makes the accessibility bound trivially true. A first-order
+ * lag has no overshoot and no oscillation, so the lit state cannot flash at any
+ * rate — with these taus its steepest excursion is a ~2/s ramp that only
+ * happens once per streak. There is no periodic term anywhere in this feature
+ * (no beat pulse, no shimmer), which is why "nothing above ~3 Hz" is not a
+ * budget being spent but a class of effect that was never added.
+ */
+export function approachEnergy(current: number, target: number, dt: number): number {
+  if (!Number.isFinite(dt) || dt <= 0) return clamp01(current);
+  const tau = target >= current ? ENERGY_RISE_TAU : ENERGY_FALL_TAU;
+  const k = 1 - Math.exp(-dt / tau);
+  return clamp01(current + (clamp01(target) - clamp01(current)) * k);
+}

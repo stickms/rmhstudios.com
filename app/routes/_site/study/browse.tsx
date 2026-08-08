@@ -32,10 +32,8 @@ export const Route = createFileRoute('/_site/study/browse')({
 function BrowsePage() {
   const initialData = Route.useLoaderData();
   return (
-    <>
-      <PageFrame>
-        <DeckMarketplaceColumn initialData={initialData} />
-      </PageFrame>
-    </>
+    <PageFrame>
+      <DeckMarketplaceColumn initialData={initialData} />
+    </PageFrame>
   );
 }
