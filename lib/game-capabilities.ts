@@ -267,6 +267,22 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     accessibility: [],
     descriptors: ['flashing'],
   },
+  'bums-rush': {
+    genre: ['party', 'platformer'],
+    players: ['single', 'online-coop', 'online-versus', 'async-leaderboard'],
+    maxPlayers: 4,
+    // Only `mouse` today: the shell is a DOM title screen. The input layer that
+    // adds keyboard, gamepad and touch lands with the playable build, and each
+    // of those strings goes in with the commit that implements it — the honesty
+    // rule at the top of this file, applied to a game that is arriving in
+    // pieces. Same for `accessibility`, which is empty rather than aspirational.
+    input: { supported: ['mouse'], required: [] },
+    sessionMinutes: [10, 45],
+    engine: '2d-canvas',
+    demanding: false,
+    save: 'own-table',
+    accessibility: [],
+  },
   'kowloon-knockout': {
     genre: ['fighting', 'action'],
     players: ['single', 'online-versus'],

@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "worlds": [
+    {
+      "world": 1,
+      "name": "bums.world.w1.name",
+      "levels": [
+        { "id": "w1-01", "world": 1, "index": 1, "name": "bums.level.w1-01.name", "minPlayers": 1, "parSeconds": 45 },
+        { "id": "w1-02", "world": 1, "index": 2, "name": "bums.level.w1-02.name", "minPlayers": 1, "parSeconds": 76 },
+        { "id": "w1-03", "world": 1, "index": 3, "name": "bums.level.w1-03.name", "minPlayers": 1, "parSeconds": 78 },
+        { "id": "w1-04", "world": 1, "index": 4, "name": "bums.level.w1-04.name", "minPlayers": 1, "parSeconds": 86 },
+        { "id": "w1-05", "world": 1, "index": 5, "name": "bums.level.w1-05.name", "minPlayers": 1, "parSeconds": 43 },
+        { "id": "w1-06", "world": 1, "index": 6, "name": "bums.level.w1-06.name", "minPlayers": 1, "parSeconds": 122 },
+        { "id": "w1-07", "world": 1, "index": 7, "name": "bums.level.w1-07.name", "minPlayers": 2, "parSeconds": 126 },
+        { "id": "w1-08", "world": 1, "index": 8, "name": "bums.level.w1-08.name", "minPlayers": 2, "parSeconds": 210 },
+        { "id": "w1-09", "world": 1, "index": 9, "name": "bums.level.w1-09.name", "minPlayers": 1, "parSeconds": 73 }
+      ]
+    }
+  ],
+  "showdown": [
+    { "id": "w1-a", "world": 1, "index": 1, "name": "bums.showdown.w1-a.name", "minPlayers": 2, "parSeconds": 45, "showdownRounds": ["race"] },
+    { "id": "w1-b", "world": 1, "index": 2, "name": "bums.showdown.w1-b.name", "minPlayers": 2, "parSeconds": 40, "showdownRounds": ["survive"] },
+    { "id": "w1-c", "world": 1, "index": 3, "name": "bums.showdown.w1-c.name", "minPlayers": 2, "parSeconds": 40, "showdownRounds": ["handle"] }
+  ]
+}

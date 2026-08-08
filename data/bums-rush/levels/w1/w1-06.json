@@ -1,0 +1,135 @@
+{
+  "version": 1,
+  "id": "w1-06",
+  "world": 1,
+  "index": 6,
+  "name": "bums.level.w1-06.name",
+  "minPlayers": 1,
+  "parSeconds": 122,
+  "bounds": { "x": 0, "y": 0, "w": 3800, "h": 1600 },
+  "palette": {
+    "paper": "#f4ead6",
+    "ink": "#1e2430",
+    "accent": "#2a7fbf",
+    "flashSafe": true,
+    "contrastRatio": 13.02
+  },
+  "spawn": [{ "x": 220, "y": 860 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 3300, "y": 760, "w": 120, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [{ "at": { "x": 1150, "y": 800 } }, { "at": { "x": 2050, "y": 770 } }],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 870, "y": 860, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1760, "y": 830, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 2950, "y": 820, "w": 700, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "swing-escalate-a",
+      "kind": "swing",
+      "at": { "x": 730, "y": 620 },
+      "length": 260,
+      "damping": 0.2
+    },
+    {
+      "id": "crate-w1-06",
+      "kind": "crate",
+      "at": { "x": 1300, "y": 790 },
+      "size": { "x": 100, "y": 80 },
+      "mass": 1.2,
+      "material": "rubber"
+    },
+    {
+      "id": "rope-crate-swing",
+      "kind": "rope",
+      "at": { "x": 1620, "y": 600 },
+      "segments": 14,
+      "stiffness": 0.35
+    },
+    {
+      "id": "lift-escalate",
+      "kind": "platformMoving",
+      "at": { "x": 2460, "y": 860 },
+      "size": { "x": 160, "y": 40 },
+      "path": [
+        { "x": 2460, "y": 860 },
+        { "x": 2760, "y": 860 }
+      ],
+      "speed": 130,
+      "loop": true,
+      "material": "paper"
+    },
+    {
+      "id": "relic-w1-06",
+      "kind": "relic",
+      "relicId": "w1-relic-06",
+      "at": { "x": 2050, "y": 780 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "sea",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1500, "w": 3800, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w1-06-clock" },
+    { "kind": "flawless", "id": "w1-06-flawless" },
+    {
+      "kind": "haul",
+      "id": "w1-06-haul",
+      "relicIds": ["w1-relic-06"]
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 950, "y": 560 },
+      "textKey": "bums.level.w1-06.note-crate",
+      "width": 240
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 2600, "y": 700 },
+      "sprite": "crane-silhouette",
+      "scale": 0.8
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 1200, "y": 730 },
+      "to": { "x": 1330, "y": 770 }
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 3200, "y": 1420 },
+      "r": 55
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 600, "y": 900 }, { "x": 870, "y": 860 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 1470, "y": 860 }, { "x": 1760, "y": 830 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 2360, "y": 830 }, { "x": 2950, "y": 820 }], "thickness": 10 }
+  ],
+  "music": "w1-doodle-docks",
+  "authorNotes": "Solo, three checkpointed segments escalating in combination. Segment 1 is a plain swing (swing-escalate-a, 270px, familiar from 01/02). Segment 2 is the escalation: crate-w1-06 sits on pier A — it is not required for anything scored, but it is a heavy, high-grip (rubber) grabbable body, and carrying it out onto rope-crate-swing (anchor 1620,600) and letting its weight add momentum to the swing is the intended fun way across the 290px gap to pier B; leaving it behind and taking the rope bare-handed also works, it is just less funny. relic-w1-06 sits on pier B for the haul objective. Segment 3 combines a first: lift-escalate patrols back and forth between (2460,860) and (2760,860) rather than sitting still, so boarding it now requires timing, the way the earlier levels' static swings did not. Assist beams span all three gaps at the usual Clock cost."
+}

@@ -39,6 +39,7 @@ import { appEntrySchema, gameEntrySchema, type AppInfo, type GameInfo } from './
 
 // ── Games ─────────────────────────────────────────────────────────────────
 import altair from './games/altair';
+import bumsRush from './games/bums-rush';
 import cookgame from './games/cookgame';
 import dailyPuzzles from './games/daily-puzzles';
 import dreamRift from './games/dream-rift';
@@ -77,6 +78,7 @@ import studio from './apps/studio';
 
 const GAME_MODULES: readonly unknown[] = [
   altair,
+  bumsRush,
   cookgame,
   dailyPuzzles,
   dreamRift,

@@ -147,6 +147,19 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'game.rmhtube.host_room', name: 'Now Showing', description: 'Host an RMHTube watch room.', icon: '📺', category: 'games', tier: 'bronze', coinReward: 10, target: 1, group: 'RMHTube' },
   { id: 'game.rmhmusic.host_room', name: 'On the Decks', description: 'Host an RMHMusic listening room.', icon: '🎚️', category: 'games', tier: 'bronze', coinReward: 10, target: 1, group: 'RMHMusic' },
   { id: 'game.rmhstudy.session', name: 'Study Buddy', description: 'Complete a focus session in RMHStudy.', icon: '📖', category: 'games', tier: 'bronze', coinReward: 10, target: 1, group: 'RMHStudy' },
+  // Bum's Rush
+  { id: 'games.bums_first_clear', name: 'Get a Grip', description: 'Clear your first level.', icon: '✋', category: 'games', tier: 'bronze', coinReward: 10, target: 1, group: "Bum's Rush" },
+  { id: 'games.bums_world_1', name: 'Dockhand', description: 'Clear Doodle Docks.', icon: '⚓', category: 'games', tier: 'bronze', coinReward: 20, target: 1, group: "Bum's Rush" },
+  { id: 'games.bums_levels_25', name: 'Handy', description: 'Clear 25 levels.', icon: '🤲', category: 'games', tier: 'silver', coinReward: 50, target: 25, group: "Bum's Rush" },
+  { id: 'games.bums_levels_72', name: 'All Hands', description: 'Clear every level.', icon: '👐', category: 'games', tier: 'gold', coinReward: 150, target: 72, group: "Bum's Rush" },
+  { id: 'games.bums_objectives_100', name: 'Completionist-ish', description: 'Complete 100 optional objectives.', icon: '📋', category: 'games', tier: 'silver', coinReward: 60, target: 100, group: "Bum's Rush" },
+  { id: 'games.bums_parcels_40', name: 'Unwrapped', description: 'Find all 40 hidden parcels.', icon: '🎁', category: 'games', tier: 'gold', coinReward: 120, target: 40, group: "Bum's Rush" },
+  { id: 'games.bums_flawless_10', name: 'Unsplattered', description: 'Clear 10 levels without a single death.', icon: '💯', category: 'games', tier: 'silver', coinReward: 60, target: 10, group: "Bum's Rush" },
+  { id: 'games.bums_chain_4', name: 'Human Rope', description: 'Form a four-player chain.', icon: '⛓️', category: 'games', tier: 'bronze', coinReward: 20, target: 1, group: "Bum's Rush" },
+  { id: 'games.bums_showdown_first', name: 'Et Tu', description: 'Win a Showdown match.', icon: '🏅', category: 'games', tier: 'bronze', coinReward: 20, target: 1, group: "Bum's Rush" },
+  { id: 'games.bums_showdown_25', name: 'Nemesis', description: 'Win 25 Showdown matches.', icon: '👑', category: 'games', tier: 'gold', coinReward: 120, target: 25, group: "Bum's Rush" },
+  { id: 'games.bums_cat', name: 'Bad Cat', description: 'Get bailed out by Inkblot.', icon: '🐱', category: 'games', tier: 'bronze', coinReward: 10, target: 1, group: "Bum's Rush", secret: true },
+  { id: 'games.bums_deaths_500', name: 'Splat Artist', description: 'Die 500 times.', icon: '💥', category: 'games', tier: 'silver', coinReward: 40, target: 500, group: "Bum's Rush" },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));

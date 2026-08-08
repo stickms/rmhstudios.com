@@ -1,0 +1,99 @@
+{
+  "version": 1,
+  "id": "w1-c",
+  "world": 1,
+  "index": 3,
+  "name": "bums.showdown.w1-c.name",
+  "minPlayers": 2,
+  "parSeconds": 40,
+  "bounds": { "x": 0, "y": 0, "w": 2000, "h": 1200 },
+  "palette": {
+    "paper": "#f4ead6",
+    "ink": "#1e2430",
+    "accent": "#2a7fbf",
+    "flashSafe": true,
+    "contrastRatio": 13.02
+  },
+  "spawn": [
+    { "x": 300, "y": 800 },
+    { "x": 1700, "y": 800 },
+    { "x": 900, "y": 800 },
+    { "x": 1100, "y": 800 }
+  ],
+  "goal": {
+    "shape": { "kind": "rect", "x": 940, "y": 790, "w": 120, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 200, "y": 850, "w": 1600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "lever-spot-a",
+      "kind": "lever",
+      "at": { "x": 700, "y": 800 },
+      "length": 60,
+      "threshold": 0.5,
+      "signal": "w1-c-lever-pulled"
+    },
+    {
+      "id": "lever-spot-b",
+      "kind": "lever",
+      "at": { "x": 1000, "y": 800 },
+      "length": 60,
+      "threshold": 0.5,
+      "signal": "w1-c-lever-pulled"
+    },
+    {
+      "id": "lever-spot-c",
+      "kind": "lever",
+      "at": { "x": 1300, "y": 800 },
+      "length": 60,
+      "threshold": 0.5,
+      "signal": "w1-c-lever-pulled"
+    },
+    {
+      "id": "relic-w1-c",
+      "kind": "relic",
+      "relicId": "w1-relic-showdown-c",
+      "at": { "x": 500, "y": 800 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "sea",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1000, "w": 2000, "h": 200 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w1-c-clock" },
+    { "kind": "flawless", "id": "w1-c-flawless" },
+    {
+      "kind": "haul",
+      "id": "w1-c-haul",
+      "relicIds": ["w1-relic-showdown-c"]
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "doodle",
+      "at": { "x": 1000, "y": 650 },
+      "sprite": "question-mark",
+      "scale": 1
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 300, "y": 900 },
+      "r": 40
+    }
+  ],
+  "assistBeams": [],
+  "music": "w1-showdown",
+  "authorNotes": "Showdown / handle, 2-4 players, one shared central platform (compact, contested middle per §8.2). Three lever props (lever-spot-a/b/c) sit across the middle, all wired to the same 'w1-c-lever-pulled' signal — the Prop contract has no 'this lever is inactive/hidden until selected' field, so the intended runtime behaviour (only one of the three is live per round, chosen at random, per §8.2's 'position rotates between 3 spots') is round logic the engine applies on top of this static data: enable exactly one of the three at round start (after the 5s delay §8.2 specifies), leave the other two inert. First player to cross that lever's threshold wins the round. relic-w1-c is a bystander pickup near the spawn line, unrelated to the win condition. The platform is wide and flat on purpose — everyone reaches the middle by roughly the same short distance, so the contest is about who gets there and grabs first, not who has the better traversal."
+}

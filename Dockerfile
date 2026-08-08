@@ -273,6 +273,21 @@ COPY lib/account ./lib/account/
 COPY lib/account-lifecycle.ts ./lib/account-lifecycle.ts
 COPY lib/shop/equipped.ts ./lib/shop/equipped.ts
 COPY lib/shop/themes.ts ./lib/shop/themes.ts
+
+# Bum's Rush: the socket hub is a room manager + validating relay — it never
+# simulates (design doc §9.1), so it needs the wire contract and nothing else.
+# The codecs are here because the hub reads a 5-byte snapshot header to cache
+# keyframes for host migration and one byte per seat to check input ownership;
+# `cosmetics.ts` because a client must not be able to invent a cosmetic id.
+# The client-side `net/` modules (host/guest/socket/lobby) are deliberately NOT
+# copied — nothing in the server bundle reaches them.
+COPY lib/bums-rush/types.ts ./lib/bums-rush/types.ts
+COPY lib/bums-rush/constants.ts ./lib/bums-rush/constants.ts
+COPY lib/bums-rush/cosmetics.ts ./lib/bums-rush/cosmetics.ts
+COPY lib/bums-rush/net/protocol.ts ./lib/bums-rush/net/protocol.ts
+COPY lib/bums-rush/net/snapshot.ts ./lib/bums-rush/net/snapshot.ts
+COPY lib/bums-rush/net/input.ts ./lib/bums-rush/net/input.ts
+COPY lib/bums-rush/net/migration.ts ./lib/bums-rush/net/migration.ts
 # homes-worker (RMHHomes external-listing scraper cron) needs lib/homes for its
 # scrape pipeline/seed and the dependency-light watch notifier. Its bundle only
 # reaches lib/homes/scrape + types/distance/watch-match, so the heavier

@@ -1,0 +1,123 @@
+{
+  "version": 1,
+  "id": "w1-04",
+  "world": 1,
+  "index": 4,
+  "name": "bums.level.w1-04.name",
+  "minPlayers": 1,
+  "parSeconds": 86,
+  "bounds": { "x": 0, "y": 0, "w": 3350, "h": 1500 },
+  "palette": {
+    "paper": "#f4ead6",
+    "ink": "#1e2430",
+    "accent": "#2a7fbf",
+    "flashSafe": true,
+    "contrastRatio": 13.02
+  },
+  "spawn": [{ "x": 220, "y": 860 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 3000, "y": 740, "w": 120, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [{ "at": { "x": 1750, "y": 800 } }],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 650, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1550, "y": 860, "w": 650, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 2480, "y": 820, "w": 750, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "lift-broken",
+      "kind": "platformMoving",
+      "at": { "x": 750, "y": 900 },
+      "size": { "x": 180, "y": 40 },
+      "path": [
+        { "x": 750, "y": 900 },
+        { "x": 750, "y": 1100 },
+        { "x": 1050, "y": 1150 },
+        { "x": 1300, "y": 950 },
+        { "x": 1300, "y": 820 }
+      ],
+      "speed": 120,
+      "loop": true,
+      "material": "paper"
+    },
+    {
+      "id": "swing-final",
+      "kind": "swing",
+      "at": { "x": 2340, "y": 600 },
+      "length": 260,
+      "damping": 0.2
+    },
+    {
+      "id": "relic-w1-04-a",
+      "kind": "relic",
+      "relicId": "w1-relic-04-a",
+      "at": { "x": 320, "y": 850 }
+    },
+    {
+      "id": "relic-w1-04-b",
+      "kind": "relic",
+      "relicId": "w1-relic-04-b",
+      "at": { "x": 1900, "y": 810 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "sea",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1400, "w": 3350, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w1-04-clock" },
+    { "kind": "flawless", "id": "w1-04-flawless" },
+    {
+      "kind": "haul",
+      "id": "w1-04-haul",
+      "relicIds": ["w1-relic-04-a", "w1-relic-04-b"]
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 700, "y": 500 },
+      "textKey": "bums.level.w1-04.note-lift",
+      "width": 260
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 1000, "y": 1120 },
+      "sprite": "gull",
+      "scale": 0.7
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 260, "y": 800 },
+      "to": { "x": 310, "y": 840 }
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 2900, "y": 1350 },
+      "r": 45
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 650, "y": 900 }, { "x": 1550, "y": 860 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 2200, "y": 860 }, { "x": 2480, "y": 820 }], "thickness": 10 }
+  ],
+  "music": "w1-doodle-docks",
+  "authorNotes": "Solo. New mechanic: carrying (haul relic-w1-04-a, picked up right at spawn, and relic-w1-04-b on the middle pier — both must reach the goal together). The twist is lift-broken: a sticky note promises a lift straight across, but its authored path dips down and sideways first (750,900 to 750,1100 to 1050,1150) before finally climbing to the middle pier (1300,820) — riding it out is still the only way across, it just isn't the straight line the note implies, and the dip stays a safe 250px above the sea even at its lowest point. Grab relic-w1-04-a before boarding the lift so a fumbled carry doesn't cost a second trip. The second gap is a plain single swing (swing-final) back on familiar ground, carrying both relics to the goal. Assist beams span both gaps for players who'd rather not carry cargo across a swing."
+}

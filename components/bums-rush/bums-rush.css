@@ -1,0 +1,127 @@
+@layer base {
+  /*
+   * Bum's Rush — the notebook palette.
+   *
+   * This is the ONLY definition of these tokens. `app/globals.css` binds them
+   * to Tailwind utilities in its `@theme` block and defines nothing, which is
+   * the lesson the `--slice-*` comment in that file records: a token with two
+   * homes is a token whose value depends on which selector happens to win.
+   *
+   * The route suppresses the site theme (`THEME_EXCLUDED_ROUTES` derives itself
+   * from the games catalog), so these are absolute values rather than
+   * theme-tracking ones. The game is a drawing on paper; it looks the same for
+   * everyone, and that is deliberate — the whole readability argument in the
+   * design doc (§2.8) rests on a known ink-on-cream contrast.
+   *
+   * Ink is a near-black BLUE rather than #000 because pure black on cream reads
+   * as printed, and the entire conceit is that a person drew this in biro.
+   */
+  .bums-theme {
+    color-scheme: light;
+
+    /* Paper */
+    --bum-paper: #f4ead6;
+    --bum-paper-2: #ece0c8;
+    --bum-paper-edge: #d8c9aa;
+    --bum-rule: #b9c9d6;
+    --bum-margin: #e2a0a8;
+
+    /* Ink */
+    --bum-ink: #1e2430;
+    --bum-ink-soft: rgba(71, 80, 96, 0.5);
+    --bum-graphite: #6b7280;
+    --bum-highlight: #fff6a8;
+    --bum-tape: rgba(232, 220, 192, 0.8);
+    --bum-splat: #232b3a;
+
+    /*
+     * Seat colours: four marker pens, picked for distinct hue AND distinct
+     * lightness so they survive protan/deutan/tritan simulation. They are still
+     * never the only channel — every seat also wears a forehead mark and can
+     * wear a name tag (design doc §2.8).
+     */
+    --bum-seat-1: #d1495b;
+    --bum-seat-2: #2a7fbf;
+    --bum-seat-3: #3f8f52;
+    --bum-seat-4: #c9761a;
+
+    /* Chrome derived from the above, so a world tint moves the whole UI with it. */
+    --bum-surface: rgba(244, 234, 214, 0.92);
+    --bum-surface-2: rgba(236, 224, 200, 0.96);
+    --bum-danger: #c02a37;
+    --bum-success: #3f8f52;
+
+    /*
+     * The game owns its radius rather than inheriting `--site-radius`: paper is
+     * cut with scissors, and every card in this UI is a torn or cut rectangle.
+     * Small and honest beats the site's softer glass radius here.
+     */
+    --bum-radius: 6px;
+    --bum-radius-sm: 3px;
+    --bum-radius-lg: 12px;
+
+    background-color: var(--bum-paper);
+    color: var(--bum-ink);
+  }
+
+  /*
+   * Per-world tints. The renderer reads `palette` out of the level data for the
+   * canvas; these classes exist so the DOM chrome (pause menu, HUD, results)
+   * moves with the world instead of staying cream while the level goes cold
+   * grey. Only the values that actually change are restated.
+   */
+  .bums-theme[data-world='5'] {
+    --bum-paper: #f6f3ec;
+    --bum-paper-2: #e8e4da;
+    --bum-rule: #cfd6cf;
+    --bum-ink: #14181f;
+  }
+
+  .bums-theme[data-world='6'] {
+    --bum-paper: #f2f6f9;
+    --bum-paper-2: #e2eaf1;
+    --bum-rule: #c3d6e4;
+    --bum-ink: #22333f;
+  }
+
+  .bums-theme[data-world='7'] {
+    --bum-paper: #e9edf1;
+    --bum-paper-2: #dbe1e8;
+    --bum-rule: #a9bccb;
+    --bum-ink: #1b232c;
+  }
+
+  /*
+   * Marker Mosh is the one world with inverted values — highlighter on black
+   * sugar paper. It is also the world most at risk of breaking the flash rule,
+   * which is why the pulse lives in transform and a ≤1Hz wash, never in these
+   * colours (design doc §2.8).
+   */
+  .bums-theme[data-world='8'] {
+    color-scheme: dark;
+    --bum-paper: #17161d;
+    --bum-paper-2: #201f28;
+    --bum-paper-edge: #2c2b36;
+    --bum-rule: #34323f;
+    --bum-margin: #6b3f52;
+    --bum-ink: #f4f0d8;
+    --bum-ink-soft: rgba(244, 240, 216, 0.45);
+    --bum-graphite: #9a94b0;
+    --bum-tape: rgba(60, 58, 74, 0.8);
+    --bum-surface: rgba(23, 22, 29, 0.92);
+    --bum-surface-2: rgba(32, 31, 40, 0.96);
+  }
+
+  /*
+   * Reduced transparency is a real setting on iOS and Windows, and every
+   * surface in this UI is a piece of paper — which should be opaque anyway.
+   * Honouring it costs nothing and keeps the game legible for the people who
+   * asked for it.
+   */
+  @media (prefers-reduced-transparency: reduce) {
+    .bums-theme {
+      --bum-surface: var(--bum-paper);
+      --bum-surface-2: var(--bum-paper-2);
+    }
+  }
+}

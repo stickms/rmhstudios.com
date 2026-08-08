@@ -14,6 +14,7 @@ import { Route as AdaptiveIntelligenceRouteImport } from './routes/adaptive-inte
 import { Route as AdsDottxtRouteImport } from './routes/ads[.]txt'
 import { Route as AltairRouteImport } from './routes/altair'
 import { Route as BlackLivesMatterRouteImport } from './routes/black-lives-matter'
+import { Route as BumsRushRouteImport } from './routes/bums-rush'
 import { Route as CookgameRouteImport } from './routes/cookgame'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as CopyrightRouteImport } from './routes/copyright'
@@ -327,6 +328,10 @@ import { Route as ApiBuildsReviewRouteImport } from './routes/api/builds/review'
 import { Route as ApiBulkIndexRouteImport } from './routes/api/bulk/index'
 import { Route as ApiBulkIdRouteImport } from './routes/api/bulk/$id'
 import { Route as ApiBulkPreviewRouteImport } from './routes/api/bulk/preview'
+import { Route as ApiBumsRushClearRouteImport } from './routes/api/bums-rush/clear'
+import { Route as ApiBumsRushLeaderboardRouteImport } from './routes/api/bums-rush/leaderboard'
+import { Route as ApiBumsRushProfileRouteImport } from './routes/api/bums-rush/profile'
+import { Route as ApiBumsRushShowdownRouteImport } from './routes/api/bums-rush/showdown'
 import { Route as ApiCallsHistoryRouteImport } from './routes/api/calls/history'
 import { Route as ApiCallsIceRouteImport } from './routes/api/calls/ice'
 import { Route as ApiCallsPrivacyRouteImport } from './routes/api/calls/privacy'
@@ -886,6 +891,11 @@ const AltairRoute = AltairRouteImport.update({
 const BlackLivesMatterRoute = BlackLivesMatterRouteImport.update({
   id: '/black-lives-matter',
   path: '/black-lives-matter',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BumsRushRoute = BumsRushRouteImport.update({
+  id: '/bums-rush',
+  path: '/bums-rush',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CookgameRoute = CookgameRouteImport.update({
@@ -2458,6 +2468,26 @@ const ApiBulkIdRoute = ApiBulkIdRouteImport.update({
 const ApiBulkPreviewRoute = ApiBulkPreviewRouteImport.update({
   id: '/api/bulk/preview',
   path: '/api/bulk/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBumsRushClearRoute = ApiBumsRushClearRouteImport.update({
+  id: '/api/bums-rush/clear',
+  path: '/api/bums-rush/clear',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBumsRushLeaderboardRoute = ApiBumsRushLeaderboardRouteImport.update({
+  id: '/api/bums-rush/leaderboard',
+  path: '/api/bums-rush/leaderboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBumsRushProfileRoute = ApiBumsRushProfileRouteImport.update({
+  id: '/api/bums-rush/profile',
+  path: '/api/bums-rush/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBumsRushShowdownRoute = ApiBumsRushShowdownRouteImport.update({
+  id: '/api/bums-rush/showdown',
+  path: '/api/bums-rush/showdown',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCallsHistoryRoute = ApiCallsHistoryRouteImport.update({
@@ -5262,6 +5292,7 @@ export interface FileRoutesByFullPath {
   '/ads.txt': typeof AdsDottxtRoute
   '/altair': typeof AltairRouteWithChildren
   '/black-lives-matter': typeof BlackLivesMatterRoute
+  '/bums-rush': typeof BumsRushRoute
   '/cookgame': typeof CookgameRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
@@ -5543,6 +5574,10 @@ export interface FileRoutesByFullPath {
   '/api/builds/review': typeof ApiBuildsReviewRoute
   '/api/bulk/$id': typeof ApiBulkIdRoute
   '/api/bulk/preview': typeof ApiBulkPreviewRoute
+  '/api/bums-rush/clear': typeof ApiBumsRushClearRoute
+  '/api/bums-rush/leaderboard': typeof ApiBumsRushLeaderboardRoute
+  '/api/bums-rush/profile': typeof ApiBumsRushProfileRoute
+  '/api/bums-rush/showdown': typeof ApiBumsRushShowdownRoute
   '/api/calls/history': typeof ApiCallsHistoryRoute
   '/api/calls/ice': typeof ApiCallsIceRoute
   '/api/calls/privacy': typeof ApiCallsPrivacyRoute
@@ -6115,6 +6150,7 @@ export interface FileRoutesByTo {
   '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
   '/ads.txt': typeof AdsDottxtRoute
   '/black-lives-matter': typeof BlackLivesMatterRoute
+  '/bums-rush': typeof BumsRushRoute
   '/cookgame': typeof CookgameRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
@@ -6374,6 +6410,10 @@ export interface FileRoutesByTo {
   '/api/builds/review': typeof ApiBuildsReviewRoute
   '/api/bulk/$id': typeof ApiBulkIdRoute
   '/api/bulk/preview': typeof ApiBulkPreviewRoute
+  '/api/bums-rush/clear': typeof ApiBumsRushClearRoute
+  '/api/bums-rush/leaderboard': typeof ApiBumsRushLeaderboardRoute
+  '/api/bums-rush/profile': typeof ApiBumsRushProfileRoute
+  '/api/bums-rush/showdown': typeof ApiBumsRushShowdownRoute
   '/api/calls/history': typeof ApiCallsHistoryRoute
   '/api/calls/ice': typeof ApiCallsIceRoute
   '/api/calls/privacy': typeof ApiCallsPrivacyRoute
@@ -6949,6 +6989,7 @@ export interface FileRoutesById {
   '/ads.txt': typeof AdsDottxtRoute
   '/altair': typeof AltairRouteWithChildren
   '/black-lives-matter': typeof BlackLivesMatterRoute
+  '/bums-rush': typeof BumsRushRoute
   '/cookgame': typeof CookgameRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
@@ -7231,6 +7272,10 @@ export interface FileRoutesById {
   '/api/builds/review': typeof ApiBuildsReviewRoute
   '/api/bulk/$id': typeof ApiBulkIdRoute
   '/api/bulk/preview': typeof ApiBulkPreviewRoute
+  '/api/bums-rush/clear': typeof ApiBumsRushClearRoute
+  '/api/bums-rush/leaderboard': typeof ApiBumsRushLeaderboardRoute
+  '/api/bums-rush/profile': typeof ApiBumsRushProfileRoute
+  '/api/bums-rush/showdown': typeof ApiBumsRushShowdownRoute
   '/api/calls/history': typeof ApiCallsHistoryRoute
   '/api/calls/ice': typeof ApiCallsIceRoute
   '/api/calls/privacy': typeof ApiCallsPrivacyRoute
@@ -7807,6 +7852,7 @@ export interface FileRouteTypes {
     | '/ads.txt'
     | '/altair'
     | '/black-lives-matter'
+    | '/bums-rush'
     | '/cookgame'
     | '/cookies'
     | '/copyright'
@@ -8088,6 +8134,10 @@ export interface FileRouteTypes {
     | '/api/builds/review'
     | '/api/bulk/$id'
     | '/api/bulk/preview'
+    | '/api/bums-rush/clear'
+    | '/api/bums-rush/leaderboard'
+    | '/api/bums-rush/profile'
+    | '/api/bums-rush/showdown'
     | '/api/calls/history'
     | '/api/calls/ice'
     | '/api/calls/privacy'
@@ -8660,6 +8710,7 @@ export interface FileRouteTypes {
     | '/adaptive-intelligence'
     | '/ads.txt'
     | '/black-lives-matter'
+    | '/bums-rush'
     | '/cookgame'
     | '/cookies'
     | '/copyright'
@@ -8919,6 +8970,10 @@ export interface FileRouteTypes {
     | '/api/builds/review'
     | '/api/bulk/$id'
     | '/api/bulk/preview'
+    | '/api/bums-rush/clear'
+    | '/api/bums-rush/leaderboard'
+    | '/api/bums-rush/profile'
+    | '/api/bums-rush/showdown'
     | '/api/calls/history'
     | '/api/calls/ice'
     | '/api/calls/privacy'
@@ -9493,6 +9548,7 @@ export interface FileRouteTypes {
     | '/ads.txt'
     | '/altair'
     | '/black-lives-matter'
+    | '/bums-rush'
     | '/cookgame'
     | '/cookies'
     | '/copyright'
@@ -9775,6 +9831,10 @@ export interface FileRouteTypes {
     | '/api/builds/review'
     | '/api/bulk/$id'
     | '/api/bulk/preview'
+    | '/api/bums-rush/clear'
+    | '/api/bums-rush/leaderboard'
+    | '/api/bums-rush/profile'
+    | '/api/bums-rush/showdown'
     | '/api/calls/history'
     | '/api/calls/ice'
     | '/api/calls/privacy'
@@ -10350,6 +10410,7 @@ export interface RootRouteChildren {
   AdsDottxtRoute: typeof AdsDottxtRoute
   AltairRoute: typeof AltairRouteWithChildren
   BlackLivesMatterRoute: typeof BlackLivesMatterRoute
+  BumsRushRoute: typeof BumsRushRoute
   CookgameRoute: typeof CookgameRoute
   CookiesRoute: typeof CookiesRoute
   CopyrightRoute: typeof CopyrightRoute
@@ -10474,6 +10535,10 @@ export interface RootRouteChildren {
   ApiBuildsReviewRoute: typeof ApiBuildsReviewRoute
   ApiBulkIdRoute: typeof ApiBulkIdRoute
   ApiBulkPreviewRoute: typeof ApiBulkPreviewRoute
+  ApiBumsRushClearRoute: typeof ApiBumsRushClearRoute
+  ApiBumsRushLeaderboardRoute: typeof ApiBumsRushLeaderboardRoute
+  ApiBumsRushProfileRoute: typeof ApiBumsRushProfileRoute
+  ApiBumsRushShowdownRoute: typeof ApiBumsRushShowdownRoute
   ApiCallsHistoryRoute: typeof ApiCallsHistoryRoute
   ApiCallsIceRoute: typeof ApiCallsIceRoute
   ApiCallsPrivacyRoute: typeof ApiCallsPrivacyRoute
@@ -10878,6 +10943,13 @@ declare module '@tanstack/react-router' {
       path: '/black-lives-matter'
       fullPath: '/black-lives-matter'
       preLoaderRoute: typeof BlackLivesMatterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bums-rush': {
+      id: '/bums-rush'
+      path: '/bums-rush'
+      fullPath: '/bums-rush'
+      preLoaderRoute: typeof BumsRushRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cookgame': {
@@ -13069,6 +13141,34 @@ declare module '@tanstack/react-router' {
       path: '/api/bulk/preview'
       fullPath: '/api/bulk/preview'
       preLoaderRoute: typeof ApiBulkPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/bums-rush/clear': {
+      id: '/api/bums-rush/clear'
+      path: '/api/bums-rush/clear'
+      fullPath: '/api/bums-rush/clear'
+      preLoaderRoute: typeof ApiBumsRushClearRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/bums-rush/leaderboard': {
+      id: '/api/bums-rush/leaderboard'
+      path: '/api/bums-rush/leaderboard'
+      fullPath: '/api/bums-rush/leaderboard'
+      preLoaderRoute: typeof ApiBumsRushLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/bums-rush/profile': {
+      id: '/api/bums-rush/profile'
+      path: '/api/bums-rush/profile'
+      fullPath: '/api/bums-rush/profile'
+      preLoaderRoute: typeof ApiBumsRushProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/bums-rush/showdown': {
+      id: '/api/bums-rush/showdown'
+      path: '/api/bums-rush/showdown'
+      fullPath: '/api/bums-rush/showdown'
+      preLoaderRoute: typeof ApiBumsRushShowdownRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/calls/history': {
@@ -18428,6 +18528,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdsDottxtRoute: AdsDottxtRoute,
   AltairRoute: AltairRouteWithChildren,
   BlackLivesMatterRoute: BlackLivesMatterRoute,
+  BumsRushRoute: BumsRushRoute,
   CookgameRoute: CookgameRoute,
   CookiesRoute: CookiesRoute,
   CopyrightRoute: CopyrightRoute,
@@ -18553,6 +18654,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiBuildsReviewRoute: ApiBuildsReviewRoute,
   ApiBulkIdRoute: ApiBulkIdRoute,
   ApiBulkPreviewRoute: ApiBulkPreviewRoute,
+  ApiBumsRushClearRoute: ApiBumsRushClearRoute,
+  ApiBumsRushLeaderboardRoute: ApiBumsRushLeaderboardRoute,
+  ApiBumsRushProfileRoute: ApiBumsRushProfileRoute,
+  ApiBumsRushShowdownRoute: ApiBumsRushShowdownRoute,
   ApiCallsHistoryRoute: ApiCallsHistoryRoute,
   ApiCallsIceRoute: ApiCallsIceRoute,
   ApiCallsPrivacyRoute: ApiCallsPrivacyRoute,
