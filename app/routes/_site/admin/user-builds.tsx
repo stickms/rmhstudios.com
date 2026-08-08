@@ -25,6 +25,7 @@ interface Build {
 }
 
 export const Route = createFileRoute('/_site/admin/user-builds')({
+  head: () => ({ meta: [{ title: 'All User Builds | Admin | RMH Studios' }] }),
   component: AdminUserBuildsPage,
 });
 

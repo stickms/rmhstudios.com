@@ -3,10 +3,8 @@
  */
 
 import { lazy, Suspense } from 'react';
-import { createFileRoute, redirect, notFound } from '@tanstack/react-router';
+import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
-import { auth } from '@/lib/auth';
 import { Spinner } from '@/components/ui/spinner';
 import { getPostBySlug } from '@/lib/blog';
 
@@ -15,17 +13,13 @@ const MDXEditor = lazy(() => import('@/components/admin/MDXEditor').then((m) => 
 
 const fetchPostForEdit = createServerFn({ method: 'GET' })
   .validator((slug: string) => slug)
+  // Admin gating lives once, in `/_site/admin/route.tsx` — its `beforeLoad`
+  // runs before this loader, so a second session resolution here bought nothing.
   .handler(async ({ data: slug }) => {
-    const request = getRequest();
-    const session = await auth.api.getSession({ headers: request.headers });
-    if (!session || !(session.user as any).isAdmin) {
-      throw redirect({ to: '/' });
-    }
-
     try {
       const post = await getPostBySlug(slug, ["title", "slug", "date", "description", "image", "tags", "content"]);
       return post;
-    } catch (e) {
+    } catch {
       throw notFound();
     }
   });

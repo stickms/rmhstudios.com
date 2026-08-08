@@ -26,6 +26,7 @@ import {
   Paintbrush,
   ShieldUser,
   SlidersHorizontal,
+  Trash2,
   User,
   Users,
   Wallet,
@@ -113,6 +114,22 @@ export const SETTINGS_DESTINATIONS: SettingsDestination[] = [
     label: 'Close friends',
     hint: 'The private circle that sees your circle-only posts',
     keywords: 'close friends circle private audience list',
+    requiresAuth: true,
+  },
+  // `/trash` already presented itself as a settings page — `backTo="/settings"`,
+  // breadcrumbs reading "Settings › Trash", strings in the `settings-content`
+  // namespace — while being absent from this list, which is the one thing that
+  // makes a settings page reachable. It had no inbound link anywhere in the
+  // running UI: the only way to a deleted post was to type the URL. This row is
+  // the fix, and is exactly the failure this file's docblock describes.
+  {
+    id: 'trash',
+    to: '/trash',
+    group: 'content',
+    icon: Trash2,
+    label: 'Trash',
+    hint: 'Restore something you deleted, or clear out a lot at once',
+    keywords: 'deleted recycle bin restore undelete bulk cleanup purge',
     requiresAuth: true,
   },
 

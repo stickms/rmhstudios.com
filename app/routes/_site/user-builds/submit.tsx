@@ -13,6 +13,10 @@ import type { Build } from '@/lib/user-builds-types';
 import { Reveal } from '@/components/motion';
 
 export const Route = createFileRoute('/_site/user-builds/submit')({
+  // `noindex`: an authoring form, and `Disallow`ed in robots.txt.
+  head: () => ({
+    meta: [{ title: 'Submit a build | RMH Studios' }, { name: 'robots', content: 'noindex' }],
+  }),
   component: SubmitBuildPage,
 });
 

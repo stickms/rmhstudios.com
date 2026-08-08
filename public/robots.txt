@@ -47,8 +47,6 @@ Disallow: /creator-studio
 Disallow: /user-builds/manage
 Disallow: /user-builds/submit
 Disallow: /homes/manage
-Disallow: /homes/saved
-Disallow: /homes/watches
 Disallow: /rmhladder/alerts
 Disallow: /rmhladder/health
 Disallow: /rmhladder/pipeline

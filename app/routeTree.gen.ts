@@ -202,6 +202,7 @@ import { Route as SiteAdminAnnouncementsRouteImport } from './routes/_site/admin
 import { Route as SiteAdminAppealsRouteImport } from './routes/_site/admin/appeals'
 import { Route as SiteAdminAuditRouteImport } from './routes/_site/admin/audit'
 import { Route as SiteAdminEconomyRouteImport } from './routes/_site/admin/economy'
+import { Route as SiteAdminLibraryRouteImport } from './routes/_site/admin/library'
 import { Route as SiteAdminLibraryQuotaRouteImport } from './routes/_site/admin/library-quota'
 import { Route as SiteAdminLibraryStorageRouteImport } from './routes/_site/admin/library-storage'
 import { Route as SiteAdminPredictionsRouteImport } from './routes/_site/admin/predictions'
@@ -364,7 +365,6 @@ import { Route as ApiFeedMentionSearchRouteImport } from './routes/api/feed/ment
 import { Route as ApiFeedSignalRouteImport } from './routes/api/feed/signal'
 import { Route as ApiFeedStreamRouteImport } from './routes/api/feed/stream'
 import { Route as ApiForestExplorerSaveRouteImport } from './routes/api/forest-explorer/save'
-import { Route as ApiFriendsActiveRouteImport } from './routes/api/friends/active'
 import { Route as ApiGabrielsHornHouseRuleRouteImport } from './routes/api/gabriels-horn/house-rule'
 import { Route as ApiGabrielsHornLeaderboardRouteImport } from './routes/api/gabriels-horn/leaderboard'
 import { Route as ApiGameSavesGameIdRouteImport } from './routes/api/game-saves/$gameId'
@@ -425,8 +425,6 @@ import { Route as ApiNewsRejectRouteImport } from './routes/api/news/reject'
 import { Route as ApiNotificationsIndexRouteImport } from './routes/api/notifications/index'
 import { Route as ApiNotificationsPreferencesRouteImport } from './routes/api/notifications/preferences'
 import { Route as ApiNotificationsReadRouteImport } from './routes/api/notifications/read'
-import { Route as ApiNotificationsReadAllRouteImport } from './routes/api/notifications/read-all'
-import { Route as ApiNotificationsUnreadCountRouteImport } from './routes/api/notifications/unread-count'
 import { Route as ApiOnboardingIndexRouteImport } from './routes/api/onboarding/index'
 import { Route as ApiOnboardingFirstWeekRouteImport } from './routes/api/onboarding/first-week'
 import { Route as ApiPersonasIndexRouteImport } from './routes/api/personas/index'
@@ -440,8 +438,6 @@ import { Route as ApiPreferencesLayoutRouteImport } from './routes/api/preferenc
 import { Route as ApiPreferencesMutedWordsRouteImport } from './routes/api/preferences/muted-words'
 import { Route as ApiPreferencesNotificationsRouteImport } from './routes/api/preferences/notifications'
 import { Route as ApiPreferencesPresenceRouteImport } from './routes/api/preferences/presence'
-import { Route as ApiPresenceFriendsRouteImport } from './routes/api/presence/friends'
-import { Route as ApiPresenceHeartbeatRouteImport } from './routes/api/presence/heartbeat'
 import { Route as ApiPresenceOnlineCountRouteImport } from './routes/api/presence/online-count'
 import { Route as ApiProfileLinksIndexRouteImport } from './routes/api/profile-links/index'
 import { Route as ApiProfileLinksReverifyRouteImport } from './routes/api/profile-links/reverify'
@@ -1834,6 +1830,11 @@ const SiteAdminEconomyRoute = SiteAdminEconomyRouteImport.update({
   path: '/economy',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
+const SiteAdminLibraryRoute = SiteAdminLibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
 const SiteAdminLibraryQuotaRoute = SiteAdminLibraryQuotaRouteImport.update({
   id: '/library-quota',
   path: '/library-quota',
@@ -2651,11 +2652,6 @@ const ApiForestExplorerSaveRoute = ApiForestExplorerSaveRouteImport.update({
   path: '/api/forest-explorer/save',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiFriendsActiveRoute = ApiFriendsActiveRouteImport.update({
-  id: '/api/friends/active',
-  path: '/api/friends/active',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiGabrielsHornHouseRuleRoute =
   ApiGabrielsHornHouseRuleRouteImport.update({
     id: '/api/gabriels-horn/house-rule',
@@ -2965,17 +2961,6 @@ const ApiNotificationsReadRoute = ApiNotificationsReadRouteImport.update({
   path: '/api/notifications/read',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiNotificationsReadAllRoute = ApiNotificationsReadAllRouteImport.update({
-  id: '/api/notifications/read-all',
-  path: '/api/notifications/read-all',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiNotificationsUnreadCountRoute =
-  ApiNotificationsUnreadCountRouteImport.update({
-    id: '/api/notifications/unread-count',
-    path: '/api/notifications/unread-count',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiOnboardingIndexRoute = ApiOnboardingIndexRouteImport.update({
   id: '/api/onboarding/',
   path: '/api/onboarding/',
@@ -3043,16 +3028,6 @@ const ApiPreferencesNotificationsRoute =
 const ApiPreferencesPresenceRoute = ApiPreferencesPresenceRouteImport.update({
   id: '/api/preferences/presence',
   path: '/api/preferences/presence',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPresenceFriendsRoute = ApiPresenceFriendsRouteImport.update({
-  id: '/api/presence/friends',
-  path: '/api/presence/friends',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPresenceHeartbeatRoute = ApiPresenceHeartbeatRouteImport.update({
-  id: '/api/presence/heartbeat',
-  path: '/api/presence/heartbeat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPresenceOnlineCountRoute = ApiPresenceOnlineCountRouteImport.update({
@@ -5473,6 +5448,7 @@ export interface FileRoutesByFullPath {
   '/admin/appeals': typeof SiteAdminAppealsRoute
   '/admin/audit': typeof SiteAdminAuditRoute
   '/admin/economy': typeof SiteAdminEconomyRoute
+  '/admin/library': typeof SiteAdminLibraryRoute
   '/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
   '/admin/library-storage': typeof SiteAdminLibraryStorageRoute
   '/admin/predictions': typeof SiteAdminPredictionsRoute
@@ -5600,7 +5576,6 @@ export interface FileRoutesByFullPath {
   '/api/feed/signal': typeof ApiFeedSignalRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
-  '/api/friends/active': typeof ApiFriendsActiveRoute
   '/api/gabriels-horn/house-rule': typeof ApiGabrielsHornHouseRuleRoute
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
@@ -5654,8 +5629,6 @@ export interface FileRoutesByFullPath {
   '/api/news/reject': typeof ApiNewsRejectRoute
   '/api/notifications/preferences': typeof ApiNotificationsPreferencesRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
-  '/api/notifications/read-all': typeof ApiNotificationsReadAllRoute
-  '/api/notifications/unread-count': typeof ApiNotificationsUnreadCountRoute
   '/api/onboarding/first-week': typeof ApiOnboardingFirstWeekRoute
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
   '/api/preferences/appearance': typeof ApiPreferencesAppearanceRoute
@@ -5664,8 +5637,6 @@ export interface FileRoutesByFullPath {
   '/api/preferences/muted-words': typeof ApiPreferencesMutedWordsRoute
   '/api/preferences/notifications': typeof ApiPreferencesNotificationsRoute
   '/api/preferences/presence': typeof ApiPreferencesPresenceRoute
-  '/api/presence/friends': typeof ApiPresenceFriendsRoute
-  '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
   '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
   '/api/profile-links/reverify': typeof ApiProfileLinksReverifyRoute
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
@@ -6308,6 +6279,7 @@ export interface FileRoutesByTo {
   '/admin/appeals': typeof SiteAdminAppealsRoute
   '/admin/audit': typeof SiteAdminAuditRoute
   '/admin/economy': typeof SiteAdminEconomyRoute
+  '/admin/library': typeof SiteAdminLibraryRoute
   '/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
   '/admin/library-storage': typeof SiteAdminLibraryStorageRoute
   '/admin/predictions': typeof SiteAdminPredictionsRoute
@@ -6435,7 +6407,6 @@ export interface FileRoutesByTo {
   '/api/feed/signal': typeof ApiFeedSignalRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
-  '/api/friends/active': typeof ApiFriendsActiveRoute
   '/api/gabriels-horn/house-rule': typeof ApiGabrielsHornHouseRuleRoute
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
@@ -6489,8 +6460,6 @@ export interface FileRoutesByTo {
   '/api/news/reject': typeof ApiNewsRejectRoute
   '/api/notifications/preferences': typeof ApiNotificationsPreferencesRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
-  '/api/notifications/read-all': typeof ApiNotificationsReadAllRoute
-  '/api/notifications/unread-count': typeof ApiNotificationsUnreadCountRoute
   '/api/onboarding/first-week': typeof ApiOnboardingFirstWeekRoute
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
   '/api/preferences/appearance': typeof ApiPreferencesAppearanceRoute
@@ -6499,8 +6468,6 @@ export interface FileRoutesByTo {
   '/api/preferences/muted-words': typeof ApiPreferencesMutedWordsRoute
   '/api/preferences/notifications': typeof ApiPreferencesNotificationsRoute
   '/api/preferences/presence': typeof ApiPreferencesPresenceRoute
-  '/api/presence/friends': typeof ApiPresenceFriendsRoute
-  '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
   '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
   '/api/profile-links/reverify': typeof ApiProfileLinksReverifyRoute
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
@@ -7169,6 +7136,7 @@ export interface FileRoutesById {
   '/_site/admin/appeals': typeof SiteAdminAppealsRoute
   '/_site/admin/audit': typeof SiteAdminAuditRoute
   '/_site/admin/economy': typeof SiteAdminEconomyRoute
+  '/_site/admin/library': typeof SiteAdminLibraryRoute
   '/_site/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
   '/_site/admin/library-storage': typeof SiteAdminLibraryStorageRoute
   '/_site/admin/predictions': typeof SiteAdminPredictionsRoute
@@ -7296,7 +7264,6 @@ export interface FileRoutesById {
   '/api/feed/signal': typeof ApiFeedSignalRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
-  '/api/friends/active': typeof ApiFriendsActiveRoute
   '/api/gabriels-horn/house-rule': typeof ApiGabrielsHornHouseRuleRoute
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
@@ -7350,8 +7317,6 @@ export interface FileRoutesById {
   '/api/news/reject': typeof ApiNewsRejectRoute
   '/api/notifications/preferences': typeof ApiNotificationsPreferencesRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
-  '/api/notifications/read-all': typeof ApiNotificationsReadAllRoute
-  '/api/notifications/unread-count': typeof ApiNotificationsUnreadCountRoute
   '/api/onboarding/first-week': typeof ApiOnboardingFirstWeekRoute
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
   '/api/preferences/appearance': typeof ApiPreferencesAppearanceRoute
@@ -7360,8 +7325,6 @@ export interface FileRoutesById {
   '/api/preferences/muted-words': typeof ApiPreferencesMutedWordsRoute
   '/api/preferences/notifications': typeof ApiPreferencesNotificationsRoute
   '/api/preferences/presence': typeof ApiPreferencesPresenceRoute
-  '/api/presence/friends': typeof ApiPresenceFriendsRoute
-  '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
   '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
   '/api/profile-links/reverify': typeof ApiProfileLinksReverifyRoute
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
@@ -8030,6 +7993,7 @@ export interface FileRouteTypes {
     | '/admin/appeals'
     | '/admin/audit'
     | '/admin/economy'
+    | '/admin/library'
     | '/admin/library-quota'
     | '/admin/library-storage'
     | '/admin/predictions'
@@ -8157,7 +8121,6 @@ export interface FileRouteTypes {
     | '/api/feed/signal'
     | '/api/feed/stream'
     | '/api/forest-explorer/save'
-    | '/api/friends/active'
     | '/api/gabriels-horn/house-rule'
     | '/api/gabriels-horn/leaderboard'
     | '/api/game-saves/$gameId'
@@ -8211,8 +8174,6 @@ export interface FileRouteTypes {
     | '/api/news/reject'
     | '/api/notifications/preferences'
     | '/api/notifications/read'
-    | '/api/notifications/read-all'
-    | '/api/notifications/unread-count'
     | '/api/onboarding/first-week'
     | '/api/predictions/$id'
     | '/api/preferences/appearance'
@@ -8221,8 +8182,6 @@ export interface FileRouteTypes {
     | '/api/preferences/muted-words'
     | '/api/preferences/notifications'
     | '/api/preferences/presence'
-    | '/api/presence/friends'
-    | '/api/presence/heartbeat'
     | '/api/presence/online-count'
     | '/api/profile-links/reverify'
     | '/api/profile/$id'
@@ -8865,6 +8824,7 @@ export interface FileRouteTypes {
     | '/admin/appeals'
     | '/admin/audit'
     | '/admin/economy'
+    | '/admin/library'
     | '/admin/library-quota'
     | '/admin/library-storage'
     | '/admin/predictions'
@@ -8992,7 +8952,6 @@ export interface FileRouteTypes {
     | '/api/feed/signal'
     | '/api/feed/stream'
     | '/api/forest-explorer/save'
-    | '/api/friends/active'
     | '/api/gabriels-horn/house-rule'
     | '/api/gabriels-horn/leaderboard'
     | '/api/game-saves/$gameId'
@@ -9046,8 +9005,6 @@ export interface FileRouteTypes {
     | '/api/news/reject'
     | '/api/notifications/preferences'
     | '/api/notifications/read'
-    | '/api/notifications/read-all'
-    | '/api/notifications/unread-count'
     | '/api/onboarding/first-week'
     | '/api/predictions/$id'
     | '/api/preferences/appearance'
@@ -9056,8 +9013,6 @@ export interface FileRouteTypes {
     | '/api/preferences/muted-words'
     | '/api/preferences/notifications'
     | '/api/preferences/presence'
-    | '/api/presence/friends'
-    | '/api/presence/heartbeat'
     | '/api/presence/online-count'
     | '/api/profile-links/reverify'
     | '/api/profile/$id'
@@ -9725,6 +9680,7 @@ export interface FileRouteTypes {
     | '/_site/admin/appeals'
     | '/_site/admin/audit'
     | '/_site/admin/economy'
+    | '/_site/admin/library'
     | '/_site/admin/library-quota'
     | '/_site/admin/library-storage'
     | '/_site/admin/predictions'
@@ -9852,7 +9808,6 @@ export interface FileRouteTypes {
     | '/api/feed/signal'
     | '/api/feed/stream'
     | '/api/forest-explorer/save'
-    | '/api/friends/active'
     | '/api/gabriels-horn/house-rule'
     | '/api/gabriels-horn/leaderboard'
     | '/api/game-saves/$gameId'
@@ -9906,8 +9861,6 @@ export interface FileRouteTypes {
     | '/api/news/reject'
     | '/api/notifications/preferences'
     | '/api/notifications/read'
-    | '/api/notifications/read-all'
-    | '/api/notifications/unread-count'
     | '/api/onboarding/first-week'
     | '/api/predictions/$id'
     | '/api/preferences/appearance'
@@ -9916,8 +9869,6 @@ export interface FileRouteTypes {
     | '/api/preferences/muted-words'
     | '/api/preferences/notifications'
     | '/api/preferences/presence'
-    | '/api/presence/friends'
-    | '/api/presence/heartbeat'
     | '/api/presence/online-count'
     | '/api/profile-links/reverify'
     | '/api/profile/$id'
@@ -10556,7 +10507,6 @@ export interface RootRouteChildren {
   ApiFeedSignalRoute: typeof ApiFeedSignalRoute
   ApiFeedStreamRoute: typeof ApiFeedStreamRoute
   ApiForestExplorerSaveRoute: typeof ApiForestExplorerSaveRoute
-  ApiFriendsActiveRoute: typeof ApiFriendsActiveRoute
   ApiGabrielsHornHouseRuleRoute: typeof ApiGabrielsHornHouseRuleRoute
   ApiGabrielsHornLeaderboardRoute: typeof ApiGabrielsHornLeaderboardRoute
   ApiGameSavesGameIdRoute: typeof ApiGameSavesGameIdRoute
@@ -10604,8 +10554,6 @@ export interface RootRouteChildren {
   ApiNewsRejectRoute: typeof ApiNewsRejectRoute
   ApiNotificationsPreferencesRoute: typeof ApiNotificationsPreferencesRoute
   ApiNotificationsReadRoute: typeof ApiNotificationsReadRoute
-  ApiNotificationsReadAllRoute: typeof ApiNotificationsReadAllRoute
-  ApiNotificationsUnreadCountRoute: typeof ApiNotificationsUnreadCountRoute
   ApiOnboardingFirstWeekRoute: typeof ApiOnboardingFirstWeekRoute
   ApiPredictionsIdRoute: typeof ApiPredictionsIdRouteWithChildren
   ApiPreferencesAppearanceRoute: typeof ApiPreferencesAppearanceRoute
@@ -10614,8 +10562,6 @@ export interface RootRouteChildren {
   ApiPreferencesMutedWordsRoute: typeof ApiPreferencesMutedWordsRoute
   ApiPreferencesNotificationsRoute: typeof ApiPreferencesNotificationsRoute
   ApiPreferencesPresenceRoute: typeof ApiPreferencesPresenceRoute
-  ApiPresenceFriendsRoute: typeof ApiPresenceFriendsRoute
-  ApiPresenceHeartbeatRoute: typeof ApiPresenceHeartbeatRoute
   ApiPresenceOnlineCountRoute: typeof ApiPresenceOnlineCountRoute
   ApiProfileLinksReverifyRoute: typeof ApiProfileLinksReverifyRoute
   ApiPromoFreeMonthRoute: typeof ApiPromoFreeMonthRoute
@@ -12250,6 +12196,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminEconomyRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
+    '/_site/admin/library': {
+      id: '/_site/admin/library'
+      path: '/library'
+      fullPath: '/admin/library'
+      preLoaderRoute: typeof SiteAdminLibraryRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
     '/_site/admin/library-quota': {
       id: '/_site/admin/library-quota'
       path: '/library-quota'
@@ -13384,13 +13337,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiForestExplorerSaveRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/friends/active': {
-      id: '/api/friends/active'
-      path: '/api/friends/active'
-      fullPath: '/api/friends/active'
-      preLoaderRoute: typeof ApiFriendsActiveRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/gabriels-horn/house-rule': {
       id: '/api/gabriels-horn/house-rule'
       path: '/api/gabriels-horn/house-rule'
@@ -13811,20 +13757,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiNotificationsReadRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/notifications/read-all': {
-      id: '/api/notifications/read-all'
-      path: '/api/notifications/read-all'
-      fullPath: '/api/notifications/read-all'
-      preLoaderRoute: typeof ApiNotificationsReadAllRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/notifications/unread-count': {
-      id: '/api/notifications/unread-count'
-      path: '/api/notifications/unread-count'
-      fullPath: '/api/notifications/unread-count'
-      preLoaderRoute: typeof ApiNotificationsUnreadCountRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/onboarding/': {
       id: '/api/onboarding/'
       path: '/api/onboarding'
@@ -13914,20 +13846,6 @@ declare module '@tanstack/react-router' {
       path: '/api/preferences/presence'
       fullPath: '/api/preferences/presence'
       preLoaderRoute: typeof ApiPreferencesPresenceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/presence/friends': {
-      id: '/api/presence/friends'
-      path: '/api/presence/friends'
-      fullPath: '/api/presence/friends'
-      preLoaderRoute: typeof ApiPresenceFriendsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/presence/heartbeat': {
-      id: '/api/presence/heartbeat'
-      path: '/api/presence/heartbeat'
-      fullPath: '/api/presence/heartbeat'
-      preLoaderRoute: typeof ApiPresenceHeartbeatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/presence/online-count': {
@@ -16914,6 +16832,7 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminAppealsRoute: typeof SiteAdminAppealsRoute
   SiteAdminAuditRoute: typeof SiteAdminAuditRoute
   SiteAdminEconomyRoute: typeof SiteAdminEconomyRoute
+  SiteAdminLibraryRoute: typeof SiteAdminLibraryRoute
   SiteAdminLibraryQuotaRoute: typeof SiteAdminLibraryQuotaRoute
   SiteAdminLibraryStorageRoute: typeof SiteAdminLibraryStorageRoute
   SiteAdminPredictionsRoute: typeof SiteAdminPredictionsRoute
@@ -16939,6 +16858,7 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminAppealsRoute: SiteAdminAppealsRoute,
   SiteAdminAuditRoute: SiteAdminAuditRoute,
   SiteAdminEconomyRoute: SiteAdminEconomyRoute,
+  SiteAdminLibraryRoute: SiteAdminLibraryRoute,
   SiteAdminLibraryQuotaRoute: SiteAdminLibraryQuotaRoute,
   SiteAdminLibraryStorageRoute: SiteAdminLibraryStorageRoute,
   SiteAdminPredictionsRoute: SiteAdminPredictionsRoute,
@@ -18666,7 +18586,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiFeedSignalRoute: ApiFeedSignalRoute,
   ApiFeedStreamRoute: ApiFeedStreamRoute,
   ApiForestExplorerSaveRoute: ApiForestExplorerSaveRoute,
-  ApiFriendsActiveRoute: ApiFriendsActiveRoute,
   ApiGabrielsHornHouseRuleRoute: ApiGabrielsHornHouseRuleRoute,
   ApiGabrielsHornLeaderboardRoute: ApiGabrielsHornLeaderboardRoute,
   ApiGameSavesGameIdRoute: ApiGameSavesGameIdRoute,
@@ -18714,8 +18633,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiNewsRejectRoute: ApiNewsRejectRoute,
   ApiNotificationsPreferencesRoute: ApiNotificationsPreferencesRoute,
   ApiNotificationsReadRoute: ApiNotificationsReadRoute,
-  ApiNotificationsReadAllRoute: ApiNotificationsReadAllRoute,
-  ApiNotificationsUnreadCountRoute: ApiNotificationsUnreadCountRoute,
   ApiOnboardingFirstWeekRoute: ApiOnboardingFirstWeekRoute,
   ApiPredictionsIdRoute: ApiPredictionsIdRouteWithChildren,
   ApiPreferencesAppearanceRoute: ApiPreferencesAppearanceRoute,
@@ -18724,8 +18641,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPreferencesMutedWordsRoute: ApiPreferencesMutedWordsRoute,
   ApiPreferencesNotificationsRoute: ApiPreferencesNotificationsRoute,
   ApiPreferencesPresenceRoute: ApiPreferencesPresenceRoute,
-  ApiPresenceFriendsRoute: ApiPresenceFriendsRoute,
-  ApiPresenceHeartbeatRoute: ApiPresenceHeartbeatRoute,
   ApiPresenceOnlineCountRoute: ApiPresenceOnlineCountRoute,
   ApiProfileLinksReverifyRoute: ApiProfileLinksReverifyRoute,
   ApiPromoFreeMonthRoute: ApiPromoFreeMonthRoute,

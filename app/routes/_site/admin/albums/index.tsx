@@ -4,31 +4,18 @@
  */
 
 import { useEffect, useState } from 'react';
-import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router';
-import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { Images, Plus, Video } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const getAdminSession = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
-    throw redirect({ to: '/' });
-  }
-  return null;
-});
-
 export const Route = createFileRoute('/_site/admin/albums/')({
   head: () => ({ meta: [{ title: 'Library Albums | Admin' }] }),
-  beforeLoad: () => getAdminSession(),
   component: AdminAlbumsPage,
 });
 

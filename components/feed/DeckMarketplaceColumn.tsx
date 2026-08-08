@@ -4,8 +4,9 @@ import { useState, useRef, useCallback } from'react';
 import { useTranslation } from'react-i18next';
 import { Link } from'@tanstack/react-router';
 import { toast } from'sonner';
-import { Library, Search, Plus, Check, Loader2, ArrowLeft } from'lucide-react';
+import { Library, Search, Plus, Check, Loader2 } from'lucide-react';
 import { EmptyState } from'@/components/ui/empty-state';
+import { StudyTabs } from'@/components/study/StudyTabs';
 
 interface MarketplaceDeck {
  id: string;
@@ -87,19 +88,18 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
 
  return (
  <div className="min-h-screen">
+ {/* The back-arrow to /study that used to open this header is now one half
+     of the StudyTabs strip below: the two study pages are siblings, not a
+     parent and a detail, so the crossing between them is a tab strip rather
+     than a link one way and a Back the other. */}
  <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
- <Link
- to="/study"
- className="rounded-site-sm p-1 text-site-text-muted hover:text-site-text hover:bg-site-surface-hover"
- aria-label={t('back', { defaultValue:'Back'})}
- >
- <ArrowLeft className="h-5 w-5"/>
- </Link>
  <Library className="h-5 w-5 text-site-accent"/>
  <h1 className="text-lg font-bold text-site-text">
  {t('deck-marketplace', { defaultValue:'Browse decks'})}
  </h1>
  </header>
+
+ <StudyTabs active="/study/browse"/>
 
  <div className="space-y-4 p-4">
  <div className="relative">

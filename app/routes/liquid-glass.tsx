@@ -69,9 +69,20 @@ const TITLE = 'Liquid Glass — Design Lab | RMH Studios';
 const DESC =
   'The living reference for the Liquid Glass material system: elevation tiers, the scene light and rim glint, the frosted edge bevel, the liquid sheen, and the shared UI primitives — all over the real aurora canvas.';
 
+/**
+ * `noindex`: this is the material lab, not a page of the site. It was listed in
+ * `lib/sitemap.ts` at priority 0.4 while having no inbound link anywhere in the
+ * running UI — an indexable orphan competing with `/design` (the public write-up
+ * of the same subject) for the same queries. The tag rather than a `robots.txt`
+ * Disallow, per that file's own rule: blocking the fetch is what stops a crawler
+ * ever reading the tag that removes an already-discovered URL.
+ *
+ * It stays a route, reachable by URL: it renders every elevation tier and
+ * primitive over the real backdrop, which is how the material gets reviewed.
+ */
 export const Route = createFileRoute('/liquid-glass')({
   head: () => ({
-    meta: buildMeta({ title: TITLE, description: DESC, path: PATH }),
+    meta: [...buildMeta({ title: TITLE, description: DESC, path: PATH }), { name: 'robots', content: 'noindex' }],
     links: [buildCanonical(PATH)],
   }),
   component: LiquidGlassLab,
