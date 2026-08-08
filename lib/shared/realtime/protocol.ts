@@ -22,22 +22,24 @@
  * ## Why this file is duplicated in `server/shared/protocol.ts`
  *
  * It should not be. The two halves are byte-identical declarations because the
- * Dockerfile's `server-builder` stage copies a curated subset of `lib/`, and
- * this file is not in it — a `server/` bundle importing an uncopied `lib/`
- * module either fails the image build or, worse, ships a bundle that throws
- * MODULE_NOT_FOUND on boot (server/CLAUDE.md gotchas 7 and 8).
+ * Dockerfile's `server-builder` stage USED to copy a curated per-module subset
+ * of `lib/`, and this file was not in it — a `server/` bundle importing an
+ * uncopied `lib/` module either fails the image build or, worse, ships a bundle
+ * that throws MODULE_NOT_FOUND on boot (server/CLAUDE.md gotchas 7 and 8).
  *
- * The one-line fix, for whoever owns the Dockerfile:
+ * **That constraint is gone.** The stage now copies `lib/` wholesale, so this
+ * file is in the build context and `server/shared/protocol.ts` can simply
+ * re-export from here:
  *
- * ```dockerfile
- * COPY lib/shared/realtime/protocol.ts ./lib/shared/realtime/protocol.ts
+ * ```ts
+ * export { PROTOCOL_EVENTS, PROTOCOL_VERSION } from '../../lib/shared/realtime/protocol';
  * ```
  *
- * (next to the existing `COPY lib/shared/realtime/types.ts` line). With that in
- * place, `server/shared/protocol.ts` re-exports from here and the duplication
- * goes away. Until then, `lib/__tests__/protocol-version.test.ts` fails the
- * build if the two copies drift, which is the property that actually matters:
- * a silent divergence would reject every client on the planet.
+ * (a RELATIVE specifier, not `@/…` — gotcha 7). Doing that deletes the
+ * duplicate declaration and `lib/__tests__/protocol-version.test.ts` along with
+ * it. Until someone does, that test fails the build if the two copies drift,
+ * which is the property that actually matters: a silent divergence would reject
+ * every client on the planet.
  */
 
 /**

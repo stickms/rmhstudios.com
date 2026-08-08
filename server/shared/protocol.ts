@@ -10,9 +10,11 @@
  * client, but emits `protocol:outdated` FIRST so the client has something to
  * render. See `lib/shared/realtime/protocol.ts` for the client half and for why
  * the declaration below is duplicated rather than imported (short version: the
- * Dockerfile's `server-builder` stage copies a curated subset of `lib/` and this
- * module is not in it — `server/CLAUDE.md` gotchas 7 and 8 explain what
- * importing an uncopied `lib/` module does to a bundle).
+ * `server-builder` stage used to copy a curated subset of `lib/` that excluded
+ * this module — `server/CLAUDE.md` gotchas 7 and 8 explain what importing an
+ * uncopied `lib/` module does to a bundle). That stage now copies `lib/`
+ * wholesale, so the duplication is no longer forced and can be collapsed; see
+ * the note in `lib/__tests__/protocol-version.test.ts`.
  *
  * `lib/__tests__/protocol-version.test.ts` fails the build if the two copies
  * drift, which is the property that matters: a silent divergence would reject

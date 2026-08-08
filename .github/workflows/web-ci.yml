@@ -2,15 +2,27 @@
 # Frontend CI gate — the standard local checks on every PR and push, so a broken
 # frontend change can't land silently. No secrets/env required.
 #
-# Split into PARALLEL jobs (typecheck+lint+test / build / audit) that each do
-# their own frozen install off the shared pnpm store cache (~10s warm). This
-# means:
+# Split into PARALLEL jobs (typecheck / test / build / audit) that each do their
+# own frozen install off the shared pnpm store cache (~10s warm). This means:
 #   • the full production Build runs on EVERY PR regardless of the test result —
 #     it used to sit AFTER the test step in one job, so a red test (once, a
 #     long-lived i18n-catalogs drift) skipped it and pre-merge build breakage
 #     slipped through to the deploy. That separation is also what let the test
 #     step go back to being a hard gate in the 2026-08-08 testing audit;
 #   • wall-clock ≈ the slowest single job (~the build), not the sum of all four.
+#
+# `typecheck` was split out of the old combined `check` job on 2026-08-08. It was
+# 54s of that job's 2m07s and ran SERIALLY ahead of lint/docs/test, which made
+# `check` the PR gate's long pole — longer than the production build (1m38s) it
+# is supposed to be cheaper than. The split is worth a whole extra runner here
+# and NOT in deploy.yml (see the note on that job) because on a PR this is the
+# critical path, and on a deploy it is not.
+#
+# The typecheck cost is real work, not a cold cache — measured locally against
+# this tree: 91s cold, 8s warm with no changes, 34s warm after editing one
+# widely-imported module (`lib/utils.ts`). CI's ~54s is a merge commit's genuine
+# downstream cone, so there is no cache bug to fix and parallelism is the only
+# remaining lever.
 # ─────────────────────────────────────────────────────────────────────────────
 name: web-ci
 
@@ -40,9 +52,9 @@ permissions:
   contents: read
 
 jobs:
-  # Typecheck + lint + unit tests. tsc/vitest exceed Node's default ~4 GB heap,
-  # so the larger heap is set job-wide.
-  check:
+  # Typecheck, alone. tsc exceeds Node's default ~4 GB heap, so the larger heap
+  # is set job-wide.
+  typecheck:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
@@ -62,33 +74,70 @@ jobs:
       # postinstall runs `prisma generate` (schema-only, no DB needed).
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      # Persist tsc's incremental program graph (.tsbuildinfo) and eslint's result
-      # cache across runs so warm runs only re-check files that actually changed.
-      # Keyed per-commit with a prefix restore-key, so each run restores the most
-      # recent cache and saves a fresh one. Both tools invalidate entries by file
-      # CONTENT (tsc hashes; eslint --cache-strategy content), so a restored cache
-      # can only ever make a check FASTER, never wrong.
-      - name: Restore typecheck/lint caches
+      # Persist tsc's incremental program graph (.tsbuildinfo) across runs so warm
+      # runs only re-check files that actually changed. Keyed per-commit with a
+      # prefix restore-key, so each run restores the most recent cache and saves a
+      # fresh one. tsc invalidates entries by file CONTENT (it hashes), so a
+      # restored cache can only ever make the check FASTER, never wrong.
+      #
+      # The tsc and eslint caches are SEPARATE entries (they used to share one
+      # `tsc-eslint-*` key holding both dirs) because they are now claimed by
+      # different jobs — two jobs writing one key just race, and one job
+      # restoring a 2-in-1 entry downloads a cache it half-ignores. deploy.yml's
+      # `ci` job takes both, so `main` keeps publishing both prefixes and a PR's
+      # first run still restores warm off the base branch. The old combined
+      # entries age out on their own; expect one cold run per prefix after this
+      # lands.
+      - name: Restore typecheck cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          path: |
-            .cache/tsc
-            .cache/eslint
-          key: tsc-eslint-${{ runner.os }}-${{ github.sha }}
+          path: .cache/tsc
+          key: tsc-${{ runner.os }}-${{ github.sha }}
           restore-keys: |
-            tsc-eslint-${{ runner.os }}-
-      # `mkdir -p` so a cold cache (miss on the restore above) still has the dirs
-      # tsc/eslint write their cache files into.
+            tsc-${{ runner.os }}-
+      # `mkdir -p` so a cold cache (miss on the restore above) still has the dir
+      # tsc writes its cache file into.
       # `pnpm run typecheck` runs the NATIVE (Go) TypeScript compiler, which
-      # typechecks this repo in ~68s cold / ~7s warm against ~218s / ~17s for the
-      # JavaScript compiler, with identical results. It is invoked by explicit
-      # path in the script because `typescript` and `typescript-native` both ship
-      # a `tsc` bin. `typescript` 5.9 stays installed — typescript-eslint imports
-      # the compiler API from it, and TS 7 does not expose one.
+      # typechecks this repo in ~91s cold / ~8s warm / ~34s after a change to a
+      # widely-imported module (all measured 2026-08-08), against ~218s / ~17s
+      # for the JavaScript compiler, with identical results. It is invoked by
+      # explicit path in the script because `typescript` and `typescript-native`
+      # both ship a `tsc` bin. `typescript` 5.9 stays installed — typescript-eslint
+      # imports the compiler API from it, and TS 7 does not expose one.
       - name: Typecheck
         run: |
           mkdir -p .cache/tsc
           pnpm run typecheck
+
+  # Lint + generated-docs freshness + the unit suite. Split from `typecheck`
+  # (2026-08-08) so the two run concurrently instead of serially; together they
+  # were the PR gate's long pole. vitest also wants the larger heap.
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: 10
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.18.0
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      # eslint's result cache — its own entry, see the note in `typecheck`.
+      # `--cache-strategy content` means a restored cache invalidates by file
+      # content, so it can only make the run faster, never wrong.
+      - name: Restore lint cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .cache/eslint
+          key: eslint-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            eslint-${{ runner.os }}-
       - name: Lint
         run: |
           mkdir -p .cache/eslint
@@ -107,7 +156,8 @@ jobs:
       # permanently red and a blocking test step meant the `build` job never
       # ran on a PR. Both halves of that are gone: the catalogs test passes,
       # `build` is its own job so a red test cannot hide a build failure, and
-      # the suite is green at 426 files / ~8.9k tests. An advisory test step is
+      # the suite is green (248 files / ~6k tests after the 2026-08-08 testing
+      # audit narrowed it to mission-critical scope). An advisory test step is
       # a suite nobody has to keep green — which is how the permanently-red
       # test got to stay permanently red. If this goes red, fix the test.
       - name: Test

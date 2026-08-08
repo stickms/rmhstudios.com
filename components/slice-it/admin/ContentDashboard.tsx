@@ -55,7 +55,6 @@ function gib(bytes: number): string {
   return `${(bytes / 1024 ** 3).toFixed(2)} GiB`;
 }
 
-
 export function ContentDashboard() {
   const { t } = useTranslation('r-slice-it');
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);

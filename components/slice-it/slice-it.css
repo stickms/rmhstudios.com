@@ -1,8 +1,49 @@
 @layer base {
-  .slice-theme {
+  /*
+   * `html[data-app-dark='0'] .slice-theme` repeats this block at a higher
+   * specificity than `.slice-theme.dark`, and that is the whole point.
+   *
+   * The game's light/dark toggle lives in a persisted zustand store, so the
+   * SERVER cannot know it: SSR renders `DarkModeWrapper` with the store default
+   * (dark) and hydration corrects it a beat later. The pre-paint script in
+   * `__root.tsx` DOES know it — it already reads that store to pick the root
+   * background — and publishes the answer as `data-app-dark` before first paint.
+   * Keying the tokens off the attribute as well as the class means the two never
+   * disagree: a player who chose light gets light in the very first frame
+   * instead of a dark one that flips.
+   *
+   * It also fixes the routes with no `DarkModeWrapper` at all (the chart editor,
+   * the player page): they inherit their tokens from the layout wrapper in
+   * `app/routes/slice-it.tsx`, which never carried `dark`, so they rendered
+   * light for a dark-mode player permanently — not for a frame.
+   *
+   * With no attribute (script blocked, or the Discord Activity, which ships a
+   * minimal head with no inline script) nothing matches and the class alone
+   * decides, exactly as before.
+   */
+  .slice-theme,
+  .slice-tokens,
+  html[data-app-dark='0'] .slice-theme,
+  html[data-app-dark='0'] .slice-tokens {
     --slice-bg: #e0e5ec;
     --slice-text: #4a5568;
-    --slice-shadow-light: #ffffff;
+    /*
+     * The highlight side of every neumorphic shadow in the game — and it is
+     * TRANSLUCENT on purpose.
+     *
+     * It used to be opaque `#ffffff` on a `#e0e5ec` ground. Every recipe here
+     * pairs a 4px offset with an 8px blur, so an opaque highlight does not fall
+     * off inside that distance: it floods. On a row of cards 8px apart the
+     * halos met in the middle and filled the gaps solid white, and around each
+     * `border-radius` the white came right up to the curve — so the corner read
+     * as a notch cut out of a white square rather than as a soft edge, which is
+     * the opposite of what this material is for. At 0.7 the highlight still
+     * lifts the top-left edge and now has somewhere to fade to.
+     *
+     * The dark theme never had the problem: `#222228` on `#16161a` is already a
+     * small delta, so it is left alone.
+     */
+    --slice-shadow-light: rgba(255, 255, 255, 0.7);
     --slice-shadow-dark: #a3b1c6;
     --slice-primary: #3b82f6;
     /* Soft blue */
@@ -12,6 +53,13 @@
     --slice-lane-top: #3b82f6;
     --slice-lane-bottom: #f472b6;
     --slice-text-muted: #64748b;
+    /* Both of these used to come from the duplicate block in `globals.css` —
+       the light theme here never declared them, so removing that copy would
+       have left them undefined. Declared now, so this block is complete. */
+    --slice-text-light: #94a3b8;
+    /* A card is the same ground as the page in light mode: the material's
+       depth comes from the shadow pair, not from a fill that differs. */
+    --slice-card-bg: #e0e5ec;
     --slice-text-shadow: rgba(0, 0, 0, 0.3);
     --slice-hold-trail: rgba(30, 30, 50, 0.65);
     --slice-text-darker: #2d3748;
@@ -31,16 +79,22 @@
   }
 
   /*
-   * Two selectors, two sources of "dark".
+   * Three selectors, three sources of "dark".
    *
    * `.dark .slice-theme` is the site theme, inherited from <html>.
    * `.slice-theme.dark` is the game's own toggle, which `DarkModeWrapper` puts
    * on its wrapper — it used to write to <html> instead, overriding the
    * player's site-wide theme for as long as the game was open and clearing it
    * on the way out.
+   * `html[data-app-dark='1'] .slice-theme` is that same toggle as the pre-paint
+   * script read it, which is the only one of the three that exists before
+   * hydration — see the note on the light block above.
    */
   .dark .slice-theme,
-  .slice-theme.dark {
+  .dark .slice-tokens,
+  .slice-theme.dark,
+  html[data-app-dark='1'] .slice-theme,
+  html[data-app-dark='1'] .slice-tokens {
     --slice-bg: #16161a;
     --slice-text: #f0f0f0;
     --slice-text-darker: #ffffff;
@@ -61,6 +115,24 @@
   }
 }
 
+/*
+ * `.slice-theme` is a SURFACE — it declares the tokens and paints itself with
+ * them. `.slice-tokens` (declared with it above) is the same tokens and no
+ * paint, for the one place that needs them apart: a Radix portal.
+ *
+ * A dialog, popover or toast portals to `<body>`, which is outside every
+ * `.slice-theme` in the tree, so `bg-slice-bg` and every
+ * `shadow-[…var(--slice-shadow-dark)]` in it resolved to nothing and the modal
+ * came out in the browser's defaults instead of the game's palette — and, being
+ * unthemed, identical in light and dark. Adding `.slice-theme` to the portalled
+ * element fixes the tokens and breaks the overlay, because the unlayered
+ * `background-color` below outranks a `bg-black/40` utility and turns a scrim
+ * opaque. `.slice-tokens` is the half a portal actually wants.
+ *
+ * Both are matched by the `data-app-dark` selectors above, which are anchored at
+ * `html` — so a portalled subtree resolves the right light/dark set even though
+ * it escaped the wrapper carrying the class.
+ */
 .slice-theme {
   background-color: var(--slice-bg);
   color: var(--slice-text);
@@ -246,4 +318,154 @@
     animation: none;
     opacity: 0;
   }
+}
+
+/*
+ * `LiquidTabs` in the game's palette — the same fix, and the same cause, as the
+ * slider above.
+ *
+ * The active capsule paints `bg-site-accent` and its ink resolves from
+ * `--site-accent-fg`. Inside `.slice-theme` those are the ROOT theme's tokens,
+ * which measured `#000000` on the shipped dark theme: the grid/table switch's
+ * selected segment rendered as a black pill in a game whose entire accent
+ * language is `--slice-primary` blue. Scoped by `[data-tab-capsule]`, the hook
+ * `globals.css` already exposes for exactly this kind of re-skin, so the tab
+ * strip stays the one sanctioned switcher rather than being forked.
+ */
+.slice-theme [data-tab-capsule] > span {
+  background: var(--slice-primary);
+}
+
+/*
+ * The ink on top of that capsule.
+ *
+ * `--site-accent-fg` is chosen to contrast with `--site-accent`, and we have
+ * just replaced the fill — so the foreground has to move with it or the label
+ * is a contrast failure the moment the two disagree. `--slice-primary` is a
+ * mid blue at every theme, so white is the safe pairing.
+ */
+.slice-theme [data-tab-capsule] ~ * {
+  --site-accent-fg: #ffffff;
+}
+
+/*
+ * Pill-scale neumorphism, for chips and small filter controls.
+ *
+ * `.neumorphic-sm` is sized for a ~36px toolbar button: a 4px offset with an
+ * 8px blur reaches 12px past the element's left and top edges. On a 25px-tall
+ * artist chip in a row with a 6px gap, that halo crosses the whole gap and
+ * meets its neighbour's, so the space BETWEEN two pills lights up into a solid
+ * bar — read as "a white rectangle behind the pills", which is exactly what it
+ * is. The shadow has to scale with the element it lifts.
+ *
+ * `9999px`, not `12px`: a 12px radius on a 25px-tall element leaves a flat
+ * segment top and bottom, so the pill has corners where it should have ends.
+ * That is the other half of "items sticking out weirdly" — the shape was never
+ * quite round.
+ */
+.neumorphic-chip {
+  background: var(--slice-bg);
+  box-shadow:
+    2px 2px 4px var(--slice-shadow-dark),
+    -2px -2px 4px var(--slice-shadow-light);
+  border-radius: 9999px;
+}
+
+/*
+ * Sticky chrome — a header that floats above the rows it labels.
+ *
+ * Two things make this its own recipe rather than `.neumorphic-sm`:
+ *
+ * 1. **It casts downward only.** A sticky header lives inside a scroll
+ *    container, pinned to its top edge, and that edge is a clip boundary — an
+ *    upward or leftward halo is guaranteed to be cut off in a straight line,
+ *    which is the opposite of soft. There is also nothing above it to cast
+ *    onto. The top light is an `inset` rim instead, which cannot be clipped
+ *    because it is painted inside the box.
+ * 2. **It has no radius.** These headers span the full width of their
+ *    scroller, so a 15px radius put rounded ends exactly where the container
+ *    clips — the header read as a pill with its ends sliced off.
+ *
+ * It replaced `.neumorphic-inset` on the library table head, which is the
+ * PRESSED recipe: it drew the one piece of chrome standing above the list as
+ * though it were a well sunk into it.
+ */
+.neumorphic-chrome {
+  background: var(--slice-bg);
+  box-shadow:
+    0 4px 8px var(--slice-shadow-dark),
+    inset 0 1px 0 var(--slice-shadow-light);
+  border-radius: 0;
+}
+
+/*
+ * Depth is this material's only affordance, so it has to MOVE.
+ *
+ * There was a `prefers-reduced-motion` block below disabling transitions on
+ * these classes and no transition anywhere to disable — hover and press
+ * snapped between shadow states. Declaring it here makes every neumorphic
+ * surface in the game ease between raised, pressed and inset, and makes that
+ * reduced-motion guard mean something.
+ *
+ * `box-shadow` and `background-color` only. Not `all`: these elements also
+ * animate `transform` on press in places, and a transition on transform would
+ * fight the spring driving it.
+ */
+.neumorphic,
+.neumorphic-sm,
+.neumorphic-chip,
+.neumorphic-chrome,
+.neumorphic-inset,
+.neumorphic-pressed,
+.neumorphic-active {
+  transition:
+    box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .neumorphic-chip,
+  .neumorphic-inset,
+  .neumorphic-active {
+    transition: none;
+  }
+}
+
+/*
+ * `ui/switch` in the game's palette — the third and last of these.
+ *
+ * Same cause as the slider and the tab capsule: the track paints
+ * `bg-site-accent` when on and the knob `bg-site-accent-fg`, and inside
+ * `.slice-theme` those resolve against the root theme, which measured
+ * `#000000`. Every modifier toggle in the song details panel and the editor's
+ * ghost-notes switch rendered as a black pill.
+ *
+ * Scoped by `[data-slot='switch']` and `aria-checked`, so only the ON state is
+ * re-skinned — the OFF track is a neutral surface in both palettes and already
+ * reads correctly. The knob is given an explicit light value rather than a
+ * token: it sits on `--slice-primary` in both themes, so it must contrast with
+ * a mid blue, not with whatever the site's accent foreground happens to be.
+ */
+.slice-theme [data-slot='switch'][aria-checked='true'] {
+  background-color: var(--slice-primary);
+  border-color: var(--slice-primary);
+}
+
+.slice-theme [data-slot='switch'][aria-checked='true'] > span {
+  background-color: #ffffff;
+}
+
+/* Off: the game's own recessed channel rather than a flat site surface, so the
+   control reads as part of this material in both states. */
+.slice-theme [data-slot='switch'][aria-checked='false'] {
+  background-color: var(--slice-bg);
+  border-color: var(--slice-shadow-dark);
+  box-shadow:
+    inset 2px 2px 4px var(--slice-shadow-dark),
+    inset -2px -2px 4px var(--slice-shadow-light);
+}
+
+.slice-theme [data-slot='switch'][aria-checked='false'] > span {
+  background-color: var(--slice-text-muted);
 }

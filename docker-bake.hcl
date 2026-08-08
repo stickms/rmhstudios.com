@@ -94,6 +94,67 @@ variable "NITRO_PRESET" {
   default = "node-cluster"
 }
 
+# ── Whether to re-export the GHCR layer cache on this build ──────────────────
+# "true" exports; anything else skips the export entirely.
+#
+# WHY THIS IS A SWITCH AND NOT ALWAYS-ON (measured, deploy run 31265996205):
+# the `cache-to` export is the LAST thing in the build and runs AFTER both
+# images are already in GHCR — 43.4s "preparing build cache for export" + 29.2s
+# "sending cache export" = 72.6s total, of which ~62s lands after the final image
+# push. The `build` job cannot finish until it completes, `deploy-gate` waits on
+# `build`, and the VPS webhook fires from `deploy-gate` — so every second of that
+# tail is a second the new code is not live, for an artifact that is only ever
+# read by a LATER build.
+#
+# And on the overwhelmingly common deploy, that artifact is worth nothing. The
+# stages a re-export could refresh are either (a) unchanged since the last
+# export — deps, prisma-generate, prod-deps, vibe-builder, go mod download — so
+# the existing `:buildcache` already carries them and rewriting it is a no-op
+# with a 72s price tag, or (b) keyed to this exact commit's source tree
+# (vite-builder, runner), so no future build can ever hit them.
+#
+# So the export is worth its cost exactly when an input to a cached stage moved.
+# deploy.yml diffs the push for that path set and sets EXPORT_CACHE=true; see the
+# "Decide whether to refresh" step there for the list and the reasoning behind
+# what is deliberately NOT in it.
+#
+# Fail-soft in both directions: skipping leaves the previous `:buildcache` in
+# place (still a valid `cache-from` source — BuildKit resolves cache by layer
+# digest, not by commit), and a stale or missing cache only ever costs a colder
+# build, never a wrong one.
+variable "EXPORT_CACHE" {
+  default = "false"
+}
+
+# ── Image layer compression ─────────────────────────────────────────────────
+# Measured on deploy run 31265996205: "exporting layers" is 38.3s for `web` and
+# 31.2s for `full`, and since the two run concurrently that phase costs ~42s of
+# critical path. Most of it is gzip. Switching to zstd typically cuts compression
+# time substantially at a similar ratio, and speeds the VPS `docker pull` too —
+# it is the single biggest remaining lever on this pipeline.
+#
+# It is left at gzip by DEFAULT, and that is a deliberate refusal to guess. zstd
+# layers use the OCI media type `application/vnd.oci.image.layer.v1.tar+zstd`,
+# which the PULLING daemon has to understand — Docker Engine ≥ 23.0. GHCR is
+# fine; the production VPS's engine version could not be verified from the
+# environment this was written in, and the failure mode is not a slow deploy, it
+# is `docker pull` failing on the host with every image already built and pushed.
+#
+# TO TURN IT ON (one command's worth of verification first):
+#
+#   1. On the VPS:  docker version --format '{{.Server.Version}}'
+#   2. If that is 23.0 or newer, set IMAGE_COMPRESSION=zstd in the bake step's
+#      env in .github/workflows/deploy.yml.
+#   3. Watch the first deploy's "exporting layers" and the VPS pull, and keep the
+#      previous image tagged for rollback (deploy.sh already tags ${GIT_SHA}).
+#
+# force-compression is required: without it BuildKit reuses already-compressed
+# layers from the cache as-is and only NEW layers get the new algorithm, so a
+# mixed-format image is what actually ships.
+variable "IMAGE_COMPRESSION" {
+  default = "gzip"
+}
+
 # The full frontend build args, shared by both targets so the in-graph
 # vite-builder stage they both depend on resolves to ONE cache key.
 function "frontend_args" {
@@ -134,6 +195,11 @@ target "web" {
     "${IMAGE_WEB}:latest",
   ]
   args = frontend_args()
+  # Layer compression — gzip unless IMAGE_COMPRESSION says otherwise. See that
+  # variable for what to verify on the VPS before switching it to zstd.
+  output = [
+    "type=image,compression=${IMAGE_COMPRESSION},force-compression=${IMAGE_COMPRESSION != "gzip"}",
+  ]
   # Registry-backed layer cache on GHCR — no 10 GB GHA-cache eviction cap, no
   # cross-workflow contention, arm64-native, shareable with other builders.
   #
@@ -146,7 +212,10 @@ target "web" {
   # green; the only cost is a colder layer cache on the next run. The image PUSH is
   # unaffected — a genuine push failure still fails the build, as it must.
   cache-from = ["type=registry,ref=${IMAGE_WEB}:buildcache"]
-  cache-to   = ["type=registry,ref=${IMAGE_WEB}:buildcache,mode=max,image-manifest=true,oci-mediatypes=true,ignore-error=true"]
+  # Exported only when EXPORT_CACHE=true — see that variable for why this is not
+  # unconditional (it is a ~62s tail on the deploy critical path that the common
+  # deploy gets nothing back from).
+  cache-to = EXPORT_CACHE == "true" ? ["type=registry,ref=${IMAGE_WEB}:buildcache,mode=max,image-manifest=true,oci-mediatypes=true,ignore-error=true"] : []
 }
 
 # ── Full image (runner-full): supervisor, status — + Go bins + Chromium ──────
@@ -167,6 +236,11 @@ target "full" {
   args = merge(frontend_args(), {
     WEB_IMAGE = "runner"
   })
+  # Same compression as `web` — these two images share layers on the VPS, so a
+  # split algorithm would defeat that dedupe as well as being half a migration.
+  output = [
+    "type=image,compression=${IMAGE_COMPRESSION},force-compression=${IMAGE_COMPRESSION != "gzip"}",
+  ]
   # Read the web buildcache too (shared base layers). Keep reading the existing
   # full cache while it is useful, but do not export it on every deploy.
   cache-from = [

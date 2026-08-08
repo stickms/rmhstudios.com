@@ -1,10 +1,11 @@
 'use client';
 import * as React from 'react';
-import { motion } from 'framer-motion';
-import { scaleIn } from '@/lib/motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { APPLE_SPRING, DURATION, EASE, scaleIn } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 import { CalendarDays, ListMusic, Moon, Sun } from 'lucide-react';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import { GameEngine } from '@/lib/slice-it/engine';
@@ -108,6 +109,8 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
     }
   }, [session.data, userName, setUserName]);
 
+  const avatarUrl = (session.data?.user as { image?: string | null } | undefined)?.image ?? null;
+
   /**
    * Open a track's details panel.
    *
@@ -117,7 +120,18 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
    */
   const handleSelectSong = React.useCallback((song: SliceSong) => {
     stopPreviewRef.current?.();
-    setSelectedSong(song);
+    // `startTransition`, because this update is what was eating the opening
+    // animation. Measured: the click ran a ~250ms task on the main thread —
+    // React rendering the whole panel subtree synchronously — and the panel's
+    // entrance spring is integrated on that same thread. A spring that misses
+    // 120ms does not slow down, it jumps: the slide covered 636px→106px in one
+    // frame gap, which is the "the fade plays and then restarts" this looked
+    // like. Nothing remounts; the animation loses its middle.
+    //
+    // Marking the open as a transition lets React render that subtree in
+    // interruptible slices and yield between them, so the frames the animation
+    // needs keep landing.
+    React.startTransition(() => setSelectedSong(song));
   }, []);
 
   const handleStartGame = React.useCallback(
@@ -190,9 +204,22 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
           {/* Header Bar */}
           <div className="flex items-center justify-between gap-2 min-w-0 shrink-0 bg-slice-bg px-4 py-3 border-b border-slice-shadow-dark/50">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 shrink-0 rounded-full bg-slice-shadow-dark shadow-inner flex items-center justify-center text-slice-text-muted font-black text-xl">
-                {userName ? userName.charAt(0).toUpperCase() : '?'}
-              </div>
+              {/* The player's actual avatar. This was a `<div>` printing the
+                  first letter of their name and nothing else — the session
+                  carries `user.image` and it was never read, so everyone was a
+                  grey initial. `UserAvatar` is the shared primitive: it proxies
+                  a remote avatar through the image optimizer and falls back to
+                  the default asset if that fetch fails, which a hand-rolled
+                  `<img>` here would not. The neumorphic ring keeps it in the
+                  game's material rather than sitting on the surface as a flat
+                  circle. */}
+              <UserAvatar
+                src={avatarUrl}
+                alt={userName || 'Player'}
+                size={40}
+                fallbackName={userName || undefined}
+                className="shrink-0 shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]"
+              />
               {/* Hidden below `sm`, not truncated. Truncating kept the name in
                   the layout while the five buttons opposite squeezed it to 24px
                   — one letter and an ellipsis, directly beside an avatar
@@ -202,10 +229,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                   buttons that need it. `min-w-0` + truncate still hold from
                   `sm` up, where a long display name would otherwise push those
                   buttons off the right edge. */}
-              <div className="hidden [@media(min-width:640px)_and_(min-height:620px)]:flex flex-col min-w-0">
-                <span className="text-[10px] font-black text-slice-text-light uppercase tracking-wider">
-                  {t('system-operator', { defaultValue: 'System Operator' })}
-                </span>
+              <div className="hidden [@media(min-width:640px)_and_(min-height:620px)]:flex min-w-0 items-center">
                 <div className="font-black text-slice-text text-base uppercase tracking-tight truncate">
                   {userName || 'GUEST'}
                 </div>
@@ -353,44 +377,96 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             {/* The stage: library, daily challenge (S1), or setlists/courses
                 (S8/S2). One at a time — each is a different mode, not a filter
                 over the same list. */}
+            {/* Cross-faded, and `mode="wait"` so the outgoing mode is gone
+                before the next one measures itself — overlapping two full-height
+                stages in the same box makes the incoming one lay out against a
+                container that is still twice as tall, which lands as a jump on
+                the frame the old one unmounts. A fade rather than a slide: these
+                three are peers, not a stack with a direction. */}
             <div className="w-full flex flex-col overflow-hidden">
-              {soloMode === 'daily' && (
-                <DailyPanel
-                  engine={engine}
-                  onPlay={(songId) => startRun(songId)}
-                  onBack={() => setSoloMode('library')}
-                />
-              )}
-              {soloMode === 'setlists' && (
-                <SetlistPanel
-                  engine={engine}
-                  onPlay={(songId) => startRun(songId)}
-                  onBack={() => setSoloMode('library')}
-                />
-              )}
-              {soloMode === 'library' && (
-                <SongLibrary
-                  onSelect={handleStartGame}
-                  onHighlight={handleSelectSong}
-                  selectedSongId={selectedSong?.id ?? null}
-                  onStopPreviewRef={stopPreviewRef}
-                />
-              )}
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={soloMode}
+                  className="flex min-h-0 flex-1 flex-col"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: DURATION.fast, ease: EASE.standard }}
+                >
+                  {soloMode === 'daily' && (
+                    <DailyPanel
+                      engine={engine}
+                      onPlay={(songId) => startRun(songId)}
+                      onBack={() => setSoloMode('library')}
+                    />
+                  )}
+                  {soloMode === 'setlists' && (
+                    <SetlistPanel
+                      engine={engine}
+                      onPlay={(songId) => startRun(songId)}
+                      onBack={() => setSoloMode('library')}
+                    />
+                  )}
+                  {soloMode === 'library' && (
+                    <SongLibrary
+                      /* PLAY opens the details panel; it does not start the run.
+                         Starting straight from the row dropped the player into a
+                         chart at whatever difficulty and modifiers were left over
+                         from the last song, with nothing in between to look at —
+                         and those controls, plus the score multiplier they add up
+                         to, all live in the panel. `START GAME` there is the
+                         control that commits. The lobby keeps its own meaning for
+                         `onSelect` (nominate this song), which is why this is
+                         decided here and not inside `SongLibrary`. */
+                      onSelect={handleSelectSong}
+                      onHighlight={handleSelectSong}
+                      selectedSongId={selectedSong?.id ?? null}
+                      onStopPreviewRef={stopPreviewRef}
+                    />
+                  )}
+                </motion.div>
+              </AnimatePresence>
             </div>
 
             {/* Sidebar - Song Details */}
-            {selectedSong && (
-              <>
-                {/* Backdrop */}
-                <button
+            {/* The details sidebar slides; it used to appear and vanish.
+                `duration-300` was on the panel with no `transition-*` property
+                to drive and no exit path at all — `{selectedSong && …}` unmounts
+                synchronously, so a close is a hard cut however the panel is
+                styled. `AnimatePresence` is what gives the exit somewhere to
+                happen, and it keeps rendering the OUTGOING element, so the panel
+                still has its song on the way out even though state is already
+                null. A spring, not a duration: this is a surface that travels.
+                The global `MotionConfig reducedMotion="user"` already collapses
+                both to an instant swap for anyone who asks. */}
+            {/* Two KEYED siblings, not a fragment.
+                `AnimatePresence` tracks its direct children by key; a bare `<>`
+                is one untracked child, so the backdrop and the panel were not
+                individually presence-managed and the pair flashed on open —
+                the fade would start, then snap as the group re-rendered. An
+                array of keyed motion elements is the shape it actually
+                supports. */}
+            <AnimatePresence>
+              {selectedSong && [
+                <motion.button
+                  key="song-details-backdrop"
                   type="button"
                   className="absolute inset-0 bg-black/20 z-65"
                   onClick={() => setSelectedSong(null)}
                   aria-label={t('close-song-details', { defaultValue: 'Close song details' })}
-                />
-
-                {/* Sidebar Panel */}
-                <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-2xl bg-slice-bg shadow-2xl z-70 duration-300 flex flex-col overflow-hidden">
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: DURATION.base, ease: EASE.standard }}
+                />,
+                <motion.div
+                  key="song-details-panel"
+                  className="absolute top-0 right-0 bottom-0 w-full sm:max-w-2xl bg-slice-bg shadow-2xl z-70 flex flex-col overflow-hidden"
+                  initial={{ x: '100%' }}
+                  animate={{ x: 0 }}
+                  exit={{ x: '100%' }}
+                  transition={APPLE_SPRING.smooth}
+                >
                   {/* Sidebar Header */}
                   <div className="flex items-center justify-between p-4 border-b border-slice-shadow-dark/50 bg-slice-shadow-dark/20">
                     <h2 className="text-lg font-black text-slice-text">
@@ -431,9 +507,9 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                       }
                     />
                   </div>
-                </div>
-              </>
-            )}
+                </motion.div>,
+              ]}
+            </AnimatePresence>
           </div>
         </>
       )}

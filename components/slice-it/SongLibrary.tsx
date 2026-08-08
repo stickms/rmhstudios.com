@@ -6,7 +6,6 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import {
   Heart,
-  History,
   Image as ImageIcon,
   Layers,
   LayoutGrid,
@@ -21,6 +20,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
 import {
@@ -136,8 +136,6 @@ interface SongLibraryProps {
  *   navigation is a smaller version of the same bug. They are now
  *   `/slice-it/`'s validated search params (`lib/slice-it/library-filters.ts`),
  *   so a shared link, a refresh, or the back button all land on the same view.
- * - **A recently-played shelf (L17).** Reads the `SongPlay` rows that were
- *   already written on every play and never read back as a list.
  * - **A random/roulette pick (S9).** Constrained by duration range, unplayed,
  *   or liked-only; picked server-side via `random=1` on the same route.
  */
@@ -301,6 +299,16 @@ export function SongLibrary({
    * upload, and the response is cacheable for exactly that reason.
    */
   const [artistFacet, setArtistFacet] = React.useState<ArtistChip[]>([]);
+  /**
+   * Whether the facet request is still out.
+   *
+   * Tracked so the chip band can hold its own height from first paint. Mounting
+   * the band only once the chips arrived made it appear mid-load and push the
+   * list down by its full 44px — one measured layout shift of 0.037 on a phone,
+   * and the visible half of "the layout changes again and nothing lines up".
+   * Reserving the row up front turns that into a fill-in.
+   */
+  const [artistFacetLoading, setArtistFacetLoading] = React.useState(true);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -311,6 +319,9 @@ export function SongLibrary({
       })
       .catch(() => {
         // A missing facet is a missing row of chips, not a broken library.
+      })
+      .finally(() => {
+        if (!cancelled) setArtistFacetLoading(false);
       });
     return () => {
       cancelled = true;
@@ -323,37 +334,15 @@ export function SongLibrary({
     [artistFacet, filters.artist],
   );
 
-  /* ── Recently played shelf (L17) ────────────────────────────────────────── */
-
-  const [recentSongs, setRecentSongs] = React.useState<LibrarySong[]>([]);
-
-  // The id, not the session object: Better Auth hands back a fresh object on
-  // unrelated refreshes, and re-fetching a twelve-row shelf on every one of
-  // those is wasted work. Reading the id here rather than inside the effect is
-  // what lets the dependency array say what the effect actually depends on.
-  const sessionUserId = session?.user?.id;
-
-  React.useEffect(() => {
-    if (!sessionUserId) {
-      setRecentSongs([]);
-      return;
-    }
-    let cancelled = false;
-    fetch('/api/slice-it/songs?shelf=recent')
-      .then((response) => (response.ok ? response.json() : Promise.reject(new Error())))
-      .then((data: { songs: LibrarySong[] }) => {
-        if (!cancelled) setRecentSongs(data.songs);
-      })
-      .catch(() => {
-        if (!cancelled) setRecentSongs([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [sessionUserId]);
-
-  const showRecentShelf =
-    !readOnly && session && filters.view === 'grid' && !filters.q && recentSongs.length > 0;
+  /* ── Recently played shelf (L17) — removed ───────────────────────────────
+   *
+   * Dropped as not useful: it repeated the top of a list already sorted by
+   * recency, cost a request on every signed-in load, and took a band of height
+   * from the browsing surface underneath it on exactly the screens with least
+   * of it. The `shelf=recent` branch of `/api/slice-it/songs` is left in place —
+   * it is a generic query with its own tests, and a future "resume where you
+   * left off" is the shape that would actually use it.
+   */
 
   /* ── Random / roulette (S9) ─────────────────────────────────────────────── */
 
@@ -541,9 +530,38 @@ export function SongLibrary({
 
   /* ── Render ──────────────────────────────────────────────────────────── */
 
+  /**
+   * In the grid, the WHOLE column scrolls; in the table, only the table does.
+   *
+   * Everything above the list — the recently-played shelf (`L17`), the artist
+   * chips (`L15`) — was `shrink-0` in a `flex-col`, so it was pinned and the
+   * list got whatever height was left. With both shelves up it left a window a
+   * couple of rows tall on a phone, and the browsing surface was the smallest
+   * thing on screen. Making the container the scroll port lets the shelves
+   * scroll away and hands their height back to the list.
+   *
+   * The table keeps the old arrangement because `SongTable` is its own scroll
+   * container — it needs a bounded `flex-1 min-h-0` parent to size against, and
+   * nesting that inside a second scroller gives two scrollbars and a header
+   * that sticks to the wrong box.
+   */
+  const scrollsAsOneColumn = filters.view !== 'table';
+
   return (
-    <div className="w-full h-full bg-slice-bg flex flex-col">
-      <div className="flex flex-wrap gap-2 items-center shrink-0 p-3 border-b border-slice-shadow-dark/50">
+    <div
+      className={`w-full h-full bg-slice-bg flex flex-col ${
+        scrollsAsOneColumn ? 'overflow-y-auto overscroll-contain' : 'overflow-hidden'
+      }`}
+    >
+      {/* Sticky only in the scrolling arrangement: the search box, the sort and
+          the view toggle are how you change what you are looking at, so they
+          stay reachable while the shelves scroll past them. `bg-slice-bg` is
+          load-bearing — without it the rows show through as they pass under. */}
+      <div
+        className={`flex flex-wrap gap-2 items-center shrink-0 p-3 border-b border-slice-shadow-dark/50 bg-slice-bg ${
+          scrollsAsOneColumn ? 'sticky top-0 z-20' : ''
+        }`}
+      >
         <div className="relative flex-1 min-w-[10rem]">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 text-slice-text-light w-4 h-4"
@@ -563,10 +581,19 @@ export function SongLibrary({
         </div>
 
         {filters.view === 'grid' && (
-          <select
+          /* The shared `Select`, on its new `slice` tier — not a bare
+             `<select>`. A native one renders the OS's own dropdown: unstyled,
+             unanimated, and in the platform's palette rather than the game's,
+             which is the one control on this row that looked like it belonged
+             to a different application. The tier portals its popup inside
+             `.slice-theme` so the neumorphic tokens resolve; see
+             `ui/select.tsx`. */
+          <Select
+            tier="slice"
             value={filters.sort}
             onChange={(e) => setFilters({ sort: e.target.value as SongSort, dir: undefined })}
-            className="h-9 pointer-coarse:h-11 shrink-0 max-w-28 rounded-lg bg-slice-card-bg border border-slice-shadow-dark/50 text-xs font-bold text-slice-text px-2"
+            className="h-9 pointer-coarse:h-11 text-xs font-bold"
+            containerClassName="shrink-0 w-32"
             aria-label={t('sort-by', { defaultValue: 'Sort by' })}
           >
             {SONG_SORTS.map((option) => (
@@ -574,7 +601,7 @@ export function SongLibrary({
                 {sortLabel(option, t)}
               </option>
             ))}
-          </select>
+          </Select>
         )}
 
         {/* L13 — grid/table view toggle. `LiquidTabs` (not a hand-rolled
@@ -615,7 +642,7 @@ export function SongLibrary({
                 <Shuffle className="w-4 h-4" aria-hidden />
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-slice-bg border-none shadow-2xl rounded-2xl max-w-sm">
+            <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none shadow-2xl rounded-2xl max-w-sm">
               <DialogHeader>
                 <DialogTitle className="text-slice-text font-black">
                   {ts('random-title', { defaultValue: 'Surprise Me' })}
@@ -646,7 +673,7 @@ export function SongLibrary({
                 <Layers className="w-4 h-4" aria-hidden />
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-slice-bg border-none shadow-2xl rounded-2xl max-w-lg">
+            <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none shadow-2xl rounded-2xl max-w-lg">
               <DialogHeader>
                 <DialogTitle className="text-slice-text font-black">
                   {ts('packs-title', { defaultValue: 'Packs' })}
@@ -667,7 +694,7 @@ export function SongLibrary({
                 <Upload className="w-4 h-4" />
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-slice-bg border-none shadow-2xl rounded-2xl max-w-lg">
+            <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none shadow-2xl rounded-2xl max-w-lg">
               <DialogHeader>
                 <DialogTitle className="text-slice-text font-black">
                   {t('upload-track-title', { defaultValue: 'UPLOAD TRACK' })}
@@ -684,50 +711,12 @@ export function SongLibrary({
         )}
       </div>
 
-      {showRecentShelf && (
-        <div className="shrink-0 border-b border-slice-shadow-dark/50 p-3">
-          <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-slice-text-light mb-2">
-            <History className="w-3 h-3" aria-hidden />
-            {ts('recently-played', { defaultValue: 'Recently played' })}
-          </div>
-          <div className="flex gap-2 overflow-x-auto scroll-fade-x pb-1">
-            {recentSongs.map((song) => (
-              <button
-                key={song.id}
-                type="button"
-                onClick={() => onHighlight(song)}
-                className="neumorphic-sm shrink-0 w-24 p-1.5 text-left touch-target"
-              >
-                <div className="w-full aspect-square rounded-md bg-slice-shadow-dark overflow-hidden relative mb-1">
-                  {song.coverUrl ? (
-                    <img
-                      src={song.coverUrl}
-                      alt=""
-                      loading="lazy"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="absolute inset-0 flex items-center justify-center text-slice-text-muted font-bold text-xs">
-                      {song.title.charAt(0)}
-                    </span>
-                  )}
-                </div>
-                <div className="text-[11px] font-bold text-slice-text truncate">{song.title}</div>
-                {song.lastPlayedAt && (
-                  <div className="text-[10px] text-slice-text-light truncate">
-                    {timeAgoShort(song.lastPlayedAt)}
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+
 
       {/* L15 — the artist facet. Hidden while a search is running: chips are a
           way to browse, and a query is a statement that you already know what
           you want. */}
-      {!filters.q && (filters.artist || artistFacet.length > 0) && (
+      {!filters.q && (filters.artist || artistFacet.length > 0 || artistFacetLoading) && (
         <div className="shrink-0 border-b border-slice-shadow-dark/50 px-3 py-2">
           {filters.artist ? (
             <div className="flex items-center gap-2 flex-wrap">
@@ -753,14 +742,38 @@ export function SongLibrary({
                 {ts('clear-artist-filter', { defaultValue: 'Clear' })}
               </Button>
             </div>
+          ) : artistFacetLoading && artistFacet.length === 0 ? (
+            /* Placeholder chips at the real chips' metrics, so the band is its
+               settled height on the FIRST paint and the list below never moves.
+               Same row classes as the real one — an empty `flex` row here
+               instead would leave the band a couple of pixels short and put a
+               smaller version of the same shift back. */
+            <div className="flex gap-1.5 overflow-x-auto -m-1.5 p-1.5" aria-hidden>
+              {[64, 88, 72, 96].map((w, i) => (
+                <div
+                  key={i}
+                  className="slice-skeleton h-[26px] shrink-0 rounded-full"
+                  style={{ width: w }}
+                />
+              ))}
+            </div>
           ) : (
-            <div className="flex gap-1.5 overflow-x-auto scroll-fade-x pb-0.5">
+            /* `-m-1.5 p-1.5` is the halo's room, not spacing.
+               `overflow-x: auto` makes the OTHER axis compute to `auto` too, so
+               this scroller clips on all four sides — and `.neumorphic-chip`
+               reaches 6px past its box (2px offset + 4px blur). Every chip's
+               highlight was being sliced flat against the scroller's edge, which
+               is the hard vertical cut where a soft corner should be. The
+               padding gives the halo somewhere to land inside the clip and the
+               equal negative margin keeps the band's metrics exactly where they
+               were, so nothing below it moves. */
+            <div className="flex gap-1.5 overflow-x-auto scroll-fade-x -m-1.5 p-1.5">
               {artistFacet.map((artist) => (
                 <button
                   key={artist.key}
                   type="button"
                   onClick={() => setFilters({ artist: artist.key })}
-                  className="neumorphic-sm shrink-0 px-2.5 py-1 text-[11px] font-bold text-slice-text-muted hover:text-slice-text touch-target"
+                  className="neumorphic-chip shrink-0 px-3 py-1 text-[11px] font-bold text-slice-text-muted hover:text-slice-text touch-target"
                 >
                   <span className="truncate max-w-32 inline-block align-middle">
                     {artist.display}
@@ -780,11 +793,11 @@ export function SongLibrary({
           {visibleSongs.length === 0 && !loading && (
             <p className="text-center text-slice-text-light py-12 text-sm font-bold">
               {filters.q
-                  ? t('no-search-results', {
-                      defaultValue: 'Nothing matches "{{query}}".',
-                      query: filters.q,
-                    })
-                  : t('library-empty', { defaultValue: 'No tracks yet — upload the first one.' })}
+                ? t('no-search-results', {
+                    defaultValue: 'Nothing matches "{{query}}".',
+                    query: filters.q,
+                  })
+                : t('library-empty', { defaultValue: 'No tracks yet — upload the first one.' })}
             </p>
           )}
           {(visibleSongs.length > 0 || loading) && (
@@ -813,11 +826,11 @@ export function SongLibrary({
           {visibleSongs.length === 0 && !loading && (
             <p className="text-center text-slice-text-light py-12 text-sm font-bold">
               {filters.q
-                  ? t('no-search-results', {
-                      defaultValue: 'Nothing matches "{{query}}".',
-                      query: filters.q,
-                    })
-                  : t('library-empty', { defaultValue: 'No tracks yet — upload the first one.' })}
+                ? t('no-search-results', {
+                    defaultValue: 'Nothing matches "{{query}}".',
+                    query: filters.q,
+                  })
+                : t('library-empty', { defaultValue: 'No tracks yet — upload the first one.' })}
             </p>
           )}
 
@@ -836,12 +849,23 @@ export function SongLibrary({
               aria-hidden
               data-testid="library-skeleton"
             >
+              {/* The real row's metrics, not a generic placeholder: `p-2`, the
+                  8px preview button, the 10px cover, the same two text lines
+                  and the same `border-l-4` gutter the selected state uses. A
+                  skeleton of a different height is a second layout the page has
+                  to jump out of when the rows land. */}
               {Array.from({ length: 6 }, (_, i) => (
-                <li key={i} className="flex items-center gap-3 py-3">
-                  <div className="slice-skeleton h-12 w-12 shrink-0" />
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <div className="slice-skeleton h-3.5 w-1/2 max-w-64" />
-                    <div className="slice-skeleton h-2.5 w-1/3 max-w-40" />
+                <li
+                  key={i}
+                  className="p-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-l-4 border-l-transparent"
+                >
+                  <div className="flex items-center gap-3 w-full sm:w-auto sm:flex-1 min-w-0">
+                    <div className="slice-skeleton h-8 w-8 shrink-0 rounded-full" />
+                    <div className="slice-skeleton h-10 w-10 shrink-0 rounded-md" />
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <div className="slice-skeleton h-3.5 w-1/2 max-w-56" />
+                      <div className="slice-skeleton h-2.5 w-1/3 max-w-40" />
+                    </div>
                   </div>
                 </li>
               ))}
@@ -1041,6 +1065,12 @@ export function SongLibrary({
                         "Rust Bloom" included. The word PLAY is the most
                         expendable 35px in the row: the glyph is the same
                         control, and the accessible name is unchanged. */}
+                    {/* `onSelect` is "the row's primary action", and what that
+                        IS belongs to the caller: the solo menu opens the details
+                        panel so a run is confirmed before it starts, and the
+                        multiplayer lobby nominates the song. Deciding here would
+                        have made the lobby's picker open a details drawer
+                        instead of picking. */}
                     {!readOnly && (
                       <Button
                         onClick={(e) => {
@@ -1526,7 +1556,6 @@ function UploadForm({ onDone }: { onDone: () => void }) {
               defaultValue: 'Tell us about this track…',
             })}
           />
-
         </div>
       )}
 

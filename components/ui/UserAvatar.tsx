@@ -24,6 +24,11 @@ export function UserAvatar({ src, alt, size = 32, className = '', fallbackName }
  // image proxy or a dead remote avatar — fall back to the default avatar.
  const [imgError, setImgError] = useState(false);
 
+ // The two `<img>` branches carry the same `object-cover` + inline box as the
+ // proxied one below. `width`/`height` attributes alone do not survive the
+ // `img { height: auto }` in the base reset, so a non-square source rendered at
+ // its own aspect ratio — a 40px circle came out a 40×21 lozenge — and an
+ // avatar is a circle at every call site.
  if (!src || imgError) {
  return (
  <img
@@ -31,7 +36,8 @@ export function UserAvatar({ src, alt, size = 32, className = '', fallbackName }
  alt={alt}
  width={size}
  height={size}
- className={`rounded-full shrink-0 ${className}`}
+ className={`rounded-full shrink-0 object-cover ${className}`}
+ style={{ width: size, height: size }}
  />
  );
  }
@@ -44,7 +50,8 @@ export function UserAvatar({ src, alt, size = 32, className = '', fallbackName }
  alt={alt}
  width={size}
  height={size}
- className={`rounded-full shrink-0 ${className}`}
+ className={`rounded-full shrink-0 object-cover ${className}`}
+ style={{ width: size, height: size }}
  onError={() => setImgError(true)}
  />
  );

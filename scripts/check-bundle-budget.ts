@@ -35,6 +35,27 @@
  * So the walk parses static `import`/`export ... from` specifiers straight out
  * of the emitted chunks — the method docs/performance-audit-2026-08-04.md
  * §"Re-running the measurement" describes.
+ *
+ * ── Why the TanStack Router versions are pinned exactly ───────────────────
+ * `@tanstack/react-router`, `@tanstack/react-start` and their two build
+ * plugins are pinned in package.json WITHOUT a caret. This is deliberate and
+ * this gate is why.
+ *
+ * Measured 2026-08-08: bumping `react-router` 1.170.18 → 1.170.23 and
+ * `react-start` 1.168.32 → 1.168.40 — a PATCH bump — moved 35.5 KB of
+ * `@tanstack/router-core` OUT of an async chunk and INTO the entry chunk
+ * (3.8 KB → 39.3 KB attributed to the entry), taking `entry, raw` from
+ * 273.4 KB to 311.6 KB and failing this gate at +8.5%. Total critical-path
+ * bytes barely moved (1217.0 → 1213.4 KB) — the payload did not grow, it
+ * RELOCATED onto the pre-hydration path, which is exactly the regression this
+ * gate exists to catch and the reason `entry, raw` is budgeted separately from
+ * the critical path.
+ *
+ * Nothing was gained in exchange: it was a patch bump taken during a routine
+ * dependency sweep, not a feature. So the versions are held at the last build
+ * that measured clean. Before widening those ranges, rebuild with
+ * `pnpm run build:frontend:sourcemap` and re-check `entry, raw` — and if a
+ * later release fixes the chunking, unpin it and say so here.
  */
 /* eslint-disable no-console -- CI reporter intentionally writes a human-readable budget table */
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
