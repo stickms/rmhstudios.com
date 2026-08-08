@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 257 routes. 133 render inside the standard site shell (sidebar, nav, context rail); 124 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 258 routes. 134 render inside the standard site shell (sidebar, nav, context rail); 124 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -31,8 +31,9 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/blog/:slug/edit` | Edit Blog Post \| Admin | admin | `app/routes/_site/admin/blog/$slug/edit.tsx` |
 | `/admin/blog/new` | Create Blog Post \| Admin | admin | `app/routes/_site/admin/blog/new.tsx` |
 | `/admin/economy` | Coin Economy | admin | `app/routes/_site/admin/economy.tsx` |
-| `/admin/library-quota` | Library Upload Appeals | admin | `app/routes/_site/admin/library-quota.tsx` |
-| `/admin/library-storage` | Library Storage Health | admin | `app/routes/_site/admin/library-storage.tsx` |
+| `/admin/library` | Library \| Admin | admin | `app/routes/_site/admin/library.tsx` |
+| `/admin/library-quota` | redirects to `/admin/library?tab=appeals` | admin | `app/routes/_site/admin/library-quota.tsx` |
+| `/admin/library-storage` | redirects to `/admin/library?tab=storage` | admin | `app/routes/_site/admin/library-storage.tsx` |
 | `/admin/predictions` | Prediction Markets \| Admin | admin | `app/routes/_site/admin/predictions.tsx` |
 | `/admin/redemptions` | Redemption Queue | admin | `app/routes/_site/admin/redemptions.tsx` |
 | `/admin/reports` | Moderation Queue | admin | `app/routes/_site/admin/reports.tsx` |
@@ -40,8 +41,8 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/security-reports` | Security Reports | admin | `app/routes/_site/admin/security-reports.tsx` |
 | `/admin/slice-it` | Slice It ranked pool | admin | `app/routes/_site/admin/slice-it.tsx` |
 | `/admin/slice-it-content` | Slice It content & storage | admin | `app/routes/_site/admin/slice-it-content.tsx` |
-| `/admin/user-builds` | — | admin | `app/routes/_site/admin/user-builds.tsx` |
-| `/admin/users` | — | admin | `app/routes/_site/admin/users.tsx` |
+| `/admin/user-builds` | All User Builds \| Admin | admin | `app/routes/_site/admin/user-builds.tsx` |
+| `/admin/users` | Users \| Admin | admin | `app/routes/_site/admin/users.tsx` |
 | `/alexdebtcounter` | redirects to `/kaikaidebtcounter` | public | `app/routes/_site/alexdebtcounter.tsx` |
 | `/analytics` | Creator Analytics | public | `app/routes/_site/analytics.tsx` |
 | `/apps` | Apps | public | `app/routes/_site/apps/index.tsx` |
@@ -70,17 +71,17 @@ Standard pages, rendered inside the sidebar shell.
 | `/history` | History | public | `app/routes/_site/history.tsx` |
 | `/homes` | RMHHomes — Rentals & houses posted by the community | public | `app/routes/_site/homes/index.tsx` |
 | `/homes/listing/:id` | Listing \| RMHHomes | public | `app/routes/_site/homes/listing.$id.tsx` |
-| `/homes/manage` | RMHHomes — My listings | public | `app/routes/_site/homes/manage.tsx` |
-| `/homes/saved` | RMHHomes — Saved | public | `app/routes/_site/homes/saved.tsx` |
+| `/homes/manage` | RMHHomes — Your homes | public | `app/routes/_site/homes/manage.tsx` |
+| `/homes/saved` | redirects to `/homes/manage?tab=saved` | public | `app/routes/_site/homes/saved.tsx` |
 | `/homes/submit` | RMHHomes — Post a listing | public | `app/routes/_site/homes/submit.tsx` |
-| `/homes/watches` | RMHHomes — My alerts | public | `app/routes/_site/homes/watches.tsx` |
+| `/homes/watches` | redirects to `/homes/manage?tab=alerts` | public | `app/routes/_site/homes/watches.tsx` |
 | `/leaderboard` | redirects to `/create?tab=games&sub=leaderboard` | public | `app/routes/_site/leaderboard.tsx` |
 | `/library` | Library | public | `app/routes/_site/library/index.tsx` |
 | `/lists` | redirects to `/saves?tab=lists` | public | `app/routes/_site/lists/index.tsx` |
 | `/lists/:id` | List | public | `app/routes/_site/lists/$id.tsx` |
 | `/market` | redirects to `/store?tab=market` | public | `app/routes/_site/market.tsx` |
 | `/messages` | Inbox | public | `app/routes/_site/messages/index.tsx` |
-| `/messages/:conversationId` | — | public | `app/routes/_site/messages/$conversationId.tsx` |
+| `/messages/:conversationId` | Conversation | public | `app/routes/_site/messages/$conversationId.tsx` |
 | `/moments/:id` | — | public | `app/routes/_site/moments.$id.tsx` |
 | `/music-trivia` | Guess the Song | public | `app/routes/_site/music-trivia.tsx` |
 | `/news` | News | public | `app/routes/_site/news/index.tsx` |
@@ -142,8 +143,8 @@ Standard pages, rendered inside the sidebar shell.
 | `/u/:userid/post/:postid` | Post Not Found \| RMH | public | `app/routes/_site/u/$userid/post/$postid.tsx` |
 | `/user-builds` | redirects to `/builds` | public | `app/routes/_site/user-builds/index.tsx` |
 | `/user-builds/:slug` | — | public | `app/routes/_site/user-builds/$slug.tsx` |
-| `/user-builds/manage` | — | public | `app/routes/_site/user-builds/manage.tsx` |
-| `/user-builds/submit` | — | public | `app/routes/_site/user-builds/submit.tsx` |
+| `/user-builds/manage` | Manage builds | public | `app/routes/_site/user-builds/manage.tsx` |
+| `/user-builds/submit` | Submit a build | public | `app/routes/_site/user-builds/submit.tsx` |
 | `/v` | redirects to `/create?tab=pages` | public | `app/routes/_site/v/index.tsx` |
 | `/ventures` | RMH Ventures | public | `app/routes/_site/ventures.tsx` |
 | `/wager` | Wager Matches | public | `app/routes/_site/wager.index.tsx` |
@@ -246,9 +247,9 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/rmhtype/multiplayer` | — | sign-in | `app/routes/rmhtype/multiplayer.tsx` |
 | `/rmhtype/solo` | — | sign-in | `app/routes/rmhtype/solo.tsx` |
 | `/rochester-offensive` | — | public | `app/routes/rochester-offensive.tsx` |
-| `/secret` | — | public | `app/routes/secret/index.tsx` |
+| `/secret` | Secret | public | `app/routes/secret/index.tsx` |
 | `/secret/cursed-logic` | — | public | `app/routes/secret/cursed-logic/index.tsx` |
-| `/secret/signal-forge` | — | public | `app/routes/secret/signal-forge.tsx` |
+| `/secret/signal-forge` | Signal Forge | public | `app/routes/secret/signal-forge.tsx` |
 | `/secret/vega` | Project Vega | public | `app/routes/secret/vega.tsx` |
 | `/security` | Security | public | `app/routes/security.tsx` |
 | `/sitemap.xml` | — | public | `app/routes/sitemap[.]xml.ts` |

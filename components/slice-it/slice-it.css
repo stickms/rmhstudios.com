@@ -157,3 +157,93 @@
     transition: none;
   }
 }
+
+/*
+ * The shared `ui/slider` primitive, in the game's own palette.
+ *
+ * `Slider` paints its three parts with `--site-*` tokens — `bg-site-border`
+ * track, `bg-site-accent` range, `bg-site-surface-opaque` thumb. Those are the
+ * right tokens for a `_site` page, but `.slice-theme` only scopes `--slice-*`,
+ * so inside the game they resolve against whatever the ROOT theme happens to
+ * hold. Measured on the shipped dark theme that is `--site-accent: #000000`,
+ * `--site-border: rgba(0,0,0,0.16)` and a fully transparent surface: a black
+ * range on a near-black track under an invisible thumb. Every slider in the
+ * game — master volume, effects, playback speed, lane cover, and the five in
+ * the settings drawer — read as one flat dark bar with no discernible value.
+ *
+ * Restyled through `[data-slot]` rather than by forking the primitive or
+ * passing a `className` at each of the call sites, which is the mechanism
+ * `globals.css` already uses to let a theme restyle a shared component. One
+ * rule here fixes every slider the game will ever mount.
+ *
+ * Neumorphic depth rule: the track is a recessed channel, the thumb is a raised
+ * cap, the range is the accent liquid between them.
+ */
+.slice-theme [data-slot='slider-track'] {
+  background: var(--slice-bg);
+  box-shadow:
+    inset 2px 2px 4px var(--slice-shadow-dark),
+    inset -2px -2px 4px var(--slice-shadow-light);
+}
+
+.slice-theme [data-slot='slider-range'] {
+  background: var(--slice-primary);
+}
+
+.slice-theme [data-slot='slider-thumb'] {
+  background: var(--slice-bg);
+  border-color: var(--slice-shadow-dark);
+  box-shadow:
+    2px 2px 5px var(--slice-shadow-dark),
+    -2px -2px 5px var(--slice-shadow-light);
+}
+
+/*
+ * A neumorphic placeholder — the shape of content that has not arrived.
+ *
+ * Inset, because a skeleton is a hole where something will go, not a raised
+ * card sitting on the surface; the sheen that crosses it is what separates
+ * "loading" from "an empty well". Sized and positioned by the caller, so one
+ * class covers a title line, a cover tile and a table row.
+ */
+.slice-skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--slice-bg);
+  box-shadow:
+    inset 3px 3px 6px var(--slice-shadow-dark),
+    inset -3px -3px 6px var(--slice-shadow-light);
+}
+
+.slice-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--slice-shadow-light) 55%, transparent),
+    transparent
+  );
+  animation: slice-skeleton-sheen 1.6s ease-in-out infinite;
+}
+
+@keyframes slice-skeleton-sheen {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/*
+ * Reduced motion gets the well without the sweep. The placeholder still reads
+ * as a placeholder — it is inset where real content is raised — so nothing is
+ * lost but the movement.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .slice-skeleton::after {
+    animation: none;
+    opacity: 0;
+  }
+}

@@ -12,6 +12,9 @@ import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 const SignalForgeGame = lazy(() => import('@/components/signal-forge/SignalForgeGame').then(m => ({ default: m.SignalForgeGame })));
 
 export const Route = createFileRoute('/secret/signal-forge')({
+  head: () => ({
+    meta: [{ title: 'Signal Forge | RMH Studios' }, { name: 'robots', content: 'noindex' }],
+  }),
   component: SignalForgePage,
 });
 

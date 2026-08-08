@@ -3,27 +3,14 @@
  */
 
 import { useTranslation } from "react-i18next";
-import { createFileRoute, Link, redirect } from '@tanstack/react-router';
-import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
-import { auth } from '@/lib/auth';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useAdminReviewCount } from '@/lib/useAdminReviewCount';
-
-const getAdminSession = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session || !(session.user as any).isAdmin) {
-    throw redirect({ to: '/' });
-  }
-  return session;
-});
 
 export const Route = createFileRoute('/_site/admin/')({
   head: () => ({
     meta: [{ title: 'Admin Dashboard | RMH Studios' }],
   }),
-  beforeLoad: () => getAdminSession(),
   component: AdminDashboardPage,
 });
 

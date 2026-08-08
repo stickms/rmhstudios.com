@@ -34,6 +34,7 @@ import {
   COMBO_BREAK_FEEDBACK_MS,
   HIT_WINDOWS,
   JUDGEMENT_COLORS,
+  LEAD_IN_SECONDS,
   QUANT_COLORS,
   MAX_LANE_COVER,
   MIN_LANE_COVER,
@@ -166,7 +167,6 @@ function drawSpikedDisc(
   ctx.closePath();
 }
 
-
 /**
  * Draw the stem, flags and beams of a notation notehead.
  *
@@ -278,7 +278,6 @@ function drawNoteStem(
   }
 }
 
-
 /**
  * Trace a tap note's BODY for a given skin shape, centred on `(cx, cy)`.
  *
@@ -339,7 +338,6 @@ function traceNoteBody(
       break;
   }
 }
-
 
 /** A note body's bevel and under-edge, derived from its own colour. */
 interface NoteShades {
@@ -1408,7 +1406,16 @@ export function GameCanvas() {
     const energy = energyRef.current * fx;
 
     const isMobileV = h > w; // portrait canvas = mobile vertical mode
-    const currentTime = AudioManager.getInstance().getCurrentTime();
+    // Before the first `play()` of a run the audio clock reads 0, which would
+    // park the opening notes a third of a screen from the judgement line
+    // throughout the countdown and then snap them off-screen the instant
+    // `start()` moves the clock to `-LEAD_IN_SECONDS`. Drawing the runway
+    // position from the countdown onward means the notes are already where they
+    // will travel from, and the transition is the clock starting rather than
+    // the playfield jumping. `hasBegun()` stays true across a mid-song pause,
+    // so this only ever applies to the pre-roll.
+    const audio = AudioManager.getInstance();
+    const currentTime = audio.hasBegun() ? audio.getCurrentTime() : -LEAD_IN_SECONDS;
     const activeBpm = engine.getActiveMap()?.bpm || 120;
     const approachSec = approachSeconds(activeBpm, runState.scrollSpeed, runState.scrollMode);
 
@@ -1460,7 +1467,14 @@ export function GameCanvas() {
       const cache = energyCacheRef.current;
       if (!cache.vignette || cache.w !== w || cache.h !== h) {
         const radius = Math.hypot(w, h) / 2;
-        const gradient = ctx.createRadialGradient(w / 2, h / 2, radius * 0.42, w / 2, h / 2, radius);
+        const gradient = ctx.createRadialGradient(
+          w / 2,
+          h / 2,
+          radius * 0.42,
+          w / 2,
+          h / 2,
+          radius,
+        );
         gradient.addColorStop(0, `rgba(${theme.vignetteRgb}, 0)`);
         gradient.addColorStop(1, `rgba(${theme.vignetteRgb}, 1)`);
         cache.vignette = gradient;
@@ -2269,7 +2283,17 @@ export function GameCanvas() {
       const alpha = 1 - Math.pow(timeDiff / 1000, 3); // Fade out
 
       ctx.save();
-      ctx.globalAlpha = alpha;
+      // H9 — the player's ceiling on the popup, multiplied into the fade rather
+      // than replacing it: the fade is what makes one judgement read as separate
+      // from the next, so a player turning the popup down must not also turn
+      // that off. The engine already honours `showJudgementsBelow` upstream by
+      // never queueing a judgement the player asked not to see; size and opacity
+      // are the half it cannot apply, because only the renderer knows them.
+      // Read per-frame from the store, like `runState` above: the rAF loop
+      // closes over ONE `render`, so a hook-subscribed value here would freeze
+      // at whatever it was when the effect last ran.
+      const { judgementScale, judgementOpacity } = useSliceItStore.getState();
+      ctx.globalAlpha = alpha * judgementOpacity;
       ctx.textAlign = 'center';
 
       // Position feedback: above hit line on mobile, centered on desktop
@@ -2281,7 +2305,7 @@ export function GameCanvas() {
           : h * 0.5;
 
       ctx.fillStyle = latestFeedback.color;
-      ctx.font = `900 ${isMobileV ? 28 : 32}px sans-serif`;
+      ctx.font = `900 ${Math.round((isMobileV ? 28 : 32) * judgementScale)}px sans-serif`;
       ctx.shadowColor = latestFeedback.color;
       ctx.shadowBlur = glow * 6;
       ctx.fillText(latestFeedback.text, feedbackX, feedbackY);
@@ -2296,9 +2320,9 @@ export function GameCanvas() {
         const sign = ms > 0 ? '+' : '';
         const offsetText = `${sign}${ms}ms`;
 
-        ctx.font = 'bold 16px monospace';
+        ctx.font = `bold ${Math.round(16 * judgementScale)}px monospace`;
         ctx.fillStyle = Math.abs(ms) < 20 ? '#334155' : '#64748b';
-        ctx.fillText(offsetText, feedbackX, feedbackY + 30);
+        ctx.fillText(offsetText, feedbackX, feedbackY + 30 * judgementScale);
       }
 
       ctx.restore();
@@ -2352,7 +2376,9 @@ export function GameCanvas() {
       ) {
         const pulseAge = (nowMs - latestFeedback.time) / HIT_PULSE_MS;
         const pulseLane = mirrorOn ? 1 - latestFeedback.lane : latestFeedback.lane;
-        const pulseVal = isOneTrack ? LANE_POS[0] : LANE_POS[Math.max(0, Math.min(pulseLane, LANE_POS.length - 1))];
+        const pulseVal = isOneTrack
+          ? LANE_POS[0]
+          : LANE_POS[Math.max(0, Math.min(pulseLane, LANE_POS.length - 1))];
         const onThisCursor = isMobileV ? Math.abs(cx - pulseVal) < 1 : Math.abs(cy - pulseVal) < 1;
         if (pulseAge >= 0 && pulseAge < 1 && onThisCursor) {
           ctx.save();

@@ -10,7 +10,6 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { m as motion } from 'framer-motion';
 import {
-  Bell,
   Bookmark,
   ChevronLeft,
   ChevronRight,
@@ -195,16 +194,13 @@ function HomesBrowsePage() {
       wide
       headerRight={
         <div className="flex items-center gap-1.5">
+          {/* One button to the whole personal side (/homes/manage), instead of
+              the two that used to point at the separate Alerts and Saved
+              pages — those are tabs there now. */}
           <Button asChild variant="ghost" size="sm">
-            <Link to="/homes/watches">
-              <Bell className="h-4 w-4" />
-              <span className="hidden sm:inline">Alerts</span>
-            </Link>
-          </Button>
-          <Button asChild variant="ghost" size="sm">
-            <Link to="/homes/saved">
+            <Link to="/homes/manage">
               <Bookmark className="h-4 w-4" />
-              <span className="hidden sm:inline">Saved</span>
+              <span className="hidden sm:inline">Your homes</span>
             </Link>
           </Button>
           {session ? (

@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 575 files across 134 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 570 files across 133 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -450,14 +450,6 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | ----- | ------- | ------ |
 | `/api/forest-explorer/save` | `GET` `POST` | `app/routes/api/forest-explorer/save.ts` |
 
-## `/api/friends`
-
-1 route.
-
-| Route | Methods | Source |
-| ----- | ------- | ------ |
-| `/api/friends/active` | `GET` | `app/routes/api/friends/active.ts` |
-
 ## `/api/gabriels-horn`
 
 2 routes.
@@ -740,15 +732,13 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/notifications`
 
-5 routes.
+3 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/notifications` | `GET` | `app/routes/api/notifications/index.ts` |
 | `/api/notifications/preferences` | `GET` `PUT` | `app/routes/api/notifications/preferences.ts` |
 | `/api/notifications/read` | `POST` | `app/routes/api/notifications/read.ts` |
-| `/api/notifications/read-all` | `POST` | `app/routes/api/notifications/read-all.ts` |
-| `/api/notifications/unread-count` | `GET` | `app/routes/api/notifications/unread-count.ts` |
 
 ## `/api/oembed`
 
@@ -839,12 +829,10 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/presence`
 
-3 routes.
+1 route.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
-| `/api/presence/friends` | `GET` | `app/routes/api/presence/friends.ts` |
-| `/api/presence/heartbeat` | `POST` | `app/routes/api/presence/heartbeat.ts` |
 | `/api/presence/online-count` | `GET` | `app/routes/api/presence/online-count.ts` |
 
 ## `/api/profile`

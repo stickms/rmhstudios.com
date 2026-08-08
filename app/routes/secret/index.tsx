@@ -16,6 +16,10 @@ import {
 import type { LucideIcon } from 'lucide-react';
 
 export const Route = createFileRoute('/secret/')({
+  // `noindex`, like every /secret page: indexing an easter egg defeats it.
+  head: () => ({
+    meta: [{ title: 'Secret | RMH Studios' }, { name: 'robots', content: 'noindex' }],
+  }),
   component: SecretPage,
 });
 

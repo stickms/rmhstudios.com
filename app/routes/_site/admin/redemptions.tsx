@@ -1,7 +1,4 @@
-import { createFileRoute, redirect } from '@tanstack/react-router';
-import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
-import { auth } from '@/lib/auth';
+import { createFileRoute } from '@tanstack/react-router';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useEffect, useState, useCallback } from 'react';
 import { formatDistanceToNow } from 'date-fns';
@@ -14,18 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 
-const getAdminSession = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
-    throw redirect({ to: '/' });
-  }
-  return null;
-});
-
 export const Route = createFileRoute('/_site/admin/redemptions')({
   head: () => ({ meta: [{ title: 'Redemption Queue | RMH Studios' }] }),
-  beforeLoad: () => getAdminSession(),
   component: AdminRedemptionsPage,
 });
 

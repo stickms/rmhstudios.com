@@ -4,15 +4,12 @@
  * Review pending driver applications (vehicle details + self-reported licence
  * number) and approve or reject.
  */
-import { createFileRoute, redirect } from '@tanstack/react-router';
-import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
+import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { Car, Check, X, MapPin, Search, Route as RouteIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import { auth } from '@/lib/auth';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,18 +20,8 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { rideClassName } from '@/lib/rideshare/classes';
 import { formatDistance, formatUsd } from '@/lib/rideshare/geo';
 
-const getAdminSession = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
-    throw redirect({ to: '/' });
-  }
-  return null;
-});
-
 export const Route = createFileRoute('/_site/admin/rideshare')({
   head: () => ({ meta: [{ title: 'Rideshare Applications | RMH Studios' }] }),
-  beforeLoad: () => getAdminSession(),
   component: AdminRidesharePage,
 });
 

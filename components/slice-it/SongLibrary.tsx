@@ -821,6 +821,33 @@ export function SongLibrary({
             </p>
           )}
 
+          {/* The first page, in the shape it will arrive in.
+              This branch used to render NOTHING while `loading` was true with
+              nothing yet fetched — the chrome around it was live and the list
+              area was blank, so the library read as empty right up until the
+              rows appeared, and a slow query looked like a broken page. The
+              table view opposite already passes `loading` down to `SongTable`;
+              the grid had no equivalent. Rows only, no controls: a skeleton
+              that draws buttons invites a click on a button that is not there
+              yet. */}
+          {visibleSongs.length === 0 && loading && (
+            <ul
+              className="divide-y divide-slice-shadow-dark/40"
+              aria-hidden
+              data-testid="library-skeleton"
+            >
+              {Array.from({ length: 6 }, (_, i) => (
+                <li key={i} className="flex items-center gap-3 py-3">
+                  <div className="slice-skeleton h-12 w-12 shrink-0" />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="slice-skeleton h-3.5 w-1/2 max-w-64" />
+                    <div className="slice-skeleton h-2.5 w-1/3 max-w-40" />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+
           {/* Dividers, because the row wraps on a phone: with the controls on
               their own line and nothing marking where one track ends, the
               cluster sat halfway between its own title and the next one and

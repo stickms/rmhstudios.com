@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Reveal } from '@/components/motion';
 import { LIFT_CARD } from '@/components/feed/motionHelpers';
 import { ColumnHeader } from './ColumnHeader';
+import { StudyTabs } from '@/components/study/StudyTabs';
 
 interface Deck {
   id: string;
@@ -140,12 +141,10 @@ export function FlashcardsColumn({
         title={t('flashcards-title', { defaultValue: 'Flashcards' })}
         actions={
           <>
-            <Link
-              to="/study/browse"
-              className="inline-flex items-center gap-1 rounded-site-sm px-2.5 py-1.5 text-sm font-medium text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text"
-            >
-              <Layers className="h-3.5 w-3.5" /> {t('deck-browse', { defaultValue: 'Browse' })}
-            </Link>
+            {/* The "Browse" text link that used to sit here is now one half of
+                the StudyTabs strip below — the crossing to /study/browse was a
+                link one way and a back-arrow the other, which is a tab strip
+                spelled two different ways. */}
             {signedIn && (
               <Button
                 size="sm"
@@ -159,6 +158,8 @@ export function FlashcardsColumn({
           </>
         }
       />
+
+      <StudyTabs active="/study" />
 
       {showForm && (
         <div className="border-b border-site-border bg-site-surface/30 p-4">

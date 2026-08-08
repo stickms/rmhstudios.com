@@ -5,13 +5,10 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
-import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Play, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { AlbumUploader, type AdminSlide } from '@/components/library/AlbumUploader';
 import { useConfirm } from '@/components/ui/confirm-dialog';
@@ -20,18 +17,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { EmptyState } from '@/components/ui/empty-state';
 
-const getAdminSession = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
-    throw redirect({ to: '/' });
-  }
-  return null;
-});
-
 export const Route = createFileRoute('/_site/admin/albums/$id')({
   head: () => ({ meta: [{ title: 'Manage Album | Admin' }] }),
-  beforeLoad: () => getAdminSession(),
   component: ManageAlbumPage,
 });
 

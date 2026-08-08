@@ -58,7 +58,19 @@ export class AudioManager {
     this.isPlaying = false;
   }
 
-  public play() {
+  /**
+   * Begin (or resume) playback.
+   *
+   * `leadInSeconds` schedules the audio to start that far in the FUTURE while
+   * the clock starts running now, so {@link getCurrentTime} returns a negative
+   * position counting up to zero. A caller that draws against the clock — Slice
+   * It's playfield — gets a silent runway in which notes can travel in from
+   * off-screen, without the note times themselves being shifted and without the
+   * audio being padded. Measured in the caller's own timebase (song seconds),
+   * not wall-clock, so a run at 2x speed gets the same *visible* runway rather
+   * than half of one.
+   */
+  public play(leadInSeconds = 0) {
     if (!this.audioContext || !this.buffer) return;
     if (this.audioContext.state === 'suspended') {
       this.audioContext.resume();
@@ -99,14 +111,37 @@ export class AudioManager {
     // Calculate start time
     const now = this.audioContext.currentTime;
     // If we were paused, resume from pauseTime. Else from 0.
-    const offset = this.pauseTime;
-    
-    this.source.start(now, offset);
-    
-    this.startTime = now - (offset / this.playbackRate);
-    this.timeAtLastRateChange = now;
+    //
+    // `pauseTime` can be NEGATIVE: pausing during a lead-in stores the position
+    // the clock was showing, which is the runway still to go. `start()` rejects
+    // a negative offset, so that case resumes at sample zero with the remaining
+    // runway re-scheduled as a fresh lead-in — the alternative, clamping it to
+    // 0, would swallow the rest of the runway and drop the player straight into
+    // the song with notes already on top of the line.
+    const paused = this.pauseTime;
+    const offset = Math.max(0, paused);
+    const pendingLeadIn = Math.max(0, leadInSeconds, paused < 0 ? -paused : 0);
+
+    // The lead-in is expressed in song seconds, so the wall-clock wait shrinks
+    // with the playback rate: `getCurrentTime()` then reads exactly
+    // `offset - pendingLeadIn` at this instant whatever the rate is, and the
+    // runway a note travels is the same at 0.5x and 2x.
+    const leadIn = pendingLeadIn / this.playbackRate;
+    const startAt = now + leadIn;
+
+    this.source.start(startAt, offset);
+
+    // Anchored to `startAt`, not `now`. `getCurrentTime()` is
+    // `offsetAtLastRateChange + (now - timeAtLastRateChange) * rate`, so
+    // anchoring ahead makes it return a negative position during the lead-in
+    // that rises linearly and crosses zero exactly as the first sample sounds —
+    // one timeline, no separate "are we in the lead-in" state for callers to
+    // get out of step with.
+    this.startTime = startAt - (offset / this.playbackRate);
+    this.timeAtLastRateChange = startAt;
     this.offsetAtLastRateChange = offset;
-    
+    this.pauseTime = 0;
+
     this.isPlaying = true;
     
     this.source.onended = () => {
@@ -194,6 +229,20 @@ export class AudioManager {
       if (this.gainNode) {
           this.gainNode.gain.value = this.volume;
       }
+  }
+
+  /**
+   * Has this track been started at all since it was loaded or stopped?
+   *
+   * `getCurrentTime()` reports 0 both before the first `play()` and at the very
+   * start of playback, and a caller that draws a timeline needs to tell those
+   * apart: Slice It renders the pre-roll at `-LEAD_IN_SECONDS` so the opening
+   * notes are already off-screen while the countdown runs, instead of sitting
+   * near the judgement line and snapping backwards the instant the clock moves.
+   * True while paused mid-song, so a pause does not read as "not started".
+   */
+  public hasBegun(): boolean {
+    return this.isPlaying || this.pauseTime !== 0;
   }
 
   public getCurrentTime(): number {

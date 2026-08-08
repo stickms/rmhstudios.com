@@ -15,6 +15,10 @@ import { Reveal } from '@/components/motion';
 import { LIFT_CARD } from '@/components/feed/motionHelpers';
 
 export const Route = createFileRoute('/_site/user-builds/manage')({
+  // `noindex`: one account's own builds (and `Disallow`ed in robots.txt).
+  head: () => ({
+    meta: [{ title: 'Manage builds | RMH Studios' }, { name: 'robots', content: 'noindex' }],
+  }),
   component: ManageBuildsPage,
 });
 

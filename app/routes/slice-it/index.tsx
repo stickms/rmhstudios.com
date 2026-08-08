@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { DarkModeWrapper } from '@/components/slice-it/DarkModeWrapper';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
-import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
+import { SliceItLoading } from '@/components/slice-it/SliceItLoading';
 import { librarySearchSchema } from '@/lib/slice-it/library-filters';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 
@@ -43,7 +43,9 @@ function SliceItPage() {
         {/* Game Canvas — occupies remaining space */}
         <div className="flex-1 min-h-0 w-full relative">
           <GameErrorBoundary gameName="Slice It">
-            <Suspense fallback={<GameLoadingFallback />}>
+            {/* Slice It's own skeleton, not the shared black sheet — see
+                `SliceItLoading` for why this game does not use it. */}
+            <Suspense fallback={<SliceItLoading />}>
               <GameCanvas />
             </Suspense>
           </GameErrorBoundary>

@@ -23,6 +23,11 @@ const fetchConversation = createServerFn({ method: 'GET' })
   });
 
 export const Route = createFileRoute('/_site/messages/$conversationId')({
+  // `noindex`: one private conversation. Titled all the same — without a
+  // head() the browser tab showed the raw conversation id.
+  head: () => ({
+    meta: [{ title: 'Conversation | RMH Studios' }, { name: 'robots', content: 'noindex' }],
+  }),
   loader: ({ params }) => fetchConversation({ data: params.conversationId }),
   component: ConversationPage,
 });
