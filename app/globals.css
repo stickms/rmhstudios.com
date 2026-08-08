@@ -134,6 +134,20 @@
   transition-duration: calc(var(--site-transition-speed, 200ms) * 1.5);
 }
 
+/* A horizontal scroller's right edge, faded so the clipped item reads as
+   "there is more" instead of as a broken layout.
+
+   An `overflow-x-auto` strip on a phone has no scrollbar and no affordance:
+   the only signal that it scrolls is an item sliced down the middle at the
+   viewport edge, which looks exactly like an overflow bug. The fade is that
+   signal. It is a utility rather than an inline `mask-image` because the two
+   strips in the Slice It library are not the last two scrollers this site will
+   have, and a bespoke gradient copied per call site is how five of them end up
+   with five different fade widths. */
+@utility scroll-fade-x {
+  mask-image: linear-gradient(to right, black calc(100% - 2rem), transparent);
+}
+
 :root {
   /* Pin the UA colour scheme to the active theme so native controls (form
      widgets, <select> option popups, scrollbars, date pickers, autofill) are
@@ -2423,6 +2437,17 @@ html.readable-font body {
   --color-slice-shadow-dark: var(--slice-shadow-dark);
   --color-slice-shadow-light: var(--slice-shadow-light);
   --color-slice-card-bg: var(--slice-card-bg);
+  /* `--slice-input-bg`/`--slice-input-border` were defined in slice-it.css for
+     both the light and dark token sets but never bound here, so every
+     `bg-slice-input-bg` / `border-slice-input-border` in the game compiled to
+     nothing — nine of them, across the AI search bar, the setlist panel, the
+     lobby and the song details panel. The visible result was the worst kind:
+     the fields fell through to `glass-inset`'s own light background and kept
+     the game's light-on-dark ink, so the AI search box rendered #f0f0f0 text
+     on rgba(255,255,255,.9) — a contrast ratio of about 1.1:1, i.e. typing
+     into an invisible field. Binding them fixes all nine at the source. */
+  --color-slice-input-bg: var(--slice-input-bg);
+  --color-slice-input-border: var(--slice-input-border);
 
   /* Altair Specific */
   --color-neon-glow: #d8b4fe;

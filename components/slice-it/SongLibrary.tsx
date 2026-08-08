@@ -572,8 +572,19 @@ export function SongLibrary({
         {/* L13 — grid/table view toggle. `LiquidTabs` (not a hand-rolled
             toggle group) sitting in a `.neumorphic-inset` well, the same
             neumorphic-treatment-around-a-sanctioned-primitive pattern
-            `editor/DifficultyTabs.tsx` uses for its difficulty strip. */}
-        <div className="neumorphic-inset shrink-0 w-[9.5rem] p-1">
+            `editor/DifficultyTabs.tsx` uses for its difficulty strip.
+
+            The width has to be DEFINITE and it has to fit two segments.
+            `LiquidTabs` is a grid of `repeat(auto-fit, minmax(min(--tab-seg-min,
+            100%), 1fr))`, which at `size="sm"` floors each segment at 5.5rem:
+            2 × 5.5rem + 0.25rem grid gap + 2 × 0.25rem well padding = 11.75rem.
+            The 9.5rem that used to be here left room for exactly ONE column and
+            `auto-fit` did what it promises — it wrapped, turning a segmented
+            control into a vertical stack that overlapped the row beneath it.
+            Dropping the width entirely is not the fix either: the grid sizes
+            from the well and the well from its content, and that circularity
+            collapses the track to a single 53px column. */}
+        <div className="neumorphic-inset shrink-0 w-[11.75rem] p-1">
           <LiquidTabs
             tabs={viewTabs}
             value={filters.view}
@@ -671,7 +682,7 @@ export function SongLibrary({
             <History className="w-3 h-3" aria-hidden />
             {ts('recently-played', { defaultValue: 'Recently played' })}
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1">
+          <div className="flex gap-2 overflow-x-auto scroll-fade-x pb-1">
             {recentSongs.map((song) => (
               <button
                 key={song.id}
@@ -761,7 +772,7 @@ export function SongLibrary({
               </Button>
             </div>
           ) : (
-            <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+            <div className="flex gap-1.5 overflow-x-auto scroll-fade-x pb-0.5">
               {artistFacet.map((artist) => (
                 <button
                   key={artist.key}
@@ -832,11 +843,27 @@ export function SongLibrary({
             </p>
           )}
 
-          <ul>
+          {/* Dividers, because the row wraps on a phone: with the controls on
+              their own line and nothing marking where one track ends, the
+              cluster sat halfway between its own title and the next one and
+              read as belonging to the wrong track. A hairline is the cheapest
+              thing that restores the grouping, and it earns its place at
+              desktop width too. */}
+          <ul className="divide-y divide-slice-shadow-dark/40">
             {visibleSongs.map((song) => (
               <li key={song.id}>
+                {/* Wraps below `sm`, and that is the whole fix for this row.
+                    `touch-target` sets a real `min-width: 44px`, so the five
+                    controls here are 44px each whatever their `w-8` says —
+                    correct for a finger, but 140px of a 358px row. With the
+                    cover and the preview button that left the title 82px, so
+                    every title elided including "Glass Arcade". Shrinking the
+                    targets would trade an a11y guarantee for legibility; taking
+                    a second line trades only vertical space, and a library is
+                    scrolled anyway. From `sm` up nothing wraps and the row is
+                    unchanged. */}
                 <div
-                  className={`p-2 flex items-center justify-between gap-2 group hover:bg-slice-shadow-dark/40 cursor-pointer border-l-4 ${
+                  className={`p-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 group hover:bg-slice-shadow-dark/40 cursor-pointer border-l-4 ${
                     selectedSongId === song.id
                       ? 'bg-blue-500/10 border-l-blue-500'
                       : 'bg-transparent border-l-transparent'
@@ -848,7 +875,7 @@ export function SongLibrary({
                   role="button"
                   tabIndex={0}
                 >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="flex items-center gap-3 w-full sm:w-auto sm:flex-1 min-w-0">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -925,7 +952,16 @@ export function SongLibrary({
                           })}
                         </div>
                       )}
-                      <div className="flex items-center gap-3 mt-0.5">
+                      {/* `flex-wrap` + `min-w-0`: flex children default to
+                          `min-width: auto`, so this row refused to shrink below
+                          its three items' min-content width and overflowed the
+                          `min-w-0` column it lives in — sliding the owner badge
+                          underneath the delete button on a phone, where it
+                          overlapped by up to 32px. Wrapping is the honest
+                          answer: the stats are the least important line in the
+                          row, so they take a second line rather than stealing
+                          the title's. */}
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 min-w-0 mt-0.5">
                         <span className="flex items-center gap-1 text-[10px] text-slice-text-light">
                           <Play className="w-2.5 h-2.5 fill-current" aria-hidden />
                           {song.plays}
@@ -950,10 +986,10 @@ export function SongLibrary({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-1 shrink-0 ml-auto">
                     {!readOnly && song.isOwner && (
                       <Button
-                        variant="destructive"
+                        variant="ghost"
                         size="icon"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -963,7 +999,14 @@ export function SongLibrary({
                         // exists. `opacity-0 group-hover:opacity-100` alone meant
                         // the control was invisible on every touch device while
                         // still taking its 32px of a row that had none to spare.
-                        className="h-8 w-8 rounded-lg touch-target sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+                        //
+                        // Ghost, not `destructive`: filled red is the weight of a
+                        // confirm dialog's commit button, and this is only the
+                        // entry point to one — `deleteId` opens a confirm. On a
+                        // library where you own every track, one filled red block
+                        // per row was the loudest thing on the screen and it was
+                        // shouting about the action you least want taken.
+                        className="h-8 w-8 rounded-lg touch-target text-red-400 hover:text-red-300 hover:bg-red-500/10 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
                         aria-label={t('delete-song', { defaultValue: 'Delete Song' })}
                       >
                         <X className="w-4 h-4" />
@@ -987,6 +1030,12 @@ export function SongLibrary({
                         <Heart className={`w-4 h-4 ${song.isLiked ? 'fill-current' : ''}`} />
                       </Button>
                     )}
+                    {/* Icon-only below `sm`. A 390px row has to seat a preview
+                        button, cover art, the title, a delete, a like and this
+                        — which left the title 70px, so EVERY title elided,
+                        "Rust Bloom" included. The word PLAY is the most
+                        expendable 35px in the row: the glyph is the same
+                        control, and the accessible name is unchanged. */}
                     {!readOnly && (
                       <Button
                         onClick={(e) => {
@@ -994,9 +1043,13 @@ export function SongLibrary({
                           stopPreview();
                           onSelect(song);
                         }}
-                        className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-3 h-8 rounded-lg text-xs touch-target"
+                        className="bg-blue-500 hover:bg-blue-600 text-white font-bold h-8 w-8 p-0 sm:w-auto sm:px-3 rounded-lg text-xs touch-target"
+                        aria-label={t('play', { defaultValue: 'PLAY' })}
                       >
-                        {t('play', { defaultValue: 'PLAY' })}
+                        <Play className="w-4 h-4 sm:hidden" aria-hidden />
+                        <span className="hidden sm:inline">
+                          {t('play', { defaultValue: 'PLAY' })}
+                        </span>
                       </Button>
                     )}
                   </div>

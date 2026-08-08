@@ -430,14 +430,20 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
               <div className="w-10 h-10 shrink-0 rounded-full bg-slice-shadow-dark shadow-inner flex items-center justify-center text-slice-text-muted font-black text-xl">
                 {userName ? userName.charAt(0).toUpperCase() : '?'}
               </div>
-              {/* `min-w-0` + truncate: a long display name used to push the
-                  multiplayer button and the two icon buttons off the right edge
-                  of a phone rather than eliding itself. */}
-              <div className="flex flex-col min-w-0">
-                <span className="hidden sm:block text-[10px] font-black text-slice-text-light uppercase tracking-wider">
+              {/* Hidden below `sm`, not truncated. Truncating kept the name in
+                  the layout while the five buttons opposite squeezed it to 24px
+                  — one letter and an ellipsis, directly beside an avatar
+                  already showing that same letter. The name is not a control
+                  and repeating one glyph is not information, so on a phone the
+                  avatar carries identity alone and the row's width goes to the
+                  buttons that need it. `min-w-0` + truncate still hold from
+                  `sm` up, where a long display name would otherwise push those
+                  buttons off the right edge. */}
+              <div className="hidden sm:flex flex-col min-w-0">
+                <span className="text-[10px] font-black text-slice-text-light uppercase tracking-wider">
                   {t('system-operator', { defaultValue: 'System Operator' })}
                 </span>
-                <div className="font-black text-slice-text text-sm sm:text-base uppercase tracking-tight truncate">
+                <div className="font-black text-slice-text text-base uppercase tracking-tight truncate">
                   {userName || 'GUEST'}
                 </div>
               </div>
