@@ -3,6 +3,7 @@
 import { laneColor, resolvePalette } from '@/lib/slice-it/palettes';
 import { approachEnergy, comboEnergy } from '@/lib/slice-it/presentation';
 import { resolveSkin, type NoteShape } from '@/lib/slice-it/skins';
+import { beamNeighbour, flagsForQuant } from '@/lib/slice-it/notation';
 import { clampLinePosition } from '@/lib/slice-it/constants';
 import { rumble } from '@/lib/shared/platform';
 import { laneForKey } from '@/lib/slice-it/input';
@@ -165,16 +166,23 @@ function drawSpikedDisc(
   ctx.closePath();
 }
 
+
 /**
- * Draw the stem and flags of a notation notehead.
+ * Draw the stem, flags and beams of a notation notehead.
  *
- * The stem rises from the head's right side, as it does on a notehead whose
- * pitch sits below the middle line — the direction is fixed rather than derived
- * from the lane, because a stem that flips between lanes reads as two different
- * note kinds instead of one note in two places.
+ * Written against two unit vectors rather than hard-coded x/y, because the
+ * playfield has two orientations: landscape scrolls right-to-left with lanes
+ * stacked, portrait scrolls top-to-bottom with lanes side by side. The stem
+ * must stand PERPENDICULAR to travel in both (a stem along the travel axis
+ * points at the next note and reads as a connector), and a beam must run ALONG
+ * it, which is exactly where the neighbour is.
  *
- * Flat, not extruded: these are 2-3 px wide and the neumorphic shadow pair that
- * makes the head sit up off the trough would turn them into a smear.
+ * `along` points at where later notes are — the direction they arrive from —
+ * so the stem sits on the trailing edge of the head and the beam runs back into
+ * the oncoming notes, the way a beam runs forward in time on a page.
+ *
+ * Flat and un-extruded: these are two or three pixels wide, and the neumorphic
+ * shadow pair that lifts the head off the trough would turn them into a smear.
  */
 function drawNoteStem(
   ctx: CanvasRenderingContext2D,
@@ -184,34 +192,88 @@ function drawNoteStem(
   flags: number,
   triplet: boolean,
   color: string,
+  vertical: boolean,
+  /** Distance to the beamed partner's stem, along `along`, or 0 for none. */
+  beamLength: number,
 ): void {
+  // perp: the way the stem points. along: the way later notes lie.
+  const perpX = vertical ? 1 : 0;
+  const perpY = vertical ? 0 : -1;
+  const alongX = vertical ? 0 : 1;
+  const alongY = vertical ? -1 : 0;
+
   const stemW = Math.max(2, size * 0.11);
   const stemH = size * 1.5;
-  const stemX = cx + size * 0.5 - stemW / 2;
-  const top = cy - size * 0.2 - stemH;
+  const baseX = cx + alongX * size * 0.5 + perpX * size * 0.2;
+  const baseY = cy + alongY * size * 0.5 + perpY * size * 0.2;
+  const tipX = baseX + perpX * stemH;
+  const tipY = baseY + perpY * stemH;
 
+  ctx.strokeStyle = color;
   ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.roundRect(stemX, top, stemW, stemH, stemW / 2);
-  ctx.fill();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
 
-  // Flags hang off the stem top, each below the last, curved the way an
-  // engraved flag is rather than drawn as a triangle.
-  for (let i = 0; i < flags; i++) {
-    const y = top + i * size * 0.34;
-    ctx.beginPath();
-    ctx.moveTo(stemX + stemW, y);
-    ctx.quadraticCurveTo(stemX + size * 0.95, y + size * 0.2, stemX + size * 0.5, y + size * 0.62);
-    ctx.quadraticCurveTo(stemX + size * 0.78, y + size * 0.22, stemX + stemW, y + size * 0.26);
-    ctx.closePath();
-    ctx.fill();
+  ctx.lineWidth = stemW;
+  ctx.beginPath();
+  ctx.moveTo(baseX, baseY);
+  ctx.lineTo(tipX, tipY);
+  ctx.stroke();
+
+  const step = size * 0.34;
+
+  if (beamLength > 0) {
+    // Beamed: bars instead of flags, one per subdivision, stacked back down
+    // the stem from the tip.
+    ctx.lineCap = 'butt';
+    // Beams are noticeably heavier than stems on a page; matching the stem
+    // weight made a beamed pair read as a wire staple.
+    ctx.lineWidth = size * 0.26;
+    for (let i = 0; i < flags; i++) {
+      const ox = -perpX * i * step;
+      const oy = -perpY * i * step;
+      ctx.beginPath();
+      ctx.moveTo(tipX + ox, tipY + oy);
+      ctx.lineTo(tipX + ox + alongX * beamLength, tipY + oy + alongY * beamLength);
+      ctx.stroke();
+    }
+    ctx.lineCap = 'round';
+  } else {
+    // Unbeamed: the engraved flag, curved rather than a triangle.
+    for (let i = 0; i < flags; i++) {
+      const ax = tipX - perpX * i * step;
+      const ay = tipY - perpY * i * step;
+      const at = (a: number, p: number) => ({
+        x: ax + alongX * size * a - perpX * size * p,
+        y: ay + alongY * size * a - perpY * size * p,
+      });
+      const c1 = at(0.85, 0.2);
+      const p1 = at(0.45, 0.62);
+      const c2 = at(0.7, 0.22);
+      const p2 = at(0, 0.26);
+      ctx.beginPath();
+      ctx.moveTo(ax, ay);
+      ctx.quadraticCurveTo(c1.x, c1.y, p1.x, p1.y);
+      ctx.quadraticCurveTo(c2.x, c2.y, p2.x, p2.y);
+      ctx.closePath();
+      ctx.fill();
+    }
   }
 
   if (triplet) {
+    // One 3 per GROUP, centred over it — not one per note. A bracket numeral
+    // says "these three are a triplet"; repeating it on each member says
+    // something that is not true of any of them individually, and on a run of
+    // triplets it turns into a row of floating digits.
     ctx.font = `bold ${Math.round(size * 0.44)}px ui-monospace, monospace`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('3', stemX + size * 0.62, top - size * 0.18);
+    const mid = beamLength > 0 ? beamLength / 2 : 0;
+    ctx.fillText(
+      '3',
+      tipX + alongX * mid + perpX * size * 0.45,
+      tipY + alongY * mid + perpY * size * 0.45,
+    );
     ctx.textBaseline = 'alphabetic';
   }
 }
@@ -313,34 +375,6 @@ function traceNoteBody(
   }
 }
 
-/**
- * How many flags a notehead carries for a subdivision, or `null` when the chart
- * does not say.
- *
- * `Slice.quant` is the denominator the note snapped to: 1 = on the beat,
- * 2 = eighth, 3 = triplet, 4 = sixteenth. Flags follow notation — a quarter has
- * none, an eighth one, a sixteenth two — and a triplet is drawn as an eighth
- * (which is what a triplet's members are) with the 3 that says so.
- *
- * `null` rather than 0 for an unknown quant, and the caller draws a bare head
- * for it. A chart with no rhythm data must not be able to CLAIM everything is a
- * quarter note; that is the same "missing is not on-beat" contract `Slice.quant`
- * documents, and drawing a stem would break it.
- */
-function flagsForQuant(quant: number | undefined): { flags: number; triplet: boolean } | null {
-  switch (quant) {
-    case 1:
-      return { flags: 0, triplet: false };
-    case 2:
-      return { flags: 1, triplet: false };
-    case 3:
-      return { flags: 1, triplet: true };
-    case 4:
-      return { flags: 2, triplet: false };
-    default:
-      return null;
-  }
-}
 
 /** A note body's bevel and under-edge, derived from its own colour. */
 interface NoteShades {
@@ -2117,6 +2151,26 @@ export function GameCanvas() {
           // the note's own colour on the accessibility palettes.
           const notation = skin.noteShape === 'notation' ? flagsForQuant(slice.quant) : null;
           if (notation) {
+            // Beaming. A run of eighths or sixteenths is joined by a bar rather
+            // than each wearing its own flag — which is both what the rhythm
+            // actually looks like written down and, on a dense chart, the
+            // difference between a readable phrase and a hedge.
+            //
+            // The group is capped at `BEAM_MAX_GROUP`: an uncapped chain draws
+            // one unbroken bar across an entire sixteenth run, and notation
+            // breaks at the beat for the same reason.
+            const beatSeconds = activeBpm > 0 ? 60 / activeBpm : 0;
+            let beamLength = 0;
+            let beamedIn = false;
+            if (notation.flags > 0) {
+              const next = beamNeighbour(slices, si, 1, beatSeconds);
+              // The partner is as far along the travel axis as it is later in
+              // time, and both share this lane's perpendicular position — so
+              // this one number is the whole geometry of the beam.
+              if (next >= 0) beamLength = (slices[next].time - slice.time) * PPS;
+              beamedIn = beamNeighbour(slices, si, -1, beatSeconds) >= 0;
+            }
+
             ctx.save();
             ctx.shadowColor = 'transparent';
             drawNoteStem(
@@ -2124,9 +2178,19 @@ export function GameCanvas() {
               nx,
               ny,
               size,
-              notation.flags,
-              notation.triplet,
-              quantAccent ?? shades.bevel,
+              // The count is the number of BARS when beamed and the number of
+              // FLAGS when not, which is the same number either way. A note
+              // that is only beamed from behind draws neither: the incoming bar
+              // has already said it.
+              beamedIn && beamLength <= 0 ? 0 : notation.flags,
+              // Only the note that opens a group carries the numeral.
+              notation.triplet && !beamedIn,
+              // Same colour as the head. The stem is part of the note, not an
+              // annotation on it, and a differently-coloured tail read as two
+              // objects stuck together.
+              color,
+              isMobileV,
+              beamLength,
             );
             ctx.restore();
           } else if (quantAccent) {
