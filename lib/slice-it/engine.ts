@@ -1131,6 +1131,18 @@ export class GameEngine {
   }
 
   /**
+   * The current combo, on its own.
+   *
+   * `getState()` already reports it, but that builds a fresh object of sixteen
+   * fields, and V13's playfield energy needs the combo on EVERY rendered frame
+   * — which would make this the draw loop's one per-frame allocation, on the
+   * weakest device that opens the game.
+   */
+  getCombo(): number {
+    return this.combo;
+  }
+
+  /**
    * A8 — a short vibration scaled by how well the note was hit.
    *
    * Never during replay/autoplay review: this is feedback for a hand resting

@@ -218,6 +218,17 @@ const SliceZ = z.object({
   lane: z.number().int().min(0).max(1),
   duration: z.number().min(0).max(120).optional(),
   speedMultiplier: z.number().min(0.1).max(10).optional(),
+  /**
+   * The beat subdivision (`Slice.quant`). Missing from this schema until now,
+   * and zod strips what it does not list — so the client-side backfill path
+   * (`useStartRun` → `patch-analysis`, taken by every legacy song the first
+   * time anyone plays it) wrote a chart with the quantisation removed. The
+   * charter computes it, the renderer colours by it, and the round trip
+   * through here quietly threw it away for good.
+   *
+   * Bounded to the denominators `quantOf` can actually produce.
+   */
+  quant: z.number().int().min(1).max(4).optional(),
 });
 
 /**

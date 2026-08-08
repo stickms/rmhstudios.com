@@ -17,6 +17,17 @@
     --slice-text-darker: #2d3748;
     --slice-input-bg: #dce1e9;
     --slice-input-border: rgba(163, 177, 198, 0.8);
+
+    /* The lane rail the notes travel along. Was a `#cbd5e0` literal inside the
+       canvas draw loop, which is a LIGHT-theme grey that the dark theme drew
+       anyway — the one bright line on an otherwise near-black playfield. */
+    --slice-rail: #cbd5e0;
+    /* V13 — the colour the playfield edges darken toward as combo builds. */
+    --slice-vignette: #64748b;
+    /* The note's drop shadow. Also a literal in the draw loop until now, and
+       the same bug as the rail: this is a light-theme shadow, so on the dark
+       theme every note wore a pale halo instead of casting anything. */
+    --slice-note-shadow: rgba(163, 177, 198, 0.6);
   }
 
   /*
@@ -44,6 +55,9 @@
     --slice-hold-trail: rgba(255, 255, 255, 0.5);
     --slice-input-bg: #121216;
     --slice-input-border: rgba(0, 0, 0, 0.5);
+    --slice-rail: #43434f;
+    --slice-vignette: #000000;
+    --slice-note-shadow: rgba(0, 0, 0, 0.7);
   }
 }
 

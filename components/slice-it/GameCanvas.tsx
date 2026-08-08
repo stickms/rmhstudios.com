@@ -1,6 +1,7 @@
 'use client';
 
 import { laneColor, resolvePalette } from '@/lib/slice-it/palettes';
+import { approachEnergy, comboEnergy } from '@/lib/slice-it/presentation';
 import { clampLinePosition } from '@/lib/slice-it/constants';
 import { rumble } from '@/lib/shared/platform';
 import { laneForKey } from '@/lib/slice-it/input';
@@ -127,6 +128,89 @@ const COMBO_MILESTONE_FEEDBACK_MS = 1100;
 const MILESTONE_COLORS = ['#38bdf8', '#a78bfa', '#f472b6', '#facc15', '#fb7185'];
 
 /**
+ * How long the hit ring takes to leave the receptor, ms.
+ *
+ * Short. This is an impact, and an impact that outlives the next note stops
+ * being feedback about a note and becomes ambient motion — on a dense chart
+ * notes land ~120 ms apart, so anything longer would be permanently on screen.
+ */
+const HIT_PULSE_MS = 260;
+
+/**
+ * Trace an eight-pointed spiked disc, centred on `(cx, cy)`.
+ *
+ * The bomb's shape. Leaves the path open so the caller can fill it, stroke it,
+ * or both, and allocates nothing — the alternative (a cached `Path2D` per
+ * radius) would have to be invalidated on every resize for no measurable gain
+ * over sixteen `lineTo`s.
+ */
+function drawSpikedDisc(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  outer: number,
+  inner: number,
+): void {
+  const points = 8;
+  ctx.beginPath();
+  for (let i = 0; i < points * 2; i++) {
+    const radius = i % 2 === 0 ? outer : inner;
+    const angle = (i * Math.PI) / points - Math.PI / 2;
+    const x = cx + Math.cos(angle) * radius;
+    const y = cy + Math.sin(angle) * radius;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+}
+
+/** A note body's bevel and under-edge, derived from its own colour. */
+interface NoteShades {
+  bevel: string;
+  shade: string;
+}
+
+/**
+ * The two derived tones for a note colour, memoised by colour.
+ *
+ * `interpolateHex` builds strings, and the draw loop touches every visible note
+ * every frame. The set of note colours is tiny and fixed (two lane colours, the
+ * type colours, the bomb) so a `Map` converges after one frame and the hot path
+ * is a lookup. Not an LRU on purpose: an unbounded cache over a bounded key
+ * space is just a table.
+ */
+function noteShades(cache: Map<string, NoteShades>, color: string): NoteShades {
+  const hit = cache.get(color);
+  if (hit) return hit;
+  const shades: NoteShades = {
+    bevel: interpolateHex(color, '#ffffff', 0.45),
+    shade: interpolateHex(color, '#000000', 0.45),
+  };
+  cache.set(color, shades);
+  return shades;
+}
+
+/**
+ * `#rrggbb` → `"r, g, b"`, for composing `rgba()` at a runtime alpha.
+ *
+ * Called once per theme change (it lives in the `themeRef` cache), never per
+ * frame. Anything it cannot parse falls back rather than throwing: a malformed
+ * custom property should cost a vignette, not the run.
+ */
+function rgbTriplet(color: string, fallback: string): string {
+  const hex = color.trim();
+  const short = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(hex);
+  const long = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+  if (long) {
+    return `${parseInt(long[1], 16)}, ${parseInt(long[2], 16)}, ${parseInt(long[3], 16)}`;
+  }
+  if (short) {
+    return [short[1], short[2], short[3]].map((c) => parseInt(c + c, 16)).join(', ');
+  }
+  return fallback;
+}
+
+/**
  * The early/late hit-error bar.
  *
  * A tick per recent hit at its signed offset, fading out, plus a marker at the
@@ -243,6 +327,13 @@ export function GameCanvas() {
       shadowLight: v('--slice-shadow-light', '#ffffff'),
       textColor: v('--slice-text-muted', '#64748b'),
       textShadowColor: v('--slice-text-shadow', 'rgba(0,0,0,0.3)'),
+      rail: v('--slice-rail', '#cbd5e0'),
+      noteShadow: v('--slice-note-shadow', 'rgba(163, 177, 198, 0.6)'),
+      // As `r, g, b` so the vignette gradient can build a matching fully
+      // transparent stop. Interpolating to the `transparent` keyword instead
+      // fades toward transparent BLACK, which tints the mid-stops on any
+      // theme whose vignette colour is not already black.
+      vignetteRgb: rgbTriplet(v('--slice-vignette', '#64748b'), '100, 116, 139'),
       holdTrail,
       // The held-note variant is a fixed transform of the same colour — compute
       // it with the cache rather than re-running the regex per note per frame.
@@ -1011,6 +1102,33 @@ export function GameCanvas() {
   /** Wall-clock seconds since the previous rendered frame. See `lastFrameAt`. */
   const lastFrameAt = useRef(0);
 
+  /**
+   * V13 — the smoothed playfield energy, 0–1. See `comboEnergy` in
+   * `lib/slice-it/presentation.ts` for what it means and why it is a curve.
+   *
+   * A ref rather than state: it changes every frame and nothing in the DOM
+   * reads it, so putting it in `useState` would re-render the component tree
+   * sixty times a second to draw on a canvas.
+   */
+  const energyRef = useRef(0);
+
+  /**
+   * The vignette gradient, and the canvas size it was built for.
+   *
+   * `createRadialGradient` allocates, and the draw loop cannot afford one per
+   * frame. Keyed on size alone: the energy rides on `globalAlpha` at fill time
+   * rather than being baked into the colour stops, so the gradient itself is
+   * the same object for the whole run and this is rebuilt only on resize.
+   */
+  const energyCacheRef = useRef<{
+    w: number;
+    h: number;
+    vignette: CanvasGradient | null;
+  }>({ w: 0, h: 0, vignette: null });
+
+  /** Derived note tones, keyed by note colour. See `noteShades`. */
+  const noteShadesRef = useRef<Map<string, NoteShades>>(new Map());
+
   const render = (
     ctx: CanvasRenderingContext2D,
     engine: GameEngine,
@@ -1091,6 +1209,21 @@ export function GameCanvas() {
     const flashOff = runState.reducedFlash;
     const fx = runState.effectIntensity; // A7
     const mirrorOn = runState.mirror && !isOneTrack;
+
+    // V13 — playfield energy. One scalar, tracking the combo curve, driving
+    // every "the run is going well" treatment below (lane rails, the vignette,
+    // note trails, the receptor glow) so they all move together and none of
+    // them fires on a threshold.
+    //
+    // Gated exactly like the combo-break wash and the milestone label: `glow`
+    // (which folds in reduced motion and `perf-lite`), `flashOff` (A2's
+    // photosensitivity mode) and `fx` (A7's intensity dial). When any of them
+    // says no the TARGET goes to zero and the field drains to the calm look
+    // rather than snapping to it — degrading to calm, not to broken.
+    const energyTarget = glow && !flashOff ? comboEnergy(engine.getCombo()) : 0;
+    energyRef.current = approachEnergy(energyRef.current, energyTarget, frameDelta);
+    const energy = energyRef.current * fx;
+
     const isMobileV = h > w; // portrait canvas = mobile vertical mode
     const currentTime = AudioManager.getInstance().getCurrentTime();
     const activeBpm = engine.getActiveMap()?.bpm || 120;
@@ -1128,10 +1261,46 @@ export function GameCanvas() {
     const scrollPos = (timeDelta: number) =>
       isMobileV ? CURSOR_MAIN - timeDelta * PPS : CURSOR_MAIN + timeDelta * PPS;
 
+    // 0. V13 — the vignette, tightening with energy.
+    //
+    // UNDER the notes, deliberately. Drawn on top it would darken the edge the
+    // notes arrive from, which costs reading time at exactly the combo where
+    // the player has the most to lose — an "energy" effect that makes the game
+    // harder the better you are doing is a bug with a nice gradient on it. Down
+    // here it only deepens the background, and the field reads as closing in
+    // around the lanes without a single note losing contrast.
+    //
+    // The gradient depends only on the canvas size, so it survives across
+    // frames and energy rides on `globalAlpha` instead of being baked into the
+    // colour stops. Rebuilt on resize alone.
+    if (energy > 0.01) {
+      const cache = energyCacheRef.current;
+      if (!cache.vignette || cache.w !== w || cache.h !== h) {
+        const radius = Math.hypot(w, h) / 2;
+        const gradient = ctx.createRadialGradient(w / 2, h / 2, radius * 0.42, w / 2, h / 2, radius);
+        gradient.addColorStop(0, `rgba(${theme.vignetteRgb}, 0)`);
+        gradient.addColorStop(1, `rgba(${theme.vignetteRgb}, 1)`);
+        cache.vignette = gradient;
+        cache.w = w;
+        cache.h = h;
+      }
+      ctx.save();
+      ctx.globalAlpha = 0.6 * energy;
+      ctx.fillStyle = cache.vignette;
+      ctx.fillRect(0, 0, w, h);
+      ctx.restore();
+    }
+
     // 1. Draw Tracks (Neumorphic Trough)
     const { shadowDark, shadowLight } = theme;
     LANE_POS.forEach((laneVal, i) => {
       const trackThickness = BAR_H * 1.5;
+      // V13 — the rail's own colour, which is what saturates with combo. The
+      // lane palette rather than a new colour of its own: `palettes.ts` is the
+      // thing that keeps this game legible to a colour-blind player, and a
+      // decoration that introduces a hue outside it would be the one part of
+      // the playfield that ignores the setting.
+      const railColor = isOneTrack ? laneA : laneColor(palette, i);
 
       if (isMobileV) {
         // Vertical tracks running top-to-bottom
@@ -1146,13 +1315,6 @@ export function GameCanvas() {
         ctx.shadowOffsetX = -3;
         ctx.shadowOffsetY = -3;
         ctx.fillRect(laneVal - trackThickness / 2, 0, trackThickness, h);
-        ctx.shadowColor = 'transparent';
-        ctx.strokeStyle = '#cbd5e0';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(laneVal, 0);
-        ctx.lineTo(laneVal, h);
-        ctx.stroke();
       } else {
         // Horizontal tracks running left-to-right (desktop)
         ctx.shadowColor = shadowDark;
@@ -1166,13 +1328,44 @@ export function GameCanvas() {
         ctx.shadowOffsetX = -3;
         ctx.shadowOffsetY = -3;
         ctx.fillRect(0, laneVal - trackThickness / 2, w, trackThickness);
-        ctx.shadowColor = 'transparent';
-        ctx.strokeStyle = '#cbd5e0';
-        ctx.lineWidth = 2;
+      }
+
+      // The rail line, and V13's glow along it.
+      //
+      // One code path for both orientations now. The two branches above used
+      // to carry a stroke each that differed only in which axis the line ran
+      // along, and keeping two copies of it is how a `#cbd5e0` literal — a
+      // LIGHT-theme grey — ended up being the single brightest thing on the
+      // dark playfield, in both of them.
+      ctx.shadowColor = 'transparent';
+      const railX0 = isMobileV ? laneVal : 0;
+      const railY0 = isMobileV ? 0 : laneVal;
+      const railX1 = isMobileV ? laneVal : w;
+      const railY1 = isMobileV ? h : laneVal;
+
+      ctx.strokeStyle = theme.rail;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(railX0, railY0);
+      ctx.lineTo(railX1, railY1);
+      ctx.stroke();
+
+      if (energy > 0.01) {
+        // The same line again in the lane's own colour, widening and
+        // brightening with the streak. A second stroke rather than lerping the
+        // first one's colour: a rail that only brightens loses its edge against
+        // the trough at high energy, and the edge is what the eye tracks.
+        ctx.save();
+        ctx.globalAlpha = Math.min(1, 0.12 + 0.5 * energy);
+        ctx.strokeStyle = railColor;
+        ctx.lineWidth = 2 + 2.5 * energy;
+        ctx.shadowColor = railColor;
+        ctx.shadowBlur = glow * 14 * energy;
         ctx.beginPath();
-        ctx.moveTo(0, laneVal);
-        ctx.lineTo(w, laneVal);
+        ctx.moveTo(railX0, railY0);
+        ctx.lineTo(railX1, railY1);
         ctx.stroke();
+        ctx.restore();
       }
     });
 
@@ -1207,7 +1400,7 @@ export function GameCanvas() {
     const map = engine.getActiveMap();
     if (map) {
       // Shadow for floating notes
-      ctx.shadowColor = 'rgba(163, 177, 198, 0.6)';
+      ctx.shadowColor = theme.noteShadow;
       ctx.shadowBlur = glow * 8;
       ctx.shadowOffsetX = 4;
       ctx.shadowOffsetY = 4;
@@ -1371,9 +1564,16 @@ export function GameCanvas() {
           ctx.globalAlpha = noteAlpha;
         }
 
-        // Color mapping
-        let color = '#475569';
-        if (slice.type === 'BOMB') color = '#ef4444';
+        // ── Colour mapping ──────────────────────────────────────────────────
+        //
+        // The bomb takes the PALETTE's bomb colour, not a `#ef4444` literal.
+        // `palettes.ts` exists because red bombs against pink notes collapse to
+        // one muddy hue under deuteranopia, and it answers that by giving three
+        // of the four palettes a black bomb — none of which ever reached the
+        // canvas, because this line hard-coded the red the palettes were
+        // written to get rid of.
+        let color = COLORS.slice.SILENT;
+        if (slice.type === 'BOMB') color = palette.bomb;
         // Hold notes and standard notes match their lane color
         else if (slice.type === 'LONG') color = laneIdx === 0 ? laneA : laneB;
         else if (slice.type === 'SWITCH') {
@@ -1383,15 +1583,32 @@ export function GameCanvas() {
         }
         // @ts-expect-error — COLORS.slice is typed loosely
         else if (COLORS.slice[slice.type]) color = COLORS.slice[slice.type];
-        // Quantisation colour, when the chart carries one and the player has not
-        // turned it off. Applied only to plain taps: BOMB, SWITCH, SPEED and
-        // LONG each already use colour to say what KIND of note they are, and
-        // that meaning outranks the rhythm one. A tap has no such claim on it,
-        // so on a tap the colour is free to say "this is the sixteenth".
-        else if (quantColorsOn && slice.quant && QUANT_COLORS[slice.quant]) {
-          color = QUANT_COLORS[slice.quant];
-        } else if (laneIdx === 0) color = laneA;
+        else if (laneIdx === 0) color = laneA;
         else color = laneB;
+
+        // Quantisation, as an ACCENT on the note rather than the note's colour.
+        //
+        // It used to replace the body colour outright, which had two costs that
+        // only show up on a real chart. `QUANT_COLORS[1]` is `#ef4444` — the
+        // bomb's exact colour — so every downbeat, the most common note there
+        // is, was drawn in the one colour reserved for the object that ends
+        // your run. And because a quantised chart colours every tap by rhythm,
+        // the two LANES became the same colour as each other, which is the
+        // readability the lane palettes are for. Drawn as a stripe instead,
+        // both signals fit: the body still says which lane, the stripe says
+        // which subdivision.
+        //
+        // Suppressed entirely on the accessibility palettes: someone who has
+        // chosen Okabe-Ito or monochrome has told us which hues they can
+        // separate, and `QUANT_COLORS` is not one of the sets they picked.
+        const quantAccent =
+          quantColorsOn &&
+          palette.id === 'default' &&
+          slice.type === 'STANDARD' &&
+          slice.quant &&
+          slice.quant > 1
+            ? QUANT_COLORS[slice.quant]
+            : null;
 
         ctx.fillStyle = color;
 
@@ -1423,38 +1640,56 @@ export function GameCanvas() {
           // Re-set fillStyle after restore — the glow pass consumed it
           ctx.fillStyle = color;
           // Restore the normal note shadow
-          ctx.shadowColor = 'rgba(163, 177, 198, 0.6)';
+          ctx.shadowColor = theme.noteShadow;
           ctx.shadowBlur = glow * 8;
           ctx.shadowOffsetX = 4;
           ctx.shadowOffsetY = 4;
         }
 
         if (slice.type === 'BOMB') {
-          ctx.beginPath();
-          ctx.arc(nx, ny, CURSOR_R, 0, Math.PI * 2);
+          // A SPIKED polygon, not a disc.
+          //
+          // `palettes.ts` already documents this shape as the reason a palette
+          // is "a reinforcement, not the signal" — WCAG 1.4.1 applied to a
+          // canvas: the one object you must never misread cannot be
+          // distinguished by colour alone. The renderer drew a plain circle,
+          // so that guarantee was a comment. It is the geometry now.
+          //
+          // The outline is the theme's text colour rather than the bomb's own:
+          // three of the four palettes specify a BLACK bomb, which on the dark
+          // theme's near-black playfield is an invisible object that ends runs.
+          drawSpikedDisc(ctx, nx, ny, CURSOR_R * 1.35, CURSOR_R * 0.62);
           ctx.fill();
+          ctx.save();
+          ctx.shadowColor = 'transparent';
+          ctx.strokeStyle = theme.textColor;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.restore();
 
           if (isTargeted) {
             ctx.save();
-            ctx.strokeStyle = 'rgba(239, 68, 68, 0.8)';
+            ctx.strokeStyle = theme.textColor;
             ctx.lineWidth = 3;
-            ctx.shadowColor = '#ef4444';
+            ctx.shadowColor = color;
             ctx.shadowBlur = glow * 12;
             ctx.beginPath();
-            ctx.arc(nx, ny, CURSOR_R + 6, 0, Math.PI * 2);
+            ctx.arc(nx, ny, CURSOR_R + 8, 0, Math.PI * 2);
             ctx.stroke();
             ctx.restore();
 
-            ctx.shadowColor = 'rgba(163, 177, 198, 0.6)';
+            ctx.shadowColor = theme.noteShadow;
             ctx.shadowBlur = glow * 8;
             ctx.shadowOffsetX = 4;
             ctx.shadowOffsetY = 4;
           }
 
-          ctx.fillStyle = 'white';
-          ctx.font = 'bold 20px sans-serif';
+          ctx.fillStyle = theme.textColor;
+          ctx.font = `bold ${Math.round(CURSOR_R * 1.3)}px sans-serif`;
           ctx.textAlign = 'center';
-          ctx.fillText('!', nx, ny + 7);
+          ctx.textBaseline = 'middle';
+          ctx.fillText('!', nx, ny);
+          ctx.textBaseline = 'alphabetic';
         } else if (slice.type === 'LONG') {
           // Long note: tail extends in the "future" direction from the head
           let remainingDuration = slice.duration || 0.5;
@@ -1531,17 +1766,100 @@ export function GameCanvas() {
           ctx.fillText(arrow, nx, ny);
           ctx.textBaseline = 'alphabetic';
         } else {
-          // Standard Note
+          // ── Standard note ────────────────────────────────────────────────
+          //
+          // Was a flat rounded square with a white dot pasted at its top-left.
+          // The dot read as a highlight from a light source that nothing else
+          // on the playfield shared, and at speed it just made the note look
+          // smudged. What replaces it is a solid three-part read — a shaded
+          // under-edge, the body, a bevel along the leading edge — which is
+          // the same neumorphic language as the trough the note travels in.
+          //
+          // Deliberately all opaque fills. A gradient would say this better and
+          // would mean a `createLinearGradient` per note per frame, which is
+          // the one allocation the draw loop cannot have.
           const size = BAR_H;
+          const half = size / 2;
+          const shades = noteShades(noteShadesRef.current, color);
+
+          // V13 — the energy trail. Behind the note, in the direction it came
+          // from, lengthening with the streak. This is the note-level half of
+          // the same continuous curve the rails and vignette ride: nothing here
+          // triggers, it just gets longer while the run stays alive.
+          if (energy > 0.02) {
+            const trail = size * (0.4 + 1.9 * energy);
+            const halfThick = size * 0.3;
+            ctx.save();
+            ctx.shadowColor = 'transparent';
+            ctx.globalAlpha = ctx.globalAlpha * 0.34 * energy;
+            ctx.fillStyle = color;
+            // Tapered to a point rather than a capsule: a constant-width stub
+            // reads as a second object stuck to the note, a wedge reads as the
+            // note having come from somewhere.
+            ctx.beginPath();
+            if (isMobileV) {
+              // Notes fall downward, so "behind" is up the screen.
+              ctx.moveTo(nx - halfThick, ny);
+              ctx.lineTo(nx + halfThick, ny);
+              ctx.lineTo(nx, ny - trail);
+            } else {
+              // Notes travel leftward, so "behind" is to the right.
+              ctx.moveTo(nx, ny - halfThick);
+              ctx.lineTo(nx, ny + halfThick);
+              ctx.lineTo(nx + trail, ny);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+          }
+
+          // Under-edge, offset toward the trailing corner.
+          ctx.fillStyle = shades.shade;
           ctx.beginPath();
-          ctx.roundRect(nx - size / 2, ny - size / 2, size, size, 8);
+          ctx.roundRect(nx - half + 1.5, ny - half + 1.5, size, size, 9);
           ctx.fill();
 
-          // Shine
-          ctx.fillStyle = 'rgba(255,255,255,0.3)';
+          // Body.
+          ctx.fillStyle = color;
           ctx.beginPath();
-          ctx.arc(nx - size * 0.15, ny - size * 0.15, size / 4, 0, Math.PI * 2);
+          ctx.roundRect(nx - half, ny - half, size, size, 9);
           ctx.fill();
+
+          // Bevel: a thin lip along the leading edge — the edge that reaches
+          // the judgement line first. It gives the note a direction, which a
+          // symmetric square never had. Thin on purpose: at a third of the note
+          // this stopped reading as a lit edge and started reading as a stripe,
+          // which is a different (and wrong) claim about what the note is.
+          ctx.fillStyle = shades.bevel;
+          ctx.beginPath();
+          if (isMobileV) {
+            ctx.roundRect(nx - half + 3, ny + half - size * 0.19, size - 6, size * 0.12, 3);
+          } else {
+            ctx.roundRect(nx - half + 3, ny - half + 3, size * 0.12, size - 6, 3);
+          }
+          ctx.fill();
+
+          // The rhythm signal (see `quantAccent` above), as the note's OUTLINE.
+          //
+          // A stripe across the body was the first attempt and it looked like a
+          // flag: bevel, body and stripe read as three equal bands, and the
+          // note stopped being an object. An outline sits at the boundary the
+          // eye already uses to find the note, so it costs no interior area and
+          // does not compete with the lane colour it surrounds.
+          if (quantAccent) {
+            ctx.save();
+            ctx.shadowColor = 'transparent';
+            const rim = Math.max(1.5, size * 0.07);
+            ctx.strokeStyle = quantAccent;
+            ctx.lineWidth = rim;
+            ctx.beginPath();
+            // Inset by half the stroke so the rim sits ON the note's edge
+            // rather than straddling it — straddling ate a visible band of the
+            // lane colour, which is the one thing the body has to say.
+            ctx.roundRect(nx - half + rim / 2, ny - half + rim / 2, size - rim, size - rim, 8);
+            ctx.stroke();
+            ctx.restore();
+          }
         }
       }
       ctx.shadowColor = 'transparent'; // Reset
@@ -1617,16 +1935,24 @@ export function GameCanvas() {
       const p = particlesRef.current[i];
       p.x += p.vx * step;
       p.y += p.vy * step;
-      p.vy += 0.2 * step; // Gravity
+      // Drag before gravity. Constant-velocity dots under gravity alone arc
+      // like thrown confetti, which is a slow, heavy read for what is supposed
+      // to be a note being struck; bleeding the speed off makes the burst leave
+      // fast and stop, which is what a spark does.
+      p.vx *= Math.pow(0.9, step);
+      p.vy *= Math.pow(0.9, step);
+      p.vy += 0.14 * step;
       p.life -= 0.05 * step;
 
       if (p.life <= 0) {
         particlesRef.current.splice(i, 1);
       } else {
-        ctx.globalAlpha = p.life;
+        // Shrink as it fades, rather than a constant disc that just gets
+        // fainter — a spark loses its body before it loses its light.
+        ctx.globalAlpha = p.life * p.life;
         ctx.fillStyle = p.color;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, p.size * (0.35 + 0.65 * p.life), 0, Math.PI * 2);
         ctx.fill();
       }
     }
@@ -1677,6 +2003,62 @@ export function GameCanvas() {
     const { textColor, textShadowColor } = theme;
 
     const drawCursor = (cx: number, cy: number, color: string, label?: string) => {
+      // V13 — the receptor picks up the streak's glow before anything is drawn
+      // on top of it, so the ring reads as lit from within rather than outlined
+      // twice. Same continuous curve as the rails; no pulse, no period.
+      if (energy > 0.01) {
+        ctx.save();
+        ctx.shadowColor = color;
+        ctx.shadowBlur = glow * 22 * energy;
+        ctx.globalAlpha = 0.35 + 0.5 * energy;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2 + 2 * energy;
+        ctx.beginPath();
+        ctx.arc(cx, cy, CURSOR_R * 1.5, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // The hit pulse: a ring expanding out of the receptor the note landed on.
+      //
+      // This is the feedback a hit was missing. A judgement word appears in the
+      // middle of the screen, which is not where the player is looking — the
+      // eye is on the judgement line, and until now the line itself did not
+      // react to being hit at all. Driven off `latestFeedback`, so it inherits
+      // the engine's own idea of when and how well a note was struck.
+      //
+      // On the flash budget: this is the one effect here that repeats at note
+      // rate, which on a dense chart is faster than 3 Hz. It stays inside the
+      // rule because the rule is about *area* — WCAG 2.3.1 counts a flash that
+      // covers more than a quarter of the central visual field, and this is a
+      // ~60 px ring on a 1360 px playfield, drawn at partial alpha, in the one
+      // place the player is already looking. It is also behind `flashOff` like
+      // everything else, so the setting that exists for this turns it off.
+      // Nothing else added by V13 repeats at all.
+      //
+      // Not on a MISS: nothing was struck, so a ring leaving the receptor would
+      // be the playfield reacting to an input that never happened.
+      if (latestFeedback && latestFeedback.text !== 'MISS' && glow && !flashOff) {
+        const pulseAge = (nowMs - latestFeedback.time) / HIT_PULSE_MS;
+        const pulseLane = mirrorOn ? 1 - latestFeedback.lane : latestFeedback.lane;
+        const pulseVal = isOneTrack ? LANE_POS[0] : LANE_POS[Math.max(0, Math.min(pulseLane, LANE_POS.length - 1))];
+        const onThisCursor = isMobileV ? Math.abs(cx - pulseVal) < 1 : Math.abs(cy - pulseVal) < 1;
+        if (pulseAge >= 0 && pulseAge < 1 && onThisCursor) {
+          ctx.save();
+          ctx.shadowColor = 'transparent';
+          // Eased out, so it leaves fast and settles — a linear ring reads as
+          // a slow expanding hoop, which is a UI animation, not an impact.
+          const eased = 1 - Math.pow(1 - pulseAge, 3);
+          ctx.globalAlpha = (1 - pulseAge) * 0.75 * fx;
+          ctx.strokeStyle = latestFeedback.color;
+          ctx.lineWidth = 3 * (1 - pulseAge) + 1;
+          ctx.beginPath();
+          ctx.arc(cx, cy, CURSOR_R * (1.5 + 2.2 * eased), 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
       ctx.shadowColor = shadowLight;
       ctx.shadowBlur = glow * 5;
       ctx.shadowOffsetX = -2;
