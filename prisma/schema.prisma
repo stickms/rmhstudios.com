@@ -1192,7 +1192,11 @@ model SongComment {
   /// running image remembers they existed. `scripts/check-migration-safety.ts`
   /// is what insists on that order, and it is right to.
   aiSeverity   String?   @db.VarChar(16)
-  aiCategories String[]
+  /// The `@default([])` is not decoration: 20260807160000_slice_it_comment_ai_triage
+  /// created this column `NOT NULL DEFAULT ARRAY[]::TEXT[]`, and a model that
+  /// omits the default makes `prisma migrate diff` propose dropping it — which
+  /// is schema drift, and `prisma-migrate-status` fails on it.
+  aiCategories String[]  @default([])
   aiRationale  String?   @db.VarChar(200)
   aiTriagedAt  DateTime?
 
