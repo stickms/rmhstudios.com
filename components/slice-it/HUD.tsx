@@ -26,6 +26,20 @@ interface MapWithSections extends BeatMap {
 /** Stable empty reference so a songless HUD render never allocates a new array. */
 const NO_SECTIONS: Section[] = [];
 
+/**
+ * H9 — where the combo counter anchors inside the score/speed row.
+ *
+ * `hidden` maps to the centre classes and is never rendered; keeping it in the
+ * record means the lookup is total, so the anchor cannot be `undefined` for a
+ * value the store is allowed to hold.
+ */
+const COMBO_ANCHOR: Record<'center' | 'left' | 'right' | 'hidden', string> = {
+  center: 'left-1/2 -translate-x-1/2',
+  left: 'left-0',
+  right: 'right-0',
+  hidden: 'left-1/2 -translate-x-1/2',
+};
+
 function fmt(s: number) {
   const m = Math.floor(s / 60);
   const sec = Math.floor(s % 60);
@@ -74,6 +88,7 @@ export function HUD({ engine }: HUDProps) {
   const { t } = useTranslation('c-game');
   const { t: ts } = useTranslation('r-slice-it');
   const { score, combo, modifiers } = useSliceItStore();
+  const comboPosition = useSliceItStore((s) => s.comboPosition);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [sample, setSample] = useState<EngineSample>(EMPTY_SAMPLE);
@@ -103,7 +118,11 @@ export function HUD({ engine }: HUDProps) {
     return () => cancelAnimationFrame(raf);
   }, [engine]);
 
-  const progress = duration > 0 ? Math.min(1, currentTime / duration) : 0;
+  // Clamped at both ends. The clock is NEGATIVE through the lead-in
+  // (`LEAD_IN_SECONDS`), which would otherwise render a negative-width fill and
+  // a `0:-3` elapsed readout for the first few seconds of every run.
+  const elapsed = Math.max(0, currentTime);
+  const progress = duration > 0 ? Math.min(1, Math.max(0, currentTime / duration)) : 0;
 
   // H5 — section markers on the progress bar. `getActiveMap()` returns the
   // same object reference for the whole run (a new one only arrives with a
@@ -173,11 +192,13 @@ export function HUD({ engine }: HUDProps) {
           </div>
         </div>
 
-        {/* Combo — center, above score/speed row */}
-        {combo > 5 && (
+        {/* Combo — H9 puts it where the player asked. `hidden` is a real
+            choice, not an accident: at speed the counter sits directly over the
+            approach lane, and some players would rather read the notes. */}
+        {combo > 5 && comboPosition !== 'hidden' && (
           <div
             key={combo}
-            className="absolute left-1/2 -translate-x-1/2 top-1 sm:top-2"
+            className={`absolute top-1 sm:top-2 ${COMBO_ANCHOR[comboPosition]}`}
             style={{ animation: 'combo-bounce 0.15s ease-out' }}
           >
             <span className="text-3xl sm:text-5xl font-black italic text-slice-text soft-glow-text drop-shadow-lg">
@@ -186,11 +207,14 @@ export function HUD({ engine }: HUDProps) {
           </div>
         )}
 
-        {/* Full-combo / all-marvellous lamp. Sits under the combo counter so the
-            two read as one column, and disappears the instant it stops being
-            true — which is the feedback. */}
+        {/* Full-combo / all-marvellous lamp. Tracks the combo counter's own
+            anchor so the two still read as one column wherever it has been
+            moved to, and disappears the instant it stops being true — which is
+            the feedback. */}
         {showChain && (
-          <div className="absolute left-1/2 -translate-x-1/2 top-12 sm:top-16 flex flex-col items-center">
+          <div
+            className={`absolute top-12 sm:top-16 flex flex-col items-center ${COMBO_ANCHOR[comboPosition]}`}
+          >
             <span
               className={`text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] ${
                 sample.isPerfect ? 'text-cyan-500' : 'text-slice-text-muted'
@@ -240,7 +264,7 @@ export function HUD({ engine }: HUDProps) {
         <div className="absolute bottom-0 left-0 right-0 translate-y-full pt-2 px-4 pointer-events-none">
           <div className="flex items-center gap-3">
             <span className="text-xs font-bold text-slice-text-muted w-10 text-right shrink-0">
-              {fmt(currentTime)}
+              {fmt(elapsed)}
             </span>
             <div className="relative flex-1 h-2 bg-slice-bg rounded-full overflow-hidden shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)]">
               {/* H5 — section boundaries. Skipped at `start <= 0`: the first

@@ -288,6 +288,33 @@ export const MAX_SCROLL_SPEED = 3.0;
 export const BASE_APPROACH_SEC = 3.0;
 
 /**
+ * Seconds of silent runway before the audio starts, in SONG time.
+ *
+ * A run used to begin with the audio already playing, so a chart whose first
+ * onset sits near t=0 spawned its opening notes mid-flight — already partway
+ * down the lane, sometimes already inside the hit window. The lead-in gives
+ * them somewhere to come from: the clock starts at `-LEAD_IN_SECONDS` and
+ * counts up, so the first note enters from off-screen and travels its full
+ * approach like every other note in the chart.
+ *
+ * **Exactly one approach at the default scroll speed**, not a hand-picked
+ * number — `BASE_APPROACH_SEC` is the time a note takes to cross the whole
+ * axis at `scrollSpeed: 1.0`, and the runway before the judgement line is
+ * 0.85 of that, so this covers it with margin and cannot drift away from the
+ * geometry it exists to match.
+ *
+ * **A constant, and it must stay one.** The obvious refinement — scale it by
+ * the player's own `scrollSpeed` so a slow-scroll player gets the longer
+ * runway they need — would make the audio start at a different wall-clock
+ * moment for every seat in a lobby, off a setting the server never sees. Every
+ * client calls `GameEngine.start()` on the server's `startsAt` timestamp, so a
+ * lead-in that is the same number everywhere is the whole of what keeps a
+ * match in sync. A player on a slower scroll speed gets less runway than they
+ * would like; they do not get a desynced match.
+ */
+export const LEAD_IN_SECONDS = BASE_APPROACH_SEC;
+
+/**
  * The visibility family (M3): what used to be one `invisible` toggle.
  *
  * `fadeOut` is the original behaviour and stays the default and the alias

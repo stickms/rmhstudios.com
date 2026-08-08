@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
-import { Loader2 } from 'lucide-react';
 
 /**
  * The Slice It chart editor.
@@ -29,11 +28,26 @@ export const Route = createFileRoute('/slice-it/edit/$songId')({
   component: EditorPage,
 });
 
+/**
+ * The editor's shape, drawn in the game's own material while its chunk lands.
+ *
+ * A centred spinner on a bare ground told the author nothing and looked like
+ * neither the editor nor the game. The editor is a toolbar over a timeline over
+ * an inspector rail, and drawing that now makes the arrival a fill-in.
+ */
 function EditorSkeleton() {
   return (
-    <div className="flex min-h-dvh items-center justify-center">
-      <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
+    <div className="flex min-h-dvh flex-col gap-3 bg-slice-bg p-4" role="status">
       <span className="sr-only">Loading the chart editor</span>
+      <div className="slice-skeleton h-12 w-full shrink-0 rounded-2xl" />
+      <div className="flex min-h-0 flex-1 gap-3">
+        <div className="slice-skeleton min-h-64 flex-1 rounded-2xl" />
+        <div className="hidden w-72 shrink-0 flex-col gap-3 lg:flex">
+          <div className="slice-skeleton h-40 w-full rounded-2xl" />
+          <div className="slice-skeleton min-h-32 flex-1 rounded-2xl" />
+        </div>
+      </div>
+      <div className="slice-skeleton h-24 w-full shrink-0 rounded-2xl" />
     </div>
   );
 }

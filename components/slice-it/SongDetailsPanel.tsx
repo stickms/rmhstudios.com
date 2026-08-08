@@ -681,6 +681,60 @@ export function SongDetailsPanel({
               }
               color="#8b5cf6"
             />
+            {/* Sudden Death and S-Random (`M2`) were in `Modifiers`, priced in
+                `MODIFIER_BONUSES` and honoured by the engine with no toggle
+                anywhere — the only way to set either was to hand-edit local
+                storage. `setModifiers` runs `applyExclusions`, so Perfectionist
+                or No Fail winning over Sudden Death is resolved by the store
+                rather than by this grid. */}
+            <ModifierToggle
+              label={t('mod-sudden-death', { defaultValue: 'Sudden Death' })}
+              active={!!modifiers.suddenDeath}
+              onClick={() => setModifiers({ ...modifiers, suddenDeath: !modifiers.suddenDeath })}
+              color="#e11d48"
+            />
+            <ModifierToggle
+              label={t('mod-s-random', { defaultValue: 'S-Random' })}
+              active={!!modifiers.sRandom}
+              onClick={() => setModifiers({ ...modifiers, sRandom: !modifiers.sRandom })}
+              color="#0ea5e9"
+            />
+          </div>
+
+          {/* A1 / M5 — the assist family, kept apart from the grid above and
+              named for what it is. These earn no score bonus and make the run
+              unranked, and both of those are deliberate: unranked because a run
+              with no fail state is not comparable to one with it, and no penalty
+              because charging a player for needing an assist is the design
+              mistake `ASSIST_MODIFIERS` exists to avoid. */}
+          <h3 className="text-sm font-bold text-slice-text uppercase mb-1">
+            {t('assists', { defaultValue: 'Assists' })}
+          </h3>
+          <p className="text-[10px] text-slice-text-light font-bold leading-snug mb-3">
+            {t('assists-hint', {
+              defaultValue:
+                'Free, and unranked. No score penalty — these keep a run off the board rather than costing you points on it.',
+            })}
+          </p>
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <ModifierToggle
+              label={t('mod-no-fail', { defaultValue: 'No Fail' })}
+              active={!!modifiers.noFail}
+              onClick={() => setModifiers({ ...modifiers, noFail: !modifiers.noFail })}
+              color="#22c55e"
+            />
+            <ModifierToggle
+              label={t('mod-assist', { defaultValue: 'Assist (0.75x)' })}
+              active={!!modifiers.assist}
+              onClick={() => setModifiers({ ...modifiers, assist: !modifiers.assist })}
+              color="#14b8a6"
+            />
+            <ModifierToggle
+              label={t('mod-tap-holds', { defaultValue: 'Taps Only' })}
+              active={!!modifiers.tapHolds}
+              onClick={() => setModifiers({ ...modifiers, tapHolds: !modifiers.tapHolds })}
+              color="#84cc16"
+            />
           </div>
 
           <div className="space-y-2">
