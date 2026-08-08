@@ -1,0 +1,18 @@
+{
+  "aiBudget": "Vous avez utilisé l'allocation IA de ce mois-ci",
+  "aiUnavailable": "Les fonctionnalités IA sont hors ligne",
+  "conflict": "Quelqu'un d'autre a modifié cela en premier",
+  "forbidden": "Vous n'avez pas accès à ceci",
+  "gone": "Cela a expiré",
+  "insufficientCoins": "Vous n'avez pas assez de pièces",
+  "internal": "Quelque chose s'est mal passé de notre côté",
+  "invalidInput": "Vérifiez le formulaire et réessayez",
+  "notFound": "Cela n'existe pas (ou a été supprimé)",
+  "queryBudget": "Cette requête était trop coûteuse à traiter",
+  "quotaExceeded": "Vous avez épuisé votre espace de stockage",
+  "rateLimited": "Ralentissez un instant",
+  "stakeLimit": "Vous avez atteint la limite que vous avez définie",
+  "storageUnavailable": "Les téléversements sont temporairement indisponibles",
+  "unauthorized": "Connectez-vous pour continuer",
+  "upgradeRequired": "Cette fonctionnalité nécessite un abonnement"
+}
