@@ -197,3 +197,53 @@
     2px 2px 5px var(--slice-shadow-dark),
     -2px -2px 5px var(--slice-shadow-light);
 }
+
+/*
+ * A neumorphic placeholder — the shape of content that has not arrived.
+ *
+ * Inset, because a skeleton is a hole where something will go, not a raised
+ * card sitting on the surface; the sheen that crosses it is what separates
+ * "loading" from "an empty well". Sized and positioned by the caller, so one
+ * class covers a title line, a cover tile and a table row.
+ */
+.slice-skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--slice-bg);
+  box-shadow:
+    inset 3px 3px 6px var(--slice-shadow-dark),
+    inset -3px -3px 6px var(--slice-shadow-light);
+}
+
+.slice-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--slice-shadow-light) 55%, transparent),
+    transparent
+  );
+  animation: slice-skeleton-sheen 1.6s ease-in-out infinite;
+}
+
+@keyframes slice-skeleton-sheen {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/*
+ * Reduced motion gets the well without the sweep. The placeholder still reads
+ * as a placeholder — it is inset where real content is raised — so nothing is
+ * lost but the movement.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .slice-skeleton::after {
+    animation: none;
+    opacity: 0;
+  }
+}

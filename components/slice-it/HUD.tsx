@@ -118,7 +118,11 @@ export function HUD({ engine }: HUDProps) {
     return () => cancelAnimationFrame(raf);
   }, [engine]);
 
-  const progress = duration > 0 ? Math.min(1, currentTime / duration) : 0;
+  // Clamped at both ends. The clock is NEGATIVE through the lead-in
+  // (`LEAD_IN_SECONDS`), which would otherwise render a negative-width fill and
+  // a `0:-3` elapsed readout for the first few seconds of every run.
+  const elapsed = Math.max(0, currentTime);
+  const progress = duration > 0 ? Math.min(1, Math.max(0, currentTime / duration)) : 0;
 
   // H5 — section markers on the progress bar. `getActiveMap()` returns the
   // same object reference for the whole run (a new one only arrives with a
@@ -260,7 +264,7 @@ export function HUD({ engine }: HUDProps) {
         <div className="absolute bottom-0 left-0 right-0 translate-y-full pt-2 px-4 pointer-events-none">
           <div className="flex items-center gap-3">
             <span className="text-xs font-bold text-slice-text-muted w-10 text-right shrink-0">
-              {fmt(currentTime)}
+              {fmt(elapsed)}
             </span>
             <div className="relative flex-1 h-2 bg-slice-bg rounded-full overflow-hidden shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)]">
               {/* H5 — section boundaries. Skipped at `start <= 0`: the first

@@ -43,6 +43,7 @@ import {
   INPUT_COOLDOWN_MS,
   JUDGEMENT_COLORS,
   JUDGEMENT_ORDER,
+  LEAD_IN_SECONDS,
   RELEASE_WINDOW_SCALE,
   TICK_FREQ_BEAT,
   TICK_FREQ_NOTE,
@@ -489,9 +490,23 @@ export class GameEngine {
     this.audioManager.setPlaybackRate(this.speedMultiplier);
   }
 
+  /**
+   * Begin the run, after `LEAD_IN_SECONDS` of silent runway.
+   *
+   * The clock starts at `-LEAD_IN_SECONDS` and counts up, so the opening notes
+   * enter from off-screen and travel their full approach rather than appearing
+   * mid-lane the instant the audio does.
+   *
+   * **Multiplayer stays in sync for free, and only because the lead-in is a
+   * constant.** Every client already calls this at the server's `startsAt`
+   * timestamp (`GameCanvas`'s `countTo`), so adding the same fixed offset on
+   * each of them moves every clock by the same amount and moves none of them
+   * relative to each other. Nothing new goes on the wire. See
+   * `LEAD_IN_SECONDS` for why it must not be derived from a player setting.
+   */
   start(): void {
     this.audioManager.setPlaybackRate(this.speedMultiplier);
-    this.audioManager.play();
+    this.audioManager.play(LEAD_IN_SECONDS);
   }
 
   pause(): void {
@@ -1025,18 +1040,13 @@ export class GameEngine {
       ) {
         this.lastMilestone = this.combo;
         this.comboMilestone = { value: this.combo, at: performance.now() };
-        const tier = COMBO_MILESTONES.indexOf(this.combo as (typeof COMBO_MILESTONES)[number]);
-        // Deliberately quiet and short. This is a garnish on top of the hit
-        // sound the player is already hearing on every note, and at the old
-        // 0.16-0.24s and full SFX volume it cut straight across the track.
-        // A third of the gain and half the length still reads as "milestone"
-        // without competing with the music it is celebrating.
-        this.audioManager.playSfX(
-          660 + tier * 110,
-          'sine',
-          0.08 + tier * 0.01,
-          (useSliceItStore.getState().sfxVolume / 100) * 0.35,
-        );
+        // Visual only. This used to also play a rising sine per tier, quietened
+        // twice and shortened once before being dropped outright: a milestone
+        // fires in the middle of a streak, which is exactly when the player is
+        // reading densely and already hearing a hit sound on every note, so any
+        // extra tone lands as interference rather than reward. The playfield
+        // flourish `GameCanvas` draws off `comboMilestone` says the same thing
+        // in the channel that is not already busy.
       }
     }
 
@@ -1111,10 +1121,11 @@ export class GameEngine {
       at: performance.now(),
       magnitude: Math.min(1, lost / COMBO_BREAK_FULL_INTENSITY),
     };
-    // A low square tone, not a sample: there is no combo-break asset in the
-    // repo, and adding a fetch to the miss path is how a missed note becomes a
-    // frame hitch that costs the next one too.
-    this.audioManager.playSfX(110, 'square', 0.22, useSliceItStore.getState().sfxVolume / 100);
+    // Visual only, like the milestone above. A 220 ms square tone at full SFX
+    // volume fired on the one event the player least needs narrating — they
+    // already know they missed, the judgement popup already says so, and the
+    // shake this sets up carries it — while stepping on the next note's hit
+    // sound, which is the note they still have a chance at.
   }
 
   /**

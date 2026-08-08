@@ -34,6 +34,7 @@ import {
   COMBO_BREAK_FEEDBACK_MS,
   HIT_WINDOWS,
   JUDGEMENT_COLORS,
+  LEAD_IN_SECONDS,
   QUANT_COLORS,
   MAX_LANE_COVER,
   MIN_LANE_COVER,
@@ -1405,7 +1406,16 @@ export function GameCanvas() {
     const energy = energyRef.current * fx;
 
     const isMobileV = h > w; // portrait canvas = mobile vertical mode
-    const currentTime = AudioManager.getInstance().getCurrentTime();
+    // Before the first `play()` of a run the audio clock reads 0, which would
+    // park the opening notes a third of a screen from the judgement line
+    // throughout the countdown and then snap them off-screen the instant
+    // `start()` moves the clock to `-LEAD_IN_SECONDS`. Drawing the runway
+    // position from the countdown onward means the notes are already where they
+    // will travel from, and the transition is the clock starting rather than
+    // the playfield jumping. `hasBegun()` stays true across a mid-song pause,
+    // so this only ever applies to the pre-roll.
+    const audio = AudioManager.getInstance();
+    const currentTime = audio.hasBegun() ? audio.getCurrentTime() : -LEAD_IN_SECONDS;
     const activeBpm = engine.getActiveMap()?.bpm || 120;
     const approachSec = approachSeconds(activeBpm, runState.scrollSpeed, runState.scrollMode);
 

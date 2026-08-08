@@ -13,7 +13,7 @@ import { AudioManager } from '@/lib/audio/AudioManager';
 import { addMatchListener } from '@/lib/slice-it/net/client';
 import { useStartRun } from '@/lib/slice-it/useStartRun';
 import type { SliceSong } from '@/lib/slice-it/types';
-import { authClient } from '@/lib/auth-client';
+import { useStableSession } from '@/hooks/useStableSession';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { SongLibrary } from '@/components/slice-it/SongLibrary';
 import { CalibrationScreen } from '@/components/slice-it/CalibrationScreen';
@@ -50,7 +50,10 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
   const isDarkMode = useSliceItStore((state) => state.isDarkMode);
   const setIsDarkMode = useSliceItStore((state) => state.setIsDarkMode);
   const engine = propEngine;
-  const session = authClient.useSession();
+  // Not `authClient.useSession()` directly: its focus revalidation reports a
+  // momentary `{ data: null, isPending: false }` when you come back to the tab,
+  // which threw the sign-in takeover over a live session. See the hook.
+  const session = useStableSession();
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as Record<string, string | undefined>;
   const { startRun, isLoading } = useStartRun(engine);
@@ -165,13 +168,21 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
 
       {!showMultiplayer && !showCalibration && (
         <>
-          {(isLoading || session.isPending) && (
+          {/* Only the track load takes the screen. `session.isPending` used to
+              take it too, so the entire menu sat behind a dimmed "VALIDATING
+              SESSION" spinner until the auth round trip came back — blocking
+              the library, the search box and both mode buttons on a request
+              none of them need. `/api/slice-it/songs` is `auth: 'optional'`,
+              the library loads its own rows behind its own skeleton, and the
+              two things that genuinely need a session (the upload control and
+              the sign-in wall) resolve themselves when it arrives. Loading a
+              track is different: it replaces the stage, so it is allowed to
+              cover it. */}
+          {isLoading && (
             <div className="absolute inset-0 z-70 bg-slice-bg/80 flex items-center justify-center flex-col gap-4">
               <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
               <div className="text-blue-500 font-extrabold animate-pulse uppercase tracking-widest">
-                {session.isPending
-                  ? t('validating-session', { defaultValue: 'Validating Session' })
-                  : t('initializing-track', { defaultValue: 'Initializing Track' })}
+                {t('initializing-track', { defaultValue: 'Initializing Track' })}
               </div>
             </div>
           )}
@@ -311,7 +322,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                 it with 320px of stage — which is how the Log In button ended up
                 below the fold of the screen whose only purpose is that button.
                 Scrolling now reaches it; sizing it means you don't have to. */}
-            {!session.data && !session.isPending && (
+            {session.signedOut && (
               <div className="absolute inset-0 z-60 bg-slice-bg/90 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain p-6 sm:p-8 backdrop-blur-xl rounded-[4rem] shadow-[inset_15px_15px_40px_var(--slice-shadow-dark),inset_-15px_-15px_40px_var(--slice-shadow-light)]">
                 <motion.div
                   className="w-full max-w-md space-y-4 [@media(min-width:640px)_and_(min-height:620px)]:space-y-10 text-center"
