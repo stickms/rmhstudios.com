@@ -9,6 +9,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { CalendarDays, ListMusic, Moon, Sun } from 'lucide-react';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import { GameEngine } from '@/lib/slice-it/engine';
+import { hitSoundPath, hitSoundPreloadList } from '@/lib/slice-it/hit-sound-pool';
 import { asset } from '@/lib/storage/asset';
 import { AudioManager } from '@/lib/audio/AudioManager';
 import { addMatchListener, spectatingLobbyCode } from '@/lib/slice-it/net/client';
@@ -82,13 +83,13 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
     AudioManager.getInstance().setVolume(volume / 100);
   }, [volume]);
 
-  // Preload persisted hit sound on mount
+  // Preload persisted hit sound on mount — the whole pool if it is Shuffle.
   React.useEffect(() => {
-    if (hitSound && hitSound !== 'default') {
-      const am = AudioManager.getInstance();
-      am.initialize();
-      am.preloadHitSound(asset(`/music/slice-it/sounds/${hitSound}`)).catch(() => {});
-    }
+    const files = hitSoundPreloadList(hitSound);
+    if (files.length === 0) return;
+    const am = AudioManager.getInstance();
+    am.initialize();
+    for (const file of files) am.preloadHitSound(asset(hitSoundPath(file))).catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // The track whose details panel is open.
