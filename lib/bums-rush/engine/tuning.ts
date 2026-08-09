@@ -34,28 +34,24 @@ export const RETUNED = {
   HEAD_AIR_FRICTION: 0.0018,
 
   /**
-   * 0.085 → 0.12, and the reasoning matters more than the number.
+   * 0.085 → 0.038, recalibrated after the arm controller was fixed.
    *
-   * `GRIP_BREAK_FORCE` is quoted in matter force units, where one character's
-   * static weight is `1.84 × 1.15 × 0.001 = 0.00212`. The tempting arithmetic
-   * is to size the break force off that: four hanging characters weigh 0.0085,
-   * so 0.0135 leaves a resting chain at 63% of break, just under the 70%
-   * warning ratio. Measured, that tears a resting chain instantly.
+   * This number only ever means something relative to what a hanging chain
+   * actually loads a grip with, and that figure moved a long way when the
+   * energy pump in `correctPosition` and the permanently-saturated arm
+   * controller were fixed. It used to take 0.12, because a four-player chain
+   * loaded its top grip at 0.068 — eight times the chain's own weight, nearly
+   * all of it the controller hauling against itself. The same chain now loads
+   * it at 0.021, which is close to the honest figure: four characters weigh
+   * 0.0085, and the rest is the players holding their sticks up.
    *
-   * The reason is that a hanging player is not a hanging WEIGHT. Everyone in a
-   * chain is holding their stick up, and the arm solver turns that into real
-   * force: a four-player chain where all four reach upward loads its top grip
-   * at 0.068 — eight times the chain's own weight. The grip is carrying the
-   * hauling, not the mass, and the hauling is most of it.
-   *
-   * 0.12 puts that resting chain at 57% of break: heavy, visibly under the
-   * warning ratio, and holding. It also leaves the material scalars doing real
-   * work — `ice` (0.45×) breaks at 0.054, so the same chain on a slick
-   * handhold tears, which is `physics-feel.test.ts`'s "tears when the same
-   * chain hangs from ice". See §21 risk 9 in the design doc for what this
-   * costs: the doc wanted a hard swing to be what tears a chain, and it is not.
+   * 0.038 keeps both halves of feel test 3 true: a resting chain on paper sits
+   * at 55% of break — heavy, visibly under the 70% warning ratio, holding —
+   * and the same chain on `ice` (0.45×, so 0.0171) is over the limit and
+   * tears. The window is genuinely narrow: below ~0.030 paper starts warning
+   * at rest, above ~0.047 ice stops tearing.
    */
-  GRIP_BREAK_FORCE: 0.12,
+  GRIP_BREAK_FORCE: 0.038,
 
   /**
    * 0.0016 → 0.0011, and 0.0055 → 0.0034.
@@ -154,6 +150,37 @@ export const ENGINE = {
 
   /** A rope prop's segments, as a fraction of `ARM_SEG_LENGTH`. */
   ROPE_SEG_LENGTH: 20,
+
+  /**
+   * Velocity damping on each arm segment, in force per (px/step).
+   *
+   * A proportional controller driving a 0.05 segment from a 1.2 head is a
+   * spring with no damper: it overshoots, comes back, overshoots less, and in
+   * the meantime the arm visibly buzzes. Sized so a segment moving at a
+   * swing's speed loses roughly a fifth of the controller's authority to
+   * damping — enough to kill the ring, far too little to make the arm feel
+   * like it is moving through treacle.
+   */
+  ARM_DAMPING: 0.0009,
+
+  /**
+   * How much of an arm's force a FREE hand gets, as a fraction of a gripped
+   * one's. See the long note in `applyAim`: the full figure exists to swing a
+   * body around an anchor, and a hand holding nothing has no anchor — all of it
+   * lands on the head instead. A third is enough to lay the arm out and pose it
+   * crisply, and low enough that no pose can press the head through the world.
+   */
+  GRIPPED_ARM_AUTHORITY: 1,
+  FREE_ARM_AUTHORITY: 0.55,
+
+  /**
+   * Fraction of an arm segment's angular velocity bled off per step.
+   *
+   * Higher than `HEAD_SPIN_DAMP` because a segment is 24× lighter than the head
+   * and picks spin up from every constraint correction, and because nothing
+   * about the game reads a segment's own rotation — only where its ends are.
+   */
+  ARM_SPIN_DAMP: 0.35,
 
   /** Auto-grab (§4.7) fires when a grabbable is this close, not on contact. */
   AUTO_GRAB_PAD: 4,

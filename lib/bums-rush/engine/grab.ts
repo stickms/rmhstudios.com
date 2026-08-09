@@ -26,7 +26,7 @@ import { MATERIALS, NET } from '../constants';
 import type { MaterialId, SeatIndex, Vec2 } from '../types';
 import type { Character } from './character';
 import { DT2, ENGINE, GRAVITY_STEP, P } from './tuning';
-import { correctPosition, type BodyMeta, type PhysWorld } from './world';
+import { cancelSeparation, correctPosition, type BodyMeta, type PhysWorld } from './world';
 
 const { Body, Constraint } = Matter;
 
@@ -282,6 +282,8 @@ export function attachGrip(
   const meta = hit.meta;
   if (!target || !meta) return;
 
+  arm.gripped = true;
+
   const c = Math.cos(target.angle);
   const s = Math.sin(target.angle);
   const dx = hit.x - target.position.x;
@@ -345,6 +347,7 @@ export function detachGrip(ctx: GrabContext, state: GrabState, grip: Grip, volun
   if (!grip.active) return;
   if (grip.constraint) ctx.world.removeConstraint(grip.constraint);
   const ch = ctx.characters[grip.seat];
+  if (ch) (grip.hand === 'l' ? ch.arms[0] : ch.arms[1]).gripped = false;
   if (voluntary && ch) {
     const arm = grip.hand === 'l' ? ch.arms[0] : ch.arms[1];
     if (ctx.nowMs - arm.peakAtMs <= P.RELEASE_ASSIST_WINDOW_MS) {
@@ -461,11 +464,18 @@ export function limitGrip(grip: Grip): void {
   const wb = c.bodyB && !c.bodyB.isStatic ? c.bodyB.inverseMass : 0;
   const wsum = wa + wb;
   if (wsum <= 0) return;
+  const ux = dx / d;
+  const uy = dy / d;
   const excess = d - ENGINE.GRIP_SLACK_PX;
-  const nx = (dx / d) * excess;
-  const ny = (dy / d) * excess;
+  const nx = ux * excess;
+  const ny = uy * excess;
   correctPosition(c.bodyA, (nx * wa) / wsum, (ny * wa) / wsum);
   if (c.bodyB && !c.bodyB.isStatic) correctPosition(c.bodyB, (-nx * wb) / wsum, (-ny * wb) / wsum);
+  // Same two halves as the arm's joint limiter: project, then take away the
+  // separating velocity. A grip that only projected would re-stretch every
+  // step, and one that folded the projection into velocity (as this did) turns
+  // a heavy chain into a catapult.
+  if (c.bodyB) cancelSeparation(c.bodyA, c.bodyB, ux, uy);
 }
 
 /** Ran every step after `Engine.update`. Returns the grips that tore. */
