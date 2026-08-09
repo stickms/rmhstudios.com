@@ -554,6 +554,8 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
   const setQuantColors = useSliceItStore((s) => s.setQuantColors);
   const noteSkin = useSliceItStore((s) => s.noteSkin);
   const setNoteSkin = useSliceItStore((s) => s.setNoteSkin);
+  const backdrop = useSliceItStore((s) => s.backdrop);
+  const setBackdrop = useSliceItStore((s) => s.setBackdrop);
   const lanePalette = useSliceItStore((s) => s.lanePalette);
   const setLanePalette = useSliceItStore((s) => s.setLanePalette);
   const reducedFlash = useSliceItStore((s) => s.reducedFlash);
@@ -998,6 +1000,35 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
                 { id: 'minimal', label: t('skin-minimal', { defaultValue: 'Minimal' }) },
               ].filter((option) => FREE_SKIN_IDS.includes(option.id))}
               onChange={setNoteSkin}
+            />
+          </Well>
+        </Section>
+
+        {/* V7 — the stage backdrop. One literal `t()` per option rather than
+            `t(\`backdrop-${id}\`)`, for the same reason the lane palettes below
+            spell theirs out: `i18next-parser` cannot read a template-literal
+            key, so the interpolated form extracts to nothing and every locale
+            falls back to the raw id.
+
+            Not folded into Accessibility & Comfort even though it is gated by
+            two settings that live there — this is the cosmetic control, and the
+            comfort controls that override it are named in the hint. */}
+        <Section title={t('backdrop', { defaultValue: 'Backdrop' })}>
+          <Well>
+            <ChoiceRow
+              label={t('backdrop-label', { defaultValue: 'Stage backdrop' })}
+              description={t('backdrop-hint', {
+                defaultValue:
+                  "A visualiser behind the playfield, drawn from the track's own analysed waveform — so it moves with the music, not on a timer of its own. It also opens up as your combo climbs and drains as the health gauge falls. Always under the notes, never over them. Reduced Flash, reduced motion and Effect Intensity all override this.",
+              })}
+              value={backdrop}
+              options={[
+                { id: 'none' as const, label: t('backdrop-none', { defaultValue: 'None' }) },
+                { id: 'pulse' as const, label: t('backdrop-pulse', { defaultValue: 'Pulse' }) },
+                { id: 'bars' as const, label: t('backdrop-bars', { defaultValue: 'Waveform' }) },
+                { id: 'aurora' as const, label: t('backdrop-aurora', { defaultValue: 'Aurora' }) },
+              ]}
+              onChange={setBackdrop}
             />
           </Well>
         </Section>

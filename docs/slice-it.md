@@ -184,3 +184,91 @@ is what makes "is this score believable?" answerable at all.
 deliberately loose — the line between an exceptional run and a number typed into
 a `fetch` call, not a simulation. The previous endpoint's only check was "a
 number under one billion", which is to say it accepted anything.
+
+## Presentation
+
+The playfield's decoration is deliberately small and deliberately gated. Two
+things drive all of it, and neither is a timer:
+
+- **The combo** (`V13`, `lib/slice-it/presentation.ts#comboEnergy`) — a
+  saturating curve with no thresholds anywhere, driving the lane rails, the
+  vignette, note trails and the receptor glow together. It replaced a
+  full-screen colour wash at 50/100/250/500/1000 combo, which was the
+  most-complained-about thing in the game.
+- **The music** (`V7`, the stage backdrops) — see below.
+
+### Where a backdrop's audio comes from
+
+**Nothing runs an FFT at play time, and there is no `AnalyserNode` on the audio
+path.** A visualiser that reads the audio graph is the one thing in this feature
+that would actually cost the player frames.
+
+Instead the backdrops sample the **peak envelope the analyser already
+persisted**: `analysisData.artefacts.envelope`, a byte-per-sample amplitude
+curve at ~200 Hz written by `beatmap/envelope.ts` at upload. It is ~48 KB, it
+has been on the wire since the chart editor started drawing its waveform from
+it, and `useStartRun` already hands the whole blob to the engine — so a
+visualiser costs one extra *consumer* of bytes the client downloaded anyway, and
+is sample-accurately in sync with the notes because it came out of the same
+analysis pass they did.
+
+`V3`'s 8-band spectrum envelope (`presentation.ts`, `spectrumEnvelope`) is the
+richer version of the same idea and is **not** persisted by any pipeline yet.
+Nothing needs it: adding it means another ~57 KB per song on the load path, and
+one amplitude curve is enough for everything the three backdrops draw.
+
+A song with no stored artefacts — a legacy row nobody has played since the
+analyser moved server-side, which `useStartRun` backfills on first play — reads
+a level of zero. The backdrop then rides on run state alone: calmer, and honest
+about having no audio to show. It does not invent a signal.
+
+### The three treatments
+
+`pulse` (the default) blooms at the judgement line; `bars` scrolls the waveform
+along the two outer margins, each bar sampling the moment a note at that
+position would be judged, so a loud passage reaches the line exactly when its
+notes do; `aurora` drifts two soft bands across the lane axis. All three take
+their colours from the player's `lanePalette` — a colour-vision setting outranks
+a decoration — and dim and desaturate as the health gauge falls
+(`backdropState`).
+
+### Why this is safe to draw behind a rhythm game
+
+1. **It cannot cost a note any contrast.** The backdrop is drawn first; step 1
+   of the render then fills each lane trough with the **opaque** `--slice-bg`,
+   and a note is `BAR_H` inside a trough of `BAR_H * 1.5`. So every note is read
+   against the bare background. Measured across the three backdrops × dark/light
+   × the default, deuteranopia and monochrome palettes, sampling the whole note
+   band at its worst pixel: note-vs-field contrast is identical with the
+   backdrop and without it. The guarantee is inherited from the opaque trough,
+   not enforced in the backdrop — a trough that stops being opaque takes it
+   away.
+2. **Three switches turn it off, and any one of them wins**
+   (`backdropVisible`): the player's own setting, `canvasGlowEnabled()` (which
+   folds in `prefers-reduced-motion` and `perf-lite`), and `A2`'s Reduced Flash.
+   `A7`'s Effect Intensity scales what is left. On a light theme the wash is
+   inverted to *shading* rather than glow, so it cannot flatten the pale
+   `--slice-rail`.
+3. **Each alpha is a constant floor plus a modulated term.** Only the second
+   term tracks the music, and it is the one the photosensitivity bound applies
+   to: ~12% alpha of a mid-tone gradient peak-to-trough, against `V13`'s
+   vignette at 60%. The envelope follower's slow release (0.34 s) damps the
+   trough between beats, so a 200 BPM track blurs into one another rather than
+   strobing.
+4. **Nothing casts a shadow and nothing allocates.** `shadowBlur` is this
+   renderer's dominant cost and a blurred full-screen layer would be the most
+   expensive op in the frame; every treatment is a gradient fill or one batched
+   path. Gradients and the bar scratch live in a cache keyed by size, palette
+   and health bucket.
+
+### A timebase bug the backdrops surfaced
+
+`computeEnvelope` used to store the rate it was *asked* for (200 Hz) rather than
+the rate its buckets were *built* at. The analysis signal is 22 050 Hz and the
+samples-per-bucket rounds 110.25 to 110, so the true rate is 200.4545 and every
+reader drifted 0.23%: 6 ms at the start of a track and **half a second** by the
+end of a four-minute one. That is the timebase the chart editor's waveform is
+drawn against, so its transients slid away from the notes they belong to over
+the course of a song. Fixed at the source — the rate has always travelled with
+the data, so nothing needs a migration and a stored envelope keeps its old rate
+until the song is next analysed.

@@ -1189,6 +1189,19 @@ export class GameEngine {
   }
 
   /**
+   * The gauge, on its own — 0–{@link HEALTH_MAX}, and pinned at full while the
+   * health modifier is off.
+   *
+   * Here for the same reason {@link getCombo} is: V7's backdrop is a pure
+   * function of health and combo, evaluated on every rendered frame, and going
+   * through `getState()` for it would allocate a sixteen-field object per frame
+   * to read one number.
+   */
+  getHealth(): number {
+    return this.health;
+  }
+
+  /**
    * A8 — a short vibration scaled by how well the note was hit.
    *
    * Never during replay/autoplay review: this is feedback for a hand resting
