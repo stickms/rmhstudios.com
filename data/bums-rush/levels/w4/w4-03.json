@@ -1,0 +1,133 @@
+{
+  "version": 1,
+  "id": "w4-03",
+  "world": 4,
+  "index": 3,
+  "name": "bums.level.w4-03.name",
+  "minPlayers": 1,
+  "parSeconds": 80,
+  "bounds": { "x": 0, "y": 0, "w": 3400, "h": 1500 },
+  "palette": {
+    "paper": "#e9e0c7",
+    "ink": "#383d44",
+    "accent": "#8a3541",
+    "flashSafe": true,
+    "contrastRatio": 8.31
+  },
+  "spawn": [{ "x": 220, "y": 860 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 2800, "y": 760, "w": 150, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [{ "at": { "x": 2450, "y": 760 } }],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 950, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1200, "y": 820, "w": 900, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 2350, "y": 800, "w": 700, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "crate-w4-03",
+      "kind": "crate",
+      "at": { "x": 330, "y": 820 },
+      "size": { "x": 100, "y": 80 },
+      "mass": 1.2,
+      "material": "paper"
+    },
+    {
+      "id": "relic-w4-03",
+      "kind": "relic",
+      "relicId": "w4-relic-03",
+      "at": { "x": 550, "y": 850 }
+    },
+    {
+      "id": "button-w4-03",
+      "kind": "button",
+      "at": { "x": 700, "y": 875 },
+      "size": { "x": 140, "y": 25 },
+      "minMass": 1.0,
+      "signal": "w4-03-gate"
+    },
+    {
+      "id": "door-w4-03",
+      "kind": "door",
+      "at": { "x": 900, "y": 660 },
+      "size": { "x": 50, "y": 240 },
+      "signal": "w4-03-gate",
+      "openOffset": { "x": 0, "y": -240 },
+      "speed": 140
+    },
+    {
+      "id": "swing-w4-03",
+      "kind": "swing",
+      "at": { "x": 930, "y": 640 },
+      "length": 260,
+      "damping": 0.2
+    },
+    {
+      "id": "swing-w4-03-b",
+      "kind": "swing",
+      "at": { "x": 2080, "y": 550 },
+      "length": 270,
+      "damping": 0.2
+    }
+  ],
+  "hazards": [
+    {
+      "id": "moat",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1400, "w": 3400, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w4-03-clock" },
+    { "kind": "flawless", "id": "w4-03-flawless" },
+    {
+      "kind": "haul",
+      "id": "w4-03-haul",
+      "relicIds": ["w4-relic-03"]
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 250, "y": 700 },
+      "textKey": "bums.level.w4-03.note-crate",
+      "width": 250
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 400, "y": 800 },
+      "to": { "x": 680, "y": 850 }
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 950, "y": 300 },
+      "sprite": "castle-silhouette",
+      "scale": 1.2
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 2500, "y": 1350 },
+      "r": 50
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 950, "y": 900 }, { "x": 1200, "y": 820 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 2100, "y": 820 }, { "x": 2350, "y": 800 }], "thickness": 10 }
+  ],
+  "music": "w4-castle-clatter",
+  "authorNotes": "Solo. Combines the new mechanic (button) with an earlier-world one (crate carrying, from W1): button-w4-03 is a weight plate that only fires signal 'w4-03-gate' while at least minMass (1.0) rests on it, and it is positioned so a player standing on it can't also reach the swing across the moat — the intended solve is to carry crate-w4-03 (mass 1.2, picked up right at spawn) 370px over to the plate and park it there permanently, which holds the button down hands-free. That opens door-w4-03 for good (direct producer-to-consumer, no relay) and frees both hands for swing-w4-03 (pivot 930,640, 260px) across the moat to the second pier (1200-2100). relic-w4-03 sits between the crate's start and the button, so grabbing it on the way to dropping the crate costs nothing extra, but it must be carried the rest of the way to the goal for the haul objective. From the second pier, swing-w4-03-b (pivot 2080,550, 270px) closes the final 250px gap over the moat to the goal pier (2350-3050, which holds the 2800-2950 goal shape) — an earlier draft of this level described this pier in prose but never placed its geometry or the swing that reaches it, which left the goal stranded 700px past the last solid ground; both are now on disk. The checkpoint sits on the actual goal-side pier (2450,760) so a fumbled last swing doesn't send a solved plate puzzle back to square one, and a second assist beam now spans the 2100->2350 gap alongside the first."
+}

@@ -1,0 +1,129 @@
+{
+  "version": 1,
+  "id": "w2-07",
+  "world": 2,
+  "index": 7,
+  "name": "bums.level.w2-07.name",
+  "minPlayers": 2,
+  "parSeconds": 130,
+  "bounds": { "x": 0, "y": 0, "w": 3700, "h": 1750 },
+  "palette": {
+    "paper": "#f3e2c4",
+    "ink": "#20160e",
+    "accent": "#c0392b",
+    "flashSafe": true,
+    "contrastRatio": 13.94
+  },
+  "spawn": [
+    { "x": 200, "y": 860 },
+    { "x": 280, "y": 860 }
+  ],
+  "goal": {
+    "shape": { "kind": "rect", "x": 3250, "y": 760, "w": 120, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [{ "at": { "x": 950, "y": 800 } }, { "at": { "x": 1950, "y": 770 } }],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 870, "y": 860, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1880, "y": 830, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1880, "y": 860, "w": 200, "h": 20 },
+      "material": "grease",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 2780, "y": 800, "w": 700, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "swing-approach",
+      "kind": "swing",
+      "at": { "x": 730, "y": 620 },
+      "length": 260,
+      "damping": 0.2
+    },
+    {
+      "id": "swing-anchor",
+      "kind": "swing",
+      "at": { "x": 1680, "y": 650 },
+      "length": 200,
+      "damping": 0.3
+    },
+    {
+      "id": "relic-w2-07",
+      "kind": "relic",
+      "relicId": "w2-relic-07",
+      "at": { "x": 2150, "y": 790 }
+    },
+    {
+      "id": "swing-final",
+      "kind": "swing",
+      "at": { "x": 2630, "y": 610 },
+      "length": 260,
+      "damping": 0.2
+    }
+  ],
+  "hazards": [
+    {
+      "id": "floor",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1650, "w": 3700, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w2-07-clock" },
+    { "kind": "flawless", "id": "w2-07-flawless" },
+    {
+      "kind": "haul",
+      "id": "w2-07-haul",
+      "relicIds": ["w2-relic-07"]
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 1500, "y": 500 },
+      "textKey": "bums.level.w2-07.note-toss",
+      "width": 280
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 1470, "y": 850 },
+      "to": { "x": 1870, "y": 830 }
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 1980, "y": 900 },
+      "sprite": "ketchup-bottle",
+      "scale": 0.9
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 3000, "y": 1570 },
+      "r": 55
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 600, "y": 900 }, { "x": 870, "y": 860 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 1470, "y": 860 }, { "x": 1880, "y": 830 }], "thickness": 14 },
+    { "kind": "chain", "points": [{ "x": 2480, "y": 830 }, { "x": 2780, "y": 800 }], "thickness": 10 }
+  ],
+  "music": "w2-sizzle-street",
+  "authorNotes": "Two players required — this world's team gate. Segments 1 and 3 are ordinary single swings (both players cross independently, same as earlier levels). Segment 2 is the genuine chain-required gap: pier A (870-1470) to pier B (1880-2480) is 410px, past the ~300px a single swing can cover and past what swing-anchor's own 200px reach gets anyone alone. The intended solve is the same throw taught in Doodle Docks: player one grabs swing-anchor (pivot 1680,650) and player two grabs player one's free hand; they pump the anchor swing together, and at the top of the arc player one lets go of player two, throwing them the rest of the way. What is new here is the landing: pier B's near edge (1880-2080) is a grease strip, so a solo landing tends to skid straight back off it — a second player already on the pier (having taken the beam, or arriving a beat later) is what actually secures the landing, which is why this gap needs two people rather than merely rewarding two people. relic-w2-07 sits past the grease, so the haul objective can't be finished by either player alone. The gate's assist beam is drawn thicker than the others as a visual tell that this is the level's hard point."
+}

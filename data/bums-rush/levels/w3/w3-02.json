@@ -1,0 +1,133 @@
+{
+  "version": 1,
+  "id": "w3-02",
+  "world": 3,
+  "index": 2,
+  "name": "bums.level.w3-02.name",
+  "minPlayers": 1,
+  "parSeconds": 74,
+  "bounds": { "x": 0, "y": 0, "w": 3600, "h": 1600 },
+  "palette": {
+    "paper": "#f7e6ba",
+    "ink": "#1e1418",
+    "accent": "#c8102e",
+    "flashSafe": true,
+    "contrastRatio": 14.53
+  },
+  "spawn": [{ "x": 220, "y": 860 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 2900, "y": 700, "w": 120, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [{ "at": { "x": 1450, "y": 770 } }],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1350, "y": 830, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 2650, "y": 760, "w": 700, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "trampoline-use-1",
+      "kind": "trampoline",
+      "at": { "x": 520, "y": 870 },
+      "size": { "x": 160, "y": 30 },
+      "bounce": 1.0
+    },
+    {
+      "id": "trapeze-1",
+      "kind": "swing",
+      "at": { "x": 950, "y": 540 },
+      "length": 330,
+      "damping": 0.08
+    },
+    {
+      "id": "trampoline-use-2",
+      "kind": "trampoline",
+      "at": { "x": 1810, "y": 800 },
+      "size": { "x": 160, "y": 30 },
+      "bounce": 1.05
+    },
+    {
+      "id": "trapeze-2",
+      "kind": "swing",
+      "at": { "x": 2300, "y": 500 },
+      "length": 340,
+      "damping": 0.1
+    },
+    {
+      "id": "camera-2",
+      "kind": "camera",
+      "at": { "x": 300, "y": 850 }
+    },
+    {
+      "id": "parcel-w3-02",
+      "kind": "parcel",
+      "parcelId": "w3-parcel-01",
+      "at": { "x": 1000, "y": 480 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "pit",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1500, "w": 3600, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w3-02-clock" },
+    { "kind": "flawless", "id": "w3-02-flawless" },
+    {
+      "kind": "snapshot",
+      "id": "w3-02-photo",
+      "predicate": { "anyInverted": true }
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 750, "y": 450 },
+      "textKey": "bums.level.w3-02.note-trapeze",
+      "width": 260
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 700, "y": 700 },
+      "to": { "x": 930, "y": 600 }
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 1150, "y": 300 },
+      "sprite": "trapeze-swing",
+      "scale": 1.2
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 2100, "y": 650 },
+      "sprite": "juggling-balls",
+      "scale": 0.7
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 2000, "y": 1450 },
+      "r": 55
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 600, "y": 900 }, { "x": 1350, "y": 830 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 1950, "y": 830 }, { "x": 2650, "y": 760 }], "thickness": 10 }
+  ],
+  "music": "w3-big-tent-bother",
+  "authorNotes": "Solo. This is the first level where the trampoline's fall is unpadded — there is no net under either gap, only the pit. Grab camera-2 near spawn, then take trampoline-use-1 off the starting pier's springboard edge (~600,870) and catch trapeze-1 (pivot 950,540, 330px bar, resting height matches the trampoline's takeoff arc) near the bottom of its hang. trapeze-1's damping is deliberately low (0.08) — World 3's trapezes keep swinging with very little bleed-off, so a pumped arc carries much further than a World 1 swing but also overshoots badly on a mistimed release; a hidden parcel sits above the trapeze's rest point (1000,480) for players who climb the arc high enough to look up instead of across. Release near the top of the arc to land on the middle pier (~400px excursion from the bar's resting x, in the usual swing-carry range) — the checkpoint sits there so a death on either gap only replays that gap. Repeat the pattern on the second gap: trampoline-use-2's springboard, trapeze-2's low-damping arc (pivot 2300,500), and a release onto the goal pier. Photo objective (anyInverted) is easiest mid-arc on either trapeze, where the low damping keeps riders swinging well past vertical. Both assist beams are present for players who want them, at the usual Clock cost."
+}

@@ -1,0 +1,99 @@
+{
+  "version": 1,
+  "id": "w2-a",
+  "world": 2,
+  "index": 1,
+  "name": "bums.showdown.w2-a.name",
+  "minPlayers": 2,
+  "parSeconds": 45,
+  "bounds": { "x": 0, "y": 0, "w": 2200, "h": 1200 },
+  "palette": {
+    "paper": "#f3e2c4",
+    "ink": "#20160e",
+    "accent": "#c0392b",
+    "flashSafe": true,
+    "contrastRatio": 13.94
+  },
+  "spawn": [
+    { "x": 150, "y": 860 },
+    { "x": 210, "y": 860 },
+    { "x": 150, "y": 800 },
+    { "x": 210, "y": 800 }
+  ],
+  "goal": {
+    "shape": { "kind": "rect", "x": 1850, "y": 760, "w": 150, "h": 60 },
+    "requires": "any"
+  },
+  "checkpoints": [],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 400, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 700, "y": 860, "w": 500, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1500, "y": 820, "w": 700, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "belt-race",
+      "kind": "conveyor",
+      "at": { "x": 400, "y": 900 },
+      "size": { "x": 300, "y": 80 },
+      "speed": 110
+    },
+    {
+      "id": "relic-w2-a",
+      "kind": "relic",
+      "relicId": "w2-relic-showdown-a",
+      "at": { "x": 950, "y": 820 }
+    },
+    {
+      "id": "swing-race",
+      "kind": "swing",
+      "at": { "x": 970, "y": 600 },
+      "length": 250,
+      "damping": 0.15
+    }
+  ],
+  "hazards": [
+    {
+      "id": "floor",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1100, "w": 2200, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w2-a-clock" },
+    { "kind": "flawless", "id": "w2-a-flawless" },
+    {
+      "kind": "haul",
+      "id": "w2-a-haul",
+      "relicIds": ["w2-relic-showdown-a"]
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "doodle",
+      "at": { "x": 1000, "y": 400 },
+      "sprite": "checkered-flag",
+      "scale": 0.9
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 1950, "y": 1050 },
+      "r": 45
+    }
+  ],
+  "assistBeams": [],
+  "music": "w2-showdown",
+  "authorNotes": "Showdown / race, 2-4 players, everyone spawns together on the start dock. The first gap is belt-race (400,900 to 700,900, speed 110) — a shared belt all four players fight over, since Showdown legally allows grabbing a rival off it (§8.3); the second gap is a plain swing-race (pivot 970,600, 300px). No assist beams — Showdown is a contest, not a tutorial. goal.requires is 'any': the instant one player's head crosses the goal shape the round ends, matching the round type's 'first to the goal wins'. relic-w2-a sits on the mid counter as an optional detour for the haul/flawless objectives, which score independently of who wins the round."
+}

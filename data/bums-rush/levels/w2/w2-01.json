@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "id": "w2-01",
+  "world": 2,
+  "index": 1,
+  "name": "bums.level.w2-01.name",
+  "minPlayers": 1,
+  "parSeconds": 42,
+  "bounds": { "x": 0, "y": 0, "w": 3000, "h": 1400 },
+  "palette": {
+    "paper": "#f3e2c4",
+    "ink": "#20160e",
+    "accent": "#c0392b",
+    "flashSafe": true,
+    "contrastRatio": 13.94
+  },
+  "spawn": [{ "x": 220, "y": 860 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 2600, "y": 740, "w": 120, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 650, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 600, "y": 1150, "w": 750, "h": 60 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1350, "y": 860, "w": 500, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 2150, "y": 800, "w": 700, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "belt-tutorial",
+      "kind": "conveyor",
+      "at": { "x": 650, "y": 900 },
+      "size": { "x": 700, "y": 80 },
+      "speed": 90
+    },
+    {
+      "id": "swing-crossing",
+      "kind": "swing",
+      "at": { "x": 1650, "y": 620 },
+      "length": 260,
+      "damping": 0.25
+    },
+    {
+      "id": "camera-1",
+      "kind": "camera",
+      "at": { "x": 330, "y": 850 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "floor",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1300, "w": 3000, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w2-01-clock" },
+    { "kind": "flawless", "id": "w2-01-flawless" },
+    {
+      "kind": "snapshot",
+      "id": "w2-01-photo",
+      "predicate": { "allAirborne": true }
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 120, "y": 760 },
+      "textKey": "bums.level.w2-01.note-belt",
+      "width": 260
+    },
+    {
+      "kind": "note",
+      "at": { "x": 1420, "y": 560 },
+      "textKey": "bums.level.w2-01.note-swing",
+      "width": 240
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 900, "y": 830 },
+      "sprite": "conveyor-gear",
+      "scale": 1
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 330, "y": 800 },
+      "to": { "x": 640, "y": 850 }
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 2450, "y": 840 },
+      "r": 40
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 1850, "y": 860 }, { "x": 2150, "y": 800 }], "thickness": 10 }
+  ],
+  "music": "w2-sizzle-street",
+  "authorNotes": "Solo, no chain required. This is the belt taught alone: grab camera-1 near spawn, then step onto belt-tutorial (650,900 to 1350,900, speed 90) — a safety plank (600,1150 to 1350,1210) runs the whole length directly beneath it, so riding the belt is the level's first ~15s and carries zero death risk even on a bad landing, matching the '20s' rule with margin. The belt drops you flush onto the mid counter at 1350. The only real risk in the level is the second crossing: swing-crossing (pivot 1650,620, 260px reach) over the true void to the goal counter at 2150 — the first genuine fall in Sizzle Street, arriving well past the safe window. Snap the photo (allAirborne) mid-arc on that swing. An assist beam spans the same gap for players who'd rather not trust the last grab. No heat, no grease, no relics yet — this level is the conveyor and nothing else."
+}

@@ -1,0 +1,171 @@
+{
+  "version": 1,
+  "id": "w4-06",
+  "world": 4,
+  "index": 6,
+  "name": "bums.level.w4-06.name",
+  "minPlayers": 1,
+  "parSeconds": 115,
+  "bounds": { "x": 0, "y": 0, "w": 3400, "h": 1500 },
+  "palette": {
+    "paper": "#e9e0c7",
+    "ink": "#383d44",
+    "accent": "#8a3541",
+    "flashSafe": true,
+    "contrastRatio": 8.31
+  },
+  "spawn": [{ "x": 220, "y": 860 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 2750, "y": 740, "w": 150, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [{ "at": { "x": 1700, "y": 760 } }],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 500, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 750, "y": 900, "w": 500, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1550, "y": 800, "w": 900, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 2700, "y": 780, "w": 600, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "lever-w4-06-a",
+      "kind": "lever",
+      "at": { "x": 300, "y": 800 },
+      "length": 70,
+      "threshold": 0.5,
+      "signal": "w4-06-lever-a"
+    },
+    {
+      "id": "swing-w4-06-link",
+      "kind": "swing",
+      "at": { "x": 480, "y": 650 },
+      "length": 250,
+      "damping": 0.2
+    },
+    {
+      "id": "lever-w4-06-b",
+      "kind": "lever",
+      "at": { "x": 950, "y": 800 },
+      "length": 70,
+      "threshold": 0.5,
+      "signal": "w4-06-lever-b"
+    },
+    {
+      "id": "relay-w4-06-hold-a",
+      "kind": "signalRelay",
+      "at": { "x": 600, "y": 500 },
+      "op": "delay",
+      "inputs": ["w4-06-lever-a"],
+      "out": "w4-06-a-held",
+      "delayMs": 3200
+    },
+    {
+      "id": "relay-w4-06-and",
+      "kind": "signalRelay",
+      "at": { "x": 650, "y": 450 },
+      "op": "and",
+      "inputs": ["w4-06-a-held", "w4-06-lever-b"],
+      "out": "w4-06-ab-momentary"
+    },
+    {
+      "id": "relay-w4-06-hold-gate",
+      "kind": "signalRelay",
+      "at": { "x": 700, "y": 400 },
+      "op": "delay",
+      "inputs": ["w4-06-ab-momentary"],
+      "out": "w4-06-gate",
+      "delayMs": 2000
+    },
+    {
+      "id": "door-w4-06",
+      "kind": "door",
+      "at": { "x": 1250, "y": 660 },
+      "size": { "x": 50, "y": 240 },
+      "signal": "w4-06-gate",
+      "openOffset": { "x": 0, "y": -240 },
+      "speed": 140
+    },
+    {
+      "id": "swing-w4-06-final",
+      "kind": "swing",
+      "at": { "x": 1230, "y": 610 },
+      "length": 290,
+      "damping": 0.2
+    },
+    {
+      "id": "swing-w4-06-goal",
+      "kind": "swing",
+      "at": { "x": 2430, "y": 520 },
+      "length": 280,
+      "damping": 0.2
+    },
+    {
+      "id": "camera-w4-06",
+      "kind": "camera",
+      "at": { "x": 320, "y": 850 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "moat",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1400, "w": 3400, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w4-06-clock" },
+    { "kind": "flawless", "id": "w4-06-flawless" },
+    {
+      "kind": "snapshot",
+      "id": "w4-06-photo",
+      "predicate": { "allAirborne": true }
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 150, "y": 720 },
+      "textKey": "bums.level.w4-06.note-bells",
+      "width": 250
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 700, "y": 300 },
+      "sprite": "gargoyle",
+      "scale": 1
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 400, "y": 760 },
+      "to": { "x": 900, "y": 760 }
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 2900, "y": 1350 },
+      "r": 50
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 500, "y": 900 }, { "x": 750, "y": 900 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 1300, "y": 900 }, { "x": 1550, "y": 800 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 2450, "y": 800 }, { "x": 2700, "y": 780 }], "thickness": 10 }
+  ],
+  "music": "w4-castle-clatter",
+  "authorNotes": "Solo. Two new mechanics escalating together: a second lever, and a signalRelay chain that turns 'both levers, within a couple of seconds' into something one body can actually do. Wiring, in order: lever-w4-06-a (non-latching, on the starting ledge) fires 'w4-06-lever-a' only while held; relay-w4-06-hold-a (op delay, delayMs 3200) reads that and holds 'w4-06-a-held' true for 3.2s after the lever is released — long enough to let go, cross swing-w4-06-link (250px, the ledges are only 250px apart on purpose) and grab lever-w4-06-b on the far ledge. relay-w4-06-and (op and) is true only while both 'w4-06-a-held' and lever B's raw signal are true together, which produces 'w4-06-ab-momentary' for roughly the width of that overlap. relay-w4-06-hold-gate (op delay, 2000ms) stretches that momentary coincidence into a 2s window on 'w4-06-gate', which door-w4-06 consumes — long enough to let go of lever B and dash through door-w4-06 before it drops again. Past the gate, swing-w4-06-final (290px, the widest single swing the world had shown up to this point) carries the player to the third pier (1550-2450) — the checkpoint sits here (1700,760), on solid ground just after the gate, so a botched landing doesn't send a solved puzzle back to square one. That third pier was originally mislabelled as the goal pier while the goal itself sat 300px further out; swing-w4-06-goal (pivot 2430,520, 280px) now closes that last gap to the actual goal pier (2700-3300, holding the 2750-2900 goal shape). The previous checkpoint coordinate (1300,760) also sat in mid-air past the second pier's edge rather than on it — moved onto solid ground as part of the same pass."
+}

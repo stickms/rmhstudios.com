@@ -153,6 +153,7 @@ function enclosingTag(src: string, idx: number): string {
 const FULLSCREEN_TIER_DIRS = new Set([
   // Games (their own palettes / scoped variable groups in globals.css)
   'altair',
+  'bums-rush',
   'cookgame',
   'cursed-logic',
   'daily-puzzles',
@@ -206,6 +207,7 @@ const FULLSCREEN_TIER_DIRS = new Set([
 const FULLSCREEN_ROUTE_SEGMENTS = new Set([
   'altair',
   'api',
+  'bums-rush',
   'cookgame',
   'daily',
   'discord',

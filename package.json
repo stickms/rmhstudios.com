@@ -46,6 +46,8 @@
     "library:metadata": "pnpm exec tsx scripts/generate-library-metadata.ts",
     "docs:api": "pnpm exec tsx scripts/generate-api-docs.ts",
     "docs:api:check": "pnpm exec tsx scripts/generate-api-docs.ts --check",
+    "bums:manifest": "pnpm exec tsx scripts/bums-rush-manifest.ts",
+    "bums:manifest:check": "pnpm exec tsx scripts/bums-rush-manifest.ts --check",
     "docs:site": "pnpm exec tsx scripts/generate-site-reference.ts",
     "docs:site:check": "pnpm exec tsx scripts/generate-site-reference.ts --check",
     "albums:migrate": "pnpm exec tsx scripts/migrate-albums-to-storage.ts",

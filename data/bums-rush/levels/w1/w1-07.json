@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "id": "w1-07",
+  "world": 1,
+  "index": 7,
+  "name": "bums.level.w1-07.name",
+  "minPlayers": 2,
+  "parSeconds": 126,
+  "bounds": { "x": 0, "y": 0, "w": 3600, "h": 1700 },
+  "palette": {
+    "paper": "#f4ead6",
+    "ink": "#1e2430",
+    "accent": "#2a7fbf",
+    "flashSafe": true,
+    "contrastRatio": 13.02
+  },
+  "spawn": [
+    { "x": 200, "y": 860 },
+    { "x": 280, "y": 860 }
+  ],
+  "goal": {
+    "shape": { "kind": "rect", "x": 3150, "y": 760, "w": 120, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [{ "at": { "x": 1150, "y": 800 } }, { "at": { "x": 2150, "y": 780 } }],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 870, "y": 860, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1880, "y": 830, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 2760, "y": 820, "w": 700, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "swing-approach",
+      "kind": "swing",
+      "at": { "x": 730, "y": 620 },
+      "length": 260,
+      "damping": 0.2
+    },
+    {
+      "id": "swing-anchor",
+      "kind": "swing",
+      "at": { "x": 1550, "y": 650 },
+      "length": 200,
+      "damping": 0.3
+    },
+    {
+      "id": "swing-final",
+      "kind": "swing",
+      "at": { "x": 2620, "y": 610 },
+      "length": 260,
+      "damping": 0.2
+    },
+    {
+      "id": "relic-w1-07",
+      "kind": "relic",
+      "relicId": "w1-relic-07",
+      "at": { "x": 2150, "y": 790 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "sea",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1600, "w": 3600, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w1-07-clock" },
+    { "kind": "flawless", "id": "w1-07-flawless" },
+    {
+      "kind": "haul",
+      "id": "w1-07-haul",
+      "relicIds": ["w1-relic-07"]
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 1500, "y": 500 },
+      "textKey": "bums.level.w1-07.note-throw",
+      "width": 280
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 1470, "y": 850 },
+      "to": { "x": 1870, "y": 830 }
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 1700, "y": 350 },
+      "sprite": "crane-silhouette",
+      "scale": 1.1
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 3000, "y": 1520 },
+      "r": 55
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 600, "y": 900 }, { "x": 870, "y": 860 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 1470, "y": 860 }, { "x": 1880, "y": 830 }], "thickness": 14 },
+    { "kind": "chain", "points": [{ "x": 2480, "y": 830 }, { "x": 2760, "y": 820 }], "thickness": 10 }
+  ],
+  "music": "w1-doodle-docks",
+  "authorNotes": "Two players required — this is the world's team gate. Segments 1 and 3 are ordinary single swings (both players cross independently, same as 01/02). Segment 2 is the genuine chain-required gap: pier A to pier B is 410px, past the ~300px a single swing can cover and past what swing-anchor's own 200px reach gets anyone on its own. The intended solve is 'throw a friend': player one grabs swing-anchor and player two grabs player one's free hand; they pump the anchor swing together, and at the top of the arc player one lets go of player two, throwing them the rest of the way to pier B's edge. Player one then follows on the beam or on a second swing of their own. relic-w1-07 sits just past the gate so the haul objective can't be finished by either player alone. The gate's assist beam is drawn thicker than the others as a visual tell that this is the level's hard point."
+}

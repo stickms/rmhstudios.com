@@ -256,6 +256,34 @@ export const config = {
     'mm:cart': { max: 30, windowMs: 60_000 },
     'mm:voice:signal': { max: 900, windowMs: 60_000 },
     'mm:voice:state': { max: 600, windowMs: 60_000 },
+    // Bum's Rush (design doc §9.3). The two hot-path events are the reason
+    // this block looks different from every other game's: the host ships
+    // snapshots at 20/s and guests ship input at 30/s, so those caps are sized
+    // at ~1.5× the honest rate to survive a burst after a reconnect without
+    // letting one socket flood a room. Everything else is a human pressing a
+    // button. `br:event` is deliberately the tight one — it is for DISCRETE
+    // events (death, checkpoint, objective, item), and a client that needs
+    // more than five a second is relaying per-frame state that belongs in the
+    // snapshot instead.
+    'br:createRoom': { max: 10, windowMs: 60_000 },
+    'br:joinRoom': { max: 20, windowMs: 60_000 },
+    'br:quickPlay': { max: 20, windowMs: 60_000 },
+    'br:listRooms': { max: 30, windowMs: 60_000 },
+    'br:claimSeat': { max: 20, windowMs: 60_000 },
+    'br:releaseSeat': { max: 20, windowMs: 60_000 },
+    'br:setCosmetics': { max: 20, windowMs: 60_000 },
+    'br:setAssists': { max: 20, windowMs: 60_000 },
+    'br:ready': { max: 60, windowMs: 60_000 },
+    'br:selectLevel': { max: 40, windowMs: 60_000 },
+    'br:start': { max: 30, windowMs: 60_000 },
+    'br:input': { max: 2400, windowMs: 60_000 },
+    'br:snapshot': { max: 1800, windowMs: 60_000 },
+    'br:event': { max: 300, windowMs: 60_000 },
+    'br:emote': { max: 30, windowMs: 60_000 },
+    'br:result': { max: 60, windowMs: 60_000 },
+    'br:hostHandoff': { max: 10, windowMs: 60_000 },
+    'br:ping': { max: 120, windowMs: 60_000 },
+    'br:leave': { max: 20, windowMs: 60_000 },
     // ─── High-frequency relay / movement events ───
     // Movement + per-frame update events were previously unmetered (the rate
     // limiter returns true for events with no rule), so a single socket could

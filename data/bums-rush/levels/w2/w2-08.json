@@ -1,0 +1,213 @@
+{
+  "version": 1,
+  "id": "w2-08",
+  "world": 2,
+  "index": 8,
+  "name": "bums.level.w2-08.name",
+  "minPlayers": 2,
+  "parSeconds": 215,
+  "bounds": { "x": 0, "y": 0, "w": 5500, "h": 2200 },
+  "palette": {
+    "paper": "#f3e2c4",
+    "ink": "#20160e",
+    "accent": "#c0392b",
+    "flashSafe": true,
+    "contrastRatio": 13.94
+  },
+  "spawn": [
+    { "x": 200, "y": 960 },
+    { "x": 280, "y": 960 }
+  ],
+  "goal": {
+    "shape": { "kind": "rect", "x": 5150, "y": 760, "w": 120, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [
+    { "at": { "x": 950, "y": 900 } },
+    { "at": { "x": 2150, "y": 870 } },
+    { "at": { "x": 3250, "y": 840 } }
+  ],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 1000, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 870, "y": 960, "w": 730, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 2050, "y": 930, "w": 700, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 3160, "y": 900, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 3160, "y": 890, "w": 220, "h": 30 },
+      "material": "grease",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 4150, "y": 870, "w": 400, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 4150, "y": 860, "w": 200, "h": 30 },
+      "material": "grease",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 4850, "y": 820, "w": 650, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "relic-tuna",
+      "kind": "relic",
+      "relicId": "w2-ingredient-tuna",
+      "at": { "x": 330, "y": 935 }
+    },
+    {
+      "id": "swing-gauntlet-1",
+      "kind": "swing",
+      "at": { "x": 730, "y": 750 },
+      "length": 260,
+      "damping": 0.2
+    },
+    {
+      "id": "belt-gauntlet-2",
+      "kind": "conveyor",
+      "at": { "x": 1600, "y": 960 },
+      "size": { "x": 450, "y": 80 },
+      "speed": 100
+    },
+    {
+      "id": "rope-gauntlet-2",
+      "kind": "rope",
+      "at": { "x": 1900, "y": 600 },
+      "segments": 14,
+      "stiffness": 0.4
+    },
+    {
+      "id": "swing-anchor-gauntlet",
+      "kind": "swing",
+      "at": { "x": 2955, "y": 700 },
+      "length": 210,
+      "damping": 0.3
+    },
+    {
+      "id": "relic-rice",
+      "kind": "relic",
+      "relicId": "w2-ingredient-rice",
+      "at": { "x": 3450, "y": 850 }
+    },
+    {
+      "id": "belt-gauntlet-4",
+      "kind": "conveyor",
+      "at": { "x": 3760, "y": 900 },
+      "size": { "x": 390, "y": 80 },
+      "speed": 90
+    },
+    {
+      "id": "relic-nori",
+      "kind": "relic",
+      "relicId": "w2-ingredient-nori",
+      "at": { "x": 4300, "y": 820 }
+    },
+    {
+      "id": "swing-final-gauntlet",
+      "kind": "swing",
+      "at": { "x": 4700, "y": 650 },
+      "length": 260,
+      "damping": 0.2
+    },
+    {
+      "id": "plate-sashimi",
+      "kind": "plate",
+      "recipeId": "w2-recipe-sashimi-three-ways",
+      "slots": ["w2-ingredient-tuna", "w2-ingredient-rice", "w2-ingredient-nori"],
+      "at": { "x": 4950, "y": 790 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "floor",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 2100, "w": 5500, "h": 100 }
+    },
+    {
+      "id": "pan-gauntlet",
+      "kind": "heat",
+      "shape": { "kind": "rect", "x": 1780, "y": 960, "w": 200, "h": 20 },
+      "graceMs": 1200
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w2-08-clock" },
+    { "kind": "flawless", "id": "w2-08-flawless" },
+    {
+      "kind": "recipe",
+      "id": "w2-08-recipe",
+      "recipeId": "w2-recipe-sashimi-three-ways"
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 300, "y": 800 },
+      "textKey": "bums.level.w2-08.note-start",
+      "width": 260
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 1880, "y": 930 },
+      "sprite": "frying-pan",
+      "scale": 1
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 2870, "y": 900 },
+      "to": { "x": 2970, "y": 800 }
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 3260, "y": 850 },
+      "sprite": "ketchup-bottle",
+      "scale": 0.9
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 4240, "y": 820 },
+      "sprite": "ketchup-bottle",
+      "scale": 0.8
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 4950, "y": 730 },
+      "sprite": "recipe-card",
+      "scale": 1.1
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 4700, "y": 2050 },
+      "r": 60
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 600, "y": 1000 }, { "x": 870, "y": 960 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 1600, "y": 960 }, { "x": 2050, "y": 930 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 2750, "y": 930 }, { "x": 3160, "y": 900 }], "thickness": 14 },
+    { "kind": "chain", "points": [{ "x": 4550, "y": 870 }, { "x": 4850, "y": 820 }], "thickness": 10 }
+  ],
+  "music": "w2-sizzle-street",
+  "authorNotes": "Two players, three checkpoints, four segments — every mechanic Sizzle Street has, back to back. relic-tuna is picked up at spawn (330,935) and carried the whole run. Seg 1: a plain swing (swing-gauntlet-1, 270px), gets both players moving. Seg 2 combines the belt and the pan again (06's escalation, reused at full length): belt-gauntlet-2 (1600,960 to 2050,960, 450px, no plank) carries you through pan-gauntlet's grace window (1780,960, 1.2s) automatically, or rope-gauntlet-2 (anchor 1900,600) lets a cautious pair grab clear of it. Seg 3 is the hardest: pier B (2050-2750) to pier C (3160-3760) is 410px, the world's team-gate gap again, solved the same way as 07 — swing-anchor-gauntlet (pivot 2955,700) anchors one player while the other is thrown across, and pier C's near edge is a grease landing strip, so the throw alone is not enough; someone needs to already be planted to catch the landing. relic-rice waits just past the grease (3450,850). Seg 4 is two short belt hops with a grease patch on the pier D landing (4150-4350) and relic-nori (4300,820) sitting past it, then swing-final-gauntlet (300px) onto the goal pier, where plate-sashimi (4950,790) takes all three ingredients for the Sashimi Three Ways recipe objective. All four true gaps carry an assist beam (the seg-3 one drawn thicker, same convention as the team gate) for a party trading the Clock objective for a guaranteed finish this deep into the level."
+}

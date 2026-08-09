@@ -2428,6 +2428,34 @@ html.readable-font body {
   --color-slice-input-bg: var(--slice-input-bg);
   --color-slice-input-border: var(--slice-input-border);
 
+  /* Bum's Rush (Tailwind bindings).
+     The values live on `.bums-theme` in `components/bums-rush/bums-rush.css`,
+     which is their only home — same reason as the `--slice-*` note above.
+     Every token defined there is bound here, because a token defined and never
+     bound is a utility that silently compiles to nothing. */
+  --color-bum-paper: var(--bum-paper);
+  --color-bum-paper-2: var(--bum-paper-2);
+  --color-bum-paper-edge: var(--bum-paper-edge);
+  --color-bum-rule: var(--bum-rule);
+  --color-bum-margin: var(--bum-margin);
+  --color-bum-ink: var(--bum-ink);
+  --color-bum-ink-soft: var(--bum-ink-soft);
+  --color-bum-graphite: var(--bum-graphite);
+  --color-bum-highlight: var(--bum-highlight);
+  --color-bum-tape: var(--bum-tape);
+  --color-bum-splat: var(--bum-splat);
+  --color-bum-surface: var(--bum-surface);
+  --color-bum-surface-2: var(--bum-surface-2);
+  --color-bum-danger: var(--bum-danger);
+  --color-bum-success: var(--bum-success);
+  --color-bum-seat-1: var(--bum-seat-1);
+  --color-bum-seat-2: var(--bum-seat-2);
+  --color-bum-seat-3: var(--bum-seat-3);
+  --color-bum-seat-4: var(--bum-seat-4);
+  --radius-bum: var(--bum-radius);
+  --radius-bum-sm: var(--bum-radius-sm);
+  --radius-bum-lg: var(--bum-radius-lg);
+
   /* Altair Specific */
   --color-neon-glow: #d8b4fe;
   --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;

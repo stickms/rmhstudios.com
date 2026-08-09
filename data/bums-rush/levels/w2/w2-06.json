@@ -1,0 +1,165 @@
+{
+  "version": 1,
+  "id": "w2-06",
+  "world": 2,
+  "index": 6,
+  "name": "bums.level.w2-06.name",
+  "minPlayers": 1,
+  "parSeconds": 128,
+  "bounds": { "x": 0, "y": 0, "w": 3800, "h": 1600 },
+  "palette": {
+    "paper": "#f3e2c4",
+    "ink": "#20160e",
+    "accent": "#c0392b",
+    "flashSafe": true,
+    "contrastRatio": 13.94
+  },
+  "spawn": [{ "x": 220, "y": 860 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 3550, "y": 740, "w": 120, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [{ "at": { "x": 950, "y": 800 } }, { "at": { "x": 2500, "y": 770 } }],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 650, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 900, "y": 860, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 2450, "y": 830, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 2800, "y": 820, "w": 220, "h": 30 },
+      "material": "grease",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 3350, "y": 780, "w": 450, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "relic-bread",
+      "kind": "relic",
+      "relicId": "w2-ingredient-bread",
+      "at": { "x": 320, "y": 850 }
+    },
+    {
+      "id": "swing-escalate-a",
+      "kind": "swing",
+      "at": { "x": 770, "y": 620 },
+      "length": 260,
+      "damping": 0.2
+    },
+    {
+      "id": "belt-hazard",
+      "kind": "conveyor",
+      "at": { "x": 1500, "y": 860 },
+      "size": { "x": 950, "y": 80 },
+      "speed": 95
+    },
+    {
+      "id": "rope-bypass",
+      "kind": "rope",
+      "at": { "x": 1950, "y": 520 },
+      "segments": 14,
+      "stiffness": 0.4
+    },
+    {
+      "id": "relic-veggie",
+      "kind": "relic",
+      "relicId": "w2-ingredient-veggie",
+      "at": { "x": 2650, "y": 790 }
+    },
+    {
+      "id": "swing-escalate-final",
+      "kind": "swing",
+      "at": { "x": 3200, "y": 590 },
+      "length": 260,
+      "damping": 0.2
+    },
+    {
+      "id": "plate-vegan-sandwich",
+      "kind": "plate",
+      "recipeId": "w2-recipe-vegan-sandwich",
+      "slots": ["w2-ingredient-bread", "w2-ingredient-veggie"],
+      "at": { "x": 3550, "y": 770 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "floor",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1500, "w": 3800, "h": 100 }
+    },
+    {
+      "id": "pan-belt",
+      "kind": "heat",
+      "shape": { "kind": "rect", "x": 1850, "y": 860, "w": 220, "h": 20 },
+      "graceMs": 1200
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w2-06-clock" },
+    { "kind": "flawless", "id": "w2-06-flawless" },
+    {
+      "kind": "recipe",
+      "id": "w2-06-recipe",
+      "recipeId": "w2-recipe-vegan-sandwich"
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 300, "y": 700 },
+      "textKey": "bums.level.w2-06.note-bread",
+      "width": 240
+    },
+    {
+      "kind": "note",
+      "at": { "x": 1750, "y": 640 },
+      "textKey": "bums.level.w2-06.note-belt-hot",
+      "width": 260
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 1960, "y": 830 },
+      "sprite": "frying-pan",
+      "scale": 1
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 2900, "y": 780 },
+      "sprite": "ketchup-bottle",
+      "scale": 0.8
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 3550, "y": 720 },
+      "sprite": "recipe-card",
+      "scale": 1
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 3650, "y": 1470 },
+      "r": 55
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 650, "y": 900 }, { "x": 900, "y": 860 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 1500, "y": 860 }, { "x": 2450, "y": 830 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 3050, "y": 830 }, { "x": 3350, "y": 780 }], "thickness": 10 }
+  ],
+  "music": "w2-sizzle-street",
+  "authorNotes": "Solo, two checkpoints, three segments — the escalation stacks the belt and the pan on the same obstacle instead of visiting them one at a time. Grab relic-bread right at spawn (320,850). Seg 1 is a plain swing (swing-escalate-a, 260px), familiar ground. Seg 2 is the escalate: belt-hazard (1500,860 to 2450,860, speed 95, 950px, no plank) carries you the whole way, but pan-belt (1850,860, 1.2s grace) sits embedded in the belt's own surface partway along — the belt keeps pulling you forward automatically, so dawdling on the hot patch is a choice, not a trap, but a cautious player can instead grab rope-bypass (anchor 1950,520, directly above the pan) and swing clear of the belt entirely rather than riding through the hot stretch. relic-veggie waits on the far counter (2650,790), past the belt, before a short grease patch (2800-3020) that slicks the final approach. Seg 3 is a plain swing (swing-escalate-final, 300px) to the goal counter, where plate-vegan-sandwich (3550,770) takes both ingredients for the recipe objective. Assist beams span all three true gaps at the usual Clock cost — the seg-2 beam bridges the belt+pan combo directly, matching rope-bypass as a second way to skip it."
+}

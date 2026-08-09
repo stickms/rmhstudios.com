@@ -1,0 +1,119 @@
+{
+  "version": 1,
+  "id": "w2-02",
+  "world": 2,
+  "index": 2,
+  "name": "bums.level.w2-02.name",
+  "minPlayers": 1,
+  "parSeconds": 72,
+  "bounds": { "x": 0, "y": 0, "w": 3100, "h": 1500 },
+  "palette": {
+    "paper": "#f3e2c4",
+    "ink": "#20160e",
+    "accent": "#c0392b",
+    "flashSafe": true,
+    "contrastRatio": 13.94
+  },
+  "spawn": [{ "x": 220, "y": 860 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 2700, "y": 740, "w": 120, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [{ "at": { "x": 1600, "y": 800 } }],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 650, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1550, "y": 860, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 2430, "y": 800, "w": 670, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "belt-crossing",
+      "kind": "conveyor",
+      "at": { "x": 650, "y": 900 },
+      "size": { "x": 900, "y": 80 },
+      "speed": 110
+    },
+    {
+      "id": "relic-w2-02",
+      "kind": "relic",
+      "relicId": "w2-relic-02",
+      "at": { "x": 2000, "y": 810 }
+    },
+    {
+      "id": "swing-final",
+      "kind": "swing",
+      "at": { "x": 2340, "y": 600 },
+      "length": 260,
+      "damping": 0.2
+    }
+  ],
+  "hazards": [
+    {
+      "id": "floor",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1400, "w": 3100, "h": 100 }
+    },
+    {
+      "id": "pan-mid",
+      "kind": "heat",
+      "shape": { "kind": "rect", "x": 1700, "y": 860, "w": 140, "h": 20 },
+      "graceMs": 1200
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w2-02-clock" },
+    { "kind": "flawless", "id": "w2-02-flawless" },
+    {
+      "kind": "haul",
+      "id": "w2-02-haul",
+      "relicIds": ["w2-relic-02"]
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 120, "y": 760 },
+      "textKey": "bums.level.w2-02.note-belt",
+      "width": 260
+    },
+    {
+      "kind": "note",
+      "at": { "x": 1620, "y": 700 },
+      "textKey": "bums.level.w2-02.note-pan",
+      "width": 220
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 1770, "y": 830 },
+      "sprite": "frying-pan",
+      "scale": 0.8
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 300, "y": 800 },
+      "to": { "x": 640, "y": 850 }
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 2900, "y": 1370 },
+      "r": 45
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 2150, "y": 860 }, { "x": 2430, "y": 800 }], "thickness": 10 }
+  ],
+  "music": "w2-sizzle-street",
+  "authorNotes": "Solo. The belt is real now: belt-crossing (650,900 to 1550,900, speed 110) spans a 900px gap with no plank beneath it — the first true fall of the world, since staying gripped to a moving surface is exactly as demanding as gripping a static ledge would be. It lands flush on the mid counter. pan-mid (1700,860, 1.2s grace) is the world's first heat hazard, a hot spot embedded in the counter's own surface between the belt's landing and relic-w2-02 (2000,810) — cross it briskly (the grace period is generous, it will not kill an unlucky half-second) rather than lingering. Past the pan, grab the relic and take swing-final (pivot 2340,600, 260px) over the last stretch of void to the goal counter. The haul objective needs relic-w2-02 delivered, so the pan is not optional scenery — you must go through, or around its edge, to finish. One assist beam spans the final swing gap only; there is no beam over the belt itself, since it is solid footing, not a void crossing."
+}

@@ -1,0 +1,134 @@
+{
+  "version": 1,
+  "id": "w2-03",
+  "world": 2,
+  "index": 3,
+  "name": "bums.level.w2-03.name",
+  "minPlayers": 1,
+  "parSeconds": 80,
+  "bounds": { "x": 0, "y": 0, "w": 3400, "h": 1500 },
+  "palette": {
+    "paper": "#f3e2c4",
+    "ink": "#20160e",
+    "accent": "#c0392b",
+    "flashSafe": true,
+    "contrastRatio": 13.94
+  },
+  "spawn": [{ "x": 220, "y": 860 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 3150, "y": 740, "w": 120, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [{ "at": { "x": 1500, "y": 800 } }],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 650, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1450, "y": 860, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 2550, "y": 800, "w": 850, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "relic-lemon",
+      "kind": "relic",
+      "relicId": "w2-ingredient-lemon",
+      "at": { "x": 320, "y": 850 }
+    },
+    {
+      "id": "belt-combine",
+      "kind": "conveyor",
+      "at": { "x": 650, "y": 900 },
+      "size": { "x": 500, "y": 80 },
+      "speed": 100
+    },
+    {
+      "id": "swing-combine",
+      "kind": "swing",
+      "at": { "x": 1350, "y": 620 },
+      "length": 260,
+      "damping": 0.2
+    },
+    {
+      "id": "relic-berry",
+      "kind": "relic",
+      "relicId": "w2-ingredient-berry",
+      "at": { "x": 1750, "y": 810 }
+    },
+    {
+      "id": "rope-combine",
+      "kind": "rope",
+      "at": { "x": 2280, "y": 520 },
+      "segments": 14,
+      "stiffness": 0.4
+    },
+    {
+      "id": "plate-friend-juice",
+      "kind": "plate",
+      "recipeId": "w2-recipe-friend-juice",
+      "slots": ["w2-ingredient-lemon", "w2-ingredient-berry"],
+      "at": { "x": 2850, "y": 790 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "floor",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1400, "w": 3400, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w2-03-clock" },
+    { "kind": "flawless", "id": "w2-03-flawless" },
+    {
+      "kind": "recipe",
+      "id": "w2-03-recipe",
+      "recipeId": "w2-recipe-friend-juice"
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 700, "y": 500 },
+      "textKey": "bums.level.w2-03.note-combine",
+      "width": 260
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 1050, "y": 700 },
+      "to": { "x": 1340, "y": 660 }
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 900, "y": 830 },
+      "sprite": "conveyor-gear",
+      "scale": 0.8
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 2850, "y": 730 },
+      "sprite": "recipe-card",
+      "scale": 1
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 3050, "y": 1370 },
+      "r": 50
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 1150, "y": 900 }, { "x": 1450, "y": 860 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 2050, "y": 860 }, { "x": 2550, "y": 800 }], "thickness": 10 }
+  ],
+  "music": "w2-sizzle-street",
+  "authorNotes": "Solo. Combines the belt (new, this world) with the rope (from Doodle Docks) in one delivery run. Grab relic-lemon right at spawn (320,850), then ride belt-combine (650,900 to 1150,900) — it does not reach the mid counter on its own; at its far end, swing-combine (pivot 1350,620, 260px) closes the remaining 300px to the mid counter at 1450, so the belt's momentum and the swing's arc are used back to back, exactly the 'new mechanic plus a World 1 one' this slot calls for. Grab relic-berry on the mid counter (1750,810), then rope-combine (anchor 2280,520, 14 segments) hangs over the second gap the same way a friend's hand would in co-op — swing it the rest of the way to the goal counter (2550) and drop both ingredients on plate-friend-juice (2850,790) for the recipe objective. Both long gaps carry an assist beam for players who'd rather not chain the moves."
+}

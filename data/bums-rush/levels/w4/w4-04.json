@@ -1,0 +1,148 @@
+{
+  "version": 1,
+  "id": "w4-04",
+  "world": 4,
+  "index": 4,
+  "name": "bums.level.w4-04.name",
+  "minPlayers": 1,
+  "parSeconds": 80,
+  "bounds": { "x": 0, "y": 0, "w": 3300, "h": 1500 },
+  "palette": {
+    "paper": "#e9e0c7",
+    "ink": "#383d44",
+    "accent": "#8a3541",
+    "flashSafe": true,
+    "contrastRatio": 8.31
+  },
+  "spawn": [{ "x": 220, "y": 860 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 2650, "y": 740, "w": 150, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [{ "at": { "x": 1350, "y": 750 } }],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 950, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 700, "y": 860, "w": 220, "h": 40 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1250, "y": 800, "w": 900, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 2420, "y": 780, "w": 600, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "lever-w4-04-decoy",
+      "kind": "lever",
+      "at": { "x": 620, "y": 800 },
+      "length": 70,
+      "threshold": 0.5,
+      "signal": "w4-04-side",
+      "latching": true
+    },
+    {
+      "id": "door-w4-04-side",
+      "kind": "door",
+      "at": { "x": 700, "y": 680 },
+      "size": { "x": 40, "y": 180 },
+      "signal": "w4-04-side",
+      "openOffset": { "x": 0, "y": -180 },
+      "speed": 120
+    },
+    {
+      "id": "relic-w4-04",
+      "kind": "relic",
+      "relicId": "w4-relic-04",
+      "at": { "x": 800, "y": 815 }
+    },
+    {
+      "id": "button-w4-04-hidden",
+      "kind": "button",
+      "at": { "x": 880, "y": 878 },
+      "size": { "x": 70, "y": 22 },
+      "minMass": 0.3,
+      "signal": "w4-04-main"
+    },
+    {
+      "id": "door-w4-04-main",
+      "kind": "door",
+      "at": { "x": 950, "y": 660 },
+      "size": { "x": 50, "y": 240 },
+      "signal": "w4-04-main",
+      "openOffset": { "x": 0, "y": -240 },
+      "speed": 140
+    },
+    {
+      "id": "swing-w4-04",
+      "kind": "swing",
+      "at": { "x": 930, "y": 610 },
+      "length": 290,
+      "damping": 0.2
+    },
+    {
+      "id": "swing-w4-04-b",
+      "kind": "swing",
+      "at": { "x": 2130, "y": 510 },
+      "length": 290,
+      "damping": 0.2
+    }
+  ],
+  "hazards": [
+    {
+      "id": "moat",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1400, "w": 3300, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w4-04-clock" },
+    { "kind": "flawless", "id": "w4-04-flawless" },
+    {
+      "kind": "haul",
+      "id": "w4-04-haul",
+      "relicIds": ["w4-relic-04"]
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "doodle",
+      "at": { "x": 950, "y": 300 },
+      "sprite": "castle-silhouette",
+      "scale": 1.2
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 500, "y": 800 },
+      "to": { "x": 600, "y": 800 }
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 2400, "y": 1350 },
+      "r": 50
+    },
+    {
+      "kind": "note",
+      "at": { "x": 1000, "y": 950 },
+      "textKey": "bums.level.w4-04.note-floor",
+      "width": 220
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 950, "y": 900 }, { "x": 1250, "y": 800 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 2150, "y": 800 }, { "x": 2420, "y": 780 }], "thickness": 10 }
+  ],
+  "music": "w4-castle-clatter",
+  "authorNotes": "Solo. The twist: after three levels of 'the lever by the door opens the door', lever-w4-04-decoy sits right next to the level's only visible gate — and does not control it. Pulling it (latching) fires 'w4-04-side', which raises door-w4-04-side, a short side alcove door 200px away, revealing relic-w4-04 for the haul objective. The actual gate blocking the path forward, door-w4-04-main, is wired to 'w4-04-main', produced by button-w4-04-hidden — a small (70px) weight plate flush with the floor right at the foot of the main door itself, easy to walk past without noticing, low minMass (0.3) so even a light graze of a hand or head triggers it. No relay anywhere in this level; both signals are direct producer-to-consumer, and neither is a NOT — the trick is purely misdirection (an obvious switch that does something real, just not the something you assumed), not a schema inversion. The note near the floor plate area is a hint, not an instruction, and deliberately doesn't say what the lever does. Once through door-w4-04-main, swing-w4-04 (pivot 930,610, 290px) carries the relic and the player to the third pier (1250-2150); swing-w4-04-b (pivot 2130,510, another 290px) then closes a second, equally long gap to the actual goal pier (2420-3020, holding the 2650-2800 goal shape) — an earlier draft named this the 'goal pier' while it was still 500px short of the goal itself, which is now fixed with the second swing and its landing pier both on disk. Checkpoint sits just past the first swing, on the third pier, well before the second gap."
+}

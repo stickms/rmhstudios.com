@@ -1,0 +1,259 @@
+{
+  "version": 1,
+  "id": "w4-08",
+  "world": 4,
+  "index": 8,
+  "name": "bums.level.w4-08.name",
+  "minPlayers": 2,
+  "parSeconds": 235,
+  "bounds": { "x": 0, "y": 0, "w": 5300, "h": 2200 },
+  "palette": {
+    "paper": "#e9e0c7",
+    "ink": "#383d44",
+    "accent": "#8a3541",
+    "flashSafe": true,
+    "contrastRatio": 8.31
+  },
+  "spawn": [
+    { "x": 200, "y": 960 },
+    { "x": 280, "y": 960 }
+  ],
+  "goal": {
+    "shape": { "kind": "rect", "x": 4900, "y": 750, "w": 150, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [
+    { "at": { "x": 1200, "y": 900 } },
+    { "at": { "x": 2500, "y": 850 } },
+    { "at": { "x": 3850, "y": 820 } }
+  ],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 1000, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 900, "y": 960, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1500, "y": 960, "w": 300, "h": 80 },
+      "material": "crumbly",
+      "render": "taped"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1800, "y": 900, "w": 650, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 2450, "y": 900, "w": 300, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 3050, "y": 850, "w": 750, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 3850, "y": 900, "w": 700, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 4600, "y": 810, "w": 700, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "relic-w4-08",
+      "kind": "relic",
+      "relicId": "w4-relic-08",
+      "at": { "x": 350, "y": 950 }
+    },
+    {
+      "id": "lever-w4-08-warm",
+      "kind": "lever",
+      "at": { "x": 400, "y": 900 },
+      "length": 70,
+      "threshold": 0.5,
+      "signal": "w4-08-warm",
+      "latching": true
+    },
+    {
+      "id": "door-w4-08-warm",
+      "kind": "door",
+      "at": { "x": 600, "y": 760 },
+      "size": { "x": 50, "y": 240 },
+      "signal": "w4-08-warm",
+      "openOffset": { "x": 0, "y": -240 },
+      "speed": 140
+    },
+    {
+      "id": "swing-w4-08-1",
+      "kind": "swing",
+      "at": { "x": 580, "y": 720 },
+      "length": 280,
+      "damping": 0.2
+    },
+    {
+      "id": "crate-w4-08-a",
+      "kind": "crate",
+      "at": { "x": 950, "y": 880 },
+      "size": { "x": 100, "y": 80 },
+      "mass": 1.2,
+      "material": "paper"
+    },
+    {
+      "id": "crate-w4-08-b",
+      "kind": "crate",
+      "at": { "x": 2050, "y": 800 },
+      "size": { "x": 100, "y": 80 },
+      "mass": 1.2,
+      "material": "paper"
+    },
+    {
+      "id": "swing-w4-08-2",
+      "kind": "swing",
+      "at": { "x": 2730, "y": 620 },
+      "length": 280,
+      "damping": 0.2
+    },
+    {
+      "id": "camera-w4-08",
+      "kind": "camera",
+      "at": { "x": 360, "y": 950 }
+    },
+    {
+      "id": "plate-w4-08-1",
+      "kind": "button",
+      "at": { "x": 3950, "y": 875 },
+      "size": { "x": 120, "y": 25 },
+      "minMass": 1.0,
+      "signal": "w4-08-p1"
+    },
+    {
+      "id": "plate-w4-08-2",
+      "kind": "button",
+      "at": { "x": 4150, "y": 875 },
+      "size": { "x": 120, "y": 25 },
+      "minMass": 1.0,
+      "signal": "w4-08-p2"
+    },
+    {
+      "id": "plate-w4-08-3",
+      "kind": "button",
+      "at": { "x": 4350, "y": 875 },
+      "size": { "x": 120, "y": 25 },
+      "minMass": 1.0,
+      "signal": "w4-08-p3"
+    },
+    {
+      "id": "relay-w4-08-and",
+      "kind": "signalRelay",
+      "at": { "x": 4150, "y": 700 },
+      "op": "and",
+      "inputs": ["w4-08-p1", "w4-08-p2", "w4-08-p3"],
+      "out": "w4-08-gate-momentary"
+    },
+    {
+      "id": "relay-w4-08-hold",
+      "kind": "signalRelay",
+      "at": { "x": 4200, "y": 650 },
+      "op": "delay",
+      "inputs": ["w4-08-gate-momentary"],
+      "out": "w4-08-gate",
+      "delayMs": 2600
+    },
+    {
+      "id": "door-w4-08-final",
+      "kind": "door",
+      "at": { "x": 4550, "y": 700 },
+      "size": { "x": 60, "y": 300 },
+      "signal": "w4-08-gate",
+      "openOffset": { "x": 0, "y": -300 },
+      "speed": 150
+    }
+  ],
+  "hazards": [
+    {
+      "id": "crusher-w4-08",
+      "kind": "crusher",
+      "shape": { "kind": "rect", "x": 3060, "y": 650, "w": 200, "h": 200 },
+      "path": [
+        { "x": 3060, "y": 650 },
+        { "x": 3060, "y": 940 }
+      ],
+      "speed": 90
+    },
+    {
+      "id": "moat",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 2100, "w": 5300, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w4-08-clock" },
+    { "kind": "flawless", "id": "w4-08-flawless" },
+    {
+      "kind": "haul",
+      "id": "w4-08-haul",
+      "relicIds": ["w4-relic-08"]
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 300, "y": 800 },
+      "textKey": "bums.level.w4-08.note-start",
+      "width": 260
+    },
+    {
+      "kind": "note",
+      "at": { "x": 1550, "y": 800 },
+      "textKey": "bums.level.w4-08.note-crumbly",
+      "width": 240
+    },
+    {
+      "kind": "note",
+      "at": { "x": 3900, "y": 700 },
+      "textKey": "bums.level.w4-08.note-plates",
+      "width": 260
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 1700, "y": 400 },
+      "sprite": "castle-silhouette",
+      "scale": 1.2
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 3200, "y": 450 },
+      "sprite": "gargoyle",
+      "scale": 1
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 2900, "y": 800 },
+      "to": { "x": 3020, "y": 750 }
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 4700, "y": 2050 },
+      "r": 60
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 600, "y": 1000 }, { "x": 900, "y": 960 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 1500, "y": 960 }, { "x": 1800, "y": 900 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 2750, "y": 900 }, { "x": 3050, "y": 850 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 3800, "y": 850 }, { "x": 3850, "y": 900 }], "thickness": 10 }
+  ],
+  "music": "w4-castle-clatter",
+  "authorNotes": "Two players, three checkpoints, four segments — every prop and gap type the world has, in one long run. Seg 1: a plain lever-w4-08-warm/door-w4-08-warm (latching) plus swing-w4-08-1 (280px) gets both players moving, same shape as 02. Seg 2 is a crumbly-floor obstacle (material crumbly, render taped per the paper-construction rule — it can be broken, so it's taped, not drawn): the 300px stretch at x1500-1800 crumbles roughly 1.2s after being gripped, so it must be crossed briskly rather than lingered on. crate-w4-08-a (picked up back at pier 2) and crate-w4-08-b (found on the far side of the crumbly stretch) both need to be carried all the way to segment 4 for the plate puzzle — the gauntlet is as much about not dropping cargo across a breaking floor as it is about the floor itself. Seg 3 is a pure timing hazard: crusher-w4-08, a portcullis slab patrolling the doorway at x3060 on a y650-940 path at 90px/s (a slow, clearly telegraphed rhythm, no lever or signal involved — this one is dodged, not solved), followed by swing-w4-08-2 (280px) across the real gap beyond it. Seg 4 is the climax, styled after the world's three-plate pressure sequence: plate-w4-08-1/2/3 each need minMass 1.0 resting on them at once. With only two players, the solve is to park crate-w4-08-a on plate 1 and crate-w4-08-b on plate 2 (both carried the whole way from segment 2 for exactly this reason), freeing both players — one steps onto plate 3 to complete the AND (relay-w4-08-and, three inputs), which produces a momentary 'w4-08-gate-momentary'; relay-w4-08-hold (op delay, 2600ms) stretches that instant into a real window on 'w4-08-gate', consumed by door-w4-08-final, giving both players time to step off and cross together rather than needing a third body to hold the last plate forever. relic-w4-08 is picked up at spawn and carried the entire gauntlet for the haul objective, on top of the two crates — arriving with all three is the point. Four assist beams span every real fall gap, including one laid directly over the crumbly stretch for a player who'd rather skip its risk entirely; the crusher doorway and the plate sequence carry no beam, since neither is a fall hazard."
+}
