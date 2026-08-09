@@ -8,6 +8,7 @@ import idCAltair from "@/locales/id/c-altair.json";
 import idCAwards from "@/locales/id/c-awards.json";
 import idCBlog from "@/locales/id/c-blog.json";
 import idCBuilds from "@/locales/id/c-builds.json";
+import idCBumsRush from "@/locales/id/c-bums-rush.json";
 import idCCircle from "@/locales/id/c-circle.json";
 import idCCreator from "@/locales/id/c-creator.json";
 import idCCursedLogic from "@/locales/id/c-cursed-logic.json";
@@ -65,6 +66,7 @@ import idCVoidBreaker from "@/locales/id/c-void-breaker.json";
 import idCWager from "@/locales/id/c-wager.json";
 import idCWishlist from "@/locales/id/c-wishlist.json";
 import idCommon from "@/locales/id/common.json";
+import idErrors from "@/locales/id/errors.json";
 import idFeed from "@/locales/id/feed.json";
 import idGamesHub from "@/locales/id/games-hub.json";
 import idGroups from "@/locales/id/groups.json";
@@ -100,6 +102,7 @@ const idResources = {
   "c-awards": idCAwards,
   "c-blog": idCBlog,
   "c-builds": idCBuilds,
+  "c-bums-rush": idCBumsRush,
   "c-circle": idCCircle,
   "c-creator": idCCreator,
   "c-cursed-logic": idCCursedLogic,
@@ -157,6 +160,7 @@ const idResources = {
   "c-wager": idCWager,
   "c-wishlist": idCWishlist,
   "common": idCommon,
+  "errors": idErrors,
   "feed": idFeed,
   "games-hub": idGamesHub,
   "groups": idGroups,

@@ -8,6 +8,7 @@ import viCAltair from "@/locales/vi/c-altair.json";
 import viCAwards from "@/locales/vi/c-awards.json";
 import viCBlog from "@/locales/vi/c-blog.json";
 import viCBuilds from "@/locales/vi/c-builds.json";
+import viCBumsRush from "@/locales/vi/c-bums-rush.json";
 import viCCircle from "@/locales/vi/c-circle.json";
 import viCCreator from "@/locales/vi/c-creator.json";
 import viCCursedLogic from "@/locales/vi/c-cursed-logic.json";
@@ -65,6 +66,7 @@ import viCVoidBreaker from "@/locales/vi/c-void-breaker.json";
 import viCWager from "@/locales/vi/c-wager.json";
 import viCWishlist from "@/locales/vi/c-wishlist.json";
 import viCommon from "@/locales/vi/common.json";
+import viErrors from "@/locales/vi/errors.json";
 import viFeed from "@/locales/vi/feed.json";
 import viGamesHub from "@/locales/vi/games-hub.json";
 import viGroups from "@/locales/vi/groups.json";
@@ -100,6 +102,7 @@ const viResources = {
   "c-awards": viCAwards,
   "c-blog": viCBlog,
   "c-builds": viCBuilds,
+  "c-bums-rush": viCBumsRush,
   "c-circle": viCCircle,
   "c-creator": viCCreator,
   "c-cursed-logic": viCCursedLogic,
@@ -157,6 +160,7 @@ const viResources = {
   "c-wager": viCWager,
   "c-wishlist": viCWishlist,
   "common": viCommon,
+  "errors": viErrors,
   "feed": viFeed,
   "games-hub": viGamesHub,
   "groups": viGroups,

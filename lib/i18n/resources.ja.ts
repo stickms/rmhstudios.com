@@ -8,6 +8,7 @@ import jaCAltair from "@/locales/ja/c-altair.json";
 import jaCAwards from "@/locales/ja/c-awards.json";
 import jaCBlog from "@/locales/ja/c-blog.json";
 import jaCBuilds from "@/locales/ja/c-builds.json";
+import jaCBumsRush from "@/locales/ja/c-bums-rush.json";
 import jaCCircle from "@/locales/ja/c-circle.json";
 import jaCCreator from "@/locales/ja/c-creator.json";
 import jaCCursedLogic from "@/locales/ja/c-cursed-logic.json";
@@ -65,6 +66,7 @@ import jaCVoidBreaker from "@/locales/ja/c-void-breaker.json";
 import jaCWager from "@/locales/ja/c-wager.json";
 import jaCWishlist from "@/locales/ja/c-wishlist.json";
 import jaCommon from "@/locales/ja/common.json";
+import jaErrors from "@/locales/ja/errors.json";
 import jaFeed from "@/locales/ja/feed.json";
 import jaGamesHub from "@/locales/ja/games-hub.json";
 import jaGroups from "@/locales/ja/groups.json";
@@ -100,6 +102,7 @@ const jaResources = {
   "c-awards": jaCAwards,
   "c-blog": jaCBlog,
   "c-builds": jaCBuilds,
+  "c-bums-rush": jaCBumsRush,
   "c-circle": jaCCircle,
   "c-creator": jaCCreator,
   "c-cursed-logic": jaCCursedLogic,
@@ -157,6 +160,7 @@ const jaResources = {
   "c-wager": jaCWager,
   "c-wishlist": jaCWishlist,
   "common": jaCommon,
+  "errors": jaErrors,
   "feed": jaFeed,
   "games-hub": jaGamesHub,
   "groups": jaGroups,

@@ -8,6 +8,7 @@ import esCAltair from "@/locales/es/c-altair.json";
 import esCAwards from "@/locales/es/c-awards.json";
 import esCBlog from "@/locales/es/c-blog.json";
 import esCBuilds from "@/locales/es/c-builds.json";
+import esCBumsRush from "@/locales/es/c-bums-rush.json";
 import esCCircle from "@/locales/es/c-circle.json";
 import esCCreator from "@/locales/es/c-creator.json";
 import esCCursedLogic from "@/locales/es/c-cursed-logic.json";
@@ -65,6 +66,7 @@ import esCVoidBreaker from "@/locales/es/c-void-breaker.json";
 import esCWager from "@/locales/es/c-wager.json";
 import esCWishlist from "@/locales/es/c-wishlist.json";
 import esCommon from "@/locales/es/common.json";
+import esErrors from "@/locales/es/errors.json";
 import esFeed from "@/locales/es/feed.json";
 import esGamesHub from "@/locales/es/games-hub.json";
 import esGroups from "@/locales/es/groups.json";
@@ -100,6 +102,7 @@ const esResources = {
   "c-awards": esCAwards,
   "c-blog": esCBlog,
   "c-builds": esCBuilds,
+  "c-bums-rush": esCBumsRush,
   "c-circle": esCCircle,
   "c-creator": esCCreator,
   "c-cursed-logic": esCCursedLogic,
@@ -157,6 +160,7 @@ const esResources = {
   "c-wager": esCWager,
   "c-wishlist": esCWishlist,
   "common": esCommon,
+  "errors": esErrors,
   "feed": esFeed,
   "games-hub": esGamesHub,
   "groups": esGroups,

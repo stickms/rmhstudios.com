@@ -8,6 +8,7 @@
   "edit": "編集",
   "edit-build": "ビルドを編集",
   "error-loading-build": "ビルドの読み込みエラー",
+  "like-count_one": "{{count}} 件のいいね",
   "like-count_other": "{{count}} いいね",
   "manage-subtitle": "公開済みおよび下書きのビルドを管理",
   "my-builds": "マイビルド",
@@ -23,5 +24,6 @@
   "submit-a-build": "ビルドを投稿",
   "update-build-details": "以下でビルドの詳細を更新してください。",
   "view": "表示",
+  "view-count_one": "{{count}} 件の閲覧",
   "view-count_other": "{{count}} 回視聴"
 }
