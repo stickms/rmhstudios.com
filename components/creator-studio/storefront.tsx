@@ -23,6 +23,7 @@
 import { type PointerEvent as ReactPointerEvent, type ReactNode, useMemo, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ArrowRight, Info } from 'lucide-react';
+import { IMAGE_VARIANTS, variantUrl } from '@/lib/images/variants.gen';
 
 /** A single thing on the shelf — a game, app, persona, build, or page. */
 export type StoreItem = {
@@ -154,16 +155,43 @@ function coverFor(item: StoreItem): { src?: string } {
   return { src: item.coverUrl || undefined };
 }
 
+/**
+ * The cards on `/games` and `/apps` are the site's heaviest image surface —
+ * measured 2026-08-09, `/games` transferred 2,070 KB of art, with masters up to
+ * 6.1x oversized for the box they render in (1280x720 shown at 209x117).
+ *
+ * `scripts/gen-image-variants.ts` pre-generates width variants for everything
+ * under `public/images/**` and records them in the manifest below, so catalog
+ * art can advertise a real srcSet. Anything NOT in the manifest — a user build's
+ * `coverUrl`, an external URL — is deliberately left alone: those are not
+ * pre-generated, and routing them through the resize proxy here would put image
+ * work on the SSR tier for every card.
+ */
+function variantSrcSet(src: string): string | undefined {
+  const widths = IMAGE_VARIANTS[src];
+  if (!widths?.length) return undefined;
+  return widths.map((w) => `${variantUrl(src, w)} ${w}w`).join(', ');
+}
+
+/**
+ * The grid is 2 columns below 720px, then 3, 4 and 5 as it widens, inside a
+ * 1400px container (see storefront.css) — so a card tops out around 280px. The
+ * hero spans the full container and passes its own `sizes`.
+ */
+const CARD_SIZES = '(max-width: 719px) 48vw, (max-width: 1100px) 33vw, 300px';
+
 function Art({
   item,
   src,
   fallbackSrc,
   eager = false,
+  sizes = CARD_SIZES,
 }: {
   item: StoreItem;
   src?: string;
   fallbackSrc?: string;
   eager?: boolean;
+  sizes?: string;
 }) {
   // Covers can 404 — e.g. a vibe screenshot the worker hasn't rendered yet.
   // Walk src → fallbackSrc → the tinted gradient placeholder instead of ever
@@ -175,9 +203,13 @@ function Art({
     <img
       className="store-art__img"
       src={current}
+      srcSet={variantSrcSet(current)}
+      sizes={variantSrcSet(current) ? sizes : undefined}
       alt=""
       loading={eager ? 'eager' : 'lazy'}
       decoding="async"
+      // The fallback walk changes `current`, so the srcSet follows it — a
+      // fallback that has no variants simply drops back to a bare src.
       onError={() => setIdx((i) => i + 1)}
     />
   ) : (
@@ -206,7 +238,7 @@ function HeroCard({ item }: { item: StoreItem }) {
     <div className="store-hero" style={{ '--card-hue': String(item.hue ?? 220) } as React.CSSProperties}>
       <PrimaryWrapper item={item} className="store-hero__link" ariaLabel={item.title}>
         <div className="store-hero__art">
-          <Art item={item} {...coverFor(item)} eager />
+          <Art item={item} {...coverFor(item)} eager sizes="100vw" />
           <span className="store-hero__scrim" aria-hidden="true" />
         </div>
         <div className="store-hero__body">
