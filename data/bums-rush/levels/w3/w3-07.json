@@ -1,0 +1,139 @@
+{
+  "version": 1,
+  "id": "w3-07",
+  "world": 3,
+  "index": 7,
+  "name": "bums.level.w3-07.name",
+  "minPlayers": 2,
+  "parSeconds": 128,
+  "bounds": { "x": 0, "y": 0, "w": 4200, "h": 1800 },
+  "palette": {
+    "paper": "#f7e6ba",
+    "ink": "#1e1418",
+    "accent": "#c8102e",
+    "flashSafe": true,
+    "contrastRatio": 14.53
+  },
+  "spawn": [
+    { "x": 200, "y": 860 },
+    { "x": 280, "y": 860 }
+  ],
+  "goal": {
+    "shape": { "kind": "rect", "x": 3800, "y": 700, "w": 120, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [{ "at": { "x": 950, "y": 800 } }, { "at": { "x": 2350, "y": 740 } }],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 900, "y": 860, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 2300, "y": 800, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 3600, "y": 700, "w": 600, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "trapeze-approach",
+      "kind": "swing",
+      "at": { "x": 600, "y": 600 },
+      "length": 300,
+      "damping": 0.2
+    },
+    {
+      "id": "cannon-gate",
+      "kind": "popCannon",
+      "at": { "x": 1620, "y": 820 },
+      "angle": -0.28,
+      "power": 55,
+      "cooldownMs": 1800,
+      "arc": 0.08
+    },
+    {
+      "id": "relic-w3-07",
+      "kind": "relic",
+      "relicId": "w3-relic-07",
+      "at": { "x": 2350, "y": 780 }
+    },
+    {
+      "id": "trapeze-final3",
+      "kind": "swing",
+      "at": { "x": 2900, "y": 450 },
+      "length": 350,
+      "damping": 0.15
+    },
+    {
+      "id": "trampoline-final",
+      "kind": "trampoline",
+      "at": { "x": 3250, "y": 830 },
+      "size": { "x": 150, "y": 30 },
+      "bounce": 1.1
+    }
+  ],
+  "hazards": [
+    {
+      "id": "pit",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1700, "w": 4200, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w3-07-clock" },
+    { "kind": "flawless", "id": "w3-07-flawless" },
+    {
+      "kind": "haul",
+      "id": "w3-07-haul",
+      "relicIds": ["w3-relic-07"]
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 1350, "y": 550 },
+      "textKey": "bums.level.w3-07.note-cannon",
+      "width": 280
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 1470, "y": 830 },
+      "to": { "x": 1600, "y": 800 }
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 1650, "y": 350 },
+      "sprite": "cannon-sparkle",
+      "scale": 1.1
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 3350, "y": 300 },
+      "sprite": "big-top-tent",
+      "scale": 1.2
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 3900, "y": 1620 },
+      "r": 55
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 600, "y": 900 }, { "x": 900, "y": 860 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 1500, "y": 860 }, { "x": 2300, "y": 800 }], "thickness": 14 },
+    { "kind": "chain", "points": [{ "x": 2900, "y": 800 }, { "x": 3600, "y": 700 }], "thickness": 10 }
+  ],
+  "music": "w3-big-tent-bother",
+  "authorNotes": "Two players required — this is the world's team gate, and the pop cannon is the gate. Segment 1 (trapeze-approach, pivot flush with the starting pier's edge) is ordinary: both players cross independently, same as any World 3 trapeze so far. Segment 2 is the real point of the level: pier A2 to pier B2 is 800px, nearly triple a single trapeze's carry, and cannon-gate is the only structure that spans it. The intended play is the one the world has been building to: one player stays anchored on pier A2's edge, reaches out to grip the barrel (the 'handle'), and the other climbs into the barrel mouth as ammunition; the handle-holder's use-item fires whoever's head is inside the barrel bounds, so it is the gripper's press that launches their partner, not their own position, that matters. As a matter of engine honesty (the same note w1-b's tide flagged for its own schema gap): the barrel is one 90px body and a floating hand can reach 118px in any direction from a floating head, so — exactly as 04 demonstrated — a lone player can still fold themselves into the barrel and self-fire solo; nothing in the prop contract can wall that off. What the level actually gates is the gap itself, not the button-press: there is no trapeze, rope or ledge that spans pier A2 to pier B2 on its own (trapeze-final3 in segment 3 is deliberately the world's longest, 350px, and still would not reach this 800px void), so every player who crosses this segment goes through cannon-gate one way or another, and doing it as a pair — one holding, one flying — is the fast, intended, and much funnier way. relic-w3-07 sits just past the gate on pier B2, so the haul objective can't be finished by either player working alone. Segment 3 closes the level: trapeze-final3 swings out and releases onto trampoline-final, a standalone landing pad, which bounces the rest of the way to the goal pier — both players make this crossing solo, same as segment 1. The gate's assist beam is drawn thicker than the others as a visual tell that this is the level's hard point."
+}

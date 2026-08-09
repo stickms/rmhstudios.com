@@ -1,0 +1,35 @@
+{
+  "bums": {
+    "world": {
+      "w1": {
+        "name": "Doodle Docks"
+      },
+      "w2": {
+        "name": "Sizzle Street"
+      },
+      "w3": {
+        "name": "Big Tent Bother"
+      },
+      "w4": {
+        "name": "Castle Clatter"
+      },
+      "w5": {
+        "name": "Shuriken School"
+      },
+      "w6": {
+        "name": "Chalk Peaks"
+      },
+      "w7": {
+        "name": "Vacuum Ward"
+      },
+      "w8": {
+        "name": "Marker Mosh"
+      }
+    }
+  },
+  "cta.play": "Get a Grip",
+  "invite.pending": "Your invite is saved. It will open once the game is playable.",
+  "tagline": "You are a head with two enormous arms and no legs whatsoever. Grab, swing, and let go at exactly the wrong moment.",
+  "title": "Bum's Rush",
+  "wip": "Under construction — the physics, the worlds and the multiplayer are being built. Check back shortly."
+}

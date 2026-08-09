@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "id": "w2-c",
+  "world": 2,
+  "index": 3,
+  "name": "bums.showdown.w2-c.name",
+  "minPlayers": 2,
+  "parSeconds": 40,
+  "bounds": { "x": 0, "y": 0, "w": 2000, "h": 1200 },
+  "palette": {
+    "paper": "#f3e2c4",
+    "ink": "#20160e",
+    "accent": "#c0392b",
+    "flashSafe": true,
+    "contrastRatio": 13.94
+  },
+  "spawn": [
+    { "x": 300, "y": 800 },
+    { "x": 1700, "y": 800 },
+    { "x": 900, "y": 800 },
+    { "x": 1100, "y": 800 }
+  ],
+  "goal": {
+    "shape": { "kind": "rect", "x": 940, "y": 790, "w": 120, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 200, "y": 850, "w": 1600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 850, "y": 850, "w": 300, "h": 20 },
+      "material": "grease",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "lever-spot-a",
+      "kind": "lever",
+      "at": { "x": 700, "y": 800 },
+      "length": 60,
+      "threshold": 0.5,
+      "signal": "w2-c-lever-pulled"
+    },
+    {
+      "id": "lever-spot-b",
+      "kind": "lever",
+      "at": { "x": 1000, "y": 800 },
+      "length": 60,
+      "threshold": 0.5,
+      "signal": "w2-c-lever-pulled"
+    },
+    {
+      "id": "lever-spot-c",
+      "kind": "lever",
+      "at": { "x": 1300, "y": 800 },
+      "length": 60,
+      "threshold": 0.5,
+      "signal": "w2-c-lever-pulled"
+    },
+    {
+      "id": "relic-w2-c",
+      "kind": "relic",
+      "relicId": "w2-relic-showdown-c",
+      "at": { "x": 500, "y": 800 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "floor",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1000, "w": 2000, "h": 200 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w2-c-clock" },
+    { "kind": "flawless", "id": "w2-c-flawless" },
+    {
+      "kind": "haul",
+      "id": "w2-c-haul",
+      "relicIds": ["w2-relic-showdown-c"]
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "doodle",
+      "at": { "x": 1000, "y": 650 },
+      "sprite": "question-mark",
+      "scale": 1
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 950, "y": 900 },
+      "sprite": "ketchup-bottle",
+      "scale": 0.6
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 300, "y": 900 },
+      "r": 40
+    }
+  ],
+  "assistBeams": [],
+  "music": "w2-showdown",
+  "authorNotes": "Showdown / handle, 2-4 players, one shared central platform (compact, contested middle per §8.2). Three lever props (lever-spot-a/b/c) sit across the middle, all wired to the same 'w2-c-lever-pulled' signal — as with World 1's handle arena, the Prop contract has no 'inactive until selected' field, so the intended runtime behaviour (only one of the three is live per round, chosen at random, position rotating between the 3 spots per §8.2) is round logic the engine applies on top of this static data: enable exactly one of the three at round start (after the 5s delay), leave the other two inert. First player to cross that lever's threshold wins the round. A grease strip (850-1150) coats the platform directly under lever-spot-b, the middle and most contested spot — landing a grab there is less reliable than on the two dry spots either side, which is the arena's one piece of texture over the World 1 original. relic-w2-c is a bystander pickup near one spawn, unrelated to the win condition."
+}

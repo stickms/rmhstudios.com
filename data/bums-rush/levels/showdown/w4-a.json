@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "id": "w4-a",
+  "world": 4,
+  "index": 1,
+  "name": "bums.showdown.w4-a.name",
+  "minPlayers": 2,
+  "parSeconds": 45,
+  "bounds": { "x": 0, "y": 0, "w": 2300, "h": 1300 },
+  "palette": {
+    "paper": "#e9e0c7",
+    "ink": "#383d44",
+    "accent": "#8a3541",
+    "flashSafe": true,
+    "contrastRatio": 8.31
+  },
+  "spawn": [
+    { "x": 150, "y": 860 },
+    { "x": 210, "y": 860 },
+    { "x": 150, "y": 800 },
+    { "x": 210, "y": 800 }
+  ],
+  "goal": {
+    "shape": { "kind": "rect", "x": 2050, "y": 760, "w": 150, "h": 60 },
+    "requires": "any"
+  },
+  "checkpoints": [],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 450, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 750, "y": 860, "w": 550, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1600, "y": 820, "w": 650, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "swing-race-a",
+      "kind": "swing",
+      "at": { "x": 430, "y": 640 },
+      "length": 260,
+      "damping": 0.15
+    },
+    {
+      "id": "rope-race-b",
+      "kind": "rope",
+      "at": { "x": 1580, "y": 570 },
+      "segments": 12,
+      "stiffness": 0.35
+    },
+    {
+      "id": "relic-w4-a",
+      "kind": "relic",
+      "relicId": "w4-relic-showdown-a",
+      "at": { "x": 1000, "y": 830 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "gate-crusher",
+      "kind": "crusher",
+      "shape": { "kind": "rect", "x": 1050, "y": 650, "w": 120, "h": 150 },
+      "path": [
+        { "x": 1050, "y": 650 },
+        { "x": 1050, "y": 850 }
+      ],
+      "speed": 130
+    },
+    {
+      "id": "moat",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1150, "w": 2300, "h": 150 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w4-a-clock" },
+    { "kind": "flawless", "id": "w4-a-flawless" },
+    {
+      "kind": "haul",
+      "id": "w4-a-haul",
+      "relicIds": ["w4-relic-showdown-a"]
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "doodle",
+      "at": { "x": 1150, "y": 400 },
+      "sprite": "banner-crest",
+      "scale": 0.9
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 2100, "y": 1100 },
+      "r": 45
+    }
+  ],
+  "assistBeams": [],
+  "music": "w4-showdown",
+  "authorNotes": "Showdown / race, 2-4 players, everyone spawns together on the start dock. Two gaps, same reach budgets as the campaign (swing-race-a 260px, rope-race-b 300px), plus one shared hazard: gate-crusher patrols the middle pier's doorway on a y650-850 path at 130px/s, fast enough to matter and identical for every racer — nobody can hog or disable it, so it stays fair. No assist beams — Showdown is a contest, not a tutorial. goal.requires is 'any': the instant one player's head crosses the goal shape the round ends, matching §8.2's 'first to the goal wins'. relic-w4-a sits on the middle pier as an optional detour for the haul/flawless objectives, which score independently of who wins the round (§7's per-player scoring, not the win condition)."
+}

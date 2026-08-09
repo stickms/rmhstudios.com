@@ -1,0 +1,130 @@
+{
+  "version": 1,
+  "id": "w2-04",
+  "world": 2,
+  "index": 4,
+  "name": "bums.level.w2-04.name",
+  "minPlayers": 1,
+  "parSeconds": 88,
+  "bounds": { "x": 0, "y": 0, "w": 3400, "h": 1500 },
+  "palette": {
+    "paper": "#f3e2c4",
+    "ink": "#20160e",
+    "accent": "#c0392b",
+    "flashSafe": true,
+    "contrastRatio": 13.94
+  },
+  "spawn": [{ "x": 220, "y": 860 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 3200, "y": 740, "w": 120, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [{ "at": { "x": 2200, "y": 800 } }],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 650, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 2150, "y": 860, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 3050, "y": 800, "w": 350, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "belt-twist-forward",
+      "kind": "conveyor",
+      "at": { "x": 650, "y": 900 },
+      "size": { "x": 600, "y": 80 },
+      "speed": 100
+    },
+    {
+      "id": "belt-twist-reverse",
+      "kind": "conveyor",
+      "at": { "x": 1250, "y": 900 },
+      "size": { "x": 600, "y": 80 },
+      "speed": -90
+    },
+    {
+      "id": "rope-escape",
+      "kind": "rope",
+      "at": { "x": 1700, "y": 560 },
+      "segments": 14,
+      "stiffness": 0.4
+    },
+    {
+      "id": "pose-w2-04",
+      "kind": "poseOutline",
+      "poseId": "w2-pose-slip",
+      "tolerance": 45,
+      "at": { "x": 2300, "y": 800 }
+    },
+    {
+      "id": "swing-final",
+      "kind": "swing",
+      "at": { "x": 2950, "y": 610 },
+      "length": 260,
+      "damping": 0.2
+    }
+  ],
+  "hazards": [
+    {
+      "id": "floor",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1400, "w": 3400, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w2-04-clock" },
+    { "kind": "flawless", "id": "w2-04-flawless" },
+    {
+      "kind": "pose",
+      "id": "w2-04-pose",
+      "poseId": "w2-pose-slip"
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 120, "y": 760 },
+      "textKey": "bums.level.w2-04.note-belt-promise",
+      "width": 260
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 1550, "y": 700 },
+      "to": { "x": 1700, "y": 620 }
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 1550, "y": 830 },
+      "sprite": "conveyor-gear",
+      "angle": 3.14,
+      "scale": 0.9
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 2300, "y": 760 },
+      "sprite": "chalk-outline",
+      "scale": 1
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 2950, "y": 1370 },
+      "r": 45
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 1250, "y": 900 }, { "x": 2150, "y": 860 }], "thickness": 12 },
+    { "kind": "chain", "points": [{ "x": 2750, "y": 860 }, { "x": 3050, "y": 800 }], "thickness": 10 }
+  ],
+  "music": "w2-sizzle-street",
+  "authorNotes": "Solo. The twist: a sticky note at spawn promises the belt runs straight through to the mid counter. belt-twist-forward (650,900 to 1250,900, speed 100) does exactly that for its first 600px — then belt-twist-reverse (1250,900 to 1850,900, speed -90) starts immediately after with no seam, and simply riding on carries you backward toward where you started rather than onward. The actual solve is to grab rope-escape (anchor 1700,560, 14 segments), which hangs directly above the reversing stretch, and swing off it the remaining ~300px to the mid counter at 2150 rather than trusting the belt the whole way — nobody dies for trusting it (there is nothing but the reversing belt and the counters on either side of it, so the worst case is riding back and forth until you grab up), it is simply not the straight ride the note implied. pose-w2-04 sits right where you land (2300,800): fit the chalk outline (poseId w2-pose-slip, tolerance 45) for the pose objective — a comedic 'flat on your back' pose that only makes sense once you've actually fought the belt. swing-final (pivot 2950,610, 300px) closes the last stretch of real void to the goal counter. A thick assist beam spans the whole reversing section for players who'd rather skip the twist entirely and grab straight across; a second, thinner beam covers the final swing gap."
+}

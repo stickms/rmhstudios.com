@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "id": "w3-09",
+  "world": 3,
+  "index": 9,
+  "name": "bums.level.w3-09.name",
+  "minPlayers": 1,
+  "parSeconds": 76,
+  "bounds": { "x": 0, "y": 0, "w": 4400, "h": 1700 },
+  "palette": {
+    "paper": "#f7e6ba",
+    "ink": "#1e1418",
+    "accent": "#c8102e",
+    "flashSafe": true,
+    "contrastRatio": 14.53
+  },
+  "spawn": [{ "x": 220, "y": 860 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 3600, "y": 640, "w": 130, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [{ "at": { "x": 1500, "y": 740 } }],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 650, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1450, "y": 800, "w": 950, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 3300, "y": 700, "w": 700, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "trapeze-buildup-1",
+      "kind": "swing",
+      "at": { "x": 650, "y": 600 },
+      "length": 300,
+      "damping": 0.1
+    },
+    {
+      "id": "trapeze-buildup-2",
+      "kind": "swing",
+      "at": { "x": 1150, "y": 520 },
+      "length": 340,
+      "damping": 0.08
+    },
+    {
+      "id": "cannon-finale",
+      "kind": "popCannon",
+      "at": { "x": 2280, "y": 750 },
+      "angle": -0.35,
+      "power": 85,
+      "cooldownMs": 2500,
+      "arc": 0.06
+    },
+    {
+      "id": "trapeze-alt-1",
+      "kind": "swing",
+      "at": { "x": 2400, "y": 470 },
+      "length": 380,
+      "damping": 0.08
+    },
+    {
+      "id": "trapeze-alt-2",
+      "kind": "swing",
+      "at": { "x": 2850, "y": 420 },
+      "length": 380,
+      "damping": 0.08
+    }
+  ],
+  "hazards": [
+    {
+      "id": "pit",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1600, "w": 4400, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w3-09-clock" },
+    { "kind": "flawless", "id": "w3-09-flawless" },
+    {
+      "kind": "snapshot",
+      "id": "w3-09-cannonball",
+      "predicate": { "allAirborne": true, "anyInverted": true }
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 120, "y": 700 },
+      "textKey": "bums.level.w3-09.note-finale",
+      "width": 280
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 1900, "y": 250 },
+      "sprite": "big-top-tent",
+      "scale": 2
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 2280, "y": 550 },
+      "sprite": "cannon-sparkle",
+      "scale": 1.4
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 3550, "y": 550 },
+      "sprite": "confetti-burst",
+      "scale": 1.6
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 350, "y": 780 },
+      "sprite": "ringmaster-hat",
+      "scale": 0.7
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 2050, "y": 780 },
+      "to": { "x": 2260, "y": 760 }
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 4100, "y": 1550 },
+      "r": 60
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 650, "y": 900 }, { "x": 1450, "y": 800 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 2400, "y": 850 }, { "x": 3300, "y": 700 }], "thickness": 14 }
+  ],
+  "music": "w3-big-tent-bother",
+  "authorNotes": "Solo. The set piece: the human-cannonball finale. Two trapezes (trapeze-buildup-1, then trapeze-buildup-2, both low-damping and pivoted flush with their departure edges, the world's standard vocabulary since 02) carry the player from the starting pier onto the long staging pier, where the checkpoint sits right in front of cannon-finale. The intended showstopper is the same trick 04 taught: grip the barrel with one hand, let your own head rest in its mouth, and use-item fires you the full ~900px across the finale gap in one shot (power 85, a tight 0.06 arc for drama) — the human cannonball, landing inside the big top on the goal pier. A player who would rather not self-launch has a full manual alternative built from the same low-damping trapeze vocabulary: trapeze-alt-1 and trapeze-alt-2 chain two long swings across the same gap, each release timed off the top of its arc, landing within reach of the goal pier's edge; a thick assist beam also spans the whole finale gap directly for anyone who wants neither. The photo objective (allAirborne + anyInverted) is easiest at the peak of the cannon shot's arc, spinning — this is the game's iconic screenshot, and it does not require a second player to get it, unlike 08's pyramid. Both gaps carry an assist beam at the usual Clock cost; the finale one is drawn extra thick, matching the scale of the moment."
+}

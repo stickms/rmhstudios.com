@@ -1,0 +1,123 @@
+{
+  "version": 1,
+  "id": "w3-01",
+  "world": 3,
+  "index": 1,
+  "name": "bums.level.w3-01.name",
+  "minPlayers": 1,
+  "parSeconds": 43,
+  "bounds": { "x": 0, "y": 0, "w": 3000, "h": 1500 },
+  "palette": {
+    "paper": "#f7e6ba",
+    "ink": "#1e1418",
+    "accent": "#c8102e",
+    "flashSafe": true,
+    "contrastRatio": 14.53
+  },
+  "spawn": [{ "x": 220, "y": 860 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 2700, "y": 560, "w": 120, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 700, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 650, "y": 1150, "w": 1700, "h": 60 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1150, "y": 760, "w": 700, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 2350, "y": 620, "w": 650, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "trampoline-teach-1",
+      "kind": "trampoline",
+      "at": { "x": 600, "y": 870 },
+      "size": { "x": 160, "y": 30 },
+      "bounce": 1.0
+    },
+    {
+      "id": "trampoline-teach-2",
+      "kind": "trampoline",
+      "at": { "x": 1720, "y": 730 },
+      "size": { "x": 160, "y": 30 },
+      "bounce": 1.05
+    },
+    {
+      "id": "camera-1",
+      "kind": "camera",
+      "at": { "x": 300, "y": 850 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "pit",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1400, "w": 3000, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w3-01-clock" },
+    { "kind": "flawless", "id": "w3-01-flawless" },
+    {
+      "kind": "snapshot",
+      "id": "w3-01-photo",
+      "predicate": { "allAirborne": true }
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 120, "y": 760 },
+      "textKey": "bums.level.w3-01.note-bounce",
+      "width": 260
+    },
+    {
+      "kind": "note",
+      "at": { "x": 520, "y": 600 },
+      "textKey": "bums.level.w3-01.note-timing",
+      "width": 240
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 1500, "y": 200 },
+      "sprite": "big-top-tent",
+      "scale": 1.4
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 300, "y": 700 },
+      "sprite": "ringmaster-hat",
+      "scale": 0.6
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 300, "y": 800 },
+      "to": { "x": 600, "y": 830 }
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 2450, "y": 900 },
+      "r": 50
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 1880, "y": 780 }, { "x": 2350, "y": 650 }], "thickness": 10 }
+  ],
+  "music": "w3-big-tent-bother",
+  "authorNotes": "Solo, no chain required. This is World 3's Teach: the trampoline, alone. Spawn on the starting pier and walk onto trampoline-teach-1 (flush with the pier's own floor height, a springboard rather than a separate jump) to bounce the ~550px gap up onto the middle pier — a wide sawdust safety-net floor spans the entire width beneath both trampoline crossings (650 to 2350), so any missed timing in this first ~20-30s just drops the player onto solid net, never into the pit. From the middle pier, trampoline-teach-2 bounces the second, slightly taller gap up onto the goal pier; camera-1 sits at spawn for the photo objective (predicate allAirborne), which triggers naturally at the top of either bounce. Only the second gap (middle pier to goal pier) is over the real void hazard, so it is the first point in the level an unforced error actually costs a life; a striped assist beam spans that same gap for players who'd rather not trust the bounce, at the Clock objective's usual cost. No swings, ropes or the pop cannon yet — those are 02 onward."
+}

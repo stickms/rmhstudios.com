@@ -1,0 +1,123 @@
+{
+  "version": 1,
+  "id": "w1-01",
+  "world": 1,
+  "index": 1,
+  "name": "bums.level.w1-01.name",
+  "minPlayers": 1,
+  "parSeconds": 45,
+  "bounds": { "x": 0, "y": 0, "w": 3000, "h": 1400 },
+  "palette": {
+    "paper": "#f4ead6",
+    "ink": "#1e2430",
+    "accent": "#2a7fbf",
+    "flashSafe": true,
+    "contrastRatio": 13.02
+  },
+  "spawn": [{ "x": 220, "y": 860 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 2600, "y": 740, "w": 120, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 700, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 650, "y": 1150, "w": 400, "h": 60 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 960, "y": 860, "w": 650, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1890, "y": 800, "w": 900, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1500, "y": 250, "w": 30, "h": 330 },
+      "material": "paper",
+      "render": "pinned",
+      "grabbable": false
+    }
+  ],
+  "props": [
+    {
+      "id": "swing-tutorial",
+      "kind": "swing",
+      "at": { "x": 680, "y": 640 },
+      "length": 260,
+      "damping": 0.25
+    },
+    {
+      "id": "swing-crossing",
+      "kind": "swing",
+      "at": { "x": 1610, "y": 590 },
+      "length": 250,
+      "damping": 0.15
+    },
+    {
+      "id": "camera-1",
+      "kind": "camera",
+      "at": { "x": 300, "y": 850 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "sea",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1300, "w": 3000, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w1-01-clock" },
+    { "kind": "flawless", "id": "w1-01-flawless" },
+    {
+      "kind": "snapshot",
+      "id": "w1-01-photo",
+      "predicate": { "anyInverted": true }
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 120, "y": 760 },
+      "textKey": "bums.level.w1-01.note-aim",
+      "width": 260
+    },
+    {
+      "kind": "note",
+      "at": { "x": 720, "y": 560 },
+      "textKey": "bums.level.w1-01.note-swing",
+      "width": 240
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 1515, "y": 260 },
+      "sprite": "crane-silhouette",
+      "scale": 1
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 300, "y": 800 },
+      "to": { "x": 620, "y": 780 }
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 2450, "y": 830 },
+      "r": 40
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 1580, "y": 900 }, { "x": 1900, "y": 860 }], "thickness": 10 }
+  ],
+  "music": "w1-doodle-docks",
+  "authorNotes": "Solo, no chain required. Spawn on the starting pier and swing (swing-tutorial, pivot ~680,640) across the 260px gap to the middle pier — a safety-net plank sits directly beneath this whole gap, so a missed grab or a bad release in the first ~20s of play lands the player back on solid ground, never in the sea. Grab camera-1 near spawn on the way past (it is off the direct line so picking it up is optional but convenient) to be ready for the photo objective, then hang upside-down at the top of either swing's arc and use it (predicate anyInverted) for w1-01-photo. Cross the second gap on swing-crossing (pivot ~1610,590, 250px reach to the goal pier) — this crossing is over the real void hazard, so it is the first point in the level an unforced error actually costs a life; an assist beam (striped chain) spans the same gap for players who want it, at the Clock objective's usual cost. No relics, ropes or crates yet — those are levels 02+."
+}

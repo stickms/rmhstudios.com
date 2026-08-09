@@ -1,0 +1,118 @@
+{
+  "version": 1,
+  "id": "w1-02",
+  "world": 1,
+  "index": 2,
+  "name": "bums.level.w1-02.name",
+  "minPlayers": 1,
+  "parSeconds": 76,
+  "bounds": { "x": 0, "y": 0, "w": 3050, "h": 1500 },
+  "palette": {
+    "paper": "#f4ead6",
+    "ink": "#1e2430",
+    "accent": "#2a7fbf",
+    "flashSafe": true,
+    "contrastRatio": 13.02
+  },
+  "spawn": [{ "x": 220, "y": 860 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 2620, "y": 740, "w": 120, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [{ "at": { "x": 1250, "y": 800 } }],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 650, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 940, "y": 860, "w": 700, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1920, "y": 820, "w": 900, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1150, "y": 620, "w": 180, "h": 40 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "swing-drop",
+      "kind": "swing",
+      "at": { "x": 795, "y": 600 },
+      "length": 290,
+      "damping": 0.2
+    },
+    {
+      "id": "rope-reach",
+      "kind": "rope",
+      "at": { "x": 1780, "y": 550 },
+      "segments": 14,
+      "stiffness": 0.4
+    },
+    {
+      "id": "camera-2",
+      "kind": "camera",
+      "at": { "x": 400, "y": 850 }
+    },
+    {
+      "id": "parcel-w1-02",
+      "kind": "parcel",
+      "parcelId": "w1-parcel-01",
+      "at": { "x": 1235, "y": 660 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "sea",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1350, "w": 3050, "h": 150 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w1-02-clock" },
+    { "kind": "flawless", "id": "w1-02-flawless" },
+    {
+      "kind": "snapshot",
+      "id": "w1-02-photo",
+      "predicate": { "allAirborne": true }
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 980, "y": 560 },
+      "textKey": "bums.level.w1-02.note-rope",
+      "width": 240
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 1650, "y": 700 },
+      "to": { "x": 1790, "y": 640 }
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 1235, "y": 620 },
+      "sprite": "crate-stack",
+      "scale": 0.8
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 2000, "y": 1250 },
+      "r": 55
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 620, "y": 900 }, { "x": 970, "y": 860 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 1610, "y": 860 }, { "x": 1950, "y": 820 }], "thickness": 10 }
+  ],
+  "music": "w1-doodle-docks",
+  "authorNotes": "Solo. This is the first level where a fall is unpadded — there is no safety net under either gap, only the sea. Grab camera-2 near spawn, then take swing-drop (pivot 795,600; 290px gap, right at the single-swing budget) off the starting pier. On the middle pier, a sticky note and an arrow point up to rope-reach (anchor 1780,550) hanging over the second 280px gap — climb up the short ledge, grab the rope near its anchor, and swing it the same way as a bar; a hidden parcel sits on the same short ledge for players who look up instead of straight ahead. The checkpoint sits on the middle pier so a death on either gap only replays that gap. Photo objective (allAirborne) is easiest to trigger at the top of the rope's swing, before the drop onto the goal pier. Both assist beams are present for players who want them, at the usual Clock cost."
+}

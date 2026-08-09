@@ -1,0 +1,99 @@
+{
+  "version": 1,
+  "id": "w1-a",
+  "world": 1,
+  "index": 1,
+  "name": "bums.showdown.w1-a.name",
+  "minPlayers": 2,
+  "parSeconds": 45,
+  "bounds": { "x": 0, "y": 0, "w": 2100, "h": 1200 },
+  "palette": {
+    "paper": "#f4ead6",
+    "ink": "#1e2430",
+    "accent": "#2a7fbf",
+    "flashSafe": true,
+    "contrastRatio": 13.02
+  },
+  "spawn": [
+    { "x": 150, "y": 860 },
+    { "x": 210, "y": 860 },
+    { "x": 150, "y": 800 },
+    { "x": 210, "y": 800 }
+  ],
+  "goal": {
+    "shape": { "kind": "rect", "x": 1750, "y": 760, "w": 150, "h": 60 },
+    "requires": "any"
+  },
+  "checkpoints": [],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 400, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 660, "y": 860, "w": 500, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1430, "y": 820, "w": 500, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "swing-race-a",
+      "kind": "swing",
+      "at": { "x": 530, "y": 600 },
+      "length": 240,
+      "damping": 0.15
+    },
+    {
+      "id": "rope-race-b",
+      "kind": "rope",
+      "at": { "x": 1300, "y": 550 },
+      "segments": 12,
+      "stiffness": 0.35
+    },
+    {
+      "id": "relic-w1-a",
+      "kind": "relic",
+      "relicId": "w1-relic-showdown-a",
+      "at": { "x": 900, "y": 820 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "sea",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1100, "w": 2100, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w1-a-clock" },
+    { "kind": "flawless", "id": "w1-a-flawless" },
+    {
+      "kind": "haul",
+      "id": "w1-a-haul",
+      "relicIds": ["w1-relic-showdown-a"]
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "doodle",
+      "at": { "x": 1000, "y": 400 },
+      "sprite": "checkered-flag",
+      "scale": 0.9
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 1900, "y": 1050 },
+      "r": 45
+    }
+  ],
+  "assistBeams": [],
+  "music": "w1-showdown",
+  "authorNotes": "Showdown / race, 2-4 players, everyone spawns together on the start dock. Two gaps, same reach budgets as the campaign (swing-race-a 260px, rope-race-b 270px), no assist beams — Showdown is a contest, not a tutorial. goal.requires is 'any': the instant one player's head crosses the goal shape the round ends, matching §8.2's 'first to the goal wins'. relic-w1-a sits on the middle pier as an optional detour for the haul/flawless objectives, which score independently of who wins the round (§7's per-player scoring, not the win condition)."
+}

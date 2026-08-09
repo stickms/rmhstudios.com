@@ -1,0 +1,153 @@
+{
+  "version": 1,
+  "id": "w2-09",
+  "world": 2,
+  "index": 9,
+  "name": "bums.level.w2-09.name",
+  "minPlayers": 1,
+  "parSeconds": 76,
+  "bounds": { "x": 0, "y": 0, "w": 3200, "h": 2300 },
+  "palette": {
+    "paper": "#f3e2c4",
+    "ink": "#20160e",
+    "accent": "#c0392b",
+    "flashSafe": true,
+    "contrastRatio": 13.94
+  },
+  "spawn": [{ "x": 220, "y": 1750 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 2000, "y": 740, "w": 120, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [{ "at": { "x": 1300, "y": 1150 } }],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 1800, "w": 650, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1820, "y": 800, "w": 580, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 650, "y": 300, "w": 40, "h": 1600 },
+      "material": "paper",
+      "render": "pinned",
+      "grabbable": false
+    }
+  ],
+  "props": [
+    {
+      "id": "camera-9",
+      "kind": "camera",
+      "at": { "x": 330, "y": 1740 }
+    },
+    {
+      "id": "flood-lift-1",
+      "kind": "platformMoving",
+      "at": { "x": 780, "y": 1680 },
+      "size": { "x": 220, "y": 40 },
+      "path": [
+        { "x": 780, "y": 1680 },
+        { "x": 950, "y": 1500 }
+      ],
+      "speed": 20,
+      "loop": false,
+      "material": "paper",
+      "angle": 0
+    },
+    {
+      "id": "flood-lift-2",
+      "kind": "platformMoving",
+      "at": { "x": 1000, "y": 1450 },
+      "size": { "x": 220, "y": 40 },
+      "path": [
+        { "x": 1000, "y": 1450 },
+        { "x": 1250, "y": 1220 }
+      ],
+      "speed": 26,
+      "loop": false,
+      "material": "paper",
+      "angle": 0.15
+    },
+    {
+      "id": "flood-lift-3",
+      "kind": "platformMoving",
+      "at": { "x": 1300, "y": 1170 },
+      "size": { "x": 220, "y": 40 },
+      "path": [
+        { "x": 1300, "y": 1170 },
+        { "x": 1600, "y": 900 }
+      ],
+      "speed": 32,
+      "loop": false,
+      "material": "paper",
+      "angle": 0.3
+    },
+    {
+      "id": "swing-flood-final",
+      "kind": "swing",
+      "at": { "x": 1750, "y": 700 },
+      "length": 220,
+      "damping": 0.2
+    }
+  ],
+  "hazards": [
+    {
+      "id": "drain",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 2250, "w": 3200, "h": 50 }
+    },
+    {
+      "id": "flood",
+      "kind": "crusher",
+      "shape": { "kind": "rect", "x": 0, "y": 2200, "w": 3200, "h": 500 },
+      "path": [
+        { "x": 0, "y": 2200 },
+        { "x": 0, "y": 400 }
+      ],
+      "speed": 40
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w2-09-clock" },
+    { "kind": "flawless", "id": "w2-09-flawless" },
+    {
+      "kind": "snapshot",
+      "id": "w2-09-photo",
+      "predicate": { "allAirborne": true }
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 120, "y": 1650 },
+      "textKey": "bums.level.w2-09.note-flood",
+      "width": 260
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 670, "y": 350 },
+      "sprite": "ketchup-bottle",
+      "scale": 1.8
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 500, "y": 1740 },
+      "to": { "x": 770, "y": 1690 }
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 2600, "y": 2150 },
+      "r": 70
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 650, "y": 1800 }, { "x": 780, "y": 1680 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 1600, "y": 900 }, { "x": 1820, "y": 800 }], "thickness": 10 }
+  ],
+  "music": "w2-sizzle-street",
+  "authorNotes": "Solo. The set piece: the kitchen floods with ketchup from below. The flood hazard (0,2200 rising to 0,400 at 40px/s, per design) is a crusher whose path climbs the full height of the level — it starts below the starting counter, so it is not an immediate threat, and grab camera-9 (330,1740) at spawn before it becomes one. A thin static void strip (0,2250) sits beneath the very start, punishing anyone knocked off before the flood even arrives, same trick as the World 1 Showdown tide. The escape is three flood-lift platforms (flood-lift-1/2/3), each drifting once (loop: false) along a short rising path and holding at the end, climbed back-to-back for a continuous ascent whose static angle steps up each time (0, 0.15, 0.3 rad) so the structure reads as increasingly tilted the higher you climb — the same translate-and-step approximation w1-09's crane used for the same reason: Prop.angle has no time-animated rotation field in the current contract, so a truly rotating rigid body is out of this ticket's scope (types.ts is not mine to edit). The checkpoint sits at flood-lift-2's landing (1300,1150) so a fall partway up the climb doesn't send you back to the floor. swing-flood-final (pivot 1750,700, 220px) closes the last gap into the goal counter (1820-2400) with the flood by now a receding memory below. camera-9 makes the photo objective (allAirborne) easiest between lift segments. Two short assist beams bridge the first mount and the last gap for a party that would rather not trust the ketchup's patience."
+}
