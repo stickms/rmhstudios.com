@@ -1,4 +1,5 @@
 import { ImgHTMLAttributes, memo } from 'react';
+import { IMAGE_VARIANTS, variantUrl } from '@/lib/images/variants.gen';
 
 interface OptimizedImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'srcSet'> {
  /** Image source URL */
@@ -56,7 +57,20 @@ export function buildOptimizedUrl(src: string, w?: number, q?: number, f?: strin
  return qs ? `${src}?${qs}` : src;
  }
 
- // Local/static paths (e.g. /images/...) — serve as-is, no optimization available
+ // Static assets under public/images/** with build-time variants (OPT-24).
+ // `scripts/gen-image-variants.ts` emits /images/_variants/<stem>-<w>.webp and
+ // records what it wrote in variants.gen.ts, so this only ever points at a
+ // file that exists — an image missing from the manifest falls through to the
+ // as-is branch below and behaves exactly as it did before.
+ const entry = w ? IMAGE_VARIANTS[src] : undefined;
+ if (entry) {
+ // Smallest variant that still covers the requested width; otherwise the
+ // largest one we have (never upscale past the source).
+ const pick = entry.widths.find((candidate) => candidate >= w!) ?? entry.widths.at(-1)!;
+ return variantUrl(src, pick) ?? src;
+ }
+
+ // Other local/static paths — serve as-is, no optimization available.
  if (src.startsWith('/')) {
  return src;
  }
@@ -75,10 +89,21 @@ export function buildOptimizedUrl(src: string, w?: number, q?: number, f?: strin
  * can't be, so callers fall back to serving them as-is. */
 export function isOptimizable(src: string): boolean {
  if (RESIZABLE_PREFIXES.some((p) => src.startsWith(p))) return true;
+ // Static art with build-time variants (OPT-24) is resizable too — it just
+ // resolves to a pre-generated file instead of an on-demand resize.
+ if (IMAGE_VARIANTS[src]) return true;
  return !src.startsWith('/');
 }
 
 export function generateSrcSet(src: string, quality?: number, format?: string): string {
+ // A build-time-variant image advertises exactly the widths that were
+ // generated. Running it through `WIDTHS` instead would emit descriptors that
+ // lie — `…-640.webp 480w` claims a 640px file is 480px wide, and the browser
+ // picks its candidate from the descriptor, not from the file.
+ const entry = IMAGE_VARIANTS[src];
+ if (entry) {
+ return entry.widths.map((w) => `${variantUrl(src, w)} ${w}w`).join(', ');
+ }
  return WIDTHS
  .map((w) => `${buildOptimizedUrl(src, w, quality, format)} ${w}w`)
  .join(', ');

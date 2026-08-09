@@ -424,6 +424,21 @@ else
     else
       skip "docs freshness" "registry/catalog/routes untouched"
     fi
+
+    # A new game's art dropped into public/images/** without regenerating
+    # lib/images/variants.gen.ts does not break anything — it silently serves
+    # the full-size master, which is exactly the 2 MB /games page the
+    # 2026-08-09 loading audit was about. Failing loudly here is the only way
+    # that stays fixed.
+    if has '^(public/images/|lib/images/variants\.gen\.ts$)'; then
+      if pnpm run images:variants:check; then
+        pass "image variant manifest is current"
+      else
+        fail "image variants are stale — run pnpm images:variants"
+      fi
+    else
+      skip "image variants" "public/images untouched"
+    fi
   fi
 fi
 

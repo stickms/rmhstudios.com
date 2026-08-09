@@ -268,6 +268,19 @@ export default defineConfig({
       // header keeps the immutable default, while a hand-copied one pins the
       // value and stops tracking it.
       routeRules: {
+        // The responsive variants under /images/_variants/** ARE content-hashed
+        // (scripts/gen-image-variants.ts puts the master's hash in the
+        // filename), so they can take the same immutable year the build's
+        // /assets/** output gets: changing the art changes the URL, so a cache
+        // entry can never go stale. This must come BEFORE the '/images/**'
+        // rule — Nitro applies the more specific match, and without it the
+        // variants would inherit the 30-day revalidating window below.
+        '/images/_variants/**': {
+          headers: { 'cache-control': 'public, max-age=31536000, immutable' },
+        },
+        // The masters keep a revalidating window: they are referenced by plain
+        // string path from the catalog, so a redeploy that changes one must be
+        // able to take effect.
         '/images/**': { headers: { 'cache-control': 'public, max-age=2592000' } },
       },
       // traceDeps externalizes packages from Nitro's Rolldown server bundle and

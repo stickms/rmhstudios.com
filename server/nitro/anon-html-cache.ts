@@ -76,6 +76,10 @@
  */
 const AUTHENTICATED_CACHE_CONTROL = 'private, no-cache, max-age=0, must-revalidate';
 
+// Shared with security-headers.ts: both plugins hook `response`, and both need
+// the headers of the response that is actually being sent.
+import { responseHeaders } from './security-headers';
+
 /**
  * Exact paths whose HTML is byte-identical for every signed-out, default-locale
  * visitor and therefore safe to share at the edge. Keep this list audited —
@@ -258,9 +262,11 @@ export default function anonHtmlCachePlugin(nitroApp: {
   nitroApp.hooks.hook('response', (res: unknown, event: unknown) => {
     try {
       const req = (event as { req?: { url?: string; method?: string; headers?: Headers } })?.req;
-      const headers =
-        (event as { res?: { headers?: Headers } })?.res?.headers ??
-        (res as { headers?: Headers })?.headers;
+      // Must read the headers off `res`, not `event.res` — see the note on
+      // `responseHeaders`. Reading `event.res` inside a `response` hook builds a
+      // brand-new detached response object, so every header set on it was
+      // silently dropped and this plugin never marked anything cacheable.
+      const headers = responseHeaders(res, event);
       if (
         !req ||
         !headers ||
