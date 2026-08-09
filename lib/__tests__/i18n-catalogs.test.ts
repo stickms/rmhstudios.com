@@ -443,6 +443,18 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'library-add',
     'assist-tick',
     'assist-tick-hint',
+    // ── V7 stage backdrops (2026-08-09) ─────────────────────────────────
+    // The backdrop picker in `SettingsPanel.tsx`. English-only until
+    // `pnpm i18n:translate && pnpm i18n:resources` runs — the pipeline needs
+    // DEEPSEEK_API_KEY, which is not available in this environment. Runtime
+    // falls back to English per key.
+    'backdrop',
+    'backdrop-aurora',
+    'backdrop-bars',
+    'backdrop-hint',
+    'backdrop-label',
+    'backdrop-none',
+    'backdrop-pulse',
     'combo-center',
     'combo-hidden',
     'combo-left',
