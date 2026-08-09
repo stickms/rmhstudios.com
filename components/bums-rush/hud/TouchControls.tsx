@@ -32,7 +32,7 @@
  * inset — checked in LANDSCAPE, where the notch takes a long edge.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { MutableRefObject, PointerEvent as ReactPointerEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Hand, MessageCircle, PackageOpen, Sparkles } from 'lucide-react';
@@ -61,12 +61,50 @@ interface TouchControlsProps {
 /** How long a stick sits still before it fades back to 30% (§12.2). */
 const IDLE_FADE_MS = 2000;
 
+/**
+ * The sticks are RELATIVE — they originate wherever the thumb lands, so there
+ * is deliberately nothing on screen until you touch (§12.2). That is right for
+ * the second level and wrong for the first: a player who has never held this
+ * game sees a level, a timer, three verb buttons, and no hint that the two
+ * halves of the screen are their arms.
+ *
+ * So: one ghost prompt per half, on the first touch level ever played, gone the
+ * instant a thumb lands and never shown again. Stored rather than shown once
+ * per mount because remounting on every retry would make it nag exactly the
+ * player who is already struggling.
+ */
+const HINT_KEY = 'bums-rush:touch-hint-seen:v1';
+
+function hintAlreadySeen(): boolean {
+  try {
+    return localStorage.getItem(HINT_KEY) === '1';
+  } catch {
+    // Private mode / storage disabled: show the hint. Showing it twice is a far
+    // smaller cost than a player who never learns the control.
+    return false;
+  }
+}
+
+function rememberHintSeen(): void {
+  try {
+    localStorage.setItem(HINT_KEY, '1');
+  } catch {
+    /* nothing to do — see above */
+  }
+}
+
 export function TouchControls({ scheme, seat, stateRef, buttonsRef, active }: TouchControlsProps) {
   const { t } = useTranslation('c-bums-rush');
   const layerRef = useRef<HTMLDivElement | null>(null);
   const sticks = useRef<Record<ArmSide, HTMLDivElement | null>>({ l: null, r: null });
   const knobs = useRef<Record<ArmSide, HTMLDivElement | null>>({ l: null, r: null });
   const fadeTimers = useRef<Record<ArmSide, number | null>>({ l: null, r: null });
+  // Read lazily: `localStorage` is not available during SSR, and this component
+  // is inside a client-only tree but the module is still evaluated on the server.
+  const [showHint, setShowHint] = useState(false);
+  useEffect(() => {
+    if (!hintAlreadySeen()) setShowHint(true);
+  }, []);
 
   useEffect(() => {
     const timers = fadeTimers.current;
@@ -129,6 +167,11 @@ export function TouchControls({ scheme, seat, stateRef, buttonsRef, active }: To
     const side = armForTouchX(x, width);
     event.currentTarget.setPointerCapture?.(event.pointerId);
 
+    if (showHint) {
+      setShowHint(false);
+      rememberHintSeen();
+    }
+
     if (scheme === 'two-stick') {
       // The base is fixed; the finger only supplies the deflection. Claiming at
       // the base and immediately moving to the finger gives the input layer the
@@ -184,6 +227,34 @@ export function TouchControls({ scheme, seat, stateRef, buttonsRef, active }: To
         onPointerCancel={handleUp}
         onLostPointerCapture={handleUp}
       >
+        {showHint ? (
+          <div
+            className="pointer-events-none absolute inset-0 flex items-center"
+            aria-hidden="true"
+          >
+            {(['l', 'r'] as const).map((side) => (
+              <div key={side} className="flex flex-1 flex-col items-center gap-2">
+                <div
+                  className="rounded-full border-2 border-dashed opacity-45"
+                  style={{
+                    width: 'clamp(4.5rem, 16vmin, 8rem)',
+                    height: 'clamp(4.5rem, 16vmin, 8rem)',
+                    borderColor: `var(--bum-seat-${seat + 1})`,
+                  }}
+                />
+                <span
+                  className="rounded-bum bg-bum-surface px-2 py-1 text-bum-ink opacity-80"
+                  style={{ fontSize: 'clamp(0.65rem, 2.6vmin, 0.9rem)' }}
+                >
+                  {side === 'l'
+                    ? t('touch.hint-left', { defaultValue: 'Drag here for your left arm' })
+                    : t('touch.hint-right', { defaultValue: 'Drag here for your right arm' })}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
         {(['l', 'r'] as const).map((side) => (
           <div
             key={side}
