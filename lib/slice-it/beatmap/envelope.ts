@@ -33,7 +33,12 @@
 export const ENVELOPE_RATE = 200;
 
 export interface PeakEnvelope {
-  /** Samples per second. Stored rather than assumed, so the rate can change later. */
+  /**
+   * Samples per second. Stored rather than assumed, so the rate can change later.
+   *
+   * The rate the buckets were ACTUALLY built at, which is not always the one
+   * that was asked for — see {@link computeEnvelope}. Rarely a round number.
+   */
   rate: number;
   /** Base64 of one unsigned byte per sample: peak absolute amplitude, 0–255. */
   data: string;
@@ -53,6 +58,24 @@ export function computeEnvelope(
   rate = ENVELOPE_RATE,
 ): PeakEnvelope {
   const perBucket = Math.max(1, Math.round(sampleRate / rate));
+  // The rate the buckets are really at, which is the requested one only when the
+  // sample rate divides it. It does not: the analysis signal is 22 050 Hz and
+  // `perBucket` rounds 110.25 to 110, so the true rate is 200.4545 and a reader
+  // that assumes 200 drifts 0.23% — an inaudible 6 ms at the start of a track
+  // and **half a second** by the end of a four-minute one.
+  //
+  // That was not a theoretical error. It is the timebase the editor's waveform
+  // is drawn against, and a waveform whose transients slide away from the notes
+  // they belong to over the course of a song defeats the one thing the waveform
+  // is there for. V7's `bars` backdrop reads the same curve and would have
+  // scrolled visibly out of time with the music it was drawing.
+  //
+  // Fixed here rather than at the readers because this is the only place that
+  // knows `perBucket`. Nothing needs a migration: `rate` has always travelled
+  // with the data and every reader already takes it from there, so a stored
+  // envelope keeps its old rate (and its old drift) until the song is next
+  // analysed, and new ones are simply right.
+  const trueRate = sampleRate > 0 && Number.isFinite(sampleRate) ? sampleRate / perBucket : rate;
   const buckets = Math.max(0, Math.ceil(samples.length / perBucket));
   const bytes = new Uint8Array(buckets);
 
@@ -71,7 +94,7 @@ export function computeEnvelope(
     bytes[b] = peak >= 1 ? 255 : Math.round(peak * 255);
   }
 
-  return { rate, data: bytesToBase64(bytes) };
+  return { rate: trueRate, data: bytesToBase64(bytes) };
 }
 
 /** Decode a stored envelope back to bytes. Returns an empty array for junk. */

@@ -79,21 +79,22 @@ model User {
   dreamRiftCoopRuns    DreamRiftCoopRun[]
   farmingSimFarm       FarmingSimFarm?
   gabrielsHornProfile  GabrielsHornPlayer?
+  bumsRushProfile      BumsRushProfile?
 
   // Massive March: campaigns this account owns, and the ones it has walked.
   massiveMarchCampaigns   MassiveMarchCampaign[]
   massiveMarchMemberships MassiveMarchMember[]
 
   // Slice-It Library Relations
-  uploadedSongs Song[]            @relation("SongUploader")
-  songLikes     SongLike[]
-  songRatings   SongRating[]
-  songComments  SongComment[]
-  songScores    SongLeaderboard[]
-  songPlays     SongPlay[]
-  sliceRuns     SliceRun[]
-  authoredCharts Chart[]           @relation("ChartAuthor")
-  chartReviews  ChartReview[]
+  uploadedSongs     Song[]            @relation("SongUploader")
+  songLikes         SongLike[]
+  songRatings       SongRating[]
+  songComments      SongComment[]
+  songScores        SongLeaderboard[]
+  songPlays         SongPlay[]
+  sliceRuns         SliceRun[]
+  authoredCharts    Chart[]           @relation("ChartAuthor")
+  chartReviews      ChartReview[]
   sliceDailyEntries SliceDailyEntry[]
   sliceSetlists     SliceSetlist[]
   curatedChartPacks ChartPack[]       @relation("ChartPackCurator")
@@ -905,9 +906,9 @@ model VoidBreakerPlayer {
 // --- Slice-It Music Library Models ---
 
 model Song {
-  id          String  @id @default(cuid())
-  title       String
-  artist      String
+  id     String @id @default(cuid())
+  title  String
+  artist String
 
   /// L15 — the normalised grouping key for {@link artist}.
   ///
@@ -920,7 +921,7 @@ model Song {
   /// Nullable: an artist tag that is entirely punctuation has no key, and
   /// Postgres treats NULLs as distinct, so those rows stay separate rather than
   /// all joining one artist page called "".
-  artistKey   String? @db.VarChar(200)
+  artistKey String? @db.VarChar(200)
 
   album       String?
   description String?
@@ -1059,14 +1060,14 @@ model Song {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  packItems ChartPackItem[]
-  ratings   SongRating[]
-  comments  SongComment[]
-  scores    SongLeaderboard[]
-  likes     SongLike[]
-  songPlays SongPlay[]
-  charts    Chart[]
-  runs      SliceRun[]
+  packItems    ChartPackItem[]
+  ratings      SongRating[]
+  comments     SongComment[]
+  scores       SongLeaderboard[]
+  likes        SongLike[]
+  songPlays    SongPlay[]
+  charts       Chart[]
+  runs         SliceRun[]
   dailyEntries SliceDailyEntry[]
 
   @@unique([uploadedBy, contentHash])
@@ -1161,10 +1162,10 @@ model SongRating {
 }
 
 model SongComment {
-  id        String   @id @default(cuid())
-  songId    String
-  userId    String
-  content   String
+  id      String @id @default(cuid())
+  songId  String
+  userId  String
+  content String
 
   /// L5 — the position in the track this comment is about, in seconds.
   ///
@@ -1240,8 +1241,8 @@ model SongLeaderboard {
   /// written before the `Chart` model existed — those runs played
   /// `Song.analysisData`, which has no identity, and inventing one would be a
   /// claim about which notes were played that nothing can support.
-  chartId String? @db.Uuid
-  chart   Chart?  @relation(fields: [chartId], references: [id], onDelete: SetNull)
+  chartId   String? @db.Uuid
+  chart     Chart?  @relation(fields: [chartId], references: [id], onDelete: SetNull)
   /// The chart's content hash at the time of the run, so a later edit is visible
   /// as an edit rather than as everyone's scores silently becoming incomparable.
   chartHash String? @db.Char(64)
@@ -1252,7 +1253,7 @@ model SongLeaderboard {
   difficulty String @default("normal") @db.VarChar(16)
   /// Board dimension 2: the canonical modifier pool (`lib/slice-it/pools.ts`).
   /// Three buckets rather than 2^7 boards of one entry each.
-  modPool String @default("none") @db.VarChar(16)
+  modPool    String @default("none") @db.VarChar(16)
 
   score     Int
   maxCombo  Int
@@ -1263,7 +1264,7 @@ model SongLeaderboard {
   /// Did the run reach the end without the gauge killing it (R9)? Defaults true
   /// because every row written before the gauge existed was, by construction, a
   /// run that finished — there was no other way to submit one.
-  cleared Boolean @default(true)
+  cleared     Boolean @default(true)
   /// Denormalised from the run so the badge survives into the board without a
   /// join back to a `SliceRun` row that may not exist (H7).
   ///
@@ -1321,9 +1322,9 @@ model SliceRun {
   maxCombo      Int
   notesResolved Int?
 
-  difficulty String  @db.VarChar(16)
-  modPool    String  @db.VarChar(16)
-  modifiers  Json
+  difficulty  String  @db.VarChar(16)
+  modPool     String  @db.VarChar(16)
+  modifiers   Json
   /// True when the run came out of a multiplayer match, for attribution.
   multiplayer Boolean @default(false)
 
@@ -1345,7 +1346,7 @@ model SliceRun {
   /// on a legitimate record run costs a real person their record. Escalation is
   /// a decision about a *pattern*, made by a human, and there is no code here
   /// that makes it.
-  suspicion Float?
+  suspicion  Float?
   /// The `SuspicionCode`s behind `suspicion`. The evidence, not the verdict — a
   /// moderator who cannot see why something is flagged cannot judge it.
   suspicions String[] @default([])
@@ -2310,6 +2311,133 @@ model SecurityReport {
   @@index([status, createdAt(sort: Desc)])
   @@index([userId])
   @@map("security_report")
+}
+
+// ─── Bum's Rush (design doc §10.2) ─────────────────────────────────────────
+//
+// Own tables, not the shared `GameSave` blob (`lib/game-saves/registry.ts`):
+// the save is queried by leaderboard, by level, and by achievement progress,
+// so it needs columns and indexes rather than one opaque JSON document.
+//
+// PK choice follows the rewrite R0-T7 policy (see `lib/CLAUDE.md`): one row
+// per account (`BumsRushProfile`) or one row per (account, level, player
+// count) upserted in place (`BumsRushLevelClear`) keeps `cuid()` — there is
+// nothing to scan by insert order. The three append-only tables below
+// (`BumsRushShowdownMatch`, `BumsRushShowdownPlayer`, `BumsRushRun`) get a
+// time-sortable `uuid(7)` instead, for the same insert-locality reason
+// `KaikaiDebtEntry` does above.
+
+model BumsRushProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Equipped cosmetics — ids are validated at write time against the
+  // code-side catalog (`lib/bums-rush/cosmetics.ts`), never trusted raw.
+  head   String  @default("biro")
+  hat    String?
+  gloves String  @default("mitten")
+  ink    String  @default("seat-1")
+
+  unlockedCosmetics String[] @default([])
+  parcelsFound      String[] @default([])
+  posesFound        String[] @default([])
+  recipesMade       String[] @default([])
+
+  /// `BindingSet[]` — versioned, see §4.5. Not yet round-tripped by the
+  /// client `Profile` contract (`lib/bums-rush/types.ts`); the column exists
+  /// so T5's bindings work has somewhere to land without a second migration.
+  bindings Json?
+  /// `GameSettings` (assists, audio, camera, rumble, tags) — the client shape
+  /// this mirrors.
+  settings Json?
+
+  levelsCleared Int @default(0)
+  deaths        Int @default(0)
+  metresSwung   Int @default(0)
+
+  showdownRating Int @default(1000)
+  showdownWins   Int @default(0)
+  showdownLosses Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clears BumsRushLevelClear[]
+
+  @@index([showdownRating])
+  @@map("bums_rush_profile")
+}
+
+model BumsRushLevelClear {
+  id           String          @id @default(cuid())
+  profileId    String
+  profile      BumsRushProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  // Denormalized alongside `profileId` so the leaderboard and the "my clears"
+  // read can filter without a join back through the profile.
+  userId       String
+  levelId      String // "w3-07"
+  playerCount  Int // 1..4 — a solo record is not a 4p record
+  bestMs       Int
+  objectives   Int             @default(0) // bitmask over the level's 3 objectives, authored order
+  assisted     Boolean         @default(false) // beams / Inkblot / assist settings used
+  clears       Int             @default(1)
+  firstClearAt DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@unique([userId, levelId, playerCount])
+  @@index([levelId, playerCount, assisted, bestMs]) // the leaderboard index
+  @@map("bums_rush_level_clear")
+}
+
+model BumsRushShowdownMatch {
+  /// uuid(7) per the new-table PK policy — append-only, read newest-first.
+  id      String   @id @default(uuid(7))
+  mode    String // 'casual' | 'ranked'
+  teams   Boolean  @default(false)
+  rounds  Int
+  endedAt DateTime @default(now())
+  flagged Boolean  @default(false) // failed a §9.8 bound
+
+  players BumsRushShowdownPlayer[]
+
+  @@index([endedAt])
+  @@map("bums_rush_showdown_match")
+}
+
+model BumsRushShowdownPlayer {
+  /// uuid(7) — same rationale as the match it belongs to.
+  id           String                @id @default(uuid(7))
+  matchId      String
+  match        BumsRushShowdownMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  userId       String? // null = signed-out guest
+  seatIndex    Int
+  roundsWon    Int                   @default(0)
+  won          Boolean               @default(false)
+  ratingBefore Int?
+  ratingAfter  Int?
+
+  @@index([userId])
+  @@map("bums_rush_showdown_player")
+}
+
+model BumsRushRun {
+  /// uuid(7) — this is the append-only attempt log §9.8 exists to keep: every
+  /// reported result lands here, ranked or not, so nothing is ever silently
+  /// dropped.
+  id          String   @id @default(uuid(7))
+  levelId     String
+  playerCount Int
+  durationMs  Int
+  deaths      Int
+  objectives  Int
+  assisted    Boolean
+  catUsed     Boolean  @default(false)
+  userIds     String[] // everyone credited (§10.5)
+  createdAt   DateTime @default(now())
+
+  @@index([levelId, createdAt])
+  @@map("bums_rush_run")
 }
 
 // ─── Altair Meta Progression (persisted to DB) ────────────────────────

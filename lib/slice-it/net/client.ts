@@ -102,6 +102,22 @@ export function setDiscordAuth(auth: { accessToken: string; channelId: string | 
 
 /** Listeners for the events the UI reacts to imperatively (audio cues, chart load). */
 export type MatchListeners = {
+  /**
+   * The host pressed Start and the room is loading — fetch the chart now.
+   *
+   * This is the event that means "get ready", and it is the one the chart load
+   * hangs off. The server's order is `loading` → (every seat reports
+   * `slice:loaded`) → `countdown` → `start`, so a client that waited for
+   * `onStart` to begin loading was waiting on an event that could not be sent
+   * until it had already loaded. Nothing happened when the host pressed START;
+   * the lobby sat still until the server's load timeout expired, which marks
+   * every silent seat a spectator and starts a match no one holds a chart for
+   * — and pressing START again in the meantime answered "a match is in
+   * progress", the only feedback the host ever got.
+   *
+   * Re-sent as each seat reports in, so a listener must be idempotent.
+   */
+  onLoading?: (status: LoadingStatus) => void;
   onStart?: (payload: MatchStartPayload) => void;
   onCountdown?: (payload: CountdownPayload) => void;
   onKicked?: (reason: string) => void;
@@ -264,6 +280,7 @@ function registerHandlers(socket: Socket): void {
 
   socket.on(S2C.LOADING, (status: LoadingStatus) => {
     store().setLoadingPlayers(Array.isArray(status?.players) ? status.players : []);
+    notify('onLoading', (fn) => fn(status));
   });
 
   socket.on(S2C.COUNTDOWN, (payload: CountdownPayload) => {

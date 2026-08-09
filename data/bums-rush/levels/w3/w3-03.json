@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "id": "w3-03",
+  "world": 3,
+  "index": 3,
+  "name": "bums.level.w3-03.name",
+  "minPlayers": 1,
+  "parSeconds": 80,
+  "bounds": { "x": 0, "y": 0, "w": 3800, "h": 1500 },
+  "palette": {
+    "paper": "#f7e6ba",
+    "ink": "#1e1418",
+    "accent": "#c8102e",
+    "flashSafe": true,
+    "contrastRatio": 14.53
+  },
+  "spawn": [{ "x": 220, "y": 860 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 3250, "y": 640, "w": 120, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [{ "at": { "x": 1850, "y": 720 } }],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 650, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1750, "y": 780, "w": 650, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 3000, "y": 700, "w": 650, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "rope-combine",
+      "kind": "rope",
+      "at": { "x": 1050, "y": 520 },
+      "segments": 16,
+      "stiffness": 0.35
+    },
+    {
+      "id": "trampoline-mid",
+      "kind": "trampoline",
+      "at": { "x": 1500, "y": 850 },
+      "size": { "x": 140, "y": 30 },
+      "bounce": 1.1
+    },
+    {
+      "id": "pose-w3-03",
+      "kind": "poseOutline",
+      "poseId": "w3-pose-juggler",
+      "tolerance": 45,
+      "at": { "x": 2000, "y": 760 }
+    },
+    {
+      "id": "trapeze-final",
+      "kind": "swing",
+      "at": { "x": 2650, "y": 560 },
+      "length": 300,
+      "damping": 0.15
+    },
+    {
+      "id": "camera-3",
+      "kind": "camera",
+      "at": { "x": 300, "y": 850 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "pit",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1400, "w": 3800, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w3-03-clock" },
+    { "kind": "flawless", "id": "w3-03-flawless" },
+    {
+      "kind": "pose",
+      "id": "w3-03-pose",
+      "poseId": "w3-pose-juggler"
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 700, "y": 480 },
+      "textKey": "bums.level.w3-03.note-combine",
+      "width": 260
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 950, "y": 700 },
+      "to": { "x": 1040, "y": 600 }
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 2000, "y": 700 },
+      "sprite": "chalk-outline",
+      "scale": 1
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 1550, "y": 300 },
+      "sprite": "big-top-tent",
+      "scale": 1
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 2900, "y": 1350 },
+      "r": 50
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 650, "y": 900 }, { "x": 1750, "y": 780 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 2400, "y": 780 }, { "x": 3000, "y": 700 }], "thickness": 10 }
+  ],
+  "music": "w3-big-tent-bother",
+  "authorNotes": "Solo. Combines World 1's rope with World 3's trampoline in one crossing: grab camera-3, then rope-combine (anchor 1050,520) off the starting pier and pump it the way any World 1 rope swings, but release mid-arc over open air rather than onto solid ground — trampoline-mid (1500,850) is a standalone landing pad with nothing supporting it but its own body, sitting squarely under the rope's swing path, and bouncing off it is the only way to clear the rest of the ~1100px total gap to the middle pier. On the middle pier, pose-w3-03 is the world's first poseOutline (poseId w3-pose-juggler) — fit into the chalk silhouette and hold for the pose objective (tolerance 45), no second player required. The second gap (a plain single trapeze, trapeze-final, pivot 2650,560, moderate 0.15 damping — gentler than 02's trapezes, familiar ground) carries the level to the goal pier. Both long gaps carry a full-span assist beam for players who'd rather skip the rope-to-trampoline relay entirely."
+}

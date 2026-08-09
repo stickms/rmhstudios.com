@@ -34,6 +34,7 @@ Generated from `lib/games.ts`, the single source of truth every card on the site
 | **Gabriel's Horn** | [`/gabriels-horn`](https://rmhstudios.com/gabriels-horn) | Playable | required | `Multiplayer` `Card Game` `Bluffing` `Party` |
 | **Nightrail** | [`/nightrail`](https://rmhstudios.com/nightrail) | Playable | required | `Arcade` `Racing` `3D` `Trick Scoring` |
 | **Massive March** | [`/massive-march`](https://rmhstudios.com/massive-march) | Playable | required | `Multiplayer` `Co-op` `3D` `Exploration` `Puzzle` |
+| **Bum's Rush** | [`/bums-rush`](https://rmhstudios.com/bums-rush) | Beta | — | `Party` `Multiplayer` `Physics` `Platformer` |
 
 ## Detail
 
@@ -168,3 +169,9 @@ You run night freight on a self-propelling courier train, and it will not slow d
 A first-person cooperative campaign with no combat, no health bar and no quest markers. You — on your own, or with up to eleven friends — land on a coastline of granite headlands and gum-tree gullies, scattered with enormous toy-coloured structures somebody left behind, and work out what any of it is for. Voice and text are both spatial: they fade with distance, muffle through a ridge and stop dead at a soundproof booth wall — so the sealed room holding the answer is a room whose occupant cannot simply tell you. Carry one thing in your hands, two on your belt, four more in a backpack you cannot open yourself. Solve installations to produce red rounds, walk them to the towers, and let the keys they hand back open the cart line, the ridge road and finally the White Gate. The sun sets, and the island gets genuinely dark.
 
 **Route:** `/massive-march` · **Catalog id:** `massive-march` · **Status:** Playable · **Sign-in:** required
+
+### Bum's Rush
+
+You are a head with two enormous arms and no legs whatsoever. Grab a ledge, swing, let go at exactly the wrong moment, and paint the wall. Bum's Rush is a hand-drawn physics party game for one to four players: link hands into a living rope, haul each other over gaps none of you could cross alone, and argue about whose fault it was. Eight themed worlds with hidden objectives, and a Showdown mode for when co-operation has run its course. Plays online, on one screen, or both at once — with a gamepad, a keyboard, or two thumbs.
+
+**Route:** `/bums-rush` · **Catalog id:** `bums-rush` · **Status:** Beta · **Sign-in:** not required

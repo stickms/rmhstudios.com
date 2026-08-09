@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 573 files across 134 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 577 files across 135 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -207,6 +207,17 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/bulk` | `GET` `POST` | `app/routes/api/bulk/index.ts` |
 | `/api/bulk/:id` | `DELETE` `GET` | `app/routes/api/bulk/$id.ts` |
 | `/api/bulk/preview` | `POST` | `app/routes/api/bulk/preview.ts` |
+
+## `/api/bums-rush`
+
+4 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/bums-rush/clear` | `POST` | `app/routes/api/bums-rush/clear.ts` |
+| `/api/bums-rush/leaderboard` | `GET` | `app/routes/api/bums-rush/leaderboard.ts` |
+| `/api/bums-rush/profile` | `GET` `PUT` | `app/routes/api/bums-rush/profile.ts` |
+| `/api/bums-rush/showdown` | `POST` | `app/routes/api/bums-rush/showdown.ts` |
 
 ## `/api/calls`
 

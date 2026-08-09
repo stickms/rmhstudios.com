@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "id": "w1-03",
+  "world": 1,
+  "index": 3,
+  "name": "bums.level.w1-03.name",
+  "minPlayers": 1,
+  "parSeconds": 78,
+  "bounds": { "x": 0, "y": 0, "w": 3300, "h": 1500 },
+  "palette": {
+    "paper": "#f4ead6",
+    "ink": "#1e2430",
+    "accent": "#2a7fbf",
+    "flashSafe": true,
+    "contrastRatio": 13.02
+  },
+  "spawn": [{ "x": 220, "y": 860 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 2960, "y": 740, "w": 120, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [{ "at": { "x": 1750, "y": 800 } }],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 650, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1550, "y": 860, "w": 650, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 2480, "y": 820, "w": 700, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "swing-combine-a",
+      "kind": "swing",
+      "at": { "x": 780, "y": 580 },
+      "length": 270,
+      "damping": 0.2
+    },
+    {
+      "id": "rope-combine-b",
+      "kind": "rope",
+      "at": { "x": 1180, "y": 520 },
+      "segments": 16,
+      "stiffness": 0.35
+    },
+    {
+      "id": "swing-final",
+      "kind": "swing",
+      "at": { "x": 2340, "y": 600 },
+      "length": 260,
+      "damping": 0.2
+    },
+    {
+      "id": "pose-w1-03",
+      "kind": "poseOutline",
+      "poseId": "w1-pose-reach",
+      "tolerance": 45,
+      "at": { "x": 1850, "y": 800 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "sea",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1350, "w": 3300, "h": 150 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w1-03-clock" },
+    { "kind": "flawless", "id": "w1-03-flawless" },
+    {
+      "kind": "pose",
+      "id": "w1-03-pose",
+      "poseId": "w1-pose-reach"
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 700, "y": 500 },
+      "textKey": "bums.level.w1-03.note-combine",
+      "width": 260
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 950, "y": 700 },
+      "to": { "x": 1170, "y": 640 }
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 1850, "y": 760 },
+      "sprite": "chalk-outline",
+      "scale": 1
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 2650, "y": 1280 },
+      "r": 50
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 650, "y": 900 }, { "x": 1550, "y": 860 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 2200, "y": 860 }, { "x": 2480, "y": 820 }], "thickness": 10 }
+  ],
+  "music": "w1-doodle-docks",
+  "authorNotes": "Solo. Combines the two grabs taught in 01/02 into one crossing: the first gap (650 to 1550, 900px total) is too far for either prop alone, so it is solved by relaying — swing-combine-a (pivot 780,580) carries you out over the water, rope-combine-b (anchor 1180,520) hangs close enough to its arc's peak to grab mid-swing, and its own pendulum carries the rest of the way to the middle pier. This is the level's version of 'grab a friend': solo, the rope is standing in for a teammate's hand. On the middle pier, pose-w1-03 is the world's poseOutline — fit into the chalk silhouette and hold for the pose objective (tolerance 45), no second player required. The second gap (280px) back to the goal pier is a plain single swing (swing-final) to close the level on familiar ground. Both long gaps carry a full-span assist beam for players who'd rather skip the relay entirely."
+}

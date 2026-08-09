@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "id": "w3-b",
+  "world": 3,
+  "index": 2,
+  "name": "bums.showdown.w3-b.name",
+  "minPlayers": 2,
+  "parSeconds": 40,
+  "bounds": { "x": 0, "y": 0, "w": 2200, "h": 1300 },
+  "palette": {
+    "paper": "#f7e6ba",
+    "ink": "#1e1418",
+    "accent": "#c8102e",
+    "flashSafe": true,
+    "contrastRatio": 14.53
+  },
+  "spawn": [
+    { "x": 950, "y": 940 },
+    { "x": 1050, "y": 940 },
+    { "x": 950, "y": 900 },
+    { "x": 1050, "y": 900 }
+  ],
+  "goal": {
+    "shape": { "kind": "rect", "x": 1080, "y": 210, "w": 140, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 700, "y": 1000, "w": 800, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1000, "y": 600, "w": 400, "h": 60 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1050, "y": 250, "w": 300, "h": 60 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "trapeze-survive-mid",
+      "kind": "swing",
+      "at": { "x": 1100, "y": 750 },
+      "length": 200,
+      "damping": 0.2
+    },
+    {
+      "id": "trapeze-survive-top",
+      "kind": "swing",
+      "at": { "x": 1150, "y": 450 },
+      "length": 180,
+      "damping": 0.2
+    },
+    {
+      "id": "relic-w3-b",
+      "kind": "relic",
+      "relicId": "w3-relic-showdown-b",
+      "at": { "x": 1150, "y": 300 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "pit",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1250, "w": 2200, "h": 50 }
+    },
+    {
+      "id": "big-top-drop",
+      "kind": "crusher",
+      "shape": { "kind": "rect", "x": 0, "y": 1300, "w": 2200, "h": 400 },
+      "path": [
+        { "x": 0, "y": 1300 },
+        { "x": 0, "y": 150 }
+      ],
+      "speed": 15.3
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w3-b-clock" },
+    { "kind": "flawless", "id": "w3-b-flawless" },
+    {
+      "kind": "haul",
+      "id": "w3-b-haul",
+      "relicIds": ["w3-relic-showdown-b"]
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "doodle",
+      "at": { "x": 400, "y": 1050 },
+      "sprite": "big-top-tent",
+      "scale": 0.9
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 1800, "y": 1050 },
+      "sprite": "ringmaster-hat",
+      "scale": 0.7
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 1800, "y": 1150 },
+      "r": 60
+    }
+  ],
+  "assistBeams": [],
+  "music": "w3-showdown",
+  "authorNotes": "Showdown / survive, 2-4 players, enclosed single-screen arena (no split-screen camera needed, §5). All four spawn together on the base ring; the 'big-top-drop' hazard is a crusher shaped as the canvas winch pulling the whole tent floor upward, its path climbing from y1300 (below the ring) to y150 (above the top perch) at 15.3px/s — the same rising-wall approximation w1-b flagged for its own tide, and the same schema gap: the Hazard contract has no time-varying shape/size field, only a static Shape plus a kinematic path, so 'the tent is coming down' is authored as one large hazard translating upward rather than a true shrinking floor. A ~75s rise from ring to summit matches §8.2's 'closing lethal boundary forces an end within 75s'. Players retreat upward via trapeze-survive-mid then trapeze-survive-top as the floor climbs; the top perch is the last refuge and holds only one comfortably, which is the point. relic-w3-b sits on the top perch as a risk/reward pickup for the haul objective. A static void strip under the base ring punishes anyone knocked clean off before the winch even reaches them."
+}

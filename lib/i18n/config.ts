@@ -51,7 +51,7 @@ export const NAMESPACES = [
   "settings-content", "settings-notifications", "shared", "site",
   "theme-studio", "user-builds", "v",
   // Component namespaces.
-  "c-admin", "c-altair", "c-awards", "c-blog", "c-builds", "c-circle",
+  "c-admin", "c-altair", "c-awards", "c-blog", "c-builds", "c-bums-rush", "c-circle",
   "c-creator", "c-cursed-logic", "c-daily-puzzles", "c-doctrine",
   "c-dream-rift", "c-economy", "c-forest-explorer", "c-gabriels-horn",
   "c-game", "c-groupcall", "c-history", "c-house-always-wins", "c-isleworks",

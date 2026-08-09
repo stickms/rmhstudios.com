@@ -1,0 +1,199 @@
+{
+  "version": 1,
+  "id": "w3-08",
+  "world": 3,
+  "index": 8,
+  "name": "bums.level.w3-08.name",
+  "minPlayers": 2,
+  "parSeconds": 216,
+  "bounds": { "x": 0, "y": 0, "w": 5600, "h": 2000 },
+  "palette": {
+    "paper": "#f7e6ba",
+    "ink": "#1e1418",
+    "accent": "#c8102e",
+    "flashSafe": true,
+    "contrastRatio": 14.53
+  },
+  "spawn": [
+    { "x": 200, "y": 960 },
+    { "x": 280, "y": 960 }
+  ],
+  "goal": {
+    "shape": { "kind": "rect", "x": 4900, "y": 700, "w": 130, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [
+    { "at": { "x": 950, "y": 880 } },
+    { "at": { "x": 2050, "y": 820 } },
+    { "at": { "x": 3650, "y": 760 } }
+  ],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 1000, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 900, "y": 940, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 2000, "y": 880, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 3600, "y": 820, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 4600, "y": 760, "w": 700, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "trapeze-gaunt-1",
+      "kind": "swing",
+      "at": { "x": 600, "y": 700 },
+      "length": 300,
+      "damping": 0.2
+    },
+    {
+      "id": "relic-w3-08-a",
+      "kind": "relic",
+      "relicId": "w3-relic-08-a",
+      "at": { "x": 950, "y": 890 }
+    },
+    {
+      "id": "trampoline-gaunt-1",
+      "kind": "trampoline",
+      "at": { "x": 1420, "y": 910 },
+      "size": { "x": 160, "y": 30 },
+      "bounce": 1.0
+    },
+    {
+      "id": "trapeze-gaunt-2",
+      "kind": "swing",
+      "at": { "x": 1750, "y": 600 },
+      "length": 320,
+      "damping": 0.15
+    },
+    {
+      "id": "cannon-gaunt",
+      "kind": "popCannon",
+      "at": { "x": 2720, "y": 830 },
+      "angle": -0.3,
+      "power": 70,
+      "cooldownMs": 2000,
+      "arc": 0.08
+    },
+    {
+      "id": "trapeze-gaunt-3",
+      "kind": "swing",
+      "at": { "x": 2600, "y": 500 },
+      "length": 380,
+      "damping": 0.12
+    },
+    {
+      "id": "trampoline-gaunt-mid",
+      "kind": "trampoline",
+      "at": { "x": 3150, "y": 850 },
+      "size": { "x": 150, "y": 30 },
+      "bounce": 1.15
+    },
+    {
+      "id": "relic-w3-08-b",
+      "kind": "relic",
+      "relicId": "w3-relic-08-b",
+      "at": { "x": 3700, "y": 770 }
+    },
+    {
+      "id": "pyramid-spot",
+      "kind": "poseOutline",
+      "poseId": "w3-pose-pyramid",
+      "tolerance": 60,
+      "at": { "x": 3900, "y": 770 }
+    },
+    {
+      "id": "trapeze-final4",
+      "kind": "swing",
+      "at": { "x": 4200, "y": 480 },
+      "length": 340,
+      "damping": 0.15
+    }
+  ],
+  "hazards": [
+    {
+      "id": "pit",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1900, "w": 5600, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w3-08-clock" },
+    {
+      "kind": "haul",
+      "id": "w3-08-haul",
+      "relicIds": ["w3-relic-08-a", "w3-relic-08-b"]
+    },
+    {
+      "kind": "snapshot",
+      "id": "w3-08-pyramid",
+      "predicate": { "chainedSeats": 3, "nearPropId": "pyramid-spot" }
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 300, "y": 620 },
+      "textKey": "bums.level.w3-08.note-start",
+      "width": 260
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 2200, "y": 350 },
+      "sprite": "big-top-tent",
+      "scale": 1.3
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 1750, "y": 380 },
+      "sprite": "trapeze-swing",
+      "scale": 1
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 2750, "y": 500 },
+      "sprite": "cannon-sparkle",
+      "scale": 1.1
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 2500, "y": 850 },
+      "to": { "x": 2700, "y": 820 }
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 3900, "y": 600 },
+      "sprite": "confetti-burst",
+      "scale": 0.8
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 5200, "y": 1850 },
+      "r": 60
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 600, "y": 1000 }, { "x": 900, "y": 940 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 1500, "y": 940 }, { "x": 2000, "y": 880 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 2600, "y": 880 }, { "x": 3600, "y": 820 }], "thickness": 14 },
+    { "kind": "chain", "points": [{ "x": 4200, "y": 820 }, { "x": 4600, "y": 760 }], "thickness": 10 }
+  ],
+  "music": "w3-big-tent-bother",
+  "authorNotes": "Two players, three checkpoints, four segments — every prop World 3 has, in one long run. Segment 1: a plain trapeze (trapeze-gaunt-1), gets both players moving; relic-w3-08-a waits on pier B, picked up in passing. Segment 2 is the trampoline-into-trapeze escalation from 06 again: trampoline-gaunt-1's springboard bounce is caught by trapeze-gaunt-2 mid-air, landing on pier C. Segment 3 is the gauntlet's centrepiece and its longest gap (1000px, pier C to pier D): cannon-gaunt is the fast route (the same handle-holder-plus-ammunition play as 07 — one player grips the barrel from pier C's edge, the other rides the barrel across, exactly as flagged there, solo self-fire remains technically available per player but the party solve is faster), and trapeze-gaunt-3 into trampoline-gaunt-mid is the slower, cannon-free alternative for a party that has just spent their cooldown or would rather swing it. relic-w3-08-b waits on pier D. pyramid-spot is a floor outline on pier D's plaza, but it is deliberately NOT wired to a `pose` objective — a pose objective only ever checks a single head's distance to one point (engine contract, objectives.ts), which cannot express 'three players stacked at once'. The human-pyramid objective is instead authored as a `snapshot` with `chainedSeats: 3` anchored on pyramid-spot via `nearPropId`, which the engine can actually evaluate: any three (or four) players hand-chained near the outline score it, unlike a plain single-occupant pose. It only scores for parties of three or more, which is the point — it is the game's best photograph and it needs the extra players to take it. Segment 4 closes on familiar ground: trapeze-final4 out to the goal pier. All four gaps carry an assist beam (segment 3's drawn thicker, the usual tell for the hard point) for a party trading the Clock objective for a guaranteed finish this deep into the level."
+}

@@ -1,0 +1,114 @@
+{
+  "version": 1,
+  "id": "w4-09",
+  "world": 4,
+  "index": 9,
+  "name": "bums.level.w4-09.name",
+  "minPlayers": 1,
+  "parSeconds": 70,
+  "bounds": { "x": 0, "y": 0, "w": 4200, "h": 2400 },
+  "palette": {
+    "paper": "#e9e0c7",
+    "ink": "#383d44",
+    "accent": "#8a3541",
+    "flashSafe": true,
+    "contrastRatio": 8.31
+  },
+  "spawn": [{ "x": 220, "y": 1900 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 3850, "y": 1650, "w": 150, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [{ "at": { "x": 720, "y": 1850 } }],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 1950, "w": 700, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 3600, "y": 1750, "w": 600, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 500, "y": 1500, "w": 300, "h": 60 },
+      "material": "paper",
+      "render": "pinned",
+      "grabbable": false
+    }
+  ],
+  "props": [
+    {
+      "id": "catapult-w4-09",
+      "kind": "popCannon",
+      "at": { "x": 700, "y": 1850 },
+      "power": 1450,
+      "cooldownMs": 4000,
+      "arc": 0.85
+    },
+    {
+      "id": "rope-w4-09-catch",
+      "kind": "rope",
+      "at": { "x": 3350, "y": 1350 },
+      "segments": 10,
+      "stiffness": 0.4
+    },
+    {
+      "id": "camera-w4-09",
+      "kind": "camera",
+      "at": { "x": 300, "y": 1900 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "moat",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 700, "y": 2000, "w": 2900, "h": 300 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w4-09-clock" },
+    { "kind": "flawless", "id": "w4-09-flawless" },
+    {
+      "kind": "snapshot",
+      "id": "w4-09-photo",
+      "predicate": { "allAirborne": true }
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 150, "y": 1750 },
+      "textKey": "bums.level.w4-09.note-catapult",
+      "width": 260
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 550, "y": 1350 },
+      "sprite": "catapult-silhouette",
+      "scale": 1.6
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 3800, "y": 1400 },
+      "sprite": "castle-silhouette",
+      "scale": 1.4
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 450, "y": 1880 },
+      "to": { "x": 680, "y": 1860 }
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 3950, "y": 2250 },
+      "r": 60
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 700, "y": 1900 }, { "x": 3600, "y": 1850 }], "thickness": 12 }
+  ],
+  "music": "w4-castle-clatter",
+  "authorNotes": "Solo. The set piece: catapult-w4-09 is a `popCannon` reskinned as the keep's siege engine, grabbed by its handle at (700,1850) and aimed with the free arm, same base interaction as W3's pop cannons — the difference here is that Castle Clatter's catapult is fired by its own rider rather than needing a second player to crank it, which is what makes it work at minPlayers 1: grab the handle, aim, and release to launch yourself in one motion. 'Chained to survive it' means anchored, not necessarily to another player — a solo rider's own firm grip on the handle through the moment of release is the anchor; letting go early or being knocked loose mid-aim is what actually costs a life here, not the flight itself. In a full party, every seat grabs onto the handle-holder's free hand before release, forming a literal chain, and the whole party launches together — anyone not holding on is left behind on the near pier rather than being flung on a bad trajectory. The arc carries the rider over the moat (void, 700-3600) roughly to (3350,1350); rope-w4-09-catch hangs there for the rider to grab out of the air and swing the rest of the way down onto the far pier under control, rather than trusting the raw ballistic arc to land them exactly on a 600px-wide target — this is the same 'everything is solved by grabbing' principle as every other level, just applied to a landing instead of a gap. A single long assist beam spans the whole moat for a player who'd rather not fire the catapult and just walk/swing the distance instead, at the usual Clock cost. camera-w4-09 is picked up at spawn for the photo objective (allAirborne — trivially true for most of the flight). The checkpoint sits right at the catapult, so a bad launch only costs the launch, never the walk back from level start."
+}

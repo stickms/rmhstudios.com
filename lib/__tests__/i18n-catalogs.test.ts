@@ -435,8 +435,26 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   // `SettingsPanel.tsx` under a plain `t` is what finally extracted them.
   'r-slice-it': [
     'accessibility',
+    // ── The multiplayer song picker's own verb (2026-08-08) ──────────────
+    // The library's row action is labelled by its caller now: the lobby ADDs a
+    // track, the solo menu PLAYs one. English-only until `pnpm i18n:translate
+    // && pnpm i18n:resources` runs.
+    'add-song',
+    'library-add',
     'assist-tick',
     'assist-tick-hint',
+    // ── V7 stage backdrops (2026-08-09) ─────────────────────────────────
+    // The backdrop picker in `SettingsPanel.tsx`. English-only until
+    // `pnpm i18n:translate && pnpm i18n:resources` runs — the pipeline needs
+    // DEEPSEEK_API_KEY, which is not available in this environment. Runtime
+    // falls back to English per key.
+    'backdrop',
+    'backdrop-aurora',
+    'backdrop-bars',
+    'backdrop-hint',
+    'backdrop-label',
+    'backdrop-none',
+    'backdrop-pulse',
     'combo-center',
     'combo-hidden',
     'combo-left',

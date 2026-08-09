@@ -12,6 +12,7 @@ import {
   Loader2,
   Pause,
   Play,
+  Plus,
   Search,
   Shuffle,
   Table2,
@@ -104,6 +105,17 @@ interface SongLibraryProps {
   selectedSongId: string | null;
   onStopPreviewRef?: React.MutableRefObject<(() => void) | null>;
   readOnly?: boolean;
+  /**
+   * What the row's primary action DOES, for its label and its glyph.
+   *
+   * `onSelect` has always been "the row's primary action" with the meaning left
+   * to the caller, but the button announced one specific meaning — PLAY — to
+   * every caller. In the multiplayer lobby that was simply wrong: pressing it
+   * puts the track on the lobby (or on the ballot) and starts nothing, so a
+   * host reasonably read it as "start the match now" and a player watched a
+   * button labelled PLAY not play anything.
+   */
+  selectAction?: 'play' | 'add';
 }
 
 /**
@@ -145,11 +157,19 @@ export function SongLibrary({
   selectedSongId,
   onStopPreviewRef,
   readOnly = false,
+  selectAction = 'play',
 }: SongLibraryProps) {
   const { t } = useTranslation('c-game');
   const { t: ts } = useTranslation('r-slice-it');
   const { data: session } = useSession();
   const volume = useSliceItStore((s) => s.volume);
+
+  // The row's primary action, named for what it actually does here.
+  const selectLabel =
+    selectAction === 'add'
+      ? ts('library-add', { defaultValue: 'ADD' })
+      : t('play', { defaultValue: 'PLAY' });
+  const SelectIcon = selectAction === 'add' ? Plus : Play;
 
   /* ── Filters (L18): URL search params, not component state ─────────────── */
 
@@ -817,6 +837,7 @@ export function SongLibrary({
               loading={loading}
               onLoadMore={() => void load(nextCursor, true)}
               readOnly={readOnly}
+              selectAction={selectAction}
               className="flex-1 min-h-0"
             />
           )}
@@ -1079,12 +1100,10 @@ export function SongLibrary({
                           onSelect(song);
                         }}
                         className="bg-blue-500 hover:bg-blue-600 text-white font-bold h-8 w-8 p-0 sm:w-auto sm:px-3 rounded-lg text-xs touch-target"
-                        aria-label={t('play', { defaultValue: 'PLAY' })}
+                        aria-label={selectLabel}
                       >
-                        <Play className="w-4 h-4 sm:hidden" aria-hidden />
-                        <span className="hidden sm:inline">
-                          {t('play', { defaultValue: 'PLAY' })}
-                        </span>
+                        <SelectIcon className="w-4 h-4 sm:hidden" aria-hidden />
+                        <span className="hidden sm:inline">{selectLabel}</span>
                       </Button>
                     )}
                   </div>

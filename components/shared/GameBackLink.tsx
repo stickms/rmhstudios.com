@@ -33,9 +33,33 @@ interface GameBackLinkProps {
    */
   z?: string;
   className?: string;
+  /**
+   * Which ground this control is sitting on.
+   *
+   * It shipped assuming every game is dark, because for six games it was — the
+   * chip is black at 50% with a zinc border and zinc-500 ink. On Bum's Rush,
+   * whose whole surface is cream paper, that renders as an unreadable dark blob
+   * in the corner: near-black on near-white, with the label invisible until you
+   * hover. `tone` is the two-line fix, and `dark` stays the default so no
+   * existing caller changes.
+   */
+  tone?: 'dark' | 'light';
 }
 
-export function GameBackLink({ to, label = 'RMH Studios', z = 'z-50', className }: GameBackLinkProps) {
+const TONES = {
+  dark: 'border-zinc-800 bg-black/50 text-zinc-500 hover:text-white',
+  // Opacity-modified black/white rather than a palette step, so this reads
+  // correctly on any light ground without importing that game's tokens.
+  light: 'border-black/25 bg-white/55 text-black/65 hover:text-black',
+} as const;
+
+export function GameBackLink({
+  to,
+  label = 'RMH Studios',
+  z = 'z-50',
+  className,
+  tone = 'dark',
+}: GameBackLinkProps) {
   return (
     <div
       className={cn(
@@ -48,7 +72,10 @@ export function GameBackLink({ to, label = 'RMH Studios', z = 'z-50', className 
         <Button
           variant="ghost"
           size="sm"
-          className="flex items-center gap-1.5 border border-zinc-800 bg-black/50 text-xs text-zinc-500 backdrop-blur-sm hover:text-white sm:text-sm"
+          className={cn(
+            'flex items-center gap-1.5 border text-xs backdrop-blur-sm sm:text-sm',
+            TONES[tone],
+          )}
         >
           <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" aria-hidden />
           <span className="hidden sm:inline">{label}</span>

@@ -90,7 +90,7 @@ import { join } from 'node:path';
  *                                       settle and cancels on unmount.
  *   - hooks/useSpatialParallax.ts     — pointer-event throttle; cancels on unmount.
  *   - hooks/useScrollRestoration.ts, hooks/useCelebration.ts,
- *     components/ui/back-to-top.tsx, components/ui/AnimatedCount.tsx,
+ *     components/ui/AnimatedCount.tsx,
  *     components/ui/TwemojiProvider.tsx — one-shot / self-terminating.
  * Everything else is a self-contained game/app or media widget whose loop is
  * bounded by mount lifetime (unmount cancels the rAF).
@@ -105,6 +105,15 @@ const ALLOW = new Set<string>([
   'app/routes/_site/rmhladder/pipeline.tsx',
   'components/assistant/ConciergePanel.tsx',
   'components/breakpoint/GameView.tsx',
+  // Bum's Rush runs exactly ONE loop for the whole game — engine step, render,
+  // input polling and the host's network tick all ride it, which is why the
+  // HUD can exist without a second rAF anywhere in `components/bums-rush/`.
+  // It meets the game/app standard: the effect that starts it returns a
+  // teardown whose first statement is `cancelAnimationFrame`, and which then
+  // disposes the simulation, the renderer, the host, both input devices and
+  // every listener. Leaving a level unmounts the hook, so there is no path
+  // where the frame outlives the screen.
+  'components/bums-rush/useLevelSession.ts',
   'components/cursed-logic/MinigameOverlay.tsx',
   'components/dream-rift/MenuBackdrop.tsx',
   // One-shot, not a loop: a single deferred frame that restores the caret after
@@ -184,7 +193,6 @@ const ALLOW = new Set<string>([
   'components/ui/AnimatedCount.tsx',
   'components/ui/TwemojiProvider.tsx',
   'components/ui/anchored-menu.tsx',
-  'components/ui/back-to-top.tsx',
   'components/ui/liquid-morph.tsx',
   'components/ui/liquid-tabs.tsx',
   'components/velum2099/game/main.ts',
@@ -233,8 +241,22 @@ function collect(dir: string, out: string[] = []): string[] {
   return out;
 }
 
+/**
+ * Comments are stripped before the search, because a file that DOCUMENTS not
+ * owning a loop — "this renderer does not call `requestAnimationFrame`; the
+ * component that mounts it owns the loop and its cancel-on-unmount" — is
+ * exactly the ownership statement this gate wants people to write, and a bare
+ * substring match punished it by demanding an allowlist entry for a file with
+ * no loop in it. An allowlist that fills up with non-loops stops meaning
+ * anything, which is the failure mode this test exists to prevent.
+ *
+ * Stripping cannot hide a real call: code that runs is code outside a comment.
+ */
 function usesRaf(file: string): boolean {
-  return readFileSync(join(ROOT, file), 'utf8').includes('requestAnimationFrame');
+  const src = readFileSync(join(ROOT, file), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+  return src.includes('requestAnimationFrame');
 }
 
 describe('§17.3 requestAnimationFrame loop allowlist', () => {

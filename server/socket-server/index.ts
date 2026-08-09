@@ -74,6 +74,7 @@ import {
   registerMassiveMarchHandlers,
   handleMassiveMarchDisconnect,
 } from './handlers/massive-march';
+import { registerBumsRushHandlers, handleBumsRushDisconnect } from './handlers/bums-rush';
 import { registerSpacesHandlers, handleSpacesDisconnect } from './handlers/spaces';
 import { registerPartyHandlers, handlePartyDisconnect } from './handlers/party';
 import { registerCallHandlers, handleCallDisconnect } from './handlers/call';
@@ -475,6 +476,7 @@ io.on('connection', (socket) => {
   registerLaundrySortHandlers(io, socket);
   registerGabrielsHornHandlers(io, socket);
   registerMassiveMarchHandlers(io, socket);
+  registerBumsRushHandlers(io, socket);
 
   // Platform expansion (§4, §5): live Spaces + cross-game party.
   registerSpacesHandlers(io, socket);
@@ -511,6 +513,7 @@ io.on('connection', (socket) => {
     handleLaundrySortDisconnect(io, socket);
     handleGabrielsHornDisconnect(io, socket);
     handleMassiveMarchDisconnect(io, socket);
+    handleBumsRushDisconnect(io, socket);
 
     cleanupRateLimits(socket.id);
   });
