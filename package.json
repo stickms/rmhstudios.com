@@ -63,6 +63,7 @@
     "i18n:coverage": "pnpm exec tsx scripts/check-i18n-coverage.ts",
     "emoji:shortcodes": "node scripts/generate-emoji-shortcodes.mjs",
     "og:cards": "pnpm exec tsx scripts/gen-og-cards.tsx",
+    "slice-it:hit-sounds": "pnpm exec tsx scripts/gen-slice-it-hit-sounds.ts",
     "typecheck": "node node_modules/typescript-native/bin/tsc --noEmit --incremental --tsBuildInfoFile .cache/tsc/native.tsbuildinfo"
   },
   "dependencies": {
