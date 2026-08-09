@@ -51,6 +51,14 @@ import {
   TICK_VOLUME_SCALE,
 } from './constants';
 import type { BeatMap, HitResult, RunStats, Slice } from './types';
+import {
+  DEFAULT_HIT_SOUND_ID,
+  HIT_SOUND_SAMPLE_IDS,
+  hitSoundPath,
+  hitSoundPreloadList,
+  pickHitSound,
+  RANDOM_HIT_SOUND_ID,
+} from './hit-sound-pool';
 import { MIN_TIMING_SAMPLES, type TimingSummary } from './integrity';
 import { prepareChart, scorableNoteCount } from './chart';
 import {
@@ -259,6 +267,13 @@ export class GameEngine {
   /** The most recent milestone worth drawing, or null. Read once per frame. */
   private comboMilestone: { value: number; at: number } | null = null;
 
+  /**
+   * The sample the previous hit played, so Shuffle never plays it twice
+   * running. Only written on the Shuffle path — with a fixed pick there is
+   * nothing to choose between, and the player asked for that one sound.
+   */
+  private lastHitSample: string | null = null;
+
   /* ── Replay capture (R3) ───────────────────────────────────────────────── *
    *
    * Three pre-sized typed arrays, not an array of objects. Recording happens
@@ -412,13 +427,33 @@ export class GameEngine {
     }
     this.audioManager.setPlaybackRate(this.speedMultiplier);
 
-    // Warm the hit sound so the first note is not the one that stutters.
-    const hitSound = store.hitSound;
-    if (hitSound && hitSound !== 'default') {
-      this.audioManager
-        .preloadHitSound(asset(`/music/slice-it/sounds/${hitSound}`))
-        .catch(() => {});
+    // Warm the hit sound so the first note is not the one that stutters. On
+    // Shuffle that is the whole pool, since any of them can be the first note.
+    for (const file of hitSoundPreloadList(store.hitSound)) {
+      this.audioManager.preloadHitSound(asset(hitSoundPath(file))).catch(() => {});
     }
+  }
+
+  /**
+   * The sample this hit should play, or `null` for the synthesised click.
+   *
+   * The only branch that chooses anything is Shuffle; a named sample is
+   * returned as-is, which is the behaviour every existing setting has always
+   * had.
+   *
+   * Unlike `prepareChart`, this draw is deliberately NOT seeded. The header's
+   * warning about bare `Math.random()` is about anything two players compare —
+   * bombs, lane switches, scores. Which sample voiced a hit is audio feedback
+   * on one machine: it reaches no judgement, no replay and no leaderboard, and
+   * seeding it would only make every retry sound identical.
+   */
+  private nextHitSample(setting: string): string | null {
+    if (setting === RANDOM_HIT_SOUND_ID) {
+      this.lastHitSample = pickHitSound(HIT_SOUND_SAMPLE_IDS, this.lastHitSample);
+      return this.lastHitSample;
+    }
+    if (!setting || setting === DEFAULT_HIT_SOUND_ID) return null;
+    return setting;
   }
 
   /**
@@ -1058,15 +1093,15 @@ export class GameEngine {
       }
 
       const sfxVolume = store.sfxVolume / 100;
-      const hitSound = store.hitSound;
+      const sample = this.nextHitSample(store.hitSound);
       const clean = result === 'MARVELOUS' || result === 'PERFECT';
       // G12 — pitch the hit sound by the note's own register, so a chart sounds
       // like the drum pattern it charts instead of one sample N times. A chart
       // with no `sound` (generated before G12) reads as `mid` and is unchanged.
       const register = REGISTER_PITCH[slice.sound ?? 'mid'];
-      if (hitSound && hitSound !== 'default') {
+      if (sample) {
         this.audioManager.playHitSoundFile(
-          asset(`/music/slice-it/sounds/${hitSound}`),
+          asset(hitSoundPath(sample)),
           sfxVolume,
           (clean ? 1.0 : 0.85) * register,
         );
@@ -1151,6 +1186,19 @@ export class GameEngine {
    */
   getCombo(): number {
     return this.combo;
+  }
+
+  /**
+   * The gauge, on its own — 0–{@link HEALTH_MAX}, and pinned at full while the
+   * health modifier is off.
+   *
+   * Here for the same reason {@link getCombo} is: V7's backdrop is a pure
+   * function of health and combo, evaluated on every rendered frame, and going
+   * through `getState()` for it would allocate a sixteen-field object per frame
+   * to read one number.
+   */
+  getHealth(): number {
+    return this.health;
   }
 
   /**

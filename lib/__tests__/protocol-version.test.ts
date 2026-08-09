@@ -5,15 +5,18 @@
  * (`lib/shared/realtime/protocol.ts`) and the server half
  * (`server/shared/protocol.ts`) declare the same contract.
  *
- * They are duplicated rather than shared because the Dockerfile's
- * `server-builder` stage copies a curated subset of `lib/` and the client
- * module is not in it — a `server/` bundle importing an uncopied `lib/` module
- * either fails the image build or ships a bundle that throws MODULE_NOT_FOUND
- * on boot (`server/CLAUDE.md` gotchas 7 and 8). Adding
- * `COPY lib/shared/realtime/protocol.ts ./lib/shared/realtime/protocol.ts`
- * to that stage lets the server half re-export from the client half and deletes
- * the duplication; until then, this test is what stands between a stray edit
- * and a hub that rejects every client on earth.
+ * They were duplicated rather than shared because the Dockerfile's
+ * `server-builder` stage used to copy a curated per-module subset of `lib/`,
+ * and the client module was not in it — a `server/` bundle importing an
+ * uncopied `lib/` module either fails the image build or ships a bundle that
+ * throws MODULE_NOT_FOUND on boot (`server/CLAUDE.md` gotchas 7 and 8).
+ *
+ * THAT BLOCKER IS GONE: the stage now copies `lib/` wholesale, so
+ * `server/shared/protocol.ts` could re-export from the client half and the
+ * duplication could be deleted outright. It has NOT been, so this test still
+ * stands between a stray edit and a hub that rejects every client on earth —
+ * but the follow-up is now a small refactor rather than a Dockerfile argument,
+ * and whoever does it should delete this file along with the duplicate.
  */
 
 import { describe, it, expect, vi } from 'vitest';

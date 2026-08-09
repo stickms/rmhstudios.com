@@ -1,7 +1,18 @@
 'use client';
 
-import { laneColor, resolvePalette } from '@/lib/slice-it/palettes';
-import { approachEnergy, comboEnergy } from '@/lib/slice-it/presentation';
+import { laneColor, relativeLuminance, resolvePalette } from '@/lib/slice-it/palettes';
+import {
+  approachEnergy,
+  approachLevel,
+  backdropBars,
+  backdropLevel,
+  backdropState,
+  backdropVisible,
+  comboEnergy,
+  resolveBackdrop,
+  type BackdropId,
+} from '@/lib/slice-it/presentation';
+import { decodeEnvelope, type PeakEnvelope } from '@/lib/slice-it/beatmap/envelope';
 import { resolveSkin, type NoteShape } from '@/lib/slice-it/skins';
 import { beamNeighbour, flagsForQuant } from '@/lib/slice-it/notation';
 import { clampLinePosition } from '@/lib/slice-it/constants';
@@ -27,11 +38,13 @@ import { MultiplayerSidebar } from './MultiplayerSidebar';
 import { MatchResults } from './MatchResults';
 import { addMatchListener, leaveLobby } from '@/lib/slice-it/net/client';
 import type { PausePayload } from '@/lib/slice-it/net/events';
+import type { BeatMap } from '@/lib/slice-it/types';
 import { toast } from 'sonner';
 import { canvasGlowEnabled } from '@/lib/render/canvas2d-fx';
 import { gameSurfaceDpr } from '@/lib/display-scale';
 import {
   COMBO_BREAK_FEEDBACK_MS,
+  HEALTH_MAX,
   HIT_WINDOWS,
   JUDGEMENT_COLORS,
   LEAD_IN_SECONDS,
@@ -456,6 +469,344 @@ function drawErrorBar(
   ctx.globalAlpha = 1;
 }
 
+/* ─── V7 — stage backdrops ───────────────────────────────────────────────── */
+
+/**
+ * Bars across the scroll axis for the `bars` backdrop.
+ *
+ * 64 over an approach window of ~3 s is ~47 ms a bar — fine enough to show a
+ * hi-hat pattern, coarse enough that the field reads as a shape rather than as
+ * noise. It is also what makes the pass affordable: the bars are accumulated
+ * into ONE path per edge and filled twice, so the whole backdrop is two fills
+ * regardless of this number, against the ~15 rasterising ops the canvas-2D
+ * probe measured for an entire frame.
+ */
+const BACKDROP_BAR_COUNT = 64;
+
+/**
+ * How finely the danger term is quantised before it reaches a colour.
+ *
+ * The gradients bake their colours into stops, so a continuously-desaturating
+ * backdrop would mean rebuilding three `CanvasGradient`s every frame — the
+ * exact allocation the vignette's cache exists to avoid. Eight buckets is one
+ * rebuild per 12.5 points of health, i.e. a handful per run, and the step is
+ * invisible under a gradient at 20% alpha.
+ */
+const BACKDROP_DANGER_STEPS = 8;
+
+/**
+ * Everything a backdrop keeps between frames.
+ *
+ * Two different lifetimes in one bag, on purpose: `bytes`/`rate` change once
+ * per song and the gradients change once per size, palette or danger bucket.
+ * Both are here because both are answers to the same question — "what must NOT
+ * be rebuilt at 60 Hz" — and splitting them into two refs would just mean two
+ * invalidation checks in the same `if`.
+ */
+interface BackdropCache {
+  /** The map `bytes` was decoded from. `getActiveMap()`'s identity is stable per run. */
+  source: unknown;
+  /** Peak-envelope bytes, 0–255. Empty for a song with no stored artefacts. */
+  bytes: Uint8Array;
+  rate: number;
+  /** What the gradients below were built for. */
+  w: number;
+  h: number;
+  key: string;
+  /** Unit-radius bloom for `pulse`; scaled to size at fill time. */
+  bloom: CanvasGradient | null;
+  /** The two drifting bands for `aurora`, one per lane colour. */
+  auroraA: CanvasGradient | null;
+  auroraB: CanvasGradient | null;
+  /** Per-bar peaks, refilled in place every frame. */
+  bars: Float32Array;
+  /** Danger-greyed lane colours, keyed `${hex}:${step}`. See `noteShades`. */
+  tint: Map<string, string>;
+}
+
+function newBackdropCache(): BackdropCache {
+  return {
+    source: null,
+    bytes: new Uint8Array(0),
+    rate: 0,
+    w: 0,
+    h: 0,
+    key: '',
+    bloom: null,
+    auroraA: null,
+    auroraB: null,
+    bars: new Float32Array(BACKDROP_BAR_COUNT),
+    tint: new Map(),
+  };
+}
+
+/**
+ * V7 — the shape `getActiveMap()` actually holds, for the one field this file
+ * needs off it.
+ *
+ * A stored chart's `analysisData` is a `GeneratedBeatmap` carrying
+ * `artefacts.envelope`, but `getActiveMap()` is typed as the plainer `BeatMap`
+ * every caller without a reason to know better should see. Declared locally for
+ * exactly the reason `HUD.tsx` declares `MapWithSections` locally: the extra
+ * field is a fact about one consumer, not about the engine's contract.
+ */
+interface MapWithEnvelope extends BeatMap {
+  artefacts?: { envelope?: PeakEnvelope };
+}
+
+/**
+ * The colour a backdrop actually draws in. Memoised like `noteShades`.
+ *
+ * Two corrections on the lane colour, both of which change only when something
+ * a player did changes — the theme, or eight steps of health — so the whole set
+ * converges to a handful of entries within a run.
+ *
+ * **A light playfield is SHADED, not lit.** Every treatment here is a
+ * translucent wash, and a wash of a bright colour over `#e0e5ec` raises the
+ * whole field's luminance — which flattens the pale `--slice-rail` the lane
+ * troughs are drawn with, i.e. the backdrop would cost contrast on exactly the
+ * lines the player tracks. Darkening the ink first inverts the wash into
+ * shading, so the light theme gains depth where the dark theme gains glow, and
+ * neither loses the rails.
+ *
+ * **Danger drains toward mid-grey**, not toward the background: a failing run
+ * whose backdrop simply vanished would say "the decoration stopped", which is
+ * not the same message as "you are about to lose this".
+ */
+function backdropInk(
+  cache: Map<string, string>,
+  color: string,
+  danger: number,
+  light: boolean,
+): string {
+  const key = `${color}:${danger}:${light ? 'l' : 'd'}`;
+  const hit = cache.get(key);
+  if (hit) return hit;
+  let ink = light ? interpolateHex(color, '#000000', 0.55) : color;
+  if (danger > 0) ink = interpolateHex(ink, '#808080', danger * 0.8);
+  cache.set(key, ink);
+  return ink;
+}
+
+/**
+ * V7 — the stage backdrop, drawn under the playfield.
+ *
+ * Three treatments over one signal. The signal is the track's own peak envelope
+ * — persisted by the analyser, already in the tab, sampled by
+ * `lib/slice-it/presentation.ts` — scaled by run state through `backdropState`,
+ * so the backdrop is simultaneously a visualiser and a readout: it moves with
+ * the music, it opens up as the combo climbs, and it drains as the gauge falls.
+ *
+ * Three rules hold for all of them, and they are why this is safe to draw
+ * behind a rhythm game rather than merely pretty:
+ *
+ *  1. **Nothing here casts a shadow.** `shadowBlur` is this renderer's dominant
+ *     cost, and a blurred full-screen layer would be the single most expensive
+ *     op in the frame. Every treatment below is a gradient fill or a flat path.
+ *  2. **Nothing here can cost a note any contrast.** Not "should not" —
+ *     cannot, and the mechanism is worth knowing because it is what makes the
+ *     alphas below safe to pick by eye. Step 1 fills each lane trough with the
+ *     OPAQUE `--slice-bg`, on top of whatever this drew, and a note is
+ *     `BAR_H` inside a trough of `BAR_H * 1.5` — so the surface every note is
+ *     read against is the bare background, always. Measured across
+ *     {pulse, bars, aurora} × {dark, light} × {default, deuteranopia,
+ *     monochrome}, sampling the full note band at its worst pixel: note-vs-
+ *     field contrast is **identical with the backdrop and without it**, down
+ *     to 1.16:1 monochrome-on-light. The budget this feature spends on
+ *     readability is zero.
+ *
+ *     That guarantee is inherited, not enforced here. A future trough that
+ *     stops being an opaque fill takes it away, and this comment is the
+ *     tripwire.
+ *  3. **Nothing here allocates.** Gradients and the bar scratch live in
+ *     `cache`; the only per-frame arithmetic is the envelope lookup.
+ */
+function drawBackdrop(
+  ctx: CanvasRenderingContext2D,
+  cache: BackdropCache,
+  options: {
+    backdrop: Exclude<BackdropId, 'none'>;
+    w: number;
+    h: number;
+    isMobileV: boolean;
+    /** The audio clock — so the drift stops when the song does, and only then. */
+    time: number;
+    /** Smoothed loudness, 0–1. Flat 0 for a song with no stored envelope. */
+    level: number;
+    /** `backdropState().intensity`, floored and already scaled by A7. */
+    strength: number;
+    /** `backdropState().danger`, quantised to {@link BACKDROP_DANGER_STEPS}. */
+    danger: number;
+    /** The judgement line's position along the scroll axis, px. */
+    cursor: number;
+    /** Pixels per second along the scroll axis. */
+    pps: number;
+    laneA: string;
+    laneB: string;
+    /** True when `--slice-bg` is a light colour. See {@link backdropInk}. */
+    light: boolean;
+  },
+): void {
+  const { w, h, isMobileV, level, strength, danger, laneA, laneB, light } = options;
+  if (w <= 0 || h <= 0 || strength <= 0.01) return;
+
+  const tintA = backdropInk(cache.tint, laneA, danger, light);
+  const tintB = backdropInk(cache.tint, laneB, danger, light);
+  const fade = 1 - danger * 0.6;
+
+  // The gradients depend on size, orientation, palette and the danger bucket —
+  // and on nothing that changes per frame, which is the point. The theme is in
+  // the key implicitly: it changes the inks, and the inks are the key.
+  const key = `${tintA}|${tintB}|${isMobileV ? 'v' : 'h'}`;
+  if (cache.key !== key || cache.w !== w || cache.h !== h) {
+    const rgbA = rgbTriplet(tintA, '59, 130, 246');
+    const rgbB = rgbTriplet(tintB, '244, 114, 182');
+
+    // Unit radius at the origin: `pulse` scales it to the size it wants at fill
+    // time, so the bloom can breathe without the gradient being rebuilt.
+    const bloom = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+    bloom.addColorStop(0, `rgba(${rgbA}, 0.85)`);
+    bloom.addColorStop(0.4, `rgba(${rgbB}, 0.4)`);
+    bloom.addColorStop(1, `rgba(${rgbB}, 0)`);
+
+    // Transparent at BOTH ends, so translating a band along the lane axis
+    // leaves nothing behind it — a gradient clamps to its end stop outside its
+    // range, and an opaque end stop would paint half the canvas solid.
+    const span = (isMobileV ? w : h) * 1.2;
+    const band = (rgb: string) => {
+      const gradient = isMobileV
+        ? ctx.createLinearGradient(-span / 2, 0, span / 2, 0)
+        : ctx.createLinearGradient(0, -span / 2, 0, span / 2);
+      gradient.addColorStop(0, `rgba(${rgb}, 0)`);
+      gradient.addColorStop(0.5, `rgba(${rgb}, 0.85)`);
+      gradient.addColorStop(1, `rgba(${rgb}, 0)`);
+      return gradient;
+    };
+
+    cache.bloom = bloom;
+    cache.auroraA = band(rgbA);
+    cache.auroraB = band(rgbB);
+    cache.key = key;
+    cache.w = w;
+    cache.h = h;
+  }
+
+  if (options.backdrop === 'pulse') {
+    // A bloom on the judgement line, breathing with the track. Anchored there
+    // rather than on the canvas centre because that is where the player is
+    // already looking; a glow that swells anywhere else pulls the eye off the
+    // one pixel column that decides the judgement.
+    const centreX = isMobileV ? w / 2 : options.cursor;
+    const centreY = isMobileV ? options.cursor : h / 2;
+    const radius = Math.hypot(w, h) * (0.28 + 0.2 * level) * (0.6 + 0.4 * strength);
+    if (radius <= 0) return;
+
+    // Alpha is a floor plus a modulated term, and the split is the safety
+    // argument. The floor is a CONSTANT tint — it cannot flash at any rate, so
+    // it can carry most of the visibility. Only the second term tracks the
+    // music, and it is what the photosensitivity bound applies to: ~12% alpha
+    // of a mid-tone gradient, peak to trough, against V13's vignette at 60%.
+    ctx.save();
+    ctx.globalAlpha = (0.18 + 0.12 * level) * strength * fade;
+    ctx.translate(centreX, centreY);
+    ctx.scale(radius, radius);
+    ctx.fillStyle = cache.bloom as CanvasGradient;
+    ctx.fillRect(-centreX / radius, -centreY / radius, w / radius, h / radius);
+    ctx.restore();
+    return;
+  }
+
+  if (options.backdrop === 'aurora') {
+    // Two soft bands drifting across the lane axis at incommensurate rates, so
+    // they cross and separate instead of settling into a visible loop.
+    //
+    // Driven by the AUDIO clock rather than `performance.now()`, which is the
+    // only reason a backdrop with a timeline of its own is allowed here at all
+    // (see `backdropState`, which deliberately has none): it advances with the
+    // song, holds still through a pause, and rewinds with a seek — so it cannot
+    // drift out of step with the thing it is decorating.
+    const laneAxis = isMobileV ? w : h;
+    // Floor plus modulation, as in `pulse` above and for the same reason. Two
+    // bands overlap where they cross, so each carries less than the single
+    // bloom does.
+    const alpha = (0.12 + 0.09 * level) * strength * fade;
+    const drift = (rate: number, phase: number) =>
+      laneAxis / 2 + Math.sin(options.time * rate + phase) * laneAxis * 0.3;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    for (const [gradient, offset] of [
+      [cache.auroraA, drift(0.11, 0)],
+      [cache.auroraB, drift(0.077, 2.2)],
+    ] as const) {
+      const tx = isMobileV ? offset : 0;
+      const ty = isMobileV ? 0 : offset;
+      ctx.save();
+      ctx.translate(tx, ty);
+      ctx.fillStyle = gradient as CanvasGradient;
+      ctx.fillRect(-tx, -ty, w, h);
+      ctx.restore();
+    }
+    ctx.restore();
+    return;
+  }
+
+  // `bars` — the track's waveform, scrolling in lockstep with the notes.
+  //
+  // Bar `i` samples the envelope at the time a note drawn at that position
+  // would be judged, so a loud moment reaches the judgement line at the exact
+  // instant its notes do. That is what makes this a readout and not wallpaper:
+  // the shape arriving from the edge is the music that is about to arrive.
+  //
+  // Along the two OUTER margins of the lane axis, growing inward. The lanes sit
+  // at 0.3/0.7 (or 0.5 under One Track), so the margins are the one part of the
+  // playfield no note ever occupies.
+  const scrollAxis = isMobileV ? h : w;
+  const laneAxis = isMobileV ? w : h;
+  if (!(options.pps > 0) || scrollAxis <= 0) return;
+
+  const timeAt = (position: number) =>
+    isMobileV
+      ? options.time - (position - options.cursor) / options.pps
+      : options.time + (position - options.cursor) / options.pps;
+  // Ascending in both orientations: portrait scrolls the other way, so the far
+  // edge is the EARLIER time there and `backdropBars` would reject the range.
+  const from = timeAt(isMobileV ? scrollAxis : 0);
+  const to = timeAt(isMobileV ? 0 : scrollAxis);
+  if (!backdropBars(cache.bytes, cache.rate, from, to, cache.bars)) return;
+
+  const slot = scrollAxis / BACKDROP_BAR_COUNT;
+  const barSize = slot * 0.68;
+  const reach = laneAxis * 0.22 * (0.45 + 0.55 * strength);
+
+  ctx.save();
+  ctx.globalAlpha = (0.16 + 0.14 * level) * strength * fade;
+  for (const [color, nearEdge] of [
+    [tintA, true],
+    [tintB, false],
+  ] as const) {
+    ctx.beginPath();
+    for (let i = 0; i < BACKDROP_BAR_COUNT; i++) {
+      const value = cache.bars[i];
+      if (value <= 0.01) continue;
+      const length = reach * value;
+      // Later time is nearer the far edge in portrait — the inverse of the
+      // mapping `timeAt` above walks, applied to the bar index.
+      const start = isMobileV
+        ? scrollAxis - (i + 1) * slot + (slot - barSize) / 2
+        : i * slot + (slot - barSize) / 2;
+      if (isMobileV) {
+        ctx.rect(nearEdge ? 0 : w - length, start, length, barSize);
+      } else {
+        ctx.rect(start, nearEdge ? 0 : h - length, barSize, length);
+      }
+    }
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
 // Gamepad button indices (Standard Gamepad mapping)
 const GAMEPAD_LANE0_BUTTONS = [2, 3, 4, 6, 12, 14]; // X, Y, LB, LT, D-Up, D-Left
 const GAMEPAD_LANE1_BUTTONS = [0, 1, 5, 7, 13, 15]; // A, B, RB, RT, D-Down, D-Right
@@ -490,14 +841,26 @@ export function GameCanvas() {
     const cs = getComputedStyle(canvas);
     const v = (name: string, fallback: string) => cs.getPropertyValue(name).trim() || fallback;
     const holdTrail = v('--slice-hold-trail', 'rgba(255, 255, 255, 0.5)');
+    const bg = v('--slice-bg', '#e0e5ec');
+    // V7 — whether the playfield is a light one, which decides whether the
+    // backdrop lights it or shades it (see `backdropInk`). Resolved from the
+    // background's own luminance rather than from the store's `isDarkMode`,
+    // because the flag says what the player picked and this needs to know what
+    // the canvas is actually painted on. `relativeLuminance` returns NaN for
+    // anything it cannot parse, and NaN fails the comparison — so an
+    // unrecognised custom background is treated as dark, which is the safe way
+    // round: a glow on an unexpectedly light field is dimmer than intended,
+    // whereas shading an unexpectedly dark one is invisible.
+    const bgLuminance = relativeLuminance(bg);
     return {
+      light: bgLuminance > 0.4,
       // Blurred shadows are this renderer's dominant cost — the canvas-2D probe
       // measured ~10 `shadowBlur` activations per frame against ~15 rasterising
       // ops, i.e. most of what it draws goes through a blur. Resolved here so the
       // decision is made once per theme/class change rather than per frame; the
       // MutationObserver below re-reads it when `perf-lite` is toggled.
       glow: canvasGlowEnabled(),
-      bg: v('--slice-bg', '#e0e5ec'),
+      bg,
       shadowDark: v('--slice-shadow-dark', '#a3b1c6'),
       shadowLight: v('--slice-shadow-light', '#ffffff'),
       textColor: v('--slice-text-muted', '#64748b'),
@@ -1315,6 +1678,16 @@ export function GameCanvas() {
   /** Derived note tones, keyed by note colour. See `noteShades`. */
   const noteShadesRef = useRef<Map<string, NoteShades>>(new Map());
 
+  /**
+   * V7 — the smoothed loudness the backdrop is drawn at, 0–1, and everything
+   * the backdrop keeps between frames.
+   *
+   * Refs for the same reason `energyRef` is one: these change on every frame
+   * and nothing in the DOM reads them.
+   */
+  const backdropLevelRef = useRef(0);
+  const backdropCacheRef = useRef<BackdropCache>(newBackdropCache());
+
   const render = (
     ctx: CanvasRenderingContext2D,
     engine: GameEngine,
@@ -1462,7 +1835,82 @@ export function GameCanvas() {
     const scrollPos = (timeDelta: number) =>
       isMobileV ? CURSOR_MAIN - timeDelta * PPS : CURSOR_MAIN + timeDelta * PPS;
 
-    // 0. V13 — the vignette, tightening with energy.
+    // 0. V7 — the stage backdrop.
+    //
+    // First thing after the background fill, so every treatment it draws sits
+    // UNDER the vignette, the lane troughs and every note. A visualiser behind
+    // a rhythm game earns its place by never being in front of one.
+    //
+    // Gated by `backdropVisible`, which folds in all three switches this layer
+    // has to obey: the player's own choice, `glow` (reduced motion and
+    // `perf-lite`), and A2's photosensitivity mode. A full-screen luminance
+    // change tracking a 200 BPM track is precisely what that last one exists to
+    // stop, and it is not negotiable against a decoration.
+    // Resolved per frame from the store, exactly like `palette` and `skin`
+    // above and for both of their reasons: changing it in settings takes effect
+    // without a reload, and the value is only a `BackdropId` as far as the type
+    // system is concerned — it arrives from local storage, where a hand-edited
+    // string type-checks all the way to a `switch` that matches nothing.
+    const backdrop = resolveBackdrop(runState.backdrop);
+    const backdropOn = backdropVisible({ backdrop, glow: theme.glow, reducedFlash: flashOff });
+    // The `!== 'none'` is `backdropVisible`'s own first clause, repeated here so
+    // the narrowing reaches `drawBackdrop` — an `Exclude<BackdropId, 'none'>`
+    // cast would say the same thing while asking the reader to trust it.
+    if (backdrop !== 'none' && backdropOn && fx > 0.01) {
+      const cache = backdropCacheRef.current;
+
+      // The envelope is decoded once per song, not per frame. `getActiveMap()`
+      // hands back the same object for the whole run, so its identity is the
+      // cache key — the same trick `HUD.tsx` uses to memoise section markers.
+      const map = engine.getActiveMap() as MapWithEnvelope | null;
+      if (cache.source !== map) {
+        const stored = map?.artefacts?.envelope;
+        cache.source = map;
+        cache.bytes = decodeEnvelope(stored);
+        cache.rate = stored?.rate ?? 0;
+        cache.tint.clear();
+      }
+
+      // A first-order envelope follower over the stored peaks: fast attack so a
+      // kick lands on the frame it happens, slow release so the gap after it is
+      // not a hole. A song with no stored artefacts holds at zero and the
+      // backdrop rides on run state alone — calmer, and honest about having no
+      // audio to show.
+      backdropLevelRef.current = approachLevel(
+        backdropLevelRef.current,
+        backdropLevel(cache.bytes, cache.rate, currentTime),
+        frameDelta,
+      );
+
+      // The run-state half, from `presentation.ts`. `intensity` is floored
+      // rather than used raw: at zero combo — which is where every run starts,
+      // and where the health gauge contributes nothing because it is off by
+      // default — a bare `intensity` is 0, and a backdrop that only appears
+      // once you are already doing well is a backdrop most players never see.
+      const state = backdropState({
+        health: engine.getHealth(),
+        healthMax: HEALTH_MAX,
+        combo: engine.getCombo(),
+        healthEnabled: runState.modifiers.healthGauge,
+      });
+      drawBackdrop(ctx, cache, {
+        backdrop,
+        w,
+        h,
+        isMobileV,
+        time: currentTime,
+        level: backdropLevelRef.current,
+        strength: (0.55 + 0.45 * state.intensity) * fx,
+        danger: Math.round(state.danger * BACKDROP_DANGER_STEPS) / BACKDROP_DANGER_STEPS,
+        cursor: CURSOR_MAIN,
+        pps: PPS,
+        laneA,
+        laneB,
+        light: theme.light,
+      });
+    }
+
+    // 0b. V13 — the vignette, tightening with energy.
     //
     // UNDER the notes, deliberately. Drawn on top it would darken the edge the
     // notes arrive from, which costs reading time at exactly the combo where

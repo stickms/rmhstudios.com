@@ -35,6 +35,14 @@ import {
   MIN_LINE_POSITION,
   MIN_SCROLL_SPEED,
 } from '@/lib/slice-it/constants';
+import {
+  DEFAULT_HIT_SOUND_ID,
+  HIT_SOUND_OPTIONS,
+  HIT_SOUND_SAMPLE_IDS,
+  hitSoundPath,
+  pickHitSound,
+  RANDOM_HIT_SOUND_ID,
+} from '@/lib/slice-it/hit-sound-pool';
 import { bindsForLane, conflictingBinds } from '@/lib/slice-it/input';
 import { LANE_PALETTE_IDS } from '@/lib/slice-it/palettes';
 import { timingScale } from '@/lib/slice-it/scoring';
@@ -518,33 +526,6 @@ const Well = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-const HIT_SOUND_OPTIONS = [
-  { id: 'default', label: 'Default (Synth)', category: 'System' },
-  { id: 'drum-hitclap.wav', label: 'Hit Clap', category: 'Drums' },
-  { id: 'drum-hitfinish.wav', label: 'Hit Finish', category: 'Drums' },
-  { id: 'drum-hitwhistle.wav', label: 'Hit Whistle', category: 'Drums' },
-  { id: 'soft-hitfinish.wav', label: 'Soft Finish', category: 'Drums' },
-  { id: 'soft-hitwhistle.wav', label: 'Soft Whistle', category: 'Drums' },
-  { id: 'all purpose clap.wav', label: 'All Purpose Clap', category: 'Drums' },
-  { id: 'snare_a.wav', label: 'Snare A', category: 'Snares' },
-  { id: 'snare_b.wav', label: 'Snare B', category: 'Snares' },
-  { id: 'snare_c.wav', label: 'Snare C', category: 'Snares' },
-  { id: 'snare_electronic_a.wav', label: 'E-Snare A', category: 'Snares' },
-  { id: 'snare_electronic_b.wav', label: 'E-Snare B', category: 'Snares' },
-  { id: 'snare_electronic_c.wav', label: 'E-Snare C', category: 'Snares' },
-  { id: 'kick_a.wav', label: 'Kick A', category: 'Kicks' },
-  { id: 'kick_b.wav', label: 'Kick B', category: 'Kicks' },
-  { id: 'kick_c.wav', label: 'Kick C', category: 'Kicks' },
-  { id: 'kick_electronic_a.wav', label: 'E-Kick A', category: 'Kicks' },
-  { id: 'kick_electronic_b.wav', label: 'E-Kick B', category: 'Kicks' },
-  { id: 'kick_electronic_c.wav', label: 'E-Kick C', category: 'Kicks' },
-  { id: 'cymbal_a.wav', label: 'Cymbal A', category: 'Cymbals' },
-  { id: 'cymbal_b.wav', label: 'Cymbal B', category: 'Cymbals' },
-  { id: 'cymbal_c.wav', label: 'Cymbal C', category: 'Cymbals' },
-  { id: 'tick.wav', label: 'Tick', category: 'Clock' },
-  { id: 'tock.wav', label: 'Tock', category: 'Clock' },
-];
-
 interface SettingsPanelProps {
   onClose: () => void;
   onCalibrate: () => void;
@@ -573,6 +554,8 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
   const setQuantColors = useSliceItStore((s) => s.setQuantColors);
   const noteSkin = useSliceItStore((s) => s.noteSkin);
   const setNoteSkin = useSliceItStore((s) => s.setNoteSkin);
+  const backdrop = useSliceItStore((s) => s.backdrop);
+  const setBackdrop = useSliceItStore((s) => s.setBackdrop);
   const lanePalette = useSliceItStore((s) => s.lanePalette);
   const setLanePalette = useSliceItStore((s) => s.setLanePalette);
   const reducedFlash = useSliceItStore((s) => s.reducedFlash);
@@ -605,17 +588,29 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
   const [previewingSound, setPreviewingSound] = React.useState<string | null>(null);
   const [loadingSound, setLoadingSound] = React.useState<string | null>(null);
 
+  // What Shuffle previewed last, so tapping it repeatedly demonstrates the
+  // no-repeat rule rather than accidentally contradicting it.
+  const lastShuffled = React.useRef<string | null>(null);
+
   const previewHitSound = React.useCallback(async (soundId: string) => {
     const am = AudioManager.getInstance();
     am.initialize();
     const sfxVol = useSliceItStore.getState().sfxVolume / 100;
-    if (soundId === 'default') {
+    if (soundId === DEFAULT_HIT_SOUND_ID) {
       setPreviewingSound(soundId);
       am.playSfX(880, 'triangle', 0.1, sfxVol);
       setTimeout(() => setPreviewingSound(null), 300);
       return;
     }
-    const url = asset(`/music/slice-it/sounds/${soundId}`);
+    // The button stays keyed by the option id — `random` highlights the
+    // Shuffle tile, not whichever sample it happened to draw.
+    let sample: string | null = soundId;
+    if (soundId === RANDOM_HIT_SOUND_ID) {
+      sample = pickHitSound(HIT_SOUND_SAMPLE_IDS, lastShuffled.current);
+      lastShuffled.current = sample;
+    }
+    if (!sample) return;
+    const url = asset(hitSoundPath(sample));
     if (!am.isHitSoundCached(url)) {
       setLoadingSound(soundId);
       try {
@@ -1005,6 +1000,35 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
                 { id: 'minimal', label: t('skin-minimal', { defaultValue: 'Minimal' }) },
               ].filter((option) => FREE_SKIN_IDS.includes(option.id))}
               onChange={setNoteSkin}
+            />
+          </Well>
+        </Section>
+
+        {/* V7 — the stage backdrop. One literal `t()` per option rather than
+            `t(\`backdrop-${id}\`)`, for the same reason the lane palettes below
+            spell theirs out: `i18next-parser` cannot read a template-literal
+            key, so the interpolated form extracts to nothing and every locale
+            falls back to the raw id.
+
+            Not folded into Accessibility & Comfort even though it is gated by
+            two settings that live there — this is the cosmetic control, and the
+            comfort controls that override it are named in the hint. */}
+        <Section title={t('backdrop', { defaultValue: 'Backdrop' })}>
+          <Well>
+            <ChoiceRow
+              label={t('backdrop-label', { defaultValue: 'Stage backdrop' })}
+              description={t('backdrop-hint', {
+                defaultValue:
+                  "A visualiser behind the playfield, drawn from the track's own analysed waveform — so it moves with the music, not on a timer of its own. It also opens up as your combo climbs and drains as the health gauge falls. Always under the notes, never over them. Reduced Flash, reduced motion and Effect Intensity all override this.",
+              })}
+              value={backdrop}
+              options={[
+                { id: 'none' as const, label: t('backdrop-none', { defaultValue: 'None' }) },
+                { id: 'pulse' as const, label: t('backdrop-pulse', { defaultValue: 'Pulse' }) },
+                { id: 'bars' as const, label: t('backdrop-bars', { defaultValue: 'Waveform' }) },
+                { id: 'aurora' as const, label: t('backdrop-aurora', { defaultValue: 'Aurora' }) },
+              ]}
+              onChange={setBackdrop}
             />
           </Well>
         </Section>

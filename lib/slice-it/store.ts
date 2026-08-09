@@ -21,6 +21,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { RealtimeStatus } from '@/lib/shared/realtime/types';
 import { DEFAULT_MODIFIERS, applyExclusions } from './modifiers';
+import { resolveBackdrop, type BackdropId } from './presentation';
 import type { Modifiers } from './types';
 import {
   BASE_APPROACH_SEC,
@@ -93,6 +94,21 @@ interface SliceItState {
    * `lanePalette` above is a colour-vision setting and outranks a look.
    */
   noteSkin: string;
+  /**
+   * V7 — which stage backdrop draws behind the playfield. See
+   * `lib/slice-it/presentation.ts`.
+   *
+   * Defaults to `pulse` rather than to `none`, which is the one place this
+   * settings block departs from "a new default reproduces today's behaviour
+   * exactly". A backdrop nobody has switched on is a backdrop nobody sees, and
+   * the effect is bounded well under what already ships: `pulse` swings ~10% of
+   * alpha on a mid-tone bloom UNDER the playfield, against V13's vignette at
+   * 0.6. It is also already behind three switches that existed before it —
+   * reduced motion and `perf-lite` (via `canvasGlowEnabled`), A2's
+   * `reducedFlash`, and A7's `effectIntensity` — so the players most likely to
+   * be harmed by it never receive it in the first place.
+   */
+  backdrop: BackdropId;
   /**
    * A2 — cap how much the screen may brighten per frame, and drop the
    * decorative flashes entirely.
@@ -226,6 +242,7 @@ interface SliceItState {
   setQuantColors: (value: boolean) => void;
   setLanePalette: (value: string) => void;
   setNoteSkin: (value: string) => void;
+  setBackdrop: (value: string) => void;
   setReducedFlash: (value: boolean) => void;
   setEffectIntensity: (value: number) => void;
   setShowJudgementsBelow: (value: string) => void;
@@ -332,6 +349,7 @@ export const useSliceItStore = create<SliceItState>()(
       quantColors: true,
       lanePalette: 'default',
       noteSkin: 'default',
+      backdrop: 'pulse',
       reducedFlash: false,
       effectIntensity: 1,
       showJudgementsBelow: 'MARVELOUS',
@@ -367,6 +385,12 @@ export const useSliceItStore = create<SliceItState>()(
       setQuantColors: (quantColors) => set({ quantColors }),
       setLanePalette: (lanePalette) => set({ lanePalette }),
       setNoteSkin: (noteSkin) => set({ noteSkin }),
+      // Narrowed on the way in as well as on the way out (the renderer resolves
+      // it again per frame, as it does the palette and the skin). Belt and
+      // braces on purpose: the field is typed `BackdropId`, but persisted state
+      // is a string somebody can edit, and a type is not a guard against
+      // storage.
+      setBackdrop: (backdrop) => set({ backdrop: resolveBackdrop(backdrop) }),
       setReducedFlash: (reducedFlash) => set({ reducedFlash }),
       setEffectIntensity: (v) => set({ effectIntensity: Math.max(0, Math.min(1, v)) }),
       setShowJudgementsBelow: (showJudgementsBelow) => set({ showJudgementsBelow }),
@@ -452,7 +476,7 @@ export const useSliceItStore = create<SliceItState>()(
     }),
     {
       name: 'slice-it-storage',
-      version: 7,
+      version: 8,
       // Settings only. Run and lobby state are per-session by definition, and
       // persisting a lobby snapshot would restore a room that no longer exists.
       partialize: (state) => ({
@@ -468,6 +492,7 @@ export const useSliceItStore = create<SliceItState>()(
         quantColors: state.quantColors,
         lanePalette: state.lanePalette,
         noteSkin: state.noteSkin,
+        backdrop: state.backdrop,
         reducedFlash: state.reducedFlash,
         effectIntensity: state.effectIntensity,
         showJudgementsBelow: state.showJudgementsBelow,
@@ -511,6 +536,12 @@ export const useSliceItStore = create<SliceItState>()(
        *   feature is gone and so is the field; the step is kept as a no-op
        *   because the version numbers are a ratchet — renumbering them would
        *   re-run later steps on blobs that already had them applied.
+       * - **v7 → v8** added `backdrop` (V7). The one step here that changes
+       *   what an existing player SEES, deliberately and only here: it lands on
+       *   `pulse` rather than `none` for the reasons on the field itself. A
+       *   returning player who wants the flat playfield back sets it to "None"
+       *   in settings, and anyone on reduced motion, `perf-lite` or Reduced
+       *   Flash keeps it whatever this says.
        */
       migrate: (persisted, version) => {
         let state = (persisted ?? {}) as Record<string, unknown>;
@@ -566,6 +597,9 @@ export const useSliceItStore = create<SliceItState>()(
           // No-op: `recentTiming` left with the AI tier. A v6 blob needs
           // nothing added, and the stale key a v7 blob still carries is
           // ignored — `partialize` decides what is written back.
+        }
+        if (version < 8) {
+          state = { ...state, backdrop: 'pulse' };
         }
         return state;
       },

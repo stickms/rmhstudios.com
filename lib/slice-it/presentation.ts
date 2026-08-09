@@ -13,6 +13,8 @@
  * actually cost the player frames.
  */
 
+import { envelopePeak } from './beatmap/envelope';
+
 /* ─── V3 — the persisted spectrum envelope ───────────────────────────────── */
 
 /** Frames per second in a stored envelope. */
@@ -173,9 +175,148 @@ export function backdropVisible(options: {
   return options.backdrop !== 'none' && options.glow && !options.reducedFlash;
 }
 
+/**
+ * The registry, in the order the settings panel offers them.
+ *
+ * Same shape as `palettes.ts`'s `LANE_PALETTE_IDS` and `skins.ts`'s
+ * `FREE_SKIN_IDS`, and for the same reason: the persisted value is a string
+ * from someone's local storage, and every consumer needs one place that turns
+ * an arbitrary string back into something drawable.
+ */
+export const BACKDROP_IDS = ['none', 'pulse', 'bars', 'aurora'] as const;
+
+/** Narrow an arbitrary persisted string back to a backdrop. */
+export function resolveBackdrop(id: string | null | undefined): BackdropId {
+  if (!id) return 'none';
+  return (BACKDROP_IDS as readonly string[]).includes(id) ? (id as BackdropId) : 'none';
+}
+
+/* ─── V7 — reading the music the backdrops react to ──────────────────────── */
+
+/**
+ * Where a backdrop's audio comes from: the peak envelope already persisted on
+ * `analysisData.artefacts`.
+ *
+ * This is the part that makes V7 shippable without V3's spectrum envelope. The
+ * analyser writes a ~200 Hz peak-amplitude curve for every song it charts
+ * (`beatmap/envelope.ts` — ~48 KB, on the wire today because the chart editor
+ * draws its waveform from it), and it is already in the tab: `useStartRun`
+ * hands the whole analysis blob to the engine, and `HUD.tsx` reads
+ * `artefacts.sections` off the same object. So a visualiser that samples it
+ * costs **one extra consumer of bytes the client already downloaded** — no new
+ * column, no bigger payload, no runtime FFT, and it is sample-accurately in
+ * sync with the notes because it came out of the same analysis pass they did.
+ *
+ * A song with no stored artefacts (a legacy row nobody has played since the
+ * analyser moved server-side, which `useStartRun` backfills on first play)
+ * reads a level of 0 forever. That is deliberate: the backdrop then rides on
+ * run state alone — dimmer and calmer, still correct — rather than inventing
+ * a signal that has nothing to do with the audio.
+ */
+
+/**
+ * Seconds of audio one loudness reading covers.
+ *
+ * 60 ms is a little under four frames at 60 Hz, so consecutive frames overlap
+ * and a transient cannot fall between two readings and vanish — which is what
+ * point-sampling a 200 Hz curve at 60 Hz does, and it looks like the backdrop
+ * randomly ignoring half the kicks.
+ */
+export const BACKDROP_LEVEL_WINDOW = 0.06;
+
+/**
+ * Peak loudness around a playback time, 0–1.
+ *
+ * Square-rooted on the way out. The stored bytes are linear amplitude, and
+ * linear amplitude spends most of its range on the loudest 10% of a track: a
+ * backdrop driven by it sits near zero through every verse and only wakes up
+ * in a chorus. The curve is a stand-in for a proper dB mapping, which would
+ * need a floor to keep silence from mapping to −∞.
+ */
+export function backdropLevel(envelope: Uint8Array, rate: number, seconds: number): number {
+  if (!(seconds >= 0)) return 0;
+  const half = BACKDROP_LEVEL_WINDOW / 2;
+  return Math.sqrt(envelopePeak(envelope, rate, seconds - half, seconds + half));
+}
+
+/**
+ * The same reading, spread across a time range — one value per bar.
+ *
+ * Writes into the caller's array rather than allocating, because this runs once
+ * per frame with 64 buckets and the allocation would be the only garbage the
+ * draw loop produces.
+ *
+ * Returns false when there is nothing to draw (no stored envelope, or a
+ * degenerate range), so the renderer can skip the pass rather than paint a row
+ * of zero-height bars and leave the player looking at a backdrop that appears
+ * broken.
+ */
+export function backdropBars(
+  envelope: Uint8Array,
+  rate: number,
+  fromSeconds: number,
+  toSeconds: number,
+  into: Float32Array,
+): boolean {
+  into.fill(0);
+  const count = into.length;
+  if (count === 0 || envelope.length === 0 || !(rate > 0)) return false;
+  if (!(toSeconds > fromSeconds)) return false;
+
+  const step = (toSeconds - fromSeconds) / count;
+  for (let i = 0; i < count; i++) {
+    const start = fromSeconds + i * step;
+    // Peak over the bucket, not the sample at its centre: one bar covers ~47 ms
+    // of a 5 ms curve, and nearest-sampling that aliases — the bar field
+    // shimmers as it scrolls instead of moving with the music. The same
+    // reasoning `envelopePeak` itself documents.
+    into[i] = start < 0 ? 0 : Math.sqrt(envelopePeak(envelope, rate, start, start + step));
+  }
+  return true;
+}
+
+/**
+ * How fast the drawn level may RISE toward a new peak, and fall away from one.
+ *
+ * An envelope follower, and the asymmetry is the whole design. A fast attack is
+ * what makes a kick land on the frame it happens; a slow release is what stops
+ * the gap after it from being a hole. Together they turn a 200 Hz curve full of
+ * holes into something that reads as the room breathing.
+ *
+ * The release also does the accessibility work. A backdrop tracking a 200 BPM
+ * track is a 3.3 Hz modulation — inside the band photosensitivity guidance
+ * cares about — so the depth is bounded (the renderer never swings more than
+ * ~12% alpha of a mid-tone colour, never a full-screen luminance step) and the
+ * 0.34 s release damps the trough between beats so consecutive peaks blur into
+ * one another rather than strobing. Above that, `backdropVisible` is the real
+ * answer: reduced motion, `perf-lite` and A2's photosensitivity mode each turn
+ * the whole layer off.
+ */
+export const BACKDROP_ATTACK_TAU = 0.045;
+export const BACKDROP_RELEASE_TAU = 0.34;
+
+/** One frame of envelope following. Frame-rate independent, like {@link approachEnergy}. */
+export function approachLevel(current: number, target: number, dt: number): number {
+  return lag(current, target, dt, target >= current ? BACKDROP_ATTACK_TAU : BACKDROP_RELEASE_TAU);
+}
+
 function clamp01(value: number): number {
   if (!Number.isFinite(value)) return 0;
   return Math.max(0, Math.min(1, value));
+}
+
+/**
+ * Move `current` toward `target` by one frame's worth of first-order lag.
+ *
+ * Exponential rather than a fixed step so it is frame-rate independent: the
+ * same wall-clock second produces the same approach at 60 Hz and at 144 Hz.
+ * Shared by the two followers here so there is one definition of what "eases
+ * toward" means on this screen rather than two that can drift apart.
+ */
+function lag(current: number, target: number, dt: number, tau: number): number {
+  if (!Number.isFinite(dt) || dt <= 0 || !(tau > 0)) return clamp01(current);
+  const k = 1 - Math.exp(-dt / tau);
+  return clamp01(current + (clamp01(target) - clamp01(current)) * k);
 }
 
 /* ─── V13 — playfield energy ─────────────────────────────────────────────── */
@@ -238,13 +379,11 @@ export const ENERGY_FALL_TAU = 0.9;
  * This is also what makes the accessibility bound trivially true. A first-order
  * lag has no overshoot and no oscillation, so the lit state cannot flash at any
  * rate — with these taus its steepest excursion is a ~2/s ramp that only
- * happens once per streak. There is no periodic term anywhere in this feature
- * (no beat pulse, no shimmer), which is why "nothing above ~3 Hz" is not a
- * budget being spent but a class of effect that was never added.
+ * happens once per streak. There is no periodic term in THIS feature (no beat
+ * pulse, no shimmer): the playfield answers the combo and nothing else. V7's
+ * backdrops do carry one, which is why they sit behind their own switch and
+ * behind {@link backdropVisible} on top of it.
  */
 export function approachEnergy(current: number, target: number, dt: number): number {
-  if (!Number.isFinite(dt) || dt <= 0) return clamp01(current);
-  const tau = target >= current ? ENERGY_RISE_TAU : ENERGY_FALL_TAU;
-  const k = 1 - Math.exp(-dt / tau);
-  return clamp01(current + (clamp01(target) - clamp01(current)) * k);
+  return lag(current, target, dt, target >= current ? ENERGY_RISE_TAU : ENERGY_FALL_TAU);
 }

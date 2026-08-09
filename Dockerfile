@@ -22,12 +22,12 @@
 #
 # Cache strategy:
 #   - pnpm store mount  → avoids re-downloading packages between builds
-#   - Vinxi/TanStack cache mounts → incremental Vite builds
 #   - deps only rebuilds on lockfile changes (not prisma schema changes)
 #   - prisma-generate is a thin layer on top of deps (~3s) — schema changes
 #     skip the expensive pnpm install and only re-run prisma generate
 #   - server-builder is decoupled from app source → only rebuilds when
-#     server/ or lib/rmh* change, NOT on app/component changes
+#     server/ or lib/ change, NOT on app/component/public changes (and it runs
+#     in parallel with vite-builder, so even a rebuild costs no wall-clock)
 #   - server-builder is env-agnostic → 100% cache hit between prod/staging
 #   - node_modules copied from prisma-generate (not builder) → stable layer
 #     that includes @prisma/client and only rebuilds on lockfile/schema changes
@@ -84,219 +84,42 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharin
     pnpm install --frozen-lockfile --prod --ignore-scripts --prefer-offline
 
 # ── Stage 2: Server bundles (env-agnostic, decoupled from app source) ─────
-# esbuild runs in <3s and produces CJS bundles for socket/rmhbox/rmhtube.
-# Only copies server/ and the shared lib/ types it imports — so changes to
-# app/, components/, public/, etc. do NOT invalidate this stage.
+# esbuild runs in <3s and produces CJS bundles for the six Node services.
+# Copies server/ + lib/ and nothing else — app/, components/ and public/ stay
+# out, so a page or component change does NOT invalidate this stage.
 # Because this stage has NO build args, it caches perfectly when deploying
 # staging right after production (or vice versa) with the same source code.
+#
+# WHY `COPY lib` AND NOT A FILE-BY-FILE LIST: this block used to be 83 separate
+# `COPY lib/<one thing>` lines, each with a comment explaining which handler
+# imported it, so that a change to an uninvolved lib/ subtree left the stage
+# cached. That traded badly on both sides of the ledger:
+#
+#   - It bought nothing on the clock. The stage it protects is a ~3s esbuild,
+#     and BuildKit runs it CONCURRENTLY with vite-builder (~90s+). Rebuilding it
+#     costs zero wall-clock — it finishes deep inside another stage's critical
+#     path either way. Meanwhile the 85 layers it added were real: every one is
+#     a record to checksum each build and an entry in the mode=max cache
+#     manifest, which is exactly the "preparing build cache for export" phase
+#     that ran 43.4s on the last measured deploy.
+#   - It was a standing footgun. The list had to be a superset of the bundles'
+#     transitive imports, so adding one `import` to a socket handler broke the
+#     production image build with a module-not-found — at deploy time, not in
+#     local dev or CI, because only this stage has the truncated tree.
+#
+# `lib/` is 15 MB and esbuild is import-driven + tree-shaking with
+# `--packages=external`, so copying all of it is a strict superset that produces
+# byte-identical bundles. Tests/mocks are already stripped by .dockerignore.
 FROM prisma-generate AS server-builder
 
 COPY tsconfig.json tsconfig.server.json ./
 COPY server ./server/
-COPY lib/rmhbox ./lib/rmhbox/
-COPY lib/rmhtube ./lib/rmhtube/
-COPY lib/rmhmusic ./lib/rmhmusic/
-COPY lib/blackjack ./lib/blackjack/
-COPY lib/holdem ./lib/holdem/
-COPY lib/baccarat ./lib/baccarat/
-COPY lib/roulette ./lib/roulette/
-# Every casino table moves coins through the shared ledger rather than its own
-# read-then-decrement, and the hub passes its own Prisma client — which is what
-# `ledger-core` (unlike `ledger.server`) is split out for. It imports nothing
-# but `@prisma/client` types, so a single-file copy resolves.
-COPY lib/economy/ledger-core.ts ./lib/economy/ledger-core.ts
-# Dream Rift's socket relay handler only needs the shared, import-free netcode
-# protocol — copy just that file (the rest of lib/dream-rift is browser code).
-COPY lib/dream-rift/net/events.ts ./lib/dream-rift/net/events.ts
-# The socket-server's app-progression helper (server/socket-server/economy.ts)
-# awards XP + quest progress to RMHType/RMHStudy players, reusing the pure,
-# import-free season + quest-catalog definitions so thresholds never drift from
-# the web tier — so those two files must be present when the bundle is built.
-COPY lib/battlepass/season.ts ./lib/battlepass/season.ts
-COPY lib/quests/catalog.ts ./lib/quests/catalog.ts
-# The socket-server's Spaces (live text rooms) and Party (cross-game groups)
-# handlers import their event-name + type contracts from these dirs
-# (server/socket-server/handlers/{spaces,party}.ts). Both are small, import-free
-# constant/type modules, so copy the dirs so the bundle can resolve them.
-COPY lib/party ./lib/party/
-COPY lib/spaces ./lib/spaces/
-# Voice-call signalling: the socket hub imports the event contract and the
-# shared state machine (peer.ts/store.ts are client-only and never reached).
-COPY lib/call/events.ts ./lib/call/events.ts
-COPY lib/call/state.ts ./lib/call/state.ts
-# The realtime status/grace contract, shared by BOTH sides of the wire: the
-# client's connection states and the 15s disconnect window that
-# server/shared/presence-grace.ts and server/rmhbox/config.ts both read, so a
-# room's countdown and the client's countdown can't disagree. Import-free
-# types + constants, so a single-file copy resolves.
-COPY lib/shared/realtime/types.ts ./lib/shared/realtime/types.ts
-COPY lib/shared/realtime/contract.ts ./lib/shared/realtime/contract.ts
-# RMHType's event names. The socket-server handler imports them rather than
-# inlining the strings (the repo-wide rule — see server/CLAUDE.md), and the
-# module is a bare constant map, so copy just the file rather than the whole
-# browser-side lib/rmhtype dir.
-COPY lib/rmhtype/events.ts ./lib/rmhtype/events.ts
-# The shared AI text helpers, for RMHType's write-me-a-passage-about-X mode. The
-# generation runs on the hub, not the web tier, because the passage is what
-# scoring is measured against — a client-supplied one would be a client-supplied
-# WPM. The module's only import is the `openai` SDK, which stays external.
-COPY lib/ai/text.server.ts ./lib/ai/text.server.ts
-# Laundry Sort's versus handler needs its wire protocol and the shared match
-# constants (durations, difficulties, lobby size) so the server validates
-# against the same values the client offers. Both are import-free constant/type
-# modules; the rest of lib/laundry-sort is the browser-side cloth solver.
-COPY lib/laundry-sort/net/events.ts ./lib/laundry-sort/net/events.ts
-COPY lib/laundry-sort/constants.ts ./lib/laundry-sort/constants.ts
-# Gabriel's Horn is server-authoritative in a way the other games are not — the
-# hub owns the deck, the dice and every hand, because the whole premise is that
-# the roller must never receive the faces. So the handler needs the rulebook
-# (constants), the wire protocol (net/events) and the deck itself. All three are
-# import-free; the rest of lib/gabriels-horn is the browser store and client.
-COPY lib/gabriels-horn/constants.ts ./lib/gabriels-horn/constants.ts
-COPY lib/gabriels-horn/deck.ts ./lib/gabriels-horn/deck.ts
-COPY lib/gabriels-horn/house-rules.ts ./lib/gabriels-horn/house-rules.ts
-COPY lib/gabriels-horn/net/events.ts ./lib/gabriels-horn/net/events.ts
-# Slice It's lobby handler needs its wire protocol, the shared lobby/match
-# constants (grace windows, countdowns, density caps) and the modifier +
-# scoring rules — the server clamps modifiers and computes the multiplier it
-# shows in the lobby, so it must reach the same answer the client does. All
-# import-free apart from zod; the rest of lib/slice-it is the browser engine,
-# the store and the (server-side, but web-tier) beatmap analyser.
-COPY lib/slice-it/constants.ts ./lib/slice-it/constants.ts
-COPY lib/slice-it/types.ts ./lib/slice-it/types.ts
-COPY lib/slice-it/modifiers.ts ./lib/slice-it/modifiers.ts
-COPY lib/slice-it/scoring.ts ./lib/slice-it/scoring.ts
-# The leaderboard's board key (R1). The socket hub's persistResults has to file
-# a multiplayer score on the same board /api/slice-it/score would, and two
-# implementations of that would put the same run on two different boards
-# depending on which door it came through.
-COPY lib/slice-it/pools.ts ./lib/slice-it/pools.ts
-COPY lib/slice-it/net/events.ts ./lib/slice-it/net/events.ts
-# N3–N12 — the mode policies (co-op split, attack resolution, elimination
-# checkpoints, matchmaking band, queue rotation, rejoin). The socket hub applies
-# every one of these, and they live outside the handler so they are testable
-# without standing up a hub.
-COPY lib/slice-it/net/modes.ts ./lib/slice-it/net/modes.ts
-# O3 — the jobs worker charts uploaded songs now, so the analyser is no longer
-# "web-tier only" as the comment above described it. That pulls in the whole
-# beatmap directory (STFT, onsets, tempo, charter, sections) plus `chart.ts`
-# for the difficulty resolution the charter's output is validated against, and
-# `songs.server.ts` to read the stored audio and write the density strip.
-COPY lib/slice-it/beatmap ./lib/slice-it/beatmap/
-COPY lib/slice-it/chart.ts ./lib/slice-it/chart.ts
-COPY lib/slice-it/songs.server.ts ./lib/slice-it/songs.server.ts
-COPY lib/slice-it/analysis-queue.server.ts ./lib/slice-it/analysis-queue.server.ts
-# C7 — the preview point the analysis job defaults from the section map.
-COPY lib/slice-it/preview.ts ./lib/slice-it/preview.ts
-# C8 — the hourly sweep that brings stale generated charts to the current
-# generator, and the chart hash it rewrites when it does.
-COPY lib/slice-it/regen.server.ts ./lib/slice-it/regen.server.ts
-COPY lib/slice-it/editor/hash.server.ts ./lib/slice-it/editor/hash.server.ts
-# ffmpeg wrapper: `songs.server.ts` reads a stored file's content type from it.
-COPY lib/audio/transcode.server.ts ./lib/audio/transcode.server.ts
-# Massive March goes in whole, unlike the games above, because for this one the
-# hub IS the simulation: the island's height field, its collision, the audibility
-# rule, the puzzle engine, the item catalogue and the campaign save are all
-# shared verbatim with the browser rather than duplicated. Copying a file at a
-# time here would mean re-reading the import graph on every change to the game;
-# the directory is a few hundred KB of import-free TypeScript and nothing else
-# in lib/ depends on it, so it cannot bust anyone else's cache either.
-COPY lib/massive-march ./lib/massive-march/
-# lights-out, doctrine, rmhvibe, rmhark-ai, media and storage were only imported
-# by the Node workers now running in the Go supervisor — no longer copied here so
-# changes to them don't bust this stage's cache.
-COPY lib/prisma.server.ts ./lib/prisma.server.ts
-COPY lib/url.ts ./lib/url.ts
-# The RMHLadder + RMHHomes scrape pipelines fetch external URLs through the
-# shared SSRF guard (lib/rmhladder/pipeline/memo-fetch.ts + adapters/http.ts and
-# lib/homes/scrape/http.ts each `import('../../ssrf-guard.server')`), so the
-# ladder-worker/homes-worker bundles need this file present at bundle time.
-COPY lib/ssrf-guard.server.ts ./lib/ssrf-guard.server.ts
-# ladder-worker (RMHLadder job-discovery cron) is the one Node worker not in
-# the Go supervisor — it needs lib/rmhladder for its pipeline/seed/probe code.
-COPY lib/rmhladder ./lib/rmhladder/
-# ladder-worker also hosts the data-lifecycle cleanup cron, which imports the
-# batched purge queries from this module (relative import, so it must be present
-# in this bundle context).
-COPY lib/cleanup.server.ts ./lib/cleanup.server.ts
-# ladder-worker's résumé storage and job alerts reach the object store and the
-# notification stack. These were invisible until the copy check learned to
-# follow `@/…` specifiers: they enter the graph through one, and everything
-# below them came along unseen. Single files, because each pulls in only the
-# siblings listed here.
-COPY lib/storage/s3.server.ts ./lib/storage/s3.server.ts
-COPY lib/storage/keys.ts ./lib/storage/keys.ts
-COPY lib/storage/asset.ts ./lib/storage/asset.ts
-# `putObject` runs every upload through the lossless storage compressor, so the
-# workers that write to the object store need it too.
-COPY lib/storage/compress.server.ts ./lib/storage/compress.server.ts
-COPY lib/notifications.server.ts ./lib/notifications.server.ts
-COPY lib/push/send.server.ts ./lib/push/send.server.ts
-COPY lib/redis.server.ts ./lib/redis.server.ts
-COPY lib/user-display.ts ./lib/user-display.ts
-COPY lib/shop/catalog.ts ./lib/shop/catalog.ts
+COPY lib ./lib/
 
-# ── jobs worker (pg-boss async backbone) ────────────────────────────────────
-# server/jobs/index.ts was in package.json's build script and in
-# docker-compose.yml's `command:` but was NEVER in this stage's esbuild list, so
-# the image shipped without dist-server/server/jobs/index.cjs and the jobs
-# container failed to start. Engagement progression has an inline fallback in
-# the web tier and so degraded quietly; the weekly digest and event reminders
-# are worker-only and simply never fired. Adding the entrypoint below requires
-# every lib/ module it reaches to be copied here — that set is what follows, and
-# lib/__tests__/server-bundle-copies.test.ts holds this list to the real import
-# graph.
-COPY lib/jobs ./lib/jobs/
-COPY lib/digest ./lib/digest/
-COPY lib/outbox ./lib/outbox/
-COPY lib/webhooks ./lib/webhooks/
-COPY lib/xp ./lib/xp/
-COPY lib/achievements/catalog.ts ./lib/achievements/catalog.ts
-COPY lib/achievements/engine.server.ts ./lib/achievements/engine.server.ts
-COPY lib/api/idempotency.server.ts ./lib/api/idempotency.server.ts
-COPY lib/async-pool.ts ./lib/async-pool.ts
-COPY lib/coins.server.ts ./lib/coins.server.ts
-COPY lib/communities/access.server.ts ./lib/communities/access.server.ts
-COPY lib/economy/ledger.server.ts ./lib/economy/ledger.server.ts
-COPY lib/email/send.server.ts ./lib/email/send.server.ts
-COPY lib/email/unsubscribe.ts ./lib/email/unsubscribe.ts
-COPY lib/events.server.ts ./lib/events.server.ts
-COPY lib/og/static-cards.ts ./lib/og/static-cards.ts
-COPY lib/quests/engine.server.ts ./lib/quests/engine.server.ts
-COPY lib/rate-limit.ts ./lib/rate-limit.ts
-COPY lib/referrals.server.ts ./lib/referrals.server.ts
-COPY lib/seo.ts ./lib/seo.ts
-COPY lib/social/engagement-effects.server.ts ./lib/social/engagement-effects.server.ts
-COPY lib/streak.server.ts ./lib/streak.server.ts
-COPY lib/notify ./lib/notify/
-COPY lib/account ./lib/account/
-COPY lib/account-lifecycle.ts ./lib/account-lifecycle.ts
-COPY lib/shop/equipped.ts ./lib/shop/equipped.ts
-COPY lib/shop/themes.ts ./lib/shop/themes.ts
-
-# Bum's Rush: the socket hub is a room manager + validating relay — it never
-# simulates (design doc §9.1), so it needs the wire contract and nothing else.
-# The codecs are here because the hub reads a 5-byte snapshot header to cache
-# keyframes for host migration and one byte per seat to check input ownership;
-# `cosmetics.ts` because a client must not be able to invent a cosmetic id.
-# The client-side `net/` modules (host/guest/socket/lobby) are deliberately NOT
-# copied — nothing in the server bundle reaches them.
-COPY lib/bums-rush/types.ts ./lib/bums-rush/types.ts
-COPY lib/bums-rush/constants.ts ./lib/bums-rush/constants.ts
-COPY lib/bums-rush/cosmetics.ts ./lib/bums-rush/cosmetics.ts
-COPY lib/bums-rush/net/protocol.ts ./lib/bums-rush/net/protocol.ts
-COPY lib/bums-rush/net/snapshot.ts ./lib/bums-rush/net/snapshot.ts
-COPY lib/bums-rush/net/input.ts ./lib/bums-rush/net/input.ts
-COPY lib/bums-rush/net/migration.ts ./lib/bums-rush/net/migration.ts
-# homes-worker (RMHHomes external-listing scraper cron) needs lib/homes for its
-# scrape pipeline/seed and the dependency-light watch notifier. Its bundle only
-# reaches lib/homes/scrape + types/distance/watch-match, so the heavier
-# geo/watches/listings modules in this dir are copied but never traversed.
-COPY lib/homes ./lib/homes/
-# Only the Node services still served by compose/helm (socket/rmhbox/rmhtube +
-# ladder-worker + homes-worker) are bundled here. recap, status, discord-bot,
-# doctrine-worker, vibe-worker and bot-worker were migrated to the Go
-# supervisor/status binaries (built in the go-builder stage), so their Node
+# Only the Node services still served by compose (socket/rmhbox/rmhtube +
+# ladder-worker + homes-worker + jobs) are bundled here. recap, status,
+# discord-bot, doctrine-worker, vibe-worker and bot-worker were migrated to the
+# Go supervisor/status binaries (built in the go-builder stage), so their Node
 # entrypoints are no longer compiled or shipped.
 RUN pnpm exec esbuild \
     server/socket-server/index.ts \
@@ -421,18 +244,31 @@ ENV DATABASE_URL=${DATABASE_URL} \
 # copies. Dropping the duplicate in-image run saves a Node + pdfjs/canvas startup
 # every build.
 
-# Build with a cache mount for faster incremental builds.
-# .vinxi cache is preserved between builds for Vite's module graph cache.
-# The fix-ssr-css-hash.mjs script corrects any SSR/client CSS hash mismatches
-# that may arise from the cache, so it's safe to keep .vinxi across builds.
+# NO CACHE MOUNT HERE — and this note is why, so it isn't "restored" as an
+# obvious oversight. This RUN used to carry
+# `--mount=type=cache,id=vinxi-cache-${COMPOSE_PROJECT_NAME},target=/app/.vinxi`
+# described as "Vite's module graph cache", plus a buildkit-cache-dance pair in
+# deploy.yml to carry that mount between CI runs. It cached NOTHING: `.vinxi` is
+# a **Vinxi** artifact, and TanStack Start 1.168 does not use Vinxi — it builds
+# through Vite/Nitro directly. Nothing in this repo or in the build writes
+# `/app/.vinxi` (the only remaining mentions are ignore-list entries), so the
+# mount was an empty directory, and the CI dance that carried it was moving
+# ~2.7 MB of nothing (measured, deploy run 31265996205) while adding a restore,
+# an inject, and a post-build extract to the deploy path.
+#
+# There is also no "incremental Vite build" to preserve. A rolldown production
+# build keeps no persistent on-disk module graph between runs — `node_modules/
+# .vite` is the DEV dep-optimizer cache — and this RUN opens with `rm -rf .output`
+# anyway. If a future Vite/Nitro version does gain a persistent build cache, add
+# a mount for ITS real path and measure it; do not reinstate `.vinxi`.
+#
 # NODE_OPTIONS prevents OOM on large bundles (three.js, codemirror, r3f, etc.)
 # (build-vibe-packages moved to the cached vibe-builder stage above; its output is
 # COPYd in before this RUN, so it is no longer bundled on the vite critical path.)
 # The final command reports payload size against this exact candidate output
 # inside the shared BuildKit graph without rebuilding Vite in a separate CI job.
 # Bundle sizing remains visible in build logs, but no longer blocks images.
-RUN --mount=type=cache,id=vinxi-cache-${COMPOSE_PROJECT_NAME},target=/app/.vinxi,sharing=locked \
-    rm -rf .output \
+RUN rm -rf .output \
     # i18n translation is NOT run here. It used to call the DeepSeek API to
     # translate any missing keys before the build — a ~39s live-network step on
     # the deploy critical path that re-translated the same still-uncommitted keys
@@ -448,8 +284,8 @@ RUN --mount=type=cache,id=vinxi-cache-${COMPOSE_PROJECT_NAME},target=/app/.vinxi
     && node scripts/fix-ssr-css-hash.mjs \
     && pnpm exec tsx scripts/ci/bundle-budget.ts
 
-# Validate, prune, and COPY straight from /app/.output. `.output` is a plain
-# layer dir (only .vinxi / .cache are cache mounts), so the runner stage can
+# Validate, prune, and COPY straight from /app/.output. This stage has no cache
+# mounts at all, so `.output` is a plain layer dir and the runner stage can
 # COPY --from it directly — no need to first `cp -a` the (~1.5 GB) tree to a
 # second path, which only cost disk + wall-clock every build.
 RUN test -d /app/.output && \

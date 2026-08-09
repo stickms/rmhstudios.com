@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { ArrowDown, ArrowUp, ArrowUpDown, Loader2, Play } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Loader2, Play, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,6 +31,9 @@ interface SongTableProps {
   onLoadMore: () => void;
   /** Hides the per-row Play action, mirroring the grid's `readOnly` behaviour. */
   readOnly?: boolean;
+  /** What the row's primary action does, for its glyph and accessible name.
+   *  Mirrors the grid — see `SongLibrary`'s prop of the same name. */
+  selectAction?: 'play' | 'add';
   /** Scroll container height class — the parent owns layout, this owns rows. */
   className?: string;
 }
@@ -71,6 +74,7 @@ export function SongTable({
   loading,
   onLoadMore,
   readOnly = false,
+  selectAction = 'play',
   className,
 }: SongTableProps) {
   const { t } = useTranslation('r-slice-it');
@@ -117,7 +121,13 @@ export function SongTable({
   return (
     <div ref={scrollRef} className={cn('overflow-y-auto overflow-x-auto', className)}>
       <table className="w-full text-sm border-collapse">
-        <thead className="neumorphic-inset sticky top-0 z-10">
+        {/* `.neumorphic-chrome`, not `.neumorphic-inset`. The head is the one
+            surface here that stands ABOVE the list — inset is the pressed
+            recipe, so it was drawn as a well sunk into the rows it labels. The
+            chrome recipe also drops the radius and casts downward only, because
+            this element is pinned to a scroller's top edge and anything it threw
+            upward or sideways was clipped off in a straight line. */}
+        <thead className="neumorphic-chrome sticky top-0 z-10">
           <tr>
             {LIBRARY_TABLE_COLUMNS.map((col) => {
               const disabled = col.requiresAuth && !authed;
@@ -230,12 +240,23 @@ export function SongTable({
                         onSelect(song);
                       }}
                       className="h-8 w-8 rounded-lg bg-blue-500 text-white hover:bg-blue-600 touch-target"
-                      aria-label={t('play-song', {
-                        defaultValue: 'Play {{title}}',
-                        title: song.title,
-                      })}
+                      aria-label={
+                        selectAction === 'add'
+                          ? t('add-song', {
+                              defaultValue: 'Add {{title}}',
+                              title: song.title,
+                            })
+                          : t('play-song', {
+                              defaultValue: 'Play {{title}}',
+                              title: song.title,
+                            })
+                      }
                     >
-                      <Play className="w-3.5 h-3.5" aria-hidden />
+                      {selectAction === 'add' ? (
+                        <Plus className="w-3.5 h-3.5" aria-hidden />
+                      ) : (
+                        <Play className="w-3.5 h-3.5" aria-hidden />
+                      )}
                     </Button>
                   )}
                 </td>

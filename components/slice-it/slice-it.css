@@ -22,7 +22,9 @@
    * decides, exactly as before.
    */
   .slice-theme,
-  html[data-app-dark='0'] .slice-theme {
+  .slice-tokens,
+  html[data-app-dark='0'] .slice-theme,
+  html[data-app-dark='0'] .slice-tokens {
     --slice-bg: #e0e5ec;
     --slice-text: #4a5568;
     /*
@@ -89,8 +91,10 @@
    * hydration — see the note on the light block above.
    */
   .dark .slice-theme,
+  .dark .slice-tokens,
   .slice-theme.dark,
-  html[data-app-dark='1'] .slice-theme {
+  html[data-app-dark='1'] .slice-theme,
+  html[data-app-dark='1'] .slice-tokens {
     --slice-bg: #16161a;
     --slice-text: #f0f0f0;
     --slice-text-darker: #ffffff;
@@ -111,6 +115,24 @@
   }
 }
 
+/*
+ * `.slice-theme` is a SURFACE — it declares the tokens and paints itself with
+ * them. `.slice-tokens` (declared with it above) is the same tokens and no
+ * paint, for the one place that needs them apart: a Radix portal.
+ *
+ * A dialog, popover or toast portals to `<body>`, which is outside every
+ * `.slice-theme` in the tree, so `bg-slice-bg` and every
+ * `shadow-[…var(--slice-shadow-dark)]` in it resolved to nothing and the modal
+ * came out in the browser's defaults instead of the game's palette — and, being
+ * unthemed, identical in light and dark. Adding `.slice-theme` to the portalled
+ * element fixes the tokens and breaks the overlay, because the unlayered
+ * `background-color` below outranks a `bg-black/40` utility and turns a scrim
+ * opaque. `.slice-tokens` is the half a portal actually wants.
+ *
+ * Both are matched by the `data-app-dark` selectors above, which are anchored at
+ * `html` — so a portalled subtree resolves the right light/dark set even though
+ * it escaped the wrapper carrying the class.
+ */
 .slice-theme {
   background-color: var(--slice-bg);
   color: var(--slice-text);
@@ -350,6 +372,33 @@
 }
 
 /*
+ * Sticky chrome — a header that floats above the rows it labels.
+ *
+ * Two things make this its own recipe rather than `.neumorphic-sm`:
+ *
+ * 1. **It casts downward only.** A sticky header lives inside a scroll
+ *    container, pinned to its top edge, and that edge is a clip boundary — an
+ *    upward or leftward halo is guaranteed to be cut off in a straight line,
+ *    which is the opposite of soft. There is also nothing above it to cast
+ *    onto. The top light is an `inset` rim instead, which cannot be clipped
+ *    because it is painted inside the box.
+ * 2. **It has no radius.** These headers span the full width of their
+ *    scroller, so a 15px radius put rounded ends exactly where the container
+ *    clips — the header read as a pill with its ends sliced off.
+ *
+ * It replaced `.neumorphic-inset` on the library table head, which is the
+ * PRESSED recipe: it drew the one piece of chrome standing above the list as
+ * though it were a well sunk into it.
+ */
+.neumorphic-chrome {
+  background: var(--slice-bg);
+  box-shadow:
+    0 4px 8px var(--slice-shadow-dark),
+    inset 0 1px 0 var(--slice-shadow-light);
+  border-radius: 0;
+}
+
+/*
  * Depth is this material's only affordance, so it has to MOVE.
  *
  * There was a `prefers-reduced-motion` block below disabling transitions on
@@ -365,6 +414,7 @@
 .neumorphic,
 .neumorphic-sm,
 .neumorphic-chip,
+.neumorphic-chrome,
 .neumorphic-inset,
 .neumorphic-pressed,
 .neumorphic-active {

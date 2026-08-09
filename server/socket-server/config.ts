@@ -118,51 +118,68 @@ export const config = {
     'holdem:sit_out': { max: 60, windowMs: 60_000 },
     'holdem:rebuy': { max: 60, windowMs: 60_000 },
     'holdem:show_cards': { max: 100, windowMs: 60_000 },
-    // Slice It. `slice:score` is the only high-frequency one — clients publish
-    // on a ~500ms timer, so 240/min leaves headroom for a reconnect burst
-    // without letting a socket flood the room. These events had NO entry here
-    // at all before, which per server/CLAUDE.md §Gotchas 5 also meant they were
-    // missing from the hub's de-facto event allowlist.
-    'slice:create': { max: 10, windowMs: 60_000 },
-    'slice:join': { max: 30, windowMs: 60_000 },
-    'slice:quickplay': { max: 20, windowMs: 60_000 },
-    'slice:browse': { max: 30, windowMs: 60_000 },
+    // Slice It.
+    //
+    // These were originally sized against how often a *person* would press each
+    // control, which is the wrong unit for a lobby: the settings panel is a
+    // cluster of toggles, four difficulty buttons and a speed slider, and a
+    // player configuring a match works through all of them in one sitting. A
+    // single drag of the speed slider is ten `slice:mods` on its own. At the old
+    // caps a host who opened the panel and actually used it ran out of budget
+    // partway through and got "Slow down a moment" on every remaining press —
+    // and because a rate-limited event answers with `S2C.ERROR`, that reads to
+    // the player as the whole lobby being broken rather than one control.
+    //
+    // So the lobby-control events are now sized against a *burst* — the way the
+    // panel is really used — not an average. They are all cheap in-memory
+    // mutations followed by one room broadcast; the ones that read a song row
+    // from the database (`song`, `nominate`, `queue`) stay lower than their
+    // neighbours for that reason, but still well above a human working quickly.
+    // `slice:score` remains the only genuinely high-frequency one — clients
+    // publish on a ~500ms timer, so 480/min leaves headroom for a reconnect
+    // burst without letting a socket flood the room.
+    'slice:create': { max: 30, windowMs: 60_000 },
+    'slice:join': { max: 60, windowMs: 60_000 },
+    'slice:quickplay': { max: 40, windowMs: 60_000 },
+    'slice:browse': { max: 120, windowMs: 60_000 },
     // Spectating is a join that takes no seat, so it gets a join's budget.
-    'slice:spectate': { max: 30, windowMs: 60_000 },
-    'slice:leave': { max: 30, windowMs: 60_000 },
-    'slice:ready': { max: 60, windowMs: 60_000 },
-    'slice:song': { max: 60, windowMs: 60_000 },
+    'slice:spectate': { max: 60, windowMs: 60_000 },
+    'slice:leave': { max: 60, windowMs: 60_000 },
+    'slice:ready': { max: 240, windowMs: 60_000 },
+    'slice:song': { max: 120, windowMs: 60_000 },
     // Teams (N2): picking a side is a toggle a player flips while making up
     // their mind, so it gets a modifier-sized budget; balancing is a host
     // control and a rarer one.
-    'slice:team': { max: 60, windowMs: 60_000 },
-    'slice:balance': { max: 30, windowMs: 60_000 },
+    'slice:team': { max: 240, windowMs: 60_000 },
+    'slice:balance': { max: 120, windowMs: 60_000 },
     // Song voting (N7). One nomination per seat per ballot and one (changeable)
-    // vote, so these track the number of ballots a lobby can run, not the number
-    // of players in it. `slice:nominate` reads a song row, which is why it is
-    // the tighter of the two.
-    'slice:nominate': { max: 30, windowMs: 60_000 },
-    'slice:vote': { max: 60, windowMs: 60_000 },
-    'slice:settings': { max: 60, windowMs: 60_000 },
-    'slice:mods': { max: 120, windowMs: 60_000 },
-    'slice:start': { max: 20, windowMs: 60_000 },
-    'slice:loaded': { max: 20, windowMs: 60_000 },
-    'slice:score': { max: 240, windowMs: 60_000 },
-    'slice:finish': { max: 20, windowMs: 60_000 },
-    'slice:rematch': { max: 30, windowMs: 60_000 },
-    'slice:chat': { max: 30, windowMs: 60_000 },
-    'slice:kick': { max: 20, windowMs: 60_000 },
+    // vote — but changing your mind is the point of a ballot, so the ceiling is
+    // a flood guard, not a budget. `slice:nominate` reads a song row, which is
+    // why it is the tighter of the two.
+    'slice:nominate': { max: 120, windowMs: 60_000 },
+    'slice:vote': { max: 240, windowMs: 60_000 },
+    // The two the settings panel drives. `slice:mods` is the highest of the
+    // lobby events because the speed slider emits one per step of a drag.
+    'slice:settings': { max: 600, windowMs: 60_000 },
+    'slice:mods': { max: 900, windowMs: 60_000 },
+    'slice:start': { max: 60, windowMs: 60_000 },
+    'slice:loaded': { max: 60, windowMs: 60_000 },
+    'slice:score': { max: 480, windowMs: 60_000 },
+    'slice:finish': { max: 60, windowMs: 60_000 },
+    'slice:rematch': { max: 120, windowMs: 60_000 },
+    'slice:chat': { max: 60, windowMs: 60_000 },
+    'slice:kick': { max: 60, windowMs: 60_000 },
     // Attack mode (N4). Charges cap at 3 and are earned at combo milestones, so
     // the server's own tally is the real limit — this is the flood guard for a
     // client that spams the event without any, which costs a lookup per call.
-    'slice:attack': { max: 60, windowMs: 60_000 },
+    'slice:attack': { max: 240, windowMs: 60_000 },
     // The session queue (N8). `slice:queue` reads a song row, so it is the
     // tighter of the pair, exactly as `slice:nominate` is.
-    'slice:queue': { max: 30, windowMs: 60_000 },
-    'slice:unqueue': { max: 60, windowMs: 60_000 },
+    'slice:queue': { max: 120, windowMs: 60_000 },
+    'slice:unqueue': { max: 240, windowMs: 60_000 },
     // Rejoin (N12) is a join, and a client in a reconnect loop is the failure
     // mode this bounds.
-    'slice:rejoin': { max: 20, windowMs: 60_000 },
+    'slice:rejoin': { max: 60, windowMs: 60_000 },
     'dr:create': { max: 10, windowMs: 60_000 },
     'dr:join': { max: 30, windowMs: 60_000 },
     'dr:quickplay': { max: 20, windowMs: 60_000 },

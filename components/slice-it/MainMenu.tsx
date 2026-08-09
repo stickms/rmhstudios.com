@@ -9,9 +9,10 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { CalendarDays, ListMusic, Moon, Sun } from 'lucide-react';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import { GameEngine } from '@/lib/slice-it/engine';
+import { hitSoundPath, hitSoundPreloadList } from '@/lib/slice-it/hit-sound-pool';
 import { asset } from '@/lib/storage/asset';
 import { AudioManager } from '@/lib/audio/AudioManager';
-import { addMatchListener } from '@/lib/slice-it/net/client';
+import { addMatchListener, spectatingLobbyCode } from '@/lib/slice-it/net/client';
 import { useStartRun } from '@/lib/slice-it/useStartRun';
 import type { SliceSong } from '@/lib/slice-it/types';
 import { useStableSession } from '@/hooks/useStableSession';
@@ -82,13 +83,13 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
     AudioManager.getInstance().setVolume(volume / 100);
   }, [volume]);
 
-  // Preload persisted hit sound on mount
+  // Preload persisted hit sound on mount — the whole pool if it is Shuffle.
   React.useEffect(() => {
-    if (hitSound && hitSound !== 'default') {
-      const am = AudioManager.getInstance();
-      am.initialize();
-      am.preloadHitSound(asset(`/music/slice-it/sounds/${hitSound}`)).catch(() => {});
-    }
+    const files = hitSoundPreloadList(hitSound);
+    if (files.length === 0) return;
+    const am = AudioManager.getInstance();
+    am.initialize();
+    for (const file of files) am.preloadHitSound(asset(hitSoundPath(file))).catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // The track whose details panel is open.
@@ -120,7 +121,18 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
    */
   const handleSelectSong = React.useCallback((song: SliceSong) => {
     stopPreviewRef.current?.();
-    setSelectedSong(song);
+    // `startTransition`, because this update is what was eating the opening
+    // animation. Measured: the click ran a ~250ms task on the main thread —
+    // React rendering the whole panel subtree synchronously — and the panel's
+    // entrance spring is integrated on that same thread. A spring that misses
+    // 120ms does not slow down, it jumps: the slide covered 636px→106px in one
+    // frame gap, which is the "the fade plays and then restarts" this looked
+    // like. Nothing remounts; the animation loses its middle.
+    //
+    // Marking the open as a transition lets React render that subtree in
+    // interruptible slices and yield between them, so the frames the animation
+    // needs keep landing.
+    React.startTransition(() => setSelectedSong(song));
   }, []);
 
   const handleStartGame = React.useCallback(
@@ -137,20 +149,55 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
   );
 
   /**
-   * The server said the match is live: load the chart and report back.
+   * The server said the match is loading: load the chart and report back.
    *
    * The server runs the countdown once everybody has reported, so no client
    * decides when play begins — which is what stops a fast machine starting
    * three seconds before a slow one.
+   *
+   * The trigger is `slice:loading`, and it has to be: the server's order is
+   * loading → countdown → start, and it will not count down until every seat
+   * has answered `slice:loaded`. Hanging the load off `onStart` therefore made
+   * each client wait for an event that could not be sent until that client had
+   * already loaded, and the deadlock was silent — pressing START left the lobby
+   * exactly as it was, and pressing it again answered "a match is in progress".
+   * `onStart` keeps a call of its own for the rejoin path (`N12`), where the
+   * server sends START straight to a returning socket with no loading phase.
    */
+  const matchLoadStartedRef = React.useRef(false);
+  const lobbyState = useSliceItStore((s) => s.lobby?.state ?? null);
+  // One load per match. `loading` repeats — the server re-emits it as each seat
+  // reports in — so the guard is cleared by the lobby going back to `waiting`
+  // (or the player leaving it), which is the only thing that means "next match".
+  React.useEffect(() => {
+    if (lobbyState === null || lobbyState === 'waiting') matchLoadStartedRef.current = false;
+  }, [lobbyState]);
+
   React.useEffect(() => {
     if (!engine) return;
+    const beginMatch = (songId: string) => {
+      // A watcher has no seat and no chart to load — `N1` is a view of someone
+      // else's match, and the loading events reach the spectator room too.
+      if (spectatingLobbyCode()) return;
+      if (matchLoadStartedRef.current) return;
+      matchLoadStartedRef.current = true;
+      setIsMultiplayer(true);
+      setShowMultiplayer(false);
+      void startRun(songId, { countPlay: false, multiplayer: true }).catch(() => {
+        // Let the next `loading` retry rather than stranding this client as the
+        // one seat the room is waiting on.
+        matchLoadStartedRef.current = false;
+      });
+    };
+
     return addMatchListener({
-      onStart: (payload) => {
-        setIsMultiplayer(true);
-        setShowMultiplayer(false);
-        void startRun(payload.song.id, { countPlay: false, multiplayer: true }).catch(() => {});
+      onLoading: () => {
+        // The song has been in the snapshot since the host picked it; the
+        // loading payload only carries who has reported in so far.
+        const songId = useSliceItStore.getState().lobby?.song?.id;
+        if (songId) beginMatch(songId);
       },
+      onStart: (payload) => beginMatch(payload.song.id),
     });
   }, [engine, startRun, setIsMultiplayer]);
 
@@ -398,7 +445,16 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                   )}
                   {soloMode === 'library' && (
                     <SongLibrary
-                      onSelect={handleStartGame}
+                      /* PLAY opens the details panel; it does not start the run.
+                         Starting straight from the row dropped the player into a
+                         chart at whatever difficulty and modifiers were left over
+                         from the last song, with nothing in between to look at —
+                         and those controls, plus the score multiplier they add up
+                         to, all live in the panel. `START GAME` there is the
+                         control that commits. The lobby keeps its own meaning for
+                         `onSelect` (nominate this song), which is why this is
+                         decided here and not inside `SongLibrary`. */
+                      onSelect={handleSelectSong}
                       onHighlight={handleSelectSong}
                       selectedSongId={selectedSong?.id ?? null}
                       onStopPreviewRef={stopPreviewRef}
