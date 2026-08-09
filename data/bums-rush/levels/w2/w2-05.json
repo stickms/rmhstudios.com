@@ -1,0 +1,129 @@
+{
+  "version": 1,
+  "id": "w2-05",
+  "world": 2,
+  "index": 5,
+  "name": "bums.level.w2-05.name",
+  "minPlayers": 1,
+  "parSeconds": 40,
+  "bounds": { "x": 0, "y": 0, "w": 3200, "h": 1300 },
+  "palette": {
+    "paper": "#f3e2c4",
+    "ink": "#20160e",
+    "accent": "#c0392b",
+    "flashSafe": true,
+    "contrastRatio": 13.94
+  },
+  "spawn": [{ "x": 200, "y": 860 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 2950, "y": 760, "w": 120, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 900, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1150, "y": 860, "w": 900, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1450, "y": 850, "w": 300, "h": 30 },
+      "material": "grease",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 2300, "y": 800, "w": 900, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "swing-breather-a",
+      "kind": "swing",
+      "at": { "x": 900, "y": 620 },
+      "length": 260,
+      "damping": 0.25
+    },
+    {
+      "id": "swing-breather-b",
+      "kind": "swing",
+      "at": { "x": 2050, "y": 600 },
+      "length": 250,
+      "damping": 0.25
+    },
+    {
+      "id": "camera-5",
+      "kind": "camera",
+      "at": { "x": 350, "y": 850 }
+    },
+    {
+      "id": "relic-w2-05-a",
+      "kind": "relic",
+      "relicId": "w2-relic-05-a",
+      "at": { "x": 650, "y": 850 }
+    },
+    {
+      "id": "relic-w2-05-b",
+      "kind": "relic",
+      "relicId": "w2-relic-05-b",
+      "at": { "x": 1700, "y": 800 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "floor",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1200, "w": 3200, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w2-05-clock" },
+    {
+      "kind": "haul",
+      "id": "w2-05-haul",
+      "relicIds": ["w2-relic-05-a", "w2-relic-05-b"]
+    },
+    {
+      "kind": "snapshot",
+      "id": "w2-05-photo",
+      "predicate": { "allSeatsInFrame": true, "allAirborne": true }
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "doodle",
+      "at": { "x": 500, "y": 780 },
+      "sprite": "steam-curl",
+      "scale": 0.6
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 1900, "y": 760 },
+      "sprite": "steam-curl",
+      "scale": 0.5
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 1550, "y": 830 },
+      "r": 70
+    },
+    {
+      "kind": "note",
+      "at": { "x": 2600, "y": 700 },
+      "textKey": "bums.level.w2-05.note-breather",
+      "width": 220
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 900, "y": 900 }, { "x": 1150, "y": 860 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 2050, "y": 860 }, { "x": 2300, "y": 800 }], "thickness": 10 }
+  ],
+  "music": "w2-sizzle-street",
+  "authorNotes": "Solo. Wide, generous counters (900px each) and two short 250px swing gaps, well inside the solo budget — nothing here should feel like a real test after 04. The mid counter's centre (1450-1750) is a grease patch (material grease) laid flush into the surface — a ketchup spill you slide across rather than fight, low-stakes fun since the counter is otherwise solid on both sides of it. All three objectives fit one relaxed pass: grab camera-5 and relic-w2-05-a on the starting counter, relic-w2-05-b right where the grease patch ends, and snap the photo (allSeatsInFrame + allAirborne) mid-arc on either swing. No checkpoint — the whole level stays under the no-checkpoint cap, and a death is a quick, easy replay."
+}

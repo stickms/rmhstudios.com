@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "id": "w4-b",
+  "world": 4,
+  "index": 2,
+  "name": "bums.showdown.w4-b.name",
+  "minPlayers": 2,
+  "parSeconds": 40,
+  "bounds": { "x": 0, "y": 0, "w": 2200, "h": 1300 },
+  "palette": {
+    "paper": "#e9e0c7",
+    "ink": "#383d44",
+    "accent": "#8a3541",
+    "flashSafe": true,
+    "contrastRatio": 8.31
+  },
+  "spawn": [
+    { "x": 950, "y": 940 },
+    { "x": 1050, "y": 940 },
+    { "x": 950, "y": 900 },
+    { "x": 1050, "y": 900 }
+  ],
+  "goal": {
+    "shape": { "kind": "rect", "x": 1080, "y": 210, "w": 140, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 700, "y": 1000, "w": 800, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1000, "y": 600, "w": 400, "h": 60 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1050, "y": 250, "w": 300, "h": 60 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "swing-survive-mid",
+      "kind": "swing",
+      "at": { "x": 1100, "y": 750 },
+      "length": 200,
+      "damping": 0.2
+    },
+    {
+      "id": "swing-survive-top",
+      "kind": "swing",
+      "at": { "x": 1150, "y": 450 },
+      "length": 180,
+      "damping": 0.2
+    },
+    {
+      "id": "relic-w4-b",
+      "kind": "relic",
+      "relicId": "w4-relic-showdown-b",
+      "at": { "x": 1150, "y": 300 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "moat",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1250, "w": 2200, "h": 50 }
+    },
+    {
+      "id": "flood",
+      "kind": "crusher",
+      "shape": { "kind": "rect", "x": 0, "y": 1300, "w": 2200, "h": 400 },
+      "path": [
+        { "x": 0, "y": 1300 },
+        { "x": 0, "y": 150 }
+      ],
+      "speed": 15.3
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w4-b-clock" },
+    { "kind": "flawless", "id": "w4-b-flawless" },
+    {
+      "kind": "haul",
+      "id": "w4-b-haul",
+      "relicIds": ["w4-relic-showdown-b"]
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "doodle",
+      "at": { "x": 400, "y": 1050 },
+      "sprite": "torch",
+      "scale": 0.8
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 1800, "y": 1150 },
+      "r": 60
+    }
+  ],
+  "assistBeams": [],
+  "music": "w4-showdown",
+  "authorNotes": "Showdown / survive, 2-4 players, enclosed single-screen arena (no split-screen camera needed, §5) — the world's undercroft floods from below rather than the sea rising, but the mechanic is identical to W1's tide arena on purpose: it is already tuned to the §8.2 spec (a ~75s rise from base to summit) and reusing a validated shape halves the risk of a bad number here. All four spawn together on the base island; 'flood' is a crusher shaped as a rising wall, its path climbing from y1300 (below the island) to y150 (above the top perch) at 15.3px/s. Note for the engine ticket, same one w1-b already flagged: the Hazard contract has no time-varying shape/size field, only a static Shape plus a kinematic path, so 'closing boundary' is one large hazard translating upward rather than a true shrinking radius — not a new gap, the same one, flagged again because this level hits it too. Players retreat upward via swing-survive-mid then swing-survive-top as the flood climbs; the top perch holds only one comfortably. relic-w4-b sits on the top perch as a risk/reward pickup for the haul objective. A static void strip under the base island punishes anyone knocked off before the flood even arrives."
+}

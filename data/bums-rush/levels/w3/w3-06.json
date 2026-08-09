@@ -1,0 +1,149 @@
+{
+  "version": 1,
+  "id": "w3-06",
+  "world": 3,
+  "index": 6,
+  "name": "bums.level.w3-06.name",
+  "minPlayers": 1,
+  "parSeconds": 118,
+  "bounds": { "x": 0, "y": 0, "w": 3900, "h": 1600 },
+  "palette": {
+    "paper": "#f7e6ba",
+    "ink": "#1e1418",
+    "accent": "#c8102e",
+    "flashSafe": true,
+    "contrastRatio": 14.53
+  },
+  "spawn": [{ "x": 220, "y": 860 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 3350, "y": 640, "w": 120, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [{ "at": { "x": 950, "y": 770 } }, { "at": { "x": 2050, "y": 720 } }],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 900, "y": 830, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 2000, "y": 780, "w": 600, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 3100, "y": 700, "w": 700, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "trampoline-esc-1",
+      "kind": "trampoline",
+      "at": { "x": 520, "y": 870 },
+      "size": { "x": 160, "y": 30 },
+      "bounce": 1.0
+    },
+    {
+      "id": "trapeze-esc-1",
+      "kind": "swing",
+      "at": { "x": 800, "y": 540 },
+      "length": 300,
+      "damping": 0.12
+    },
+    {
+      "id": "trampoline-esc-2",
+      "kind": "trampoline",
+      "at": { "x": 1420, "y": 800 },
+      "size": { "x": 160, "y": 30 },
+      "bounce": 1.05
+    },
+    {
+      "id": "trapeze-esc-2",
+      "kind": "swing",
+      "at": { "x": 1750, "y": 480 },
+      "length": 340,
+      "damping": 0.1
+    },
+    {
+      "id": "trapeze-esc-3",
+      "kind": "swing",
+      "at": { "x": 2600, "y": 480 },
+      "length": 300,
+      "damping": 0.12
+    },
+    {
+      "id": "trampoline-esc-mid",
+      "kind": "trampoline",
+      "at": { "x": 2850, "y": 850 },
+      "size": { "x": 150, "y": 30 },
+      "bounce": 1.15
+    },
+    {
+      "id": "pose-w3-06",
+      "kind": "poseOutline",
+      "poseId": "w3-pose-tightrope",
+      "tolerance": 45,
+      "at": { "x": 2300, "y": 760 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "pit",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1500, "w": 3900, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w3-06-clock" },
+    { "kind": "flawless", "id": "w3-06-flawless" },
+    {
+      "kind": "pose",
+      "id": "w3-06-pose",
+      "poseId": "w3-pose-tightrope"
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 700, "y": 420 },
+      "textKey": "bums.level.w3-06.note-combo",
+      "width": 260
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 600, "y": 830 },
+      "to": { "x": 790, "y": 600 }
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 1750, "y": 280 },
+      "sprite": "trapeze-swing",
+      "scale": 1
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 3300, "y": 250 },
+      "sprite": "big-top-tent",
+      "scale": 1.3
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 3600, "y": 1450 },
+      "r": 55
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 600, "y": 900 }, { "x": 900, "y": 830 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 1500, "y": 830 }, { "x": 2000, "y": 780 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 2600, "y": 780 }, { "x": 3100, "y": 700 }], "thickness": 10 }
+  ],
+  "music": "w3-big-tent-bother",
+  "authorNotes": "Solo, three checkpointed segments escalating the trampoline/trapeze interaction World 3 has been teaching since 01/02. Segment 1: trampoline-esc-1's springboard bounce is caught mid-air by trapeze-esc-1 (pivot 800,540, 300px bar) rather than landing on solid ground — the escalation is that the trampoline no longer aims you at a platform, it aims you at a grab. Segment 2 repeats the same trampoline-then-trapeze shape at a bigger gap and a lower damping (trapeze-esc-2, pivot 1750,480, 340px bar, 0.1 damping) so the margin for a late grab is smaller. Segment 3 flips the order — trapeze-esc-3 (pivot 2600,480, flush with pier C's own edge, the usual convention) swings out over open air and releases onto trampoline-esc-mid, a standalone landing pad with nothing under it but its own body, which bounces the short remaining hop up onto the goal pier. pose-w3-06 sits on pier C (tolerance 45) for players who want to strike a tightrope pose between segments 2 and 3 before committing to the flip. All three gaps carry an assist beam at the usual Clock cost."
+}

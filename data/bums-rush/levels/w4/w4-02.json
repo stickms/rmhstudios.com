@@ -1,0 +1,144 @@
+{
+  "version": 1,
+  "id": "w4-02",
+  "world": 4,
+  "index": 2,
+  "name": "bums.level.w4-02.name",
+  "minPlayers": 1,
+  "parSeconds": 70,
+  "bounds": { "x": 0, "y": 0, "w": 3300, "h": 1500 },
+  "palette": {
+    "paper": "#e9e0c7",
+    "ink": "#383d44",
+    "accent": "#8a3541",
+    "flashSafe": true,
+    "contrastRatio": 8.31
+  },
+  "spawn": [{ "x": 220, "y": 860 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 2650, "y": 740, "w": 150, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [{ "at": { "x": 1350, "y": 800 } }],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 900, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1150, "y": 900, "w": 500, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1900, "y": 820, "w": 900, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "lever-w4-02-a",
+      "kind": "lever",
+      "at": { "x": 650, "y": 800 },
+      "length": 70,
+      "threshold": 0.5,
+      "signal": "w4-02-gate-a",
+      "latching": true
+    },
+    {
+      "id": "door-w4-02-a",
+      "kind": "door",
+      "at": { "x": 900, "y": 660 },
+      "size": { "x": 50, "y": 240 },
+      "signal": "w4-02-gate-a",
+      "openOffset": { "x": 0, "y": -240 },
+      "speed": 140
+    },
+    {
+      "id": "swing-w4-02-a",
+      "kind": "swing",
+      "at": { "x": 880, "y": 640 },
+      "length": 260,
+      "damping": 0.2
+    },
+    {
+      "id": "lever-w4-02-b",
+      "kind": "lever",
+      "at": { "x": 1400, "y": 760 },
+      "length": 70,
+      "threshold": 0.5,
+      "signal": "w4-02-gate-b",
+      "latching": true
+    },
+    {
+      "id": "door-w4-02-b",
+      "kind": "door",
+      "at": { "x": 1600, "y": 660 },
+      "size": { "x": 50, "y": 240 },
+      "signal": "w4-02-gate-b",
+      "openOffset": { "x": 0, "y": -240 },
+      "speed": 140
+    },
+    {
+      "id": "swing-w4-02-b",
+      "kind": "swing",
+      "at": { "x": 1630, "y": 610 },
+      "length": 250,
+      "damping": 0.2
+    },
+    {
+      "id": "camera-w4-02",
+      "kind": "camera",
+      "at": { "x": 320, "y": 850 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "moat",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1400, "w": 3300, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w4-02-clock" },
+    { "kind": "flawless", "id": "w4-02-flawless" },
+    {
+      "kind": "snapshot",
+      "id": "w4-02-photo",
+      "predicate": { "allAirborne": true }
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 500, "y": 700 },
+      "textKey": "bums.level.w4-02.note-drop",
+      "width": 240
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 900, "y": 300 },
+      "sprite": "castle-silhouette",
+      "scale": 1.2
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 2100, "y": 400 },
+      "sprite": "banner-crest",
+      "scale": 0.8
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 1050, "y": 1350 },
+      "r": 55
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 900, "y": 900 }, { "x": 1150, "y": 900 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 1650, "y": 900 }, { "x": 1900, "y": 820 }], "thickness": 10 }
+  ],
+  "music": "w4-castle-clatter",
+  "authorNotes": "Solo. Two identical lever-gate-swing units back to back, over a real moat this time (void hazard beneath everything past the starting pier). Pull lever-w4-02-a (latching) to raise door-w4-02-a, then grab swing-w4-02-a (pivot 880,640, 260px reach) to cross the first gap to the checkpoint pier. Repeat the pattern: lever-w4-02-b raises door-w4-02-b, swing-w4-02-b (pivot 1630,610, 250px) carries you to the goal pier. Both signal pairs are direct producer-to-consumer (lever->door), no relay involved — this level is still purely about learning that a gate now guards a real fall, not about combining anything new. Grab camera-w4-02 near spawn for the photo objective (allAirborne, easiest mid-swing). Both gaps carry an assist beam for players who'd rather not trust the swing at the usual Clock cost. The checkpoint sits on the middle pier so a missed second swing doesn't cost the first gate."
+}

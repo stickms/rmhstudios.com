@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "id": "w4-01",
+  "world": 4,
+  "index": 1,
+  "name": "bums.level.w4-01.name",
+  "minPlayers": 1,
+  "parSeconds": 28,
+  "bounds": { "x": 0, "y": 0, "w": 3000, "h": 1400 },
+  "palette": {
+    "paper": "#e9e0c7",
+    "ink": "#383d44",
+    "accent": "#8a3541",
+    "flashSafe": true,
+    "contrastRatio": 8.31
+  },
+  "spawn": [{ "x": 220, "y": 860 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 2500, "y": 740, "w": 150, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 2700, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "lever-w4-01",
+      "kind": "lever",
+      "at": { "x": 760, "y": 800 },
+      "length": 70,
+      "threshold": 0.5,
+      "signal": "w4-01-gate",
+      "latching": true
+    },
+    {
+      "id": "door-w4-01",
+      "kind": "door",
+      "at": { "x": 1000, "y": 660 },
+      "size": { "x": 50, "y": 240 },
+      "signal": "w4-01-gate",
+      "openOffset": { "x": 0, "y": -240 },
+      "speed": 140
+    },
+    {
+      "id": "camera-w4-01",
+      "kind": "camera",
+      "at": { "x": 300, "y": 850 }
+    }
+  ],
+  "hazards": [],
+  "objectives": [
+    { "kind": "clock", "id": "w4-01-clock" },
+    { "kind": "flawless", "id": "w4-01-flawless" },
+    {
+      "kind": "snapshot",
+      "id": "w4-01-photo",
+      "predicate": { "anyInverted": true }
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 500, "y": 700 },
+      "textKey": "bums.level.w4-01.note-lever",
+      "width": 240
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 1000, "y": 300 },
+      "sprite": "castle-silhouette",
+      "scale": 1.5
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 350, "y": 820 },
+      "to": { "x": 720, "y": 800 }
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 2300, "y": 960 },
+      "r": 45
+    }
+  ],
+  "assistBeams": [],
+  "music": "w4-castle-clatter",
+  "authorNotes": "Solo, and there is nowhere to fall — the whole level is one continuous floor (no void hazard at all), so the first 20s and every second after are death-proof by construction, not just by timing. Grab lever-w4-01 (760,800; latching, so a single pull holds) and pull it toward you: it fires signal 'w4-01-gate', consumed directly by door-w4-01 (a portcullis panel resting on the floor at x1000), which rises out of the way (openOffset -240 on y) and stays open, since the lever latches. No relay needed for the simplest possible wiring: one producer, one consumer. Grab camera-w4-01 near spawn on the way past for the photo objective (predicate anyInverted) — easiest triggered hanging upside-down from the floor itself once past the gate, since the whole floor is grabbable. Walk the rest of the way to the goal. This is the only level in the world with zero hazards; every level after this one has a real drop."
+}

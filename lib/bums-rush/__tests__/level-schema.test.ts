@@ -33,11 +33,32 @@ function cloneBaseLevel(): Record<string, unknown> {
   return structuredClone(w1_01) as Record<string, unknown>;
 }
 
-describe("Bum's Rush level manifest + World 1 content", () => {
+/**
+ * Every world directory on disk, not a hardcoded `w1`.
+ *
+ * The point of the both-directions check below is that a level file which
+ * nobody lists is a level nobody can play, and a manifest entry with no file is
+ * a crash. Naming one world defeated it the moment a second was authored: World
+ * 2's files could appear, be listed nowhere, and the suite would stay green.
+ */
+const WORLD_DIRS = readdirSync(LEVELS_DIR, { withFileTypes: true })
+  .filter((e) => e.isDirectory() && /^w\d+$/.test(e.name))
+  .map((e) => e.name)
+  .sort();
+
+const worldNumbers = WORLD_DIRS.map((d) => Number(d.slice(1))).sort((a, b) => a - b);
+
+describe("Bum's Rush level manifest + world content", () => {
+  it('every world directory is one the manifest knows about', async () => {
+    const manifest = await loadManifest();
+    expect(manifest.worlds.map((w) => w.world).sort((a, b) => a - b)).toEqual(worldNumbers);
+  });
+
   it('the manifest lists exactly the files on disk, both directions', async () => {
     const manifest = await loadManifest();
-    const worldFiles = readdirSync(join(LEVELS_DIR, 'w1'))
-      .filter((f) => f.endsWith('.json'))
+    const worldFiles = WORLD_DIRS.flatMap((dir) =>
+      readdirSync(join(LEVELS_DIR, dir)).filter((f) => f.endsWith('.json')),
+    )
       .map((f) => f.replace(/\.json$/, ''))
       .sort();
     const showdownFiles = readdirSync(join(LEVELS_DIR, 'showdown'))
@@ -55,18 +76,28 @@ describe("Bum's Rush level manifest + World 1 content", () => {
     expect(manifestShowdownIds).toEqual(showdownFiles);
   });
 
-  it('loads and validates every World 1 campaign level via the real loader', async () => {
-    const levels = await loadWorld(1);
-    expect(levels).toHaveLength(9);
-    expect(levels.map((l) => l.index)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  it.each(worldNumbers)(
+    'loads and validates every World %i campaign level via the real loader',
+    async (world) => {
+      const levels = await loadWorld(world);
+      expect(levels).toHaveLength(9);
+      expect(levels.map((l) => l.index)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
-    for (const level of levels) {
-      // getLevelIssues (non-throwing) and validateLevel (throwing) must agree.
-      expect(getLevelIssues(level)).toEqual([]);
-      expect(() => validateLevel(level)).not.toThrow();
-      expect(level.objectives).toHaveLength(3);
-    }
-  });
+      for (const level of levels) {
+        // getLevelIssues (non-throwing) and validateLevel (throwing) must agree.
+        expect(getLevelIssues(level)).toEqual([]);
+        expect(() => validateLevel(level)).not.toThrow();
+        expect(level.objectives).toHaveLength(3);
+      }
+
+      // §6.7's solo/co-op split is the promise the world map renders and the
+      // reason a lone visitor is never sent to a level they cannot finish.
+      const coop = levels.filter((l) => l.minPlayers > 1).map((l) => l.index);
+      expect(coop, 'levels 7 and 8 are the co-op gate; the rest must be solo-viable').toEqual([
+        7, 8,
+      ]);
+    },
+  );
 
   it.each(['w1-a', 'w1-b', 'w1-c'])('loads and validates showdown arena %s', async (id) => {
     const level = await loadShowdownArena(id);

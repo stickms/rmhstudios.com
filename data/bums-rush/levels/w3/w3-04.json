@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "id": "w3-04",
+  "world": 3,
+  "index": 4,
+  "name": "bums.level.w3-04.name",
+  "minPlayers": 1,
+  "parSeconds": 84,
+  "bounds": { "x": 0, "y": 0, "w": 3600, "h": 1500 },
+  "palette": {
+    "paper": "#f7e6ba",
+    "ink": "#1e1418",
+    "accent": "#c8102e",
+    "flashSafe": true,
+    "contrastRatio": 14.53
+  },
+  "spawn": [{ "x": 220, "y": 860 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 2700, "y": 700, "w": 120, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [{ "at": { "x": 1500, "y": 770 } }],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 650, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1400, "y": 830, "w": 650, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 2450, "y": 760, "w": 650, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "cannon-solo",
+      "kind": "popCannon",
+      "at": { "x": 700, "y": 860 },
+      "angle": -0.55,
+      "power": 32,
+      "cooldownMs": 1500,
+      "arc": 0.12
+    },
+    {
+      "id": "trapeze-manual",
+      "kind": "swing",
+      "at": { "x": 680, "y": 520 },
+      "length": 380,
+      "damping": 0.18
+    },
+    {
+      "id": "pose-w3-04",
+      "kind": "poseOutline",
+      "poseId": "w3-pose-strongman",
+      "tolerance": 45,
+      "at": { "x": 1650, "y": 810 }
+    },
+    {
+      "id": "trapeze-final2",
+      "kind": "swing",
+      "at": { "x": 2050, "y": 610 },
+      "length": 280,
+      "damping": 0.2
+    }
+  ],
+  "hazards": [
+    {
+      "id": "pit",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1400, "w": 3600, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w3-04-clock" },
+    { "kind": "flawless", "id": "w3-04-flawless" },
+    {
+      "kind": "pose",
+      "id": "w3-04-pose",
+      "poseId": "w3-pose-strongman"
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "note",
+      "at": { "x": 750, "y": 700 },
+      "textKey": "bums.level.w3-04.note-cannon",
+      "width": 260
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 700, "y": 760 },
+      "sprite": "cannon-sparkle",
+      "scale": 1
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 680, "y": 350 },
+      "sprite": "trapeze-swing",
+      "scale": 1
+    },
+    {
+      "kind": "arrow",
+      "from": { "x": 300, "y": 800 },
+      "to": { "x": 650, "y": 850 }
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 2300, "y": 1350 },
+      "r": 45
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 650, "y": 900 }, { "x": 1400, "y": 830 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 2050, "y": 830 }, { "x": 2450, "y": 760 }], "thickness": 10 }
+  ],
+  "music": "w3-big-tent-bother",
+  "authorNotes": "Solo. World 3's pop cannon, introduced as the level's Twist: a sticky note by the barrel insists 'TWO PLAYERS REQUIRED — ONE HOLDS, ONE FLIES', and for a party of two or more that is exactly true (see 07). Here, alone, it is a lie a solo player can disprove: cannon-solo's barrel is a grabbable body, and because a fully extended arm reaches 118px from the head centre, a lone player can grip the barrel's rim with one hand while their own head rests in its mouth — then use-item fires themselves, no second player required. That is the twist: the note is honest about the two-player *routine*, not about the physical limit. Players who'd rather not fold themselves into a cannon barrel have a full alternative: trapeze-manual (pivot 680,520, a long 380px bar hanging flush with the starting pier's edge, same convention as every World 1 tutorial swing) crosses the same ~750px gap the slow way, with a pump or two. pose-w3-04 sits on the middle pier — a strongman flex, tolerance 45 — for the pose objective; the checkpoint sits right there too, so a mistimed cannon shot or an over-pumped trapeze only costs the first gap. The second gap closes on familiar ground: trapeze-final2 (pivot 2050,610, moderate 0.2 damping), no cannon involved. Both gaps carry an assist beam for players who want a third, calmer option."
+}

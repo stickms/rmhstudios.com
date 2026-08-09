@@ -5,21 +5,411 @@
       "world": 1,
       "name": "bums.world.w1.name",
       "levels": [
-        { "id": "w1-01", "world": 1, "index": 1, "name": "bums.level.w1-01.name", "minPlayers": 1, "parSeconds": 45 },
-        { "id": "w1-02", "world": 1, "index": 2, "name": "bums.level.w1-02.name", "minPlayers": 1, "parSeconds": 76 },
-        { "id": "w1-03", "world": 1, "index": 3, "name": "bums.level.w1-03.name", "minPlayers": 1, "parSeconds": 78 },
-        { "id": "w1-04", "world": 1, "index": 4, "name": "bums.level.w1-04.name", "minPlayers": 1, "parSeconds": 86 },
-        { "id": "w1-05", "world": 1, "index": 5, "name": "bums.level.w1-05.name", "minPlayers": 1, "parSeconds": 43 },
-        { "id": "w1-06", "world": 1, "index": 6, "name": "bums.level.w1-06.name", "minPlayers": 1, "parSeconds": 122 },
-        { "id": "w1-07", "world": 1, "index": 7, "name": "bums.level.w1-07.name", "minPlayers": 2, "parSeconds": 126 },
-        { "id": "w1-08", "world": 1, "index": 8, "name": "bums.level.w1-08.name", "minPlayers": 2, "parSeconds": 210 },
-        { "id": "w1-09", "world": 1, "index": 9, "name": "bums.level.w1-09.name", "minPlayers": 1, "parSeconds": 73 }
+        {
+          "id": "w1-01",
+          "world": 1,
+          "index": 1,
+          "name": "bums.level.w1-01.name",
+          "minPlayers": 1,
+          "parSeconds": 45
+        },
+        {
+          "id": "w1-02",
+          "world": 1,
+          "index": 2,
+          "name": "bums.level.w1-02.name",
+          "minPlayers": 1,
+          "parSeconds": 76
+        },
+        {
+          "id": "w1-03",
+          "world": 1,
+          "index": 3,
+          "name": "bums.level.w1-03.name",
+          "minPlayers": 1,
+          "parSeconds": 78
+        },
+        {
+          "id": "w1-04",
+          "world": 1,
+          "index": 4,
+          "name": "bums.level.w1-04.name",
+          "minPlayers": 1,
+          "parSeconds": 86
+        },
+        {
+          "id": "w1-05",
+          "world": 1,
+          "index": 5,
+          "name": "bums.level.w1-05.name",
+          "minPlayers": 1,
+          "parSeconds": 43
+        },
+        {
+          "id": "w1-06",
+          "world": 1,
+          "index": 6,
+          "name": "bums.level.w1-06.name",
+          "minPlayers": 1,
+          "parSeconds": 122
+        },
+        {
+          "id": "w1-07",
+          "world": 1,
+          "index": 7,
+          "name": "bums.level.w1-07.name",
+          "minPlayers": 2,
+          "parSeconds": 126
+        },
+        {
+          "id": "w1-08",
+          "world": 1,
+          "index": 8,
+          "name": "bums.level.w1-08.name",
+          "minPlayers": 2,
+          "parSeconds": 210
+        },
+        {
+          "id": "w1-09",
+          "world": 1,
+          "index": 9,
+          "name": "bums.level.w1-09.name",
+          "minPlayers": 1,
+          "parSeconds": 73
+        }
+      ]
+    },
+    {
+      "world": 2,
+      "name": "bums.world.w2.name",
+      "levels": [
+        {
+          "id": "w2-01",
+          "world": 2,
+          "index": 1,
+          "name": "bums.level.w2-01.name",
+          "minPlayers": 1,
+          "parSeconds": 42
+        },
+        {
+          "id": "w2-02",
+          "world": 2,
+          "index": 2,
+          "name": "bums.level.w2-02.name",
+          "minPlayers": 1,
+          "parSeconds": 72
+        },
+        {
+          "id": "w2-03",
+          "world": 2,
+          "index": 3,
+          "name": "bums.level.w2-03.name",
+          "minPlayers": 1,
+          "parSeconds": 80
+        },
+        {
+          "id": "w2-04",
+          "world": 2,
+          "index": 4,
+          "name": "bums.level.w2-04.name",
+          "minPlayers": 1,
+          "parSeconds": 88
+        },
+        {
+          "id": "w2-05",
+          "world": 2,
+          "index": 5,
+          "name": "bums.level.w2-05.name",
+          "minPlayers": 1,
+          "parSeconds": 40
+        },
+        {
+          "id": "w2-06",
+          "world": 2,
+          "index": 6,
+          "name": "bums.level.w2-06.name",
+          "minPlayers": 1,
+          "parSeconds": 128
+        },
+        {
+          "id": "w2-07",
+          "world": 2,
+          "index": 7,
+          "name": "bums.level.w2-07.name",
+          "minPlayers": 2,
+          "parSeconds": 130
+        },
+        {
+          "id": "w2-08",
+          "world": 2,
+          "index": 8,
+          "name": "bums.level.w2-08.name",
+          "minPlayers": 2,
+          "parSeconds": 215
+        },
+        {
+          "id": "w2-09",
+          "world": 2,
+          "index": 9,
+          "name": "bums.level.w2-09.name",
+          "minPlayers": 1,
+          "parSeconds": 76
+        }
+      ]
+    },
+    {
+      "world": 3,
+      "name": "bums.world.w3.name",
+      "levels": [
+        {
+          "id": "w3-01",
+          "world": 3,
+          "index": 1,
+          "name": "bums.level.w3-01.name",
+          "minPlayers": 1,
+          "parSeconds": 43
+        },
+        {
+          "id": "w3-02",
+          "world": 3,
+          "index": 2,
+          "name": "bums.level.w3-02.name",
+          "minPlayers": 1,
+          "parSeconds": 74
+        },
+        {
+          "id": "w3-03",
+          "world": 3,
+          "index": 3,
+          "name": "bums.level.w3-03.name",
+          "minPlayers": 1,
+          "parSeconds": 80
+        },
+        {
+          "id": "w3-04",
+          "world": 3,
+          "index": 4,
+          "name": "bums.level.w3-04.name",
+          "minPlayers": 1,
+          "parSeconds": 84
+        },
+        {
+          "id": "w3-05",
+          "world": 3,
+          "index": 5,
+          "name": "bums.level.w3-05.name",
+          "minPlayers": 1,
+          "parSeconds": 42
+        },
+        {
+          "id": "w3-06",
+          "world": 3,
+          "index": 6,
+          "name": "bums.level.w3-06.name",
+          "minPlayers": 1,
+          "parSeconds": 118
+        },
+        {
+          "id": "w3-07",
+          "world": 3,
+          "index": 7,
+          "name": "bums.level.w3-07.name",
+          "minPlayers": 2,
+          "parSeconds": 128
+        },
+        {
+          "id": "w3-08",
+          "world": 3,
+          "index": 8,
+          "name": "bums.level.w3-08.name",
+          "minPlayers": 2,
+          "parSeconds": 216
+        },
+        {
+          "id": "w3-09",
+          "world": 3,
+          "index": 9,
+          "name": "bums.level.w3-09.name",
+          "minPlayers": 1,
+          "parSeconds": 76
+        }
+      ]
+    },
+    {
+      "world": 4,
+      "name": "bums.world.w4.name",
+      "levels": [
+        {
+          "id": "w4-01",
+          "world": 4,
+          "index": 1,
+          "name": "bums.level.w4-01.name",
+          "minPlayers": 1,
+          "parSeconds": 28
+        },
+        {
+          "id": "w4-02",
+          "world": 4,
+          "index": 2,
+          "name": "bums.level.w4-02.name",
+          "minPlayers": 1,
+          "parSeconds": 70
+        },
+        {
+          "id": "w4-03",
+          "world": 4,
+          "index": 3,
+          "name": "bums.level.w4-03.name",
+          "minPlayers": 1,
+          "parSeconds": 80
+        },
+        {
+          "id": "w4-04",
+          "world": 4,
+          "index": 4,
+          "name": "bums.level.w4-04.name",
+          "minPlayers": 1,
+          "parSeconds": 80
+        },
+        {
+          "id": "w4-05",
+          "world": 4,
+          "index": 5,
+          "name": "bums.level.w4-05.name",
+          "minPlayers": 1,
+          "parSeconds": 45
+        },
+        {
+          "id": "w4-06",
+          "world": 4,
+          "index": 6,
+          "name": "bums.level.w4-06.name",
+          "minPlayers": 1,
+          "parSeconds": 115
+        },
+        {
+          "id": "w4-07",
+          "world": 4,
+          "index": 7,
+          "name": "bums.level.w4-07.name",
+          "minPlayers": 2,
+          "parSeconds": 150
+        },
+        {
+          "id": "w4-08",
+          "world": 4,
+          "index": 8,
+          "name": "bums.level.w4-08.name",
+          "minPlayers": 2,
+          "parSeconds": 235
+        },
+        {
+          "id": "w4-09",
+          "world": 4,
+          "index": 9,
+          "name": "bums.level.w4-09.name",
+          "minPlayers": 1,
+          "parSeconds": 70
+        }
       ]
     }
   ],
   "showdown": [
-    { "id": "w1-a", "world": 1, "index": 1, "name": "bums.showdown.w1-a.name", "minPlayers": 2, "parSeconds": 45, "showdownRounds": ["race"] },
-    { "id": "w1-b", "world": 1, "index": 2, "name": "bums.showdown.w1-b.name", "minPlayers": 2, "parSeconds": 40, "showdownRounds": ["survive"] },
-    { "id": "w1-c", "world": 1, "index": 3, "name": "bums.showdown.w1-c.name", "minPlayers": 2, "parSeconds": 40, "showdownRounds": ["handle"] }
+    {
+      "id": "w1-a",
+      "world": 1,
+      "index": 1,
+      "name": "bums.showdown.w1-a.name",
+      "minPlayers": 2,
+      "parSeconds": 45
+    },
+    {
+      "id": "w1-b",
+      "world": 1,
+      "index": 2,
+      "name": "bums.showdown.w1-b.name",
+      "minPlayers": 2,
+      "parSeconds": 40
+    },
+    {
+      "id": "w1-c",
+      "world": 1,
+      "index": 3,
+      "name": "bums.showdown.w1-c.name",
+      "minPlayers": 2,
+      "parSeconds": 40
+    },
+    {
+      "id": "w2-a",
+      "world": 2,
+      "index": 1,
+      "name": "bums.showdown.w2-a.name",
+      "minPlayers": 2,
+      "parSeconds": 45
+    },
+    {
+      "id": "w2-b",
+      "world": 2,
+      "index": 2,
+      "name": "bums.showdown.w2-b.name",
+      "minPlayers": 2,
+      "parSeconds": 40
+    },
+    {
+      "id": "w2-c",
+      "world": 2,
+      "index": 3,
+      "name": "bums.showdown.w2-c.name",
+      "minPlayers": 2,
+      "parSeconds": 40
+    },
+    {
+      "id": "w3-a",
+      "world": 3,
+      "index": 1,
+      "name": "bums.showdown.w3-a.name",
+      "minPlayers": 2,
+      "parSeconds": 44
+    },
+    {
+      "id": "w3-b",
+      "world": 3,
+      "index": 2,
+      "name": "bums.showdown.w3-b.name",
+      "minPlayers": 2,
+      "parSeconds": 40
+    },
+    {
+      "id": "w3-c",
+      "world": 3,
+      "index": 3,
+      "name": "bums.showdown.w3-c.name",
+      "minPlayers": 2,
+      "parSeconds": 40
+    },
+    {
+      "id": "w4-a",
+      "world": 4,
+      "index": 1,
+      "name": "bums.showdown.w4-a.name",
+      "minPlayers": 2,
+      "parSeconds": 45
+    },
+    {
+      "id": "w4-b",
+      "world": 4,
+      "index": 2,
+      "name": "bums.showdown.w4-b.name",
+      "minPlayers": 2,
+      "parSeconds": 40
+    },
+    {
+      "id": "w4-c",
+      "world": 4,
+      "index": 3,
+      "name": "bums.showdown.w4-c.name",
+      "minPlayers": 2,
+      "parSeconds": 40
+    }
   ]
 }

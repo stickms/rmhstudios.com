@@ -1,0 +1,165 @@
+{
+  "version": 1,
+  "id": "w4-05",
+  "world": 4,
+  "index": 5,
+  "name": "bums.level.w4-05.name",
+  "minPlayers": 1,
+  "parSeconds": 45,
+  "bounds": { "x": 0, "y": 0, "w": 3200, "h": 1300 },
+  "palette": {
+    "paper": "#e9e0c7",
+    "ink": "#383d44",
+    "accent": "#8a3541",
+    "flashSafe": true,
+    "contrastRatio": 8.31
+  },
+  "spawn": [{ "x": 200, "y": 860 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 2960, "y": 760, "w": 150, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 900, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1150, "y": 860, "w": 900, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 2300, "y": 820, "w": 900, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "lever-w4-05",
+      "kind": "lever",
+      "at": { "x": 650, "y": 800 },
+      "length": 70,
+      "threshold": 0.5,
+      "signal": "w4-05-gate-a",
+      "latching": true
+    },
+    {
+      "id": "door-w4-05-a",
+      "kind": "door",
+      "at": { "x": 900, "y": 660 },
+      "size": { "x": 50, "y": 240 },
+      "signal": "w4-05-gate-a",
+      "openOffset": { "x": 0, "y": -240 },
+      "speed": 140
+    },
+    {
+      "id": "swing-w4-05-a",
+      "kind": "swing",
+      "at": { "x": 880, "y": 640 },
+      "length": 260,
+      "damping": 0.25
+    },
+    {
+      "id": "button-w4-05",
+      "kind": "button",
+      "at": { "x": 1900, "y": 838 },
+      "size": { "x": 140, "y": 22 },
+      "minMass": 0.3,
+      "signal": "w4-05-gate-b"
+    },
+    {
+      "id": "door-w4-05-b",
+      "kind": "door",
+      "at": { "x": 2050, "y": 620 },
+      "size": { "x": 50, "y": 240 },
+      "signal": "w4-05-gate-b",
+      "openOffset": { "x": 0, "y": -240 },
+      "speed": 140
+    },
+    {
+      "id": "swing-w4-05-b",
+      "kind": "swing",
+      "at": { "x": 2030, "y": 610 },
+      "length": 250,
+      "damping": 0.25
+    },
+    {
+      "id": "key-w4-05",
+      "kind": "key",
+      "lockId": "w4-keepsake-05",
+      "at": { "x": 1500, "y": 800 }
+    },
+    {
+      "id": "relic-w4-05-a",
+      "kind": "relic",
+      "relicId": "w4-relic-05-a",
+      "at": { "x": 400, "y": 850 }
+    },
+    {
+      "id": "relic-w4-05-b",
+      "kind": "relic",
+      "relicId": "w4-relic-05-b",
+      "at": { "x": 1700, "y": 810 }
+    },
+    {
+      "id": "camera-w4-05",
+      "kind": "camera",
+      "at": { "x": 320, "y": 850 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "moat",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1200, "w": 3200, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w4-05-clock" },
+    {
+      "kind": "haul",
+      "id": "w4-05-haul",
+      "relicIds": ["w4-relic-05-a", "w4-relic-05-b"]
+    },
+    {
+      "kind": "snapshot",
+      "id": "w4-05-photo",
+      "predicate": { "allSeatsInFrame": true, "allAirborne": true }
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "doodle",
+      "at": { "x": 500, "y": 760 },
+      "sprite": "gargoyle",
+      "scale": 0.6
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 2000, "y": 720 },
+      "sprite": "crow",
+      "scale": 0.5
+    },
+    {
+      "kind": "note",
+      "at": { "x": 2600, "y": 700 },
+      "textKey": "bums.level.w4-05.note-breather",
+      "width": 220
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 1000, "y": 1150 },
+      "r": 60
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 900, "y": 900 }, { "x": 1150, "y": 860 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 2050, "y": 860 }, { "x": 2300, "y": 820 }], "thickness": 10 }
+  ],
+  "music": "w4-castle-clatter",
+  "authorNotes": "Solo. Wide, generous piers (900px each) and two short, familiar lever-door and button-door crossings, both signals wired directly with no relay, both switches latching or trivial-minMass so nothing here should feel like a test after 01-04. Everything is gettable on one relaxed pass: relic-w4-05-a sits right on the starting pier, relic-w4-05-b right on the middle pier, camera-w4-05 by spawn, and the snapshot (allSeatsInFrame + allAirborne) is easiest mid-arc on either swing. key-w4-05 sits on the middle pier as a themed collectible only — per lib/bums-rush/types.ts, the `key` prop carries only a `lockId` with no signal output, and `door` requires a `signal` unconditionally, so there is currently no schema path for a key to gate a door the way lever/button/signalRelay do; this is flagged the same way earlier levels flag schema gaps (not mine to fix here) rather than forced into an invalid wiring. No checkpoint: the whole level stays comfortably under the no-checkpoint cap, and a death just means a short, easy replay."
+}

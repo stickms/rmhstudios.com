@@ -1,0 +1,105 @@
+{
+  "version": 1,
+  "id": "w3-a",
+  "world": 3,
+  "index": 1,
+  "name": "bums.showdown.w3-a.name",
+  "minPlayers": 2,
+  "parSeconds": 44,
+  "bounds": { "x": 0, "y": 0, "w": 2400, "h": 1300 },
+  "palette": {
+    "paper": "#f7e6ba",
+    "ink": "#1e1418",
+    "accent": "#c8102e",
+    "flashSafe": true,
+    "contrastRatio": 14.53
+  },
+  "spawn": [
+    { "x": 150, "y": 860 },
+    { "x": 210, "y": 860 },
+    { "x": 150, "y": 800 },
+    { "x": 210, "y": 800 }
+  ],
+  "goal": {
+    "shape": { "kind": "rect", "x": 2150, "y": 740, "w": 150, "h": 60 },
+    "requires": "any"
+  },
+  "checkpoints": [],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 400, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 750, "y": 850, "w": 500, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1950, "y": 800, "w": 450, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "trampoline-race-a",
+      "kind": "trampoline",
+      "at": { "x": 330, "y": 870 },
+      "size": { "x": 150, "y": 30 },
+      "bounce": 1.05
+    },
+    {
+      "id": "trapeze-race-b",
+      "kind": "swing",
+      "at": { "x": 1250, "y": 530 },
+      "length": 320,
+      "damping": 0.15
+    },
+    {
+      "id": "relic-w3-a",
+      "kind": "relic",
+      "relicId": "w3-relic-showdown-a",
+      "at": { "x": 950, "y": 800 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "pit",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1200, "w": 2400, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w3-a-clock" },
+    { "kind": "flawless", "id": "w3-a-flawless" },
+    {
+      "kind": "haul",
+      "id": "w3-a-haul",
+      "relicIds": ["w3-relic-showdown-a"]
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "doodle",
+      "at": { "x": 1150, "y": 400 },
+      "sprite": "checkered-flag",
+      "scale": 0.9
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 400, "y": 300 },
+      "sprite": "big-top-tent",
+      "scale": 1.1
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 2100, "y": 1150 },
+      "r": 45
+    }
+  ],
+  "assistBeams": [],
+  "music": "w3-showdown",
+  "authorNotes": "Showdown / race, 2-4 players, everyone spawns together on the start platform under the big top. Two gaps, same reach budgets as the campaign (trampoline-race-a's bounce, trapeze-race-b's 320px bar flush with pier B's own edge), no assist beams — Showdown is a contest, not a tutorial. goal.requires is 'any': the instant one player's head crosses the goal shape the round ends, matching §8.2's 'first to the goal wins'. relic-w3-a sits on the middle pier as an optional detour for the haul/flawless objectives, which score independently of who wins the round (§7's per-player scoring, not the win condition)."
+}

@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "id": "w3-05",
+  "world": 3,
+  "index": 5,
+  "name": "bums.level.w3-05.name",
+  "minPlayers": 1,
+  "parSeconds": 42,
+  "bounds": { "x": 0, "y": 0, "w": 3500, "h": 1400 },
+  "palette": {
+    "paper": "#f7e6ba",
+    "ink": "#1e1418",
+    "accent": "#c8102e",
+    "flashSafe": true,
+    "contrastRatio": 14.53
+  },
+  "spawn": [{ "x": 200, "y": 860 }],
+  "goal": {
+    "shape": { "kind": "rect", "x": 2900, "y": 760, "w": 130, "h": 60 },
+    "requires": "all"
+  },
+  "checkpoints": [],
+  "geometry": [
+    {
+      "shape": { "kind": "rect", "x": 0, "y": 900, "w": 900, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 1220, "y": 860, "w": 900, "h": 80 },
+      "material": "paper",
+      "render": "drawn"
+    },
+    {
+      "shape": { "kind": "rect", "x": 2500, "y": 820, "w": 900, "h": 100 },
+      "material": "paper",
+      "render": "drawn"
+    }
+  ],
+  "props": [
+    {
+      "id": "trapeze-breather-a",
+      "kind": "swing",
+      "at": { "x": 900, "y": 640 },
+      "length": 260,
+      "damping": 0.25
+    },
+    {
+      "id": "trampoline-breather-b",
+      "kind": "trampoline",
+      "at": { "x": 2050, "y": 830 },
+      "size": { "x": 160, "y": 30 },
+      "bounce": 1.0
+    },
+    {
+      "id": "camera-5",
+      "kind": "camera",
+      "at": { "x": 350, "y": 850 }
+    },
+    {
+      "id": "relic-w3-05-a",
+      "kind": "relic",
+      "relicId": "w3-relic-05-a",
+      "at": { "x": 650, "y": 850 }
+    },
+    {
+      "id": "relic-w3-05-b",
+      "kind": "relic",
+      "relicId": "w3-relic-05-b",
+      "at": { "x": 1650, "y": 810 }
+    }
+  ],
+  "hazards": [
+    {
+      "id": "pit",
+      "kind": "void",
+      "shape": { "kind": "rect", "x": 0, "y": 1300, "w": 3500, "h": 100 }
+    }
+  ],
+  "objectives": [
+    { "kind": "clock", "id": "w3-05-clock" },
+    {
+      "kind": "haul",
+      "id": "w3-05-haul",
+      "relicIds": ["w3-relic-05-a", "w3-relic-05-b"]
+    },
+    {
+      "kind": "snapshot",
+      "id": "w3-05-photo",
+      "predicate": { "allSeatsInFrame": true, "allAirborne": true }
+    }
+  ],
+  "decorations": [
+    {
+      "kind": "doodle",
+      "at": { "x": 500, "y": 780 },
+      "sprite": "confetti-burst",
+      "scale": 0.6
+    },
+    {
+      "kind": "doodle",
+      "at": { "x": 1900, "y": 760 },
+      "sprite": "juggling-balls",
+      "scale": 0.5
+    },
+    {
+      "kind": "stain",
+      "at": { "x": 400, "y": 960 },
+      "r": 60
+    },
+    {
+      "kind": "note",
+      "at": { "x": 2600, "y": 700 },
+      "textKey": "bums.level.w3-05.note-breather",
+      "width": 220
+    }
+  ],
+  "assistBeams": [
+    { "kind": "chain", "points": [{ "x": 900, "y": 900 }, { "x": 1220, "y": 860 }], "thickness": 10 },
+    { "kind": "chain", "points": [{ "x": 2120, "y": 860 }, { "x": 2500, "y": 820 }], "thickness": 10 }
+  ],
+  "music": "w3-big-tent-bother",
+  "authorNotes": "Solo. Wide, generous piers (900px each) and two short, familiar gaps — a single trapeze (trapeze-breather-a, pivot flush with the starting pier's own edge at 900,640, 260px bar) and a single trampoline (trampoline-breather-b, flush with the middle pier at 2050,830) — nothing here should feel like a test after 04. All three objectives are gettable on one relaxed pass: grab camera-5 and both relics on the way (relic-w3-05-a is right on the starting pier, relic-w3-05-b right on the middle pier — neither requires a detour), and snap the photo (allSeatsInFrame + allAirborne) mid-arc on the trapeze or mid-bounce on the trampoline. No checkpoint: the whole level is short enough to stay under the no-checkpoint cap, and a death just means a quick, easy replay."
+}
