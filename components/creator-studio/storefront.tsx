@@ -20,7 +20,7 @@
  * common `StoreItem` shape and hand it a `seed`.
  */
 
-import { type PointerEvent as ReactPointerEvent, type ReactNode, useMemo, useRef, useState } from 'react';
+import { type PointerEvent as ReactPointerEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ArrowRight, Info } from 'lucide-react';
 import { IMAGE_VARIANTS, variantUrl } from '@/lib/images/variants.gen';
@@ -168,9 +168,9 @@ function coverFor(item: StoreItem): { src?: string } {
  * work on the SSR tier for every card.
  */
 function variantSrcSet(src: string): string | undefined {
-  const widths = IMAGE_VARIANTS[src];
-  if (!widths?.length) return undefined;
-  return widths.map((w) => `${variantUrl(src, w)} ${w}w`).join(', ');
+  const entry = IMAGE_VARIANTS[src];
+  if (!entry?.widths.length) return undefined;
+  return entry.widths.map((w) => `${variantUrl(src, w)} ${w}w`).join(', ');
 }
 
 /**
@@ -199,18 +199,37 @@ function Art({
   const candidates = [src, fallbackSrc].filter(Boolean) as string[];
   const [idx, setIdx] = useState(0);
   const current = idx < candidates.length ? candidates[idx] : null;
+
+  // The card's text comes from the build-time catalog and is painted with the
+  // first frame; only the art arrives over the network. Fading it in over
+  // `.store-art`'s gradient turns that gap into a settle instead of a pop.
+  //
+  // An image served from cache can already be `complete` before React attaches
+  // `onLoad`, which would leave it stuck at opacity 0 — hence the ref check on
+  // mount. `src` is in the dep list so the fallback walk re-arms it.
+  const [loaded, setLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  useEffect(() => {
+    if (imgRef.current?.complete) setLoaded(true);
+  }, [current]);
+
   return current ? (
     <img
-      className="store-art__img"
+      ref={imgRef}
+      className={`store-art__img${loaded ? ' is-loaded' : ''}`}
       src={current}
       srcSet={variantSrcSet(current)}
       sizes={variantSrcSet(current) ? sizes : undefined}
       alt=""
       loading={eager ? 'eager' : 'lazy'}
       decoding="async"
+      onLoad={() => setLoaded(true)}
       // The fallback walk changes `current`, so the srcSet follows it — a
       // fallback that has no variants simply drops back to a bare src.
-      onError={() => setIdx((i) => i + 1)}
+      onError={() => {
+        setLoaded(false);
+        setIdx((i) => i + 1);
+      }}
     />
   ) : (
     <div className="store-art__placeholder" style={{ backgroundImage: hueGradient(item.hue) }} aria-hidden="true">

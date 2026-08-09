@@ -62,12 +62,12 @@ export function buildOptimizedUrl(src: string, w?: number, q?: number, f?: strin
  // records what it wrote in variants.gen.ts, so this only ever points at a
  // file that exists — an image missing from the manifest falls through to the
  // as-is branch below and behaves exactly as it did before.
- if (w && IMAGE_VARIANTS[src]) {
- const available = IMAGE_VARIANTS[src];
+ const entry = w ? IMAGE_VARIANTS[src] : undefined;
+ if (entry) {
  // Smallest variant that still covers the requested width; otherwise the
  // largest one we have (never upscale past the source).
- const pick = available.find((candidate) => candidate >= w) ?? available[available.length - 1];
- return variantUrl(src, pick);
+ const pick = entry.widths.find((candidate) => candidate >= w!) ?? entry.widths.at(-1)!;
+ return variantUrl(src, pick) ?? src;
  }
 
  // Other local/static paths — serve as-is, no optimization available.
@@ -100,9 +100,9 @@ export function generateSrcSet(src: string, quality?: number, format?: string): 
  // generated. Running it through `WIDTHS` instead would emit descriptors that
  // lie — `…-640.webp 480w` claims a 640px file is 480px wide, and the browser
  // picks its candidate from the descriptor, not from the file.
- const variants = IMAGE_VARIANTS[src];
- if (variants) {
- return variants.map((w) => `${variantUrl(src, w)} ${w}w`).join(', ');
+ const entry = IMAGE_VARIANTS[src];
+ if (entry) {
+ return entry.widths.map((w) => `${variantUrl(src, w)} ${w}w`).join(', ');
  }
  return WIDTHS
  .map((w) => `${buildOptimizedUrl(src, w, quality, format)} ${w}w`)
