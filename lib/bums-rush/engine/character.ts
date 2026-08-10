@@ -21,8 +21,8 @@
 import Matter from 'matter-js';
 import { RENDER } from '../constants';
 import type { Assists, Cosmetics, SeatIndex, SeatLifeState, Vec2 } from '../types';
-import { correctPosition, defaultMeta, FILTERS, type PhysWorld } from './world';
-import { ENGINE, P } from './tuning';
+import { cancelSeparation, correctPosition, defaultMeta, FILTERS, type PhysWorld } from './world';
+import { ENGINE, GRAVITY_SCALE, P } from './tuning';
 
 const { Bodies, Body } = Matter;
 
@@ -46,6 +46,13 @@ export interface Arm {
   peakAtMs: number;
   /** Grease coats a hand for a while after contact (§6.6 W2). */
   greaseUntilMs: number;
+  /**
+   * Whether this hand is currently holding something.
+   *
+   * The aim solver needs it because a free arm and a gripped arm want very
+   * different authority — see `FREE_ARM_AUTHORITY` in `applyAim`.
+   */
+  gripped: boolean;
 }
 
 export interface Character {
@@ -93,6 +100,10 @@ const STRETCH_SCALE = P.ARM_REACH_PX_STRETCHED / P.ARM_REACH_PX;
 const forceScratch: Vec2 = { x: 0, y: 0 };
 const shoulderScratch: Vec2 = { x: 0, y: 0 };
 const dirScratch: Vec2 = { x: 0, y: 0 };
+const clampScratch: Vec2 = { x: 0, y: 0 };
+
+/** Four times a fatal fall — unreachable in play; see `clampActorSpeed`. */
+const SPEED_CEILING = P.DEATH_SPEED * 4;
 
 function signedAngle(ax: number, ay: number, bx: number, by: number): number {
   return Math.atan2(ax * by - ay * bx, ax * bx + ay * by);
@@ -182,6 +193,7 @@ function createArm(world: PhysWorld, seat: SeatIndex, side: 'l' | 'r', at: Vec2)
     peakSpeed: 0,
     peakAtMs: -1e9,
     greaseUntilMs: 0,
+    gripped: false,
   };
 }
 
@@ -309,12 +321,35 @@ export function applyAim(ch: Character, arm: Arm, nowMs: number): void {
   // A centred stick means the arm dangles. It is the only way to read, at a
   // glance and across the screen, that a player has let go and is falling.
   arm.limp = mag < 0.12;
-  const gain = arm.limp ? P.ARM_REACH_GAIN * P.ARM_LIMP_GAIN : P.ARM_REACH_GAIN;
+  /*
+   * A FREE arm gets a fraction of the authority a gripped one does, and this is
+   * the fix for "he can fly".
+   *
+   * The full force exists for one job: a gripped hand is pinned, the target is
+   * unreachable, and the residual error hauls the body around the anchor. That
+   * is the swing, and it needs every bit of `ARM_FORCE_MAX`.
+   *
+   * A free arm has nothing to pull against, so all that force goes into the
+   * reaction on the head. Held straight up — four point masses on constraints,
+   * an inverted pendulum the controller can never win — it saturated forever
+   * and pressed the head down with SIX TIMES the character's weight. Standing
+   * on the ground that drove the head through the floor (measured: rest at
+   * y=674, through by step 427, gone to y=11571 and back out the top); in the
+   * air it kept every segment at full drive, which is what "the arms move on
+   * their own" looked like.
+   *
+   * Scaling by grip state rather than clamping the reaction keeps Newton's
+   * third law exact — the pair still sums to zero, so this cannot become
+   * thrust — and costs the swing nothing, because a swinging arm is by
+   * definition gripped.
+   */
+  const authority = arm.gripped ? ENGINE.GRIPPED_ARM_AUTHORITY : ENGINE.FREE_ARM_AUTHORITY;
+  const gain = (arm.limp ? P.ARM_REACH_GAIN * P.ARM_LIMP_GAIN : P.ARM_REACH_GAIN) * authority;
   // The clamp goes limp with the gain. Scaling only the gain leaves a dangling
   // arm able to saturate at full force the moment the error grows, which is
   // exactly a falling player — and a dangling arm that can shove the body is
   // not dangling.
-  const forceMax = arm.limp ? P.ARM_FORCE_MAX * P.ARM_LIMP_GAIN : P.ARM_FORCE_MAX;
+  const forceMax = (arm.limp ? P.ARM_FORCE_MAX * P.ARM_LIMP_GAIN : P.ARM_FORCE_MAX) * authority;
 
   let wantX: number;
   let wantY: number;
@@ -380,14 +415,48 @@ export function applyAim(ch: Character, arm: Arm, nowMs: number): void {
     const towardX = sh.x + dirX * reach - seg.position.x;
     const towardY = sh.y + dirY * reach - seg.position.y;
     const w = gain * P.ARM_SEG_WEIGHT[i];
-    let fx = towardX * w;
-    let fy = towardY * w;
+
+    /*
+     * Feed-forward: carry the segment's own weight before the controller sees
+     * the error at all.
+     *
+     * Without this, a raised arm can never reach its target — gravity holds it
+     * below the line — so a pure proportional controller sits at its clamp
+     * FOREVER. That is not a small inefficiency, it is the bug: four saturated
+     * segments per arm put a constant 4× body weight of reaction through the
+     * head, which on the ground drove the character down through the floor at
+     * 5px/step (measured: rest at y=674, through the floor by step 427, gone to
+     * y=11571) and in the air kept every segment permanently at full drive,
+     * which is what "the arms move on their own" looks like.
+     *
+     * Cancelling the segment's weight and charging it to the head is exactly
+     * what a body does when it holds an arm up, costs nothing in net force
+     * (it is still an internal pair), and leaves the P term doing only the job
+     * it is good at: correcting real pose error, and going quiet at rest.
+     */
+    const lift = seg.mass * P.GRAVITY_Y * GRAVITY_SCALE;
+
+    /*
+     * And a damping term, because a spring with no damper is an oscillator.
+     * The segments are 24× lighter than the head, so an undamped P controller
+     * rings at a frequency the eye reads as buzzing — the second half of "the
+     * arms rotate very fast". Damping is on the segment's own velocity, so it
+     * costs nothing when the arm is still and only bites when it whips.
+     */
+    let fx = towardX * w - seg.velocity.x * ENGINE.ARM_DAMPING;
+    let fy = towardY * w - seg.velocity.y * ENGINE.ARM_DAMPING;
+
     const fm = Math.hypot(fx, fy);
     if (fm > forceMax) {
       const s = forceMax / fm;
       fx *= s;
       fy *= s;
     }
+    // The lift is added AFTER the clamp: it is not the controller's effort, it
+    // is the weight the arm was always carrying, and clamping it would put the
+    // sag straight back.
+    fy -= lift;
+
     forceScratch.x = fx;
     forceScratch.y = fy;
     Body.applyForce(seg, seg.position, forceScratch);
@@ -447,6 +516,38 @@ export function trackAcceleration(ch: Character): void {
   ch.prevVY = ny;
 }
 
+/**
+ * The last line of defence: no part of a character may exceed this speed.
+ *
+ * `DEATH_SPEED` is 26 px/step, which is a fatal fall, so `SPEED_CEILING` at
+ * four times that is unreachable by anything the game asks a player to do —
+ * it is a safety net, not a tuning knob, and if it is ever load-bearing for
+ * feel something else is wrong.
+ *
+ * It exists because the arm controller is not a muscle. Four point masses on
+ * constraints cannot stand up: an arm held straight overhead is an inverted
+ * pendulum, so the controller is permanently correcting a buckle it can never
+ * win, and pose-dependent resonances between that and the joint limiter can
+ * still run away even with the energy pump fixed and gravity fed forward.
+ * Measured before this: a character resting on the floor with both arms up
+ * left through the world at y=11571.
+ *
+ * Clamping speed cannot create motion, only remove it, so it can never be the
+ * cause of a launch — it is strictly the thing that stops one.
+ */
+export function clampActorSpeed(ch: Character): void {
+  for (const body of ch.bodies) {
+    const vx = body.velocity.x;
+    const vy = body.velocity.y;
+    const speed = Math.hypot(vx, vy);
+    if (speed <= SPEED_CEILING || speed < 1e-9) continue;
+    const s = SPEED_CEILING / speed;
+    clampScratch.x = vx * s;
+    clampScratch.y = vy * s;
+    Body.setVelocity(body, clampScratch);
+  }
+}
+
 export function relaxArms(ch: Character): void {
   dampHeadSpin(ch);
   const slack = ENGINE.JOINT_SLACK_PX;
@@ -484,6 +585,30 @@ export function relaxArms(ch: Character): void {
  */
 function dampHeadSpin(ch: Character): void {
   Body.setAngularVelocity(ch.head, ch.head.angularVelocity * (1 - ENGINE.HEAD_SPIN_DAMP));
+  /*
+   * The segments need this at least as much as the head, and for a while they
+   * did not have it — which was the whole of "the arms rotate very fast".
+   *
+   * The aim solver drives each segment by its CENTRE, deliberately: applying
+   * force off-centre would spin the segment about its own joints instead of
+   * laying the arm out. But that leaves segment ORIENTATION controlled only by
+   * the constraints, and constraint torque has nothing to dissipate it — so
+   * the segments kept whatever spin they picked up, forever.
+   *
+   * It is invisible in the positions and glaring on screen, because
+   * `armPolyline` builds every node from `seg.position + SEG_HALF × (cos a,
+   * sin a)`: a segment whose centre is perfectly still still whirls its two
+   * endpoints around itself. Measured on a HELD pose, the drawn arm swept a
+   * mean of 17 rad/s with peaks over 180 — against a commanded slew cap of
+   * 12.6 rad/s, i.e. the arm was moving faster than the player could ever
+   * command it to.
+   */
+  for (const arm of ch.arms) {
+    for (const seg of arm.segs) {
+      Body.setAngularVelocity(seg, seg.angularVelocity * (1 - ENGINE.ARM_SPIN_DAMP));
+    }
+    Body.setAngularVelocity(arm.hand, arm.hand.angularVelocity * (1 - ENGINE.ARM_SPIN_DAMP));
+  }
 }
 
 /** `bLocal` is `b`'s attach point along its own long axis. */
@@ -512,11 +637,19 @@ function limitCentres(
   const wb = b.isStatic ? 0 : b.inverseMass;
   const wsum = wa + wb;
   if (wsum <= 0) return;
+  const ux = dx / d;
+  const uy = dy / d;
   const excess = d - maxDist;
-  const nx = (dx / d) * excess;
-  const ny = (dy / d) * excess;
+  const nx = ux * excess;
+  const ny = uy * excess;
   correctPosition(a, (nx * wa) / wsum, (ny * wa) / wsum);
   correctPosition(b, (-nx * wb) / wsum, (-ny * wb) / wsum);
+  // The projection above moves the bodies without touching their velocity, so
+  // on its own it leaves them still travelling apart and the joint re-stretches
+  // next step — a limiter that fights the same separation forever. This is the
+  // other half: take away the separating velocity, and only that. It is a
+  // subtraction, which is what keeps the pair stable instead of pumping.
+  cancelSeparation(a, b, ux, uy);
 }
 
 /** Fill `out` with ARM_SEGMENTS+1 points, shoulder → hand (§Simulation.render). */

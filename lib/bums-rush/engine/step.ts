@@ -50,6 +50,7 @@ import {
   destroyCharacter,
   noteImpact,
   relaxArms,
+  clampActorSpeed,
   smoothAim,
   trackAcceleration,
   type Character,
@@ -766,6 +767,7 @@ export function createSimulation(level: Level, opts: SimulationOptions = {}): Si
     }
     for (const ch of characters) {
       if (!ch) continue;
+      clampActorSpeed(ch);
       trackAcceleration(ch);
       trackStranded(ch, DT);
     }
