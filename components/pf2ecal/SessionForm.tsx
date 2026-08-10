@@ -194,8 +194,11 @@ export function SessionForm({
         />
       </div>
 
+      {/* `min-w-0` on both columns: a `datetime-local` input reports a wide
+          intrinsic minimum, and a grid child defaults to `min-width: auto`, so
+          at 320px the two columns pushed 12px past the form. */}
       <div className="grid gap-4 sm:grid-cols-2">
-        <div>
+        <div className="min-w-0">
           <label className="pf2e-mono-label mb-1.5 block" htmlFor="pf2e-start">
             {t('field-starts', { defaultValue: 'Starts' })}
           </label>
@@ -208,7 +211,7 @@ export function SessionForm({
             required
           />
         </div>
-        <div>
+        <div className="min-w-0">
           <label className="pf2e-mono-label mb-1.5 block" htmlFor="pf2e-end">
             {t('field-ends', { defaultValue: 'Ends' })}
           </label>

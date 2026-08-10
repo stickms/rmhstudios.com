@@ -87,14 +87,17 @@ export function Announcements({
       aria-label={t('announcements', { defaultValue: 'Announcements' })}
     >
       <header className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="pf2e-title flex items-center gap-2">
+        {/* `min-w-0` so the heading can shrink and truncate; without it the
+            flex child keeps its min-content width and pushes "Post" out of the
+            header at 320px. */}
+        <h2 className="pf2e-headline flex min-w-0 items-center gap-2">
           <Megaphone size={17} aria-hidden />
           {t('announcements', { defaultValue: 'Announcements' })}
         </h2>
         {canEdit && !composing && (
           <button
             type="button"
-            className="pf2e-btn pf2e-btn-secondary pf2e-btn-sm"
+            className="pf2e-btn pf2e-btn-secondary pf2e-btn-sm shrink-0"
             onClick={() => setComposing(true)}
           >
             {t('post', { defaultValue: 'Post' })}

@@ -415,6 +415,7 @@ model User {
   pf2eSessionsEdited  Pf2eSession[]         @relation("Pf2eSessionEditor")
   pf2eResponses       Pf2eSessionResponse[]
   pf2eAnnouncements   Pf2eAnnouncement[]    @relation("Pf2eAnnouncementAuthor")
+  pf2eSettingsEdits   Pf2eSettings[]        @relation("Pf2eSettingsEditor")
 
   @@index([isBot])
   @@index([followerCount])
@@ -8408,6 +8409,14 @@ model Pf2eSession {
   /// already moved or RSVP'd to.
   pinnedToRule Boolean @default(true)
 
+  /// When the Discord reminder for this session actually went out.
+  ///
+  /// The idempotency key for the reminder cron: the sweep runs every few
+  /// minutes and would otherwise re-post the same reminder on every tick for
+  /// the whole morning. Cleared when the session is moved to a different day,
+  /// so rescheduling a night genuinely re-arms its reminder.
+  reminderSentAt DateTime?
+
   createdById String?
   updatedById String?
   createdAt   DateTime @default(now())
@@ -8455,4 +8464,42 @@ model Pf2eAnnouncement {
 
   @@index([pinned, createdAt(sort: Desc)])
   @@map("pf2e_announcement")
+}
+
+/// Board-wide settings. Exactly one row, id `singleton`.
+///
+/// A single-row table rather than a config file because the group edits this
+/// from the page: the webhook URL and the reminder time are theirs to change,
+/// and a deploy should not be in the loop. The fixed id is what makes
+/// `upsert` the only write path — there is no way to end up with two.
+model Pf2eSettings {
+  id String @id @default("singleton")
+
+  /// A Discord incoming-webhook URL. Server-only: it is a bearer credential —
+  /// anyone holding it can post to the channel — so it is NEVER returned to a
+  /// client in full (`maskWebhookUrl` in `lib/pf2ecal/discord.server.ts` is
+  /// what the API sends instead). The host is validated against Discord's own
+  /// domains on write, so this column cannot become an arbitrary SSRF target.
+  discordWebhookUrl String? @db.VarChar(500)
+
+  /// Reminders are off until someone turns them on, even once a URL is saved:
+  /// pasting a webhook should not immediately start posting to a channel.
+  remindersEnabled Boolean @default(false)
+
+  /// Minutes past local midnight to post the morning-of reminder. 540 = 9:00am.
+  /// Stored as minutes rather than a time so the arithmetic in the cron is
+  /// integer comparison and no timezone can creep into the stored value.
+  reminderMinutes Int @default(540)
+
+  /// The zone `reminderMinutes` is measured in — "morning" is meaningless
+  /// without one, and the worker runs in UTC. IANA name, validated on write.
+  reminderTimeZone String @default("America/New_York") @db.VarChar(64)
+
+  updatedById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  updatedBy User? @relation("Pf2eSettingsEditor", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@map("pf2e_settings")
 }

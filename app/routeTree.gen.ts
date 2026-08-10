@@ -439,6 +439,7 @@ import { Route as ApiPf2ecalAnnouncementsRouteImport } from './routes/api/pf2eca
 import { Route as ApiPf2ecalAskRouteImport } from './routes/api/pf2ecal/ask'
 import { Route as ApiPf2ecalCalendarDoticsRouteImport } from './routes/api/pf2ecal/calendar[.]ics'
 import { Route as ApiPf2ecalSessionsRouteImport } from './routes/api/pf2ecal/sessions'
+import { Route as ApiPf2ecalSettingsRouteImport } from './routes/api/pf2ecal/settings'
 import { Route as ApiPlaylistsIndexRouteImport } from './routes/api/playlists/index'
 import { Route as ApiPoolsIndexRouteImport } from './routes/api/pools/index'
 import { Route as ApiPredictionsIndexRouteImport } from './routes/api/predictions/index'
@@ -708,6 +709,7 @@ import { Route as ApiPersonasIdChatRouteImport } from './routes/api/personas/$id
 import { Route as ApiPersonasAvatarFilenameRouteImport } from './routes/api/personas/avatar/$filename'
 import { Route as ApiPf2ecalAnnouncementsIdRouteImport } from './routes/api/pf2ecal/announcements.$id'
 import { Route as ApiPf2ecalSessionsIdRouteImport } from './routes/api/pf2ecal/sessions.$id'
+import { Route as ApiPf2ecalSettingsTestWebhookRouteImport } from './routes/api/pf2ecal/settings.test-webhook'
 import { Route as ApiPlaylistsIdIndexRouteImport } from './routes/api/playlists/$id/index'
 import { Route as ApiPoolsIdIndexRouteImport } from './routes/api/pools/$id/index'
 import { Route as ApiPoolsIdContributeRouteImport } from './routes/api/pools/$id/contribute'
@@ -3046,6 +3048,11 @@ const ApiPf2ecalSessionsRoute = ApiPf2ecalSessionsRouteImport.update({
   path: '/api/pf2ecal/sessions',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPf2ecalSettingsRoute = ApiPf2ecalSettingsRouteImport.update({
+  id: '/api/pf2ecal/settings',
+  path: '/api/pf2ecal/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPlaylistsIndexRoute = ApiPlaylistsIndexRouteImport.update({
   id: '/api/playlists/',
   path: '/api/playlists/',
@@ -4447,6 +4454,12 @@ const ApiPf2ecalSessionsIdRoute = ApiPf2ecalSessionsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiPf2ecalSessionsRoute,
 } as any)
+const ApiPf2ecalSettingsTestWebhookRoute =
+  ApiPf2ecalSettingsTestWebhookRouteImport.update({
+    id: '/test-webhook',
+    path: '/test-webhook',
+    getParentRoute: () => ApiPf2ecalSettingsRoute,
+  } as any)
 const ApiPlaylistsIdIndexRoute = ApiPlaylistsIdIndexRouteImport.update({
   id: '/api/playlists/$id/',
   path: '/api/playlists/$id/',
@@ -5727,6 +5740,7 @@ export interface FileRoutesByFullPath {
   '/api/pf2ecal/ask': typeof ApiPf2ecalAskRoute
   '/api/pf2ecal/calendar.ics': typeof ApiPf2ecalCalendarDoticsRoute
   '/api/pf2ecal/sessions': typeof ApiPf2ecalSessionsRouteWithChildren
+  '/api/pf2ecal/settings': typeof ApiPf2ecalSettingsRouteWithChildren
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
   '/api/preferences/appearance': typeof ApiPreferencesAppearanceRoute
   '/api/preferences/conversation': typeof ApiPreferencesConversationRoute
@@ -6025,6 +6039,7 @@ export interface FileRoutesByFullPath {
   '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
   '/api/pf2ecal/announcements/$id': typeof ApiPf2ecalAnnouncementsIdRoute
   '/api/pf2ecal/sessions/$id': typeof ApiPf2ecalSessionsIdRouteWithChildren
+  '/api/pf2ecal/settings/test-webhook': typeof ApiPf2ecalSettingsTestWebhookRoute
   '/api/pools/$id/contribute': typeof ApiPoolsIdContributeRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
   '/api/profile-links/$id/verify': typeof ApiProfileLinksIdVerifyRoute
@@ -6572,6 +6587,7 @@ export interface FileRoutesByTo {
   '/api/pf2ecal/ask': typeof ApiPf2ecalAskRoute
   '/api/pf2ecal/calendar.ics': typeof ApiPf2ecalCalendarDoticsRoute
   '/api/pf2ecal/sessions': typeof ApiPf2ecalSessionsRouteWithChildren
+  '/api/pf2ecal/settings': typeof ApiPf2ecalSettingsRouteWithChildren
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
   '/api/preferences/appearance': typeof ApiPreferencesAppearanceRoute
   '/api/preferences/conversation': typeof ApiPreferencesConversationRoute
@@ -6870,6 +6886,7 @@ export interface FileRoutesByTo {
   '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
   '/api/pf2ecal/announcements/$id': typeof ApiPf2ecalAnnouncementsIdRoute
   '/api/pf2ecal/sessions/$id': typeof ApiPf2ecalSessionsIdRouteWithChildren
+  '/api/pf2ecal/settings/test-webhook': typeof ApiPf2ecalSettingsTestWebhookRoute
   '/api/pools/$id/contribute': typeof ApiPoolsIdContributeRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
   '/api/profile-links/$id/verify': typeof ApiProfileLinksIdVerifyRoute
@@ -7443,6 +7460,7 @@ export interface FileRoutesById {
   '/api/pf2ecal/ask': typeof ApiPf2ecalAskRoute
   '/api/pf2ecal/calendar.ics': typeof ApiPf2ecalCalendarDoticsRoute
   '/api/pf2ecal/sessions': typeof ApiPf2ecalSessionsRouteWithChildren
+  '/api/pf2ecal/settings': typeof ApiPf2ecalSettingsRouteWithChildren
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
   '/api/preferences/appearance': typeof ApiPreferencesAppearanceRoute
   '/api/preferences/conversation': typeof ApiPreferencesConversationRoute
@@ -7741,6 +7759,7 @@ export interface FileRoutesById {
   '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
   '/api/pf2ecal/announcements/$id': typeof ApiPf2ecalAnnouncementsIdRoute
   '/api/pf2ecal/sessions/$id': typeof ApiPf2ecalSessionsIdRouteWithChildren
+  '/api/pf2ecal/settings/test-webhook': typeof ApiPf2ecalSettingsTestWebhookRoute
   '/api/pools/$id/contribute': typeof ApiPoolsIdContributeRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
   '/api/profile-links/$id/verify': typeof ApiProfileLinksIdVerifyRoute
@@ -8314,6 +8333,7 @@ export interface FileRouteTypes {
     | '/api/pf2ecal/ask'
     | '/api/pf2ecal/calendar.ics'
     | '/api/pf2ecal/sessions'
+    | '/api/pf2ecal/settings'
     | '/api/predictions/$id'
     | '/api/preferences/appearance'
     | '/api/preferences/conversation'
@@ -8612,6 +8632,7 @@ export interface FileRouteTypes {
     | '/api/personas/avatar/$filename'
     | '/api/pf2ecal/announcements/$id'
     | '/api/pf2ecal/sessions/$id'
+    | '/api/pf2ecal/settings/test-webhook'
     | '/api/pools/$id/contribute'
     | '/api/predictions/$id/trade'
     | '/api/profile-links/$id/verify'
@@ -9159,6 +9180,7 @@ export interface FileRouteTypes {
     | '/api/pf2ecal/ask'
     | '/api/pf2ecal/calendar.ics'
     | '/api/pf2ecal/sessions'
+    | '/api/pf2ecal/settings'
     | '/api/predictions/$id'
     | '/api/preferences/appearance'
     | '/api/preferences/conversation'
@@ -9457,6 +9479,7 @@ export interface FileRouteTypes {
     | '/api/personas/avatar/$filename'
     | '/api/pf2ecal/announcements/$id'
     | '/api/pf2ecal/sessions/$id'
+    | '/api/pf2ecal/settings/test-webhook'
     | '/api/pools/$id/contribute'
     | '/api/predictions/$id/trade'
     | '/api/profile-links/$id/verify'
@@ -10029,6 +10052,7 @@ export interface FileRouteTypes {
     | '/api/pf2ecal/ask'
     | '/api/pf2ecal/calendar.ics'
     | '/api/pf2ecal/sessions'
+    | '/api/pf2ecal/settings'
     | '/api/predictions/$id'
     | '/api/preferences/appearance'
     | '/api/preferences/conversation'
@@ -10327,6 +10351,7 @@ export interface FileRouteTypes {
     | '/api/personas/avatar/$filename'
     | '/api/pf2ecal/announcements/$id'
     | '/api/pf2ecal/sessions/$id'
+    | '/api/pf2ecal/settings/test-webhook'
     | '/api/pools/$id/contribute'
     | '/api/predictions/$id/trade'
     | '/api/profile-links/$id/verify'
@@ -10736,6 +10761,7 @@ export interface RootRouteChildren {
   ApiPf2ecalAskRoute: typeof ApiPf2ecalAskRoute
   ApiPf2ecalCalendarDoticsRoute: typeof ApiPf2ecalCalendarDoticsRoute
   ApiPf2ecalSessionsRoute: typeof ApiPf2ecalSessionsRouteWithChildren
+  ApiPf2ecalSettingsRoute: typeof ApiPf2ecalSettingsRouteWithChildren
   ApiPredictionsIdRoute: typeof ApiPredictionsIdRouteWithChildren
   ApiPreferencesAppearanceRoute: typeof ApiPreferencesAppearanceRoute
   ApiPreferencesConversationRoute: typeof ApiPreferencesConversationRoute
@@ -14037,6 +14063,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPf2ecalSessionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/pf2ecal/settings': {
+      id: '/api/pf2ecal/settings'
+      path: '/api/pf2ecal/settings'
+      fullPath: '/api/pf2ecal/settings'
+      preLoaderRoute: typeof ApiPf2ecalSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/playlists/': {
       id: '/api/playlists/'
       path: '/api/playlists'
@@ -15919,6 +15952,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/pf2ecal/sessions/$id'
       preLoaderRoute: typeof ApiPf2ecalSessionsIdRouteImport
       parentRoute: typeof ApiPf2ecalSessionsRoute
+    }
+    '/api/pf2ecal/settings/test-webhook': {
+      id: '/api/pf2ecal/settings/test-webhook'
+      path: '/test-webhook'
+      fullPath: '/api/pf2ecal/settings/test-webhook'
+      preLoaderRoute: typeof ApiPf2ecalSettingsTestWebhookRouteImport
+      parentRoute: typeof ApiPf2ecalSettingsRoute
     }
     '/api/playlists/$id/': {
       id: '/api/playlists/$id/'
@@ -18233,6 +18273,17 @@ const ApiPf2ecalSessionsRouteChildren: ApiPf2ecalSessionsRouteChildren = {
 const ApiPf2ecalSessionsRouteWithChildren =
   ApiPf2ecalSessionsRoute._addFileChildren(ApiPf2ecalSessionsRouteChildren)
 
+interface ApiPf2ecalSettingsRouteChildren {
+  ApiPf2ecalSettingsTestWebhookRoute: typeof ApiPf2ecalSettingsTestWebhookRoute
+}
+
+const ApiPf2ecalSettingsRouteChildren: ApiPf2ecalSettingsRouteChildren = {
+  ApiPf2ecalSettingsTestWebhookRoute: ApiPf2ecalSettingsTestWebhookRoute,
+}
+
+const ApiPf2ecalSettingsRouteWithChildren =
+  ApiPf2ecalSettingsRoute._addFileChildren(ApiPf2ecalSettingsRouteChildren)
+
 interface ApiPredictionsIdRouteChildren {
   ApiPredictionsIdTradeRoute: typeof ApiPredictionsIdTradeRoute
 }
@@ -18960,6 +19011,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPf2ecalAskRoute: ApiPf2ecalAskRoute,
   ApiPf2ecalCalendarDoticsRoute: ApiPf2ecalCalendarDoticsRoute,
   ApiPf2ecalSessionsRoute: ApiPf2ecalSessionsRouteWithChildren,
+  ApiPf2ecalSettingsRoute: ApiPf2ecalSettingsRouteWithChildren,
   ApiPredictionsIdRoute: ApiPredictionsIdRouteWithChildren,
   ApiPreferencesAppearanceRoute: ApiPreferencesAppearanceRoute,
   ApiPreferencesConversationRoute: ApiPreferencesConversationRoute,

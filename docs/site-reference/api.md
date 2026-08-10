@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 582 files across 135 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 584 files across 135 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -796,7 +796,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/pf2ecal`
 
-8 routes.
+10 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -808,6 +808,8 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/pf2ecal/sessions` | `POST` | `app/routes/api/pf2ecal/sessions.ts` |
 | `/api/pf2ecal/sessions/:id` | `DELETE` `PATCH` | `app/routes/api/pf2ecal/sessions.$id.ts` |
 | `/api/pf2ecal/sessions/:id/response` | `DELETE` `PUT` | `app/routes/api/pf2ecal/sessions.$id.response.ts` |
+| `/api/pf2ecal/settings` | `GET` `PUT` | `app/routes/api/pf2ecal/settings.ts` |
+| `/api/pf2ecal/settings/test-webhook` | `POST` | `app/routes/api/pf2ecal/settings.test-webhook.ts` |
 
 ## `/api/playlists`
 

@@ -152,7 +152,7 @@ export function ResponseRoster({ responses }: { responses: SessionResponseDTO[] 
         const Icon = ICONS[status];
         return (
           <div key={status}>
-            <div className="pf2e-mono-label mb-1.5 flex items-center gap-1.5">
+            <div className="pf2e-caption mb-1.5 flex items-center gap-1.5">
               <Icon size={12} aria-hidden />
               <span>
                 {labels(status).label} · {people.length}

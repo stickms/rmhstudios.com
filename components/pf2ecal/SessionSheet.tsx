@@ -180,7 +180,7 @@ export function SessionSheet({
             className="flex flex-col gap-5"
           >
             <div>
-              <p className="pf2e-title">
+              <p className="pf2e-headline">
                 {time.local}{' '}
                 {time.reference && <span className="pf2e-muted font-normal">{time.reference}</span>}
               </p>

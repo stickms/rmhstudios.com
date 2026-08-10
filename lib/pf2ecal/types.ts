@@ -51,6 +51,16 @@ export interface AnnouncementDTO {
   updatedAt: string;
 }
 
+/** Board settings as the client sees them — the webhook is masked, never raw. */
+export interface SettingsDTO {
+  /** `discord.com/…/123/…ab12`, or null when none is saved. Never the secret. */
+  webhookMasked: string | null;
+  remindersEnabled: boolean;
+  /** Minutes past local midnight. 540 = 9:00am. */
+  reminderMinutes: number;
+  reminderTimeZone: string;
+}
+
 export interface CalendarStateDTO {
   sessions: SessionDTO[];
   announcements: AnnouncementDTO[];
@@ -64,6 +74,7 @@ export interface CalendarStateDTO {
   /** Window the server generated occurrences for, as ISO instants. */
   windowStart: string;
   windowEnd: string;
+  settings: SettingsDTO;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -165,6 +176,29 @@ export const respondSchema = z.object({
   note: z.string().trim().max(RESPONSE_NOTE_MAX).nullish(),
 });
 
+/**
+ * Settings patch.
+ *
+ * `webhookUrl` is tri-state on purpose and the three states mean different
+ * things: absent leaves the stored URL alone (so toggling reminders does not
+ * require re-pasting a secret the client was never given), `null` clears it,
+ * and a string replaces it. A single nullable field could not express "don't
+ * touch it", which is the common case.
+ */
+export const settingsSchema = z
+  .object({
+    webhookUrl: z.string().max(500).nullish(),
+    remindersEnabled: z.boolean().optional(),
+    // 0..1439: minutes past midnight, so 1440 would be the next day's 00:00.
+    reminderMinutes: z.number().int().min(0).max(1439).optional(),
+    reminderTimeZone: z.string().min(1).max(64).optional(),
+  })
+  .refine((v) => Object.keys(v).length > 0, { message: 'Nothing to change.' });
+
+export const testWebhookSchema = z.object({
+  webhookUrl: z.string().min(1).max(500),
+});
+
 export const announcementSchema = z.object({
   body: z.string().trim().min(1).max(ANNOUNCEMENT_MAX),
   pinned: z.boolean().default(false),
@@ -181,3 +215,4 @@ export type CreateSessionInput = z.infer<typeof createSessionSchema>;
 export type UpdateSessionInput = z.infer<typeof updateSessionSchema>;
 export type RespondInput = z.infer<typeof respondSchema>;
 export type AnnouncementInput = z.infer<typeof announcementSchema>;
+export type SettingsInput = z.infer<typeof settingsSchema>;

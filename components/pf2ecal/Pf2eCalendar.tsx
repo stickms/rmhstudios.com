@@ -19,9 +19,10 @@
  */
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { CalendarPlus, RefreshCw, WifiOff } from 'lucide-react';
+import { CalendarPlus, RefreshCw, Settings2, WifiOff } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { Link } from '@tanstack/react-router';
 import type { Availability, CalendarStateDTO, Session, SessionDTO } from '@/lib/pf2ecal/types';
 import { toSession } from '@/lib/pf2ecal/types';
@@ -40,6 +41,7 @@ import { SessionCard } from './SessionCard';
 import { SessionSheet } from './SessionSheet';
 import { Sheet } from './Sheet';
 import { SessionForm, emptyForm, type SessionFormValue } from './SessionForm';
+import { SettingsSheet } from './SettingsSheet';
 import { SubscribePanel } from './SubscribePanel';
 import { formatMonthLabel } from './format';
 import {
@@ -49,6 +51,7 @@ import {
   removeSession,
   replaceAnnouncement,
   replaceSession,
+  replaceSettings,
   useCalendarBoard,
   useCalendarMutation,
   useLocalTimeZone,
@@ -180,6 +183,33 @@ export function Pf2eCalendar({ initialState }: { initialState: CalendarStateDTO 
     optimistic: ({ id }) => removeAnnouncement(id),
   });
 
+  const saveSettings = useCalendarMutation<
+    Record<string, unknown>,
+    { settings: CalendarStateDTO['settings'] }
+  >({
+    send: (payload) => api.saveSettings(payload),
+    settle: (data) => replaceSettings(data.settings),
+    successMessage: t('toast-settings-saved', { defaultValue: 'Settings saved' }),
+  });
+
+  // Not a `useCalendarMutation`: it changes nothing on the board, so it wants
+  // neither an optimistic patch nor the shared invalidation. It is a one-shot
+  // side effect whose only output is a toast.
+  const [testing, setTesting] = useState(false);
+  const testWebhook = useCallback(
+    (webhookUrl: string) => {
+      setTesting(true);
+      void api
+        .testWebhook(webhookUrl)
+        .then(() => toast.success(t('test-sent', { defaultValue: 'Sent — check the channel.' })))
+        .catch((error: Error) => toast.error(error.message))
+        .finally(() => setTesting(false));
+    },
+    [t],
+  );
+
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
   const handleRespond = useCallback(
     (session: Session, status: Availability | null, note: string | null = null) => {
       if (!viewerId) return;
@@ -257,6 +287,14 @@ export function Pf2eCalendar({ initialState }: { initialState: CalendarStateDTO 
             <button
               type="button"
               className="pf2e-btn pf2e-btn-ghost"
+              onClick={() => setSettingsOpen(true)}
+            >
+              <Settings2 size={16} aria-hidden />
+              {t('settings', { defaultValue: 'Settings' })}
+            </button>
+            <button
+              type="button"
+              className="pf2e-btn pf2e-btn-ghost"
               onClick={() => void refetch()}
               disabled={isFetching}
             >
@@ -312,7 +350,7 @@ export function Pf2eCalendar({ initialState }: { initialState: CalendarStateDTO 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
           {/* Agenda — first in the DOM so it is first on a phone and first for
               a screen reader, regardless of where the grid sits visually. */}
-          <main className="flex flex-col gap-6">
+          <main className="flex min-w-0 flex-col gap-6">
             <section aria-label={t('upcoming-sessions', { defaultValue: 'Upcoming sessions' })}>
               <h2 className="pf2e-mono-label mb-3">
                 {t('upcoming', { defaultValue: 'Upcoming' })}
@@ -374,7 +412,7 @@ export function Pf2eCalendar({ initialState }: { initialState: CalendarStateDTO 
             )}
           </main>
 
-          <aside className="flex flex-col gap-6 lg:sticky lg:top-6">
+          <aside className="flex min-w-0 flex-col gap-6 lg:sticky lg:top-6">
             {awaitingFirstData ? (
               <>
                 <MonthGridSkeleton />
@@ -473,6 +511,20 @@ export function Pf2eCalendar({ initialState }: { initialState: CalendarStateDTO 
           />
         )}
       </Sheet>
+
+      <SettingsSheet
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        settings={board.settings}
+        canEdit={Boolean(viewerId)}
+        saving={saveSettings.isPending}
+        testing={testing}
+        onSave={(draft) => {
+          saveSettings.mutate(draft as Record<string, unknown>);
+          setSettingsOpen(false);
+        }}
+        onTest={testWebhook}
+      />
 
       {/* Bottom-right, above the page and below the sheets. No account
           needed: it only reads the board, which anyone with the link can

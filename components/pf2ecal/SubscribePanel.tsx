@@ -42,7 +42,7 @@ export function SubscribePanel({ feedUrl, scheduleNote }: SubscribePanelProps) {
       className="pf2e-card p-4"
       aria-label={t('add-to-calendar', { defaultValue: 'Add to your calendar' })}
     >
-      <h2 className="pf2e-title mb-1 flex items-center gap-2">
+      <h2 className="pf2e-headline mb-1 flex items-center gap-2">
         <CalendarPlus size={17} aria-hidden />
         {t('add-to-calendar', { defaultValue: 'Add to your calendar' })}
       </h2>

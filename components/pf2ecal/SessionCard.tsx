@@ -67,7 +67,7 @@ export function SessionCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="pf2e-mono-label mb-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+          <div className="pf2e-caption mb-1 flex flex-wrap items-center gap-x-2 gap-y-1">
             <span>{formatDayLabel(session.startsAt, timeZone)}</span>
             <span aria-hidden>·</span>
             <span>{formatRelativeDay(session.startsAt, now, timeZone)}</span>
@@ -79,12 +79,8 @@ export function SessionCard({
             )}
           </div>
 
-          <h3 className="pf2e-title">
-            <button
-              type="button"
-              className="text-left hover:underline"
-              onClick={() => onOpen(session)}
-            >
+          <h3 className="pf2e-headline">
+            <button type="button" className="pf2e-titlebtn" onClick={() => onOpen(session)}>
               {session.title}
             </button>
           </h3>

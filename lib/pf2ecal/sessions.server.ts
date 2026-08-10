@@ -25,6 +25,8 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { SITE_URL } from '@/lib/seo';
 import { CAMPAIGN_RULE, describeRule, occurrencesBetween, type RecurrenceRule } from './schedule';
+import { maskWebhookUrl } from './discord.server';
+import { getSettings } from './settings.server';
 import type { AnnouncementDTO, Availability, CalendarStateDTO, SessionDTO } from './types';
 
 /**
@@ -181,7 +183,7 @@ export async function getCalendarState(
   const window = calendarWindow(now);
   await syncRule(window);
 
-  const [sessions, announcements] = await Promise.all([
+  const [sessions, announcements, settings] = await Promise.all([
     prisma.pf2eSession.findMany({
       where: { startsAt: { gte: window.start, lt: window.end } },
       orderBy: { startsAt: 'asc' },
@@ -192,6 +194,7 @@ export async function getCalendarState(
       take: 40,
       include: { author: { select: personSelect } },
     }),
+    getSettings(),
   ]);
 
   return {
@@ -211,6 +214,14 @@ export async function getCalendarState(
     feedUrl: `${SITE_URL}/api/pf2ecal/calendar.ics`,
     windowStart: window.start.toISOString(),
     windowEnd: window.end.toISOString(),
+    settings: {
+      // Masked, never raw — the board is readable by anyone with the link, and
+      // the webhook URL is a bearer credential for the Discord channel.
+      webhookMasked: maskWebhookUrl(settings.discordWebhookUrl),
+      remindersEnabled: settings.remindersEnabled,
+      reminderMinutes: settings.reminderMinutes,
+      reminderTimeZone: settings.reminderTimeZone,
+    },
   };
 }
 

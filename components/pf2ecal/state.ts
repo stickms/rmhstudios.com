@@ -36,6 +36,7 @@ import type {
   Availability,
   CalendarStateDTO,
   SessionDTO,
+  SettingsDTO,
 } from '@/lib/pf2ecal/types';
 import { resolveLocalTimeZone } from '@/lib/pf2ecal/zoned-time';
 
@@ -183,6 +184,11 @@ export function replaceAnnouncement(announcement: AnnouncementDTO): Patch {
       }),
     };
   };
+}
+
+/** Replace the board's settings block after a save. */
+export function replaceSettings(settings: SettingsDTO): Patch {
+  return (state) => ({ ...state, settings });
 }
 
 export function removeAnnouncement(id: string): Patch {
@@ -340,6 +346,16 @@ export const api = {
     }),
   deleteAnnouncement: (id: string) =>
     request<{ deleted: boolean }>(`/api/pf2ecal/announcements/${id}`, { method: 'DELETE' }),
+  saveSettings: (body: unknown) =>
+    request<{ settings: SettingsDTO }>('/api/pf2ecal/settings', {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }),
+  testWebhook: (webhookUrl: string) =>
+    request<{ ok: true }>('/api/pf2ecal/settings/test-webhook', {
+      method: 'POST',
+      body: JSON.stringify({ webhookUrl }),
+    }),
 };
 
 /** Seed the cache from the route loader so the first paint has real data. */

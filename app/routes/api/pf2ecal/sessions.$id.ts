@@ -3,6 +3,7 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { getSession } from '@/lib/pf2ecal/sessions.server';
 import { MAX_SESSION_HOURS, updateSessionSchema } from '@/lib/pf2ecal/types';
+import { CAMPAIGN_TIME_ZONE, zonedDateKey } from '@/lib/pf2ecal/zoned-time';
 
 /**
  * PATCH  /api/pf2ecal/sessions/:id — edit, move, cancel or un-cancel.
@@ -47,9 +48,20 @@ export const Route = createFileRoute('/api/pf2ecal/sessions/$id')({
             );
           }
 
+          // Moving a session to a different day re-arms its reminder: the
+          // morning-of ping is about a specific date, and a night moved from
+          // Wednesday to Friday has not been announced yet. Moving it WITHIN a
+          // day leaves the marker alone, so nudging a start time by an hour
+          // does not re-post to the channel.
+          const movedDay =
+            body.startsAt !== undefined &&
+            zonedDateKey(startsAt, CAMPAIGN_TIME_ZONE) !==
+              zonedDateKey(existing.startsAt, CAMPAIGN_TIME_ZONE);
+
           await prisma.pf2eSession.update({
             where: { id: params.id },
             data: {
+              ...(movedDay && { reminderSentAt: null }),
               ...(body.title !== undefined && { title: body.title }),
               ...(body.notes !== undefined && { notes: body.notes }),
               ...(body.location !== undefined && { location: body.location }),

@@ -98,18 +98,21 @@ export function MonthGrid({
 
   return (
     <section
-      className="pf2e-card p-4"
+      className="pf2e-card pf2e-month-card"
       aria-label={t('month-overview', { defaultValue: 'Month overview' })}
     >
       <header className="mb-3 flex items-center justify-between gap-2">
-        {/* `whitespace-nowrap` + `min-w-0` on the control group: "September
-            2026" is wider than the rail's title slot, and left to wrap it
-            pushed the header onto two lines and shoved the arrows down with
-            it. The controls give up their space instead. */}
-        <h2 className="pf2e-title whitespace-nowrap text-[1.0625rem]">
+        {/* The TITLE gives up space, not the controls. "September 2026" is
+            wider than the rail's title slot; letting it wrap pushed the header
+            onto two lines, and the first fix — `min-w-0` on the control group
+            — was worse: the buttons are `flex-shrink: 0`, so they simply
+            overflowed their own container at every width. The title truncates
+            (`min-w-0` is what makes `truncate` work on a flex child) and the
+            controls keep their intrinsic size. */}
+        <h2 className="pf2e-title min-w-0 truncate text-[1.0625rem]">
           {formatMonthLabel(year, month)}
         </h2>
-        <div className="flex min-w-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           <button type="button" className="pf2e-btn pf2e-btn-ghost pf2e-btn-sm" onClick={onToday}>
             {t('today', { defaultValue: 'Today' })}
           </button>
