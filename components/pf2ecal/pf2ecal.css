@@ -22,17 +22,35 @@
  */
 
 .pf2e {
-  /* Apple's own text stack, then the platform fallbacks. `-apple-system`
-     resolves to SF Pro on Apple hardware — which is the whole point, since SF
-     is not licensed for webfont delivery and shipping a look-alike would cost
-     ~200KB to be visibly not-SF on the devices that matter most. Everywhere
-     else this lands on the platform UI face, which is the right answer there
-     too. No webfont is loaded by this page at all. */
+  /* SF on Apple, Inter everywhere else.
+     
+     `-apple-system` / `BlinkMacSystemFont` resolve to SF Pro on Apple hardware
+     and to NOTHING anywhere else, so a stack that goes straight from them to
+     `system-ui` lands on whatever the OS default is — Segoe UI on Windows,
+     DejaVu Sans on Linux. That is what the first version of this did, and it
+     is why the audit screenshots (headless Chromium on Linux) rendered in
+     DejaVu and looked nothing like SF.
+     
+     Inter is the fix and it costs nothing: this app already self-hosts it
+     (`@fontsource-variable/inter`, imported at the top of `app/globals.css`),
+     it was drawn in SF's lineage, and `var(--font-inter)` carries the
+     metric-matched `'Inter Fallback'` face behind it for platforms that have
+     neither. A webfont is only fetched when it is actually used to render
+     text, so an Apple device resolves `-apple-system` first and never
+     downloads a byte of it.
+     
+     SF itself cannot be shipped: Apple's licence covers UI in apps for their
+     platforms and does not permit webfont redistribution. Inter is the closest
+     thing that can be, and this is the same stack `--site-font-body` in
+     `app/globals.css` already uses — the page just failed to follow it. */
   --pf2e-font:
-    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue',
-    'Segoe UI Variable Text', 'Segoe UI', Roboto, system-ui, sans-serif;
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', var(--font-inter),
+    sans-serif;
+  --pf2e-font-display:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI Variable Display',
+    var(--font-inter), sans-serif;
   --pf2e-font-rounded:
-    ui-rounded, 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    ui-rounded, 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, var(--font-inter), sans-serif;
 
   /* ── Light: iOS system greys ───────────────────────────────────────────
      These are the actual iOS system values, not approximations. systemGrey6
@@ -165,6 +183,10 @@
    ~28px — that is where SF Pro switches to its Display optical size, and
    applying it to body text is the thing that makes a pastiche look wrong. */
 .pf2e-display {
+  /* SF Pro Display above ~20pt, which is where Apple's own optical-size switch
+     happens; Inter has no separate display cut, so elsewhere this is the same
+     face and the declaration simply costs nothing. */
+  font-family: var(--pf2e-font-display);
   font-size: clamp(1.75rem, 1.35rem + 1.9vw, 2.125rem); /* → 34px */
   font-weight: 700;
   letter-spacing: -0.022em;
