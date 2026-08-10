@@ -1,0 +1,5 @@
+{
+  "day-with-sessions_one": "{{date}}, {{count}} session",
+  "hide-past_one": "Hide {{count}} past session",
+  "show-past_one": "Show {{count}} past session"
+}

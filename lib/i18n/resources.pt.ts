@@ -66,6 +66,7 @@ import ptCVoidBreaker from "@/locales/pt/c-void-breaker.json";
 import ptCWager from "@/locales/pt/c-wager.json";
 import ptCWishlist from "@/locales/pt/c-wishlist.json";
 import ptCommon from "@/locales/pt/common.json";
+import ptErrors from "@/locales/pt/errors.json";
 import ptFeed from "@/locales/pt/feed.json";
 import ptGamesHub from "@/locales/pt/games-hub.json";
 import ptGroups from "@/locales/pt/groups.json";
@@ -160,6 +161,7 @@ const ptResources = {
   "c-wager": ptCWager,
   "c-wishlist": ptCWishlist,
   "common": ptCommon,
+  "errors": ptErrors,
   "feed": ptFeed,
   "games-hub": ptGamesHub,
   "groups": ptGroups,

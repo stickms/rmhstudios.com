@@ -66,6 +66,7 @@ import trCVoidBreaker from "@/locales/tr/c-void-breaker.json";
 import trCWager from "@/locales/tr/c-wager.json";
 import trCWishlist from "@/locales/tr/c-wishlist.json";
 import trCommon from "@/locales/tr/common.json";
+import trErrors from "@/locales/tr/errors.json";
 import trFeed from "@/locales/tr/feed.json";
 import trGamesHub from "@/locales/tr/games-hub.json";
 import trGroups from "@/locales/tr/groups.json";
@@ -160,6 +161,7 @@ const trResources = {
   "c-wager": trCWager,
   "c-wishlist": trCWishlist,
   "common": trCommon,
+  "errors": trErrors,
   "feed": trFeed,
   "games-hub": trGamesHub,
   "groups": trGroups,
