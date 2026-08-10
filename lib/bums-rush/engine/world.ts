@@ -353,15 +353,6 @@ export function assertBodyBudget(world: PhysWorld, seats: number): void {
 const setPosScratch: Vec2 = { x: 0, y: 0 };
 
 /**
- * matter integrates with Verlet, so `positionPrev` is where a body's velocity
- * actually lives — but `@types/matter-js@0.20` does not declare it. This is a
- * typings gap, not a runtime one; every matter build since 0.10 has the field.
- */
-interface VerletBody extends Matter.Body {
-  positionPrev: Matter.Vector;
-}
-
-/**
  * Move a body WITHOUT changing its velocity — a pure positional projection.
  *
  * `Body.setPosition` already drags `positionPrev` along by the same delta, so
