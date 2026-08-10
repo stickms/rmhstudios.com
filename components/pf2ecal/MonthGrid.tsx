@@ -109,16 +109,14 @@ export function MonthGrid({
             overflowed their own container at every width. The title truncates
             (`min-w-0` is what makes `truncate` work on a flex child) and the
             controls keep their intrinsic size. */}
-        <h2 className="pf2e-title min-w-0 truncate text-[1.0625rem]">
-          {formatMonthLabel(year, month)}
-        </h2>
-        <div className="flex shrink-0 items-center gap-1">
+        <h2 className="pf2e-month-title">{formatMonthLabel(year, month)}</h2>
+        <div className="flex shrink-0 items-center gap-2">
           <button type="button" className="pf2e-btn pf2e-btn-ghost pf2e-btn-sm" onClick={onToday}>
             {t('today', { defaultValue: 'Today' })}
           </button>
           <button
             type="button"
-            className="pf2e-btn pf2e-btn-ghost pf2e-btn-icon"
+            className="pf2e-btn pf2e-btn-ghost pf2e-month-nav"
             onClick={() => onShift(-1)}
             aria-label={t('previous-month', { defaultValue: 'Previous month' })}
           >
@@ -126,7 +124,7 @@ export function MonthGrid({
           </button>
           <button
             type="button"
-            className="pf2e-btn pf2e-btn-ghost pf2e-btn-icon"
+            className="pf2e-btn pf2e-btn-ghost pf2e-month-nav"
             onClick={() => onShift(1)}
             aria-label={t('next-month', { defaultValue: 'Next month' })}
           >

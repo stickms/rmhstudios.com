@@ -888,8 +888,97 @@ textarea.pf2e-field {
   border: 1px solid var(--pf2e-line-strong);
 }
 
+/* ── The side rail ────────────────────────────────────────────────────────
+   `position: sticky` pins an element's TOP. That is fine while the element is
+   shorter than the viewport and actively wrong once it is taller: the rail
+   freezes with its bottom below the fold, and the only way to reach the end of
+   it is to scroll the whole document past the end of the sticky CONTAINER —
+   i.e. to the bottom of the page. Which is exactly the bug.
+
+   So the rail becomes its own scroll region, capped at the viewport. When its
+   content fits, `max-height` is slack and no scrollbar appears and nothing
+   changes; when it does not, the overflow is reachable where it is. Scroll
+   chaining is left at its default so running off the end of the rail continues
+   to scroll the page rather than dead-ending.
+
+   Only above `lg`, where the rail exists as a column at all. On a phone it is
+   a stacked section and scrolls with the document — which is also what keeps
+   mobile Safari's address bar collapsing (§12.1). */
+@media (min-width: 64rem) {
+  .pf2e-rail {
+    position: sticky;
+    top: 1.5rem;
+    max-height: calc(100dvh - 3rem);
+    overflow-y: auto;
+    /* The rail is chrome, not content — a permanent gutter would crowd the
+       cards, and the thin scrollbar only paints while it can scroll. */
+    scrollbar-width: thin;
+    scrollbar-color: var(--pf2e-line-strong) transparent;
+  }
+}
+
 /* The month card gives its grid the full width on a phone: at 320px every
    pixel of horizontal padding comes straight out of the day cells. */
+/* The month header.
+
+   The title lives in this stylesheet rather than on a Tailwind `text-[…]`
+   utility because `.pf2e-title` and that utility are both single-class
+   selectors, so SOURCE ORDER decides — and this sheet loads after Tailwind's
+   utilities, so the class was silently winning and rendering the month at 22px
+   bold. At that size "September 2026" does not fit a 320px rail beside three
+   controls, and it truncated to "August 2…" on a screen with room to spare.
+
+   Headline (17px/590) is the right size for a card header anyway; the previous
+   value was Title 3, which belongs to a section heading. */
+.pf2e-month-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1.0625rem;
+  font-weight: 590;
+  letter-spacing: -0.011em;
+  line-height: 1.3;
+}
+
+/* The chevrons paint at 32px so the header can hold a month name and three
+   controls inside a 320px rail, and carry a full 44px touch target on a
+   pseudo-element.
+
+   Two things this got wrong first time, both caught by the audit rather than by
+   eye:
+
+   1. It only overrode `left`/`right`, assuming the base `::after` from
+      `.pf2e-btn-sm` applied — these buttons do not carry that class, so there
+      was no pseudo-element at all and the hit area was the 38px button box.
+      The rule below is complete.
+   2. The horizontal expansion has to be paid for in the GAP. Each button is
+      32px wide and grows 6px a side, so two of them 4px apart would have hit
+      areas overlapping by 8px and the left chevron would swallow taps meant
+      for the right one. `+ .pf2e-month-nav` opens the pair to 12px, which
+      makes the two 44px areas exactly adjacent and never overlapping. */
+.pf2e-month-nav {
+  position: relative;
+  min-height: 32px;
+  width: 32px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.pf2e-month-nav::after {
+  content: '';
+  position: absolute;
+  left: -6px;
+  right: -6px;
+  top: 50%;
+  height: 44px;
+  transform: translateY(-50%);
+}
+
+.pf2e-month-nav + .pf2e-month-nav {
+  margin-left: 4px;
+}
+
 .pf2e-month-card {
   padding: 12px 4px;
 }
@@ -1160,6 +1249,31 @@ textarea.pf2e-ask {
   max-height: 7rem;
   resize: none;
   padding-block: 0.5rem;
+}
+
+/* Formatted assistant output. `white-space: pre-wrap` stays for the user's
+   side (typed text keeps its breaks); the bot's side is real elements now, so
+   its paragraphs and lists need their own rhythm. */
+.pf2e-msg-p {
+  margin-top: 0.5em;
+}
+
+.pf2e-msg-list {
+  margin: 0.25em 0 0;
+  padding-left: 1.1em;
+  list-style: disc;
+}
+
+.pf2e-msg-list li {
+  margin-top: 0.15em;
+}
+
+.pf2e-code {
+  padding: 0.1em 0.32em;
+  border-radius: 5px;
+  background-color: var(--pf2e-fill-strong);
+  font-family: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace;
+  font-size: 0.92em;
 }
 
 .pf2e-msg-user,

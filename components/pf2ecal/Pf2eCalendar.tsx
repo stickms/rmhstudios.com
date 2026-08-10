@@ -412,7 +412,7 @@ export function Pf2eCalendar({ initialState }: { initialState: CalendarStateDTO 
             )}
           </main>
 
-          <aside className="flex min-w-0 flex-col gap-6 lg:sticky lg:top-6">
+          <aside className="pf2e-rail flex min-w-0 flex-col gap-6">
             {awaitingFirstData ? (
               <>
                 <MonthGridSkeleton />

@@ -29,6 +29,7 @@ import { ArrowUp, Bot, Sparkles, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StatusLine, useAssistantStatus } from './Loading';
+import { RichText } from './rich-text';
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
@@ -252,7 +253,10 @@ export function Assistant() {
                   transition={{ duration: 0.2, ease: EASE }}
                   className={turn.role === 'user' ? 'pf2e-msg-user' : 'pf2e-msg-bot'}
                 >
-                  {turn.content}
+                  {/* The user's own text is shown verbatim — they typed it, and
+                      formatting it would be putting words in their mouth. Only
+                      the model's side is parsed. */}
+                  {turn.role === 'user' ? turn.content : <RichText text={turn.content} />}
                 </motion.div>
               ))}
 
