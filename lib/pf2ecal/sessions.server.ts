@@ -139,6 +139,10 @@ const sessionInclude = {
     orderBy: { updatedAt: 'desc' },
     include: { user: { select: personSelect } },
   },
+  // A COUNT, not the rows. Every session on the board would otherwise carry
+  // every word anyone wrote about it, for a panel that only opens when someone
+  // taps into the session — `/api/pf2ecal/sessions/:id/recap` serves those.
+  _count: { select: { recaps: true } },
 } as const satisfies Prisma.Pf2eSessionInclude;
 
 type SessionRow = Prisma.Pf2eSessionGetPayload<{ include: typeof sessionInclude }>;
@@ -153,6 +157,7 @@ function toSessionDTO(row: SessionRow): SessionDTO {
     // model call in the board read would put DeepSeek's latency in front of the
     // schedule, which is the one thing on this page that has to load.
     blurb: row.blurbShort && row.blurbLong ? { short: row.blurbShort, long: row.blurbLong } : null,
+    recap: { summary: row.recapSummary, count: row._count.recaps },
     startsAt: row.startsAt.toISOString(),
     endsAt: row.endsAt.toISOString(),
     canceledAt: row.canceledAt?.toISOString() ?? null,
@@ -167,6 +172,57 @@ function toSessionDTO(row: SessionRow): SessionDTO {
       image: displayImage(response.user),
       updatedAt: response.updatedAt.toISOString(),
     })),
+  };
+}
+
+type AnnouncementRow = Prisma.Pf2eAnnouncementGetPayload<{
+  include: { author: { select: typeof personSelect } };
+}>;
+
+/** Shared by the board read and the announcement writes, so they cannot drift. */
+export function toAnnouncementDTO(row: AnnouncementRow): AnnouncementDTO {
+  return {
+    id: row.id,
+    body: row.body,
+    pinned: row.pinned,
+    authorName: displayName(row.author),
+    authorImage: displayImage(row.author),
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+    sessionId: row.sessionId,
+    expiresAt: row.expiresAt?.toISOString() ?? null,
+    automated: row.automated,
+  };
+}
+
+/**
+ * Sessions older than the board's window, newest first.
+ *
+ * The board carries a rolling month of history, which is the right amount to
+ * have on screen and the wrong amount for "what did we do in March". Rather
+ * than widen the window — which would grow the payload of every single load,
+ * forever — older nights are a separate, cursor-paged read that only happens
+ * when someone actually looks back.
+ *
+ * `before` is a cursor on `startsAt`, so a session added mid-scroll cannot make
+ * a page skip or repeat a row the way an offset would.
+ */
+export async function getArchivedSessions(
+  before: Date,
+  limit = 20,
+): Promise<{ sessions: SessionDTO[]; hasMore: boolean }> {
+  const rows = await prisma.pf2eSession.findMany({
+    where: { startsAt: { lt: before } },
+    orderBy: { startsAt: 'desc' },
+    take: limit + 1,
+    include: sessionInclude,
+  });
+  const page = rows.slice(0, limit);
+  return {
+    // Returned in the board's own ascending order so the client can merge it
+    // into `state.sessions` without re-sorting the world.
+    sessions: page.map(toSessionDTO).reverse(),
+    hasMore: rows.length > limit,
   };
 }
 
@@ -194,6 +250,14 @@ export async function getCalendarState(
       include: sessionInclude,
     }),
     prisma.pf2eAnnouncement.findMany({
+      where: {
+        // Expired notes drop out on their own. A PINNED note ignores its
+        // expiry, because pinning is a person saying "keep this up" and a pin
+        // that silently vanished would be the more surprising of the two
+        // behaviours. Filtered in SQL rather than after the read so the `take`
+        // below cannot be filled entirely with notes about last month.
+        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }, { pinned: true }],
+      },
       orderBy: [{ pinned: 'desc' }, { createdAt: 'desc' }],
       take: 40,
       include: { author: { select: personSelect } },
@@ -203,15 +267,7 @@ export async function getCalendarState(
 
   return {
     sessions: sessions.map(toSessionDTO),
-    announcements: announcements.map((row): AnnouncementDTO => ({
-      id: row.id,
-      body: row.body,
-      pinned: row.pinned,
-      authorName: displayName(row.author),
-      authorImage: displayImage(row.author),
-      createdAt: row.createdAt.toISOString(),
-      updatedAt: row.updatedAt.toISOString(),
-    })),
+    announcements: announcements.map(toAnnouncementDTO),
     viewerId: viewer?.id ?? null,
     viewerName: viewer?.name ?? null,
     scheduleNote: describeRule(),

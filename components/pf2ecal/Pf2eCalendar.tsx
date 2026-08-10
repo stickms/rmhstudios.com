@@ -39,6 +39,7 @@ import {
 import { MonthGrid } from './MonthGrid';
 import { NextUp } from './NextUp';
 import { SessionCard } from './SessionCard';
+import { Segmented } from './ios';
 import { SubscribePanel } from './SubscribePanel';
 import { ThemeToggle } from './ThemeToggle';
 import { formatMonthLabel } from './format';
@@ -56,6 +57,7 @@ import {
   useNow,
   useOnline,
   useProgressiveList,
+  useSessionArchive,
   useSessionBlurbs,
 } from './state';
 import './pf2ecal.css';
@@ -80,6 +82,9 @@ const SettingsSheet = lazy(() =>
   import('./SettingsSheet').then((m) => ({ default: m.SettingsSheet })),
 );
 const Assistant = lazy(() => import('./Assistant').then((m) => ({ default: m.Assistant })));
+
+/** Which sessions the agenda is listing. A filter, not a set of panels. */
+type AgendaScope = 'upcoming' | 'past' | 'all';
 
 /** Latches true the first time its argument is, and never goes back. */
 function useOnceTrue(value: boolean): boolean {
@@ -122,16 +127,51 @@ export function Pf2eCalendar({ initialState }: { initialState: CalendarStateDTO 
     });
   }, []);
 
+  // Declared here rather than beside the agenda because `jumpToDay` below
+  // widens it: tapping a past day in the month grid has to put that day in
+  // scope before it can scroll to it.
+  const [scope, setScope] = useState<AgendaScope>('upcoming');
+
   const dayRefs = useRef(new Map<string, HTMLDivElement>());
 
-  const jumpToDay = useCallback((dateKey: string) => {
-    setSelectedKey(dateKey);
-    const node = dayRefs.current.get(dateKey);
-    // `block: 'center'` rather than 'start': the agenda has sticky-ish
-    // context above it and a start-aligned scroll hides the day heading
-    // behind it on a phone.
+  // The day the agenda should scroll to once it has rendered one, cleared as
+  // soon as it has. It is state and not a plain call because tapping a PAST day
+  // also changes the agenda's scope, and the card for that day does not exist
+  // until React has committed that change — calling `scrollIntoView` inside the
+  // click handler looks up a ref that is still empty and silently does nothing.
+  // An effect is the only place that is reliably after the commit. (Deferring a
+  // frame with `requestAnimationFrame` is the obvious alternative and is not
+  // equivalent: it is not ordered against React's commit at all, and it is a
+  // rAF outside the reviewed allowlist for §17.3.)
+  const [pendingScroll, setPendingScroll] = useState<string | null>(null);
+
+  const jumpToDay = useCallback(
+    (dateKey: string) => {
+      setSelectedKey(dateKey);
+      // Tapping a day that has already happened widens the scope to include it.
+      // Without this the calendar is a dead end for exactly the case it is most
+      // useful for — "what did we do that week" — because the day has a dot on
+      // it and scrolling to it finds nothing.
+      if (dateKey < zonedDateKey(new Date(), timeZone)) {
+        setScope((current) => (current === 'upcoming' ? 'all' : current));
+      }
+      setPendingScroll(dateKey);
+    },
+    [timeZone],
+  );
+
+  useEffect(() => {
+    if (!pendingScroll) return;
+    const node = dayRefs.current.get(pendingScroll);
+    // `block: 'center'` rather than 'start': the agenda has sticky-ish context
+    // above it and a start-aligned scroll hides the day heading behind it on a
+    // phone.
     node?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, []);
+    // Cleared whether or not a card was found — a day with no session is a
+    // legitimate tap, and leaving the target set would make the NEXT unrelated
+    // render scroll somewhere the user did not ask to go.
+    setPendingScroll(null);
+  }, [pendingScroll]);
 
   /* ── Sheets ───────────────────────────────────────────────────────────── */
   const [openSessionId, setOpenSessionId] = useState<string | null>(null);
@@ -230,6 +270,29 @@ export function Pf2eCalendar({ initialState }: { initialState: CalendarStateDTO 
     [t],
   );
 
+  // Move both ends by the same offset so the session keeps its length, and let
+  // the server announce it like any other move. Sent as one PATCH rather than
+  // two so the range check on the far side sees the finished pair — patching
+  // the start alone would momentarily put it past the stored end and be
+  // rejected for a move that is perfectly valid.
+  const shiftSession = useCallback(
+    (session: Session, minutes: number) => {
+      const offset = minutes * 60_000;
+      markBusy(session.id, true);
+      updateSession.mutate(
+        {
+          id: session.id,
+          payload: {
+            startsAt: new Date(session.startsAt.getTime() + offset).toISOString(),
+            endsAt: new Date(session.endsAt.getTime() + offset).toISOString(),
+          },
+        },
+        { onSettled: () => markBusy(session.id, false) },
+      );
+    },
+    [markBusy, updateSession],
+  );
+
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Latched, so a sheet that has been opened once stays in the tree and keeps
@@ -247,19 +310,42 @@ export function Pf2eCalendar({ initialState }: { initialState: CalendarStateDTO 
     [markBusy, respond, viewerId],
   );
 
+  /* ── What the agenda is showing ───────────────────────────────────────── */
+  // A SCOPE filter over one list, not a pair of panels behind a tab strip. The
+  // difference is not pedantry: the agenda keeps its identity, the month grid
+  // keeps pointing into it, and picking "Past" is the same kind of act as
+  // picking a month — it changes which sessions you are looking at, it does not
+  // navigate anywhere. (It is also what iOS does with a segmented control, and
+  // why this one is a `radiogroup` rather than a set of tabs.)
+  const scopeSegments = useMemo(
+    () => [
+      { value: 'upcoming' as const, label: t('scope-upcoming', { defaultValue: 'Upcoming' }) },
+      { value: 'past' as const, label: t('scope-past', { defaultValue: 'Past' }) },
+      { value: 'all' as const, label: t('scope-all', { defaultValue: 'All' }) },
+    ],
+    [t],
+  );
+
   /* ── Agenda grouping ──────────────────────────────────────────────────── */
-  // Upcoming first (that is what the page is for), with anything already
-  // finished collapsed below it rather than dropped — the group looks back at
-  // "when did we last play" often enough that hiding it entirely is wrong.
   const { upcoming, past } = useMemo(() => {
     const cutoff = now.getTime();
     return {
       upcoming: sessions.filter((s) => s.endsAt.getTime() >= cutoff),
+      // Newest first: looking back, "last Wednesday" is what you want at the
+      // top, not the oldest night the board happens to be holding.
       past: sessions.filter((s) => s.endsAt.getTime() < cutoff).reverse(),
     };
   }, [sessions, now]);
 
-  const [showPast, setShowPast] = useState(false);
+  // What the chosen scope actually lists. `all` interleaves nothing — past
+  // ascending under upcoming would read as a jumble — so it is the upcoming
+  // list followed by history running backwards from now, which is how anyone
+  // describes a calendar out loud.
+  const agenda = useMemo(() => {
+    if (scope === 'past') return past;
+    if (scope === 'all') return [...upcoming, ...past];
+    return upcoming;
+  }, [scope, upcoming, past]);
 
   // The phone-only "next session" card. A cancelled session is still listed in
   // the agenda — people need to see that it is off — but it is not what "next"
@@ -272,24 +358,20 @@ export function Pf2eCalendar({ initialState }: { initialState: CalendarStateDTO 
   // the list approaches, and `.pf2e-cull` keeps the ones that have scrolled away
   // from costing layout — see `useProgressiveList`.
   const {
-    visible: visibleUpcoming,
-    hidden: hiddenUpcoming,
-    sentinelRef: upcomingSentinel,
-  } = useProgressiveList(upcoming);
-  const {
-    visible: visiblePast,
-    hidden: hiddenPast,
-    sentinelRef: pastSentinel,
-  } = useProgressiveList(showPast ? past : []);
+    visible: visibleAgenda,
+    hidden: hiddenAgenda,
+    sentinelRef: agendaSentinel,
+  } = useProgressiveList(agenda);
+
+  // Older than the board's own window. `sessions` is ascending, so the first
+  // entry is the oldest thing loaded and therefore the cursor for the next page.
+  const archive = useSessionArchive(board.sessions[0]?.startsAt);
 
   // Descriptions are fetched for the cards that are actually on screen, once the
   // browser is idle — never during hydration, where they would contend with the
   // board's own revalidation for the connection.
   const idleReady = useIdleReady();
-  const describable = useMemo(
-    () => [...visibleUpcoming, ...visiblePast].map((session) => session.id),
-    [visibleUpcoming, visiblePast],
-  );
+  const describable = useMemo(() => visibleAgenda.map((session) => session.id), [visibleAgenda]);
   useSessionBlurbs(
     useMemo(
       () => board.sessions.filter((session) => describable.includes(session.id)),
@@ -542,90 +624,97 @@ export function Pf2eCalendar({ initialState }: { initialState: CalendarStateDTO 
           </aside>
 
           <main className="order-2 flex min-w-0 flex-col gap-6 lg:order-1">
-            <section aria-label={t('upcoming-sessions', { defaultValue: 'Upcoming sessions' })}>
-              <h2 className="pf2e-mono-label mb-3">
-                {t('upcoming', { defaultValue: 'Upcoming' })}
-              </h2>
+            <section aria-label={t('sessions', { defaultValue: 'Sessions' })}>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <h2 className="pf2e-mono-label">{t('sessions', { defaultValue: 'Sessions' })}</h2>
+                {/* A scope filter over one list — see the note where `scope`
+                    is declared for why this is a value picker rather than a
+                    pair of tabs. */}
+                <div className="pf2e-scope">
+                  <Segmented
+                    segments={scopeSegments}
+                    value={scope}
+                    onChange={setScope}
+                    label={t('which-sessions', { defaultValue: 'Which sessions' })}
+                  />
+                </div>
+              </div>
+
               {awaitingFirstData ? (
                 <div className="flex flex-col gap-3">
                   <SessionCardSkeleton />
                   <SessionCardSkeleton />
                   <SessionCardSkeleton />
                 </div>
-              ) : upcoming.length === 0 ? (
+              ) : agenda.length === 0 ? (
                 <p className="pf2e-card pf2e-body pf2e-muted p-5">
-                  {t('nothing-booked', { defaultValue: 'Nothing on the books.' })}{' '}
-                  {viewerId
-                    ? t('nothing-booked-editor', { defaultValue: 'Add a session to get started.' })
-                    : t('nothing-booked-guest', { defaultValue: 'Sign in to add one.' })}
+                  {scope === 'past'
+                    ? t('nothing-past', { defaultValue: 'No sessions have happened yet.' })
+                    : t('nothing-booked', { defaultValue: 'Nothing on the books.' })}{' '}
+                  {scope !== 'past' &&
+                    (viewerId
+                      ? t('nothing-booked-editor', {
+                          defaultValue: 'Add a session to get started.',
+                        })
+                      : t('nothing-booked-guest', { defaultValue: 'Sign in to add one.' }))}
                 </p>
               ) : (
                 <>
                   <motion.div layout className="flex flex-col gap-3">
                     <AnimatePresence initial={false}>
-                      {visibleUpcoming.map(renderCard)}
+                      {visibleAgenda.map(renderCard)}
                     </AnimatePresence>
                   </motion.div>
                   {/* Watched 600px early, so the next page is already in the DOM
                       by the time the list ends. The count is shown because a
                       silent sentinel is indistinguishable from a list that has
                       finished — and on a phone, from one that is broken. */}
-                  {hiddenUpcoming > 0 && (
-                    <p className="pf2e-caption mt-3 text-center" ref={upcomingSentinel}>
+                  {hiddenAgenda > 0 && (
+                    <p className="pf2e-caption mt-3 text-center" ref={agendaSentinel}>
                       {t('more-sessions', {
                         defaultValue: '{{count}} more session below',
                         defaultValue_other: '{{count}} more sessions below',
-                        count: hiddenUpcoming,
+                        count: hiddenAgenda,
                       })}
                     </p>
                   )}
                 </>
               )}
-            </section>
 
-            {past.length > 0 && (
-              <section aria-label={t('past-sessions', { defaultValue: 'Past sessions' })}>
-                <button
-                  type="button"
-                  className="pf2e-btn pf2e-btn-ghost pf2e-btn-sm mb-3"
-                  onClick={() => setShowPast((v) => !v)}
-                  aria-expanded={showPast}
-                >
-                  {showPast
-                    ? t('hide-past', {
-                        defaultValue: 'Hide {{count}} past session',
-                        defaultValue_other: 'Hide {{count}} past sessions',
-                        count: past.length,
-                      })
-                    : t('show-past', {
-                        defaultValue: 'Show {{count}} past session',
-                        defaultValue_other: 'Show {{count}} past sessions',
-                        count: past.length,
-                      })}
-                </button>
-                <AnimatePresence initial={false}>
-                  {showPast && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.24, ease: EASE }}
-                      className="flex flex-col gap-3 overflow-hidden"
+              {/* Looking further back than the board carries. Only offered once
+                  the reader has actually asked to look backwards — on the
+                  Upcoming scope it would be a button about nothing on screen. */}
+              {!awaitingFirstData && scope !== 'upcoming' && hiddenAgenda === 0 && (
+                <div className="mt-4 text-center">
+                  {archive.exhausted ? (
+                    <p className="pf2e-caption">
+                      {t('archive-end', { defaultValue: 'That\u2019s the whole history.' })}
+                    </p>
+                  ) : (
+                    <button
+                      type="button"
+                      className="pf2e-btn pf2e-btn-ghost pf2e-btn-sm"
+                      onClick={archive.load}
+                      disabled={archive.loading}
                     >
-                      {visiblePast.map(renderCard)}
-                      {hiddenPast > 0 && (
-                        <p className="pf2e-caption text-center" ref={pastSentinel}>
-                          {t('more-past-sessions', {
-                            defaultValue: '{{count}} more further back',
-                            count: hiddenPast,
-                          })}
-                        </p>
-                      )}
-                    </motion.div>
+                      {archive.loading
+                        ? t('archive-loading', { defaultValue: 'Looking further back…' })
+                        : t('archive-more', { defaultValue: 'Load older sessions' })}
+                    </button>
                   )}
-                </AnimatePresence>
-              </section>
-            )}
+                  {/* Reported rather than swallowed: a silent failure here reads
+                      as an empty archive, which is a lie about the table\u2019s own
+                      history. */}
+                  {archive.error && (
+                    <p className="pf2e-caption mt-2" role="status">
+                      {t('archive-failed', {
+                        defaultValue: 'Could not reach the archive. Try again.',
+                      })}
+                    </p>
+                  )}
+                </div>
+              )}
+            </section>
           </main>
         </div>
       </div>
@@ -650,6 +739,11 @@ export function Pf2eCalendar({ initialState }: { initialState: CalendarStateDTO 
               updateSession.mutate({ id: session.id, payload: { canceled } })
             }
             onDelete={(session) => deleteSession.mutate({ id: session.id })}
+            onShift={shiftSession}
+            // The write-up lives behind its own endpoint, so adding one does
+            // not touch the board cache — this refreshes the count the card
+            // and the sheet header read from it.
+            onRecapAdded={() => void refetch()}
           />
         </Suspense>
       )}

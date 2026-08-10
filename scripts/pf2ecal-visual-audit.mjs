@@ -98,6 +98,26 @@ const SHEET_STATES = [
       await page.locator('.pf2e-fab').click();
     },
   },
+  // The agenda's other two scopes. `Past` in particular is a list nobody sees
+  // in the default state, and it is where the archive control and the
+  // "that's the whole history" line live — both of which sit at the bottom of a
+  // long column, which is exactly where overflow hides.
+  ...['Past', 'All'].map((scope) => ({
+    name: `scope-${scope.toLowerCase()}`,
+    open: async (page) => {
+      await page
+        .locator('.pf2e-scope [role="radio"]')
+        .filter({ hasText: new RegExp(`^${scope}$`) })
+        .click();
+      await page.waitForFunction(
+        (want) =>
+          document.querySelector('.pf2e-scope [role="radio"][aria-checked="true"]')?.textContent ===
+          want,
+        scope,
+        { timeout: 5000 },
+      );
+    },
+  })),
 ];
 
 /**
@@ -152,10 +172,25 @@ const SHEET_VIEWPORTS = [
 async function settle(page) {
   await page.waitForFunction(
     () => {
-      const el = document.querySelector('.pf2e-sheet, .pf2e-assistant');
-      if (!el) return true;
-      const r = el.getBoundingClientRect();
-      const key = `${r.top.toFixed(1)}:${r.left.toFixed(1)}:${r.width.toFixed(1)}:${r.height.toFixed(1)}`;
+      // The AGENDA as well as any open sheet. Session cards re-flow seconds
+      // after load, when the generated descriptions arrive and cross-fade in
+      // over the notes — and a `layout` animation mid-flight puts two boxes
+      // through each other on the way past, which the overlap check faithfully
+      // reports. Twenty "overlaps" that are really one animation is how a
+      // useful check becomes noise nobody reads, so the audit waits for the
+      // list to stop moving rather than filtering the result.
+      const watched = [
+        document.querySelector('.pf2e-sheet, .pf2e-assistant'),
+        document.querySelector('.pf2e-shell main .pf2e-cull:last-of-type'),
+        document.querySelector('.pf2e-shell main'),
+      ].filter(Boolean);
+      if (!watched.length) return true;
+      const key = watched
+        .map((el) => {
+          const r = el.getBoundingClientRect();
+          return `${r.top.toFixed(1)}:${r.left.toFixed(1)}:${r.width.toFixed(1)}:${r.height.toFixed(1)}`;
+        })
+        .join('|');
       const previous = window.__pf2eSettleKey;
       window.__pf2eSettleKey = key;
       return previous === key;
@@ -215,6 +250,28 @@ const AUDIT = () => {
   const all = Array.from(document.querySelectorAll('.pf2e *'));
   const measured = [];
   for (const el of all) {
+    // Skip anything inside a subtree the browser has SKIPPED LAYOUT for.
+    //
+    // `.pf2e-cull` is `content-visibility: auto`, so a card that has scrolled
+    // out of view has no laid-out children: every descendant reports the
+    // card's `contain-intrinsic-size` placeholder box instead of its own. They
+    // therefore all "overlap" each other, and the overlap check dutifully
+    // reported twenty collisions per phone viewport for a layout that is
+    // correct — the geometry it was measuring did not exist.
+    //
+    // `checkVisibility({ contentVisibilityAuto: true })` is the exact question:
+    // is this element's content being rendered right now. It also subsumes the
+    // opacity/visibility/display checks that used to be done by hand below.
+    if (
+      typeof el.checkVisibility === 'function' &&
+      !el.checkVisibility({
+        contentVisibilityAuto: true,
+        opacityProperty: true,
+        visibilityProperty: true,
+      })
+    ) {
+      continue;
+    }
     const rect = el.getBoundingClientRect();
     if (rect.width < 1 || rect.height < 1) continue;
     const style = getComputedStyle(el);
@@ -526,6 +583,10 @@ async function main() {
     // only renders after `useIdleReady` fires, which is client React running.
     await page.waitForSelector('.pf2e-fab', { timeout: 15_000 });
     await page.waitForTimeout(350);
+    // Before `prepare` too, not only after it: the descriptions land on idle
+    // and re-flow the agenda, so a state with no sheet to open was being
+    // measured mid-animation just as readily as one with.
+    await settle(page);
     if (prepare) {
       // A prepare step that fails is a HARD failure, not a skip. It used to
       // print SKIP and pass, which meant a button that had stopped opening its

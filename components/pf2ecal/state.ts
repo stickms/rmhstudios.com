@@ -35,6 +35,7 @@ import type {
   AnnouncementDTO,
   Availability,
   CalendarStateDTO,
+  RecapDTO,
   SessionBlurbDTO,
   SessionDTO,
   SettingsDTO,
@@ -362,7 +363,39 @@ export const api = {
       '/api/pf2ecal/sessions/blurbs',
       { method: 'POST', body: JSON.stringify({ ids }), signal },
     ),
+  recap: (id: string, signal?: AbortSignal) =>
+    request<{ entries: RecapDTO[]; summary: string | null }>(`/api/pf2ecal/sessions/${id}/recap`, {
+      signal,
+    }),
+  addRecap: (id: string, body: string) =>
+    request<{ entry: RecapDTO }>(`/api/pf2ecal/sessions/${id}/recap`, {
+      method: 'POST',
+      body: JSON.stringify({ body }),
+    }),
+  archive: (before: string, signal?: AbortSignal) =>
+    request<{ sessions: SessionDTO[]; hasMore: boolean }>(
+      `/api/pf2ecal/sessions/archive?before=${encodeURIComponent(before)}`,
+      { signal },
+    ),
 };
+
+/**
+ * Merge older sessions into the cached board.
+ *
+ * De-duplicated by id and re-sorted rather than concatenated: the archive page
+ * is read backwards from the oldest session on screen, and a session moved into
+ * the loaded window between two pages would otherwise appear twice.
+ */
+export function mergeSessions(incoming: SessionDTO[]): Patch {
+  return (state) => {
+    const byId = new Map(state.sessions.map((session) => [session.id, session]));
+    for (const session of incoming) if (!byId.has(session.id)) byId.set(session.id, session);
+    return {
+      ...state,
+      sessions: [...byId.values()].sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
+    };
+  };
+}
 
 /** Merge generated descriptions into the cached board. */
 export function applyBlurbs(blurbs: Record<string, SessionBlurbDTO>): Patch {
@@ -589,6 +622,57 @@ export function useSessionBlurbs(visibleSessions: SessionDTO[], enabled: boolean
       busy.current = false;
     };
   }, [enabled, wanted, queryClient]);
+}
+
+/**
+ * Load nights older than the board's own window, a page at a time.
+ *
+ * The board reaches a month back, which is right for the agenda and useless for
+ * "what did we play in March". `load()` reads backwards from the oldest session
+ * already held and merges the page into the same cache everything else reads,
+ * so the month grid, the agenda and the assistant all see the new rows without
+ * a second source of truth for what a session is.
+ *
+ * Failure is a state, not a toast: `error` is rendered next to the button that
+ * triggered it, because a silent no-op on "show older" reads as an empty
+ * archive — which is a lie about the table's own history.
+ */
+export function useSessionArchive(oldestLoaded: string | undefined): {
+  load: () => void;
+  loading: boolean;
+  exhausted: boolean;
+  error: boolean;
+} {
+  const queryClient = useQueryClient();
+  const [loading, setLoading] = useState(false);
+  const [exhausted, setExhausted] = useState(false);
+  const [error, setError] = useState(false);
+
+  const load = useCallback(() => {
+    if (loading || exhausted || !oldestLoaded) return;
+    setLoading(true);
+    setError(false);
+    api
+      .archive(oldestLoaded)
+      .then((data) => {
+        if (!data.hasMore) setExhausted(true);
+        if (!data.sessions.length) {
+          setExhausted(true);
+          return;
+        }
+        const current = queryClient.getQueryData<CalendarStateDTO>(CALENDAR_KEY);
+        if (current) {
+          queryClient.setQueryData<CalendarStateDTO>(
+            CALENDAR_KEY,
+            mergeSessions(data.sessions)(current),
+          );
+        }
+      })
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
+  }, [exhausted, loading, oldestLoaded, queryClient]);
+
+  return { load, loading, exhausted, error };
 }
 
 /** Copy to clipboard with a toast, shared by the two subscribe controls. */

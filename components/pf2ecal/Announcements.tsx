@@ -7,14 +7,26 @@
  * Pinned notes sort to the top and stay there; everything else is reverse
  * chronological. Anyone signed in can post, pin, edit or remove any note, which
  * is the same rule the rest of the page follows.
+ *
+ * Three things a note can be, and they are deliberately different:
+ *
+ * - **Dismissed** — hidden on THIS DEVICE, by anyone, signed in or not. "I have
+ *   read this" belongs to the reader, and on a board this small the alternative
+ *   (delete it so it stops nagging me) takes the note away from the person who
+ *   has not opened the page yet. Restorable, and never a write.
+ * - **Deleted** — gone for everyone, and it needs an account.
+ * - **Expired** — gone on its own, once the night it was about has passed.
+ *   `expiresAt` comes from the session the note is attached to; a pinned note
+ *   ignores it, because pinning is an explicit "keep this up".
  */
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { Megaphone, Pin, PinOff, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { Check, Megaphone, Pin, PinOff, Sparkles, Trash2, Undo2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AnnouncementDTO } from '@/lib/pf2ecal/types';
 import { ANNOUNCEMENT_MAX } from '@/lib/pf2ecal/types';
+import { useDismissedAnnouncements } from './dismissed';
 import { EASE } from './motion';
 
 const ITEM = {
@@ -71,6 +83,14 @@ export function Announcements({
   const [pinned, setPinned] = useState(false);
   const [composing, setComposing] = useState(false);
 
+  const liveIds = useMemo(() => announcements.map((a) => a.id), [announcements]);
+  const { dismissed, dismiss, restoreAll } = useDismissedAnnouncements(liveIds);
+  // A pinned note is not dismissible: pinning is the table saying "everyone
+  // needs to see this", and letting one person hide it locally would quietly
+  // defeat the only mechanism they have for insisting.
+  const visible = announcements.filter((a) => a.pinned || !dismissed.has(a.id));
+  const hiddenCount = announcements.length - visible.length;
+
   const submit = () => {
     const body = draft.trim();
     if (!body) return;
@@ -93,15 +113,33 @@ export function Announcements({
           <Megaphone size={17} aria-hidden />
           {t('announcements', { defaultValue: 'Announcements' })}
         </h2>
-        {canEdit && !composing && (
-          <button
-            type="button"
-            className="pf2e-btn pf2e-btn-secondary pf2e-btn-sm shrink-0"
-            onClick={() => setComposing(true)}
-          >
-            {t('post', { defaultValue: 'Post' })}
-          </button>
-        )}
+        <div className="flex shrink-0 items-center gap-1">
+          {/* Dismissing is never a one-way door. Without this the only way back
+              to a note you tapped past is clearing site data, which is not a
+              thing to ask of someone who wanted to tidy a notice board. */}
+          {hiddenCount > 0 && (
+            <button
+              type="button"
+              className="pf2e-btn pf2e-btn-ghost pf2e-btn-sm"
+              onClick={restoreAll}
+            >
+              <Undo2 size={14} aria-hidden />
+              {t('show-read', {
+                defaultValue: 'Show {{count}} read',
+                count: hiddenCount,
+              })}
+            </button>
+          )}
+          {canEdit && !composing && (
+            <button
+              type="button"
+              className="pf2e-btn pf2e-btn-secondary pf2e-btn-sm"
+              onClick={() => setComposing(true)}
+            >
+              {t('post', { defaultValue: 'Post' })}
+            </button>
+          )}
+        </div>
       </header>
 
       <AnimatePresence initial={false}>
@@ -171,18 +209,20 @@ export function Announcements({
         )}
       </AnimatePresence>
 
-      {announcements.length === 0 ? (
+      {visible.length === 0 ? (
         <p className="pf2e-caption">
-          {canEdit
-            ? t('announcements-empty-editor', {
-                defaultValue: 'Nothing posted yet. Use this for schedule changes and reminders.',
-              })
-            : t('announcements-empty', { defaultValue: 'Nothing posted yet.' })}
+          {hiddenCount > 0
+            ? t('announcements-all-read', { defaultValue: 'You\u2019re caught up.' })
+            : canEdit
+              ? t('announcements-empty-editor', {
+                  defaultValue: 'Nothing posted yet. Use this for schedule changes and reminders.',
+                })
+              : t('announcements-empty', { defaultValue: 'Nothing posted yet.' })}
         </p>
       ) : (
         <ul className="flex flex-col gap-3">
           <AnimatePresence initial={false}>
-            {announcements.map((announcement) => (
+            {visible.map((announcement) => (
               <motion.li
                 key={announcement.id}
                 layout="position"
@@ -198,57 +238,91 @@ export function Announcements({
                   .filter(Boolean)
                   .join(' ')}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <p className="pf2e-body min-w-0 whitespace-pre-wrap break-words">
-                    {announcement.body}
+                {/* The note gets the full width and the controls share the
+                    meta line beneath it.
+
+                    They used to sit BESIDE the text, which was survivable with
+                    two icon buttons and not with three: this card lives in a
+                    20rem rail on a desktop and the whole screen is 320px on the
+                    narrowest phone, so 132px of touch targets left "Starting an
+                    hour late next time." wrapping one word per line. The meta
+                    line is the right home for them — it is short, it is already
+                    there, and nothing on it competes for space. */}
+                <p className="pf2e-body whitespace-pre-wrap break-words">{announcement.body}</p>
+
+                <div className="mt-1.5 flex items-center justify-between gap-2">
+                  <p className="pf2e-caption flex min-w-0 flex-wrap items-center gap-x-1.5">
+                    {announcement.pinned && (
+                      <>
+                        <Pin size={11} aria-hidden />
+                        <span>{t('pinned', { defaultValue: 'Pinned' })}</span>
+                        <span aria-hidden>·</span>
+                      </>
+                    )}
+                    {announcement.automated ? (
+                      <>
+                        <Sparkles size={11} aria-hidden />
+                        <span>
+                          {t('posted-by-the-board', { defaultValue: 'Posted automatically' })}
+                        </span>
+                      </>
+                    ) : (
+                      <span>
+                        {announcement.authorName ?? t('someone', { defaultValue: 'Someone' })}
+                      </span>
+                    )}
+                    <span aria-hidden>·</span>
+                    <time dateTime={announcement.createdAt}>
+                      {formatPosted(announcement.createdAt, timeZone)}
+                    </time>
                   </p>
-                  {canEdit && (
-                    <div className="flex shrink-0 items-center gap-1">
+
+                  <div className="flex shrink-0 items-center gap-1">
+                    {/* Dismiss needs no account — it writes nothing shared.
+                        Absent on a pinned note, which the table has said
+                        everyone should see. */}
+                    {!announcement.pinned && (
                       <button
                         type="button"
                         className="pf2e-btn pf2e-btn-ghost pf2e-btn-icon"
-                        aria-label={
-                          announcement.pinned
-                            ? t('unpin', { defaultValue: 'Unpin' })
-                            : t('pin-to-top', { defaultValue: 'Pin to the top' })
-                        }
-                        onClick={() => onTogglePin(announcement)}
+                        aria-label={t('mark-read', { defaultValue: 'Mark as read on this device' })}
+                        onClick={() => dismiss(announcement.id)}
                       >
-                        {announcement.pinned ? (
-                          <PinOff size={15} aria-hidden />
-                        ) : (
-                          <Pin size={15} aria-hidden />
-                        )}
+                        <Check size={15} aria-hidden />
                       </button>
-                      <button
-                        type="button"
-                        className="pf2e-btn pf2e-btn-ghost pf2e-btn-icon"
-                        aria-label={t('delete-announcement', {
-                          defaultValue: 'Delete announcement',
-                        })}
-                        onClick={() => onDelete(announcement)}
-                      >
-                        <Trash2 size={15} aria-hidden />
-                      </button>
-                    </div>
-                  )}
+                    )}
+                    {canEdit && (
+                      <>
+                        <button
+                          type="button"
+                          className="pf2e-btn pf2e-btn-ghost pf2e-btn-icon"
+                          aria-label={
+                            announcement.pinned
+                              ? t('unpin', { defaultValue: 'Unpin' })
+                              : t('pin-to-top', { defaultValue: 'Pin to the top' })
+                          }
+                          onClick={() => onTogglePin(announcement)}
+                        >
+                          {announcement.pinned ? (
+                            <PinOff size={15} aria-hidden />
+                          ) : (
+                            <Pin size={15} aria-hidden />
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          className="pf2e-btn pf2e-btn-ghost pf2e-btn-icon"
+                          aria-label={t('delete-announcement', {
+                            defaultValue: 'Delete announcement',
+                          })}
+                          onClick={() => onDelete(announcement)}
+                        >
+                          <Trash2 size={15} aria-hidden />
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
-                <p className="pf2e-caption mt-1.5 flex items-center gap-1.5">
-                  {announcement.pinned && (
-                    <>
-                      <Pin size={11} aria-hidden />
-                      <span>{t('pinned', { defaultValue: 'Pinned' })}</span>
-                      <span aria-hidden>·</span>
-                    </>
-                  )}
-                  <span>
-                    {announcement.authorName ?? t('someone', { defaultValue: 'Someone' })}
-                  </span>
-                  <span aria-hidden>·</span>
-                  <time dateTime={announcement.createdAt}>
-                    {formatPosted(announcement.createdAt, timeZone)}
-                  </time>
-                </p>
               </motion.li>
             ))}
           </AnimatePresence>

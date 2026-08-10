@@ -819,6 +819,22 @@ html[data-app-dark='1'] .pf2e-segmented-thumb {
   max-width: 100%;
 }
 
+/* The agenda's scope filter, beside its heading. Same reasoning as above, and
+   the same escape hatch: it takes a fixed box on a wide screen and the whole
+   row on a phone, where a 200px control squeezed against a heading truncates
+   all three of its labels rather than one of them. */
+.pf2e-scope {
+  flex: 0 1 auto;
+  width: 13rem;
+  max-width: 100%;
+}
+
+@media (max-width: 26rem) {
+  .pf2e-scope {
+    width: 100%;
+  }
+}
+
 /* A UISegmentedControl is 32pt tall and a switch is 51×31pt — Apple's own
    sizes, which the page should not fatten. They meet the 44px minimum with a
    transparent expander instead. Vertical only: their neighbours sit beside

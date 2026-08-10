@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
+import { announceChange, classifyChange } from '@/lib/pf2ecal/announce.server';
 import { getSession } from '@/lib/pf2ecal/sessions.server';
 import { MAX_SESSION_HOURS, updateSessionSchema } from '@/lib/pf2ecal/types';
 import { CAMPAIGN_TIME_ZONE, zonedDateKey } from '@/lib/pf2ecal/zoned-time';
@@ -24,7 +25,13 @@ export const Route = createFileRoute('/api/pf2ecal/sessions/$id')({
         async ({ params, userId, body }) => {
           const existing = await prisma.pf2eSession.findUnique({
             where: { id: params.id },
-            select: { startsAt: true, endsAt: true },
+            select: {
+              startsAt: true,
+              endsAt: true,
+              title: true,
+              location: true,
+              canceledAt: true,
+            },
           });
           if (!existing) return Response.json({ error: 'Not found' }, { status: 404 });
 
@@ -58,7 +65,7 @@ export const Route = createFileRoute('/api/pf2ecal/sessions/$id')({
             zonedDateKey(startsAt, CAMPAIGN_TIME_ZONE) !==
               zonedDateKey(existing.startsAt, CAMPAIGN_TIME_ZONE);
 
-          await prisma.pf2eSession.update({
+          const updated = await prisma.pf2eSession.update({
             where: { id: params.id },
             data: {
               ...(movedDay && { reminderSentAt: null }),
@@ -75,7 +82,34 @@ export const Route = createFileRoute('/api/pf2ecal/sessions/$id')({
               pinnedToRule: false,
               updatedById: userId,
             },
+            select: { title: true, startsAt: true, endsAt: true, canceledAt: true, location: true },
           });
+
+          // Moving or calling off a night is the one edit other people have to
+          // hear about, and the person making it is halfway out of the sheet.
+          // `announcement` is tri-state and the states matter: absent means
+          // "you write it" and the board posts the change itself; an empty
+          // string means they chose to say nothing; text is posted as theirs.
+          //
+          // Awaited, unlike the DeepSeek rewrite inside it: the row has to
+          // exist before the response returns, or the client's own refetch
+          // races it and the note appears a beat later out of nowhere.
+          const change = classifyChange(existing, updated);
+          if (change && body.announcement !== '') {
+            await announceChange({
+              sessionId: params.id,
+              change,
+              expiresAt: updated.endsAt,
+              authorId: userId,
+              body: body.announcement ?? null,
+            }).catch((cause: unknown) => {
+              // The edit itself succeeded. Failing to announce it is worth a
+              // log and is not worth turning a saved change into an error the
+              // user will retry — which would move the session twice.
+              console.error('[pf2ecal] change announcement failed:', cause);
+            });
+          }
+
           return Response.json({ session: await getSession(params.id) });
         },
       ),
