@@ -66,6 +66,7 @@ import hiCVoidBreaker from "@/locales/hi/c-void-breaker.json";
 import hiCWager from "@/locales/hi/c-wager.json";
 import hiCWishlist from "@/locales/hi/c-wishlist.json";
 import hiCommon from "@/locales/hi/common.json";
+import hiErrors from "@/locales/hi/errors.json";
 import hiFeed from "@/locales/hi/feed.json";
 import hiGamesHub from "@/locales/hi/games-hub.json";
 import hiGroups from "@/locales/hi/groups.json";
@@ -160,6 +161,7 @@ const hiResources = {
   "c-wager": hiCWager,
   "c-wishlist": hiCWishlist,
   "common": hiCommon,
+  "errors": hiErrors,
   "feed": hiFeed,
   "games-hub": hiGamesHub,
   "groups": hiGroups,
