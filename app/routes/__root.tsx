@@ -487,8 +487,12 @@ function RootDocument({ children }: { children: ReactNode }) {
             is an enhancement; without scripting the content is just there.
             The scripted equivalent — observer armed but never fired — is
             handled by the deadline in components/motion/useRevealWatchdog. */}
+        {/* `.store-art__img` is on the same footing: the storefront cards fade
+            their art in from opacity 0 once it loads, and the class that does
+            it is set by an event handler. No scripting, no handler, no art —
+            so it joins the reveal rule rather than getting its own mechanism. */}
         <noscript>
-          <style>{`[data-reveal],.reveal{opacity:1!important;transform:none!important;filter:none!important}`}</style>
+          <style>{`[data-reveal],.reveal{opacity:1!important;transform:none!important;filter:none!important}.store-art__img{opacity:1!important}`}</style>
         </noscript>
       </head>
       <body className="font-body antialiased" suppressHydrationWarning>

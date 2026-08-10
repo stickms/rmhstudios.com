@@ -8,6 +8,7 @@ import koCAltair from "@/locales/ko/c-altair.json";
 import koCAwards from "@/locales/ko/c-awards.json";
 import koCBlog from "@/locales/ko/c-blog.json";
 import koCBuilds from "@/locales/ko/c-builds.json";
+import koCBumsRush from "@/locales/ko/c-bums-rush.json";
 import koCCircle from "@/locales/ko/c-circle.json";
 import koCCreator from "@/locales/ko/c-creator.json";
 import koCCursedLogic from "@/locales/ko/c-cursed-logic.json";
@@ -74,6 +75,7 @@ import koPages from "@/locales/ko/pages.json";
 import koRAltair from "@/locales/ko/r-altair.json";
 import koRDiscord from "@/locales/ko/r-discord.json";
 import koRForestExplorer from "@/locales/ko/r-forest-explorer.json";
+import koRPf2ecal from "@/locales/ko/r-pf2ecal.json";
 import koRRmhbox from "@/locales/ko/r-rmhbox.json";
 import koRRmhcode from "@/locales/ko/r-rmhcode.json";
 import koRSecret from "@/locales/ko/r-secret.json";
@@ -100,6 +102,7 @@ const koResources = {
   "c-awards": koCAwards,
   "c-blog": koCBlog,
   "c-builds": koCBuilds,
+  "c-bums-rush": koCBumsRush,
   "c-circle": koCCircle,
   "c-creator": koCCreator,
   "c-cursed-logic": koCCursedLogic,
@@ -166,6 +169,7 @@ const koResources = {
   "r-altair": koRAltair,
   "r-discord": koRDiscord,
   "r-forest-explorer": koRForestExplorer,
+  "r-pf2ecal": koRPf2ecal,
   "r-rmhbox": koRRmhbox,
   "r-rmhcode": koRRmhcode,
   "r-secret": koRSecret,

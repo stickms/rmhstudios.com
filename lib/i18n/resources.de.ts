@@ -8,6 +8,7 @@ import deCAltair from "@/locales/de/c-altair.json";
 import deCAwards from "@/locales/de/c-awards.json";
 import deCBlog from "@/locales/de/c-blog.json";
 import deCBuilds from "@/locales/de/c-builds.json";
+import deCBumsRush from "@/locales/de/c-bums-rush.json";
 import deCCircle from "@/locales/de/c-circle.json";
 import deCCreator from "@/locales/de/c-creator.json";
 import deCCursedLogic from "@/locales/de/c-cursed-logic.json";
@@ -74,6 +75,7 @@ import dePages from "@/locales/de/pages.json";
 import deRAltair from "@/locales/de/r-altair.json";
 import deRDiscord from "@/locales/de/r-discord.json";
 import deRForestExplorer from "@/locales/de/r-forest-explorer.json";
+import deRPf2ecal from "@/locales/de/r-pf2ecal.json";
 import deRRmhbox from "@/locales/de/r-rmhbox.json";
 import deRRmhcode from "@/locales/de/r-rmhcode.json";
 import deRSecret from "@/locales/de/r-secret.json";
@@ -100,6 +102,7 @@ const deResources = {
   "c-awards": deCAwards,
   "c-blog": deCBlog,
   "c-builds": deCBuilds,
+  "c-bums-rush": deCBumsRush,
   "c-circle": deCCircle,
   "c-creator": deCCreator,
   "c-cursed-logic": deCCursedLogic,
@@ -166,6 +169,7 @@ const deResources = {
   "r-altair": deRAltair,
   "r-discord": deRDiscord,
   "r-forest-explorer": deRForestExplorer,
+  "r-pf2ecal": deRPf2ecal,
   "r-rmhbox": deRRmhbox,
   "r-rmhcode": deRRmhcode,
   "r-secret": deRSecret,

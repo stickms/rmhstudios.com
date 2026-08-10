@@ -30,6 +30,35 @@ export interface ICSEvent {
   url?: string | null;
   /** When set, the event is exported with STATUS:CANCELLED. */
   canceledAt?: Date | string | null;
+  /**
+   * Revision counter (RFC 5545 §3.8.7.4). A subscribing calendar only replaces
+   * an event it already holds when the incoming copy has a HIGHER `SEQUENCE`;
+   * without one, a `PUBLISH` feed that moves an event can leave the old time
+   * sitting on a phone indefinitely. Must be a non-negative integer that only
+   * ever increases for a given UID — deriving it from the row's `updatedAt` is
+   * the usual way. Omitted means 0, which is right for an event that is
+   * exported once and never revised.
+   */
+  sequence?: number;
+}
+
+/** Calendar-level properties, for a feed clients subscribe to rather than import once. */
+export interface ICSCalendarOptions {
+  /**
+   * `X-WR-CALNAME` — the name Apple Calendar, Google Calendar and Outlook show
+   * in the sidebar. Non-standard, and universally implemented; without it a
+   * subscription is listed under its URL.
+   */
+  name?: string;
+  /** `X-WR-CALDESC` — the subtitle shown beside the name. */
+  description?: string;
+  /**
+   * How often a subscriber should re-poll, in minutes. Emitted as both
+   * `REFRESH-INTERVAL` (RFC 7986) and `X-PUBLISHED-TTL` (what Outlook reads),
+   * because no single property is honoured everywhere. Clients treat it as a
+   * hint and generally poll no faster than their own floor.
+   */
+  refreshMinutes?: number;
 }
 
 const PRODID = '-//RMH Studios//RMHEvents//EN';
@@ -97,12 +126,13 @@ function veventLines(event: ICSEvent, dtstamp: string): string[] {
   // URL is a URI value type (not TEXT), so it is not TEXT-escaped.
   if (event.url) lines.push(`URL:${event.url}`);
   lines.push(`STATUS:${event.canceledAt ? 'CANCELLED' : 'CONFIRMED'}`);
+  if (event.sequence) lines.push(`SEQUENCE:${Math.max(0, Math.floor(event.sequence))}`);
   lines.push('END:VEVENT');
   return lines;
 }
 
 /** Wrap one or more events in a VCALENDAR envelope, folded, CRLF-terminated. */
-function buildCalendar(events: ICSEvent[]): string {
+function buildCalendar(events: ICSEvent[], options: ICSCalendarOptions = {}): string {
   const dtstamp = toUtcStamp(new Date());
   const lines: string[] = [
     'BEGIN:VCALENDAR',
@@ -111,6 +141,22 @@ function buildCalendar(events: ICSEvent[]): string {
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
   ];
+  if (options.name) {
+    lines.push(`X-WR-CALNAME:${escapeText(options.name)}`);
+    // RFC 7986 NAME, for the clients that read the standard property rather
+    // than the Apple-era X- one. Emitting both is what makes the feed name
+    // itself correctly everywhere.
+    lines.push(`NAME:${escapeText(options.name)}`);
+  }
+  if (options.description) {
+    lines.push(`X-WR-CALDESC:${escapeText(options.description)}`);
+    lines.push(`DESCRIPTION:${escapeText(options.description)}`);
+  }
+  if (options.refreshMinutes && options.refreshMinutes > 0) {
+    const minutes = Math.floor(options.refreshMinutes);
+    lines.push(`REFRESH-INTERVAL;VALUE=DURATION:PT${minutes}M`);
+    lines.push(`X-PUBLISHED-TTL:PT${minutes}M`);
+  }
   for (const event of events) lines.push(...veventLines(event, dtstamp));
   lines.push('END:VCALENDAR');
   return lines.map(foldLine).join('\r\n') + '\r\n';
@@ -121,7 +167,7 @@ export function eventToICS(event: ICSEvent): string {
   return buildCalendar([event]);
 }
 
-/** A multi-event calendar (many VEVENTs) — for a per-user calendar feed. */
-export function calendarFeedICS(events: ICSEvent[]): string {
-  return buildCalendar(events);
+/** A multi-event calendar (many VEVENTs) — for a per-user or per-table feed. */
+export function calendarFeedICS(events: ICSEvent[], options?: ICSCalendarOptions): string {
+  return buildCalendar(events, options);
 }

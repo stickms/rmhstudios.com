@@ -8,6 +8,7 @@ import arCAltair from "@/locales/ar/c-altair.json";
 import arCAwards from "@/locales/ar/c-awards.json";
 import arCBlog from "@/locales/ar/c-blog.json";
 import arCBuilds from "@/locales/ar/c-builds.json";
+import arCBumsRush from "@/locales/ar/c-bums-rush.json";
 import arCCircle from "@/locales/ar/c-circle.json";
 import arCCreator from "@/locales/ar/c-creator.json";
 import arCCursedLogic from "@/locales/ar/c-cursed-logic.json";
@@ -76,6 +77,7 @@ import arRAltair from "@/locales/ar/r-altair.json";
 import arRDiscord from "@/locales/ar/r-discord.json";
 import arRForestExplorer from "@/locales/ar/r-forest-explorer.json";
 import arRKowloonKnockout from "@/locales/ar/r-kowloon-knockout.json";
+import arRPf2ecal from "@/locales/ar/r-pf2ecal.json";
 import arRRmhbox from "@/locales/ar/r-rmhbox.json";
 import arRRmhcode from "@/locales/ar/r-rmhcode.json";
 import arRSecret from "@/locales/ar/r-secret.json";
@@ -102,6 +104,7 @@ const arResources = {
   "c-awards": arCAwards,
   "c-blog": arCBlog,
   "c-builds": arCBuilds,
+  "c-bums-rush": arCBumsRush,
   "c-circle": arCCircle,
   "c-creator": arCCreator,
   "c-cursed-logic": arCCursedLogic,
@@ -170,6 +173,7 @@ const arResources = {
   "r-discord": arRDiscord,
   "r-forest-explorer": arRForestExplorer,
   "r-kowloon-knockout": arRKowloonKnockout,
+  "r-pf2ecal": arRPf2ecal,
   "r-rmhbox": arRRmhbox,
   "r-rmhcode": arRRmhcode,
   "r-secret": arRSecret,

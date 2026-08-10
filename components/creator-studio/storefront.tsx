@@ -20,9 +20,10 @@
  * common `StoreItem` shape and hand it a `seed`.
  */
 
-import { type PointerEvent as ReactPointerEvent, type ReactNode, useMemo, useRef, useState } from 'react';
+import { type PointerEvent as ReactPointerEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ArrowRight, Info } from 'lucide-react';
+import { IMAGE_VARIANTS, variantUrl } from '@/lib/images/variants.gen';
 
 /** A single thing on the shelf — a game, app, persona, build, or page. */
 export type StoreItem = {
@@ -154,16 +155,43 @@ function coverFor(item: StoreItem): { src?: string } {
   return { src: item.coverUrl || undefined };
 }
 
+/**
+ * The cards on `/games` and `/apps` are the site's heaviest image surface —
+ * measured 2026-08-09, `/games` transferred 2,070 KB of art, with masters up to
+ * 6.1x oversized for the box they render in (1280x720 shown at 209x117).
+ *
+ * `scripts/gen-image-variants.ts` pre-generates width variants for everything
+ * under `public/images/**` and records them in the manifest below, so catalog
+ * art can advertise a real srcSet. Anything NOT in the manifest — a user build's
+ * `coverUrl`, an external URL — is deliberately left alone: those are not
+ * pre-generated, and routing them through the resize proxy here would put image
+ * work on the SSR tier for every card.
+ */
+function variantSrcSet(src: string): string | undefined {
+  const entry = IMAGE_VARIANTS[src];
+  if (!entry?.widths.length) return undefined;
+  return entry.widths.map((w) => `${variantUrl(src, w)} ${w}w`).join(', ');
+}
+
+/**
+ * The grid is 2 columns below 720px, then 3, 4 and 5 as it widens, inside a
+ * 1400px container (see storefront.css) — so a card tops out around 280px. The
+ * hero spans the full container and passes its own `sizes`.
+ */
+const CARD_SIZES = '(max-width: 719px) 48vw, (max-width: 1100px) 33vw, 300px';
+
 function Art({
   item,
   src,
   fallbackSrc,
   eager = false,
+  sizes = CARD_SIZES,
 }: {
   item: StoreItem;
   src?: string;
   fallbackSrc?: string;
   eager?: boolean;
+  sizes?: string;
 }) {
   // Covers can 404 — e.g. a vibe screenshot the worker hasn't rendered yet.
   // Walk src → fallbackSrc → the tinted gradient placeholder instead of ever
@@ -171,14 +199,37 @@ function Art({
   const candidates = [src, fallbackSrc].filter(Boolean) as string[];
   const [idx, setIdx] = useState(0);
   const current = idx < candidates.length ? candidates[idx] : null;
+
+  // The card's text comes from the build-time catalog and is painted with the
+  // first frame; only the art arrives over the network. Fading it in over
+  // `.store-art`'s gradient turns that gap into a settle instead of a pop.
+  //
+  // An image served from cache can already be `complete` before React attaches
+  // `onLoad`, which would leave it stuck at opacity 0 — hence the ref check on
+  // mount. `src` is in the dep list so the fallback walk re-arms it.
+  const [loaded, setLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  useEffect(() => {
+    if (imgRef.current?.complete) setLoaded(true);
+  }, [current]);
+
   return current ? (
     <img
-      className="store-art__img"
+      ref={imgRef}
+      className={`store-art__img${loaded ? ' is-loaded' : ''}`}
       src={current}
+      srcSet={variantSrcSet(current)}
+      sizes={variantSrcSet(current) ? sizes : undefined}
       alt=""
       loading={eager ? 'eager' : 'lazy'}
       decoding="async"
-      onError={() => setIdx((i) => i + 1)}
+      onLoad={() => setLoaded(true)}
+      // The fallback walk changes `current`, so the srcSet follows it — a
+      // fallback that has no variants simply drops back to a bare src.
+      onError={() => {
+        setLoaded(false);
+        setIdx((i) => i + 1);
+      }}
     />
   ) : (
     <div className="store-art__placeholder" style={{ backgroundImage: hueGradient(item.hue) }} aria-hidden="true">
@@ -206,7 +257,7 @@ function HeroCard({ item }: { item: StoreItem }) {
     <div className="store-hero" style={{ '--card-hue': String(item.hue ?? 220) } as React.CSSProperties}>
       <PrimaryWrapper item={item} className="store-hero__link" ariaLabel={item.title}>
         <div className="store-hero__art">
-          <Art item={item} {...coverFor(item)} eager />
+          <Art item={item} {...coverFor(item)} eager sizes="100vw" />
           <span className="store-hero__scrim" aria-hidden="true" />
         </div>
         <div className="store-hero__body">

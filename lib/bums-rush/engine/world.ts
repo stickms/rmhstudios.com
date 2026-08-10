@@ -353,28 +353,73 @@ export function assertBodyBudget(world: PhysWorld, seats: number): void {
 const setPosScratch: Vec2 = { x: 0, y: 0 };
 
 /**
- * matter integrates with Verlet, so `positionPrev` is where a body's velocity
- * actually lives — but `@types/matter-js@0.20` does not declare it. This is a
- * typings gap, not a runtime one; every matter build since 0.10 has the field.
- */
-interface VerletBody extends Matter.Body {
-  positionPrev: Matter.Vector;
-}
-
-/**
- * Move a body and let Verlet read the move as a velocity change — which is what
- * a taut rope does, and what the two-argument `Body.setPosition` deliberately
- * does not do (it drags `positionPrev` along so the body keeps sailing). Used
- * by the joint limiter and by grip re-projection.
+ * Move a body WITHOUT changing its velocity — a pure positional projection.
+ *
+ * `Body.setPosition` already drags `positionPrev` along by the same delta, so
+ * on its own it is exactly this. That is deliberate here, and it is the fix for
+ * a bug that made the game unplayable: this function used to subtract the delta
+ * from `positionPrev` afterwards, on the theory that a taut rope should read
+ * its correction as a velocity change.
+ *
+ * The theory is right and the implementation was a pump. Verlet velocity is
+ * `position - positionPrev`, so cancelling the drag adds the WHOLE correction
+ * to velocity — every step, per joint, unbounded. An arm is six joints, a
+ * character is two arms, and the limiter runs `LIMIT_ITERATIONS` times, so a
+ * character resting on the floor (where joints compress and corrections are
+ * biggest) gained speed until it tunnelled through the world: measured, a
+ * spawn at y=300 settled at y≈596 and then left through the floor to y=9265.
+ * The arms spinning "on their own" were the same energy arriving as rotation.
+ *
+ * The velocity half of a taut joint is real, but it is a *subtraction*: a rope
+ * removes the separating component of relative velocity. That is
+ * {@link cancelSeparation}, which is bounded by construction because it can
+ * only ever remove motion that already exists.
  */
 export function correctPosition(body: Matter.Body, dx: number, dy: number): void {
   if (dx === 0 && dy === 0) return;
   setPosScratch.x = body.position.x + dx;
   setPosScratch.y = body.position.y + dy;
   Body.setPosition(body, setPosScratch);
-  const prev = (body as VerletBody).positionPrev;
-  prev.x -= dx;
-  prev.y -= dy;
+}
+
+const velScratchA: Vec2 = { x: 0, y: 0 };
+const velScratchB: Vec2 = { x: 0, y: 0 };
+
+/**
+ * Remove the separating part of two bodies' relative velocity along `n`.
+ *
+ * This is the half of a taut joint that {@link correctPosition} deliberately
+ * does not do. It can only ever take motion away — the impulse is derived from
+ * the relative velocity that is already there — so unlike adding the positional
+ * error it cannot inject energy no matter how large the correction was.
+ *
+ * Treats both bodies as point masses. The arm's segments are 0.05 to the head's
+ * 1.2, so the angular term is noise against the linear one, and leaving it out
+ * keeps this cheap enough to run on every joint of every arm twice a step.
+ *
+ * `n` must be a unit vector pointing from `a` to `b`.
+ */
+export function cancelSeparation(a: Matter.Body, b: Matter.Body, nx: number, ny: number): void {
+  const wa = a.isStatic ? 0 : a.inverseMass;
+  const wb = b.isStatic ? 0 : b.inverseMass;
+  const wsum = wa + wb;
+  if (wsum <= 0) return;
+
+  const vrel = (b.velocity.x - a.velocity.x) * nx + (b.velocity.y - a.velocity.y) * ny;
+  // Negative means they are already closing; a rope does not push.
+  if (vrel <= 0) return;
+
+  const j = vrel / wsum;
+  if (wa > 0) {
+    velScratchA.x = a.velocity.x + j * wa * nx;
+    velScratchA.y = a.velocity.y + j * wa * ny;
+    Body.setVelocity(a, velScratchA);
+  }
+  if (wb > 0) {
+    velScratchB.x = b.velocity.x - j * wb * nx;
+    velScratchB.y = b.velocity.y - j * wb * ny;
+    Body.setVelocity(b, velScratchB);
+  }
 }
 
 /**

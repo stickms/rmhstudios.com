@@ -111,6 +111,70 @@ function runPlugin(options: {
 
 const cacheControl = (headers: Headers) => headers.get('Cache-Control') ?? '';
 
+/**
+ * The plugin must write to the response that is actually being SENT.
+ *
+ * `runPlugin` above passes one `Headers` instance as both `res.headers` and
+ * `event.res.headers`, so it cannot tell the two apart — and that is precisely
+ * how this shipped broken. In real H3, `prepareResponse()` clears the event's
+ * prepared-response slot while it builds the final Response, and `event.res` is
+ * a lazy getter (`this[kEventRes] ||= new H3EventResponse()`). So a `response`
+ * hook that reads `event.res` does not get the response: it CONSTRUCTS a fresh,
+ * empty, detached one. The old `event.res.headers ?? res.headers` therefore
+ * never fell through — every header went into a throwaway bag, and both this
+ * plugin and `security-headers.ts` were no-ops on every response in production.
+ *
+ * This models H3's real semantics: `event.res` hands back a NEW object each
+ * time, and only `res.headers` is the live one.
+ */
+describe('anon-html-cache — writes to the response actually being sent', () => {
+  function runAgainstRealH3Shape(path: string, cookie?: string) {
+    const sentHeaders = new Headers({ 'content-type': 'text/html; charset=utf-8' });
+    const detached: Headers[] = [];
+
+    let handler: ((res: unknown, event: unknown) => void) | null = null;
+    anonHtmlCachePlugin({
+      hooks: {
+        hook: (name, fn) => {
+          if (name === 'response') handler = fn;
+        },
+      },
+    });
+
+    const reqHeaders = new Headers();
+    if (cookie) reqHeaders.set('cookie', cookie);
+
+    const event = {
+      req: { url: `http://rmhstudios.com${path}`, method: 'GET', headers: reqHeaders },
+      // The lazy getter: a brand-new detached response every read, exactly like
+      // `get res() { return this[kEventRes] ||= new H3EventResponse(); }` after
+      // `prepareResponse` has cleared the slot.
+      get res() {
+        const fresh = new Headers();
+        detached.push(fresh);
+        return { headers: fresh };
+      },
+    };
+
+    handler!({ headers: sentHeaders }, event);
+    return { sentHeaders, detached };
+  }
+
+  it('sets Cache-Control on the sent response, not on a detached event.res', () => {
+    const { sentHeaders, detached } = runAgainstRealH3Shape('/');
+    expect(cacheControl(sentHeaders)).toContain('s-maxage=');
+    for (const bag of detached) {
+      expect(bag.get('Cache-Control'), 'header landed on a discarded object').toBeNull();
+    }
+  });
+
+  it('still marks an authenticated document private on the sent response', () => {
+    const { sentHeaders } = runAgainstRealH3Shape('/', 'better-auth.session_token=abc123');
+    expect(cacheControl(sentHeaders)).toBe('private, no-cache, max-age=0, must-revalidate');
+    expect(cacheControl(sentHeaders)).not.toContain('no-store');
+  });
+});
+
 describe('anon-html-cache — authenticated requests are never shared (OPT-43)', () => {
   it('never marks an authenticated response `public`, on any path', () => {
     const leaks: string[] = [];

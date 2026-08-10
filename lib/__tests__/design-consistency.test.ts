@@ -190,6 +190,13 @@ const FULLSCREEN_TIER_DIRS = new Set([
   'studio',
   // Standalone campaign/marketing arms with their own art direction
   'blm',
+  // An unlisted scheduling board for one Pathfinder 2e table, asked for as
+  // "minimal, Apple-style, whites and blacks". It has no relationship to the
+  // site's themes — it declares its own `--pf2e-*` group in
+  // `components/pf2ecal/pf2ecal.css` and paints an opaque ground over the
+  // viewport — so holding it to `--site-*` would make it a different page, not
+  // a more consistent one.
+  'pf2ecal',
   'breakpoint',
   'covid',
   'doctrine',
@@ -221,6 +228,8 @@ const FULLSCREEN_ROUTE_SEGMENTS = new Set([
   'massive-march',
   'neon-driftway',
   'nightrail',
+  // The PF2e table's board — see the note beside `pf2ecal` above.
+  'pf2ecal',
   'rmh-farming-sim',
   'rmhbox',
   'rmhcode',

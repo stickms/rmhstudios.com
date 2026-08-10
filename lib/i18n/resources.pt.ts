@@ -8,6 +8,7 @@ import ptCAltair from "@/locales/pt/c-altair.json";
 import ptCAwards from "@/locales/pt/c-awards.json";
 import ptCBlog from "@/locales/pt/c-blog.json";
 import ptCBuilds from "@/locales/pt/c-builds.json";
+import ptCBumsRush from "@/locales/pt/c-bums-rush.json";
 import ptCCircle from "@/locales/pt/c-circle.json";
 import ptCCreator from "@/locales/pt/c-creator.json";
 import ptCCursedLogic from "@/locales/pt/c-cursed-logic.json";
@@ -74,6 +75,7 @@ import ptPages from "@/locales/pt/pages.json";
 import ptRAltair from "@/locales/pt/r-altair.json";
 import ptRDiscord from "@/locales/pt/r-discord.json";
 import ptRForestExplorer from "@/locales/pt/r-forest-explorer.json";
+import ptRPf2ecal from "@/locales/pt/r-pf2ecal.json";
 import ptRRmhbox from "@/locales/pt/r-rmhbox.json";
 import ptRRmhcode from "@/locales/pt/r-rmhcode.json";
 import ptRSecret from "@/locales/pt/r-secret.json";
@@ -100,6 +102,7 @@ const ptResources = {
   "c-awards": ptCAwards,
   "c-blog": ptCBlog,
   "c-builds": ptCBuilds,
+  "c-bums-rush": ptCBumsRush,
   "c-circle": ptCCircle,
   "c-creator": ptCCreator,
   "c-cursed-logic": ptCCursedLogic,
@@ -166,6 +169,7 @@ const ptResources = {
   "r-altair": ptRAltair,
   "r-discord": ptRDiscord,
   "r-forest-explorer": ptRForestExplorer,
+  "r-pf2ecal": ptRPf2ecal,
   "r-rmhbox": ptRRmhbox,
   "r-rmhcode": ptRRmhcode,
   "r-secret": ptRSecret,

@@ -63,7 +63,34 @@
   object-fit: cover;
   object-position: top center;
   display: block;
-  transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
+  /* The catalog is build-time data, so a card's title, tags and CTA paint with
+     the first frame while only the art is still in flight. Starting the art at
+     0 and fading it in over `.store-art`'s gradient makes that arrival a settle
+     rather than a pop — the gradient is the placeholder, so nothing is blank.
+
+     `.is-loaded` is set by the component on `load` (and immediately when a
+     cached image is already `complete`). With scripting off nothing ever sets
+     it, so `__root.tsx`'s <noscript> block forces these visible — the same
+     mechanism already used for scroll reveals. */
+  opacity: 0;
+  transition:
+    transform 600ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 320ms ease-out;
+}
+
+.store-art__img.is-loaded {
+  opacity: 1;
+}
+
+/* Reduced motion still wants the image, just not the fade. */
+@media (prefers-reduced-motion: reduce) {
+  .store-art__img {
+    transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+.reduce-motion .store-art__img {
+  transition: none;
 }
 
 .store-art__placeholder {

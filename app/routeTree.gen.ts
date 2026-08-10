@@ -39,6 +39,7 @@ import { Route as NeonDriftwayRouteImport } from './routes/neon-driftway'
 import { Route as NightrailRouteImport } from './routes/nightrail'
 import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as OptimizationRouteImport } from './routes/optimization'
+import { Route as Pf2ecalRouteImport } from './routes/pf2ecal'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RmhCapitalRouteImport } from './routes/rmh-capital'
 import { Route as RmhFarmingSimRouteImport } from './routes/rmh-farming-sim'
@@ -436,6 +437,12 @@ import { Route as ApiNotificationsReadRouteImport } from './routes/api/notificat
 import { Route as ApiOnboardingIndexRouteImport } from './routes/api/onboarding/index'
 import { Route as ApiOnboardingFirstWeekRouteImport } from './routes/api/onboarding/first-week'
 import { Route as ApiPersonasIndexRouteImport } from './routes/api/personas/index'
+import { Route as ApiPf2ecalIndexRouteImport } from './routes/api/pf2ecal/index'
+import { Route as ApiPf2ecalAnnouncementsRouteImport } from './routes/api/pf2ecal/announcements'
+import { Route as ApiPf2ecalAskRouteImport } from './routes/api/pf2ecal/ask'
+import { Route as ApiPf2ecalCalendarDoticsRouteImport } from './routes/api/pf2ecal/calendar[.]ics'
+import { Route as ApiPf2ecalSessionsRouteImport } from './routes/api/pf2ecal/sessions'
+import { Route as ApiPf2ecalSettingsRouteImport } from './routes/api/pf2ecal/settings'
 import { Route as ApiPlaylistsIndexRouteImport } from './routes/api/playlists/index'
 import { Route as ApiPoolsIndexRouteImport } from './routes/api/pools/index'
 import { Route as ApiPredictionsIndexRouteImport } from './routes/api/predictions/index'
@@ -703,6 +710,9 @@ import { Route as ApiOgReplayIdRouteImport } from './routes/api/og/replay/$id'
 import { Route as ApiPersonasIdIndexRouteImport } from './routes/api/personas/$id/index'
 import { Route as ApiPersonasIdChatRouteImport } from './routes/api/personas/$id/chat'
 import { Route as ApiPersonasAvatarFilenameRouteImport } from './routes/api/personas/avatar/$filename'
+import { Route as ApiPf2ecalAnnouncementsIdRouteImport } from './routes/api/pf2ecal/announcements.$id'
+import { Route as ApiPf2ecalSessionsIdRouteImport } from './routes/api/pf2ecal/sessions.$id'
+import { Route as ApiPf2ecalSettingsTestWebhookRouteImport } from './routes/api/pf2ecal/settings.test-webhook'
 import { Route as ApiPlaylistsIdIndexRouteImport } from './routes/api/playlists/$id/index'
 import { Route as ApiPoolsIdIndexRouteImport } from './routes/api/pools/$id/index'
 import { Route as ApiPoolsIdContributeRouteImport } from './routes/api/pools/$id/contribute'
@@ -829,6 +839,7 @@ import { Route as ApiLibraryCollectionIdItemsRouteImport } from './routes/api/li
 import { Route as ApiMarketListingsIdIndexRouteImport } from './routes/api/market/listings/$id/index'
 import { Route as ApiMarketListingsIdBuyRouteImport } from './routes/api/market/listings/$id/buy'
 import { Route as ApiOgPostIdStoryRouteImport } from './routes/api/og/post/$id/story'
+import { Route as ApiPf2ecalSessionsIdResponseRouteImport } from './routes/api/pf2ecal/sessions.$id.response'
 import { Route as ApiPlaylistsIdItemsIndexRouteImport } from './routes/api/playlists/$id/items/index'
 import { Route as ApiPlaylistsIdItemsItemIdRouteImport } from './routes/api/playlists/$id/items/$itemId'
 import { Route as ApiRideshareRidesIdMessagesRouteImport } from './routes/api/rideshare/rides/$id/messages'
@@ -1019,6 +1030,11 @@ const OfflineRoute = OfflineRouteImport.update({
 const OptimizationRoute = OptimizationRouteImport.update({
   id: '/optimization',
   path: '/optimization',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Pf2ecalRoute = Pf2ecalRouteImport.update({
+  id: '/pf2ecal',
+  path: '/pf2ecal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -3024,6 +3040,37 @@ const ApiPersonasIndexRoute = ApiPersonasIndexRouteImport.update({
   path: '/api/personas/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPf2ecalIndexRoute = ApiPf2ecalIndexRouteImport.update({
+  id: '/api/pf2ecal/',
+  path: '/api/pf2ecal/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPf2ecalAnnouncementsRoute = ApiPf2ecalAnnouncementsRouteImport.update({
+  id: '/api/pf2ecal/announcements',
+  path: '/api/pf2ecal/announcements',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPf2ecalAskRoute = ApiPf2ecalAskRouteImport.update({
+  id: '/api/pf2ecal/ask',
+  path: '/api/pf2ecal/ask',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPf2ecalCalendarDoticsRoute =
+  ApiPf2ecalCalendarDoticsRouteImport.update({
+    id: '/api/pf2ecal/calendar.ics',
+    path: '/api/pf2ecal/calendar.ics',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPf2ecalSessionsRoute = ApiPf2ecalSessionsRouteImport.update({
+  id: '/api/pf2ecal/sessions',
+  path: '/api/pf2ecal/sessions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPf2ecalSettingsRoute = ApiPf2ecalSettingsRouteImport.update({
+  id: '/api/pf2ecal/settings',
+  path: '/api/pf2ecal/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPlaylistsIndexRoute = ApiPlaylistsIndexRouteImport.update({
   id: '/api/playlists/',
   path: '/api/playlists/',
@@ -4414,6 +4461,23 @@ const ApiPersonasAvatarFilenameRoute =
     path: '/api/personas/avatar/$filename',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPf2ecalAnnouncementsIdRoute =
+  ApiPf2ecalAnnouncementsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => ApiPf2ecalAnnouncementsRoute,
+  } as any)
+const ApiPf2ecalSessionsIdRoute = ApiPf2ecalSessionsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiPf2ecalSessionsRoute,
+} as any)
+const ApiPf2ecalSettingsTestWebhookRoute =
+  ApiPf2ecalSettingsTestWebhookRouteImport.update({
+    id: '/test-webhook',
+    path: '/test-webhook',
+    getParentRoute: () => ApiPf2ecalSettingsRoute,
+  } as any)
 const ApiPlaylistsIdIndexRoute = ApiPlaylistsIdIndexRouteImport.update({
   id: '/api/playlists/$id/',
   path: '/api/playlists/$id/',
@@ -5069,6 +5133,12 @@ const ApiOgPostIdStoryRoute = ApiOgPostIdStoryRouteImport.update({
   path: '/story',
   getParentRoute: () => ApiOgPostIdRoute,
 } as any)
+const ApiPf2ecalSessionsIdResponseRoute =
+  ApiPf2ecalSessionsIdResponseRouteImport.update({
+    id: '/response',
+    path: '/response',
+    getParentRoute: () => ApiPf2ecalSessionsIdRoute,
+  } as any)
 const ApiPlaylistsIdItemsIndexRoute =
   ApiPlaylistsIdItemsIndexRouteImport.update({
     id: '/api/playlists/$id/items/',
@@ -5335,6 +5405,7 @@ export interface FileRoutesByFullPath {
   '/nightrail': typeof NightrailRoute
   '/offline': typeof OfflineRoute
   '/optimization': typeof OptimizationRoute
+  '/pf2ecal': typeof Pf2ecalRoute
   '/privacy': typeof PrivacyRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
   '/rmh-farming-sim': typeof RmhFarmingSimRouteWithChildren
@@ -5686,6 +5757,11 @@ export interface FileRoutesByFullPath {
   '/api/notifications/preferences': typeof ApiNotificationsPreferencesRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
   '/api/onboarding/first-week': typeof ApiOnboardingFirstWeekRoute
+  '/api/pf2ecal/announcements': typeof ApiPf2ecalAnnouncementsRouteWithChildren
+  '/api/pf2ecal/ask': typeof ApiPf2ecalAskRoute
+  '/api/pf2ecal/calendar.ics': typeof ApiPf2ecalCalendarDoticsRoute
+  '/api/pf2ecal/sessions': typeof ApiPf2ecalSessionsRouteWithChildren
+  '/api/pf2ecal/settings': typeof ApiPf2ecalSettingsRouteWithChildren
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
   '/api/preferences/appearance': typeof ApiPreferencesAppearanceRoute
   '/api/preferences/conversation': typeof ApiPreferencesConversationRoute
@@ -5863,6 +5939,7 @@ export interface FileRoutesByFullPath {
   '/api/notifications/': typeof ApiNotificationsIndexRoute
   '/api/onboarding/': typeof ApiOnboardingIndexRoute
   '/api/personas/': typeof ApiPersonasIndexRoute
+  '/api/pf2ecal/': typeof ApiPf2ecalIndexRoute
   '/api/playlists/': typeof ApiPlaylistsIndexRoute
   '/api/pools/': typeof ApiPoolsIndexRoute
   '/api/predictions/': typeof ApiPredictionsIndexRoute
@@ -5981,6 +6058,9 @@ export interface FileRoutesByFullPath {
   '/api/og/replay/$id': typeof ApiOgReplayIdRoute
   '/api/personas/$id/chat': typeof ApiPersonasIdChatRoute
   '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
+  '/api/pf2ecal/announcements/$id': typeof ApiPf2ecalAnnouncementsIdRoute
+  '/api/pf2ecal/sessions/$id': typeof ApiPf2ecalSessionsIdRouteWithChildren
+  '/api/pf2ecal/settings/test-webhook': typeof ApiPf2ecalSettingsTestWebhookRoute
   '/api/pools/$id/contribute': typeof ApiPoolsIdContributeRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
   '/api/profile-links/$id/verify': typeof ApiProfileLinksIdVerifyRoute
@@ -6123,6 +6203,7 @@ export interface FileRoutesByFullPath {
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
   '/api/market/listings/$id/buy': typeof ApiMarketListingsIdBuyRoute
   '/api/og/post/$id/story': typeof ApiOgPostIdStoryRoute
+  '/api/pf2ecal/sessions/$id/response': typeof ApiPf2ecalSessionsIdResponseRoute
   '/api/playlists/$id/items/$itemId': typeof ApiPlaylistsIdItemsItemIdRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
@@ -6193,6 +6274,7 @@ export interface FileRoutesByTo {
   '/nightrail': typeof NightrailRoute
   '/offline': typeof OfflineRoute
   '/optimization': typeof OptimizationRoute
+  '/pf2ecal': typeof Pf2ecalRoute
   '/privacy': typeof PrivacyRoute
   '/rmh-internal-affairs': typeof RmhInternalAffairsRouteWithChildren
   '/rmhcalculator': typeof RmhcalculatorRoute
@@ -6525,6 +6607,11 @@ export interface FileRoutesByTo {
   '/api/notifications/preferences': typeof ApiNotificationsPreferencesRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
   '/api/onboarding/first-week': typeof ApiOnboardingFirstWeekRoute
+  '/api/pf2ecal/announcements': typeof ApiPf2ecalAnnouncementsRouteWithChildren
+  '/api/pf2ecal/ask': typeof ApiPf2ecalAskRoute
+  '/api/pf2ecal/calendar.ics': typeof ApiPf2ecalCalendarDoticsRoute
+  '/api/pf2ecal/sessions': typeof ApiPf2ecalSessionsRouteWithChildren
+  '/api/pf2ecal/settings': typeof ApiPf2ecalSettingsRouteWithChildren
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
   '/api/preferences/appearance': typeof ApiPreferencesAppearanceRoute
   '/api/preferences/conversation': typeof ApiPreferencesConversationRoute
@@ -6702,6 +6789,7 @@ export interface FileRoutesByTo {
   '/api/notifications': typeof ApiNotificationsIndexRoute
   '/api/onboarding': typeof ApiOnboardingIndexRoute
   '/api/personas': typeof ApiPersonasIndexRoute
+  '/api/pf2ecal': typeof ApiPf2ecalIndexRoute
   '/api/playlists': typeof ApiPlaylistsIndexRoute
   '/api/pools': typeof ApiPoolsIndexRoute
   '/api/predictions': typeof ApiPredictionsIndexRoute
@@ -6820,6 +6908,9 @@ export interface FileRoutesByTo {
   '/api/og/replay/$id': typeof ApiOgReplayIdRoute
   '/api/personas/$id/chat': typeof ApiPersonasIdChatRoute
   '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
+  '/api/pf2ecal/announcements/$id': typeof ApiPf2ecalAnnouncementsIdRoute
+  '/api/pf2ecal/sessions/$id': typeof ApiPf2ecalSessionsIdRouteWithChildren
+  '/api/pf2ecal/settings/test-webhook': typeof ApiPf2ecalSettingsTestWebhookRoute
   '/api/pools/$id/contribute': typeof ApiPoolsIdContributeRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
   '/api/profile-links/$id/verify': typeof ApiProfileLinksIdVerifyRoute
@@ -6962,6 +7053,7 @@ export interface FileRoutesByTo {
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
   '/api/market/listings/$id/buy': typeof ApiMarketListingsIdBuyRoute
   '/api/og/post/$id/story': typeof ApiOgPostIdStoryRoute
+  '/api/pf2ecal/sessions/$id/response': typeof ApiPf2ecalSessionsIdResponseRoute
   '/api/playlists/$id/items/$itemId': typeof ApiPlaylistsIdItemsItemIdRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
@@ -7038,6 +7130,7 @@ export interface FileRoutesById {
   '/nightrail': typeof NightrailRoute
   '/offline': typeof OfflineRoute
   '/optimization': typeof OptimizationRoute
+  '/pf2ecal': typeof Pf2ecalRoute
   '/privacy': typeof PrivacyRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
   '/rmh-farming-sim': typeof RmhFarmingSimRouteWithChildren
@@ -7390,6 +7483,11 @@ export interface FileRoutesById {
   '/api/notifications/preferences': typeof ApiNotificationsPreferencesRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
   '/api/onboarding/first-week': typeof ApiOnboardingFirstWeekRoute
+  '/api/pf2ecal/announcements': typeof ApiPf2ecalAnnouncementsRouteWithChildren
+  '/api/pf2ecal/ask': typeof ApiPf2ecalAskRoute
+  '/api/pf2ecal/calendar.ics': typeof ApiPf2ecalCalendarDoticsRoute
+  '/api/pf2ecal/sessions': typeof ApiPf2ecalSessionsRouteWithChildren
+  '/api/pf2ecal/settings': typeof ApiPf2ecalSettingsRouteWithChildren
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
   '/api/preferences/appearance': typeof ApiPreferencesAppearanceRoute
   '/api/preferences/conversation': typeof ApiPreferencesConversationRoute
@@ -7567,6 +7665,7 @@ export interface FileRoutesById {
   '/api/notifications/': typeof ApiNotificationsIndexRoute
   '/api/onboarding/': typeof ApiOnboardingIndexRoute
   '/api/personas/': typeof ApiPersonasIndexRoute
+  '/api/pf2ecal/': typeof ApiPf2ecalIndexRoute
   '/api/playlists/': typeof ApiPlaylistsIndexRoute
   '/api/pools/': typeof ApiPoolsIndexRoute
   '/api/predictions/': typeof ApiPredictionsIndexRoute
@@ -7685,6 +7784,9 @@ export interface FileRoutesById {
   '/api/og/replay/$id': typeof ApiOgReplayIdRoute
   '/api/personas/$id/chat': typeof ApiPersonasIdChatRoute
   '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
+  '/api/pf2ecal/announcements/$id': typeof ApiPf2ecalAnnouncementsIdRoute
+  '/api/pf2ecal/sessions/$id': typeof ApiPf2ecalSessionsIdRouteWithChildren
+  '/api/pf2ecal/settings/test-webhook': typeof ApiPf2ecalSettingsTestWebhookRoute
   '/api/pools/$id/contribute': typeof ApiPoolsIdContributeRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
   '/api/profile-links/$id/verify': typeof ApiProfileLinksIdVerifyRoute
@@ -7827,6 +7929,7 @@ export interface FileRoutesById {
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
   '/api/market/listings/$id/buy': typeof ApiMarketListingsIdBuyRoute
   '/api/og/post/$id/story': typeof ApiOgPostIdStoryRoute
+  '/api/pf2ecal/sessions/$id/response': typeof ApiPf2ecalSessionsIdResponseRoute
   '/api/playlists/$id/items/$itemId': typeof ApiPlaylistsIdItemsItemIdRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
@@ -7904,6 +8007,7 @@ export interface FileRouteTypes {
     | '/nightrail'
     | '/offline'
     | '/optimization'
+    | '/pf2ecal'
     | '/privacy'
     | '/rmh-capital'
     | '/rmh-farming-sim'
@@ -8255,6 +8359,11 @@ export interface FileRouteTypes {
     | '/api/notifications/preferences'
     | '/api/notifications/read'
     | '/api/onboarding/first-week'
+    | '/api/pf2ecal/announcements'
+    | '/api/pf2ecal/ask'
+    | '/api/pf2ecal/calendar.ics'
+    | '/api/pf2ecal/sessions'
+    | '/api/pf2ecal/settings'
     | '/api/predictions/$id'
     | '/api/preferences/appearance'
     | '/api/preferences/conversation'
@@ -8432,6 +8541,7 @@ export interface FileRouteTypes {
     | '/api/notifications/'
     | '/api/onboarding/'
     | '/api/personas/'
+    | '/api/pf2ecal/'
     | '/api/playlists/'
     | '/api/pools/'
     | '/api/predictions/'
@@ -8550,6 +8660,9 @@ export interface FileRouteTypes {
     | '/api/og/replay/$id'
     | '/api/personas/$id/chat'
     | '/api/personas/avatar/$filename'
+    | '/api/pf2ecal/announcements/$id'
+    | '/api/pf2ecal/sessions/$id'
+    | '/api/pf2ecal/settings/test-webhook'
     | '/api/pools/$id/contribute'
     | '/api/predictions/$id/trade'
     | '/api/profile-links/$id/verify'
@@ -8692,6 +8805,7 @@ export interface FileRouteTypes {
     | '/api/library/collection/$id/items'
     | '/api/market/listings/$id/buy'
     | '/api/og/post/$id/story'
+    | '/api/pf2ecal/sessions/$id/response'
     | '/api/playlists/$id/items/$itemId'
     | '/api/rideshare/rides/$id/messages'
     | '/api/rideshare/rides/$id/rate'
@@ -8762,6 +8876,7 @@ export interface FileRouteTypes {
     | '/nightrail'
     | '/offline'
     | '/optimization'
+    | '/pf2ecal'
     | '/privacy'
     | '/rmh-internal-affairs'
     | '/rmhcalculator'
@@ -9094,6 +9209,11 @@ export interface FileRouteTypes {
     | '/api/notifications/preferences'
     | '/api/notifications/read'
     | '/api/onboarding/first-week'
+    | '/api/pf2ecal/announcements'
+    | '/api/pf2ecal/ask'
+    | '/api/pf2ecal/calendar.ics'
+    | '/api/pf2ecal/sessions'
+    | '/api/pf2ecal/settings'
     | '/api/predictions/$id'
     | '/api/preferences/appearance'
     | '/api/preferences/conversation'
@@ -9271,6 +9391,7 @@ export interface FileRouteTypes {
     | '/api/notifications'
     | '/api/onboarding'
     | '/api/personas'
+    | '/api/pf2ecal'
     | '/api/playlists'
     | '/api/pools'
     | '/api/predictions'
@@ -9389,6 +9510,9 @@ export interface FileRouteTypes {
     | '/api/og/replay/$id'
     | '/api/personas/$id/chat'
     | '/api/personas/avatar/$filename'
+    | '/api/pf2ecal/announcements/$id'
+    | '/api/pf2ecal/sessions/$id'
+    | '/api/pf2ecal/settings/test-webhook'
     | '/api/pools/$id/contribute'
     | '/api/predictions/$id/trade'
     | '/api/profile-links/$id/verify'
@@ -9531,6 +9655,7 @@ export interface FileRouteTypes {
     | '/api/library/collection/$id/items'
     | '/api/market/listings/$id/buy'
     | '/api/og/post/$id/story'
+    | '/api/pf2ecal/sessions/$id/response'
     | '/api/playlists/$id/items/$itemId'
     | '/api/rideshare/rides/$id/messages'
     | '/api/rideshare/rides/$id/rate'
@@ -9606,6 +9731,7 @@ export interface FileRouteTypes {
     | '/nightrail'
     | '/offline'
     | '/optimization'
+    | '/pf2ecal'
     | '/privacy'
     | '/rmh-capital'
     | '/rmh-farming-sim'
@@ -9958,6 +10084,11 @@ export interface FileRouteTypes {
     | '/api/notifications/preferences'
     | '/api/notifications/read'
     | '/api/onboarding/first-week'
+    | '/api/pf2ecal/announcements'
+    | '/api/pf2ecal/ask'
+    | '/api/pf2ecal/calendar.ics'
+    | '/api/pf2ecal/sessions'
+    | '/api/pf2ecal/settings'
     | '/api/predictions/$id'
     | '/api/preferences/appearance'
     | '/api/preferences/conversation'
@@ -10135,6 +10266,7 @@ export interface FileRouteTypes {
     | '/api/notifications/'
     | '/api/onboarding/'
     | '/api/personas/'
+    | '/api/pf2ecal/'
     | '/api/playlists/'
     | '/api/pools/'
     | '/api/predictions/'
@@ -10253,6 +10385,9 @@ export interface FileRouteTypes {
     | '/api/og/replay/$id'
     | '/api/personas/$id/chat'
     | '/api/personas/avatar/$filename'
+    | '/api/pf2ecal/announcements/$id'
+    | '/api/pf2ecal/sessions/$id'
+    | '/api/pf2ecal/settings/test-webhook'
     | '/api/pools/$id/contribute'
     | '/api/predictions/$id/trade'
     | '/api/profile-links/$id/verify'
@@ -10395,6 +10530,7 @@ export interface FileRouteTypes {
     | '/api/library/collection/$id/items'
     | '/api/market/listings/$id/buy'
     | '/api/og/post/$id/story'
+    | '/api/pf2ecal/sessions/$id/response'
     | '/api/playlists/$id/items/$itemId'
     | '/api/rideshare/rides/$id/messages'
     | '/api/rideshare/rides/$id/rate'
@@ -10471,6 +10607,7 @@ export interface RootRouteChildren {
   NightrailRoute: typeof NightrailRoute
   OfflineRoute: typeof OfflineRoute
   OptimizationRoute: typeof OptimizationRoute
+  Pf2ecalRoute: typeof Pf2ecalRoute
   PrivacyRoute: typeof PrivacyRoute
   RmhCapitalRoute: typeof RmhCapitalRouteWithChildren
   RmhFarmingSimRoute: typeof RmhFarmingSimRouteWithChildren
@@ -10659,6 +10796,11 @@ export interface RootRouteChildren {
   ApiNotificationsPreferencesRoute: typeof ApiNotificationsPreferencesRoute
   ApiNotificationsReadRoute: typeof ApiNotificationsReadRoute
   ApiOnboardingFirstWeekRoute: typeof ApiOnboardingFirstWeekRoute
+  ApiPf2ecalAnnouncementsRoute: typeof ApiPf2ecalAnnouncementsRouteWithChildren
+  ApiPf2ecalAskRoute: typeof ApiPf2ecalAskRoute
+  ApiPf2ecalCalendarDoticsRoute: typeof ApiPf2ecalCalendarDoticsRoute
+  ApiPf2ecalSessionsRoute: typeof ApiPf2ecalSessionsRouteWithChildren
+  ApiPf2ecalSettingsRoute: typeof ApiPf2ecalSettingsRouteWithChildren
   ApiPredictionsIdRoute: typeof ApiPredictionsIdRouteWithChildren
   ApiPreferencesAppearanceRoute: typeof ApiPreferencesAppearanceRoute
   ApiPreferencesConversationRoute: typeof ApiPreferencesConversationRoute
@@ -10783,6 +10925,7 @@ export interface RootRouteChildren {
   ApiNotificationsIndexRoute: typeof ApiNotificationsIndexRoute
   ApiOnboardingIndexRoute: typeof ApiOnboardingIndexRoute
   ApiPersonasIndexRoute: typeof ApiPersonasIndexRoute
+  ApiPf2ecalIndexRoute: typeof ApiPf2ecalIndexRoute
   ApiPlaylistsIndexRoute: typeof ApiPlaylistsIndexRoute
   ApiPoolsIndexRoute: typeof ApiPoolsIndexRoute
   ApiPredictionsIndexRoute: typeof ApiPredictionsIndexRoute
@@ -11157,6 +11300,13 @@ declare module '@tanstack/react-router' {
       path: '/optimization'
       fullPath: '/optimization'
       preLoaderRoute: typeof OptimizationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pf2ecal': {
+      id: '/pf2ecal'
+      path: '/pf2ecal'
+      fullPath: '/pf2ecal'
+      preLoaderRoute: typeof Pf2ecalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -13938,6 +14088,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPersonasIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/pf2ecal/': {
+      id: '/api/pf2ecal/'
+      path: '/api/pf2ecal'
+      fullPath: '/api/pf2ecal/'
+      preLoaderRoute: typeof ApiPf2ecalIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/pf2ecal/announcements': {
+      id: '/api/pf2ecal/announcements'
+      path: '/api/pf2ecal/announcements'
+      fullPath: '/api/pf2ecal/announcements'
+      preLoaderRoute: typeof ApiPf2ecalAnnouncementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/pf2ecal/ask': {
+      id: '/api/pf2ecal/ask'
+      path: '/api/pf2ecal/ask'
+      fullPath: '/api/pf2ecal/ask'
+      preLoaderRoute: typeof ApiPf2ecalAskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/pf2ecal/calendar.ics': {
+      id: '/api/pf2ecal/calendar.ics'
+      path: '/api/pf2ecal/calendar.ics'
+      fullPath: '/api/pf2ecal/calendar.ics'
+      preLoaderRoute: typeof ApiPf2ecalCalendarDoticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/pf2ecal/sessions': {
+      id: '/api/pf2ecal/sessions'
+      path: '/api/pf2ecal/sessions'
+      fullPath: '/api/pf2ecal/sessions'
+      preLoaderRoute: typeof ApiPf2ecalSessionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/pf2ecal/settings': {
+      id: '/api/pf2ecal/settings'
+      path: '/api/pf2ecal/settings'
+      fullPath: '/api/pf2ecal/settings'
+      preLoaderRoute: typeof ApiPf2ecalSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/playlists/': {
       id: '/api/playlists/'
       path: '/api/playlists'
@@ -15807,6 +15999,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPersonasAvatarFilenameRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/pf2ecal/announcements/$id': {
+      id: '/api/pf2ecal/announcements/$id'
+      path: '/$id'
+      fullPath: '/api/pf2ecal/announcements/$id'
+      preLoaderRoute: typeof ApiPf2ecalAnnouncementsIdRouteImport
+      parentRoute: typeof ApiPf2ecalAnnouncementsRoute
+    }
+    '/api/pf2ecal/sessions/$id': {
+      id: '/api/pf2ecal/sessions/$id'
+      path: '/$id'
+      fullPath: '/api/pf2ecal/sessions/$id'
+      preLoaderRoute: typeof ApiPf2ecalSessionsIdRouteImport
+      parentRoute: typeof ApiPf2ecalSessionsRoute
+    }
+    '/api/pf2ecal/settings/test-webhook': {
+      id: '/api/pf2ecal/settings/test-webhook'
+      path: '/test-webhook'
+      fullPath: '/api/pf2ecal/settings/test-webhook'
+      preLoaderRoute: typeof ApiPf2ecalSettingsTestWebhookRouteImport
+      parentRoute: typeof ApiPf2ecalSettingsRoute
+    }
     '/api/playlists/$id/': {
       id: '/api/playlists/$id/'
       path: '/api/playlists/$id'
@@ -16688,6 +16901,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/og/post/$id/story'
       preLoaderRoute: typeof ApiOgPostIdStoryRouteImport
       parentRoute: typeof ApiOgPostIdRoute
+    }
+    '/api/pf2ecal/sessions/$id/response': {
+      id: '/api/pf2ecal/sessions/$id/response'
+      path: '/response'
+      fullPath: '/api/pf2ecal/sessions/$id/response'
+      preLoaderRoute: typeof ApiPf2ecalSessionsIdResponseRouteImport
+      parentRoute: typeof ApiPf2ecalSessionsIdRoute
     }
     '/api/playlists/$id/items/': {
       id: '/api/playlists/$id/items/'
@@ -18077,6 +18297,53 @@ const ApiListsIdRouteWithChildren = ApiListsIdRoute._addFileChildren(
   ApiListsIdRouteChildren,
 )
 
+interface ApiPf2ecalAnnouncementsRouteChildren {
+  ApiPf2ecalAnnouncementsIdRoute: typeof ApiPf2ecalAnnouncementsIdRoute
+}
+
+const ApiPf2ecalAnnouncementsRouteChildren: ApiPf2ecalAnnouncementsRouteChildren =
+  {
+    ApiPf2ecalAnnouncementsIdRoute: ApiPf2ecalAnnouncementsIdRoute,
+  }
+
+const ApiPf2ecalAnnouncementsRouteWithChildren =
+  ApiPf2ecalAnnouncementsRoute._addFileChildren(
+    ApiPf2ecalAnnouncementsRouteChildren,
+  )
+
+interface ApiPf2ecalSessionsIdRouteChildren {
+  ApiPf2ecalSessionsIdResponseRoute: typeof ApiPf2ecalSessionsIdResponseRoute
+}
+
+const ApiPf2ecalSessionsIdRouteChildren: ApiPf2ecalSessionsIdRouteChildren = {
+  ApiPf2ecalSessionsIdResponseRoute: ApiPf2ecalSessionsIdResponseRoute,
+}
+
+const ApiPf2ecalSessionsIdRouteWithChildren =
+  ApiPf2ecalSessionsIdRoute._addFileChildren(ApiPf2ecalSessionsIdRouteChildren)
+
+interface ApiPf2ecalSessionsRouteChildren {
+  ApiPf2ecalSessionsIdRoute: typeof ApiPf2ecalSessionsIdRouteWithChildren
+}
+
+const ApiPf2ecalSessionsRouteChildren: ApiPf2ecalSessionsRouteChildren = {
+  ApiPf2ecalSessionsIdRoute: ApiPf2ecalSessionsIdRouteWithChildren,
+}
+
+const ApiPf2ecalSessionsRouteWithChildren =
+  ApiPf2ecalSessionsRoute._addFileChildren(ApiPf2ecalSessionsRouteChildren)
+
+interface ApiPf2ecalSettingsRouteChildren {
+  ApiPf2ecalSettingsTestWebhookRoute: typeof ApiPf2ecalSettingsTestWebhookRoute
+}
+
+const ApiPf2ecalSettingsRouteChildren: ApiPf2ecalSettingsRouteChildren = {
+  ApiPf2ecalSettingsTestWebhookRoute: ApiPf2ecalSettingsTestWebhookRoute,
+}
+
+const ApiPf2ecalSettingsRouteWithChildren =
+  ApiPf2ecalSettingsRoute._addFileChildren(ApiPf2ecalSettingsRouteChildren)
+
 interface ApiPredictionsIdRouteChildren {
   ApiPredictionsIdTradeRoute: typeof ApiPredictionsIdTradeRoute
 }
@@ -18613,6 +18880,7 @@ const rootRouteChildren: RootRouteChildren = {
   NightrailRoute: NightrailRoute,
   OfflineRoute: OfflineRoute,
   OptimizationRoute: OptimizationRoute,
+  Pf2ecalRoute: Pf2ecalRoute,
   PrivacyRoute: PrivacyRoute,
   RmhCapitalRoute: RmhCapitalRouteWithChildren,
   RmhFarmingSimRoute: RmhFarmingSimRouteWithChildren,
@@ -18802,6 +19070,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiNotificationsPreferencesRoute: ApiNotificationsPreferencesRoute,
   ApiNotificationsReadRoute: ApiNotificationsReadRoute,
   ApiOnboardingFirstWeekRoute: ApiOnboardingFirstWeekRoute,
+  ApiPf2ecalAnnouncementsRoute: ApiPf2ecalAnnouncementsRouteWithChildren,
+  ApiPf2ecalAskRoute: ApiPf2ecalAskRoute,
+  ApiPf2ecalCalendarDoticsRoute: ApiPf2ecalCalendarDoticsRoute,
+  ApiPf2ecalSessionsRoute: ApiPf2ecalSessionsRouteWithChildren,
+  ApiPf2ecalSettingsRoute: ApiPf2ecalSettingsRouteWithChildren,
   ApiPredictionsIdRoute: ApiPredictionsIdRouteWithChildren,
   ApiPreferencesAppearanceRoute: ApiPreferencesAppearanceRoute,
   ApiPreferencesConversationRoute: ApiPreferencesConversationRoute,
@@ -18926,6 +19199,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiNotificationsIndexRoute: ApiNotificationsIndexRoute,
   ApiOnboardingIndexRoute: ApiOnboardingIndexRoute,
   ApiPersonasIndexRoute: ApiPersonasIndexRoute,
+  ApiPf2ecalIndexRoute: ApiPf2ecalIndexRoute,
   ApiPlaylistsIndexRoute: ApiPlaylistsIndexRoute,
   ApiPoolsIndexRoute: ApiPoolsIndexRoute,
   ApiPredictionsIndexRoute: ApiPredictionsIndexRoute,
