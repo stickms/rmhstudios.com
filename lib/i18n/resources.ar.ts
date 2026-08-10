@@ -8,6 +8,7 @@ import arCAltair from "@/locales/ar/c-altair.json";
 import arCAwards from "@/locales/ar/c-awards.json";
 import arCBlog from "@/locales/ar/c-blog.json";
 import arCBuilds from "@/locales/ar/c-builds.json";
+import arCBumsRush from "@/locales/ar/c-bums-rush.json";
 import arCCircle from "@/locales/ar/c-circle.json";
 import arCCreator from "@/locales/ar/c-creator.json";
 import arCCursedLogic from "@/locales/ar/c-cursed-logic.json";
@@ -66,6 +67,7 @@ import arCVoidBreaker from "@/locales/ar/c-void-breaker.json";
 import arCWager from "@/locales/ar/c-wager.json";
 import arCWishlist from "@/locales/ar/c-wishlist.json";
 import arCommon from "@/locales/ar/common.json";
+import arErrors from "@/locales/ar/errors.json";
 import arFeed from "@/locales/ar/feed.json";
 import arGamesHub from "@/locales/ar/games-hub.json";
 import arGroups from "@/locales/ar/groups.json";
@@ -102,6 +104,7 @@ const arResources = {
   "c-awards": arCAwards,
   "c-blog": arCBlog,
   "c-builds": arCBuilds,
+  "c-bums-rush": arCBumsRush,
   "c-circle": arCCircle,
   "c-creator": arCCreator,
   "c-cursed-logic": arCCursedLogic,
@@ -160,6 +163,7 @@ const arResources = {
   "c-wager": arCWager,
   "c-wishlist": arCWishlist,
   "common": arCommon,
+  "errors": arErrors,
   "feed": arFeed,
   "games-hub": arGamesHub,
   "groups": arGroups,

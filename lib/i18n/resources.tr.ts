@@ -8,6 +8,7 @@ import trCAltair from "@/locales/tr/c-altair.json";
 import trCAwards from "@/locales/tr/c-awards.json";
 import trCBlog from "@/locales/tr/c-blog.json";
 import trCBuilds from "@/locales/tr/c-builds.json";
+import trCBumsRush from "@/locales/tr/c-bums-rush.json";
 import trCCircle from "@/locales/tr/c-circle.json";
 import trCCreator from "@/locales/tr/c-creator.json";
 import trCCursedLogic from "@/locales/tr/c-cursed-logic.json";
@@ -65,6 +66,7 @@ import trCVoidBreaker from "@/locales/tr/c-void-breaker.json";
 import trCWager from "@/locales/tr/c-wager.json";
 import trCWishlist from "@/locales/tr/c-wishlist.json";
 import trCommon from "@/locales/tr/common.json";
+import trErrors from "@/locales/tr/errors.json";
 import trFeed from "@/locales/tr/feed.json";
 import trGamesHub from "@/locales/tr/games-hub.json";
 import trGroups from "@/locales/tr/groups.json";
@@ -100,6 +102,7 @@ const trResources = {
   "c-awards": trCAwards,
   "c-blog": trCBlog,
   "c-builds": trCBuilds,
+  "c-bums-rush": trCBumsRush,
   "c-circle": trCCircle,
   "c-creator": trCCreator,
   "c-cursed-logic": trCCursedLogic,
@@ -157,6 +160,7 @@ const trResources = {
   "c-wager": trCWager,
   "c-wishlist": trCWishlist,
   "common": trCommon,
+  "errors": trErrors,
   "feed": trFeed,
   "games-hub": trGamesHub,
   "groups": trGroups,

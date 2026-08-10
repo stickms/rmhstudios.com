@@ -8,6 +8,7 @@ import deCAltair from "@/locales/de/c-altair.json";
 import deCAwards from "@/locales/de/c-awards.json";
 import deCBlog from "@/locales/de/c-blog.json";
 import deCBuilds from "@/locales/de/c-builds.json";
+import deCBumsRush from "@/locales/de/c-bums-rush.json";
 import deCCircle from "@/locales/de/c-circle.json";
 import deCCreator from "@/locales/de/c-creator.json";
 import deCCursedLogic from "@/locales/de/c-cursed-logic.json";
@@ -65,6 +66,7 @@ import deCVoidBreaker from "@/locales/de/c-void-breaker.json";
 import deCWager from "@/locales/de/c-wager.json";
 import deCWishlist from "@/locales/de/c-wishlist.json";
 import deCommon from "@/locales/de/common.json";
+import deErrors from "@/locales/de/errors.json";
 import deFeed from "@/locales/de/feed.json";
 import deGamesHub from "@/locales/de/games-hub.json";
 import deGroups from "@/locales/de/groups.json";
@@ -100,6 +102,7 @@ const deResources = {
   "c-awards": deCAwards,
   "c-blog": deCBlog,
   "c-builds": deCBuilds,
+  "c-bums-rush": deCBumsRush,
   "c-circle": deCCircle,
   "c-creator": deCCreator,
   "c-cursed-logic": deCCursedLogic,
@@ -157,6 +160,7 @@ const deResources = {
   "c-wager": deCWager,
   "c-wishlist": deCWishlist,
   "common": deCommon,
+  "errors": deErrors,
   "feed": deFeed,
   "games-hub": deGamesHub,
   "groups": deGroups,

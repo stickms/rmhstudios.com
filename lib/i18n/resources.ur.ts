@@ -8,6 +8,7 @@ import urCAltair from "@/locales/ur/c-altair.json";
 import urCAwards from "@/locales/ur/c-awards.json";
 import urCBlog from "@/locales/ur/c-blog.json";
 import urCBuilds from "@/locales/ur/c-builds.json";
+import urCBumsRush from "@/locales/ur/c-bums-rush.json";
 import urCCircle from "@/locales/ur/c-circle.json";
 import urCCreator from "@/locales/ur/c-creator.json";
 import urCCursedLogic from "@/locales/ur/c-cursed-logic.json";
@@ -65,6 +66,7 @@ import urCVoidBreaker from "@/locales/ur/c-void-breaker.json";
 import urCWager from "@/locales/ur/c-wager.json";
 import urCWishlist from "@/locales/ur/c-wishlist.json";
 import urCommon from "@/locales/ur/common.json";
+import urErrors from "@/locales/ur/errors.json";
 import urFeed from "@/locales/ur/feed.json";
 import urGamesHub from "@/locales/ur/games-hub.json";
 import urGroups from "@/locales/ur/groups.json";
@@ -100,6 +102,7 @@ const urResources = {
   "c-awards": urCAwards,
   "c-blog": urCBlog,
   "c-builds": urCBuilds,
+  "c-bums-rush": urCBumsRush,
   "c-circle": urCCircle,
   "c-creator": urCCreator,
   "c-cursed-logic": urCCursedLogic,
@@ -157,6 +160,7 @@ const urResources = {
   "c-wager": urCWager,
   "c-wishlist": urCWishlist,
   "common": urCommon,
+  "errors": urErrors,
   "feed": urFeed,
   "games-hub": urGamesHub,
   "groups": urGroups,

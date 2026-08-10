@@ -8,6 +8,7 @@ import hiCAltair from "@/locales/hi/c-altair.json";
 import hiCAwards from "@/locales/hi/c-awards.json";
 import hiCBlog from "@/locales/hi/c-blog.json";
 import hiCBuilds from "@/locales/hi/c-builds.json";
+import hiCBumsRush from "@/locales/hi/c-bums-rush.json";
 import hiCCircle from "@/locales/hi/c-circle.json";
 import hiCCreator from "@/locales/hi/c-creator.json";
 import hiCCursedLogic from "@/locales/hi/c-cursed-logic.json";
@@ -65,6 +66,7 @@ import hiCVoidBreaker from "@/locales/hi/c-void-breaker.json";
 import hiCWager from "@/locales/hi/c-wager.json";
 import hiCWishlist from "@/locales/hi/c-wishlist.json";
 import hiCommon from "@/locales/hi/common.json";
+import hiErrors from "@/locales/hi/errors.json";
 import hiFeed from "@/locales/hi/feed.json";
 import hiGamesHub from "@/locales/hi/games-hub.json";
 import hiGroups from "@/locales/hi/groups.json";
@@ -100,6 +102,7 @@ const hiResources = {
   "c-awards": hiCAwards,
   "c-blog": hiCBlog,
   "c-builds": hiCBuilds,
+  "c-bums-rush": hiCBumsRush,
   "c-circle": hiCCircle,
   "c-creator": hiCCreator,
   "c-cursed-logic": hiCCursedLogic,
@@ -157,6 +160,7 @@ const hiResources = {
   "c-wager": hiCWager,
   "c-wishlist": hiCWishlist,
   "common": hiCommon,
+  "errors": hiErrors,
   "feed": hiFeed,
   "games-hub": hiGamesHub,
   "groups": hiGroups,

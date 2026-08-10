@@ -8,6 +8,7 @@ import zhCAltair from "@/locales/zh/c-altair.json";
 import zhCAwards from "@/locales/zh/c-awards.json";
 import zhCBlog from "@/locales/zh/c-blog.json";
 import zhCBuilds from "@/locales/zh/c-builds.json";
+import zhCBumsRush from "@/locales/zh/c-bums-rush.json";
 import zhCCircle from "@/locales/zh/c-circle.json";
 import zhCCreator from "@/locales/zh/c-creator.json";
 import zhCCursedLogic from "@/locales/zh/c-cursed-logic.json";
@@ -66,6 +67,7 @@ import zhCVoidBreaker from "@/locales/zh/c-void-breaker.json";
 import zhCWager from "@/locales/zh/c-wager.json";
 import zhCWishlist from "@/locales/zh/c-wishlist.json";
 import zhCommon from "@/locales/zh/common.json";
+import zhErrors from "@/locales/zh/errors.json";
 import zhFeed from "@/locales/zh/feed.json";
 import zhGamesHub from "@/locales/zh/games-hub.json";
 import zhGroups from "@/locales/zh/groups.json";
@@ -102,6 +104,7 @@ const zhResources = {
   "c-awards": zhCAwards,
   "c-blog": zhCBlog,
   "c-builds": zhCBuilds,
+  "c-bums-rush": zhCBumsRush,
   "c-circle": zhCCircle,
   "c-creator": zhCCreator,
   "c-cursed-logic": zhCCursedLogic,
@@ -160,6 +163,7 @@ const zhResources = {
   "c-wager": zhCWager,
   "c-wishlist": zhCWishlist,
   "common": zhCommon,
+  "errors": zhErrors,
   "feed": zhFeed,
   "games-hub": zhGamesHub,
   "groups": zhGroups,

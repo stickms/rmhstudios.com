@@ -8,6 +8,7 @@ import ptCAltair from "@/locales/pt/c-altair.json";
 import ptCAwards from "@/locales/pt/c-awards.json";
 import ptCBlog from "@/locales/pt/c-blog.json";
 import ptCBuilds from "@/locales/pt/c-builds.json";
+import ptCBumsRush from "@/locales/pt/c-bums-rush.json";
 import ptCCircle from "@/locales/pt/c-circle.json";
 import ptCCreator from "@/locales/pt/c-creator.json";
 import ptCCursedLogic from "@/locales/pt/c-cursed-logic.json";
@@ -65,6 +66,7 @@ import ptCVoidBreaker from "@/locales/pt/c-void-breaker.json";
 import ptCWager from "@/locales/pt/c-wager.json";
 import ptCWishlist from "@/locales/pt/c-wishlist.json";
 import ptCommon from "@/locales/pt/common.json";
+import ptErrors from "@/locales/pt/errors.json";
 import ptFeed from "@/locales/pt/feed.json";
 import ptGamesHub from "@/locales/pt/games-hub.json";
 import ptGroups from "@/locales/pt/groups.json";
@@ -100,6 +102,7 @@ const ptResources = {
   "c-awards": ptCAwards,
   "c-blog": ptCBlog,
   "c-builds": ptCBuilds,
+  "c-bums-rush": ptCBumsRush,
   "c-circle": ptCCircle,
   "c-creator": ptCCreator,
   "c-cursed-logic": ptCCursedLogic,
@@ -157,6 +160,7 @@ const ptResources = {
   "c-wager": ptCWager,
   "c-wishlist": ptCWishlist,
   "common": ptCommon,
+  "errors": ptErrors,
   "feed": ptFeed,
   "games-hub": ptGamesHub,
   "groups": ptGroups,

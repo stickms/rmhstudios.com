@@ -8,6 +8,7 @@ import ruCAltair from "@/locales/ru/c-altair.json";
 import ruCAwards from "@/locales/ru/c-awards.json";
 import ruCBlog from "@/locales/ru/c-blog.json";
 import ruCBuilds from "@/locales/ru/c-builds.json";
+import ruCBumsRush from "@/locales/ru/c-bums-rush.json";
 import ruCCircle from "@/locales/ru/c-circle.json";
 import ruCCreator from "@/locales/ru/c-creator.json";
 import ruCCursedLogic from "@/locales/ru/c-cursed-logic.json";
@@ -65,6 +66,7 @@ import ruCVoidBreaker from "@/locales/ru/c-void-breaker.json";
 import ruCWager from "@/locales/ru/c-wager.json";
 import ruCWishlist from "@/locales/ru/c-wishlist.json";
 import ruCommon from "@/locales/ru/common.json";
+import ruErrors from "@/locales/ru/errors.json";
 import ruFeed from "@/locales/ru/feed.json";
 import ruGamesHub from "@/locales/ru/games-hub.json";
 import ruGroups from "@/locales/ru/groups.json";
@@ -100,6 +102,7 @@ const ruResources = {
   "c-awards": ruCAwards,
   "c-blog": ruCBlog,
   "c-builds": ruCBuilds,
+  "c-bums-rush": ruCBumsRush,
   "c-circle": ruCCircle,
   "c-creator": ruCCreator,
   "c-cursed-logic": ruCCursedLogic,
@@ -157,6 +160,7 @@ const ruResources = {
   "c-wager": ruCWager,
   "c-wishlist": ruCWishlist,
   "common": ruCommon,
+  "errors": ruErrors,
   "feed": ruFeed,
   "games-hub": ruGamesHub,
   "groups": ruGroups,

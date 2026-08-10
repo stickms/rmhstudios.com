@@ -8,6 +8,7 @@ import koCAltair from "@/locales/ko/c-altair.json";
 import koCAwards from "@/locales/ko/c-awards.json";
 import koCBlog from "@/locales/ko/c-blog.json";
 import koCBuilds from "@/locales/ko/c-builds.json";
+import koCBumsRush from "@/locales/ko/c-bums-rush.json";
 import koCCircle from "@/locales/ko/c-circle.json";
 import koCCreator from "@/locales/ko/c-creator.json";
 import koCCursedLogic from "@/locales/ko/c-cursed-logic.json";
@@ -65,6 +66,7 @@ import koCVoidBreaker from "@/locales/ko/c-void-breaker.json";
 import koCWager from "@/locales/ko/c-wager.json";
 import koCWishlist from "@/locales/ko/c-wishlist.json";
 import koCommon from "@/locales/ko/common.json";
+import koErrors from "@/locales/ko/errors.json";
 import koFeed from "@/locales/ko/feed.json";
 import koGamesHub from "@/locales/ko/games-hub.json";
 import koGroups from "@/locales/ko/groups.json";
@@ -100,6 +102,7 @@ const koResources = {
   "c-awards": koCAwards,
   "c-blog": koCBlog,
   "c-builds": koCBuilds,
+  "c-bums-rush": koCBumsRush,
   "c-circle": koCCircle,
   "c-creator": koCCreator,
   "c-cursed-logic": koCCursedLogic,
@@ -157,6 +160,7 @@ const koResources = {
   "c-wager": koCWager,
   "c-wishlist": koCWishlist,
   "common": koCommon,
+  "errors": koErrors,
   "feed": koFeed,
   "games-hub": koGamesHub,
   "groups": koGroups,
