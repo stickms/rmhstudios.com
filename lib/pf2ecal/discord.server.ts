@@ -156,8 +156,7 @@ export function buildReminderPayload(session: ReminderSession, boardUrl: string)
   const maybe = session.responses.filter((r) => r.status === 'TENTATIVE');
   const out = session.responses.filter((r) => r.status === 'UNAVAILABLE');
 
-  const nameList = (list: typeof going) =>
-    list.length ? list.map((r) => r.name).join(', ') : '—';
+  const nameList = (list: typeof going) => (list.length ? list.map((r) => r.name).join(', ') : '—');
 
   const fields: Array<{ name: string; value: string; inline?: boolean }> = [
     {
