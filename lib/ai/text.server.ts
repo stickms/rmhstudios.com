@@ -642,8 +642,12 @@ export async function askCalendarAssistant(input: {
     'or a person.\n' +
     '- If the data does not answer the question, say so plainly in one sentence and suggest ' +
     'what would ("nothing is on the board past October").\n' +
-    '- Always give times in BOTH Eastern and Central when you state one, exactly as the data ' +
-    'writes them. Never convert a time yourself — copy what the data says.\n' +
+    '- When you state a time, give it as "8:00 PM Eastern / 7:00 PM CDT" — copy those clock ' +
+    'values from the data, never convert one yourself. Say the DATE once ("Wednesday the 12th"); ' +
+    'do not repeat the full date beside every clock value, and do not restate the end time ' +
+    'unless you were asked how long it runs.\n' +
+    '- Write plain prose. No Markdown headings, no bold, no tables — this renders in a small ' +
+    'chat bubble, and a sentence beats a formatted block at that size.\n' +
     '- Be brief: 1-4 sentences, no preamble, no bullet lists unless you are listing sessions.\n' +
     '- You cannot change anything. If asked to add, edit, cancel or RSVP, say that they need ' +
     'to use the buttons on the page, and point at the right one.\n' +

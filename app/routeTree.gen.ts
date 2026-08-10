@@ -431,6 +431,7 @@ import { Route as ApiNewsRejectRouteImport } from './routes/api/news/reject'
 import { Route as ApiNotificationsIndexRouteImport } from './routes/api/notifications/index'
 import { Route as ApiNotificationsPreferencesRouteImport } from './routes/api/notifications/preferences'
 import { Route as ApiNotificationsReadRouteImport } from './routes/api/notifications/read'
+import { Route as ApiOgPf2ecalRouteImport } from './routes/api/og/pf2ecal'
 import { Route as ApiOnboardingIndexRouteImport } from './routes/api/onboarding/index'
 import { Route as ApiOnboardingFirstWeekRouteImport } from './routes/api/onboarding/first-week'
 import { Route as ApiPersonasIndexRouteImport } from './routes/api/personas/index'
@@ -3005,6 +3006,11 @@ const ApiNotificationsPreferencesRoute =
 const ApiNotificationsReadRoute = ApiNotificationsReadRouteImport.update({
   id: '/api/notifications/read',
   path: '/api/notifications/read',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOgPf2ecalRoute = ApiOgPf2ecalRouteImport.update({
+  id: '/api/og/pf2ecal',
+  path: '/api/og/pf2ecal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiOnboardingIndexRoute = ApiOnboardingIndexRouteImport.update({
@@ -5735,6 +5741,7 @@ export interface FileRoutesByFullPath {
   '/api/news/reject': typeof ApiNewsRejectRoute
   '/api/notifications/preferences': typeof ApiNotificationsPreferencesRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
+  '/api/og/pf2ecal': typeof ApiOgPf2ecalRoute
   '/api/onboarding/first-week': typeof ApiOnboardingFirstWeekRoute
   '/api/pf2ecal/announcements': typeof ApiPf2ecalAnnouncementsRouteWithChildren
   '/api/pf2ecal/ask': typeof ApiPf2ecalAskRoute
@@ -6582,6 +6589,7 @@ export interface FileRoutesByTo {
   '/api/news/reject': typeof ApiNewsRejectRoute
   '/api/notifications/preferences': typeof ApiNotificationsPreferencesRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
+  '/api/og/pf2ecal': typeof ApiOgPf2ecalRoute
   '/api/onboarding/first-week': typeof ApiOnboardingFirstWeekRoute
   '/api/pf2ecal/announcements': typeof ApiPf2ecalAnnouncementsRouteWithChildren
   '/api/pf2ecal/ask': typeof ApiPf2ecalAskRoute
@@ -7455,6 +7463,7 @@ export interface FileRoutesById {
   '/api/news/reject': typeof ApiNewsRejectRoute
   '/api/notifications/preferences': typeof ApiNotificationsPreferencesRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
+  '/api/og/pf2ecal': typeof ApiOgPf2ecalRoute
   '/api/onboarding/first-week': typeof ApiOnboardingFirstWeekRoute
   '/api/pf2ecal/announcements': typeof ApiPf2ecalAnnouncementsRouteWithChildren
   '/api/pf2ecal/ask': typeof ApiPf2ecalAskRoute
@@ -8328,6 +8337,7 @@ export interface FileRouteTypes {
     | '/api/news/reject'
     | '/api/notifications/preferences'
     | '/api/notifications/read'
+    | '/api/og/pf2ecal'
     | '/api/onboarding/first-week'
     | '/api/pf2ecal/announcements'
     | '/api/pf2ecal/ask'
@@ -9175,6 +9185,7 @@ export interface FileRouteTypes {
     | '/api/news/reject'
     | '/api/notifications/preferences'
     | '/api/notifications/read'
+    | '/api/og/pf2ecal'
     | '/api/onboarding/first-week'
     | '/api/pf2ecal/announcements'
     | '/api/pf2ecal/ask'
@@ -10047,6 +10058,7 @@ export interface FileRouteTypes {
     | '/api/news/reject'
     | '/api/notifications/preferences'
     | '/api/notifications/read'
+    | '/api/og/pf2ecal'
     | '/api/onboarding/first-week'
     | '/api/pf2ecal/announcements'
     | '/api/pf2ecal/ask'
@@ -10756,6 +10768,7 @@ export interface RootRouteChildren {
   ApiNewsRejectRoute: typeof ApiNewsRejectRoute
   ApiNotificationsPreferencesRoute: typeof ApiNotificationsPreferencesRoute
   ApiNotificationsReadRoute: typeof ApiNotificationsReadRoute
+  ApiOgPf2ecalRoute: typeof ApiOgPf2ecalRoute
   ApiOnboardingFirstWeekRoute: typeof ApiOnboardingFirstWeekRoute
   ApiPf2ecalAnnouncementsRoute: typeof ApiPf2ecalAnnouncementsRouteWithChildren
   ApiPf2ecalAskRoute: typeof ApiPf2ecalAskRoute
@@ -14005,6 +14018,13 @@ declare module '@tanstack/react-router' {
       path: '/api/notifications/read'
       fullPath: '/api/notifications/read'
       preLoaderRoute: typeof ApiNotificationsReadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/og/pf2ecal': {
+      id: '/api/og/pf2ecal'
+      path: '/api/og/pf2ecal'
+      fullPath: '/api/og/pf2ecal'
+      preLoaderRoute: typeof ApiOgPf2ecalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/onboarding/': {
@@ -19006,6 +19026,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiNewsRejectRoute: ApiNewsRejectRoute,
   ApiNotificationsPreferencesRoute: ApiNotificationsPreferencesRoute,
   ApiNotificationsReadRoute: ApiNotificationsReadRoute,
+  ApiOgPf2ecalRoute: ApiOgPf2ecalRoute,
   ApiOnboardingFirstWeekRoute: ApiOnboardingFirstWeekRoute,
   ApiPf2ecalAnnouncementsRoute: ApiPf2ecalAnnouncementsRouteWithChildren,
   ApiPf2ecalAskRoute: ApiPf2ecalAskRoute,

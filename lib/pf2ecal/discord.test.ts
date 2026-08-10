@@ -227,6 +227,8 @@ describe('buildReminderPayload', () => {
       { ...session, responses: [] },
       'https://example.test/pf2ecal',
     ) as { embeds: Array<{ fields: Array<{ name: string; value: string }> }> };
-    expect(payload.embeds[0].fields.some((f) => f.value.includes('Nobody has answered'))).toBe(true);
+    expect(payload.embeds[0].fields.some((f) => f.value.includes('Nobody has answered'))).toBe(
+      true,
+    );
   });
 });

@@ -14,9 +14,16 @@
  *      intersect. Catches a sticky header eating content, an absolutely
  *      positioned control landing on a label, a grid cell colliding with its
  *      neighbour.
- *   4. **Touch targets** — interactive elements under 44×44 CSS px, the iOS
+ *   4. **Unreachable sticky content** — a `position: sticky` element taller
+ *      than the window it is pinned within, with no scroller of its own. Its
+ *      bottom is unreachable until the page ends; nothing else here sees it,
+ *      because it overflows nothing.
+ *   5. **Premature truncation** — an ellipsis on text that would have fitted if
+ *      the element were sized correctly. Looks identical to a legitimate
+ *      ellipsis in a screenshot.
+ *   6. **Touch targets** — interactive elements under 44×44 CSS px, the iOS
  *      minimum. The one rule a hand-rolled control set most often breaks.
- *   5. **Console/page errors**, including React hydration mismatches.
+ *   7. **Console/page errors**, including React hydration mismatches.
  *
  * Usage: node scripts/pf2ecal-visual-audit.mjs [baseUrl] [outDir]
  * Exits non-zero if any hard check fails, so it can gate a change.
@@ -198,6 +205,54 @@ const AUDIT = () => {
         detail:
           `${describe(el)} [${Math.round(rect.left)}..${Math.round(rect.right)}]` +
           ` escapes ${describe(parent)} [${Math.round(pr.left)}..${Math.round(pr.right)}]`,
+      });
+    }
+  }
+
+  // 2c. Sticky content that cannot be reached.
+  //
+  // `position: sticky` pins an element's TOP. Once the element is taller than
+  // the window it is pinned within, its bottom sits below the fold forever —
+  // you can only see the end of it by scrolling the whole document past the end
+  // of the sticky CONTAINER. A sidebar that "won't scroll until you reach the
+  // bottom of the page" is exactly this, and nothing else in the audit sees it,
+  // because the element is not overflowing anything.
+  for (const { el, rect, style } of measured) {
+    if (style.position !== 'sticky') continue;
+    const overflows = style.overflowY === 'auto' || style.overflowY === 'scroll';
+    if (overflows) continue; // it can scroll itself; the content is reachable
+    const top = parseFloat(style.top);
+    const available = window.innerHeight - (Number.isFinite(top) ? top : 0);
+    if (rect.height > available + 1) {
+      problems.push({
+        kind: 'unreachable-sticky',
+        detail:
+          `${describe(el)} is ${Math.round(rect.height)}px tall in a ` +
+          `${Math.round(available)}px sticky window and does not scroll itself`,
+      });
+    }
+  }
+
+  // 2d. Text truncated with room to spare.
+  //
+  // An ellipsis is correct when the content genuinely does not fit and a defect
+  // when it does — "August 2…" in a rail with 60px of slack is the latter, and
+  // it looks identical to the former in a screenshot. Reported when the
+  // element's own box could not hold the text AND its parent had spare width,
+  // which is the signature of a sizing bug rather than a real overflow.
+  for (const { el, rect, style } of measured) {
+    if (style.textOverflow !== 'ellipsis') continue;
+    if (el.scrollWidth <= Math.ceil(rect.width) + 1) continue; // not truncating
+    const parent = el.parentElement;
+    if (!parent) continue;
+    const slack = parent.getBoundingClientRect().width - parent.scrollWidth;
+    if (slack > 8) {
+      problems.push({
+        kind: 'premature-truncation',
+        detail:
+          `${describe(el)} "${(el.textContent ?? '').trim().slice(0, 24)}" clipped at ` +
+          `${Math.round(rect.width)}px (needs ${el.scrollWidth}px) with ` +
+          `${Math.round(slack)}px spare in ${describe(parent)}`,
       });
     }
   }

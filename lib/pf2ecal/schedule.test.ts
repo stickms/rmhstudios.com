@@ -33,10 +33,7 @@ function clockIn(instant: Date, timeZone: string): string {
 
 describe('zonedTimeToUtc', () => {
   it('resolves a summer Eastern wall-clock time (EDT, UTC-4)', () => {
-    const instant = zonedTimeToUtc(
-      { year: 2026, month: 8, day: 12, hour: 20 },
-      CAMPAIGN_TIME_ZONE,
-    );
+    const instant = zonedTimeToUtc({ year: 2026, month: 8, day: 12, hour: 20 }, CAMPAIGN_TIME_ZONE);
     expect(instant.toISOString()).toBe('2026-08-13T00:00:00.000Z');
   });
 
@@ -150,9 +147,7 @@ describe('CAMPAIGN_RULE occurrences', () => {
       new Date('2026-10-20T00:00:00Z'),
       new Date('2026-11-20T00:00:00Z'),
     );
-    const offsets = new Set(
-      around.map((o) => o.startsAt.toISOString().slice(11, 16)),
-    );
+    const offsets = new Set(around.map((o) => o.startsAt.toISOString().slice(11, 16)));
     // Same local hour, two different UTC hours — which is the proof that the
     // rule is anchored to the wall clock rather than to a fixed offset.
     expect(offsets.size).toBe(2);
