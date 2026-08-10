@@ -26,6 +26,20 @@ export interface SessionResponseDTO {
   updatedAt: string;
 }
 
+/**
+ * The generated description of a session: a line for the card, a paragraph for
+ * the sheet.
+ *
+ * Nullable everywhere it appears, and that is the contract, not an oversight —
+ * there may be no AI configured, the model may have failed every retry, or the
+ * session may simply not have been asked about yet. Everything that renders it
+ * has a fallback to what the person typed.
+ */
+export interface SessionBlurbDTO {
+  short: string;
+  long: string;
+}
+
 export interface SessionDTO {
   id: string;
   title: string;
@@ -39,6 +53,8 @@ export interface SessionDTO {
   createdByName: string | null;
   updatedByName: string | null;
   responses: SessionResponseDTO[];
+  /** Cached AI description, or null until one has been generated. */
+  blurb: SessionBlurbDTO | null;
 }
 
 export interface AnnouncementDTO {
@@ -197,6 +213,17 @@ export const settingsSchema = z
 
 export const testWebhookSchema = z.object({
   webhookUrl: z.string().min(1).max(500),
+});
+
+/**
+ * The ids a client is asking for descriptions of.
+ *
+ * Capped at six because the endpoint costs money per id and the client only
+ * ever asks about the cards it has actually put on screen. The cap is enforced
+ * here so an unbounded array is a 400 rather than a bill.
+ */
+export const blurbRequestSchema = z.object({
+  ids: z.array(z.string().min(1).max(64)).min(1).max(6),
 });
 
 export const announcementSchema = z.object({

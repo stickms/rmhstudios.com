@@ -15,14 +15,13 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AnnouncementDTO } from '@/lib/pf2ecal/types';
 import { ANNOUNCEMENT_MAX } from '@/lib/pf2ecal/types';
+import { EASE } from './motion';
 
 const ITEM = {
   initial: { opacity: 0, y: -6 },
   animate: { opacity: 1, y: 0 },
   exit: { opacity: 0, height: 0, marginTop: 0, transition: { duration: 0.16 } },
 };
-
-const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 /**
  * `Aug 10, 9:18 AM` in the VIEWER's timezone.

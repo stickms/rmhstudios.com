@@ -149,6 +149,10 @@ function toSessionDTO(row: SessionRow): SessionDTO {
     title: row.title,
     notes: row.notes,
     location: row.location,
+    // Whatever was cached last time someone looked. Never generated here: a
+    // model call in the board read would put DeepSeek's latency in front of the
+    // schedule, which is the one thing on this page that has to load.
+    blurb: row.blurbShort && row.blurbLong ? { short: row.blurbShort, long: row.blurbLong } : null,
     startsAt: row.startsAt.toISOString(),
     endsAt: row.endsAt.toISOString(),
     canceledAt: row.canceledAt?.toISOString() ?? null,

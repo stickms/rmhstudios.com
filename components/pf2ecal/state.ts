@@ -21,7 +21,7 @@
  *    reintroduces exactly the race in (1).
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   useIsMutating,
@@ -35,6 +35,7 @@ import type {
   AnnouncementDTO,
   Availability,
   CalendarStateDTO,
+  SessionBlurbDTO,
   SessionDTO,
   SettingsDTO,
 } from '@/lib/pf2ecal/types';
@@ -356,7 +357,22 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ webhookUrl }),
     }),
+  blurbs: (ids: string[], signal?: AbortSignal) =>
+    request<{ blurbs: Record<string, SessionBlurbDTO>; configured: boolean }>(
+      '/api/pf2ecal/sessions/blurbs',
+      { method: 'POST', body: JSON.stringify({ ids }), signal },
+    ),
 };
+
+/** Merge generated descriptions into the cached board. */
+export function applyBlurbs(blurbs: Record<string, SessionBlurbDTO>): Patch {
+  return (state) => ({
+    ...state,
+    sessions: state.sessions.map((session) =>
+      blurbs[session.id] ? { ...session, blurb: blurbs[session.id] } : session,
+    ),
+  });
+}
 
 /** Seed the cache from the route loader so the first paint has real data. */
 export function seedBoard(queryClient: QueryClient, state: CalendarStateDTO): void {
@@ -414,6 +430,165 @@ export function useNow(): Date {
     return () => window.clearInterval(id);
   }, []);
   return now;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Rendering a long board                                                     */
+/* -------------------------------------------------------------------------- */
+
+/** How many session cards enter the DOM at a time. */
+export const AGENDA_PAGE = 8;
+
+/**
+ * Render a long list a page at a time, growing as the end of it approaches.
+ *
+ * The board holds a rolling six months, so a weekly game is ~26 upcoming
+ * sessions today and a busier table with one-offs is more. Every card carries an
+ * availability picker, a roster summary, a `layout` animation and now a
+ * generated description; mounting all of them to show the eight that fit on a
+ * phone is work nobody asked for, and it is paid on every load.
+ *
+ * The sentinel is watched with a 600px root margin, so the next page is in the
+ * DOM before the user reaches the bottom and the growth is never something they
+ * wait for. Where `IntersectionObserver` does not exist the whole list renders
+ * at once — degraded to exactly the behaviour this replaced, never to a list
+ * with items missing from it.
+ *
+ * This is only half the story: revealing a card is not the same as paying to
+ * paint it, and `.pf2e-cull` (`content-visibility: auto`) is what keeps the ones
+ * that have scrolled away from costing layout. The two are complementary — this
+ * bounds the DOM, that bounds the rendering.
+ */
+export function useProgressiveList<T>(
+  items: T[],
+  pageSize: number = AGENDA_PAGE,
+): { visible: T[]; hidden: number; sentinelRef: (node: HTMLElement | null) => void } {
+  const [limit, setLimit] = useState(pageSize);
+  const [node, setNode] = useState<HTMLElement | null>(null);
+
+  // A shorter list (someone deleted a session, or the filter changed) must pull
+  // the limit back down, or "show 8 more" would already be exhausted.
+  const total = items.length;
+  useEffect(() => {
+    setLimit((current) => Math.min(Math.max(pageSize, current), Math.max(pageSize, total)));
+  }, [pageSize, total]);
+
+  useEffect(() => {
+    if (!node) return;
+    if (typeof IntersectionObserver !== 'function') {
+      setLimit(total);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setLimit((current) => current + pageSize);
+        }
+      },
+      { rootMargin: '600px 0px' },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [node, pageSize, total]);
+
+  const visible = useMemo(() => items.slice(0, limit), [items, limit]);
+  return { visible, hidden: Math.max(0, total - visible.length), sentinelRef: setNode };
+}
+
+/**
+ * Fill in the AI descriptions for the sessions currently on screen.
+ *
+ * Only for what is rendered, and only for what is missing one: the endpoint
+ * spends money per session, so asking about a card nobody has scrolled to would
+ * be paying for something no one will read. As `useProgressiveList` reveals more
+ * cards this runs again for the new ones.
+ *
+ * ## Failing safe is the point
+ *
+ * Every outcome except success is silent. There is no toast, no error row, and
+ * nothing disappears from the page — a session with no description renders the
+ * notes someone typed, which is what it did before this feature existed. The
+ * three things that can go wrong are handled separately because they want
+ * different answers:
+ *
+ * - **No AI configured.** The response says so once and this stops asking for
+ *   the rest of the visit. Retrying a key that is not set is pure noise.
+ * - **A request failed.** Retried with exponential backoff, up to three times
+ *   across the visit, then left alone. The server retries the *model* — including
+ *   when it answers in the wrong shape — so what is left here is the network.
+ * - **The server answered without some ids.** Those sessions are remembered as
+ *   attempted so the next reveal does not ask for them again in a loop. They
+ *   will be picked up on a later page load, by which point DeepSeek may be back.
+ */
+export function useSessionBlurbs(visibleSessions: SessionDTO[], enabled: boolean): void {
+  const queryClient = useQueryClient();
+  // Refs, not state: none of this is rendered, and putting it in state would
+  // re-run the effect that writes it.
+  const attempted = useRef(new Set<string>());
+  const failures = useRef(0);
+  const stopped = useRef(false);
+  const busy = useRef(false);
+
+  const wanted = visibleSessions
+    .filter((session) => !session.blurb && !attempted.current.has(session.id))
+    .map((session) => session.id)
+    .slice(0, 6)
+    .join(',');
+
+  useEffect(() => {
+    if (!enabled || !wanted || stopped.current || busy.current) return;
+    const ids = wanted.split(',');
+    busy.current = true;
+    const controller = new AbortController();
+    let timer: number | undefined;
+
+    const run = () => {
+      api
+        .blurbs(ids, controller.signal)
+        .then((data) => {
+          for (const id of ids) attempted.current.add(id);
+          if (!data.configured) {
+            stopped.current = true;
+            return;
+          }
+          failures.current = 0;
+          if (Object.keys(data.blurbs).length === 0) return;
+          const current = queryClient.getQueryData<CalendarStateDTO>(CALENDAR_KEY);
+          if (current) {
+            queryClient.setQueryData<CalendarStateDTO>(
+              CALENDAR_KEY,
+              applyBlurbs(data.blurbs)(current),
+            );
+          }
+        })
+        .catch(() => {
+          failures.current += 1;
+          if (failures.current >= 3) {
+            stopped.current = true;
+            return;
+          }
+          // Back off and let the next render re-enter, rather than looping here
+          // — by then the visible set may have changed and the retry should be
+          // for whatever is on screen now.
+          timer = window.setTimeout(
+            () => {
+              busy.current = false;
+            },
+            1000 * 2 ** failures.current,
+          );
+        })
+        .finally(() => {
+          if (timer === undefined) busy.current = false;
+        });
+    };
+
+    run();
+    return () => {
+      controller.abort();
+      if (timer !== undefined) window.clearTimeout(timer);
+      busy.current = false;
+    };
+  }, [enabled, wanted, queryClient]);
 }
 
 /** Copy to clipboard with a toast, shared by the two subscribe controls. */

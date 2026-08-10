@@ -100,12 +100,73 @@ const SHEET_STATES = [
   },
 ];
 
+/**
+ * The appearance control, driven AGAINST the OS preference in both directions.
+ *
+ * The point is the combination the media query alone cannot produce: a browser
+ * reporting `prefers-color-scheme: dark` on a page the visitor has explicitly
+ * set to Light, and the reverse. Both halves of the theme — the `.pf2e` tokens
+ * and the document ground — have to follow the choice rather than the OS, and
+ * the `ground-mismatch` check above is what proves they moved together.
+ */
+const THEME_STATES = [
+  { name: 'theme-forced-light', scheme: 'dark', pick: 'Light' },
+  { name: 'theme-forced-dark', scheme: 'light', pick: 'Dark' },
+].map((state) => ({
+  ...state,
+  open: async (page) => {
+    await page
+      .locator('.pf2e-theme-toggle [role="radio"]')
+      .filter({ hasText: new RegExp(`^${state.pick}$`) })
+      .click();
+    // Assert the click LANDED. A no-op click leaves the page on its OS
+    // preference, where every other check still passes — which is exactly how
+    // this state managed to be green while testing nothing.
+    await page.waitForFunction(
+      (pick) =>
+        document.querySelector('.pf2e-theme-toggle [role="radio"][aria-checked="true"]')
+          ?.textContent === pick,
+      state.pick,
+      { timeout: 5000 },
+    );
+  },
+}));
+
 const SHEET_VIEWPORTS = [
   { name: 'iphone-se-320', width: 320, height: 568 },
   { name: 'iphone-13', width: 390, height: 844 },
   { name: 'ipad-mini', width: 744, height: 1133 },
   { name: 'desktop-1440', width: 1440, height: 900 },
 ];
+
+/**
+ * Wait until nothing is still moving.
+ *
+ * A fixed `waitForTimeout` after opening a sheet is a guess, and it was the
+ * wrong one: the panel arrives on a spring, and measuring it two frames early
+ * reports a 44px control as 43.99 and fails the touch-target check on a design
+ * that is correct. Retuning the spring should not be able to break the audit, so
+ * the audit stops guessing — it watches the moving element until its box is the
+ * same on two consecutive frames.
+ */
+async function settle(page) {
+  await page.waitForFunction(
+    () => {
+      const el = document.querySelector('.pf2e-sheet, .pf2e-assistant');
+      if (!el) return true;
+      const r = el.getBoundingClientRect();
+      const key = `${r.top.toFixed(1)}:${r.left.toFixed(1)}:${r.width.toFixed(1)}:${r.height.toFixed(1)}`;
+      const previous = window.__pf2eSettleKey;
+      window.__pf2eSettleKey = key;
+      return previous === key;
+    },
+    null,
+    { timeout: 8000, polling: 'raf' },
+  );
+  // One more frame so anything keyed off the same spring (a scrim's opacity, a
+  // cross-fading body) has committed too.
+  await page.waitForTimeout(120);
+}
 
 /** Sign up a throwaway account and return its cookies. */
 async function signIn(browser, base) {
@@ -346,6 +407,82 @@ const AUDIT = () => {
     }
   }
 
+  // 5. The document ground versus the page's own.
+  //
+  // This is the check for the bug that prompted it: `.pf2e` painted itself
+  // black from `prefers-color-scheme` while the site theme painted <html> and
+  // <body> Daylight white underneath. On a desktop it is invisible — the page
+  // covers the viewport — and on a phone every rubber-band overscroll flashes a
+  // white gutter above a black page. Nothing in a screenshot shows it, because
+  // the overscroll region is not in one.
+  const shell = document.querySelector('.pf2e');
+  if (shell) {
+    const pageBg = getComputedStyle(shell).backgroundColor;
+    for (const [what, node] of [
+      ['html', document.documentElement],
+      ['body', document.body],
+    ]) {
+      const bg = getComputedStyle(node).backgroundColor;
+      if (bg !== pageBg) {
+        problems.push({
+          kind: 'ground-mismatch',
+          detail: `${what} is ${bg} under a .pf2e of ${pageBg}`,
+        });
+      }
+    }
+  }
+
+  // 6. The stacked order on a phone.
+  //
+  // Below the `lg` breakpoint the rail leads the agenda, and inside it the
+  // order is announcements → next session → month → subscribe. That is a
+  // deliberate arrangement expressed entirely in `order-*` utilities, which is
+  // exactly the kind of thing that silently inverts when someone moves a block
+  // in the JSX.
+  if (vw < 1024) {
+    const rail = document.querySelector('.pf2e-rail');
+    const agenda = document.querySelector('.pf2e-shell main');
+    if (rail && agenda && rail.getBoundingClientRect().top >= agenda.getBoundingClientRect().top) {
+      problems.push({ kind: 'mobile-order', detail: 'the agenda is above the rail on a phone' });
+    }
+
+    const expected = ['announcements', 'next', 'month', 'subscribe'];
+    const tops = expected.map((name) => {
+      const el = document.querySelector(`[data-rail="${name}"]`);
+      return el ? el.getBoundingClientRect().top : null;
+    });
+    for (let i = 1; i < tops.length; i++) {
+      if (tops[i] === null || tops[i - 1] === null) continue;
+      if (tops[i] <= tops[i - 1]) {
+        problems.push({
+          kind: 'mobile-order',
+          detail: `${expected[i]} (${Math.round(tops[i])}) is not below ${expected[i - 1]} (${Math.round(
+            tops[i - 1],
+          )})`,
+        });
+      }
+    }
+  }
+
+  // 7. Culling still culls.
+  //
+  // The board's window is six months, so a weekly game materialises ~26
+  // upcoming rows; `useProgressiveList` renders eight at a time. If that ever
+  // regresses the page still LOOKS right — it just mounts every card, every
+  // availability picker and every layout animation on load, which is invisible
+  // in a screenshot and very visible on a phone. The ceiling is generous
+  // (two pages plus slack) so a taller viewport legitimately revealing a second
+  // page does not trip it.
+  if (window.innerHeight <= 950) {
+    const rendered = document.querySelectorAll('.pf2e-cull').length;
+    if (rendered > 20) {
+      problems.push({
+        kind: 'not-culled',
+        detail: `${rendered} session cards in the DOM at ${window.innerHeight}px tall`,
+      });
+    }
+  }
+
   return problems;
 };
 
@@ -380,13 +517,27 @@ async function main() {
 
     await page.goto(`${BASE}${URL_PATH}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.pf2e-shell');
+    // `.pf2e-shell` is server-rendered, so waiting for it proves only that HTML
+    // arrived. Every `prepare` below clicks something, and a click before
+    // hydration lands on a button React has not claimed yet: nothing happens and
+    // nothing complains. That is not hypothetical — it is what made the theme
+    // states pass while doing nothing at all, and in a dev build hydration here
+    // takes well over a second. The assistant launcher is the signal, because it
+    // only renders after `useIdleReady` fires, which is client React running.
+    await page.waitForSelector('.pf2e-fab', { timeout: 15_000 });
     await page.waitForTimeout(350);
     if (prepare) {
+      // A prepare step that fails is a HARD failure, not a skip. It used to
+      // print SKIP and pass, which meant a button that had stopped opening its
+      // sheet looked identical to a state that was never measured.
       try {
         await prepare(page);
-        await page.waitForTimeout(450); // let the sheet spring settle
+        await settle(page);
       } catch (cause) {
-        console.log(`${label.padEnd(40)} SKIP (${String(cause).split('\n')[0].slice(0, 60)})`);
+        const detail = String(cause).split('\n')[0].slice(0, 120);
+        console.log(`${label.padEnd(40)} FAILED TO OPEN: ${detail}`);
+        report.push({ label, problems: [{ kind: 'prepare-failed', detail }], errors: [] });
+        hardFailures += 1;
         await page.close();
         return;
       }
@@ -447,6 +598,21 @@ async function main() {
           await context.close();
         }
       }
+    }
+  }
+
+  // Pass 3 — the appearance control fighting the OS preference, at a phone and
+  // a desktop width. Signed out, because the control needs no account.
+  for (const state of THEME_STATES) {
+    for (const vp of [SHEET_VIEWPORTS[1], SHEET_VIEWPORTS[3]]) {
+      const context = await browser.newContext({
+        viewport: { width: vp.width, height: vp.height },
+        colorScheme: state.scheme,
+        timezoneId: 'America/Denver',
+        deviceScaleFactor: 1,
+      });
+      await check(context, `${state.name}-${vp.name}`, state.open);
+      await context.close();
     }
   }
 

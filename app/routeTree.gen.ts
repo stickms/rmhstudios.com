@@ -710,6 +710,7 @@ import { Route as ApiPersonasIdChatRouteImport } from './routes/api/personas/$id
 import { Route as ApiPersonasAvatarFilenameRouteImport } from './routes/api/personas/avatar/$filename'
 import { Route as ApiPf2ecalAnnouncementsIdRouteImport } from './routes/api/pf2ecal/announcements.$id'
 import { Route as ApiPf2ecalSessionsIdRouteImport } from './routes/api/pf2ecal/sessions.$id'
+import { Route as ApiPf2ecalSessionsBlurbsRouteImport } from './routes/api/pf2ecal/sessions.blurbs'
 import { Route as ApiPf2ecalSettingsTestWebhookRouteImport } from './routes/api/pf2ecal/settings.test-webhook'
 import { Route as ApiPlaylistsIdIndexRouteImport } from './routes/api/playlists/$id/index'
 import { Route as ApiPoolsIdIndexRouteImport } from './routes/api/pools/$id/index'
@@ -4460,6 +4461,12 @@ const ApiPf2ecalSessionsIdRoute = ApiPf2ecalSessionsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiPf2ecalSessionsRoute,
 } as any)
+const ApiPf2ecalSessionsBlurbsRoute =
+  ApiPf2ecalSessionsBlurbsRouteImport.update({
+    id: '/blurbs',
+    path: '/blurbs',
+    getParentRoute: () => ApiPf2ecalSessionsRoute,
+  } as any)
 const ApiPf2ecalSettingsTestWebhookRoute =
   ApiPf2ecalSettingsTestWebhookRouteImport.update({
     id: '/test-webhook',
@@ -6046,6 +6053,7 @@ export interface FileRoutesByFullPath {
   '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
   '/api/pf2ecal/announcements/$id': typeof ApiPf2ecalAnnouncementsIdRoute
   '/api/pf2ecal/sessions/$id': typeof ApiPf2ecalSessionsIdRouteWithChildren
+  '/api/pf2ecal/sessions/blurbs': typeof ApiPf2ecalSessionsBlurbsRoute
   '/api/pf2ecal/settings/test-webhook': typeof ApiPf2ecalSettingsTestWebhookRoute
   '/api/pools/$id/contribute': typeof ApiPoolsIdContributeRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
@@ -6894,6 +6902,7 @@ export interface FileRoutesByTo {
   '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
   '/api/pf2ecal/announcements/$id': typeof ApiPf2ecalAnnouncementsIdRoute
   '/api/pf2ecal/sessions/$id': typeof ApiPf2ecalSessionsIdRouteWithChildren
+  '/api/pf2ecal/sessions/blurbs': typeof ApiPf2ecalSessionsBlurbsRoute
   '/api/pf2ecal/settings/test-webhook': typeof ApiPf2ecalSettingsTestWebhookRoute
   '/api/pools/$id/contribute': typeof ApiPoolsIdContributeRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
@@ -7768,6 +7777,7 @@ export interface FileRoutesById {
   '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
   '/api/pf2ecal/announcements/$id': typeof ApiPf2ecalAnnouncementsIdRoute
   '/api/pf2ecal/sessions/$id': typeof ApiPf2ecalSessionsIdRouteWithChildren
+  '/api/pf2ecal/sessions/blurbs': typeof ApiPf2ecalSessionsBlurbsRoute
   '/api/pf2ecal/settings/test-webhook': typeof ApiPf2ecalSettingsTestWebhookRoute
   '/api/pools/$id/contribute': typeof ApiPoolsIdContributeRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
@@ -8642,6 +8652,7 @@ export interface FileRouteTypes {
     | '/api/personas/avatar/$filename'
     | '/api/pf2ecal/announcements/$id'
     | '/api/pf2ecal/sessions/$id'
+    | '/api/pf2ecal/sessions/blurbs'
     | '/api/pf2ecal/settings/test-webhook'
     | '/api/pools/$id/contribute'
     | '/api/predictions/$id/trade'
@@ -9490,6 +9501,7 @@ export interface FileRouteTypes {
     | '/api/personas/avatar/$filename'
     | '/api/pf2ecal/announcements/$id'
     | '/api/pf2ecal/sessions/$id'
+    | '/api/pf2ecal/sessions/blurbs'
     | '/api/pf2ecal/settings/test-webhook'
     | '/api/pools/$id/contribute'
     | '/api/predictions/$id/trade'
@@ -10363,6 +10375,7 @@ export interface FileRouteTypes {
     | '/api/personas/avatar/$filename'
     | '/api/pf2ecal/announcements/$id'
     | '/api/pf2ecal/sessions/$id'
+    | '/api/pf2ecal/sessions/blurbs'
     | '/api/pf2ecal/settings/test-webhook'
     | '/api/pools/$id/contribute'
     | '/api/predictions/$id/trade'
@@ -15973,6 +15986,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPf2ecalSessionsIdRouteImport
       parentRoute: typeof ApiPf2ecalSessionsRoute
     }
+    '/api/pf2ecal/sessions/blurbs': {
+      id: '/api/pf2ecal/sessions/blurbs'
+      path: '/blurbs'
+      fullPath: '/api/pf2ecal/sessions/blurbs'
+      preLoaderRoute: typeof ApiPf2ecalSessionsBlurbsRouteImport
+      parentRoute: typeof ApiPf2ecalSessionsRoute
+    }
     '/api/pf2ecal/settings/test-webhook': {
       id: '/api/pf2ecal/settings/test-webhook'
       path: '/test-webhook'
@@ -18284,10 +18304,12 @@ const ApiPf2ecalSessionsIdRouteWithChildren =
 
 interface ApiPf2ecalSessionsRouteChildren {
   ApiPf2ecalSessionsIdRoute: typeof ApiPf2ecalSessionsIdRouteWithChildren
+  ApiPf2ecalSessionsBlurbsRoute: typeof ApiPf2ecalSessionsBlurbsRoute
 }
 
 const ApiPf2ecalSessionsRouteChildren: ApiPf2ecalSessionsRouteChildren = {
   ApiPf2ecalSessionsIdRoute: ApiPf2ecalSessionsIdRouteWithChildren,
+  ApiPf2ecalSessionsBlurbsRoute: ApiPf2ecalSessionsBlurbsRoute,
 }
 
 const ApiPf2ecalSessionsRouteWithChildren =

@@ -19,8 +19,7 @@ import { AvailabilityPicker, ResponseRoster } from './Availability';
 import { Sheet } from './Sheet';
 import { SessionForm, formFromSession, type SessionFormValue } from './SessionForm';
 import { asExternalUrl, describeSessionTime, formatFullDate } from './format';
-
-const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
+import { EASE } from './motion';
 
 interface SessionSheetProps {
   session: Session | null;
@@ -209,6 +208,23 @@ export function SessionSheet({
                   <span className="min-w-0 break-words">{session.location}</span>
                 )}
               </p>
+            )}
+
+            {/* The long form of what the card showed one line of. It sits ABOVE
+                the notes rather than replacing them: this is a summary written
+                from the notes, and the sheet is exactly where someone has come
+                to read the original. Labelled so nobody mistakes a generated
+                paragraph for something a person at the table wrote. */}
+            {session.blurb && (
+              <div>
+                <p className="pf2e-mono-label mb-1.5">
+                  {t('about-this-session', { defaultValue: 'About this session' })}
+                </p>
+                <p className="pf2e-body break-words">{session.blurb.long}</p>
+                <p className="pf2e-caption mt-1.5">
+                  {t('blurb-generated', { defaultValue: 'Written by AI from the notes below.' })}
+                </p>
+              </div>
             )}
 
             {session.notes && (

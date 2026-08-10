@@ -8397,6 +8397,20 @@ model Pf2eSession {
   /// when it parses as an http(s) URL.
   location String   @default("") @db.VarChar(300)
 
+  /// AI-written descriptions of this session, cached on the row.
+  ///
+  /// `blurbShort` is the line under the card, `blurbLong` the paragraph in the
+  /// sheet. Both are derived from what a person typed — title, notes, location,
+  /// when it runs — so `blurbKey` is a hash of exactly those inputs and a
+  /// mismatch is what triggers a rewrite. Everything is null until the first
+  /// reader asks for it: generating during materialisation would put a model
+  /// call in the path of every page load, and the page has to be readable with
+  /// no AI configured at all.
+  blurbShort String?   @db.VarChar(240)
+  blurbLong  String?   @db.VarChar(2000)
+  blurbKey   String?   @db.VarChar(64)
+  blurbAt    DateTime?
+
   /// Set instead of deleting, so the row keeps its responses and the .ics feed
   /// can publish STATUS:CANCELLED to calendars that already imported it.
   /// Deleting outright would silently leave the event on every subscriber's
