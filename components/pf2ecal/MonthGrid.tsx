@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next';
 import type { Session } from '@/lib/pf2ecal/types';
 import { zonedDateKey } from '@/lib/pf2ecal/zoned-time';
 import { formatMonthLabel } from './format';
+import { TRANSITION_FAST } from './motion';
 
 /** Weekday initials in the viewer's locale, starting Sunday. */
 function useWeekdayInitials(): string[] {
@@ -148,7 +149,7 @@ export function MonthGrid({
         className="pf2e-month"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+        transition={TRANSITION_FAST}
       >
         {cells.map((cell) => {
           const daySessions = byDay.get(cell.key) ?? [];

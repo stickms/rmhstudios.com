@@ -12,15 +12,32 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { CalendarX2, ExternalLink, MapPin, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import type { Availability, Session } from '@/lib/pf2ecal/types';
 import { RESPONSE_NOTE_MAX } from '@/lib/pf2ecal/types';
 import { AvailabilityPicker, ResponseRoster } from './Availability';
 import { Sheet } from './Sheet';
 import { SessionForm, formFromSession, type SessionFormValue } from './SessionForm';
+import { RecapPanel } from './RecapPanel';
 import { asExternalUrl, describeSessionTime, formatFullDate } from './format';
+import { EASE } from './motion';
 
-const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
+/**
+ * The offsets the quick-move buttons apply, to BOTH ends so the session keeps
+ * its length. An hour each way covers "we're starting late"; a day and a week
+ * cover the two ways a night actually slips.
+ *
+ * The labels are literal `t()` calls behind a function rather than strings in
+ * the table, because `i18next-parser` reads source: `t(shift.key)` extracts
+ * nothing and every locale would silently serve English forever.
+ */
+const SHIFTS: { minutes: number; label: (t: TFunction) => string }[] = [
+  { minutes: -60, label: (t) => t('shift-earlier-hour', { defaultValue: 'An hour earlier' }) },
+  { minutes: 60, label: (t) => t('shift-later-hour', { defaultValue: 'An hour later' }) },
+  { minutes: 24 * 60, label: (t) => t('shift-next-day', { defaultValue: 'Next day' }) },
+  { minutes: 7 * 24 * 60, label: (t) => t('shift-next-week', { defaultValue: 'Next week' }) },
+];
 
 interface SessionSheetProps {
   session: Session | null;
@@ -33,6 +50,10 @@ interface SessionSheetProps {
   onSave: (session: Session, payload: Record<string, unknown>) => void;
   onSetCanceled: (session: Session, canceled: boolean) => void;
   onDelete: (session: Session) => void;
+  /** Move both ends by N minutes, keeping the session's length. */
+  onShift: (session: Session, minutes: number) => void;
+  /** Lets the page refresh the board once someone adds to the write-up. */
+  onRecapAdded: () => void;
 }
 
 export function SessionSheet({
@@ -46,6 +67,8 @@ export function SessionSheet({
   onSave,
   onSetCanceled,
   onDelete,
+  onShift,
+  onRecapAdded,
 }: SessionSheetProps) {
   const { t } = useTranslation('r-pf2ecal');
   const [editing, setEditing] = useState(false);
@@ -211,12 +234,74 @@ export function SessionSheet({
               </p>
             )}
 
+            {/* The long form of what the card showed one line of. It sits ABOVE
+                the notes rather than replacing them: this is a summary written
+                from the notes, and the sheet is exactly where someone has come
+                to read the original. Labelled so nobody mistakes a generated
+                paragraph for something a person at the table wrote. */}
+            {session.blurb && (
+              <div>
+                <p className="pf2e-mono-label mb-1.5">
+                  {t('about-this-session', { defaultValue: 'About this session' })}
+                </p>
+                <p className="pf2e-body break-words">{session.blurb.long}</p>
+                <p className="pf2e-caption mt-1.5">
+                  {t('blurb-generated', { defaultValue: 'Written by AI from the notes below.' })}
+                </p>
+              </div>
+            )}
+
             {session.notes && (
               <div>
                 <p className="pf2e-mono-label mb-1.5">{t('notes', { defaultValue: 'Notes' })}</p>
                 <p className="pf2e-body whitespace-pre-wrap break-words">{session.notes}</p>
               </div>
             )}
+
+            {/* Rescheduling without opening the editor.
+
+                Moving a night by a day or a week is by far the most common
+                edit, and doing it through the form means reading two
+                `datetime-local` fields, working out the new date in your head
+                and typing it twice without breaking the duration. These buttons
+                shift BOTH ends by the same offset, so the session keeps its
+                length, and each one posts an announcement the way any other
+                move does. The form is still there for everything else. */}
+            {viewerId && !canceled && (
+              <div>
+                <p className="pf2e-mono-label mb-2">
+                  {t('reschedule', { defaultValue: 'Move it' })}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {SHIFTS.map((shift) => (
+                    <button
+                      key={shift.minutes}
+                      type="button"
+                      className="pf2e-btn pf2e-btn-secondary pf2e-btn-sm"
+                      disabled={submitting}
+                      onClick={() => onShift(session, shift.minutes)}
+                    >
+                      {shift.label(t)}
+                    </button>
+                  ))}
+                </div>
+                <p className="pf2e-caption mt-2">
+                  {t('reschedule-note', {
+                    defaultValue:
+                      'Keeps the same length and tells the table. Use Edit for anything else.',
+                  })}
+                </p>
+              </div>
+            )}
+
+            <RecapPanel
+              sessionId={session.id}
+              isPast={session.endsAt.getTime() < Date.now()}
+              canEdit={Boolean(viewerId)}
+              knownSummary={session.recap.summary}
+              knownCount={session.recap.count}
+              onAdded={onRecapAdded}
+            />
 
             {viewerId && !canceled && (
               <div>

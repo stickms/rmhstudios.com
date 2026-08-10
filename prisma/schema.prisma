@@ -415,6 +415,7 @@ model User {
   pf2eSessionsEdited  Pf2eSession[]         @relation("Pf2eSessionEditor")
   pf2eResponses       Pf2eSessionResponse[]
   pf2eAnnouncements   Pf2eAnnouncement[]    @relation("Pf2eAnnouncementAuthor")
+  pf2eRecaps          Pf2eRecap[]           @relation("Pf2eRecapAuthor")
   pf2eSettingsEdits   Pf2eSettings[]        @relation("Pf2eSettingsEditor")
 
   @@index([isBot])
@@ -8397,6 +8398,28 @@ model Pf2eSession {
   /// when it parses as an http(s) URL.
   location String   @default("") @db.VarChar(300)
 
+  /// AI-written descriptions of this session, cached on the row.
+  ///
+  /// `blurbShort` is the line under the card, `blurbLong` the paragraph in the
+  /// sheet. Both are derived from what a person typed — title, notes, location,
+  /// when it runs — so `blurbKey` is a hash of exactly those inputs and a
+  /// mismatch is what triggers a rewrite. Everything is null until the first
+  /// reader asks for it: generating during materialisation would put a model
+  /// call in the path of every page load, and the page has to be readable with
+  /// no AI configured at all.
+  blurbShort String?   @db.VarChar(240)
+  blurbLong  String?   @db.VarChar(2000)
+  blurbKey   String?   @db.VarChar(64)
+  blurbAt    DateTime?
+
+  /// AI summary of what happened, written from the `recaps` below once the
+  /// session is over. Keyed like the blurbs: `recapKey` hashes the entries it
+  /// was written from, so adding one more account of the night rewrites it and
+  /// nothing else does.
+  recapSummary String?   @db.VarChar(2000)
+  recapKey     String?   @db.VarChar(64)
+  recapAt      DateTime?
+
   /// Set instead of deleting, so the row keeps its responses and the .ics feed
   /// can publish STATUS:CANCELLED to calendars that already imported it.
   /// Deleting outright would silently leave the event on every subscriber's
@@ -8422,13 +8445,39 @@ model Pf2eSession {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  createdBy User?                 @relation("Pf2eSessionAuthor", fields: [createdById], references: [id], onDelete: SetNull)
-  updatedBy User?                 @relation("Pf2eSessionEditor", fields: [updatedById], references: [id], onDelete: SetNull)
-  responses Pf2eSessionResponse[]
+  createdBy     User?                 @relation("Pf2eSessionAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy     User?                 @relation("Pf2eSessionEditor", fields: [updatedById], references: [id], onDelete: SetNull)
+  responses     Pf2eSessionResponse[]
+  recaps        Pf2eRecap[]
+  announcements Pf2eAnnouncement[]
 
   /// The one read the page makes: a window of sessions in chronological order.
   @@index([startsAt])
   @@map("pf2e_session")
+}
+
+/// One person's account of what happened in a session.
+///
+/// Several per session on purpose rather than one shared text field: the GM
+/// remembers the plot and a player remembers that their character nearly died,
+/// and a single field means whoever types second overwrites the first. They are
+/// also the raw material for `Pf2eSession.recapSummary` and for the assistant's
+/// grounding, both of which are better with more than one account of the night.
+model Pf2eRecap {
+  id        String @id @default(cuid())
+  sessionId String
+  authorId  String?
+
+  body String @db.VarChar(4000)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  session Pf2eSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  author  User?       @relation("Pf2eRecapAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([sessionId, createdAt])
+  @@map("pf2e_recap")
 }
 
 model Pf2eSessionResponse {
@@ -8456,13 +8505,37 @@ model Pf2eAnnouncement {
   /// Pinned announcements sort above the rest and survive the "recent" cutoff.
   pinned Boolean @default(false)
 
+  /// The session this note is about, when it is about one.
+  ///
+  /// Set automatically for a note the board writes after a change, and inferred
+  /// from the text for one a person writes ("no game next Friday"). It is what
+  /// makes `expiresAt` meaningful — the note is relevant until that night has
+  /// been and gone, and then it is clutter.
+  sessionId String?
+
+  /// When this note stops being shown. Null means it stays until someone
+  /// removes it, which is the right default for "read the recap first" and the
+  /// wrong one for "we're starting an hour late on Wednesday".
+  ///
+  /// Pinned notes ignore it: pinning is an explicit "keep this up", and having
+  /// a pin silently expire would be the more surprising of the two behaviours.
+  expiresAt DateTime?
+
+  /// True when the board wrote this itself, because a session was moved or
+  /// called off and whoever did it left no note. Surfaced in the UI so nobody
+  /// mistakes it for a person speaking.
+  automated Boolean @default(false)
+
   authorId  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  author User? @relation("Pf2eAnnouncementAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  author  User?        @relation("Pf2eAnnouncementAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  session Pf2eSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
 
   @@index([pinned, createdAt(sort: Desc)])
+  /// The board read filters on this every time; without it that is a scan.
+  @@index([expiresAt])
   @@map("pf2e_announcement")
 }
 

@@ -127,9 +127,7 @@ describe('RichText — safety', () => {
     // matched that sentence — the same trap the design gate hits when a comment
     // names the thing it forbids.
     const source = readFileSync(new URL('./rich-text.tsx', import.meta.url), 'utf8');
-    const code = source
-      .replace(/\/\*[\s\S]*?\*\//g, '')
-      .replace(/^\s*\/\/.*$/gm, '');
+    const code = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
     expect(code).not.toContain('dangerouslySetInnerHTML');
     expect(code).not.toContain('innerHTML');
     // Guards the stripper itself: if it ever ate the whole file, the two

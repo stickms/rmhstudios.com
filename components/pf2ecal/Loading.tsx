@@ -24,8 +24,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
-const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
+import { EASE } from './motion';
 
 export interface ProgressiveStep {
   /** Milliseconds after start at which this message takes over. */

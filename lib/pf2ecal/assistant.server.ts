@@ -1,13 +1,26 @@
 /**
  * The calendar's question-answering assistant.
  *
- * It answers from **the board and nothing else**: the sessions in the window,
- * their responses, the announcements, and today's date. That is deliberate.
+ * It answers two kinds of question and the difference matters.
+ *
+ * **About the table** — when they play, who has replied, what was announced,
+ * what happened last time — it answers from **this context and nothing else**.
  * A model asked "when is the next game" with no grounding will happily invent a
  * Tuesday, and the one place a wrong answer costs something real is a page whose
  * whole job is telling five people when to show up. So the context is built
  * here, the prompt says to use only it, and a question it cannot answer from
  * that gets "I don't know" rather than a guess.
+ *
+ * **About Pathfinder itself** — rules, feats, character building, Golarion — it
+ * answers from what the model knows, because there is no rules text here and
+ * pretending otherwise would be worse. The prompt's job there is to keep the
+ * two sourced separately (a remembered feat is never "what your table decided")
+ * and to make hedging the default: "I think that is a level 4 feat, worth
+ * checking on Archives of Nethys" beats a confident invention every time.
+ *
+ * The session write-ups are part of the grounding, which is what makes "what
+ * did we do last time" answerable at all. They are indented under the session
+ * they belong to so one night's events cannot be attributed to another.
  *
  * Prompt-injection posture matches the rest of `lib/ai/`: session titles, notes
  * and announcements are user-authored text, so they are labelled as data and
@@ -67,9 +80,15 @@ async function buildContext(now: Date): Promise<string> {
         startsAt: true,
         endsAt: true,
         canceledAt: true,
+        recapSummary: true,
         responses: {
           select: { status: true, note: true, user: { select: personSelect } },
         },
+        // The three most recent accounts of the night, capped hard. The summary
+        // above is usually enough and is what the model should lean on; these
+        // are here because "who did Kelda talk to" is answerable from the raw
+        // notes and not from a four-sentence précis of them.
+        recaps: { orderBy: { createdAt: 'asc' }, take: 3, select: { body: true } },
       },
     }),
     prisma.pf2eAnnouncement.findMany({
@@ -105,6 +124,15 @@ async function buildContext(now: Date): Promise<string> {
         `${session.notes ? ` — notes: ${session.notes.slice(0, 400)}` : ''}` +
         ` — replies: ${replies}`,
     );
+    // Indented under their session so the model cannot attribute one night's
+    // events to another — the single most likely way this grounding goes wrong
+    // once there is more than one write-up in the window.
+    if (session.recapSummary) {
+      lines.push(`    what happened: ${session.recapSummary.slice(0, 800)}`);
+    }
+    for (const recap of session.recaps) {
+      lines.push(`    account: ${recap.body.slice(0, 600)}`);
+    }
   }
 
   lines.push('');
