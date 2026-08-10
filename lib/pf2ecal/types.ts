@@ -26,6 +26,20 @@ export interface SessionResponseDTO {
   updatedAt: string;
 }
 
+/**
+ * The generated description of a session: a line for the card, a paragraph for
+ * the sheet.
+ *
+ * Nullable everywhere it appears, and that is the contract, not an oversight —
+ * there may be no AI configured, the model may have failed every retry, or the
+ * session may simply not have been asked about yet. Everything that renders it
+ * has a fallback to what the person typed.
+ */
+export interface SessionBlurbDTO {
+  short: string;
+  long: string;
+}
+
 export interface SessionDTO {
   id: string;
   title: string;
@@ -39,6 +53,10 @@ export interface SessionDTO {
   createdByName: string | null;
   updatedByName: string | null;
   responses: SessionResponseDTO[];
+  /** Cached AI description, or null until one has been generated. */
+  blurb: SessionBlurbDTO | null;
+  /** The write-up: an AI summary and how many people contributed to it. */
+  recap: RecapSummaryDTO;
 }
 
 export interface AnnouncementDTO {
@@ -49,6 +67,34 @@ export interface AnnouncementDTO {
   authorImage: string | null;
   createdAt: string;
   updatedAt: string;
+  /** The session this note is about, when it is about one. */
+  sessionId: string | null;
+  /** When it stops being shown; null means it stays until removed. */
+  expiresAt: string | null;
+  /** True when the board wrote it after a change nobody explained. */
+  automated: boolean;
+}
+
+/** One person's account of a session, as rendered in the recap list. */
+export interface RecapDTO {
+  id: string;
+  body: string;
+  authorId: string | null;
+  authorName: string | null;
+  authorImage: string | null;
+  createdAt: string;
+}
+
+/**
+ * What the board knows about a session's write-up without shipping the whole
+ * thing: the AI summary and how many accounts it was written from. The entries
+ * themselves load when the sheet opens — most sessions are never opened, and a
+ * board of 30 sessions would otherwise carry every word anyone wrote about any
+ * of them.
+ */
+export interface RecapSummaryDTO {
+  summary: string | null;
+  count: number;
 }
 
 /** Board settings as the client sees them — the webhook is masked, never raw. */
@@ -168,6 +214,17 @@ export const updateSessionSchema = z
     startsAt: isoInstant.optional(),
     endsAt: isoInstant.optional(),
     canceled: z.boolean().optional(),
+    /**
+     * What to tell the table, when the editor wants to say it themselves.
+     *
+     * Tri-state, and the states are the point: an empty string means "post
+     * nothing", a non-empty string is posted as their own announcement, and
+     * ABSENT means "you write it" — the board posts the change itself. Absent
+     * is the default because the common case is someone dragging a session an
+     * hour later and closing the sheet, and a schedule change nobody hears
+     * about is the failure this whole feature exists to prevent.
+     */
+    announcement: z.string().trim().max(ANNOUNCEMENT_MAX).optional(),
   })
   .refine((v) => Object.keys(v).length > 0, { message: 'Nothing to change.' });
 
@@ -197,6 +254,38 @@ export const settingsSchema = z
 
 export const testWebhookSchema = z.object({
   webhookUrl: z.string().min(1).max(500),
+});
+
+/**
+ * The ids a client is asking for descriptions of.
+ *
+ * Capped at six because the endpoint costs money per id and the client only
+ * ever asks about the cards it has actually put on screen. The cap is enforced
+ * here so an unbounded array is a 400 rather than a bill.
+ */
+export const blurbRequestSchema = z.object({
+  ids: z.array(z.string().min(1).max(64)).min(1).max(6),
+});
+
+/** One person's account of a session. Same ceiling as the session's own notes. */
+export const RECAP_MAX = 4000;
+
+export const recapSchema = z.object({
+  body: z.string().trim().min(1).max(RECAP_MAX),
+});
+
+/**
+ * A page of sessions older than the board's own window.
+ *
+ * `before` is a cursor, not a filter: the archive is read backwards from the
+ * oldest session already on screen, so paging cannot skip or repeat a row when
+ * someone adds a session mid-scroll.
+ */
+export const archiveQuerySchema = z.object({
+  before: z
+    .string()
+    .refine((value) => !Number.isNaN(Date.parse(value)), { message: 'Invalid date' }),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
 });
 
 export const announcementSchema = z.object({

@@ -30,8 +30,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StatusLine, useAssistantStatus } from './Loading';
 import { RichText } from './rich-text';
-
-const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
+import { EASE, SPRING_PANEL, SPRING_PRESS } from './motion';
 
 interface Turn {
   role: 'user' | 'assistant';
@@ -153,7 +152,7 @@ export function Assistant() {
             : t('assistant-open', { defaultValue: 'Ask about the schedule' })
         }
         whileTap={{ scale: 0.94 }}
-        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+        transition={SPRING_PRESS}
       >
         <AnimatePresence mode="wait" initial={false}>
           {open ? (
@@ -192,7 +191,7 @@ export function Assistant() {
             initial={{ opacity: 0, y: 12, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.98 }}
-            transition={{ type: 'spring', stiffness: 420, damping: 36 }}
+            transition={SPRING_PANEL}
             onKeyDown={(event) => {
               if (event.key === 'Escape') setOpen(false);
             }}

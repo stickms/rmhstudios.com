@@ -24,6 +24,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { SPRING_PANEL, TRANSITION_FAST } from './motion';
 
 /**
  * Motion for the sheet. Two shapes, because the sheet has two forms: the phone
@@ -44,8 +45,6 @@ const SHEET = {
 };
 
 /** A spring, not a duration: the sheet is a surface being thrown, not a fade. */
-const SHEET_SPRING = { type: 'spring' as const, stiffness: 420, damping: 40, mass: 0.9 };
-const SCRIM_FADE = { duration: 0.18, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] };
 
 interface SheetProps {
   open: boolean;
@@ -75,7 +74,7 @@ export function Sheet({ open, onOpenChange, title, subtitle, headerAction, child
                   initial="initial"
                   animate="animate"
                   exit="exit"
-                  transition={SCRIM_FADE}
+                  transition={TRANSITION_FAST}
                 />
               </DialogPrimitive.Overlay>
 
@@ -87,7 +86,7 @@ export function Sheet({ open, onOpenChange, title, subtitle, headerAction, child
                     initial="initial"
                     animate="animate"
                     exit="exit"
-                    transition={SHEET_SPRING}
+                    transition={SPRING_PANEL}
                   >
                     <div className="pf2e-grabber" aria-hidden />
 

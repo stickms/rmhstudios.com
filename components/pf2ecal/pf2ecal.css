@@ -15,10 +15,16 @@
  * both the look that was asked for and the reason the states survive greyscale
  * printing, colour-vision deficiency and a phone in sunlight.
  *
- * Light and dark follow `prefers-color-scheme`. The site's own theme classes
- * are ignored on purpose: the page paints an opaque background over the whole
- * viewport, so a Daylight or Graphite document underneath is never visible, and
- * a viewer's OS preference is the only signal that means anything here.
+ * Light and dark follow `prefers-color-scheme` by default, overridable per
+ * visitor by the Auto/Light/Dark control in the page header — see the dark-mode
+ * note above the token overrides below for how the two are expressed. The
+ * site's own theme classes are ignored on purpose: the page paints an opaque
+ * background over the whole viewport, so a Daylight or Graphite document
+ * underneath is never visible, and the viewer's own choice is the only signal
+ * that means anything here. `/pf2ecal` is in `THEME_EXCLUDED_ROUTES` and
+ * `APP_ROUTE_THEME_BG` so <html> is painted from that same choice rather than
+ * from the site theme; without it the document stayed Daylight white under a
+ * dark page, which a phone reveals on every overscroll.
  */
 
 .pf2e {
@@ -89,11 +95,16 @@
   --pf2e-r-lg: 13px;
   --pf2e-r-xl: 20px;
 
-  /* One curve for the page. This is close to UIKit's default ease-out, so CSS
-     transitions and the framer-motion springs read as one system. */
-  --pf2e-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+  /* One curve for the page, and it is the SAME one the JavaScript uses:
+     `EASE` in `components/pf2ecal/motion.ts` is this cubic-bezier as an array.
+     They were two different curves until the pass that consolidated the five
+     copies of the easing constant, which meant a CSS transition and a
+     framer-motion animation on adjacent elements decelerated differently — the
+     kind of mismatch nobody can name and everybody can feel. Change both. */
+  --pf2e-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --pf2e-fast: 130ms;
   --pf2e-base: 220ms;
+  --pf2e-slow: 300ms;
 
   /* The grouped-list inset. iOS uses 16pt from the screen edge and the row
      separator starts after the row's leading padding, not at the card edge —
@@ -113,11 +124,31 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* ── Dark ──────────────────────────────────────────────────────────────────
+   Every dark rule on this page is written TWICE, and the pair is the whole
+   mechanism, so it is worth reading once:
+
+     @media (prefers-color-scheme: dark) → html:not([data-app-dark='0'])
+       The OS preference, which is the default (mode "auto") and the only thing
+       that works with JavaScript off. The `:not()` is what an explicit LIGHT
+       choice switches it back off with.
+
+     html[data-app-dark='1']
+       An explicit DARK choice. `data-app-dark` is set on <html> before first
+       paint by the theme script in `app/routes/__root.tsx` and kept in step
+       afterwards by `paintDocumentGround` — see `components/pf2ecal/theme.ts`.
+
+   Equal specificity, so the explicit block goes second and wins. CSS has no way
+   to say "this selector OR that media query" for one declaration block, and the
+   alternatives — `light-dark()` everywhere, or dropping the media query and
+   letting the script be the only source — each trade a real property away, so
+   the duplication is the deliberate choice. **Keep the two copies identical.**
+
+   Dark inverts the relationship: the GROUPED BACKGROUND goes true black and the
+   rows lift to systemGrey6-dark (#1c1c1e). Same idea as light, same trap if
+   reversed. */
 @media (prefers-color-scheme: dark) {
-  .pf2e {
-    /* Dark mode inverts the relationship: the GROUPED BACKGROUND goes true
-       black and the rows lift to systemGrey6-dark (#1c1c1e). Same idea as
-       light, same trap if reversed. */
+  html:not([data-app-dark='0']) .pf2e {
     --pf2e-bg: #000000;
     --pf2e-bg-sunken: #0a0a0a;
     --pf2e-surface: #1c1c1e;
@@ -144,6 +175,32 @@
   }
 }
 
+html[data-app-dark='1'] .pf2e {
+  --pf2e-bg: #000000;
+  --pf2e-bg-sunken: #0a0a0a;
+  --pf2e-surface: #1c1c1e;
+  --pf2e-surface-raised: #2c2c2e;
+  --pf2e-fill: rgba(120, 120, 128, 0.24);
+  --pf2e-fill-strong: rgba(120, 120, 128, 0.36);
+
+  --pf2e-text: #ffffff;
+  --pf2e-text-secondary: rgba(235, 235, 245, 0.6);
+  --pf2e-text-tertiary: rgba(235, 235, 245, 0.3);
+  --pf2e-text-inverse: #000000;
+
+  --pf2e-line: rgba(84, 84, 88, 0.65);
+  --pf2e-line-strong: rgba(84, 84, 88, 0.9);
+
+  --pf2e-ink: #ffffff;
+  --pf2e-ink-hover: #f2f2f7;
+
+  --pf2e-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --pf2e-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --pf2e-shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.6);
+
+  color-scheme: dark;
+}
+
 /* Forced-colours mode replaces every colour we set with the user's own. The
    only job left is to make sure the borders we were drawing with alpha still
    exist, since `rgba(60,60,67,.29)` becomes transparent rather than a line. */
@@ -158,6 +215,28 @@
   .pf2e-group {
     border: 1px solid CanvasText;
   }
+}
+
+/* ── Culling ───────────────────────────────────────────────────────────────
+   A session card that has scrolled out of view stops costing layout, style and
+   paint, and starts again when it comes back. The board's window is six months,
+   so a weekly game is ~26 cards before anyone adds a one-off, and each one
+   carries an availability picker, a roster summary and a layout animation.
+
+   `auto` on `contain-intrinsic-size`, not a fixed height: the browser remembers
+   the size each card had when it was last rendered and uses that as the
+   placeholder afterwards, so the scrollbar stops moving after the first pass.
+   The 13rem seed is only for a card that has never been on screen — roughly what
+   one measures at on a phone.
+
+   This is the paint half of the pair. `useProgressiveList` is the DOM half, and
+   the difference matters: this element is still findable by ⌘F, still a
+   `scrollIntoView` target for the month grid, and still read by a screen reader.
+   Content that has not been revealed yet is none of those things, which is why
+   both exist rather than either alone. */
+.pf2e-cull {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 13rem;
 }
 
 /* ── Page frame ────────────────────────────────────────────────────────────
@@ -232,6 +311,25 @@
 
 .pf2e-muted {
   color: var(--pf2e-text-secondary);
+}
+
+/* The phone-only "next session" card's headline. Title 2 (22px) rather than the
+   page's Display: it is the loudest thing in the stack under the page title,
+   and matching the title would make two competing headings on one screen.
+   `first-letter` capitalises it because `Intl.RelativeTimeFormat` returns
+   "tomorrow" lowercase in English and something else entirely in the locales
+   that do not capitalise at all — which is exactly why this is CSS and not a
+   `.toUpperCase()` on the string. */
+.pf2e-nextup-lead {
+  font-family: var(--pf2e-font-display);
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.021em;
+  line-height: 1.15;
+}
+
+.pf2e-nextup-lead::first-letter {
+  text-transform: uppercase;
 }
 
 /* ── Surfaces ──────────────────────────────────────────────────────────────
@@ -550,11 +648,16 @@ textarea.pf2e-field {
   padding-block: 0;
 }
 
-/* Dark mode paints the native date/time picker glyph black-on-black. */
+/* Dark mode paints the native date/time picker glyph black-on-black. (Two
+   copies — see the dark-mode note at the top of this file.) */
 @media (prefers-color-scheme: dark) {
-  .pf2e-field::-webkit-calendar-picker-indicator {
+  html:not([data-app-dark='0']) .pf2e-field::-webkit-calendar-picker-indicator {
     filter: invert(1);
   }
+}
+
+html[data-app-dark='1'] .pf2e-field::-webkit-calendar-picker-indicator {
+  filter: invert(1);
 }
 
 /* ── Switch ────────────────────────────────────────────────────────────────
@@ -604,12 +707,17 @@ textarea.pf2e-field {
   transform: translateX(20px);
 }
 
+/* The knob stays white on an ink track in light mode; in dark the track is
+   white, so the knob inverts to keep the two distinguishable. (Two copies — see
+   the dark-mode note at the top of this file.) */
 @media (prefers-color-scheme: dark) {
-  /* The knob stays white on an ink track in light mode; in dark the track is
-     white, so the knob inverts to keep the two distinguishable. */
-  .pf2e-switch[aria-checked='true']::after {
+  html:not([data-app-dark='0']) .pf2e-switch[aria-checked='true']::after {
     background-color: #000000;
   }
+}
+
+html[data-app-dark='1'] .pf2e-switch[aria-checked='true']::after {
+  background-color: #000000;
 }
 
 @media (forced-colors: active) {
@@ -660,10 +768,15 @@ textarea.pf2e-field {
   z-index: 0;
 }
 
+/* (Two copies — see the dark-mode note at the top of this file.) */
 @media (prefers-color-scheme: dark) {
-  .pf2e-segmented-thumb {
+  html:not([data-app-dark='0']) .pf2e-segmented-thumb {
     background-color: var(--pf2e-surface-raised);
   }
+}
+
+html[data-app-dark='1'] .pf2e-segmented-thumb {
+  background-color: var(--pf2e-surface-raised);
 }
 
 .pf2e-segment {
@@ -693,6 +806,33 @@ textarea.pf2e-field {
 
 .pf2e-segment[aria-checked='true'] {
   font-weight: 590;
+}
+
+/* The appearance control in the page header. A segmented control fills its
+   container by design (it is normally the full width of a settings row), so
+   inline in a button row it needs an explicit box: wide enough for the three
+   labels at every shipped locale's word length, and allowed to shrink rather
+   than push the row wider than the phone. */
+.pf2e-theme-toggle {
+  flex: 0 1 auto;
+  width: 12.5rem;
+  max-width: 100%;
+}
+
+/* The agenda's scope filter, beside its heading. Same reasoning as above, and
+   the same escape hatch: it takes a fixed box on a wide screen and the whole
+   row on a phone, where a 200px control squeezed against a heading truncates
+   all three of its labels rather than one of them. */
+.pf2e-scope {
+  flex: 0 1 auto;
+  width: 13rem;
+  max-width: 100%;
+}
+
+@media (max-width: 26rem) {
+  .pf2e-scope {
+    width: 100%;
+  }
 }
 
 /* A UISegmentedControl is 32pt tall and a switch is 51×31pt — Apple's own
@@ -1010,10 +1150,15 @@ textarea.pf2e-field {
   background-color: rgba(0, 0, 0, 0.35);
 }
 
+/* (Two copies — see the dark-mode note at the top of this file.) */
 @media (prefers-color-scheme: dark) {
-  .pf2e-scrim {
+  html:not([data-app-dark='0']) .pf2e-scrim {
     background-color: rgba(0, 0, 0, 0.6);
   }
+}
+
+html[data-app-dark='1'] .pf2e-scrim {
+  background-color: rgba(0, 0, 0, 0.6);
 }
 
 .pf2e-sheet-wrap {

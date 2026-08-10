@@ -713,6 +713,8 @@ import { Route as ApiPersonasIdChatRouteImport } from './routes/api/personas/$id
 import { Route as ApiPersonasAvatarFilenameRouteImport } from './routes/api/personas/avatar/$filename'
 import { Route as ApiPf2ecalAnnouncementsIdRouteImport } from './routes/api/pf2ecal/announcements.$id'
 import { Route as ApiPf2ecalSessionsIdRouteImport } from './routes/api/pf2ecal/sessions.$id'
+import { Route as ApiPf2ecalSessionsArchiveRouteImport } from './routes/api/pf2ecal/sessions.archive'
+import { Route as ApiPf2ecalSessionsBlurbsRouteImport } from './routes/api/pf2ecal/sessions.blurbs'
 import { Route as ApiPf2ecalSettingsTestWebhookRouteImport } from './routes/api/pf2ecal/settings.test-webhook'
 import { Route as ApiPlaylistsIdIndexRouteImport } from './routes/api/playlists/$id/index'
 import { Route as ApiPoolsIdIndexRouteImport } from './routes/api/pools/$id/index'
@@ -840,6 +842,7 @@ import { Route as ApiLibraryCollectionIdItemsRouteImport } from './routes/api/li
 import { Route as ApiMarketListingsIdIndexRouteImport } from './routes/api/market/listings/$id/index'
 import { Route as ApiMarketListingsIdBuyRouteImport } from './routes/api/market/listings/$id/buy'
 import { Route as ApiOgPostIdStoryRouteImport } from './routes/api/og/post/$id/story'
+import { Route as ApiPf2ecalSessionsIdRecapRouteImport } from './routes/api/pf2ecal/sessions.$id.recap'
 import { Route as ApiPf2ecalSessionsIdResponseRouteImport } from './routes/api/pf2ecal/sessions.$id.response'
 import { Route as ApiPlaylistsIdItemsIndexRouteImport } from './routes/api/playlists/$id/items/index'
 import { Route as ApiPlaylistsIdItemsItemIdRouteImport } from './routes/api/playlists/$id/items/$itemId'
@@ -4478,6 +4481,18 @@ const ApiPf2ecalSessionsIdRoute = ApiPf2ecalSessionsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiPf2ecalSessionsRoute,
 } as any)
+const ApiPf2ecalSessionsArchiveRoute =
+  ApiPf2ecalSessionsArchiveRouteImport.update({
+    id: '/archive',
+    path: '/archive',
+    getParentRoute: () => ApiPf2ecalSessionsRoute,
+  } as any)
+const ApiPf2ecalSessionsBlurbsRoute =
+  ApiPf2ecalSessionsBlurbsRouteImport.update({
+    id: '/blurbs',
+    path: '/blurbs',
+    getParentRoute: () => ApiPf2ecalSessionsRoute,
+  } as any)
 const ApiPf2ecalSettingsTestWebhookRoute =
   ApiPf2ecalSettingsTestWebhookRouteImport.update({
     id: '/test-webhook',
@@ -5139,6 +5154,12 @@ const ApiOgPostIdStoryRoute = ApiOgPostIdStoryRouteImport.update({
   path: '/story',
   getParentRoute: () => ApiOgPostIdRoute,
 } as any)
+const ApiPf2ecalSessionsIdRecapRoute =
+  ApiPf2ecalSessionsIdRecapRouteImport.update({
+    id: '/recap',
+    path: '/recap',
+    getParentRoute: () => ApiPf2ecalSessionsIdRoute,
+  } as any)
 const ApiPf2ecalSessionsIdResponseRoute =
   ApiPf2ecalSessionsIdResponseRouteImport.update({
     id: '/response',
@@ -6067,6 +6088,8 @@ export interface FileRoutesByFullPath {
   '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
   '/api/pf2ecal/announcements/$id': typeof ApiPf2ecalAnnouncementsIdRoute
   '/api/pf2ecal/sessions/$id': typeof ApiPf2ecalSessionsIdRouteWithChildren
+  '/api/pf2ecal/sessions/archive': typeof ApiPf2ecalSessionsArchiveRoute
+  '/api/pf2ecal/sessions/blurbs': typeof ApiPf2ecalSessionsBlurbsRoute
   '/api/pf2ecal/settings/test-webhook': typeof ApiPf2ecalSettingsTestWebhookRoute
   '/api/pools/$id/contribute': typeof ApiPoolsIdContributeRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
@@ -6210,6 +6233,7 @@ export interface FileRoutesByFullPath {
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
   '/api/market/listings/$id/buy': typeof ApiMarketListingsIdBuyRoute
   '/api/og/post/$id/story': typeof ApiOgPostIdStoryRoute
+  '/api/pf2ecal/sessions/$id/recap': typeof ApiPf2ecalSessionsIdRecapRoute
   '/api/pf2ecal/sessions/$id/response': typeof ApiPf2ecalSessionsIdResponseRoute
   '/api/playlists/$id/items/$itemId': typeof ApiPlaylistsIdItemsItemIdRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
@@ -6918,6 +6942,8 @@ export interface FileRoutesByTo {
   '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
   '/api/pf2ecal/announcements/$id': typeof ApiPf2ecalAnnouncementsIdRoute
   '/api/pf2ecal/sessions/$id': typeof ApiPf2ecalSessionsIdRouteWithChildren
+  '/api/pf2ecal/sessions/archive': typeof ApiPf2ecalSessionsArchiveRoute
+  '/api/pf2ecal/sessions/blurbs': typeof ApiPf2ecalSessionsBlurbsRoute
   '/api/pf2ecal/settings/test-webhook': typeof ApiPf2ecalSettingsTestWebhookRoute
   '/api/pools/$id/contribute': typeof ApiPoolsIdContributeRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
@@ -7061,6 +7087,7 @@ export interface FileRoutesByTo {
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
   '/api/market/listings/$id/buy': typeof ApiMarketListingsIdBuyRoute
   '/api/og/post/$id/story': typeof ApiOgPostIdStoryRoute
+  '/api/pf2ecal/sessions/$id/recap': typeof ApiPf2ecalSessionsIdRecapRoute
   '/api/pf2ecal/sessions/$id/response': typeof ApiPf2ecalSessionsIdResponseRoute
   '/api/playlists/$id/items/$itemId': typeof ApiPlaylistsIdItemsItemIdRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
@@ -7795,6 +7822,8 @@ export interface FileRoutesById {
   '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
   '/api/pf2ecal/announcements/$id': typeof ApiPf2ecalAnnouncementsIdRoute
   '/api/pf2ecal/sessions/$id': typeof ApiPf2ecalSessionsIdRouteWithChildren
+  '/api/pf2ecal/sessions/archive': typeof ApiPf2ecalSessionsArchiveRoute
+  '/api/pf2ecal/sessions/blurbs': typeof ApiPf2ecalSessionsBlurbsRoute
   '/api/pf2ecal/settings/test-webhook': typeof ApiPf2ecalSettingsTestWebhookRoute
   '/api/pools/$id/contribute': typeof ApiPoolsIdContributeRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
@@ -7938,6 +7967,7 @@ export interface FileRoutesById {
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
   '/api/market/listings/$id/buy': typeof ApiMarketListingsIdBuyRoute
   '/api/og/post/$id/story': typeof ApiOgPostIdStoryRoute
+  '/api/pf2ecal/sessions/$id/recap': typeof ApiPf2ecalSessionsIdRecapRoute
   '/api/pf2ecal/sessions/$id/response': typeof ApiPf2ecalSessionsIdResponseRoute
   '/api/playlists/$id/items/$itemId': typeof ApiPlaylistsIdItemsItemIdRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
@@ -8672,6 +8702,8 @@ export interface FileRouteTypes {
     | '/api/personas/avatar/$filename'
     | '/api/pf2ecal/announcements/$id'
     | '/api/pf2ecal/sessions/$id'
+    | '/api/pf2ecal/sessions/archive'
+    | '/api/pf2ecal/sessions/blurbs'
     | '/api/pf2ecal/settings/test-webhook'
     | '/api/pools/$id/contribute'
     | '/api/predictions/$id/trade'
@@ -8815,6 +8847,7 @@ export interface FileRouteTypes {
     | '/api/library/collection/$id/items'
     | '/api/market/listings/$id/buy'
     | '/api/og/post/$id/story'
+    | '/api/pf2ecal/sessions/$id/recap'
     | '/api/pf2ecal/sessions/$id/response'
     | '/api/playlists/$id/items/$itemId'
     | '/api/rideshare/rides/$id/messages'
@@ -9523,6 +9556,8 @@ export interface FileRouteTypes {
     | '/api/personas/avatar/$filename'
     | '/api/pf2ecal/announcements/$id'
     | '/api/pf2ecal/sessions/$id'
+    | '/api/pf2ecal/sessions/archive'
+    | '/api/pf2ecal/sessions/blurbs'
     | '/api/pf2ecal/settings/test-webhook'
     | '/api/pools/$id/contribute'
     | '/api/predictions/$id/trade'
@@ -9666,6 +9701,7 @@ export interface FileRouteTypes {
     | '/api/library/collection/$id/items'
     | '/api/market/listings/$id/buy'
     | '/api/og/post/$id/story'
+    | '/api/pf2ecal/sessions/$id/recap'
     | '/api/pf2ecal/sessions/$id/response'
     | '/api/playlists/$id/items/$itemId'
     | '/api/rideshare/rides/$id/messages'
@@ -10399,6 +10435,8 @@ export interface FileRouteTypes {
     | '/api/personas/avatar/$filename'
     | '/api/pf2ecal/announcements/$id'
     | '/api/pf2ecal/sessions/$id'
+    | '/api/pf2ecal/sessions/archive'
+    | '/api/pf2ecal/sessions/blurbs'
     | '/api/pf2ecal/settings/test-webhook'
     | '/api/pools/$id/contribute'
     | '/api/predictions/$id/trade'
@@ -10542,6 +10580,7 @@ export interface FileRouteTypes {
     | '/api/library/collection/$id/items'
     | '/api/market/listings/$id/buy'
     | '/api/og/post/$id/story'
+    | '/api/pf2ecal/sessions/$id/recap'
     | '/api/pf2ecal/sessions/$id/response'
     | '/api/playlists/$id/items/$itemId'
     | '/api/rideshare/rides/$id/messages'
@@ -16033,6 +16072,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPf2ecalSessionsIdRouteImport
       parentRoute: typeof ApiPf2ecalSessionsRoute
     }
+    '/api/pf2ecal/sessions/archive': {
+      id: '/api/pf2ecal/sessions/archive'
+      path: '/archive'
+      fullPath: '/api/pf2ecal/sessions/archive'
+      preLoaderRoute: typeof ApiPf2ecalSessionsArchiveRouteImport
+      parentRoute: typeof ApiPf2ecalSessionsRoute
+    }
+    '/api/pf2ecal/sessions/blurbs': {
+      id: '/api/pf2ecal/sessions/blurbs'
+      path: '/blurbs'
+      fullPath: '/api/pf2ecal/sessions/blurbs'
+      preLoaderRoute: typeof ApiPf2ecalSessionsBlurbsRouteImport
+      parentRoute: typeof ApiPf2ecalSessionsRoute
+    }
     '/api/pf2ecal/settings/test-webhook': {
       id: '/api/pf2ecal/settings/test-webhook'
       path: '/test-webhook'
@@ -16921,6 +16974,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/og/post/$id/story'
       preLoaderRoute: typeof ApiOgPostIdStoryRouteImport
       parentRoute: typeof ApiOgPostIdRoute
+    }
+    '/api/pf2ecal/sessions/$id/recap': {
+      id: '/api/pf2ecal/sessions/$id/recap'
+      path: '/recap'
+      fullPath: '/api/pf2ecal/sessions/$id/recap'
+      preLoaderRoute: typeof ApiPf2ecalSessionsIdRecapRouteImport
+      parentRoute: typeof ApiPf2ecalSessionsIdRoute
     }
     '/api/pf2ecal/sessions/$id/response': {
       id: '/api/pf2ecal/sessions/$id/response'
@@ -18332,10 +18392,12 @@ const ApiPf2ecalAnnouncementsRouteWithChildren =
   )
 
 interface ApiPf2ecalSessionsIdRouteChildren {
+  ApiPf2ecalSessionsIdRecapRoute: typeof ApiPf2ecalSessionsIdRecapRoute
   ApiPf2ecalSessionsIdResponseRoute: typeof ApiPf2ecalSessionsIdResponseRoute
 }
 
 const ApiPf2ecalSessionsIdRouteChildren: ApiPf2ecalSessionsIdRouteChildren = {
+  ApiPf2ecalSessionsIdRecapRoute: ApiPf2ecalSessionsIdRecapRoute,
   ApiPf2ecalSessionsIdResponseRoute: ApiPf2ecalSessionsIdResponseRoute,
 }
 
@@ -18344,10 +18406,14 @@ const ApiPf2ecalSessionsIdRouteWithChildren =
 
 interface ApiPf2ecalSessionsRouteChildren {
   ApiPf2ecalSessionsIdRoute: typeof ApiPf2ecalSessionsIdRouteWithChildren
+  ApiPf2ecalSessionsArchiveRoute: typeof ApiPf2ecalSessionsArchiveRoute
+  ApiPf2ecalSessionsBlurbsRoute: typeof ApiPf2ecalSessionsBlurbsRoute
 }
 
 const ApiPf2ecalSessionsRouteChildren: ApiPf2ecalSessionsRouteChildren = {
   ApiPf2ecalSessionsIdRoute: ApiPf2ecalSessionsIdRouteWithChildren,
+  ApiPf2ecalSessionsArchiveRoute: ApiPf2ecalSessionsArchiveRoute,
+  ApiPf2ecalSessionsBlurbsRoute: ApiPf2ecalSessionsBlurbsRoute,
 }
 
 const ApiPf2ecalSessionsRouteWithChildren =

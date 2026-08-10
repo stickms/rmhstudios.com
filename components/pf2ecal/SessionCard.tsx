@@ -14,12 +14,13 @@
  * is the link into detail and the pills stay independent.
  */
 
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { ExternalLink, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Availability, Session } from '@/lib/pf2ecal/types';
 import { AvailabilityPicker, useSummary } from './Availability';
 import { asExternalUrl, describeSessionTime, formatDayLabel, formatRelativeDay } from './format';
+import { SPRING_LIST, TRANSITION, TRANSITION_FAST } from './motion';
 
 interface SessionCardProps {
   session: Session;
@@ -55,7 +56,7 @@ export function SessionCard({
       // `layout="position"` and not `layout`: only the card's OFFSET animates
       // when the list reorders. Full layout animation would also interpolate
       // width/height, which re-rasterises the text inside every frame.
-      transition={{ type: 'spring', stiffness: 380, damping: 38 }}
+      transition={SPRING_LIST}
       className={[
         'pf2e-card p-4 sm:p-5',
         canceled ? 'pf2e-canceled' : '',
@@ -114,11 +115,49 @@ export function SessionCard({
         </div>
       </div>
 
-      {session.notes && (
-        <p className="pf2e-body pf2e-muted mt-3 line-clamp-3 whitespace-pre-wrap">
-          {session.notes}
-        </p>
-      )}
+      {/* One line about this particular night, written from the notes rather
+          than being them. It is clamped at two lines because the card is a
+          scanning surface — the full version is in the sheet, which is where
+          someone has already decided to read.
+
+          The raw notes are the fallback, not the second choice: they are what
+          this card showed before the descriptions existed, and they are what it
+          shows when there is no AI configured, when DeepSeek is down, or when a
+          session was added thirty seconds ago and nothing has described it yet.
+          There is never a placeholder or a spinner here — an empty card that
+          fills in a second later reads as broken. */}
+      <AnimatePresence mode="wait" initial={false}>
+        {session.blurb ? (
+          <motion.p
+            key="blurb"
+            className="pf2e-body pf2e-muted mt-3 line-clamp-2"
+            // A description arrives seconds after the card, so it CROSS-FADES in
+            // rather than appearing. Opacity only, and `mode="wait"` so the
+            // notes have gone before it starts: animating height here would
+            // shove every card below it down mid-scroll, which is the one thing
+            // a list must not do while someone is reading it.
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={TRANSITION}
+          >
+            {session.blurb.short}
+          </motion.p>
+        ) : (
+          session.notes && (
+            <motion.p
+              key="notes"
+              className="pf2e-body pf2e-muted mt-3 line-clamp-3 whitespace-pre-wrap"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={TRANSITION_FAST}
+            >
+              {session.notes}
+            </motion.p>
+          )
+        )}
+      </AnimatePresence>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         {viewerId && !canceled ? (

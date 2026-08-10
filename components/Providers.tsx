@@ -22,10 +22,12 @@ import {
   SiteStyle,
   REDUCE_TRANSPARENCY_KEY,
   USER_THEME_KEY,
+  appRouteGround,
+  paintDocumentGround,
 } from '@/stores/themeStore';
 import { clearThemeTokens, type AppliedUserTheme } from '@/lib/themes/tokens';
 import { applyAccent, isAccentId, ACCENT_STORAGE_KEY, accentCssVars } from '@/lib/appearance';
-import { ensureReadableAccent, colorSchemeForBackground } from '@/lib/appearance/contrast';
+import { ensureReadableAccent } from '@/lib/appearance/contrast';
 import {
   HEX_RE,
   FONT_SCALE_KEY,
@@ -217,6 +219,12 @@ const loadMotionFeatures = () => import('@/lib/motion-features').then((mod) => m
 export const THEME_EXCLUDED_ROUTES = [
   ...games.map((g) => g.href),
   ...apps.filter((a) => !a.usesSiteTheme).map((a) => a.href),
+  // Unlisted full-screen pages that own their palette but are deliberately in
+  // no catalog, so nothing above can derive them. `/pf2ecal` is the PF2e
+  // board: monochrome, its own light/dark, registered in
+  // FULLSCREEN_ROUTE_SEGMENTS for the design gate — and, until it was listed
+  // here, painted a Daylight-white <html> underneath itself.
+  '/pf2ecal',
 ].filter((href) => href.startsWith('/'));
 
 /**
@@ -620,53 +628,35 @@ export function Providers({
       localStorage.removeItem(CUSTOM_ACCENT_KEY);
     }
 
-    // Excluded app/game routes keep the base (dark) document background so the
-    // browser bar tint and overscroll match their :root-token chrome — same
-    // gate as the inline themeScript in app/routes/__root.tsx.
+    // Excluded app/game routes keep their own document background so the browser
+    // bar tint and overscroll match their :root-token chrome — same gate as the
+    // inline themeScript in app/routes/__root.tsx, and the same `APP_ROUTE_*`
+    // resolution, because until this consulted it too the script pre-painted a
+    // light page's real ground and this effect flipped it to APP_THEME_BG a
+    // moment later. Anything without an entry keeps that near-black default.
+    const ground = isAppRoute ? appRouteGround(pathname) : null;
     const bg = userThemeOn
       ? (activeUserTheme as AppliedUserTheme).bg
       : isAppRoute
-        ? APP_THEME_BG
+        ? (ground?.bg ?? APP_THEME_BG)
         : (THEME_BG[activeStyle] ?? THEME_BG.default);
-    html.style.backgroundColor = bg;
-    document.body.style.backgroundColor = bg;
 
-    // Pin the UA colour scheme to the ACTUAL background (built-in, curated, user
-    // theme, or app-route chrome) so native controls, scrollbars, autofill and
-    // <select> popups never fall back to the OS default and misrender. Derived
-    // from luminance so it stays correct for marketplace themes that carry no
-    // style class. Mirrors the pre-paint themeScript in app/routes/__root.tsx.
-    html.style.colorScheme = colorSchemeForBackground(bg);
-
-    // Keep the browser-chrome tint in step with the theme — but NOT on iOS, and
-    // only ever our own tag. Both halves of that are explained above the
-    // pre-paint `themeScript` in app/routes/__root.tsx: iOS Safari fills the
-    // strip behind its floating tab bar with this colour, flat, over the aurora
-    // the page paints there, and a route that sets its own `theme-color` in
-    // `head()` means it (this used to overwrite those too, because it wrote to
-    // every matching tag on the page).
-    //
-    // Ours is still appended when a route already has one, rather than skipped:
-    // the browser uses the FIRST applicable `theme-color` in document order, so
-    // the route's — which the framework emits in the head before this appends —
-    // wins for as long as that route is mounted, and ours is already in place
-    // for when the framework removes it on the way out. Skipping instead would
-    // leave the site with no tag at all after such a navigation, because this
-    // effect does not re-run on every pathname change.
-    const marked = document.querySelector<HTMLMetaElement>(
-      'meta[name="theme-color"][data-rmh-theme]',
-    );
-    if (html.classList.contains('ios-webkit')) {
-      marked?.remove();
-    } else if (marked) {
-      marked.content = bg;
-    } else {
-      const meta = document.createElement('meta');
-      meta.name = 'theme-color';
-      meta.content = bg;
-      meta.setAttribute('data-rmh-theme', '');
-      document.head.appendChild(meta);
-    }
+    // Paints <html>/<body>, publishes `data-app-dark` for a page whose own
+    // stylesheet keys its tokens off it, pins `color-scheme` to the background's
+    // luminance and mirrors the tint into our `theme-color` tag. Shared with the
+    // pages that own their light/dark, which have to repaint on a toggle without
+    // waiting for this effect — it does not re-run on every pathname change.
+    paintDocumentGround(bg, ground ? ground.dark : null);
+    // `pathname` is read but deliberately not a dependency: crossing INTO or OUT
+    // OF the app tier is the only navigation that can change the ground, and
+    // `isAppRoute` already flips on exactly that — so the effect re-runs, in the
+    // same render, with the current pathname. Listing `pathname` instead would
+    // re-run this whole block (twelve localStorage reads, a class sweep, the
+    // theme-color tag) on every route change in the app, for a value that could
+    // not have changed. Two app-tier routes with different grounds linking
+    // directly to each other would be the gap; there are none, and a full load
+    // resolves it through the pre-paint script regardless.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     style,
     preview,

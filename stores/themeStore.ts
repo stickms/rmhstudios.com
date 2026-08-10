@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { AppliedUserTheme, AppliedUserThemePreview } from '@/lib/themes/tokens';
 import { DEFAULT_COLOR_VISION, type ColorVisionMode } from '@/lib/appearance/prefs';
+import { colorSchemeForBackground } from '@/lib/appearance/contrast';
 
 // Each theme carries its document background color (`bg`) alongside its catalog
 // metadata so there is ONE source of truth for the theme→background map. Both the
@@ -30,7 +31,8 @@ export type SiteStyle = (typeof SITE_STYLES)[number]['id'];
 export const APP_THEME_BG = '#0b0b0b';
 
 /**
- * Games whose own palette is NOT the near-black `APP_THEME_BG` ground.
+ * Full-screen routes whose own palette is NOT the near-black `APP_THEME_BG`
+ * ground.
  *
  * The pre-paint script paints `APP_THEME_BG` for every excluded route, which is
  * right for a game that is dark and wrong for one that is not: Slice It's light
@@ -38,20 +40,25 @@ export const APP_THEME_BG = '#0b0b0b';
  * flipped to near-white as soon as `.slice-theme` resolved. A full-screen
  * black-to-white flash on every load.
  *
- * Keyed by route prefix. Each entry names the game's own persisted preference so
- * the script can pre-paint the SAME colour the game is about to use:
+ * Keyed by route prefix. Each entry names the page's own persisted preference so
+ * the script can pre-paint the SAME colour that page is about to use:
  *
- * - `key` — the localStorage key the game persists under.
+ * - `key` — the localStorage key the page persists under.
  * - `darkFlag` — the boolean inside that JSON (zustand `persist` nests it under
- *   `state`) which is true when the game is in its dark theme.
- * - `dark` / `light` — the two grounds, mirroring `slice-it.css`.
+ *   `state`) which is true when the page is in its dark theme.
+ * - `dark` / `light` — the two grounds, mirroring the page's own stylesheet.
+ * - `system` — when nothing is stored yet, ask `prefers-color-scheme` instead of
+ *   assuming dark. A page whose default is "follow the OS" must not persist a
+ *   resolved flag while it is on that setting, or the stored value goes stale
+ *   the moment the OS flips with the tab closed; leaving the flag absent is what
+ *   routes it back through the media query on the next load.
  *
- * A game with no entry keeps `APP_THEME_BG`, which is the correct default for
+ * A page with no entry keeps `APP_THEME_BG`, which is the correct default for
  * the dark `--app-*` tier that most of them use.
  */
 export const APP_ROUTE_THEME_BG: Record<
   string,
-  { key: string; darkFlag: string; dark: string; light: string }
+  { key: string; darkFlag: string; dark: string; light: string; system?: boolean }
 > = {
   '/slice-it': {
     key: 'slice-it-storage',
@@ -59,7 +66,107 @@ export const APP_ROUTE_THEME_BG: Record<
     dark: '#16161a',
     light: '#e0e5ec',
   },
+  // The PF2e board. Grounds mirror `--pf2e-bg` in
+  // `components/pf2ecal/pf2ecal.css` — true black in dark, iOS systemGrey6 in
+  // light. Without this entry the site painted the document Daylight white
+  // under a page that had gone dark from `prefers-color-scheme`, which is
+  // invisible on a desktop (the page covers the viewport) and glaring on a
+  // phone, where every rubber-band overscroll flashes the gutter.
+  '/pf2ecal': {
+    key: 'pf2ecal-theme',
+    darkFlag: 'dark',
+    dark: '#000000',
+    light: '#f2f2f7',
+    system: true,
+  },
 };
+
+/**
+ * The ground a full-screen route wants right now, or null when it has no entry.
+ *
+ * Browser-only (it reads `localStorage` and `matchMedia`). This is the runtime
+ * half of the pre-paint script's `RB` loop in `app/routes/__root.tsx` — the two
+ * resolve the same preference the same way and must be changed together.
+ */
+export function appRouteGround(pathname: string): { bg: string; dark: boolean } | null {
+  for (const [base, entry] of Object.entries(APP_ROUTE_THEME_BG)) {
+    if (pathname !== base && !pathname.startsWith(`${base}/`)) continue;
+
+    let dark = entry.system
+      ? typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches
+      : true;
+    try {
+      const raw = localStorage.getItem(entry.key);
+      const parsed = raw ? (JSON.parse(raw) as Record<string, unknown> | null) : null;
+      const state = (parsed?.state ?? parsed) as Record<string, unknown> | null;
+      const flag = state?.[entry.darkFlag];
+      if (typeof flag === 'boolean') dark = flag;
+    } catch {
+      // Unreadable or non-JSON storage falls through to the default above,
+      // which is the whole reason this is wrapped: a pre-paint path may not
+      // throw.
+    }
+    return { bg: dark ? entry.dark : entry.light, dark };
+  }
+  return null;
+}
+
+/**
+ * Paint the document ground and everything pinned to it.
+ *
+ * Extracted so the two callers cannot drift: `Providers` runs it whenever the
+ * theme resolves, and a full-screen page that owns its own light/dark (the PF2e
+ * board) runs it when the visitor flips that switch — an effect inside the page
+ * cannot wait for `Providers`, whose theme effect deliberately does not re-run
+ * on a pathname change.
+ *
+ * `dark` is the app-tier flag the page's own stylesheet keys off; pass null on
+ * the site tier, where the style class carries it instead.
+ */
+export function paintDocumentGround(bg: string, dark: boolean | null): void {
+  const html = document.documentElement;
+  html.style.backgroundColor = bg;
+  document.body.style.backgroundColor = bg;
+
+  if (dark === null) html.removeAttribute('data-app-dark');
+  else html.setAttribute('data-app-dark', dark ? '1' : '0');
+
+  // Pin the UA colour scheme to the ACTUAL background so native controls,
+  // scrollbars, autofill and `<select>` popups never fall back to the OS
+  // default and misrender. Derived from luminance so it stays correct for
+  // marketplace themes that carry no style class.
+  html.style.colorScheme = colorSchemeForBackground(bg);
+
+  // Keep the browser-chrome tint in step — but NOT on iOS, and only ever our
+  // own tag. Both halves are explained above the pre-paint `themeScript` in
+  // `app/routes/__root.tsx`: iOS Safari fills the strip behind its floating tab
+  // bar with this colour, flat, over the aurora the page paints there, and a
+  // route that sets its own `theme-color` in `head()` means it (this used to
+  // overwrite those too, because it wrote to every matching tag on the page).
+  //
+  // Ours is still appended when a route already has one, rather than skipped:
+  // the browser uses the FIRST applicable `theme-color` in document order, so
+  // the route's — which the framework emits in the head before this appends —
+  // wins for as long as that route is mounted, and ours is already in place for
+  // when the framework removes it on the way out. Skipping instead would leave
+  // the site with no tag at all after such a navigation.
+  const marked = document.querySelector<HTMLMetaElement>(
+    'meta[name="theme-color"][data-rmh-theme]',
+  );
+  if (html.classList.contains('ios-webkit')) {
+    marked?.remove();
+  } else if (marked) {
+    marked.content = bg;
+  } else {
+    const meta = document.createElement('meta');
+    meta.name = 'theme-color';
+    meta.content = bg;
+    meta.setAttribute('data-rmh-theme', '');
+    document.head.appendChild(meta);
+  }
+}
 
 /**
  * Theme → document background color, derived from SITE_STYLES. Used to paint the

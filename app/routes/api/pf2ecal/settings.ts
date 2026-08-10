@@ -19,65 +19,62 @@ import { settingsSchema } from '@/lib/pf2ecal/types';
 export const Route = createFileRoute('/api/pf2ecal/settings')({
   server: {
     handlers: {
-      PUT: defineHandler(
-        { rateLimit: 'write', body: settingsSchema },
-        async ({ userId, body }) => {
-          // Tri-state: `undefined` leaves the stored URL alone, `null`/'' clears
-          // it, a string replaces it. See the schema's note.
-          let webhookUpdate: { discordWebhookUrl?: string | null } = {};
-          if (body.webhookUrl !== undefined) {
-            if (body.webhookUrl === null || body.webhookUrl.trim() === '') {
-              webhookUpdate = { discordWebhookUrl: null };
-            } else {
-              const check = validateWebhookUrl(body.webhookUrl);
-              if (!check.ok || !check.url) {
-                return Response.json({ error: check.error }, { status: 400 });
-              }
-              webhookUpdate = { discordWebhookUrl: check.url };
+      PUT: defineHandler({ rateLimit: 'write', body: settingsSchema }, async ({ userId, body }) => {
+        // Tri-state: `undefined` leaves the stored URL alone, `null`/'' clears
+        // it, a string replaces it. See the schema's note.
+        let webhookUpdate: { discordWebhookUrl?: string | null } = {};
+        if (body.webhookUrl !== undefined) {
+          if (body.webhookUrl === null || body.webhookUrl.trim() === '') {
+            webhookUpdate = { discordWebhookUrl: null };
+          } else {
+            const check = validateWebhookUrl(body.webhookUrl);
+            if (!check.ok || !check.url) {
+              return Response.json({ error: check.error }, { status: 400 });
             }
+            webhookUpdate = { discordWebhookUrl: check.url };
           }
+        }
 
-          if (body.reminderTimeZone !== undefined && !isValidTimeZone(body.reminderTimeZone)) {
-            return Response.json({ error: 'That is not a known timezone.' }, { status: 400 });
-          }
+        if (body.reminderTimeZone !== undefined && !isValidTimeZone(body.reminderTimeZone)) {
+          return Response.json({ error: 'That is not a known timezone.' }, { status: 400 });
+        }
 
-          const data = {
-            ...webhookUpdate,
-            ...(body.remindersEnabled !== undefined && {
-              remindersEnabled: body.remindersEnabled,
-            }),
-            ...(body.reminderMinutes !== undefined && { reminderMinutes: body.reminderMinutes }),
-            ...(body.reminderTimeZone !== undefined && {
-              reminderTimeZone: body.reminderTimeZone,
-            }),
-            updatedById: userId,
-          };
+        const data = {
+          ...webhookUpdate,
+          ...(body.remindersEnabled !== undefined && {
+            remindersEnabled: body.remindersEnabled,
+          }),
+          ...(body.reminderMinutes !== undefined && { reminderMinutes: body.reminderMinutes }),
+          ...(body.reminderTimeZone !== undefined && {
+            reminderTimeZone: body.reminderTimeZone,
+          }),
+          updatedById: userId,
+        };
 
-          const row = await prisma.pf2eSettings.upsert({
-            where: { id: SETTINGS_ID },
-            create: { id: SETTINGS_ID, ...data },
-            update: data,
-          });
+        const row = await prisma.pf2eSettings.upsert({
+          where: { id: SETTINGS_ID },
+          create: { id: SETTINGS_ID, ...data },
+          update: data,
+        });
 
-          // Turning reminders on with no webhook saved would leave the cron
-          // silently doing nothing; say so rather than letting the switch lie.
-          if (row.remindersEnabled && !row.discordWebhookUrl) {
-            return Response.json(
-              { error: 'Add a webhook URL before turning reminders on.' },
-              { status: 400 },
-            );
-          }
+        // Turning reminders on with no webhook saved would leave the cron
+        // silently doing nothing; say so rather than letting the switch lie.
+        if (row.remindersEnabled && !row.discordWebhookUrl) {
+          return Response.json(
+            { error: 'Add a webhook URL before turning reminders on.' },
+            { status: 400 },
+          );
+        }
 
-          return Response.json({
-            settings: {
-              webhookMasked: maskWebhookUrl(row.discordWebhookUrl),
-              remindersEnabled: row.remindersEnabled,
-              reminderMinutes: row.reminderMinutes,
-              reminderTimeZone: row.reminderTimeZone,
-            },
-          });
-        },
-      ),
+        return Response.json({
+          settings: {
+            webhookMasked: maskWebhookUrl(row.discordWebhookUrl),
+            remindersEnabled: row.remindersEnabled,
+            reminderMinutes: row.reminderMinutes,
+            reminderTimeZone: row.reminderTimeZone,
+          },
+        });
+      }),
     },
   },
 });
