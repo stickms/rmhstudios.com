@@ -8,6 +8,7 @@ import zhCAltair from "@/locales/zh/c-altair.json";
 import zhCAwards from "@/locales/zh/c-awards.json";
 import zhCBlog from "@/locales/zh/c-blog.json";
 import zhCBuilds from "@/locales/zh/c-builds.json";
+import zhCBumsRush from "@/locales/zh/c-bums-rush.json";
 import zhCCircle from "@/locales/zh/c-circle.json";
 import zhCCreator from "@/locales/zh/c-creator.json";
 import zhCCursedLogic from "@/locales/zh/c-cursed-logic.json";
@@ -76,6 +77,7 @@ import zhRAltair from "@/locales/zh/r-altair.json";
 import zhRDiscord from "@/locales/zh/r-discord.json";
 import zhRForestExplorer from "@/locales/zh/r-forest-explorer.json";
 import zhRKowloonKnockout from "@/locales/zh/r-kowloon-knockout.json";
+import zhRPf2ecal from "@/locales/zh/r-pf2ecal.json";
 import zhRRmhbox from "@/locales/zh/r-rmhbox.json";
 import zhRRmhcode from "@/locales/zh/r-rmhcode.json";
 import zhRSecret from "@/locales/zh/r-secret.json";
@@ -102,6 +104,7 @@ const zhResources = {
   "c-awards": zhCAwards,
   "c-blog": zhCBlog,
   "c-builds": zhCBuilds,
+  "c-bums-rush": zhCBumsRush,
   "c-circle": zhCCircle,
   "c-creator": zhCCreator,
   "c-cursed-logic": zhCCursedLogic,
@@ -170,6 +173,7 @@ const zhResources = {
   "r-discord": zhRDiscord,
   "r-forest-explorer": zhRForestExplorer,
   "r-kowloon-knockout": zhRKowloonKnockout,
+  "r-pf2ecal": zhRPf2ecal,
   "r-rmhbox": zhRRmhbox,
   "r-rmhcode": zhRRmhcode,
   "r-secret": zhRSecret,

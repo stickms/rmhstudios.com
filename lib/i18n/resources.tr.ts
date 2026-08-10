@@ -8,6 +8,7 @@ import trCAltair from "@/locales/tr/c-altair.json";
 import trCAwards from "@/locales/tr/c-awards.json";
 import trCBlog from "@/locales/tr/c-blog.json";
 import trCBuilds from "@/locales/tr/c-builds.json";
+import trCBumsRush from "@/locales/tr/c-bums-rush.json";
 import trCCircle from "@/locales/tr/c-circle.json";
 import trCCreator from "@/locales/tr/c-creator.json";
 import trCCursedLogic from "@/locales/tr/c-cursed-logic.json";
@@ -74,6 +75,7 @@ import trPages from "@/locales/tr/pages.json";
 import trRAltair from "@/locales/tr/r-altair.json";
 import trRDiscord from "@/locales/tr/r-discord.json";
 import trRForestExplorer from "@/locales/tr/r-forest-explorer.json";
+import trRPf2ecal from "@/locales/tr/r-pf2ecal.json";
 import trRRmhbox from "@/locales/tr/r-rmhbox.json";
 import trRRmhcode from "@/locales/tr/r-rmhcode.json";
 import trRSecret from "@/locales/tr/r-secret.json";
@@ -100,6 +102,7 @@ const trResources = {
   "c-awards": trCAwards,
   "c-blog": trCBlog,
   "c-builds": trCBuilds,
+  "c-bums-rush": trCBumsRush,
   "c-circle": trCCircle,
   "c-creator": trCCreator,
   "c-cursed-logic": trCCursedLogic,
@@ -166,6 +169,7 @@ const trResources = {
   "r-altair": trRAltair,
   "r-discord": trRDiscord,
   "r-forest-explorer": trRForestExplorer,
+  "r-pf2ecal": trRPf2ecal,
   "r-rmhbox": trRRmhbox,
   "r-rmhcode": trRRmhcode,
   "r-secret": trRSecret,

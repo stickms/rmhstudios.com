@@ -8,6 +8,7 @@ import esCAltair from "@/locales/es/c-altair.json";
 import esCAwards from "@/locales/es/c-awards.json";
 import esCBlog from "@/locales/es/c-blog.json";
 import esCBuilds from "@/locales/es/c-builds.json";
+import esCBumsRush from "@/locales/es/c-bums-rush.json";
 import esCCircle from "@/locales/es/c-circle.json";
 import esCCreator from "@/locales/es/c-creator.json";
 import esCCursedLogic from "@/locales/es/c-cursed-logic.json";
@@ -74,6 +75,7 @@ import esPages from "@/locales/es/pages.json";
 import esRAltair from "@/locales/es/r-altair.json";
 import esRDiscord from "@/locales/es/r-discord.json";
 import esRForestExplorer from "@/locales/es/r-forest-explorer.json";
+import esRPf2ecal from "@/locales/es/r-pf2ecal.json";
 import esRRmhbox from "@/locales/es/r-rmhbox.json";
 import esRRmhcode from "@/locales/es/r-rmhcode.json";
 import esRSecret from "@/locales/es/r-secret.json";
@@ -100,6 +102,7 @@ const esResources = {
   "c-awards": esCAwards,
   "c-blog": esCBlog,
   "c-builds": esCBuilds,
+  "c-bums-rush": esCBumsRush,
   "c-circle": esCCircle,
   "c-creator": esCCreator,
   "c-cursed-logic": esCCursedLogic,
@@ -166,6 +169,7 @@ const esResources = {
   "r-altair": esRAltair,
   "r-discord": esRDiscord,
   "r-forest-explorer": esRForestExplorer,
+  "r-pf2ecal": esRPf2ecal,
   "r-rmhbox": esRRmhbox,
   "r-rmhcode": esRRmhcode,
   "r-secret": esRSecret,

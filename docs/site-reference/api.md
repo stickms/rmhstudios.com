@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 574 files across 134 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 584 files across 135 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -793,6 +793,23 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/personas/:id` | `DELETE` `GET` | `app/routes/api/personas/$id/index.ts` |
 | `/api/personas/:id/chat` | `POST` | `app/routes/api/personas/$id/chat.ts` |
 | `/api/personas/avatar/:filename` | `GET` | `app/routes/api/personas/avatar/$filename.ts` |
+
+## `/api/pf2ecal`
+
+10 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/pf2ecal` | `GET` | `app/routes/api/pf2ecal/index.ts` |
+| `/api/pf2ecal/announcements` | `POST` | `app/routes/api/pf2ecal/announcements.ts` |
+| `/api/pf2ecal/announcements/:id` | `DELETE` `PATCH` | `app/routes/api/pf2ecal/announcements.$id.ts` |
+| `/api/pf2ecal/ask` | `POST` | `app/routes/api/pf2ecal/ask.ts` |
+| `/api/pf2ecal/calendar.ics` | `GET` | `app/routes/api/pf2ecal/calendar[.]ics.ts` |
+| `/api/pf2ecal/sessions` | `POST` | `app/routes/api/pf2ecal/sessions.ts` |
+| `/api/pf2ecal/sessions/:id` | `DELETE` `PATCH` | `app/routes/api/pf2ecal/sessions.$id.ts` |
+| `/api/pf2ecal/sessions/:id/response` | `DELETE` `PUT` | `app/routes/api/pf2ecal/sessions.$id.response.ts` |
+| `/api/pf2ecal/settings` | `GET` `PUT` | `app/routes/api/pf2ecal/settings.ts` |
+| `/api/pf2ecal/settings/test-webhook` | `POST` | `app/routes/api/pf2ecal/settings.test-webhook.ts` |
 
 ## `/api/playlists`
 

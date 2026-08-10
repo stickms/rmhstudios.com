@@ -1,0 +1,1259 @@
+/*
+ * /pf2ecal — a scoped, monochrome design scheme.
+ *
+ * This page deliberately does NOT use the `--site-*` contract. It is an
+ * unlisted board for one table, asked for as "minimal, Apple-style, whites and
+ * blacks", and it has no relationship to the themes the rest of the site
+ * offers. `pf2ecal` is registered in FULLSCREEN_ROUTE_SEGMENTS /
+ * FULLSCREEN_TIER_DIRS (lib/__tests__/design-consistency.test.ts) for exactly
+ * that reason — the same mechanism the games and the campaign arms use — so
+ * this is an exemption the gate knows about rather than one it fails to notice.
+ *
+ * Everything below hangs off `.pf2e` so nothing here can leak into the site
+ * tier. Colour is entirely greyscale: the three availability states are
+ * distinguished by FILL, BORDER and ICON SHAPE rather than by hue, which is
+ * both the look that was asked for and the reason the states survive greyscale
+ * printing, colour-vision deficiency and a phone in sunlight.
+ *
+ * Light and dark follow `prefers-color-scheme`. The site's own theme classes
+ * are ignored on purpose: the page paints an opaque background over the whole
+ * viewport, so a Daylight or Graphite document underneath is never visible, and
+ * a viewer's OS preference is the only signal that means anything here.
+ */
+
+.pf2e {
+  /* SF on Apple, Inter everywhere else.
+     
+     `-apple-system` / `BlinkMacSystemFont` resolve to SF Pro on Apple hardware
+     and to NOTHING anywhere else, so a stack that goes straight from them to
+     `system-ui` lands on whatever the OS default is — Segoe UI on Windows,
+     DejaVu Sans on Linux. That is what the first version of this did, and it
+     is why the audit screenshots (headless Chromium on Linux) rendered in
+     DejaVu and looked nothing like SF.
+     
+     Inter is the fix and it costs nothing: this app already self-hosts it
+     (`@fontsource-variable/inter`, imported at the top of `app/globals.css`),
+     it was drawn in SF's lineage, and `var(--font-inter)` carries the
+     metric-matched `'Inter Fallback'` face behind it for platforms that have
+     neither. A webfont is only fetched when it is actually used to render
+     text, so an Apple device resolves `-apple-system` first and never
+     downloads a byte of it.
+     
+     SF itself cannot be shipped: Apple's licence covers UI in apps for their
+     platforms and does not permit webfont redistribution. Inter is the closest
+     thing that can be, and this is the same stack `--site-font-body` in
+     `app/globals.css` already uses — the page just failed to follow it. */
+  --pf2e-font:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', var(--font-inter),
+    sans-serif;
+  --pf2e-font-display:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI Variable Display',
+    var(--font-inter), sans-serif;
+  --pf2e-font-rounded:
+    ui-rounded, 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, var(--font-inter), sans-serif;
+
+  /* ── Light: iOS system greys ───────────────────────────────────────────
+     These are the actual iOS system values, not approximations. systemGrey6
+     (#f2f2f7) is the grouped-table background and systemBackground (#fff) is
+     the row fill — that inversion is what makes an iOS settings screen read as
+     iOS, and getting it backwards is the single most common tell. */
+  --pf2e-bg: #f2f2f7;
+  --pf2e-bg-sunken: #e5e5ea;
+  --pf2e-surface: #ffffff;
+  --pf2e-surface-raised: #ffffff;
+  --pf2e-fill: rgba(120, 120, 128, 0.12);
+  --pf2e-fill-strong: rgba(120, 120, 128, 0.2);
+
+  /* label / secondaryLabel / tertiaryLabel */
+  --pf2e-text: #000000;
+  --pf2e-text-secondary: rgba(60, 60, 67, 0.6);
+  --pf2e-text-tertiary: rgba(60, 60, 67, 0.3);
+  --pf2e-text-inverse: #ffffff;
+
+  /* separator / opaqueSeparator */
+  --pf2e-line: rgba(60, 60, 67, 0.29);
+  --pf2e-line-strong: rgba(60, 60, 67, 0.36);
+
+  /* The one "accent" is ink: black on white, inverted in dark. Monochrome by
+     brief, so there is no systemBlue here — the tint IS the label colour. */
+  --pf2e-ink: #000000;
+  --pf2e-ink-hover: #1c1c1e;
+
+  --pf2e-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --pf2e-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --pf2e-shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.16);
+
+  /* iOS corner radii. 10 is a control, 13 a grouped-list card, 20 a sheet. */
+  --pf2e-r-sm: 8px;
+  --pf2e-r-md: 10px;
+  --pf2e-r-lg: 13px;
+  --pf2e-r-xl: 20px;
+
+  /* One curve for the page. This is close to UIKit's default ease-out, so CSS
+     transitions and the framer-motion springs read as one system. */
+  --pf2e-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --pf2e-fast: 130ms;
+  --pf2e-base: 220ms;
+
+  /* The grouped-list inset. iOS uses 16pt from the screen edge and the row
+     separator starts after the row's leading padding, not at the card edge —
+     both are below. */
+  --pf2e-inset: 16px;
+
+  color-scheme: light;
+  background-color: var(--pf2e-bg);
+  color: var(--pf2e-text);
+  font-family: var(--pf2e-font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Tabular figures everywhere: a column of times whose digits change width
+     shimmers as it updates, and this page is mostly a column of times. */
+  font-variant-numeric: tabular-nums;
+  /* iOS never lets a tap flash a blue box. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+  .pf2e {
+    /* Dark mode inverts the relationship: the GROUPED BACKGROUND goes true
+       black and the rows lift to systemGrey6-dark (#1c1c1e). Same idea as
+       light, same trap if reversed. */
+    --pf2e-bg: #000000;
+    --pf2e-bg-sunken: #0a0a0a;
+    --pf2e-surface: #1c1c1e;
+    --pf2e-surface-raised: #2c2c2e;
+    --pf2e-fill: rgba(120, 120, 128, 0.24);
+    --pf2e-fill-strong: rgba(120, 120, 128, 0.36);
+
+    --pf2e-text: #ffffff;
+    --pf2e-text-secondary: rgba(235, 235, 245, 0.6);
+    --pf2e-text-tertiary: rgba(235, 235, 245, 0.3);
+    --pf2e-text-inverse: #000000;
+
+    --pf2e-line: rgba(84, 84, 88, 0.65);
+    --pf2e-line-strong: rgba(84, 84, 88, 0.9);
+
+    --pf2e-ink: #ffffff;
+    --pf2e-ink-hover: #f2f2f7;
+
+    --pf2e-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --pf2e-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+    --pf2e-shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.6);
+
+    color-scheme: dark;
+  }
+}
+
+/* Forced-colours mode replaces every colour we set with the user's own. The
+   only job left is to make sure the borders we were drawing with alpha still
+   exist, since `rgba(60,60,67,.29)` becomes transparent rather than a line. */
+@media (forced-colors: active) {
+  .pf2e {
+    --pf2e-line: CanvasText;
+    --pf2e-line-strong: CanvasText;
+  }
+  .pf2e-card,
+  .pf2e-btn,
+  .pf2e-field,
+  .pf2e-group {
+    border: 1px solid CanvasText;
+  }
+}
+
+/* ── Page frame ────────────────────────────────────────────────────────────
+   The page scrolls the DOCUMENT rather than an inner `overflow-y-auto` box:
+   mobile Safari only collapses its address bar for document scroll, and an
+   inner scroller costs ~90px of usable height on every phone. */
+.pf2e {
+  min-height: 100dvh;
+  padding-bottom: max(3rem, env(safe-area-inset-bottom));
+}
+
+.pf2e-shell {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 68rem;
+  padding-inline: max(1rem, env(safe-area-inset-left), env(safe-area-inset-right));
+}
+
+/* ── Typography ────────────────────────────────────────────────────────────
+   The iOS text styles, at their real sizes. Large Title is 34pt with tight
+   tracking; Body is 17pt; Footnote is 13pt; the uppercase caption above a
+   grouped list is Footnote in secondaryLabel. Negative tracking only above
+   ~28px — that is where SF Pro switches to its Display optical size, and
+   applying it to body text is the thing that makes a pastiche look wrong. */
+.pf2e-display {
+  /* SF Pro Display above ~20pt, which is where Apple's own optical-size switch
+     happens; Inter has no separate display cut, so elsewhere this is the same
+     face and the declaration simply costs nothing. */
+  font-family: var(--pf2e-font-display);
+  font-size: clamp(1.75rem, 1.35rem + 1.9vw, 2.125rem); /* → 34px */
+  font-weight: 700;
+  letter-spacing: -0.022em;
+  line-height: 1.06;
+}
+
+.pf2e-title {
+  font-size: 1.375rem; /* Title 3 — 22px */
+  font-weight: 700;
+  letter-spacing: -0.021em;
+  line-height: 1.2;
+}
+
+.pf2e-headline {
+  font-size: 1.0625rem; /* Headline — 17px semibold */
+  font-weight: 590;
+  letter-spacing: -0.011em;
+  line-height: 1.3;
+}
+
+.pf2e-body {
+  font-size: 1.0625rem; /* Body — 17px */
+  line-height: 1.35;
+  letter-spacing: -0.011em;
+}
+
+.pf2e-caption {
+  font-size: 0.8125rem; /* Footnote — 13px */
+  line-height: 1.35;
+  color: var(--pf2e-text-secondary);
+}
+
+/* The uppercase caption above a grouped list. iOS sets it in Footnote, not in
+   a tracked-out micro size — the wide letter-spacing tell belongs to other
+   design languages. */
+.pf2e-mono-label {
+  font-size: 0.8125rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: var(--pf2e-text-secondary);
+}
+
+.pf2e-muted {
+  color: var(--pf2e-text-secondary);
+}
+
+/* ── Surfaces ──────────────────────────────────────────────────────────────
+   The iOS grouped-list card: a filled rounded rect on a tinted page, with
+   hairlines BETWEEN rows and none around the outside. No blur anywhere on this
+   page — the material is paper, and a backdrop filter would cost a composited
+   layer per card on a list that can run to 30 rows. */
+.pf2e-card {
+  background-color: var(--pf2e-surface);
+  border: none;
+  border-radius: var(--pf2e-r-lg);
+  box-shadow: var(--pf2e-shadow-sm);
+}
+
+.pf2e-card-flat {
+  background-color: var(--pf2e-fill);
+  border: none;
+  border-radius: var(--pf2e-r-md);
+}
+
+/* ── Grouped list ─────────────────────────────────────────────────────────
+   The iOS Settings shape: an uppercase caption above, a filled card, rows
+   separated by an inset hairline that starts after the row's leading padding
+   rather than at the card edge. That inset is the detail that reads as native;
+   a full-bleed divider reads as a web table. */
+.pf2e-group {
+  background-color: var(--pf2e-surface);
+  border-radius: var(--pf2e-r-lg);
+  overflow: hidden;
+  box-shadow: var(--pf2e-shadow-sm);
+}
+
+.pf2e-group-title {
+  padding: 0 var(--pf2e-inset) 6px;
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  color: var(--pf2e-text-secondary);
+}
+
+.pf2e-group-footer {
+  padding: 6px var(--pf2e-inset) 0;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: var(--pf2e-text-secondary);
+}
+
+.pf2e-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px; /* the iOS minimum touch target, and it is not negotiable */
+  padding: 11px var(--pf2e-inset);
+  background: transparent;
+  border: none;
+  color: var(--pf2e-text);
+  font-family: inherit;
+  font-size: 1.0625rem; /* 17px — the iOS body size */
+  line-height: 1.3;
+  text-align: left;
+  position: relative;
+}
+
+button.pf2e-row {
+  cursor: pointer;
+  transition: background-color var(--pf2e-fast) var(--pf2e-ease);
+}
+
+button.pf2e-row:active {
+  background-color: var(--pf2e-fill);
+}
+
+/* The inset separator. A pseudo-element rather than `border-top` so it can
+   start at the content inset while the row's own background still runs full
+   bleed — which is exactly how UITableView draws it. */
+.pf2e-row + .pf2e-row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: var(--pf2e-inset);
+  right: 0;
+  height: 1px;
+  background-color: var(--pf2e-line);
+  transform: scaleY(0.5); /* a true hairline on 2x displays */
+  transform-origin: top;
+}
+
+.pf2e-row-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.pf2e-row-value {
+  color: var(--pf2e-text-secondary);
+  font-size: 1.0625rem;
+  white-space: nowrap;
+}
+
+/* ── Focus ─────────────────────────────────────────────────────────────────
+   One ring for the whole page, on ink so it is legible against every surface
+   here (all of which are near-white or near-black). */
+.pf2e :focus-visible {
+  outline: 2px solid var(--pf2e-ink);
+  outline-offset: 2px;
+  border-radius: var(--pf2e-r-sm);
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────────
+   iOS capsule buttons. 44px minimum on anything a thumb has to find; the
+   `-sm` variant is for controls that sit inside a row where the ROW is
+   already the 44px target. */
+.pf2e-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  /* `flex-shrink: 0` is load-bearing: in a tight flex row the default
+     `flex-shrink: 1` let a 44px icon button compress to 25px, which the
+     visual audit caught at iPad-landscape widths and no eye would have. */
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 980px; /* a capsule — a shape, not a radius token */
+  border: none;
+  font-family: inherit;
+  font-size: 1.0625rem;
+  font-weight: 590; /* SF's semibold; falls back cleanly to 600 elsewhere */
+  line-height: 1;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  /* Named properties, never `transition-all`: this element also changes size
+     when its label swaps, and animating that is a layout thrash per frame. */
+  transition:
+    background-color var(--pf2e-fast) var(--pf2e-ease),
+    color var(--pf2e-fast) var(--pf2e-ease),
+    opacity var(--pf2e-fast) var(--pf2e-ease),
+    transform var(--pf2e-fast) var(--pf2e-ease);
+}
+
+.pf2e-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* iOS presses shrink slightly and dim; it never uses a hover-only affordance,
+   which is also what makes this correct on touch where there is no hover. */
+.pf2e-btn:not(:disabled):active {
+  transform: scale(0.96);
+  opacity: 0.75;
+}
+
+.pf2e-btn-primary {
+  background-color: var(--pf2e-ink);
+  color: var(--pf2e-text-inverse);
+}
+
+.pf2e-btn-secondary {
+  background-color: var(--pf2e-fill);
+  color: var(--pf2e-text);
+}
+
+.pf2e-btn-ghost {
+  background-color: transparent;
+  color: var(--pf2e-text);
+  font-weight: 400;
+  padding: 0 10px;
+}
+
+.pf2e-btn-outline {
+  background-color: transparent;
+  box-shadow: inset 0 0 0 1px var(--pf2e-line-strong);
+  color: var(--pf2e-text);
+}
+
+.pf2e-btn-sm {
+  position: relative;
+  min-height: 32px;
+  padding: 0 14px;
+  font-size: 0.9375rem;
+}
+
+/* Every small button carries the expander — see the note above. Applied by the
+   class rather than left to call sites so a `-sm` button cannot ship without
+   one. */
+.pf2e-btn-sm::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 44px;
+  transform: translateY(-50%);
+}
+
+.pf2e-btn-icon {
+  min-height: 44px;
+  width: 44px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.pf2e-btn-sm.pf2e-btn-icon {
+  min-height: 32px;
+  width: 32px;
+}
+
+/* ── Hit-area expansion ───────────────────────────────────────────────────
+   Some controls must LOOK small — a 32px pill beside a heading, a title that
+   is also a link — while still meeting the 44px minimum a thumb needs. The
+   standard fix: keep the painted box small and grow the touch target with a
+   transparent pseudo-element.
+
+   It expands VERTICALLY only. Growing sideways would overlap the control's
+   neighbours in a flex row and let one button swallow taps meant for the next
+   — a fix that trades a small target for a wrong one. */
+.pf2e-hit {
+  position: relative;
+}
+
+.pf2e-hit::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 44px;
+  transform: translateY(-50%);
+}
+
+/* The session title on a card: reads as a heading, behaves as a link, and gets
+   a full-height touch target without a 44px-tall line of text. */
+.pf2e-titlebtn {
+  position: relative;
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pf2e-titlebtn:hover {
+  opacity: 0.6;
+}
+
+/* The title paints as one 26px line but must be as tappable as anything else
+   on the card. Vertical-only expansion, same as `.pf2e-hit` — the neighbours
+   above and below it are static text, so there is nothing for it to steal. */
+.pf2e-titlebtn::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 44px;
+  transform: translateY(-50%);
+}
+
+/* ── Fields ────────────────────────────────────────────────────────────────
+   16px minimum font size on inputs: mobile Safari zooms the viewport on focus
+   for anything smaller, and the zoom does not undo itself. iOS body is 17px,
+   which clears it anyway. */
+.pf2e-field {
+  display: block;
+  width: 100%;
+  padding: 11px 14px;
+  background-color: var(--pf2e-fill);
+  border: none;
+  border-radius: var(--pf2e-r-md);
+  color: var(--pf2e-text);
+  font-family: inherit;
+  font-size: 1.0625rem;
+  line-height: 1.35;
+  transition: background-color var(--pf2e-fast) var(--pf2e-ease);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.pf2e-field::placeholder {
+  color: var(--pf2e-text-tertiary);
+}
+
+.pf2e-field:focus {
+  outline: none;
+  background-color: var(--pf2e-fill-strong);
+}
+
+.pf2e-field:focus-visible {
+  outline: 2px solid var(--pf2e-ink);
+  outline-offset: 1px;
+}
+
+textarea.pf2e-field {
+  resize: vertical;
+  min-height: 76px;
+}
+
+/* A field that sits INSIDE a grouped row: no fill of its own, the row is the
+   surface. This is how iOS renders a text field in Settings.
+
+   It takes the row's full height rather than sitting as a 23px line of text
+   inside 11px of padding — otherwise the row looks like a 44px target and the
+   thing you actually have to hit is half that. The row drops its own vertical
+   padding to compensate, so the height is unchanged. */
+.pf2e-row .pf2e-field {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  text-align: right;
+  min-height: 44px;
+}
+
+.pf2e-row:has(.pf2e-field) {
+  padding-block: 0;
+}
+
+/* Dark mode paints the native date/time picker glyph black-on-black. */
+@media (prefers-color-scheme: dark) {
+  .pf2e-field::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+  }
+}
+
+/* ── Switch ────────────────────────────────────────────────────────────────
+   The iOS toggle, hand-rolled: a 51×31 track with a 27px knob that slides.
+   Monochrome, so "on" is ink rather than systemGreen — and because colour
+   alone cannot carry a state here, the knob's travel and the track fill move
+   together, which is legible in greyscale and to a screen reader via
+   `aria-checked` on the button itself. */
+.pf2e-switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 51px;
+  height: 31px;
+  padding: 0;
+  border: none;
+  border-radius: 980px;
+  background-color: var(--pf2e-fill-strong);
+  cursor: pointer;
+  transition: background-color var(--pf2e-base) var(--pf2e-ease);
+}
+
+.pf2e-switch[aria-checked='true'] {
+  background-color: var(--pf2e-ink);
+}
+
+.pf2e-switch:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pf2e-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  box-shadow:
+    0 3px 8px rgba(0, 0, 0, 0.15),
+    0 1px 1px rgba(0, 0, 0, 0.16);
+  transition: transform var(--pf2e-base) var(--pf2e-ease);
+}
+
+.pf2e-switch[aria-checked='true']::after {
+  transform: translateX(20px);
+}
+
+@media (prefers-color-scheme: dark) {
+  /* The knob stays white on an ink track in light mode; in dark the track is
+     white, so the knob inverts to keep the two distinguishable. */
+  .pf2e-switch[aria-checked='true']::after {
+    background-color: #000000;
+  }
+}
+
+@media (forced-colors: active) {
+  .pf2e-switch {
+    border: 1px solid CanvasText;
+  }
+  .pf2e-switch::after {
+    background-color: CanvasText;
+  }
+}
+
+/* ── Segmented control ────────────────────────────────────────────────────
+   UISegmentedControl: a tinted track with a raised pill behind the selected
+   segment. The pill is a sibling element translated with a CSS custom
+   property, NOT a framer-motion `layoutId` — that belongs to LiquidTabs and is
+   CI-enforced (design-language.md §13 rule 3). A transform on one element is
+   also cheaper than the layout projection would be. */
+.pf2e-segmented {
+  position: relative;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 0;
+  /* Fill the row and be allowed to shrink inside it. Four segments at their
+     intrinsic width are 289px, which escaped a 270px row at 320px — the
+     segments truncate instead. */
+  width: 100%;
+  min-width: 0;
+  padding: 2px;
+  border-radius: 9px;
+  background-color: var(--pf2e-fill);
+  isolation: isolate;
+}
+
+.pf2e-segmented-thumb {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  width: calc((100% - 4px) / var(--pf2e-seg-count, 1));
+  border-radius: 7px;
+  background-color: var(--pf2e-surface);
+  box-shadow:
+    0 3px 8px rgba(0, 0, 0, 0.12),
+    0 1px 1px rgba(0, 0, 0, 0.04);
+  transform: translateX(calc(var(--pf2e-seg-index, 0) * 100%));
+  transition: transform var(--pf2e-base) var(--pf2e-ease);
+  z-index: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .pf2e-segmented-thumb {
+    background-color: var(--pf2e-surface-raised);
+  }
+}
+
+.pf2e-segment {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  min-height: 28px;
+  padding: 6px 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: none;
+  background: transparent;
+  color: var(--pf2e-text);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 7px;
+  transition: opacity var(--pf2e-fast) var(--pf2e-ease);
+}
+
+.pf2e-segment[aria-checked='false'] {
+  opacity: 0.6;
+}
+
+.pf2e-segment[aria-checked='true'] {
+  font-weight: 590;
+}
+
+/* A UISegmentedControl is 32pt tall and a switch is 51×31pt — Apple's own
+   sizes, which the page should not fatten. They meet the 44px minimum with a
+   transparent expander instead. Vertical only: their neighbours sit beside
+   them, so nothing is stolen. */
+.pf2e-segment::after,
+.pf2e-switch::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 44px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+/* The switch already uses ::after for its knob, so its hit expander is a
+   ::before instead. */
+.pf2e-switch::after {
+  content: none;
+}
+
+.pf2e-switch::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  right: -4px;
+  top: 50%;
+  height: 44px;
+  transform: translateY(-50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf2e-segmented-thumb,
+  .pf2e-switch,
+  .pf2e-switch::after {
+    transition: none;
+  }
+}
+
+/* ── Availability ──────────────────────────────────────────────────────────
+   Three states, three visual treatments, no hue:
+     going       solid ink fill
+     tentative   ink outline, transparent
+     unavailable flat fill, secondary text
+   Each also carries its own icon, so the state is never carried by contrast
+   alone (WCAG 1.4.1) and stays readable to someone who cannot see the fill. */
+.pf2e-avail {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 44px;
+  padding: 0.375rem 0.875rem;
+  border-radius: 980px;
+  border: 1px solid var(--pf2e-line);
+  background-color: transparent;
+  color: var(--pf2e-text-secondary);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color var(--pf2e-fast) var(--pf2e-ease),
+    border-color var(--pf2e-fast) var(--pf2e-ease),
+    color var(--pf2e-fast) var(--pf2e-ease),
+    transform var(--pf2e-fast) var(--pf2e-ease);
+}
+
+.pf2e-avail:not(:disabled):hover {
+  border-color: var(--pf2e-line-strong);
+  color: var(--pf2e-text);
+}
+
+.pf2e-avail:not(:disabled):active {
+  transform: scale(0.96);
+}
+
+.pf2e-avail[data-active='true'][data-status='GOING'] {
+  background-color: var(--pf2e-ink);
+  border-color: var(--pf2e-ink);
+  color: var(--pf2e-text-inverse);
+}
+
+.pf2e-avail[data-active='true'][data-status='TENTATIVE'] {
+  background-color: transparent;
+  border-color: var(--pf2e-ink);
+  border-style: dashed;
+  color: var(--pf2e-text);
+}
+
+.pf2e-avail[data-active='true'][data-status='UNAVAILABLE'] {
+  background-color: var(--pf2e-fill-strong);
+  border-color: transparent;
+  color: var(--pf2e-text);
+}
+
+/* ── Month grid ────────────────────────────────────────────────────────────
+   A real 7-column grid on every width. Cells are square-ish via aspect-ratio
+   with no competing max-height, so the grid never fights itself for size. */
+.pf2e-month {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.pf2e-daycell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.1875rem;
+  /* `min-height`, not a bare `aspect-ratio`. Two reasons, both from the audit:
+     a square cell is under 44px tall on a narrow phone, and `aspect-ratio`
+     beside a `max-*` clamp is the §12.1 trap the viewport gate exists to
+     catch. The cell is square-ish by column width and floored at the touch
+     minimum.
+
+     Width is a different story and cannot be fixed by CSS: seven columns of
+     44px need 308px before any padding, so a 320px phone mathematically
+     cannot give every day a 44px-wide cell. iOS Calendar has exactly this
+     constraint and answers it the same way — take the padding to near zero so
+     the cells are as wide as the screen allows, and accept a dense grid.
+     `.pf2e-month-card` below does that; the audit records the exception. */
+  aspect-ratio: auto;
+  min-height: 44px;
+  padding: 0.25rem 0.125rem;
+  border: 1px solid transparent;
+  border-radius: var(--pf2e-r-md);
+  background-color: transparent;
+  color: var(--pf2e-text);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition:
+    background-color var(--pf2e-fast) var(--pf2e-ease),
+    border-color var(--pf2e-fast) var(--pf2e-ease),
+    color var(--pf2e-fast) var(--pf2e-ease);
+}
+
+.pf2e-daycell:hover {
+  background-color: var(--pf2e-fill);
+}
+
+.pf2e-daycell[data-outside='true'] {
+  color: var(--pf2e-text-tertiary);
+}
+
+.pf2e-daycell[data-today='true'] {
+  font-weight: 700;
+}
+
+.pf2e-daycell[data-today='true'] .pf2e-daynum {
+  background-color: var(--pf2e-ink);
+  color: var(--pf2e-text-inverse);
+  border-radius: 50%;
+}
+
+.pf2e-daycell[data-selected='true'] {
+  border-color: var(--pf2e-line-strong);
+  background-color: var(--pf2e-fill);
+}
+
+.pf2e-daynum {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Session markers under the number. A dot per session, capped at three so a
+   busy day does not reflow the cell. */
+.pf2e-dots {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 5px;
+}
+
+.pf2e-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--pf2e-ink);
+}
+
+.pf2e-dot[data-canceled='true'] {
+  background-color: transparent;
+  border: 1px solid var(--pf2e-line-strong);
+}
+
+/* The month card gives its grid the full width on a phone: at 320px every
+   pixel of horizontal padding comes straight out of the day cells. */
+.pf2e-month-card {
+  padding: 12px 4px;
+}
+
+@media (min-width: 24rem) {
+  .pf2e-month-card {
+    padding: 16px;
+  }
+}
+
+.pf2e-month-card > header {
+  padding-inline: 12px;
+}
+
+@media (min-width: 24rem) {
+  .pf2e-month-card > header {
+    padding-inline: 0;
+  }
+}
+
+/* ── Sheet / dialog ────────────────────────────────────────────────────────
+   Bottom sheet on a phone, centred card on a desktop. Both are the same DOM;
+   only the positioning changes, so there is one component and one set of
+   focus/escape semantics rather than two that drift. */
+.pf2e-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background-color: rgba(0, 0, 0, 0.35);
+}
+
+@media (prefers-color-scheme: dark) {
+  .pf2e-scrim {
+    background-color: rgba(0, 0, 0, 0.6);
+  }
+}
+
+.pf2e-sheet-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 61;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.pf2e-sheet {
+  pointer-events: auto;
+  width: 100%;
+  max-height: min(92dvh, 52rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  background-color: var(--pf2e-bg);
+  border-top-left-radius: var(--pf2e-r-xl);
+  border-top-right-radius: var(--pf2e-r-xl);
+  box-shadow: var(--pf2e-shadow-lg);
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+}
+
+@media (min-width: 40rem) {
+  .pf2e-sheet-wrap {
+    align-items: center;
+    padding: 1.5rem;
+  }
+
+  .pf2e-sheet {
+    max-width: 34rem;
+    max-height: min(86dvh, 48rem);
+    border-radius: var(--pf2e-r-xl);
+    padding-bottom: 0;
+  }
+}
+
+/* The grab handle only means anything where the sheet is bottom-anchored. */
+.pf2e-grabber {
+  width: 2.25rem;
+  height: 0.3125rem;
+  border-radius: 980px;
+  background-color: var(--pf2e-line-strong);
+  margin: 0.5rem auto 0;
+}
+
+@media (min-width: 40rem) {
+  .pf2e-grabber {
+    display: none;
+  }
+}
+
+/* Sticky sheet chrome so the title and the actions stay reachable in a long
+   form on a short screen. */
+.pf2e-sheet-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  background-color: var(--pf2e-bg);
+  border-bottom: 1px solid var(--pf2e-line);
+}
+
+/* ── Skeletons ─────────────────────────────────────────────────────────────
+   A two-tone sweep rather than a pulse: on a slow connection the skeleton is
+   on screen for seconds, and a pulse at that duration reads as a broken page.
+   Reduced motion gets a static block. */
+.pf2e-skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--pf2e-fill);
+  border-radius: var(--pf2e-r-sm);
+}
+
+.pf2e-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(90deg, transparent, var(--pf2e-fill-strong), transparent);
+  animation: pf2e-sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes pf2e-sweep {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf2e-skeleton::after {
+    animation: none;
+  }
+
+  .pf2e-btn:not(:disabled):active,
+  .pf2e-avail:not(:disabled):active {
+    transform: none;
+  }
+}
+
+/* ── Offline / pending affordances ────────────────────────────────────────
+   A row whose write has not landed yet is dimmed rather than replaced, so the
+   value the user chose stays on screen and legible while it is in flight. */
+.pf2e-pending {
+  opacity: 0.55;
+  transition: opacity var(--pf2e-base) var(--pf2e-ease);
+}
+
+.pf2e-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.9375rem;
+  border-radius: var(--pf2e-r-md);
+  background-color: var(--pf2e-fill);
+  color: var(--pf2e-text-secondary);
+  font-size: 0.8125rem;
+}
+
+/* ── Canceled ──────────────────────────────────────────────────────────────
+   Strikethrough plus a label. The strikethrough alone is a hue-free signal but
+   a weak one at small sizes, so it never travels without the word. */
+.pf2e-canceled .pf2e-title {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  color: var(--pf2e-text-tertiary);
+}
+
+.pf2e-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ── Assistant ─────────────────────────────────────────────────────────────
+   A launcher pinned bottom-right and the panel it opens. Both are `fixed` and
+   inset by the safe area, so neither sits under the iPhone home indicator.
+   z-index sits below the sheet (60/61) — a session dialog must cover this, not
+   the other way round. */
+.pf2e-fab {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border: none;
+  border-radius: 50%;
+  background-color: var(--pf2e-ink);
+  color: var(--pf2e-text-inverse);
+  box-shadow: var(--pf2e-shadow-md);
+  cursor: pointer;
+  transition:
+    background-color var(--pf2e-fast) var(--pf2e-ease),
+    box-shadow var(--pf2e-fast) var(--pf2e-ease);
+}
+
+.pf2e-fab:hover {
+  background-color: var(--pf2e-ink-hover);
+  box-shadow: var(--pf2e-shadow-lg);
+}
+
+.pf2e-assistant {
+  position: fixed;
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--pf2e-bg);
+  border: 1px solid var(--pf2e-line);
+  box-shadow: var(--pf2e-shadow-lg);
+  /* Phone: a bottom sheet that leaves the launcher reachable above it. */
+  inset-inline: 0.5rem;
+  bottom: calc(max(1rem, env(safe-area-inset-bottom)) + 4rem);
+  max-height: min(70dvh, 34rem);
+  border-radius: var(--pf2e-r-xl);
+}
+
+@media (min-width: 40rem) {
+  .pf2e-assistant {
+    inset-inline: auto;
+    right: max(1rem, env(safe-area-inset-right));
+    width: 24rem;
+    max-height: min(70dvh, 36rem);
+  }
+}
+
+.pf2e-assistant-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.75rem 0.75rem 0.75rem 1rem;
+  border-bottom: 1px solid var(--pf2e-line);
+}
+
+.pf2e-assistant-body {
+  flex: 1;
+  min-height: 6rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 0.875rem 1rem;
+}
+
+.pf2e-assistant-foot {
+  padding: 0.75rem 1rem;
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--pf2e-line);
+}
+
+/* The composer grows with its content up to a cap, then scrolls — a chat box
+   that stays one line while you type a paragraph hides what you wrote. */
+textarea.pf2e-ask {
+  min-height: 44px;
+  max-height: 7rem;
+  resize: none;
+  padding-block: 0.5rem;
+}
+
+.pf2e-msg-user,
+.pf2e-msg-bot {
+  max-width: 88%;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--pf2e-r-lg);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.pf2e-msg-user {
+  align-self: flex-end;
+  background-color: var(--pf2e-ink);
+  color: var(--pf2e-text-inverse);
+  border-bottom-right-radius: var(--pf2e-r-sm);
+}
+
+.pf2e-msg-bot {
+  align-self: flex-start;
+  background-color: var(--pf2e-fill);
+  color: var(--pf2e-text);
+  border-bottom-left-radius: var(--pf2e-r-sm);
+}
+
+.pf2e-suggestion {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--pf2e-line);
+  border-radius: var(--pf2e-r-md);
+  background-color: transparent;
+  color: var(--pf2e-text);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition:
+    background-color var(--pf2e-fast) var(--pf2e-ease),
+    border-color var(--pf2e-fast) var(--pf2e-ease);
+}
+
+.pf2e-suggestion:hover:not(:disabled) {
+  background-color: var(--pf2e-fill);
+  border-color: var(--pf2e-line-strong);
+}
+
+.pf2e-suggestion:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Three dots that fade in sequence. Opacity-only, so it composites on the GPU
+   and costs nothing while the request is in flight. */
+.pf2e-typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 1.2em;
+}
+
+.pf2e-typing span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--pf2e-text-tertiary);
+  animation: pf2e-blink 1.2s ease-in-out infinite;
+}
+
+.pf2e-typing span:nth-child(2) {
+  animation-delay: 0.18s;
+}
+
+.pf2e-typing span:nth-child(3) {
+  animation-delay: 0.36s;
+}
+
+@keyframes pf2e-blink {
+  0%,
+  60%,
+  100% {
+    opacity: 0.25;
+  }
+  30% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf2e-typing span {
+    animation: none;
+    opacity: 0.6;
+  }
+}

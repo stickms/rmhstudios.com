@@ -8,6 +8,7 @@ import frCAltair from "@/locales/fr/c-altair.json";
 import frCAwards from "@/locales/fr/c-awards.json";
 import frCBlog from "@/locales/fr/c-blog.json";
 import frCBuilds from "@/locales/fr/c-builds.json";
+import frCBumsRush from "@/locales/fr/c-bums-rush.json";
 import frCCircle from "@/locales/fr/c-circle.json";
 import frCCreator from "@/locales/fr/c-creator.json";
 import frCCursedLogic from "@/locales/fr/c-cursed-logic.json";
@@ -74,6 +75,7 @@ import frPages from "@/locales/fr/pages.json";
 import frRAltair from "@/locales/fr/r-altair.json";
 import frRDiscord from "@/locales/fr/r-discord.json";
 import frRForestExplorer from "@/locales/fr/r-forest-explorer.json";
+import frRPf2ecal from "@/locales/fr/r-pf2ecal.json";
 import frRRmhbox from "@/locales/fr/r-rmhbox.json";
 import frRRmhcode from "@/locales/fr/r-rmhcode.json";
 import frRSecret from "@/locales/fr/r-secret.json";
@@ -100,6 +102,7 @@ const frResources = {
   "c-awards": frCAwards,
   "c-blog": frCBlog,
   "c-builds": frCBuilds,
+  "c-bums-rush": frCBumsRush,
   "c-circle": frCCircle,
   "c-creator": frCCreator,
   "c-cursed-logic": frCCursedLogic,
@@ -166,6 +169,7 @@ const frResources = {
   "r-altair": frRAltair,
   "r-discord": frRDiscord,
   "r-forest-explorer": frRForestExplorer,
+  "r-pf2ecal": frRPf2ecal,
   "r-rmhbox": frRRmhbox,
   "r-rmhcode": frRRmhcode,
   "r-secret": frRSecret,

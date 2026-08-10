@@ -58,6 +58,7 @@ export default tseslint.config(
         // DOM globals referenced inside Playwright page.evaluate() callbacks.
         document: 'readonly',
         window: 'readonly',
+        getComputedStyle: 'readonly',
         self: 'readonly',
         navigator: 'readonly',
         location: 'readonly',

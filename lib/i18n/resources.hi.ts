@@ -8,6 +8,7 @@ import hiCAltair from "@/locales/hi/c-altair.json";
 import hiCAwards from "@/locales/hi/c-awards.json";
 import hiCBlog from "@/locales/hi/c-blog.json";
 import hiCBuilds from "@/locales/hi/c-builds.json";
+import hiCBumsRush from "@/locales/hi/c-bums-rush.json";
 import hiCCircle from "@/locales/hi/c-circle.json";
 import hiCCreator from "@/locales/hi/c-creator.json";
 import hiCCursedLogic from "@/locales/hi/c-cursed-logic.json";
@@ -74,6 +75,7 @@ import hiPages from "@/locales/hi/pages.json";
 import hiRAltair from "@/locales/hi/r-altair.json";
 import hiRDiscord from "@/locales/hi/r-discord.json";
 import hiRForestExplorer from "@/locales/hi/r-forest-explorer.json";
+import hiRPf2ecal from "@/locales/hi/r-pf2ecal.json";
 import hiRRmhbox from "@/locales/hi/r-rmhbox.json";
 import hiRRmhcode from "@/locales/hi/r-rmhcode.json";
 import hiRSecret from "@/locales/hi/r-secret.json";
@@ -100,6 +102,7 @@ const hiResources = {
   "c-awards": hiCAwards,
   "c-blog": hiCBlog,
   "c-builds": hiCBuilds,
+  "c-bums-rush": hiCBumsRush,
   "c-circle": hiCCircle,
   "c-creator": hiCCreator,
   "c-cursed-logic": hiCCursedLogic,
@@ -166,6 +169,7 @@ const hiResources = {
   "r-altair": hiRAltair,
   "r-discord": hiRDiscord,
   "r-forest-explorer": hiRForestExplorer,
+  "r-pf2ecal": hiRPf2ecal,
   "r-rmhbox": hiRRmhbox,
   "r-rmhcode": hiRRmhcode,
   "r-secret": hiRSecret,

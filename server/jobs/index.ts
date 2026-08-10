@@ -21,6 +21,10 @@ import { registerDigestCron } from '@/lib/digest/pipeline.server';
 import { registerMaintenanceCrons } from '@/lib/jobs/maintenance.server';
 import { ANALYSIS_QUEUE, registerAnalysisWorker } from '@/lib/slice-it/analysis-queue.server';
 import { REGEN_QUEUE, registerRegenCron } from '@/lib/slice-it/regen.server';
+import {
+  PF2E_REMINDER_QUEUE,
+  registerPf2eReminderCron,
+} from '@/lib/pf2ecal/reminders.server';
 
 const log = createLogger('jobs');
 
@@ -82,6 +86,20 @@ async function main() {
     log.error({
       event: 'jobs.register_failed',
       queue: ANALYSIS_QUEUE,
+      err: (e as Error)?.message,
+    });
+  }
+
+  // The PF2e table's morning-of Discord reminders. A no-op unless the board
+  // has a webhook saved AND reminders switched on, so registering it costs one
+  // idle queue on every deploy that never uses it.
+  try {
+    await registerPf2eReminderCron(boss);
+    log.info({ event: 'jobs.started', queue: PF2E_REMINDER_QUEUE });
+  } catch (e) {
+    log.error({
+      event: 'jobs.register_failed',
+      queue: PF2E_REMINDER_QUEUE,
       err: (e as Error)?.message,
     });
   }

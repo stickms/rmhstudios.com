@@ -8,6 +8,7 @@ import viCAltair from "@/locales/vi/c-altair.json";
 import viCAwards from "@/locales/vi/c-awards.json";
 import viCBlog from "@/locales/vi/c-blog.json";
 import viCBuilds from "@/locales/vi/c-builds.json";
+import viCBumsRush from "@/locales/vi/c-bums-rush.json";
 import viCCircle from "@/locales/vi/c-circle.json";
 import viCCreator from "@/locales/vi/c-creator.json";
 import viCCursedLogic from "@/locales/vi/c-cursed-logic.json";
@@ -74,6 +75,7 @@ import viPages from "@/locales/vi/pages.json";
 import viRAltair from "@/locales/vi/r-altair.json";
 import viRDiscord from "@/locales/vi/r-discord.json";
 import viRForestExplorer from "@/locales/vi/r-forest-explorer.json";
+import viRPf2ecal from "@/locales/vi/r-pf2ecal.json";
 import viRRmhbox from "@/locales/vi/r-rmhbox.json";
 import viRRmhcode from "@/locales/vi/r-rmhcode.json";
 import viRSecret from "@/locales/vi/r-secret.json";
@@ -100,6 +102,7 @@ const viResources = {
   "c-awards": viCAwards,
   "c-blog": viCBlog,
   "c-builds": viCBuilds,
+  "c-bums-rush": viCBumsRush,
   "c-circle": viCCircle,
   "c-creator": viCCreator,
   "c-cursed-logic": viCCursedLogic,
@@ -166,6 +169,7 @@ const viResources = {
   "r-altair": viRAltair,
   "r-discord": viRDiscord,
   "r-forest-explorer": viRForestExplorer,
+  "r-pf2ecal": viRPf2ecal,
   "r-rmhbox": viRRmhbox,
   "r-rmhcode": viRRmhcode,
   "r-secret": viRSecret,
