@@ -1,0 +1,828 @@
+/*
+ * /pf2ecal — a scoped, monochrome design scheme.
+ *
+ * This page deliberately does NOT use the `--site-*` contract. It is an
+ * unlisted board for one table, asked for as "minimal, Apple-style, whites and
+ * blacks", and it has no relationship to the themes the rest of the site
+ * offers. `pf2ecal` is registered in FULLSCREEN_ROUTE_SEGMENTS /
+ * FULLSCREEN_TIER_DIRS (lib/__tests__/design-consistency.test.ts) for exactly
+ * that reason — the same mechanism the games and the campaign arms use — so
+ * this is an exemption the gate knows about rather than one it fails to notice.
+ *
+ * Everything below hangs off `.pf2e` so nothing here can leak into the site
+ * tier. Colour is entirely greyscale: the three availability states are
+ * distinguished by FILL, BORDER and ICON SHAPE rather than by hue, which is
+ * both the look that was asked for and the reason the states survive greyscale
+ * printing, colour-vision deficiency and a phone in sunlight.
+ *
+ * Light and dark follow `prefers-color-scheme`. The site's own theme classes
+ * are ignored on purpose: the page paints an opaque background over the whole
+ * viewport, so a Daylight or Graphite document underneath is never visible, and
+ * a viewer's OS preference is the only signal that means anything here.
+ */
+
+.pf2e {
+  /* Apple's own text stack, then the platform fallbacks. `-apple-system`
+     resolves to SF on Apple hardware, which is what makes the page read as
+     native rather than as a pastiche of it. */
+  --pf2e-font:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', 'Segoe UI', Roboto,
+    system-ui, sans-serif;
+
+  /* ── Light ─────────────────────────────────────────────────────────────── */
+  --pf2e-bg: #ffffff;
+  --pf2e-bg-sunken: #f5f5f7;
+  --pf2e-surface: #ffffff;
+  --pf2e-surface-raised: #ffffff;
+  --pf2e-fill: rgba(0, 0, 0, 0.04);
+  --pf2e-fill-strong: rgba(0, 0, 0, 0.08);
+
+  --pf2e-text: #1d1d1f;
+  --pf2e-text-secondary: #6e6e73;
+  --pf2e-text-tertiary: #8e8e93;
+  --pf2e-text-inverse: #ffffff;
+
+  --pf2e-line: rgba(0, 0, 0, 0.1);
+  --pf2e-line-strong: rgba(0, 0, 0, 0.18);
+
+  /* The single "accent" is ink itself — solid black on white, inverted in dark
+     mode. One value, so a filled control never has to be re-picked per theme. */
+  --pf2e-ink: #1d1d1f;
+  --pf2e-ink-hover: #000000;
+
+  --pf2e-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 1px rgba(0, 0, 0, 0.03);
+  --pf2e-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --pf2e-shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.06);
+
+  --pf2e-r-sm: 8px;
+  --pf2e-r-md: 12px;
+  --pf2e-r-lg: 18px;
+  --pf2e-r-xl: 24px;
+
+  /* One duration and one curve for the whole page. The curve is a soft
+     deceleration — the same shape lib/motion.ts calls `standard` — so CSS
+     transitions and the framer-motion springs read as one system. */
+  --pf2e-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --pf2e-fast: 130ms;
+  --pf2e-base: 220ms;
+
+  color-scheme: light;
+  background-color: var(--pf2e-bg);
+  color: var(--pf2e-text);
+  font-family: var(--pf2e-font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Tabular figures everywhere: a column of times whose digits change width
+     shimmers as it updates, and this page is mostly a column of times. */
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-color-scheme: dark) {
+  .pf2e {
+    --pf2e-bg: #000000;
+    --pf2e-bg-sunken: #0a0a0a;
+    --pf2e-surface: #1c1c1e;
+    --pf2e-surface-raised: #2c2c2e;
+    --pf2e-fill: rgba(255, 255, 255, 0.06);
+    --pf2e-fill-strong: rgba(255, 255, 255, 0.12);
+
+    --pf2e-text: #f5f5f7;
+    --pf2e-text-secondary: #a1a1a6;
+    --pf2e-text-tertiary: #6e6e73;
+    --pf2e-text-inverse: #000000;
+
+    --pf2e-line: rgba(255, 255, 255, 0.12);
+    --pf2e-line-strong: rgba(255, 255, 255, 0.24);
+
+    --pf2e-ink: #f5f5f7;
+    --pf2e-ink-hover: #ffffff;
+
+    --pf2e-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --pf2e-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+    --pf2e-shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.6);
+
+    color-scheme: dark;
+  }
+}
+
+/* Forced-colours mode replaces every colour we set with the user's own. The
+   only job left is to make sure the borders we were drawing with alpha still
+   exist, since `rgba(0,0,0,.1)` becomes transparent rather than a system line. */
+@media (forced-colors: active) {
+  .pf2e {
+    --pf2e-line: CanvasText;
+    --pf2e-line-strong: CanvasText;
+  }
+  .pf2e-card,
+  .pf2e-btn,
+  .pf2e-field {
+    border: 1px solid CanvasText;
+  }
+}
+
+/* ── Page frame ────────────────────────────────────────────────────────────
+   The page scrolls the DOCUMENT rather than an inner `overflow-y-auto` box:
+   mobile Safari only collapses its address bar for document scroll, and an
+   inner scroller costs ~90px of usable height on every phone. */
+.pf2e {
+  min-height: 100dvh;
+  padding-bottom: max(3rem, env(safe-area-inset-bottom));
+}
+
+.pf2e-shell {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 68rem;
+  padding-inline: max(1rem, env(safe-area-inset-left), env(safe-area-inset-right));
+}
+
+/* ── Typography ────────────────────────────────────────────────────────────
+   A four-step scale. Negative tracking at display sizes is the single most
+   recognisable thing about Apple's type, and it only looks right above ~28px —
+   body text keeps normal tracking. */
+.pf2e-display {
+  font-size: clamp(1.9rem, 1.4rem + 2.2vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.028em;
+  line-height: 1.06;
+}
+
+.pf2e-title {
+  font-size: 1.3125rem;
+  font-weight: 600;
+  letter-spacing: -0.014em;
+  line-height: 1.25;
+}
+
+.pf2e-body {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.pf2e-caption {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--pf2e-text-secondary);
+}
+
+.pf2e-mono-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pf2e-text-tertiary);
+}
+
+.pf2e-muted {
+  color: var(--pf2e-text-secondary);
+}
+
+/* ── Surfaces ──────────────────────────────────────────────────────────────
+   One card, one hairline. No blur anywhere on this page: the material is
+   paper, and a backdrop filter would both contradict that and cost a
+   composited layer per card on a list that can run to 30 rows. */
+.pf2e-card {
+  background-color: var(--pf2e-surface);
+  border: 1px solid var(--pf2e-line);
+  border-radius: var(--pf2e-r-lg);
+  box-shadow: var(--pf2e-shadow-sm);
+}
+
+.pf2e-card-flat {
+  background-color: var(--pf2e-bg-sunken);
+  border: 1px solid transparent;
+  border-radius: var(--pf2e-r-md);
+}
+
+/* A row list with hairlines between, not around — the iOS grouped-table shape. */
+.pf2e-rows > * + * {
+  border-top: 1px solid var(--pf2e-line);
+}
+
+/* ── Focus ─────────────────────────────────────────────────────────────────
+   One ring for the whole page, on ink so it is legible against every surface
+   here (all of which are near-white or near-black). */
+.pf2e :focus-visible {
+  outline: 2px solid var(--pf2e-ink);
+  outline-offset: 2px;
+  border-radius: var(--pf2e-r-sm);
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────────
+   44px minimum touch target on the primary controls (the Apple HIG figure and
+   the one that actually matters on a phone in a pub). */
+.pf2e-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.375rem;
+  padding: 0.5rem 0.9375rem;
+  border-radius: 980px; /* pill — a shape, not a radius token */
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  /* Named properties, never `transition-all`: this element also changes size
+     when its label swaps, and animating that is a layout thrash per frame. */
+  transition:
+    background-color var(--pf2e-fast) var(--pf2e-ease),
+    border-color var(--pf2e-fast) var(--pf2e-ease),
+    color var(--pf2e-fast) var(--pf2e-ease),
+    opacity var(--pf2e-fast) var(--pf2e-ease),
+    transform var(--pf2e-fast) var(--pf2e-ease);
+}
+
+.pf2e-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pf2e-btn:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+.pf2e-btn-primary {
+  background-color: var(--pf2e-ink);
+  color: var(--pf2e-text-inverse);
+}
+
+.pf2e-btn-primary:not(:disabled):hover {
+  background-color: var(--pf2e-ink-hover);
+}
+
+.pf2e-btn-secondary {
+  background-color: var(--pf2e-fill);
+  color: var(--pf2e-text);
+}
+
+.pf2e-btn-secondary:not(:disabled):hover {
+  background-color: var(--pf2e-fill-strong);
+}
+
+.pf2e-btn-ghost {
+  background-color: transparent;
+  color: var(--pf2e-text-secondary);
+}
+
+.pf2e-btn-ghost:not(:disabled):hover {
+  background-color: var(--pf2e-fill);
+  color: var(--pf2e-text);
+}
+
+.pf2e-btn-outline {
+  background-color: transparent;
+  border-color: var(--pf2e-line-strong);
+  color: var(--pf2e-text);
+}
+
+.pf2e-btn-outline:not(:disabled):hover {
+  background-color: var(--pf2e-fill);
+}
+
+.pf2e-btn-sm {
+  min-height: 1.9375rem;
+  padding: 0.3125rem 0.6875rem;
+  font-size: 0.8125rem;
+}
+
+.pf2e-btn-icon {
+  min-height: 2.25rem;
+  width: 2.25rem;
+  padding: 0;
+  border-radius: 50%;
+}
+
+/* ── Fields ────────────────────────────────────────────────────────────────
+   16px minimum font size on inputs: mobile Safari zooms the viewport on focus
+   for anything smaller, and the zoom does not undo itself. */
+.pf2e-field {
+  display: block;
+  width: 100%;
+  padding: 0.625rem 0.8125rem;
+  background-color: var(--pf2e-bg-sunken);
+  border: 1px solid transparent;
+  border-radius: var(--pf2e-r-md);
+  color: var(--pf2e-text);
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.4;
+  transition:
+    background-color var(--pf2e-fast) var(--pf2e-ease),
+    border-color var(--pf2e-fast) var(--pf2e-ease);
+}
+
+.pf2e-field::placeholder {
+  color: var(--pf2e-text-tertiary);
+}
+
+.pf2e-field:focus {
+  outline: none;
+  background-color: var(--pf2e-surface);
+  border-color: var(--pf2e-line-strong);
+}
+
+.pf2e-field:focus-visible {
+  outline: 2px solid var(--pf2e-ink);
+  outline-offset: 1px;
+}
+
+textarea.pf2e-field {
+  resize: vertical;
+  min-height: 4.5rem;
+}
+
+/* Dark mode paints the native date/time picker glyph black-on-black. */
+@media (prefers-color-scheme: dark) {
+  .pf2e-field::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+  }
+}
+
+/* ── Availability ──────────────────────────────────────────────────────────
+   Three states, three visual treatments, no hue:
+     going       solid ink fill
+     tentative   ink outline, transparent
+     unavailable flat fill, secondary text
+   Each also carries its own icon, so the state is never carried by contrast
+   alone (WCAG 1.4.1) and stays readable to someone who cannot see the fill. */
+.pf2e-avail {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 2.125rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 980px;
+  border: 1px solid var(--pf2e-line);
+  background-color: transparent;
+  color: var(--pf2e-text-secondary);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color var(--pf2e-fast) var(--pf2e-ease),
+    border-color var(--pf2e-fast) var(--pf2e-ease),
+    color var(--pf2e-fast) var(--pf2e-ease),
+    transform var(--pf2e-fast) var(--pf2e-ease);
+}
+
+.pf2e-avail:not(:disabled):hover {
+  border-color: var(--pf2e-line-strong);
+  color: var(--pf2e-text);
+}
+
+.pf2e-avail:not(:disabled):active {
+  transform: scale(0.96);
+}
+
+.pf2e-avail[data-active='true'][data-status='GOING'] {
+  background-color: var(--pf2e-ink);
+  border-color: var(--pf2e-ink);
+  color: var(--pf2e-text-inverse);
+}
+
+.pf2e-avail[data-active='true'][data-status='TENTATIVE'] {
+  background-color: transparent;
+  border-color: var(--pf2e-ink);
+  border-style: dashed;
+  color: var(--pf2e-text);
+}
+
+.pf2e-avail[data-active='true'][data-status='UNAVAILABLE'] {
+  background-color: var(--pf2e-fill-strong);
+  border-color: transparent;
+  color: var(--pf2e-text);
+}
+
+/* ── Month grid ────────────────────────────────────────────────────────────
+   A real 7-column grid on every width. Cells are square-ish via aspect-ratio
+   with no competing max-height, so the grid never fights itself for size. */
+.pf2e-month {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.pf2e-daycell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.1875rem;
+  aspect-ratio: 1;
+  padding: 0.25rem 0.125rem;
+  border: 1px solid transparent;
+  border-radius: var(--pf2e-r-md);
+  background-color: transparent;
+  color: var(--pf2e-text);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition:
+    background-color var(--pf2e-fast) var(--pf2e-ease),
+    border-color var(--pf2e-fast) var(--pf2e-ease),
+    color var(--pf2e-fast) var(--pf2e-ease);
+}
+
+.pf2e-daycell:hover {
+  background-color: var(--pf2e-fill);
+}
+
+.pf2e-daycell[data-outside='true'] {
+  color: var(--pf2e-text-tertiary);
+}
+
+.pf2e-daycell[data-today='true'] {
+  font-weight: 700;
+}
+
+.pf2e-daycell[data-today='true'] .pf2e-daynum {
+  background-color: var(--pf2e-ink);
+  color: var(--pf2e-text-inverse);
+  border-radius: 50%;
+}
+
+.pf2e-daycell[data-selected='true'] {
+  border-color: var(--pf2e-line-strong);
+  background-color: var(--pf2e-fill);
+}
+
+.pf2e-daynum {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Session markers under the number. A dot per session, capped at three so a
+   busy day does not reflow the cell. */
+.pf2e-dots {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 5px;
+}
+
+.pf2e-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--pf2e-ink);
+}
+
+.pf2e-dot[data-canceled='true'] {
+  background-color: transparent;
+  border: 1px solid var(--pf2e-line-strong);
+}
+
+/* ── Sheet / dialog ────────────────────────────────────────────────────────
+   Bottom sheet on a phone, centred card on a desktop. Both are the same DOM;
+   only the positioning changes, so there is one component and one set of
+   focus/escape semantics rather than two that drift. */
+.pf2e-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background-color: rgba(0, 0, 0, 0.35);
+}
+
+@media (prefers-color-scheme: dark) {
+  .pf2e-scrim {
+    background-color: rgba(0, 0, 0, 0.6);
+  }
+}
+
+.pf2e-sheet-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 61;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.pf2e-sheet {
+  pointer-events: auto;
+  width: 100%;
+  max-height: min(92dvh, 52rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  background-color: var(--pf2e-bg);
+  border-top-left-radius: var(--pf2e-r-xl);
+  border-top-right-radius: var(--pf2e-r-xl);
+  box-shadow: var(--pf2e-shadow-lg);
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+}
+
+@media (min-width: 40rem) {
+  .pf2e-sheet-wrap {
+    align-items: center;
+    padding: 1.5rem;
+  }
+
+  .pf2e-sheet {
+    max-width: 34rem;
+    max-height: min(86dvh, 48rem);
+    border-radius: var(--pf2e-r-xl);
+    padding-bottom: 0;
+  }
+}
+
+/* The grab handle only means anything where the sheet is bottom-anchored. */
+.pf2e-grabber {
+  width: 2.25rem;
+  height: 0.3125rem;
+  border-radius: 980px;
+  background-color: var(--pf2e-line-strong);
+  margin: 0.5rem auto 0;
+}
+
+@media (min-width: 40rem) {
+  .pf2e-grabber {
+    display: none;
+  }
+}
+
+/* Sticky sheet chrome so the title and the actions stay reachable in a long
+   form on a short screen. */
+.pf2e-sheet-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  background-color: var(--pf2e-bg);
+  border-bottom: 1px solid var(--pf2e-line);
+}
+
+/* ── Skeletons ─────────────────────────────────────────────────────────────
+   A two-tone sweep rather than a pulse: on a slow connection the skeleton is
+   on screen for seconds, and a pulse at that duration reads as a broken page.
+   Reduced motion gets a static block. */
+.pf2e-skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--pf2e-fill);
+  border-radius: var(--pf2e-r-sm);
+}
+
+.pf2e-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(90deg, transparent, var(--pf2e-fill-strong), transparent);
+  animation: pf2e-sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes pf2e-sweep {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf2e-skeleton::after {
+    animation: none;
+  }
+
+  .pf2e-btn:not(:disabled):active,
+  .pf2e-avail:not(:disabled):active {
+    transform: none;
+  }
+}
+
+/* ── Offline / pending affordances ────────────────────────────────────────
+   A row whose write has not landed yet is dimmed rather than replaced, so the
+   value the user chose stays on screen and legible while it is in flight. */
+.pf2e-pending {
+  opacity: 0.55;
+  transition: opacity var(--pf2e-base) var(--pf2e-ease);
+}
+
+.pf2e-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.9375rem;
+  border-radius: var(--pf2e-r-md);
+  background-color: var(--pf2e-fill);
+  color: var(--pf2e-text-secondary);
+  font-size: 0.8125rem;
+}
+
+/* ── Canceled ──────────────────────────────────────────────────────────────
+   Strikethrough plus a label. The strikethrough alone is a hue-free signal but
+   a weak one at small sizes, so it never travels without the word. */
+.pf2e-canceled .pf2e-title {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  color: var(--pf2e-text-tertiary);
+}
+
+.pf2e-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ── Assistant ─────────────────────────────────────────────────────────────
+   A launcher pinned bottom-right and the panel it opens. Both are `fixed` and
+   inset by the safe area, so neither sits under the iPhone home indicator.
+   z-index sits below the sheet (60/61) — a session dialog must cover this, not
+   the other way round. */
+.pf2e-fab {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border: none;
+  border-radius: 50%;
+  background-color: var(--pf2e-ink);
+  color: var(--pf2e-text-inverse);
+  box-shadow: var(--pf2e-shadow-md);
+  cursor: pointer;
+  transition:
+    background-color var(--pf2e-fast) var(--pf2e-ease),
+    box-shadow var(--pf2e-fast) var(--pf2e-ease);
+}
+
+.pf2e-fab:hover {
+  background-color: var(--pf2e-ink-hover);
+  box-shadow: var(--pf2e-shadow-lg);
+}
+
+.pf2e-assistant {
+  position: fixed;
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--pf2e-bg);
+  border: 1px solid var(--pf2e-line);
+  box-shadow: var(--pf2e-shadow-lg);
+  /* Phone: a bottom sheet that leaves the launcher reachable above it. */
+  inset-inline: 0.5rem;
+  bottom: calc(max(1rem, env(safe-area-inset-bottom)) + 4rem);
+  max-height: min(70dvh, 34rem);
+  border-radius: var(--pf2e-r-xl);
+}
+
+@media (min-width: 40rem) {
+  .pf2e-assistant {
+    inset-inline: auto;
+    right: max(1rem, env(safe-area-inset-right));
+    width: 24rem;
+    max-height: min(70dvh, 36rem);
+  }
+}
+
+.pf2e-assistant-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.75rem 0.75rem 0.75rem 1rem;
+  border-bottom: 1px solid var(--pf2e-line);
+}
+
+.pf2e-assistant-body {
+  flex: 1;
+  min-height: 6rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 0.875rem 1rem;
+}
+
+.pf2e-assistant-foot {
+  padding: 0.75rem 1rem;
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--pf2e-line);
+}
+
+/* The composer grows with its content up to a cap, then scrolls — a chat box
+   that stays one line while you type a paragraph hides what you wrote. */
+textarea.pf2e-ask {
+  min-height: 2.375rem;
+  max-height: 7rem;
+  resize: none;
+  padding-block: 0.5rem;
+}
+
+.pf2e-msg-user,
+.pf2e-msg-bot {
+  max-width: 88%;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--pf2e-r-lg);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.pf2e-msg-user {
+  align-self: flex-end;
+  background-color: var(--pf2e-ink);
+  color: var(--pf2e-text-inverse);
+  border-bottom-right-radius: var(--pf2e-r-sm);
+}
+
+.pf2e-msg-bot {
+  align-self: flex-start;
+  background-color: var(--pf2e-fill);
+  color: var(--pf2e-text);
+  border-bottom-left-radius: var(--pf2e-r-sm);
+}
+
+.pf2e-suggestion {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--pf2e-line);
+  border-radius: var(--pf2e-r-md);
+  background-color: transparent;
+  color: var(--pf2e-text);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition:
+    background-color var(--pf2e-fast) var(--pf2e-ease),
+    border-color var(--pf2e-fast) var(--pf2e-ease);
+}
+
+.pf2e-suggestion:hover:not(:disabled) {
+  background-color: var(--pf2e-fill);
+  border-color: var(--pf2e-line-strong);
+}
+
+.pf2e-suggestion:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Three dots that fade in sequence. Opacity-only, so it composites on the GPU
+   and costs nothing while the request is in flight. */
+.pf2e-typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 1.2em;
+}
+
+.pf2e-typing span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--pf2e-text-tertiary);
+  animation: pf2e-blink 1.2s ease-in-out infinite;
+}
+
+.pf2e-typing span:nth-child(2) {
+  animation-delay: 0.18s;
+}
+
+.pf2e-typing span:nth-child(3) {
+  animation-delay: 0.36s;
+}
+
+@keyframes pf2e-blink {
+  0%,
+  60%,
+  100% {
+    opacity: 0.25;
+  }
+  30% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf2e-typing span {
+    animation: none;
+    opacity: 0.6;
+  }
+}

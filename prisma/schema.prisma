@@ -410,6 +410,12 @@ model User {
   kaikaiDebtEntries      KaikaiDebtEntry[]       @relation("KaikaiDebtAuthor")
   kaikaiDebtsOwed        KaikaiDebtEntry[]       @relation("KaikaiDebtCreditor")
 
+  // ─── PF2e team calendar (/pf2ecal) ───────────────────────────────────────
+  pf2eSessionsCreated Pf2eSession[]         @relation("Pf2eSessionAuthor")
+  pf2eSessionsEdited  Pf2eSession[]         @relation("Pf2eSessionEditor")
+  pf2eResponses       Pf2eSessionResponse[]
+  pf2eAnnouncements   Pf2eAnnouncement[]    @relation("Pf2eAnnouncementAuthor")
+
   @@index([isBot])
   @@index([followerCount])
   // Backs the nightly finalize-deletion sweep; partial in effect since the
@@ -8355,4 +8361,98 @@ model KaikaiDebtEntry {
   /// "everything Kaikai owes this person", across both provenances.
   @@index([creditorId, createdAt(sort: Desc)])
   @@map("kaikai_debt_entry")
+}
+
+// ─── PF2e team calendar (/pf2ecal) ─────────────────────────────────────────
+// A private, unlisted scheduling board for one Pathfinder 2e table. Everything
+// here is table-wide rather than per-owner: the page has no roles, so any
+// signed-in account may create and edit. Authorship is recorded (`createdBy` /
+// `updatedBy`) so the group can see who moved a session, not to gate anything.
+
+/// How one player answers one session.
+enum Pf2eAvailability {
+  GOING
+  TENTATIVE
+  UNAVAILABLE
+}
+
+model Pf2eSession {
+  id String @id @default(cuid())
+
+  /// Set only on rows materialised from the recurring rule
+  /// (`lib/pf2ecal/schedule.ts`), formatted `YYYY-MM-DD` in the campaign
+  /// timezone. It is the idempotency key for that materialisation: the
+  /// generator runs on every read, so without a unique key each read would
+  /// insert the same session again. Null on a session someone added by hand,
+  /// and `@unique` tolerates many nulls in Postgres, so one-off sessions do
+  /// not collide with each other.
+  occurrenceKey String? @unique @db.VarChar(16)
+
+  title    String   @db.VarChar(120)
+  notes    String   @default("") @db.VarChar(4000)
+  startsAt DateTime
+  endsAt   DateTime
+  /// Free text — a VTT link, a house, "Zack's place". Rendered as a link only
+  /// when it parses as an http(s) URL.
+  location String   @default("") @db.VarChar(300)
+
+  /// Set instead of deleting, so the row keeps its responses and the .ics feed
+  /// can publish STATUS:CANCELLED to calendars that already imported it.
+  /// Deleting outright would silently leave the event on every subscriber's
+  /// phone.
+  canceledAt DateTime?
+
+  /// True once a generated occurrence has been edited or answered. The
+  /// materialiser skips rebuilding a session that anyone has touched, so
+  /// changing the recurring rule never overwrites a session the table has
+  /// already moved or RSVP'd to.
+  pinnedToRule Boolean @default(true)
+
+  createdById String?
+  updatedById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy User?                 @relation("Pf2eSessionAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User?                 @relation("Pf2eSessionEditor", fields: [updatedById], references: [id], onDelete: SetNull)
+  responses Pf2eSessionResponse[]
+
+  /// The one read the page makes: a window of sessions in chronological order.
+  @@index([startsAt])
+  @@map("pf2e_session")
+}
+
+model Pf2eSessionResponse {
+  id        String           @id @default(cuid())
+  sessionId String
+  userId    String
+  status    Pf2eAvailability
+  /// "can only make the first hour", "driving, might be late".
+  note      String?          @db.VarChar(200)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  session Pf2eSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// One answer per player per session — the write is an upsert on this key.
+  @@unique([sessionId, userId])
+  @@index([userId, updatedAt(sort: Desc)])
+  @@map("pf2e_session_response")
+}
+
+model Pf2eAnnouncement {
+  id     String  @id @default(cuid())
+  body   String  @db.VarChar(2000)
+  /// Pinned announcements sort above the rest and survive the "recent" cutoff.
+  pinned Boolean @default(false)
+
+  authorId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author User? @relation("Pf2eAnnouncementAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([pinned, createdAt(sort: Desc)])
+  @@map("pf2e_announcement")
 }

@@ -8,6 +8,7 @@ import urCAltair from "@/locales/ur/c-altair.json";
 import urCAwards from "@/locales/ur/c-awards.json";
 import urCBlog from "@/locales/ur/c-blog.json";
 import urCBuilds from "@/locales/ur/c-builds.json";
+import urCBumsRush from "@/locales/ur/c-bums-rush.json";
 import urCCircle from "@/locales/ur/c-circle.json";
 import urCCreator from "@/locales/ur/c-creator.json";
 import urCCursedLogic from "@/locales/ur/c-cursed-logic.json";
@@ -74,6 +75,7 @@ import urPages from "@/locales/ur/pages.json";
 import urRAltair from "@/locales/ur/r-altair.json";
 import urRDiscord from "@/locales/ur/r-discord.json";
 import urRForestExplorer from "@/locales/ur/r-forest-explorer.json";
+import urRPf2ecal from "@/locales/ur/r-pf2ecal.json";
 import urRRmhbox from "@/locales/ur/r-rmhbox.json";
 import urRRmhcode from "@/locales/ur/r-rmhcode.json";
 import urRSecret from "@/locales/ur/r-secret.json";
@@ -100,6 +102,7 @@ const urResources = {
   "c-awards": urCAwards,
   "c-blog": urCBlog,
   "c-builds": urCBuilds,
+  "c-bums-rush": urCBumsRush,
   "c-circle": urCCircle,
   "c-creator": urCCreator,
   "c-cursed-logic": urCCursedLogic,
@@ -166,6 +169,7 @@ const urResources = {
   "r-altair": urRAltair,
   "r-discord": urRDiscord,
   "r-forest-explorer": urRForestExplorer,
+  "r-pf2ecal": urRPf2ecal,
   "r-rmhbox": urRRmhbox,
   "r-rmhcode": urRRmhcode,
   "r-secret": urRSecret,

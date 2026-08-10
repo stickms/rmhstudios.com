@@ -8,6 +8,7 @@ import ruCAltair from "@/locales/ru/c-altair.json";
 import ruCAwards from "@/locales/ru/c-awards.json";
 import ruCBlog from "@/locales/ru/c-blog.json";
 import ruCBuilds from "@/locales/ru/c-builds.json";
+import ruCBumsRush from "@/locales/ru/c-bums-rush.json";
 import ruCCircle from "@/locales/ru/c-circle.json";
 import ruCCreator from "@/locales/ru/c-creator.json";
 import ruCCursedLogic from "@/locales/ru/c-cursed-logic.json";
@@ -74,6 +75,7 @@ import ruPages from "@/locales/ru/pages.json";
 import ruRAltair from "@/locales/ru/r-altair.json";
 import ruRDiscord from "@/locales/ru/r-discord.json";
 import ruRForestExplorer from "@/locales/ru/r-forest-explorer.json";
+import ruRPf2ecal from "@/locales/ru/r-pf2ecal.json";
 import ruRRmhbox from "@/locales/ru/r-rmhbox.json";
 import ruRRmhcode from "@/locales/ru/r-rmhcode.json";
 import ruRSecret from "@/locales/ru/r-secret.json";
@@ -100,6 +102,7 @@ const ruResources = {
   "c-awards": ruCAwards,
   "c-blog": ruCBlog,
   "c-builds": ruCBuilds,
+  "c-bums-rush": ruCBumsRush,
   "c-circle": ruCCircle,
   "c-creator": ruCCreator,
   "c-cursed-logic": ruCCursedLogic,
@@ -166,6 +169,7 @@ const ruResources = {
   "r-altair": ruRAltair,
   "r-discord": ruRDiscord,
   "r-forest-explorer": ruRForestExplorer,
+  "r-pf2ecal": ruRPf2ecal,
   "r-rmhbox": ruRRmhbox,
   "r-rmhcode": ruRRmhcode,
   "r-secret": ruRSecret,

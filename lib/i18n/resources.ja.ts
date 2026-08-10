@@ -8,6 +8,7 @@ import jaCAltair from "@/locales/ja/c-altair.json";
 import jaCAwards from "@/locales/ja/c-awards.json";
 import jaCBlog from "@/locales/ja/c-blog.json";
 import jaCBuilds from "@/locales/ja/c-builds.json";
+import jaCBumsRush from "@/locales/ja/c-bums-rush.json";
 import jaCCircle from "@/locales/ja/c-circle.json";
 import jaCCreator from "@/locales/ja/c-creator.json";
 import jaCCursedLogic from "@/locales/ja/c-cursed-logic.json";
@@ -74,6 +75,7 @@ import jaPages from "@/locales/ja/pages.json";
 import jaRAltair from "@/locales/ja/r-altair.json";
 import jaRDiscord from "@/locales/ja/r-discord.json";
 import jaRForestExplorer from "@/locales/ja/r-forest-explorer.json";
+import jaRPf2ecal from "@/locales/ja/r-pf2ecal.json";
 import jaRRmhbox from "@/locales/ja/r-rmhbox.json";
 import jaRRmhcode from "@/locales/ja/r-rmhcode.json";
 import jaRSecret from "@/locales/ja/r-secret.json";
@@ -100,6 +102,7 @@ const jaResources = {
   "c-awards": jaCAwards,
   "c-blog": jaCBlog,
   "c-builds": jaCBuilds,
+  "c-bums-rush": jaCBumsRush,
   "c-circle": jaCCircle,
   "c-creator": jaCCreator,
   "c-cursed-logic": jaCCursedLogic,
@@ -166,6 +169,7 @@ const jaResources = {
   "r-altair": jaRAltair,
   "r-discord": jaRDiscord,
   "r-forest-explorer": jaRForestExplorer,
+  "r-pf2ecal": jaRPf2ecal,
   "r-rmhbox": jaRRmhbox,
   "r-rmhcode": jaRRmhcode,
   "r-secret": jaRSecret,
