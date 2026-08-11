@@ -8,7 +8,7 @@
  * to reuse.
  */
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Delete, Equal, History as HistoryIcon } from 'lucide-react';
 import { toast } from 'sonner';
@@ -78,7 +78,7 @@ interface HistoryItem {
 
 export function ScientificCalculator({ model }: { model: CalcModel }) {
   const { t } = useTranslation('c-rmhcalculator');
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const [expression, setExpression] = useState('');
@@ -88,6 +88,22 @@ export function ScientificCalculator({ model }: { model: CalcModel }) {
   const [result, setResult] = useState<ComputeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+
+  /**
+   * Grow the field to fit what is in it, then stop and scroll.
+   *
+   * Measured rather than counted: reset to `auto` first so the box also SHRINKS
+   * when text is deleted, then take the content height. The ceiling is
+   * `max-height` in CSS rather than a number here, so the cap stays with the
+   * rest of the field's styling and scales with its clamped font size — once
+   * the content passes it, `overflow-y: auto` takes over.
+   */
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [expression]);
 
   /** Insert text at the caret (or append), keeping focus in the field. */
   const insert = useCallback((text: string) => {
@@ -240,9 +256,15 @@ export function ScientificCalculator({ model }: { model: CalcModel }) {
             </div>
           </div>
 
-          <input
+          {/* A textarea, not a single line: what goes in here is a prompt for a
+              model, not a four-function sum, and a long integral or a worded
+              question ran off the side of a one-line field with no way to see
+              the start of what you typed. It starts one row tall and grows with
+              the expression (see the effect above), so it costs nothing until
+              there is something to show. */}
+          <textarea
             ref={inputRef}
-            type="text"
+            rows={1}
             inputMode="text"
             autoComplete="off"
             spellCheck={false}
@@ -252,7 +274,11 @@ export function ScientificCalculator({ model }: { model: CalcModel }) {
             value={expression}
             onChange={(e) => setExpression(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') {
+              // Enter still evaluates — that is the whole point of the field.
+              // Shift+Enter is the escape hatch for a genuine newline, which is
+              // the convention every other multi-line prompt box on the site
+              // uses.
+              if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 compute();
               }

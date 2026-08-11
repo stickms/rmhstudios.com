@@ -2,10 +2,17 @@ package discordbot
 
 import (
 	"context"
+	"strings"
+	"time"
 
 	"github.com/rmhstudios/rmh-go/pkg/config"
 	"github.com/rmhstudios/rmh-go/pkg/worker"
 )
+
+// summaryInterval is how often the /sohumbum2 summarizer sweeps for periods
+// whose figures have changed. Half-hourly: a day's write-up should feel current
+// without a model call per message.
+const summaryInterval = 30 * time.Minute
 
 // Run assembles the bot's services and runs the discordgo session until ctx is
 // cancelled. With no bot token configured it idles (returns nil on cancel) so a
@@ -36,11 +43,52 @@ func Run(ctx context.Context, d worker.Deps) error {
 	chat := NewChatService(deepseek, d.DB, d.Logger)
 	chat.pet = pet // let /chat reflect and record Alex's live state
 
-	bot, err := New(cfg, chat, pet, d.Logger)
+	watchCfg := loadWatchConfig()
+	watchRepo := newWatchRepo(d.DB)
+	watch := NewWatchService(watchCfg, watchRepo, d.Logger)
+	var summarizer *WatchSummarizer
+	if watch != nil {
+		d.Logger.Info("watch: activity tracking enabled",
+			"users", len(watchCfg.UserIDs), "timeZone", watchCfg.TimeZone, "storeContent", watchCfg.StoreContent)
+		summarizer = NewWatchSummarizer(watchCfg, watchRepo, deepseek, watch.loc, d.Logger)
+		if summarizer == nil {
+			d.Logger.Warn("watch: no DEEPSEEK_API_KEY — figures will be tracked without written summaries")
+		}
+	}
+
+	bot, err := New(cfg, chat, pet, watch, summarizer, d.Logger)
 	if err != nil {
 		return err
 	}
 	return bot.Run(ctx)
+}
+
+// loadWatchConfig resolves the activity tracker's configuration.
+//
+// The allowlist defaults to the one account the dossier was built for, so the
+// feature works without extra deployment config. `DISCORD_WATCH_USER_IDS=none`
+// (or `off`) turns tracking off entirely without removing the worker — the
+// documented way to disable it, since an empty env var is indistinguishable
+// from an unset one and would otherwise silently re-enable the default.
+func loadWatchConfig() WatchConfig {
+	ids := config.GetCSV("DISCORD_WATCH_USER_IDS")
+	if len(ids) == 0 {
+		ids = []string{defaultWatchUserID}
+	}
+	if len(ids) == 1 {
+		switch strings.ToLower(strings.TrimSpace(ids[0])) {
+		case "none", "off", "disabled":
+			ids = nil
+		}
+	}
+	return WatchConfig{
+		UserIDs:       ids,
+		TimeZone:      config.GetString("DISCORD_WATCH_TIMEZONE", "America/New_York"),
+		StoreContent:  config.GetBool("DISCORD_WATCH_STORE_CONTENT", true),
+		RetentionDays: config.GetInt("DISCORD_WATCH_RETENTION_DAYS", 45),
+		FlushInterval: config.GetDuration("DISCORD_WATCH_FLUSH_INTERVAL", time.Minute),
+		GapGrace:      config.GetDuration("DISCORD_WATCH_GAP_GRACE", 10*time.Minute),
+	}
 }
 
 func firstNonEmpty(vals ...string) string {

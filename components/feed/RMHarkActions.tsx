@@ -17,13 +17,22 @@ import { useOptimisticAction } from'@/hooks/useOptimisticAction';
 import { useSignInPrompt } from'@/hooks/useSignInPrompt';
 import { EngagementCount, engagementPill } from'./EngagementCount';
 import { usePopPresence } from '@/hooks/usePopPresence';
+import { cn } from '@/lib/utils';
 
 interface RMHarkActionsProps {
  item: FeedItem;
  onUpdate?: (id: string, updates: Partial<FeedItem>) => void;
+ /**
+ * Spacing from whatever sits above, supplied by the host.
+ *
+ * The row used to carry its own `mt-3`, which is wrong for a shared component:
+ * the wheel card places it in a flex column that ALREADY has a gap, so the two
+ * stacked and the toolbar sat twice as far from the post as it should.
+ */
+ className?: string;
 }
 
-export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
+export function RMHarkActions({ item, onUpdate, className }: RMHarkActionsProps) {
  const navigate = useNavigate();
  const { t } = useTranslation('feed');
  // Select just the action (a stable reference) so this component doesn't
@@ -115,17 +124,25 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  };
 
  return (
- // §15.4 — fixed columns rather than `justify-between`, so each control's
- // left edge is pinned. The pills hug their contents, so their widths change
- // as counts appear and grow; spacing them by distributing free space would
- // let that ripple sideways into every other icon in the row.
- <div className="grid grid-cols-4 items-center mt-3 -ml-2 max-w-md">
+ // §15.4 — the four controls are distributed across the FULL width of the
+ // post, not packed into fixed columns inside a `max-w-md` box. The old grid
+ // pinned each control's left edge (so a growing count could not shift its
+ // neighbours) but it bought that with a row that stopped short of the card:
+ // three icons evenly spaced, then Views alone against the grid's right edge,
+ // which read as one icon flung away from the other three.
+ //
+ // The stability it protected is worth less than it looks: a count moves by
+ // one, on the control the viewer just pressed, and `justify-between` spreads
+ // that fraction across three gaps of ~100px. `-mx-2` cancels the pills' own
+ // padding so the first and last icons line up with the text above them
+ // rather than sitting inset from it.
+ <div className={cn('flex w-full items-center justify-between -mx-2', className)}>
  {/* Comment */}
  <button
  onClick={handleCommentClick}
  title={t('comment', { defaultValue:'Comment'})}
  aria-label={t('comment', { defaultValue:'Comment'})}
- className="group flex min-h-11 min-w-11 items-center justify-self-start rounded-full text-site-text-muted hover:text-site-accent transition-colors duration-site-fast"
+ className="group flex min-h-11 min-w-11 items-center rounded-full text-site-text-muted hover:text-site-accent transition-colors duration-site-fast"
  >
  <span className={`${engagementPill} h-9 gap-0.5 px-2 sm:gap-1 sm:px-2.5 group-hover:bg-site-accent-dim/50 group-active:scale-95`}>
  <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform"aria-hidden />
@@ -134,7 +151,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  </button>
 
  {/* reRMHark */}
- <div className="relative justify-self-start"ref={repostRef}>
+ <div className="relative"ref={repostRef}>
  <button
  ref={repostBtnRef}
  onClick={(e) => {
@@ -217,7 +234,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  <button
  onClick={toggleLike}
  aria-pressed={!!item.liked}
- className={`group flex min-h-11 min-w-11 items-center justify-self-start rounded-full transition-colors duration-site-fast ${
+ className={`group flex min-h-11 min-w-11 items-center rounded-full transition-colors duration-site-fast ${
  item.liked ?'text-site-danger':'text-site-text-muted hover:text-site-danger'
  }`}
  title={
@@ -240,12 +257,10 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
  </span>
  </button>
 
- {/* Views — pinned to the row's RIGHT edge rather than its column's left.
- The pills hug their counts and the view count is the largest number on
- the row ("18.4K"), so a left-pinned last column let this pill grow out
- past the end of the row on a 320px screen. Nothing the viewer taps
- changes this count, so anchoring the far side costs no stability. */}
- <div className="flex min-h-11 items-center justify-self-end text-site-text-dim">
+ {/* Views. Last in the row and therefore against its right edge, which is
+ also where it wants to be: this is the largest number on the row
+ ("18.4K") and the only one nothing the viewer taps can change. */}
+ <div className="flex min-h-11 items-center text-site-text-dim">
  <span className={`${engagementPill} h-9 gap-0.5 px-2 sm:gap-1 sm:px-2.5`}>
  <Eye className="w-4 h-4"/>
  <EngagementCount value={item.viewCount} />
