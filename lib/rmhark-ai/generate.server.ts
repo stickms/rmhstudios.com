@@ -29,7 +29,11 @@ import {
 } from '@/lib/rmhark-schema';
 
 const deepseek = new OpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY!,
+  // `|| 'missing'` rather than `!` — see the note in `lib/rmhvibe/vibe-ai.server.ts`:
+  // the SDK throws on an absent key at construction, and `loadEntries()` imports
+  // this module before serving any page, so `!` turned one unset env var into a
+  // site-wide first-request 500.
+  apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
   baseURL: 'https://api.deepseek.com/v1',
   maxRetries: 2,
 });

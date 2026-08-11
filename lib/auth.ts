@@ -13,7 +13,20 @@ import { passkey } from '@better-auth/passkey';
 import { getUserTier } from '@/lib/entitlements';
 import { sendEmail } from '@/lib/email/send.server';
 
-const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY!);
+// The `!` here used to be load-bearing in the worst way. `new Stripe(undefined)`
+// throws "Neither apiKey nor config.authenticator provided" at CONSTRUCTION, and
+// this module is in the import graph of essentially every route — so with
+// STRIPE_SECRET_KEY unset, TanStack Start's `loadEntries()` (which imports every
+// route entry before serving any of them) threw, and the FIRST REQUEST TO ANY
+// PAGE ON THE SITE 500'd. Not the billing pages: all of them.
+//
+// A placeholder key removes the boot-time failure without pretending Stripe
+// works: the client constructs fine and any real API call fails at request time
+// with an auth error, which is the same degradation shape this file already
+// chose for email (see `emailConfigured` below). A billing feature being
+// unavailable when it is unconfigured is correct; the homepage being unavailable
+// is not.
+const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_unconfigured');
 
 // Email verification / password reset only make sense when a transport is
 // actually configured. `sendEmail` no-ops (logs) without RESEND_API_KEY, so

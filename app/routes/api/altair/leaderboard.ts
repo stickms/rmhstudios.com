@@ -6,7 +6,15 @@ export const Route = createFileRoute('/api/altair/leaderboard')({
   server: {
     handlers: {
       GET: defineHandler(
-        { auth: 'none', rateLimit: { limit: 20, windowMs: 60_000, prefix: 'altair-leaderboard' } },
+        {
+          auth: 'none',
+          rateLimit: { limit: 20, windowMs: 60_000, prefix: 'altair-leaderboard' },
+          // Same policy, same reasoning as `void-breaker/leaderboard`: a global
+          // top-N with no per-caller branch, so the bytes are identical for
+          // everyone and a shared cache may store them. `?type=` varies the URL,
+          // which is the cache key, so each variant caches independently.
+          cache: { visibility: 'public', maxAge: 30, sMaxAge: 60, staleWhileRevalidate: 300 },
+        },
         async ({ request }) => {
           try {
             const { searchParams } = new URL(request.url);

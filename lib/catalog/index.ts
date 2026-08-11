@@ -1,5 +1,7 @@
 /**
- * The catalog barrel: one file per game/app, aggregated and validated here.
+ * The catalog barrel: one file per game/app, aggregated here and strict-parsed
+ * in `lib/__tests__/catalog.test.ts` (see "Why the zod validation is NOT here
+ * any more" below).
  *
  * ## Why this exists
  *
@@ -26,16 +28,35 @@
  * (kept alphabetical, so additions append rather than interleave) and buys the
  * same module graph in every runtime that reads the catalog.
  *
- * ## Why zod at module load
+ * ## Why the zod validation is NOT here any more
  *
- * These entries are hand-written data. Validating them the moment the module is
- * first imported means a typo'd key or a missing field fails immediately — in
- * dev, in the test run, and in the build — instead of rendering as a blank card
- * in production. The cost is one strict parse of 34 small objects, once per
- * process. See `lib/catalog/types.ts` for the schemas.
+ * These entries are hand-written data, so they are strict-parsed against the
+ * schemas in `lib/catalog/types.ts` — but in `lib/__tests__/catalog.test.ts`,
+ * not at module load. The parse used to run here, and the cost of that decision
+ * was paid by the wrong party:
+ *
+ *   * This module is imported by `components/Providers.tsx`, i.e. by every page.
+ *     Importing the schemas pulled **zod (71 KB raw) onto the shared critical
+ *     path of the entire site**, and module-scope `z.object(...)` calls are not
+ *     tree-shakeable, so no amount of "the parse never runs in production" would
+ *     have removed it.
+ *   * The parse itself then ran 34 strict `.parse()` calls **in the browser, on
+ *     every cold page load**, to re-check data that had already been checked in
+ *     CI and cannot change at runtime.
+ *
+ * The validation is not weaker for moving: the test parses every entry with the
+ * same schemas (and now sees the RAW module objects rather than already-parsed
+ * output), `pnpm test` is in the commit gate and in `web-ci`, and each entry
+ * file is additionally annotated `const entry: GameInfo`, so TypeScript's excess
+ * property checking rejects a typo'd key at compile time too. What is gone is
+ * only the third copy of the check — the one that ran on visitors' phones.
+ *
+ * The cross-entry invariants that are *cheap* (duplicate id, duplicate order)
+ * stay below: they are plain comparisons, they need no schema, and they are the
+ * ones whose failure mode is silent reordering rather than a loud parse error.
  */
 
-import { appEntrySchema, gameEntrySchema, type AppInfo, type GameInfo } from './types';
+import type { AppInfo, GameInfo } from './types';
 
 // ── Games ─────────────────────────────────────────────────────────────────
 import altair from './games/altair';
@@ -76,7 +97,7 @@ import rmhtube from './apps/rmhtube';
 import rmhtype from './apps/rmhtype';
 import studio from './apps/studio';
 
-const GAME_MODULES: readonly unknown[] = [
+const GAME_MODULES: readonly GameInfo[] = [
   altair,
   bumsRush,
   cookgame,
@@ -102,7 +123,7 @@ const GAME_MODULES: readonly unknown[] = [
   voidBreaker,
 ];
 
-const APP_MODULES: readonly unknown[] = [
+const APP_MODULES: readonly AppInfo[] = [
   rmhConnections,
   rmhStrategies,
   rmhcalculator,
@@ -118,27 +139,18 @@ const APP_MODULES: readonly unknown[] = [
 ];
 
 /**
- * Parses every entry, then sorts by `order`.
+ * Sorts by `order`, rejecting the two collisions that would otherwise be silent.
  *
  * Two ids sharing an `order` would make the catalog order depend on the import
  * list — the thing this split is trying to stop being load-bearing — so a
- * collision is rejected outright rather than tie-broken silently.
+ * collision is rejected outright rather than tie-broken silently. Both checks
+ * are plain comparisons over 34 objects: no schema, no zod, nothing that ends up
+ * in a client bundle.
  */
 function buildCatalog<T extends { id: string; order: number }>(
-  modules: readonly unknown[],
-  parse: (value: unknown) => T,
+  entries: readonly T[],
   label: string,
 ): T[] {
-  const entries = modules.map((mod, i) => {
-    try {
-      return parse(mod);
-    } catch (cause) {
-      throw new Error(`Invalid ${label} catalog entry at position ${i}: ${String(cause)}`, {
-        cause,
-      });
-    }
-  });
-
   const seenIds = new Set<string>();
   const seenOrders = new Set<number>();
   for (const entry of entries) {
@@ -150,21 +162,13 @@ function buildCatalog<T extends { id: string; order: number }>(
     seenOrders.add(entry.order);
   }
 
-  return entries.sort((a, b) => a.order - b.order);
+  return [...entries].sort((a, b) => a.order - b.order);
 }
 
 /** Single source of truth for all games displayed on the site. */
-export const games: GameInfo[] = buildCatalog(
-  GAME_MODULES,
-  (value) => gameEntrySchema.parse(value),
-  'game',
-);
+export const games: GameInfo[] = buildCatalog(GAME_MODULES, 'game');
 
 /** Single source of truth for all apps displayed on the site. */
-export const apps: AppInfo[] = buildCatalog(
-  APP_MODULES,
-  (value) => appEntrySchema.parse(value),
-  'app',
-);
+export const apps: AppInfo[] = buildCatalog(APP_MODULES, 'app');
 
 export type { AppInfo, GameInfo };

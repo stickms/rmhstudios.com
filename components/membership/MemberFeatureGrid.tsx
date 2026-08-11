@@ -16,8 +16,23 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import * as Icons from 'lucide-react';
-import { Lock, Check } from 'lucide-react';
+import {
+  BadgeCheck,
+  BriefcaseBusiness,
+  Check,
+  Code,
+  EyeOff,
+  Keyboard,
+  ListChecks,
+  Lock,
+  Mic,
+  Smile,
+  Sparkles,
+  Sticker,
+  Timer,
+  Undo2,
+  type LucideIcon,
+} from 'lucide-react';
 import {
   MEMBER_FEATURES,
   TIER_LABELS,
@@ -43,12 +58,28 @@ interface Props {
  * The registry stores icon *names* because it is imported by server routes,
  * where a React component would be dead weight. Falling back to `Sparkles`
  * keeps a typo in the registry from throwing on the pricing page.
+ *
+ * The map is explicit on purpose. `import * as Icons` indexed by a computed key
+ * is unshakeable — the bundler must retain every member — which dragged the
+ * lucide barrel plus the 431 KB `icons-*` chunk into this route's payload.
+ * Keep in sync with `MEMBER_FEATURES` in `lib/entitlements/features.ts`.
  */
+const FEATURE_ICONS: Record<string, LucideIcon> = {
+  BadgeCheck,
+  BriefcaseBusiness,
+  Code,
+  EyeOff,
+  Keyboard,
+  ListChecks,
+  Mic,
+  Smile,
+  Sticker,
+  Timer,
+  Undo2,
+};
+
 function IconFor({ name, className }: { name: string; className?: string }) {
-  const Cmp =
-    (Icons as unknown as Record<string, React.ComponentType<{ className?: string }> | undefined>)[
-      name
-    ] ?? Icons.Sparkles;
+  const Cmp = FEATURE_ICONS[name] ?? Sparkles;
   return <Cmp className={className} />;
 }
 

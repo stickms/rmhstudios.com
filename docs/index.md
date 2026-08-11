@@ -83,6 +83,13 @@ opti/**
 :maxdepth: 1
 :hidden:
 
+loading-audit-2026-08-11/index
+loading-audit-2026-08-11/01-measurements
+loading-audit-2026-08-11/02-critical-path
+loading-audit-2026-08-11/03-api-caching
+loading-audit-2026-08-11/04-database
+loading-audit-2026-08-11/05-server-edge-fonts
+loading-audit-2026-08-11/06-backlog
 ui-audit-2026-08-01
 ui-audit-2026-07-28
 performance-audit-2026-07-17

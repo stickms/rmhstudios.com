@@ -1,5 +1,28 @@
 # Loading-Time Audit — 2026-08-09
 
+> **Superseded in part by
+> [`loading-audit-2026-08-11/`](loading-audit-2026-08-11/index.md).** Two findings
+> below are wrong and were corrected there by measurement — read that folder's
+> "Corrections to earlier audits" section before acting on §4 or §6:
+>
+> 1. **§4's diagnosis of the icon chunk is wrong.** The cause was not "552 files
+>    each importing a handful of icons, whose union rolldown hoists". It was
+>    **four files** doing a computed lookup on a namespace import
+>    (`import * as Icons` → `Icons[name]`), which is unshakeable. Fixing those
+>    four removed the chunk entirely. **The ~588-file per-icon codemod
+>    recommended below (OPT-10) is unnecessary — do not do it.**
+> 2. **§6's "`/games` downloads 2.07 MB of card art" no longer holds.** It
+>    downloads 296 KB; the responsive-variant pipeline is implemented and
+>    working (commit `f8df30ee`, after this audit). AVIF is the remaining image
+>    win, not responsive variants.
+>
+> Also: the `event.res` header bug this audit fixed in `security-headers.ts` and
+> `anon-html-cache.ts` was **still present in `server/nitro/otel.ts`**, so
+> `Server-Timing` never reached a client. Fixed 08-11.
+>
+> Everything else here still holds, and §1, §2, §3a, §3b and §8 have since been
+> fixed — see the newer folder for which.
+
 Triggered by: **"everything loads slowly — including the games and apps."**
 
 Unlike the previous passes, this one is measured against a **running

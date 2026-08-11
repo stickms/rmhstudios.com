@@ -6,7 +6,11 @@
  * custom scrollbar, selection colors, and utility animations.
  */
 
-@import url('https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap');
+/* MedievalSharp is NOT @imported here on purpose. A remote `@import` inside a
+ * bundled stylesheet is the worst way to load a font: the remote sheet is not
+ * even discoverable until THIS sheet has downloaded, so it is a serial second
+ * round trip AND render-blocking. It is loaded idle-deferred from the route's
+ * head instead — app/routes/altair.tsx, via lib/fonts/deferred.ts. */
 
 /* ─── Dark Theme (default) ──────────────────────────────────────── */
 
