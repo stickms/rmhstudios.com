@@ -21,6 +21,19 @@ import type { WatchStateDTO, WatchTickDTO } from '@/lib/sohumtracker/types';
 const STREAM_URL = '/api/sohumtracker/stream';
 
 /**
+ * Reconnect backoff after the browser gives up on the stream.
+ *
+ * `EventSource` retries on its own ONLY for a connection that dropped. A response
+ * it considers fatal — a 429 from the connection limiter, a 502 mid-deploy, a
+ * content-type the proxy rewrote — puts it in `CLOSED`, which is terminal: it
+ * will never try again. Before this the page then sat on "Offline" until someone
+ * reloaded it, which is exactly the wrong behaviour for the one deploy minute it
+ * is most likely to happen in.
+ */
+const RECONNECT_BASE_MS = 2_000;
+const RECONNECT_MAX_MS = 60_000;
+
+/**
  * Re-render on an interval, returning `Date.now()`.
  *
  * Starts null and fills in after mount, which is deliberate: a component that
@@ -131,14 +144,45 @@ export function useWatchState(initial: WatchStateDTO, days: number): WatchStateH
 
   useEffect(() => {
     let closed = false;
+    let attempt = 0;
+    let reconnectTimer: number | null = null;
+
+    const clearTimer = () => {
+      if (reconnectTimer !== null) {
+        window.clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+    };
 
     const disconnect = () => {
+      clearTimer();
       sourceRef.current?.close();
       sourceRef.current = null;
     };
 
+    /**
+     * Reconnect after a fatal close, with exponential backoff and full jitter.
+     *
+     * Jittered because a deploy drops every open page at the same instant, and
+     * an un-jittered schedule brings all of them back in lockstep — a thundering
+     * herd against a tier that has just finished restarting.
+     */
+    const scheduleReconnect = () => {
+      if (closed || reconnectTimer !== null) return;
+      const ceiling = Math.min(RECONNECT_MAX_MS, RECONNECT_BASE_MS * 2 ** attempt);
+      attempt += 1;
+      reconnectTimer = window.setTimeout(
+        () => {
+          reconnectTimer = null;
+          connect();
+        },
+        ceiling / 2 + Math.random() * (ceiling / 2),
+      );
+    };
+
     const connect = () => {
       if (closed || sourceRef.current) return;
+      clearTimer();
       const source = new EventSource(STREAM_URL);
       sourceRef.current = source;
 
@@ -151,28 +195,61 @@ export function useWatchState(initial: WatchStateDTO, days: number): WatchStateH
           // A malformed frame is not worth tearing the connection down for.
         }
       });
-      source.onopen = () => setStatus('live');
+      source.onopen = () => {
+        // A successful open resets the schedule, so an hour-long outage
+        // followed by a blip does not start the next one at a minute.
+        attempt = 0;
+        setStatus('live');
+      };
       source.onerror = () => {
-        // EventSource reconnects on its own with its own backoff; saying
-        // "offline" is honest for the gap without racing it to reconnect.
-        setStatus(source.readyState === EventSource.CLOSED ? 'offline' : 'connecting');
+        if (source.readyState === EventSource.CLOSED) {
+          // Terminal for EventSource — nothing will reconnect it but us.
+          setStatus('offline');
+          sourceRef.current = null;
+          source.close();
+          scheduleReconnect();
+          return;
+        }
+        // Merely reconnecting: EventSource has its own retry for this and
+        // racing it would open a second connection.
+        setStatus('connecting');
       };
     };
 
     const onPageHide = () => disconnect();
-    const onPageShow = () => connect();
+    const onPageShow = () => {
+      attempt = 0;
+      connect();
+    };
+
+    /**
+     * A tab that was hidden for a while comes back with a stale dossier even if
+     * the stream survived: browsers throttle background sockets and a laptop
+     * that slept missed every push. So a return to visible refetches the whole
+     * state rather than trusting the connection to have kept up.
+     */
+    const onVisibility = () => {
+      if (document.visibilityState !== 'visible') return;
+      if (!sourceRef.current) {
+        attempt = 0;
+        connect();
+      }
+      refresh();
+    };
 
     connect();
     window.addEventListener('pagehide', onPageHide);
     window.addEventListener('pageshow', onPageShow);
+    document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
       closed = true;
       window.removeEventListener('pagehide', onPageHide);
       window.removeEventListener('pageshow', onPageShow);
+      document.removeEventListener('visibilitychange', onVisibility);
       disconnect();
     };
-  }, []);
+  }, [refresh]);
 
   return { state, status, refreshing, refresh };
 }

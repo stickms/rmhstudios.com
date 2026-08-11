@@ -2,7 +2,12 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
 import { renderPageCard } from '@/lib/og/page-card.server';
-import { buildDayCard, buildOverviewCard, buildPeriodCard } from '@/lib/sohumtracker/og.server';
+import {
+  buildDayCard,
+  buildOverviewCard,
+  buildPeriodCard,
+  fallbackCard,
+} from '@/lib/sohumtracker/og.server';
 
 /**
  * GET /api/og/sohumtracker — the unfurl card for the dossier and any period of it.
@@ -38,19 +43,36 @@ export const Route = createFileRoute('/api/og/sohumtracker')({
           // Most specific first, and only one is ever read: a request naming
           // both a day and a month is answering one question, and the narrower
           // one is the one that was clicked.
-          const card =
-            (query?.date ? await buildDayCard(query.date) : null) ??
-            (query?.week ? await buildPeriodCard('week', query.week) : null) ??
-            (query?.month ? await buildPeriodCard('month', query.month) : null) ??
-            (await buildOverviewCard());
+          //
+          // Every read is inside the try: an unfurl has no error state of its
+          // own, so a database that is briefly down must produce a CARD rather
+          // than a 500, which renders in a chat as a broken image nobody
+          // re-requests.
+          let card;
+          let degraded = false;
+          try {
+            card =
+              (query?.date ? await buildDayCard(query.date) : null) ??
+              (query?.week ? await buildPeriodCard('week', query.week) : null) ??
+              (query?.month ? await buildPeriodCard('month', query.month) : null) ??
+              (await buildOverviewCard());
+          } catch {
+            card = fallbackCard();
+            degraded = true;
+          }
+
           const png = await renderPageCard(card);
           return new Response(new Uint8Array(png), {
             headers: {
               'Content-Type': 'image/png',
               // Short: a day card goes stale the moment he says anything else,
               // and `renderPageCard` already de-duplicates identical content by
-              // its cache key, so a re-request is usually free anyway.
-              'Cache-Control': 'public, max-age=300, s-maxage=900, stale-while-revalidate=3600',
+              // its cache key, so a re-request is usually free anyway. The
+              // degraded card gets a much shorter one — it must not be what a
+              // CDN is still serving after the database comes back.
+              'Cache-Control': degraded
+                ? 'public, max-age=30, s-maxage=30'
+                : 'public, max-age=300, s-maxage=900, stale-while-revalidate=3600',
             },
           });
         },

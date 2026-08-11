@@ -79,12 +79,21 @@ func (s *WatchSummarizer) postPendingDigests(ctx context.Context, session *disco
 			if err != nil {
 				s.logger.Warn("watch: digest totals", "periodKey", summary.PeriodKey, "error", err)
 			}
-			_, err = session.ChannelMessageSendComplex(s.cfg.DigestChannelID, &discordgo.MessageSend{
-				// No pings, ever. This is a channel post about somebody, and an
-				// @ on it would turn a running joke into a notification he
-				// cannot mute.
-				AllowedMentions: &discordgo.MessageAllowedMentions{Parse: []discordgo.AllowedMentionType{}},
-				Embeds:          []*discordgo.MessageEmbed{buildDigestEmbed(summary, totals, s.cfg.SiteURL)},
+			// Retried in-pass as well as next-pass: the claim below is released
+			// on a transient failure, but the next pass is half an hour away and
+			// a five-second Discord blip should not cost a digest that long.
+			err = withRetry(ctx, s.logger, "discord.digest.post", retryAPI, func(context.Context) error {
+				_, sendErr := session.ChannelMessageSendComplex(s.cfg.DigestChannelID, &discordgo.MessageSend{
+					// No pings, ever. This is a channel post about somebody, and
+					// an @ on it would turn a running joke into a notification he
+					// cannot mute.
+					AllowedMentions: &discordgo.MessageAllowedMentions{Parse: []discordgo.AllowedMentionType{}},
+					Embeds:          []*discordgo.MessageEmbed{buildDigestEmbed(summary, totals, s.cfg.SiteURL)},
+				})
+				if sendErr != nil && permanentDiscordError(sendErr) {
+					return permanent(sendErr)
+				}
+				return sendErr
 			})
 			if err != nil {
 				s.logger.Warn("watch: digest post", "periodKey", summary.PeriodKey, "error", err)

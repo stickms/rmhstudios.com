@@ -88,6 +88,29 @@ export async function buildPeriodCard(
   };
 }
 
+/**
+ * The card drawn when the database cannot be reached.
+ *
+ * An unfurl is the one surface here with no error state of its own: a link
+ * pasted into a chat either shows a card or shows a broken image, and a broken
+ * image is what a reader remembers. So a failed read falls back to a card that
+ * is true regardless of what the tables say, rather than 500ing.
+ *
+ * No `cacheKey` variance and a short cache at the route: this must not be the
+ * bytes a CDN holds onto once the database is back.
+ */
+export function fallbackCard(): PageCardData {
+  return {
+    cacheKey: 'sohumtracker:unavailable',
+    eyebrow: 'Standing Review',
+    lead: SUBJECT_FALLBACK_NAME,
+    title: 'What Is Sohum Doing Right Now?',
+    subtitle: 'The record is briefly unavailable. He is not.',
+    stats: [],
+    path: '/sohumtracker',
+  };
+}
+
 /** The card for the dossier's front page. */
 export async function buildOverviewCard(): Promise<PageCardData> {
   // 30 days rather than the page's own window: the card is a summary, and the

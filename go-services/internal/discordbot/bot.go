@@ -348,7 +348,18 @@ func (b *Bot) Run(ctx context.Context) error {
 	b.lifecycleCtx = ctx
 	b.ctxMu.Unlock()
 
-	if err := b.session.Open(); err != nil {
+	// Retried rather than fatal. This worker shares a process with five others
+	// under an errgroup, and returning here cancels the group and exits non-zero
+	// (cmd/supervisor) — so before this, Discord being unreachable for thirty
+	// seconds at container start took down recap, doctrine, vibe, bot-worker and
+	// streak-saver with it. discordgo handles reconnection AFTER a successful
+	// open; this covers the one gap it does not, which is never getting one.
+	//
+	// Still bounded: a genuinely bad token, or intents the application has not
+	// been granted (4014), fails identically forever and must be loud rather
+	// than a worker that quietly never starts.
+	if err := withRetry(ctx, b.logger, "discord.gateway.open", retryGateway,
+		func(context.Context) error { return b.session.Open() }); err != nil {
 		return fmt.Errorf("open gateway: %w", err)
 	}
 	b.logger.Info("discord gateway opened")

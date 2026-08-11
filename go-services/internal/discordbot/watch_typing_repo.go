@@ -35,7 +35,7 @@ func (r *watchRepo) touchTypingSession(ctx context.Context, t *typingSession, id
 	now := time.Now().UTC()
 	cutoff := t.LastTypingAt.Add(-idle)
 
-	tag, err := r.db.Pool.Exec(ctx,
+	tag, err := r.exec(ctx,
 		`UPDATE "discord_watch_typing_session"
 		 SET "lastTypingAt"=$3,"updatedAt"=$4
 		 WHERE "discordId"=$1 AND "channelId"=$2 AND "settledAt" IS NULL AND "lastTypingAt" >= $5`,
@@ -51,7 +51,7 @@ func (r *watchRepo) touchTypingSession(ctx context.Context, t *typingSession, id
 	// settle as abandoned — closing it here would silently forgive a run that
 	// genuinely produced no message.
 	t.ID = newWatchID()
-	_, err = r.db.Pool.Exec(ctx,
+	_, err = r.exec(ctx,
 		`INSERT INTO "discord_watch_typing_session"
 		   ("id","discordId","guildId","channelId","channelName","startedAt","lastTypingAt","updatedAt")
 		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
@@ -74,7 +74,7 @@ func (r *watchRepo) settleTypingSession(
 	if r.db == nil {
 		return nil
 	}
-	_, err := r.db.Pool.Exec(ctx,
+	_, err := r.exec(ctx,
 		`UPDATE "discord_watch_typing_session"
 		 SET "settledAt"=$3,
 		     "sent"=$4,
@@ -94,7 +94,7 @@ func (r *watchRepo) openTypingSessions(ctx context.Context) ([]*typingSession, e
 	if r.db == nil {
 		return nil, nil
 	}
-	rows, err := r.db.Pool.Query(ctx,
+	rows, err := r.query(ctx,
 		`SELECT "id","discordId","guildId","channelId","channelName",
 		        "startedAt","lastTypingAt","settledAt","durationSec","sent"
 		 FROM "discord_watch_typing_session"
@@ -120,7 +120,7 @@ func (r *watchRepo) typingSessionsStartedIn(
 	if r.db == nil {
 		return nil, nil
 	}
-	rows, err := r.db.Pool.Query(ctx,
+	rows, err := r.query(ctx,
 		`SELECT "id","discordId","guildId","channelId","channelName",
 		        "startedAt","lastTypingAt","settledAt","durationSec","sent"
 		 FROM "discord_watch_typing_session"
@@ -164,7 +164,7 @@ func (r *watchRepo) purgeTypingSessions(ctx context.Context, before time.Time) e
 	if r.db == nil {
 		return nil
 	}
-	_, err := r.db.Pool.Exec(ctx,
+	_, err := r.exec(ctx,
 		`DELETE FROM "discord_watch_typing_session"
 		 WHERE "settledAt" IS NOT NULL AND "startedAt" < $1`, before)
 	return err

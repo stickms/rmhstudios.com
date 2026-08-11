@@ -34,7 +34,9 @@ func Run(ctx context.Context, d worker.Deps) error {
 
 	configurePetRates() // apply any env overrides to the tamagotchi pacing
 
-	deepseek := NewDeepSeekClient(cfg.DeepSeekKey, cfg.DeepSeekMod)
+	// The logger is attached so a retried DeepSeek call says so once, rather
+	// than a stalled reply looking like a hang.
+	deepseek := NewDeepSeekClient(cfg.DeepSeekKey, cfg.DeepSeekMod).WithLogger(d.Logger)
 	repo := newPetRepo(d.DB)
 	imager := newAlexImager(repo, d.Logger)
 	// Base URL of the web app that renders the /caretakers leaderboard image.
@@ -44,7 +46,7 @@ func Run(ctx context.Context, d worker.Deps) error {
 	chat.pet = pet // let /chat reflect and record Alex's live state
 
 	watchCfg := loadWatchConfig()
-	watchRepo := newWatchRepo(d.DB)
+	watchRepo := newWatchRepo(d.DB).withLogger(d.Logger)
 	watch := NewWatchService(watchCfg, watchRepo, d.Logger)
 	var summarizer *WatchSummarizer
 	if watch != nil {

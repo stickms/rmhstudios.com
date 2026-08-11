@@ -17,6 +17,7 @@ go_library(
         "pet_presence.go",
         "pet_repo.go",
         "pet_service.go",
+        "retry.go",
         "run.go",
         "watch.go",
         "watch_digest.go",
@@ -45,6 +46,7 @@ go_test(
     srcs = [
         "chat_memory_test.go",
         "discordbot_test.go",
+        "retry_test.go",
         "run_test.go",
         "watch_jobhunt_test.go",
         "watch_test.go",
