@@ -186,6 +186,17 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
   padding: 0.15rem 0;
+  /* A textarea now, so: no drag handle (the height is driven by the content),
+     and no inherited monospace default — `font` is otherwise reset by the UA
+     for this element in a way it is not for `input`. */
+  resize: none;
+  font-family: inherit;
+  line-height: 1.25;
+  /* The ceiling the auto-grow effect grows into. `em` keeps it five lines at
+     whatever size the clamp above resolves to, rather than five lines at one
+     viewport width and two at another. Past it the field scrolls. */
+  max-height: calc(1.25em * 5);
+  overflow-y: auto;
 }
 .rmhcalc-display__input::placeholder {
   color: var(--site-text-dim);

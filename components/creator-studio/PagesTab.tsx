@@ -181,8 +181,13 @@ export function PagesTab({
   const toolbar = (
     <header className="vibe-gallery__head store-pages__head glass-chrome">
       <h3 className="vibe-gallery__title">{t('pages-title', { defaultValue: 'Pages' })}</h3>
+      {/* Fills the bar rather than floating at its right edge. `ml-auto` with a
+          fixed 320px width is right for `BuildsTab`, where the field is one of a
+          cluster of controls (search + sort) with nothing opposite it — but this
+          header has a title on the left, so the same rule left a stretch of
+          empty capsule between the two and read as a gap rather than a bar. */}
       <SearchField
-        containerClassName="ml-auto w-[min(320px,48vw)]"
+        containerClassName="min-w-0 flex-1"
         value={query}
         onValueChange={setQuery}
         placeholder={t('search-placeholder', { defaultValue: 'Search pages...' })}
@@ -213,7 +218,7 @@ export function PagesTab({
           {t('hero-headline', { defaultValue: 'The everything platform.' })}
         </h2>
         <div className="mt-8 flex w-full justify-center">
-          <div className="vibe-dock vibe-dock--area vibe-rise-soft">
+          <div className="glass-pane vibe-dock vibe-dock--area vibe-rise-soft">
             <textarea
               ref={inputRef}
               name="prompt"

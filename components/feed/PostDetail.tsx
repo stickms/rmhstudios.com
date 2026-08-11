@@ -436,7 +436,7 @@ export function PostDetail({ postId }: PostDetailProps) {
 
  {/* Actions */}
  {!post.deletedAt && (
- <div className="border-t border-site-border pt-1">
+ <div className="border-t border-site-border pt-3">
  <RMHarkActions
  item={post}
  onUpdate={(_, updates) => {

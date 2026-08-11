@@ -519,7 +519,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  )}
 
  {/* Actions */}
- {!item.deletedAt && <RMHarkActions item={item} />}
+ {!item.deletedAt && <RMHarkActions item={item} className="mt-3"/>}
  </div>
  </div>
 

@@ -2210,7 +2210,18 @@ html.perf-lite .radial-hub__veil {
 /* `.rmhark__stats` is gone: the wheel card renders the shared `RMHarkActions`
    toolbar now, which brings its own (Tailwind) styling, its counts and the
    view count. A second stats style here is how the two cards drifted apart in
-   the first place. */
+   the first place.
+
+   What this wrapper corrects is the toolbar's own slack. Its controls are 44px
+   tall (the touch-target minimum) around a 36px pill, so the row carries 4px of
+   dead space above and below the icons you can actually see. Against the card's
+   bottom padding that read as a band of empty card under the toolbar, much
+   deeper than the gap above it. Pulling the 4px back at the bottom edge makes
+   the space under the icons match the space over them; the buttons keep their
+   full 44px target either way, since this moves the box, not its height. */
+.rmhark__actions {
+  margin-block-end: calc(var(--rad-1) * -1);
+}
 
 .radial-feed__empty {
   flex: 1;

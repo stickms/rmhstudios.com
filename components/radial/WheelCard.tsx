@@ -140,7 +140,11 @@ export const WheelCard = memo(function WheelCard({ item }: { item: FeedItem }) {
   // the 541-line card. `useSession` is one app-wide subscription and the
   // feed-store selector is a stable reference, so neither re-renders per tick;
   // the quote composer stays lazy and only mounts once someone opens it.
-  const actions = isRmhark ? <RMHarkActions item={item} /> : null;
+  const actions = isRmhark ? (
+    <div className="rmhark__actions">
+      <RMHarkActions item={item} />
+    </div>
+  ) : null;
 
   useEffect(() => {
     const el = contentRef.current;
