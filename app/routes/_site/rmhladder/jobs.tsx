@@ -10,7 +10,10 @@ import { useState, useEffect, useRef } from 'react';
 import { createFileRoute, Outlet, redirect, useNavigate, useRouter, useRouterState } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
-import { z } from 'zod';
+import {
+  fetchJobsSchema,
+  setJobActionSchema,
+} from '@/lib/rmhladder/server-fn-schemas.server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import {
@@ -39,21 +42,6 @@ import { buildCanonical, buildMeta } from '@/lib/seo';
 // function-parameter variance makes a direct assignment fail.
 const queriesPrisma = prisma as unknown as QueriesPrisma;
 const actionsPrisma = prisma as unknown as ActionsPrisma;
-
-const fetchJobsSchema = z.object({
-  preset: z.enum(['new', 'finance', 'consulting', 'tech', 'expiring', 'remote', 'saved', 'ignored']).optional(),
-  q: z.string().max(200).optional(),
-  cities: z.array(z.string()).max(50).optional(),
-  programTypes: z.array(z.string()).max(50).optional(),
-  sort: z.enum(['relevance', 'posted', 'deadline']).optional(),
-  cursor: z.string().regex(/^\d+$/).optional(),
-  take: z.number().int().min(1).max(100).optional(),
-});
-
-const setJobActionSchema = z.object({
-  jobId: z.string().min(1),
-  action: z.enum(['saved', 'applied', 'ignored']).nullable(),
-});
 
 const fetchJobs = createServerFn({ method: 'GET' })
   .validator((input: unknown) => fetchJobsSchema.parse(input))

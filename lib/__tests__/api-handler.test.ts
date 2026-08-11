@@ -238,3 +238,235 @@ describe('error containment', () => {
     await expect(res.json()).resolves.toEqual({ error: 'Nope' });
   });
 });
+
+/* -------------------------------------------------------------------------- */
+/* Cache headers + conditional requests                                       */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The `cache` / `etag` half of the wrapper had **no tests at all** until the
+ * 2026-08-11 loading audit started declaring policies on real routes
+ * (`docs/loading-audit-2026-08-11/03-api-caching.md`). It is the part where a
+ * mistake is a data leak rather than a bug: `visibility: 'public'` on a
+ * per-user response means the CDN stores the first caller's body under the URL
+ * and serves it to everyone else.
+ *
+ * `assertCacheSpec` refuses that combination at **module load**, which is the
+ * property worth pinning hardest — a request-time check would only fail on the
+ * paths that get exercised, in an environment with a CDN in front, i.e. in
+ * production after the leak.
+ */
+describe('cache spec', () => {
+  it('rejects public + authenticated at definition time, not request time', () => {
+    // The whole safety story: this throws while the route module is being
+    // imported, so the server does not boot and the mistake cannot deploy.
+    expect(() =>
+      defineHandler(
+        { auth: 'required', cache: { visibility: 'public', maxAge: 60 } },
+        async () => Response.json({}),
+      ),
+    ).toThrow(/cache.visibility 'public' with auth 'required'/);
+
+    expect(() =>
+      defineHandler(
+        { auth: 'admin', cache: { visibility: 'public', maxAge: 60 } },
+        async () => Response.json({}),
+      ),
+    ).toThrow(/cache.visibility 'public' with auth 'admin'/);
+  });
+
+  it('allows public on auth none/optional', () => {
+    expect(() =>
+      defineHandler(
+        { auth: 'none', cache: { visibility: 'public', maxAge: 60 } },
+        async () => Response.json({}),
+      ),
+    ).not.toThrow();
+    expect(() =>
+      defineHandler(
+        { auth: 'optional', cache: { visibility: 'public', maxAge: 60 } },
+        async () => Response.json({}),
+      ),
+    ).not.toThrow();
+  });
+
+  it('rejects a malformed spec at definition time', () => {
+    expect(() =>
+      defineHandler(
+        // @ts-expect-error — deliberately invalid visibility
+        { auth: 'none', cache: { visibility: 'shared', maxAge: 60 } },
+        async () => Response.json({}),
+      ),
+    ).toThrow(/must be 'public' or 'private'/);
+    expect(() =>
+      defineHandler(
+        { auth: 'none', cache: { visibility: 'public', maxAge: -1 } },
+        async () => Response.json({}),
+      ),
+    ).toThrow(/non-negative/);
+  });
+
+  it('writes Cache-Control and Vary on a successful GET', async () => {
+    const h = defineHandler(
+      {
+        auth: 'none',
+        cache: { visibility: 'public', maxAge: 30, sMaxAge: 60, staleWhileRevalidate: 300 },
+      },
+      async () => Response.json({ ok: true }),
+    );
+    const res = await h({ params: {}, request: req() });
+    expect(res.headers.get('cache-control')).toBe(
+      'public, max-age=30, s-maxage=60, stale-while-revalidate=300',
+    );
+    // Always-on: without it a cache can hand a gzip body to a client that never
+    // asked for one.
+    expect(res.headers.get('vary')).toBe('Accept-Encoding');
+  });
+
+  it('adds Vary: Cookie on a private response', async () => {
+    const h = defineHandler(
+      { auth: 'none', cache: { visibility: 'private', maxAge: 15 } },
+      async () => Response.json({ ok: true }),
+    );
+    const res = await h({ params: {}, request: req() });
+    // `private` is the braces; `Vary: Cookie` is the belt — it stops any
+    // intermediary that ignores `private` from keying one user's response for
+    // the next.
+    expect(res.headers.get('cache-control')).toBe('private, max-age=15');
+    expect(res.headers.get('vary')).toBe('Accept-Encoding, Cookie');
+    // `s-maxage` is meaningless on a private response and must not be emitted.
+    expect(res.headers.get('cache-control')).not.toMatch(/s-maxage/);
+  });
+
+  it('never puts a cache header on a mutation or an error', async () => {
+    const mutation = defineHandler(
+      { auth: 'none', cache: { visibility: 'public', maxAge: 60 } },
+      async () => Response.json({ ok: true }),
+    );
+    expect((await mutation({ params: {}, request: post({}) })).headers.get('cache-control')).toBe(
+      null,
+    );
+
+    const failing = defineHandler(
+      { auth: 'none', cache: { visibility: 'public', maxAge: 60 } },
+      async () => Response.json({ error: 'nope' }, { status: 404 }),
+    );
+    const res = await failing({ params: {}, request: req() });
+    expect(res.status).toBe(404);
+    expect(res.headers.get('cache-control')).toBe(null);
+  });
+});
+
+describe('conditional requests (ETag / 304)', () => {
+  const cached = (body: unknown) =>
+    defineHandler({ auth: 'none', cache: { visibility: 'public', maxAge: 60 } }, async () =>
+      Response.json(body),
+    );
+
+  it('emits a weak ETag when cache is declared (etag defaults on)', async () => {
+    const res = await cached({ a: 1 })({ params: {}, request: req() });
+    expect(res.headers.get('etag')).toMatch(/^W\/"/);
+  });
+
+  it('answers a matching If-None-Match with a bodyless 304 that repeats the policy', async () => {
+    const h = cached({ a: 1 });
+    const etag = (await h({ params: {}, request: req() })).headers.get('etag')!;
+
+    const res = await h({
+      params: {},
+      request: req('https://rmhstudios.com/api/test', { headers: { 'if-none-match': etag } }),
+    });
+    expect(res.status).toBe(304);
+    await expect(res.text()).resolves.toBe('');
+    // RFC 9110 §15.4.5: a 304 MUST repeat the caching headers. Omit them and the
+    // client's stored entry keeps expiring on whatever policy it first saw,
+    // which turns a quiet revalidation back into a request storm one TTL later.
+    expect(res.headers.get('cache-control')).toBe('public, max-age=60');
+    expect(res.headers.get('etag')).toBe(etag);
+  });
+
+  it('uses weak comparison, so W/"x" and "x" match', async () => {
+    const h = cached({ a: 1 });
+    const weak = (await h({ params: {}, request: req() })).headers.get('etag')!;
+    const strong = weak.replace(/^W\//, '');
+    const res = await h({
+      params: {},
+      request: req('https://rmhstudios.com/api/test', { headers: { 'if-none-match': strong } }),
+    });
+    expect(res.status).toBe(304);
+  });
+
+  it('matches `*` and a comma-separated list', async () => {
+    const h = cached({ a: 1 });
+    const etag = (await h({ params: {}, request: req() })).headers.get('etag')!;
+
+    for (const header of ['*', `W/"nope", ${etag}, W/"also-nope"`]) {
+      const res = await h({
+        params: {},
+        request: req('https://rmhstudios.com/api/test', { headers: { 'if-none-match': header } }),
+      });
+      expect(res.status, `If-None-Match: ${header}`).toBe(304);
+    }
+  });
+
+  it('serves 200 when the body changed', async () => {
+    const stale = (await cached({ a: 1 })({ params: {}, request: req() })).headers.get('etag')!;
+    const res = await cached({ a: 2 })({
+      params: {},
+      request: req('https://rmhstudios.com/api/test', { headers: { 'if-none-match': stale } }),
+    });
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual({ a: 2 });
+  });
+
+  it('etag: false opts out while keeping the cache policy', async () => {
+    const h = defineHandler(
+      { auth: 'none', cache: { visibility: 'public', maxAge: 60 }, etag: false },
+      async () => Response.json({ a: 1 }),
+    );
+    const res = await h({ params: {}, request: req() });
+    expect(res.headers.get('etag')).toBe(null);
+    expect(res.headers.get('cache-control')).toBe('public, max-age=60');
+  });
+
+  it('etag: true works without any cache policy', async () => {
+    const h = defineHandler({ auth: 'none', etag: true }, async () => Response.json({ a: 1 }));
+    const res = await h({ params: {}, request: req() });
+    expect(res.headers.get('etag')).toMatch(/^W\/"/);
+    expect(res.headers.get('cache-control')).toBe(null);
+  });
+
+  it('refuses to hash a streaming body — an SSE response would hang forever', async () => {
+    const h = defineHandler({ auth: 'none', etag: true }, async () => {
+      const stream = new ReadableStream({
+        start(c) {
+          c.enqueue(new TextEncoder().encode('data: hi\n\n'));
+          // Deliberately never closed: this is the shape that would hang if the
+          // wrapper tried to buffer it to compute a hash.
+        },
+      });
+      return new Response(stream, { headers: { 'content-type': 'text/event-stream' } });
+    });
+    const res = await h({ params: {}, request: req() });
+    expect(res.headers.get('etag')).toBe(null);
+  });
+
+  it('refuses to hash an already-encoded body — the hash could never match', async () => {
+    const h = defineHandler(
+      { auth: 'none', etag: true },
+      async () =>
+        new Response('compressed-bytes', {
+          headers: { 'content-type': 'application/json', 'content-encoding': 'gzip' },
+        }),
+    );
+    expect((await h({ params: {}, request: req() })).headers.get('etag')).toBe(null);
+  });
+
+  it('leaves the body readable after hashing it', async () => {
+    // `weakEtag` clones the response to hash it. If it consumed the original
+    // instead, every cached route would return an empty body — which is the kind
+    // of bug that only shows up in production.
+    const res = await cached({ hello: 'world' })({ params: {}, request: req() });
+    await expect(res.json()).resolves.toEqual({ hello: 'world' });
+  });
+});

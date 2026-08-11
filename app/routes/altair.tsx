@@ -17,6 +17,9 @@ import { gameRouteHead } from '@/lib/seo-catalog';
 import AltairShell from '@/components/altair/AltairShell';
 import altairCss from '@/components/altair/altair.css?url';
 
+const FONTS_URL =
+  'https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap';
+
 function AltairLayout() {
   return (
     <AltairShell>
@@ -26,6 +29,9 @@ function AltairLayout() {
 }
 
 export const Route = createFileRoute('/altair')({
-  head: () => gameRouteHead('altair', { links: [{ rel: 'stylesheet', href: altairCss }] }),
+  head: () => gameRouteHead('altair', {
+      links: [{ rel: 'stylesheet', href: altairCss }],
+      fontsUrl: FONTS_URL,
+    }),
   component: AltairLayout,
 });

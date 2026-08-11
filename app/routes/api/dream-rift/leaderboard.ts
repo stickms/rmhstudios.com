@@ -18,6 +18,10 @@ export const Route = createFileRoute('/api/dream-rift/leaderboard')({
         {
           auth: 'none',
           rateLimit: { limit: 20, windowMs: 60_000, prefix: 'dream-rift-leaderboard' },
+          // Same policy, same reasoning as `void-breaker/leaderboard`: a global
+          // top-N with no per-caller branch. `?difficulty=` varies the URL, which
+          // is the cache key, so each difficulty caches independently.
+          cache: { visibility: 'public', maxAge: 30, sMaxAge: 60, staleWhileRevalidate: 300 },
         },
         async ({ request }) => {
           try {

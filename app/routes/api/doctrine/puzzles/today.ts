@@ -11,7 +11,13 @@ export const Route = createFileRoute('/api/doctrine/puzzles/today')({
   server: {
     handlers: {
       GET: defineHandler(
-        { auth: 'none', rateLimit: { limit: 30, windowMs: 60_000, prefix: 'doctrine-today' } },
+        {
+          auth: 'none',
+          rateLimit: { limit: 30, windowMs: 60_000, prefix: 'doctrine-today' },
+          // Today's puzzle changes once per day and the handler already memoizes
+          // per date in-process; the edge can hold it far longer than a leaderboard.
+          cache: { visibility: 'public', maxAge: 300, sMaxAge: 3600, staleWhileRevalidate: 86400 },
+        },
         async () => {
           try {
             const today = new Date().toISOString().slice(0, 10);

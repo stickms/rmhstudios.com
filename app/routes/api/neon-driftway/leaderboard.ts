@@ -9,6 +9,9 @@ export const Route = createFileRoute('/api/neon-driftway/leaderboard')({
         {
           auth: 'none',
           rateLimit: { limit: 20, windowMs: 60_000, prefix: 'neon-driftway-leaderboard' },
+          // Anonymous-invariant global top-N — the same bytes for every caller,
+          // which is what `public` claims. Matches `void-breaker/leaderboard`.
+          cache: { visibility: 'public', maxAge: 30, sMaxAge: 60, staleWhileRevalidate: 300 },
         },
         async () => {
           try {

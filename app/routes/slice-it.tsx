@@ -4,6 +4,9 @@ import { gameRouteHead } from '@/lib/seo-catalog';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import sliceItCss from '@/components/slice-it/slice-it.css?url';
 
+const FONTS_URL =
+  'https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap';
+
 function SliceItLayout() {
   // Keep `<html data-app-dark>` — written before first paint by the inline
   // script in `__root.tsx`, and the selector `slice-it.css` keys its token
@@ -30,10 +33,6 @@ function SliceItLayout() {
       // whenever the game's toggle and the site theme did.
       className="slice-theme min-h-screen transition-colors duration-300"
     >
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap"
-      />
       {/* No <Toaster> here. `components/Providers.tsx` already mounts one for
           the whole app, at bottom-left and themed. A second one rendered every
           toast a second time at sonner's default bottom-right — the same
@@ -44,6 +43,9 @@ function SliceItLayout() {
 }
 
 export const Route = createFileRoute('/slice-it')({
-  head: () => gameRouteHead('slice-it', { links: [{ rel: 'stylesheet', href: sliceItCss }] }),
+  head: () => gameRouteHead('slice-it', {
+      links: [{ rel: 'stylesheet', href: sliceItCss }],
+      fontsUrl: FONTS_URL,
+    }),
   component: SliceItLayout,
 });

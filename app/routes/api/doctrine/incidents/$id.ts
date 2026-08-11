@@ -7,7 +7,13 @@ export const Route = createFileRoute('/api/doctrine/incidents/$id')({
   server: {
     handlers: {
       GET: defineHandler(
-        { auth: 'none', rateLimit: { limit: 30, windowMs: 60_000, prefix: 'doctrine-incident' } },
+        {
+          auth: 'none',
+          rateLimit: { limit: 30, windowMs: 60_000, prefix: 'doctrine-incident' },
+          // A single incident record, keyed entirely by the path param and
+          // effectively immutable once published.
+          cache: { visibility: 'public', maxAge: 60, sMaxAge: 300, staleWhileRevalidate: 3600 },
+        },
         async ({ params }) => {
           try {
             const incident = await getIncident(params.id);

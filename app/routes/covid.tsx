@@ -2,6 +2,10 @@ import { createFileRoute } from '@tanstack/react-router';
 import { CovidPage } from '@/components/covid/CovidPage';
 import covidCss from '@/components/covid/covid.css?url';
 import { buildMeta, buildCanonical } from '@/lib/seo';
+import { deferredFontScript, preconnectGoogleFonts } from '@/lib/fonts/deferred';
+
+const FONTS_URL =
+  'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..700&family=Inter:wght@300..700&family=Great+Vibes&display=swap';
 
 /**
  * /covid — "Feature Leak: The True Origins of X".
@@ -25,13 +29,11 @@ export const Route = createFileRoute('/covid')({
     links: [
       buildCanonical(PATH),
       { rel: 'stylesheet', href: covidCss },
-      { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-      { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
-      {
-        rel: 'stylesheet',
-        href: 'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..700&family=Inter:wght@300..700&family=Great+Vibes&display=swap',
-      },
+      ...preconnectGoogleFonts(),
     ],
+    // Idle-deferred rather than a render-blocking <link> — see
+    // `lib/fonts/deferred.ts`.
+    scripts: [{ children: deferredFontScript(FONTS_URL) }],
   }),
   component: CovidPage,
 });

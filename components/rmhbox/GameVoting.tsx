@@ -13,20 +13,15 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Timer, Gamepad2, icons } from 'lucide-react';
+import { Timer, Gamepad2 } from 'lucide-react';
 import { getSocket } from '@/lib/rmhbox/socket';
 import { S2C } from '@/lib/rmhbox/events';
 import type { VoteCandidate } from '@/lib/rmhbox/types';
-
-/** Convert kebab-case icon name to PascalCase for lucide-react lookup */
-function kebabToPascal(name: string): string {
-  return name.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('');
-}
+import { MINIGAME_ICONS } from './minigame-icons';
 
 /** Resolve a minigame icon string to a Lucide component, falling back to emoji or Gamepad2 */
 function GameIcon({ icon, className }: { icon: string; className?: string }) {
-  const pascalName = kebabToPascal(icon);
-  const LucideIcon = icons[pascalName as keyof typeof icons];
+  const LucideIcon = MINIGAME_ICONS[icon];
   if (LucideIcon) return <LucideIcon className={className} />;
   if (/^\p{Emoji}/u.test(icon)) return <span className={className}>{icon}</span>;
   return <Gamepad2 className={className} />;

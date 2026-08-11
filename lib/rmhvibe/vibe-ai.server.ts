@@ -23,7 +23,12 @@ import OpenAI from 'openai';
 // Reuse the existing DeepSeek key already configured for the discord bot and the
 // vibe generator. Never sent to the client.
 const deepseek = new OpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY!,
+  // `|| 'missing'` rather than `!`: the SDK throws on an absent key at
+  // CONSTRUCTION, and this module sits in the route-entry import graph that
+  // `loadEntries()` walks before serving any request — so an unset key here
+  // failed the first request to every page, not just this feature's. The other
+  // 14 sibling clients in `lib/**` already use this fallback for that reason.
+  apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
   baseURL: 'https://api.deepseek.com/v1',
   maxRetries: 1,
 });

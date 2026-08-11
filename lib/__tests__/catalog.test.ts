@@ -8,10 +8,17 @@ import { appEntrySchema, gameEntrySchema } from '@/lib/catalog/types';
 
 /**
  * The catalog split (one file per entry under `lib/catalog/`) moved the
- * "is this entry well-formed?" question from a reviewer's eyes to a zod schema
- * that runs at module load. That covers shape. It does not cover the three
- * things that only make sense across the whole catalog, which is what this file
- * is for:
+ * "is this entry well-formed?" question from a reviewer's eyes to a zod schema.
+ *
+ * **This file is now the only place that schema runs.** It used to also run at
+ * module load in `lib/catalog/index.ts`, which put zod (71 KB raw) on the shared
+ * critical path of every page on the site and re-parsed 34 static objects in
+ * every visitor's browser. The parse moved here; nothing about the coverage
+ * changed except that it now runs once in CI instead of once per page view. So
+ * `every entry parses against its schema` below is load-bearing — deleting it
+ * removes the site's only runtime-shape check on hand-written catalog data.
+ *
+ * On top of shape, three things only make sense across the whole catalog:
  *
  *  1. every file on disk is actually wired into the barrel (a per-entry file
  *     that nobody imports is invisible, and the failure mode is a game
