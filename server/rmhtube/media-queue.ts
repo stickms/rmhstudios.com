@@ -1,9 +1,9 @@
 /**
  * RmhTube — Media Queue Manager
  *
- * Handles the video queue: add, remove, reorder, skip, auto-advance,
- * vote-to-skip, queue voting, shuffle, loop, and history.
- * Persists queue items to the database.
+ * The video queue: add, remove, reorder, skip, auto-advance, vote-to-skip,
+ * queue voting, shuffle, loop and history. Queue items are persisted; the
+ * playhead is not (that is the sync engine's, and it is ephemeral by design).
  */
 
 import type { Server, Socket } from 'socket.io';
@@ -19,15 +19,19 @@ import {
   QueueReorderSchema,
   QueuePlayItemSchema,
   QueueVoteSchema,
+  QueueMetaSchema,
   ReactionSchema,
 } from '../../lib/rmhtube/schemas';
-import { detectMediaType, extractYouTubeId, youtubeThumbUrl } from '../../lib/rmhtube/utils';
+import { parseMedia } from '../../lib/rmhtube/media';
 import type { RoomManager } from './room-manager';
 import type { SyncEngine } from './sync-engine';
 import type { QueueItem, RmhTubeRoom } from './types';
 import { z } from 'zod';
 
 const EmptySchema = z.object({}).optional();
+
+/** Played items kept in memory for the room's history panel. */
+const HISTORY_LIMIT = 50;
 
 export class MediaQueue {
   constructor(
@@ -43,17 +47,49 @@ export class MediaQueue {
     socket.on(C2S.QUEUE_PLAY_ITEM, validated(socket, C2S.QUEUE_PLAY_ITEM, QueuePlayItemSchema, (s, p) => this.playItem(s, p)));
     socket.on(C2S.QUEUE_SKIP, validated(socket, C2S.QUEUE_SKIP, EmptySchema, (s) => this.skipCurrent(s)));
     socket.on(C2S.QUEUE_VOTE_SKIP, validated(socket, C2S.QUEUE_VOTE_SKIP, EmptySchema, (s) => this.voteSkip(s)));
+    socket.on(C2S.QUEUE_META, validated(socket, C2S.QUEUE_META, QueueMetaSchema, (s, p) => this.applyMeta(s, p)));
     socket.on(C2S.REACTION_SEND, validated(socket, C2S.REACTION_SEND, ReactionSchema, (s, p) => this.sendReaction(s, p)));
-
-    // Phase 3: Queue voting & shuffle
     socket.on(C2S.QUEUE_VOTE, validated(socket, C2S.QUEUE_VOTE, QueueVoteSchema, (s, p) => this.voteForItem(s, p)));
     socket.on(C2S.QUEUE_SHUFFLE, validated(socket, C2S.QUEUE_SHUFFLE, EmptySchema, (s) => this.shuffleQueue(s)));
   }
 
-  // ─── Helper: Leader Check ───────────────────────────────────
+  // ─── Helpers ─────────────────────────────────────────────────
 
   private isLeader(room: RmhTubeRoom, userId: string): boolean {
     return room.leaderUserId === userId;
+  }
+
+  /**
+   * Re-point `currentIndex` at whatever the playing item is now.
+   *
+   * Every mutation of the array has to do this. Removing an item above the
+   * playhead, or reordering across it, used to leave the index pointing at a
+   * different video, and the error only surfaced on the *next* skip — which
+   * replayed something already watched, or jumped over something that was not.
+   */
+  private syncCurrentIndex(room: RmhTubeRoom): void {
+    if (!room.currentItem) {
+      room.currentIndex = -1;
+      return;
+    }
+    const index = room.queue.findIndex((q) => q.id === room.currentItem!.id);
+    // Not in the queue any more (it was removed while playing): leave the
+    // pointer just before whatever slid into its place, so the next advance
+    // picks that up rather than skipping it.
+    if (index !== -1) room.currentIndex = index;
+  }
+
+  private reindex(room: RmhTubeRoom): void {
+    room.queue.forEach((q, i) => { q.position = i; });
+    this.syncCurrentIndex(room);
+  }
+
+  /** Broadcast the whole queue (after any reorder) with vote state intact. */
+  private broadcastQueue(room: RmhTubeRoom): void {
+    this.roomManager.broadcastAction(room, 'QUEUE_REORDERED', {
+      queue: this.roomManager.broadcastQueue(room),
+      currentIndex: room.currentIndex,
+    });
   }
 
   // ─── Add to Queue ────────────────────────────────────────────
@@ -64,7 +100,6 @@ export class MediaQueue {
     const room = this.roomManager.getRoomForUser(userId);
     if (!room) return;
 
-    // Permission check
     if (room.hostUserId !== userId && !room.settings.allowMemberQueue) {
       socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can add to the queue.' });
       return;
@@ -75,57 +110,103 @@ export class MediaQueue {
       return;
     }
 
-    const mediaType = detectMediaType(payload.url);
-    if (!mediaType) {
-      socket.emit(S2C.ERROR, { code: 'INVALID_URL', message: 'Unsupported media URL.' });
+    // One parser decides what a URL is, and it is written against the player's
+    // own matchers — so anything accepted here is something the player can
+    // actually load.
+    const media = parseMedia(payload.url);
+    if (!media) {
+      socket.emit(S2C.ERROR, {
+        code: 'INVALID_URL',
+        message: 'Unsupported link. Use a YouTube video, a Twitch channel or VOD, Vimeo, or a direct video/stream URL.',
+      });
       return;
-    }
-
-    // Build queue item
-    let title = payload.title || payload.url;
-    let thumbnailUrl: string | null = null;
-
-    // Resolve YouTube metadata
-    if (mediaType === 'youtube') {
-      const videoId = extractYouTubeId(payload.url);
-      if (videoId) {
-        thumbnailUrl = youtubeThumbUrl(videoId);
-        if (!payload.title) {
-          title = `YouTube Video (${videoId})`;
-        }
-      }
     }
 
     const now = Date.now();
     const item: QueueItem = {
       id: nanoid(12),
-      url: payload.url,
-      mediaType,
-      title: title.slice(0, 256),
+      url: media.url,
+      mediaType: media.mediaType,
+      title: (payload.title || media.label || fallbackTitle(media.mediaType, media.id)).slice(0, 256),
+      // Duration and true liveness come from the player once the item plays
+      // (QUEUE_META); the URL can only hint at them.
       duration: null,
-      thumbnailUrl,
+      thumbnailUrl: media.thumbnailUrl,
       addedBy: userId,
       addedByName: userName,
       addedAt: now,
       position: room.queue.length,
+      live: media.liveHint === 'live',
     };
 
     room.queue.push(item);
     room.lastActivityAt = now;
 
-    this.roomManager.broadcastAction(room, 'QUEUE_ITEM_ADDED', { item });
+    this.roomManager.broadcastAction(room, 'QUEUE_ITEM_ADDED', {
+      item: this.roomManager.toBroadcastItem(room, item),
+    });
 
-    // Persist to DB
     this.persistQueueItem(room.id, item).catch((err) => {
       logger.error({ event: 'db_queue_add_failed', roomId: room.id, error: String(err) });
     });
 
     // Auto-play if nothing is currently playing
     if (!room.currentItem && room.settings.autoPlay) {
-      this.playAtIndex(room, 0);
+      this.playAtIndex(room, room.queue.length - 1);
     }
 
-    logger.info({ event: 'queue_item_added', roomId: room.id, userId, mediaType, title: item.title });
+    logger.info({ event: 'queue_item_added', roomId: room.id, userId, mediaType: item.mediaType, title: item.title });
+  }
+
+  // ─── Item metadata (from the leader's player) ─────────────────
+
+  /**
+   * The leader's player learned something the URL could not tell us: the real
+   * duration, whether the source is actually a broadcast, and sometimes a
+   * title. Liveness matters most — it is what switches the room from
+   * position sync to mirroring, and `/watch?v=…` is equally how YouTube
+   * addresses a live stream, so it cannot be decided before load.
+   */
+  private applyMeta(
+    socket: Socket,
+    payload: { itemId: string; duration?: number | null; live?: boolean; title?: string },
+  ): void {
+    const userId = socket.data.userId as string;
+    const room = this.roomManager.getRoomForUser(userId);
+    if (!room || !this.isLeader(room, userId)) return;
+
+    const item = room.queue.find((q) => q.id === payload.itemId)
+      ?? (room.currentItem?.id === payload.itemId ? room.currentItem : undefined);
+    if (!item) return;
+
+    const patch: Record<string, unknown> = {};
+    if (payload.duration !== undefined && payload.duration !== item.duration) {
+      item.duration = payload.duration;
+      patch.duration = payload.duration;
+    }
+    if (payload.live !== undefined && payload.live !== item.live) {
+      item.live = payload.live;
+      patch.live = payload.live;
+    }
+    if (payload.title && payload.title !== item.title) {
+      item.title = payload.title.slice(0, 256);
+      patch.title = item.title;
+    }
+    if (Object.keys(patch).length === 0) return;
+
+    // Liveness decides how the whole room synchronises, so a change to it has
+    // to reach the timeline, not just the queue row.
+    if (patch.live !== undefined && room.currentItem?.id === item.id) {
+      this.syncEngine.setMode(room, item.live ? 'live' : 'vod');
+    }
+
+    this.roomManager.broadcastAction(room, 'QUEUE_ITEM_META', { itemId: item.id, ...patch });
+
+    if (patch.duration !== undefined || patch.title !== undefined) {
+      this.persistQueueMeta(item).catch((err) => {
+        logger.error({ event: 'db_queue_meta_failed', roomId: room.id, error: String(err) });
+      });
+    }
   }
 
   // ─── Remove from Queue ───────────────────────────────────────
@@ -140,25 +221,35 @@ export class MediaQueue {
 
     const item = room.queue[itemIndex];
 
-    // Members can only remove their own items, host can remove any
+    // Members can only remove their own items, the host can remove any.
     if (room.hostUserId !== userId && item.addedBy !== userId) {
       socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'You can only remove your own items.' });
       return;
     }
 
+    const removedWasCurrent = room.currentItem?.id === payload.itemId;
     room.queue.splice(itemIndex, 1);
-    // Reindex positions
+
+    if (removedWasCurrent) {
+      // The playing item is gone from the queue. Park the pointer just before
+      // the slot it vacated so the next advance plays whatever moved into it.
+      room.currentIndex = itemIndex - 1;
+    } else if (itemIndex <= room.currentIndex) {
+      room.currentIndex -= 1;
+    }
     room.queue.forEach((q, i) => { q.position = i; });
     room.lastActivityAt = Date.now();
 
-    this.roomManager.broadcastAction(room, 'QUEUE_ITEM_REMOVED', { itemId: payload.itemId });
-
-    // Persist removal + updated positions
-    this.persistQueueRemove(payload.itemId).then(() =>
-      this.persistQueuePositions(room.queue),
-    ).catch((err) => {
-      logger.error({ event: 'db_queue_remove_failed', roomId: room.id, error: String(err) });
+    this.roomManager.broadcastAction(room, 'QUEUE_ITEM_REMOVED', {
+      itemId: payload.itemId,
+      currentIndex: room.currentIndex,
     });
+
+    this.persistQueueRemove(payload.itemId)
+      .then(() => this.persistQueuePositions(room.queue))
+      .catch((err) => {
+        logger.error({ event: 'db_queue_remove_failed', roomId: room.id, error: String(err) });
+      });
   }
 
   // ─── Reorder Queue ───────────────────────────────────────────
@@ -177,25 +268,11 @@ export class MediaQueue {
     const newPos = Math.max(0, Math.min(payload.newPosition, room.queue.length - 1));
     const [item] = room.queue.splice(oldIndex, 1);
     room.queue.splice(newPos, 0, item);
-    room.queue.forEach((q, i) => { q.position = i; });
+    this.reindex(room);
     room.lastActivityAt = Date.now();
 
-    this.roomManager.broadcastAction(room, 'QUEUE_REORDERED', {
-      queue: room.queue.map((q) => ({
-        id: q.id,
-        url: q.url,
-        mediaType: q.mediaType,
-        title: q.title,
-        duration: q.duration,
-        thumbnailUrl: q.thumbnailUrl,
-        addedBy: q.addedBy,
-        addedByName: q.addedByName,
-        addedAt: q.addedAt,
-        position: q.position,
-      })),
-    });
+    this.broadcastQueue(room);
 
-    // Persist updated positions
     this.persistQueuePositions(room.queue).catch((err) => {
       logger.error({ event: 'db_queue_reorder_failed', roomId: room.id, error: String(err) });
     });
@@ -260,7 +337,7 @@ export class MediaQueue {
     }
   }
 
-  // ─── Queue Voting (Phase 3.3) ───────────────────────────────
+  // ─── Queue Voting ───────────────────────────────────────────
 
   private voteForItem(socket: Socket, payload: { itemId: string }): void {
     const userId = socket.data.userId as string;
@@ -272,53 +349,37 @@ export class MediaQueue {
       return;
     }
 
-    // Verify the item exists in the queue
-    const itemExists = room.queue.some((q) => q.id === payload.itemId);
-    if (!itemExists) {
+    if (!room.queue.some((q) => q.id === payload.itemId)) {
       socket.emit(S2C.ERROR, { code: 'ITEM_NOT_FOUND', message: 'Queue item not found.' });
       return;
     }
 
-    // Toggle vote: remove if already voted, add otherwise
     let voters = room.queueVotes.get(payload.itemId);
     if (!voters) {
       voters = new Set<string>();
       room.queueVotes.set(payload.itemId, voters);
     }
 
-    if (voters.has(userId)) {
-      voters.delete(userId);
-    } else {
-      voters.add(userId);
-    }
+    if (voters.has(userId)) voters.delete(userId);
+    else voters.add(userId);
 
     room.lastActivityAt = Date.now();
 
-    // Broadcast vote update
     this.roomManager.broadcastAction(room, 'QUEUE_VOTE_UPDATED', {
       itemId: payload.itemId,
       votes: voters.size,
       voters: Array.from(voters),
     });
 
-    // Auto-sort by votes if enabled
-    if (room.settings.autoSortByVotes) {
-      this.sortQueueByVotes(room);
-    }
+    if (room.settings.autoSortByVotes) this.sortQueueByVotes(room);
 
-    logger.info({
-      event: 'queue_vote',
-      roomId: room.id,
-      userId,
-      itemId: payload.itemId,
-      votes: voters.size,
-    });
+    logger.info({ event: 'queue_vote', roomId: room.id, userId, itemId: payload.itemId, votes: voters.size });
   }
 
   /**
-   * Sorts queue items by vote count (descending). Items at or before
-   * currentIndex are left in place; only items after are sorted.
-   * Broadcasts QUEUE_REORDERED and persists new positions.
+   * Sort the not-yet-played tail by vote count, descending. Items at or before
+   * the playhead stay put — reordering what is already playing is not a sort,
+   * it is a skip.
    */
   private sortQueueByVotes(room: RmhTubeRoom): void {
     const startIndex = room.currentIndex + 1;
@@ -328,77 +389,45 @@ export class MediaQueue {
     unsorted.sort((a, b) => {
       const votesA = room.queueVotes.get(a.id)?.size ?? 0;
       const votesB = room.queueVotes.get(b.id)?.size ?? 0;
-      // Descending by votes; ties keep original order (stable sort)
-      return votesB - votesA;
+      return votesB - votesA; // stable: ties keep their order
     });
 
-    // Replace the sortable portion
     room.queue.splice(startIndex, unsorted.length, ...unsorted);
-    room.queue.forEach((q, i) => { q.position = i; });
+    this.reindex(room);
 
-    this.roomManager.broadcastAction(room, 'QUEUE_REORDERED', {
-      queue: room.queue.map((q) => ({
-        id: q.id,
-        url: q.url,
-        mediaType: q.mediaType,
-        title: q.title,
-        duration: q.duration,
-        thumbnailUrl: q.thumbnailUrl,
-        addedBy: q.addedBy,
-        addedByName: q.addedByName,
-        addedAt: q.addedAt,
-        position: q.position,
-      })),
-    });
+    this.broadcastQueue(room);
 
-    // Persist updated positions
     this.persistQueuePositions(room.queue).catch((err) => {
       logger.error({ event: 'db_queue_vote_sort_failed', roomId: room.id, error: String(err) });
     });
   }
 
-  // ─── Queue Shuffle (Phase 3.4) ──────────────────────────────
+  // ─── Queue Shuffle ──────────────────────────────────────────
 
   private shuffleQueue(socket: Socket): void {
     const userId = socket.data.userId as string;
     const room = this.roomManager.getRoomForUser(userId);
     if (!room) return;
 
-    // Host or moderator only
     if (!this.isLeader(room, userId)) {
       socket.emit(S2C.ERROR, { code: 'NOT_LEADER', message: 'Only the leader can shuffle the queue.' });
       return;
     }
 
     const startIndex = room.currentIndex + 1;
-    if (startIndex >= room.queue.length) return; // Nothing to shuffle
+    if (startIndex >= room.queue.length) return; // nothing to shuffle
 
-    // Fisher-Yates shuffle on items after currentIndex
+    // Fisher-Yates over the not-yet-played tail.
     for (let i = room.queue.length - 1; i > startIndex; i--) {
       const j = startIndex + Math.floor(Math.random() * (i - startIndex + 1));
       [room.queue[i], room.queue[j]] = [room.queue[j], room.queue[i]];
     }
 
-    // Reindex positions
-    room.queue.forEach((q, i) => { q.position = i; });
+    this.reindex(room);
     room.lastActivityAt = Date.now();
 
-    this.roomManager.broadcastAction(room, 'QUEUE_REORDERED', {
-      queue: room.queue.map((q) => ({
-        id: q.id,
-        url: q.url,
-        mediaType: q.mediaType,
-        title: q.title,
-        duration: q.duration,
-        thumbnailUrl: q.thumbnailUrl,
-        addedBy: q.addedBy,
-        addedByName: q.addedByName,
-        addedAt: q.addedAt,
-        position: q.position,
-      })),
-    });
+    this.broadcastQueue(room);
 
-    // Persist updated positions
     this.persistQueuePositions(room.queue).catch((err) => {
       logger.error({ event: 'db_queue_shuffle_failed', roomId: room.id, error: String(err) });
     });
@@ -414,11 +443,7 @@ export class MediaQueue {
     const room = this.roomManager.getRoomForUser(userId);
     if (!room) return;
 
-    socket.to(room.id).emit(S2C.REACTION_BROADCAST, {
-      userId,
-      userName,
-      emoji: payload.emoji,
-    });
+    socket.to(room.id).emit(S2C.REACTION_BROADCAST, { userId, userName, emoji: payload.emoji });
   }
 
   // ─── Queue Advancement ───────────────────────────────────────
@@ -426,30 +451,16 @@ export class MediaQueue {
   advanceQueue(room: RmhTubeRoom): void {
     room.skipVotes.clear();
 
-    // Phase 3.9: Push current item to history before advancing
     if (room.currentItem) {
       room.playedItems.push({ ...room.currentItem });
-      // Keep history capped at 50 items (FIFO)
-      if (room.playedItems.length > 50) {
-        room.playedItems.splice(0, room.playedItems.length - 50);
+      if (room.playedItems.length > HISTORY_LIMIT) {
+        room.playedItems.splice(0, room.playedItems.length - HISTORY_LIMIT);
       }
 
       this.roomManager.broadcastAction(room, 'QUEUE_HISTORY_UPDATED', {
-        playedItems: room.playedItems.map((q) => ({
-          id: q.id,
-          url: q.url,
-          mediaType: q.mediaType,
-          title: q.title,
-          duration: q.duration,
-          thumbnailUrl: q.thumbnailUrl,
-          addedBy: q.addedBy,
-          addedByName: q.addedByName,
-          addedAt: q.addedAt,
-          position: q.position,
-        })),
+        playedItems: room.playedItems.map((q) => this.roomManager.toBroadcastItem(room, q)),
       });
 
-      // Mark current as played in DB
       this.persistQueuePlayed(room.currentItem.id).catch((err) => {
         logger.error({ event: 'db_queue_played_failed', roomId: room.id, error: String(err) });
       });
@@ -459,20 +470,16 @@ export class MediaQueue {
     if (nextIndex < room.queue.length) {
       this.playAtIndex(room, nextIndex);
     } else if (room.settings.loopQueue && room.queue.length > 0) {
-      // Phase 3.5: Loop — reset to beginning of queue
       this.playAtIndex(room, 0);
       logger.info({ event: 'queue_looped', roomId: room.id });
     } else {
-      // Queue exhausted
       room.currentItem = null;
       room.currentIndex = -1;
-      this.syncEngine.onMediaChanged(room);
-      this.roomManager.broadcastAction(room, 'PLAYBACK_ENDED', {});
+      const videoState = this.syncEngine.onMediaChanged(room);
+      this.roomManager.broadcastAction(room, 'PLAYBACK_ENDED', { videoState });
       logger.info({ event: 'queue_exhausted', roomId: room.id });
     }
   }
-
-  // ─── Internal Play Helper ────────────────────────────────────
 
   private playAtIndex(room: RmhTubeRoom, index: number): void {
     if (index < 0 || index >= room.queue.length) return;
@@ -481,34 +488,17 @@ export class MediaQueue {
     room.currentIndex = index;
     room.lastActivityAt = Date.now();
 
-    this.syncEngine.onMediaChanged(room);
+    // The fresh anchor travels *with* the item. Announcing them separately let
+    // a client hold a new video against the previous one's timeline for as long
+    // as the two messages were apart.
+    const videoState = this.syncEngine.onMediaChanged(room);
     this.roomManager.broadcastAction(room, 'NOW_PLAYING', {
-      item: room.currentItem,
+      item: this.roomManager.toBroadcastItem(room, room.currentItem),
       index: room.currentIndex,
+      videoState,
     });
 
     logger.info({ event: 'now_playing', roomId: room.id, title: room.currentItem.title, index });
-  }
-
-  // ─── Video End Notification ──────────────────────────────────
-
-  /**
-   * Called when the host's video player reports the video has ended.
-   * Auto-advances the queue if autoPlay is enabled.
-   * Supports loop mode via advanceQueue (Phase 3.5).
-   */
-  handleVideoEnded(room: RmhTubeRoom): void {
-    if (room.settings.autoPlay) {
-      this.advanceQueue(room);
-    } else if (room.settings.loopQueue && room.queue.length > 0) {
-      // Even without autoPlay, if loop is enabled and we're at the end,
-      // loop back to the first item
-      const nextIndex = room.currentIndex + 1;
-      if (nextIndex >= room.queue.length) {
-        this.playAtIndex(room, 0);
-        logger.info({ event: 'queue_looped_on_end', roomId: room.id });
-      }
-    }
   }
 
   // ─── Database Persistence ────────────────────────────────────
@@ -528,6 +518,16 @@ export class MediaQueue {
         addedByName: item.addedByName,
         position: item.position,
       },
+    });
+  }
+
+  private async persistQueueMeta(item: QueueItem): Promise<void> {
+    const prisma = getPrismaClient();
+    await prisma.rmhTubeQueueItem.update({
+      where: { id: item.id },
+      data: { duration: item.duration, title: item.title },
+    }).catch(() => {
+      // The row may already be gone (removed while its metadata was in flight).
     });
   }
 
@@ -559,5 +559,15 @@ export class MediaQueue {
         }),
       ),
     );
+  }
+}
+
+/** A name to show until the leader's player reports the real one. */
+function fallbackTitle(mediaType: string, id: string | null): string {
+  switch (mediaType) {
+    case 'youtube': return id ? `YouTube · ${id}` : 'YouTube playlist';
+    case 'twitch': return id ? `Twitch · ${id}` : 'Twitch';
+    case 'vimeo': return id ? `Vimeo · ${id}` : 'Vimeo';
+    default: return 'Video';
   }
 }

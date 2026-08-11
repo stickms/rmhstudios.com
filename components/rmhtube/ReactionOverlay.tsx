@@ -7,6 +7,7 @@ import { useState, useEffect, type Dispatch, type SetStateAction } from 'react';
 import { emit, getSocket } from '@/lib/rmhtube/socket';
 import { C2S, S2C } from '@/lib/rmhtube/events';
 import { AVAILABLE_REACTIONS } from '@/lib/rmhtube/constants';
+import { useRmhTubeStore } from '@/lib/rmhtube/store';
 
 interface FloatingReaction {
   id: number;
@@ -31,6 +32,11 @@ function spawnReaction(setReactions: Dispatch<SetStateAction<FloatingReaction[]>
 
 export default function ReactionOverlay() {
   const [reactions, setReactions] = useState<FloatingReaction[]>([]);
+  // The host could set custom reactions, the server stored them and sent them
+  // down — and this bar rendered the hardcoded defaults regardless, so the
+  // setting had no observable effect at all.
+  const customReactions = useRmhTubeStore((s) => s.room?.settings.customReactions);
+  const available = customReactions?.length ? customReactions : AVAILABLE_REACTIONS;
 
   // Listen for reactions from other users
   useEffect(() => {
@@ -69,7 +75,7 @@ export default function ReactionOverlay() {
 
       {/* Reaction bar */}
       <div className="flex items-center gap-1 px-2">
-        {AVAILABLE_REACTIONS.map((emoji) => (
+        {available.map((emoji) => (
           <button
             key={emoji}
             onClick={() => handleSendReaction(emoji)}

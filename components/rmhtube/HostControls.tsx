@@ -36,6 +36,9 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
   const currentTime = videoState?.currentTime ?? 0;
   const duration = currentItem?.duration ?? null;
   const currentSpeed = videoState?.playbackRate ?? 1;
+  // A broadcast has no position to report and no rate to change — showing a
+  // running clock against a sliding DVR window is worse than showing nothing.
+  const isLive = videoState?.mode === 'live';
 
   const masterVolume = useRmhTubeStore((s) => s.settings.masterVolume);
   const muted = useRmhTubeStore((s) => s.settings.muted);
@@ -71,20 +74,24 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
 
   const handlePlayPause = useCallback(() => {
     if (isLeader) {
-      // Optimistically update local state so the UI responds immediately
+      // Optimistic, so the button answers the click rather than the round trip.
+      // `rev` advances with it: the store drops anchors older than the one it
+      // holds, and without a bump this local anchor would lose to the in-flight
+      // heartbeat that still says the opposite.
       const room = useRmhTubeStore.getState().room;
       if (room) {
-        useRmhTubeStore.getState().updateVideoState({
+        useRmhTubeStore.getState().setVideoState({
           ...room.videoState,
           playing: !playing,
           updatedAt: getServerNow(),
+          rev: room.videoState.rev + 1,
         });
       }
       emit(playing ? C2S.SYNC_PAUSE : C2S.SYNC_PLAY, {});
     } else {
       toast.info(t("only-leader-playback", { defaultValue: "Only the leader can control playback" }));
     }
-  }, [isLeader, playing]);
+  }, [isLeader, playing, t]);
 
   const handleSkip = useCallback(() => {
     if (isLeader) {
@@ -93,7 +100,7 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
     } else {
       toast.info(t("only-leader-skip", { defaultValue: "Only the leader can skip" }));
     }
-  }, [isLeader, onSkip]);
+  }, [isLeader, onSkip, t]);
 
   const handleMuteToggle = useCallback(() => {
     updateSettings({ muted: !muted });
@@ -115,7 +122,7 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
     }
     emit(C2S.SYNC_SET_SPEED, { speed });
     setShowSpeedMenu(false);
-  }, [isLeader]);
+  }, [isLeader, t]);
 
   const handleSpeedCycle = useCallback(() => {
     if (!isLeader) return;
@@ -163,9 +170,16 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
         <p className="text-sm font-medium truncate text-(--app-text)">
           {currentItem.title}
         </p>
-        <p className="text-xs text-(--app-text-dim)">
-          {formatDuration(currentTime)} / {formatDuration(duration)}
-        </p>
+        {isLive ? (
+          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-(--app-danger)">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-(--app-danger)" aria-hidden />
+            {t("live", { defaultValue: "Live" })}
+          </p>
+        ) : (
+          <p className="text-xs text-(--app-text-dim)">
+            {formatDuration(currentTime)} / {formatDuration(duration)}
+          </p>
+        )}
       </div>
 
       {/* Volume — always visible */}
@@ -202,8 +216,9 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
         <Subtitles className="h-4 w-4" />
       </button>
 
-      {/* Playback Speed — host can change, non-host reads current speed */}
-      <div className="relative shrink-0" ref={speedMenuRef}>
+      {/* Playback Speed — host can change, non-host reads current speed.
+          Hidden on a broadcast: the providers ignore the rate on a live edge. */}
+      <div className={`relative shrink-0 ${isLive ? 'hidden' : ''}`} ref={speedMenuRef}>
         <button
           onClick={() => setShowSpeedMenu((v) => !v)}
           onDoubleClick={isLeader ? handleSpeedCycle : undefined}

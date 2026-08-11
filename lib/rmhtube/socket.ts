@@ -15,8 +15,9 @@ import type { PeerWaitState } from '@/lib/shared/realtime/types';
 import { useRmhTubeStore } from './store';
 import { C2S, S2C } from './events';
 import { toast } from './toast-store';
-import { getServerNow, recordPong, beginClockSyncBurst, resetClock } from './clock';
+import { recordPong, beginClockSyncBurst, resetClock } from './clock';
 import { CLOCK_SYNC_SAMPLES, CLOCK_SYNC_INTERVAL_MS } from './constants';
+import type { VideoState } from './types';
 
 let client: RealtimeClient | null = null;
 let clockSyncTimer: ReturnType<typeof setInterval> | null = null;
@@ -118,32 +119,10 @@ function registerHandlers(socket: Socket) {
   );
 
   // ─── Video sync ───────────────────────────────────────────────────────
-  socket.on(S2C.SYNC_STATE, (videoState) => store().updateVideoState(videoState));
-
-  /** Patch the live video state, stamped on the shared clock. */
-  const patchVideo = (patch: Record<string, unknown>) => {
-    const room = store().room;
-    if (!room) return;
-    store().updateVideoState({ ...room.videoState, ...patch, updatedAt: getServerNow() });
-  };
-
-  socket.on(S2C.SYNC_PLAY, () => patchVideo({ playing: true }));
-  socket.on(S2C.SYNC_PAUSE, () => patchVideo({ playing: false }));
-  socket.on(S2C.SYNC_SEEK, (data: { time: number }) => patchVideo({ currentTime: data.time }));
-  socket.on(S2C.SYNC_SPEED_CHANGED, (data: { speed: number }) =>
-    patchVideo({ playbackRate: data.speed }),
-  );
-
-  socket.on(S2C.SYNC_MEDIA_CHANGED, () => {
-    // The queue advance arrives as a room action; this just stops the outgoing
-    // item playing on over the incoming one.
-    store().updateVideoState({
-      playing: false,
-      currentTime: 0,
-      playbackRate: 1,
-      updatedAt: getServerNow(),
-    });
-  });
+  // One event, one code path. Every anchor is complete and self-consistent, so
+  // there is nothing to patch and no order to get wrong beyond `rev`, which
+  // `applyVideoState` checks.
+  socket.on(S2C.SYNC_STATE, (videoState: VideoState) => store().applyVideoState(videoState));
 
   // ─── Chat ─────────────────────────────────────────────────────────────
   socket.on(S2C.CHAT_TYPING_INDICATOR, (data: { userId: string; userName: string }) => {
