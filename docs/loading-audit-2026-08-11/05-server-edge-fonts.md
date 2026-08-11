@@ -180,13 +180,26 @@ catalogs and every article is a full origin SSR render.**
 
 This is the cheapest large win in the whole report — an ops action, no code —
 and it is one of two things blocking most of §3's API caching from paying off
-too. It is §1 of [`06-backlog.md`](06-backlog.md) for that reason.
+too. It is §2 of [`06-backlog.md`](06-backlog.md) for that reason.
 
-Note also that the committed HTML rule is scoped to `/` while
-`CACHEABLE_ANON_PATHS` in the plugin covers `/games`, `/apps`, `/news`,
-`/library`, the legal pages and the `/blog/`+`/news/` subtrees. Edge narrower
-than origin is the safe direction (the origin is the final gate), but widening
-the rule to match the allowlist is where the rest of the win is.
+**The committed rule needs no widening.** The 08-09 audit noted it was "scoped to
+`/`" and an earlier draft of this folder repeated that; both are stale. The
+expression in `deploy/apply-cloudflare-cache-rules.sh` already lists all 11 paths
+in `CACHEABLE_ANON_PATHS` (`/`, `/games`, `/apps`, `/news`, `/library`,
+`/optimization`, `/security`, `/privacy`, `/terms`, `/cookies`, `/copyright`) plus
+the `/blog/` and `/news/` prefixes, bypasses cache on a `session_token` or
+`rmh-lang` cookie, and respects the origin's `Cache-Control`.
+`lib/__tests__/anon-html-cache.test.ts` parses that expression back out of the
+shell script and fails if it drifts from the plugin's exported lists, which is why
+the two cannot silently diverge. The rule is complete — it has simply never been
+applied to the zone.
+
+**One operational gotcha if you apply it by hand.** The script PUTs the *whole*
+`http_request_cache_settings` phase entrypoint, which **replaces every rule in that
+phase**. So a rule added by hand in the dashboard is destroyed the next time
+anyone runs the script, and conversely running the script destroys hand-added
+rules. If you edit by hand, make the same edit in the script in the same commit —
+`VERIFY_ONLY=1` is what tells you the two agree.
 
 ## 5 — CSS: one 465 KB sheet for three tiers
 

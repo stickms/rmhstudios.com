@@ -70,10 +70,17 @@ CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ZONE_ID=... bash deploy/apply-cloudflare-cac
 # then save the VERIFY_ONLY=1 output, per docs/performance-slo.md
 ```
 
-Then widen the rule from `/` to match `CACHEABLE_ANON_PATHS` in
-`server/nitro/anon-html-cache.ts`, and tick the two unchecked boxes in
+Then tick the two unchecked boxes in
 [`../performance-slo.md`](../performance-slo.md). It also gates most of §3's value.
 Evidence: [`05`](05-server-edge-fonts.md) §4.
+
+> **No widening needed** — an earlier draft of this backlog said to widen the HTML
+> rule "from `/`" to match `CACHEABLE_ANON_PATHS`. That was inherited from the
+> 08-09 audit and is **stale**: the committed rule's expression already lists all
+> 11 paths in `CACHEABLE_ANON_PATHS` plus the `/blog/` and `/news/` prefixes, and
+> `lib/__tests__/anon-html-cache.test.ts` parses that expression out of the shell
+> script and fails if it drifts from the plugin. The rule is complete; it has just
+> never been applied.
 
 ### 3 — Per-route API cache policies, route by route ⭐ M, ongoing
 
