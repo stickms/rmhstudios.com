@@ -193,6 +193,8 @@ import { Route as SitemapsNameRouteImport } from './routes/sitemaps.$name'
 import { Route as SliceItIndexRouteImport } from './routes/slice-it/index'
 import { Route as Sohumbum2IndexRouteImport } from './routes/sohumbum2/index'
 import { Route as Sohumbum2DateRouteImport } from './routes/sohumbum2/$date'
+import { Route as SohumtrackerIndexRouteImport } from './routes/sohumtracker/index'
+import { Route as SohumtrackerDateRouteImport } from './routes/sohumtracker/$date'
 import { Route as StrategiesIndexRouteImport } from './routes/strategies/index'
 import { Route as StrategiesIncidentsRouteImport } from './routes/strategies/incidents'
 import { Route as StrategiesSahurRouteImport } from './routes/strategies/sahur'
@@ -439,7 +441,7 @@ import { Route as ApiNotificationsIndexRouteImport } from './routes/api/notifica
 import { Route as ApiNotificationsPreferencesRouteImport } from './routes/api/notifications/preferences'
 import { Route as ApiNotificationsReadRouteImport } from './routes/api/notifications/read'
 import { Route as ApiOgPf2ecalRouteImport } from './routes/api/og/pf2ecal'
-import { Route as ApiOgSohumbum2RouteImport } from './routes/api/og/sohumbum2'
+import { Route as ApiOgSohumtrackerRouteImport } from './routes/api/og/sohumtracker'
 import { Route as ApiOnboardingIndexRouteImport } from './routes/api/onboarding/index'
 import { Route as ApiOnboardingFirstWeekRouteImport } from './routes/api/onboarding/first-week'
 import { Route as ApiPersonasIndexRouteImport } from './routes/api/personas/index'
@@ -529,7 +531,8 @@ import { Route as ApiSliceItShelvesRouteImport } from './routes/api/slice-it/she
 import { Route as ApiSliceItShowcaseRouteImport } from './routes/api/slice-it/showcase'
 import { Route as ApiSliceItSongsRouteImport } from './routes/api/slice-it/songs'
 import { Route as ApiSliceItUploaderStatsRouteImport } from './routes/api/slice-it/uploader-stats'
-import { Route as ApiSohumbum2ActivityRouteImport } from './routes/api/sohumbum2/activity'
+import { Route as ApiSohumtrackerActivityRouteImport } from './routes/api/sohumtracker/activity'
+import { Route as ApiSohumtrackerStreamRouteImport } from './routes/api/sohumtracker/stream'
 import { Route as ApiSpacesIndexRouteImport } from './routes/api/spaces/index'
 import { Route as ApiSpacesLiveRouteImport } from './routes/api/spaces/live'
 import { Route as ApiSpeedrunCategoriesRouteImport } from './routes/api/speedrun/categories'
@@ -1814,6 +1817,16 @@ const Sohumbum2DateRoute = Sohumbum2DateRouteImport.update({
   path: '/sohumbum2/$date',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SohumtrackerIndexRoute = SohumtrackerIndexRouteImport.update({
+  id: '/sohumtracker/',
+  path: '/sohumtracker/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SohumtrackerDateRoute = SohumtrackerDateRouteImport.update({
+  id: '/sohumtracker/$date',
+  path: '/sohumtracker/$date',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StrategiesIndexRoute = StrategiesIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -3060,9 +3073,9 @@ const ApiOgPf2ecalRoute = ApiOgPf2ecalRouteImport.update({
   path: '/api/og/pf2ecal',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiOgSohumbum2Route = ApiOgSohumbum2RouteImport.update({
-  id: '/api/og/sohumbum2',
-  path: '/api/og/sohumbum2',
+const ApiOgSohumtrackerRoute = ApiOgSohumtrackerRouteImport.update({
+  id: '/api/og/sohumtracker',
+  path: '/api/og/sohumtracker',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiOnboardingIndexRoute = ApiOnboardingIndexRouteImport.update({
@@ -3516,9 +3529,14 @@ const ApiSliceItUploaderStatsRoute = ApiSliceItUploaderStatsRouteImport.update({
   path: '/api/slice-it/uploader-stats',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiSohumbum2ActivityRoute = ApiSohumbum2ActivityRouteImport.update({
-  id: '/api/sohumbum2/activity',
-  path: '/api/sohumbum2/activity',
+const ApiSohumtrackerActivityRoute = ApiSohumtrackerActivityRouteImport.update({
+  id: '/api/sohumtracker/activity',
+  path: '/api/sohumtracker/activity',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSohumtrackerStreamRoute = ApiSohumtrackerStreamRouteImport.update({
+  id: '/api/sohumtracker/stream',
+  path: '/api/sohumtracker/stream',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSpacesIndexRoute = ApiSpacesIndexRouteImport.update({
@@ -5604,6 +5622,7 @@ export interface FileRoutesByFullPath {
   '/secret/vega': typeof SecretVegaRoute
   '/sitemaps/$name': typeof SitemapsNameRoute
   '/sohumbum2/$date': typeof Sohumbum2DateRoute
+  '/sohumtracker/$date': typeof SohumtrackerDateRoute
   '/strategies/incidents': typeof StrategiesIncidentsRoute
   '/strategies/sahur': typeof StrategiesSahurRoute
   '/v/$slug': typeof VSlugRoute
@@ -5625,6 +5644,7 @@ export interface FileRoutesByFullPath {
   '/secret/': typeof SecretIndexRoute
   '/slice-it/': typeof SliceItIndexRoute
   '/sohumbum2/': typeof Sohumbum2IndexRoute
+  '/sohumtracker/': typeof SohumtrackerIndexRoute
   '/strategies/': typeof StrategiesIndexRoute
   '/studio/': typeof StudioIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
@@ -5824,7 +5844,7 @@ export interface FileRoutesByFullPath {
   '/api/notifications/preferences': typeof ApiNotificationsPreferencesRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
   '/api/og/pf2ecal': typeof ApiOgPf2ecalRoute
-  '/api/og/sohumbum2': typeof ApiOgSohumbum2Route
+  '/api/og/sohumtracker': typeof ApiOgSohumtrackerRoute
   '/api/onboarding/first-week': typeof ApiOnboardingFirstWeekRoute
   '/api/pf2ecal/announcements': typeof ApiPf2ecalAnnouncementsRouteWithChildren
   '/api/pf2ecal/ask': typeof ApiPf2ecalAskRoute
@@ -5901,7 +5921,8 @@ export interface FileRoutesByFullPath {
   '/api/slice-it/showcase': typeof ApiSliceItShowcaseRoute
   '/api/slice-it/songs': typeof ApiSliceItSongsRouteWithChildren
   '/api/slice-it/uploader-stats': typeof ApiSliceItUploaderStatsRoute
-  '/api/sohumbum2/activity': typeof ApiSohumbum2ActivityRoute
+  '/api/sohumtracker/activity': typeof ApiSohumtrackerActivityRoute
+  '/api/sohumtracker/stream': typeof ApiSohumtrackerStreamRoute
   '/api/spaces/live': typeof ApiSpacesLiveRoute
   '/api/speedrun/categories': typeof ApiSpeedrunCategoriesRoute
   '/api/speedrun/leaderboard': typeof ApiSpeedrunLeaderboardRoute
@@ -6462,6 +6483,7 @@ export interface FileRoutesByTo {
   '/secret/vega': typeof SecretVegaRoute
   '/sitemaps/$name': typeof SitemapsNameRoute
   '/sohumbum2/$date': typeof Sohumbum2DateRoute
+  '/sohumtracker/$date': typeof SohumtrackerDateRoute
   '/strategies/incidents': typeof StrategiesIncidentsRoute
   '/strategies/sahur': typeof StrategiesSahurRoute
   '/v/$slug': typeof VSlugRoute
@@ -6484,6 +6506,7 @@ export interface FileRoutesByTo {
   '/secret': typeof SecretIndexRoute
   '/slice-it': typeof SliceItIndexRoute
   '/sohumbum2': typeof Sohumbum2IndexRoute
+  '/sohumtracker': typeof SohumtrackerIndexRoute
   '/strategies': typeof StrategiesIndexRoute
   '/studio': typeof StudioIndexRoute
   '/temple-of-joy': typeof TempleOfJoyIndexRoute
@@ -6683,7 +6706,7 @@ export interface FileRoutesByTo {
   '/api/notifications/preferences': typeof ApiNotificationsPreferencesRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
   '/api/og/pf2ecal': typeof ApiOgPf2ecalRoute
-  '/api/og/sohumbum2': typeof ApiOgSohumbum2Route
+  '/api/og/sohumtracker': typeof ApiOgSohumtrackerRoute
   '/api/onboarding/first-week': typeof ApiOnboardingFirstWeekRoute
   '/api/pf2ecal/announcements': typeof ApiPf2ecalAnnouncementsRouteWithChildren
   '/api/pf2ecal/ask': typeof ApiPf2ecalAskRoute
@@ -6760,7 +6783,8 @@ export interface FileRoutesByTo {
   '/api/slice-it/showcase': typeof ApiSliceItShowcaseRoute
   '/api/slice-it/songs': typeof ApiSliceItSongsRouteWithChildren
   '/api/slice-it/uploader-stats': typeof ApiSliceItUploaderStatsRoute
-  '/api/sohumbum2/activity': typeof ApiSohumbum2ActivityRoute
+  '/api/sohumtracker/activity': typeof ApiSohumtrackerActivityRoute
+  '/api/sohumtracker/stream': typeof ApiSohumtrackerStreamRoute
   '/api/spaces/live': typeof ApiSpacesLiveRoute
   '/api/speedrun/categories': typeof ApiSpeedrunCategoriesRoute
   '/api/speedrun/leaderboard': typeof ApiSpeedrunLeaderboardRoute
@@ -7348,6 +7372,7 @@ export interface FileRoutesById {
   '/secret/vega': typeof SecretVegaRoute
   '/sitemaps/$name': typeof SitemapsNameRoute
   '/sohumbum2/$date': typeof Sohumbum2DateRoute
+  '/sohumtracker/$date': typeof SohumtrackerDateRoute
   '/strategies/incidents': typeof StrategiesIncidentsRoute
   '/strategies/sahur': typeof StrategiesSahurRoute
   '/v/$slug': typeof VSlugRoute
@@ -7370,6 +7395,7 @@ export interface FileRoutesById {
   '/secret/': typeof SecretIndexRoute
   '/slice-it/': typeof SliceItIndexRoute
   '/sohumbum2/': typeof Sohumbum2IndexRoute
+  '/sohumtracker/': typeof SohumtrackerIndexRoute
   '/strategies/': typeof StrategiesIndexRoute
   '/studio/': typeof StudioIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
@@ -7569,7 +7595,7 @@ export interface FileRoutesById {
   '/api/notifications/preferences': typeof ApiNotificationsPreferencesRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
   '/api/og/pf2ecal': typeof ApiOgPf2ecalRoute
-  '/api/og/sohumbum2': typeof ApiOgSohumbum2Route
+  '/api/og/sohumtracker': typeof ApiOgSohumtrackerRoute
   '/api/onboarding/first-week': typeof ApiOnboardingFirstWeekRoute
   '/api/pf2ecal/announcements': typeof ApiPf2ecalAnnouncementsRouteWithChildren
   '/api/pf2ecal/ask': typeof ApiPf2ecalAskRoute
@@ -7646,7 +7672,8 @@ export interface FileRoutesById {
   '/api/slice-it/showcase': typeof ApiSliceItShowcaseRoute
   '/api/slice-it/songs': typeof ApiSliceItSongsRouteWithChildren
   '/api/slice-it/uploader-stats': typeof ApiSliceItUploaderStatsRoute
-  '/api/sohumbum2/activity': typeof ApiSohumbum2ActivityRoute
+  '/api/sohumtracker/activity': typeof ApiSohumtrackerActivityRoute
+  '/api/sohumtracker/stream': typeof ApiSohumtrackerStreamRoute
   '/api/spaces/live': typeof ApiSpacesLiveRoute
   '/api/speedrun/categories': typeof ApiSpeedrunCategoriesRoute
   '/api/speedrun/leaderboard': typeof ApiSpeedrunLeaderboardRoute
@@ -8235,6 +8262,7 @@ export interface FileRouteTypes {
     | '/secret/vega'
     | '/sitemaps/$name'
     | '/sohumbum2/$date'
+    | '/sohumtracker/$date'
     | '/strategies/incidents'
     | '/strategies/sahur'
     | '/v/$slug'
@@ -8256,6 +8284,7 @@ export interface FileRouteTypes {
     | '/secret/'
     | '/slice-it/'
     | '/sohumbum2/'
+    | '/sohumtracker/'
     | '/strategies/'
     | '/studio/'
     | '/temple-of-joy/'
@@ -8455,7 +8484,7 @@ export interface FileRouteTypes {
     | '/api/notifications/preferences'
     | '/api/notifications/read'
     | '/api/og/pf2ecal'
-    | '/api/og/sohumbum2'
+    | '/api/og/sohumtracker'
     | '/api/onboarding/first-week'
     | '/api/pf2ecal/announcements'
     | '/api/pf2ecal/ask'
@@ -8532,7 +8561,8 @@ export interface FileRouteTypes {
     | '/api/slice-it/showcase'
     | '/api/slice-it/songs'
     | '/api/slice-it/uploader-stats'
-    | '/api/sohumbum2/activity'
+    | '/api/sohumtracker/activity'
+    | '/api/sohumtracker/stream'
     | '/api/spaces/live'
     | '/api/speedrun/categories'
     | '/api/speedrun/leaderboard'
@@ -9093,6 +9123,7 @@ export interface FileRouteTypes {
     | '/secret/vega'
     | '/sitemaps/$name'
     | '/sohumbum2/$date'
+    | '/sohumtracker/$date'
     | '/strategies/incidents'
     | '/strategies/sahur'
     | '/v/$slug'
@@ -9115,6 +9146,7 @@ export interface FileRouteTypes {
     | '/secret'
     | '/slice-it'
     | '/sohumbum2'
+    | '/sohumtracker'
     | '/strategies'
     | '/studio'
     | '/temple-of-joy'
@@ -9314,7 +9346,7 @@ export interface FileRouteTypes {
     | '/api/notifications/preferences'
     | '/api/notifications/read'
     | '/api/og/pf2ecal'
-    | '/api/og/sohumbum2'
+    | '/api/og/sohumtracker'
     | '/api/onboarding/first-week'
     | '/api/pf2ecal/announcements'
     | '/api/pf2ecal/ask'
@@ -9391,7 +9423,8 @@ export interface FileRouteTypes {
     | '/api/slice-it/showcase'
     | '/api/slice-it/songs'
     | '/api/slice-it/uploader-stats'
-    | '/api/sohumbum2/activity'
+    | '/api/sohumtracker/activity'
+    | '/api/sohumtracker/stream'
     | '/api/spaces/live'
     | '/api/speedrun/categories'
     | '/api/speedrun/leaderboard'
@@ -9978,6 +10011,7 @@ export interface FileRouteTypes {
     | '/secret/vega'
     | '/sitemaps/$name'
     | '/sohumbum2/$date'
+    | '/sohumtracker/$date'
     | '/strategies/incidents'
     | '/strategies/sahur'
     | '/v/$slug'
@@ -10000,6 +10034,7 @@ export interface FileRouteTypes {
     | '/secret/'
     | '/slice-it/'
     | '/sohumbum2/'
+    | '/sohumtracker/'
     | '/strategies/'
     | '/studio/'
     | '/temple-of-joy/'
@@ -10199,7 +10234,7 @@ export interface FileRouteTypes {
     | '/api/notifications/preferences'
     | '/api/notifications/read'
     | '/api/og/pf2ecal'
-    | '/api/og/sohumbum2'
+    | '/api/og/sohumtracker'
     | '/api/onboarding/first-week'
     | '/api/pf2ecal/announcements'
     | '/api/pf2ecal/ask'
@@ -10276,7 +10311,8 @@ export interface FileRouteTypes {
     | '/api/slice-it/showcase'
     | '/api/slice-it/songs'
     | '/api/slice-it/uploader-stats'
-    | '/api/sohumbum2/activity'
+    | '/api/sohumtracker/activity'
+    | '/api/sohumtracker/stream'
     | '/api/spaces/live'
     | '/api/speedrun/categories'
     | '/api/speedrun/leaderboard'
@@ -10792,10 +10828,12 @@ export interface RootRouteChildren {
   ReplaysIdRoute: typeof ReplaysIdRoute
   SitemapsNameRoute: typeof SitemapsNameRoute
   Sohumbum2DateRoute: typeof Sohumbum2DateRoute
+  SohumtrackerDateRoute: typeof SohumtrackerDateRoute
   VSlugRoute: typeof VSlugRoute
   VNewRoute: typeof VNewRoute
   DiscordIndexRoute: typeof DiscordIndexRoute
   Sohumbum2IndexRoute: typeof Sohumbum2IndexRoute
+  SohumtrackerIndexRoute: typeof SohumtrackerIndexRoute
   ApiAccountDeleteRoute: typeof ApiAccountDeleteRoute
   ApiAccountExportRoute: typeof ApiAccountExportRoute
   ApiAccountStandingRoute: typeof ApiAccountStandingRoute
@@ -10917,7 +10955,7 @@ export interface RootRouteChildren {
   ApiNotificationsPreferencesRoute: typeof ApiNotificationsPreferencesRoute
   ApiNotificationsReadRoute: typeof ApiNotificationsReadRoute
   ApiOgPf2ecalRoute: typeof ApiOgPf2ecalRoute
-  ApiOgSohumbum2Route: typeof ApiOgSohumbum2Route
+  ApiOgSohumtrackerRoute: typeof ApiOgSohumtrackerRoute
   ApiOnboardingFirstWeekRoute: typeof ApiOnboardingFirstWeekRoute
   ApiPf2ecalAnnouncementsRoute: typeof ApiPf2ecalAnnouncementsRouteWithChildren
   ApiPf2ecalAskRoute: typeof ApiPf2ecalAskRoute
@@ -10981,7 +11019,8 @@ export interface RootRouteChildren {
   ApiSliceItShowcaseRoute: typeof ApiSliceItShowcaseRoute
   ApiSliceItSongsRoute: typeof ApiSliceItSongsRouteWithChildren
   ApiSliceItUploaderStatsRoute: typeof ApiSliceItUploaderStatsRoute
-  ApiSohumbum2ActivityRoute: typeof ApiSohumbum2ActivityRoute
+  ApiSohumtrackerActivityRoute: typeof ApiSohumtrackerActivityRoute
+  ApiSohumtrackerStreamRoute: typeof ApiSohumtrackerStreamRoute
   ApiSpacesLiveRoute: typeof ApiSpacesLiveRoute
   ApiSpeedrunCategoriesRoute: typeof ApiSpeedrunCategoriesRoute
   ApiSpeedrunLeaderboardRoute: typeof ApiSpeedrunLeaderboardRoute
@@ -12502,6 +12541,20 @@ declare module '@tanstack/react-router' {
       path: '/sohumbum2/$date'
       fullPath: '/sohumbum2/$date'
       preLoaderRoute: typeof Sohumbum2DateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sohumtracker/': {
+      id: '/sohumtracker/'
+      path: '/sohumtracker'
+      fullPath: '/sohumtracker/'
+      preLoaderRoute: typeof SohumtrackerIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sohumtracker/$date': {
+      id: '/sohumtracker/$date'
+      path: '/sohumtracker/$date'
+      fullPath: '/sohumtracker/$date'
+      preLoaderRoute: typeof SohumtrackerDateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/strategies/': {
@@ -14226,11 +14279,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiOgPf2ecalRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/og/sohumbum2': {
-      id: '/api/og/sohumbum2'
-      path: '/api/og/sohumbum2'
-      fullPath: '/api/og/sohumbum2'
-      preLoaderRoute: typeof ApiOgSohumbum2RouteImport
+    '/api/og/sohumtracker': {
+      id: '/api/og/sohumtracker'
+      path: '/api/og/sohumtracker'
+      fullPath: '/api/og/sohumtracker'
+      preLoaderRoute: typeof ApiOgSohumtrackerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/onboarding/': {
@@ -14856,11 +14909,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSliceItUploaderStatsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/sohumbum2/activity': {
-      id: '/api/sohumbum2/activity'
-      path: '/api/sohumbum2/activity'
-      fullPath: '/api/sohumbum2/activity'
-      preLoaderRoute: typeof ApiSohumbum2ActivityRouteImport
+    '/api/sohumtracker/activity': {
+      id: '/api/sohumtracker/activity'
+      path: '/api/sohumtracker/activity'
+      fullPath: '/api/sohumtracker/activity'
+      preLoaderRoute: typeof ApiSohumtrackerActivityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/sohumtracker/stream': {
+      id: '/api/sohumtracker/stream'
+      path: '/api/sohumtracker/stream'
+      fullPath: '/api/sohumtracker/stream'
+      preLoaderRoute: typeof ApiSohumtrackerStreamRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/spaces/': {
@@ -19163,10 +19223,12 @@ const rootRouteChildren: RootRouteChildren = {
   ReplaysIdRoute: ReplaysIdRoute,
   SitemapsNameRoute: SitemapsNameRoute,
   Sohumbum2DateRoute: Sohumbum2DateRoute,
+  SohumtrackerDateRoute: SohumtrackerDateRoute,
   VSlugRoute: VSlugRoute,
   VNewRoute: VNewRoute,
   DiscordIndexRoute: DiscordIndexRoute,
   Sohumbum2IndexRoute: Sohumbum2IndexRoute,
+  SohumtrackerIndexRoute: SohumtrackerIndexRoute,
   ApiAccountDeleteRoute: ApiAccountDeleteRoute,
   ApiAccountExportRoute: ApiAccountExportRoute,
   ApiAccountStandingRoute: ApiAccountStandingRoute,
@@ -19288,7 +19350,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiNotificationsPreferencesRoute: ApiNotificationsPreferencesRoute,
   ApiNotificationsReadRoute: ApiNotificationsReadRoute,
   ApiOgPf2ecalRoute: ApiOgPf2ecalRoute,
-  ApiOgSohumbum2Route: ApiOgSohumbum2Route,
+  ApiOgSohumtrackerRoute: ApiOgSohumtrackerRoute,
   ApiOnboardingFirstWeekRoute: ApiOnboardingFirstWeekRoute,
   ApiPf2ecalAnnouncementsRoute: ApiPf2ecalAnnouncementsRouteWithChildren,
   ApiPf2ecalAskRoute: ApiPf2ecalAskRoute,
@@ -19352,7 +19414,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSliceItShowcaseRoute: ApiSliceItShowcaseRoute,
   ApiSliceItSongsRoute: ApiSliceItSongsRouteWithChildren,
   ApiSliceItUploaderStatsRoute: ApiSliceItUploaderStatsRoute,
-  ApiSohumbum2ActivityRoute: ApiSohumbum2ActivityRoute,
+  ApiSohumtrackerActivityRoute: ApiSohumtrackerActivityRoute,
+  ApiSohumtrackerStreamRoute: ApiSohumtrackerStreamRoute,
   ApiSpacesLiveRoute: ApiSpacesLiveRoute,
   ApiSpeedrunCategoriesRoute: ApiSpeedrunCategoriesRoute,
   ApiSpeedrunLeaderboardRoute: ApiSpeedrunLeaderboardRoute,

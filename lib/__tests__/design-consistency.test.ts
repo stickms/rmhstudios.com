@@ -212,9 +212,9 @@ const FULLSCREEN_TIER_DIRS = new Set([
   // own greys, blurple and — the part that matters — its four status colours, so
   // a green dot here means what a green dot means in the client. Re-tinting
   // those to the site accent would break the only vocabulary the page relies on
-  // its readers already having. Declares its own `--sb2-*` group in
-  // `components/sohumbum2/sohumbum2.css`.
-  'sohumbum2',
+  // its readers already having. Declares its own `--stk-*` group in
+  // `components/sohumtracker/sohumtracker.css`.
+  'sohumtracker',
 ]);
 
 /** Top-level route trees that are full-screen experiences, not `_site` pages. */
@@ -248,8 +248,8 @@ const FULLSCREEN_ROUTE_SEGMENTS = new Set([
   'secret',
   'slice-it',
   'sohumbum',
-  // The live activity dossier — see the note beside `sohumbum2` above.
-  'sohumbum2',
+  // The live activity dossier — see the note beside `sohumtracker` above.
+  'sohumtracker',
   'strategies',
   'studio',
   'synapse-storm',

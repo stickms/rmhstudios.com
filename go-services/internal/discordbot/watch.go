@@ -164,7 +164,7 @@ func (w *WatchService) dateKey(t time.Time) string {
 // Start decides what to do with whatever the previous run left open, then begins
 // the flush loop. Sessions whose heartbeat is recent are resumed; older ones are
 // closed at that heartbeat. See the restart note at the top of this file.
-func (w *WatchService) Start(ctx context.Context) {
+func (w *WatchService) Start(ctx context.Context, s *discordgo.Session) {
 	if w == nil {
 		return
 	}
@@ -174,7 +174,10 @@ func (w *WatchService) Start(ctx context.Context) {
 	} else if resumed > 0 || closed > 0 {
 		w.logger.Info("watch: sessions from previous run", "resumed", resumed, "closedStale", closed)
 	}
-	go w.flushLoop(ctx)
+	// Off the caller's goroutine: this is a REST round trip, and Run is holding
+	// up the gateway's post-open path.
+	go w.RefreshIdentities(ctx, s)
+	go w.flushLoop(ctx, s)
 }
 
 // gapGrace is the configured outage tolerance, with a sane floor so a
@@ -189,13 +192,29 @@ func (w *WatchService) gapGrace() time.Duration {
 // flushLoop re-measures open sessions and recomputes the live days on a fixed
 // cadence, so a page loaded mid-session sees numbers that are at most one
 // interval stale even if no gateway event has landed for hours.
-func (w *WatchService) flushLoop(ctx context.Context) {
+func (w *WatchService) flushLoop(ctx context.Context, s *discordgo.Session) {
 	interval := w.cfg.FlushInterval
 	if interval <= 0 {
 		interval = time.Minute
 	}
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
+
+	// The identity poll runs on its own, much slower clock off the same ticker,
+	// so there is one timer rather than two racing for the mutex.
+	identity := time.NewTicker(identityRefreshInterval)
+	defer identity.Stop()
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-identity.C:
+				w.RefreshIdentities(ctx, s)
+			}
+		}
+	}()
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -660,6 +679,45 @@ func (w *WatchService) HandlePresence(ctx context.Context, e *discordgo.Presence
 	}
 }
 
+// identityRefreshInterval is how often the tracker re-asks Discord who he is.
+//
+// Identity also arrives opportunistically (every message, and presence payloads
+// that carry a full user), but neither fires while he is quiet — and an avatar
+// hash goes DEAD the moment he changes his picture, because Discord's CDN 404s
+// the old hash rather than redirecting. A poll is the only thing that closes
+// that window for a user who changes their avatar and then says nothing.
+//
+// Hourly: one REST call per tracked user against a
+// rate limit measured in requests per second.
+const identityRefreshInterval = time.Hour
+
+// RefreshIdentities re-fetches each tracked user's current name and avatar from
+// Discord and caches them for the profile card.
+//
+// The REST endpoint rather than the state cache: `s.State.Member` only knows
+// users the bot has seen in an event this run, so on a fresh start — exactly
+// when the card is emptiest — it usually knows nothing. `s.User` always answers.
+func (w *WatchService) RefreshIdentities(ctx context.Context, s *discordgo.Session) {
+	if w == nil || s == nil {
+		return
+	}
+	for _, id := range w.cfg.UserIDs {
+		user, err := s.User(id, discordgo.WithContext(ctx))
+		if err != nil || user == nil {
+			// A failed lookup leaves the last known identity in place; the next
+			// refresh (or his next message) tries again.
+			w.logger.Warn("watch: identity refresh", "userId", id, "error", err)
+			continue
+		}
+		w.mu.Lock()
+		err = w.repo.upsertLiveIdentity(ctx, user.ID, user.Username, user.GlobalName, user.Avatar)
+		w.mu.Unlock()
+		if err != nil {
+			w.logger.Warn("watch: identity refresh write", "userId", id, "error", err)
+		}
+	}
+}
+
 // recordLiveStatus writes the online/idle/dnd level and the headline activity
 // for the profile card.
 //
@@ -679,18 +737,55 @@ func (w *WatchService) recordLiveStatus(ctx context.Context, e *discordgo.Presen
 		status = "offline"
 	}
 
+	// Discord stacks activities — a game, Spotify and a stream can all be live at
+	// once — so the whole set is recorded and the card renders all of them. The
+	// headline pair is kept alongside for the one-line summaries (the OG card,
+	// the meta description) that have room for exactly one.
 	name, kind := "", (*int)(nil)
+	live := make([]liveActivity, 0, len(e.Activities))
+	custom, customEmoji := "", ""
+
 	for _, a := range e.Activities {
-		if a == nil || a.Type == discordgo.ActivityTypeCustom || strings.TrimSpace(a.Name) == "" {
+		if a == nil {
 			continue
 		}
+		// Type 4 is the custom status: a line of text somebody typed about
+		// themselves, not time spent doing something. It is captured, but as its
+		// own thing rather than as an activity.
+		if a.Type == discordgo.ActivityTypeCustom {
+			custom = truncateRunes(strings.TrimSpace(a.State), 190)
+			if a.Emoji.Name != "" {
+				customEmoji = truncateRunes(a.Emoji.Name, 64)
+			}
+			continue
+		}
+		if strings.TrimSpace(a.Name) == "" {
+			continue
+		}
+
 		t := int(a.Type)
-		name, kind = truncateRunes(a.Name, 120), &t
-		if playingActivityTypes[t] {
-			break // a game outranks whatever else is running
+		entry := liveActivity{
+			Name:    truncateRunes(a.Name, 120),
+			Type:    t,
+			Details: truncateRunes(a.Details, 200),
+			State:   truncateRunes(a.State, 200),
+		}
+		// Rich presence reports when the activity began; the card counts up from
+		// it. Left zero when Discord does not say, and the card then omits the
+		// duration rather than claiming it started this instant.
+		if ts := a.Timestamps.StartTimestamp; ts > 0 {
+			entry.StartedAt = time.UnixMilli(ts).UTC().Format(time.RFC3339)
+		}
+		live = append(live, entry)
+
+		// A game outranks whatever else is running for the headline slot; the
+		// first non-game only holds it until a game turns up.
+		if kind == nil || (!playingActivityTypes[*kind] && playingActivityTypes[t]) {
+			name, kind = entry.Name, &t
 		}
 	}
-	if err := w.repo.upsertLiveStatus(ctx, e.User.ID, status, name, kind); err != nil {
+
+	if err := w.repo.upsertLiveStatus(ctx, e.User.ID, status, name, kind, live, custom, customEmoji); err != nil {
 		w.logger.Warn("watch: live status", "error", err)
 	}
 	if u := e.User; u != nil && u.Username != "" {

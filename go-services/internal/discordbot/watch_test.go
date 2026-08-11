@@ -420,12 +420,13 @@ func TestDisabledWatchServiceIsSafe(t *testing.T) {
 	if w.tracks("169194892269060096") {
 		t.Fatal("a nil tracker tracks nobody")
 	}
-	w.Start(t.Context())
+	w.Start(t.Context(), nil)
 	w.HandleVoiceState(t.Context(), nil, nil)
 	w.HandleMessage(t.Context(), nil, nil)
 	w.HandlePresence(t.Context(), nil)
 	w.HandleReaction(t.Context(), nil)
 	w.Reconcile(t.Context(), nil, nil)
+	w.RefreshIdentities(t.Context(), nil)
 }
 
 func TestNewWatchServiceRejectsEmptyAllowlist(t *testing.T) {
