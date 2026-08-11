@@ -77,21 +77,6 @@ func fixtureProber(t *testing.T) (*Prober, Snapshot) {
 	return p, p.Snapshot()
 }
 
-// fixtureSLO is the burn-rate report these render tests pass to renderHTML.
-//
-// Empty on purpose. `renderHTML` grew a third parameter with the SLO work
-// (E14) and these call sites were never updated, so the package's tests have
-// not compiled since. This restores exactly what they asserted before that
-// change: a populated report renders a per-service burn-rate row that the
-// "one card per service" count also matches, which would turn a compile error
-// into a wrong assertion.
-//
-// The SLO section's own rendering is therefore still uncovered. That test
-// belongs with the SLO feature rather than being invented here.
-func fixtureSLO(_ *Prober) SLOReport {
-	return SLOReport{}
-}
-
 // TestRenderHTMLStructure covers the shape of the page every other assertion
 // here depends on: the verdict in the title and the headline, one card per
 // service with its state on it, a tier heading per group, and one globe pin per
