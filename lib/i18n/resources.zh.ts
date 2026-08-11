@@ -67,6 +67,7 @@ import zhCVoidBreaker from "@/locales/zh/c-void-breaker.json";
 import zhCWager from "@/locales/zh/c-wager.json";
 import zhCWishlist from "@/locales/zh/c-wishlist.json";
 import zhCommon from "@/locales/zh/common.json";
+import zhErrors from "@/locales/zh/errors.json";
 import zhFeed from "@/locales/zh/feed.json";
 import zhGamesHub from "@/locales/zh/games-hub.json";
 import zhGroups from "@/locales/zh/groups.json";
@@ -83,6 +84,7 @@ import zhRRmhcode from "@/locales/zh/r-rmhcode.json";
 import zhRSecret from "@/locales/zh/r-secret.json";
 import zhRSliceIt from "@/locales/zh/r-slice-it.json";
 import zhRSohumbum from "@/locales/zh/r-sohumbum.json";
+import zhRSohumtracker from "@/locales/zh/r-sohumtracker.json";
 import zhRStrategies from "@/locales/zh/r-strategies.json";
 import zhRStudio from "@/locales/zh/r-studio.json";
 import zhRideshare from "@/locales/zh/rideshare.json";
@@ -163,6 +165,7 @@ const zhResources = {
   "c-wager": zhCWager,
   "c-wishlist": zhCWishlist,
   "common": zhCommon,
+  "errors": zhErrors,
   "feed": zhFeed,
   "games-hub": zhGamesHub,
   "groups": zhGroups,
@@ -179,6 +182,7 @@ const zhResources = {
   "r-secret": zhRSecret,
   "r-slice-it": zhRSliceIt,
   "r-sohumbum": zhRSohumbum,
+  "r-sohumtracker": zhRSohumtracker,
   "r-strategies": zhRStrategies,
   "r-studio": zhRStudio,
   "rideshare": zhRideshare,

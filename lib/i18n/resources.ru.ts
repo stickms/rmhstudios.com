@@ -66,6 +66,7 @@ import ruCVoidBreaker from "@/locales/ru/c-void-breaker.json";
 import ruCWager from "@/locales/ru/c-wager.json";
 import ruCWishlist from "@/locales/ru/c-wishlist.json";
 import ruCommon from "@/locales/ru/common.json";
+import ruErrors from "@/locales/ru/errors.json";
 import ruFeed from "@/locales/ru/feed.json";
 import ruGamesHub from "@/locales/ru/games-hub.json";
 import ruGroups from "@/locales/ru/groups.json";
@@ -81,6 +82,7 @@ import ruRRmhcode from "@/locales/ru/r-rmhcode.json";
 import ruRSecret from "@/locales/ru/r-secret.json";
 import ruRSliceIt from "@/locales/ru/r-slice-it.json";
 import ruRSohumbum from "@/locales/ru/r-sohumbum.json";
+import ruRSohumtracker from "@/locales/ru/r-sohumtracker.json";
 import ruRStrategies from "@/locales/ru/r-strategies.json";
 import ruRStudio from "@/locales/ru/r-studio.json";
 import ruRideshare from "@/locales/ru/rideshare.json";
@@ -160,6 +162,7 @@ const ruResources = {
   "c-wager": ruCWager,
   "c-wishlist": ruCWishlist,
   "common": ruCommon,
+  "errors": ruErrors,
   "feed": ruFeed,
   "games-hub": ruGamesHub,
   "groups": ruGroups,
@@ -175,6 +178,7 @@ const ruResources = {
   "r-secret": ruRSecret,
   "r-slice-it": ruRSliceIt,
   "r-sohumbum": ruRSohumbum,
+  "r-sohumtracker": ruRSohumtracker,
   "r-strategies": ruRStrategies,
   "r-studio": ruRStudio,
   "rideshare": ruRideshare,
