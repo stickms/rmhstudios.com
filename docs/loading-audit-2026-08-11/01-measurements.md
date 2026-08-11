@@ -50,33 +50,44 @@ The critical path is the transitive **static**-import closure of the client
 entry chunk (the one containing `rmh-user-theme`), walking `from "./x.js"` and
 skipping `import("./x.js")`.
 
-| Metric                | before  | after   | change      |
-| --------------------- | ------: | ------: | ----------- |
-| Entry chunk           | 277.2 KB | 276.0 KB | −1.2 KB    |
-| Critical path, raw    | 1323.3 KB | 1260.6 KB | **−62.7 KB** |
-| Critical path, brotli | 380.2 KB | 361.4 KB | **−18.8 KB** |
-| Chunks                | 131     | **111** | **−20**     |
-| Chunks under 6 KB     | 109 (137.6 KB) | 90 (125.9 KB) | −19 |
-| Total JS files emitted | 1090   | 1018    | −72         |
+| Metric                 |   before | after    | change       |
+| ---------------------- | -------: | -------- | ------------ |
+| Entry chunk            | 277.2 KB | 276.0 KB | −1.2 KB      |
+| Critical path, raw     | 1323.3 KB | **1182.1 KB** | **−141.2 KB** |
+| Critical path, brotli  | 380.2 KB | **338.1 KB** | **−42.1 KB** |
+| Chunks                 |      131 | **108**  | **−23**      |
+| Chunks under 6 KB      | 109 (137.6 KB) | 89 (125.9 KB) | −20 |
+| Total JS files emitted |     1090 | 1018     | −72          |
+
+Reached in two steps, worth separating because the second was found only after the
+first had been measured and written up:
+
+| Step | raw | brotli | chunks |
+| ---- | --: | -----: | -----: |
+| baseline | 1323.3 KB | 380.2 KB | 131 |
+| icons + zod-catalog + socket.io | 1260.6 KB | 361.4 KB | 111 |
+| **+ framer-motion (9 modules)** | **1182.1 KB** | **338.1 KB** | **108** |
 
 Largest critical-path members, after:
 
-| Chunk              |     Raw |  Brotli | What it is                        | Needed on every page? |
-| ------------------ | ------: | ------: | --------------------------------- | --------------------- |
-| `index-*`          | 276.0 KB | 66.5 KB | the entry                        | inherent              |
-| `vendor-react-*`   | 187.3 KB | 50.1 KB | React                            | yes                   |
-| `c-ui-*`           | 128.3 KB | 34.0 KB | English i18n core namespaces     | yes                   |
-| `schemas-*`        |  71.0 KB | 16.6 KB | **zod**                          | **no** — see §3       |
-| `layout-*`         |  68.2 KB | 19.3 KB | layout system                    | yes                   |
-| `localeStore-*`    |  46.3 KB | 13.5 KB | locale store                     | yes                   |
-| `auth-client-*`    |  43.0 KB | 13.0 KB | Better Auth client               | yes                   |
-| `router-*`         |  41.4 KB | 12.2 KB | TanStack Router                  | yes                   |
-| `createServerFn-*` |  36.8 KB | 10.2 KB | Start server-fn runtime          | yes                   |
-| `Providers-*`      |  32.8 KB | 10.5 KB | the shell (was 41.7 KB)          | yes                   |
-| `apps-*`           |  29.8 KB |  9.2 KB | the game/app catalog data        | data, not code        |
-| `VisualElement-*`  |  26.4 KB |  8.5 KB | **framer-motion**                | **no** — see §3       |
+| Chunk              |      Raw |  Brotli | What it is                    | Needed on every page? |
+| ------------------ | -------: | ------: | ----------------------------- | --------------------- |
+| `index-*`          | 276.0 KB | 66.5 KB | the entry                     | inherent              |
+| `vendor-react-*`   | 187.3 KB | 50.1 KB | React                         | yes                   |
+| `c-ui-*`           | 128.3 KB | 34.0 KB | English i18n core namespaces  | yes                   |
+| `schemas-*`        |  71.0 KB | 16.6 KB | **zod**                       | **no** — see §3       |
+| `localeStore-*`    |  46.3 KB | 13.5 KB | locale store                  | yes                   |
+| `auth-client-*`    |  43.0 KB | 13.0 KB | Better Auth client            | yes                   |
+| `router-*`         |  41.4 KB | 12.2 KB | TanStack Router               | yes                   |
+| `createServerFn-*` |  36.8 KB | 10.2 KB | Start server-fn runtime       | yes                   |
+| `Providers-*`      |  32.7 KB | 10.4 KB | the shell (was 41.7 KB)       | yes                   |
+| `dist-*`           |  31.8 KB |  7.9 KB | (vendor)                      | —                     |
+| `apps-*`           |  29.8 KB |  9.2 KB | the game/app catalog data     | data, not code        |
+| `utils-*`          |  27.6 KB |  7.6 KB | shared utils                  | yes                   |
+| `VisualElement-*`  |  26.4 KB |  8.5 KB | framer-motion element core    | **partly** — see §3   |
 
-Gone from the critical path entirely: `esm-*` (socket.io-client, 40.3 KB).
+Gone from the critical path: `esm-*` (socket.io-client, 40.3 KB) and `layout-*`
+(68.2 KB, framer-motion's layout projection).
 
 Gone from the build entirely: `icons-*` (431.3 KB raw / 116.1 KB gzip /
 91.3 KB brotli, 1,400 export specifiers) and `lucide-react-*` (157.1 KB, the
@@ -87,16 +98,23 @@ per-icon modules co-located into the route chunks that use them.
 
 Both are open items, carried into [`06-backlog.md`](06-backlog.md):
 
-- **`schemas-*` — zod, 71.0 KB raw / 16.6 KB brotli.** The catalog path is
-  fixed (see [`02-critical-path.md`](02-critical-path.md) §2) but the second
-  path from the 08-09 audit is unchanged: **26 page routes** do
-  `import { z } from 'zod'` at top level for their `validateSearch` schema.
-  `validateSearch` is not a route *component*, so Start's splitter never lifts
-  it and it lands in the shared entry by design.
-- **`VisualElement-*` — framer-motion, 26.4 KB raw.** Reached from the shell.
-  `Providers` already uses `LazyMotion`, so this is worth a look: either a
-  feature bundle is being loaded eagerly, or a non-lazy `motion.*` import in the
-  shell defeats it.
+- **`schemas-*` — zod, 71.0 KB raw / 16.6 KB brotli.** Still there after nine
+  route modules were fixed, because **246** client-reachable modules import zod —
+  it is the shared schema layer, not a route-level accident. This is the one
+  remaining critical-path item and it needs a decision rather than a patch:
+  [`02-critical-path.md`](02-critical-path.md) §2 and
+  [`06-backlog.md`](06-backlog.md) §1.
+- **`VisualElement-*` — framer-motion element core, 26.4 KB raw / 8.5 KB brotli.**
+  Reduced, not eliminated. Nine modules importing the full `motion` instead of
+  `LazyMotion`'s `m` were fixed, which removed `layout-*` (68.2 KB — framer's
+  layout projection, and it had sat in the top five critical-path members for two
+  audits unidentified). What still pulls `VisualElement` is a **different and
+  legitimate** set of imports: `Reorder` + `useDragControls`
+  (`components/ui/sortable-list.tsx`), `LayoutGroup`
+  (`components/user-builds/BuildGrid.tsx`), `useScroll`/`useTransform`/`useInView`.
+  Those are real framer APIs with no `m`-style lightweight variant, so removing
+  them means putting their *consumers* behind a lazy boundary — a different kind of
+  change. [`06-backlog.md`](06-backlog.md) §12.
 
 ## 4 — Browser-level, and why to distrust the timings
 
@@ -107,8 +125,8 @@ brotli/gzip:
 | Route      | requests |    JS |  CSS |  IMG | FONT |  DOC | TOTAL   |
 | ---------- | -------: | ----: | ---: | ---: | ---: | ---: | ------: |
 | `/`        |      382 | 851–1062 KB | 104 KB | 6 KB | 49 KB | 60 KB | 1134–1347 KB |
-| `/games`   |      351 | 1105 KB | 107 KB | 296 KB | 49 KB | 89 KB | 1723 KB |
-| `/apps`    |      365 | 1010 KB | 104 KB | 124 KB | 49 KB | 63 KB | 1430 KB |
+| `/games`   |      351 | 1105 KB | 107 KB | **0 KB** | 49 KB | 89 KB | ~1427 KB |
+| `/apps`    |      365 | 1010 KB | 104 KB | **0 KB** | 49 KB | 63 KB | ~1306 KB |
 | `/library` |      334 |  873 KB | 107 KB |  6 KB | 49 KB | 61 KB | 1159 KB |
 | `/news`    |      342 | 855–1071 KB | 104 KB | 6 KB | 49 KB | 50 KB | 1136–1352 KB |
 
@@ -116,6 +134,15 @@ Request counts are stable to ±1 across runs and are the number to act on.
 **Byte totals swing up to 20% run-to-run** because the 3.5 s observation window
 catches a different tail of lazily-preloaded route chunks each time; ranges are
 given rather than false precision.
+
+> **Corrected after publication.** The IMG column originally read 296 KB for
+> `/games` and 124 KB for `/apps`. Both were **zero**: the harness was classifying
+> inline `data:image/png;base64,…` URIs as images because they match an
+> image-extension regex, and CDP reports a nonzero `encodedDataLength` for them
+> even though nothing crossed the network. `/games` and `/apps` fetch **no raster
+> art at all** — the SSR HTML for `/games` contains zero `<img>` tags, and the
+> cards are a CSS gradient plus a lucide icon. **Filter `data:` URIs before
+> attributing bytes.**
 
 Timings, same runs:
 

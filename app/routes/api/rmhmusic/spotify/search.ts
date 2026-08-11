@@ -52,7 +52,14 @@ export const Route = createFileRoute('/api/rmhmusic/spotify/search')({
   server: {
     handlers: {
       GET: defineHandler(
-        { auth: 'none', rateLimit: { limit: 30, windowMs: 60_000, prefix: 'rmhmusic-search' } },
+        {
+          auth: 'none',
+          rateLimit: { limit: 30, windowMs: 60_000, prefix: 'rmhmusic-search' },
+          // A pass-through to Spotify's catalogue search: viewer-independent and
+          // keyed entirely by `?q=`/`?type=`. Caching this is worth more than the
+          // bytes — it also keeps repeated searches off a third-party rate limit.
+          cache: { visibility: 'public', maxAge: 300, sMaxAge: 3600, staleWhileRevalidate: 86400 },
+        },
         async ({ request }) => {
           const q = new URL(request.url).searchParams.get('q')?.trim();
           const type = new URL(request.url).searchParams.get('type') || 'track';

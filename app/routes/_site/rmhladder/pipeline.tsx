@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
-import { z } from 'zod';
+import { doUpdateApplicationSchema } from '@/lib/rmhladder/server-fn-schemas.server';
 import { CalendarDays, Download } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
@@ -57,12 +57,6 @@ const fetchApplications = createServerFn({ method: 'GET' }).handler(async () => 
       resume.activeVersion ? [{ ...resume.activeVersion, resumeName: resume.name }] : [],
     ),
   };
-});
-
-const doUpdateApplicationSchema = z.object({
-  jobId: z.string().min(1),
-  // Restrict to a plain object; actions layer parses patch fields authoritatively
-  patch: z.object({}).passthrough(),
 });
 
 const doUpdateApplication = createServerFn({ method: 'POST' })

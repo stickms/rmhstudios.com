@@ -21,7 +21,12 @@
  * is noise.
  */
 
-import { AnimatePresence, motion } from 'framer-motion';
+// `m as motion`, not `motion`: `Providers` wraps the app in `LazyMotion`, and `m`
+// is the component that honours it — `motion` bundles its own full feature
+// implementation, which lands in the SHARED ENTRY CHUNK when the module is
+// reachable from a route's top level. Nine modules did this, together putting
+// ~36 KB of framer-motion on the critical path of every page.
+import { AnimatePresence, m as motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EASE } from './motion';

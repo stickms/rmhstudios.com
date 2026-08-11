@@ -10,7 +10,15 @@ import { articleSchema, jsonLdScript } from '@/lib/schema';
 import ReactMarkdown from 'react-markdown';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Calendar, ExternalLink } from 'lucide-react';
-import { motion } from 'framer-motion';
+// `m as motion`, not `motion` — the same alias the six other route modules that
+// animate use. `Providers` wraps the app in `LazyMotion`, whose whole point is
+// that the feature bundle loads on demand; `m` is the component that honours
+// that, while `motion` carries its own full `VisualElement` implementation.
+// Because a route module's top level is aggregated into the SHARED ENTRY CHUNK,
+// this one import put 36 KB of framer-motion on the critical path of every page
+// on the site — defeating the LazyMotion setup for everyone, to animate one
+// article page. The rendered markup and the variants are unchanged.
+import { m as motion } from 'framer-motion';
 import { staggerContainer, staggerItem } from '@/lib/motion';
 import { ShareButton } from '@/components/blog/ShareButton';
 import { liquidVTName } from '@/lib/view-transition';

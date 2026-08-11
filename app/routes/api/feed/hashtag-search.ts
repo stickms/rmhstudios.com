@@ -23,6 +23,11 @@ export const Route = createFileRoute('/api/feed/hashtag-search')({
             prefix: 'hashtag-search',
             message: 'Rate limited',
           },
+          // Hashtag typeahead: viewer-independent (tags are global), keyed by the
+          // `?q=` prefix in the URL. This is the shape that benefits most from an
+          // edge cache — one request per keystroke, and the popular prefixes are
+          // hit by everyone. Short window because a new post can create a tag.
+          cache: { visibility: 'public', maxAge: 30, sMaxAge: 60, staleWhileRevalidate: 300 },
         },
         async ({ request }) => {
           const q = new URL(request.url).searchParams.get('q')?.trim().toLowerCase() ?? '';

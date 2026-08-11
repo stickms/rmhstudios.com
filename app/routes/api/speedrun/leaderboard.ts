@@ -25,7 +25,14 @@ export const Route = createFileRoute('/api/speedrun/leaderboard')({
   server: {
     handlers: {
       GET: defineHandler(
-        { auth: 'none', rateLimit: 'read', query: querySchema },
+        {
+          auth: 'none',
+          rateLimit: 'read',
+          query: querySchema,
+          // Anonymous-invariant global top-N — the same bytes for every caller,
+          // which is what `public` claims. Matches `void-breaker/leaderboard`.
+          cache: { visibility: 'public', maxAge: 30, sMaxAge: 60, staleWhileRevalidate: 300 },
+        },
         async ({ query }) => {
           try {
             const board = await getBoard(query);

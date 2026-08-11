@@ -18,7 +18,12 @@
  *   • going offline says so, instead of leaving "that did not save" unexplained.
  */
 
-import { AnimatePresence, motion } from 'framer-motion';
+// `m as motion`, not `motion`: `Providers` wraps the app in `LazyMotion`, and `m`
+// is the component that honours it — `motion` bundles its own full feature
+// implementation, which lands in the SHARED ENTRY CHUNK when the module is
+// reachable from a route's top level. Nine modules did this, together putting
+// ~36 KB of framer-motion on the critical path of every page.
+import { AnimatePresence, m as motion } from 'framer-motion';
 import { CalendarPlus, RefreshCw, Settings2, WifiOff } from 'lucide-react';
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';

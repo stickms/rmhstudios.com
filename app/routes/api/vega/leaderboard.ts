@@ -6,7 +6,13 @@ export const Route = createFileRoute('/api/vega/leaderboard')({
   server: {
     handlers: {
       GET: defineHandler(
-        { auth: 'none', rateLimit: { limit: 20, windowMs: 60_000, prefix: 'vega-leaderboard' } },
+        {
+          auth: 'none',
+          rateLimit: { limit: 20, windowMs: 60_000, prefix: 'vega-leaderboard' },
+          // Anonymous-invariant global top-N — the same bytes for every caller,
+          // which is what `public` claims. Matches `void-breaker/leaderboard`.
+          cache: { visibility: 'public', maxAge: 30, sMaxAge: 60, staleWhileRevalidate: 300 },
+        },
         async () => {
           try {
             const leaderboard = await prisma.vegaPlayer.findMany({

@@ -43,8 +43,23 @@ Verified: same build, same empty env, boots and serves 200.
 **Still open** — the underlying cold-start cost. 1.55–2.04 s for the first
 request after boot, warm 26–80 ms. `warmup.ts` hides it for the homepage after a
 deploy, but every blue/green swap pays it and any un-primed route pays it first.
-Lazy-constructing the remaining ~16 module-scope clients would shave the cold
-path further; the availability hazard is what this commit removes.
+
+> **Measured, and it kills the obvious follow-up.** The first draft recommended
+> lazy-constructing the remaining ~16 module-scope `new OpenAI(...)` clients to
+> shave that cold path. Measured on this machine:
+>
+> ```
+> require('openai')      103 ms   ← paid once, regardless of lazy construction
+> 16 × new OpenAI({…})     4 ms   ← what lazy construction would save
+> ```
+>
+> **4 ms.** Not worth touching 16 files and every call site. The 103 ms is the
+> module *import*, which only a dynamic `import('openai')` inside an async getter
+> would defer — a much larger refactor of code that cannot be exercised here
+> without API keys, against a cost that `warmup.ts` already hides. The real
+> cold-start driver is `loadEntries()` walking ~855 route modules and a 2.77 MB SSR
+> bundle, not client construction. The availability hazard — the actual bug — is
+> what this branch removes.
 
 ## 2 — `Server-Timing` never reached a client (FIXED)
 
@@ -78,11 +93,20 @@ $ curl -sD- -o /dev/null http://localhost:3201/          # after
 server-timing: trace;desc="b0f14e5cecfa941dfbc9a84a0148e61b", total;dur=22.4
 ```
 
-**Lesson worth encoding:** this bug has now been found twice, in three plugins,
-because the broken form is the one that reads naturally. A test that asserts each
-`response`-hook plugin resolves headers via `responseHeaders` — or a lint rule
-banning `event.res` inside a `response` hook — is cheap insurance.
-[`06-backlog.md`](06-backlog.md) §5.
+**And it is now gated.** This bug has been found twice, in three plugins, because
+the broken form is the one that reads naturally and the symptom is total silence.
+`lib/__tests__/nitro-response-headers.test.ts` reads the source of every Nitro
+plugin that registers a `response` hook and requires that it resolve headers
+through the shared `responseHeaders(res, event)`, plus asserts no plugin contains
+`event.res?.headers ?? …` at all (comments stripped first, since the plugins
+legitimately *quote* the broken idiom when explaining it).
+
+It also asserts the plugin set is non-empty and contains the three known members —
+because a source-scanning test whose glob silently matches nothing passes
+vacuously, which is the same class of failure it was written to catch.
+
+Proven to work: reintroducing the old line in `otel.ts` fails the test with the
+explanatory message; restoring the fix makes it pass.
 
 ## 3 — Nine routes blocked first paint on Google Fonts (FIXED)
 
@@ -180,21 +204,79 @@ split is worth doing. Note the brotli figure (47.9 KB) is modest — the win her
 is **parse and style-recalc time on low-end devices**, not bytes, so measure it
 with long-tasks rather than with a byte budget.
 
-## 6 — Images: mostly already fixed
+## 6 — Images: less was wrong than reported, and AVIF is now in (FIXED)
 
-Measured image transfer: **6 KB on `/`, 296 KB on `/games`, 124 KB on `/apps`.**
+### First, two corrections
 
-The 08-09 audit's "`/games` downloads 2.07 MB of card art" no longer holds —
-commit `f8df30ee` landed the fix. The responsive-variant pipeline
-(`scripts/gen-image-variants.ts` → `/images/_variants/<stem>-<hash>-{320,640}.webp`,
-consumed via `srcSet` in `components/ui/OptimizedImage.tsx` and `BlurImage.tsx`)
-is implemented and working. 146 variants exist, 70 of them for game card art.
+**`/games` ships no raster art at all.** The 08-09 audit reported 2.07 MB of card
+art; the first pass of this audit reported 296 KB. Both are wrong. The SSR HTML
+for `/games` contains **zero `<img>` tags**, and a CDP trace of the page finds no
+image requests — the cards are a CSS gradient (`gradient` in the catalog) plus a
+lucide icon. The 296 KB figure was my own harness counting inline
+`data:image/png;base64,…` URIs, which match an image-extension regex but are not
+network transfers at all.
 
-What remains:
+**So responsive variants were never the missing piece, and neither was card art.**
+The variant pipeline (`scripts/gen-image-variants.ts` →
+`/images/_variants/<stem>-<hash>-<w>.<fmt>`, consumed via `srcSet` in
+`OptimizedImage`/`BlurImage`) has been implemented and working since `f8df30ee`.
 
-| Item | Detail |
-| ---- | ------ |
-| **No AVIF at all** | 181 WebP, 31 JPG, 22 PNG, **0 AVIF** in `public/images`. OPT-22, unimplemented. Typically 20–30% under WebP at equal quality. |
-| **Variant coverage is partial** | 146 variants for 234 source images. Extending `gen-image-variants.ts` coverage is mechanical. |
-| **One 928 KB PNG** | `public/images/activities/lightsout.png` — a PNG where every neighbour is WebP. Single-file fix. |
-| **`/void-breaker`** | Reported at 3.94 MB of images on 08-09; not re-measured here. Verify before acting — `/games` moved, so this may have too. |
+What *was* real:
+
+### A 928 KB PNG served at full size (FIXED)
+
+`public/images/activities/lightsout.png` is 1024×1024 and **928 KB** — the largest
+single image in the repo — and `LightsOutDiscordActivity.tsx` rendered it through a
+raw `<img src>` to fill a Discord PIP tile a few hundred pixels wide. The build
+was already emitting 320/640/960 variants for that exact path; nothing pointed at
+them. Now goes through `OptimizedImage` with `priority` (in PIP/grid mode the logo
+*is* the LCP element, which is the one place `priority` is correct).
+
+### AVIF in the pipeline (FIXED)
+
+There were **0 AVIF files in the repo** (OPT-22, unimplemented). Now:
+
+- `scripts/gen-image-variants.ts` emits every width in **both** AVIF and WebP.
+  `avif({ quality: 55, effort: 4 })` — effort 4 of 9 is the knee of the
+  speed/compression curve, and the hashed filenames mean an unchanged image is
+  never re-encoded, so the slow pass is paid once per image per change.
+- `variantUrl(src, width, format)` gained a format argument; the manifest's
+  `widths` array describes both formats, since only the extension differs.
+- `OptimizedImage` wraps its `<img>` in `<picture>` with a
+  `<source type="image/avif">` **before** it. The `<img>` keeps its own WebP
+  `srcSet` and stays the styled, measured, error-handling element — `<picture>` has
+  no box of its own, so `className`, `width`/`height` and every parent layout are
+  untouched. A browser without AVIF ignores the source and behaves exactly as
+  before, which is why this is additive rather than a swap.
+
+Measured across the shipped art: **2.93 MB AVIF vs 4.38 MB WebP — 33% smaller**
+for the same pixels and widths (per-file example: `altair-640` is 39.9 KB AVIF
+against 55.8 KB WebP).
+
+Pinned by 6 render tests (`lib/__tests__/optimized-image-picture.test.tsx`): source
+order, matching widths across formats, bare-`<img>` fallback for an unlisted path,
+no AVIF when the caller pinned an explicit `format`, and that `className`/dimensions
+stay on the `<img>`. Plus 7 manifest-integrity tests
+(`lib/__tests__/image-variants.test.ts`) asserting every manifest width exists on
+disk in **both** formats — because a width present as WebP but missing as AVIF
+would have the browser pick the AVIF source, fail, and fall back, costing a wasted
+round trip per image.
+
+### The honest caveat on what AVIF actually buys today
+
+Of the 69 manifest entries, **almost none are referenced from source.**
+`grep` for the manifest paths finds only `lightsout.png` (the fix above); the
+`merch-*`, `screenshots/*`, `deeplink/*` and `games/*` entries are either
+unreferenced or reached through the catalog's `imagePath`, which the `/games` index
+does not render as an image. So the pipeline optimises a set of images the app
+largely does not currently request.
+
+That makes the AVIF work **infrastructure that pays off when raster art is used**
+(user avatars, uploaded media, library covers, build screenshots, the merch
+storefront) rather than a measurable win on `/` or `/games` today. Stated plainly
+so nobody looks for a byte drop on the catalog pages and concludes it is broken.
+
+`BlurImage` deliberately still emits WebP only: it also writes a
+`<link rel="preload" imageSrcSet>`, and getting `type` negotiation wrong there
+causes a *double* download — the opposite of the intended effect. Worth doing
+carefully, separately.

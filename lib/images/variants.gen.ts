@@ -3,7 +3,8 @@
 // `pnpm images:variants:check` fails when this file is out of date.
 //
 // Maps a public image path to the content hash of its master and the widths
-// generated under /images/_variants/. Callers emit a srcSet only for paths
+// generated under /images/_variants/. Every width exists in BOTH avif and webp;
+// `variantUrl(src, width, format)` picks one. Callers emit a srcSet only for paths
 // listed here, so an image with no entry is served exactly as it was before —
 // which is why adding art without regenerating this file silently costs the
 // optimization rather than breaking the page, and why the commit gate checks it.
@@ -86,9 +87,9 @@ export const IMAGE_VARIANTS: Readonly<Record<string, ImageVariant>> = {
  * The variant URL for a source path and width. Returns null when the image has
  * no generated variants, so callers fall back to the original src.
  */
-export function variantUrl(src: string, width: number): string | null {
+export function variantUrl(src: string, width: number, format: 'webp' | 'avif' = 'webp'): string | null {
   const entry = IMAGE_VARIANTS[src];
   if (!entry) return null;
   const stem = src.replace(/^\/images\//, '').replace(/\.[^.]+$/, '');
-  return `/images/_variants/${stem}-${entry.hash}-${width}.webp`;
+  return `/images/_variants/${stem}-${entry.hash}-${width}.${format}`;
 }

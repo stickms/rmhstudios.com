@@ -1,6 +1,5 @@
 import { Link, createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { z } from 'zod';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { DayDetail } from '@/components/sohumbum2/DayDetail';
@@ -29,13 +28,27 @@ import { describeDay } from '@/lib/sohumbum2/describe';
  * date with nothing recorded is NOT — a quiet Tuesday is a fact about him, and
  * the page says so.
  */
-const dateParam = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, 'expected YYYY-MM-DD')
-  .max(10);
+/**
+ * Hand-rolled instead of a one-line zod schema, for the same reason as
+ * `bums-rush`: a route module's top-level code lands in the SHARED ENTRY CHUNK,
+ * so importing zod here charged every page on the site 71 KB to validate one date
+ * string on one route. A regex is the whole schema anyway.
+ *
+ * Throwing (rather than returning null) is deliberate and unchanged: this is a
+ * server-function validator, and a malformed date should fail the call, which the
+ * route then renders as a 404.
+ */
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function parseDateParam(value: string): string {
+  if (typeof value !== 'string' || value.length > 10 || !DATE_RE.test(value)) {
+    throw new Error('expected YYYY-MM-DD');
+  }
+  return value;
+}
 
 const fetchDay = createServerFn({ method: 'GET' })
-  .validator((date: string) => dateParam.parse(date))
+  .validator((date: string) => parseDateParam(date))
   .handler(async ({ data }) => {
     const snapshot = await getDaySnapshot(data);
     // `getDaySnapshot` returns null only for a date that cannot exist or has not

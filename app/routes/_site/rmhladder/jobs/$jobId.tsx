@@ -1,7 +1,10 @@
 import { createFileRoute, notFound, redirect, useRouter } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
-import { z } from 'zod';
+import {
+  jobActionSchema,
+  jobIdSchema,
+} from '@/lib/rmhladder/server-fn-schemas.server';
 import { JobDetail } from '@/components/rmhladder/JobDetail';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
@@ -13,8 +16,6 @@ import { safeExternalUrl } from '@/components/rmhladder/url';
 
 const queriesPrisma = prisma as unknown as QueriesPrisma;
 const actionsPrisma = prisma as unknown as ActionsPrisma;
-const jobIdSchema = z.object({ jobId: z.string().min(1).max(200) });
-const actionSchema = jobIdSchema.extend({ action: z.enum(['saved', 'applied', 'ignored']).nullable() });
 
 const fetchJob = createServerFn({ method: 'GET' })
   .validator((input: unknown) => jobIdSchema.parse(input))
@@ -26,7 +27,7 @@ const fetchJob = createServerFn({ method: 'GET' })
   });
 
 const updateTracking = createServerFn({ method: 'POST' })
-  .validator((input: unknown) => actionSchema.parse(input))
+  .validator((input: unknown) => jobActionSchema.parse(input))
   .handler(async ({ data }) => {
     const session = await auth.api.getSession({ headers: getRequest().headers });
     if (!session?.user) {
