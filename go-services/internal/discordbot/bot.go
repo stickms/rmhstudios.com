@@ -167,11 +167,17 @@ func New(cfg Config, chat *ChatService, pet *PetService, watch *WatchService, su
 		// The tracker needs voice states to time a call, presences to see what he
 		// is playing, and reactions for both directions of that count.
 		//
-		// GuildPresences is PRIVILEGED and must also be enabled in the Discord
-		// Developer Portal; without it the gateway simply never sends presence
-		// updates and the "playing" figures stay at zero rather than the bot
-		// failing to connect. Message content is likewise privileged, and is what
-		// the summarizer needs to say what he was talking about.
+		// GuildPresences and MessageContent are PRIVILEGED and must ALSO be
+		// enabled in the Discord Developer Portal ("Privileged Gateway Intents"
+		// on the Bot page). This is not a degraded-mode situation: IDENTIFYing
+		// with an intent the application has not been granted makes Discord close
+		// the gateway with 4014 (Disallowed Intent), and discordgo reconnects on
+		// error unconditionally — so the bot never reaches ready and Alex goes
+		// down with it, in a silent reconnect loop.
+		//
+		// Enabling them in the portal takes effect on the next IDENTIFY, so the
+		// worker has to be RESTARTED after flipping the toggles; an already-open
+		// gateway keeps the bitfield it connected with.
 		session.Identify.Intents |= discordgo.IntentsGuildVoiceStates |
 			discordgo.IntentsGuildPresences |
 			discordgo.IntentsGuildMessageReactions
@@ -340,7 +346,7 @@ func (b *Bot) Run(ctx context.Context) error {
 
 	// Settle whatever the previous run left open and begin the flush/heartbeat
 	// loop, then the summarizer. Both stop with ctx.
-	b.watch.Start(ctx)
+	b.watch.Start(ctx, b.session)
 	b.summary.Start(ctx, summaryInterval)
 
 	<-ctx.Done()

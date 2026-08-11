@@ -79,14 +79,14 @@ export const APP_ROUTE_THEME_BG: Record<
     light: '#f2f2f7',
     system: true,
   },
-  // The activity dossier. Grounds mirror `--sb2-bg` in
-  // `components/sohumbum2/sohumbum2.css` — Discord's app frame in dark, its
+  // The activity dossier. Grounds mirror `--stk-bg` in
+  // `components/sohumtracker/sohumtracker.css` — Discord's app frame in dark, its
   // light theme's chat ground in light. `system: true` because the page follows
   // `prefers-color-scheme` and ships no toggle of its own; `key` is therefore a
   // reserved slot that nothing writes yet, and the lookup falls through to the
   // system preference exactly as intended.
-  '/sohumbum2': {
-    key: 'sohumbum2-theme',
+  '/sohumtracker': {
+    key: 'sohumtracker-theme',
     darkFlag: 'dark',
     dark: '#1a1b1e',
     light: '#f2f3f5',

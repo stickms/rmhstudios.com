@@ -69,7 +69,7 @@ export const NAMESPACES = [
   "r-altair", "r-discord", "r-forest-explorer", "r-kowloon-knockout",
   "r-pf2ecal",
   "r-rmhbox", "r-rmhcode", "r-secret", "r-slice-it", "r-sohumbum",
-  "r-sohumbum2",
+  "r-sohumtracker",
   "r-strategies", "r-studio",
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
