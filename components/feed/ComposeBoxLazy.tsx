@@ -88,7 +88,14 @@ function ComposePlaceholder({ onActivate }: { onActivate?: () => void }) {
  {t('sign-in-prompt', { defaultValue:'Sign in to post RMHarks'})}
  </p>
  <Link to="/login"search={{ callbackURL: undefined }}>
- <Button variant="accent">{t('sign-in', { defaultValue:'Sign In'})}</Button>
+ {/* `size="sm"` is load-bearing, not decoration: ComposeBox's own
+ signed-out branch (the thing that replaces this once the chunk
+ lands) renders `size="sm"`, and omitting it here meant the button
+ painted at the default size and visibly shrank a moment later.
+ The two cards are otherwise identical — keep them that way. */}
+ <Button variant="accent"size="sm">
+ {t('sign-in', { defaultValue:'Sign In'})}
+ </Button>
  </Link>
  </div>
  );
