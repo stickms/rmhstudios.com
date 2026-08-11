@@ -1197,7 +1197,10 @@ model SongComment {
   /// running image remembers they existed. `scripts/check-migration-safety.ts`
   /// is what insists on that order, and it is right to.
   aiSeverity   String?   @db.VarChar(16)
-  aiCategories String[]
+  /// The empty-array default is deliberate and already in the database
+  /// (20260807160000_slice_it_comment_ai_triage says why); declaring it here
+  /// only stops `migrate diff` proposing to drop it on every run.
+  aiCategories String[]  @default([])
   aiRationale  String?   @db.VarChar(200)
   aiTriagedAt  DateTime?
 
