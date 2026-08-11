@@ -270,6 +270,13 @@ func buildSummaryPrompt(period, key string, days []*dayRollup, totals dayTotals,
 		fmt.Fprintf(&b, "PERIOD: %s\n", key)
 	}
 
+	// Name the zone explicitly. Discord reports instants in UTC and the model has
+	// no way to know they were converted, so an unqualified "18:12" invites it to
+	// reason about a UTC evening — which for an Eastern subject is the afternoon,
+	// and turns "he was up at 3am" into "he was on after lunch".
+	fmt.Fprintf(&b, "TIME ZONE: every time and every day boundary below is %s (US Eastern). "+
+		"A \"day\" runs local midnight to local midnight, not UTC.\n", loc.String())
+
 	b.WriteString("\nMEASURED FIGURES (correct; do not recompute):\n")
 	fmt.Fprintf(&b, "- Time in voice chat: %s across %d sessions (longest single stretch %s)\n",
 		humanDuration(totals.VoiceSec), totals.VoiceSessions, humanDuration(totals.LongestVoiceSec))
@@ -303,8 +310,8 @@ func buildSummaryPrompt(period, key string, days []*dayRollup, totals dayTotals,
 		fmt.Fprintf(&b, "- Busiest channel: #%s (%d messages)\n", totals.TopChannel, totals.TopChannelMessages)
 	}
 	if totals.FirstSeenAt != nil && totals.LastSeenAt != nil {
-		fmt.Fprintf(&b, "- First seen %s, last seen %s (local time)\n",
-			totals.FirstSeenAt.In(loc).Format("15:04"), totals.LastSeenAt.In(loc).Format("15:04"))
+		fmt.Fprintf(&b, "- First seen %s, last seen %s (%s)\n",
+			totals.FirstSeenAt.In(loc).Format("15:04"), totals.LastSeenAt.In(loc).Format("15:04"), loc.String())
 	}
 
 	if period != periodDay && len(days) > 1 {

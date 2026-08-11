@@ -60,6 +60,20 @@ import (
 	"sync"
 	"time"
 
+	// Embeds the IANA timezone database in the binary.
+	//
+	// NOT optional, and not a nicety. The Go binaries ship in an Alpine image
+	// (the root Dockerfile's `runner-full`), and Alpine does not include tzdata
+	// — so without this, `time.LoadLocation("America/New_York")` FAILS in
+	// production and every day boundary, late-night window and hourly bucket
+	// silently shifts by four or five hours. The subject is in Eastern time and
+	// the whole point of this page is what he was doing at 3am; measuring that
+	// in UTC would put it in the wrong day.
+	//
+	// It lives in this package rather than in a `main` so the tracker cannot be
+	// built into a binary that forgot it. Costs ~450KB.
+	_ "time/tzdata"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/rmhstudios/rmh-go/pkg/log"
 )
@@ -133,9 +147,15 @@ func NewWatchService(cfg WatchConfig, repo *watchRepo, logger *log.Logger) *Watc
 	}
 	loc, err := time.LoadLocation(cfg.TimeZone)
 	if err != nil || loc == nil {
-		// A bad zone must not silently reshape every day boundary, so say so and
-		// fall back to UTC rather than guessing at what was meant.
-		logger.Warn("watch: unknown timezone, falling back to UTC", "timeZone", cfg.TimeZone)
+		// ERROR, not warn: this is not a degraded mode, it is wrong data. Every
+		// dateKey, every "late night" judgement and every hourly bucket is
+		// measured in this zone, so falling back to UTC silently re-buckets a
+		// 1am session into the previous day and reports it as an afternoon.
+		//
+		// With `time/tzdata` embedded above this should be unreachable; it stays
+		// as a guard against a genuinely bad DISCORD_WATCH_TIMEZONE value.
+		logger.Error("watch: unknown timezone — day boundaries will be UTC and WRONG for a non-UTC subject",
+			"timeZone", cfg.TimeZone, "error", err)
 		loc = time.UTC
 	}
 	watched := make(map[string]struct{}, len(cfg.UserIDs))

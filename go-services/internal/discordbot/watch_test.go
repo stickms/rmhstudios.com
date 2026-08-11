@@ -13,9 +13,55 @@ func eastern(t *testing.T) *time.Location {
 	t.Helper()
 	loc, err := time.LoadLocation("America/New_York")
 	if err != nil {
-		t.Skipf("tzdata unavailable: %v", err)
+		// FAIL rather than skip. This used to skip, which is precisely how the
+		// production bug would have hidden: the binaries ship on Alpine, which
+		// has no tzdata, so LoadLocation failed there and the tracker fell back
+		// to UTC — shifting every day boundary by four or five hours — while the
+		// test suite quietly reported success. `time/tzdata` is embedded in
+		// watch.go to make this impossible; this assertion is what keeps it so.
+		t.Fatalf("America/New_York must resolve — is the `time/tzdata` import still in watch.go? %v", err)
 	}
 	return loc
+}
+
+// The subject is in US Eastern and the whole premise of this page is what he was
+// doing at 3am, so the zone has to survive being built into a container with no
+// system timezone database. `time/tzdata` (imported in watch.go) is what makes
+// that true; this asserts the property rather than the import.
+func TestTrackingTimeZoneResolvesWithoutSystemTzdata(t *testing.T) {
+	loc, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		t.Fatalf("the tracking zone must resolve from the binary alone: %v", err)
+	}
+
+	// Eastern is UTC-4 in August (EDT) and UTC-5 in January (EST). Asserting
+	// both proves a real zone was loaded rather than a UTC alias, which is what
+	// the silent fallback produced.
+	summer := time.Date(2026, 8, 11, 12, 0, 0, 0, loc)
+	winter := time.Date(2026, 1, 11, 12, 0, 0, 0, loc)
+	if _, offset := summer.Zone(); offset != -4*3600 {
+		t.Fatalf("August offset = %ds, want -4h (EDT)", offset)
+	}
+	if _, offset := winter.Zone(); offset != -5*3600 {
+		t.Fatalf("January offset = %ds, want -5h (EST)", offset)
+	}
+
+	// And the consequence that matters: 1am Eastern is the PREVIOUS UTC day, so
+	// a UTC fallback would file a late-night session under the wrong date.
+	lateNight := time.Date(2026, 8, 12, 1, 30, 0, 0, loc)
+	if got := lateNight.In(loc).Format("2006-01-02"); got != "2026-08-12" {
+		t.Fatalf("local dateKey = %s, want 2026-08-12", got)
+	}
+	if got := lateNight.UTC().Format("2006-01-02"); got != "2026-08-12" {
+		// 1:30am EDT is 5:30am UTC — same date here, but the reverse case below
+		// is the one that bites.
+		t.Logf("note: 1:30am EDT is %s UTC", lateNight.UTC().Format("2006-01-02 15:04"))
+	}
+	evening := time.Date(2026, 8, 11, 22, 0, 0, 0, loc)
+	if got := evening.UTC().Format("2006-01-02"); got != "2026-08-12" {
+		t.Fatalf("10pm Eastern should be the NEXT day in UTC, got %s — "+
+			"this is why the rollup must bucket locally", got)
+	}
 }
 
 func TestAnalyzeMessage(t *testing.T) {
