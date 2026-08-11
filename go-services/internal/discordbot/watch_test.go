@@ -372,19 +372,62 @@ func TestSanitizeSampleFlattensNewlines(t *testing.T) {
 	}
 }
 
-// The hash is the cost control: identical figures must not earn a second model
-// call, and any change to any figure must.
-func TestSourceHashChangesWithFigures(t *testing.T) {
-	days := []*dayRollup{{DateKey: "2026-08-11", VoiceSec: 3600, Messages: 10}}
-	base := sourceHash(periodDay, "2026-08-11", days)
+// The hash is the cost control AND the freshness rule: a period must be
+// rewritten whenever anything the model would see has changed, and must not be
+// re-billed when nothing has.
+//
+// The regression this guards is real. The hash used to be a hand-picked list of
+// 14 figures while the prompt read 28, so a day where he streamed, or collected
+// reactions, or said entirely different things without changing the message
+// count, hashed identically and kept a stale write-up forever.
+func TestSourceHashTracksEverythingThePromptSees(t *testing.T) {
+	loc := eastern(t)
+	base := []*dayRollup{{
+		DateKey: "2026-08-11", VoiceSec: 3600, Messages: 10, StreamingSec: 0,
+		ReactionsReceived: 0, MutedSec: 0,
+	}}
+	samples := []sampledMessage{
+		{Channel: "general", SentAt: time.Date(2026, 8, 11, 20, 0, 0, 0, time.UTC), Content: "ill apply tomorrow"},
+	}
+	promptFor := func(days []*dayRollup, s []sampledMessage) string {
+		return buildSummaryPrompt(periodDay, "2026-08-11", days, sumDays(days), s, loc)
+	}
 
-	if again := sourceHash(periodDay, "2026-08-11", days); again != base {
-		t.Fatal("same figures must hash the same, or every pass re-bills")
+	original := sourceHash(promptFor(base, samples))
+	if again := sourceHash(promptFor(base, samples)); again != original {
+		t.Fatal("identical input must hash the same, or every pass re-bills")
 	}
-	days[0].Messages = 11
-	if changed := sourceHash(periodDay, "2026-08-11", days); changed == base {
-		t.Fatal("a changed figure must earn a regeneration")
+
+	// Each of these appears in the prompt and none was in the old field list.
+	for _, tc := range []struct {
+		name  string
+		apply func(d *dayRollup)
+	}{
+		{"streaming time", func(d *dayRollup) { d.StreamingSec = 1800 }},
+		{"reactions received", func(d *dayRollup) { d.ReactionsReceived = 12 }},
+		{"muted time", func(d *dayRollup) { d.MutedSec = 900 }},
+		{"links shared", func(d *dayRollup) { d.Links = 4 }},
+		{"longest stretch", func(d *dayRollup) { d.LongestVoiceSec = 3000 }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			changed := []*dayRollup{{}}
+			*changed[0] = *base[0]
+			tc.apply(changed[0])
+			if sourceHash(promptFor(changed, samples)) == original {
+				t.Fatalf("a change to %s must earn a regeneration", tc.name)
+			}
+		})
 	}
+
+	// And what he actually SAID is the whole point of the summary.
+	t.Run("message sample", func(t *testing.T) {
+		other := []sampledMessage{
+			{Channel: "general", SentAt: samples[0].SentAt, Content: "one more game then bed"},
+		}
+		if sourceHash(promptFor(base, other)) == original {
+			t.Fatal("different messages must earn a regeneration")
+		}
+	})
 }
 
 func TestHumanDuration(t *testing.T) {
@@ -420,12 +463,13 @@ func TestDisabledWatchServiceIsSafe(t *testing.T) {
 	if w.tracks("169194892269060096") {
 		t.Fatal("a nil tracker tracks nobody")
 	}
-	w.Start(t.Context())
+	w.Start(t.Context(), nil)
 	w.HandleVoiceState(t.Context(), nil, nil)
 	w.HandleMessage(t.Context(), nil, nil)
 	w.HandlePresence(t.Context(), nil)
 	w.HandleReaction(t.Context(), nil)
 	w.Reconcile(t.Context(), nil, nil)
+	w.RefreshIdentities(t.Context(), nil)
 }
 
 func TestNewWatchServiceRejectsEmptyAllowlist(t *testing.T) {

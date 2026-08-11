@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 265 routes. 137 render inside the standard site shell (sidebar, nav, context rail); 128 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 267 routes. 137 render inside the standard site shell (sidebar, nav, context rail); 130 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -264,8 +264,10 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/slice-it/edit/:songId` | Chart editor — Slice It! | public | `app/routes/slice-it/edit.$songId.tsx` |
 | `/slice-it/player/:handle` | — | public | `app/routes/slice-it/player.$handle.tsx` |
 | `/sohumbum` | Is Sohum Joshi A Bum Yet? | public | `app/routes/sohumbum.tsx` |
-| `/sohumbum2` | What Is Sohum Doing Right Now? | public | `app/routes/sohumbum2/index.tsx` |
-| `/sohumbum2/:date` | — | public | `app/routes/sohumbum2/$date.tsx` |
+| `/sohumbum2` | redirects to `/sohumtracker` | public | `app/routes/sohumbum2/index.tsx` |
+| `/sohumbum2/:date` | redirects to `/sohumtracker/$date` | public | `app/routes/sohumbum2/$date.tsx` |
+| `/sohumtracker` | What Is Sohum Doing Right Now? | public | `app/routes/sohumtracker/index.tsx` |
+| `/sohumtracker/:date` | — | public | `app/routes/sohumtracker/$date.tsx` |
 | `/strategies` | — | public | `app/routes/strategies/index.tsx` |
 | `/strategies/incidents` | — | public | `app/routes/strategies/incidents.tsx` |
 | `/strategies/profile` | — | public | `app/routes/strategies/profile/index.tsx` |

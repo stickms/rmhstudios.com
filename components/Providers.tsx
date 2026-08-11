@@ -239,7 +239,7 @@ export const THEME_EXCLUDED_ROUTES = [
   // for the same reason `/pf2ecal` is — without it the document paints a
   // Daylight-white <html> under a page that has gone dark, which a desktop
   // hides and every phone overscroll reveals.
-  '/sohumbum2',
+  '/sohumtracker',
 ].filter((href) => href.startsWith('/'));
 
 /**

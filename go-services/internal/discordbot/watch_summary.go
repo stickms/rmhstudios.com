@@ -15,8 +15,8 @@
 //
 // # When it runs
 //
-// A period is re-summarised only when its `sourceHash` changes. The hash is a
-// digest of the rollups it was written from, so:
+// A period is re-summarised only when its `sourceHash` changes, and that hash is
+// a digest of the PROMPT — the exact question the model would be asked. So:
 //
 //   - today's summary refreshes while the day fills in,
 //   - a finished day is summarised once and then never re-billed,
@@ -185,15 +185,6 @@ func (s *WatchSummarizer) summarize(ctx context.Context, discordID, period, key 
 		return nil
 	}
 
-	hash := sourceHash(period, key, days)
-	previous, err := s.repo.summarySourceHash(ctx, discordID, period, key)
-	if err != nil {
-		return err
-	}
-	if previous == hash {
-		return nil
-	}
-
 	from, _, err := dayBounds(fromKey, s.loc)
 	if err != nil {
 		return err
@@ -207,7 +198,21 @@ func (s *WatchSummarizer) summarize(ctx context.Context, discordID, period, key 
 		return err
 	}
 
+	// The prompt is built BEFORE the up-to-date check, because the prompt is
+	// what the check is about: if the model would be asked exactly the same
+	// question, its answer is already stored. Building it costs one indexed
+	// query; asking again costs a model call.
 	prompt := buildSummaryPrompt(period, key, days, totals, samples, s.loc)
+
+	hash := sourceHash(prompt)
+	previous, err := s.repo.summarySourceHash(ctx, discordID, period, key)
+	if err != nil {
+		return err
+	}
+	if previous == hash {
+		return nil
+	}
+
 	raw, err := s.deepseek.ChatWith(ctx, []ChatMessage{
 		{Role: roleSystem, Content: summarySystemPrompt},
 		{Role: roleUser, Content: prompt},
@@ -508,17 +513,24 @@ func isoWeekStart(key string, loc *time.Location) (time.Time, error) {
 	return jan4.AddDate(0, 0, -offset+(week-1)*7), nil
 }
 
-// sourceHash digests the figures a summary was written from. Any change to any
-// of them produces a different hash and earns a regeneration; nothing else does.
-func sourceHash(period, key string, days []*dayRollup) string {
+// sourceHash digests the exact question the model was asked.
+//
+// The prompt itself, rather than a hand-picked list of figures. That list was
+// the previous implementation and it was wrong in a way that is easy to miss:
+// the prompt reads 28 fields and the list covered 14, so a period where he
+// streamed, or collected reactions, or said entirely different things without
+// changing the message COUNT would hash the same and never be rewritten. The
+// message sample was not hashed at all.
+//
+// Hashing the prompt makes the rule exactly what it should be — regenerate when
+// and only when the model would see something different — and it cannot drift
+// again, because there is no second list of fields to keep in step.
+//
+// This is the whole cost control: today's summary rewrites itself as the day
+// fills in, and a finished day is paid for once.
+func sourceHash(prompt string) string {
 	h := sha256.New()
-	fmt.Fprintf(h, "%s|%s", period, key)
-	for _, d := range days {
-		fmt.Fprintf(h, "|%s:%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%d,%s",
-			d.DateKey, d.VoiceSec, d.VoiceSessions, d.AloneSec, d.LateNightSec,
-			d.Messages, d.Words, d.Characters, d.Replies, d.Questions,
-			d.ReactionsGiven, d.GamingSec, d.TopGame, d.TopGameSec, d.TopChannel)
-	}
+	h.Write([]byte(prompt))
 	return hex.EncodeToString(h.Sum(nil))
 }
 
