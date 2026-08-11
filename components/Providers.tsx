@@ -102,6 +102,16 @@ const SessionCtx = createContext<SessionCtxValue | null>(null);
 /*  moment. We persist the last-known user to localStorage and seed    */
 /*  the context with it so the signed-in UI shows immediately, then    */
 /*  let the live session take over (and self-heal if it's stale).     */
+/*                                                                     */
+/*  Only display fields are stored — never a token. This cache is a   */
+/*  hint for rendering the shell, never proof of anything: every       */
+/*  privileged read is authorized server-side against the session      */
+/*  cookie, so a hand-edited entry buys nothing but a wrong avatar     */
+/*  until the live session corrects it.                                */
+/*                                                                     */
+/*  It has nothing to offer a SIGNED-OUT visitor — there is no user    */
+/*  to remember — which is why their pending state is answered from    */
+/*  the server's own lookup instead (see `effectiveSession`).          */
 /* ------------------------------------------------------------------ */
 const CACHED_USER_KEY = 'rmh-auth-user';
 
@@ -328,11 +338,20 @@ export function Providers({
   // provide one (e.g. a client-only render path).
   const [cachedUser, setCachedUser] = useState<CachedSessionUser | null>(initialUser);
   useEffect(() => {
-    if (!initialUser) {
-      const stored = readCachedUser();
-      if (stored) setCachedUser(stored);
+    if (initialUser) return;
+    // The server resolving to NOBODY is an answer, not a gap. A stale copy in
+    // localStorage must not override it — that is a signed-out visitor watching
+    // the shell paint signed-in and then snap back a frame later. Drop the copy
+    // instead; the server just told us it is wrong.
+    if (sessionResolved) {
+      writeCachedUser(null);
+      return;
     }
-  }, [initialUser]);
+    // Only when the server could NOT resolve (failed or timed out) is the
+    // persisted user the best guess available.
+    const stored = readCachedUser();
+    if (stored) setCachedUser(stored);
+  }, [initialUser, sessionResolved]);
 
   // Persist the live session whenever it resolves (and clear it on sign-out).
   const liveUser = session.data?.user;
@@ -369,6 +388,23 @@ export function Providers({
         data: { user: cachedUser, session: null },
       } as unknown as SessionCtxValue;
     }
+    // The server read the cookie and found nobody, and we have never seen a
+    // live session. Signed-out is KNOWN from the first frame, so say so.
+    //
+    // Falling through to better-auth's raw state here is what made every
+    // signed-out visit start on a spinner: its `useSession()` begins
+    // `{ data: null, isPending: true }` and only settles after a network
+    // round-trip, so `isPending` stayed true for a visitor the SERVER had
+    // already answered for. Everything gated on it rendered its loading branch
+    // and then re-rendered — the feed composer painted its full-height
+    // signed-in placeholder and snapped to the short sign-in card a frame later.
+    //
+    // `!session.data` keeps this to the cold signed-out case: once a session
+    // has ever landed, a later refetch goes through `cachedUser` above instead
+    // of being reported as signed out.
+    if (sessionResolved && !initialUser && session.isPending && !session.data) {
+      return { ...session, isPending: false, data: null } as unknown as SessionCtxValue;
+    }
     // Server couldn't resolve the session and we have no cached user: the
     // answer is UNKNOWN. Report pending (not signed out) until the client
     // session lands, so the shell shows a neutral placeholder instead of
@@ -377,7 +413,7 @@ export function Providers({
       return { ...session, isPending: true, data: null } as unknown as SessionCtxValue;
     }
     return session;
-  }, [session, cachedUser, sessionResolved]);
+  }, [session, cachedUser, sessionResolved, initialUser]);
 
   // Resolved user display data (custom image/name). Seed from the SSR-resolved
   // user so the current user's own avatar/name paint immediately from the loader
