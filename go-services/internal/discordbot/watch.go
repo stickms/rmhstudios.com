@@ -60,6 +60,20 @@ import (
 	"sync"
 	"time"
 
+	// Embeds the IANA timezone database in the binary.
+	//
+	// NOT optional, and not a nicety. The Go binaries ship in an Alpine image
+	// (the root Dockerfile's `runner-full`), and Alpine does not include tzdata
+	// — so without this, `time.LoadLocation("America/New_York")` FAILS in
+	// production and every day boundary, late-night window and hourly bucket
+	// silently shifts by four or five hours. The subject is in Eastern time and
+	// the whole point of this page is what he was doing at 3am; measuring that
+	// in UTC would put it in the wrong day.
+	//
+	// It lives in this package rather than in a `main` so the tracker cannot be
+	// built into a binary that forgot it. Costs ~450KB.
+	_ "time/tzdata"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/rmhstudios/rmh-go/pkg/log"
 )
@@ -102,6 +116,12 @@ type WatchConfig struct {
 	// resumable. Under it, a restart is treated as continuous; over it, the
 	// session is closed at its last heartbeat. See the restart note at the top.
 	GapGrace time.Duration
+	// DigestChannelID is where the weekly write-up is posted once a week has
+	// ended. Empty — the default — means no digest is ever posted, which is the
+	// right default for a feature that writes into somebody else's channel.
+	DigestChannelID string
+	// SiteURL is the origin the digest's links point at.
+	SiteURL string
 }
 
 // Enabled reports whether anything should be tracked at all.
@@ -133,9 +153,15 @@ func NewWatchService(cfg WatchConfig, repo *watchRepo, logger *log.Logger) *Watc
 	}
 	loc, err := time.LoadLocation(cfg.TimeZone)
 	if err != nil || loc == nil {
-		// A bad zone must not silently reshape every day boundary, so say so and
-		// fall back to UTC rather than guessing at what was meant.
-		logger.Warn("watch: unknown timezone, falling back to UTC", "timeZone", cfg.TimeZone)
+		// ERROR, not warn: this is not a degraded mode, it is wrong data. Every
+		// dateKey, every "late night" judgement and every hourly bucket is
+		// measured in this zone, so falling back to UTC silently re-buckets a
+		// 1am session into the previous day and reports it as an afternoon.
+		//
+		// With `time/tzdata` embedded above this should be unreachable; it stays
+		// as a guard against a genuinely bad DISCORD_WATCH_TIMEZONE value.
+		logger.Error("watch: unknown timezone — day boundaries will be UTC and WRONG for a non-UTC subject",
+			"timeZone", cfg.TimeZone, "error", err)
 		loc = time.UTC
 	}
 	watched := make(map[string]struct{}, len(cfg.UserIDs))
@@ -177,7 +203,64 @@ func (w *WatchService) Start(ctx context.Context, s *discordgo.Session) {
 	// Off the caller's goroutine: this is a REST round trip, and Run is holding
 	// up the gateway's post-open path.
 	go w.RefreshIdentities(ctx, s)
+	go w.backfillRollups(ctx)
 	go w.flushLoop(ctx, s)
+}
+
+// backfillRollupsMax bounds the startup backfill regardless of retention.
+//
+// Sixty days is far more than any correction has needed and short enough that
+// the sweep is a few hundred queries rather than a scan of the whole history.
+const backfillRollupsMax = 60
+
+// backfillRollups recomputes recent days once, at startup.
+//
+// The flush loop only ever recomputes today and yesterday, because those are the
+// only days still accruing. That is right for normal operation and wrong after a
+// bug fix: a day rolled up by an older, incorrect version of the aggregation
+// keeps its wrong figures forever, since nothing ever asks for it again. This is
+// the path that lets a correction reach history.
+//
+// # Why it is bounded by retention, and must stay so
+//
+// `recomputeDay` rebuilds a day from its RAW rows. Message rows are pruned after
+// `RetentionDays`, so recomputing a day older than that would find no messages
+// and write a row full of zeroes — erasing real history rather than correcting
+// it. The window is therefore capped just inside the retention horizon. Anything
+// that widens retention may widen this; nothing may widen this alone.
+func (w *WatchService) backfillRollups(ctx context.Context) {
+	if w == nil || !w.cfg.Enabled() {
+		return
+	}
+	// One day of headroom: a day at the exact boundary may be losing rows to the
+	// pruner as this runs.
+	days := w.cfg.RetentionDays - 1
+	if days > backfillRollupsMax {
+		days = backfillRollupsMax
+	}
+	if days < 1 {
+		return
+	}
+
+	now := time.Now().UTC()
+	// Yesterday backwards: today and yesterday are the flush loop's job and it
+	// will have done them within the minute.
+	start := now.AddDate(0, 0, -days)
+	repaired := 0
+	for _, id := range w.cfg.UserIDs {
+		if err := w.recomputeSpan(ctx, id, start, now.AddDate(0, 0, -1)); err != nil {
+			w.logger.Warn("watch: rollup backfill", "userId", id, "error", err)
+			continue
+		}
+		repaired++
+	}
+	if repaired > 0 {
+		// Worth a line: it explains why a summary that had settled is about to be
+		// rewritten (the prompt hash moves with the figures, so a corrected day
+		// re-summarises on the next pass by design).
+		w.logger.Info("watch: recomputed recent rollups from raw rows",
+			"users", repaired, "days", days)
+	}
 }
 
 // gapGrace is the configured outage tolerance, with a sane floor so a
@@ -236,6 +319,9 @@ func (w *WatchService) flush(ctx context.Context) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	now := time.Now().UTC()
+	// Settled first, so a compose session that expired since the last tick is
+	// already judged by the time this tick's recompute reads the table.
+	w.sweepTyping(ctx, now)
 	for _, id := range w.cfg.UserIDs {
 		w.beat(ctx, id, now)
 		for _, key := range []string{w.dateKey(now), w.dateKey(now.Add(-24 * time.Hour))} {
@@ -623,6 +709,11 @@ func (w *WatchService) HandleMessage(ctx context.Context, s *discordgo.Session, 
 		IsReply:     m.MessageReference != nil,
 		IsQuestion:  metrics.Question,
 		IsLateNight: isLateNight(sentAt, w.loc),
+		// Decided here, from the text, and stored — the text does not survive
+		// retention and a rule applied later would have nothing to read.
+		// Independent of StoreContent: the FINDING is not the content, and the
+		// figure this feeds must not silently zero out when text is off.
+		MentionsJob: matchesJobHunt(m.Content),
 	}
 	if w.cfg.StoreContent && m.Content != "" {
 		row.Content = truncateRunes(m.Content, contentLimit)
@@ -634,6 +725,9 @@ func (w *WatchService) HandleMessage(ctx context.Context, s *discordgo.Session, 
 		w.logger.Warn("watch: insert message", "userId", m.Author.ID, "error", err)
 		return
 	}
+	// The message is the verdict on whatever he was typing in this channel: the
+	// compose session produced something after all.
+	w.settleTypingForMessage(ctx, m.Author.ID, m.ChannelID, sentAt)
 	// A message is the most reliable place to learn his current name and avatar:
 	// the author object on a MessageCreate is always fully populated, where a
 	// presence update's user often is not.

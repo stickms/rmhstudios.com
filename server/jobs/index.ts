@@ -25,6 +25,10 @@ import {
   PF2E_REMINDER_QUEUE,
   registerPf2eReminderCron,
 } from '@/lib/pf2ecal/reminders.server';
+import {
+  SOHUMTRACKER_ALERT_QUEUE,
+  registerSohumTrackerAlertCron,
+} from '@/lib/sohumtracker/alerts.server';
 
 const log = createLogger('jobs');
 
@@ -100,6 +104,20 @@ async function main() {
     log.error({
       event: 'jobs.register_failed',
       queue: PF2E_REMINDER_QUEUE,
+      err: (e as Error)?.message,
+    });
+  }
+
+  // /sohumtracker — "tell me when he joins voice". A minute-by-minute sweep of
+  // the open voice session the Go tracker writes; push itself stays in Node,
+  // which is where the VAPID keys and the subscription table live.
+  try {
+    await registerSohumTrackerAlertCron(boss);
+    log.info({ event: 'jobs.started', queue: SOHUMTRACKER_ALERT_QUEUE });
+  } catch (e) {
+    log.error({
+      event: 'jobs.register_failed',
+      queue: SOHUMTRACKER_ALERT_QUEUE,
       err: (e as Error)?.message,
     });
   }

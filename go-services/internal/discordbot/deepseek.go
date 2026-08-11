@@ -16,6 +16,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -82,11 +84,28 @@ type chatCompletionResponse struct {
 }
 
 // DeepSeekClient is a minimal OpenAI-compatible chat-completions client.
+//
+// Every call goes through the package retry loop (retry.go). DeepSeek rate-limits
+// aggressively and, like every hosted inference API, occasionally answers 5xx or
+// simply drops the connection; before this, a single one of those lost whatever
+// was being generated — Alex's reply, or a day's summary that then waited a full
+// half-hour pass to be attempted again.
 type DeepSeekClient struct {
 	apiKey  string
 	model   string
 	baseURL string
 	http    *http.Client
+	// logger is only used to narrate retries; nil is fine and silent.
+	logger retryLogger
+}
+
+// WithLogger attaches a logger for retry narration. Returns the same client so
+// it can be chained onto the constructor at a call site that has one.
+func (c *DeepSeekClient) WithLogger(l retryLogger) *DeepSeekClient {
+	if c != nil {
+		c.logger = l
+	}
+	return c
 }
 
 // configured reports whether the client can make calls (a key is set).
@@ -122,6 +141,18 @@ func (c *DeepSeekClient) ChatWith(ctx context.Context, messages []ChatMessage, o
 	if c.apiKey == "" {
 		return "", fmt.Errorf("DEEPSEEK_API_KEY is not set")
 	}
+	var reply string
+	err := withRetry(ctx, c.logger, "deepseek.chat", retryAPI, func(ctx context.Context) error {
+		var err error
+		reply, err = c.chatOnce(ctx, messages, opts)
+		return err
+	})
+	return reply, err
+}
+
+// chatOnce is a single attempt. Split out so the retry loop above reads as the
+// policy and this reads as the request.
+func (c *DeepSeekClient) chatOnce(ctx context.Context, messages []ChatMessage, opts ChatOptions) (string, error) {
 
 	temp := opts.Temperature
 	if temp == nil {
@@ -148,6 +179,8 @@ func (c *DeepSeekClient) ChatWith(ctx context.Context, messages []ChatMessage, o
 
 	resp, err := c.http.Do(req)
 	if err != nil {
+		// A transport error is the most retryable thing there is: the request
+		// either never arrived or its answer did not.
 		return "", fmt.Errorf("deepseek request: %w", err)
 	}
 	defer resp.Body.Close()
@@ -157,18 +190,63 @@ func (c *DeepSeekClient) ChatWith(ctx context.Context, messages []ChatMessage, o
 		return "", fmt.Errorf("read response: %w", err)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return "", fmt.Errorf("deepseek HTTP %d: %s", resp.StatusCode, string(body))
+		httpErr := fmt.Errorf("deepseek HTTP %d: %s", resp.StatusCode, truncateRunes(string(body), 300))
+		if !retryableStatus(resp.StatusCode) {
+			// 400/401/403/404 answer identically every time. Retrying a bad key
+			// four times is four ways to be told the same thing.
+			return "", permanent(httpErr)
+		}
+		if wait := parseRetryAfter(resp.Header.Get("Retry-After")); wait > 0 {
+			return "", retryAfter(httpErr, wait)
+		}
+		return "", httpErr
 	}
 
 	var parsed chatCompletionResponse
 	if err := json.Unmarshal(body, &parsed); err != nil {
+		// A 200 that is not JSON is usually a proxy or an interstitial in the
+		// path rather than DeepSeek itself, and that clears.
 		return "", fmt.Errorf("decode response: %w", err)
 	}
 	if parsed.Error != nil {
-		return "", fmt.Errorf("deepseek error: %s", parsed.Error.Message)
+		return "", permanent(fmt.Errorf("deepseek error: %s", parsed.Error.Message))
 	}
 	if len(parsed.Choices) == 0 {
 		return "", fmt.Errorf("deepseek returned no choices")
 	}
 	return parsed.Choices[0].Message.Content, nil
+}
+
+// retryableStatus reports whether an HTTP status is worth trying again.
+//
+// 429 and 5xx are the transient ones. 408 (request timeout) and 409 (conflict)
+// are included because DeepSeek uses both for load shedding. Everything else in
+// 4xx is a statement about the request, which the next attempt would repeat.
+func retryableStatus(code int) bool {
+	switch code {
+	case http.StatusRequestTimeout, http.StatusConflict, http.StatusTooManyRequests:
+		return true
+	}
+	return code >= 500
+}
+
+// parseRetryAfter reads the header in either of its two legal forms — a count of
+// seconds, or an HTTP date. Zero when absent or unparseable, which leaves the
+// backoff schedule in charge.
+func parseRetryAfter(value string) time.Duration {
+	if value == "" {
+		return 0
+	}
+	if secs, err := strconv.Atoi(strings.TrimSpace(value)); err == nil {
+		if secs < 0 {
+			return 0
+		}
+		return time.Duration(secs) * time.Second
+	}
+	if when, err := http.ParseTime(value); err == nil {
+		if d := time.Until(when); d > 0 {
+			return d
+		}
+	}
+	return 0
 }

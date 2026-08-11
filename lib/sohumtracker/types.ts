@@ -78,6 +78,21 @@ export interface WatchDayDTO {
   reactionsGiven: number;
   reactionsReceived: number;
 
+  /**
+   * Messages that read as being about looking for work — an application, an
+   * interview, a recruiter, a CV. Flagged on the message when it arrives, so
+   * the count survives the text being deleted at 45 days.
+   */
+  jobMentions: number;
+
+  /**
+   * Compose sessions: times he started typing, and the ones no message came out
+   * of. `typingAbandonedSec` is how long he spent on those.
+   */
+  typingStarts: number;
+  typingAbandoned: number;
+  typingAbandonedSec: number;
+
   gamingSec: number;
   gameSessions: number;
   topGame: string | null;
@@ -205,6 +220,21 @@ export interface WatchTotalsDTO {
   lateNightMessages: number;
   reactionsGiven: number;
   reactionsReceived: number;
+
+  jobMentions: number;
+  /**
+   * Days since the last one — the figure this whole page is really about.
+   * Null when he has not mentioned it once in the window, which the page states
+   * differently ("not once in 120 days") because "120" and "at least 120" are
+   * not the same claim.
+   */
+  daysSinceJobMention: number | null;
+  /** The dateKey it last came up on, for the link. */
+  lastJobMentionDateKey: string | null;
+
+  typingStarts: number;
+  typingAbandoned: number;
+  typingAbandonedSec: number;
   /** The single biggest day, for the "personal best" line. */
   peakVoiceSec: number;
   peakVoiceDateKey: string | null;

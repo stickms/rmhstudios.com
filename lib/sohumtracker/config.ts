@@ -69,6 +69,22 @@ export function formatDuration(seconds: number): string {
   return `${total}s`;
 }
 
+/**
+ * `603d 6h` — the same duration, for spans measured in years.
+ *
+ * `formatDuration` is right up to about a fortnight and useless past it: the
+ * projection to 2030 renders as "14478h 35m", which nobody can hold in their
+ * head or compare to "1,239 days remaining" sitting next to it. Above two days
+ * this switches to days, which is the unit the deadline is already counted in.
+ */
+export function formatSpan(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds <= 0) return '—';
+  if (seconds < 172_800) return formatDuration(seconds);
+  const days = Math.floor(seconds / 86_400);
+  const hours = Math.floor((seconds % 86_400) / 3600);
+  return hours > 0 ? `${formatCount(days)}d ${hours}h` : `${formatCount(days)}d`;
+}
+
 /** `4:12:07`, for the live counter that ticks. */
 export function formatClock(seconds: number): string {
   const total = Math.max(0, Math.floor(seconds));

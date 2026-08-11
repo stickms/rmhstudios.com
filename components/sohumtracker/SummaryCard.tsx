@@ -13,6 +13,7 @@
  * quoted message must never be able to do is arrive here as markup.
  */
 
+import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { formatWeekRange, formatDayLong, formatMonthLong } from '@/lib/sohumtracker/dates';
 import type { WatchSummaryDTO } from '@/lib/sohumtracker/types';
@@ -22,6 +23,12 @@ interface SummaryCardProps {
   /** Shown when there is no summary for the period yet. */
   emptyTitle: string;
   emptyBody: string;
+  /**
+   * Whether to offer the period's own page. Off on that page, where the address
+   * bar is already the permalink — and off for day summaries, which are shown
+   * inside `DayDetail`, which carries its own share controls.
+   */
+  showPermalink?: boolean;
 }
 
 /** The human label for a period key, by period. */
@@ -36,7 +43,12 @@ function periodLabel(summary: WatchSummaryDTO): string {
   }
 }
 
-export function SummaryCard({ summary, emptyTitle, emptyBody }: SummaryCardProps) {
+export function SummaryCard({
+  summary,
+  emptyTitle,
+  emptyBody,
+  showPermalink = false,
+}: SummaryCardProps) {
   const { t } = useTranslation('r-sohumtracker');
 
   if (!summary) {
@@ -85,6 +97,22 @@ export function SummaryCard({ summary, emptyTitle, emptyBody }: SummaryCardProps
           defaultValue:
             'Written from the measured figures and a sample of his messages. The figures are counted, not estimated.',
         })}
+        {showPermalink && summary.period === 'week' ? (
+          <>
+            {' '}
+            <Link to="/sohumtracker/week/$week" params={{ week: summary.periodKey }}>
+              {t('summary-open-week', { defaultValue: 'Open this week' })}
+            </Link>
+          </>
+        ) : null}
+        {showPermalink && summary.period === 'month' ? (
+          <>
+            {' '}
+            <Link to="/sohumtracker/month/$month" params={{ month: summary.periodKey }}>
+              {t('summary-open-month', { defaultValue: 'Open this month' })}
+            </Link>
+          </>
+        ) : null}
       </p>
     </article>
   );

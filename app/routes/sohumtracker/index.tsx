@@ -44,11 +44,15 @@ function describeState(state: WatchStateDTO | undefined): string {
       `${formatDuration(state.totals.voiceSec)} in voice over the last ${state.totals.days} days.`
     );
   }
+  const since =
+    state.totals.daysSinceJobMention === null
+      ? `Work has not come up once in ${state.totals.days} days.`
+      : `${state.totals.daysSinceJobMention} days since he mentioned looking for work.`;
   return (
     `${formatDuration(state.totals.presenceSec)} signed in to Discord over the last ` +
     `${state.totals.days} days — ${formatDuration(state.totals.mobileSec)} of it on his phone, ` +
     `${formatDuration(state.totals.voiceSec)} in voice and ` +
-    `${formatCount(state.totals.messages)} messages.`
+    `${formatCount(state.totals.messages)} messages. ${since}`
   );
 }
 

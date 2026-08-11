@@ -155,6 +155,24 @@ export function DayDetail({ day, showPermalink = true }: DayDetailProps) {
       value: formatCount(day.links),
     },
     {
+      // Always shown, including at zero. A missing row and a zero row read the
+      // same way at a glance, and only one of them is a finding.
+      id: 'job-mentions',
+      label: t('fact-job-mentions', { defaultValue: 'Mentioned looking for work' }),
+      value: formatCount(day.jobMentions),
+    },
+    day.typingAbandoned > 0
+      ? {
+          id: 'typing-abandoned',
+          label: t('fact-typing-abandoned', { defaultValue: 'Typed and never sent' }),
+          value: t('fact-typing-abandoned-value', {
+            count: day.typingAbandoned,
+            duration: formatDuration(day.typingAbandonedSec),
+            defaultValue: '{{count}} drafts · {{duration}}',
+          }),
+        }
+      : null,
+    {
       id: 'reactions-given',
       label: t('fact-reactions-given', { defaultValue: 'Reactions given' }),
       value: formatCount(day.reactionsGiven),

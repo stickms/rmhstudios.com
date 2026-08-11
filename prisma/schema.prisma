@@ -319,6 +319,9 @@ model User {
   // Web Push subscriptions
   pushSubscriptions PushSubscription[]
 
+  // "Tell me when he joins voice" opt-ins on /sohumtracker
+  discordWatchAlerts DiscordWatchAlert[]
+
   // Referral program
   referralsMade    Referral[] @relation("Referrer")
   referralReceived Referral?  @relation("Referee")
@@ -8656,6 +8659,13 @@ model DiscordWatchVoiceSession {
   flagsChangedAt DateTime
   peersChangedAt DateTime
 
+  /// When the "he just joined voice" push went out for this session. The claim
+  /// is taken with a conditional update BEFORE the push, so two sweeps racing
+  /// cannot both notify; the cost is that a send which fails after the claim is
+  /// not retried, which is the right trade for a notification about something
+  /// happening right now.
+  alertedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -8694,6 +8704,11 @@ model DiscordWatchMessage {
   isQuestion  Boolean @default(false)
   /// Sent between midnight and 5am in the tracking timezone.
   isLateNight Boolean @default(false)
+  /// The message reads as being about looking for work — an application, an
+  /// interview, a recruiter, a CV. Decided at insert time by `matchesJobHunt`
+  /// so the finding OUTLIVES the message text, which is deleted at 45 days.
+  /// Always false when the Message Content intent is off and there is no text.
+  mentionsJob Boolean @default(false)
 
   createdAt DateTime @default(now())
 
@@ -8766,6 +8781,16 @@ model DiscordWatchDay {
   reactionsGiven    Int @default(0)
   reactionsReceived Int @default(0)
 
+  /// Messages that read as being about looking for work. Counted, not
+  /// inferred — the flag is set on the message row when it arrives.
+  jobMentions Int @default(0)
+
+  /// Compose sessions started, and the ones that never produced a message.
+  /// `typingAbandonedSec` is how long he spent typing those.
+  typingStarts       Int @default(0)
+  typingAbandoned    Int @default(0)
+  typingAbandonedSec Int @default(0)
+
   /// Time at each status, from the status-session log. Mutually exclusive — a
   /// status is one value — so these sum to his presence for the day.
   onlineSec Int @default(0)
@@ -8837,12 +8862,83 @@ model DiscordWatchSummary {
   sourceHash  String
   generatedAt DateTime @default(now())
 
+  /// When this period's digest was posted to Discord, for the weekly one that
+  /// is. Non-null means "already posted" and is what makes the post idempotent
+  /// across regenerations: a summary rewritten because the figures moved does
+  /// not get announced twice.
+  digestPostedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([discordId, period, periodKey])
   @@index([discordId, period, periodKey(sort: Desc)], map: "idx_discord_watch_summary_lookup")
   @@map("discord_watch_summary")
+}
+
+/// One compose session: he started typing in a channel, and either a message
+/// came out of it or one did not.
+///
+/// Discord re-sends `TYPING_START` roughly every eight seconds while somebody
+/// keeps typing, so a single run is many events; they are coalesced into one row
+/// by extending `lastTypingAt` while the gap stays under the idle window.
+///
+/// `sent` is the whole point. A compose session with no message is a thing he
+/// wrote and then deleted, which is the only trace this tracker can get of a
+/// decision — every other column on this page records something he did.
+model DiscordWatchTypingSession {
+  id          String  @id @default(cuid())
+  discordId   String
+  guildId     String
+  channelId   String
+  channelName String?
+
+  startedAt    DateTime
+  /// The last typing event of this run; the gap from here decides when the run
+  /// is settled and can be judged.
+  lastTypingAt DateTime
+  /// Set when the run is settled, either by a message or by the idle window.
+  settledAt    DateTime?
+  durationSec  Int       @default(0)
+
+  /// A message from him landed in this channel while the run was open.
+  sent Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([discordId, startedAt(sort: Desc)], map: "idx_discord_watch_typing_user")
+  @@index([discordId, settledAt], map: "idx_discord_watch_typing_open")
+  @@map("discord_watch_typing_session")
+}
+
+/// Somebody who asked to be told when the tracked account joins a voice channel.
+///
+/// Keyed to a site account rather than to an anonymous push endpoint on purpose:
+/// the site already has one push path (`lib/push/send.server.ts`, VAPID, dead-
+/// endpoint cleanup) and it is keyed by user. A second, anonymous one would be a
+/// second thing to get the encryption and the 410-handling right in.
+model DiscordWatchAlert {
+  id        String @id @default(cuid())
+  userId    String
+  /// Which tracked account this is about, so the table survives a second one.
+  discordId String
+
+  /// "voice" — the only kind so far, named rather than implied so adding
+  /// "he posted at 4am" later does not need a migration to tell them apart.
+  kind String @default("voice")
+
+  /// Rate limiting, per subscriber: he joins and leaves a call six times an
+  /// evening and nobody wants six notifications about it.
+  lastNotifiedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, discordId, kind])
+  @@index([discordId, kind], map: "idx_discord_watch_alert_target")
+  @@map("discord_watch_alert")
 }
 
 /// One contiguous run of a presence STATE: a status (online/idle/dnd) held on a

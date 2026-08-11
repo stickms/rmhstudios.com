@@ -32,7 +32,18 @@ import {
   SUBJECT_FALLBACK_NAME,
   TRACKING_TIME_ZONE,
 } from './config';
-import { isValidDateKey, isoWeekKey, monthKeyOf, shiftDateKey } from './dates';
+import {
+  daysBetween,
+  isoWeekBounds,
+  isoWeekKey,
+  isValidDateKey,
+  isValidMonthKey,
+  monthBounds,
+  monthKeyOf,
+  shiftDateKey,
+  shiftMonthKey,
+  shiftWeekKey,
+} from './dates';
 import type {
   DiscordStatus,
   WatchActivityDTO,
@@ -151,6 +162,10 @@ const DAY_SELECT = {
   lateNightMessages: true,
   reactionsGiven: true,
   reactionsReceived: true,
+  jobMentions: true,
+  typingStarts: true,
+  typingAbandoned: true,
+  typingAbandonedSec: true,
   gamingSec: true,
   gameSessions: true,
   topGame: true,
@@ -230,6 +245,10 @@ function toDayDTO(row: DayRow, summary: WatchSummaryDTO | null): WatchDayDTO {
     lateNightMessages: row.lateNightMessages,
     reactionsGiven: row.reactionsGiven,
     reactionsReceived: row.reactionsReceived,
+    jobMentions: row.jobMentions,
+    typingStarts: row.typingStarts,
+    typingAbandoned: row.typingAbandoned,
+    typingAbandonedSec: row.typingAbandonedSec,
     gamingSec: row.gamingSec,
     gameSessions: row.gameSessions,
     topGame: row.topGame,
@@ -276,6 +295,10 @@ function emptyDay(dateKey: string): WatchDayDTO {
     lateNightMessages: 0,
     reactionsGiven: 0,
     reactionsReceived: 0,
+    jobMentions: 0,
+    typingStarts: 0,
+    typingAbandoned: 0,
+    typingAbandonedSec: 0,
     gamingSec: 0,
     gameSessions: 0,
     topGame: null,
@@ -424,6 +447,12 @@ function buildTotals(days: WatchDayDTO[], todayKey: string): WatchTotalsDTO {
     webSec: 0,
     reactionsGiven: 0,
     reactionsReceived: 0,
+    jobMentions: 0,
+    daysSinceJobMention: null,
+    lastJobMentionDateKey: null,
+    typingStarts: 0,
+    typingAbandoned: 0,
+    typingAbandonedSec: 0,
     peakVoiceSec: 0,
     peakVoiceDateKey: null,
     currentStreak: 0,
@@ -460,6 +489,12 @@ function buildTotals(days: WatchDayDTO[], todayKey: string): WatchTotalsDTO {
     totals.lateNightMessages += day.lateNightMessages;
     totals.reactionsGiven += day.reactionsGiven;
     totals.reactionsReceived += day.reactionsReceived;
+    totals.jobMentions += day.jobMentions;
+    totals.typingStarts += day.typingStarts;
+    totals.typingAbandoned += day.typingAbandoned;
+    totals.typingAbandonedSec += day.typingAbandonedSec;
+    // The LAST day it came up, not the first: the page counts days since.
+    if (day.jobMentions > 0) totals.lastJobMentionDateKey = day.dateKey;
 
     if (day.voiceSec > totals.peakVoiceSec) {
       totals.peakVoiceSec = day.voiceSec;
@@ -487,6 +522,13 @@ function buildTotals(days: WatchDayDTO[], todayKey: string): WatchTotalsDTO {
   while (cursor >= 0 && days[cursor].voiceSec > 0) {
     totals.currentStreak += 1;
     cursor -= 1;
+  }
+
+  // Days since, derived from the key rather than from a clock: `todayKey` is
+  // already the tracking zone's today, and re-deriving it here would be a second
+  // answer to a question the server has answered once.
+  if (totals.lastJobMentionDateKey) {
+    totals.daysSinceJobMention = daysBetween(totals.lastJobMentionDateKey, todayKey);
   }
 
   const topGame = [...games.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
@@ -656,5 +698,117 @@ export async function getDaySnapshot(
     prevKey,
     nextKey: nextKey <= todayKey ? nextKey : null,
     updatedAt: row?.updatedAt.toISOString() ?? null,
+  };
+}
+
+/** A week or a month, for its permalink and its unfurl card. */
+export interface PeriodSnapshot {
+  period: 'week' | 'month';
+  periodKey: string;
+  /** The span it covers, clamped so it never runs past today. */
+  firstKey: string;
+  lastKey: string;
+  /** Dense: every day of the span, zeros where the tracker wrote nothing. */
+  days: WatchDayDTO[];
+  summary: WatchSummaryDTO | null;
+  /** Folded from `days`, so a period page states the same figures the page does. */
+  totals: WatchTotalsDTO;
+  prevKey: string | null;
+  nextKey: string | null;
+  /** Newest row timestamp in the span — the OG card's content cache key. */
+  updatedAt: string | null;
+}
+
+/**
+ * A week or a month, assembled the same way a day is.
+ *
+ * Weeks and months already HAVE summaries — the summarizer writes all three
+ * periods — so the only thing missing was an address for them. This gives them
+ * one, with the same properties the day permalink has: dense days, a real
+ * unfurl, prev/next, and figures folded from the same rows the dossier folds.
+ *
+ * `null` only for a key that cannot exist (`2026-W99`, `2026-13`) or one that
+ * has not started yet. A period with nothing in it is NOT null — an empty week
+ * is a fact about him, and the page says so.
+ */
+export async function getPeriodSnapshot(
+  period: 'week' | 'month',
+  periodKey: string,
+  now: Date = new Date(),
+): Promise<PeriodSnapshot | null> {
+  const bounds =
+    period === 'week'
+      ? isoWeekBounds(periodKey)
+      : isValidMonthKey(periodKey)
+        ? monthBounds(periodKey)
+        : null;
+  if (!bounds) return null;
+
+  const todayKey = trackingTodayKey(now);
+  if (bounds.firstKey > todayKey) return null; // hasn't started
+  // A period in progress is clamped to today: the calendar half of a month that
+  // has not happened would otherwise render as a week of zeroes, which reads as
+  // "he did nothing" rather than "it is the 11th".
+  const lastKey = bounds.lastKey > todayKey ? todayKey : bounds.lastKey;
+
+  const [rows, summaryRow] = await Promise.all([
+    prisma.discordWatchDay.findMany({
+      where: {
+        discordId: SUBJECT_DISCORD_ID,
+        dateKey: { gte: bounds.firstKey, lte: lastKey },
+      },
+      orderBy: { dateKey: 'asc' },
+      select: { ...DAY_SELECT, updatedAt: true },
+    }),
+    prisma.discordWatchSummary.findFirst({
+      where: { discordId: SUBJECT_DISCORD_ID, period, periodKey },
+      select: {
+        period: true,
+        periodKey: true,
+        headline: true,
+        summary: true,
+        verdict: true,
+        mood: true,
+        topics: true,
+        generatedAt: true,
+      },
+    }),
+  ]);
+
+  const byKey = new Map(rows.map((row) => [row.dateKey, row]));
+  const days: WatchDayDTO[] = [];
+  for (let key = bounds.firstKey; key <= lastKey; key = shiftDateKey(key, 1)) {
+    const row = byKey.get(key);
+    days.push(row ? toDayDTO(row, null) : emptyDay(key));
+  }
+
+  const updatedAt = rows.reduce<Date | null>(
+    (newest, row) => (!newest || row.updatedAt > newest ? row.updatedAt : newest),
+    null,
+  );
+
+  // Prev is unconditional (the tracker's history simply runs out and that page
+  // says so); next is suppressed once it would point at a period that has not
+  // begun, which is the one case that genuinely has no page.
+  const prevKey = period === 'week' ? shiftWeekKey(periodKey, -1) : shiftMonthKey(periodKey, -1);
+  const nextKey = period === 'week' ? shiftWeekKey(periodKey, 1) : shiftMonthKey(periodKey, 1);
+  const nextStarts =
+    nextKey === null
+      ? null
+      : period === 'week'
+        ? (isoWeekBounds(nextKey)?.firstKey ?? null)
+        : monthBounds(nextKey).firstKey;
+
+  return {
+    period,
+    periodKey,
+    firstKey: bounds.firstKey,
+    lastKey,
+    days,
+    summary: summaryRow ? toSummaryDTO(summaryRow) : null,
+    totals: buildTotals(days, todayKey),
+    prevKey,
+    nextKey: nextKey && nextStarts && nextStarts <= todayKey ? nextKey : null,
+    updatedAt: updatedAt?.toISOString() ?? null,
   };
 }

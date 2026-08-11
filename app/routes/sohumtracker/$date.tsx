@@ -143,6 +143,7 @@ function DayRoute() {
             <div className="stk-grid-2">
               <SummaryCard
                 summary={week}
+                showPermalink
                 emptyTitle={t('week-empty-title', { defaultValue: 'This week' })}
                 emptyBody={t('week-empty-body', {
                   defaultValue: 'Not written up yet. It settles once the week has enough in it.',
@@ -150,6 +151,7 @@ function DayRoute() {
               />
               <SummaryCard
                 summary={month}
+                showPermalink
                 emptyTitle={t('month-empty-title', { defaultValue: 'This month' })}
                 emptyBody={t('month-empty-body', {
                   defaultValue: 'Not written up yet. It settles once the month has enough in it.',

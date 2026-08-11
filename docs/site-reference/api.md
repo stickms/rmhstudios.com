@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 592 files across 137 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 594 files across 137 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -1255,11 +1255,13 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/sohumtracker`
 
-2 routes.
+4 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/sohumtracker/activity` | `GET` | `app/routes/api/sohumtracker/activity.ts` |
+| `/api/sohumtracker/alert` | `GET` `POST` | `app/routes/api/sohumtracker/alert.ts` |
+| `/api/sohumtracker/export` | `GET` | `app/routes/api/sohumtracker/export.ts` |
 | `/api/sohumtracker/stream` | `GET` | `app/routes/api/sohumtracker/stream.ts` |
 
 ## `/api/spaces`
