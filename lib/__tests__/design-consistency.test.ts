@@ -208,6 +208,13 @@ const FULLSCREEN_TIER_DIRS = new Set([
   // A single-purpose page that pastiches another site's fixed palette. It has
   // no theme to be consistent with — that is the whole point of it.
   'sohumbum',
+  // The live activity dossier. It reports on Discord and is drawn in Discord's
+  // own greys, blurple and — the part that matters — its four status colours, so
+  // a green dot here means what a green dot means in the client. Re-tinting
+  // those to the site accent would break the only vocabulary the page relies on
+  // its readers already having. Declares its own `--sb2-*` group in
+  // `components/sohumbum2/sohumbum2.css`.
+  'sohumbum2',
 ]);
 
 /** Top-level route trees that are full-screen experiences, not `_site` pages. */
@@ -241,6 +248,8 @@ const FULLSCREEN_ROUTE_SEGMENTS = new Set([
   'secret',
   'slice-it',
   'sohumbum',
+  // The live activity dossier — see the note beside `sohumbum2` above.
+  'sohumbum2',
   'strategies',
   'studio',
   'synapse-storm',

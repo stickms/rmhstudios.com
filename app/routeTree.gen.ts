@@ -191,6 +191,8 @@ import { Route as SecretSignalForgeRouteImport } from './routes/secret/signal-fo
 import { Route as SecretVegaRouteImport } from './routes/secret/vega'
 import { Route as SitemapsNameRouteImport } from './routes/sitemaps.$name'
 import { Route as SliceItIndexRouteImport } from './routes/slice-it/index'
+import { Route as Sohumbum2IndexRouteImport } from './routes/sohumbum2/index'
+import { Route as Sohumbum2DateRouteImport } from './routes/sohumbum2/$date'
 import { Route as StrategiesIndexRouteImport } from './routes/strategies/index'
 import { Route as StrategiesIncidentsRouteImport } from './routes/strategies/incidents'
 import { Route as StrategiesSahurRouteImport } from './routes/strategies/sahur'
@@ -437,6 +439,7 @@ import { Route as ApiNotificationsIndexRouteImport } from './routes/api/notifica
 import { Route as ApiNotificationsPreferencesRouteImport } from './routes/api/notifications/preferences'
 import { Route as ApiNotificationsReadRouteImport } from './routes/api/notifications/read'
 import { Route as ApiOgPf2ecalRouteImport } from './routes/api/og/pf2ecal'
+import { Route as ApiOgSohumbum2RouteImport } from './routes/api/og/sohumbum2'
 import { Route as ApiOnboardingIndexRouteImport } from './routes/api/onboarding/index'
 import { Route as ApiOnboardingFirstWeekRouteImport } from './routes/api/onboarding/first-week'
 import { Route as ApiPersonasIndexRouteImport } from './routes/api/personas/index'
@@ -526,6 +529,7 @@ import { Route as ApiSliceItShelvesRouteImport } from './routes/api/slice-it/she
 import { Route as ApiSliceItShowcaseRouteImport } from './routes/api/slice-it/showcase'
 import { Route as ApiSliceItSongsRouteImport } from './routes/api/slice-it/songs'
 import { Route as ApiSliceItUploaderStatsRouteImport } from './routes/api/slice-it/uploader-stats'
+import { Route as ApiSohumbum2ActivityRouteImport } from './routes/api/sohumbum2/activity'
 import { Route as ApiSpacesIndexRouteImport } from './routes/api/spaces/index'
 import { Route as ApiSpacesLiveRouteImport } from './routes/api/spaces/live'
 import { Route as ApiSpeedrunCategoriesRouteImport } from './routes/api/speedrun/categories'
@@ -1800,6 +1804,16 @@ const SliceItIndexRoute = SliceItIndexRouteImport.update({
   path: '/',
   getParentRoute: () => SliceItRoute,
 } as any)
+const Sohumbum2IndexRoute = Sohumbum2IndexRouteImport.update({
+  id: '/sohumbum2/',
+  path: '/sohumbum2/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Sohumbum2DateRoute = Sohumbum2DateRouteImport.update({
+  id: '/sohumbum2/$date',
+  path: '/sohumbum2/$date',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StrategiesIndexRoute = StrategiesIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -3046,6 +3060,11 @@ const ApiOgPf2ecalRoute = ApiOgPf2ecalRouteImport.update({
   path: '/api/og/pf2ecal',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOgSohumbum2Route = ApiOgSohumbum2RouteImport.update({
+  id: '/api/og/sohumbum2',
+  path: '/api/og/sohumbum2',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiOnboardingIndexRoute = ApiOnboardingIndexRouteImport.update({
   id: '/api/onboarding/',
   path: '/api/onboarding/',
@@ -3495,6 +3514,11 @@ const ApiSliceItSongsRoute = ApiSliceItSongsRouteImport.update({
 const ApiSliceItUploaderStatsRoute = ApiSliceItUploaderStatsRouteImport.update({
   id: '/api/slice-it/uploader-stats',
   path: '/api/slice-it/uploader-stats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSohumbum2ActivityRoute = ApiSohumbum2ActivityRouteImport.update({
+  id: '/api/sohumbum2/activity',
+  path: '/api/sohumbum2/activity',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSpacesIndexRoute = ApiSpacesIndexRouteImport.update({
@@ -5579,6 +5603,7 @@ export interface FileRoutesByFullPath {
   '/secret/signal-forge': typeof SecretSignalForgeRoute
   '/secret/vega': typeof SecretVegaRoute
   '/sitemaps/$name': typeof SitemapsNameRoute
+  '/sohumbum2/$date': typeof Sohumbum2DateRoute
   '/strategies/incidents': typeof StrategiesIncidentsRoute
   '/strategies/sahur': typeof StrategiesSahurRoute
   '/v/$slug': typeof VSlugRoute
@@ -5599,6 +5624,7 @@ export interface FileRoutesByFullPath {
   '/rmhtype/': typeof RmhtypeIndexRoute
   '/secret/': typeof SecretIndexRoute
   '/slice-it/': typeof SliceItIndexRoute
+  '/sohumbum2/': typeof Sohumbum2IndexRoute
   '/strategies/': typeof StrategiesIndexRoute
   '/studio/': typeof StudioIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
@@ -5798,6 +5824,7 @@ export interface FileRoutesByFullPath {
   '/api/notifications/preferences': typeof ApiNotificationsPreferencesRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
   '/api/og/pf2ecal': typeof ApiOgPf2ecalRoute
+  '/api/og/sohumbum2': typeof ApiOgSohumbum2Route
   '/api/onboarding/first-week': typeof ApiOnboardingFirstWeekRoute
   '/api/pf2ecal/announcements': typeof ApiPf2ecalAnnouncementsRouteWithChildren
   '/api/pf2ecal/ask': typeof ApiPf2ecalAskRoute
@@ -5874,6 +5901,7 @@ export interface FileRoutesByFullPath {
   '/api/slice-it/showcase': typeof ApiSliceItShowcaseRoute
   '/api/slice-it/songs': typeof ApiSliceItSongsRouteWithChildren
   '/api/slice-it/uploader-stats': typeof ApiSliceItUploaderStatsRoute
+  '/api/sohumbum2/activity': typeof ApiSohumbum2ActivityRoute
   '/api/spaces/live': typeof ApiSpacesLiveRoute
   '/api/speedrun/categories': typeof ApiSpeedrunCategoriesRoute
   '/api/speedrun/leaderboard': typeof ApiSpeedrunLeaderboardRoute
@@ -6433,6 +6461,7 @@ export interface FileRoutesByTo {
   '/secret/signal-forge': typeof SecretSignalForgeRoute
   '/secret/vega': typeof SecretVegaRoute
   '/sitemaps/$name': typeof SitemapsNameRoute
+  '/sohumbum2/$date': typeof Sohumbum2DateRoute
   '/strategies/incidents': typeof StrategiesIncidentsRoute
   '/strategies/sahur': typeof StrategiesSahurRoute
   '/v/$slug': typeof VSlugRoute
@@ -6454,6 +6483,7 @@ export interface FileRoutesByTo {
   '/rmhtype': typeof RmhtypeIndexRoute
   '/secret': typeof SecretIndexRoute
   '/slice-it': typeof SliceItIndexRoute
+  '/sohumbum2': typeof Sohumbum2IndexRoute
   '/strategies': typeof StrategiesIndexRoute
   '/studio': typeof StudioIndexRoute
   '/temple-of-joy': typeof TempleOfJoyIndexRoute
@@ -6653,6 +6683,7 @@ export interface FileRoutesByTo {
   '/api/notifications/preferences': typeof ApiNotificationsPreferencesRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
   '/api/og/pf2ecal': typeof ApiOgPf2ecalRoute
+  '/api/og/sohumbum2': typeof ApiOgSohumbum2Route
   '/api/onboarding/first-week': typeof ApiOnboardingFirstWeekRoute
   '/api/pf2ecal/announcements': typeof ApiPf2ecalAnnouncementsRouteWithChildren
   '/api/pf2ecal/ask': typeof ApiPf2ecalAskRoute
@@ -6729,6 +6760,7 @@ export interface FileRoutesByTo {
   '/api/slice-it/showcase': typeof ApiSliceItShowcaseRoute
   '/api/slice-it/songs': typeof ApiSliceItSongsRouteWithChildren
   '/api/slice-it/uploader-stats': typeof ApiSliceItUploaderStatsRoute
+  '/api/sohumbum2/activity': typeof ApiSohumbum2ActivityRoute
   '/api/spaces/live': typeof ApiSpacesLiveRoute
   '/api/speedrun/categories': typeof ApiSpeedrunCategoriesRoute
   '/api/speedrun/leaderboard': typeof ApiSpeedrunLeaderboardRoute
@@ -7315,6 +7347,7 @@ export interface FileRoutesById {
   '/secret/signal-forge': typeof SecretSignalForgeRoute
   '/secret/vega': typeof SecretVegaRoute
   '/sitemaps/$name': typeof SitemapsNameRoute
+  '/sohumbum2/$date': typeof Sohumbum2DateRoute
   '/strategies/incidents': typeof StrategiesIncidentsRoute
   '/strategies/sahur': typeof StrategiesSahurRoute
   '/v/$slug': typeof VSlugRoute
@@ -7336,6 +7369,7 @@ export interface FileRoutesById {
   '/rmhtype/': typeof RmhtypeIndexRoute
   '/secret/': typeof SecretIndexRoute
   '/slice-it/': typeof SliceItIndexRoute
+  '/sohumbum2/': typeof Sohumbum2IndexRoute
   '/strategies/': typeof StrategiesIndexRoute
   '/studio/': typeof StudioIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
@@ -7535,6 +7569,7 @@ export interface FileRoutesById {
   '/api/notifications/preferences': typeof ApiNotificationsPreferencesRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
   '/api/og/pf2ecal': typeof ApiOgPf2ecalRoute
+  '/api/og/sohumbum2': typeof ApiOgSohumbum2Route
   '/api/onboarding/first-week': typeof ApiOnboardingFirstWeekRoute
   '/api/pf2ecal/announcements': typeof ApiPf2ecalAnnouncementsRouteWithChildren
   '/api/pf2ecal/ask': typeof ApiPf2ecalAskRoute
@@ -7611,6 +7646,7 @@ export interface FileRoutesById {
   '/api/slice-it/showcase': typeof ApiSliceItShowcaseRoute
   '/api/slice-it/songs': typeof ApiSliceItSongsRouteWithChildren
   '/api/slice-it/uploader-stats': typeof ApiSliceItUploaderStatsRoute
+  '/api/sohumbum2/activity': typeof ApiSohumbum2ActivityRoute
   '/api/spaces/live': typeof ApiSpacesLiveRoute
   '/api/speedrun/categories': typeof ApiSpeedrunCategoriesRoute
   '/api/speedrun/leaderboard': typeof ApiSpeedrunLeaderboardRoute
@@ -8198,6 +8234,7 @@ export interface FileRouteTypes {
     | '/secret/signal-forge'
     | '/secret/vega'
     | '/sitemaps/$name'
+    | '/sohumbum2/$date'
     | '/strategies/incidents'
     | '/strategies/sahur'
     | '/v/$slug'
@@ -8218,6 +8255,7 @@ export interface FileRouteTypes {
     | '/rmhtype/'
     | '/secret/'
     | '/slice-it/'
+    | '/sohumbum2/'
     | '/strategies/'
     | '/studio/'
     | '/temple-of-joy/'
@@ -8417,6 +8455,7 @@ export interface FileRouteTypes {
     | '/api/notifications/preferences'
     | '/api/notifications/read'
     | '/api/og/pf2ecal'
+    | '/api/og/sohumbum2'
     | '/api/onboarding/first-week'
     | '/api/pf2ecal/announcements'
     | '/api/pf2ecal/ask'
@@ -8493,6 +8532,7 @@ export interface FileRouteTypes {
     | '/api/slice-it/showcase'
     | '/api/slice-it/songs'
     | '/api/slice-it/uploader-stats'
+    | '/api/sohumbum2/activity'
     | '/api/spaces/live'
     | '/api/speedrun/categories'
     | '/api/speedrun/leaderboard'
@@ -9052,6 +9092,7 @@ export interface FileRouteTypes {
     | '/secret/signal-forge'
     | '/secret/vega'
     | '/sitemaps/$name'
+    | '/sohumbum2/$date'
     | '/strategies/incidents'
     | '/strategies/sahur'
     | '/v/$slug'
@@ -9073,6 +9114,7 @@ export interface FileRouteTypes {
     | '/rmhtype'
     | '/secret'
     | '/slice-it'
+    | '/sohumbum2'
     | '/strategies'
     | '/studio'
     | '/temple-of-joy'
@@ -9272,6 +9314,7 @@ export interface FileRouteTypes {
     | '/api/notifications/preferences'
     | '/api/notifications/read'
     | '/api/og/pf2ecal'
+    | '/api/og/sohumbum2'
     | '/api/onboarding/first-week'
     | '/api/pf2ecal/announcements'
     | '/api/pf2ecal/ask'
@@ -9348,6 +9391,7 @@ export interface FileRouteTypes {
     | '/api/slice-it/showcase'
     | '/api/slice-it/songs'
     | '/api/slice-it/uploader-stats'
+    | '/api/sohumbum2/activity'
     | '/api/spaces/live'
     | '/api/speedrun/categories'
     | '/api/speedrun/leaderboard'
@@ -9933,6 +9977,7 @@ export interface FileRouteTypes {
     | '/secret/signal-forge'
     | '/secret/vega'
     | '/sitemaps/$name'
+    | '/sohumbum2/$date'
     | '/strategies/incidents'
     | '/strategies/sahur'
     | '/v/$slug'
@@ -9954,6 +9999,7 @@ export interface FileRouteTypes {
     | '/rmhtype/'
     | '/secret/'
     | '/slice-it/'
+    | '/sohumbum2/'
     | '/strategies/'
     | '/studio/'
     | '/temple-of-joy/'
@@ -10153,6 +10199,7 @@ export interface FileRouteTypes {
     | '/api/notifications/preferences'
     | '/api/notifications/read'
     | '/api/og/pf2ecal'
+    | '/api/og/sohumbum2'
     | '/api/onboarding/first-week'
     | '/api/pf2ecal/announcements'
     | '/api/pf2ecal/ask'
@@ -10229,6 +10276,7 @@ export interface FileRouteTypes {
     | '/api/slice-it/showcase'
     | '/api/slice-it/songs'
     | '/api/slice-it/uploader-stats'
+    | '/api/sohumbum2/activity'
     | '/api/spaces/live'
     | '/api/speedrun/categories'
     | '/api/speedrun/leaderboard'
@@ -10743,9 +10791,11 @@ export interface RootRouteChildren {
   RefCodeRoute: typeof RefCodeRoute
   ReplaysIdRoute: typeof ReplaysIdRoute
   SitemapsNameRoute: typeof SitemapsNameRoute
+  Sohumbum2DateRoute: typeof Sohumbum2DateRoute
   VSlugRoute: typeof VSlugRoute
   VNewRoute: typeof VNewRoute
   DiscordIndexRoute: typeof DiscordIndexRoute
+  Sohumbum2IndexRoute: typeof Sohumbum2IndexRoute
   ApiAccountDeleteRoute: typeof ApiAccountDeleteRoute
   ApiAccountExportRoute: typeof ApiAccountExportRoute
   ApiAccountStandingRoute: typeof ApiAccountStandingRoute
@@ -10867,6 +10917,7 @@ export interface RootRouteChildren {
   ApiNotificationsPreferencesRoute: typeof ApiNotificationsPreferencesRoute
   ApiNotificationsReadRoute: typeof ApiNotificationsReadRoute
   ApiOgPf2ecalRoute: typeof ApiOgPf2ecalRoute
+  ApiOgSohumbum2Route: typeof ApiOgSohumbum2Route
   ApiOnboardingFirstWeekRoute: typeof ApiOnboardingFirstWeekRoute
   ApiPf2ecalAnnouncementsRoute: typeof ApiPf2ecalAnnouncementsRouteWithChildren
   ApiPf2ecalAskRoute: typeof ApiPf2ecalAskRoute
@@ -10930,6 +10981,7 @@ export interface RootRouteChildren {
   ApiSliceItShowcaseRoute: typeof ApiSliceItShowcaseRoute
   ApiSliceItSongsRoute: typeof ApiSliceItSongsRouteWithChildren
   ApiSliceItUploaderStatsRoute: typeof ApiSliceItUploaderStatsRoute
+  ApiSohumbum2ActivityRoute: typeof ApiSohumbum2ActivityRoute
   ApiSpacesLiveRoute: typeof ApiSpacesLiveRoute
   ApiSpeedrunCategoriesRoute: typeof ApiSpeedrunCategoriesRoute
   ApiSpeedrunLeaderboardRoute: typeof ApiSpeedrunLeaderboardRoute
@@ -12437,6 +12489,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/slice-it/'
       preLoaderRoute: typeof SliceItIndexRouteImport
       parentRoute: typeof SliceItRoute
+    }
+    '/sohumbum2/': {
+      id: '/sohumbum2/'
+      path: '/sohumbum2'
+      fullPath: '/sohumbum2/'
+      preLoaderRoute: typeof Sohumbum2IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sohumbum2/$date': {
+      id: '/sohumbum2/$date'
+      path: '/sohumbum2/$date'
+      fullPath: '/sohumbum2/$date'
+      preLoaderRoute: typeof Sohumbum2DateRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/strategies/': {
       id: '/strategies/'
@@ -14160,6 +14226,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiOgPf2ecalRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/og/sohumbum2': {
+      id: '/api/og/sohumbum2'
+      path: '/api/og/sohumbum2'
+      fullPath: '/api/og/sohumbum2'
+      preLoaderRoute: typeof ApiOgSohumbum2RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/onboarding/': {
       id: '/api/onboarding/'
       path: '/api/onboarding'
@@ -14781,6 +14854,13 @@ declare module '@tanstack/react-router' {
       path: '/api/slice-it/uploader-stats'
       fullPath: '/api/slice-it/uploader-stats'
       preLoaderRoute: typeof ApiSliceItUploaderStatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/sohumbum2/activity': {
+      id: '/api/sohumbum2/activity'
+      path: '/api/sohumbum2/activity'
+      fullPath: '/api/sohumbum2/activity'
+      preLoaderRoute: typeof ApiSohumbum2ActivityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/spaces/': {
@@ -19082,9 +19162,11 @@ const rootRouteChildren: RootRouteChildren = {
   RefCodeRoute: RefCodeRoute,
   ReplaysIdRoute: ReplaysIdRoute,
   SitemapsNameRoute: SitemapsNameRoute,
+  Sohumbum2DateRoute: Sohumbum2DateRoute,
   VSlugRoute: VSlugRoute,
   VNewRoute: VNewRoute,
   DiscordIndexRoute: DiscordIndexRoute,
+  Sohumbum2IndexRoute: Sohumbum2IndexRoute,
   ApiAccountDeleteRoute: ApiAccountDeleteRoute,
   ApiAccountExportRoute: ApiAccountExportRoute,
   ApiAccountStandingRoute: ApiAccountStandingRoute,
@@ -19206,6 +19288,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiNotificationsPreferencesRoute: ApiNotificationsPreferencesRoute,
   ApiNotificationsReadRoute: ApiNotificationsReadRoute,
   ApiOgPf2ecalRoute: ApiOgPf2ecalRoute,
+  ApiOgSohumbum2Route: ApiOgSohumbum2Route,
   ApiOnboardingFirstWeekRoute: ApiOnboardingFirstWeekRoute,
   ApiPf2ecalAnnouncementsRoute: ApiPf2ecalAnnouncementsRouteWithChildren,
   ApiPf2ecalAskRoute: ApiPf2ecalAskRoute,
@@ -19269,6 +19352,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSliceItShowcaseRoute: ApiSliceItShowcaseRoute,
   ApiSliceItSongsRoute: ApiSliceItSongsRouteWithChildren,
   ApiSliceItUploaderStatsRoute: ApiSliceItUploaderStatsRoute,
+  ApiSohumbum2ActivityRoute: ApiSohumbum2ActivityRoute,
   ApiSpacesLiveRoute: ApiSpacesLiveRoute,
   ApiSpeedrunCategoriesRoute: ApiSpeedrunCategoriesRoute,
   ApiSpeedrunLeaderboardRoute: ApiSpeedrunLeaderboardRoute,
