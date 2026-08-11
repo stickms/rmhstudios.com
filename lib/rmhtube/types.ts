@@ -7,7 +7,9 @@
 
 // ─── Media Types ─────────────────────────────────────────────────
 
-export type MediaType = 'youtube' | 'twitch' | 'direct';
+import type { MediaType, LiveHint, ParsedMedia } from './media';
+
+export type { MediaType, LiveHint, ParsedMedia };
 
 // ─── Room Settings ───────────────────────────────────────────────
 
@@ -18,21 +20,39 @@ export interface RoomSettings {
   allowMemberSkip: boolean;
   autoPlay: boolean;
   password: string | null;
-  // Phase 3
   queueVoting: boolean;
   autoSortByVotes: boolean;
   loopQueue: boolean;
-  // Phase 5
   customReactions: string[] | null;
+  /**
+   * Pause the room while somebody is still buffering, rather than leaving them
+   * behind to be seek-chased for the rest of the video. The overlay this drives
+   * is the shared `PEERS_WAITING` one every other multiplayer app uses.
+   */
+  waitForSlowPeers: boolean;
 }
 
 // ─── Video State (ephemeral — not persisted) ─────────────────────
 
+/**
+ * `vod` — a fixed timeline every viewer can be placed on.
+ * `live` — a sliding window whose "position" is not comparable between
+ * viewers, so it is mirrored (play/pause) rather than synchronised.
+ */
+export type SyncMode = 'vod' | 'live';
+
 export interface VideoState {
+  mode: SyncMode;
   playing: boolean;
+  /** Position in seconds, true as of `updatedAt`. Unused when live. */
   currentTime: number;
   playbackRate: number;
+  /** Server-clock ms at which `currentTime` was true. */
   updatedAt: number;
+  /** The leader's playhead is not advancing — hold the timeline, don't project it. */
+  stalled: boolean;
+  /** Monotonic; lets a client drop an anchor that arrives out of order. */
+  rev: number;
 }
 
 // ─── Chat ────────────────────────────────────────────────────────
@@ -119,9 +139,27 @@ export interface ClientQueueItem {
   addedByName: string;
   addedAt: number;
   position: number;
-  // Phase 3: Queue Voting
   votes: number;
   votedByMe: boolean;
+  /**
+   * Whether the source has a fixed timeline. Starts as the URL's hint and is
+   * replaced by what the leader's player actually reports, because
+   * `/watch?v=…` is equally how YouTube addresses a live broadcast.
+   */
+  live: boolean;
+}
+
+/**
+ * A queue item as broadcast to the whole room.
+ *
+ * `votedByMe` is per-viewer, so a broadcast cannot carry it — it carries the
+ * voter list and each client derives its own flag (`adoptQueue` in the store).
+ * The old broadcasts simply omitted both, so every reorder, shuffle and
+ * auto-sort replaced the client's queue with items whose vote counts had reset
+ * to zero.
+ */
+export interface QueueBroadcastItem extends Omit<ClientQueueItem, 'votedByMe'> {
+  voters: string[];
 }
 
 // ─── Public Room Info (for room browser) ─────────────────────────

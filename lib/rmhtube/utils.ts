@@ -4,7 +4,13 @@
 
 import { customAlphabet } from 'nanoid';
 import { ROOM_CODE_LENGTH, ROOM_CODE_ALPHABET } from './constants';
-import type { MediaType } from './types';
+
+/**
+ * Media parsing moved to `./media` — one parser, written against react-player's
+ * own matchers. These re-exports keep existing call sites resolving.
+ */
+export { parseMedia, detectMediaType, extractYouTubeId, youtubeThumbnail } from './media';
+export type { MediaType, LiveHint, ParsedMedia } from './media';
 
 const generateCode = customAlphabet(ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH);
 
@@ -28,36 +34,6 @@ export function generateRoomCode(): string {
 }
 
 /**
- * Detect the media type from a URL.
- * Returns null if the URL is not a supported media source.
- */
-export function detectMediaType(url: string): MediaType | null {
-  try {
-    const parsed = new URL(url);
-    const host = parsed.hostname.replace(/^www\./, '');
-
-    // YouTube
-    if (host === 'youtube.com' || host === 'youtu.be' || host === 'm.youtube.com') {
-      return 'youtube';
-    }
-
-    // Twitch
-    if (host === 'twitch.tv' || host.endsWith('.twitch.tv')) {
-      return 'twitch';
-    }
-
-    // Direct video files
-    if (/\.(mp4|webm|ogg|m3u8|mpd)(\?|$)/i.test(parsed.pathname)) {
-      return 'direct';
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-/**
  * Format seconds into mm:ss or h:mm:ss.
  */
 export function formatDuration(seconds: number | null): string {
@@ -67,30 +43,6 @@ export function formatDuration(seconds: number | null): string {
   const s = Math.floor(seconds % 60);
   const pad = (n: number) => String(n).padStart(2, '0');
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
-}
-
-/**
- * Extract a YouTube video ID from a URL.
- */
-export function extractYouTubeId(url: string): string | null {
-  try {
-    const parsed = new URL(url);
-    const host = parsed.hostname.replace(/^www\./, '');
-    if (host === 'youtu.be') return parsed.pathname.slice(1) || null;
-    if (host === 'youtube.com' || host === 'm.youtube.com') {
-      return parsed.searchParams.get('v') || null;
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Build a YouTube thumbnail URL from a video ID.
- */
-export function youtubeThumbUrl(videoId: string): string {
-  return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
 }
 
 /**

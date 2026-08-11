@@ -13,13 +13,13 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from "react-i18next";
-import { connectToRmhTube, getSocket, disconnectFromRmhTube, emit } from '@/lib/rmhtube/socket';
+import { connectToRmhTube, emit } from '@/lib/rmhtube/socket';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { S2C, C2S } from '@/lib/rmhtube/events';
 import { SHORTCUTS, AUTO_AFK_TIMEOUT_MS } from '@/lib/rmhtube/constants';
 import { toast } from '@/lib/rmhtube/toast-store';
 import RmhTubeHeader from '@/components/rmhtube/RmhTubeHeader';
-import RoomSettings from '@/components/rmhtube/RoomSettings';
+import SettingsPanel from '@/components/rmhtube/SettingsPanel';
 import VideoPlayer from '@/components/rmhtube/VideoPlayer';
 import type { VideoPlayerHandle } from '@/components/rmhtube/VideoPlayer';
 import HostControls from '@/components/rmhtube/HostControls';
@@ -44,7 +44,6 @@ export default function RmhTubeRoomPage() {
   const connectionStatus = useRmhTubeStore((s) => s.connectionStatus);
   const theaterMode = useRmhTubeStore((s) => s.settings.theaterMode);
   const layoutDensity = useRmhTubeStore((s) => s.settings.layoutDensity);
-  const updateSettings = useRmhTubeStore((s) => s.updateSettings);
   const [mobileTab, setMobileTab] = useState<MobileTab>('chat');
   const [isDesktop, setIsDesktop] = useState(true);
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -226,7 +225,10 @@ export default function RmhTubeRoomPage() {
   }, [roomId]);
 
   const handleVideoEnded = useCallback(() => {
-    if (room && room.myUserId === room.hostUserId) {
+    // The server accepts a skip from the LEADER, not the host. When the two
+    // were different people this asked the wrong one, the server answered
+    // NOT_LEADER, and the queue simply stopped at the end of a video.
+    if (room && room.myUserId === room.leaderUserId) {
       emit(C2S.QUEUE_SKIP, {});
     }
   }, [room]);
@@ -264,7 +266,6 @@ export default function RmhTubeRoomPage() {
 
   const isHost = room.myUserId === room.hostUserId;
   const isLeader = room.myUserId === room.leaderUserId;
-  const currentUrl = room.currentItem?.url ?? null;
 
   return (
     <div className={`app-viewport ${densityClass} ${theaterMode ? 'rmhtube-theater-mode' : ''}`}>
@@ -297,7 +298,7 @@ export default function RmhTubeRoomPage() {
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
             </button>
           )}
-          <RoomSettings />
+          <SettingsPanel />
         </div>
       </div>
 
@@ -310,7 +311,7 @@ export default function RmhTubeRoomPage() {
             <div className={`flex flex-col min-h-0 overflow-hidden ${!theaterMode ? 'border-r border-(--app-border)' : ''}`}>
               {/* Video player */}
               <div className={`shrink-0 p-4 pb-2 *:max-h-full rmhtube-video-container ${theaterMode ? 'max-h-[85%]' : 'max-h-[70%]'}`}>
-                <VideoPlayer ref={videoPlayerRef} url={currentUrl} isHost={isHost} isLeader={isLeader} onEnded={handleVideoEnded} />
+                <VideoPlayer ref={videoPlayerRef} item={room.currentItem} isLeader={isLeader} onEnded={handleVideoEnded} />
               </div>
 
               {/* Controls / Now playing bar */}
@@ -378,7 +379,7 @@ export default function RmhTubeRoomPage() {
           /* Mobile layout */
           <div className="flex flex-col h-full min-h-0">
             <div className="shrink-0 p-3 pb-0">
-              <VideoPlayer ref={videoPlayerRef} url={currentUrl} isHost={isHost} isLeader={isLeader} onEnded={handleVideoEnded} />
+              <VideoPlayer ref={videoPlayerRef} item={room.currentItem} isLeader={isLeader} onEnded={handleVideoEnded} />
             </div>
 
             <div className="shrink-0">

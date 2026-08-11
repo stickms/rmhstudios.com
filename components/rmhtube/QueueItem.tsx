@@ -4,7 +4,7 @@
  */
 'use client';
 
-import { X, GripVertical, Play, ThumbsUp, ListPlus } from 'lucide-react';
+import { X, GripVertical, Play, ThumbsUp, ListPlus, Radio } from 'lucide-react';
 import { useTranslation } from "react-i18next";
 import { formatDuration } from '@/lib/rmhtube/utils';
 import type { ClientQueueItem } from '@/lib/rmhtube/types';
@@ -12,7 +12,8 @@ import type { ClientQueueItem } from '@/lib/rmhtube/types';
 interface QueueItemProps {
   item: ClientQueueItem;
   isActive: boolean;
-  isHost: boolean;
+  /** May reorder and jump the queue — that is the LEADER, not the host. */
+  canControl: boolean;
   canRemove: boolean;
   queueVoting: boolean;
   onRemove: () => void;
@@ -21,7 +22,7 @@ interface QueueItemProps {
   onAddToPlaylist?: () => void;
 }
 
-export default function QueueItem({ item, isActive, isHost, canRemove, queueVoting, onRemove, onPlay, onVote, onAddToPlaylist }: QueueItemProps) {
+export default function QueueItem({ item, isActive, canControl, canRemove, queueVoting, onRemove, onPlay, onVote, onAddToPlaylist }: QueueItemProps) {
   const { t } = useTranslation("c-rmhtube");
   return (
     <div
@@ -31,8 +32,8 @@ export default function QueueItem({ item, isActive, isHost, canRemove, queueVoti
           : 'bg-(--app-bg) hover:bg-(--app-surface-hover)'
       }`}
     >
-      {/* Drag handle (host only) */}
-      {isHost && (
+      {/* Drag handle */}
+      {canControl && (
         <div className="shrink-0 cursor-grab text-(--app-text-dim) hover:text-(--app-text-muted)">
           <GripVertical className="h-4 w-4" />
         </div>
@@ -52,12 +53,23 @@ export default function QueueItem({ item, isActive, isHost, canRemove, queueVoti
       )}
 
       {/* Info */}
-      <div className="flex-1 min-w-0" onClick={isHost ? onPlay : undefined} role={isHost ? 'button' : undefined}>
-        <p className={`text-sm font-medium truncate ${isHost ? 'cursor-pointer hover:text-(--app-accent)' : ''} text-(--app-text)`}>
+      <div className="flex-1 min-w-0" onClick={canControl ? onPlay : undefined} role={canControl ? 'button' : undefined}>
+        <p className={`text-sm font-medium truncate ${canControl ? 'cursor-pointer hover:text-(--app-accent)' : ''} text-(--app-text)`}>
           {item.title}
         </p>
-        <p className="text-xs text-(--app-text-dim)">
-          {item.addedByName} · {formatDuration(item.duration)}
+        <p className="flex items-center gap-1.5 text-xs text-(--app-text-dim)">
+          <span className="truncate">{item.addedByName}</span>
+          <span aria-hidden>·</span>
+          {/* A broadcast has no runtime to show, and `--:--` reads as missing
+              data rather than as what it is. */}
+          {item.live ? (
+            <span className="inline-flex items-center gap-1 font-semibold uppercase tracking-wide text-(--app-danger)">
+              <Radio className="h-3 w-3" aria-hidden />
+              {t("live", { defaultValue: "Live" })}
+            </span>
+          ) : (
+            <span>{formatDuration(item.duration)}</span>
+          )}
         </p>
       </div>
 

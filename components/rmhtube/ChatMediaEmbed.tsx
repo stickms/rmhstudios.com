@@ -1,8 +1,20 @@
 /**
- * ChatMediaEmbed — Inline image/GIF rendering for chat messages.
+ * ChatMediaEmbed — inline images and GIFs in chat.
  *
- * Detects image URLs, Giphy links, and Tenor links in message content
- * and renders them inline below the text.
+ * Two things here exist because of how chat behaved without them.
+ *
+ * **The parse is cached.** `stripEmbedUrls` and `extractMediaEmbeds` were
+ * called separately for every message on every render — a regex sweep plus a
+ * `new URL()` per link, twice, across the whole 200-message transcript, on a
+ * panel that re-rendered every two seconds because it subscribed to the entire
+ * store. Messages are immutable, so their parse is too.
+ *
+ * **Every embed reserves its space.** An image with no intrinsic size is zero
+ * pixels tall until the network answers, so the transcript grew *after* the
+ * scroll that was supposed to show the message, leaving it off-screen. The
+ * reserved box means the layout is right from the first frame;
+ * `useStickToBottom`'s ResizeObserver covers whatever the reservation gets
+ * wrong.
  */
 'use client';
 
@@ -14,7 +26,6 @@ import { safeHref } from '@/lib/url-safety';
 // ─── URL extraction & classification ─────────────────────────────
 
 const URL_REGEX = /https?:\/\/[^\s<>"']+/gi;
-
 const IMAGE_EXT_REGEX = /\.(gif|png|jpe?g|webp|avif)(\?[^\s]*)?$/i;
 
 type MediaEmbedInfo = {
@@ -23,24 +34,51 @@ type MediaEmbedInfo = {
   type: 'image' | 'giphy' | 'tenor' | 'tenor-pending';
 };
 
-/**
- * Strip embedded media URLs from message text.
- * Returns the content with those URLs removed (and trimmed).
- */
-export function stripEmbedUrls(content: string): string {
-  const embeds = extractMediaEmbeds(content);
-  if (embeds.length === 0) return content;
-  const embedUrls = new Set(embeds.map((e) => e.originalUrl));
-  return content
-    .replace(URL_REGEX, (match) => (embedUrls.has(match) ? '' : match))
-    .replace(/\s{2,}/g, ' ')
-    .trim();
+export interface MessageMedia {
+  /** The message text with embedded URLs removed. */
+  text: string;
+  embeds: MediaEmbedInfo[];
 }
 
 /**
- * Extract embeddable media from message content.
- * Returns an array of media info objects.
+ * Parsed messages, keyed by content.
+ *
+ * Bounded because a long watch party's transcript is bounded but its *history*
+ * is not: messages scroll out of the store and their entries would otherwise
+ * outlive them.
  */
+const MESSAGE_CACHE_LIMIT = 500;
+const messageCache = new Map<string, MessageMedia>();
+
+/** Text and embeds for a message, parsed once. */
+export function parseMessageMedia(content: string): MessageMedia {
+  const cached = messageCache.get(content);
+  if (cached) return cached;
+
+  const embeds = extractMediaEmbeds(content);
+  const embedUrls = new Set(embeds.map((e) => e.originalUrl));
+  const text = embeds.length === 0
+    ? content
+    : content
+        .replace(URL_REGEX, (match) => (embedUrls.has(match) ? '' : match))
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+
+  const parsed: MessageMedia = { text, embeds };
+  if (messageCache.size >= MESSAGE_CACHE_LIMIT) {
+    const oldest = messageCache.keys().next().value;
+    if (oldest !== undefined) messageCache.delete(oldest);
+  }
+  messageCache.set(content, parsed);
+  return parsed;
+}
+
+/** Message text with embedded media URLs removed. */
+export function stripEmbedUrls(content: string): string {
+  return parseMessageMedia(content).text;
+}
+
+/** Embeddable media in a message. */
 export function extractMediaEmbeds(content: string): MediaEmbedInfo[] {
   const urls = content.match(URL_REGEX);
   if (!urls) return [];
@@ -65,10 +103,7 @@ export function extractMediaEmbeds(content: string): MediaEmbedInfo[] {
       // Giphy share URL: giphy.com/gifs/[optional-slug-]ID
       if (host === 'giphy.com' && parsed.pathname.startsWith('/gifs/')) {
         const pathParts = parsed.pathname.split('/').pop() ?? '';
-        // The ID is after the last hyphen, or the whole slug if no hyphens
-        const gifId = pathParts.includes('-')
-          ? pathParts.split('-').pop()
-          : pathParts;
+        const gifId = pathParts.includes('-') ? pathParts.split('-').pop() : pathParts;
         if (gifId) {
           embeds.push({
             originalUrl: url,
@@ -116,14 +151,8 @@ export function extractMediaEmbeds(content: string): MediaEmbedInfo[] {
 const tenorCache = new Map<string, string>();
 
 function useTenorResolve(url: string | null): { src: string | null; loading: boolean } {
-  const [resolved, setResolved] = useState<string | null>(() => {
-    if (!url) return null;
-    return tenorCache.get(url) ?? null;
-  });
-  const [loading, setLoading] = useState(() => {
-    if (!url) return false;
-    return !tenorCache.has(url);
-  });
+  const [resolved, setResolved] = useState<string | null>(() => (url ? tenorCache.get(url) ?? null : null));
+  const [loading, setLoading] = useState(() => (url ? !tenorCache.has(url) : false));
 
   useEffect(() => {
     if (!url) return;
@@ -164,54 +193,89 @@ function useTenorResolve(url: string | null): { src: string | null; loading: boo
 
 // ─── Single embed renderer ───────────────────────────────────────
 
+/**
+ * The slot an embed occupies before its natural size is known. Wide enough to
+ * read, short enough that being wrong about it costs a small scroll rather
+ * than a page.
+ */
+const RESERVED_WIDTH = 200;
+const MAX_HEIGHT = 192;
+
+/**
+ * Both dimensions, in pixels.
+ *
+ * Deliberately not `aspect-ratio` beside a `max-height`: the clamp wins and the
+ * ratio is silently discarded, which the §12.1 viewport gate fails a build for.
+ * Scaling down to fit both bounds here says the same thing without the trap —
+ * and a box the browser knows the size of before the bytes arrive is the whole
+ * point of the reservation.
+ */
+function reservedBox(natural: { width: number; height: number } | null) {
+  if (!natural) return { width: RESERVED_WIDTH, height: Math.round((RESERVED_WIDTH * 3) / 4) };
+  // Never scale up: a small emoji-sized GIF keeps its own size.
+  const scale = Math.min(RESERVED_WIDTH / natural.width, MAX_HEIGHT / natural.height, 1);
+  return {
+    width: Math.max(1, Math.round(natural.width * scale)),
+    height: Math.max(1, Math.round(natural.height * scale)),
+  };
+}
+
 function EmbedItem({ embed }: { embed: MediaEmbedInfo }) {
-  const { t } = useTranslation("c-rmhtube");
+  const { t } = useTranslation('c-rmhtube');
   const [error, setError] = useState(false);
-  const tenor = useTenorResolve(
-    embed.type === 'tenor-pending' ? embed.originalUrl : null,
-  );
+  const [natural, setNatural] = useState<{ width: number; height: number } | null>(null);
+  const tenor = useTenorResolve(embed.type === 'tenor-pending' ? embed.originalUrl : null);
 
   const src = embed.type === 'tenor-pending' ? tenor.src : embed.directUrl;
 
-  if (!src || error) {
-    if (embed.type === 'tenor-pending' && tenor.loading) {
-      return (
-        <div className="mt-1 w-48 h-32 rounded-lg bg-(--app-surface) animate-pulse" />
-      );
-    }
-    if (error) {
-      return (
-        <div className="mt-1 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-(--app-surface) text-(--app-text-dim) text-xs">
-          <ImageOff className="h-3.5 w-3.5" />
-          {t("failed-to-load-media", { defaultValue: "Failed to load media" })}
-        </div>
-      );
-    }
-    return null;
+  if (error) {
+    return (
+      <div className="mt-1 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-(--app-surface) text-(--app-text-dim) text-xs">
+        <ImageOff className="h-3.5 w-3.5" aria-hidden />
+        {t('failed-to-load-media', { defaultValue: 'Failed to load media' })}
+      </div>
+    );
   }
 
+  // Same box whether we are resolving a Tenor share, waiting on bytes, or
+  // showing the image — so the transcript's height never jumps under the pin.
+  const box = reservedBox(natural);
+
   return (
-    <a
-      href={safeHref(embed.originalUrl)}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="mt-1 block max-w-xs"
+    <div
+      className="mt-1 overflow-hidden rounded-lg border border-(--app-border) bg-(--app-surface)"
+      style={box}
     >
-      <img
-        src={src}
-        alt=""
-        loading="lazy"
-        onError={() => setError(true)}
-        className="rounded-lg max-h-48 max-w-full object-contain border border-(--app-border)"
-      />
-    </a>
+      {src ? (
+        <a href={safeHref(embed.originalUrl)} target="_blank" rel="noopener noreferrer" className="block h-full w-full">
+          <img
+            src={src}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            width={box.width}
+            height={box.height}
+            onLoad={(event) => {
+              const { naturalWidth, naturalHeight } = event.currentTarget;
+              if (naturalWidth > 0 && naturalHeight > 0) {
+                setNatural({ width: naturalWidth, height: naturalHeight });
+              }
+            }}
+            onError={() => setError(true)}
+            className="h-full w-full object-cover"
+          />
+        </a>
+      ) : (
+        <div className="h-full w-full app-skeleton" />
+      )}
+    </div>
   );
 }
 
 // ─── Main export ─────────────────────────────────────────────────
 
 export default function ChatMediaEmbed({ content }: { content: string }) {
-  const embeds = useMemo(() => extractMediaEmbeds(content), [content]);
+  const embeds = useMemo(() => parseMessageMedia(content).embeds, [content]);
 
   if (embeds.length === 0) return null;
 
