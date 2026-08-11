@@ -65,6 +65,21 @@ func fixtureProber(t *testing.T) (*Prober, Snapshot) {
 	return p, p.Snapshot()
 }
 
+// fixtureSLO is the burn-rate report these render tests pass to renderHTML.
+//
+// Empty on purpose. `renderHTML` grew a third parameter with the SLO work
+// (E14) and these call sites were never updated, so the package's tests have
+// not compiled since. This restores exactly what they asserted before that
+// change: a populated report renders a per-service burn-rate row that the
+// "one card per service" count also matches, which would turn a compile error
+// into a wrong assertion.
+//
+// The SLO section's own rendering is therefore still uncovered. That test
+// belongs with the SLO feature rather than being invented here.
+func fixtureSLO(_ *Prober) SLOReport {
+	return SLOReport{}
+}
+
 // TestRenderHTMLStructure covers the shape of the page every other assertion
 // here depends on: the verdict in the title and the headline, one card per
 // service with its state on it, a tier heading per group, and one globe pin per
@@ -72,7 +87,7 @@ func fixtureProber(t *testing.T) (*Prober, Snapshot) {
 // every later pin to the wrong place on the sphere).
 func TestRenderHTMLStructure(t *testing.T) {
 	p, snap := fixtureProber(t)
-	out := renderHTML(snap, p)
+	out := renderHTML(snap, p, fixtureSLO(p))
 
 	if !strings.HasPrefix(out, "<!doctype html>") {
 		t.Fatal("render must be a complete document")
@@ -134,7 +149,7 @@ func TestRenderHTMLStructure(t *testing.T) {
 // destination, not a dependency, and nothing loads from it.)
 func TestRenderHTMLIsSelfContained(t *testing.T) {
 	p, snap := fixtureProber(t)
-	out := renderHTML(snap, p)
+	out := renderHTML(snap, p, fixtureSLO(p))
 
 	for _, forbidden := range []string{
 		"fonts.googleapis.com", "fonts.gstatic.com", "<script src", "unpkg.com", "jsdelivr",
@@ -192,7 +207,7 @@ func TestRenderHTMLEscapesServiceText(t *testing.T) {
 		Detail:      `<img src=x onerror=alert(3)>`,
 		CheckedAt:   "2026-08-01T00:00:00.000Z",
 	}
-	out := renderHTML(p.Snapshot(), p)
+	out := renderHTML(p.Snapshot(), p, fixtureSLO(p))
 
 	for _, injected := range []string{"<script>alert(1)", `onload="alert(2)`, "<img src=x onerror"} {
 		if strings.Contains(out, injected) {
@@ -209,7 +224,7 @@ func TestRenderHTMLEscapesServiceText(t *testing.T) {
 // serves for the first few seconds of every restart.
 func TestRenderHTMLNeverChecked(t *testing.T) {
 	p := NewProber([]Target{{Name: "Website", Group: "Core"}})
-	out := renderHTML(p.Snapshot(), p)
+	out := renderHTML(p.Snapshot(), p, fixtureSLO(p))
 
 	if strings.Contains(out, "1970") {
 		t.Error("the epoch sentinel leaked into the page as a date")
@@ -229,7 +244,7 @@ func TestDumpDashboard(t *testing.T) {
 		t.Skip("set STATUS_RENDER_DUMP=<file> to dump the rendered dashboard")
 	}
 	p, snap := fixtureProber(t)
-	if err := os.WriteFile(path, []byte(renderHTML(snap, p)), 0o600); err != nil {
+	if err := os.WriteFile(path, []byte(renderHTML(snap, p, fixtureSLO(p))), 0o600); err != nil {
 		t.Fatal(err)
 	}
 }

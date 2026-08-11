@@ -6,6 +6,7 @@ go_library(
         "dashboard.go",
         "persist.go",
         "probe.go",
+        "slo.go",
         "status.go",
     ],
     importpath = "github.com/rmhstudios/rmh-go/internal/status",
