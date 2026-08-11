@@ -789,6 +789,274 @@
   font-weight: 600;
 }
 
+/* ── Punch card ───────────────────────────────────────────────────────────── */
+
+/* 7 rows × 24 hours, plus a label column and an hour strip. `minmax(0, 1fr)`
+   on the hours rather than a fixed cell size: 24 fixed cells plus a label
+   column overflows a 360px phone, and a grid that scrolls sideways is a grid
+   nobody reads the right half of. */
+.stk-punch {
+  display: grid;
+  grid-template-columns: 26px repeat(24, minmax(0, 1fr));
+  gap: 2px;
+  align-items: center;
+}
+
+.stk-punch__corner {
+  grid-column: 1;
+}
+
+.stk-punch__hour,
+.stk-punch__day {
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  color: var(--stk-text-faint);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.stk-punch__day {
+  text-align: start;
+  font-size: 10px;
+}
+
+.stk-punch__cell {
+  aspect-ratio: 1;
+  min-height: 8px;
+  border-radius: 2px;
+  border: 1px solid transparent;
+  background: var(--stk-heat-0);
+  transition: border-color var(--stk-fast) var(--stk-ease);
+}
+
+.stk-punch__cell[data-level='1'] {
+  background: var(--stk-heat-1);
+}
+
+.stk-punch__cell[data-level='2'] {
+  background: var(--stk-heat-2);
+}
+
+.stk-punch__cell[data-level='3'] {
+  background: var(--stk-heat-3);
+}
+
+.stk-punch__cell[data-level='4'] {
+  background: var(--stk-heat-4);
+}
+
+.stk-punch__cell[data-active='true'] {
+  border-color: var(--stk-text);
+}
+
+/* ── Sleep ────────────────────────────────────────────────────────────────── */
+
+.stk-sleep-figures {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 12px;
+}
+
+@media (min-width: 560px) {
+  .stk-sleep-figures {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.stk-sleep-figure {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: var(--stk-r-sm);
+  background: var(--stk-inset);
+}
+
+.stk-sleep-figure__label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--stk-text-faint);
+}
+
+.stk-sleep-figure__value {
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.stk-sleep-figure__note {
+  font-size: 11px;
+  color: var(--stk-text-faint);
+}
+
+.stk-sleep-bar {
+  fill: var(--stk-accent);
+  opacity: 0.85;
+}
+
+/* ── Records, trends, projection ──────────────────────────────────────────── */
+
+.stk-chart__note {
+  font-size: 11px;
+  color: var(--stk-text-faint);
+}
+
+.stk-records {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  border-radius: var(--stk-r-sm);
+  overflow: hidden;
+  background: var(--stk-line-soft);
+}
+
+/* A three-column row that collapses to label-over-value on a phone, where a
+   long label and a duration cannot share 320px without one of them wrapping
+   into the other. */
+.stk-record {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 2px 10px;
+  padding: 8px 10px;
+  background: var(--stk-surface);
+}
+
+@media (min-width: 560px) {
+  .stk-record {
+    grid-template-columns: 1fr auto 88px;
+  }
+}
+
+.stk-record__label {
+  font-size: 13px;
+  color: var(--stk-text-muted);
+  min-width: 0;
+}
+
+.stk-record__value {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.stk-record__when {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  color: var(--stk-text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 560px) {
+  .stk-record__when {
+    grid-column: auto;
+    text-align: end;
+  }
+}
+
+.stk-record__when--trend {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 3px;
+}
+
+@media (min-width: 560px) {
+  .stk-record__when--trend {
+    justify-content: flex-end;
+  }
+}
+
+/* Up is not good news on this page and down is not bad news, so the arrows are
+   coloured by DIRECTION rather than by sentiment — the reader supplies the
+   judgement, which is the register the whole page is written in. */
+.stk-record[data-direction='up'] .stk-record__when--trend {
+  color: var(--stk-idle);
+}
+
+.stk-record[data-direction='down'] .stk-record__when--trend {
+  color: var(--stk-online);
+}
+
+/* ── Period pages ─────────────────────────────────────────────────────────── */
+
+.stk-period-days {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 8px;
+  border-radius: var(--stk-r-sm);
+  overflow: hidden;
+  background: var(--stk-line-soft);
+  list-style: none;
+}
+
+.stk-period-day {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 8px 10px;
+  background: var(--stk-surface);
+  color: var(--stk-text);
+  text-decoration: none;
+  transition: background-color var(--stk-fast) var(--stk-ease);
+}
+
+.stk-period-day:hover {
+  background: var(--stk-surface-hover);
+  text-decoration: none;
+}
+
+@media (min-width: 560px) {
+  .stk-period-day {
+    grid-template-columns: 60px 1fr auto;
+  }
+}
+
+.stk-period-day__label {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--stk-text-muted);
+}
+
+.stk-period-day__track {
+  height: 8px;
+  border-radius: var(--stk-r-pill);
+  background: var(--stk-inset);
+  overflow: hidden;
+}
+
+.stk-period-day__fill {
+  display: block;
+  height: 100%;
+  /* Width is data, set inline by the component; the fallback keeps an
+     unstyled/JS-less render from painting a full-width bar. */
+  width: var(--stk-fill, 0%);
+  border-radius: var(--stk-r-pill);
+  background: var(--stk-accent);
+}
+
+.stk-period-day__value {
+  grid-column: 2;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--stk-text-faint);
+}
+
+@media (min-width: 560px) {
+  .stk-period-day__value {
+    grid-column: auto;
+    text-align: end;
+  }
+}
+
 /* ── Calendar ─────────────────────────────────────────────────────────────── */
 
 .stk-calendar__nav {

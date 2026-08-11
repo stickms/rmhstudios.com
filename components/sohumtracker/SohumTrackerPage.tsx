@@ -8,8 +8,11 @@
  *   1. Is he on right now, and doing what     → the profile card
  *   2. How much of this is there              → the headline figures
  *   3. What does that look like over time     → the two charts
- *   4. What happened on a given day           → the calendar, and the day panel
- *   5. What does it all amount to             → the week and month write-ups
+ *   4. Is there a pattern to it               → the punch card and the sleep strip
+ *   5. What happened on a given day           → the calendar, and the day panel
+ *   6. What does it all amount to             → the week and month write-ups
+ *   7. How far has it ever gone, and which way is it going → records and trends
+ *   8. Where does this end up                 → the projection to his own deadline
  *
  * The page is seeded by the route loader (so the first paint is server-rendered
  * and the unfurl is real) and then polls `/api/sohumtracker/activity`. Every
@@ -31,6 +34,10 @@ import { ActivityCharts } from './ActivityCharts';
 import { DayDetail } from './DayDetail';
 import { useWatchState } from './live';
 import { ProfileCard } from './ProfileCard';
+import { ProjectionCard } from './ProjectionCard';
+import { PunchCard } from './PunchCard';
+import { RecordsCard } from './RecordsCard';
+import { SleepCard } from './SleepCard';
 import { SummaryCard } from './SummaryCard';
 
 interface SohumTrackerPageProps {
@@ -249,6 +256,24 @@ export function SohumTrackerPage({
               <ActivityCharts days={days} />
             </section>
 
+            <section className="stk-section" aria-labelledby="stk-patterns">
+              <div className="stk-section__head">
+                <h2 className="stk-section__title" id="stk-patterns">
+                  {t('patterns-heading', { defaultValue: 'The pattern' })}
+                </h2>
+                <p className="stk-section__note">
+                  {t('patterns-note', {
+                    defaultValue:
+                      'The same figures folded by weekday and by night, which is where a routine shows up.',
+                  })}
+                </p>
+              </div>
+              <div className="stk-grid-2">
+                <PunchCard days={days} />
+                <SleepCard days={days} />
+              </div>
+            </section>
+
             <section className="stk-section" aria-labelledby="stk-calendar">
               <div className="stk-section__head">
                 <h2 className="stk-section__title" id="stk-calendar">
@@ -306,6 +331,7 @@ export function SohumTrackerPage({
               <div className="stk-grid-2">
                 <SummaryCard
                   summary={week}
+                  showPermalink
                   emptyTitle={t('week-empty-title', { defaultValue: 'This week' })}
                   emptyBody={t('week-empty-body', {
                     defaultValue: 'Not written up yet. It settles once the week has enough in it.',
@@ -313,12 +339,31 @@ export function SohumTrackerPage({
                 />
                 <SummaryCard
                   summary={month}
+                  showPermalink
                   emptyTitle={t('month-empty-title', { defaultValue: 'This month' })}
                   emptyBody={t('month-empty-body', {
                     defaultValue: 'Not written up yet. It settles once the month has enough in it.',
                   })}
                 />
               </div>
+            </section>
+
+            <section className="stk-section" aria-labelledby="stk-records">
+              <div className="stk-section__head">
+                <h2 className="stk-section__title" id="stk-records">
+                  {t('records-heading', { defaultValue: 'The record' })}
+                </h2>
+              </div>
+              <RecordsCard days={days} todayKey={state.todayKey} />
+            </section>
+
+            <section className="stk-section" aria-labelledby="stk-projection">
+              <div className="stk-section__head">
+                <h2 className="stk-section__title" id="stk-projection">
+                  {t('projection-heading', { defaultValue: 'At this rate' })}
+                </h2>
+              </div>
+              <ProjectionCard days={days} todayKey={state.todayKey} />
             </section>
           </>
         )}
@@ -341,6 +386,23 @@ export function SohumTrackerPage({
               defaultValue: 'The four terms he set himself are reviewed separately.',
             })}{' '}
             <a href="/sohumbum">{t('colophon-link', { defaultValue: 'Is Sohum Joshi a bum yet?' })}</a>
+          </p>
+          {/* Plain anchors, not buttons: these are downloads, and the browser
+              already knows how to do a download from a link with a
+              Content-Disposition on the other end. `download` is advisory —
+              the header is what actually names the file. */}
+          <p>
+            {t('colophon-export', {
+              defaultValue:
+                'Every figure above is downloadable, so nothing here has to be taken on trust:',
+            })}{' '}
+            <a href={`/api/sohumtracker/export?format=csv&days=${historyDays}`} download>
+              {t('colophon-export-csv', { defaultValue: 'CSV, one row per day' })}
+            </a>
+            {' · '}
+            <a href={`/api/sohumtracker/export?format=json&days=${historyDays}`} download>
+              {t('colophon-export-json', { defaultValue: 'JSON, with the write-ups' })}
+            </a>
           </p>
         </footer>
       </div>

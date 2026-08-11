@@ -14,12 +14,12 @@
  */
 
 import type { PageCardData } from '@/lib/og/page-card.server';
-import { getDaySnapshot, getWatchState } from './activity.server';
+import { getDaySnapshot, getPeriodSnapshot, getWatchState } from './activity.server';
 import { formatCount, formatDuration, SUBJECT_FALLBACK_NAME } from './config';
 import { formatDayLong } from './dates';
 // `dayFigures` lives in a client-safe module because route `head()` functions
 // run in the browser too — see the note at the top of `describe.ts`.
-import { dayFigures } from './describe';
+import { dayFigures, periodFigures, periodLabel } from './describe';
 import type { WatchDayDTO } from './types';
 
 /**
@@ -54,6 +54,37 @@ export async function buildDayCard(dateKey: string): Promise<PageCardData | null
     subtitle: day.summary?.verdict || dayFigures(day),
     stats: dayStats(day),
     path: `/sohumtracker/${dateKey}`,
+  };
+}
+
+/**
+ * The card for a week's or a month's permalink.
+ *
+ * Same three chips as a day's, because the whole point of the period pages is
+ * that they are comparable to the days inside them — a card whose figures were
+ * chosen differently would break that at exactly the moment two are pasted side
+ * by side.
+ */
+export async function buildPeriodCard(
+  period: 'week' | 'month',
+  periodKey: string,
+): Promise<PageCardData | null> {
+  const snapshot = await getPeriodSnapshot(period, periodKey);
+  if (!snapshot) return null;
+  const { totals, summary } = snapshot;
+
+  return {
+    cacheKey: `sohumtracker:${period}:${periodKey}:${snapshot.updatedAt ?? 'empty'}`,
+    eyebrow: period === 'week' ? 'Weekly Review' : 'Monthly Review',
+    lead: SUBJECT_FALLBACK_NAME,
+    title: summary?.headline || periodLabel(period, periodKey),
+    subtitle: summary?.verdict || periodFigures(totals),
+    stats: [
+      { label: 'Signed in', value: formatDuration(totals.presenceSec) },
+      { label: 'In voice', value: formatDuration(totals.voiceSec) },
+      { label: 'Messages', value: formatCount(totals.messages) },
+    ],
+    path: `/sohumtracker/${period}/${periodKey}`,
   };
 }
 

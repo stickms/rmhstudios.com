@@ -446,6 +446,9 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   // `noindex` like its parent — it exists to be pasted into a chat, where the
   // OG card does the work, not to be crawled.
   '/sohumtracker/$date': null,
+  // …and the week and month it belongs to, for the same reason.
+  '/sohumtracker/week/$week': null,
+  '/sohumtracker/month/$month': null,
   '/tag/$tag': null, // unbounded tag space; crawlable via posts, not listed
   '/groups/$id': null, // membership-scoped
   '/spaces/$id': null, // live audio room, gone when it ends

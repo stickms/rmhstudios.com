@@ -532,6 +532,7 @@ import { Route as ApiSliceItShowcaseRouteImport } from './routes/api/slice-it/sh
 import { Route as ApiSliceItSongsRouteImport } from './routes/api/slice-it/songs'
 import { Route as ApiSliceItUploaderStatsRouteImport } from './routes/api/slice-it/uploader-stats'
 import { Route as ApiSohumtrackerActivityRouteImport } from './routes/api/sohumtracker/activity'
+import { Route as ApiSohumtrackerExportRouteImport } from './routes/api/sohumtracker/export'
 import { Route as ApiSohumtrackerStreamRouteImport } from './routes/api/sohumtracker/stream'
 import { Route as ApiSpacesIndexRouteImport } from './routes/api/spaces/index'
 import { Route as ApiSpacesLiveRouteImport } from './routes/api/spaces/live'
@@ -596,6 +597,8 @@ import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/curs
 import { Route as SliceItArtistKeyRouteImport } from './routes/slice-it/artist.$key'
 import { Route as SliceItEditSongIdRouteImport } from './routes/slice-it/edit.$songId'
 import { Route as SliceItPlayerHandleRouteImport } from './routes/slice-it/player.$handle'
+import { Route as SohumtrackerMonthMonthRouteImport } from './routes/sohumtracker/month.$month'
+import { Route as SohumtrackerWeekWeekRouteImport } from './routes/sohumtracker/week.$week'
 import { Route as StrategiesProfileIndexRouteImport } from './routes/strategies/profile/index'
 import { Route as StrategiesProfileReputationRouteImport } from './routes/strategies/profile/reputation'
 import { Route as StrategiesProfileSettingsRouteImport } from './routes/strategies/profile/settings'
@@ -3534,6 +3537,11 @@ const ApiSohumtrackerActivityRoute = ApiSohumtrackerActivityRouteImport.update({
   path: '/api/sohumtracker/activity',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSohumtrackerExportRoute = ApiSohumtrackerExportRouteImport.update({
+  id: '/api/sohumtracker/export',
+  path: '/api/sohumtracker/export',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSohumtrackerStreamRoute = ApiSohumtrackerStreamRouteImport.update({
   id: '/api/sohumtracker/stream',
   path: '/api/sohumtracker/stream',
@@ -3854,6 +3862,16 @@ const SliceItPlayerHandleRoute = SliceItPlayerHandleRouteImport.update({
   id: '/player/$handle',
   path: '/player/$handle',
   getParentRoute: () => SliceItRoute,
+} as any)
+const SohumtrackerMonthMonthRoute = SohumtrackerMonthMonthRouteImport.update({
+  id: '/sohumtracker/month/$month',
+  path: '/sohumtracker/month/$month',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SohumtrackerWeekWeekRoute = SohumtrackerWeekWeekRouteImport.update({
+  id: '/sohumtracker/week/$week',
+  path: '/sohumtracker/week/$week',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const StrategiesProfileIndexRoute = StrategiesProfileIndexRouteImport.update({
   id: '/profile/',
@@ -5922,6 +5940,7 @@ export interface FileRoutesByFullPath {
   '/api/slice-it/songs': typeof ApiSliceItSongsRouteWithChildren
   '/api/slice-it/uploader-stats': typeof ApiSliceItUploaderStatsRoute
   '/api/sohumtracker/activity': typeof ApiSohumtrackerActivityRoute
+  '/api/sohumtracker/export': typeof ApiSohumtrackerExportRoute
   '/api/sohumtracker/stream': typeof ApiSohumtrackerStreamRoute
   '/api/spaces/live': typeof ApiSpacesLiveRoute
   '/api/speedrun/categories': typeof ApiSpeedrunCategoriesRoute
@@ -5976,6 +5995,8 @@ export interface FileRoutesByFullPath {
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
   '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
+  '/sohumtracker/month/$month': typeof SohumtrackerMonthMonthRoute
+  '/sohumtracker/week/$week': typeof SohumtrackerWeekWeekRoute
   '/strategies/profile/reputation': typeof StrategiesProfileReputationRoute
   '/strategies/profile/settings': typeof StrategiesProfileSettingsRoute
   '/strategies/puzzles/$mode': typeof StrategiesPuzzlesModeRoute
@@ -6784,6 +6805,7 @@ export interface FileRoutesByTo {
   '/api/slice-it/songs': typeof ApiSliceItSongsRouteWithChildren
   '/api/slice-it/uploader-stats': typeof ApiSliceItUploaderStatsRoute
   '/api/sohumtracker/activity': typeof ApiSohumtrackerActivityRoute
+  '/api/sohumtracker/export': typeof ApiSohumtrackerExportRoute
   '/api/sohumtracker/stream': typeof ApiSohumtrackerStreamRoute
   '/api/spaces/live': typeof ApiSpacesLiveRoute
   '/api/speedrun/categories': typeof ApiSpeedrunCategoriesRoute
@@ -6838,6 +6860,8 @@ export interface FileRoutesByTo {
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
   '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
+  '/sohumtracker/month/$month': typeof SohumtrackerMonthMonthRoute
+  '/sohumtracker/week/$week': typeof SohumtrackerWeekWeekRoute
   '/strategies/profile/reputation': typeof StrategiesProfileReputationRoute
   '/strategies/profile/settings': typeof StrategiesProfileSettingsRoute
   '/strategies/puzzles/$mode': typeof StrategiesPuzzlesModeRoute
@@ -7673,6 +7697,7 @@ export interface FileRoutesById {
   '/api/slice-it/songs': typeof ApiSliceItSongsRouteWithChildren
   '/api/slice-it/uploader-stats': typeof ApiSliceItUploaderStatsRoute
   '/api/sohumtracker/activity': typeof ApiSohumtrackerActivityRoute
+  '/api/sohumtracker/export': typeof ApiSohumtrackerExportRoute
   '/api/sohumtracker/stream': typeof ApiSohumtrackerStreamRoute
   '/api/spaces/live': typeof ApiSpacesLiveRoute
   '/api/speedrun/categories': typeof ApiSpeedrunCategoriesRoute
@@ -7727,6 +7752,8 @@ export interface FileRoutesById {
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
   '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
+  '/sohumtracker/month/$month': typeof SohumtrackerMonthMonthRoute
+  '/sohumtracker/week/$week': typeof SohumtrackerWeekWeekRoute
   '/strategies/profile/reputation': typeof StrategiesProfileReputationRoute
   '/strategies/profile/settings': typeof StrategiesProfileSettingsRoute
   '/strategies/puzzles/$mode': typeof StrategiesPuzzlesModeRoute
@@ -8562,6 +8589,7 @@ export interface FileRouteTypes {
     | '/api/slice-it/songs'
     | '/api/slice-it/uploader-stats'
     | '/api/sohumtracker/activity'
+    | '/api/sohumtracker/export'
     | '/api/sohumtracker/stream'
     | '/api/spaces/live'
     | '/api/speedrun/categories'
@@ -8616,6 +8644,8 @@ export interface FileRouteTypes {
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
     | '/slice-it/player/$handle'
+    | '/sohumtracker/month/$month'
+    | '/sohumtracker/week/$week'
     | '/strategies/profile/reputation'
     | '/strategies/profile/settings'
     | '/strategies/puzzles/$mode'
@@ -9424,6 +9454,7 @@ export interface FileRouteTypes {
     | '/api/slice-it/songs'
     | '/api/slice-it/uploader-stats'
     | '/api/sohumtracker/activity'
+    | '/api/sohumtracker/export'
     | '/api/sohumtracker/stream'
     | '/api/spaces/live'
     | '/api/speedrun/categories'
@@ -9478,6 +9509,8 @@ export interface FileRouteTypes {
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
     | '/slice-it/player/$handle'
+    | '/sohumtracker/month/$month'
+    | '/sohumtracker/week/$week'
     | '/strategies/profile/reputation'
     | '/strategies/profile/settings'
     | '/strategies/puzzles/$mode'
@@ -10312,6 +10345,7 @@ export interface FileRouteTypes {
     | '/api/slice-it/songs'
     | '/api/slice-it/uploader-stats'
     | '/api/sohumtracker/activity'
+    | '/api/sohumtracker/export'
     | '/api/sohumtracker/stream'
     | '/api/spaces/live'
     | '/api/speedrun/categories'
@@ -10366,6 +10400,8 @@ export interface FileRouteTypes {
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
     | '/slice-it/player/$handle'
+    | '/sohumtracker/month/$month'
+    | '/sohumtracker/week/$week'
     | '/strategies/profile/reputation'
     | '/strategies/profile/settings'
     | '/strategies/puzzles/$mode'
@@ -11020,6 +11056,7 @@ export interface RootRouteChildren {
   ApiSliceItSongsRoute: typeof ApiSliceItSongsRouteWithChildren
   ApiSliceItUploaderStatsRoute: typeof ApiSliceItUploaderStatsRoute
   ApiSohumtrackerActivityRoute: typeof ApiSohumtrackerActivityRoute
+  ApiSohumtrackerExportRoute: typeof ApiSohumtrackerExportRoute
   ApiSohumtrackerStreamRoute: typeof ApiSohumtrackerStreamRoute
   ApiSpacesLiveRoute: typeof ApiSpacesLiveRoute
   ApiSpeedrunCategoriesRoute: typeof ApiSpeedrunCategoriesRoute
@@ -11067,6 +11104,8 @@ export interface RootRouteChildren {
   EmbedPostIdRoute: typeof EmbedPostIdRoute
   EmbedReplayIdRoute: typeof EmbedReplayIdRoute
   LibraryAlbumsAlbumIdRoute: typeof LibraryAlbumsAlbumIdRoute
+  SohumtrackerMonthMonthRoute: typeof SohumtrackerMonthMonthRoute
+  SohumtrackerWeekWeekRoute: typeof SohumtrackerWeekWeekRoute
   TagTagRssDotxmlRoute: typeof TagTagRssDotxmlRoute
   UHandleRssDotxmlRoute: typeof UHandleRssDotxmlRoute
   ApiActivityIndexRoute: typeof ApiActivityIndexRoute
@@ -14916,6 +14955,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSohumtrackerActivityRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/sohumtracker/export': {
+      id: '/api/sohumtracker/export'
+      path: '/api/sohumtracker/export'
+      fullPath: '/api/sohumtracker/export'
+      preLoaderRoute: typeof ApiSohumtrackerExportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/sohumtracker/stream': {
       id: '/api/sohumtracker/stream'
       path: '/api/sohumtracker/stream'
@@ -15363,6 +15409,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/slice-it/player/$handle'
       preLoaderRoute: typeof SliceItPlayerHandleRouteImport
       parentRoute: typeof SliceItRoute
+    }
+    '/sohumtracker/month/$month': {
+      id: '/sohumtracker/month/$month'
+      path: '/sohumtracker/month/$month'
+      fullPath: '/sohumtracker/month/$month'
+      preLoaderRoute: typeof SohumtrackerMonthMonthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sohumtracker/week/$week': {
+      id: '/sohumtracker/week/$week'
+      path: '/sohumtracker/week/$week'
+      fullPath: '/sohumtracker/week/$week'
+      preLoaderRoute: typeof SohumtrackerWeekWeekRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/strategies/profile/': {
       id: '/strategies/profile/'
@@ -19415,6 +19475,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSliceItSongsRoute: ApiSliceItSongsRouteWithChildren,
   ApiSliceItUploaderStatsRoute: ApiSliceItUploaderStatsRoute,
   ApiSohumtrackerActivityRoute: ApiSohumtrackerActivityRoute,
+  ApiSohumtrackerExportRoute: ApiSohumtrackerExportRoute,
   ApiSohumtrackerStreamRoute: ApiSohumtrackerStreamRoute,
   ApiSpacesLiveRoute: ApiSpacesLiveRoute,
   ApiSpeedrunCategoriesRoute: ApiSpeedrunCategoriesRoute,
@@ -19462,6 +19523,8 @@ const rootRouteChildren: RootRouteChildren = {
   EmbedPostIdRoute: EmbedPostIdRoute,
   EmbedReplayIdRoute: EmbedReplayIdRoute,
   LibraryAlbumsAlbumIdRoute: LibraryAlbumsAlbumIdRoute,
+  SohumtrackerMonthMonthRoute: SohumtrackerMonthMonthRoute,
+  SohumtrackerWeekWeekRoute: SohumtrackerWeekWeekRoute,
   TagTagRssDotxmlRoute: TagTagRssDotxmlRoute,
   UHandleRssDotxmlRoute: UHandleRssDotxmlRoute,
   ApiActivityIndexRoute: ApiActivityIndexRoute,

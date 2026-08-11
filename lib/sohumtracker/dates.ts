@@ -85,9 +85,63 @@ export function isoWeekStartKey(dateKey: string): string {
   return shiftDateKey(dateKey, -mondayIndex(dateKey));
 }
 
+/**
+ * The Monday an ISO week key starts on, or null for a malformed key.
+ *
+ * Round-tripping through `isoWeekKey` is what makes this a VALIDATION and not
+ * just a parse: `2026-W53` is a real string and not a real week in a 52-week
+ * year, and the only cheap way to know that is to build the Monday it would
+ * imply and ask which week that Monday is actually in.
+ */
+export function isoWeekStart(weekKey: string): string | null {
+  const match = /^(\d{4})-W(\d{2})$/.exec(weekKey);
+  if (!match) return null;
+  const [, year, week] = match;
+  const weekNumber = Number(week);
+  if (weekNumber < 1 || weekNumber > 53) return null;
+  const jan4 = new Date(Date.UTC(Number(year), 0, 4));
+  const jan4Monday = new Date(jan4.getTime() - ((jan4.getUTCDay() + 6) % 7) * MS_PER_DAY);
+  const monday = utcToDateKey(new Date(jan4Monday.getTime() + (weekNumber - 1) * 7 * MS_PER_DAY));
+  return isoWeekKey(monday) === weekKey ? monday : null;
+}
+
+/** True for a well-formed key naming a week that exists. */
+export function isValidWeekKey(weekKey: string): boolean {
+  return isoWeekStart(weekKey) !== null;
+}
+
+/** Monday and Sunday of an ISO week, as day keys. Null for a bad key. */
+export function isoWeekBounds(weekKey: string): { firstKey: string; lastKey: string } | null {
+  const firstKey = isoWeekStart(weekKey);
+  if (!firstKey) return null;
+  return { firstKey, lastKey: shiftDateKey(firstKey, 6) };
+}
+
+/** `2026-W33` + 1 → `2026-W34`, crossing year boundaries correctly. */
+export function shiftWeekKey(weekKey: string, weeks: number): string | null {
+  const start = isoWeekStart(weekKey);
+  if (!start) return null;
+  return isoWeekKey(shiftDateKey(start, weeks * 7));
+}
+
 /** The month key (`2026-08`) a day falls in. */
 export function monthKeyOf(dateKey: string): string {
   return dateKey.slice(0, 7);
+}
+
+/** True for a well-formed `YYYY-MM` naming a real month. */
+export function isValidMonthKey(monthKey: string): boolean {
+  const match = /^(\d{4})-(\d{2})$/.exec(monthKey);
+  if (!match) return false;
+  const month = Number(match[2]);
+  return month >= 1 && month <= 12;
+}
+
+/** `2026-12` + 1 → `2027-01`. */
+export function shiftMonthKey(monthKey: string, months: number): string {
+  const [year, month] = monthKey.split('-').map(Number);
+  const shifted = new Date(Date.UTC(year, month - 1 + months, 1));
+  return utcToDateKey(shifted).slice(0, 7);
 }
 
 /** First and last day of a month key, as day keys. */
@@ -129,12 +183,7 @@ export function formatMonthLong(monthKey: string): string {
 
 /** `Aug 10 – Aug 16`, the span an ISO week key covers. */
 export function formatWeekRange(weekKey: string): string {
-  const match = /^(\d{4})-W(\d{2})$/.exec(weekKey);
-  if (!match) return weekKey;
-  const [, year, week] = match;
-  const jan4 = new Date(Date.UTC(Number(year), 0, 4));
-  const jan4Monday = new Date(jan4.getTime() - ((jan4.getUTCDay() + 6) % 7) * MS_PER_DAY);
-  const start = new Date(jan4Monday.getTime() + (Number(week) - 1) * 7 * MS_PER_DAY);
-  const end = new Date(start.getTime() + 6 * MS_PER_DAY);
-  return `${formatDayShort(utcToDateKey(start))} – ${formatDayShort(utcToDateKey(end))}`;
+  const bounds = isoWeekBounds(weekKey);
+  if (!bounds) return weekKey;
+  return `${formatDayShort(bounds.firstKey)} – ${formatDayShort(bounds.lastKey)}`;
 }
