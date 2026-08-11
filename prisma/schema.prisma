@@ -8795,10 +8795,13 @@ model DiscordWatchDay {
 /// "month" and `periodKey` is the matching key shape (YYYY-MM-DD, YYYY-Www,
 /// YYYY-MM), so all three live in one table and the page fetches them together.
 ///
-/// `sourceHash` is a digest of the rollups the summary was generated from. The
-/// summarizer regenerates a period only when its hash changes, which is what
-/// stops a finished day being re-summarised (and re-billed) on every pass while
-/// still letting today's summary refresh as the day fills in.
+/// `sourceHash` is a digest of the PROMPT the summary was generated from — the
+/// exact question the model was asked. The summarizer regenerates a period only
+/// when that hash changes, which is what stops a finished day being
+/// re-summarised (and re-billed) on every pass while still letting today's
+/// summary refresh as the day fills in. Hashing the prompt rather than a list of
+/// figures means "anything the model would see changed" is the literal rule,
+/// with no second list of fields to drift out of step with the prompt.
 model DiscordWatchSummary {
   id        String @id @default(cuid())
   discordId String
