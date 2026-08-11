@@ -1,0 +1,11 @@
+{
+  "cal-cell-messages_one": "{{count}} messages",
+  "chart-trend-alt_one": "Bar chart of activity across the last {{count}} days",
+  "figures-heading_one": "The last {{count}} days",
+  "stat-late-note_one": "{{count}} messages after midnight",
+  "stat-messages-note_one": "{{count}} words",
+  "stat-streak-note_one": "best run {{count}} days",
+  "stat-streak-value_one": "{{count}} days",
+  "stat-voice-note_one": "across {{count}} active days",
+  "voice-with_one": "with {{count}} others"
+}

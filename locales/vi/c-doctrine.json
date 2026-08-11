@@ -1,6 +1,7 @@
 {
   "access-required": "Yêu cầu quyền truy cập {{tierName}}",
   "active": "Đang hoạt động",
+  "attempt-count_one": "{{count}} lần thử",
   "attempt-count_other": "{{count}} lần thử",
   "attempts": "lần thử",
   "best-streak": "tốt nhất: {{longestStreak}}",
