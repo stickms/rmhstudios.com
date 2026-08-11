@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { Link, useSearch } from '@tanstack/react-router';
 import { Loader2, TrendingUp, Gamepad2 } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,6 @@ import { PredictionsMarketTab } from '@/components/predictions/PredictionsMarket
 export function RMHCoinsPage() {
   const { t } = useTranslation("c-rmhcoins");
   const { data: session, isPending } = authClient.useSession();
-  const navigate = useNavigate();
   const [coins, setCoins] = useState(0);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
@@ -26,19 +25,22 @@ export function RMHCoinsPage() {
     search.tab === 'games' ? 'games' : 'markets',
   );
 
-  // Redirect if not authenticated, keeping the invite so login comes back to it.
-  useEffect(() => {
-    if (!isPending && !session?.user) {
-      navigate({
-        to: '/login',
-        search: { callbackURL: `/predictions${window.location.search}` },
-      });
-    }
-  }, [isPending, session, navigate]);
+  // Signed out is a supported state, not a redirect. This page used to bounce
+  // anyone without a session to /login, which meant the prediction markets —
+  // public information, and the reason most people arrive — were invisible
+  // until you had an account. Now the markets read normally, the casino tables
+  // show their lobbies read-only, and the sign-in ask lands on the control you
+  // actually pressed.
+  const signedIn = Boolean(session?.user);
 
   // Fetch coin balance
   useEffect(() => {
-    if (!session?.user) return;
+    if (!session?.user) {
+      // No balance to fetch, and nothing to wait for.
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
     fetch('/api/coins')
       .then((r) => r.json())
       .then((data) => {
@@ -75,8 +77,6 @@ export function RMHCoinsPage() {
     );
   }
 
-  if (!session?.user) return null;
-
   const tabs: LiquidTab[] = [
     { id: 'markets', label: t("tab-markets", { defaultValue: "Markets" }), icon: TrendingUp },
     { id: 'games', label: t("tab-games", { defaultValue: "Games" }), icon: Gamepad2 },
@@ -84,23 +84,43 @@ export function RMHCoinsPage() {
 
   return (
     <div className="flex flex-col w-full">
-      {/* Balance bar */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-site-border">
-        <div className="flex items-center gap-2">
-          <CoinIcon className="w-6 h-6" />
-          <span className="font-bold text-2xl text-site-warning">{coins}</span>
-          <span className="text-sm text-site-text-dim ml-1">{t("rmh-coins", { defaultValue: "RMH Coins" })}</span>
-        </div>
-        {coins < 10 && (
-          <Button
-            onClick={handleClaimCoins}
-            loading={claiming}
-            variant="outline"
-            size="sm"
-            className="rounded-site-sm border-site-warning/50 text-site-warning hover:bg-site-warning/10"
-          >
-            {t("claim-free-coins", { defaultValue: "Claim 10 Free Coins" })}
-          </Button>
+      {/* Balance bar — a balance once you have one, the offer of one before. */}
+      <div className="flex items-center justify-between gap-3 px-4 py-4 border-b border-site-border">
+        {signedIn ? (
+          <>
+            <div className="flex items-center gap-2">
+              <CoinIcon className="w-6 h-6" />
+              <span className="font-bold text-2xl text-site-warning">{coins}</span>
+              <span className="text-sm text-site-text-dim ml-1">{t("rmh-coins", { defaultValue: "RMH Coins" })}</span>
+            </div>
+            {coins < 10 && (
+              <Button
+                onClick={handleClaimCoins}
+                loading={claiming}
+                variant="outline"
+                size="sm"
+                className="rounded-site-sm border-site-warning/50 text-site-warning hover:bg-site-warning/10"
+              >
+                {t("claim-free-coins", { defaultValue: "Claim 10 Free Coins" })}
+              </Button>
+            )}
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-2 min-w-0">
+              <CoinIcon className="w-6 h-6 shrink-0" />
+              <span className="text-sm text-site-text-muted">
+                {t("signed-out-balance", {
+                  defaultValue: "Sign in to claim free RMH Coins and back your calls.",
+                })}
+              </span>
+            </div>
+            <Button asChild variant="accent" size="sm" className="shrink-0">
+              <Link to="/login" search={{ callbackURL: '/predictions' }}>
+                {t("sign-in", { defaultValue: "Sign in" })}
+              </Link>
+            </Button>
+          </>
         )}
       </div>
 
@@ -121,11 +141,11 @@ export function RMHCoinsPage() {
       <div className="flex-1 pt-3">
         {tab === 'markets' ? (
           <div id="rmhcoins-panel-markets" role="tabpanel" aria-labelledby="rmhcoins-tab-markets">
-            <PredictionsMarketTab coins={coins} setCoins={setCoins} />
+            <PredictionsMarketTab coins={coins} setCoins={setCoins} signedIn={signedIn} />
           </div>
         ) : (
           <div id="rmhcoins-panel-games" role="tabpanel" aria-labelledby="rmhcoins-tab-games">
-            <PlayTab coins={coins} setCoins={setCoins} />
+            <PlayTab coins={coins} setCoins={setCoins} signedIn={signedIn} />
           </div>
         )}
       </div>

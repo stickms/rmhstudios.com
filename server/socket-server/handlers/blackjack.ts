@@ -913,11 +913,16 @@ function destroyRoom(roomId: string) {
   }
 }
 
-function onListRooms(socket: Socket) {
-  // Browsing the lobby → subscribe this socket to the lobby room so it keeps
-  // receiving broadcastRoomList() updates while it's viewing the list.
-  socket.join(LOBBY_ROOM);
-  const list = Array.from(rooms.values())
+/**
+ * The public lobby rows.
+ *
+ * Exported because the signed-out lobby preview reads the same list over HTTP
+ * (`/internal/casino-rooms`) — a socket connection needs a session token, so a
+ * visitor who has not signed in cannot ask for it the normal way. Both paths
+ * serialize here so the two views can never drift.
+ */
+export function listPublicRooms() {
+  return Array.from(rooms.values())
     .filter((r) => r.privacy === 'public')
     .map((r) => ({
       roomId: r.roomId,
@@ -927,7 +932,13 @@ function onListRooms(socket: Socket) {
       maxPlayers: r.maxPlayers,
       inProgress: r.phase !== 'idle' && r.phase !== 'betting',
     }));
-  socket.emit(S2C.ROOM_LIST, { rooms: list });
+}
+
+function onListRooms(socket: Socket) {
+  // Browsing the lobby → subscribe this socket to the lobby room so it keeps
+  // receiving broadcastRoomList() updates while it's viewing the list.
+  socket.join(LOBBY_ROOM);
+  socket.emit(S2C.ROOM_LIST, { rooms: listPublicRooms() });
 }
 
 function onCreateRoom(socket: Socket, payload: unknown) {

@@ -41,21 +41,25 @@ import {
   registerBlackjackHandlers,
   handleBlackjackDisconnect,
   initializeBlackjackPublicTable,
+  listPublicRooms as listBlackjackRooms,
 } from './handlers/blackjack';
 import {
   registerHoldemHandlers,
   handleHoldemDisconnect,
   initializeHoldem,
+  listPublicRooms as listHoldemRooms,
 } from './handlers/holdem';
 import {
   registerBaccaratHandlers,
   handleBaccaratDisconnect,
   initializeBaccarat,
+  listPublicRooms as listBaccaratRooms,
 } from './handlers/baccarat';
 import {
   registerRouletteHandlers,
   handleRouletteDisconnect,
   initializeRoulette,
+  listPublicRooms as listRouletteRooms,
 } from './handlers/roulette';
 import { registerLightsOutHandlers, handleLightsOutDisconnect } from './handlers/lights-out';
 import { registerDoctrineHandlers, handleDoctrineDisconnect } from './handlers/doctrine';
@@ -415,6 +419,32 @@ function requestHandler(_req: IncomingMessage, res: ServerResponse): void {
   if (_req.url === '/health' && _req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ status: 'ok', uptime: process.uptime() }));
+    return;
+  }
+  // The casino lobbies, read-only, for callers with no socket.
+  //
+  // A socket connection needs a session token, so a signed-out visitor cannot
+  // ask for the room list the normal way — which is why /predictions used to
+  // bounce them to /login rather than show them anything. The web tier proxies
+  // this from `/api/casino/rooms` (server-to-server, so the browser stays
+  // same-origin and this port needs no CORS of its own).
+  //
+  // Only `privacy === 'public'` rooms are serialized, by the same
+  // `listPublicRooms()` the socket handler emits — no player identities, no
+  // hands, no balances, nothing a lobby browser could not already see.
+  if (_req.url === '/internal/casino-rooms' && _req.method === 'GET') {
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store',
+    });
+    res.end(
+      JSON.stringify({
+        blackjack: listBlackjackRooms(),
+        holdem: listHoldemRooms(),
+        baccarat: listBaccaratRooms(),
+        roulette: listRouletteRooms(),
+      }),
+    );
     return;
   }
   res.writeHead(404);

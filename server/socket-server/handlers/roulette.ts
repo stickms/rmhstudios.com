@@ -463,11 +463,10 @@ function destroyRoom(roomId: string) {
   }
 }
 
-function onListRooms(socket: Socket) {
-  // Browsing the lobby → subscribe this socket to the lobby room so it keeps
-  // receiving broadcastRoomList() updates while it's viewing the list.
-  socket.join(LOBBY_ROOM);
-  const list = Array.from(rooms.values())
+/** The public lobby rows — see `blackjack.ts#listPublicRooms` for why this is
+ *  exported rather than inlined into the socket handler. */
+export function listPublicRooms() {
+  return Array.from(rooms.values())
     .filter((r) => r.privacy === 'public')
     .map((r) => ({
       roomId: r.roomId,
@@ -477,7 +476,13 @@ function onListRooms(socket: Socket) {
       maxPlayers: r.maxPlayers,
       inProgress: r.phase !== 'idle' && r.phase !== 'betting',
     }));
-  socket.emit(S2C.ROOM_LIST, { rooms: list });
+}
+
+function onListRooms(socket: Socket) {
+  // Browsing the lobby → subscribe this socket to the lobby room so it keeps
+  // receiving broadcastRoomList() updates while it's viewing the list.
+  socket.join(LOBBY_ROOM);
+  socket.emit(S2C.ROOM_LIST, { rooms: listPublicRooms() });
 }
 
 function onCreateRoom(socket: Socket, payload: unknown) {

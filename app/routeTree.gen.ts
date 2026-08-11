@@ -340,6 +340,7 @@ import { Route as ApiBumsRushShowdownRouteImport } from './routes/api/bums-rush/
 import { Route as ApiCallsHistoryRouteImport } from './routes/api/calls/history'
 import { Route as ApiCallsIceRouteImport } from './routes/api/calls/ice'
 import { Route as ApiCallsPrivacyRouteImport } from './routes/api/calls/privacy'
+import { Route as ApiCasinoRoomsRouteImport } from './routes/api/casino/rooms'
 import { Route as ApiCoinsIndexRouteImport } from './routes/api/coins/index'
 import { Route as ApiCoinsBetRouteImport } from './routes/api/coins/bet'
 import { Route as ApiCoinsClaimRouteImport } from './routes/api/coins/claim'
@@ -2547,6 +2548,11 @@ const ApiCallsIceRoute = ApiCallsIceRouteImport.update({
 const ApiCallsPrivacyRoute = ApiCallsPrivacyRouteImport.update({
   id: '/api/calls/privacy',
   path: '/api/calls/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCasinoRoomsRoute = ApiCasinoRoomsRouteImport.update({
+  id: '/api/casino/rooms',
+  path: '/api/casino/rooms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCoinsIndexRoute = ApiCoinsIndexRouteImport.update({
@@ -5707,6 +5713,7 @@ export interface FileRoutesByFullPath {
   '/api/calls/history': typeof ApiCallsHistoryRoute
   '/api/calls/ice': typeof ApiCallsIceRoute
   '/api/calls/privacy': typeof ApiCallsPrivacyRoute
+  '/api/casino/rooms': typeof ApiCasinoRoomsRoute
   '/api/coins/bet': typeof ApiCoinsBetRoute
   '/api/coins/claim': typeof ApiCoinsClaimRoute
   '/api/coins/gift': typeof ApiCoinsGiftRoute
@@ -6561,6 +6568,7 @@ export interface FileRoutesByTo {
   '/api/calls/history': typeof ApiCallsHistoryRoute
   '/api/calls/ice': typeof ApiCallsIceRoute
   '/api/calls/privacy': typeof ApiCallsPrivacyRoute
+  '/api/casino/rooms': typeof ApiCasinoRoomsRoute
   '/api/coins/bet': typeof ApiCoinsBetRoute
   '/api/coins/claim': typeof ApiCoinsClaimRoute
   '/api/coins/gift': typeof ApiCoinsGiftRoute
@@ -7442,6 +7450,7 @@ export interface FileRoutesById {
   '/api/calls/history': typeof ApiCallsHistoryRoute
   '/api/calls/ice': typeof ApiCallsIceRoute
   '/api/calls/privacy': typeof ApiCallsPrivacyRoute
+  '/api/casino/rooms': typeof ApiCasinoRoomsRoute
   '/api/coins/bet': typeof ApiCoinsBetRoute
   '/api/coins/claim': typeof ApiCoinsClaimRoute
   '/api/coins/gift': typeof ApiCoinsGiftRoute
@@ -8323,6 +8332,7 @@ export interface FileRouteTypes {
     | '/api/calls/history'
     | '/api/calls/ice'
     | '/api/calls/privacy'
+    | '/api/casino/rooms'
     | '/api/coins/bet'
     | '/api/coins/claim'
     | '/api/coins/gift'
@@ -9177,6 +9187,7 @@ export interface FileRouteTypes {
     | '/api/calls/history'
     | '/api/calls/ice'
     | '/api/calls/privacy'
+    | '/api/casino/rooms'
     | '/api/coins/bet'
     | '/api/coins/claim'
     | '/api/coins/gift'
@@ -10057,6 +10068,7 @@ export interface FileRouteTypes {
     | '/api/calls/history'
     | '/api/calls/ice'
     | '/api/calls/privacy'
+    | '/api/casino/rooms'
     | '/api/coins/bet'
     | '/api/coins/claim'
     | '/api/coins/gift'
@@ -10776,6 +10788,7 @@ export interface RootRouteChildren {
   ApiCallsHistoryRoute: typeof ApiCallsHistoryRoute
   ApiCallsIceRoute: typeof ApiCallsIceRoute
   ApiCallsPrivacyRoute: typeof ApiCallsPrivacyRoute
+  ApiCasinoRoomsRoute: typeof ApiCasinoRoomsRoute
   ApiCoinsBetRoute: typeof ApiCoinsBetRoute
   ApiCoinsClaimRoute: typeof ApiCoinsClaimRoute
   ApiCoinsGiftRoute: typeof ApiCoinsGiftRoute
@@ -13466,6 +13479,13 @@ declare module '@tanstack/react-router' {
       path: '/api/calls/privacy'
       fullPath: '/api/calls/privacy'
       preLoaderRoute: typeof ApiCallsPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/casino/rooms': {
+      id: '/api/casino/rooms'
+      path: '/api/casino/rooms'
+      fullPath: '/api/casino/rooms'
+      preLoaderRoute: typeof ApiCasinoRoomsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/coins/': {
@@ -19107,6 +19127,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCallsHistoryRoute: ApiCallsHistoryRoute,
   ApiCallsIceRoute: ApiCallsIceRoute,
   ApiCallsPrivacyRoute: ApiCallsPrivacyRoute,
+  ApiCasinoRoomsRoute: ApiCasinoRoomsRoute,
   ApiCoinsBetRoute: ApiCoinsBetRoute,
   ApiCoinsClaimRoute: ApiCoinsClaimRoute,
   ApiCoinsGiftRoute: ApiCoinsGiftRoute,
