@@ -45,6 +45,24 @@ export interface WatchDayDTO {
   aloneSec: number;
   lateNightSec: number;
 
+  /**
+   * Time at each status. Mutually exclusive — a status is one value — so these
+   * sum to his presence for the day.
+   */
+  onlineSec: number;
+  idleSec: number;
+  dndSec: number;
+
+  /**
+   * Time signed in on each client. These OVERLAP: desktop and mobile are
+   * routinely both true, so the three can sum to more than online+idle+dnd.
+   * Read them as "how much of the day was he reachable on a phone", not as a
+   * partition of it.
+   */
+  desktopSec: number;
+  mobileSec: number;
+  webSec: number;
+
   messages: number;
   words: number;
   characters: number;
@@ -106,6 +124,13 @@ export interface WatchLiveDTO {
   /** Fully-built CDN URL, or null for the default avatar. */
   avatarUrl: string | null;
 
+  /**
+   * Which clients he is signed in on right now. Discord shows a phone badge for
+   * a mobile-only session and this is the same signal; more than one can be
+   * true at once.
+   */
+  clients: { desktop: boolean; mobile: boolean; web: boolean };
+
   /** Present only while he is actually in a voice channel. */
   voice: {
     channelName: string | null;
@@ -157,6 +182,26 @@ export interface WatchTotalsDTO {
   gamingSec: number;
   aloneSec: number;
   lateNightSec: number;
+
+  /**
+   * Time at each status. Mutually exclusive — a status is one value — so these
+   * sum to his presence for the day.
+   */
+  /** Total time signed in to Discord — online + idle + dnd. */
+  presenceSec: number;
+  onlineSec: number;
+  idleSec: number;
+  dndSec: number;
+
+  /**
+   * Time signed in on each client. These OVERLAP: desktop and mobile are
+   * routinely both true, so the three can sum to more than online+idle+dnd.
+   * Read them as "how much of the day was he reachable on a phone", not as a
+   * partition of it.
+   */
+  desktopSec: number;
+  mobileSec: number;
+  webSec: number;
   lateNightMessages: number;
   reactionsGiven: number;
   reactionsReceived: number;

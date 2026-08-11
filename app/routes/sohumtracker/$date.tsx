@@ -58,12 +58,12 @@ export const Route = createFileRoute('/sohumtracker/$date')({
           title: `${label} — Sohum's day | RMH Studios`,
           description: loaderData
             ? describeDay(loaderData.day)
-            : 'One day of Discord activity: hours in voice, messages sent, games played.',
+            : 'One day of Discord activity: hours signed in, hours in voice, messages sent.',
           path: `/sohumtracker/${params.date}`,
           // The day's own card, so the paste carries that day's figures rather
           // than the dossier's front page.
           image: `/api/og/sohumtracker?date=${encodeURIComponent(params.date)}`,
-          imageAlt: `Activity report for ${label}: time in voice, messages sent and games played.`,
+          imageAlt: `Activity report for ${label}: time signed in to Discord, time in voice and messages sent.`,
         }),
         { name: 'robots', content: 'noindex, nofollow' },
         { name: 'color-scheme', content: 'dark light' },

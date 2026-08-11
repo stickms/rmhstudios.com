@@ -22,10 +22,14 @@ import type { WatchDayDTO } from './types';
  * August 9: 8h 4m in voice…".
  */
 export function dayFigures(day: WatchDayDTO): string {
-  if (day.voiceSec === 0 && day.messages === 0 && day.gamingSec === 0) {
-    return 'Nothing recorded. No voice, no messages, no games.';
+  const signedIn = day.onlineSec + day.idleSec + day.dndSec;
+  if (signedIn === 0 && day.voiceSec === 0 && day.messages === 0 && day.gamingSec === 0) {
+    return 'Nothing recorded. Not online, no voice, no messages, no games.';
   }
+  // Time signed in leads: it is the figure the rest are a fraction of, and the
+  // one that answers "how much of his day was this" on its own.
   return (
+    `${formatDuration(signedIn)} signed in, ` +
     `${formatDuration(day.voiceSec)} in voice, ` +
     `${formatCount(day.messages)} messages, ` +
     `${formatDuration(day.gamingSec)} in games.`

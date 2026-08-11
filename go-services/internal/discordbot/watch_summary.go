@@ -278,6 +278,14 @@ func buildSummaryPrompt(period, key string, days []*dayRollup, totals dayTotals,
 	fmt.Fprintf(&b, "- Streaming: %s; camera on: %s\n",
 		humanDuration(totals.StreamingSec), humanDuration(totals.VideoSec))
 	fmt.Fprintf(&b, "- Time in voice between midnight and 5am: %s\n", humanDuration(totals.LateNightSec))
+	fmt.Fprintf(&b, "- Signed in to Discord: %s (%s online, %s idle, %s do-not-disturb)\n",
+		humanDuration(totals.OnlineSec+totals.IdleSec+totals.DndSec),
+		humanDuration(totals.OnlineSec), humanDuration(totals.IdleSec), humanDuration(totals.DndSec))
+	// Stated as overlapping on purpose — the model is told not to do arithmetic,
+	// and without saying so it would try to make three figures sum to the total.
+	fmt.Fprintf(&b, "- Of that, signed in on desktop: %s; on mobile: %s; on web: %s "+
+		"(these OVERLAP — he is often on more than one at once, so they may sum to more than the total)\n",
+		humanDuration(totals.DesktopSec), humanDuration(totals.MobileSec), humanDuration(totals.WebSec))
 	fmt.Fprintf(&b, "- Messages sent: %d (%d words, %d characters)\n",
 		totals.Messages, totals.Words, totals.Characters)
 	fmt.Fprintf(&b, "- Of those: %d replies, %d questions, %d sent between midnight and 5am\n",
@@ -389,6 +397,12 @@ type dayTotals struct {
 	VideoSec          int
 	AloneSec          int
 	LateNightSec      int
+	OnlineSec         int
+	IdleSec           int
+	DndSec            int
+	DesktopSec        int
+	MobileSec         int
+	WebSec            int
 	Messages          int
 	Words             int
 	Characters        int
@@ -431,6 +445,12 @@ func sumDays(days []*dayRollup) dayTotals {
 		t.VideoSec += d.VideoSec
 		t.AloneSec += d.AloneSec
 		t.LateNightSec += d.LateNightSec
+		t.OnlineSec += d.OnlineSec
+		t.IdleSec += d.IdleSec
+		t.DndSec += d.DndSec
+		t.DesktopSec += d.DesktopSec
+		t.MobileSec += d.MobileSec
+		t.WebSec += d.WebSec
 		t.Messages += d.Messages
 		t.Words += d.Words
 		t.Characters += d.Characters

@@ -8766,6 +8766,20 @@ model DiscordWatchDay {
   reactionsGiven    Int @default(0)
   reactionsReceived Int @default(0)
 
+  /// Time at each status, from the status-session log. Mutually exclusive — a
+  /// status is one value — so these sum to his presence for the day.
+  onlineSec Int @default(0)
+  idleSec   Int @default(0)
+  dndSec    Int @default(0)
+
+  /// Time signed in on each client. These OVERLAP: desktop and mobile are
+  /// routinely both true, so the three can sum to more than online+idle+dnd.
+  /// Read them as "how much of the day was he reachable on a phone", not as a
+  /// partition of it.
+  desktopSec Int @default(0)
+  mobileSec  Int @default(0)
+  webSec     Int @default(0)
+
   gamingSec    Int     @default(0)
   gameSessions Int     @default(0)
   topGame      String?
@@ -8829,6 +8843,47 @@ model DiscordWatchSummary {
   @@unique([discordId, period, periodKey])
   @@index([discordId, period, periodKey(sort: Desc)], map: "idx_discord_watch_summary_lookup")
   @@map("discord_watch_summary")
+}
+
+/// One contiguous run of a presence STATE: a status (online/idle/dnd) held on a
+/// particular set of clients. Opened when either changes, closed when either
+/// changes again — the same open/close shape as a voice session, and resumed
+/// across a brief restart by the same heartbeat rule.
+///
+/// This exists because the live row records a LEVEL, not an interval: "online
+/// since 14:02" is knowable from it, but "he was online for nine hours
+/// yesterday, six of them on his phone" is not, and that needs a log.
+///
+/// Offline is the ABSENCE of a row rather than a row of its own. A gap is
+/// already unambiguous, and storing offline would double the write volume to
+/// record something derivable.
+model DiscordWatchStatusSession {
+  id        String @id @default(cuid())
+  discordId String
+
+  /// "online" | "idle" | "dnd" — never "offline" (see above).
+  status String
+
+  /// Which clients he was signed in on for this run. These OVERLAP by design:
+  /// Discord reports desktop and mobile independently and both are routinely
+  /// true at once, so per-platform totals derived from them can sum to more
+  /// than the elapsed time. That is the honest answer, not a bug.
+  desktop Boolean @default(false)
+  mobile  Boolean @default(false)
+  web     Boolean @default(false)
+
+  startedAt   DateTime
+  endedAt     DateTime?
+  durationSec Int       @default(0)
+  /// "change" | "offline" | "shutdown" | "stale" — why the run ended.
+  endedReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([discordId, startedAt(sort: Desc)], map: "idx_discord_watch_status_user")
+  @@index([discordId, endedAt], map: "idx_discord_watch_status_open")
+  @@map("discord_watch_status_session")
 }
 
 /// The live state behind /sohumbum2's profile card: is he online, what is he

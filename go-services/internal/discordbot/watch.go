@@ -254,6 +254,17 @@ func (w *WatchService) flush(ctx context.Context) {
 // keeps a long silent session's mute/alone counters honest instead of letting
 // them arrive in one lump whenever he finally unmutes.
 func (w *WatchService) beat(ctx context.Context, discordID string, now time.Time) {
+	// The presence and activity heartbeats come FIRST and unconditionally: he is
+	// very often online without being in a voice channel, and hanging them off
+	// the voice branch below would leave those runs unbeaten — and so written
+	// off as stale by the next restart.
+	if err := w.repo.touchOpenPresence(ctx, discordID); err != nil {
+		w.logger.Warn("watch: presence heartbeat", "userId", discordID, "error", err)
+	}
+	if err := w.repo.touchOpenStatus(ctx, discordID); err != nil {
+		w.logger.Warn("watch: status heartbeat", "userId", discordID, "error", err)
+	}
+
 	sess, err := w.repo.openVoiceSession(ctx, discordID)
 	if err != nil || sess == nil {
 		return
@@ -284,6 +295,11 @@ func (w *WatchService) closeAll(ctx context.Context, reason string) {
 		}
 		if err := w.repo.closeOpenPresence(ctx, id, nil, now); err != nil {
 			w.logger.Warn("watch: close presence on shutdown", "error", err)
+		}
+		if open, err := w.repo.openStatusSession(ctx, id); err == nil && open != nil {
+			if err := w.repo.closeStatusSession(ctx, open, now, reason); err != nil {
+				w.logger.Warn("watch: close status on shutdown", "error", err)
+			}
 		}
 		if err := w.recomputeDay(ctx, id, w.dateKey(now)); err != nil {
 			w.logger.Warn("watch: recompute on shutdown", "error", err)
@@ -491,6 +507,64 @@ func (w *WatchService) Reconcile(ctx context.Context, s *discordgo.Session, guil
 		}
 	}
 
+	// Settle the PRESENCE log against the same sync, for the same reason the
+	// voice log is settled below: a status run resumed across a restart is a
+	// guess until the gateway confirms it.
+	//
+	// A synced guild carries its members' presences, and Discord's presence is a
+	// user-level fact rather than a per-guild one, so whichever guild syncs first
+	// gives the real answer. `applyStatusSession` no-ops when the status and
+	// client set are unchanged, which is what makes a redeploy invisible — the
+	// resumed run keeps its original startedAt rather than being chopped in two.
+	//
+	// The `len(guild.Presences) > 0` guard matters: a lazily-loaded guild can
+	// deliver an EMPTY presence array, which is "we did not tell you" and not
+	// "he is offline". Treating that as offline would end a live run on every
+	// such sync.
+	if len(guild.Presences) > 0 {
+		seen := make(map[string]struct{})
+		for _, pr := range guild.Presences {
+			if pr == nil || pr.User == nil || !w.tracks(pr.User.ID) {
+				continue
+			}
+			seen[pr.User.ID] = struct{}{}
+			status := strings.TrimSpace(string(pr.Status))
+			if status == "" {
+				continue
+			}
+			if status == "invisible" {
+				status = "offline"
+			}
+			if err := w.applyStatusSession(ctx, pr.User.ID, status, clientsFrom(pr.ClientStatus), now); err != nil {
+				w.logger.Warn("watch: reconcile status", "userId", pr.User.ID, "error", err)
+			}
+		}
+
+		// Present in the guild's roster but absent from its presences means
+		// offline. Close the resumed run RETROACTIVELY at its heartbeat, so
+		// resuming can never credit presence he was not there for.
+		for id := range w.watched {
+			if _, online := seen[id]; online {
+				continue
+			}
+			open, err := w.repo.openStatusSession(ctx, id)
+			if err != nil || open == nil {
+				continue
+			}
+			endedAt := open.HeartbeatAt
+			if endedAt.IsZero() || endedAt.Before(open.StartedAt) {
+				endedAt = open.StartedAt
+			}
+			if err := w.repo.closeStatusSession(ctx, open, endedAt, "stale"); err != nil {
+				w.logger.Warn("watch: reconcile status retire", "userId", id, "error", err)
+				continue
+			}
+			if err := w.recomputeSpan(ctx, id, open.StartedAt, endedAt); err != nil {
+				w.logger.Warn("watch: reconcile status recompute", "userId", id, "error", err)
+			}
+		}
+	}
+
 	// A resumed session in this guild for somebody who is not in voice here lost
 	// its bet: close it back at the heartbeat that justified resuming it.
 	for id := range w.watched {
@@ -628,6 +702,18 @@ func (w *WatchService) HandlePresence(ctx context.Context, e *discordgo.Presence
 	// The profile card's "now" row. Written before the session reconciliation
 	// below so the card is current even if a database error stops the rest.
 	w.recordLiveStatus(ctx, e)
+
+	// The presence LOG — how long he was online, and on what. Separate from the
+	// live row above because that one records a level and this one records
+	// intervals; only the log can answer "nine hours, six of them on mobile".
+	if status := strings.TrimSpace(string(e.Status)); status != "" {
+		if status == "invisible" {
+			status = "offline"
+		}
+		if err := w.applyStatusSession(ctx, e.User.ID, status, clientsFrom(e.ClientStatus), now); err != nil {
+			w.logger.Warn("watch: status session", "userId", e.User.ID, "error", err)
+		}
+	}
 
 	open, err := w.repo.openPresenceSessions(ctx, e.User.ID)
 	if err != nil {

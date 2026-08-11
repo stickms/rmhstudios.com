@@ -158,6 +158,23 @@ export function SohumTrackerPage({
               </div>
               <div className="stk-stats">
                 <Stat
+                  label={t('stat-online', { defaultValue: 'Signed in' })}
+                  value={formatDuration(totals.presenceSec)}
+                  note={t('stat-online-note', {
+                    online: formatDuration(totals.onlineSec),
+                    idle: formatDuration(totals.idleSec),
+                    defaultValue: '{{online}} online, {{idle}} idle',
+                  })}
+                />
+                <Stat
+                  label={t('stat-mobile', { defaultValue: 'On his phone' })}
+                  value={formatDuration(totals.mobileSec)}
+                  note={t('stat-mobile-note', {
+                    desktop: formatDuration(totals.desktopSec),
+                    defaultValue: '{{desktop}} on desktop',
+                  })}
+                />
+                <Stat
                   label={t('stat-voice', { defaultValue: 'In voice' })}
                   value={formatDuration(totals.voiceSec)}
                   note={t('stat-voice-note', {

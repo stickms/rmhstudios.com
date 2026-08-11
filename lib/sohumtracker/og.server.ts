@@ -30,9 +30,10 @@ import type { WatchDayDTO } from './types';
  */
 function dayStats(day: WatchDayDTO): PageCardData['stats'] {
   return [
+    // Time signed in first: it is the figure the other two are a fraction of.
+    { label: 'Signed in', value: formatDuration(day.onlineSec + day.idleSec + day.dndSec) },
     { label: 'In voice', value: formatDuration(day.voiceSec) },
     { label: 'Messages', value: formatCount(day.messages) },
-    { label: 'In games', value: formatDuration(day.gamingSec) },
   ];
 }
 
@@ -65,8 +66,9 @@ export async function buildOverviewCard(): Promise<PageCardData> {
 
   const subtitle = live.voice
     ? `In voice right now — ${formatDuration(live.voice.durationSec)} and counting.`
-    : `${formatDuration(totals.voiceSec)} in voice over the last ${totals.days} days. ` +
-      `${formatCount(totals.messages)} messages. Nothing applied for.`;
+    : `${formatDuration(totals.presenceSec)} signed in to Discord over the last ` +
+      `${totals.days} days, ${formatDuration(totals.mobileSec)} of it on his phone. ` +
+      `Nothing applied for.`;
 
   return {
     // `generatedAt` is minute-truncated: the card should follow him into a call
@@ -77,9 +79,9 @@ export async function buildOverviewCard(): Promise<PageCardData> {
     title: 'What Is Sohum Doing Right Now?',
     subtitle,
     stats: [
-      { label: 'In voice, 30d', value: formatDuration(totals.voiceSec) },
-      { label: 'Messages', value: formatCount(totals.messages) },
-      { label: 'In games', value: formatDuration(totals.gamingSec) },
+      { label: 'Signed in, 30d', value: formatDuration(totals.presenceSec) },
+      { label: 'In voice', value: formatDuration(totals.voiceSec) },
+      { label: 'On mobile', value: formatDuration(totals.mobileSec) },
     ],
     path: '/sohumtracker',
   };
