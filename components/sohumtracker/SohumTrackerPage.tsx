@@ -30,6 +30,7 @@ import { formatCount, formatDuration } from '@/lib/sohumtracker/config';
 import { formatDayLong, isoWeekKey, monthKeyOf } from '@/lib/sohumtracker/dates';
 import type { WatchStateDTO, WatchSummaryDTO } from '@/lib/sohumtracker/types';
 import { ActivityCalendar } from './ActivityCalendar';
+import { AlertToggle } from './AlertToggle';
 import { ActivityCharts } from './ActivityCharts';
 import { DayDetail } from './DayDetail';
 import { useWatchState } from './live';
@@ -113,6 +114,7 @@ export function SohumTrackerPage({
             </span>
           </h1>
           <div className="stk-header__actions">
+            <AlertToggle />
             {/* An honest connection indicator rather than a spinner that implies
                 the page is broken while the stream is merely quiet. */}
             <span className="stk-feed-state" data-status={status} aria-live="polite">
@@ -244,6 +246,46 @@ export function SohumTrackerPage({
                     defaultValue: 'of the period, on Discord at all',
                   })}
                 />
+                {/* The one figure on this page measured against the thing he
+                    actually said he would do. "Not once" and "0" are different
+                    claims, so the null case gets its own wording rather than a
+                    number that would read as "it came up today". */}
+                <Stat
+                  label={t('stat-job', { defaultValue: 'Since he mentioned a job' })}
+                  value={
+                    totals.daysSinceJobMention === null
+                      ? t('stat-job-never', { defaultValue: 'Never' })
+                      : t('stat-job-value', {
+                          count: totals.daysSinceJobMention,
+                          defaultValue: '{{count}} days',
+                        })
+                  }
+                  note={
+                    totals.daysSinceJobMention === null
+                      ? t('stat-job-never-note', {
+                          count: totals.days,
+                          defaultValue: 'not once in {{count}} days',
+                        })
+                      : t('stat-job-note', {
+                          count: totals.jobMentions,
+                          defaultValue: '{{count}} mentions in the period',
+                        })
+                  }
+                  alarm
+                />
+                {totals.typingAbandoned > 0 ? (
+                  <Stat
+                    label={t('stat-drafts', { defaultValue: 'Typed and never sent' })}
+                    value={t('stat-drafts-value', {
+                      count: totals.typingAbandoned,
+                      defaultValue: '{{count}} drafts',
+                    })}
+                    note={t('stat-drafts-note', {
+                      value: formatDuration(totals.typingAbandonedSec),
+                      defaultValue: '{{value}} spent writing them',
+                    })}
+                  />
+                ) : null}
               </div>
             </section>
 

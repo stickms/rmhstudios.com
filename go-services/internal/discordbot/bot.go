@@ -178,9 +178,15 @@ func New(cfg Config, chat *ChatService, pet *PetService, watch *WatchService, su
 		// Enabling them in the portal takes effect on the next IDENTIFY, so the
 		// worker has to be RESTARTED after flipping the toggles; an already-open
 		// gateway keeps the bitfield it connected with.
+		//
+		// GuildMessageTyping is NOT privileged — it is the ordinary typing
+		// indicator every client already shows everyone in the channel — and it
+		// is what lets the tracker see a message that was written and then not
+		// sent. Adding it needs no portal change, only this bit.
 		session.Identify.Intents |= discordgo.IntentsGuildVoiceStates |
 			discordgo.IntentsGuildPresences |
-			discordgo.IntentsGuildMessageReactions
+			discordgo.IntentsGuildMessageReactions |
+			discordgo.IntentsGuildMessageTyping
 		if watch.cfg.StoreContent {
 			session.Identify.Intents |= discordgo.IntentsMessageContent
 		}
@@ -195,6 +201,7 @@ func New(cfg Config, chat *ChatService, pet *PetService, watch *WatchService, su
 		session.AddHandler(b.onVoiceStateUpdate)
 		session.AddHandler(b.onPresenceUpdate)
 		session.AddHandler(b.onMessageReactionAdd)
+		session.AddHandler(b.onTypingStart)
 	}
 	return b, nil
 }
@@ -234,6 +241,14 @@ func (b *Bot) onMessageReactionAdd(_ *discordgo.Session, e *discordgo.MessageRea
 	ctx, cancel := b.watchContext()
 	defer cancel()
 	b.watch.HandleReaction(ctx, e)
+}
+
+// onTypingStart opens (or extends) a compose session, so the tracker can tell a
+// message that was written and sent from one that was written and deleted.
+func (b *Bot) onTypingStart(s *discordgo.Session, e *discordgo.TypingStart) {
+	ctx, cancel := b.watchContext()
+	defer cancel()
+	b.watch.HandleTyping(ctx, s, e)
 }
 
 // onMessageCreate lets Alex reply when he's @mentioned or someone replies to one
@@ -347,7 +362,7 @@ func (b *Bot) Run(ctx context.Context) error {
 	// Settle whatever the previous run left open and begin the flush/heartbeat
 	// loop, then the summarizer. Both stop with ctx.
 	b.watch.Start(ctx, b.session)
-	b.summary.Start(ctx, summaryInterval)
+	b.summary.Start(ctx, b.session, summaryInterval)
 
 	<-ctx.Done()
 

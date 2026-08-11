@@ -176,7 +176,7 @@ func TestBuildDayRollupSplitsVoiceAcrossMidnight(t *testing.T) {
 	now := left.Add(time.Hour)
 
 	firstFrom, firstTo, _ := dayBounds("2026-08-11", loc)
-	first := buildDayRollup("u", "2026-08-11", "America/New_York", loc, firstFrom, firstTo, now, nil, sessions, nil, nil)
+	first := buildDayRollup("u", "2026-08-11", "America/New_York", loc, firstFrom, firstTo, now, nil, sessions, nil, nil, nil)
 	if first.VoiceSec != 3*3600 {
 		t.Fatalf("day one voice = %ds, want 3h", first.VoiceSec)
 	}
@@ -188,7 +188,7 @@ func TestBuildDayRollupSplitsVoiceAcrossMidnight(t *testing.T) {
 	}
 
 	secondFrom, secondTo, _ := dayBounds("2026-08-12", loc)
-	second := buildDayRollup("u", "2026-08-12", "America/New_York", loc, secondFrom, secondTo, now, nil, sessions, nil, nil)
+	second := buildDayRollup("u", "2026-08-12", "America/New_York", loc, secondFrom, secondTo, now, nil, sessions, nil, nil, nil)
 	if second.VoiceSec != 3*3600 {
 		t.Fatalf("day two voice = %ds, want 3h", second.VoiceSec)
 	}
@@ -217,7 +217,7 @@ func TestBuildDayRollupMeasuresOpenSessionAgainstNow(t *testing.T) {
 	now := time.Date(2026, 8, 11, 15, 30, 0, 0, loc).UTC()
 
 	roll := buildDayRollup("u", "2026-08-11", "America/New_York", loc, from, to, now,
-		nil, []*voiceSession{{DiscordID: "u", JoinedAt: joined}}, nil, nil)
+		nil, []*voiceSession{{DiscordID: "u", JoinedAt: joined}}, nil, nil, nil)
 
 	if roll.VoiceSec != 9000 {
 		t.Fatalf("open session voice = %ds, want 2h30m", roll.VoiceSec)
@@ -246,7 +246,7 @@ func TestBuildDayRollupCountsMessagesAndGames(t *testing.T) {
 		{ActivityName: "Spotify", ActivityType: 2, StartedAt: at(16, 0), EndedAt: &gameEnd},
 	}
 
-	roll := buildDayRollup("u", "2026-08-11", "America/New_York", loc, from, to, now, messages, nil, presence, nil)
+	roll := buildDayRollup("u", "2026-08-11", "America/New_York", loc, from, to, now, messages, nil, presence, nil, nil)
 
 	if roll.Messages != 3 || roll.Words != 9 || roll.Characters != 36 {
 		t.Fatalf("message totals wrong: %+v", roll)
@@ -339,7 +339,7 @@ func TestBuildDayRollupSplitsOnlineTimeAndOverlapsClients(t *testing.T) {
 	now := idleEnd.Add(time.Hour)
 
 	from1, to1, _ := dayBounds("2026-08-11", loc)
-	first := buildDayRollup("u", "2026-08-11", "America/New_York", loc, from1, to1, now, nil, nil, nil, statuses)
+	first := buildDayRollup("u", "2026-08-11", "America/New_York", loc, from1, to1, now, nil, nil, nil, statuses, nil)
 	if first.OnlineSec != 2*3600 {
 		t.Fatalf("day one online = %ds, want 2h (10pm–midnight)", first.OnlineSec)
 	}
@@ -348,7 +348,7 @@ func TestBuildDayRollupSplitsOnlineTimeAndOverlapsClients(t *testing.T) {
 	}
 
 	from2, to2, _ := dayBounds("2026-08-12", loc)
-	second := buildDayRollup("u", "2026-08-12", "America/New_York", loc, from2, to2, now, nil, nil, nil, statuses)
+	second := buildDayRollup("u", "2026-08-12", "America/New_York", loc, from2, to2, now, nil, nil, nil, statuses, nil)
 	if second.OnlineSec != 2*3600 {
 		t.Fatalf("day two online = %ds, want 2h (midnight–2am)", second.OnlineSec)
 	}

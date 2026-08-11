@@ -95,11 +95,21 @@ export async function buildOverviewCard(): Promise<PageCardData> {
   const state = await getWatchState({ days: 30 });
   const { totals, live } = state;
 
+  // The job line is measured now rather than asserted: "nothing applied for" was
+  // a claim the card could not back up, and `daysSinceJobMention` is the same
+  // sentence with a figure behind it.
+  const jobLine =
+    totals.daysSinceJobMention === null
+      ? `Work has not come up once in ${totals.days} days.`
+      : totals.daysSinceJobMention === 0
+        ? 'He mentioned looking for work today.'
+        : `${totals.daysSinceJobMention} days since he mentioned looking for work.`;
+
   const subtitle = live.voice
-    ? `In voice right now — ${formatDuration(live.voice.durationSec)} and counting.`
+    ? `In voice right now — ${formatDuration(live.voice.durationSec)} and counting. ${jobLine}`
     : `${formatDuration(totals.presenceSec)} signed in to Discord over the last ` +
       `${totals.days} days, ${formatDuration(totals.mobileSec)} of it on his phone. ` +
-      `Nothing applied for.`;
+      jobLine;
 
   return {
     // `generatedAt` is minute-truncated: the card should follow him into a call

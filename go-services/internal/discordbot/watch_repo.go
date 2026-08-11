@@ -91,6 +91,10 @@ type watchMessage struct {
 	IsReply     bool
 	IsQuestion  bool
 	IsLateNight bool
+	// MentionsJob is decided once, at insert, by matchesJobHunt — see the note
+	// at the top of watch_jobhunt.go for why it is stored rather than derived
+	// later (the text it was derived from does not survive retention).
+	MentionsJob bool
 }
 
 // presenceSession is one run of a rich-presence activity.
@@ -299,13 +303,13 @@ func (r *watchRepo) insertMessage(ctx context.Context, m *watchMessage) error {
 		`INSERT INTO "discord_watch_message"
 		   ("id","discordId","guildId","channelId","channelName","messageId","sentAt","content",
 		    "charCount","wordCount","attachments","embeds","links","mentions","emoji","stickers",
-		    "isReply","isQuestion","isLateNight")
-		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+		    "isReply","isQuestion","isLateNight","mentionsJob")
+		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
 		 ON CONFLICT ("messageId") DO NOTHING`,
 		newWatchID(), m.DiscordID, m.GuildID, m.ChannelID, nullableString(m.ChannelName), m.MessageID,
 		m.SentAt, nullableString(m.Content),
 		m.CharCount, m.WordCount, m.Attachments, m.Embeds, m.Links, m.Mentions, m.Emoji, m.Stickers,
-		m.IsReply, m.IsQuestion, m.IsLateNight)
+		m.IsReply, m.IsQuestion, m.IsLateNight, m.MentionsJob)
 	return err
 }
 
@@ -339,7 +343,7 @@ func (r *watchRepo) messagesForDay(ctx context.Context, discordID string, from, 
 	}
 	rows, err := r.db.Pool.Query(ctx,
 		`SELECT "channelId","channelName","sentAt","charCount","wordCount","attachments","links",
-		        "mentions","emoji","stickers","isReply","isQuestion","isLateNight"
+		        "mentions","emoji","stickers","isReply","isQuestion","isLateNight","mentionsJob"
 		 FROM "discord_watch_message"
 		 WHERE "discordId"=$1 AND "sentAt" >= $2 AND "sentAt" < $3
 		 ORDER BY "sentAt"`, discordID, from, to)
@@ -354,7 +358,7 @@ func (r *watchRepo) messagesForDay(ctx context.Context, discordID string, from, 
 		var channelName *string
 		if err := rows.Scan(&m.ChannelID, &channelName, &m.SentAt, &m.CharCount, &m.WordCount,
 			&m.Attachments, &m.Links, &m.Mentions, &m.Emoji, &m.Stickers,
-			&m.IsReply, &m.IsQuestion, &m.IsLateNight); err != nil {
+			&m.IsReply, &m.IsQuestion, &m.IsLateNight, &m.MentionsJob); err != nil {
 			return nil, err
 		}
 		if channelName != nil {
@@ -814,9 +818,10 @@ func (r *watchRepo) writeDayRollup(ctx context.Context, d *dayRollup) error {
 		    "desktopSec","mobileSec","webSec","messages","words",
 		    "characters","attachments","links","mentions","emoji","stickers","replies","questions",
 		    "lateNightMessages","gamingSec","gameSessions","topGame","topGameSec","topChannel",
-		    "topChannelMessages","hourlyMessages","hourlyVoiceSec","firstSeenAt","lastSeenAt","updatedAt")
+		    "topChannelMessages","hourlyMessages","hourlyVoiceSec","firstSeenAt","lastSeenAt",
+		    "jobMentions","typingStarts","typingAbandoned","typingAbandonedSec","updatedAt")
 		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,
-		         $24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40)
+		         $24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44)
 		 ON CONFLICT ("discordId","dateKey") DO UPDATE SET
 		   "timeZone"=EXCLUDED."timeZone",
 		   "voiceSec"=EXCLUDED."voiceSec",
@@ -855,6 +860,10 @@ func (r *watchRepo) writeDayRollup(ctx context.Context, d *dayRollup) error {
 		   "hourlyVoiceSec"=EXCLUDED."hourlyVoiceSec",
 		   "firstSeenAt"=EXCLUDED."firstSeenAt",
 		   "lastSeenAt"=EXCLUDED."lastSeenAt",
+		   "jobMentions"=EXCLUDED."jobMentions",
+		   "typingStarts"=EXCLUDED."typingStarts",
+		   "typingAbandoned"=EXCLUDED."typingAbandoned",
+		   "typingAbandonedSec"=EXCLUDED."typingAbandonedSec",
 		   "updatedAt"=EXCLUDED."updatedAt"`,
 		d.DiscordID, d.DateKey, d.TimeZone, d.VoiceSec, d.VoiceSessions, d.LongestVoiceSec, d.MutedSec,
 		d.DeafenedSec, d.StreamingSec, d.VideoSec, d.AloneSec, d.LateNightSec, d.OnlineSec, d.IdleSec, d.DndSec,
@@ -862,7 +871,8 @@ func (r *watchRepo) writeDayRollup(ctx context.Context, d *dayRollup) error {
 		d.Characters, d.Attachments, d.Links, d.Mentions, d.Emoji, d.Stickers, d.Replies, d.Questions,
 		d.LateNightMessages, d.GamingSec, d.GameSessions, nullableString(d.TopGame), d.TopGameSec,
 		nullableString(d.TopChannel), d.TopChannelMessages, jsonInts(d.HourlyMessages), jsonInts(d.HourlyVoiceSec),
-		d.FirstSeenAt, d.LastSeenAt, now)
+		d.FirstSeenAt, d.LastSeenAt,
+		d.JobMentions, d.TypingStarts, d.TypingAbandoned, d.TypingAbandonedSec, now)
 	return err
 }
 
@@ -932,6 +942,73 @@ func (r *watchRepo) upsertSummary(ctx context.Context, s *watchSummary) error {
 	return err
 }
 
+// unpostedWeekSummaries returns weekly write-ups that have never been announced,
+// no older than `oldestKey`. Ordered so a backlog is posted in the order the
+// weeks happened rather than newest-first.
+func (r *watchRepo) unpostedWeekSummaries(ctx context.Context, discordID, oldestKey string) ([]*watchSummary, error) {
+	if r.db == nil {
+		return nil, nil
+	}
+	rows, err := r.db.Pool.Query(ctx,
+		`SELECT "periodKey","headline","summary","verdict","mood","topics"
+		 FROM "discord_watch_summary"
+		 WHERE "discordId"=$1 AND "period"='week' AND "digestPostedAt" IS NULL AND "periodKey" >= $2
+		 ORDER BY "periodKey"`, discordID, oldestKey)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []*watchSummary
+	for rows.Next() {
+		v := &watchSummary{DiscordID: discordID, Period: periodWeek}
+		var verdict, mood *string
+		var topics []string
+		if err := rows.Scan(&v.PeriodKey, &v.Headline, &v.Summary, &verdict, &mood, &topics); err != nil {
+			return nil, err
+		}
+		if verdict != nil {
+			v.Verdict = *verdict
+		}
+		if mood != nil {
+			v.Mood = *mood
+		}
+		v.Topics = topics
+		out = append(out, v)
+	}
+	return out, rows.Err()
+}
+
+// claimDigest marks a week as posted, returning whether THIS caller won the
+// claim. Conditional on the column still being null, which is what makes two
+// workers racing safe without a lock.
+func (r *watchRepo) claimDigest(ctx context.Context, discordID, periodKey string, at time.Time) (bool, error) {
+	if r.db == nil {
+		return false, nil
+	}
+	tag, err := r.db.Pool.Exec(ctx,
+		`UPDATE "discord_watch_summary" SET "digestPostedAt"=$3,"updatedAt"=$4
+		 WHERE "discordId"=$1 AND "period"='week' AND "periodKey"=$2 AND "digestPostedAt" IS NULL`,
+		discordID, periodKey, at, time.Now().UTC())
+	if err != nil {
+		return false, err
+	}
+	return tag.RowsAffected() > 0, nil
+}
+
+// releaseDigest undoes a claim after a transient send failure, so a later pass
+// retries. Not called for a permanent one — see the note in watch_digest.go.
+func (r *watchRepo) releaseDigest(ctx context.Context, discordID, periodKey string) error {
+	if r.db == nil {
+		return nil
+	}
+	_, err := r.db.Pool.Exec(ctx,
+		`UPDATE "discord_watch_summary" SET "digestPostedAt"=NULL,"updatedAt"=$3
+		 WHERE "discordId"=$1 AND "period"='week' AND "periodKey"=$2`,
+		discordID, periodKey, time.Now().UTC())
+	return err
+}
+
 // daysInRange returns the rollups for [fromKey, toKey] inclusive — the figures
 // the summarizer describes and the hash it keys off.
 func (r *watchRepo) daysInRange(ctx context.Context, discordID, fromKey, toKey string) ([]*dayRollup, error) {
@@ -944,7 +1021,8 @@ func (r *watchRepo) daysInRange(ctx context.Context, discordID, fromKey, toKey s
 		    "desktopSec","mobileSec","webSec","messages","words","characters",
 		        "attachments","links","mentions","emoji","stickers","replies","questions",
 		        "lateNightMessages","reactionsGiven","reactionsReceived","gamingSec","gameSessions",
-		        "topGame","topGameSec","topChannel","topChannelMessages","firstSeenAt","lastSeenAt"
+		        "topGame","topGameSec","topChannel","topChannelMessages","firstSeenAt","lastSeenAt",
+		        "jobMentions","typingStarts","typingAbandoned","typingAbandonedSec"
 		 FROM "discord_watch_day"
 		 WHERE "discordId"=$1 AND "dateKey" >= $2 AND "dateKey" <= $3
 		 ORDER BY "dateKey"`, discordID, fromKey, toKey)
@@ -963,7 +1041,8 @@ func (r *watchRepo) daysInRange(ctx context.Context, discordID, fromKey, toKey s
 			&d.Words, &d.Characters, &d.Attachments, &d.Links, &d.Mentions, &d.Emoji, &d.Stickers,
 			&d.Replies, &d.Questions, &d.LateNightMessages, &d.ReactionsGiven, &d.ReactionsReceived,
 			&d.GamingSec, &d.GameSessions, &topGame, &d.TopGameSec, &topChannel, &d.TopChannelMessages,
-			&d.FirstSeenAt, &d.LastSeenAt); err != nil {
+			&d.FirstSeenAt, &d.LastSeenAt,
+			&d.JobMentions, &d.TypingStarts, &d.TypingAbandoned, &d.TypingAbandonedSec); err != nil {
 			return nil, err
 		}
 		if topGame != nil {

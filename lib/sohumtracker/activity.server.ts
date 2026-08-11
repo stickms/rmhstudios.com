@@ -33,6 +33,7 @@ import {
   TRACKING_TIME_ZONE,
 } from './config';
 import {
+  daysBetween,
   isoWeekBounds,
   isoWeekKey,
   isValidDateKey,
@@ -161,6 +162,10 @@ const DAY_SELECT = {
   lateNightMessages: true,
   reactionsGiven: true,
   reactionsReceived: true,
+  jobMentions: true,
+  typingStarts: true,
+  typingAbandoned: true,
+  typingAbandonedSec: true,
   gamingSec: true,
   gameSessions: true,
   topGame: true,
@@ -240,6 +245,10 @@ function toDayDTO(row: DayRow, summary: WatchSummaryDTO | null): WatchDayDTO {
     lateNightMessages: row.lateNightMessages,
     reactionsGiven: row.reactionsGiven,
     reactionsReceived: row.reactionsReceived,
+    jobMentions: row.jobMentions,
+    typingStarts: row.typingStarts,
+    typingAbandoned: row.typingAbandoned,
+    typingAbandonedSec: row.typingAbandonedSec,
     gamingSec: row.gamingSec,
     gameSessions: row.gameSessions,
     topGame: row.topGame,
@@ -286,6 +295,10 @@ function emptyDay(dateKey: string): WatchDayDTO {
     lateNightMessages: 0,
     reactionsGiven: 0,
     reactionsReceived: 0,
+    jobMentions: 0,
+    typingStarts: 0,
+    typingAbandoned: 0,
+    typingAbandonedSec: 0,
     gamingSec: 0,
     gameSessions: 0,
     topGame: null,
@@ -434,6 +447,12 @@ function buildTotals(days: WatchDayDTO[], todayKey: string): WatchTotalsDTO {
     webSec: 0,
     reactionsGiven: 0,
     reactionsReceived: 0,
+    jobMentions: 0,
+    daysSinceJobMention: null,
+    lastJobMentionDateKey: null,
+    typingStarts: 0,
+    typingAbandoned: 0,
+    typingAbandonedSec: 0,
     peakVoiceSec: 0,
     peakVoiceDateKey: null,
     currentStreak: 0,
@@ -470,6 +489,12 @@ function buildTotals(days: WatchDayDTO[], todayKey: string): WatchTotalsDTO {
     totals.lateNightMessages += day.lateNightMessages;
     totals.reactionsGiven += day.reactionsGiven;
     totals.reactionsReceived += day.reactionsReceived;
+    totals.jobMentions += day.jobMentions;
+    totals.typingStarts += day.typingStarts;
+    totals.typingAbandoned += day.typingAbandoned;
+    totals.typingAbandonedSec += day.typingAbandonedSec;
+    // The LAST day it came up, not the first: the page counts days since.
+    if (day.jobMentions > 0) totals.lastJobMentionDateKey = day.dateKey;
 
     if (day.voiceSec > totals.peakVoiceSec) {
       totals.peakVoiceSec = day.voiceSec;
@@ -497,6 +522,13 @@ function buildTotals(days: WatchDayDTO[], todayKey: string): WatchTotalsDTO {
   while (cursor >= 0 && days[cursor].voiceSec > 0) {
     totals.currentStreak += 1;
     cursor -= 1;
+  }
+
+  // Days since, derived from the key rather than from a clock: `todayKey` is
+  // already the tracking zone's today, and re-deriving it here would be a second
+  // answer to a question the server has answered once.
+  if (totals.lastJobMentionDateKey) {
+    totals.daysSinceJobMention = daysBetween(totals.lastJobMentionDateKey, todayKey);
   }
 
   const topGame = [...games.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];

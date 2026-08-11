@@ -1453,6 +1453,14 @@
 /* ── Phones ───────────────────────────────────────────────────────────────── */
 
 @media (max-width: 640px) {
+  /* Header controls collapse to their icons: the page title is the thing that
+     must stay readable, and three labelled buttons beside it on a 390px screen
+     turn it into an ellipsis. Each control keeps an `aria-label`, so only the
+     visible text goes. */
+  .stk-header .stk-btn__label {
+    display: none;
+  }
+
   .stk-profile__body {
     grid-template-columns: 1fr;
     padding: 0 16px 16px;

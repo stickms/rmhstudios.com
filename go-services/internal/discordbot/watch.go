@@ -116,6 +116,12 @@ type WatchConfig struct {
 	// resumable. Under it, a restart is treated as continuous; over it, the
 	// session is closed at its last heartbeat. See the restart note at the top.
 	GapGrace time.Duration
+	// DigestChannelID is where the weekly write-up is posted once a week has
+	// ended. Empty — the default — means no digest is ever posted, which is the
+	// right default for a feature that writes into somebody else's channel.
+	DigestChannelID string
+	// SiteURL is the origin the digest's links point at.
+	SiteURL string
 }
 
 // Enabled reports whether anything should be tracked at all.
@@ -256,6 +262,9 @@ func (w *WatchService) flush(ctx context.Context) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	now := time.Now().UTC()
+	// Settled first, so a compose session that expired since the last tick is
+	// already judged by the time this tick's recompute reads the table.
+	w.sweepTyping(ctx, now)
 	for _, id := range w.cfg.UserIDs {
 		w.beat(ctx, id, now)
 		for _, key := range []string{w.dateKey(now), w.dateKey(now.Add(-24 * time.Hour))} {
@@ -643,6 +652,11 @@ func (w *WatchService) HandleMessage(ctx context.Context, s *discordgo.Session, 
 		IsReply:     m.MessageReference != nil,
 		IsQuestion:  metrics.Question,
 		IsLateNight: isLateNight(sentAt, w.loc),
+		// Decided here, from the text, and stored — the text does not survive
+		// retention and a rule applied later would have nothing to read.
+		// Independent of StoreContent: the FINDING is not the content, and the
+		// figure this feeds must not silently zero out when text is off.
+		MentionsJob: matchesJobHunt(m.Content),
 	}
 	if w.cfg.StoreContent && m.Content != "" {
 		row.Content = truncateRunes(m.Content, contentLimit)
@@ -654,6 +668,9 @@ func (w *WatchService) HandleMessage(ctx context.Context, s *discordgo.Session, 
 		w.logger.Warn("watch: insert message", "userId", m.Author.ID, "error", err)
 		return
 	}
+	// The message is the verdict on whatever he was typing in this channel: the
+	// compose session produced something after all.
+	w.settleTypingForMessage(ctx, m.Author.ID, m.ChannelID, sentAt)
 	// A message is the most reliable place to learn his current name and avatar:
 	// the author object on a MessageCreate is always fully populated, where a
 	// presence update's user often is not.

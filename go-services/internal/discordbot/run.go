@@ -88,6 +88,12 @@ func loadWatchConfig() WatchConfig {
 		RetentionDays: config.GetInt("DISCORD_WATCH_RETENTION_DAYS", 45),
 		FlushInterval: config.GetDuration("DISCORD_WATCH_FLUSH_INTERVAL", time.Minute),
 		GapGrace:      config.GetDuration("DISCORD_WATCH_GAP_GRACE", 10*time.Minute),
+		// Unset by default: posting into a channel is the one thing this worker
+		// does that other people see, so it stays off until somebody names the
+		// channel deliberately.
+		DigestChannelID: config.GetString("DISCORD_WATCH_DIGEST_CHANNEL_ID", ""),
+		SiteURL: strings.TrimRight(config.GetString("SITE_URL",
+			config.GetString("VITE_BETTER_AUTH_URL", "https://rmhstudios.com")), "/"),
 	}
 }
 

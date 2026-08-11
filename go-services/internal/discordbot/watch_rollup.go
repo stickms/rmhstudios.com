@@ -76,6 +76,16 @@ type dayRollup struct {
 	ReactionsGiven    int
 	ReactionsReceived int
 
+	// Messages that read as being about looking for work, per watch_jobhunt.go.
+	JobMentions int
+
+	// Compose sessions started on this day, and the ones no message came out
+	// of. Counted on the day the typing STARTED, matching how a voice session
+	// is counted on the day it began.
+	TypingStarts       int
+	TypingAbandoned    int
+	TypingAbandonedSec int
+
 	GamingSec    int
 	GameSessions int
 	TopGame      string
@@ -167,9 +177,13 @@ func (w *WatchService) recomputeDay(ctx context.Context, discordID, dateKey stri
 	if err != nil {
 		return fmt.Errorf("status for %s: %w", dateKey, err)
 	}
+	typing, err := w.repo.typingSessionsStartedIn(ctx, discordID, from, to)
+	if err != nil {
+		return fmt.Errorf("typing for %s: %w", dateKey, err)
+	}
 
 	roll := buildDayRollup(discordID, dateKey, w.cfg.TimeZone, w.loc, from, to, now,
-		messages, voice, presence, statuses)
+		messages, voice, presence, statuses, typing)
 	return w.repo.writeDayRollup(ctx, roll)
 }
 
@@ -184,6 +198,7 @@ func buildDayRollup(
 	voice []*voiceSession,
 	presence []*presenceSession,
 	statuses []*statusSession,
+	typing []*typingSession,
 ) *dayRollup {
 	d := &dayRollup{
 		DiscordID:      discordID,
@@ -212,6 +227,9 @@ func buildDayRollup(
 		}
 		if m.IsLateNight {
 			d.LateNightMessages++
+		}
+		if m.MentionsJob {
+			d.JobMentions++
 		}
 		if h := m.SentAt.In(loc).Hour(); h >= 0 && h < hoursPerDay {
 			d.HourlyMessages[h]++
@@ -325,6 +343,30 @@ func buildDayRollup(
 		touch(&d.FirstSeenAt, &d.LastSeenAt, minTime(end, to))
 	}
 	d.TopGame, d.TopGameSec = topEntry(byGame)
+
+	// ── Typing ──
+	//
+	// Counted on the day the run STARTED, and not split across midnight the way
+	// voice and presence are: a compose session is an EVENT (he sat there and
+	// then did or did not send it), not a stretch of time occupied, and half of
+	// one on either side of midnight would not mean anything. Its duration rides
+	// along on the same day for the same reason.
+	//
+	// Unsettled runs are skipped entirely: a run with no verdict yet is not a
+	// message he abandoned, it is a message he might still be writing.
+	for _, tp := range typing {
+		if tp.SettledAt == nil {
+			continue
+		}
+		if tp.StartedAt.Before(from) || !tp.StartedAt.Before(to) {
+			continue
+		}
+		d.TypingStarts++
+		if !tp.Sent {
+			d.TypingAbandoned++
+			d.TypingAbandonedSec += tp.DurationSec
+		}
+	}
 
 	return d
 }

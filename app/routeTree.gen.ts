@@ -532,6 +532,7 @@ import { Route as ApiSliceItShowcaseRouteImport } from './routes/api/slice-it/sh
 import { Route as ApiSliceItSongsRouteImport } from './routes/api/slice-it/songs'
 import { Route as ApiSliceItUploaderStatsRouteImport } from './routes/api/slice-it/uploader-stats'
 import { Route as ApiSohumtrackerActivityRouteImport } from './routes/api/sohumtracker/activity'
+import { Route as ApiSohumtrackerAlertRouteImport } from './routes/api/sohumtracker/alert'
 import { Route as ApiSohumtrackerExportRouteImport } from './routes/api/sohumtracker/export'
 import { Route as ApiSohumtrackerStreamRouteImport } from './routes/api/sohumtracker/stream'
 import { Route as ApiSpacesIndexRouteImport } from './routes/api/spaces/index'
@@ -3537,6 +3538,11 @@ const ApiSohumtrackerActivityRoute = ApiSohumtrackerActivityRouteImport.update({
   path: '/api/sohumtracker/activity',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSohumtrackerAlertRoute = ApiSohumtrackerAlertRouteImport.update({
+  id: '/api/sohumtracker/alert',
+  path: '/api/sohumtracker/alert',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSohumtrackerExportRoute = ApiSohumtrackerExportRouteImport.update({
   id: '/api/sohumtracker/export',
   path: '/api/sohumtracker/export',
@@ -5940,6 +5946,7 @@ export interface FileRoutesByFullPath {
   '/api/slice-it/songs': typeof ApiSliceItSongsRouteWithChildren
   '/api/slice-it/uploader-stats': typeof ApiSliceItUploaderStatsRoute
   '/api/sohumtracker/activity': typeof ApiSohumtrackerActivityRoute
+  '/api/sohumtracker/alert': typeof ApiSohumtrackerAlertRoute
   '/api/sohumtracker/export': typeof ApiSohumtrackerExportRoute
   '/api/sohumtracker/stream': typeof ApiSohumtrackerStreamRoute
   '/api/spaces/live': typeof ApiSpacesLiveRoute
@@ -6805,6 +6812,7 @@ export interface FileRoutesByTo {
   '/api/slice-it/songs': typeof ApiSliceItSongsRouteWithChildren
   '/api/slice-it/uploader-stats': typeof ApiSliceItUploaderStatsRoute
   '/api/sohumtracker/activity': typeof ApiSohumtrackerActivityRoute
+  '/api/sohumtracker/alert': typeof ApiSohumtrackerAlertRoute
   '/api/sohumtracker/export': typeof ApiSohumtrackerExportRoute
   '/api/sohumtracker/stream': typeof ApiSohumtrackerStreamRoute
   '/api/spaces/live': typeof ApiSpacesLiveRoute
@@ -7697,6 +7705,7 @@ export interface FileRoutesById {
   '/api/slice-it/songs': typeof ApiSliceItSongsRouteWithChildren
   '/api/slice-it/uploader-stats': typeof ApiSliceItUploaderStatsRoute
   '/api/sohumtracker/activity': typeof ApiSohumtrackerActivityRoute
+  '/api/sohumtracker/alert': typeof ApiSohumtrackerAlertRoute
   '/api/sohumtracker/export': typeof ApiSohumtrackerExportRoute
   '/api/sohumtracker/stream': typeof ApiSohumtrackerStreamRoute
   '/api/spaces/live': typeof ApiSpacesLiveRoute
@@ -8589,6 +8598,7 @@ export interface FileRouteTypes {
     | '/api/slice-it/songs'
     | '/api/slice-it/uploader-stats'
     | '/api/sohumtracker/activity'
+    | '/api/sohumtracker/alert'
     | '/api/sohumtracker/export'
     | '/api/sohumtracker/stream'
     | '/api/spaces/live'
@@ -9454,6 +9464,7 @@ export interface FileRouteTypes {
     | '/api/slice-it/songs'
     | '/api/slice-it/uploader-stats'
     | '/api/sohumtracker/activity'
+    | '/api/sohumtracker/alert'
     | '/api/sohumtracker/export'
     | '/api/sohumtracker/stream'
     | '/api/spaces/live'
@@ -10345,6 +10356,7 @@ export interface FileRouteTypes {
     | '/api/slice-it/songs'
     | '/api/slice-it/uploader-stats'
     | '/api/sohumtracker/activity'
+    | '/api/sohumtracker/alert'
     | '/api/sohumtracker/export'
     | '/api/sohumtracker/stream'
     | '/api/spaces/live'
@@ -11056,6 +11068,7 @@ export interface RootRouteChildren {
   ApiSliceItSongsRoute: typeof ApiSliceItSongsRouteWithChildren
   ApiSliceItUploaderStatsRoute: typeof ApiSliceItUploaderStatsRoute
   ApiSohumtrackerActivityRoute: typeof ApiSohumtrackerActivityRoute
+  ApiSohumtrackerAlertRoute: typeof ApiSohumtrackerAlertRoute
   ApiSohumtrackerExportRoute: typeof ApiSohumtrackerExportRoute
   ApiSohumtrackerStreamRoute: typeof ApiSohumtrackerStreamRoute
   ApiSpacesLiveRoute: typeof ApiSpacesLiveRoute
@@ -14953,6 +14966,13 @@ declare module '@tanstack/react-router' {
       path: '/api/sohumtracker/activity'
       fullPath: '/api/sohumtracker/activity'
       preLoaderRoute: typeof ApiSohumtrackerActivityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/sohumtracker/alert': {
+      id: '/api/sohumtracker/alert'
+      path: '/api/sohumtracker/alert'
+      fullPath: '/api/sohumtracker/alert'
+      preLoaderRoute: typeof ApiSohumtrackerAlertRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/sohumtracker/export': {
@@ -19475,6 +19495,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSliceItSongsRoute: ApiSliceItSongsRouteWithChildren,
   ApiSliceItUploaderStatsRoute: ApiSliceItUploaderStatsRoute,
   ApiSohumtrackerActivityRoute: ApiSohumtrackerActivityRoute,
+  ApiSohumtrackerAlertRoute: ApiSohumtrackerAlertRoute,
   ApiSohumtrackerExportRoute: ApiSohumtrackerExportRoute,
   ApiSohumtrackerStreamRoute: ApiSohumtrackerStreamRoute,
   ApiSpacesLiveRoute: ApiSpacesLiveRoute,

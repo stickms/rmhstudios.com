@@ -35,6 +35,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/rmhstudios/rmh-go/pkg/log"
 )
 
@@ -88,7 +89,11 @@ func NewWatchSummarizer(cfg WatchConfig, repo *watchRepo, deepseek *DeepSeekClie
 }
 
 // Start runs the summarizer loop until ctx is cancelled.
-func (s *WatchSummarizer) Start(ctx context.Context, interval time.Duration) {
+//
+// The gateway session is passed in rather than held on the struct because the
+// summarizer only needs it for the weekly digest — everything else it does is
+// database and model calls, and a nil session simply means no digest.
+func (s *WatchSummarizer) Start(ctx context.Context, session *discordgo.Session, interval time.Duration) {
 	if s == nil {
 		return
 	}
@@ -110,6 +115,9 @@ func (s *WatchSummarizer) Start(ctx context.Context, interval time.Duration) {
 		defer ticker.Stop()
 		for {
 			s.runPass(ctx)
+			// After the pass, so a week summarised on this very tick can be
+			// announced on it rather than waiting another half hour.
+			s.postPendingDigests(ctx, session, time.Now().UTC())
 			select {
 			case <-ctx.Done():
 				return
@@ -139,6 +147,12 @@ func (s *WatchSummarizer) runPass(ctx context.Context) {
 			s.logger.Warn("watch: prune messages", "error", err)
 		} else if n > 0 {
 			s.logger.Info("watch: pruned raw messages past retention", "rows", n, "retentionDays", days)
+		}
+		// Compose sessions age out on the same clock. The day counts already
+		// carry everything the page shows, and a settled run is a record of one
+		// moment in somebody's evening with nothing left to recompute from it.
+		if err := s.repo.purgeTypingSessions(ctx, cutoff); err != nil {
+			s.logger.Warn("watch: prune typing sessions", "error", err)
 		}
 	}
 }
@@ -309,6 +323,17 @@ func buildSummaryPrompt(period, key string, days []*dayRollup, totals dayTotals,
 	if totals.TopChannel != "" {
 		fmt.Fprintf(&b, "- Busiest channel: #%s (%d messages)\n", totals.TopChannel, totals.TopChannelMessages)
 	}
+	// Stated even when zero, and phrased so the model cannot read a zero as
+	// "unknown". "He did not mention looking for work" is the single most
+	// on-topic finding this dossier can make, and an omitted line would be
+	// silently dropped from the write-up on exactly the periods it matters most.
+	fmt.Fprintf(&b, "- Messages that mentioned looking for work (applications, interviews, "+
+		"recruiters, a CV): %d\n", totals.JobMentions)
+	if totals.TypingStarts > 0 {
+		fmt.Fprintf(&b, "- Started typing %d times; %d of those produced no message at all "+
+			"(%s spent typing something he did not send)\n",
+			totals.TypingStarts, totals.TypingAbandoned, humanDuration(totals.TypingAbandonedSec))
+	}
 	if totals.FirstSeenAt != nil && totals.LastSeenAt != nil {
 		fmt.Fprintf(&b, "- First seen %s, last seen %s (%s)\n",
 			totals.FirstSeenAt.In(loc).Format("15:04"), totals.LastSeenAt.In(loc).Format("15:04"), loc.String())
@@ -424,6 +449,11 @@ type dayTotals struct {
 	GamingSec         int
 	GameSessions      int
 
+	JobMentions        int
+	TypingStarts       int
+	TypingAbandoned    int
+	TypingAbandonedSec int
+
 	TopGame            string
 	TopGameSec         int
 	TopChannel         string
@@ -471,6 +501,10 @@ func sumDays(days []*dayRollup) dayTotals {
 		t.ReactionsReceived += d.ReactionsReceived
 		t.GamingSec += d.GamingSec
 		t.GameSessions += d.GameSessions
+		t.JobMentions += d.JobMentions
+		t.TypingStarts += d.TypingStarts
+		t.TypingAbandoned += d.TypingAbandoned
+		t.TypingAbandonedSec += d.TypingAbandonedSec
 		if d.TopGame != "" {
 			games[d.TopGame] += d.TopGameSec
 		}

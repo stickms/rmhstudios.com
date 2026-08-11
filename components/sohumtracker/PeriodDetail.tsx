@@ -103,6 +103,11 @@ export function PeriodDetail({ period, days, totals, summary }: PeriodDetailProp
       value: formatDuration(totals.gamingSec),
     },
     {
+      id: 'job-mentions',
+      label: t('fact-job-mentions', { defaultValue: 'Mentioned looking for work' }),
+      value: formatCount(totals.jobMentions),
+    },
+    {
       id: 'active-days',
       label: t('fact-active-days', { defaultValue: 'Days he showed up' }),
       value: t('fact-active-days-value', {
