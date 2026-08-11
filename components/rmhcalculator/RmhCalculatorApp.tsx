@@ -15,6 +15,7 @@ import { CALC_MODELS, type CalcModel } from '@/lib/rmhcalculator/types';
 import { ModelToggle } from '@/components/rmhcalculator/ModelToggle';
 import { ScientificCalculator } from '@/components/rmhcalculator/ScientificCalculator';
 import { GraphingCalculator } from '@/components/rmhcalculator/GraphingCalculator';
+import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 
 const MODEL_STORAGE_KEY = 'rmhcalc:model';
 type Mode = 'scientific' | 'graphing';
@@ -25,6 +26,7 @@ function isCalcModel(v: unknown): v is CalcModel {
 
 export function RmhCalculatorApp() {
   const { t } = useTranslation('c-rmhcalculator');
+  const goBack = useBackOrFallback();
   const [mode, setMode] = useState<Mode>('scientific');
   const [model, setModel] = useState<CalcModel>('reasoner');
 
@@ -79,7 +81,7 @@ export function RmhCalculatorApp() {
         </div>
         <div className="rmhcalc__header-actions">
           <ModelToggle value={model} onChange={changeModel} />
-          <Link to="/builds" className="rmhcalc__back">
+          <Link to="/apps" onClick={goBack} className="rmhcalc__back">
             <span aria-hidden="true">&larr;</span>
             {t('back-to-builds', { defaultValue: 'Builds' })}
           </Link>

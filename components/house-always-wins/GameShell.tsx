@@ -4,6 +4,7 @@ import React, { Suspense } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 
 const HouseAlwaysWinsGame = React.lazy(() =>
   import("./game/HouseAlwaysWinsGame").then((m) => ({
@@ -16,6 +17,7 @@ interface GameShellProps {
 }
 
 export function GameShell({ userName }: GameShellProps) {
+  const goBack = useBackOrFallback();
   const { t } = useTranslation("c-house-always-wins");
   return (
     <div className="app-viewport bg-neutral-950 text-white" data-fluid-press-scope>
@@ -25,7 +27,8 @@ export function GameShell({ userName }: GameShellProps) {
       <div className="app-safe-top app-safe-x shrink-0 border-b border-neutral-800/50 z-20">
         <div className="flex items-center justify-between gap-3 px-4 py-2">
           <Link
-            to="/"
+            to="/games"
+            onClick={goBack}
             className="flex shrink-0 items-center gap-2 text-neutral-500 hover:text-neutral-300 transition-colors text-sm"
           >
             <ArrowLeft className="w-4 h-4" />

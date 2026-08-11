@@ -105,7 +105,7 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
     try {
       const res = await fetch(`/api/user-builds/${build.id}`, { method: 'DELETE' });
       if (res.ok) {
-        navigate({ to: '/builds' });
+        navigate({ to: '/create/builds' });
       }
     } catch (error) {
       console.error('Error deleting build:', error);

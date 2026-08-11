@@ -23,6 +23,7 @@ import { lobbyReturnPath } from '@/lib/lobby-link';
 import { MAX_PLAYERS, MIN_PLAYERS, MIRROR_NAME } from '@/lib/gabriels-horn/constants';
 import { HornLeaderboard } from './Leaderboard';
 import { HornButton, Panel } from './ui';
+import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 
 export function MainMenu({
   signedIn,
@@ -42,6 +43,7 @@ export function MainMenu({
   onRules: () => void;
 }) {
   const { t } = useTranslation('c-gabriels-horn');
+  const goBack = useBackOrFallback();
   // Signing in is a detour, not a change of plan: come back to the invite.
   const invite = useLobbyInvite();
   const [code, setCode] = useState('');
@@ -50,7 +52,8 @@ export function MainMenu({
     <div className="gh-scene app-page app-safe-x text-(--app-text)">
       <header className="app-safe-top px-4 pt-4">
         <Link
-          to="/builds"
+          to="/games"
+          onClick={goBack}
           className="inline-flex min-h-11 items-center gap-1.5 rounded-[var(--app-radius-sm)] px-2 py-1 text-xs text-(--app-text-muted) transition-colors hover:text-(--app-text)"
         >
           <ArrowLeft className="size-3.5" aria-hidden="true" />

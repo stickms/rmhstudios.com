@@ -21,6 +21,7 @@ import { PoemJournal } from './PoemJournal';
 import { SaveLoadMenu } from './SaveLoadMenu';
 import { ProgressScreen } from './ProgressScreen';
 import type { GameScreen } from '@/lib/versecraft/types';
+import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 
 // Screens that are safe to restore on refresh (not mid-puzzle or transient)
 const RESTORABLE_SCREENS = new Set<GameScreen>([
@@ -29,6 +30,7 @@ const RESTORABLE_SCREENS = new Set<GameScreen>([
 
 export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
   const { t } = useTranslation("c-versecraft");
+  const goBack = useBackOrFallback();
   const screen = useGameStore(s => s.screen);
   const mode = useGameStore(s => s.mode);
   const gameStarted = useGameStore(s => s.gameStarted);
@@ -156,7 +158,8 @@ export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
           back buttons or the dialogue HUD on mobile. */}
       {screen === 'menu' && (
         <Link
-          to="/builds"
+          to="/games"
+          onClick={goBack}
           className="absolute top-[calc(1rem+var(--safe-top))] left-[calc(1rem+var(--safe-left))] z-50 flex items-center gap-1.5 px-3 py-2 rounded text-xs transition hover:brightness-125"
           style={{
             backgroundColor: 'rgba(26, 21, 32, 0.8)',

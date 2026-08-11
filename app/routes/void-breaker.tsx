@@ -15,7 +15,7 @@ function VoidBreakerPage() {
       className="fixed inset-0 bg-black flex flex-col overflow-hidden"
       style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
     >
-      <GameBackLink to="/builds" />
+      <GameBackLink to="/games" />
       <div className="grow relative flex items-center justify-center overflow-hidden">
         <GameErrorBoundary gameName="Void Breaker">
           <Suspense fallback={<GameLoadingFallback />}>

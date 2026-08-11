@@ -208,7 +208,7 @@ export function RightSidebar({
           })}
         </div>
         <Link
-          to="/builds"
+          to="/games"
           aria-label={t('show-more-builds', { defaultValue: 'Show more official builds' })}
           className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors"
         >

@@ -16,6 +16,7 @@
 import type { ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Circle, Copy } from 'lucide-react';
+import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 import { useTranslation } from 'react-i18next';
 import type { RealtimeStatus } from '@/lib/shared/realtime/types';
 
@@ -61,6 +62,7 @@ export default function AppHeader({
   bordered = true,
 }: AppHeaderProps) {
   const { t } = useTranslation('shared');
+  const goBack = useBackOrFallback();
 
   const backClasses =
     'flex items-center gap-1.5 text-sm font-medium text-(--app-text-muted) transition-colors hover:text-(--app-text)';
@@ -82,7 +84,12 @@ export default function AppHeader({
     >
       <div className="flex min-w-0 items-center gap-2">
         {backHref ? (
-          <Link to={backHref} onClick={onBack} className={backClasses}>
+          // `onBack` wins when a caller supplies one — that is the app saying it
+          // knows where "up" is (leave the room, close the deck). With only an
+          // href, the arrow used to walk past wherever you came from to the
+          // catalog; `useBackOrFallback` steps back instead, and still follows
+          // the href on a cold load. See its docblock.
+          <Link to={backHref} onClick={onBack ?? goBack} className={backClasses}>
             <ArrowLeft className="h-4 w-4 shrink-0 rtl-flip" aria-hidden />
             {/* The arrow alone carries the meaning once space is tight. */}
             <span className="hidden truncate xs:inline">{backLabel}</span>

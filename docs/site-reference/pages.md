@@ -144,7 +144,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/trash` | Trash | public | `app/routes/_site/trash.tsx` |
 | `/u/:userid` | User Not Found \| RMH | public | `app/routes/_site/u/$userid/index.tsx` |
 | `/u/:userid/post/:postid` | Post Not Found \| RMH | public | `app/routes/_site/u/$userid/post/$postid.tsx` |
-| `/user-builds` | redirects to `/builds` | public | `app/routes/_site/user-builds/index.tsx` |
+| `/user-builds` | redirects to `/games` | public | `app/routes/_site/user-builds/index.tsx` |
 | `/user-builds/:slug` | — | public | `app/routes/_site/user-builds/$slug.tsx` |
 | `/user-builds/manage` | Manage builds | public | `app/routes/_site/user-builds/manage.tsx` |
 | `/user-builds/submit` | Submit a build | public | `app/routes/_site/user-builds/submit.tsx` |

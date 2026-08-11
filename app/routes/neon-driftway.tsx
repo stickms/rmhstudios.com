@@ -17,7 +17,7 @@ function NeonDriftwayPage() {
       className="fixed inset-0 bg-black flex flex-col overflow-hidden"
       style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
     >
-      <GameBackLink to="/builds" />
+      <GameBackLink to="/games" />
 
       {/* The cockpit fills the viewport at every aspect ratio — the renderer
           adapts its field of view rather than letterboxing a fixed frame. */}
