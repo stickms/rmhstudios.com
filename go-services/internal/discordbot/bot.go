@@ -44,6 +44,10 @@ type Bot struct {
 	session *discordgo.Session
 	chat    *ChatService
 	pet     *PetService
+	// watch is the /sohumbum2 activity tracker. Nil when no allowlist is
+	// configured, and every call site tolerates that — the bot is Alex first.
+	watch   *WatchService
+	summary *WatchSummarizer
 
 	// lifecycleCtx is set when Run starts; per-interaction contexts are derived
 	// from it (with interactionTimeout) so in-flight agent loops / DeepSeek calls
@@ -144,7 +148,7 @@ func slashCommands() []*discordgo.ApplicationCommand {
 }
 
 // New builds the bot from its already-constructed services.
-func New(cfg Config, chat *ChatService, pet *PetService, logger *log.Logger) (*Bot, error) {
+func New(cfg Config, chat *ChatService, pet *PetService, watch *WatchService, summary *WatchSummarizer, logger *log.Logger) (*Bot, error) {
 	if cfg.Token == "" {
 		return nil, fmt.Errorf("discord bot token is required")
 	}
@@ -159,20 +163,88 @@ func New(cfg Config, chat *ChatService, pet *PetService, logger *log.Logger) (*B
 	if cfg.MessageContent {
 		session.Identify.Intents |= discordgo.IntentsMessageContent
 	}
+	if watch != nil {
+		// The tracker needs voice states to time a call, presences to see what he
+		// is playing, and reactions for both directions of that count.
+		//
+		// GuildPresences is PRIVILEGED and must also be enabled in the Discord
+		// Developer Portal; without it the gateway simply never sends presence
+		// updates and the "playing" figures stay at zero rather than the bot
+		// failing to connect. Message content is likewise privileged, and is what
+		// the summarizer needs to say what he was talking about.
+		session.Identify.Intents |= discordgo.IntentsGuildVoiceStates |
+			discordgo.IntentsGuildPresences |
+			discordgo.IntentsGuildMessageReactions
+		if watch.cfg.StoreContent {
+			session.Identify.Intents |= discordgo.IntentsMessageContent
+		}
+	}
 
-	b := &Bot{cfg: cfg, logger: logger, session: session, chat: chat, pet: pet}
+	b := &Bot{cfg: cfg, logger: logger, session: session, chat: chat, pet: pet, watch: watch, summary: summary}
 	session.AddHandler(b.onReady)
 	session.AddHandler(b.onInteraction)
 	session.AddHandler(b.onGuildCreate)
 	session.AddHandler(b.onMessageCreate)
+	if watch != nil {
+		session.AddHandler(b.onVoiceStateUpdate)
+		session.AddHandler(b.onPresenceUpdate)
+		session.AddHandler(b.onMessageReactionAdd)
+	}
 	return b, nil
+}
+
+// watchContext derives a bounded context for a tracker handler from the bot's
+// lifecycle context, so a database call cannot outlive shutdown or hang a
+// gateway goroutine forever.
+func (b *Bot) watchContext() (context.Context, context.CancelFunc) {
+	b.ctxMu.RLock()
+	parent := b.lifecycleCtx
+	b.ctxMu.RUnlock()
+	if parent == nil {
+		parent = context.Background()
+	}
+	return context.WithTimeout(parent, 20*time.Second)
+}
+
+// onVoiceStateUpdate feeds the tracker. It fires for every user in the guild,
+// not just tracked ones — somebody else joining or leaving is what decides
+// whether the tracked user is now alone in the channel — and the allowlist is
+// applied inside the tracker before anything is written.
+func (b *Bot) onVoiceStateUpdate(s *discordgo.Session, e *discordgo.VoiceStateUpdate) {
+	ctx, cancel := b.watchContext()
+	defer cancel()
+	b.watch.HandleVoiceState(ctx, s, e)
+}
+
+// onPresenceUpdate feeds the tracker what he is playing.
+func (b *Bot) onPresenceUpdate(_ *discordgo.Session, e *discordgo.PresenceUpdate) {
+	ctx, cancel := b.watchContext()
+	defer cancel()
+	b.watch.HandlePresence(ctx, e)
+}
+
+// onMessageReactionAdd counts reactions in both directions.
+func (b *Bot) onMessageReactionAdd(_ *discordgo.Session, e *discordgo.MessageReactionAdd) {
+	ctx, cancel := b.watchContext()
+	defer cancel()
+	b.watch.HandleReaction(ctx, e)
 }
 
 // onMessageCreate lets Alex reply when he's @mentioned or someone replies to one
 // of his messages. Runs the AI reply off the gateway goroutine under a bounded
 // context. Ignores bots (including himself) to avoid loops.
 func (b *Bot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if b.chat == nil || m.Author == nil || m.Author.Bot || m.GuildID == "" {
+	if m == nil || m.Author == nil || m.Author.Bot || m.GuildID == "" {
+		return
+	}
+	// The tracker runs before the mention check: it records what a tracked user
+	// says to anyone, not only what they say to Alex.
+	if b.watch != nil {
+		ctx, cancel := b.watchContext()
+		b.watch.HandleMessage(ctx, s, m)
+		cancel()
+	}
+	if b.chat == nil {
 		return
 	}
 	botID := ""
@@ -217,7 +289,17 @@ func (b *Bot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) 
 // bot is added to a new server. It triggers Alex's one-time intro announcement,
 // which is idempotent (persisted via introSentAt), so startup never re-posts.
 func (b *Bot) onGuildCreate(s *discordgo.Session, e *discordgo.GuildCreate) {
-	if b.pet == nil || e == nil || e.Guild == nil || e.Guild.Unavailable {
+	if e == nil || e.Guild == nil || e.Guild.Unavailable {
+		return
+	}
+	// A guild sync carries its live voice states, which is the only moment the
+	// tracker can confirm whether a session it resumed across a restart is real.
+	if b.watch != nil {
+		ctx, cancel := b.watchContext()
+		b.watch.Reconcile(ctx, s, e.Guild)
+		cancel()
+	}
+	if b.pet == nil {
 		return
 	}
 	b.ctxMu.RLock()
@@ -255,6 +337,11 @@ func (b *Bot) Run(ctx context.Context) error {
 	if b.pet != nil {
 		b.pet.StartCareLoop(ctx, b.session)
 	}
+
+	// Settle whatever the previous run left open and begin the flush/heartbeat
+	// loop, then the summarizer. Both stop with ctx.
+	b.watch.Start(ctx)
+	b.summary.Start(ctx, summaryInterval)
 
 	<-ctx.Done()
 

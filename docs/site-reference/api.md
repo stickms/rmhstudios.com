@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 589 files across 136 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 591 files across 137 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -769,7 +769,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/og`
 
-9 routes.
+10 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -782,6 +782,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/og/post/:id/story` | `GET` | `app/routes/api/og/post/$id/story.ts` |
 | `/api/og/profile/:id` | `GET` | `app/routes/api/og/profile/$id.ts` |
 | `/api/og/replay/:id` | `GET` | `app/routes/api/og/replay/$id.ts` |
+| `/api/og/sohumbum2` | `GET` | `app/routes/api/og/sohumbum2.ts` |
 
 ## `/api/onboarding`
 
@@ -1251,6 +1252,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/slice-it/songs/stream/:id` | `GET` | `app/routes/api/slice-it/songs/stream/$id.ts` |
 | `/api/slice-it/songs/upload` | `POST` | `app/routes/api/slice-it/songs/upload.ts` |
 | `/api/slice-it/uploader-stats` | `GET` | `app/routes/api/slice-it/uploader-stats.ts` |
+
+## `/api/sohumbum2`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/sohumbum2/activity` | `GET` | `app/routes/api/sohumbum2/activity.ts` |
 
 ## `/api/spaces`
 
