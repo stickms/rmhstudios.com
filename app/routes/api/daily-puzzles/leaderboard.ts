@@ -12,6 +12,9 @@ export const Route = createFileRoute('/api/daily-puzzles/leaderboard')({
         {
           auth: 'none',
           rateLimit: { limit: 20, windowMs: 60_000, prefix: 'daily-puzzle-leaderboard' },
+          // Anonymous-invariant global top-N — the same bytes for every caller,
+          // which is what `public` claims. Matches `void-breaker/leaderboard`.
+          cache: { visibility: 'public', maxAge: 30, sMaxAge: 60, staleWhileRevalidate: 300 },
         },
         async ({ request }) => {
           try {

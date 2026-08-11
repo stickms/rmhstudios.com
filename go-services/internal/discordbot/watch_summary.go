@@ -15,8 +15,8 @@
 //
 // # When it runs
 //
-// A period is re-summarised only when its `sourceHash` changes. The hash is a
-// digest of the rollups it was written from, so:
+// A period is re-summarised only when its `sourceHash` changes, and that hash is
+// a digest of the PROMPT — the exact question the model would be asked. So:
 //
 //   - today's summary refreshes while the day fills in,
 //   - a finished day is summarised once and then never re-billed,
@@ -35,6 +35,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/rmhstudios/rmh-go/pkg/log"
 )
 
@@ -88,7 +89,11 @@ func NewWatchSummarizer(cfg WatchConfig, repo *watchRepo, deepseek *DeepSeekClie
 }
 
 // Start runs the summarizer loop until ctx is cancelled.
-func (s *WatchSummarizer) Start(ctx context.Context, interval time.Duration) {
+//
+// The gateway session is passed in rather than held on the struct because the
+// summarizer only needs it for the weekly digest — everything else it does is
+// database and model calls, and a nil session simply means no digest.
+func (s *WatchSummarizer) Start(ctx context.Context, session *discordgo.Session, interval time.Duration) {
 	if s == nil {
 		return
 	}
@@ -110,6 +115,9 @@ func (s *WatchSummarizer) Start(ctx context.Context, interval time.Duration) {
 		defer ticker.Stop()
 		for {
 			s.runPass(ctx)
+			// After the pass, so a week summarised on this very tick can be
+			// announced on it rather than waiting another half hour.
+			s.postPendingDigests(ctx, session, time.Now().UTC())
 			select {
 			case <-ctx.Done():
 				return
@@ -139,6 +147,12 @@ func (s *WatchSummarizer) runPass(ctx context.Context) {
 			s.logger.Warn("watch: prune messages", "error", err)
 		} else if n > 0 {
 			s.logger.Info("watch: pruned raw messages past retention", "rows", n, "retentionDays", days)
+		}
+		// Compose sessions age out on the same clock. The day counts already
+		// carry everything the page shows, and a settled run is a record of one
+		// moment in somebody's evening with nothing left to recompute from it.
+		if err := s.repo.purgeTypingSessions(ctx, cutoff); err != nil {
+			s.logger.Warn("watch: prune typing sessions", "error", err)
 		}
 	}
 }
@@ -185,15 +199,6 @@ func (s *WatchSummarizer) summarize(ctx context.Context, discordID, period, key 
 		return nil
 	}
 
-	hash := sourceHash(period, key, days)
-	previous, err := s.repo.summarySourceHash(ctx, discordID, period, key)
-	if err != nil {
-		return err
-	}
-	if previous == hash {
-		return nil
-	}
-
 	from, _, err := dayBounds(fromKey, s.loc)
 	if err != nil {
 		return err
@@ -207,7 +212,21 @@ func (s *WatchSummarizer) summarize(ctx context.Context, discordID, period, key 
 		return err
 	}
 
+	// The prompt is built BEFORE the up-to-date check, because the prompt is
+	// what the check is about: if the model would be asked exactly the same
+	// question, its answer is already stored. Building it costs one indexed
+	// query; asking again costs a model call.
 	prompt := buildSummaryPrompt(period, key, days, totals, samples, s.loc)
+
+	hash := sourceHash(prompt)
+	previous, err := s.repo.summarySourceHash(ctx, discordID, period, key)
+	if err != nil {
+		return err
+	}
+	if previous == hash {
+		return nil
+	}
+
 	raw, err := s.deepseek.ChatWith(ctx, []ChatMessage{
 		{Role: roleSystem, Content: summarySystemPrompt},
 		{Role: roleUser, Content: prompt},
@@ -265,6 +284,13 @@ func buildSummaryPrompt(period, key string, days []*dayRollup, totals dayTotals,
 		fmt.Fprintf(&b, "PERIOD: %s\n", key)
 	}
 
+	// Name the zone explicitly. Discord reports instants in UTC and the model has
+	// no way to know they were converted, so an unqualified "18:12" invites it to
+	// reason about a UTC evening — which for an Eastern subject is the afternoon,
+	// and turns "he was up at 3am" into "he was on after lunch".
+	fmt.Fprintf(&b, "TIME ZONE: every time and every day boundary below is %s (US Eastern). "+
+		"A \"day\" runs local midnight to local midnight, not UTC.\n", loc.String())
+
 	b.WriteString("\nMEASURED FIGURES (correct; do not recompute):\n")
 	fmt.Fprintf(&b, "- Time in voice chat: %s across %d sessions (longest single stretch %s)\n",
 		humanDuration(totals.VoiceSec), totals.VoiceSessions, humanDuration(totals.LongestVoiceSec))
@@ -273,6 +299,14 @@ func buildSummaryPrompt(period, key string, days []*dayRollup, totals dayTotals,
 	fmt.Fprintf(&b, "- Streaming: %s; camera on: %s\n",
 		humanDuration(totals.StreamingSec), humanDuration(totals.VideoSec))
 	fmt.Fprintf(&b, "- Time in voice between midnight and 5am: %s\n", humanDuration(totals.LateNightSec))
+	fmt.Fprintf(&b, "- Signed in to Discord: %s (%s online, %s idle, %s do-not-disturb)\n",
+		humanDuration(totals.OnlineSec+totals.IdleSec+totals.DndSec),
+		humanDuration(totals.OnlineSec), humanDuration(totals.IdleSec), humanDuration(totals.DndSec))
+	// Stated as overlapping on purpose — the model is told not to do arithmetic,
+	// and without saying so it would try to make three figures sum to the total.
+	fmt.Fprintf(&b, "- Of that, signed in on desktop: %s; on mobile: %s; on web: %s "+
+		"(these OVERLAP — he is often on more than one at once, so they may sum to more than the total)\n",
+		humanDuration(totals.DesktopSec), humanDuration(totals.MobileSec), humanDuration(totals.WebSec))
 	fmt.Fprintf(&b, "- Messages sent: %d (%d words, %d characters)\n",
 		totals.Messages, totals.Words, totals.Characters)
 	fmt.Fprintf(&b, "- Of those: %d replies, %d questions, %d sent between midnight and 5am\n",
@@ -289,9 +323,20 @@ func buildSummaryPrompt(period, key string, days []*dayRollup, totals dayTotals,
 	if totals.TopChannel != "" {
 		fmt.Fprintf(&b, "- Busiest channel: #%s (%d messages)\n", totals.TopChannel, totals.TopChannelMessages)
 	}
+	// Stated even when zero, and phrased so the model cannot read a zero as
+	// "unknown". "He did not mention looking for work" is the single most
+	// on-topic finding this dossier can make, and an omitted line would be
+	// silently dropped from the write-up on exactly the periods it matters most.
+	fmt.Fprintf(&b, "- Messages that mentioned looking for work (applications, interviews, "+
+		"recruiters, a CV): %d\n", totals.JobMentions)
+	if totals.TypingStarts > 0 {
+		fmt.Fprintf(&b, "- Started typing %d times; %d of those produced no message at all "+
+			"(%s spent typing something he did not send)\n",
+			totals.TypingStarts, totals.TypingAbandoned, humanDuration(totals.TypingAbandonedSec))
+	}
 	if totals.FirstSeenAt != nil && totals.LastSeenAt != nil {
-		fmt.Fprintf(&b, "- First seen %s, last seen %s (local time)\n",
-			totals.FirstSeenAt.In(loc).Format("15:04"), totals.LastSeenAt.In(loc).Format("15:04"))
+		fmt.Fprintf(&b, "- First seen %s, last seen %s (%s)\n",
+			totals.FirstSeenAt.In(loc).Format("15:04"), totals.LastSeenAt.In(loc).Format("15:04"), loc.String())
 	}
 
 	if period != periodDay && len(days) > 1 {
@@ -384,6 +429,12 @@ type dayTotals struct {
 	VideoSec          int
 	AloneSec          int
 	LateNightSec      int
+	OnlineSec         int
+	IdleSec           int
+	DndSec            int
+	DesktopSec        int
+	MobileSec         int
+	WebSec            int
 	Messages          int
 	Words             int
 	Characters        int
@@ -397,6 +448,11 @@ type dayTotals struct {
 	ReactionsReceived int
 	GamingSec         int
 	GameSessions      int
+
+	JobMentions        int
+	TypingStarts       int
+	TypingAbandoned    int
+	TypingAbandonedSec int
 
 	TopGame            string
 	TopGameSec         int
@@ -426,6 +482,12 @@ func sumDays(days []*dayRollup) dayTotals {
 		t.VideoSec += d.VideoSec
 		t.AloneSec += d.AloneSec
 		t.LateNightSec += d.LateNightSec
+		t.OnlineSec += d.OnlineSec
+		t.IdleSec += d.IdleSec
+		t.DndSec += d.DndSec
+		t.DesktopSec += d.DesktopSec
+		t.MobileSec += d.MobileSec
+		t.WebSec += d.WebSec
 		t.Messages += d.Messages
 		t.Words += d.Words
 		t.Characters += d.Characters
@@ -439,6 +501,10 @@ func sumDays(days []*dayRollup) dayTotals {
 		t.ReactionsReceived += d.ReactionsReceived
 		t.GamingSec += d.GamingSec
 		t.GameSessions += d.GameSessions
+		t.JobMentions += d.JobMentions
+		t.TypingStarts += d.TypingStarts
+		t.TypingAbandoned += d.TypingAbandoned
+		t.TypingAbandonedSec += d.TypingAbandonedSec
 		if d.TopGame != "" {
 			games[d.TopGame] += d.TopGameSec
 		}
@@ -508,17 +574,24 @@ func isoWeekStart(key string, loc *time.Location) (time.Time, error) {
 	return jan4.AddDate(0, 0, -offset+(week-1)*7), nil
 }
 
-// sourceHash digests the figures a summary was written from. Any change to any
-// of them produces a different hash and earns a regeneration; nothing else does.
-func sourceHash(period, key string, days []*dayRollup) string {
+// sourceHash digests the exact question the model was asked.
+//
+// The prompt itself, rather than a hand-picked list of figures. That list was
+// the previous implementation and it was wrong in a way that is easy to miss:
+// the prompt reads 28 fields and the list covered 14, so a period where he
+// streamed, or collected reactions, or said entirely different things without
+// changing the message COUNT would hash the same and never be rewritten. The
+// message sample was not hashed at all.
+//
+// Hashing the prompt makes the rule exactly what it should be — regenerate when
+// and only when the model would see something different — and it cannot drift
+// again, because there is no second list of fields to keep in step.
+//
+// This is the whole cost control: today's summary rewrites itself as the day
+// fills in, and a finished day is paid for once.
+func sourceHash(prompt string) string {
 	h := sha256.New()
-	fmt.Fprintf(h, "%s|%s", period, key)
-	for _, d := range days {
-		fmt.Fprintf(h, "|%s:%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%d,%s",
-			d.DateKey, d.VoiceSec, d.VoiceSessions, d.AloneSec, d.LateNightSec,
-			d.Messages, d.Words, d.Characters, d.Replies, d.Questions,
-			d.ReactionsGiven, d.GamingSec, d.TopGame, d.TopGameSec, d.TopChannel)
-	}
+	h.Write([]byte(prompt))
 	return hex.EncodeToString(h.Sum(nil))
 }
 

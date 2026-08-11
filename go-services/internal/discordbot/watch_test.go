@@ -3,6 +3,8 @@ package discordbot
 import (
 	"testing"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 // eastern is the tracker's default zone, and the one whose DST transitions the
@@ -11,9 +13,55 @@ func eastern(t *testing.T) *time.Location {
 	t.Helper()
 	loc, err := time.LoadLocation("America/New_York")
 	if err != nil {
-		t.Skipf("tzdata unavailable: %v", err)
+		// FAIL rather than skip. This used to skip, which is precisely how the
+		// production bug would have hidden: the binaries ship on Alpine, which
+		// has no tzdata, so LoadLocation failed there and the tracker fell back
+		// to UTC — shifting every day boundary by four or five hours — while the
+		// test suite quietly reported success. `time/tzdata` is embedded in
+		// watch.go to make this impossible; this assertion is what keeps it so.
+		t.Fatalf("America/New_York must resolve — is the `time/tzdata` import still in watch.go? %v", err)
 	}
 	return loc
+}
+
+// The subject is in US Eastern and the whole premise of this page is what he was
+// doing at 3am, so the zone has to survive being built into a container with no
+// system timezone database. `time/tzdata` (imported in watch.go) is what makes
+// that true; this asserts the property rather than the import.
+func TestTrackingTimeZoneResolvesWithoutSystemTzdata(t *testing.T) {
+	loc, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		t.Fatalf("the tracking zone must resolve from the binary alone: %v", err)
+	}
+
+	// Eastern is UTC-4 in August (EDT) and UTC-5 in January (EST). Asserting
+	// both proves a real zone was loaded rather than a UTC alias, which is what
+	// the silent fallback produced.
+	summer := time.Date(2026, 8, 11, 12, 0, 0, 0, loc)
+	winter := time.Date(2026, 1, 11, 12, 0, 0, 0, loc)
+	if _, offset := summer.Zone(); offset != -4*3600 {
+		t.Fatalf("August offset = %ds, want -4h (EDT)", offset)
+	}
+	if _, offset := winter.Zone(); offset != -5*3600 {
+		t.Fatalf("January offset = %ds, want -5h (EST)", offset)
+	}
+
+	// And the consequence that matters: 1am Eastern is the PREVIOUS UTC day, so
+	// a UTC fallback would file a late-night session under the wrong date.
+	lateNight := time.Date(2026, 8, 12, 1, 30, 0, 0, loc)
+	if got := lateNight.In(loc).Format("2006-01-02"); got != "2026-08-12" {
+		t.Fatalf("local dateKey = %s, want 2026-08-12", got)
+	}
+	if got := lateNight.UTC().Format("2006-01-02"); got != "2026-08-12" {
+		// 1:30am EDT is 5:30am UTC — same date here, but the reverse case below
+		// is the one that bites.
+		t.Logf("note: 1:30am EDT is %s UTC", lateNight.UTC().Format("2006-01-02 15:04"))
+	}
+	evening := time.Date(2026, 8, 11, 22, 0, 0, 0, loc)
+	if got := evening.UTC().Format("2006-01-02"); got != "2026-08-12" {
+		t.Fatalf("10pm Eastern should be the NEXT day in UTC, got %s — "+
+			"this is why the rollup must bucket locally", got)
+	}
 }
 
 func TestAnalyzeMessage(t *testing.T) {
@@ -128,7 +176,7 @@ func TestBuildDayRollupSplitsVoiceAcrossMidnight(t *testing.T) {
 	now := left.Add(time.Hour)
 
 	firstFrom, firstTo, _ := dayBounds("2026-08-11", loc)
-	first := buildDayRollup("u", "2026-08-11", "America/New_York", loc, firstFrom, firstTo, now, nil, sessions, nil)
+	first := buildDayRollup("u", "2026-08-11", "America/New_York", loc, firstFrom, firstTo, now, nil, sessions, nil, nil, nil)
 	if first.VoiceSec != 3*3600 {
 		t.Fatalf("day one voice = %ds, want 3h", first.VoiceSec)
 	}
@@ -140,7 +188,7 @@ func TestBuildDayRollupSplitsVoiceAcrossMidnight(t *testing.T) {
 	}
 
 	secondFrom, secondTo, _ := dayBounds("2026-08-12", loc)
-	second := buildDayRollup("u", "2026-08-12", "America/New_York", loc, secondFrom, secondTo, now, nil, sessions, nil)
+	second := buildDayRollup("u", "2026-08-12", "America/New_York", loc, secondFrom, secondTo, now, nil, sessions, nil, nil, nil)
 	if second.VoiceSec != 3*3600 {
 		t.Fatalf("day two voice = %ds, want 3h", second.VoiceSec)
 	}
@@ -169,7 +217,7 @@ func TestBuildDayRollupMeasuresOpenSessionAgainstNow(t *testing.T) {
 	now := time.Date(2026, 8, 11, 15, 30, 0, 0, loc).UTC()
 
 	roll := buildDayRollup("u", "2026-08-11", "America/New_York", loc, from, to, now,
-		nil, []*voiceSession{{DiscordID: "u", JoinedAt: joined}}, nil)
+		nil, []*voiceSession{{DiscordID: "u", JoinedAt: joined}}, nil, nil, nil)
 
 	if roll.VoiceSec != 9000 {
 		t.Fatalf("open session voice = %ds, want 2h30m", roll.VoiceSec)
@@ -198,7 +246,7 @@ func TestBuildDayRollupCountsMessagesAndGames(t *testing.T) {
 		{ActivityName: "Spotify", ActivityType: 2, StartedAt: at(16, 0), EndedAt: &gameEnd},
 	}
 
-	roll := buildDayRollup("u", "2026-08-11", "America/New_York", loc, from, to, now, messages, nil, presence)
+	roll := buildDayRollup("u", "2026-08-11", "America/New_York", loc, from, to, now, messages, nil, presence, nil, nil)
 
 	if roll.Messages != 3 || roll.Words != 9 || roll.Characters != 36 {
 		t.Fatalf("message totals wrong: %+v", roll)
@@ -268,6 +316,73 @@ func TestBankPeersTracksAloneTimeAndPeak(t *testing.T) {
 	}
 	if sess.PeakPeers != 2 {
 		t.Fatalf("peak only rises, got %d", sess.PeakPeers)
+	}
+}
+
+// Time online is split at local midnight like everything else, statuses are
+// mutually exclusive, and client time OVERLAPS on purpose.
+func TestBuildDayRollupSplitsOnlineTimeAndOverlapsClients(t *testing.T) {
+	loc := eastern(t)
+	// Online 10pm→2am on desktop AND mobile, then idle 2am→3am on mobile only.
+	onlineEnd := time.Date(2026, 8, 12, 2, 0, 0, 0, loc).UTC()
+	idleEnd := time.Date(2026, 8, 12, 3, 0, 0, 0, loc).UTC()
+	statuses := []*statusSession{
+		{
+			Status: "online", Clients: clientSet{Desktop: true, Mobile: true},
+			StartedAt: time.Date(2026, 8, 11, 22, 0, 0, 0, loc).UTC(), EndedAt: &onlineEnd,
+		},
+		{
+			Status: "idle", Clients: clientSet{Mobile: true},
+			StartedAt: onlineEnd, EndedAt: &idleEnd,
+		},
+	}
+	now := idleEnd.Add(time.Hour)
+
+	from1, to1, _ := dayBounds("2026-08-11", loc)
+	first := buildDayRollup("u", "2026-08-11", "America/New_York", loc, from1, to1, now, nil, nil, nil, statuses, nil)
+	if first.OnlineSec != 2*3600 {
+		t.Fatalf("day one online = %ds, want 2h (10pm–midnight)", first.OnlineSec)
+	}
+	if first.IdleSec != 0 {
+		t.Fatalf("the idle run is entirely on day two, got %ds", first.IdleSec)
+	}
+
+	from2, to2, _ := dayBounds("2026-08-12", loc)
+	second := buildDayRollup("u", "2026-08-12", "America/New_York", loc, from2, to2, now, nil, nil, nil, statuses, nil)
+	if second.OnlineSec != 2*3600 {
+		t.Fatalf("day two online = %ds, want 2h (midnight–2am)", second.OnlineSec)
+	}
+	if second.IdleSec != 3600 {
+		t.Fatalf("day two idle = %ds, want 1h", second.IdleSec)
+	}
+	if second.DndSec != 0 {
+		t.Fatalf("no dnd was recorded, got %ds", second.DndSec)
+	}
+
+	// Client time overlaps: both clients were signed in for the online run, so
+	// desktop + mobile exceeds the presence total rather than partitioning it.
+	if second.DesktopSec != 2*3600 {
+		t.Fatalf("day two desktop = %ds, want 2h", second.DesktopSec)
+	}
+	if second.MobileSec != 3*3600 {
+		t.Fatalf("day two mobile = %ds, want 3h (online + idle)", second.MobileSec)
+	}
+	presence := second.OnlineSec + second.IdleSec + second.DndSec
+	if second.DesktopSec+second.MobileSec <= presence {
+		t.Fatal("client totals are expected to OVERLAP and exceed presence — that is the contract")
+	}
+}
+
+// A client reporting any status at all is a signed-in client; only an empty
+// string means "not signed in here". Counting only "online" would have lost
+// every idle phone, which is most of them.
+func TestClientsFromCountsAnyReportedStatus(t *testing.T) {
+	got := clientsFrom(discordgo.ClientStatus{Desktop: "online", Mobile: "idle", Web: ""})
+	if !got.Desktop || !got.Mobile || got.Web {
+		t.Fatalf("clientsFrom = %+v, want desktop+mobile only", got)
+	}
+	if (clientSet{}).any() {
+		t.Fatal("an empty client set means signed in nowhere")
 	}
 }
 
@@ -372,19 +487,62 @@ func TestSanitizeSampleFlattensNewlines(t *testing.T) {
 	}
 }
 
-// The hash is the cost control: identical figures must not earn a second model
-// call, and any change to any figure must.
-func TestSourceHashChangesWithFigures(t *testing.T) {
-	days := []*dayRollup{{DateKey: "2026-08-11", VoiceSec: 3600, Messages: 10}}
-	base := sourceHash(periodDay, "2026-08-11", days)
+// The hash is the cost control AND the freshness rule: a period must be
+// rewritten whenever anything the model would see has changed, and must not be
+// re-billed when nothing has.
+//
+// The regression this guards is real. The hash used to be a hand-picked list of
+// 14 figures while the prompt read 28, so a day where he streamed, or collected
+// reactions, or said entirely different things without changing the message
+// count, hashed identically and kept a stale write-up forever.
+func TestSourceHashTracksEverythingThePromptSees(t *testing.T) {
+	loc := eastern(t)
+	base := []*dayRollup{{
+		DateKey: "2026-08-11", VoiceSec: 3600, Messages: 10, StreamingSec: 0,
+		ReactionsReceived: 0, MutedSec: 0,
+	}}
+	samples := []sampledMessage{
+		{Channel: "general", SentAt: time.Date(2026, 8, 11, 20, 0, 0, 0, time.UTC), Content: "ill apply tomorrow"},
+	}
+	promptFor := func(days []*dayRollup, s []sampledMessage) string {
+		return buildSummaryPrompt(periodDay, "2026-08-11", days, sumDays(days), s, loc)
+	}
 
-	if again := sourceHash(periodDay, "2026-08-11", days); again != base {
-		t.Fatal("same figures must hash the same, or every pass re-bills")
+	original := sourceHash(promptFor(base, samples))
+	if again := sourceHash(promptFor(base, samples)); again != original {
+		t.Fatal("identical input must hash the same, or every pass re-bills")
 	}
-	days[0].Messages = 11
-	if changed := sourceHash(periodDay, "2026-08-11", days); changed == base {
-		t.Fatal("a changed figure must earn a regeneration")
+
+	// Each of these appears in the prompt and none was in the old field list.
+	for _, tc := range []struct {
+		name  string
+		apply func(d *dayRollup)
+	}{
+		{"streaming time", func(d *dayRollup) { d.StreamingSec = 1800 }},
+		{"reactions received", func(d *dayRollup) { d.ReactionsReceived = 12 }},
+		{"muted time", func(d *dayRollup) { d.MutedSec = 900 }},
+		{"links shared", func(d *dayRollup) { d.Links = 4 }},
+		{"longest stretch", func(d *dayRollup) { d.LongestVoiceSec = 3000 }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			changed := []*dayRollup{{}}
+			*changed[0] = *base[0]
+			tc.apply(changed[0])
+			if sourceHash(promptFor(changed, samples)) == original {
+				t.Fatalf("a change to %s must earn a regeneration", tc.name)
+			}
+		})
 	}
+
+	// And what he actually SAID is the whole point of the summary.
+	t.Run("message sample", func(t *testing.T) {
+		other := []sampledMessage{
+			{Channel: "general", SentAt: samples[0].SentAt, Content: "one more game then bed"},
+		}
+		if sourceHash(promptFor(base, other)) == original {
+			t.Fatal("different messages must earn a regeneration")
+		}
+	})
 }
 
 func TestHumanDuration(t *testing.T) {

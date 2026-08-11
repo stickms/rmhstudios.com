@@ -67,7 +67,10 @@
   --stk-shadow-md: 0 4px 14px rgb(0 0 0 / 32%);
   --stk-shadow-lg: 0 12px 40px rgb(0 0 0 / 44%);
 
-  /* Discord's radii: 4 a control, 8 a card, 16 a panel, 999 a pill. */
+  /* Discord's radii: 4 a control, 8 a card, 16 a panel, 999 a pill. `xs` is
+     below the ladder on purpose and exists for one job — the heat-grid cells,
+     which are 10-16px square, where 4px reads as a circle. */
+  --stk-r-xs: 3px;
   --stk-r-sm: 4px;
   --stk-r-md: 8px;
   --stk-r-lg: 16px;
@@ -284,7 +287,13 @@
 
 .stk-profile__body {
   display: grid;
-  grid-template-columns: auto 1fr;
+  /* `minmax(0, …)` rather than a bare `1fr`, everywhere on this page. A `1fr`
+     track is `minmax(auto, 1fr)`, and that `auto` minimum is the widest
+     MIN-CONTENT among its items — so one child with a wide flex-basis (the
+     activity rows: `flex: 1 1 240px`) silently widens the whole column past the
+     viewport. `.stk` clips it with `overflow-x: hidden`, so the symptom is not a
+     scrollbar but a name quietly cut in half at 320px. */
+  grid-template-columns: auto minmax(0, 1fr);
   gap: 12px 16px;
   padding: 0 20px 20px;
 }
@@ -445,7 +454,10 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  flex: 1 1 240px;
+  /* `min(240px, 100%)` as the basis: 240 is the width this row wants, but on a
+     320px phone the column is narrower than that and a fixed basis becomes a
+     min-content floor the grid track has to honour. */
+  flex: 1 1 min(240px, 100%);
   min-width: 0;
   padding: 10px 12px;
   border-radius: var(--stk-r-md);
@@ -710,16 +722,54 @@
   position: relative;
   width: 100%;
   /* The SVG is viewBox-scaled, so it fills whatever width it is given and the
-     page never scrolls sideways for it. */
+     PAGE never scrolls sideways for it. Below `--stk-plot-min` the plot scrolls
+     inside itself instead — see the note on that token. */
   display: block;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  /* Vertical gestures still scroll the page: a chart that swallowed them would
+     trap a thumb dragged down the middle of a phone screen. */
   touch-action: pan-y;
+  scrollbar-width: thin;
 }
 
+/*
+ * A viewBox scales its TEXT with the box.
+ *
+ * These plots are 720 user units wide. Rendered into a 244px column on a 320px
+ * phone that is a 0.34 scale, which turns the 10px axis labels into 3.4px — the
+ * sleep strip's per-night dates were present, correct and completely
+ * unreadable. Letting the plot scroll below a floor keeps the type at a legible
+ * size and costs a swipe, which is the trade every wide table on a phone makes.
+ *
+ * 560px rather than the full 720: enough that 10px type renders at ~7.8px and
+ * the shape of a week is still visible without scrolling at all.
+ */
 .stk-chart__plot svg {
   display: block;
   width: 100%;
+  min-width: var(--stk-plot-min, 0);
   height: auto;
   overflow: visible;
+}
+
+/* The plot is focusable (arrow keys walk it), and the global focus ring sits 2px
+   OUTSIDE its target — which a scroll container clips on every edge. An inset
+   ring is the standard answer and is the only one visible here. */
+.stk-chart__plot svg:focus-visible {
+  outline-offset: -2px;
+}
+
+@media (max-width: 560px) {
+  .stk-chart__plot {
+    --stk-plot-min: 480px;
+  }
+}
+
+@media (max-width: 380px) {
+  .stk-chart__plot {
+    --stk-plot-min: 420px;
+  }
 }
 
 .stk-chart__grid-line {
@@ -787,6 +837,289 @@
 .stk-chart__readout strong {
   color: var(--stk-text);
   font-weight: 600;
+}
+
+/* ── Punch card ───────────────────────────────────────────────────────────── */
+
+/* 7 rows × 24 hours, plus a label column and an hour strip. `minmax(0, 1fr)`
+   on the hours rather than a fixed cell size: 24 fixed cells plus a label
+   column overflows a 360px phone, and a grid that scrolls sideways is a grid
+   nobody reads the right half of. */
+.stk-punch {
+  display: grid;
+  grid-template-columns: 26px repeat(24, minmax(0, 1fr));
+  gap: 2px;
+  align-items: center;
+}
+
+.stk-punch__corner {
+  grid-column: 1;
+}
+
+/* 10/11px rather than the 9px this started at: Discord's own smallest shipped
+   type is 11px, and a 9px numeral against `--stk-text-faint` fails contrast at
+   a normal viewing distance even though the ratio passes. */
+.stk-punch__hour,
+.stk-punch__day {
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--stk-text-faint);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.stk-punch__day {
+  text-align: start;
+  font-size: 11px;
+}
+
+.stk-punch__cell {
+  aspect-ratio: 1;
+  /* Never smaller than a legible mark: below ~9px the ramp's middle steps stop
+     being distinguishable from each other at all. */
+  min-height: 9px;
+  border-radius: var(--stk-r-xs);
+  border: 1px solid transparent;
+  background: var(--stk-heat-0);
+  transition: border-color var(--stk-fast) var(--stk-ease);
+}
+
+.stk-punch__cell[data-level='1'] {
+  background: var(--stk-heat-1);
+}
+
+.stk-punch__cell[data-level='2'] {
+  background: var(--stk-heat-2);
+}
+
+.stk-punch__cell[data-level='3'] {
+  background: var(--stk-heat-3);
+}
+
+.stk-punch__cell[data-level='4'] {
+  background: var(--stk-heat-4);
+}
+
+.stk-punch__cell[data-active='true'] {
+  border-color: var(--stk-text);
+}
+
+/* ── Sleep ────────────────────────────────────────────────────────────────── */
+
+.stk-sleep-figures {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 12px;
+}
+
+@media (min-width: 560px) {
+  .stk-sleep-figures {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.stk-sleep-figure {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: var(--stk-r-sm);
+  background: var(--stk-inset);
+}
+
+.stk-sleep-figure__label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--stk-text-faint);
+}
+
+.stk-sleep-figure__value {
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.stk-sleep-figure__note {
+  font-size: 11px;
+  color: var(--stk-text-faint);
+}
+
+.stk-sleep-bar {
+  fill: var(--stk-accent);
+  opacity: 0.85;
+}
+
+/* ── Records, trends, projection ──────────────────────────────────────────── */
+
+.stk-chart__note {
+  font-size: 11px;
+  color: var(--stk-text-faint);
+}
+
+.stk-records {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  border-radius: var(--stk-r-sm);
+  overflow: hidden;
+  background: var(--stk-line-soft);
+}
+
+/* A three-column row that collapses to label-over-value on a phone, where a
+   long label and a duration cannot share 320px without one of them wrapping
+   into the other. */
+.stk-record {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 2px 10px;
+  padding: 8px 10px;
+  background: var(--stk-surface);
+}
+
+@media (min-width: 560px) {
+  .stk-record {
+    grid-template-columns: minmax(0, 1fr) auto 88px;
+  }
+}
+
+.stk-record__label {
+  font-size: 13px;
+  color: var(--stk-text-muted);
+  min-width: 0;
+}
+
+.stk-record__value {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.stk-record__when {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  color: var(--stk-text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 560px) {
+  .stk-record__when {
+    grid-column: auto;
+    text-align: end;
+  }
+}
+
+/* The date beside a personal best is a standalone link in a row, not a link
+   inside a sentence — so the WCAG 2.5.8 inline exemption does not cover it, and
+   at 14px tall it was a genuinely hard tap. The padding grows the hit box to 24px
+   and the equal negative margin keeps the row's layout exactly where it was. */
+.stk-record__when a {
+  display: inline-block;
+  padding-block: 5px;
+  margin-block: -5px;
+}
+
+.stk-record__when--trend {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 3px;
+}
+
+@media (min-width: 560px) {
+  .stk-record__when--trend {
+    justify-content: flex-end;
+  }
+}
+
+/* Up is not good news on this page and down is not bad news, so the arrows are
+   coloured by DIRECTION rather than by sentiment — the reader supplies the
+   judgement, which is the register the whole page is written in. */
+.stk-record[data-direction='up'] .stk-record__when--trend {
+  color: var(--stk-idle);
+}
+
+.stk-record[data-direction='down'] .stk-record__when--trend {
+  color: var(--stk-online);
+}
+
+/* ── Period pages ─────────────────────────────────────────────────────────── */
+
+.stk-period-days {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 8px;
+  border-radius: var(--stk-r-sm);
+  overflow: hidden;
+  background: var(--stk-line-soft);
+  list-style: none;
+}
+
+.stk-period-day {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-items: center;
+  gap: 4px 10px;
+  padding: 8px 10px;
+  background: var(--stk-surface);
+  color: var(--stk-text);
+  text-decoration: none;
+  transition: background-color var(--stk-fast) var(--stk-ease);
+}
+
+.stk-period-day:hover {
+  background: var(--stk-surface-hover);
+  text-decoration: none;
+}
+
+@media (min-width: 560px) {
+  .stk-period-day {
+    grid-template-columns: 60px minmax(0, 1fr) auto;
+  }
+}
+
+.stk-period-day__label {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--stk-text-muted);
+}
+
+.stk-period-day__track {
+  height: 8px;
+  border-radius: var(--stk-r-pill);
+  background: var(--stk-inset);
+  overflow: hidden;
+}
+
+.stk-period-day__fill {
+  display: block;
+  height: 100%;
+  /* Width is data, set inline by the component; the fallback keeps an
+     unstyled/JS-less render from painting a full-width bar. */
+  width: var(--stk-fill, 0%);
+  border-radius: var(--stk-r-pill);
+  background: var(--stk-accent);
+}
+
+.stk-period-day__value {
+  grid-column: 2;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--stk-text-faint);
+}
+
+@media (min-width: 560px) {
+  .stk-period-day__value {
+    grid-column: auto;
+    text-align: end;
+  }
 }
 
 /* ── Calendar ─────────────────────────────────────────────────────────────── */
@@ -949,7 +1282,7 @@
 .stk-legend__cell {
   width: 12px;
   height: 12px;
-  border-radius: 3px;
+  border-radius: var(--stk-r-xs);
   background: var(--stk-heat, var(--stk-heat-0));
 }
 
@@ -1168,7 +1501,7 @@
 .stk-grid-2 {
   display: grid;
   gap: 12px;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   /* Cards keep their own height rather than stretching to the tallest sibling.
      The calendar is a fixed-height month grid and the panel beside it is not,
      so stretching left the calendar card with a screenful of empty space under
@@ -1178,15 +1511,23 @@
 
 @media (min-width: 900px) {
   .stk-grid-2 {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 }
 
 /* ── Phones ───────────────────────────────────────────────────────────────── */
 
 @media (max-width: 640px) {
+  /* Header controls collapse to their icons: the page title is the thing that
+     must stay readable, and three labelled buttons beside it on a 390px screen
+     turn it into an ellipsis. Each control keeps an `aria-label`, so only the
+     visible text goes. */
+  .stk-header .stk-btn__label {
+    display: none;
+  }
+
   .stk-profile__body {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     padding: 0 16px 16px;
   }
 
@@ -1226,6 +1567,32 @@
   }
 }
 
+/* ── Very narrow phones ───────────────────────────────────────────────────
+   At 320-400px the header runs out of room even with the controls collapsed to
+   icons, and the title — the one thing that must survive — was eliding to
+   "What Is So…". The subtitle goes (it is repeated in the colophon) and the
+   title is allowed the two lines it needs, rather than the connection
+   indicator's word being dropped: that word is the whole reason the indicator
+   is not colour alone. */
+
+@media (max-width: 400px) {
+  .stk-header__sub {
+    display: none;
+  }
+
+  .stk-header__title {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.25;
+  }
+
+  .stk-header__actions {
+    gap: 6px;
+  }
+}
+
 /* ── Reduced motion ───────────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
@@ -1236,7 +1603,9 @@
 
   .stk-day,
   .stk-segment,
-  .stk-btn {
+  .stk-btn,
+  .stk-punch__cell,
+  .stk-period-day {
     transition: none;
   }
 }

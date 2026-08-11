@@ -32,7 +32,13 @@ export const Route = createFileRoute('/api/laundry-sort/leaderboard')({
   server: {
     handlers: {
       GET: defineHandler(
-        { auth: 'none', rateLimit: { limit: 30, windowMs: 60_000, prefix: 'laundry-leaderboard' } },
+        {
+          auth: 'none',
+          rateLimit: { limit: 30, windowMs: 60_000, prefix: 'laundry-leaderboard' },
+          // Same policy, same reasoning as `void-breaker/leaderboard`: a global
+          // top-N with no per-caller branch, so a shared cache may store it.
+          cache: { visibility: 'public', maxAge: 30, sMaxAge: 60, staleWhileRevalidate: 300 },
+        },
         async ({ request }) => {
           const url = new URL(request.url);
           const parsed = querySchema.safeParse({

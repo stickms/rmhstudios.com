@@ -1,6 +1,5 @@
 import { Link, createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { z } from 'zod';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { DayDetail } from '@/components/sohumtracker/DayDetail';
@@ -29,13 +28,27 @@ import { describeDay } from '@/lib/sohumtracker/describe';
  * date with nothing recorded is NOT — a quiet Tuesday is a fact about him, and
  * the page says so.
  */
-const dateParam = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, 'expected YYYY-MM-DD')
-  .max(10);
+/**
+ * Hand-rolled instead of a one-line zod schema. A route module's top-level code is
+ * aggregated into the SHARED ENTRY CHUNK, so `import { z } from 'zod'` here charges
+ * **every page on the site** 71 KB raw to validate one date string on one route. A
+ * regex is the whole schema anyway.
+ *
+ * Throwing (rather than returning null) is deliberate and unchanged: this is a
+ * server-function validator, and a malformed date should fail the call, which the
+ * route renders as a 404.
+ */
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function parseDateParam(value: string): string {
+  if (typeof value !== 'string' || value.length > 10 || !DATE_RE.test(value)) {
+    throw new Error('expected YYYY-MM-DD');
+  }
+  return value;
+}
 
 const fetchDay = createServerFn({ method: 'GET' })
-  .validator((date: string) => dateParam.parse(date))
+  .validator((date: string) => parseDateParam(date))
   .handler(async ({ data }) => {
     const snapshot = await getDaySnapshot(data);
     // `getDaySnapshot` returns null only for a date that cannot exist or has not
@@ -58,12 +71,12 @@ export const Route = createFileRoute('/sohumtracker/$date')({
           title: `${label} — Sohum's day | RMH Studios`,
           description: loaderData
             ? describeDay(loaderData.day)
-            : 'One day of Discord activity: hours in voice, messages sent, games played.',
+            : 'One day of Discord activity: hours signed in, hours in voice, messages sent.',
           path: `/sohumtracker/${params.date}`,
           // The day's own card, so the paste carries that day's figures rather
           // than the dossier's front page.
           image: `/api/og/sohumtracker?date=${encodeURIComponent(params.date)}`,
-          imageAlt: `Activity report for ${label}: time in voice, messages sent and games played.`,
+          imageAlt: `Activity report for ${label}: time signed in to Discord, time in voice and messages sent.`,
         }),
         { name: 'robots', content: 'noindex, nofollow' },
         { name: 'color-scheme', content: 'dark light' },
@@ -130,6 +143,7 @@ function DayRoute() {
             <div className="stk-grid-2">
               <SummaryCard
                 summary={week}
+                showPermalink
                 emptyTitle={t('week-empty-title', { defaultValue: 'This week' })}
                 emptyBody={t('week-empty-body', {
                   defaultValue: 'Not written up yet. It settles once the week has enough in it.',
@@ -137,6 +151,7 @@ function DayRoute() {
               />
               <SummaryCard
                 summary={month}
+                showPermalink
                 emptyTitle={t('month-empty-title', { defaultValue: 'This month' })}
                 emptyBody={t('month-empty-body', {
                   defaultValue: 'Not written up yet. It settles once the month has enough in it.',

@@ -31,8 +31,22 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import * as Icons from 'lucide-react';
-import { Search, X } from 'lucide-react';
+import {
+  Clock,
+  Coffee,
+  Flag,
+  Hash,
+  Leaf,
+  Lightbulb,
+  Plane,
+  Search,
+  Smile,
+  Sticker,
+  Trophy,
+  User,
+  X,
+  type LucideIcon,
+} from 'lucide-react';
 import {
   EMOJI_CATEGORIES,
   CATEGORY_META,
@@ -61,11 +75,36 @@ interface EmojiPickerPanelProps {
   height?: number;
 }
 
+/**
+ * Icon-name → component map for `CATEGORY_META.icon`.
+ *
+ * Deliberately an explicit map rather than `import * as Icons` + `Icons[name]`.
+ * A namespace import that is indexed by a computed key is unshakeable: the
+ * bundler cannot know which members are reachable, so it must retain all of
+ * them. That one line put the whole lucide barrel (157 KB) and the 431 KB
+ * `icons-*` chunk into this component's chunk — and because the composer's
+ * picker is in the homepage's lazy-route graph, onto the homepage. Same shape
+ * (and same reason) as `components/home/layout-icons.ts`.
+ *
+ * Keep in sync with `CATEGORY_META` in `lib/emoji/catalog.ts`; an unlisted name
+ * falls back to `Smile`, exactly as the dynamic lookup did.
+ */
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  Clock,
+  Coffee,
+  Flag,
+  Hash,
+  Leaf,
+  Lightbulb,
+  Plane,
+  Smile,
+  Sticker,
+  Trophy,
+  User,
+};
+
 function CategoryIcon({ name, className }: { name: string; className?: string }) {
-  const Cmp =
-    (Icons as unknown as Record<string, React.ComponentType<{ className?: string }> | undefined>)[
-      name
-    ] ?? Icons.Smile;
+  const Cmp = CATEGORY_ICONS[name] ?? Smile;
   return <Cmp className={className} />;
 }
 

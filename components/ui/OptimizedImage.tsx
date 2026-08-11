@@ -110,6 +110,25 @@ export function generateSrcSet(src: string, quality?: number, format?: string): 
 }
 
 /**
+ * The AVIF srcSet for a build-time-variant image, or null when there isn't one.
+ *
+ * `scripts/gen-image-variants.ts` emits every width in **both** AVIF and WebP, so
+ * this is always available for a manifest-listed path and is always exactly the
+ * same width set as {@link generateSrcSet}. Measured on the shipped art: 2.93 MB
+ * of AVIF against 4.38 MB of WebP, i.e. **~33% less** for the same pixels.
+ *
+ * Returns null (and the caller renders a bare `<img>`) for anything not in the
+ * manifest — an on-demand resize route or an external URL, where the format is
+ * negotiated by the optimizer instead and a second `<source>` would just be a
+ * duplicate request waiting to happen.
+ */
+function avifSrcSet(src: string): string | null {
+ const entry = IMAGE_VARIANTS[src];
+ if (!entry) return null;
+ return entry.widths.map((w) => `${variantUrl(src, w, 'avif')} ${w}w`).join(', ');
+}
+
+/**
  * Optimized image component that serves resized/converted images
  * via Sharp on the server. Generates responsive srcSet for all images.
  */
@@ -155,7 +174,14 @@ function OptimizedImageImpl({
  // Optimized default src (pick a reasonable middle size)
  const defaultSrc = degraded ? src : buildOptimizedUrl(src, width || 800, quality, format);
 
- return (
+ // AVIF is offered through a `<source>` rather than mixed into `srcSet`, because
+ // `srcSet` selects on WIDTH and `<source type>` selects on FORMAT — a single
+ // srcSet cannot express "prefer AVIF, fall back to WebP at the same widths".
+ // Skipped when the caller pinned an explicit `format`, and when the image has
+ // already failed once and degraded to its master.
+ const avif = !degraded && !format ? avifSrcSet(src) : null;
+
+ const img = (
  <img
  src={defaultSrc}
  srcSet={srcSet}
@@ -176,6 +202,26 @@ function OptimizedImageImpl({
  }}
  {...rest}
  />
+ );
+
+ if (!avif) return img;
+
+ // The `<img>` keeps its own `srcSet` (WebP) and stays the styled, measured,
+ // error-handling element — `<picture>` is a selection wrapper with no box of its
+ // own, so `className`, `width`/`height` and any parent layout keep working
+ // untouched. A browser that doesn't understand `image/avif` ignores the
+ // `<source>` and uses the `<img>` exactly as before, which is why this is
+ // additive rather than a swap.
+ //
+ // Note the `onError` degrade path lands on the `<img>`: if the variant files are
+ // missing (a build that skipped `pnpm images:variants`) the AVIF source is also
+ // missing, `avif` recomputes to null on the re-render, and the whole element
+ // falls back to the untouched master.
+ return (
+ <picture>
+ <source type="image/avif" srcSet={avif} sizes={sizes} />
+ {img}
+ </picture>
  );
 }
 

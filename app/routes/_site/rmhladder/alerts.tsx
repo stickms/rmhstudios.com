@@ -2,7 +2,7 @@ import { Bell, CheckCheck } from 'lucide-react';
 import { createFileRoute, Link, redirect, useRouter } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
-import { z } from 'zod';
+import { markReadSchema } from '@/lib/rmhladder/server-fn-schemas.server';
 import { useTranslation } from 'react-i18next';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
@@ -25,7 +25,6 @@ const fetchAlerts = createServerFn({ method: 'GET' }).handler(async () => {
   return { alerts: await listAlerts(queriesPrisma, session.user.id) };
 });
 
-const markReadSchema = z.object({ alertId: z.string().min(1).max(200).optional() });
 const doMarkRead = createServerFn({ method: 'POST' })
   .validator((input: unknown) => markReadSchema.parse(input))
   .handler(async ({ data }) => {

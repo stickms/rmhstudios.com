@@ -178,9 +178,15 @@ func New(cfg Config, chat *ChatService, pet *PetService, watch *WatchService, su
 		// Enabling them in the portal takes effect on the next IDENTIFY, so the
 		// worker has to be RESTARTED after flipping the toggles; an already-open
 		// gateway keeps the bitfield it connected with.
+		//
+		// GuildMessageTyping is NOT privileged — it is the ordinary typing
+		// indicator every client already shows everyone in the channel — and it
+		// is what lets the tracker see a message that was written and then not
+		// sent. Adding it needs no portal change, only this bit.
 		session.Identify.Intents |= discordgo.IntentsGuildVoiceStates |
 			discordgo.IntentsGuildPresences |
-			discordgo.IntentsGuildMessageReactions
+			discordgo.IntentsGuildMessageReactions |
+			discordgo.IntentsGuildMessageTyping
 		if watch.cfg.StoreContent {
 			session.Identify.Intents |= discordgo.IntentsMessageContent
 		}
@@ -195,6 +201,7 @@ func New(cfg Config, chat *ChatService, pet *PetService, watch *WatchService, su
 		session.AddHandler(b.onVoiceStateUpdate)
 		session.AddHandler(b.onPresenceUpdate)
 		session.AddHandler(b.onMessageReactionAdd)
+		session.AddHandler(b.onTypingStart)
 	}
 	return b, nil
 }
@@ -234,6 +241,14 @@ func (b *Bot) onMessageReactionAdd(_ *discordgo.Session, e *discordgo.MessageRea
 	ctx, cancel := b.watchContext()
 	defer cancel()
 	b.watch.HandleReaction(ctx, e)
+}
+
+// onTypingStart opens (or extends) a compose session, so the tracker can tell a
+// message that was written and sent from one that was written and deleted.
+func (b *Bot) onTypingStart(s *discordgo.Session, e *discordgo.TypingStart) {
+	ctx, cancel := b.watchContext()
+	defer cancel()
+	b.watch.HandleTyping(ctx, s, e)
 }
 
 // onMessageCreate lets Alex reply when he's @mentioned or someone replies to one
@@ -333,7 +348,18 @@ func (b *Bot) Run(ctx context.Context) error {
 	b.lifecycleCtx = ctx
 	b.ctxMu.Unlock()
 
-	if err := b.session.Open(); err != nil {
+	// Retried rather than fatal. This worker shares a process with five others
+	// under an errgroup, and returning here cancels the group and exits non-zero
+	// (cmd/supervisor) — so before this, Discord being unreachable for thirty
+	// seconds at container start took down recap, doctrine, vibe, bot-worker and
+	// streak-saver with it. discordgo handles reconnection AFTER a successful
+	// open; this covers the one gap it does not, which is never getting one.
+	//
+	// Still bounded: a genuinely bad token, or intents the application has not
+	// been granted (4014), fails identically forever and must be loud rather
+	// than a worker that quietly never starts.
+	if err := withRetry(ctx, b.logger, "discord.gateway.open", retryGateway,
+		func(context.Context) error { return b.session.Open() }); err != nil {
 		return fmt.Errorf("open gateway: %w", err)
 	}
 	b.logger.Info("discord gateway opened")
@@ -347,7 +373,7 @@ func (b *Bot) Run(ctx context.Context) error {
 	// Settle whatever the previous run left open and begin the flush/heartbeat
 	// loop, then the summarizer. Both stop with ctx.
 	b.watch.Start(ctx, b.session)
-	b.summary.Start(ctx, summaryInterval)
+	b.summary.Start(ctx, b.session, summaryInterval)
 
 	<-ctx.Done()
 

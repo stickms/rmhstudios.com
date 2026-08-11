@@ -21,15 +21,119 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/rmhstudios/rmh-go/pkg/db"
 )
 
 // watchRepo owns DB access for the tracker.
+//
+// Every statement goes through `exec`/`query`/`queryRow` below rather than
+// touching the pool directly, so the retry policy is written once instead of at
+// forty call sites — and so no future call site can forget it.
 type watchRepo struct {
-	db *db.DB
+	db     *db.DB
+	logger retryLogger
 }
 
 func newWatchRepo(database *db.DB) *watchRepo { return &watchRepo{db: database} }
+
+// withLogger attaches a logger for retry narration. Optional; nil is silent.
+func (r *watchRepo) withLogger(l retryLogger) *watchRepo {
+	if r != nil {
+		r.logger = l
+	}
+	return r
+}
+
+// ── The retrying SQL seam ───────────────────────────────────────────────────
+//
+// A pool blip, a failover or a restarting Postgres is a few hundred milliseconds
+// and the gateway does not redeliver: a message row lost to one of those is lost
+// for good, because Discord will not send it again. So the statements retry.
+//
+// # Only when it is provably safe
+//
+// `pgconn.SafeToRetry` is the whole basis for this, and it is the reason these
+// wrappers are worth having rather than a blanket loop. It reports true only when
+// the driver knows the statement never reached the server — a connection that
+// failed to acquire, a write that never left. A connection that dropped while
+// AWAITING a reply is not safe to retry: the insert may well have committed, and
+// blindly re-running it would double-count a voice session or a message.
+//
+// Most statements here are upserts or conditional updates and would survive a
+// double-run anyway. `insertMessage` and the session inserts would not, and one
+// rule that is correct for all of them beats a per-call-site judgement that will
+// eventually be made wrong.
+
+// retryableDBError reports whether a failed statement is worth another attempt.
+func retryableDBError(err error) bool {
+	if err == nil {
+		return false
+	}
+	// A cancelled context is a shutdown, not a fault.
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return false
+	}
+	return pgconn.SafeToRetry(err)
+}
+
+// dbRetry runs `fn` under the database schedule, giving up immediately on
+// anything the driver cannot vouch is un-executed.
+func (r *watchRepo) dbRetry(ctx context.Context, label string, fn func(ctx context.Context) error) error {
+	return withRetry(ctx, r.logger, label, retryDBPolicy, func(ctx context.Context) error {
+		err := fn(ctx)
+		if err != nil && !retryableDBError(err) {
+			return permanent(err)
+		}
+		return err
+	})
+}
+
+// exec runs a statement, retrying when it is safe to.
+func (r *watchRepo) exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error) {
+	var tag pgconn.CommandTag
+	err := r.dbRetry(ctx, "db.exec", func(ctx context.Context) error {
+		var err error
+		tag, err = r.exec(ctx, sql, args...)
+		return err
+	})
+	return tag, err
+}
+
+// query runs a query, retrying when it is safe to.
+//
+// The rows are NOT retried once handed back — a failure part-way through
+// iteration surfaces from `rows.Err()` to the caller, which is where the partial
+// result already is.
+func (r *watchRepo) query(ctx context.Context, sql string, args ...any) (pgx.Rows, error) {
+	var rows pgx.Rows
+	err := r.dbRetry(ctx, "db.query", func(ctx context.Context) error {
+		var err error
+		rows, err = r.query(ctx, sql, args...)
+		return err
+	})
+	return rows, err
+}
+
+// queryRowScan runs a single-row query AND its scan under one retry.
+//
+// The pair is retried together because pgx's QueryRow defers every error to
+// Scan: retrying only the query would re-run the statement and then still hand
+// back the first attempt's failure. Passing the scan in is what lets the loop
+// own both halves.
+//
+// `pgx.ErrNoRows` reaches the caller unchanged (it is wrapped, and `errors.Is`
+// sees through that) — an empty result is an answer, not a fault.
+func (r *watchRepo) queryRowScan(
+	ctx context.Context,
+	label, sql string,
+	args []any,
+	scan func(pgx.Row) error,
+) error {
+	return r.dbRetry(ctx, label, func(ctx context.Context) error {
+		return scan(r.db.Pool.QueryRow(ctx, sql, args...))
+	})
+}
 
 // ── Row types ───────────────────────────────────────────────────────────────
 
@@ -91,6 +195,10 @@ type watchMessage struct {
 	IsReply     bool
 	IsQuestion  bool
 	IsLateNight bool
+	// MentionsJob is decided once, at insert, by matchesJobHunt — see the note
+	// at the top of watch_jobhunt.go for why it is stored rather than derived
+	// later (the text it was derived from does not survive retention).
+	MentionsJob bool
 }
 
 // presenceSession is one run of a rich-presence activity.
@@ -150,11 +258,16 @@ func (r *watchRepo) openVoiceSession(ctx context.Context, discordID string) (*vo
 	if r.db == nil {
 		return nil, nil
 	}
-	row := r.db.Pool.QueryRow(ctx,
+	var v *voiceSession
+	err := r.queryRowScan(ctx, "db.openVoiceSession",
 		`SELECT `+voiceColumns+` FROM "discord_watch_voice_session"
 		 WHERE "discordId"=$1 AND "leftAt" IS NULL
-		 ORDER BY "joinedAt" DESC LIMIT 1`, discordID)
-	v, err := scanVoiceSession(row)
+		 ORDER BY "joinedAt" DESC LIMIT 1`, []any{discordID},
+		func(row pgx.Row) error {
+			var err error
+			v, err = scanVoiceSession(row)
+			return err
+		})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
@@ -172,7 +285,7 @@ func (r *watchRepo) insertVoiceSession(ctx context.Context, v *voiceSession) err
 	v.ID = newWatchID()
 	now := time.Now().UTC()
 	v.HeartbeatAt = now
-	_, err := r.db.Pool.Exec(ctx,
+	_, err := r.exec(ctx,
 		`INSERT INTO "discord_watch_voice_session"
 		   ("id","discordId","guildId","channelId","channelName","joinedAt",
 		    "selfMute","selfDeaf","streaming","video","serverMute","serverDeaf",
@@ -193,7 +306,7 @@ func (r *watchRepo) saveVoiceSession(ctx context.Context, v *voiceSession) error
 	}
 	now := time.Now().UTC()
 	v.HeartbeatAt = now
-	_, err := r.db.Pool.Exec(ctx,
+	_, err := r.exec(ctx,
 		`UPDATE "discord_watch_voice_session" SET
 		   "mutedSec"=$2,"deafenedSec"=$3,"streamingSec"=$4,"videoSec"=$5,"aloneSec"=$6,
 		   "selfMute"=$7,"selfDeaf"=$8,"streaming"=$9,"video"=$10,"serverMute"=$11,"serverDeaf"=$12,
@@ -219,7 +332,7 @@ func (r *watchRepo) closeVoiceSession(ctx context.Context, v *voiceSession, at t
 		duration = 0
 	}
 	v.LeftAt, v.EndedReason, v.DurationSec = &at, reason, duration
-	_, err := r.db.Pool.Exec(ctx,
+	_, err := r.exec(ctx,
 		`UPDATE "discord_watch_voice_session" SET
 		   "leftAt"=$2,"endedReason"=$3,"durationSec"=$4,
 		   "mutedSec"=$5,"deafenedSec"=$6,"streamingSec"=$7,"videoSec"=$8,"aloneSec"=$9,
@@ -246,7 +359,7 @@ func (r *watchRepo) resumeOrCloseSessions(ctx context.Context, now time.Time, gr
 	cutoff := now.Add(-grace)
 
 	// Voice: duration is measured to the heartbeat, not to now.
-	voice, err := r.db.Pool.Exec(ctx,
+	voice, err := r.exec(ctx,
 		`UPDATE "discord_watch_voice_session" SET
 		   "leftAt"="updatedAt",
 		   "endedReason"='stale',
@@ -256,7 +369,17 @@ func (r *watchRepo) resumeOrCloseSessions(ctx context.Context, now time.Time, gr
 	if err != nil {
 		return 0, 0, fmt.Errorf("retire stale voice sessions: %w", err)
 	}
-	presence, err := r.db.Pool.Exec(ctx,
+	statuses, err := r.exec(ctx,
+		`UPDATE "discord_watch_status_session" SET
+		   "endedAt"="updatedAt",
+		   "endedReason"='stale',
+		   "durationSec"=GREATEST(0, FLOOR(EXTRACT(EPOCH FROM ("updatedAt" - "startedAt")))::int),
+		   "updatedAt"=$2
+		 WHERE "endedAt" IS NULL AND "updatedAt" < $1`, cutoff, now)
+	if err != nil {
+		return 0, 0, fmt.Errorf("retire stale status sessions: %w", err)
+	}
+	presence, err := r.exec(ctx,
 		`UPDATE "discord_watch_presence_session" SET
 		   "endedAt"="updatedAt",
 		   "durationSec"=GREATEST(0, FLOOR(EXTRACT(EPOCH FROM ("updatedAt" - "startedAt")))::int),
@@ -267,13 +390,14 @@ func (r *watchRepo) resumeOrCloseSessions(ctx context.Context, now time.Time, gr
 	}
 
 	var resumed int
-	if err := r.db.Pool.QueryRow(ctx,
+	if err := r.queryRowScan(ctx, "db.countResumed",
 		`SELECT (SELECT count(*) FROM "discord_watch_voice_session" WHERE "leftAt" IS NULL)
-		      + (SELECT count(*) FROM "discord_watch_presence_session" WHERE "endedAt" IS NULL)`,
-	).Scan(&resumed); err != nil {
+		      + (SELECT count(*) FROM "discord_watch_presence_session" WHERE "endedAt" IS NULL)
+		      + (SELECT count(*) FROM "discord_watch_status_session" WHERE "endedAt" IS NULL)`,
+		nil, func(row pgx.Row) error { return row.Scan(&resumed) }); err != nil {
 		return 0, 0, fmt.Errorf("count resumed sessions: %w", err)
 	}
-	return resumed, int(voice.RowsAffected() + presence.RowsAffected()), nil
+	return resumed, int(voice.RowsAffected() + presence.RowsAffected() + statuses.RowsAffected()), nil
 }
 
 // ── Messages ────────────────────────────────────────────────────────────────
@@ -284,17 +408,17 @@ func (r *watchRepo) insertMessage(ctx context.Context, m *watchMessage) error {
 	if r.db == nil {
 		return nil
 	}
-	_, err := r.db.Pool.Exec(ctx,
+	_, err := r.exec(ctx,
 		`INSERT INTO "discord_watch_message"
 		   ("id","discordId","guildId","channelId","channelName","messageId","sentAt","content",
 		    "charCount","wordCount","attachments","embeds","links","mentions","emoji","stickers",
-		    "isReply","isQuestion","isLateNight")
-		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+		    "isReply","isQuestion","isLateNight","mentionsJob")
+		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
 		 ON CONFLICT ("messageId") DO NOTHING`,
 		newWatchID(), m.DiscordID, m.GuildID, m.ChannelID, nullableString(m.ChannelName), m.MessageID,
 		m.SentAt, nullableString(m.Content),
 		m.CharCount, m.WordCount, m.Attachments, m.Embeds, m.Links, m.Mentions, m.Emoji, m.Stickers,
-		m.IsReply, m.IsQuestion, m.IsLateNight)
+		m.IsReply, m.IsQuestion, m.IsLateNight, m.MentionsJob)
 	return err
 }
 
@@ -308,9 +432,9 @@ func (r *watchRepo) messageAuthor(ctx context.Context, messageID string) (string
 	}
 	var author string
 	var sentAt time.Time
-	err := r.db.Pool.QueryRow(ctx,
-		`SELECT "discordId","sentAt" FROM "discord_watch_message" WHERE "messageId"=$1`, messageID,
-	).Scan(&author, &sentAt)
+	err := r.queryRowScan(ctx, "db.messageAuthor",
+		`SELECT "discordId","sentAt" FROM "discord_watch_message" WHERE "messageId"=$1`,
+		[]any{messageID}, func(row pgx.Row) error { return row.Scan(&author, &sentAt) })
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", time.Time{}, nil
 	}
@@ -326,9 +450,9 @@ func (r *watchRepo) messagesForDay(ctx context.Context, discordID string, from, 
 	if r.db == nil {
 		return nil, nil
 	}
-	rows, err := r.db.Pool.Query(ctx,
+	rows, err := r.query(ctx,
 		`SELECT "channelId","channelName","sentAt","charCount","wordCount","attachments","links",
-		        "mentions","emoji","stickers","isReply","isQuestion","isLateNight"
+		        "mentions","emoji","stickers","isReply","isQuestion","isLateNight","mentionsJob"
 		 FROM "discord_watch_message"
 		 WHERE "discordId"=$1 AND "sentAt" >= $2 AND "sentAt" < $3
 		 ORDER BY "sentAt"`, discordID, from, to)
@@ -343,7 +467,7 @@ func (r *watchRepo) messagesForDay(ctx context.Context, discordID string, from, 
 		var channelName *string
 		if err := rows.Scan(&m.ChannelID, &channelName, &m.SentAt, &m.CharCount, &m.WordCount,
 			&m.Attachments, &m.Links, &m.Mentions, &m.Emoji, &m.Stickers,
-			&m.IsReply, &m.IsQuestion, &m.IsLateNight); err != nil {
+			&m.IsReply, &m.IsQuestion, &m.IsLateNight, &m.MentionsJob); err != nil {
 			return nil, err
 		}
 		if channelName != nil {
@@ -361,7 +485,7 @@ func (r *watchRepo) sampleMessages(ctx context.Context, discordID string, from, 
 	if r.db == nil {
 		return nil, nil
 	}
-	rows, err := r.db.Pool.Query(ctx,
+	rows, err := r.query(ctx,
 		`SELECT COALESCE("channelName","channelId"),"sentAt","content"
 		 FROM "discord_watch_message"
 		 WHERE "discordId"=$1 AND "sentAt" >= $2 AND "sentAt" < $3
@@ -397,7 +521,7 @@ func (r *watchRepo) pruneMessages(ctx context.Context, before time.Time) (int64,
 	if r.db == nil {
 		return 0, nil
 	}
-	tag, err := r.db.Pool.Exec(ctx,
+	tag, err := r.exec(ctx,
 		`DELETE FROM "discord_watch_message" WHERE "sentAt" < $1`, before)
 	if err != nil {
 		return 0, err
@@ -411,7 +535,7 @@ func (r *watchRepo) openPresenceSessions(ctx context.Context, discordID string) 
 	if r.db == nil {
 		return nil, nil
 	}
-	rows, err := r.db.Pool.Query(ctx,
+	rows, err := r.query(ctx,
 		`SELECT "id","discordId","guildId","activityName","activityType","details","state",
 		        "startedAt","updatedAt"
 		 FROM "discord_watch_presence_session"
@@ -446,7 +570,7 @@ func (r *watchRepo) insertPresenceSession(ctx context.Context, p *presenceSessio
 	}
 	p.ID = newWatchID()
 	now := time.Now().UTC()
-	_, err := r.db.Pool.Exec(ctx,
+	_, err := r.exec(ctx,
 		`INSERT INTO "discord_watch_presence_session"
 		   ("id","discordId","guildId","activityName","activityType","details","state","startedAt","updatedAt")
 		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
@@ -463,7 +587,7 @@ func (r *watchRepo) closePresenceSession(ctx context.Context, p *presenceSession
 	if duration < 0 {
 		duration = 0
 	}
-	_, err := r.db.Pool.Exec(ctx,
+	_, err := r.exec(ctx,
 		`UPDATE "discord_watch_presence_session"
 		 SET "endedAt"=$2,"durationSec"=$3,"updatedAt"=$4 WHERE "id"=$1`,
 		p.ID, at, duration, time.Now().UTC())
@@ -486,7 +610,7 @@ func (r *watchRepo) closeOpenPresence(ctx context.Context, discordID string, onl
 		query += ` AND "id"=$4`
 		args = append(args, *only)
 	}
-	_, err := r.db.Pool.Exec(ctx, query, args...)
+	_, err := r.exec(ctx, query, args...)
 	return err
 }
 
@@ -496,7 +620,7 @@ func (r *watchRepo) touchOpenPresence(ctx context.Context, discordID string) err
 	if r.db == nil {
 		return nil
 	}
-	_, err := r.db.Pool.Exec(ctx,
+	_, err := r.exec(ctx,
 		`UPDATE "discord_watch_presence_session" SET "updatedAt"=$2
 		 WHERE "discordId"=$1 AND "endedAt" IS NULL`, discordID, time.Now().UTC())
 	return err
@@ -510,7 +634,7 @@ func (r *watchRepo) voiceSessionsOverlapping(ctx context.Context, discordID stri
 	if r.db == nil {
 		return nil, nil
 	}
-	rows, err := r.db.Pool.Query(ctx,
+	rows, err := r.query(ctx,
 		`SELECT `+voiceColumns+` FROM "discord_watch_voice_session"
 		 WHERE "discordId"=$1 AND "joinedAt" < $3 AND COALESCE("leftAt", NOW()) > $2
 		 ORDER BY "joinedAt"`, discordID, from, to)
@@ -535,7 +659,7 @@ func (r *watchRepo) presenceSessionsOverlapping(ctx context.Context, discordID s
 	if r.db == nil {
 		return nil, nil
 	}
-	rows, err := r.db.Pool.Query(ctx,
+	rows, err := r.query(ctx,
 		`SELECT "id","discordId","guildId","activityName","activityType","details","state",
 		        "startedAt","endedAt","updatedAt"
 		 FROM "discord_watch_presence_session"
@@ -561,6 +685,131 @@ func (r *watchRepo) presenceSessionsOverlapping(ctx context.Context, discordID s
 			p.State = *state
 		}
 		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
+// ── Status sessions (time online) ───────────────────────────────────────────
+
+// statusSession is one contiguous run of a status held on a set of clients.
+type statusSession struct {
+	ID          string
+	DiscordID   string
+	Status      string
+	Clients     clientSet
+	StartedAt   time.Time
+	EndedAt     *time.Time
+	DurationSec int
+	HeartbeatAt time.Time
+}
+
+const statusColumns = `"id","discordId","status","desktop","mobile","web",` +
+	`"startedAt","endedAt","durationSec","updatedAt"`
+
+func scanStatusSession(row pgx.Row) (*statusSession, error) {
+	v := &statusSession{}
+	if err := row.Scan(&v.ID, &v.DiscordID, &v.Status,
+		&v.Clients.Desktop, &v.Clients.Mobile, &v.Clients.Web,
+		&v.StartedAt, &v.EndedAt, &v.DurationSec, &v.HeartbeatAt); err != nil {
+		return nil, err
+	}
+	return v, nil
+}
+
+// openStatusSession returns the in-progress run, or (nil, nil).
+func (r *watchRepo) openStatusSession(ctx context.Context, discordID string) (*statusSession, error) {
+	if r.db == nil {
+		return nil, nil
+	}
+	var v *statusSession
+	err := r.queryRowScan(ctx, "db.openStatusSession",
+		`SELECT `+statusColumns+` FROM "discord_watch_status_session"
+		 WHERE "discordId"=$1 AND "endedAt" IS NULL
+		 ORDER BY "startedAt" DESC LIMIT 1`, []any{discordID},
+		func(row pgx.Row) error {
+			var err error
+			v, err = scanStatusSession(row)
+			return err
+		})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return v, nil
+}
+
+func (r *watchRepo) insertStatusSession(ctx context.Context, v *statusSession) error {
+	if r.db == nil {
+		return nil
+	}
+	v.ID = newWatchID()
+	now := time.Now().UTC()
+	v.HeartbeatAt = now
+	_, err := r.exec(ctx,
+		`INSERT INTO "discord_watch_status_session"
+		   ("id","discordId","status","desktop","mobile","web","startedAt","updatedAt")
+		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+		v.ID, v.DiscordID, v.Status, v.Clients.Desktop, v.Clients.Mobile, v.Clients.Web,
+		v.StartedAt, now)
+	return err
+}
+
+// closeStatusSession ends a run at `at`. As with voice, `at` is not always now:
+// a run retired after an outage is closed back at its last heartbeat so the log
+// never claims presence the tracker did not observe.
+func (r *watchRepo) closeStatusSession(ctx context.Context, v *statusSession, at time.Time, reason string) error {
+	if r.db == nil {
+		return nil
+	}
+	duration := int(at.Sub(v.StartedAt).Seconds())
+	if duration < 0 {
+		duration = 0
+	}
+	v.EndedAt, v.DurationSec = &at, duration
+	_, err := r.exec(ctx,
+		`UPDATE "discord_watch_status_session"
+		 SET "endedAt"=$2,"durationSec"=$3,"endedReason"=$4,"updatedAt"=$5 WHERE "id"=$1`,
+		v.ID, at, duration, reason, time.Now().UTC())
+	return err
+}
+
+// touchOpenStatus beats the heartbeat on the open run, so a restart can tell a
+// live presence from one the bot lost track of.
+func (r *watchRepo) touchOpenStatus(ctx context.Context, discordID string) error {
+	if r.db == nil {
+		return nil
+	}
+	_, err := r.exec(ctx,
+		`UPDATE "discord_watch_status_session" SET "updatedAt"=$2
+		 WHERE "discordId"=$1 AND "endedAt" IS NULL`, discordID, time.Now().UTC())
+	return err
+}
+
+// statusSessionsOverlapping returns every run touching [from, to), including the
+// open one — which is what lets today's online figure keep climbing while he
+// sits there.
+func (r *watchRepo) statusSessionsOverlapping(ctx context.Context, discordID string, from, to time.Time) ([]*statusSession, error) {
+	if r.db == nil {
+		return nil, nil
+	}
+	rows, err := r.query(ctx,
+		`SELECT `+statusColumns+` FROM "discord_watch_status_session"
+		 WHERE "discordId"=$1 AND "startedAt" < $3 AND COALESCE("endedAt", NOW()) > $2
+		 ORDER BY "startedAt"`, discordID, from, to)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []*statusSession
+	for rows.Next() {
+		v, err := scanStatusSession(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, v)
 	}
 	return out, rows.Err()
 }
@@ -608,7 +857,7 @@ func (r *watchRepo) upsertLiveStatus(
 	if err != nil {
 		return fmt.Errorf("marshal activities: %w", err)
 	}
-	_, err = r.db.Pool.Exec(ctx,
+	_, err = r.exec(ctx,
 		`INSERT INTO "discord_watch_live"
 		   ("discordId","status","statusChangedAt","activityName","activityType",
 		    "activities","customStatus","customEmoji","updatedAt")
@@ -652,7 +901,7 @@ func (r *watchRepo) upsertLiveIdentity(ctx context.Context, discordID, username,
 		return nil
 	}
 	now := time.Now().UTC()
-	_, err := r.db.Pool.Exec(ctx,
+	_, err := r.exec(ctx,
 		`INSERT INTO "discord_watch_live" ("discordId","username","globalName","avatarHash","statusChangedAt","updatedAt")
 		 VALUES ($1,$2,$3,$4,$5,$5)
 		 ON CONFLICT ("discordId") DO UPDATE SET
@@ -676,15 +925,17 @@ func (r *watchRepo) writeDayRollup(ctx context.Context, d *dayRollup) error {
 		return nil
 	}
 	now := time.Now().UTC()
-	_, err := r.db.Pool.Exec(ctx,
+	_, err := r.exec(ctx,
 		`INSERT INTO "discord_watch_day"
 		   ("discordId","dateKey","timeZone","voiceSec","voiceSessions","longestVoiceSec","mutedSec",
-		    "deafenedSec","streamingSec","videoSec","aloneSec","lateNightSec","messages","words",
+		    "deafenedSec","streamingSec","videoSec","aloneSec","lateNightSec","onlineSec","idleSec","dndSec",
+		    "desktopSec","mobileSec","webSec","messages","words",
 		    "characters","attachments","links","mentions","emoji","stickers","replies","questions",
 		    "lateNightMessages","gamingSec","gameSessions","topGame","topGameSec","topChannel",
-		    "topChannelMessages","hourlyMessages","hourlyVoiceSec","firstSeenAt","lastSeenAt","updatedAt")
+		    "topChannelMessages","hourlyMessages","hourlyVoiceSec","firstSeenAt","lastSeenAt",
+		    "jobMentions","typingStarts","typingAbandoned","typingAbandonedSec","updatedAt")
 		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,
-		         $24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34)
+		         $24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44)
 		 ON CONFLICT ("discordId","dateKey") DO UPDATE SET
 		   "timeZone"=EXCLUDED."timeZone",
 		   "voiceSec"=EXCLUDED."voiceSec",
@@ -696,6 +947,12 @@ func (r *watchRepo) writeDayRollup(ctx context.Context, d *dayRollup) error {
 		   "videoSec"=EXCLUDED."videoSec",
 		   "aloneSec"=EXCLUDED."aloneSec",
 		   "lateNightSec"=EXCLUDED."lateNightSec",
+		   "onlineSec"=EXCLUDED."onlineSec",
+		   "idleSec"=EXCLUDED."idleSec",
+		   "dndSec"=EXCLUDED."dndSec",
+		   "desktopSec"=EXCLUDED."desktopSec",
+		   "mobileSec"=EXCLUDED."mobileSec",
+		   "webSec"=EXCLUDED."webSec",
 		   "messages"=EXCLUDED."messages",
 		   "words"=EXCLUDED."words",
 		   "characters"=EXCLUDED."characters",
@@ -717,13 +974,19 @@ func (r *watchRepo) writeDayRollup(ctx context.Context, d *dayRollup) error {
 		   "hourlyVoiceSec"=EXCLUDED."hourlyVoiceSec",
 		   "firstSeenAt"=EXCLUDED."firstSeenAt",
 		   "lastSeenAt"=EXCLUDED."lastSeenAt",
+		   "jobMentions"=EXCLUDED."jobMentions",
+		   "typingStarts"=EXCLUDED."typingStarts",
+		   "typingAbandoned"=EXCLUDED."typingAbandoned",
+		   "typingAbandonedSec"=EXCLUDED."typingAbandonedSec",
 		   "updatedAt"=EXCLUDED."updatedAt"`,
 		d.DiscordID, d.DateKey, d.TimeZone, d.VoiceSec, d.VoiceSessions, d.LongestVoiceSec, d.MutedSec,
-		d.DeafenedSec, d.StreamingSec, d.VideoSec, d.AloneSec, d.LateNightSec, d.Messages, d.Words,
+		d.DeafenedSec, d.StreamingSec, d.VideoSec, d.AloneSec, d.LateNightSec, d.OnlineSec, d.IdleSec, d.DndSec,
+		d.DesktopSec, d.MobileSec, d.WebSec, d.Messages, d.Words,
 		d.Characters, d.Attachments, d.Links, d.Mentions, d.Emoji, d.Stickers, d.Replies, d.Questions,
 		d.LateNightMessages, d.GamingSec, d.GameSessions, nullableString(d.TopGame), d.TopGameSec,
 		nullableString(d.TopChannel), d.TopChannelMessages, jsonInts(d.HourlyMessages), jsonInts(d.HourlyVoiceSec),
-		d.FirstSeenAt, d.LastSeenAt, now)
+		d.FirstSeenAt, d.LastSeenAt,
+		d.JobMentions, d.TypingStarts, d.TypingAbandoned, d.TypingAbandonedSec, now)
 	return err
 }
 
@@ -734,7 +997,7 @@ func (r *watchRepo) bumpReactions(ctx context.Context, discordID, dateKey, timeZ
 		return nil
 	}
 	now := time.Now().UTC()
-	_, err := r.db.Pool.Exec(ctx,
+	_, err := r.exec(ctx,
 		`INSERT INTO "discord_watch_day" ("discordId","dateKey","timeZone","reactionsGiven","reactionsReceived","updatedAt")
 		 VALUES ($1,$2,$3,$4,$5,$6)
 		 ON CONFLICT ("discordId","dateKey") DO UPDATE SET
@@ -755,9 +1018,10 @@ func (r *watchRepo) summarySourceHash(ctx context.Context, discordID, period, pe
 		return "", nil
 	}
 	var hash string
-	err := r.db.Pool.QueryRow(ctx,
+	err := r.queryRowScan(ctx, "db.summarySourceHash",
 		`SELECT "sourceHash" FROM "discord_watch_summary"
-		 WHERE "discordId"=$1 AND "period"=$2 AND "periodKey"=$3`, discordID, period, periodKey).Scan(&hash)
+		 WHERE "discordId"=$1 AND "period"=$2 AND "periodKey"=$3`,
+		[]any{discordID, period, periodKey}, func(row pgx.Row) error { return row.Scan(&hash) })
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", nil
 	}
@@ -772,7 +1036,7 @@ func (r *watchRepo) upsertSummary(ctx context.Context, s *watchSummary) error {
 		return nil
 	}
 	now := time.Now().UTC()
-	_, err := r.db.Pool.Exec(ctx,
+	_, err := r.exec(ctx,
 		`INSERT INTO "discord_watch_summary"
 		   ("id","discordId","period","periodKey","headline","summary","verdict","mood","topics",
 		    "model","sourceHash","generatedAt","updatedAt")
@@ -793,18 +1057,87 @@ func (r *watchRepo) upsertSummary(ctx context.Context, s *watchSummary) error {
 	return err
 }
 
+// unpostedWeekSummaries returns weekly write-ups that have never been announced,
+// no older than `oldestKey`. Ordered so a backlog is posted in the order the
+// weeks happened rather than newest-first.
+func (r *watchRepo) unpostedWeekSummaries(ctx context.Context, discordID, oldestKey string) ([]*watchSummary, error) {
+	if r.db == nil {
+		return nil, nil
+	}
+	rows, err := r.query(ctx,
+		`SELECT "periodKey","headline","summary","verdict","mood","topics"
+		 FROM "discord_watch_summary"
+		 WHERE "discordId"=$1 AND "period"='week' AND "digestPostedAt" IS NULL AND "periodKey" >= $2
+		 ORDER BY "periodKey"`, discordID, oldestKey)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []*watchSummary
+	for rows.Next() {
+		v := &watchSummary{DiscordID: discordID, Period: periodWeek}
+		var verdict, mood *string
+		var topics []string
+		if err := rows.Scan(&v.PeriodKey, &v.Headline, &v.Summary, &verdict, &mood, &topics); err != nil {
+			return nil, err
+		}
+		if verdict != nil {
+			v.Verdict = *verdict
+		}
+		if mood != nil {
+			v.Mood = *mood
+		}
+		v.Topics = topics
+		out = append(out, v)
+	}
+	return out, rows.Err()
+}
+
+// claimDigest marks a week as posted, returning whether THIS caller won the
+// claim. Conditional on the column still being null, which is what makes two
+// workers racing safe without a lock.
+func (r *watchRepo) claimDigest(ctx context.Context, discordID, periodKey string, at time.Time) (bool, error) {
+	if r.db == nil {
+		return false, nil
+	}
+	tag, err := r.exec(ctx,
+		`UPDATE "discord_watch_summary" SET "digestPostedAt"=$3,"updatedAt"=$4
+		 WHERE "discordId"=$1 AND "period"='week' AND "periodKey"=$2 AND "digestPostedAt" IS NULL`,
+		discordID, periodKey, at, time.Now().UTC())
+	if err != nil {
+		return false, err
+	}
+	return tag.RowsAffected() > 0, nil
+}
+
+// releaseDigest undoes a claim after a transient send failure, so a later pass
+// retries. Not called for a permanent one — see the note in watch_digest.go.
+func (r *watchRepo) releaseDigest(ctx context.Context, discordID, periodKey string) error {
+	if r.db == nil {
+		return nil
+	}
+	_, err := r.exec(ctx,
+		`UPDATE "discord_watch_summary" SET "digestPostedAt"=NULL,"updatedAt"=$3
+		 WHERE "discordId"=$1 AND "period"='week' AND "periodKey"=$2`,
+		discordID, periodKey, time.Now().UTC())
+	return err
+}
+
 // daysInRange returns the rollups for [fromKey, toKey] inclusive — the figures
 // the summarizer describes and the hash it keys off.
 func (r *watchRepo) daysInRange(ctx context.Context, discordID, fromKey, toKey string) ([]*dayRollup, error) {
 	if r.db == nil {
 		return nil, nil
 	}
-	rows, err := r.db.Pool.Query(ctx,
+	rows, err := r.query(ctx,
 		`SELECT "dateKey","voiceSec","voiceSessions","longestVoiceSec","mutedSec","deafenedSec",
-		        "streamingSec","videoSec","aloneSec","lateNightSec","messages","words","characters",
+		        "streamingSec","videoSec","aloneSec","lateNightSec","onlineSec","idleSec","dndSec",
+		    "desktopSec","mobileSec","webSec","messages","words","characters",
 		        "attachments","links","mentions","emoji","stickers","replies","questions",
 		        "lateNightMessages","reactionsGiven","reactionsReceived","gamingSec","gameSessions",
-		        "topGame","topGameSec","topChannel","topChannelMessages","firstSeenAt","lastSeenAt"
+		        "topGame","topGameSec","topChannel","topChannelMessages","firstSeenAt","lastSeenAt",
+		        "jobMentions","typingStarts","typingAbandoned","typingAbandonedSec"
 		 FROM "discord_watch_day"
 		 WHERE "discordId"=$1 AND "dateKey" >= $2 AND "dateKey" <= $3
 		 ORDER BY "dateKey"`, discordID, fromKey, toKey)
@@ -818,11 +1151,13 @@ func (r *watchRepo) daysInRange(ctx context.Context, discordID, fromKey, toKey s
 		d := &dayRollup{DiscordID: discordID}
 		var topGame, topChannel *string
 		if err := rows.Scan(&d.DateKey, &d.VoiceSec, &d.VoiceSessions, &d.LongestVoiceSec, &d.MutedSec,
-			&d.DeafenedSec, &d.StreamingSec, &d.VideoSec, &d.AloneSec, &d.LateNightSec, &d.Messages,
+			&d.DeafenedSec, &d.StreamingSec, &d.VideoSec, &d.AloneSec, &d.LateNightSec, &d.OnlineSec, &d.IdleSec, &d.DndSec,
+			&d.DesktopSec, &d.MobileSec, &d.WebSec, &d.Messages,
 			&d.Words, &d.Characters, &d.Attachments, &d.Links, &d.Mentions, &d.Emoji, &d.Stickers,
 			&d.Replies, &d.Questions, &d.LateNightMessages, &d.ReactionsGiven, &d.ReactionsReceived,
 			&d.GamingSec, &d.GameSessions, &topGame, &d.TopGameSec, &topChannel, &d.TopChannelMessages,
-			&d.FirstSeenAt, &d.LastSeenAt); err != nil {
+			&d.FirstSeenAt, &d.LastSeenAt,
+			&d.JobMentions, &d.TypingStarts, &d.TypingAbandoned, &d.TypingAbandonedSec); err != nil {
 			return nil, err
 		}
 		if topGame != nil {

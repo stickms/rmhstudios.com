@@ -9,7 +9,10 @@ import { useState } from 'react';
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
-import { z } from 'zod';
+import {
+  doKeywordSchema,
+  doUpdatePrefsSchema,
+} from '@/lib/rmhladder/server-fn-schemas.server';
 import { auth } from '@/lib/auth';
 import { Select } from '@/components/ui/select';
 import { prisma } from '@/lib/prisma.server';
@@ -50,29 +53,6 @@ const fetchSettings = createServerFn({ method: 'GET' }).handler(async () => {
   ]);
   return { ...settings, companies, savedSearches };
 });
-
-// updatePrefs parses authoritatively; passthrough here ensures any unknown keys
-// from future fields reach the handler without breaking validation.
-const doUpdatePrefsSchema = z.object({}).passthrough();
-
-const doKeywordSchema = z.discriminatedUnion('kind', [
-  z.object({
-    kind: z.literal('upsert'),
-    keyword: z.string().min(1).max(100),
-    type: z.enum(['boost', 'block']),
-    weight: z.number().int().min(0).max(50),
-  }),
-  z.object({
-    kind: z.literal('delete'),
-    keyword: z.string().min(1),
-    type: z.enum(['boost', 'block']),
-  }),
-  z.object({
-    kind: z.literal('watchlist'),
-    companyId: z.string().min(1).max(100),
-    on: z.boolean(),
-  }),
-]);
 
 const doUpdatePrefs = createServerFn({ method: 'POST' })
   .validator((input: unknown) => doUpdatePrefsSchema.parse(input))

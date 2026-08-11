@@ -1,6 +1,5 @@
 import { lazy, Suspense } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
 import { gameRouteHead } from '@/lib/seo-catalog';
 import { GameBackLink } from '@/components/shared/GameBackLink';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
@@ -16,10 +15,35 @@ const BumsRushGame = lazy(() =>
  * carries no authority, which is why it is safe in a URL — unlike a party
  * ticket, which goes through router state and never appears here.
  */
-const searchSchema = z.object({
-  room: z.string().length(6).optional(),
-  editor: z.coerce.boolean().optional(),
-});
+/**
+ * Hand-rolled rather than a zod schema, and this one genuinely has to be:
+ * `validateSearch` runs in the BROWSER on every navigation, so unlike a server
+ * function's validator it cannot hide behind a `.server` module. A top-level
+ * `import { z } from 'zod'` in any route file is aggregated into the shared entry
+ * chunk, which put zod (71 KB raw) on the critical path of every page on the site
+ * — to parse two optional search params on one game route.
+ *
+ * The checks are the same ones the schema made: `room` is a 6-character join code
+ * or absent, `editor` is a boolean coerced from whatever the URL carried. An
+ * invalid value is dropped rather than thrown on, which is what `.optional()` did.
+ */
+interface BumsRushSearch {
+  room?: string;
+  editor?: boolean;
+}
+
+function parseSearch(search: Record<string, unknown>): BumsRushSearch {
+  const out: BumsRushSearch = {};
+  const room = search.room;
+  if (typeof room === 'string' && room.length === 6) out.room = room;
+  // `Boolean(...)`, matching `z.coerce.boolean()` exactly — including that it
+  // treats the string '0' as true. Preserved rather than "fixed": the flag is
+  // only ever produced by the editor link, so presence is the signal, and
+  // tightening it here would be a behaviour change smuggled into a perf fix.
+  const editor = search.editor;
+  if (editor !== undefined) out.editor = Boolean(editor);
+  return out;
+}
 
 function BumsRushPage() {
   const { room } = Route.useSearch();
@@ -47,7 +71,7 @@ function BumsRushPage() {
 }
 
 export const Route = createFileRoute('/bums-rush')({
-  validateSearch: searchSchema,
+  validateSearch: parseSearch,
   head: () => gameRouteHead('bums-rush', { links: [{ rel: 'stylesheet', href: bumsRushCss }] }),
   component: BumsRushPage,
 });

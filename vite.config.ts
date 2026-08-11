@@ -166,6 +166,26 @@ function manualChunks(id: string) {
   // entry and must not be duplicated.
 }
 
+// MEASURED AND REJECTED: `output.codeSplitting.minSize` (2026-08-11).
+//
+// Three audits in a row flagged it as "worth measuring, not worth guessing at" —
+// the theory being that 90 of the 111 critical-path chunks are under 6 KB, and a
+// page making ~380 requests should trade chunk count for per-request overhead.
+// Measured at `minSize: 20_000`, against the same build:
+//
+//   entry chunk        276.0 KB → 450.0 KB   (+63%)
+//   critical path      111 chunks → 116      (worse)
+//   chunks under 6 KB  90 → 95               (worse)
+//   total JS files     1018 → 1023           (unchanged, effectively)
+//
+// It does not merge small chunks into fewer small chunks; it merges them into the
+// ENTRY, which is the one chunk that is fully blocking on every page. And it
+// barely moves the count, because most of a page's ~380 requests are per-route
+// chunks and their modulepreloads, not members of the shared graph — so the lever
+// is aimed at the wrong population. Don't re-run it expecting a different answer;
+// the request-count problem needs route-level chunk shaping, not a size floor.
+// Full numbers: docs/loading-audit-2026-08-11/06-backlog.md §7.
+
 export default defineConfig({
   customLogger: logger,
   resolve: {

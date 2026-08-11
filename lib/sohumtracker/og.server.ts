@@ -14,12 +14,12 @@
  */
 
 import type { PageCardData } from '@/lib/og/page-card.server';
-import { getDaySnapshot, getWatchState } from './activity.server';
+import { getDaySnapshot, getPeriodSnapshot, getWatchState } from './activity.server';
 import { formatCount, formatDuration, SUBJECT_FALLBACK_NAME } from './config';
 import { formatDayLong } from './dates';
 // `dayFigures` lives in a client-safe module because route `head()` functions
 // run in the browser too — see the note at the top of `describe.ts`.
-import { dayFigures } from './describe';
+import { dayFigures, periodFigures, periodLabel } from './describe';
 import type { WatchDayDTO } from './types';
 
 /**
@@ -30,9 +30,10 @@ import type { WatchDayDTO } from './types';
  */
 function dayStats(day: WatchDayDTO): PageCardData['stats'] {
   return [
+    // Time signed in first: it is the figure the other two are a fraction of.
+    { label: 'Signed in', value: formatDuration(day.onlineSec + day.idleSec + day.dndSec) },
     { label: 'In voice', value: formatDuration(day.voiceSec) },
     { label: 'Messages', value: formatCount(day.messages) },
-    { label: 'In games', value: formatDuration(day.gamingSec) },
   ];
 }
 
@@ -56,6 +57,60 @@ export async function buildDayCard(dateKey: string): Promise<PageCardData | null
   };
 }
 
+/**
+ * The card for a week's or a month's permalink.
+ *
+ * Same three chips as a day's, because the whole point of the period pages is
+ * that they are comparable to the days inside them — a card whose figures were
+ * chosen differently would break that at exactly the moment two are pasted side
+ * by side.
+ */
+export async function buildPeriodCard(
+  period: 'week' | 'month',
+  periodKey: string,
+): Promise<PageCardData | null> {
+  const snapshot = await getPeriodSnapshot(period, periodKey);
+  if (!snapshot) return null;
+  const { totals, summary } = snapshot;
+
+  return {
+    cacheKey: `sohumtracker:${period}:${periodKey}:${snapshot.updatedAt ?? 'empty'}`,
+    eyebrow: period === 'week' ? 'Weekly Review' : 'Monthly Review',
+    lead: SUBJECT_FALLBACK_NAME,
+    title: summary?.headline || periodLabel(period, periodKey),
+    subtitle: summary?.verdict || periodFigures(totals),
+    stats: [
+      { label: 'Signed in', value: formatDuration(totals.presenceSec) },
+      { label: 'In voice', value: formatDuration(totals.voiceSec) },
+      { label: 'Messages', value: formatCount(totals.messages) },
+    ],
+    path: `/sohumtracker/${period}/${periodKey}`,
+  };
+}
+
+/**
+ * The card drawn when the database cannot be reached.
+ *
+ * An unfurl is the one surface here with no error state of its own: a link
+ * pasted into a chat either shows a card or shows a broken image, and a broken
+ * image is what a reader remembers. So a failed read falls back to a card that
+ * is true regardless of what the tables say, rather than 500ing.
+ *
+ * No `cacheKey` variance and a short cache at the route: this must not be the
+ * bytes a CDN holds onto once the database is back.
+ */
+export function fallbackCard(): PageCardData {
+  return {
+    cacheKey: 'sohumtracker:unavailable',
+    eyebrow: 'Standing Review',
+    lead: SUBJECT_FALLBACK_NAME,
+    title: 'What Is Sohum Doing Right Now?',
+    subtitle: 'The record is briefly unavailable. He is not.',
+    stats: [],
+    path: '/sohumtracker',
+  };
+}
+
 /** The card for the dossier's front page. */
 export async function buildOverviewCard(): Promise<PageCardData> {
   // 30 days rather than the page's own window: the card is a summary, and the
@@ -63,10 +118,21 @@ export async function buildOverviewCard(): Promise<PageCardData> {
   const state = await getWatchState({ days: 30 });
   const { totals, live } = state;
 
+  // The job line is measured now rather than asserted: "nothing applied for" was
+  // a claim the card could not back up, and `daysSinceJobMention` is the same
+  // sentence with a figure behind it.
+  const jobLine =
+    totals.daysSinceJobMention === null
+      ? `Work has not come up once in ${totals.days} days.`
+      : totals.daysSinceJobMention === 0
+        ? 'He mentioned looking for work today.'
+        : `${totals.daysSinceJobMention} days since he mentioned looking for work.`;
+
   const subtitle = live.voice
-    ? `In voice right now — ${formatDuration(live.voice.durationSec)} and counting.`
-    : `${formatDuration(totals.voiceSec)} in voice over the last ${totals.days} days. ` +
-      `${formatCount(totals.messages)} messages. Nothing applied for.`;
+    ? `In voice right now — ${formatDuration(live.voice.durationSec)} and counting. ${jobLine}`
+    : `${formatDuration(totals.presenceSec)} signed in to Discord over the last ` +
+      `${totals.days} days, ${formatDuration(totals.mobileSec)} of it on his phone. ` +
+      jobLine;
 
   return {
     // `generatedAt` is minute-truncated: the card should follow him into a call
@@ -77,9 +143,9 @@ export async function buildOverviewCard(): Promise<PageCardData> {
     title: 'What Is Sohum Doing Right Now?',
     subtitle,
     stats: [
-      { label: 'In voice, 30d', value: formatDuration(totals.voiceSec) },
-      { label: 'Messages', value: formatCount(totals.messages) },
-      { label: 'In games', value: formatDuration(totals.gamingSec) },
+      { label: 'Signed in, 30d', value: formatDuration(totals.presenceSec) },
+      { label: 'In voice', value: formatDuration(totals.voiceSec) },
+      { label: 'On mobile', value: formatDuration(totals.mobileSec) },
     ],
     path: '/sohumtracker',
   };

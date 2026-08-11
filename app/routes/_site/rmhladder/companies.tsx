@@ -9,7 +9,10 @@ import { useEffect, useRef, useState } from 'react';
 import { createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
-import { z } from 'zod';
+import {
+  doCompanyActionSchema,
+  fetchCompaniesSchema,
+} from '@/lib/rmhladder/server-fn-schemas.server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { listCompanies, getSettings, type QueriesPrisma } from '@/lib/rmhladder/server/queries';
@@ -26,16 +29,6 @@ const queriesPrisma = prisma as unknown as QueriesPrisma;
 const actionsPrisma = prisma as unknown as ActionsPrisma;
 
 type AnyRow = Record<string, unknown>;
-
-const fetchCompaniesSchema = z.object({
-  q: z.string().max(200).optional(),
-});
-
-const doCompanyActionSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('enabled'), companyId: z.string().min(1), enabled: z.boolean() }),
-  z.object({ kind: z.literal('priority'), companyId: z.string().min(1), priorityLevel: z.number().int().min(1).max(5) }),
-  z.object({ kind: z.literal('watchlist'), companyId: z.string().min(1), on: z.boolean() }),
-]);
 
 const fetchCompanies = createServerFn({ method: 'GET' })
   .validator((input: unknown) => fetchCompaniesSchema.parse(input))

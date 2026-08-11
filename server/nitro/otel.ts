@@ -41,6 +41,7 @@
 // Imports are RELATIVE, not `@/` aliased — Nitro plugin modules don't reliably
 // resolve the tsconfig path aliases (same reason as warmup.ts / drain.ts).
 
+import { responseHeaders } from './security-headers';
 import { markScope, serverTimingHeader } from '../../lib/otel/timing';
 import { enterTrace, spanFromHeader, type TraceScope } from '../../lib/otel/trace';
 
@@ -145,7 +146,23 @@ export default function otelPlugin(nitroApp: NitroAppLike): void {
         // took no time.
         markScope(scope, 'total', performance.now() - scope.startedAt);
 
-        const headers = event.res?.headers ?? (_res as { headers?: Headers } | undefined)?.headers;
+        // MUST go through `responseHeaders(res, event)` — prefer the `res`
+        // argument, fall back to `event.res` — and not `event.res ?? res`.
+        // In H3 v2, `prepareResponse()` clears the event's prepared-response
+        // slot while it builds the final `Response`, and `event.res` is a lazy
+        // getter (`this[kEventRes] ||= new H3EventResponse()`). So reading
+        // `event.res` inside a `response` hook does not return the response
+        // being sent: it CONSTRUCTS a fresh, empty, detached one. Its `.headers`
+        // is a perfectly valid `Headers`, so `??` never falls through, and every
+        // header written here lands in a throwaway bag that is discarded a
+        // microtask later.
+        //
+        // That is exactly the bug that made the whole anonymous-HTML cache and
+        // the security headers inert (fixed 2026-08-09) — this plugin had the
+        // same line and was missed, which is why `Server-Timing` never reached a
+        // client and `lib/rum.ts` could never stamp a beacon with the server's
+        // trace id. One helper, shared, so there is one place to get it right.
+        const headers = responseHeaders(_res, event);
         // `append`, not `set`: Server-Timing is a list header and a route may
         // already have added its own timing entries. One append rather than one
         // per phase — `serverTimingHeader` composes the whole list value.

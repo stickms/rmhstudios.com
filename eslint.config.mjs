@@ -198,6 +198,30 @@ export default tseslint.config(
     plugins: { local },
     rules: {
       'local/no-adhoc-user-select': 'warn',
+      // "error", not "warn", unlike its neighbour: this one has no backlog. The
+      // four offending sites were fixed on 2026-08-11 (they were carrying a
+      // 431 KB / 116 KB-gzip icon chunk onto every page that reached them), so
+      // the count is zero and the only direction it can move is up. The failure
+      // is invisible — bytes, not correctness — which is exactly why it needs to
+      // fail the build rather than add a line to a warning list nobody reads.
+      // See docs/loading-audit-2026-08-11/02-critical-path.md §1.
+      'local/no-lucide-namespace-import': 'error',
+    },
+  },
+
+  // ── Tests may hold the whole icon set ─────────────────────────────────────
+  // `local/no-lucide-namespace-import` is about BUNDLE SIZE, and a test is never
+  // bundled — nothing a `*.test.ts` imports reaches a browser. Meanwhile
+  // `lib/__tests__/catalog.test.ts` needs the full set for a check that cannot be
+  // written any other way: it asserts every catalog entry's `iconName` names a
+  // real Lucide icon. That check is the reason the catalog schema deliberately
+  // does NOT validate `iconName` itself (doing so would drag the icon set into
+  // every bundle that reads the catalog), so moving it out of a test would
+  // recreate exactly the problem the rule exists to prevent.
+  {
+    files: ['**/*.test.{ts,tsx}', '**/__tests__/**/*.{ts,tsx}', 'testing/**/*.{ts,tsx}'],
+    rules: {
+      'local/no-lucide-namespace-import': 'off',
     },
   },
 

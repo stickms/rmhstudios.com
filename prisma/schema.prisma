@@ -319,6 +319,9 @@ model User {
   // Web Push subscriptions
   pushSubscriptions PushSubscription[]
 
+  // "Tell me when he joins voice" opt-ins on /sohumtracker
+  discordWatchAlerts DiscordWatchAlert[]
+
   // Referral program
   referralsMade    Referral[] @relation("Referrer")
   referralReceived Referral?  @relation("Referee")
@@ -8815,6 +8818,13 @@ model DiscordWatchVoiceSession {
   flagsChangedAt DateTime
   peersChangedAt DateTime
 
+  /// When the "he just joined voice" push went out for this session. The claim
+  /// is taken with a conditional update BEFORE the push, so two sweeps racing
+  /// cannot both notify; the cost is that a send which fails after the claim is
+  /// not retried, which is the right trade for a notification about something
+  /// happening right now.
+  alertedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -8853,6 +8863,11 @@ model DiscordWatchMessage {
   isQuestion  Boolean @default(false)
   /// Sent between midnight and 5am in the tracking timezone.
   isLateNight Boolean @default(false)
+  /// The message reads as being about looking for work — an application, an
+  /// interview, a recruiter, a CV. Decided at insert time by `matchesJobHunt`
+  /// so the finding OUTLIVES the message text, which is deleted at 45 days.
+  /// Always false when the Message Content intent is off and there is no text.
+  mentionsJob Boolean @default(false)
 
   createdAt DateTime @default(now())
 
@@ -8925,6 +8940,30 @@ model DiscordWatchDay {
   reactionsGiven    Int @default(0)
   reactionsReceived Int @default(0)
 
+  /// Messages that read as being about looking for work. Counted, not
+  /// inferred — the flag is set on the message row when it arrives.
+  jobMentions Int @default(0)
+
+  /// Compose sessions started, and the ones that never produced a message.
+  /// `typingAbandonedSec` is how long he spent typing those.
+  typingStarts       Int @default(0)
+  typingAbandoned    Int @default(0)
+  typingAbandonedSec Int @default(0)
+
+  /// Time at each status, from the status-session log. Mutually exclusive — a
+  /// status is one value — so these sum to his presence for the day.
+  onlineSec Int @default(0)
+  idleSec   Int @default(0)
+  dndSec    Int @default(0)
+
+  /// Time signed in on each client. These OVERLAP: desktop and mobile are
+  /// routinely both true, so the three can sum to more than online+idle+dnd.
+  /// Read them as "how much of the day was he reachable on a phone", not as a
+  /// partition of it.
+  desktopSec Int @default(0)
+  mobileSec  Int @default(0)
+  webSec     Int @default(0)
+
   gamingSec    Int     @default(0)
   gameSessions Int     @default(0)
   topGame      String?
@@ -8954,10 +8993,13 @@ model DiscordWatchDay {
 /// "month" and `periodKey` is the matching key shape (YYYY-MM-DD, YYYY-Www,
 /// YYYY-MM), so all three live in one table and the page fetches them together.
 ///
-/// `sourceHash` is a digest of the rollups the summary was generated from. The
-/// summarizer regenerates a period only when its hash changes, which is what
-/// stops a finished day being re-summarised (and re-billed) on every pass while
-/// still letting today's summary refresh as the day fills in.
+/// `sourceHash` is a digest of the PROMPT the summary was generated from — the
+/// exact question the model was asked. The summarizer regenerates a period only
+/// when that hash changes, which is what stops a finished day being
+/// re-summarised (and re-billed) on every pass while still letting today's
+/// summary refresh as the day fills in. Hashing the prompt rather than a list of
+/// figures means "anything the model would see changed" is the literal rule,
+/// with no second list of fields to drift out of step with the prompt.
 model DiscordWatchSummary {
   id        String @id @default(cuid())
   discordId String
@@ -8979,12 +9021,124 @@ model DiscordWatchSummary {
   sourceHash  String
   generatedAt DateTime @default(now())
 
+  /// When this period's digest was posted to Discord, for the weekly one that
+  /// is. Non-null means "already posted" and is what makes the post idempotent
+  /// across regenerations: a summary rewritten because the figures moved does
+  /// not get announced twice.
+  digestPostedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([discordId, period, periodKey])
   @@index([discordId, period, periodKey(sort: Desc)], map: "idx_discord_watch_summary_lookup")
   @@map("discord_watch_summary")
+}
+
+/// One compose session: he started typing in a channel, and either a message
+/// came out of it or one did not.
+///
+/// Discord re-sends `TYPING_START` roughly every eight seconds while somebody
+/// keeps typing, so a single run is many events; they are coalesced into one row
+/// by extending `lastTypingAt` while the gap stays under the idle window.
+///
+/// `sent` is the whole point. A compose session with no message is a thing he
+/// wrote and then deleted, which is the only trace this tracker can get of a
+/// decision — every other column on this page records something he did.
+model DiscordWatchTypingSession {
+  id          String  @id @default(cuid())
+  discordId   String
+  guildId     String
+  channelId   String
+  channelName String?
+
+  startedAt    DateTime
+  /// The last typing event of this run; the gap from here decides when the run
+  /// is settled and can be judged.
+  lastTypingAt DateTime
+  /// Set when the run is settled, either by a message or by the idle window.
+  settledAt    DateTime?
+  durationSec  Int       @default(0)
+
+  /// A message from him landed in this channel while the run was open.
+  sent Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([discordId, startedAt(sort: Desc)], map: "idx_discord_watch_typing_user")
+  @@index([discordId, settledAt], map: "idx_discord_watch_typing_open")
+  @@map("discord_watch_typing_session")
+}
+
+/// Somebody who asked to be told when the tracked account joins a voice channel.
+///
+/// Keyed to a site account rather than to an anonymous push endpoint on purpose:
+/// the site already has one push path (`lib/push/send.server.ts`, VAPID, dead-
+/// endpoint cleanup) and it is keyed by user. A second, anonymous one would be a
+/// second thing to get the encryption and the 410-handling right in.
+model DiscordWatchAlert {
+  id        String @id @default(cuid())
+  userId    String
+  /// Which tracked account this is about, so the table survives a second one.
+  discordId String
+
+  /// "voice" — the only kind so far, named rather than implied so adding
+  /// "he posted at 4am" later does not need a migration to tell them apart.
+  kind String @default("voice")
+
+  /// Rate limiting, per subscriber: he joins and leaves a call six times an
+  /// evening and nobody wants six notifications about it.
+  lastNotifiedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, discordId, kind])
+  @@index([discordId, kind], map: "idx_discord_watch_alert_target")
+  @@map("discord_watch_alert")
+}
+
+/// One contiguous run of a presence STATE: a status (online/idle/dnd) held on a
+/// particular set of clients. Opened when either changes, closed when either
+/// changes again — the same open/close shape as a voice session, and resumed
+/// across a brief restart by the same heartbeat rule.
+///
+/// This exists because the live row records a LEVEL, not an interval: "online
+/// since 14:02" is knowable from it, but "he was online for nine hours
+/// yesterday, six of them on his phone" is not, and that needs a log.
+///
+/// Offline is the ABSENCE of a row rather than a row of its own. A gap is
+/// already unambiguous, and storing offline would double the write volume to
+/// record something derivable.
+model DiscordWatchStatusSession {
+  id        String @id @default(cuid())
+  discordId String
+
+  /// "online" | "idle" | "dnd" — never "offline" (see above).
+  status String
+
+  /// Which clients he was signed in on for this run. These OVERLAP by design:
+  /// Discord reports desktop and mobile independently and both are routinely
+  /// true at once, so per-platform totals derived from them can sum to more
+  /// than the elapsed time. That is the honest answer, not a bug.
+  desktop Boolean @default(false)
+  mobile  Boolean @default(false)
+  web     Boolean @default(false)
+
+  startedAt   DateTime
+  endedAt     DateTime?
+  durationSec Int       @default(0)
+  /// "change" | "offline" | "shutdown" | "stale" — why the run ended.
+  endedReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([discordId, startedAt(sort: Desc)], map: "idx_discord_watch_status_user")
+  @@index([discordId, endedAt], map: "idx_discord_watch_status_open")
+  @@map("discord_watch_status_session")
 }
 
 /// The live state behind /sohumbum2's profile card: is he online, what is he

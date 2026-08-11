@@ -9,7 +9,10 @@ import { useState, useEffect, useRef } from 'react';
 import { createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
-import { z } from 'zod';
+import {
+  doResolveSchema,
+  fetchTasksSchema,
+} from '@/lib/rmhladder/server-fn-schemas.server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { listReviewTasks, type QueriesPrisma } from '@/lib/rmhladder/server/queries';
@@ -24,15 +27,6 @@ const queriesPrisma = prisma as unknown as QueriesPrisma;
 const actionsPrisma = prisma as unknown as ActionsPrisma;
 
 type AnyRow = Record<string, unknown>;
-
-const fetchTasksSchema = z.object({
-  tab: z.enum(['open', 'resolved']),
-});
-
-const doResolveSchema = z.object({
-  taskId: z.string().min(1),
-  resolution: z.enum(['verify', 'expire', 'duplicate', 'non_us', 'ignore']),
-});
 
 const fetchTasks = createServerFn({ method: 'GET' })
   .validator((input: unknown) => fetchTasksSchema.parse(input))

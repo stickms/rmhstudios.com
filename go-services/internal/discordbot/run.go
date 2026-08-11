@@ -34,7 +34,9 @@ func Run(ctx context.Context, d worker.Deps) error {
 
 	configurePetRates() // apply any env overrides to the tamagotchi pacing
 
-	deepseek := NewDeepSeekClient(cfg.DeepSeekKey, cfg.DeepSeekMod)
+	// The logger is attached so a retried DeepSeek call says so once, rather
+	// than a stalled reply looking like a hang.
+	deepseek := NewDeepSeekClient(cfg.DeepSeekKey, cfg.DeepSeekMod).WithLogger(d.Logger)
 	repo := newPetRepo(d.DB)
 	imager := newAlexImager(repo, d.Logger)
 	// Base URL of the web app that renders the /caretakers leaderboard image.
@@ -44,7 +46,7 @@ func Run(ctx context.Context, d worker.Deps) error {
 	chat.pet = pet // let /chat reflect and record Alex's live state
 
 	watchCfg := loadWatchConfig()
-	watchRepo := newWatchRepo(d.DB)
+	watchRepo := newWatchRepo(d.DB).withLogger(d.Logger)
 	watch := NewWatchService(watchCfg, watchRepo, d.Logger)
 	var summarizer *WatchSummarizer
 	if watch != nil {
@@ -88,6 +90,12 @@ func loadWatchConfig() WatchConfig {
 		RetentionDays: config.GetInt("DISCORD_WATCH_RETENTION_DAYS", 45),
 		FlushInterval: config.GetDuration("DISCORD_WATCH_FLUSH_INTERVAL", time.Minute),
 		GapGrace:      config.GetDuration("DISCORD_WATCH_GAP_GRACE", 10*time.Minute),
+		// Unset by default: posting into a channel is the one thing this worker
+		// does that other people see, so it stays off until somebody names the
+		// channel deliberately.
+		DigestChannelID: config.GetString("DISCORD_WATCH_DIGEST_CHANNEL_ID", ""),
+		SiteURL: strings.TrimRight(config.GetString("SITE_URL",
+			config.GetString("VITE_BETTER_AUTH_URL", "https://rmhstudios.com")), "/"),
 	}
 }
 

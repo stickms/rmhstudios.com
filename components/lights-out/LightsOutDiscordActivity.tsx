@@ -25,6 +25,7 @@ import {
     Check, Users, Swords, Calendar, Crown, Clock,
     ArrowLeft,
 } from 'lucide-react';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -177,9 +178,21 @@ export function LightsOutDiscordActivity({ discord }: LightsOutDiscordActivityPr
     if (layoutMode === 'pip' || layoutMode === 'grid') {
         return (
             <div className="h-dvh w-dvw bg-[#1d1d20] flex items-center justify-center overflow-hidden">
-                <img
+                {/* OptimizedImage, not a raw <img>: the master is a 1024×1024
+                    PNG weighing 928 KB — the largest single image in the repo —
+                    and it was being served in full to fill a Discord PIP tile a
+                    few hundred pixels wide. The build already emits 320/640/960
+                    WebP variants for this exact path (see
+                    lib/images/variants.gen.ts); nothing was pointing at them. */}
+                <OptimizedImage
                     src="/images/activities/lightsout.png"
                     alt="Lights Out"
+                    width={640}
+                    height={640}
+                    // The PIP/grid logo IS the whole view here, so it is the LCP
+                    // element rather than a list item — the one place `priority`
+                    // is correct.
+                    priority
                     className="max-w-[75%] max-h-[75%] object-contain"
                 />
             </div>

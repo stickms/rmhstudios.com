@@ -60,6 +60,20 @@ import (
 	"sync"
 	"time"
 
+	// Embeds the IANA timezone database in the binary.
+	//
+	// NOT optional, and not a nicety. The Go binaries ship in an Alpine image
+	// (the root Dockerfile's `runner-full`), and Alpine does not include tzdata
+	// — so without this, `time.LoadLocation("America/New_York")` FAILS in
+	// production and every day boundary, late-night window and hourly bucket
+	// silently shifts by four or five hours. The subject is in Eastern time and
+	// the whole point of this page is what he was doing at 3am; measuring that
+	// in UTC would put it in the wrong day.
+	//
+	// It lives in this package rather than in a `main` so the tracker cannot be
+	// built into a binary that forgot it. Costs ~450KB.
+	_ "time/tzdata"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/rmhstudios/rmh-go/pkg/log"
 )
@@ -102,6 +116,12 @@ type WatchConfig struct {
 	// resumable. Under it, a restart is treated as continuous; over it, the
 	// session is closed at its last heartbeat. See the restart note at the top.
 	GapGrace time.Duration
+	// DigestChannelID is where the weekly write-up is posted once a week has
+	// ended. Empty — the default — means no digest is ever posted, which is the
+	// right default for a feature that writes into somebody else's channel.
+	DigestChannelID string
+	// SiteURL is the origin the digest's links point at.
+	SiteURL string
 }
 
 // Enabled reports whether anything should be tracked at all.
@@ -133,9 +153,15 @@ func NewWatchService(cfg WatchConfig, repo *watchRepo, logger *log.Logger) *Watc
 	}
 	loc, err := time.LoadLocation(cfg.TimeZone)
 	if err != nil || loc == nil {
-		// A bad zone must not silently reshape every day boundary, so say so and
-		// fall back to UTC rather than guessing at what was meant.
-		logger.Warn("watch: unknown timezone, falling back to UTC", "timeZone", cfg.TimeZone)
+		// ERROR, not warn: this is not a degraded mode, it is wrong data. Every
+		// dateKey, every "late night" judgement and every hourly bucket is
+		// measured in this zone, so falling back to UTC silently re-buckets a
+		// 1am session into the previous day and reports it as an afternoon.
+		//
+		// With `time/tzdata` embedded above this should be unreachable; it stays
+		// as a guard against a genuinely bad DISCORD_WATCH_TIMEZONE value.
+		logger.Error("watch: unknown timezone — day boundaries will be UTC and WRONG for a non-UTC subject",
+			"timeZone", cfg.TimeZone, "error", err)
 		loc = time.UTC
 	}
 	watched := make(map[string]struct{}, len(cfg.UserIDs))
@@ -177,7 +203,64 @@ func (w *WatchService) Start(ctx context.Context, s *discordgo.Session) {
 	// Off the caller's goroutine: this is a REST round trip, and Run is holding
 	// up the gateway's post-open path.
 	go w.RefreshIdentities(ctx, s)
+	go w.backfillRollups(ctx)
 	go w.flushLoop(ctx, s)
+}
+
+// backfillRollupsMax bounds the startup backfill regardless of retention.
+//
+// Sixty days is far more than any correction has needed and short enough that
+// the sweep is a few hundred queries rather than a scan of the whole history.
+const backfillRollupsMax = 60
+
+// backfillRollups recomputes recent days once, at startup.
+//
+// The flush loop only ever recomputes today and yesterday, because those are the
+// only days still accruing. That is right for normal operation and wrong after a
+// bug fix: a day rolled up by an older, incorrect version of the aggregation
+// keeps its wrong figures forever, since nothing ever asks for it again. This is
+// the path that lets a correction reach history.
+//
+// # Why it is bounded by retention, and must stay so
+//
+// `recomputeDay` rebuilds a day from its RAW rows. Message rows are pruned after
+// `RetentionDays`, so recomputing a day older than that would find no messages
+// and write a row full of zeroes — erasing real history rather than correcting
+// it. The window is therefore capped just inside the retention horizon. Anything
+// that widens retention may widen this; nothing may widen this alone.
+func (w *WatchService) backfillRollups(ctx context.Context) {
+	if w == nil || !w.cfg.Enabled() {
+		return
+	}
+	// One day of headroom: a day at the exact boundary may be losing rows to the
+	// pruner as this runs.
+	days := w.cfg.RetentionDays - 1
+	if days > backfillRollupsMax {
+		days = backfillRollupsMax
+	}
+	if days < 1 {
+		return
+	}
+
+	now := time.Now().UTC()
+	// Yesterday backwards: today and yesterday are the flush loop's job and it
+	// will have done them within the minute.
+	start := now.AddDate(0, 0, -days)
+	repaired := 0
+	for _, id := range w.cfg.UserIDs {
+		if err := w.recomputeSpan(ctx, id, start, now.AddDate(0, 0, -1)); err != nil {
+			w.logger.Warn("watch: rollup backfill", "userId", id, "error", err)
+			continue
+		}
+		repaired++
+	}
+	if repaired > 0 {
+		// Worth a line: it explains why a summary that had settled is about to be
+		// rewritten (the prompt hash moves with the figures, so a corrected day
+		// re-summarises on the next pass by design).
+		w.logger.Info("watch: recomputed recent rollups from raw rows",
+			"users", repaired, "days", days)
+	}
 }
 
 // gapGrace is the configured outage tolerance, with a sane floor so a
@@ -236,6 +319,9 @@ func (w *WatchService) flush(ctx context.Context) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	now := time.Now().UTC()
+	// Settled first, so a compose session that expired since the last tick is
+	// already judged by the time this tick's recompute reads the table.
+	w.sweepTyping(ctx, now)
 	for _, id := range w.cfg.UserIDs {
 		w.beat(ctx, id, now)
 		for _, key := range []string{w.dateKey(now), w.dateKey(now.Add(-24 * time.Hour))} {
@@ -254,6 +340,17 @@ func (w *WatchService) flush(ctx context.Context) {
 // keeps a long silent session's mute/alone counters honest instead of letting
 // them arrive in one lump whenever he finally unmutes.
 func (w *WatchService) beat(ctx context.Context, discordID string, now time.Time) {
+	// The presence and activity heartbeats come FIRST and unconditionally: he is
+	// very often online without being in a voice channel, and hanging them off
+	// the voice branch below would leave those runs unbeaten — and so written
+	// off as stale by the next restart.
+	if err := w.repo.touchOpenPresence(ctx, discordID); err != nil {
+		w.logger.Warn("watch: presence heartbeat", "userId", discordID, "error", err)
+	}
+	if err := w.repo.touchOpenStatus(ctx, discordID); err != nil {
+		w.logger.Warn("watch: status heartbeat", "userId", discordID, "error", err)
+	}
+
 	sess, err := w.repo.openVoiceSession(ctx, discordID)
 	if err != nil || sess == nil {
 		return
@@ -284,6 +381,11 @@ func (w *WatchService) closeAll(ctx context.Context, reason string) {
 		}
 		if err := w.repo.closeOpenPresence(ctx, id, nil, now); err != nil {
 			w.logger.Warn("watch: close presence on shutdown", "error", err)
+		}
+		if open, err := w.repo.openStatusSession(ctx, id); err == nil && open != nil {
+			if err := w.repo.closeStatusSession(ctx, open, now, reason); err != nil {
+				w.logger.Warn("watch: close status on shutdown", "error", err)
+			}
 		}
 		if err := w.recomputeDay(ctx, id, w.dateKey(now)); err != nil {
 			w.logger.Warn("watch: recompute on shutdown", "error", err)
@@ -491,6 +593,64 @@ func (w *WatchService) Reconcile(ctx context.Context, s *discordgo.Session, guil
 		}
 	}
 
+	// Settle the PRESENCE log against the same sync, for the same reason the
+	// voice log is settled below: a status run resumed across a restart is a
+	// guess until the gateway confirms it.
+	//
+	// A synced guild carries its members' presences, and Discord's presence is a
+	// user-level fact rather than a per-guild one, so whichever guild syncs first
+	// gives the real answer. `applyStatusSession` no-ops when the status and
+	// client set are unchanged, which is what makes a redeploy invisible — the
+	// resumed run keeps its original startedAt rather than being chopped in two.
+	//
+	// The `len(guild.Presences) > 0` guard matters: a lazily-loaded guild can
+	// deliver an EMPTY presence array, which is "we did not tell you" and not
+	// "he is offline". Treating that as offline would end a live run on every
+	// such sync.
+	if len(guild.Presences) > 0 {
+		seen := make(map[string]struct{})
+		for _, pr := range guild.Presences {
+			if pr == nil || pr.User == nil || !w.tracks(pr.User.ID) {
+				continue
+			}
+			seen[pr.User.ID] = struct{}{}
+			status := strings.TrimSpace(string(pr.Status))
+			if status == "" {
+				continue
+			}
+			if status == "invisible" {
+				status = "offline"
+			}
+			if err := w.applyStatusSession(ctx, pr.User.ID, status, clientsFrom(pr.ClientStatus), now); err != nil {
+				w.logger.Warn("watch: reconcile status", "userId", pr.User.ID, "error", err)
+			}
+		}
+
+		// Present in the guild's roster but absent from its presences means
+		// offline. Close the resumed run RETROACTIVELY at its heartbeat, so
+		// resuming can never credit presence he was not there for.
+		for id := range w.watched {
+			if _, online := seen[id]; online {
+				continue
+			}
+			open, err := w.repo.openStatusSession(ctx, id)
+			if err != nil || open == nil {
+				continue
+			}
+			endedAt := open.HeartbeatAt
+			if endedAt.IsZero() || endedAt.Before(open.StartedAt) {
+				endedAt = open.StartedAt
+			}
+			if err := w.repo.closeStatusSession(ctx, open, endedAt, "stale"); err != nil {
+				w.logger.Warn("watch: reconcile status retire", "userId", id, "error", err)
+				continue
+			}
+			if err := w.recomputeSpan(ctx, id, open.StartedAt, endedAt); err != nil {
+				w.logger.Warn("watch: reconcile status recompute", "userId", id, "error", err)
+			}
+		}
+	}
+
 	// A resumed session in this guild for somebody who is not in voice here lost
 	// its bet: close it back at the heartbeat that justified resuming it.
 	for id := range w.watched {
@@ -549,6 +709,11 @@ func (w *WatchService) HandleMessage(ctx context.Context, s *discordgo.Session, 
 		IsReply:     m.MessageReference != nil,
 		IsQuestion:  metrics.Question,
 		IsLateNight: isLateNight(sentAt, w.loc),
+		// Decided here, from the text, and stored — the text does not survive
+		// retention and a rule applied later would have nothing to read.
+		// Independent of StoreContent: the FINDING is not the content, and the
+		// figure this feeds must not silently zero out when text is off.
+		MentionsJob: matchesJobHunt(m.Content),
 	}
 	if w.cfg.StoreContent && m.Content != "" {
 		row.Content = truncateRunes(m.Content, contentLimit)
@@ -560,6 +725,9 @@ func (w *WatchService) HandleMessage(ctx context.Context, s *discordgo.Session, 
 		w.logger.Warn("watch: insert message", "userId", m.Author.ID, "error", err)
 		return
 	}
+	// The message is the verdict on whatever he was typing in this channel: the
+	// compose session produced something after all.
+	w.settleTypingForMessage(ctx, m.Author.ID, m.ChannelID, sentAt)
 	// A message is the most reliable place to learn his current name and avatar:
 	// the author object on a MessageCreate is always fully populated, where a
 	// presence update's user often is not.
@@ -628,6 +796,18 @@ func (w *WatchService) HandlePresence(ctx context.Context, e *discordgo.Presence
 	// The profile card's "now" row. Written before the session reconciliation
 	// below so the card is current even if a database error stops the rest.
 	w.recordLiveStatus(ctx, e)
+
+	// The presence LOG — how long he was online, and on what. Separate from the
+	// live row above because that one records a level and this one records
+	// intervals; only the log can answer "nine hours, six of them on mobile".
+	if status := strings.TrimSpace(string(e.Status)); status != "" {
+		if status == "invisible" {
+			status = "offline"
+		}
+		if err := w.applyStatusSession(ctx, e.User.ID, status, clientsFrom(e.ClientStatus), now); err != nil {
+			w.logger.Warn("watch: status session", "userId", e.User.ID, "error", err)
+		}
+	}
 
 	open, err := w.repo.openPresenceSessions(ctx, e.User.ID)
 	if err != nil {

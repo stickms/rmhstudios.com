@@ -49,6 +49,45 @@ export function DayDetail({ day, showPermalink = true }: DayDetailProps) {
   // better and would extract nothing (`i18next-parser` is a static scanner).
   const facts: Array<{ id: string; label: string; value: string } | null> = [
     {
+      id: 'signed-in',
+      label: t('fact-signed-in', { defaultValue: 'Signed in to Discord' }),
+      value: formatDuration(day.onlineSec + day.idleSec + day.dndSec),
+    },
+    {
+      id: 'online',
+      label: t('fact-online', { defaultValue: 'Online' }),
+      value: formatDuration(day.onlineSec),
+    },
+    {
+      id: 'idle',
+      label: t('fact-idle', { defaultValue: 'Idle' }),
+      value: formatDuration(day.idleSec),
+    },
+    day.dndSec > 0
+      ? {
+          id: 'dnd',
+          label: t('fact-dnd', { defaultValue: 'Do not disturb' }),
+          value: formatDuration(day.dndSec),
+        }
+      : null,
+    {
+      id: 'desktop',
+      label: t('fact-desktop', { defaultValue: 'On desktop' }),
+      value: formatDuration(day.desktopSec),
+    },
+    {
+      id: 'mobile',
+      label: t('fact-mobile', { defaultValue: 'On mobile' }),
+      value: formatDuration(day.mobileSec),
+    },
+    day.webSec > 0
+      ? {
+          id: 'web',
+          label: t('fact-web', { defaultValue: 'On web' }),
+          value: formatDuration(day.webSec),
+        }
+      : null,
+    {
       id: 'voice',
       label: t('fact-voice', { defaultValue: 'In voice' }),
       value: formatDuration(day.voiceSec),
@@ -115,6 +154,24 @@ export function DayDetail({ day, showPermalink = true }: DayDetailProps) {
       label: t('fact-links', { defaultValue: 'Links shared' }),
       value: formatCount(day.links),
     },
+    {
+      // Always shown, including at zero. A missing row and a zero row read the
+      // same way at a glance, and only one of them is a finding.
+      id: 'job-mentions',
+      label: t('fact-job-mentions', { defaultValue: 'Mentioned looking for work' }),
+      value: formatCount(day.jobMentions),
+    },
+    day.typingAbandoned > 0
+      ? {
+          id: 'typing-abandoned',
+          label: t('fact-typing-abandoned', { defaultValue: 'Typed and never sent' }),
+          value: t('fact-typing-abandoned-value', {
+            count: day.typingAbandoned,
+            duration: formatDuration(day.typingAbandonedSec),
+            defaultValue: '{{count}} drafts · {{duration}}',
+          }),
+        }
+      : null,
     {
       id: 'reactions-given',
       label: t('fact-reactions-given', { defaultValue: 'Reactions given' }),
