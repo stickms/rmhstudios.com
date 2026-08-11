@@ -66,6 +66,7 @@ import viCVoidBreaker from "@/locales/vi/c-void-breaker.json";
 import viCWager from "@/locales/vi/c-wager.json";
 import viCWishlist from "@/locales/vi/c-wishlist.json";
 import viCommon from "@/locales/vi/common.json";
+import viErrors from "@/locales/vi/errors.json";
 import viFeed from "@/locales/vi/feed.json";
 import viGamesHub from "@/locales/vi/games-hub.json";
 import viGroups from "@/locales/vi/groups.json";
@@ -81,6 +82,7 @@ import viRRmhcode from "@/locales/vi/r-rmhcode.json";
 import viRSecret from "@/locales/vi/r-secret.json";
 import viRSliceIt from "@/locales/vi/r-slice-it.json";
 import viRSohumbum from "@/locales/vi/r-sohumbum.json";
+import viRSohumbum2 from "@/locales/vi/r-sohumbum2.json";
 import viRStrategies from "@/locales/vi/r-strategies.json";
 import viRStudio from "@/locales/vi/r-studio.json";
 import viRideshare from "@/locales/vi/rideshare.json";
@@ -160,6 +162,7 @@ const viResources = {
   "c-wager": viCWager,
   "c-wishlist": viCWishlist,
   "common": viCommon,
+  "errors": viErrors,
   "feed": viFeed,
   "games-hub": viGamesHub,
   "groups": viGroups,
@@ -175,6 +178,7 @@ const viResources = {
   "r-secret": viRSecret,
   "r-slice-it": viRSliceIt,
   "r-sohumbum": viRSohumbum,
+  "r-sohumbum2": viRSohumbum2,
   "r-strategies": viRStrategies,
   "r-studio": viRStudio,
   "rideshare": viRideshare,

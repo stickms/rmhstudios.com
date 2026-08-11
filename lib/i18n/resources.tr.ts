@@ -66,6 +66,7 @@ import trCVoidBreaker from "@/locales/tr/c-void-breaker.json";
 import trCWager from "@/locales/tr/c-wager.json";
 import trCWishlist from "@/locales/tr/c-wishlist.json";
 import trCommon from "@/locales/tr/common.json";
+import trErrors from "@/locales/tr/errors.json";
 import trFeed from "@/locales/tr/feed.json";
 import trGamesHub from "@/locales/tr/games-hub.json";
 import trGroups from "@/locales/tr/groups.json";
@@ -81,6 +82,7 @@ import trRRmhcode from "@/locales/tr/r-rmhcode.json";
 import trRSecret from "@/locales/tr/r-secret.json";
 import trRSliceIt from "@/locales/tr/r-slice-it.json";
 import trRSohumbum from "@/locales/tr/r-sohumbum.json";
+import trRSohumbum2 from "@/locales/tr/r-sohumbum2.json";
 import trRStrategies from "@/locales/tr/r-strategies.json";
 import trRStudio from "@/locales/tr/r-studio.json";
 import trRideshare from "@/locales/tr/rideshare.json";
@@ -160,6 +162,7 @@ const trResources = {
   "c-wager": trCWager,
   "c-wishlist": trCWishlist,
   "common": trCommon,
+  "errors": trErrors,
   "feed": trFeed,
   "games-hub": trGamesHub,
   "groups": trGroups,
@@ -175,6 +178,7 @@ const trResources = {
   "r-secret": trRSecret,
   "r-slice-it": trRSliceIt,
   "r-sohumbum": trRSohumbum,
+  "r-sohumbum2": trRSohumbum2,
   "r-strategies": trRStrategies,
   "r-studio": trRStudio,
   "rideshare": trRideshare,

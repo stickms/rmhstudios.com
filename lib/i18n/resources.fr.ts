@@ -66,6 +66,7 @@ import frCVoidBreaker from "@/locales/fr/c-void-breaker.json";
 import frCWager from "@/locales/fr/c-wager.json";
 import frCWishlist from "@/locales/fr/c-wishlist.json";
 import frCommon from "@/locales/fr/common.json";
+import frErrors from "@/locales/fr/errors.json";
 import frFeed from "@/locales/fr/feed.json";
 import frGamesHub from "@/locales/fr/games-hub.json";
 import frGroups from "@/locales/fr/groups.json";
@@ -81,6 +82,7 @@ import frRRmhcode from "@/locales/fr/r-rmhcode.json";
 import frRSecret from "@/locales/fr/r-secret.json";
 import frRSliceIt from "@/locales/fr/r-slice-it.json";
 import frRSohumbum from "@/locales/fr/r-sohumbum.json";
+import frRSohumbum2 from "@/locales/fr/r-sohumbum2.json";
 import frRStrategies from "@/locales/fr/r-strategies.json";
 import frRStudio from "@/locales/fr/r-studio.json";
 import frRideshare from "@/locales/fr/rideshare.json";
@@ -160,6 +162,7 @@ const frResources = {
   "c-wager": frCWager,
   "c-wishlist": frCWishlist,
   "common": frCommon,
+  "errors": frErrors,
   "feed": frFeed,
   "games-hub": frGamesHub,
   "groups": frGroups,
@@ -175,6 +178,7 @@ const frResources = {
   "r-secret": frRSecret,
   "r-slice-it": frRSliceIt,
   "r-sohumbum": frRSohumbum,
+  "r-sohumbum2": frRSohumbum2,
   "r-strategies": frRStrategies,
   "r-studio": frRStudio,
   "rideshare": frRideshare,

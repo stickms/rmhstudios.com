@@ -66,6 +66,7 @@ import idCVoidBreaker from "@/locales/id/c-void-breaker.json";
 import idCWager from "@/locales/id/c-wager.json";
 import idCWishlist from "@/locales/id/c-wishlist.json";
 import idCommon from "@/locales/id/common.json";
+import idErrors from "@/locales/id/errors.json";
 import idFeed from "@/locales/id/feed.json";
 import idGamesHub from "@/locales/id/games-hub.json";
 import idGroups from "@/locales/id/groups.json";
@@ -81,6 +82,7 @@ import idRRmhcode from "@/locales/id/r-rmhcode.json";
 import idRSecret from "@/locales/id/r-secret.json";
 import idRSliceIt from "@/locales/id/r-slice-it.json";
 import idRSohumbum from "@/locales/id/r-sohumbum.json";
+import idRSohumbum2 from "@/locales/id/r-sohumbum2.json";
 import idRStrategies from "@/locales/id/r-strategies.json";
 import idRStudio from "@/locales/id/r-studio.json";
 import idRideshare from "@/locales/id/rideshare.json";
@@ -160,6 +162,7 @@ const idResources = {
   "c-wager": idCWager,
   "c-wishlist": idCWishlist,
   "common": idCommon,
+  "errors": idErrors,
   "feed": idFeed,
   "games-hub": idGamesHub,
   "groups": idGroups,
@@ -175,6 +178,7 @@ const idResources = {
   "r-secret": idRSecret,
   "r-slice-it": idRSliceIt,
   "r-sohumbum": idRSohumbum,
+  "r-sohumbum2": idRSohumbum2,
   "r-strategies": idRStrategies,
   "r-studio": idRStudio,
   "rideshare": idRideshare,

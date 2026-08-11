@@ -67,6 +67,7 @@ import arCVoidBreaker from "@/locales/ar/c-void-breaker.json";
 import arCWager from "@/locales/ar/c-wager.json";
 import arCWishlist from "@/locales/ar/c-wishlist.json";
 import arCommon from "@/locales/ar/common.json";
+import arErrors from "@/locales/ar/errors.json";
 import arFeed from "@/locales/ar/feed.json";
 import arGamesHub from "@/locales/ar/games-hub.json";
 import arGroups from "@/locales/ar/groups.json";
@@ -83,6 +84,7 @@ import arRRmhcode from "@/locales/ar/r-rmhcode.json";
 import arRSecret from "@/locales/ar/r-secret.json";
 import arRSliceIt from "@/locales/ar/r-slice-it.json";
 import arRSohumbum from "@/locales/ar/r-sohumbum.json";
+import arRSohumbum2 from "@/locales/ar/r-sohumbum2.json";
 import arRStrategies from "@/locales/ar/r-strategies.json";
 import arRStudio from "@/locales/ar/r-studio.json";
 import arRideshare from "@/locales/ar/rideshare.json";
@@ -163,6 +165,7 @@ const arResources = {
   "c-wager": arCWager,
   "c-wishlist": arCWishlist,
   "common": arCommon,
+  "errors": arErrors,
   "feed": arFeed,
   "games-hub": arGamesHub,
   "groups": arGroups,
@@ -179,6 +182,7 @@ const arResources = {
   "r-secret": arRSecret,
   "r-slice-it": arRSliceIt,
   "r-sohumbum": arRSohumbum,
+  "r-sohumbum2": arRSohumbum2,
   "r-strategies": arRStrategies,
   "r-studio": arRStudio,
   "rideshare": arRideshare,

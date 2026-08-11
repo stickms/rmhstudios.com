@@ -66,6 +66,7 @@ import itCVoidBreaker from "@/locales/it/c-void-breaker.json";
 import itCWager from "@/locales/it/c-wager.json";
 import itCWishlist from "@/locales/it/c-wishlist.json";
 import itCommon from "@/locales/it/common.json";
+import itErrors from "@/locales/it/errors.json";
 import itFeed from "@/locales/it/feed.json";
 import itGamesHub from "@/locales/it/games-hub.json";
 import itGroups from "@/locales/it/groups.json";
@@ -81,6 +82,7 @@ import itRRmhcode from "@/locales/it/r-rmhcode.json";
 import itRSecret from "@/locales/it/r-secret.json";
 import itRSliceIt from "@/locales/it/r-slice-it.json";
 import itRSohumbum from "@/locales/it/r-sohumbum.json";
+import itRSohumbum2 from "@/locales/it/r-sohumbum2.json";
 import itRStrategies from "@/locales/it/r-strategies.json";
 import itRStudio from "@/locales/it/r-studio.json";
 import itRideshare from "@/locales/it/rideshare.json";
@@ -160,6 +162,7 @@ const itResources = {
   "c-wager": itCWager,
   "c-wishlist": itCWishlist,
   "common": itCommon,
+  "errors": itErrors,
   "feed": itFeed,
   "games-hub": itGamesHub,
   "groups": itGroups,
@@ -175,6 +178,7 @@ const itResources = {
   "r-secret": itRSecret,
   "r-slice-it": itRSliceIt,
   "r-sohumbum": itRSohumbum,
+  "r-sohumbum2": itRSohumbum2,
   "r-strategies": itRStrategies,
   "r-studio": itRStudio,
   "rideshare": itRideshare,

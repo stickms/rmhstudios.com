@@ -66,6 +66,7 @@ import deCVoidBreaker from "@/locales/de/c-void-breaker.json";
 import deCWager from "@/locales/de/c-wager.json";
 import deCWishlist from "@/locales/de/c-wishlist.json";
 import deCommon from "@/locales/de/common.json";
+import deErrors from "@/locales/de/errors.json";
 import deFeed from "@/locales/de/feed.json";
 import deGamesHub from "@/locales/de/games-hub.json";
 import deGroups from "@/locales/de/groups.json";
@@ -81,6 +82,7 @@ import deRRmhcode from "@/locales/de/r-rmhcode.json";
 import deRSecret from "@/locales/de/r-secret.json";
 import deRSliceIt from "@/locales/de/r-slice-it.json";
 import deRSohumbum from "@/locales/de/r-sohumbum.json";
+import deRSohumbum2 from "@/locales/de/r-sohumbum2.json";
 import deRStrategies from "@/locales/de/r-strategies.json";
 import deRStudio from "@/locales/de/r-studio.json";
 import deRideshare from "@/locales/de/rideshare.json";
@@ -160,6 +162,7 @@ const deResources = {
   "c-wager": deCWager,
   "c-wishlist": deCWishlist,
   "common": deCommon,
+  "errors": deErrors,
   "feed": deFeed,
   "games-hub": deGamesHub,
   "groups": deGroups,
@@ -175,6 +178,7 @@ const deResources = {
   "r-secret": deRSecret,
   "r-slice-it": deRSliceIt,
   "r-sohumbum": deRSohumbum,
+  "r-sohumbum2": deRSohumbum2,
   "r-strategies": deRStrategies,
   "r-studio": deRStudio,
   "rideshare": deRideshare,
