@@ -165,6 +165,7 @@
   "streak_other": "Racha: {{count}}",
   "tab-games": "Games",
   "tab-markets": "Markets",
+  "table-blinds": "{{small}}/{{big}} blinds",
   "table-name-placeholder": "Nombre de la mesa (opcional)",
   "tabs-aria": "Predictions sections",
   "take-insurance": "Tomar ({{cost}})",

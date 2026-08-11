@@ -162,6 +162,7 @@
   "streak_other": "लगातार: {{count}}",
   "tab-games": "Games",
   "tab-markets": "Markets",
+  "table-blinds": "{{small}}/{{big}} blinds",
   "table-name-placeholder": "टेबल का नाम (वैकल्पिक)",
   "tabs-aria": "Predictions sections",
   "take-insurance": "बीमा लें ({{cost}})",

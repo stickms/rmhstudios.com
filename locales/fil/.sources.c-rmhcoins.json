@@ -1,5 +1,4 @@
 {
-  "blinds": "",
   "in-progress": "",
   "no-open-tables": "",
   "no-open-tables-body": "",
@@ -9,5 +8,6 @@
   "signed-out-lobby-body": "",
   "signed-out-lobby-cta": "",
   "signed-out-lobby-title": "",
-  "signed-out-solo-body": ""
+  "signed-out-solo-body": "",
+  "table-blinds": ""
 }

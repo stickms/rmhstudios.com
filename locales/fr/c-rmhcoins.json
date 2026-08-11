@@ -165,6 +165,7 @@
   "streak_other": "Série : {{count}}",
   "tab-games": "Games",
   "tab-markets": "Markets",
+  "table-blinds": "{{small}}/{{big}} blinds",
   "table-name-placeholder": "Nom de la table (facultatif)",
   "tabs-aria": "Predictions sections",
   "take-insurance": "Prendre ({{cost}})",

@@ -130,7 +130,7 @@ export function SignedOutLobby({ game }: { game: PreviewGame }) {
                   <p className="truncate text-xs text-site-text-dim">
                     {room.ownerName}
                     {room.bigBlind
-                      ? ` · ${t('blinds', {
+                      ? ` · ${t('table-blinds', {
                           defaultValue: '{{small}}/{{big}} blinds',
                           small: room.smallBlind,
                           big: room.bigBlind,

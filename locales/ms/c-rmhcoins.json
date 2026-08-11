@@ -159,6 +159,7 @@
   "streak_other": "Streak: {{count}}",
   "tab-games": "Games",
   "tab-markets": "Markets",
+  "table-blinds": "{{small}}/{{big}} blinds",
   "table-name-placeholder": "Table name (optional)",
   "tabs-aria": "Predictions sections",
   "take-insurance": "Take ({{cost}})",

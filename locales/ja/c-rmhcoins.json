@@ -159,6 +159,7 @@
   "streak_other": "連勝：{{count}}",
   "tab-games": "Games",
   "tab-markets": "Markets",
+  "table-blinds": "{{small}}/{{big}} blinds",
   "table-name-placeholder": "テーブル名（任意）",
   "tabs-aria": "Predictions sections",
   "take-insurance": "保険をかける（{{cost}}）",

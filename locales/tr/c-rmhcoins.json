@@ -162,6 +162,7 @@
   "streak_other": "Seri: {{count}}",
   "tab-games": "Games",
   "tab-markets": "Markets",
+  "table-blinds": "{{small}}/{{big}} blinds",
   "table-name-placeholder": "Masa adı (isteğe bağlı)",
   "tabs-aria": "Predictions sections",
   "take-insurance": "Sigorta al ({{cost}})",

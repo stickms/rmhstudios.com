@@ -162,6 +162,7 @@
   "streak_other": "Serie: {{count}}",
   "tab-games": "Games",
   "tab-markets": "Markets",
+  "table-blinds": "{{small}}/{{big}} blinds",
   "table-name-placeholder": "Tischname (optional)",
   "tabs-aria": "Predictions sections",
   "take-insurance": "Versicherung nehmen ({{cost}})",

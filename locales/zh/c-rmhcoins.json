@@ -159,6 +159,7 @@
   "streak_other": "连续记录：{{count}}",
   "tab-games": "Games",
   "tab-markets": "Markets",
+  "table-blinds": "{{small}}/{{big}} blinds",
   "table-name-placeholder": "表名（可选）",
   "tabs-aria": "Predictions sections",
   "take-insurance": "花费（{{cost}}）",

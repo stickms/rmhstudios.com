@@ -159,6 +159,7 @@
   "streak_other": "Chuỗi: {{count}}",
   "tab-games": "Games",
   "tab-markets": "Markets",
+  "table-blinds": "{{small}}/{{big}} blinds",
   "table-name-placeholder": "Tên bàn (không bắt buộc)",
   "tabs-aria": "Predictions sections",
   "take-insurance": "Nhận bảo hiểm ({{cost}})",

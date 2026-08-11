@@ -165,6 +165,7 @@
   "streak_other": "Sequência: {{count}}",
   "tab-games": "Games",
   "tab-markets": "Markets",
+  "table-blinds": "{{small}}/{{big}} blinds",
   "table-name-placeholder": "Nome da mesa (opcional)",
   "tabs-aria": "Predictions sections",
   "take-insurance": "Pegar seguro ({{cost}})",
