@@ -203,7 +203,64 @@ func (w *WatchService) Start(ctx context.Context, s *discordgo.Session) {
 	// Off the caller's goroutine: this is a REST round trip, and Run is holding
 	// up the gateway's post-open path.
 	go w.RefreshIdentities(ctx, s)
+	go w.backfillRollups(ctx)
 	go w.flushLoop(ctx, s)
+}
+
+// backfillRollupsMax bounds the startup backfill regardless of retention.
+//
+// Sixty days is far more than any correction has needed and short enough that
+// the sweep is a few hundred queries rather than a scan of the whole history.
+const backfillRollupsMax = 60
+
+// backfillRollups recomputes recent days once, at startup.
+//
+// The flush loop only ever recomputes today and yesterday, because those are the
+// only days still accruing. That is right for normal operation and wrong after a
+// bug fix: a day rolled up by an older, incorrect version of the aggregation
+// keeps its wrong figures forever, since nothing ever asks for it again. This is
+// the path that lets a correction reach history.
+//
+// # Why it is bounded by retention, and must stay so
+//
+// `recomputeDay` rebuilds a day from its RAW rows. Message rows are pruned after
+// `RetentionDays`, so recomputing a day older than that would find no messages
+// and write a row full of zeroes — erasing real history rather than correcting
+// it. The window is therefore capped just inside the retention horizon. Anything
+// that widens retention may widen this; nothing may widen this alone.
+func (w *WatchService) backfillRollups(ctx context.Context) {
+	if w == nil || !w.cfg.Enabled() {
+		return
+	}
+	// One day of headroom: a day at the exact boundary may be losing rows to the
+	// pruner as this runs.
+	days := w.cfg.RetentionDays - 1
+	if days > backfillRollupsMax {
+		days = backfillRollupsMax
+	}
+	if days < 1 {
+		return
+	}
+
+	now := time.Now().UTC()
+	// Yesterday backwards: today and yesterday are the flush loop's job and it
+	// will have done them within the minute.
+	start := now.AddDate(0, 0, -days)
+	repaired := 0
+	for _, id := range w.cfg.UserIDs {
+		if err := w.recomputeSpan(ctx, id, start, now.AddDate(0, 0, -1)); err != nil {
+			w.logger.Warn("watch: rollup backfill", "userId", id, "error", err)
+			continue
+		}
+		repaired++
+	}
+	if repaired > 0 {
+		// Worth a line: it explains why a summary that had settled is about to be
+		// rewritten (the prompt hash moves with the figures, so a corrected day
+		// re-summarises on the next pass by design).
+		w.logger.Info("watch: recomputed recent rollups from raw rows",
+			"users", repaired, "days", days)
+	}
 }
 
 // gapGrace is the configured outage tolerance, with a sane floor so a

@@ -51,6 +51,7 @@ go_test(
         "watch_jobhunt_test.go",
         "watch_test.go",
         "watch_typing_test.go",
+        "watch_union_test.go",
     ],
     embed = [":discordbot"],
     deps = [
