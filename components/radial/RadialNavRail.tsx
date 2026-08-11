@@ -22,10 +22,13 @@ import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useAdminReviewCount } from '@/lib/useAdminReviewCount';
-import { SIDEBAR_NAV, isNavGroup, type NavGroup, type NavLeaf } from '@/lib/sidebar-nav';
-
-const isActive = (pathname: string, href: string) =>
-  href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
+import {
+  SIDEBAR_NAV,
+  isNavGroup,
+  isNavLeafActive,
+  type NavGroup,
+  type NavLeaf,
+} from '@/lib/sidebar-nav';
 
 type RailEntry = { kind: 'leaf'; leaf: NavLeaf } | { kind: 'group'; group: NavGroup };
 
@@ -66,7 +69,7 @@ export function RadialNavRail() {
   const renderLeaf = (leaf: NavLeaf) => {
     const Icon = leaf.icon;
     const label = t(leaf.tKey, { defaultValue: leaf.label });
-    const active = isActive(pathname, leaf.href);
+    const active = isNavLeafActive(pathname, leaf);
     const count = badgeFor(leaf);
     const body = (
       <>

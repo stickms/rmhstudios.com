@@ -7,17 +7,21 @@ import { toast } from 'sonner';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import type { Market } from './types';
 import { LIFT_CARD } from '@/components/feed/motionHelpers';
+import { useSignInPrompt } from '@/hooks/useSignInPrompt';
 
 interface Props {
   market: Market;
   coins: number;
   setCoins: (coins: number) => void;
   onUpdated: (m: Market) => void;
+  /** Signed-out visitors can read a market but not trade it. */
+  signedIn: boolean;
 }
 
 const QUICK_AMOUNTS = [5, 10, 25, 50];
 
-export function PredictionCard({ market, coins, setCoins, onUpdated }: Props) {
+export function PredictionCard({ market, coins, setCoins, onUpdated, signedIn }: Props) {
+  const promptSignIn = useSignInPrompt();
   const { t } = useTranslation('c-predictions');
   const [amount, setAmount] = useState(10);
   const [pending, setPending] = useState<'YES' | 'NO' | null>(null);
@@ -30,6 +34,13 @@ export function PredictionCard({ market, coins, setCoins, onUpdated }: Props) {
 
   async function trade(side: 'YES' | 'NO') {
     if (pending) return;
+    // Ask before the balance check: a signed-out visitor has no balance, so the
+    // amount test below would tell them they were short of coins rather than
+    // that they need an account.
+    if (!signedIn) {
+      promptSignIn(t('trade-sign-in', { defaultValue: 'Sign in to back a prediction.' }));
+      return;
+    }
     if (amount < 1) {
       toast.error(t('enter-amount', { defaultValue: 'Enter an amount first' }));
       return;

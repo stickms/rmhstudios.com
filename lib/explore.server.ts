@@ -133,7 +133,7 @@ const HOT_CANDIDATE_POOL = 100;
  * all viewers (each viewer's audience/hidden/mute filters still apply on top
  * during hydration below).
  */
-async function loadHotPostCandidateIds(): Promise<string[]> {
+async function loadHotPostCandidateIds(): Promise<{ ids: string[]; fallback: boolean }> {
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const rows = await prisma.rMHark.findMany({
     where: { deletedAt: null, createdAt: { gte: since }, audience: 'PUBLIC', likeCount: { gt: 0 } },
@@ -141,15 +141,31 @@ async function loadHotPostCandidateIds(): Promise<string[]> {
     take: HOT_CANDIDATE_POOL,
     select: { id: true },
   });
-  return rows.map((r) => r.id);
+  if (rows.length) return { ids: rows.map((r) => r.id), fallback: false };
+
+  // Nothing liked in the window. "Most-liked" is the right ranking for a busy
+  // week and the wrong one for a quiet site: with `likeCount > 0` as a hard
+  // gate, a site whose posts simply have not been liked yet has no hot posts —
+  // ever — and Explore's Posts tab renders literally nothing, because every
+  // section on it is guarded by a `length > 0`. Recency is the honest fallback:
+  // it keeps the tab populated while engagement is thin, and stops applying the
+  // moment a single post is liked.
+  const recent = await prisma.rMHark.findMany({
+    where: { deletedAt: null, audience: 'PUBLIC' },
+    orderBy: { createdAt: 'desc' },
+    take: HOT_CANDIDATE_POOL,
+    select: { id: true },
+  });
+  return { ids: recent.map((r) => r.id), fallback: true };
 }
 
 export async function listExplore(viewerId: string | null): Promise<ExploreResult> {
   // Viewer-independent slices — cached and shared across all viewers.
-  const [base, hotCandidateIds] = await Promise.all([
+  const [base, hotCandidates] = await Promise.all([
     cached('explore:list', 120_000, loadExploreBase),
     cached('explore:hot-candidates', 60_000, loadHotPostCandidateIds),
   ]);
+  const hotCandidateIds = hotCandidates.ids;
 
   // Per-viewer inputs for hot posts (audience/mute) and the suggested-user
   // exclude set. These are cheap indexed reads.
@@ -184,7 +200,14 @@ export async function listExplore(viewerId: string | null): Promise<ExploreResul
   // Apply the viewer's muted words to hot posts too (the timeline already does;
   // explore would otherwise be a mute-filter bypass), then take the display slice.
   // Reactions load as bounded aggregates for the whole slice (perf audit §2.3).
-  const displayRows = hotRows.filter((r) => (r.likeCount ?? 0) > 0).slice(0, HOT_POSTS_TAKE);
+  // The like re-check guards the CACHED pool: a post can lose its last like in
+  // the two minutes a pool is held, and it should drop out rather than sit on a
+  // "hot" shelf with zero likes. It must not run against the recency fallback,
+  // which is by definition made of unliked posts — that would filter the
+  // fallback back down to the empty list it exists to replace.
+  const displayRows = (
+    hotCandidates.fallback ? hotRows : hotRows.filter((r) => (r.likeCount ?? 0) > 0)
+  ).slice(0, HOT_POSTS_TAKE);
   const hotPosts = applyMutedWords(
     await mapRmharksWithBoundedReactions(displayRows, viewerId),
     muted,

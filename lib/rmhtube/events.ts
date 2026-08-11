@@ -18,17 +18,21 @@ export const C2S = {
   ROOM_BROWSE:          'rmhtube:room:browse',
   ROOM_CHAT:            'rmhtube:room:chat',
 
-  // Video sync (host → server)
+  // Video sync (leader → server)
   SYNC_HOST_STATE:      'rmhtube:sync:host_state',
   SYNC_PLAY:            'rmhtube:sync:play',
   SYNC_PAUSE:           'rmhtube:sync:pause',
   SYNC_SEEK:            'rmhtube:sync:seek',
-  // Robustness: clock sync + on-demand resync
+  // Clock sync + on-demand resync
   SYNC_PING:            'rmhtube:sync:ping',
   SYNC_REQUEST:         'rmhtube:sync:request',
+  /** Any viewer: "I am / am no longer starved of data." Drives wait-for-peers. */
+  SYNC_STALL:           'rmhtube:sync:stall',
 
   // Media queue
   QUEUE_ADD:            'rmhtube:queue:add',
+  /** Leader-observed metadata for the playing item (duration, liveness, title). */
+  QUEUE_META:           'rmhtube:queue:meta',
   QUEUE_REMOVE:         'rmhtube:queue:remove',
   QUEUE_REORDER:        'rmhtube:queue:reorder',
   QUEUE_PLAY_ITEM:      'rmhtube:queue:play_item',
@@ -71,13 +75,19 @@ export const S2C = {
   ROOM_DISBANDED:       'rmhtube:room:disbanded',
   NOT_IN_ROOM:          'rmhtube:room:not_in_room',
 
-  // Video sync (server → clients)
+  /**
+   * The room's timeline anchor — the ONE event that moves playback.
+   *
+   * There used to be four more beside it (`sync:play`, `sync:pause`,
+   * `sync:seek`, `sync:speed_changed`) sent as "snappy edges" just before the
+   * anchor that followed them. Each carried a flag but no position, so the
+   * client re-stamped a stale `currentTime` as current and rewound every viewer
+   * by however long it had been since the last anchor — a visible jerk on every
+   * play, pause and speed change, undone a few milliseconds later by the anchor
+   * that should have been the only message.
+   */
   SYNC_STATE:           'rmhtube:sync:state',
-  SYNC_PLAY:            'rmhtube:sync:play',
-  SYNC_PAUSE:           'rmhtube:sync:pause',
-  SYNC_SEEK:            'rmhtube:sync:seek',
-  SYNC_MEDIA_CHANGED:   'rmhtube:sync:media_changed',
-  // Robustness: clock sync handshake reply
+  // Clock sync handshake reply
   SYNC_PONG:            'rmhtube:sync:pong',
 
   // Queue updates
@@ -86,15 +96,12 @@ export const S2C = {
   // Reactions
   REACTION_BROADCAST:   'rmhtube:reaction:broadcast',
 
-  // Errors
-  PEERS_WAITING:      'rmhtube:peers:waiting',
+  // Peers the room is holding for (buffering), and errors
+  PEERS_WAITING:        'rmhtube:peers:waiting',
   ERROR:                'rmhtube:error',
 
   // Phase 1: Typing Indicators
   CHAT_TYPING_INDICATOR: 'rmhtube:chat:typing_indicator',
-
-  // Phase 2: Synced Playback Speed
-  SYNC_SPEED_CHANGED:   'rmhtube:sync:speed_changed',
 
   // Phase 4: Invite Links
   ROOM_INVITE_CREATED:  'rmhtube:room:invite_created',

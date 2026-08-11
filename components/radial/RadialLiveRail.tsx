@@ -110,7 +110,17 @@ function LivePulse({ active }: { active: boolean }) {
   return (
     <section className="rad-live__pulse">
       <span className="rad-live__dot" aria-hidden />
-      <span>{t('online-now-count', { count, defaultValue: '{{count}} people online now' })}</span>
+      <span>
+        {t('online-now-count', {
+          count,
+          // Both forms are spelled out: `i18next-parser` writes `defaultValue`
+          // into BOTH `_one` and `_other` when it only sees one, which is how
+          // this read "1 people online now" — the plural keys existed and were
+          // identical. Locales with more than two forms fill the rest from `en`.
+          defaultValue_one: '{{count}} person online now',
+          defaultValue_other: '{{count}} people online now',
+        })}
+      </span>
     </section>
   );
 }

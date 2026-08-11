@@ -17,7 +17,7 @@ function NightrailPage() {
       className="fixed inset-0 bg-black flex flex-col overflow-hidden"
       style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
     >
-      <GameBackLink to="/builds" />
+      <GameBackLink to="/games" />
 
       {/* The chase camera fills the viewport at every aspect ratio — the
           renderer widens its field of view on portrait rather than

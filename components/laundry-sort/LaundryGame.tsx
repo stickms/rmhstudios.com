@@ -44,9 +44,11 @@ import { ScorePopups, popupsFromEvents, type Popup } from './hud/ScorePopups';
 import { VersusTicker } from './hud/VersusTicker';
 import { WashLegend } from './hud/WashLegend';
 import './laundry.css';
+import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 
 export function LaundryGame() {
   const { t } = useTranslation('c-laundry-sort');
+  const goBack = useBackOrFallback();
   const { data: session } = useSession();
   const signedIn = Boolean(session?.user?.id);
 
@@ -406,7 +408,7 @@ export function LaundryGame() {
           }}
         >
           <Button asChild variant="ghost" size="sm" className="border border-white/10 bg-black/50">
-            <Link to="/builds">
+            <Link to="/games" onClick={goBack}>
               <ArrowLeft className="size-3.5" aria-hidden="true" />
               <span className="hidden sm:inline">RMH Studios</span>
               <span className="sr-only sm:hidden">

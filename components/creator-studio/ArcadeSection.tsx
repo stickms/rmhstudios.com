@@ -1,23 +1,26 @@
 'use client';
 
 /**
- * Create · Arcade section.
+ * The Arcade section — the player block at the top of `/games`.
  *
- * The former standalone `/arcade` destination, folded into the Games tab (it
- * sits directly under the Ranked summary). Both of that page's surfaces came
- * with it — today's daily **Challenges** and the global player **Leaderboard** —
- * behind a compact sub-tab strip, so nothing lost a home when the Arcade nav
- * wedge went away. `/arcade` and `/leaderboard` redirect here.
+ * The former standalone `/arcade` destination. It was folded into Create's Games
+ * tab, and moved to `/games` (under the Ranked summary) when that tab was
+ * removed. Both of the original page's surfaces have travelled with it the whole
+ * way — today's daily **Challenges** and the global player **Leaderboard** —
+ * behind a compact sub-tab strip, so nothing lost a home at either step.
+ * `/arcade` and `/leaderboard` redirect here.
  *
  * The sub-tab is mirrored into `?sub=` by the route (see `sub`/`onSubChange`)
  * rather than held locally, so `/leaderboard` deep-links land on the board even
- * when the viewer is *already* on `/create` and the page never remounts.
+ * when the viewer is *already* on `/games` and the page never remounts.
  *
- * Both surfaces load client-side: Games is not the default tab of `/create`, so
- * seeding either query from the route loader would charge every visit to the
- * page for a panel most of them never open. The challenge board self-fetches
- * (`ArcadeHub` with no `initialState`); the leaderboard is pulled the first time
- * its tab is opened and then cached for the life of the page.
+ * Both surfaces load client-side: this block sits above a catalog most visitors
+ * came for, so seeding either query from the route loader would charge every
+ * visit to `/games` for a panel many of them never open — and `/games` is a
+ * public, indexed page, so that cost would fall on crawlers too. The challenge
+ * board self-fetches (`ArcadeHub` with no `initialState`); the leaderboard is
+ * pulled the first time its tab is opened and then cached for the life of the
+ * page.
  */
 
 import { useEffect, useState } from 'react';

@@ -33,7 +33,9 @@ export default function MediaQueue() {
   }, []);
 
   const handlePlayItem = useCallback((itemId: string) => {
-    if (room && room.myUserId === room.hostUserId) {
+    // The server gates jumping the queue on the LEADER. Asking as the host
+    // when the two were different people got a NOT_LEADER error and no jump.
+    if (room && room.myUserId === room.leaderUserId) {
       emit(C2S.QUEUE_PLAY_ITEM, { itemId });
     }
   }, [room]);
@@ -62,6 +64,11 @@ export default function MediaQueue() {
   if (!room) return null;
 
   const isHost = room.myUserId === room.hostUserId;
+  // Shuffling and jumping the queue are the leader's; the loop toggle is a room
+  // setting, so it stays the host's. They are usually the same person — but
+  // when they were not, every one of these controls was drawn for whoever could
+  // not use it.
+  const isLeader = room.myUserId === room.leaderUserId;
   const canAdd = isHost || room.settings.allowMemberQueue;
 
   return (
@@ -93,8 +100,8 @@ export default function MediaQueue() {
             </button>
           )}
 
-          {/* Shuffle (Phase 3.6) — host/mod only */}
-          {isHost && (
+          {/* Shuffle — the leader's, per the server's check */}
+          {isLeader && (
             <button
               onClick={handleShuffle}
               className="p-1 rounded-md transition-colors text-(--app-text-dim) hover:text-(--app-text-muted) hover:bg-(--app-surface-hover)"
@@ -132,7 +139,7 @@ export default function MediaQueue() {
                 key={item.id}
                 item={item}
                 isActive={isActive}
-                isHost={isHost}
+                canControl={isLeader}
                 canRemove={canRemove}
                 queueVoting={room.settings.queueVoting}
                 onRemove={() => handleRemove(item.id)}

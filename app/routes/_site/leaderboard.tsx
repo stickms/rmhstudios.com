@@ -11,6 +11,6 @@ import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_site/leaderboard')({
   beforeLoad: () => {
-    throw redirect({ to: '/create', search: { tab: 'games', sub: 'leaderboard' } });
+    throw redirect({ to: '/games', search: { sub: 'leaderboard' } });
   },
 });

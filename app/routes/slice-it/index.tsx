@@ -8,6 +8,7 @@ import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { SliceItLoading } from '@/components/slice-it/SliceItLoading';
 import { librarySearchSchema } from '@/lib/slice-it/library-filters';
 import { buildCanonical, buildMeta } from '@/lib/seo';
+import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 
 const GameCanvas = lazy(() =>
   import('@/components/slice-it/GameCanvas').then((m) => ({ default: m.GameCanvas })),
@@ -15,12 +16,13 @@ const GameCanvas = lazy(() =>
 
 function SliceItPage() {
   const { t } = useTranslation('r-slice-it');
+  const goBack = useBackOrFallback();
   return (
     <DarkModeWrapper>
       <main className="fixed inset-0 slice-theme overflow-hidden flex flex-col bg-slice-bg transition-colors duration-300">
         {/* Header */}
         <div className="p-3 shrink-0 flex items-center gap-3 shadow-sm z-10 bg-slice-bg border-b border-slice-shadow-dark/30 transition-colors duration-300">
-          <Link to="/builds">
+          <Link to="/games" onClick={goBack}>
             <Button
               variant="ghost"
               size="sm"

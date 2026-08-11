@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Loader2, Plus, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PredictionCard } from './PredictionCard';
+import { useSignInPrompt } from '@/hooks/useSignInPrompt';
 import { CreatePredictionModal } from './CreatePredictionModal';
 import type { Market } from './types';
 import { Reveal } from '@/components/motion';
@@ -12,12 +13,15 @@ import { Reveal } from '@/components/motion';
 interface Props {
   coins: number;
   setCoins: (coins: number) => void;
+  /** Signed-out visitors read the markets; trading and creating ask first. */
+  signedIn: boolean;
 }
 
 type Filter = 'open' | 'resolved' | 'mine';
 
-export function PredictionsMarketTab({ coins, setCoins }: Props) {
+export function PredictionsMarketTab({ coins, setCoins, signedIn }: Props) {
   const { t } = useTranslation('c-predictions');
+  const promptSignIn = useSignInPrompt();
   const [filter, setFilter] = useState<Filter>('open');
   const [markets, setMarkets] = useState<Market[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,7 +74,16 @@ export function PredictionsMarketTab({ coins, setCoins }: Props) {
             </button>
           ))}
         </div>
-        <Button variant="accent" size="sm" className="ml-auto" onClick={() => setCreateOpen(true)}>
+        <Button
+          variant="accent"
+          size="sm"
+          className="ml-auto"
+          onClick={() =>
+            signedIn
+              ? setCreateOpen(true)
+              : promptSignIn(t('create-sign-in', { defaultValue: 'Sign in to open a market.' }))
+          }
+        >
           <Plus className="w-4 h-4 mr-1" />
           {t('create', { defaultValue: 'Create' })}
         </Button>
@@ -101,6 +114,7 @@ export function PredictionsMarketTab({ coins, setCoins }: Props) {
               coins={coins}
               setCoins={setCoins}
               onUpdated={handleUpdated}
+              signedIn={signedIn}
             />
           ))}
         </Reveal>

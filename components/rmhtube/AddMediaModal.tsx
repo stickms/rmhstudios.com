@@ -3,9 +3,9 @@
  */
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { X, Link as LinkIcon } from 'lucide-react';
-import { detectMediaType } from '@/lib/rmhtube/utils';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { X, Link as LinkIcon, Radio } from 'lucide-react';
+import { parseMedia } from '@/lib/rmhtube/media';
 import { useTranslation } from 'react-i18next';
 
 interface AddMediaModalProps {
@@ -24,7 +24,9 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
     inputRef.current?.focus();
   }, []);
 
-  const mediaType = url ? detectMediaType(url) : null;
+  // The same parser the server validates with, so the preview and the outcome
+  // cannot disagree.
+  const media = useMemo(() => (url.trim() ? parseMedia(url.trim()) : null), [url]);
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
@@ -33,12 +35,14 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
       setError(t("error-enter-url", { defaultValue: "Please enter a URL" }));
       return;
     }
-    if (!detectMediaType(trimmedUrl)) {
-      setError(t("error-unsupported-url", { defaultValue: "Unsupported URL. Use YouTube, Twitch, or a direct video link (.mp4, .webm)" }));
+    if (!parseMedia(trimmedUrl)) {
+      setError(t("error-unsupported-url", {
+        defaultValue: "That link can't be played here. Use a YouTube video or live stream, a Twitch channel or VOD, Vimeo, or a direct video/stream URL (.mp4, .webm, .m3u8).",
+      }));
       return;
     }
     onAdd(trimmedUrl, title.trim());
-  }, [url, title, onAdd]);
+  }, [url, title, onAdd, t]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -75,10 +79,27 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
                 className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
               />
             </div>
-            {mediaType && (
-              <p className="mt-1 text-xs text-(--app-success)">
-                {t("detected-media-type", { defaultValue: "Detected: {{type}}", type: mediaType })}
-              </p>
+            {media && (
+              <div className="mt-2 flex items-center gap-2">
+                {media.thumbnailUrl && (
+                  <img
+                    src={media.thumbnailUrl}
+                    alt=""
+                    width={64}
+                    height={36}
+                    className="h-9 w-16 shrink-0 rounded object-cover"
+                  />
+                )}
+                <p className="flex items-center gap-1.5 text-xs text-(--app-success)">
+                  {t("detected-media-type", { defaultValue: "Detected: {{type}}", type: media.mediaType })}
+                  {media.liveHint === 'live' && (
+                    <span className="inline-flex items-center gap-1 font-semibold uppercase tracking-wide text-(--app-danger)">
+                      <Radio className="h-3 w-3" aria-hidden />
+                      {t("live", { defaultValue: "Live" })}
+                    </span>
+                  )}
+                </p>
+              </div>
             )}
             {error && (
               <p className="mt-1 text-xs text-(--app-danger)">{error}</p>

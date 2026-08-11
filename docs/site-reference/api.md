@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 591 files across 136 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 592 files across 137 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -228,6 +228,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/calls/history` | `GET` | `app/routes/api/calls/history.ts` |
 | `/api/calls/ice` | `GET` | `app/routes/api/calls/ice.ts` |
 | `/api/calls/privacy` | `GET` `PUT` | `app/routes/api/calls/privacy.ts` |
+
+## `/api/casino`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/casino/rooms` | `GET` | `app/routes/api/casino/rooms.ts` |
 
 ## `/api/circle`
 

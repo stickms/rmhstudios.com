@@ -237,6 +237,26 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'menu-audience',
     'menu-content-warning',
     'menu-reply-control',
+    // ── Home deck + Explore empty states (2026-08-11) ────────────────────
+    // The home deck's three surfaces used to share one "Nothing here yet"
+    // string, and Explore's Posts/People tabs had no empty branch at all — the
+    // sections are `length > 0` guards, so an empty payload rendered an empty
+    // column. Each surface now says what it collects, and a signed-out visitor
+    // is told why "Following" is missing from the strip. English-only until
+    // `pnpm i18n:translate && pnpm i18n:resources` runs — that pipeline needs
+    // DEEPSEEK_API_KEY, which is not available here. Runtime falls back to
+    // English per key.
+    'deck-empty-following',
+    'deck-empty-following-title',
+    'deck-empty-games',
+    'deck-empty-games-title',
+    'deck-empty-news',
+    'deck-empty-news-title',
+    'deck-signed-out',
+    'deck-signed-out-cta',
+    'deck-signed-out-tail',
+    'explore-empty-people',
+    'explore-empty-posts',
     // RightSidebar footer link to the standalone DIA site; awaiting the
     // DeepSeek translate pipeline. Runtime falls back to English per key.
     'internal-affairs',

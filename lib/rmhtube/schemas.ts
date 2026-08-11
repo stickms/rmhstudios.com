@@ -19,6 +19,7 @@ export const RoomSettingsSchema = z.object({
   autoSortByVotes: z.boolean().optional(),
   loopQueue: z.boolean().optional(),
   customReactions: z.array(z.string().min(1).max(8)).min(4).max(12).nullable().optional(),
+  waitForSlowPeers: z.boolean().optional(),
 });
 
 // ─── Client → Server Event Payloads ──────────────────────────────
@@ -62,11 +63,25 @@ export const HostStateSchema = z.object({
   playing: z.boolean(),
   currentTime: z.number().min(0),
   playbackRate: z.number().min(0.25).max(4),
+  /**
+   * The leader's estimate of the server clock when it read `currentTime`.
+   * Anchoring on this instead of the receive time removes one-way network
+   * latency from every anchor the room is built on.
+   */
   timestamp: z.number(),
+  /** The leader's playhead is not advancing — hold the timeline. */
+  stalled: z.boolean().optional().default(false),
+  /** The source turned out to have no fixed timeline. */
+  live: z.boolean().optional().default(false),
 });
 
 export const SeekSchema = z.object({
   time: z.number().min(0),
+});
+
+/** Any viewer reporting whether it is starved of data. */
+export const StallSchema = z.object({
+  stalled: z.boolean(),
 });
 
 export const PingSchema = z.object({
@@ -82,6 +97,18 @@ export const SetSpeedSchema = z.object({
 export const QueueAddSchema = z.object({
   url: z.string().url().max(2048),
   title: z.string().max(256).optional(),
+});
+
+/**
+ * Metadata the leader's player learned about the item it is playing. The URL
+ * cannot tell us a video's duration, and it cannot reliably tell us whether a
+ * YouTube link is a broadcast — only the loaded player knows.
+ */
+export const QueueMetaSchema = z.object({
+  itemId: z.string(),
+  duration: z.number().min(0).max(24 * 60 * 60).nullable().optional(),
+  live: z.boolean().optional(),
+  title: z.string().min(1).max(256).optional(),
 });
 
 export const QueueRemoveSchema = z.object({

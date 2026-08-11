@@ -14,15 +14,30 @@
  * One component, one geometry: the floating edge PLUS the device's own inset, so
  * the button sits the same visual distance from the first usable pixel on a
  * notched phone, a flat phone, and a desktop.
+ *
+ * It also goes BACK. It used to be a plain link to a catalog page wearing an
+ * ArrowLeft, so the arrow lied: reaching a game from `/explore` or from the
+ * game's own menu and pressing it landed you on `/games`, past wherever you came
+ * from and — in the sub-screen case — out of the game instead of up one level.
+ * `useBackOrFallback` steps back when this SPA session has its own prior entry
+ * and falls through to `to` when it does not (a shared link, a new tab, a search
+ * result). `to` stays required and stays a real `<Link>` href, so the control is
+ * still a right-clickable link with a correct destination on a cold load.
  */
 
 import { Link, type LinkProps } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 import { cn } from '@/lib/utils';
 
 interface GameBackLinkProps {
-  /** Where "back" goes — usually `/builds` or the game's own menu route. */
+  /**
+   * Where back goes when there is no history to step into — the game's own menu
+   * route if it has one, otherwise the catalog it belongs to (`/games`,
+   * `/apps`). Not the destination on a normal in-session press; see the
+   * docblock.
+   */
   to: LinkProps['to'];
   /** Visible next to the arrow from `sm` up. Defaults to the studio name. */
   label?: string;
@@ -60,6 +75,8 @@ export function GameBackLink({
   className,
   tone = 'dark',
 }: GameBackLinkProps) {
+  const goBack = useBackOrFallback();
+
   return (
     <div
       className={cn(
@@ -68,7 +85,7 @@ export function GameBackLink({
         className,
       )}
     >
-      <Link to={to}>
+      <Link to={to} onClick={goBack}>
         <Button
           variant="ghost"
           size="sm"

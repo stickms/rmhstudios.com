@@ -38,35 +38,66 @@ export const config = {
 
   // ─── Timers ───
   SYNC_HEARTBEAT_INTERVAL_MS: envInt('RMHTUBE_SYNC_HEARTBEAT_MS', 2_000),
-  SYNC_TOLERANCE_MS: 2_000,
   ROOM_IDLE_TIMEOUT_MS: envInt('RMHTUBE_IDLE_TIMEOUT', 30 * 60 * 1000),
   ROOM_EMPTY_TIMEOUT_MS: envInt('RMHTUBE_EMPTY_TIMEOUT', 5 * 60 * 1000),
   DISCONNECT_GRACE_PERIOD_MS: envInt('RMHTUBE_GRACE_MS', 120_000),
   ROOM_GC_INTERVAL_MS: envInt('RMHTUBE_GC_INTERVAL', 60_000),
 
   // ─── Rate Limits ───
+  //
+  // This map is also the de-facto allowlist of inbound events: the shared
+  // limiter passes anything it does not find a rule for. Every event the hub
+  // listens to therefore needs an entry — half of them had none, so a client
+  // could spam seeks, skips, kicks and settings writes without limit.
+  //
+  // Ceilings are set well clear of what a well-behaved client sends. The
+  // previous `sync:host_state` limit was 60/min against a client that sent
+  // exactly 60/min, so the room's only source of truth was dropped by its own
+  // rate limiter whenever anything fired an extra report.
   SOCKET_RATE_LIMITS: {
-    'rmhtube:room:create':     { max: 3,   windowMs: 60_000 },
-    'rmhtube:room:join':       { max: 10,  windowMs: 60_000 },
-    'rmhtube:room:chat':       { max: 30,  windowMs: 60_000 },
-    'rmhtube:sync:host_state': { max: 60,  windowMs: 60_000 },
-    'rmhtube:sync:ping':       { max: 120, windowMs: 60_000 },
-    'rmhtube:sync:request':    { max: 60,  windowMs: 60_000 },
-    'rmhtube:queue:add':       { max: 20,  windowMs: 60_000 },
-    'rmhtube:queue:vote_skip': { max: 10,  windowMs: 60_000 },
-    'rmhtube:reaction:send':   { max: 30,  windowMs: 60_000 },
-    'rmhtube:chat:typing':     { max: 30,  windowMs: 60_000 },
-    'rmhtube:chat:react':      { max: 30,  windowMs: 60_000 },
-    'rmhtube:chat:pin':        { max: 10,  windowMs: 60_000 },
-    'rmhtube:sync:set_speed':  { max: 10,  windowMs: 60_000 },
-    'rmhtube:queue:vote':      { max: 20,  windowMs: 60_000 },
-    'rmhtube:queue:shuffle':   { max: 5,   windowMs: 60_000 },
-    'rmhtube:room:set_leader': { max: 10,  windowMs: 60_000 },
-    'rmhtube:room:ban':        { max: 10,  windowMs: 60_000 },
-    'rmhtube:room:unban':      { max: 10,  windowMs: 60_000 },
-    'rmhtube:room:create_invite': { max: 5, windowMs: 3_600_000 },
-    'rmhtube:room:set_status': { max: 10,  windowMs: 60_000 },
-    'rmhtube:room:check_history': { max: 10, windowMs: 60_000 },
+    // Room lifecycle
+    'rmhtube:room:create':        { max: 3,   windowMs: 60_000 },
+    'rmhtube:room:join':          { max: 10,  windowMs: 60_000 },
+    'rmhtube:room:leave':         { max: 20,  windowMs: 60_000 },
+    'rmhtube:room:kick':          { max: 20,  windowMs: 60_000 },
+    'rmhtube:room:transfer_host': { max: 10,  windowMs: 60_000 },
+    'rmhtube:room:update_settings': { max: 30, windowMs: 60_000 },
+    'rmhtube:room:browse':        { max: 30,  windowMs: 60_000 },
+    'rmhtube:room:set_leader':    { max: 10,  windowMs: 60_000 },
+    'rmhtube:room:ban':           { max: 10,  windowMs: 60_000 },
+    'rmhtube:room:unban':         { max: 10,  windowMs: 60_000 },
+    'rmhtube:room:create_invite': { max: 5,   windowMs: 3_600_000 },
+    'rmhtube:room:set_status':    { max: 10,  windowMs: 60_000 },
+    'rmhtube:room:check_history': { max: 10,  windowMs: 60_000 },
+
+    // Sync. The leader reports every 2 s (30/min) and both sides fire extra on
+    // tab-return, so the ceiling sits at four times the steady rate.
+    'rmhtube:sync:host_state':    { max: 120, windowMs: 60_000 },
+    'rmhtube:sync:play':          { max: 60,  windowMs: 60_000 },
+    'rmhtube:sync:pause':         { max: 60,  windowMs: 60_000 },
+    'rmhtube:sync:seek':          { max: 60,  windowMs: 60_000 },
+    'rmhtube:sync:set_speed':     { max: 20,  windowMs: 60_000 },
+    'rmhtube:sync:ping':          { max: 120, windowMs: 60_000 },
+    'rmhtube:sync:request':       { max: 60,  windowMs: 60_000 },
+    'rmhtube:sync:stall':         { max: 60,  windowMs: 60_000 },
+
+    // Queue
+    'rmhtube:queue:add':          { max: 20,  windowMs: 60_000 },
+    'rmhtube:queue:remove':       { max: 30,  windowMs: 60_000 },
+    'rmhtube:queue:reorder':      { max: 60,  windowMs: 60_000 },
+    'rmhtube:queue:play_item':    { max: 30,  windowMs: 60_000 },
+    'rmhtube:queue:skip':         { max: 30,  windowMs: 60_000 },
+    'rmhtube:queue:vote_skip':    { max: 10,  windowMs: 60_000 },
+    'rmhtube:queue:vote':         { max: 20,  windowMs: 60_000 },
+    'rmhtube:queue:shuffle':      { max: 5,   windowMs: 60_000 },
+    'rmhtube:queue:meta':         { max: 30,  windowMs: 60_000 },
+
+    // Chat + reactions
+    'rmhtube:room:chat':          { max: 30,  windowMs: 60_000 },
+    'rmhtube:chat:typing':        { max: 30,  windowMs: 60_000 },
+    'rmhtube:chat:react':         { max: 30,  windowMs: 60_000 },
+    'rmhtube:chat:pin':           { max: 10,  windowMs: 60_000 },
+    'rmhtube:reaction:send':      { max: 30,  windowMs: 60_000 },
   } as Record<string, { max: number; windowMs: number }>,
 
   // ─── Shutdown ───

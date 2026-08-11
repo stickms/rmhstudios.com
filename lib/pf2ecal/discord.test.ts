@@ -22,7 +22,7 @@ import {
   validateWebhookUrl,
   type ReminderSession,
 } from './discord.server';
-import { isReminderDue, reminderInstantFor, REMINDER_GRACE_HOURS } from './reminders.server';
+import { isReminderDue, reminderInstantFor, REMINDER_GRACE_HOURS } from './reminders';
 
 const GOOD = 'https://discord.com/api/webhooks/123456789012345678/abcDEF-ghiJKL_mnoPQR';
 

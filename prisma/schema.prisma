@@ -1938,6 +1938,15 @@ model RmhTubeRoom {
   allowMemberQueue Boolean   @default(true)
   allowMemberSkip  Boolean   @default(true)
   autoPlay         Boolean   @default(true)
+  // Settings the host can set that had no column: the hub held them in memory
+  // only, so every restart silently reverted them to these defaults.
+  queueVoting      Boolean   @default(false)
+  autoSortByVotes  Boolean   @default(false)
+  loopQueue        Boolean   @default(false)
+  /// Empty = the room never chose any, so the default reaction set is used.
+  customReactions  String[]  @default([])
+  /// Pause the room while a member is buffering instead of leaving them behind.
+  waitForSlowPeers Boolean   @default(true)
   scheduledFor     DateTime?
   description      String?
   createdAt        DateTime  @default(now())

@@ -3,9 +3,10 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
-import { BadgeCheck, Heart, MessageCircle, Repeat2 } from 'lucide-react';
+import { BadgeCheck } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { RelativeTime } from '@/components/ui/RelativeTime';
+import { RMHarkActions } from '@/components/feed/RMHarkActions';
 import { RmharkMedia } from './RmharkMedia';
 import { relativeTimeShort } from '@/lib/utils';
 import type { FeedItem } from '@/lib/feed-types';
@@ -37,13 +38,19 @@ function hrefFor(item: FeedItem): string {
  *
  * They stay separate because the column card is an interactive post (30
  * imports, 11 hooks, session + feed-store subscriptions, view tracking,
- * like/repost/menu actions) and the wheel cannot afford it: the wheel rakes
- * its cards onto a 3D cylinder, and design.md §4 records that a rotated 3D
- * transform is the slow path for an antialiased curve — nothing rasterised
+ * like/repost/menu actions) and the wheel cannot afford all of it: the wheel
+ * rakes its cards onto a 3D cylinder, and design.md §4 records that a rotated
+ * 3D transform is the slow path for an antialiased curve — nothing rasterised
  * survives between frames, and the globe's wireframe as thirteen elements
  * halved the frame rate of the whole gesture. Adding a `variant="wheel"` to
  * the 541-line card would put all of that weight on the site's most-viewed
  * surface to save a file.
+ *
+ * What the wheel DOES take is the shared `RMHarkActions` toolbar — the row, not
+ * the card. Passive counts here meant the site's most-viewed surface showed a
+ * like control that could not like; the row costs one app-wide session
+ * subscription, a stable feed-store selector and a lazy quote composer, none of
+ * which run per frame.
  *
  * What they must NOT do is disagree about the same post. Everything shared is
  * shared for real: `relativeTimeShort` (the two had private copies that
@@ -116,27 +123,24 @@ export const WheelCard = memo(function WheelCard({ item }: { item: FeedItem }) {
     </>
   );
 
-  // Passive metadata, not a toolbar. These counts are not interactive here (the
-  // whole card is one link), but they were styled as the universal like/comment/
-  // repost action row and hidden from assistive tech entirely — so they read as
-  // broken buttons to sighted users and did not exist for everyone else. Now
-  // they carry their own labels and are announced as the text they are.
-  const stats = isRmhark ? (
-    <div className="rmhark__stats">
-      <span>
-        <Heart aria-hidden />{' '}
-        {t('like-count', { defaultValue: '{{count}} likes', count: item.likeCount ?? 0 })}
-      </span>
-      <span>
-        <MessageCircle aria-hidden />{' '}
-        {t('comment-count', { defaultValue: '{{count}} comments', count: item.commentCount ?? 0 })}
-      </span>
-      <span>
-        <Repeat2 aria-hidden />{' '}
-        {t('repost-count', { defaultValue: '{{count}} reposts', count: item.repostCount ?? 0 })}
-      </span>
-    </div>
-  ) : null;
+  // The real toolbar — the same `RMHarkActions` the column card uses, so a like
+  // from the wheel is the same optimistic write, the same reRMHark menu and the
+  // same sign-in prompt as everywhere else.
+  //
+  // This row was passive text for a while ("0 likes · 0 comments · 0 reposts")
+  // because the whole card was one `<Link>` and an anchor cannot nest buttons.
+  // That traded one defect for another: the counts still looked like the
+  // universal action row, so they read as buttons that did nothing. The fix is
+  // structural rather than cosmetic — the link now wraps the BODY only and the
+  // toolbar is its sibling, so both are real, neither is nested, and the labels
+  // come off because the icons are back to meaning what they mean everywhere
+  // else. It also brings the view count, which the wheel never showed.
+  //
+  // On the weight the docblock above warns about: this is the actions row, not
+  // the 541-line card. `useSession` is one app-wide subscription and the
+  // feed-store selector is a stable reference, so neither re-renders per tick;
+  // the quote composer stays lazy and only mounts once someone opens it.
+  const actions = isRmhark ? <RMHarkActions item={item} /> : null;
 
   useEffect(() => {
     const el = contentRef.current;
@@ -149,20 +153,21 @@ export const WheelCard = memo(function WheelCard({ item }: { item: FeedItem }) {
     return () => ro.disconnect();
   }, [item.content]);
 
-  const inner = (
+  // The link wraps the body and stops there; the toolbar is a sibling. Wrapping
+  // the whole card meant the action buttons would have been nested inside an
+  // anchor, which is invalid and is why they were text for so long.
+  return (
     <article className="rmhark">
-      {body}
-      {stats}
+      {external ? (
+        <a href={href} className="rmhark__link" target="_blank" rel="noopener noreferrer">
+          {body}
+        </a>
+      ) : (
+        <Link to={href} className="rmhark__link">
+          {body}
+        </Link>
+      )}
+      {actions}
     </article>
-  );
-
-  return external ? (
-    <a href={href} className="rmhark__link" target="_blank" rel="noopener noreferrer">
-      {inner}
-    </a>
-  ) : (
-    <Link to={href} className="rmhark__link">
-      {inner}
-    </Link>
   );
 });

@@ -2049,7 +2049,11 @@ html.perf-lite .radial-hub__veil {
     transform 0.2s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
     border-color 0.2s ease;
 }
-.rmhark__link:hover .rmhark {
+/* The link is inside the card now (it wraps the body, so the toolbar beside it
+   can hold real buttons), so the lift keys off the card containing a hovered
+   link rather than off an ancestor. Hovering a toolbar button does not lift the
+   card — that row is its own set of targets, not a way into the post. */
+.rmhark:has(.rmhark__link:hover) {
   border-color: var(--site-border-bright);
   transform: translateY(-2px);
 }
@@ -2203,22 +2207,10 @@ html.perf-lite .radial-hub__veil {
   line-height: 1.25;
   color: var(--site-text);
 }
-.rmhark__stats {
-  display: flex;
-  gap: 1.1rem;
-  color: var(--site-text-muted);
-  font-size: 0.8rem;
-  font-variant-numeric: tabular-nums;
-}
-.rmhark__stats span {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-}
-.rmhark__stats svg {
-  width: 0.95rem;
-  height: 0.95rem;
-}
+/* `.rmhark__stats` is gone: the wheel card renders the shared `RMHarkActions`
+   toolbar now, which brings its own (Tailwind) styling, its counts and the
+   view count. A second stats style here is how the two cards drifted apart in
+   the first place. */
 
 .radial-feed__empty {
   flex: 1;
@@ -2363,10 +2355,20 @@ html.perf-lite .radial-hub__veil {
   scrollbar-width: thin;
 }
 .rad-deck__note {
+  /* `flex: none`, like `.rad-deck__tabs`: the note sits between the strip and
+     the scrolling list, and without it a full list would squeeze it away. */
+  flex: none;
   padding: var(--rad-4) 0;
   font-size: 0.82rem;
   color: var(--site-text-muted);
   text-align: center;
+}
+.rad-deck__note-link {
+  color: var(--site-accent);
+  font-weight: 600;
+}
+.rad-deck__note-link:hover {
+  text-decoration: underline;
 }
 .rad-deck__row {
   display: flex;

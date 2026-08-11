@@ -29,10 +29,73 @@ import {
   SetStatusSchema,
   CheckHistorySchema,
 } from '../../lib/rmhtube/schemas';
+import { z } from 'zod';
 import { generateRoomCode, sanitizeString } from '../../lib/rmhtube/utils';
-import { reanchor } from '../../lib/rmhtube/sync-math';
-import type { RmhTubeRoom, RmhTubeMember, VideoState, RoomSettings, ChatMessage, QueueItem, BannedUser, InviteLink } from './types';
-import type { ClientRoomState, ClientMemberInfo, ClientQueueItem, PublicRoomInfo } from '../../lib/rmhtube/types';
+import { parseMedia } from '../../lib/rmhtube/media';
+import { reanchor, initialVideoState } from '../../lib/rmhtube/sync-math';
+import { createPeerWaitRuntime } from './types';
+import type { RmhTubeRoom, RmhTubeMember, RoomSettings, ChatMessage, QueueItem, BannedUser, InviteLink } from './types';
+import type { ClientRoomState, ClientMemberInfo, QueueBroadcastItem, PublicRoomInfo } from '../../lib/rmhtube/types';
+
+/**
+ * The database row `hydrateRoom` reads. Spelled out rather than inferred from
+ * Prisma's generics so the shape a restore depends on is visible here.
+ */
+interface DbRoomRow {
+  id: string;
+  name: string | null;
+  hostId: string;
+  isPublic: boolean;
+  password: string | null;
+  maxMembers: number;
+  allowMemberQueue: boolean;
+  allowMemberSkip: boolean;
+  autoPlay: boolean;
+  queueVoting: boolean;
+  autoSortByVotes: boolean;
+  loopQueue: boolean;
+  customReactions: string[];
+  waitForSlowPeers: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  members: {
+    userId: string;
+    joinedAt: Date;
+    user: { id: string; name: string | null; image: string | null };
+  }[];
+  queue: {
+    id: string;
+    url: string;
+    mediaType: string;
+    title: string;
+    duration: number | null;
+    thumbnailUrl: string | null;
+    addedById: string;
+    addedByName: string;
+    position: number;
+    createdAt: Date;
+  }[];
+  messages: {
+    id: string;
+    userId: string;
+    userName: string;
+    content: string;
+    replyToId: string | null;
+    createdAt: Date;
+  }[];
+}
+
+/**
+ * An empty stored list means "this room never chose custom reactions", which
+ * the app models as null (fall back to the defaults). The zod schema requires
+ * at least four when a room does choose, so an empty array is unambiguous.
+ */
+function parseCustomReactions(stored: string[]): string[] | null {
+  return stored.length > 0 ? stored : null;
+}
+
+/** `room:leave` carries nothing, but still needs a schema to be rate-limited. */
+const EmptyPayloadSchema = z.object({}).optional();
 
 export class RoomManager {
   /** All active rooms in memory */
@@ -51,7 +114,7 @@ export class RoomManager {
   handleConnection(socket: Socket): void {
     socket.on(C2S.ROOM_CREATE, validated(socket, C2S.ROOM_CREATE, CreateRoomSchema, (s, p) => this.createRoom(s, p)));
     socket.on(C2S.ROOM_JOIN, validated(socket, C2S.ROOM_JOIN, JoinRoomSchema, (s, p) => this.joinRoom(s, p)));
-    socket.on(C2S.ROOM_LEAVE, () => this.leaveRoom(socket));
+    socket.on(C2S.ROOM_LEAVE, validated(socket, C2S.ROOM_LEAVE, EmptyPayloadSchema, (s) => this.leaveRoom(s)));
     socket.on(C2S.ROOM_KICK, validated(socket, C2S.ROOM_KICK, KickMemberSchema, (s, p) => this.kickMember(s, p)));
     socket.on(C2S.ROOM_TRANSFER_HOST, validated(socket, C2S.ROOM_TRANSFER_HOST, TransferHostSchema, (s, p) => this.transferHost(s, p)));
     socket.on(C2S.ROOM_UPDATE_SETTINGS, validated(socket, C2S.ROOM_UPDATE_SETTINGS, UpdateSettingsSchema, (s, p) => this.updateSettings(s, p)));
@@ -128,6 +191,7 @@ export class RoomManager {
       autoSortByVotes: payload.settings?.autoSortByVotes ?? false,
       loopQueue: payload.settings?.loopQueue ?? false,
       customReactions: payload.settings?.customReactions ?? null,
+      waitForSlowPeers: payload.settings?.waitForSlowPeers ?? true,
     };
 
     const now = Date.now();
@@ -153,7 +217,7 @@ export class RoomManager {
       queue: [],
       currentItem: null,
       currentIndex: -1,
-      videoState: { playing: false, currentTime: 0, playbackRate: 1, updatedAt: now },
+      videoState: initialVideoState(now),
       chat: [],
       skipVotes: new Set(),
       createdAt: now,
@@ -166,6 +230,7 @@ export class RoomManager {
       playedItems: [],
       bannedUsers: [],
       inviteLinks: [],
+      peerWait: createPeerWaitRuntime(),
     };
 
     this.rooms.set(roomId, room);
@@ -465,6 +530,7 @@ export class RoomManager {
     if (s.autoSortByVotes !== undefined) room.settings.autoSortByVotes = s.autoSortByVotes;
     if (s.loopQueue !== undefined) room.settings.loopQueue = s.loopQueue;
     if (s.customReactions !== undefined) room.settings.customReactions = s.customReactions;
+    if (s.waitForSlowPeers !== undefined) room.settings.waitForSlowPeers = s.waitForSlowPeers;
 
     room.lastActivityAt = Date.now();
 
@@ -780,6 +846,37 @@ export class RoomManager {
 
   // ─── State Snapshots ─────────────────────────────────────────
 
+  /**
+   * A queue item in the shape every broadcast and snapshot uses.
+   *
+   * One mapper, because there used to be four inline ones — in `reorder`,
+   * `shuffle`, `sortByVotes` and the history broadcast — and none of them
+   * carried the vote fields. Every reorder therefore replaced each client's
+   * queue with items whose vote counts were gone.
+   */
+  toBroadcastItem(room: RmhTubeRoom, q: QueueItem): QueueBroadcastItem {
+    const voters = room.queueVotes.get(q.id);
+    return {
+      id: q.id,
+      url: q.url,
+      mediaType: q.mediaType,
+      title: q.title,
+      duration: q.duration,
+      thumbnailUrl: q.thumbnailUrl,
+      addedBy: q.addedBy,
+      addedByName: q.addedByName,
+      addedAt: q.addedAt,
+      position: q.position,
+      live: q.live,
+      votes: voters?.size ?? 0,
+      voters: voters ? Array.from(voters) : [],
+    };
+  }
+
+  broadcastQueue(room: RmhTubeRoom): QueueBroadcastItem[] {
+    return room.queue.map((q) => this.toBroadcastItem(room, q));
+  }
+
   buildClientState(room: RmhTubeRoom, forUserId: string): ClientRoomState {
     const members: ClientMemberInfo[] = Array.from(room.members.values()).map((m) => ({
       userId: m.userId,
@@ -792,26 +889,13 @@ export class RoomManager {
       status: m.status,
     }));
 
-    const mapQueueItem = (q: QueueItem): ClientQueueItem => ({
-      id: q.id,
-      url: q.url,
-      mediaType: q.mediaType,
-      title: q.title,
-      duration: q.duration,
-      thumbnailUrl: q.thumbnailUrl,
-      addedBy: q.addedBy,
-      addedByName: q.addedByName,
-      addedAt: q.addedAt,
-      position: q.position,
-      votes: room.queueVotes.get(q.id)?.size ?? 0,
-      votedByMe: room.queueVotes.get(q.id)?.has(forUserId) ?? false,
-    });
+    const mapQueueItem = (q: QueueItem) => {
+      const { voters, ...item } = this.toBroadcastItem(room, q);
+      return { ...item, votedByMe: voters.includes(forUserId) };
+    };
 
-    const queue: ClientQueueItem[] = room.queue.map(mapQueueItem);
-
-    const currentItem: ClientQueueItem | null = room.currentItem
-      ? mapQueueItem(room.currentItem)
-      : null;
+    const queue = room.queue.map(mapQueueItem);
+    const currentItem = room.currentItem ? mapQueueItem(room.currentItem) : null;
 
     // Only expose ban list to the host
     const isHost = room.hostUserId === forUserId;
@@ -913,167 +997,26 @@ export class RoomManager {
 
   // ─── Database Restoration ────────────────────────────────────
 
-  /**
-   * Load all active (non-closed) rooms from the database into memory.
-   * Called once on server startup so rooms survive restarts.
-   * Members start as disconnected — they reconnect via socket.
-   */
-  async restoreRoomsFromDb(): Promise<void> {
-    const prisma = getPrismaClient();
-
-    const dbRooms = await prisma.rmhTubeRoom.findMany({
-      where: { closedAt: null },
-      include: {
-        members: {
-          where: { leftAt: null },
-          include: { user: { select: { id: true, name: true, image: true } } },
-        },
-        queue: {
-          where: { playedAt: null },
-          orderBy: { position: 'asc' },
-        },
-        messages: {
-          orderBy: { createdAt: 'desc' },
-          take: config.CHAT_HISTORY_LENGTH,
-        },
-      },
-    });
-
-    let restored = 0;
-
-    for (const dbRoom of dbRooms) {
-      // Skip if already in memory (shouldn't happen on fresh startup)
-      if (this.rooms.has(dbRoom.id)) continue;
-
-      // Skip rooms with no members
-      if (dbRoom.members.length === 0) continue;
-
-      const now = Date.now();
-
-      const members = new Map<string, RmhTubeMember>();
-      for (const dbMember of dbRoom.members) {
-        members.set(dbMember.userId, {
-          userId: dbMember.userId,
-          userName: dbMember.user.name ?? 'Unknown',
-          avatarUrl: dbMember.user.image ?? null,
-          socketId: null,
-          isConnected: false,
-          joinedAt: dbMember.joinedAt.getTime(),
-          lastSeenAt: now,
-          role: dbMember.userId === dbRoom.hostId ? 'host' : 'member',
-          status: 'watching',
-        });
-      }
-
-      const queue: QueueItem[] = dbRoom.queue.map((q) => ({
-        id: q.id,
-        url: q.url,
-        mediaType: q.mediaType as QueueItem['mediaType'],
-        title: q.title,
-        duration: q.duration,
-        thumbnailUrl: q.thumbnailUrl,
-        addedBy: q.addedById,
-        addedByName: q.addedByName,
-        addedAt: q.createdAt.getTime(),
-        position: q.position,
-      }));
-
-      const chat: ChatMessage[] = dbRoom.messages
-        .map((m) => ({
-          id: m.id,
-          userId: m.userId,
-          userName: m.userName,
-          content: m.content,
-          createdAt: m.createdAt.getTime(),
-          replyToId: (m as Record<string, unknown>).replyToId as string | null ?? null,
-          replyToContent: null,
-          replyToUserName: null,
-          mentions: [],
-          timestamp: null,
-        }))
-        .reverse(); // DB ordered desc, we need asc
-
-      const room: RmhTubeRoom = {
-        id: dbRoom.id,
-        name: dbRoom.name,
-        hostUserId: dbRoom.hostId,
-        leaderUserId: dbRoom.hostId,
-        settings: {
-          isPublic: dbRoom.isPublic,
-          maxMembers: dbRoom.maxMembers,
-          allowMemberQueue: dbRoom.allowMemberQueue,
-          allowMemberSkip: dbRoom.allowMemberSkip,
-          autoPlay: dbRoom.autoPlay,
-          password: dbRoom.password,
-          queueVoting: false,
-          autoSortByVotes: false,
-          loopQueue: false,
-          customReactions: null,
-        },
-        members,
-        queue,
-        currentItem: null,
-        currentIndex: -1,
-        videoState: { playing: false, currentTime: 0, playbackRate: 1, updatedAt: now },
-        chat,
-        skipVotes: new Set(),
-        createdAt: dbRoom.createdAt.getTime(),
-        lastActivityAt: dbRoom.updatedAt.getTime(),
-        seq: 0,
-        pinnedMessage: null,
-        typingTimers: new Map(),
-        chatReactions: new Map(),
-        queueVotes: new Map(),
-        playedItems: [],
-        bannedUsers: [],
-        inviteLinks: [],
-      };
-
-      this.rooms.set(dbRoom.id, room);
-
-      // Index all members so they can reconnect
-      for (const dbMember of dbRoom.members) {
-        this.userRoomIndex.set(dbMember.userId, dbRoom.id);
-      }
-
-      restored++;
-    }
-
-    if (restored > 0) {
-      logger.info({ event: 'rooms_restored_from_db', count: restored });
-    }
-  }
+  /** The room shape both restore paths read out of Postgres. */
+  private static readonly DB_INCLUDE = {
+    members: {
+      where: { leftAt: null },
+      include: { user: { select: { id: true, name: true, image: true } } },
+    },
+    queue: { where: { playedAt: null }, orderBy: { position: 'asc' } },
+    messages: { orderBy: { createdAt: 'desc' }, take: config.CHAT_HISTORY_LENGTH },
+  } as const;
 
   /**
-   * Try to load a single room from the database into memory.
-   * Used when a user joins a room that's not in the in-memory cache.
-   * Returns the room if found and active, null otherwise.
+   * Build the in-memory room from its database row.
+   *
+   * Boot-restore and join-time load used to carry a copy of this each, and the
+   * copies had drifted: both hardcoded `queueVoting`, `autoSortByVotes`,
+   * `loopQueue` and `customReactions` to their defaults, so every one of those
+   * settings silently reverted whenever the hub restarted — the host set them,
+   * saw them apply, and found them off again the next evening.
    */
-  async loadRoomFromDb(roomId: string): Promise<RmhTubeRoom | null> {
-    if (this.rooms.has(roomId)) return this.rooms.get(roomId)!;
-
-    const prisma = getPrismaClient();
-
-    const dbRoom = await prisma.rmhTubeRoom.findUnique({
-      where: { id: roomId, closedAt: null },
-      include: {
-        members: {
-          where: { leftAt: null },
-          include: { user: { select: { id: true, name: true, image: true } } },
-        },
-        queue: {
-          where: { playedAt: null },
-          orderBy: { position: 'asc' },
-        },
-        messages: {
-          orderBy: { createdAt: 'desc' },
-          take: config.CHAT_HISTORY_LENGTH,
-        },
-      },
-    });
-
-    if (!dbRoom) return null;
-
+  private hydrateRoom(dbRoom: DbRoomRow): RmhTubeRoom {
     const now = Date.now();
 
     const members = new Map<string, RmhTubeMember>();
@@ -1102,6 +1045,9 @@ export class RoomManager {
       addedByName: q.addedByName,
       addedAt: q.createdAt.getTime(),
       position: q.position,
+      // Liveness is a runtime observation, not a stored fact — the leader's
+      // player reports it once the item loads. The URL hint is the seed.
+      live: parseMedia(q.url)?.liveHint === 'live',
     }));
 
     const chat: ChatMessage[] = dbRoom.messages
@@ -1111,15 +1057,15 @@ export class RoomManager {
         userName: m.userName,
         content: m.content,
         createdAt: m.createdAt.getTime(),
-        replyToId: (m as Record<string, unknown>).replyToId as string | null ?? null,
+        replyToId: m.replyToId ?? null,
         replyToContent: null,
         replyToUserName: null,
         mentions: [],
         timestamp: null,
       }))
-      .reverse();
+      .reverse(); // DB ordered desc, we need asc
 
-    const room: RmhTubeRoom = {
+    return {
       id: dbRoom.id,
       name: dbRoom.name,
       hostUserId: dbRoom.hostId,
@@ -1131,16 +1077,17 @@ export class RoomManager {
         allowMemberSkip: dbRoom.allowMemberSkip,
         autoPlay: dbRoom.autoPlay,
         password: dbRoom.password,
-        queueVoting: false,
-        autoSortByVotes: false,
-        loopQueue: false,
-        customReactions: null,
+        queueVoting: dbRoom.queueVoting,
+        autoSortByVotes: dbRoom.autoSortByVotes,
+        loopQueue: dbRoom.loopQueue,
+        customReactions: parseCustomReactions(dbRoom.customReactions),
+        waitForSlowPeers: dbRoom.waitForSlowPeers,
       },
       members,
       queue,
       currentItem: null,
       currentIndex: -1,
-      videoState: { playing: false, currentTime: 0, playbackRate: 1, updatedAt: now },
+      videoState: initialVideoState(now),
       chat,
       skipVotes: new Set(),
       createdAt: dbRoom.createdAt.getTime(),
@@ -1153,17 +1100,62 @@ export class RoomManager {
       playedItems: [],
       bannedUsers: [],
       inviteLinks: [],
+      peerWait: createPeerWaitRuntime(),
     };
+  }
 
-    this.rooms.set(dbRoom.id, room);
+  /** Register a hydrated room and index its members so they can reconnect. */
+  private adoptRoom(room: RmhTubeRoom): RmhTubeRoom {
+    this.rooms.set(room.id, room);
+    for (const userId of room.members.keys()) this.userRoomIndex.set(userId, room.id);
+    return room;
+  }
 
-    // Index all existing members
-    for (const dbMember of dbRoom.members) {
-      this.userRoomIndex.set(dbMember.userId, dbRoom.id);
+  /**
+   * Load all active (non-closed) rooms from the database into memory.
+   * Called once on server startup so rooms survive restarts.
+   * Members start as disconnected — they reconnect via socket.
+   */
+  async restoreRoomsFromDb(): Promise<void> {
+    const prisma = getPrismaClient();
+
+    const dbRooms = await prisma.rmhTubeRoom.findMany({
+      where: { closedAt: null },
+      include: RoomManager.DB_INCLUDE,
+    });
+
+    let restored = 0;
+    for (const dbRoom of dbRooms) {
+      // Skip rooms already in memory (shouldn't happen on a fresh start) and
+      // rooms nobody is left in.
+      if (this.rooms.has(dbRoom.id)) continue;
+      if (dbRoom.members.length === 0) continue;
+      this.adoptRoom(this.hydrateRoom(dbRoom));
+      restored++;
     }
 
+    if (restored > 0) {
+      logger.info({ event: 'rooms_restored_from_db', count: restored });
+    }
+  }
+
+  /**
+   * Load a single room from the database into memory. Used when a user joins a
+   * room that is not in the in-memory cache. Null when it is gone or closed.
+   */
+  async loadRoomFromDb(roomId: string): Promise<RmhTubeRoom | null> {
+    const cached = this.rooms.get(roomId);
+    if (cached) return cached;
+
+    const prisma = getPrismaClient();
+    const dbRoom = await prisma.rmhTubeRoom.findUnique({
+      where: { id: roomId, closedAt: null },
+      include: RoomManager.DB_INCLUDE,
+    });
+    if (!dbRoom) return null;
+
     logger.info({ event: 'room_loaded_from_db', roomId });
-    return room;
+    return this.adoptRoom(this.hydrateRoom(dbRoom));
   }
 
   // ─── Database Persistence ────────────────────────────────────
@@ -1181,6 +1173,11 @@ export class RoomManager {
         allowMemberQueue: room.settings.allowMemberQueue,
         allowMemberSkip: room.settings.allowMemberSkip,
         autoPlay: room.settings.autoPlay,
+        queueVoting: room.settings.queueVoting,
+        autoSortByVotes: room.settings.autoSortByVotes,
+        loopQueue: room.settings.loopQueue,
+        customReactions: room.settings.customReactions ?? [],
+        waitForSlowPeers: room.settings.waitForSlowPeers,
         members: {
           create: {
             userId: room.hostUserId,
@@ -1226,6 +1223,11 @@ export class RoomManager {
         allowMemberQueue: settings.allowMemberQueue,
         allowMemberSkip: settings.allowMemberSkip,
         autoPlay: settings.autoPlay,
+        queueVoting: settings.queueVoting,
+        autoSortByVotes: settings.autoSortByVotes,
+        loopQueue: settings.loopQueue,
+        customReactions: settings.customReactions ?? [],
+        waitForSlowPeers: settings.waitForSlowPeers,
       },
     });
   }

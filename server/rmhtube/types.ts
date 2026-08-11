@@ -6,7 +6,10 @@
  * these types extend them with ephemeral runtime state.
  */
 
-export type MediaType = 'youtube' | 'twitch' | 'direct';
+import type { MediaType, VideoState, RoomSettings } from '../../lib/rmhtube/types';
+
+export type { MediaType, VideoState, RoomSettings };
+
 export type MemberRole = 'host' | 'member';
 export type UserPresenceStatus = 'watching' | 'afk' | 'brb';
 
@@ -33,26 +36,8 @@ export interface QueueItem {
   addedByName: string;
   addedAt: number;
   position: number;
-}
-
-export interface VideoState {
-  playing: boolean;
-  currentTime: number;
-  playbackRate: number;
-  updatedAt: number;
-}
-
-export interface RoomSettings {
-  isPublic: boolean;
-  maxMembers: number;
-  allowMemberQueue: boolean;
-  allowMemberSkip: boolean;
-  autoPlay: boolean;
-  password: string | null;
-  queueVoting: boolean;
-  autoSortByVotes: boolean;
-  loopQueue: boolean;
-  customReactions: string[] | null;
+  /** No fixed timeline — mirror play/pause instead of synchronising a position. */
+  live: boolean;
 }
 
 export interface BannedUser {
@@ -102,6 +87,29 @@ export interface RmhTubeRoom {
   bannedUsers: BannedUser[];
   // Phase 4: Invite links
   inviteLinks: InviteLink[];
+
+  /** Wait-for-slow-peers state (see `sync-engine.ts`). */
+  peerWait: PeerWaitRuntime;
+}
+
+export interface PeerWaitRuntime {
+  /** userId → server-clock ms the member reported it was starved of data. */
+  stalled: Map<string, number>;
+  /** When the room auto-paused for a buffering member, else null. */
+  startedAt: number | null;
+  /** The room was playing when it paused, so resume once everyone is back. */
+  resumeAfter: boolean;
+  /**
+   * No new wait before this instant. Set when a wait times out, so a member who
+   * never recovers cannot re-pause the room every few seconds forever.
+   */
+  cooldownUntil: number;
+  /** Last broadcast peer set, so an unchanged one is not re-sent every tick. */
+  signature: string;
+}
+
+export function createPeerWaitRuntime(): PeerWaitRuntime {
+  return { stalled: new Map(), startedAt: null, resumeAfter: false, cooldownUntil: 0, signature: '' };
 }
 
 export interface ChatMessage {

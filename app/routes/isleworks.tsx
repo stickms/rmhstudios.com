@@ -13,7 +13,7 @@ function IsleworksPage() {
       className="fixed inset-0 flex flex-col overflow-hidden bg-[#8ecbe8]"
       style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
     >
-      <GameBackLink to="/create" z="z-[60]" />
+      <GameBackLink to="/games" z="z-[60]" />
 
       {/* The island fills whatever viewport it is given — there is no fixed
           playfield to letterbox, so no `.app-stage` here. */}

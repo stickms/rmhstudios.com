@@ -32,7 +32,7 @@ import {
   unprojectSphere,
   unrotateSphere,
 } from '@/lib/fluid';
-import type { NavLeaf } from '@/lib/sidebar-nav';
+import { isNavLeafActive, type NavLeaf } from '@/lib/sidebar-nav';
 
 /**
  * The **liquid globe** navigator — the site's navigation as a glass sphere you
@@ -542,9 +542,7 @@ export function LiquidGlobe({
    * visitor is already looking at.
    */
   useEffect(() => {
-    const here = nodes.findIndex((n) =>
-      n.href === '/' ? pathname === '/' : pathname === n.href || pathname.startsWith(`${n.href}/`),
-    );
+    const here = nodes.findIndex((n) => isNavLeafActive(pathname, n));
     const n = here >= 0 ? nodes[here] : null;
     rot.current.yaw = n ? -n.lon + 42 : 12;
     rot.current.pitch = n ? clamp(-n.lat + 9, -PITCH_LIMIT, PITCH_LIMIT) : -8;
