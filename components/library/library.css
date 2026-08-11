@@ -2683,7 +2683,13 @@
    media cards use cheap L1 glass, while the hero and explorer are the page's two
    rationed refractive surfaces. */
 .lib--glass-playground {
-  --lib-gutter: clamp(12px, 2.7vw, 28px);
+  /* Matches `PageTabs`' gutter (`px-2 md:px-3` → 8px / 12px). It used to run up
+     to 28px, and since the tab strip sits OUTSIDE `.lib-playground` while every
+     content section sits inside it, that inset applied to the sections and not
+     to the strip — so the shelves were up to 32px narrower than the tabs and
+     search directly above them, on a page where all three read as one column.
+     The playground does not clip, so the 3D orbit still has room to lift. */
+  --lib-gutter: clamp(8px, 1.2vw, 12px);
   --lib-content: 1400px;
   padding-bottom: clamp(88px, 12vw, 152px);
   background:
@@ -2770,13 +2776,17 @@
   padding-inline: 13px;
 }
 
-/* Each content family uses the same outer bubble and internal spacing rhythm. */
+/* Each content family uses the same outer bubble and internal spacing rhythm.
+   The border is `.glass-fill`'s own, NOT a transparent override: L1's 1px rim
+   is what grounds a surface, and without it these sections were a shadow with
+   no edge — the one place on the site where a repeated content card floated
+   instead of sitting. (High contrast used to patch the rim back on for exactly
+   that reason; it no longer has to.) */
 .lib--glass-playground .lib-section-shell {
   max-width: var(--lib-content);
   margin: 14px auto 0;
   padding: clamp(14px, 2.4vw, 28px);
   overflow: visible;
-  border: 1px solid transparent;
   border-radius: calc(var(--site-radius) * 1.25);
 }
 
@@ -3034,8 +3044,10 @@ html.reduce-motion .lib-playground [data-library-orbit] {
   transition: none;
 }
 
-.style-high-contrast .lib--glass-playground .lib-orbit-card,
-.style-high-contrast .lib--glass-playground .lib-section-shell {
+/* `.lib-section-shell` is not in this list any more: it keeps `.glass-fill`'s
+   rim in every theme now, so high contrast has nothing left to restore. The
+   orbit cards still clear their transparent border here. */
+.style-high-contrast .lib--glass-playground .lib-orbit-card {
   border-color: var(--site-border);
 }
 
