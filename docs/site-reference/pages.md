@@ -46,11 +46,11 @@ Standard pages, rendered inside the sidebar shell.
 | `/alexdebtcounter` | redirects to `/kaikaidebtcounter` | public | `app/routes/_site/alexdebtcounter.tsx` |
 | `/analytics` | Creator Analytics | public | `app/routes/_site/analytics.tsx` |
 | `/apps` | Apps | public | `app/routes/_site/apps/index.tsx` |
-| `/arcade` | redirects to `/create?tab=games` | public | `app/routes/_site/arcade.tsx` |
+| `/arcade` | redirects to `/games` | public | `app/routes/_site/arcade.tsx` |
 | `/blog` | redirects to `/library` | public | `app/routes/_site/blog/index.tsx` |
 | `/blog/:slug` | — | public | `app/routes/_site/blog/$slug.tsx` |
 | `/bookmarks` | redirects to `/saves?tab=saved` | public | `app/routes/_site/bookmarks.tsx` |
-| `/builds` | redirects to `/create?tab=games` | public | `app/routes/_site/builds/index.tsx` |
+| `/builds` | redirects to `/games` | public | `app/routes/_site/builds/index.tsx` |
 | `/builds/:slug` | Build Not Found | public | `app/routes/_site/builds/$slug.tsx` |
 | `/c/:slug` | — | public | `app/routes/_site/c.$slug.tsx` |
 | `/communities` | Communities | public | `app/routes/_site/communities.tsx` |
@@ -75,7 +75,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/homes/saved` | redirects to `/homes/manage?tab=saved` | public | `app/routes/_site/homes/saved.tsx` |
 | `/homes/submit` | RMHHomes — Post a listing | public | `app/routes/_site/homes/submit.tsx` |
 | `/homes/watches` | redirects to `/homes/manage?tab=alerts` | public | `app/routes/_site/homes/watches.tsx` |
-| `/leaderboard` | redirects to `/create?tab=games&sub=leaderboard` | public | `app/routes/_site/leaderboard.tsx` |
+| `/leaderboard` | redirects to `/games?sub=leaderboard` | public | `app/routes/_site/leaderboard.tsx` |
 | `/library` | Library | public | `app/routes/_site/library/index.tsx` |
 | `/lists` | redirects to `/saves?tab=lists` | public | `app/routes/_site/lists/index.tsx` |
 | `/lists/:id` | List | public | `app/routes/_site/lists/$id.tsx` |

@@ -57,8 +57,9 @@ function MemberAvatar({ member, size = 30 }: { member: PartyMemberView; size?: n
  *
  * Two layouts share one interactive core:
  * - `inline` (default): a static card, meant to live inside a page section —
- *   currently the **Games tab of Create** (`/create?tab=games`). This is
- *   the primary placement; it does not float over the page.
+ *   currently the player block at the top of **`/games`**, which is where it
+ *   moved when Create's Games tab was removed. This is the primary placement;
+ *   it does not float over the page.
  * - non-inline: a fixed docked pill (kept for game shells / future use).
  */
 export function PartyBar({ inline = true }: { inline?: boolean }) {

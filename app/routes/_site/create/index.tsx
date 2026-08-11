@@ -11,30 +11,25 @@
  * (Note: the standalone `/studio` route is a separate music DAW — "RMH Studio".)
  */
 
-import { useCallback, useMemo } from 'react';
-import { createFileRoute, redirect, useNavigate, Link } from '@tanstack/react-router';
+import { useCallback } from 'react';
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
-import { FileText, Gamepad2, Boxes, Bot, Coins } from 'lucide-react';
+import { FileText, Boxes, Bot, Coins } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { type LiquidTab } from '@/components/ui/liquid-tabs';
 import { PageTabs } from '@/components/feed/PageTabs';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { Button } from '@/components/ui/button';
-import { listCuratedBuilds } from '@/lib/builds/curated';
 import { listVibePages } from '@/lib/rmhvibe/vibe.server';
 import { PagesTab, type VibeGallery } from '@/components/creator-studio/PagesTab';
 import { UserBuildsTab } from '@/components/creator-studio/BuildsTab';
-import { RankedSummary } from '@/components/creator-studio/RankedSummary';
-import {
-  ArcadeSection,
-  ARCADE_SUB_TABS,
-  type ArcadeSubTab,
-} from '@/components/creator-studio/ArcadeSection';
+// Kept for the `?tab=games` → `/games` redirect only: this page no longer
+// renders the Arcade block, but it still has to recognise its `?sub=` to hand
+// it on intact.
+import { ARCADE_SUB_TABS, type ArcadeSubTab } from '@/components/creator-studio/ArcadeSection';
 import { PersonasTab } from '@/components/creator-studio/PersonasTab';
 import { EarningsTab } from '@/components/creator-studio/EarningsTab';
 import { StudioDashboard } from '@/components/creator-studio/StudioDashboard';
-import { PartyBar } from '@/components/party/PartyBar';
 import '@/components/rmhvibe/vibe.css';
 import '@/components/library/library.css';
 import '@/components/builds/builds.css';
@@ -42,14 +37,23 @@ import '@/components/creator-studio/creator-studio.css';
 import '@/components/creator-studio/storefront.css';
 
 /**
- * `apps` is deliberately absent: the apps catalog is its own page at `/apps`,
- * and this tab rendered nothing but that same catalog. `?tab=apps` redirects
- * there (see `beforeLoad`) so deep links survive. The Games tab keeps its
- * creator surfaces — party, Ranked, the Arcade Pass — and links out to
- * `/games` for the catalog rather than rendering a second copy of it.
+ * `apps` and `games` are both deliberately absent: each catalog is its own page
+ * (`/apps`, `/games`), and neither tab rendered anything the catalog page did
+ * not. `?tab=apps` and `?tab=games` redirect out (see `beforeLoad`) so deep
+ * links survive.
+ *
+ * The Games tab's *creator* surfaces — the party bar, Ranked, the Arcade Pass —
+ * moved WITH it, onto `/games` above the catalog, rather than being deleted:
+ * `/arcade` and `/leaderboard` are redirects into that Arcade block, so dropping
+ * it would have stranded both routes and taken the daily challenges and the
+ * player leaderboard off the site entirely. `?sub=` travels with the redirect.
  */
-const STUDIO_TABS = ['pages', 'games', 'user-builds', 'personas', 'earnings'] as const;
+const STUDIO_TABS = ['pages', 'user-builds', 'personas', 'earnings'] as const;
 type StudioTab = (typeof STUDIO_TABS)[number];
+
+/** Tabs this page no longer renders but still answers for, by redirecting. */
+const REDIRECTED_TABS = ['apps', 'games'] as const;
+type RedirectedTab = (typeof REDIRECTED_TABS)[number];
 
 const fetchGallery = createServerFn({ method: 'GET' })
   .validator((data: { q?: string; cursor?: string }) => data)
@@ -66,21 +70,43 @@ export const Route = createFileRoute('/_site/create/')({
     links: [buildCanonical('/create')],
   }),
   beforeLoad: ({ search }) => {
-    // The apps catalog moved out to its own indexable page.
-    if ((search as { tab?: string }).tab === 'apps') throw redirect({ to: '/apps' });
+    // Both catalogs moved out to their own indexable pages, and the Games tab's
+    // creator surfaces went with them — so `?tab=games` carries its `?sub=`
+    // across, keeping `/arcade?tab=leaderboard` → `/leaderboard` → here → the
+    // board working as one hop chain.
+    const { tab, sub } = search as { tab?: string; sub?: string };
+    if (tab === 'apps') throw redirect({ to: '/apps' });
+    if (tab === 'games') {
+      throw redirect({
+        to: '/games',
+        search: ARCADE_SUB_TABS.includes(sub as ArcadeSubTab) ? { sub: sub as ArcadeSubTab } : {},
+      });
+    }
   },
-  validateSearch: (search: Record<string, unknown>): { tab?: StudioTab; sub?: ArcadeSubTab } => {
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { tab?: StudioTab | RedirectedTab; sub?: ArcadeSubTab } => {
     const { tab, sub } = search;
+    const known =
+      STUDIO_TABS.includes(tab as StudioTab) || REDIRECTED_TABS.includes(tab as RedirectedTab);
     return {
-      ...(STUDIO_TABS.includes(tab as StudioTab) ? { tab: tab as StudioTab } : {}),
-      // `?sub=` is the Games tab's Arcade block; anything else is ignored so a
-      // stray param can't strand the section on a surface that doesn't exist.
+      // The two moved-out tabs are kept VALID here even though this page no
+      // longer renders them. `validateSearch` runs before `beforeLoad` and is
+      // what `beforeLoad` reads, so a value stripped here is a value the
+      // redirect above can never see — dropping them from the union would
+      // silently turn `?tab=apps` and `?tab=games` into a bare `/create` rather
+      // than the catalog page they point at.
+      ...(known ? { tab: tab as StudioTab | RedirectedTab } : {}),
+      // `?sub=` is the Arcade block's sub-tab, forwarded to `/games`; anything
+      // else is ignored so a stray param can't strand the section on a surface
+      // that doesn't exist.
       ...(ARCADE_SUB_TABS.includes(sub as ArcadeSubTab) ? { sub: sub as ArcadeSubTab } : {}),
     };
   },
   loader: async () => ({
     gallery: await fetchGallery({ data: {} }),
-    curated: listCuratedBuilds(),
+    // `curated` is gone with the Games tab — it was read for one count, and the
+    // catalogs it flattened are loaded by `/games` and `/apps` themselves now.
     // Fresh per load → each refresh re-advertises a different featured mix while
     // staying deterministic between server render and client hydration.
     seed: Math.floor(Math.random() * 1_000_000) + 1,
@@ -90,8 +116,8 @@ export const Route = createFileRoute('/_site/create/')({
 
 function CreatePage() {
   const { t } = useTranslation('feed');
-  const { gallery, curated, seed } = Route.useLoaderData();
-  const { tab = 'pages', sub = 'challenges' } = Route.useSearch();
+  const { gallery, seed } = Route.useLoaderData();
+  const { tab = 'pages' } = Route.useSearch();
   const navigate = useNavigate();
 
   const setTab = useCallback(
@@ -103,18 +129,8 @@ function CreatePage() {
     [navigate],
   );
 
-  const setArcadeSub = useCallback(
-    (next: ArcadeSubTab) => {
-      void navigate({ to: '/create', search: { tab: 'games', sub: next }, replace: true });
-    },
-    [navigate],
-  );
-
-  const gameCount = useMemo(() => curated.filter((b) => b.kind === 'game').length, [curated]);
-
   const tabs: LiquidTab[] = [
     { id: 'pages', label: t('studio-tab-pages', { defaultValue: 'Pages' }), icon: FileText },
-    { id: 'games', label: t('studio-tab-games', { defaultValue: 'Games' }), icon: Gamepad2 },
     {
       id: 'user-builds',
       label: t('studio-tab-user-builds', { defaultValue: 'User Builds' }),
@@ -162,35 +178,6 @@ function CreatePage() {
             aria-labelledby="cstudio-tab-pages"
           >
             <PagesTab initial={gallery} seed={seed} fetchGallery={fetchGallery} />
-          </div>
-        )}
-        {tab === 'games' && (
-          <div
-            className="cstudio-body"
-            role="tabpanel"
-            id="cstudio-panel-games"
-            aria-labelledby="cstudio-tab-games"
-          >
-            <PartyBar inline />
-            <RankedSummary />
-            <ArcadeSection sub={sub} onSubChange={setArcadeSub} />
-            <section className="glass-fill rounded-site p-4">
-              <h2 className="text-base font-semibold text-site-text">
-                {t('create-games-catalog-title', { defaultValue: 'All games' })}
-              </h2>
-              <p className="mt-1 text-sm text-site-text-muted">
-                {t('create-games-catalog-body', {
-                  count: gameCount,
-                  defaultValue:
-                    'The full catalog of {{count}} games lives on its own page, so it can be linked and found.',
-                })}
-              </p>
-              <Button asChild variant="accent" size="sm" className="mt-3">
-                <Link to="/games">
-                  {t('create-games-catalog-cta', { defaultValue: 'Browse all games' })}
-                </Link>
-              </Button>
-            </section>
           </div>
         )}
         {tab === 'user-builds' && (

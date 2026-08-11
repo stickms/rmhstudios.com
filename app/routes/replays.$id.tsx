@@ -78,8 +78,7 @@ function ReplayPage() {
     <div className="flex min-h-screen flex-col bg-site-bg text-site-text">
       <header className="flex items-center justify-between border-b border-site-border px-4 py-3">
         <Link
-          to="/create"
-          search={{ tab: 'games' }}
+          to="/games"
           className="inline-flex items-center gap-2 text-sm font-medium text-site-text-muted hover:text-site-text"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden />
@@ -95,8 +94,7 @@ function ReplayPage() {
               {t('replay-not-available', { defaultValue: 'This replay isn’t available.' })}
             </p>
             <Link
-              to="/create"
-              search={{ tab: 'games' }}
+              to="/games"
               className="text-sm font-semibold text-site-accent hover:underline"
             >
               {t('replay-browse-games', { defaultValue: 'Browse games' })}

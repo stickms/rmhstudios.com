@@ -280,6 +280,17 @@ RUN rm -rf .output \
     # Anything not yet translated falls back to English at runtime.
     && echo "[i18n] regenerating resource modules from committed locales (translation runs in CI, not here)" \
     && pnpm exec tsx scripts/gen-i18n-resources.ts \
+    # Responsive image variants (OPT-24). This is NOT optional decoration: the
+    # manifest lib/images/variants.gen.ts is COMMITTED while the files it names
+    # under public/images/_variants/ are gitignored and generated here, and
+    # every consumer emits a `srcSet` for the paths the manifest lists. A
+    # `srcset` carrying `w` descriptors REPLACES `src` in the candidate set, so
+    # if the files are absent the browser has nothing else to try — the art does
+    # not fall back to the master, it fails outright (catalog cards drop to their
+    # letter placeholder, everything on OptimizedImage breaks). This step is why
+    # `pnpm build` chains images:variants before `vite build`; this RUN calls
+    # `vite build` directly, so it has to chain it too.
+    && pnpm run images:variants \
     && NODE_OPTIONS='--max-old-space-size=8192' pnpm exec vite build \
     && node scripts/fix-ssr-css-hash.mjs \
     && pnpm exec tsx scripts/ci/bundle-budget.ts

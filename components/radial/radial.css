@@ -2363,10 +2363,20 @@ html.perf-lite .radial-hub__veil {
   scrollbar-width: thin;
 }
 .rad-deck__note {
+  /* `flex: none`, like `.rad-deck__tabs`: the note sits between the strip and
+     the scrolling list, and without it a full list would squeeze it away. */
+  flex: none;
   padding: var(--rad-4) 0;
   font-size: 0.82rem;
   color: var(--site-text-muted);
   text-align: center;
+}
+.rad-deck__note-link {
+  color: var(--site-accent);
+  font-weight: 600;
+}
+.rad-deck__note-link:hover {
+  text-decoration: underline;
 }
 .rad-deck__row {
   display: flex;
