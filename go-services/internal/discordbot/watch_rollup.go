@@ -48,6 +48,19 @@ type dayRollup struct {
 	AloneSec        int
 	LateNightSec    int
 
+	// Time at each status. Mutually exclusive — a status is one value — so
+	// these sum to his presence for the day.
+	OnlineSec int
+	IdleSec   int
+	DndSec    int
+
+	// Time signed in on each client. These OVERLAP: desktop and mobile are
+	// routinely both true, so the three can sum to more than the presence
+	// total above. That is the honest reading, not double counting.
+	DesktopSec int
+	MobileSec  int
+	WebSec     int
+
 	Messages    int
 	Words       int
 	Characters  int
@@ -150,8 +163,13 @@ func (w *WatchService) recomputeDay(ctx context.Context, discordID, dateKey stri
 	if err != nil {
 		return fmt.Errorf("presence for %s: %w", dateKey, err)
 	}
+	statuses, err := w.repo.statusSessionsOverlapping(ctx, discordID, from, to)
+	if err != nil {
+		return fmt.Errorf("status for %s: %w", dateKey, err)
+	}
 
-	roll := buildDayRollup(discordID, dateKey, w.cfg.TimeZone, w.loc, from, to, now, messages, voice, presence)
+	roll := buildDayRollup(discordID, dateKey, w.cfg.TimeZone, w.loc, from, to, now,
+		messages, voice, presence, statuses)
 	return w.repo.writeDayRollup(ctx, roll)
 }
 
@@ -165,6 +183,7 @@ func buildDayRollup(
 	messages []*watchMessage,
 	voice []*voiceSession,
 	presence []*presenceSession,
+	statuses []*statusSession,
 ) *dayRollup {
 	d := &dayRollup{
 		DiscordID:      discordID,
@@ -248,6 +267,41 @@ func buildDayRollup(
 
 		addHourlyVoice(d.HourlyVoiceSec, v.JoinedAt, end, from, to, loc)
 		touch(&d.FirstSeenAt, &d.LastSeenAt, maxTime(v.JoinedAt, from))
+		touch(&d.FirstSeenAt, &d.LastSeenAt, minTime(end, to))
+	}
+
+	// ── Time online ──
+	//
+	// Same overlap-with-the-day arithmetic as voice, and for the same reason: a
+	// run that started before local midnight belongs to both days, split at the
+	// boundary. Whether he was online at 2am is exactly the sort of thing this
+	// page is for, so it must not be credited wholly to whichever day it began.
+	for _, st := range statuses {
+		end := sessionEnd(st.EndedAt, now)
+		inDay := overlapSeconds(st.StartedAt, end, from, to)
+		if inDay <= 0 {
+			continue
+		}
+		switch st.Status {
+		case "online":
+			d.OnlineSec += inDay
+		case "idle":
+			d.IdleSec += inDay
+		case "dnd":
+			d.DndSec += inDay
+		}
+		// Client time is added independently of the status and of each other,
+		// which is what makes these three able to exceed the presence total.
+		if st.Clients.Desktop {
+			d.DesktopSec += inDay
+		}
+		if st.Clients.Mobile {
+			d.MobileSec += inDay
+		}
+		if st.Clients.Web {
+			d.WebSec += inDay
+		}
+		touch(&d.FirstSeenAt, &d.LastSeenAt, maxTime(st.StartedAt, from))
 		touch(&d.FirstSeenAt, &d.LastSeenAt, minTime(end, to))
 	}
 

@@ -132,6 +132,12 @@ const DAY_SELECT = {
   videoSec: true,
   aloneSec: true,
   lateNightSec: true,
+  onlineSec: true,
+  idleSec: true,
+  dndSec: true,
+  desktopSec: true,
+  mobileSec: true,
+  webSec: true,
   messages: true,
   words: true,
   characters: true,
@@ -205,6 +211,12 @@ function toDayDTO(row: DayRow, summary: WatchSummaryDTO | null): WatchDayDTO {
     videoSec: row.videoSec,
     aloneSec: row.aloneSec,
     lateNightSec: row.lateNightSec,
+    onlineSec: row.onlineSec,
+    idleSec: row.idleSec,
+    dndSec: row.dndSec,
+    desktopSec: row.desktopSec,
+    mobileSec: row.mobileSec,
+    webSec: row.webSec,
     messages: row.messages,
     words: row.words,
     characters: row.characters,
@@ -245,6 +257,12 @@ function emptyDay(dateKey: string): WatchDayDTO {
     videoSec: 0,
     aloneSec: 0,
     lateNightSec: 0,
+    onlineSec: 0,
+    idleSec: 0,
+    dndSec: 0,
+    desktopSec: 0,
+    mobileSec: 0,
+    webSec: 0,
     messages: 0,
     words: 0,
     characters: 0,
@@ -286,7 +304,7 @@ export function trackingTodayKey(now: Date = new Date()): string {
  * overlapping.
  */
 export async function getLive(now: Date = new Date()): Promise<WatchLiveDTO> {
-  const [live, voice, lastMessage] = await Promise.all([
+  const [live, voice, clients, lastMessage] = await Promise.all([
     prisma.discordWatchLive.findUnique({
       where: { discordId: SUBJECT_DISCORD_ID },
       select: {
@@ -315,6 +333,15 @@ export async function getLive(now: Date = new Date()): Promise<WatchLiveDTO> {
         peerCount: true,
       },
     }),
+    // The open status run carries which clients he is signed in on. It is a
+    // separate row from `discordWatchLive` because that one is a level and this
+    // is an interval — and the card wants the interval's client set, which is
+    // the same thing the day totals are built from.
+    prisma.discordWatchStatusSession.findFirst({
+      where: { discordId: SUBJECT_DISCORD_ID, endedAt: null },
+      orderBy: { startedAt: 'desc' },
+      select: { desktop: true, mobile: true, web: true },
+    }),
     prisma.discordWatchMessage.findFirst({
       where: { discordId: SUBJECT_DISCORD_ID },
       orderBy: { sentAt: 'desc' },
@@ -341,6 +368,11 @@ export async function getLive(now: Date = new Date()): Promise<WatchLiveDTO> {
     displayName: live?.globalName || live?.username || SUBJECT_FALLBACK_NAME,
     username: live?.username ?? null,
     avatarUrl: avatarUrl(SUBJECT_DISCORD_ID, live?.avatarHash ?? null),
+    clients: {
+      desktop: clients?.desktop ?? false,
+      mobile: clients?.mobile ?? false,
+      web: clients?.web ?? false,
+    },
     voice: voice
       ? {
           channelName: voice.channelName,
@@ -383,6 +415,13 @@ function buildTotals(days: WatchDayDTO[], todayKey: string): WatchTotalsDTO {
     aloneSec: 0,
     lateNightSec: 0,
     lateNightMessages: 0,
+    presenceSec: 0,
+    onlineSec: 0,
+    idleSec: 0,
+    dndSec: 0,
+    desktopSec: 0,
+    mobileSec: 0,
+    webSec: 0,
     reactionsGiven: 0,
     reactionsReceived: 0,
     peakVoiceSec: 0,
@@ -411,6 +450,13 @@ function buildTotals(days: WatchDayDTO[], todayKey: string): WatchTotalsDTO {
     totals.gamingSec += day.gamingSec;
     totals.aloneSec += day.aloneSec;
     totals.lateNightSec += day.lateNightSec;
+    totals.onlineSec += day.onlineSec;
+    totals.idleSec += day.idleSec;
+    totals.dndSec += day.dndSec;
+    totals.presenceSec += day.onlineSec + day.idleSec + day.dndSec;
+    totals.desktopSec += day.desktopSec;
+    totals.mobileSec += day.mobileSec;
+    totals.webSec += day.webSec;
     totals.lateNightMessages += day.lateNightMessages;
     totals.reactionsGiven += day.reactionsGiven;
     totals.reactionsReceived += day.reactionsReceived;

@@ -40,14 +40,15 @@ function describeState(state: WatchStateDTO | undefined): string {
   if (state.live.voice) {
     return (
       `In voice right now — ${formatDuration(state.live.voice.durationSec)} and counting. ` +
-      `${formatDuration(state.totals.voiceSec)} in voice and ` +
-      `${formatCount(state.totals.messages)} messages over the last ${state.totals.days} days.`
+      `${formatDuration(state.totals.presenceSec)} signed in and ` +
+      `${formatDuration(state.totals.voiceSec)} in voice over the last ${state.totals.days} days.`
     );
   }
   return (
-    `${formatDuration(state.totals.voiceSec)} in voice, ` +
-    `${formatCount(state.totals.messages)} messages and ` +
-    `${formatDuration(state.totals.gamingSec)} in games over the last ${state.totals.days} days.`
+    `${formatDuration(state.totals.presenceSec)} signed in to Discord over the last ` +
+    `${state.totals.days} days — ${formatDuration(state.totals.mobileSec)} of it on his phone, ` +
+    `${formatDuration(state.totals.voiceSec)} in voice and ` +
+    `${formatCount(state.totals.messages)} messages.`
   );
 }
 
@@ -64,7 +65,8 @@ export const Route = createFileRoute('/sohumtracker/')({
         description: describeState(loaderData),
         path: '/sohumtracker',
         image: '/api/og/sohumtracker',
-        imageAlt: 'Hours in voice chat, messages sent and games played, as recorded by rmhbot.',
+        imageAlt:
+          'Hours signed in to Discord, hours in voice chat and messages sent, as recorded by rmhbot.',
       }),
       // Unfurling and indexing are different questions and are answered
       // differently on purpose. Set AFTER buildMeta so it wins if that ever

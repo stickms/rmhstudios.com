@@ -39,7 +39,7 @@ const PAD_T = 8;
 const PAD_B = 20;
 
 /** Which figure the trend chart is plotting. */
-type TrendMetric = 'voice' | 'messages' | 'gaming';
+type TrendMetric = 'online' | 'voice' | 'messages' | 'gaming';
 
 interface ChartsProps {
   days: WatchDayDTO[];
@@ -47,12 +47,13 @@ interface ChartsProps {
 
 export function ActivityCharts({ days }: ChartsProps) {
   const { t } = useTranslation('r-sohumtracker');
-  const [metric, setMetric] = useState<TrendMetric>('voice');
+  const [metric, setMetric] = useState<TrendMetric>('online');
 
   // Literal keys, not a table lookup: `i18next-parser` is a static scanner and
   // `t(option.key)` over an array extracts nothing, so the string would never
   // reach `locales/` and every non-English locale would serve English forever.
   const metrics: ReadonlyArray<{ value: TrendMetric; label: string }> = [
+    { value: 'online', label: t('metric-online', { defaultValue: 'Online' }) },
     { value: 'voice', label: t('metric-voice', { defaultValue: 'Voice' }) },
     { value: 'messages', label: t('metric-messages', { defaultValue: 'Messages' }) },
     { value: 'gaming', label: t('metric-gaming', { defaultValue: 'Games' }) },
@@ -124,9 +125,18 @@ function TrendChart({ days, metric }: { days: WatchDayDTO[]; metric: TrendMetric
 
   const series = useMemo(
     () =>
-      days.map((day) =>
-        metric === 'voice' ? day.voiceSec : metric === 'gaming' ? day.gamingSec : day.messages,
-      ),
+      days.map((day) => {
+        switch (metric) {
+          case 'online':
+            return day.onlineSec + day.idleSec + day.dndSec;
+          case 'voice':
+            return day.voiceSec;
+          case 'gaming':
+            return day.gamingSec;
+          default:
+            return day.messages;
+        }
+      }),
     [days, metric],
   );
   const isDuration = metric !== 'messages';
@@ -222,6 +232,12 @@ function TrendChart({ days, metric }: { days: WatchDayDTO[]; metric: TrendMetric
         {activeDay ? (
           <>
             <strong>{formatDayShort(activeDay.dateKey)}</strong>
+            <span>
+              {t('readout-online', {
+                value: formatDuration(activeDay.onlineSec + activeDay.idleSec + activeDay.dndSec),
+                defaultValue: 'Signed in {{value}}',
+              })}
+            </span>
             <span>
               {t('readout-voice', {
                 value: formatDuration(activeDay.voiceSec),

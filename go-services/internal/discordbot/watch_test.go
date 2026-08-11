@@ -3,6 +3,8 @@ package discordbot
 import (
 	"testing"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 // eastern is the tracker's default zone, and the one whose DST transitions the
@@ -128,7 +130,7 @@ func TestBuildDayRollupSplitsVoiceAcrossMidnight(t *testing.T) {
 	now := left.Add(time.Hour)
 
 	firstFrom, firstTo, _ := dayBounds("2026-08-11", loc)
-	first := buildDayRollup("u", "2026-08-11", "America/New_York", loc, firstFrom, firstTo, now, nil, sessions, nil)
+	first := buildDayRollup("u", "2026-08-11", "America/New_York", loc, firstFrom, firstTo, now, nil, sessions, nil, nil)
 	if first.VoiceSec != 3*3600 {
 		t.Fatalf("day one voice = %ds, want 3h", first.VoiceSec)
 	}
@@ -140,7 +142,7 @@ func TestBuildDayRollupSplitsVoiceAcrossMidnight(t *testing.T) {
 	}
 
 	secondFrom, secondTo, _ := dayBounds("2026-08-12", loc)
-	second := buildDayRollup("u", "2026-08-12", "America/New_York", loc, secondFrom, secondTo, now, nil, sessions, nil)
+	second := buildDayRollup("u", "2026-08-12", "America/New_York", loc, secondFrom, secondTo, now, nil, sessions, nil, nil)
 	if second.VoiceSec != 3*3600 {
 		t.Fatalf("day two voice = %ds, want 3h", second.VoiceSec)
 	}
@@ -169,7 +171,7 @@ func TestBuildDayRollupMeasuresOpenSessionAgainstNow(t *testing.T) {
 	now := time.Date(2026, 8, 11, 15, 30, 0, 0, loc).UTC()
 
 	roll := buildDayRollup("u", "2026-08-11", "America/New_York", loc, from, to, now,
-		nil, []*voiceSession{{DiscordID: "u", JoinedAt: joined}}, nil)
+		nil, []*voiceSession{{DiscordID: "u", JoinedAt: joined}}, nil, nil)
 
 	if roll.VoiceSec != 9000 {
 		t.Fatalf("open session voice = %ds, want 2h30m", roll.VoiceSec)
@@ -198,7 +200,7 @@ func TestBuildDayRollupCountsMessagesAndGames(t *testing.T) {
 		{ActivityName: "Spotify", ActivityType: 2, StartedAt: at(16, 0), EndedAt: &gameEnd},
 	}
 
-	roll := buildDayRollup("u", "2026-08-11", "America/New_York", loc, from, to, now, messages, nil, presence)
+	roll := buildDayRollup("u", "2026-08-11", "America/New_York", loc, from, to, now, messages, nil, presence, nil)
 
 	if roll.Messages != 3 || roll.Words != 9 || roll.Characters != 36 {
 		t.Fatalf("message totals wrong: %+v", roll)
@@ -268,6 +270,73 @@ func TestBankPeersTracksAloneTimeAndPeak(t *testing.T) {
 	}
 	if sess.PeakPeers != 2 {
 		t.Fatalf("peak only rises, got %d", sess.PeakPeers)
+	}
+}
+
+// Time online is split at local midnight like everything else, statuses are
+// mutually exclusive, and client time OVERLAPS on purpose.
+func TestBuildDayRollupSplitsOnlineTimeAndOverlapsClients(t *testing.T) {
+	loc := eastern(t)
+	// Online 10pm→2am on desktop AND mobile, then idle 2am→3am on mobile only.
+	onlineEnd := time.Date(2026, 8, 12, 2, 0, 0, 0, loc).UTC()
+	idleEnd := time.Date(2026, 8, 12, 3, 0, 0, 0, loc).UTC()
+	statuses := []*statusSession{
+		{
+			Status: "online", Clients: clientSet{Desktop: true, Mobile: true},
+			StartedAt: time.Date(2026, 8, 11, 22, 0, 0, 0, loc).UTC(), EndedAt: &onlineEnd,
+		},
+		{
+			Status: "idle", Clients: clientSet{Mobile: true},
+			StartedAt: onlineEnd, EndedAt: &idleEnd,
+		},
+	}
+	now := idleEnd.Add(time.Hour)
+
+	from1, to1, _ := dayBounds("2026-08-11", loc)
+	first := buildDayRollup("u", "2026-08-11", "America/New_York", loc, from1, to1, now, nil, nil, nil, statuses)
+	if first.OnlineSec != 2*3600 {
+		t.Fatalf("day one online = %ds, want 2h (10pm–midnight)", first.OnlineSec)
+	}
+	if first.IdleSec != 0 {
+		t.Fatalf("the idle run is entirely on day two, got %ds", first.IdleSec)
+	}
+
+	from2, to2, _ := dayBounds("2026-08-12", loc)
+	second := buildDayRollup("u", "2026-08-12", "America/New_York", loc, from2, to2, now, nil, nil, nil, statuses)
+	if second.OnlineSec != 2*3600 {
+		t.Fatalf("day two online = %ds, want 2h (midnight–2am)", second.OnlineSec)
+	}
+	if second.IdleSec != 3600 {
+		t.Fatalf("day two idle = %ds, want 1h", second.IdleSec)
+	}
+	if second.DndSec != 0 {
+		t.Fatalf("no dnd was recorded, got %ds", second.DndSec)
+	}
+
+	// Client time overlaps: both clients were signed in for the online run, so
+	// desktop + mobile exceeds the presence total rather than partitioning it.
+	if second.DesktopSec != 2*3600 {
+		t.Fatalf("day two desktop = %ds, want 2h", second.DesktopSec)
+	}
+	if second.MobileSec != 3*3600 {
+		t.Fatalf("day two mobile = %ds, want 3h (online + idle)", second.MobileSec)
+	}
+	presence := second.OnlineSec + second.IdleSec + second.DndSec
+	if second.DesktopSec+second.MobileSec <= presence {
+		t.Fatal("client totals are expected to OVERLAP and exceed presence — that is the contract")
+	}
+}
+
+// A client reporting any status at all is a signed-in client; only an empty
+// string means "not signed in here". Counting only "online" would have lost
+// every idle phone, which is most of them.
+func TestClientsFromCountsAnyReportedStatus(t *testing.T) {
+	got := clientsFrom(discordgo.ClientStatus{Desktop: "online", Mobile: "idle", Web: ""})
+	if !got.Desktop || !got.Mobile || got.Web {
+		t.Fatalf("clientsFrom = %+v, want desktop+mobile only", got)
+	}
+	if (clientSet{}).any() {
+		t.Fatal("an empty client set means signed in nowhere")
 	}
 }
 
