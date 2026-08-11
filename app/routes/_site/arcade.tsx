@@ -19,8 +19,8 @@ export const Route = createFileRoute('/_site/arcade')({
       : {},
   beforeLoad: ({ search }) => {
     throw redirect({
-      to: '/create',
-      search: { tab: 'games', ...(search.tab === 'leaderboard' ? { sub: 'leaderboard' } : {}) },
+      to: '/games',
+      search: search.tab === 'leaderboard' ? { sub: 'leaderboard' } : {},
     });
   },
 });

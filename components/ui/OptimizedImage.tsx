@@ -1,4 +1,4 @@
-import { ImgHTMLAttributes, memo } from 'react';
+import { ImgHTMLAttributes, memo, useState } from 'react';
 import { IMAGE_VARIANTS, variantUrl } from '@/lib/images/variants.gen';
 
 interface OptimizedImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'srcSet'> {
@@ -124,12 +124,25 @@ function OptimizedImageImpl({
  className,
  loading = 'lazy',
  priority = false,
+ onError,
  ...rest
 }: OptimizedImageProps) {
+ // Variant art is a pre-generated FILE, and the manifest that names it ships
+ // committed while the files themselves are gitignored and written by
+ // `pnpm images:variants`. A build path that skips that step leaves every entry
+ // in the manifest pointing at a 404 — and because both `src` and `srcSet` here
+ // resolve to variant URLs, there is nothing left to fall back to and the image
+ // breaks outright. On the first error we drop back to the untouched master,
+ // which is always on disk. Tracked by VALUE rather than a boolean so a changed
+ // `src` stops matching on its own and re-attempts the variants, instead of a
+ // recycled element inheriting the previous image's failure.
+ const [failedSrc, setFailedSrc] = useState<string | null>(null);
+ const degraded = failedSrc === src;
+
  if (!src) return null;
 
  // Static local paths can't be optimized — skip srcSet
- const srcSet = isOptimizable(src) ? generateSrcSet(src, quality, format) : undefined;
+ const srcSet = !degraded && isOptimizable(src) ? generateSrcSet(src, quality, format) : undefined;
 
  // Default sizes attribute based on layout
  const sizes =
@@ -140,13 +153,13 @@ function OptimizedImageImpl({
  : '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw';
 
  // Optimized default src (pick a reasonable middle size)
- const defaultSrc = buildOptimizedUrl(src, width || 800, quality, format);
+ const defaultSrc = degraded ? src : buildOptimizedUrl(src, width || 800, quality, format);
 
  return (
  <img
  src={defaultSrc}
  srcSet={srcSet}
- sizes={sizes}
+ sizes={srcSet ? sizes : undefined}
  alt={alt}
  width={layout !== 'fullWidth' ? width : undefined}
  height={layout !== 'fullWidth' ? height : undefined}
@@ -157,6 +170,10 @@ function OptimizedImageImpl({
  loading={priority ? 'eager' : loading}
  decoding={priority ? 'sync' : 'async'}
  className={className}
+ onError={(e) => {
+ if (!degraded) setFailedSrc(src);
+ onError?.(e);
+ }}
  {...rest}
  />
  );

@@ -3,7 +3,6 @@ import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { RightSidebar } from '@/components/feed/RightSidebar';
 import { ExploreColumn } from '@/components/feed/ExploreColumn';
 import { SavedSearches } from '@/components/search/SavedSearches';
 import { buildCanonical, buildMeta } from '@/lib/seo';
@@ -64,22 +63,23 @@ function ExplorePage() {
   const { t } = useTranslation('site');
   const { q, tab } = Route.useSearch();
   const { discovery, sidebar } = Route.useLoaderData();
-  const { officialBuilds, userBuilds, recommendedUsers, blogPosts } = sidebar;
+  const { officialBuilds, userBuilds, blogPosts } = sidebar;
 
+  // No `rightSidebar`. `PageLayout` portals one into the shell's live rail
+  // (components/radial/rail-slot.tsx), and the rail is not empty to begin with —
+  // it already carries Trending and "Who to follow". Handing it `RightSidebar`
+  // put a second, differently-titled copy of the same recommendations
+  // ("Recommended Users") in a panel nested inside the rail, above an "Explore
+  // everything" link pointing at this very page. The third copy was in the main
+  // column: `ExploreRecommendations` renders official builds, user builds,
+  // people and writing per tab, which is what this page is FOR. Discovery on the
+  // discovery page belongs in the column; the rail's ambient half stands alone.
   return (
     <PageLayout
       title={t('explore-title', { defaultValue: 'Explore' })}
       description={t('explore-subtitle', {
         defaultValue: 'Search people, posts, builds and writing across RMH Studios.',
       })}
-      rightSidebar={
-        <RightSidebar
-          officialBuilds={officialBuilds}
-          userBuilds={userBuilds}
-          recommendedUsers={recommendedUsers}
-          blogPosts={blogPosts}
-        />
-      }
     >
       <SavedSearches currentQuery={q} />
       <ExploreColumn

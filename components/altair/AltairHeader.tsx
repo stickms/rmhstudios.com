@@ -15,6 +15,7 @@ import { ArrowLeft, Sun, Moon, Settings, Circle } from 'lucide-react';
 import { useAltairSettingsStore } from '@/lib/altair/stores/settings-store';
 import { useAltairGameStore } from '@/lib/altair/stores/game-store';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
+import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 
 interface AltairHeaderProps {
   context?: 'menu' | 'game' | 'meta_shop' | 'class_select' | 'settings';
@@ -38,6 +39,7 @@ export default function AltairHeader({
   connectionStatus,
 }: AltairHeaderProps) {
   const { t } = useTranslation("c-altair");
+  const goBack = useBackOrFallback();
   const theme = useAltairSettingsStore((s) => s.theme);
   const toggleTheme = useAltairSettingsStore((s) => s.toggleTheme);
   const timeSurvived = useAltairGameStore((s) => s.timeSurvived);
@@ -61,7 +63,8 @@ export default function AltairHeader({
         {hasBack && (
           isMenu && !onBack ? (
             <Link
-              to="/builds"
+              to="/games"
+              onClick={goBack}
               className="text-sm font-medium text-(--altair-text-muted) hover:text-(--altair-accent) transition-colors"
             >
               <span className="flex items-center gap-1">

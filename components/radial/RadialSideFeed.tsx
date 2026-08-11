@@ -54,6 +54,44 @@ const SURFACES: Surface[] = [
 const PAGE_SIZE = 8;
 
 /**
+ * What each surface IS, shown when it has nothing in it.
+ *
+ * One `t()` call per surface rather than ``t(`deck-empty-${id}`)``: a computed
+ * key is invisible to `i18next-parser`, so it would never land in `locales/` and
+ * every non-English locale would silently serve the English default.
+ *
+ * The copy is the point. All three surfaces used to share "Nothing here yet ·
+ * New posts on this surface will show up here", which tells a signed-out
+ * visitor — the one most likely to be looking at an empty deck — neither what
+ * the surface collects nor why theirs is empty.
+ */
+function useEmptyCopy() {
+  const { t } = useTranslation('feed');
+  return (id: SurfaceId): { title: string; description: string } => {
+    if (id === 'following')
+      return {
+        title: t('deck-empty-following-title', { defaultValue: 'No posts from your follows' }),
+        description: t('deck-empty-following', {
+          defaultValue: 'Posts from the people you follow collect here. Follow a few to fill it.',
+        }),
+      };
+    if (id === 'news')
+      return {
+        title: t('deck-empty-news-title', { defaultValue: 'No news yet' }),
+        description: t('deck-empty-news', {
+          defaultValue: 'Announcements and release notes from RMH Studios land here.',
+        }),
+      };
+    return {
+      title: t('deck-empty-games-title', { defaultValue: 'No game posts yet' }),
+      description: t('deck-empty-games', {
+        defaultValue: 'Scores, runs and clips people share from the games show up here.',
+      }),
+    };
+  };
+}
+
+/**
  * The range in which radial.css renders the deck. Between 1440 and 1600 the
  * site-wide live rail has appeared but the window is not yet wide enough for
  * four columns, so the home-only deck yields its COLUMN and stacks under the
@@ -89,6 +127,7 @@ export function RadialSideFeed() {
   const { data: session } = useSession();
   const visible = useMediaQuery(DECK_QUERY);
   const idle = useIdleReady();
+  const emptyCopy = useEmptyCopy();
 
   const surfaces = useMemo(() => SURFACES.filter((s) => !s.requiresAuth || session), [session]);
   const [active, setActive] = useState<SurfaceId>(surfaces[0]?.id ?? 'news');
@@ -147,6 +186,24 @@ export function RadialSideFeed() {
         }))}
       />
 
+      {/* Signed out, "Following" is filtered out of the strip entirely, so the
+          deck silently offers two tabs instead of three and never says why —
+          the visitor sees a narrower module, not a missing feature. Name it,
+          and make it the one thing on this column that is worth a click. */}
+      {!session && (
+        <p className="rad-deck__note">
+          {t('deck-signed-out', {
+            defaultValue: 'Showing public posts.',
+          })}{' '}
+          <Link to="/login" search={{ callbackURL: '/' }} className="rad-deck__note-link">
+            {t('deck-signed-out-cta', { defaultValue: 'Sign in' })}
+          </Link>{' '}
+          {t('deck-signed-out-tail', {
+            defaultValue: 'to follow people and get a feed of your own.',
+          })}
+        </p>
+      )}
+
       <div
         className="rad-deck__list"
         role="tabpanel"
@@ -171,13 +228,7 @@ export function RadialSideFeed() {
             ))}
           </div>
         ) : items.length === 0 ? (
-          <EmptyState
-            className="px-2 py-6"
-            title={t('feed-empty-surface-title', { defaultValue: 'Nothing here yet' })}
-            description={t('feed-empty-surface', {
-              defaultValue: 'New posts on this surface will show up here.',
-            })}
-          />
+          <EmptyState className="px-2 py-6" {...emptyCopy(active)} />
         ) : (
           items.map((item) => (
             <Link key={item.id} to={hrefFor(item)} className="rad-deck__row">

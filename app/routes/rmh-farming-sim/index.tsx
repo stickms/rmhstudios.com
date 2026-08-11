@@ -12,7 +12,7 @@ function RmhFarmingSimPage() {
       className="fixed inset-0 bg-black flex flex-col overflow-hidden"
       style={{ touchAction: 'none' }}
     >
-      <GameBackLink to="/builds" />
+      <GameBackLink to="/games" />
       <div className="grow relative overflow-hidden">
         <GameErrorBoundary gameName="RMH Farming Simulator">
           <Suspense fallback={<GameLoadingFallback />}>

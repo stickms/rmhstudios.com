@@ -6,7 +6,6 @@ import { ArrowLeft, MessageCircle } from'lucide-react';
 import { toast } from'sonner';
 import { Spinner } from'@/components/ui/spinner';
 import { Button } from'@/components/ui/button';
-import { AnimatedCount } from'@/components/ui/AnimatedCount';
 import { RMHarkOverflowMenu } from'./RMHarkOverflowMenu';
 import { useLocaleStore } from'@/stores/localeStore';
 import { LOCALE_TO_LANGUAGE_NAME } from'@/lib/i18n/config';
@@ -428,40 +427,12 @@ export function PostDetail({ postId }: PostDetailProps) {
  {post.edited && !post.deletedAt ? <EditHistoryButton postId={postId} className="text-sm"/> : null}
  </p>
 
- {/* Engagement stats bar. `flex-wrap` + `whitespace-nowrap` per stat: on a
- 320px screen this row used to break INSIDE a stat, stranding "reRMHarks"
- on its own line under its number. Each figure now stays glued to its
- label and the row wraps between stats instead. */}
- {!post.deletedAt && (
- <div className="flex flex-wrap items-center gap-x-4 gap-y-1 py-3 border-t border-site-border text-sm">
- <span className="whitespace-nowrap">
- <AnimatedCount
- value={post.repostCount ?? 0}
- format={(n) => n.toLocaleString()}
- className="font-bold text-site-text"
- />{' '}
- <span className="text-site-text-dim">
- {t('rermharks', { defaultValue:'reRMHarks'})}
- </span>
- </span>
- <span className="whitespace-nowrap">
- <AnimatedCount
- value={post.likeCount ?? 0}
- format={(n) => n.toLocaleString()}
- className="font-bold text-site-text"
- />{' '}
- <span className="text-site-text-dim">{t('likes', { defaultValue:'Likes'})}</span>
- </span>
- <span className="whitespace-nowrap">
- <AnimatedCount
- value={post.viewCount ?? 0}
- format={(n) => n.toLocaleString()}
- className="font-bold text-site-text"
- />{' '}
- <span className="text-site-text-dim">{t('views', { defaultValue:'Views'})}</span>
- </span>
- </div>
- )}
+ {/* The passive "N reRMHarks · N Likes · N Views" bar that used to sit here
+ is gone. `RMHarkActions` directly below already renders every one of those
+ counts against the same icons the rest of the site uses — so the page
+ showed each figure twice, once as text that looked clickable and did
+ nothing, and once on the control that actually performs the action. The
+ toolbar is the one that stays, because it is the one you can press. */}
 
  {/* Actions */}
  {!post.deletedAt && (

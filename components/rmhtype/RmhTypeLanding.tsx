@@ -156,7 +156,7 @@ export default function RmhTypeLanding() {
 
   return (
     <div className="app-page">
-      <RmhTypeHeader backLabel="Builds" backHref="/builds" />
+      <RmhTypeHeader backLabel="Apps" backHref="/apps" />
 
       <div className="flex-1 p-4 md:p-8">
         <div className="max-w-4xl mx-auto space-y-8">

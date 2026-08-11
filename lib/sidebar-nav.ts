@@ -43,6 +43,16 @@ export type NavLeaf = {
   requiresAdmin?: boolean;
   badge?: NavBadge;
   external?: boolean;
+  /**
+   * Extra paths that light this pin even though it navigates to `href`.
+   *
+   * For the pins that stand for a DESTINATION rather than a URL — "Games &
+   * Apps" is one pin over two indexable catalogs — the visitor can be on a page
+   * the pin represents but does not link to. Without this the rail reads as
+   * "you are nowhere" on `/apps`, which is worse than the extra route costing
+   * its own pin. Matched exactly like `href` (prefix, `/` segment-aware).
+   */
+  altHrefs?: string[];
 };
 export type NavGroup = {
   id: string;
@@ -90,7 +100,17 @@ export const SIDEBAR_NAV: NavItem[] = [
   // one. Before this they had no pin at all: `/create` dropped its Apps tab
   // when the catalogs became their own pages, which left `/apps` reachable only
   // from search and the `?tab=apps` redirect.
-  { id: '/games', href: '/games', tKey: 'nav-games', label: 'Games & Apps', icon: Gamepad2 },
+  // `altHrefs` is what makes the one-pin trade honest: the pin navigates to
+  // `/games`, but `/apps` is the same destination, so it lights the same pin
+  // instead of leaving the rail with nothing marked.
+  {
+    id: '/games',
+    href: '/games',
+    tKey: 'nav-games',
+    label: 'Games & Apps',
+    icon: Gamepad2,
+    altHrefs: ['/apps'],
+  },
   { id: '/library', href: '/library', tKey: 'nav-library', label: 'Library', icon: Library },
   { id: '/communities', href: '/communities', tKey: 'nav-communities', label: 'Communities', icon: Users },
   { id: '/store', href: '/store', tKey: 'nav-store', label: 'Store', icon: ShoppingBag },
@@ -121,6 +141,25 @@ export const SIDEBAR_NAV: NavItem[] = [
     badge: 'admin-review',
   },
 ];
+
+/**
+ * Whether `pathname` is "inside" a nav leaf — the one definition of what lights
+ * a pin, used by the desktop rail and by the globe's you-are-here orientation.
+ *
+ * It lived twice, once in `RadialNavRail` and once in `LiquidGlobe`, which is
+ * how `/apps` came to be marked in neither: a second copy is a second thing to
+ * remember to update. `/` matches only itself (every path starts with it);
+ * everything else matches its own path or a `/`-delimited descendant, so
+ * `/games` covers `/games/altair` without `/gameshow` covering anything.
+ */
+export function isNavLeafActive(
+  pathname: string,
+  leaf: Pick<NavLeaf, 'href' | 'altHrefs'>,
+): boolean {
+  const matches = (href: string) =>
+    href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
+  return matches(leaf.href) || (leaf.altHrefs?.some(matches) ?? false);
+}
 
 /**
  * Apply a user's saved order to a list of nav items. Items whose id is present

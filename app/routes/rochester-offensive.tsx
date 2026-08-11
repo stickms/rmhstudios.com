@@ -13,7 +13,7 @@ function BreakpointPage() {
       className="fixed inset-0 bg-black flex flex-col overflow-hidden"
       style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
     >
-      <GameBackLink to="/builds" z="z-[60]" />
+      <GameBackLink to="/games" z="z-[60]" />
 
       <div className="grow relative flex items-center justify-center overflow-hidden">
         <GameErrorBoundary gameName="Mental-Hospital: Rochester Offensive">

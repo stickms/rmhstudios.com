@@ -2,16 +2,18 @@
 import React, { Suspense } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
+import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 
 const CookGameGame = React.lazy(() =>
   import('./CookGameGame').then((m) => ({ default: m.CookGameGame })),
 );
 
 export function GameShell({ userName }: { userName?: string | null }) {
+  const goBack = useBackOrFallback();
   return (
     <div className="app-viewport bg-neutral-950 text-white" data-fluid-press-scope>
       <div className="app-safe-top app-safe-x shrink-0 flex items-center justify-between gap-3 px-4 py-2 border-b border-neutral-800/50 z-20">
-        <Link to="/builds" className="flex shrink-0 items-center gap-2 text-neutral-500 hover:text-neutral-300 text-sm">
+        <Link to="/games" onClick={goBack} className="flex shrink-0 items-center gap-2 text-neutral-500 hover:text-neutral-300 text-sm">
           <ArrowLeft className="w-4 h-4" />
           <span className="font-mono tracking-widest text-xs">RMH STUDIOS</span>
         </Link>

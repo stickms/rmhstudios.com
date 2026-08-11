@@ -7,7 +7,7 @@
     "node": ">=24.18.0 <25"
   },
   "scripts": {
-    "dev": "concurrently \"vite dev\" \"pnpm run socket-server\" \"pnpm run rmhbox-server\" \"pnpm run rmhtube-server\" \"pnpm run ladder-worker:dev\" \"pnpm run homes-worker:dev\" \"pnpm run jobs:dev\"",
+    "dev": "pnpm run images:variants && concurrently \"vite dev\" \"pnpm run socket-server\" \"pnpm run rmhbox-server\" \"pnpm run rmhtube-server\" \"pnpm run ladder-worker:dev\" \"pnpm run homes-worker:dev\" \"pnpm run jobs:dev\"",
     "build-vibe-packages": "pnpm exec tsx scripts/build-vibe-packages.ts",
     "images:variants": "pnpm exec tsx scripts/gen-image-variants.ts",
     "images:variants:check": "pnpm exec tsx scripts/gen-image-variants.ts --check",

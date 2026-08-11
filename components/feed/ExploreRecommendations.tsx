@@ -462,6 +462,20 @@ export function ExploreRecommendations({
  </RevealItem>
  )}
 
+ {/* Posts and People are the two tabs whose sections are bare `&&` guards —
+ Builds, Blog and Library each carry their own `? :` empty branch. So when
+ the payload held nothing for them they rendered an empty column under the
+ search box with no explanation, which is what "the Posts filter shows
+ nothing" was. Gated on the exact tab, not on `showHot`/`showPeople`: those
+ are also true for Top, where one empty section among several populated
+ ones should stay silent rather than plant a notice mid-page. */}
+ {tab ==='posts'&& data && !data.hotPosts.length && !data.trendingTags.length && (
+ <EmptyState description={t('explore-empty-posts', { defaultValue:'No posts to show yet — once people start posting, what they are talking about shows up here.'})} />
+ )}
+ {tab ==='people'&& data && !data.suggestedUsers.length && !data.communities.length && !tipLeaders.length && (
+ <EmptyState description={t('explore-empty-people', { defaultValue:'No one to suggest yet. Once more people join, you will find them here.'})} />
+ )}
+
  {/* Nothing to show for the social tabs (no data yet). */}
  {needsExploreData && !data && (
  <EmptyState description={t('explore-empty-hint', { defaultValue:'Start typing to search across people, posts, builds, and the blog.'})} />

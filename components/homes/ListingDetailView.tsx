@@ -50,8 +50,10 @@ import {
   propertyTypeLabel,
   statusLabel,
 } from '@/lib/homes/format';
+import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 
 export function ListingDetailView({ id }: { id: string }) {
+  const goBack = useBackOrFallback();
   const { data: session } = useSession();
   const confirm = useConfirm();
   const navigate = useNavigate();
@@ -166,7 +168,7 @@ export function ListingDetailView({ id }: { id: string }) {
           <Home className="mx-auto mb-3 h-10 w-10 text-site-text-muted" />
           <p className="mb-4">This listing is no longer available.</p>
           <Button asChild variant="outline">
-            <Link to="/homes">
+            <Link to="/homes" onClick={goBack}>
               <ArrowLeft className="h-4 w-4" /> Back to browse
             </Link>
           </Button>

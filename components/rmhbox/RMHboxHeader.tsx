@@ -25,6 +25,7 @@ import { ArrowLeft, Circle, Infinity as InfinityIcon, Pause, Play } from 'lucide
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emit } from '@/lib/rmhbox/socket';
 import { C2S } from '@/lib/rmhbox/events';
+import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 import SettingsMenu from './SettingsMenu';
 import HostControlModal from './HostControlModal';
 
@@ -153,6 +154,7 @@ export default function RMHboxHeader({
   const timerInfo = useRMHboxStore((s) => s.timerInfo);
   const lobby = useRMHboxStore((s) => s.lobby);
   const navigate = useNavigate();
+  const goBack = useBackOrFallback();
 
   const handleToggleTheme = useCallback(() => {
     updateSettings({ theme: theme === 'dark' ? 'light' : 'dark' });
@@ -202,7 +204,12 @@ export default function RMHboxHeader({
                 emit(C2S.LOBBY_LEAVE, { lobbyId: lobby.lobbyId });
                 useRMHboxStore.getState().leaveLobby();
                 navigate({ to: '/rmhbox' });
+                return;
               }
+              // Everywhere else the arrow means what it says: step back to
+              // wherever this session came from, and only fall through to the
+              // href on a cold load. See `useBackOrFallback`.
+              goBack(e);
             }}
           >
             <span className="flex items-center gap-1">

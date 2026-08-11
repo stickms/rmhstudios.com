@@ -143,7 +143,7 @@ export default function RmhTubeLanding() {
   return (
     <div className="app-page">
       <div className="border-b border-(--app-border)">
-        <RmhTubeHeader backLabel="Builds" backHref="/builds" />
+        <RmhTubeHeader backLabel="Apps" backHref="/apps" />
       </div>
 
       <div className="flex-1 p-4 md:p-8">

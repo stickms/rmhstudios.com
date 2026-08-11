@@ -8,10 +8,17 @@ import { BlackjackGame } from './BlackjackGame';
 import { HoldemGame } from './HoldemGame';
 import { BaccaratGame } from './BaccaratGame';
 import { RouletteGame } from './RouletteGame';
+import { SignedOutLobby } from './SignedOutLobby';
 
 interface Props {
   coins: number;
   setCoins: (coins: number) => void;
+  /**
+   * Signed-out visitors browse the same game switcher, but each game shows the
+   * read-only lobby preview instead of a table: every one of these connects a
+   * socket, and a socket needs a session token.
+   */
+  signedIn: boolean;
 }
 
 type GameChoice = 'plinko' | 'blackjack' | 'holdem' | 'baccarat' | 'roulette';
@@ -22,7 +29,7 @@ function isGameChoice(value: unknown): value is GameChoice {
   return typeof value === 'string' && (GAME_CHOICES as readonly string[]).includes(value);
 }
 
-export function PlayTab({ coins, setCoins }: Props) {
+export function PlayTab({ coins, setCoins, signedIn }: Props) {
   const { t } = useTranslation("c-rmhcoins");
   // A table invite link names its game (`?game=holdem`) because the four tables
   // share this one page — see `TableInvite`.
@@ -66,11 +73,17 @@ export function PlayTab({ coins, setCoins }: Props) {
       </div>
 
       {/* Game content */}
-      {selected === 'plinko' && <PlinkoGame coins={coins} setCoins={setCoins} />}
-      {selected === 'blackjack' && <BlackjackGame coins={coins} setCoins={setCoins} />}
-      {selected === 'holdem' && <HoldemGame coins={coins} setCoins={setCoins} />}
-      {selected === 'baccarat' && <BaccaratGame coins={coins} setCoins={setCoins} />}
-      {selected === 'roulette' && <RouletteGame coins={coins} setCoins={setCoins} />}
+      {!signedIn ? (
+        <SignedOutLobby game={selected} />
+      ) : (
+        <>
+          {selected === 'plinko' && <PlinkoGame coins={coins} setCoins={setCoins} />}
+          {selected === 'blackjack' && <BlackjackGame coins={coins} setCoins={setCoins} />}
+          {selected === 'holdem' && <HoldemGame coins={coins} setCoins={setCoins} />}
+          {selected === 'baccarat' && <BaccaratGame coins={coins} setCoins={setCoins} />}
+          {selected === 'roulette' && <RouletteGame coins={coins} setCoins={setCoins} />}
+        </>
+      )}
     </div>
   );
 }

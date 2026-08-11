@@ -8,7 +8,7 @@ function ForestExplorerPage() {
   const { t } = useTranslation("r-forest-explorer")
   return (
     <main className="fixed inset-0 bg-gradient-to-b from-[#0a1a0e] via-[#0d200f] to-[#071208] flex flex-col overflow-hidden">
-      <GameBackLink to="/builds" />
+      <GameBackLink to="/games" />
 
       <div className="grow flex flex-col items-center justify-center px-4">
         <div className="text-center mb-10">

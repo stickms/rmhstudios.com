@@ -252,6 +252,11 @@ services:
       # single-process. Raise cpus/mem_limit above together with the worker count,
       # and size per-worker --max-old-space-size so N workers fit the container.
       - NITRO_CLUSTER_WORKERS=${WEB_WORKERS:-2}
+      # Server-to-server address of the socket hub, for `/api/casino/rooms` —
+      # the signed-out lobby preview reads the room list over HTTP because a
+      # socket needs a session token. Compose-network name, never reachable
+      # from a browser.
+      - SOCKET_INTERNAL_URL=http://socket:${PORT_SOCKET:-7001}
     healthcheck:
       # Hit the cheap liveness endpoint, not `/` — curling `/` every 30s renders
       # the full homepage through SSR on the single web event loop (perf audit
