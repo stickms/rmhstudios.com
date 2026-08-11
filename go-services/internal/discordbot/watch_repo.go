@@ -14,6 +14,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -566,18 +567,52 @@ func (r *watchRepo) presenceSessionsOverlapping(ctx context.Context, discordID s
 
 // ── Live state ──────────────────────────────────────────────────────────────
 
-// upsertLiveStatus records Discord's own online/idle/dnd level and what he is
-// reported to be doing. `statusChangedAt` only moves when the status actually
-// changes, so the page can say "online for 4h" rather than "online for 60s"
-// after every unrelated presence event.
-func (r *watchRepo) upsertLiveStatus(ctx context.Context, discordID, status, activityName string, activityType *int) error {
+// liveActivity is one entry of the `activities` JSON array — a single thing
+// Discord reports him as doing right now.
+type liveActivity struct {
+	Name    string `json:"name"`
+	Type    int    `json:"type"`
+	Details string `json:"details,omitempty"`
+	State   string `json:"state,omitempty"`
+	// RFC3339, or empty when Discord did not report a start.
+	StartedAt string `json:"startedAt,omitempty"`
+}
+
+// upsertLiveStatus records Discord's own online/idle/dnd level, everything he is
+// reported to be doing, and his custom status.
+//
+// `statusChangedAt` only moves when the status actually changes, so the page can
+// say "online for 4h" rather than "online for 60s" after every unrelated
+// presence event.
+//
+// `activities` is written whole rather than merged: a presence update is the
+// complete current set, so an activity that ended is one that is simply absent
+// from the new array. Merging would leave a finished game on the card forever.
+func (r *watchRepo) upsertLiveStatus(
+	ctx context.Context,
+	discordID, status, activityName string,
+	activityType *int,
+	activities []liveActivity,
+	customStatus, customEmoji string,
+) error {
 	if r.db == nil {
 		return nil
 	}
 	now := time.Now().UTC()
-	_, err := r.db.Pool.Exec(ctx,
-		`INSERT INTO "discord_watch_live" ("discordId","status","statusChangedAt","activityName","activityType","updatedAt")
-		 VALUES ($1,$2,$3,$4,$5,$3)
+	// A nil slice would be SQL NULL; an empty one must serialise as `[]` so the
+	// page can tell "nothing running" from "never recorded".
+	if activities == nil {
+		activities = []liveActivity{}
+	}
+	payload, err := json.Marshal(activities)
+	if err != nil {
+		return fmt.Errorf("marshal activities: %w", err)
+	}
+	_, err = r.db.Pool.Exec(ctx,
+		`INSERT INTO "discord_watch_live"
+		   ("discordId","status","statusChangedAt","activityName","activityType",
+		    "activities","customStatus","customEmoji","updatedAt")
+		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$3)
 		 ON CONFLICT ("discordId") DO UPDATE SET
 		   "status"=EXCLUDED."status",
 		   "statusChangedAt"=CASE
@@ -585,13 +620,29 @@ func (r *watchRepo) upsertLiveStatus(ctx context.Context, discordID, status, act
 		     THEN EXCLUDED."statusChangedAt" ELSE "discord_watch_live"."statusChangedAt" END,
 		   "activityName"=EXCLUDED."activityName",
 		   "activityType"=EXCLUDED."activityType",
+		   "activities"=EXCLUDED."activities",
+		   "customStatus"=EXCLUDED."customStatus",
+		   "customEmoji"=EXCLUDED."customEmoji",
 		   "updatedAt"=EXCLUDED."updatedAt"`,
-		discordID, status, now, nullableString(activityName), activityType)
+		discordID, status, now, nullableString(activityName), activityType,
+		payload, nullableString(customStatus), nullableString(customEmoji))
 	return err
 }
 
 // upsertLiveIdentity caches the name and avatar hash the profile card renders,
 // so the web tier never needs a bot token to ask Discord who he is.
+//
+// Every column is written VERBATIM rather than COALESCEd over the stored value.
+// That matters for one specific failure: Discord's CDN 404s an avatar hash the
+// moment the avatar changes, so a cache that can only ever be added to will
+// serve a dead image URL forever once he switches his picture — and, if he
+// removes it entirely (`avatar: null`), a COALESCE would pin the old hash
+// permanently with no event able to clear it.
+//
+// This is only safe because every caller has a COMPLETE user object: a message
+// author, a presence payload already checked for a populated `Username`, or a
+// REST fetch. A partial user (a presence carrying only an id) must not reach
+// here — it would blank the name.
 //
 // It deliberately does NOT touch `status`: identity arrives on message events,
 // which say nothing about whether he is online, and writing the column's default
@@ -605,9 +656,9 @@ func (r *watchRepo) upsertLiveIdentity(ctx context.Context, discordID, username,
 		`INSERT INTO "discord_watch_live" ("discordId","username","globalName","avatarHash","statusChangedAt","updatedAt")
 		 VALUES ($1,$2,$3,$4,$5,$5)
 		 ON CONFLICT ("discordId") DO UPDATE SET
-		   "username"=COALESCE(EXCLUDED."username","discord_watch_live"."username"),
-		   "globalName"=COALESCE(EXCLUDED."globalName","discord_watch_live"."globalName"),
-		   "avatarHash"=COALESCE(EXCLUDED."avatarHash","discord_watch_live"."avatarHash"),
+		   "username"=EXCLUDED."username",
+		   "globalName"=EXCLUDED."globalName",
+		   "avatarHash"=EXCLUDED."avatarHash",
 		   "updatedAt"=EXCLUDED."updatedAt"`,
 		discordID, nullableString(username), nullableString(globalName), nullableString(avatarHash), now)
 	return err

@@ -8854,9 +8854,29 @@ model DiscordWatchLive {
   avatarHash String?
 
   /// The activity Discord last reported, so the card can say "Playing X" even
-  /// between presence sessions being opened and closed.
+  /// between presence sessions being opened and closed. This is the HEADLINE
+  /// one (a game outranks anything else); `activities` carries the full set.
   activityName String?
   activityType Int?
+
+  /// Every activity running right now, as a JSON array of
+  /// `{ name, type, details, state, startedAt }`.
+  ///
+  /// Discord stacks these — a game, Spotify and a stream can all be live at
+  /// once, and the client shows all of them. A single `activityName` column
+  /// could only ever describe one, which made the card quietly wrong exactly
+  /// when there was the most to say.
+  activities Json?
+
+  /// The custom status: Discord's activity type 4, which is not an activity at
+  /// all but a line of text somebody typed about themselves. Kept apart from
+  /// `activities` for that reason — it is never "time spent doing something",
+  /// and folding it in would put "🧋" on the chart next to eleven hours of
+  /// Counter-Strike. The page renders it as the bubble beside the name.
+  customStatus String?
+  /// The emoji beside that text, as a literal character (Unicode) or a custom
+  /// emoji name. Nullable independently: a status can be text-only or emoji-only.
+  customEmoji  String?
 
   updatedAt DateTime @updatedAt
 

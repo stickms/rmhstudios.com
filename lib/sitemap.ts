@@ -208,6 +208,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/drafts': 'personal',
   '/history': 'personal',
   '/alexdebtcounter': 'redirect', // → /kaikaidebtcounter (the counter's subject is Kaikai)
+  '/sohumbum2': 'redirect', // → /sohumtracker (renamed; the old link was already shared)
   '/lists': 'redirect', // → /saves?tab=lists
   '/messages': 'personal',
   '/notifications': 'personal',
@@ -336,7 +337,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   // reports on a real account's behaviour, so it is meant to be shared with a
   // link rather than surfaced by searching their name. Its OG card is public
   // (a paste should unfurl) — unfurling and indexing are different questions.
-  '/sohumbum2': 'noindex',
+  '/sohumtracker': 'noindex',
 
   // ── ephemeral realtime rooms ──
   '/altair/multiplayer': 'ephemeral',
@@ -440,10 +441,11 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/profile/$id': null, // legacy alias of `/u/$userid`
   '/store/$userid': null, // mirrors the profile; would duplicate it
   '/thread/$rootId': null, // canonicalised to `/u/{handle}/post/{id}`
+  '/sohumbum2/$date': null, // redirects to `/sohumtracker/{date}`
   // One day of the activity dossier. Unbounded (a new one every day) and
   // `noindex` like its parent — it exists to be pasted into a chat, where the
   // OG card does the work, not to be crawled.
-  '/sohumbum2/$date': null,
+  '/sohumtracker/$date': null,
   '/tag/$tag': null, // unbounded tag space; crawlable via posts, not listed
   '/groups/$id': null, // membership-scoped
   '/spaces/$id': null, // live audio room, gone when it ends
