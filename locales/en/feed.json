@@ -804,7 +804,7 @@
   "onboarding-step-theme": "Pick a theme you like (⌘K →\"theme\")",
   "onboarding-title": "Get started on RMH Studios",
   "online-now": "Online now",
-  "online-now-count_one": "{{count}} people online now",
+  "online-now-count_one": "{{count}} person online now",
   "online-now-count_other": "{{count}} people online now",
   "open-image": "Open image",
   "open-image-described": "Open image: {{alt}}",

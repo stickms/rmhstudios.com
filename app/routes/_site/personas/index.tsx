@@ -10,6 +10,6 @@ import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_site/personas/')({
   beforeLoad: () => {
-    throw redirect({ to: '/create', search: { tab: 'personas' } });
+    throw redirect({ to: '/create/personas' });
   },
 });

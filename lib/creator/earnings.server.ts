@@ -282,7 +282,7 @@ export async function reviewRedemption(
           : finalStatus === 'FULFILLED'
             ? 'Your redemption was fulfilled 🎉'
             : 'Your redemption was approved',
-      link: '/create?tab=earnings',
+      link: '/create/earnings',
     }).catch(() => {});
   }
   return { status: finalStatus };

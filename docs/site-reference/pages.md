@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 260 routes. 134 render inside the standard site shell (sidebar, nav, context rail); 126 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 263 routes. 137 render inside the standard site shell (sidebar, nav, context rail); 126 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -54,8 +54,11 @@ Standard pages, rendered inside the sidebar shell.
 | `/builds/:slug` | Build Not Found | public | `app/routes/_site/builds/$slug.tsx` |
 | `/c/:slug` | — | public | `app/routes/_site/c.$slug.tsx` |
 | `/communities` | Communities | public | `app/routes/_site/communities.tsx` |
-| `/create` | redirects to `/apps` | public | `app/routes/_site/create/index.tsx` |
-| `/creator-studio` | redirects to `/create?tab=earnings` | public | `app/routes/_site/creator-studio.tsx` |
+| `/create` | Create | public | `app/routes/_site/create/index.tsx` |
+| `/create/builds` | User Builds | public | `app/routes/_site/create/builds.tsx` |
+| `/create/earnings` | Earnings | public | `app/routes/_site/create/earnings.tsx` |
+| `/create/personas` | AI Personas | public | `app/routes/_site/create/personas.tsx` |
+| `/creator-studio` | redirects to `/create/earnings` | public | `app/routes/_site/creator-studio.tsx` |
 | `/developer` | Developer API | public | `app/routes/_site/developer/index.tsx` |
 | `/drafts` | Drafts | public | `app/routes/_site/drafts.tsx` |
 | `/emoji-packs` | Emoji & sticker packs | public | `app/routes/_site/emoji-packs.tsx` |
@@ -86,7 +89,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/music-trivia` | Guess the Song | public | `app/routes/_site/music-trivia.tsx` |
 | `/news` | News | public | `app/routes/_site/news/index.tsx` |
 | `/notifications` | redirects to `/messages?tab=notifications` | public | `app/routes/_site/notifications.tsx` |
-| `/personas` | redirects to `/create?tab=personas` | public | `app/routes/_site/personas/index.tsx` |
+| `/personas` | redirects to `/create/personas` | public | `app/routes/_site/personas/index.tsx` |
 | `/personas/:id` | Persona | public | `app/routes/_site/personas/$id.tsx` |
 | `/playlists` | redirects to `/library?view=music` | public | `app/routes/_site/playlists.tsx` |
 | `/predictions` | Predictions | public | `app/routes/_site/predictions.tsx` |
@@ -145,7 +148,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/user-builds/:slug` | — | public | `app/routes/_site/user-builds/$slug.tsx` |
 | `/user-builds/manage` | Manage builds | public | `app/routes/_site/user-builds/manage.tsx` |
 | `/user-builds/submit` | Submit a build | public | `app/routes/_site/user-builds/submit.tsx` |
-| `/v` | redirects to `/create?tab=pages` | public | `app/routes/_site/v/index.tsx` |
+| `/v` | redirects to `/create` | public | `app/routes/_site/v/index.tsx` |
 | `/ventures` | RMH Ventures | public | `app/routes/_site/ventures.tsx` |
 | `/wager` | Wager Matches | public | `app/routes/_site/wager.index.tsx` |
 | `/wager/:id` | Wager Match | public | `app/routes/_site/wager.$id.tsx` |

@@ -76,6 +76,7 @@ import { Route as SiteAnalyticsRouteImport } from './routes/_site/analytics'
 import { Route as SiteArcadeRouteImport } from './routes/_site/arcade'
 import { Route as SiteBookmarksRouteImport } from './routes/_site/bookmarks'
 import { Route as SiteCommunitiesRouteImport } from './routes/_site/communities'
+import { Route as SiteCreateRouteRouteImport } from './routes/_site/create/route'
 import { Route as SiteCreatorStudioRouteImport } from './routes/_site/creator-studio'
 import { Route as SiteDeveloperRouteRouteImport } from './routes/_site/developer/route'
 import { Route as SiteDraftsRouteImport } from './routes/_site/drafts'
@@ -223,6 +224,9 @@ import { Route as SiteBuildsIndexRouteImport } from './routes/_site/builds/index
 import { Route as SiteBuildsSlugRouteImport } from './routes/_site/builds/$slug'
 import { Route as SiteCSlugRouteImport } from './routes/_site/c.$slug'
 import { Route as SiteCreateIndexRouteImport } from './routes/_site/create/index'
+import { Route as SiteCreateBuildsRouteImport } from './routes/_site/create/builds'
+import { Route as SiteCreateEarningsRouteImport } from './routes/_site/create/earnings'
+import { Route as SiteCreatePersonasRouteImport } from './routes/_site/create/personas'
 import { Route as SiteDeveloperIndexRouteImport } from './routes/_site/developer/index'
 import { Route as SiteGamesIndexRouteImport } from './routes/_site/games/index'
 import { Route as SiteGamesGameIdRouteImport } from './routes/_site/games/$gameId'
@@ -1220,6 +1224,11 @@ const SiteCommunitiesRoute = SiteCommunitiesRouteImport.update({
   path: '/communities',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteCreateRouteRoute = SiteCreateRouteRouteImport.update({
+  id: '/create',
+  path: '/create',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteCreatorStudioRoute = SiteCreatorStudioRouteImport.update({
   id: '/creator-studio',
   path: '/creator-studio',
@@ -1952,9 +1961,24 @@ const SiteCSlugRoute = SiteCSlugRouteImport.update({
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteCreateIndexRoute = SiteCreateIndexRouteImport.update({
-  id: '/create/',
-  path: '/create/',
-  getParentRoute: () => SiteRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => SiteCreateRouteRoute,
+} as any)
+const SiteCreateBuildsRoute = SiteCreateBuildsRouteImport.update({
+  id: '/builds',
+  path: '/builds',
+  getParentRoute: () => SiteCreateRouteRoute,
+} as any)
+const SiteCreateEarningsRoute = SiteCreateEarningsRouteImport.update({
+  id: '/earnings',
+  path: '/earnings',
+  getParentRoute: () => SiteCreateRouteRoute,
+} as any)
+const SiteCreatePersonasRoute = SiteCreatePersonasRouteImport.update({
+  id: '/personas',
+  path: '/personas',
+  getParentRoute: () => SiteCreateRouteRoute,
 } as any)
 const SiteDeveloperIndexRoute = SiteDeveloperIndexRouteImport.update({
   id: '/',
@@ -5442,6 +5466,7 @@ export interface FileRoutesByFullPath {
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
   '/admin': typeof SiteAdminRouteRouteWithChildren
+  '/create': typeof SiteCreateRouteRouteWithChildren
   '/developer': typeof SiteDeveloperRouteRouteWithChildren
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
@@ -5592,6 +5617,9 @@ export interface FileRoutesByFullPath {
   '/blog/$slug': typeof SiteBlogSlugRoute
   '/builds/$slug': typeof SiteBuildsSlugRoute
   '/c/$slug': typeof SiteCSlugRoute
+  '/create/builds': typeof SiteCreateBuildsRoute
+  '/create/earnings': typeof SiteCreateEarningsRoute
+  '/create/personas': typeof SiteCreatePersonasRoute
   '/games/$gameId': typeof SiteGamesGameIdRoute
   '/games/slice-it': typeof SiteGamesSliceItRoute
   '/groups/$id': typeof SiteGroupsIdRoute
@@ -6443,6 +6471,9 @@ export interface FileRoutesByTo {
   '/blog/$slug': typeof SiteBlogSlugRoute
   '/builds/$slug': typeof SiteBuildsSlugRoute
   '/c/$slug': typeof SiteCSlugRoute
+  '/create/builds': typeof SiteCreateBuildsRoute
+  '/create/earnings': typeof SiteCreateEarningsRoute
+  '/create/personas': typeof SiteCreatePersonasRoute
   '/games/$gameId': typeof SiteGamesGameIdRoute
   '/games/slice-it': typeof SiteGamesSliceItRoute
   '/groups/$id': typeof SiteGroupsIdRoute
@@ -7169,6 +7200,7 @@ export interface FileRoutesById {
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
   '/_site/admin': typeof SiteAdminRouteRouteWithChildren
+  '/_site/create': typeof SiteCreateRouteRouteWithChildren
   '/_site/developer': typeof SiteDeveloperRouteRouteWithChildren
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
@@ -7320,6 +7352,9 @@ export interface FileRoutesById {
   '/_site/blog/$slug': typeof SiteBlogSlugRoute
   '/_site/builds/$slug': typeof SiteBuildsSlugRoute
   '/_site/c/$slug': typeof SiteCSlugRoute
+  '/_site/create/builds': typeof SiteCreateBuildsRoute
+  '/_site/create/earnings': typeof SiteCreateEarningsRoute
+  '/_site/create/personas': typeof SiteCreatePersonasRoute
   '/_site/games/$gameId': typeof SiteGamesGameIdRoute
   '/_site/games/slice-it': typeof SiteGamesSliceItRoute
   '/_site/groups/$id': typeof SiteGroupsIdRoute
@@ -8047,6 +8082,7 @@ export interface FileRouteTypes {
     | '/versecraft'
     | '/void-breaker'
     | '/admin'
+    | '/create'
     | '/developer'
     | '/.well-known/apple-app-site-association'
     | '/.well-known/assetlinks.json'
@@ -8197,6 +8233,9 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/builds/$slug'
     | '/c/$slug'
+    | '/create/builds'
+    | '/create/earnings'
+    | '/create/personas'
     | '/games/$gameId'
     | '/games/slice-it'
     | '/groups/$id'
@@ -9048,6 +9087,9 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/builds/$slug'
     | '/c/$slug'
+    | '/create/builds'
+    | '/create/earnings'
+    | '/create/personas'
     | '/games/$gameId'
     | '/games/slice-it'
     | '/groups/$id'
@@ -9773,6 +9815,7 @@ export interface FileRouteTypes {
     | '/versecraft'
     | '/void-breaker'
     | '/_site/admin'
+    | '/_site/create'
     | '/_site/developer'
     | '/.well-known/apple-app-site-association'
     | '/.well-known/assetlinks.json'
@@ -9924,6 +9967,9 @@ export interface FileRouteTypes {
     | '/_site/blog/$slug'
     | '/_site/builds/$slug'
     | '/_site/c/$slug'
+    | '/_site/create/builds'
+    | '/_site/create/earnings'
+    | '/_site/create/personas'
     | '/_site/games/$gameId'
     | '/_site/games/slice-it'
     | '/_site/groups/$id'
@@ -11574,6 +11620,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteCommunitiesRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/create': {
+      id: '/_site/create'
+      path: '/create'
+      fullPath: '/create'
+      preLoaderRoute: typeof SiteCreateRouteRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/creator-studio': {
       id: '/_site/creator-studio'
       path: '/creator-studio'
@@ -12598,10 +12651,31 @@ declare module '@tanstack/react-router' {
     }
     '/_site/create/': {
       id: '/_site/create/'
-      path: '/create'
+      path: '/'
       fullPath: '/create/'
       preLoaderRoute: typeof SiteCreateIndexRouteImport
-      parentRoute: typeof SiteRoute
+      parentRoute: typeof SiteCreateRouteRoute
+    }
+    '/_site/create/builds': {
+      id: '/_site/create/builds'
+      path: '/builds'
+      fullPath: '/create/builds'
+      preLoaderRoute: typeof SiteCreateBuildsRouteImport
+      parentRoute: typeof SiteCreateRouteRoute
+    }
+    '/_site/create/earnings': {
+      id: '/_site/create/earnings'
+      path: '/earnings'
+      fullPath: '/create/earnings'
+      preLoaderRoute: typeof SiteCreateEarningsRouteImport
+      parentRoute: typeof SiteCreateRouteRoute
+    }
+    '/_site/create/personas': {
+      id: '/_site/create/personas'
+      path: '/personas'
+      fullPath: '/create/personas'
+      preLoaderRoute: typeof SiteCreatePersonasRouteImport
+      parentRoute: typeof SiteCreateRouteRoute
     }
     '/_site/developer/': {
       id: '/_site/developer/'
@@ -17282,6 +17356,24 @@ const SiteAdminRouteRouteWithChildren = SiteAdminRouteRoute._addFileChildren(
   SiteAdminRouteRouteChildren,
 )
 
+interface SiteCreateRouteRouteChildren {
+  SiteCreateBuildsRoute: typeof SiteCreateBuildsRoute
+  SiteCreateEarningsRoute: typeof SiteCreateEarningsRoute
+  SiteCreatePersonasRoute: typeof SiteCreatePersonasRoute
+  SiteCreateIndexRoute: typeof SiteCreateIndexRoute
+}
+
+const SiteCreateRouteRouteChildren: SiteCreateRouteRouteChildren = {
+  SiteCreateBuildsRoute: SiteCreateBuildsRoute,
+  SiteCreateEarningsRoute: SiteCreateEarningsRoute,
+  SiteCreatePersonasRoute: SiteCreatePersonasRoute,
+  SiteCreateIndexRoute: SiteCreateIndexRoute,
+}
+
+const SiteCreateRouteRouteWithChildren = SiteCreateRouteRoute._addFileChildren(
+  SiteCreateRouteRouteChildren,
+)
+
 interface SiteDeveloperRouteRouteChildren {
   SiteDeveloperIndexRoute: typeof SiteDeveloperIndexRoute
 }
@@ -17334,6 +17426,7 @@ const SiteRmhladderRouteWithChildren = SiteRmhladderRoute._addFileChildren(
 
 interface SiteRouteChildren {
   SiteAdminRouteRoute: typeof SiteAdminRouteRouteWithChildren
+  SiteCreateRouteRoute: typeof SiteCreateRouteRouteWithChildren
   SiteDeveloperRouteRoute: typeof SiteDeveloperRouteRouteWithChildren
   SiteAchievementsRoute: typeof SiteAchievementsRoute
   SiteAlexdebtcounterRoute: typeof SiteAlexdebtcounterRoute
@@ -17414,7 +17507,6 @@ interface SiteRouteChildren {
   SiteAppsIndexRoute: typeof SiteAppsIndexRoute
   SiteBlogIndexRoute: typeof SiteBlogIndexRoute
   SiteBuildsIndexRoute: typeof SiteBuildsIndexRoute
-  SiteCreateIndexRoute: typeof SiteCreateIndexRoute
   SiteGamesIndexRoute: typeof SiteGamesIndexRoute
   SiteGroupsIndexRoute: typeof SiteGroupsIndexRoute
   SiteHomesIndexRoute: typeof SiteHomesIndexRoute
@@ -17441,6 +17533,7 @@ interface SiteRouteChildren {
 
 const SiteRouteChildren: SiteRouteChildren = {
   SiteAdminRouteRoute: SiteAdminRouteRouteWithChildren,
+  SiteCreateRouteRoute: SiteCreateRouteRouteWithChildren,
   SiteDeveloperRouteRoute: SiteDeveloperRouteRouteWithChildren,
   SiteAchievementsRoute: SiteAchievementsRoute,
   SiteAlexdebtcounterRoute: SiteAlexdebtcounterRoute,
@@ -17521,7 +17614,6 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteAppsIndexRoute: SiteAppsIndexRoute,
   SiteBlogIndexRoute: SiteBlogIndexRoute,
   SiteBuildsIndexRoute: SiteBuildsIndexRoute,
-  SiteCreateIndexRoute: SiteCreateIndexRoute,
   SiteGamesIndexRoute: SiteGamesIndexRoute,
   SiteGroupsIndexRoute: SiteGroupsIndexRoute,
   SiteHomesIndexRoute: SiteHomesIndexRoute,

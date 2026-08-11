@@ -48,10 +48,15 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   // Primary hubs. `/games` and `/apps` are the public catalog indexes; they
   // were listed here for a long time with nothing behind them, then dropped
   // when that was found, and now exist. `/create` is the creator half of the
-  // same catalog (Arcade Pass, Ranked, personas, earnings) and stays listed.
+  // same catalog and stays listed — and now that its tabs are real routes
+  // rather than `?tab=` values, the two public ones are their own URLs with
+  // their own canonicals, so they are listed too. (`/create/earnings` is not:
+  // it is one viewer's own dashboard — see EXCLUDED_ROUTES.)
   { loc: '/games', changefreq: 'weekly', priority: 0.9 },
   { loc: '/apps', changefreq: 'weekly', priority: 0.9 },
   { loc: '/create', changefreq: 'daily', priority: 0.8 },
+  { loc: '/create/builds', changefreq: 'daily', priority: 0.7 },
+  { loc: '/create/personas', changefreq: 'weekly', priority: 0.6 },
   { loc: '/explore', changefreq: 'daily', priority: 0.8 },
   { loc: '/library', changefreq: 'daily', priority: 0.8 },
   { loc: '/news', changefreq: 'daily', priority: 0.8 },
@@ -65,8 +70,9 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   //
   // Absent on purpose: `/arcade`, `/leaderboard`, `/events`, `/market`,
   // `/shop`, `/pricing`, `/personas`, `/playlists`, `/spaces` and `/v` all look
-  // like destinations in the nav but are `beforeLoad` redirects into a tab of
-  // `/create`, `/store`, `/communities` or `/library`. They are in
+  // like destinations in the nav but are `beforeLoad` redirects into a tab or
+  // section of `/games`, `/create`, `/store`, `/communities` or `/library`.
+  // They are in
   // `EXCLUDED_ROUTES` as redirects; the pages they land on are listed here
   // instead. `/shop` and `/pricing` joined that list late — they were listed
   // here *and* self-canonical while `/store` was too, so one catalog and one
@@ -197,6 +203,7 @@ export type ExclusionReason =
 export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   // ── personal / auth-gated ──
   '/analytics': 'personal',
+  '/create/earnings': 'personal', // the viewer's own coins, views and payouts
   '/bookmarks': 'redirect', // → /saves
   '/drafts': 'personal',
   '/history': 'personal',
@@ -280,19 +287,19 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   // have names people use — but each is a `beforeLoad` redirect into a tab of
   // another page. Nothing about the route file's name says so.
   '/blog': 'redirect', // → /library
-  '/user-builds': 'redirect', // → /builds → /create?tab=games
-  '/builds': 'redirect', // → /create?tab=games
+  '/user-builds': 'redirect', // → /builds → /games
+  '/builds': 'redirect', // → /games
   '/lights-out': 'redirect', // → /daily/lights-out
-  '/arcade': 'redirect', // → /create?tab=games
-  '/leaderboard': 'redirect', // → /create?tab=games&sub=leaderboard
+  '/arcade': 'redirect', // → /games
+  '/leaderboard': 'redirect', // → /games?sub=leaderboard
   '/events': 'redirect', // → /communities?tab=events
   '/market': 'redirect', // → /store?tab=market
   '/shop': 'redirect', // → /store?tab=shop
   '/pricing': 'redirect', // → /store?tab=membership
-  '/personas': 'redirect', // → /create?tab=personas
+  '/personas': 'redirect', // → /create/personas
   '/playlists': 'redirect', // → /library?view=music
   '/spaces': 'redirect', // → /communities?tab=spaces
-  '/v': 'redirect', // → /create?tab=pages
+  '/v': 'redirect', // → /create
   '/search': 'redirect', // → /explore (the two pages were merged)
   // Admin-gated: signed-in non-admins are redirected to /rmhladder.
   '/rmhladder/companies': 'admin',
