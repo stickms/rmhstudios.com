@@ -67,6 +67,7 @@ import zhCVoidBreaker from "@/locales/zh/c-void-breaker.json";
 import zhCWager from "@/locales/zh/c-wager.json";
 import zhCWishlist from "@/locales/zh/c-wishlist.json";
 import zhCommon from "@/locales/zh/common.json";
+import zhErrors from "@/locales/zh/errors.json";
 import zhFeed from "@/locales/zh/feed.json";
 import zhGamesHub from "@/locales/zh/games-hub.json";
 import zhGroups from "@/locales/zh/groups.json";
@@ -163,6 +164,7 @@ const zhResources = {
   "c-wager": zhCWager,
   "c-wishlist": zhCWishlist,
   "common": zhCommon,
+  "errors": zhErrors,
   "feed": zhFeed,
   "games-hub": zhGamesHub,
   "groups": zhGroups,

@@ -52,7 +52,7 @@
   "disable-captions": "Untertitel deaktivieren",
   "enable-captions": "Untertitel aktivieren",
   "error-enter-url": "Bitte gib eine URL ein",
-  "error-unsupported-url": "That link can't be played here. Use a YouTube video or live stream, a Twitch channel or VOD, Vimeo, or a direct video/stream URL (.mp4, .webm, .m3u8).",
+  "error-unsupported-url": "Dieser Link kann hier nicht abgespielt werden. Verwende ein YouTube-Video oder einen Live-Stream, einen Twitch-Kanal oder ein VOD, Vimeo oder eine direkte Video-/Stream-URL (.mp4, .webm, .m3u8).",
   "exit-fullscreen": "Vollbild beenden",
   "expires-after": "Läuft ab nach",
   "failed-to-copy": "Kopieren fehlgeschlagen",
