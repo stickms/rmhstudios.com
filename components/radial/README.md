@@ -420,15 +420,23 @@ the flow, so `radial.css` ends with a section of explicit arithmetic guarantees:
   bare page background there. This was an on-device finding from the mobile
   push-drawer the hub replaced, which blocked background scroll from its scrim
   for the same reason; the drawer is gone, so the note lives here now.
-- **`__scrim` and `__catcher` are two different elements.** The decorative fade
-  under the docked orb (`.radial-hub__scrim`, fixed, bottom-centre, a gradient of
-  the page ground) and the overlay's transparent dismiss surface
-  (`.radial-hub__catcher`, absolute, filling the overlay) shared one class name,
-  and two single-class rules on one name overwrite each other rather than
-  coexist: the catcher inherited the fade's `min(24rem, 92vw)` width, ~92px
-  height and `translateX(-50%)` — a 359×92 box half off the left edge, which no
-  outside tap could hit — while the fade inherited the catcher's
-  `background: transparent` and painted nothing. Keep the names distinct. The
+- **Nothing paints behind the docked orb.** There was a decorative legibility
+  fade under it (`.radial-hub__scrim`, fixed bottom-centre, a radial gradient of
+  the page ground) so text scrolling through the orb's band dissolved rather
+  than collided with the disc. It is gone: anchored to the bottom of the visual
+  viewport, it landed exactly on iOS Safari's floating bottom bar and tinted the
+  browser's own chrome with a band of page background on every `_site` page —
+  and it read as a glow hanging off the orb, which is the same thing the orb's
+  own "no shadow" rule exists to avoid. Columns already reserve
+  `--site-floating-reserve` at their end, so nothing sits under the orb once a
+  scroll settles. Don't reintroduce a bottom-anchored decorative layer here.
+- **Give any new hub layer its own class name.** The scrim above and the
+  overlay's transparent dismiss surface (`.radial-hub__catcher`, absolute,
+  filling the overlay) once shared one, and two single-class rules on one name
+  overwrite each other rather than coexist: the catcher inherited the fade's
+  `min(24rem, 92vw)` width, ~92px height and `translateX(-50%)` — a 359×92 box
+  half off the left edge, which no outside tap could hit — while the fade
+  inherited the catcher's `background: transparent` and painted nothing. The
   catcher also needs `place-self: stretch`: the overlay is a
   `place-items: center` grid, and an absolutely positioned grid child still takes
   its container's alignment, so `inset: 0` alone shrink-wraps it.

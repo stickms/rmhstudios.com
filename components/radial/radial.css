@@ -845,38 +845,23 @@ html.perf-lite .radial-backdrop__blob {
     opacity 0.34s ease,
     box-shadow 0.28s ease;
 }
-/* Legibility scrim under the docked orb. The orb is fixed bottom-centre over
-   scrolling content, so feed text, counters and card meta pass directly beneath
-   it. Columns reserve --site-floating-reserve at their END, but nothing can stop
-   text from travelling through the orb's band mid-scroll — so fade the page
-   ground in behind it, radially, and the type dissolves into the surface instead
-   of colliding with the disc. Decorative, never hit-testable, and it retracts
-   the moment the dial opens (the overlay owns the screen then). */
-.radial-hub__scrim {
-  position: fixed;
-  left: 50%;
-  bottom: 0;
-  z-index: calc(var(--z-floating) - 2);
-  width: min(24rem, 92vw);
-  /* The orb's own band plus its inset, plus room for the fade to resolve. */
-  height: calc(
-    env(safe-area-inset-bottom, 0px) + var(--site-hub-orb-size) + var(--site-hub-orb-inset) * 2
-  );
-  transform: translateX(-50%);
-  pointer-events: none;
-  opacity: 1;
-  transition: opacity 0.28s ease;
-  background: radial-gradient(
-    60% 78% at 50% 100%,
-    var(--site-bg) 0%,
-    color-mix(in srgb, var(--site-bg) 72%, transparent) 42%,
-    transparent 78%
-  );
-}
-.radial-hub[data-phase='open'] .radial-hub__scrim,
-.radial-hub[data-phase='closing'] .radial-hub__scrim {
-  opacity: 0;
-}
+/* No legibility scrim under the docked orb. There used to be a fixed,
+   bottom-centred `radial-hub__scrim` that faded the page ground in behind the
+   orb (a radial gradient of `--site-bg`) so text scrolling through the orb's
+   band dissolved instead of colliding with the disc. It cost more than it
+   bought:
+
+     • It is anchored to the bottom of the VISUAL viewport, which on iOS Safari
+       is exactly where the floating bottom bar sits — so the gradient tinted
+       the browser's own chrome with a band of page background, on every _site
+       page, for as long as the bar was up.
+     • Read as a glow/shadow hanging off the orb rather than as the invisible
+       legibility aid it was meant to be, which is the opposite of the orb's own
+       "no shadow, it is a saturated accent disc and needs no help separating"
+       rule directly above.
+
+   The orb still clears content at rest: columns reserve `--site-floating-reserve`
+   at their end, so nothing lands under it once a scroll settles. */
 
 /* Hover/press lift only while docked (closed) — never fight the glide-to-centre.
    The scaling lives on the independent `scale` property, not inside `transform`:
@@ -992,23 +977,17 @@ html.perf-lite .radial-backdrop__blob {
 /* Transparent full-screen click-catcher (closes on an outside tap); sits below
    the veil + globe so only empty regions dismiss the menu.
 
-   Its own class, and that is the whole point of this block. It used to share
-   `.radial-hub__scrim` with the decorative fade under the docked orb, which is
-   a different element in a different part of the tree wanting the opposite
-   geometry — and two single-class rules on one class name do not coexist, they
-   overwrite each other. Both surfaces lost:
-
-     • This one inherited the fade's `width: min(24rem, 92vw)`, its ~92px height
-       and its `translateX(-50%)`, so the "full-screen" catcher was really a
-       359x92 box hanging half off the left edge (measured headless at 390x844).
-       Every tap outside the globe missed it and landed on the overlay, which
-       has no handler — so the documented way out (RadialHub: "Escape, the
-       foot's X and an outside tap") silently had only two doors.
-     • The fade inherited this one's `position: absolute`, `inset: 0` and
-       `background: transparent`, which is the entire rule that draws it — so
-       the legibility fade behind the orb painted nothing at all.
-
-   Separate names, separate rules, both work. */
+   Its own class, and it keeps it. It used to share `.radial-hub__scrim` with
+   the (now removed) decorative fade under the docked orb — a different element
+   in a different part of the tree wanting the opposite geometry — and two
+   single-class rules on one class name do not coexist, they overwrite each
+   other. This one inherited the fade's `width: min(24rem, 92vw)`, its ~92px
+   height and its `translateX(-50%)`, so the "full-screen" catcher was really a
+   359x92 box hanging half off the left edge (measured headless at 390x844).
+   Every tap outside the globe missed it and landed on the overlay, which has no
+   handler — so the documented way out (RadialHub: "Escape, the foot's X and an
+   outside tap") silently had only two doors. Give any new hub layer its own
+   name rather than reaching for this one. */
 .radial-hub__catcher {
   position: absolute;
   inset: 0;
@@ -2246,8 +2225,17 @@ html.ios-webkit .radial-hub__veil {
    Nothing here is interactive: the card is one link (see RmharkMedia). */
 .rmhark__media {
   position: relative;
-  /* The card is a flex column with a `gap`, so the media needs no margin of its
-     own — but it must not be squeezed by a tall neighbour. */
+  /* The gutter above a photo is the media's OWN margin, and it has to be: the
+     card IS a flex column with a `gap`, but `.rmhark__link` wraps the entire
+     body (head, text, read-more cue, media) in one plain block box so the
+     toolbar beside it can hold real buttons. That gap therefore only ever
+     separated the link from the toolbar — inside the link nothing spaced the
+     media at all, so a photo rendered flush against the last line of the post.
+     Matches the `mt-3` gutter the column card (`feed/RMHarkCard`) puts between
+     the same two things. */
+  margin-top: var(--rad-3);
+  /* Harmless where the parent is a block box; keeps the media from being
+     squeezed by a tall neighbour if it is ever a flex item again. */
   flex: none;
 }
 .rmhark__media-grid {
