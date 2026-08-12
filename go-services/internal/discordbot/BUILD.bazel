@@ -28,6 +28,7 @@ go_library(
         "watch_summary.go",
         "watch_typing.go",
         "watch_typing_repo.go",
+        "watch_voicesync.go",
     ],
     importpath = "github.com/rmhstudios/rmh-go/internal/discordbot",
     visibility = ["//go-services:__subpackages__"],
@@ -52,6 +53,7 @@ go_test(
         "watch_test.go",
         "watch_typing_test.go",
         "watch_union_test.go",
+        "watch_voicesync_test.go",
     ],
     embed = [":discordbot"],
     deps = [
