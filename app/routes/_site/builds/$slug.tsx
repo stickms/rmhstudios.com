@@ -21,7 +21,7 @@ import { BuildDetail } from '@/components/user-builds';
 import { BlurImage, blurImagePreload } from '@/components/ui/BlurImage';
 import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
-import { stripTrailingSlash } from '@/lib/url';
+import { getPublicBuildDetail } from '@/lib/user-builds-detail.server';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 
 const allOfficial = [...games, ...apps];
@@ -35,13 +35,13 @@ const fetchBuild = createServerFn({ method: 'GET' })
       return { kind: 'official' as const, data: official };
     }
 
-    // 2. Fall back to user-submitted build from the DB
-    const baseUrl = stripTrailingSlash(
-      import.meta.env.VITE_BETTER_AUTH_URL || 'http://localhost:3000',
-    );
-    const res = await fetch(`${baseUrl}/api/user-builds/${slug}`, { cache: 'no-store' });
-    if (res.ok) {
-      const data = await res.json();
+    // 2. Fall back to user-submitted build from the DB. Read in-process rather
+    // than fetching this site's own `/api/user-builds/<slug>` over the network —
+    // that loopback added a full request cycle (public hostname, CDN, Apache,
+    // a second Nitro render) to this page's TTFB. Same anonymous projection;
+    // see lib/user-builds-detail.server.
+    const data = await getPublicBuildDetail(slug);
+    if (data) {
       return { kind: 'user-build' as const, data };
     }
 

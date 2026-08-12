@@ -197,7 +197,18 @@ function effectiveGate(id: string, byId: Map<string, RouteFile>): Gate {
  */
 function redirectTarget(file: string): string | null {
   const source = readFileSync(join(ROOT, file), 'utf8');
-  if (/getSession|isAdmin/.test(source)) return null; // conditional, not a pure redirect
+  // A route that resolves a session and THEN maybe redirects is an auth gate, not
+  // a permanent redirect — printing it as "redirects to /login" would tell a
+  // reader that signed-in visitors get bounced too, which is the opposite of what
+  // these routes do.
+  //
+  // Matching on the name of whatever resolves the session is inherently fragile:
+  // `getRequestSession` (the request-memoized resolver in
+  // lib/auth-session.server.ts) does NOT contain the substring `getSession`, so
+  // when the auth gates moved onto it every one of them silently reclassified as
+  // an unconditional redirect. Both names are listed explicitly; a third resolver
+  // belongs here too.
+  if (/getSession|getRequestSession|isAdmin/.test(source)) return null;
   const match = source.match(/throw redirect\(\{\s*to:\s*['"]([^'"]+)['"]/);
   if (!match) return null;
 
