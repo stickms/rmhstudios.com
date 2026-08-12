@@ -126,9 +126,15 @@ export function ProfileCard({ live, generatedAt }: ProfileCardProps) {
           {/* Every activity, not just one: Discord stacks them and shows all,
               so a card that renders a single "Playing" line is wrong exactly
               when there is the most to say. */}
-          {live.activities.map((activity) => (
+          {live.activities.map((activity, index) => (
             <Panel
-              key={`${activity.type}:${activity.name}`}
+              // Index in the key, not just type+name. Discord can report two
+              // entries that are identical by both — the same title arriving
+              // from a launcher and from the game itself is the common one — and
+              // a duplicate React key silently DROPS the second panel. That is
+              // the one way this list can lose a row that Discord is reporting,
+              // and it would look exactly like the tracker having missed it.
+              key={`${index}:${activity.type}:${activity.name}`}
               color={ACTIVITY_COLORS[activity.type] ?? 'var(--stk-accent)'}
               icon={activityIcon(activity.type)}
               label={activityLabel(activity.type, t)}
