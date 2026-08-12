@@ -9,8 +9,7 @@ import { lazy, Suspense } from 'react';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { gameRouteHead } from '@/lib/seo-catalog';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { redirect } from '@tanstack/react-router';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 import rmhboxCss from '@/components/rmhbox/rmhbox.css?url';
@@ -24,8 +23,7 @@ import rmhboxCss from '@/components/rmhbox/rmhbox.css?url';
 const RMHboxShell = lazy(() => import('@/components/rmhbox/RMHboxShell'));
 
 const checkAuth = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers });
+  const session = await getRequestSession();
   if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhbox' } });
   return { user: session.user };
 });

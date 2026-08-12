@@ -12,18 +12,20 @@ import { createServerFn } from '@tanstack/react-start';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { BuildDetail } from '@/components/user-builds';
 import { blurImagePreload } from '@/components/ui/BlurImage';
-import { stripTrailingSlash } from '@/lib/url';
+import { getPublicBuildDetail } from '@/lib/user-builds-detail.server';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 
 const fetchBuild = createServerFn({ method: 'GET' })
   .validator((slug: string) => slug)
   .handler(async ({ data: slug }) => {
-    const baseUrl = stripTrailingSlash(
-      import.meta.env.VITE_BETTER_AUTH_URL || 'http://localhost:3000',
-    );
-    const res = await fetch(`${baseUrl}/api/user-builds/${slug}`, { cache: 'no-store' });
-    if (!res.ok) throw notFound();
-    return res.json();
+    // Reads the DB in-process. This used to `fetch` this site's own public
+    // `/api/user-builds/<slug>`, which put a whole extra HTTP request cycle —
+    // TLS to the public hostname, the CDN hop, Apache, a second Nitro render
+    // with its own session lookup — in front of this page's first byte. The
+    // anonymous projection is preserved exactly; see lib/user-builds-detail.server.
+    const build = await getPublicBuildDetail(slug);
+    if (!build) throw notFound();
+    return build;
   });
 
 export const Route = createFileRoute('/_site/user-builds/$slug')({

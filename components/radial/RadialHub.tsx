@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { LogOut, Settings, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -9,8 +9,33 @@ import { useResolvedUser, useSession } from '@/components/Providers';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { SIDEBAR_NAV, isNavGroup, type NavLeaf } from '@/lib/sidebar-nav';
-import { LiquidGlobe } from './LiquidGlobe';
 import { RmhLogo } from './RmhLogo';
+
+/**
+ * The globe is the single biggest module in the `_site` shell's eager graph, and
+ * it renders ONLY while the menu is open (`phase` starts `'closed'`, so it is
+ * never in the server HTML and never on the hydration path). A static import
+ * therefore put its whole cost — download, parse and compile — on every page that
+ * wears the shell, for a component most page views never mount.
+ *
+ * It is behind a lazy boundary and a warm-up instead. `preloadGlobe` is the part
+ * that makes this safe: opening is ONE synchronous 500 ms motion in which the orb
+ * swells into the globe (see MOTION_MS), so a globe that arrives late would show
+ * an empty overlay mid-morph. Warming the chunk on the first sign of intent —
+ * hover, focus, touch-down, or just an idle moment after the shell mounts — means
+ * the import is already resolved before the phase flips, and the Suspense
+ * fallback is a frame nobody sees rather than a hole in the animation.
+ */
+const LiquidGlobe = lazy(() =>
+  import('./LiquidGlobe').then((m) => ({ default: m.LiquidGlobe })),
+);
+
+let globePreloaded = false;
+function preloadGlobe() {
+  if (globePreloaded) return;
+  globePreloaded = true;
+  void import('./LiquidGlobe');
+}
 
 type HubUser = { id: string; handle?: string | null; isAdmin?: boolean };
 
@@ -44,6 +69,10 @@ export function RadialHub() {
 
   const [phase, setPhase] = useState<Phase>('closed');
   const globeRef = useRef<HTMLDivElement | null>(null);
+  // Read by `attachGlobe`, which fires from a ref callback and so cannot close
+  // over the render's `phase`.
+  const phaseRef = useRef<Phase>(phase);
+  phaseRef.current = phase;
   const orbRef = useRef<HTMLButtonElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -100,6 +129,30 @@ export function RadialHub() {
     });
   }, [reduced]);
 
+  // Backstop for the intent handlers: fetch the globe during the first idle
+  // window after the shell settles. This is what keeps the lazy boundary honest
+  // for someone who opens the menu as their very first action — the chunk is
+  // already in the module cache by then, so the open is indistinguishable from
+  // the old static import. Deliberately idle-scheduled so it never competes with
+  // the page's own first paint, and a no-op where requestIdleCallback is absent
+  // (Safari) beyond a short timer.
+  useEffect(() => {
+    const idle = (
+      window as typeof window & {
+        requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      }
+    ).requestIdleCallback;
+    if (idle) {
+      const handle = idle(preloadGlobe, { timeout: 3000 });
+      return () =>
+        (
+          window as typeof window & { cancelIdleCallback?: (h: number) => void }
+        ).cancelIdleCallback?.(handle);
+    }
+    const timer = setTimeout(preloadGlobe, 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Block background scroll + wire Escape while the menu is active.
   //
   // Deliberately NOT a CSS scroll-lock on the document. Both `overflow: hidden`
@@ -131,11 +184,23 @@ export function RadialHub() {
   // Focus lands on the GLOBE itself, not on its first pin: focusing a pin turns
   // the globe to face it, which would immediately discard the "you are here"
   // orientation the globe just opened with.
-  useEffect(() => {
-    if (phase !== 'open') return;
-    const raf = requestAnimationFrame(() => globeRef.current?.focus());
-    return () => cancelAnimationFrame(raf);
-  }, [phase]);
+  //
+  // This is a callback ref rather than an effect keyed on `phase`, because the
+  // globe is lazy: an effect that ran on the phase flip would fire while the
+  // chunk was still resolving, find `globeRef.current` null, and silently drop
+  // focus — leaving a keyboard user stranded on an open menu. Driving it from the
+  // ref means it fires exactly when the node actually exists, in both the warm
+  // (already imported) and cold cases. `LiquidGlobe` takes `rootRef` as a plain
+  // `Ref`, so a callback is a valid thing to hand it.
+  const attachGlobe = useCallback((node: HTMLDivElement | null) => {
+    globeRef.current = node;
+    if (!node) return;
+    requestAnimationFrame(() => {
+      // Re-check: a fast open→close can retire the menu before this frame runs,
+      // and focusing a globe that is on its way out would steal it back.
+      if (phaseRef.current === 'open') node.focus();
+    });
+  }, []);
 
   // The orb leaves the tab order while the menu is up (it has become the globe),
   // so hand focus back to it when the menu is dismissed rather than navigated.
@@ -186,6 +251,13 @@ export function RadialHub() {
         // along with the pointer events radial.css takes off it.
         tabIndex={menuVisible ? -1 : 0}
         onClick={toggle}
+        // Warm the globe chunk on intent so the open motion never waits on it.
+        // `onPointerDown` is the one that matters on touch, where there is no
+        // hover to precede the tap; it still buys the whole press-to-release
+        // interval plus the 500 ms morph.
+        onPointerEnter={preloadGlobe}
+        onPointerDown={preloadGlobe}
+        onFocus={preloadGlobe}
       >
         <RmhLogo className="radial-hub__logo" />
       </button>
@@ -216,16 +288,22 @@ export function RadialHub() {
         {/* Mounted only while the menu is up — that is what bounds the globe's
             frame loop, and it means a closed hub costs a page nothing. */}
         {menuVisible && (
-          <LiquidGlobe
-            rootRef={globeRef}
-            items={leaves}
-            pathname={pathname}
-            onDismiss={dismissForNavigation}
-            tabIndex={tab}
-            // The globe's gesture is not confined to the sphere: the whole
-            // overlay turns it, except where a real control lives.
-            surfaceRef={overlayRef}
-          />
+          // `null` fallback: the orb, veil and foot are already animating, so on
+          // the rare cold open the overlay simply completes its morph and the
+          // globe lands into it. Anything else here would be a second visual
+          // state competing with the one motion.
+          <Suspense fallback={null}>
+            <LiquidGlobe
+              rootRef={attachGlobe}
+              items={leaves}
+              pathname={pathname}
+              onDismiss={dismissForNavigation}
+              tabIndex={tab}
+              // The globe's gesture is not confined to the sphere: the whole
+              // overlay turns it, except where a real control lives.
+              surfaceRef={overlayRef}
+            />
+          </Suspense>
         )}
 
         <div className="radial-hub__foot">

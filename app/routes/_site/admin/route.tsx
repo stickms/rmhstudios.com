@@ -4,12 +4,10 @@
 
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { auth } from '@/lib/auth';
-import { getRequest } from '@tanstack/react-start/server';
+import { getRequestSession } from '@/lib/auth-session.server';
 
 const checkAdminAuth = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers });
+  const session = await getRequestSession();
   if (!session || !(session.user as any).isAdmin) {
     throw redirect({ to: '/' });
   }

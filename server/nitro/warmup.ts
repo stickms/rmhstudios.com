@@ -45,13 +45,21 @@ async function warm(): Promise<void> {
     ]);
     await Promise.all([
       // Same params (and therefore same cache key) as the anon homepage: For-You,
-      // filter all, first page, limit 20, no viewer.
+      // filter all, first page, limit 15, no viewer.
+      //
+      // `limit` IS part of the cache key (lib/feed/timeline.ts keys on it and
+      // neither path clamps or normalises it), so this number is not cosmetic:
+      // while it said 20 and app/routes/_site/index.tsx asked for 15, warmup
+      // primed `timeline:anon:v2:first:20` and the landing page read
+      // `timeline:anon:v2:first:15` — a key nothing had written. The warmup ran,
+      // reported success, and the first anon visitor still paid the full cold
+      // timeline assembly. Keep the two in step; there is no alias between them.
       getTimeline({
         userId: null,
         surface: 'foryou',
         filter: 'all',
         cursor: null,
-        limit: 20,
+        limit: 15,
         search: null,
       }).catch(() => {}),
       // getRequestSession() returns null with no active request, so this resolves

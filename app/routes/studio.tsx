@@ -8,12 +8,10 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
 import { appRouteHead } from '@/lib/seo-catalog';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 
 const checkAuth = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers });
+  const session = await getRequestSession();
   if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/studio' } });
   return { user: session.user };
 });

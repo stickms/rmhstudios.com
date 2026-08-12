@@ -14,37 +14,11 @@ import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { updateBuildSchema, adminUpdateBuildSchema } from '@/lib/user-builds-schema';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { findBuild, projectBuildDetail } from '@/lib/user-builds-detail.server';
 import { getAuthenticatedUser } from '@/lib/rmhcode-auth';
 import { logAdminAction } from '@/lib/admin-audit.server';
 
 type RouteParams = { params: Promise<{ id: string }> };
-
-async function findBuild(idOrSlug: string) {
-  // Try by ID first, then by slug
-  let build = await prisma.userBuild.findUnique({
-    where: { id: idOrSlug },
-    include: {
-      user: { select: userDisplaySelect },
-      category: { select: { id: true, name: true, slug: true, color: true, iconName: true } },
-      tags: { select: { name: true } },
-      versions: { orderBy: { createdAt: 'desc' }, take: 10 },
-    },
-  });
-
-  if (!build) {
-    build = await prisma.userBuild.findUnique({
-      where: { slug: idOrSlug },
-      include: {
-        user: { select: userDisplaySelect },
-        category: { select: { id: true, name: true, slug: true, color: true, iconName: true } },
-        tags: { select: { name: true } },
-        versions: { orderBy: { createdAt: 'desc' }, take: 10 },
-      },
-    });
-  }
-
-  return build;
-}
 
 export const Route = createFileRoute('/api/user-builds/$id')({
   server: {
@@ -95,43 +69,10 @@ export const Route = createFileRoute('/api/user-builds/$id')({
           });
           unlocked = !!u;
         }
-        const locked = price > 0 && !unlocked;
-
-        return Response.json({
-          id: build.id,
-          slug: build.slug,
-          title: build.title,
-          description: build.description,
-          readme: locked ? null : build.readme,
-          thumbnailUrl: build.thumbnailUrl,
-          repoUrl: locked ? null : build.repoUrl,
-          demoUrl: locked ? null : build.demoUrl,
-          price,
-          locked,
-          unlocked,
-          visibility: build.visibility,
-          featured: build.featured,
-          isCurated: build.isCurated,
-          technologies: build.technologies,
-          likeCount: build.likeCount,
-          commentCount: build.commentCount,
-          viewCount: build.viewCount,
-          createdAt: build.createdAt.toISOString(),
-          updatedAt: build.updatedAt.toISOString(),
-          publishedAt: build.publishedAt?.toISOString() ?? null,
-          user: resolveUser(build.user),
-          category: build.category,
-          tags: build.tags.map((t: { name: string }) => t.name),
-          versions: build.versions.map((v: any) => ({
-            id: v.id,
-            version: v.version,
-            changelog: v.changelog,
-            commitHash: v.commitHash,
-            createdAt: v.createdAt.toISOString(),
-          })),
-          liked,
-          isOwner,
-        });
+        // Shared with the `/builds/$slug` and `/user-builds/$slug` loaders, which
+        // read in-process rather than looping back through this endpoint — one
+        // projection so the two paths cannot drift apart.
+        return Response.json(projectBuildDetail(build, { isOwner, liked, unlocked }));
       }),
       PATCH: defineHandler({ auth: 'none' }, async ({ request, params }) => {
         const { id } = params;
