@@ -13,17 +13,41 @@
 // The message SAMPLE is what makes that characterisation possible; without
 // content storage the summarizer still runs, and simply describes the shape.
 //
-// # When it runs
+// # When it runs, and when it stops
 //
-// A period is re-summarised only when its `sourceHash` changes, and that hash is
-// a digest of the PROMPT — the exact question the model would be asked. So:
+// Two rules, and the second is what makes this a record rather than a live
+// document.
 //
-//   - today's summary refreshes while the day fills in,
-//   - a finished day is summarised once and then never re-billed,
-//   - a week or month settles as soon as its last day does.
+// **While a period is current**, it is re-summarised whenever its `sourceHash`
+// changes — and that hash is a digest of the PROMPT, the exact question the
+// model would be asked. Today's write-up keeps up with the day as it fills in,
+// and costs a model call only when there is genuinely something new to say.
 //
-// That is the whole cost-control story, and it is why the hash covers the
-// figures rather than a timestamp.
+// **Once a period has concluded** — plus one more pass, so the final write-up
+// describes the complete day rather than stopping wherever the last pass of the
+// evening happened to land (see `settleWindow`) — it is SEALED: written once if it was never written at
+// all, and after that never rewritten. What the dossier said about last Tuesday
+// is what it will always say about last Tuesday.
+//
+// The seal is not only editorial. Hashing the prompt means anything that changes
+// the prompt re-bills the period, and several things change it long after a day
+// is over:
+//
+//   - a reaction landing on a week-old message moves `reactionsReceived`;
+//   - retention pruning DELETES old message samples, so an ageing day would be
+//     rewritten from thinner evidence than it was first written from — paying
+//     the model to make the entry worse;
+//   - editing `buildSummaryPrompt` changes every prompt at once, so a single
+//     deploy would re-bill every unsealed day, week and month in one pass.
+//
+// Sealing closes all three, and makes the ordinary pass cheaper besides: a
+// sealed period costs one indexed lookup and stops, rather than a rollup query,
+// a sample query and a prompt build.
+//
+// The one thing sealing does not block is filling a hole. A concluded period
+// with no summary at all is still written, so a bot that was down for a week
+// catches up instead of leaving blank cells in the calendar forever. That is
+// writing a record which was never made, not revising one that was.
 package discordbot
 
 import (
@@ -55,6 +79,36 @@ const summarySampleLimit = 60
 // leaving a hole in the calendar.
 const summaryBackfillDays = 14
 
+// defaultSummaryInterval is how often a pass runs when the caller does not say.
+const defaultSummaryInterval = 30 * time.Minute
+
+// settleWindow is how long after a period ends it stays open, and it exists to
+// buy exactly one thing: the final pass.
+//
+// Passes run every `defaultSummaryInterval`, so the last one before local
+// midnight lands up to a full interval short of it. Sealing ON midnight would
+// therefore freeze each day on a write-up that stops at 23:31 — and for this
+// subject the half hour before midnight is prime time, so every entry in the
+// dossier would quietly omit the end of the evening.
+//
+// One pass after the boundary fixes that, and one pass is all it takes: an open
+// voice session is measured as ending "now" and then CLIPPED to the day
+// (`unionSeconds`), so a call running 23:00 to dawn already contributes its full
+// hour to yesterday at 00:30. Yesterday's figures are complete at the first pass
+// after midnight; nothing is waiting on the session to close.
+//
+// Two intervals of slack, so a pass that runs long or a tick that drifts cannot
+// land past the window and skip that final write. With the default that seals a
+// day at 01:00 local — the entry describes the complete day, and is then fixed
+// for good.
+func (s *WatchSummarizer) settleWindow() time.Duration {
+	interval := s.passInterval
+	if interval <= 0 {
+		interval = defaultSummaryInterval
+	}
+	return 2 * interval
+}
+
 // watchSummary is one row of `discord_watch_summary`.
 type watchSummary struct {
 	DiscordID  string
@@ -76,6 +130,10 @@ type WatchSummarizer struct {
 	logger   *log.Logger
 	cfg      WatchConfig
 	loc      *time.Location
+
+	// passInterval is how often `runPass` fires. Held because the seal is
+	// defined in terms of it — see settleWindow.
+	passInterval time.Duration
 }
 
 // NewWatchSummarizer builds the summarizer. Returns nil when tracking is off or
@@ -98,8 +156,11 @@ func (s *WatchSummarizer) Start(ctx context.Context, session *discordgo.Session,
 		return
 	}
 	if interval <= 0 {
-		interval = 30 * time.Minute
+		interval = defaultSummaryInterval
 	}
+	// Recorded before the loop starts, because the seal is measured in passes:
+	// a period stays open just long enough for one to land after it ends.
+	s.passInterval = interval
 	go func() {
 		// A short initial delay lets the tracker's startup reconciliation land
 		// first, so the first pass summarises settled rollups.
@@ -133,7 +194,7 @@ func (s *WatchSummarizer) runPass(ctx context.Context) {
 	now := time.Now().In(s.loc)
 	for _, discordID := range s.cfg.UserIDs {
 		for _, p := range s.pendingPeriods(now) {
-			if err := s.summarize(ctx, discordID, p.period, p.key); err != nil {
+			if err := s.summarize(ctx, discordID, p.period, p.key, now); err != nil {
 				s.logger.Warn("watch: summarize", "userId", discordID, "period", p.period, "key", p.key, "error", err)
 			}
 			if ctx.Err() != nil {
@@ -164,9 +225,12 @@ type periodRef struct {
 }
 
 // pendingPeriods lists the candidates for one pass: the recent days, the current
-// and previous week, and the current and previous month. Anything whose hash is
-// unchanged is skipped without a model call, so the list is allowed to be
-// generous — it is what makes the backfill after an outage automatic.
+// and previous week, and the current and previous month.
+//
+// The list is deliberately generous, because being on it is cheap. A sealed
+// period — which, on any ordinary pass, is all of them but today — costs one
+// indexed hash lookup and stops. What the reach buys is the outage backfill: a
+// period that ended with no write-up at all is still findable a fortnight later.
 func (s *WatchSummarizer) pendingPeriods(now time.Time) []periodRef {
 	refs := make([]periodRef, 0, summaryBackfillDays+4)
 	for i := 0; i < summaryBackfillDays; i++ {
@@ -181,9 +245,96 @@ func (s *WatchSummarizer) pendingPeriods(now time.Time) []periodRef {
 	return refs
 }
 
-// summarize writes one period's summary, unless nothing has changed since the
-// last one.
-func (s *WatchSummarizer) summarize(ctx context.Context, discordID, period, key string) error {
+// ── The seal ────────────────────────────────────────────────────────────────
+
+// summaryAction is what a pass has decided to do with one period.
+type summaryAction int
+
+const (
+	// summarySealed: concluded and already written. Never touched again — this
+	// is the rule that stops the dossier rewriting its own history.
+	summarySealed summaryAction = iota
+	// summaryBackfill: concluded but never written. A hole left by an outage,
+	// filled once.
+	summaryBackfill
+	// summaryRefresh: still current, so it keeps up with the figures as they
+	// move (subject to the source hash).
+	summaryRefresh
+)
+
+func (a summaryAction) String() string {
+	switch a {
+	case summarySealed:
+		return "sealed"
+	case summaryBackfill:
+		return "backfill"
+	default:
+		return "refresh"
+	}
+}
+
+// decideSummary is the whole "may we pay the model for this period" rule, in one
+// place and with no clock or database in it so it can be stated as a table.
+func decideSummary(sealed, written bool) summaryAction {
+	switch {
+	case sealed && written:
+		return summarySealed
+	case sealed:
+		return summaryBackfill
+	default:
+		return summaryRefresh
+	}
+}
+
+// periodEndsAt is the instant a period stops accruing: local midnight at the end
+// of its last day.
+func periodEndsAt(period, key string, loc *time.Location) (time.Time, error) {
+	_, toKey, err := periodRange(period, key, loc)
+	if err != nil {
+		return time.Time{}, err
+	}
+	_, end, err := dayBounds(toKey, loc)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return end, nil
+}
+
+// periodSealed reports whether a period is closed to revision.
+//
+// The window is passed in rather than read off the summarizer so this stays a
+// pure function of (period, clock) — the rule is worth being able to state as a
+// table without building a service around it.
+//
+// A key that cannot be placed in time reads as NOT sealed. That direction is
+// deliberate: an unparseable key already fails in `summarize`, and failing
+// towards the old behaviour is recoverable, whereas failing towards "sealed"
+// would silently mean a period that can never be written at all.
+func periodSealed(period, key string, now time.Time, loc *time.Location, window time.Duration) bool {
+	end, err := periodEndsAt(period, key, loc)
+	if err != nil {
+		return false
+	}
+	return !now.Before(end.Add(window))
+}
+
+// summarize writes one period's summary, unless it is sealed or nothing has
+// changed since the last one.
+func (s *WatchSummarizer) summarize(ctx context.Context, discordID, period, key string, now time.Time) error {
+	// Asked first, and of the cheapest question available: is there a row? A
+	// sealed period that has one is finished, and finding that out costs a
+	// single indexed lookup instead of the two queries and the prompt build
+	// below — which is most of what a pass would otherwise do, since all but one
+	// of the days it walks are sealed.
+	previous, err := s.repo.summarySourceHash(ctx, discordID, period, key)
+	if err != nil {
+		return err
+	}
+	action := decideSummary(periodSealed(period, key, now, s.loc, s.settleWindow()), previous != "")
+	if action == summarySealed {
+		return nil
+	}
+
 	fromKey, toKey, err := periodRange(period, key, s.loc)
 	if err != nil {
 		return err
@@ -212,17 +363,13 @@ func (s *WatchSummarizer) summarize(ctx context.Context, discordID, period, key 
 		return err
 	}
 
-	// The prompt is built BEFORE the up-to-date check, because the prompt is
+	// The prompt has to exist before the up-to-date check, because the prompt is
 	// what the check is about: if the model would be asked exactly the same
-	// question, its answer is already stored. Building it costs one indexed
-	// query; asking again costs a model call.
+	// question, its answer is already stored. Building it costs two indexed
+	// queries; asking again costs a model call.
 	prompt := buildSummaryPrompt(period, key, days, totals, samples, s.loc)
 
 	hash := sourceHash(prompt)
-	previous, err := s.repo.summarySourceHash(ctx, discordID, period, key)
-	if err != nil {
-		return err
-	}
 	if previous == hash {
 		return nil
 	}
@@ -244,7 +391,16 @@ func (s *WatchSummarizer) summarize(ctx context.Context, discordID, period, key 
 	parsed.PeriodKey = key
 	parsed.Model = s.deepseek.model
 	parsed.SourceHash = hash
-	return s.repo.upsertSummary(ctx, parsed)
+	if err := s.repo.upsertSummary(ctx, parsed); err != nil {
+		return err
+	}
+	if action == summaryBackfill {
+		// Worth saying out loud: it means a period ended with no write-up, which
+		// is a gap in the record rather than the ordinary path.
+		s.logger.Info("watch: filled in a period that was never summarised",
+			"userId", discordID, "period", period, "key", key)
+	}
+	return nil
 }
 
 // summarySystemPrompt sets the register. The page's whole joke is that it never

@@ -57,6 +57,114 @@ func probeService(t *testing.T) (*WatchService, context.Context) {
 	return svc, ctx
 }
 
+// probeSummarizer builds a summarizer whose model client is deliberately
+// UNCONFIGURED, so any attempt to write a summary fails immediately and locally
+// — no key, no network, no cost. That turns "did it try to re-summarise?" into a
+// plain error check.
+func probeSummarizer(t *testing.T, w *WatchService) *WatchSummarizer {
+	t.Helper()
+	loc, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		t.Skipf("tzdata unavailable: %v", err)
+	}
+	return &WatchSummarizer{
+		repo:     w.repo,
+		deepseek: &DeepSeekClient{},
+		logger:   log.New("probe", "info"),
+		cfg:      WatchConfig{UserIDs: []string{probeUser}, TimeZone: "America/New_York"},
+		loc:      loc,
+	}
+}
+
+// seedProbeDay writes a rollup with enough in it that the period is worth
+// summarising — without it, `summarize` returns early on "nothing happened" and
+// a seal test would pass for entirely the wrong reason.
+func seedProbeDay(t *testing.T, ctx context.Context, w *WatchService, dateKey string) {
+	t.Helper()
+	if err := w.repo.writeDayRollup(ctx, &dayRollup{
+		DiscordID: probeUser,
+		DateKey:   dateKey,
+		TimeZone:  "America/New_York",
+		Messages:  42,
+		VoiceSec:  3600,
+	}); err != nil {
+		t.Fatalf("writeDayRollup: %v", err)
+	}
+}
+
+// TestProbeSealedPeriodIsNeverRewritten is the composition the unit tests cannot
+// reach: `decideSummary` and `periodSealed` are pure and tested, but whether
+// `summarize` actually consults them needs a row in a real table, because with a
+// nil database every repo method early-returns and the summary always looks
+// absent.
+//
+// The pair matters more than either half. The sealed case proves nothing is
+// rewritten; the in-progress case proves the model WOULD have been called on the
+// same data, so the seal is what stopped it and not an unrelated early return.
+func TestProbeSealedPeriodIsNeverRewritten(t *testing.T) {
+	w, ctx := probeService(t)
+	s := probeSummarizer(t, w)
+
+	const dateKey = "2026-08-11"
+	const sentinel = "sentinel-hash-written-when-the-day-was-current"
+	t.Cleanup(func() {
+		_, _ = w.repo.db.Pool.Exec(ctx,
+			`DELETE FROM "discord_watch_summary" WHERE "discordId"=$1`, probeUser)
+	})
+
+	seedProbeDay(t, ctx, w, dateKey)
+	if err := w.repo.upsertSummary(ctx, &watchSummary{
+		DiscordID: probeUser, Period: periodDay, PeriodKey: dateKey,
+		Headline: "Sealed", Summary: "Written while the day was still current.",
+		Model: "probe", SourceHash: sentinel,
+	}); err != nil {
+		t.Fatalf("upsertSummary: %v", err)
+	}
+
+	// Long after the settle window: the entry is final.
+	sealedAt := time.Date(2026, time.August, 20, 12, 0, 0, 0, s.loc)
+	if err := s.summarize(ctx, probeUser, periodDay, dateKey, sealedAt); err != nil {
+		t.Fatalf("summarize on a sealed day returned %v — it tried to rewrite it", err)
+	}
+	after, err := w.repo.summarySourceHash(ctx, probeUser, periodDay, dateKey)
+	if err != nil {
+		t.Fatalf("summarySourceHash: %v", err)
+	}
+	if after != sentinel {
+		t.Errorf("sourceHash = %q, want the original %q — the sealed entry was rewritten", after, sentinel)
+	}
+
+	// The same call while the day is still running must reach the model. If this
+	// does NOT error, the seal is not what stopped the case above.
+	duringTheDay := time.Date(2026, time.August, 11, 15, 0, 0, 0, s.loc)
+	if err := s.summarize(ctx, probeUser, periodDay, dateKey, duringTheDay); err == nil {
+		t.Error("summarize on the current day returned nil — it never reached the model, " +
+			"so the sealed case above proves nothing")
+	}
+}
+
+// TestProbeConcludedPeriodWithNoSummaryIsStillFilledIn guards the deliberate
+// exception. Sealing must not turn an outage into a permanent blank cell.
+func TestProbeConcludedPeriodWithNoSummaryIsStillFilledIn(t *testing.T) {
+	w, ctx := probeService(t)
+	s := probeSummarizer(t, w)
+
+	const dateKey = "2026-08-11"
+	t.Cleanup(func() {
+		_, _ = w.repo.db.Pool.Exec(ctx,
+			`DELETE FROM "discord_watch_summary" WHERE "discordId"=$1`, probeUser)
+	})
+	seedProbeDay(t, ctx, w, dateKey)
+
+	// Concluded, sealed, and never written. It must still be attempted — which
+	// with an unconfigured client means reaching the model and failing there.
+	sealedAt := time.Date(2026, time.August, 20, 12, 0, 0, 0, s.loc)
+	if err := s.summarize(ctx, probeUser, periodDay, dateKey, sealedAt); err == nil {
+		t.Error("a concluded day with no summary was skipped — an outage would leave " +
+			"a permanent hole in the calendar")
+	}
+}
+
 // TestProbeVoiceJoinWritesARow drives the ordinary event path.
 func TestProbeVoiceJoinWritesARow(t *testing.T) {
 	w, ctx := probeService(t)

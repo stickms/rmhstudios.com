@@ -55,6 +55,7 @@ go_test(
         "watch_live_probe_test.go",
         "watch_presencesync_test.go",
         "watch_repo_test.go",
+        "watch_summary_seal_test.go",
         "watch_test.go",
         "watch_typing_test.go",
         "watch_union_test.go",
