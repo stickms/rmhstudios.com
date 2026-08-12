@@ -464,3 +464,145 @@ describe('cloudflare cache rule stays in sync with the origin allowlist', () => 
     expect(htmlRule).toContain('rmh-lang=');
   });
 });
+
+/**
+ * No NON-HTML cache rule may capture a path the origin serves as HTML.
+ *
+ * ## The bug this exists to stop
+ *
+ * On 2026-08-11 the zone carried a hand-made rule called "CDN static assets"
+ * whose expression was `URI Path starts with /library` (plus `/music`, `/models`,
+ * `/sprites`). `/library` is **not** a static directory — there is no
+ * `public/library` — it is an app route tree (`_site/library/index.tsx`,
+ * `library.$slug.tsx`, `library.albums.$albumId.tsx`) whose loader resolves a
+ * session and branches on `isAdmin`. So a rule meant for game audio was
+ * governing per-viewer HTML, with no cookie bypass, ahead of the rule that has
+ * one. `starts with /music` likewise swallowed `/music-trivia`.
+ *
+ * It was not a live leak, and the reason matters: every rule in the phase uses
+ * `edge_ttl: respect_origin`, so the origin's `private, no-cache` on
+ * authenticated HTML refused the store. But that is one dropdown away from being
+ * one — "Ignore cache-control header and use this TTL" is the natural thing to
+ * reach for on a rule named "CDN static assets", and choosing it would have
+ * published one viewer's library (possibly an admin's) to everyone.
+ *
+ * A prefix that overlaps an HTML route is therefore treated as a bug in its own
+ * right, independent of the TTL mode that currently makes it harmless. Trailing
+ * slashes are the fix and the thing asserted: `/music/` cannot match
+ * `/music-trivia`, while `/music` can.
+ *
+ * Scope note: this parses the committed script, so it constrains what the repo
+ * will apply — it cannot see a rule someone adds only in the dashboard. That gap
+ * is why the script's header says the PUT replaces the whole phase.
+ */
+describe('no static-asset cache rule may capture an HTML route', () => {
+  const rules: { description: string; expression: string }[] = (() => {
+    const script = readFileSync(
+      join(process.cwd(), 'deploy/apply-cloudflare-cache-rules.sh'),
+      'utf8',
+    );
+    // The heredoc body is real JSON once the shell quoting is stripped.
+    const body = script.split("read -r -d '' BODY <<'JSON' || true\n")[1]?.split('\nJSON')[0];
+    return JSON.parse(body ?? '{"rules":[]}').rules;
+  })();
+
+  /** The cookie-gated HTML rule is the one allowed to match HTML paths. */
+  const isHtmlRule = (r: { expression: string }) => r.expression.includes('session_token');
+
+  /** Every `starts_with(http.request.uri.path, "X")` prefix in an expression. */
+  const prefixesOf = (expression: string): string[] =>
+    [...expression.matchAll(/starts_with\(http\.request\.uri\.path,\s*"([^"]+)"\)/g)].map(
+      (m) => m[1],
+    );
+
+  it('found the rules to check (a silent parse failure would pass vacuously)', () => {
+    expect(rules.length).toBeGreaterThan(1);
+    expect(rules.filter(isHtmlRule)).toHaveLength(1);
+  });
+
+  it('no non-HTML rule matches an exact allowlisted HTML path', () => {
+    const collisions: string[] = [];
+    for (const rule of rules.filter((r) => !isHtmlRule(r))) {
+      for (const prefix of prefixesOf(rule.expression)) {
+        for (const path of CACHEABLE_ANON_PATHS) {
+          if (path.startsWith(prefix)) collisions.push(`${rule.description}: "${prefix}" ⊃ ${path}`);
+        }
+      }
+    }
+    expect(
+      collisions,
+      'A static-asset rule matches an HTML path the origin marks shareable. Whichever ' +
+        'rule wins, the HTML is now governed by a rule with no cookie bypass — add a ' +
+        'trailing slash so the prefix means "files under this directory".',
+    ).toEqual([]);
+  });
+
+  it('no non-HTML rule matches an allowlisted HTML prefix', () => {
+    const collisions: string[] = [];
+    for (const rule of rules.filter((r) => !isHtmlRule(r))) {
+      for (const prefix of prefixesOf(rule.expression)) {
+        for (const htmlPrefix of CACHEABLE_ANON_PREFIXES) {
+          // Either direction is an overlap: the static prefix may sit above the
+          // article subtree or inside it.
+          if (htmlPrefix.startsWith(prefix) || prefix.startsWith(htmlPrefix)) {
+            collisions.push(`${rule.description}: "${prefix}" overlaps ${htmlPrefix}`);
+          }
+        }
+      }
+    }
+    expect(collisions, 'A static-asset rule overlaps the article subtrees.').toEqual([]);
+  });
+
+  it('static-media prefixes end in a slash, so they cannot swallow a sibling route', () => {
+    // `/music` matches `/music-trivia`; `/music/` cannot. This is the whole fix,
+    // so it is asserted directly rather than left implicit in the collision
+    // checks above — a future prefix pointing at a directory with no sibling
+    // route today would otherwise be free to omit it.
+    const bare: string[] = [];
+    for (const rule of rules.filter((r) => !isHtmlRule(r))) {
+      // The image-transform rule targets API path stems, not directories, and is
+      // matched against `/api/...` routes that are never HTML.
+      if (rule.expression.includes('/api/')) continue;
+      for (const prefix of prefixesOf(rule.expression)) {
+        if (!prefix.endsWith('/')) bare.push(`${rule.description}: "${prefix}"`);
+      }
+    }
+    expect(
+      bare,
+      'These path prefixes have no trailing slash, so they also match sibling routes ' +
+        'that merely start with the same characters.',
+    ).toEqual([]);
+  });
+
+  it('every rule respects the origin Cache-Control in both directions', () => {
+    // The origin is the final gate on what may be stored: it is what refuses to
+    // share authenticated HTML. An explicit TTL override on any rule removes that
+    // gate, which is what would promote a prefix overlap into a cross-user leak.
+    const script = readFileSync(
+      join(process.cwd(), 'deploy/apply-cloudflare-cache-rules.sh'),
+      'utf8',
+    );
+    const body = script.split("read -r -d '' BODY <<'JSON' || true\n")[1]?.split('\nJSON')[0];
+    const parsed = JSON.parse(body ?? '{"rules":[]}').rules as {
+      description: string;
+      action_parameters?: {
+        edge_ttl?: { mode?: string };
+        browser_ttl?: { mode?: string };
+      };
+    }[];
+
+    const overrides = parsed.flatMap((rule) =>
+      (['edge_ttl', 'browser_ttl'] as const)
+        .filter((key) => {
+          const mode = rule.action_parameters?.[key]?.mode;
+          return mode !== undefined && mode !== 'respect_origin';
+        })
+        .map((key) => `${rule.description}.${key}=${rule.action_parameters?.[key]?.mode}`),
+    );
+    expect(
+      overrides,
+      'A TTL override ignores the origin Cache-Control, including the `private, no-cache` ' +
+        'that keeps authenticated HTML out of the shared cache.',
+    ).toEqual([]);
+  });
+});

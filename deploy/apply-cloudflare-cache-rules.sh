@@ -58,17 +58,54 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 API="https://api.cloudflare.com/client/v4"
 PHASE="http_request_cache_settings"
 
-# The ruleset entrypoint body. This PUT REPLACES every rule in the phase, so both
-# rules must be present here:
-#   1. image paths — cache-eligible, respecting the origin Cache-Control.
-#   2. anonymous public HTML — cache-eligible ONLY when no session/locale
-#      cookie is present, respecting the origin (which sets public s-maxage for
-#      the anon default-locale case and private/no-cache when authenticated).
+# The ruleset entrypoint body.
+#
+# ⚠️  THIS PUT REPLACES EVERY RULE IN THE PHASE. There is no merge and no partial
+# update: whatever is not in this array is deleted from the zone. So a rule added
+# by hand in the dashboard is destroyed the next time anyone runs this script, and
+# running this script destroys hand-added rules. If you edit one, edit the other in
+# the same commit; `VERIFY_ONLY=1` is what tells you the two agree.
+#
+# Rules are ORDER-SENSITIVE to the verifier (scripts/ci/verify-cloudflare-cache-rules.mjs
+# compares the arrays positionally), and the order below mirrors the zone:
+#   1. /assets/**   — hashed build output; origin errors pass through so a 5xx is
+#                     never cached under an immutable URL.
+#   2. static media — game audio + sprite sheets.
+#   3. image transforms — /api/image-proxy, /api/feed/image/.
+#   4. anonymous public HTML — the cookie-gated one.
+#
+# Every rule uses `respect_origin` for both TTLs. That is load-bearing, not a
+# default: the origin is the final gate on what may be stored, and it is what
+# distinguishes `public, s-maxage=30` (anon page), `public, s-maxage=300` (article),
+# `public, max-age=2592000` (static media) and `private, no-cache` (authenticated
+# HTML) per response. An "Ignore cache-control and use this TTL" override on ANY of
+# these throws that away — and on rules 1/2, whose path prefixes can overlap an
+# HTML route, it is what would turn an overlap into a cross-user leak. Don't.
 read -r -d '' BODY <<'JSON' || true
 {
   "rules": [
     {
-      "description": "perf audit §1.2 — cache image-proxy + feed image transforms",
+      "description": "Avoid Caching Errors",
+      "expression": "(http.request.full_uri contains \"/assets/\")",
+      "action": "set_cache_settings",
+      "action_parameters": {
+        "cache": true,
+        "edge_ttl": { "mode": "respect_origin" },
+        "origin_error_page_passthru": true
+      }
+    },
+    {
+      "description": "CDN static assets",
+      "expression": "(starts_with(http.request.uri.path, \"/music/\")) or (starts_with(http.request.uri.path, \"/sprites/\"))",
+      "action": "set_cache_settings",
+      "action_parameters": {
+        "cache": true,
+        "edge_ttl": { "mode": "respect_origin" },
+        "browser_ttl": { "mode": "respect_origin" }
+      }
+    },
+    {
+      "description": "Image Caching",
       "expression": "(starts_with(http.request.uri.path, \"/api/image-proxy\")) or (starts_with(http.request.uri.path, \"/api/feed/image/\"))",
       "action": "set_cache_settings",
       "action_parameters": {
@@ -79,7 +116,7 @@ read -r -d '' BODY <<'JSON' || true
       }
     },
     {
-      "description": "perf audit §1.2 — cache anonymous default-locale public HTML (bypass on session/locale cookie)",
+      "description": "Cache anonymous default-locale public HTML",
       "expression": "(http.request.method eq \"GET\" and (http.request.uri.path in {\"/\" \"/games\" \"/apps\" \"/news\" \"/library\" \"/optimization\" \"/security\" \"/privacy\" \"/terms\" \"/cookies\" \"/copyright\"} or starts_with(http.request.uri.path, \"/blog/\") or starts_with(http.request.uri.path, \"/news/\")) and not (http.cookie contains \"session_token\") and not (http.cookie contains \"rmh-lang=\"))",
       "action": "set_cache_settings",
       "action_parameters": {

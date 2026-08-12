@@ -67,6 +67,7 @@ Bandwidth and caching:
 | **Cache policies on all 13 GET endpoints that could safely take one**           | `cache-control` + `ETag` + a verified **304**; 10 → 23 declaring a policy | [`03`](03-api-caching.md) §3 |
 | **AVIF in the image pipeline** + `<picture>` in `OptimizedImage`                | 2.93 MB AVIF vs 4.38 MB WebP for the same art — **33% smaller**          | [`05`](05-server-edge-fonts.md) §6 |
 | **A 928 KB PNG served at full size into a Discord PIP tile**                    | Now goes through the variant pipeline that already had 320/640/960 for it | [`05`](05-server-edge-fonts.md) §6 |
+| **Cloudflare cache rules applied** — and two bugs found in the live zone         | A static-asset rule was governing `/library`'s per-viewer HTML; the same rule was a **no-op** for 125 MB of audio + sprites (origin sent no `Cache-Control`). Both fixed, both now gated by CI | [`06`](06-backlog.md) §2 |
 
 Server and correctness:
 
@@ -145,12 +146,11 @@ repository. See [`05`](05-server-edge-fonts.md) §4.
 
 ## Not done, and why
 
-Three items are deliberately left. Each is a real cost, not an oversight:
+Two items are deliberately left. Each is a real cost, not an oversight:
 
 | Item | Why not |
 | ---- | ------- |
-| **Apply the Cloudflare cache rules** | Requires `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ZONE_ID` and writes to production DNS/CDN config. Not available to this session and not a code change. **This is the single cheapest large win left** — see [`06`](06-backlog.md) §2. |
-| **Split `globals.css`** (465 KB, 65–67% used) | The win is parse/style-recalc time on low-end devices, and verifying it needs three themes × two widths × ~30 full-screen apps looked at by eye. Doing it blind risks a visual regression across the whole product to save 48 KB brotli. [`06`](06-backlog.md) §6 |
+| **Split `globals.css`** (465 KB, 65–67% used) | The win is parse/style-recalc time on low-end devices, and verifying it needs three themes × two widths × ~30 full-screen apps looked at by eye. Doing it blind risks a visual regression across the whole product to save 48 KB brotli. [`06`](06-backlog.md) §5 |
 | **The 3D games' 4.8–6.0 s of long tasks** | The highest ceiling in the product and the only item that is genuine investigation rather than a known fix — three.js shader compilation, scene construction, geometry upload, profiled per title. [`06`](06-backlog.md) §7 |
 
 ## Contents

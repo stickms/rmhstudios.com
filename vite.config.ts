@@ -302,6 +302,23 @@ export default defineConfig({
         // string path from the catalog, so a redeploy that changes one must be
         // able to take effect.
         '/images/**': { headers: { 'cache-control': 'public, max-age=2592000' } },
+        // Game audio (96 MB / 67 files) and sprite sheets (29 MB / 442 files).
+        //
+        // These had NO Cache-Control, and that made the Cloudflare "CDN static
+        // assets" cache rule a silent no-op: its Edge TTL is "use cache-control
+        // header if present, **bypass cache if not**", so with no header the edge
+        // declined to store the very files the rule exists to cache, and every
+        // request for a 96 MB music library went to the origin. A rule that is
+        // configured correctly and still does nothing is the worst shape of this
+        // bug — the dashboard shows it Active.
+        //
+        // Same 30-day revalidating window as /images/** and for the same reason:
+        // these are referenced by plain string path (lib/storage/asset.ts), not
+        // content-hashed, so a redeploy that replaces a track or a sheet has to be
+        // able to take effect. Do NOT add `immutable` here without hashing the
+        // filenames first.
+        '/music/**': { headers: { 'cache-control': 'public, max-age=2592000' } },
+        '/sprites/**': { headers: { 'cache-control': 'public, max-age=2592000' } },
       },
       // traceDeps externalizes packages from Nitro's Rolldown server bundle and
       // traces them into .output/node_modules for runtime resolution.
