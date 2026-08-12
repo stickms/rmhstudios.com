@@ -180,6 +180,11 @@ type WatchService struct {
 	logger *log.Logger
 	cfg    WatchConfig
 	loc    *time.Location
+	// voiceMisses counts consecutive sweeps that found no voice state for a
+	// user who has an open session. Closing is the one destructive thing the
+	// sweep does — it stops the clock and blanks the card — so it takes more
+	// than one reading. See watch_voicesync.go.
+	voiceMisses map[string]int
 
 	watched map[string]struct{}
 
@@ -209,7 +214,10 @@ func NewWatchService(cfg WatchConfig, repo *watchRepo, logger *log.Logger) *Watc
 	for _, id := range cfg.UserIDs {
 		watched[id] = struct{}{}
 	}
-	return &WatchService{repo: repo, logger: logger, cfg: cfg, loc: loc, watched: watched}
+	return &WatchService{
+		repo: repo, logger: logger, cfg: cfg, loc: loc, watched: watched,
+		voiceMisses: make(map[string]int, len(watched)),
+	}
 }
 
 // tracks reports whether a Discord user ID is on the allowlist.
