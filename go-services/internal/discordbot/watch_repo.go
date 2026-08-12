@@ -33,9 +33,42 @@ import (
 type watchRepo struct {
 	db     *db.DB
 	logger retryLogger
+	// pool is the ONLY thing the three helpers below talk to, and the seam a
+	// test injects a fake through. It exists because the helpers previously
+	// named `r.db.Pool.Exec` inline, a blanket rename turned each of them into a
+	// call to ITSELF, and every statement in the tracker recursed until the
+	// stack overflowed — which in Go is a fatal error that takes the whole
+	// supervisor process down. Nothing caught it because every repo method
+	// early-returns on a nil `db`, so no unit test ever reached the recursion.
+	pool pgxConn
 }
 
-func newWatchRepo(database *db.DB) *watchRepo { return &watchRepo{db: database} }
+// pgxConn is the slice of pgxpool.Pool the retrying helpers use. Narrow on
+// purpose: it is satisfied by the real pool and by a counting fake, which is
+// what makes "exec calls the pool exactly once" a testable statement.
+type pgxConn interface {
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+}
+
+func newWatchRepo(database *db.DB) *watchRepo {
+	r := &watchRepo{db: database}
+	if database != nil && database.Pool != nil {
+		r.pool = database.Pool
+	}
+	return r
+}
+
+// conn returns the pool the helpers should use. Never nil: every caller has
+// already guarded on `r.db == nil`, and a nil here would be a panic rather than
+// the no-op those guards promise.
+func (r *watchRepo) conn() pgxConn {
+	if r.pool != nil {
+		return r.pool
+	}
+	return r.db.Pool
+}
 
 // withLogger attaches a logger for retry narration. Optional; nil is silent.
 func (r *watchRepo) withLogger(l retryLogger) *watchRepo {
@@ -94,7 +127,7 @@ func (r *watchRepo) exec(ctx context.Context, sql string, args ...any) (pgconn.C
 	var tag pgconn.CommandTag
 	err := r.dbRetry(ctx, "db.exec", func(ctx context.Context) error {
 		var err error
-		tag, err = r.exec(ctx, sql, args...)
+		tag, err = r.conn().Exec(ctx, sql, args...)
 		return err
 	})
 	return tag, err
@@ -109,7 +142,7 @@ func (r *watchRepo) query(ctx context.Context, sql string, args ...any) (pgx.Row
 	var rows pgx.Rows
 	err := r.dbRetry(ctx, "db.query", func(ctx context.Context) error {
 		var err error
-		rows, err = r.query(ctx, sql, args...)
+		rows, err = r.conn().Query(ctx, sql, args...)
 		return err
 	})
 	return rows, err
@@ -131,7 +164,7 @@ func (r *watchRepo) queryRowScan(
 	scan func(pgx.Row) error,
 ) error {
 	return r.dbRetry(ctx, label, func(ctx context.Context) error {
-		return scan(r.db.Pool.QueryRow(ctx, sql, args...))
+		return scan(r.conn().QueryRow(ctx, sql, args...))
 	})
 }
 
