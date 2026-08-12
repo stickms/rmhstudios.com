@@ -163,11 +163,6 @@ export function RadialHub() {
 
   return (
     <div className="radial-hub" data-phase={phase}>
-      {/* Legibility scrim — fades the page ground in behind the docked orb so
-          content scrolling through its band dissolves instead of colliding
-          with it (see radial.css). Paints under the orb. */}
-      <div className="radial-hub__scrim" aria-hidden />
-
       <button
         ref={orbRef}
         type="button"
