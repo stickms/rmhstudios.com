@@ -52,6 +52,47 @@
 // The heartbeat is `updatedAt` on the session row rather than a tracker-wide
 // cursor: a row is only resumable on the evidence that the tracker was watching
 // THAT session, which is exactly what touching it proves.
+//
+// # Nothing depends on an event arriving
+//
+// Every gateway event this tracker listens to fires on a TRANSITION. None of
+// them fire for a state that is already true, so anything learned only from a
+// handler is invisible whenever the bot was not watching at the moment it
+// changed — which is every restart, every reconnect, and every write that
+// failed. That is not a rare edge: the normal case for the tracked account is
+// being online and in a call already, continuously, across a deploy.
+//
+// So every measured signal has a recovery path that does not involve an event,
+// and this table is the contract. A new signal without a middle column is a
+// signal that will silently read zero one day:
+//
+//	SIGNAL              LIVE SOURCE           RECOVERY (no event required)
+//	voice session       VOICE_STATE_UPDATE    Reconcile on guild sync, then
+//	                                          syncVoiceFromState every tick
+//	voice peers/alone   VOICE_STATE_UPDATE    refreshPeers("") every tick
+//	                    (anyone's, not his)
+//	status + clients    PRESENCE_UPDATE       Reconcile, then adopt-if-unknown
+//	                                          in syncPresenceFromState
+//	activities/games    PRESENCE_UPDATE       same, via applyPresence
+//	live card row       PRESENCE_UPDATE       same; also refreshed every tick
+//	name + avatar       MESSAGE_CREATE        RefreshIdentities, hourly REST
+//	typing runs         TYPING_START          sweepTyping settles them by clock
+//	day rollups         (derived)             recomputed from raw rows every
+//	                                          tick; backfillRollups at startup
+//	summaries           (derived)             regenerate when the prompt hash
+//	                                          moves, so corrected days re-run
+//
+// Two signals genuinely have no recovery, and it is better to say so than to
+// imply otherwise: MESSAGES and REACTIONS. Both are events about a moment
+// rather than a state, so there is nothing to re-read — a message sent while
+// the bot is down is simply not counted. (Message rows are keyed on a unique
+// `messageId`, so a channel-history backfill would be safe to add if that gap
+// ever matters; nothing else here would need to change.)
+//
+// The sweeps live in watch_voicesync.go and watch_presencesync.go, and both
+// carry the same warning: the gateway's state cache is authoritative for what
+// it holds, but discordgo merges rather than replaces `ClientStatus`, so it is
+// not authoritative for which clients he is signed in on.
 package discordbot
 
 import (
@@ -326,6 +367,14 @@ func (w *WatchService) flush(ctx context.Context, s *discordgo.Session) {
 	// never saw — or never managed to write — is adopted within the minute
 	// rather than lost until he next leaves. See watch_voicesync.go.
 	w.syncVoiceFromState(ctx, s, now)
+	// …and the same for presence: status, clients and activities all hang off
+	// PRESENCE_UPDATE, which never fires for somebody who was already online.
+	w.syncPresenceFromState(ctx, s, now)
+	// Peer counts drive `aloneSec`, the most damning figure the page has, and
+	// they only move on a voice event — including other people's. Re-deriving
+	// them from the gateway's state every tick means a missed join cannot leave
+	// him credited as alone for the rest of the evening.
+	w.refreshPeers(ctx, s, "", now)
 	for _, id := range w.cfg.UserIDs {
 		w.beat(ctx, id, now)
 		for _, key := range []string{w.dateKey(now), w.dateKey(now.Add(-24 * time.Hour))} {
@@ -497,10 +546,19 @@ func (w *WatchService) startVoice(
 
 // refreshPeers re-counts the company a tracked user has in their channel and
 // banks any stretch they spent alone in it.
+//
+// An EMPTY `guildID` means "every guild" — the recovery path. Peer counts
+// otherwise only move when a voice event arrives, so a join or leave that never
+// reached us would leave him credited as alone for the rest of the call. The
+// flush tick passes "" so the count is re-derived from the gateway's own state
+// every minute regardless of which events landed.
 func (w *WatchService) refreshPeers(ctx context.Context, s *discordgo.Session, guildID string, now time.Time) {
 	for id := range w.watched {
 		sess, err := w.repo.openVoiceSession(ctx, id)
-		if err != nil || sess == nil || sess.GuildID != guildID {
+		if err != nil || sess == nil {
+			continue
+		}
+		if guildID != "" && sess.GuildID != guildID {
 			continue
 		}
 		peers := countVoicePeers(s, sess.GuildID, sess.ChannelID, id)
@@ -618,16 +676,17 @@ func (w *WatchService) Reconcile(ctx context.Context, s *discordgo.Session, guil
 				continue
 			}
 			seen[pr.User.ID] = struct{}{}
-			status := strings.TrimSpace(string(pr.Status))
-			if status == "" {
+			if strings.TrimSpace(string(pr.Status)) == "" {
 				continue
 			}
-			if status == "invisible" {
-				status = "offline"
-			}
-			if err := w.applyStatusSession(ctx, pr.User.ID, status, clientsFrom(pr.ClientStatus), now); err != nil {
-				w.logger.Warn("watch: reconcile status", "userId", pr.User.ID, "error", err)
-			}
+			// The whole presence path, not just the session log. This used to
+			// call `applyStatusSession` alone, which settled the LOG and left
+			// `discord_watch_live` untouched — so a bot that connected while he
+			// was already online showed a grey dot and "offline" on the card
+			// forever, however many hours the log was correctly accruing. It
+			// also opens the presence sessions for anything he is already
+			// playing, which the log-only path never did either.
+			w.applyPresence(ctx, &discordgo.PresenceUpdate{Presence: *pr, GuildID: guild.ID}, now)
 		}
 
 		// Present in the guild's roster but absent from its presences means
@@ -787,8 +846,19 @@ func (w *WatchService) HandlePresence(ctx context.Context, e *discordgo.Presence
 	}
 	w.mu.Lock()
 	defer w.mu.Unlock()
+	w.applyPresence(ctx, e, time.Now().UTC())
+}
 
-	now := time.Now().UTC()
+// applyPresence is the whole of the presence bookkeeping, split from the handler
+// above so the periodic sweep can run the identical path.
+//
+// That sharing is the point rather than a convenience: a second implementation
+// of "what a presence means" is how the live card and the presence log end up
+// disagreeing about whether he is online. See watch_presencesync.go for why the
+// sweep exists at all.
+//
+// Caller must hold `w.mu`.
+func (w *WatchService) applyPresence(ctx context.Context, e *discordgo.PresenceUpdate, now time.Time) {
 	live := make(map[string]*discordgo.Activity, len(e.Activities))
 	for _, a := range e.Activities {
 		if a == nil || a.Type == discordgo.ActivityTypeCustom || strings.TrimSpace(a.Name) == "" {
