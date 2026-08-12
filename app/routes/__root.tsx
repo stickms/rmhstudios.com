@@ -486,13 +486,16 @@ function RootDocument({ children }: { children: ReactNode }) {
     <html lang={locale} dir={dirFor(locale)} suppressHydrationWarning>
       <head>
         <HeadContent />
-        {/* Scroll-triggered reveals start at opacity 0 and are brought in by an
-            IntersectionObserver. With no JS there is no observer, so whole
-            sections would simply never appear (the audit found /pricing's plan
-            grid and all of /rmh-capital's body in exactly that state). Reveal
-            is an enhancement; without scripting the content is just there.
-            The scripted equivalent — observer armed but never fired — is
-            handled by the deadline in components/motion/useRevealWatchdog. */}
+        {/* Reveals are now pure CSS (`animation-timeline: view()`), and their
+            hidden start state lives only inside `@supports` + `@media not
+            (prefers-reduced-motion)` — so a no-JS render was never hiding
+            anything and this rule is belt-and-braces rather than load-bearing.
+            It is KEPT because it costs nothing and it still covers the case the
+            CSS cannot: a third-party or future surface that sets its own
+            `opacity: 0` under `[data-reveal]`/`.reveal` and undoes it in script.
+            (`components/motion/useRevealWatchdog` — the 1.5s deadline that used
+            to rescue a stuck IntersectionObserver — is gone with the observer;
+            see docs/performance-audit-2026-08-12.md §1.1.) */}
         {/* `.store-art__img` is on the same footing: the storefront cards fade
             their art in from opacity 0 once it loads, and the class that does
             it is set by an event handler. No scripting, no handler, no art —

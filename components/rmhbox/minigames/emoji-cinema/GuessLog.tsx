@@ -7,8 +7,8 @@
  */
 'use client';
 
-import { useRef, useEffect } from 'react';
 import { useTranslation } from "react-i18next";
+import { useStickToBottom } from '@/hooks/useStickToBottom';
 
 export interface GuessLogEntry {
   userId: string;
@@ -24,14 +24,10 @@ interface GuessLogProps {
 
 export default function GuessLog({ entries }: GuessLogProps) {
   const { t } = useTranslation("c-rmhbox");
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  // Auto-scroll to bottom on new entries
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [entries.length]);
+  // `useStickToBottom`, not `scrollTop = scrollHeight` in an effect. Reading
+  // `scrollHeight` FORCES a synchronous layout on every new guess, and the old
+  // form re-pinned unconditionally. See docs/performance-audit-2026-08-12.md §1.5.
+  const { containerRef, contentRef } = useStickToBottom<HTMLDivElement, HTMLDivElement>();
 
   if (entries.length === 0) return null;
 
@@ -41,9 +37,10 @@ export default function GuessLog({ entries }: GuessLogProps) {
         {t("guess-log", { defaultValue: "Guess Log" })}
       </span>
       <div
-        ref={scrollRef}
+        ref={containerRef}
         className="flex flex-col gap-1 max-h-40 overflow-y-auto"
       >
+        <div ref={contentRef} className="flex flex-col gap-1">
         {entries.map((entry, i) => (
           <div
             key={i}
@@ -68,6 +65,7 @@ export default function GuessLog({ entries }: GuessLogProps) {
             </span>
           </div>
         ))}
+        </div>
       </div>
     </div>
   );

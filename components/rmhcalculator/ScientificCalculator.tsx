@@ -90,15 +90,21 @@ export function ScientificCalculator({ model }: { model: CalcModel }) {
   const [history, setHistory] = useState<HistoryItem[]>([]);
 
   /**
-   * Grow the field to fit what is in it, then stop and scroll.
+   * Grow the field to fit what is in it, then stop and scroll —
+   * **fallback only.**
    *
-   * Measured rather than counted: reset to `auto` first so the box also SHRINKS
-   * when text is deleted, then take the content height. The ceiling is
-   * `max-height` in CSS rather than a number here, so the cap stays with the
-   * rest of the field's styling and scales with its clamped font size — once
-   * the content passes it, `overflow-y: auto` takes over.
+   * `field-sizing: content` in rmhcalculator.css does this natively, inside the
+   * layout pass the browser is already running. What is left here is the same
+   * measurement for engines that lack it: reset to `auto` so the box also
+   * SHRINKS when text is deleted, then take the content height.
+   *
+   * The `CSS.supports` guard is the point. This pair of statements is a write
+   * that invalidates layout followed by a read that forces it back —
+   * synchronously, on every keystroke — so it must not run anywhere the browser
+   * is already doing the work. See docs/performance-audit-2026-08-12.md §1.7.
    */
   useEffect(() => {
+    if (typeof CSS !== 'undefined' && CSS.supports?.('field-sizing', 'content')) return;
     const el = inputRef.current;
     if (!el) return;
     el.style.height = 'auto';

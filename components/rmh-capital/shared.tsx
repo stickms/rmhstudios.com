@@ -28,70 +28,20 @@ export function BrandMark() {
   );
 }
 
-/**
- * Reveal-on-scroll. Adds `.in` to every `.reveal` element inside the scope as it
- * enters the viewport. Re-runs whenever `key` changes (i.e. on navigation) so
- * freshly-mounted page content animates in too. Falls back to showing everything
- * if IntersectionObserver is unavailable or the user prefers reduced motion.
+/*
+ * The scroll-reveal used to live here as `useReveal(key)`: a rAF-deferred
+ * `querySelectorAll` over every `.reveal` node, a `getBoundingClientRect()` per
+ * node to catch the ones already on screen, an IntersectionObserver for the
+ * rest, and a print listener + deadline as a fail-open net — because the CSS it
+ * drove set `opacity: 0` unconditionally, so anything that did not run the
+ * observer rendered the page blank.
+ *
+ * It is now a scroll-driven CSS animation (`animation-timeline: view()`) whose
+ * hidden start state exists only inside `@supports` + `@media not
+ * (prefers-reduced-motion)`. Nothing can be left hidden by a mechanism that
+ * never ran, so the net is not needed either. See
+ * docs/performance-audit-2026-08-12.md §1.4.
  */
-export function useReveal(key: string) {
-  useEffect(() => {
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let io: IntersectionObserver | null = null;
-
-    // Defer one frame so the freshly-navigated page is in the DOM and laid out
-    // before we query/measure it. Without this, a client-side route change can
-    // run before the new page commits and the reveal nodes never get `.in`.
-    const raf = requestAnimationFrame(() => {
-      const nodes = Array.from(document.querySelectorAll<HTMLElement>('.rmhc-root .reveal'));
-      if (reduce || !('IntersectionObserver' in window)) {
-        nodes.forEach((n) => n.classList.add('in'));
-        return;
-      }
-      const vh = window.innerHeight || document.documentElement.clientHeight;
-      io = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((e) => {
-            if (e.isIntersecting) {
-              e.target.classList.add('in');
-              io?.unobserve(e.target);
-            }
-          });
-        },
-        { threshold: 0.1, rootMargin: '0px 0px -8% 0px' },
-      );
-      nodes.forEach((n) => {
-        if (n.classList.contains('in')) return;
-        // Reveal anything already at/above the fold right away — don't rely on the
-        // observer's async first callback, which is unreliable after an SPA nav.
-        // Observe only below-the-fold nodes so they still animate in on scroll.
-        if (n.getBoundingClientRect().top < vh * 0.92) n.classList.add('in');
-        else io!.observe(n);
-      });
-    });
-
-    // Fail-open. Below-the-fold nodes wait on the observer, which never fires
-    // in anything that doesn't scroll — print, full-page capture, an embedded
-    // viewport — and the page is then a hero and a footer around thousands of
-    // pixels of nothing. After a deadline (or on print) everything is shown;
-    // a normal scroll always wins the race, so the animation is untouched.
-    const revealAll = () => {
-      document
-        .querySelectorAll<HTMLElement>('.rmhc-root .reveal:not(.in)')
-        .forEach((n) => n.classList.add('in'));
-      io?.disconnect();
-    };
-    const deadline = setTimeout(revealAll, 1500);
-    window.addEventListener('beforeprint', revealAll);
-
-    return () => {
-      cancelAnimationFrame(raf);
-      clearTimeout(deadline);
-      window.removeEventListener('beforeprint', revealAll);
-      io?.disconnect();
-    };
-  }, [key]);
-}
 
 type NavItem = { to: string; labelKey: string; labelDefault: string };
 const NAV: NavItem[] = [

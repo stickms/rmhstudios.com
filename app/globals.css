@@ -1520,6 +1520,26 @@ html.app-route {
       inset 0 -1px 0 var(--site-glass-rim-soft);
   }
 
+  /* ── `.textarea-autosize` — grow with the content, without a layout read ────
+     `<Textarea autosize>` opts in. The browser sizes the control inside the
+     layout pass it is already running; the JS this replaces
+     (`el.style.height = 'auto'` then reading `el.scrollHeight`) forces a
+     SYNCHRONOUS layout on every keystroke, which is the shape it is worth
+     removing. See docs/performance-audit-2026-08-12.md §1.7.
+
+     Gated on `@supports` so an engine without `field-sizing` keeps exactly the
+     fixed-height behaviour it has today — this can only ever be an upgrade. The
+     `min-h-24` utility on the primitive still sets the floor; the ceiling here
+     hands overflow back to the scrollbar rather than letting a long paste push
+     the page. */
+  @supports (field-sizing: content) {
+    .textarea-autosize {
+      field-sizing: content;
+      max-block-size: var(--textarea-max-block, 40vh);
+      overflow-y: auto;
+    }
+  }
+
   /* Shared sticky geometry. The primary chrome owns the page-edge inset and a
      full section of breathing room below it. A secondary sticky is an explicit
      cascade level: it clears the compact 56px primary header instead of racing it
@@ -5134,27 +5154,26 @@ body {
 }
 
 /* ── Reveal on scroll (audit SPA-003) ─────────────────────────────────────
-   One curve for the whole site, replacing five implementations that disagreed on
-   timing, distance and easing.
+   The rules that used to be here are GONE, and this note is what replaces them,
+   because the deletion is the interesting part.
 
-   CRITICALLY: visible by DEFAULT. The hidden state only applies under
-   `[data-reveal-armed]`, which `hooks/useReveal` sets **after** it has an
-   IntersectionObserver watching. That inverts the failure mode behind AUD-006 in
-   the 2026-07-28 audit — pages whose entire body sat at `opacity: 0` whenever the
-   observer didn't fire (print, full-page capture, reader mode, pre-hydration,
-   `/pricing`'s plan grid, ~4,700px of `/rmh-capital`). If JS never runs, content
-   shows. */
-[data-reveal-armed] .site-reveal {
-  opacity: 0;
-  transform: translateY(var(--site-reveal-distance));
-  transition:
-    opacity var(--site-reveal-duration) var(--site-reveal-ease) var(--site-reveal-delay, 0ms),
-    transform var(--site-reveal-duration) var(--site-reveal-ease) var(--site-reveal-delay, 0ms);
-}
-[data-reveal-armed] .site-reveal[data-visible] {
-  opacity: 1;
-  transform: none;
-}
+   `[data-reveal-armed] .site-reveal` was the site's answer to AUD-006: a reveal
+   whose hidden state was opt-IN, applied only after `hooks/useReveal` had an
+   IntersectionObserver watching, so content could never be left invisible by a
+   mechanism that never ran. The design was right. It was also never adopted —
+   `.site-reveal` finished with ZERO consumers in the entire tree, and the hook
+   with zero importers, while the five implementations it was written to replace
+   carried on (`rmh-pmc`, `rmh-capital`, `LibraryReveal`, `MembershipPanel`,
+   `RoadmapSection`). Two of those still had the exact `opacity: 0` fail-closed
+   bug AUD-006 named.
+
+   So the answer is not a sixth mechanism. It is `.u-reveal` (§ further down this
+   file): `animation-timeline: view()`, no observer, no JS at all, and hidden
+   only inside `@supports` + `@media not (prefers-reduced-motion)` — which gets
+   the fail-open property structurally instead of by arming an attribute.
+   `--site-reveal-distance` / `-duration` / `-ease` above are KEPT and are what
+   the CSS reveals read, so "one curve for the whole site" survives the change.
+   See docs/performance-audit-2026-08-12.md §1.4. */
 
 /* Standalone design-system story. */
 .spatial-design-page {
@@ -5560,7 +5579,10 @@ body {
 @keyframes u-reveal-in {
   from {
     opacity: 0;
-    transform: translateY(24px);
+    /* `--site-reveal-distance` is the site's one reveal offset (§ the token block
+       near the top of this file). `<Reveal y={…}>` overrides it per element via
+       `--u-reveal-y`; everything else inherits the shared curve. */
+    transform: translateY(var(--u-reveal-y, var(--site-reveal-distance)));
   }
   to {
     opacity: 1;
@@ -5572,7 +5594,12 @@ body {
     html:not(.reduce-motion) .u-reveal {
       animation: u-reveal-in linear both;
       animation-timeline: view();
-      animation-range: entry 0% entry 46%;
+      /* A stagger on a scroll timeline is a RANGE SHIFT, not a delay: there is
+         no clock for `animation-delay` to delay against, so a delay set here is
+         silently ignored. `--u-reveal-shift` moves where in its own entry an
+         element starts, which is the same effect for siblings sharing a row. */
+      animation-range: entry var(--u-reveal-shift, 0%) entry
+        calc(46% + var(--u-reveal-shift, 0%));
     }
     /* Optional per-item lift for staggered grids: parent sets nothing, each
        child just enters on its own geometry — a natural cascade. */
@@ -5580,6 +5607,37 @@ body {
       animation: u-reveal-in linear both;
       animation-timeline: view();
       animation-range: entry 2% cover 12%;
+    }
+
+    /* ── `.u-reveal-group` — the staggered container (`<RevealGroup>`) ────────
+       Children cascade. The shift is assigned by `nth-child` rather than by an
+       index prop because the alternative is threading a number through every
+       item, and because it keeps working when children are conditional.
+
+       Past the 6th child the shift stops growing on purpose: a grid of 30 cards
+       whose stagger kept accumulating would leave the last row starting more
+       than a full entry late, i.e. visibly stuck. Six steps is enough to read as
+       a cascade in the row where a cascade is visible at all. */
+    html:not(.reduce-motion) .u-reveal-group > * {
+      animation: u-reveal-in linear both;
+      animation-timeline: view();
+      animation-range: entry var(--u-reveal-shift, 0%) entry
+        calc(46% + var(--u-reveal-shift, 0%));
+    }
+    html:not(.reduce-motion) .u-reveal-group > *:nth-child(2) {
+      --u-reveal-shift: 5%;
+    }
+    html:not(.reduce-motion) .u-reveal-group > *:nth-child(3) {
+      --u-reveal-shift: 10%;
+    }
+    html:not(.reduce-motion) .u-reveal-group > *:nth-child(4) {
+      --u-reveal-shift: 15%;
+    }
+    html:not(.reduce-motion) .u-reveal-group > *:nth-child(5) {
+      --u-reveal-shift: 20%;
+    }
+    html:not(.reduce-motion) .u-reveal-group > *:nth-child(n + 6) {
+      --u-reveal-shift: 25%;
     }
   }
 }
@@ -5632,6 +5690,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .u-reveal,
   .u-reveal-soft,
+  .u-reveal-group > *,
   .u-parallax {
     animation: none !important;
     transform: none !important;
@@ -5640,6 +5699,7 @@ body {
 }
 html.reduce-motion .u-reveal,
 html.reduce-motion .u-reveal-soft,
+html.reduce-motion .u-reveal-group > *,
 html.reduce-motion .u-parallax {
   animation: none !important;
   transform: none !important;

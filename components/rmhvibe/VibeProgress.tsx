@@ -14,8 +14,8 @@
  * it degrades gracefully on a half-streamed, not-yet-valid response.
  */
 
-import { useEffect, useRef } from 'react';
 import { Check, FileCode2, Loader2 } from 'lucide-react';
+import { useStickToBottom } from '@/hooks/useStickToBottom';
 
 const FILES_MARKER = '===FILES===';
 const FILE_HEADER_RE = /^---\s*file:\s*(.+?)\s*---\s*$/gim;
@@ -76,13 +76,14 @@ function formatBytes(n: number): string {
 
 export function VibeProgress({ content, className = '' }: { content: string; className?: string }) {
   const { title, deps, phase, files } = parseVibeProgress(content);
-  const ref = useRef<HTMLDivElement>(null);
+  const { containerRef, contentRef } = useStickToBottom<HTMLDivElement, HTMLDivElement>();
 
-  // Keep the newest file in view as the list grows.
-  useEffect(() => {
-    const el = ref.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [files.length]);
+  // `useStickToBottom`, not `scrollTop = scrollHeight` in an effect. The old form
+  // had two faults: reading `scrollHeight` FORCES a synchronous layout, here on
+  // every streamed token, and it re-pinned unconditionally — so a reader who
+  // scrolled up to re-read something was yanked back down by the next token.
+  // The hook records the pin decision on `scroll` (before the content grows) and
+  // re-pins from a ResizeObserver. See docs/performance-audit-2026-08-12.md §1.5.
 
   if (!content.trim()) return null;
 
@@ -106,7 +107,8 @@ export function VibeProgress({ content, className = '' }: { content: string; cla
       )}
 
       {files.length > 0 && (
-        <div ref={ref} className="vibe-progress__files">
+        <div ref={containerRef} className="vibe-progress__files">
+        <div ref={contentRef}>
           {files.map((f) => (
             <div
               key={f.name}
@@ -126,6 +128,7 @@ export function VibeProgress({ content, className = '' }: { content: string; cla
               )}
             </div>
           ))}
+          </div>
         </div>
       )}
     </div>

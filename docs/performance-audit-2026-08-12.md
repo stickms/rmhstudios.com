@@ -77,13 +77,37 @@ old one because nothing pointed the second at the first.
 | 1   | `<Reveal>` (JS) used 34× while the CSS equivalent `.u-reveal` is used 3×    | every feed column, every section  | P0   |
 | 2   | `AnimatedCount` re-renders React **once per frame**, ×4 per feed card       | every feed scroll + every like    | P0   |
 | 3   | 15 files import full `motion`, defeating `LazyMotion` for the whole app     | every page that loads one of them | P0   |
-| 4   | `useReveal` is mounted on 12 pages and its target class has **0 consumers** | 12 pages, dead work               | P1   |
+| 4   | ~~`useReveal` mounted on 12 pages~~ → **wrong**: zero importers. Two *other* reveals were fail-closed | `/rmh-pmc`, `/rmh-capital` render blank without JS | P1   |
 | 5   | Beatmap STFT: **2.9 s** per 15-min upload, single-threaded JS               | the jobs worker, per upload       | P1   |
 | 6   | 12 chat surfaces hand-roll stick-to-bottom with a forced reflow per message | every chat/stream message         | P1   |
 | 7   | `AnchoredMenu` measures + flips in JS; CSS anchor positioning does it       | every menu open                   | P2   |
 | 8   | `vibe-builder` needlessly serializes ahead of the 66 s `vite build`         | every cold deploy                 | P2   |
 | 9   | Textarea autosize by forced reflow; `field-sizing: content` is free         | per keystroke, 54 textareas       | P2   |
 | 10  | ResizeObserver used for pure layout decisions container queries can make    | 35 files                          | P3   |
+
+---
+
+## Implementation status (updated 2026-08-12, after the work landed)
+
+Everything in Part 4's steps 1–8 is implemented. Where implementation contradicted
+the audit, **the audit is corrected in place below and the correction is called
+out** — a finding that turned out to be wrong is more useful documented than
+quietly deleted.
+
+| Finding | Status | Note |
+| --- | --- | --- |
+| §1.1 `<Reveal>` → `.u-reveal` | ✅ done | Component rewritten; all 34 call sites unchanged. Watchdog deleted. |
+| §1.2 `AnimatedCount` | ✅ done, **different fix** | CSS `counter()` was rejected during implementation — see the correction in §1.2. |
+| §1.3 `m as motion` | ✅ done | 15 files + an eslint rule holding the count at zero. |
+| §1.4 dead `useReveal` | ✅ done, **finding was wrong** | It had ZERO importers, not 12 — see the correction in §1.4. The real bug was next door. |
+| §1.5 stick-to-bottom | ◐ 5 of 12 | The five append-only logs are migrated. The seven conversation views are not — see §1.5. |
+| §1.6 `AnchoredMenu` | ⛔ not done | Deliberate. High risk, needs a real device pass; see §1.6. |
+| §1.7 `field-sizing` | ✅ done | On the `Textarea` primitive + the calculator, both behind `@supports`. |
+| §1.8 container queries | ⛔ not done | Standing direction, not a discrete change. |
+| §1.9 `content-visibility` | ⛔ not done | Needs a scroll-behaviour pass in a browser; see §1.9. |
+| §2.1(a) parallel STFT | ✅ done | **Measured 2.05× on 4 cores, output bit-identical.** See §2.1. |
+| §2.1(b) WASM the FFT | ⛔ not done | Now lower value — see the correction in §2.1. |
+| §3.2 `vibe-builder` | ✅ done | Edge removed; assertion moved to the runner stage. |
 
 ---
 
@@ -257,6 +281,45 @@ Given the pseudo-element caveat, the honest framing: this is a clear win for the
 feed's engagement pills specifically, where the numbers are small and the render
 volume is high. It is not worth forcing onto every `AnimatedCount` call site.
 
+> ### CORRECTION — what actually shipped, and why it is not the above
+>
+> Implementation rejected the `counter()` version outright. The two constraints
+> sketched above turned out to be disqualifying rather than manageable:
+>
+> 1. **Formatting.** The call sites were surveyed properly and *most* of them
+>    format: `formatCount` (1.2K / 3.4M) across the feed, comments and user
+>    builds, and `toLocaleString()` (thousands separators) on `ProfileHero`'s coin
+>    balance and `ProfileHoverCard`'s follower counts. `counter()` renders a bare
+>    integer and can express none of them. "Roll under 1,000, snap above it" does
+>    not rescue this — a coin balance is *always* above it, so the component that
+>    rolls most visibly would never roll at all.
+> 2. **Accessibility.** Moving the number into `::after` was assumed benign
+>    because the engagement buttons carry their own `aria-label`. But the **views**
+>    readout in `RMHarkActions` is a plain `<div>` with no label, so its count text
+>    is genuinely read today. That is a real regression traded for a render win.
+>
+> **What shipped instead: the tween writes to the DOM through a ref, and React
+> renders once per real value change.**
+>
+> ```ts
+> const step = (ts: number) => {
+>   // …
+>   el.textContent = formatRef.current(Math.round(current));  // not setDisplay()
+>   if (t < 1) raf = requestAnimationFrame(step);
+> };
+> ```
+>
+> This removes **every** per-frame React render — which was the actual finding —
+> while keeping a real text node, so formatting, selection, copy/paste and the
+> accessibility tree are all untouched. `format` is held in a ref and deliberately
+> kept out of the effect deps, because most call sites pass an inline arrow whose
+> identity changes every render; as a dependency it would restart the tween on
+> every parent render, which is the same thrash by another route.
+>
+> The lesson worth keeping: **"move it to CSS" is a means, not the goal.** The
+> goal was removing 17 renders per tween, and a ref achieves it without asking the
+> platform to render a formatted number, which CSS cannot do.
+
 ---
 
 ## 1.3 · P0 — 15 files import full `motion` and silently un-do `LazyMotion`
@@ -310,35 +373,84 @@ it belongs in the same commit as the fix:
 
 ---
 
-## 1.4 · P1 — `useReveal` is mounted on 12 pages and does nothing
+## 1.4 · P1 — CORRECTED: the dead hook was harmless; the reveals next to it were not
 
-**Where:** `hooks/useReveal.ts:47`.
+> **This finding was wrong as first written, and the correction is the useful
+> part.** It claimed `useReveal` was "mounted on 12 pages" each paying a
+> `querySelectorAll`. That number came from a grep for `useReveal` — which
+> collided with **three unrelated hooks of the same name** in
+> `components/rmh-pmc/shared.tsx`, `components/rmh-capital/shared.tsx` and
+> `components/library/LibraryReveal.tsx`.
+>
+> `hooks/useReveal.ts` actually had **zero importers**. It cost nothing at
+> runtime, because it never ran. It was dead code, not slow code — a P3
+> deletion, not a P1 fix.
+>
+> Chasing the correction is what found the real bug.
 
-```ts
-const targets = Array.from(root.querySelectorAll<HTMLElement>('.site-reveal'));
-if (targets.length === 0) return;
+**What was actually there.** `hooks/useReveal.ts` and its `.site-reveal` CSS were
+written to fix AUD-006 (2026-07-28): reveals that set `opacity: 0`
+unconditionally and relied on an IntersectionObserver to undo it, so print,
+reader mode, full-page capture and pre-hydration all rendered blank sections.
+Its design was right — the hidden state was opt-IN, applied only once an observer
+was already watching.
+
+It was never adopted. `.site-reveal` finished with zero consumers, while **the
+five implementations it was written to replace carried on unchanged**, two of
+them still carrying the exact bug:
+
+```css
+/* components/rmh-pmc/rmh-pmc.css — before */
+.rmhp-root .reveal { opacity: 0; transform: translateY(20px); transition: … }
+.rmhp-root .reveal.in { opacity: 1; transform: none; }
 ```
 
-`.site-reveal` appears in **zero** `.tsx` files. It exists in `globals.css`
-(`5147`, `5154`) and in this hook's own doc comment, and nowhere else. So on
-`app/routes/__root.tsx`, `components/rmh-capital/Layout.tsx`,
-`components/rmh-pmc/Layout.tsx`, `components/library/*` and the rest of the 12
-consumers, the hook runs a `querySelectorAll` across the whole subtree on mount
-and returns.
+```css
+/* components/rmh-capital/rmh-capital.css — before, same shape */
+.rmhc-root .reveal { opacity: 0; transform: translateY(24px); transition: … }
+```
 
-This is the identical failure `hooks/useSpatialParallax.ts` documents in its own
-header — "a selector that never matches is a slower `querySelector` and a false
-suggestion that the surface exists" — which means the pattern has now recurred
-and is worth a gate rather than another one-off fix.
+`.in` was added by a `useReveal(pathname)` hook that ran a rAF-deferred
+`querySelectorAll` over every `.reveal` node and a `getBoundingClientRect()` per
+node — a forced layout across ~100 elements on every navigation — plus an
+IntersectionObserver, plus a print listener and a deadline as a fail-open net.
+The net existed *because* the CSS was fail-closed. All of it was scaffolding
+around a decision made in the first line.
 
-**Fix:** delete `hooks/useReveal.ts`, its 12 call sites, and the
-`[data-reveal-armed] .site-reveal` rules at `globals.css:5141-5158`. §1.1
-replaces the capability with the CSS path.
+**What shipped.** Both stylesheets moved to the same scroll-driven, fail-open
+shape as `.u-reveal`, keeping the existing `.reveal` / `.d1`–`.d4` class names so
+no markup changed across ~100 call sites:
 
-**Gate it:** the added-lines scan in `scripts/check-consistency.sh` is the right
-home for a check that every class-name string literal passed to
-`querySelectorAll` in `hooks/` matches at least one occurrence in
-`components/**` or `app/**`.
+```css
+@supports (animation-timeline: view()) {
+  @media not (prefers-reduced-motion: reduce) {
+    html:not(.reduce-motion) .rmhp-root .reveal {
+      animation: rmhp-reveal-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 46%;
+    }
+    /* The stagger is a RANGE shift, not a delay — a scroll timeline has no clock
+       for `animation-delay` to delay against, so a delay is silently ignored. */
+    html:not(.reduce-motion) .rmhp-root .reveal.d1 { animation-range: entry 6% entry 52%; }
+    html:not(.reduce-motion) .rmhp-root .reveal.d2 { animation-range: entry 12% entry 58%; }
+  }
+}
+```
+
+Deleted with them: both `useReveal(key)` implementations, both call sites in the
+layout shells, `hooks/useReveal.ts`, and the `[data-reveal-armed] .site-reveal`
+rules. The `--site-reveal-distance` / `-duration` / `-ease` tokens are **kept** —
+`.u-reveal` now reads them, so "one curve for the whole site" survives.
+
+`components/library/LibraryReveal.tsx` is the third same-named hook and is a
+different design (a context + observe/unobserve callback ref, fail-open already).
+It is left alone.
+
+**The transferable lesson,** and the reason this is written up rather than
+silently fixed: *writing the replacement is not the migration.* A correct
+primitive with zero adopters is indistinguishable from no primitive at all,
+except that it also makes greps lie. Both times this pattern appeared in this
+audit — here and in §1.1 — the good implementation existed and lost.
 
 ---
 
@@ -376,6 +488,28 @@ consumers, both in `components/rmhtube/`.
 first — the hook's own docs describe the "chat doesn't scroll when images or
 GIFs are embedded" report that all twelve still have — and a performance fix
 second.
+
+> ### STATUS — 5 of 12 done
+>
+> Migrated: `rmhvibe/ThinkingStream`, `rmhvibe/VibeProgress`,
+> `rmhcalculator/ReasoningStream`, `rmhbox/…/undercover-agent/GameLog`,
+> `rmhbox/…/emoji-cinema/GuessLog`. These are append-only logs with a simple,
+> fully-visible DOM, so the container/content ref split is mechanical and safe to
+> verify by reading. Each also gained a behaviour fix worth naming on its own: they
+> re-pinned *unconditionally*, so a reader who scrolled up to re-read an earlier
+> line was yanked back down by the next streamed token. They now respect the
+> reader's position.
+>
+> **Not migrated (7):** `feed/GroupChatView`, `feed/PersonaChatColumn`,
+> `spaces/SpaceRoom`, `rideshare/RideChat`, `rmhmusic/ChatPanel`,
+> `assistant/ConciergePanel`, `rmh-farming-sim/ChatBox`.
+>
+> These are the ones that carry embeds — and therefore the ones where the hook's
+> real value is — but they are also the ones whose scroll container and content
+> box need to be split correctly against a live conversation with images loading
+> into it. That is a change to verify in a browser, not by reading a diff, and
+> shipping it blind is how you turn a scroll annoyance into a scroll bug. Left for
+> a pass that can watch a GIF land.
 
 **Where CSS can take over entirely.** For an append-only log with no
 scroll-to-read requirement (`ThinkingStream`, `VibeProgress`, `GuessLog`), the
@@ -630,6 +764,50 @@ queue is the right abstraction and it is already in place.
 inline — `app/routes/api/slice-it/songs/upload.ts:457` enqueues after the
 commit, and the O3 work moved charting out of the request path entirely. The
 3-second figure is worker time, not user-facing latency.
+
+### RESULT — measured after implementation
+
+Two things sharpened once the work was done.
+
+**The FFT is 95% of the STFT, not "most of it".** Profiled separately at
+15 minutes / 89,788 frames:
+
+| Stage | Time | Share |
+| --- | ---: | ---: |
+| `RealFFT.magnitudes` | 3,576 ms | **95%** |
+| filterbank + `log1p` | 181 ms | 5% |
+
+So the filterbank is noise and only the transform is worth touching — which is
+also why (b) below changed rank.
+
+**(a) landed and is measured.** `computeSpectrogramParallel` splits the frame
+range across `availableParallelism() - 1` workers over two `SharedArrayBuffer`s.
+On this 4-core box, 3 workers, 15-minute track:
+
+| | Time |
+| --- | ---: |
+| Single-threaded `computeSpectrogram` | 1,663 ms |
+| `computeSpectrogramParallel` | **809 ms** |
+| Speedup | **2.05×** |
+
+**Differing cells: 0 of 4,883,508.** The output is bit-identical to the
+reference, which is the property that matters most here — a chart that depends on
+how many cores the box had would be a genuinely nasty bug, and it is ruled out by
+construction: the workers call `computeSpectrogramRange`, the *same* exported
+kernel the single-threaded path calls, rather than a transcription of it.
+
+2.05× rather than ~3× is worker spawn (~40 ms each) plus the copy in and out of
+shared memory, against a 1.6 s job on a shared 4-core sandbox. It improves with
+core count; the production VPS has more.
+
+Cost to the build: **one esbuild entry**, and esbuild does all seven in 127 ms.
+
+**(b) is now worth less than the audit implied, and is not done.** WASM's 2–4×
+applies to the FFT, which is now already split N ways — so it multiplies against
+a much smaller remainder, and it would add a Rust/emscripten toolchain to a build
+this same audit is trying to keep fast. Revisit only if analysis throughput
+becomes a real constraint; the sequencing advice ("parallelism first") turned out
+to be the important part of §2.1, and it is done.
 
 ## 2.2 · Other low-level candidates, ranked honestly
 
