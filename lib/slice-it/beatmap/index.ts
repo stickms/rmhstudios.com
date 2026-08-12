@@ -40,8 +40,8 @@
  */
 
 import type { BeatMap, Difficulty, Slice } from '../types';
-import { prepareAudio, type AudioLike } from './audio';
-import { computeSpectrogram } from './spectrum';
+import { prepareAudio, type AudioLike, type PreparedAudio } from './audio';
+import { computeSpectrogram, type Spectrogram } from './spectrum';
 import { detectOnsets, onsetStrengthSignal } from './onsets';
 import { bpmFromBeats, estimateTempo, syntheticBeats, trackBeats } from './tempo';
 import { buildCharts, quantizeOnsets } from './charter';
@@ -139,6 +139,26 @@ export interface GenerateOptions {
    * not involve deleting the upload.
    */
   densityBias?: number;
+  /**
+   * A spectrogram already computed for this audio, and the prepared PCM it came
+   * from. Skips the STFT — which is ~64% of this function — so the caller can
+   * have computed it somewhere better.
+   *
+   * The one caller is `analysis-queue.server.ts`, which runs the transform
+   * across every core via `spectrum.parallel.server.ts`. It is an option rather
+   * than a second entry point because the parallel path is Node-only
+   * (`worker_threads`, `SharedArrayBuffer`) and this module is deliberately
+   * dependency-free so a browser tab can still chart a legacy song.
+   *
+   * **Both fields or neither**, and both must come from the same
+   * `prepareAudio(audio)` call as each other — `samples` is used again below for
+   * the peak envelope, so a mismatched pair would silently chart one track and
+   * draw the waveform of another.
+   */
+  precomputed?: {
+    prepared: PreparedAudio;
+    spectrogram: Spectrogram;
+  };
 }
 
 /** How close a hint must be to the detection to be trusted, fractionally. */
@@ -173,9 +193,9 @@ export function reconcileBpm(detected: number, hint: number | undefined): number
  * the upload. It only rejects input it cannot read at all.
  */
 export function generateBeatmap(audio: AudioLike, options: GenerateOptions): GeneratedBeatmap {
-  const { samples, sampleRate, duration } = prepareAudio(audio);
+  const { samples, sampleRate, duration } = options.precomputed?.prepared ?? prepareAudio(audio);
 
-  const spec = computeSpectrogram(samples, sampleRate);
+  const spec = options.precomputed?.spectrogram ?? computeSpectrogram(samples, sampleRate);
   const odf = onsetStrengthSignal(spec);
   const tempo = estimateTempo(odf, spec.frameDuration);
 

@@ -110,6 +110,12 @@ function SortableRow<T extends SortableItem>({
  {/* Drag handle (pointer devices). Touch/keyboard users use the buttons. */}
  <span
  onPointerDown={(e) => controls.start(e)}
+ // `data-gesture` (globals.css §user-select): the press that begins a
+ // reorder lands HERE, so this is where a selection would anchor — and the
+ // drag then sweeps it across the row's own label, which sits inches away
+ // in the same flex line. Guarding the handle is enough to stop it: a
+ // selection that never starts cannot be extended.
+ data-gesture=""
  className="cursor-grab touch-none text-site-text-dim active:cursor-grabbing"
  aria-hidden
  >

@@ -1286,6 +1286,20 @@ html.ios-webkit .radial-hub__veil {
   /* Focus lands here when the menu opens (see RadialHub) — programmatic focus on
      a container should not draw a ring around the whole globe. */
   outline: none;
+  /* The whole globe is a gesture, not just the sphere.
+     `.radial-globe__stage` below already refuses selection, but the stage is
+     only the square the sphere is inscribed in — this ROOT also holds the title
+     card ("RMH Presents" / "The Liquid Globe"), and the two sit in one grid a
+     thumb's width apart. So a spin that starts on the sphere and travels
+     downward, or a hold that lands just below it, anchors a selection in the
+     wordmark and drags a highlight across it for the rest of the gesture. The
+     stage cannot prevent that: the selection never began inside the stage.
+     The title is a marquee, not prose — there is nothing here anyone copies —
+     so the guard belongs on the container that owns the gesture. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 /* Blooms out of the orb and collapses back into it. KEYFRAMES, not a transition:
    the globe is mounted only while the menu is up, and an element that is created

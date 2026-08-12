@@ -192,11 +192,26 @@
   resize: none;
   font-family: inherit;
   line-height: 1.25;
-  /* The ceiling the auto-grow effect grows into. `em` keeps it five lines at
-     whatever size the clamp above resolves to, rather than five lines at one
-     viewport width and two at another. Past it the field scrolls. */
+  /* The ceiling the auto-grow grows into. `em` keeps it five lines at whatever
+     size the clamp above resolves to, rather than five lines at one viewport
+     width and two at another. Past it the field scrolls. */
   max-height: calc(1.25em * 5);
   overflow-y: auto;
+}
+/* Auto-grow, natively. This used to be a `height:auto` write followed by a
+   `scrollHeight` read in an effect keyed on the expression — a FORCED
+   synchronous layout on every keystroke, in a field people type into fast.
+   `field-sizing: content` gets the same box out of the layout pass the browser
+   was already running. The JS fallback is still there for engines without it,
+   scoped by the matching `@supports not`. See
+   docs/performance-audit-2026-08-12.md §1.7. */
+@supports (field-sizing: content) {
+  .rmhcalc-display__input {
+    field-sizing: content;
+    /* The inline `height` the fallback effect may have written must not win over
+       the intrinsic sizing once the browser is doing it. */
+    height: auto !important;
+  }
 }
 .rmhcalc-display__input::placeholder {
   color: var(--site-text-dim);

@@ -24,7 +24,11 @@
  *   not sit under the home indicator on an iPhone.
  */
 
-import { AnimatePresence, motion } from 'framer-motion';
+// `m as motion`, not `motion`: `Providers` wraps the app in `LazyMotion`, and `m`
+// is the component that honours it — `motion` bundles its own full feature
+// implementation, which lands in the SHARED ENTRY CHUNK when the module is
+// reachable from a route's top level.
+import { AnimatePresence, m as motion } from 'framer-motion';
 import { ArrowUp, Bot, Sparkles, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';

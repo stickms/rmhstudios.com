@@ -219,6 +219,11 @@ export function TouchControls({ scheme, seat, stateRef, buttonsRef, active }: To
       */}
       <div
         ref={layerRef}
+        // `data-gesture` (globals.css §user-select): `touchAction: 'none'` below
+        // stops the browser SCROLLING with the drag; it does not stop the
+        // selection the same press anchors. This layer is the full screen, so
+        // that selection lands on whatever hint or score text it covers.
+        data-gesture=""
         className="absolute inset-0 z-10"
         style={{ touchAction: 'none' }}
         onPointerDown={handleDown}

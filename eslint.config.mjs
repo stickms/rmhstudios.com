@@ -206,6 +206,38 @@ export default tseslint.config(
       // fail the build rather than add a line to a warning list nobody reads.
       // See docs/loading-audit-2026-08-11/02-critical-path.md §1.
       'local/no-lucide-namespace-import': 'error',
+      // Same shape as the rule above, same reason for "error": the backlog is
+      // zero as of 2026-08-12, and the failure is invisible.
+      //
+      // `Providers` wraps the app in `<LazyMotion>` and `lib/motion-features.ts`
+      // exists ONLY so the heavy animation/gesture/layout/drag drivers load in an
+      // async chunk after first paint. Importing `motion` opts that module out:
+      // it bundles its own full feature implementation, which lands in whatever
+      // chunk the module belongs to — the SHARED ENTRY when the module is
+      // reachable from a route's top level. So one file importing `motion`
+      // silently cancels the split for every page that loads it, and the 121
+      // files that correctly use `m` get nothing.
+      //
+      // Fifteen modules had regressed to `motion` (including `radial/Parallax`,
+      // which is in the site shell and therefore on every `_site` route's
+      // critical path); all fixed 2026-08-12. See
+      // docs/performance-audit-2026-08-12.md §1.3.
+      //
+      // `m`, `AnimatePresence`, `LazyMotion`, `MotionConfig`, the hooks and all
+      // types are unrestricted — only the `motion` component is the problem.
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'framer-motion',
+              importNames: ['motion'],
+              message:
+                'Import `m as motion` instead. `motion` ships its own full feature bundle and defeats the <LazyMotion> split in components/Providers.tsx (docs/performance-audit-2026-08-12.md §1.3).',
+            },
+          ],
+        },
+      ],
     },
   },
 

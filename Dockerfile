@@ -192,12 +192,26 @@ COPY --exclude=go-services \
      --exclude=server/status --exclude=server/vibe-worker \
      --exclude=server/shared . .
 
-# The hosted vibe-package bundles, built once in the cached vibe-builder stage
-# above (not re-bundled here). public/vibe-packages is .dockerignore'd out of the
-# context copy above, so this is the only copy — placed AFTER the context COPY so
-# it can't be clobbered. It must exist before `vite build` so Nitro folds it into
-# .output/public (the build validates .output/public/vibe-packages/react.js).
-COPY --from=vibe-builder /app/public/vibe-packages ./public/vibe-packages
+# NOTE: the hosted vibe-package bundles are deliberately NOT copied in here.
+#
+# They used to be, with the reasoning "it must exist before `vite build` so Nitro
+# folds it into .output/public". That was true but expensive: a `COPY --from` is a
+# build-graph EDGE, so it made BuildKit hold this stage — the build's long pole,
+# ~66 s of Vite/Nitro — until vibe-builder had finished its own bundling, for a
+# payload the Vite build never reads.
+#
+# It never reads it because `public/vibe-packages/*.js` are standalone browser
+# bundles addressed by STRING PATH at runtime by generated vibe pages
+# (lib/rmhvibe/vibe-packages.ts, served through app/routes/api/vibe/pkg/$file.ts).
+# Nothing under app/ components/ lib/ imports them, so they are not in the module
+# graph — Vite's entire involvement was copying the directory verbatim into
+# .output/public/.
+#
+# So the runner stage copies them to that same destination directly, and
+# vibe-builder now runs fully parallel with this stage instead of gating it. The
+# `.output/public/vibe-packages/react.js` assertion moved to the runner with them,
+# so the guarantee is unchanged — it is just checked where the files now land.
+# See docs/performance-audit-2026-08-12.md §3.2.
 
 ARG COMPOSE_PROJECT_NAME=rmhstudios
 ARG DATABASE_URL
@@ -299,10 +313,11 @@ RUN rm -rf .output \
 # mounts at all, so `.output` is a plain layer dir and the runner stage can
 # COPY --from it directly — no need to first `cp -a` the (~1.5 GB) tree to a
 # second path, which only cost disk + wall-clock every build.
+# (The vibe-packages assertion is NOT here — those files no longer pass through
+# this stage. It lives in the runner stage, next to the COPY that places them.)
 RUN test -d /app/.output && \
     test -f /app/.output/server/index.mjs && \
-    test -f /app/.output/public/robots.txt && \
-    test -f /app/.output/public/vibe-packages/react.js
+    test -f /app/.output/public/robots.txt
 
 # ── Slim runtime image: drop assets that Apache serves off the host disk ──────
 # In production, Apache serves /library, /music, /models and /sprites directly
@@ -311,8 +326,10 @@ RUN test -d /app/.output && \
 # weight (~500 MB, mostly public/library). Prune them from the Nitro output
 # AFTER the validation above (which needs models/) and AFTER library cover
 # generation (which already ran in `library:metadata`). Everything still served
-# by Node — public/images (default avatar, read server-side), public/vibe-packages,
-# favicon, brand, etc. — is intentionally kept. (music/ and sprites/ are already
+# by Node — public/images (default avatar, read server-side), favicon, brand,
+# etc. — is intentionally kept. (`public/vibe-packages` is not in this stage's
+# .output at all any more: the runner copies it straight from vibe-builder, so
+# there is nothing here to prune or preserve.) (music/ and sprites/ are already
 # excluded from the build context via .dockerignore; the rm is a harmless no-op
 # for them.)
 RUN rm -rf /app/.output/public/library \
@@ -391,6 +408,19 @@ COPY --from=prod-deps --chown=app:nodejs /app/node_modules ./node_modules
 # ─── Nitro server output ────────────────────────────────────────────────
 # .output/ contains the Nitro server bundle, static assets, and public files.
 COPY --from=vite-builder --chown=app:nodejs /app/.output ./.output
+
+# ─── Hosted vibe-package bundles ────────────────────────────────────────
+# Standalone browser bundles (three, pixi, p5, framer-motion, …) that generated
+# vibe pages load by URL. They are NOT part of the Vite module graph, so they are
+# copied to their final destination here rather than routed through vite-builder
+# — which is what lets vibe-builder run in parallel with the Vite build instead of
+# gating it. Placed AFTER the .output COPY so it cannot clobber them.
+# See docs/performance-audit-2026-08-12.md §3.2.
+COPY --from=vibe-builder --chown=app:nodejs /app/public/vibe-packages ./.output/public/vibe-packages
+
+# The assertion that moved with the files. Kept as its own layer so a failure
+# names the thing that broke rather than surfacing inside an unrelated step.
+RUN test -f /app/.output/public/vibe-packages/react.js
 
 # ─── Custom server bundles (from env-agnostic stage) ────────────────────
 COPY --from=server-builder --chown=app:nodejs /app/dist-server ./dist-server

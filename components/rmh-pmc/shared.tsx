@@ -76,46 +76,20 @@ function ZuluClock() {
   );
 }
 
-/**
- * Reveal-on-scroll. Adds `.in` to every `.reveal` element inside the scope as it
- * enters the viewport. Re-runs whenever `key` changes (navigation) so freshly
- * mounted page content animates in too. Falls back to showing everything when
- * IntersectionObserver is unavailable or reduced motion is requested.
+/*
+ * The scroll-reveal used to live here as `useReveal(key)`: a rAF-deferred
+ * `querySelectorAll` over every `.reveal` node, a `getBoundingClientRect()` per
+ * node to catch the ones already on screen, an IntersectionObserver for the
+ * rest, and a print listener + deadline as a fail-open net — because the CSS it
+ * drove set `opacity: 0` unconditionally, so anything that did not run the
+ * observer rendered the page blank.
+ *
+ * It is now a scroll-driven CSS animation (`animation-timeline: view()`) whose
+ * hidden start state exists only inside `@supports` + `@media not
+ * (prefers-reduced-motion)`. Nothing can be left hidden by a mechanism that
+ * never ran, so the net is not needed either. See
+ * docs/performance-audit-2026-08-12.md §1.4.
  */
-export function useReveal(key: string) {
-  useEffect(() => {
-    const reduce = prefersReduced();
-    let io: IntersectionObserver | null = null;
-    const raf = requestAnimationFrame(() => {
-      const nodes = Array.from(document.querySelectorAll<HTMLElement>('.rmhp-root .reveal'));
-      if (reduce || !('IntersectionObserver' in window)) {
-        nodes.forEach((n) => n.classList.add('in'));
-        return;
-      }
-      const vh = window.innerHeight || document.documentElement.clientHeight;
-      io = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((e) => {
-            if (e.isIntersecting) {
-              e.target.classList.add('in');
-              io?.unobserve(e.target);
-            }
-          });
-        },
-        { threshold: 0.1, rootMargin: '0px 0px -8% 0px' }
-      );
-      nodes.forEach((n) => {
-        if (n.classList.contains('in')) return;
-        if (n.getBoundingClientRect().top < vh * 0.92) n.classList.add('in');
-        else io!.observe(n);
-      });
-    });
-    return () => {
-      cancelAnimationFrame(raf);
-      io?.disconnect();
-    };
-  }, [key]);
-}
 
 type NavItem = { to: string; label: string };
 const NAV: NavItem[] = [

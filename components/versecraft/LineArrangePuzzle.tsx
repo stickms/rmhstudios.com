@@ -42,7 +42,12 @@ function SortableLine({ line, index }: { line: PoemLine; index: number }) {
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    // `data-gesture` (globals.css §user-select): dnd-kit's listeners make this
+    // whole line draggable, and the line IS the poem text — so without a guard
+    // the gesture that arranges the poem highlights it instead, and on iOS a
+    // slow start pops the long-press callout over it. The text is the object
+    // here, not something to copy out.
+    <div ref={setNodeRef} style={style} data-gesture="" {...attributes} {...listeners}>
       <motion.div
         className="flex items-center gap-3 px-4 py-3 rounded cursor-grab active:cursor-grabbing mb-2 transition"
         style={{

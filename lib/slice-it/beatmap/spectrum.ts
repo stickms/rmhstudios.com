@@ -96,11 +96,40 @@ function buildFilterbank(
  * the loud chorus and none in the intro, and the resulting chart has a
  * two-minute hole in it.
  */
-export function computeSpectrogram(
-  samples: Float32Array,
+/** Geometry of a spectrogram, derivable without doing any of the work. */
+export function spectrogramShape(
+  sampleCount: number,
   sampleRate: number,
   options: { frameSize?: number; hopSize?: number } = {},
-): Spectrogram {
+) {
+  const frameSize = options.frameSize ?? FRAME_SIZE;
+  const hopSize = options.hopSize ?? HOP_SIZE;
+  const { freqs, count: bands } = buildFilterbank(frameSize, sampleRate);
+  const frames = Math.max(0, Math.floor((sampleCount - frameSize) / hopSize) + 1);
+  return { frameSize, hopSize, bands, frames, freqs };
+}
+
+/**
+ * Fill rows `[from, to)` of a `frames × bands` matrix.
+ *
+ * Split out of {@link computeSpectrogram} so the parallel path
+ * (`spectrum.parallel.server.ts`) runs **this exact code** in each worker
+ * instead of a transcription of it. A numeric kernel copied into a worker is a
+ * kernel that drifts from its reference, and the symptom would be charts that
+ * differ depending on how many cores the box had — which is not a bug anyone
+ * would find by reading either copy.
+ *
+ * Rows are disjoint by construction, so N workers writing N ranges of one
+ * `SharedArrayBuffer` never overlap and need no locking.
+ */
+export function computeSpectrogramRange(
+  samples: Float32Array,
+  sampleRate: number,
+  out: Float32Array,
+  from: number,
+  to: number,
+  options: { frameSize?: number; hopSize?: number } = {},
+): void {
   const frameSize = options.frameSize ?? FRAME_SIZE;
   const hopSize = options.hopSize ?? HOP_SIZE;
 
@@ -108,17 +137,18 @@ export function computeSpectrogram(
   // ~78 000 of them for a 15-minute track — and a complex FFT spends half its
   // work carrying those zeros. `RealFFT` also applies the window and reads
   // straight from `samples` at an offset, so the per-frame copy is gone too.
+  //
+  // Measured 2026-08-12: this transform is **95%** of the whole STFT; the
+  // filterbank + log1p below is the other 5%. That is why the parallel path
+  // exists and why nothing here is micro-tuned.
   const fft = new RealFFT(frameSize);
   const window = hannWindow(frameSize);
-  const { spans, weights, freqs, count: bands } = buildFilterbank(frameSize, sampleRate);
-
-  const frames = Math.max(0, Math.floor((samples.length - frameSize) / hopSize) + 1);
-  const data = new Float32Array(Math.max(0, frames * bands));
+  const { spans, weights, count: bands } = buildFilterbank(frameSize, sampleRate);
 
   const magnitude = new Float64Array(frameSize / 2);
   const lambda = 20;
 
-  for (let f = 0; f < frames; f++) {
+  for (let f = from; f < to; f++) {
     fft.magnitudes(samples, magnitude, f * hopSize, window);
 
     const rowStart = f * bands;
@@ -130,21 +160,38 @@ export function computeSpectrogram(
       for (let i = 0; i < span; i++) {
         sum += magnitude[start + i] * weights[w + i];
       }
-      data[rowStart + b] = Math.log1p(lambda * sum);
+      out[rowStart + b] = Math.log1p(lambda * sum);
     }
   }
+}
 
-  const frameDuration = hopSize / sampleRate;
-  const centreOffset = frameSize / 2 / sampleRate;
-
+/** Assemble a {@link Spectrogram} around an already-filled data matrix. */
+export function spectrogramFromData(
+  data: Float32Array,
+  shape: ReturnType<typeof spectrogramShape>,
+  sampleRate: number,
+): Spectrogram {
+  const frameDuration = shape.hopSize / sampleRate;
+  const centreOffset = shape.frameSize / 2 / sampleRate;
   return {
     data,
-    frames,
-    bands,
+    frames: shape.frames,
+    bands: shape.bands,
     frameDuration,
-    bandFreqs: freqs,
+    bandFreqs: shape.freqs,
     frameTime: (i: number) => i * frameDuration + centreOffset,
   };
+}
+
+export function computeSpectrogram(
+  samples: Float32Array,
+  sampleRate: number,
+  options: { frameSize?: number; hopSize?: number } = {},
+): Spectrogram {
+  const shape = spectrogramShape(samples.length, sampleRate, options);
+  const data = new Float32Array(Math.max(0, shape.frames * shape.bands));
+  computeSpectrogramRange(samples, sampleRate, data, 0, shape.frames, options);
+  return spectrogramFromData(data, shape, sampleRate);
 }
 
 /**

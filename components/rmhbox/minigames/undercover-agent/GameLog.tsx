@@ -11,9 +11,9 @@
  */
 'use client';
 
-import { useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MessageSquare, Target, RotateCcw, Skull, Users } from 'lucide-react';
+import { useStickToBottom } from '@/hooks/useStickToBottom';
 
 export interface GameLogEntry {
   id: number;
@@ -46,14 +46,12 @@ const LOG_ICONS: Record<GameLogEntry['type'], typeof MessageSquare> = {
 
 export default function GameLog({ redTeam, blueTeam, logEntries }: GameLogProps) {
   const { t } = useTranslation("c-rmhbox");
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  // Auto-scroll to bottom on new entries
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [logEntries.length]);
+  // `useStickToBottom`, not `scrollTop = scrollHeight` in an effect. Reading
+  // `scrollHeight` FORCES a synchronous layout on every new entry, and the old
+  // form re-pinned unconditionally — so a reader scrolled up to check an earlier
+  // line was yanked back down by the next one. See
+  // docs/performance-audit-2026-08-12.md §1.5.
+  const { containerRef, contentRef } = useStickToBottom<HTMLDivElement, HTMLDivElement>();
 
   return (
     <div className="flex flex-col rounded-xl border border-(--app-border) bg-(--app-surface) overflow-hidden">
@@ -83,7 +81,8 @@ export default function GameLog({ redTeam, blueTeam, logEntries }: GameLogProps)
       </div>
 
       {/* Scrollable log entries */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto max-h-48 lg:max-h-64 px-2 py-1.5 space-y-1">
+      <div ref={containerRef} className="flex-1 overflow-y-auto max-h-48 lg:max-h-64 px-2 py-1.5">
+        <div ref={contentRef} className="space-y-1">
         {logEntries.length === 0 ? (
           <p className="text-center text-[10px] text-(--app-text-muted) italic py-4">
             {t("no-actions-yet", { defaultValue: "No actions yet" })}
@@ -104,6 +103,7 @@ export default function GameLog({ redTeam, blueTeam, logEntries }: GameLogProps)
             );
           })
         )}
+        </div>
       </div>
     </div>
   );

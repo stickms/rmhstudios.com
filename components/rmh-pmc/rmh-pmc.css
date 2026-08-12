@@ -386,14 +386,49 @@
 /* Spatial consistency pass: visible interactive surfaces share one geometry. */
 .rmhp-root :is(a,button,input,textarea,select,.frame,.readout,.entry,.caps li,.chip,.cable-lead,.side-item){border-radius:var(--spatial-radius)}
 
-/* ════ REVEAL ════ */
-.rmhp-root .reveal{opacity:0;transform:translateY(20px);transition:opacity .7s cubic-bezier(.2,.6,.2,1),transform .7s cubic-bezier(.2,.6,.2,1)}
-.rmhp-root .reveal.in{opacity:1;transform:none}
-.rmhp-root .reveal.d1{transition-delay:.07s}.rmhp-root .reveal.d2{transition-delay:.14s}.rmhp-root .reveal.d3{transition-delay:.21s}.rmhp-root .reveal.d4{transition-delay:.28s}
+/* ════ REVEAL ════
+   Scroll-driven, and fail-OPEN. See docs/performance-audit-2026-08-12.md §1.4.
+
+   This used to be `opacity:0` unconditionally, undone by a `.in` class that a
+   `useReveal(pathname)` hook in shared.tsx added from an IntersectionObserver.
+   That is the AUD-006 shape: the resting state of the markup was INVISIBLE, so
+   every path where the observer never ran — print, reader mode, full-page
+   capture, pre-hydration, a JS error earlier in the page — rendered ~4,700px of
+   this site blank. The hook also read `getBoundingClientRect()` for each of
+   ~100 nodes on mount (a forced layout) to catch the ones already on screen.
+
+   Both problems are the same problem: JavaScript owned the visible state. Here
+   the hidden start state exists ONLY inside `@supports` + `@media not
+   (prefers-reduced-motion)`, so anything that cannot run the animation has
+   never hidden anything, and there is nothing left to undo. No observer, no
+   rAF, no layout read — the compositor drives it off the scroller. */
+@supports (animation-timeline: view()) {
+  @media not (prefers-reduced-motion: reduce) {
+    html:not(.reduce-motion) .rmhp-root .reveal {
+      animation: rmhp-reveal-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 46%;
+    }
+    /* The stagger is a RANGE shift, not a delay: on a scroll timeline there is
+       no clock for `animation-delay` to delay against, so a delay is silently
+       ignored. Shifting where in its own entry each sibling starts is what
+       reproduces the d1..d4 cascade for items sharing a row. */
+    html:not(.reduce-motion) .rmhp-root .reveal.d1 { animation-range: entry 6% entry 52%; }
+    html:not(.reduce-motion) .rmhp-root .reveal.d2 { animation-range: entry 12% entry 58%; }
+    html:not(.reduce-motion) .rmhp-root .reveal.d3 { animation-range: entry 18% entry 64%; }
+    html:not(.reduce-motion) .rmhp-root .reveal.d4 { animation-range: entry 24% entry 70%; }
+  }
+}
+@keyframes rmhp-reveal-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: none; }
+}
 
 @media(prefers-reduced-motion:reduce){
   .rmhp-root .brief-schematic,.rmhp-root .pagehead::before{transform:none;will-change:auto}
-  .rmhp-root .reveal{opacity:1;transform:none;transition:none}
+  /* Belt and braces: the rule above is already gated on `not (prefers-reduced-motion)`,
+     so nothing is hidden here in the first place. This keeps the guarantee local. */
+  .rmhp-root .reveal{opacity:1;transform:none;animation:none}
   .rmhp-root .redactln::after{animation:none;transform:scaleX(0)}
   .rmhp-root .spin-slow,.rmhp-root .ping,.rmhp-root .transmit-track,.rmhp-root .lineage-track{animation:none}
   .rmhp-root *{animation-duration:.001ms!important;animation-iteration-count:1!important}
