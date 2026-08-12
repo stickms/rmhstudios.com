@@ -1199,17 +1199,40 @@ html.perf-lite .radial-backdrop__blob {
    enough to carry the separation on its own: `perf-lite` because a full-page
    rasterisation is exactly what that tier exists to avoid, and
    `reduce-transparency` because a visitor who asked for less see-through
-   material did not ask for a blurrier one. */
+   material did not ask for a blurrier one.
+
+   `ios-webkit` joins them, and for a reason that is worth separating from the
+   other two: it is not that the device is weak or that the visitor asked for
+   less, it is that the premise above does not hold on WebKit. "A `filter` on a
+   static subtree rasterises once and is then a cached texture" is a CHROMIUM
+   measurement. `.radial-frame` is the whole feed — a subtree as tall as the
+   document, holding every lazy-loaded card — and asking a phone to keep a
+   blurred copy of it alive at device pixel ratio 3 while a canvas animates
+   above is a memory-pressure bet, not a cached texture. Losing that bet means
+   re-rasterising a document-height blur per frame, underneath the one gesture
+   on the site that spends its entire budget on being smooth.
+
+   This module already treats WebKit's compositor as its own axis in exactly
+   this way — `hooks/useLiquidBackground.ts` detaches wholesale on `ios-webkit`
+   because "moving a fixed, oversized gradient underneath multiple translucent
+   surfaces can wedge WebKit's compositor". Same engine, same shape of problem. */
 html.perf-lite .radial-shell:has(.radial-hub[data-phase='open']) .radial-backdrop,
 html.perf-lite .radial-shell:has(.radial-hub[data-phase='open']) .radial-topbar,
 html.perf-lite .radial-shell:has(.radial-hub[data-phase='open']) .radial-frame,
 html.reduce-transparency .radial-shell:has(.radial-hub[data-phase='open']) .radial-backdrop,
 html.reduce-transparency .radial-shell:has(.radial-hub[data-phase='open']) .radial-topbar,
-html.reduce-transparency .radial-shell:has(.radial-hub[data-phase='open']) .radial-frame {
+html.reduce-transparency .radial-shell:has(.radial-hub[data-phase='open']) .radial-frame,
+html.ios-webkit .radial-shell:has(.radial-hub[data-phase='open']) .radial-backdrop,
+html.ios-webkit .radial-shell:has(.radial-hub[data-phase='open']) .radial-topbar,
+html.ios-webkit .radial-shell:has(.radial-hub[data-phase='open']) .radial-frame {
   filter: none;
 }
+/* The veil is translucent ONLY because the page behind it is blurred (see its
+   own note). Wherever that blur is off, it has to carry the separation alone or
+   the menu opens onto a legible, unblurred page with a tint over it. */
 html.reduce-transparency .radial-hub__veil,
-html.perf-lite .radial-hub__veil {
+html.perf-lite .radial-hub__veil,
+html.ios-webkit .radial-hub__veil {
   background: var(--site-bg);
 }
 
@@ -1993,9 +2016,93 @@ html.perf-lite .radial-hub__veil {
   max-width: 34rem;
   min-width: 0;
   transform-origin: center center;
-  backface-visibility: hidden;
   /* `will-change` is toggled by the scroll pass onto only the cards in the focus
-     band, so a long feed never permanently promotes dozens of compositor layers. */
+     band, so a long feed never permanently promotes dozens of compositor layers.
+
+     `backface-visibility: hidden` used to sit here, and it defeated exactly
+     that. It is the oldest force-a-GPU-layer hack there is, and on WebKit it is
+     still a compositing trigger — so on iOS it promoted EVERY slot in the feed,
+     not the handful in the band, and a few pages of lazy-loading meant dozens of
+     card-sized layers alive at once at device pixel ratio 3. Nothing needed it:
+     no slot is ever rotated far enough to show its own back (the rake tops out
+     at 15deg), and the only reason a card should get a layer is that it is being
+     animated right now, which both rake paths already say for themselves. */
+}
+
+/* ── The rake, as a scroll-driven animation ───────────────────────────────
+   The curve the wheel is named for: a card lies flat when it is at the middle
+   of the screen and tips away, receding, as it travels to either end.
+
+   Where the browser can do this, the stylesheet does it and `RadialWheel.tsx`
+   runs nothing at all. That is not a tidiness preference — it is the difference
+   between scroll-LINKED and scroll-DRIVEN. A `scroll` listener plus rAF is JS
+   reacting to a scroll that has already been composited, so its transforms
+   land against a position the screen has left; on a compositor-scrolling
+   platform (all of iOS) the cards can only ever be a frame or more behind the
+   column they belong to, which reads as the feed swimming under your thumb. A
+   view() timeline is evaluated as part of the same frame as the scroll, so
+   there is nothing to fall behind.
+
+   The `@supports` test must stay identical to `supportsViewTimeline()` in
+   `lib/perf-tier.ts`: it is what tells the component to stand down, and if the
+   two ever disagreed the column would get both rakes at once, or neither.
+
+   The keyframes and the JS pass draw the same cylinder from the same numbers
+   (15deg of tilt, 150px of depth against a 1500px perspective, ~0.8 opacity at
+   the edge). One difference is inherent and deliberate: `view()` normalises
+   progress over the card's whole cover range — viewport height PLUS card height
+   — where the JS pass measures in viewport halves, so a card reaches the screen
+   edge a little before the keyframes reach their endpoint. The rake is
+   correspondingly gentler at the very top and bottom of the screen. Matching it
+   exactly would need the card's own height, which CSS cannot see here, and the
+   gap is smaller than the difference between two card sizes. */
+@keyframes radial-wheel-rake {
+  from {
+    transform: perspective(1500px) translateZ(-150px) rotateX(-15deg);
+    opacity: 0.8;
+  }
+  50% {
+    transform: perspective(1500px) translateZ(0) rotateX(0deg);
+    opacity: 1;
+  }
+  to {
+    transform: perspective(1500px) translateZ(-150px) rotateX(15deg);
+    opacity: 0.8;
+  }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* The same two opt-outs the component checks, in the same order: a curve the
+       page applies to itself as you scroll is unrequested motion, and continuous
+       decorative GPU work is what `perf-lite` exists to drop. */
+    html:not(.reduce-motion):not(.perf-lite) .radial-wheel__slot {
+      animation-name: radial-wheel-rake;
+      animation-timing-function: linear;
+      animation-timeline: view();
+      animation-range: cover 0% cover 100%;
+      /* Fill stays `none` on purpose. With `both` every slot in the feed would
+         hold an endpoint transform forever, which is a stacking context and a
+         promotion candidate per card — the same permanent-layer problem
+         `backface-visibility` caused above, reintroduced by the fix for it. With
+         no fill, a card outside its range has no transform at all; the range
+         ends where the card is fully off screen, so nothing pops. */
+      /* `animation-duration` is deliberately not set: on a timeline that is not
+         time-based its initial `auto` is the correct value, and naming it here
+         risks being dropped as unparsed on an engine that ships `view()` without
+         it — which would silently give every card a 0s animation. */
+    }
+  }
+}
+/* Printing renders the page as it stands, so a card caught partway along its
+   range is baked into the output tilted and faded — the ghost-card bug the JS
+   pass answers with a `beforeprint` flatten. This is the same reset for the
+   stylesheet path. The selector repeats the one above rather than being
+   simplified: `@supports`/`@media` add no specificity, so a shorter one would
+   lose to it and the reset would silently do nothing. */
+@media print {
+  html:not(.reduce-motion):not(.perf-lite) .radial-wheel__slot {
+    animation-name: none;
+  }
 }
 .radial-wheel__sentinel {
   width: 100%;
