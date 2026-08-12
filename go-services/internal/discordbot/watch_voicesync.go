@@ -38,6 +38,14 @@ import (
 // schedule, so re-reading it is cheaper and more correct than trying to keep a
 // derived copy in step with every event that could touch it.
 
+// voiceCloseAfterMisses is how many consecutive sweeps must agree that he is not
+// in a channel before an open session is closed.
+//
+// Three, at one sweep a minute. Long enough that no single bad read can end a
+// live call; short enough that a leave whose event went missing is settled
+// within a few minutes, against a figure measured in hours.
+const voiceCloseAfterMisses = 3
+
 // syncVoiceFromState reconciles every tracked user's open voice row against
 // discordgo's state cache.
 //
@@ -63,9 +71,15 @@ func (w *WatchService) syncVoiceFromState(ctx context.Context, s *discordgo.Sess
 			continue
 		}
 
+		// Any sighting clears the absence counter below.
+		if live != nil {
+			delete(w.voiceMisses, id)
+		}
+
 		switch {
 		case live == nil && open == nil:
 			// Not in voice and nothing open. The overwhelmingly common case.
+			delete(w.voiceMisses, id)
 
 		case live == nil:
 			// An open row for somebody the gateway says is not in a channel.
@@ -77,6 +91,24 @@ func (w *WatchService) syncVoiceFromState(ctx context.Context, s *discordgo.Sess
 			if !stateKnowsGuild(s, open.GuildID) {
 				continue
 			}
+			// …and only after the reading has held for several sweeps.
+			//
+			// Closing is the one DESTRUCTIVE thing this sweep does: it stops the
+			// clock and blanks the profile card. Adopting is additive and
+			// self-correcting, so the two directions do not deserve the same
+			// confidence. A single bad read — a cache mid-rebuild, a guild whose
+			// voice states have not landed yet, a race with a reconnect — would
+			// otherwise end a call he is still sitting in, and the next sweep
+			// would see nothing open and leave it ended.
+			//
+			// A real leave still closes on the event; this only delays the
+			// fallback for a leave whose event went missing, by a couple of
+			// minutes, on a figure measured in hours.
+			w.voiceMisses[id]++
+			if w.voiceMisses[id] < voiceCloseAfterMisses {
+				continue
+			}
+			delete(w.voiceMisses, id)
 			w.bankFlags(open, now)
 			w.bankPeers(open, now, open.PeerCount)
 			if err := w.repo.closeVoiceSession(ctx, open, now, "sync"); err != nil {

@@ -130,3 +130,66 @@ func TestProbeSyncAdoptsAnAlreadyOpenChannel(t *testing.T) {
 	}
 	t.Logf("day rollup: voiceSec=%d voiceSessions=%d", roll[0].VoiceSec, roll[0].VoiceSessions)
 }
+
+// TestProbeSyncKeepsALiveSessionThroughATransientCacheGap is the guard on the
+// one destructive thing the sweep does.
+//
+// A cache that momentarily does not list him — mid-rebuild, mid-reconnect, a
+// guild whose voice states have not landed — must not end a call he is still
+// sitting in, because the next sweep would then see nothing open and leave it
+// ended. The symptom of getting this wrong is precisely "voice time accrues but
+// the card never shows a channel".
+func TestProbeSyncKeepsALiveSessionThroughATransientCacheGap(t *testing.T) {
+	w, ctx := probeService(t)
+
+	inVoice := &discordgo.Session{State: discordgo.NewState()}
+	_ = inVoice.State.GuildAdd(&discordgo.Guild{
+		ID:          "g1",
+		VoiceStates: []*discordgo.VoiceState{{UserID: probeUser, ChannelID: "c1"}},
+	})
+	// The guild is known but reports nobody in voice — the ambiguous reading.
+	gap := &discordgo.Session{State: discordgo.NewState()}
+	_ = gap.State.GuildAdd(&discordgo.Guild{ID: "g1"})
+
+	now := time.Now().UTC()
+	w.mu.Lock()
+	w.syncVoiceFromState(ctx, inVoice, now)
+	w.mu.Unlock()
+
+	open, _ := w.repo.openVoiceSession(ctx, probeUser)
+	if open == nil {
+		t.Fatal("precondition: sync did not adopt the session")
+	}
+	sessionID := open.ID
+
+	// Two blank readings must not end it.
+	for i := 1; i < voiceCloseAfterMisses; i++ {
+		w.mu.Lock()
+		w.syncVoiceFromState(ctx, gap, now.Add(time.Duration(i)*time.Minute))
+		w.mu.Unlock()
+		if open, _ = w.repo.openVoiceSession(ctx, probeUser); open == nil {
+			t.Fatalf("session closed after %d blank reading(s), want it to survive %d",
+				i, voiceCloseAfterMisses-1)
+		}
+	}
+
+	// One more, and it settles.
+	w.mu.Lock()
+	w.syncVoiceFromState(ctx, gap, now.Add(voiceCloseAfterMisses*time.Minute))
+	w.mu.Unlock()
+	if open, _ = w.repo.openVoiceSession(ctx, probeUser); open != nil {
+		t.Errorf("session %s still open after %d blank readings", open.ID, voiceCloseAfterMisses)
+	}
+
+	// And a sighting in between must reset the count rather than accumulating.
+	w.mu.Lock()
+	w.syncVoiceFromState(ctx, inVoice, now.Add(10*time.Minute))
+	w.syncVoiceFromState(ctx, gap, now.Add(11*time.Minute))
+	w.syncVoiceFromState(ctx, inVoice, now.Add(12*time.Minute))
+	w.syncVoiceFromState(ctx, gap, now.Add(13*time.Minute))
+	w.mu.Unlock()
+	if open, _ = w.repo.openVoiceSession(ctx, probeUser); open == nil {
+		t.Error("alternating sightings closed the session — the miss counter is not resetting")
+	}
+	_ = sessionID
+}
