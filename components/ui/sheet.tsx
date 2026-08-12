@@ -107,6 +107,11 @@ const SheetContent = React.forwardRef<
  onPointerDown={onHandlePointerDown}
  onPointerMove={onHandlePointerMove}
  onPointerUp={onHandlePointerUp}
+ // `data-gesture` (globals.css §user-select): this bar exists only to be
+ // held and thrown. `touch-none` already stops the browser scrolling with
+ // the drag, but not the selection it anchors — a swipe-to-dismiss that
+ // starts here sweeps a highlight across the sheet's title on the way down.
+ data-gesture=""
  className="mx-auto mb-2 h-1.5 w-10 shrink-0 cursor-grab touch-none rounded-full bg-site-border-bright md:hidden"
  aria-hidden
  />

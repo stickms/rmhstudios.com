@@ -75,7 +75,11 @@ export function MobileControls({ input, onReload, onAbility, onJump, onBuyToggle
   });
 
   return (
-    <div className="bp-mobile">
+    // `data-gesture` (globals.css §user-select): every layer below is held or
+    // dragged — the look surface, the joystick, the fire button under a thumb
+    // that never lifts. Nothing in here is text, so nothing in here should
+    // highlight, pop an iOS callout, or flash a tap highlight mid-fight.
+    <div className="bp-mobile" data-gesture="">
       {/* look layer */}
       <div
         className="bp-look-layer"
