@@ -307,7 +307,7 @@ func (w *WatchService) flushLoop(ctx context.Context, s *discordgo.Session) {
 			w.closeAll(context.WithoutCancel(ctx), "shutdown")
 			return
 		case <-ticker.C:
-			w.flush(ctx)
+			w.flush(ctx, s)
 		}
 	}
 }
@@ -315,13 +315,17 @@ func (w *WatchService) flushLoop(ctx context.Context, s *discordgo.Session) {
 // flush beats the heartbeat on every open session and recomputes the days that
 // can still change. Yesterday is included because a session that began before
 // local midnight keeps adding to it until it ends.
-func (w *WatchService) flush(ctx context.Context) {
+func (w *WatchService) flush(ctx context.Context, s *discordgo.Session) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	now := time.Now().UTC()
 	// Settled first, so a compose session that expired since the last tick is
 	// already judged by the time this tick's recompute reads the table.
 	w.sweepTyping(ctx, now)
+	// Then make the open voice rows match the gateway's own state, so a join we
+	// never saw — or never managed to write — is adopted within the minute
+	// rather than lost until he next leaves. See watch_voicesync.go.
+	w.syncVoiceFromState(ctx, s, now)
 	for _, id := range w.cfg.UserIDs {
 		w.beat(ctx, id, now)
 		for _, key := range []string{w.dateKey(now), w.dateKey(now.Add(-24 * time.Hour))} {
