@@ -178,8 +178,22 @@ export function CallOverlay() {
           : formatDuration(elapsed);
 
   return (
+    // BELOW the shell's top bar, not on top of it.
+    //
+    // This is mounted from `Providers`, outside `.radial-shell`, so its z-120 is
+    // a real body-level number and it genuinely outranks the bar's z-60. That
+    // was the bug: at 390px the banner's card is 374px wide spanning y 8..60
+    // while the top bar spans 0..56 with its 44px controls at y 6..50 — full
+    // occlusion of brand, search, messages, notifications and avatar, for the
+    // whole call, starting at DIAL time rather than on connect.
+    //
+    // Offset rather than restacked: reserving space would mean changing shell
+    // geometry from a global provider, and this bar is transient chrome. The
+    // shift is conditional on a shell actually being present, because the same
+    // banner rides full-screen routes (games, login) that have no top bar —
+    // `:has()` on the body, since the token lives at :root but the BAR does not.
     <div
-      className="fixed inset-x-0 top-0 z-[120] flex justify-center p-2"
+      className="call-banner fixed inset-x-0 top-0 z-[120] flex justify-center p-2"
       style={{ paddingTop: 'max(0.5rem, var(--safe-top, 0px))' }}
     >
       <div

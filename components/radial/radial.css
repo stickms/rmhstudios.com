@@ -60,10 +60,11 @@
   --rad-rail-nav: 0px;
   --rad-rail-live: 0px;
   --rad-measure: 0px;
-  /* Single source of truth for the top bar's height — every sticky offset and
-     every `100dvh - bar` minimum reads it, so the bar can't grow out of sync
-     with the space reserved under it. */
-  --rad-topbar-h: 3.5rem;
+  /* The top bar's height is declared on :root (just below this block), not
+     here. Everything inside the shell still inherits it; declaring it at the
+     root is what lets chrome mounted OUTSIDE the shell — CallOverlay's banner,
+     from Providers — offset itself by the bar's real height instead of
+     hardcoding a duplicate of it. */
   /* Height of the bottom-right floating corner (back-to-top stacked over the
      compose button). Every full-height desktop panel stops this far short of the
      viewport bottom, so a floating control can never land on top of one. */
@@ -269,6 +270,32 @@ html.perf-lite .radial-backdrop__blob {
 }
 
 /* ── Top utility bar ──────────────────────────────────────────────────── */
+/* Single source of truth for the top bar's height — every sticky offset and
+   every `100dvh - bar` minimum reads it, so the bar can't grow out of sync with
+   the space reserved under it.
+
+   On :root rather than on `.radial-shell` so body-level chrome can read it too.
+   `CallOverlay`'s persistent banner is mounted from `Providers`, outside the
+   shell, and used to sit at `top: 0` with `z-[120]` — which covered the entire
+   top bar (brand, search, messages, notifications, avatar) for the whole
+   duration of a call, from DIAL time, on every viewport under ~900px. It offsets
+   by this now. */
+:root {
+  --rad-topbar-h: 3.5rem;
+}
+@media (min-width: 768px) {
+  :root {
+    --rad-topbar-h: 4rem;
+  }
+}
+
+/* CallOverlay's persistent banner (components/call/CallOverlay.tsx). It is
+   body-level chrome, so it clears the bar by moving rather than by out-ranking
+   it — and only where there IS a bar. */
+body:has(.radial-shell) .call-banner {
+  top: var(--rad-topbar-h);
+}
+
 .radial-topbar {
   position: sticky;
   top: 0;
@@ -2418,9 +2445,6 @@ html.ios-webkit .radial-hub__veil {
 
 /* ── Desktop refinements ──────────────────────────────────────────────── */
 @media (min-width: 768px) {
-  .radial-shell {
-    --rad-topbar-h: 4rem;
-  }
   .radial-wheel__slot,
   .radial-wheel__lead {
     max-width: 38rem;
