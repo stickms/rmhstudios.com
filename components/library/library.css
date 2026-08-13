@@ -1155,7 +1155,11 @@
 .lib-upload__overlay {
   position: fixed;
   inset: 0;
-  z-index: 120;
+  /* Body-level — every consumer goes through `LibraryDialogShell`, which
+     portals. In place this was measured inside `.radial-frame`'s stacking
+     context (pinned at 1), so 120 bought nothing and the shell's chrome painted
+     over the scrim. At <body> the ordinary dialog band is correct. */
+  z-index: 50;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1748,9 +1752,12 @@
   min-width: 196px;
   max-width: 260px;
   padding: 6px;
-  /* Opens over book covers with no scrim behind it — same case as the top bar's
-     quick panels, so the same shared opacity (globals.css). */
-  background-color: color-mix(in srgb, var(--site-bg) var(--site-glass-menu-opacity), transparent);
+  /* No fill override. `.glass-overlay` used to be 62%, which was too thin for a
+     menu opening over book covers with no scrim, so this repainted it at a flat
+     88%. That tier is now 90% with a HARD 78% floor and, unlike this override,
+     it tracks the Glass clarity slider — so the override had become both weaker
+     than the default it existed to strengthen and the reason this one surface
+     ignored a user preference. */
   --motion-origin: top left;
 }
 .lib-ctx__label {
@@ -2957,7 +2964,10 @@
   border-radius: calc(var(--site-radius) - 5px);
   background:
     radial-gradient(
-      circle at var(--lib-orbit-glow-x, 50%) var(--lib-orbit-glow-y, 35%),
+      /* Fixed centre. This used to read `--lib-orbit-glow-*`, written on every
+         pointer move — moving a gradient's position repaints the whole tile
+         (design.md §3). The tilt still tracks the finger; the light does not. */
+      circle at 50% 35%,
       color-mix(in srgb, var(--site-accent) 16%, transparent),
       transparent 58%
     ),

@@ -169,7 +169,7 @@ export function CommunityColumn({
  const isMod = canModerate(community.role);
 
  return (
- <div className="min-h-screen">
+ <div>
  <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
  <Link
  to="/communities"

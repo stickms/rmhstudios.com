@@ -20,7 +20,7 @@
  * common `StoreItem` shape and hand it a `seed`.
  */
 
-import { type PointerEvent as ReactPointerEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ArrowRight, Info } from 'lucide-react';
 import { IMAGE_VARIANTS, variantUrl } from '@/lib/images/variants.gen';
@@ -107,15 +107,13 @@ function wideFlags(count: number, seed: number): boolean[] {
 
 // ── Cards ────────────────────────────────────────────────────────────────────
 
-/** Follow the pointer so the card's glow + subtle tilt track the cursor. */
-function trackPointer(e: ReactPointerEvent<HTMLElement>) {
-  const el = e.currentTarget;
-  const r = el.getBoundingClientRect();
-  const mx = ((e.clientX - r.left) / r.width) * 100;
-  const my = ((e.clientY - r.top) / r.height) * 100;
-  el.style.setProperty('--mx', `${mx}%`);
-  el.style.setProperty('--my', `${my}%`);
-}
+// `trackPointer` lived here: `getBoundingClientRect()` plus two `setProperty`
+// calls on the RAW `pointermove`, with no rAF, moving the centre of a 320px
+// `radial-gradient`. Deleted — nothing on this site tracks the cursor (the whole
+// class was retired 2026-08-01, design.md §3), and a gradient's position is
+// PAINT: moving one re-rasterises the entire card, at pointer rate, on a page
+// that renders a grid of them. The glow itself stays: its `:hover { opacity: 1 }`
+// and its 240ms transition already existed and are the part that reads.
 
 function PrimaryWrapper({
   item,
@@ -131,7 +129,6 @@ function PrimaryWrapper({
   const shared = {
     className,
     'aria-label': ariaLabel,
-    onPointerMove: trackPointer,
     style: { '--card-hue': String(item.hue ?? 220) } as React.CSSProperties,
   };
   if (item.to) {

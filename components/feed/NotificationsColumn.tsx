@@ -390,7 +390,7 @@ export function NotificationsColumn({
  const groups = useMemo(() => groupNotifications(items), [items]);
 
  return (
- <div className="min-h-screen">
+ <div>
  {/* Embedded (as a profile tab) this is just a toolbar: the host page owns
  the heading and the sticky bar. */}
  <ColumnHeader
@@ -519,7 +519,7 @@ export function NotificationsColumn({
  type="button"
  onClick={() => handleClick(n)}
  disabled={!clickable}
- className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-[background-color,transform] duration-site-fast ${
+ className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-[background-color,scale] duration-site-fast ${
  clickable
  ?'cursor-pointer hover:bg-site-surface-hover active:scale-[0.99]'
  :'cursor-default'

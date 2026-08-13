@@ -52,7 +52,32 @@ export function ThemePreviewBar() {
       role="region"
       aria-label={t('preview-bar-label', { defaultValue: 'Theme preview' })}
       data-motion="pop"
-      className="glass-overlay origin-bottom fixed inset-x-0 bottom-[calc(var(--safe-bottom)+var(--site-floating-edge))] z-[60] mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] items-center gap-3 rounded-full px-4 py-2 shadow-site"
+      // Two fixes in one class string.
+      //
+      // **The lane.** This is bottom-CENTRE at the bare edge offset, which is
+      // the hub orb's lane — and the orb is the site's only navigation control
+      // on mobile. At 390px the capsule spanned safe+12..safe+64 against an orb
+      // at safe+16..safe+76, so 48 of the orb's 60px were covered and untappable
+      // for the whole preview. It cannot join the `data-floating` stack the way
+      // the cookie bar and mini-player do: those rules are
+      // `.vibe-app:has(…) [data-floating='…']`, and this bar is mounted in
+      // `Providers` OUTSIDE the shell, so the descendant combinator never
+      // matches. So it carries the same arithmetic directly. It is centred and
+      // as tall as the orb, so it lifts rather than stepping sideways. The
+      // expression is `--float-lift-hub` inlined and reduced: the stack writes
+      // `safe + edge + (orb-size + orb-inset - edge + 0.75rem)`, in which the
+      // two `edge` terms cancel.
+      //
+      // **The band.** z-[60] put it ABOVE every z-50 dialog, sheet and the
+      // composer — it floated over their scrims, undimmed, reading as part of
+      // the modal. Radix at least neutralises its clicks; `ComposeModal` is
+      // hand-rolled and does not, so "Buy" and "Exit preview" stayed live
+      // through an open composer and would swap the site's theme underneath it.
+      // z-40 is the band the other shell-level floating chrome uses
+      // (BackToTop, CookieConsent), so a modal now covers it. 60 is `Select`'s
+      // band precisely because a select must clear a dialog it was opened
+      // INSIDE; this bar is not in that category.
+      className="glass-overlay origin-bottom fixed inset-x-0 bottom-[calc(var(--safe-bottom)+var(--site-hub-orb-size)+var(--site-hub-orb-inset)+0.75rem)] z-40 mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] items-center gap-3 rounded-full px-4 py-2 shadow-site"
     >
       <span className="min-w-0 truncate text-sm text-site-text">
         {t('previewing', { defaultValue: 'Previewing' })}

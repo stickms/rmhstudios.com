@@ -928,14 +928,23 @@ export function Providers({
                   // own stacking. A plain translucent --site-surface with no
                   // blur would let the page ghost through the message.
                   style: {
-                    background:
-                      'color-mix(in srgb, var(--site-surface-opaque, var(--site-surface)) 82%, transparent)',
+                    // The SAME expression `.glass-overlay` uses (globals.css
+                    // §L4), not a third answer. This was a flat 82% of
+                    // `--site-surface-opaque`, which meant a toast was thinner
+                    // than every other floating surface, had no legibility
+                    // floor, and — unlike the tier — ignored the Glass clarity
+                    // slider entirely. A toast is the one L4 surface that
+                    // appears unbidden and is gone in four seconds, so it is the
+                    // last one that can afford to ghost.
+                    background: 'var(--site-glass-overlay-fill)',
                     backdropFilter:
                       'blur(calc(var(--site-glass-blur-overlay) * var(--glass-blur-factor, 1))) saturate(var(--site-glass-saturate))',
                     WebkitBackdropFilter:
                       'blur(calc(var(--site-glass-blur-overlay) * var(--glass-blur-factor, 1))) saturate(var(--site-glass-saturate))',
                     border: '1px solid var(--site-border)',
-                    borderRadius: 'var(--site-radius-sm)',
+                    // A toast is a panel, not a control: `--site-radius`, the
+                    // same curve every other floating panel takes.
+                    borderRadius: 'var(--site-radius)',
                     boxShadow: 'var(--site-shadow)',
                     color: 'var(--site-text)',
                   },

@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { PageFrame } from '@/components/feed/PageLayout';
 import { definePage } from '@/lib/route/define-page';
 import { createServerFn } from '@tanstack/react-start';
@@ -7,11 +7,11 @@ import { Trophy } from 'lucide-react';
 import { ColumnHeader } from '@/components/feed/ColumnHeader';
 import { JourneyColumn } from '@/components/feed/JourneyColumn';
 import { useSession } from '@/components/Providers';
-import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from 'react-i18next';
 import { auth } from '@/lib/auth';
 import { listAchievements } from '@/lib/achievements.server';
+import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 
 // Prefetch the viewer's own achievements server-side so the grid is present at
 // first paint / prefetched on intent instead of fetched on mount. Signed-out
@@ -28,11 +28,9 @@ export const Route = createFileRoute('/_site/achievements')({
     path: '/achievements',
     title: 'Achievements | RMH Studios',
     description:
-      'Every achievement on RMH Studios: what unlocks it, what it is worth, and who has earned it.',
-  }),
+      'Every achievement on RMH Studios: what unlocks it, what it is worth, and who has earned it.' }),
   loader: () => fetchAchievements(),
-  component: AchievementsPage,
-});
+  component: AchievementsPage });
 
 function AchievementsPage() {
   const { t } = useTranslation('site');
@@ -67,16 +65,11 @@ function AchievementsPage() {
                 <Spinner />
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
-                <p className="font-medium text-site-text">
-                  {t('sign-in-to-track-achievements', {
-                    defaultValue: 'Sign in to track achievements',
-                  })}
-                </p>
-                <Link to="/login" search={{ callbackURL: '/achievements' }}>
-                  <Button variant="accent">{t('sign-in', { defaultValue: 'Sign in' })}</Button>
-                </Link>
-              </div>
+              <SignedOutPrompt
+                callbackURL="/achievements"
+                title={t('sign-in-to-track-achievements', {
+                  defaultValue: 'Sign in to track achievements' })}
+              />
             )}
           </>
         )}

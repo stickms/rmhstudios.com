@@ -117,15 +117,15 @@ export function AchievementsColumn({
  </div>
  <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-site-surface">
  <div
- className="h-full rounded-full bg-site-accent transition-[width] duration-site-slow"
- style={{ width: `${pct}%`}}
+ className="h-full w-full rounded-full bg-site-accent origin-left transition-transform duration-site-slow"
+ style={{ transform: `scaleX(${pct / 100})`}}
  />
  </div>
  </>
  );
 
  return (
- <div className={hideHeader ?'':'min-h-screen'}>
+ <div>
  {/* hideHeader === embedded in JourneyColumn/ProfileColumn, which supply
  the page header (and the drawer button); only the stats survive. */}
  {hideHeader ? (

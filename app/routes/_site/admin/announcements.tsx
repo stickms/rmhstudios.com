@@ -373,7 +373,7 @@ function AdminAnnouncementsPage() {
                     type="button"
                     aria-label={t('remove-image', { defaultValue: 'Remove image' })}
                     onClick={() => setImageUrls((prev) => prev.filter((u) => u !== url))}
-                    className="absolute right-1 top-1 rounded-full bg-site-media-scrim-strong p-0.5 text-site-media-ink opacity-0 transition-opacity group-hover:opacity-100"
+                    className="absolute right-1 top-1 flex size-11 items-center justify-center rounded-full bg-site-media-scrim-strong text-site-media-ink transition-opacity sm:size-auto sm:p-0.5 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>

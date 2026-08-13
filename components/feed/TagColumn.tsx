@@ -67,7 +67,7 @@ export function TagColumn({
  };
 
  return (
- <div className="min-h-screen">
+ <div>
  <ColumnHeader icon={Hash} title={tag} />
 
  {loading && (

@@ -31,7 +31,7 @@ export function NewsCard({ article, index }: NewsCardProps) {
         >
             <div
                 data-slot="card"
-                className="h-full bg-(--site-surface) border overflow-hidden hover:border-(--site-accent)/50 hover:-translate-y-0.5 hover:shadow-site active:scale-[0.98] transition-[transform,border-color,box-shadow] duration-site group relative flex flex-col"
+                className="h-full bg-(--site-surface) border overflow-hidden hover:border-(--site-accent)/50 hover:-translate-y-0.5 hover:shadow-site active:scale-[0.98] transition-[scale,translate,border-color,box-shadow] duration-site group relative flex flex-col"
                 style={{
                     borderRadius: 'var(--site-radius)',
                     borderWidth: 'var(--site-border-width)',

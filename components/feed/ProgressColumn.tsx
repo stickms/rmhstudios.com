@@ -175,7 +175,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  const weekly = data.quests.filter((q) => q.period ==='weekly');
 
  return (
- <div className={hideHeader ?'':'min-h-screen'}>
+ <div>
  {/* hideHeader === embedded in JourneyColumn, which supplies the page
  header (and the drawer button) itself. */}
  {!hideHeader && (
@@ -207,8 +207,8 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  <div className="mt-3">
  <div className="h-2.5 w-full overflow-hidden rounded-full bg-site-bg">
  <div
- className="h-full rounded-full bg-site-accent transition-[width] duration-site-slow"
- style={{ width: `${lvlPct}%`}}
+ className="h-full w-full rounded-full bg-site-accent origin-left transition-transform duration-site-slow"
+ style={{ transform: `scaleX(${lvlPct / 100})`}}
  />
  </div>
  <p className="mt-1 text-[11px] text-site-text-dim">

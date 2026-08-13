@@ -194,7 +194,7 @@ export function DeckStudyColumn({
  if (queue && queue.length > 0) {
  const card = queue[idx];
  return (
- <div className="min-h-screen">
+ <div>
  <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
  <button
  onClick={() => setQueue(null)}
@@ -242,7 +242,7 @@ export function DeckStudyColumn({
  }
 
  return (
- <div className="min-h-screen">
+ <div>
  <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
  <Link to="/study"className="text-site-text-dim hover:text-site-text">
  <ArrowLeft className="h-5 w-5"/>

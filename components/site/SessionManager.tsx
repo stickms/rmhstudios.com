@@ -119,8 +119,14 @@ export function SessionManager() {
 
   const otherCount = sessions.filter((s) => s.token !== currentToken).length;
 
+  // `.glass-pane` — the singular-panel tier, and what the three siblings
+  // stacked directly under this one in /settings/security already use. This
+  // was `bg-site-surface/40`, which is also the alpha-stacking bug:
+  // `--site-surface` is already rgba (0.065 on ultra) and Tailwind v4's
+  // modifier MULTIPLIES, so the panel rendered at 0.026 — five panels in one
+  // column, two materials, and two of them nearly invisible.
   return (
-    <section className="rounded-site border border-site-border bg-site-surface/40 p-4">
+    <section className="glass-pane rounded-site p-4">
       <div className="mb-1 flex items-center gap-2">
         <Monitor className="h-5 w-5 text-site-accent" aria-hidden />
         <h2 className="text-base font-bold text-site-text">

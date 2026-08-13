@@ -11,6 +11,7 @@
  * is one-file-per-request), reporting per-row success/failure.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { LibraryDialogShell } from './LibraryDialogShell';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
@@ -326,12 +327,9 @@ export function UploadModal({
   const gated = !!quota && !quota.isAdmin && quota.used >= quota.quota && !hasItems;
 
   return (
-    <div
-      className="lib-upload__overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-label={t('dialog-label', { defaultValue: 'Upload a book' })}
-      onMouseDown={() => !publishing && onClose()}
+    <LibraryDialogShell
+      onClose={() => !publishing && onClose()}
+      label={t('dialog-label', { defaultValue: 'Upload a book' })}
     >
       <div className={`lib-upload ${hasItems && isAdmin ? 'lib-upload--multi' : ''}`} onMouseDown={(e) => e.stopPropagation()}>
         <div className="lib-upload__head">
@@ -430,7 +428,7 @@ export function UploadModal({
           </button>
         </div>
       </div>
-    </div>
+    </LibraryDialogShell>
   );
 }
 

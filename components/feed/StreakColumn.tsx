@@ -64,7 +64,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  const nextPct = next ? Math.min(100, Math.round((streak.current / next.day) * 100)) : 100;
 
  return (
- <div className={hideHeader ?'':'min-h-screen'}>
+ <div>
  {/* hideHeader === embedded in JourneyColumn, which supplies the page
  header (and the drawer button) itself. */}
  {!hideHeader && (
@@ -157,8 +157,8 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  </div>
  <div className="h-2.5 w-full overflow-hidden rounded-full bg-site-bg">
  <div
- className="h-full rounded-full bg-site-warning transition-[width] duration-site-slow"
- style={{ width: `${nextPct}%`}}
+ className="h-full w-full rounded-full bg-site-warning origin-left transition-transform duration-site-slow"
+ style={{ transform: `scaleX(${nextPct / 100})`}}
  />
  </div>
  <p className="mt-1.5 text-xs text-site-text-dim">
@@ -190,7 +190,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  return (
  <div
  key={m.day}
- className={`flex items-center gap-3 rounded-site border p-3 transition-[transform,border-color] duration-site ${
+ className={`flex items-center gap-3 rounded-site border p-3 transition-[border-color] duration-site ${
  reached
  ?'border-site-border bg-site-surface'
  :'border-site-border/60 bg-site-bg opacity-70'

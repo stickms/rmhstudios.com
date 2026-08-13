@@ -122,7 +122,7 @@ export function DraftsColumn({
  const empty = drafts.length === 0 && scheduled.length === 0;
 
  return (
- <div className="min-h-screen">
+ <div>
  <ColumnHeader
  icon={FileText}
  title={t('drafts-and-scheduled', { defaultValue:'Drafts & Scheduled'})}

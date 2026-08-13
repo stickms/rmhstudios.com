@@ -198,7 +198,7 @@ export function RankedColumn({
  }
 
  return (
- <div className="min-h-screen">
+ <div>
  <ColumnHeader icon={Swords} title={t('ranked', { defaultValue:'Ranked'})} />
 
  <div className="space-y-6 p-4">

@@ -5,6 +5,7 @@ import { Wand2, Loader2, Sparkles, X, Lock } from'lucide-react';
 import { useTranslation } from'react-i18next';
 import { Link } from'@tanstack/react-router';
 import { Button } from'@/components/ui/button';
+import { OverlayPanel } from'@/components/ui/overlay-panel';
 
 interface AIImageButtonProps {
  /** Current composer text — used to theme the generated image. */
@@ -101,13 +102,17 @@ export function AIImageButton({
  )}
  </button>
 
+ {/* `OverlayPanel` portals this to <body>. It opens from inside `ComposeBox`,
+ whose root is `.glass-pane` — a live `backdrop-filter`, which is BOTH a
+ containing block for `position: fixed` descendants AND a stacking context. So
+ `fixed inset-0` resolved to the composer's own ~600x160 box rather than the
+ viewport, and the bespoke `z-88` (picked to sit just under `--z-hub-overlay:
+ 90`) was a number that could never be reached from inside the frame anyway. */}
  {locked && showUpgrade && (
- <div
- className="fixed inset-0 z-88 flex items-center justify-center bg-site-media-scrim-strong p-4"
- role="dialog"
- aria-modal="true"
- aria-labelledby="ai-image-upgrade-title"
- onClick={() => setShowUpgrade(false)}
+ <OverlayPanel
+ open
+ onClose={() => setShowUpgrade(false)}
+ closeLabel={t('close', { defaultValue:'Close'})}
  >
  {/* `.glass-overlay` rather than a hand-rolled surface+border+shadow box: it
  is the tier this belongs to (floating UI), and the tier is also what
@@ -115,6 +120,9 @@ export function AIImageButton({
  was `overflow-hidden` with no height cap, so on a short screen the
  upgrade copy and its buttons were clipped away with nothing to scroll. */}
  <div
+ role="dialog"
+ aria-modal="true"
+ aria-labelledby="ai-image-upgrade-title"
  className="glass-overlay relative w-full max-w-sm text-center"
  onClick={(e) => e.stopPropagation()}
  >
@@ -168,7 +176,7 @@ export function AIImageButton({
  </div>
  </div>
  </div>
- </div>
+ </OverlayPanel>
  )}
  </>
  );

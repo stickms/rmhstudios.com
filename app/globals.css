@@ -203,13 +203,25 @@
   --site-glass-blur-chrome-scrolled: 30px;
   --site-glass-blur-overlay: 30px;
   --site-glass-saturate: 180%;
-  /* Opacity for a menu that opens straight over LIVE CONTENT with no scrim
-     behind it (the top bar's quick panels, the library's right-click menu) — as
-     opposed to a dialog, which gets one. `.glass-overlay`'s 62% is tuned for the
-     scrimmed case; over a busy shelf or a high-contrast headline the menu's own
-     rows have to win, and they need this much. One number, so the two surfaces
-     can't drift apart. */
-  --site-glass-menu-opacity: 88%;
+  /* The L4 fill, named. `.glass-overlay` sets this as its own background, and
+     it is here rather than only in that rule so the handful of things that
+     CANNOT carry the class can still match the tier exactly: a border-triangle
+     (the tooltip's arrow, which has no background at all — its colour IS a
+     border colour) and an inline style object (sonner's toast, which owns its
+     own positioning and stacking). Those were three hand-copied approximations
+     of this expression before it had a name. */
+  --site-glass-overlay-fill: color-mix(
+    in srgb,
+    var(--site-bg) clamp(78%, calc(90% * var(--glass-user-tint, 1)), 100%),
+    transparent
+  );
+
+  /* `--site-glass-menu-opacity` (88%) lived here, for menus opening over live
+     content with no scrim. It is retired: it existed because `.glass-overlay`
+     was 62%, and that tier now carries its own legibility floor — 90% base,
+     clamped to a hard 78% minimum, and slider-aware. A second flat number could
+     only drift from it, and did: it had become the LOWER of the two, on exactly
+     the surfaces it was added to strengthen. */
   --site-glass-rim: rgba(0, 0, 0, 0.08);
   --site-glass-rim-soft: rgba(0, 0, 0, 0.035);
   --site-glass-light: rgba(255, 255, 255, 0.7);
@@ -1469,11 +1481,7 @@ html.app-route {
        everywhere else on the page, and in the blur here — but a menu stays a
        menu. `clamp()` also caps at 100%, so a Calm/Opaque setting cannot mint an
        invalid percentage. */
-    background-color: color-mix(
-      in srgb,
-      var(--site-bg) clamp(78%, calc(90% * var(--glass-user-tint, 1)), 100%),
-      transparent
-    );
+    background-color: var(--site-glass-overlay-fill);
     background-image: var(--glass-glint-layer);
     background-clip: border-box;
     background-origin: border-box;
@@ -5205,12 +5213,13 @@ body {
   right: -12%;
   border-radius: 42% 58% 63% 37% / 47% 39% 61% 53%;
   background: var(--site-text);
-  transform: translate3d(
-      calc(var(--spatial-parallax-x, 0) * 0.9),
-      calc(var(--spatial-parallax-y, 0px) * 0.9 + var(--spatial-scroll-y, 0px) * 0.08),
-      0
-    )
-    rotate(11deg);
+  /* Scroll depth only. The two `--spatial-parallax-*` terms are gone with the
+     pointer tracker that fed them (hooks/useSpatialParallax.ts) — and this
+     declaration had never actually applied, because the X fallback was a
+     unitless `0`, which makes `calc(0 * 0.9)` a <number> and invalidates the
+     whole `translate3d()`. So this shape has been sitting still since it
+     shipped; it moves now. */
+  transform: translate3d(0, calc(var(--spatial-scroll-y, 0px) * 0.08), 0) rotate(11deg);
   transition: transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -5224,11 +5233,8 @@ body {
   background-size: 12px 12px;
   mask-image: radial-gradient(circle, black 20%, transparent 72%);
   opacity: 0.72;
-  transform: translate3d(
-    calc(var(--spatial-parallax-x, 0) * -0.4),
-    calc(var(--spatial-parallax-y, 0px) * -0.4 + var(--spatial-scroll-y, 0px) * -0.035),
-    0
-  );
+  /* Same correction as the shape above. */
+  transform: translate3d(0, calc(var(--spatial-scroll-y, 0px) * -0.035), 0);
   transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 

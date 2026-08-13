@@ -3,7 +3,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { m as motion } from 'framer-motion';
 import {
   Loader2,
@@ -11,7 +11,6 @@ import {
   Route as RouteIcon,
   Car,
   CheckCircle2,
-  LogIn,
   CalendarClock,
   Clock,
   XCircle,
@@ -29,6 +28,7 @@ import { ActiveRidePanel } from '@/components/rideshare/ActiveRidePanel';
 import { SavedPlaces } from '@/components/rideshare/SavedPlaces';
 import { estimateFareCents, formatDistance, formatUsd, type RidePlace } from '@/lib/rideshare/geo';
 import { RIDE_CLASSES, rideClassName, type RideClassId } from '@/lib/rideshare/classes';
+import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 
 export const Route = createFileRoute('/_site/rideshare/ride')({
   head: () => ({ meta: [{ title: 'Request a ride — RMH Rideshare' }] }),
@@ -281,24 +281,15 @@ function RequestRidePage() {
   if (!session) {
     return (
       <PageLayout title={t('page-title', { defaultValue: 'Request a ride' })} wide>
-        <div className="mx-auto max-w-md px-4 py-20 text-center">
-          <Navigation className="mx-auto h-10 w-10 text-site-accent" />
-          <h2 className="mt-4 text-xl font-bold text-site-text">
-            {t('sign-in-heading', { defaultValue: 'Sign in to request a ride' })}
-          </h2>
-          <p className="mt-2 text-site-text-muted">
-            {t('sign-in-description', {
-              defaultValue: 'You need an RMH account to use RMH Rideshare.',
-            })}
-          </p>
-          <Link
-            to="/login"
-            search={{ callbackURL: '/rideshare/ride' }}
-            className="mt-5 inline-flex items-center gap-2 rounded-site bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-transform hover:scale-105"
-          >
-            <LogIn className="h-4 w-4" /> {t('sign-in-button', { defaultValue: 'Sign in' })}
-          </Link>
-        </div>
+        <SignedOutPrompt
+          icon={Navigation}
+          callbackURL="/rideshare/ride"
+          title={t('sign-in-heading', { defaultValue: 'Sign in to request a ride' })}
+          description={t('sign-in-description', {
+            defaultValue: 'You need an RMH account to use RMH Rideshare.',
+          })}
+          actionLabel={t('sign-in-button', { defaultValue: 'Sign in' })}
+        />
       </PageLayout>
     );
   }
@@ -324,7 +315,7 @@ function RequestRidePage() {
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Left: form */}
             <div className="space-y-5">
-              <div className="rounded-site border border-site-border bg-site-surface/80 p-5">
+              <div className="glass-fill rounded-site p-5">
                 <h2 className="mb-4 text-lg font-bold text-site-text">
                   {t('where-to-heading', { defaultValue: 'Where to?' })}
                 </h2>
@@ -357,7 +348,7 @@ function RequestRidePage() {
                 )}
               </div>
 
-              <div className="rounded-site border border-site-border bg-site-surface/80 p-5">
+              <div className="glass-fill rounded-site p-5">
                 <h2 className="mb-3 text-lg font-bold text-site-text">
                   {t('pick-your-ride-heading', { defaultValue: 'Pick your ride' })}
                 </h2>
@@ -376,7 +367,7 @@ function RequestRidePage() {
                 />
               )}
 
-              <div className="rounded-site border border-site-border bg-site-surface/80 p-5">
+              <div className="glass-fill rounded-site p-5">
                 <label className="mb-1.5 block text-xs font-medium text-site-text-muted">
                   {t('notes-label', { defaultValue: 'Notes for your driver (optional)' })}
                 </label>
@@ -388,12 +379,12 @@ function RequestRidePage() {
                   placeholder={t('notes-placeholder', {
                     defaultValue: "e.g. I'll be by the main entrance",
                   })}
-                  className="w-full resize-none rounded-site-sm border border-site-border bg-site-surface px-3 py-2.5 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 sm:py-2 sm:text-sm"
+                  className="w-full resize-none glass-inset rounded-site-sm px-3 py-2.5 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 sm:py-2 sm:text-sm"
                 />
               </div>
 
               {/* Schedule for later */}
-              <div className="rounded-site border border-site-border bg-site-surface/80 p-5">
+              <div className="glass-fill rounded-site p-5">
                 <label className="flex cursor-pointer items-center justify-between gap-3">
                   <span className="flex items-center gap-2 text-sm font-medium text-site-text">
                     <CalendarClock className="h-4 w-4 text-site-accent" />{' '}
@@ -412,7 +403,7 @@ function RequestRidePage() {
                     value={scheduledFor}
                     min={minScheduleValue()}
                     onChange={(e) => setScheduledFor(e.target.value)}
-                    className="mt-3 w-full rounded-site-sm border border-site-border bg-site-surface px-3 py-2.5 text-base text-site-text outline-none transition-colors focus:border-site-accent/60 sm:py-2 sm:text-sm"
+                    className="mt-3 w-full glass-inset rounded-site-sm px-3 py-2.5 text-base text-site-text outline-none transition-colors focus:border-site-accent/60 sm:py-2 sm:text-sm"
                   />
                 )}
               </div>
@@ -462,7 +453,7 @@ function RequestRidePage() {
                   key={ride.id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center justify-between gap-3 rounded-site border border-site-border bg-site-surface/80 p-4"
+                  className="flex items-center justify-between gap-3 glass-fill rounded-site p-4"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 text-sm font-semibold text-site-text">
@@ -524,7 +515,7 @@ function RequestRidePage() {
                   key={ride.id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="rounded-site border border-site-border bg-site-surface/80 p-4"
+                  className="glass-fill rounded-site p-4"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-semibold text-site-text">

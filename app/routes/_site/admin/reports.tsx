@@ -9,6 +9,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
 
 export const Route = createFileRoute('/_site/admin/reports')({
   head: () => ({ meta: [{ title: 'Moderation Queue | RMH Studios' }] }),
@@ -115,23 +116,23 @@ function AdminReportsPage() {
           {t('moderation-queue-description', { defaultValue: 'Review and resolve user reports.' })}
         </div>
 
-        {/* Status tabs */}
-        <div className="flex flex-wrap gap-2">
-          {STATUS_TABS.map((s) => (
-            <button
-              key={s}
-              onClick={() => setStatus(s)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                status === s
-                  ? 'bg-site-accent text-site-accent-fg'
-                  : 'bg-site-surface text-site-text-muted hover:text-site-text border border-site-border'
-              }`}
-            >
-              {s.charAt(0) + s.slice(1).toLowerCase()}
-              {counts[s] ? <span className="ml-1.5 opacity-80">{counts[s]}</span> : null}
-            </button>
-          ))}
-        </div>
+        {/* An exclusive switcher IS a tab strip, whatever it is built from — an
+            accent pill row with no `role` is still one, and this one had no
+            `aria-pressed` either, so a screen reader could not tell which status
+            was showing. `LiquidTabs` brings the roving focus, the selected
+            state and the shared capsule; `count` is the badge this was drawing
+            by hand. */}
+        <LiquidTabs
+          tabs={STATUS_TABS.map((s) => ({
+            id: s,
+            label: s.charAt(0) + s.slice(1).toLowerCase(),
+            count: counts[s] || undefined,
+          }))}
+          value={status}
+          onChange={(id) => setStatus(id as (typeof STATUS_TABS)[number])}
+          scroll
+          aria-label={t('moderation-queue', { defaultValue: 'Moderation queue' })}
+        />
 
         {loading ? (
           <div className="flex justify-center py-20">

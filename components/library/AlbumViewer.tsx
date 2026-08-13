@@ -18,6 +18,7 @@
  */
 
 import { memo, useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from '@tanstack/react-router';
 import {
   ChevronLeft,
@@ -377,7 +378,15 @@ export function AlbumViewer({ album }: { album: Album }) {
   const loaded = loadedKey === order[pos];
   const imgTransform = `translate(${offset.x + swipeDX}px, ${offset.y}px) scale(${scale})`;
 
-  return (
+  // PORTALLED. `.av` is `position: fixed; inset: 0; z-index: 60`, and 60 was
+  // chosen to sit just above the shell's top bar — but it was measured inside
+  // `.radial-frame`'s stacking context (pinned at 1), so it never got there. A
+  // full-screen album viewer with the site's top bar and hub orb painted over it
+  // is not a viewer, and z-60 is precisely the number that makes it look like
+  // someone already thought about this.
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <div className="av" role="dialog" aria-modal="true" aria-label={album.title}>
       <header className="av__bar av__bar--top">
         <div className="av__title-group">
@@ -540,7 +549,8 @@ export function AlbumViewer({ album }: { album: Album }) {
         stripRef={stripRef}
         thumbnailsLabel={t('album-thumbnails', { defaultValue: 'Thumbnails' })}
       />
-    </div>
+    </div>,
+    document.body,
   );
 }
 

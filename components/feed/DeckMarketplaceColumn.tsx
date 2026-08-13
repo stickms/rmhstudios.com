@@ -87,7 +87,7 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  };
 
  return (
- <div className="min-h-screen">
+ <div>
  {/* The back-arrow to /study that used to open this header is now one half
      of the StudyTabs strip below: the two study pages are siblings, not a
      parent and a detail, so the crossing between them is a tab strip rather

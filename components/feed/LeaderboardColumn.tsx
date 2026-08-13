@@ -89,7 +89,7 @@ export function LeaderboardColumn({
  ];
 
  return (
- <div className="min-h-screen">
+ <div>
  {!hideHeader && (
  <ColumnHeader icon={Trophy} title={t('leaderboard', { defaultValue:'Leaderboard'})} />
  )}
