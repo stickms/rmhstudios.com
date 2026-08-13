@@ -42,6 +42,7 @@ import { buildOptimizedUrl } from '@/components/ui/OptimizedImage';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
+import { OverlayPanel } from '@/components/ui/overlay-panel';
 import { ScheduleControl } from '@/components/ui/schedule-control';
 import { useSmartPaste, type MediaRejection } from '@/hooks/useSmartPaste';
 import { postWithOutbox, subscribeOutbox } from '@/lib/offline/outbox';
@@ -1160,14 +1161,7 @@ export function ComposeBox({
 
       {/* Post visibility (audience) picker — opened from the (+) menu */}
       {audienceOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <button
-            type="button"
-            aria-label={t('close', { defaultValue: 'Close' })}
-            tabIndex={-1}
-            className="absolute inset-0 bg-site-media-scrim-strong"
-            onClick={() => setAudienceOpen(false)}
-          />
+        <OverlayPanel open onClose={() => setAudienceOpen(false)}>
           <motion.div
             variants={modalContent}
             initial="initial"
@@ -1210,19 +1204,12 @@ export function ComposeBox({
               ))}
             </div>
           </motion.div>
-        </div>
+        </OverlayPanel>
       )}
 
       {/* Who-can-reply picker — opened from the (+) menu */}
       {replyOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <button
-            type="button"
-            aria-label={t('close', { defaultValue: 'Close' })}
-            tabIndex={-1}
-            className="absolute inset-0 bg-site-media-scrim-strong"
-            onClick={() => setReplyOpen(false)}
-          />
+        <OverlayPanel open onClose={() => setReplyOpen(false)}>
           <motion.div
             variants={modalContent}
             initial="initial"
@@ -1265,16 +1252,12 @@ export function ComposeBox({
               ))}
             </div>
           </motion.div>
-        </div>
+        </OverlayPanel>
       )}
 
       {/* Unlock-price popover — opened from the (+) menu */}
       {showPriceModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-site-media-scrim-strong"
-            onClick={() => setShowPriceModal(false)}
-          />
+        <OverlayPanel open onClose={() => setShowPriceModal(false)}>
           <motion.div
             variants={modalContent}
             initial="initial"
@@ -1335,16 +1318,12 @@ export function ComposeBox({
               </Button>
             </div>
           </motion.div>
-        </div>
+        </OverlayPanel>
       )}
 
       {/* Markdown cheat sheet — opened from the (+) menu */}
       {showCheatSheet && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-site-media-scrim-strong"
-            onClick={() => setShowCheatSheet(false)}
-          />
+        <OverlayPanel open onClose={() => setShowCheatSheet(false)}>
           <motion.div
             variants={modalContent}
             initial="initial"
@@ -1419,16 +1398,12 @@ export function ComposeBox({
               </tbody>
             </table>
           </motion.div>
-        </div>
+        </OverlayPanel>
       )}
 
       {/* Image alt-text editor — opened from the ALT pill on a preview image */}
       {altEditIndex !== null && imageUrls[altEditIndex] && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-site-media-scrim-strong"
-            onClick={() => setAltEditIndex(null)}
-          />
+        <OverlayPanel open onClose={() => setAltEditIndex(null)}>
           <motion.div
             variants={modalContent}
             initial="initial"
@@ -1493,7 +1468,7 @@ export function ComposeBox({
               </Button>
             </div>
           </motion.div>
-        </div>
+        </OverlayPanel>
       )}
     </div>
   );
