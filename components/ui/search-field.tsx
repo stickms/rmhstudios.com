@@ -54,7 +54,12 @@ export const SearchField = React.forwardRef<HTMLInputElement, SearchFieldProps>(
           value={value}
           onChange={(event) => onValueChange(event.target.value)}
           className={cn(
-            'w-full rounded-full border border-site-border bg-site-surface py-2 pl-9 pr-9 text-sm text-site-text',
+            // `.glass-inset` — the recessed-well tier, which is what a field is, and what
+            // `Input` already takes. The hand-rolled box painted the same shape and
+            // none of the material, so this one field degraded nowhere: every
+            // high-contrast / reduced-transparency / perf-lite rule in globals.css
+            // targets the glass classes and nothing else.
+            'glass-inset w-full rounded-full py-2 pl-9 pr-9 text-sm text-site-text',
             'placeholder:text-site-text-dim focus:border-site-accent focus:outline-none',
             className,
           )}
