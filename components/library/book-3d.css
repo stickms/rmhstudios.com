@@ -7,7 +7,10 @@
 .b3d {
   position: fixed;
   inset: 0;
-  z-index: 130;
+  /* Body-level (the component portals), so this is the real dialog band rather
+     than a large number measured inside `.radial-frame`'s stacking context —
+     which is where 130 used to land, underneath the z-60 top bar. */
+  z-index: 50;
   display: flex;
   flex-direction: column;
   overscroll-behavior: contain;

@@ -241,6 +241,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  <button
  type="button"
  tabIndex={-1}
+ data-motion="fade"
  className="glass-scrim absolute inset-0 touch-none"
  onClick={onClose}
  aria-label={t('close', { defaultValue:'Close'})}
@@ -252,6 +253,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  role="dialog"
  aria-modal="true"
  aria-label={t('palette-new-post', { defaultValue:'New post'})}
+ data-motion="rise"
  className="glass-overlay absolute inset-0 h-dvh max-h-none overflow-y-auto overscroll-contain rounded-none pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] text-site-text sm:inset-x-4 sm:bottom-auto sm:top-[10vh] sm:mx-auto sm:h-auto sm:max-h-[80dvh] sm:max-w-lg sm:rounded-site sm:p-0"
  >
  {/* Header */}

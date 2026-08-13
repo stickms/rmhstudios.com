@@ -2973,13 +2973,41 @@ html.readable-font body {
     );
   }
   /* Back-to-top rides above the cookie bar and the mini-player (the vars add;
-     an absent one is 0). It is NOT lifted by the hub any more: the orb is
-     bottom-CENTRE and this is the right lane, so there was never anything to
-     clear there — and the lift is what pushed the button up into the reading
+     an absent one is 0). It is not lifted by the orb DIRECTLY: the orb is
+     bottom-CENTRE and this is the right lane, so there is nothing to clear
+     there — and that lift is what used to push the button up into the reading
      column. It shares the compose FAB's row instead (`.floating-fab-lane`),
-     stepping sideways rather than upwards. */
-  .vibe-app:has([data-floating='cookie']) [data-floating='backtotop'],
-  .vibe-app:has([data-floating='miniplayer']) [data-floating='backtotop'] {
+     stepping sideways rather than upwards.
+
+     But it must inherit the orb's lift TRANSITIVELY, and that is what the first
+     rule below is for. The two members it stacks on are themselves hub-lifted,
+     and on a phone both span the full width — the cookie bar is
+     `inset-x-3 mx-auto max-w-2xl` and the mini-player is
+     `left-2 right-2 mx-auto max-w-sm` — so both DO occupy the right lane there.
+     Without the hub term the sum is one member short and the button lands
+     inside them: at 390px with the orb up, back-to-top sat at safe+172→safe+216
+     while the cookie card spanned safe+88→safe+244, i.e. directly on top of
+     "Essential only" / "Accept all"; against the mini-player it covered
+     play/close. Above `md` the mini-player moves to the right lane with its own
+     `md:bottom-4` (a utilities-layer class, which outranks this rule) and the
+     centred cookie card no longer reaches the right lane, so the extra term is
+     mobile-shaped in practice even though it is written width-independently —
+     the same reasoning the stack above uses. */
+  .vibe-app:has([data-floating='hub']):is(
+      :has([data-floating='cookie']),
+      :has([data-floating='miniplayer'])
+    )
+    [data-floating='backtotop'] {
+    bottom: calc(
+      var(--safe-bottom) + var(--site-fab-row-bottom) + var(--float-lift-hub) +
+        var(--float-lift-cookie) + var(--float-lift-miniplayer)
+    );
+  }
+  .vibe-app:not(:has([data-floating='hub'])):is(
+      :has([data-floating='cookie']),
+      :has([data-floating='miniplayer'])
+    )
+    [data-floating='backtotop'] {
     bottom: calc(
       var(--safe-bottom) + var(--site-fab-row-bottom) + var(--float-lift-cookie) +
         var(--float-lift-miniplayer)
