@@ -5213,12 +5213,13 @@ body {
   right: -12%;
   border-radius: 42% 58% 63% 37% / 47% 39% 61% 53%;
   background: var(--site-text);
-  transform: translate3d(
-      calc(var(--spatial-parallax-x, 0) * 0.9),
-      calc(var(--spatial-parallax-y, 0px) * 0.9 + var(--spatial-scroll-y, 0px) * 0.08),
-      0
-    )
-    rotate(11deg);
+  /* Scroll depth only. The two `--spatial-parallax-*` terms are gone with the
+     pointer tracker that fed them (hooks/useSpatialParallax.ts) — and this
+     declaration had never actually applied, because the X fallback was a
+     unitless `0`, which makes `calc(0 * 0.9)` a <number> and invalidates the
+     whole `translate3d()`. So this shape has been sitting still since it
+     shipped; it moves now. */
+  transform: translate3d(0, calc(var(--spatial-scroll-y, 0px) * 0.08), 0) rotate(11deg);
   transition: transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -5232,11 +5233,8 @@ body {
   background-size: 12px 12px;
   mask-image: radial-gradient(circle, black 20%, transparent 72%);
   opacity: 0.72;
-  transform: translate3d(
-    calc(var(--spatial-parallax-x, 0) * -0.4),
-    calc(var(--spatial-parallax-y, 0px) * -0.4 + var(--spatial-scroll-y, 0px) * -0.035),
-    0
-  );
+  /* Same correction as the shape above. */
+  transform: translate3d(0, calc(var(--spatial-scroll-y, 0px) * -0.035), 0);
   transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 

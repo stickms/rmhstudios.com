@@ -2964,7 +2964,10 @@
   border-radius: calc(var(--site-radius) - 5px);
   background:
     radial-gradient(
-      circle at var(--lib-orbit-glow-x, 50%) var(--lib-orbit-glow-y, 35%),
+      /* Fixed centre. This used to read `--lib-orbit-glow-*`, written on every
+         pointer move — moving a gradient's position repaints the whole tile
+         (design.md §3). The tilt still tracks the finger; the light does not. */
+      circle at 50% 35%,
       color-mix(in srgb, var(--site-accent) 16%, transparent),
       transparent 58%
     ),
