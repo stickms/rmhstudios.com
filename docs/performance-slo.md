@@ -27,6 +27,20 @@ Each configured route gets three Lighthouse runs. The report requires every
 route and every metric to have all three samples. Missing or out-of-band data is
 reported in the Actions summary; available artifacts are retained for 14 days.
 
+**These are mobile numbers.** `lhci collect` is run with no preset, and
+Lighthouse's default is emulated mobile — a Moto-G-class viewport with 4× CPU
+throttling and slow-4G network throttling. The bands below are therefore already
+the phone case, not an average of all traffic, and they should not be read as
+representative of a desktop visitor.
+
+There is deliberately **no desktop counterpart lane**, and the reason is worth
+stating so it is not added as an obvious oversight: the mobile ÷ desktop ratio
+between two Lighthouse presets is largely a property of *the presets* — the 4×
+CPU slowdown and the throttled link are configuration, not measurement — so it
+would produce an authoritative-looking number that says almost nothing about
+this site. The device comparison that does mean something comes from real users,
+via `--by-device` on the RUM reporter above.
+
 Synthetic bands are in `scripts/ci/synthetic-perf-bands.json`:
 
 | Route class |     LCP |    TBT |  CLS |    TTFB | Minimum score |
