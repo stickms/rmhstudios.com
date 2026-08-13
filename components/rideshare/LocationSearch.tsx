@@ -151,7 +151,7 @@ export function LocationSearch({
       <label className="mb-1.5 block text-xs font-medium text-site-text-muted">{label}</label>
 
       {value ? (
-        <div className="flex items-center gap-2 rounded-site-sm border border-site-border bg-site-surface px-3 py-2.5 sm:py-2">
+        <div className="flex items-center gap-2 glass-inset rounded-site-sm px-3 py-2.5 sm:py-2">
           <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${dotClassName}`} />
           <span className="min-w-0 flex-1 truncate text-sm text-site-text" title={value.label}>
             {value.label}
@@ -175,7 +175,7 @@ export function LocationSearch({
               onChange={(e) => setQuery(e.target.value)}
               onFocus={() => results.length && setOpen(true)}
               placeholder={placeholder ?? t('search-placeholder', { defaultValue: 'Search for an address or place' })}
-              className="w-full rounded-site-sm border border-site-border bg-site-surface py-2.5 pl-8 pr-9 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 sm:py-2 sm:text-sm"
+              className="w-full glass-inset rounded-site-sm py-2.5 pl-8 pr-9 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 sm:py-2 sm:text-sm"
               autoComplete="off"
             />
             {loading && (

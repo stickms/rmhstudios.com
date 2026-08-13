@@ -141,7 +141,7 @@ function PendingState() {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-site border border-site-border bg-site-surface/80 p-8 text-center"
+      className="glass-fill rounded-site p-8 text-center"
     >
       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-site bg-site-warning/15 text-site-warning">
         <Clock className="h-7 w-7" />
@@ -208,7 +208,7 @@ function ApplicationForm({
   }
 
   const inputClass =
-    'w-full rounded-site-sm border border-site-border bg-site-surface px-3 py-2.5 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 sm:py-2 sm:text-sm';
+    'w-full glass-inset rounded-site-sm px-3 py-2.5 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 sm:py-2 sm:text-sm';
 
   return (
     <form onSubmit={submit} className="space-y-6">
@@ -236,7 +236,7 @@ function ApplicationForm({
         </div>
       )}
 
-      <div className="rounded-site border border-site-border bg-site-surface/80 p-5">
+      <div className="glass-fill rounded-site p-5">
         <h3 className="mb-4 font-semibold text-site-text">{t('vehicle-details', { defaultValue: 'Vehicle details' })}</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
@@ -270,7 +270,7 @@ function ApplicationForm({
         </div>
       </div>
 
-      <div className="rounded-site border border-site-border bg-site-surface/80 p-5">
+      <div className="glass-fill rounded-site p-5">
         <h3 className="mb-1 font-semibold text-site-text">{t('which-class-drive', { defaultValue: 'Which class will you drive?' })}</h3>
         <p className="mb-4 text-xs text-site-text-muted">{t('class-hint', { defaultValue: 'Pick the option that best matches your vehicle.' })}</p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -498,7 +498,7 @@ function RideCard({
     <motion.li
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`rounded-site border border-site-border bg-site-surface/80 p-4 ${busy ? 'opacity-70' : ''}`}
+      className={`glass-fill rounded-site p-4 ${busy ? 'opacity-70' : ''}`}
     >
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-2 text-sm font-semibold text-site-text">
