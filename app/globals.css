@@ -22,6 +22,21 @@
 @source not "../go-services";
 @source not "../docs";
 @source not "../deploy";
+/* MEASURED AND REJECTED (2026-08-13): also excluding `../locales`, `../data`,
+   `../prisma` and `../public`.
+
+   The theory was sound and the arithmetic looked convincing: Tailwind's scanner
+   extracts candidate tokens from any text file, and it cannot tell a class name
+   from an English word — `locales/en` alone contains `start` (94×), `right`
+   (60), `left` (47), `table` (45), plus `block`, `grid`, `center`, `hidden`,
+   `invisible`, `static`, `auto`, `contents`, every one of them a real utility
+   name. Times 16 locales, all landing in the render-blocking sheet.
+
+   Built both ways: **477,274 → 477,237 bytes. 37 bytes.** Those directories
+   were contributing essentially nothing — every token they could mint is
+   already minted by a component that genuinely uses it, so the "extra"
+   utilities were never extra. Don't re-derive this from the word counts; they
+   are real and they still do not matter. */
 
 /* Theme stylesheets moved to their respective route files for code splitting */
 
@@ -257,7 +272,27 @@
 
   --glass-user-blur: 1;
   --glass-user-tint: 1;
-  --glass-blur-factor: var(--glass-user-blur, 1);
+  /* §5.46.4 — the blur multiplier every backdrop-filter on the site is scaled
+     by. Three inputs, combined with min() so the SMALLEST always wins and no
+     tier can ever raise another tier's cost:
+
+       --glass-user-blur         the clarity slider (runtime, inline on <html>)
+       --glass-blur-cap-tier     the device tier — html.perf-lite caps at 1
+       --glass-blur-cap-viewport the viewport tier — phones/tablets cap lower
+
+     They are three separate PROPERTIES rather than three rules writing one,
+     because the tiers live on selectors of different specificity
+     (`html.perf-lite` vs a bare `html` inside a media query). Written as
+     competing rules the higher-specificity tier would win outright — and since
+     perf-lite is the *less* aggressive cap of the two, a weak phone would have
+     ended up with MORE blur than a strong one. min() over disjoint properties
+     composes instead of competing. 999 is an inert default: it just means
+     "this tier has no opinion". */
+  --glass-blur-factor: min(
+    var(--glass-user-blur, 1),
+    var(--glass-blur-cap-tier, 999),
+    var(--glass-blur-cap-viewport, 999)
+  );
 
   /* Elevation tokens — feather-soft Apple depth layering */
   --site-shadow: 0 4px 30px -6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -1935,6 +1970,65 @@ html.app-route {
   }
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+   Handheld tier — the THIRD device axis (§6.4/§10).
+
+   `html.perf-lite` means "this machine is weak". `html.ios-webkit` means "this
+   compositor behaves differently". Neither describes the fact this block is
+   about, and that gap is why phones were paying full price:
+
+     - `lib/perf-tier.ts` documents that NO iPhone is ever `perf-lite` (its
+       signals are Chromium-only except hardwareConcurrency, which iOS reports
+       as 4–6), and its Android triggers are `deviceMemory < 4` or
+       `hardwareConcurrency <= 2` — thresholds a current mid-range Android also
+       clears. So in practice almost no phone reached the one tier that turns
+       continuous decorative GPU work off.
+     - `ios-webkit` DID freeze the aurora, but only on iOS. Android Chrome ran
+       the full animated backdrop with no equivalent.
+
+   What is true of every handheld regardless of how fast its SoC is: it renders
+   at 2–3× device pixel ratio, it is thermally limited, and it is on battery.
+   A `position: fixed` full-viewport gradient running two infinite transform
+   animations underneath ~46 `backdrop-filter` surfaces means the compositor
+   re-derives every one of those blurs on every frame, over ~9× the physical
+   pixels a 1× desktop covers — for ambient decoration nobody is looking at
+   during a cold load.
+
+   So: keep the material (tint, glint, depth, blur — the identity), and stop
+   paying for MOTION underneath it. This is what iOS has had all along; Android
+   phones now match, which makes the two consistent rather than divergent.
+
+   Deliberately `(pointer: coarse)` AND a width bound, not width alone: a
+   desktop browser resized narrow is still a desktop and keeps the full effect,
+   and a coarse-pointer TV or kiosk above 1024px is not thermally limited in the
+   way this block assumes. CSS-only demotion — no component branches. */
+@media (pointer: coarse) and (max-width: 1024px) {
+  html {
+    /* Blur radius is the dominant term in backdrop-filter cost, and it is the
+       one this site can give up cheaply on a phone: the `max-width: 767.98px`
+       block above already raises every glass tier's tint opacity floor, so the
+       material there is substantially more opaque and reads far less of the
+       backdrop through it. Cutting the radius to 60% is close to invisible
+       against that floor (18px → 10.8px panes, 20px → 12px chrome, 30px → 18px
+       overlays) while removing a large, per-frame, full-screen GPU cost.
+       A cap, never a raise — the clarity slider can still go lower. */
+    --glass-blur-cap-viewport: 0.6;
+  }
+
+  /* The ambient drift and the pointer/motion parallax, both aurora layers. This
+     is the change that actually matters: a STATIC backdrop lets the compositor
+     cache each backdrop-filter region instead of re-blurring it every frame.
+     The aurora itself stays — same gradient, same colours, same depth — it just
+     stops moving, exactly as it already does under html.ios-webkit. */
+  html:not(.app-route) .site-aurora::before,
+  html:not(.app-route) .site-aurora::after {
+    animation: none;
+    translate: none;
+    transition: none;
+    will-change: auto;
+  }
+}
+
 /* The travelling light band for the ambient .glass-liquid sheen. Long dwells at
    each off-pane end keep the sweep occasional and calm rather than a strobe —
    and mean the band is stationary (so the compositor has nothing to do at all)
@@ -2117,10 +2211,10 @@ html.reduce-transparency .glass-liquid::after {
 html.perf-lite {
   --glass-glint-attach: scroll;
   /* §5.46.4: the clarity slider may lower blur on weak devices but never raise
-     its cost — cap the blur factor at 1 here. This rides the derived factor (not
-     --glass-user-blur, which the runtime sets inline on <html> and would
-     out-specify this class rule). Tint still scales. */
-  --glass-blur-factor: min(var(--glass-user-blur, 1), 1);
+     its cost — cap this tier's contribution at 1. Declaring the CAP rather than
+     the derived factor is what lets the viewport tier below cap it further; see
+     the --glass-blur-factor note at :root. Tint still scales. */
+  --glass-blur-cap-tier: 1;
   --glass-glint-layer: linear-gradient(
     180deg,
     color-mix(

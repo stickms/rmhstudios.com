@@ -61,6 +61,17 @@ interface NetworkInformationLike {
   effectiveType?: string;
 }
 
+/**
+ * The thresholds, named once so the function below and the pre-paint script at
+ * the bottom of this file cannot drift apart.
+ */
+/** Under this many GB of RAM is the low tier. Chromium-only, spec-quantised. */
+export const LOW_MEMORY_GB = 4;
+/** This many logical cores or fewer is the low tier. */
+export const LOW_CORE_COUNT = 2;
+/** Connection types treated as an implicit Data Saver request. */
+export const SLOW_EFFECTIVE_TYPES = ['2g', 'slow-2g'] as const;
+
 /** True when this device should run the reduced-effect tier. */
 export function isLowEndDevice(): boolean {
   if (typeof navigator === 'undefined') return false;
@@ -75,13 +86,18 @@ export function isLowEndDevice(): boolean {
   // usually a device with other things to worry about.
   const connection = nav.connection;
   if (connection?.saveData === true) return true;
-  if (connection?.effectiveType === '2g' || connection?.effectiveType === 'slow-2g') return true;
+  if (
+    connection?.effectiveType != null &&
+    (SLOW_EFFECTIVE_TYPES as readonly string[]).includes(connection.effectiveType)
+  ) {
+    return true;
+  }
 
   const memory = nav.deviceMemory;
-  if (typeof memory === 'number' && memory > 0 && memory < 4) return true;
+  if (typeof memory === 'number' && memory > 0 && memory < LOW_MEMORY_GB) return true;
 
   const cores = nav.hardwareConcurrency;
-  if (typeof cores === 'number' && cores > 0 && cores <= 2) return true;
+  if (typeof cores === 'number' && cores > 0 && cores <= LOW_CORE_COUNT) return true;
 
   return false;
 }
@@ -140,8 +156,41 @@ export function supportsViewTimeline(): boolean {
 /**
  * Stamp (or clear) `html.perf-lite`. Safe to call repeatedly; call it once on
  * mount — the signals it reads never change for the lifetime of the document.
+ *
+ * This is now a **re-assertion**, not the primary stamp: {@link PERF_TIER_SCRIPT}
+ * runs in `<head>` and has already applied the class before first paint. Kept
+ * because it costs nothing (`toggle` with an unchanged value does not
+ * invalidate style) and it is the recovery path if the inline script threw.
  */
 export function applyPerfTier(): void {
   if (typeof document === 'undefined') return;
   document.documentElement.classList.toggle('perf-lite', isLowEndDevice());
 }
+
+/**
+ * The pre-paint form of {@link isLowEndDevice}, as an inline `<head>` script.
+ *
+ * ## Why this has to run before paint
+ *
+ * `perf-lite` is what switches off the aurora drift, the radial blob field, the
+ * pane blur and the pointer light. Applied from a mount effect — which is where
+ * it lived — the class landed only after the entry bundle had downloaded,
+ * parsed and hydrated. So the devices the tier exists to protect rendered the
+ * FULL effect stack for the whole of the load, which is both the most expensive
+ * moment and the one the tier was meant to make cheap. It also meant a visible
+ * restyle mid-load: full glass, then flat.
+ *
+ * Stamping it in `<head>` costs four property reads and gets the right
+ * stylesheet on the first frame. Same placement, and the same reasoning, as the
+ * `ios-webkit` stamp it sits next to in `app/routes/__root.tsx`.
+ *
+ * ## Why it is a string in THIS file
+ *
+ * A second implementation of a heuristic is exactly the drift this repo's gates
+ * exist to catch, so the two forms are adjacent and share
+ * {@link LOW_MEMORY_GB} / {@link LOW_CORE_COUNT} / {@link SLOW_EFFECTIVE_TYPES}
+ * by interpolation rather than by copy. `lib/__tests__/perf-tier-script.test.ts`
+ * evaluates this string against the same navigator fixtures it runs
+ * `isLowEndDevice()` on and fails when they disagree.
+ */
+export const PERF_TIER_SCRIPT = `(function(){try{var n=navigator,c=n.connection||{},m=n.deviceMemory,h=n.hardwareConcurrency,S=${JSON.stringify(SLOW_EFFECTIVE_TYPES)},l=false;if(c.saveData===true)l=true;else if(c.effectiveType!=null&&S.indexOf(c.effectiveType)>=0)l=true;else if(typeof m==="number"&&m>0&&m<${LOW_MEMORY_GB})l=true;else if(typeof h==="number"&&h>0&&h<=${LOW_CORE_COUNT})l=true;if(l)document.documentElement.classList.add("perf-lite")}catch(e){}})()`;

@@ -27,6 +27,20 @@ Each configured route gets three Lighthouse runs. The report requires every
 route and every metric to have all three samples. Missing or out-of-band data is
 reported in the Actions summary; available artifacts are retained for 14 days.
 
+**These are mobile numbers.** `lhci collect` is run with no preset, and
+Lighthouse's default is emulated mobile — a Moto-G-class viewport with 4× CPU
+throttling and slow-4G network throttling. The bands below are therefore already
+the phone case, not an average of all traffic, and they should not be read as
+representative of a desktop visitor.
+
+There is deliberately **no desktop counterpart lane**, and the reason is worth
+stating so it is not added as an obvious oversight: the mobile ÷ desktop ratio
+between two Lighthouse presets is largely a property of *the presets* — the 4×
+CPU slowdown and the throttled link are configuration, not measurement — so it
+would produce an authoritative-looking number that says almost nothing about
+this site. The device comparison that does mean something comes from real users,
+via `--by-device` on the RUM reporter above.
+
 Synthetic bands are in `scripts/ci/synthetic-perf-bands.json`:
 
 | Route class |     LCP |    TBT |  CLS |    TTFB | Minimum score |
@@ -58,6 +72,32 @@ segment so handles/IDs/slugs are not logged, and emits:
 
 The shared route-class thresholds are in `lib/rum-slo-bands.json`. Route
 classification and threshold lookup are in `lib/rum-slo.ts`.
+
+### The device dimension — read this before trusting a pooled percentile
+
+Every sample also carries a bucketed device context: `formFactor`
+(`mobile`/`tablet`/`desktop`), `vw`, `dpr`, `mem`, `cores`, `net`, `saveData`.
+See `lib/rum.ts` §Device context for why each field is bucketed the way it is —
+the short version is that these are the fields that change a decision, and
+nothing finer, because `/api/rum` is anonymous by design.
+
+**A pooled p75 cannot see this site's dominant performance fact.** The load cost
+here is overwhelmingly main-thread JavaScript and GPU compositing, and a phone
+pays 4–6× for both. Mixed into one population with desktop traffic, a 3× mobile
+regression reads as mild drift and passes its band. That is not hypothetical:
+six consecutive audits measured only unthrottled desktop Chromium
+(`docs/loading-audit-2026-08-11/01-measurements.md` §6) and none of them could
+have seen it. Split the report before concluding a route is healthy:
+
+```bash
+node scripts/ci/rum-slo-report.mjs --by-device --min-samples=100 web.log
+```
+
+`--by-device` adds a Device column and prints the mobile ÷ desktop p75 ratio per
+metric. Samples from a client cached before the dimension shipped are bucketed
+as `unknown` rather than dropped, so the population never silently shrinks when
+the beacon changes. Note that the split divides each row's samples three ways —
+lower `--min-samples` accordingly or widen the window.
 
 Aggregate a captured log window locally:
 

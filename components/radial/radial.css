@@ -247,6 +247,23 @@ html.perf-lite .radial-backdrop__blob {
   animation: none;
   will-change: auto;
 }
+/* Handheld tier — the same axis globals.css introduces for the aurora, applied
+   to the two layers here that the `min-width: 768px` gates above do NOT cover.
+   Those gates stop at phones, so a coarse-pointer TABLET (768–1024px) was still
+   running six breathing rings plus four drifting blobs, full-screen and forever,
+   underneath every backdrop-filter on the page — the exact cost the phone rules
+   exist to avoid, on a device with the same thermal ceiling. Composition is
+   kept; only the motion stops. */
+@media (pointer: coarse) and (max-width: 1024px) {
+  .radial-backdrop__ring,
+  .radial-backdrop__blob {
+    animation: none;
+    will-change: auto;
+  }
+  .radial-backdrop__rings {
+    will-change: auto;
+  }
+}
 @keyframes radial-blob-drift {
   0% {
     transform: translate3d(0, 0, 0) scale(1);

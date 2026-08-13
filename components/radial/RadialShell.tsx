@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation } from '@tanstack/react-router';
 import { Bell, MessageCircle, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -13,7 +13,70 @@ import { RadialHub } from './RadialHub';
 import { RadialNavRail } from './RadialNavRail';
 import { RadialLiveRail } from './RadialLiveRail';
 import { RailSlotContext } from './rail-slot';
-import { MessagesPanel, NotificationsPanel, ProfilePanel, SearchPanel } from './TopBarPanels';
+
+/**
+ * The four quick panels, behind a lazy boundary — same treatment, and the same
+ * reasoning, as the nav globe in `RadialHub`.
+ *
+ * `TopBarPanels` was statically imported here, so every `_site` page shipped
+ * it: four panel bodies, `QuickPanel`'s anchoring/viewport-fit/focus machinery,
+ * seven lucide icons and `authClient` (the panels sign you out). None of it is
+ * reachable until someone opens a panel, and on a phone the whole top bar is a
+ * glance-and-move-on surface — but the code was parsed and hydrated on every
+ * load regardless. That parse is main-thread time, which is the axis a phone
+ * pays 4–6× on.
+ *
+ * All four `lazy()` calls name the SAME module, so they resolve to one chunk
+ * fetched once — not four.
+ */
+const SearchPanel = lazy(() => import('./TopBarPanels').then((m) => ({ default: m.SearchPanel })));
+const NotificationsPanel = lazy(() =>
+  import('./TopBarPanels').then((m) => ({ default: m.NotificationsPanel })),
+);
+const MessagesPanel = lazy(() =>
+  import('./TopBarPanels').then((m) => ({ default: m.MessagesPanel })),
+);
+const ProfilePanel = lazy(() => import('./TopBarPanels').then((m) => ({ default: m.ProfilePanel })));
+
+let panelsPreloaded = false;
+/**
+ * Warm the panel chunk on the first sign of intent.
+ *
+ * Without it the first open waits on a network round trip with a `null`
+ * Suspense fallback where the panel should be — the chunk is only requested
+ * once the click has already happened. Hover, focus and touch-down all reach
+ * this well before the click does, and the idle backstop in `RadialTopBar`
+ * covers a visitor who taps without hovering first.
+ */
+function preloadPanels() {
+  if (panelsPreloaded) return;
+  panelsPreloaded = true;
+  void import('./TopBarPanels');
+}
+
+/**
+ * Renders a lazy panel only once the top bar has been used at least once.
+ *
+ * `children` is built unconditionally by the caller, which is free — a JSX
+ * element is a plain object, and a `lazy()` component's import fires when it is
+ * RENDERED, not when its element is created. So returning `null` here really
+ * does mean the chunk is never requested.
+ */
+function LazyPanel({ mounted, children }: { mounted: boolean; children: ReactNode }) {
+  if (!mounted) return null;
+  return <Suspense fallback={null}>{children}</Suspense>;
+}
+
+/**
+ * Intent hints for the panel chunk, spread onto each top-bar control. Pointer
+ * enter and focus cover a deliberate reach; pointer DOWN is the one that
+ * matters on touch, where there is no hover to precede the tap.
+ */
+const panelIntentProps = {
+  onPointerEnter: preloadPanels,
+  onPointerDown: preloadPanels,
+  onFocus: preloadPanels,
+} as const;
 
 /**
  * Fixed monochrome backdrop: concentric hairline rings centred on the viewport.
@@ -74,6 +137,19 @@ function RadialTopBar() {
   const signedIn = Boolean(session);
 
   const [panel, setPanel] = useState<QuickPanelId | null>(null);
+  /**
+   * Latch: has a panel ever been opened on this page?
+   *
+   * The panels have to be MOUNTED to close properly — `QuickPanel` runs an exit
+   * animation through `usePopPresence`, so a panel that is unmounted the moment
+   * `open` goes false vanishes instead of animating out. Rendering them only
+   * while `panel === id` would do exactly that. The latch keeps the group
+   * mounted from the first open onward, so every open and close after that
+   * behaves precisely as it did when the import was static — the only thing
+   * that changed is that a visitor who never touches the top bar never
+   * downloads it.
+   */
+  const [panelsMounted, setPanelsMounted] = useState(false);
   const searchRef = useRef<HTMLButtonElement | null>(null);
   const messagesRef = useRef<HTMLButtonElement | null>(null);
   const bellRef = useRef<HTMLButtonElement | null>(null);
@@ -86,7 +162,27 @@ function RadialTopBar() {
   // one of its own links, or the back button) always dismisses it.
   useEffect(() => setPanel(null), [pathname]);
 
-  const toggle = (id: QuickPanelId) => setPanel((p) => (p === id ? null : id));
+  // Idle backstop for the panel chunk, mirroring `RadialHub`'s globe warm-up:
+  // the hover/focus/touch-down hints below cover a deliberate reach for a
+  // control, and this covers everyone else — late enough to stay behind the
+  // page's own first paint, early enough to be resolved before a first tap.
+  useEffect(() => {
+    const w = window as typeof window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      cancelIdleCallback?: (h: number) => void;
+    };
+    const timer = setTimeout(preloadPanels, 800);
+    const handle = w.requestIdleCallback?.(preloadPanels, { timeout: 800 });
+    return () => {
+      clearTimeout(timer);
+      if (handle !== undefined) w.cancelIdleCallback?.(handle);
+    };
+  }, []);
+
+  const toggle = (id: QuickPanelId) => {
+    setPanelsMounted(true);
+    setPanel((p) => (p === id ? null : id));
+  };
   const close = () => setPanel(null);
 
   return (
@@ -109,13 +205,16 @@ function RadialTopBar() {
           className="radial-topbar__btn"
           data-fluid-press=""
           onClick={() => toggle('search')}
+          {...panelIntentProps}
           aria-haspopup="dialog"
           aria-expanded={panel === 'search'}
           aria-label={t('search', { defaultValue: 'Search' })}
         >
           <Search aria-hidden />
         </button>
-        <SearchPanel open={panel === 'search'} onClose={close} anchorRef={searchRef} />
+        <LazyPanel mounted={panelsMounted}>
+          <SearchPanel open={panel === 'search'} onClose={close} anchorRef={searchRef} />
+        </LazyPanel>
 
         {session ? (
           <>
@@ -125,6 +224,7 @@ function RadialTopBar() {
               className="radial-topbar__btn max-sm:hidden"
               data-fluid-press=""
               onClick={() => toggle('messages')}
+              {...panelIntentProps}
               aria-haspopup="dialog"
               aria-expanded={panel === 'messages'}
               aria-label={t('messages', { defaultValue: 'Messages' })}
@@ -132,7 +232,9 @@ function RadialTopBar() {
               <MessageCircle aria-hidden />
               {unread > 0 && <span className="radial-topbar__dot" aria-hidden />}
             </button>
-            <MessagesPanel open={panel === 'messages'} onClose={close} anchorRef={messagesRef} />
+            <LazyPanel mounted={panelsMounted}>
+              <MessagesPanel open={panel === 'messages'} onClose={close} anchorRef={messagesRef} />
+            </LazyPanel>
 
             <button
               type="button"
@@ -140,6 +242,7 @@ function RadialTopBar() {
               className="radial-topbar__btn"
               data-fluid-press=""
               onClick={() => toggle('notifications')}
+              {...panelIntentProps}
               aria-haspopup="dialog"
               aria-expanded={panel === 'notifications'}
               aria-label={t('notifications', { defaultValue: 'Notifications' })}
@@ -147,11 +250,13 @@ function RadialTopBar() {
               <Bell aria-hidden />
               {notifications > 0 && <span className="radial-topbar__dot" aria-hidden />}
             </button>
-            <NotificationsPanel
-              open={panel === 'notifications'}
-              onClose={close}
-              anchorRef={bellRef}
-            />
+            <LazyPanel mounted={panelsMounted}>
+              <NotificationsPanel
+                open={panel === 'notifications'}
+                onClose={close}
+                anchorRef={bellRef}
+              />
+            </LazyPanel>
 
             <button
               type="button"
@@ -159,6 +264,7 @@ function RadialTopBar() {
               className="radial-topbar__avatar"
               data-fluid-press=""
               onClick={() => toggle('profile')}
+              {...panelIntentProps}
               aria-haspopup="dialog"
               aria-expanded={panel === 'profile'}
               aria-label={t('profile', { defaultValue: 'Profile' })}
@@ -170,7 +276,9 @@ function RadialTopBar() {
                 fallbackName={resolved?.name || session.user.name}
               />
             </button>
-            <ProfilePanel open={panel === 'profile'} onClose={close} anchorRef={avatarRef} />
+            <LazyPanel mounted={panelsMounted}>
+              <ProfilePanel open={panel === 'profile'} onClose={close} anchorRef={avatarRef} />
+            </LazyPanel>
           </>
         ) : sessionUnknown ? (
           // The session is UNKNOWN, not absent — the server lookup failed or

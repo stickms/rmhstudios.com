@@ -489,9 +489,16 @@ export function Providers({
     document.documentElement.classList.toggle('app-route', isAppRoute);
   }, [isAppRoute]);
 
-  // Resolve the device effect tier once. `html.perf-lite` is read by the aurora
+  // Re-assert the device effect tier. `html.perf-lite` is read by the aurora
   // layers, the radial blob field, the GL tier gate, glass-lens, canvas2d-fx and
   // the liquid morph/pop motions — see lib/perf-tier.ts.
+  //
+  // The class is now applied pre-paint by PERF_TIER_SCRIPT in `__root.tsx`, so
+  // this is a no-op on every normal load (`toggle` with an unchanged value does
+  // not invalidate style) and exists only as the recovery path if that inline
+  // script threw. It must NOT be removed and it must NOT become the primary
+  // stamp again: from here the class lands after hydration, which is precisely
+  // the load window the tier is supposed to make cheap.
   useEffect(() => applyPerfTier(), []);
 
   // Scrollbars reveal on scroll rather than sitting on screen permanently
