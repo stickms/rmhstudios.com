@@ -2647,11 +2647,10 @@ html.ios-webkit .radial-hub__veil {
   border: var(--site-border-width, 1px) solid var(--site-border);
   box-shadow: var(--site-shadow);
   overflow: hidden;
-  /* `.glass-overlay` supplies the blur, the glint and the viewport caps; its 62%
-     tint is calibrated for dialogs that sit over a scrim. These panels sit
-     directly over live content with no scrim, so take the same material at the
-     shared no-scrim menu opacity (globals.css). */
-  background-color: color-mix(in srgb, var(--site-bg) var(--site-glass-menu-opacity), transparent);
+  /* No fill override — see the matching note on `.lib-ctx` (library.css). The
+     62% this was written against is long gone: `.glass-overlay` is 90% with a
+     78% floor and follows the Glass clarity slider, which a flat repaint cannot.
+     `.glass-overlay` still supplies the blur, the glint and the viewport caps. */
 }
 @media (max-width: 559.98px) {
   .rad-panel {

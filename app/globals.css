@@ -203,13 +203,12 @@
   --site-glass-blur-chrome-scrolled: 30px;
   --site-glass-blur-overlay: 30px;
   --site-glass-saturate: 180%;
-  /* Opacity for a menu that opens straight over LIVE CONTENT with no scrim
-     behind it (the top bar's quick panels, the library's right-click menu) — as
-     opposed to a dialog, which gets one. `.glass-overlay`'s 62% is tuned for the
-     scrimmed case; over a busy shelf or a high-contrast headline the menu's own
-     rows have to win, and they need this much. One number, so the two surfaces
-     can't drift apart. */
-  --site-glass-menu-opacity: 88%;
+  /* `--site-glass-menu-opacity` (88%) lived here, for menus opening over live
+     content with no scrim. It is retired: it existed because `.glass-overlay`
+     was 62%, and that tier now carries its own legibility floor — 90% base,
+     clamped to a hard 78% minimum, and slider-aware. A second flat number could
+     only drift from it, and did: it had become the LOWER of the two, on exactly
+     the surfaces it was added to strengthen. */
   --site-glass-rim: rgba(0, 0, 0, 0.08);
   --site-glass-rim-soft: rgba(0, 0, 0, 0.035);
   --site-glass-light: rgba(255, 255, 255, 0.7);

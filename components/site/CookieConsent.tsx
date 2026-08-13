@@ -116,7 +116,14 @@ export function CookieConsent() {
       // §5.5x A.1: bottom-most member of the mobile floating stack — its presence
       // lifts the mini-player / back-to-top clear of it (globals.css :has() rules).
       data-floating="cookie"
-      className="glass-chrome bottom-above-dock fixed inset-x-3 z-40 mx-auto max-w-2xl rounded-site p-4 shadow-site"
+      // `.glass-overlay`, not `.glass-chrome`. This is `role="dialog"`, it is
+      // `fixed`, it floats over live content, and it is the one surface a
+      // first-time visitor MUST read before they can dismiss it — which is the
+      // definition of the L4 tier. `.glass-chrome` is the sticky-header tier: a
+      // 32% fill with no legibility floor, tuned for something you read THROUGH
+      // on the way to the content behind it. `.glass-overlay` also supplies its
+      // own shadow, so the hand-added `shadow-site` goes with it.
+      className="glass-overlay bottom-above-dock fixed inset-x-3 z-40 mx-auto max-w-2xl rounded-site p-4"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Cookie className="hidden h-5 w-5 shrink-0 text-site-accent sm:block" aria-hidden />

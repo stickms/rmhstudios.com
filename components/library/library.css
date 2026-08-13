@@ -1752,9 +1752,12 @@
   min-width: 196px;
   max-width: 260px;
   padding: 6px;
-  /* Opens over book covers with no scrim behind it — same case as the top bar's
-     quick panels, so the same shared opacity (globals.css). */
-  background-color: color-mix(in srgb, var(--site-bg) var(--site-glass-menu-opacity), transparent);
+  /* No fill override. `.glass-overlay` used to be 62%, which was too thin for a
+     menu opening over book covers with no scrim, so this repainted it at a flat
+     88%. That tier is now 90% with a HARD 78% floor and, unlike this override,
+     it tracks the Glass clarity slider — so the override had become both weaker
+     than the default it existed to strengthen and the reason this one surface
+     ignored a user preference. */
   --motion-origin: top left;
 }
 .lib-ctx__label {
