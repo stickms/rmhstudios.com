@@ -590,7 +590,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  setImageUrls((prev) => prev.filter((_, j) => j !== i));
  setImageAlts((prev) => prev.filter((_, j) => j !== i));
  }}
- className="absolute top-1 right-1 p-0.5 rounded-full bg-site-media-scrim-strong text-site-media-ink opacity-0 group-hover:opacity-100 transition-opacity"
+ className="absolute top-1 right-1 flex size-11 items-center justify-center rounded-full bg-site-media-scrim-strong text-site-media-ink transition-opacity sm:size-auto sm:p-0.5 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
  >
  <X className="w-3.5 h-3.5"/>
  </button>

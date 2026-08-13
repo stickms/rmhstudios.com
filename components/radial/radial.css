@@ -3120,7 +3120,15 @@ html.ios-webkit .radial-hub__veil {
      never listed here, so it stayed a 33px target on every page of the site. */
   .radial-topbar__avatar,
   .rad-live__row,
-  .rad-deck__row {
+  .rad-deck__row,
+  /* The quick panels' own rows — each search result, each notification, each
+     message thread, and every entry in the account menu. They are ~36px and sit
+     4px apart, and they are the most-tapped rows on the site's only persistent
+     chrome; they were simply never added here alongside the live-rail rows this
+     block's comment records fixing. */
+  .rad-panel__row,
+  .rad-panel__identity,
+  .rad-panel__more {
     position: relative;
   }
   .radial-topbar__btn::after,
@@ -3128,7 +3136,10 @@ html.ios-webkit .radial-hub__veil {
   .radial-topbar__brand::after,
   .radial-topbar__avatar::after,
   .rad-live__row::after,
-  .rad-deck__row::after {
+  .rad-deck__row::after,
+  .rad-panel__row::after,
+  .rad-panel__identity::after,
+  .rad-panel__more::after {
     content: '';
     position: absolute;
     top: 50%;
@@ -3139,9 +3150,12 @@ html.ios-webkit .radial-hub__veil {
     min-width: var(--site-touch-target);
     min-height: var(--site-touch-target);
   }
-  /* The rail/deck rows are full-width already, so they only need the height. */
+  /* The rail/deck/panel rows are full-width already, so they only need height. */
   .rad-live__row::after,
-  .rad-deck__row::after {
+  .rad-deck__row::after,
+  .rad-panel__row::after,
+  .rad-panel__identity::after,
+  .rad-panel__more::after {
     min-width: 0;
   }
 }
