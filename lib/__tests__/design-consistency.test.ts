@@ -729,7 +729,6 @@ const CSS_DEBT: Record<string, { hex: number; radius: number }> = {
   'components/feed/feed.css': { hex: 0, radius: 7 },
   'components/security/security.css': { hex: 0, radius: 4 },
   'components/rmhcalculator/rmhcalculator.css': { hex: 0, radius: 3 },
-  'components/builds/builds.css': { hex: 2, radius: 2 },
   'components/library/book-3d.css': { hex: 1, radius: 2 },
   'components/radial/radial.css': { hex: 2, radius: 0 },
 };

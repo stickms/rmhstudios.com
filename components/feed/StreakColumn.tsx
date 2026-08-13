@@ -157,8 +157,8 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  </div>
  <div className="h-2.5 w-full overflow-hidden rounded-full bg-site-bg">
  <div
- className="h-full rounded-full bg-site-warning transition-[width] duration-site-slow"
- style={{ width: `${nextPct}%`}}
+ className="h-full w-full rounded-full bg-site-warning origin-left transition-transform duration-site-slow"
+ style={{ transform: `scaleX(${nextPct / 100})`}}
  />
  </div>
  <p className="mt-1.5 text-xs text-site-text-dim">

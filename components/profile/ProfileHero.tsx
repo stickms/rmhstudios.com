@@ -600,8 +600,8 @@ export function ProfileHero({
               </div>
               <div className="glass-inset mt-3 h-2 overflow-hidden rounded-full p-0">
                 <div
-                  className="h-full rounded-full bg-site-warning transition-[width]"
-                  style={{ width: `${progress}%` }}
+                  className="h-full w-full origin-left rounded-full bg-site-warning transition-transform duration-site-slow"
+                  style={{ transform: `scaleX(${progress / 100})` }}
                 />
               </div>
             </section>
