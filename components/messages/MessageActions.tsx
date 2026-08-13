@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { Copy, EyeOff, MoreHorizontal, Pencil, Undo2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
+import { MenuItem } from '@/components/ui/menu';
 import { cn } from '@/lib/utils';
 import { canEdit, editWindowRemainingMs, MESSAGE_EDIT_WINDOW_MS } from '@/lib/messages/edit-policy';
 
@@ -56,9 +57,6 @@ export function MessageActions({
   const editable = !deleted && canEdit(message, viewerId);
   const copyable = !deleted && message.content.trim().length > 0;
 
-  const rowClass =
-    'flex w-full items-center gap-2 px-3 py-2.5 text-sm text-site-text hover:bg-site-surface-hover';
-
   const remainingMinutes = Math.ceil(editWindowRemainingMs(message.createdAt) / 60_000);
 
   return (
@@ -88,24 +86,19 @@ export function MessageActions({
         className="w-56"
       >
         {editable && (
-          <button
-            type="button"
-            role="menuitem"
-            className={rowClass}
-            onClick={() => {
+          <MenuItem
+            icon={Pencil}
+            hint={t('message-edit-remaining', {
+              minutes: remainingMinutes,
+              defaultValue: '{{minutes}}m left',
+            })}
+            onSelect={() => {
               setOpen(false);
               onEdit();
             }}
           >
-            <Pencil className="size-4 text-site-text-dim" aria-hidden="true" />
-            <span className="flex-1 text-left">{t('message-edit', { defaultValue: 'Edit' })}</span>
-            <span className="text-[11px] tabular-nums text-site-text-dim">
-              {t('message-edit-remaining', {
-                minutes: remainingMinutes,
-                defaultValue: '{{minutes}}m left',
-              })}
-            </span>
-          </button>
+            {t('message-edit', { defaultValue: 'Edit' })}
+          </MenuItem>
         )}
 
         {isSender && !deleted && !editable && (
@@ -120,46 +113,38 @@ export function MessageActions({
         )}
 
         {copyable && (
-          <button
-            type="button"
-            role="menuitem"
-            className={rowClass}
-            onClick={() => {
+          <MenuItem
+            icon={Copy}
+            onSelect={() => {
               setOpen(false);
               void navigator.clipboard?.writeText(message.content);
             }}
           >
-            <Copy className="size-4 text-site-text-dim" aria-hidden="true" />
             {t('message-copy', { defaultValue: 'Copy text' })}
-          </button>
+          </MenuItem>
         )}
 
-        <button
-          type="button"
-          role="menuitem"
-          className={rowClass}
-          onClick={() => {
+        <MenuItem
+          icon={EyeOff}
+          onSelect={() => {
             setOpen(false);
             onHide();
           }}
         >
-          <EyeOff className="size-4 text-site-text-dim" aria-hidden="true" />
           {t('message-delete-for-me', { defaultValue: 'Delete for me' })}
-        </button>
+        </MenuItem>
 
         {isSender && !deleted && (
-          <button
-            type="button"
-            role="menuitem"
-            className={cn(rowClass, 'text-site-danger')}
-            onClick={() => {
+          <MenuItem
+            icon={Undo2}
+            tone="danger"
+            onSelect={() => {
               setOpen(false);
               onUnsend();
             }}
           >
-            <Undo2 className="size-4" aria-hidden="true" />
             {t('message-unsend', { defaultValue: 'Unsend for everyone' })}
-          </button>
+          </MenuItem>
         )}
       </AnchoredMenu>
     </>

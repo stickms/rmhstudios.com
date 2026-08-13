@@ -251,7 +251,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  role="dialog"
  aria-modal="true"
  aria-label={t('palette-new-post', { defaultValue:'New post'})}
- className="motion-cage glass-overlay absolute inset-0 h-dvh max-h-none overflow-y-auto overscroll-contain rounded-none pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] text-site-text sm:inset-x-4 sm:bottom-auto sm:top-[10vh] sm:mx-auto sm:h-auto sm:max-h-[80dvh] sm:max-w-lg sm:rounded-site sm:p-0"
+ className="glass-overlay absolute inset-0 h-dvh max-h-none overflow-y-auto overscroll-contain rounded-none pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] text-site-text sm:inset-x-4 sm:bottom-auto sm:top-[10vh] sm:mx-auto sm:h-auto sm:max-h-[80dvh] sm:max-w-lg sm:rounded-site sm:p-0"
  >
  {/* Header */}
  <div className="flex items-center justify-between px-4 py-3 border-b border-site-border">
@@ -629,7 +629,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  variants={modalContent}
  initial="initial"
  animate="animate"
- className="motion-cage relative w-full max-w-md p-4 glass-overlay"
+ className="relative w-full max-w-md p-4 glass-overlay"
  >
  <div className="mb-2 flex items-center justify-between">
  <h3 id="compose-alt-title"className="text-sm font-semibold text-site-text">

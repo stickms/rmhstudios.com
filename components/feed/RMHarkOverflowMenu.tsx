@@ -11,7 +11,7 @@
  * parent owns that state and passes a `translate`control for the menu item.
  */
 
-import { lazy, Suspense, useEffect, useRef, useState } from'react';
+import { lazy, Suspense, useRef, useState } from'react';
 import {
  MoreHorizontal,
  Heart,
@@ -33,7 +33,8 @@ import { useTranslation } from'react-i18next';
 import { useSession } from'@/components/Providers';
 import { useOptimisticAction } from'@/hooks/useOptimisticAction';
 import { useConfirm } from'@/components/ui/confirm-dialog';
-import { usePopPresence } from '@/hooks/usePopPresence';
+import { AnchoredMenu } from '@/components/ui/anchored-menu';
+import { MenuItem, MenuSeparator } from '@/components/ui/menu';
 import { cn } from'@/lib/utils';
 import type { FeedItem } from'@/lib/feed-types';
 
@@ -108,11 +109,7 @@ export function RMHarkOverflowMenu({
  const [insightsOpen, setInsightsOpen] = useState(false);
  const [pinned, setPinned] = useState(!!item.pinned);
  const [bookmarked, setBookmarked] = useState(!!item.bookmarked);
- const menuRef = useRef<HTMLDivElement>(null);
  const triggerRef = useRef<HTMLButtonElement>(null);
- const panelRef = useRef<HTMLDivElement>(null);
- // The shared bloom (globals.css §7.1) — held mounted for its close.
- const { present, state } = usePopPresence(menuOpen);
  const { run: runBookmark } = useOptimisticAction();
  const { run: runPin } = useOptimisticAction();
 
@@ -125,28 +122,12 @@ export function RMHarkOverflowMenu({
  mounted.current.tip ||= tipOpen;
  mounted.current.edit ||= editOpen;
 
- useEffect(() => {
- if (!menuOpen) return;
- const handleClick = (e: MouseEvent) => {
- if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
- };
- // Escape closes and hands focus back to the trigger — an open menu was
- // dismissable only by clicking outside it, which a keyboard user can't do.
- // CAPTURE phase on purpose: the panel stops keydown propagation, and React
- // routes that through the native event, so a bubble-phase listener here would
- // never fire while focus was inside the menu.
- const handleKey = (e: KeyboardEvent) => {
- if (e.key !== 'Escape') return;
- setMenuOpen(false);
- triggerRef.current?.focus();
- };
- document.addEventListener('mousedown', handleClick);
- document.addEventListener('keydown', handleKey, true);
- return () => {
- document.removeEventListener('mousedown', handleClick);
- document.removeEventListener('keydown', handleKey, true);
- };
- }, [menuOpen]);
+ // Outside-press dismissal, Escape, focus return, the roving arrow keys and the
+ // close animation all live in AnchoredMenu now. This file used to carry its own
+ // copy of the first three — and, because the panel was an in-place
+ // `absolute top-full … z-50`, it was measured inside `.radial-frame`'s stacking
+ // context (pinned at z-index 1), so on a post near the top of the column the
+ // menu's first rows painted UNDER the top bar. AnchoredMenu portals to <body>.
 
  const shareUrl =
  typeof window !=='undefined'
@@ -291,16 +272,11 @@ export function RMHarkOverflowMenu({
  }
  };
 
- const itemClass =
-'flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors';
- const dangerClass =
-'flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors';
  const showTranslate =
  translate && !!item.content && !item.deletedAt && (item.content?.length ?? 0) > 8;
 
  return (
- // Lift above sibling content (comments, related posts) while the menu is open.
- <div className={cn('relative', menuOpen &&'z-30', className)} ref={menuRef}>
+ <div className={cn('relative', className)}>
  <button
  ref={triggerRef}
  onClick={(e) => {
@@ -317,61 +293,55 @@ export function RMHarkOverflowMenu({
  >
  <MoreHorizontal className={cn('w-5 h-5', iconClassName)} />
  </button>
- {present && (
- <div
- ref={panelRef}
- data-motion="pop"
- data-state={state}
- role="menu"
- tabIndex={-1}
- className="absolute right-0 top-full mt-1 w-44 origin-top-right glass-overlay py-1 z-50"
- onClick={(e) => e.stopPropagation()}
- onKeyDown={(e) => e.stopPropagation()}
+ <AnchoredMenu
+ open={menuOpen}
+ onClose={() => setMenuOpen(false)}
+ anchorRef={triggerRef}
+ label={t('more-options', { defaultValue:'More options'})}
+ className="w-52"
  >
  {session && (
- <button onClick={handleBookmark} className={itemClass}>
- <Bookmark
- className={`w-4 h-4 ${bookmarked ?'fill-site-accent text-site-accent':'text-site-text-dim'}`}
- />
+ <MenuItem
+ icon={Bookmark}
+ // The fill IS the state here, so it overrides the row's default dim ink.
+ iconClassName={bookmarked ?'fill-site-accent text-site-accent': undefined}
+ onSelect={handleBookmark}
+ >
  {bookmarked
  ? t('bookmark-saved-label', { defaultValue:'Saved'})
  : t('bookmark-label', { defaultValue:'Bookmark'})}
- </button>
+ </MenuItem>
  )}
- <button
- onClick={() => {
+ <MenuItem
+ icon={Heart}
+ onSelect={() => {
  setMenuOpen(false);
  setEngagementModal('likes');
  }}
- className={itemClass}
  >
- <Heart className="w-4 h-4 text-site-text-dim"/>
  {t('liked-by', { defaultValue:'Liked by'})}
- </button>
- <button
- onClick={() => {
+ </MenuItem>
+ <MenuItem
+ icon={Repeat}
+ onSelect={() => {
  setMenuOpen(false);
  setEngagementModal('reposts');
  }}
- className={itemClass}
  >
- <Repeat className="w-4 h-4 text-site-text-dim"/>
  {t('rermharkd-by', { defaultValue:"reRMHark'd by"})}
- </button>
- <button onClick={handleShare} className={itemClass}>
- <Share2 className="w-4 h-4 text-site-text-dim"/>
+ </MenuItem>
+ <MenuItem icon={Share2} onSelect={handleShare}>
  {t('share', { defaultValue:'Share'})}
- </button>
+ </MenuItem>
  {showTranslate && (
- <button
- onClick={() => {
+ <MenuItem
+ icon={Languages}
+ disabled={translate!.translating}
+ onSelect={() => {
  setMenuOpen(false);
  translate!.onToggle();
  }}
- disabled={translate!.translating}
- className={cn(itemClass,'disabled:opacity-60')}
  >
- <Languages className="w-4 h-4 text-site-text-dim"/>
  {translate!.translating
  ? t('translating', { defaultValue:'Translating…'})
  : translate!.hasTranslation
@@ -379,80 +349,76 @@ export function RMHarkOverflowMenu({
  ? t('show-original', { defaultValue:'Show original'})
  : t('show-translation', { defaultValue:'Show translation'})
  : t('translate', { defaultValue:'Translate'})}
- </button>
+ </MenuItem>
  )}
  {isAuthor && (
  <>
- <button
- onClick={() => {
+ <MenuSeparator />
+ <MenuItem
+ icon={TrendingUp}
+ onSelect={() => {
  setMenuOpen(false);
  setInsightsOpen(true);
  }}
- className={itemClass}
  >
- <TrendingUp className="w-4 h-4 text-site-text-dim"/>
  {t('view-insights', { defaultValue:'View insights'})}
- </button>
- <button
- onClick={() => {
+ </MenuItem>
+ <MenuItem
+ icon={Pencil}
+ onSelect={() => {
  setMenuOpen(false);
  setEditOpen(true);
  }}
- className={itemClass}
  >
- <Pencil className="w-4 h-4 text-site-text-dim"/>
  {t('edit', { defaultValue:'Edit'})}
- </button>
- <button onClick={handlePin} className={itemClass}>
- <Pin
- className={`w-4 h-4 ${pinned ?'fill-site-accent text-site-accent':'text-site-text-dim'}`}
- />
+ </MenuItem>
+ <MenuItem
+ icon={Pin}
+ iconClassName={pinned ?'fill-site-accent text-site-accent': undefined}
+ onSelect={handlePin}
+ >
  {pinned
  ? t('unpin-from-profile', { defaultValue:'Unpin from profile'})
  : t('pin-to-profile', { defaultValue:'Pin to profile'})}
- </button>
- <button onClick={handleDelete} className={dangerClass}>
- <Trash2 className="w-4 h-4"/>
+ </MenuItem>
+ <MenuItem icon={Trash2} tone="danger" onSelect={handleDelete}>
  {t('delete', { defaultValue:'Delete'})}
- </button>
+ </MenuItem>
  </>
  )}
  {!isAuthor && session && (
  <>
+ <MenuSeparator />
  {targetUserId && (
- <button
- onClick={() => {
+ <MenuItem
+ icon={Coins}
+ iconClassName="text-site-warning"
+ onSelect={() => {
  setMenuOpen(false);
  setTipOpen(true);
  }}
- className={itemClass}
  >
- <Coins className="w-4 h-4 text-site-warning"/>
  {t('send-tip', { defaultValue:'Send tip'})}
- </button>
+ </MenuItem>
  )}
- <button
- onClick={() => {
+ <MenuItem
+ icon={Flag}
+ onSelect={() => {
  setMenuOpen(false);
  setReportOpen(true);
  }}
- className={itemClass}
  >
- <Flag className="w-4 h-4 text-site-text-dim"/>
  {t('report', { defaultValue:'Report'})}
- </button>
- <button onClick={handleMute} className={itemClass}>
- <VolumeX className="w-4 h-4 text-site-text-dim"/>
+ </MenuItem>
+ <MenuItem icon={VolumeX} onSelect={handleMute}>
  {t('mute', { defaultValue:'Mute'})}
- </button>
- <button onClick={handleBlock} className={dangerClass}>
- <Ban className="w-4 h-4"/>
+ </MenuItem>
+ <MenuItem icon={Ban} tone="danger" onSelect={handleBlock}>
  {t('block', { defaultValue:'Block'})}
- </button>
+ </MenuItem>
  </>
  )}
- </div>
- )}
+ </AnchoredMenu>
 
  {engagementModal && (
  <Suspense fallback={null}>

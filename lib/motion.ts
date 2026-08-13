@@ -124,7 +124,7 @@ export const pressable = {
  * play, however good the keyframes are. CSS owns the look; this owns the
  * lifetime; they have to agree, so if one moves, move the other.
  */
-export const POP_COLLAPSE_MS = 130;
+export const POP_COLLAPSE_MS = 110;
 
 /** The default tweened transition — smooth, quick, used by the variants below. */
 export const transition: Transition = { duration: DURATION.base, ease: EASE.standard };
