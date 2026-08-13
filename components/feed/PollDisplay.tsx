@@ -110,7 +110,7 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
  const maxVotes = Math.max(...localPoll.options.map((o) => o.voteCount), 1);
 
  return (
- <div className="mt-3 border border-site-border rounded-site p-3 bg-site-surface/20">
+ <div className="glass-fill mt-3 rounded-site p-3">
  <p className="text-sm font-semibold text-site-text mb-2">{localPoll.question}</p>
 
  {localPoll.multiSelect && !showResults && (
@@ -137,7 +137,13 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
  width relayouts the option row on every frame of every result reveal. */}
  <div
  className={`absolute inset-0 origin-left transition-[transform,background-color] duration-site-slow ${
- isSelected ?'bg-site-accent/20':'bg-site-surface/50'
+ // `--site-surface-hover`, not `bg-site-surface/50`. `--site-surface` is
+ // ALREADY rgba (0.065 on ultra), and Tailwind v4's opacity modifier
+ // multiplies rather than replaces — so /50 rendered at 0.033 and the bar
+ // for every option you did not vote for was invisible. `-hover` is a real
+ // token, calibrated per theme, and is what "one step up from the surface"
+ // actually means here.
+ isSelected ?'bg-site-accent/20':'bg-site-surface-hover'
  }`}
  style={{ transform: `scaleX(${pct / 100})`}}
  />

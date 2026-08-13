@@ -704,7 +704,7 @@ export function ComposeBox({
 
           {/* Poll creator */}
           {attachment === 'poll' && (
-            <div className="mt-2 border border-site-border rounded-site p-3 bg-site-surface/20">
+            <div className="glass-fill mt-2 rounded-site p-3">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">
                   {t('poll-heading', { defaultValue: 'Poll' })}
@@ -819,7 +819,7 @@ export function ComposeBox({
 
           {/* GIF picker */}
           {attachment === 'gif' && (
-            <div className="mt-2 border border-site-border rounded-site p-3 bg-site-surface/20">
+            <div className="glass-fill mt-2 rounded-site p-3">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">
                   {t('gif-heading', { defaultValue: 'GIF' })}

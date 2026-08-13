@@ -217,7 +217,7 @@ export function ShopColumn({
     );
 
   return (
-    <div className="min-h-screen">
+    <div>
       {showHero && (
         <PinnedHero
           /* 1.2 screens, not the 2.6 default: at 2.6 the catalog started three

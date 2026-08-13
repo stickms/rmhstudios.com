@@ -56,7 +56,7 @@ export function RecapColumn({
  }, []);
 
  return (
- <div className="min-h-screen">
+ <div>
  {loading ? (
  <div className="flex justify-center py-20">
  <Spinner />

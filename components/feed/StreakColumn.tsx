@@ -64,7 +64,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  const nextPct = next ? Math.min(100, Math.round((streak.current / next.day) * 100)) : 100;
 
  return (
- <div className={hideHeader ?'':'min-h-screen'}>
+ <div>
  {/* hideHeader === embedded in JourneyColumn, which supplies the page
  header (and the drawer button) itself. */}
  {!hideHeader && (

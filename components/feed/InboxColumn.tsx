@@ -61,7 +61,7 @@ export function InboxColumn({
   ];
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col">
       {/* No title here: the route wraps this column in `PageLayout`, which owns
           the one h1 for the page (the same header /predictions and /developer
           use). This used to draw its own sticky "Inbox" chrome, which is what

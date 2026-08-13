@@ -289,6 +289,17 @@ html.perf-lite .radial-backdrop__blob {
   }
 }
 
+/* The error and 404 pages are mounted from BOTH `__root` (outside the shell,
+   where a viewport-height centred block is right) and `_site` (inside it, where
+   `.radial-shell__main` already guarantees
+   `calc(100dvh - var(--rad-topbar-h))` plus its own padding and `pb-dock`). The
+   `min-h-dvh` they carry for the first case adds a full extra viewport of dead
+   scroll in the second, so it is cancelled where the shell has already paid for
+   it — rather than dropped, which would break the root-level case. */
+.radial-shell__main .error-page {
+  min-height: 0;
+}
+
 /* CallOverlay's persistent banner (components/call/CallOverlay.tsx). It is
    body-level chrome, so it clears the bar by moving rather than by out-ranking
    it — and only where there IS a bar. */

@@ -175,7 +175,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  const weekly = data.quests.filter((q) => q.period ==='weekly');
 
  return (
- <div className={hideHeader ?'':'min-h-screen'}>
+ <div>
  {/* hideHeader === embedded in JourneyColumn, which supplies the page
  header (and the drawer button) itself. */}
  {!hideHeader && (

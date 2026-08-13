@@ -80,7 +80,7 @@ export function WrappedColumn({
  ];
 
  return (
- <div className="min-h-screen">
+ <div>
  {/* Pinned scroll-narrative hero — marquee moment for the year review. */}
  <PinnedHero
  eyebrow={t('your-year-on-rmh', { defaultValue:'Your year on RMH'})}

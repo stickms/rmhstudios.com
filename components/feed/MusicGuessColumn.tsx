@@ -105,7 +105,7 @@ export function MusicGuessColumn({
  const validForm = form.title.trim() && form.artist.trim() && hintLines.length >= 1;
 
  return (
- <div className="min-h-screen">
+ <div>
  <ColumnHeader
  icon={Music}
  title={t('guess-the-song', { defaultValue:'Guess the Song'})}

@@ -130,7 +130,7 @@ export function GroupChatsColumn({
  const visibleGroups = q ? groups.filter((g) => g.name.toLowerCase().includes(q)) : groups;
 
  return (
- <div className="min-h-screen">
+ <div>
  <ColumnHeader
  sticky={!embedded}
  icon={embedded ? undefined : Users}

@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { gridClassFor } from '@/lib/whats-new';
@@ -112,5 +112,109 @@ describe('spatial redesign — responsive layout contract', () => {
       expect(stylesheet).toContain('overflow-x:clip');
       expect(stylesheet).toContain('env(safe-area-inset-top,0px)');
     }
+  });
+
+  /**
+   * A column inside the shell must not claim a viewport of its own.
+   *
+   * `.radial-shell__main` is already `min-height: calc(100dvh -
+   * var(--rad-topbar-h))`, with `padding-block` of its own and `pb-dock` on top
+   * (radial.css). A column that then adds `min-h-screen` asks for a SECOND full
+   * viewport underneath the first, which is roughly 245px of dead scroll at the
+   * bottom of every route that does it — the scrollbar says there is more to
+   * read and there is not.
+   *
+   * `h-screen` is worse than `min-h-screen` and worth stating separately: it is
+   * `100vh`, the LARGE viewport, so on a phone it is taller than the space the
+   * browser actually leaves once its toolbars are showing — `ConversationView`
+   * carries a written note about exactly that. `dvh` is the unit that tracks the
+   * real one.
+   *
+   * Twenty-five files had shipped this. That is the reason it is a gate and not
+   * a comment.
+   */
+  it('no column inside the shell claims its own viewport height', () => {
+    const walk = (dir: string, out: string[] = []): string[] => {
+      let entries;
+      try {
+        entries = readdirSync(join(ROOT, dir), { withFileTypes: true });
+      } catch {
+        return out;
+      }
+      for (const entry of entries) {
+        const rel = join(dir, entry.name);
+        if (entry.isDirectory()) walk(rel, out);
+        else if (entry.name.endsWith('.tsx') && !entry.name.endsWith('.test.tsx')) out.push(rel);
+      }
+      return out;
+    };
+
+    /**
+     * One-directional, like every allowlist here. A genuinely full-height
+     * surface inside the shell needs a reason naming what it is.
+     */
+    const ALLOWED: ReadonlyArray<{ file: string; reason: string }> = [
+      {
+        file: 'components/feed/GroupChatView.tsx',
+        reason:
+          'Chat transcript: a fixed-height flex column with its own scroll region, not a document you read top to bottom. Tracked for the dvh fix alongside PersonaChatColumn.',
+      },
+      {
+        file: 'components/feed/PersonaChatColumn.tsx',
+        reason: 'Same shape and the same pending dvh fix as GroupChatView.',
+      },
+      {
+        file: 'components/errors/NotFound.tsx',
+        reason:
+          'Mounted from BOTH __root (outside the shell, where a viewport-height centred block is right) and _site (inside it). It keeps min-h-dvh for the first case and carries `.error-page`, which radial.css cancels under `.radial-shell__main` for the second.',
+      },
+      {
+        file: 'components/errors/RouteErrorFallback.tsx',
+        reason: 'Same dual mount and the same `.error-page` cancellation as NotFound.',
+      },
+      {
+        file: 'app/routes/_site/library/index.tsx',
+        reason: 'The `.vibe-screen` library shell paints its own full-bleed ground; it is not a column.',
+      },
+      {
+        file: 'app/routes/_site/create/route.tsx',
+        reason: 'The `.cstudio-screen` creator-studio shell, same full-bleed case as the library.',
+      },
+      {
+        file: 'app/routes/_site/roadmap.tsx',
+        reason: 'Full-bleed timeline that paints its own isolated backdrop across the viewport.',
+      },
+      {
+        file: 'app/routes/_site/user-builds/submit.tsx',
+        reason: 'Skips PageLayout entirely and paints its own slab; queued to be wrapped in PageLayout (plan 5.2).',
+      },
+      {
+        file: 'app/routes/_site/user-builds/manage.tsx',
+        reason: 'Same as user-builds/submit.tsx.',
+      },
+    ];
+    const allowed = new Set(ALLOWED.map((e) => e.file));
+
+    const files = [...walk('components/feed'), ...walk('app/routes/_site'), ...walk('components/errors')];
+    const offenders: string[] = [];
+    for (const file of files) {
+      if (allowed.has(file)) continue;
+      const src = readFileSync(join(ROOT, file), 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+      const hit = /className=[^\n]*\b(min-h-screen|h-screen|min-h-dvh)\b/.exec(src);
+      if (hit) offenders.push(`${file} (${hit[1]})`);
+    }
+    expect(
+      offenders,
+      'The shell already guarantees the viewport. A column that adds its own leaves a second one of dead scroll under it.',
+    ).toEqual([]);
+
+    // Allowlist staleness — an entry that no longer trips comes out.
+    const stale = ALLOWED.filter(({ file }) => {
+      const src = readFileSync(join(ROOT, file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+      return !/className=[^\n]*\b(min-h-screen|h-screen|min-h-dvh)\b/.test(src);
+    }).map((e) => e.file);
+    expect(stale, 'This file no longer needs excusing — remove the entry.').toEqual([]);
   });
 });

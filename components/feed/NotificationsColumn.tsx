@@ -390,7 +390,7 @@ export function NotificationsColumn({
  const groups = useMemo(() => groupNotifications(items), [items]);
 
  return (
- <div className="min-h-screen">
+ <div>
  {/* Embedded (as a profile tab) this is just a toolbar: the host page owns
  the heading and the sticky bar. */}
  <ColumnHeader

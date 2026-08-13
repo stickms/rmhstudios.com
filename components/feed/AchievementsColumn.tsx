@@ -125,7 +125,7 @@ export function AchievementsColumn({
  );
 
  return (
- <div className={hideHeader ?'':'min-h-screen'}>
+ <div>
  {/* hideHeader === embedded in JourneyColumn/ProfileColumn, which supply
  the page header (and the drawer button); only the stats survive. */}
  {hideHeader ? (

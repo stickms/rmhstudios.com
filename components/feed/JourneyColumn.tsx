@@ -60,7 +60,7 @@ export function JourneyColumn({
  }
 
  return (
- <div className="min-h-screen">
+ <div>
  {/* Reveal header — stat-grid dashboard, lighter treatment than marquee pages. */}
  <Reveal>
  {/* The tab bar *is* this page's header: no title, so the nav fills the

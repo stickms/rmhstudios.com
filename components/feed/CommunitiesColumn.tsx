@@ -129,7 +129,7 @@ export function CommunitiesColumn({
     'w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted focus:border-site-accent focus:outline-none';
 
   return (
-    <div className="min-h-screen">
+    <div>
       <ColumnHeader
         // Embedded (a tab on /communities), the page already renders its own
         // "Communities" title above the tab sheet — repeating it here shipped the

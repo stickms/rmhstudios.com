@@ -394,7 +394,7 @@ export function PostDetail({ postId }: PostDetailProps) {
 
  {/* Quoted original */}
  {post.original && (
- <div className="mb-3 border border-site-border rounded-site p-3 bg-site-surface/30">
+ <div className="glass-fill mb-3 rounded-site p-3">
  <div className="flex items-center gap-1.5 text-sm mb-1">
  {freshOriginalUser ? (
  <Link
