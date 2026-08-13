@@ -1155,7 +1155,11 @@
 .lib-upload__overlay {
   position: fixed;
   inset: 0;
-  z-index: 120;
+  /* Body-level — every consumer goes through `LibraryDialogShell`, which
+     portals. In place this was measured inside `.radial-frame`'s stacking
+     context (pinned at 1), so 120 bought nothing and the shell's chrome painted
+     over the scrim. At <body> the ordinary dialog band is correct. */
+  z-index: 50;
   display: flex;
   align-items: center;
   justify-content: center;
