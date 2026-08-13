@@ -1145,6 +1145,34 @@ html.perf-lite .radial-backdrop__blob {
 .radial-shell:has(.radial-hub[data-phase='open']) .radial-topbar,
 .radial-shell:has(.radial-hub[data-phase='open']) .radial-frame {
   filter: blur(var(--hub-page-blur, 20px));
+  /* The transition lives HERE, on the open state, so it governs the way IN and
+     NOT the way out. That asymmetry is the fix for a reported bug: the whole
+     feed disappeared for the length of the close and then popped back.
+
+     Why it looked like the close's fault when it is really the open's. A
+     `filter` is only cheap on a subtree that HOLDS STILL and fits in a
+     rasterised buffer, and `.radial-frame` is neither small nor bounded — it is
+     the entire document-height feed. When that buffer cannot be maintained the
+     layer renders EMPTY, which is exactly the bet this block's own `ios-webkit`
+     note describes losing. While the menu is open you cannot see it, because
+     the veil is painted over the top. On close the veil's opacity lands first
+     (0.3s, ahead of its 0.5s clip-path, by its own design) while the filter was
+     still transitioning for 0.32s — so the veil got out of the way and revealed
+     a blank page, and the feed snapped back the instant `filter` reached `none`.
+
+     Dropping the filter instantly on close removes the window entirely: the
+     feed is back on the first frame of the close and is revealed by the
+     shrinking veil, which is what the wipe was always supposed to show. It also
+     stops 320ms of document-height re-rasterisation during the exact gesture
+     that is spending its whole budget on being smooth — so this is cheaper as
+     well as correct.
+
+     If a blank ever shows on the way IN too (the same buffer, during the 0.32s
+     before the growing veil covers it), the answer is not a longer transition —
+     it is to stop filtering `.radial-frame` at all and let the veil carry the
+     separation alone, which is already what `perf-lite`, `reduce-transparency`
+     and `ios-webkit` do a few rules below. */
+  transition: filter 0.32s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
 }
 /* …and the "rasterises once" above is only true if the blurred layer HOLDS
    STILL. `.radial-backdrop` does not: it owns the breathing rings and the
@@ -1168,10 +1196,11 @@ html.perf-lite .radial-backdrop__blob {
 .radial-topbar,
 .radial-frame {
   filter: none;
-  /* Shorter than the veil's 0.5s: every frame of a blur transition is a fresh
-     rasterisation of the page, so this is the one part of the open that should
-     not linger. */
-  transition: filter 0.32s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
+  /* No `transition` here on purpose — see the note on the `[data-phase='open']`
+     rule above. It used to sit on this base rule, which made it govern BOTH
+     directions; the 0.32s it then spent unwinding on the way out is what left
+     the feed blank for the length of the close. The way in still eases, because
+     that transition is declared on the open state itself. */
 }
 
 /* The degradation tiers opt out and lean on the veil, which is already opaque
