@@ -11,6 +11,7 @@ import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { EmptyState } from '@/components/ui/empty-state';
 import { toast } from 'sonner';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import {
   listSecurityReports,
   updateSecurityReport,
@@ -132,23 +133,20 @@ function AdminSecurityReportsPage() {
           })}
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {SECURITY_REPORT_STATUSES.map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setStatus(s)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                status === s
-                  ? 'bg-site-accent text-site-accent-fg'
-                  : 'bg-site-surface text-site-text-muted hover:text-site-text border border-site-border'
-              }`}
-            >
-              {SECURITY_STATUS_LABELS[s]}
-              {counts[s] ? <span className="ml-1.5 opacity-80">{counts[s]}</span> : null}
-            </button>
-          ))}
-        </div>
+        {/* The byte-identical twin of the switcher in admin/reports.tsx — same
+            hand-rolled accent pill, same missing `aria-pressed`. Both are
+            `LiquidTabs` now, which is what stops them drifting apart again. */}
+        <LiquidTabs
+          tabs={SECURITY_REPORT_STATUSES.map((s) => ({
+            id: s,
+            label: SECURITY_STATUS_LABELS[s],
+            count: counts[s] || undefined,
+          }))}
+          value={status}
+          onChange={(id) => setStatus(id as SecurityReportStatus)}
+          scroll
+          aria-label={t('security-reports', { defaultValue: 'Security reports' })}
+        />
 
         {loading ? (
           <div className="flex justify-center py-20">
