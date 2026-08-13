@@ -28,7 +28,7 @@ export function formatCount(n: number | undefined): string {
  * never nudges the icon or its neighbours.
  */
 export const engagementPill =
-'flex w-fit shrink-0 items-center rounded-full transition-[background-color,transform] duration-site-fast';
+'flex w-fit shrink-0 items-center rounded-full transition-[background-color,scale] duration-site-fast';
 
 /**
  * The count beside an engagement icon (comment, reRMHark, like, views).

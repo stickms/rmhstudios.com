@@ -519,7 +519,7 @@ export function NotificationsColumn({
  type="button"
  onClick={() => handleClick(n)}
  disabled={!clickable}
- className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-[background-color,transform] duration-site-fast ${
+ className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-[background-color,scale] duration-site-fast ${
  clickable
  ?'cursor-pointer hover:bg-site-surface-hover active:scale-[0.99]'
  :'cursor-default'

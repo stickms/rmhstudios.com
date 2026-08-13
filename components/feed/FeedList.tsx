@@ -265,7 +265,7 @@ export function FeedList({
  <div className="site-sticky-secondary mt-4 flex justify-center pointer-events-none">
  <button
  onClick={handleShowNew}
- className="pointer-events-auto flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-site-accent text-site-accent-fg text-sm font-bold shadow-site hover:bg-site-accent-hover transition-[transform,background-color] duration-site-fast active:scale-95"
+ className="pointer-events-auto flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-site-accent text-site-accent-fg text-sm font-bold shadow-site hover:bg-site-accent-hover transition-[scale,background-color] duration-site-fast active:scale-95"
  >
  <ArrowUp className="w-4 h-4"/>
  {t('new-posts', {

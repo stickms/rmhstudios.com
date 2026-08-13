@@ -26,7 +26,7 @@ export function NewsCategoryTabs({
       <button
         onClick={() => onCategoryChange(null)}
         aria-pressed={!activeCategory}
-        className={`shrink-0 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-[transform,background-color,color,box-shadow] duration-site-fast active:scale-95 ${
+        className={`shrink-0 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-[scale,background-color,color,box-shadow] duration-site-fast active:scale-95 ${
           !activeCategory
             ? 'bg-(--site-accent) text-site-accent-fg shadow-site-sm'
             : 'bg-(--site-surface) text-(--site-text-muted) border border-(--site-border) hover:text-(--site-text) hover:bg-(--site-surface-hover)'
@@ -42,7 +42,7 @@ export function NewsCategoryTabs({
             key={category}
             onClick={() => onCategoryChange(isActive ? null : category)}
             aria-pressed={isActive}
-            className={`shrink-0 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-[transform,background-color,color,box-shadow] duration-site-fast active:scale-95 ${
+            className={`shrink-0 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-[scale,background-color,color,box-shadow] duration-site-fast active:scale-95 ${
               isActive
                 ? `${color.bg} ${color.text} ${color.border} border shadow-site-sm`
                 : 'bg-(--site-surface) text-(--site-text-muted) border border-(--site-border) hover:text-(--site-text) hover:bg-(--site-surface-hover)'

@@ -168,7 +168,7 @@ function WinningNumberDisplay({ number: num }: { number: number }) {
 // ── Bet dot styles ──────────────────────────────────────────────
 
 const DOT_BASE =
-  'absolute z-20 rounded-full transition-[opacity,transform] opacity-0 hover:opacity-100 hover:scale-125';
+  'absolute z-20 rounded-full transition-[opacity,scale] opacity-0 hover:opacity-100 hover:scale-125';
 const DOT_IDLE = `${DOT_BASE} bg-site-accent/70 border border-site-accent shadow-sm`;
 const DOT_SIZE = 'w-5 h-5 sm:w-4 sm:h-4';
 

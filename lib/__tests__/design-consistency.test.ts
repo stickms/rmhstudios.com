@@ -570,6 +570,47 @@ describe('design consistency — one tab-strip grammar (§16.2)', () => {
     ).toEqual([]);
   });
 
+  /**
+   * `transition-[…transform…]` beside a `scale-*`/`translate-*`/`rotate-*`
+   * utility animates nothing — a Tailwind v4 migration hazard.
+   *
+   * v4 emits those utilities as the INDEPENDENT `scale` / `translate` / `rotate`
+   * CSS properties, not as a composed `transform`. The bare `transition-transform`
+   * utility knows that (it expands to
+   * `transition-property: transform, translate, scale, rotate`), but an
+   * ARBITRARY list is passed through verbatim — so the element transitions a
+   * `transform` nobody sets while its hover lift or press squish snaps in 0ms
+   * and the colour half of the same list eases over 150-300ms.
+   *
+   * The tell, before this was fixed: inside one control in `RMHarkActions`, the
+   * icon used bare `transition-transform` and animated, while the pill directly
+   * behind it used `transition-[background-color,transform]` and jumped. Fifteen
+   * surfaces shipped it.
+   *
+   * `transition-[transform]` on its own is FINE and common here — a progress bar
+   * driven by an inline `style={{ transform: scaleX(…) }}` really is animating
+   * the transform property. That is why this rule needs both halves present
+   * before it fires.
+   */
+  it('no `transition-[…transform…]` beside a scale/translate/rotate utility', () => {
+    const TRANSFORM_LIST = /transition-\[[^\]]*\btransform\b[^\]]*\]/;
+    const UTILITY = /(?:^|[\s'"`:])(?:group-)?(?:hover|active|focus|focus-visible)?:?-?(?:scale|translate|rotate)-/;
+    const offenders: string[] = [];
+    for (const file of FILES) {
+      const src = readFileSync(join(ROOT, file), 'utf8');
+      for (const line of src.split('\n')) {
+        if (!TRANSFORM_LIST.test(line)) continue;
+        if (!UTILITY.test(line)) continue;
+        offenders.push(file);
+        break;
+      }
+    }
+    expect(
+      offenders,
+      'Tailwind v4 emits scale/translate/rotate as their own properties. Name those in the transition list (`transition-[scale,color]`), or use the bare `transition-transform`, which already covers all four.',
+    ).toEqual([]);
+  });
+
   it('no `tailwindcss-animate` classes — the plugin is not installed', () => {
     expect(
       deadAnimate,
