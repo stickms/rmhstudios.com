@@ -2974,7 +2974,22 @@ html.ios-webkit .radial-hub__veil {
    away with the content instead of pinning. (The shell's own top bar + hub stay
    fixed — that's radial chrome, not page chrome, and neither uses these hooks.)
    Editor-internal toolbars keep their own `position` — this only unpins page
-   chrome. */
+   chrome.
+
+   `.site-sticky-pinned` is the OPT-OUT, and it exists because the rule above is
+   about page chrome that merely wants to hover, not about surfaces whose whole
+   purpose is to stay. Two were being caught by the generic
+   `.site-sticky-secondary`:
+
+     · the desktop split-view MAP on /homes, which scrolled out of view after one
+       screenful — so from the second screen of results you were browsing a grid
+       of listings with no map, which is the entire point of the layout;
+     · the feed's "N new posts" pill, which is a notification about content
+       above you and is useless once it has scrolled past.
+
+   Anything reaching for this has to be a surface that stops working when it
+   scrolls away. "It looks better pinned" is what the rule above already says
+   no to. */
 .radial-shell
   :is(
     .site-sticky-chrome,
@@ -2982,8 +2997,8 @@ html.ios-webkit .radial-hub__veil {
     [data-slot='context-rail'],
     .lib-explorer,
     .tab-sheet-scroll
-  ),
-.radial-shell__main .sticky {
+  ):not(.site-sticky-pinned),
+.radial-shell__main .sticky:not(.site-sticky-pinned) {
   position: static !important;
   inset-block-start: auto !important;
   top: auto !important;
