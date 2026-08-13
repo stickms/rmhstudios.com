@@ -1268,14 +1268,30 @@ html.app-route {
      for `position: fixed` descendants. That is only safe if everything that
      deliberately overflows a card is portalled out of it — which §5.1 asserts,
      since floating UI must be `.glass-overlay` and L4 surfaces are portalled. The
-     assertion does not hold in the code. Portalled: `Dialog`, `Sheet`, `Select`
-     and `ProfileHoverCard` (Radix portals), `Tooltip`, `anchored-menu` and
-     `ReactionMenu` (explicit `createPortal`). NOT portalled — anchored `absolute
-     … top-full` inside their host, `.glass-overlay` or not: `RMHarkOverflowMenu`
-     and `RMHarkActions`' repost menu (both inside the `.glass-fill` feed card),
-     `CommentItem`, `ComposeModal`, `GroupChatView`, `ConversationView`,
-     `MentionTextarea`, `HandleInput`, `BuildFilters`, `PartyBar` and both
-     `LocationSearch`es. Containing the L1 role clips the first two outright.
+     assertion does not hold in the code, though it holds for more of it than it
+     used to. Portalled: `Dialog`, `Sheet`, `Select` and `ProfileHoverCard`
+     (Radix portals), `Tooltip` and `ReactionMenu` (explicit `createPortal`), and
+     everything on `AnchoredMenu` — which is now `RMHarkOverflowMenu`,
+     `RMHarkActions`' repost menu, `CommentItem`, `GroupChatView`,
+     `ConversationView`, `PartyBar`, `BuildFilters`, `MessageActions`,
+     `EventTime` and `ComposeBox`. The first two are the ones that sat inside the
+     `.glass-fill` feed card, so containing the L1 role no longer clips them.
+
+     Also portalled, by their own `createPortal` rather than by AnchoredMenu:
+     `LibraryContextMenu`, `QuickPanel`, `LanguageSwitcher` and
+     `NotificationsPopover`.
+
+     STILL IN PLACE — anchored `absolute … top-full` inside their host,
+     `.glass-overlay` or not: `ComposeModal`'s (+) menu, `MentionTextarea`,
+     `HandleInput`, both `LocationSearch`es, `EmojiPickerButton`, and
+     `AlbumViewer` / `BookReader`.
+
+     `ComposeModal`'s is deliberate and must stay: it opens INSIDE a z-50 dialog,
+     and a panel portalled to `<body>` at `--z-menu` (40) would render
+     UNDERNEATH the dialog that opened it. The rest are autocompletes, pickers
+     and reader chrome whose panel is tied to a field's or a page's own layout —
+     candidates for AnchoredMenu, not oversights. None of them is inside a
+     `.glass-fill` card, which is what this note is actually about.
 
      The role is also not only repeated cards in practice: it is `Card`'s default
      tier, so it is also on `NotFound`, `RouteErrorFallback`, `ProfileEditModal`'s

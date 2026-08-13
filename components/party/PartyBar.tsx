@@ -137,7 +137,6 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
             <MenuItem
               key={g.id}
               icon={Gamepad2}
-              iconClassName="text-site-accent"
               onSelect={() => {
                 queue(g.id);
                 setMenuOpen(false);

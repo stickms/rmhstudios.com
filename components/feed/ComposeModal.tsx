@@ -313,6 +313,9 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  <button
  ref={menuBtnRef}
  onClick={() => setMenuOpen((v) => !v)}
+ aria-label={t('add-to-post-aria', { defaultValue:'Add to post'})}
+ aria-haspopup="menu"
+ aria-expanded={menuOpen}
  className="p-1.5 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent/10 transition-colors"
  >
  <Plus className="w-4.5 h-4.5"/>
@@ -335,7 +338,8 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  data-motion="pop"
  data-state={menuState}
  role="menu"
- className="absolute top-full right-0 mt-1 w-40 origin-top-right glass-overlay p-1 z-50"
+ aria-label={t('add-to-post-aria', { defaultValue:'Add to post'})}
+ className="absolute top-full right-0 mt-1 w-52 origin-top-right glass-overlay p-1 z-50"
  >
  <MenuItem
  icon={BarChart3}
