@@ -5,7 +5,7 @@ import { getRequest } from '@tanstack/react-start/server';
 import { ThreadView } from '@/components/feed/ThreadView';
 import { auth } from '@/lib/auth';
 import { getThread } from '@/lib/feed/thread.server';
-import { SITE_URL } from '@/lib/seo';
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, ogCardPath, SITE_URL } from '@/lib/seo';
 import type { FeedItem } from '@/lib/feed-types';
 
 const fetchThread = createServerFn({ method: 'GET' })
@@ -39,17 +39,43 @@ export const Route = createFileRoute('/_site/thread/$rootId')({
     const body = root && !root.locked ? root.content?.trim() : '';
     const snippet = body ? (body.length > 120 ? `${body.slice(0, 119)}…` : body) : '';
     const canonical = handle && root ? `${SITE_URL}/u/${handle}/post/${root.id}` : null;
+    const title = snippet ? `${author}: "${snippet}" | RMH Studios` : `Thread | RMH Studios`;
+    const description = snippet || `A thread by ${author} on RMH Studios.`;
+    // The opening post's own card. This URL is the one the RSS feeds link to,
+    // so it is the form most likely to be pasted somewhere — and it was the one
+    // form of a post that carried no `og:image` at all, unfurling as the
+    // site-wide default while the permalink for the same content showed the
+    // post. The card route re-checks the post's visibility itself, so pointing
+    // at it here cannot reveal anything this page hasn't already withheld.
+    const card = root ? `${SITE_URL}${ogCardPath('post', root.id)}` : null;
 
     return {
       meta: [
-        { title: snippet ? `${author}: "${snippet}" | RMH Studios` : `Thread | RMH Studios` },
+        { title },
         {
           name: 'description',
-          content: snippet || `A thread by ${author} on RMH Studios.`,
+          content: description,
         },
         // Without a handle there is no canonical to point at, so keep the
         // duplicate out of the index rather than letting it compete.
         ...(canonical ? [] : [{ name: 'robots', content: 'noindex, follow' }]),
+        { property: 'og:type', content: 'article' },
+        { property: 'og:title', content: title },
+        { property: 'og:description', content: description },
+        { property: 'og:site_name', content: 'RMH Studios' },
+        ...(root ? [{ property: 'og:url', content: `${SITE_URL}/thread/${root.id}` }] : []),
+        ...(card
+          ? [
+              { property: 'og:image', content: card },
+              { property: 'og:image:width', content: String(OG_IMAGE_WIDTH) },
+              { property: 'og:image:height', content: String(OG_IMAGE_HEIGHT) },
+              { property: 'og:image:alt', content: `A thread by ${author} on RMH Studios.` },
+              { name: 'twitter:card', content: 'summary_large_image' },
+              { name: 'twitter:title', content: title },
+              { name: 'twitter:description', content: description },
+              { name: 'twitter:image', content: card },
+            ]
+          : []),
       ],
       links: canonical ? [{ rel: 'canonical', href: canonical }] : [],
     };

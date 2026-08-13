@@ -158,7 +158,7 @@ Verified: `grep` for `fonts.googleapis.com` across `app/`, `components/`, `lib/`
 now returns only `FONTS_URL` constants (deferred), preconnects, and comments —
 **zero render-blocking references**.
 
-## 4 — The edge: origin is ready, nothing is listening
+## 4 — The edge: applied (and the live zone had two bugs of its own)
 
 The 08-09 anon-HTML fix works. Confirmed on the running build:
 
@@ -170,8 +170,15 @@ anonymous  /   → cache-control: public, max-age=0, s-maxage=30, stale-while-re
 their own stale anon copy); only `s-maxage` — shared caches, i.e. the Cloudflare
 edge — applies.
 
-**But Cloudflare does not cache `text/html` by default, so these headers remain
-inert until the cache rule exists.** `deploy/apply-cloudflare-cache-rules.sh` is
+Cloudflare does not cache `text/html` by default, so these headers were inert
+until the cache rule existed. **The rules are now applied**, and reading the live
+zone to do it turned up two bugs that were never in the repo — a "CDN static
+assets" rule governing `/library`'s per-viewer HTML, and that same rule being a
+no-op for the 125 MB of audio and sprite sheets it existed to cache. Both are
+fixed and now gated by CI; the full account is
+[`06-backlog.md`](06-backlog.md) §2. What follows is the original diagnosis.
+
+**The header situation as found:** `deploy/apply-cloudflare-cache-rules.sh` is
 committed and unapplied; the two checklist items in
 [`../performance-slo.md`](../performance-slo.md) ("Configure
 `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ZONE_ID`", "Apply the Cloudflare rules")

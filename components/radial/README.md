@@ -14,7 +14,7 @@ in `app/globals.css`).
 
 | File                 | Role                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `RadialWheel.tsx`    | The feed as a gently-curved column on the **document's own scroll** (no inner scroll region — so mobile Safari collapses its toolbars). Cards flow at natural heights (variable, never overlapping) and a rAF window-scroll pass rakes each onto a shallow cylinder from cached offsets (no layout thrash). Optional non-raked `lead` slot (the compose box). Reduced-motion → plain list. Fires `onEndReached` for lazy loading.                                                                                                                                                                                                                         |
+| `RadialWheel.tsx`    | The feed as a gently-curved column on the **document's own scroll** (no inner scroll region — so mobile Safari collapses its toolbars). Cards flow at natural heights (variable, never overlapping) and are raked onto a shallow cylinder by a **scroll-driven CSS animation** (`animation-timeline: view()`, in `radial.css`), evaluated on the thread that owns the scroll so the curve cannot lag it. Two fallbacks, picked once on mount: a rAF window-scroll pass from cached offsets (no layout thrash) where the browser has no view timeline, and **no rake at all** on iOS WebKit, where a scroll event arrives after the compositor has already scrolled and a hand-driven pass can only draw a frame behind the column. Optional non-raked `lead` slot (the compose box). Reduced-motion / `perf-lite` → plain list. The haptic focus tick rides an IntersectionObserver line across the viewport's middle, not the rake. Fires `onEndReached` for lazy loading. |
 | `RadialHub.tsx`      | The persistent navigator's **phase state machine** (closed → open → closing) and chrome. Tapping the fixed RMH orb sends it to the centre of the screen, where it **swells and dissolves into the liquid globe**; an expanding circular **veil** sinks the page behind it, and the foot capsule (identity · settings · sign out · close) rises. Consumes `lib/sidebar-nav`, honours auth/admin gating, owns Escape / outside-tap / focus restoration. The globe is mounted **only** while the menu is up.                                                                                                                                                 |
 | `LiquidGlobe.tsx`    | **The navigator itself** — the destinations as pins on a glass sphere you turn to find where you want to go. Drag (pointer or finger) to spin, release to coast; magnetism eases the nearest destination into the **reticle** once the spin settles; **hold** with the pointer down and the reticle's ring fills; **let go once it is full** and you land there. Let go early, or drag away, and the ring drains — nothing navigates without a deliberate hold-and-release. **Poke it and it ripples** — a wave spreads from the point you touched and travels with the surface. Wireframe = one canvas, pins = JS-projected real links (click, Enter and screen readers all work without the gesture) — both from the same projection. See "The globe" below. |
 | `RadialShell.tsx`    | The application frame for every standard (`_site`) route: fixed ring backdrop, slim utility top bar, the **three-track frame** (nav rail · `<main>` · live rail) and the hub. The backdrop layer paints **only** the rings and the blob field — the aurora canvas is the document's own `.site-aurora` element (rendered in `app/routes/__root.tsx`), so it drifts on its own compositor keyframes and is the one scene every `backdrop-filter` on the page samples. The rings used to drift against the pointer, driven by a `pointermove` listener and a rAF lerp mounted on **every** route; that went with the rest of the site's cursor reactivity (`docs/design-language.md` §5.1.1) and must not come back. |
@@ -420,15 +420,23 @@ the flow, so `radial.css` ends with a section of explicit arithmetic guarantees:
   bare page background there. This was an on-device finding from the mobile
   push-drawer the hub replaced, which blocked background scroll from its scrim
   for the same reason; the drawer is gone, so the note lives here now.
-- **`__scrim` and `__catcher` are two different elements.** The decorative fade
-  under the docked orb (`.radial-hub__scrim`, fixed, bottom-centre, a gradient of
-  the page ground) and the overlay's transparent dismiss surface
-  (`.radial-hub__catcher`, absolute, filling the overlay) shared one class name,
-  and two single-class rules on one name overwrite each other rather than
-  coexist: the catcher inherited the fade's `min(24rem, 92vw)` width, ~92px
-  height and `translateX(-50%)` — a 359×92 box half off the left edge, which no
-  outside tap could hit — while the fade inherited the catcher's
-  `background: transparent` and painted nothing. Keep the names distinct. The
+- **Nothing paints behind the docked orb.** There was a decorative legibility
+  fade under it (`.radial-hub__scrim`, fixed bottom-centre, a radial gradient of
+  the page ground) so text scrolling through the orb's band dissolved rather
+  than collided with the disc. It is gone: anchored to the bottom of the visual
+  viewport, it landed exactly on iOS Safari's floating bottom bar and tinted the
+  browser's own chrome with a band of page background on every `_site` page —
+  and it read as a glow hanging off the orb, which is the same thing the orb's
+  own "no shadow" rule exists to avoid. Columns already reserve
+  `--site-floating-reserve` at their end, so nothing sits under the orb once a
+  scroll settles. Don't reintroduce a bottom-anchored decorative layer here.
+- **Give any new hub layer its own class name.** The scrim above and the
+  overlay's transparent dismiss surface (`.radial-hub__catcher`, absolute,
+  filling the overlay) once shared one, and two single-class rules on one name
+  overwrite each other rather than coexist: the catcher inherited the fade's
+  `min(24rem, 92vw)` width, ~92px height and `translateX(-50%)` — a 359×92 box
+  half off the left edge, which no outside tap could hit — while the fade
+  inherited the catcher's `background: transparent` and painted nothing. The
   catcher also needs `place-self: stretch`: the overlay is a
   `place-items: center` grid, and an absolutely positioned grid child still takes
   its container's alignment, so `inset: 0` alone shrink-wraps it.

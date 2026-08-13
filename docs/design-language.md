@@ -808,8 +808,12 @@ gated off there too, via `html.app-route`).
 
 - **Radial motion (the shipped layer).** The radial UI is CSS/rAF-driven and
   framer-motion-free for the shell: the feed **wheel** rakes each card onto a
-  shallow cylinder on a rAF window-scroll pass with cached offsets (no layout
-  thrash — `RadialWheel`), the **hub** glides the orb to centre and blooms the
+  shallow cylinder from a **scroll-driven CSS animation** (`animation-timeline:
+  view()`), falling back to a rAF window-scroll pass with cached offsets where
+  the browser has no view timeline and to a flat column on iOS WebKit — where a
+  scroll *event* is delivered after the compositor has already scrolled, so a
+  hand-driven rake can only ever be a frame late (`RadialWheel`), the **hub**
+  glides the orb to centre and blooms the
   **liquid globe** under an expanding `clip-path` **circular veil** (CSS phase
   machine + one mount-bounded rAF loop for the sphere's spin, dwell and ripple),
   and page headers/heroes rise in on mount (`radial-page-rise`). The **ring

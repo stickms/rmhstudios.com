@@ -304,10 +304,28 @@
 /* Spatial consistency pass: visible interactive surfaces share one geometry. */
 .rmhc-root :is(a,button,input,textarea,select,.card,.feature-media,.featured,.fside-item,.caps li,.chip){border-radius:var(--spatial-radius)}
 
-/* ════ REVEAL ════ */
-.rmhc-root .reveal{opacity:0;transform:translateY(24px);transition:opacity .8s cubic-bezier(.2,.6,.2,1),transform .8s cubic-bezier(.2,.6,.2,1)}
-.rmhc-root .reveal.in{opacity:1;transform:none}
-.rmhc-root .reveal.d1{transition-delay:.08s}.rmhc-root .reveal.d2{transition-delay:.16s}.rmhc-root .reveal.d3{transition-delay:.24s}
+/* ════ REVEAL ════
+   Scroll-driven, and fail-OPEN — same change, same reasons, as the twin block in
+   rmh-pmc.css. See docs/performance-audit-2026-08-12.md §1.4. The hidden start
+   state lives only where a scroll timeline can undo it, so a page that cannot
+   animate has never hidden anything. */
+@supports (animation-timeline: view()) {
+  @media not (prefers-reduced-motion: reduce) {
+    html:not(.reduce-motion) .rmhc-root .reveal {
+      animation: rmhc-reveal-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 46%;
+    }
+    /* Range shift, not `animation-delay` — a scroll timeline has no clock. */
+    html:not(.reduce-motion) .rmhc-root .reveal.d1 { animation-range: entry 7% entry 53%; }
+    html:not(.reduce-motion) .rmhc-root .reveal.d2 { animation-range: entry 14% entry 60%; }
+    html:not(.reduce-motion) .rmhc-root .reveal.d3 { animation-range: entry 21% entry 67%; }
+  }
+}
+@keyframes rmhc-reveal-in {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
 
 /* arc draw animation */
 .rmhc-root .arc-draw{stroke-dasharray:var(--len,2000);stroke-dashoffset:var(--len,2000);animation:rmhc-draw 2.6s cubic-bezier(.4,0,.2,1) forwards}
@@ -317,7 +335,8 @@
 
 @media(prefers-reduced-motion:reduce){
   .rmhc-root .hero-bg,.rmhc-root .pagehead::before{transform:none;will-change:auto}
-  .rmhc-root .reveal{opacity:1;transform:none;transition:none}
+  /* Belt and braces — the rule above is already reduced-motion gated. */
+  .rmhc-root .reveal{opacity:1;transform:none;animation:none}
   .rmhc-root .arc-draw{animation:none;stroke-dashoffset:0}
   .rmhc-root .spin-slow,.rmhc-root .ticker-track{animation:none}
   .rmhc-root *{animation-duration:.001ms!important;animation-iteration-count:1!important}

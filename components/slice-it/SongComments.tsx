@@ -1,7 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+// `m as motion`, not `motion`: `Providers` wraps the app in `LazyMotion`, and `m`
+// is the component that honours it — `motion` bundles its own full feature
+// implementation, which lands in the SHARED ENTRY CHUNK when the module is
+// reachable from a route's top level.
+import { m as motion } from 'framer-motion';
 import { fadeRise } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';

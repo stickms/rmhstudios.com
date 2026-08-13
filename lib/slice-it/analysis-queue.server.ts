@@ -28,6 +28,8 @@ import decode from '@audio/decode';
 import { getBoss } from '@/lib/jobs/boss.server';
 import { prisma } from '@/lib/prisma.server';
 import { BEATMAP_VERSION, decodedToAudioLike, generateBeatmap } from './beatmap';
+import { prepareAudio } from './beatmap/audio';
+import { computeSpectrogramParallel } from './beatmap/spectrum.parallel.server';
 import { defaultPreviewStart } from './preview';
 import { readSongAudio, songDensityStrip } from './songs.server';
 
@@ -104,12 +106,29 @@ export async function runAnalysis(job: AnalysisJob): Promise<void> {
 
     const audio = decodedToAudioLike(await decode(stored.body));
 
+    // The STFT is ~64% of `generateBeatmap` and its FFT is 95% of that, so it is
+    // computed here — across every core — and handed in, rather than being done
+    // single-threaded inside the generator. `computeSpectrogramParallel` falls
+    // back to the inline kernel when the worker artifact is unavailable, so this
+    // is a speed decision and never a correctness one.
+    const prepared = prepareAudio(audio);
+    const { spectrogram, mode } = await computeSpectrogramParallel(
+      prepared.samples,
+      prepared.sampleRate,
+    );
+    if (mode === 'inline') {
+      // Distinguishable in logs from the parallel case on purpose: a worker box
+      // silently doing this on one thread is a deploy problem, not a slow song.
+      console.warn('[slice-it] STFT ran inline (no worker); analysis will be slower', song.id);
+    }
+
     const analysis = generateBeatmap(audio, {
       id: song.id,
       name: song.title,
       artist: song.artist,
       bpmHint: job.bpmHint ?? (song.bpm && song.bpm > 0 ? song.bpm : undefined),
       densityBias: job.densityBias,
+      precomputed: { prepared, spectrogram },
     });
 
     await prisma.song.update({

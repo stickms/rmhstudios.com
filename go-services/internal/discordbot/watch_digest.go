@@ -52,7 +52,6 @@ func (s *WatchSummarizer) postPendingDigests(ctx context.Context, session *disco
 	if s == nil || session == nil || s.cfg.DigestChannelID == "" {
 		return
 	}
-	currentWeek := isoWeekKey(now.In(s.loc))
 	oldest := isoWeekKey(now.In(s.loc).AddDate(0, 0, -digestBackfillDays))
 
 	for _, discordID := range s.cfg.UserIDs {
@@ -62,8 +61,15 @@ func (s *WatchSummarizer) postPendingDigests(ctx context.Context, session *disco
 			continue
 		}
 		for _, summary := range pending {
-			// The current week is still moving; it gets posted next Monday.
-			if summary.PeriodKey >= currentWeek {
+			// Only a SEALED week, which is a stronger condition than a finished
+			// one and subsumes it — the current week's settle window has not even
+			// started, so it can never read as sealed.
+			//
+			// A week that is over but still settling can be rewritten (see
+			// `settleWindow`), and a digest is a permanent copy of the
+			// prose in somebody else's channel. Posting a draft would leave the
+			// embed disagreeing with the page it links to, for good.
+			if !periodSealed(periodWeek, summary.PeriodKey, now, s.loc, s.settleWindow()) {
 				continue
 			}
 			claimed, err := s.repo.claimDigest(ctx, discordID, summary.PeriodKey, now)

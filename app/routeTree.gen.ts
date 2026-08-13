@@ -717,6 +717,7 @@ import { Route as ApiMessagesConversationIdTypingRouteImport } from './routes/ap
 import { Route as ApiMessagesConversationIdUnsendRouteImport } from './routes/api/messages/$conversationId/unsend'
 import { Route as ApiMessagesConversationIdVoiceRouteImport } from './routes/api/messages/$conversationId/voice'
 import { Route as ApiMessagesVoiceFilenameRouteImport } from './routes/api/messages/voice/$filename'
+import { Route as ApiOgAppAppIdRouteImport } from './routes/api/og/app/$appId'
 import { Route as ApiOgBlogSlugRouteImport } from './routes/api/og/blog/$slug'
 import { Route as ApiOgGameGameIdRouteImport } from './routes/api/og/game/$gameId'
 import { Route as ApiOgJobJobIdRouteImport } from './routes/api/og/job/$jobId'
@@ -4515,6 +4516,11 @@ const ApiMessagesVoiceFilenameRoute =
     path: '/voice/$filename',
     getParentRoute: () => ApiMessagesRoute,
   } as any)
+const ApiOgAppAppIdRoute = ApiOgAppAppIdRouteImport.update({
+  id: '/api/og/app/$appId',
+  path: '/api/og/app/$appId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiOgBlogSlugRoute = ApiOgBlogSlugRouteImport.update({
   id: '/api/og/blog/$slug',
   path: '/api/og/blog/$slug',
@@ -6189,6 +6195,7 @@ export interface FileRoutesByFullPath {
   '/api/messages/$conversationId/unsend': typeof ApiMessagesConversationIdUnsendRoute
   '/api/messages/$conversationId/voice': typeof ApiMessagesConversationIdVoiceRoute
   '/api/messages/voice/$filename': typeof ApiMessagesVoiceFilenameRoute
+  '/api/og/app/$appId': typeof ApiOgAppAppIdRoute
   '/api/og/blog/$slug': typeof ApiOgBlogSlugRoute
   '/api/og/game/$gameId': typeof ApiOgGameGameIdRoute
   '/api/og/job/$jobId': typeof ApiOgJobJobIdRoute
@@ -7058,6 +7065,7 @@ export interface FileRoutesByTo {
   '/api/messages/$conversationId/unsend': typeof ApiMessagesConversationIdUnsendRoute
   '/api/messages/$conversationId/voice': typeof ApiMessagesConversationIdVoiceRoute
   '/api/messages/voice/$filename': typeof ApiMessagesVoiceFilenameRoute
+  '/api/og/app/$appId': typeof ApiOgAppAppIdRoute
   '/api/og/blog/$slug': typeof ApiOgBlogSlugRoute
   '/api/og/game/$gameId': typeof ApiOgGameGameIdRoute
   '/api/og/job/$jobId': typeof ApiOgJobJobIdRoute
@@ -7954,6 +7962,7 @@ export interface FileRoutesById {
   '/api/messages/$conversationId/unsend': typeof ApiMessagesConversationIdUnsendRoute
   '/api/messages/$conversationId/voice': typeof ApiMessagesConversationIdVoiceRoute
   '/api/messages/voice/$filename': typeof ApiMessagesVoiceFilenameRoute
+  '/api/og/app/$appId': typeof ApiOgAppAppIdRoute
   '/api/og/blog/$slug': typeof ApiOgBlogSlugRoute
   '/api/og/game/$gameId': typeof ApiOgGameGameIdRoute
   '/api/og/job/$jobId': typeof ApiOgJobJobIdRoute
@@ -8850,6 +8859,7 @@ export interface FileRouteTypes {
     | '/api/messages/$conversationId/unsend'
     | '/api/messages/$conversationId/voice'
     | '/api/messages/voice/$filename'
+    | '/api/og/app/$appId'
     | '/api/og/blog/$slug'
     | '/api/og/game/$gameId'
     | '/api/og/job/$jobId'
@@ -9719,6 +9729,7 @@ export interface FileRouteTypes {
     | '/api/messages/$conversationId/unsend'
     | '/api/messages/$conversationId/voice'
     | '/api/messages/voice/$filename'
+    | '/api/og/app/$appId'
     | '/api/og/blog/$slug'
     | '/api/og/game/$gameId'
     | '/api/og/job/$jobId'
@@ -10614,6 +10625,7 @@ export interface FileRouteTypes {
     | '/api/messages/$conversationId/unsend'
     | '/api/messages/$conversationId/voice'
     | '/api/messages/voice/$filename'
+    | '/api/og/app/$appId'
     | '/api/og/blog/$slug'
     | '/api/og/game/$gameId'
     | '/api/og/job/$jobId'
@@ -11261,6 +11273,7 @@ export interface RootRouteChildren {
   ApiLibraryCollectionIdRoute: typeof ApiLibraryCollectionIdRouteWithChildren
   ApiLibraryCoverIdRoute: typeof ApiLibraryCoverIdRoute
   ApiLibraryFileIdRoute: typeof ApiLibraryFileIdRoute
+  ApiOgAppAppIdRoute: typeof ApiOgAppAppIdRoute
   ApiOgBlogSlugRoute: typeof ApiOgBlogSlugRoute
   ApiOgGameGameIdRoute: typeof ApiOgGameGameIdRoute
   ApiOgJobJobIdRoute: typeof ApiOgJobJobIdRoute
@@ -16302,6 +16315,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMessagesVoiceFilenameRouteImport
       parentRoute: typeof ApiMessagesRoute
     }
+    '/api/og/app/$appId': {
+      id: '/api/og/app/$appId'
+      path: '/api/og/app/$appId'
+      fullPath: '/api/og/app/$appId'
+      preLoaderRoute: typeof ApiOgAppAppIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/og/blog/$slug': {
       id: '/api/og/blog/$slug'
       path: '/api/og/blog/$slug'
@@ -19713,6 +19733,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiLibraryCollectionIdRoute: ApiLibraryCollectionIdRouteWithChildren,
   ApiLibraryCoverIdRoute: ApiLibraryCoverIdRoute,
   ApiLibraryFileIdRoute: ApiLibraryFileIdRoute,
+  ApiOgAppAppIdRoute: ApiOgAppAppIdRoute,
   ApiOgBlogSlugRoute: ApiOgBlogSlugRoute,
   ApiOgGameGameIdRoute: ApiOgGameGameIdRoute,
   ApiOgJobJobIdRoute: ApiOgJobJobIdRoute,

@@ -22,6 +22,45 @@ const ComposeModal = lazy(() =>
 );
 
 /**
+ * Should this render show the server-streamed first page instead of the store?
+ *
+ * The store is seeded from the streamed page by an effect — and effects never run
+ * during SSR. Reading the store alone therefore put the SKELETON in the server
+ * HTML on every cold load of `/`, so the real rmharks appeared only once the entry
+ * bundle had downloaded, parsed and hydrated. Preferring the streamed page while
+ * the store is still pristine puts the first page of cards in the SSR markup,
+ * which is the entire point of streaming it. (`FeedList` — the classic column —
+ * has always done this; only the radial home was missing it.)
+ *
+ * The surface guard is load-bearing, not defensive. `setFilter`/`setSearch`
+ * (stores/feedStore.ts) both reset to `items: []` + `initialized: false` before
+ * they fetch, which re-satisfies "pristine store" on a surface the streamed
+ * For-You page does not describe — so without the `filter`/`search` check, asking
+ * for a filtered or searched feed would flash the old For-You posts back up.
+ *
+ * Exported for `lib/__tests__/feed-first-paint.test.ts`: the SSR win and that
+ * flash are both invisible in a unit render of the component, so the predicate is
+ * pinned directly.
+ */
+export function shouldUseStreamedPage({
+  initialized,
+  storeCount,
+  filter,
+  search,
+  streamedCount,
+}: {
+  initialized: boolean;
+  storeCount: number;
+  filter: string;
+  search: string | null;
+  streamedCount: number;
+}): boolean {
+  return (
+    !initialized && storeCount === 0 && filter === 'all' && !search && streamedCount > 0
+  );
+}
+
+/**
  * The live feed. It renders off the shared `feedStore`, so every existing feed
  * behaviour keeps working: the streamed first page hydrates the store, live SSE
  * ticks flow through (`useFeedSSE`), and reaching the end of the loaded set
@@ -29,14 +68,25 @@ const ComposeModal = lazy(() =>
  */
 function FeedWheel({ initial }: { initial: InitialFeed }) {
   const { t } = useTranslation('feed');
-  const items = useFeedStore((s) => s.items);
+  const storeItems = useFeedStore((s) => s.items);
   const loading = useFeedStore((s) => s.loading);
   const error = useFeedStore((s) => s.error);
   const initialized = useFeedStore((s) => s.initialized);
+  const filter = useFeedStore((s) => s.filter);
+  const search = useFeedStore((s) => s.search);
   const hydrate = useFeedStore((s) => s.hydrate);
   const fetchNextPage = useFeedStore((s) => s.fetchNextPage);
   const retry = useFeedStore((s) => s.retry);
   const seeded = useRef(false);
+
+  const usingInitial = shouldUseStreamedPage({
+    initialized,
+    storeCount: storeItems.length,
+    filter,
+    search,
+    streamedCount: initial.items.length,
+  });
+  const items = usingInitial ? initial.items : storeItems;
 
   // Live real-time stream (likes/comments/reposts/new posts), same as the classic feed.
   useFeedSSE();

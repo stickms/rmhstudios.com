@@ -171,7 +171,11 @@ const ALLOW = new Set<string>([
   'components/nightrail/NightrailGame.tsx',
   'components/news/NewsHero.tsx',
   'components/rmh-capital/ContactPage.tsx',
-  'components/rmh-capital/shared.tsx',
+  // `components/rmh-capital/shared.tsx` came OUT on 2026-08-12: its rAF was the
+  // deferred `querySelectorAll` inside `useReveal(key)`, and the reveal is now a
+  // scroll-driven CSS animation with no JS at all. (`rmh-pmc/shared.tsx` stays —
+  // it lost the same hook, but has a separate counter tick that still uses rAF.)
+  // See docs/performance-audit-2026-08-12.md §1.4.
   'components/rmh-pmc/ContactPage.tsx',
   'components/rmh-pmc/shared.tsx',
   'components/rmhcalculator/ScientificCalculator.tsx',

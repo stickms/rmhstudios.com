@@ -13,6 +13,16 @@
  * Two variants, matching the existing landscape/story split:
  *   - `landscape` → 1200×630 (the OG unfurl)
  *   - `story`     → 1080×1920 (share-to-stories / download)
+ *
+ * ## `art`
+ *
+ * A card may carry the page's own picture beside its text — a game's key art,
+ * an app's screenshot. That is not decoration for these two: the catalog cards,
+ * the arcade and the home page all identify a game by its art before its name,
+ * and a hub that unfurled as a title and a rating was the one surface where it
+ * didn't. It is landscape-only. The story variant stacks pane → chips → globe
+ * down a 9:16 column with no room for a second block, and a hero band there
+ * would push the mark off the bottom.
  */
 
 import React from 'react';
@@ -20,8 +30,10 @@ import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
 import {
   DIM,
+  HAIRLINE_W,
   INK,
   MUTED,
+  RADIUS_SM,
   SCALE,
   fetchAvatarDataUri,
   loadFonts,
@@ -37,18 +49,24 @@ import {
   displayTracking,
   fitText,
   frameMetrics,
+  framedImage,
   globeMark,
   kicker,
   pane,
   statChips,
   type Stat,
 } from '@/lib/og/chrome.server';
+import { loadOgImage } from '@/lib/og/media.server';
 
 const pngCache = new Map<string, { png: Buffer; ts: number }>();
 const PNG_MAX = 160;
 
 const PANE_PAD = 30 * SCALE;
 const PANE_PAD_STORY = 44 * SCALE;
+/** Share of the pane the page's own picture takes, when it has one. */
+const ART_SHARE = 0.42;
+/** Between the text block and that picture. */
+const ART_GAP = 24 * SCALE;
 
 export type PageCardVariant = 'landscape' | 'story';
 
@@ -77,6 +95,13 @@ export interface PageCardData {
   stats?: Stat[];
   /** Whose page this is, when that's part of the answer. */
   byline?: PageCardByline | null;
+  /**
+   * The page's own picture, beside the text. A `public/`-relative path, a
+   * stored-object URL or a remote one — `lib/og/media.server` resolves all
+   * three. Ignored on the story variant, and silently dropped when it can't be
+   * read: a card without the art is the same card, a card with a hole is not.
+   */
+  art?: string | null;
   /** Footer path, without the origin. Defaults to no path. */
   path?: string | null;
   variant?: PageCardVariant;
@@ -93,7 +118,9 @@ export async function renderPageCard(data: PageCardData): Promise<Buffer> {
   const size = variant === 'story' ? STORY : LANDSCAPE;
   const ttl = data.ttlMs ?? 30 * 60 * 1000;
 
-  const cacheKey = `${variant}:${data.cacheKey}`;
+  // The art is part of the key rather than trusted to the caller's: it is drawn,
+  // and the rule for this cache is that everything drawn is in the key.
+  const cacheKey = `${variant}:${data.cacheKey}:${data.art ?? ''}`;
   const cached = pngCache.get(cacheKey);
   if (cached && Date.now() - cached.ts < ttl) return cached.png;
 
@@ -106,15 +133,39 @@ export async function renderPageCard(data: PageCardData): Promise<Buffer> {
   const lead = clean(data.lead, 60);
   const stats = data.stats ?? [];
 
+  // The pane's content box. The rim comes off as well as the padding: satori
+  // lays out border-box, and the art column is drawn at an exact width rather
+  // than estimated, so 4px of overflow would be a picture hanging off the pane.
   const frame = frameMetrics(size.width, size.height, centred);
-  const inner = frame.width - pad * 2;
+  const paneWidth = frame.width - pad * 2 - HAIRLINE_W * 2;
+  const paneHeight = frame.height - pad * 2 - HAIRLINE_W * 2;
+
+  // The picture first — what is left of the pane is what the text gets.
+  const art = centred
+    ? null
+    : await loadOgImage(data.art, {
+        width: Math.round(paneWidth * ART_SHARE),
+        height: paneHeight,
+        fit: 'cover',
+      });
+  const inner = art ? paneWidth - art.width - ART_GAP : paneWidth;
+
   // Height the pane's own rows claim before the title gets any: the lead line,
   // the subtitle, and the byline each reserve their band only when present.
-  const leadBand = lead ? 26 * SCALE : 0;
+  //
+  // The lead is measured rather than assumed to be one line. It is set
+  // uppercase and tracked at 0.2em, so it takes about 0.82em per character —
+  // over half again what the fitter's mixed-case estimate would say — and a
+  // card with art has barely half the width to spend it in. Reserving one band
+  // for a lead that wraps to two is how the title below it gets sized for room
+  // it does not have.
+  const kickerSize = 11 * SCALE * (centred ? 1.3 : 1);
+  const leadLines = lead ? Math.min(2, Math.max(1, Math.ceil((lead.length * kickerSize * 0.82) / inner))) : 0;
+  const leadBand = leadLines * 26 * SCALE;
   const subtitleSize = centred ? 32 * SCALE : 19 * SCALE;
   const subtitleBand = subtitle ? subtitleSize * 2.9 : 0;
   const bylineBand = data.byline ? 34 * SCALE : 0;
-  const titleBox = frame.height - pad * 2 - leadBand - subtitleBand - bylineBand;
+  const titleBox = paneHeight - leadBand - subtitleBand - bylineBand;
 
   const titleSize = fitText(title, {
     width: inner,
@@ -127,16 +178,7 @@ export async function renderPageCard(data: PageCardData): Promise<Buffer> {
   const bylineName = data.byline ? clean(data.byline.name, 30) : '';
   const align = centred ? 'center' : 'flex-start';
 
-  const body = pane({
-    style: {
-      // Landscape fills the body slot; the story card stacks pane → chips →
-      // globe down the middle, so there the pane has to hug its own content.
-      ...(centred ? {} : { flex: 1 }),
-      justifyContent: 'center',
-      alignItems: centred ? 'center' : 'stretch',
-      padding: pad,
-    },
-    children: [
+  const textChildren = [
       lead ? (
         <div key="lead" style={{ display: 'flex', marginBottom: 10 * SCALE, alignSelf: align }}>
           {kicker(lead, INK, centred ? 1.3 : 1)}
@@ -196,7 +238,37 @@ export async function renderPageCard(data: PageCardData): Promise<Buffer> {
           ) : null}
         </div>
       ) : null,
-    ],
+  ];
+
+  const body = pane({
+    style: {
+      // Landscape fills the body slot; the story card stacks pane → chips →
+      // globe down the middle, so there the pane has to hug its own content.
+      ...(centred ? {} : { flex: 1 }),
+      ...(art
+        ? { flexDirection: 'row' as const, alignItems: 'center' as const }
+        : { justifyContent: 'center' as const, alignItems: centred ? ('center' as const) : ('stretch' as const) }),
+      padding: pad,
+    },
+    children: art
+      ? [
+          <div
+            key="text"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              flexShrink: 0,
+              width: inner,
+              justifyContent: 'center',
+            }}
+          >
+            {textChildren}
+          </div>,
+          <div key="art" style={{ display: 'flex', flexShrink: 0, marginLeft: ART_GAP }}>
+            {framedImage(art, RADIUS_SM)}
+          </div>,
+        ]
+      : textChildren,
   });
 
   // The footer URL shares its row with the chips, and satori will happily run it

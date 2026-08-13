@@ -9,8 +9,11 @@ import { renderPageCard } from '@/lib/og/page-card.server';
  *
  * The hub used to unfurl as the game's static key art, which said nothing about
  * the page: not the rating, not how many people had reviewed it, not that the
- * page carries guides at all. The card carries the hub's own figures instead,
- * in the site's design language.
+ * page carries guides at all. Replacing it with a figures-only card then lost
+ * the other half — the art is how the catalog, the arcade and the home page all
+ * identify a game, so a link that showed only its title was the one surface
+ * where it looked like nothing in particular. The card carries both: the hub's
+ * figures in the site's design language, beside the game's own key art.
  */
 export const Route = createFileRoute('/api/og/game/$gameId')({
   server: {
@@ -31,7 +34,10 @@ export const Route = createFileRoute('/api/og/game/$gameId')({
           eyebrow: 'Game hub',
           title: game.title,
           subtitle: game.description,
-          lead: game.tags.slice(0, 3).join(' · '),
+          // Two tags, not three: the kicker shares its line with nothing, and
+          // the pane is half as wide once the art is in it.
+          lead: game.tags.slice(0, 2).join(' · '),
+          art: game.imagePath ?? null,
           path: `/games/${game.id}`,
           stats: [
             // A game nobody has rated yet leads with its status instead of a

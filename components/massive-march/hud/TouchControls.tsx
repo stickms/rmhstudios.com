@@ -101,6 +101,10 @@ export function TouchControls({ onInteract }: { onInteract: () => void }) {
     <>
       {/* Look surface: the right half of the screen, under everything else. */}
       <div
+        // `data-gesture` (globals.css §user-select): this pane covers two thirds
+        // of the screen and its whole job is to be dragged. Without it a look
+        // sweep anchors a selection in whatever HUD text sits under the thumb.
+        data-gesture=""
         className="absolute top-0 right-0 bottom-0 left-1/3 z-0"
         onPointerDown={onLookDown}
         onPointerMove={onLookMove}
@@ -109,6 +113,7 @@ export function TouchControls({ onInteract }: { onInteract: () => void }) {
       />
 
       <div
+        data-gesture=""
         className="absolute bottom-[calc(5.5rem+var(--safe-bottom))] left-[calc(1.5rem+var(--safe-left))] z-20 grid place-items-center rounded-full border-[3px] touch-none"
         style={{
           width: STICK_RADIUS * 2.2,

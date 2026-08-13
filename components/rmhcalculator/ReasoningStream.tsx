@@ -6,10 +6,11 @@
  * indicator until (and unless) text arrives. Auto-scrolls to the newest text.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { ChevronDown, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
+import { useStickToBottom } from '@/hooks/useStickToBottom';
 
 export function ReasoningStream({
   text,
@@ -24,14 +25,12 @@ export function ReasoningStream({
 }) {
   const { t } = useTranslation('c-rmhcalculator');
   const [open, setOpen] = useState(true);
-  const bodyRef = useRef<HTMLDivElement>(null);
-
-  // Keep the newest reasoning in view while streaming.
-  useEffect(() => {
-    if (open && active && bodyRef.current) {
-      bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
-    }
-  }, [text, open, active]);
+  // `useStickToBottom`, not `scrollTop = scrollHeight` in an effect. Reading
+  // `scrollHeight` FORCES a synchronous layout on every new entry, and the old
+  // form re-pinned unconditionally — so a reader scrolled up to check an earlier
+  // line was yanked back down by the next one. See
+  // docs/performance-audit-2026-08-12.md §1.5.
+  const { containerRef, contentRef } = useStickToBottom<HTMLDivElement, HTMLDivElement>();
 
   if (!text && !active) return null;
 
@@ -60,7 +59,8 @@ export function ReasoningStream({
         />
       </button>
       {open && (
-        <div ref={bodyRef} className="rmhcalc-reasoning__body">
+        <div ref={containerRef} className="rmhcalc-reasoning__body">
+          <div ref={contentRef}>
           {text ? (
             <p className="rmhcalc-reasoning__text">{text}</p>
           ) : (
@@ -68,6 +68,7 @@ export function ReasoningStream({
               {t('reasoning-waiting', { defaultValue: 'Waiting for the model…' })}
             </p>
           )}
+          </div>
         </div>
       )}
     </div>

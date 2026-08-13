@@ -57,30 +57,53 @@ options, both real work:
 Do **not** spend another pass on route-level edits; that work is done and measured.
 Full evidence: [`02`](02-critical-path.md) §2.
 
-### 2 — Apply the Cloudflare cache rules ⭐ S, ops-only, no code
+### 2 — Cloudflare cache rules — APPLIED, plus two bugs found in the live zone
 
-**The cheapest large win left, and the only item that cannot be done from the
-repository.** The origin already says `public, max-age=0, s-maxage=30,
-stale-while-revalidate=120` on anonymous `/`, and Cloudflare does not cache
-`text/html` by default — so every anonymous view of `/`, both catalogs and every
-article is still a full origin SSR render.
+**Done.** The rules are applied to the zone, so anonymous `/`, both catalogs, the
+legal pages and the `/blog/`+`/news/` subtrees are now served from the edge
+instead of a full origin SSR render each hit. The origin had been emitting
+`public, max-age=0, s-maxage=30, stale-while-revalidate=120` (and
+`s-maxage=300, swr=86400` for articles) since 08-09 with nothing listening.
 
-```bash
-CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ZONE_ID=... bash deploy/apply-cloudflare-cache-rules.sh
-# then save the VERIFY_ONLY=1 output, per docs/performance-slo.md
-```
+Reading the live zone turned up two problems that were **not** in the repo, both
+in hand-made rules, and both now fixed and encoded in
+`deploy/apply-cloudflare-cache-rules.sh`:
 
-Then tick the two unchecked boxes in
-[`../performance-slo.md`](../performance-slo.md). It also gates most of §3's value.
-Evidence: [`05`](05-server-edge-fonts.md) §4.
+**(a) A "CDN static assets" rule was governing HTML routes.** Its expression was
+`URI Path starts with /library` (plus `/music`, `/models`, `/sprites`).
+`/library` is not a static directory — there is no `public/library` — it is an app
+route tree (`_site/library/index.tsx`, `library.$slug.tsx`,
+`library.albums.$albumId.tsx`) whose loader resolves a session and branches on
+`isAdmin`. So per-viewer HTML was governed by a rule with no cookie bypass,
+ordered *ahead* of the rule that has one. `starts with /music` likewise swallowed
+`/music-trivia`.
 
-> **No widening needed** — an earlier draft of this backlog said to widen the HTML
-> rule "from `/`" to match `CACHEABLE_ANON_PATHS`. That was inherited from the
-> 08-09 audit and is **stale**: the committed rule's expression already lists all
-> 11 paths in `CACHEABLE_ANON_PATHS` plus the `/blog/` and `/news/` prefixes, and
-> `lib/__tests__/anon-html-cache.test.ts` parses that expression out of the shell
-> script and fails if it drifts from the plugin. The rule is complete; it has just
-> never been applied.
+Not a live leak — every rule uses `edge_ttl: respect_origin`, so the origin's
+`private, no-cache` on authenticated HTML refused the store. But it was one
+dropdown away: "Ignore cache-control header and use this TTL" is the natural
+choice on a rule named "CDN static assets", and it would have published one
+viewer's library to everyone. Fixed by trailing slashes (`/music/`, `/sprites/`);
+`/library` removed (it is HTML — rule 4's job) and `/models` removed (no
+`public/models` exists).
+
+**(b) That same rule was a no-op for the files it existed to cache.** Edge TTL
+"use cache-control header if present, **bypass cache if not**" plus an origin that
+sent **no** `Cache-Control` for `/music/**` and `/sprites/**` meant the edge
+declined to store them — **96 MB of game audio across 67 files and 29 MB of sprite
+sheets across 442 files, fetched from the origin every request**, under a rule the
+dashboard showed as Active. Fixed in `vite.config.ts` with the `routeRules` those
+paths never had (30-day revalidating window, matching `/images/**`, no
+`immutable` because the filenames are not content-hashed).
+
+Both classes now fail CI. `lib/__tests__/anon-html-cache.test.ts` asserts that no
+non-HTML rule's path prefix can capture a `CACHEABLE_ANON_PATHS` entry or an
+article prefix, that static-media prefixes end in a slash, and that **no rule uses
+a TTL override** — since respect-origin is what makes the origin the final gate.
+Each assertion was verified to fail on the real bug and pass on the fix.
+
+Still worth doing: tick the two boxes in
+[`../performance-slo.md`](../performance-slo.md) and save the `VERIFY_ONLY=1`
+output as the record.
 
 ### 3 — Per-route API cache policies, route by route ⭐ M, ongoing
 
