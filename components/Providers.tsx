@@ -936,8 +936,7 @@ export function Providers({
                     // slider entirely. A toast is the one L4 surface that
                     // appears unbidden and is gone in four seconds, so it is the
                     // last one that can afford to ghost.
-                    background:
-                      'color-mix(in srgb, var(--site-bg) clamp(78%, calc(90% * var(--glass-user-tint, 1)), 100%), transparent)',
+                    background: 'var(--site-glass-overlay-fill)',
                     backdropFilter:
                       'blur(calc(var(--site-glass-blur-overlay) * var(--glass-blur-factor, 1))) saturate(var(--site-glass-saturate))',
                     WebkitBackdropFilter:

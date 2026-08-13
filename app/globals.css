@@ -203,6 +203,19 @@
   --site-glass-blur-chrome-scrolled: 30px;
   --site-glass-blur-overlay: 30px;
   --site-glass-saturate: 180%;
+  /* The L4 fill, named. `.glass-overlay` sets this as its own background, and
+     it is here rather than only in that rule so the handful of things that
+     CANNOT carry the class can still match the tier exactly: a border-triangle
+     (the tooltip's arrow, which has no background at all — its colour IS a
+     border colour) and an inline style object (sonner's toast, which owns its
+     own positioning and stacking). Those were three hand-copied approximations
+     of this expression before it had a name. */
+  --site-glass-overlay-fill: color-mix(
+    in srgb,
+    var(--site-bg) clamp(78%, calc(90% * var(--glass-user-tint, 1)), 100%),
+    transparent
+  );
+
   /* `--site-glass-menu-opacity` (88%) lived here, for menus opening over live
      content with no scrim. It is retired: it existed because `.glass-overlay`
      was 62%, and that tier now carries its own legibility floor — 90% base,
@@ -1468,11 +1481,7 @@ html.app-route {
        everywhere else on the page, and in the blur here — but a menu stays a
        menu. `clamp()` also caps at 100%, so a Calm/Opaque setting cannot mint an
        invalid percentage. */
-    background-color: color-mix(
-      in srgb,
-      var(--site-bg) clamp(78%, calc(90% * var(--glass-user-tint, 1)), 100%),
-      transparent
-    );
+    background-color: var(--site-glass-overlay-fill);
     background-image: var(--glass-glint-layer);
     background-clip: border-box;
     background-origin: border-box;
