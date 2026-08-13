@@ -3,7 +3,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { m as motion } from 'framer-motion';
 import {
   Loader2,
@@ -11,7 +11,6 @@ import {
   Route as RouteIcon,
   Car,
   CheckCircle2,
-  LogIn,
   CalendarClock,
   Clock,
   XCircle,
@@ -29,6 +28,7 @@ import { ActiveRidePanel } from '@/components/rideshare/ActiveRidePanel';
 import { SavedPlaces } from '@/components/rideshare/SavedPlaces';
 import { estimateFareCents, formatDistance, formatUsd, type RidePlace } from '@/lib/rideshare/geo';
 import { RIDE_CLASSES, rideClassName, type RideClassId } from '@/lib/rideshare/classes';
+import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 
 export const Route = createFileRoute('/_site/rideshare/ride')({
   head: () => ({ meta: [{ title: 'Request a ride — RMH Rideshare' }] }),
@@ -281,24 +281,15 @@ function RequestRidePage() {
   if (!session) {
     return (
       <PageLayout title={t('page-title', { defaultValue: 'Request a ride' })} wide>
-        <div className="mx-auto max-w-md px-4 py-20 text-center">
-          <Navigation className="mx-auto h-10 w-10 text-site-accent" />
-          <h2 className="mt-4 text-xl font-bold text-site-text">
-            {t('sign-in-heading', { defaultValue: 'Sign in to request a ride' })}
-          </h2>
-          <p className="mt-2 text-site-text-muted">
-            {t('sign-in-description', {
-              defaultValue: 'You need an RMH account to use RMH Rideshare.',
-            })}
-          </p>
-          <Link
-            to="/login"
-            search={{ callbackURL: '/rideshare/ride' }}
-            className="mt-5 inline-flex items-center gap-2 rounded-site bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-transform hover:scale-105"
-          >
-            <LogIn className="h-4 w-4" /> {t('sign-in-button', { defaultValue: 'Sign in' })}
-          </Link>
-        </div>
+        <SignedOutPrompt
+          icon={Navigation}
+          callbackURL="/rideshare/ride"
+          title={t('sign-in-heading', { defaultValue: 'Sign in to request a ride' })}
+          description={t('sign-in-description', {
+            defaultValue: 'You need an RMH account to use RMH Rideshare.',
+          })}
+          actionLabel={t('sign-in-button', { defaultValue: 'Sign in' })}
+        />
       </PageLayout>
     );
   }
