@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from'react';
 import { useTranslation } from'react-i18next';
 import { Loader2, Music, Plus, X, Check, Lightbulb, Trophy } from'lucide-react';
 import { Button } from'@/components/ui/button';
+import { OverlayPanel } from'@/components/ui/overlay-panel';
 import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
 import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
@@ -287,11 +288,22 @@ function PlayModal({
  }
  }
 
+ // PORTALLED. This claimed modality — an outside-press close over a full
+ // scrim — while rendering inside `.radial-frame`, whose stacking context is
+ // pinned at 1: the top bar's four quick-panel triggers stayed live above the
+ // scrim, and the hub orb burned through at bottom-centre. On viewports under
+ // ~640px tall the audio controls reached the orb.
+ //
+ // The panel also takes `.glass-overlay` rather than `.glass-fill`. L1 has no
+ // backdrop blur — it is the tier for repeated content — so a floating panel on
+ // it lets the page ghost through its own text. Floating UI is L4, and that is
+ // CI-enforced (design-consistency.test.ts).
  return (
- <div className="fixed inset-0 z-50 flex items-center justify-center p-4"onMouseDown={onClose}>
- <div className="absolute inset-0 bg-site-media-scrim-strong"/>
+ <OverlayPanel open onClose={onClose} closeLabel={t('close', { defaultValue:'Close'})}>
  <div
- className="relative z-10 w-full max-w-md p-5 glass-fill"
+ role="dialog"
+ aria-modal="true"
+ className="relative z-10 w-full max-w-md p-5 glass-overlay"
  onMouseDown={(e) => e.stopPropagation()}
  >
  <div className="mb-3 flex items-center justify-between">
@@ -395,6 +407,6 @@ function PlayModal({
  </>
  )}
  </div>
- </div>
+ </OverlayPanel>
  );
 }

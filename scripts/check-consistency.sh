@@ -352,6 +352,8 @@ elif [ ! -d node_modules ]; then
 else
   GATE_TESTS=(
     lib/__tests__/design-consistency.test.ts
+    lib/__tests__/stacking-consistency.test.ts
+    lib/__tests__/motion-pop-spring.test.ts
     lib/__tests__/game-viewport-consistency.test.ts
     lib/__tests__/filter-cost-budget.test.ts
     lib/__tests__/theme-tokens.test.ts
