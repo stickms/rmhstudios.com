@@ -15,7 +15,8 @@ import { AIGenerateButton } from'./AIGenerateButton';
 import { MentionTextarea } from'./MentionTextarea';
 import { EmojiPickerButton } from'@/components/shared/EmojiPickerButton';
 import { useEmojiInsert } from'@/lib/emoji/use-emoji-insert';
-import { usePopPresence } from '@/hooks/usePopPresence';
+import { AnchoredMenu } from '@/components/ui/anchored-menu';
+import { MenuItem } from '@/components/ui/menu';
 import { useFreshUser } from'@/stores/userDisplayStore';
 import { timeAgoShort } from'@/lib/utils';
 import { useTranslation } from'react-i18next';
@@ -106,11 +107,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  const [translatedText, setTranslatedText] = useState<string | null>(null);
  const [showTranslated, setShowTranslated] = useState(false);
  const [translating, setTranslating] = useState(false);
- const menuRef = useRef<HTMLDivElement>(null);
  const menuBtnRef = useRef<HTMLButtonElement>(null);
- const menuPanelRef = useRef<HTMLDivElement>(null);
- // The shared bloom (globals.css §7.1) — held mounted for its close.
- const { present: menuPresent, state: menuState } = usePopPresence(menuOpen);
 
  // When the site language changes, drop any cached translation so the next
  //"Translate"click re-translates into the newly selected language.
@@ -148,17 +145,12 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
 
  const isAuthor = sessionUser?.id === comment.userId;
 
- // Close dropdown on outside click
- useEffect(() => {
- if (!menuOpen) return;
- const handleClick = (e: MouseEvent) => {
- if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
- setMenuOpen(false);
- }
- };
- document.addEventListener('mousedown', handleClick);
- return () => document.removeEventListener('mousedown', handleClick);
- }, [menuOpen]);
+ // Outside-press dismissal, Escape, focus return, the roving arrow keys and the
+ // close animation all live in AnchoredMenu now. This file used to carry its own
+ // outside-click listener — and, because the panel was an in-place
+ // `absolute top-full … z-50`, it was measured inside `.radial-frame`'s stacking
+ // context (pinned at z-index 1), so a comment near the top of the column had its
+ // menu painted UNDER the top bar. AnchoredMenu portals to <body>.
 
  // Track view
  useEffect(() => {
@@ -300,53 +292,54 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
 
  {/* More menu */}
  {!comment.deletedAt && (
- <div className="relative ml-auto shrink-0"ref={menuRef}>
+ <div className="relative ml-auto shrink-0">
  <button
  ref={menuBtnRef}
  onClick={() => setMenuOpen((v) => !v)}
+ aria-haspopup="menu"
+ aria-expanded={menuOpen}
  className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <MoreHorizontal className="w-3.5 h-3.5"/>
  </button>
- {menuPresent && (
- <div ref={menuPanelRef}
- data-motion="pop"
- data-state={menuState} className="absolute right-0 top-full mt-1 w-44 origin-top-right glass-overlay py-1 z-50">
- <button
- onClick={() => { setMenuOpen(false); setEngagementModal('likes'); }}
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
+ <AnchoredMenu
+ open={menuOpen}
+ onClose={() => setMenuOpen(false)}
+ anchorRef={menuBtnRef}
+ label={t('more-options', { defaultValue:'More options'})}
+ className="w-52"
  >
- <Heart className="w-4 h-4 text-site-text-dim"/>
+ <MenuItem
+ icon={Heart}
+ onSelect={() => { setMenuOpen(false); setEngagementModal('likes'); }}
+ >
  {t('liked-by', { defaultValue:'Liked by'})}
- </button>
- <button
- onClick={() => { setMenuOpen(false); setEngagementModal('reposts'); }}
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
+ </MenuItem>
+ <MenuItem
+ icon={Repeat}
+ onSelect={() => { setMenuOpen(false); setEngagementModal('reposts'); }}
  >
- <Repeat className="w-4 h-4 text-site-text-dim"/>
  {t('rermarkd-by', { defaultValue:"reRMHark'd by"})}
- </button>
+ </MenuItem>
  {comment.content.length > 8 && (
- <button
- onClick={handleTranslate}
+ <MenuItem
+ icon={Languages}
  disabled={translating}
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors disabled:opacity-60"
+ onSelect={handleTranslate}
  >
- <Languages className="w-4 h-4 text-site-text-dim"/>
  {translating ? t('translating', { defaultValue:'Translating…'}) : translatedText ? (showTranslated ? t('show-original', { defaultValue:'Show original'}) : t('show-translation', { defaultValue:'Show translation'})) : t('translate', { defaultValue:'Translate'})}
- </button>
+ </MenuItem>
  )}
  {isAuthor && (
- <button
- onClick={() => { setMenuOpen(false); handleDelete(); }}
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors"
+ <MenuItem
+ icon={Trash2}
+ tone="danger"
+ onSelect={() => { setMenuOpen(false); handleDelete(); }}
  >
- <Trash2 className="w-4 h-4"/>
  {t('delete', { defaultValue:'Delete'})}
- </button>
+ </MenuItem>
  )}
- </div>
- )}
+ </AnchoredMenu>
  </div>
  )}
  </div>

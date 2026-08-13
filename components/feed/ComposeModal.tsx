@@ -21,6 +21,7 @@ import { authClient } from'@/lib/auth-client';
 import { useResolvedUser } from'@/components/Providers';
 import { buildOptimizedUrl } from'@/components/ui/OptimizedImage';
 import { Button } from'@/components/ui/button';
+import { MenuItem } from '@/components/ui/menu';
 import { usePopPresence } from '@/hooks/usePopPresence';
 import { useFeedStore } from'@/stores/feedStore';
 import {
@@ -317,24 +318,35 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  <Plus className="w-4.5 h-4.5"/>
  </button>
 
+ {/* The ROW is the shared `MenuItem` primitive; the PANEL deliberately
+ stays in place rather than moving onto AnchoredMenu. AnchoredMenu
+ portals to <body> and paints at `--z-menu` (40), which is the band
+ that clears the SHELL — and this composer is itself a body-level
+ modal at z-50, so a portalled panel would land under its own dialog
+ and under the scrim. `.anchored-menu` sets that z-index from an
+ UNLAYERED rule, so a Tailwind `z-*` on the panel cannot lift it out
+ either (`Select` clears a dialog with its own `z-[60]` instead).
+ In here there is no shell chrome to clear and nothing clips the
+ panel, so the reason to portal does not apply. Outside-click,
+ Escape and the close animation therefore stay local, above. */}
  {menuPresent && (
  <div
  ref={menuPopRef}
  data-motion="pop"
  data-state={menuState}
- className="absolute top-full right-0 mt-1 w-40 origin-top-right glass-overlay py-1 z-50"
+ role="menu"
+ className="absolute top-full right-0 mt-1 w-40 origin-top-right glass-overlay p-1 z-50"
  >
- <button
- onClick={() => {
+ <MenuItem
+ icon={BarChart3}
+ onSelect={() => {
  setAttachment('poll');
  setGifUrl('');
  setMenuOpen(false);
  }}
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
- <BarChart3 className="w-4 h-4 text-site-text-dim"/>
  {t('create-poll', { defaultValue:'Create Poll'})}
- </button>
+ </MenuItem>
  </div>
  )}
  </div>
