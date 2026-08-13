@@ -274,7 +274,13 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
         disabled={option.disabled}
         data-slot="select-item"
         className={cn(
-          'relative flex w-full cursor-pointer select-none items-center gap-2 py-1.5 pl-2.5 pr-8 outline-none',
+          // The same row metrics as `MenuItem` (components/ui/menu.tsx), because
+          // a select's list and an overflow menu are the same object to whoever
+          // is looking at them: same gap, same padding, same `min-h-9` with the
+          // `pointer-coarse:min-h-11` touch floor. These rows were `py-1.5
+          // pl-2.5`, which lands at ~30px — under the floor, and visibly tighter
+          // than the menu that opens from the button next to it.
+          'relative flex w-full min-h-9 pointer-coarse:min-h-11 cursor-pointer select-none items-center gap-2.5 py-2 pl-3 pr-8 outline-none',
           'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
           styles.item,
         )}
@@ -304,7 +310,13 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
               // Button/Input/Badge, so a select squares off and swaps its
               // elevation for a hairline ring in the themes that do that.
               'flex w-full cursor-pointer appearance-none items-center justify-between gap-2 transition duration-site',
-              controlSize === 'sm' ? 'h-8 px-3.5 py-1 pr-8' : 'h-10 px-4 py-2 pr-10',
+              // The SAME heights as Button and Input — `h-11` / `h-9`, not the
+              // `h-10` / `h-8` this used to carry. A select is the third control
+              // in a form row beside those two, and 4px short is not a subtle
+              // difference when the three sit on one line: the baselines stop
+              // agreeing and the row reads as assembled from two kits. 44px is
+              // also the touch floor, which `h-10` was under.
+              controlSize === 'sm' ? 'h-9 px-3.5 py-1 pr-8' : 'h-11 px-4 py-2 pr-10',
               'focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
               // The value can be longer than the control: clip it rather than let
               // it push the chevron out of the box.
@@ -364,7 +376,8 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
                     <SelectPrimitive.Group key={`group-${i}`}>
                       <SelectPrimitive.Label
                         className={cn(
-                          'px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em]',
+                          // Matches `MenuLabel` — same inset as the rows below it.
+                          'px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.18em]',
                           styles.label,
                         )}
                       >

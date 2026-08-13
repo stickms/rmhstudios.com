@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from '@tanstack/react-router';
 import { ArrowLeft, Upload } from 'lucide-react';
@@ -122,7 +123,24 @@ export function MDXEditor({
     }
   };
 
-  return (
+  // PORTALLED to <body>. This is a full-screen takeover (its own header carries
+  // Back-to-admin and Save Post), but it renders from a route under `_site`, so
+  // in place it landed inside `.radial-frame` — `position: relative; z-index:
+  // var(--z-content)`, a stacking context pinned at 1 — and its `z-50` was
+  // measured inside that 1. The shell's OPAQUE top bar (`--z-topbar: 60`,
+  // 4rem at >=768px) then painted over the editor's own 4rem header: at desktop
+  // width the toolbar was 100% covered and **Save Post was unclickable**, so a
+  // post could not be saved at all. Below 768px a 3.5rem bar left an 8px sliver,
+  // and clicks in the covered band hit the top bar's search/messages/profile
+  // buttons instead.
+  //
+  // Portalling rather than un-fixing it: the two-pane `ResizablePanelGroup`
+  // below needs a definite height, which `fixed inset-0` is what supplies. At
+  // body level the shell is a sibling stacking context at z-auto, so z-50 now
+  // means what it says.
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <div className="h-screen w-screen flex flex-col bg-site-bg overflow-hidden fixed inset-0 z-50">
       <div className="h-16 border-b border-site-border flex items-center justify-between px-4 lg:px-6 shrink-0 bg-site-surface w-full shadow-sm">
         <div className="flex items-center gap-4">
@@ -376,6 +394,7 @@ export function MDXEditor({
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

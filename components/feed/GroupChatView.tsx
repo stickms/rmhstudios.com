@@ -19,7 +19,8 @@ import {
 import { useReducedMotion } from'@/hooks/useReducedMotion';
 import { EASE_OUT_EXPO } from'@/components/motion';
 import { Button } from'@/components/ui/button';
-import { usePopPresence } from '@/hooks/usePopPresence';
+import { AnchoredMenu } from '@/components/ui/anchored-menu';
+import { MenuItem } from '@/components/ui/menu';
 import { useConfirm } from'@/components/ui/confirm-dialog';
 import { Spinner } from'@/components/ui/spinner';
 import { UserAvatar } from'./UserAvatar';
@@ -88,11 +89,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  } | null>(null);
  const scrollRef = useRef<HTMLDivElement>(null);
  const imageInputRef = useRef<HTMLInputElement>(null);
- const attachRef = useRef<HTMLDivElement>(null);
  const attachBtnRef = useRef<HTMLButtonElement>(null);
- const attachPanelRef = useRef<HTMLDivElement>(null);
- // The shared bloom (globals.css §7.1) — held mounted for its close.
- const { present: attachPresent, state: attachState } = usePopPresence(attachOpen);
  const lastAtRef = useRef<string | null>(null);
  const inputRef = useRef<HTMLTextAreaElement>(null);
  // The initial message page is history (no entrance); everything appended
@@ -104,15 +101,11 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  setReactionMenu({ x, y, messageId }),
  );
 
- // Close the attach (+) menu on outside click.
- useEffect(() => {
- if (!attachOpen) return;
- const onDown = (e: MouseEvent) => {
- if (attachRef.current && !attachRef.current.contains(e.target as Node)) setAttachOpen(false);
- };
- document.addEventListener('mousedown', onDown);
- return () => document.removeEventListener('mousedown', onDown);
- }, [attachOpen]);
+ // Outside-press dismissal, Escape, focus return, the roving arrow keys and the
+ // close animation all live in AnchoredMenu now. This file used to carry its own
+ // outside-click listener, and its panel was an in-place `absolute bottom-full …
+ // z-30` measured inside `.radial-frame`'s stacking context (pinned at z-index
+ // 1), so it painted under the shell's chrome. AnchoredMenu portals to <body>.
 
  const setMsgs = useCallback((msgs: Msg[]) => {
  // Initial load — the whole batch is history, so none of it animates in.
@@ -612,12 +605,13 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  onChange={(e) => handleImageFiles(e.target.files)}
  />
  {/* Attach (+) menu — image, GIF, poll. Mirrors the rmhark composer. */}
- <div className="relative"ref={attachRef}>
+ <div className="relative">
  <button
  ref={attachBtnRef}
  type="button"
  onClick={() => setAttachOpen((v) => !v)}
  aria-label={t('add-to-message', { defaultValue:'Add to message'})}
+ aria-haspopup="menu"
  aria-expanded={attachOpen}
  className="flex h-9 w-9 items-center justify-center rounded-full text-site-text-dim hover:bg-site-accent/10 hover:text-site-accent disabled:opacity-40"
  disabled={uploading}
@@ -628,49 +622,44 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  <Plus className="h-5 w-5"/>
  )}
  </button>
- {attachPresent && (
- <div
- ref={attachPanelRef}
- data-motion="pop"
- data-state={attachState}
- className="absolute bottom-full left-0 z-30 mb-1 w-40 origin-bottom-left glass-overlay py-1"
+ <AnchoredMenu
+ open={attachOpen}
+ onClose={() => setAttachOpen(false)}
+ anchorRef={attachBtnRef}
+ label={t('add-to-message', { defaultValue:'Add to message'})}
+ side="top"
+ align="start"
+ className="w-40"
  >
- <button
- type="button"
+ <MenuItem
+ icon={ImagePlus}
  disabled={imageUrls.length >= MAX_IMAGES}
- onClick={() => {
+ onSelect={() => {
  setAttachOpen(false);
  imageInputRef.current?.click();
  }}
- className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover disabled:cursor-not-allowed disabled:opacity-40"
  >
- <ImagePlus className="h-4 w-4 text-site-text-dim"/>{''}
  {t('menu-add-image', { defaultValue:'Add Image'})}
- </button>
- <button
- type="button"
- onClick={() => {
+ </MenuItem>
+ <MenuItem
+ icon={ImagePlay}
+ onSelect={() => {
  setAttachOpen(false);
  setShowGifPicker((v) => !v);
  }}
- className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover"
  >
- <ImagePlay className="h-4 w-4 text-site-text-dim"/>{''}
  {t('menu-add-gif', { defaultValue:'Add GIF'})}
- </button>
- <button
- type="button"
- onClick={() => {
+ </MenuItem>
+ <MenuItem
+ icon={BarChart3}
+ onSelect={() => {
  setAttachOpen(false);
  setPollDraft((p) => (p ? null : { question:'', options: ['',''] }));
  }}
- className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover"
  >
- <BarChart3 className="h-4 w-4 text-site-text-dim"/>{''}
  {t('menu-create-poll', { defaultValue:'Create Poll'})}
- </button>
- </div>
- )}
+ </MenuItem>
+ </AnchoredMenu>
  </div>
  <EmojiPickerButton
  direction="up"

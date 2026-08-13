@@ -13,7 +13,8 @@ import { GroupCallButton } from '@/components/groupcall/GroupCallButton';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
-import { usePopPresence } from '@/hooks/usePopPresence';
+import { AnchoredMenu } from '@/components/ui/anchored-menu';
+import { MenuItem } from '@/components/ui/menu';
 import { toast } from 'sonner';
 import { GhostTextArea } from './GhostTextArea';
 import { SmartReplies } from './SmartReplies';
@@ -131,11 +132,7 @@ export function ConversationView({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const attachRef = useRef<HTMLDivElement>(null);
   const attachBtnRef = useRef<HTMLButtonElement>(null);
-  const attachPanelRef = useRef<HTMLDivElement>(null);
-  // The shared bloom (globals.css §7.1) — held mounted for its close.
-  const { present: attachPresent, state: attachState } = usePopPresence(attachOpen);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const initialFetched = useRef(false);
   // IDs of messages that should NOT animate in: the initial page and any
@@ -162,15 +159,11 @@ export function ConversationView({
     setReactionMenu({ x, y, messageId }),
   );
 
-  // Close the attach (+) menu on outside click.
-  useEffect(() => {
-    if (!attachOpen) return;
-    const onDown = (e: MouseEvent) => {
-      if (attachRef.current && !attachRef.current.contains(e.target as Node)) setAttachOpen(false);
-    };
-    document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
-  }, [attachOpen]);
+  // The attach (+) menu's outside-press dismissal, Escape, focus return, roving
+  // arrow keys and close animation all live in AnchoredMenu now. Its panel was an
+  // in-place `absolute bottom-full … z-30`, measured inside `.radial-frame`'s
+  // stacking context (pinned at z-index 1), so it painted under the shell's own
+  // chrome; AnchoredMenu portals to <body>.
 
   // AI inline autocomplete, grounded in the recent DM conversation. Tombstoned
   // and voice-only messages contribute nothing, so a retracted line cannot be
@@ -1372,11 +1365,12 @@ export function ConversationView({
                 className="flex h-[42px] shrink-0 items-center"
               />
               {/* Attach (+) menu — image, GIF. Mirrors the rmhark composer. */}
-              <div className="relative shrink-0" ref={attachRef}>
+              <div className="relative shrink-0">
                 <button
                   ref={attachBtnRef}
                   type="button"
                   aria-label={t('add-to-message', { defaultValue: 'Add to message' })}
+                  aria-haspopup="menu"
                   aria-expanded={attachOpen}
                   onClick={() => setAttachOpen((v) => !v)}
                   disabled={uploading}
@@ -1388,38 +1382,34 @@ export function ConversationView({
                     <Plus className="h-5 w-5" />
                   )}
                 </button>
-                {attachPresent && (
-                  <div
-                    ref={attachPanelRef}
-                    data-motion="pop"
-                    data-state={attachState}
-                    className="absolute bottom-full right-0 z-30 mb-1 w-40 origin-bottom-right glass-overlay py-1"
+                <AnchoredMenu
+                  open={attachOpen}
+                  onClose={() => setAttachOpen(false)}
+                  anchorRef={attachBtnRef}
+                  label={t('add-to-message', { defaultValue: 'Add to message' })}
+                  side="top"
+                  className="w-40"
+                >
+                  <MenuItem
+                    icon={ImagePlus}
+                    disabled={imageUrls.length >= MAX_DM_IMAGES}
+                    onSelect={() => {
+                      setAttachOpen(false);
+                      imageInputRef.current?.click();
+                    }}
                   >
-                    <button
-                      type="button"
-                      disabled={imageUrls.length >= MAX_DM_IMAGES}
-                      onClick={() => {
-                        setAttachOpen(false);
-                        imageInputRef.current?.click();
-                      }}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      <ImagePlus className="h-4 w-4 text-site-text-dim" />{' '}
-                      {t('menu-add-image', { defaultValue: 'Add Image' })}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAttachOpen(false);
-                        setShowGifPicker((v) => !v);
-                      }}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover"
-                    >
-                      <ImagePlay className="h-4 w-4 text-site-text-dim" />{' '}
-                      {t('menu-add-gif', { defaultValue: 'Add GIF' })}
-                    </button>
-                  </div>
-                )}
+                    {t('menu-add-image', { defaultValue: 'Add Image' })}
+                  </MenuItem>
+                  <MenuItem
+                    icon={ImagePlay}
+                    onSelect={() => {
+                      setAttachOpen(false);
+                      setShowGifPicker((v) => !v);
+                    }}
+                  >
+                    {t('menu-add-gif', { defaultValue: 'Add GIF' })}
+                  </MenuItem>
+                </AnchoredMenu>
               </div>
             </>
           )}

@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Search, ChevronDown, X, User, Plus, Award } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { usePopPresence } from '@/hooks/usePopPresence';
+import { AnchoredMenu } from '@/components/ui/anchored-menu';
+import { MenuItem } from '@/components/ui/menu';
 import { useSession } from '@/components/Providers';
 import type { BuildCategory, BuildSortOption } from '@/lib/user-builds-types';
 
@@ -46,11 +47,17 @@ export function BuildFilters({
   const [search, setSearch] = useState(searchQuery);
   const [showCategories, setShowCategories] = useState(false);
   const [showSort, setShowSort] = useState(false);
-  // Each menu stays mounted for its close (globals.css §7.1). The click-catcher
-  // backdrops below stay on the raw flag — a menu on its way out must not keep
-  // swallowing presses meant for the page behind it.
-  const categoryMenu = usePopPresence(showCategories);
-  const sortMenu = usePopPresence(showSort);
+  const categoryTriggerRef = useRef<HTMLButtonElement>(null);
+  const sortTriggerRef = useRef<HTMLButtonElement>(null);
+  // Staying mounted for the close, the outside press, Escape, focus return and
+  // the arrow keys all live in AnchoredMenu now. Both panels used to be in-place
+  // `absolute top-full … z-50` divs with a `fixed inset-0` click-catcher under
+  // them — measured inside `.radial-frame`'s stacking context (pinned at
+  // z-index 1), so they painted under the shell's top bar. They portal now, and
+  // AnchoredMenu caps each panel to the room its side actually has, which is
+  // what the category menu's `max-h-64` was approximating.
+  // Both menus are an exclusive choice, so their rows are `menuitemradio` with a
+  // trailing check rather than an accent-tinted button.
 
   // Debounce search
   useEffect(() => {
@@ -105,7 +112,10 @@ export function BuildFilters({
         {/* Category Filter */}
         <div className="relative">
           <button
+            ref={categoryTriggerRef}
             onClick={() => setShowCategories(!showCategories)}
+            aria-haspopup="menu"
+            aria-expanded={showCategories}
             className="flex items-center gap-2 px-4 py-2 rounded-site-sm bg-site-surface border border-site-border text-sm text-site-text hover:border-site-accent/50 transition-colors min-w-[140px]"
           >
             <span className="truncate">
@@ -117,57 +127,47 @@ export function BuildFilters({
             />
           </button>
 
-          {categoryMenu.present && (
-            <>
-              {showCategories && (
-                <div className="fixed inset-0 z-40" onClick={() => setShowCategories(false)} />
-              )}
-              <div
-                data-motion="pop"
-                data-state={categoryMenu.state}
-                className="absolute top-full mt-2 right-0 origin-top-right w-48 glass-overlay py-1 z-50 max-h-64 overflow-y-auto"
+          <AnchoredMenu
+            open={showCategories}
+            onClose={() => setShowCategories(false)}
+            anchorRef={categoryTriggerRef}
+            label={t('label-category', { defaultValue: 'Category' })}
+            className="w-48"
+          >
+            <MenuItem
+              checked={!selectedCategory}
+              onSelect={() => {
+                onCategoryChange(undefined);
+                setShowCategories(false);
+              }}
+            >
+              {t('all-categories', { defaultValue: 'All Categories' })}
+            </MenuItem>
+            {categories.map((cat) => (
+              <MenuItem
+                key={cat.id}
+                checked={selectedCategory === cat.id}
+                // Stringified so a category with zero builds still reports it —
+                // `hint` renders on truthiness, and 0 is falsy.
+                hint={cat.buildCount !== undefined ? String(cat.buildCount) : undefined}
+                onSelect={() => {
+                  onCategoryChange(cat.id);
+                  setShowCategories(false);
+                }}
               >
-                <button
-                  onClick={() => {
-                    onCategoryChange(undefined);
-                    setShowCategories(false);
-                  }}
-                  className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                    !selectedCategory
-                      ? 'text-site-accent bg-site-accent/10'
-                      : 'text-site-text-muted hover:text-site-text hover:bg-site-surface-hover'
-                  }`}
-                >
-                  {t('all-categories', { defaultValue: 'All Categories' })}
-                </button>
-                {categories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => {
-                      onCategoryChange(cat.id);
-                      setShowCategories(false);
-                    }}
-                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                      selectedCategory === cat.id
-                        ? 'text-site-accent bg-site-accent/10'
-                        : 'text-site-text-muted hover:text-site-text hover:bg-site-surface-hover'
-                    }`}
-                  >
-                    {cat.name}
-                    {cat.buildCount !== undefined && (
-                      <span className="ml-2 text-xs text-site-text-dim">({cat.buildCount})</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
+                {cat.name}
+              </MenuItem>
+            ))}
+          </AnchoredMenu>
         </div>
 
         {/* Sort */}
         <div className="relative">
           <button
+            ref={sortTriggerRef}
             onClick={() => setShowSort(!showSort)}
+            aria-haspopup="menu"
+            aria-expanded={showSort}
             className="flex items-center gap-2 px-4 py-2 rounded-site-sm bg-site-surface border border-site-border text-sm text-site-text hover:border-site-accent/50 transition-colors min-w-[140px]"
           >
             <span>{selectedSortData?.label || t('sort-by', { defaultValue: 'Sort by' })}</span>
@@ -176,35 +176,26 @@ export function BuildFilters({
             />
           </button>
 
-          {sortMenu.present && (
-            <>
-              {showSort && (
-                <div className="fixed inset-0 z-40" onClick={() => setShowSort(false)} />
-              )}
-              <div
-                data-motion="pop"
-                data-state={sortMenu.state}
-                className="absolute top-full mt-2 right-0 origin-top-right w-40 glass-overlay py-1 z-50"
+          <AnchoredMenu
+            open={showSort}
+            onClose={() => setShowSort(false)}
+            anchorRef={sortTriggerRef}
+            label={t('sort-by', { defaultValue: 'Sort by' })}
+            className="w-40"
+          >
+            {SORT_OPTIONS.map((option) => (
+              <MenuItem
+                key={option.value}
+                checked={selectedSort === option.value}
+                onSelect={() => {
+                  onSortChange(option.value);
+                  setShowSort(false);
+                }}
               >
-                {SORT_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => {
-                      onSortChange(option.value);
-                      setShowSort(false);
-                    }}
-                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                      selectedSort === option.value
-                        ? 'text-site-accent bg-site-accent/10'
-                        : 'text-site-text-muted hover:text-site-text hover:bg-site-surface-hover'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
+                {option.label}
+              </MenuItem>
+            ))}
+          </AnchoredMenu>
         </div>
 
         {/* Curated Toggle */}

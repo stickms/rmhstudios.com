@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from'react-i18next';
 import Cropper from'react-easy-crop';
 import type { Area } from'react-easy-crop';
@@ -88,11 +89,34 @@ export function ImageCropModal({
  }
  };
 
- return (
- <div className="fixed inset-0 z-[300] flex items-center justify-center p-0 sm:p-4">
+ // PORTALLED, and that is the whole reason this component worked on /login and
+ // did nothing at all on /u/<id>.
+ //
+ // `ProfileEditModal` renders it as a sibling AFTER `</SheetContent></Sheet>`,
+ // so in place it lands inside `.radial-frame` — `position: relative; z-index:
+ // var(--z-content)`, a stacking context PINNED AT 1 (globals.css §5.6). The
+ // `z-[300]` this used to carry was therefore measured inside that 1 and lost
+ // to the host Sheet's BODY-level z-50: the cropper painted underneath the very
+ // sheet that opened it. Worse, it would have been inert even if visible —
+ // Radix's dismissable-layer sets `body.style.pointerEvents = 'none'` while a
+ // modal layer is up and re-enables only its own layer, so Crop, Cancel and the
+ // zoom slider would not have responded to a click.
+ //
+ // /login mounts the same component from a TOP-LEVEL route, outside the shell,
+ // where it is genuinely viewport-fixed and always worked. Do not verify a
+ // change to this file on the login path.
+ //
+ // z-60, not 300: at body level it only has to clear the z-50 dialogs and
+ // sheets it opens from, which is the same band `Select` uses for a popup
+ // opened from inside a dialog.
+ if (typeof document === 'undefined') return null;
+
+ return createPortal(
+ <div className="fixed inset-0 z-[60] flex items-center justify-center p-0 sm:p-4">
  <button
  type="button"
  tabIndex={-1}
+ data-motion="fade"
  className="absolute inset-0 bg-site-media-scrim-strong"
  onClick={onCancel}
  aria-label={t('close-crop-modal', { defaultValue:'Close crop modal'})}
@@ -103,7 +127,8 @@ export function ImageCropModal({
  role="dialog"
  aria-modal="true"
  aria-labelledby="image-crop-title"
- className="motion-cage glass-overlay relative flex h-dvh w-dvw max-w-none flex-col overflow-y-auto rounded-none pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] sm:h-auto sm:max-h-[90dvh] sm:w-full sm:max-w-lg sm:rounded-site sm:p-0"
+ data-motion="rise"
+ className="glass-overlay relative flex h-dvh w-dvw max-w-none flex-col overflow-y-auto rounded-none pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] sm:h-auto sm:max-h-[90dvh] sm:w-full sm:max-w-lg sm:rounded-site sm:p-0"
  >
  {/* Header */}
  <div className="flex items-center justify-between px-4 py-3 border-b border-site-border shrink-0">
@@ -211,7 +236,8 @@ export function ImageCropModal({
  </Button>
  </div>
  </div>
- </div>
+ </div>,
+ document.body,
  );
 }
 
