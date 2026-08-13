@@ -59,6 +59,32 @@ segment so handles/IDs/slugs are not logged, and emits:
 The shared route-class thresholds are in `lib/rum-slo-bands.json`. Route
 classification and threshold lookup are in `lib/rum-slo.ts`.
 
+### The device dimension — read this before trusting a pooled percentile
+
+Every sample also carries a bucketed device context: `formFactor`
+(`mobile`/`tablet`/`desktop`), `vw`, `dpr`, `mem`, `cores`, `net`, `saveData`.
+See `lib/rum.ts` §Device context for why each field is bucketed the way it is —
+the short version is that these are the fields that change a decision, and
+nothing finer, because `/api/rum` is anonymous by design.
+
+**A pooled p75 cannot see this site's dominant performance fact.** The load cost
+here is overwhelmingly main-thread JavaScript and GPU compositing, and a phone
+pays 4–6× for both. Mixed into one population with desktop traffic, a 3× mobile
+regression reads as mild drift and passes its band. That is not hypothetical:
+six consecutive audits measured only unthrottled desktop Chromium
+(`docs/loading-audit-2026-08-11/01-measurements.md` §6) and none of them could
+have seen it. Split the report before concluding a route is healthy:
+
+```bash
+node scripts/ci/rum-slo-report.mjs --by-device --min-samples=100 web.log
+```
+
+`--by-device` adds a Device column and prints the mobile ÷ desktop p75 ratio per
+metric. Samples from a client cached before the dimension shipped are bucketed
+as `unknown` rather than dropped, so the population never silently shrinks when
+the beacon changes. Note that the split divides each row's samples three ways —
+lower `--min-samples` accordingly or widen the window.
+
 Aggregate a captured log window locally:
 
 ```bash

@@ -39,6 +39,7 @@ import {
 } from '@/stores/themeStore';
 import { ACCENT_MAP } from '@/lib/appearance';
 import { GLASS_LEVEL_VARS, GLASS_LEVEL_KEY } from '@/lib/appearance/prefs';
+import { PERF_TIER_SCRIPT } from '@/lib/perf-tier';
 import appCss from '@/app/globals.css?url';
 // The Latin subset of the self-hosted body font. Imported for its hashed URL so
 // the document can PRELOAD it — see the `links` block in `head()` below.
@@ -449,6 +450,12 @@ export const Route = createRootRoute({
       ],
       scripts: [
         { children: platformScript },
+        // The device effect tier, stamped BEFORE first paint for the same
+        // reason `platformScript` above stamps `ios-webkit` there: the class
+        // selects a stylesheet, so applying it after hydration means the
+        // devices it protects render the full effect stack for the entire
+        // load. See lib/perf-tier.ts §PERF_TIER_SCRIPT.
+        { children: PERF_TIER_SCRIPT },
         { children: themeScript },
         { children: localeScript },
         // Inter (body font) is self-hosted via globals.css; decorative/theme fonts

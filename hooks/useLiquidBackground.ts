@@ -109,6 +109,16 @@ export function useLiquidBackground(): void {
     if (root.classList.contains('perf-lite')) return;
     if (root.classList.contains('reduce-motion')) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    // Handheld tier. `app/globals.css` pins the aurora layers' `translate` to
+    // `none` under exactly this query, so every offset this hook computed there
+    // was written to a property nothing read — a pointer/tilt listener, a rAF
+    // and a DOM write per frame, on the devices least able to spare them.
+    //
+    // **This query and the CSS one are one contract and must stay identical**
+    // (`lib/__tests__/handheld-tier.test.ts` fails when they drift): a narrower
+    // query here burns frames for no visual effect, and a wider one detaches
+    // the parallax on devices whose CSS still animates it.
+    if (window.matchMedia('(pointer: coarse) and (max-width: 1024px)').matches) return;
 
     let raf = 0;
     let targetX = 0;
