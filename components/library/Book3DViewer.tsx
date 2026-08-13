@@ -28,6 +28,7 @@
  */
 
 import { useCallback, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from '@tanstack/react-router';
 import { BookOpen, Crosshair, Rotate3d, Smartphone, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -215,7 +216,21 @@ export function Book3DViewer({ book, onClose }: { book: LibraryBook; onClose: ()
     '--book-hue': String(book.hue),
   } as React.CSSProperties;
 
-  return (
+  // PORTALLED to <body>, which is what makes `.b3d`'s `position: fixed` mean the
+  // VIEWPORT. In place it renders inside `.radial-frame` — `position: relative;
+  // z-index: var(--z-content)`, a stacking context pinned at 1 — so its z-index
+  // of 130 was measured inside that 1 and the shell's opaque z-60 top bar
+  // painted over the viewer's top 56px (mobile) / 64px (desktop). `.b3d__bar` is
+  // the first flex child and holds the ONLY close button, so on touch, where
+  // there is no Escape key, the viewer could not be closed at all: the only
+  // tappable things in that strip were the top bar's own controls showing
+  // through. The scrim's blur failed to cover the bar for the same reason, so
+  // the site chrome stayed crisp above a modal dialog.
+  //
+  // `LibraryContextMenu` in this same directory already portals for this reason.
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <div
       // `.glass-scrim` is the shared dialog-backdrop material (§5.1) — the
       // library stays visible and frosted behind the book rather than being
@@ -224,6 +239,13 @@ export function Book3DViewer({ book, onClose }: { book: LibraryBook; onClose: ()
       role="dialog"
       aria-modal="true"
       aria-label={t('book3d-open', { title: book.title, defaultValue: 'View {{title}} in 3D' })}
+      // Press the scrim to leave. Independent of the portal fix: Escape was the
+      // only exit this dialog had, and a phone has no Escape. `currentTarget`
+      // so a press that lands on the book, the bar or the footer does not
+      // dismiss — only the empty space around them.
+      onPointerDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <header className="b3d__bar">
         <div className="b3d__heading">
@@ -321,6 +343,7 @@ export function Book3DViewer({ book, onClose }: { book: LibraryBook; onClose: ()
           </Link>
         </div>
       </footer>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -23,9 +23,20 @@
  *    viewport clamp behind it, it got shoved down into the top bar instead of
  *    opening downward into the empty feed.
  *
+ * 3. **It drives the keyboard.** `role="menu"` is a promise: arrow keys move a
+ *    roving focus between rows, Home/End jump to the ends, typing jumps to the
+ *    row that starts with what you typed, Tab leaves. This used to be the
+ *    caller's problem and so it was nobody's — the panel opened, focus landed on
+ *    the first button, and Down did nothing (or scrolled the page behind it).
+ *    That gap is most of why twenty-six menus on this site hand-rolled a panel
+ *    rather than adopt this one: adopting it cost them a keyboard.
+ *
  * Everything else stays the caller's: it owns the open state, the trigger, and
- * the rows. Rows are ordinary children — this is a positioned surface, not a
- * roving-focus ARIA menu implementation.
+ * the rows. Rows should be `MenuItem`/`MenuSeparator`/`MenuLabel` from
+ * `components/ui/menu` — the roving focus enumerates `[data-menu-item]`, which
+ * `MenuItem` sets, deliberately rather than `button, a[href]`: a menu row may
+ * CONTAIN a control (a clear button in a filter field), and arrowing onto one of
+ * those strands the keyboard somewhere the arrow keys cannot get it back out of.
  */
 
 import {
@@ -47,6 +58,7 @@ import {
   type PlacementSide,
 } from '@/lib/anchored-placement';
 import { cn } from '@/lib/utils';
+import { MENU_ITEM_ATTR } from './menu';
 import './anchored-menu.css';
 
 // useLayoutEffect warns during SSR; a menu only ever opens from a client
@@ -57,6 +69,24 @@ const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : use
 const TRIGGER_GAP = 4;
 /** Gap kept between the panel and each viewport edge. */
 const EDGE_MARGIN = 12;
+/**
+ * How long typed characters keep accumulating into one typeahead query. The
+ * same window Radix and AppKit both use; long enough to type "delete", short
+ * enough that coming back a second later starts a new search.
+ */
+const TYPEAHEAD_MS = 1000;
+
+/** The rows the keyboard may land on, in document order, minus the disabled. */
+function enabledItems(panel: HTMLElement | null): HTMLElement[] {
+  if (!panel) return [];
+  return [...panel.querySelectorAll<HTMLElement>(`[${MENU_ITEM_ATTR}]`)].filter(
+    (el) =>
+      !(el as HTMLButtonElement).disabled &&
+      el.getAttribute('aria-disabled') !== 'true' &&
+      // A row inside a collapsed section is still in the DOM.
+      el.offsetParent !== null,
+  );
+}
 
 export interface AnchoredMenuProps {
   open: boolean;
@@ -173,6 +203,65 @@ export function AnchoredMenu({
   // which corner it grew out of, which `placement.side` has already decided.
   const { present, state } = usePopPresence(open);
 
+  // Roving focus, the half of `role="menu"` that is a keyboard contract rather
+  // than a label. Bound to the PANEL rather than to the document: a menu is not
+  // modal, and a document-level Down-arrow handler would hijack the arrow keys
+  // of whatever else is focused while the menu happens to be open.
+  const typeahead = useRef({ query: '', at: 0 });
+  const onPanelKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    const items = enabledItems(panelRef.current);
+    if (items.length === 0) return;
+    const current = items.indexOf(document.activeElement as HTMLElement);
+
+    const focusAt = (index: number) => {
+      e.preventDefault();
+      // `preventScroll` because the panel is position:fixed — it is in view by
+      // construction, so the browser's focus scroll can only drag the page
+      // underneath it. The row is brought into the panel's own scroll instead.
+      const el = items[(index + items.length) % items.length];
+      el.focus({ preventScroll: true });
+      el.scrollIntoView({ block: 'nearest' });
+    };
+
+    switch (e.key) {
+      case 'ArrowDown':
+        return focusAt(current + 1);
+      case 'ArrowUp':
+        // From nowhere, Up enters at the BOTTOM — the platform behaviour, and
+        // the reason `current === -1` is not just treated as 0 here.
+        return focusAt(current === -1 ? items.length - 1 : current - 1);
+      case 'Home':
+        return focusAt(0);
+      case 'End':
+        return focusAt(items.length - 1);
+      case 'Tab':
+        // Tab is a dismissal, not a way through the rows. Let the browser move
+        // focus onward from the trigger, which the close effect restores it to.
+        onClose();
+        return;
+      default:
+        break;
+    }
+
+    // Typeahead. Single printable characters only — modified keys are shortcuts,
+    // and a space is a row's own activation, not the start of a search.
+    if (e.key.length !== 1 || e.ctrlKey || e.metaKey || e.altKey || e.key === ' ') return;
+    const now = performance.now();
+    const state = typeahead.current;
+    state.query = (now - state.at > TYPEAHEAD_MS ? '' : state.query) + e.key.toLowerCase();
+    state.at = now;
+    // Search from the row AFTER the focused one and wrap, so repeating a letter
+    // cycles through the rows that start with it instead of sticking on the first.
+    const from = current + 1;
+    for (let i = 0; i < items.length; i++) {
+      const item = items[(from + i) % items.length];
+      if ((item.textContent ?? '').trim().toLowerCase().startsWith(state.query)) {
+        focusAt(items.indexOf(item));
+        return;
+      }
+    }
+  }, [onClose]);
+
   // Escape closes and hands focus back; an outside press closes. `pointerdown`
   // (not click) so the panel dismisses before the press lands on what is under
   // it, and capture phase so a panel that stops propagation cannot swallow it.
@@ -212,9 +301,11 @@ export function AnchoredMenu({
       // `preventScroll` because the panel is position:fixed — it is in view by
       // construction, so the browser's focus scroll can only drag the page
       // underneath it.
-      (el.querySelector<HTMLElement>('button:not(:disabled), a[href], input') ?? el).focus({
-        preventScroll: true,
-      });
+      // Rows first, then any other focusable the panel opens with (a filter
+      // field at the top of a picker, which is where the keyboard wants to be).
+      (enabledItems(el)[0] ??
+        el.querySelector<HTMLElement>('input, button:not(:disabled), a[href]') ??
+        el).focus({ preventScroll: true });
     });
     return () => {
       cancelAnimationFrame(raf);
@@ -264,7 +355,12 @@ export function AnchoredMenu({
             data-align={align}
             data-motion="pop"
             data-state={state}
-            className={cn('anchored-menu glass-overlay py-1', className)}
+            onKeyDown={onPanelKeyDown}
+            // `p-1`, not `py-1`: rows are `rounded-site-sm` and inset from the
+            // panel edge (components/ui/menu.tsx), so the highlight is a pill
+            // inside the panel rather than a square band that collides with the
+            // panel's own corner radius on the first and last row.
+            className={cn('anchored-menu glass-overlay p-1', className)}
             style={style}
           >
             {children}

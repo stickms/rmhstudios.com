@@ -2,7 +2,7 @@
 
 import { MessageCircle, Repeat2, Heart, Eye, Repeat, PenSquare } from'lucide-react';
 import { useNavigate } from'@tanstack/react-router';
-import { lazy, Suspense, useState, useRef, useEffect } from'react';
+import { lazy, Suspense, useState, useRef } from'react';
 import { useFeedStore } from'@/stores/feedStore';
 import { useSession } from'@/components/Providers';
 import type { FeedItem } from'@/lib/feed-types';
@@ -16,7 +16,8 @@ import { useTranslation } from'react-i18next';
 import { useOptimisticAction } from'@/hooks/useOptimisticAction';
 import { useSignInPrompt } from'@/hooks/useSignInPrompt';
 import { EngagementCount, engagementPill } from'./EngagementCount';
-import { usePopPresence } from '@/hooks/usePopPresence';
+import { AnchoredMenu } from '@/components/ui/anchored-menu';
+import { MenuItem } from '@/components/ui/menu';
 import { cn } from '@/lib/utils';
 
 interface RMHarkActionsProps {
@@ -45,37 +46,20 @@ export function RMHarkActions({ item, onUpdate, className }: RMHarkActionsProps)
  // Latch so the quote modal stays mounted after first open (close animation).
  const quoteMounted = useRef(false);
  quoteMounted.current ||= quoteOpen;
- const repostRef = useRef<HTMLDivElement>(null);
  const repostBtnRef = useRef<HTMLButtonElement>(null);
  // The button also spans the count slot, so the menu buds off the round icon
  // surface instead — that circle is what reads as the trigger on screen.
  const repostIconRef = useRef<HTMLSpanElement>(null);
- const repostPanelRef = useRef<HTMLDivElement>(null);
- // The shared bloom (globals.css §7.1) — held mounted for its close.
- const { present: repostPresent, state: repostState } = usePopPresence(repostMenu);
  const { run: runLike } = useOptimisticAction();
  const { run: runRepost } = useOptimisticAction();
  const promptSignIn = useSignInPrompt();
 
- useEffect(() => {
- if (!repostMenu) return;
- const onClick = (e: MouseEvent) => {
- if (repostRef.current && !repostRef.current.contains(e.target as Node)) setRepostMenu(false);
- };
- // Escape closes and returns focus to the trigger. Capture phase so the
- // panel's own stopPropagation can't swallow it (see RMHarkOverflowMenu).
- const onKey = (e: KeyboardEvent) => {
- if (e.key !== 'Escape') return;
- setRepostMenu(false);
- repostBtnRef.current?.focus();
- };
- document.addEventListener('mousedown', onClick);
- document.addEventListener('keydown', onKey, true);
- return () => {
- document.removeEventListener('mousedown', onClick);
- document.removeEventListener('keydown', onKey, true);
- };
- }, [repostMenu]);
+ // Outside-press dismissal, Escape, focus return, the roving arrow keys and the
+ // close animation all live in AnchoredMenu now. This file used to carry its own
+ // copy of the first three — and, because the panel was an in-place
+ // `absolute left-0 top-full … z-50`, it was measured inside `.radial-frame`'s
+ // stacking context (pinned at z-index 1), so on a post near the top of the
+ // column it painted UNDER the top bar. AnchoredMenu portals to <body>.
 
  const updateItem = onUpdate ?? storeUpdate;
  const actualId = item.actualId ?? item.id;
@@ -151,7 +135,7 @@ export function RMHarkActions({ item, onUpdate, className }: RMHarkActionsProps)
  </button>
 
  {/* reRMHark */}
- <div className="relative"ref={repostRef}>
+ <div className="relative">
  <button
  ref={repostBtnRef}
  onClick={(e) => {
@@ -180,44 +164,40 @@ export function RMHarkActions({ item, onUpdate, className }: RMHarkActionsProps)
  <EngagementCount value={item.repostCount} />
  </span>
  </button>
- {repostPresent && (
- <div
- ref={repostPanelRef}
- data-motion="pop"
- data-state={repostState}
- role="menu"
- tabIndex={-1}
- className="absolute left-0 top-full mt-1 w-40 origin-top-left glass-overlay py-1 z-50"
- onClick={(e) => e.stopPropagation()}
+ <AnchoredMenu
+ open={repostMenu}
+ onClose={() => setRepostMenu(false)}
+ anchorRef={repostBtnRef}
+ align="start"
+ // Named after its trigger, through the key the first row below already
+ // uses — so the panel's accessible name is not English-only.
+ label={t('rermhark', { defaultValue:'reRMHark'})}
+ // Wider than the old panel on purpose: MenuItem truncates its label, and
+ //"Undo reRMHark"does not survive w-40 once the row is inset by the
+ // panel's own p-1.
+ className="w-48"
  >
- <button
- type="button"
- role="menuitem"
- onClick={() => {
+ <MenuItem
+ icon={Repeat}
+ onSelect={() => {
  setRepostMenu(false);
  toggleRepost();
  }}
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
- <Repeat className="w-4 h-4 text-site-text-dim"/>
  {item.reposted
  ? t('undo-rermhark', { defaultValue:'Undo reRMHark'})
  : t('rermhark', { defaultValue:'reRMHark'})}
- </button>
- <button
- type="button"
- role="menuitem"
- onClick={() => {
+ </MenuItem>
+ <MenuItem
+ icon={PenSquare}
+ onSelect={() => {
  setRepostMenu(false);
  setQuoteOpen(true);
  }}
- className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
- <PenSquare className="w-4 h-4 text-site-text-dim"/>
  {t('quote', { defaultValue:'Quote'})}
- </button>
- </div>
- )}
+ </MenuItem>
+ </AnchoredMenu>
  </div>
 
  {quoteMounted.current && (

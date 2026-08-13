@@ -4,10 +4,9 @@ import { useRef, useState } from 'react';
 import { Crown, Gamepad2, LogOut, UserPlus, Users, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
+import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
-import { usePopPresence } from '@/hooks/usePopPresence';
+import { MenuItem } from '@/components/ui/menu';
 import { useParty } from '@/hooks/useParty';
 import type { PartyMemberView } from '@/lib/party/types';
 
@@ -67,15 +66,16 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
   const { data: session } = useSession();
   const { party, createParty, leave, queue } = useParty();
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
-  // The game list hangs off the trigger's trailing edge with nothing holding it
-  // inside the window — on a phone, or with the bar near an edge, part of it
-  // sat off-screen. Clamp it, and re-clamp whenever the viewport changes.
-  // `present` keeps the menu mounted for its close; the viewport clamp is held
-  // for the same window so the panel cannot jump back mid-exit.
-  const { present, state } = usePopPresence(menuOpen);
-  useMenuViewportFit(present, menuRef);
+  // Placement, the viewport clamp, the close animation, Escape, outside-press
+  // dismissal, focus return and the roving arrow keys all live in AnchoredMenu
+  // now. This file carried its own usePopPresence + useMenuViewportFit and
+  // nothing else — the panel had no Escape and no outside-press, so once open
+  // the only way out was the X in its own header. It also rendered in place, so
+  // it was measured inside `.radial-frame`'s stacking context (pinned at
+  // z-index 1) and painted under the shell's chrome. AnchoredMenu portals to
+  // <body>.
 
   if (!session?.user) return null;
 
@@ -97,63 +97,55 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
 
       <div className="relative">
         <Button
+          ref={triggerRef}
           size="sm"
           variant="outline"
           onClick={() => setMenuOpen((o) => !o)}
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
           className="gap-1.5"
         >
           <Gamepad2 className="h-4 w-4" aria-hidden />
           {t('party-choose-game', { defaultValue: 'Choose game' })}
         </Button>
-        {present && (
-          <div
-            ref={menuRef}
-            className={cn(
-              'absolute right-0 z-10 w-52 glass-overlay p-1',
-              // Inline card opens the menu downward; the docked pill opens it up.
-              // The bloom (globals.css §7.1) unfurls from whichever edge that
-              // put it on, so the same menu grows down out of the card and up
-              // out of the dock.
-              inline ? 'top-full mt-2 origin-top-right' : 'bottom-full mb-2 origin-bottom-right',
-            )}
-            data-slot="party-game-menu"
-            data-motion="pop"
-            data-state={state}
-            role="menu"
-          >
-            <div className="flex items-center justify-between px-2 py-1">
-              <span className="text-xs font-semibold uppercase tracking-wide text-site-text-dim">
-                {t('party-games', { defaultValue: 'Party games' })}
-              </span>
-              <button
-                type="button"
-                onClick={() => setMenuOpen(false)}
-                className="rounded p-0.5 text-site-text-dim hover:text-site-text"
-                aria-label={t('close', { defaultValue: 'Close' })}
-              >
-                <X className="h-3.5 w-3.5" aria-hidden />
-              </button>
-            </div>
-            {PARTY_GAMES.map((g) => (
-              <button
-                key={g.id}
-                type="button"
-                role="menuitem"
-                onClick={() => {
-                  queue(g.id);
-                  setMenuOpen(false);
-                }}
-                className={cn(
-                  'flex w-full items-center gap-2 rounded-site-sm px-2 py-1.5 text-left text-sm text-site-text',
-                  'hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent',
-                )}
-              >
-                <Gamepad2 className="h-4 w-4 text-site-accent" aria-hidden />
-                {g.label}
-              </button>
-            ))}
+        <AnchoredMenu
+          open={menuOpen}
+          onClose={() => setMenuOpen(false)}
+          anchorRef={triggerRef}
+          label={t('party-games', { defaultValue: 'Party games' })}
+          // Inline card opens the menu downward; the docked pill opens it up.
+          // The pop (globals.css §7.1) unfurls from whichever edge that put it
+          // on, so the same menu grows down out of the card and up out of the
+          // dock — and flips on its own when the chosen side has no room.
+          side={inline ? 'bottom' : 'top'}
+          className="w-52"
+        >
+          <div className="flex items-center justify-between px-2 py-1">
+            <span className="text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+              {t('party-games', { defaultValue: 'Party games' })}
+            </span>
+            <button
+              type="button"
+              onClick={() => setMenuOpen(false)}
+              className="rounded p-0.5 text-site-text-dim hover:text-site-text"
+              aria-label={t('close', { defaultValue: 'Close' })}
+            >
+              <X className="h-3.5 w-3.5" aria-hidden />
+            </button>
           </div>
-        )}
+          {PARTY_GAMES.map((g) => (
+            <MenuItem
+              key={g.id}
+              icon={Gamepad2}
+              onSelect={() => {
+                queue(g.id);
+                setMenuOpen(false);
+              }}
+            >
+              {g.label}
+            </MenuItem>
+          ))}
+        </AnchoredMenu>
       </div>
 
       <Button

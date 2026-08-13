@@ -1268,14 +1268,30 @@ html.app-route {
      for `position: fixed` descendants. That is only safe if everything that
      deliberately overflows a card is portalled out of it — which §5.1 asserts,
      since floating UI must be `.glass-overlay` and L4 surfaces are portalled. The
-     assertion does not hold in the code. Portalled: `Dialog`, `Sheet`, `Select`
-     and `ProfileHoverCard` (Radix portals), `Tooltip`, `anchored-menu` and
-     `ReactionMenu` (explicit `createPortal`). NOT portalled — anchored `absolute
-     … top-full` inside their host, `.glass-overlay` or not: `RMHarkOverflowMenu`
-     and `RMHarkActions`' repost menu (both inside the `.glass-fill` feed card),
-     `CommentItem`, `ComposeModal`, `GroupChatView`, `ConversationView`,
-     `MentionTextarea`, `HandleInput`, `BuildFilters`, `PartyBar` and both
-     `LocationSearch`es. Containing the L1 role clips the first two outright.
+     assertion does not hold in the code, though it holds for more of it than it
+     used to. Portalled: `Dialog`, `Sheet`, `Select` and `ProfileHoverCard`
+     (Radix portals), `Tooltip` and `ReactionMenu` (explicit `createPortal`), and
+     everything on `AnchoredMenu` — which is now `RMHarkOverflowMenu`,
+     `RMHarkActions`' repost menu, `CommentItem`, `GroupChatView`,
+     `ConversationView`, `PartyBar`, `BuildFilters`, `MessageActions`,
+     `EventTime` and `ComposeBox`. The first two are the ones that sat inside the
+     `.glass-fill` feed card, so containing the L1 role no longer clips them.
+
+     Also portalled, by their own `createPortal` rather than by AnchoredMenu:
+     `LibraryContextMenu`, `QuickPanel`, `LanguageSwitcher` and
+     `NotificationsPopover`.
+
+     STILL IN PLACE — anchored `absolute … top-full` inside their host,
+     `.glass-overlay` or not: `ComposeModal`'s (+) menu, `MentionTextarea`,
+     `HandleInput`, both `LocationSearch`es, `EmojiPickerButton`, and
+     `AlbumViewer` / `BookReader`.
+
+     `ComposeModal`'s is deliberate and must stay: it opens INSIDE a z-50 dialog,
+     and a panel portalled to `<body>` at `--z-menu` (40) would render
+     UNDERNEATH the dialog that opened it. The rest are autocompletes, pickers
+     and reader chrome whose panel is tied to a field's or a page's own layout —
+     candidates for AnchoredMenu, not oversights. None of them is inside a
+     `.glass-fill` card, which is what this note is actually about.
 
      The role is also not only repeated cards in practice: it is `Card`'s default
      tier, so it is also on `NotFound`, `RouteErrorFallback`, `ProfileEditModal`'s
@@ -2957,13 +2973,41 @@ html.readable-font body {
     );
   }
   /* Back-to-top rides above the cookie bar and the mini-player (the vars add;
-     an absent one is 0). It is NOT lifted by the hub any more: the orb is
-     bottom-CENTRE and this is the right lane, so there was never anything to
-     clear there — and the lift is what pushed the button up into the reading
+     an absent one is 0). It is not lifted by the orb DIRECTLY: the orb is
+     bottom-CENTRE and this is the right lane, so there is nothing to clear
+     there — and that lift is what used to push the button up into the reading
      column. It shares the compose FAB's row instead (`.floating-fab-lane`),
-     stepping sideways rather than upwards. */
-  .vibe-app:has([data-floating='cookie']) [data-floating='backtotop'],
-  .vibe-app:has([data-floating='miniplayer']) [data-floating='backtotop'] {
+     stepping sideways rather than upwards.
+
+     But it must inherit the orb's lift TRANSITIVELY, and that is what the first
+     rule below is for. The two members it stacks on are themselves hub-lifted,
+     and on a phone both span the full width — the cookie bar is
+     `inset-x-3 mx-auto max-w-2xl` and the mini-player is
+     `left-2 right-2 mx-auto max-w-sm` — so both DO occupy the right lane there.
+     Without the hub term the sum is one member short and the button lands
+     inside them: at 390px with the orb up, back-to-top sat at safe+172→safe+216
+     while the cookie card spanned safe+88→safe+244, i.e. directly on top of
+     "Essential only" / "Accept all"; against the mini-player it covered
+     play/close. Above `md` the mini-player moves to the right lane with its own
+     `md:bottom-4` (a utilities-layer class, which outranks this rule) and the
+     centred cookie card no longer reaches the right lane, so the extra term is
+     mobile-shaped in practice even though it is written width-independently —
+     the same reasoning the stack above uses. */
+  .vibe-app:has([data-floating='hub']):is(
+      :has([data-floating='cookie']),
+      :has([data-floating='miniplayer'])
+    )
+    [data-floating='backtotop'] {
+    bottom: calc(
+      var(--safe-bottom) + var(--site-fab-row-bottom) + var(--float-lift-hub) +
+        var(--float-lift-cookie) + var(--float-lift-miniplayer)
+    );
+  }
+  .vibe-app:not(:has([data-floating='hub'])):is(
+      :has([data-floating='cookie']),
+      :has([data-floating='miniplayer'])
+    )
+    [data-floating='backtotop'] {
     bottom: calc(
       var(--safe-bottom) + var(--site-fab-row-bottom) + var(--float-lift-cookie) +
         var(--float-lift-miniplayer)
@@ -4389,70 +4433,76 @@ input[type='number'] {
    sits in `@layer components` precisely so the utility outranks it; the variable
    is the escape hatch for the cases a utility cannot express.
 
-   ── It opens the way the globe does: cage first, then the glass ───────────
-   The liquid globe does not fade a finished sphere in. It blooms a WIREFRAME —
-   meridians and parallels, hairlines and nothing else — and the material reads
-   in around it. A menu opens the same way here, in two acts on one clock:
+   ── It opens the way Apple's menus open: one settle, nothing staged ───────
+   This used to be a two-act "bloom": a wireframe CAGE (`::after`, the globe's
+   6×7 meridian grid) held the first third while the panel's fill was forced
+   transparent and its rows sat at zero opacity, then the cage dissolved and the
+   content read in behind it. On top of that the panel ROCKED — a sampled
+   under-damped spring driving a 0.9deg `rotate()` about the anchor — and the
+   scale was ANISOTROPIC, 0.94 × 0.84.
 
-     act 1 (0 → ~34%)   the cage. `::after` draws the panel's rim and a grid of
-                        6 verticals × 7 horizontals — the globe's own count —
-                        while the panel blooms from its anchor. The panel's fill
-                        is held OFF (a keyframe beats a normal author
-                        declaration, so `.glass-overlay`'s own tint loses to
-                        `background-color: transparent` here) and the content is
-                        still at zero. What you see is the skeleton.
-     act 2 (~34 → 100%) the glass. The cage dissolves, the fill reads in, and
-                        the rows come up behind it. Legible from ~200ms.
+   It was coherent with the navigation globe and it was wrong for a menu, in
+   four ways a user actually perceives:
 
-   Two things deliberately do NOT wait, both for cost. The **blur** lands at
+     1. **A skeleton flash.** No platform menu shows you its own wireframe on
+        the way in. Whatever it evokes, what it reads as is a rendering glitch —
+        a panel that failed to paint for 100ms and then recovered.
+     2. **Rotation.** Nothing in AppKit, UIKit or SwiftUI rotates a menu. A
+        rotated panel puts every horizontal rule and every row of text off-axis
+        for the length of the open, which is the single loudest "this is a web
+        page" tell in the vocabulary — and it forces antialiasing on every glyph
+        edge in the panel while it runs.
+     3. **Anisotropic scale.** 0.94 × 0.84 is a squash. Apple scales uniformly,
+        so the panel reads as the same object arriving from further away rather
+        than as a shape being stretched into existence.
+     4. **Staged content.** Holding the rows at zero until 34% means the menu is
+        VISIBLE but UNREADABLE for its first 100ms. The one number that decides
+        whether an open feels fast is when the content is legible, and staging
+        is the only thing here that was making it slow.
+
+   So the bloom is retired and this is now the platform shape: an **anchored,
+   uniform scale-and-fade on one spring**, content arriving WITH the panel.
+
+     · scale 0.92 → 1, uniform, from the trigger's own corner (§ the anchor,
+       below), sampled from `spring(0.26, 0.08)` in `lib/fluid.ts` — the same
+       function `SPRINGS`/`APPLE_SPRING` are built from, so this is not an
+       imitation of a spring's look with a bezier, it IS the site's spring.
+       Bounce 0.08 puts the peak 0.06% past the target: a real spring's
+       deceleration profile with an overshoot far below a pixel, so it never
+       inflates past its own box (an X overshoot can push a horizontal scrollbar
+       onto the document for two frames) and never fights the settle.
+     · opacity 0 → 1 over the first 24% (≈62ms), so the panel is legible almost
+       immediately and the scale is what finishes the arrival.
+
+   Legible from ~60ms rather than ~200ms, settled at 260ms rather than 300ms.
+
+   Stops are sampled, and the timing function is `linear`, because these ARE the
+   curve — an ease between sampled points would re-shape a spring that was
+   already exact. `lib/__tests__/motion-pop-spring.test.ts` re-samples
+   `spring(0.26, 0.08)` and asserts these exact stops, so the CSS and the physics
+   cannot drift apart.
+
+   Two things deliberately do NOT animate, both for cost. The **blur** lands at
    once, because it is the one property here that cannot be animated cheaply
-   (`.glass-overlay` re-samples its whole backdrop per frame) — so act 1 reads as
-   a frosted pane with a wireframe on it, which is what a glass globe with a cage
-   in it looks like anyway. And the **shadow** is never animated: a blurred
-   box-shadow is a full repaint of the panel and its penumbra on every frame, and
-   it buys a detail nobody looks at during a 300ms open. Everything that IS
-   animated is either compositor-only (transform, the cage's opacity, the rows'
-   opacity) or one flat rect fill (`background-color`).
-
-   ── The wobble is the globe's, not a bounce ───────────────────────────────
-   The panel does not overshoot its size. It ROCKS: `lib/fluid`'s under-damped
-   spring at the globe's own `WOBBLE_SPRING` bounce of 0.62, released from rest
-   with the same ωd kick `LiquidGlobe` uses (which is what makes the first swing
-   peak at exactly the amplitude, whatever the bounce is retuned to), retimed
-   from the globe's 0.78s to 0.20s because this is a menu and not a ball on a
-   tether. Sampled at 0.2ms and read off at the stops below, normalised so the
-   peak is 1:
-
-     +1.000 @41ms   −0.275 @149ms   +0.076 @257ms   → 0.032 at the end
-
-   — the globe's "rocks away from your finger and settles back, a couple of
-   times, quickly", to the number, and the whole rock is over inside the 300ms
-   window. Because the origin is the anchor, it is a pendulum swing about the
-   trigger: the corner welded to the control never moves and the far end settles,
-   which is the tether the globe's comment is describing. The residual 0.03° at
-   100% is a tenth of a pixel at the far corner of a typical menu, so landing on
-   the element's own transform is invisible.
-
-   Amplitude is `--motion-wobble`, default 0.9deg. It is a ROTATION, so the
-   swing it produces scales with the panel's diagonal — 3px on a 200px menu,
-   10px on the top bar's quick panels. Big panels dial it down rather than the
-   default being tuned for the biggest one and reading as dead on the rest.
-
-   The SCALE half is now strictly monotonic: 0.94×0.84 → 1, no overshoot in
-   either axis. The liveliness is the rock; a menu that also inflated past its
-   own box read as two springs fighting, and an X overshoot could push a
-   horizontal scrollbar onto the document for two frames besides.
-
-   Stops are dense (nine of them) and the timing function is `linear`, because
-   these ARE the sampled curve — an ease between sampled points would re-shape a
-   spring that was already exact. Stop count costs nothing at runtime: the
-   engine only ever interpolates between the two that bracket the current time.
+   (`.glass-overlay` re-samples its whole backdrop per frame). And the **shadow**
+   is never animated: a blurred box-shadow is a full repaint of the panel and its
+   penumbra on every frame, and it buys a detail nobody looks at during a 260ms
+   open. What is left is compositor-only — transform and opacity, nothing else.
+   That is also why retiring the cage is a performance change and not only a
+   visual one: it was an extra full-size painted layer carrying two repeating
+   gradients, composited over a backdrop-filtered panel, on every menu, select,
+   dialog and sheet the site opens.
 
    ── The close ─────────────────────────────────────────────────────────────
-   A dismissal is not a performance: no cage, no rock, just a quick reabsorb
-   toward the anchor over `--motion-collapse`, with `forwards` so the panel
-   stays gone while whatever owns it unmounts. `pointer-events: none` for the
-   same window — the panel is visibly leaving and must not still be clickable.
+   A dismissal is not a performance: a quick uniform reabsorb toward the anchor
+   over `--motion-collapse`, with `forwards` so the panel stays gone while
+   whatever owns it unmounts. `pointer-events: none` for the same window — the
+   panel is visibly leaving and must not still be clickable. It is deliberately
+   less than half the open: Apple's asymmetry is that arriving is a movement and
+   leaving is an erasure, and a dismissal that takes as long as the open is the
+   thing that makes a UI feel like it is arguing with you. The exit scale is
+   UNIFORM (0.96) for the same reason the open is — the old `scale(0.97, 0.9)`
+   collapsed the panel vertically into a letterbox on the way out.
 
    Radix schedules its own unmount and needs nothing. A hand-rolled menu is
    removed by React the instant its state flips, which is why NOTHING it did
@@ -4463,33 +4513,26 @@ input[type='number'] {
    Mirrors of `lib/motion.ts`: `--motion-in` = DURATION.slow (0.22s),
    `--motion-out` = DURATION.fast (0.1s), the enter curve = EASE.emphasized,
    the exit = a plain ease-in so dismissals feel immediate. `--motion-bloom` is
-   the pop's own window: 0.3s, which is `DURATION.slow` plus the little the two
-   acts and the rock actually need, and the ceiling this site's own motion note
-   sets for a tween. The number that matters more than the total is when the
-   CONTENT is readable — ~200ms — because that, not the last frame of a settling
-   spring, is what "it opened" means to whoever is reading it.
-   `--motion-collapse` mirrors `POP_COLLAPSE_MS` in `lib/motion.ts`, which is
-   what the presence hook counts. Keep them in step — if one moves, move the
-   other.
+   the pop's own window: 0.26s, the perceptual duration of the spring it samples
+   and inside the 0.3s ceiling this site's own motion note sets for a tween. The
+   number that matters more than the total is when the CONTENT is readable —
+   ~60ms — because that, not the last frame of a settling spring, is what "it
+   opened" means to whoever is reading it. `--motion-collapse` mirrors
+   `POP_COLLAPSE_MS` in `lib/motion.ts`, which is what the presence hook counts.
+   Keep them in step — if one moves, move the other;
+   `lib/__tests__/motion-pop-spring.test.ts` fails if they drift.
 
-   `perf-lite` drops both the cage and the settle for a plain anchored
-   scale-fade. Everything here
-   is gated on no-preference, and the global reduce rule in §REDUCED MOTION
-   collapses it anyway. */
+   `perf-lite` keeps the anchored scale-fade but drops the sampled settle for a
+   single eased tween — 2 stops instead of 10, on a device already struggling.
+   Everything here is gated on no-preference, and the global reduce rule in
+   §REDUCED MOTION collapses it anyway. */
 :root {
   --motion-in: 0.22s;
   --motion-out: 0.1s;
-  --motion-bloom: 0.3s;
-  --motion-collapse: 0.13s;
-  --motion-wobble: 0.9deg;
+  --motion-bloom: 0.26s;
+  --motion-collapse: 0.11s;
   --motion-ease-in: cubic-bezier(0.16, 1, 0.3, 1);
   --motion-ease-out: ease-in;
-  /* Cage ink. Off `currentColor`, so it is the panel's own text colour at the
-     globe's own weights — `--cage-major` 34% for the rim, `--cage-minor` 20%
-     for the interior lines (radial.css) — and every theme and the `--app-*`
-     tier get a legible wireframe without naming a palette. */
-  --motion-cage-rim: color-mix(in srgb, currentColor 30%, transparent);
-  --motion-cage-line: color-mix(in srgb, currentColor 17%, transparent);
 }
 
 /* Outside the motion query on purpose: the anchor is not an animation, and a
@@ -4503,24 +4546,12 @@ input[type='number'] {
     transform-origin: var(--motion-origin, var(--radix-popper-transform-origin, center));
   }
 
-  /* How long the two acts run on each surface. The cage and the reveal are
-     PERCENTAGE keyframes, so they only line up with a surface's own travel if
-     they share its duration — a cage still dissolving after the panel had
-     finished arriving would read as a second, slower animation. The modal
-     surfaces run on `--motion-in`, the window their own keyframes already use;
-     only `pop` has the longer bloom to fill.
-
-     `.motion-cage` is the bare opt-in: the wireframe act WITHOUT a panel
-     animation, for a surface whose travel is somebody else's — a framer
-     `modalContent` variant, a hand-rolled crop dialog. The cage lives on
-     `::after` and the reveal on `> *`, neither of which is the panel, so the
-     two never contend for the same `animation` property. */
-  :is(
-    .motion-cage,
-    [data-motion='rise'],
-    [data-slot='dialog-content'],
-    [data-slot='sheet-content']
-  ) {
+  /* How long a surface's own open runs. The modal surfaces keep `--motion-in`,
+     the window their own keyframes already use; `pop` runs the spring's
+     perceptual duration. Nothing else reads this any more — it used to time the
+     cage and the staged row reveal against whatever travel the host had, and
+     both of those are gone. */
+  :is([data-motion='rise'], [data-slot='dialog-content'], [data-slot='sheet-content']) {
     --motion-open: var(--motion-in);
   }
   [data-motion='pop'] {
@@ -4543,49 +4574,6 @@ input[type='number'] {
     pointer-events: none;
   }
 
-  /* Act 1's wireframe. Declared only under the enter selector so a menu that is
-     not opening carries no extra box at all, and excluded from `.glass-liquid`,
-     the one glass class that already owns `::after` (§4.35 — `::before` is
-     refraction-only, `::after` was left free for exactly this kind of use).
-
-     The grid is the globe's cage flattened: 6 meridians and 7 parallels, as
-     percentages of the panel rather than degrees of a sphere, so it reads the
-     same on a 40px-tall speed menu and a 32rem quick panel. `border-radius:
-     inherit` keeps the rim on the panel's own curve in every theme. */
-  :is(
-      .motion-cage,
-      [data-motion='pop'],
-      [data-motion='rise'],
-      [data-slot='dialog-content'],
-      [data-slot='sheet-content']
-    ):not([data-state='closed'], .glass-liquid)::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    pointer-events: none;
-    border: 1px solid var(--motion-cage-rim);
-    border-radius: inherit;
-    background-image:
-      repeating-linear-gradient(90deg, var(--motion-cage-line) 0 1px, transparent 1px 16.6667%),
-      repeating-linear-gradient(180deg, var(--motion-cage-line) 0 1px, transparent 1px 14.2857%);
-    opacity: 0;
-    animation: motion-pop-cage var(--motion-open, var(--motion-bloom)) linear;
-  }
-
-  /* Act 2's reveal. Direct children only — the rows, the header, the footer —
-     so the panel's own material can resolve on its own schedule underneath. */
-  :is(
-      .motion-cage,
-      [data-motion='pop'],
-      [data-motion='rise'],
-      [data-slot='dialog-content'],
-      [data-slot='sheet-content']
-    ):not([data-state='closed'])
-    > * {
-    animation: motion-pop-reveal var(--motion-open, var(--motion-bloom)) linear;
-  }
-
   [data-motion='rise']:not([data-state='closed']) {
     animation: motion-rise-in var(--motion-in) var(--motion-ease-in);
   }
@@ -4593,33 +4581,12 @@ input[type='number'] {
     animation: motion-rise-out var(--motion-out) var(--motion-ease-out) forwards;
   }
 
-  /* perf-lite: the cage is an extra painted layer with two repeating gradients
-     over a backdrop-filtered panel, and the settle is 13 stops of transform on
-     the same. Neither is being enjoyed on a device that is already struggling.
-     Keep the anchored scale, drop both acts. */
+  /* perf-lite: the sampled settle is ten stops of transform on a
+     backdrop-filtered panel, and its last third is sub-pixel — nothing there is
+     being enjoyed on a device already struggling. Keep the anchored scale-fade,
+     drop the sampling for one eased tween. */
   html.perf-lite [data-motion='pop']:not([data-state='closed']) {
     animation: motion-pop-lite var(--motion-in) var(--motion-ease-in);
-  }
-  html.perf-lite
-    :is(
-      .motion-cage,
-      [data-motion='pop'],
-      [data-motion='rise'],
-      [data-slot='dialog-content'],
-      [data-slot='sheet-content']
-    ):not([data-state='closed'], .glass-liquid)::after {
-    content: none;
-  }
-  html.perf-lite
-    :is(
-      .motion-cage,
-      [data-motion='pop'],
-      [data-motion='rise'],
-      [data-slot='dialog-content'],
-      [data-slot='sheet-content']
-    ):not([data-state='closed'])
-    > * {
-    animation: none;
   }
 }
 
@@ -4639,97 +4606,70 @@ input[type='number'] {
     opacity: 0;
   }
 }
-/* The bloom, act by act.
-   `transform` is the monotonic unfurl times the globe's rock (see the wobble
-   note above — the rotate multipliers ARE the sampled spring). `background-color`
-   and `box-shadow` are held off through act 1 and then resolve to the panel's
-   own values via the implicit 100%, which is how the fill "reads in" around the
-   wireframe without this keyframe having to know what any given panel's fill is.
-   The opacity ramp is short and only softens the arrival of the blur. */
+/* The open: one uniform anchored scale on the site's own spring, plus a short
+   opacity ramp.
+ *
+ * The scale stops are `spring(0.26, 0.08)` from `lib/fluid.ts` sampled at
+ * 0/8/16/24/32/42/54/68/84% of its duration and mapped onto 0.92 → 1 — the same
+ * function `SPRINGS` and `APPLE_SPRING` are built from, so a surface animated
+ * here and one animated in framer are the same motion rather than two
+ * impressions of it. `lib/__tests__/motion-pop-spring.test.ts` re-derives them.
+ *
+ * The 100% stop is deliberately ABSENT, as it is in every keyframe here: an
+ * omitted final frame resolves to the element's own computed value, so this
+ * composes with whatever centring `translate` the element already carries
+ * (Tailwind v4 centres with the `translate` longhand, which `transform` does not
+ * overwrite) and lands the spring exactly on the panel's own transform rather
+ * than on this file's idea of it. Sampling stops at 84% for the same reason —
+ * the remaining 0.1% is below a pixel on any real panel.
+ *
+ * Nothing here touches `background-color` or `box-shadow`. The old version held
+ * the fill off through act 1 to let the wireframe read; with no wireframe, a
+ * panel whose material fades in is just a panel that arrives twice. */
 @keyframes motion-pop-in {
   0% {
     opacity: 0;
-    transform: scale(0.94, 0.84) rotate(0deg);
-    background-color: transparent;
+    transform: scale(0.92);
   }
   8% {
+    opacity: 0.34;
+    transform: scale(0.9274);
+  }
+  16% {
+    opacity: 0.68;
+    transform: scale(0.9421);
+  }
+  24% {
     opacity: 1;
-    transform: scale(0.968, 0.912) rotate(calc(var(--motion-wobble) * 0.847));
-    background-color: transparent;
+    transform: scale(0.9573);
   }
-  14% {
-    opacity: 1;
-    transform: scale(0.98, 0.945) rotate(var(--motion-wobble));
-    background-color: transparent;
+  32% {
+    transform: scale(0.9702);
   }
-  20% {
-    opacity: 1;
-    transform: scale(0.988, 0.966) rotate(calc(var(--motion-wobble) * 0.845));
-    background-color: transparent;
+  42% {
+    transform: scale(0.9822);
   }
-  28% {
-    opacity: 1;
-    transform: scale(0.994, 0.984) rotate(calc(var(--motion-wobble) * 0.415));
-    background-color: transparent;
-  }
-  /* Act 2 begins: the last frame the fill is still held off. */
-  34% {
-    opacity: 1;
-    transform: scale(0.997, 0.991) rotate(calc(var(--motion-wobble) * 0.15));
-    background-color: transparent;
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1, 0.999) rotate(calc(var(--motion-wobble) * -0.275));
-  }
-  64% {
-    opacity: 1;
-    transform: scale(1, 1) rotate(calc(var(--motion-wobble) * -0.115));
-  }
-  80% {
-    opacity: 1;
-    transform: scale(1, 1) rotate(calc(var(--motion-wobble) * 0.064));
-  }
-}
-/* The wireframe: up almost at once, held through act 1, gone by the time the
-   glass has finished reading in. Opacity only, so it never repaints — the two
-   gradients are rasterised once and the rest is the compositor. */
-@keyframes motion-pop-cage {
-  0% {
-    opacity: 0;
-  }
-  12% {
-    opacity: 1;
-  }
-  34% {
-    opacity: 1;
-  }
-  62% {
-    opacity: 0;
-  }
-}
-/* The content, riding in behind the dissolving cage. */
-@keyframes motion-pop-reveal {
-  0% {
-    opacity: 0;
-  }
-  34% {
-    opacity: 0;
+  54% {
+    transform: scale(0.9911);
   }
   68% {
-    opacity: 1;
+    transform: scale(0.9965);
+  }
+  84% {
+    transform: scale(0.999);
   }
 }
 @keyframes motion-pop-out {
   to {
     opacity: 0;
-    transform: scale(0.97, 0.9);
+    transform: scale(0.96);
   }
 }
+/* Same shape, same start, one eased tween instead of the sampled spring. */
 @keyframes motion-pop-lite {
   from {
     opacity: 0;
-    transform: scale(0.96);
+    transform: scale(0.92);
   }
 }
 @keyframes motion-rise-in {

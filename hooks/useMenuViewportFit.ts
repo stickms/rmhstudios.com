@@ -127,10 +127,10 @@ export function useMenuViewportFit<T extends HTMLElement>(
     };
 
     fit();
-    // The bloom settles at `--motion-bloom` (300ms). Re-measure once afterward,
-    // because getBoundingClientRect includes its temporary scale and rotation —
-    // a menu measured mid-open is measured 6% short and gets no clamp it needed.
-    const settleTimer = window.setTimeout(fit, 360);
+    // The open settles at `--motion-bloom` (260ms). Re-measure once afterward,
+    // because getBoundingClientRect includes its temporary scale — a menu
+    // measured mid-open is measured up to 8% short and gets no clamp it needed.
+    const settleTimer = window.setTimeout(fit, 320);
 
     // Re-fit if the viewport changes while the menu is open (rotation, the
     // mobile URL bar collapsing, a pinch-zoom, desktop resize). Keyboard-driven

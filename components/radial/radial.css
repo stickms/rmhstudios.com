@@ -2565,13 +2565,12 @@ html.ios-webkit .radial-hub__veil {
    globals.css for exactly this reason; the spacing was missed.) Keep this block
    on the three variables below and on `--site-*`, which are global. */
 .rad-panel {
-  /* The bloom's rock is a ROTATION about the anchor (globals.css §7.1), so the
-     swing it produces at the far corner scales with the panel's diagonal. These
-     are the largest floating surfaces on the site — 23rem × 32rem — where the
-     0.9deg default throws the bottom-left corner about 10px and reads as the
-     panel being flung rather than settling. Halved, it is the same rock at the
-     same speed, at the ~4px this box wants. */
-  --motion-wobble: 0.42deg;
+  /* No per-panel motion override any more. This block used to halve
+     `--motion-wobble`, because the open's rotational rock threw these panels'
+     far corner about 10px — they are the largest floating surfaces on the site
+     (23rem × 32rem) and a rotation's travel scales with the diagonal. The rock
+     is retired (globals.css §7.1); a uniform scale needs no per-size tuning,
+     which is most of why it is the right shape. */
   /* Container inset from the rounded edge. Larger than the row inset because it
      has a 22px corner curve to clear. */
   --panel-pad: 0.625rem;
