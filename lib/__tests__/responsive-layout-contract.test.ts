@@ -184,14 +184,6 @@ describe('spatial redesign — responsive layout contract', () => {
         file: 'app/routes/_site/roadmap.tsx',
         reason: 'Full-bleed timeline that paints its own isolated backdrop across the viewport.',
       },
-      {
-        file: 'app/routes/_site/user-builds/submit.tsx',
-        reason: 'Skips PageLayout entirely and paints its own slab; queued to be wrapped in PageLayout (plan 5.2).',
-      },
-      {
-        file: 'app/routes/_site/user-builds/manage.tsx',
-        reason: 'Same as user-builds/submit.tsx.',
-      },
     ];
     const allowed = new Set(ALLOWED.map((e) => e.file));
 
