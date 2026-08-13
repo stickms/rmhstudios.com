@@ -17,9 +17,20 @@ import { join } from 'node:path';
  *     file that spins a rAF loop forever while the page is at rest.
  *   - a listed file no longer uses rAF → remove it from the list (keep it honest).
  *
- * The shared MOTION-TIER files below are the freeze-relevant ones (they mount on
- * every page); each is verified idle-at-rest / one-shot:
+ * The shared MOTION-TIER files below are the freeze-relevant ones; each is
+ * verified idle-at-rest / one-shot:
  *   - components/ui/liquid-morph.tsx  — idle sampler, stops after SETTLE_FRAMES.
+ *                                       NOT a shared motion-tier file, despite
+ *                                       having been listed as one that "mounts on
+ *                                       every page": its only consumer is the
+ *                                       internal /liquid-glass demo route. The
+ *                                       entry stays because the rAF is real and
+ *                                       still needs sanctioning; the CLAIM is
+ *                                       corrected, because an allowlist whose
+ *                                       reasons are wrong is one nobody can audit.
+ *                                       `liquid-tabs.tsx:243` — the component its
+ *                                       docblock names first — uses a plain
+ *                                       `layoutId` spring and no morph at all.
  *   - components/ui/liquid-tabs.tsx   — one-shot rAF to move focus after a tab key.
  *   - hooks/useLiquidBackground.ts    — rAF used as a per-event THROTTLE
  *                                       (one-shot). `useGlassLight.ts`,
