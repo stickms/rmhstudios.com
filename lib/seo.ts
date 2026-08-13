@@ -24,7 +24,7 @@ export const OG_IMAGE_HEIGHT = 630;
  * exists — and makes the set of things that HAVE a real card greppable.
  */
 export function ogCardPath(
-  kind: 'post' | 'profile' | 'replay' | 'moment' | 'game' | 'blog' | 'job',
+  kind: 'post' | 'profile' | 'replay' | 'moment' | 'game' | 'app' | 'blog' | 'job',
   id: string,
 ): string {
   return `/api/og/${kind}/${encodeURIComponent(id)}`;

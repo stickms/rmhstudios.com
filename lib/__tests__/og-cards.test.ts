@@ -4,6 +4,8 @@ import { resolve } from 'node:path';
 import { buildMeta, ogCardPath, absoluteUrl, SITE_URL, DEFAULT_OG_IMAGE } from '@/lib/seo';
 import { STATIC_CARDS, staticCardFor, staticCardImage } from '@/lib/og/static-cards';
 import { fitText } from '@/lib/og/chrome.server';
+import { MAX_COLLAGE_TILES, collageTiles } from '@/lib/og/collage';
+import { postCardShowsContent } from '@/lib/og/post-visibility';
 
 /**
  * The Open Graph card system, as a gate.
@@ -111,10 +113,88 @@ describe('buildMeta', () => {
 describe('ogCardPath', () => {
   it('points at the card route for a kind', () => {
     expect(ogCardPath('game', 'isleworks')).toBe('/api/og/game/isleworks');
+    expect(ogCardPath('app', 'rmhtube')).toBe('/api/og/app/rmhtube');
   });
 
   it('encodes ids so a handle with a slash cannot escape the route', () => {
     expect(ogCardPath('profile', 'a/b')).toBe('/api/og/profile/a%2Fb');
+  });
+});
+
+describe('postCardShowsContent', () => {
+  const open = { deletedAt: null, audience: 'PUBLIC', unlockPrice: 0, isSensitive: false };
+
+  it('shows a public, free, live, unflagged post', () => {
+    expect(postCardShowsContent(open)).toBe(true);
+    // A null price is the same as a free one — most rows have never been priced.
+    expect(postCardShowsContent({ ...open, unlockPrice: null })).toBe(true);
+  });
+
+  it('hides everything the card route must not leak', () => {
+    // Each of these renders the author and the counts and nothing else. They
+    // are asserted one by one because the card is a public, uncredentialed
+    // surface: a condition dropped from this list is content published to
+    // anyone holding the post's id, and nothing else in the system would fail.
+    expect(postCardShowsContent({ ...open, deletedAt: new Date() })).toBe(false);
+    expect(postCardShowsContent({ ...open, audience: 'FOLLOWERS' })).toBe(false);
+    expect(postCardShowsContent({ ...open, audience: 'PRIVATE' })).toBe(false);
+    expect(postCardShowsContent({ ...open, unlockPrice: 25 })).toBe(false);
+    expect(postCardShowsContent({ ...open, isSensitive: true })).toBe(false);
+  });
+
+  it('hides a post that does not exist', () => {
+    // The route renders a generic card for an unresolvable id, so "no post"
+    // must not be the one input that opens the gate.
+    expect(postCardShowsContent(null)).toBe(false);
+    expect(postCardShowsContent(undefined)).toBe(false);
+    // An empty select is not a public post either.
+    expect(postCardShowsContent({})).toBe(false);
+  });
+});
+
+describe('collageTiles', () => {
+  const box = { width: 406, height: 290 };
+  const gap = 8;
+
+  it('lays out nothing for nothing', () => {
+    expect(collageTiles(0, box, gap)).toEqual([]);
+  });
+
+  it('gives a single picture the whole box', () => {
+    expect(collageTiles(1, box, gap)).toEqual([{ left: 0, top: 0, ...box }]);
+  });
+
+  it('keeps every tile inside the box', () => {
+    // The property that matters: satori does not clip, so a tile that overhangs
+    // paints over the pane's rim and the text column beside it.
+    for (let count = 1; count <= MAX_COLLAGE_TILES; count++) {
+      for (const tile of collageTiles(count, box, gap)) {
+        expect(tile.left).toBeGreaterThanOrEqual(0);
+        expect(tile.top).toBeGreaterThanOrEqual(0);
+        expect(tile.left + tile.width).toBeLessThanOrEqual(box.width);
+        expect(tile.top + tile.height).toBeLessThanOrEqual(box.height);
+      }
+    }
+  });
+
+  it('reaches both edges, so the grid is not lopsided', () => {
+    for (let count = 2; count <= MAX_COLLAGE_TILES; count++) {
+      const tiles = collageTiles(count, box, gap);
+      expect(Math.max(...tiles.map((t) => t.left + t.width))).toBe(box.width);
+      expect(Math.max(...tiles.map((t) => t.top + t.height))).toBe(box.height);
+    }
+  });
+
+  it('leaves at least the gap between neighbours', () => {
+    // An odd box width rounds the half down; the gutter absorbs the remainder
+    // rather than the tiles overlapping by a pixel.
+    const odd = { width: 405, height: 291 };
+    const [a, b] = collageTiles(2, odd, gap);
+    expect(b.left - (a.left + a.width)).toBeGreaterThanOrEqual(gap);
+  });
+
+  it('draws at most four, whatever it is handed', () => {
+    expect(collageTiles(9, box, gap)).toHaveLength(MAX_COLLAGE_TILES);
   });
 });
 

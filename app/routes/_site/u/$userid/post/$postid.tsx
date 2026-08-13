@@ -11,6 +11,7 @@ import { getSidebarData } from '@/lib/sidebar-data';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, ogCardPath, SITE_URL } from '@/lib/seo';
+import { postCardShowsContent } from '@/lib/og/post-visibility';
 
 const fetchPostMeta = createServerFn({ method: 'GET' })
   .validator((postid: string) => postid)
@@ -20,8 +21,12 @@ const fetchPostMeta = createServerFn({ method: 'GET' })
       select: {
         content: true,
         gifUrl: true,
+        imageUrls: true,
         audience: true,
         unlockPrice: true,
+        isSensitive: true,
+        deletedAt: true,
+        createdAt: true,
         user: { select: userDisplaySelect },
         poll: { select: { question: true } },
       },
@@ -37,11 +42,16 @@ const fetchPostMeta = createServerFn({ method: 'GET' })
     // used to cover the card image alone, so a followers-only or paid post
     // still emitted its body as `description` and `og:description` — readable
     // by any crawler, and by anyone who viewed source, without ever meeting the
-    // audience rule or paying the unlock. The gate now covers the text too.
+    // audience rule or paying the unlock. It is now the SAME gate the card
+    // itself applies (`postCardShowsContent`), which also closes the half it
+    // still had open: a post marked sensitive was hidden in the card image and
+    // quoted verbatim in `og:description` two tags further down.
+    const showContent = postCardShowsContent(rmhark);
     const isPublicFree = rmhark.audience === 'PUBLIC' && (rmhark.unlockPrice ?? 0) === 0;
+    const imageCount = rmhark.imageUrls?.length ?? 0;
 
     let description: string;
-    if (!isPublicFree) {
+    if (!showContent) {
       description = `A post by ${userName} on RMH.`;
     } else if (rmhark.content) {
       description = rmhark.content;
@@ -54,19 +64,29 @@ const fetchPostMeta = createServerFn({ method: 'GET' })
     }
 
     const title =
-      isPublicFree && rmhark.content
+      showContent && rmhark.content
         ? `${userName} on RMH: "${rmhark.content.length > 80 ? rmhark.content.slice(0, 80) + '...' : rmhark.content}"`
         : `${userName} on RMH`;
 
-    const ogImage = isPublicFree ? ogCardPath('post', postid) : user.image;
+    // What the card will actually show, so the image has a text alternative
+    // that describes the picture rather than repeating the title.
+    const imageAlt = showContent
+      ? imageCount
+        ? `Post by ${userName} on RMH, with ${imageCount} attached ${imageCount === 1 ? 'image' : 'images'}.`
+        : `Post by ${userName} on RMH.`
+      : `A post by ${userName} on RMH.`;
 
     return {
       title,
       description,
-      userImage: user.image,
-      ogImage,
+      imageAlt,
+      publishedTime: rmhark.createdAt?.toISOString() ?? null,
       postId: postid,
       handle,
+      // What `/api/embed/oembed` will actually answer for — the oEmbed
+      // `alternate` is a promise that the endpoint resolves, so it tracks the
+      // endpoint's own rule (public + free) rather than the card's.
+      embeddable: isPublicFree,
       // Restricted posts are excluded from the sitemap, but a link shared into a
       // public channel is enough for a crawler to find one — so say it on the
       // page as well.
@@ -89,13 +109,13 @@ export const Route = createFileRoute('/_site/u/$userid/post/$postid')({
   head: ({ loaderData, params }) => {
     const meta = loaderData?.meta;
     if (!meta) return { meta: [{ title: 'Post Not Found | RMH' }] };
-    const rawImage = meta.ogImage ?? meta.userImage;
-    const ogImage = rawImage
-      ? rawImage.startsWith('http')
-        ? rawImage
-        : `${SITE_URL}${rawImage}`
-      : undefined;
-    const isCard = !!meta.ogImage && meta.ogImage.startsWith('/api/og/');
+    // Every post points at its rendered card, including the restricted ones.
+    // The card route applies the visibility rule itself and draws the author
+    // and the counts with no content when it fails, so there is nothing left
+    // for this route to withhold by falling back — and what it used to fall
+    // back to was the author's avatar, an image of unknown shape that forced
+    // `summary` and unfurled a followers-only post as a blurry square crop.
+    const ogImage = `${SITE_URL}${ogCardPath('post', meta.postId)}`;
     // Only free, public posts are embeddable — advertise oEmbed for those so
     // Discord/Slack/WordPress unfurl them richly via /api/embed/oembed.
     //
@@ -118,24 +138,25 @@ export const Route = createFileRoute('/_site/u/$userid/post/$postid')({
         { property: 'og:description', content: meta.description },
         { property: 'og:site_name', content: 'RMH' },
         { property: 'og:url', content: postUrl },
-        ...(ogImage ? [{ property: 'og:image', content: ogImage }] : []),
-        // Only the rendered card has known dimensions — the fallback is the
-        // author's avatar, whatever size they uploaded it at.
-        ...(isCard
-          ? [
-              { property: 'og:image:width', content: String(OG_IMAGE_WIDTH) },
-              { property: 'og:image:height', content: String(OG_IMAGE_HEIGHT) },
-            ]
+        { property: 'og:image', content: ogImage },
+        // The card is always the 1200×630 render now, so the dimensions are
+        // always declarable — which is what makes a consumer pick the large
+        // layout up front instead of reflowing when the image lands.
+        { property: 'og:image:width', content: String(OG_IMAGE_WIDTH) },
+        { property: 'og:image:height', content: String(OG_IMAGE_HEIGHT) },
+        { property: 'og:image:alt', content: meta.imageAlt },
+        ...(meta.publishedTime
+          ? [{ property: 'article:published_time', content: meta.publishedTime }]
           : []),
-        ...(ogImage ? [{ property: 'og:image:alt', content: meta.title }] : []),
-        { name: 'twitter:card', content: isCard ? 'summary_large_image' : 'summary' },
+        { name: 'twitter:card', content: 'summary_large_image' },
         { name: 'twitter:title', content: meta.title },
         { name: 'twitter:description', content: meta.description },
-        ...(ogImage ? [{ name: 'twitter:image', content: ogImage }] : []),
+        { name: 'twitter:image', content: ogImage },
+        { name: 'twitter:image:alt', content: meta.imageAlt },
       ],
       links: [
         ...(canonicalUrl ? [{ rel: 'canonical', href: canonicalUrl }] : []),
-        ...(isCard
+        ...(meta.embeddable
           ? [
               {
                 rel: 'alternate',
