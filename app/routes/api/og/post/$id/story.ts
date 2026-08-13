@@ -2,6 +2,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { renderPostStoryImage } from '@/lib/og/post-story.server';
+import { postCardShowsContent } from '@/lib/og/post-visibility';
+import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 
 /**
  * GET /api/og/post/$id/story — vertical 1080×1920 "share to Stories" image (PNG)
@@ -20,23 +22,21 @@ export const Route = createFileRoute('/api/og/post/$id/story')({
             audience: true,
             unlockPrice: true,
             isSensitive: true,
-            user: { select: { name: true, handle: true, image: true } },
+            // The display shape, so the story card names the author the same
+            // way every other surface does (see @/lib/user-display).
+            user: { select: userDisplaySelect },
           },
         });
 
-        const hideContent =
-          !post ||
-          post.deletedAt ||
-          post.audience !== 'PUBLIC' ||
-          (post.unlockPrice ?? 0) > 0 ||
-          post.isSensitive;
+        const showContent = postCardShowsContent(post);
+        const author = post?.user ? resolveUser(post.user) : null;
 
         const png = await renderPostStoryImage({
           id: params.id,
-          content: hideContent ? '' : (post?.content ?? ''),
-          authorName: post?.user?.name ?? 'RMH Studios',
-          authorHandle: post?.user?.handle ?? null,
-          authorImage: post?.user?.image ?? null,
+          content: showContent ? (post?.content ?? '') : '',
+          authorName: author?.name ?? 'RMH Studios',
+          authorHandle: author?.handle ?? null,
+          authorImage: author?.image ?? null,
         });
 
         return new Response(new Uint8Array(png), {

@@ -446,6 +446,133 @@ export function avatarDisc(
 }
 
 /* -------------------------------------------------------------------------- */
+/* Pictures                                                                   */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * A picture on a card: the bitmap, plus the hairline rim every surface here
+ * takes.
+ *
+ * The rim is drawn as a sibling overlay rather than as a `border` on the `<img>`
+ * because a border would sit *outside* the width satori was told to lay out,
+ * pushing a collage's tiles past the box they were measured into. It matters
+ * for the same reason it matters on `avatarDisc`: a screenshot that is white at
+ * the edges dissolves into the pane without it, and most screenshots are.
+ *
+ * `image` carries the size it was encoded at (see `lib/og/media.server`), so the
+ * element always draws at its real pixel size — nothing here relies on satori's
+ * `objectFit`, and nothing is scaled twice.
+ */
+export function framedImage(
+  image: { src: string; width: number; height: number },
+  radius: number = RADIUS_SM,
+  overlay?: React.ReactNode,
+): React.ReactElement {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        position: 'relative',
+        width: image.width,
+        height: image.height,
+      }}
+    >
+      {/* satori is handed this tree, not the DOM: `alt` is inert here, and the
+          card's text alternative is the route's `og:image:alt`. */}
+      <img
+        src={image.src}
+        alt=""
+        width={image.width}
+        height={image.height}
+        style={{ borderRadius: radius }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          width: image.width,
+          height: image.height,
+          borderRadius: radius,
+          border: `${HAIRLINE_W}px solid ${HAIRLINE}`,
+        }}
+      />
+      {overlay ?? null}
+    </div>
+  );
+}
+
+/**
+ * The small ink pill that labels a picture — "GIF" over an animation, whose
+ * one visible frame otherwise looks like a still photo.
+ *
+ * Positioned by the caller; it is absolute so it can sit inside a `framedImage`
+ * without being measured as part of the tile.
+ */
+export function mediaTag(text: string, inset: number): React.ReactElement {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: inset,
+        bottom: inset,
+        display: 'flex',
+        alignItems: 'center',
+        paddingLeft: 8 * SCALE,
+        paddingRight: 8 * SCALE,
+        paddingTop: 3 * SCALE,
+        paddingBottom: 4 * SCALE,
+        borderRadius: 9999,
+        backgroundColor: 'rgba(0, 0, 0, 0.72)',
+        color: INK_FG,
+        fontSize: 11 * SCALE,
+        fontWeight: 700,
+        letterSpacing: '0.06em',
+      }}
+    >
+      {text}
+    </div>
+  );
+}
+
+/**
+ * The verified check, drawn rather than typed.
+ *
+ * There is no emoji font (and no icon font) in this pipeline, so the badge is a
+ * filled disc with an "L" rotated 45° inside it — two borders on one box. The
+ * shape degrades honestly: if a renderer ever drops `transform`, what is left is
+ * a mark inside a disc rather than a missing-glyph box.
+ */
+export function verifiedBadge(size: number): React.ReactElement {
+  const arm = Math.round(size * 0.34);
+  const weight = Math.max(2, Math.round(size * 0.12));
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: size,
+        height: size,
+        borderRadius: size,
+        backgroundColor: INK,
+      }}
+    >
+      <div
+        style={{
+          width: arm,
+          height: arm * 0.62,
+          marginBottom: arm * 0.24,
+          borderLeft: `${weight}px solid ${INK_FG}`,
+          borderBottom: `${weight}px solid ${INK_FG}`,
+          transform: 'rotate(-45deg)',
+        }}
+      />
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /* The card frame                                                             */
 /* -------------------------------------------------------------------------- */
 

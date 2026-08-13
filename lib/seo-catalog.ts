@@ -138,9 +138,11 @@ export function appRouteHead(id: string, options: HeadOptions = {}) {
       title: `${app.title} — ${app.cta} | RMH Studios`,
       description: app.description,
       path,
-      image: app.imagePath || undefined,
-      imageAlt: app.imagePath ? `${app.title} on RMH Studios.` : undefined,
-      imageSize: app.imagePath ? null : undefined,
+      // The rendered card, not the raw screenshot this used to point at: a
+      // 1200×630 with the app's art *in* it declares its dimensions, says which
+      // site it is from, and — unlike `imagePath` — exists for every app.
+      image: ogCardPath('app', app.id),
+      imageAlt: `${app.title} on RMH Studios.`,
     }),
     links: [buildCanonical(path), ...(options.links ?? []), ...fonts.links],
     scripts: [

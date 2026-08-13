@@ -11,8 +11,7 @@
  * the caches, which is the point.
  */
 
-import { LRUCache } from 'lru-cache';
-import { safeFetch } from '@/lib/ssrf-guard.server';
+import { loadOgImage } from '@/lib/og/media.server';
 
 /* -------------------------------------------------------------------------- */
 /* Fonts                                                                      */
@@ -84,28 +83,37 @@ export function satoriFonts() {
 /* Avatars                                                                    */
 /* -------------------------------------------------------------------------- */
 
-// Small in-process cache of resolved avatar data URIs, keyed by source URL, so a
-// card re-render (or many cards sharing an author) doesn't re-fetch + re-encode
-// the same avatar.
-const avatarCache = new LRUCache<string, string>({ max: 200, ttl: 10 * 60 * 1000 });
+/**
+ * The largest an avatar is drawn on any card (the profile card's 52 × `SCALE`),
+ * rounded up to the next power of two. One size for every caller, because the
+ * point of a shared cache is that the profile card and the post card resolve
+ * the same author to the same bytes.
+ */
+const AVATAR_PX = 128;
 
+/**
+ * An author's avatar as a `data:` URI, or null when it can't be resolved.
+ *
+ * This used to `safeFetch` the URL as stored, which meant it only ever worked
+ * for the OAuth avatars and the CDN form: an uploaded avatar is stored as the
+ * local proxy path `/api/profile/avatar/<file>`, and an https-only,
+ * absolute-only guard rejects that — so every user who had actually set an
+ * avatar rendered as their initial, and did so *only* on the deployments
+ * without a CDN, which is the one place nobody looks at an unfurl. Going
+ * through `loadOgImage` reads those out of object storage directly and
+ * normalises the result to a PNG at one known size, so the format the user
+ * happened to upload (webp, avif) stops being resvg's problem.
+ */
 export async function fetchAvatarDataUri(url: string | null | undefined): Promise<string | null> {
-  if (!url) return null;
-  const hit = avatarCache.get(url);
-  if (hit) return hit;
-  try {
-    // User-supplied URL → SSRF guard, with a tight timeout so a slow avatar host
-    // can't stall card rendering (and the request handler behind it).
-    const res = await safeFetch(url, { timeoutMs: 3_000 });
-    if (!res.ok) return null;
-    const buf = Buffer.from(await res.arrayBuffer());
-    const type = res.headers.get('content-type') || 'image/png';
-    const dataUri = `data:${type};base64,${buf.toString('base64')}`;
-    avatarCache.set(url, dataUri);
-    return dataUri;
-  } catch {
-    return null;
-  }
+  const image = await loadOgImage(url, {
+    width: AVATAR_PX,
+    height: AVATAR_PX,
+    fit: 'cover',
+    // Avatars are drawn inside a circular clip, so their own transparency has
+    // to survive to the composite.
+    alpha: true,
+  });
+  return image?.src ?? null;
 }
 
 /* -------------------------------------------------------------------------- */
