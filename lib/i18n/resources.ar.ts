@@ -83,6 +83,7 @@ import arRRmhcode from "@/locales/ar/r-rmhcode.json";
 import arRSecret from "@/locales/ar/r-secret.json";
 import arRSliceIt from "@/locales/ar/r-slice-it.json";
 import arRSohumbum from "@/locales/ar/r-sohumbum.json";
+import arRSohumtracker from "@/locales/ar/r-sohumtracker.json";
 import arRStrategies from "@/locales/ar/r-strategies.json";
 import arRStudio from "@/locales/ar/r-studio.json";
 import arRideshare from "@/locales/ar/rideshare.json";
@@ -179,6 +180,7 @@ const arResources = {
   "r-secret": arRSecret,
   "r-slice-it": arRSliceIt,
   "r-sohumbum": arRSohumbum,
+  "r-sohumtracker": arRSohumtracker,
   "r-strategies": arRStrategies,
   "r-studio": arRStudio,
   "rideshare": arRideshare,

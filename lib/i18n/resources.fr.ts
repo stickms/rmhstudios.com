@@ -81,6 +81,7 @@ import frRRmhcode from "@/locales/fr/r-rmhcode.json";
 import frRSecret from "@/locales/fr/r-secret.json";
 import frRSliceIt from "@/locales/fr/r-slice-it.json";
 import frRSohumbum from "@/locales/fr/r-sohumbum.json";
+import frRSohumtracker from "@/locales/fr/r-sohumtracker.json";
 import frRStrategies from "@/locales/fr/r-strategies.json";
 import frRStudio from "@/locales/fr/r-studio.json";
 import frRideshare from "@/locales/fr/rideshare.json";
@@ -175,6 +176,7 @@ const frResources = {
   "r-secret": frRSecret,
   "r-slice-it": frRSliceIt,
   "r-sohumbum": frRSohumbum,
+  "r-sohumtracker": frRSohumtracker,
   "r-strategies": frRStrategies,
   "r-studio": frRStudio,
   "rideshare": frRideshare,

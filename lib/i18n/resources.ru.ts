@@ -81,6 +81,7 @@ import ruRRmhcode from "@/locales/ru/r-rmhcode.json";
 import ruRSecret from "@/locales/ru/r-secret.json";
 import ruRSliceIt from "@/locales/ru/r-slice-it.json";
 import ruRSohumbum from "@/locales/ru/r-sohumbum.json";
+import ruRSohumtracker from "@/locales/ru/r-sohumtracker.json";
 import ruRStrategies from "@/locales/ru/r-strategies.json";
 import ruRStudio from "@/locales/ru/r-studio.json";
 import ruRideshare from "@/locales/ru/rideshare.json";
@@ -175,6 +176,7 @@ const ruResources = {
   "r-secret": ruRSecret,
   "r-slice-it": ruRSliceIt,
   "r-sohumbum": ruRSohumbum,
+  "r-sohumtracker": ruRSohumtracker,
   "r-strategies": ruRStrategies,
   "r-studio": ruRStudio,
   "rideshare": ruRideshare,

@@ -81,6 +81,7 @@ import urRRmhcode from "@/locales/ur/r-rmhcode.json";
 import urRSecret from "@/locales/ur/r-secret.json";
 import urRSliceIt from "@/locales/ur/r-slice-it.json";
 import urRSohumbum from "@/locales/ur/r-sohumbum.json";
+import urRSohumtracker from "@/locales/ur/r-sohumtracker.json";
 import urRStrategies from "@/locales/ur/r-strategies.json";
 import urRStudio from "@/locales/ur/r-studio.json";
 import urRideshare from "@/locales/ur/rideshare.json";
@@ -175,6 +176,7 @@ const urResources = {
   "r-secret": urRSecret,
   "r-slice-it": urRSliceIt,
   "r-sohumbum": urRSohumbum,
+  "r-sohumtracker": urRSohumtracker,
   "r-strategies": urRStrategies,
   "r-studio": urRStudio,
   "rideshare": urRideshare,

@@ -81,6 +81,7 @@ import deRRmhcode from "@/locales/de/r-rmhcode.json";
 import deRSecret from "@/locales/de/r-secret.json";
 import deRSliceIt from "@/locales/de/r-slice-it.json";
 import deRSohumbum from "@/locales/de/r-sohumbum.json";
+import deRSohumtracker from "@/locales/de/r-sohumtracker.json";
 import deRStrategies from "@/locales/de/r-strategies.json";
 import deRStudio from "@/locales/de/r-studio.json";
 import deRideshare from "@/locales/de/rideshare.json";
@@ -175,6 +176,7 @@ const deResources = {
   "r-secret": deRSecret,
   "r-slice-it": deRSliceIt,
   "r-sohumbum": deRSohumbum,
+  "r-sohumtracker": deRSohumtracker,
   "r-strategies": deRStrategies,
   "r-studio": deRStudio,
   "rideshare": deRideshare,

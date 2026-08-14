@@ -174,12 +174,13 @@ const DAY_SELECT = {
   topChannelMessages: true,
   hourlyMessages: true,
   hourlyVoiceSec: true,
+  hourlyGamingSec: true,
   firstSeenAt: true,
   lastSeenAt: true,
 } as const;
 
 type DayRow = {
-  [K in keyof typeof DAY_SELECT]: K extends 'hourlyMessages' | 'hourlyVoiceSec'
+  [K in keyof typeof DAY_SELECT]: K extends 'hourlyMessages' | 'hourlyVoiceSec' | 'hourlyGamingSec'
     ? unknown
     : K extends 'topGame' | 'topChannel'
       ? string | null
@@ -257,6 +258,7 @@ function toDayDTO(row: DayRow, summary: WatchSummaryDTO | null): WatchDayDTO {
     topChannelMessages: row.topChannelMessages,
     hourlyMessages: asHourly(row.hourlyMessages),
     hourlyVoiceSec: asHourly(row.hourlyVoiceSec),
+    hourlyGamingSec: asHourly(row.hourlyGamingSec),
     firstSeenAt: row.firstSeenAt?.toISOString() ?? null,
     lastSeenAt: row.lastSeenAt?.toISOString() ?? null,
     summary,
@@ -307,6 +309,7 @@ function emptyDay(dateKey: string): WatchDayDTO {
     topChannelMessages: 0,
     hourlyMessages: null,
     hourlyVoiceSec: null,
+    hourlyGamingSec: null,
     firstSeenAt: null,
     lastSeenAt: null,
     summary: null,

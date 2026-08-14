@@ -81,6 +81,7 @@ import esRRmhcode from "@/locales/es/r-rmhcode.json";
 import esRSecret from "@/locales/es/r-secret.json";
 import esRSliceIt from "@/locales/es/r-slice-it.json";
 import esRSohumbum from "@/locales/es/r-sohumbum.json";
+import esRSohumtracker from "@/locales/es/r-sohumtracker.json";
 import esRStrategies from "@/locales/es/r-strategies.json";
 import esRStudio from "@/locales/es/r-studio.json";
 import esRideshare from "@/locales/es/rideshare.json";
@@ -175,6 +176,7 @@ const esResources = {
   "r-secret": esRSecret,
   "r-slice-it": esRSliceIt,
   "r-sohumbum": esRSohumbum,
+  "r-sohumtracker": esRSohumtracker,
   "r-strategies": esRStrategies,
   "r-studio": esRStudio,
   "rideshare": esRideshare,

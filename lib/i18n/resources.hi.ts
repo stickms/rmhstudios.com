@@ -81,6 +81,7 @@ import hiRRmhcode from "@/locales/hi/r-rmhcode.json";
 import hiRSecret from "@/locales/hi/r-secret.json";
 import hiRSliceIt from "@/locales/hi/r-slice-it.json";
 import hiRSohumbum from "@/locales/hi/r-sohumbum.json";
+import hiRSohumtracker from "@/locales/hi/r-sohumtracker.json";
 import hiRStrategies from "@/locales/hi/r-strategies.json";
 import hiRStudio from "@/locales/hi/r-studio.json";
 import hiRideshare from "@/locales/hi/rideshare.json";
@@ -175,6 +176,7 @@ const hiResources = {
   "r-secret": hiRSecret,
   "r-slice-it": hiRSliceIt,
   "r-sohumbum": hiRSohumbum,
+  "r-sohumtracker": hiRSohumtracker,
   "r-strategies": hiRStrategies,
   "r-studio": hiRStudio,
   "rideshare": hiRideshare,
