@@ -94,8 +94,9 @@ type dayRollup struct {
 	TopChannel         string
 	TopChannelMessages int
 
-	HourlyMessages []int
-	HourlyVoiceSec []int
+	HourlyMessages  []int
+	HourlyVoiceSec  []int
+	HourlyGamingSec []int
 
 	FirstSeenAt *time.Time
 	LastSeenAt  *time.Time
@@ -201,11 +202,12 @@ func buildDayRollup(
 	typing []*typingSession,
 ) *dayRollup {
 	d := &dayRollup{
-		DiscordID:      discordID,
-		DateKey:        dateKey,
-		TimeZone:       timeZone,
-		HourlyMessages: make([]int, hoursPerDay),
-		HourlyVoiceSec: make([]int, hoursPerDay),
+		DiscordID:       discordID,
+		DateKey:         dateKey,
+		TimeZone:        timeZone,
+		HourlyMessages:  make([]int, hoursPerDay),
+		HourlyVoiceSec:  make([]int, hoursPerDay),
+		HourlyGamingSec: make([]int, hoursPerDay),
 	}
 
 	// ── Messages ──
@@ -301,7 +303,7 @@ func buildDayRollup(
 	for _, sp := range mergedVoice {
 		d.VoiceSec += int(sp.end.Sub(sp.start).Seconds())
 		d.LateNightSec += overlapSeconds(sp.start, sp.end, lateFrom, lateTo)
-		addHourlyVoice(d.HourlyVoiceSec, sp.start, sp.end, from, to, loc)
+		addHourlySpan(d.HourlyVoiceSec, sp.start, sp.end, from, to, loc)
 	}
 
 	// ── Time online ──
@@ -397,7 +399,16 @@ func buildDayRollup(
 		touch(&d.FirstSeenAt, &d.LastSeenAt, maxTime(p.StartedAt, from))
 		touch(&d.FirstSeenAt, &d.LastSeenAt, minTime(end, to))
 	}
-	d.GamingSec = unionSeconds(gameSpans, from, to)
+	// Merged once, then both figures are read off it — same discipline as voice
+	// above, so the total and the histogram can never disagree. The histogram is
+	// what lets the page tell "in a game until 3am" apart from "asleep": the
+	// only other activity signals are messages and voice, and a long silent
+	// gaming session looks exactly like a night to both of them.
+	mergedGames := mergeSpans(gameSpans, from, to)
+	for _, sp := range mergedGames {
+		d.GamingSec += int(sp.end.Sub(sp.start).Seconds())
+		addHourlySpan(d.HourlyGamingSec, sp.start, sp.end, from, to, loc)
+	}
 
 	// Per game as well, so a duplicated open row cannot make one title's total
 	// exceed the day's — and so `topGameSec` can never exceed `gamingSec`.
@@ -434,10 +445,10 @@ func buildDayRollup(
 	return d
 }
 
-// addHourlyVoice distributes a session's seconds across the local hours it
+// addHourlySpan distributes a span's seconds across the local hours it
 // covers, clipped to the day. Walking hour boundaries with time.Date rather than
 // adding an hour keeps a DST day's buckets lined up with the wall clock.
-func addHourlyVoice(buckets []int, start, end, dayFrom, dayTo time.Time, loc *time.Location) {
+func addHourlySpan(buckets []int, start, end, dayFrom, dayTo time.Time, loc *time.Location) {
 	start = maxTime(start, dayFrom)
 	end = minTime(end, dayTo)
 	if !end.After(start) {

@@ -81,6 +81,7 @@ import jaRRmhcode from "@/locales/ja/r-rmhcode.json";
 import jaRSecret from "@/locales/ja/r-secret.json";
 import jaRSliceIt from "@/locales/ja/r-slice-it.json";
 import jaRSohumbum from "@/locales/ja/r-sohumbum.json";
+import jaRSohumtracker from "@/locales/ja/r-sohumtracker.json";
 import jaRStrategies from "@/locales/ja/r-strategies.json";
 import jaRStudio from "@/locales/ja/r-studio.json";
 import jaRideshare from "@/locales/ja/rideshare.json";
@@ -175,6 +176,7 @@ const jaResources = {
   "r-secret": jaRSecret,
   "r-slice-it": jaRSliceIt,
   "r-sohumbum": jaRSohumbum,
+  "r-sohumtracker": jaRSohumtracker,
   "r-strategies": jaRStrategies,
   "r-studio": jaRStudio,
   "rideshare": jaRideshare,

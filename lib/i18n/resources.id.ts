@@ -81,6 +81,7 @@ import idRRmhcode from "@/locales/id/r-rmhcode.json";
 import idRSecret from "@/locales/id/r-secret.json";
 import idRSliceIt from "@/locales/id/r-slice-it.json";
 import idRSohumbum from "@/locales/id/r-sohumbum.json";
+import idRSohumtracker from "@/locales/id/r-sohumtracker.json";
 import idRStrategies from "@/locales/id/r-strategies.json";
 import idRStudio from "@/locales/id/r-studio.json";
 import idRideshare from "@/locales/id/rideshare.json";
@@ -175,6 +176,7 @@ const idResources = {
   "r-secret": idRSecret,
   "r-slice-it": idRSliceIt,
   "r-sohumbum": idRSohumbum,
+  "r-sohumtracker": idRSohumtracker,
   "r-strategies": idRStrategies,
   "r-studio": idRStudio,
   "rideshare": idRideshare,

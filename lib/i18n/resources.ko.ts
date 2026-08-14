@@ -81,6 +81,7 @@ import koRRmhcode from "@/locales/ko/r-rmhcode.json";
 import koRSecret from "@/locales/ko/r-secret.json";
 import koRSliceIt from "@/locales/ko/r-slice-it.json";
 import koRSohumbum from "@/locales/ko/r-sohumbum.json";
+import koRSohumtracker from "@/locales/ko/r-sohumtracker.json";
 import koRStrategies from "@/locales/ko/r-strategies.json";
 import koRStudio from "@/locales/ko/r-studio.json";
 import koRideshare from "@/locales/ko/rideshare.json";
@@ -175,6 +176,7 @@ const koResources = {
   "r-secret": koRSecret,
   "r-slice-it": koRSliceIt,
   "r-sohumbum": koRSohumbum,
+  "r-sohumtracker": koRSohumtracker,
   "r-strategies": koRStrategies,
   "r-studio": koRStudio,
   "rideshare": koRideshare,

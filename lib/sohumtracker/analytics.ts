@@ -20,9 +20,9 @@
  * must see the same bedtime as a reader in Rochester, because it is HIS bedtime.
  */
 
-import { getZonedParts } from '@/lib/pf2ecal/zoned-time';
+import { zonedTimeToUtc } from '@/lib/pf2ecal/zoned-time';
 import { TRACKING_TIME_ZONE } from './config';
-import { daysBetween, isoWeekKey, mondayIndex, shiftDateKey } from './dates';
+import { dateKeyToUtc, daysBetween, isoWeekKey, mondayIndex, shiftDateKey } from './dates';
 import type { WatchDayDTO } from './types';
 
 /* -------------------------------------------------------------------------- */
@@ -137,10 +137,61 @@ const MIN_SLEEP_HOURS = 3;
 /** …and at most this, above which it is a day off Discord, not a night. */
 const MAX_SLEEP_HOURS = 15;
 
-/** Fractional local hour of an instant, in the tracking zone. */
-function localHour(instant: Date): number {
-  const parts = getZonedParts(instant, TRACKING_TIME_ZONE);
-  return parts.hour + parts.minute / 60;
+/**
+ * The hour a night window starts on.
+ *
+ * 18:00, so a night runs 18:00 → 18:00 and a 04:00 bedtime sorts after a 23:00
+ * one instead of before it. The card draws the same axis.
+ */
+const NIGHT_ANCHOR_HOUR = 18;
+
+/**
+ * The longest run of consecutive quiet hours in a night window.
+ *
+ * Longest, not first: an evening often has a quiet hour in it (dinner, a shower,
+ * a drive) and taking the first run would report that as the night. Ties go to
+ * the earlier run, which matters only for a day so empty that the length bounds
+ * will discard it anyway.
+ */
+function longestQuietRun(window: boolean[]): { start: number; length: number } | null {
+  let best: { start: number; length: number } | null = null;
+  let start = -1;
+
+  for (let index = 0; index <= window.length; index += 1) {
+    const active = index < window.length ? window[index] : true;
+    if (!active) {
+      if (start < 0) start = index;
+      continue;
+    }
+    if (start >= 0) {
+      const length = index - start;
+      if (!best || length > best.length) best = { start, length };
+      start = -1;
+    }
+  }
+  return best;
+}
+
+/**
+ * The instant at a given local hour of a day key, as an ISO string.
+ *
+ * `hour` may run past 24 — a night window is anchored at 18:00, so hour 30 is
+ * 06:00 the next morning, and `Date.UTC` normalises the overflow. The
+ * conversion goes through `zonedTimeToUtc` rather than adding milliseconds so
+ * that a night containing a DST transition still starts and ends on the wall
+ * clock hours the histograms were bucketed by.
+ */
+function instantAtLocalHour(dateKey: string, hour: number): string {
+  const day = dateKeyToUtc(dateKey);
+  return zonedTimeToUtc(
+    {
+      year: day.getUTCFullYear(),
+      month: day.getUTCMonth() + 1,
+      day: day.getUTCDate(),
+      hour,
+    },
+    TRACKING_TIME_ZONE,
+  ).toISOString();
 }
 
 /**
@@ -170,13 +221,47 @@ function median(values: number[]): number {
 }
 
 /**
- * When he sleeps, inferred from when he stops and starts being visible.
+ * Whether he did anything at all in each local hour of a day.
+ *
+ * ACTIVITY, deliberately — messages, voice, or a game — and never presence.
+ *
+ * `firstSeenAt`/`lastSeenAt` look like the obvious inputs here and were the
+ * original ones, but they are touched by status sessions, and a status session
+ * closes only when Discord reports "offline". Idle does not close it. Anyone who
+ * leaves the desktop client running overnight is therefore "seen" continuously:
+ * the session spans midnight, gets clipped to each day, and every day comes back
+ * with `lastSeenAt` at 23:59 and `firstSeenAt` at 00:00. The gap between them is
+ * zero, every night falls under the 3h floor, and the card reports nothing at
+ * all — which is exactly what it was doing.
+ *
+ * Being idle with Discord open is not being awake. Sending a message, sitting in
+ * voice, or having a game open is. So the three histograms are the signal, and
+ * gaming has to be one of them: he games in long silent stretches, and without
+ * it an evening in a game reads as an early night.
+ */
+function activeHours(day: WatchDayDTO | undefined): boolean[] {
+  const hours = new Array<boolean>(24).fill(false);
+  if (!day) return hours;
+  for (const series of [day.hourlyMessages, day.hourlyVoiceSec, day.hourlyGamingSec]) {
+    if (!series) continue;
+    for (let hour = 0; hour < 24; hour += 1) {
+      if ((series[hour] ?? 0) > 0) hours[hour] = true;
+    }
+  }
+  return hours;
+}
+
+/**
+ * When he sleeps, inferred from when he stops and starts doing things.
  *
  * This is an INFERENCE and the page says so: the tracker sees Discord, not a
- * bedroom. A night here is the gap between the last thing he did on one day and
- * the first thing he did on the next, which is his sleep only to the extent that
- * he is on Discord right up to it and back on it soon after — which, given
- * everything else on the page, is not a heroic assumption.
+ * bedroom. A night here is the longest unbroken run of hours, across one
+ * midnight, in which he sent nothing, joined nothing and played nothing.
+ *
+ * Resolution is one hour, because that is the resolution of the histograms. A
+ * night is reported from the start of the first quiet hour to the end of the
+ * last, so a bedtime reads as "02:00" rather than "02:47" — coarser than the old
+ * timestamp arithmetic, and unlike it, actually measuring the right thing.
  */
 export function inferSleep(days: WatchDayDTO[]): SleepPattern {
   const nights: SleepWindow[] = [];
@@ -187,20 +272,40 @@ export function inferSleep(days: WatchDayDTO[]): SleepPattern {
     // Consecutive calendar days only: a gap across a quiet Wednesday is two
     // nights and a day, and averaging it in would push every figure late.
     if (daysBetween(day.dateKey, next.dateKey) !== 1) continue;
-    if (!day.lastSeenAt || !next.firstSeenAt) continue;
 
-    const slept = new Date(day.lastSeenAt);
-    const woke = new Date(next.firstSeenAt);
-    const hours = (woke.getTime() - slept.getTime()) / 3_600_000;
-    if (!Number.isFinite(hours) || hours < MIN_SLEEP_HOURS || hours > MAX_SLEEP_HOURS) continue;
+    // The night window is 18:00 on the first day to 18:00 on the second, which
+    // is the axis the card draws and the only one on which a 4am bedtime reads
+    // as late. Index 0 is 18:00; hour h of the window is 24h long.
+    const today = activeHours(day);
+    const tomorrow = activeHours(next);
+    const window = Array.from({ length: 24 }, (_, offset) => {
+      const hour = (NIGHT_ANCHOR_HOUR + offset) % 24;
+      return offset < 24 - NIGHT_ANCHOR_HOUR ? today[hour] : tomorrow[hour];
+    });
+
+    // A day with no histograms at all is not a 24-hour night; it is a day the
+    // tracker has nothing for. Without this, an outage would be reported as his
+    // longest ever sleep.
+    if (!window.some(Boolean)) continue;
+
+    const run = longestQuietRun(window);
+    if (!run) continue;
+    if (run.length < MIN_SLEEP_HOURS || run.length > MAX_SLEEP_HOURS) continue;
+
+    const sleptHour = (NIGHT_ANCHOR_HOUR + run.start) % 24;
+    const wokeHour = (NIGHT_ANCHOR_HOUR + run.start + run.length) % 24;
+    // The instants are reconstructed from the hour so the export and the
+    // screen-reader table can state a real time rather than an offset.
+    const sleptAt = instantAtLocalHour(day.dateKey, NIGHT_ANCHOR_HOUR + run.start);
+    const wokeAt = instantAtLocalHour(day.dateKey, NIGHT_ANCHOR_HOUR + run.start + run.length);
 
     nights.push({
       nightOf: day.dateKey,
-      sleptAt: day.lastSeenAt,
-      wokeAt: next.firstSeenAt,
-      hours,
-      sleptHour: localHour(slept),
-      wokeHour: localHour(woke),
+      sleptAt,
+      wokeAt,
+      hours: run.length,
+      sleptHour,
+      wokeHour,
     });
   }
 

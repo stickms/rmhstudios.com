@@ -8813,11 +8813,15 @@ model DiscordWatchDay {
   topChannel         String?
   topChannelMessages Int     @default(0)
 
-  /// Per-hour message and voice-second histograms, 24 integers each, index 0 =
-  /// local midnight. Stored as JSON because they are read as a unit (the page
-  /// draws them as one chart) and never queried by hour.
-  hourlyMessages Json?
-  hourlyVoiceSec Json?
+  /// Per-hour message, voice-second and gaming-second histograms, 24 integers
+  /// each, index 0 = local midnight. Stored as JSON because they are read as a
+  /// unit (the page draws them as one chart) and never queried by hour.
+  ///
+  /// Gaming is bucketed from the MERGED spans, like voice, so simultaneous
+  /// "Playing" activities cannot push an hour past 3600.
+  hourlyMessages   Json?
+  hourlyVoiceSec   Json?
+  hourlyGamingSec  Json?
 
   firstSeenAt DateTime?
   lastSeenAt  DateTime?

@@ -81,6 +81,7 @@ import trRRmhcode from "@/locales/tr/r-rmhcode.json";
 import trRSecret from "@/locales/tr/r-secret.json";
 import trRSliceIt from "@/locales/tr/r-slice-it.json";
 import trRSohumbum from "@/locales/tr/r-sohumbum.json";
+import trRSohumtracker from "@/locales/tr/r-sohumtracker.json";
 import trRStrategies from "@/locales/tr/r-strategies.json";
 import trRStudio from "@/locales/tr/r-studio.json";
 import trRideshare from "@/locales/tr/rideshare.json";
@@ -175,6 +176,7 @@ const trResources = {
   "r-secret": trRSecret,
   "r-slice-it": trRSliceIt,
   "r-sohumbum": trRSohumbum,
+  "r-sohumtracker": trRSohumtracker,
   "r-strategies": trRStrategies,
   "r-studio": trRStudio,
   "rideshare": trRideshare,

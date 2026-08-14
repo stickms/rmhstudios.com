@@ -81,6 +81,7 @@ import viRRmhcode from "@/locales/vi/r-rmhcode.json";
 import viRSecret from "@/locales/vi/r-secret.json";
 import viRSliceIt from "@/locales/vi/r-slice-it.json";
 import viRSohumbum from "@/locales/vi/r-sohumbum.json";
+import viRSohumtracker from "@/locales/vi/r-sohumtracker.json";
 import viRStrategies from "@/locales/vi/r-strategies.json";
 import viRStudio from "@/locales/vi/r-studio.json";
 import viRideshare from "@/locales/vi/rideshare.json";
@@ -175,6 +176,7 @@ const viResources = {
   "r-secret": viRSecret,
   "r-slice-it": viRSliceIt,
   "r-sohumbum": viRSohumbum,
+  "r-sohumtracker": viRSohumtracker,
   "r-strategies": viRStrategies,
   "r-studio": viRStudio,
   "rideshare": viRideshare,

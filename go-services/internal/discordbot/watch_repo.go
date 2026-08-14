@@ -965,10 +965,10 @@ func (r *watchRepo) writeDayRollup(ctx context.Context, d *dayRollup) error {
 		    "desktopSec","mobileSec","webSec","messages","words",
 		    "characters","attachments","links","mentions","emoji","stickers","replies","questions",
 		    "lateNightMessages","gamingSec","gameSessions","topGame","topGameSec","topChannel",
-		    "topChannelMessages","hourlyMessages","hourlyVoiceSec","firstSeenAt","lastSeenAt",
+		    "topChannelMessages","hourlyMessages","hourlyVoiceSec","hourlyGamingSec","firstSeenAt","lastSeenAt",
 		    "jobMentions","typingStarts","typingAbandoned","typingAbandonedSec","updatedAt")
 		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,
-		         $24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44)
+		         $24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44,$45)
 		 ON CONFLICT ("discordId","dateKey") DO UPDATE SET
 		   "timeZone"=EXCLUDED."timeZone",
 		   "voiceSec"=EXCLUDED."voiceSec",
@@ -1005,6 +1005,7 @@ func (r *watchRepo) writeDayRollup(ctx context.Context, d *dayRollup) error {
 		   "topChannelMessages"=EXCLUDED."topChannelMessages",
 		   "hourlyMessages"=EXCLUDED."hourlyMessages",
 		   "hourlyVoiceSec"=EXCLUDED."hourlyVoiceSec",
+		   "hourlyGamingSec"=EXCLUDED."hourlyGamingSec",
 		   "firstSeenAt"=EXCLUDED."firstSeenAt",
 		   "lastSeenAt"=EXCLUDED."lastSeenAt",
 		   "jobMentions"=EXCLUDED."jobMentions",
@@ -1017,7 +1018,7 @@ func (r *watchRepo) writeDayRollup(ctx context.Context, d *dayRollup) error {
 		d.DesktopSec, d.MobileSec, d.WebSec, d.Messages, d.Words,
 		d.Characters, d.Attachments, d.Links, d.Mentions, d.Emoji, d.Stickers, d.Replies, d.Questions,
 		d.LateNightMessages, d.GamingSec, d.GameSessions, nullableString(d.TopGame), d.TopGameSec,
-		nullableString(d.TopChannel), d.TopChannelMessages, jsonInts(d.HourlyMessages), jsonInts(d.HourlyVoiceSec),
+		nullableString(d.TopChannel), d.TopChannelMessages, jsonInts(d.HourlyMessages), jsonInts(d.HourlyVoiceSec), jsonInts(d.HourlyGamingSec),
 		d.FirstSeenAt, d.LastSeenAt,
 		d.JobMentions, d.TypingStarts, d.TypingAbandoned, d.TypingAbandonedSec, now)
 	return err
