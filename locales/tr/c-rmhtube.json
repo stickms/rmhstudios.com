@@ -52,7 +52,7 @@
   "disable-captions": "Altyazıları kapat",
   "enable-captions": "Altyazıları aç",
   "error-enter-url": "Lütfen bir URL girin",
-  "error-unsupported-url": "That link can't be played here. Use a YouTube video or live stream, a Twitch channel or VOD, Vimeo, or a direct video/stream URL (.mp4, .webm, .m3u8).",
+  "error-unsupported-url": "Bu bağlantı burada oynatılamaz. Bir YouTube videosu veya canlı yayını, Twitch kanalı veya VOD, Vimeo ya da doğrudan video/yayın URL'si (.mp4, .webm, .m3u8) kullanın.",
   "exit-fullscreen": "Tam ekrandan çık",
   "expires-after": "Şu kadar süre sonra sona erer",
   "failed-to-copy": "Kopyalanamadı",
