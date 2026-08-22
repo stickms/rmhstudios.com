@@ -54,7 +54,7 @@ export const NAMESPACES = [
   "c-admin", "c-altair", "c-awards", "c-blog", "c-builds", "c-bums-rush", "c-circle",
   "c-creator", "c-cursed-logic", "c-daily-puzzles", "c-doctrine",
   "c-dream-rift", "c-economy", "c-forest-explorer", "c-gabriels-horn",
-  "c-game", "c-history", "c-house-always-wins", "c-isleworks",
+  "c-game", "c-groupcall", "c-history", "c-house-always-wins", "c-isleworks",
   "c-kaikai-debt",
   "c-kowloon-knockout", "c-laundry-sort", "c-layout", "c-library",
   "c-lights-out", "c-lists", "c-lockdown", "c-massive-march", "c-moderation", "c-neon-driftway",

@@ -385,6 +385,9 @@ import { Route as ApiGabrielsHornLeaderboardRouteImport } from './routes/api/gab
 import { Route as ApiGameSavesGameIdRouteImport } from './routes/api/game-saves/$gameId'
 import { Route as ApiGifSearchRouteImport } from './routes/api/gif/search'
 import { Route as ApiGroupChatsIndexRouteImport } from './routes/api/group-chats/index'
+import { Route as ApiGroupcallsActiveRouteImport } from './routes/api/groupcalls/active'
+import { Route as ApiGroupcallsHistoryRouteImport } from './routes/api/groupcalls/history'
+import { Route as ApiGroupcallsInvitableRouteImport } from './routes/api/groupcalls/invitable'
 import { Route as ApiGuidesIndexRouteImport } from './routes/api/guides/index'
 import { Route as ApiGuidesIdRouteImport } from './routes/api/guides/$id'
 import { Route as ApiHandleCheckRouteImport } from './routes/api/handle/check'
@@ -2789,6 +2792,21 @@ const ApiGifSearchRoute = ApiGifSearchRouteImport.update({
 const ApiGroupChatsIndexRoute = ApiGroupChatsIndexRouteImport.update({
   id: '/api/group-chats/',
   path: '/api/group-chats/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGroupcallsActiveRoute = ApiGroupcallsActiveRouteImport.update({
+  id: '/api/groupcalls/active',
+  path: '/api/groupcalls/active',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGroupcallsHistoryRoute = ApiGroupcallsHistoryRouteImport.update({
+  id: '/api/groupcalls/history',
+  path: '/api/groupcalls/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGroupcallsInvitableRoute = ApiGroupcallsInvitableRouteImport.update({
+  id: '/api/groupcalls/invitable',
+  path: '/api/groupcalls/invitable',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGuidesIndexRoute = ApiGuidesIndexRouteImport.update({
@@ -5824,6 +5842,9 @@ export interface FileRoutesByFullPath {
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
   '/api/gif/search': typeof ApiGifSearchRoute
+  '/api/groupcalls/active': typeof ApiGroupcallsActiveRoute
+  '/api/groupcalls/history': typeof ApiGroupcallsHistoryRoute
+  '/api/groupcalls/invitable': typeof ApiGroupcallsInvitableRoute
   '/api/guides/$id': typeof ApiGuidesIdRouteWithChildren
   '/api/handle/check': typeof ApiHandleCheckRoute
   '/api/handles/change': typeof ApiHandlesChangeRoute
@@ -6691,6 +6712,9 @@ export interface FileRoutesByTo {
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
   '/api/gif/search': typeof ApiGifSearchRoute
+  '/api/groupcalls/active': typeof ApiGroupcallsActiveRoute
+  '/api/groupcalls/history': typeof ApiGroupcallsHistoryRoute
+  '/api/groupcalls/invitable': typeof ApiGroupcallsInvitableRoute
   '/api/guides/$id': typeof ApiGuidesIdRouteWithChildren
   '/api/handle/check': typeof ApiHandleCheckRoute
   '/api/handles/change': typeof ApiHandlesChangeRoute
@@ -7585,6 +7609,9 @@ export interface FileRoutesById {
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
   '/api/gif/search': typeof ApiGifSearchRoute
+  '/api/groupcalls/active': typeof ApiGroupcallsActiveRoute
+  '/api/groupcalls/history': typeof ApiGroupcallsHistoryRoute
+  '/api/groupcalls/invitable': typeof ApiGroupcallsInvitableRoute
   '/api/guides/$id': typeof ApiGuidesIdRouteWithChildren
   '/api/handle/check': typeof ApiHandleCheckRoute
   '/api/handles/change': typeof ApiHandlesChangeRoute
@@ -8479,6 +8506,9 @@ export interface FileRouteTypes {
     | '/api/gabriels-horn/leaderboard'
     | '/api/game-saves/$gameId'
     | '/api/gif/search'
+    | '/api/groupcalls/active'
+    | '/api/groupcalls/history'
+    | '/api/groupcalls/invitable'
     | '/api/guides/$id'
     | '/api/handle/check'
     | '/api/handles/change'
@@ -9346,6 +9376,9 @@ export interface FileRouteTypes {
     | '/api/gabriels-horn/leaderboard'
     | '/api/game-saves/$gameId'
     | '/api/gif/search'
+    | '/api/groupcalls/active'
+    | '/api/groupcalls/history'
+    | '/api/groupcalls/invitable'
     | '/api/guides/$id'
     | '/api/handle/check'
     | '/api/handles/change'
@@ -10239,6 +10272,9 @@ export interface FileRouteTypes {
     | '/api/gabriels-horn/leaderboard'
     | '/api/game-saves/$gameId'
     | '/api/gif/search'
+    | '/api/groupcalls/active'
+    | '/api/groupcalls/history'
+    | '/api/groupcalls/invitable'
     | '/api/guides/$id'
     | '/api/handle/check'
     | '/api/handles/change'
@@ -10971,6 +11007,9 @@ export interface RootRouteChildren {
   ApiGabrielsHornLeaderboardRoute: typeof ApiGabrielsHornLeaderboardRoute
   ApiGameSavesGameIdRoute: typeof ApiGameSavesGameIdRoute
   ApiGifSearchRoute: typeof ApiGifSearchRoute
+  ApiGroupcallsActiveRoute: typeof ApiGroupcallsActiveRoute
+  ApiGroupcallsHistoryRoute: typeof ApiGroupcallsHistoryRoute
+  ApiGroupcallsInvitableRoute: typeof ApiGroupcallsInvitableRoute
   ApiGuidesIdRoute: typeof ApiGuidesIdRouteWithChildren
   ApiHandleCheckRoute: typeof ApiHandleCheckRoute
   ApiHandlesChangeRoute: typeof ApiHandlesChangeRoute
@@ -13950,6 +13989,27 @@ declare module '@tanstack/react-router' {
       path: '/api/group-chats'
       fullPath: '/api/group-chats/'
       preLoaderRoute: typeof ApiGroupChatsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/groupcalls/active': {
+      id: '/api/groupcalls/active'
+      path: '/api/groupcalls/active'
+      fullPath: '/api/groupcalls/active'
+      preLoaderRoute: typeof ApiGroupcallsActiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/groupcalls/history': {
+      id: '/api/groupcalls/history'
+      path: '/api/groupcalls/history'
+      fullPath: '/api/groupcalls/history'
+      preLoaderRoute: typeof ApiGroupcallsHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/groupcalls/invitable': {
+      id: '/api/groupcalls/invitable'
+      path: '/api/groupcalls/invitable'
+      fullPath: '/api/groupcalls/invitable'
+      preLoaderRoute: typeof ApiGroupcallsInvitableRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/guides/': {
@@ -19406,6 +19466,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGabrielsHornLeaderboardRoute: ApiGabrielsHornLeaderboardRoute,
   ApiGameSavesGameIdRoute: ApiGameSavesGameIdRoute,
   ApiGifSearchRoute: ApiGifSearchRoute,
+  ApiGroupcallsActiveRoute: ApiGroupcallsActiveRoute,
+  ApiGroupcallsHistoryRoute: ApiGroupcallsHistoryRoute,
+  ApiGroupcallsInvitableRoute: ApiGroupcallsInvitableRoute,
   ApiGuidesIdRoute: ApiGuidesIdRouteWithChildren,
   ApiHandleCheckRoute: ApiHandleCheckRoute,
   ApiHandlesChangeRoute: ApiHandlesChangeRoute,
