@@ -66,6 +66,7 @@ import jaCVoidBreaker from "@/locales/ja/c-void-breaker.json";
 import jaCWager from "@/locales/ja/c-wager.json";
 import jaCWishlist from "@/locales/ja/c-wishlist.json";
 import jaCommon from "@/locales/ja/common.json";
+import jaErrors from "@/locales/ja/errors.json";
 import jaFeed from "@/locales/ja/feed.json";
 import jaGamesHub from "@/locales/ja/games-hub.json";
 import jaGroups from "@/locales/ja/groups.json";
@@ -161,6 +162,7 @@ const jaResources = {
   "c-wager": jaCWager,
   "c-wishlist": jaCWishlist,
   "common": jaCommon,
+  "errors": jaErrors,
   "feed": jaFeed,
   "games-hub": jaGamesHub,
   "groups": jaGroups,

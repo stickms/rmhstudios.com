@@ -45,6 +45,7 @@
   "filter-todo": "To do",
   "find-contradiction": "矛盾を見つけてください",
   "five-facts-tagline": "5つの事実。そのうち2つは嘘。偽物を見つけ出せ。",
+  "found-liar_one": "嘘つきを見つけました！推測回数: {{count}}回{{suffix}}。",
   "found-liar_other": "{{count}}回の推測で嘘つきを見つけました{{suffix}}。",
   "fun-fact": "豆知識",
   "gave-up-message": "今日のパズルを諦めました。",

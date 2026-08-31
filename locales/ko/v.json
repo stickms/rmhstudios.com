@@ -1,5 +1,6 @@
 {
   "backfill-thumbs": "Backfill all page thumbnails",
+  "backfill-thumbs-done_one": "썸네일 재렌더링을 위해 {{count}}개 페이지를 대기열에 추가했습니다. 작업자가 처리함에 따라 새로고침됩니다.",
   "backfill-thumbs-done_other": "Queued {{count}} page(s) for thumbnail re-render. They will refresh as the worker processes them.",
   "backfill-thumbs-failed": "Failed to queue thumbnail backfill. Try again.",
   "empty-gallery": "아직 페이지가 없습니다 — 첫 페이지를 만들어 보세요.",
