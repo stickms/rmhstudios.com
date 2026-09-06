@@ -14,6 +14,7 @@ import { Route as AdaptiveIntelligenceRouteImport } from './routes/adaptive-inte
 import { Route as AdsDottxtRouteImport } from './routes/ads[.]txt'
 import { Route as AltairRouteImport } from './routes/altair'
 import { Route as BlackLivesMatterRouteImport } from './routes/black-lives-matter'
+import { Route as BreachesRouteImport } from './routes/breaches'
 import { Route as BumsRushRouteImport } from './routes/bums-rush'
 import { Route as CookgameRouteImport } from './routes/cookgame'
 import { Route as CookiesRouteImport } from './routes/cookies'
@@ -923,6 +924,11 @@ const AltairRoute = AltairRouteImport.update({
 const BlackLivesMatterRoute = BlackLivesMatterRouteImport.update({
   id: '/black-lives-matter',
   path: '/black-lives-matter',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BreachesRoute = BreachesRouteImport.update({
+  id: '/breaches',
+  path: '/breaches',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BumsRushRoute = BumsRushRouteImport.update({
@@ -5491,6 +5497,7 @@ export interface FileRoutesByFullPath {
   '/ads.txt': typeof AdsDottxtRoute
   '/altair': typeof AltairRouteWithChildren
   '/black-lives-matter': typeof BlackLivesMatterRoute
+  '/breaches': typeof BreachesRoute
   '/bums-rush': typeof BumsRushRoute
   '/cookgame': typeof CookgameRoute
   '/cookies': typeof CookiesRoute
@@ -6381,6 +6388,7 @@ export interface FileRoutesByTo {
   '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
   '/ads.txt': typeof AdsDottxtRoute
   '/black-lives-matter': typeof BlackLivesMatterRoute
+  '/breaches': typeof BreachesRoute
   '/bums-rush': typeof BumsRushRoute
   '/cookgame': typeof CookgameRoute
   '/cookies': typeof CookiesRoute
@@ -7251,6 +7259,7 @@ export interface FileRoutesById {
   '/ads.txt': typeof AdsDottxtRoute
   '/altair': typeof AltairRouteWithChildren
   '/black-lives-matter': typeof BlackLivesMatterRoute
+  '/breaches': typeof BreachesRoute
   '/bums-rush': typeof BumsRushRoute
   '/cookgame': typeof CookgameRoute
   '/cookies': typeof CookiesRoute
@@ -8146,6 +8155,7 @@ export interface FileRouteTypes {
     | '/ads.txt'
     | '/altair'
     | '/black-lives-matter'
+    | '/breaches'
     | '/bums-rush'
     | '/cookgame'
     | '/cookies'
@@ -9036,6 +9046,7 @@ export interface FileRouteTypes {
     | '/adaptive-intelligence'
     | '/ads.txt'
     | '/black-lives-matter'
+    | '/breaches'
     | '/bums-rush'
     | '/cookgame'
     | '/cookies'
@@ -9905,6 +9916,7 @@ export interface FileRouteTypes {
     | '/ads.txt'
     | '/altair'
     | '/black-lives-matter'
+    | '/breaches'
     | '/bums-rush'
     | '/cookgame'
     | '/cookies'
@@ -10799,6 +10811,7 @@ export interface RootRouteChildren {
   AdsDottxtRoute: typeof AdsDottxtRoute
   AltairRoute: typeof AltairRouteWithChildren
   BlackLivesMatterRoute: typeof BlackLivesMatterRoute
+  BreachesRoute: typeof BreachesRoute
   BumsRushRoute: typeof BumsRushRoute
   CookgameRoute: typeof CookgameRoute
   CookiesRoute: typeof CookiesRoute
@@ -11353,6 +11366,13 @@ declare module '@tanstack/react-router' {
       path: '/black-lives-matter'
       fullPath: '/black-lives-matter'
       preLoaderRoute: typeof BlackLivesMatterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/breaches': {
+      id: '/breaches'
+      path: '/breaches'
+      fullPath: '/breaches'
+      preLoaderRoute: typeof BreachesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bums-rush': {
@@ -19233,6 +19253,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdsDottxtRoute: AdsDottxtRoute,
   AltairRoute: AltairRouteWithChildren,
   BlackLivesMatterRoute: BlackLivesMatterRoute,
+  BreachesRoute: BreachesRoute,
   BumsRushRoute: BumsRushRoute,
   CookgameRoute: CookgameRoute,
   CookiesRoute: CookiesRoute,

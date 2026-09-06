@@ -375,6 +375,9 @@ export function RightSidebar({
           <Link to="/security" className="hover:text-site-text transition-colors">
             {t('security', { defaultValue: 'Security' })}
           </Link>
+          <Link to="/breaches" className="hover:text-site-text transition-colors">
+            {t('breaches', { defaultValue: 'Breaches' })}
+          </Link>
           <Link to="/design" className="hover:text-site-text transition-colors">
             {t('design-system', { defaultValue: 'Design system' })}
           </Link>
