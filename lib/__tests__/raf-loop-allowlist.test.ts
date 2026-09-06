@@ -63,6 +63,23 @@ import { join } from 'node:path';
  *                                       transform/opacity/custom properties, skips
  *                                       every write on a frame where nothing moved,
  *                                       and reads no layout.
+ *   - components/rideshare/cars/LiquidCarStage.tsx — the RMH family of cars'
+ *                                       turntable. Idle-at-rest by construction
+ *                                       and NOT bounded by mount, which matters
+ *                                       because unlike the globe it sits on a
+ *                                       content page you might read for a
+ *                                       minute: the scene's `frame()` returns
+ *                                       false the instant the throw has settled,
+ *                                       the wobble has died and the last ripple
+ *                                       has expired, and the loop is not
+ *                                       rescheduled. Drag, poke, a body swap, a
+ *                                       resize and a theme change each start it
+ *                                       again. There is deliberately no idle
+ *                                       spin, so a car nobody is touching runs
+ *                                       no loop at all; an IntersectionObserver
+ *                                       stops it off-screen on top of that, and
+ *                                       the effect cancels the pending frame on
+ *                                       unmount.
  *   - components/temple-of-joy/TempleGlobes.tsx — the temple's globe field: the
  *                                       spin/ripple/wobble loop for one to eight
  *                                       liquid globes. Bounded by MOUNT, like the
@@ -181,6 +198,7 @@ const ALLOW = new Set<string>([
   'components/neon-driftway/NeonDriftwayGame.tsx',
   'components/nightrail/NightrailGame.tsx',
   'components/news/NewsHero.tsx',
+  'components/rideshare/cars/LiquidCarStage.tsx',
   'components/rmh-capital/ContactPage.tsx',
   // `components/rmh-capital/shared.tsx` came OUT on 2026-08-12: its rAF was the
   // deferred `querySelectorAll` inside `useReveal(key)`, and the reveal is now a

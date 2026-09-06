@@ -147,6 +147,56 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   // falls back to English per key. Remove once `pnpm i18n:translate &&
   // pnpm i18n:resources` has been run and the catalogs committed.
   'c-ui': ['move-down', 'move-up'],
+  // ── The RMH family of cars (2026-09-06) ────────────────────────────────
+  // Copy for the fleet showcase on /services?tab=cars. English-only until
+  // `pnpm i18n:translate && pnpm i18n:resources` runs — the pipeline needs
+  // DEEPSEEK_API_KEY, which is not available in this environment. Runtime falls
+  // back to English per key.
+  'c-rideshare': [
+    'cars-bike-blurb',
+    'cars-bike-drivetrain',
+    'cars-bike-tagline',
+    'cars-black-blurb',
+    'cars-black-drivetrain',
+    'cars-black-tagline',
+    'cars-comfort-blurb',
+    'cars-comfort-drivetrain',
+    'cars-comfort-tagline',
+    'cars-cta',
+    'cars-fleet-heading',
+    'cars-green-blurb',
+    'cars-green-drivetrain',
+    'cars-green-tagline',
+    'cars-heli-blurb',
+    'cars-heli-drivetrain',
+    'cars-heli-tagline',
+    'cars-hint',
+    'cars-hint-reduced',
+    'cars-hint-static',
+    'cars-lede',
+    'cars-lineup-heading',
+    'cars-lineup-note',
+    'cars-loading',
+    'cars-reset-view',
+    'cars-spec-fare',
+    'cars-spec-fare-value',
+    'cars-spec-length',
+    'cars-spec-length-value',
+    'cars-spec-pickup',
+    'cars-spec-pickup-value',
+    'cars-spec-seats',
+    'cars-stage-description',
+    'cars-stage-label',
+    'cars-title',
+    'cars-turn-left',
+    'cars-turn-right',
+    'cars-x-blurb',
+    'cars-x-drivetrain',
+    'cars-x-tagline',
+    'cars-xl-blurb',
+    'cars-xl-drivetrain',
+    'cars-xl-tagline',
+  ],
   feed: [
     // ── Explore's Library and Games & Apps discovery (2026-08-08) ────────
     // Section headings for the two Explore tabs that had no discovery content
@@ -365,6 +415,9 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     // pipeline caveat as the `feed` block above — English-only until
     // `pnpm i18n:translate && pnpm i18n:resources` runs.
     'catalog-tabs-aria-label',
+    // The Services hub's fourth tab, the fleet showcase (2026-09-06). Same
+    // pipeline caveat.
+    'services-cars-tab',
     // 2026-07-28 UI audit fixes; see the note below.
     'get-started-free',
     'ladder-awaiting-first-run',

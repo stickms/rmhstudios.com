@@ -128,6 +128,10 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   { loc: '/design', changefreq: 'monthly', priority: 0.5 },
   { loc: '/optimization', changefreq: 'monthly', priority: 0.4 },
   { loc: '/security', changefreq: 'monthly', priority: 0.4 },
+  // The public incident log. `app/routes/breaches.tsx` calls itself "sibling to
+  // /security" and ships a canonical and a public description, so it is
+  // classified the way its sibling is.
+  { loc: '/breaches', changefreq: 'monthly', priority: 0.4 },
 
   // Legal. Low priority, but they must be crawlable — several app stores and
   // payment processors check that the linked policy actually resolves.
