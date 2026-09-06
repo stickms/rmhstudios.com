@@ -43,6 +43,7 @@ import { Route as OptimizationRouteImport } from './routes/optimization'
 import { Route as Pf2ecalRouteImport } from './routes/pf2ecal'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RmhCapitalRouteImport } from './routes/rmh-capital'
+import { Route as RmhDatacenterRouteImport } from './routes/rmh-datacenter'
 import { Route as RmhFarmingSimRouteImport } from './routes/rmh-farming-sim'
 import { Route as RmhInternalAffairsRouteImport } from './routes/rmh-internal-affairs'
 import { Route as RmhPmcRouteImport } from './routes/rmh-pmc'
@@ -163,6 +164,12 @@ import { Route as RmhCapitalCareersRouteImport } from './routes/rmh-capital/care
 import { Route as RmhCapitalContactRouteImport } from './routes/rmh-capital/contact'
 import { Route as RmhCapitalFirmRouteImport } from './routes/rmh-capital/firm'
 import { Route as RmhCapitalInsightsRouteImport } from './routes/rmh-capital/insights'
+import { Route as RmhDatacenterIndexRouteImport } from './routes/rmh-datacenter/index'
+import { Route as RmhDatacenterContactRouteImport } from './routes/rmh-datacenter/contact'
+import { Route as RmhDatacenterFacilitiesRouteImport } from './routes/rmh-datacenter/facilities'
+import { Route as RmhDatacenterNetworkRouteImport } from './routes/rmh-datacenter/network'
+import { Route as RmhDatacenterPlatformRouteImport } from './routes/rmh-datacenter/platform'
+import { Route as RmhDatacenterPowerRouteImport } from './routes/rmh-datacenter/power'
 import { Route as RmhFarmingSimIndexRouteImport } from './routes/rmh-farming-sim/index'
 import { Route as RmhInternalAffairsPageRouteImport } from './routes/rmh-internal-affairs.$page'
 import { Route as RmhPmcIndexRouteImport } from './routes/rmh-pmc/index'
@@ -1071,6 +1078,11 @@ const RmhCapitalRoute = RmhCapitalRouteImport.update({
   path: '/rmh-capital',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RmhDatacenterRoute = RmhDatacenterRouteImport.update({
+  id: '/rmh-datacenter',
+  path: '/rmh-datacenter',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RmhFarmingSimRoute = RmhFarmingSimRouteImport.update({
   id: '/rmh-farming-sim',
   path: '/rmh-farming-sim',
@@ -1672,6 +1684,36 @@ const RmhCapitalInsightsRoute = RmhCapitalInsightsRouteImport.update({
   id: '/insights',
   path: '/insights',
   getParentRoute: () => RmhCapitalRoute,
+} as any)
+const RmhDatacenterIndexRoute = RmhDatacenterIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => RmhDatacenterRoute,
+} as any)
+const RmhDatacenterContactRoute = RmhDatacenterContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => RmhDatacenterRoute,
+} as any)
+const RmhDatacenterFacilitiesRoute = RmhDatacenterFacilitiesRouteImport.update({
+  id: '/facilities',
+  path: '/facilities',
+  getParentRoute: () => RmhDatacenterRoute,
+} as any)
+const RmhDatacenterNetworkRoute = RmhDatacenterNetworkRouteImport.update({
+  id: '/network',
+  path: '/network',
+  getParentRoute: () => RmhDatacenterRoute,
+} as any)
+const RmhDatacenterPlatformRoute = RmhDatacenterPlatformRouteImport.update({
+  id: '/platform',
+  path: '/platform',
+  getParentRoute: () => RmhDatacenterRoute,
+} as any)
+const RmhDatacenterPowerRoute = RmhDatacenterPowerRouteImport.update({
+  id: '/power',
+  path: '/power',
+  getParentRoute: () => RmhDatacenterRoute,
 } as any)
 const RmhFarmingSimIndexRoute = RmhFarmingSimIndexRouteImport.update({
   id: '/',
@@ -5526,6 +5568,7 @@ export interface FileRoutesByFullPath {
   '/pf2ecal': typeof Pf2ecalRoute
   '/privacy': typeof PrivacyRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
+  '/rmh-datacenter': typeof RmhDatacenterRouteWithChildren
   '/rmh-farming-sim': typeof RmhFarmingSimRouteWithChildren
   '/rmh-internal-affairs': typeof RmhInternalAffairsRouteWithChildren
   '/rmh-pmc': typeof RmhPmcRouteWithChildren
@@ -5639,6 +5682,11 @@ export interface FileRoutesByFullPath {
   '/rmh-capital/contact': typeof RmhCapitalContactRoute
   '/rmh-capital/firm': typeof RmhCapitalFirmRoute
   '/rmh-capital/insights': typeof RmhCapitalInsightsRoute
+  '/rmh-datacenter/contact': typeof RmhDatacenterContactRoute
+  '/rmh-datacenter/facilities': typeof RmhDatacenterFacilitiesRoute
+  '/rmh-datacenter/network': typeof RmhDatacenterNetworkRoute
+  '/rmh-datacenter/platform': typeof RmhDatacenterPlatformRoute
+  '/rmh-datacenter/power': typeof RmhDatacenterPowerRoute
   '/rmh-internal-affairs/$page': typeof RmhInternalAffairsPageRoute
   '/rmh-pmc/capabilities': typeof RmhPmcCapabilitiesRoute
   '/rmh-pmc/command': typeof RmhPmcCommandRoute
@@ -5670,6 +5718,7 @@ export interface FileRoutesByFullPath {
   '/forest-explorer/': typeof ForestExplorerIndexRoute
   '/kowloon-knockout/': typeof KowloonKnockoutIndexRoute
   '/rmh-capital/': typeof RmhCapitalIndexRoute
+  '/rmh-datacenter/': typeof RmhDatacenterIndexRoute
   '/rmh-farming-sim/': typeof RmhFarmingSimIndexRoute
   '/rmh-pmc/': typeof RmhPmcIndexRoute
   '/rmhbox/': typeof RmhboxIndexRoute
@@ -6507,6 +6556,11 @@ export interface FileRoutesByTo {
   '/rmh-capital/contact': typeof RmhCapitalContactRoute
   '/rmh-capital/firm': typeof RmhCapitalFirmRoute
   '/rmh-capital/insights': typeof RmhCapitalInsightsRoute
+  '/rmh-datacenter/contact': typeof RmhDatacenterContactRoute
+  '/rmh-datacenter/facilities': typeof RmhDatacenterFacilitiesRoute
+  '/rmh-datacenter/network': typeof RmhDatacenterNetworkRoute
+  '/rmh-datacenter/platform': typeof RmhDatacenterPlatformRoute
+  '/rmh-datacenter/power': typeof RmhDatacenterPowerRoute
   '/rmh-internal-affairs/$page': typeof RmhInternalAffairsPageRoute
   '/rmh-pmc/capabilities': typeof RmhPmcCapabilitiesRoute
   '/rmh-pmc/command': typeof RmhPmcCommandRoute
@@ -6538,6 +6592,7 @@ export interface FileRoutesByTo {
   '/forest-explorer': typeof ForestExplorerIndexRoute
   '/kowloon-knockout': typeof KowloonKnockoutIndexRoute
   '/rmh-capital': typeof RmhCapitalIndexRoute
+  '/rmh-datacenter': typeof RmhDatacenterIndexRoute
   '/rmh-farming-sim': typeof RmhFarmingSimIndexRoute
   '/rmh-pmc': typeof RmhPmcIndexRoute
   '/rmhbox': typeof RmhboxIndexRoute
@@ -7288,6 +7343,7 @@ export interface FileRoutesById {
   '/pf2ecal': typeof Pf2ecalRoute
   '/privacy': typeof PrivacyRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
+  '/rmh-datacenter': typeof RmhDatacenterRouteWithChildren
   '/rmh-farming-sim': typeof RmhFarmingSimRouteWithChildren
   '/rmh-internal-affairs': typeof RmhInternalAffairsRouteWithChildren
   '/rmh-pmc': typeof RmhPmcRouteWithChildren
@@ -7401,6 +7457,11 @@ export interface FileRoutesById {
   '/rmh-capital/contact': typeof RmhCapitalContactRoute
   '/rmh-capital/firm': typeof RmhCapitalFirmRoute
   '/rmh-capital/insights': typeof RmhCapitalInsightsRoute
+  '/rmh-datacenter/contact': typeof RmhDatacenterContactRoute
+  '/rmh-datacenter/facilities': typeof RmhDatacenterFacilitiesRoute
+  '/rmh-datacenter/network': typeof RmhDatacenterNetworkRoute
+  '/rmh-datacenter/platform': typeof RmhDatacenterPlatformRoute
+  '/rmh-datacenter/power': typeof RmhDatacenterPowerRoute
   '/rmh-internal-affairs/$page': typeof RmhInternalAffairsPageRoute
   '/rmh-pmc/capabilities': typeof RmhPmcCapabilitiesRoute
   '/rmh-pmc/command': typeof RmhPmcCommandRoute
@@ -7433,6 +7494,7 @@ export interface FileRoutesById {
   '/forest-explorer/': typeof ForestExplorerIndexRoute
   '/kowloon-knockout/': typeof KowloonKnockoutIndexRoute
   '/rmh-capital/': typeof RmhCapitalIndexRoute
+  '/rmh-datacenter/': typeof RmhDatacenterIndexRoute
   '/rmh-farming-sim/': typeof RmhFarmingSimIndexRoute
   '/rmh-pmc/': typeof RmhPmcIndexRoute
   '/rmhbox/': typeof RmhboxIndexRoute
@@ -8184,6 +8246,7 @@ export interface FileRouteTypes {
     | '/pf2ecal'
     | '/privacy'
     | '/rmh-capital'
+    | '/rmh-datacenter'
     | '/rmh-farming-sim'
     | '/rmh-internal-affairs'
     | '/rmh-pmc'
@@ -8297,6 +8360,11 @@ export interface FileRouteTypes {
     | '/rmh-capital/contact'
     | '/rmh-capital/firm'
     | '/rmh-capital/insights'
+    | '/rmh-datacenter/contact'
+    | '/rmh-datacenter/facilities'
+    | '/rmh-datacenter/network'
+    | '/rmh-datacenter/platform'
+    | '/rmh-datacenter/power'
     | '/rmh-internal-affairs/$page'
     | '/rmh-pmc/capabilities'
     | '/rmh-pmc/command'
@@ -8328,6 +8396,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/'
     | '/kowloon-knockout/'
     | '/rmh-capital/'
+    | '/rmh-datacenter/'
     | '/rmh-farming-sim/'
     | '/rmh-pmc/'
     | '/rmhbox/'
@@ -9165,6 +9234,11 @@ export interface FileRouteTypes {
     | '/rmh-capital/contact'
     | '/rmh-capital/firm'
     | '/rmh-capital/insights'
+    | '/rmh-datacenter/contact'
+    | '/rmh-datacenter/facilities'
+    | '/rmh-datacenter/network'
+    | '/rmh-datacenter/platform'
+    | '/rmh-datacenter/power'
     | '/rmh-internal-affairs/$page'
     | '/rmh-pmc/capabilities'
     | '/rmh-pmc/command'
@@ -9196,6 +9270,7 @@ export interface FileRouteTypes {
     | '/forest-explorer'
     | '/kowloon-knockout'
     | '/rmh-capital'
+    | '/rmh-datacenter'
     | '/rmh-farming-sim'
     | '/rmh-pmc'
     | '/rmhbox'
@@ -9945,6 +10020,7 @@ export interface FileRouteTypes {
     | '/pf2ecal'
     | '/privacy'
     | '/rmh-capital'
+    | '/rmh-datacenter'
     | '/rmh-farming-sim'
     | '/rmh-internal-affairs'
     | '/rmh-pmc'
@@ -10058,6 +10134,11 @@ export interface FileRouteTypes {
     | '/rmh-capital/contact'
     | '/rmh-capital/firm'
     | '/rmh-capital/insights'
+    | '/rmh-datacenter/contact'
+    | '/rmh-datacenter/facilities'
+    | '/rmh-datacenter/network'
+    | '/rmh-datacenter/platform'
+    | '/rmh-datacenter/power'
     | '/rmh-internal-affairs/$page'
     | '/rmh-pmc/capabilities'
     | '/rmh-pmc/command'
@@ -10090,6 +10171,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/'
     | '/kowloon-knockout/'
     | '/rmh-capital/'
+    | '/rmh-datacenter/'
     | '/rmh-farming-sim/'
     | '/rmh-pmc/'
     | '/rmhbox/'
@@ -10840,6 +10922,7 @@ export interface RootRouteChildren {
   Pf2ecalRoute: typeof Pf2ecalRoute
   PrivacyRoute: typeof PrivacyRoute
   RmhCapitalRoute: typeof RmhCapitalRouteWithChildren
+  RmhDatacenterRoute: typeof RmhDatacenterRouteWithChildren
   RmhFarmingSimRoute: typeof RmhFarmingSimRouteWithChildren
   RmhInternalAffairsRoute: typeof RmhInternalAffairsRouteWithChildren
   RmhPmcRoute: typeof RmhPmcRouteWithChildren
@@ -11569,6 +11652,13 @@ declare module '@tanstack/react-router' {
       path: '/rmh-capital'
       fullPath: '/rmh-capital'
       preLoaderRoute: typeof RmhCapitalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rmh-datacenter': {
+      id: '/rmh-datacenter'
+      path: '/rmh-datacenter'
+      fullPath: '/rmh-datacenter'
+      preLoaderRoute: typeof RmhDatacenterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rmh-farming-sim': {
@@ -12410,6 +12500,48 @@ declare module '@tanstack/react-router' {
       fullPath: '/rmh-capital/insights'
       preLoaderRoute: typeof RmhCapitalInsightsRouteImport
       parentRoute: typeof RmhCapitalRoute
+    }
+    '/rmh-datacenter/': {
+      id: '/rmh-datacenter/'
+      path: '/'
+      fullPath: '/rmh-datacenter/'
+      preLoaderRoute: typeof RmhDatacenterIndexRouteImport
+      parentRoute: typeof RmhDatacenterRoute
+    }
+    '/rmh-datacenter/contact': {
+      id: '/rmh-datacenter/contact'
+      path: '/contact'
+      fullPath: '/rmh-datacenter/contact'
+      preLoaderRoute: typeof RmhDatacenterContactRouteImport
+      parentRoute: typeof RmhDatacenterRoute
+    }
+    '/rmh-datacenter/facilities': {
+      id: '/rmh-datacenter/facilities'
+      path: '/facilities'
+      fullPath: '/rmh-datacenter/facilities'
+      preLoaderRoute: typeof RmhDatacenterFacilitiesRouteImport
+      parentRoute: typeof RmhDatacenterRoute
+    }
+    '/rmh-datacenter/network': {
+      id: '/rmh-datacenter/network'
+      path: '/network'
+      fullPath: '/rmh-datacenter/network'
+      preLoaderRoute: typeof RmhDatacenterNetworkRouteImport
+      parentRoute: typeof RmhDatacenterRoute
+    }
+    '/rmh-datacenter/platform': {
+      id: '/rmh-datacenter/platform'
+      path: '/platform'
+      fullPath: '/rmh-datacenter/platform'
+      preLoaderRoute: typeof RmhDatacenterPlatformRouteImport
+      parentRoute: typeof RmhDatacenterRoute
+    }
+    '/rmh-datacenter/power': {
+      id: '/rmh-datacenter/power'
+      path: '/power'
+      fullPath: '/rmh-datacenter/power'
+      preLoaderRoute: typeof RmhDatacenterPowerRouteImport
+      parentRoute: typeof RmhDatacenterRoute
     }
     '/rmh-farming-sim/': {
       id: '/rmh-farming-sim/'
@@ -18030,6 +18162,28 @@ const RmhCapitalRouteWithChildren = RmhCapitalRoute._addFileChildren(
   RmhCapitalRouteChildren,
 )
 
+interface RmhDatacenterRouteChildren {
+  RmhDatacenterContactRoute: typeof RmhDatacenterContactRoute
+  RmhDatacenterFacilitiesRoute: typeof RmhDatacenterFacilitiesRoute
+  RmhDatacenterNetworkRoute: typeof RmhDatacenterNetworkRoute
+  RmhDatacenterPlatformRoute: typeof RmhDatacenterPlatformRoute
+  RmhDatacenterPowerRoute: typeof RmhDatacenterPowerRoute
+  RmhDatacenterIndexRoute: typeof RmhDatacenterIndexRoute
+}
+
+const RmhDatacenterRouteChildren: RmhDatacenterRouteChildren = {
+  RmhDatacenterContactRoute: RmhDatacenterContactRoute,
+  RmhDatacenterFacilitiesRoute: RmhDatacenterFacilitiesRoute,
+  RmhDatacenterNetworkRoute: RmhDatacenterNetworkRoute,
+  RmhDatacenterPlatformRoute: RmhDatacenterPlatformRoute,
+  RmhDatacenterPowerRoute: RmhDatacenterPowerRoute,
+  RmhDatacenterIndexRoute: RmhDatacenterIndexRoute,
+}
+
+const RmhDatacenterRouteWithChildren = RmhDatacenterRoute._addFileChildren(
+  RmhDatacenterRouteChildren,
+)
+
 interface RmhFarmingSimRouteChildren {
   RmhFarmingSimIndexRoute: typeof RmhFarmingSimIndexRoute
 }
@@ -19282,6 +19436,7 @@ const rootRouteChildren: RootRouteChildren = {
   Pf2ecalRoute: Pf2ecalRoute,
   PrivacyRoute: PrivacyRoute,
   RmhCapitalRoute: RmhCapitalRouteWithChildren,
+  RmhDatacenterRoute: RmhDatacenterRouteWithChildren,
   RmhFarmingSimRoute: RmhFarmingSimRouteWithChildren,
   RmhInternalAffairsRoute: RmhInternalAffairsRouteWithChildren,
   RmhPmcRoute: RmhPmcRouteWithChildren,

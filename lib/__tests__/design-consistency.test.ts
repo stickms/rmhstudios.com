@@ -204,6 +204,12 @@ const FULLSCREEN_TIER_DIRS = new Set([
   'lockdown',
   'render',
   'rmh-capital',
+  // The infrastructure arm's microsite. Same standing as the two beside it: a
+  // separately-branded site with its own art direction, scoped under
+  // `.rmhdc-root`, declaring its own `--signal`/`--thermal` variable group in
+  // `components/rmh-datacenter/rmh-datacenter.css`. Holding it to `--site-*`
+  // would make it a page of RMH Studios wearing another company's name.
+  'rmh-datacenter',
   'rmh-pmc',
   // A single-purpose page that pastiches another site's fixed palette. It has
   // no theme to be consistent with — that is the whole point of it.

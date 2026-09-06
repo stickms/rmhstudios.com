@@ -105,10 +105,11 @@ describe('spatial redesign — responsive layout contract', () => {
 
   it('keeps standalone parallax pages safe-area aware without creating scroll roots', () => {
     const capital = source('components/rmh-capital/rmh-capital.css');
+    const datacenter = source('components/rmh-datacenter/rmh-datacenter.css');
     const pmc = source('components/rmh-pmc/rmh-pmc.css');
     const rmhtech = source('components/rmhtech/rmhtech.css');
 
-    for (const stylesheet of [capital, pmc, rmhtech]) {
+    for (const stylesheet of [capital, datacenter, pmc, rmhtech]) {
       expect(stylesheet).toContain('overflow-x:clip');
       expect(stylesheet).toContain('env(safe-area-inset-top,0px)');
     }
