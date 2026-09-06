@@ -211,6 +211,8 @@ export class LiquidCarScene {
 
   private azimuth = HOME_AZIMUTH;
   private azimuthVel = 0;
+  /** Last drawn azimuth, so the rotor can be driven by how far the body TURNED. */
+  private lastAzimuth = HOME_AZIMUTH;
   private elevation = HOME_ELEVATION;
   private elevationVel = 0;
   /** Set while a throw or an entrance is settling; `null` once it has arrived. */
@@ -430,6 +432,9 @@ export class LiquidCarScene {
       this.azimuth = HOME_AZIMUTH - 0.85;
       this.settleTo = { azimuth: HOME_AZIMUTH, elevation: this.elevation };
     }
+    // The pose is SET here, not turned to, so the rotor must not read the jump
+    // as a spin — the entrance that follows is a turn and will drive it.
+    this.lastAzimuth = this.azimuth;
   }
 
   /* ── Materials ──────────────────────────────────────────────────────────── */
@@ -629,11 +634,16 @@ export class LiquidCarScene {
 
     this.turntable.rotation.y = this.azimuth;
     if (this.body.rotor) {
-      // The disc turns as the model turns. It is not a running engine — it is
-      // the one part of the body that shows which way the rest of it is going —
-      // so it stops exactly when the turn does, like everything else here.
-      this.body.rotor.rotation.y += this.azimuthVel * dt * 7;
+      // The disc turns as the model turns — driven by how far the body actually
+      // moved this frame, not by `azimuthVel`, which is zero for the whole of a
+      // drag (only a throw carries a velocity) and would have left the rotor
+      // still while the thing it is bolted to was being turned by hand. It is
+      // not a running engine, it is the one part of the body that shows which
+      // way the rest of it is going, so by construction it stops when the turn
+      // does — like everything else here.
+      this.body.rotor.rotation.y += (this.azimuth - this.lastAzimuth) * 7;
     }
+    this.lastAzimuth = this.azimuth;
 
     if (this.stepRipples(now / 1000)) moving = true;
 
