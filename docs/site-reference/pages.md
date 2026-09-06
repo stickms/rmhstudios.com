@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 276 routes. 137 render inside the standard site shell (sidebar, nav, context rail); 139 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 276 routes. 143 render inside the standard site shell (sidebar, nav, context rail); 133 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -102,6 +102,12 @@ Standard pages, rendered inside the sidebar shell.
 | `/rideshare` | RMH Rideshare — Rides across the community | public | `app/routes/_site/rideshare/index.tsx` |
 | `/rideshare/drive` | Drive with RMH Rideshare | public | `app/routes/_site/rideshare/drive.tsx` |
 | `/rideshare/ride` | Request a ride — RMH Rideshare | public | `app/routes/_site/rideshare/ride.tsx` |
+| `/rmh-datacenter` | — | public | `app/routes/_site/rmh-datacenter/index.tsx` |
+| `/rmh-datacenter/contact` | — | public | `app/routes/_site/rmh-datacenter/contact.tsx` |
+| `/rmh-datacenter/facilities` | — | public | `app/routes/_site/rmh-datacenter/facilities.tsx` |
+| `/rmh-datacenter/network` | — | public | `app/routes/_site/rmh-datacenter/network.tsx` |
+| `/rmh-datacenter/platform` | — | public | `app/routes/_site/rmh-datacenter/platform.tsx` |
+| `/rmh-datacenter/power` | — | public | `app/routes/_site/rmh-datacenter/power.tsx` |
 | `/rmhladder` | RMH Ladder \| Verified Early-Career Jobs | public | `app/routes/_site/rmhladder/index.tsx` |
 | `/rmhladder/alerts` | — | sign-in | `app/routes/_site/rmhladder/alerts.tsx` |
 | `/rmhladder/companies` | — | admin | `app/routes/_site/rmhladder/companies.tsx` |
@@ -225,12 +231,6 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/rmh-capital/contact` | — | public | `app/routes/rmh-capital/contact.tsx` |
 | `/rmh-capital/firm` | — | public | `app/routes/rmh-capital/firm.tsx` |
 | `/rmh-capital/insights` | — | public | `app/routes/rmh-capital/insights.tsx` |
-| `/rmh-datacenter` | — | public | `app/routes/rmh-datacenter/index.tsx` |
-| `/rmh-datacenter/contact` | — | public | `app/routes/rmh-datacenter/contact.tsx` |
-| `/rmh-datacenter/facilities` | — | public | `app/routes/rmh-datacenter/facilities.tsx` |
-| `/rmh-datacenter/network` | — | public | `app/routes/rmh-datacenter/network.tsx` |
-| `/rmh-datacenter/platform` | — | public | `app/routes/rmh-datacenter/platform.tsx` |
-| `/rmh-datacenter/power` | — | public | `app/routes/rmh-datacenter/power.tsx` |
 | `/rmh-farming-sim` | — | public | `app/routes/rmh-farming-sim/index.tsx` |
 | `/rmh-internal-affairs` | — | public | `app/routes/rmh-internal-affairs.ts` |
 | `/rmh-internal-affairs/:page` | — | public | `app/routes/rmh-internal-affairs.$page.ts` |

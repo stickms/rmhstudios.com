@@ -10,10 +10,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_SAMPLES,
+  genusOf,
   loft,
   mergeGrids,
   monotoneSpline,
   signedPow,
+  topologyOf,
   type LoftStation,
 } from '../grid';
 
@@ -185,6 +187,66 @@ describe('the loft', () => {
     expect(waist(tapered, 0)).toBeCloseTo(waist(plain, 0), 6);
     expect(waist(tapered, plain.samples / 4)).toBeLessThan(waist(plain, plain.samples / 4) + 1e-9);
     expect(tapered.half[2]).toBeLessThanOrEqual(plain.half[2] + 1e-9);
+  });
+});
+
+/**
+ * What the loft IS, as opposed to what it holds.
+ *
+ * The docblock at the top of `grid.ts` says every object on this site wears
+ * "the navigation globe's topology". That is a claim about genus, and until
+ * there was arithmetic behind it, it was a claim a section list could quietly
+ * falsify: an end that stops closing leaves a surface that renders identically
+ * and is a tube. These are the arithmetic — and the open-ended case is here so
+ * a passing sphere test cannot be a test that passes on anything.
+ */
+describe('topology', () => {
+  it('welds a pole-capped loft into a sphere', () => {
+    const t = topologyOf(loft(capsule()));
+    expect({
+      closed: t.boundaryEdges === 0,
+      manifold: t.nonManifoldEdges === 0,
+      components: t.components,
+      euler: t.euler,
+      genus: genusOf(t),
+    }).toEqual({ closed: true, manifold: true, components: 1, euler: 2, genus: 0 });
+  });
+
+  it('measures a loft with open ends as a tube, not a sphere', () => {
+    const tube = capsule().map((s, i, all) =>
+      i === 0 || i === all.length - 1 ? { ...s, halfRight: 0.4, halfUp: 0.3 } : s,
+    );
+    const t = topologyOf(loft(tube));
+    expect({ euler: t.euler, closed: t.boundaryEdges === 0, genus: genusOf(t) }).toEqual({
+      euler: 0,
+      closed: false,
+      genus: null,
+    });
+  });
+
+  it('holds at every station and sample count', () => {
+    const measured = [
+      [3, 8],
+      [12, 24],
+      [31, 36],
+    ].map(([count, samples]) => topologyOf(loft(capsule(count), { samples })).euler);
+    expect(measured).toEqual([2, 2, 2]);
+  });
+
+  it('counts a merge as the number of surfaces it merged', () => {
+    // Two capsules side by side are two spheres, so χ is 2 per piece. A merge
+    // that silently welded them into one object would report 2, not 4.
+    const a = loft(capsule());
+    const b = loft(capsule().map((s) => ({ ...s, centre: [s.centre[0], 9, 0] as const })));
+    const t = topologyOf(mergeGrids([a, b])!);
+    expect({ components: t.components, euler: t.euler }).toEqual({ components: 2, euler: 4 });
+  });
+
+  it('ignores the buffer\'s duplicate pole rows, which are memory and not shape', () => {
+    const grid = loft(capsule());
+    const t = topologyOf(grid);
+    // The buffer carries `samples` vertices per pole; the surface has one point.
+    expect(grid.radii.length - t.vertices).toBe((DEFAULT_SAMPLES - 1) * 2);
   });
 });
 

@@ -506,3 +506,159 @@ export function mergeGrids(grids: readonly LoftGrid[]): LoftGrid | null {
     half: [(max[0] - min[0]) / 2, (max[1] - min[1]) / 2, (max[2] - min[2]) / 2],
   };
 }
+
+/* ── Topology ─────────────────────────────────────────────────────────────── */
+
+/** What a surface is, once its coincident vertices are treated as one point. */
+export interface SurfaceTopology {
+  /** Distinct points after welding. */
+  vertices: number;
+  /** Distinct undirected edges of the non-degenerate triangles. */
+  edges: number;
+  /** Non-degenerate triangles. */
+  faces: number;
+  /** Edges used by exactly one face. A closed surface has none. */
+  boundaryEdges: number;
+  /** Edges used by more than two faces. A manifold has none. */
+  nonManifoldEdges: number;
+  /** Connected pieces, counted through shared edges. */
+  components: number;
+  /** V − E + F. */
+  euler: number;
+}
+
+/**
+ * Measure a grid as a surface rather than as a buffer.
+ *
+ * The buffer is not the shape. A pole is `samples` vertices sitting on one
+ * point, and the quads that reach it are half degenerate — so counting rows of
+ * the position array answers a question about memory, not about geometry. This
+ * welds coincident vertices, drops the triangles that collapse to a line, and
+ * reports what is left.
+ *
+ * It exists because "closed", "a sphere" and "one piece" are claims this site
+ * makes out loud — the navigation globe's topology is the thing every lofted
+ * object is said to be wearing — and a claim with no arithmetic behind it drifts
+ * the first time somebody edits a section list. With this, the claim is
+ * `euler === 2`.
+ *
+ * Welding is by quantised position, so two vertices count as one point when
+ * they are within `epsilon` on a grid of that size. The poles this is mostly
+ * about are computed from the same centre and are bitwise identical, so the
+ * tolerance is only there to keep a hand-written station list from failing on
+ * the last bit of a float.
+ */
+export function topologyOf(grid: LoftGrid, epsilon = 1e-6): SurfaceTopology {
+  const { positions, indices } = grid;
+  const q = 1 / epsilon;
+  const ids = new Map<string, number>();
+  const weld = new Uint32Array(positions.length / 3);
+  for (let v = 0; v < weld.length; v++) {
+    const key = `${Math.round(positions[v * 3] * q)},${Math.round(positions[v * 3 + 1] * q)},${Math.round(positions[v * 3 + 2] * q)}`;
+    let id = ids.get(key);
+    if (id === undefined) {
+      id = ids.size;
+      ids.set(key, id);
+    }
+    weld[v] = id;
+  }
+
+  /** Face count per undirected edge, and one face id per edge for the union. */
+  const edgeUse = new Map<number, number>();
+  const edgeFace = new Map<number, number>();
+  const parent = new Int32Array(indices.length / 3).fill(-1);
+  const find = (x: number): number => {
+    let r = x;
+    while (parent[r] >= 0) r = parent[r];
+    while (parent[x] >= 0) {
+      const next = parent[x];
+      parent[x] = r;
+      x = next;
+    }
+    return r;
+  };
+  const union = (a: number, b: number) => {
+    const ra = find(a);
+    const rb = find(b);
+    if (ra !== rb) parent[rb] = ra;
+  };
+
+  // Edge keys are a single number so the map stays primitive-keyed: welded ids
+  // are bounded by the vertex count, which is far below 2^26 for any grid here.
+  const keyOf = (a: number, b: number) => (a < b ? a * 0x4000000 + b : b * 0x4000000 + a);
+
+  let faces = 0;
+  for (let f = 0; f < indices.length / 3; f++) {
+    const a = weld[indices[f * 3]];
+    const b = weld[indices[f * 3 + 1]];
+    const c = weld[indices[f * 3 + 2]];
+    // A triangle with a repeated corner is a line: it has no area, contributes
+    // no face, and its "edges" are already carried by the triangle beside it.
+    if (a === b || b === c || a === c) continue;
+    faces++;
+    for (const [u, v] of [
+      [a, b],
+      [b, c],
+      [c, a],
+    ]) {
+      const k = keyOf(u, v);
+      edgeUse.set(k, (edgeUse.get(k) ?? 0) + 1);
+      const seen = edgeFace.get(k);
+      if (seen === undefined) edgeFace.set(k, f);
+      else union(seen, f);
+    }
+  }
+
+  let boundaryEdges = 0;
+  let nonManifoldEdges = 0;
+  for (const used of edgeUse.values()) {
+    if (used === 1) boundaryEdges++;
+    else if (used > 2) nonManifoldEdges++;
+  }
+
+  const roots = new Set<number>();
+  for (let f = 0; f < parent.length; f++) {
+    const a = weld[indices[f * 3]];
+    const b = weld[indices[f * 3 + 1]];
+    const c = weld[indices[f * 3 + 2]];
+    if (a === b || b === c || a === c) continue;
+    roots.add(find(f));
+  }
+
+  // Only the points an actual face uses are part of the surface; a welded
+  // vertex reachable by no non-degenerate triangle is buffer, not geometry.
+  const used = new Set<number>();
+  for (let f = 0; f < indices.length / 3; f++) {
+    const a = weld[indices[f * 3]];
+    const b = weld[indices[f * 3 + 1]];
+    const c = weld[indices[f * 3 + 2]];
+    if (a === b || b === c || a === c) continue;
+    used.add(a);
+    used.add(b);
+    used.add(c);
+  }
+
+  return {
+    vertices: used.size,
+    edges: edgeUse.size,
+    faces,
+    boundaryEdges,
+    nonManifoldEdges,
+    components: roots.size,
+    euler: used.size - edgeUse.size + faces,
+  };
+}
+
+/**
+ * The genus of a closed surface — 0 is a sphere, 1 a torus.
+ *
+ * `null` when the surface is not closed or not a manifold, because genus is not
+ * defined for something with a boundary or an edge shared by three faces, and a
+ * number returned there would be a made-up one.
+ */
+export function genusOf(topology: SurfaceTopology): number | null {
+  if (topology.boundaryEdges > 0 || topology.nonManifoldEdges > 0) return null;
+  if (topology.components < 1) return null;
+  const g = (2 * topology.components - topology.euler) / 2;
+  return Number.isInteger(g) ? g : null;
+}

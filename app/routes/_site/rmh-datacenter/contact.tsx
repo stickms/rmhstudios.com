@@ -7,7 +7,7 @@ const TITLE = 'Contact — RMH Datacenter';
 const DESC =
   'Request capacity from RMH Datacenter: the colocation, bare metal, accelerated compute, peering, site-tour and sustainability-reporting desks, with what each one commits to answering in.';
 
-export const Route = createFileRoute('/rmh-datacenter/contact')({
+export const Route = createFileRoute('/_site/rmh-datacenter/contact')({
   validateSearch: (search: Record<string, unknown>): { intent?: string } => ({
     intent: typeof search.intent === 'string' ? search.intent : undefined,
   }),
