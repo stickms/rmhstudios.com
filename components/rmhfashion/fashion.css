@@ -1,0 +1,56 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   RMH Fashion — the stage, and the wardrobe's own colours.
+
+   The cage alphas are here for the same reason the cars' are: they are numbers
+   the WebGL renderer multiplies by, not colours, so stating them as plain
+   numbers spares a resolve step and lets high contrast raise them.
+
+   The wardrobe's own colours are NOT here. A garment's colour is domain-fixed
+   the way a playing card's is, so it lives in the `--rmhfash-swatch-*` scoped
+   variable group in `app/globals.css`, alongside `--casino-*` and `--temple-*`
+   and for the same reason — see the comment there.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.rmhfash-stage {
+  --rmhfash-cage-minor: 0.26;
+  --rmhfash-cage-parallel: 0.18;
+  --rmhfash-cage-major: 0.5;
+}
+
+/* High contrast is a legibility mode, not a darker theme: a wireframe at 26%
+   ink is exactly what it exists to stop shipping. */
+.style-high-contrast .rmhfash-stage {
+  --rmhfash-cage-minor: 0.6;
+  --rmhfash-cage-parallel: 0.48;
+  --rmhfash-cage-major: 1;
+}
+
+.rmhfash-stage {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  width: 100%;
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .rmhfash-stage {
+    /* A standing figure is tall; the stage stops being a portrait only once
+       there is width to spare for the wardrobe beside it. */
+    aspect-ratio: 4 / 5;
+  }
+}
+
+.rmhfash-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* The whole stage is a drag surface, so the browser must not claim the
+     gesture for a scroll or a pinch first. */
+  touch-action: none;
+}
+
+/* A swatch chip. The colour is the content, so it carries its own border rather
+   than relying on the ring the glass classes would give it. */
+.rmhfash-chip {
+  border: var(--site-border-width, 1px) solid color-mix(in srgb, var(--site-text) 22%, transparent);
+}

@@ -8,6 +8,7 @@ import {
   Car,
   CarFront,
   Check,
+  Shirt,
   type LucideIcon,
 } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
@@ -27,16 +28,17 @@ import { buildMeta, buildCanonical } from '@/lib/seo';
  * a content-less bounce page, whereas summary panels give /services real value
  * as a hub while the child routes stay reachable directly AND via the link-out.
  *
- * `?tab=cars` is the one panel that is not a summary. **The RMH family of cars**
- * is the fleet behind RMH Rideshare, shown as turnable 3D bodies, and it has no
- * app of its own to link out to — it IS the content. It lives here rather than
- * at a route of its own because it is a chapter of Rideshare rather than a
- * sibling of it, and because the tab strip is already the thing that says which
- * chapter you are reading. Its panel is `lazy()`, so the three.js it needs is
- * fetched when somebody opens the tab and never on the other three.
+ * Two of the panels are not summaries. **The RMH family of cars** (`?tab=cars`)
+ * is the fleet behind RMH Rideshare and **RMH Fashion** (`?tab=fashion`) is a
+ * wardrobe built around a figure you design; both are turnable 3D and neither
+ * has an app of its own to link out to — they ARE the content. They live here
+ * rather than at routes of their own because the tab strip is already the thing
+ * that says which chapter you are reading, and because a showcase with no data
+ * behind it does not need a route to itself. Both panels are `lazy()`, so the
+ * three.js they share is fetched when somebody opens one and never otherwise.
  */
 
-const SERVICE_TABS = ['homes', 'rmhladder', 'rideshare', 'cars'] as const;
+const SERVICE_TABS = ['homes', 'rmhladder', 'rideshare', 'cars', 'fashion'] as const;
 type ServiceTab = (typeof SERVICE_TABS)[number];
 
 /**
@@ -47,6 +49,11 @@ type ServiceTab = (typeof SERVICE_TABS)[number];
  */
 const CarFamily = lazy(() =>
   import('@/components/rideshare/cars/CarFamily').then((m) => ({ default: m.CarFamily })),
+);
+
+/** The wardrobe showcase. Split out for the same reason the fleet is. */
+const FashionStudio = lazy(() =>
+  import('@/components/rmhfashion/FashionStudio').then((m) => ({ default: m.FashionStudio })),
 );
 
 /** What every tab has, whatever it renders. */
@@ -71,9 +78,9 @@ interface ServiceSummary extends ServiceBase {
   features: [string, string][];
 }
 
-/** The fleet showcase, which is content rather than a signpost to content. */
+/** A showcase panel: content in its own right rather than a signpost to content. */
 interface ServiceShowcase extends ServiceBase {
-  panel: 'cars';
+  panel: 'cars' | 'fashion';
 }
 
 type ServiceDef = ServiceSummary | ServiceShowcase;
@@ -139,6 +146,12 @@ const SERVICES: ServiceDef[] = [
     icon: CarFront,
     name: 'RMH Cars',
   },
+  {
+    id: 'fashion',
+    panel: 'fashion',
+    icon: Shirt,
+    name: 'RMH Fashion',
+  },
 ];
 
 export const Route = createFileRoute('/_site/services')({
@@ -146,7 +159,7 @@ export const Route = createFileRoute('/_site/services')({
     meta: buildMeta({
       title: 'Services | RMH Studios',
       description:
-        'RMH Studios services — RMHHomes housing marketplace, RMHLadder early-career job discovery, RMH Rideshare, and the RMH family of cars in 3D.',
+        'RMH Studios services — RMHHomes housing marketplace, RMHLadder early-career job discovery, RMH Rideshare, the RMH family of cars, and RMH Fashion: a 3D wardrobe built around a figure you design.',
       path: '/services',
     }),
     links: [buildCanonical('/services')],
@@ -180,9 +193,11 @@ function ServicesPage() {
   const tabs: LiquidTab[] = SERVICES.map((s) => ({
     id: s.id,
     label:
-      s.panel === 'cars'
-        ? t('services-cars-tab', { defaultValue: 'RMH Cars' })
-        : t(s.navKey, { ns: 'feed', defaultValue: s.name }),
+      s.panel === 'summary'
+        ? t(s.navKey, { ns: 'feed', defaultValue: s.name })
+        : s.panel === 'cars'
+          ? t('services-cars-tab', { defaultValue: 'RMH Cars' })
+          : t('services-fashion-tab', { defaultValue: 'RMH Fashion' }),
     icon: s.icon,
   }));
 
@@ -215,17 +230,17 @@ function ServicesPage() {
           aria-labelledby={`services-tab-${active.id}`}
           className={active.panel === 'summary' ? 'glass-pane rounded-site p-6 sm:p-8' : undefined}
         >
-          {active.panel === 'cars' ? (
-            // The fallback holds the panel's height rather than collapsing to
-            // nothing: this panel is the tallest of the four, and a `null`
-            // fallback drops the page to the tab strip and then shoves it back
-            // down when the chunk lands. It is a plain box, not the stage's own
-            // class — that class ships INSIDE the chunk being waited for.
-            <Suspense fallback={<div className="min-h-[70vh]" aria-hidden />}>
-              <CarFamily />
-            </Suspense>
-          ) : (
+          {active.panel === 'summary' ? (
             <ServiceSummaryPanel service={active} />
+          ) : (
+            // The fallback holds the panel's height rather than collapsing to
+            // nothing: these are the tallest panels, and a `null` fallback drops
+            // the page to the tab strip and then shoves it back down when the
+            // chunk lands. It is a plain box, not the panel's own class — that
+            // class ships INSIDE the chunk being waited for.
+            <Suspense fallback={<div className="min-h-[70vh]" aria-hidden />}>
+              {active.panel === 'cars' ? <CarFamily /> : <FashionStudio />}
+            </Suspense>
           )}
         </section>
       </div>

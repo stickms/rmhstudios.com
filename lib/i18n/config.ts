@@ -60,7 +60,7 @@ export const NAMESPACES = [
   "c-lights-out", "c-lists", "c-lockdown", "c-massive-march", "c-moderation", "c-neon-driftway",
   "c-news", "c-nightrail", "c-predictions", "c-profile-modules", "c-rideshare",
   "c-rmh-capital", "c-rmh-pmc", "c-rmhbox", "c-rmhcalculator", "c-rmhcode",
-  "c-rmhcoins", "c-rmhmusic", "c-rmhstudy", "c-rmhtech", "c-rmhtube",
+  "c-rmhcoins", "c-rmhfashion", "c-rmhmusic", "c-rmhstudy", "c-rmhtech", "c-rmhtube",
   "c-rmhtype", "c-rmhvibe", "c-roadmap", "c-saves", "c-signal-forge",
   "c-status", "c-studio", "c-synapse-storm", "c-temple-of-joy",
   "c-tournaments", "c-ui", "c-user-builds", "c-vega", "c-velum2099",
