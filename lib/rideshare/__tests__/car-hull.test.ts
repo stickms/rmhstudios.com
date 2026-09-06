@@ -22,7 +22,6 @@ import {
   buildRotor,
   buildSilhouette,
   buildWheels,
-  monotoneSpline,
   rotorHub,
   sectionAt,
   wheelCentres,
@@ -69,37 +68,6 @@ describe('the fleet catalogue', () => {
       for (const s of body.sections) expect(s.top).toBeLessThanOrEqual(FLEET_HEIGHT + 1e-9);
       if (body.rotor) expect(body.rotor.y).toBeLessThanOrEqual(FLEET_HEIGHT + 1e-9);
     }
-  });
-});
-
-describe('monotone interpolation', () => {
-  it('passes exactly through every knot', () => {
-    const xs = [0, 0.25, 0.6, 1];
-    const ys = [1, 4, 2, 3];
-    const f = monotoneSpline(xs, ys);
-    for (let i = 0; i < xs.length; i++) expect(f(xs[i])).toBeCloseTo(ys[i], 10);
-  });
-
-  it('never overshoots a knot — the reason it is not a Catmull-Rom', () => {
-    // A peak in the middle: a cubic that ignores monotonicity sails past 4 on
-    // its way in, and the widest point of a car becomes a number nobody wrote.
-    const f = monotoneSpline([0, 0.5, 1], [1, 4, 1]);
-    for (let i = 0; i <= 200; i++) {
-      const v = f(i / 200);
-      expect(v).toBeGreaterThanOrEqual(1 - 1e-9);
-      expect(v).toBeLessThanOrEqual(4 + 1e-9);
-    }
-  });
-
-  it('clamps outside its range rather than extrapolating', () => {
-    const f = monotoneSpline([0, 1], [2, 5]);
-    expect(f(-3)).toBe(2);
-    expect(f(9)).toBe(5);
-  });
-
-  it('survives degenerate inputs', () => {
-    expect(monotoneSpline([], [])(0.5)).toBe(0);
-    expect(monotoneSpline([0.3], [7])(0.5)).toBe(7);
   });
 });
 

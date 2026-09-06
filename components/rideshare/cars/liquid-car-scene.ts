@@ -45,6 +45,14 @@ import {
   spring,
   springStep,
 } from '@/lib/fluid';
+import {
+  applyPaint,
+  cageMaterial,
+  glassMaterial,
+  type CagePaint,
+  type CageTier,
+  type InkTarget,
+} from '@/lib/render/glass-cage';
 import { FLEET_HEIGHT, FLEET_RADIUS, type CarBodySpec } from '@/lib/rideshare/cars';
 import {
   buildHull,
@@ -129,25 +137,8 @@ const WOBBLE_KICK = (() => {
   return omega * Math.sqrt(Math.max(0.01, 1 - zeta * zeta));
 })();
 
-/**
- * The scene's ink, resolved from the page's `--site-*` contract by the caller.
- * Every colour in here arrives through this — the renderer names none of its own.
- */
-export interface CarPaint {
-  /** `--site-text`: the cage's ink and the body of the glass. */
-  ink: string;
-  /** `--site-accent`: the tint, the ripple crest and the ground ring. */
-  accent: string;
-  /** Cage line alphas, matching the globe's three tiers. */
-  minor: number;
-  parallel: number;
-  major: number;
-}
-
-/** The three cage tiers of {@link CarPaint}. */
-type CageTier = 'minor' | 'parallel' | 'major';
-/** What a material takes its colour from: a cage tier, or the glass itself. */
-type InkTier = 'glass' | CageTier;
+/** The scene's ink. The material and its tiers live in `lib/render/glass-cage`. */
+export type CarPaint = CagePaint;
 
 export interface LiquidCarSceneOptions {
   canvas: HTMLCanvasElement;
@@ -167,11 +158,6 @@ interface Ripple {
   z: number;
   /** `performance.now()` at impact, in seconds. */
   t0: number;
-}
-
-interface InkTarget {
-  material: THREE.ShaderMaterial;
-  tier: InkTier;
 }
 
 interface Body {
@@ -440,39 +426,13 @@ export class LiquidCarScene {
   /* ── Materials ──────────────────────────────────────────────────────────── */
 
   private glassMaterial(accentMix: number, side: THREE.Side, strength: number) {
-    const material = new THREE.ShaderMaterial({
-      uniforms: {
-        uInk: { value: new THREE.Color() },
-        uAccent: { value: new THREE.Color() },
-        uAccentMix: { value: accentMix },
-        uStrength: { value: strength },
-        // The static scene sun (design-language §5.1.1 — nothing tracks the
-        // cursor). A fixed direction in view space, so the glint sits where the
-        // page's light comes from and stays there.
-        uSun: { value: new THREE.Vector3(-0.42, 0.78, 0.46).normalize() },
-      },
-      vertexShader: GLASS_VERTEX,
-      fragmentShader: GLASS_FRAGMENT,
-      transparent: true,
-      depthWrite: false,
-      side,
-    });
+    const material = glassMaterial(accentMix, side, strength);
     this.bodyInk.push({ material, tier: 'glass' });
     return material;
   }
 
   private cageMaterial(tier: CageTier, into: InkTarget[]) {
-    const material = new THREE.ShaderMaterial({
-      uniforms: {
-        uColor: { value: new THREE.Color() },
-        uCrest: { value: new THREE.Color() },
-        uAlpha: { value: 0.2 },
-      },
-      vertexShader: CAGE_VERTEX,
-      fragmentShader: CAGE_FRAGMENT,
-      transparent: true,
-      depthWrite: false,
-    });
+    const material = cageMaterial();
     into.push({ material, tier });
     return material;
   }
@@ -480,18 +440,7 @@ export class LiquidCarScene {
   /** Re-ink the scene from the page's tokens. Cheap enough to call on a theme flip. */
   setPaint(paint: CarPaint): void {
     this.paint = paint;
-    const ink = new THREE.Color().setStyle(paint.ink);
-    const accent = new THREE.Color().setStyle(paint.accent);
-    for (const { material, tier } of [...this.bodyInk, ...this.stageInk]) {
-      if (tier === 'glass') {
-        (material.uniforms.uInk.value as THREE.Color).copy(ink);
-        (material.uniforms.uAccent.value as THREE.Color).copy(accent);
-      } else {
-        (material.uniforms.uColor.value as THREE.Color).copy(ink);
-        (material.uniforms.uCrest.value as THREE.Color).copy(accent);
-        material.uniforms.uAlpha.value = paint[tier];
-      }
-    }
+    applyPaint([...this.bodyInk, ...this.stageInk], paint);
   }
 
   /* ── Gestures ───────────────────────────────────────────────────────────── */
@@ -842,76 +791,3 @@ function groundRing(radius: number): THREE.BufferGeometry {
   }
   return staticLineGeometry(Float32Array.from(pts));
 }
-
-/* ── Shaders ─────────────────────────────────────────────────────────────────
-   Two programs, both unlit. There are no lights in this scene and there need not
-   be any: the site's glass answers a STATIC SUN (design-language §5.1.1 —
-   nothing tracks the cursor), so the specular is one fixed direction and the
-   rest of the surface is Fresnel. That is also what makes the material cheap
-   enough to sit on a content page rather than in a game. */
-
-const GLASS_VERTEX = /* glsl */ `
-  attribute float aWave;
-  varying vec3 vNormal;
-  varying vec3 vView;
-  varying float vWave;
-  void main() {
-    vec4 mv = modelViewMatrix * vec4(position, 1.0);
-    vNormal = normalize(normalMatrix * normal);
-    vView = normalize(-mv.xyz);
-    vWave = aWave;
-    gl_Position = projectionMatrix * mv;
-  }
-`;
-
-const GLASS_FRAGMENT = /* glsl */ `
-  uniform vec3 uInk;
-  uniform vec3 uAccent;
-  uniform float uAccentMix;
-  uniform float uStrength;
-  uniform vec3 uSun;
-  varying vec3 vNormal;
-  varying vec3 vView;
-  varying float vWave;
-
-  void main() {
-    vec3 n = normalize(vNormal);
-    vec3 v = normalize(vView);
-    // Fresnel: glass is nearly invisible face-on and nearly solid at the limb,
-    // which is what lets a transparent body still read as a volume.
-    float rim = pow(1.0 - abs(dot(n, v)), 2.6);
-    float spec = pow(max(dot(reflect(-uSun, n), v), 0.0), 44.0);
-    float wave = clamp(abs(vWave), 0.0, 1.0);
-
-    vec3 tint = mix(uInk, uAccent, clamp(uAccentMix + wave * 0.35, 0.0, 1.0));
-    vec3 colour = mix(tint, uAccent, rim * 0.5) + spec * 0.6;
-    float alpha = uStrength * (0.07 + 0.5 * rim + 0.28 * spec + 0.24 * wave);
-
-    gl_FragColor = vec4(colour, clamp(alpha, 0.0, 1.0));
-    #include <colorspace_fragment>
-  }
-`;
-
-const CAGE_VERTEX = /* glsl */ `
-  attribute float aWave;
-  varying float vWave;
-  void main() {
-    vWave = aWave;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-
-const CAGE_FRAGMENT = /* glsl */ `
-  uniform vec3 uColor;
-  uniform vec3 uCrest;
-  uniform float uAlpha;
-  varying float vWave;
-  void main() {
-    // The crest is carried BY the wireframe rather than drawn as a second bright
-    // ring on top of it — the globe's decision, for the globe's reason: a hard
-    // bright circle stops being light on a wave and becomes a line somebody drew.
-    float wave = clamp(abs(vWave), 0.0, 1.0);
-    gl_FragColor = vec4(mix(uColor, uCrest, wave), min(1.0, uAlpha + wave * 0.6));
-    #include <colorspace_fragment>
-  }
-`;

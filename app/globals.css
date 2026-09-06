@@ -525,6 +525,33 @@
   --neon-blue: #0066ff;
   --neon-red: #ff0044;
 
+  /* ── Wardrobe group (`components/rmhfashion/`) ────────────────────────────
+     RMH Fashion dresses a figure you design, and a garment's colour is not the
+     theme's to choose any more than a playing card's is: a red coat is red in
+     every theme, and re-tinting it when somebody switches to Midnight would be
+     re-dyeing their clothes because they changed the lights.
+
+     So these are the wardrobe's dyes, in the same spirit as `--casino-*`. The
+     chips in the picker and the meshes on the stage both read them from here,
+     which is what keeps the swatch you tapped and the cloth you got identical.
+
+     `--rmhfash-swatch-accent` is the deliberate exception, and the reason the
+     group is not simply a constant table: it forwards to `--site-accent`, so a
+     visitor can dress the figure in the site's own colour and have that one
+     garment follow their theme and their accent preset. */
+  --rmhfash-swatch-ink: #23262b;
+  --rmhfash-swatch-bone: #ece5da;
+  --rmhfash-swatch-slate: #5c6b7a;
+  --rmhfash-swatch-sand: #d8bd94;
+  --rmhfash-swatch-clay: #a5624a;
+  --rmhfash-swatch-moss: #5d7350;
+  --rmhfash-swatch-sky: #7fa8c9;
+  --rmhfash-swatch-indigo: #3c4a7d;
+  --rmhfash-swatch-plum: #6d4266;
+  --rmhfash-swatch-rose: #c98a91;
+  --rmhfash-swatch-ochre: #c2913c;
+  --rmhfash-swatch-accent: var(--site-accent);
+
   /* ── Casino table group (`components/rmhcoins/`) ──────────────────────────
      A scoped variable group, in the same spirit as `--temple-*` / `--slice-*` /
      `--neon-*`, for the ONE part of the site whose colours are not the theme's
@@ -774,6 +801,19 @@
 /* Midnight — Apple-style true-black monochrome. OLED black ground, near-white
    ink, graphite elevated surfaces, hairline light borders, one calm blue signal.
    The dark twin of the default: strict greyscale, the accent is the only hue. */
+/* Dyed cloth on a dark ground needs more light than it does on paper, or the
+   darker half of the wardrobe collapses into the background. Only the swatches
+   that actually disappear are lifted. */
+.style-graphite,
+.style-high-contrast {
+  --rmhfash-swatch-ink: #6f7681;
+  --rmhfash-swatch-slate: #8fa1b3;
+  --rmhfash-swatch-indigo: #6d7fc4;
+  --rmhfash-swatch-plum: #a273a0;
+  --rmhfash-swatch-moss: #8aa47a;
+  --rmhfash-swatch-clay: #d38a6e;
+}
+
 .style-graphite {
   color-scheme: dark;
   --site-bg: #000000;

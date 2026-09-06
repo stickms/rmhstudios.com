@@ -415,9 +415,10 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     // pipeline caveat as the `feed` block above — English-only until
     // `pnpm i18n:translate && pnpm i18n:resources` runs.
     'catalog-tabs-aria-label',
-    // The Services hub's fourth tab, the fleet showcase (2026-09-06). Same
-    // pipeline caveat.
+    // The Services hub's fourth and fifth tabs — the fleet showcase and the
+    // fashion studio (2026-09-06). Same pipeline caveat.
     'services-cars-tab',
+    'services-fashion-tab',
     // 2026-07-28 UI audit fixes; see the note below.
     'get-started-free',
     'ladder-awaiting-first-run',

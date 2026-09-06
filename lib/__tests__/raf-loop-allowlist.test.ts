@@ -80,6 +80,20 @@ import { join } from 'node:path';
  *                                       stops it off-screen on top of that, and
  *                                       the effect cancels the pending frame on
  *                                       unmount.
+ *   - components/rmhfashion/FashionStage.tsx — RMH Fashion's figure turntable.
+ *                                       The same construction as the car stage
+ *                                       above and idle-at-rest for the same
+ *                                       reason: `frame()` returns false once the
+ *                                       throw has settled, the sway has died and
+ *                                       the last ripple has expired, and the
+ *                                       loop is not rescheduled. Dressing,
+ *                                       dyeing, a figure slider, a drag, a poke
+ *                                       and a theme change each start it again.
+ *                                       There is no idle spin, so a dressed
+ *                                       figure nobody is touching runs no loop;
+ *                                       an IntersectionObserver stops it
+ *                                       off-screen, and the effect cancels the
+ *                                       pending frame on unmount.
  *   - components/temple-of-joy/TempleGlobes.tsx — the temple's globe field: the
  *                                       spin/ripple/wobble loop for one to eight
  *                                       liquid globes. Bounded by MOUNT, like the
@@ -199,6 +213,7 @@ const ALLOW = new Set<string>([
   'components/nightrail/NightrailGame.tsx',
   'components/news/NewsHero.tsx',
   'components/rideshare/cars/LiquidCarStage.tsx',
+  'components/rmhfashion/FashionStage.tsx',
   'components/rmh-capital/ContactPage.tsx',
   // `components/rmh-capital/shared.tsx` came OUT on 2026-08-12: its rAF was the
   // deferred `querySelectorAll` inside `useReveal(key)`, and the reveal is now a

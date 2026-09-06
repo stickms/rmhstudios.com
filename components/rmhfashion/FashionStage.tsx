@@ -1,32 +1,28 @@
 'use client';
 
 /**
- * The stage — the React side of the liquid car.
+ * The stage — the React side of the figure.
  *
- * It owns four things and nothing else: the canvas, the frame loop, the gesture,
- * and the ink. Everything about how a vehicle actually looks lives in
- * `liquid-car-scene.ts`; everything about what a vehicle IS lives in
- * `lib/rideshare/cars.ts`.
+ * The same four responsibilities the car turntable has, for the same reasons:
+ * the canvas, the frame loop, the gesture, and the ink. Everything about how a
+ * person and their clothes look lives in `fashion-scene.ts`; everything about
+ * what a garment IS lives in `lib/fashion/`.
  *
  * ## The loop starts on demand and stops on its own
  *
  * `kick()` schedules a frame; the scene's `frame()` says whether it wants
- * another. Drag, release, poke, a body swap, a resize and a theme change each
- * kick it, and it winds itself down the moment the throw settles and the last
- * ripple dies. A page with this component on it and nobody touching it runs no
- * rAF at all — the §16.4 idle-at-rest rule that the site's shared motion tier
- * lives by, applied to a canvas. (Off-screen it does not even do that: an
- * IntersectionObserver stops the loop, and a tab in the background never gets a
- * frame from the browser in the first place.)
+ * another, and stops the moment the throw has settled, the sway has died and
+ * the last ripple has expired. Dressing, dyeing, resizing, a drag, a poke and a
+ * theme change each kick it. A page with a dressed figure on it and nobody
+ * touching it runs no rAF at all (§16.4), and an IntersectionObserver stops it
+ * off-screen on top of that.
  *
  * ## Reaching it without a pointer
  *
- * The canvas is a picture as far as assistive tech is concerned, and the drag is
- * a pointer affordance layered on top of it. So the turn is ALSO three real
- * buttons underneath — turn left, turn right, reset — rather than key handlers
- * bolted onto a `div` with `role="application"`. A keyboard user gets the same
- * control through a control they can find, and a screen reader gets a described
- * image plus three labelled buttons instead of an interactive black box.
+ * The canvas is a picture as far as assistive tech is concerned. The turn is
+ * therefore also three real buttons, not key handlers bolted onto a div with
+ * `role="application"` — and the wardrobe itself is ordinary buttons, so the
+ * whole service is operable without ever touching the 3D at all.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -37,43 +33,39 @@ import { VelocityTracker } from '@/lib/fluid';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { probeGpu } from '@/lib/render/probe';
 import { TIER_QUALITY, detectTier } from '@/lib/render/tier';
-import type { CarBodySpec } from '@/lib/rideshare/cars';
 import { readAlpha, readToken, resolveColor } from '@/lib/render/glass-cage';
-import { LiquidCarScene, type CarPaint } from './liquid-car-scene';
-import { CarSilhouette } from './CarSilhouette';
-import './cars.css';
+import { SWATCHES, swatchVar, type SwatchId } from '@/lib/fashion/palette';
+import type { Outfit } from '@/lib/fashion/wardrobe';
+import { FashionScene, type FashionPaint } from './fashion-scene';
+import './fashion.css';
 
-interface LiquidCarStageProps {
-  spec: CarBodySpec;
-  /** The vehicle's name, for the canvas's accessible description. */
-  name: string;
+interface FashionStageProps {
+  outfit: Outfit;
   /** One sentence describing what is on the stage, already translated. */
   description: string;
 }
 
 /** How far a pointer may travel and still count as a poke rather than a drag. */
 const POKE_SLOP = 6;
-/** One press of a turn button, in radians. An eighth of a turn. */
+/** One press of a turn button. An eighth of a turn. */
 const NUDGE = Math.PI / 4;
 
-export function LiquidCarStage({ spec, name, description }: LiquidCarStageProps) {
-  const { t } = useTranslation('c-rideshare');
+export function FashionStage({ outfit, description }: FashionStageProps) {
+  const { t } = useTranslation('c-rmhfashion');
   const reduced = useReducedMotion();
   const hostRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const sceneRef = useRef<LiquidCarScene | null>(null);
+  const sceneRef = useRef<FashionScene | null>(null);
   const frameRef = useRef(0);
   const visibleRef = useRef(true);
   const [failed, setFailed] = useState(false);
 
-  // The scene is created once and lives across body swaps, so the two effects
-  // below can run in either order: whichever gets there first puts the current
-  // vehicle on the stage, and `applied` stops the other from rebuilding it.
-  const specRef = useRef(spec);
-  specRef.current = spec;
-  const appliedRef = useRef<CarBodySpec | null>(null);
+  // The scene outlives every outfit change, so the two effects below can run in
+  // either order: whichever gets there first dresses the figure.
+  const outfitRef = useRef(outfit);
+  outfitRef.current = outfit;
+  const appliedRef = useRef<Outfit | null>(null);
 
-  /** Ask for a frame. A no-op while one is already pending or the stage is away. */
   const kick = useCallback(() => {
     if (frameRef.current || !visibleRef.current || !sceneRef.current) return;
     const step = (now: number) => {
@@ -85,8 +77,6 @@ export function LiquidCarStage({ spec, name, description }: LiquidCarStageProps)
     frameRef.current = requestAnimationFrame(step);
   }, []);
 
-  /* ── The scene ─────────────────────────────────────────────────────────── */
-
   useEffect(() => {
     const host = hostRef.current;
     const canvas = canvasRef.current;
@@ -97,13 +87,10 @@ export function LiquidCarStage({ spec, name, description }: LiquidCarStageProps)
       setFailed(true);
       return;
     }
-
-    // The tier is asked for two numbers only — a device-pixel ceiling and
-    // whether to multisample — so `reducedMotion` is deliberately NOT passed to
-    // it. There it means "cut the effects", which would drop this stage to a 1x
-    // buffer; but under reduced motion this canvas is a still picture, and a
-    // still picture at 1x on a 3x phone is just a blurry picture. The motion is
-    // cut where motion lives, inside the scene.
+    // `reducedMotion` is deliberately not passed to the tier: there it means
+    // "cut the effects", which would drop this to a 1x buffer — and under
+    // reduced motion this canvas is a still picture, where a 1x buffer on a 3x
+    // phone is just a blurry picture. The motion is cut inside the scene.
     const tier = detectTier({
       gpuTier: gpu.gpuTier,
       isMobile: window.matchMedia('(pointer: coarse)').matches,
@@ -111,9 +98,9 @@ export function LiquidCarStage({ spec, name, description }: LiquidCarStageProps)
     });
     const quality = TIER_QUALITY[tier];
 
-    let scene: LiquidCarScene;
+    let scene: FashionScene;
     try {
-      scene = new LiquidCarScene({
+      scene = new FashionScene({
         canvas,
         maxDpr: quality.dpr[1],
         antialias: quality.antialias,
@@ -121,27 +108,20 @@ export function LiquidCarStage({ spec, name, description }: LiquidCarStageProps)
         onContextLost: () => setFailed(true),
       });
     } catch {
-      // A browser can advertise WebGL and still refuse a context (a blocklisted
-      // driver, too many live contexts). The silhouette is a complete fallback,
-      // so this is a downgrade rather than an error to report.
       setFailed(true);
       return;
     }
     sceneRef.current = scene;
     scene.setPaint(readPaint(host));
-    appliedRef.current = specRef.current;
-    scene.setBody(specRef.current);
+    appliedRef.current = outfitRef.current;
+    scene.setOutfit(outfitRef.current);
 
     const resize = new ResizeObserver(([entry]) => {
-      const box = entry.contentRect;
-      scene.resize(box.width, box.height);
+      scene.resize(entry.contentRect.width, entry.contentRect.height);
       kick();
     });
     resize.observe(host);
 
-    // Off-screen the loop stops entirely rather than rendering a canvas nobody
-    // can see — the cheapest possible answer to "what does this cost while the
-    // visitor is reading the rest of the page".
     const seen = new IntersectionObserver(([entry]) => {
       visibleRef.current = entry.isIntersecting;
       if (entry.isIntersecting) kick();
@@ -149,9 +129,8 @@ export function LiquidCarStage({ spec, name, description }: LiquidCarStageProps)
     seen.observe(host);
 
     // Themes land on <html> as a class (and user themes as inline custom
-    // properties), so one observer catches every way the palette can change —
-    // the built-in themes, an accent preset, a marketplace theme, high contrast
-    // — without this component having to know that any of them exist.
+    // properties), so one observer catches every way the palette can change
+    // without this component knowing that any of them exist.
     const repaint = new MutationObserver(() => {
       sceneRef.current?.setPaint(readPaint(host));
       kick();
@@ -173,19 +152,15 @@ export function LiquidCarStage({ spec, name, description }: LiquidCarStageProps)
     };
   }, [kick, reduced]);
 
-  /* ── The body on the stage ─────────────────────────────────────────────── */
-
   useEffect(() => {
     const scene = sceneRef.current;
     if (!scene) return;
-    if (appliedRef.current !== spec) {
-      appliedRef.current = spec;
-      scene.setBody(spec);
+    if (appliedRef.current !== outfit) {
+      appliedRef.current = outfit;
+      scene.setOutfit(outfit);
     }
     kick();
-  }, [spec, kick]);
-
-  /* ── The gesture ───────────────────────────────────────────────────────── */
+  }, [outfit, kick]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -232,11 +207,8 @@ export function LiquidCarStage({ spec, name, description }: LiquidCarStageProps)
       const scene = sceneRef.current;
       if (!scene || event.pointerId !== pointer) return;
       pointer = null;
-      if (canvas.hasPointerCapture(event.pointerId)) {
-        canvas.releasePointerCapture(event.pointerId);
-      }
-      // A press that never really moved is a POKE, not a throw of zero speed —
-      // otherwise every tap ends in a settle spring that has nothing to settle.
+      if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+      // A press that never really moved is a POKE, not a throw of zero speed.
       if (travelled <= POKE_SLOP) {
         const rect = canvas.getBoundingClientRect();
         scene.poke(
@@ -275,31 +247,26 @@ export function LiquidCarStage({ spec, name, description }: LiquidCarStageProps)
     kick();
   }, [kick]);
 
-  // Three hints, because there are three things this stage can be: a live
-  // turntable, a live turntable that has been asked not to animate, and a flat
-  // drawing on a machine with no WebGL. Telling the third one to drag would be
-  // an instruction it cannot follow.
   const hint = failed
-    ? t('cars-hint-static', {
-        defaultValue: 'Your browser can’t show the 3D model, so here is the side elevation.',
+    ? t('stage-hint-static', {
+        defaultValue: 'Your browser can’t show the 3D model, so the wardrobe below still works.',
       })
     : reduced
-      ? t('cars-hint-reduced', { defaultValue: 'Drag the stage to turn it.' })
-      : t('cars-hint', { defaultValue: 'Drag to turn it · tap it to make it ripple' });
+      ? t('stage-hint-reduced', { defaultValue: 'Drag the stage to turn the figure.' })
+      : t('stage-hint', {
+          defaultValue: 'Drag to turn · tap the figure to make the fabric ripple',
+        });
 
   return (
     <div className="flex flex-col gap-3">
-      <div ref={hostRef} className="rmhcar-stage glass-pane glass-bevel-sm rounded-site">
+      <div ref={hostRef} className="rmhfash-stage glass-pane glass-bevel-sm rounded-site">
         {failed ? (
-          // No GPU, or the context went away. The silhouette is the same body,
-          // drawn from the same sections — a smaller thing to see, not a
-          // different one, and never an empty box with an apology in it.
-          <CarSilhouette
-            spec={spec}
-            frame="body"
-            title={description}
-            className="size-full p-6 text-site-text"
-          />
+          <div className="flex size-full items-center justify-center p-6 text-center text-sm text-site-text-muted">
+            {t('stage-unavailable', {
+              defaultValue:
+                'This device can’t draw the figure, but everything you choose below is still saved to the outfit.',
+            })}
+          </div>
         ) : (
           <canvas ref={canvasRef} role="img" aria-label={description} />
         )}
@@ -309,22 +276,22 @@ export function LiquidCarStage({ spec, name, description }: LiquidCarStageProps)
         <p className="text-xs text-site-text-dim">{hint}</p>
         {!failed && (
           <div className="flex items-center gap-1">
-            {/* The near face of the body follows the button: a positive turn
-                about the turntable's axis sweeps what you are looking at toward
-                screen-right, so THAT is the right-hand button. */}
+            {/* The near face of the figure follows the button, so a positive
+                turn — which sweeps what you are looking at toward screen-right
+                — is the right-hand one. */}
             <StageButton
               onClick={() => turn(-NUDGE)}
-              label={t('cars-turn-left', { defaultValue: 'Turn {{name}} left', name })}
+              label={t('turn-left', { defaultValue: 'Turn the figure left' })}
               icon={RotateCcw}
             />
             <StageButton
               onClick={home}
-              label={t('cars-reset-view', { defaultValue: 'Reset the view' })}
+              label={t('reset-view', { defaultValue: 'Reset the view' })}
               icon={Undo2}
             />
             <StageButton
               onClick={() => turn(NUDGE)}
-              label={t('cars-turn-right', { defaultValue: 'Turn {{name}} right', name })}
+              label={t('turn-right', { defaultValue: 'Turn the figure right' })}
               icon={RotateCw}
             />
           </div>
@@ -351,22 +318,22 @@ function StageButton({
 }
 
 /* ── Ink ─────────────────────────────────────────────────────────────────────
-   The renderer names no colours (see `CarPaint`), so they are read off the stage
-   element's own computed style and handed over. The awkward part — a custom
-   property's computed value can be an `oklch()` or a `color-mix()` that
-   `THREE.Color` silently renders as white — is handled once in
-   `lib/render/glass-cage`, which puts every value through the browser's own
-   parser first. The cage alphas are numbers rather than colours (cars.css)
-   precisely so they need no such round trip. */
+   The renderer names no colours. The site's ink comes from `--site-*`; the
+   wardrobe's comes from the `--rmhfash-swatch-*` group, which is a domain-fixed
+   palette rather than a theme token (a red coat is red in every theme). Both go
+   through the browser's own parser first — see `lib/render/glass-cage`. */
 
-function readPaint(host: HTMLElement): CarPaint {
+function readPaint(host: HTMLElement): FashionPaint {
   const cs = getComputedStyle(host);
   const fallback = resolveColor(cs.color) ?? '#808080';
+  const swatches = {} as Record<SwatchId, string>;
+  for (const id of SWATCHES) swatches[id] = readToken(cs, swatchVar(id), fallback);
   return {
     ink: readToken(cs, '--site-text', fallback),
     accent: readToken(cs, '--site-accent', fallback),
-    minor: readAlpha(cs, '--rmhcar-cage-minor', 0.28),
-    parallel: readAlpha(cs, '--rmhcar-cage-parallel', 0.2),
-    major: readAlpha(cs, '--rmhcar-cage-major', 0.52),
+    minor: readAlpha(cs, '--rmhfash-cage-minor', 0.26),
+    parallel: readAlpha(cs, '--rmhfash-cage-parallel', 0.18),
+    major: readAlpha(cs, '--rmhfash-cage-major', 0.5),
+    swatches,
   };
 }
