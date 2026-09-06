@@ -505,7 +505,14 @@ export class LiquidCarScene {
 
   /** Turn the body. `dx`/`dy` are CSS pixels since the last move. */
   drag(dx: number, dy: number): void {
-    this.azimuth -= dx * AZIMUTH_PER_PX;
+    // The surface follows the finger: drag right and the face you are looking
+    // at travels right, as it would on a real turntable. `rotation.y` maps a
+    // body-local +z to world `(sin a, 0, cos a)`, so screen-right is INCREASING
+    // azimuth — this read `-=` and mirrored every horizontal drag, which is the
+    // one thing a direct-manipulation gesture can get wrong and still look
+    // plausible in a still screenshot. Measured, not reasoned: dragging +120px
+    // moved the nose 0.69 NDC to the LEFT before this.
+    this.azimuth += dx * AZIMUTH_PER_PX;
     // Past the elevation limits the drag rubber-bands rather than stopping dead,
     // so the stage never changes behaviour under the finger — it just gradually
     // stops keeping up, and springs back on release.
@@ -527,12 +534,12 @@ export class LiquidCarScene {
    */
   release(vx: number, vy: number): void {
     this.dragging = false;
-    this.azimuthVel = -vx * AZIMUTH_PER_PX;
+    this.azimuthVel = vx * AZIMUTH_PER_PX;
     this.elevationVel = vy * ELEVATION_PER_PX;
     this.settleTo = {
       azimuth: this.reduced
         ? this.azimuth
-        : this.azimuth - projectDistance(vx * AZIMUTH_PER_PX, DECELERATION.fast),
+        : this.azimuth + projectDistance(vx * AZIMUTH_PER_PX, DECELERATION.fast),
       elevation: Math.min(ELEVATION_MAX, Math.max(ELEVATION_MIN, this.elevation)),
     };
   }
