@@ -1,9 +1,17 @@
-import { useCallback } from 'react';
+import { Suspense, lazy, useCallback } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, Building2, Briefcase, Car, Check, type LucideIcon } from 'lucide-react';
+import {
+  ArrowRight,
+  Building2,
+  Briefcase,
+  Car,
+  CarFront,
+  Check,
+  type LucideIcon,
+} from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import type { LiquidTab } from '@/components/ui/liquid-tabs';
 import { PageTabs } from '@/components/feed/PageTabs';
 import { Button } from '@/components/ui/button';
 import { buildMeta, buildCanonical } from '@/lib/seo';
@@ -18,18 +26,43 @@ import { buildMeta, buildCanonical } from '@/lib/seo';
  * pattern): the children are full standalone apps, so link tabs would make this
  * a content-less bounce page, whereas summary panels give /services real value
  * as a hub while the child routes stay reachable directly AND via the link-out.
+ *
+ * `?tab=cars` is the one panel that is not a summary. **The RMH family of cars**
+ * is the fleet behind RMH Rideshare, shown as turnable 3D bodies, and it has no
+ * app of its own to link out to — it IS the content. It lives here rather than
+ * at a route of its own because it is a chapter of Rideshare rather than a
+ * sibling of it, and because the tab strip is already the thing that says which
+ * chapter you are reading. Its panel is `lazy()`, so the three.js it needs is
+ * fetched when somebody opens the tab and never on the other three.
  */
 
-const SERVICE_TABS = ['homes', 'rmhladder', 'rideshare'] as const;
+const SERVICE_TABS = ['homes', 'rmhladder', 'rideshare', 'cars'] as const;
 type ServiceTab = (typeof SERVICE_TABS)[number];
 
-interface ServiceDef {
+/**
+ * The fleet showcase. Split out for the same reason `/library/$slug` splits its
+ * reader: `routeTree.gen.ts` imports every route module statically, so a
+ * top-level import of anything that reaches three.js would ship the vendor
+ * chunk on EVERY page of the site.
+ */
+const CarFamily = lazy(() =>
+  import('@/components/rideshare/cars/CarFamily').then((m) => ({ default: m.CarFamily })),
+);
+
+/** What every tab has, whatever it renders. */
+interface ServiceBase {
   id: ServiceTab;
   icon: LucideIcon;
-  href: string;
-  /** Reuse the existing sidebar nav string (feed namespace). */
-  navKey: string;
+  /** English default for the label. */
   name: string;
+}
+
+/** The three link-out verticals: a summary card with a prominent CTA. */
+interface ServiceSummary extends ServiceBase {
+  panel: 'summary';
+  /** The sidebar nav string this vertical already ships in every locale. */
+  navKey: string;
+  href: string;
   descKey: string;
   desc: string;
   ctaKey: string;
@@ -38,9 +71,17 @@ interface ServiceDef {
   features: [string, string][];
 }
 
+/** The fleet showcase, which is content rather than a signpost to content. */
+interface ServiceShowcase extends ServiceBase {
+  panel: 'cars';
+}
+
+type ServiceDef = ServiceSummary | ServiceShowcase;
+
 const SERVICES: ServiceDef[] = [
   {
     id: 'homes',
+    panel: 'summary',
     icon: Building2,
     href: '/homes',
     navKey: 'nav-homes',
@@ -58,6 +99,7 @@ const SERVICES: ServiceDef[] = [
   },
   {
     id: 'rmhladder',
+    panel: 'summary',
     icon: Briefcase,
     href: '/rmhladder',
     navKey: 'nav-rmhladder',
@@ -75,6 +117,7 @@ const SERVICES: ServiceDef[] = [
   },
   {
     id: 'rideshare',
+    panel: 'summary',
     icon: Car,
     href: '/rideshare',
     navKey: 'nav-rideshare',
@@ -90,6 +133,12 @@ const SERVICES: ServiceDef[] = [
       ['services-rideshare-f4', 'Upfront fares — pay after the trip, tip if you loved it'],
     ],
   },
+  {
+    id: 'cars',
+    panel: 'cars',
+    icon: CarFront,
+    name: 'RMH Cars',
+  },
 ];
 
 export const Route = createFileRoute('/_site/services')({
@@ -97,7 +146,7 @@ export const Route = createFileRoute('/_site/services')({
     meta: buildMeta({
       title: 'Services | RMH Studios',
       description:
-        'RMH Studios services — RMHHomes housing marketplace, RMHLadder early-career job discovery, and RMH Rideshare.',
+        'RMH Studios services — RMHHomes housing marketplace, RMHLadder early-career job discovery, RMH Rideshare, and the RMH family of cars in 3D.',
       path: '/services',
     }),
     links: [buildCanonical('/services')],
@@ -123,15 +172,21 @@ function ServicesPage() {
     [navigate],
   );
 
+  // The three verticals reuse their sidebar nav strings, which already ship in
+  // every locale, so a computed key is safe for them. The showcase has no nav
+  // entry and needs a NEW key — and `i18next-parser` cannot see through a
+  // computed one, so a key written that way never reaches `locales/` and every
+  // locale silently serves the default. It is spelled out.
   const tabs: LiquidTab[] = SERVICES.map((s) => ({
     id: s.id,
-    label: t(s.navKey, { ns: 'feed', defaultValue: s.name }),
+    label:
+      s.panel === 'cars'
+        ? t('services-cars-tab', { defaultValue: 'RMH Cars' })
+        : t(s.navKey, { ns: 'feed', defaultValue: s.name }),
     icon: s.icon,
   }));
 
   const active = SERVICES.find((s) => s.id === tab) ?? SERVICES[0];
-  const ActiveIcon = active.icon;
-  const activeName = t(active.navKey, { ns: 'feed', defaultValue: active.name });
 
   return (
     <PageLayout
@@ -150,50 +205,65 @@ function ServicesPage() {
         aria-label={t('nav-services', { ns: 'feed', defaultValue: 'Services' })}
       />
 
+      {/* The showcase brings its own panes (a stage, a picker, a spec card), so
+          wrapping it in one more would be a pane inside a pane. The three
+          summaries are a single card and keep the card. */}
       <div className="px-4 pb-12">
-        {/* Active service summary panel (?tab=). */}
         <section
           id={`services-panel-${active.id}`}
           role="tabpanel"
           aria-labelledby={`services-tab-${active.id}`}
-          className="glass-pane rounded-site p-6 sm:p-8"
+          className={active.panel === 'summary' ? 'glass-pane rounded-site p-6 sm:p-8' : undefined}
         >
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
-            <div className="glass-fill glass-bevel-sm flex size-16 shrink-0 items-center justify-center rounded-site text-site-accent">
-              <ActiveIcon className="size-8" aria-hidden />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h2 className="font-display text-2xl font-semibold tracking-[-0.02em] text-site-text">
-                {activeName}
-              </h2>
-              <p className="mt-2 max-w-prose text-site-text-muted">
-                {t(active.descKey, { defaultValue: active.desc })}
-              </p>
-
-              <ul className="mt-5 grid gap-2.5 sm:grid-cols-2">
-                {active.features.map(([key, dflt]) => (
-                  <li
-                    key={key}
-                    className="u-reveal-soft flex items-start gap-2 text-sm text-site-text"
-                  >
-                    <Check className="mt-0.5 size-4 shrink-0 text-site-accent" aria-hidden />
-                    <span>{t(key, { defaultValue: dflt })}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="mt-6">
-                <Button asChild variant="accent">
-                  <Link to={active.href}>
-                    {t(active.ctaKey, { defaultValue: active.cta })}
-                    <ArrowRight className="size-4" aria-hidden />
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </div>
+          {active.panel === 'cars' ? (
+            <Suspense fallback={null}>
+              <CarFamily />
+            </Suspense>
+          ) : (
+            <ServiceSummaryPanel service={active} />
+          )}
         </section>
       </div>
     </PageLayout>
+  );
+}
+
+function ServiceSummaryPanel({ service }: { service: ServiceSummary }) {
+  const { t } = useTranslation(['site', 'feed']);
+  const Icon = service.icon;
+  const name = t(service.navKey, { ns: 'feed', defaultValue: service.name });
+
+  return (
+    <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+      <div className="glass-fill glass-bevel-sm flex size-16 shrink-0 items-center justify-center rounded-site text-site-accent">
+        <Icon className="size-8" aria-hidden />
+      </div>
+      <div className="min-w-0 flex-1">
+        <h2 className="font-display text-2xl font-semibold tracking-[-0.02em] text-site-text">
+          {name}
+        </h2>
+        <p className="mt-2 max-w-prose text-site-text-muted">
+          {t(service.descKey, { defaultValue: service.desc })}
+        </p>
+
+        <ul className="mt-5 grid gap-2.5 sm:grid-cols-2">
+          {service.features.map(([key, dflt]) => (
+            <li key={key} className="u-reveal-soft flex items-start gap-2 text-sm text-site-text">
+              <Check className="mt-0.5 size-4 shrink-0 text-site-accent" aria-hidden />
+              <span>{t(key, { defaultValue: dflt })}</span>
+            </li>
+          ))}
+        </ul>
+
+        <div className="mt-6">
+          <Button asChild variant="accent">
+            <Link to={service.href}>
+              {t(service.ctaKey, { defaultValue: service.cta })}
+              <ArrowRight className="size-4" aria-hidden />
+            </Link>
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
