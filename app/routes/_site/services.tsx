@@ -216,7 +216,12 @@ function ServicesPage() {
           className={active.panel === 'summary' ? 'glass-pane rounded-site p-6 sm:p-8' : undefined}
         >
           {active.panel === 'cars' ? (
-            <Suspense fallback={null}>
+            // The fallback holds the panel's height rather than collapsing to
+            // nothing: this panel is the tallest of the four, and a `null`
+            // fallback drops the page to the tab strip and then shoves it back
+            // down when the chunk lands. It is a plain box, not the stage's own
+            // class — that class ships INSIDE the chunk being waited for.
+            <Suspense fallback={<div className="min-h-[70vh]" aria-hidden />}>
               <CarFamily />
             </Suspense>
           ) : (

@@ -194,8 +194,16 @@ export function CarFamily() {
                 onClick={() => setSelected(info.id)}
                 aria-pressed={on}
                 data-fluid-press=""
+                // Selection is marked twice on purpose. The accent tint is the
+                // obvious cue and the only one a screenshot shows, but colour
+                // alone is not a cue under the colour-vision modes (§13) — so
+                // the chosen card also carries a visibly heavier outline, which
+                // is a change in WEIGHT rather than in hue. `aria-pressed`
+                // carries the same fact to assistive tech.
                 className={`glass-fill flex flex-col gap-1 rounded-site p-3 text-left transition-colors ${
-                  on ? 'text-site-accent' : 'text-site-text-muted hover:text-site-text'
+                  on
+                    ? 'text-site-accent ring-2 ring-site-accent'
+                    : 'text-site-text-muted hover:text-site-text'
                 }`}
               >
                 <CarSilhouette spec={body} frame="body" className="h-12 w-full" />

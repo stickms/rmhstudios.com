@@ -581,6 +581,11 @@ export class LiquidCarScene {
     // is ornament, and an unrequested full-surface animation is precisely what
     // the preference is asking not to be shown. The press still turns the body.
     if (this.reduced || this.lost || !this.body) return false;
+    // A poke arrives on a pointer event, not on a frame, so the turntable may
+    // have been turned since the last render — and a raycast reads `matrixWorld`,
+    // which only `render()` refreshes. Without this a tap during a fast drag is
+    // tested against where the body was a frame ago.
+    this.scene.updateMatrixWorld();
     this.raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), this.camera);
     const hit = this.raycaster.intersectObject(this.body.shell, false)[0];
     if (!hit) return false;
