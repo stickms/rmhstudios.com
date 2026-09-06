@@ -256,6 +256,12 @@ import { Route as SiteProfileIdRouteImport } from './routes/_site/profile/$id'
 import { Route as SiteRideshareIndexRouteImport } from './routes/_site/rideshare/index'
 import { Route as SiteRideshareDriveRouteImport } from './routes/_site/rideshare/drive'
 import { Route as SiteRideshareRideRouteImport } from './routes/_site/rideshare/ride'
+import { Route as SiteRmhDatacenterIndexRouteImport } from './routes/_site/rmh-datacenter/index'
+import { Route as SiteRmhDatacenterContactRouteImport } from './routes/_site/rmh-datacenter/contact'
+import { Route as SiteRmhDatacenterFacilitiesRouteImport } from './routes/_site/rmh-datacenter/facilities'
+import { Route as SiteRmhDatacenterNetworkRouteImport } from './routes/_site/rmh-datacenter/network'
+import { Route as SiteRmhDatacenterPlatformRouteImport } from './routes/_site/rmh-datacenter/platform'
+import { Route as SiteRmhDatacenterPowerRouteImport } from './routes/_site/rmh-datacenter/power'
 import { Route as SiteRmhladderIndexRouteImport } from './routes/_site/rmhladder/index'
 import { Route as SiteRmhladderAlertsRouteImport } from './routes/_site/rmhladder/alerts'
 import { Route as SiteRmhladderCompaniesRouteImport } from './routes/_site/rmhladder/companies'
@@ -2138,6 +2144,40 @@ const SiteRideshareDriveRoute = SiteRideshareDriveRouteImport.update({
 const SiteRideshareRideRoute = SiteRideshareRideRouteImport.update({
   id: '/rideshare/ride',
   path: '/rideshare/ride',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteRmhDatacenterIndexRoute = SiteRmhDatacenterIndexRouteImport.update({
+  id: '/rmh-datacenter/',
+  path: '/rmh-datacenter/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteRmhDatacenterContactRoute =
+  SiteRmhDatacenterContactRouteImport.update({
+    id: '/rmh-datacenter/contact',
+    path: '/rmh-datacenter/contact',
+    getParentRoute: () => SiteRoute,
+  } as any)
+const SiteRmhDatacenterFacilitiesRoute =
+  SiteRmhDatacenterFacilitiesRouteImport.update({
+    id: '/rmh-datacenter/facilities',
+    path: '/rmh-datacenter/facilities',
+    getParentRoute: () => SiteRoute,
+  } as any)
+const SiteRmhDatacenterNetworkRoute =
+  SiteRmhDatacenterNetworkRouteImport.update({
+    id: '/rmh-datacenter/network',
+    path: '/rmh-datacenter/network',
+    getParentRoute: () => SiteRoute,
+  } as any)
+const SiteRmhDatacenterPlatformRoute =
+  SiteRmhDatacenterPlatformRouteImport.update({
+    id: '/rmh-datacenter/platform',
+    path: '/rmh-datacenter/platform',
+    getParentRoute: () => SiteRoute,
+  } as any)
+const SiteRmhDatacenterPowerRoute = SiteRmhDatacenterPowerRouteImport.update({
+  id: '/rmh-datacenter/power',
+  path: '/rmh-datacenter/power',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteRmhladderIndexRoute = SiteRmhladderIndexRouteImport.update({
@@ -5723,6 +5763,11 @@ export interface FileRoutesByFullPath {
   '/profile/$id': typeof SiteProfileIdRoute
   '/rideshare/drive': typeof SiteRideshareDriveRoute
   '/rideshare/ride': typeof SiteRideshareRideRoute
+  '/rmh-datacenter/contact': typeof SiteRmhDatacenterContactRoute
+  '/rmh-datacenter/facilities': typeof SiteRmhDatacenterFacilitiesRoute
+  '/rmh-datacenter/network': typeof SiteRmhDatacenterNetworkRoute
+  '/rmh-datacenter/platform': typeof SiteRmhDatacenterPlatformRoute
+  '/rmh-datacenter/power': typeof SiteRmhDatacenterPowerRoute
   '/rmhladder/alerts': typeof SiteRmhladderAlertsRoute
   '/rmhladder/companies': typeof SiteRmhladderCompaniesRoute
   '/rmhladder/health': typeof SiteRmhladderHealthRoute
@@ -6041,6 +6086,7 @@ export interface FileRoutesByFullPath {
   '/news/': typeof SiteNewsIndexRoute
   '/personas/': typeof SitePersonasIndexRoute
   '/rideshare/': typeof SiteRideshareIndexRoute
+  '/rmh-datacenter/': typeof SiteRmhDatacenterIndexRoute
   '/rmhladder/': typeof SiteRmhladderIndexRoute
   '/saves/': typeof SiteSavesIndexRoute
   '/settings/': typeof SiteSettingsIndexRoute
@@ -6591,6 +6637,11 @@ export interface FileRoutesByTo {
   '/profile/$id': typeof SiteProfileIdRoute
   '/rideshare/drive': typeof SiteRideshareDriveRoute
   '/rideshare/ride': typeof SiteRideshareRideRoute
+  '/rmh-datacenter/contact': typeof SiteRmhDatacenterContactRoute
+  '/rmh-datacenter/facilities': typeof SiteRmhDatacenterFacilitiesRoute
+  '/rmh-datacenter/network': typeof SiteRmhDatacenterNetworkRoute
+  '/rmh-datacenter/platform': typeof SiteRmhDatacenterPlatformRoute
+  '/rmh-datacenter/power': typeof SiteRmhDatacenterPowerRoute
   '/rmhladder/alerts': typeof SiteRmhladderAlertsRoute
   '/rmhladder/companies': typeof SiteRmhladderCompaniesRoute
   '/rmhladder/health': typeof SiteRmhladderHealthRoute
@@ -6909,6 +6960,7 @@ export interface FileRoutesByTo {
   '/news': typeof SiteNewsIndexRoute
   '/personas': typeof SitePersonasIndexRoute
   '/rideshare': typeof SiteRideshareIndexRoute
+  '/rmh-datacenter': typeof SiteRmhDatacenterIndexRoute
   '/rmhladder': typeof SiteRmhladderIndexRoute
   '/saves': typeof SiteSavesIndexRoute
   '/settings': typeof SiteSettingsIndexRoute
@@ -7486,6 +7538,11 @@ export interface FileRoutesById {
   '/_site/profile/$id': typeof SiteProfileIdRoute
   '/_site/rideshare/drive': typeof SiteRideshareDriveRoute
   '/_site/rideshare/ride': typeof SiteRideshareRideRoute
+  '/_site/rmh-datacenter/contact': typeof SiteRmhDatacenterContactRoute
+  '/_site/rmh-datacenter/facilities': typeof SiteRmhDatacenterFacilitiesRoute
+  '/_site/rmh-datacenter/network': typeof SiteRmhDatacenterNetworkRoute
+  '/_site/rmh-datacenter/platform': typeof SiteRmhDatacenterPlatformRoute
+  '/_site/rmh-datacenter/power': typeof SiteRmhDatacenterPowerRoute
   '/_site/rmhladder/alerts': typeof SiteRmhladderAlertsRoute
   '/_site/rmhladder/companies': typeof SiteRmhladderCompaniesRoute
   '/_site/rmhladder/health': typeof SiteRmhladderHealthRoute
@@ -7804,6 +7861,7 @@ export interface FileRoutesById {
   '/_site/news/': typeof SiteNewsIndexRoute
   '/_site/personas/': typeof SitePersonasIndexRoute
   '/_site/rideshare/': typeof SiteRideshareIndexRoute
+  '/_site/rmh-datacenter/': typeof SiteRmhDatacenterIndexRoute
   '/_site/rmhladder/': typeof SiteRmhladderIndexRoute
   '/_site/saves/': typeof SiteSavesIndexRoute
   '/_site/settings/': typeof SiteSettingsIndexRoute
@@ -8381,6 +8439,11 @@ export interface FileRouteTypes {
     | '/profile/$id'
     | '/rideshare/drive'
     | '/rideshare/ride'
+    | '/rmh-datacenter/contact'
+    | '/rmh-datacenter/facilities'
+    | '/rmh-datacenter/network'
+    | '/rmh-datacenter/platform'
+    | '/rmh-datacenter/power'
     | '/rmhladder/alerts'
     | '/rmhladder/companies'
     | '/rmhladder/health'
@@ -8699,6 +8762,7 @@ export interface FileRouteTypes {
     | '/news/'
     | '/personas/'
     | '/rideshare/'
+    | '/rmh-datacenter/'
     | '/rmhladder/'
     | '/saves/'
     | '/settings/'
@@ -9249,6 +9313,11 @@ export interface FileRouteTypes {
     | '/profile/$id'
     | '/rideshare/drive'
     | '/rideshare/ride'
+    | '/rmh-datacenter/contact'
+    | '/rmh-datacenter/facilities'
+    | '/rmh-datacenter/network'
+    | '/rmh-datacenter/platform'
+    | '/rmh-datacenter/power'
     | '/rmhladder/alerts'
     | '/rmhladder/companies'
     | '/rmhladder/health'
@@ -9567,6 +9636,7 @@ export interface FileRouteTypes {
     | '/news'
     | '/personas'
     | '/rideshare'
+    | '/rmh-datacenter'
     | '/rmhladder'
     | '/saves'
     | '/settings'
@@ -10143,6 +10213,11 @@ export interface FileRouteTypes {
     | '/_site/profile/$id'
     | '/_site/rideshare/drive'
     | '/_site/rideshare/ride'
+    | '/_site/rmh-datacenter/contact'
+    | '/_site/rmh-datacenter/facilities'
+    | '/_site/rmh-datacenter/network'
+    | '/_site/rmh-datacenter/platform'
+    | '/_site/rmh-datacenter/power'
     | '/_site/rmhladder/alerts'
     | '/_site/rmhladder/companies'
     | '/_site/rmhladder/health'
@@ -10461,6 +10536,7 @@ export interface FileRouteTypes {
     | '/_site/news/'
     | '/_site/personas/'
     | '/_site/rideshare/'
+    | '/_site/rmh-datacenter/'
     | '/_site/rmhladder/'
     | '/_site/saves/'
     | '/_site/settings/'
@@ -13060,6 +13136,48 @@ declare module '@tanstack/react-router' {
       path: '/rideshare/ride'
       fullPath: '/rideshare/ride'
       preLoaderRoute: typeof SiteRideshareRideRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/rmh-datacenter/': {
+      id: '/_site/rmh-datacenter/'
+      path: '/rmh-datacenter'
+      fullPath: '/rmh-datacenter/'
+      preLoaderRoute: typeof SiteRmhDatacenterIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/rmh-datacenter/contact': {
+      id: '/_site/rmh-datacenter/contact'
+      path: '/rmh-datacenter/contact'
+      fullPath: '/rmh-datacenter/contact'
+      preLoaderRoute: typeof SiteRmhDatacenterContactRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/rmh-datacenter/facilities': {
+      id: '/_site/rmh-datacenter/facilities'
+      path: '/rmh-datacenter/facilities'
+      fullPath: '/rmh-datacenter/facilities'
+      preLoaderRoute: typeof SiteRmhDatacenterFacilitiesRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/rmh-datacenter/network': {
+      id: '/_site/rmh-datacenter/network'
+      path: '/rmh-datacenter/network'
+      fullPath: '/rmh-datacenter/network'
+      preLoaderRoute: typeof SiteRmhDatacenterNetworkRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/rmh-datacenter/platform': {
+      id: '/_site/rmh-datacenter/platform'
+      path: '/rmh-datacenter/platform'
+      fullPath: '/rmh-datacenter/platform'
+      preLoaderRoute: typeof SiteRmhDatacenterPlatformRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/rmh-datacenter/power': {
+      id: '/_site/rmh-datacenter/power'
+      path: '/rmh-datacenter/power'
+      fullPath: '/rmh-datacenter/power'
+      preLoaderRoute: typeof SiteRmhDatacenterPowerRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/rmhladder/': {
@@ -17762,6 +17880,11 @@ interface SiteRouteChildren {
   SiteProfileIdRoute: typeof SiteProfileIdRoute
   SiteRideshareDriveRoute: typeof SiteRideshareDriveRoute
   SiteRideshareRideRoute: typeof SiteRideshareRideRoute
+  SiteRmhDatacenterContactRoute: typeof SiteRmhDatacenterContactRoute
+  SiteRmhDatacenterFacilitiesRoute: typeof SiteRmhDatacenterFacilitiesRoute
+  SiteRmhDatacenterNetworkRoute: typeof SiteRmhDatacenterNetworkRoute
+  SiteRmhDatacenterPlatformRoute: typeof SiteRmhDatacenterPlatformRoute
+  SiteRmhDatacenterPowerRoute: typeof SiteRmhDatacenterPowerRoute
   SiteSettingsAccountStatusRoute: typeof SiteSettingsAccountStatusRoute
   SiteSettingsAppearanceRoute: typeof SiteSettingsAppearanceRoute
   SiteSettingsCircleRoute: typeof SiteSettingsCircleRoute
@@ -17796,6 +17919,7 @@ interface SiteRouteChildren {
   SiteNewsIndexRoute: typeof SiteNewsIndexRoute
   SitePersonasIndexRoute: typeof SitePersonasIndexRoute
   SiteRideshareIndexRoute: typeof SiteRideshareIndexRoute
+  SiteRmhDatacenterIndexRoute: typeof SiteRmhDatacenterIndexRoute
   SiteSavesIndexRoute: typeof SiteSavesIndexRoute
   SiteSettingsIndexRoute: typeof SiteSettingsIndexRoute
   SiteSpacesIndexRoute: typeof SiteSpacesIndexRoute
@@ -17869,6 +17993,11 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteProfileIdRoute: SiteProfileIdRoute,
   SiteRideshareDriveRoute: SiteRideshareDriveRoute,
   SiteRideshareRideRoute: SiteRideshareRideRoute,
+  SiteRmhDatacenterContactRoute: SiteRmhDatacenterContactRoute,
+  SiteRmhDatacenterFacilitiesRoute: SiteRmhDatacenterFacilitiesRoute,
+  SiteRmhDatacenterNetworkRoute: SiteRmhDatacenterNetworkRoute,
+  SiteRmhDatacenterPlatformRoute: SiteRmhDatacenterPlatformRoute,
+  SiteRmhDatacenterPowerRoute: SiteRmhDatacenterPowerRoute,
   SiteSettingsAccountStatusRoute: SiteSettingsAccountStatusRoute,
   SiteSettingsAppearanceRoute: SiteSettingsAppearanceRoute,
   SiteSettingsCircleRoute: SiteSettingsCircleRoute,
@@ -17903,6 +18032,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteNewsIndexRoute: SiteNewsIndexRoute,
   SitePersonasIndexRoute: SitePersonasIndexRoute,
   SiteRideshareIndexRoute: SiteRideshareIndexRoute,
+  SiteRmhDatacenterIndexRoute: SiteRmhDatacenterIndexRoute,
   SiteSavesIndexRoute: SiteSavesIndexRoute,
   SiteSettingsIndexRoute: SiteSettingsIndexRoute,
   SiteSpacesIndexRoute: SiteSpacesIndexRoute,
