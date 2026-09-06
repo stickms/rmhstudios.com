@@ -1,5 +1,6 @@
 {
   "billing-footnote": "Billed monthly · cancel anytime · secure checkout by Stripe",
+  "catalog-tabs-aria-label": "Games and apps",
   "category-placeholder": "Category",
   "contact-team": "Contact team",
   "current-badge": "Current",
@@ -25,6 +26,7 @@
   "quotes-footer-note": "“Your work is going to fill a large part of your life, and the only way to be truly satisfied is to do what you believe is great work. And the only way to do great work is to love what you do.”",
   "quotes-hero-description": "A curated collection of the most memorable words from Steve Jobs — co-founder of Apple, visionary, and one of the most influential thinkers of the modern era.",
   "roadmap-title": "Roadmap",
+  "services-cars-tab": "RMH Cars",
   "share-feedback-placeholder": "Share your feedback...",
   "sign-in": "Sign in",
   "sign-in-to-manage-developer-keys": "Sign in to manage developer keys",
