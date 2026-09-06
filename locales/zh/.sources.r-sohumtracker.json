@@ -1,0 +1,23 @@
+{
+  "cal-cell-messages_one": "{{count}} messages",
+  "chart-trend-alt_one": "Bar chart of activity across the last {{count}} days",
+  "fact-typing-abandoned-value_one": "{{count}} drafts · {{duration}}",
+  "figures-heading_one": "The last {{count}} days",
+  "period-day-messages_one": "{{count}} msg",
+  "project-caveat_one": "A flat carry-forward of the last {{count}} days, quiet ones included. Not a forecast — a statement of what this rate adds up to.",
+  "project-remaining_one": "{{count}} days to January 1st, 2030",
+  "punch-hint_one": "Busiest hour of his week: {{weekday}} at {{hour}}. Folded from {{count}} days.",
+  "records-note_one": "across the tracked {{count}} days",
+  "sleep-sample_one": "from {{count}} nights",
+  "stat-drafts-value_one": "{{count}} drafts",
+  "stat-job-never-note_one": "not once in {{count}} days",
+  "stat-job-note_one": "{{count}} mentions in the period",
+  "stat-job-value_one": "{{count}} days",
+  "stat-late-note_one": "{{count}} messages after midnight",
+  "stat-messages-note_one": "{{count}} words",
+  "stat-streak-note_one": "best run {{count}} days",
+  "stat-streak-value_one": "{{count}} days",
+  "stat-voice-note_one": "across {{count}} active days",
+  "trend-note_one": "first {{count}} days of each",
+  "voice-with_one": "with {{count}} others"
+}

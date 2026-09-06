@@ -44,6 +44,7 @@ import itCRmhbox from "@/locales/it/c-rmhbox.json";
 import itCRmhcalculator from "@/locales/it/c-rmhcalculator.json";
 import itCRmhcode from "@/locales/it/c-rmhcode.json";
 import itCRmhcoins from "@/locales/it/c-rmhcoins.json";
+import itCRmhfashion from "@/locales/it/c-rmhfashion.json";
 import itCRmhmusic from "@/locales/it/c-rmhmusic.json";
 import itCRmhstudy from "@/locales/it/c-rmhstudy.json";
 import itCRmhtech from "@/locales/it/c-rmhtech.json";
@@ -66,6 +67,7 @@ import itCVoidBreaker from "@/locales/it/c-void-breaker.json";
 import itCWager from "@/locales/it/c-wager.json";
 import itCWishlist from "@/locales/it/c-wishlist.json";
 import itCommon from "@/locales/it/common.json";
+import itErrors from "@/locales/it/errors.json";
 import itFeed from "@/locales/it/feed.json";
 import itGamesHub from "@/locales/it/games-hub.json";
 import itGroups from "@/locales/it/groups.json";
@@ -139,6 +141,7 @@ const itResources = {
   "c-rmhcalculator": itCRmhcalculator,
   "c-rmhcode": itCRmhcode,
   "c-rmhcoins": itCRmhcoins,
+  "c-rmhfashion": itCRmhfashion,
   "c-rmhmusic": itCRmhmusic,
   "c-rmhstudy": itCRmhstudy,
   "c-rmhtech": itCRmhtech,
@@ -161,6 +164,7 @@ const itResources = {
   "c-wager": itCWager,
   "c-wishlist": itCWishlist,
   "common": itCommon,
+  "errors": itErrors,
   "feed": itFeed,
   "games-hub": itGamesHub,
   "groups": itGroups,

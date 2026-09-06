@@ -44,6 +44,7 @@ import deCRmhbox from "@/locales/de/c-rmhbox.json";
 import deCRmhcalculator from "@/locales/de/c-rmhcalculator.json";
 import deCRmhcode from "@/locales/de/c-rmhcode.json";
 import deCRmhcoins from "@/locales/de/c-rmhcoins.json";
+import deCRmhfashion from "@/locales/de/c-rmhfashion.json";
 import deCRmhmusic from "@/locales/de/c-rmhmusic.json";
 import deCRmhstudy from "@/locales/de/c-rmhstudy.json";
 import deCRmhtech from "@/locales/de/c-rmhtech.json";
@@ -66,6 +67,7 @@ import deCVoidBreaker from "@/locales/de/c-void-breaker.json";
 import deCWager from "@/locales/de/c-wager.json";
 import deCWishlist from "@/locales/de/c-wishlist.json";
 import deCommon from "@/locales/de/common.json";
+import deErrors from "@/locales/de/errors.json";
 import deFeed from "@/locales/de/feed.json";
 import deGamesHub from "@/locales/de/games-hub.json";
 import deGroups from "@/locales/de/groups.json";
@@ -139,6 +141,7 @@ const deResources = {
   "c-rmhcalculator": deCRmhcalculator,
   "c-rmhcode": deCRmhcode,
   "c-rmhcoins": deCRmhcoins,
+  "c-rmhfashion": deCRmhfashion,
   "c-rmhmusic": deCRmhmusic,
   "c-rmhstudy": deCRmhstudy,
   "c-rmhtech": deCRmhtech,
@@ -161,6 +164,7 @@ const deResources = {
   "c-wager": deCWager,
   "c-wishlist": deCWishlist,
   "common": deCommon,
+  "errors": deErrors,
   "feed": deFeed,
   "games-hub": deGamesHub,
   "groups": deGroups,

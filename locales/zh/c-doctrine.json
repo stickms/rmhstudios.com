@@ -1,6 +1,7 @@
 {
   "access-required": "需要{{tierName}}访问权限",
   "active": "活跃",
+  "attempt-count_one": "{{count}}次尝试",
   "attempt-count_other": "{{count}} 次尝试",
   "attempts": "尝试",
   "best-streak": "最佳：{{最长连续记录}}",

@@ -1,0 +1,18 @@
+{
+  "aiBudget": "今月のAI利用枠を使い切りました",
+  "aiUnavailable": "AI機能はオフラインです",
+  "conflict": "他の誰かが先にこれを変更しました",
+  "forbidden": "これにアクセスする権限がありません",
+  "gone": "それは期限切れです",
+  "insufficientCoins": "コインが足りません",
+  "internal": "こちら側で問題が発生しました",
+  "invalidInput": "フォームを確認してもう一度お試しください",
+  "notFound": "それは存在しません（または削除されました）",
+  "queryBudget": "そのリクエストは処理するにはコストが高すぎました",
+  "quotaExceeded": "ストレージを使い切りました",
+  "rateLimited": "少し待ってからお試しください",
+  "stakeLimit": "設定した上限に達しました",
+  "storageUnavailable": "アップロードは一時的に利用できません",
+  "unauthorized": "続行するにはサインインしてください",
+  "upgradeRequired": "この機能にはメンバーシップが必要です"
+}

@@ -52,7 +52,7 @@
   "disable-captions": "کیپشنز غیر فعال کریں",
   "enable-captions": "کیپشنز فعال کریں",
   "error-enter-url": "براہ کرم ایک URL درج کریں",
-  "error-unsupported-url": "That link can't be played here. Use a YouTube video or live stream, a Twitch channel or VOD, Vimeo, or a direct video/stream URL (.mp4, .webm, .m3u8).",
+  "error-unsupported-url": "یہ لنک یہاں چلایا نہیں جا سکتا۔ YouTube ویڈیو یا لائیو اسٹریم، Twitch چینل یا VOD، Vimeo، یا براہ راست ویڈیو/اسٹریم URL (.mp4، .webm، .m3u8) استعمال کریں۔",
   "exit-fullscreen": "فل سکرین سے باہر نکلیں",
   "expires-after": "ختم ہونے کے بعد",
   "failed-to-copy": "کاپی کرنے میں ناکام",
