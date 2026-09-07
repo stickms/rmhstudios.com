@@ -44,6 +44,7 @@ import koCRmhbox from "@/locales/ko/c-rmhbox.json";
 import koCRmhcalculator from "@/locales/ko/c-rmhcalculator.json";
 import koCRmhcode from "@/locales/ko/c-rmhcode.json";
 import koCRmhcoins from "@/locales/ko/c-rmhcoins.json";
+import koCRmhfashion from "@/locales/ko/c-rmhfashion.json";
 import koCRmhmusic from "@/locales/ko/c-rmhmusic.json";
 import koCRmhstudy from "@/locales/ko/c-rmhstudy.json";
 import koCRmhtech from "@/locales/ko/c-rmhtech.json";
@@ -66,6 +67,7 @@ import koCVoidBreaker from "@/locales/ko/c-void-breaker.json";
 import koCWager from "@/locales/ko/c-wager.json";
 import koCWishlist from "@/locales/ko/c-wishlist.json";
 import koCommon from "@/locales/ko/common.json";
+import koErrors from "@/locales/ko/errors.json";
 import koFeed from "@/locales/ko/feed.json";
 import koGamesHub from "@/locales/ko/games-hub.json";
 import koGroups from "@/locales/ko/groups.json";
@@ -139,6 +141,7 @@ const koResources = {
   "c-rmhcalculator": koCRmhcalculator,
   "c-rmhcode": koCRmhcode,
   "c-rmhcoins": koCRmhcoins,
+  "c-rmhfashion": koCRmhfashion,
   "c-rmhmusic": koCRmhmusic,
   "c-rmhstudy": koCRmhstudy,
   "c-rmhtech": koCRmhtech,
@@ -161,6 +164,7 @@ const koResources = {
   "c-wager": koCWager,
   "c-wishlist": koCWishlist,
   "common": koCommon,
+  "errors": koErrors,
   "feed": koFeed,
   "games-hub": koGamesHub,
   "groups": koGroups,

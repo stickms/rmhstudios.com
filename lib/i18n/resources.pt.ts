@@ -44,6 +44,7 @@ import ptCRmhbox from "@/locales/pt/c-rmhbox.json";
 import ptCRmhcalculator from "@/locales/pt/c-rmhcalculator.json";
 import ptCRmhcode from "@/locales/pt/c-rmhcode.json";
 import ptCRmhcoins from "@/locales/pt/c-rmhcoins.json";
+import ptCRmhfashion from "@/locales/pt/c-rmhfashion.json";
 import ptCRmhmusic from "@/locales/pt/c-rmhmusic.json";
 import ptCRmhstudy from "@/locales/pt/c-rmhstudy.json";
 import ptCRmhtech from "@/locales/pt/c-rmhtech.json";
@@ -66,6 +67,7 @@ import ptCVoidBreaker from "@/locales/pt/c-void-breaker.json";
 import ptCWager from "@/locales/pt/c-wager.json";
 import ptCWishlist from "@/locales/pt/c-wishlist.json";
 import ptCommon from "@/locales/pt/common.json";
+import ptErrors from "@/locales/pt/errors.json";
 import ptFeed from "@/locales/pt/feed.json";
 import ptGamesHub from "@/locales/pt/games-hub.json";
 import ptGroups from "@/locales/pt/groups.json";
@@ -139,6 +141,7 @@ const ptResources = {
   "c-rmhcalculator": ptCRmhcalculator,
   "c-rmhcode": ptCRmhcode,
   "c-rmhcoins": ptCRmhcoins,
+  "c-rmhfashion": ptCRmhfashion,
   "c-rmhmusic": ptCRmhmusic,
   "c-rmhstudy": ptCRmhstudy,
   "c-rmhtech": ptCRmhtech,
@@ -161,6 +164,7 @@ const ptResources = {
   "c-wager": ptCWager,
   "c-wishlist": ptCWishlist,
   "common": ptCommon,
+  "errors": ptErrors,
   "feed": ptFeed,
   "games-hub": ptGamesHub,
   "groups": ptGroups,

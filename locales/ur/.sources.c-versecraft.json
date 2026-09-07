@@ -56,7 +56,7 @@
   "select-words-prompt_one": "Select {{count}} words to compose your poem",
   "select-words-prompt_other": "Select {{count}} words to compose your poem",
   "settings": "Settings",
-  "sign-in-hint": "Sign in to save progress to the cloud",
+  "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",
   "sign-in-to-save": "Sign in to save your progress to the cloud",
   "skip": "Skip",
   "slot-auto": "Auto",
