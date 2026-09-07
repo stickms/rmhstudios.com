@@ -133,6 +133,13 @@ export const STATIC_CARDS: StaticCard[] = [
     subtitle: 'The investment arm of RMH Studios.',
   },
   {
+    path: '/rmh-datacenter',
+    file: 'rmh-datacenter',
+    eyebrow: 'RMH Datacenter',
+    title: 'RMH Datacenter',
+    subtitle: 'Six campuses, 148 MW, one backbone.',
+  },
+  {
     path: '/rmh-pmc',
     file: 'rmh-pmc',
     eyebrow: 'RMH PMC',
