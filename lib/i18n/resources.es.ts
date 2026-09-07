@@ -39,11 +39,13 @@ import esCPredictions from "@/locales/es/c-predictions.json";
 import esCProfileModules from "@/locales/es/c-profile-modules.json";
 import esCRideshare from "@/locales/es/c-rideshare.json";
 import esCRmhCapital from "@/locales/es/c-rmh-capital.json";
+import esCRmhDatacenter from "@/locales/es/c-rmh-datacenter.json";
 import esCRmhPmc from "@/locales/es/c-rmh-pmc.json";
 import esCRmhbox from "@/locales/es/c-rmhbox.json";
 import esCRmhcalculator from "@/locales/es/c-rmhcalculator.json";
 import esCRmhcode from "@/locales/es/c-rmhcode.json";
 import esCRmhcoins from "@/locales/es/c-rmhcoins.json";
+import esCRmhfashion from "@/locales/es/c-rmhfashion.json";
 import esCRmhmusic from "@/locales/es/c-rmhmusic.json";
 import esCRmhstudy from "@/locales/es/c-rmhstudy.json";
 import esCRmhtech from "@/locales/es/c-rmhtech.json";
@@ -66,6 +68,7 @@ import esCVoidBreaker from "@/locales/es/c-void-breaker.json";
 import esCWager from "@/locales/es/c-wager.json";
 import esCWishlist from "@/locales/es/c-wishlist.json";
 import esCommon from "@/locales/es/common.json";
+import esErrors from "@/locales/es/errors.json";
 import esFeed from "@/locales/es/feed.json";
 import esGamesHub from "@/locales/es/games-hub.json";
 import esGroups from "@/locales/es/groups.json";
@@ -134,11 +137,13 @@ const esResources = {
   "c-profile-modules": esCProfileModules,
   "c-rideshare": esCRideshare,
   "c-rmh-capital": esCRmhCapital,
+  "c-rmh-datacenter": esCRmhDatacenter,
   "c-rmh-pmc": esCRmhPmc,
   "c-rmhbox": esCRmhbox,
   "c-rmhcalculator": esCRmhcalculator,
   "c-rmhcode": esCRmhcode,
   "c-rmhcoins": esCRmhcoins,
+  "c-rmhfashion": esCRmhfashion,
   "c-rmhmusic": esCRmhmusic,
   "c-rmhstudy": esCRmhstudy,
   "c-rmhtech": esCRmhtech,
@@ -161,6 +166,7 @@ const esResources = {
   "c-wager": esCWager,
   "c-wishlist": esCWishlist,
   "common": esCommon,
+  "errors": esErrors,
   "feed": esFeed,
   "games-hub": esGamesHub,
   "groups": esGroups,

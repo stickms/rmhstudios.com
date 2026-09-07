@@ -28,6 +28,7 @@
   "pagination-next": "다음",
   "pagination-previous": "이전",
   "pagination-range": "{{from}}–{{to}} / {{total}}",
+  "player-count_one": "플레이어 {{count}}명",
   "player-count_other": "플레이어 {{count}}명",
   "player-range": "플레이어 {{minPlayers}}–{{maxPlayers}}명",
   "pts": "점",

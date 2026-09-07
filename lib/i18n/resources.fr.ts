@@ -39,11 +39,13 @@ import frCPredictions from "@/locales/fr/c-predictions.json";
 import frCProfileModules from "@/locales/fr/c-profile-modules.json";
 import frCRideshare from "@/locales/fr/c-rideshare.json";
 import frCRmhCapital from "@/locales/fr/c-rmh-capital.json";
+import frCRmhDatacenter from "@/locales/fr/c-rmh-datacenter.json";
 import frCRmhPmc from "@/locales/fr/c-rmh-pmc.json";
 import frCRmhbox from "@/locales/fr/c-rmhbox.json";
 import frCRmhcalculator from "@/locales/fr/c-rmhcalculator.json";
 import frCRmhcode from "@/locales/fr/c-rmhcode.json";
 import frCRmhcoins from "@/locales/fr/c-rmhcoins.json";
+import frCRmhfashion from "@/locales/fr/c-rmhfashion.json";
 import frCRmhmusic from "@/locales/fr/c-rmhmusic.json";
 import frCRmhstudy from "@/locales/fr/c-rmhstudy.json";
 import frCRmhtech from "@/locales/fr/c-rmhtech.json";
@@ -66,6 +68,7 @@ import frCVoidBreaker from "@/locales/fr/c-void-breaker.json";
 import frCWager from "@/locales/fr/c-wager.json";
 import frCWishlist from "@/locales/fr/c-wishlist.json";
 import frCommon from "@/locales/fr/common.json";
+import frErrors from "@/locales/fr/errors.json";
 import frFeed from "@/locales/fr/feed.json";
 import frGamesHub from "@/locales/fr/games-hub.json";
 import frGroups from "@/locales/fr/groups.json";
@@ -134,11 +137,13 @@ const frResources = {
   "c-profile-modules": frCProfileModules,
   "c-rideshare": frCRideshare,
   "c-rmh-capital": frCRmhCapital,
+  "c-rmh-datacenter": frCRmhDatacenter,
   "c-rmh-pmc": frCRmhPmc,
   "c-rmhbox": frCRmhbox,
   "c-rmhcalculator": frCRmhcalculator,
   "c-rmhcode": frCRmhcode,
   "c-rmhcoins": frCRmhcoins,
+  "c-rmhfashion": frCRmhfashion,
   "c-rmhmusic": frCRmhmusic,
   "c-rmhstudy": frCRmhstudy,
   "c-rmhtech": frCRmhtech,
@@ -161,6 +166,7 @@ const frResources = {
   "c-wager": frCWager,
   "c-wishlist": frCWishlist,
   "common": frCommon,
+  "errors": frErrors,
   "feed": frFeed,
   "games-hub": frGamesHub,
   "groups": frGroups,

@@ -45,6 +45,7 @@
   "filter-todo": "To do",
   "find-contradiction": "Temukan kontradiksi",
   "five-facts-tagline": "Lima fakta. Dua adalah kebohongan. Temukan para penipu.",
+  "found-liar_one": "Anda menemukan pembohong dalam {{count}} tebakan{{suffix}}.",
   "found-liar_other": "Kamu menemukan pembohong dalam {{count}} tebakan{{suffix}}.",
   "fun-fact": "Fakta Menarik",
   "gave-up-message": "Kamu menyerah pada teka-teki hari ini.",

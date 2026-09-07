@@ -6,7 +6,7 @@
   "content-label": "Conteúdo",
   "content-placeholder": "Write your post in Markdown…",
   "date-label": "Data",
-  "delete-confirm": "Tem certeza de que deseja excluir \"{{title}}\"? Esta ação não pode ser desfeita.",
+  "delete-confirm": "A exclusão de \"{{title}}\" não pode ser desfeita.",
   "delete-failed": "Falha ao excluir postagem",
   "delete-post": "Excluir Postagem",
   "delete-success": "Postagem do blog excluída: {{slug}}.",

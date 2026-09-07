@@ -1,4 +1,5 @@
 {
+  "backfill-thumbs-done_one": "Queued {{count}} page(s) for thumbnail re-render. They will refresh as the worker processes them.",
   "empty-gallery": "No pages yet — be the first to make one.",
   "generate-aria-label": "Generate",
   "hero-headline": "The everything platform.",
