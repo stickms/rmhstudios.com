@@ -211,8 +211,11 @@ export function MenuGlobe({
   const render = useCallback(
     (ctx: CanvasRenderingContext2D, frame: StageFrame) => {
       const { width, height, dt, paint } = frame;
-      const cx = width / 2;
-      const cy = height / 2;
+      // `useCanvasStage` sets the transform with the origin at the canvas
+      // CENTRE (`setTransform(dpr, 0, 0, dpr, w*dpr/2, h*dpr/2)`) and clears
+      // around it, because that is where all its renderers project to zero.
+      // So the sphere is drawn about (0, 0); adding half the box again is how
+      // the globe ends up in the bottom-right corner, mostly off its own canvas.
       const radius = Math.min(width, height) * 0.39;
       let busy = false;
 
@@ -254,7 +257,6 @@ export function MenuGlobe({
       const pitchDeg = pitch.current.value;
 
       /* ── the cage ──────────────────────────────────────────────────────── */
-      ctx.clearRect(0, 0, width, height);
       ctx.lineWidth = 1;
       ctx.lineJoin = 'round';
 
@@ -275,8 +277,8 @@ export function MenuGlobe({
             continue;
           }
           const screen = toScreen(view, radius);
-          const x = cx + screen.x;
-          const y = cy + screen.y;
+          const x = screen.x;
+          const y = screen.y;
           if (open) ctx.lineTo(x, y);
           else {
             ctx.moveTo(x, y);
@@ -308,7 +310,7 @@ export function MenuGlobe({
           // reads as being *through* something rather than in front of it.
           ctx.globalAlpha = 0.05;
           ctx.beginPath();
-          ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+          ctx.arc(0, 0, radius, 0, Math.PI * 2);
           ctx.fillStyle = paint.ink;
           ctx.fill();
         }
@@ -322,8 +324,8 @@ export function MenuGlobe({
         const view = viewOf(anchor, yawDeg, pitchDeg, swell, scratch.current);
         const screen = toScreen(view, radius);
         const hit = hits.current[i]!;
-        hit.sx = cx + screen.x;
-        hit.sy = cy + screen.y;
+        hit.sx = screen.x;
+        hit.sy = screen.y;
         hit.depth = view.z;
       }
       order.sort((a, b) => hits.current[a]!.depth - hits.current[b]!.depth);
@@ -369,14 +371,14 @@ export function MenuGlobe({
       ctx.globalAlpha = 0.5;
       ctx.strokeStyle = paint.ink;
       ctx.beginPath();
-      ctx.arc(cx, cy, radius * 0.15, 0, Math.PI * 2);
+      ctx.arc(0, 0, radius * 0.15, 0, Math.PI * 2);
       ctx.stroke();
       if (lock > 0.9) {
         ctx.globalAlpha = Math.min(1, (lock - 0.9) / 0.08);
         ctx.strokeStyle = paint.palette[SULPHUR] ?? paint.ink;
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(cx, cy, radius * 0.15, 0, Math.PI * 2);
+        ctx.arc(0, 0, radius * 0.15, 0, Math.PI * 2);
         ctx.stroke();
         ctx.lineWidth = 1;
       }
@@ -459,7 +461,16 @@ export function MenuGlobe({
 
       if (wasTap) {
         const point = pointAt(e);
-        const index = point ? pickNearest(hits.current, point.x, point.y, TAP_SLOP) : -1;
+        // `hits` are in the renderer's centre-origin space, so the pointer has
+        // to be moved into it before picking.
+        const index = point
+          ? pickNearest(
+              hits.current,
+              point.x - point.rect.width / 2,
+              point.y - point.rect.height / 2,
+              TAP_SLOP,
+            )
+          : -1;
         // A tap that lands on nothing still re-seats the current course rather
         // than leaving the globe wherever the finger stopped it.
         onSelect(index >= 0 ? index : selected);
