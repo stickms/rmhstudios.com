@@ -8,6 +8,7 @@ import enCAltair from "@/locales/en/c-altair.json";
 import enCAwards from "@/locales/en/c-awards.json";
 import enCBlog from "@/locales/en/c-blog.json";
 import enCBuilds from "@/locales/en/c-builds.json";
+import enCBumsRush from "@/locales/en/c-bums-rush.json";
 import enCCircle from "@/locales/en/c-circle.json";
 import enCCreator from "@/locales/en/c-creator.json";
 import enCCursedLogic from "@/locales/en/c-cursed-logic.json";
@@ -21,6 +22,7 @@ import enCGame from "@/locales/en/c-game.json";
 import enCHistory from "@/locales/en/c-history.json";
 import enCHouseAlwaysWins from "@/locales/en/c-house-always-wins.json";
 import enCIsleworks from "@/locales/en/c-isleworks.json";
+import enCKaikaiDebt from "@/locales/en/c-kaikai-debt.json";
 import enCKowloonKnockout from "@/locales/en/c-kowloon-knockout.json";
 import enCLaundrySort from "@/locales/en/c-laundry-sort.json";
 import enCLayout from "@/locales/en/c-layout.json";
@@ -28,19 +30,23 @@ import enCLibrary from "@/locales/en/c-library.json";
 import enCLightsOut from "@/locales/en/c-lights-out.json";
 import enCLists from "@/locales/en/c-lists.json";
 import enCLockdown from "@/locales/en/c-lockdown.json";
+import enCMassiveMarch from "@/locales/en/c-massive-march.json";
 import enCModeration from "@/locales/en/c-moderation.json";
 import enCNeonDriftway from "@/locales/en/c-neon-driftway.json";
 import enCNews from "@/locales/en/c-news.json";
 import enCNightrail from "@/locales/en/c-nightrail.json";
 import enCPredictions from "@/locales/en/c-predictions.json";
 import enCProfileModules from "@/locales/en/c-profile-modules.json";
+import enCRebarRutabaga from "@/locales/en/c-rebar-rutabaga.json";
 import enCRideshare from "@/locales/en/c-rideshare.json";
 import enCRmhCapital from "@/locales/en/c-rmh-capital.json";
+import enCRmhDatacenter from "@/locales/en/c-rmh-datacenter.json";
 import enCRmhPmc from "@/locales/en/c-rmh-pmc.json";
 import enCRmhbox from "@/locales/en/c-rmhbox.json";
 import enCRmhcalculator from "@/locales/en/c-rmhcalculator.json";
 import enCRmhcode from "@/locales/en/c-rmhcode.json";
 import enCRmhcoins from "@/locales/en/c-rmhcoins.json";
+import enCRmhfashion from "@/locales/en/c-rmhfashion.json";
 import enCRmhmusic from "@/locales/en/c-rmhmusic.json";
 import enCRmhstudy from "@/locales/en/c-rmhstudy.json";
 import enCRmhtech from "@/locales/en/c-rmhtech.json";
@@ -64,6 +70,7 @@ import enCVoidBreaker from "@/locales/en/c-void-breaker.json";
 import enCWager from "@/locales/en/c-wager.json";
 import enCWishlist from "@/locales/en/c-wishlist.json";
 import enCommon from "@/locales/en/common.json";
+import enErrors from "@/locales/en/errors.json";
 import enFeed from "@/locales/en/feed.json";
 import enGamesHub from "@/locales/en/games-hub.json";
 import enGroups from "@/locales/en/groups.json";
@@ -74,10 +81,13 @@ import enRAltair from "@/locales/en/r-altair.json";
 import enRDiscord from "@/locales/en/r-discord.json";
 import enRForestExplorer from "@/locales/en/r-forest-explorer.json";
 import enRKowloonKnockout from "@/locales/en/r-kowloon-knockout.json";
+import enRPf2ecal from "@/locales/en/r-pf2ecal.json";
 import enRRmhbox from "@/locales/en/r-rmhbox.json";
 import enRRmhcode from "@/locales/en/r-rmhcode.json";
 import enRSecret from "@/locales/en/r-secret.json";
 import enRSliceIt from "@/locales/en/r-slice-it.json";
+import enRSohumbum from "@/locales/en/r-sohumbum.json";
+import enRSohumtracker from "@/locales/en/r-sohumtracker.json";
 import enRStrategies from "@/locales/en/r-strategies.json";
 import enRStudio from "@/locales/en/r-studio.json";
 import enRideshare from "@/locales/en/rideshare.json";
@@ -99,6 +109,7 @@ const enResources = {
   "c-awards": enCAwards,
   "c-blog": enCBlog,
   "c-builds": enCBuilds,
+  "c-bums-rush": enCBumsRush,
   "c-circle": enCCircle,
   "c-creator": enCCreator,
   "c-cursed-logic": enCCursedLogic,
@@ -112,6 +123,7 @@ const enResources = {
   "c-history": enCHistory,
   "c-house-always-wins": enCHouseAlwaysWins,
   "c-isleworks": enCIsleworks,
+  "c-kaikai-debt": enCKaikaiDebt,
   "c-kowloon-knockout": enCKowloonKnockout,
   "c-laundry-sort": enCLaundrySort,
   "c-layout": enCLayout,
@@ -119,19 +131,23 @@ const enResources = {
   "c-lights-out": enCLightsOut,
   "c-lists": enCLists,
   "c-lockdown": enCLockdown,
+  "c-massive-march": enCMassiveMarch,
   "c-moderation": enCModeration,
   "c-neon-driftway": enCNeonDriftway,
   "c-news": enCNews,
   "c-nightrail": enCNightrail,
   "c-predictions": enCPredictions,
   "c-profile-modules": enCProfileModules,
+  "c-rebar-rutabaga": enCRebarRutabaga,
   "c-rideshare": enCRideshare,
   "c-rmh-capital": enCRmhCapital,
+  "c-rmh-datacenter": enCRmhDatacenter,
   "c-rmh-pmc": enCRmhPmc,
   "c-rmhbox": enCRmhbox,
   "c-rmhcalculator": enCRmhcalculator,
   "c-rmhcode": enCRmhcode,
   "c-rmhcoins": enCRmhcoins,
+  "c-rmhfashion": enCRmhfashion,
   "c-rmhmusic": enCRmhmusic,
   "c-rmhstudy": enCRmhstudy,
   "c-rmhtech": enCRmhtech,
@@ -155,6 +171,7 @@ const enResources = {
   "c-wager": enCWager,
   "c-wishlist": enCWishlist,
   "common": enCommon,
+  "errors": enErrors,
   "feed": enFeed,
   "games-hub": enGamesHub,
   "groups": enGroups,
@@ -165,10 +182,13 @@ const enResources = {
   "r-discord": enRDiscord,
   "r-forest-explorer": enRForestExplorer,
   "r-kowloon-knockout": enRKowloonKnockout,
+  "r-pf2ecal": enRPf2ecal,
   "r-rmhbox": enRRmhbox,
   "r-rmhcode": enRRmhcode,
   "r-secret": enRSecret,
   "r-slice-it": enRSliceIt,
+  "r-sohumbum": enRSohumbum,
+  "r-sohumtracker": enRSohumtracker,
   "r-strategies": enRStrategies,
   "r-studio": enRStudio,
   "rideshare": enRideshare,

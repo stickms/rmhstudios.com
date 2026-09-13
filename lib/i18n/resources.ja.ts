@@ -37,6 +37,7 @@ import jaCNews from "@/locales/ja/c-news.json";
 import jaCNightrail from "@/locales/ja/c-nightrail.json";
 import jaCPredictions from "@/locales/ja/c-predictions.json";
 import jaCProfileModules from "@/locales/ja/c-profile-modules.json";
+import jaCRebarRutabaga from "@/locales/ja/c-rebar-rutabaga.json";
 import jaCRideshare from "@/locales/ja/c-rideshare.json";
 import jaCRmhCapital from "@/locales/ja/c-rmh-capital.json";
 import jaCRmhPmc from "@/locales/ja/c-rmh-pmc.json";
@@ -132,6 +133,7 @@ const jaResources = {
   "c-nightrail": jaCNightrail,
   "c-predictions": jaCPredictions,
   "c-profile-modules": jaCProfileModules,
+  "c-rebar-rutabaga": jaCRebarRutabaga,
   "c-rideshare": jaCRideshare,
   "c-rmh-capital": jaCRmhCapital,
   "c-rmh-pmc": jaCRmhPmc,

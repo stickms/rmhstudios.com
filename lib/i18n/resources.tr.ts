@@ -37,6 +37,7 @@ import trCNews from "@/locales/tr/c-news.json";
 import trCNightrail from "@/locales/tr/c-nightrail.json";
 import trCPredictions from "@/locales/tr/c-predictions.json";
 import trCProfileModules from "@/locales/tr/c-profile-modules.json";
+import trCRebarRutabaga from "@/locales/tr/c-rebar-rutabaga.json";
 import trCRideshare from "@/locales/tr/c-rideshare.json";
 import trCRmhCapital from "@/locales/tr/c-rmh-capital.json";
 import trCRmhPmc from "@/locales/tr/c-rmh-pmc.json";
@@ -132,6 +133,7 @@ const trResources = {
   "c-nightrail": trCNightrail,
   "c-predictions": trCPredictions,
   "c-profile-modules": trCProfileModules,
+  "c-rebar-rutabaga": trCRebarRutabaga,
   "c-rideshare": trCRideshare,
   "c-rmh-capital": trCRmhCapital,
   "c-rmh-pmc": trCRmhPmc,

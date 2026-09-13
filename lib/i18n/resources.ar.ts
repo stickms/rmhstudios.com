@@ -37,6 +37,7 @@ import arCNews from "@/locales/ar/c-news.json";
 import arCNightrail from "@/locales/ar/c-nightrail.json";
 import arCPredictions from "@/locales/ar/c-predictions.json";
 import arCProfileModules from "@/locales/ar/c-profile-modules.json";
+import arCRebarRutabaga from "@/locales/ar/c-rebar-rutabaga.json";
 import arCRideshare from "@/locales/ar/c-rideshare.json";
 import arCRmhCapital from "@/locales/ar/c-rmh-capital.json";
 import arCRmhPmc from "@/locales/ar/c-rmh-pmc.json";
@@ -134,6 +135,7 @@ const arResources = {
   "c-nightrail": arCNightrail,
   "c-predictions": arCPredictions,
   "c-profile-modules": arCProfileModules,
+  "c-rebar-rutabaga": arCRebarRutabaga,
   "c-rideshare": arCRideshare,
   "c-rmh-capital": arCRmhCapital,
   "c-rmh-pmc": arCRmhPmc,

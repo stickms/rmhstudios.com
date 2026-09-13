@@ -37,6 +37,7 @@ import hiCNews from "@/locales/hi/c-news.json";
 import hiCNightrail from "@/locales/hi/c-nightrail.json";
 import hiCPredictions from "@/locales/hi/c-predictions.json";
 import hiCProfileModules from "@/locales/hi/c-profile-modules.json";
+import hiCRebarRutabaga from "@/locales/hi/c-rebar-rutabaga.json";
 import hiCRideshare from "@/locales/hi/c-rideshare.json";
 import hiCRmhCapital from "@/locales/hi/c-rmh-capital.json";
 import hiCRmhPmc from "@/locales/hi/c-rmh-pmc.json";
@@ -132,6 +133,7 @@ const hiResources = {
   "c-nightrail": hiCNightrail,
   "c-predictions": hiCPredictions,
   "c-profile-modules": hiCProfileModules,
+  "c-rebar-rutabaga": hiCRebarRutabaga,
   "c-rideshare": hiCRideshare,
   "c-rmh-capital": hiCRmhCapital,
   "c-rmh-pmc": hiCRmhPmc,

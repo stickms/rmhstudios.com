@@ -593,6 +593,42 @@
   --casino-seat-3: #e0862f;
   --casino-seat-4: #2fb3a0;
 
+  /* ── Spherification group (`components/rebar-rutabaga/`) ──────────────────
+     Rebar & Rutabaga is a molecular-gastronomy kitchen whose technique is
+     spherification, so its menu is read off a liquid globe with one pearl per
+     course. A pearl's colour is the food's, not the theme's — the same argument
+     the casino group makes about a playing card and the wardrobe group makes
+     about a red coat. Lingonberry is red under every set of lights, and
+     re-tinting the cloudberry when somebody switches to Midnight would be
+     re-cooking it.
+
+     `--rebar-sulphur` is the restaurant's mark: machine-guard yellow, the one
+     colour a foundry floor is allowed to be, used for the reticle the pearls
+     lock into and for the hazard rule. A brand mark is fixed for the same reason
+     a suit is.
+
+     What is NOT in here is the page around the food: panels, cards, buttons,
+     body copy, the globe's own wireframe cage and its glass all take ordinary
+     `--site-*` tokens, so every surface the site is entitled to theme still
+     tracks the theme. High-contrast overrides only the two that carry a legibility
+     duty (see the `.style-high-contrast` block). */
+  --rebar-sulphur: #c9a81b;
+  /* Ink for anything printed ON the sulphur fill — the reticle's lock count,
+     the hazard rule's label. Paired with that fill, so it does not follow
+     `--site-text` (which is bone in the dark themes and would disappear). */
+  --rebar-sulphur-ink: #16181a;
+  /* One dye per course, in running order — see `COURSES` in
+     `lib/rebar-rutabaga/menu.ts`. The pearl you see is the pearl that arrives. */
+  --rebar-pearl-birch: #c8a54a;
+  --rebar-pearl-rye: #e8d7b0;
+  --rebar-pearl-oyster: #b9c4b4;
+  --rebar-pearl-rutabaga: #8d5a2b;
+  --rebar-pearl-cod: #dfe3e2;
+  --rebar-pearl-marrow: #a8232f;
+  --rebar-pearl-reindeer: #55606a;
+  --rebar-pearl-cloudberry: #d98b1f;
+  --rebar-pearl-gravel: #2e2723;
+
   /* Legacy rainbow stops — kept for game pages */
   --rainbow-1: #ff0000;
   --rainbow-2: #ff7f00;
@@ -2192,6 +2228,14 @@ html.style-high-contrast .lg-goo {
   --casino-red-hover: #ee1111;
   --casino-green: #007a3d;
   --casino-green-hover: #009a4d;
+  /* The restaurant's mark carries text (the reticle's lock count sits on it), so
+     it goes to the extremes like the card faces do. The pearls stay hues — a
+     lingonberry that is not red stops being the food — except the gravel, whose
+     near-black is the one dye that would disappear entirely against this theme's
+     ink-on-ink globe. */
+  --rebar-sulphur: #ffd400;
+  --rebar-sulphur-ink: #000000;
+  --rebar-pearl-gravel: #8a7f74;
 }
 
 /* Reduce transparency — three triggers, one behaviour (§10): the OS media
@@ -2480,6 +2524,20 @@ html.readable-font body {
   --color-casino-seat-2: var(--casino-seat-2);
   --color-casino-seat-3: var(--casino-seat-3);
   --color-casino-seat-4: var(--casino-seat-4);
+
+  /* Spherification group → bg-rebar-* / text-rebar-* / border-rebar-* utilities.
+     Scoped domain colours, not theme tokens — see the group's note in :root. */
+  --color-rebar-sulphur: var(--rebar-sulphur);
+  --color-rebar-sulphur-ink: var(--rebar-sulphur-ink);
+  --color-rebar-pearl-birch: var(--rebar-pearl-birch);
+  --color-rebar-pearl-rye: var(--rebar-pearl-rye);
+  --color-rebar-pearl-oyster: var(--rebar-pearl-oyster);
+  --color-rebar-pearl-rutabaga: var(--rebar-pearl-rutabaga);
+  --color-rebar-pearl-cod: var(--rebar-pearl-cod);
+  --color-rebar-pearl-marrow: var(--rebar-pearl-marrow);
+  --color-rebar-pearl-reindeer: var(--rebar-pearl-reindeer);
+  --color-rebar-pearl-cloudberry: var(--rebar-pearl-cloudberry);
+  --color-rebar-pearl-gravel: var(--rebar-pearl-gravel);
   --color-site-danger: var(--site-danger);
   /* Guaranteed-legible ink for text/icons ON a --site-danger fill. Falls back to
      white for themes that predate the token; every built-in theme sets it. */

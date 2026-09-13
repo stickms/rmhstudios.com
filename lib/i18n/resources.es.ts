@@ -37,6 +37,7 @@ import esCNews from "@/locales/es/c-news.json";
 import esCNightrail from "@/locales/es/c-nightrail.json";
 import esCPredictions from "@/locales/es/c-predictions.json";
 import esCProfileModules from "@/locales/es/c-profile-modules.json";
+import esCRebarRutabaga from "@/locales/es/c-rebar-rutabaga.json";
 import esCRideshare from "@/locales/es/c-rideshare.json";
 import esCRmhCapital from "@/locales/es/c-rmh-capital.json";
 import esCRmhPmc from "@/locales/es/c-rmh-pmc.json";
@@ -132,6 +133,7 @@ const esResources = {
   "c-nightrail": esCNightrail,
   "c-predictions": esCPredictions,
   "c-profile-modules": esCProfileModules,
+  "c-rebar-rutabaga": esCRebarRutabaga,
   "c-rideshare": esCRideshare,
   "c-rmh-capital": esCRmhCapital,
   "c-rmh-pmc": esCRmhPmc,

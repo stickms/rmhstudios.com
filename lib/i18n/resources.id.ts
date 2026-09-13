@@ -37,6 +37,7 @@ import idCNews from "@/locales/id/c-news.json";
 import idCNightrail from "@/locales/id/c-nightrail.json";
 import idCPredictions from "@/locales/id/c-predictions.json";
 import idCProfileModules from "@/locales/id/c-profile-modules.json";
+import idCRebarRutabaga from "@/locales/id/c-rebar-rutabaga.json";
 import idCRideshare from "@/locales/id/c-rideshare.json";
 import idCRmhCapital from "@/locales/id/c-rmh-capital.json";
 import idCRmhPmc from "@/locales/id/c-rmh-pmc.json";
@@ -132,6 +133,7 @@ const idResources = {
   "c-nightrail": idCNightrail,
   "c-predictions": idCPredictions,
   "c-profile-modules": idCProfileModules,
+  "c-rebar-rutabaga": idCRebarRutabaga,
   "c-rideshare": idCRideshare,
   "c-rmh-capital": idCRmhCapital,
   "c-rmh-pmc": idCRmhPmc,
