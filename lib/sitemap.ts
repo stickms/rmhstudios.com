@@ -94,6 +94,10 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   { loc: '/rideshare', changefreq: 'weekly', priority: 0.5 },
   { loc: '/roadmap', changefreq: 'weekly', priority: 0.5 },
   { loc: '/services', changefreq: 'monthly', priority: 0.6 },
+  // A child of the Services hub with its own canonical and Restaurant
+  // JSON-LD, so it is its own indexable URL rather than a tab on `/services`.
+  // `monthly` because a tasting menu changes with the season, not the week.
+  { loc: '/services/rebar-rutabaga', changefreq: 'monthly', priority: 0.5 },
   { loc: '/store', changefreq: 'weekly', priority: 0.5 },
   { loc: '/study', changefreq: 'weekly', priority: 0.5 },
   { loc: '/study/browse', changefreq: 'daily', priority: 0.5 },
