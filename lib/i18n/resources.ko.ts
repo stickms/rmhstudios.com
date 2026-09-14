@@ -37,6 +37,7 @@ import koCNews from "@/locales/ko/c-news.json";
 import koCNightrail from "@/locales/ko/c-nightrail.json";
 import koCPredictions from "@/locales/ko/c-predictions.json";
 import koCProfileModules from "@/locales/ko/c-profile-modules.json";
+import koCRebarRutabaga from "@/locales/ko/c-rebar-rutabaga.json";
 import koCRideshare from "@/locales/ko/c-rideshare.json";
 import koCRmhCapital from "@/locales/ko/c-rmh-capital.json";
 import koCRmhPmc from "@/locales/ko/c-rmh-pmc.json";
@@ -132,6 +133,7 @@ const koResources = {
   "c-nightrail": koCNightrail,
   "c-predictions": koCPredictions,
   "c-profile-modules": koCProfileModules,
+  "c-rebar-rutabaga": koCRebarRutabaga,
   "c-rideshare": koCRideshare,
   "c-rmh-capital": koCRmhCapital,
   "c-rmh-pmc": koCRmhPmc,

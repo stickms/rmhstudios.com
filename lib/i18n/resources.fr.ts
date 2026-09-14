@@ -37,6 +37,7 @@ import frCNews from "@/locales/fr/c-news.json";
 import frCNightrail from "@/locales/fr/c-nightrail.json";
 import frCPredictions from "@/locales/fr/c-predictions.json";
 import frCProfileModules from "@/locales/fr/c-profile-modules.json";
+import frCRebarRutabaga from "@/locales/fr/c-rebar-rutabaga.json";
 import frCRideshare from "@/locales/fr/c-rideshare.json";
 import frCRmhCapital from "@/locales/fr/c-rmh-capital.json";
 import frCRmhPmc from "@/locales/fr/c-rmh-pmc.json";
@@ -132,6 +133,7 @@ const frResources = {
   "c-nightrail": frCNightrail,
   "c-predictions": frCPredictions,
   "c-profile-modules": frCProfileModules,
+  "c-rebar-rutabaga": frCRebarRutabaga,
   "c-rideshare": frCRideshare,
   "c-rmh-capital": frCRmhCapital,
   "c-rmh-pmc": frCRmhPmc,

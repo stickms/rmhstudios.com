@@ -43,7 +43,8 @@ import {
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { ChartCard, ChartToggle, Readout, ReadoutRow, Swatch } from './chart-kit';
-import { pointerOnStage, useCanvasStage, type StageFrame } from './canvas-stage';
+import { pointerOnStage, useCanvasStage, type StageFrame } from '@/hooks/useCanvasStage';
+import { DEBT_PAINT } from './debt-paint';
 import { categoryLabel } from './CompositionCharts';
 
 /** Camera distance in world units. Far enough that the far row is not a smear. */
@@ -218,7 +219,7 @@ export function DebtSurface3D({ grid, nowMs, selected }: DebtSurface3DProps) {
         if (column.height <= 0) continue;
         const cell = gridFrame.cells[column.cellIndex]!;
         const dimmed = filtering && !selectedRef.current.has(cell.category);
-        const colour = stage.paint.categories[column.categoryIndex] ?? stage.paint.ink;
+        const colour = stage.paint.palette[column.categoryIndex] ?? stage.paint.ink;
 
         const x = -FIELD / 2 + (column.monthIndex + 0.5) * stepX;
         const z = -FIELD / 2 + (column.categoryIndex + 0.5) * stepZ;
@@ -302,7 +303,7 @@ export function DebtSurface3D({ grid, nowMs, selected }: DebtSurface3DProps) {
     [],
   );
 
-  const { canvasRef, invalidate } = useCanvasStage(render, spinning);
+  const { canvasRef, invalidate } = useCanvasStage(render, spinning, DEBT_PAINT);
 
   /* --- Interaction -------------------------------------------------------- */
 

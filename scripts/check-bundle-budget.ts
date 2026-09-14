@@ -98,11 +98,39 @@ const OUT_DIR = path.join(ROOT, '.output', 'public');
  * tree produced entry chunks of 267,233 / 268,726 / 269,212 B (a 0.7% spread),
  * so a much tighter band would be flaky rather than strict.
  *
+ * **2026-09-13 — entry raised 294,000 → 296,500 B (OPT-01 line).** The bytes
+ * were bought by **Rebar & Rutabaga** (`/services/rebar-rutabaga`), the
+ * molecular-gastronomy restaurant page under Services. Measured on this tree:
+ * `origin/main` 292,045 B, the feature branch 294,510 B — +2,465 B, against
+ * 1,955 B of headroom.
+ *
+ * What is actually in that number is the part that CANNOT be split: the route
+ * module itself. `routeTree.gen.ts` imports all 739 route modules statically,
+ * so a route's `head()` — its title, description, canonical and, here, the
+ * `Restaurant` JSON-LD with its address and menu literals — is entry weight the
+ * moment the route exists, plus the `restaurantSchema()` builder it calls in
+ * `lib/schema.ts` (already on the critical path via `__root.tsx`'s site-wide
+ * Organization/WebSite JSON-LD).
+ *
+ * Splitting was measured before raising, not assumed. `React.lazy()` on the
+ * page's three section components moved the entry by ~100 B, and on the menu
+ * globe alone by ~100 B: the component bodies, the copy deck and the canvas
+ * were already being emitted as async route chunks by rolldown. Three Suspense
+ * boundaries that defer server-rendered content to buy 0.03% of the budget is
+ * complexity pretending to be an optimisation, so the page imports its sections
+ * directly and the raise carries the route module instead. (This is the
+ * opposite finding to the Slice It! raise above, whose two heaviest bodies were
+ * genuinely worth deferring — hence the measurement rather than the habit.)
+ *
+ * The new band is measured + 0.68%, the same headroom ratio the 2026-08-07 band
+ * carried, so it still absorbs the ~0.7% build-to-build spread documented above
+ * rather than being flaky-tight.
+ *
  * Budgets that only ever move up are theatre. Per OPT-01: raising one requires
  * a line in the PR body naming the user-visible feature that bought the bytes.
  */
 const BUDGETS = {
-  entryRaw: 294_000,
+  entryRaw: 296_500,
   criticalPathRaw: 1_291_000,
   criticalPathBrotli: 370_000,
 };

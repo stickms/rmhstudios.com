@@ -37,6 +37,7 @@ import ruCNews from "@/locales/ru/c-news.json";
 import ruCNightrail from "@/locales/ru/c-nightrail.json";
 import ruCPredictions from "@/locales/ru/c-predictions.json";
 import ruCProfileModules from "@/locales/ru/c-profile-modules.json";
+import ruCRebarRutabaga from "@/locales/ru/c-rebar-rutabaga.json";
 import ruCRideshare from "@/locales/ru/c-rideshare.json";
 import ruCRmhCapital from "@/locales/ru/c-rmh-capital.json";
 import ruCRmhPmc from "@/locales/ru/c-rmh-pmc.json";
@@ -132,6 +133,7 @@ const ruResources = {
   "c-nightrail": ruCNightrail,
   "c-predictions": ruCPredictions,
   "c-profile-modules": ruCProfileModules,
+  "c-rebar-rutabaga": ruCRebarRutabaga,
   "c-rideshare": ruCRideshare,
   "c-rmh-capital": ruCRmhCapital,
   "c-rmh-pmc": ruCRmhPmc,

@@ -71,7 +71,8 @@ import { Select } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { ChartCard, ChartToggle, Readout, ReadoutRow, Swatch } from './chart-kit';
-import { pointerOnStage, useCanvasStage, type StageFrame } from './canvas-stage';
+import { pointerOnStage, useCanvasStage, type StageFrame } from '@/hooks/useCanvasStage';
+import { DEBT_PAINT } from './debt-paint';
 import { categoryLabel } from './CompositionCharts';
 
 const DEG = Math.PI / 180;
@@ -186,7 +187,7 @@ export function HyperCube4D({
           // the figure that is *about* the fourth dimension — everything else
           // is a cube you have seen before.
           const isW = axis === 3;
-          ctx.strokeStyle = isW ? stage.paint.categories[6]! : stage.paint.ink;
+          ctx.strokeStyle = isW ? stage.paint.palette[6]! : stage.paint.ink;
           // Depth fade, so the far half of the figure recedes instead of
           // tangling with the near half.
           const depth = (a.depth + b.depth) / 2;
@@ -231,7 +232,7 @@ export function HyperCube4D({
         // haze", which is the only cue a still frame has.
         const near = Math.min(1, Math.max(0, (point.w + 1.6) / 3.2));
         ctx.globalAlpha = dimmed ? 0.1 : 0.32 + 0.62 * near;
-        ctx.fillStyle = stage.paint.categories[datum.categoryIndex] ?? stage.paint.ink;
+        ctx.fillStyle = stage.paint.palette[datum.categoryIndex] ?? stage.paint.ink;
         ctx.beginPath();
         ctx.arc(point.sx, point.sy, point.radius, 0, Math.PI * 2);
         ctx.fill();
@@ -247,7 +248,7 @@ export function HyperCube4D({
     [scratch],
   );
 
-  const { canvasRef, invalidate } = useCanvasStage(render, spinning);
+  const { canvasRef, invalidate } = useCanvasStage(render, spinning, DEBT_PAINT);
 
   /* --- Interaction -------------------------------------------------------- */
 

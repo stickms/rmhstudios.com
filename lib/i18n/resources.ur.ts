@@ -37,6 +37,7 @@ import urCNews from "@/locales/ur/c-news.json";
 import urCNightrail from "@/locales/ur/c-nightrail.json";
 import urCPredictions from "@/locales/ur/c-predictions.json";
 import urCProfileModules from "@/locales/ur/c-profile-modules.json";
+import urCRebarRutabaga from "@/locales/ur/c-rebar-rutabaga.json";
 import urCRideshare from "@/locales/ur/c-rideshare.json";
 import urCRmhCapital from "@/locales/ur/c-rmh-capital.json";
 import urCRmhPmc from "@/locales/ur/c-rmh-pmc.json";
@@ -132,6 +133,7 @@ const urResources = {
   "c-nightrail": urCNightrail,
   "c-predictions": urCPredictions,
   "c-profile-modules": urCProfileModules,
+  "c-rebar-rutabaga": urCRebarRutabaga,
   "c-rideshare": urCRideshare,
   "c-rmh-capital": urCRmhCapital,
   "c-rmh-pmc": urCRmhPmc,

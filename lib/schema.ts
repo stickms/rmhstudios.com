@@ -126,6 +126,86 @@ export function bookSchema({ name, description, path, author, image }: BookInput
   };
 }
 
+interface RestaurantInput {
+  name: string;
+  description: string;
+  path: string;
+  /** Street address lines, city, postal code and ISO country code. */
+  street: string;
+  locality: string;
+  postalCode: string;
+  country: string;
+  telephone: string;
+  /** ISO 4217 currency the menu is priced in. */
+  currency: string;
+  /** Per-guest price for the tasting menu, as a plain number. */
+  price: number;
+  /** Cuisine served, e.g. "Nordic". */
+  cuisine: string;
+  /**
+   * Opening hours in schema.org's `Mo,Tu 17:30-23:30` shorthand, one entry per
+   * distinct block. A tasting-menu restaurant has seatings rather than opening
+   * hours, so this is the span the room is occupied, not when you may walk in.
+   */
+  hours: string[];
+  image?: string;
+}
+
+/**
+ * A `Restaurant` node.
+ *
+ * `servesCuisine`, `priceRange` and `acceptsReservations` are the three fields
+ * Google actually surfaces for a restaurant result, so none of them is optional
+ * here — a builder that lets a caller omit the field that makes the rich result
+ * appear is a builder that quietly produces a plain blue link.
+ */
+export function restaurantSchema({
+  name,
+  description,
+  path,
+  street,
+  locality,
+  postalCode,
+  country,
+  telephone,
+  currency,
+  price,
+  cuisine,
+  hours,
+  image,
+}: RestaurantInput): Json {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Restaurant',
+    name,
+    description,
+    url: path.startsWith('http') ? path : `${SITE_URL}${path}`,
+    image: image ? (image.startsWith('http') ? image : `${SITE_URL}${image}`) : DEFAULT_IMAGE,
+    telephone,
+    servesCuisine: cuisine,
+    priceRange: `${price} ${currency}`,
+    acceptsReservations: true,
+    openingHours: hours,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: street,
+      addressLocality: locality,
+      postalCode,
+      addressCountry: country,
+    },
+    hasMenu: {
+      '@type': 'Menu',
+      name: `${name} tasting menu`,
+      offers: {
+        '@type': 'Offer',
+        price,
+        priceCurrency: currency,
+      },
+    },
+    parentOrganization: { '@type': 'Organization', name: ORG_NAME, url: SITE_URL },
+  };
+}
+
 interface PersonInput {
   name: string;
   handle?: string | null;

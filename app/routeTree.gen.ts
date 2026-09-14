@@ -272,6 +272,8 @@ import { Route as SiteRmhladderResumeRouteImport } from './routes/_site/rmhladde
 import { Route as SiteRmhladderReviewRouteImport } from './routes/_site/rmhladder/review'
 import { Route as SiteRmhladderSettingsRouteImport } from './routes/_site/rmhladder/settings'
 import { Route as SiteSavesIndexRouteImport } from './routes/_site/saves/index'
+import { Route as SiteServicesIndexRouteImport } from './routes/_site/services/index'
+import { Route as SiteServicesRebarRutabagaRouteImport } from './routes/_site/services/rebar-rutabaga'
 import { Route as SiteSettingsIndexRouteImport } from './routes/_site/settings/index'
 import { Route as SiteSettingsAccountStatusRouteImport } from './routes/_site/settings/account-status'
 import { Route as SiteSettingsAppearanceRouteImport } from './routes/_site/settings/appearance'
@@ -2230,6 +2232,17 @@ const SiteSavesIndexRoute = SiteSavesIndexRouteImport.update({
   path: '/saves/',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteServicesIndexRoute = SiteServicesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SiteServicesRoute,
+} as any)
+const SiteServicesRebarRutabagaRoute =
+  SiteServicesRebarRutabagaRouteImport.update({
+    id: '/rebar-rutabaga',
+    path: '/rebar-rutabaga',
+    getParentRoute: () => SiteServicesRoute,
+  } as any)
 const SiteSettingsIndexRoute = SiteSettingsIndexRouteImport.update({
   id: '/settings/',
   path: '/settings/',
@@ -5622,7 +5635,7 @@ export interface FileRoutesByFullPath {
   '/rmhladder': typeof SiteRmhladderRouteWithChildren
   '/roadmap': typeof SiteRoadmapRoute
   '/search': typeof SiteSearchRoute
-  '/services': typeof SiteServicesRoute
+  '/services': typeof SiteServicesRouteWithChildren
   '/share': typeof SiteShareRoute
   '/shop': typeof SiteShopRoute
   '/speedruns': typeof SiteSpeedrunsRoute
@@ -5776,6 +5789,7 @@ export interface FileRoutesByFullPath {
   '/rmhladder/resume': typeof SiteRmhladderResumeRoute
   '/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/rmhladder/settings': typeof SiteRmhladderSettingsRoute
+  '/services/rebar-rutabaga': typeof SiteServicesRebarRutabagaRoute
   '/settings/account-status': typeof SiteSettingsAccountStatusRoute
   '/settings/appearance': typeof SiteSettingsAppearanceRoute
   '/settings/circle': typeof SiteSettingsCircleRoute
@@ -6089,6 +6103,7 @@ export interface FileRoutesByFullPath {
   '/rmh-datacenter/': typeof SiteRmhDatacenterIndexRoute
   '/rmhladder/': typeof SiteRmhladderIndexRoute
   '/saves/': typeof SiteSavesIndexRoute
+  '/services/': typeof SiteServicesIndexRoute
   '/settings/': typeof SiteSettingsIndexRoute
   '/spaces/': typeof SiteSpacesIndexRoute
   '/store/': typeof SiteStoreIndexRoute
@@ -6497,7 +6512,6 @@ export interface FileRoutesByTo {
   '/recap': typeof SiteRecapRoute
   '/roadmap': typeof SiteRoadmapRoute
   '/search': typeof SiteSearchRoute
-  '/services': typeof SiteServicesRoute
   '/share': typeof SiteShareRoute
   '/shop': typeof SiteShopRoute
   '/speedruns': typeof SiteSpeedrunsRoute
@@ -6650,6 +6664,7 @@ export interface FileRoutesByTo {
   '/rmhladder/resume': typeof SiteRmhladderResumeRoute
   '/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/rmhladder/settings': typeof SiteRmhladderSettingsRoute
+  '/services/rebar-rutabaga': typeof SiteServicesRebarRutabagaRoute
   '/settings/account-status': typeof SiteSettingsAccountStatusRoute
   '/settings/appearance': typeof SiteSettingsAppearanceRoute
   '/settings/circle': typeof SiteSettingsCircleRoute
@@ -6963,6 +6978,7 @@ export interface FileRoutesByTo {
   '/rmh-datacenter': typeof SiteRmhDatacenterIndexRoute
   '/rmhladder': typeof SiteRmhladderIndexRoute
   '/saves': typeof SiteSavesIndexRoute
+  '/services': typeof SiteServicesIndexRoute
   '/settings': typeof SiteSettingsIndexRoute
   '/spaces': typeof SiteSpacesIndexRoute
   '/store': typeof SiteStoreIndexRoute
@@ -7396,7 +7412,7 @@ export interface FileRoutesById {
   '/_site/rmhladder': typeof SiteRmhladderRouteWithChildren
   '/_site/roadmap': typeof SiteRoadmapRoute
   '/_site/search': typeof SiteSearchRoute
-  '/_site/services': typeof SiteServicesRoute
+  '/_site/services': typeof SiteServicesRouteWithChildren
   '/_site/share': typeof SiteShareRoute
   '/_site/shop': typeof SiteShopRoute
   '/_site/speedruns': typeof SiteSpeedrunsRoute
@@ -7551,6 +7567,7 @@ export interface FileRoutesById {
   '/_site/rmhladder/resume': typeof SiteRmhladderResumeRoute
   '/_site/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/_site/rmhladder/settings': typeof SiteRmhladderSettingsRoute
+  '/_site/services/rebar-rutabaga': typeof SiteServicesRebarRutabagaRoute
   '/_site/settings/account-status': typeof SiteSettingsAccountStatusRoute
   '/_site/settings/appearance': typeof SiteSettingsAppearanceRoute
   '/_site/settings/circle': typeof SiteSettingsCircleRoute
@@ -7864,6 +7881,7 @@ export interface FileRoutesById {
   '/_site/rmh-datacenter/': typeof SiteRmhDatacenterIndexRoute
   '/_site/rmhladder/': typeof SiteRmhladderIndexRoute
   '/_site/saves/': typeof SiteSavesIndexRoute
+  '/_site/services/': typeof SiteServicesIndexRoute
   '/_site/settings/': typeof SiteSettingsIndexRoute
   '/_site/spaces/': typeof SiteSpacesIndexRoute
   '/_site/store/': typeof SiteStoreIndexRoute
@@ -8452,6 +8470,7 @@ export interface FileRouteTypes {
     | '/rmhladder/resume'
     | '/rmhladder/review'
     | '/rmhladder/settings'
+    | '/services/rebar-rutabaga'
     | '/settings/account-status'
     | '/settings/appearance'
     | '/settings/circle'
@@ -8765,6 +8784,7 @@ export interface FileRouteTypes {
     | '/rmh-datacenter/'
     | '/rmhladder/'
     | '/saves/'
+    | '/services/'
     | '/settings/'
     | '/spaces/'
     | '/store/'
@@ -9173,7 +9193,6 @@ export interface FileRouteTypes {
     | '/recap'
     | '/roadmap'
     | '/search'
-    | '/services'
     | '/share'
     | '/shop'
     | '/speedruns'
@@ -9326,6 +9345,7 @@ export interface FileRouteTypes {
     | '/rmhladder/resume'
     | '/rmhladder/review'
     | '/rmhladder/settings'
+    | '/services/rebar-rutabaga'
     | '/settings/account-status'
     | '/settings/appearance'
     | '/settings/circle'
@@ -9639,6 +9659,7 @@ export interface FileRouteTypes {
     | '/rmh-datacenter'
     | '/rmhladder'
     | '/saves'
+    | '/services'
     | '/settings'
     | '/spaces'
     | '/store'
@@ -10226,6 +10247,7 @@ export interface FileRouteTypes {
     | '/_site/rmhladder/resume'
     | '/_site/rmhladder/review'
     | '/_site/rmhladder/settings'
+    | '/_site/services/rebar-rutabaga'
     | '/_site/settings/account-status'
     | '/_site/settings/appearance'
     | '/_site/settings/circle'
@@ -10539,6 +10561,7 @@ export interface FileRouteTypes {
     | '/_site/rmh-datacenter/'
     | '/_site/rmhladder/'
     | '/_site/saves/'
+    | '/_site/services/'
     | '/_site/settings/'
     | '/_site/spaces/'
     | '/_site/store/'
@@ -13249,6 +13272,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/saves/'
       preLoaderRoute: typeof SiteSavesIndexRouteImport
       parentRoute: typeof SiteRoute
+    }
+    '/_site/services/': {
+      id: '/_site/services/'
+      path: '/'
+      fullPath: '/services/'
+      preLoaderRoute: typeof SiteServicesIndexRouteImport
+      parentRoute: typeof SiteServicesRoute
+    }
+    '/_site/services/rebar-rutabaga': {
+      id: '/_site/services/rebar-rutabaga'
+      path: '/rebar-rutabaga'
+      fullPath: '/services/rebar-rutabaga'
+      preLoaderRoute: typeof SiteServicesRebarRutabagaRouteImport
+      parentRoute: typeof SiteServicesRoute
     }
     '/_site/settings/': {
       id: '/_site/settings/'
@@ -17822,6 +17859,20 @@ const SiteRmhladderRouteWithChildren = SiteRmhladderRoute._addFileChildren(
   SiteRmhladderRouteChildren,
 )
 
+interface SiteServicesRouteChildren {
+  SiteServicesRebarRutabagaRoute: typeof SiteServicesRebarRutabagaRoute
+  SiteServicesIndexRoute: typeof SiteServicesIndexRoute
+}
+
+const SiteServicesRouteChildren: SiteServicesRouteChildren = {
+  SiteServicesRebarRutabagaRoute: SiteServicesRebarRutabagaRoute,
+  SiteServicesIndexRoute: SiteServicesIndexRoute,
+}
+
+const SiteServicesRouteWithChildren = SiteServicesRoute._addFileChildren(
+  SiteServicesRouteChildren,
+)
+
 interface SiteRouteChildren {
   SiteAdminRouteRoute: typeof SiteAdminRouteRouteWithChildren
   SiteCreateRouteRoute: typeof SiteCreateRouteRouteWithChildren
@@ -17853,7 +17904,7 @@ interface SiteRouteChildren {
   SiteRmhladderRoute: typeof SiteRmhladderRouteWithChildren
   SiteRoadmapRoute: typeof SiteRoadmapRoute
   SiteSearchRoute: typeof SiteSearchRoute
-  SiteServicesRoute: typeof SiteServicesRoute
+  SiteServicesRoute: typeof SiteServicesRouteWithChildren
   SiteShareRoute: typeof SiteShareRoute
   SiteShopRoute: typeof SiteShopRoute
   SiteSpeedrunsRoute: typeof SiteSpeedrunsRoute
@@ -17966,7 +18017,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteRmhladderRoute: SiteRmhladderRouteWithChildren,
   SiteRoadmapRoute: SiteRoadmapRoute,
   SiteSearchRoute: SiteSearchRoute,
-  SiteServicesRoute: SiteServicesRoute,
+  SiteServicesRoute: SiteServicesRouteWithChildren,
   SiteShareRoute: SiteShareRoute,
   SiteShopRoute: SiteShopRoute,
   SiteSpeedrunsRoute: SiteSpeedrunsRoute,

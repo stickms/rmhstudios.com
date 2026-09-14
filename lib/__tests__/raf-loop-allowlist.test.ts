@@ -168,9 +168,10 @@ const ALLOW = new Set<string>([
   'components/forest-explorer/story/StoryGame.tsx',
   'components/forest-explorer/story/StoryNarration.tsx',
   'components/forest-explorer/story/StoryToast.tsx',
-  // The ONE loop behind the debt counter's three spatial views (the 3D terrain,
-  // the 4D projection and the debt globe). It is a `_site` page rather than a
-  // game, so it is held to the idle-at-rest standard and meets it three times
+  // The ONE loop behind every canvas view on the site tier: the debt counter's
+  // three spatial views (the 3D terrain, the 4D projection and the debt globe)
+  // and the Rebar & Rutabaga menu globe. These are `_site` pages rather than
+  // games, so it is held to the idle-at-rest standard and meets it three times
   // over: a frame is scheduled only while the canvas is intersecting AND the tab
   // is foreground AND either React says it is animating or the renderer's own
   // return value says it has not settled. That last channel is what lets a
@@ -179,7 +180,7 @@ const ALLOW = new Set<string>([
   // inside the loop. Cancelled on unmount, on leaving the viewport, and on the
   // tab going to the background. A page parked on the analytics panel with
   // nothing moving schedules no frames at all.
-  'components/kaikai-debt/stats/canvas-stage.ts',
+  'hooks/useCanvasStage.ts',
   'components/slice-it/GameCanvas.tsx',
   'components/slice-it/HUD.tsx',
   // Replay playback (R4). Idle at rest: the loop only exists while the replay

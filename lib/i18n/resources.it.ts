@@ -37,6 +37,7 @@ import itCNews from "@/locales/it/c-news.json";
 import itCNightrail from "@/locales/it/c-nightrail.json";
 import itCPredictions from "@/locales/it/c-predictions.json";
 import itCProfileModules from "@/locales/it/c-profile-modules.json";
+import itCRebarRutabaga from "@/locales/it/c-rebar-rutabaga.json";
 import itCRideshare from "@/locales/it/c-rideshare.json";
 import itCRmhCapital from "@/locales/it/c-rmh-capital.json";
 import itCRmhPmc from "@/locales/it/c-rmh-pmc.json";
@@ -132,6 +133,7 @@ const itResources = {
   "c-nightrail": itCNightrail,
   "c-predictions": itCPredictions,
   "c-profile-modules": itCProfileModules,
+  "c-rebar-rutabaga": itCRebarRutabaga,
   "c-rideshare": itCRideshare,
   "c-rmh-capital": itCRmhCapital,
   "c-rmh-pmc": itCRmhPmc,

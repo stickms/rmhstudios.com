@@ -60,17 +60,16 @@ import {
   RING_SAMPLES,
   RING_SIN,
   anchorAt,
-  categoryLatitude,
   clampPitch,
   globeK,
-  liftFor,
-  timeLongitude,
   type GlobeAnchor,
-} from '@/lib/kaikai-debt/globe';
+} from '@/lib/globe';
+import { categoryLatitude, liftFor, timeLongitude } from '@/lib/kaikai-debt/globe';
 import { RIPPLE, rippleFront, rippleWave, unprojectSphere, unrotateSphere } from '@/lib/fluid';
 import { cn } from '@/lib/utils';
 import { ChartCard, ChartToggle, Readout, ReadoutRow, Swatch } from './chart-kit';
-import { pointerOnStage, useCanvasStage, type StageFrame } from './canvas-stage';
+import { pointerOnStage, useCanvasStage, type StageFrame } from '@/hooks/useCanvasStage';
+import { DEBT_PAINT } from './debt-paint';
 import { categoryLabel } from './CompositionCharts';
 
 const DEG = Math.PI / 180;
@@ -381,7 +380,7 @@ export function DebtGlobe({
       const cell = gridFrame.cells[pin.cellIndex]!;
       const dimmed = filtering && !selectedRef.current.has(cell.category);
       const front = pin.depth > 0;
-      const colour = stage.paint.categories[pin.categoryIndex] ?? stage.paint.ink;
+      const colour = stage.paint.palette[pin.categoryIndex] ?? stage.paint.ink;
       const swell = 1 + waveAt(pin.anchor.bx, pin.anchor.by, pin.anchor.bz);
       const base = project(pin.anchor.bx, pin.anchor.by, pin.anchor.bz, swell);
 
@@ -424,7 +423,7 @@ export function DebtGlobe({
     );
   }, []);
 
-  const { canvasRef, invalidate } = useCanvasStage(render, false);
+  const { canvasRef, invalidate } = useCanvasStage(render, false, DEBT_PAINT);
 
   /* --- Interaction -------------------------------------------------------- */
 

@@ -37,6 +37,7 @@ import zhCNews from "@/locales/zh/c-news.json";
 import zhCNightrail from "@/locales/zh/c-nightrail.json";
 import zhCPredictions from "@/locales/zh/c-predictions.json";
 import zhCProfileModules from "@/locales/zh/c-profile-modules.json";
+import zhCRebarRutabaga from "@/locales/zh/c-rebar-rutabaga.json";
 import zhCRideshare from "@/locales/zh/c-rideshare.json";
 import zhCRmhCapital from "@/locales/zh/c-rmh-capital.json";
 import zhCRmhPmc from "@/locales/zh/c-rmh-pmc.json";
@@ -134,6 +135,7 @@ const zhResources = {
   "c-nightrail": zhCNightrail,
   "c-predictions": zhCPredictions,
   "c-profile-modules": zhCProfileModules,
+  "c-rebar-rutabaga": zhCRebarRutabaga,
   "c-rideshare": zhCRideshare,
   "c-rmh-capital": zhCRmhCapital,
   "c-rmh-pmc": zhCRmhPmc,

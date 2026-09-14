@@ -37,6 +37,7 @@ import viCNews from "@/locales/vi/c-news.json";
 import viCNightrail from "@/locales/vi/c-nightrail.json";
 import viCPredictions from "@/locales/vi/c-predictions.json";
 import viCProfileModules from "@/locales/vi/c-profile-modules.json";
+import viCRebarRutabaga from "@/locales/vi/c-rebar-rutabaga.json";
 import viCRideshare from "@/locales/vi/c-rideshare.json";
 import viCRmhCapital from "@/locales/vi/c-rmh-capital.json";
 import viCRmhPmc from "@/locales/vi/c-rmh-pmc.json";
@@ -132,6 +133,7 @@ const viResources = {
   "c-nightrail": viCNightrail,
   "c-predictions": viCPredictions,
   "c-profile-modules": viCProfileModules,
+  "c-rebar-rutabaga": viCRebarRutabaga,
   "c-rideshare": viCRideshare,
   "c-rmh-capital": viCRmhCapital,
   "c-rmh-pmc": viCRmhPmc,
