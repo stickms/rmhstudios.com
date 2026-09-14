@@ -17,6 +17,7 @@ import { formatDistanceToNow } from'date-fns';
 import { VirtualPostList } from'./VirtualPostList';
 import { ComposeBox } from'./ComposeBox';
 import { Reveal } from'@/components/motion';
+import { VoiceRoomBanner } from'@/components/groupcall/VoiceRoomBanner';
 import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
 import { Button } from'@/components/ui/button';
@@ -234,6 +235,14 @@ export function CommunityColumn({
  <p className="mt-2 text-sm text-site-text-muted">{community.description}</p>
  )}
  </Reveal>
+
+ {community.joined && (
+ <VoiceRoomBanner
+ origin="community"
+ originId={community.id}
+ className="border-b border-site-border p-4"
+ />
+ )}
 
  {/* Pinned announcements */}
  {(community.announcements.length > 0 || isMod) && (

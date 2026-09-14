@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 595 files across 137 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 598 files across 138 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -530,6 +530,16 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/group-chats/:id/messages/:messageId/vote` | `POST` | `app/routes/api/group-chats/$id/messages/$messageId/vote.ts` |
 | `/api/group-chats/:id/react` | `POST` | `app/routes/api/group-chats/$id/react.ts` |
 | `/api/group-chats/:id/stream` | `GET` | `app/routes/api/group-chats/$id/stream.ts` |
+
+## `/api/groupcalls`
+
+3 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/groupcalls/active` | `GET` | `app/routes/api/groupcalls/active.ts` |
+| `/api/groupcalls/history` | `GET` | `app/routes/api/groupcalls/history.ts` |
+| `/api/groupcalls/invitable` | `GET` | `app/routes/api/groupcalls/invitable.ts` |
 
 ## `/api/guides`
 

@@ -53,6 +53,7 @@ import { apps } from '@/lib/apps';
 import { AppI18nProvider } from '@/components/i18n/AppI18nProvider';
 import { CommandPaletteMount } from '@/components/site/CommandPaletteMount';
 import { CallMount } from '@/components/call/CallMount';
+import { GroupCallMount } from '@/components/groupcall/GroupCallMount';
 import { ThemePreviewBar } from '@/components/themes/ThemePreviewBar';
 import { RecentsTracker } from '@/components/site/RecentsTracker';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
@@ -897,6 +898,7 @@ export function Providers({
                         incoming call has to ring wherever the user is, and
                         answering one must survive navigating away. */}
                     <CallMount />
+                    <GroupCallMount />
                   </SilentErrorBoundary>
                 </ConfirmProvider>
               </ResolvedUserCtx.Provider>

@@ -8,6 +8,18 @@ import (
 	"time"
 )
 
+// fixtureSLO is the SLO report these render tests pass to renderHTML.
+//
+// The zero SLOConfig is deliberate rather than lazy: normalise() fills in the
+// documented defaults (99.9%, 1h/6h windows, 30d budget capped by retained
+// history), so this is the same shape of report the handler builds in
+// production without pinning the tests to numbers they do not assert on. Every
+// test in this file is about the rendered document — escaping, structure, the
+// never-probed state — not about burn rate.
+func fixtureSLO(p *Prober) SLOReport {
+	return p.SLO(SLOConfig{}, time.Now())
+}
+
 // fixtureProber builds a prober with a realistic multi-tier snapshot and a half
 // window of bucket history, so the render is exercised against real content
 // (every tier, every state, a partly-filled uptime strip) rather than an empty
@@ -65,21 +77,6 @@ func fixtureProber(t *testing.T) (*Prober, Snapshot) {
 	return p, p.Snapshot()
 }
 
-// fixtureSLO is the burn-rate report these render tests pass to renderHTML.
-//
-// Empty on purpose. `renderHTML` grew a third parameter with the SLO work
-// (E14) and these call sites were never updated, so the package's tests have
-// not compiled since. This restores exactly what they asserted before that
-// change: a populated report renders a per-service burn-rate row that the
-// "one card per service" count also matches, which would turn a compile error
-// into a wrong assertion.
-//
-// The SLO section's own rendering is therefore still uncovered. That test
-// belongs with the SLO feature rather than being invented here.
-func fixtureSLO(_ *Prober) SLOReport {
-	return SLOReport{}
-}
-
 // TestRenderHTMLStructure covers the shape of the page every other assertion
 // here depends on: the verdict in the title and the headline, one card per
 // service with its state on it, a tier heading per group, and one globe pin per
@@ -109,8 +106,20 @@ func TestRenderHTMLStructure(t *testing.T) {
 		}
 	}
 
-	if got := strings.Count(out, `<li class="svc glass-fill"`); got != len(snap.Services) {
+	// The error-budget section (E14) reuses the .svc card markup for its own
+	// per-service rows, so counting across the whole document counts every
+	// service twice. Split at its heading and assert each list separately —
+	// "one card per service" is what this always meant, and asserting it on
+	// both halves catches a section that renders a partial roster.
+	tiers, budget, found := strings.Cut(out, `<h2 class="tier__label">Error budget</h2>`)
+	if !found {
+		t.Fatal("missing the error-budget section heading")
+	}
+	if got := strings.Count(tiers, `<li class="svc glass-fill"`); got != len(snap.Services) {
 		t.Errorf("rendered %d service cards, want %d", got, len(snap.Services))
+	}
+	if got := strings.Count(budget, `<li class="svc glass-fill"`); got != len(snap.Services) {
+		t.Errorf("rendered %d error-budget rows, want one per service (%d)", got, len(snap.Services))
 	}
 	if got := strings.Count(out, `<li class="globe__pin"`); got != len(snap.Services) {
 		t.Errorf("rendered %d globe pins, want one per service (%d)", got, len(snap.Services))

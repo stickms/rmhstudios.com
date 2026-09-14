@@ -111,6 +111,22 @@ function leaveParty(io: Server, userId: string, disbandSocket?: Socket): void {
   emitState(io, party);
 }
 
+// ─── Read-only accessors for other handlers ─────────────────────
+
+/**
+ * Is this user in that party right now?
+ *
+ * Parties are in-memory only — there is no Prisma model — so a feature scoped
+ * to a party (the group-call handler's party voice rooms) has nowhere else to
+ * ask. This accessor exists so that question has one supported answer instead
+ * of another handler reaching into the Maps above and turning them into a
+ * de-facto public API that can never be reshaped.
+ */
+export function isPartyMember(partyId: string, userId: string): boolean {
+  const party = parties.get(partyId);
+  return party ? party.members.has(userId) : false;
+}
+
 // ─── Registration ───────────────────────────────────────────────
 
 export function registerPartyHandlers(io: Server, socket: Socket, _ctx?: unknown): void {
