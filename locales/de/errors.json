@@ -1,0 +1,18 @@
+{
+  "aiBudget": "Du hast das AI-Kontingent dieses Monats aufgebraucht",
+  "aiUnavailable": "AI-Funktionen sind offline",
+  "conflict": "Jemand anderes hat dies zuerst geändert",
+  "forbidden": "Du hast keinen Zugriff darauf",
+  "gone": "Das ist abgelaufen",
+  "insufficientCoins": "Du hast nicht genug Coins",
+  "internal": "Auf unserer Seite ist etwas schiefgelaufen",
+  "invalidInput": "Überprüfe das Formular und versuche es erneut",
+  "notFound": "Das existiert nicht (oder wurde entfernt)",
+  "queryBudget": "Diese Anfrage war zu teuer",
+  "quotaExceeded": "Dein Speicher ist voll",
+  "rateLimited": "Langsamer für einen Moment",
+  "stakeLimit": "Du hast das von dir gesetzte Limit erreicht",
+  "storageUnavailable": "Uploads sind vorübergehend nicht verfügbar",
+  "unauthorized": "Melde dich an, um fortzufahren",
+  "upgradeRequired": "Diese Funktion erfordert eine Mitgliedschaft"
+}

@@ -40,11 +40,13 @@ import idCProfileModules from "@/locales/id/c-profile-modules.json";
 import idCRebarRutabaga from "@/locales/id/c-rebar-rutabaga.json";
 import idCRideshare from "@/locales/id/c-rideshare.json";
 import idCRmhCapital from "@/locales/id/c-rmh-capital.json";
+import idCRmhDatacenter from "@/locales/id/c-rmh-datacenter.json";
 import idCRmhPmc from "@/locales/id/c-rmh-pmc.json";
 import idCRmhbox from "@/locales/id/c-rmhbox.json";
 import idCRmhcalculator from "@/locales/id/c-rmhcalculator.json";
 import idCRmhcode from "@/locales/id/c-rmhcode.json";
 import idCRmhcoins from "@/locales/id/c-rmhcoins.json";
+import idCRmhfashion from "@/locales/id/c-rmhfashion.json";
 import idCRmhmusic from "@/locales/id/c-rmhmusic.json";
 import idCRmhstudy from "@/locales/id/c-rmhstudy.json";
 import idCRmhtech from "@/locales/id/c-rmhtech.json";
@@ -67,6 +69,7 @@ import idCVoidBreaker from "@/locales/id/c-void-breaker.json";
 import idCWager from "@/locales/id/c-wager.json";
 import idCWishlist from "@/locales/id/c-wishlist.json";
 import idCommon from "@/locales/id/common.json";
+import idErrors from "@/locales/id/errors.json";
 import idFeed from "@/locales/id/feed.json";
 import idGamesHub from "@/locales/id/games-hub.json";
 import idGroups from "@/locales/id/groups.json";
@@ -136,11 +139,13 @@ const idResources = {
   "c-rebar-rutabaga": idCRebarRutabaga,
   "c-rideshare": idCRideshare,
   "c-rmh-capital": idCRmhCapital,
+  "c-rmh-datacenter": idCRmhDatacenter,
   "c-rmh-pmc": idCRmhPmc,
   "c-rmhbox": idCRmhbox,
   "c-rmhcalculator": idCRmhcalculator,
   "c-rmhcode": idCRmhcode,
   "c-rmhcoins": idCRmhcoins,
+  "c-rmhfashion": idCRmhfashion,
   "c-rmhmusic": idCRmhmusic,
   "c-rmhstudy": idCRmhstudy,
   "c-rmhtech": idCRmhtech,
@@ -163,6 +168,7 @@ const idResources = {
   "c-wager": idCWager,
   "c-wishlist": idCWishlist,
   "common": idCommon,
+  "errors": idErrors,
   "feed": idFeed,
   "games-hub": idGamesHub,
   "groups": idGroups,

@@ -40,11 +40,13 @@ import jaCProfileModules from "@/locales/ja/c-profile-modules.json";
 import jaCRebarRutabaga from "@/locales/ja/c-rebar-rutabaga.json";
 import jaCRideshare from "@/locales/ja/c-rideshare.json";
 import jaCRmhCapital from "@/locales/ja/c-rmh-capital.json";
+import jaCRmhDatacenter from "@/locales/ja/c-rmh-datacenter.json";
 import jaCRmhPmc from "@/locales/ja/c-rmh-pmc.json";
 import jaCRmhbox from "@/locales/ja/c-rmhbox.json";
 import jaCRmhcalculator from "@/locales/ja/c-rmhcalculator.json";
 import jaCRmhcode from "@/locales/ja/c-rmhcode.json";
 import jaCRmhcoins from "@/locales/ja/c-rmhcoins.json";
+import jaCRmhfashion from "@/locales/ja/c-rmhfashion.json";
 import jaCRmhmusic from "@/locales/ja/c-rmhmusic.json";
 import jaCRmhstudy from "@/locales/ja/c-rmhstudy.json";
 import jaCRmhtech from "@/locales/ja/c-rmhtech.json";
@@ -67,6 +69,7 @@ import jaCVoidBreaker from "@/locales/ja/c-void-breaker.json";
 import jaCWager from "@/locales/ja/c-wager.json";
 import jaCWishlist from "@/locales/ja/c-wishlist.json";
 import jaCommon from "@/locales/ja/common.json";
+import jaErrors from "@/locales/ja/errors.json";
 import jaFeed from "@/locales/ja/feed.json";
 import jaGamesHub from "@/locales/ja/games-hub.json";
 import jaGroups from "@/locales/ja/groups.json";
@@ -136,11 +139,13 @@ const jaResources = {
   "c-rebar-rutabaga": jaCRebarRutabaga,
   "c-rideshare": jaCRideshare,
   "c-rmh-capital": jaCRmhCapital,
+  "c-rmh-datacenter": jaCRmhDatacenter,
   "c-rmh-pmc": jaCRmhPmc,
   "c-rmhbox": jaCRmhbox,
   "c-rmhcalculator": jaCRmhcalculator,
   "c-rmhcode": jaCRmhcode,
   "c-rmhcoins": jaCRmhcoins,
+  "c-rmhfashion": jaCRmhfashion,
   "c-rmhmusic": jaCRmhmusic,
   "c-rmhstudy": jaCRmhstudy,
   "c-rmhtech": jaCRmhtech,
@@ -163,6 +168,7 @@ const jaResources = {
   "c-wager": jaCWager,
   "c-wishlist": jaCWishlist,
   "common": jaCommon,
+  "errors": jaErrors,
   "feed": jaFeed,
   "games-hub": jaGamesHub,
   "groups": jaGroups,
