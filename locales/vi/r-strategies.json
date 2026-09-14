@@ -42,6 +42,7 @@
   "leaderboards": "Bảng xếp hạng",
   "loading": "Đang tải...",
   "loading-puzzle": "Đang tải câu đố...",
+  "min-remaining_one": "Còn {{count}} phút",
   "min-remaining_other": "Còn {{count}} phút",
   "next-sahur-mode": "Chế độ Sahur tiếp theo (3x XP)",
   "no-intelligence": "Không có thông tin tình báo nào ở cấp độ truy cập của bạn.",

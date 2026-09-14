@@ -40,11 +40,13 @@ import zhCProfileModules from "@/locales/zh/c-profile-modules.json";
 import zhCRebarRutabaga from "@/locales/zh/c-rebar-rutabaga.json";
 import zhCRideshare from "@/locales/zh/c-rideshare.json";
 import zhCRmhCapital from "@/locales/zh/c-rmh-capital.json";
+import zhCRmhDatacenter from "@/locales/zh/c-rmh-datacenter.json";
 import zhCRmhPmc from "@/locales/zh/c-rmh-pmc.json";
 import zhCRmhbox from "@/locales/zh/c-rmhbox.json";
 import zhCRmhcalculator from "@/locales/zh/c-rmhcalculator.json";
 import zhCRmhcode from "@/locales/zh/c-rmhcode.json";
 import zhCRmhcoins from "@/locales/zh/c-rmhcoins.json";
+import zhCRmhfashion from "@/locales/zh/c-rmhfashion.json";
 import zhCRmhmusic from "@/locales/zh/c-rmhmusic.json";
 import zhCRmhstudy from "@/locales/zh/c-rmhstudy.json";
 import zhCRmhtech from "@/locales/zh/c-rmhtech.json";
@@ -68,6 +70,7 @@ import zhCVoidBreaker from "@/locales/zh/c-void-breaker.json";
 import zhCWager from "@/locales/zh/c-wager.json";
 import zhCWishlist from "@/locales/zh/c-wishlist.json";
 import zhCommon from "@/locales/zh/common.json";
+import zhErrors from "@/locales/zh/errors.json";
 import zhFeed from "@/locales/zh/feed.json";
 import zhGamesHub from "@/locales/zh/games-hub.json";
 import zhGroups from "@/locales/zh/groups.json";
@@ -138,11 +141,13 @@ const zhResources = {
   "c-rebar-rutabaga": zhCRebarRutabaga,
   "c-rideshare": zhCRideshare,
   "c-rmh-capital": zhCRmhCapital,
+  "c-rmh-datacenter": zhCRmhDatacenter,
   "c-rmh-pmc": zhCRmhPmc,
   "c-rmhbox": zhCRmhbox,
   "c-rmhcalculator": zhCRmhcalculator,
   "c-rmhcode": zhCRmhcode,
   "c-rmhcoins": zhCRmhcoins,
+  "c-rmhfashion": zhCRmhfashion,
   "c-rmhmusic": zhCRmhmusic,
   "c-rmhstudy": zhCRmhstudy,
   "c-rmhtech": zhCRmhtech,
@@ -166,6 +171,7 @@ const zhResources = {
   "c-wager": zhCWager,
   "c-wishlist": zhCWishlist,
   "common": zhCommon,
+  "errors": zhErrors,
   "feed": zhFeed,
   "games-hub": zhGamesHub,
   "groups": zhGroups,

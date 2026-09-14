@@ -13,6 +13,7 @@
   "connect": "BAĞLAN",
   "connected-as": "{{name}} olarak bağlandı",
   "copy-code": "Kodu kopyala",
+  "copy-invite-link": "Davet bağlantısını kopyala",
   "create-lobby": "LOBBİ OLUŞTUR",
   "disconnected": "Bağlantı kesildi",
   "display-name": "GÖRÜNEN AD",
