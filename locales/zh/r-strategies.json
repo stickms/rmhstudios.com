@@ -42,6 +42,7 @@
   "leaderboards": "排行榜",
   "loading": "加载中...",
   "loading-puzzle": "加载谜题中……",
+  "min-remaining_one": "剩余 {{count}} 分钟",
   "min-remaining_other": "剩余 {{count}} 分钟",
   "next-sahur-mode": "下一顿封斋餐模式（3倍经验值）",
   "no-intelligence": "您的权限级别无法获取任何情报。",

@@ -1,0 +1,18 @@
+{
+  "aiBudget": "You've used this month's AI allowance",
+  "aiUnavailable": "AI features are offline",
+  "conflict": "Someone else changed this first",
+  "forbidden": "You don't have access to this",
+  "gone": "That has expired",
+  "insufficientCoins": "You don't have enough coins",
+  "internal": "Something went wrong on our side",
+  "invalidInput": "Check the form and try again",
+  "notFound": "That doesn't exist (or was removed)",
+  "queryBudget": "That request was too expensive to serve",
+  "quotaExceeded": "You're out of storage",
+  "rateLimited": "Slow down for a moment",
+  "stakeLimit": "You've reached the limit you set",
+  "storageUnavailable": "Uploads are temporarily unavailable",
+  "unauthorized": "Sign in to continue",
+  "upgradeRequired": "This feature needs a membership"
+}

@@ -13,6 +13,7 @@
   "action-strike-desc": "— Memberikan damage (1 dasar, 2 jika Anda Bersiap). Jika mereka Blokir, mereka tetap menerima 1 chip damage.",
   "actions-heading": "Aksi",
   "active": "Aktif",
+  "brace-btn_one": "Brace ({{count}})",
   "brace-btn_other": "Kokoh ({{count}})",
   "buy-cost": "Beli ({{cost}} F)",
   "charge": "Isi Daya",
