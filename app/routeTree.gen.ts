@@ -190,6 +190,7 @@ import { Route as SecretIndexRouteImport } from './routes/secret/index'
 import { Route as SecretCursedLogicRouteImport } from './routes/secret/cursed-logic'
 import { Route as SecretSignalForgeRouteImport } from './routes/secret/signal-forge'
 import { Route as SecretVegaRouteImport } from './routes/secret/vega'
+import { Route as ServicesRebarRutabagaRouteImport } from './routes/services.rebar-rutabaga'
 import { Route as SitemapsNameRouteImport } from './routes/sitemaps.$name'
 import { Route as SliceItIndexRouteImport } from './routes/slice-it/index'
 import { Route as Sohumbum2IndexRouteImport } from './routes/sohumbum2/index'
@@ -273,7 +274,6 @@ import { Route as SiteRmhladderReviewRouteImport } from './routes/_site/rmhladde
 import { Route as SiteRmhladderSettingsRouteImport } from './routes/_site/rmhladder/settings'
 import { Route as SiteSavesIndexRouteImport } from './routes/_site/saves/index'
 import { Route as SiteServicesIndexRouteImport } from './routes/_site/services/index'
-import { Route as SiteServicesRebarRutabagaRouteImport } from './routes/_site/services/rebar-rutabaga'
 import { Route as SiteSettingsIndexRouteImport } from './routes/_site/settings/index'
 import { Route as SiteSettingsAccountStatusRouteImport } from './routes/_site/settings/account-status'
 import { Route as SiteSettingsAppearanceRouteImport } from './routes/_site/settings/appearance'
@@ -1816,6 +1816,11 @@ const SecretVegaRoute = SecretVegaRouteImport.update({
   path: '/vega',
   getParentRoute: () => SecretRoute,
 } as any)
+const ServicesRebarRutabagaRoute = ServicesRebarRutabagaRouteImport.update({
+  id: '/services/rebar-rutabaga',
+  path: '/services/rebar-rutabaga',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapsNameRoute = SitemapsNameRouteImport.update({
   id: '/sitemaps/$name',
   path: '/sitemaps/$name',
@@ -2237,12 +2242,6 @@ const SiteServicesIndexRoute = SiteServicesIndexRouteImport.update({
   path: '/',
   getParentRoute: () => SiteServicesRoute,
 } as any)
-const SiteServicesRebarRutabagaRoute =
-  SiteServicesRebarRutabagaRouteImport.update({
-    id: '/rebar-rutabaga',
-    path: '/rebar-rutabaga',
-    getParentRoute: () => SiteServicesRoute,
-  } as any)
 const SiteSettingsIndexRoute = SiteSettingsIndexRouteImport.update({
   id: '/settings/',
   path: '/settings/',
@@ -5710,6 +5709,7 @@ export interface FileRoutesByFullPath {
   '/secret/cursed-logic': typeof SecretCursedLogicRouteWithChildren
   '/secret/signal-forge': typeof SecretSignalForgeRoute
   '/secret/vega': typeof SecretVegaRoute
+  '/services/rebar-rutabaga': typeof ServicesRebarRutabagaRoute
   '/sitemaps/$name': typeof SitemapsNameRoute
   '/sohumbum2/$date': typeof Sohumbum2DateRoute
   '/sohumtracker/$date': typeof SohumtrackerDateRoute
@@ -5789,7 +5789,6 @@ export interface FileRoutesByFullPath {
   '/rmhladder/resume': typeof SiteRmhladderResumeRoute
   '/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/rmhladder/settings': typeof SiteRmhladderSettingsRoute
-  '/services/rebar-rutabaga': typeof SiteServicesRebarRutabagaRoute
   '/settings/account-status': typeof SiteSettingsAccountStatusRoute
   '/settings/appearance': typeof SiteSettingsAppearanceRoute
   '/settings/circle': typeof SiteSettingsCircleRoute
@@ -6584,6 +6583,7 @@ export interface FileRoutesByTo {
   '/rmhtype/solo': typeof RmhtypeSoloRoute
   '/secret/signal-forge': typeof SecretSignalForgeRoute
   '/secret/vega': typeof SecretVegaRoute
+  '/services/rebar-rutabaga': typeof ServicesRebarRutabagaRoute
   '/sitemaps/$name': typeof SitemapsNameRoute
   '/sohumbum2/$date': typeof Sohumbum2DateRoute
   '/sohumtracker/$date': typeof SohumtrackerDateRoute
@@ -6664,7 +6664,6 @@ export interface FileRoutesByTo {
   '/rmhladder/resume': typeof SiteRmhladderResumeRoute
   '/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/rmhladder/settings': typeof SiteRmhladderSettingsRoute
-  '/services/rebar-rutabaga': typeof SiteServicesRebarRutabagaRoute
   '/settings/account-status': typeof SiteSettingsAccountStatusRoute
   '/settings/appearance': typeof SiteSettingsAppearanceRoute
   '/settings/circle': typeof SiteSettingsCircleRoute
@@ -7487,6 +7486,7 @@ export interface FileRoutesById {
   '/secret/cursed-logic': typeof SecretCursedLogicRouteWithChildren
   '/secret/signal-forge': typeof SecretSignalForgeRoute
   '/secret/vega': typeof SecretVegaRoute
+  '/services/rebar-rutabaga': typeof ServicesRebarRutabagaRoute
   '/sitemaps/$name': typeof SitemapsNameRoute
   '/sohumbum2/$date': typeof Sohumbum2DateRoute
   '/sohumtracker/$date': typeof SohumtrackerDateRoute
@@ -7567,7 +7567,6 @@ export interface FileRoutesById {
   '/_site/rmhladder/resume': typeof SiteRmhladderResumeRoute
   '/_site/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/_site/rmhladder/settings': typeof SiteRmhladderSettingsRoute
-  '/_site/services/rebar-rutabaga': typeof SiteServicesRebarRutabagaRoute
   '/_site/settings/account-status': typeof SiteSettingsAccountStatusRoute
   '/_site/settings/appearance': typeof SiteSettingsAppearanceRoute
   '/_site/settings/circle': typeof SiteSettingsCircleRoute
@@ -8391,6 +8390,7 @@ export interface FileRouteTypes {
     | '/secret/cursed-logic'
     | '/secret/signal-forge'
     | '/secret/vega'
+    | '/services/rebar-rutabaga'
     | '/sitemaps/$name'
     | '/sohumbum2/$date'
     | '/sohumtracker/$date'
@@ -8470,7 +8470,6 @@ export interface FileRouteTypes {
     | '/rmhladder/resume'
     | '/rmhladder/review'
     | '/rmhladder/settings'
-    | '/services/rebar-rutabaga'
     | '/settings/account-status'
     | '/settings/appearance'
     | '/settings/circle'
@@ -9265,6 +9264,7 @@ export interface FileRouteTypes {
     | '/rmhtype/solo'
     | '/secret/signal-forge'
     | '/secret/vega'
+    | '/services/rebar-rutabaga'
     | '/sitemaps/$name'
     | '/sohumbum2/$date'
     | '/sohumtracker/$date'
@@ -9345,7 +9345,6 @@ export interface FileRouteTypes {
     | '/rmhladder/resume'
     | '/rmhladder/review'
     | '/rmhladder/settings'
-    | '/services/rebar-rutabaga'
     | '/settings/account-status'
     | '/settings/appearance'
     | '/settings/circle'
@@ -10167,6 +10166,7 @@ export interface FileRouteTypes {
     | '/secret/cursed-logic'
     | '/secret/signal-forge'
     | '/secret/vega'
+    | '/services/rebar-rutabaga'
     | '/sitemaps/$name'
     | '/sohumbum2/$date'
     | '/sohumtracker/$date'
@@ -10247,7 +10247,6 @@ export interface FileRouteTypes {
     | '/_site/rmhladder/resume'
     | '/_site/rmhladder/review'
     | '/_site/rmhladder/settings'
-    | '/_site/services/rebar-rutabaga'
     | '/_site/settings/account-status'
     | '/_site/settings/appearance'
     | '/_site/settings/circle'
@@ -10998,6 +10997,7 @@ export interface RootRouteChildren {
   NewsRssDotxmlRoute: typeof NewsRssDotxmlRoute
   RefCodeRoute: typeof RefCodeRoute
   ReplaysIdRoute: typeof ReplaysIdRoute
+  ServicesRebarRutabagaRoute: typeof ServicesRebarRutabagaRoute
   SitemapsNameRoute: typeof SitemapsNameRoute
   Sohumbum2DateRoute: typeof Sohumbum2DateRoute
   SohumtrackerDateRoute: typeof SohumtrackerDateRoute
@@ -12699,6 +12699,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SecretVegaRouteImport
       parentRoute: typeof SecretRoute
     }
+    '/services/rebar-rutabaga': {
+      id: '/services/rebar-rutabaga'
+      path: '/services/rebar-rutabaga'
+      fullPath: '/services/rebar-rutabaga'
+      preLoaderRoute: typeof ServicesRebarRutabagaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemaps/$name': {
       id: '/sitemaps/$name'
       path: '/sitemaps/$name'
@@ -13278,13 +13285,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/services/'
       preLoaderRoute: typeof SiteServicesIndexRouteImport
-      parentRoute: typeof SiteServicesRoute
-    }
-    '/_site/services/rebar-rutabaga': {
-      id: '/_site/services/rebar-rutabaga'
-      path: '/rebar-rutabaga'
-      fullPath: '/services/rebar-rutabaga'
-      preLoaderRoute: typeof SiteServicesRebarRutabagaRouteImport
       parentRoute: typeof SiteServicesRoute
     }
     '/_site/settings/': {
@@ -17860,12 +17860,10 @@ const SiteRmhladderRouteWithChildren = SiteRmhladderRoute._addFileChildren(
 )
 
 interface SiteServicesRouteChildren {
-  SiteServicesRebarRutabagaRoute: typeof SiteServicesRebarRutabagaRoute
   SiteServicesIndexRoute: typeof SiteServicesIndexRoute
 }
 
 const SiteServicesRouteChildren: SiteServicesRouteChildren = {
-  SiteServicesRebarRutabagaRoute: SiteServicesRebarRutabagaRoute,
   SiteServicesIndexRoute: SiteServicesIndexRoute,
 }
 
@@ -19523,6 +19521,7 @@ const rootRouteChildren: RootRouteChildren = {
   NewsRssDotxmlRoute: NewsRssDotxmlRoute,
   RefCodeRoute: RefCodeRoute,
   ReplaysIdRoute: ReplaysIdRoute,
+  ServicesRebarRutabagaRoute: ServicesRebarRutabagaRoute,
   SitemapsNameRoute: SitemapsNameRoute,
   Sohumbum2DateRoute: Sohumbum2DateRoute,
   SohumtrackerDateRoute: SohumtrackerDateRoute,

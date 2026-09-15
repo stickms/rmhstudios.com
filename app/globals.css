@@ -607,11 +607,30 @@
      lock into and for the hazard rule. A brand mark is fixed for the same reason
      a suit is.
 
-     What is NOT in here is the page around the food: panels, cards, buttons,
-     body copy, the globe's own wireframe cage and its glass all take ordinary
-     `--site-*` tokens, so every surface the site is entitled to theme still
-     tracks the theme. High-contrast overrides only the two that carry a legibility
-     duty (see the `.style-high-contrast` block). */
+     ## The room's own light (added 2026-09-15)
+
+     The group started as nine dyes and a mark, with the page around the food on
+     ordinary `--site-*` tokens. It is now the restaurant's whole surface
+     contract, because the restaurant was asked for a design of its own rather
+     than an RMH page with food on it — the same licence Temple of Joy has to be
+     candlelit, spent here on Scandinavian daylight.
+
+     The principle the palette is built on: in a Nordic room, LIGHT is the
+     material and everything else is a surface for it to fall on. So there is no
+     decorative colour at all. There is plaster, there is graphite, there is a
+     hairline, and there is exactly one accent — the sulphur — which appears
+     perhaps twice on the page and means something both times. Anything that
+     wants emphasis gets it from SIZE, SPACE or a RULE, never from a new hue.
+
+     Three planes, and only three, so a reader can always tell what is behind
+     what without a shadow: `sunk` is the ground the page sits on, `paper` is the
+     page, `raised` is the one plane that comes forward (the globe's panel).
+     Corners are square everywhere — `rounded-none`, which the radius gate allows
+     precisely because a square corner is a shape and not a radius.
+
+     `.style-graphite` is not an inversion of this; it is the same room at
+     evening service, warm charcoal rather than the blue-black the site uses.
+     `.style-high-contrast` squares the contrast up to AA-large on every pair. */
   --rebar-sulphur: #c9a81b;
   /* Ink for anything printed ON the sulphur fill — the reticle's lock count,
      the hazard rule's label. Paired with that fill, so it does not follow
@@ -628,6 +647,36 @@
   --rebar-pearl-reindeer: #55606a;
   --rebar-pearl-cloudberry: #d98b1f;
   --rebar-pearl-gravel: #2e2723;
+
+  /* ── Surfaces: three planes, day service ─────────────────────────────────
+     Lime plaster, not white. `#f4f2ed` is warm enough that the graphite ink
+     reads as ink rather than as a hole, which is the whole trick of a Nordic
+     interior photographed at noon. */
+  --rebar-paper: #f4f2ed;
+  --rebar-paper-sunk: #e9e5dd;
+  --rebar-paper-raised: #fbfaf7;
+
+  /* ── Ink: one hue, three weights ─────────────────────────────────────────
+     Warm graphite. `soft` is body copy at length; `faint` is for the mono
+     labels that should read as annotation rather than as text. */
+  --rebar-ink: #1a1917;
+  --rebar-ink-soft: #66625b;
+  --rebar-ink-faint: #a29c92;
+
+  /* ── Rules ───────────────────────────────────────────────────────────────
+     The page is built from lines, not boxes. `line` is the hairline that
+     separates; `line-strong` is the one that declares a section and is ink
+     itself, so a heading's underscore is the same colour as the heading. */
+  --rebar-line: #d9d4cb;
+  --rebar-line-strong: #1a1917;
+
+  /* ── Motion ──────────────────────────────────────────────────────────────
+     One duration and one curve for the whole page, so every reveal in a
+     scroll reads as the same hand. The curve is a long decelerate — it arrives
+     rather than stops. Kept as tokens so a section cannot invent its own. */
+  --rebar-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --rebar-dur: 620ms;
+  --rebar-dur-quick: 260ms;
 
   /* Legacy rainbow stops — kept for game pages */
   --rainbow-1: #ff0000;
@@ -2236,6 +2285,35 @@ html.style-high-contrast .lg-goo {
   --rebar-sulphur: #ffd400;
   --rebar-sulphur-ink: #000000;
   --rebar-pearl-gravel: #8a7f74;
+
+  /* The room at maximum contrast. Plaster becomes true black and ink true
+     white, because this theme's contract is extremes, not taste — every pair
+     below clears AA-large, and the hairline is bright enough to survive on a
+     phone at arm's length, which the plaster hairline is not. */
+  --rebar-paper: #000000;
+  --rebar-paper-sunk: #000000;
+  --rebar-paper-raised: #0b0b0b;
+  --rebar-ink: #ffffff;
+  --rebar-ink-soft: #e4e4e4;
+  --rebar-ink-faint: #bdbdbd;
+  --rebar-line: #7a7a7a;
+  --rebar-line-strong: #ffffff;
+}
+
+/* ── Evening service ────────────────────────────────────────────────────────
+   Midnight's site chrome is blue-black; a dining room is not. This is the same
+   plaster under tungsten — warm charcoal, bone ink — so the page reads as the
+   hour changing rather than as a different restaurant. The pearls and the
+   sulphur do not move: the food is lit, not repainted. */
+.style-graphite {
+  --rebar-paper: #191713;
+  --rebar-paper-sunk: #110f0d;
+  --rebar-paper-raised: #232019;
+  --rebar-ink: #f3efe6;
+  --rebar-ink-soft: #a8a196;
+  --rebar-ink-faint: #6d675d;
+  --rebar-line: #35302a;
+  --rebar-line-strong: #f3efe6;
 }
 
 /* Reduce transparency — three triggers, one behaviour (§10): the OS media
@@ -2538,6 +2616,15 @@ html.readable-font body {
   --color-rebar-pearl-reindeer: var(--rebar-pearl-reindeer);
   --color-rebar-pearl-cloudberry: var(--rebar-pearl-cloudberry);
   --color-rebar-pearl-gravel: var(--rebar-pearl-gravel);
+  /* The room's own surfaces → bg-rebar-paper / text-rebar-ink / border-rebar-line. */
+  --color-rebar-paper: var(--rebar-paper);
+  --color-rebar-paper-sunk: var(--rebar-paper-sunk);
+  --color-rebar-paper-raised: var(--rebar-paper-raised);
+  --color-rebar-ink: var(--rebar-ink);
+  --color-rebar-ink-soft: var(--rebar-ink-soft);
+  --color-rebar-ink-faint: var(--rebar-ink-faint);
+  --color-rebar-line: var(--rebar-line);
+  --color-rebar-line-strong: var(--rebar-line-strong);
   --color-site-danger: var(--site-danger);
   /* Guaranteed-legible ink for text/icons ON a --site-danger fill. Falls back to
      white for themes that predate the token; every built-in theme sets it. */
