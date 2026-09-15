@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 277 routes. 144 render inside the standard site shell (sidebar, nav, context rail); 133 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 277 routes. 143 render inside the standard site shell (sidebar, nav, context rail); 134 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -121,7 +121,6 @@ Standard pages, rendered inside the sidebar shell.
 | `/saves` | Saved | public | `app/routes/_site/saves/index.tsx` |
 | `/search` | redirects to `/explore` | public | `app/routes/_site/search.tsx` |
 | `/services` | Services | public | `app/routes/_site/services/index.tsx` |
-| `/services/rebar-rutabaga` | Rebar & Rutabaga | public | `app/routes/_site/services/rebar-rutabaga.tsx` |
 | `/settings` | Settings | public | `app/routes/_site/settings/index.tsx` |
 | `/settings/account-status` | Account status | public | `app/routes/_site/settings/account-status.tsx` |
 | `/settings/appearance` | Appearance | public | `app/routes/_site/settings/appearance.tsx` |
@@ -265,6 +264,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/secret/signal-forge` | Signal Forge | public | `app/routes/secret/signal-forge.tsx` |
 | `/secret/vega` | Project Vega | public | `app/routes/secret/vega.tsx` |
 | `/security` | Security | public | `app/routes/security.tsx` |
+| `/services/rebar-rutabaga` | Rebar & Rutabaga | public | `app/routes/services.rebar-rutabaga.tsx` |
 | `/sitemap.xml` | — | public | `app/routes/sitemap[.]xml.ts` |
 | `/sitemaps/:name` | — | public | `app/routes/sitemaps.$name.ts` |
 | `/slice-it` | Slice It! | public | `app/routes/slice-it/index.tsx` |
