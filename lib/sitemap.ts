@@ -18,6 +18,8 @@ import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
 
 /** One `<url>` in a sitemap. */
+import { VERTICALS, verticalPriority } from '@/lib/verticals';
+
 export interface SitemapEntry {
   loc: string;
   lastmod?: Date | string;
@@ -42,6 +44,15 @@ export const SITEMAP_CHUNK_SIZE = 40_000;
  * hubs people land on from search · 0.6 first-party games and apps · 0.5
  * secondary surfaces · 0.3 corporate/legal.
  */
+/** Every vertical page, derived from the one place a vertical is declared. */
+const VERTICAL_ROUTES: SitemapEntry[] = VERTICALS.flatMap((v) =>
+  v.pages.map((page) => ({
+    loc: page.segment ? `${v.base}/${page.segment}` : v.base,
+    changefreq: page.cadence,
+    priority: verticalPriority(page),
+  })),
+);
+
 export const STATIC_ROUTES: SitemapEntry[] = [
   { loc: '/', changefreq: 'daily', priority: 1.0 },
 
@@ -93,11 +104,10 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   { loc: '/ranked', changefreq: 'daily', priority: 0.5 },
   { loc: '/rideshare', changefreq: 'weekly', priority: 0.5 },
   { loc: '/roadmap', changefreq: 'weekly', priority: 0.5 },
+  // The programming grid (L1). `daily` because that is literally what it is:
+  // a page whose whole value is that today's contents differ from yesterday's.
+  { loc: '/schedule', changefreq: 'daily', priority: 0.7 },
   { loc: '/services', changefreq: 'monthly', priority: 0.6 },
-  // A child of the Services hub with its own canonical and Restaurant
-  // JSON-LD, so it is its own indexable URL rather than a tab on `/services`.
-  // `monthly` because a tasting menu changes with the season, not the week.
-  { loc: '/services/rebar-rutabaga', changefreq: 'monthly', priority: 0.5 },
   { loc: '/store', changefreq: 'weekly', priority: 0.5 },
   { loc: '/study', changefreq: 'weekly', priority: 0.5 },
   { loc: '/study/browse', changefreq: 'daily', priority: 0.5 },
@@ -108,27 +118,13 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   // Developer platform — the API is a promotable product surface.
   { loc: '/developer', changefreq: 'weekly', priority: 0.6 },
 
-  // Ventures: separately-branded arms, each a small marketing site.
-  { loc: '/rmh-capital', changefreq: 'monthly', priority: 0.5 },
-  { loc: '/rmh-capital/businesses', changefreq: 'monthly', priority: 0.4 },
-  { loc: '/rmh-capital/careers', changefreq: 'weekly', priority: 0.4 },
-  { loc: '/rmh-capital/contact', changefreq: 'yearly', priority: 0.3 },
-  { loc: '/rmh-capital/firm', changefreq: 'monthly', priority: 0.4 },
-  { loc: '/rmh-capital/insights', changefreq: 'weekly', priority: 0.4 },
-  { loc: '/rmh-datacenter', changefreq: 'monthly', priority: 0.5 },
-  { loc: '/rmh-datacenter/contact', changefreq: 'yearly', priority: 0.3 },
-  { loc: '/rmh-datacenter/facilities', changefreq: 'monthly', priority: 0.4 },
-  { loc: '/rmh-datacenter/network', changefreq: 'monthly', priority: 0.4 },
-  { loc: '/rmh-datacenter/platform', changefreq: 'monthly', priority: 0.4 },
-  { loc: '/rmh-datacenter/power', changefreq: 'monthly', priority: 0.4 },
-  { loc: '/rmh-pmc', changefreq: 'monthly', priority: 0.5 },
-  { loc: '/rmh-pmc/capabilities', changefreq: 'monthly', priority: 0.4 },
-  { loc: '/rmh-pmc/command', changefreq: 'monthly', priority: 0.4 },
-  { loc: '/rmh-pmc/contact', changefreq: 'yearly', priority: 0.3 },
-  { loc: '/rmh-pmc/intelligence', changefreq: 'monthly', priority: 0.4 },
-  { loc: '/rmh-pmc/operators', changefreq: 'monthly', priority: 0.4 },
-  { loc: '/adaptive-intelligence', changefreq: 'monthly', priority: 0.5 },
-  { loc: '/deeplink', changefreq: 'monthly', priority: 0.5 },
+  // The separately-branded arms are DERIVED from `lib/verticals.ts` rather than
+  // listed here (K2). Eleven microsites shipped in six weeks and this block was
+  // hand-extended each time — twice by a follow-up commit, after the coverage
+  // test below caught the omission in CI rather than in review. One declaration
+  // per vertical means microsite #12 is crawlable because it exists, not
+  // because somebody also remembered to edit this file.
+  ...VERTICAL_ROUTES,
 
   // Campaigns and standalone statements.
   { loc: '/black-lives-matter', changefreq: 'yearly', priority: 0.3 },

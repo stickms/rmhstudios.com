@@ -17,12 +17,14 @@ import { drainOutbox, sweepOutbox } from '@/lib/outbox/outbox.server';
 import { sweepIdempotencyKeys } from '@/lib/api/idempotency.server';
 import { flushDueHeldNotifications } from '@/lib/notify/held.server';
 import { finalizeDueDeletions } from '@/lib/account/deletion.server';
+import { runIndexSweep } from '@/lib/search/indexer.server';
 
 export const OUTBOX_DRAIN_QUEUE = 'outbox.drain';
 export const MAINTENANCE_QUEUE = 'platform.maintenance';
 export const RARITY_ROLLUP_QUEUE = 'achievements.rarity';
 export const QUIET_HOURS_FLUSH_QUEUE = 'notify.quiet-hours-flush';
 export const DELETION_SWEEP_QUEUE = 'account.finalize-deletions';
+export const EMBEDDING_SWEEP_QUEUE = 'search.embedding-sweep';
 
 /**
  * Every minute. The outbox is the delivery path for webhooks and
@@ -43,6 +45,14 @@ export const RARITY_ROLLUP_CRON = '20 3 * * *';
 export const QUIET_HOURS_FLUSH_CRON = '*/15 * * * *';
 /** Daily at 04:10 UTC. Deletions are scheduled 30 days out; a few hours does not matter. */
 export const DELETION_SWEEP_CRON = '10 4 * * *';
+/**
+ * Every five minutes (M1). Each run does one bounded batch per kind, so the
+ * cadence is what decides how fast a corpus is indexed — five minutes keeps
+ * new content semantically searchable within about that, while never letting
+ * one run become an all-night job. A no-op when no embedding endpoint is
+ * configured, which is the default.
+ */
+export const EMBEDDING_SWEEP_CRON = '*/5 * * * *';
 
 /**
  * Recompute achievement rarity (F7).
@@ -108,12 +118,14 @@ export async function registerMaintenanceCrons(boss: PgBoss): Promise<void> {
   await boss.createQueue(RARITY_ROLLUP_QUEUE);
   await boss.createQueue(QUIET_HOURS_FLUSH_QUEUE);
   await boss.createQueue(DELETION_SWEEP_QUEUE);
+  await boss.createQueue(EMBEDDING_SWEEP_QUEUE);
 
   await boss.schedule(OUTBOX_DRAIN_QUEUE, OUTBOX_DRAIN_CRON, {}, { tz: 'UTC' });
   await boss.schedule(MAINTENANCE_QUEUE, MAINTENANCE_CRON, {}, { tz: 'UTC' });
   await boss.schedule(RARITY_ROLLUP_QUEUE, RARITY_ROLLUP_CRON, {}, { tz: 'UTC' });
   await boss.schedule(QUIET_HOURS_FLUSH_QUEUE, QUIET_HOURS_FLUSH_CRON, {}, { tz: 'UTC' });
   await boss.schedule(DELETION_SWEEP_QUEUE, DELETION_SWEEP_CRON, {}, { tz: 'UTC' });
+  await boss.schedule(EMBEDDING_SWEEP_QUEUE, EMBEDDING_SWEEP_CRON, {}, { tz: 'UTC' });
 
   await boss.work(QUIET_HOURS_FLUSH_QUEUE, async () => {
     await flushDueHeldNotifications();
@@ -121,6 +133,10 @@ export async function registerMaintenanceCrons(boss: PgBoss): Promise<void> {
 
   await boss.work(DELETION_SWEEP_QUEUE, async () => {
     await finalizeDueDeletions();
+  });
+
+  await boss.work(EMBEDDING_SWEEP_QUEUE, async () => {
+    await runIndexSweep();
   });
 
   await boss.work(OUTBOX_DRAIN_QUEUE, async () => {

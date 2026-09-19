@@ -99,6 +99,7 @@ import { Route as SiteRankedRouteImport } from './routes/_site/ranked'
 import { Route as SiteRecapRouteImport } from './routes/_site/recap'
 import { Route as SiteRmhladderRouteImport } from './routes/_site/rmhladder'
 import { Route as SiteRoadmapRouteImport } from './routes/_site/roadmap'
+import { Route as SiteScheduleRouteImport } from './routes/_site/schedule'
 import { Route as SiteSearchRouteImport } from './routes/_site/search'
 import { Route as SiteServicesRouteImport } from './routes/_site/services'
 import { Route as SiteShareRouteImport } from './routes/_site/share'
@@ -342,6 +343,7 @@ import { Route as ApiAwardsIndexRouteImport } from './routes/api/awards/index'
 import { Route as ApiBattlepassIndexRouteImport } from './routes/api/battlepass/index'
 import { Route as ApiBattlepassClaimRouteImport } from './routes/api/battlepass/claim'
 import { Route as ApiBattlepassUnlockRouteImport } from './routes/api/battlepass/unlock'
+import { Route as ApiBuildsConsentRouteImport } from './routes/api/builds/consent'
 import { Route as ApiBuildsReviewRouteImport } from './routes/api/builds/review'
 import { Route as ApiBulkIndexRouteImport } from './routes/api/bulk/index'
 import { Route as ApiBulkIdRouteImport } from './routes/api/bulk/$id'
@@ -369,6 +371,7 @@ import { Route as ApiDailyPuzzlesLeaderboardRouteImport } from './routes/api/dai
 import { Route as ApiDailyPuzzlesPuzzleRouteImport } from './routes/api/daily-puzzles/puzzle'
 import { Route as ApiDailyPuzzlesResultsRouteImport } from './routes/api/daily-puzzles/results'
 import { Route as ApiDailyPuzzlesScoreRouteImport } from './routes/api/daily-puzzles/score'
+import { Route as ApiDatacenterComputeRouteImport } from './routes/api/datacenter/compute'
 import { Route as ApiDiscordActivityImageRouteImport } from './routes/api/discord/activity-image'
 import { Route as ApiDiscordDailyProgressRouteImport } from './routes/api/discord/daily-progress'
 import { Route as ApiDiscordEmbedRouteImport } from './routes/api/discord/embed'
@@ -432,6 +435,7 @@ import { Route as ApiLibraryUploadRouteImport } from './routes/api/library/uploa
 import { Route as ApiListsIndexRouteImport } from './routes/api/lists/index'
 import { Route as ApiListsIdRouteImport } from './routes/api/lists/$id'
 import { Route as ApiMassiveMarchCampaignsRouteImport } from './routes/api/massive-march/campaigns'
+import { Route as ApiMemoryIndexRouteImport } from './routes/api/memory/index'
 import { Route as ApiMessagesConversationIdRouteImport } from './routes/api/messages/$conversationId'
 import { Route as ApiMessagesReadAllRouteImport } from './routes/api/messages/read-all'
 import { Route as ApiMessagesSearchRouteImport } from './routes/api/messages/search'
@@ -484,6 +488,8 @@ import { Route as ApiPromoFreeMonthRouteImport } from './routes/api/promo/free-m
 import { Route as ApiPushPublicKeyRouteImport } from './routes/api/push/public-key'
 import { Route as ApiPushSubscribeRouteImport } from './routes/api/push/subscribe'
 import { Route as ApiRankedIndexRouteImport } from './routes/api/ranked/index'
+import { Route as ApiRecommendIndexRouteImport } from './routes/api/recommend/index'
+import { Route as ApiRecommendFeedbackRouteImport } from './routes/api/recommend/feedback'
 import { Route as ApiReferralsClaimRouteImport } from './routes/api/referrals/claim'
 import { Route as ApiReferralsMeRouteImport } from './routes/api/referrals/me'
 import { Route as ApiReplaysIndexRouteImport } from './routes/api/replays/index'
@@ -520,10 +526,15 @@ import { Route as ApiRmhtypeKeystatsRouteImport } from './routes/api/rmhtype/key
 import { Route as ApiRmhtypePracticeTestRouteImport } from './routes/api/rmhtype/practice-test'
 import { Route as ApiSavesIndexRouteImport } from './routes/api/saves/index'
 import { Route as ApiSavesFoldersRouteImport } from './routes/api/saves/folders'
+import { Route as ApiScheduleIndexRouteImport } from './routes/api/schedule/index'
+import { Route as ApiScheduleAdminRouteImport } from './routes/api/schedule/admin'
 import { Route as ApiScheduledIndexRouteImport } from './routes/api/scheduled/index'
 import { Route as ApiScheduledIdRouteImport } from './routes/api/scheduled/$id'
 import { Route as ApiSearchSavedRouteImport } from './routes/api/search/saved'
+import { Route as ApiServicesRebarReservationsRouteImport } from './routes/api/services/rebar-reservations'
 import { Route as ApiSettingsEmailDigestRouteImport } from './routes/api/settings/email-digest'
+import { Route as ApiSettingsGameAssistsRouteImport } from './routes/api/settings/game-assists'
+import { Route as ApiSettingsPlayLimitsRouteImport } from './routes/api/settings/play-limits'
 import { Route as ApiShopIndexRouteImport } from './routes/api/shop/index'
 import { Route as ApiShopEquipRouteImport } from './routes/api/shop/equip'
 import { Route as ApiShopPurchaseRouteImport } from './routes/api/shop/purchase'
@@ -1359,6 +1370,11 @@ const SiteRmhladderRoute = SiteRmhladderRouteImport.update({
 const SiteRoadmapRoute = SiteRoadmapRouteImport.update({
   id: '/roadmap',
   path: '/roadmap',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteScheduleRoute = SiteScheduleRouteImport.update({
+  id: '/schedule',
+  path: '/schedule',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteSearchRoute = SiteSearchRouteImport.update({
@@ -2585,6 +2601,11 @@ const ApiBattlepassUnlockRoute = ApiBattlepassUnlockRouteImport.update({
   path: '/api/battlepass/unlock',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiBuildsConsentRoute = ApiBuildsConsentRouteImport.update({
+  id: '/api/builds/consent',
+  path: '/api/builds/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiBuildsReviewRoute = ApiBuildsReviewRouteImport.update({
   id: '/api/builds/review',
   path: '/api/builds/review',
@@ -2720,6 +2741,11 @@ const ApiDailyPuzzlesResultsRoute = ApiDailyPuzzlesResultsRouteImport.update({
 const ApiDailyPuzzlesScoreRoute = ApiDailyPuzzlesScoreRouteImport.update({
   id: '/api/daily-puzzles/score',
   path: '/api/daily-puzzles/score',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDatacenterComputeRoute = ApiDatacenterComputeRouteImport.update({
+  id: '/api/datacenter/compute',
+  path: '/api/datacenter/compute',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiDiscordActivityImageRoute = ApiDiscordActivityImageRouteImport.update({
@@ -3043,6 +3069,11 @@ const ApiMassiveMarchCampaignsRoute =
     path: '/api/massive-march/campaigns',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiMemoryIndexRoute = ApiMemoryIndexRouteImport.update({
+  id: '/api/memory/',
+  path: '/api/memory/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMessagesConversationIdRoute =
   ApiMessagesConversationIdRouteImport.update({
     id: '/$conversationId',
@@ -3311,6 +3342,16 @@ const ApiRankedIndexRoute = ApiRankedIndexRouteImport.update({
   path: '/api/ranked/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRecommendIndexRoute = ApiRecommendIndexRouteImport.update({
+  id: '/api/recommend/',
+  path: '/api/recommend/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRecommendFeedbackRoute = ApiRecommendFeedbackRouteImport.update({
+  id: '/api/recommend/feedback',
+  path: '/api/recommend/feedback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiReferralsClaimRoute = ApiReferralsClaimRouteImport.update({
   id: '/api/referrals/claim',
   path: '/api/referrals/claim',
@@ -3491,6 +3532,16 @@ const ApiSavesFoldersRoute = ApiSavesFoldersRouteImport.update({
   path: '/api/saves/folders',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiScheduleIndexRoute = ApiScheduleIndexRouteImport.update({
+  id: '/api/schedule/',
+  path: '/api/schedule/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiScheduleAdminRoute = ApiScheduleAdminRouteImport.update({
+  id: '/api/schedule/admin',
+  path: '/api/schedule/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiScheduledIndexRoute = ApiScheduledIndexRouteImport.update({
   id: '/api/scheduled/',
   path: '/api/scheduled/',
@@ -3506,9 +3557,25 @@ const ApiSearchSavedRoute = ApiSearchSavedRouteImport.update({
   path: '/saved',
   getParentRoute: () => ApiSearchRoute,
 } as any)
+const ApiServicesRebarReservationsRoute =
+  ApiServicesRebarReservationsRouteImport.update({
+    id: '/api/services/rebar-reservations',
+    path: '/api/services/rebar-reservations',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiSettingsEmailDigestRoute = ApiSettingsEmailDigestRouteImport.update({
   id: '/api/settings/email-digest',
   path: '/api/settings/email-digest',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSettingsGameAssistsRoute = ApiSettingsGameAssistsRouteImport.update({
+  id: '/api/settings/game-assists',
+  path: '/api/settings/game-assists',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSettingsPlayLimitsRoute = ApiSettingsPlayLimitsRouteImport.update({
+  id: '/api/settings/play-limits',
+  path: '/api/settings/play-limits',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiShopIndexRoute = ApiShopIndexRouteImport.update({
@@ -5633,6 +5700,7 @@ export interface FileRoutesByFullPath {
   '/recap': typeof SiteRecapRoute
   '/rmhladder': typeof SiteRmhladderRouteWithChildren
   '/roadmap': typeof SiteRoadmapRoute
+  '/schedule': typeof SiteScheduleRoute
   '/search': typeof SiteSearchRoute
   '/services': typeof SiteServicesRouteWithChildren
   '/share': typeof SiteShareRoute
@@ -5844,6 +5912,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/battlepass/claim': typeof ApiBattlepassClaimRoute
   '/api/battlepass/unlock': typeof ApiBattlepassUnlockRoute
+  '/api/builds/consent': typeof ApiBuildsConsentRoute
   '/api/builds/review': typeof ApiBuildsReviewRoute
   '/api/bulk/$id': typeof ApiBulkIdRoute
   '/api/bulk/preview': typeof ApiBulkPreviewRoute
@@ -5867,6 +5936,7 @@ export interface FileRoutesByFullPath {
   '/api/daily-puzzles/puzzle': typeof ApiDailyPuzzlesPuzzleRoute
   '/api/daily-puzzles/results': typeof ApiDailyPuzzlesResultsRoute
   '/api/daily-puzzles/score': typeof ApiDailyPuzzlesScoreRoute
+  '/api/datacenter/compute': typeof ApiDatacenterComputeRoute
   '/api/discord/activity-image': typeof ApiDiscordActivityImageRoute
   '/api/discord/daily-progress': typeof ApiDiscordDailyProgressRoute
   '/api/discord/embed': typeof ApiDiscordEmbedRoute
@@ -5965,6 +6035,7 @@ export interface FileRoutesByFullPath {
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
   '/api/push/public-key': typeof ApiPushPublicKeyRoute
   '/api/push/subscribe': typeof ApiPushSubscribeRoute
+  '/api/recommend/feedback': typeof ApiRecommendFeedbackRoute
   '/api/referrals/claim': typeof ApiReferralsClaimRoute
   '/api/referrals/me': typeof ApiReferralsMeRoute
   '/api/replays/$id': typeof ApiReplaysIdRoute
@@ -5998,9 +6069,13 @@ export interface FileRoutesByFullPath {
   '/api/rmhtype/keystats': typeof ApiRmhtypeKeystatsRoute
   '/api/rmhtype/practice-test': typeof ApiRmhtypePracticeTestRoute
   '/api/saves/folders': typeof ApiSavesFoldersRouteWithChildren
+  '/api/schedule/admin': typeof ApiScheduleAdminRoute
   '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
   '/api/search/saved': typeof ApiSearchSavedRouteWithChildren
+  '/api/services/rebar-reservations': typeof ApiServicesRebarReservationsRoute
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
+  '/api/settings/game-assists': typeof ApiSettingsGameAssistsRoute
+  '/api/settings/play-limits': typeof ApiSettingsPlayLimitsRoute
   '/api/shop/equip': typeof ApiShopEquipRoute
   '/api/shop/purchase': typeof ApiShopPurchaseRoute
   '/api/signal-forge/abandon': typeof ApiSignalForgeAbandonRoute
@@ -6127,6 +6202,7 @@ export interface FileRoutesByFullPath {
   '/api/history/': typeof ApiHistoryIndexRoute
   '/api/kaikai-debt/': typeof ApiKaikaiDebtIndexRoute
   '/api/lists/': typeof ApiListsIndexRoute
+  '/api/memory/': typeof ApiMemoryIndexRoute
   '/api/moments/': typeof ApiMomentsIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
   '/api/onboarding/': typeof ApiOnboardingIndexRoute
@@ -6137,9 +6213,11 @@ export interface FileRoutesByFullPath {
   '/api/predictions/': typeof ApiPredictionsIndexRoute
   '/api/profile-links/': typeof ApiProfileLinksIndexRoute
   '/api/ranked/': typeof ApiRankedIndexRoute
+  '/api/recommend/': typeof ApiRecommendIndexRoute
   '/api/replays/': typeof ApiReplaysIndexRoute
   '/api/requests/': typeof ApiRequestsIndexRoute
   '/api/saves/': typeof ApiSavesIndexRoute
+  '/api/schedule/': typeof ApiScheduleIndexRoute
   '/api/scheduled/': typeof ApiScheduledIndexRoute
   '/api/shop/': typeof ApiShopIndexRoute
   '/api/spaces/': typeof ApiSpacesIndexRoute
@@ -6510,6 +6588,7 @@ export interface FileRoutesByTo {
   '/ranked': typeof SiteRankedRoute
   '/recap': typeof SiteRecapRoute
   '/roadmap': typeof SiteRoadmapRoute
+  '/schedule': typeof SiteScheduleRoute
   '/search': typeof SiteSearchRoute
   '/share': typeof SiteShareRoute
   '/shop': typeof SiteShopRoute
@@ -6719,6 +6798,7 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/battlepass/claim': typeof ApiBattlepassClaimRoute
   '/api/battlepass/unlock': typeof ApiBattlepassUnlockRoute
+  '/api/builds/consent': typeof ApiBuildsConsentRoute
   '/api/builds/review': typeof ApiBuildsReviewRoute
   '/api/bulk/$id': typeof ApiBulkIdRoute
   '/api/bulk/preview': typeof ApiBulkPreviewRoute
@@ -6742,6 +6822,7 @@ export interface FileRoutesByTo {
   '/api/daily-puzzles/puzzle': typeof ApiDailyPuzzlesPuzzleRoute
   '/api/daily-puzzles/results': typeof ApiDailyPuzzlesResultsRoute
   '/api/daily-puzzles/score': typeof ApiDailyPuzzlesScoreRoute
+  '/api/datacenter/compute': typeof ApiDatacenterComputeRoute
   '/api/discord/activity-image': typeof ApiDiscordActivityImageRoute
   '/api/discord/daily-progress': typeof ApiDiscordDailyProgressRoute
   '/api/discord/embed': typeof ApiDiscordEmbedRoute
@@ -6840,6 +6921,7 @@ export interface FileRoutesByTo {
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
   '/api/push/public-key': typeof ApiPushPublicKeyRoute
   '/api/push/subscribe': typeof ApiPushSubscribeRoute
+  '/api/recommend/feedback': typeof ApiRecommendFeedbackRoute
   '/api/referrals/claim': typeof ApiReferralsClaimRoute
   '/api/referrals/me': typeof ApiReferralsMeRoute
   '/api/replays/$id': typeof ApiReplaysIdRoute
@@ -6873,9 +6955,13 @@ export interface FileRoutesByTo {
   '/api/rmhtype/keystats': typeof ApiRmhtypeKeystatsRoute
   '/api/rmhtype/practice-test': typeof ApiRmhtypePracticeTestRoute
   '/api/saves/folders': typeof ApiSavesFoldersRouteWithChildren
+  '/api/schedule/admin': typeof ApiScheduleAdminRoute
   '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
   '/api/search/saved': typeof ApiSearchSavedRouteWithChildren
+  '/api/services/rebar-reservations': typeof ApiServicesRebarReservationsRoute
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
+  '/api/settings/game-assists': typeof ApiSettingsGameAssistsRoute
+  '/api/settings/play-limits': typeof ApiSettingsPlayLimitsRoute
   '/api/shop/equip': typeof ApiShopEquipRoute
   '/api/shop/purchase': typeof ApiShopPurchaseRoute
   '/api/signal-forge/abandon': typeof ApiSignalForgeAbandonRoute
@@ -7002,6 +7088,7 @@ export interface FileRoutesByTo {
   '/api/history': typeof ApiHistoryIndexRoute
   '/api/kaikai-debt': typeof ApiKaikaiDebtIndexRoute
   '/api/lists': typeof ApiListsIndexRoute
+  '/api/memory': typeof ApiMemoryIndexRoute
   '/api/moments': typeof ApiMomentsIndexRoute
   '/api/notifications': typeof ApiNotificationsIndexRoute
   '/api/onboarding': typeof ApiOnboardingIndexRoute
@@ -7012,9 +7099,11 @@ export interface FileRoutesByTo {
   '/api/predictions': typeof ApiPredictionsIndexRoute
   '/api/profile-links': typeof ApiProfileLinksIndexRoute
   '/api/ranked': typeof ApiRankedIndexRoute
+  '/api/recommend': typeof ApiRecommendIndexRoute
   '/api/replays': typeof ApiReplaysIndexRoute
   '/api/requests': typeof ApiRequestsIndexRoute
   '/api/saves': typeof ApiSavesIndexRoute
+  '/api/schedule': typeof ApiScheduleIndexRoute
   '/api/scheduled': typeof ApiScheduledIndexRoute
   '/api/shop': typeof ApiShopIndexRoute
   '/api/spaces': typeof ApiSpacesIndexRoute
@@ -7410,6 +7499,7 @@ export interface FileRoutesById {
   '/_site/recap': typeof SiteRecapRoute
   '/_site/rmhladder': typeof SiteRmhladderRouteWithChildren
   '/_site/roadmap': typeof SiteRoadmapRoute
+  '/_site/schedule': typeof SiteScheduleRoute
   '/_site/search': typeof SiteSearchRoute
   '/_site/services': typeof SiteServicesRouteWithChildren
   '/_site/share': typeof SiteShareRoute
@@ -7622,6 +7712,7 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/battlepass/claim': typeof ApiBattlepassClaimRoute
   '/api/battlepass/unlock': typeof ApiBattlepassUnlockRoute
+  '/api/builds/consent': typeof ApiBuildsConsentRoute
   '/api/builds/review': typeof ApiBuildsReviewRoute
   '/api/bulk/$id': typeof ApiBulkIdRoute
   '/api/bulk/preview': typeof ApiBulkPreviewRoute
@@ -7645,6 +7736,7 @@ export interface FileRoutesById {
   '/api/daily-puzzles/puzzle': typeof ApiDailyPuzzlesPuzzleRoute
   '/api/daily-puzzles/results': typeof ApiDailyPuzzlesResultsRoute
   '/api/daily-puzzles/score': typeof ApiDailyPuzzlesScoreRoute
+  '/api/datacenter/compute': typeof ApiDatacenterComputeRoute
   '/api/discord/activity-image': typeof ApiDiscordActivityImageRoute
   '/api/discord/daily-progress': typeof ApiDiscordDailyProgressRoute
   '/api/discord/embed': typeof ApiDiscordEmbedRoute
@@ -7743,6 +7835,7 @@ export interface FileRoutesById {
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
   '/api/push/public-key': typeof ApiPushPublicKeyRoute
   '/api/push/subscribe': typeof ApiPushSubscribeRoute
+  '/api/recommend/feedback': typeof ApiRecommendFeedbackRoute
   '/api/referrals/claim': typeof ApiReferralsClaimRoute
   '/api/referrals/me': typeof ApiReferralsMeRoute
   '/api/replays/$id': typeof ApiReplaysIdRoute
@@ -7776,9 +7869,13 @@ export interface FileRoutesById {
   '/api/rmhtype/keystats': typeof ApiRmhtypeKeystatsRoute
   '/api/rmhtype/practice-test': typeof ApiRmhtypePracticeTestRoute
   '/api/saves/folders': typeof ApiSavesFoldersRouteWithChildren
+  '/api/schedule/admin': typeof ApiScheduleAdminRoute
   '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
   '/api/search/saved': typeof ApiSearchSavedRouteWithChildren
+  '/api/services/rebar-reservations': typeof ApiServicesRebarReservationsRoute
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
+  '/api/settings/game-assists': typeof ApiSettingsGameAssistsRoute
+  '/api/settings/play-limits': typeof ApiSettingsPlayLimitsRoute
   '/api/shop/equip': typeof ApiShopEquipRoute
   '/api/shop/purchase': typeof ApiShopPurchaseRoute
   '/api/signal-forge/abandon': typeof ApiSignalForgeAbandonRoute
@@ -7905,6 +8002,7 @@ export interface FileRoutesById {
   '/api/history/': typeof ApiHistoryIndexRoute
   '/api/kaikai-debt/': typeof ApiKaikaiDebtIndexRoute
   '/api/lists/': typeof ApiListsIndexRoute
+  '/api/memory/': typeof ApiMemoryIndexRoute
   '/api/moments/': typeof ApiMomentsIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
   '/api/onboarding/': typeof ApiOnboardingIndexRoute
@@ -7915,9 +8013,11 @@ export interface FileRoutesById {
   '/api/predictions/': typeof ApiPredictionsIndexRoute
   '/api/profile-links/': typeof ApiProfileLinksIndexRoute
   '/api/ranked/': typeof ApiRankedIndexRoute
+  '/api/recommend/': typeof ApiRecommendIndexRoute
   '/api/replays/': typeof ApiReplaysIndexRoute
   '/api/requests/': typeof ApiRequestsIndexRoute
   '/api/saves/': typeof ApiSavesIndexRoute
+  '/api/schedule/': typeof ApiScheduleIndexRoute
   '/api/scheduled/': typeof ApiScheduledIndexRoute
   '/api/shop/': typeof ApiShopIndexRoute
   '/api/spaces/': typeof ApiSpacesIndexRoute
@@ -8314,6 +8414,7 @@ export interface FileRouteTypes {
     | '/recap'
     | '/rmhladder'
     | '/roadmap'
+    | '/schedule'
     | '/search'
     | '/services'
     | '/share'
@@ -8525,6 +8626,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/battlepass/claim'
     | '/api/battlepass/unlock'
+    | '/api/builds/consent'
     | '/api/builds/review'
     | '/api/bulk/$id'
     | '/api/bulk/preview'
@@ -8548,6 +8650,7 @@ export interface FileRouteTypes {
     | '/api/daily-puzzles/puzzle'
     | '/api/daily-puzzles/results'
     | '/api/daily-puzzles/score'
+    | '/api/datacenter/compute'
     | '/api/discord/activity-image'
     | '/api/discord/daily-progress'
     | '/api/discord/embed'
@@ -8646,6 +8749,7 @@ export interface FileRouteTypes {
     | '/api/promo/free-month'
     | '/api/push/public-key'
     | '/api/push/subscribe'
+    | '/api/recommend/feedback'
     | '/api/referrals/claim'
     | '/api/referrals/me'
     | '/api/replays/$id'
@@ -8679,9 +8783,13 @@ export interface FileRouteTypes {
     | '/api/rmhtype/keystats'
     | '/api/rmhtype/practice-test'
     | '/api/saves/folders'
+    | '/api/schedule/admin'
     | '/api/scheduled/$id'
     | '/api/search/saved'
+    | '/api/services/rebar-reservations'
     | '/api/settings/email-digest'
+    | '/api/settings/game-assists'
+    | '/api/settings/play-limits'
     | '/api/shop/equip'
     | '/api/shop/purchase'
     | '/api/signal-forge/abandon'
@@ -8808,6 +8916,7 @@ export interface FileRouteTypes {
     | '/api/history/'
     | '/api/kaikai-debt/'
     | '/api/lists/'
+    | '/api/memory/'
     | '/api/moments/'
     | '/api/notifications/'
     | '/api/onboarding/'
@@ -8818,9 +8927,11 @@ export interface FileRouteTypes {
     | '/api/predictions/'
     | '/api/profile-links/'
     | '/api/ranked/'
+    | '/api/recommend/'
     | '/api/replays/'
     | '/api/requests/'
     | '/api/saves/'
+    | '/api/schedule/'
     | '/api/scheduled/'
     | '/api/shop/'
     | '/api/spaces/'
@@ -9191,6 +9302,7 @@ export interface FileRouteTypes {
     | '/ranked'
     | '/recap'
     | '/roadmap'
+    | '/schedule'
     | '/search'
     | '/share'
     | '/shop'
@@ -9400,6 +9512,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/battlepass/claim'
     | '/api/battlepass/unlock'
+    | '/api/builds/consent'
     | '/api/builds/review'
     | '/api/bulk/$id'
     | '/api/bulk/preview'
@@ -9423,6 +9536,7 @@ export interface FileRouteTypes {
     | '/api/daily-puzzles/puzzle'
     | '/api/daily-puzzles/results'
     | '/api/daily-puzzles/score'
+    | '/api/datacenter/compute'
     | '/api/discord/activity-image'
     | '/api/discord/daily-progress'
     | '/api/discord/embed'
@@ -9521,6 +9635,7 @@ export interface FileRouteTypes {
     | '/api/promo/free-month'
     | '/api/push/public-key'
     | '/api/push/subscribe'
+    | '/api/recommend/feedback'
     | '/api/referrals/claim'
     | '/api/referrals/me'
     | '/api/replays/$id'
@@ -9554,9 +9669,13 @@ export interface FileRouteTypes {
     | '/api/rmhtype/keystats'
     | '/api/rmhtype/practice-test'
     | '/api/saves/folders'
+    | '/api/schedule/admin'
     | '/api/scheduled/$id'
     | '/api/search/saved'
+    | '/api/services/rebar-reservations'
     | '/api/settings/email-digest'
+    | '/api/settings/game-assists'
+    | '/api/settings/play-limits'
     | '/api/shop/equip'
     | '/api/shop/purchase'
     | '/api/signal-forge/abandon'
@@ -9683,6 +9802,7 @@ export interface FileRouteTypes {
     | '/api/history'
     | '/api/kaikai-debt'
     | '/api/lists'
+    | '/api/memory'
     | '/api/moments'
     | '/api/notifications'
     | '/api/onboarding'
@@ -9693,9 +9813,11 @@ export interface FileRouteTypes {
     | '/api/predictions'
     | '/api/profile-links'
     | '/api/ranked'
+    | '/api/recommend'
     | '/api/replays'
     | '/api/requests'
     | '/api/saves'
+    | '/api/schedule'
     | '/api/scheduled'
     | '/api/shop'
     | '/api/spaces'
@@ -10090,6 +10212,7 @@ export interface FileRouteTypes {
     | '/_site/recap'
     | '/_site/rmhladder'
     | '/_site/roadmap'
+    | '/_site/schedule'
     | '/_site/search'
     | '/_site/services'
     | '/_site/share'
@@ -10302,6 +10425,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/battlepass/claim'
     | '/api/battlepass/unlock'
+    | '/api/builds/consent'
     | '/api/builds/review'
     | '/api/bulk/$id'
     | '/api/bulk/preview'
@@ -10325,6 +10449,7 @@ export interface FileRouteTypes {
     | '/api/daily-puzzles/puzzle'
     | '/api/daily-puzzles/results'
     | '/api/daily-puzzles/score'
+    | '/api/datacenter/compute'
     | '/api/discord/activity-image'
     | '/api/discord/daily-progress'
     | '/api/discord/embed'
@@ -10423,6 +10548,7 @@ export interface FileRouteTypes {
     | '/api/promo/free-month'
     | '/api/push/public-key'
     | '/api/push/subscribe'
+    | '/api/recommend/feedback'
     | '/api/referrals/claim'
     | '/api/referrals/me'
     | '/api/replays/$id'
@@ -10456,9 +10582,13 @@ export interface FileRouteTypes {
     | '/api/rmhtype/keystats'
     | '/api/rmhtype/practice-test'
     | '/api/saves/folders'
+    | '/api/schedule/admin'
     | '/api/scheduled/$id'
     | '/api/search/saved'
+    | '/api/services/rebar-reservations'
     | '/api/settings/email-digest'
+    | '/api/settings/game-assists'
+    | '/api/settings/play-limits'
     | '/api/shop/equip'
     | '/api/shop/purchase'
     | '/api/signal-forge/abandon'
@@ -10585,6 +10715,7 @@ export interface FileRouteTypes {
     | '/api/history/'
     | '/api/kaikai-debt/'
     | '/api/lists/'
+    | '/api/memory/'
     | '/api/moments/'
     | '/api/notifications/'
     | '/api/onboarding/'
@@ -10595,9 +10726,11 @@ export interface FileRouteTypes {
     | '/api/predictions/'
     | '/api/profile-links/'
     | '/api/ranked/'
+    | '/api/recommend/'
     | '/api/replays/'
     | '/api/requests/'
     | '/api/saves/'
+    | '/api/schedule/'
     | '/api/scheduled/'
     | '/api/shop/'
     | '/api/spaces/'
@@ -11038,6 +11171,7 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiBattlepassClaimRoute: typeof ApiBattlepassClaimRoute
   ApiBattlepassUnlockRoute: typeof ApiBattlepassUnlockRoute
+  ApiBuildsConsentRoute: typeof ApiBuildsConsentRoute
   ApiBuildsReviewRoute: typeof ApiBuildsReviewRoute
   ApiBulkIdRoute: typeof ApiBulkIdRoute
   ApiBulkPreviewRoute: typeof ApiBulkPreviewRoute
@@ -11061,6 +11195,7 @@ export interface RootRouteChildren {
   ApiDailyPuzzlesPuzzleRoute: typeof ApiDailyPuzzlesPuzzleRoute
   ApiDailyPuzzlesResultsRoute: typeof ApiDailyPuzzlesResultsRoute
   ApiDailyPuzzlesScoreRoute: typeof ApiDailyPuzzlesScoreRoute
+  ApiDatacenterComputeRoute: typeof ApiDatacenterComputeRoute
   ApiDiscordActivityImageRoute: typeof ApiDiscordActivityImageRoute
   ApiDiscordDailyProgressRoute: typeof ApiDiscordDailyProgressRoute
   ApiDiscordEmbedRoute: typeof ApiDiscordEmbedRoute
@@ -11146,6 +11281,7 @@ export interface RootRouteChildren {
   ApiPromoFreeMonthRoute: typeof ApiPromoFreeMonthRoute
   ApiPushPublicKeyRoute: typeof ApiPushPublicKeyRoute
   ApiPushSubscribeRoute: typeof ApiPushSubscribeRoute
+  ApiRecommendFeedbackRoute: typeof ApiRecommendFeedbackRoute
   ApiReferralsClaimRoute: typeof ApiReferralsClaimRoute
   ApiReferralsMeRoute: typeof ApiReferralsMeRoute
   ApiReplaysIdRoute: typeof ApiReplaysIdRoute
@@ -11174,8 +11310,12 @@ export interface RootRouteChildren {
   ApiRmhtypeKeystatsRoute: typeof ApiRmhtypeKeystatsRoute
   ApiRmhtypePracticeTestRoute: typeof ApiRmhtypePracticeTestRoute
   ApiSavesFoldersRoute: typeof ApiSavesFoldersRouteWithChildren
+  ApiScheduleAdminRoute: typeof ApiScheduleAdminRoute
   ApiScheduledIdRoute: typeof ApiScheduledIdRouteWithChildren
+  ApiServicesRebarReservationsRoute: typeof ApiServicesRebarReservationsRoute
   ApiSettingsEmailDigestRoute: typeof ApiSettingsEmailDigestRoute
+  ApiSettingsGameAssistsRoute: typeof ApiSettingsGameAssistsRoute
+  ApiSettingsPlayLimitsRoute: typeof ApiSettingsPlayLimitsRoute
   ApiShopEquipRoute: typeof ApiShopEquipRoute
   ApiShopPurchaseRoute: typeof ApiShopPurchaseRoute
   ApiSignalForgeAbandonRoute: typeof ApiSignalForgeAbandonRoute
@@ -11260,6 +11400,7 @@ export interface RootRouteChildren {
   ApiHistoryIndexRoute: typeof ApiHistoryIndexRoute
   ApiKaikaiDebtIndexRoute: typeof ApiKaikaiDebtIndexRoute
   ApiListsIndexRoute: typeof ApiListsIndexRoute
+  ApiMemoryIndexRoute: typeof ApiMemoryIndexRoute
   ApiMomentsIndexRoute: typeof ApiMomentsIndexRoute
   ApiNotificationsIndexRoute: typeof ApiNotificationsIndexRoute
   ApiOnboardingIndexRoute: typeof ApiOnboardingIndexRoute
@@ -11270,9 +11411,11 @@ export interface RootRouteChildren {
   ApiPredictionsIndexRoute: typeof ApiPredictionsIndexRoute
   ApiProfileLinksIndexRoute: typeof ApiProfileLinksIndexRoute
   ApiRankedIndexRoute: typeof ApiRankedIndexRoute
+  ApiRecommendIndexRoute: typeof ApiRecommendIndexRoute
   ApiReplaysIndexRoute: typeof ApiReplaysIndexRoute
   ApiRequestsIndexRoute: typeof ApiRequestsIndexRoute
   ApiSavesIndexRoute: typeof ApiSavesIndexRoute
+  ApiScheduleIndexRoute: typeof ApiScheduleIndexRoute
   ApiScheduledIndexRoute: typeof ApiScheduledIndexRoute
   ApiShopIndexRoute: typeof ApiShopIndexRoute
   ApiSpacesIndexRoute: typeof ApiSpacesIndexRoute
@@ -12060,6 +12203,13 @@ declare module '@tanstack/react-router' {
       path: '/roadmap'
       fullPath: '/roadmap'
       preLoaderRoute: typeof SiteRoadmapRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/schedule': {
+      id: '/_site/schedule'
+      path: '/schedule'
+      fullPath: '/schedule'
+      preLoaderRoute: typeof SiteScheduleRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/search': {
@@ -13763,6 +13913,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiBattlepassUnlockRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/builds/consent': {
+      id: '/api/builds/consent'
+      path: '/api/builds/consent'
+      fullPath: '/api/builds/consent'
+      preLoaderRoute: typeof ApiBuildsConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/builds/review': {
       id: '/api/builds/review'
       path: '/api/builds/review'
@@ -13950,6 +14107,13 @@ declare module '@tanstack/react-router' {
       path: '/api/daily-puzzles/score'
       fullPath: '/api/daily-puzzles/score'
       preLoaderRoute: typeof ApiDailyPuzzlesScoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/datacenter/compute': {
+      id: '/api/datacenter/compute'
+      path: '/api/datacenter/compute'
+      fullPath: '/api/datacenter/compute'
+      preLoaderRoute: typeof ApiDatacenterComputeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/discord/activity-image': {
@@ -14393,6 +14557,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMassiveMarchCampaignsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/memory/': {
+      id: '/api/memory/'
+      path: '/api/memory'
+      fullPath: '/api/memory/'
+      preLoaderRoute: typeof ApiMemoryIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/messages/$conversationId': {
       id: '/api/messages/$conversationId'
       path: '/$conversationId'
@@ -14757,6 +14928,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRankedIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/recommend/': {
+      id: '/api/recommend/'
+      path: '/api/recommend'
+      fullPath: '/api/recommend/'
+      preLoaderRoute: typeof ApiRecommendIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/recommend/feedback': {
+      id: '/api/recommend/feedback'
+      path: '/api/recommend/feedback'
+      fullPath: '/api/recommend/feedback'
+      preLoaderRoute: typeof ApiRecommendFeedbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/referrals/claim': {
       id: '/api/referrals/claim'
       path: '/api/referrals/claim'
@@ -15009,6 +15194,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSavesFoldersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/schedule/': {
+      id: '/api/schedule/'
+      path: '/api/schedule'
+      fullPath: '/api/schedule/'
+      preLoaderRoute: typeof ApiScheduleIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/schedule/admin': {
+      id: '/api/schedule/admin'
+      path: '/api/schedule/admin'
+      fullPath: '/api/schedule/admin'
+      preLoaderRoute: typeof ApiScheduleAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/scheduled/': {
       id: '/api/scheduled/'
       path: '/api/scheduled'
@@ -15030,11 +15229,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSearchSavedRouteImport
       parentRoute: typeof ApiSearchRoute
     }
+    '/api/services/rebar-reservations': {
+      id: '/api/services/rebar-reservations'
+      path: '/api/services/rebar-reservations'
+      fullPath: '/api/services/rebar-reservations'
+      preLoaderRoute: typeof ApiServicesRebarReservationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/settings/email-digest': {
       id: '/api/settings/email-digest'
       path: '/api/settings/email-digest'
       fullPath: '/api/settings/email-digest'
       preLoaderRoute: typeof ApiSettingsEmailDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/settings/game-assists': {
+      id: '/api/settings/game-assists'
+      path: '/api/settings/game-assists'
+      fullPath: '/api/settings/game-assists'
+      preLoaderRoute: typeof ApiSettingsGameAssistsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/settings/play-limits': {
+      id: '/api/settings/play-limits'
+      path: '/api/settings/play-limits'
+      fullPath: '/api/settings/play-limits'
+      preLoaderRoute: typeof ApiSettingsPlayLimitsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/shop/': {
@@ -17901,6 +18121,7 @@ interface SiteRouteChildren {
   SiteRecapRoute: typeof SiteRecapRoute
   SiteRmhladderRoute: typeof SiteRmhladderRouteWithChildren
   SiteRoadmapRoute: typeof SiteRoadmapRoute
+  SiteScheduleRoute: typeof SiteScheduleRoute
   SiteSearchRoute: typeof SiteSearchRoute
   SiteServicesRoute: typeof SiteServicesRouteWithChildren
   SiteShareRoute: typeof SiteShareRoute
@@ -18014,6 +18235,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteRecapRoute: SiteRecapRoute,
   SiteRmhladderRoute: SiteRmhladderRouteWithChildren,
   SiteRoadmapRoute: SiteRoadmapRoute,
+  SiteScheduleRoute: SiteScheduleRoute,
   SiteSearchRoute: SiteSearchRoute,
   SiteServicesRoute: SiteServicesRouteWithChildren,
   SiteShareRoute: SiteShareRoute,
@@ -19562,6 +19784,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiBattlepassClaimRoute: ApiBattlepassClaimRoute,
   ApiBattlepassUnlockRoute: ApiBattlepassUnlockRoute,
+  ApiBuildsConsentRoute: ApiBuildsConsentRoute,
   ApiBuildsReviewRoute: ApiBuildsReviewRoute,
   ApiBulkIdRoute: ApiBulkIdRoute,
   ApiBulkPreviewRoute: ApiBulkPreviewRoute,
@@ -19585,6 +19808,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDailyPuzzlesPuzzleRoute: ApiDailyPuzzlesPuzzleRoute,
   ApiDailyPuzzlesResultsRoute: ApiDailyPuzzlesResultsRoute,
   ApiDailyPuzzlesScoreRoute: ApiDailyPuzzlesScoreRoute,
+  ApiDatacenterComputeRoute: ApiDatacenterComputeRoute,
   ApiDiscordActivityImageRoute: ApiDiscordActivityImageRoute,
   ApiDiscordDailyProgressRoute: ApiDiscordDailyProgressRoute,
   ApiDiscordEmbedRoute: ApiDiscordEmbedRoute,
@@ -19670,6 +19894,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPromoFreeMonthRoute: ApiPromoFreeMonthRoute,
   ApiPushPublicKeyRoute: ApiPushPublicKeyRoute,
   ApiPushSubscribeRoute: ApiPushSubscribeRoute,
+  ApiRecommendFeedbackRoute: ApiRecommendFeedbackRoute,
   ApiReferralsClaimRoute: ApiReferralsClaimRoute,
   ApiReferralsMeRoute: ApiReferralsMeRoute,
   ApiReplaysIdRoute: ApiReplaysIdRoute,
@@ -19698,8 +19923,12 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhtypeKeystatsRoute: ApiRmhtypeKeystatsRoute,
   ApiRmhtypePracticeTestRoute: ApiRmhtypePracticeTestRoute,
   ApiSavesFoldersRoute: ApiSavesFoldersRouteWithChildren,
+  ApiScheduleAdminRoute: ApiScheduleAdminRoute,
   ApiScheduledIdRoute: ApiScheduledIdRouteWithChildren,
+  ApiServicesRebarReservationsRoute: ApiServicesRebarReservationsRoute,
   ApiSettingsEmailDigestRoute: ApiSettingsEmailDigestRoute,
+  ApiSettingsGameAssistsRoute: ApiSettingsGameAssistsRoute,
+  ApiSettingsPlayLimitsRoute: ApiSettingsPlayLimitsRoute,
   ApiShopEquipRoute: ApiShopEquipRoute,
   ApiShopPurchaseRoute: ApiShopPurchaseRoute,
   ApiSignalForgeAbandonRoute: ApiSignalForgeAbandonRoute,
@@ -19784,6 +20013,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHistoryIndexRoute: ApiHistoryIndexRoute,
   ApiKaikaiDebtIndexRoute: ApiKaikaiDebtIndexRoute,
   ApiListsIndexRoute: ApiListsIndexRoute,
+  ApiMemoryIndexRoute: ApiMemoryIndexRoute,
   ApiMomentsIndexRoute: ApiMomentsIndexRoute,
   ApiNotificationsIndexRoute: ApiNotificationsIndexRoute,
   ApiOnboardingIndexRoute: ApiOnboardingIndexRoute,
@@ -19794,9 +20024,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPredictionsIndexRoute: ApiPredictionsIndexRoute,
   ApiProfileLinksIndexRoute: ApiProfileLinksIndexRoute,
   ApiRankedIndexRoute: ApiRankedIndexRoute,
+  ApiRecommendIndexRoute: ApiRecommendIndexRoute,
   ApiReplaysIndexRoute: ApiReplaysIndexRoute,
   ApiRequestsIndexRoute: ApiRequestsIndexRoute,
   ApiSavesIndexRoute: ApiSavesIndexRoute,
+  ApiScheduleIndexRoute: ApiScheduleIndexRoute,
   ApiScheduledIndexRoute: ApiScheduledIndexRoute,
   ApiShopIndexRoute: ApiShopIndexRoute,
   ApiSpacesIndexRoute: ApiSpacesIndexRoute,

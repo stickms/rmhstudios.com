@@ -143,6 +143,35 @@ function ssRemovePlayer(io: Server, socketId: string): void {
 
 // ─── Event Handlers ───
 
+/**
+ * Mint an empty WAITING lobby and register it in the in-memory map.
+ *
+ * Split out of `ss:createLobby` so the party path (see the bottom of this file)
+ * can make a room for people who have not connected to the game yet. The socket
+ * path then seats its creator as host; the party path seats nobody and lets
+ * every member arrive through the ordinary `ss:joinLobby`, which is what keeps
+ * one join path rather than two.
+ */
+function ssCreateLobby(hostUserId: string): SSLobbyInMemory {
+  let code = generateLobbyCode();
+  let attempts = 0;
+  while (ssLobbies.has(code) && attempts < 20) { code = generateLobbyCode(); attempts++; }
+
+  const lobby: SSLobbyInMemory = {
+    id: generateSSId(),
+    code,
+    hostUserId,
+    status: 'WAITING',
+    players: new Map(),
+    currentMatchId: null,
+    currentMatchSeed: null,
+    currentMatchStartAt: null,
+    matchPlayers: new Map(),
+  };
+  ssLobbies.set(code, lobby);
+  return lobby;
+}
+
 export function registerSynapseStormHandlers(io: Server, socket: Socket): void {
   // ─── Time Sync ───
   socket.on('ss:timeSync', (payload: { clientTime?: number }) => {
@@ -164,27 +193,11 @@ export function registerSynapseStormHandlers(io: Server, socket: Socket): void {
 
     ssRemovePlayer(io, socket.id);
 
-    let code = generateLobbyCode();
-    let attempts = 0;
-    while (ssLobbies.has(code) && attempts < 20) { code = generateLobbyCode(); attempts++; }
-
-    const lobbyId = generateSSId();
-
-    const lobby: SSLobbyInMemory = {
-      id: lobbyId,
-      code,
-      hostUserId: userId,
-      status: 'WAITING',
-      players: new Map(),
-      currentMatchId: null,
-      currentMatchSeed: null,
-      currentMatchStartAt: null,
-      matchPlayers: new Map(),
-    };
+    const lobby = ssCreateLobby(userId);
+    const { code, id: lobbyId } = lobby;
 
     const player: SSPlayer = { socketId: socket.id, userId, displayName, isReady: false, isHost: true };
     lobby.players.set(userId, player);
-    ssLobbies.set(code, lobby);
     ssUserSocketMap.set(userId, socket.id);
     ssSocketUserMap.set(socket.id, userId);
     ssSocketLobbyMap.set(socket.id, code);
@@ -589,3 +602,58 @@ export function handleSynapseStormDisconnect(io: Server, socket: Socket): void {
     ssSocketLobbyMap.delete(socket.id);
   }
 }
+
+// ─── Party support (P1) ───────────────────────────────────────────────────
+//
+// The party system (`handlers/party.ts`) has been complete since §5 and had an
+// empty registry: every piece of it worked and no game had ever called
+// `registerPartyGame`, so `party:queue` answered "that game does not support
+// parties yet" for all thirteen online games. This is Synapse Storm's entry.
+//
+// The whole adoption is: make a room nobody is sitting in yet, and return its
+// code. Members receive that code as their ticket's `roomId` and arrive through
+// the ordinary join path, so nothing about seating, readying or the match
+// lifecycle has a second implementation to keep in step.
+
+import { registerPartyGame, type PartyMember, type RoomRef } from '../party-contract';
+
+registerPartyGame('synapse-storm', {
+  maxPartySize: MAX_SS_PLAYERS,
+  async createRoomForParty(members: PartyMember[]): Promise<RoomRef> {
+    // The leader hosts, matching what they would get by pressing Create.
+    const host = members[0];
+    if (!host) throw new Error('synapse-storm: empty party');
+
+    const lobby = ssCreateLobby(host.userId);
+    logger.info({ event: 'ss_party_lobby_created', code: lobby.code, hostUserId: host.userId });
+
+    // Persist exactly as `ss:createLobby` does — fire-and-forget, because a
+    // lobby that works but was not written down is a better outcome than a
+    // party that cannot start because the database was briefly unavailable.
+    try {
+      const db = getPrismaClient();
+      db.sSLobby
+        .create({ data: { id: lobby.id, code: lobby.code, hostUserId: host.userId, status: 'WAITING' } })
+        .then((dbLobby: { id: string }) => {
+          lobby.id = dbLobby.id;
+        })
+        .catch((err: Error) =>
+          logger.warn({ event: 'ss_party_db_persist_failed', error: err.message }),
+        );
+    } catch (err) {
+      logger.warn({ event: 'ss_party_db_unavailable', error: (err as Error).message });
+    }
+
+    return { game: 'synapse-storm', roomId: lobby.code };
+  },
+
+  reapIfEmpty(roomId: string): void {
+    const lobby = ssLobbies.get(roomId.toUpperCase());
+    // `players` is the occupancy test, and checking it (rather than assuming
+    // the timer implies abandonment) is what makes this safe to run against a
+    // lobby that filled up and is mid-match.
+    if (!lobby || lobby.players.size > 0) return;
+    ssLobbies.delete(lobby.code);
+    logger.info({ event: 'ss_party_lobby_reaped', code: lobby.code });
+  },
+});

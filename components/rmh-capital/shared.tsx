@@ -2,9 +2,10 @@
  * RMH Capital — shared primitives ported from the original static site.
  * Nav, footer, ticker, brand mark, and the scroll-reveal hook.
  */
-import { useEffect } from 'react';
-import { Link, useRouterState } from '@tanstack/react-router';
+
+import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { useVerticalNav } from '@/hooks/useVerticalNav';
 
 /* The geometric RMH mark used in the nav + footer. */
 export function BrandMark() {
@@ -54,30 +55,13 @@ const NAV: NavItem[] = [
 
 export function TopNav() {
   const { t } = useTranslation('c-rmh-capital');
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
-
-  useEffect(() => {
-    const nav = document.querySelector('.rmhc-root .topnav');
-    if (!nav) return;
-    const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 12);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  const toggleMenu = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const btn = e.currentTarget;
-    const menu = btn.closest('.topnav')?.querySelector('.mobile-menu');
-    if (!menu) return;
-    const open = menu.classList.toggle('open');
-    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-  };
-
-  const closeMenu = () => {
-    document.querySelector('.rmhc-root .mobile-menu')?.classList.remove('open');
-  };
-
-  const current = (to: string) => (pathname === to ? 'page' : undefined);
+  // Condense-on-scroll, the mobile menu and `aria-current` are identical here
+  // and in RMH PMC, character for character — see `hooks/useVerticalNav.ts`
+  // for why the shared part is the behaviour and not a component.
+  const { toggleMenu, closeMenu, current } = useVerticalNav({
+    rootClass: 'rmhc-root',
+    barClass: 'topnav',
+  });
 
   return (
     <header className="topnav">

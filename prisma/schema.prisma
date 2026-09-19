@@ -393,6 +393,27 @@ model User {
   aiUsage             AiUsage[]
   activities          Activity[]
   gameStats           GameStat[]
+
+  /// Responsible play (W8). Optional: a member with no row has no limits.
+  playLimits          UserPlayLimits?
+
+  /// Rebar & Rutabaga bookings (W1).
+  rebarReservations   RebarReservation[]
+
+  /// Seasonal ranked standings (P5), beside the lifetime `eloRatings`.
+  seasonRatings       RankedSeasonRating[]
+
+  /// Cross-game assists (P7). Optional: no row means no assists.
+  gameAssists         GameAssistPreference?
+
+  /// What the AI surfaces remember about them (M3). Member-editable.
+  memories            MemberMemory[]
+
+  /// Compute bought with coins from RMH Datacenter (W2).
+  computeGrants       ComputeGrant[]
+
+  /// What this member agreed to give which builds (B1).
+  buildGrants         BuildGrant[]
   readPositions       ReadPosition[]
   heldNotifications   HeldNotification[]
   conversationPrefs   ConversationPref[]
@@ -1200,7 +1221,15 @@ model SongComment {
   /// running image remembers they existed. `scripts/check-migration-safety.ts`
   /// is what insists on that order, and it is right to.
   aiSeverity   String?   @db.VarChar(16)
-  aiCategories String[]
+  /// `@default([])` because 20260807160000_slice_it_comment_ai_triage created
+  /// this column as `TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[]`, on purpose and
+  /// with its reasoning written down — but the model never declared it. The
+  /// database therefore carried a default that schema.prisma did not, so
+  /// `prisma migrate diff` proposed dropping it on every run and the
+  /// migrate-status drift gate failed on main. Declaring it here makes the
+  /// model describe what the migration actually built; no migration is needed,
+  /// because nothing about the database changes.
+  aiCategories String[]  @default([])
   aiRationale  String?   @db.VarChar(200)
   aiTriagedAt  DateTime?
 
@@ -3529,6 +3558,7 @@ model UserBuild {
   category   BuildCategory? @relation(fields: [categoryId], references: [id])
   categoryId String?
   versions   BuildVersion[]
+  grants     BuildGrant[]
   tags       BuildTag[]
   likes      BuildLike[]
   comments   BuildComment[]
@@ -3811,7 +3841,8 @@ model BuildVersion {
   commitHash String?  @db.VarChar(40)
   createdAt  DateTime @default(now())
 
-  build UserBuild @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  build    UserBuild            @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  manifest BuildManifestRecord?
 
   @@unique([buildId, version])
   @@map("build_version")
@@ -9039,4 +9070,474 @@ model DiscordWatchLive {
   updatedAt DateTime @updatedAt
 
   @@map("discord_watch_live")
+}
+
+// ─── Responsible play (W8, 2026-09-19) ────────────────────────────────────
+// The guard rails every coin-risking surface on the site shipped without.
+//
+// The audit for `docs/plans/2026-09-19-next-phase-feature-ideas.md` grepped the
+// tree for `selfExclu|age-gate|isAdult|over18` and found nothing: `/wager`,
+// `/predictions`, `CoinStake`, `DailyWheelSpin` and the five casino tables ran
+// with per-stake ceilings (`lib/wager/constants.ts`) and no per-DAY anything.
+//
+// Coins cannot be cashed out, which is why this is a small feature rather than
+// an incident. It is not a reason to keep adding risk surfaces without it.
+
+/// One row per member who has ever set a limit. Absent row = no limits, which
+/// is why every read goes through `resolvePlayLimits()` rather than assuming a
+/// row exists.
+model UserPlayLimits {
+  userId String @id
+
+  /// Most coins this member may stake per rolling UTC day, across every risk
+  /// surface. Null = no cap. Enforced in `debitCoinsOn` for `type: 'WAGER'`,
+  /// which is the one chokepoint both the web tier and the socket tier share.
+  dailyCoinCap Int?
+
+  /// Set by the member; until it passes, every `WAGER` debit is refused and the
+  /// risk surfaces are hidden from navigation and search. Deliberately NOT
+  /// clearable early — see `play-limits.ts` for why the asymmetry is the
+  /// feature rather than an inconvenience.
+  selfExcludedUntil DateTime?
+
+  /// A shorter, softer break. Same refusal, no navigation change.
+  coolOffUntil DateTime?
+
+  /// A LOOSENING waiting out its 24 hours. Tightening applies immediately and
+  /// never lands here; only a change that would give the member more rope is
+  /// parked, so that "raise my limit" can never be an impulse the site honours
+  /// in the same minute it was typed.
+  ///
+  /// `pendingCap` is the requested new cap (null means "remove the cap"), and
+  /// `pendingCapAt` is when it becomes effective. Both are cleared together,
+  /// so `pendingCapAt != null` is the only test for "a change is in flight" —
+  /// a null `pendingCap` is a meaningful request, not an empty slot.
+  pendingCap   Int?
+  pendingCapAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_play_limits")
+}
+
+// ─── Rebar & Rutabaga — reservations (W1, 2026-09-19) ─────────────────────
+// The first piece of state behind any of the eleven /services and /ventures
+// microsites. Before this the whole section was brochureware: a signed-in
+// member and a search-engine crawler got the same page, and the one
+// interactive control anywhere in it was a `mailto:`.
+//
+// The `mailto:` stays, for parties larger than the form takes — that was
+// always the right path for those, and the component's comment says so.
+
+/// One booked table. The rules these rows must satisfy live in
+/// `lib/rebar-rutabaga/booking.ts` and are enforced in `.server.ts`.
+model RebarReservation {
+  id String @id @default(cuid())
+
+  /// Null for a guest booking. The restaurant takes a table from anyone with an
+  /// email; being a member gets you the booking in /notifications and a
+  /// calendar file, not a better chance of a table.
+  userId String?
+
+  /// The LOCAL calendar day of the service, `YYYY-MM-DD` — not an instant.
+  /// 17:30 is 17:30 in Gothenburg whether or not Sweden is on summer time that
+  /// week, so storing a UTC instant would make the seating drift an hour twice
+  /// a year. See the booking module's header.
+  serviceDate String @db.VarChar(10)
+
+  /// '17:30' | '20:45' — the two seatings the page prints.
+  seating String @db.VarChar(5)
+
+  partySize Int
+
+  name  String @db.VarChar(80)
+  email String @db.VarChar(160)
+
+  /// Allergies and anything else the kitchen needs to know. The house's first
+  /// policy is about allergies, so this is the field that policy acts on.
+  note String? @db.VarChar(500)
+
+  /// 'booked' | 'cancelled'. A string rather than an enum: the restaurant will
+  /// grow 'seated' and 'no-show' when there is a host stand to record them,
+  /// and each of those is a migration if this is an enum.
+  status String @default("booked") @db.VarChar(16)
+
+  cancelledAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  /// The availability query: covers already booked for one service.
+  @@index([serviceDate, seating, status])
+  /// "My bookings", newest first.
+  @@index([userId, createdAt(sort: Desc)])
+  /// NOTE: the migration also adds a PARTIAL unique index —
+  /// ("email", "serviceDate", "seating") WHERE status = 'booked' — so a
+  /// double-submitted form cannot take two tables out of twenty-two, while a
+  /// cancellation still frees the night to be re-booked. Prisma's DSL cannot
+  /// express a filtered index, so it is hand-written in the migration and
+  /// intentionally NOT mirrored here, exactly as
+  /// `20260716000000_add_rmhark_feed_partial_index` documents. A local
+  /// `prisma migrate dev` / `db push` may offer to DROP it — do not accept
+  /// that drop; the uniqueness is what makes the insert safe under a race.
+  @@map("rebar_reservation")
+}
+
+// ─── Ranked seasons (P5, 2026-09-19) ──────────────────────────────────────
+// `EloRating` stays exactly as it is: one lifetime number per (user, game),
+// never reset, which is a genuinely useful thing to have and is what every
+// existing consumer reads.
+//
+// This is the seasonal ladder beside it. A separate table rather than a
+// `season` column on `EloRating` for one specific reason: adding a column is
+// safe during a blue/green swap, and CHANGING that table's unique constraint
+// from (userId, game) to (userId, game, season) is not — old code would be
+// writing through the old key against the new index for the length of the
+// flip. A new table has no old readers at all.
+
+/// A player's standing in one game for one season.
+model RankedSeasonRating {
+  id     String @id @default(cuid())
+  userId String
+  game   String @db.VarChar(40)
+
+  /// Derived from the date by `lib/ranked/season.ts`, never allocated by a
+  /// table — so no row has to be created for a season to begin, and two
+  /// services cannot disagree about which season it is.
+  season Int
+
+  rating Int @default(1000)
+  wins   Int @default(0)
+  losses Int @default(0)
+  draws  Int @default(0)
+
+  /// Counts DOWN from PLACEMENT_MATCHES. While above zero the rating is
+  /// provisional: hidden from the ladder, moved by a wider K-factor, and
+  /// exempt from decay.
+  placementsLeft Int @default(5)
+
+  /// Drives decay, which is computed on READ rather than by a nightly sweep —
+  /// so there is no job to fall behind, and no window where two players were
+  /// decayed as of different days.
+  lastPlayedAt DateTime?
+
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, game, season])
+  /// The ladder read: one game, one season, best first.
+  @@index([game, season, rating(sort: Desc)])
+  @@map("ranked_season_rating")
+}
+
+// ─── Embeddings (M1, 2026-09-19) ──────────────────────────────────────────
+// Search has always been lexical: a generated `tsvector` with a GIN index plus
+// trigram for typos (`lib/search/posts.server.ts`). That is a good lexical
+// search and it was the only one — nothing on the site could find a document
+// that means the same thing in different words.
+//
+// Four later ideas want this and none of them should build their own: one
+// recommender (M2), a member memory the AI surfaces share (M3), discovery
+// shelves for a build store (B3), and duplicate detection on FeatureRequest.
+
+/// One embedding of one thing.
+model Embedding {
+  id String @id @default(cuid())
+
+  /// What was embedded: 'rmhark' | 'library' | 'news' | 'blog' | 'game' |
+  /// 'app' | 'build'. A string rather than an enum because adding a kind is a
+  /// backfill, and an enum would make it a migration as well.
+  kind String @db.VarChar(24)
+
+  /// The row this describes, in that kind's own table.
+  entityId String @db.VarChar(64)
+
+  /// The model that produced it, and the dimension it produced.
+  ///
+  /// Recorded rather than assumed: changing models means every stored vector
+  /// is in a different space and comparing across them returns confident
+  /// nonsense. With this here, a model change is a backfill that can run
+  /// alongside the old vectors and cut over when it finishes.
+  model String @db.VarChar(64)
+  dim   Int
+
+  /// The vector itself. `Unsupported` because Prisma has no vector type; every
+  /// read and write goes through raw SQL in `embeddings.server.ts`, which is
+  /// the only file allowed to touch this column.
+  vector Unsupported("vector(1536)")
+
+  /// Hash of the text that produced it, so a re-index can skip anything whose
+  /// source has not changed. Without it, a backfill re-embeds the whole corpus
+  /// every run and the bill is the corpus size rather than the diff.
+  contentHash String @db.VarChar(64)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([kind, entityId])
+  @@index([kind, updatedAt])
+  @@map("embedding")
+}
+
+// ─── The programming grid (L1, 2026-09-19) ────────────────────────────────
+// Everything on this platform is on-demand. Nothing happens AT a time, which
+// is why there is no reason to open the site at 8pm rather than never. The
+// pieces were all here and scattered — a daily puzzle, a wheel reset, a
+// tournament start, an event RSVP, a scheduled post — and appeared nowhere
+// together, so nothing could answer "what is on today".
+//
+// A schedule is editorial, so this is rows: somebody decides that Thursday's
+// featured build is this one. The opposite call from ranked seasons, which are
+// derived precisely because nobody decides them.
+
+/// One thing on the grid. Recurrence is expanded at read time by
+/// `lib/schedule/slots.ts` — a daily drop does not need 365 rows a year.
+model ScheduledSlot {
+  id String @id @default(cuid())
+
+  /// 'daily-puzzle' | 'tournament' | 'premiere' | … — see SLOT_KINDS. A string
+  /// rather than an enum because adding a kind should be a deploy, not a
+  /// migration, and the grid degrades gracefully on one it does not know.
+  kind String @db.VarChar(24)
+
+  title String  @db.VarChar(120)
+  href  String? @db.VarChar(200)
+
+  /// First (or only) occurrence, UTC.
+  startsAt DateTime
+
+  /// Zero means a moment rather than a window — a puzzle dropping.
+  durationMinutes Int @default(0)
+
+  /// 'once' | 'daily' | 'weekly'.
+  recurrence String @default("once") @db.VarChar(8)
+
+  /// When a recurring slot stops. Null runs indefinitely.
+  until DateTime?
+
+  /// Off the grid without being deleted, so a recurring slot can be paused for
+  /// a week and put back rather than re-created from memory.
+  published Boolean @default(true)
+
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  /// The window query: published slots that could overlap a range.
+  @@index([published, startsAt])
+  @@map("scheduled_slot")
+}
+
+// ─── The cross-game assist layer (P7, 2026-09-19) ─────────────────────────
+// `lib/game-capabilities.ts` named this as a known absence in its own header:
+// "accessibility is empty for almost every game, and that is not an oversight;
+// the cross-game assist layer has not been built."
+//
+// Separate from `AppearancePreference` rather than folded into it, because
+// these are not the same kind of setting. That one changes how the SITE looks
+// and costs nothing; these change how a GAME plays and cost leaderboard
+// eligibility. Putting a switch with that consequence next to a font-size
+// slider would misrepresent what it does.
+
+/// One row per member who has ever changed a game assist. Absent = defaults.
+model GameAssistPreference {
+  userId String @id
+
+  /// A held input stands in for repeated mashing.
+  holdToPress Boolean @default(false)
+
+  /// Slowest the game may run its clock, per mille (500–1000). Stored as an
+  /// integer for the same reason `AppearancePreference.fontScale` is: a float
+  /// that round-trips through JSON and a form is a float that eventually is
+  /// not the number anybody typed.
+  speedFloorPerMille Int @default(1000)
+
+  /// Suppress flashing, strobing and screen shake. The in-game counterpart to
+  /// the site-wide `AppearancePreference.reduceMotion`, which a canvas cannot
+  /// honour on its own.
+  calmVisuals Boolean @default(false)
+
+  /// Do not encode state in hue alone. The in-game counterpart to
+  /// `AppearancePreference.colorVision`, which retints semantic tokens and so
+  /// reaches the chrome around a game but never the game's own renderer.
+  colorSafe Boolean @default(false)
+
+  /// Remove or extend reaction-time windows.
+  noTimedInput Boolean @default(false)
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("game_assist_preference")
+}
+
+// ─── Member memory (M3, 2026-09-19) ───────────────────────────────────────
+// `lib/ai/` has coach, recap, catch-up and summarize, plus persona-chat —
+// five surfaces that each rebuild their idea of a member from scratch on every
+// call. The assistant does not know you just finished a season, the coach does
+// not know what you asked the assistant, and the recap re-derives what the
+// coach already computed.
+//
+// Member-editable and member-DELETABLE is not a nice-to-have on this table. A
+// memory somebody cannot see is a liability, and `lib/account-lifecycle.ts`
+// already establishes that everything about a member is exportable and
+// erasable. A row here is a claim the site is making about a person; they get
+// to read it and strike it out.
+
+/// One durable fact about a member, as the AI surfaces see them.
+model MemberMemory {
+  id     String @id @default(cuid())
+  userId String
+
+  /// Namespaced key: 'prefers.game' | 'goal.active' | 'milestone.recent' | …
+  /// Namespaced so a surface can read a family without knowing every key, and
+  /// so a key can be retired without a migration.
+  key String @db.VarChar(64)
+
+  /// The fact, in plain language. Never a blob: this is shown to the member
+  /// verbatim on the memory page, so anything they cannot read has no business
+  /// being here.
+  value String @db.VarChar(400)
+
+  /// Which surface wrote it — 'coach' | 'recap' | 'assistant' | 'member'.
+  /// A member-written row is authoritative and is never overwritten by a
+  /// surface; somebody correcting the site about themselves should not have to
+  /// do it twice.
+  source String @db.VarChar(16)
+
+  /// Set when the member has explicitly confirmed or edited the row. Used to
+  /// protect it from being rewritten, and to show which facts they have
+  /// actually looked at.
+  confirmedAt DateTime?
+
+  /// Memories decay: a goal from March is not a goal. A surface writing a row
+  /// sets this, and reads filter on it, so nothing has to sweep.
+  expiresAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// One value per key per member — a memory is a fact, not a log.
+  @@unique([userId, key])
+  @@index([userId, updatedAt(sort: Desc)])
+  @@map("member_memory")
+}
+
+// ─── RMH Datacenter: compute a member actually bought (W2, 2026-09-19) ────
+// The datacenter microsite draws capacity meters from a static file while the
+// platform genuinely sells compute: `lib/ai/budget.server.ts` meters AI spend
+// per tier, `ImageGenBudget` caps generation, RMHVibe bills builds against
+// Kimi and DeepSeek, and `AiUsage` records all of it. The fiction and the
+// infrastructure were describing the same thing and not talking.
+//
+// This is also the coin sink W7's inventory said the economy needs. It is the
+// one sink whose price can be set honestly rather than arbitrarily, because
+// providing it costs the platform real money.
+
+/// Extra compute a member bought with coins, for one calendar month.
+model ComputeGrant {
+  id     String @id @default(cuid())
+  userId String
+
+  /// 'YYYY-MM'. Grants are monthly because the budget they extend is monthly —
+  /// a grant with its own rolling window would need its own accounting, and
+  /// two windows that nearly agree is worse than one.
+  month String @db.VarChar(7)
+
+  /// Extra AI allowance bought, in micro-dollars, added on top of the tier's
+  /// `MONTHLY_BUDGET_MICROS`. Same unit as `AiUsage.costMicros` so the two can
+  /// be compared without a conversion anybody could get wrong.
+  aiMicros Int @default(0)
+
+  /// Extra image generations.
+  imageGens Int @default(0)
+
+  /// Extra library upload slots.
+  librarySlots Int @default(0)
+
+  /// What was paid, so the grant reconciles against the ledger. The ledger is
+  /// authoritative for the coins; this is the receipt's own copy.
+  coinsPaid Int
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// The budget read: everything this member bought this month.
+  @@index([userId, month])
+  @@map("compute_grant")
+}
+
+// ─── Build manifests and consent (B1, 2026-09-19) ─────────────────────────
+// A User Build is a hosted page today. What makes it a page rather than an app
+// is that it cannot use the platform — no storage, no leaderboard, no presence
+// — because there is no way for it to ASK, and so no way for a member to
+// decide. These two tables are that way.
+
+/// The manifest a build version declared. One per version, because a build
+/// asking for more than it used to is a new version by definition — otherwise
+/// yesterday's consent silently covers today's request.
+model BuildManifestRecord {
+  id        String @id @default(cuid())
+  versionId String @unique
+
+  /// The validated manifest, exactly as published. Stored whole rather than
+  /// exploded into columns so a member's consent can be shown against what
+  /// they actually agreed to, not a reconstruction of it.
+  manifest Json
+
+  /// Denormalised for the query that matters: "does this need a human?"
+  needsReview Boolean @default(false)
+
+  /// Set when a human cleared it. Null while queued; a build requesting
+  /// `coins:spend` does not run until this is set.
+  reviewedAt DateTime?
+  reviewedBy String?
+
+  createdAt DateTime @default(now())
+
+  version BuildVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@index([needsReview, reviewedAt])
+  @@map("build_manifest")
+}
+
+/// What one member agreed to give one build.
+///
+/// Keyed by VERSION, not by build. A build that adds a capability publishes a
+/// new version, and the member is asked again — consent that carried forward
+/// across a manifest change would be consent to something nobody showed them.
+model BuildGrant {
+  id        String @id @default(cuid())
+  userId    String
+  buildId   String
+  versionId String
+
+  /// The capability strings granted, as an array. A subset of what the
+  /// manifest asked for: a member may decline one and keep the rest.
+  capabilities Json
+
+  /// Member-set ceiling for `coins:spend`, per session. The author's
+  /// `suggestedCoinCap` is a suggestion; this is the number that binds.
+  coinCap Int @default(0)
+
+  grantedAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  build UserBuild @relation(fields: [buildId], references: [id], onDelete: Cascade)
+
+  /// The check on every capability call: what has this member given this
+  /// version of this build?
+  @@unique([userId, versionId])
+  @@index([buildId, revokedAt])
+  @@map("build_grant")
 }

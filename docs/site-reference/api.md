@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 595 files across 137 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 605 files across 142 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -191,10 +191,11 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/builds`
 
-2 routes.
+3 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
+| `/api/builds/consent` | `DELETE` `GET` `POST` | `app/routes/api/builds/consent.ts` |
 | `/api/builds/cover/:file` | `GET` | `app/routes/api/builds/cover/$file.ts` |
 | `/api/builds/review` | `POST` | `app/routes/api/builds/review.ts` |
 
@@ -335,6 +336,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/daily-puzzles/puzzle` | `GET` | `app/routes/api/daily-puzzles/puzzle.ts` |
 | `/api/daily-puzzles/results` | `GET` | `app/routes/api/daily-puzzles/results.ts` |
 | `/api/daily-puzzles/score` | `POST` | `app/routes/api/daily-puzzles/score.ts` |
+
+## `/api/datacenter`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/datacenter/compute` | `GET` `POST` | `app/routes/api/datacenter/compute.ts` |
 
 ## `/api/developer`
 
@@ -689,6 +698,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | ----- | ------- | ------ |
 | `/api/massive-march/campaigns` | `DELETE` `GET` | `app/routes/api/massive-march/campaigns.ts` |
 
+## `/api/memory`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/memory` | `DELETE` `GET` `POST` | `app/routes/api/memory/index.ts` |
+
 ## `/api/messages`
 
 17 routes.
@@ -978,6 +995,15 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | ----- | ------- | ------ |
 | `/api/recap` | `GET` | `app/routes/api/recap.ts` |
 
+## `/api/recommend`
+
+2 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/recommend` | `GET` | `app/routes/api/recommend/index.ts` |
+| `/api/recommend/feedback` | `POST` | `app/routes/api/recommend/feedback.ts` |
+
 ## `/api/referrals`
 
 2 routes.
@@ -1161,6 +1187,15 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/saves/folders` | `GET` `POST` | `app/routes/api/saves/folders.ts` |
 | `/api/saves/folders/:id` | `DELETE` `PATCH` | `app/routes/api/saves/folders.$id.ts` |
 
+## `/api/schedule`
+
+2 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/schedule` | `GET` | `app/routes/api/schedule/index.ts` |
+| `/api/schedule/admin` | `DELETE` `GET` `POST` | `app/routes/api/schedule/admin.ts` |
+
 ## `/api/scheduled`
 
 3 routes.
@@ -1181,13 +1216,23 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/search/saved` | `GET` `POST` | `app/routes/api/search/saved.ts` |
 | `/api/search/saved/:id` | `DELETE` `PATCH` | `app/routes/api/search/saved.$id.ts` |
 
-## `/api/settings`
+## `/api/services`
 
 1 route.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
+| `/api/services/rebar-reservations` | `DELETE` `GET` `POST` | `app/routes/api/services/rebar-reservations.ts` |
+
+## `/api/settings`
+
+3 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
 | `/api/settings/email-digest` | `POST` | `app/routes/api/settings/email-digest.ts` |
+| `/api/settings/game-assists` | `GET` `POST` | `app/routes/api/settings/game-assists.ts` |
+| `/api/settings/play-limits` | `GET` `POST` | `app/routes/api/settings/play-limits.ts` |
 
 ## `/api/shop`
 

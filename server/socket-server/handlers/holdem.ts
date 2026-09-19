@@ -1664,3 +1664,79 @@ export function handleHoldemDisconnect(_io: Server, socket: Socket): void {
     logger.error({ event: 'holdem_disconnect_leave_error', userId, error: String(err) }),
   );
 }
+
+// ─── Party support (P1) ───────────────────────────────────────────────────
+//
+// See `handlers/party.ts`: the party system was complete with an empty
+// registry. Hold'em's entry is the one that has to be careful, because seating
+// at this table costs coins.
+//
+// `onCreateRoom` seats and charges its creator as part of creating. A party
+// room must not do that — the leader has not chosen a buy-in for anybody else,
+// and charging four people the moment a leader presses a button is exactly the
+// kind of thing `assertPlayAllowedOn` (W8) exists to stop being possible by
+// accident. So the party path makes an EMPTY table and every member buys in
+// through the ordinary `JOIN_ROOM`, which is already where the ledger call,
+// the insufficient-funds path and the responsible-play check live.
+//
+// `privacy: 'unlisted'` for the same reason Kowloon's party rooms are private:
+// a table on the public list can be taken by strangers before the party lands.
+
+import { registerPartyGame, type PartyMember, type RoomRef } from '../party-contract';
+
+registerPartyGame('holdem', {
+  maxPartySize: MAX_PLAYERS_CAP,
+  createRoomForParty(members: PartyMember[]): Promise<RoomRef> {
+    const host = members[0];
+    if (!host) throw new Error('holdem: empty party');
+
+    const roomId = generateRoomId();
+    const bigBlind = DEFAULT_SMALL_BLIND * 2;
+    const room: HoldemRoom = {
+      roomId,
+      name: `${host.name ?? 'Party'}'s Table`,
+      ownerId: host.userId,
+      ownerName: host.name ?? 'Player',
+      maxPlayers: DEFAULT_MAX_PLAYERS,
+      smallBlind: DEFAULT_SMALL_BLIND,
+      bigBlind,
+      buyIn: Math.max(bigBlind * 10, DEFAULT_BUY_IN),
+      privacy: 'unlisted',
+      joinCode: generateRoomId(),
+      phase: 'waiting',
+      players: new Map(),
+      deck: [],
+      communityCards: [],
+      pot: 0,
+      sidePots: [],
+      currentTurnUserId: null,
+      currentBet: 0,
+      minRaise: bigBlind,
+      dealerIndex: -1,
+      turnOrder: [],
+      turnIdx: 0,
+      turnTimer: null,
+      resultsTimer: null,
+      handNumber: 0,
+      lastRaiseAmount: bigBlind,
+      resultsEndTime: null,
+      turnDeadline: null,
+    };
+
+    rooms.set(roomId, room);
+    logger.info({ event: 'holdem_party_room_created', roomId, ownerId: host.userId });
+    return Promise.resolve({ game: 'holdem', roomId });
+  },
+
+  reapIfEmpty(roomId: string): void {
+    const room = rooms.get(roomId);
+    // Two guards, not one: nobody seated AND no hand in flight. A table can be
+    // empty of `players` transiently during teardown, and deleting one that is
+    // still running timers would strand them.
+    if (!room || room.players.size > 0 || room.phase !== 'waiting') return;
+    if (room.turnTimer) clearTimeout(room.turnTimer);
+    if (room.resultsTimer) clearTimeout(room.resultsTimer);
+    rooms.delete(roomId);
+    logger.info({ event: 'holdem_party_room_reaped', roomId });
+  },
+});

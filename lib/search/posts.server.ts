@@ -16,6 +16,8 @@ import { prisma } from '@/lib/prisma.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import { fuzzyColumn, norm, type FuzzyTerms } from './db.server';
 import { confidenceOf, scoreRecord, withPopularity, withRecency, MATCH_FLOOR } from './score';
+import { fuse, pinExact } from './hybrid';
+import { isEmbeddingAvailable, nearest } from './embeddings.server';
 import type { LegacyPost, SearchHit } from './types';
 
 const CANDIDATE_POOL = 120;
@@ -92,9 +94,31 @@ export async function searchPostsScored(
     ORDER BY ${order}, "createdAt" DESC
     LIMIT ${hasText ? CANDIDATE_POOL : limit}
   `);
-  if (matches.length === 0) return [];
+  // ── Hybrid retrieval (M1) ────────────────────────────────────────────────
+  //
+  // The semantic half runs only when an embedding endpoint is configured, and
+  // contributes an empty list when it is not. That is not a guard bolted on: it
+  // is what makes this safe to ship before a key exists, because fusing one
+  // list returns that list's own order and the behaviour below is then
+  // byte-identical to what this function did before.
+  //
+  // Lexical carries more weight than semantic. Semantic is better at "the post
+  // about the thing with the spheres" and worse at a name; the failure people
+  // actually notice is an exact match that stopped coming first, so the tie is
+  // broken toward the retriever that does not make that mistake.
+  const semantic = hasText && isEmbeddingAvailable()
+    ? await nearest('rmhark', terms.q, CANDIDATE_POOL).catch(() => [])
+    : [];
 
-  const ids = matches.map((m) => m.id);
+  const semanticIds = new Set(semantic.map((n) => n.entityId));
+  const fused = fuse({
+    lex: { ids: matches.map((m) => m.id), weight: 1.3 },
+    vec: { ids: semantic.map((n) => n.entityId) },
+  });
+
+  if (fused.length === 0) return [];
+
+  const ids = fused.slice(0, CANDIDATE_POOL).map((h) => h.id);
   const rows = await prisma.rMHark.findMany({
     where: { id: { in: ids } },
     select: {
@@ -122,9 +146,17 @@ export async function searchPostsScored(
             { value: user.handle, weight: 0.5 },
           ])
         : { score: 0.5, reason: 'none' as const };
+      // A post the vector retriever found may share no characters with the
+      // query at all, so its lexical score is 0 and the floor below would drop
+      // it. Give it a floor-passing score instead — but only a floor-passing
+      // one, so it ranks beneath everything that matched on words. Semantic
+      // recall is worth having underneath the lexical results; it is not worth
+      // having above them.
+      const semanticFloor = semanticIds.has(row.id) ? MATCH_FLOOR : 0;
+      const effective = Math.max(score, semanticFloor);
       const boosted = hasText
-        ? withRecency(withPopularity(score, row.likeCount), row.createdAt)
-        : score;
+        ? withRecency(withPopularity(effective, row.likeCount), row.createdAt)
+        : effective;
       return {
         post: {
           id: row.id,
@@ -136,12 +168,27 @@ export async function searchPostsScored(
           confidence: confidenceOf(boosted),
         },
         score: boosted,
-        reason,
+        reason: score > 0 ? reason : semanticIds.has(row.id) ? ('semantic' as const) : reason,
       };
     })
     .filter((r) => !hasText || r.score >= floor);
 
   scored.sort((a, b) => b.score - a.score);
+
+  // An exact match is pinned regardless of anything above. Somebody typing a
+  // title in full is asking for that thing, not expressing an interest in the
+  // topic, and no amount of semantic neighbourhood should outrank it.
+  const exactIds = scored.filter((s) => s.reason === 'exact').map((s) => s.post.id);
+  if (exactIds.length > 0) {
+    const order = new Map(
+      pinExact(
+        scored.map((s) => ({ id: s.post.id, score: s.score, ranks: {} })),
+        exactIds,
+      ).map((h, i) => [h.id, i]),
+    );
+    scored.sort((a, b) => (order.get(a.post.id) ?? 0) - (order.get(b.post.id) ?? 0));
+  }
+
   return scored.slice(0, limit);
 }
 

@@ -15,7 +15,24 @@ export function expectedScore(ratingA: number, ratingB: number): number {
  * an opponent of `opponentRating`.
  */
 export function nextRating(rating: number, opponentRating: number, score: number): number {
-  return Math.round(rating + K_FACTOR * (score - expectedScore(rating, opponentRating)));
+  return nextRatingWithK(rating, opponentRating, score, K_FACTOR);
+}
+
+/**
+ * The same step with an explicit K-factor.
+ *
+ * Seasons (P5) move a placement match further than a settled one, so the
+ * factor has to be a parameter somewhere. It is here rather than a second copy
+ * of the formula in `lib/ranked/season.ts`, so there is one place that knows
+ * what an Elo update is.
+ */
+export function nextRatingWithK(
+  rating: number,
+  opponentRating: number,
+  score: number,
+  k: number,
+): number {
+  return Math.round(rating + k * (score - expectedScore(rating, opponentRating)));
 }
 
 /** Curated list of games that support ranked challenges. */
