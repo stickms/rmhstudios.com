@@ -4,8 +4,9 @@
  * transmission log, brand mark, footer, and the scroll-reveal hook.
  */
 import { useEffect, useRef, useState } from 'react';
-import { Link, useRouterState } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { useVerticalNav } from '@/hooks/useVerticalNav';
 
 /* Reticle-in-hex mark — the hex keeps lineage with the RMH holding mark;
    the crosshair + chevron make it PMC. */
@@ -102,26 +103,12 @@ const NAV: NavItem[] = [
 
 export function CommandBar() {
   const { t } = useTranslation("c-rmh-pmc");
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
-
-  useEffect(() => {
-    const bar = document.querySelector('.rmhp-root .cmdbar');
-    if (!bar) return;
-    const onScroll = () => bar.classList.toggle('scrolled', window.scrollY > 12);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  const toggleMenu = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const btn = e.currentTarget;
-    const menu = btn.closest('.cmdbar')?.querySelector('.mobile-menu');
-    if (!menu) return;
-    const open = menu.classList.toggle('open');
-    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-  };
-  const closeMenu = () => document.querySelector('.rmhp-root .mobile-menu')?.classList.remove('open');
-  const current = (to: string) => (pathname === to ? 'page' : undefined);
+  // Shared with RMH Capital's TopNav — see `hooks/useVerticalNav.ts`. The look
+  // of these two bars has nothing in common; the behaviour was identical.
+  const { toggleMenu, closeMenu, current } = useVerticalNav({
+    rootClass: 'rmhp-root',
+    barClass: 'cmdbar',
+  });
 
   return (
     <header className="cmdbar">

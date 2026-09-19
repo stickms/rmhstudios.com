@@ -759,9 +759,29 @@ import a hook that lives somewhere it had no reason to look.
 
 Before the twelfth: extract the kit. A `components/vertical/` set — masthead, hero, section,
 stat row, capacity meter, CTA, contact — parameterised by a per-vertical token group in the way
-`components/shared/app-theme.css` already parameterises the `--app-*` tier. Rebar & Rutabaga's
-Scandinavian daylight palette (`#860`) and the datacenter's dark industrial one are then two
-token sets, not two component trees.
+`components/shared/app-theme.css` already parameterises the `--app-*` tier.
+
+> **Corrected while implementing this (2026-09-19).** Reading the six microsites before writing
+> the kit says that is the wrong shape, and building it would have produced an abstraction two of
+> them use and four fight:
+>
+> - **RMH Datacenter** had already been moved onto the site's own design language
+>   (`components/rmh-datacenter/parts.tsx` builds on `components/ui/card` and `--site-*`), so it
+>   duplicates nothing.
+> - **Rebar & Rutabaga** has its own `--rebar-*` material deliberately, and a shared visual
+>   component there would undo the thing that page is.
+> - **RMH Capital** and **RMH PMC** look nothing alike — a markets ticker and a gold hexagon
+>   against a transmission log and a decrypt effect.
+>
+> What those last two do share, character for character, is the **behaviour**: condense past 12px
+> of scroll, toggle a mobile menu while keeping `aria-expanded` in step, close it, mark the
+> current link. Two copies differing only in a CSS class prefix and an i18n namespace. So what
+> shipped is `hooks/useVerticalNav.ts` — the behaviour, with the markup and material left exactly
+> where they are. A hook cannot be fought by a site with its own look, which is precisely why it
+> is the part worth sharing.
+>
+> The structural half of the original K1 — one declaration per vertical, driving the sitemap —
+> shipped as **K2**, and is where microsite #12's wiring actually comes from.
 
 The test: **microsite #12 should be a content file and a token block**, and W1's reservation panel
 should drop into any of them.
