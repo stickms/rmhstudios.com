@@ -104,6 +104,9 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   { loc: '/ranked', changefreq: 'daily', priority: 0.5 },
   { loc: '/rideshare', changefreq: 'weekly', priority: 0.5 },
   { loc: '/roadmap', changefreq: 'weekly', priority: 0.5 },
+  // The programming grid (L1). `daily` because that is literally what it is:
+  // a page whose whole value is that today's contents differ from yesterday's.
+  { loc: '/schedule', changefreq: 'daily', priority: 0.7 },
   { loc: '/services', changefreq: 'monthly', priority: 0.6 },
   { loc: '/store', changefreq: 'weekly', priority: 0.5 },
   { loc: '/study', changefreq: 'weekly', priority: 0.5 },

@@ -99,6 +99,7 @@ import { Route as SiteRankedRouteImport } from './routes/_site/ranked'
 import { Route as SiteRecapRouteImport } from './routes/_site/recap'
 import { Route as SiteRmhladderRouteImport } from './routes/_site/rmhladder'
 import { Route as SiteRoadmapRouteImport } from './routes/_site/roadmap'
+import { Route as SiteScheduleRouteImport } from './routes/_site/schedule'
 import { Route as SiteSearchRouteImport } from './routes/_site/search'
 import { Route as SiteServicesRouteImport } from './routes/_site/services'
 import { Route as SiteShareRouteImport } from './routes/_site/share'
@@ -522,6 +523,8 @@ import { Route as ApiRmhtypeKeystatsRouteImport } from './routes/api/rmhtype/key
 import { Route as ApiRmhtypePracticeTestRouteImport } from './routes/api/rmhtype/practice-test'
 import { Route as ApiSavesIndexRouteImport } from './routes/api/saves/index'
 import { Route as ApiSavesFoldersRouteImport } from './routes/api/saves/folders'
+import { Route as ApiScheduleIndexRouteImport } from './routes/api/schedule/index'
+import { Route as ApiScheduleAdminRouteImport } from './routes/api/schedule/admin'
 import { Route as ApiScheduledIndexRouteImport } from './routes/api/scheduled/index'
 import { Route as ApiScheduledIdRouteImport } from './routes/api/scheduled/$id'
 import { Route as ApiSearchSavedRouteImport } from './routes/api/search/saved'
@@ -1363,6 +1366,11 @@ const SiteRmhladderRoute = SiteRmhladderRouteImport.update({
 const SiteRoadmapRoute = SiteRoadmapRouteImport.update({
   id: '/roadmap',
   path: '/roadmap',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteScheduleRoute = SiteScheduleRouteImport.update({
+  id: '/schedule',
+  path: '/schedule',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteSearchRoute = SiteSearchRouteImport.update({
@@ -3503,6 +3511,16 @@ const ApiSavesIndexRoute = ApiSavesIndexRouteImport.update({
 const ApiSavesFoldersRoute = ApiSavesFoldersRouteImport.update({
   id: '/api/saves/folders',
   path: '/api/saves/folders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiScheduleIndexRoute = ApiScheduleIndexRouteImport.update({
+  id: '/api/schedule/',
+  path: '/api/schedule/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiScheduleAdminRoute = ApiScheduleAdminRouteImport.update({
+  id: '/api/schedule/admin',
+  path: '/api/schedule/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiScheduledIndexRoute = ApiScheduledIndexRouteImport.update({
@@ -5658,6 +5676,7 @@ export interface FileRoutesByFullPath {
   '/recap': typeof SiteRecapRoute
   '/rmhladder': typeof SiteRmhladderRouteWithChildren
   '/roadmap': typeof SiteRoadmapRoute
+  '/schedule': typeof SiteScheduleRoute
   '/search': typeof SiteSearchRoute
   '/services': typeof SiteServicesRouteWithChildren
   '/share': typeof SiteShareRoute
@@ -6024,6 +6043,7 @@ export interface FileRoutesByFullPath {
   '/api/rmhtype/keystats': typeof ApiRmhtypeKeystatsRoute
   '/api/rmhtype/practice-test': typeof ApiRmhtypePracticeTestRoute
   '/api/saves/folders': typeof ApiSavesFoldersRouteWithChildren
+  '/api/schedule/admin': typeof ApiScheduleAdminRoute
   '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
   '/api/search/saved': typeof ApiSearchSavedRouteWithChildren
   '/api/services/rebar-reservations': typeof ApiServicesRebarReservationsRoute
@@ -6169,6 +6189,7 @@ export interface FileRoutesByFullPath {
   '/api/replays/': typeof ApiReplaysIndexRoute
   '/api/requests/': typeof ApiRequestsIndexRoute
   '/api/saves/': typeof ApiSavesIndexRoute
+  '/api/schedule/': typeof ApiScheduleIndexRoute
   '/api/scheduled/': typeof ApiScheduledIndexRoute
   '/api/shop/': typeof ApiShopIndexRoute
   '/api/spaces/': typeof ApiSpacesIndexRoute
@@ -6539,6 +6560,7 @@ export interface FileRoutesByTo {
   '/ranked': typeof SiteRankedRoute
   '/recap': typeof SiteRecapRoute
   '/roadmap': typeof SiteRoadmapRoute
+  '/schedule': typeof SiteScheduleRoute
   '/search': typeof SiteSearchRoute
   '/share': typeof SiteShareRoute
   '/shop': typeof SiteShopRoute
@@ -6903,6 +6925,7 @@ export interface FileRoutesByTo {
   '/api/rmhtype/keystats': typeof ApiRmhtypeKeystatsRoute
   '/api/rmhtype/practice-test': typeof ApiRmhtypePracticeTestRoute
   '/api/saves/folders': typeof ApiSavesFoldersRouteWithChildren
+  '/api/schedule/admin': typeof ApiScheduleAdminRoute
   '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
   '/api/search/saved': typeof ApiSearchSavedRouteWithChildren
   '/api/services/rebar-reservations': typeof ApiServicesRebarReservationsRoute
@@ -7048,6 +7071,7 @@ export interface FileRoutesByTo {
   '/api/replays': typeof ApiReplaysIndexRoute
   '/api/requests': typeof ApiRequestsIndexRoute
   '/api/saves': typeof ApiSavesIndexRoute
+  '/api/schedule': typeof ApiScheduleIndexRoute
   '/api/scheduled': typeof ApiScheduledIndexRoute
   '/api/shop': typeof ApiShopIndexRoute
   '/api/spaces': typeof ApiSpacesIndexRoute
@@ -7443,6 +7467,7 @@ export interface FileRoutesById {
   '/_site/recap': typeof SiteRecapRoute
   '/_site/rmhladder': typeof SiteRmhladderRouteWithChildren
   '/_site/roadmap': typeof SiteRoadmapRoute
+  '/_site/schedule': typeof SiteScheduleRoute
   '/_site/search': typeof SiteSearchRoute
   '/_site/services': typeof SiteServicesRouteWithChildren
   '/_site/share': typeof SiteShareRoute
@@ -7810,6 +7835,7 @@ export interface FileRoutesById {
   '/api/rmhtype/keystats': typeof ApiRmhtypeKeystatsRoute
   '/api/rmhtype/practice-test': typeof ApiRmhtypePracticeTestRoute
   '/api/saves/folders': typeof ApiSavesFoldersRouteWithChildren
+  '/api/schedule/admin': typeof ApiScheduleAdminRoute
   '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
   '/api/search/saved': typeof ApiSearchSavedRouteWithChildren
   '/api/services/rebar-reservations': typeof ApiServicesRebarReservationsRoute
@@ -7955,6 +7981,7 @@ export interface FileRoutesById {
   '/api/replays/': typeof ApiReplaysIndexRoute
   '/api/requests/': typeof ApiRequestsIndexRoute
   '/api/saves/': typeof ApiSavesIndexRoute
+  '/api/schedule/': typeof ApiScheduleIndexRoute
   '/api/scheduled/': typeof ApiScheduledIndexRoute
   '/api/shop/': typeof ApiShopIndexRoute
   '/api/spaces/': typeof ApiSpacesIndexRoute
@@ -8351,6 +8378,7 @@ export interface FileRouteTypes {
     | '/recap'
     | '/rmhladder'
     | '/roadmap'
+    | '/schedule'
     | '/search'
     | '/services'
     | '/share'
@@ -8717,6 +8745,7 @@ export interface FileRouteTypes {
     | '/api/rmhtype/keystats'
     | '/api/rmhtype/practice-test'
     | '/api/saves/folders'
+    | '/api/schedule/admin'
     | '/api/scheduled/$id'
     | '/api/search/saved'
     | '/api/services/rebar-reservations'
@@ -8862,6 +8891,7 @@ export interface FileRouteTypes {
     | '/api/replays/'
     | '/api/requests/'
     | '/api/saves/'
+    | '/api/schedule/'
     | '/api/scheduled/'
     | '/api/shop/'
     | '/api/spaces/'
@@ -9232,6 +9262,7 @@ export interface FileRouteTypes {
     | '/ranked'
     | '/recap'
     | '/roadmap'
+    | '/schedule'
     | '/search'
     | '/share'
     | '/shop'
@@ -9596,6 +9627,7 @@ export interface FileRouteTypes {
     | '/api/rmhtype/keystats'
     | '/api/rmhtype/practice-test'
     | '/api/saves/folders'
+    | '/api/schedule/admin'
     | '/api/scheduled/$id'
     | '/api/search/saved'
     | '/api/services/rebar-reservations'
@@ -9741,6 +9773,7 @@ export interface FileRouteTypes {
     | '/api/replays'
     | '/api/requests'
     | '/api/saves'
+    | '/api/schedule'
     | '/api/scheduled'
     | '/api/shop'
     | '/api/spaces'
@@ -10135,6 +10168,7 @@ export interface FileRouteTypes {
     | '/_site/recap'
     | '/_site/rmhladder'
     | '/_site/roadmap'
+    | '/_site/schedule'
     | '/_site/search'
     | '/_site/services'
     | '/_site/share'
@@ -10502,6 +10536,7 @@ export interface FileRouteTypes {
     | '/api/rmhtype/keystats'
     | '/api/rmhtype/practice-test'
     | '/api/saves/folders'
+    | '/api/schedule/admin'
     | '/api/scheduled/$id'
     | '/api/search/saved'
     | '/api/services/rebar-reservations'
@@ -10647,6 +10682,7 @@ export interface FileRouteTypes {
     | '/api/replays/'
     | '/api/requests/'
     | '/api/saves/'
+    | '/api/schedule/'
     | '/api/scheduled/'
     | '/api/shop/'
     | '/api/spaces/'
@@ -11224,6 +11260,7 @@ export interface RootRouteChildren {
   ApiRmhtypeKeystatsRoute: typeof ApiRmhtypeKeystatsRoute
   ApiRmhtypePracticeTestRoute: typeof ApiRmhtypePracticeTestRoute
   ApiSavesFoldersRoute: typeof ApiSavesFoldersRouteWithChildren
+  ApiScheduleAdminRoute: typeof ApiScheduleAdminRoute
   ApiScheduledIdRoute: typeof ApiScheduledIdRouteWithChildren
   ApiServicesRebarReservationsRoute: typeof ApiServicesRebarReservationsRoute
   ApiSettingsEmailDigestRoute: typeof ApiSettingsEmailDigestRoute
@@ -11326,6 +11363,7 @@ export interface RootRouteChildren {
   ApiReplaysIndexRoute: typeof ApiReplaysIndexRoute
   ApiRequestsIndexRoute: typeof ApiRequestsIndexRoute
   ApiSavesIndexRoute: typeof ApiSavesIndexRoute
+  ApiScheduleIndexRoute: typeof ApiScheduleIndexRoute
   ApiScheduledIndexRoute: typeof ApiScheduledIndexRoute
   ApiShopIndexRoute: typeof ApiShopIndexRoute
   ApiSpacesIndexRoute: typeof ApiSpacesIndexRoute
@@ -12113,6 +12151,13 @@ declare module '@tanstack/react-router' {
       path: '/roadmap'
       fullPath: '/roadmap'
       preLoaderRoute: typeof SiteRoadmapRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/schedule': {
+      id: '/_site/schedule'
+      path: '/schedule'
+      fullPath: '/schedule'
+      preLoaderRoute: typeof SiteScheduleRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/search': {
@@ -15076,6 +15121,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSavesFoldersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/schedule/': {
+      id: '/api/schedule/'
+      path: '/api/schedule'
+      fullPath: '/api/schedule/'
+      preLoaderRoute: typeof ApiScheduleIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/schedule/admin': {
+      id: '/api/schedule/admin'
+      path: '/api/schedule/admin'
+      fullPath: '/api/schedule/admin'
+      preLoaderRoute: typeof ApiScheduleAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/scheduled/': {
       id: '/api/scheduled/'
       path: '/api/scheduled'
@@ -17982,6 +18041,7 @@ interface SiteRouteChildren {
   SiteRecapRoute: typeof SiteRecapRoute
   SiteRmhladderRoute: typeof SiteRmhladderRouteWithChildren
   SiteRoadmapRoute: typeof SiteRoadmapRoute
+  SiteScheduleRoute: typeof SiteScheduleRoute
   SiteSearchRoute: typeof SiteSearchRoute
   SiteServicesRoute: typeof SiteServicesRouteWithChildren
   SiteShareRoute: typeof SiteShareRoute
@@ -18095,6 +18155,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteRecapRoute: SiteRecapRoute,
   SiteRmhladderRoute: SiteRmhladderRouteWithChildren,
   SiteRoadmapRoute: SiteRoadmapRoute,
+  SiteScheduleRoute: SiteScheduleRoute,
   SiteSearchRoute: SiteSearchRoute,
   SiteServicesRoute: SiteServicesRouteWithChildren,
   SiteShareRoute: SiteShareRoute,
@@ -19780,6 +19841,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhtypeKeystatsRoute: ApiRmhtypeKeystatsRoute,
   ApiRmhtypePracticeTestRoute: ApiRmhtypePracticeTestRoute,
   ApiSavesFoldersRoute: ApiSavesFoldersRouteWithChildren,
+  ApiScheduleAdminRoute: ApiScheduleAdminRoute,
   ApiScheduledIdRoute: ApiScheduledIdRouteWithChildren,
   ApiServicesRebarReservationsRoute: ApiServicesRebarReservationsRoute,
   ApiSettingsEmailDigestRoute: ApiSettingsEmailDigestRoute,
@@ -19882,6 +19944,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiReplaysIndexRoute: ApiReplaysIndexRoute,
   ApiRequestsIndexRoute: ApiRequestsIndexRoute,
   ApiSavesIndexRoute: ApiSavesIndexRoute,
+  ApiScheduleIndexRoute: ApiScheduleIndexRoute,
   ApiScheduledIndexRoute: ApiScheduledIndexRoute,
   ApiShopIndexRoute: ApiShopIndexRoute,
   ApiSpacesIndexRoute: ApiSpacesIndexRoute,

@@ -9260,3 +9260,52 @@ model Embedding {
   @@index([kind, updatedAt])
   @@map("embedding")
 }
+
+// ─── The programming grid (L1, 2026-09-19) ────────────────────────────────
+// Everything on this platform is on-demand. Nothing happens AT a time, which
+// is why there is no reason to open the site at 8pm rather than never. The
+// pieces were all here and scattered — a daily puzzle, a wheel reset, a
+// tournament start, an event RSVP, a scheduled post — and appeared nowhere
+// together, so nothing could answer "what is on today".
+//
+// A schedule is editorial, so this is rows: somebody decides that Thursday's
+// featured build is this one. The opposite call from ranked seasons, which are
+// derived precisely because nobody decides them.
+
+/// One thing on the grid. Recurrence is expanded at read time by
+/// `lib/schedule/slots.ts` — a daily drop does not need 365 rows a year.
+model ScheduledSlot {
+  id String @id @default(cuid())
+
+  /// 'daily-puzzle' | 'tournament' | 'premiere' | … — see SLOT_KINDS. A string
+  /// rather than an enum because adding a kind should be a deploy, not a
+  /// migration, and the grid degrades gracefully on one it does not know.
+  kind String @db.VarChar(24)
+
+  title String  @db.VarChar(120)
+  href  String? @db.VarChar(200)
+
+  /// First (or only) occurrence, UTC.
+  startsAt DateTime
+
+  /// Zero means a moment rather than a window — a puzzle dropping.
+  durationMinutes Int @default(0)
+
+  /// 'once' | 'daily' | 'weekly'.
+  recurrence String @default("once") @db.VarChar(8)
+
+  /// When a recurring slot stops. Null runs indefinitely.
+  until DateTime?
+
+  /// Off the grid without being deleted, so a recurring slot can be paused for
+  /// a week and put back rather than re-created from memory.
+  published Boolean @default(true)
+
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  /// The window query: published slots that could overlap a range.
+  @@index([published, startsAt])
+  @@map("scheduled_slot")
+}
