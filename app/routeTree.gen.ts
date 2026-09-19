@@ -484,6 +484,8 @@ import { Route as ApiPromoFreeMonthRouteImport } from './routes/api/promo/free-m
 import { Route as ApiPushPublicKeyRouteImport } from './routes/api/push/public-key'
 import { Route as ApiPushSubscribeRouteImport } from './routes/api/push/subscribe'
 import { Route as ApiRankedIndexRouteImport } from './routes/api/ranked/index'
+import { Route as ApiRecommendIndexRouteImport } from './routes/api/recommend/index'
+import { Route as ApiRecommendFeedbackRouteImport } from './routes/api/recommend/feedback'
 import { Route as ApiReferralsClaimRouteImport } from './routes/api/referrals/claim'
 import { Route as ApiReferralsMeRouteImport } from './routes/api/referrals/me'
 import { Route as ApiReplaysIndexRouteImport } from './routes/api/replays/index'
@@ -3313,6 +3315,16 @@ const ApiRankedIndexRoute = ApiRankedIndexRouteImport.update({
   path: '/api/ranked/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRecommendIndexRoute = ApiRecommendIndexRouteImport.update({
+  id: '/api/recommend/',
+  path: '/api/recommend/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRecommendFeedbackRoute = ApiRecommendFeedbackRouteImport.update({
+  id: '/api/recommend/feedback',
+  path: '/api/recommend/feedback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiReferralsClaimRoute = ApiReferralsClaimRouteImport.update({
   id: '/api/referrals/claim',
   path: '/api/referrals/claim',
@@ -5978,6 +5990,7 @@ export interface FileRoutesByFullPath {
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
   '/api/push/public-key': typeof ApiPushPublicKeyRoute
   '/api/push/subscribe': typeof ApiPushSubscribeRoute
+  '/api/recommend/feedback': typeof ApiRecommendFeedbackRoute
   '/api/referrals/claim': typeof ApiReferralsClaimRoute
   '/api/referrals/me': typeof ApiReferralsMeRoute
   '/api/replays/$id': typeof ApiReplaysIdRoute
@@ -6152,6 +6165,7 @@ export interface FileRoutesByFullPath {
   '/api/predictions/': typeof ApiPredictionsIndexRoute
   '/api/profile-links/': typeof ApiProfileLinksIndexRoute
   '/api/ranked/': typeof ApiRankedIndexRoute
+  '/api/recommend/': typeof ApiRecommendIndexRoute
   '/api/replays/': typeof ApiReplaysIndexRoute
   '/api/requests/': typeof ApiRequestsIndexRoute
   '/api/saves/': typeof ApiSavesIndexRoute
@@ -6855,6 +6869,7 @@ export interface FileRoutesByTo {
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
   '/api/push/public-key': typeof ApiPushPublicKeyRoute
   '/api/push/subscribe': typeof ApiPushSubscribeRoute
+  '/api/recommend/feedback': typeof ApiRecommendFeedbackRoute
   '/api/referrals/claim': typeof ApiReferralsClaimRoute
   '/api/referrals/me': typeof ApiReferralsMeRoute
   '/api/replays/$id': typeof ApiReplaysIdRoute
@@ -7029,6 +7044,7 @@ export interface FileRoutesByTo {
   '/api/predictions': typeof ApiPredictionsIndexRoute
   '/api/profile-links': typeof ApiProfileLinksIndexRoute
   '/api/ranked': typeof ApiRankedIndexRoute
+  '/api/recommend': typeof ApiRecommendIndexRoute
   '/api/replays': typeof ApiReplaysIndexRoute
   '/api/requests': typeof ApiRequestsIndexRoute
   '/api/saves': typeof ApiSavesIndexRoute
@@ -7760,6 +7776,7 @@ export interface FileRoutesById {
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
   '/api/push/public-key': typeof ApiPushPublicKeyRoute
   '/api/push/subscribe': typeof ApiPushSubscribeRoute
+  '/api/recommend/feedback': typeof ApiRecommendFeedbackRoute
   '/api/referrals/claim': typeof ApiReferralsClaimRoute
   '/api/referrals/me': typeof ApiReferralsMeRoute
   '/api/replays/$id': typeof ApiReplaysIdRoute
@@ -7934,6 +7951,7 @@ export interface FileRoutesById {
   '/api/predictions/': typeof ApiPredictionsIndexRoute
   '/api/profile-links/': typeof ApiProfileLinksIndexRoute
   '/api/ranked/': typeof ApiRankedIndexRoute
+  '/api/recommend/': typeof ApiRecommendIndexRoute
   '/api/replays/': typeof ApiReplaysIndexRoute
   '/api/requests/': typeof ApiRequestsIndexRoute
   '/api/saves/': typeof ApiSavesIndexRoute
@@ -8665,6 +8683,7 @@ export interface FileRouteTypes {
     | '/api/promo/free-month'
     | '/api/push/public-key'
     | '/api/push/subscribe'
+    | '/api/recommend/feedback'
     | '/api/referrals/claim'
     | '/api/referrals/me'
     | '/api/replays/$id'
@@ -8839,6 +8858,7 @@ export interface FileRouteTypes {
     | '/api/predictions/'
     | '/api/profile-links/'
     | '/api/ranked/'
+    | '/api/recommend/'
     | '/api/replays/'
     | '/api/requests/'
     | '/api/saves/'
@@ -9542,6 +9562,7 @@ export interface FileRouteTypes {
     | '/api/promo/free-month'
     | '/api/push/public-key'
     | '/api/push/subscribe'
+    | '/api/recommend/feedback'
     | '/api/referrals/claim'
     | '/api/referrals/me'
     | '/api/replays/$id'
@@ -9716,6 +9737,7 @@ export interface FileRouteTypes {
     | '/api/predictions'
     | '/api/profile-links'
     | '/api/ranked'
+    | '/api/recommend'
     | '/api/replays'
     | '/api/requests'
     | '/api/saves'
@@ -10446,6 +10468,7 @@ export interface FileRouteTypes {
     | '/api/promo/free-month'
     | '/api/push/public-key'
     | '/api/push/subscribe'
+    | '/api/recommend/feedback'
     | '/api/referrals/claim'
     | '/api/referrals/me'
     | '/api/replays/$id'
@@ -10620,6 +10643,7 @@ export interface FileRouteTypes {
     | '/api/predictions/'
     | '/api/profile-links/'
     | '/api/ranked/'
+    | '/api/recommend/'
     | '/api/replays/'
     | '/api/requests/'
     | '/api/saves/'
@@ -11171,6 +11195,7 @@ export interface RootRouteChildren {
   ApiPromoFreeMonthRoute: typeof ApiPromoFreeMonthRoute
   ApiPushPublicKeyRoute: typeof ApiPushPublicKeyRoute
   ApiPushSubscribeRoute: typeof ApiPushSubscribeRoute
+  ApiRecommendFeedbackRoute: typeof ApiRecommendFeedbackRoute
   ApiReferralsClaimRoute: typeof ApiReferralsClaimRoute
   ApiReferralsMeRoute: typeof ApiReferralsMeRoute
   ApiReplaysIdRoute: typeof ApiReplaysIdRoute
@@ -11297,6 +11322,7 @@ export interface RootRouteChildren {
   ApiPredictionsIndexRoute: typeof ApiPredictionsIndexRoute
   ApiProfileLinksIndexRoute: typeof ApiProfileLinksIndexRoute
   ApiRankedIndexRoute: typeof ApiRankedIndexRoute
+  ApiRecommendIndexRoute: typeof ApiRecommendIndexRoute
   ApiReplaysIndexRoute: typeof ApiReplaysIndexRoute
   ApiRequestsIndexRoute: typeof ApiRequestsIndexRoute
   ApiSavesIndexRoute: typeof ApiSavesIndexRoute
@@ -14782,6 +14808,20 @@ declare module '@tanstack/react-router' {
       path: '/api/ranked'
       fullPath: '/api/ranked/'
       preLoaderRoute: typeof ApiRankedIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/recommend/': {
+      id: '/api/recommend/'
+      path: '/api/recommend'
+      fullPath: '/api/recommend/'
+      preLoaderRoute: typeof ApiRecommendIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/recommend/feedback': {
+      id: '/api/recommend/feedback'
+      path: '/api/recommend/feedback'
+      fullPath: '/api/recommend/feedback'
+      preLoaderRoute: typeof ApiRecommendFeedbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/referrals/claim': {
@@ -19711,6 +19751,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPromoFreeMonthRoute: ApiPromoFreeMonthRoute,
   ApiPushPublicKeyRoute: ApiPushPublicKeyRoute,
   ApiPushSubscribeRoute: ApiPushSubscribeRoute,
+  ApiRecommendFeedbackRoute: ApiRecommendFeedbackRoute,
   ApiReferralsClaimRoute: ApiReferralsClaimRoute,
   ApiReferralsMeRoute: ApiReferralsMeRoute,
   ApiReplaysIdRoute: ApiReplaysIdRoute,
@@ -19837,6 +19878,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPredictionsIndexRoute: ApiPredictionsIndexRoute,
   ApiProfileLinksIndexRoute: ApiProfileLinksIndexRoute,
   ApiRankedIndexRoute: ApiRankedIndexRoute,
+  ApiRecommendIndexRoute: ApiRecommendIndexRoute,
   ApiReplaysIndexRoute: ApiReplaysIndexRoute,
   ApiRequestsIndexRoute: ApiRequestsIndexRoute,
   ApiSavesIndexRoute: ApiSavesIndexRoute,
