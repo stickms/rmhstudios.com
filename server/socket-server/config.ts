@@ -50,6 +50,14 @@ export const config = {
     'party:kick': { max: 20, windowMs: 60_000 },
     'party:transfer': { max: 20, windowMs: 60_000 },
     'party:queue': { max: 20, windowMs: 60_000 },
+
+    // Matchmaking (P2). Prefixed `queue:`, NOT `mm:` — Massive March already
+    // owns `mm:` (see its block below, including its own `mm:join`), and the
+    // socket server isolates games by event-name prefix alone. Two games
+    // sharing one would each receive the other's traffic.
+    'queue:join': { max: 20, windowMs: 60_000 },
+    'queue:leave': { max: 30, windowMs: 60_000 },
+    'queue:peek': { max: 60, windowMs: 60_000 },
     // Voice calls. ICE is chatty by nature — a single negotiation emits dozens
     // of candidates — so it gets a much higher ceiling than the lifecycle
     // events, which a human presses at most a few times a minute.

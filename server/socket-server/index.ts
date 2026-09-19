@@ -81,6 +81,10 @@ import {
 import { registerBumsRushHandlers, handleBumsRushDisconnect } from './handlers/bums-rush';
 import { registerSpacesHandlers, handleSpacesDisconnect } from './handlers/spaces';
 import { registerPartyHandlers, handlePartyDisconnect } from './handlers/party';
+import {
+  registerMatchmakingHandlers,
+  handleMatchmakingDisconnect,
+} from './handlers/matchmaking';
 import { registerCallHandlers, handleCallDisconnect } from './handlers/call';
 
 // ─── Startup validation ─────────────────────────────────────────
@@ -510,6 +514,7 @@ io.on('connection', (socket) => {
   // Platform expansion (§4, §5): live Spaces + cross-game party.
   registerSpacesHandlers(io, socket);
   registerPartyHandlers(io, socket);
+  registerMatchmakingHandlers(io, socket);
   registerCallHandlers(io, socket);
 
   // Disconnect cleanup
@@ -518,6 +523,7 @@ io.on('connection', (socket) => {
 
     handleSpacesDisconnect(io, socket);
     handlePartyDisconnect(io, socket);
+    handleMatchmakingDisconnect(socket);
     void handleCallDisconnect(io, socket);
     handleSynapseStormDisconnect(io, socket);
     handleSliceItDisconnect(io, socket);

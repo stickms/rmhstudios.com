@@ -47,6 +47,7 @@ import {
   type PartyMember,
 } from '../party-contract';
 import { PARTY_C2S, PARTY_S2C } from '../../../lib/party/events';
+import { setPartyLookup } from './matchmaking';
 
 const MAX_PARTY_SIZE = 8;
 
@@ -66,6 +67,25 @@ interface Party {
 
 const parties = new Map<string, Party>();
 const userToParty = new Map<string, string>(); // userId -> partyId
+
+/**
+ * Hand matchmaking (P2) a read-only view of who is in a party with whom.
+ *
+ * Injection rather than an import so the two modules do not become mutually
+ * dependent: matchmaking needs to know a party exists, the party system does
+ * not need to know matchmaking does. Only the LEADER resolves to a party — a
+ * member queueing on their own would otherwise drag the whole party into a
+ * search their leader did not start.
+ */
+setPartyLookup((userId) => {
+  const partyId = userToParty.get(userId);
+  const party = partyId ? parties.get(partyId) : null;
+  if (!party || party.leaderId !== userId) return null;
+  return {
+    key: party.id,
+    members: [...party.members.values()].map((m) => ({ userId: m.userId, name: m.name })),
+  };
+});
 
 function roomName(partyId: string): string {
   return `party:${partyId}`;
