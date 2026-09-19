@@ -9211,3 +9211,52 @@ model RankedSeasonRating {
   @@index([game, season, rating(sort: Desc)])
   @@map("ranked_season_rating")
 }
+
+// ─── Embeddings (M1, 2026-09-19) ──────────────────────────────────────────
+// Search has always been lexical: a generated `tsvector` with a GIN index plus
+// trigram for typos (`lib/search/posts.server.ts`). That is a good lexical
+// search and it was the only one — nothing on the site could find a document
+// that means the same thing in different words.
+//
+// Four later ideas want this and none of them should build their own: one
+// recommender (M2), a member memory the AI surfaces share (M3), discovery
+// shelves for a build store (B3), and duplicate detection on FeatureRequest.
+
+/// One embedding of one thing.
+model Embedding {
+  id String @id @default(cuid())
+
+  /// What was embedded: 'rmhark' | 'library' | 'news' | 'blog' | 'game' |
+  /// 'app' | 'build'. A string rather than an enum because adding a kind is a
+  /// backfill, and an enum would make it a migration as well.
+  kind String @db.VarChar(24)
+
+  /// The row this describes, in that kind's own table.
+  entityId String @db.VarChar(64)
+
+  /// The model that produced it, and the dimension it produced.
+  ///
+  /// Recorded rather than assumed: changing models means every stored vector
+  /// is in a different space and comparing across them returns confident
+  /// nonsense. With this here, a model change is a backfill that can run
+  /// alongside the old vectors and cut over when it finishes.
+  model String @db.VarChar(64)
+  dim   Int
+
+  /// The vector itself. `Unsupported` because Prisma has no vector type; every
+  /// read and write goes through raw SQL in `embeddings.server.ts`, which is
+  /// the only file allowed to touch this column.
+  vector Unsupported("vector(1536)")
+
+  /// Hash of the text that produced it, so a re-index can skip anything whose
+  /// source has not changed. Without it, a backfill re-embeds the whole corpus
+  /// every run and the bill is the corpus size rather than the diff.
+  contentHash String @db.VarChar(64)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([kind, entityId])
+  @@index([kind, updatedAt])
+  @@map("embedding")
+}
