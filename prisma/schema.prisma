@@ -411,6 +411,9 @@ model User {
 
   /// Compute bought with coins from RMH Datacenter (W2).
   computeGrants       ComputeGrant[]
+
+  /// What this member agreed to give which builds (B1).
+  buildGrants         BuildGrant[]
   readPositions       ReadPosition[]
   heldNotifications   HeldNotification[]
   conversationPrefs   ConversationPref[]
@@ -3547,6 +3550,7 @@ model UserBuild {
   category   BuildCategory? @relation(fields: [categoryId], references: [id])
   categoryId String?
   versions   BuildVersion[]
+  grants     BuildGrant[]
   tags       BuildTag[]
   likes      BuildLike[]
   comments   BuildComment[]
@@ -3829,7 +3833,8 @@ model BuildVersion {
   commitHash String?  @db.VarChar(40)
   createdAt  DateTime @default(now())
 
-  build UserBuild @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  build    UserBuild            @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  manifest BuildManifestRecord?
 
   @@unique([buildId, version])
   @@map("build_version")
@@ -9461,4 +9466,70 @@ model ComputeGrant {
   /// The budget read: everything this member bought this month.
   @@index([userId, month])
   @@map("compute_grant")
+}
+
+// ─── Build manifests and consent (B1, 2026-09-19) ─────────────────────────
+// A User Build is a hosted page today. What makes it a page rather than an app
+// is that it cannot use the platform — no storage, no leaderboard, no presence
+// — because there is no way for it to ASK, and so no way for a member to
+// decide. These two tables are that way.
+
+/// The manifest a build version declared. One per version, because a build
+/// asking for more than it used to is a new version by definition — otherwise
+/// yesterday's consent silently covers today's request.
+model BuildManifestRecord {
+  id        String @id @default(cuid())
+  versionId String @unique
+
+  /// The validated manifest, exactly as published. Stored whole rather than
+  /// exploded into columns so a member's consent can be shown against what
+  /// they actually agreed to, not a reconstruction of it.
+  manifest Json
+
+  /// Denormalised for the query that matters: "does this need a human?"
+  needsReview Boolean @default(false)
+
+  /// Set when a human cleared it. Null while queued; a build requesting
+  /// `coins:spend` does not run until this is set.
+  reviewedAt DateTime?
+  reviewedBy String?
+
+  createdAt DateTime @default(now())
+
+  version BuildVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@index([needsReview, reviewedAt])
+  @@map("build_manifest")
+}
+
+/// What one member agreed to give one build.
+///
+/// Keyed by VERSION, not by build. A build that adds a capability publishes a
+/// new version, and the member is asked again — consent that carried forward
+/// across a manifest change would be consent to something nobody showed them.
+model BuildGrant {
+  id        String @id @default(cuid())
+  userId    String
+  buildId   String
+  versionId String
+
+  /// The capability strings granted, as an array. A subset of what the
+  /// manifest asked for: a member may decline one and keep the rest.
+  capabilities Json
+
+  /// Member-set ceiling for `coins:spend`, per session. The author's
+  /// `suggestedCoinCap` is a suggestion; this is the number that binds.
+  coinCap Int @default(0)
+
+  grantedAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  build UserBuild @relation(fields: [buildId], references: [id], onDelete: Cascade)
+
+  /// The check on every capability call: what has this member given this
+  /// version of this build?
+  @@unique([userId, versionId])
+  @@index([buildId, revokedAt])
+  @@map("build_grant")
 }

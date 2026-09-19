@@ -343,6 +343,7 @@ import { Route as ApiAwardsIndexRouteImport } from './routes/api/awards/index'
 import { Route as ApiBattlepassIndexRouteImport } from './routes/api/battlepass/index'
 import { Route as ApiBattlepassClaimRouteImport } from './routes/api/battlepass/claim'
 import { Route as ApiBattlepassUnlockRouteImport } from './routes/api/battlepass/unlock'
+import { Route as ApiBuildsConsentRouteImport } from './routes/api/builds/consent'
 import { Route as ApiBuildsReviewRouteImport } from './routes/api/builds/review'
 import { Route as ApiBulkIndexRouteImport } from './routes/api/bulk/index'
 import { Route as ApiBulkIdRouteImport } from './routes/api/bulk/$id'
@@ -2598,6 +2599,11 @@ const ApiBattlepassClaimRoute = ApiBattlepassClaimRouteImport.update({
 const ApiBattlepassUnlockRoute = ApiBattlepassUnlockRouteImport.update({
   id: '/api/battlepass/unlock',
   path: '/api/battlepass/unlock',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBuildsConsentRoute = ApiBuildsConsentRouteImport.update({
+  id: '/api/builds/consent',
+  path: '/api/builds/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiBuildsReviewRoute = ApiBuildsReviewRouteImport.update({
@@ -5906,6 +5912,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/battlepass/claim': typeof ApiBattlepassClaimRoute
   '/api/battlepass/unlock': typeof ApiBattlepassUnlockRoute
+  '/api/builds/consent': typeof ApiBuildsConsentRoute
   '/api/builds/review': typeof ApiBuildsReviewRoute
   '/api/bulk/$id': typeof ApiBulkIdRoute
   '/api/bulk/preview': typeof ApiBulkPreviewRoute
@@ -6791,6 +6798,7 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/battlepass/claim': typeof ApiBattlepassClaimRoute
   '/api/battlepass/unlock': typeof ApiBattlepassUnlockRoute
+  '/api/builds/consent': typeof ApiBuildsConsentRoute
   '/api/builds/review': typeof ApiBuildsReviewRoute
   '/api/bulk/$id': typeof ApiBulkIdRoute
   '/api/bulk/preview': typeof ApiBulkPreviewRoute
@@ -7704,6 +7712,7 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/battlepass/claim': typeof ApiBattlepassClaimRoute
   '/api/battlepass/unlock': typeof ApiBattlepassUnlockRoute
+  '/api/builds/consent': typeof ApiBuildsConsentRoute
   '/api/builds/review': typeof ApiBuildsReviewRoute
   '/api/bulk/$id': typeof ApiBulkIdRoute
   '/api/bulk/preview': typeof ApiBulkPreviewRoute
@@ -8617,6 +8626,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/battlepass/claim'
     | '/api/battlepass/unlock'
+    | '/api/builds/consent'
     | '/api/builds/review'
     | '/api/bulk/$id'
     | '/api/bulk/preview'
@@ -9502,6 +9512,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/battlepass/claim'
     | '/api/battlepass/unlock'
+    | '/api/builds/consent'
     | '/api/builds/review'
     | '/api/bulk/$id'
     | '/api/bulk/preview'
@@ -10414,6 +10425,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/battlepass/claim'
     | '/api/battlepass/unlock'
+    | '/api/builds/consent'
     | '/api/builds/review'
     | '/api/bulk/$id'
     | '/api/bulk/preview'
@@ -11159,6 +11171,7 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiBattlepassClaimRoute: typeof ApiBattlepassClaimRoute
   ApiBattlepassUnlockRoute: typeof ApiBattlepassUnlockRoute
+  ApiBuildsConsentRoute: typeof ApiBuildsConsentRoute
   ApiBuildsReviewRoute: typeof ApiBuildsReviewRoute
   ApiBulkIdRoute: typeof ApiBulkIdRoute
   ApiBulkPreviewRoute: typeof ApiBulkPreviewRoute
@@ -13898,6 +13911,13 @@ declare module '@tanstack/react-router' {
       path: '/api/battlepass/unlock'
       fullPath: '/api/battlepass/unlock'
       preLoaderRoute: typeof ApiBattlepassUnlockRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/builds/consent': {
+      id: '/api/builds/consent'
+      path: '/api/builds/consent'
+      fullPath: '/api/builds/consent'
+      preLoaderRoute: typeof ApiBuildsConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/builds/review': {
@@ -19764,6 +19784,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiBattlepassClaimRoute: ApiBattlepassClaimRoute,
   ApiBattlepassUnlockRoute: ApiBattlepassUnlockRoute,
+  ApiBuildsConsentRoute: ApiBuildsConsentRoute,
   ApiBuildsReviewRoute: ApiBuildsReviewRoute,
   ApiBulkIdRoute: ApiBulkIdRoute,
   ApiBulkPreviewRoute: ApiBulkPreviewRoute,
