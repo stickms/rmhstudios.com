@@ -20,7 +20,11 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import { isEmbeddingAvailable, upsertEmbedding, type EmbeddableKind } from '@/lib/search/embeddings.server';
+import {
+  isEmbeddingStoreReady,
+  upsertEmbedding,
+  type EmbeddableKind,
+} from '@/lib/search/embeddings.server';
 
 /** Rows per run, per kind. Bounded so one sweep cannot become an all-night job. */
 const BATCH = 200;
@@ -47,7 +51,11 @@ function checkpointName(kind: EmbeddableKind): string {
  */
 export async function indexBatch(kind: EmbeddableKind): Promise<IndexResult> {
   const empty: IndexResult = { kind, scanned: 0, written: 0, unchanged: 0, completed: false };
-  if (!isEmbeddingAvailable()) return empty;
+  // Both halves have to be true: a provider key AND the table the conditional
+  // migration only creates where pgvector exists. Without the second, this
+  // sweep would fail every five minutes against a relation that is never going
+  // to appear.
+  if (!(await isEmbeddingStoreReady())) return empty;
 
   const name = checkpointName(kind);
   const checkpoint = await prisma.backfillCheckpoint.findUnique({
@@ -157,7 +165,7 @@ async function loadBatch(
  * file, not a table: there is nothing to page through and no cursor to keep.
  */
 export async function indexCatalog(): Promise<{ written: number; unchanged: number }> {
-  if (!isEmbeddingAvailable()) return { written: 0, unchanged: 0 };
+  if (!(await isEmbeddingStoreReady())) return { written: 0, unchanged: 0 };
 
   const { games } = await import('@/lib/games');
   const { apps } = await import('@/lib/apps');

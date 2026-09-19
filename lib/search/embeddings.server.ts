@@ -65,6 +65,40 @@ export function isEmbeddingAvailable(): boolean {
   return Boolean(API_KEY);
 }
 
+/**
+ * Has the `embedding` table actually been created?
+ *
+ * Two things have to be true for semantic search to work, and they are set by
+ * different people in different places: an API key (an env var) and pgvector
+ * (an extension on the database server). The migration is conditional on the
+ * second, so a deployment with a key and no extension has a working provider
+ * and no table — and the five-minute index sweep would then fail forever,
+ * retrying against a relation that is never going to appear.
+ *
+ * Checked once per process and cached, including the negative: this is a
+ * deployment-shaped fact, not a runtime one, and re-asking every five minutes
+ * would be a query whose answer cannot change without a restart.
+ */
+let tableReady: boolean | null = null;
+export async function isEmbeddingStoreReady(): Promise<boolean> {
+  if (!isEmbeddingAvailable()) return false;
+  if (tableReady !== null) return tableReady;
+  try {
+    const rows = await prisma.$queryRaw<{ ok: boolean }[]>`
+      SELECT to_regclass('public.embedding') IS NOT NULL AS ok
+    `;
+    tableReady = Boolean(rows[0]?.ok);
+  } catch {
+    tableReady = false;
+  }
+  return tableReady;
+}
+
+/** Test seam: forget the cached answer. Never called in production. */
+export function __resetEmbeddingStoreCheck(): void {
+  tableReady = null;
+}
+
 /** Stable hash of the prepared text, so an unchanged source is never re-embedded. */
 export function contentHash(text: string): string {
   return createHash('sha256').update(prepareText(text)).digest('hex').slice(0, 64);
@@ -114,7 +148,7 @@ export async function upsertEmbedding(
   entityId: string,
   text: string,
 ): Promise<'written' | 'unchanged' | 'unavailable'> {
-  if (!isEmbeddingAvailable()) return 'unavailable';
+  if (!(await isEmbeddingStoreReady())) return 'unavailable';
 
   const hash = contentHash(text);
   const existing = await prisma.embedding.findUnique({
@@ -144,6 +178,7 @@ export async function upsertEmbedding(
 
 /** Drop an entity's embedding — call when the entity is deleted. */
 export async function deleteEmbedding(kind: EmbeddableKind, entityId: string): Promise<void> {
+  if (!(await isEmbeddingStoreReady())) return;
   await prisma.embedding.deleteMany({ where: { kind, entityId } });
 }
 
@@ -170,6 +205,7 @@ export async function nearest(
   query: string,
   limit = 50,
 ): Promise<Neighbour[]> {
+  if (!(await isEmbeddingStoreReady())) return [];
   const vector = await embed(query);
   if (!vector) return [];
 
@@ -195,6 +231,7 @@ export async function similarTo(
   entityId: string,
   limit = 10,
 ): Promise<Neighbour[]> {
+  if (!(await isEmbeddingStoreReady())) return [];
   const rows = await prisma.$queryRaw<{ entityId: string; distance: number }[]>`
     SELECT e."entityId", (e."vector" <=> src."vector") AS "distance"
     FROM "embedding" e

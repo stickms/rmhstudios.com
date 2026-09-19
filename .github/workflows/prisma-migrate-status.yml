@@ -37,7 +37,13 @@ jobs:
     timeout-minutes: 20
     services:
       postgres:
-        image: postgres:16-alpine
+        # pgvector's image, not plain postgres:16-alpine, so the embeddings
+        # migration (M1) is genuinely EXERCISED here. That migration is
+        # conditional — it skips cleanly when pgvector is unavailable — and on
+        # a plain image this check would pass by taking the skip branch every
+        # time, which is a green tick for a path nobody runs. Same Postgres 16,
+        # plus the extension.
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
