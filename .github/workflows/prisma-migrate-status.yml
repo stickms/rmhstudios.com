@@ -109,11 +109,19 @@ jobs:
           #    them gone. Dropping them would not break search — it would make
           #    every fuzzy query a sequential scan computing a trigram set per
           #    row, which is the thing the index exists to avoid.
+          #  - `embedding_vector_hnsw_idx` — an HNSW index over a pgvector
+          #    column using `vector_cosine_ops`, from 20260919120000_embeddings.
+          #    Prisma has no vector type, so the column is `Unsupported(...)`
+          #    and the index has no schema syntax at all. Dropping it would not
+          #    break semantic search either — it would turn every similarity
+          #    query into a sequential scan of every stored vector, which is
+          #    fast enough on a small corpus to hide the mistake entirely.
           grep -vE '^(--.*)?$' drift.sql \
             | grep -vxF 'DROP INDEX "rmheet_content_tsv_idx";' \
             | grep -vxF 'ALTER TABLE "rmheet" DROP COLUMN "content_tsv";' \
             | grep -vxF 'DROP INDEX "Song_title_trgm_idx";' \
             | grep -vxF 'DROP INDEX "Song_artist_trgm_idx";' \
+            | grep -vxF 'DROP INDEX "embedding_vector_hnsw_idx";' \
             > unexpected.sql || true
           if [ -s unexpected.sql ]; then
             {
