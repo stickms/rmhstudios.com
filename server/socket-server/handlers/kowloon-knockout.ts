@@ -310,3 +310,45 @@ export function registerKowloonKnockoutHandlers(io: Server, socket: Socket): voi
 export function handleKowloonKnockoutDisconnect(_io: Server, socket: Socket): void {
     cleanupSocket(socket.id);
 }
+
+// ── Party support (P1) ─────────────────────────────────────────────
+//
+// See `handlers/party.ts` for why this exists: the party system was finished
+// and had an empty registry. Kowloon's rooms are seat-indexed and keyed by
+// socket id, so a party room is simply one with every seat still empty —
+// members take seats through the ordinary `JOIN_ROOM`, and the host-leaves
+// teardown, the CPU backfill and the arena sizing all keep working untouched.
+//
+// `isPublic: false` matters here specifically. Kowloon lists public rooms on
+// the versus page, and a party room that appeared there could be filled by a
+// stranger in the seconds between the leader queuing and the party arriving.
+
+import { registerPartyGame, type PartyMember, type RoomRef } from '../party-contract';
+
+registerPartyGame('kowloon-knockout', {
+    // Four seats, and a fifth member would have nowhere to sit.
+    maxPartySize: 4,
+    createRoomForParty(members: PartyMember[]): Promise<RoomRef> {
+        const code = generateUniqueCode();
+        const room: KKRoom = {
+            code,
+            // Teams needs an even arena; a party of 2 or 4 gets teams offered,
+            // a party of 3 would be silently downgraded on the first join, so
+            // start every party room in ffa and let the host change it.
+            mode: 'ffa',
+            arenaSize: Math.max(2, Math.min(members.length, 4)),
+            maxRounds: 3,
+            state: 'lobby',
+            isPublic: false,
+            slots: [null, null, null, null],
+        };
+        rooms.set(code, room);
+        return Promise.resolve({ game: 'kowloon-knockout', roomId: code });
+    },
+
+    reapIfEmpty(roomId: string): void {
+        const room = rooms.get(roomId.toUpperCase());
+        if (!room || room.slots.some((slot) => slot !== null)) return;
+        rooms.delete(room.code);
+    },
+});

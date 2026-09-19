@@ -19,16 +19,33 @@
  *   registerPartyHandlers(io, socket)   // ctx optional/unused
  *   handlePartyDisconnect(io, socket)   // in the disconnect block
  *
- * NOTE: no games are registered as party-enabled yet — `party:queue` returns a
- * "not party-enabled" error until a game calls `registerPartyGame(...)` from its
- * own handler (rollout: RMHBox, Synapse Storm, Hold'em, Kowloon Knockout).
+ * Registered games, each from the bottom of its own handler: Laundry Sort,
+ * Gabriel's Horn, Bum's Rush (all three predate this note), plus Synapse Storm,
+ * Kowloon Knockout and Hold'em (P1, 2026-09-19). `party:queue` still answers
+ * "that game does not support parties yet" for anything not in the registry,
+ * and `lib/game-capabilities.ts`'s `partyCapable` is held to this exact set by
+ * `lib/__tests__/game-capabilities.test.ts`.
+ *
+ * (The note that used to sit here said no game was registered yet and listed a
+ * planned rollout. Three games had joined since it was written without it being
+ * updated — which is why the parity test now exists rather than a comment.)
+ *
+ * RMHBox is deliberately NOT here: it runs in its own process (port 7676) and
+ * cannot have a room made for it by an in-process function call. Giving it a
+ * party entry means an internal HTTP endpoint on that service, which is a
+ * different piece of work from filling in a registry.
  */
 
 import type { Server, Socket } from 'socket.io';
 import { getPrismaClient } from '../prisma-client';
 import { logger } from '../logger';
 import { checkRateLimit } from '../rate-limit';
-import { partyGames, mintPartyTicket, type PartyMember } from '../party-contract';
+import {
+  partyGames,
+  mintPartyTicket,
+  PARTY_ROOM_GRACE_MS,
+  type PartyMember,
+} from '../party-contract';
 import { PARTY_C2S, PARTY_S2C } from '../../../lib/party/events';
 
 const MAX_PARTY_SIZE = 8;
@@ -329,6 +346,23 @@ export function registerPartyHandlers(io: Server, socket: Socket, _ctx?: unknown
       for (const s of socketsForUser(io, m.userId)) s.emit(PARTY_S2C.TICKET, msg);
     }
     logger.info({ event: 'party_queued', partyId: party.id, game, roomId: ref.roomId });
+
+    // Reclaim the room if the party never turns up. Without this, a leader who
+    // queues a game and then closes the tab leaks one room permanently: every
+    // party-enabled game deletes rooms when the last PLAYER leaves, and a room
+    // that never had a player never takes that path. `unref` so an idle timer
+    // is never the reason this process stays alive.
+    if (impl.reapIfEmpty) {
+      const reap = impl.reapIfEmpty.bind(impl);
+      const roomId = ref.roomId;
+      setTimeout(() => {
+        try {
+          reap(roomId);
+        } catch (err) {
+          logger.warn({ event: 'party_room_reap_failed', game, roomId, error: String(err) });
+        }
+      }, PARTY_ROOM_GRACE_MS).unref?.();
+    }
   });
 
   // Self-contained cleanup (idempotent; `handlePartyDisconnect` may also run).

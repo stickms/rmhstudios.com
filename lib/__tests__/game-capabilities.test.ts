@@ -129,6 +129,83 @@ describe('game capabilities', () => {
     expect(missing).toEqual([]);
   });
 
+  it('partyCapable matches the socket server\'s party registry exactly', () => {
+    // The badge this drives says "you can bring your party straight into this".
+    // A claim without a registry entry is a button that errors; a registry
+    // entry without a claim is a feature nobody is told about. Both directions
+    // are failures, so both are checked — this is the one field here that has a
+    // definitive machine-readable source to be held against.
+    // Resolve both spellings: a literal id, and the `GAME_ID` constant that
+    // Bum's Rush registers with. A test that only saw literals would quietly
+    // stop covering any game that tidied its id into a constant.
+    const dir = join(ROOT, 'server/socket-server/handlers');
+    const registered = new Set<string>();
+    for (const f of readdirSync(dir).filter((n) => n.endsWith('.ts'))) {
+      const src = readFileSync(join(dir, f), 'utf8');
+      const call = src.match(/registerPartyGame\(\s*(?:'([^']+)'|([A-Za-z_$][\w$]*))/);
+      if (!call) continue;
+      if (call[1]) {
+        registered.add(call[1]);
+        continue;
+      }
+      const constant = src.match(new RegExp(`const ${call[2]}\\s*=\\s*'([^']+)'`));
+      expect({ file: f, resolved: Boolean(constant) }).toEqual({ file: f, resolved: true });
+      if (constant) registered.add(constant[1]);
+    }
+
+    const claimed = Object.entries(GAME_CAPABILITIES)
+      .filter(([, c]) => c.partyCapable)
+      .map(([id]) => id)
+      .sort();
+
+    // Intersect with the catalog: the casino tables register too (hold'em is
+    // party-capable and real), and they have no `GameInfo` entry to carry a
+    // flag, so they are legitimately registered-but-unclaimed.
+    const catalogIds = new Set(games.map((g) => g.id));
+    const registeredInCatalog = [...registered].filter((id) => catalogIds.has(id)).sort();
+
+    expect(claimed).toEqual(registeredInCatalog);
+  });
+
+  it('no game claims party support without also claiming online play', () => {
+    // A party is several people in one room. A game that says it is
+    // single-player only and also says it seats a party is describing two
+    // different games.
+    for (const [id, caps] of Object.entries(GAME_CAPABILITIES)) {
+      if (!caps.partyCapable) continue;
+      const online = caps.players.some((p) => p === 'online-versus' || p === 'online-coop');
+      expect({ id, online }).toEqual({ id, online: true });
+    }
+  });
+
+  it('every party-capable game can reclaim a room the party never joined', () => {
+    // A party room is created with nobody in it. A game that only deletes rooms
+    // when the last PLAYER leaves therefore has no path to deleting one that
+    // never had a player, and each abandoned queue leaks a room forever in the
+    // busiest process on the system.
+    //
+    // Two ways to be safe, and both count: a `reapIfEmpty` (the party system
+    // calls it once after PARTY_ROOM_GRACE_MS), or the game's own periodic
+    // sweep. The sweepers must respect PARTY_ROOM_GRACE_MS — without it they
+    // delete the party's room before it can arrive, which is the opposite bug
+    // and just as fatal, so a sweeping game must name the constant.
+    const dir = join(ROOT, 'server/socket-server/handlers');
+    const files = readdirSync(dir).filter((f) => f.endsWith('.ts'));
+    const registered: { id: string; file: string; src: string }[] = [];
+    for (const f of files) {
+      const src = readFileSync(join(dir, f), 'utf8');
+      const m = src.match(/registerPartyGame\(\s*(?:'([^']+)'|([A-Z_]+))/);
+      if (m) registered.push({ id: m[1] ?? m[2], file: f, src });
+    }
+    expect(registered.length).toBeGreaterThan(0);
+
+    for (const { id, src } of registered) {
+      const reaps = /reapIfEmpty\s*\(/.test(src);
+      const sweeps = /setInterval\(/.test(src) && src.includes('PARTY_ROOM_GRACE_MS');
+      expect({ id, reclaimable: reaps || sweeps }).toEqual({ id, reclaimable: true });
+    }
+  });
+
   it('every webgl game actually reaches for webgl', () => {
     const missing: string[] = [];
     for (const [id, caps] of Object.entries(GAME_CAPABILITIES)) {

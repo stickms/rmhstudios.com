@@ -20,7 +20,14 @@ CREATE TABLE "user_play_limits" (
 -- AddForeignKey
 ALTER TABLE "user_play_limits" ADD CONSTRAINT "user_play_limits_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
--- The daily-cap check sums today's WAGER debits for one member. `coin_transaction`
--- already carries (senderId, createdAt DESC); this adds `type` so the sum is an
--- index-only scan rather than a heap fetch per row on a member with a long history.
-CREATE INDEX "coin_transaction_senderId_type_createdAt_idx" ON "coin_transaction"("senderId", "type", "createdAt" DESC);
+-- No new index. The daily-cap check filters
+--   senderId = $1 AND type = 'WAGER' AND createdAt >= midnight
+-- and `coin_transaction` already carries (senderId, createdAt DESC), which
+-- narrows that to one member's movements since midnight — tens of rows at the
+-- outside. Filtering those few by `type` needs no help. An earlier draft added
+-- (senderId, type, createdAt) and the migration-safety check was right to
+-- object: a plain CREATE INDEX holds a SHARE lock on this table for the whole
+-- build, blocking every coin movement on the site, and CONCURRENTLY cannot run
+-- inside the transaction Prisma wraps migrations in. Paying that on the one
+-- table where every purchase, tip and payout is written, to speed up a query
+-- that is already indexed, is the wrong trade.

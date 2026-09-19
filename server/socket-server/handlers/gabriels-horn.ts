@@ -38,7 +38,7 @@ import { generateRoomCode, sanitizeString, sanitizeUserName } from '../utils';
 import { checkRateLimit } from '../rate-limit';
 import { logger } from '../logger';
 import { getPrismaClient } from '../prisma-client';
-import { registerPartyGame, verifyPartyTicket } from '../party-contract';
+import { registerPartyGame, verifyPartyTicket, PARTY_ROOM_GRACE_MS } from '../party-contract';
 import type { PartyMember, PartyTicket } from '../party-contract';
 import {
   CHAT_HISTORY,
@@ -1226,7 +1226,16 @@ function ensureGc(): void {
   gcInterval = setInterval(() => {
     const now = Date.now();
     for (const [code, lobby] of lobbies) {
-      if (lobby.seats.size === 0 || now - lobby.lastActivityAt > LOBBY_IDLE_TIMEOUT_MS) {
+      // An empty lobby is swept, but not instantly. A party room is created
+      // with no seats and stays that way until its members finish loading the
+      // game, so the old `seats.size === 0` test destroyed party rooms at the
+      // next tick — before anyone could arrive, and inside the ticket's own
+      // 60-second lifetime. `lastActivityAt` is set at creation and bumped on
+      // every seat change, so this window means "empty and nothing has
+      // happened", which is the condition actually being tested for.
+      const idleFor = now - lobby.lastActivityAt;
+      const abandoned = lobby.seats.size === 0 && idleFor > PARTY_ROOM_GRACE_MS;
+      if (abandoned || idleFor > LOBBY_IDLE_TIMEOUT_MS) {
         destroyLobby(code);
       }
     }

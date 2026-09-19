@@ -30,14 +30,20 @@ of surface production and it is not the problem.
 
 The problem is what four greps turned up while auditing for this document:
 
-1. **The party system is finished and switched off.** `server/socket-server/handlers/party.ts`
+1. **The party system is finished and barely adopted.** `server/socket-server/handlers/party.ts`
    implements create/invite/accept/leave/kick/transfer/queue with rate limits, disconnect
-   handling and single-use join tickets. Line 22 of that file says it plainly:
-   *"no games are registered as party-enabled yet — `party:queue` returns a 'not party-enabled'
-   error until a game calls `registerPartyGame(...)`"*. The registry at
-   `server/socket-server/party-contract.ts:55` is empty. **Thirteen** games declare
-   `online-versus` or `online-coop` in `lib/game-capabilities.ts`. None of them can be
-   partied into.
+   handling and single-use join tickets. Line 22 of that file said plainly:
+   *"no games are registered as party-enabled yet"*.
+
+   > **Corrected while implementing this (2026-09-19).** That comment was stale, and taking it
+   > at its word is the one factual error in this document's first draft. Three games —
+   > Laundry Sort, Gabriel's Horn and Bum's Rush — had registered since it was written, so the
+   > registry was never empty. The shape of the finding survives the correction and the number
+   > changes: **3 of 13** online games could be partied into, not 0 of 13, against a system built
+   > to serve all of them. The comment is now replaced by a parity test, because a comment is
+   > what was wrong.
+
+   **Thirteen** games declare `online-versus` or `online-coop` in `lib/game-capabilities.ts`.
 2. **Replays exist for 2 of 23 games.** `lib/game/replay.ts` is a well-built, verifiable
    seed-plus-input-log contract with a generic player at
    `components/replays/GameReplayPlayer.tsx` and a shareable embed at
@@ -147,11 +153,12 @@ Elo engine as *shared* services. Then it shipped nine more games without adoptin
 
 ### The gap
 
-`server/socket-server/party-contract.ts:55` — *"The registry of party-enabled games, keyed by
-game id"* — is empty. The handler's own header comment names the intended rollout: **RMHBox,
-Synapse Storm, Hold'em, Kowloon Knockout**. That rollout never happened. Every piece of the
-feature that is hard — invite delivery to a user's other sockets, leader transfer, disconnect
-cleanup, a single-use ticket so a room id never travels in a URL — is written.
+The handler's header named an intended rollout — **RMHBox, Synapse Storm, Hold'em, Kowloon
+Knockout** — and none of those four had happened; three other games (Laundry Sort, Gabriel's
+Horn, Bum's Rush) had quietly registered instead, which is why the header's "no games yet" claim
+was wrong in both directions. Every piece of the feature that is hard — invite delivery to a
+user's other sockets, leader transfer, disconnect cleanup, a single-use ticket so a room id never
+travels in a URL — is written.
 
 ### Design
 

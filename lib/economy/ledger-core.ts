@@ -28,7 +28,11 @@
  */
 
 import type { CoinTxnType, Prisma, PrismaClient } from '@prisma/client';
-import { assertPlayAllowedOn } from '@/lib/economy/play-limits-core';
+// Relative, never `@/` — this module is bundled into the socket server, and
+// server/CLAUDE.md gotcha 7 is about this exact file: a `@/lib/economy/ledger-core`
+// specifier that esbuild could not map emitted a literal require() and killed the
+// whole hub on boot, with no build error.
+import { assertPlayAllowedOn } from './play-limits-core';
 
 /** Any Prisma client: the base client or an interactive-transaction client. */
 export type Db = Prisma.TransactionClient | PrismaClient;

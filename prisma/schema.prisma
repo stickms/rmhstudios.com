@@ -5599,10 +5599,6 @@ model CoinTransaction {
   @@index([senderId, createdAt(sort: Desc)])
   /// Drives the economy dashboard: supply by type over a time window.
   @@index([createdAt(sort: Desc), type])
-  /// Responsible play (W8): sums one member's WAGER debits since midnight UTC
-  /// on every staked coin. Without `type` in the index that check heap-fetches
-  /// every coin movement the member ever made to filter them.
-  @@index([senderId, type, createdAt(sort: Desc)])
   @@map("coin_transaction")
 }
 

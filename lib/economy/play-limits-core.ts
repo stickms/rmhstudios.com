@@ -29,15 +29,15 @@
  *     rather than by oversight.
  */
 
-import { AppError } from '@/lib/errors/codes';
+import { AppError } from '../errors/codes';
 import {
   NO_LIMITS,
   blockedBy,
   dayWindowStart,
   effectiveCap,
   type PlayLimits,
-} from '@/lib/economy/play-limits';
-import type { Db } from '@/lib/economy/ledger-core';
+} from './play-limits';
+import type { Db } from './ledger-core';
 
 /**
  * Read a member's limits, with the absent row meaning "no limits".
