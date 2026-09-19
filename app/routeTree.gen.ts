@@ -524,6 +524,7 @@ import { Route as ApiScheduledIndexRouteImport } from './routes/api/scheduled/in
 import { Route as ApiScheduledIdRouteImport } from './routes/api/scheduled/$id'
 import { Route as ApiSearchSavedRouteImport } from './routes/api/search/saved'
 import { Route as ApiSettingsEmailDigestRouteImport } from './routes/api/settings/email-digest'
+import { Route as ApiSettingsPlayLimitsRouteImport } from './routes/api/settings/play-limits'
 import { Route as ApiShopIndexRouteImport } from './routes/api/shop/index'
 import { Route as ApiShopEquipRouteImport } from './routes/api/shop/equip'
 import { Route as ApiShopPurchaseRouteImport } from './routes/api/shop/purchase'
@@ -3511,6 +3512,11 @@ const ApiSettingsEmailDigestRoute = ApiSettingsEmailDigestRouteImport.update({
   path: '/api/settings/email-digest',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSettingsPlayLimitsRoute = ApiSettingsPlayLimitsRouteImport.update({
+  id: '/api/settings/play-limits',
+  path: '/api/settings/play-limits',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiShopIndexRoute = ApiShopIndexRouteImport.update({
   id: '/api/shop/',
   path: '/api/shop/',
@@ -6001,6 +6007,7 @@ export interface FileRoutesByFullPath {
   '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
   '/api/search/saved': typeof ApiSearchSavedRouteWithChildren
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
+  '/api/settings/play-limits': typeof ApiSettingsPlayLimitsRoute
   '/api/shop/equip': typeof ApiShopEquipRoute
   '/api/shop/purchase': typeof ApiShopPurchaseRoute
   '/api/signal-forge/abandon': typeof ApiSignalForgeAbandonRoute
@@ -6876,6 +6883,7 @@ export interface FileRoutesByTo {
   '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
   '/api/search/saved': typeof ApiSearchSavedRouteWithChildren
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
+  '/api/settings/play-limits': typeof ApiSettingsPlayLimitsRoute
   '/api/shop/equip': typeof ApiShopEquipRoute
   '/api/shop/purchase': typeof ApiShopPurchaseRoute
   '/api/signal-forge/abandon': typeof ApiSignalForgeAbandonRoute
@@ -7779,6 +7787,7 @@ export interface FileRoutesById {
   '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
   '/api/search/saved': typeof ApiSearchSavedRouteWithChildren
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
+  '/api/settings/play-limits': typeof ApiSettingsPlayLimitsRoute
   '/api/shop/equip': typeof ApiShopEquipRoute
   '/api/shop/purchase': typeof ApiShopPurchaseRoute
   '/api/signal-forge/abandon': typeof ApiSignalForgeAbandonRoute
@@ -8682,6 +8691,7 @@ export interface FileRouteTypes {
     | '/api/scheduled/$id'
     | '/api/search/saved'
     | '/api/settings/email-digest'
+    | '/api/settings/play-limits'
     | '/api/shop/equip'
     | '/api/shop/purchase'
     | '/api/signal-forge/abandon'
@@ -9557,6 +9567,7 @@ export interface FileRouteTypes {
     | '/api/scheduled/$id'
     | '/api/search/saved'
     | '/api/settings/email-digest'
+    | '/api/settings/play-limits'
     | '/api/shop/equip'
     | '/api/shop/purchase'
     | '/api/signal-forge/abandon'
@@ -10459,6 +10470,7 @@ export interface FileRouteTypes {
     | '/api/scheduled/$id'
     | '/api/search/saved'
     | '/api/settings/email-digest'
+    | '/api/settings/play-limits'
     | '/api/shop/equip'
     | '/api/shop/purchase'
     | '/api/signal-forge/abandon'
@@ -11176,6 +11188,7 @@ export interface RootRouteChildren {
   ApiSavesFoldersRoute: typeof ApiSavesFoldersRouteWithChildren
   ApiScheduledIdRoute: typeof ApiScheduledIdRouteWithChildren
   ApiSettingsEmailDigestRoute: typeof ApiSettingsEmailDigestRoute
+  ApiSettingsPlayLimitsRoute: typeof ApiSettingsPlayLimitsRoute
   ApiShopEquipRoute: typeof ApiShopEquipRoute
   ApiShopPurchaseRoute: typeof ApiShopPurchaseRoute
   ApiSignalForgeAbandonRoute: typeof ApiSignalForgeAbandonRoute
@@ -15035,6 +15048,13 @@ declare module '@tanstack/react-router' {
       path: '/api/settings/email-digest'
       fullPath: '/api/settings/email-digest'
       preLoaderRoute: typeof ApiSettingsEmailDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/settings/play-limits': {
+      id: '/api/settings/play-limits'
+      path: '/api/settings/play-limits'
+      fullPath: '/api/settings/play-limits'
+      preLoaderRoute: typeof ApiSettingsPlayLimitsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/shop/': {
@@ -19700,6 +19720,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSavesFoldersRoute: ApiSavesFoldersRouteWithChildren,
   ApiScheduledIdRoute: ApiScheduledIdRouteWithChildren,
   ApiSettingsEmailDigestRoute: ApiSettingsEmailDigestRoute,
+  ApiSettingsPlayLimitsRoute: ApiSettingsPlayLimitsRoute,
   ApiShopEquipRoute: ApiShopEquipRoute,
   ApiShopPurchaseRoute: ApiShopPurchaseRoute,
   ApiSignalForgeAbandonRoute: ApiSignalForgeAbandonRoute,

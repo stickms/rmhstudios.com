@@ -393,6 +393,9 @@ model User {
   aiUsage             AiUsage[]
   activities          Activity[]
   gameStats           GameStat[]
+
+  /// Responsible play (W8). Optional: a member with no row has no limits.
+  playLimits          UserPlayLimits?
   readPositions       ReadPosition[]
   heldNotifications   HeldNotification[]
   conversationPrefs   ConversationPref[]
@@ -5596,6 +5599,10 @@ model CoinTransaction {
   @@index([senderId, createdAt(sort: Desc)])
   /// Drives the economy dashboard: supply by type over a time window.
   @@index([createdAt(sort: Desc), type])
+  /// Responsible play (W8): sums one member's WAGER debits since midnight UTC
+  /// on every staked coin. Without `type` in the index that check heap-fetches
+  /// every coin movement the member ever made to filter them.
+  @@index([senderId, type, createdAt(sort: Desc)])
   @@map("coin_transaction")
 }
 
@@ -9039,4 +9046,55 @@ model DiscordWatchLive {
   updatedAt DateTime @updatedAt
 
   @@map("discord_watch_live")
+}
+
+// ─── Responsible play (W8, 2026-09-19) ────────────────────────────────────
+// The guard rails every coin-risking surface on the site shipped without.
+//
+// The audit for `docs/plans/2026-09-19-next-phase-feature-ideas.md` grepped the
+// tree for `selfExclu|age-gate|isAdult|over18` and found nothing: `/wager`,
+// `/predictions`, `CoinStake`, `DailyWheelSpin` and the five casino tables ran
+// with per-stake ceilings (`lib/wager/constants.ts`) and no per-DAY anything.
+//
+// Coins cannot be cashed out, which is why this is a small feature rather than
+// an incident. It is not a reason to keep adding risk surfaces without it.
+
+/// One row per member who has ever set a limit. Absent row = no limits, which
+/// is why every read goes through `resolvePlayLimits()` rather than assuming a
+/// row exists.
+model UserPlayLimits {
+  userId String @id
+
+  /// Most coins this member may stake per rolling UTC day, across every risk
+  /// surface. Null = no cap. Enforced in `debitCoinsOn` for `type: 'WAGER'`,
+  /// which is the one chokepoint both the web tier and the socket tier share.
+  dailyCoinCap Int?
+
+  /// Set by the member; until it passes, every `WAGER` debit is refused and the
+  /// risk surfaces are hidden from navigation and search. Deliberately NOT
+  /// clearable early — see `play-limits.ts` for why the asymmetry is the
+  /// feature rather than an inconvenience.
+  selfExcludedUntil DateTime?
+
+  /// A shorter, softer break. Same refusal, no navigation change.
+  coolOffUntil DateTime?
+
+  /// A LOOSENING waiting out its 24 hours. Tightening applies immediately and
+  /// never lands here; only a change that would give the member more rope is
+  /// parked, so that "raise my limit" can never be an impulse the site honours
+  /// in the same minute it was typed.
+  ///
+  /// `pendingCap` is the requested new cap (null means "remove the cap"), and
+  /// `pendingCapAt` is when it becomes effective. Both are cleared together,
+  /// so `pendingCapAt != null` is the only test for "a change is in flight" —
+  /// a null `pendingCap` is a meaningful request, not an empty slot.
+  pendingCap   Int?
+  pendingCapAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_play_limits")
 }
