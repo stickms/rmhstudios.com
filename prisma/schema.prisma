@@ -408,6 +408,9 @@ model User {
 
   /// What the AI surfaces remember about them (M3). Member-editable.
   memories            MemberMemory[]
+
+  /// Compute bought with coins from RMH Datacenter (W2).
+  computeGrants       ComputeGrant[]
   readPositions       ReadPosition[]
   heldNotifications   HeldNotification[]
   conversationPrefs   ConversationPref[]
@@ -9413,4 +9416,49 @@ model MemberMemory {
   @@unique([userId, key])
   @@index([userId, updatedAt(sort: Desc)])
   @@map("member_memory")
+}
+
+// ─── RMH Datacenter: compute a member actually bought (W2, 2026-09-19) ────
+// The datacenter microsite draws capacity meters from a static file while the
+// platform genuinely sells compute: `lib/ai/budget.server.ts` meters AI spend
+// per tier, `ImageGenBudget` caps generation, RMHVibe bills builds against
+// Kimi and DeepSeek, and `AiUsage` records all of it. The fiction and the
+// infrastructure were describing the same thing and not talking.
+//
+// This is also the coin sink W7's inventory said the economy needs. It is the
+// one sink whose price can be set honestly rather than arbitrarily, because
+// providing it costs the platform real money.
+
+/// Extra compute a member bought with coins, for one calendar month.
+model ComputeGrant {
+  id     String @id @default(cuid())
+  userId String
+
+  /// 'YYYY-MM'. Grants are monthly because the budget they extend is monthly —
+  /// a grant with its own rolling window would need its own accounting, and
+  /// two windows that nearly agree is worse than one.
+  month String @db.VarChar(7)
+
+  /// Extra AI allowance bought, in micro-dollars, added on top of the tier's
+  /// `MONTHLY_BUDGET_MICROS`. Same unit as `AiUsage.costMicros` so the two can
+  /// be compared without a conversion anybody could get wrong.
+  aiMicros Int @default(0)
+
+  /// Extra image generations.
+  imageGens Int @default(0)
+
+  /// Extra library upload slots.
+  librarySlots Int @default(0)
+
+  /// What was paid, so the grant reconciles against the ledger. The ledger is
+  /// authoritative for the coins; this is the receipt's own copy.
+  coinsPaid Int
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// The budget read: everything this member bought this month.
+  @@index([userId, month])
+  @@map("compute_grant")
 }

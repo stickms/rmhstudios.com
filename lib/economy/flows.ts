@@ -309,6 +309,14 @@ export const COIN_FLOWS: readonly CoinFlow[] = [
     note: 'WAGER. Gated by W8.',
   },
   {
+    id: 'compute-pack',
+    kind: 'sink',
+    surface: 'RMH Datacenter — buying compute',
+    source: 'lib/datacenter/compute.server.ts',
+    bounded: true,
+    note: 'Capped at MAX_PACKS_PER_MONTH per member per month. The one sink whose price can be set honestly, because providing what it sells costs the platform real money (W2).',
+  },
+  {
     id: 'casino-stake',
     kind: 'sink',
     surface: 'Every table stake and side bet',
