@@ -399,6 +399,9 @@ model User {
 
   /// Rebar & Rutabaga bookings (W1).
   rebarReservations   RebarReservation[]
+
+  /// Seasonal ranked standings (P5), beside the lifetime `eloRatings`.
+  seasonRatings       RankedSeasonRating[]
   readPositions       ReadPosition[]
   heldNotifications   HeldNotification[]
   conversationPrefs   ConversationPref[]
@@ -9159,4 +9162,52 @@ model RebarReservation {
   /// `prisma migrate dev` / `db push` may offer to DROP it — do not accept
   /// that drop; the uniqueness is what makes the insert safe under a race.
   @@map("rebar_reservation")
+}
+
+// ─── Ranked seasons (P5, 2026-09-19) ──────────────────────────────────────
+// `EloRating` stays exactly as it is: one lifetime number per (user, game),
+// never reset, which is a genuinely useful thing to have and is what every
+// existing consumer reads.
+//
+// This is the seasonal ladder beside it. A separate table rather than a
+// `season` column on `EloRating` for one specific reason: adding a column is
+// safe during a blue/green swap, and CHANGING that table's unique constraint
+// from (userId, game) to (userId, game, season) is not — old code would be
+// writing through the old key against the new index for the length of the
+// flip. A new table has no old readers at all.
+
+/// A player's standing in one game for one season.
+model RankedSeasonRating {
+  id     String @id @default(cuid())
+  userId String
+  game   String @db.VarChar(40)
+
+  /// Derived from the date by `lib/ranked/season.ts`, never allocated by a
+  /// table — so no row has to be created for a season to begin, and two
+  /// services cannot disagree about which season it is.
+  season Int
+
+  rating Int @default(1000)
+  wins   Int @default(0)
+  losses Int @default(0)
+  draws  Int @default(0)
+
+  /// Counts DOWN from PLACEMENT_MATCHES. While above zero the rating is
+  /// provisional: hidden from the ladder, moved by a wider K-factor, and
+  /// exempt from decay.
+  placementsLeft Int @default(5)
+
+  /// Drives decay, which is computed on READ rather than by a nightly sweep —
+  /// so there is no job to fall behind, and no window where two players were
+  /// decayed as of different days.
+  lastPlayedAt DateTime?
+
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, game, season])
+  /// The ladder read: one game, one season, best first.
+  @@index([game, season, rating(sort: Desc)])
+  @@map("ranked_season_rating")
 }

@@ -1,11 +1,16 @@
 /**
  * Ranked challenge resolution (#5). When a challenge result is reported, update
  * both players' ELO ratings for that game and the win/loss/draw tallies.
+ *
+ * Since P5 this writes TWO ladders: `EloRating` (lifetime, unchanged, what
+ * every existing consumer reads) and `RankedSeasonRating` (this season, with
+ * placement and decay). Both in one transaction — see below.
  */
 
 import { prisma } from '@/lib/prisma.server';
 import { BASE_RATING, nextRating } from '@/lib/ranked/elo';
 import { grantAchievement } from '@/lib/achievements/engine.server';
+import { applySeasonResult } from '@/lib/ranked/season.server';
 
 async function getOrInitRating(tx: typeof prisma, userId: string, game: string) {
   return tx.eloRating.upsert({
@@ -57,6 +62,16 @@ export async function applyChallengeResult(params: {
         losses: { increment: opponentScore === 0 ? 1 : 0 },
         draws: { increment: opponentScore === 0.5 ? 1 : 0 },
       },
+    });
+
+    // The seasonal ladder moves in the SAME transaction (P5). A season rating
+    // that advanced while the lifetime one did not — or the reverse — would be
+    // a discrepancy with no way to explain it afterwards.
+    await applySeasonResult(tx as unknown as Parameters<typeof applySeasonResult>[0], {
+      game,
+      challengerId,
+      opponentId,
+      winnerId,
     });
 
     return { challengerRating: newChallenger, opponentRating: newOpponent };

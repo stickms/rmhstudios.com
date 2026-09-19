@@ -185,7 +185,6 @@ const KNOWN_UNWRAPPED: readonly string[] = [
   'app/routes/api/profile/banner/$filename.ts',
   'app/routes/api/pulse.ts',
   'app/routes/api/push/public-key.ts',
-  'app/routes/api/ranked/$game/leaderboard.ts',
   'app/routes/api/ready.ts',
   'app/routes/api/replays/index.ts',
   'app/routes/api/rideshare/directions.ts',
