@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { AppearancePanel } from '@/components/settings/AppearancePanel';
+import { GameAssistPanel } from '@/components/settings/GameAssistPanel';
 
 export const Route = createFileRoute('/_site/settings/appearance')({
   head: () => ({
@@ -19,8 +20,13 @@ function AppearanceSettingsPage() {
         { label: 'Appearance' },
       ]}
     >
-      <div className="px-4 pt-4 pb-12">
+      <div className="space-y-4 px-4 pt-4 pb-12">
         <AppearancePanel />
+        {/* Game assists sit beside the site's own accessibility controls
+            rather than on their own page: somebody looking for "make this
+            usable" looks in one place, and the two halves of that answer —
+            the chrome and the games — belong together. */}
+        <GameAssistPanel />
       </div>
     </PageLayout>
   );

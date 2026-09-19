@@ -402,6 +402,9 @@ model User {
 
   /// Seasonal ranked standings (P5), beside the lifetime `eloRatings`.
   seasonRatings       RankedSeasonRating[]
+
+  /// Cross-game assists (P7). Optional: no row means no assists.
+  gameAssists         GameAssistPreference?
   readPositions       ReadPosition[]
   heldNotifications   HeldNotification[]
   conversationPrefs   ConversationPref[]
@@ -9308,4 +9311,49 @@ model ScheduledSlot {
   /// The window query: published slots that could overlap a range.
   @@index([published, startsAt])
   @@map("scheduled_slot")
+}
+
+// ─── The cross-game assist layer (P7, 2026-09-19) ─────────────────────────
+// `lib/game-capabilities.ts` named this as a known absence in its own header:
+// "accessibility is empty for almost every game, and that is not an oversight;
+// the cross-game assist layer has not been built."
+//
+// Separate from `AppearancePreference` rather than folded into it, because
+// these are not the same kind of setting. That one changes how the SITE looks
+// and costs nothing; these change how a GAME plays and cost leaderboard
+// eligibility. Putting a switch with that consequence next to a font-size
+// slider would misrepresent what it does.
+
+/// One row per member who has ever changed a game assist. Absent = defaults.
+model GameAssistPreference {
+  userId String @id
+
+  /// A held input stands in for repeated mashing.
+  holdToPress Boolean @default(false)
+
+  /// Slowest the game may run its clock, per mille (500–1000). Stored as an
+  /// integer for the same reason `AppearancePreference.fontScale` is: a float
+  /// that round-trips through JSON and a form is a float that eventually is
+  /// not the number anybody typed.
+  speedFloorPerMille Int @default(1000)
+
+  /// Suppress flashing, strobing and screen shake. The in-game counterpart to
+  /// the site-wide `AppearancePreference.reduceMotion`, which a canvas cannot
+  /// honour on its own.
+  calmVisuals Boolean @default(false)
+
+  /// Do not encode state in hue alone. The in-game counterpart to
+  /// `AppearancePreference.colorVision`, which retints semantic tokens and so
+  /// reaches the chrome around a game but never the game's own renderer.
+  colorSafe Boolean @default(false)
+
+  /// Remove or extend reaction-time windows.
+  noTimedInput Boolean @default(false)
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("game_assist_preference")
 }

@@ -530,6 +530,7 @@ import { Route as ApiScheduledIdRouteImport } from './routes/api/scheduled/$id'
 import { Route as ApiSearchSavedRouteImport } from './routes/api/search/saved'
 import { Route as ApiServicesRebarReservationsRouteImport } from './routes/api/services/rebar-reservations'
 import { Route as ApiSettingsEmailDigestRouteImport } from './routes/api/settings/email-digest'
+import { Route as ApiSettingsGameAssistsRouteImport } from './routes/api/settings/game-assists'
 import { Route as ApiSettingsPlayLimitsRouteImport } from './routes/api/settings/play-limits'
 import { Route as ApiShopIndexRouteImport } from './routes/api/shop/index'
 import { Route as ApiShopEquipRouteImport } from './routes/api/shop/equip'
@@ -3549,6 +3550,11 @@ const ApiSettingsEmailDigestRoute = ApiSettingsEmailDigestRouteImport.update({
   path: '/api/settings/email-digest',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSettingsGameAssistsRoute = ApiSettingsGameAssistsRouteImport.update({
+  id: '/api/settings/game-assists',
+  path: '/api/settings/game-assists',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSettingsPlayLimitsRoute = ApiSettingsPlayLimitsRouteImport.update({
   id: '/api/settings/play-limits',
   path: '/api/settings/play-limits',
@@ -6048,6 +6054,7 @@ export interface FileRoutesByFullPath {
   '/api/search/saved': typeof ApiSearchSavedRouteWithChildren
   '/api/services/rebar-reservations': typeof ApiServicesRebarReservationsRoute
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
+  '/api/settings/game-assists': typeof ApiSettingsGameAssistsRoute
   '/api/settings/play-limits': typeof ApiSettingsPlayLimitsRoute
   '/api/shop/equip': typeof ApiShopEquipRoute
   '/api/shop/purchase': typeof ApiShopPurchaseRoute
@@ -6930,6 +6937,7 @@ export interface FileRoutesByTo {
   '/api/search/saved': typeof ApiSearchSavedRouteWithChildren
   '/api/services/rebar-reservations': typeof ApiServicesRebarReservationsRoute
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
+  '/api/settings/game-assists': typeof ApiSettingsGameAssistsRoute
   '/api/settings/play-limits': typeof ApiSettingsPlayLimitsRoute
   '/api/shop/equip': typeof ApiShopEquipRoute
   '/api/shop/purchase': typeof ApiShopPurchaseRoute
@@ -7840,6 +7848,7 @@ export interface FileRoutesById {
   '/api/search/saved': typeof ApiSearchSavedRouteWithChildren
   '/api/services/rebar-reservations': typeof ApiServicesRebarReservationsRoute
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
+  '/api/settings/game-assists': typeof ApiSettingsGameAssistsRoute
   '/api/settings/play-limits': typeof ApiSettingsPlayLimitsRoute
   '/api/shop/equip': typeof ApiShopEquipRoute
   '/api/shop/purchase': typeof ApiShopPurchaseRoute
@@ -8750,6 +8759,7 @@ export interface FileRouteTypes {
     | '/api/search/saved'
     | '/api/services/rebar-reservations'
     | '/api/settings/email-digest'
+    | '/api/settings/game-assists'
     | '/api/settings/play-limits'
     | '/api/shop/equip'
     | '/api/shop/purchase'
@@ -9632,6 +9642,7 @@ export interface FileRouteTypes {
     | '/api/search/saved'
     | '/api/services/rebar-reservations'
     | '/api/settings/email-digest'
+    | '/api/settings/game-assists'
     | '/api/settings/play-limits'
     | '/api/shop/equip'
     | '/api/shop/purchase'
@@ -10541,6 +10552,7 @@ export interface FileRouteTypes {
     | '/api/search/saved'
     | '/api/services/rebar-reservations'
     | '/api/settings/email-digest'
+    | '/api/settings/game-assists'
     | '/api/settings/play-limits'
     | '/api/shop/equip'
     | '/api/shop/purchase'
@@ -11264,6 +11276,7 @@ export interface RootRouteChildren {
   ApiScheduledIdRoute: typeof ApiScheduledIdRouteWithChildren
   ApiServicesRebarReservationsRoute: typeof ApiServicesRebarReservationsRoute
   ApiSettingsEmailDigestRoute: typeof ApiSettingsEmailDigestRoute
+  ApiSettingsGameAssistsRoute: typeof ApiSettingsGameAssistsRoute
   ApiSettingsPlayLimitsRoute: typeof ApiSettingsPlayLimitsRoute
   ApiShopEquipRoute: typeof ApiShopEquipRoute
   ApiShopPurchaseRoute: typeof ApiShopPurchaseRoute
@@ -15168,6 +15181,13 @@ declare module '@tanstack/react-router' {
       path: '/api/settings/email-digest'
       fullPath: '/api/settings/email-digest'
       preLoaderRoute: typeof ApiSettingsEmailDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/settings/game-assists': {
+      id: '/api/settings/game-assists'
+      path: '/api/settings/game-assists'
+      fullPath: '/api/settings/game-assists'
+      preLoaderRoute: typeof ApiSettingsGameAssistsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/settings/play-limits': {
@@ -19845,6 +19865,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiScheduledIdRoute: ApiScheduledIdRouteWithChildren,
   ApiServicesRebarReservationsRoute: ApiServicesRebarReservationsRoute,
   ApiSettingsEmailDigestRoute: ApiSettingsEmailDigestRoute,
+  ApiSettingsGameAssistsRoute: ApiSettingsGameAssistsRoute,
   ApiSettingsPlayLimitsRoute: ApiSettingsPlayLimitsRoute,
   ApiShopEquipRoute: ApiShopEquipRoute,
   ApiShopPurchaseRoute: ApiShopPurchaseRoute,
