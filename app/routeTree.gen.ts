@@ -523,6 +523,7 @@ import { Route as ApiSavesFoldersRouteImport } from './routes/api/saves/folders'
 import { Route as ApiScheduledIndexRouteImport } from './routes/api/scheduled/index'
 import { Route as ApiScheduledIdRouteImport } from './routes/api/scheduled/$id'
 import { Route as ApiSearchSavedRouteImport } from './routes/api/search/saved'
+import { Route as ApiServicesRebarReservationsRouteImport } from './routes/api/services/rebar-reservations'
 import { Route as ApiSettingsEmailDigestRouteImport } from './routes/api/settings/email-digest'
 import { Route as ApiSettingsPlayLimitsRouteImport } from './routes/api/settings/play-limits'
 import { Route as ApiShopIndexRouteImport } from './routes/api/shop/index'
@@ -3507,6 +3508,12 @@ const ApiSearchSavedRoute = ApiSearchSavedRouteImport.update({
   path: '/saved',
   getParentRoute: () => ApiSearchRoute,
 } as any)
+const ApiServicesRebarReservationsRoute =
+  ApiServicesRebarReservationsRouteImport.update({
+    id: '/api/services/rebar-reservations',
+    path: '/api/services/rebar-reservations',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiSettingsEmailDigestRoute = ApiSettingsEmailDigestRouteImport.update({
   id: '/api/settings/email-digest',
   path: '/api/settings/email-digest',
@@ -6006,6 +6013,7 @@ export interface FileRoutesByFullPath {
   '/api/saves/folders': typeof ApiSavesFoldersRouteWithChildren
   '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
   '/api/search/saved': typeof ApiSearchSavedRouteWithChildren
+  '/api/services/rebar-reservations': typeof ApiServicesRebarReservationsRoute
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
   '/api/settings/play-limits': typeof ApiSettingsPlayLimitsRoute
   '/api/shop/equip': typeof ApiShopEquipRoute
@@ -6882,6 +6890,7 @@ export interface FileRoutesByTo {
   '/api/saves/folders': typeof ApiSavesFoldersRouteWithChildren
   '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
   '/api/search/saved': typeof ApiSearchSavedRouteWithChildren
+  '/api/services/rebar-reservations': typeof ApiServicesRebarReservationsRoute
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
   '/api/settings/play-limits': typeof ApiSettingsPlayLimitsRoute
   '/api/shop/equip': typeof ApiShopEquipRoute
@@ -7786,6 +7795,7 @@ export interface FileRoutesById {
   '/api/saves/folders': typeof ApiSavesFoldersRouteWithChildren
   '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
   '/api/search/saved': typeof ApiSearchSavedRouteWithChildren
+  '/api/services/rebar-reservations': typeof ApiServicesRebarReservationsRoute
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
   '/api/settings/play-limits': typeof ApiSettingsPlayLimitsRoute
   '/api/shop/equip': typeof ApiShopEquipRoute
@@ -8690,6 +8700,7 @@ export interface FileRouteTypes {
     | '/api/saves/folders'
     | '/api/scheduled/$id'
     | '/api/search/saved'
+    | '/api/services/rebar-reservations'
     | '/api/settings/email-digest'
     | '/api/settings/play-limits'
     | '/api/shop/equip'
@@ -9566,6 +9577,7 @@ export interface FileRouteTypes {
     | '/api/saves/folders'
     | '/api/scheduled/$id'
     | '/api/search/saved'
+    | '/api/services/rebar-reservations'
     | '/api/settings/email-digest'
     | '/api/settings/play-limits'
     | '/api/shop/equip'
@@ -10469,6 +10481,7 @@ export interface FileRouteTypes {
     | '/api/saves/folders'
     | '/api/scheduled/$id'
     | '/api/search/saved'
+    | '/api/services/rebar-reservations'
     | '/api/settings/email-digest'
     | '/api/settings/play-limits'
     | '/api/shop/equip'
@@ -11187,6 +11200,7 @@ export interface RootRouteChildren {
   ApiRmhtypePracticeTestRoute: typeof ApiRmhtypePracticeTestRoute
   ApiSavesFoldersRoute: typeof ApiSavesFoldersRouteWithChildren
   ApiScheduledIdRoute: typeof ApiScheduledIdRouteWithChildren
+  ApiServicesRebarReservationsRoute: typeof ApiServicesRebarReservationsRoute
   ApiSettingsEmailDigestRoute: typeof ApiSettingsEmailDigestRoute
   ApiSettingsPlayLimitsRoute: typeof ApiSettingsPlayLimitsRoute
   ApiShopEquipRoute: typeof ApiShopEquipRoute
@@ -15042,6 +15056,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/search/saved'
       preLoaderRoute: typeof ApiSearchSavedRouteImport
       parentRoute: typeof ApiSearchRoute
+    }
+    '/api/services/rebar-reservations': {
+      id: '/api/services/rebar-reservations'
+      path: '/api/services/rebar-reservations'
+      fullPath: '/api/services/rebar-reservations'
+      preLoaderRoute: typeof ApiServicesRebarReservationsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/settings/email-digest': {
       id: '/api/settings/email-digest'
@@ -19719,6 +19740,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhtypePracticeTestRoute: ApiRmhtypePracticeTestRoute,
   ApiSavesFoldersRoute: ApiSavesFoldersRouteWithChildren,
   ApiScheduledIdRoute: ApiScheduledIdRouteWithChildren,
+  ApiServicesRebarReservationsRoute: ApiServicesRebarReservationsRoute,
   ApiSettingsEmailDigestRoute: ApiSettingsEmailDigestRoute,
   ApiSettingsPlayLimitsRoute: ApiSettingsPlayLimitsRoute,
   ApiShopEquipRoute: ApiShopEquipRoute,

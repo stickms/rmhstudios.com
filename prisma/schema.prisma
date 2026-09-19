@@ -396,6 +396,9 @@ model User {
 
   /// Responsible play (W8). Optional: a member with no row has no limits.
   playLimits          UserPlayLimits?
+
+  /// Rebar & Rutabaga bookings (W1).
+  rebarReservations   RebarReservation[]
   readPositions       ReadPosition[]
   heldNotifications   HeldNotification[]
   conversationPrefs   ConversationPref[]
@@ -9093,4 +9096,67 @@ model UserPlayLimits {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_play_limits")
+}
+
+// ─── Rebar & Rutabaga — reservations (W1, 2026-09-19) ─────────────────────
+// The first piece of state behind any of the eleven /services and /ventures
+// microsites. Before this the whole section was brochureware: a signed-in
+// member and a search-engine crawler got the same page, and the one
+// interactive control anywhere in it was a `mailto:`.
+//
+// The `mailto:` stays, for parties larger than the form takes — that was
+// always the right path for those, and the component's comment says so.
+
+/// One booked table. The rules these rows must satisfy live in
+/// `lib/rebar-rutabaga/booking.ts` and are enforced in `.server.ts`.
+model RebarReservation {
+  id String @id @default(cuid())
+
+  /// Null for a guest booking. The restaurant takes a table from anyone with an
+  /// email; being a member gets you the booking in /notifications and a
+  /// calendar file, not a better chance of a table.
+  userId String?
+
+  /// The LOCAL calendar day of the service, `YYYY-MM-DD` — not an instant.
+  /// 17:30 is 17:30 in Gothenburg whether or not Sweden is on summer time that
+  /// week, so storing a UTC instant would make the seating drift an hour twice
+  /// a year. See the booking module's header.
+  serviceDate String @db.VarChar(10)
+
+  /// '17:30' | '20:45' — the two seatings the page prints.
+  seating String @db.VarChar(5)
+
+  partySize Int
+
+  name  String @db.VarChar(80)
+  email String @db.VarChar(160)
+
+  /// Allergies and anything else the kitchen needs to know. The house's first
+  /// policy is about allergies, so this is the field that policy acts on.
+  note String? @db.VarChar(500)
+
+  /// 'booked' | 'cancelled'. A string rather than an enum: the restaurant will
+  /// grow 'seated' and 'no-show' when there is a host stand to record them,
+  /// and each of those is a migration if this is an enum.
+  status String @default("booked") @db.VarChar(16)
+
+  cancelledAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  /// The availability query: covers already booked for one service.
+  @@index([serviceDate, seating, status])
+  /// "My bookings", newest first.
+  @@index([userId, createdAt(sort: Desc)])
+  /// NOTE: the migration also adds a PARTIAL unique index —
+  /// ("email", "serviceDate", "seating") WHERE status = 'booked' — so a
+  /// double-submitted form cannot take two tables out of twenty-two, while a
+  /// cancellation still frees the night to be re-booked. Prisma's DSL cannot
+  /// express a filtered index, so it is hand-written in the migration and
+  /// intentionally NOT mirrored here, exactly as
+  /// `20260716000000_add_rmhark_feed_partial_index` documents. A local
+  /// `prisma migrate dev` / `db push` may offer to DROP it — do not accept
+  /// that drop; the uniqueness is what makes the insert safe under a race.
+  @@map("rebar_reservation")
 }

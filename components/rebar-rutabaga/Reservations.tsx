@@ -17,16 +17,23 @@
  *
  * **The call to action is a ruled link, not a filled button.** A pill of accent
  * colour would be the single loudest object on a page built entirely from
- * hairlines, and it would be loud in service of an email address. A generous
- * underline that thickens on hover is the same affordance at the page's own
- * volume — and it is a real `<a href="mailto:">`, so it keeps every behaviour a
- * link has that a styled button does not.
+ * hairlines. A generous underline that thickens on hover is the same affordance
+ * at the page's own volume.
+ *
+ * **The book is now real (W1).** That call to action used to be an
+ * `<a href="mailto:">` and the restaurant had no state at all — the only
+ * interactive control on any of the eleven /services and /ventures microsites.
+ * It opens `BookingForm`, which keeps the same ruled-link volume and the same
+ * `--rebar-*` material. The email address stays below it for parties larger
+ * than the form takes, which was always the right path for those: booking the
+ * whole room is a conversation, not a row in a table.
  */
 
 import { useTranslation } from 'react-i18next';
 import { ArrowUpRight } from 'lucide-react';
 import { policyText } from './copy';
 import { Reveal, DrawnRule, stagger } from './Reveal';
+import { BookingForm } from './BookingForm';
 import {
   JUICE_PAIRING_SEK,
   MENU_PRICE_SEK,
@@ -89,26 +96,31 @@ export function Reservations() {
               </p>
             </Reveal>
 
-            <Reveal delay={0.16}>
-              <div className="mt-12">
-                <a
-                  href="mailto:bord@rebarochrutabaga.se"
-                  className="group inline-flex items-baseline gap-3 border-b border-rebar-line-strong pb-2 font-display text-xl font-light tracking-[-0.02em] text-rebar-ink transition-colors duration-[var(--rebar-dur-quick)] hover:text-rebar-ink-soft"
-                >
-                  {t('book.cta', { defaultValue: 'Request a table' })}
-                  <ArrowUpRight
-                    className="size-4 shrink-0 transition-transform duration-[var(--rebar-dur-quick)] group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                    aria-hidden
-                  />
-                </a>
-              </div>
-            </Reveal>
+            <BookingForm />
+
             <Reveal delay={0.2}>
               <p className="mt-5 max-w-[30rem] text-sm leading-relaxed text-rebar-ink-soft">
                 {t('book.opens', {
                   defaultValue:
                     'Bookings open on the first of each month at 09:00 CET, for the month after next.',
                 })}
+              </p>
+            </Reveal>
+            <Reveal delay={0.24}>
+              <p className="mt-3 max-w-[30rem] text-sm leading-relaxed text-rebar-ink-soft">
+                {t('book.large', {
+                  defaultValue: 'For more than six, or to take the whole room, write to us:',
+                })}{' '}
+                <a
+                  href="mailto:bord@rebarochrutabaga.se"
+                  className="group inline-flex items-baseline gap-1 border-b border-rebar-line-strong text-rebar-ink transition-colors duration-[var(--rebar-dur-quick)] hover:text-rebar-ink-soft"
+                >
+                  bord@rebarochrutabaga.se
+                  <ArrowUpRight
+                    className="size-3 shrink-0 transition-transform duration-[var(--rebar-dur-quick)] group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                    aria-hidden
+                  />
+                </a>
               </p>
             </Reveal>
 
