@@ -405,6 +405,9 @@ model User {
 
   /// Cross-game assists (P7). Optional: no row means no assists.
   gameAssists         GameAssistPreference?
+
+  /// What the AI surfaces remember about them (M3). Member-editable.
+  memories            MemberMemory[]
   readPositions       ReadPosition[]
   heldNotifications   HeldNotification[]
   conversationPrefs   ConversationPref[]
@@ -9356,4 +9359,58 @@ model GameAssistPreference {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("game_assist_preference")
+}
+
+// ─── Member memory (M3, 2026-09-19) ───────────────────────────────────────
+// `lib/ai/` has coach, recap, catch-up and summarize, plus persona-chat —
+// five surfaces that each rebuild their idea of a member from scratch on every
+// call. The assistant does not know you just finished a season, the coach does
+// not know what you asked the assistant, and the recap re-derives what the
+// coach already computed.
+//
+// Member-editable and member-DELETABLE is not a nice-to-have on this table. A
+// memory somebody cannot see is a liability, and `lib/account-lifecycle.ts`
+// already establishes that everything about a member is exportable and
+// erasable. A row here is a claim the site is making about a person; they get
+// to read it and strike it out.
+
+/// One durable fact about a member, as the AI surfaces see them.
+model MemberMemory {
+  id     String @id @default(cuid())
+  userId String
+
+  /// Namespaced key: 'prefers.game' | 'goal.active' | 'milestone.recent' | …
+  /// Namespaced so a surface can read a family without knowing every key, and
+  /// so a key can be retired without a migration.
+  key String @db.VarChar(64)
+
+  /// The fact, in plain language. Never a blob: this is shown to the member
+  /// verbatim on the memory page, so anything they cannot read has no business
+  /// being here.
+  value String @db.VarChar(400)
+
+  /// Which surface wrote it — 'coach' | 'recap' | 'assistant' | 'member'.
+  /// A member-written row is authoritative and is never overwritten by a
+  /// surface; somebody correcting the site about themselves should not have to
+  /// do it twice.
+  source String @db.VarChar(16)
+
+  /// Set when the member has explicitly confirmed or edited the row. Used to
+  /// protect it from being rewritten, and to show which facts they have
+  /// actually looked at.
+  confirmedAt DateTime?
+
+  /// Memories decay: a goal from March is not a goal. A surface writing a row
+  /// sets this, and reads filter on it, so nothing has to sweep.
+  expiresAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// One value per key per member — a memory is a fact, not a log.
+  @@unique([userId, key])
+  @@index([userId, updatedAt(sort: Desc)])
+  @@map("member_memory")
 }

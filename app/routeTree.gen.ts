@@ -433,6 +433,7 @@ import { Route as ApiLibraryUploadRouteImport } from './routes/api/library/uploa
 import { Route as ApiListsIndexRouteImport } from './routes/api/lists/index'
 import { Route as ApiListsIdRouteImport } from './routes/api/lists/$id'
 import { Route as ApiMassiveMarchCampaignsRouteImport } from './routes/api/massive-march/campaigns'
+import { Route as ApiMemoryIndexRouteImport } from './routes/api/memory/index'
 import { Route as ApiMessagesConversationIdRouteImport } from './routes/api/messages/$conversationId'
 import { Route as ApiMessagesReadAllRouteImport } from './routes/api/messages/read-all'
 import { Route as ApiMessagesSearchRouteImport } from './routes/api/messages/search'
@@ -3056,6 +3057,11 @@ const ApiMassiveMarchCampaignsRoute =
     path: '/api/massive-march/campaigns',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiMemoryIndexRoute = ApiMemoryIndexRouteImport.update({
+  id: '/api/memory/',
+  path: '/api/memory/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMessagesConversationIdRoute =
   ApiMessagesConversationIdRouteImport.update({
     id: '/$conversationId',
@@ -6182,6 +6188,7 @@ export interface FileRoutesByFullPath {
   '/api/history/': typeof ApiHistoryIndexRoute
   '/api/kaikai-debt/': typeof ApiKaikaiDebtIndexRoute
   '/api/lists/': typeof ApiListsIndexRoute
+  '/api/memory/': typeof ApiMemoryIndexRoute
   '/api/moments/': typeof ApiMomentsIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
   '/api/onboarding/': typeof ApiOnboardingIndexRoute
@@ -7065,6 +7072,7 @@ export interface FileRoutesByTo {
   '/api/history': typeof ApiHistoryIndexRoute
   '/api/kaikai-debt': typeof ApiKaikaiDebtIndexRoute
   '/api/lists': typeof ApiListsIndexRoute
+  '/api/memory': typeof ApiMemoryIndexRoute
   '/api/moments': typeof ApiMomentsIndexRoute
   '/api/notifications': typeof ApiNotificationsIndexRoute
   '/api/onboarding': typeof ApiOnboardingIndexRoute
@@ -7976,6 +7984,7 @@ export interface FileRoutesById {
   '/api/history/': typeof ApiHistoryIndexRoute
   '/api/kaikai-debt/': typeof ApiKaikaiDebtIndexRoute
   '/api/lists/': typeof ApiListsIndexRoute
+  '/api/memory/': typeof ApiMemoryIndexRoute
   '/api/moments/': typeof ApiMomentsIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
   '/api/onboarding/': typeof ApiOnboardingIndexRoute
@@ -8887,6 +8896,7 @@ export interface FileRouteTypes {
     | '/api/history/'
     | '/api/kaikai-debt/'
     | '/api/lists/'
+    | '/api/memory/'
     | '/api/moments/'
     | '/api/notifications/'
     | '/api/onboarding/'
@@ -9770,6 +9780,7 @@ export interface FileRouteTypes {
     | '/api/history'
     | '/api/kaikai-debt'
     | '/api/lists'
+    | '/api/memory'
     | '/api/moments'
     | '/api/notifications'
     | '/api/onboarding'
@@ -10680,6 +10691,7 @@ export interface FileRouteTypes {
     | '/api/history/'
     | '/api/kaikai-debt/'
     | '/api/lists/'
+    | '/api/memory/'
     | '/api/moments/'
     | '/api/notifications/'
     | '/api/onboarding/'
@@ -11362,6 +11374,7 @@ export interface RootRouteChildren {
   ApiHistoryIndexRoute: typeof ApiHistoryIndexRoute
   ApiKaikaiDebtIndexRoute: typeof ApiKaikaiDebtIndexRoute
   ApiListsIndexRoute: typeof ApiListsIndexRoute
+  ApiMemoryIndexRoute: typeof ApiMemoryIndexRoute
   ApiMomentsIndexRoute: typeof ApiMomentsIndexRoute
   ApiNotificationsIndexRoute: typeof ApiNotificationsIndexRoute
   ApiOnboardingIndexRoute: typeof ApiOnboardingIndexRoute
@@ -14502,6 +14515,13 @@ declare module '@tanstack/react-router' {
       path: '/api/massive-march/campaigns'
       fullPath: '/api/massive-march/campaigns'
       preLoaderRoute: typeof ApiMassiveMarchCampaignsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/memory/': {
+      id: '/api/memory/'
+      path: '/api/memory'
+      fullPath: '/api/memory/'
+      preLoaderRoute: typeof ApiMemoryIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/messages/$conversationId': {
@@ -19951,6 +19971,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHistoryIndexRoute: ApiHistoryIndexRoute,
   ApiKaikaiDebtIndexRoute: ApiKaikaiDebtIndexRoute,
   ApiListsIndexRoute: ApiListsIndexRoute,
+  ApiMemoryIndexRoute: ApiMemoryIndexRoute,
   ApiMomentsIndexRoute: ApiMomentsIndexRoute,
   ApiNotificationsIndexRoute: ApiNotificationsIndexRoute,
   ApiOnboardingIndexRoute: ApiOnboardingIndexRoute,
