@@ -23,6 +23,10 @@ import { z } from 'zod';
 import { createSeededRng } from '@/lib/lights-out/seed';
 import { getDailyShape, isActiveCell, getShapeLabel } from '@/lib/lights-out/shapes';
 import { generatePuzzle, toggleCellInGrid, isSolved, type Grid } from '@/lib/lights-out/lights-out';
+import {
+  DAILY_PUZZLE_VERSION,
+  dailyPuzzleReplaySchema,
+} from '@/lib/daily-puzzles/replay-schema';
 
 /** A JSON-serializable value — replay payloads are stored as JSON and travel
  * through server-function loaders, so the element type must be serializable
@@ -37,11 +41,35 @@ export interface ReplayData {
   snapshots?: ReplayJsonValue[];
 }
 
+/**
+ * What kind of record a replay is, and therefore what it can be trusted for.
+ *
+ * - `deterministic` — the run can be re-derived from the log, so the stored
+ *   score is the server's own and may back a leaderboard or a speedrun.
+ * - `keyframe` — periodic snapshots of a run that cannot be re-simulated (float
+ *   physics, a networked match, wall-clock deltas). Watchable and shareable,
+ *   which is most of what a replay is for; **never** score-bearing.
+ *
+ * The distinction is the same one `lib/game/director.server.ts` draws for
+ * adaptive difficulty, for the same reason: a number nobody can re-derive is
+ * indistinguishable from a number somebody made up, and the moment it reaches a
+ * leaderboard the leaderboard stops meaning anything. Keeping the two kinds
+ * apart is what lets a game have replays without having to earn a verifier
+ * first.
+ */
+export type ReplayKind = 'deterministic' | 'keyframe';
+
 export interface ReplayableGame {
   /** Stable game key (matches `GameReplay.game`, ≤ 32 chars). */
   game: string;
   /** Logic version (≤ 16 chars). Bump on any change to re-simulation/scoring. */
   version: string;
+  /**
+   * Defaults to `'deterministic'`, which is the safe default: it means the
+   * registry expects a verifier, and `replayScoreIsTrusted` only says yes when
+   * one is actually there.
+   */
+  kind?: ReplayKind;
   /** Zod schema for this game's `data` payload. */
   schema: z.ZodTypeAny;
   /**
@@ -50,6 +78,46 @@ export interface ReplayableGame {
    * authoritative (the client-submitted score is not trusted).
    */
   verify?(data: unknown): { score: number } | null;
+  /**
+   * Set when the verifier lives in a server-only module rather than on this
+   * object, because it needs a database.
+   *
+   * This file is imported by the replay player and therefore by the client
+   * bundle, so it cannot reach Prisma. A game in that position declares the
+   * marker here and `lib/replays.server.ts` holds the function. The marker
+   * exists so `replayScoreIsTrusted` stays answerable on the client — without
+   * it, a genuinely verified game would look untrusted to every leaderboard
+   * that asked.
+   */
+  serverVerified?: true;
+  /**
+   * The same contract, for a game whose ground truth is a ROW rather than a
+   * seed.
+   *
+   * Lights Out rebuilds its board from a number, so a pure function is enough.
+   * A Daily Puzzle cannot: the puzzle was written by a model and stored in
+   * `DailyPuzzle`, so re-scoring means reading the row that holds the solution.
+   * Passing the puzzle IN with the replay would defeat the exercise — the
+   * client would be supplying both the answer and the working.
+   *
+   * `saveReplay` is already async, so awaiting this costs nothing. A game
+   * declares one or the other, never both.
+   */
+  verifyAsync?(data: unknown): Promise<{ score: number } | null>;
+}
+
+/**
+ * May this game's stored score be believed?
+ *
+ * The one question every leaderboard, speedrun and profile stat should ask
+ * before showing a replay's number. True only for a deterministic game that
+ * actually ships a verifier — a game that declares `deterministic` and forgets
+ * one is treated as untrusted rather than given the benefit of the doubt.
+ */
+export function replayScoreIsTrusted(def: ReplayableGame | undefined): boolean {
+  if (!def) return false;
+  if ((def.kind ?? 'deterministic') !== 'deterministic') return false;
+  return Boolean(def.verify || def.verifyAsync || def.serverVerified);
 }
 
 /** Hard cap on stored payload size (`JSON.stringify` byte length). */
@@ -272,6 +340,23 @@ export const replayableGames: Record<string, ReplayableGame> = {
     schema: sliceItSchema,
     verify: verifySliceIt,
   },
+  /**
+   * The five Daily Puzzle modes, as one game (P4).
+   *
+   * One entry rather than five because they share a storage shape, a version
+   * and a verifier; the mode is a field in the payload. Splitting them would
+   * mean five near-identical registrations and five places to bump a version.
+   *
+   * `serverVerified` because the solution is a `DailyPuzzle` row — see
+   * `lib/daily-puzzles/replay.server.ts` for why the client cannot be asked to
+   * supply it.
+   */
+  'daily-puzzle': {
+    game: 'daily-puzzle',
+    version: DAILY_PUZZLE_VERSION,
+    schema: dailyPuzzleReplaySchema,
+    serverVerified: true,
+  },
 };
 
 export function getReplayable(game: string): ReplayableGame | undefined {
@@ -285,4 +370,5 @@ export const REPLAYABLE_GAME_IDS = Object.keys(replayableGames);
 export const REPLAY_GAME_TITLES: Record<string, string> = {
   'lights-out': 'Lights Out',
   'slice-it': 'Slice It!',
+  'daily-puzzle': 'Daily Puzzles',
 };

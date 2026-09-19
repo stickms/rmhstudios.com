@@ -14,6 +14,7 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { getReplayable, REPLAY_SIZE_CAP, type ReplayData } from '@/lib/game/replay';
+import { verifyDailyPuzzle } from '@/lib/daily-puzzles/replay.server';
 import { userDisplaySelect, resolveUserDisplay } from '@/lib/user-display';
 
 /** Typed failure modes so API routes can map to precise HTTP statuses. */
@@ -28,6 +29,18 @@ export class ReplayError extends Error {
 }
 
 const MAX_DURATION_MS = 24 * 60 * 60 * 1000; // clamp obviously-bogus durations
+
+/**
+ * Verifiers for games whose ground truth needs a database.
+ *
+ * `lib/game/replay.ts` is imported by the replay player and so cannot reach
+ * Prisma; a game in that position sets `serverVerified: true` there and lands
+ * here. Keeping the map next to `saveReplay` rather than exporting a register()
+ * hook means there is exactly one file to read to find out what can verify.
+ */
+const SERVER_VERIFIERS: Record<string, (data: unknown) => Promise<{ score: number } | null>> = {
+  'daily-puzzle': verifyDailyPuzzle,
+};
 
 export interface SaveReplayInput {
   userId: string;
@@ -63,9 +76,21 @@ export async function saveReplay(input: SaveReplayInput): Promise<SavedReplay> {
 
   // Verified games: the re-simulated score is authoritative. Unverified games:
   // fall back to the (sanity-clamped) submitted score.
+  const asyncVerify = def.verifyAsync ?? (def.serverVerified ? SERVER_VERIFIERS[def.game] : undefined);
+  if (def.serverVerified && !asyncVerify) {
+    // A game that claims server-side verification and has no verifier would
+    // otherwise silently fall through to trusting the client — the exact
+    // outcome the claim exists to prevent. Refuse instead.
+    throw new ReplayError('UNKNOWN_GAME');
+  }
+
   let score: number | null = null;
   if (def.verify) {
     const result = def.verify(data);
+    if (!result) throw new ReplayError('VERIFY_FAILED');
+    score = result.score;
+  } else if (asyncVerify) {
+    const result = await asyncVerify(data);
     if (!result) throw new ReplayError('VERIFY_FAILED');
     score = result.score;
   } else if (typeof input.score === 'number' && Number.isFinite(input.score)) {
