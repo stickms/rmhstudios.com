@@ -124,19 +124,28 @@ export function GameAssistPanel() {
       </p>
 
       <div className="space-y-3">
+        {/* A `div`, not a `label`: Radix's Switch renders a `button`, which a
+            wrapping label does not associate with — the control is named by
+            `aria-labelledby` pointing at the text instead, which is what a
+            screen reader actually reads. */}
         {SWITCHES.map((s) => (
-          <label key={s.key} className="flex items-start justify-between gap-4">
+          <div key={s.key} className="flex items-start justify-between gap-4">
             <span>
-              <span className="block text-sm font-medium text-site-text">{s.label}</span>
-              <span className="block text-xs text-site-text-muted">{s.hint}</span>
+              <span id={`assist-${s.key}`} className="block text-sm font-medium text-site-text">
+                {s.label}
+              </span>
+              <span id={`assist-${s.key}-hint`} className="block text-xs text-site-text-muted">
+                {s.hint}
+              </span>
             </span>
             <Switch
               checked={Boolean(a[s.key])}
               disabled={saving}
               onCheckedChange={(next) => void save({ [s.key]: next })}
-              aria-label={s.label}
+              aria-labelledby={`assist-${s.key}`}
+              aria-describedby={`assist-${s.key}-hint`}
             />
-          </label>
+          </div>
         ))}
 
         <div>
