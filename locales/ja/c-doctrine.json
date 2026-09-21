@@ -1,6 +1,7 @@
 {
   "access-required": "{{tierName}}へのアクセスが必要です",
   "active": "アクティブ",
+  "attempt-count_one": "{{count}}回の試行",
   "attempt-count_other": "{{count}}回の試行",
   "attempts": "試行",
   "best-streak": "最高: {{longestStreak}}",
