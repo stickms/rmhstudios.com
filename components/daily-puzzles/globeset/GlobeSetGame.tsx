@@ -23,11 +23,20 @@
  * hand somebody a four-hour run for going to lunch.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, m as motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { Compass, Globe2, HelpCircle, LayoutGrid, Shapes, Swords, Sparkles } from 'lucide-react';
+import {
+  Box,
+  Compass,
+  Globe2,
+  HelpCircle,
+  LayoutGrid,
+  Shapes,
+  Swords,
+  Sparkles,
+} from 'lucide-react';
 import { formatDateKey, getTodayEST, getPuzzleNumber } from '@/lib/daily-puzzles/seed';
 import {
   fetchResultFromServer,
@@ -72,6 +81,15 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { PastPuzzlesSection } from '@/components/daily-puzzles/PastPuzzlesSection';
 import { GlobeSetBoard } from './GlobeSetBoard';
 import { GlobeSetGlobe } from './GlobeSetGlobe';
+import { arSupported } from '@/lib/globeset/xr';
+
+/**
+ * The room view carries three.js, so it is fetched when somebody asks for it
+ * and never as part of the page. Most players are on a device that cannot run
+ * it at all (`arSupported()` is false on every desktop and on all of iOS), and
+ * they should not pay for a renderer they will never be offered.
+ */
+const GlobeSetXr = lazy(() => import('./GlobeSetXr').then((m) => ({ default: m.GlobeSetXr })));
 import { GlobeSetHud } from './GlobeSetHud';
 import { GlobeSetResults } from './GlobeSetResults';
 import { GlobeSetRules } from './GlobeSetRules';
@@ -143,6 +161,9 @@ export function GlobeSetGame() {
   const [rulesOpen, setRulesOpen] = useState(false);
   const [shapes, setShapes] = useState(false);
   const [view, setView] = useState<CardView>('globe');
+  /** Whether this device can run an `immersive-ar` session, and whether it is. */
+  const [arAvailable, setArAvailable] = useState(false);
+  const [inRoom, setInRoom] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
   /**
    * Today's run, if it is already in the books.
@@ -207,6 +228,14 @@ export function GlobeSetGame() {
     setShapes(initialShapes());
     setView(initialView());
     setStats(loadStats());
+    // Permission-free and never throws; a false simply hides the control.
+    let cancelled = false;
+    void arSupported().then((ok) => {
+      if (!cancelled) setArAvailable(ok);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const toggleView = useCallback(() => {
@@ -642,6 +671,14 @@ export function GlobeSetGame() {
               {t('globeset-gyro', { defaultValue: 'Walk around it' })}
             </Button>
           )}
+          {/* Shown only where an immersive-ar session can actually start, so
+              it is never a button that fails on press. */}
+          {view === 'globe' && arAvailable && !summary && (
+            <Button type="button" variant="ghost" size="sm" onClick={() => setInRoom(true)}>
+              <Box className="h-4 w-4" aria-hidden />
+              {t('globeset-ar-enter', { defaultValue: 'View in your room' })}
+            </Button>
+          )}
           <Button
             type="button"
             variant={shapes ? 'accent-outline' : 'ghost'}
@@ -745,6 +782,22 @@ export function GlobeSetGame() {
             onSelectDate={setDateKey}
           />
         </>
+      )}
+
+      {inRoom && (
+        <Suspense fallback={null}>
+          <GlobeSetXr
+            board={run.board}
+            selected={selected}
+            hinted={hinted}
+            shapes={shapes}
+            elapsedSeconds={Math.round(elapsedMs / 1000)}
+            cardsLeft={cardsRemaining(run)}
+            sets={run.found.length}
+            onToggle={toggle}
+            onExit={() => setInRoom(false)}
+          />
+        </Suspense>
       )}
 
       <GlobeSetRules open={rulesOpen} onOpenChange={setRulesOpen} />

@@ -124,6 +124,18 @@ export function GlobeSetRules({
 
           <section>
             <h3 className="font-semibold">
+              {t('globeset-rules-ar-title', { defaultValue: 'Put it in your room' })}
+            </h3>
+            <p className="mt-1 text-site-text-muted">
+              {t('globeset-rules-ar-body', {
+                defaultValue:
+                  'Where the device supports it, "View in your room" opens a camera view, lets you set the globe down on a real surface and leaves it there. Unlike the tilt option this one tracks where you ARE, not just which way you are pointing — lean in and it holds still, walk round the back of it and you see the back of it. Tap a card to pick it, exactly as on the page.',
+              })}
+            </p>
+          </section>
+
+          <section>
+            <h3 className="font-semibold">
               {t('globeset-rules-keys-title', { defaultValue: 'Keyboard' })}
             </h3>
             <p className="mt-1 text-site-text-muted">
