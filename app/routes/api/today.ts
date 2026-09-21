@@ -6,11 +6,19 @@ import { QUESTS, dailyKey } from '@/lib/quests/catalog';
 
 /**
  * GET /api/today — the signed-in user's daily loop at a glance: check-in
- * streak (+ freezes), wheel spin, the six daily puzzles, and daily quests.
+ * streak (+ freezes), wheel spin, the seven daily puzzles, and daily quests.
  * Powers the "Today" widget so the scattered daily surfaces read as one loop.
  */
 
-const PUZZLE_MODES = ['lights-out', 'alibi', 'spectrum', 'outcast', 'chainlink', 'impostor'];
+const PUZZLE_MODES = [
+  'lights-out',
+  'alibi',
+  'spectrum',
+  'outcast',
+  'chainlink',
+  'impostor',
+  'globeset',
+];
 
 export const Route = createFileRoute('/api/today')({
   server: {

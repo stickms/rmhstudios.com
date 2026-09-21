@@ -1,0 +1,28 @@
+-- GlobeSet joins the daily puzzle suite as a TIME-ranked mode: lower
+-- `timeSeconds` wins, so it needs its own ascending index alongside the
+-- existing score-desc and moves-asc ones. Without it the leaderboard query
+-- (`WHERE gameMode = … AND dateKey = … ORDER BY timeSeconds ASC`) has no
+-- ordered path and falls back to a scan of every score ever recorded.
+--
+-- Plain CREATE INDEX rather than CONCURRENTLY, for the reason
+-- `20260716000000_add_rmhark_feed_partial_index` gives: `prisma migrate deploy`
+-- applies each migration inside a transaction, and CONCURRENTLY cannot run in
+-- one. The lock this takes is bounded by how big the table actually is —
+-- `daily_puzzle_score` holds at most one row per (user, mode, day), so it grows
+-- with players × days rather than with plays, and it is two orders of magnitude
+-- smaller than the tables this rule exists to protect. If it is ever large
+-- enough to matter, build it by hand with
+--
+--   CREATE INDEX CONCURRENTLY "daily_puzzle_score_gameMode_dateKey_timeSeconds_idx"
+--     ON "daily_puzzle_score" ("gameMode", "dateKey", "timeSeconds" ASC);
+--
+-- and then `prisma migrate resolve --applied 20260920100000_globeset_daily_puzzle`.
+-- `IF NOT EXISTS` is what makes that escape hatch safe: the migration becomes a
+-- no-op rather than a failure that blocks every later one.
+--
+-- migration-safety: acknowledged[create-index-not-concurrent] one row per user
+-- per mode per day, and a documented CONCURRENTLY path above if it ever grows
+-- past what a brief share lock can cover.
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "daily_puzzle_score_gameMode_dateKey_timeSeconds_idx"
+  ON "daily_puzzle_score" ("gameMode", "dateKey", "timeSeconds" ASC);
