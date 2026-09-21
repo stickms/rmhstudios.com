@@ -1,0 +1,20 @@
+{
+  "aiBudget": "Has agotado la asignación de IA de este mes",
+  "aiUnavailable": "Las funciones de IA están fuera de línea",
+  "conflict": "Alguien más cambió esto primero",
+  "coolOff": "Te estás tomando un descanso de apostar monedas",
+  "forbidden": "No tienes acceso a esto",
+  "gone": "Eso ha expirado",
+  "insufficientCoins": "No tienes suficientes monedas",
+  "internal": "Algo salió mal de nuestro lado",
+  "invalidInput": "Revisa el formulario e inténtalo de nuevo",
+  "notFound": "Eso no existe (o fue eliminado)",
+  "queryBudget": "Esa solicitud era demasiado costosa de atender",
+  "quotaExceeded": "Te quedaste sin almacenamiento",
+  "rateLimited": "Ve más despacio por un momento",
+  "selfExcluded": "Te has excluido de apostar monedas",
+  "stakeLimit": "Has alcanzado el límite que estableciste",
+  "storageUnavailable": "Las subidas no están disponibles temporalmente",
+  "unauthorized": "Inicia sesión para continuar",
+  "upgradeRequired": "Esta función requiere una membresía"
+}

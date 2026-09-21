@@ -1,0 +1,20 @@
+{
+  "aiBudget": "Hai esaurito la quota AI di questo mese",
+  "aiUnavailable": "Le funzionalità AI sono offline",
+  "conflict": "Qualcun altro ha modificato questo elemento prima",
+  "coolOff": "Ti stai prendendo una pausa dallo staking di monete",
+  "forbidden": "Non hai accesso a questo",
+  "gone": "Questo è scaduto",
+  "insufficientCoins": "Non hai abbastanza monete",
+  "internal": "Qualcosa è andato storto dalla nostra parte",
+  "invalidInput": "Controlla il modulo e riprova",
+  "notFound": "Questo non esiste (o è stato rimosso)",
+  "queryBudget": "Quella richiesta era troppo costosa da servire",
+  "quotaExceeded": "Hai esaurito lo spazio di archiviazione",
+  "rateLimited": "Rallenta un momento",
+  "selfExcluded": "Ti sei escluso dallo staking di monete",
+  "stakeLimit": "Hai raggiunto il limite che avevi impostato",
+  "storageUnavailable": "I caricamenti sono temporaneamente non disponibili",
+  "unauthorized": "Accedi per continuare",
+  "upgradeRequired": "Questa funzionalità richiede un abbonamento"
+}
