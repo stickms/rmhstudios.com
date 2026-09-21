@@ -141,6 +141,7 @@ import { Route as BlogRssDotxmlRouteImport } from './routes/blog.rss[.]xml'
 import { Route as DailyIndexRouteImport } from './routes/daily/index'
 import { Route as DailyAlibiRouteImport } from './routes/daily/alibi'
 import { Route as DailyChainlinkRouteImport } from './routes/daily/chainlink'
+import { Route as DailyGlobesetRouteImport } from './routes/daily/globeset'
 import { Route as DailyImpostorRouteImport } from './routes/daily/impostor'
 import { Route as DailyLightsOutRouteImport } from './routes/daily/lights-out'
 import { Route as DailyOutcastRouteImport } from './routes/daily/outcast'
@@ -1580,6 +1581,11 @@ const DailyAlibiRoute = DailyAlibiRouteImport.update({
 const DailyChainlinkRoute = DailyChainlinkRouteImport.update({
   id: '/chainlink',
   path: '/chainlink',
+  getParentRoute: () => DailyRoute,
+} as any)
+const DailyGlobesetRoute = DailyGlobesetRouteImport.update({
+  id: '/globeset',
+  path: '/globeset',
   getParentRoute: () => DailyRoute,
 } as any)
 const DailyImpostorRoute = DailyImpostorRouteImport.update({
@@ -5740,6 +5746,7 @@ export interface FileRoutesByFullPath {
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/daily/alibi': typeof DailyAlibiRoute
   '/daily/chainlink': typeof DailyChainlinkRoute
+  '/daily/globeset': typeof DailyGlobesetRoute
   '/daily/impostor': typeof DailyImpostorRoute
   '/daily/lights-out': typeof DailyLightsOutRoute
   '/daily/outcast': typeof DailyOutcastRoute
@@ -6626,6 +6633,7 @@ export interface FileRoutesByTo {
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/daily/alibi': typeof DailyAlibiRoute
   '/daily/chainlink': typeof DailyChainlinkRoute
+  '/daily/globeset': typeof DailyGlobesetRoute
   '/daily/impostor': typeof DailyImpostorRoute
   '/daily/lights-out': typeof DailyLightsOutRoute
   '/daily/outcast': typeof DailyOutcastRoute
@@ -7539,6 +7547,7 @@ export interface FileRoutesById {
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/daily/alibi': typeof DailyAlibiRoute
   '/daily/chainlink': typeof DailyChainlinkRoute
+  '/daily/globeset': typeof DailyGlobesetRoute
   '/daily/impostor': typeof DailyImpostorRoute
   '/daily/lights-out': typeof DailyLightsOutRoute
   '/daily/outcast': typeof DailyOutcastRoute
@@ -8454,6 +8463,7 @@ export interface FileRouteTypes {
     | '/blog/rss.xml'
     | '/daily/alibi'
     | '/daily/chainlink'
+    | '/daily/globeset'
     | '/daily/impostor'
     | '/daily/lights-out'
     | '/daily/outcast'
@@ -9340,6 +9350,7 @@ export interface FileRouteTypes {
     | '/blog/rss.xml'
     | '/daily/alibi'
     | '/daily/chainlink'
+    | '/daily/globeset'
     | '/daily/impostor'
     | '/daily/lights-out'
     | '/daily/outcast'
@@ -10252,6 +10263,7 @@ export interface FileRouteTypes {
     | '/blog/rss.xml'
     | '/daily/alibi'
     | '/daily/chainlink'
+    | '/daily/globeset'
     | '/daily/impostor'
     | '/daily/lights-out'
     | '/daily/outcast'
@@ -12497,6 +12509,13 @@ declare module '@tanstack/react-router' {
       path: '/chainlink'
       fullPath: '/daily/chainlink'
       preLoaderRoute: typeof DailyChainlinkRouteImport
+      parentRoute: typeof DailyRoute
+    }
+    '/daily/globeset': {
+      id: '/daily/globeset'
+      path: '/globeset'
+      fullPath: '/daily/globeset'
+      preLoaderRoute: typeof DailyGlobesetRouteImport
       parentRoute: typeof DailyRoute
     }
     '/daily/impostor': {
@@ -18350,6 +18369,7 @@ const AltairRouteWithChildren =
 interface DailyRouteChildren {
   DailyAlibiRoute: typeof DailyAlibiRoute
   DailyChainlinkRoute: typeof DailyChainlinkRoute
+  DailyGlobesetRoute: typeof DailyGlobesetRoute
   DailyImpostorRoute: typeof DailyImpostorRoute
   DailyLightsOutRoute: typeof DailyLightsOutRoute
   DailyOutcastRoute: typeof DailyOutcastRoute
@@ -18360,6 +18380,7 @@ interface DailyRouteChildren {
 const DailyRouteChildren: DailyRouteChildren = {
   DailyAlibiRoute: DailyAlibiRoute,
   DailyChainlinkRoute: DailyChainlinkRoute,
+  DailyGlobesetRoute: DailyGlobesetRoute,
   DailyImpostorRoute: DailyImpostorRoute,
   DailyLightsOutRoute: DailyLightsOutRoute,
   DailyOutcastRoute: DailyOutcastRoute,

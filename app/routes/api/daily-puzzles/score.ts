@@ -4,7 +4,15 @@ import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
 import { recordGamePlay } from '@/lib/quests/engine.server';
 
-const VALID_MODES = ['lights-out', 'alibi', 'spectrum', 'outcast', 'chainlink', 'impostor'];
+const VALID_MODES = [
+  'lights-out',
+  'alibi',
+  'spectrum',
+  'outcast',
+  'chainlink',
+  'impostor',
+  'globeset',
+];
 
 export const Route = createFileRoute('/api/daily-puzzles/score')({
   server: {
@@ -33,6 +41,7 @@ export const Route = createFileRoute('/api/daily-puzzles/score')({
             }
 
             const isLightsOut = gameMode === 'lights-out';
+            const isGlobeSet = gameMode === 'globeset';
 
             // Optional fields shared across all modes
             const resultJson = body.resultJson ?? undefined;
@@ -103,6 +112,85 @@ export const Route = createFileRoute('/api/daily-puzzles/score')({
                   dnf,
                   resultJson,
                   timeSeconds,
+                },
+              });
+              return Response.json({ success: true, created: true });
+            }
+
+            if (isGlobeSet) {
+              // GlobeSet: time-based scoring — lower timeSeconds wins. `score` still
+              // rides along (0-999) but only feeds the hub's "points today" total,
+              // never the ranking, so it's validated the same way and nothing more.
+              const dnf = body.dnf === true;
+              const runSeconds =
+                typeof body.timeSeconds === 'number'
+                  ? body.timeSeconds
+                  : parseInt(body.timeSeconds, 10);
+              const hintUsed = body.hintUsed === true;
+              const score = typeof body.score === 'number' ? body.score : parseInt(body.score, 10);
+
+              if (!Number.isInteger(runSeconds) || runSeconds <= 0 || runSeconds > 10800) {
+                return Response.json({ error: 'Invalid timeSeconds' }, { status: 400 });
+              }
+
+              if (Number.isNaN(score) || score < 0 || score > 999) {
+                return Response.json({ error: 'Invalid score' }, { status: 400 });
+              }
+
+              await recordGamePlay(session.user.id);
+
+              const existing = await prisma.dailyPuzzleScore.findUnique({
+                where: {
+                  userId_gameMode_dateKey: {
+                    userId: session.user.id,
+                    gameMode,
+                    dateKey,
+                  },
+                },
+              });
+
+              if (existing) {
+                if (dnf) {
+                  // A DNF (auto-solver used) submission never overwrites a row
+                  // that already exists, dnf or not: the leaderboard has to be
+                  // able to trust that a non-dnf row was really solved, and a
+                  // second give-up says nothing a first one did not.
+                  return Response.json({ success: true, improved: false });
+                }
+                if (existing.dnf) {
+                  await prisma.dailyPuzzleScore.update({
+                    where: { id: existing.id },
+                    data: { timeSeconds: runSeconds, score, hintUsed, dnf: false, resultJson },
+                  });
+                  return Response.json({ success: true, improved: true });
+                }
+                if (runSeconds >= (existing.timeSeconds ?? Infinity)) {
+                  // Still update resultJson even if the time didn't improve
+                  if (resultJson && !existing.resultJson) {
+                    await prisma.dailyPuzzleScore.update({
+                      where: { id: existing.id },
+                      data: { resultJson },
+                    });
+                  }
+                  return Response.json({ success: true, improved: false });
+                }
+                await prisma.dailyPuzzleScore.update({
+                  where: { id: existing.id },
+                  data: { timeSeconds: runSeconds, score, hintUsed, resultJson },
+                });
+                return Response.json({ success: true, improved: true });
+              }
+
+              await prisma.dailyPuzzleScore.create({
+                data: {
+                  userId: session.user.id,
+                  gameMode,
+                  dateKey,
+                  timeSeconds: runSeconds,
+                  score,
+                  hintUsed,
+                  dnf,
+                  resultJson,
                 },
               });
               return Response.json({ success: true, created: true });

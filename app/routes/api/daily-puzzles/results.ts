@@ -3,7 +3,15 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
 
-const VALID_MODES = ['lights-out', 'alibi', 'spectrum', 'outcast', 'chainlink', 'impostor'];
+const VALID_MODES = [
+  'lights-out',
+  'alibi',
+  'spectrum',
+  'outcast',
+  'chainlink',
+  'impostor',
+  'globeset',
+];
 
 export const Route = createFileRoute('/api/daily-puzzles/results')({
   server: {

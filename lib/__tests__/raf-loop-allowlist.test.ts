@@ -157,6 +157,17 @@ const ALLOW = new Set<string>([
   // where the frame outlives the screen.
   'components/bums-rush/useLevelSession.ts',
   'components/cursed-logic/MinigameOverlay.tsx',
+  // GlobeSet's globe: the seven cards of the daily deal pinned to a sphere you
+  // turn. Idle-at-rest, which is the standard this has to meet because /daily
+  // is a game surface a player leaves open. A frame is scheduled only while a
+  // finger is down, while the release is still coasting (the coast decays to a
+  // hard REST_DEG_PER_S floor, then stops), while a focused card is gliding to
+  // the front (which converges and clears its own target), or while the
+  // gyroscope is live — and the sensor's own loop is the one in
+  // `useDeviceAttitude`, already listed below. The effect that starts it
+  // returns a teardown whose first statement is `cancelAnimationFrame`, so
+  // switching to the flat board or leaving the page ends it.
+  'components/daily-puzzles/globeset/GlobeSetGlobe.tsx',
   'components/dream-rift/MenuBackdrop.tsx',
   // One-shot, not a loop: a single deferred frame that restores the caret after
   // a smart-paste rewrites the textarea value (B16). It schedules no successor,

@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 278 routes. 144 render inside the standard site shell (sidebar, nav, context rail); 134 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 279 routes. 144 render inside the standard site shell (sidebar, nav, context rail); 135 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -187,6 +187,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/daily` | Daily Puzzles — a new set every day | public | `app/routes/daily/index.tsx` |
 | `/daily/alibi` | — | public | `app/routes/daily/alibi.tsx` |
 | `/daily/chainlink` | — | public | `app/routes/daily/chainlink.tsx` |
+| `/daily/globeset` | GlobeSet — the daily globe puzzle | public | `app/routes/daily/globeset.tsx` |
 | `/daily/impostor` | — | public | `app/routes/daily/impostor.tsx` |
 | `/daily/lights-out` | — | public | `app/routes/daily/lights-out.tsx` |
 | `/daily/outcast` | — | public | `app/routes/daily/outcast.tsx` |

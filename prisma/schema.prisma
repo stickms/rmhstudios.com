@@ -724,14 +724,14 @@ model LaundryPlayer {
 model DailyPuzzleScore {
   id          String   @id @default(cuid())
   userId      String
-  gameMode    String // lights-out | alibi | spectrum | outcast | chainlink | impostor
+  gameMode    String // lights-out | alibi | spectrum | outcast | chainlink | impostor | globeset
   dateKey     String // YYYY-MM-DD
   score       Int      @default(0) // points (higher = better) for most games
   moves       Int? // lights-out: move count (lower = better)
   hintUsed    Boolean? @default(false) // lights-out: whether hints were used
-  dnf         Boolean? @default(false) // lights-out: did not finish
+  dnf         Boolean? @default(false) // lights-out: did not finish; globeset: auto-solver used
   resultJson  Json? // game-specific result data
-  timeSeconds Int? // time taken (for timed games)
+  timeSeconds Int? // time taken (for timed games); globeset: rank axis, lower is better
   createdAt   DateTime @default(now()) @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -739,6 +739,8 @@ model DailyPuzzleScore {
   @@unique([userId, gameMode, dateKey])
   @@index([gameMode, dateKey, score(sort: Desc)])
   @@index([gameMode, dateKey, moves(sort: Asc)])
+  // globeset ranks by time (lower = better), same shape as the moves index above.
+  @@index([gameMode, dateKey, timeSeconds(sort: Asc)])
   @@map("daily_puzzle_score")
 }
 

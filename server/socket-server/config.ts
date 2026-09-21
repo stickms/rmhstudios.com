@@ -302,6 +302,22 @@ export const config = {
     'rfs:move': { max: 2400, windowMs: 60_000 },
     'ndw:playerUpdate': { max: 3600, windowMs: 60_000 },
     'ndw:scoreUpdate': { max: 1200, windowMs: 60_000 },
+    // GlobeSet. Lobby/lifecycle events are the same small, deliberate budget
+    // every other lobby game gets. `globeset:submit` is the hot path — a
+    // player submits ~20 times over a race plus misses, so it gets a
+    // generous ceiling rather than the lobby-control budget.
+    'globeset:create': { max: 10, windowMs: 60_000 },
+    'globeset:join': { max: 30, windowMs: 60_000 },
+    'globeset:quickplay': { max: 20, windowMs: 60_000 },
+    'globeset:browse': { max: 30, windowMs: 60_000 },
+    'globeset:leave': { max: 30, windowMs: 60_000 },
+    'globeset:ready': { max: 60, windowMs: 60_000 },
+    'globeset:settings': { max: 60, windowMs: 60_000 },
+    'globeset:start': { max: 20, windowMs: 60_000 },
+    'globeset:rematch': { max: 30, windowMs: 60_000 },
+    'globeset:ticket': { max: 20, windowMs: 60_000 },
+    'globeset:submit': { max: 400, windowMs: 60_000 },
+    'globeset:forfeit': { max: 10, windowMs: 60_000 },
   } as Record<string, { max: number; windowMs: number }>,
 
   // ─── Shutdown ───

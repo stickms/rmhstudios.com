@@ -375,6 +375,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/daily/impostor': 'duplicate',
   '/daily/lights-out': 'duplicate',
   '/daily/outcast': 'duplicate',
+  '/daily/globeset': 'duplicate',
   '/daily/spectrum': 'duplicate',
   '/forest-explorer/explore': 'duplicate',
   '/forest-explorer/story': 'duplicate',
