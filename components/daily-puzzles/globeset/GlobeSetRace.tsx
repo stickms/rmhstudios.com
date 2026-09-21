@@ -554,9 +554,33 @@ function RaceBoard({ shapes, view, attitudeRef, gyroActive }: Omit<GlobeSetRaceP
 
 /* ── After ─────────────────────────────────────────────────────────────────── */
 
+interface VersusRecord {
+  racesPlayed: number;
+  racesWon: number;
+  bestRaceMs: number | null;
+  setsFound: number;
+}
+
 function RaceResults() {
   const { t } = useTranslation('c-daily-puzzles');
   const results = useGlobeSetRaceStore((s) => s.results)!;
+  const [record, setRecord] = useState<VersusRecord | null>(null);
+
+  // The hub writes the record as the results go out, so this is read once the
+  // standings are already on screen rather than raced against them. A failure
+  // is silent: the standings are the result, and the career line is a bonus.
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/globeset/record')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.record) setRecord(data.record as VersusRecord);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const selfId = useGlobeSetRaceStore((s) => s.selfId);
   const lobby = useGlobeSetRaceStore((s) => s.lobby);
   const isHost = lobby?.players.find((p) => p.socketId === selfId)?.isHost ?? false;
@@ -592,6 +616,25 @@ function RaceResults() {
           </li>
         ))}
       </ol>
+      {record && record.racesPlayed > 0 && (
+        <dl className="glass-fill mt-4 grid grid-cols-3 gap-3 rounded-site p-3 text-center">
+          <RecordFigure
+            label={t('globeset-record-races', { defaultValue: 'Races' })}
+            value={String(record.racesPlayed)}
+          />
+          <RecordFigure
+            label={t('globeset-record-wins', { defaultValue: 'Wins' })}
+            value={String(record.racesWon)}
+          />
+          <RecordFigure
+            label={t('globeset-record-best', { defaultValue: 'Best race' })}
+            value={
+              record.bestRaceMs == null ? '—' : formatDuration(Math.round(record.bestRaceMs / 1000))
+            }
+          />
+        </dl>
+      )}
+
       <div className="mt-5 flex flex-wrap gap-2">
         {isHost && (
           <Button type="button" onClick={() => rematch()}>
@@ -603,5 +646,16 @@ function RaceResults() {
         </Button>
       </div>
     </Panel>
+  );
+}
+
+function RecordFigure({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-[0.6rem] font-medium uppercase tracking-wide text-site-text-muted">
+        {label}
+      </dt>
+      <dd className="mt-0.5 font-mono text-base font-bold tabular-nums text-site-text">{value}</dd>
+    </div>
   );
 }

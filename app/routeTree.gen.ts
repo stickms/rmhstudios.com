@@ -397,6 +397,7 @@ import { Route as ApiGabrielsHornHouseRuleRouteImport } from './routes/api/gabri
 import { Route as ApiGabrielsHornLeaderboardRouteImport } from './routes/api/gabriels-horn/leaderboard'
 import { Route as ApiGameSavesGameIdRouteImport } from './routes/api/game-saves/$gameId'
 import { Route as ApiGifSearchRouteImport } from './routes/api/gif/search'
+import { Route as ApiGlobesetRecordRouteImport } from './routes/api/globeset/record'
 import { Route as ApiGroupChatsIndexRouteImport } from './routes/api/group-chats/index'
 import { Route as ApiGuidesIndexRouteImport } from './routes/api/guides/index'
 import { Route as ApiGuidesIdRouteImport } from './routes/api/guides/$id'
@@ -2874,6 +2875,11 @@ const ApiGameSavesGameIdRoute = ApiGameSavesGameIdRouteImport.update({
 const ApiGifSearchRoute = ApiGifSearchRouteImport.update({
   id: '/api/gif/search',
   path: '/api/gif/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGlobesetRecordRoute = ApiGlobesetRecordRouteImport.update({
+  id: '/api/globeset/record',
+  path: '/api/globeset/record',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGroupChatsIndexRoute = ApiGroupChatsIndexRouteImport.update({
@@ -5966,6 +5972,7 @@ export interface FileRoutesByFullPath {
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
   '/api/gif/search': typeof ApiGifSearchRoute
+  '/api/globeset/record': typeof ApiGlobesetRecordRoute
   '/api/guides/$id': typeof ApiGuidesIdRouteWithChildren
   '/api/handle/check': typeof ApiHandleCheckRoute
   '/api/handles/change': typeof ApiHandlesChangeRoute
@@ -6853,6 +6860,7 @@ export interface FileRoutesByTo {
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
   '/api/gif/search': typeof ApiGifSearchRoute
+  '/api/globeset/record': typeof ApiGlobesetRecordRoute
   '/api/guides/$id': typeof ApiGuidesIdRouteWithChildren
   '/api/handle/check': typeof ApiHandleCheckRoute
   '/api/handles/change': typeof ApiHandlesChangeRoute
@@ -7768,6 +7776,7 @@ export interface FileRoutesById {
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
   '/api/gif/search': typeof ApiGifSearchRoute
+  '/api/globeset/record': typeof ApiGlobesetRecordRoute
   '/api/guides/$id': typeof ApiGuidesIdRouteWithChildren
   '/api/handle/check': typeof ApiHandleCheckRoute
   '/api/handles/change': typeof ApiHandlesChangeRoute
@@ -8683,6 +8692,7 @@ export interface FileRouteTypes {
     | '/api/gabriels-horn/leaderboard'
     | '/api/game-saves/$gameId'
     | '/api/gif/search'
+    | '/api/globeset/record'
     | '/api/guides/$id'
     | '/api/handle/check'
     | '/api/handles/change'
@@ -9570,6 +9580,7 @@ export interface FileRouteTypes {
     | '/api/gabriels-horn/leaderboard'
     | '/api/game-saves/$gameId'
     | '/api/gif/search'
+    | '/api/globeset/record'
     | '/api/guides/$id'
     | '/api/handle/check'
     | '/api/handles/change'
@@ -10484,6 +10495,7 @@ export interface FileRouteTypes {
     | '/api/gabriels-horn/leaderboard'
     | '/api/game-saves/$gameId'
     | '/api/gif/search'
+    | '/api/globeset/record'
     | '/api/guides/$id'
     | '/api/handle/check'
     | '/api/handles/change'
@@ -11230,6 +11242,7 @@ export interface RootRouteChildren {
   ApiGabrielsHornLeaderboardRoute: typeof ApiGabrielsHornLeaderboardRoute
   ApiGameSavesGameIdRoute: typeof ApiGameSavesGameIdRoute
   ApiGifSearchRoute: typeof ApiGifSearchRoute
+  ApiGlobesetRecordRoute: typeof ApiGlobesetRecordRoute
   ApiGuidesIdRoute: typeof ApiGuidesIdRouteWithChildren
   ApiHandleCheckRoute: typeof ApiHandleCheckRoute
   ApiHandlesChangeRoute: typeof ApiHandlesChangeRoute
@@ -14301,6 +14314,13 @@ declare module '@tanstack/react-router' {
       path: '/api/gif/search'
       fullPath: '/api/gif/search'
       preLoaderRoute: typeof ApiGifSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/globeset/record': {
+      id: '/api/globeset/record'
+      path: '/api/globeset/record'
+      fullPath: '/api/globeset/record'
+      preLoaderRoute: typeof ApiGlobesetRecordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/group-chats/': {
@@ -19852,6 +19872,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGabrielsHornLeaderboardRoute: ApiGabrielsHornLeaderboardRoute,
   ApiGameSavesGameIdRoute: ApiGameSavesGameIdRoute,
   ApiGifSearchRoute: ApiGifSearchRoute,
+  ApiGlobesetRecordRoute: ApiGlobesetRecordRoute,
   ApiGuidesIdRoute: ApiGuidesIdRouteWithChildren,
   ApiHandleCheckRoute: ApiHandleCheckRoute,
   ApiHandlesChangeRoute: ApiHandlesChangeRoute,

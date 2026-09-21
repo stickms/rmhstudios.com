@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { resolveUserDisplay } from '@/lib/user-display';
+import { resolveUserDisplay, userDisplaySelect } from '@/lib/user-display';
 
 const VALID_MODES = [
   'lights-out',
@@ -75,14 +75,11 @@ export const Route = createFileRoute('/api/daily-puzzles/leaderboard')({
                 dnf: true,
                 timeSeconds: true,
                 createdAt: true,
-                user: {
-                  select: {
-                    name: true,
-                    username: true,
-                    image: true,
-                    profile: { select: { displayName: true, customImage: true } },
-                  },
-                },
+                // The shared select, not a hand-written one: a bespoke list
+                // drops the cosmetics joins, so this board would render a
+                // different version of the same person than every other
+                // surface does.
+                user: { select: userDisplaySelect },
               },
             });
 

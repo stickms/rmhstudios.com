@@ -14,7 +14,7 @@
  * rooms for broadcast, soft hub auth read off `socket.data`, per-event rate
  * limits declared in `config.ts`, a batched standings tick instead of one
  * broadcast per submission, and a fire-and-forget result write on finish —
- * except GlobeSet has nowhere to write to; see {@link logRaceResults}.
+ * and the versus record it writes on results; see {@link persistRaceResults}.
  *
  * **No reconnect grace window.** Laundry Sort's versus mode is signed-in
  * only and still drops a seat on disconnect with no grace; GlobeSet is
@@ -32,6 +32,7 @@ import type { Server, Socket } from 'socket.io';
 import { generateRoomCode, sanitizeUserName } from '../utils';
 import { checkRateLimit } from '../rate-limit';
 import { logger } from '../logger';
+import { getPrismaClient } from '../prisma-client';
 import { bindEvents, type Handlers } from '../../shared/typed-socket';
 import {
   registerPartyGame,
@@ -525,25 +526,30 @@ function finishRound(io: Server, lobby: Lobby): void {
 
   const standings = buildResults(lobby);
   io.to(roomName(lobby.code)).emit(S2C.RESULTS, { standings });
-  logRaceResults(lobby, standings);
+  void persistRaceResults(lobby, standings);
   broadcastLobby(io, lobby);
 }
 
 /**
- * Race results have nowhere to persist to.
+ * Fold a finished race into each signed-in racer's versus record.
  *
- * `prisma/schema.prisma` has no `GlobeSetPlayer`/`GlobeSetRaceMatch` table the
- * way Laundry Sort's versus mode writes to `LaundryPlayer` — the closest
- * existing model, `DailyPuzzleScore`, is keyed `(userId, gameMode,
- * dateKey)` for the SOLO daily puzzle (one row per player per day) and
- * would either collide across same-day races or misrepresent a multiplayer
- * result as that day's daily-puzzle score. Adding a table is a schema
- * change (a migration; see `lib/CLAUDE.md`'s new-table PK policy) outside
- * this handler's remit, so results are logged and otherwise dropped until
- * one exists — never blocking the results screen, same as every other
- * write on this path would be.
+ * Fire-and-forget, and deliberately AFTER the results have already been
+ * emitted: the scoreboard is the thing the room is waiting for, and a database
+ * that is slow or down must not hold it up or lose it. Every failure is
+ * swallowed with a log line, per player, so one bad row cannot cost the rest
+ * theirs.
+ *
+ * **Anonymous racers are skipped.** A guest's id is `guest:<socketId>`, which
+ * dies with the connection — a row keyed on it could never be read back by the
+ * person who earned it and would accumulate forever. They still race, still
+ * appear in the standings and still win; there is simply nowhere durable to
+ * write it, and inventing a row would be worse than not having one.
+ *
+ * `bestRaceMs` only moves on a real finish. A forfeit and a timeout both leave
+ * it alone, for the same reason the daily leaderboard ranks a solved-out run
+ * last: a result that was not earned should not be able to set a record.
  */
-function logRaceResults(lobby: Lobby, standings: FinalStanding[]): void {
+async function persistRaceResults(lobby: Lobby, standings: FinalStanding[]): Promise<void> {
   logger.info({
     event: 'globeset_race_finished',
     code: lobby.code,
@@ -552,6 +558,70 @@ function logRaceResults(lobby: Lobby, standings: FinalStanding[]): void {
     players: standings.length,
     finishers: standings.filter((s) => s.timeMs !== null).length,
   });
+
+  const ranked = standings.filter((s) => s.userId && !s.userId.startsWith('guest:'));
+  if (ranked.length === 0) return;
+
+  let prisma: ReturnType<typeof getPrismaClient>;
+  try {
+    prisma = getPrismaClient();
+  } catch (error) {
+    logger.error({
+      event: 'globeset_race_persist_unavailable',
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return;
+  }
+
+  await Promise.all(
+    ranked.map(async (row) => {
+      const finished = row.timeMs !== null && !row.forfeited;
+      try {
+        // One upsert per player: each touches a distinct `userId`, none reads
+        // another's row, so they are independent and go in parallel.
+        const existing = await prisma.globeSetPlayer.findUnique({
+          where: { userId: row.userId },
+          select: { id: true, bestRaceMs: true },
+        });
+        const best =
+          finished && row.timeMs !== null
+            ? Math.min(row.timeMs, existing?.bestRaceMs ?? Number.MAX_SAFE_INTEGER)
+            : (existing?.bestRaceMs ?? null);
+
+        if (existing) {
+          await prisma.globeSetPlayer.update({
+            where: { id: existing.id },
+            data: {
+              racesPlayed: { increment: 1 },
+              racesWon: { increment: row.placement === 1 && finished ? 1 : 0 },
+              setsFound: { increment: row.globeSets },
+              bestRaceMs: best,
+            },
+          });
+          return;
+        }
+
+        await prisma.globeSetPlayer.create({
+          data: {
+            userId: row.userId,
+            racesPlayed: 1,
+            racesWon: row.placement === 1 && finished ? 1 : 0,
+            setsFound: row.globeSets,
+            bestRaceMs: finished ? row.timeMs : null,
+          },
+        });
+      } catch (error) {
+        // A racer who signed out mid-match, or a row another node created
+        // between our read and our write. Neither is worth a retry and
+        // neither may cost anybody else their record.
+        logger.error({
+          event: 'globeset_race_persist_failed',
+          code: lobby.code,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }),
+  );
 }
 
 /* ─── Garbage collection ────────────────────────────────────────────────── */

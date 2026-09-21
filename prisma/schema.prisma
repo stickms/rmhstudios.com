@@ -53,6 +53,7 @@ model User {
   altairCoopProfile    AltairCoopProfile?
   altairMatchPlayers   AltairMatchPlayer[]
   laundryProfile       LaundryPlayer?
+  globesetProfile      GlobeSetPlayer?
   sliceItProfile       Player?
   vegaProfile          VegaPlayer?
   signalForgeProfile   SignalForgePlayer?
@@ -742,6 +743,41 @@ model DailyPuzzleScore {
   // globeset ranks by time (lower = better), same shape as the moves index above.
   @@index([gameMode, dateKey, timeSeconds(sort: Asc)])
   @@map("daily_puzzle_score")
+}
+
+// GlobeSet's versus record — one row per player, written by the socket hub when
+// a race finishes.
+//
+// An AGGREGATE rather than a match table, following `LaundryPlayer` (the other
+// casual versus game on the same hub). GlobeSet races are ephemeral rooms with
+// no ladder behind them, so a row per match would be unbounded growth nobody
+// queries; what a player actually wants to know is how many they have run, how
+// many they have won, and their best clear. The daily run is scored separately
+// in `DailyPuzzleScore` — the two are different contests and one table for both
+// would make neither number mean anything.
+//
+// Anonymous racers are first-class in a room (see `identity()` in
+// `server/socket-server/handlers/globeset.ts`) and are deliberately NOT written
+// here: their id is `guest:<socketId>`, which dies with the connection, so a
+// row keyed on it could never be read back and would accumulate forever.
+model GlobeSetPlayer {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  racesPlayed Int @default(0)
+  racesWon    Int @default(0)
+  /// Fastest full clear in a race, in milliseconds. Null until one is finished
+  /// — a forfeit and an unfinished race both leave it alone.
+  bestRaceMs  Int?
+  /// Career sets taken across every race. A volume number, not a skill one.
+  setsFound   Int @default(0)
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@index([racesWon(sort: Desc)])
+  @@map("globeset_player")
 }
 
 // Daily Puzzle content cache — the generated puzzle for a given mode + day.

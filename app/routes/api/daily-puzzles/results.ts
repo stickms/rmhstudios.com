@@ -13,6 +13,26 @@ const VALID_MODES = [
   'globeset',
 ];
 
+/**
+ * One stored run, in the shape the client's local store mirrors.
+ *
+ * Spelled out rather than left as `Record<string, any>`: `resultJson` really is
+ * free-form per mode (each game writes its own summary), but everything around
+ * it is fixed, and typing the envelope is what stops a renamed column from
+ * silently reaching the client as `undefined`.
+ */
+interface StoredResult {
+  puzzleDate: string;
+  score: number;
+  moves: number | null;
+  hintUsed: boolean | null;
+  dnf: boolean | null;
+  timeSeconds: number | null;
+  /** Mode-specific; the mode that wrote it is the only thing that can read it. */
+  resultJson: unknown;
+  completedAt: string;
+}
+
 export const Route = createFileRoute('/api/daily-puzzles/results')({
   server: {
     handlers: {
@@ -102,7 +122,7 @@ export const Route = createFileRoute('/api/daily-puzzles/results')({
               },
             });
 
-            const results: Record<string, any> = {};
+            const results: Record<string, StoredResult> = {};
             for (const e of entries) {
               results[e.dateKey] = {
                 puzzleDate: e.dateKey,

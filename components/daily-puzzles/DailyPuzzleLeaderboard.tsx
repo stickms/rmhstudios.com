@@ -39,8 +39,14 @@ interface DailyPuzzleLeaderboardProps {
   hintUsed?: boolean;
   dnf?: boolean;
   completed: boolean;
-  /** Game-specific result data to persist with the score */
-  resultJson?: any;
+  /**
+   * Game-specific result data to persist with the score.
+   *
+   * `unknown` rather than `any`: this component only forwards it to the API,
+   * and the mode that wrote it is the only thing that can read it back — so
+   * nothing here should be able to reach into it by accident.
+   */
+  resultJson?: unknown;
   /**
    * Time taken in seconds. Carried by every mode for the record; for a TIMED
    * mode it is also the ranking key, and passing `null` is how a caller says
