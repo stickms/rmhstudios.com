@@ -130,6 +130,7 @@
   "globeset-results-label": "Your result",
   "globeset-rules-ar-body": "Where the device supports it, \"View in your room\" opens a camera view, lets you set the globe down on a real surface and leaves it there. Unlike the tilt option this one tracks where you ARE, not just which way you are pointing — lean in and it holds still, walk round the back of it and you see the back of it. Tap a card to pick it, exactly as on the page.",
   "globeset-rules-ar-title": "Put it in your room",
+  "globeset-rules-ar-where": "Not seeing the button? It only shows up where the browser can really open an AR session — Android phones and tablets in Chrome, with Google Play Services for AR installed, and headset browsers. Desktop and iOS have no WebXR AR to offer, so the control stays hidden there rather than failing when you press it. The globe, the tilt option and the flat board all work everywhere.",
   "globeset-rules-globe-body": "The seven cards are pinned to a glass sphere. Drag anywhere to spin it and let go to let it coast; a card facing you can be tapped, one on the far side is dimmed until you bring it round. Prefer them laid out flat? The Globe button switches to a plain board and back — same deck, same run.",
   "globeset-rules-globe-title": "Turning the globe",
   "globeset-rules-guarantee-body": "Seven cards can be combined 127 ways but there are only 64 possible colour totals, so two combinations always match — and the difference between them is a GlobeSet. A full board is never stuck, and the deck always clears.",
