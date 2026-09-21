@@ -1,0 +1,15 @@
+{
+  "credit.value.inquiries_one": "{{count}} opened in his name",
+  "credit.value.mix_one": "{{count}} of 8 kinds of debt",
+  "credit.windowMinutes_one": "{{count}}m",
+  "log.daysAgo_one": "{{count}}d ago",
+  "log.hoursAgo_one": "{{count}}h ago",
+  "log.minutesAgo_one": "{{count}}m ago",
+  "log.subtotal_one": "{{amount}} itemised across {{count}} lines",
+  "log.yearsAgo_one": "{{count}}y ago",
+  "stats.filter.clear_one": "Clear ({{count}} selected)",
+  "stats.itemisedDetail_one": "{{count}} lines recovered",
+  "stats.membersDetail_one": "{{count}} lines",
+  "stats.readout.linesShort_one": "{{count}} line",
+  "stats.rhythm.peak_one": "Busiest: {{day}} at {{hour}}:00 UTC ({{count}} line)"
+}

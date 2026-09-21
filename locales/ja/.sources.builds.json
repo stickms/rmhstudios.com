@@ -22,5 +22,6 @@
   "sort-recent": "Recent",
   "submit": "Submit",
   "tab-curated": "Curated",
-  "tab-user-builds": "User builds"
+  "tab-user-builds": "User builds",
+  "views-count_one": "{{count}} views"
 }
