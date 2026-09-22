@@ -625,7 +625,11 @@ export function GlobeSetGame() {
             aria-label={t('globeset-tabs-label', { defaultValue: 'GlobeSet mode' })}
           />
         </div>
-        <div className="flex items-center gap-2">
+        {/* WRAPS, and must: with the gyroscope and AR controls both showing
+            this row is ~660px of buttons, the page does not scroll sideways,
+            and on a phone everything past the fold — "View in your room"
+            among them — was simply unreachable. */}
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
             variant={view === 'globe' ? 'accent-outline' : 'ghost'}
