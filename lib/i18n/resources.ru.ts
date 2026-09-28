@@ -40,11 +40,13 @@ import ruCProfileModules from "@/locales/ru/c-profile-modules.json";
 import ruCRebarRutabaga from "@/locales/ru/c-rebar-rutabaga.json";
 import ruCRideshare from "@/locales/ru/c-rideshare.json";
 import ruCRmhCapital from "@/locales/ru/c-rmh-capital.json";
+import ruCRmhDatacenter from "@/locales/ru/c-rmh-datacenter.json";
 import ruCRmhPmc from "@/locales/ru/c-rmh-pmc.json";
 import ruCRmhbox from "@/locales/ru/c-rmhbox.json";
 import ruCRmhcalculator from "@/locales/ru/c-rmhcalculator.json";
 import ruCRmhcode from "@/locales/ru/c-rmhcode.json";
 import ruCRmhcoins from "@/locales/ru/c-rmhcoins.json";
+import ruCRmhfashion from "@/locales/ru/c-rmhfashion.json";
 import ruCRmhmusic from "@/locales/ru/c-rmhmusic.json";
 import ruCRmhstudy from "@/locales/ru/c-rmhstudy.json";
 import ruCRmhtech from "@/locales/ru/c-rmhtech.json";
@@ -67,6 +69,7 @@ import ruCVoidBreaker from "@/locales/ru/c-void-breaker.json";
 import ruCWager from "@/locales/ru/c-wager.json";
 import ruCWishlist from "@/locales/ru/c-wishlist.json";
 import ruCommon from "@/locales/ru/common.json";
+import ruErrors from "@/locales/ru/errors.json";
 import ruFeed from "@/locales/ru/feed.json";
 import ruGamesHub from "@/locales/ru/games-hub.json";
 import ruGroups from "@/locales/ru/groups.json";
@@ -136,11 +139,13 @@ const ruResources = {
   "c-rebar-rutabaga": ruCRebarRutabaga,
   "c-rideshare": ruCRideshare,
   "c-rmh-capital": ruCRmhCapital,
+  "c-rmh-datacenter": ruCRmhDatacenter,
   "c-rmh-pmc": ruCRmhPmc,
   "c-rmhbox": ruCRmhbox,
   "c-rmhcalculator": ruCRmhcalculator,
   "c-rmhcode": ruCRmhcode,
   "c-rmhcoins": ruCRmhcoins,
+  "c-rmhfashion": ruCRmhfashion,
   "c-rmhmusic": ruCRmhmusic,
   "c-rmhstudy": ruCRmhstudy,
   "c-rmhtech": ruCRmhtech,
@@ -163,6 +168,7 @@ const ruResources = {
   "c-wager": ruCWager,
   "c-wishlist": ruCWishlist,
   "common": ruCommon,
+  "errors": ruErrors,
   "feed": ruFeed,
   "games-hub": ruGamesHub,
   "groups": ruGroups,

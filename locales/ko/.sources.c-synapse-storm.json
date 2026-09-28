@@ -13,6 +13,7 @@
   "connect": "CONNECT",
   "connected-as": "Connected as {{name}}",
   "copy-code": "Copy code",
+  "copy-invite-link": "Copy invite link",
   "create-lobby": "CREATE LOBBY",
   "disconnected": "Disconnected",
   "display-name": "DISPLAY NAME",
