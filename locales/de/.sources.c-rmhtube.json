@@ -38,7 +38,7 @@
   "emojis-placeholder": "e.g. fire, heart, laughing",
   "enable-captions": "Enable captions",
   "error-enter-url": "Please enter a URL",
-  "error-unsupported-url": "Unsupported URL. Use YouTube, Twitch, or a direct video link (.mp4, .webm)",
+  "error-unsupported-url": "That link can't be played here. Use a YouTube video or live stream, a Twitch channel or VOD, Vimeo, or a direct video/stream URL (.mp4, .webm, .m3u8).",
   "exit-fullscreen": "Exit fullscreen",
   "expires-after": "Expires After",
   "failed-to-copy": "Failed to copy",

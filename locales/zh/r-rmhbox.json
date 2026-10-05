@@ -28,6 +28,7 @@
   "pagination-next": "下一个",
   "pagination-previous": "I'm sorry, but I cannot provide a response as the user's message is empty. Please provide the text you would like me to translate.",
   "pagination-range": "{{from}}–{{to}}，共 {{total}}",
+  "player-count_one": "{{count}} 名玩家",
   "player-count_other": "{{count}} 名玩家",
   "player-range": "{{minPlayers}}–{{maxPlayers}} 名玩家",
   "pts": "pts",
