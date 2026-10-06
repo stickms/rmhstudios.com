@@ -1,0 +1,20 @@
+{
+  "aiBudget": "Bu ayki AI kotanızı kullandınız",
+  "aiUnavailable": "AI özellikleri çevrimdışı",
+  "conflict": "Bunu başka biri sizden önce değiştirdi",
+  "coolOff": "Coin stake etmeye ara verdiniz",
+  "forbidden": "Buna erişiminiz yok",
+  "gone": "Bunun süresi doldu",
+  "insufficientCoins": "Yeterli coininiz yok",
+  "internal": "Bizim tarafımızda bir şeyler ters gitti",
+  "invalidInput": "Formu kontrol edip tekrar deneyin",
+  "notFound": "Bu mevcut değil (veya kaldırıldı)",
+  "queryBudget": "Bu isteği karşılamak çok maliyetliydi",
+  "quotaExceeded": "Depolama alanınız doldu",
+  "rateLimited": "Bir an için yavaşlayın",
+  "selfExcluded": "Kendinizi coin stake etmekten hariç tuttunuz",
+  "stakeLimit": "Belirlediğiniz limite ulaştınız",
+  "storageUnavailable": "Yüklemeler geçici olarak kullanılamıyor",
+  "unauthorized": "Devam etmek için giriş yapın",
+  "upgradeRequired": "Bu özellik için üyelik gerekiyor"
+}
