@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AeroWindow } from './AeroWindow';
 import { toast } from 'sonner';
 import {
   addDays,
@@ -33,7 +34,10 @@ import { buildIcs, encodeShare, titleById, type DunesdayState } from '@/lib/dune
 import { DURATION, EASE } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { fmtDay, LONG, SHORT } from './format';
+import { bubbleBurst } from './fx';
 import { Segmented } from './Segmented';
+import { sfx } from './sound';
+import { Win7Progress } from './Win7Progress';
 import type { DunesdayActions } from './useDunesdayState';
 
 const PREVIEW_DAYS = 14;
@@ -174,262 +178,253 @@ export function Schedule({
     );
 
   return (
-    <section className="ds-window" aria-labelledby="ds-schedule-title">
-      <div className="ds-titlebar">
-        <CalendarDays size={16} aria-hidden="true" />
-        <h2 id="ds-schedule-title">{t('schedule-title', { defaultValue: 'Your schedule' })}</h2>
-        <span className="ds-caption-dots" aria-hidden="true">
-          <span />
-          <span />
-          <span />
-        </span>
-      </div>
-      <div className="ds-window-body">
-        <div className="ds-toolbar ds-no-print" style={{ marginBottom: 14 }}>
-          <Segmented
-            label={t('view-label', { defaultValue: 'Schedule view' })}
-            value={view}
-            onChange={setView}
-            options={[
-              { value: 'list', label: t('view-list', { defaultValue: 'Day by day' }) },
-              { value: 'month', label: t('view-month', { defaultValue: 'Calendar' }) },
-            ]}
-          />
-          <div className="ds-row" style={{ marginLeft: 'auto' }}>
-            <button
-              type="button"
-              className="ds-btn ds-btn--sm"
-              onClick={exportIcs}
-              disabled={!plan.days.length}
-            >
-              <CalendarPlus size={14} aria-hidden="true" />
-              {t('export-ics', { defaultValue: 'Add to calendar' })}
-            </button>
-            <button type="button" className="ds-btn ds-btn--ghost ds-btn--sm" onClick={copyLink}>
-              <Link2 size={14} aria-hidden="true" />
-              {t('share', { defaultValue: 'Share' })}
-            </button>
-            <button
-              type="button"
-              className="ds-btn ds-btn--ghost ds-btn--sm"
-              onClick={copyText}
-              disabled={!plan.days.length}
-            >
-              <ClipboardCopy size={14} aria-hidden="true" />
-              {t('copy-text', { defaultValue: 'Copy' })}
-            </button>
-            <button
-              type="button"
-              className="ds-btn ds-btn--ghost ds-btn--sm ds-btn--icon"
-              onClick={() => window.print()}
-              aria-label={t('print', { defaultValue: 'Print' })}
-            >
-              <Printer size={14} aria-hidden="true" />
-            </button>
-          </div>
-        </div>
-
-        {tonight && (
-          <motion.div
-            className="ds-tonight"
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: DURATION.slow, ease: EASE.standard }}
+    <AeroWindow
+      title={t('schedule-title', { defaultValue: 'Your schedule' })}
+      icon={<CalendarDays size={16} aria-hidden="true" />}
+    >
+      <div className="ds-toolbar ds-no-print" style={{ marginBottom: 14 }}>
+        <Segmented
+          label={t('view-label', { defaultValue: 'Schedule view' })}
+          value={view}
+          onChange={setView}
+          options={[
+            { value: 'list', label: t('view-list', { defaultValue: 'Day by day' }) },
+            { value: 'month', label: t('view-month', { defaultValue: 'Calendar' }) },
+          ]}
+        />
+        <div className="ds-row" style={{ marginLeft: 'auto' }}>
+          <button
+            type="button"
+            className="ds-btn ds-btn--sm"
+            onClick={exportIcs}
+            disabled={!plan.days.length}
           >
-            <div className="ds-row">
-              <Popcorn size={22} aria-hidden="true" />
-              <h3>
-                {isTonightToday
-                  ? t('tonight', { defaultValue: 'Tonight' })
-                  : t('next-up', {
-                      defaultValue: 'Next up · {{date}}',
-                      date: fmtDay(tonight.date, lang, LONG),
-                    })}
-              </h3>
-              <span style={{ marginLeft: 'auto', fontWeight: 700 }}>
-                {formatMinutes(tonight.minutes)}
-              </span>
-            </div>
-            {tonight.entries.map((entry) => {
-              const title = titleById(state, entry.titleId);
-              const finalPart = !entry.part || entry.part[0] === entry.part[1];
-              return (
-                <div
-                  key={`${entry.titleId}-${entry.episodes?.[0] ?? entry.part?.[0] ?? 0}`}
-                  className="ds-tonight-item"
-                >
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <strong>{label(entry)}</strong>
-                    {title?.hook && <div style={{ fontSize: 13, opacity: 0.9 }}>{title.hook}</div>}
-                  </div>
-                  <span>{formatMinutes(entry.minutes)}</span>
-                  {finalPart && (
-                    <button
-                      type="button"
-                      className="ds-btn ds-btn--green ds-btn--sm"
-                      onClick={() => markDone(entry)}
-                    >
-                      <Check size={14} aria-hidden="true" />
-                      {t('mark-done', { defaultValue: 'Watched' })}
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-            {isTonightToday && (
-              <div>
-                <button
-                  type="button"
-                  className="ds-btn ds-btn--ghost ds-btn--sm"
-                  onClick={() => actions.toggleSkip(today)}
-                >
-                  <Coffee size={14} aria-hidden="true" />
-                  {t('skip-tonight', { defaultValue: 'Not tonight — reshuffle' })}
-                </button>
-              </div>
-            )}
-          </motion.div>
-        )}
-
-        {!plan.days.length ? (
-          <p className="ds-muted">
-            {t('empty-plan', {
-              defaultValue:
-                'Nothing to schedule. Tick some titles in the watch list below to build a plan.',
-            })}
-          </p>
-        ) : view === 'list' ? (
-          <>
-            {weeks.map((week) => (
-              <div key={week.start}>
-                <div className="ds-week-head">
-                  {t('week-of', {
-                    defaultValue: 'Week of {{date}}',
-                    date: fmtDay(week.start, lang, { month: 'short', day: 'numeric' }),
-                  })}
-                </div>
-                <div className="ds-stack" style={{ gap: 8 }}>
-                  <AnimatePresence initial={false}>
-                    {week.days.map((day) => {
-                      const skipped =
-                        state.settings.skipDates.includes(day.date) || day.budget === 0;
-                      const over = day.budget > 0 && day.minutes > day.budget;
-                      return (
-                        <motion.div
-                          key={day.date}
-                          layout="position"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: DURATION.base }}
-                          className={cn(
-                            'ds-card ds-day',
-                            day.date === today && 'ds-day--today',
-                            skipped && 'ds-day--skip',
-                          )}
-                        >
-                          <div className="ds-date-tile">
-                            <span className="ds-dow">
-                              {fmtDay(day.date, lang, { weekday: 'short' })}
-                            </span>
-                            <span className="ds-dom">{parseDay(day.date).getUTCDate()}</span>
-                            <span className="ds-mon">
-                              {fmtDay(day.date, lang, { month: 'short' })}
-                            </span>
-                          </div>
-                          <div style={{ minWidth: 0 }}>
-                            {skipped && !day.entries.length ? (
-                              <div className="ds-row">
-                                <span className="ds-muted">
-                                  {t('day-off', { defaultValue: 'Day off' })}
-                                </span>
-                                {state.settings.skipDates.includes(day.date) && (
-                                  <button
-                                    type="button"
-                                    className="ds-btn ds-btn--ghost ds-btn--sm ds-no-print"
-                                    onClick={() => actions.toggleSkip(day.date)}
-                                  >
-                                    {t('day-on', { defaultValue: 'Watch this day after all' })}
-                                  </button>
-                                )}
-                              </div>
-                            ) : (
-                              <>
-                                {day.entries.map((entry) => {
-                                  const title = titleById(state, entry.titleId);
-                                  return (
-                                    <div
-                                      key={`${entry.titleId}-${entry.episodes?.[0] ?? entry.part?.[0] ?? 0}`}
-                                      className="ds-entry"
-                                    >
-                                      {title && <FranchiseTag franchise={title.franchise} />}
-                                      <span>{label(entry)}</span>
-                                      <span className="ds-entry-meta">
-                                        {formatMinutes(entry.minutes)}
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                                <div className="ds-row" style={{ marginTop: 6 }}>
-                                  <span className="ds-entry-meta">
-                                    {t('day-total', {
-                                      defaultValue: '{{total}} of a {{budget}} night',
-                                      total: formatMinutes(day.minutes),
-                                      budget: formatMinutes(day.budget),
-                                    })}
-                                  </span>
-                                  <button
-                                    type="button"
-                                    className="ds-btn ds-btn--ghost ds-btn--sm ds-no-print"
-                                    style={{ marginLeft: 'auto' }}
-                                    onClick={() => actions.toggleSkip(day.date)}
-                                  >
-                                    {t('take-off', { defaultValue: 'Take this day off' })}
-                                  </button>
-                                </div>
-                                <div
-                                  className={cn('ds-meter', over && 'ds-meter--over')}
-                                  aria-hidden="true"
-                                >
-                                  <span
-                                    style={{
-                                      width: `${Math.min(100, (day.minutes / Math.max(1, day.budget)) * 100)}%`,
-                                    }}
-                                  />
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </AnimatePresence>
-                </div>
-              </div>
-            ))}
-            {plan.days.length > PREVIEW_DAYS && (
-              <div style={{ marginTop: 14, textAlign: 'center' }} className="ds-no-print">
-                <button
-                  type="button"
-                  className="ds-btn ds-btn--ghost"
-                  onClick={() => setShowAll((v) => !v)}
-                >
-                  {showAll
-                    ? t('show-less', { defaultValue: 'Show the next two weeks' })
-                    : t('show-all', {
-                        defaultValue: 'Show all {{count}} days',
-                        count: plan.days.length,
-                      })}
-                </button>
-              </div>
-            )}
-          </>
-        ) : (
-          <MonthView plan={plan} state={state} today={today} actions={actions} />
-        )}
+            <CalendarPlus size={14} aria-hidden="true" />
+            {t('export-ics', { defaultValue: 'Add to calendar' })}
+          </button>
+          <button type="button" className="ds-btn ds-btn--ghost ds-btn--sm" onClick={copyLink}>
+            <Link2 size={14} aria-hidden="true" />
+            {t('share', { defaultValue: 'Share' })}
+          </button>
+          <button
+            type="button"
+            className="ds-btn ds-btn--ghost ds-btn--sm"
+            onClick={copyText}
+            disabled={!plan.days.length}
+          >
+            <ClipboardCopy size={14} aria-hidden="true" />
+            {t('copy-text', { defaultValue: 'Copy' })}
+          </button>
+          <button
+            type="button"
+            className="ds-btn ds-btn--ghost ds-btn--sm ds-btn--icon"
+            onClick={() => window.print()}
+            aria-label={t('print', { defaultValue: 'Print' })}
+          >
+            <Printer size={14} aria-hidden="true" />
+          </button>
+        </div>
       </div>
-    </section>
+
+      {tonight && (
+        <motion.div
+          className="ds-tonight"
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: DURATION.slow, ease: EASE.standard }}
+        >
+          <div className="ds-row">
+            <Popcorn size={22} aria-hidden="true" />
+            <h3>
+              {isTonightToday
+                ? t('tonight', { defaultValue: 'Tonight' })
+                : t('next-up', {
+                    defaultValue: 'Next up · {{date}}',
+                    date: fmtDay(tonight.date, lang, LONG),
+                  })}
+            </h3>
+            <span style={{ marginLeft: 'auto', fontWeight: 700 }}>
+              {formatMinutes(tonight.minutes)}
+            </span>
+          </div>
+          {tonight.entries.map((entry) => {
+            const title = titleById(state, entry.titleId);
+            const finalPart = !entry.part || entry.part[0] === entry.part[1];
+            return (
+              <div
+                key={`${entry.titleId}-${entry.episodes?.[0] ?? entry.part?.[0] ?? 0}`}
+                className="ds-tonight-item"
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <strong>{label(entry)}</strong>
+                  {title?.hook && <div style={{ fontSize: 13, opacity: 0.9 }}>{title.hook}</div>}
+                </div>
+                <span>{formatMinutes(entry.minutes)}</span>
+                {finalPart && (
+                  <button
+                    type="button"
+                    className="ds-btn ds-btn--green ds-btn--sm"
+                    data-sfx="custom"
+                    onClick={(e) => {
+                      sfx.chime();
+                      void bubbleBurst(e.clientX, e.clientY, true);
+                      markDone(entry);
+                    }}
+                  >
+                    <Check size={14} aria-hidden="true" />
+                    {t('mark-done', { defaultValue: 'Watched' })}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+          {isTonightToday && (
+            <div>
+              <button
+                type="button"
+                className="ds-btn ds-btn--ghost ds-btn--sm"
+                onClick={() => actions.toggleSkip(today)}
+              >
+                <Coffee size={14} aria-hidden="true" />
+                {t('skip-tonight', { defaultValue: 'Not tonight — reshuffle' })}
+              </button>
+            </div>
+          )}
+        </motion.div>
+      )}
+
+      {!plan.days.length ? (
+        <p className="ds-muted">
+          {t('empty-plan', {
+            defaultValue:
+              'Nothing to schedule. Tick some titles in the watch list below to build a plan.',
+          })}
+        </p>
+      ) : view === 'list' ? (
+        <>
+          {weeks.map((week) => (
+            <div key={week.start}>
+              <div className="ds-week-head">
+                {t('week-of', {
+                  defaultValue: 'Week of {{date}}',
+                  date: fmtDay(week.start, lang, { month: 'short', day: 'numeric' }),
+                })}
+              </div>
+              <div className="ds-stack" style={{ gap: 8 }}>
+                <AnimatePresence initial={false}>
+                  {week.days.map((day) => {
+                    const skipped = state.settings.skipDates.includes(day.date) || day.budget === 0;
+                    const over = day.budget > 0 && day.minutes > day.budget;
+                    return (
+                      <motion.div
+                        key={day.date}
+                        layout="position"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: DURATION.base }}
+                        className={cn(
+                          'ds-card ds-day',
+                          day.date === today && 'ds-day--today',
+                          skipped && 'ds-day--skip',
+                        )}
+                      >
+                        <div className="ds-date-tile">
+                          <span className="ds-dow">
+                            {fmtDay(day.date, lang, { weekday: 'short' })}
+                          </span>
+                          <span className="ds-dom">{parseDay(day.date).getUTCDate()}</span>
+                          <span className="ds-mon">
+                            {fmtDay(day.date, lang, { month: 'short' })}
+                          </span>
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          {skipped && !day.entries.length ? (
+                            <div className="ds-row">
+                              <span className="ds-muted">
+                                {t('day-off', { defaultValue: 'Day off' })}
+                              </span>
+                              {state.settings.skipDates.includes(day.date) && (
+                                <button
+                                  type="button"
+                                  className="ds-btn ds-btn--ghost ds-btn--sm ds-no-print"
+                                  onClick={() => actions.toggleSkip(day.date)}
+                                >
+                                  {t('day-on', { defaultValue: 'Watch this day after all' })}
+                                </button>
+                              )}
+                            </div>
+                          ) : (
+                            <>
+                              {day.entries.map((entry) => {
+                                const title = titleById(state, entry.titleId);
+                                return (
+                                  <div
+                                    key={`${entry.titleId}-${entry.episodes?.[0] ?? entry.part?.[0] ?? 0}`}
+                                    className="ds-entry"
+                                  >
+                                    {title && <FranchiseTag franchise={title.franchise} />}
+                                    <span>{label(entry)}</span>
+                                    <span className="ds-entry-meta">
+                                      {formatMinutes(entry.minutes)}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                              <div className="ds-row" style={{ marginTop: 6 }}>
+                                <span className="ds-entry-meta">
+                                  {t('day-total', {
+                                    defaultValue: '{{total}} of a {{budget}} night',
+                                    total: formatMinutes(day.minutes),
+                                    budget: formatMinutes(day.budget),
+                                  })}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="ds-btn ds-btn--ghost ds-btn--sm ds-no-print"
+                                  style={{ marginLeft: 'auto' }}
+                                  onClick={() => actions.toggleSkip(day.date)}
+                                >
+                                  {t('take-off', { defaultValue: 'Take this day off' })}
+                                </button>
+                              </div>
+                              <Win7Progress
+                                value={day.minutes / Math.max(1, day.budget)}
+                                tone={over ? 'paused' : 'ok'}
+                                shine={false}
+                              />
+                            </>
+                          )}
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+            </div>
+          ))}
+          {plan.days.length > PREVIEW_DAYS && (
+            <div style={{ marginTop: 14, textAlign: 'center' }} className="ds-no-print">
+              <button
+                type="button"
+                className="ds-btn ds-btn--ghost"
+                onClick={() => setShowAll((v) => !v)}
+              >
+                {showAll
+                  ? t('show-less', { defaultValue: 'Show the next two weeks' })
+                  : t('show-all', {
+                      defaultValue: 'Show all {{count}} days',
+                      count: plan.days.length,
+                    })}
+              </button>
+            </div>
+          )}
+        </>
+      ) : (
+        <MonthView plan={plan} state={state} today={today} actions={actions} />
+      )}
+    </AeroWindow>
   );
 }
 

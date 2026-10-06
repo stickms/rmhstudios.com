@@ -126,11 +126,25 @@ const OUT_DIR = path.join(ROOT, '.output', 'public');
  * carried, so it still absorbs the ~0.7% build-to-build spread documented above
  * rather than being flaky-tight.
  *
+ * **2026-10-06 — entry raised 296,500 → 299,000 B (OPT-01 line).** The bytes
+ * were bought by **Dunesday** (`/dunesday`), the MCU + Dune marathon planner.
+ * Measured on this tree with `vite build --sourcemap` (maps stripped):
+ * `main` before Dunesday (bd1fc49) 295,908 B, with it 296,823 B — +915 B, against
+ * 592 B of headroom.
+ *
+ * As with Rebar & Rutabaga, what is left is the part that cannot be split:
+ * the route's registration and `head()` in the statically imported route
+ * tree. Everything else was trimmed before raising — the meta description and
+ * the catalog's long description were cut to a sentence and a redundant meta
+ * tag dropped (together ~400 B) — and the page body, its 7.css stylesheet,
+ * the gadgets and the sound engine are all in the route's own async chunk.
+ * The new band is measured + 0.68%, the same ratio as the previous raises.
+ *
  * Budgets that only ever move up are theatre. Per OPT-01: raising one requires
  * a line in the PR body naming the user-visible feature that bought the bytes.
  */
 const BUDGETS = {
-  entryRaw: 296_500,
+  entryRaw: 299_000,
   criticalPathRaw: 1_291_000,
   criticalPathBrotli: 370_000,
 };

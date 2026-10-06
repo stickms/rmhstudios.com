@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useMemo, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AeroWindow } from './AeroWindow';
 import { formatMinutes } from '@/lib/dunesday/schedule';
 import {
   isIncluded,
@@ -32,7 +33,10 @@ import {
 import type { WatchTitle } from '@/lib/dunesday/titles';
 import { DURATION, EASE } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import { bubbleBurst } from './fx';
 import { Segmented } from './Segmented';
+import { sfx } from './sound';
+import { Win7Progress } from './Win7Progress';
 import type { DunesdayActions } from './useDunesdayState';
 
 type KindFilter = 'all' | 'film' | 'series';
@@ -79,179 +83,169 @@ export function Watchlist({ state, actions }: { state: DunesdayState; actions: D
   const positions = new Map(ordered.map((title, i) => [title.id, i]));
 
   return (
-    <section className="ds-window" aria-labelledby="ds-list-title">
-      <div className="ds-titlebar">
-        <h2 id="ds-list-title">{t('list-title', { defaultValue: 'Watch list' })}</h2>
-        <span className="ds-caption-dots" aria-hidden="true">
-          <span />
-          <span />
-          <span />
-        </span>
-      </div>
-      <div className="ds-window-body">
-        <div className="ds-stack" style={{ gap: 12 }}>
-          <div className="ds-row">
-            <span className="ds-label">{t('order-label', { defaultValue: 'Order' })}</span>
-            <Segmented
-              label={t('order-label', { defaultValue: 'Order' })}
-              value={state.order}
-              onChange={actions.setOrder}
-              options={[
-                { value: 'release', label: t('order-release', { defaultValue: 'Release' }) },
-                { value: 'story', label: t('order-story', { defaultValue: 'Story (timeline)' }) },
-                { value: 'custom', label: t('order-custom', { defaultValue: 'My order' }) },
-              ]}
-            />
-          </div>
-          {state.order !== 'custom' && (
-            <div className="ds-row">
-              <span className="ds-label">{t('dune-label', { defaultValue: 'Dune goes' })}</span>
-              <Segmented
-                label={t('dune-label', { defaultValue: 'Dune goes' })}
-                value={state.dunePlacement}
-                onChange={(v) => actions.set('dunePlacement', v)}
-                options={[
-                  { value: 'end', label: t('dune-end', { defaultValue: 'Last (freshest)' }) },
-                  { value: 'start', label: t('dune-start', { defaultValue: 'First' }) },
-                  { value: 'mixed', label: t('dune-mixed', { defaultValue: 'By date' }) },
-                ]}
-              />
-            </div>
-          )}
-
-          <div className="ds-toolbar">
-            <label className="ds-row ds-search">
-              <Search size={16} aria-hidden="true" />
-              <input
-                type="search"
-                className="ds-input"
-                style={{ flex: 1 }}
-                placeholder={t('search', { defaultValue: 'Search titles…' })}
-                aria-label={t('search', { defaultValue: 'Search titles…' })}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-            </label>
-            <Segmented
-              label={t('kind-label', { defaultValue: 'Show' })}
-              value={kind}
-              onChange={setKind}
-              options={[
-                { value: 'all', label: t('kind-all', { defaultValue: 'All' }) },
-                { value: 'film', label: t('kind-film', { defaultValue: 'Films' }) },
-                { value: 'series', label: t('kind-series', { defaultValue: 'Series' }) },
-              ]}
-            />
-            <label className="ds-check">
-              <input
-                type="checkbox"
-                checked={hideWatched}
-                onChange={(e) => setHideWatched(e.target.checked)}
-              />
-              {t('hide-watched', { defaultValue: 'Hide watched' })}
-            </label>
-          </div>
+    <AeroWindow title={t('list-title', { defaultValue: 'Watch list' })}>
+      <div className="ds-stack" style={{ gap: 12 }}>
+        <div className="ds-row">
+          <span className="ds-label">{t('order-label', { defaultValue: 'Order' })}</span>
+          <Segmented
+            label={t('order-label', { defaultValue: 'Order' })}
+            value={state.order}
+            onChange={actions.setOrder}
+            options={[
+              { value: 'release', label: t('order-release', { defaultValue: 'Release' }) },
+              { value: 'story', label: t('order-story', { defaultValue: 'Story (timeline)' }) },
+              { value: 'custom', label: t('order-custom', { defaultValue: 'My order' }) },
+            ]}
+          />
         </div>
-
-        {groups.map((group) => {
-          const open = !collapsed[group.key];
-          const inPlan = group.titles.filter((x) => isIncluded(state, x));
-          const seen = inPlan.filter((x) => isWatched(state, x)).length;
-          return (
-            <div key={group.key} className="ds-group">
-              {grouped && (
-                <button
-                  type="button"
-                  className="ds-group-head"
-                  aria-expanded={open}
-                  onClick={() => setCollapsed((c) => ({ ...c, [group.key]: open }))}
-                >
-                  <ChevronDown
-                    size={16}
-                    aria-hidden="true"
-                    style={{
-                      transform: open ? 'none' : 'rotate(-90deg)',
-                      transition: 'transform 0.15s ease',
-                    }}
-                  />
-                  {group.name}
-                  <span className="ds-hint">
-                    {seen}/{inPlan.length}
-                  </span>
-                  <span className="ds-meter" aria-hidden="true">
-                    <span
-                      style={{ width: `${inPlan.length ? (seen / inPlan.length) * 100 : 0}%` }}
-                    />
-                  </span>
-                </button>
-              )}
-              <AnimatePresence initial={false}>
-                {open && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: DURATION.slow, ease: EASE.standard }}
-                    style={{ overflow: 'hidden' }}
-                  >
-                    {grouped && group.titles.length > 1 && (
-                      <div className="ds-row" style={{ margin: '8px 0 2px' }}>
-                        <button
-                          type="button"
-                          className="ds-btn ds-btn--ghost ds-btn--sm"
-                          onClick={() =>
-                            actions.setIncludedMany(
-                              group.titles.map((x) => x.id),
-                              true,
-                            )
-                          }
-                        >
-                          {t('group-all-in', { defaultValue: 'Include all' })}
-                        </button>
-                        <button
-                          type="button"
-                          className="ds-btn ds-btn--ghost ds-btn--sm"
-                          onClick={() =>
-                            actions.setIncludedMany(
-                              group.titles.map((x) => x.id),
-                              false,
-                            )
-                          }
-                        >
-                          {t('group-all-out', { defaultValue: 'Skip all' })}
-                        </button>
-                        <button
-                          type="button"
-                          className="ds-btn ds-btn--ghost ds-btn--sm"
-                          onClick={() => actions.markWatchedMany(inPlan.map((x) => x.id))}
-                        >
-                          {t('group-all-seen', { defaultValue: 'Mark all watched' })}
-                        </button>
-                      </div>
-                    )}
-                    {group.titles.map((title) => (
-                      <TitleRow
-                        key={title.id}
-                        title={title}
-                        state={state}
-                        actions={actions}
-                        index={grouped ? null : (positions.get(title.id) ?? 0) + 1}
-                        movable={state.order === 'custom'}
-                      />
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          );
-        })}
-        {!filtered.length && (
-          <p className="ds-muted">{t('no-match', { defaultValue: 'No titles match.' })}</p>
+        {state.order !== 'custom' && (
+          <div className="ds-row">
+            <span className="ds-label">{t('dune-label', { defaultValue: 'Dune goes' })}</span>
+            <Segmented
+              label={t('dune-label', { defaultValue: 'Dune goes' })}
+              value={state.dunePlacement}
+              onChange={(v) => actions.set('dunePlacement', v)}
+              options={[
+                { value: 'end', label: t('dune-end', { defaultValue: 'Last (freshest)' }) },
+                { value: 'start', label: t('dune-start', { defaultValue: 'First' }) },
+                { value: 'mixed', label: t('dune-mixed', { defaultValue: 'By date' }) },
+              ]}
+            />
+          </div>
         )}
 
-        <AddCustom actions={actions} />
+        <div className="ds-toolbar">
+          <label className="ds-row ds-search">
+            <Search size={16} aria-hidden="true" />
+            <input
+              type="search"
+              className="ds-input"
+              style={{ flex: 1 }}
+              placeholder={t('search', { defaultValue: 'Search titles…' })}
+              aria-label={t('search', { defaultValue: 'Search titles…' })}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </label>
+          <Segmented
+            label={t('kind-label', { defaultValue: 'Show' })}
+            value={kind}
+            onChange={setKind}
+            options={[
+              { value: 'all', label: t('kind-all', { defaultValue: 'All' }) },
+              { value: 'film', label: t('kind-film', { defaultValue: 'Films' }) },
+              { value: 'series', label: t('kind-series', { defaultValue: 'Series' }) },
+            ]}
+          />
+          <label className="ds-check">
+            <input
+              type="checkbox"
+              checked={hideWatched}
+              onChange={(e) => setHideWatched(e.target.checked)}
+            />
+            {t('hide-watched', { defaultValue: 'Hide watched' })}
+          </label>
+        </div>
       </div>
-    </section>
+
+      {groups.map((group) => {
+        const open = !collapsed[group.key];
+        const inPlan = group.titles.filter((x) => isIncluded(state, x));
+        const seen = inPlan.filter((x) => isWatched(state, x)).length;
+        return (
+          <div key={group.key} className="ds-group">
+            {grouped && (
+              <button
+                type="button"
+                className="ds-group-head"
+                aria-expanded={open}
+                onClick={() => setCollapsed((c) => ({ ...c, [group.key]: open }))}
+              >
+                <ChevronDown
+                  size={16}
+                  aria-hidden="true"
+                  style={{
+                    transform: open ? 'none' : 'rotate(-90deg)',
+                    transition: 'transform 0.15s ease',
+                  }}
+                />
+                {group.name}
+                <span className="ds-hint">
+                  {seen}/{inPlan.length}
+                </span>
+                <Win7Progress
+                  className="ds-group-progress"
+                  value={inPlan.length ? seen / inPlan.length : 0}
+                  shine={false}
+                />
+              </button>
+            )}
+            <AnimatePresence initial={false}>
+              {open && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: DURATION.slow, ease: EASE.standard }}
+                  style={{ overflow: 'hidden' }}
+                >
+                  {grouped && group.titles.length > 1 && (
+                    <div className="ds-row" style={{ margin: '8px 0 2px' }}>
+                      <button
+                        type="button"
+                        className="ds-btn ds-btn--ghost ds-btn--sm"
+                        onClick={() =>
+                          actions.setIncludedMany(
+                            group.titles.map((x) => x.id),
+                            true,
+                          )
+                        }
+                      >
+                        {t('group-all-in', { defaultValue: 'Include all' })}
+                      </button>
+                      <button
+                        type="button"
+                        className="ds-btn ds-btn--ghost ds-btn--sm"
+                        onClick={() =>
+                          actions.setIncludedMany(
+                            group.titles.map((x) => x.id),
+                            false,
+                          )
+                        }
+                      >
+                        {t('group-all-out', { defaultValue: 'Skip all' })}
+                      </button>
+                      <button
+                        type="button"
+                        className="ds-btn ds-btn--ghost ds-btn--sm"
+                        onClick={() => actions.markWatchedMany(inPlan.map((x) => x.id))}
+                      >
+                        {t('group-all-seen', { defaultValue: 'Mark all watched' })}
+                      </button>
+                    </div>
+                  )}
+                  {group.titles.map((title) => (
+                    <TitleRow
+                      key={title.id}
+                      title={title}
+                      state={state}
+                      actions={actions}
+                      index={grouped ? null : (positions.get(title.id) ?? 0) + 1}
+                      movable={state.order === 'custom'}
+                    />
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        );
+      })}
+      {!filtered.length && (
+        <p className="ds-muted">{t('no-match', { defaultValue: 'No titles match.' })}</p>
+      )}
+
+      <AddCustom actions={actions} />
+    </AeroWindow>
   );
 }
 
@@ -294,7 +288,16 @@ function TitleRow({
             ? t('unmark', { defaultValue: 'Mark {{title}} as not watched', title: title.title })
             : t('mark', { defaultValue: 'Mark {{title}} as watched', title: title.title })
         }
-        onClick={() => actions.toggleWatched(title.id)}
+        data-sfx="custom"
+        onClick={(e) => {
+          if (watched) sfx.undo();
+          else {
+            sfx.chime();
+            const r = e.currentTarget.getBoundingClientRect();
+            void bubbleBurst(r.left + r.width / 2, r.top + r.height / 2);
+          }
+          actions.toggleWatched(title.id);
+        }}
       >
         <Check size={18} aria-hidden="true" />
       </button>

@@ -18,6 +18,11 @@
  * complete without it. Reduced motion turns every decorative animation off.
  */
 
+/* 7.css (MIT, https://khang-nd.github.io/7.css) — the Windows 7 glass frame,
+   caption buttons and progress bars. Scoped build (everything under `.win7`),
+   in its own cascade layer so any rule of ours wins over it outright. */
+@import '7.css/dist/7.scoped.css' layer(win7);
+
 .ds {
   --ds-font:
     'Segoe UI', 'Frutiger', 'Frutiger Linotype', 'Myriad Pro', 'Nunito', 'Inter', system-ui,
@@ -584,76 +589,6 @@
 }
 
 /* ── Windows (Vista-style glass panels) ─────────────────────────────────── */
-
-.ds-window {
-  position: relative;
-  border-radius: var(--ds-radius);
-  background: var(--ds-glass);
-  border: 1px solid var(--ds-glass-edge);
-  box-shadow:
-    var(--ds-glass-shadow),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(16px) saturate(1.5);
-  -webkit-backdrop-filter: blur(16px) saturate(1.5);
-  overflow: hidden;
-}
-
-.ds-window::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 60px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0));
-  pointer-events: none;
-}
-
-.ds[data-night='true'] .ds-window::before {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0));
-}
-
-.ds-titlebar {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: var(--ds-title-bar);
-  border-bottom: 1px solid rgba(80, 150, 210, 0.45);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--ds-ink);
-}
-
-.ds-titlebar h2,
-.ds-titlebar h3 {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.ds-caption-dots {
-  display: flex;
-  gap: 5px;
-  margin-left: auto;
-}
-
-.ds-caption-dots span {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.8);
-}
-
-.ds-caption-dots span:nth-child(1) {
-  background: linear-gradient(180deg, #c9ecff, #6cbcf0);
-}
-.ds-caption-dots span:nth-child(2) {
-  background: linear-gradient(180deg, #dbf7c9, #79c95a);
-}
-.ds-caption-dots span:nth-child(3) {
-  background: linear-gradient(180deg, #ffd0c6, #e45b4b);
-}
 
 .ds-window-body {
   position: relative;
@@ -2024,7 +1959,8 @@
     display: none !important;
   }
   .ds,
-  .ds-window,
+  .ds-win,
+  .ds-win-body,
   .ds-card {
     background: #fff !important;
     color: #000 !important;
@@ -2106,4 +2042,1180 @@ html.reduce-motion .ds-bubble {
     grid-template-columns: 52px minmax(0, 1fr);
     gap: 8px;
   }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   Aero, turned up: 7.css windows, gel feedback, gadgets, Start menu, boot
+   screen, aquarium, butterflies, glossy controls.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── 7.css glass windows (see AeroWindow.tsx for the scoping trick) ─────── */
+
+.ds .win7 {
+  --w7-font: 600 14px var(--ds-font);
+  --w7-w-bg: #4f9bd8;
+}
+
+.ds[data-night='true'] .win7 {
+  --w7-w-bg: #1d3f7a;
+  --w7-w-bd: #000000d9;
+}
+
+.ds-win {
+  position: relative;
+  isolation: isolate;
+  padding: 0 7px 7px;
+}
+
+.ds-win-frame {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+
+.ds-win-frame .window {
+  height: 100%;
+  /* A box-shadow, not filter: drop-shadow on .ds-win — the watch list window
+     is thousands of pixels tall, and a filter on it forces one layer bigger
+     than a GPU texture, which Chromium paints with a blank band. */
+  box-shadow:
+    0 12px 28px rgba(5, 50, 110, 0.28),
+    2px 2px 10px 1px var(--w7-w-bd),
+    inset 0 0 0 1px #fffa;
+}
+
+/* The glass reads better over a busy sky with a touch more blur than 7.css's 4px. */
+.ds-win-frame .window.glass::after {
+  backdrop-filter: blur(10px) saturate(1.3);
+  -webkit-backdrop-filter: blur(10px) saturate(1.3);
+}
+
+.ds-win-head .title-bar {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 6px 2px 6px 8px;
+  min-height: 34px;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.ds-win-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 2px !important;
+  color: #0b2a4a !important;
+  line-height: 1.2 !important;
+}
+
+.ds[data-night='true'] .ds-win-title {
+  color: #fff !important;
+  text-shadow:
+    0 0 8px #000,
+    0 0 12px #000 !important;
+}
+
+.ds-win-title h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.ds-win-head .title-bar-controls {
+  margin-left: auto;
+  flex: none;
+}
+
+.ds-win-body {
+  background: var(--ds-glass-strong);
+  border: 1px solid rgba(0, 0, 0, 0.45);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  border-radius: 3px;
+}
+
+.ds[data-night='true'] .ds-win-body {
+  box-shadow:
+    0 0 0 1px rgba(150, 210, 255, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.ds-win-bodywrap {
+  overflow: hidden;
+}
+
+.ds-win--rolled {
+  padding-bottom: 0;
+}
+
+/* ── Windows 7 progress bars ───────────────────────────────────────────── */
+
+.ds-w7-progress,
+.ds-w7-progress [role='progressbar'],
+.ds-w7-progress [role='progressbar'] > span {
+  display: block;
+}
+
+.ds-w7-progress [role='progressbar'] {
+  height: 15px;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.ds-w7-progress [role='progressbar'] > span {
+  height: 100%;
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ds-w7-progress {
+  margin-top: 6px;
+}
+
+.ds-status-progress [role='progressbar'] {
+  height: 22px;
+}
+
+.ds-status-progress {
+  margin-top: 12px;
+}
+
+.ds-group-head .ds-group-progress {
+  flex: 1;
+  max-width: 180px;
+  margin: 0 0 0 auto;
+}
+
+/* 7.css paints the fill on `[role=progressbar] > div`; ours is a span (so the
+   bar is valid inside the watch list's group-header buttons), so its four
+   fill rules are restated here for spans — values copied from 7.css v0.21.1. */
+.ds-w7-progress [role='progressbar'] > span {
+  background-color: var(--w7-pg-bg);
+  background-image:
+    linear-gradient(180deg, #f3f3f3af, #fcfcfcaf 3px, #dbdbdbaf 6px, transparent 0),
+    radial-gradient(circle at 0 50%, #0000002f 10px, transparent 30px),
+    radial-gradient(circle at 100% 50%, #0000002f 10px, transparent 30px),
+    linear-gradient(180deg, transparent 65%, #ffffff55),
+    linear-gradient(180deg, transparent 6px, #cacaca33 0, #d5d5d533);
+  box-shadow: inset 0 0 0 1px #ffffff1f;
+  height: 100%;
+  overflow: hidden;
+}
+
+.ds-w7-progress [role='progressbar'].paused > span {
+  background-color: var(--w7-pg-bg-paused);
+}
+
+.ds-w7-progress [role='progressbar'].error > span {
+  background-color: var(--w7-pg-bg-error);
+}
+
+.ds-w7-progress [role='progressbar'].animate > span:before,
+.ds-w7-progress [role='progressbar'].marquee:before {
+  -webkit-animation: progressbar 3s linear infinite;
+  animation: progressbar 3s linear infinite;
+  background: linear-gradient(90deg, transparent, #ffffff80, transparent 40%);
+  content: '';
+  display: block;
+  height: 100%;
+}
+
+/* ── Gel feedback: water ripples ───────────────────────────────────────── */
+
+.ds-btn,
+.ds-suggest,
+.ds-seg button,
+.ds-group-head,
+.ds-start-item {
+  position: relative;
+  overflow: hidden;
+}
+
+.ds-ripple {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.65) 0%,
+    rgba(255, 255, 255, 0.25) 40%,
+    rgba(255, 255, 255, 0) 70%
+  );
+  transform: scale(0);
+  animation: ds-ripple 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes ds-ripple {
+  to {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+/* Gel buttons squish a little when pressed, and glow on hover. */
+.ds-btn:active:not(:disabled),
+.ds-seg button:active {
+  transform: translateY(1px) scale(0.97);
+}
+
+/* ── Poppable bubbles ──────────────────────────────────────────────────── */
+
+/* Empty sky is clickable: the hero and the page column let clicks fall
+   through to the scene, and only their real content takes them back. */
+.ds-main,
+.ds-hero {
+  pointer-events: none;
+}
+
+.ds-main > :not(.ds-hero),
+.ds-hero > * {
+  pointer-events: auto;
+}
+
+.ds-bubble {
+  pointer-events: auto;
+  cursor: pointer;
+  transition:
+    opacity 0.2s ease,
+    scale 0.2s ease;
+}
+
+.ds-bubble--popped {
+  opacity: 0 !important;
+  scale: 1.6;
+  pointer-events: none;
+}
+
+/* ── Sunset, swooshes, sparkles, butterflies ───────────────────────────── */
+
+.ds-sun {
+  transition:
+    right 1.6s cubic-bezier(0.16, 1, 0.3, 1),
+    top 1.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ds-sunset {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 170, 90, 0) 20%,
+    rgba(255, 170, 90, 0.55) 70%,
+    rgba(255, 120, 60, 0.6) 100%
+  );
+  transition: opacity 1.6s ease;
+  pointer-events: none;
+}
+
+.ds-swoosh {
+  position: absolute;
+  left: -10%;
+  width: 120%;
+  top: 8%;
+  height: 70%;
+  opacity: 0.9;
+  mix-blend-mode: screen;
+}
+
+.ds-swoosh path {
+  animation: ds-swoosh 14s ease-in-out infinite alternate;
+  transform-origin: center;
+}
+
+.ds-swoosh-2 {
+  animation-duration: 18s !important;
+  animation-delay: -6s !important;
+}
+
+.ds-swoosh-3 {
+  animation-duration: 11s !important;
+  animation-delay: -3s !important;
+}
+
+@keyframes ds-swoosh {
+  from {
+    transform: translate3d(-3%, 2%, 0) scaleY(0.9);
+  }
+  to {
+    transform: translate3d(3%, -3%, 0) scaleY(1.15);
+  }
+}
+
+.ds[data-night='true'] .ds-swoosh {
+  opacity: 0.35;
+}
+
+.ds-sparkle {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background:
+    linear-gradient(90deg, transparent 45%, #fff 50%, transparent 55%),
+    linear-gradient(0deg, transparent 45%, #fff 50%, transparent 55%);
+  border-radius: 50%;
+  filter: drop-shadow(0 0 4px #fff);
+  animation: ds-twinkle 3.4s ease-in-out infinite;
+  opacity: 0;
+}
+
+@keyframes ds-twinkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.4) rotate(0deg);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1) rotate(45deg);
+  }
+}
+
+.ds-butterflies {
+  pointer-events: none;
+}
+
+.ds-butterfly {
+  position: absolute;
+  width: 26px;
+  height: 20px;
+  offset-rotate: auto;
+  animation: ds-flutter-path 38s linear infinite;
+}
+
+.ds-butterfly--1 {
+  offset-path: path('M -60 300 C 200 120 420 380 700 200 S 1200 140 1600 260');
+}
+
+.ds-butterfly--2 {
+  offset-path: path('M 1600 420 C 1300 300 1100 520 800 360 S 300 260 -60 380');
+  animation-duration: 46s;
+  animation-delay: -20s;
+}
+
+.ds-butterfly span,
+.ds-butterfly::before,
+.ds-butterfly::after {
+  position: absolute;
+}
+
+.ds-butterfly::before,
+.ds-butterfly::after {
+  content: '';
+  top: 0;
+  width: 13px;
+  height: 18px;
+  border-radius: 60% 60% 40% 40%;
+  background: radial-gradient(circle at 50% 30%, #c8f4ff 0%, #36b8ff 55%, #0a6fc4 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+  animation: ds-flap 0.28s ease-in-out infinite alternate;
+}
+
+.ds-butterfly::before {
+  left: 0;
+  transform-origin: right center;
+}
+
+.ds-butterfly::after {
+  right: 0;
+  transform-origin: left center;
+}
+
+.ds-butterfly--2::before,
+.ds-butterfly--2::after {
+  background: radial-gradient(circle at 50% 30%, #fff6c8 0%, #ffb648 55%, #e07a14 100%);
+}
+
+.ds-butterfly span {
+  left: 11px;
+  top: 2px;
+  width: 4px;
+  height: 16px;
+  border-radius: 2px;
+  background: #23324a;
+}
+
+@keyframes ds-flap {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0.25);
+  }
+}
+
+@keyframes ds-flutter-path {
+  from {
+    offset-distance: 0%;
+  }
+  to {
+    offset-distance: 100%;
+  }
+}
+
+/* ── Vista Sidebar gadgets ─────────────────────────────────────────────── */
+
+.ds-gadgets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 8px;
+}
+
+@media (min-width: 860px) {
+  .ds-gadgets {
+    grid-template-columns: 160px minmax(0, 1.4fr) minmax(0, 1fr) 160px;
+  }
+}
+
+.ds-gadget {
+  position: relative;
+  min-height: 150px;
+  border-radius: 14px;
+  padding: 12px;
+  color: #fff;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.35) 0%,
+      rgba(255, 255, 255, 0.08) 48%,
+      rgba(255, 255, 255, 0) 52%
+    ),
+    linear-gradient(180deg, rgba(30, 70, 120, 0.82), rgba(8, 22, 48, 0.9));
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 10px 24px rgba(0, 30, 70, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  transition:
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.25s ease;
+}
+
+.ds-gadget:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 16px 32px rgba(0, 30, 70, 0.4),
+    0 0 0 3px var(--ds-aqua-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.ds-gadget--clock {
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.ds-gadget--clock svg {
+  width: 100%;
+  max-width: 150px;
+  filter: drop-shadow(0 8px 14px rgba(0, 40, 90, 0.4));
+}
+
+.ds-gadget--clock:hover {
+  box-shadow: none;
+}
+
+.ds-gadget--meter {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 8px;
+}
+
+.ds-dial {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  width: 50%;
+  max-width: 130px;
+}
+
+.ds-dial svg {
+  width: 100%;
+}
+
+.ds-dial-read {
+  display: grid;
+  justify-items: center;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.ds-dial-read strong {
+  font-size: 16px;
+}
+
+.ds-dial-read span {
+  font-size: 11px;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.ds-gadget--weather {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.4) 0%,
+      rgba(255, 255, 255, 0.08) 48%,
+      rgba(255, 255, 255, 0) 52%
+    ),
+    linear-gradient(180deg, #f6b452, #c96b1a 70%, #8a3f0b);
+  display: grid;
+  align-content: center;
+  gap: 6px;
+}
+
+.ds-weather-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ds-weather-sun {
+  color: #fff6c0;
+  filter: drop-shadow(0 0 8px #ffe27a);
+  animation: ds-spin 18s linear infinite;
+}
+
+@keyframes ds-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ds-weather-temp {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+  text-shadow: 0 2px 4px rgba(90, 30, 0, 0.5);
+}
+
+.ds-weather-place {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.95;
+}
+
+.ds-weather-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  text-shadow: 0 1px 2px rgba(90, 30, 0, 0.5);
+}
+
+.ds-gadget--cal {
+  display: block;
+  width: 100%;
+  font: inherit;
+  cursor: pointer;
+  perspective: 600px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.35) 0%,
+      rgba(255, 255, 255, 0.08) 48%,
+      rgba(255, 255, 255, 0) 52%
+    ),
+    linear-gradient(180deg, #e3462f, #9b1c10);
+  padding: 22px 12px 12px;
+}
+
+.ds-cal-rings {
+  position: absolute;
+  top: 7px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: radial-gradient(circle, #2a0a05 3px, transparent 4px) 0 0 / 24px 8px repeat-x;
+  background-position: center;
+}
+
+.ds-cal-page {
+  position: absolute;
+  inset: 22px 12px 12px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  border-radius: 6px;
+  color: #0b2a4a;
+  background: linear-gradient(180deg, #ffffff, #e9f2fa);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transform-origin: top center;
+}
+
+.ds-cal-num {
+  font-size: 46px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: #c8232c;
+}
+
+.ds-cal-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ── Start orb + Start menu ────────────────────────────────────────────── */
+
+.ds-start {
+  position: relative;
+}
+
+.ds-start-orb {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 30, 60, 0.6);
+  cursor: pointer;
+  background:
+    radial-gradient(circle at 50% 120%, rgba(120, 220, 255, 0.95), rgba(120, 220, 255, 0) 55%),
+    radial-gradient(circle at 50% 50%, #1d6fb8 0%, #0b3a6e 70%, #061c38 100%);
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.35),
+    0 3px 10px rgba(0, 40, 90, 0.5),
+    inset 0 -4px 10px rgba(80, 200, 255, 0.6);
+  transition:
+    box-shadow 0.25s ease,
+    transform 0.2s ease;
+  overflow: hidden;
+}
+
+.ds-start-orb::before {
+  content: '';
+  position: absolute;
+  inset: 2px 6px 52% 6px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.05));
+}
+
+.ds-start-orb:hover,
+.ds-start-orb[aria-expanded='true'] {
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.5),
+    0 0 18px 6px rgba(80, 200, 255, 0.75),
+    inset 0 -4px 12px rgba(120, 230, 255, 0.9);
+}
+
+.ds-start-orb:active {
+  transform: scale(0.94);
+}
+
+.ds-start-flag {
+  position: absolute;
+  inset: 11px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  transform: perspective(40px) rotateY(-14deg) skewY(-4deg);
+}
+
+.ds-start-flag span {
+  border-radius: 2px 5px 2px 5px;
+}
+
+.ds-start-flag span:nth-child(1) {
+  background: linear-gradient(135deg, #ff8a5c, #e3341a);
+}
+.ds-start-flag span:nth-child(2) {
+  background: linear-gradient(135deg, #b3ef6a, #4cae1c);
+}
+.ds-start-flag span:nth-child(3) {
+  background: linear-gradient(135deg, #7ad0ff, #1a7fe0);
+}
+.ds-start-flag span:nth-child(4) {
+  background: linear-gradient(135deg, #ffe27a, #f0a414);
+}
+
+.ds-start-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 50;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  width: min(420px, calc(100vw - 32px));
+  padding: 8px;
+  gap: 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.6);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.35) 70px, transparent 100px),
+    linear-gradient(180deg, rgba(40, 90, 150, 0.82), rgba(10, 30, 70, 0.9));
+  box-shadow:
+    0 18px 40px rgba(0, 20, 50, 0.5),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+}
+
+@media (min-width: 520px) {
+  .ds-start-menu {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  }
+}
+
+.ds-start-left {
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+}
+
+.ds-start-right {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding: 6px 2px;
+}
+
+.ds-start-user {
+  display: grid;
+  place-items: center;
+  margin: 0 auto 6px;
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #fff, #d8ecfa);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.ds-start-user .ds-buddy-avatar {
+  font-size: 20px;
+}
+
+.ds-start-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: #0b2a4a;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ds-start-item small {
+  display: block;
+  font-size: 12px;
+  color: #5a7390;
+}
+
+.ds-start-item:hover,
+.ds-start-item:focus-visible {
+  outline: none;
+  border-color: #7da2ce;
+  background: linear-gradient(180deg, #f2f8fd, #d3e8fb);
+}
+
+.ds-start-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  color: #fff;
+  background: linear-gradient(180deg, #5fd2ff, #0d74c0);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.ds-start-item--side {
+  color: #fff;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.ds-start-item--side:hover,
+.ds-start-item--side:focus-visible {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.5);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.08));
+}
+
+/* ── Boot splash ───────────────────────────────────────────────────────── */
+
+.ds-boot {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 28px;
+  background: radial-gradient(circle at 50% 45%, #0b1a2e 0%, #000 70%);
+  cursor: pointer;
+}
+
+.ds-boot-stage {
+  position: relative;
+  width: 160px;
+  height: 160px;
+}
+
+.ds-boot-light {
+  position: absolute;
+  inset: 40px;
+  border-radius: 50%;
+  mix-blend-mode: screen;
+  filter: blur(4px);
+}
+
+.ds-boot-orb {
+  position: absolute;
+  inset: 30px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0) 40%),
+    conic-gradient(from 45deg, #ff5a3c, #ffc928, #7ad33c, #2ba7ff, #ff5a3c);
+  box-shadow:
+    0 0 40px 10px rgba(80, 180, 255, 0.5),
+    0 0 90px 30px rgba(80, 180, 255, 0.25);
+}
+
+.ds-boot-text {
+  margin: 0;
+  color: #e8f2ff;
+  font-family: var(--ds-font);
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 12px rgba(120, 200, 255, 0.6);
+}
+
+/* ── Aquarium ──────────────────────────────────────────────────────────── */
+
+.ds-tank {
+  position: relative;
+  height: 190px;
+  max-width: 760px;
+  margin: 0 auto 28px;
+  border-radius: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 18px 40px rgba(0, 50, 100, 0.35),
+    inset 0 0 0 1px rgba(0, 60, 120, 0.25);
+  overflow: hidden;
+}
+
+.ds-tank-water {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #8fe3ff 0%, #2bb3ec 45%, #0a6fb8 100%);
+}
+
+.ds-tank-caustics {
+  position: absolute;
+  inset: -20%;
+  opacity: 0.35;
+  background:
+    radial-gradient(ellipse 40px 14px at 20% 30%, #fff, transparent),
+    radial-gradient(ellipse 60px 18px at 60% 20%, #fff, transparent),
+    radial-gradient(ellipse 50px 12px at 80% 45%, #fff, transparent),
+    radial-gradient(ellipse 30px 10px at 40% 55%, #fff, transparent);
+  animation: ds-caustics 9s ease-in-out infinite alternate;
+}
+
+@keyframes ds-caustics {
+  to {
+    transform: translate3d(6%, 4%, 0) scale(1.1);
+  }
+}
+
+.ds-tank-sand {
+  position: absolute;
+  left: -5%;
+  right: -5%;
+  bottom: -18px;
+  height: 46px;
+  border-radius: 50% 50% 0 0;
+  background: linear-gradient(180deg, #ffe0a0, #e2a650);
+}
+
+.ds-tank-shine {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 22%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0) 30%);
+}
+
+.ds-fish {
+  position: absolute;
+  left: 0;
+  display: block;
+  pointer-events: auto;
+  cursor: pointer;
+  animation: ds-swim linear infinite;
+}
+
+.ds-fish-inner {
+  display: block;
+  animation: ds-bobfish 2.4s ease-in-out infinite;
+}
+
+.ds-fish svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.ds-fish--b .ds-fish-inner {
+  transform: scaleX(-1);
+}
+
+@keyframes ds-swim {
+  0% {
+    transform: translateX(-80px);
+  }
+  100% {
+    transform: translateX(min(820px, 100vw));
+  }
+}
+
+.ds-fish--a {
+  animation-name: ds-swim-left;
+}
+
+@keyframes ds-swim-left {
+  0% {
+    transform: translateX(min(820px, 100vw));
+  }
+  100% {
+    transform: translateX(-80px);
+  }
+}
+
+@keyframes ds-bobfish {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -6px;
+  }
+}
+
+.ds-fish--startled .ds-fish-inner {
+  animation: ds-startle 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ds-startle {
+  0% {
+    translate: 0 0;
+  }
+  30% {
+    translate: -20px -14px;
+    rotate: -12deg;
+  }
+  100% {
+    translate: 0 0;
+    rotate: 0deg;
+  }
+}
+
+.ds-tank-bubble {
+  position: absolute;
+  bottom: 10px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  background: radial-gradient(circle at 30% 30%, #fff 0 20%, rgba(255, 255, 255, 0.15) 40%);
+  animation: ds-tank-rise 4.5s ease-in infinite;
+}
+
+@keyframes ds-tank-rise {
+  from {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+  to {
+    transform: translate3d(8px, -180px, 0);
+    opacity: 0;
+  }
+}
+
+.ds-weed {
+  position: absolute;
+  bottom: 14px;
+  width: 10px;
+  border-radius: 10px 10px 2px 2px;
+  background: linear-gradient(180deg, #8ae65c, #2f9a2a);
+  transform-origin: bottom center;
+  animation: ds-sway 4s ease-in-out infinite alternate;
+}
+
+@keyframes ds-sway {
+  from {
+    transform: rotate(-8deg);
+  }
+  to {
+    transform: rotate(8deg);
+  }
+}
+
+/* ── Glossy Aero checkboxes and range sliders ──────────────────────────── */
+
+.ds input[type='checkbox'] {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  border-radius: 5px;
+  border: 1px solid #6d91ab;
+  background: linear-gradient(180deg, #ffffff, #dbeefa);
+  box-shadow:
+    inset 0 1px 2px rgba(0, 40, 90, 0.2),
+    0 1px 0 rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.ds input[type='checkbox']::after {
+  content: '';
+  width: 6px;
+  height: 11px;
+  margin-top: -3px;
+  border: solid #fff;
+  border-width: 0 3px 3px 0;
+  transform: rotate(45deg) scale(0);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ds input[type='checkbox']:checked {
+  border-color: #1d6b12;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.5) 0%,
+      rgba(255, 255, 255, 0.1) 49%,
+      rgba(255, 255, 255, 0) 51%
+    ),
+    linear-gradient(180deg, #8ae65c, #3fb52f 60%, #23861f);
+}
+
+.ds input[type='checkbox']:checked::after {
+  transform: rotate(45deg) scale(1);
+}
+
+.ds input[type='checkbox']:hover {
+  border-color: #3c7fb1;
+  box-shadow: 0 0 0 3px var(--ds-aqua-glow);
+}
+
+.ds input[type='range'] {
+  accent-color: #1592de;
+  height: 22px;
+}
+
+/* ── Glossy Aero scrollbars (the page scrolls the document) ────────────── */
+
+html:has(.ds) {
+  scrollbar-color: #5aa9de rgba(200, 230, 250, 0.6);
+}
+
+html:has(.ds)::-webkit-scrollbar {
+  width: 16px;
+}
+
+html:has(.ds)::-webkit-scrollbar-track {
+  background: linear-gradient(90deg, #dcecf8, #f4f9fd);
+}
+
+html:has(.ds)::-webkit-scrollbar-thumb {
+  border: 2px solid #f4f9fd;
+  border-radius: 8px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.7),
+      rgba(255, 255, 255, 0.1) 50%,
+      rgba(0, 0, 0, 0.05)
+    ),
+    linear-gradient(180deg, #7cc9ff, #1a7fd0);
+}
+
+/* ── Glowing hero wordmark + orb pulse ─────────────────────────────────── */
+
+.ds-wordmark {
+  animation: ds-glow 5s ease-in-out infinite;
+}
+
+@keyframes ds-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 4px 10px rgba(5, 60, 120, 0.35))
+      drop-shadow(0 1px 0 rgba(255, 255, 255, 0.9));
+  }
+  50% {
+    filter: drop-shadow(0 4px 22px rgba(80, 200, 255, 0.65))
+      drop-shadow(0 1px 0 rgba(255, 255, 255, 0.9));
+  }
+}
+
+.ds-count-bubble {
+  animation: ds-float 6s ease-in-out infinite;
+}
+
+.ds-count-bubble:nth-child(2) {
+  animation-delay: -1.5s;
+}
+.ds-count-bubble:nth-child(3) {
+  animation-delay: -3s;
+}
+.ds-count-bubble:nth-child(4) {
+  animation-delay: -4.5s;
+}
+
+@keyframes ds-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -8px;
+  }
+}
+
+.ds-buddy-launch {
+  animation: ds-float 5s ease-in-out infinite;
+}
+
+/* Reduced motion: none of the above moves. */
+@media (prefers-reduced-motion: reduce) {
+  .ds-butterflies,
+  .ds-sparkle,
+  .ds-swoosh {
+    display: none;
+  }
+}
+
+html.reduce-motion .ds-butterflies,
+html.reduce-motion .ds-sparkle,
+html.reduce-motion .ds-swoosh {
+  display: none;
 }

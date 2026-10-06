@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AeroWindow } from './AeroWindow';
 import { toast } from 'sonner';
 import type { CloudSync } from './useCloudSync';
 
@@ -52,119 +53,110 @@ export function Connect({ sync }: { sync: CloudSync }) {
         : t('sync-saved', { defaultValue: 'Synced' });
 
   return (
-    <section className="ds-window" aria-labelledby="ds-connect-title">
-      <div className="ds-titlebar">
-        <CalendarCheck size={16} aria-hidden="true" />
-        <h2 id="ds-connect-title">
-          {t('connect-title', { defaultValue: 'Calendar, RSS & Discord' })}
-        </h2>
-        {sync.slot && (
-          <span className="ds-hint" style={{ marginLeft: 'auto' }} role="status">
-            {statusLabel}
-          </span>
-        )}
-        <span
-          className="ds-caption-dots"
-          aria-hidden="true"
-          style={sync.slot ? { marginLeft: 8 } : undefined}
-        >
-          <span />
-          <span />
-          <span />
-        </span>
-      </div>
-      <div className="ds-window-body ds-stack">
-        {!sync.slot ? (
-          <div className="ds-stack" style={{ gap: 10 }}>
-            <p style={{ margin: 0 }}>
-              {t('connect-intro', {
-                defaultValue:
-                  'Subscribe to your plan in Apple, Google or Outlook Calendar, follow it in any RSS reader, and get tonight’s lineup and your progress posted to a Discord channel. Everything updates by itself as you tick titles off.',
-              })}
-            </p>
-            <p className="ds-hint" style={{ margin: 0 }}>
-              {t('connect-privacy', {
-                defaultValue:
-                  'This saves a copy of your plan on RMH Studios under a private, unguessable link. No account needed. Anyone with the calendar or RSS link can see your watch list, but only this browser can change it. You can turn it off any time, which deletes the copy.',
-              })}
-            </p>
-            <div>
-              <button
-                type="button"
-                className="ds-btn ds-btn--green"
-                disabled={busy}
-                onClick={async () => {
-                  setBusy(true);
-                  const ok = await sync.enable();
-                  setBusy(false);
-                  if (ok)
-                    toast.success(
-                      t('sync-on', {
-                        defaultValue: 'Sync is on. Your calendar, RSS and Discord links are ready.',
-                      }),
-                    );
-                  else
-                    toast.error(
-                      t('sync-failed', {
-                        defaultValue: 'Couldn’t turn sync on. Try again in a moment.',
-                      }),
-                    );
-                }}
-              >
-                <CloudUpload size={16} aria-hidden="true" />
-                {t('sync-enable', { defaultValue: 'Turn on sync' })}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <SyncedPanels sync={sync} origin={origin} copyFailed={copyFailed} />
-        )}
-
-        {sync.slot && (
-          <div className="ds-row ds-no-print">
+    <AeroWindow
+      title={t('connect-title', { defaultValue: 'Calendar, RSS & Discord' })}
+      icon={<CalendarCheck size={16} aria-hidden="true" />}
+      extra={
+        <>
+          {sync.slot && (
+            <span className="ds-hint" style={{ marginLeft: 'auto' }} role="status">
+              {statusLabel}
+            </span>
+          )}
+        </>
+      }
+      bodyClassName="ds-stack"
+    >
+      {!sync.slot ? (
+        <div className="ds-stack" style={{ gap: 10 }}>
+          <p style={{ margin: 0 }}>
+            {t('connect-intro', {
+              defaultValue:
+                'Subscribe to your plan in Apple, Google or Outlook Calendar, follow it in any RSS reader, and get tonight’s lineup and your progress posted to a Discord channel. Everything updates by itself as you tick titles off.',
+            })}
+          </p>
+          <p className="ds-hint" style={{ margin: 0 }}>
+            {t('connect-privacy', {
+              defaultValue:
+                'This saves a copy of your plan on RMH Studios under a private, unguessable link. No account needed. Anyone with the calendar or RSS link can see your watch list, but only this browser can change it. You can turn it off any time, which deletes the copy.',
+            })}
+          </p>
+          <div>
             <button
               type="button"
-              className="ds-btn ds-btn--ghost ds-btn--sm"
-              onClick={() =>
-                copy(
-                  `${origin}/dunesday#sync=${sync.slot!.feedId}.${sync.slot!.token}`,
-                  t('device-copied', {
-                    defaultValue:
-                      'Link copied. Open it on your other device — keep it private, it can edit your plan.',
-                  }),
-                  copyFailed,
-                )
-              }
-            >
-              <Smartphone size={14} aria-hidden="true" />
-              {t('device-link', { defaultValue: 'Open on another device' })}
-            </button>
-            <button
-              type="button"
-              className={
-                armedStop ? 'ds-btn ds-btn--sand ds-btn--sm' : 'ds-btn ds-btn--ghost ds-btn--sm'
-              }
-              onBlur={() => setArmedStop(false)}
+              className="ds-btn ds-btn--green"
+              disabled={busy}
               onClick={async () => {
-                if (!armedStop) return setArmedStop(true);
-                await sync.disable();
-                setArmedStop(false);
-                toast.success(
-                  t('sync-off', { defaultValue: 'Sync is off and the online copy is deleted.' }),
-                );
+                setBusy(true);
+                const ok = await sync.enable();
+                setBusy(false);
+                if (ok)
+                  toast.success(
+                    t('sync-on', {
+                      defaultValue: 'Sync is on. Your calendar, RSS and Discord links are ready.',
+                    }),
+                  );
+                else
+                  toast.error(
+                    t('sync-failed', {
+                      defaultValue: 'Couldn’t turn sync on. Try again in a moment.',
+                    }),
+                  );
               }}
             >
-              <CloudOff size={14} aria-hidden="true" />
-              {armedStop
-                ? t('sync-disable-confirm', {
-                    defaultValue: 'Click again — links will stop working',
-                  })
-                : t('sync-disable', { defaultValue: 'Turn off sync' })}
+              <CloudUpload size={16} aria-hidden="true" />
+              {t('sync-enable', { defaultValue: 'Turn on sync' })}
             </button>
           </div>
-        )}
-      </div>
-    </section>
+        </div>
+      ) : (
+        <SyncedPanels sync={sync} origin={origin} copyFailed={copyFailed} />
+      )}
+
+      {sync.slot && (
+        <div className="ds-row ds-no-print">
+          <button
+            type="button"
+            className="ds-btn ds-btn--ghost ds-btn--sm"
+            onClick={() =>
+              copy(
+                `${origin}/dunesday#sync=${sync.slot!.feedId}.${sync.slot!.token}`,
+                t('device-copied', {
+                  defaultValue:
+                    'Link copied. Open it on your other device — keep it private, it can edit your plan.',
+                }),
+                copyFailed,
+              )
+            }
+          >
+            <Smartphone size={14} aria-hidden="true" />
+            {t('device-link', { defaultValue: 'Open on another device' })}
+          </button>
+          <button
+            type="button"
+            className={
+              armedStop ? 'ds-btn ds-btn--sand ds-btn--sm' : 'ds-btn ds-btn--ghost ds-btn--sm'
+            }
+            onBlur={() => setArmedStop(false)}
+            onClick={async () => {
+              if (!armedStop) return setArmedStop(true);
+              await sync.disable();
+              setArmedStop(false);
+              toast.success(
+                t('sync-off', { defaultValue: 'Sync is off and the online copy is deleted.' }),
+              );
+            }}
+          >
+            <CloudOff size={14} aria-hidden="true" />
+            {armedStop
+              ? t('sync-disable-confirm', {
+                  defaultValue: 'Click again — links will stop working',
+                })
+              : t('sync-disable', { defaultValue: 'Turn off sync' })}
+          </button>
+        </div>
+      )}
+    </AeroWindow>
   );
 }
 
