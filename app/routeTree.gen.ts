@@ -24,6 +24,7 @@ import { Route as DailyRouteImport } from './routes/daily'
 import { Route as DeeplinkRouteImport } from './routes/deeplink'
 import { Route as DesignRouteImport } from './routes/design'
 import { Route as DreamRiftRouteImport } from './routes/dream-rift'
+import { Route as DunesdayRouteImport } from './routes/dunesday'
 import { Route as ForestExplorerRouteImport } from './routes/forest-explorer'
 import { Route as GabrielsHornRouteImport } from './routes/gabriels-horn'
 import { Route as HandleRouteImport } from './routes/handle'
@@ -383,6 +384,7 @@ import { Route as ApiDoctrineReactionsRouteImport } from './routes/api/doctrine/
 import { Route as ApiDreamRiftCoopRouteImport } from './routes/api/dream-rift/coop'
 import { Route as ApiDreamRiftLeaderboardRouteImport } from './routes/api/dream-rift/leaderboard'
 import { Route as ApiDreamRiftScoreRouteImport } from './routes/api/dream-rift/score'
+import { Route as ApiDunesdayAskRouteImport } from './routes/api/dunesday/ask'
 import { Route as ApiEmailUnsubscribeRouteImport } from './routes/api/email/unsubscribe'
 import { Route as ApiEmbedOembedRouteImport } from './routes/api/embed/oembed'
 import { Route as ApiEmojiPacksIndexRouteImport } from './routes/api/emoji-packs/index'
@@ -995,6 +997,11 @@ const DesignRoute = DesignRouteImport.update({
 const DreamRiftRoute = DreamRiftRouteImport.update({
   id: '/dream-rift',
   path: '/dream-rift',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DunesdayRoute = DunesdayRouteImport.update({
+  id: '/dunesday',
+  path: '/dunesday',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForestExplorerRoute = ForestExplorerRouteImport.update({
@@ -2803,6 +2810,11 @@ const ApiDreamRiftLeaderboardRoute = ApiDreamRiftLeaderboardRouteImport.update({
 const ApiDreamRiftScoreRoute = ApiDreamRiftScoreRouteImport.update({
   id: '/api/dream-rift/score',
   path: '/api/dream-rift/score',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDunesdayAskRoute = ApiDunesdayAskRouteImport.update({
+  id: '/api/dunesday/ask',
+  path: '/api/dunesday/ask',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiEmailUnsubscribeRoute = ApiEmailUnsubscribeRouteImport.update({
@@ -5638,6 +5650,7 @@ export interface FileRoutesByFullPath {
   '/deeplink': typeof DeeplinkRouteWithChildren
   '/design': typeof DesignRoute
   '/dream-rift': typeof DreamRiftRoute
+  '/dunesday': typeof DunesdayRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/gabriels-horn': typeof GabrielsHornRoute
   '/handle': typeof HandleRoute
@@ -5960,6 +5973,7 @@ export interface FileRoutesByFullPath {
   '/api/dream-rift/coop': typeof ApiDreamRiftCoopRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
+  '/api/dunesday/ask': typeof ApiDunesdayAskRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/api/embed/oembed': typeof ApiEmbedOembedRoute
   '/api/emoji-packs/installed': typeof ApiEmojiPacksInstalledRoute
@@ -6549,6 +6563,7 @@ export interface FileRoutesByTo {
   '/deeplink': typeof DeeplinkRouteWithChildren
   '/design': typeof DesignRoute
   '/dream-rift': typeof DreamRiftRoute
+  '/dunesday': typeof DunesdayRoute
   '/gabriels-horn': typeof GabrielsHornRoute
   '/handle': typeof HandleRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
@@ -6848,6 +6863,7 @@ export interface FileRoutesByTo {
   '/api/dream-rift/coop': typeof ApiDreamRiftCoopRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
+  '/api/dunesday/ask': typeof ApiDunesdayAskRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/api/embed/oembed': typeof ApiEmbedOembedRoute
   '/api/emoji-packs/installed': typeof ApiEmojiPacksInstalledRoute
@@ -7441,6 +7457,7 @@ export interface FileRoutesById {
   '/deeplink': typeof DeeplinkRouteWithChildren
   '/design': typeof DesignRoute
   '/dream-rift': typeof DreamRiftRoute
+  '/dunesday': typeof DunesdayRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/gabriels-horn': typeof GabrielsHornRoute
   '/handle': typeof HandleRoute
@@ -7764,6 +7781,7 @@ export interface FileRoutesById {
   '/api/dream-rift/coop': typeof ApiDreamRiftCoopRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
+  '/api/dunesday/ask': typeof ApiDunesdayAskRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/api/embed/oembed': typeof ApiEmbedOembedRoute
   '/api/emoji-packs/installed': typeof ApiEmojiPacksInstalledRoute
@@ -8358,6 +8376,7 @@ export interface FileRouteTypes {
     | '/deeplink'
     | '/design'
     | '/dream-rift'
+    | '/dunesday'
     | '/forest-explorer'
     | '/gabriels-horn'
     | '/handle'
@@ -8680,6 +8699,7 @@ export interface FileRouteTypes {
     | '/api/dream-rift/coop'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
+    | '/api/dunesday/ask'
     | '/api/email/unsubscribe'
     | '/api/embed/oembed'
     | '/api/emoji-packs/installed'
@@ -9269,6 +9289,7 @@ export interface FileRouteTypes {
     | '/deeplink'
     | '/design'
     | '/dream-rift'
+    | '/dunesday'
     | '/gabriels-horn'
     | '/handle'
     | '/house-always-wins'
@@ -9568,6 +9589,7 @@ export interface FileRouteTypes {
     | '/api/dream-rift/coop'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
+    | '/api/dunesday/ask'
     | '/api/email/unsubscribe'
     | '/api/embed/oembed'
     | '/api/emoji-packs/installed'
@@ -10160,6 +10182,7 @@ export interface FileRouteTypes {
     | '/deeplink'
     | '/design'
     | '/dream-rift'
+    | '/dunesday'
     | '/forest-explorer'
     | '/gabriels-horn'
     | '/handle'
@@ -10483,6 +10506,7 @@ export interface FileRouteTypes {
     | '/api/dream-rift/coop'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
+    | '/api/dunesday/ask'
     | '/api/email/unsubscribe'
     | '/api/embed/oembed'
     | '/api/emoji-packs/installed'
@@ -11076,6 +11100,7 @@ export interface RootRouteChildren {
   DeeplinkRoute: typeof DeeplinkRouteWithChildren
   DesignRoute: typeof DesignRoute
   DreamRiftRoute: typeof DreamRiftRoute
+  DunesdayRoute: typeof DunesdayRoute
   ForestExplorerRoute: typeof ForestExplorerRouteWithChildren
   GabrielsHornRoute: typeof GabrielsHornRoute
   HandleRoute: typeof HandleRoute
@@ -11230,6 +11255,7 @@ export interface RootRouteChildren {
   ApiDreamRiftCoopRoute: typeof ApiDreamRiftCoopRoute
   ApiDreamRiftLeaderboardRoute: typeof ApiDreamRiftLeaderboardRoute
   ApiDreamRiftScoreRoute: typeof ApiDreamRiftScoreRoute
+  ApiDunesdayAskRoute: typeof ApiDunesdayAskRoute
   ApiEmailUnsubscribeRoute: typeof ApiEmailUnsubscribeRoute
   ApiEmbedOembedRoute: typeof ApiEmbedOembedRoute
   ApiEmojiPacksInstalledRoute: typeof ApiEmojiPacksInstalledRoute
@@ -11703,6 +11729,13 @@ declare module '@tanstack/react-router' {
       path: '/dream-rift'
       fullPath: '/dream-rift'
       preLoaderRoute: typeof DreamRiftRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dunesday': {
+      id: '/dunesday'
+      path: '/dunesday'
+      fullPath: '/dunesday'
+      preLoaderRoute: typeof DunesdayRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forest-explorer': {
@@ -14216,6 +14249,13 @@ declare module '@tanstack/react-router' {
       path: '/api/dream-rift/score'
       fullPath: '/api/dream-rift/score'
       preLoaderRoute: typeof ApiDreamRiftScoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/dunesday/ask': {
+      id: '/api/dunesday/ask'
+      path: '/api/dunesday/ask'
+      fullPath: '/api/dunesday/ask'
+      preLoaderRoute: typeof ApiDunesdayAskRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/email/unsubscribe': {
@@ -19705,6 +19745,7 @@ const rootRouteChildren: RootRouteChildren = {
   DeeplinkRoute: DeeplinkRouteWithChildren,
   DesignRoute: DesignRoute,
   DreamRiftRoute: DreamRiftRoute,
+  DunesdayRoute: DunesdayRoute,
   ForestExplorerRoute: ForestExplorerRouteWithChildren,
   GabrielsHornRoute: GabrielsHornRoute,
   HandleRoute: HandleRoute,
@@ -19860,6 +19901,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDreamRiftCoopRoute: ApiDreamRiftCoopRoute,
   ApiDreamRiftLeaderboardRoute: ApiDreamRiftLeaderboardRoute,
   ApiDreamRiftScoreRoute: ApiDreamRiftScoreRoute,
+  ApiDunesdayAskRoute: ApiDunesdayAskRoute,
   ApiEmailUnsubscribeRoute: ApiEmailUnsubscribeRoute,
   ApiEmbedOembedRoute: ApiEmbedOembedRoute,
   ApiEmojiPacksInstalledRoute: ApiEmojiPacksInstalledRoute,

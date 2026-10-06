@@ -22,6 +22,7 @@ Generated from `lib/apps.ts`, the single source of truth every card on the site 
 | **RMH Ladder** | [`/rmhladder`](https://rmhstudios.com/rmhladder) | Beta | — | `Careers` `Jobs` `Early Career` `AI` `Beta` |
 | **RMHCalculator** | [`/rmhcalculator`](https://rmhstudios.com/rmhcalculator) | Beta | required | `Calculator` `Graphing` `AI` `DeepSeek` `Beta` |
 | **RMHHomes** | [`/homes`](https://rmhstudios.com/homes) | Beta | required | `Housing` `Search` `Maps` `Beta` |
+| **Dunesday** | [`/dunesday`](https://rmhstudios.com/dunesday) | New | — | `Planner` `Movies` `MCU` `Dune` `AI` |
 
 ## Unlisted
 
@@ -93,6 +94,12 @@ RMHCalculator is a graphing and scientific calculator powered entirely by the De
 RMHHomes is a housing marketplace that blends member-posted rentals and houses with real apartment/home postings aggregated from public feeds across the web. Browse everything on an interactive map, filter by price, beds, baths, property type and source, save favorites, and set up alerts for new matches. Post your own listing and message the owner directly, or jump straight to the original posting for aggregated listings.
 
 **Route:** `/homes` · **Catalog id:** `rmhhomes` · **Status:** Beta · **Sign-in:** required
+
+### Dunesday
+
+Dunesday schedules the whole Marvel Cinematic Universe — every film and Disney+ series — plus the Dune films, night by night, so the run ends before Avengers: Doomsday and Dune: Part Three open on 18 December 2026. Set a start date and an average watch time per day, or let it fit the plan to your deadline; shape the week, take days off, pick release or story order, tick off what you have seen and it re-plans around you. Export to your calendar, share your plan, and ask the built-in AI buddy about the films with a spoiler shield that knows how far you have got.
+
+**Route:** `/dunesday` · **Catalog id:** `dunesday` · **Status:** New · **Sign-in:** not required
 
 ### RMHdle
 
