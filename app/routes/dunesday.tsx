@@ -21,11 +21,12 @@ export const Route = createFileRoute('/dunesday')({
     meta: [
       ...buildMeta({
         title: 'Dunesday — MCU + Dune Marathon Planner | RMH Studios',
+        // Short on purpose: every route's head() ships in the site-wide entry
+        // chunk (routeTree imports all route modules statically).
         description:
-          'Watch every MCU film and series and both Dune films before Avengers: Doomsday and Dune: Part Three on December 18, 2026. Set your start date and pace and get a night-by-night plan, calendar export and a spoiler-safe AI buddy.',
+          'Every MCU film and Dune, planned night by night before Doomsday and Dune: Part Three.',
         path: '/dunesday',
       }),
-      { name: 'color-scheme', content: 'light dark' },
     ],
     links: [buildCanonical('/dunesday'), { rel: 'stylesheet', href: dunesdayCss }],
   }),

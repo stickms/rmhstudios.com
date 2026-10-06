@@ -4,10 +4,11 @@ const entry: AppInfo = {
   id: 'dunesday',
   order: 120,
   title: 'Dunesday',
-  description:
-    'Plan your MCU + Dune marathon so you finish every film and show before Avengers: Doomsday and Dune: Part Three.',
+  description: 'Plan an MCU + Dune marathon that ends before Doomsday and Dune: Part Three.',
+  // Kept short on purpose: the catalog ships in the site-wide entry chunk, and
+  // the full pitch was what pushed it over its bundle budget (OPT-01).
   longDescription:
-    'Dunesday schedules the whole Marvel Cinematic Universe — every film and Disney+ series — plus the Dune films, night by night, so the run ends before Avengers: Doomsday and Dune: Part Three open on 18 December 2026. Set a start date and an average watch time per day, or let it fit the plan to your deadline; shape the week, take days off, pick release or story order, tick off what you have seen and it re-plans around you. Export to your calendar, share your plan, and ask the built-in AI buddy about the films with a spoiler shield that knows how far you have got.',
+    'Every MCU film and series plus Dune, scheduled night by night before 18 Dec 2026 — with calendar, RSS, Discord and an AI buddy.',
   href: '/dunesday',
   status: 'New',
   cta: 'Plan my marathon',
@@ -15,7 +16,7 @@ const entry: AppInfo = {
   gradient: 'from-sky-400 via-cyan-400 to-amber-300',
   iconName: 'Clapperboard',
   color: 'from-sky-500/20 to-amber-400/20 hover:border-sky-400/50',
-  tags: ['Planner', 'Movies', 'MCU', 'Dune', 'AI'],
+  tags: ['Planner', 'Movies', 'AI'],
   authGate: false,
   // Full-screen top-level route (app/routes/dunesday.tsx) with its own Frutiger
   // Aero palette (components/dunesday/dunesday.css), so the site theme class
