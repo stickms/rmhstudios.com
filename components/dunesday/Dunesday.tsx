@@ -41,6 +41,8 @@ import { PlanControls } from './PlanControls';
 import { Schedule } from './Schedule';
 import { StatusPanel } from './StatusPanel';
 import { Watchlist } from './Watchlist';
+import { Connect } from './Connect';
+import { useCloudSync } from './useCloudSync';
 import { useDunesdayState } from './useDunesdayState';
 
 const GROUND = { day: '#bfe6ff', night: '#0b1a3a' };
@@ -69,6 +71,20 @@ export function Dunesday() {
   const { t } = useTranslation('c-dunesday');
   const { state, ready, importedShare, actions } = useDunesdayState();
   const celebrate = useCelebration();
+  const sync = useCloudSync(state, ready, actions.replace, () =>
+    toast.error(
+      t('sync-lost', {
+        defaultValue:
+          'Your synced copy no longer exists, so sync was turned off. Your plan is still here.',
+      }),
+    ),
+  );
+
+  useEffect(() => {
+    if (sync.restored) {
+      toast.success(t('sync-restored', { defaultValue: 'Synced plan loaded on this device.' }));
+    }
+  }, [sync.restored, t]);
   const [today, setToday] = useState(() => localToday());
   const [balloons, setBalloons] = useState<Balloon[]>([]);
 
@@ -246,6 +262,7 @@ export function Dunesday() {
             <a href="#plan">{t('nav-plan', { defaultValue: 'Plan' })}</a>
             <a href="#schedule">{t('nav-schedule', { defaultValue: 'Schedule' })}</a>
             <a href="#list">{t('nav-list', { defaultValue: 'Watch list' })}</a>
+            <a href="#connect">{t('nav-connect', { defaultValue: 'Connect' })}</a>
           </div>
           <div className="ds-topbar-actions">
             <button
@@ -299,6 +316,13 @@ export function Dunesday() {
             {t('section-schedule', { defaultValue: 'Night by night' })}
           </h2>
           <Schedule plan={plan} state={state} actions={actions} today={today} />
+        </motion.section>
+
+        <motion.section id="connect" className="ds-section ds-no-print" {...reveal}>
+          <h2 className="ds-section-title">
+            {t('section-connect', { defaultValue: 'Take it everywhere' })}
+          </h2>
+          <Connect sync={sync} />
         </motion.section>
 
         <motion.section id="list" className="ds-section" {...reveal}>

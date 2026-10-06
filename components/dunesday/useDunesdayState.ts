@@ -180,6 +180,8 @@ export function useDunesdayState() {
         }),
       resetProgress: () => update((s) => ({ ...s, watched: {}, episodesWatched: {} })),
       resetAll: () => update(() => defaultState()),
+      /** Adopt a plan restored from cloud sync (normalised again on the way in). */
+      replace: (next: unknown) => update(() => hydrateState(next)),
     }),
     [update],
   );
