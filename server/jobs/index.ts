@@ -21,10 +21,8 @@ import { registerDigestCron } from '@/lib/digest/pipeline.server';
 import { registerMaintenanceCrons } from '@/lib/jobs/maintenance.server';
 import { ANALYSIS_QUEUE, registerAnalysisWorker } from '@/lib/slice-it/analysis-queue.server';
 import { REGEN_QUEUE, registerRegenCron } from '@/lib/slice-it/regen.server';
-import {
-  PF2E_REMINDER_QUEUE,
-  registerPf2eReminderCron,
-} from '@/lib/pf2ecal/reminders.server';
+import { PF2E_REMINDER_QUEUE, registerPf2eReminderCron } from '@/lib/pf2ecal/reminders.server';
+import { DUNESDAY_DAILY_QUEUE, registerDunesdayDailyCron } from '@/lib/dunesday/sync.server';
 import {
   SOHUMTRACKER_ALERT_QUEUE,
   registerSohumTrackerAlertCron,
@@ -104,6 +102,20 @@ async function main() {
     log.error({
       event: 'jobs.register_failed',
       queue: PF2E_REMINDER_QUEUE,
+      err: (e as Error)?.message,
+    });
+  }
+
+  // /dunesday — "tonight's lineup" Discord posts for synced marathon plans.
+  // Same sweep shape as the PF2e reminders: every 10 minutes, idempotent on a
+  // per-plan date, and idle unless someone has saved a webhook.
+  try {
+    await registerDunesdayDailyCron(boss);
+    log.info({ event: 'jobs.started', queue: DUNESDAY_DAILY_QUEUE });
+  } catch (e) {
+    log.error({
+      event: 'jobs.register_failed',
+      queue: DUNESDAY_DAILY_QUEUE,
       err: (e as Error)?.message,
     });
   }

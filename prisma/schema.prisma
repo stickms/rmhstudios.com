@@ -391,27 +391,27 @@ model User {
   /// 2am in anger is recoverable by simply signing back in (B12).
   deletionScheduledAt DateTime?
 
-  aiUsage             AiUsage[]
-  activities          Activity[]
-  gameStats           GameStat[]
+  aiUsage    AiUsage[]
+  activities Activity[]
+  gameStats  GameStat[]
 
   /// Responsible play (W8). Optional: a member with no row has no limits.
-  playLimits          UserPlayLimits?
+  playLimits UserPlayLimits?
 
   /// Rebar & Rutabaga bookings (W1).
-  rebarReservations   RebarReservation[]
+  rebarReservations RebarReservation[]
 
   /// Seasonal ranked standings (P5), beside the lifetime `eloRatings`.
-  seasonRatings       RankedSeasonRating[]
+  seasonRatings RankedSeasonRating[]
 
   /// Cross-game assists (P7). Optional: no row means no assists.
-  gameAssists         GameAssistPreference?
+  gameAssists GameAssistPreference?
 
   /// What the AI surfaces remember about them (M3). Member-editable.
-  memories            MemberMemory[]
+  memories MemberMemory[]
 
   /// Compute bought with coins from RMH Datacenter (W2).
-  computeGrants       ComputeGrant[]
+  computeGrants ComputeGrant[]
 
   /// What this member agreed to give which builds (B1).
   buildGrants         BuildGrant[]
@@ -765,13 +765,13 @@ model GlobeSetPlayer {
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  racesPlayed Int @default(0)
-  racesWon    Int @default(0)
+  racesPlayed Int  @default(0)
+  racesWon    Int  @default(0)
   /// Fastest full clear in a race, in milliseconds. Null until one is finished
   /// — a forfeit and an unfinished race both leave it alone.
   bestRaceMs  Int?
   /// Career sets taken across every race. A volume number, not a skill one.
-  setsFound   Int @default(0)
+  setsFound   Int  @default(0)
 
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
@@ -8888,9 +8888,9 @@ model DiscordWatchDay {
   ///
   /// Gaming is bucketed from the MERGED spans, like voice, so simultaneous
   /// "Playing" activities cannot push an hour past 3600.
-  hourlyMessages   Json?
-  hourlyVoiceSec   Json?
-  hourlyGamingSec  Json?
+  hourlyMessages  Json?
+  hourlyVoiceSec  Json?
+  hourlyGamingSec Json?
 
   firstSeenAt DateTime?
   lastSeenAt  DateTime?
@@ -9578,4 +9578,47 @@ model BuildGrant {
   @@unique([userId, versionId])
   @@index([buildId, revokedAt])
   @@map("build_grant")
+}
+
+/// A Dunesday marathon plan (/dunesday) synced from the browser so a server
+/// can act on it: a live calendar subscription, an RSS feed and Discord posts.
+///
+/// There is deliberately no user relation. The planner works signed out, and
+/// a plan is addressed by two capabilities instead of an account:
+///   - `feedId` (public, unguessable) — reads the calendar and RSS feeds, which
+///     calendar apps and feed readers fetch with no cookies attached;
+///   - the edit token — only its SHA-256 is stored; the browser keeps the token.
+/// `state` is the same shape the browser keeps in localStorage, re-normalised
+/// by `hydrateState` on every write, so a hostile client cannot store anything
+/// the planner would not have produced itself.
+model DunesdayPlan {
+  id            String @id @default(cuid())
+  feedId        String @unique @db.VarChar(32)
+  editTokenHash String @db.VarChar(64)
+
+  state Json
+
+  /// IANA zone the plan's dates and nightly start time are read in. The worker
+  /// runs in UTC, so "tonight" means nothing without it. Validated on write.
+  timeZone String @default("UTC") @db.VarChar(64)
+
+  /// A Discord incoming-webhook URL — a bearer credential, so it is never sent
+  /// back to a client in full (see `maskWebhookUrl`) and its host is validated
+  /// against Discord's own domains before it is stored.
+  discordWebhookUrl String? @db.VarChar(500)
+  /// Post "tonight's lineup" an hour before the nightly start time.
+  discordDaily      Boolean @default(true)
+  /// Post when titles are ticked off (and phases completed).
+  discordProgress   Boolean @default(true)
+  /// The name posts use ("Sam watched Iron Man"). Optional, user-written.
+  discordName       String? @db.VarChar(40)
+  /// The plan-zone date (YYYY-MM-DD) the daily lineup was last posted for —
+  /// the idempotency key for the 10-minute sweep.
+  lastDailyPostDate String? @db.VarChar(10)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([discordWebhookUrl, discordDaily])
+  @@map("dunesday_plan")
 }
