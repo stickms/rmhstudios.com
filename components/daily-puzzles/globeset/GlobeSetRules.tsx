@@ -133,9 +133,9 @@ export function GlobeSetRules({
               })}
             </p>
             <p className="mt-2 text-site-text-muted">
-              {t('globeset-rules-ar-where', {
+              {t('globeset-rules-ar-devices', {
                 defaultValue:
-                  'Not seeing the button? It only shows up where the browser can really open an AR session — Android phones and tablets in Chrome, with Google Play Services for AR installed, and headset browsers. Desktop and iOS have no WebXR AR to offer, so the control stays hidden there rather than failing when you press it. The globe, the tilt option and the flat board all work everywhere.',
+                  'Which version you get depends on the device. Android phones and tablets in Chrome, with Google Play Services for AR installed, and headset browsers run the full one: the globe is anchored to the room, so walking round the back of it shows you the back of it. iPhone and iPad have no WebXR in any browser — they are all Safari underneath — so they get the camera version: your room is behind the globe and it turns as you turn, but it cannot stay put when you walk, because the phone can tell which way you are pointing and not where you are standing. On a desktop there is no room view at all; the globe, the flat board and everything else work everywhere.',
               })}
             </p>
           </section>

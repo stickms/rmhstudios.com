@@ -20,7 +20,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const ROOT = resolve(__dirname, '../..');
@@ -158,16 +158,19 @@ describe('Permissions-Policy', () => {
 
   it('still denies what nothing uses', () => {
     // The header is a deny-list by default, and anything opened should have a
-    // caller. These two have none and must stay shut:
+    // caller. `payment` has none and must stay shut: Stripe Checkout is a
+    // redirect, not an in-page Payment Request handler.
     //
-    //   • `payment` — Stripe Checkout is a redirect, not an in-page handler.
-    //   • `camera` — nothing requests video. GlobeSet's "view in your room"
-    //     looks like it would need it and does not: WebXR passthrough is
-    //     composited by the XR runtime and the page never receives camera
-    //     pixels, so the feature that gates it is `xr-spatial-tracking`.
-    //     Opening `camera` for it would be granting a permission that buys
-    //     nothing and widens the blast radius of any future injection.
+    // `camera` used to be asserted here too, on the grounds that GlobeSet's
+    // "view in your room" only LOOKED like it needed video — WebXR passthrough
+    // is composited by the XR runtime and the page never receives camera
+    // pixels, so `xr-spatial-tracking` is what gates it. That is still exactly
+    // true of `GlobeSetXr`, and it stopped being the whole story when
+    // `GlobeSetRoom` landed: no browser on iOS exposes `navigator.xr`, so the
+    // iPhone fallback reads the rear camera into a `<video>` itself and makes
+    // a real `getUserMedia({ video })` call. The rule above — permit what the
+    // code actually calls — now covers `camera` on its own, from the source
+    // rather than from a claim written here, which is the stronger check.
     expect(allowlistFor(HEADER, 'payment')).toBe('');
-    expect(allowlistFor(HEADER, 'camera')).toBe('');
   });
 });
