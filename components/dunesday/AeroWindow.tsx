@@ -16,11 +16,18 @@
  */
 
 import { AnimatePresence, m as motion } from 'framer-motion';
-import { useId, useState, type ReactNode } from 'react';
+import { createContext, useContext, useId, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EASE } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { sfx } from './sound';
+
+/**
+ * Inside a desktop window (the Dunesday 7 OS) a panel must not draw a second
+ * window frame inside the first: it renders as a Windows 7 group — a heading
+ * with a rule — and its body. Set by the OS's app components.
+ */
+export const BareChrome = createContext(false);
 
 export function AeroWindow({
   title,
@@ -42,6 +49,22 @@ export function AeroWindow({
   const titleId = useId();
   const bodyId = useId();
   const [rolledUp, setRolledUp] = useState(false);
+  const bare = useContext(BareChrome);
+
+  if (bare) {
+    return (
+      <section className="ds-group7" aria-labelledby={titleId}>
+        <div className="ds-group7-head">
+          {icon}
+          <h2 id={titleId}>{title}</h2>
+          {extra}
+        </div>
+        <div className={cn('ds-group7-body', bodyClassName)} style={bodyStyle}>
+          {children}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className={cn('ds-win', rolledUp && 'ds-win--rolled')} aria-labelledby={titleId}>

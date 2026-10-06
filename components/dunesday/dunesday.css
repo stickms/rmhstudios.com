@@ -22,6 +22,11 @@
    caption buttons and progress bars. Scoped build (everything under `.win7`),
    in its own cascade layer so any rule of ours wins over it outright. */
 @import '7.css/dist/7.scoped.css' layer(win7);
+@import './os/os.css';
+@import './os/apps/minesweeper.css';
+@import './os/apps/cards.css';
+@import './os/apps/paint.css';
+@import './os/apps/utilities.css';
 
 .ds {
   --ds-font:

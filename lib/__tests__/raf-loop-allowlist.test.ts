@@ -167,6 +167,13 @@ const ALLOW = new Set<string>([
   // `useDeviceAttitude`, already listed below. The effect that starts it
   // returns a teardown whose first statement is `cancelAnimationFrame`, so
   // switching to the flat board or leaving the page ends it.
+  // Dunesday 7 desktop: the draggable soap-bubble physics (BubbleWorld) and the
+  // wallpaper parallax throttle (`rafThrottle`, one-shot per pointer event). The
+  // bubble loop is a self-contained toy like the games': it runs only while the
+  // desktop (or the screen saver) is mounted, skips frames while
+  // `document.hidden`, is never started under reduced motion, and is cancelled
+  // on unmount. Transform-only, writes nothing to <html>.
+  'components/dunesday/os/frame.ts',
   'components/daily-puzzles/globeset/GlobeSetGlobe.tsx',
   'components/dream-rift/MenuBackdrop.tsx',
   // One-shot, not a loop: a single deferred frame that restores the caret after

@@ -28,7 +28,7 @@ function useNow(): Date | null {
   return now;
 }
 
-function Clock() {
+export function Clock() {
   const { t } = useTranslation('c-dunesday');
   const now = useNow();
   const h = now ? (now.getHours() % 12) * 30 + now.getMinutes() * 0.5 : 0;
@@ -148,7 +148,7 @@ function Dial({ value, label, sub }: { value: number; label: string; sub: string
 }
 
 /** The Arrakis forecast — always hot, with a worm-sign level that changes daily. */
-function Weather({ today }: { today: string }) {
+export function Weather({ today }: { today: string }) {
   const { t } = useTranslation('c-dunesday');
   const seed = [...today].reduce((a, c) => a + c.charCodeAt(0), 0);
   const levels = [
@@ -179,7 +179,7 @@ function Weather({ today }: { today: string }) {
   );
 }
 
-function TearOff({ today }: { today: string }) {
+export function TearOff({ today }: { today: string }) {
   const { t } = useTranslation('c-dunesday');
   const left = Math.max(0, daysBetween(today, DUNESDAY));
   const [torn, setTorn] = useState(0);
@@ -214,13 +214,11 @@ function TearOff({ today }: { today: string }) {
   );
 }
 
-export function Gadgets({
-  today,
+export function MeterGadget({
   pct,
   tonightMinutes,
   tonightBudget,
 }: {
-  today: string;
   pct: number;
   tonightMinutes: number;
   tonightBudget: number;
@@ -228,22 +226,17 @@ export function Gadgets({
   const { t } = useTranslation('c-dunesday');
   const load = tonightBudget > 0 ? tonightMinutes / tonightBudget : 0;
   return (
-    <div className="ds-gadgets" aria-label={t('gadgets', { defaultValue: 'Gadgets' })} role="group">
-      <Clock />
-      <div className="ds-gadget ds-gadget--meter">
-        <Dial
-          value={pct / 100}
-          label={`${pct}%`}
-          sub={t('dial-watched', { defaultValue: 'watched' })}
-        />
-        <Dial
-          value={Math.min(1, load)}
-          label={formatMinutes(tonightMinutes)}
-          sub={t('dial-tonight', { defaultValue: 'tonight' })}
-        />
-      </div>
-      <Weather today={today} />
-      <TearOff today={today} />
+    <div className="ds-gadget ds-gadget--meter">
+      <Dial
+        value={pct / 100}
+        label={`${pct}%`}
+        sub={t('dial-watched', { defaultValue: 'watched' })}
+      />
+      <Dial
+        value={Math.min(1, load)}
+        label={formatMinutes(tonightMinutes)}
+        sub={t('dial-tonight', { defaultValue: 'tonight' })}
+      />
     </div>
   );
 }
