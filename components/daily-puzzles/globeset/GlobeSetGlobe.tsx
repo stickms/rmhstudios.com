@@ -39,6 +39,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { DECELERATION, VelocityTracker, rubberBandClamp, smoothstep } from '@/lib/fluid';
 import { conjugate, rotateVector, type Quat } from '@/lib/device-attitude';
+import { cn } from '@/lib/utils';
 import { colorParity, type Card } from '@/lib/globeset/cards';
 import {
   GLOBE_PERSPECTIVE,
@@ -95,6 +96,15 @@ export interface GlobeSetGlobeProps {
   attitudeRef: RefObject<Quat | null>;
   /** Whether the sensor is currently driving the globe. */
   gyroActive: boolean;
+  /**
+   * Put the parity ledger on glass.
+   *
+   * On the page the ledger sits on the site surface and is legible by
+   * construction. In the camera room view it floats over whatever the lens is
+   * pointed at, which is arbitrary and often high-contrast — so there it takes
+   * the L4 overlay tier like any other floating UI (design-language.md §13).
+   */
+  ledgerOnGlass?: boolean;
   onToggle: (card: Card) => void;
   onClear: () => void;
 }
@@ -108,6 +118,7 @@ export function GlobeSetGlobe({
   shapes,
   attitudeRef,
   gyroActive,
+  ledgerOnGlass,
   onToggle,
   onClear,
 }: GlobeSetGlobeProps) {
@@ -526,7 +537,12 @@ export function GlobeSetGlobe({
         </div>
       </div>
 
-      <GlobeLedger parity={parity} picked={live.length} onClear={onClear} />
+      <GlobeLedger
+        parity={parity}
+        picked={live.length}
+        onClear={onClear}
+        onGlass={ledgerOnGlass}
+      />
     </div>
   );
 }
@@ -618,14 +634,21 @@ function GlobeLedger({
   parity,
   picked,
   onClear,
+  onGlass = false,
 }: {
   parity: boolean[];
   picked: number;
   onClear: () => void;
+  onGlass?: boolean;
 }) {
   const { t } = useTranslation('c-daily-puzzles');
   return (
-    <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+    <div
+      className={cn(
+        'mt-4 flex flex-wrap items-center justify-center gap-3',
+        onGlass && 'glass-overlay mx-auto w-fit rounded-site px-3 py-1.5',
+      )}
+    >
       <button
         type="button"
         onClick={onClear}

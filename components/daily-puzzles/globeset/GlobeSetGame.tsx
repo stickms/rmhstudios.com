@@ -29,6 +29,7 @@ import { AnimatePresence, m as motion } from 'framer-motion';
 import { toast } from 'sonner';
 import {
   Box,
+  Camera,
   Compass,
   Globe2,
   HelpCircle,
@@ -82,6 +83,7 @@ import { PastPuzzlesSection } from '@/components/daily-puzzles/PastPuzzlesSectio
 import { GlobeSetBoard } from './GlobeSetBoard';
 import { GlobeSetGlobe } from './GlobeSetGlobe';
 import { arSupported } from '@/lib/globeset/xr';
+import { roomModeSupported } from '@/lib/globeset/room';
 
 /**
  * The room view carries three.js, so it is fetched when somebody asks for it
@@ -90,6 +92,9 @@ import { arSupported } from '@/lib/globeset/xr';
  * they should not pay for a renderer they will never be offered.
  */
 const GlobeSetXr = lazy(() => import('./GlobeSetXr').then((m) => ({ default: m.GlobeSetXr })));
+const GlobeSetRoom = lazy(() =>
+  import('./GlobeSetRoom').then((m) => ({ default: m.GlobeSetRoom })),
+);
 import { GlobeSetHud } from './GlobeSetHud';
 import { GlobeSetResults } from './GlobeSetResults';
 import { GlobeSetRules } from './GlobeSetRules';
@@ -164,6 +169,16 @@ export function GlobeSetGame() {
   /** Whether this device can run an `immersive-ar` session, and whether it is. */
   const [arAvailable, setArAvailable] = useState(false);
   const [inRoom, setInRoom] = useState(false);
+  /**
+   * The iOS consolation: camera behind the ordinary globe.
+   *
+   * Separate state rather than a mode on `inRoom`, because the two are
+   * different components with different teardown — one ends an XR session, the
+   * other stops a MediaStream — and collapsing them into one flag is how a
+   * camera gets left running.
+   */
+  const [roomAvailable, setRoomAvailable] = useState(false);
+  const [inCameraRoom, setInCameraRoom] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
   /**
    * Today's run, if it is already in the books.
@@ -233,6 +248,8 @@ export function GlobeSetGame() {
     void arSupported().then((ok) => {
       if (!cancelled) setArAvailable(ok);
     });
+    // Permission-free too: a property read, not a getUserMedia call.
+    setRoomAvailable(roomModeSupported());
     return () => {
       cancelled = true;
     };
@@ -593,6 +610,25 @@ export function GlobeSetGame() {
   }, []);
   const tilt = useDeviceAttitude({ onRotate, onRest });
   const gyroActive = tilt.status === 'active' || tilt.status === 'waiting';
+  const tiltRef = useRef(tilt);
+  tiltRef.current = tilt;
+
+  /**
+   * Enter the camera room view, asking for the gyroscope on the way in.
+   *
+   * The sensor request has to ride THIS click: iOS gates
+   * `DeviceOrientationEvent.requestPermission()` behind a user gesture, and
+   * calling it from the mode's own mount effect — one tick later, with the
+   * gesture spent — is a silent refusal. Declining only costs the tilt; the
+   * camera view still works by drag.
+   */
+  const enterCameraRoom = useCallback(() => {
+    if (tiltRef.current.supported && !tiltRef.current.enabled) {
+      void tiltRef.current.toggle();
+    }
+    setInCameraRoom(true);
+  }, []);
+
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-12">
@@ -680,6 +716,16 @@ export function GlobeSetGame() {
           {view === 'globe' && arAvailable && !summary && (
             <Button type="button" variant="ghost" size="sm" onClick={() => setInRoom(true)}>
               <Box className="h-4 w-4" aria-hidden />
+              {t('globeset-ar-enter', { defaultValue: 'View in your room' })}
+            </Button>
+          )}
+          {/* The same offer where WebXR cannot run — every iPhone and iPad.
+              Deliberately the same words: it is the same thing the player
+              wants, at the fidelity the device can manage, and only ever one
+              of these two buttons exists on any given device. */}
+          {view === 'globe' && !arAvailable && roomAvailable && !summary && (
+            <Button type="button" variant="ghost" size="sm" onClick={enterCameraRoom}>
+              <Camera className="h-4 w-4" aria-hidden />
               {t('globeset-ar-enter', { defaultValue: 'View in your room' })}
             </Button>
           )}
@@ -786,6 +832,28 @@ export function GlobeSetGame() {
             onSelectDate={setDateKey}
           />
         </>
+      )}
+
+      {inCameraRoom && (
+        <Suspense fallback={null}>
+          <GlobeSetRoom
+            board={run.board}
+            selected={selected}
+            hinted={hinted}
+            solving={solving}
+            locked={locked}
+            shapes={shapes}
+            attitudeRef={attitudeRef}
+            gyroActive={gyroActive}
+            tiltLive={tilt.status === 'active'}
+            elapsedSeconds={Math.round(elapsedMs / 1000)}
+            cardsLeft={cardsRemaining(run)}
+            sets={run.found.length}
+            onToggle={toggle}
+            onClear={clearSelection}
+            onExit={() => setInCameraRoom(false)}
+          />
+        </Suspense>
       )}
 
       {inRoom && (
