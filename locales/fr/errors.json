@@ -1,0 +1,20 @@
+{
+  "aiBudget": "Vous avez utilisé votre allocation AI de ce mois",
+  "aiUnavailable": "Les fonctionnalités AI sont hors ligne",
+  "conflict": "Quelqu'un d'autre a modifié ceci en premier",
+  "coolOff": "Vous faites une pause dans le staking de coins",
+  "forbidden": "Vous n'avez pas accès à ceci",
+  "gone": "Ceci a expiré",
+  "insufficientCoins": "Vous n'avez pas assez de coins",
+  "internal": "Une erreur s'est produite de notre côté",
+  "invalidInput": "Vérifiez le formulaire et réessayez",
+  "notFound": "Cela n'existe pas (ou a été supprimé)",
+  "queryBudget": "Cette requête était trop coûteuse à traiter",
+  "quotaExceeded": "Vous n'avez plus de stockage",
+  "rateLimited": "Ralentissez un instant",
+  "selfExcluded": "Vous vous êtes exclu du staking de coins",
+  "stakeLimit": "Vous avez atteint la limite que vous avez fixée",
+  "storageUnavailable": "Les téléversements sont temporairement indisponibles",
+  "unauthorized": "Connectez-vous pour continuer",
+  "upgradeRequired": "Cette fonctionnalité nécessite un abonnement"
+}

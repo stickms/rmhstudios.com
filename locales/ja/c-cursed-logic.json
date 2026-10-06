@@ -13,6 +13,7 @@
   "action-strike-desc": "— ダメージを与える（基本1、準備済みなら2）。相手がブロックしても、1チップのダメージを受けます。",
   "actions-heading": "アクション",
   "active": "アクティブ",
+  "brace-btn_one": "ブレース ({{count}})",
   "brace-btn_other": "ブレース（{{count}}）",
   "buy-cost": "購入（{{cost}} F）",
   "charge": "チャージ",
