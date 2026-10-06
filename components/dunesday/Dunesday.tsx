@@ -15,12 +15,13 @@
 
 import { Link } from '@tanstack/react-router';
 import { m as motion } from 'framer-motion';
-import { ArrowLeft, Moon, Sun } from 'lucide-react';
+import { ArrowLeft, Moon, Sun, Volume2, VolumeX } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AeroWindow } from './AeroWindow';
 import { toast } from 'sonner';
 import { useCelebration } from '@/hooks/useCelebration';
-import { DURATION, EASE } from '@/lib/motion';
+import { EASE } from '@/lib/motion';
 import { buildPlan, localToday } from '@/lib/dunesday/schedule';
 import { paintDocumentGround } from '@/stores/themeStore';
 import {
@@ -43,6 +44,13 @@ import { StatusPanel } from './StatusPanel';
 import { Watchlist } from './Watchlist';
 import { Connect } from './Connect';
 import { useCloudSync } from './useCloudSync';
+import { Win7Progress } from './Win7Progress';
+import { Aquarium } from './Aquarium';
+import { BootSplash } from './BootSplash';
+import { Gadgets } from './Gadgets';
+import { StartMenu } from './StartMenu';
+import { isMuted, setMuted, sfx } from './sound';
+import { useAeroFeedback } from './useAeroFeedback';
 import { useDunesdayState } from './useDunesdayState';
 
 const GROUND = { day: '#bfe6ff', night: '#0b1a3a' };
@@ -71,6 +79,16 @@ export function Dunesday() {
   const { t } = useTranslation('c-dunesday');
   const { state, ready, importedShare, actions } = useDunesdayState();
   const celebrate = useCelebration();
+  const rootRef = useRef<HTMLDivElement>(null);
+  useAeroFeedback(rootRef);
+  const [muted, setMutedState] = useState(false);
+  useEffect(() => setMutedState(isMuted()), []);
+  const toggleMuted = useCallback(() => {
+    const next = !isMuted();
+    setMuted(next);
+    setMutedState(next);
+    if (!next) sfx.bloop();
+  }, []);
   const sync = useCloudSync(state, ready, actions.replace, () =>
     toast.error(
       t('sync-lost', {
@@ -113,6 +131,10 @@ export function Dunesday() {
   const plan = useMemo(() => buildPlan(work, settings), [work, settings]);
   const progress = useMemo(() => progressOf(state, today), [state, today]);
   const remainingMinutes = useMemo(() => work.reduce((a, w) => a + w.minutes, 0), [work]);
+  const pct = progress.totalMinutes
+    ? Math.round((progress.watchedMinutes / progress.totalMinutes) * 100)
+    : 0;
+  const tonight = plan.days.find((d) => d.date === today) ?? null;
 
   // The two one-tap fixes the status panel offers when the plan runs late.
   const fitMinutes = useMemo(() => {
@@ -237,8 +259,9 @@ export function Dunesday() {
   } as const;
 
   return (
-    <div className="ds app-page" data-night={state.night}>
-      <AeroScene />
+    <div ref={rootRef} className="ds app-page" data-night={state.night}>
+      <AeroScene progress={pct / 100} />
+      <BootSplash />
 
       <nav
         className="ds-topbar ds-no-print"
@@ -252,10 +275,13 @@ export function Dunesday() {
           >
             <ArrowLeft size={16} aria-hidden="true" />
           </Link>
+          <StartMenu
+            night={state.night}
+            onNight={() => actions.set('night', !state.night)}
+            muted={muted}
+            onMuted={toggleMuted}
+          />
           <a href="#top" className="ds-brand">
-            <span className="ds-orb" aria-hidden="true">
-              <Sun size={18} />
-            </span>
             Dunesday
           </a>
           <div className="ds-nav">
@@ -265,6 +291,20 @@ export function Dunesday() {
             <a href="#connect">{t('nav-connect', { defaultValue: 'Connect' })}</a>
           </div>
           <div className="ds-topbar-actions">
+            <button
+              type="button"
+              className="ds-btn ds-btn--ghost ds-btn--sm ds-btn--icon"
+              aria-pressed={!muted}
+              aria-label={t('sounds', { defaultValue: 'Sounds' })}
+              data-sfx="custom"
+              onClick={toggleMuted}
+            >
+              {muted ? (
+                <VolumeX size={16} aria-hidden="true" />
+              ) : (
+                <Volume2 size={16} aria-hidden="true" />
+              )}
+            </button>
             <button
               type="button"
               className="ds-btn ds-btn--ghost ds-btn--sm ds-btn--icon"
@@ -284,6 +324,13 @@ export function Dunesday() {
 
       <main className="ds-main" id="top">
         <Hero />
+
+        <Gadgets
+          today={today}
+          pct={pct}
+          tonightMinutes={tonight?.minutes ?? 0}
+          tonightBudget={tonight?.budget ?? 0}
+        />
 
         <motion.section id="plan" className="ds-section" {...reveal}>
           <h2 className="ds-section-title">
@@ -333,6 +380,7 @@ export function Dunesday() {
         </motion.section>
 
         <footer className="ds-footer">
+          <Aquarium />
           <div className="ds-footer-badges" aria-hidden="true">
             <span className="ds-88x31">AERO 2026</span>
             <span className="ds-88x31">SPOILER FREE</span>
@@ -398,37 +446,30 @@ function TitleMix({ state }: { state: DunesdayState }) {
   const skipped = TITLES.filter((x) => !isIncluded(state, x)).length;
 
   return (
-    <section className="ds-window" aria-labelledby="ds-mix-title">
-      <div className="ds-titlebar">
-        <h2 id="ds-mix-title">{t('mix-title', { defaultValue: 'Where the hours go' })}</h2>
-      </div>
-      <div className="ds-window-body ds-stack" style={{ gap: 10 }}>
-        {rows.map((r) => (
-          <div key={r.key}>
-            <div className="ds-row" style={{ justifyContent: 'space-between', fontSize: 14 }}>
-              <span>{r.label}</span>
-              <strong>{Math.round(r.minutes / 60)}h</strong>
-            </div>
-            <div className="ds-meter" aria-hidden="true">
-              <motion.span
-                initial={{ width: 0 }}
-                animate={{ width: `${(r.minutes / total) * 100}%` }}
-                transition={{ duration: DURATION.slow * 3, ease: EASE.standard }}
-              />
-            </div>
+    <AeroWindow
+      title={t('mix-title', { defaultValue: 'Where the hours go' })}
+      bodyClassName="ds-stack"
+      bodyStyle={{ gap: 10 }}
+    >
+      {rows.map((r) => (
+        <div key={r.key}>
+          <div className="ds-row" style={{ justifyContent: 'space-between', fontSize: 14 }}>
+            <span>{r.label}</span>
+            <strong>{Math.round(r.minutes / 60)}h</strong>
           </div>
-        ))}
-        {skipped > 0 && (
-          <span className="ds-hint">
-            {t('mix-skipped', {
-              count: skipped,
-              defaultValue: '{{count}} titles left out of the plan.',
-              defaultValue_one: '{{count}} title left out of the plan.',
-              defaultValue_other: '{{count}} titles left out of the plan.',
-            })}
-          </span>
-        )}
-      </div>
-    </section>
+          <Win7Progress value={r.minutes / total} />
+        </div>
+      ))}
+      {skipped > 0 && (
+        <span className="ds-hint">
+          {t('mix-skipped', {
+            count: skipped,
+            defaultValue: '{{count}} titles left out of the plan.',
+            defaultValue_one: '{{count}} title left out of the plan.',
+            defaultValue_other: '{{count}} titles left out of the plan.',
+          })}
+        </span>
+      )}
+    </AeroWindow>
   );
 }

@@ -71,6 +71,7 @@
     "typecheck": "node node_modules/typescript-native/bin/tsc --noEmit --incremental --tsBuildInfoFile .cache/tsc/native.tsbuildinfo"
   },
   "dependencies": {
+    "7.css": "0.21.1",
     "@anthropic-ai/sdk": "^0.116.0",
     "@audio/decode": "^3.11.3",
     "@aws-sdk/client-s3": "^3.1106.0",

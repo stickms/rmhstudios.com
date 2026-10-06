@@ -79,6 +79,13 @@ export function Buddy({
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
+  // The Start menu opens the chat without owning its state.
+  useEffect(() => {
+    const onOpen = () => setOpen(true);
+    window.addEventListener('dunesday:open-buddy', onOpen);
+    return () => window.removeEventListener('dunesday:open-buddy', onOpen);
+  }, []);
+
   useEffect(() => {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight, behavior: 'smooth' });
   }, [turns, pending]);
