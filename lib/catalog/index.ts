@@ -84,6 +84,7 @@ import versecraft from './games/versecraft';
 import voidBreaker from './games/void-breaker';
 
 // ── Apps ──────────────────────────────────────────────────────────────────
+import dunesday from './apps/dunesday';
 import rmhConnections from './apps/rmh-connections';
 import rmhStrategies from './apps/rmh-strategies';
 import rmhcalculator from './apps/rmhcalculator';
@@ -124,6 +125,7 @@ const GAME_MODULES: readonly GameInfo[] = [
 ];
 
 const APP_MODULES: readonly AppInfo[] = [
+  dunesday,
   rmhConnections,
   rmhStrategies,
   rmhcalculator,

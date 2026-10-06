@@ -24,6 +24,7 @@ import { Route as DailyRouteImport } from './routes/daily'
 import { Route as DeeplinkRouteImport } from './routes/deeplink'
 import { Route as DesignRouteImport } from './routes/design'
 import { Route as DreamRiftRouteImport } from './routes/dream-rift'
+import { Route as DunesdayRouteImport } from './routes/dunesday'
 import { Route as ForestExplorerRouteImport } from './routes/forest-explorer'
 import { Route as GabrielsHornRouteImport } from './routes/gabriels-horn'
 import { Route as HandleRouteImport } from './routes/handle'
@@ -141,6 +142,7 @@ import { Route as BlogRssDotxmlRouteImport } from './routes/blog.rss[.]xml'
 import { Route as DailyIndexRouteImport } from './routes/daily/index'
 import { Route as DailyAlibiRouteImport } from './routes/daily/alibi'
 import { Route as DailyChainlinkRouteImport } from './routes/daily/chainlink'
+import { Route as DailyGlobesetRouteImport } from './routes/daily/globeset'
 import { Route as DailyImpostorRouteImport } from './routes/daily/impostor'
 import { Route as DailyLightsOutRouteImport } from './routes/daily/lights-out'
 import { Route as DailyOutcastRouteImport } from './routes/daily/outcast'
@@ -382,6 +384,8 @@ import { Route as ApiDoctrineReactionsRouteImport } from './routes/api/doctrine/
 import { Route as ApiDreamRiftCoopRouteImport } from './routes/api/dream-rift/coop'
 import { Route as ApiDreamRiftLeaderboardRouteImport } from './routes/api/dream-rift/leaderboard'
 import { Route as ApiDreamRiftScoreRouteImport } from './routes/api/dream-rift/score'
+import { Route as ApiDunesdayAskRouteImport } from './routes/api/dunesday/ask'
+import { Route as ApiDunesdaySyncRouteImport } from './routes/api/dunesday/sync'
 import { Route as ApiEmailUnsubscribeRouteImport } from './routes/api/email/unsubscribe'
 import { Route as ApiEmbedOembedRouteImport } from './routes/api/embed/oembed'
 import { Route as ApiEmojiPacksIndexRouteImport } from './routes/api/emoji-packs/index'
@@ -396,6 +400,7 @@ import { Route as ApiGabrielsHornHouseRuleRouteImport } from './routes/api/gabri
 import { Route as ApiGabrielsHornLeaderboardRouteImport } from './routes/api/gabriels-horn/leaderboard'
 import { Route as ApiGameSavesGameIdRouteImport } from './routes/api/game-saves/$gameId'
 import { Route as ApiGifSearchRouteImport } from './routes/api/gif/search'
+import { Route as ApiGlobesetRecordRouteImport } from './routes/api/globeset/record'
 import { Route as ApiGroupChatsIndexRouteImport } from './routes/api/group-chats/index'
 import { Route as ApiGuidesIndexRouteImport } from './routes/api/guides/index'
 import { Route as ApiGuidesIdRouteImport } from './routes/api/guides/$id'
@@ -695,6 +700,7 @@ import { Route as ApiDoctrineReputationLeaderboardRouteImport } from './routes/a
 import { Route as ApiDoctrineSafehouseContentRouteImport } from './routes/api/doctrine/safehouse/content'
 import { Route as ApiDoctrineSafehouseDisclosuresRouteImport } from './routes/api/doctrine/safehouse/disclosures'
 import { Route as ApiDoctrineSahurStatusRouteImport } from './routes/api/doctrine/sahur/status'
+import { Route as ApiDunesdaySyncFeedIdRouteImport } from './routes/api/dunesday/sync.$feedId'
 import { Route as ApiEmojiPacksSlugIndexRouteImport } from './routes/api/emoji-packs/$slug/index'
 import { Route as ApiEmojiPacksSlugItemsRouteImport } from './routes/api/emoji-packs/$slug/items'
 import { Route as ApiEmojiPacksSlugSubscribeRouteImport } from './routes/api/emoji-packs/$slug/subscribe'
@@ -870,6 +876,9 @@ import { Route as ApiAdminWagerIdResolveRouteImport } from './routes/api/admin/w
 import { Route as ApiCommunitiesSlugAnnouncementsIdRouteImport } from './routes/api/communities/$slug/announcements/$id'
 import { Route as ApiCommunitiesSlugMembersUserIdRouteImport } from './routes/api/communities/$slug/members/$userId'
 import { Route as ApiDeveloperKeysIdUsageRouteImport } from './routes/api/developer/keys/$id/usage'
+import { Route as ApiDunesdayFeedsFeedIdCalendarDoticsRouteImport } from './routes/api/dunesday/feeds.$feedId.calendar[.]ics'
+import { Route as ApiDunesdayFeedsFeedIdRssDotxmlRouteImport } from './routes/api/dunesday/feeds.$feedId.rss[.]xml'
+import { Route as ApiDunesdaySyncFeedIdDiscordRouteImport } from './routes/api/dunesday/sync.$feedId.discord'
 import { Route as ApiHomesListingsIdFavoriteRouteImport } from './routes/api/homes/listings.$id.favorite'
 import { Route as ApiLibraryCollectionIdCoverRouteImport } from './routes/api/library/collection/$id/cover'
 import { Route as ApiLibraryCollectionIdItemsRouteImport } from './routes/api/library/collection/$id/items'
@@ -993,6 +1002,11 @@ const DesignRoute = DesignRouteImport.update({
 const DreamRiftRoute = DreamRiftRouteImport.update({
   id: '/dream-rift',
   path: '/dream-rift',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DunesdayRoute = DunesdayRouteImport.update({
+  id: '/dunesday',
+  path: '/dunesday',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForestExplorerRoute = ForestExplorerRouteImport.update({
@@ -1580,6 +1594,11 @@ const DailyAlibiRoute = DailyAlibiRouteImport.update({
 const DailyChainlinkRoute = DailyChainlinkRouteImport.update({
   id: '/chainlink',
   path: '/chainlink',
+  getParentRoute: () => DailyRoute,
+} as any)
+const DailyGlobesetRoute = DailyGlobesetRouteImport.update({
+  id: '/globeset',
+  path: '/globeset',
   getParentRoute: () => DailyRoute,
 } as any)
 const DailyImpostorRoute = DailyImpostorRouteImport.update({
@@ -2798,6 +2817,16 @@ const ApiDreamRiftScoreRoute = ApiDreamRiftScoreRouteImport.update({
   path: '/api/dream-rift/score',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDunesdayAskRoute = ApiDunesdayAskRouteImport.update({
+  id: '/api/dunesday/ask',
+  path: '/api/dunesday/ask',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDunesdaySyncRoute = ApiDunesdaySyncRouteImport.update({
+  id: '/api/dunesday/sync',
+  path: '/api/dunesday/sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiEmailUnsubscribeRoute = ApiEmailUnsubscribeRouteImport.update({
   id: '/api/email/unsubscribe',
   path: '/api/email/unsubscribe',
@@ -2868,6 +2897,11 @@ const ApiGameSavesGameIdRoute = ApiGameSavesGameIdRouteImport.update({
 const ApiGifSearchRoute = ApiGifSearchRouteImport.update({
   id: '/api/gif/search',
   path: '/api/gif/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGlobesetRecordRoute = ApiGlobesetRecordRouteImport.update({
+  id: '/api/globeset/record',
+  path: '/api/globeset/record',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGroupChatsIndexRoute = ApiGroupChatsIndexRouteImport.update({
@@ -4414,6 +4448,11 @@ const ApiDoctrineSahurStatusRoute = ApiDoctrineSahurStatusRouteImport.update({
   path: '/api/doctrine/sahur/status',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDunesdaySyncFeedIdRoute = ApiDunesdaySyncFeedIdRouteImport.update({
+  id: '/$feedId',
+  path: '/$feedId',
+  getParentRoute: () => ApiDunesdaySyncRoute,
+} as any)
 const ApiEmojiPacksSlugIndexRoute = ApiEmojiPacksSlugIndexRouteImport.update({
   id: '/api/emoji-packs/$slug/',
   path: '/api/emoji-packs/$slug/',
@@ -5329,6 +5368,24 @@ const ApiDeveloperKeysIdUsageRoute = ApiDeveloperKeysIdUsageRouteImport.update({
   path: '/usage',
   getParentRoute: () => ApiDeveloperKeysIdRoute,
 } as any)
+const ApiDunesdayFeedsFeedIdCalendarDoticsRoute =
+  ApiDunesdayFeedsFeedIdCalendarDoticsRouteImport.update({
+    id: '/api/dunesday/feeds/$feedId/calendar.ics',
+    path: '/api/dunesday/feeds/$feedId/calendar.ics',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiDunesdayFeedsFeedIdRssDotxmlRoute =
+  ApiDunesdayFeedsFeedIdRssDotxmlRouteImport.update({
+    id: '/api/dunesday/feeds/$feedId/rss.xml',
+    path: '/api/dunesday/feeds/$feedId/rss.xml',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiDunesdaySyncFeedIdDiscordRoute =
+  ApiDunesdaySyncFeedIdDiscordRouteImport.update({
+    id: '/discord',
+    path: '/discord',
+    getParentRoute: () => ApiDunesdaySyncFeedIdRoute,
+  } as any)
 const ApiHomesListingsIdFavoriteRoute =
   ApiHomesListingsIdFavoriteRouteImport.update({
     id: '/favorite',
@@ -5626,6 +5683,7 @@ export interface FileRoutesByFullPath {
   '/deeplink': typeof DeeplinkRouteWithChildren
   '/design': typeof DesignRoute
   '/dream-rift': typeof DreamRiftRoute
+  '/dunesday': typeof DunesdayRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/gabriels-horn': typeof GabrielsHornRoute
   '/handle': typeof HandleRoute
@@ -5740,6 +5798,7 @@ export interface FileRoutesByFullPath {
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/daily/alibi': typeof DailyAlibiRoute
   '/daily/chainlink': typeof DailyChainlinkRoute
+  '/daily/globeset': typeof DailyGlobesetRoute
   '/daily/impostor': typeof DailyImpostorRoute
   '/daily/lights-out': typeof DailyLightsOutRoute
   '/daily/outcast': typeof DailyOutcastRoute
@@ -5947,6 +6006,8 @@ export interface FileRoutesByFullPath {
   '/api/dream-rift/coop': typeof ApiDreamRiftCoopRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
+  '/api/dunesday/ask': typeof ApiDunesdayAskRoute
+  '/api/dunesday/sync': typeof ApiDunesdaySyncRouteWithChildren
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/api/embed/oembed': typeof ApiEmbedOembedRoute
   '/api/emoji-packs/installed': typeof ApiEmojiPacksInstalledRoute
@@ -5959,6 +6020,7 @@ export interface FileRoutesByFullPath {
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
   '/api/gif/search': typeof ApiGifSearchRoute
+  '/api/globeset/record': typeof ApiGlobesetRecordRoute
   '/api/guides/$id': typeof ApiGuidesIdRouteWithChildren
   '/api/handle/check': typeof ApiHandleCheckRoute
   '/api/handles/change': typeof ApiHandlesChangeRoute
@@ -6284,6 +6346,7 @@ export interface FileRoutesByFullPath {
   '/api/doctrine/safehouse/content': typeof ApiDoctrineSafehouseContentRoute
   '/api/doctrine/safehouse/disclosures': typeof ApiDoctrineSafehouseDisclosuresRoute
   '/api/doctrine/sahur/status': typeof ApiDoctrineSahurStatusRoute
+  '/api/dunesday/sync/$feedId': typeof ApiDunesdaySyncFeedIdRouteWithChildren
   '/api/emoji-packs/$slug/items': typeof ApiEmojiPacksSlugItemsRoute
   '/api/emoji-packs/$slug/subscribe': typeof ApiEmojiPacksSlugSubscribeRoute
   '/api/emoji-packs/$slug/upload': typeof ApiEmojiPacksSlugUploadRoute
@@ -6471,6 +6534,9 @@ export interface FileRoutesByFullPath {
   '/api/communities/$slug/announcements/$id': typeof ApiCommunitiesSlugAnnouncementsIdRoute
   '/api/communities/$slug/members/$userId': typeof ApiCommunitiesSlugMembersUserIdRoute
   '/api/developer/keys/$id/usage': typeof ApiDeveloperKeysIdUsageRoute
+  '/api/dunesday/feeds/$feedId/calendar.ics': typeof ApiDunesdayFeedsFeedIdCalendarDoticsRoute
+  '/api/dunesday/feeds/$feedId/rss.xml': typeof ApiDunesdayFeedsFeedIdRssDotxmlRoute
+  '/api/dunesday/sync/$feedId/discord': typeof ApiDunesdaySyncFeedIdDiscordRoute
   '/api/homes/listings/$id/favorite': typeof ApiHomesListingsIdFavoriteRoute
   '/api/library/collection/$id/cover': typeof ApiLibraryCollectionIdCoverRoute
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
@@ -6535,6 +6601,7 @@ export interface FileRoutesByTo {
   '/deeplink': typeof DeeplinkRouteWithChildren
   '/design': typeof DesignRoute
   '/dream-rift': typeof DreamRiftRoute
+  '/dunesday': typeof DunesdayRoute
   '/gabriels-horn': typeof GabrielsHornRoute
   '/handle': typeof HandleRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
@@ -6626,6 +6693,7 @@ export interface FileRoutesByTo {
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/daily/alibi': typeof DailyAlibiRoute
   '/daily/chainlink': typeof DailyChainlinkRoute
+  '/daily/globeset': typeof DailyGlobesetRoute
   '/daily/impostor': typeof DailyImpostorRoute
   '/daily/lights-out': typeof DailyLightsOutRoute
   '/daily/outcast': typeof DailyOutcastRoute
@@ -6833,6 +6901,8 @@ export interface FileRoutesByTo {
   '/api/dream-rift/coop': typeof ApiDreamRiftCoopRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
+  '/api/dunesday/ask': typeof ApiDunesdayAskRoute
+  '/api/dunesday/sync': typeof ApiDunesdaySyncRouteWithChildren
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/api/embed/oembed': typeof ApiEmbedOembedRoute
   '/api/emoji-packs/installed': typeof ApiEmojiPacksInstalledRoute
@@ -6845,6 +6915,7 @@ export interface FileRoutesByTo {
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
   '/api/gif/search': typeof ApiGifSearchRoute
+  '/api/globeset/record': typeof ApiGlobesetRecordRoute
   '/api/guides/$id': typeof ApiGuidesIdRouteWithChildren
   '/api/handle/check': typeof ApiHandleCheckRoute
   '/api/handles/change': typeof ApiHandlesChangeRoute
@@ -7170,6 +7241,7 @@ export interface FileRoutesByTo {
   '/api/doctrine/safehouse/content': typeof ApiDoctrineSafehouseContentRoute
   '/api/doctrine/safehouse/disclosures': typeof ApiDoctrineSafehouseDisclosuresRoute
   '/api/doctrine/sahur/status': typeof ApiDoctrineSahurStatusRoute
+  '/api/dunesday/sync/$feedId': typeof ApiDunesdaySyncFeedIdRouteWithChildren
   '/api/emoji-packs/$slug/items': typeof ApiEmojiPacksSlugItemsRoute
   '/api/emoji-packs/$slug/subscribe': typeof ApiEmojiPacksSlugSubscribeRoute
   '/api/emoji-packs/$slug/upload': typeof ApiEmojiPacksSlugUploadRoute
@@ -7357,6 +7429,9 @@ export interface FileRoutesByTo {
   '/api/communities/$slug/announcements/$id': typeof ApiCommunitiesSlugAnnouncementsIdRoute
   '/api/communities/$slug/members/$userId': typeof ApiCommunitiesSlugMembersUserIdRoute
   '/api/developer/keys/$id/usage': typeof ApiDeveloperKeysIdUsageRoute
+  '/api/dunesday/feeds/$feedId/calendar.ics': typeof ApiDunesdayFeedsFeedIdCalendarDoticsRoute
+  '/api/dunesday/feeds/$feedId/rss.xml': typeof ApiDunesdayFeedsFeedIdRssDotxmlRoute
+  '/api/dunesday/sync/$feedId/discord': typeof ApiDunesdaySyncFeedIdDiscordRoute
   '/api/homes/listings/$id/favorite': typeof ApiHomesListingsIdFavoriteRoute
   '/api/library/collection/$id/cover': typeof ApiLibraryCollectionIdCoverRoute
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
@@ -7425,6 +7500,7 @@ export interface FileRoutesById {
   '/deeplink': typeof DeeplinkRouteWithChildren
   '/design': typeof DesignRoute
   '/dream-rift': typeof DreamRiftRoute
+  '/dunesday': typeof DunesdayRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/gabriels-horn': typeof GabrielsHornRoute
   '/handle': typeof HandleRoute
@@ -7539,6 +7615,7 @@ export interface FileRoutesById {
   '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/daily/alibi': typeof DailyAlibiRoute
   '/daily/chainlink': typeof DailyChainlinkRoute
+  '/daily/globeset': typeof DailyGlobesetRoute
   '/daily/impostor': typeof DailyImpostorRoute
   '/daily/lights-out': typeof DailyLightsOutRoute
   '/daily/outcast': typeof DailyOutcastRoute
@@ -7747,6 +7824,8 @@ export interface FileRoutesById {
   '/api/dream-rift/coop': typeof ApiDreamRiftCoopRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
+  '/api/dunesday/ask': typeof ApiDunesdayAskRoute
+  '/api/dunesday/sync': typeof ApiDunesdaySyncRouteWithChildren
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
   '/api/embed/oembed': typeof ApiEmbedOembedRoute
   '/api/emoji-packs/installed': typeof ApiEmojiPacksInstalledRoute
@@ -7759,6 +7838,7 @@ export interface FileRoutesById {
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
   '/api/gif/search': typeof ApiGifSearchRoute
+  '/api/globeset/record': typeof ApiGlobesetRecordRoute
   '/api/guides/$id': typeof ApiGuidesIdRouteWithChildren
   '/api/handle/check': typeof ApiHandleCheckRoute
   '/api/handles/change': typeof ApiHandlesChangeRoute
@@ -8084,6 +8164,7 @@ export interface FileRoutesById {
   '/api/doctrine/safehouse/content': typeof ApiDoctrineSafehouseContentRoute
   '/api/doctrine/safehouse/disclosures': typeof ApiDoctrineSafehouseDisclosuresRoute
   '/api/doctrine/sahur/status': typeof ApiDoctrineSahurStatusRoute
+  '/api/dunesday/sync/$feedId': typeof ApiDunesdaySyncFeedIdRouteWithChildren
   '/api/emoji-packs/$slug/items': typeof ApiEmojiPacksSlugItemsRoute
   '/api/emoji-packs/$slug/subscribe': typeof ApiEmojiPacksSlugSubscribeRoute
   '/api/emoji-packs/$slug/upload': typeof ApiEmojiPacksSlugUploadRoute
@@ -8271,6 +8352,9 @@ export interface FileRoutesById {
   '/api/communities/$slug/announcements/$id': typeof ApiCommunitiesSlugAnnouncementsIdRoute
   '/api/communities/$slug/members/$userId': typeof ApiCommunitiesSlugMembersUserIdRoute
   '/api/developer/keys/$id/usage': typeof ApiDeveloperKeysIdUsageRoute
+  '/api/dunesday/feeds/$feedId/calendar.ics': typeof ApiDunesdayFeedsFeedIdCalendarDoticsRoute
+  '/api/dunesday/feeds/$feedId/rss.xml': typeof ApiDunesdayFeedsFeedIdRssDotxmlRoute
+  '/api/dunesday/sync/$feedId/discord': typeof ApiDunesdaySyncFeedIdDiscordRoute
   '/api/homes/listings/$id/favorite': typeof ApiHomesListingsIdFavoriteRoute
   '/api/library/collection/$id/cover': typeof ApiLibraryCollectionIdCoverRoute
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
@@ -8340,6 +8424,7 @@ export interface FileRouteTypes {
     | '/deeplink'
     | '/design'
     | '/dream-rift'
+    | '/dunesday'
     | '/forest-explorer'
     | '/gabriels-horn'
     | '/handle'
@@ -8454,6 +8539,7 @@ export interface FileRouteTypes {
     | '/blog/rss.xml'
     | '/daily/alibi'
     | '/daily/chainlink'
+    | '/daily/globeset'
     | '/daily/impostor'
     | '/daily/lights-out'
     | '/daily/outcast'
@@ -8661,6 +8747,8 @@ export interface FileRouteTypes {
     | '/api/dream-rift/coop'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
+    | '/api/dunesday/ask'
+    | '/api/dunesday/sync'
     | '/api/email/unsubscribe'
     | '/api/embed/oembed'
     | '/api/emoji-packs/installed'
@@ -8673,6 +8761,7 @@ export interface FileRouteTypes {
     | '/api/gabriels-horn/leaderboard'
     | '/api/game-saves/$gameId'
     | '/api/gif/search'
+    | '/api/globeset/record'
     | '/api/guides/$id'
     | '/api/handle/check'
     | '/api/handles/change'
@@ -8998,6 +9087,7 @@ export interface FileRouteTypes {
     | '/api/doctrine/safehouse/content'
     | '/api/doctrine/safehouse/disclosures'
     | '/api/doctrine/sahur/status'
+    | '/api/dunesday/sync/$feedId'
     | '/api/emoji-packs/$slug/items'
     | '/api/emoji-packs/$slug/subscribe'
     | '/api/emoji-packs/$slug/upload'
@@ -9185,6 +9275,9 @@ export interface FileRouteTypes {
     | '/api/communities/$slug/announcements/$id'
     | '/api/communities/$slug/members/$userId'
     | '/api/developer/keys/$id/usage'
+    | '/api/dunesday/feeds/$feedId/calendar.ics'
+    | '/api/dunesday/feeds/$feedId/rss.xml'
+    | '/api/dunesday/sync/$feedId/discord'
     | '/api/homes/listings/$id/favorite'
     | '/api/library/collection/$id/cover'
     | '/api/library/collection/$id/items'
@@ -9249,6 +9342,7 @@ export interface FileRouteTypes {
     | '/deeplink'
     | '/design'
     | '/dream-rift'
+    | '/dunesday'
     | '/gabriels-horn'
     | '/handle'
     | '/house-always-wins'
@@ -9340,6 +9434,7 @@ export interface FileRouteTypes {
     | '/blog/rss.xml'
     | '/daily/alibi'
     | '/daily/chainlink'
+    | '/daily/globeset'
     | '/daily/impostor'
     | '/daily/lights-out'
     | '/daily/outcast'
@@ -9547,6 +9642,8 @@ export interface FileRouteTypes {
     | '/api/dream-rift/coop'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
+    | '/api/dunesday/ask'
+    | '/api/dunesday/sync'
     | '/api/email/unsubscribe'
     | '/api/embed/oembed'
     | '/api/emoji-packs/installed'
@@ -9559,6 +9656,7 @@ export interface FileRouteTypes {
     | '/api/gabriels-horn/leaderboard'
     | '/api/game-saves/$gameId'
     | '/api/gif/search'
+    | '/api/globeset/record'
     | '/api/guides/$id'
     | '/api/handle/check'
     | '/api/handles/change'
@@ -9884,6 +9982,7 @@ export interface FileRouteTypes {
     | '/api/doctrine/safehouse/content'
     | '/api/doctrine/safehouse/disclosures'
     | '/api/doctrine/sahur/status'
+    | '/api/dunesday/sync/$feedId'
     | '/api/emoji-packs/$slug/items'
     | '/api/emoji-packs/$slug/subscribe'
     | '/api/emoji-packs/$slug/upload'
@@ -10071,6 +10170,9 @@ export interface FileRouteTypes {
     | '/api/communities/$slug/announcements/$id'
     | '/api/communities/$slug/members/$userId'
     | '/api/developer/keys/$id/usage'
+    | '/api/dunesday/feeds/$feedId/calendar.ics'
+    | '/api/dunesday/feeds/$feedId/rss.xml'
+    | '/api/dunesday/sync/$feedId/discord'
     | '/api/homes/listings/$id/favorite'
     | '/api/library/collection/$id/cover'
     | '/api/library/collection/$id/items'
@@ -10138,6 +10240,7 @@ export interface FileRouteTypes {
     | '/deeplink'
     | '/design'
     | '/dream-rift'
+    | '/dunesday'
     | '/forest-explorer'
     | '/gabriels-horn'
     | '/handle'
@@ -10252,6 +10355,7 @@ export interface FileRouteTypes {
     | '/blog/rss.xml'
     | '/daily/alibi'
     | '/daily/chainlink'
+    | '/daily/globeset'
     | '/daily/impostor'
     | '/daily/lights-out'
     | '/daily/outcast'
@@ -10460,6 +10564,8 @@ export interface FileRouteTypes {
     | '/api/dream-rift/coop'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
+    | '/api/dunesday/ask'
+    | '/api/dunesday/sync'
     | '/api/email/unsubscribe'
     | '/api/embed/oembed'
     | '/api/emoji-packs/installed'
@@ -10472,6 +10578,7 @@ export interface FileRouteTypes {
     | '/api/gabriels-horn/leaderboard'
     | '/api/game-saves/$gameId'
     | '/api/gif/search'
+    | '/api/globeset/record'
     | '/api/guides/$id'
     | '/api/handle/check'
     | '/api/handles/change'
@@ -10797,6 +10904,7 @@ export interface FileRouteTypes {
     | '/api/doctrine/safehouse/content'
     | '/api/doctrine/safehouse/disclosures'
     | '/api/doctrine/sahur/status'
+    | '/api/dunesday/sync/$feedId'
     | '/api/emoji-packs/$slug/items'
     | '/api/emoji-packs/$slug/subscribe'
     | '/api/emoji-packs/$slug/upload'
@@ -10984,6 +11092,9 @@ export interface FileRouteTypes {
     | '/api/communities/$slug/announcements/$id'
     | '/api/communities/$slug/members/$userId'
     | '/api/developer/keys/$id/usage'
+    | '/api/dunesday/feeds/$feedId/calendar.ics'
+    | '/api/dunesday/feeds/$feedId/rss.xml'
+    | '/api/dunesday/sync/$feedId/discord'
     | '/api/homes/listings/$id/favorite'
     | '/api/library/collection/$id/cover'
     | '/api/library/collection/$id/items'
@@ -11052,6 +11163,7 @@ export interface RootRouteChildren {
   DeeplinkRoute: typeof DeeplinkRouteWithChildren
   DesignRoute: typeof DesignRoute
   DreamRiftRoute: typeof DreamRiftRoute
+  DunesdayRoute: typeof DunesdayRoute
   ForestExplorerRoute: typeof ForestExplorerRouteWithChildren
   GabrielsHornRoute: typeof GabrielsHornRoute
   HandleRoute: typeof HandleRoute
@@ -11206,6 +11318,8 @@ export interface RootRouteChildren {
   ApiDreamRiftCoopRoute: typeof ApiDreamRiftCoopRoute
   ApiDreamRiftLeaderboardRoute: typeof ApiDreamRiftLeaderboardRoute
   ApiDreamRiftScoreRoute: typeof ApiDreamRiftScoreRoute
+  ApiDunesdayAskRoute: typeof ApiDunesdayAskRoute
+  ApiDunesdaySyncRoute: typeof ApiDunesdaySyncRouteWithChildren
   ApiEmailUnsubscribeRoute: typeof ApiEmailUnsubscribeRoute
   ApiEmbedOembedRoute: typeof ApiEmbedOembedRoute
   ApiEmojiPacksInstalledRoute: typeof ApiEmojiPacksInstalledRoute
@@ -11218,6 +11332,7 @@ export interface RootRouteChildren {
   ApiGabrielsHornLeaderboardRoute: typeof ApiGabrielsHornLeaderboardRoute
   ApiGameSavesGameIdRoute: typeof ApiGameSavesGameIdRoute
   ApiGifSearchRoute: typeof ApiGifSearchRoute
+  ApiGlobesetRecordRoute: typeof ApiGlobesetRecordRoute
   ApiGuidesIdRoute: typeof ApiGuidesIdRouteWithChildren
   ApiHandleCheckRoute: typeof ApiHandleCheckRoute
   ApiHandlesChangeRoute: typeof ApiHandlesChangeRoute
@@ -11559,6 +11674,8 @@ export interface RootRouteChildren {
   ApiAdminPredictionsIdModerateRoute: typeof ApiAdminPredictionsIdModerateRoute
   ApiAdminPredictionsIdResolveRoute: typeof ApiAdminPredictionsIdResolveRoute
   ApiAdminWagerIdResolveRoute: typeof ApiAdminWagerIdResolveRoute
+  ApiDunesdayFeedsFeedIdCalendarDoticsRoute: typeof ApiDunesdayFeedsFeedIdCalendarDoticsRoute
+  ApiDunesdayFeedsFeedIdRssDotxmlRoute: typeof ApiDunesdayFeedsFeedIdRssDotxmlRoute
   ApiMarketListingsIdBuyRoute: typeof ApiMarketListingsIdBuyRoute
   ApiPlaylistsIdItemsItemIdRoute: typeof ApiPlaylistsIdItemsItemIdRoute
   ApiRmhmusicGuessIdAttemptRoute: typeof ApiRmhmusicGuessIdAttemptRoute
@@ -11678,6 +11795,13 @@ declare module '@tanstack/react-router' {
       path: '/dream-rift'
       fullPath: '/dream-rift'
       preLoaderRoute: typeof DreamRiftRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dunesday': {
+      id: '/dunesday'
+      path: '/dunesday'
+      fullPath: '/dunesday'
+      preLoaderRoute: typeof DunesdayRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forest-explorer': {
@@ -12497,6 +12621,13 @@ declare module '@tanstack/react-router' {
       path: '/chainlink'
       fullPath: '/daily/chainlink'
       preLoaderRoute: typeof DailyChainlinkRouteImport
+      parentRoute: typeof DailyRoute
+    }
+    '/daily/globeset': {
+      id: '/daily/globeset'
+      path: '/globeset'
+      fullPath: '/daily/globeset'
+      preLoaderRoute: typeof DailyGlobesetRouteImport
       parentRoute: typeof DailyRoute
     }
     '/daily/impostor': {
@@ -14186,6 +14317,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDreamRiftScoreRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/dunesday/ask': {
+      id: '/api/dunesday/ask'
+      path: '/api/dunesday/ask'
+      fullPath: '/api/dunesday/ask'
+      preLoaderRoute: typeof ApiDunesdayAskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/dunesday/sync': {
+      id: '/api/dunesday/sync'
+      path: '/api/dunesday/sync'
+      fullPath: '/api/dunesday/sync'
+      preLoaderRoute: typeof ApiDunesdaySyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/email/unsubscribe': {
       id: '/api/email/unsubscribe'
       path: '/api/email/unsubscribe'
@@ -14282,6 +14427,13 @@ declare module '@tanstack/react-router' {
       path: '/api/gif/search'
       fullPath: '/api/gif/search'
       preLoaderRoute: typeof ApiGifSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/globeset/record': {
+      id: '/api/globeset/record'
+      path: '/api/globeset/record'
+      fullPath: '/api/globeset/record'
+      preLoaderRoute: typeof ApiGlobesetRecordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/group-chats/': {
@@ -16377,6 +16529,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDoctrineSahurStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/dunesday/sync/$feedId': {
+      id: '/api/dunesday/sync/$feedId'
+      path: '/$feedId'
+      fullPath: '/api/dunesday/sync/$feedId'
+      preLoaderRoute: typeof ApiDunesdaySyncFeedIdRouteImport
+      parentRoute: typeof ApiDunesdaySyncRoute
+    }
     '/api/emoji-packs/$slug/': {
       id: '/api/emoji-packs/$slug/'
       path: '/api/emoji-packs/$slug'
@@ -17602,6 +17761,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDeveloperKeysIdUsageRouteImport
       parentRoute: typeof ApiDeveloperKeysIdRoute
     }
+    '/api/dunesday/feeds/$feedId/calendar.ics': {
+      id: '/api/dunesday/feeds/$feedId/calendar.ics'
+      path: '/api/dunesday/feeds/$feedId/calendar.ics'
+      fullPath: '/api/dunesday/feeds/$feedId/calendar.ics'
+      preLoaderRoute: typeof ApiDunesdayFeedsFeedIdCalendarDoticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/dunesday/feeds/$feedId/rss.xml': {
+      id: '/api/dunesday/feeds/$feedId/rss.xml'
+      path: '/api/dunesday/feeds/$feedId/rss.xml'
+      fullPath: '/api/dunesday/feeds/$feedId/rss.xml'
+      preLoaderRoute: typeof ApiDunesdayFeedsFeedIdRssDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/dunesday/sync/$feedId/discord': {
+      id: '/api/dunesday/sync/$feedId/discord'
+      path: '/discord'
+      fullPath: '/api/dunesday/sync/$feedId/discord'
+      preLoaderRoute: typeof ApiDunesdaySyncFeedIdDiscordRouteImport
+      parentRoute: typeof ApiDunesdaySyncFeedIdRoute
+    }
     '/api/homes/listings/$id/favorite': {
       id: '/api/homes/listings/$id/favorite'
       path: '/favorite'
@@ -18350,6 +18530,7 @@ const AltairRouteWithChildren =
 interface DailyRouteChildren {
   DailyAlibiRoute: typeof DailyAlibiRoute
   DailyChainlinkRoute: typeof DailyChainlinkRoute
+  DailyGlobesetRoute: typeof DailyGlobesetRoute
   DailyImpostorRoute: typeof DailyImpostorRoute
   DailyLightsOutRoute: typeof DailyLightsOutRoute
   DailyOutcastRoute: typeof DailyOutcastRoute
@@ -18360,6 +18541,7 @@ interface DailyRouteChildren {
 const DailyRouteChildren: DailyRouteChildren = {
   DailyAlibiRoute: DailyAlibiRoute,
   DailyChainlinkRoute: DailyChainlinkRoute,
+  DailyGlobesetRoute: DailyGlobesetRoute,
   DailyImpostorRoute: DailyImpostorRoute,
   DailyLightsOutRoute: DailyLightsOutRoute,
   DailyOutcastRoute: DailyOutcastRoute,
@@ -19042,6 +19224,31 @@ const ApiCommunityPagesIdRouteChildren: ApiCommunityPagesIdRouteChildren = {
 const ApiCommunityPagesIdRouteWithChildren =
   ApiCommunityPagesIdRoute._addFileChildren(ApiCommunityPagesIdRouteChildren)
 
+interface ApiDunesdaySyncFeedIdRouteChildren {
+  ApiDunesdaySyncFeedIdDiscordRoute: typeof ApiDunesdaySyncFeedIdDiscordRoute
+}
+
+const ApiDunesdaySyncFeedIdRouteChildren: ApiDunesdaySyncFeedIdRouteChildren = {
+  ApiDunesdaySyncFeedIdDiscordRoute: ApiDunesdaySyncFeedIdDiscordRoute,
+}
+
+const ApiDunesdaySyncFeedIdRouteWithChildren =
+  ApiDunesdaySyncFeedIdRoute._addFileChildren(
+    ApiDunesdaySyncFeedIdRouteChildren,
+  )
+
+interface ApiDunesdaySyncRouteChildren {
+  ApiDunesdaySyncFeedIdRoute: typeof ApiDunesdaySyncFeedIdRouteWithChildren
+}
+
+const ApiDunesdaySyncRouteChildren: ApiDunesdaySyncRouteChildren = {
+  ApiDunesdaySyncFeedIdRoute: ApiDunesdaySyncFeedIdRouteWithChildren,
+}
+
+const ApiDunesdaySyncRouteWithChildren = ApiDunesdaySyncRoute._addFileChildren(
+  ApiDunesdaySyncRouteChildren,
+)
+
 interface ApiGuidesIdRouteChildren {
   ApiGuidesIdPublishRoute: typeof ApiGuidesIdPublishRoute
 }
@@ -19664,6 +19871,7 @@ const rootRouteChildren: RootRouteChildren = {
   DeeplinkRoute: DeeplinkRouteWithChildren,
   DesignRoute: DesignRoute,
   DreamRiftRoute: DreamRiftRoute,
+  DunesdayRoute: DunesdayRoute,
   ForestExplorerRoute: ForestExplorerRouteWithChildren,
   GabrielsHornRoute: GabrielsHornRoute,
   HandleRoute: HandleRoute,
@@ -19819,6 +20027,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDreamRiftCoopRoute: ApiDreamRiftCoopRoute,
   ApiDreamRiftLeaderboardRoute: ApiDreamRiftLeaderboardRoute,
   ApiDreamRiftScoreRoute: ApiDreamRiftScoreRoute,
+  ApiDunesdayAskRoute: ApiDunesdayAskRoute,
+  ApiDunesdaySyncRoute: ApiDunesdaySyncRouteWithChildren,
   ApiEmailUnsubscribeRoute: ApiEmailUnsubscribeRoute,
   ApiEmbedOembedRoute: ApiEmbedOembedRoute,
   ApiEmojiPacksInstalledRoute: ApiEmojiPacksInstalledRoute,
@@ -19831,6 +20041,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGabrielsHornLeaderboardRoute: ApiGabrielsHornLeaderboardRoute,
   ApiGameSavesGameIdRoute: ApiGameSavesGameIdRoute,
   ApiGifSearchRoute: ApiGifSearchRoute,
+  ApiGlobesetRecordRoute: ApiGlobesetRecordRoute,
   ApiGuidesIdRoute: ApiGuidesIdRouteWithChildren,
   ApiHandleCheckRoute: ApiHandleCheckRoute,
   ApiHandlesChangeRoute: ApiHandlesChangeRoute,
@@ -20173,6 +20384,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminPredictionsIdModerateRoute: ApiAdminPredictionsIdModerateRoute,
   ApiAdminPredictionsIdResolveRoute: ApiAdminPredictionsIdResolveRoute,
   ApiAdminWagerIdResolveRoute: ApiAdminWagerIdResolveRoute,
+  ApiDunesdayFeedsFeedIdCalendarDoticsRoute:
+    ApiDunesdayFeedsFeedIdCalendarDoticsRoute,
+  ApiDunesdayFeedsFeedIdRssDotxmlRoute: ApiDunesdayFeedsFeedIdRssDotxmlRoute,
   ApiMarketListingsIdBuyRoute: ApiMarketListingsIdBuyRoute,
   ApiPlaylistsIdItemsItemIdRoute: ApiPlaylistsIdItemsItemIdRoute,
   ApiRmhmusicGuessIdAttemptRoute: ApiRmhmusicGuessIdAttemptRoute,

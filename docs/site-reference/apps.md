@@ -22,6 +22,7 @@ Generated from `lib/apps.ts`, the single source of truth every card on the site 
 | **RMH Ladder** | [`/rmhladder`](https://rmhstudios.com/rmhladder) | Beta | — | `Careers` `Jobs` `Early Career` `AI` `Beta` |
 | **RMHCalculator** | [`/rmhcalculator`](https://rmhstudios.com/rmhcalculator) | Beta | required | `Calculator` `Graphing` `AI` `DeepSeek` `Beta` |
 | **RMHHomes** | [`/homes`](https://rmhstudios.com/homes) | Beta | required | `Housing` `Search` `Maps` `Beta` |
+| **Dunesday** | [`/dunesday`](https://rmhstudios.com/dunesday) | New | — | `Planner` `Movies` `AI` |
 
 ## Unlisted
 
@@ -93,6 +94,12 @@ RMHCalculator is a graphing and scientific calculator powered entirely by the De
 RMHHomes is a housing marketplace that blends member-posted rentals and houses with real apartment/home postings aggregated from public feeds across the web. Browse everything on an interactive map, filter by price, beds, baths, property type and source, save favorites, and set up alerts for new matches. Post your own listing and message the owner directly, or jump straight to the original posting for aggregated listings.
 
 **Route:** `/homes` · **Catalog id:** `rmhhomes` · **Status:** Beta · **Sign-in:** required
+
+### Dunesday
+
+Every MCU film and series plus Dune, scheduled night by night before 18 Dec 2026 — with calendar, RSS, Discord and an AI buddy.
+
+**Route:** `/dunesday` · **Catalog id:** `dunesday` · **Status:** New · **Sign-in:** not required
 
 ### RMHdle
 

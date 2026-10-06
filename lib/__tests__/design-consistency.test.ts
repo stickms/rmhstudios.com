@@ -197,6 +197,12 @@ const FULLSCREEN_TIER_DIRS = new Set([
   // viewport — so holding it to `--site-*` would make it a different page, not
   // a more consistent one.
   'pf2ecal',
+  // The MCU + Dune marathon planner, asked for by name in Frutiger Aero —
+  // glossy aqua glass, sky gradients, bubbles, Vista window chrome. It declares
+  // its own `--ds-*` group in `components/dunesday/dunesday.css` (with a Night
+  // variant) and paints its own sky over the viewport, so the site themes have
+  // nothing to say about it.
+  'dunesday',
   'breakpoint',
   'covid',
   'doctrine',
@@ -226,6 +232,8 @@ const FULLSCREEN_ROUTE_SEGMENTS = new Set([
   'daily',
   'discord',
   'dream-rift',
+  // The marathon planner — see the note beside `dunesday` above.
+  'dunesday',
   'forest-explorer',
   'gabriels-horn',
   'house-always-wins',

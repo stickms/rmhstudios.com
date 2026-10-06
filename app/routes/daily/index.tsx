@@ -28,7 +28,7 @@ export const Route = createFileRoute('/daily/')({
     meta: buildMeta({
       title: 'Daily Puzzles — a new set every day | RMH Studios',
       description:
-        'Six bite-size daily brain puzzles — Lights Out, Alibi, Spectrum, Outcast, Chainlink and Impostor. New puzzles every day at midnight EST, the same for everyone. Build a streak and share your results.',
+        'Seven bite-size daily brain puzzles — Lights Out, Alibi, Spectrum, Outcast, Chainlink, Impostor and GlobeSet. New puzzles every day at midnight EST, the same for everyone. Build a streak and share your results.',
       path: PATH,
     }),
     links: [buildCanonical(PATH)],

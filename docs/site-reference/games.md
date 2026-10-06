@@ -58,7 +58,7 @@ Navigate Outpost 13, a reality-glitched mining station overrun by "Echoes." Use 
 
 ### Daily Puzzles
 
-A suite of six daily brain games. Toggle lights in Lights Out, solve crime scenarios in Alibi, rank items in Spectrum, spot the odd one out in Outcast, build word chains in Chainlink, and detect lies in Impostor. Share your results with friends and compete for the best scores.
+A suite of seven daily brain games. Toggle lights in Lights Out, solve crime scenarios in Alibi, rank items in Spectrum, spot the odd one out in Outcast, build word chains in Chainlink, detect lies in Impostor, and turn a glass globe to find sets in GlobeSet. Share your results with friends and compete for the best scores.
 
 **Route:** `/daily` · **Catalog id:** `daily-puzzles` · **Sign-in:** not required
 

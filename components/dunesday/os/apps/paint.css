@@ -1,0 +1,745 @@
+/*
+ * Paint and Windows Photo Viewer for the Dunesday 7 desktop.
+ * Windows 7 colours are literal on purpose: these are period pieces.
+ */
+
+/* ───────────────────────────── Paint ───────────────────────────── */
+
+.ds-paint {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: #f5f6f7;
+  color: #1e1e1e;
+  font-size: 12px;
+  outline: none;
+}
+
+.ds-paint-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 3px 4px 0;
+  background: linear-gradient(#dfe9f5, #d3e1f1);
+  border-bottom: 1px solid #a5b9d4;
+}
+
+.ds-paint-filebtn {
+  padding: 3px 14px 4px;
+  border: 1px solid #1d4f91;
+  border-bottom: 0;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(#3c7fd1, #1c5ab0 50%, #1752a3 51%, #2a6bc4);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ds-paint-filebtn:hover {
+  background: linear-gradient(#5595e2, #2869c3 50%, #1f60b6 51%, #3a7cd6);
+}
+
+.ds-paint-tablabel {
+  padding: 3px 14px 4px;
+  margin-bottom: -1px;
+  border: 1px solid #a5b9d4;
+  border-bottom-color: #f5f6f7;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(#fdfeff, #f5f6f7);
+}
+
+.ds-paint-ribbon {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 4px;
+  overflow-x: auto;
+  background: linear-gradient(#fbfcfe, #e8eef6);
+  border-bottom: 1px solid #b6c6db;
+}
+
+.ds-paint-group {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2px;
+  padding: 2px 6px;
+  border-right: 1px solid #c5d2e3;
+  flex-shrink: 0;
+}
+
+.ds-paint-group:last-child {
+  border-right: 0;
+}
+
+.ds-paint-grouprow {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.ds-paint-grouprow--wrap {
+  flex-wrap: wrap;
+  max-width: 96px;
+}
+
+.ds-paint-grouplabel {
+  text-align: center;
+  color: #4c607a;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.ds-paint-tool,
+.ds-paint-size,
+.ds-paint-slot,
+.ds-paint-zoom {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: #1e395b;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ds-paint-tool {
+  width: 26px;
+  height: 26px;
+}
+
+.ds-paint-tool:hover:not(:disabled),
+.ds-paint-size:hover,
+.ds-paint-slot:hover,
+.ds-paint-zoom:hover,
+.ds-paint-edit:hover {
+  border-color: #e5c365;
+  background: linear-gradient(#fffbe8, #ffe9a8);
+}
+
+.ds-paint-tool.is-on,
+.ds-paint-size.is-on,
+.ds-paint-slot.is-on {
+  border-color: #c2962e;
+  background: linear-gradient(#ffdd8c, #ffc95e);
+}
+
+.ds-paint-tool:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.ds-paint-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 4px;
+  cursor: pointer;
+}
+
+.ds-paint-size {
+  width: 30px;
+  height: 26px;
+}
+
+.ds-paint-sizebar {
+  display: block;
+  width: 20px;
+  background: #1e1e1e;
+}
+
+.ds-paint-slot {
+  flex-direction: column;
+  gap: 2px;
+  width: 50px;
+  height: 58px;
+  font-size: 11px;
+  line-height: 1.1;
+}
+
+.ds-paint-chip {
+  display: block;
+  width: 22px;
+  height: 22px;
+  border: 1px solid #7a8899;
+  box-shadow: inset 0 0 0 1px #fff;
+}
+
+.ds-paint-chip--big {
+  width: 28px;
+  height: 28px;
+}
+
+.ds-paint-palette {
+  display: grid;
+  grid-template-columns: repeat(10, 18px);
+  gap: 2px;
+  margin: 0 4px;
+}
+
+.ds-paint-swatch {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid #8e9aab;
+  box-shadow: inset 0 0 0 1px #fff;
+  cursor: pointer;
+}
+
+.ds-paint-swatch:hover {
+  border-color: #e5a52a;
+}
+
+.ds-paint-edit {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 50px;
+  padding: 2px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  font-size: 11px;
+  line-height: 1.1;
+  text-align: center;
+  cursor: pointer;
+}
+
+.ds-paint-colorinput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.ds-paint-edit:focus-within {
+  outline: 2px solid #3c7fd1;
+  outline-offset: 1px;
+}
+
+.ds-paint-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px;
+  background: #c5cfdf;
+}
+
+.ds-paint-sheet {
+  position: relative;
+  box-shadow: 1px 1px 4px rgb(0 0 0 / 0.35);
+  background: #fff;
+}
+
+.ds-paint-canvas,
+.ds-paint-overlay {
+  position: absolute;
+  inset: 0;
+  display: block;
+  touch-action: none;
+  image-rendering: auto;
+}
+
+.ds-paint-overlay {
+  cursor: crosshair;
+}
+
+.ds-paint-overlay--picker,
+.ds-paint-overlay--fill {
+  cursor: copy;
+}
+
+.ds-paint-overlay--eraser {
+  cursor: cell;
+}
+
+.ds-paint-status {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 24px;
+  padding: 1px 4px;
+  border-top: 1px solid #b6c6db;
+  background: linear-gradient(#f0f4fa, #dce6f3);
+  color: #1e395b;
+  font-size: 11px;
+}
+
+.ds-paint-statuscell {
+  min-width: 110px;
+  padding: 0 8px;
+  border-right: 1px solid #b6c6db;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.ds-paint-statusgrow {
+  flex: 1;
+}
+
+.ds-paint-zoom {
+  min-width: 48px;
+  height: 20px;
+  padding: 0 6px;
+}
+
+.ds-paint-tool:focus-visible,
+.ds-paint-size:focus-visible,
+.ds-paint-slot:focus-visible,
+.ds-paint-swatch:focus-visible,
+.ds-paint-zoom:focus-visible,
+.ds-paint-filebtn:focus-visible,
+.ds-paint-fileitem:focus-visible,
+.ds-photos-tbtn:focus-visible,
+.ds-photos-cbtn:focus-visible,
+.ds-photos-play:focus-visible {
+  outline: 2px solid #3c7fd1;
+  outline-offset: 1px;
+}
+
+/* Paint's in-app dialogs (Open, Save as, the confirmations). */
+.ds-paint-modal,
+.ds-photos-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  background: rgb(255 255 255 / 0.45);
+}
+
+.ds-paint-dialog,
+.ds-photos-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(420px, 100%);
+  max-height: 100%;
+  padding: 12px;
+  border: 1px solid #6d8bb5;
+  border-radius: 6px;
+  background: #f0f0f0;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.35);
+  color: #1e1e1e;
+  font-size: 12px;
+}
+
+.ds-paint-dialogtitle {
+  font-size: 14px;
+  color: #1e395b;
+}
+
+.ds-paint-filelist {
+  display: flex;
+  flex-direction: column;
+  min-height: 80px;
+  max-height: 240px;
+  overflow: auto;
+  border: 1px solid #a5acb5;
+  background: #fff;
+}
+
+.ds-paint-fileitem {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 6px;
+  align-items: center;
+  padding: 3px 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ds-paint-fileitem > svg {
+  grid-row: span 2;
+}
+
+.ds-paint-fileitem:hover {
+  border-color: #b8d6fb;
+  background: #e5f3fb;
+}
+
+.ds-paint-fileitem.is-on {
+  border-color: #7da2ce;
+  background: #cce8ff;
+}
+
+.ds-paint-filename,
+.ds-paint-filewhere {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ds-paint-filewhere {
+  color: #6d6d6d;
+  font-size: 11px;
+}
+
+.ds-paint-empty,
+.ds-paint-where {
+  margin: 0;
+  color: #4c4c4c;
+}
+
+.ds-paint-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ds-paint-field input {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 4px;
+  border: 1px solid #abadb3;
+  background: #fff;
+  color: #1e1e1e;
+  font: inherit;
+}
+
+.ds-paint-field input:focus {
+  outline: none;
+  border-color: #3d7bad;
+}
+
+.ds-paint-error {
+  margin: 0;
+  color: #b00020;
+}
+
+.ds-paint-msg,
+.ds-photos-msg {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.ds-paint-msg p,
+.ds-photos-msg p {
+  margin: 6px 0 0;
+}
+
+.ds-paint-dialogbtns,
+.ds-photos-dialogbtns {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+/* ─────────────────────── Windows Photo Viewer ─────────────────────── */
+
+.ds-photos {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: #fff;
+  color: #1e1e1e;
+  font-size: 12px;
+  outline: none;
+}
+
+.ds-photos-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 30px;
+  padding: 2px 6px;
+  overflow-x: auto;
+  background: linear-gradient(#f7fbff, #dbe8f6 50%, #cddff3 51%, #dce9f7);
+  border-bottom: 1px solid #a0b5d1;
+}
+
+.ds-photos-tbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: #1e395b;
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ds-photos-tbtn:hover:not(:disabled) {
+  border-color: #8fb0d8;
+  background: linear-gradient(rgb(255 255 255 / 0.9), rgb(220 236 252 / 0.9));
+}
+
+.ds-photos-tbtn.is-on {
+  border-color: #7da2ce;
+  background: linear-gradient(#e2eefc, #c6dcf6);
+}
+
+.ds-photos-tbtn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.ds-photos-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.ds-photos-stage {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  background: #fff;
+  touch-action: none;
+  user-select: none;
+}
+
+.ds-photos-stage.is-pannable {
+  cursor: grab;
+}
+
+.ds-photos-stage.is-pannable:active {
+  cursor: grabbing;
+}
+
+.ds-photos-img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  max-width: none;
+  transform-origin: center center;
+  box-shadow: 0 1px 6px rgb(0 0 0 / 0.25);
+}
+
+.ds-photos-img.is-loading {
+  visibility: hidden;
+}
+
+.ds-photos-missing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 100%;
+  padding: 24px;
+  color: #4c4c4c;
+  text-align: center;
+}
+
+.ds-photos-missing p {
+  max-width: 360px;
+  margin: 0;
+}
+
+.ds-photos-info {
+  flex: 0 0 220px;
+  overflow: auto;
+  padding: 10px 12px;
+  border-left: 1px solid #c8d4e3;
+  background: #f3f7fc;
+}
+
+.ds-photos-info dl {
+  margin: 0;
+}
+
+.ds-photos-info dt {
+  margin-top: 8px;
+  color: #6d6d6d;
+  font-size: 11px;
+}
+
+.ds-photos-info dt:first-child {
+  margin-top: 0;
+}
+
+.ds-photos-info dd {
+  margin: 1px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.ds-photos-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 48px;
+  padding: 4px 10px;
+  border-top: 1px solid #9fb4cf;
+  background: linear-gradient(#eef4fb, #d5e3f3 45%, #c3d6ee 46%, #d6e5f6);
+}
+
+.ds-photos-zoom,
+.ds-photos-nav,
+.ds-photos-end {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ds-photos-zoom,
+.ds-photos-end {
+  flex: 1;
+}
+
+.ds-photos-end {
+  justify-content: flex-end;
+}
+
+.ds-photos-slider {
+  width: 90px;
+  accent-color: #2a6bc4;
+}
+
+.ds-photos-pct {
+  min-width: 42px;
+  color: #1e395b;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ds-photos-cbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: #1e395b;
+  cursor: pointer;
+}
+
+.ds-photos-cbtn:hover:not(:disabled) {
+  border-color: #8fb0d8;
+  background: linear-gradient(rgb(255 255 255 / 0.95), rgb(205 225 248 / 0.95));
+}
+
+.ds-photos-cbtn:disabled,
+.ds-photos-play:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.ds-photos-cbtn--delete:hover:not(:disabled) {
+  color: #b3261e;
+}
+
+.ds-photos-play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin: 0 4px;
+  border: 1px solid #1d4f91;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 30%, #8fc4ff, #2a6bc4 55%, #174e9c);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.7),
+    0 1px 3px rgb(0 0 0 / 0.35);
+  color: #fff;
+  cursor: pointer;
+}
+
+.ds-photos-play:hover:not(:disabled) {
+  background: radial-gradient(circle at 50% 30%, #b0d7ff, #3c80d8 55%, #1d5aae);
+}
+
+/* Slide show: the whole window goes dark and the picture fills it. */
+.ds-photos-show {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  background: #000;
+  outline: none;
+}
+
+.ds-photos-showstage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ds-photos-showimg {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.ds-photos-exit {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  opacity: 0.6;
+}
+
+.ds-photos-exit:hover,
+.ds-photos-exit:focus-visible {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ds-photos-showimg {
+    animation: ds-photos-fade 0.6s ease-out;
+  }
+
+  .ds-photos-img {
+    transition: box-shadow 0.15s ease;
+  }
+
+  .ds-paint-tool,
+  .ds-paint-size,
+  .ds-paint-slot,
+  .ds-photos-cbtn,
+  .ds-photos-tbtn {
+    transition:
+      background-color 0.12s ease,
+      border-color 0.12s ease;
+  }
+
+  .ds-os--still .ds-photos-showimg {
+    animation: none;
+  }
+
+  .ds-os--still .ds-photos-img,
+  .ds-os--still .ds-paint-tool,
+  .ds-os--still .ds-paint-size,
+  .ds-os--still .ds-paint-slot,
+  .ds-os--still .ds-photos-cbtn,
+  .ds-os--still .ds-photos-tbtn {
+    transition: none;
+  }
+}
+
+@keyframes ds-photos-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}

@@ -166,7 +166,7 @@ export const SITE_DESTINATIONS: SiteDestination[] = [
     title: 'Daily Puzzles',
     href: '/daily',
     iconName: 'Puzzle',
-    keywords: 'lights out alibi spectrum outcast chainlink impostor puzzle',
+    keywords: 'lights out alibi spectrum outcast chainlink impostor globeset puzzle set cards',
     description: 'A new set of puzzles every day.',
   },
   {

@@ -97,6 +97,16 @@ export const APP_ROUTE_THEME_BG: Record<
     light: '#f2f2f7',
     system: true,
   },
+  // The Dunesday marathon planner. Grounds mirror `--ds-ground` in
+  // `components/dunesday/dunesday.css` — Aero sky blue by day, deep night blue
+  // with the page's Night toggle on. The toggle lives in the page's own stored
+  // plan (`dunesday:v1` → `night`), so the pre-paint script reads it from there.
+  '/dunesday': {
+    key: 'dunesday:v1',
+    darkFlag: 'night',
+    dark: '#0b1a3a',
+    light: '#bfe6ff',
+  },
   // The activity dossier. Grounds mirror `--stk-bg` in
   // `components/sohumtracker/sohumtracker.css` — Discord's app frame in dark, its
   // light theme's chat ground in light. `system: true` because the page follows

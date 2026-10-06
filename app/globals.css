@@ -593,6 +593,33 @@
   --casino-seat-3: #e0862f;
   --casino-seat-4: #2fb3a0;
 
+  /* ── GlobeSet dot group (`components/daily-puzzles/globeset/`) ────────────────
+     GlobeSet is played on 63 cards carrying between one and six coloured dots,
+     and a "GlobeSet" is a set of cards on which every colour appears an even
+     number of times. The colours are therefore the game's *data*, not its
+     decoration: two dots are the same dot because they are the same colour, so
+     re-tinting them per theme would not restyle the game, it would change what
+     the player is being asked. Same argument as `--casino-*` and a playing
+     card's suits.
+
+     Everything AROUND the cards — the board, the HUD, the results, the race
+     lobby — takes ordinary `--site-*` tokens, so the page still tracks the
+     theme; only the six dots are fixed.
+
+     `--globeset-dot-ink` is the hairline drawn around every dot and the glyph
+     stroked inside it in "distinct shapes" mode. It is dark on purpose: the
+     dots sit on the card's own near-white face, which does not follow the
+     page. */
+  --globeset-card-face: #f7f7f5;
+  --globeset-card-edge: #c9cbd2;
+  --globeset-dot-ink: #17181c;
+  --globeset-dot-red: #e0443f;
+  --globeset-dot-orange: #ef8a12;
+  --globeset-dot-yellow: #dcbb16;
+  --globeset-dot-green: #2ba463;
+  --globeset-dot-blue: #3b7ff0;
+  --globeset-dot-purple: #9a55e8;
+
   /* ── Spherification group (`components/rebar-rutabaga/`) ──────────────────
      Rebar & Rutabaga is a molecular-gastronomy kitchen whose technique is
      spherification, so its menu is read off a liquid globe with one pearl per
@@ -1229,6 +1256,43 @@ html[data-color-vision='tritanopia']:is(
   --site-danger-fg: #1a0000;
   --site-warning: #ff8ad8;
   --site-warning-fg: #1a0014;
+}
+
+/* GlobeSet's six dots (`--globeset-dot-*` above) are the one place on the site
+   where colour is the DATA rather than the meaning attached to it: the player's
+   whole task is "does this colour appear an even number of times", so two dots
+   a viewer cannot tell apart is not a styling problem, it is an unplayable
+   game. The three modes therefore get a full six-hue ramp, not just the three
+   semantic tokens.
+
+   These are a backstop, not the fix. GlobeSet also stamps a distinct SHAPE inside
+   every dot, and the board turns that on automatically whenever a colour-vision
+   mode is set (`components/daily-puzzles/globeset/GlobeSetCard.tsx`) — six shapes
+   separate under any deficiency, where six hues can only be stretched. */
+html[data-color-vision='deuteranopia'],
+html[data-color-vision='protanopia'] {
+  /* Okabe–Ito, the standard colour-vision-safe qualitative set: vermillion,
+     orange, yellow, bluish green, blue, reddish purple. Red and green collapse
+     toward each other, so the ramp separates by lightness as much as by hue. */
+  --globeset-dot-red: #d55e00;
+  --globeset-dot-orange: #e69f00;
+  --globeset-dot-yellow: #b8a200;
+  --globeset-dot-green: #009e73;
+  --globeset-dot-blue: #0072b2;
+  --globeset-dot-purple: #cc79a7;
+}
+
+html[data-color-vision='tritanopia'] {
+  /* Blue–yellow deficiency: red and green are seen normally, so those keep
+     their hues and the BLUE/YELLOW pair is what has to move — blue to a dark
+     teal and yellow to a light warm pink, which land far apart in lightness
+     even once the hue difference is gone. */
+  --globeset-dot-red: #d62728;
+  --globeset-dot-orange: #e8730c;
+  --globeset-dot-yellow: #e79ab0;
+  --globeset-dot-green: #2f9e44;
+  --globeset-dot-blue: #0f7d86;
+  --globeset-dot-purple: #6a3d9a;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -2263,6 +2327,18 @@ html.style-high-contrast .lg-goo {
   --casino-felt: #000000;
   --casino-felt-raised: #1a1a1a;
   --casino-ink: #ffffff;
+  /* GlobeSet's dots are data, so high contrast pushes them to their most
+     separable form rather than flattening them: a saturated ramp on a pure
+     white face, with a black rim so a dot is still a dot against it. */
+  --globeset-card-face: #ffffff;
+  --globeset-card-edge: #000000;
+  --globeset-dot-ink: #000000;
+  --globeset-dot-red: #e60000;
+  --globeset-dot-orange: #ff8000;
+  --globeset-dot-yellow: #ffd400;
+  --globeset-dot-green: #00a000;
+  --globeset-dot-blue: #0066ff;
+  --globeset-dot-purple: #b000e0;
   --site-podium-gold: #ffd400;
   --site-podium-silver: #e6e6e6;
   --site-podium-bronze: #ff9d3c;
@@ -5823,8 +5899,7 @@ body {
          no clock for `animation-delay` to delay against, so a delay set here is
          silently ignored. `--u-reveal-shift` moves where in its own entry an
          element starts, which is the same effect for siblings sharing a row. */
-      animation-range: entry var(--u-reveal-shift, 0%) entry
-        calc(46% + var(--u-reveal-shift, 0%));
+      animation-range: entry var(--u-reveal-shift, 0%) entry calc(46% + var(--u-reveal-shift, 0%));
     }
     /* Optional per-item lift for staggered grids: parent sets nothing, each
        child just enters on its own geometry — a natural cascade. */
@@ -5846,8 +5921,7 @@ body {
     html:not(.reduce-motion) .u-reveal-group > * {
       animation: u-reveal-in linear both;
       animation-timeline: view();
-      animation-range: entry var(--u-reveal-shift, 0%) entry
-        calc(46% + var(--u-reveal-shift, 0%));
+      animation-range: entry var(--u-reveal-shift, 0%) entry calc(46% + var(--u-reveal-shift, 0%));
     }
     html:not(.reduce-motion) .u-reveal-group > *:nth-child(2) {
       --u-reveal-shift: 5%;
