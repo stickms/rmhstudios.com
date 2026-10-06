@@ -13,6 +13,7 @@
   "action-strike-desc": "— 피해를 줍니다 (기본 1, 준비 상태면 2). 상대가 막기를 선택해도 칩 1개의 피해를 입힙니다.",
   "actions-heading": "행동",
   "active": "활성",
+  "brace-btn_one": "브레이스 ({{count}})",
   "brace-btn_other": "버티기 ({{count}})",
   "buy-cost": "구매 ({{cost}} F)",
   "charge": "충전",

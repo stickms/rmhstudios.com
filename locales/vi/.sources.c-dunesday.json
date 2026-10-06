@@ -1,0 +1,8 @@
+{
+  "behind_one": "At this pace you finish {{finish}}, {{count}} day late.",
+  "cal-gadget_one": "{{count}} days until Dunesday",
+  "mix-skipped_one": "{{count}} title left out of the plan.",
+  "on-track_one": "On track: you finish {{finish}}, {{count}} day to spare.",
+  "show-all_one": "Show all {{count}} days",
+  "streak-days_one": "{{count}} day"
+}
