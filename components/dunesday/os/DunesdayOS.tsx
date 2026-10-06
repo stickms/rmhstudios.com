@@ -18,7 +18,7 @@ import { AnimatePresence, MotionConfig, m as motion } from 'framer-motion';
 import { Power } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { paintDocumentGround } from '@/stores/themeStore';
+import { APP_ROUTE_THEME_BG, paintDocumentGround } from '@/stores/themeStore';
 import { cn } from '@/lib/utils';
 import { BootSplash } from '../BootSplash';
 import { useDunesday } from '../DunesdayProvider';
@@ -86,8 +86,16 @@ export function DunesdayOS() {
     };
   }, [actions]);
 
+  // The two grounds come from `APP_ROUTE_THEME_BG` rather than being repeated
+  // here, because the pre-paint script in `app/routes/__root.tsx` paints from that
+  // same map before this effect can run — and when the two disagreed, every first
+  // load flashed. They did disagree: this effect painted `#1a4f8f` while the entry
+  // named `--ds-ground` (`#bfe6ff`), so the document was pre-painted one blue and
+  // repainted another. `components/pf2ecal/theme.ts` reads the map for exactly
+  // this reason.
   useEffect(() => {
-    paintDocumentGround(state.night ? '#0b1a3a' : '#1a4f8f', state.night);
+    const ground = APP_ROUTE_THEME_BG['/dunesday'];
+    paintDocumentGround(state.night ? ground.dark : ground.light, state.night);
   }, [state.night]);
 
   // Screensaver after the chosen idle time on the desktop.

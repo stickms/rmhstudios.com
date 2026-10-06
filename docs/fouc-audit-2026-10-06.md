@@ -62,18 +62,21 @@ was.
 
 ## Findings
 
-| #   | Page(s)                                                         | Measured                                                                                                                                     | Status                                        |
-| --- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| 1   | ~34 game/app routes                                             | `html.app-route` applied ~1.9s after FCP → surfaces, gutter and aurora all change                                                            | **fixed, verified**                           |
-| 2   | `/temple-of-joy`                                                | document ground `#0b0b0b` → `#fbf9f4`, **Δluma 0.945**, full viewport, every load                                                            | **fixed, verified**                           |
-| 3   | `/daily/lights-out`, `/lights-out`                              | **0.182** of layout shift after FCP (budget 0.1)                                                                                             | **fixed, verified**                           |
-| 4   | `/kowloon-knockout`                                             | restyle under `high-contrast`                                                                                                                | **fixed by #1, verified**                     |
-| 5   | `/laundry-sort`                                                 | **0.443** of layout shift after FCP — geometric only, 0.0000 pixel change                                                                    | **allowlisted, capped, with the measurement** |
-| 6   | `/discord/`, `/discord/rmhbox`, `/discord/lights-out`           | ground `#fff` → `#000` (**Δluma 1.000**) plus theme class, accent, surface, `color-scheme` and root font size all landing after FCP          | **open — reported, not fixed**                |
-| 7   | `/slice-it/player/$handle` (404 branch)                         | ground `#16161a` → `#ffffff`, and **30.5% frame divergence** — a real transient flash                                                        | **open — reported**                           |
-| 8   | `/slice-it/` under `comfort`                                    | every root attribute set before paint is CLEARED after hydration (`"app-route readable-font"` → `""`, `data-density` → absent) + 0.201 shift | **open — reported**                           |
-| 9   | `/daily/lights-out` under `comfort`                             | residual **0.109** (was 0.182); the scrollbar cause is verified gone                                                                         | **open — reported**                           |
-| 10  | six decorative families site-wide, `MedievalSharp` on `/altair` | not measurable here                                                                                                                          | **reported**                                  |
+| #   | Page(s)                                                         | Measured                                                                                                                                     | Status                                                                       |
+| --- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| 1   | ~34 game/app routes                                             | `html.app-route` applied ~1.9s after FCP → surfaces, gutter and aurora all change                                                            | **fixed, verified**                                                          |
+| 2   | `/temple-of-joy`                                                | document ground `#0b0b0b` → `#fbf9f4`, **Δluma 0.945**, full viewport, every load                                                            | **fixed, verified**                                                          |
+| 3   | `/daily/lights-out`, `/lights-out`                              | **0.182** of layout shift after FCP (budget 0.1)                                                                                             | **fixed, verified**                                                          |
+| 4   | `/kowloon-knockout`                                             | restyle under `high-contrast`                                                                                                                | **fixed by #1, verified**                                                    |
+| 5   | `/laundry-sort`                                                 | **0.443** of layout shift after FCP — geometric only, 0.0000 pixel change                                                                    | **allowlisted, capped, with the measurement**                                |
+| 6   | `/discord/`, `/discord/rmhbox`, `/discord/lights-out`           | ground `#fff` → `#000` (**Δluma 1.000**) plus theme class, accent, surface, `color-scheme` and root font size all landing after FCP          | **open — reported, not fixed**                                               |
+| 7   | `/slice-it/player/$handle` (404 branch)                         | ground `#16161a` → `#ffffff`, and **30.5% frame divergence** — a real transient flash                                                        | **open — reported**                                                          |
+| 8   | `/slice-it/` under `comfort`                                    | every root attribute set before paint is CLEARED after hydration (`"app-route readable-font"` → `""`, `data-density` → absent) + 0.201 shift | **open — reported**                                                          |
+| 9   | `/daily/lights-out` under `comfort`                             | residual **0.109** (was 0.182); the scrollbar cause is verified gone                                                                         | **open — reported**                                                          |
+| 10  | six decorative families site-wide, `MedievalSharp` on `/altair` | not measurable here                                                                                                                          | **reported**                                                                 |
+| 11  | `/dunesday`                                                     | ground `#0b1a3a` → `#bfe6ff`, **Δluma 0.738**, every first load                                                                              | **fixed, verified**                                                          |
+| 12  | `/daily/globeset`                                               | **7.3%** frame divergence, signed in and out                                                                                                 | **partly fixed** — the scrollbar re-centring is gone; the rest is finding 13 |
+| 13  | `/daily/globeset`, `/rmhtype` (signed in)                       | the server-rendered page is **replaced by a spinner** for ~750–800ms, then returns                                                           | **open — reported**                                                          |
 
 Verified by re-running the affected routes across **all nine profiles** after the
 fixes (189 runs): findings 1–4 are gone, and what is left is 6–9 plus the
@@ -251,6 +254,86 @@ changing the site's font strategy unilaterally. If it is to be removed, the
 levers are metric-matched fallbacks (`size-adjust` / `ascent-override` on a local
 fallback face, so the swap costs no reflow) or preloading the one family a page
 actually uses above the fold — not reverting to render-blocking.
+
+### 11 & 12 — the two `main` brought in, caught the same hour
+
+The branch merged `main` (18 commits, two new routes) and the audit found a flash in
+**both** new pages on the first run against them. Neither needed a new idea; each was
+a second instance of something this pass had already fixed, which is the argument for
+the gates below in its strongest form.
+
+**`/dunesday` — Δluma 0.738, every first load.** `main` added the planner _with_ an
+`APP_ROUTE_THEME_BG` entry, correctly naming both grounds. What the entry could not
+say — because the option did not exist when it was written — is **which way the page
+opens**. The map's old behaviour was to assume dark when nothing is stored, so a first
+visit pre-painted deep night blue `#0b1a3a` under a page whose default is Aero day
+`#bfe6ff` (`night: false` in `lib/dunesday/state.ts`). `defaultDark: false` is the
+whole fix.
+
+That makes twice — Temple of Joy and Dunesday — that a silent default produced a
+full-viewport flash, so the default is no longer inheritable: a new gate requires
+**every** entry to carry either `system: true` or an explicit `defaultDark`, and the
+pre-existing entries now state theirs. A reviewer adding a page has to look up what
+its store defaults to, which is the step both bugs skipped. Verified to fail, naming
+`/dunesday`, when that one line is removed.
+
+**`/daily/globeset` — 7.3% frame divergence, signed in and out.** Byte-for-byte the
+Lights Out bug: a bare `mx-auto max-w-5xl` column on an app-tier route, where
+`html.app-route` withholds `scrollbar-gutter: stable`, so the board outgrowing the
+window added a scrollbar, narrowed the viewport, and `mx-auto` re-centred the whole
+column sideways. Same fix: `.app-page`.
+
+Worth noting what caught these. The route set is **derived** from
+`app/routeTree.gen.ts`, so `/dunesday` and `/daily/globeset` were in the audit the
+moment the merge landed — 287 pages became 289, with no list to update and nothing
+silently unaudited. That is the property the coverage gate exists to protect.
+
+### 13 — the worst thing the audit found: a finished page replaced by a spinner
+
+Not a flash of _unstyled_ content — a flash of **no** content, and the only finding
+here a reader would describe as the page breaking.
+
+On `/daily/globeset`, and on `/rmhtype` while signed in, the sequence measured from
+the compositor frames is: the **server-rendered page paints complete** (title,
+controls, stats row, leaderboards) and stays up for ~1.1s and ~1.5s respectively —
+then the whole page is **replaced by `GameLoadingFallback`**, a blank sheet with a
+spinner, for **~750ms** and **~800ms** — then the page returns.
+
+Measured as 7.3% and 10.3% of frame divergence, with `stillMoving` at 0.0000 and
+0.0001: both pages are fully settled by the end, so this is not an animation the
+detector mistook for a flash. The filmstrips show it plainly.
+
+**Mechanism.** Both routes render a `React.lazy` component inside a `<Suspense>`
+whose fallback is `GameLoadingFallback`. React 19 server-renders the real component,
+so the HTML is complete and paints. On the client, hydration reaches the boundary,
+the chunk has not arrived, the boundary **suspends**, and React swaps in the
+fallback — discarding markup the reader is already looking at. When the chunk lands
+it renders again.
+
+**Why only these two.** `/isleworks` uses the identical `lazy()` + `GameLoadingFallback`
+shape and measures 0.000 divergence, settled at +0ms. The difference is what the
+server renders: a client-only game SSRs to the fallback anyway, so there is nothing
+to lose. These two SSR a _populated_ page. `/daily/alibi` (0.004),
+`/daily/lights-out` (0.000) and `/laundry-sort` (0.006) are clean too, so this is not
+a property of the pattern — it is the pattern **plus** real server-rendered content
+**plus** a chunk slow enough to suspend.
+
+**Reported, not fixed**, because every fix is a bundle-strategy decision this audit
+should not make alone:
+
+- The direct fix is a `<link rel="modulepreload">` for the inner chunk in the route's
+  `head()`, so it downloads in parallel with the entry bundle and hydration never
+  suspends. The obstacle is getting the hashed chunk URL into `head()` — a Vite
+  manifest lookup or an `import.meta.url` trick, neither of which should be invented
+  in a FOUC PR.
+- Dropping the inner `lazy()` and letting TanStack's route-level split carry the game
+  is cleaner, but these route modules are statically imported by `routeTree.gen.ts`,
+  so it moves code toward the entry graph — straight into `check:bundle-budget` and
+  `check:entry-composition`, which is why the inner `lazy()` is there in the first
+  place.
+
+What is not in doubt is the measurement: two pages show finished content, blank it
+for the better part of a second, and bring it back.
 
 ## Not verified here
 

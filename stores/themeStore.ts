@@ -81,6 +81,8 @@ export const APP_ROUTE_THEME_BG: Record<
   '/slice-it': {
     key: 'slice-it-storage',
     darkFlag: 'isDarkMode',
+    // `isDarkMode: true` in `lib/slice-it/store.ts` — Slice It opens dark.
+    defaultDark: true,
     dark: '#16161a',
     light: '#e0e5ec',
   },
@@ -104,8 +106,21 @@ export const APP_ROUTE_THEME_BG: Record<
   '/dunesday': {
     key: 'dunesday:v1',
     darkFlag: 'night',
+    // `night: false` in `lib/dunesday/state.ts`, so a first visit is DAY. Without
+    // this the pre-paint script took the map's old silent default and painted
+    // `#0b1a3a` under a day page — measured Δluma 0.738, every first load, by
+    // `testing/e2e/fouc.mjs`.
+    defaultDark: false,
     dark: '#0b1a3a',
-    light: '#bfe6ff',
+    // `#1a4f8f`, NOT `--ds-ground` (`#bfe6ff`). The CSS token is the desktop
+    // wallpaper's base; what the document itself is painted is whatever
+    // `DunesdayOS` passes to `paintDocumentGround`, and the two are different
+    // colours. The entry named the wrong one, so correcting the default alone
+    // moved the flash rather than removing it (Δluma 0.738 → 0.671). `DunesdayOS`
+    // now reads these two values instead of repeating them, which is how
+    // `components/pf2ecal/theme.ts` has always done it and why the board never
+    // drifted this way.
+    light: '#1a4f8f',
   },
   // The activity dossier. Grounds mirror `--stk-bg` in
   // `components/sohumtracker/sohumtracker.css` — Discord's app frame in dark, its

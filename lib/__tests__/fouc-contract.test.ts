@@ -216,6 +216,91 @@ describe('FOUC contract: pre-paint parity', () => {
   });
 
   /**
+   * A page that paints the document ground must take the colour FROM the map, not
+   * repeat it.
+   *
+   * `paintDocumentGround` is the shared writer, and a page calling it is doing the
+   * right thing — the problem is where it gets the colour. The pre-paint script
+   * paints from `APP_ROUTE_THEME_BG` before any of this code runs, so a literal in
+   * the caller is a second copy of a value that has to match, and the two drifted
+   * exactly as you would expect: `/dunesday`'s entry named `--ds-ground`
+   * (`#bfe6ff`, the wallpaper's base) while `DunesdayOS` painted `#1a4f8f`. The
+   * document was pre-painted one blue and repainted another on every load, and
+   * fixing the entry's DEFAULT only moved the flash (Δluma 0.738 → 0.671) because
+   * the colour itself was wrong.
+   *
+   * `components/pf2ecal/theme.ts` has always read the map, and the board never
+   * drifted this way. That is the pattern, so this makes it the rule. Reading
+   * `appRouteGround` counts: it is the map plus the stored-preference resolution.
+   */
+  it('every page that paints the document ground reads its colours from APP_ROUTE_THEME_BG', () => {
+    const offenders: string[] = [];
+    for (const file of grepRepoMatching(/\bpaintDocumentGround\s*\(/)) {
+      // The helper's own definition, and the runtime that drives it for the site
+      // tier, both live in the store that owns the map.
+      if (file === 'stores/themeStore.ts') continue;
+      const src = read(file);
+      // Two ways to read the map, both correct: the map itself, or
+      // `appRouteGround`, which is the map plus the stored-preference resolution
+      // (`components/Providers.tsx` uses that one, since it has a pathname and no
+      // opinion about which page it is on).
+      if (src.includes('APP_ROUTE_THEME_BG') || src.includes('appRouteGround')) continue;
+      // A hex literal anywhere in the call is the drift this catches.
+      const literal = src.match(/paintDocumentGround\([^)]*#[0-9a-fA-F]{3,8}/);
+      offenders.push(
+        `${file} calls paintDocumentGround${
+          literal ? ` with a colour literal (${literal[0].slice(-7)})` : ''
+        } without reading APP_ROUTE_THEME_BG. The pre-paint script in app/routes/__root.tsx paints from that map before this code runs, so a second copy of the colour here is a flash waiting for the two to disagree. Read the entry instead — see components/pf2ecal/theme.ts.`,
+      );
+    }
+    expect(offenders, offenders.join('\n')).toEqual([]);
+  });
+
+  /**
+   * Every `APP_ROUTE_THEME_BG` entry must say WHICH WAY ITS PAGE OPENS.
+   *
+   * The map used to assume dark when nothing was stored. That is right for the
+   * `--app-*` tier and wrong for any page that opens light, and the wrongness is
+   * silent — the entry looks complete, the lookup succeeds, and the page flashes.
+   * It has now happened twice:
+   *
+   * - Temple of Joy opens at Dawn (cream). Pre-painted near-black: Δluma 0.945.
+   * - `/dunesday` opens in day (Aero sky blue), and its entry was added on `main`
+   *   with no default at all. Pre-painted deep night blue: Δluma 0.738, every
+   *   first load. The audit caught it the same hour the branch merged `main`.
+   *
+   * So the default may no longer be inherited. An entry must either carry
+   * `system: true` (resolve from `prefers-color-scheme`, for a page that persists
+   * nothing) or state `defaultDark` outright. There is no third option, and that
+   * is the whole point: a reviewer adding a page now has to look up what its store
+   * defaults to, which is the step both bugs skipped.
+   */
+  it('every APP_ROUTE_THEME_BG entry declares how its page opens', () => {
+    const themeStore = read('stores/themeStore.ts');
+    const block = themeStore.slice(
+      themeStore.indexOf('export const APP_ROUTE_THEME_BG'),
+      themeStore.indexOf('export function appRouteGround'),
+    );
+
+    // Split on the top-level route keys; each chunk is one entry's body.
+    const entries = [...block.matchAll(/'(\/[a-z0-9-]+)':\s*\{([\s\S]*?)\n {2}\},/g)].map((m) => ({
+      route: m[1],
+      body: m[2],
+    }));
+    expect(entries.length, 'the APP_ROUTE_THEME_BG parser found no entries').toBeGreaterThan(3);
+
+    const silent = entries.filter(
+      (e) => !/\bsystem:\s*true/.test(e.body) && !/\bdefaultDark:\s*(?:true|false)/.test(e.body),
+    );
+    expect(
+      silent.map((e) => e.route),
+      `These APP_ROUTE_THEME_BG entries inherit the dark default silently. Add \`defaultDark: true\` or \`false\` (whichever the page's own store defaults to — look it up), or \`system: true\` if the page follows prefers-color-scheme:\n${silent
+        .map((e) => `  - ${e.route}`)
+        .join('\n')}`,
+    ).toEqual([]);
+  });
+
+  /**
    * `APP_ROUTE_THEME_BG` is how the pre-paint script learns that a full-screen
    * page's ground is not the near-black `APP_THEME_BG`. An entry whose
    * localStorage key no longer matches what the page persists resolves to the

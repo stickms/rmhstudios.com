@@ -631,7 +631,18 @@ export function GlobeSetGame() {
 
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-12">
+    // `.app-page` is the contract for a full-screen screen that is a DOCUMENT
+    // (app/globals.css §"Full-screen app/game layout helpers"), and this is one.
+    // Without it this was a bare `mx-auto` column on an app route, where
+    // `html.app-route` withholds `scrollbar-gutter: stable` — so the moment the
+    // board grew past the window the document gained a scrollbar, the viewport
+    // narrowed by its width, and `mx-auto` re-centred the whole column sideways in
+    // front of the player. `testing/e2e/fouc.mjs` measured 7.3% of frame
+    // divergence across that, signed in and out. `.app-page` takes the gutter back
+    // (`html.app-route:has(.app-page)`) and brings `100svh` as the floor plus the
+    // home-indicator inset. Lights Out had the identical bug and the identical fix.
+    <div className="app-page">
+      <div className="mx-auto w-full max-w-5xl px-4 pb-12">
       <header className="pt-2 text-center">
         <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-site-accent">
           <Sparkles className="h-3.5 w-3.5" aria-hidden />
@@ -872,7 +883,8 @@ export function GlobeSetGame() {
         </Suspense>
       )}
 
-      <GlobeSetRules open={rulesOpen} onOpenChange={setRulesOpen} />
+        <GlobeSetRules open={rulesOpen} onOpenChange={setRulesOpen} />
+      </div>
     </div>
   );
 }

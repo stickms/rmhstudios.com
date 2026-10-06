@@ -85,6 +85,36 @@ definition, and what a late `:root` block actually changes shows up in detectors
   indistinguishable from a flash at 24×48, and every _cause_ of a flash already
   has its own gated detector above.
 
+## Seeing it, not just scoring it
+
+A FOUC verdict is a number, and a number is the wrong format for "does this look
+right". `--filmstrip` writes the audit's own evidence as a page you can open: the
+real compositor frames it measured, in order, each labelled with how long after the
+first captured frame it was on screen, next to the verdict drawn from them.
+
+```bash
+node testing/e2e/fouc.mjs --route / --route /isleworks \
+  --profiles fresh,signed-in --filmstrip /tmp/initial-loads.html
+```
+
+Runs of the same route are laid out as adjacent rows in profile order, so
+**signed-out above signed-in** is the default reading — the comparison that matters
+most on a social site, where the shell a visitor gets and the shell an account gets
+are different pages with different first paints.
+
+Two properties are deliberate:
+
+- The frames are the **same ones the detectors measured**, collected during that
+  run, not a second load. A re-run can race differently, and then the picture and
+  the verdict disagree with no way to tell which is wrong.
+- Only `FILMSTRIP_FRAME_BUDGET` (16) of the analysed 48 are rendered. The analysis
+  wants resolution; a human wants the sequence. Every frame is inlined as a data
+  URI, so 48 per row across twenty routes is a document nobody scrolls twice.
+
+**A clean load looks identical from its first content-bearing frame to its last.**
+That is the whole test, and it is the one thing a reviewer can check without
+reading a threshold.
+
 ## Appearance profiles
 
 A FOUC is preference-dependent — the pre-paint script's whole job is to read a

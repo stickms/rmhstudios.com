@@ -53,7 +53,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { chromium } from 'playwright';
-import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { writeFileSync, mkdirSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { INSTRUMENT_SOURCE, SAMPLE_WINDOW_MS } from './fouc-instrument.mjs';
 import { collectRoutes, REPO_ROOT } from './fouc-routes.mjs';
@@ -150,6 +150,24 @@ const FRAME_DIVERGENCE_LIMIT = 0.06;
  * Re-derive it with `FOUC_DEBUG=1`, which prints the per-frame distance series.
  */
 const FRAME_LATE_SETTLE_LIMIT = 0.08;
+
+/**
+ * Above this much residual frame-to-frame change in the last quarter of the
+ * capture, the page counts as STILL ANIMATING and the pixel detector stands down
+ * to a note.
+ *
+ * It has to. Its whole method is "compare every frame against the settled one",
+ * and an animating page has no settled one — the last frame is just where the
+ * capture stopped. Dunesday boots through a Windows-7 splash and GlobeSet spins a
+ * liquid globe; both reported divergence that was the animation, not a flash.
+ * 0.004 is an order of magnitude under the 0.06 divergence gate and well above the
+ * ~0.000 a genuinely static page measures.
+ *
+ * Standing down costs less than it looks: the root-level detectors (ground, theme
+ * class, direction, fonts, tokens, `data-app-dark`) read `getComputedStyle`, not
+ * pixels, and they keep gating on these pages.
+ */
+const FRAME_ANIMATING_LIMIT = 0.004;
 
 /** A frame is "content bearing" once it stops being a single flat colour. */
 const FRAME_CONTENT_VARIANCE = 0.0015;
@@ -415,6 +433,16 @@ const FRAME_ANALYZER = `async (frames) => {
  */
 const FRAME_ANALYSIS_BUDGET = 48;
 
+/**
+ * How many of those frames the filmstrip renders.
+ *
+ * The analysis wants resolution; a human looking at a strip wants to see the
+ * sequence. 16 evenly-spaced frames across the window read as a sequence at a
+ * glance and keep the page openable — every frame is inlined as a data URI, so 48
+ * per row across twenty routes is a 15 MB document nobody scrolls twice.
+ */
+const FILMSTRIP_FRAME_BUDGET = 16;
+
 /** Evenly thin a frame list to `budget`, always keeping the first and last. */
 function subsampleFrames(frames, budget) {
   if (frames.length <= budget) return frames;
@@ -506,6 +534,19 @@ function analyseFrames(stats) {
     }
   }
 
+  // (b2) Was the page still moving when the window closed? A page with a
+  //      deliberate intro — a boot splash, a spinning globe, a game loop — never
+  //      reaches a settled state, and then "the settled picture" is just one frame
+  //      of an animation and every comparison against it is meaningless. Measured
+  //      as the mean consecutive-frame change over the last quarter of the capture.
+  const tail = series.slice(Math.floor(series.length * 0.75));
+  let stillMoving = 0;
+  if (tail.length > 1) {
+    let sum = 0;
+    for (let i = 1; i < tail.length; i++) sum += Math.abs(tail[i].diff - tail[i - 1].diff);
+    stillMoving = sum / (tail.length - 1);
+  }
+
   // (c) When the picture actually stopped moving: the first frame from which
   //     every later frame is within 2% of the settled one.
   let settledFromMs = null;
@@ -531,6 +572,7 @@ function analyseFrames(stats) {
     divergeAt,
     maxUnsettled,
     maxUnsettledAtMs,
+    stillMoving,
     settledFromMs,
   };
 }
@@ -568,6 +610,7 @@ async function auditPage({
   captureFrames,
   sabotage,
   throttle,
+  filmstrip,
 }) {
   const url = `${BASE_URL}${target.url}`;
   const findings = [];
@@ -979,6 +1022,33 @@ async function auditPage({
           `(${FRAME_ANALYZER})(${JSON.stringify(sampled.map((f) => ({ data: f.data, t: f.t })))})`,
         );
         frameReport = analyseFrames(stats);
+        // The filmstrip is the audit's evidence in a form a human can look at:
+        // the real painted frames, in order, each labelled with how long after
+        // first paint it was shown. Collected here rather than from a second load
+        // so the pictures ARE the frames the detectors measured — a re-run can
+        // race differently and then the picture and the verdict disagree.
+        if (filmstrip) {
+          const t0 = stats[0]?.t ?? 0;
+          filmstrip.push({
+            route: target.url,
+            landedOn,
+            profile: profileName,
+            profileWhy: profile.why,
+            fcp,
+            frames: subsampleFrames(
+              sampled.map((f, i) => ({
+                data: f.data,
+                dt: Math.round(((stats[i]?.t ?? t0) - t0) * 1000),
+              })),
+              FILMSTRIP_FRAME_BUDGET,
+            ),
+            report: frameReport,
+            groundAtPaint: atPaint?.ground ?? null,
+            groundSettled: settled?.ground ?? null,
+            findings: findings.map((f) => ({ kind: f.kind, detail: f.detail })),
+            notes: [...notes],
+          });
+        }
         if (process.env.FOUC_DEBUG) {
           console.log('[report]', target.url, profileName, JSON.stringify(frameReport));
         }
@@ -988,12 +1058,20 @@ async function auditPage({
           else notes.push(`${entry.detail} (not gated under this profile)`);
         };
 
+        const animating = Boolean(frameReport && frameReport.stillMoving > FRAME_ANIMATING_LIMIT);
         if (frameReport && frameReport.divergence > FRAME_DIVERGENCE_LIMIT) {
-          raise({
-            kind: 'frame',
-            detail: `painted frames moved AWAY from the settled picture by ${(frameReport.divergence * 100).toFixed(1)}% (limit ${(FRAME_DIVERGENCE_LIMIT * 100).toFixed(0)}%) — something was shown and then changed`,
-            at: frameReport.divergeAt,
-          });
+          const detail = `painted frames moved AWAY from the settled picture by ${(frameReport.divergence * 100).toFixed(1)}% (limit ${(FRAME_DIVERGENCE_LIMIT * 100).toFixed(0)}%)`;
+          if (animating) {
+            notes.push(
+              `${detail}, but the page was still animating when the capture ended (${(frameReport.stillMoving * 100).toFixed(2)}% residual frame-to-frame change over the last quarter) — there is no settled picture to compare against, so this is not gated. The root-level detectors still are.`,
+            );
+          } else {
+            raise({
+              kind: 'frame',
+              detail: `${detail} — something was shown and then changed`,
+              at: frameReport.divergeAt,
+            });
+          }
         }
         // Late settle is REPORTED, not gated, and the reason is worth stating
         // because it is the one judgement call in the harness.
@@ -1005,7 +1083,7 @@ async function auditPage({
         // above: a root token (D2), a stylesheet (D3), a font (D3b), a layout
         // shift (D5). So this signal's job is to point a human at a page, not to
         // fail the build on a guess.
-        if (frameReport && frameReport.maxUnsettled > FRAME_LATE_SETTLE_LIMIT) {
+        if (frameReport && !animating && frameReport.maxUnsettled > FRAME_LATE_SETTLE_LIMIT) {
           notes.push(
             `the painted picture was still ${(frameReport.maxUnsettled * 100).toFixed(1)}% different from its settled state ${Math.round(frameReport.maxUnsettledAtMs)}ms after content first appeared; it stopped moving at +${frameReport.settledFromMs ?? '?'}ms`,
           );
@@ -1154,6 +1232,128 @@ async function selfTest(browser, target, throttle) {
   return true;
 }
 
+// ── Filmstrip ────────────────────────────────────────────────────────────────
+
+/**
+ * Render the captured frames as a page a human can look at.
+ *
+ * A FOUC verdict is a number, and a number is exactly the wrong format for "does
+ * this look right". The filmstrip puts the audit's own evidence — the real
+ * compositor frames it measured, in order, each labelled with how long after first
+ * paint it was on screen — next to the verdict it drew from them, so the two can
+ * be checked against each other by eye.
+ *
+ * Signed-out and signed-in runs of the same route are laid out as adjacent rows,
+ * because that pair is the comparison that matters most on a social site: the
+ * shell a visitor gets versus the one an account gets, and whether either of them
+ * changes after the reader can see it.
+ */
+function renderFilmstrip(strips) {
+  const byRoute = new Map();
+  for (const strip of strips) {
+    if (!byRoute.has(strip.route)) byRoute.set(strip.route, []);
+    byRoute.get(strip.route).push(strip);
+  }
+
+  const esc = (v) =>
+    String(v).replace(
+      /[&<>"]/g,
+      (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c],
+    );
+
+  const row = (strip) => {
+    const verdict = strip.findings.length
+      ? `<span class="bad">${strip.findings.length} finding(s)</span>`
+      : '<span class="ok">clean</span>';
+    const cells = strip.frames
+      .map(
+        (f) => `<figure><img src="data:image/jpeg;base64,${f.data}" alt="" loading="lazy" />
+          <figcaption>+${f.dt}ms</figcaption></figure>`,
+      )
+      .join('');
+    const grounds =
+      strip.groundAtPaint === strip.groundSettled
+        ? `<span class="sw" style="background:${esc(strip.groundAtPaint)}"></span> held ${esc(strip.groundAtPaint)} throughout`
+        : `<span class="sw" style="background:${esc(strip.groundAtPaint)}"></span> ${esc(strip.groundAtPaint)}
+           → <span class="sw" style="background:${esc(strip.groundSettled)}"></span> ${esc(strip.groundSettled)}`;
+    const detail = [
+      ...strip.findings.map((f) => `<li class="bad"><b>${esc(f.kind)}</b> ${esc(f.detail)}</li>`),
+      ...strip.notes.map((n) => `<li class="note">${esc(n)}</li>`),
+    ].join('');
+    return `<section class="run">
+      <h3>${esc(strip.profile)} ${verdict}</h3>
+      <p class="meta">${esc(strip.profileWhy)}</p>
+      <p class="meta">first contentful paint ${strip.fcp === null ? '—' : Math.round(strip.fcp) + 'ms'}
+        · settled ${strip.report?.settledFromMs ?? '—'}ms after content appeared
+        · ground: ${grounds}${
+          strip.landedOn && strip.landedOn.replace(/\/+$/, '') !== strip.route.replace(/\/+$/, '')
+            ? ` · <b>redirected to ${esc(strip.landedOn)}</b>`
+            : ''
+        }</p>
+      <div class="strip">${cells}</div>
+      ${detail ? `<ul class="detail">${detail}</ul>` : ''}
+    </section>`;
+  };
+
+  const sections = [...byRoute.entries()]
+    .map(
+      ([route, runs]) => `<article>
+        <h2><code>${esc(route)}</code></h2>
+        ${runs.map(row).join('')}
+      </article>`,
+    )
+    .join('');
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FOUC filmstrips</title>
+<style>
+  :root { color-scheme: dark light; --ink: #e8e8ea; --dim: #9a9aa2; --bg: #141416; --card: #1c1c20; --line: #2c2c32; }
+  @media (prefers-color-scheme: light) {
+    :root { --ink: #1a1a1c; --dim: #5a5a62; --bg: #f6f6f8; --card: #fff; --line: #e2e2e8; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 24px 16px 64px; background: var(--bg); color: var(--ink);
+    font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .wrap { max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .lede { color: var(--dim); margin: 0 0 28px; max-width: 70ch; }
+  article { background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px; margin: 0 0 20px; }
+  h2 { font-size: 16px; margin: 0 0 12px; }
+  h2 code { background: color-mix(in srgb, var(--ink) 10%, transparent); padding: 2px 6px; border-radius: 5px; }
+  .run { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; }
+  .run:first-of-type { border-top: 0; margin-top: 0; padding-top: 0; }
+  h3 { font-size: 14px; margin: 0 0 4px; font-weight: 600; }
+  .meta { color: var(--dim); font-size: 12.5px; margin: 0 0 8px; }
+  .ok { color: #4ea96b; font-weight: 600; }
+  .bad { color: #e0604f; font-weight: 600; }
+  .sw { display: inline-block; width: 11px; height: 11px; border-radius: 3px;
+    border: 1px solid color-mix(in srgb, var(--ink) 35%, transparent); vertical-align: -1px; }
+  .strip { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; }
+  figure { margin: 0; flex: 0 0 auto; text-align: center; }
+  img { display: block; width: 104px; height: auto; border-radius: 4px;
+    border: 1px solid var(--line); background: #000; }
+  figcaption { font-size: 10.5px; color: var(--dim); margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .detail { margin: 10px 0 0; padding-left: 18px; font-size: 12.5px; }
+  .detail li { margin: 3px 0; }
+  .detail .note { color: var(--dim); }
+</style>
+</head>
+<body><div class="wrap">
+<h1>FOUC filmstrips</h1>
+<p class="lede">Real compositor frames from <code>testing/e2e/fouc.mjs</code>, in the
+order they were painted, each labelled with how long after the first captured frame
+it was on screen. These are the exact frames the detectors measured. A clean load
+looks the same from its first content-bearing frame to its last.</p>
+${sections}
+</div></body>
+</html>`;
+}
+
 // ── Runner ───────────────────────────────────────────────────────────────────
 
 function parseArgs(argv) {
@@ -1186,6 +1386,7 @@ function parseArgs(argv) {
     else if (a === '--self-test') args.selfTest = true;
     else if (a === '--no-auth') args.auth = false;
     else if (a === '--throttle') args.throttle = Math.max(1, Number(argv[++i]) || 1);
+    else if (a === '--filmstrip') args.filmstrip = argv[++i];
     else if (a === '-h' || a === '--help') args.help = true;
     else throw new Error(`unknown flag: ${a}`);
   }
@@ -1196,7 +1397,7 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) {
     console.log(
-      `FOUC audit\n\n  node testing/e2e/fouc.mjs [--quick] [--route <path>]… [--profiles a,b]\n                            [--json <file>] [--no-frames] [--concurrency N] [--limit N]\n  node testing/e2e/fouc.mjs --self-test     # prove the detectors fire, first\n\nCPU is throttled ${DEFAULT_CPU_THROTTLE}x by default; --throttle 1 turns that off.\nBASE_URL defaults to http://localhost:3000 and must point at a BUILT server.`,
+      `FOUC audit\n\n  node testing/e2e/fouc.mjs [--quick] [--route <path>]… [--profiles a,b]\n                            [--json <file>] [--no-frames] [--concurrency N] [--limit N]\n  node testing/e2e/fouc.mjs --self-test     # prove the detectors fire, first\n  node testing/e2e/fouc.mjs --route / --profiles fresh,signed-in --filmstrip out.html\n\nCPU is throttled ${DEFAULT_CPU_THROTTLE}x by default; --throttle 1 turns that off.\nBASE_URL defaults to http://localhost:3000 and must point at a BUILT server.`,
     );
     return;
   }
@@ -1283,6 +1484,7 @@ async function main() {
   }
 
   const results = [];
+  const filmstrips = args.filmstrip ? [] : null;
   let done = 0;
   let nextJob = 0;
 
@@ -1300,6 +1502,7 @@ async function main() {
           profile: PROFILES[profileName],
           captureFrames: args.frames,
           throttle: args.throttle,
+          filmstrip: filmstrips,
         });
       } catch (error) {
         outcome = {
@@ -1400,6 +1603,25 @@ async function main() {
     }
   }
 
+  if (filmstrips) {
+    if (!args.frames) {
+      console.error('\n--filmstrip needs frames; drop --no-frames.');
+    } else {
+      // Signed-out before signed-in for each route, so the pair reads in the order
+      // a reviewer thinks about it.
+      const order = profileNames.indexOf.bind(profileNames);
+      filmstrips.sort(
+        (a, b) => a.route.localeCompare(b.route) || order(a.profile) - order(b.profile),
+      );
+      mkdirSync(join(args.filmstrip, '..'), { recursive: true });
+      writeFileSync(args.filmstrip, renderFilmstrip(filmstrips));
+      const bytes = (existsSync(args.filmstrip) && statSync(args.filmstrip).size) || 0;
+      console.log(
+        `\nFilmstrip → ${args.filmstrip} (${filmstrips.length} run(s), ${(bytes / 1024 / 1024).toFixed(1)} MB)`,
+      );
+    }
+  }
+
   if (args.json) {
     const out = {
       generatedAt: new Date().toISOString(),
@@ -1410,6 +1632,7 @@ async function main() {
         POST_FCP_CLS_LIMIT,
         FRAME_DIVERGENCE_LIMIT,
         FRAME_LATE_SETTLE_LIMIT,
+        FRAME_ANIMATING_LIMIT,
       },
       coverage: {
         audited: targets.length,
