@@ -10,7 +10,7 @@
  */
 
 import { AnimatePresence, m as motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
 
@@ -22,9 +22,18 @@ const LIGHTS = [
   { color: '#ffc928', from: [130, 80] },
 ];
 
-export function BootSplash() {
+/**
+ * @param force Show it now regardless of the once-per-session rule (Restart).
+ * @param onDone Called when it finishes or is skipped.
+ */
+export function BootSplash({
+  force = false,
+  onDone,
+}: { force?: boolean; onDone?: () => void } = {}) {
   const { t } = useTranslation('c-dunesday');
   const [show, setShow] = useState(false);
+  const doneRef = useRef(onDone);
+  doneRef.current = onDone;
 
   useEffect(() => {
     let seen: boolean;
@@ -34,16 +43,23 @@ export function BootSplash() {
     } catch {
       seen = true;
     }
-    if (seen || prefersReducedMotion()) return;
+    if ((seen && !force) || prefersReducedMotion()) {
+      doneRef.current?.();
+      return;
+    }
     setShow(true);
-    const done = window.setTimeout(() => setShow(false), 1900);
-    const skip = () => setShow(false);
+    const finish = () => {
+      setShow(false);
+      doneRef.current?.();
+    };
+    const done = window.setTimeout(finish, 1900);
+    const skip = finish;
     window.addEventListener('keydown', skip, { once: true });
     return () => {
       window.clearTimeout(done);
       window.removeEventListener('keydown', skip);
     };
-  }, []);
+  }, [force]);
 
   return (
     <AnimatePresence>
@@ -51,7 +67,10 @@ export function BootSplash() {
         <motion.div
           className="ds-boot"
           role="presentation"
-          onClick={() => setShow(false)}
+          onClick={() => {
+            setShow(false);
+            doneRef.current?.();
+          }}
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5 }}

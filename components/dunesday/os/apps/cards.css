@@ -1,0 +1,523 @@
+/*
+ * Dunesday card games — Solitaire (.ds-sol) and Spider (.ds-spider), sharing
+ * the .ds-cards kit from cards.tsx. Cards are pure DOM: white face with SVG
+ * pips, glossy Aero-blue back. Every animation lives inside
+ * prefers-reduced-motion: no-preference and is skipped under .ds-os--still.
+ */
+
+.ds-cards {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 12px;
+  color: #1e1e1e;
+  background: #f0f0f0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ---------------------------------------------------------------- menu bar */
+
+.ds-cards .ds-cards__menubar {
+  display: flex;
+  flex: none;
+  gap: 2px;
+  padding: 2px 4px;
+  background: linear-gradient(#fdfeff, #e6edf7);
+  border-bottom: 1px solid #b6c3d6;
+}
+
+.ds-cards .ds-cards__menubtn {
+  padding: 3px 9px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: default;
+}
+
+.ds-cards .ds-cards__menubtn:hover,
+.ds-cards .ds-cards__menubtn.is-open {
+  border-color: #a8d8f7;
+  background: linear-gradient(#f2f9fe, #d6ecfb);
+}
+
+.ds-cards .ds-cards__menubtn:focus-visible {
+  outline: 2px solid #1a6fd1;
+  outline-offset: 1px;
+}
+
+/* ------------------------------------------------------------------- table */
+
+.ds-cards .ds-cards__table {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 35%, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 60%),
+    radial-gradient(ellipse at 50% 120%, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0) 60%), #237a35;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.35);
+  touch-action: none;
+  --cw: 72px;
+}
+
+.ds-spider .ds-cards__table {
+  background:
+    radial-gradient(ellipse at 50% 35%, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0) 60%),
+    radial-gradient(ellipse at 50% 120%, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0) 60%), #1f6e3a;
+}
+
+/* ------------------------------------------------------------------- piles */
+
+.ds-cards .ds-pile {
+  position: absolute;
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: calc(var(--cw) * 0.08);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: default;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ds-cards .ds-pile:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px rgba(0, 0, 0, 0.55);
+}
+
+.ds-cards .ds-pile--selected {
+  outline: 2px dashed #ffe680;
+  outline-offset: 3px;
+}
+
+.ds-cards .ds-pile--hint {
+  box-shadow:
+    0 0 0 3px #ffe680,
+    0 0 14px 4px rgba(255, 230, 128, 0.7);
+}
+
+.ds-cards .ds-pile__slot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  border-radius: calc(var(--cw) * 0.08);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.ds-cards .ds-pile__slot--ace::after,
+.ds-cards .ds-pile__slot--king::after,
+.ds-cards .ds-pile__slot--recycle::after {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.35);
+  font-weight: 700;
+  font-size: calc(var(--cw) * 0.42);
+  line-height: 1;
+}
+
+.ds-cards .ds-pile__slot--ace::after {
+  content: 'A';
+}
+
+.ds-cards .ds-pile__slot--king::after {
+  content: 'K';
+  font-size: calc(var(--cw) * 0.32);
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.ds-cards .ds-pile__slot--recycle::after {
+  content: '\21BB';
+  font-size: calc(var(--cw) * 0.55);
+}
+
+/* ------------------------------------------------------------------- cards */
+
+.ds-cards .ds-card {
+  position: absolute;
+  display: block;
+  box-sizing: border-box;
+  border: 1px solid #8a8f96;
+  border-radius: calc(var(--cw) * 0.08);
+  background: linear-gradient(160deg, #ffffff 0%, #ffffff 60%, #eef1f4 100%);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  touch-action: none;
+  pointer-events: auto;
+}
+
+.ds-cards .ds-card--red {
+  color: #d01c1c;
+}
+
+.ds-cards .ds-card--black {
+  color: #141414;
+}
+
+.ds-cards .ds-card__corner {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: calc(var(--cw) * 0.22);
+  line-height: 1;
+}
+
+.ds-cards .ds-card__corner--tl {
+  left: calc(var(--cw) * 0.04);
+  top: calc(var(--cw) * 0.05);
+}
+
+.ds-cards .ds-card__corner--br {
+  right: calc(var(--cw) * 0.04);
+  bottom: calc(var(--cw) * 0.05);
+  transform: rotate(180deg);
+}
+
+.ds-cards .ds-card__rank {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+  font-size: calc(var(--cw) * 0.2);
+  letter-spacing: -0.04em;
+}
+
+.ds-cards .ds-card__mini {
+  width: calc(var(--cw) * 0.15);
+  height: calc(var(--cw) * 0.15);
+  margin-top: calc(var(--cw) * 0.01);
+  fill: currentColor;
+}
+
+.ds-cards .ds-card__center {
+  position: absolute;
+  inset: 22% 20%;
+  display: grid;
+  place-items: center;
+}
+
+.ds-cards .ds-card__pip {
+  width: 72%;
+  height: 72%;
+  fill: currentColor;
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.12));
+}
+
+.ds-cards .ds-card__center--ace .ds-card__pip {
+  width: 92%;
+  height: 92%;
+}
+
+.ds-cards .ds-card__center--court {
+  inset: 18% 18%;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  background: linear-gradient(170deg, rgba(255, 215, 120, 0.35), rgba(255, 255, 255, 0) 70%);
+  grid-template-rows: 1fr auto;
+  padding: 4% 0 8%;
+}
+
+.ds-cards .ds-card__court {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+  font-size: calc(var(--cw) * 0.36);
+  line-height: 1;
+}
+
+.ds-cards .ds-card__center--court .ds-card__pip {
+  width: calc(var(--cw) * 0.2);
+  height: calc(var(--cw) * 0.2);
+}
+
+/* Aero card back: glossy blue, a fine diamond lattice, a white rim. */
+.ds-cards .ds-card--back {
+  border-color: #3d5a80;
+  background:
+    linear-gradient(
+      165deg,
+      rgba(255, 255, 255, 0.65) 0%,
+      rgba(255, 255, 255, 0.12) 38%,
+      rgba(255, 255, 255, 0) 39%
+    ),
+    radial-gradient(ellipse at 30% 110%, rgba(110, 220, 255, 0.55), rgba(110, 220, 255, 0) 60%),
+    repeating-linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.09) 0 2px,
+      rgba(255, 255, 255, 0) 2px 7px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      rgba(255, 255, 255, 0.09) 0 2px,
+      rgba(255, 255, 255, 0) 2px 7px
+    ),
+    linear-gradient(180deg, #2f7fd6 0%, #1450a8 55%, #0c3b80 100%);
+  box-shadow:
+    inset 0 0 0 calc(var(--cw) * 0.05) #ffffff,
+    inset 0 0 0 calc(var(--cw) * 0.05 + 1px) rgba(0, 40, 90, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.ds-cards .ds-card--selected {
+  box-shadow:
+    0 0 0 2px #ffe680,
+    0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.ds-cards .ds-card--selected::after,
+.ds-cards .ds-card--hint::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 220, 90, 0.25);
+  pointer-events: none;
+}
+
+.ds-cards .ds-card--hint {
+  box-shadow:
+    0 0 0 2px #ffe680,
+    0 0 12px 3px rgba(255, 230, 128, 0.75);
+}
+
+.ds-cards .ds-card--dragging {
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.45);
+  cursor: grabbing;
+}
+
+/* ----------------------------------------------------------- status bar */
+
+.ds-cards .ds-cards__status {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 14px;
+  padding: 3px 10px;
+  border-top: 1px solid #b6c3d6;
+  background: linear-gradient(#f4f7fb, #dfe7f1);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ds-cards .ds-cards__status-msg {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #8a1c1c;
+}
+
+.ds-cards .ds-cards__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- dialogs */
+
+.ds-cards .ds-cards__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.ds-cards .ds-cards__scrim--win {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.ds-cards .ds-cards__dialog {
+  width: min(340px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  padding: 14px 16px 12px;
+  border: 1px solid #6d8bb3;
+  border-radius: 6px;
+  background: linear-gradient(#ffffff, #eef3f9);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.ds-cards .ds-cards__dialog-title {
+  margin: 0 0 8px;
+  color: #1e3287;
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.ds-cards .ds-cards__dialog--win .ds-cards__dialog-title {
+  font-size: 20px;
+}
+
+.ds-cards .ds-cards__dialog-body p {
+  margin: 0 0 6px;
+  line-height: 1.45;
+}
+
+.ds-cards .ds-cards__dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.ds-cards .ds-cards__stats {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 16px;
+  margin: 0;
+}
+
+.ds-cards .ds-cards__stats dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------- cascade */
+
+.ds-cards .ds-cards__cascade {
+  display: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1500;
+}
+
+.ds-cards .ds-cards__fly {
+  position: absolute;
+  display: block;
+}
+
+.ds-cards .ds-cards__bounce {
+  position: relative;
+}
+
+/* ----------------------------------------------------------------- motion */
+
+@media (prefers-reduced-motion: no-preference) {
+  .ds-cards:not(.ds-os--still *) .ds-card--slide {
+    animation: ds-cards-slide 240ms cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 22ms);
+  }
+
+  .ds-cards:not(.ds-os--still *) .ds-card--returning {
+    transition: transform 220ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+
+  .ds-cards:not(.ds-os--still *) .ds-cards__cascade {
+    display: block;
+  }
+
+  .ds-cards:not(.ds-os--still *) .ds-cards__fly {
+    opacity: 0;
+    animation: ds-cards-fly-x 3.4s linear var(--delay, 0s) forwards;
+  }
+
+  .ds-cards:not(.ds-os--still *) .ds-cards__bounce {
+    animation: ds-cards-bounce 3.4s var(--delay, 0s) forwards;
+  }
+
+  .ds-cards:not(.ds-os--still *) .ds-cards__scrim--win {
+    animation: ds-cards-fade 400ms ease-out 1.2s backwards;
+  }
+
+  .ds-cards:not(.ds-os--still *) .ds-pile--hint,
+  .ds-cards:not(.ds-os--still *) .ds-card--hint {
+    animation: ds-cards-pulse 900ms ease-in-out 2;
+  }
+}
+
+@keyframes ds-cards-slide {
+  from {
+    z-index: 900;
+    transform: translate(var(--fx, 0px), var(--fy, 0px));
+  }
+  to {
+    z-index: 900;
+    transform: none;
+  }
+}
+
+@keyframes ds-cards-fly-x {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(var(--dx, 300px));
+  }
+}
+
+@keyframes ds-cards-bounce {
+  0% {
+    transform: translateY(0);
+    animation-timing-function: ease-in;
+  }
+  28% {
+    transform: translateY(var(--drop, 200px));
+    animation-timing-function: ease-out;
+  }
+  46% {
+    transform: translateY(calc(var(--drop, 200px) * 0.4));
+    animation-timing-function: ease-in;
+  }
+  64% {
+    transform: translateY(var(--drop, 200px));
+    animation-timing-function: ease-out;
+  }
+  76% {
+    transform: translateY(calc(var(--drop, 200px) * 0.68));
+    animation-timing-function: ease-in;
+  }
+  88% {
+    transform: translateY(var(--drop, 200px));
+    animation-timing-function: ease-out;
+  }
+  94% {
+    transform: translateY(calc(var(--drop, 200px) * 0.88));
+    animation-timing-function: ease-in;
+  }
+  100% {
+    transform: translateY(var(--drop, 200px));
+  }
+}
+
+@keyframes ds-cards-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes ds-cards-pulse {
+  50% {
+    filter: brightness(1.25);
+  }
+}
