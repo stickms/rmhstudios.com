@@ -117,7 +117,7 @@ export default function PlayerList({ players, hostUserId, isHost, myUserId, onKi
                   : 'bg-(--app-text-muted)/20 text-(--app-text-muted)'
               }`}
             >
-              {player.isReady ? t("ready", { defaultValue: "Ready" }) : t("not-ready", { defaultValue: "Not Ready" })}
+              {player.isReady ? t("ready-player-list", { defaultValue: "Ready" }) : t("not-ready", { defaultValue: "Not Ready" })}
             </span>
           </li>
         );

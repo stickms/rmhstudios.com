@@ -89,8 +89,8 @@ export default function HostControlModal() {
             backgroundColor: 'var(--app-warning)',
             color: '#000',
           }}
-          aria-label={t('host-controls', { defaultValue: 'Host controls' })}
-          title={t('host-controls', { defaultValue: 'Host controls' })}
+          aria-label={t('host-controls-host-control-modal', { defaultValue: 'Host controls' })}
+          title={t('host-controls-host-control-modal', { defaultValue: 'Host controls' })}
         >
           <Crown className="h-5 w-5" />
         </button>
@@ -116,7 +116,7 @@ export default function HostControlModal() {
             <div className="mb-4 flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-lg font-bold text-(--app-text)">
                 <Shield className="h-5 w-5 text-(--app-warning)" />
-                {t('host-controls', { defaultValue: 'Host controls' })}
+                {t('host-controls-host-control-modal', { defaultValue: 'Host controls' })}
               </h2>
               <button
                 onClick={() => setIsOpen(false)}
@@ -144,7 +144,7 @@ export default function HostControlModal() {
             {otherPlayers.length > 0 && (
               <div className="mb-4">
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--app-text-muted)">
-                  {t('players-count', { defaultValue: 'Players ({{count}})', count: otherPlayers.length })}
+                  {t('players-count-host-control-modal', { defaultValue: 'Players ({{count}})', count: otherPlayers.length })}
                 </h3>
                 <div className="max-h-48 space-y-1 overflow-y-auto">
                   {otherPlayers.map((player) => (

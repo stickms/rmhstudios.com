@@ -81,7 +81,7 @@ export default function CategoryCrashResults({
       {/* Header */}
       <div className="text-center">
         <h3 className="text-lg font-bold flex items-center justify-center gap-1.5">
-          {isGameOver ? <><Trophy size={18} className="text-(--app-warning)" /> {t("final-results", { defaultValue: "Final Results" })}</> : t("round-of", { defaultValue: "Round {{current}} of {{total}}", current: currentRound, total: totalRounds })}
+          {isGameOver ? <><Trophy size={18} className="text-(--app-warning)" /> {t("final-results", { defaultValue: "Final Results" })}</> : t("round-of-category-crash-results", { defaultValue: "Round {{current}} of {{total}}", current: currentRound, total: totalRounds })}
         </h3>
         <p className="text-sm text-(--app-text-muted)">
           {t("letter-label", { defaultValue: "Letter:" })} <span className="font-bold text-(--app-accent)">{roundResults.letter}</span>

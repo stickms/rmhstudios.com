@@ -109,14 +109,14 @@ export default function WikiRaceResults({
               {/* Stats row */}
               <div className="mb-2 flex items-center gap-4 text-xs text-(--app-text-muted)">
                 <span>
-                  {t("click-count", { count: player.clickCount, defaultValue: "{{count}} click", defaultValue_plural: "{{count}} clicks" })}
+                  {t("click-count", { count: player.clickCount, defaultValue_one: "{{count}} click", defaultValue: "{{count}} clicks" })}
                 </span>
                 <span>
-                  {t("articles-visited", { count: player.path.length, defaultValue: "{{count}} article visited", defaultValue_plural: "{{count}} articles visited" })}
+                  {t("articles-visited", { count: player.path.length, defaultValue_one: "{{count}} article visited", defaultValue: "{{count}} articles visited" })}
                 </span>
                 {player.hasFinished ? (
                   <span className="text-green-400 font-medium">
-                    {t("finished-rank", { rank: player.finishRank, defaultValue: "Finished #{{rank}}" })}
+                    {t("finished-rank-wiki-race-results", { rank: player.finishRank, defaultValue: "Finished #{{rank}}" })}
                   </span>
                 ) : (
                   <span className="text-red-400 font-medium">{t("dnf", { defaultValue: "DNF" })}</span>

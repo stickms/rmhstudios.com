@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Send, Loader2, MessageCircle, ChevronDown } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import type { BuildComment } from '@/lib/user-builds-types';
 
 interface BuildCommentsProps {
@@ -100,7 +100,7 @@ function CommentItem({
 
 export function BuildComments({ buildId }: BuildCommentsProps) {
   const { t } = useTranslation('c-user-builds');
-  const { data: session } = authClient.useSession();
+  const { data: session } = useSession();
   const [comments, setComments] = useState<BuildComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);

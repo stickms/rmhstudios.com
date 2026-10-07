@@ -30,7 +30,7 @@ export function NeumorphicModal({
 }: NeumorphicModalProps) {
   const { t } = useTranslation('c-game');
   const resolvedConfirmText = confirmText ?? t('confirm', { defaultValue: 'Confirm' });
-  const resolvedCancelText = cancelText ?? t('cancel', { defaultValue: 'Cancel' });
+  const resolvedCancelText = cancelText ?? t('cancel-neumorphic-modal', { defaultValue: 'Cancel' });
   return (
     <DialogPrimitive.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogPrimitive.Portal>

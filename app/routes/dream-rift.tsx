@@ -2,17 +2,17 @@
  * Dream Rift — a Touhou-style co-op danmaku bullet hell.
  */
 
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { gameRouteHead } from '@/lib/seo-catalog';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 
-const DreamRiftGate = lazy(() =>
-  import('@/components/dream-rift/DreamRiftGate').then((m) => ({
-    default: m.DreamRiftGate,
-  })),
-);
+// Static, not `lazy()`: Start already splits this route's component into its own
+// chunk and loads it BEFORE hydrating. An inner `lazy()` can still be pending at
+// hydration, and an update reaching the boundary then swaps the server-rendered
+// page for the fallback (docs/fouc-audit-2026-10-06.md §13).
+import { DreamRiftGate } from '@/components/dream-rift/DreamRiftGate';
 
 export const Route = createFileRoute('/dream-rift')({
   head: () => gameRouteHead('dream-rift'),

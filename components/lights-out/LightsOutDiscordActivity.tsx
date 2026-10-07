@@ -258,7 +258,7 @@ function ModeMenu({ discord, onSelect }: { discord: DiscordContext; onSelect: (m
                             <Calendar className="w-6 h-6 text-amber-400" />
                         </div>
                         <div className="flex-1">
-                            <div className="text-white font-semibold group-hover:text-amber-400 transition-colors">{t("daily-puzzle", { defaultValue: "Daily Puzzle" })}</div>
+                            <div className="text-white font-semibold group-hover:text-amber-400 transition-colors">{t("daily-puzzle-lights-out-discord-activity", { defaultValue: "Daily Puzzle" })}</div>
                             <div className="text-[#b5bac1] text-sm">
                                 {alreadyCompleted
                                     ? t("daily-completed-summary", { defaultValue: "Completed — {{emoji}} {{moves}} moves", emoji: alreadyCompleted.ratingEmoji, moves: alreadyCompleted.moves })
@@ -568,7 +568,7 @@ function LeaderboardModal({
                                         <span className={`text-sm font-mono shrink-0 ${
                                             isCompleted ? 'text-emerald-400' : 'text-[#949ba4]'
                                         }`}>
-                                            {isCompleted ? t("moves-count", { defaultValue: "{{count}} move", defaultValue_plural: "{{count}} moves", count: entry.moves ?? 0 }) : t("playing", { defaultValue: "playing..." })}
+                                            {isCompleted ? t("moves-count", { defaultValue_one: "{{count}} move", defaultValue: "{{count}} moves", count: entry.moves ?? 0 }) : t("playing", { defaultValue: "playing..." })}
                                         </span>
                                     </div>
                                 );
@@ -614,7 +614,7 @@ function InstructionsModal({ onClose }: { onClose: () => void }) {
                     <div className="flex gap-3 items-start">
                         <div className="w-8 h-8 rounded-lg bg-[#1e1f22] border border-[#3f4147] shrink-0 mt-0.5" />
                         <p className="text-[#b5bac1] text-sm">
-                            <span className="text-white font-semibold">{t("goal-label", { defaultValue: "Goal:" })}</span> {t("goal-description", { defaultValue: "turn all lights dark. Fewer moves = better rating." })}
+                            <span className="text-white font-semibold">{t("goal-label-lights-out-discord-activity", { defaultValue: "Goal:" })}</span> {t("goal-description-lights-out-discord-activity", { defaultValue: "turn all lights dark. Fewer moves = better rating." })}
                         </p>
                     </div>
                     <div className="py-2 px-3 rounded-lg bg-[#1e1f22] text-center">
@@ -881,7 +881,7 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
                     <div className="text-center">
                         <h2 className="text-base font-bold text-white flex items-center gap-1.5">
                             <Sparkles className="w-4 h-4 text-amber-400" />
-                            {t("daily-puzzle", { defaultValue: "Daily Puzzle" })}
+                            {t("daily-puzzle-lights-out-discord-activity", { defaultValue: "Daily Puzzle" })}
                         </h2>
                         <p className="text-[#b5bac1] text-[11px]">{todayKey} · {shapeLabel}</p>
                     </div>
@@ -1475,7 +1475,7 @@ function RaceGameplay({
                                             p.status === 'solved' ? 'text-emerald-400' :
                                             p.status === 'dnf' ? 'text-red-400' : 'text-[#949ba4]'
                                         }`}>
-                                            {p.status === 'solved' ? `\u2713 ${t("moves-count", { defaultValue: "{{count}} move", defaultValue_plural: "{{count}} moves", count: p.moves })}` :
+                                            {p.status === 'solved' ? `\u2713 ${t("moves-count", { defaultValue_one: "{{count}} move", defaultValue: "{{count}} moves", count: p.moves })}` :
                                              p.status === 'dnf' ? 'DNF' : t("solving", { defaultValue: "solving..." })}
                                         </span>
                                     </div>
@@ -1605,8 +1605,8 @@ function RaceResults({
                                 }`}>
                                     {isSolvedP ? (
                                         isTimed && p.finishedAt && lobby.raceStartedAt
-                                            ? `${((p.finishedAt - lobby.raceStartedAt) / 1000).toFixed(1)}s · ${t("moves-count", { defaultValue: "{{count}} move", defaultValue_plural: "{{count}} moves", count: p.moves })}`
-                                            : `${t("moves-count", { defaultValue: "{{count}} move", defaultValue_plural: "{{count}} moves", count: p.moves })}${p.finishedAt && lobby.raceStartedAt ? ` · ${((p.finishedAt - lobby.raceStartedAt) / 1000).toFixed(1)}s` : ''}`
+                                            ? `${((p.finishedAt - lobby.raceStartedAt) / 1000).toFixed(1)}s · ${t("moves-count", { defaultValue_one: "{{count}} move", defaultValue: "{{count}} moves", count: p.moves })}`
+                                            : `${t("moves-count", { defaultValue_one: "{{count}} move", defaultValue: "{{count}} moves", count: p.moves })}${p.finishedAt && lobby.raceStartedAt ? ` · ${((p.finishedAt - lobby.raceStartedAt) / 1000).toFixed(1)}s` : ''}`
                                     ) : p.status === 'dnf' ? 'DNF' : t("spectator", { defaultValue: "Spectator" })}
                                 </span>
                             </div>

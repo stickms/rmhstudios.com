@@ -8,6 +8,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import { useState, useRef, useEffect } from 'react';
 import { DiscordIcon, GoogleIcon, GithubIcon } from '@/components/ui/brand-icons';
 import { Mail, Lock, User, Camera, Fingerprint, Loader2, ArrowLeft } from 'lucide-react';
@@ -75,7 +76,7 @@ function LoginPage() {
     }
   }, [rawCallback]);
 
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session, isPending } = useSession();
 
   useEffect(() => {
     if (!isPending && session?.user) {

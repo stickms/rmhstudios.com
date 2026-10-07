@@ -61,7 +61,7 @@ function AdminRedemptionsPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data.error ?? t('action-failed', { defaultValue: 'Action failed' }));
+        toast.error(data.error ?? t('action-failed-appeals', { defaultValue: 'Action failed' }));
         return;
       }
       toast.success(

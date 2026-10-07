@@ -382,7 +382,7 @@ export function GeneratePanel() {
             onChange={(event) => setConfirmed(event.target.checked)}
           />
           <span>
-            {t('editor-generate-confirm', {
+            {t('editor-generate-confirm', { defaultValue_one: 'I understand this deletes {{count}} note I edited myself.',
               defaultValue: 'I understand this deletes {{count}} notes I edited myself.',
               count: authoredAtRisk,
             })}

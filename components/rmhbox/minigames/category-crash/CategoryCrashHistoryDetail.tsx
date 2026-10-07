@@ -121,7 +121,7 @@ export default function CategoryCrashHistoryDetail({
             {/* Round header */}
             <div className="flex items-center gap-3 mb-3">
               <h4 className="text-sm font-semibold text-(--app-text-muted)">
-                {t("round-number", { defaultValue: "Round {{num}}", num: roundNum })}
+                {t("round-number-category-crash-history-detail", { defaultValue: "Round {{num}}", num: roundNum })}
               </h4>
               <span className="text-2xl font-bold text-(--app-accent)">{letter}</span>
             </div>

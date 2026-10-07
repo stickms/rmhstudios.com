@@ -237,7 +237,7 @@ export default function RmhTypeMultiplayer() {
                         {' · '}
                         <span className="capitalize">{r.passageLength}</span>
                         {' · '}
-                        {r.rounds} {r.rounds === 1 ? t("round", { defaultValue: "round" }) : t("rounds", { defaultValue: "rounds" })}
+                        {r.rounds} {r.rounds === 1 ? t("round", { defaultValue: "round" }) : t("rounds-rmh-type-multiplayer-page", { defaultValue: "rounds" })}
                       </div>
                     </div>
                     <div className="text-xs font-mono text-(--app-text-muted)">

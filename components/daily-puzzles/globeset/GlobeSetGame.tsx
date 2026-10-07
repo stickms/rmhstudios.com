@@ -75,7 +75,7 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useCelebration } from '@/hooks/useCelebration';
 import { useDeviceAttitude } from '@/hooks/useDeviceAttitude';
 import type { Quat } from '@/lib/device-attitude';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
@@ -147,7 +147,7 @@ export function GlobeSetGame() {
   const reduced = useReducedMotion();
   const celebrate = useCelebration();
   const confirm = useConfirm();
-  const session = authClient.useSession();
+  const session = useSession();
 
   const today = useMemo(() => getTodayEST(), []);
   const todayKey = useMemo(() => formatDateKey(today), [today]);

@@ -55,7 +55,7 @@ export default function CareersPage() {
               <div className="value"><h3>{t("value-ownership-title", { defaultValue: "Ownership" })}</h3><p>{t("value-ownership-body", { defaultValue: "Real responsibility early, and the autonomy to act on it." })}</p></div>
               <div className="value"><h3>{t("value-mentorship-title", { defaultValue: "Mentorship" })}</h3><p>{t("value-mentorship-body", { defaultValue: "Senior people who invest in how you think, not just what you produce." })}</p></div>
               <div className="value"><h3>{t("value-mobility-title", { defaultValue: "Mobility" })}</h3><p>{t("value-mobility-body", { defaultValue: "Move across businesses and markets as your interests grow." })}</p></div>
-              <div className="value"><h3>{t("value-long-term-title", { defaultValue: "The long term" })}</h3><p>{t("value-long-term-body", { defaultValue: "Careers built to last, on a platform built the same way." })}</p></div>
+              <div className="value"><h3>{t("value-long-term-title", { defaultValue: "The long term" })}</h3><p>{t("value-long-term-body-careers-page", { defaultValue: "Careers built to last, on a platform built the same way." })}</p></div>
             </div>
           </div>
         </div>

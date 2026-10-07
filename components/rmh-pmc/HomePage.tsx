@@ -241,9 +241,9 @@ export default function HomePage() {
         <div className="container">
           <div className="cta-band reveal">
             <span className="desig center">{t("cta-desig", { defaultValue: "Selection" })}</span>
-            <h2 style={{ marginTop: 16 }}>{t("cta-heading", { defaultValue: "The standard does not lower for anyone" })}</h2>
+            <h2 style={{ marginTop: 16 }}>{t("cta-heading-home-page", { defaultValue: "The standard does not lower for anyone" })}</h2>
             <p>
-              {t("cta-body", { defaultValue: "We recruit a small number of operators, analysts, logisticians, and medics each year — and select them again before they ever carry our flag. If you have already proven it, prove it once more." })}
+              {t("cta-body-home-page", { defaultValue: "We recruit a small number of operators, analysts, logisticians, and medics each year — and select them again before they ever carry our flag. If you have already proven it, prove it once more." })}
             </p>
             <Link className="btn btn-amber" to="/rmh-pmc/operators">{t("selection-recruiting", { defaultValue: "Selection & recruiting" })} <span className="arw">→</span></Link>
           </div>

@@ -345,6 +345,139 @@ describe('FOUC contract: pre-paint parity', () => {
   });
 });
 
+describe('FOUC contract: hydration', () => {
+  /**
+   * A hydration mismatch with no Suspense boundary between it and the document
+   * makes React re-render the WHOLE document — and React 19 resets `<html>`'s
+   * attributes to its props when it does, wiping every class, `data-*` attribute
+   * and inline style the pre-paint scripts set. So a mismatch anywhere is a
+   * full-document flash of the default theme. These are the three shapes that
+   * produced one, as source-level rules.
+   */
+
+  /**
+   * Better Auth's hook starts every CLIENT render at `isPending: true`; the
+   * server rendered from its own answer. `/login` rendered its form on the server
+   * and a spinner on the client's first pass, so React #418'd on every signed-out
+   * redirect to it. `useSession()` from `components/Providers` is seeded from the
+   * server's session lookup on both sides.
+   */
+  it('nothing renders from authClient.useSession() except the provider that wraps it', () => {
+    const callers = grepRepoMatching(/authClient\.useSession\(\)/).filter((f) => {
+      const src = readFileSync(join(REPO, f), 'utf8');
+      // Mentions in comments are fine; a call is a `= authClient.useSession()`.
+      return /=\s*authClient\.useSession\(\)/.test(src);
+    });
+    expect(
+      callers,
+      'use `useSession()` from @/components/Providers — the raw hook disagrees with the server on the first client render',
+    ).toEqual(['components/Providers.tsx']);
+  });
+
+  /**
+   * A 404 thrown by a nested loader: the server builds `<head>` only up to the
+   * not-found boundary, TanStack's client `hydrate()` builds it for every match,
+   * and an inline `<script>` the server never sent fails hydration for the whole
+   * document. `lib/router/not-found-head.ts` applies the server's cut on the
+   * client; this keeps it installed.
+   */
+  it('the router applies the server-side not-found head cut on the client', () => {
+    expect(read('app/router.tsx')).toMatch(/installNotFoundHeadGuard\(router\.looseRoutesById\)/);
+  });
+
+  /**
+   * TanStack Start already splits a route's `component` into its own chunk and
+   * loads it BEFORE hydrating. A `lazy()` inside that component can still be
+   * pending when hydration reaches it, and any update that reaches the boundary
+   * in that window — a session resolving, a context value changing — makes React
+   * discard the server-rendered page and show the fallback until the chunk
+   * lands. Measured on 30 routes: finished pages blanked to "Loading…" for
+   * 90–1800ms and came back (docs/fouc-audit-2026-10-06.md §13).
+   *
+   * So a route module imports its page statically. The entries below are the
+   * `lazy()`s that cannot do that harm, each for the reason given; the list is
+   * one-directional — an entry whose file no longer uses `lazy()` fails until
+   * it is removed, and a new one needs the same justification.
+   */
+  const LAZY_IN_ROUTE_ALLOWED: Record<string, string> = {
+    'app/routes/_site.tsx':
+      'first-run/welcome modals, cookie consent, shortcuts and the mini player — mounted on the client after an interaction or a stored flag, never server-rendered',
+    'app/routes/_site/admin/blog/$slug/edit.tsx':
+      'admin-only MDX editor, behind auth: not in the audit, nothing public to swap',
+    'app/routes/_site/admin/blog/new.tsx': 'admin-only MDX editor, behind auth',
+    'app/routes/_site/admin/slice-it-content.tsx': 'admin-only dashboard, behind auth',
+    'app/routes/_site/services/index.tsx':
+      'the car and fashion previews open from a click inside the page; the page itself is static',
+    'app/routes/altair/index.tsx':
+      'client-only game screen: the server renders the fallback, so there is no server markup to lose',
+    'app/routes/altair/multiplayer/$lobbyId.tsx':
+      'client-only multiplayer screens, reached after a socket handshake',
+    'app/routes/discord/index.tsx':
+      'Discord Activities render only after the SDK handshake, which is client-only',
+    'app/routes/discord/lights-out.tsx':
+      'Discord Activity, rendered after the client-only SDK handshake',
+    'app/routes/discord/rmhbox.tsx':
+      'Discord Activity, rendered after the client-only SDK handshake',
+    'app/routes/forest-explorer/explore.tsx':
+      'client-only 3D scene: the server renders the fallback',
+    'app/routes/forest-explorer/story.tsx': 'client-only 3D scene: the server renders the fallback',
+    'app/routes/isleworks.tsx': 'client-only 3D scene: the server renders the fallback',
+    'app/routes/library.$slug.tsx': 'the book and EPUB readers open from the page on demand',
+    'app/routes/rmhcode/index.tsx': 'the token generator opens on demand from the page',
+    'app/routes/rmhmusic/$roomId.tsx': 'the visualizer mounts once audio is playing',
+    'app/routes/slice-it/edit.$songId.tsx': 'the chart editor, behind auth, client-only canvas',
+    'app/routes/synapse-storm.tsx': 'client-only WebGL game: the server renders the fallback',
+    'app/routes/temple-of-joy/index.tsx': 'client-only game gate: the server renders the fallback',
+    'app/routes/velum2099.tsx': 'client-only WebGL game: the server renders the fallback',
+  };
+
+  it('route modules import their page statically, except the reviewed lazy() boundaries', () => {
+    const lazyRoutes = grepRepoMatching(/=\s*lazy\(/)
+      .filter((f) => f.startsWith('app/routes/'))
+      .sort();
+    const unreviewed = lazyRoutes.filter((f) => !(f in LAZY_IN_ROUTE_ALLOWED));
+    expect(
+      unreviewed,
+      "import the page statically — Start already code-splits route components (see this test's docblock)",
+    ).toEqual([]);
+    const stale = Object.keys(LAZY_IN_ROUTE_ALLOWED).filter((f) => !lazyRoutes.includes(f));
+    expect(
+      stale,
+      'these no longer use lazy() — remove their LAZY_IN_ROUTE_ALLOWED entries',
+    ).toEqual([]);
+  });
+});
+
+describe('FOUC contract: fonts', () => {
+  /**
+   * Every display family is self-hosted with `font-display: optional`
+   * (`scripts/gen-self-hosted-fonts.ts`): a face that misses its ~100ms window is
+   * not used for that page view, so it cannot swap under text the reader is
+   * looking at. A Google Fonts stylesheet appended after paint — what every route
+   * did before, by design — guarantees exactly that swap.
+   */
+  it('no page loads a font from Google Fonts', () => {
+    const hits = grepRepoMatching(/fonts\.googleapis\.com/).filter(
+      // Server-side OG card rendering fetches font binaries at build/request time;
+      // nothing there reaches a browser.
+      (f) => !/\.server\.tsx?$/.test(f),
+    );
+    expect(hits, 'self-host the face — see scripts/gen-self-hosted-fonts.ts').toEqual([]);
+  });
+
+  it('every generated face is font-display: optional', () => {
+    const dir = join(REPO, 'app/fonts');
+    for (const file of readdirSync(dir).filter((f) => f.endsWith('.css'))) {
+      const css = readFileSync(join(dir, file), 'utf8');
+      const faces = css.match(/@font-face\s*\{[^}]*\}/g) ?? [];
+      expect(faces.length, `${file} declares no faces`).toBeGreaterThan(0);
+      for (const face of faces) {
+        expect(face, `${file}: a display face that can swap`).toMatch(/font-display:\s*optional;/);
+      }
+    }
+  });
+});
+
 describe('FOUC contract: the harness itself', () => {
   /**
    * The in-page instrument must be valid JavaScript.
@@ -371,11 +504,14 @@ describe('FOUC contract: the harness itself', () => {
   it('every gated detector has a sabotage in the self-test', () => {
     const harness = read('testing/e2e/fouc.mjs');
     const sabotaged = new Set([...harness.matchAll(/expect: '([a-z-]+)'/g)].map((m) => m[1]));
-    // `hydration` and `shift` are the two gated kinds with no sabotage: both are
-    // produced by the browser's own observers rather than by this harness's
-    // reasoning, and both were observed firing on real pages during this audit
-    // (React's hydration diagnostics, and 0.443 on /laundry-sort).
-    for (const kind of ['ground', 'restyle', 'late-css', 'font-swap', 'frame']) {
+    // `shift` is the one gated kind with no sabotage: it is produced by the
+    // browser's own layout-shift observer rather than by this harness's
+    // reasoning, and it was observed firing on real pages (0.443 on
+    // /laundry-sort). `hydration` used to be in the same category — until it
+    // turned out to have been deaf to production builds all along (React reports
+    // there through `reportError`, not the console), which is the argument for
+    // proving every detector that CAN be proved.
+    for (const kind of ['ground', 'restyle', 'late-css', 'font-swap', 'hydration', 'frame']) {
       expect(sabotaged, `no --self-test sabotage proves the "${kind}" detector fires`).toContain(
         kind,
       );

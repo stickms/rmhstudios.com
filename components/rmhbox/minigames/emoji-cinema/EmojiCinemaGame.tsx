@@ -409,7 +409,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
           animate="animate"
         >
           <span className="text-5xl">⏭️</span>
-          <h2 className="text-xl font-bold text-(--app-text)">{t("round-skipped", { defaultValue: "Round Skipped" })}</h2>
+          <h2 className="text-xl font-bold text-(--app-text)">{t("round-skipped-emoji-cinema-game", { defaultValue: "Round Skipped" })}</h2>
           <p className="text-sm text-(--app-text-muted)">
             {t("round-skipped-reason", { defaultValue: "The producer didn't submit any emojis — the round has been skipped." })}
           </p>

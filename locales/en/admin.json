@@ -325,5 +325,10 @@
   "view-content": "View content",
   "view-driver-applications": "Driver applications",
   "view-ride-history": "Ride history",
-  "year-label": "Year"
+  "year-label": "Year",
+  "action-failed-appeals": "Action failed",
+  "moderation-queue-reports": "Moderation queue",
+  "moderation-queue-description-index": "Review user reports of posts, comments, profiles, and builds. Resolve, dismiss, or take content down.",
+  "user-builds-description-index": "Moderate and search through all submitted builds from the community. Edit metadata and change visibilities.",
+  "announcements-title-announcements": "Announcements"
 }

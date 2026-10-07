@@ -101,31 +101,14 @@ const POST_FCP_CLS_LIMIT = 0.1;
  * fixed, they do not go in to quiet a finding. An entry must name the element,
  * CAP the value so a worse shift still fails, and say why the shift costs the
  * reader nothing. "Hard to fix" is not such a reason.
+ *
+ * Empty since 2026-10-07. Its one entry was `/laundry-sort` at 0.443 — a 16:9
+ * stage that was 0x0 in the server HTML until a ResizeObserver measured it. The
+ * stage is now sized by CSS from first paint (container-query units, see
+ * `components/laundry-sort/AspectStage.tsx`) and measures 0 in every profile.
+ * Keep the list: the next entry needs the same evidence that one carried.
  */
-const KNOWN_SHIFTS = [
-  {
-    route: '/laundry-sort',
-    element: 'div.relative.overflow-hidden',
-    max: 0.5,
-    why:
-      "Laundry Sort's 16:9 stage (components/laundry-sort/AspectStage.tsx) is sized " +
-      'by a ResizeObserver, so it is 0x0 in the server HTML and grows to the letterbox ' +
-      'once JS has measured the container. Three measurements make that a geometric ' +
-      'shift rather than a visible one: the box is bg-black inside a bg-black parent, ' +
-      'it renders NO children until the measurement lands (size.width > 0 ? children : ' +
-      'null), and the compositor frames across the shift show 0.0000 divergence and ' +
-      '0.0000 late-unsettling — nothing the reader can see moves, because there is ' +
-      'nothing in that box to see yet. Both ways to remove the geometry change cost ' +
-      'more than they save: CSS aspect-ratio with both max-constraints is rejected in ' +
-      "that file's own docblock because browsers disagree when the container is the " +
-      'constrained axis (and the pixel size is load-bearing regardless — the WebGL ' +
-      'drawing buffer and the pointer mapping both read it), while not server-rendering ' +
-      'the stage would trade this for a real blank frame. A layout effect does not help ' +
-      'either: the 0x0 box is in the SSR HTML and is painted long before hydration. ' +
-      'Capped at 0.5 — the measurement is 0.443, and a larger one means the letterbox ' +
-      'maths changed and wants looking at.',
-  },
-];
+const KNOWN_SHIFTS = [];
 
 /**
  * How far a frame may DIVERGE from the settled frame relative to its
@@ -611,6 +594,7 @@ async function auditPage({
   sabotage,
   throttle,
   filmstrip,
+  windowMs = SAMPLE_WINDOW_MS,
 }) {
   const url = `${BASE_URL}${target.url}`;
   const findings = [];
@@ -655,7 +639,9 @@ async function auditPage({
     page = await context.newPage();
     // Before the instrument: it reads this to decide whether to run the
     // compositor heartbeat, which is only worth its CPU when frames are captured.
-    await page.addInitScript(`window.__foucCaptureFrames = ${captureFrames ? 'true' : 'false'}`);
+    await page.addInitScript(
+      `window.__foucCaptureFrames = ${captureFrames ? 'true' : 'false'}; window.__foucWindowMs = ${windowMs};`,
+    );
     await page.addInitScript(INSTRUMENT_SOURCE);
     // --self-test only: a deliberate post-paint restyle, injected AFTER the
     // instrument so the audit is measuring a real flash rather than its own
@@ -728,7 +714,7 @@ async function auditPage({
     // Let the sampler run its full window: the restyles this audit hunts for
     // land after hydration, after the i18n backfill, and after any store
     // rehydration — all of which are well past `load`.
-    await page.waitForTimeout(SAMPLE_WINDOW_MS + 250);
+    await page.waitForTimeout(windowMs + 250);
 
     if (cdp) {
       try {
@@ -755,6 +741,7 @@ async function auditPage({
         sheetImpact: S.sheetImpact,
         fontFiles: S.fontFiles,
         fontLoadedAt: S.fontLoadedAt,
+        fontSwaps: S.fontSwaps,
       };
     });
 
@@ -917,6 +904,11 @@ async function auditPage({
     const lateFamilies = new Map();
     for (const [family, loadedAt] of Object.entries(state.fontLoadedAt ?? {})) {
       if (loadedAt <= fcp + 1) continue;
+      // Every face of this family is `font-display: optional` — the self-hosted
+      // display faces (app/fonts/) all are. Such a face never swaps under text
+      // already on screen: past its ~100ms window it is simply not used for this
+      // page view, so a late download is a cache warm-up, not a flash.
+      if (!state.fontSwaps?.[family]) continue;
       lateFamilies.set(family, loadedAt);
     }
 
@@ -1125,7 +1117,7 @@ async function auditPage({
  * failed that way once (a regex escape eaten by the template literal killed
  * `INSTRUMENT_SOURCE`, and every page came back "clean" until the missing
  * `window.__fouc` was itself made a finding). So `--self-test` sabotages a real
- * page in four specific ways and asserts that the matching detector catches each
+ * page in one specific way per detector and asserts that the matching detector catches each
  * one. It is cheap, it runs against the same server as the audit, and a green
  * audit is only meaningful after it.
  */
@@ -1185,6 +1177,16 @@ const SABOTAGES = [
         document.head.appendChild(style);
       } catch (e) { /* the sabotage failing is itself a self-test failure */ }
     }, 700))`,
+  },
+  {
+    name: 'hydration',
+    expect: 'hydration',
+    why: 'Report a hydration mismatch the way a PRODUCTION React build does — through `reportError`, never the console. The detector listened only to console.error until a production #418 went unseen on every load of a page whose whole <html> it wiped.',
+    script: `requestAnimationFrame(() => setTimeout(() => {
+      const err = new Error('Minified React error #418; visit https://react.dev/errors/418?args[]=HTML&args[]= (fouc self-test)');
+      if (typeof reportError === 'function') reportError(err);
+      else setTimeout(() => { throw err; });
+    }, 600))`,
   },
   {
     name: 'frame',
@@ -1368,6 +1370,8 @@ function parseArgs(argv) {
     selfTest: false,
     auth: true,
     throttle: DEFAULT_CPU_THROTTLE,
+    filmstrip: null,
+    windowMs: SAMPLE_WINDOW_MS,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -1387,6 +1391,8 @@ function parseArgs(argv) {
     else if (a === '--no-auth') args.auth = false;
     else if (a === '--throttle') args.throttle = Math.max(1, Number(argv[++i]) || 1);
     else if (a === '--filmstrip') args.filmstrip = argv[++i];
+    else if (a === '--window')
+      args.windowMs = Math.max(1000, Number(argv[++i]) || SAMPLE_WINDOW_MS);
     else if (a === '-h' || a === '--help') args.help = true;
     else throw new Error(`unknown flag: ${a}`);
   }
@@ -1454,6 +1460,13 @@ async function main() {
   console.log(`  profiles   ${profileNames.join(', ')}`);
   console.log(`  frames     ${args.frames ? 'on (compositor screencast)' : 'off'}`);
   console.log(
+    `  window     ${args.windowMs}ms${
+      args.windowMs < SAMPLE_WINDOW_MS
+        ? ' — SHORTER than the default, so idle-gated flashes after this point are invisible'
+        : ''
+    }`,
+  );
+  console.log(
     `  cpu        ${args.throttle > 1 ? `${args.throttle}x throttled` : 'unthrottled (results are not reproducible — see --throttle)'}`,
   );
   console.log(`  runs       ${targets.length * profileNames.length}\n`);
@@ -1503,6 +1516,7 @@ async function main() {
           captureFrames: args.frames,
           throttle: args.throttle,
           filmstrip: filmstrips,
+          windowMs: args.windowMs,
         });
       } catch (error) {
         outcome = {

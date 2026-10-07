@@ -105,7 +105,7 @@ function AdminReportsPage() {
       body: JSON.stringify(body),
     });
     if (res.ok) toast.success(kind === 'ban' ? t('user-banned', { defaultValue: 'User banned' }) : t('strike-issued', { defaultValue: 'Strike issued' }));
-    else toast.error(t('action-failed', { defaultValue: 'Action failed' }));
+    else toast.error(t('action-failed-appeals', { defaultValue: 'Action failed' }));
   };
 
   return (
@@ -131,7 +131,7 @@ function AdminReportsPage() {
           value={status}
           onChange={(id) => setStatus(id as (typeof STATUS_TABS)[number])}
           scroll
-          aria-label={t('moderation-queue', { defaultValue: 'Moderation queue' })}
+          aria-label={t('moderation-queue-reports', { defaultValue: 'Moderation queue' })}
         />
 
         {loading ? (

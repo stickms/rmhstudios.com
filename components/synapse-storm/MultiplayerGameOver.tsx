@@ -42,7 +42,7 @@ export const MultiplayerGameOver: React.FC<MultiplayerGameOverProps> = ({
 
                 <div className="go-stats-grid">
                     <div className="go-stat">
-                        <span className="hud-label">{t("solved", { defaultValue: "Solved" })}</span>
+                        <span className="hud-label">{t("solved-hud", { defaultValue: "Solved" })}</span>
                         <div className="hud-value">{myEntry?.puzzlesSolved ?? gameState.puzzlesSolved}</div>
                     </div>
                     <div className="go-stat">

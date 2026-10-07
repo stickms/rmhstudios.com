@@ -92,7 +92,7 @@ export function PersonLeaderboard({
                     {formatDebt(row.value)}
                   </span>
                   <span className="w-14 shrink-0 text-right text-site-text-muted tabular-nums">
-                    {t('stats.readout.linesShort', {
+                    {t('stats.readout.linesShort', { defaultValue_one: '{{count}} line',
                       defaultValue: '{{count}} lines',
                       count: row.stat.count,
                     })}

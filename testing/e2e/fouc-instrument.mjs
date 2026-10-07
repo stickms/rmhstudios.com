@@ -14,12 +14,23 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * How long the per-frame sampler keeps running after document-start. Long
- * enough to cover hydration, the i18n backfill, a late route chunk and the
- * store rehydrations that follow them; short enough that a page with a live
- * socket or a game loop does not hold the audit open.
+ * How long the per-frame sampler keeps running after document-start, by default.
+ *
+ * It was 4000ms, chosen to cover hydration, the i18n backfill, a late route
+ * chunk and the store rehydrations that follow them. That was the wrong boundary,
+ * and the audit reported a whole class of flash as clean because of it: work
+ * gated on `hooks/useIdleReady` — a `requestIdleCallback` with a 2s timeout,
+ * registered from a mount effect that itself runs after hydration — happens LATER
+ * than all of that. Measured at 4x throttle on a signed-in page whose account and
+ * device themes disagreed: correct pre-paint at 530ms, then the account sync
+ * cleared `style-graphite` at 7930ms and the document went black to white at
+ * 8621ms. A 4s window saw a clean page.
+ *
+ * 10s covers that with margin: a throttled hydration (~3s) + the idle timeout
+ * (2s) + one fetch + the repaint. The runner can override it with `--window`,
+ * and sets `window.__foucWindowMs` before this script runs so the two agree.
  */
-export const SAMPLE_WINDOW_MS = 4000;
+export const SAMPLE_WINDOW_MS = 10000;
 
 export const INSTRUMENT_SOURCE = `(() => {
   if (window.__fouc) return;
@@ -49,6 +60,11 @@ export const INSTRUMENT_SOURCE = `(() => {
     // "Inter Variable", and no amount of string-munging turns one into the other.
     // 'document.fonts' knows both, and knows exactly when the face became usable.
     fontLoadedAt: {},
+    // Families with at least one loaded face whose font-display can SWAP. A face
+    // declared 'optional' cannot: it gets ~100ms, and if it misses that window
+    // the fallback stays for the rest of the page view — so it finishing after
+    // first paint is not a flash, and the late-font detector must not call it one.
+    fontSwaps: {},
     // React's hydration diagnostics, captured from console + error events.
     hydrationErrors: [],
     // Attribute mutations on <html>/<body> with their timestamps, from a
@@ -139,11 +155,29 @@ export const INSTRUMENT_SOURCE = `(() => {
   } catch (e) {}
 
   // ── Hydration diagnostics ─────────────────────────────────────────────────
-  // React 19 reports hydration failures through console.error with a stable
-  // prefix and a minified-error code. A hydration mismatch IS a flash — the
-  // server markup paints, React throws it away and re-renders the subtree — so
-  // it is collected here rather than left to the generic console listener.
+  // A hydration mismatch IS a flash — the server markup paints, React throws it
+  // away and re-renders the subtree — so it is collected here rather than left to
+  // the generic console listener.
+  //
+  // React reports it through TWO channels and the audit has to hear both. A
+  // development build calls console.error with a readable diff. A PRODUCTION
+  // build — the only thing this audit runs against — does not touch the console
+  // at all: \`onRecoverableError\` defaults to \`reportError\`, which dispatches an
+  // \`error\` event on window carrying "Minified React error #418". This detector
+  // used to patch console.error only, so against a production build it could not
+  // fire, and it never did: /slice-it/player/$handle threw #418 on every load,
+  // React re-rendered the whole document, and every attribute the pre-paint
+  // scripts had put on <html> — class, data-app-dark, color-scheme — was wiped
+  // (docs/fouc-audit-2026-10-06.md §7–8).
   var HYDRATION = /hydrat|did not match|server (?:html|rendered)|text content does not match|Minified React error #(?:418|421|423|425|428)/i;
+  try {
+    window.addEventListener('error', function (e) {
+      try {
+        var msg = String((e && e.error && e.error.message) || (e && e.message) || '');
+        if (HYDRATION.test(msg)) S.hydrationErrors.push({ t: now(), message: msg.slice(0, 600) });
+      } catch (err) {}
+    });
+  } catch (e) {}
   var origError = console.error;
   console.error = function () {
     try {
@@ -303,6 +337,7 @@ export const INSTRUMENT_SOURCE = `(() => {
         if (face.status !== 'loaded') return;
         var name = String(face.family).replace(/^["']|["']$/g, '');
         if (S.fontLoadedAt[name] === undefined) S.fontLoadedAt[name] = t;
+        if (face.display !== 'optional') S.fontSwaps[name] = true;
       });
     } catch (e) {}
   };
@@ -410,7 +445,7 @@ export const INSTRUMENT_SOURCE = `(() => {
     // screencast to feed, pure waste. The runner sets the flag in an init script
     // injected before this one.
     if (window.__foucCaptureFrames) heartbeat();
-    if (now() - S.t0 > ${SAMPLE_WINDOW_MS}) {
+    if (now() - S.t0 > (window.__foucWindowMs || ${SAMPLE_WINDOW_MS})) {
       S.sampling = false;
       S.stoppedAt = now();
       if (beat) beat.remove();

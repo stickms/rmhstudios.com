@@ -23,15 +23,25 @@ and why each detector asks its question the way it does is in
   under visible text · hydration mismatch · post-paint layout shift. Plus a
   compositor-frame detector on real `Page.startScreencast` frames.
 - **The detectors are proven, not assumed.** `--self-test` sabotages a real page
-  five ways and asserts each matching detector fires. Run it before trusting a
-  green result.
+  once per provable detector (six, since the second pass added `hydration`) and
+  asserts each matching detector fires. Run it before trusting a green result.
+- **A ten-second sample window** since the second pass (it was four): the account
+  appearance sync waits for idle and measured 8.6s after navigation under the 4×
+  throttle, so a shorter window could not see the flash it caused.
 
-### The caveat that matters
+### The caveat that mattered — and the two that turned out to matter more
 
-Chromium in this container does not fetch `fonts.gstatic.com` from a page
-context, so the **`font-swap` detector never had a real swap to find**. A clean
-`font-swap` column below is _absence of evidence_, not evidence of absence —
-see [Not verified here](#not-verified-here). Everything else was measured.
+The first pass recorded one caveat: Chromium in this container does not fetch
+`fonts.gstatic.com` from a page context, so the `font-swap` detector had no real
+swap to find. The second pass removed it from the other side — every display face
+is now self-hosted, same-origin, and `font-display: optional` (finding 10) — so the
+detector now sees every face the site loads, and none can swap.
+
+What the first pass did NOT know is that two of its own instruments were blind:
+the `hydration` detector heard only `console.error`, which a production React
+build never uses for a mismatch (finding 15), and the 4s window ended before the
+idle-gated account sync ran (finding 14). Both are fixed, and both are why the
+second pass found more than the first.
 
 ## The headline
 
@@ -62,21 +72,29 @@ was.
 
 ## Findings
 
-| #   | Page(s)                                                         | Measured                                                                                                                                     | Status                                                                       |
-| --- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| 1   | ~34 game/app routes                                             | `html.app-route` applied ~1.9s after FCP → surfaces, gutter and aurora all change                                                            | **fixed, verified**                                                          |
-| 2   | `/temple-of-joy`                                                | document ground `#0b0b0b` → `#fbf9f4`, **Δluma 0.945**, full viewport, every load                                                            | **fixed, verified**                                                          |
-| 3   | `/daily/lights-out`, `/lights-out`                              | **0.182** of layout shift after FCP (budget 0.1)                                                                                             | **fixed, verified**                                                          |
-| 4   | `/kowloon-knockout`                                             | restyle under `high-contrast`                                                                                                                | **fixed by #1, verified**                                                    |
-| 5   | `/laundry-sort`                                                 | **0.443** of layout shift after FCP — geometric only, 0.0000 pixel change                                                                    | **allowlisted, capped, with the measurement**                                |
-| 6   | `/discord/`, `/discord/rmhbox`, `/discord/lights-out`           | ground `#fff` → `#000` (**Δluma 1.000**) plus theme class, accent, surface, `color-scheme` and root font size all landing after FCP          | **open — reported, not fixed**                                               |
-| 7   | `/slice-it/player/$handle` (404 branch)                         | ground `#16161a` → `#ffffff`, and **30.5% frame divergence** — a real transient flash                                                        | **open — reported**                                                          |
-| 8   | `/slice-it/` under `comfort`                                    | every root attribute set before paint is CLEARED after hydration (`"app-route readable-font"` → `""`, `data-density` → absent) + 0.201 shift | **open — reported**                                                          |
-| 9   | `/daily/lights-out` under `comfort`                             | residual **0.109** (was 0.182); the scrollbar cause is verified gone                                                                         | **open — reported**                                                          |
-| 10  | six decorative families site-wide, `MedievalSharp` on `/altair` | not measurable here                                                                                                                          | **reported**                                                                 |
-| 11  | `/dunesday`                                                     | ground `#0b1a3a` → `#bfe6ff`, **Δluma 0.738**, every first load                                                                              | **fixed, verified**                                                          |
-| 12  | `/daily/globeset`                                               | **7.3%** frame divergence, signed in and out                                                                                                 | **partly fixed** — the scrollbar re-centring is gone; the rest is finding 13 |
-| 13  | `/daily/globeset`, `/rmhtype` (signed in)                       | the server-rendered page is **replaced by a spinner** for ~750–800ms, then returns                                                           | **open — reported**                                                          |
+| #   | Page(s)                                                                      | Measured                                                                                                                                     | Status                                                                   |
+| --- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| 1   | ~34 game/app routes                                                          | `html.app-route` applied ~1.9s after FCP → surfaces, gutter and aurora all change                                                            | **fixed, verified**                                                      |
+| 2   | `/temple-of-joy`                                                             | document ground `#0b0b0b` → `#fbf9f4`, **Δluma 0.945**, full viewport, every load                                                            | **fixed, verified**                                                      |
+| 3   | `/daily/lights-out`, `/lights-out`                                           | **0.182** of layout shift after FCP (budget 0.1)                                                                                             | **fixed, verified**                                                      |
+| 4   | `/kowloon-knockout`                                                          | restyle under `high-contrast`                                                                                                                | **fixed by #1, verified**                                                |
+| 5   | `/laundry-sort`                                                              | **0.443** of layout shift after FCP — geometric only, 0.0000 pixel change                                                                    | **fixed, verified** (2nd pass) — 0 in every profile; allowlist emptied   |
+| 6   | `/discord/`, `/discord/rmhbox`, `/discord/lights-out`                        | ground `#fff` → `#000` (**Δluma 1.000**) plus theme class, accent, surface, `color-scheme` and root font size all landing after FCP          | **fixed, verified** (2nd pass)                                           |
+| 7   | `/slice-it/player/$handle` (404 branch)                                      | ground `#16161a` → `#ffffff`, and **30.5% frame divergence** — a real transient flash                                                        | **fixed, verified** (2nd pass) — two causes, see 17 and 20               |
+| 8   | `/slice-it/` under `comfort`                                                 | every root attribute set before paint is CLEARED after hydration (`"app-route readable-font"` → `""`, `data-density` → absent) + 0.201 shift | **fixed, verified** (2nd pass) — explained by 14, 17 and 18              |
+| 9   | `/daily/lights-out` under `comfort`                                          | residual **0.109** (was 0.182); the scrollbar cause is verified gone                                                                         | **fixed, verified** (2nd pass) — **0.0067**                              |
+| 10  | six decorative families site-wide, `MedievalSharp` on `/altair`              | not measurable here                                                                                                                          | **fixed** (2nd pass) — 15 families self-hosted, `font-display: optional` |
+| 11  | `/dunesday`                                                                  | ground `#0b1a3a` → `#bfe6ff`, **Δluma 0.738**, every first load                                                                              | **fixed, verified**                                                      |
+| 12  | `/daily/globeset`                                                            | **7.3%** frame divergence, signed in and out                                                                                                 | **fixed, verified** — scrollbar (1st pass) + finding 13 (2nd)            |
+| 13  | `/daily/globeset`, `/rmhtype` (signed in)                                    | the server-rendered page is **replaced by a spinner** for ~750–800ms, then returns                                                           | **fixed, verified** (2nd pass) — and it was 32 routes, not 2: finding 18 |
+| 14  | every page, signed in, when the account's appearance ≠ device's              | the whole document flips theme **8.6s** after load (idle-gated account sync)                                                                 | **fixed, verified** (2nd pass)                                           |
+| 15  | the audit itself                                                             | the `hydration` detector could not hear a production build                                                                                   | **fixed** (2nd pass) — and a self-test sabotage for it                   |
+| 16  | `/login` (every signed-out redirect to it)                                   | React **#418** → whole document re-rendered, pre-paint attributes wiped                                                                      | **fixed, verified** (2nd pass) — + 29 more raw-session callers           |
+| 17  | any 404 thrown by a nested loader                                            | React **#418** in `<head>` → whole document re-rendered                                                                                      | **fixed, verified** (2nd pass)                                           |
+| 18  | 32 routes with an inner `lazy()` around server-rendered content              | finished page blanks to "Loading…" for **90–1800ms**, then returns                                                                           | **fixed, verified** (2nd pass) — gated                                   |
+| 19  | `/daily/outcast`, `/daily/spectrum`, `/void-breaker`, `/secret/signal-forge` | React **#418**: Twemoji rewrote emoji in markup React had not hydrated yet                                                                   | **fixed, verified** (2nd pass)                                           |
+| 20  | any global 404 under an app-tier URL                                         | site-tier `NotFound` card on an app-tier ground                                                                                              | **fixed, verified** (2nd pass)                                           |
+| 21  | game/app pages whose copy lives in a non-bundled i18n namespace              | text changes after paint when the English catalog lands; React **#418** when it wins the race with hydration                                 | **fixed, verified** (2nd pass) — 113 keys, gated                         |
 
 Verified by re-running the affected routes across **all nine profiles** after the
 fixes (189 runs): findings 1–4 are gone, and what is left is 6–9 plus the
@@ -155,6 +173,16 @@ a worse shift still fails the audit, and a new route cannot join the list by
 accident. That list is one-directional, like the allowlists in
 `design-consistency.test.ts`.
 
+**Fixed 2026-10-07 — and the "costs more than it saves" verdict above was
+wrong.** The objection to CSS was `aspect-ratio` beside `max-*` clamps; container
+query units need neither. The stage's wrapper is now a size container occupying
+exactly the frame's content box (the box `measure()` reads), and the stage is
+`min(100cqw, 100cqh × 16/9)` by `min(100cqh, 100cqw × 9/16)` — the same
+largest-16:9-that-fits arithmetic as the ResizeObserver, written as two `min()`s.
+So the server HTML already has the letterbox, and the measured pixel size that
+lands later is the same box. Measured post-paint shift: **0 in every profile**
+(was 0.443). `KNOWN_SHIFTS` is now empty.
+
 ### 6. `/discord/*` — no pre-paint script at all
 
 `__root.tsx`'s `head()` returns a deliberately minimal head for a Discord
@@ -192,6 +220,17 @@ What to check first: whether Discord's Activity CSP permits a same-origin extern
 script. If it does, the whole pre-paint stack can be served as a file and the
 Discord head stops being a special case.
 
+**Fixed 2026-10-07.** The premise of the empty head was checkable from the page
+itself, and it does not hold: the document has always carried inline scripts —
+the `$tsr` dehydration script TanStack Start emits on every SSR page, without
+which these routes could not hydrate at all. They hydrate inside Discord, so
+inline scripts run there. The Discord head now carries the pre-paint scripts
+(still no external fonts, preconnects, speculation rules or JSON-LD — nothing
+that leaves the origin, which is the real constraint of the Activity's URL
+proxy), and `/discord` is registered in `THEME_EXCLUDED_ROUTES`: these are
+full-screen games in Discord's palette, the one game tier that was still
+receiving the SITE theme after hydration.
+
 ### 7. `/slice-it/player/$handle` — the 404 shell under an app ground
 
 Audited with a handle nobody holds (`fidelity: 'shell'`), so the loader throws
@@ -206,6 +245,15 @@ answer: either `notFoundComponent` for an app-tier route keeps the app's chrome
 that a 404 is always site-tier (which it cannot know before the loader runs). The
 first is the better product answer and belongs with whoever owns the app tier's
 error states. It affects only the not-found branch of app-tier sub-routes.
+
+**Fixed 2026-10-07 — and the transient was not the design question.** The
+30.5% divergence was React **#418**: the server builds `<head>` only up to the
+not-found boundary, the client's `hydrate()` builds it for every match, so the
+Slice It layout's head `<script>` existed only on the client (finding 17). With
+no Suspense boundary between that mismatch and the document, React re-rendered
+the whole document and reset `<html>`'s attributes — which is the "attributes
+cleared" signature of finding 8 too. The design question had a principled answer
+as well: a 404 the ROOT renders is a site page whatever its URL (finding 20).
 
 ### 8. `/slice-it/` under `comfort` — the root attributes are cleared, not corrected
 
@@ -227,6 +275,13 @@ shows where the rehydration is late enough to catch. Reproducing it in a browser
 and finding the writer is the next step; the profile and route above do it
 reliably.
 
+**Explained and fixed 2026-10-07.** Three mechanisms produce exactly this
+signature, and the second pass found all three: the idle account sync (14), a
+hydration failure with no boundary between it and the document (16, 17), and the
+lazy-boundary swap that blanked this page's whole library for ~1.1s (18) — the
+0.201 "shift" was the library leaving and coming back. On the current build
+`/slice-it/` keeps every root attribute from the first frame in every profile.
+
 ### 9. `/daily/lights-out` under `comfort` — a residual 0.109
 
 After the `.app-page` fix the shift is 0.182 → **0.109** and appears only under
@@ -238,6 +293,14 @@ on the built page, `html` carries `app-route` before paint, `.app-page` is prese
 The residual is content reflow at the larger font scale, and it is 1.09× the
 budget. It is **not** allowlisted: `KNOWN_SHIFTS` requires evidence that a shift
 costs the reader nothing, and there is none for this one.
+
+**Fixed 2026-10-07: 0.109 → 0.0067.** Measured with source rects, the residual
+was not reflow: the loading state was a bare centred `div`, and when the effect
+built the grid React REUSED that div as the board's column — a 100×33 box became a
+640×769 column (0.092) and its padding landed a frame later (0.011). The loading
+state now wears the board's own frame (`.app-page`, the column, the back link), so
+the board arrives into it. The grid stays client-built on purpose: today's puzzle
+depends on the visitor's LOCAL date, which the server cannot know.
 
 ### 10. Deferred decorative fonts
 
@@ -254,6 +317,19 @@ changing the site's font strategy unilaterally. If it is to be removed, the
 levers are metric-matched fallbacks (`size-adjust` / `ascent-override` on a local
 fallback face, so the swap costs no reflow) or preloading the one family a page
 actually uses above the fold — not reverting to render-blocking.
+
+**Fixed 2026-10-07, by the lever this section named first.** Every display face
+the site loads — the six site-wide families plus nine per-page ones (Outfit,
+MedievalSharp, Press Start 2P, EB Garamond, Spectral, Playfair italics, Great
+Vibes, Fraunces, Archivo, IBM Plex Mono) — is self-hosted from Fontsource with
+`font-display: optional`, generated by `scripts/gen-self-hosted-fonts.ts` into
+`app/fonts/`. `optional` is the one value that cannot swap: a face that misses its
+~100ms window is not used for that page view and is cached for the next. The
+site-wide faces are declared in the render-blocking `globals.css` (a face whose
+`@font-face` arrives after paint swaps whatever its display value); each page's
+own faces come from a stylesheet linked in its `head()` plus a preload of the one
+Latin file its first screen needs. No page loads from Google Fonts any more (the
+CSP allowances stay — static pages in `public/` still use them).
 
 ### 11 & 12 — the two `main` brought in, caught the same hour
 
@@ -335,14 +411,155 @@ should not make alone:
 What is not in doubt is the measurement: two pages show finished content, blank it
 for the better part of a second, and bring it back.
 
+**Fixed 2026-10-07 — and it was thirty-two routes, not two.** The mechanism was right
+and the scope was wrong. A probe that watches a page's rendered text for "paints,
+collapses, comes back" found the swap on 30 routes (32 counting the two signed in, below): every daily puzzle, the four
+app landings, Slice It's library and hub, and 17 games, blanking for 90–1800ms.
+The fix needed no bundle-strategy decision after all: TanStack Start already
+splits a route's `component` into its own chunk and **awaits it before
+hydrating** (`hydrate()` in `router-core/ssr/ssr-client` returns the route-chunk
+promise), so importing the page statically moves it from a race into that chunk.
+Per-module sourcemap attribution confirms no page entered the entry chunk; what
+did is each route's preload list for its now-larger chunk, ~6 KB in all — recorded
+as an OPT-01 raise in `scripts/check-bundle-budget.ts`. A gate now fails any route
+module that `lazy()`s its page, against a reviewed allowlist of the ones that
+cannot swap (client-only scenes, on-demand panels, admin).
+
+## Second pass — what "fix everything else" found
+
+The second pass started as "close 5–13" and became the larger half of the audit,
+because two of the harness's own instruments were blind (14, 15). Each finding
+below was measured, fixed, and re-measured on a production build.
+
+### 14. The account appearance sync flipped the whole document, seconds after load
+
+Appearance is stored per device (`localStorage`, which `themeScript` paints from)
+and per account (`AppearancePreference`). `Providers` reconciled them at IDLE and
+let the account win — so anyone whose devices disagreed watched every page load in
+the device's theme and flip to the account's: measured Graphite at 530ms → class
+cleared at 7.9s → Daylight at **8.6s**, on the 4× throttle. That is every user
+with two devices who has changed a setting on one of them.
+
+The root loader already resolves the session, so the account's appearance is now
+read there and written into `localStorage` by a tiny inline script BEFORE
+`themeScript` runs (`lib/appearance/account-seed.ts`, which reproduces the
+account-sync precedence field for field). The pre-paint script is unchanged; it
+simply finds values that already agree, and the idle sync finds nothing to change.
+Verified both directions: account Daylight over a Graphite device and account
+Graphite over a Daylight device both paint the account's theme from the first
+sample, with no change in 12s.
+
+### 15. The hydration detector could not hear a production build
+
+React reports a hydration mismatch through `console.error` only in DEVELOPMENT.
+A production build's default `onRecoverableError` is `reportError` — an `error`
+event on `window` — and the instrument patched only the console. Against the
+builds it audits it could not fire, and it never did. It now listens on both
+channels; `--self-test` has a `hydration` sabotage that reports #418 exactly the
+way production React does; and `app/client.tsx` (a client entry that is Start's
+default plus `onRecoverableError`) passes React's component stack — available in
+production — to the client-error beacon and the console, so a production mismatch
+names the component that diverged. That is how 16–19 were located.
+
+### 16. `/login` failed hydration on every signed-out redirect
+
+It read Better Auth's `authClient.useSession()` directly, which starts every
+CLIENT render at `isPending: true`; the server rendered from its own answer. Form
+on the server, spinner on the client: #418, and with no boundary in between React
+re-rendered the whole document. 29 more components used the raw hook (the daily
+puzzles, games, feed pieces, `useStableSession`); all now use `useSession()` from
+`components/Providers`, which is seeded from the server's session lookup on both
+sides. A gate allows the raw hook only in `Providers.tsx`.
+
+### 17. A nested 404 failed hydration for the whole document
+
+TanStack's server `loadMatches` runs `head()` only up to the not-found boundary
+(`headMaxIndex`); the client's `hydrate()` runs it for every match. Meta and links
+are hoisted and do not care; an inline `<script>` is hydrated in place. On
+`/slice-it/player/<unknown>` the Slice It layout's head script existed only on the
+client, React threw #418, and the document lost its theme class, app ground and
+`color-scheme` two seconds after painting them correctly.
+`lib/router/not-found-head.ts` applies the server's cut on the client — every
+route's `head`/`scripts` is wrapped once at router creation to contribute nothing
+past the boundary — and a gate keeps it installed.
+
+### 18. Thirty-two routes, not two — see the "Fixed" note under 13 above.
+
+Two more turned up signed in: `/rmhbox` and `/studio` server-render their shell
+for a signed-in visitor (the allowlist had called them client-only) and blanked
+it for 0.7–0.9s. And `/cookgame` swapped for a different reason: R3F's `<Canvas>`
+forwards a suspension inside the scene — rapier's `<Physics>` loading its WASM —
+to the nearest DOM `<Suspense>`, so the HUD and the whole game dropped back to
+"LOADING..." for ~2s after painting. A `<Suspense>` inside the canvas keeps it
+there.
+
+### 19. Twemoji rewrote markup React had not hydrated yet
+
+`TwemojiProvider` swaps emoji text for `<img>`s from a mount effect over its whole
+subtree. React 19 hydrates nested Suspense boundaries in LATER passes, after that
+effect has run, so it rewrote text inside server markup React had not adopted:
+#418 on `/daily/outcast` and `/daily/spectrum` (the 🎭/🌈 on their loading
+screens), `/void-breaker` (🔒 on locked ships) and `/secret/signal-forge` (🏆
+Top Scores). The lazy swaps of 18 had been hiding all four — the boundary was
+client-rendered from scratch anyway. The initial pass now rewrites an emoji only
+once its element and everything under it carry React's fiber key, and retries the
+rest on idle until they do.
+
+### 20. A global 404 under an app-tier URL painted the app's ground
+
+The pre-paint script picks the tier from the URL, so `/slice-it/player/<nobody>`
+pre-painted Slice It's dark ground under the site's Daylight `NotFound` card. A
+404 the ROOT renders is a site page whatever its URL. The root `head()` runs after
+the loaders on the server and reads `globalNotFound` from its own match (fresh —
+`ctx.matches` there is the pre-loader snapshot), emitting a site-tier variant of
+`themeScript`; `Providers` reads the same flag, so the two agree from frame 0.
+
+### 21. English copy that changed after paint
+
+English ships only the core i18n namespaces in the entry, on both server and
+client; the rest of the catalog is backfilled after init. So a game or app page
+renders its strings from each call's `defaultValue` first and re-renders them from
+`locales/en/<ns>.json` when the backfill lands — and wherever the two disagree,
+the reader watches the text change. When the backfill beats hydration React fails
+to hydrate instead (#418), which is how it surfaced: `/rmh-capital` server-rendered
+"Latest Perspectives" and the client "Insights"; `/rmh-pmc`'s Command page showed
+the HOME page's section headings once the catalog loaded.
+
+A scan of every `t()` call with a literal default in a non-bundled namespace
+(~9,900 of them) found **113 keys** that disagreed with the catalog — almost all
+one key shared by call sites that say different things, which the catalog can
+only hold one of — plus plural calls whose singular was wrong until the catalog
+arrived ("1 moves"), eight of them still using the pre-v21 `defaultValue_plural`
+suffix that i18next 26 ignores. Each divergent call site got its own key (CLAUDE.md
+already says new wording is a new key; the new keys are English-only in
+`KNOWN_UNTRANSLATED` until the translate pipeline runs), three catalog plural forms
+were corrected, and plural calls pass `defaultValue_one`.
+`lib/__tests__/i18n-default-drift.test.ts`, in the commit gate, fails on any of it.
+
+What this does not change: a NON-English visitor still sees a game or app page's
+non-core strings in English until that locale's catalog backfills, because the
+server renders only the core namespaces of the active locale too (perf audit
+§4.1's trade). Removing that needs the page's namespaces at hydration — see
+[Not verified here](#not-verified-here).
+
+### Not FOUC, reported
+
+- **#419 on `/cookgame`**: the server render throws inside a Suspense boundary,
+  so the server sends the fallback and the client renders the scene. The reader
+  sees loading, not a restyle, so `app/client.tsx` labels it `recoverable` rather
+  than `hydration` — but it is a server error on every request. (`/isleworks`,
+  `/forest-explorer/explore` and `/` also reported #419 for a while; those runs
+  were taken while the database was down — lesson 7 — and do not count.)
+
 ## Not verified here
 
-| Thing                                | Why                                                                                                                                                                                                                                                                        | What would verify it                                            |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| `font-swap` on any page              | Chromium in this container does not fetch `fonts.gstatic.com` from a page context, so no font ever loaded late. The detector is proven by `--self-test` (which loads the site's own self-hosted Inter under a new family after paint) but had no production swap to catch. | Re-run the audit on a box with outbound access to Google Fonts. |
-| The 9th profile × the full route set | A whole-site pass is ~2300 runs. The breadth pass reached **923 runs across 8 profiles** before it was stopped to pick up the fixes; the affected routes were then re-run across **all nine**.                                                                             | `node testing/e2e/fouc.mjs` with no flags, ~60 min.             |
-| Client-side navigation               | Every measurement here is a **hard load**. A soft nav has its own ordering (the route chunk and its CSS arrive while the previous page is still on screen) and the `.lib__shelf` guard in `globals.css` exists because of it.                                              | A soft-nav mode driving the router rather than `page.goto`.     |
-| iOS WebKit                           | `platformScript`'s `ios-webkit` tier, the `theme-color` omission and the mobile aurora mirroring are all Safari-specific.                                                                                                                                                  | The same harness against WebKit.                                |
+| Thing                                     | Why                                                                                                                                                                                                                                                                                                                                                                                                                                                 | What would verify it                                                      |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `font-swap` from Google Fonts             | Moot since the second pass: no page loads a font from Google any more, and every display face is self-hosted `optional`. Faces now arrive same-origin, so the detector sees them.                                                                                                                                                                                                                                                                   | —                                                                         |
+| The full route set × all nine profiles    | See [Verification](#verification-second-pass) for what the second pass ran end to end.                                                                                                                                                                                                                                                                                                                                                              | `node testing/e2e/fouc.mjs` with no flags.                                |
+| Non-English first paint on game/app pages | The server renders only the active locale's CORE namespaces, so a non-English visitor sees a game's non-core strings in English until that locale's catalog backfills (finding 21). Fixing it means having the page's namespaces at hydration — server-side full catalogs plus the client loading the namespaces the page used before it hydrates — which reverses part of perf audit §4.1 and is a decision for the i18n owners, not a FOUC patch. | Run the audit with an `rtl`/`de` profile and watch text, not just tokens. |
+| Client-side navigation                    | Every measurement here is a **hard load**. A soft nav has its own ordering (the route chunk and its CSS arrive while the previous page is still on screen) and the `.lib__shelf` guard in `globals.css` exists because of it.                                                                                                                                                                                                                       | A soft-nav mode driving the router rather than `page.goto`.               |
+| iOS WebKit                                | `platformScript`'s `ios-webkit` tier, the `theme-color` omission and the mobile aurora mirroring are all Safari-specific.                                                                                                                                                                                                                                                                                                                           | The same harness against WebKit.                                          |
 
 ## What the audit's own bugs taught
 
@@ -371,6 +588,18 @@ wrong_, and the first three produced a clean report on a site that was flashing.
    signed-out run called ~40 `/admin/*` pages clean having loaded the home page
    instead. The report now separates "visited as themselves" from "redirected
    away", and a `signed-in` profile closes the gap.
+6. **A detector can be deaf without being dead.** The `hydration` detector parsed,
+   installed and passed every test — and listened on a channel production React
+   never uses. Nothing failed; it simply never heard anything. The self-test now
+   sabotages every detector it can, through the channel production uses, so
+   "never fires" stops looking the same as "nothing to find" (finding 15).
+7. **Check the environment before believing the page.** Partway through the
+   second pass the container was suspended and Postgres did not come back. Every
+   signed-in probe after that ran against a server whose session lookups and
+   loaders failed — and the failures looked like hydration findings. The runs were
+   discarded and repeated with a database check in front of each one. A FOUC
+   audit measures the page the server sent; if the server is broken, so is the
+   measurement.
 
 ## What stops this from coming back
 
@@ -387,3 +616,17 @@ commit:
   removed.
 - **Every page in the generated route tree is audited or excluded with a reason**,
   and an exclusion reason must name a mechanism.
+- **Nothing but `Providers.tsx` renders from `authClient.useSession()`** — the raw
+  hook disagrees with the server on the first client render (finding 16).
+- **The router keeps the not-found head guard installed** (finding 17).
+- **A route module imports its page statically**, against a reviewed,
+  one-directional allowlist of `lazy()`s that cannot swap server-rendered content
+  (finding 18).
+- **No page loads a font from Google Fonts, and every generated face is
+  `font-display: optional`** (finding 10); `pnpm fonts:check` runs in the commit
+  gate when the fonts or their packages change.
+- **Every detector the harness can sabotage is sabotaged by `--self-test`**,
+  `hydration` included (finding 15).
+- **Every `t()` default in a non-bundled namespace equals its English catalog
+  entry, plural forms included, and nothing uses `defaultValue_plural`**
+  (`lib/__tests__/i18n-default-drift.test.ts`, finding 21).

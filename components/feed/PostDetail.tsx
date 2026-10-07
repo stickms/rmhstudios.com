@@ -9,8 +9,7 @@ import { Button } from'@/components/ui/button';
 import { RMHarkOverflowMenu } from'./RMHarkOverflowMenu';
 import { useLocaleStore } from'@/stores/localeStore';
 import { LOCALE_TO_LANGUAGE_NAME } from'@/lib/i18n/config';
-import { authClient } from'@/lib/auth-client';
-import { useResolvedUser } from'@/components/Providers';
+import { useResolvedUser, useSession } from'@/components/Providers';
 import { useFreshUser, useUserDisplayStore } from'@/stores/userDisplayStore';
 import { useFeedStore } from'@/stores/feedStore';
 import { RMHarkActions } from'./RMHarkActions';
@@ -58,7 +57,7 @@ export function PostDetail({ postId }: PostDetailProps) {
  const [notFound, setNotFound] = useState(false);
  const [commentContent, setCommentContent] = useState('');
  const [submitting, setSubmitting] = useState(false);
- const { data: session } = authClient.useSession();
+ const { data: session } = useSession();
  const { resolved: resolvedUser } = useResolvedUser();
  const remaining = MAX_COMMENT_LENGTH - commentContent.length;
  const [translatedText, setTranslatedText] = useState<string | null>(null);

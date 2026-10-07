@@ -367,7 +367,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
                   <Flag className="h-5 w-5 inline" /> {t("finished-rank", { defaultValue: "Finished! Rank #{{rank}}", rank: finishRank })}
                 </span>
                 <p className="text-sm text-(--app-success)/70">
-                  {t("finished-clicks", { defaultValue: "{{clicks}} clicks • Viewing target article", clicks: clickCount })}
+                  {t("finished-clicks-wiki-race-game", { defaultValue: "{{clicks}} clicks • Viewing target article", clicks: clickCount })}
                 </p>
               </div>
             )}

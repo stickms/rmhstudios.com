@@ -20,7 +20,7 @@
   --line:rgba(200,162,74,0.18);
   --line-soft:rgba(244,241,233,0.08);
   --serif:'Spectral',Georgia,serif;
-  --sans:'Inter',system-ui,-apple-system,sans-serif;
+  --sans:'Inter Variable','Inter',system-ui,-apple-system,sans-serif;
   --mono:'JetBrains Mono',ui-monospace,monospace;
   --maxw:1240px;
   --pad:clamp(20px,5vw,64px);

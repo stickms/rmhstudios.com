@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { ArrowLeft, Copy, Check, Crown, Link2, Users } from 'lucide-react';
 import { NDWMultiplayerClient } from '@/lib/neon-driftway/multiplayer';
 import { useLobbyInviteJoin, useLobbyLink } from '@/hooks/useLobbyLink';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import type { LevelId, NDWLobbyPlayer, NDWLobbyState } from '@/lib/neon-driftway/types';
 import { LEVELS } from '@/lib/neon-driftway/constants';
 
@@ -28,7 +28,7 @@ export function NDWMultiplayerLobby({ onBack, onGameStart }: NDWMultiplayerLobby
 
     const { t } = useTranslation("c-neon-driftway");
     const clientRef = useRef<NDWMultiplayerClient | null>(null);
-    const session = authClient.useSession();
+    const session = useSession();
     const playerName = session.data?.user?.name || 'Driver';
     const { copied: linkCopied, copyLink } = useLobbyLink({ code: roomId });
 
@@ -236,7 +236,7 @@ export function NDWMultiplayerLobby({ onBack, onGameStart }: NDWMultiplayerLobby
                 {/* Level Select (host only) */}
                 {isHost && (
                     <div className="bg-zinc-900/80 border border-zinc-700 rounded-lg p-4">
-                        <div className="text-xs text-zinc-400 uppercase tracking-wider mb-2">{t("select-level", { defaultValue: "Select Level" })}</div>
+                        <div className="text-xs text-zinc-400 uppercase tracking-wider mb-2">{t("select-level-ndwmultiplayer-lobby", { defaultValue: "Select Level" })}</div>
                         <div className="flex gap-2">
                             {([1, 2, 3] as LevelId[]).map(id => (
                                 <button

@@ -16,9 +16,10 @@ import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { gameRouteHead } from '@/lib/seo-catalog';
 import AltairShell from '@/components/altair/AltairShell';
 import altairCss from '@/components/altair/altair.css?url';
-
-const FONTS_URL =
-  'https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap';
+// MedievalSharp, self-hosted with `font-display: optional` (app/fonts/), and its
+// Latin file preloaded so the title makes the face's window — lib/fonts/self-hosted.ts.
+import medievalSharpCss from '@/app/fonts/medievalsharp.css?url';
+import medievalSharpLatin from '@fontsource/medievalsharp/files/medievalsharp-latin-400-normal.woff2?url';
 
 function AltairLayout() {
   return (
@@ -30,8 +31,11 @@ function AltairLayout() {
 
 export const Route = createFileRoute('/altair')({
   head: () => gameRouteHead('altair', {
-      links: [{ rel: 'stylesheet', href: altairCss }],
-      fontsUrl: FONTS_URL,
+      links: [
+        { rel: 'stylesheet', href: altairCss },
+        { rel: 'stylesheet', href: medievalSharpCss },
+      ],
+      fontPreloads: [medievalSharpLatin],
     }),
   component: AltairLayout,
 });

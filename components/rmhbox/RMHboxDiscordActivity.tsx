@@ -476,7 +476,7 @@ export function RMHboxDiscordActivity({ discord }: Props) {
                                                     </div>
                                                     <div className="flex items-center gap-4 text-sm">
                                                         <span className="text-(--app-text-muted)">{t("wins-count", { count: s.wins, defaultValue: "{{count}} win" })}</span>
-                                                        <span className="font-bold text-(--app-accent)">{t("score-pts", { count: s.totalScore, defaultValue: "{{count}} pts" })}</span>
+                                                        <span className="font-bold text-(--app-accent)">{t("score-pts-rmhbox-discord-activity", { count: s.totalScore, defaultValue: "{{count}} pts" })}</span>
                                                     </div>
                                                 </div>
                                             ))}

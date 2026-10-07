@@ -147,7 +147,7 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
                   className="hover:text-site-text transition-colors"
-                  title={t("view-source", { defaultValue: "View source" })}
+                  title={t("view-source-build-card", { defaultValue: "View source" })}
                 >
                   <GitBranch className="w-4 h-4" />
                 </a>

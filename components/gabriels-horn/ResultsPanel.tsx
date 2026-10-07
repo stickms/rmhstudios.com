@@ -44,7 +44,7 @@ export function ResultsPanel({
           </h1>
           {winner && !results.abandoned ? (
             <p className="mt-1 text-sm text-(--app-text-muted)">
-              {t('results-with', {
+              {t('results-with', { defaultValue_one: 'Holding {{count}} card after {{rounds}} rounds.',
                 defaultValue: 'Holding {{count}} cards after {{rounds}} rounds.',
                 count: winner.handCount,
                 rounds: results.rounds,
@@ -89,7 +89,7 @@ export function ResultsPanel({
                   ) : null}
                 </span>
                 <span className="shrink-0 font-mono text-sm font-bold tabular-nums">
-                  {t('card-count', { defaultValue: '{{count}} cards', count: row.handCount })}
+                  {t('card-count', { defaultValue_one: '{{count}} card', defaultValue: '{{count}} cards', count: row.handCount })}
                 </span>
               </li>
             ))}

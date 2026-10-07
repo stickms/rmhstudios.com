@@ -2,10 +2,12 @@ import { createFileRoute } from '@tanstack/react-router';
 import { CovidPage } from '@/components/covid/CovidPage';
 import covidCss from '@/components/covid/covid.css?url';
 import { buildMeta, buildCanonical } from '@/lib/seo';
-import { deferredFontScript, preconnectGoogleFonts } from '@/lib/fonts/deferred';
-
-const FONTS_URL =
-  'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..700&family=Inter:wght@300..700&family=Great+Vibes&display=swap';
+// Playfair Display (uprights site-wide, italics here) and Great Vibes, self-hosted
+// with `font-display: optional` (app/fonts/); the upright Latin file — the
+// headlines — preloaded. Inter is the site's own. See lib/fonts/self-hosted.ts.
+import covidFontsCss from '@/app/fonts/covid.css?url';
+import playfairLatin from '@fontsource-variable/playfair-display/files/playfair-display-latin-wght-normal.woff2?url';
+import { preloadFont } from '@/lib/fonts/self-hosted';
 
 /**
  * /covid — "Feature Leak: The True Origins of X".
@@ -29,11 +31,9 @@ export const Route = createFileRoute('/covid')({
     links: [
       buildCanonical(PATH),
       { rel: 'stylesheet', href: covidCss },
-      ...preconnectGoogleFonts(),
+      { rel: 'stylesheet', href: covidFontsCss },
+      preloadFont(playfairLatin),
     ],
-    // Idle-deferred rather than a render-blocking <link> — see
-    // `lib/fonts/deferred.ts`.
-    scripts: [{ children: deferredFontScript(FONTS_URL) }],
   }),
   component: CovidPage,
 });

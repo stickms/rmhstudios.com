@@ -13,7 +13,7 @@ import { generateImpostorShare } from '@/lib/daily-puzzles/share';
 import { fetchDailyPuzzle } from '@/lib/daily-puzzles/client';
 import { PuzzleLoading } from '@/components/daily-puzzles/PuzzleLoading';
 import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLeaderboard';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import { PastPuzzlesSection } from '@/components/daily-puzzles/PastPuzzlesSection';
 
 type StatementResult = 'real' | 'fake-found' | 'fake-missed' | 'wrong-guess';
@@ -67,7 +67,7 @@ function ImpostorGameContent({ puzzle, dateKey, isToday }: { puzzle: ImpostorPuz
         }
     }, [dateKey]);
 
-    const session = authClient.useSession();
+    const session = useSession();
 
     useEffect(() => {
         if (session.data && !hasCompleted('impostor', dateKey)) {

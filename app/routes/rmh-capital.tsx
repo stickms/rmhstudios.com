@@ -1,23 +1,21 @@
 import { createFileRoute } from '@tanstack/react-router';
 import RmhCapitalLayout from '@/components/rmh-capital/Layout';
 import rmhCapitalCss from '@/components/rmh-capital/rmh-capital.css?url';
-import { deferredFontScript, preconnectGoogleFonts } from '@/lib/fonts/deferred';
-
-const FONTS_URL =
-  'https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap';
+// Spectral, self-hosted with `font-display: optional` (app/fonts/), its Latin 500
+// — the headline weight — preloaded. Inter and JetBrains Mono are the site's own
+// self-hosted faces. See lib/fonts/self-hosted.ts.
+import spectralCss from '@/app/fonts/spectral.css?url';
+import spectralLatin500 from '@fontsource/spectral/files/spectral-latin-500-normal.woff2?url';
+import { preloadFont } from '@/lib/fonts/self-hosted';
 
 export const Route = createFileRoute('/rmh-capital')({
   head: () => ({
     meta: [{ name: 'theme-color', content: '#06090F' }],
     links: [
       { rel: 'stylesheet', href: rmhCapitalCss },
-      ...preconnectGoogleFonts(),
+      { rel: 'stylesheet', href: spectralCss },
+      preloadFont(spectralLatin500),
     ],
-    // Idle-deferred, not a render-blocking <link>: the families already carry
-    // `display=swap`, so blocking first paint on fonts.googleapis.com bought
-    // nothing and made this route's paint depend on a third party. See
-    // `lib/fonts/deferred.ts`.
-    scripts: [{ children: deferredFontScript(FONTS_URL) }],
   }),
   component: RmhCapitalLayout,
 });

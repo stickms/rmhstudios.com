@@ -17,20 +17,7 @@ import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
 import { buildCanonical, buildMeta, ogCardPath, SITE_URL } from '@/lib/seo';
 import { breadcrumbSchema, jsonLdScript, videoGameSchema } from '@/lib/schema';
-import { deferredFontScript, preconnectGoogleFonts } from '@/lib/fonts/deferred';
-
-/**
- * The head fragments a `fontsUrl` implies: non-blocking preconnects, and the
- * idle-append script. Empty when the route asked for no font, so a route that
- * doesn't use one emits exactly what it did before.
- */
-function fontHead(fontsUrl: string | undefined) {
-  if (!fontsUrl) return { links: [], scripts: [] };
-  return {
-    links: [...preconnectGoogleFonts()],
-    scripts: [{ children: deferredFontScript(fontsUrl) }],
-  };
-}
+import { preloadFont } from '@/lib/fonts/self-hosted';
 
 /**
  * The catalog index pages, and what every game/app breadcrumb walks back to.
@@ -57,20 +44,14 @@ interface HeadOptions {
    */
   links?: LinkTag[];
   /**
-   * A Google Fonts `css2?...` URL for a game whose look depends on a display
-   * family, loaded the ONLY way that doesn't gate first paint on a third party:
-   * preconnect in the head, stylesheet appended on idle
-   * (`lib/fonts/deferred.ts`).
-   *
-   * It is an option here rather than a `<link>` in each game's layout because
-   * that is precisely what four game shells used to do, and a
-   * `<link rel="stylesheet">` in a component body is the worst available shape:
-   * React 19 hoists it and **suspends rendering until it loads**, so the game
-   * painted nothing at all until fonts.googleapis.com answered. Routing it
-   * through here means a game asks for a font by naming it, and cannot
-   * accidentally re-acquire the blocking behaviour.
+   * `.woff2` URLs (from `?url` imports) of the self-hosted display face this
+   * game's first screen is set in, preloaded so the face makes its
+   * `font-display: optional` window — see `lib/fonts/self-hosted.ts`. The
+   * `@font-face` rules themselves live in the game's own stylesheet (an
+   * `@import` of the generated `app/fonts/*.css`), so they are declared before
+   * first paint; a face declared after it swaps no matter what.
    */
-  fontsUrl?: string;
+  fontPreloads?: string[];
 }
 
 /**
@@ -92,7 +73,7 @@ export function gameRouteHead(id: string, options: HeadOptions = {}) {
   }
 
   const path = game.href;
-  const fonts = fontHead(options.fontsUrl);
+  const fontLinks = (options.fontPreloads ?? []).map(preloadFont);
   return {
     meta: buildMeta({
       title: `${game.title} — play free in your browser | RMH Studios`,
@@ -101,9 +82,8 @@ export function gameRouteHead(id: string, options: HeadOptions = {}) {
       image: ogCardPath('game', game.id),
       imageAlt: `${game.title} on RMH Studios.`,
     }),
-    links: [buildCanonical(path), ...(options.links ?? []), ...fonts.links],
+    links: [buildCanonical(path), ...(options.links ?? []), ...fontLinks],
     scripts: [
-      ...fonts.scripts,
       jsonLdScript([
         videoGameSchema({
           name: game.title,
@@ -132,7 +112,7 @@ export function appRouteHead(id: string, options: HeadOptions = {}) {
   }
 
   const path = app.href;
-  const fonts = fontHead(options.fontsUrl);
+  const fontLinks = (options.fontPreloads ?? []).map(preloadFont);
   return {
     meta: buildMeta({
       title: `${app.title} — ${app.cta} | RMH Studios`,
@@ -144,9 +124,8 @@ export function appRouteHead(id: string, options: HeadOptions = {}) {
       image: ogCardPath('app', app.id),
       imageAlt: `${app.title} on RMH Studios.`,
     }),
-    links: [buildCanonical(path), ...(options.links ?? []), ...fonts.links],
+    links: [buildCanonical(path), ...(options.links ?? []), ...fontLinks],
     scripts: [
-      ...fonts.scripts,
       jsonLdScript(
         breadcrumbSchema([
           { name: 'Apps', path: APPS_INDEX_PATH },

@@ -3,9 +3,10 @@ import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { gameRouteHead } from '@/lib/seo-catalog';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import sliceItCss from '@/components/slice-it/slice-it.css?url';
-
-const FONTS_URL =
-  'https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap';
+// Outfit, self-hosted with `font-display: optional` (app/fonts/) and preloaded:
+// the whole game is set in it — lib/fonts/self-hosted.ts.
+import outfitCss from '@/app/fonts/outfit.css?url';
+import outfitLatin from '@fontsource-variable/outfit/files/outfit-latin-wght-normal.woff2?url';
 
 function SliceItLayout() {
   // Keep `<html data-app-dark>` — written before first paint by the inline
@@ -44,8 +45,11 @@ function SliceItLayout() {
 
 export const Route = createFileRoute('/slice-it')({
   head: () => gameRouteHead('slice-it', {
-      links: [{ rel: 'stylesheet', href: sliceItCss }],
-      fontsUrl: FONTS_URL,
+      links: [
+        { rel: 'stylesheet', href: sliceItCss },
+        { rel: 'stylesheet', href: outfitCss },
+      ],
+      fontPreloads: [outfitLatin],
     }),
   component: SliceItLayout,
 });

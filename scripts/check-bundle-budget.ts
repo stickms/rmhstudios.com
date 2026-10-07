@@ -140,11 +140,35 @@ const OUT_DIR = path.join(ROOT, '.output', 'public');
  * the gadgets and the sound engine are all in the route's own async chunk.
  * The new band is measured + 0.68%, the same ratio as the previous raises.
  *
+ * **2026-10-07 — entry raised 299,000 → 307,700 B (OPT-01 line).** The bytes
+ * were bought by **no finished page blanking to a spinner during hydration**
+ * (docs/fouc-audit-2026-10-06.md §13). Measured on this tree with
+ * `vite build --sourcemap`: `main` (45584d5) 290.5 KB, this branch 305,601 B —
+ * about +8 KB.
+ *
+ * Thirty-two routes server-rendered their page inside an inner `lazy()` (two
+ * more one component down); if anything updated the boundary before that chunk
+ * arrived, React threw the server markup away and showed "Loading…" for
+ * 90–1800ms. The fix imports the page statically, so it rides in the route
+ * component's own chunk — which Start loads BEFORE hydrating. The page itself stays out of the entry (verified by
+ * per-module sourcemap attribution, not assumed). What lands here is each
+ * route's lazy-component stub now carrying Vite's `__vite__mapDeps` preload list
+ * for the bigger chunk — ~100–500 B per route, ~6 KB in all — plus ~2 KB of new
+ * shell code: the not-found head guard (`lib/router/not-found-head.ts`), the
+ * account appearance seed (`lib/appearance/account-seed.ts`) and the client
+ * entry that gives a production hydration error its component stack
+ * (`app/client.tsx`). The preload list
+ * is not dead weight: a client navigation into a game now fetches its whole
+ * chunk graph in parallel instead of route-chunk-then-lazy-chunk.
+ *
+ * The critical path is still 3.5% (raw) and 3.9% (brotli) under its own budgets.
+ * The new band is measured + 0.68%, the same ratio as the previous raises.
+ *
  * Budgets that only ever move up are theatre. Per OPT-01: raising one requires
  * a line in the PR body naming the user-visible feature that bought the bytes.
  */
 const BUDGETS = {
-  entryRaw: 299_000,
+  entryRaw: 307_700,
   criticalPathRaw: 1_291_000,
   criticalPathBrotli: 370_000,
 };

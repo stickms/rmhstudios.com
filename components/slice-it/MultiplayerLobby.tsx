@@ -297,7 +297,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
     return (
       <Shell>
         <Loader2 className="w-8 h-8 animate-spin text-blue-500" aria-hidden />
-        <span className="sr-only">{t('loading', { defaultValue: 'Loading' })}</span>
+        <span className="sr-only">{t('loading-game-canvas', { defaultValue: 'Loading' })}</span>
       </Shell>
     );
   }
@@ -605,7 +605,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
                   {lobby.vote
                     ? ts('mp-nominate', { defaultValue: 'NOMINATE' })
                     : isHost
-                      ? t('change', { defaultValue: 'CHANGE' })
+                      ? t('change-multiplayer-lobby', { defaultValue: 'CHANGE' })
                       : t('host-picks', { defaultValue: 'HOST PICKS' })}
                 </Button>
               </div>
@@ -664,7 +664,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
                             ready: readyCount,
                             total: present.length,
                           })
-                        : t('start-game', { defaultValue: 'START GAME' })}
+                        : t('start-game-multiplayer-lobby', { defaultValue: 'START GAME' })}
                 </Button>
               ) : (
                 <Button

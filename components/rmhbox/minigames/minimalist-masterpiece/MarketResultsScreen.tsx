@@ -51,7 +51,7 @@ export default function MarketResultsScreen({
   return (
     <div className="flex flex-col items-center gap-6 p-4">
       <h2 className="text-xl font-bold text-(--app-text)">{t("market-results", { defaultValue: "Market Results" })}</h2>
-      <p className="text-sm text-(--app-text-muted)">{t("prompt-label", { defaultValue: "Prompt:" })} &quot;{prompt}&quot;</p>
+      <p className="text-sm text-(--app-text-muted)">{t("prompt-label-market-results-screen", { defaultValue: "Prompt:" })} &quot;{prompt}&quot;</p>
 
       {/* Painting Rankings (by market value) */}
       <div className="w-full max-w-md space-y-3">

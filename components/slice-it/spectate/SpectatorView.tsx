@@ -214,7 +214,7 @@ export function SpectatorView({ code, onLeave }: { code: string; onLeave: () => 
                     </span>
                     <span className="block text-[10px] font-bold text-slice-text-light font-mono">
                       {(total.accuracy * 100).toFixed(1)}% ·{' '}
-                      {t('mp-team-players', {
+                      {t('mp-team-players', { defaultValue_one: '{{count}} player',
                         defaultValue: '{{count}} players',
                         count: total.players,
                       })}

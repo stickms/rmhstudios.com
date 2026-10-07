@@ -110,7 +110,7 @@ export function GuideView({ gameId, guide }: { gameId: string; guide: GuideData 
         <Textarea
           value={body}
           onChange={(e) => setBody(e.target.value.slice(0, 40_000))}
-          placeholder={t('guide-body', { defaultValue: 'Write your guide in Markdown…' })}
+          placeholder={t('guide-body-guide-view', { defaultValue: 'Write your guide in Markdown…' })}
           aria-label={t('guide-body', { defaultValue: 'Guide content' })}
           rows={16}
           className="font-mono text-sm"

@@ -494,7 +494,7 @@ export function TableScreen({
         </Panel>
 
         <p className="text-center text-xs text-(--app-text-dim)">
-          {t('deck-left', {
+          {t('deck-left', { defaultValue_one: '{{count}} card left in the deck',
             defaultValue: '{{count}} cards left in the deck',
             count: view.deckCount,
           })}

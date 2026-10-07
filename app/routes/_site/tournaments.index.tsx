@@ -61,7 +61,7 @@ function TournamentsPage() {
         viewerId ? (
           <Button size="sm" onClick={() => setCreating(true)}>
             <Plus className="size-4" />
-            {t('host', { defaultValue: 'Host' })}
+            {t('host-tournaments-index', { defaultValue: 'Host' })}
           </Button>
         ) : null
       }
@@ -113,7 +113,7 @@ function TournamentsPage() {
                       {' · '}
                       {tourney.format === 'ROUND_ROBIN'
                         ? t('round-robin', { defaultValue: 'Round robin' })
-                        : t('single-elim', { defaultValue: 'Single elim' })}
+                        : t('single-elim-tournaments-index', { defaultValue: 'Single elim' })}
                     </p>
                   </div>
                   {tourney.status === 'LIVE' && (

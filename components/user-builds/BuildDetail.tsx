@@ -13,7 +13,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import ReactMarkdown from 'react-markdown';
 import { useTranslation } from 'react-i18next';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import type { Build } from '@/lib/user-builds-types';
 import { liquidVTName } from '@/lib/view-transition';
 import { TechBadges } from './TechBadges';
@@ -44,7 +44,7 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
   const { t } = useTranslation("c-user-builds");
   const confirm = useConfirm();
   const navigate = useNavigate();
-  const { data: session } = authClient.useSession();
+  const { data: session } = useSession();
   const [build, setBuild] = useState(initialBuild);
   const { run: runLike, pending: liking } = useOptimisticAction();
   const [deleting, setDeleting] = useState(false);

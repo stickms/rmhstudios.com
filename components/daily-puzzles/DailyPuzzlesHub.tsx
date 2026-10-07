@@ -54,7 +54,7 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useCelebration } from '@/hooks/useCelebration';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 
 const LIGHTS_OUT = 'lights-out';
 const GENERIC_MODES = DESK_MODES.filter((m) => m.id !== LIGHTS_OUT);
@@ -161,7 +161,7 @@ export function DailyPuzzlesHub() {
   const navigate = useNavigate();
   const reduced = useReducedMotion();
   const celebrate = useCelebration();
-  const session = authClient.useSession();
+  const session = useSession();
 
   const today = useMemo(() => getTodayEST(), []);
   const todayKey = useMemo(() => formatDateKey(today), [today]);

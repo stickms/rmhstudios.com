@@ -36,11 +36,22 @@
  * `signedOut` is therefore *proven* signed-out, never merely "not currently
  * holding a session object", and that is the only thing a takeover should key
  * on. Reads that merely decorate (an owner-only button) can keep using `data`.
+ *
+ * ## The live source is the shared session, not Better Auth's hook
+ *
+ * `authClient.useSession()` starts every CLIENT render at `isPending: true` and
+ * only settles after a network round trip, while the server rendered from its
+ * own answer — so the first client render disagreed with the HTML it was
+ * hydrating, and React threw the markup away. `useSession()` from
+ * `components/Providers` is seeded from the server's session lookup on both
+ * sides and still passes the revalidation blip above straight through, so this
+ * hook keeps its behaviour and loses the mismatch.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 
 type LiveSession = ReturnType<typeof authClient.useSession>;
 type SessionData = LiveSession['data'];
@@ -58,7 +69,7 @@ export interface StableSession {
 }
 
 export function useStableSession(): StableSession {
-  const live = authClient.useSession();
+  const live = useSession();
   const [confirmedOut, setConfirmedOut] = useState(false);
 
   // Not state: writing it during render is the point — the very first render

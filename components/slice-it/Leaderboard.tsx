@@ -570,7 +570,7 @@ function ModifierIcons({ modifiers }: { modifiers: NonNullable<LeaderboardEntry[
         </Tooltip>
       )}
       {modifiers.spin && (
-        <Tooltip content={t('mod-spin', { defaultValue: 'Spin Mod' })}>
+        <Tooltip content={t('mod-spin-leaderboard', { defaultValue: 'Spin Mod' })}>
           <RotateCcw className="w-3 h-3 text-indigo-400" />
         </Tooltip>
       )}

@@ -11,7 +11,7 @@ import React, { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from "react-i18next";
 import { Button } from '@/components/ui/button';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import { HowToPlayContent } from './HowToPlayContent';
 import { LeaderboardPanel } from './LeaderboardPanel';
 
@@ -23,7 +23,7 @@ interface Props {
 
 export function LandingScreen({ onStartGame, hasSavedRun, onLoadSavedRun }: Props) {
   const { t } = useTranslation("c-signal-forge");
-  const session = authClient.useSession();
+  const session = useSession();
   const navigate = useNavigate();
   const [showHowToPlay, setShowHowToPlay] = useState(false);
 

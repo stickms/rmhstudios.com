@@ -152,11 +152,11 @@ function PlayerHeader({ profile }: { profile: PlayerProfile }) {
         <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs font-bold text-slice-text-muted">
           <span className="inline-flex items-center gap-1">
             <Music4 className="h-3.5 w-3.5" aria-hidden />
-            {t('player-uploads', { defaultValue: '{{count}} songs uploaded', count: profile.uploads })}
+            {t('player-uploads', { defaultValue_one: '{{count}} song uploaded', defaultValue: '{{count}} songs uploaded', count: profile.uploads })}
           </span>
           <span className="inline-flex items-center gap-1">
             <PenLine className="h-3.5 w-3.5" aria-hidden />
-            {t('player-charts', { defaultValue: '{{count}} charts authored', count: profile.charts })}
+            {t('player-charts', { defaultValue_one: '{{count}} chart authored', defaultValue: '{{count}} charts authored', count: profile.charts })}
           </span>
         </p>
       </div>

@@ -81,7 +81,7 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
           <div key={roundNum} className="rounded-lg border border-(--app-border) p-4 space-y-3">
             {/* Round header */}
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-(--app-text)">{t("round-number", { round: roundNum, defaultValue: "Round {{round}}" })}</span>
+              <span className="text-sm font-semibold text-(--app-text)">{t("round-number-minimalist-masterpiece-history-detail", { round: roundNum, defaultValue: "Round {{round}}" })}</span>
               <span className="text-xs text-(--app-text-muted)">
                 {t("drawings-count", { count: drawings.length, defaultValue: "{{count}} drawing", defaultValue_other: "{{count}} drawings" })}
               </span>
@@ -120,7 +120,7 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
                         <span className="text-(--app-text)">#{r.rank} {artist?.userName ?? r.artistUserName ?? 'Unknown'}</span>
                         {r.winnerName && (
                           <span className="text-xs text-(--app-text-muted)">
-                            {t("won-by", { name: r.winnerName, paid: r.winnerPaid, defaultValue: "Won by {{name}} for {{paid}} coins" })}
+                            {t("won-by-minimalist-masterpiece-history-detail", { name: r.winnerName, paid: r.winnerPaid, defaultValue: "Won by {{name}} for {{paid}} coins" })}
                             {(r.overbidPenalty ?? 0) > 0 && (
                               <span className="text-red-500 ml-1">{t("overbid-penalty", { penalty: r.overbidPenalty, defaultValue: "(penalty: -{{penalty}})" })}</span>
                             )}
@@ -149,7 +149,7 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
                         {sb.overbidPenalty > 0 && (
                           <span className="text-red-500">{t("score-penalty", { value: sb.overbidPenalty, defaultValue: "Penalty: -{{value}}" })}</span>
                         )}
-                        <span className="font-medium text-(--app-accent)">{t("total-score", { value: sb.totalScore, defaultValue: "Total: {{value}}" })}</span>
+                        <span className="font-medium text-(--app-accent)">{t("total-score-minimalist-masterpiece-history-detail", { value: sb.totalScore, defaultValue: "Total: {{value}}" })}</span>
                       </div>
                     </div>
                   );
