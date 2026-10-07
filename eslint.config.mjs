@@ -321,4 +321,22 @@ export default tseslint.config(
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },
+
+  // ── e2e harnesses: stdout IS the deliverable ───────────────────────────────
+  // `testing/e2e/*.mjs` are command-line audits (the browser smoke, the FOUC
+  // audit) whose entire output is a report a human reads in a terminal and a
+  // non-zero exit code. `no-console` exists to keep stray debugging out of the
+  // shipped bundles; in a Node CLI that never enters a bundle, `console.log` is
+  // the only output channel there is, and routing a report through `console.warn`
+  // to satisfy the rule would send it to stderr and make the exit-code contract
+  // meaningless. Scoped to this one directory so nothing else inherits it.
+  //
+  // Last in the file on purpose: the general block above sets `no-console` for
+  // the whole repo, and flat config resolves by order.
+  {
+    files: ['testing/e2e/*.mjs'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
 );

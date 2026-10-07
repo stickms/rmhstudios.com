@@ -369,6 +369,7 @@ else
     lib/__tests__/game-registry-consistency.test.ts
     lib/__tests__/server-bundle-copies.test.ts
     lib/__tests__/test-discovery.test.ts
+    lib/__tests__/fouc-contract.test.ts
   )
   if [ "$FULL" = 1 ]; then
     if pnpm test; then pass "full vitest suite"; else fail "vitest suite"; fi

@@ -484,7 +484,20 @@ export function Providers({
 
   const isAppRoute = isAppThemeRoute(pathname);
 
-  // Toggle app-route class so CSS can disable scrollbar-gutter on game/app pages
+  // `html.app-route` resolves the site surfaces to their opaque twins, withholds
+  // `scrollbar-gutter: stable` and gates the aurora off — all three visible from
+  // the first frame, all three in `app/globals.css`.
+  //
+  // The class is now stamped pre-paint by `themeScript` in `__root.tsx` from the
+  // same `app` boolean that picks the ground, so on a hard load this `toggle`
+  // runs with an unchanged value and does not invalidate style. It is kept — and
+  // must be — for the two cases the inline script cannot reach: a CLIENT
+  // navigation from a site page into a game (the script runs once per document,
+  // not once per route) and the recovery path if that script threw. Before the
+  // pre-paint stamp existed this was the only writer, so every game loaded with
+  // translucent surfaces over its own backdrop, a reserved scrollbar gutter and a
+  // live aurora, then snapped out of all three after hydration. See the
+  // `app-route` section of that script's docblock.
   useEffect(() => {
     document.documentElement.classList.toggle('app-route', isAppRoute);
   }, [isAppRoute]);

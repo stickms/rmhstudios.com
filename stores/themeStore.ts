@@ -44,12 +44,22 @@ export const APP_THEME_BG = '#0b0b0b';
  * the script can pre-paint the SAME colour that page is about to use:
  *
  * - `key` — the localStorage key the page persists under.
- * - `darkFlag` — the boolean inside that JSON (zustand `persist` nests it under
- *   `state`) which is true when the page is in its dark theme.
+ * - `darkFlag` — the field inside that JSON (zustand `persist` nests it under
+ *   `state`) that says which theme is up. A boolean, true when dark, unless
+ *   `darkWhen` names a string to compare against.
+ * - `darkWhen` — for a page that stores a NAMED theme rather than a boolean
+ *   (Temple of Joy stores `theme: 'dawn' | 'vespers'`), the value that means
+ *   dark. Without it the field is read as a boolean, which is what every
+ *   zustand-backed page here stores.
  * - `dark` / `light` — the two grounds, mirroring the page's own stylesheet.
+ * - `defaultDark` — what to assume when nothing is stored. Defaults to TRUE,
+ *   because the `--app-*` tier is dark and that is right for most games. A page
+ *   that opens light must say so: Temple of Joy opens at Dawn, and assuming dark
+ *   for it would pre-paint near-black under a cream page, which is the flash this
+ *   map exists to prevent, just in the other direction.
  * - `system` — when nothing is stored yet, ask `prefers-color-scheme` instead of
- *   assuming dark. A page whose default is "follow the OS" must not persist a
- *   resolved flag while it is on that setting, or the stored value goes stale
+ *   using `defaultDark`. A page whose default is "follow the OS" must not persist
+ *   a resolved flag while it is on that setting, or the stored value goes stale
  *   the moment the OS flips with the tab closed; leaving the flag absent is what
  *   routes it back through the media query on the next load.
  *
@@ -58,11 +68,21 @@ export const APP_THEME_BG = '#0b0b0b';
  */
 export const APP_ROUTE_THEME_BG: Record<
   string,
-  { key: string; darkFlag: string; dark: string; light: string; system?: boolean }
+  {
+    key: string;
+    darkFlag: string;
+    darkWhen?: string;
+    dark: string;
+    light: string;
+    defaultDark?: boolean;
+    system?: boolean;
+  }
 > = {
   '/slice-it': {
     key: 'slice-it-storage',
     darkFlag: 'isDarkMode',
+    // `isDarkMode: true` in `lib/slice-it/store.ts` — Slice It opens dark.
+    defaultDark: true,
     dark: '#16161a',
     light: '#e0e5ec',
   },
@@ -86,8 +106,21 @@ export const APP_ROUTE_THEME_BG: Record<
   '/dunesday': {
     key: 'dunesday:v1',
     darkFlag: 'night',
+    // `night: false` in `lib/dunesday/state.ts`, so a first visit is DAY. Without
+    // this the pre-paint script took the map's old silent default and painted
+    // `#0b1a3a` under a day page — measured Δluma 0.738, every first load, by
+    // `testing/e2e/fouc.mjs`.
+    defaultDark: false,
     dark: '#0b1a3a',
-    light: '#bfe6ff',
+    // `#1a4f8f`, NOT `--ds-ground` (`#bfe6ff`). The CSS token is the desktop
+    // wallpaper's base; what the document itself is painted is whatever
+    // `DunesdayOS` passes to `paintDocumentGround`, and the two are different
+    // colours. The entry named the wrong one, so correcting the default alone
+    // moved the flash rather than removing it (Δluma 0.738 → 0.671). `DunesdayOS`
+    // now reads these two values instead of repeating them, which is how
+    // `components/pf2ecal/theme.ts` has always done it and why the board never
+    // drifted this way.
+    light: '#1a4f8f',
   },
   // The activity dossier. Grounds mirror `--stk-bg` in
   // `components/sohumtracker/sohumtracker.css` — Discord's app frame in dark, its
@@ -101,6 +134,28 @@ export const APP_ROUTE_THEME_BG: Record<
     dark: '#1a1b1e',
     light: '#f2f3f5',
     system: true,
+  },
+  // Temple of Joy. Grounds mirror `--toj-ground` in
+  // `components/temple-of-joy/temple-of-joy.css` — Dawn's cream page and
+  // Vespers' near-black one.
+  //
+  // This entry is the reason `darkWhen` and `defaultDark` exist. The temple is
+  // the first page here that stores a NAMED theme (`theme: 'dawn' | 'vespers'`,
+  // at the top level of its own save rather than under a zustand `state`) and the
+  // first whose default is LIGHT. Without it the pre-paint script painted
+  // `APP_THEME_BG` near-black and `useDocumentTheme` in
+  // `components/temple-of-joy/hooks.ts` repainted the document cream from an
+  // effect — a full-viewport black-to-cream flash on every load, measured at
+  // Δluma 0.945 by `testing/e2e/fouc.mjs`. The effect stays: it is the
+  // client-navigation path and it restores what it found on the way out. It is
+  // now a no-op on a hard load, which is where the flash was.
+  '/temple-of-joy': {
+    key: 'temple_of_joy_save_v2',
+    darkFlag: 'theme',
+    darkWhen: 'vespers',
+    defaultDark: false,
+    dark: '#16130e',
+    light: '#fbf9f4',
   },
 };
 
@@ -119,13 +174,17 @@ export function appRouteGround(pathname: string): { bg: string; dark: boolean } 
       ? typeof window !== 'undefined' &&
         typeof window.matchMedia === 'function' &&
         window.matchMedia('(prefers-color-scheme: dark)').matches
-      : true;
+      : entry.defaultDark !== false;
     try {
       const raw = localStorage.getItem(entry.key);
       const parsed = raw ? (JSON.parse(raw) as Record<string, unknown> | null) : null;
       const state = (parsed?.state ?? parsed) as Record<string, unknown> | null;
       const flag = state?.[entry.darkFlag];
-      if (typeof flag === 'boolean') dark = flag;
+      if (entry.darkWhen !== undefined) {
+        if (typeof flag === 'string') dark = flag === entry.darkWhen;
+      } else if (typeof flag === 'boolean') {
+        dark = flag;
+      }
     } catch {
       // Unreadable or non-JSON storage falls through to the default above,
       // which is the whole reason this is wrapped: a pre-paint path may not

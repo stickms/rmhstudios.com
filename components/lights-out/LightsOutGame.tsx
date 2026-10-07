@@ -272,7 +272,24 @@ export function LightsOutGame() {
         : null;
 
     return (
-        <div className="max-w-lg mx-auto px-4 py-8">
+        // `.app-page` is the contract for exactly what this is: a full-screen
+        // screen that is a DOCUMENT (app/globals.css §"Full-screen app/game
+        // layout helpers"). This was a bare `max-w-lg mx-auto` column, which cost
+        // 0.182 of layout shift after first contentful paint — measured by
+        // `testing/e2e/fouc.mjs` against a 0.1 budget — and the cause was not the
+        // column's height but the SCROLLBAR. `/daily` is in the games catalog, so
+        // `html.app-route` withholds `scrollbar-gutter: stable`; when the puzzle's
+        // content grew past the window the document gained a scrollbar, the
+        // viewport narrowed by its width, and `mx-auto` re-centred the whole
+        // column sideways in front of the reader. `.app-page` is the documented
+        // exception that takes the gutter back (`html.app-route:has(.app-page)`),
+        // and it brings the rest of the contract with it: `100svh` rather than
+        // `100vh` as the floor, so a short puzzle fills the window without
+        // inventing a scrollbar on a phone, plus the home-indicator inset on the
+        // last row. The column stays nested inside it so the flex direction
+        // applies to the page and not to the puzzle's own rows.
+        <div className="app-page">
+        <div className="max-w-lg mx-auto w-full px-4 py-8">
             {/* Back to Daily Puzzles */}
             <Link
                 to="/daily"
@@ -657,6 +674,7 @@ export function LightsOutGame() {
                     )}
                 </AnimatePresence>
             </div>
+        </div>
         </div>
     );
 }

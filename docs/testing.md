@@ -38,9 +38,9 @@ files found."_ See [Discovery](#discovery) — that is now a gate.
 the subset of the suite that encodes the site's conventions — the design/tab
 gate, the game-viewport contract, the filter-cost budget, the theme-token and
 colour-vision contracts, the API-handler adoption backlog, the i18n catalog and
-namespace integrity, the rAF-loop allowlist, the server-bundle copy check and
-the test-discovery gate — plus eslint on the changed files, `tsc`, and the
-generated-docs freshness checks. That subset runs in ~3s. It is wired into
+namespace integrity, the rAF-loop allowlist, the server-bundle copy check, the
+FOUC contract and the test-discovery gate — plus eslint on the changed files,
+`tsc`, and the generated-docs freshness checks. That subset runs in ~3s. It is wired into
 `git commit` by `.githooks/pre-commit` (`pnpm hooks:install`) and by
 `.claude/hooks/commit-gate.sh` in agent sessions. A new guard test belongs in
 the `GATE_TESTS` list in `scripts/check-consistency.sh`.
@@ -203,6 +203,27 @@ not wired into any workflow; run it by hand against a built app:
 pnpm build && node .output/server/index.mjs &
 BASE_URL=http://localhost:3000 node testing/e2e/smoke.mjs
 ```
+
+### 5. FOUC audit (not in CI)
+
+`testing/e2e/fouc.mjs` drives the **built** app and measures what every page
+looked like frame by frame, across nine stored-preference profiles, to prove no
+page flashes. It is the only check in this repo that can answer that question —
+every mechanism that prevents a flash is correct in isolation and only provably
+correct together, in a browser, in the order the browser does things.
+
+```bash
+pnpm build && node .output/server/index.mjs &
+node testing/e2e/fouc.mjs --self-test    # prove the detectors fire, FIRST
+node testing/e2e/fouc.mjs                # every page, every profile (~60 min)
+node testing/e2e/fouc.mjs --quick        # two profiles, the CI shape
+```
+
+Dev mode injects CSS through JS and always flashes, so the audit is meaningless
+against `pnpm dev` — it must run against `.output`. Its commit-time half,
+`lib/__tests__/fouc-contract.test.ts`, is in `GATE_TESTS` and needs no browser.
+Full detail, including why each detector asks its question when it does:
+[`fouc.md`](./fouc.md).
 
 ### Coverage
 
