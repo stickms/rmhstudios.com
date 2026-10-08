@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import FighterTrappings from './FighterTrappings';
 import type { RenderFighter } from '@/lib/kowloon-knockout/net/session';
 import { bodyMaterialProps } from './materials';
+import { frameAlpha } from '@/lib/render/frame-alpha';
 
 type FramesRef = MutableRefObject<RenderFighter[]>;
 
@@ -44,7 +45,7 @@ export default function StickFighter({ seat, framesRef, showNameplate = true }: 
     const plateColor = initial?.isLocal ? '#ffcc00' : accentHex;
     const plateLabel = `P${seat + 1}`;
 
-    useFrame((state) => {
+    useFrame((state, delta) => {
         const rf = framesRef.current.find((f) => f.seat === seat);
         if (!rf || !root.current) return;
         const r = root.current;
@@ -53,10 +54,15 @@ export default function StickFighter({ seat, framesRef, showNameplate = true }: 
         r.visible = true;
 
         // Position + facing (damped for sub-step smoothness).
-        r.position.x += (rf.x - r.position.x) * 0.5;
-        r.position.z += (rf.z - r.position.z) * 0.5;
+        // Per-frame factors were tuned at 60Hz; frameAlpha holds the same
+        // time constant at 144/240Hz instead of tightening it 2.4–4×.
+        const kPos = frameAlpha(0.5, delta);
+        const k40 = frameAlpha(0.4, delta);
+        const k45 = frameAlpha(0.45, delta);
+        r.position.x += (rf.x - r.position.x) * kPos;
+        r.position.z += (rf.z - r.position.z) * kPos;
         const faceY = Math.atan2(Math.cos(rf.yaw), Math.sin(rf.yaw));
-        r.rotation.y = dampAngle(r.rotation.y, faceY, 0.4);
+        r.rotation.y = dampAngle(r.rotation.y, faceY, k40);
 
         const t = state.clock.elapsedTime;
         const b = body.current!;
@@ -122,14 +128,14 @@ export default function StickFighter({ seat, framesRef, showNameplate = true }: 
         }
 
         b.position.y = 0.9 + bodyY;
-        b.rotation.x += (bodyPitch - b.rotation.x) * 0.4;
-        b.rotation.z += (bodyRoll - b.rotation.z) * 0.4;
-        la.rotation.x += (laX - la.rotation.x) * 0.45;
-        la.rotation.z += (laZ - la.rotation.z) * 0.45;
-        ra.rotation.x += (raX - ra.rotation.x) * 0.45;
-        ra.rotation.z += (raZ - ra.rotation.z) * 0.45;
-        ll.rotation.x += (llX - ll.rotation.x) * 0.4;
-        rl.rotation.x += (rlX - rl.rotation.x) * 0.4;
+        b.rotation.x += (bodyPitch - b.rotation.x) * k40;
+        b.rotation.z += (bodyRoll - b.rotation.z) * k40;
+        la.rotation.x += (laX - la.rotation.x) * k45;
+        la.rotation.z += (laZ - la.rotation.z) * k45;
+        ra.rotation.x += (raX - ra.rotation.x) * k45;
+        ra.rotation.z += (raZ - ra.rotation.z) * k45;
+        ll.rotation.x += (llX - ll.rotation.x) * k40;
+        rl.rotation.x += (rlX - rl.rotation.x) * k40;
 
         // Hit flash → emissive red pulse.
         if (bodyMat.current && headMat.current) {

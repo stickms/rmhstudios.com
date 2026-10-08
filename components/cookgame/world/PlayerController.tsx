@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
+import { frameAlpha } from '@/lib/render/frame-alpha';
 import { RigidBody, CapsuleCollider, type RapierRigidBody } from '@react-three/rapier';
 import { Vector3 } from 'three';
 import { useCookgameStore } from '@/lib/cookgame/store';
@@ -31,7 +32,7 @@ export function PlayerController() {
     };
   }, []);
 
-  useFrame(() => {
+  useFrame((_, delta) => {
     const rb = body.current;
     if (!rb) return;
 
@@ -65,7 +66,7 @@ export function PlayerController() {
     // Camera follows the body; lerp for smoothness.
     const t = rb.translation();
     camTarget.current.set(t.x + CAMERA_OFFSET.x, t.y + CAMERA_OFFSET.y, t.z + CAMERA_OFFSET.z);
-    camera.position.lerp(camTarget.current, 0.12);
+    camera.position.lerp(camTarget.current, frameAlpha(0.12, delta));
     camera.lookAt(t.x, t.y + 1, t.z);
 
     // Throttle store writes (~every 5 frames) to avoid render thrash.

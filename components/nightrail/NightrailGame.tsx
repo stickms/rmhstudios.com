@@ -18,7 +18,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isLowPowerDevice, requestScreenWakeLock, supportsWebGL } from '@/lib/shared/platform';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { createRun, emptyInput, stepRun, type RunState } from '@/lib/nightrail/game';
+import { createRun, emptyInput, stepRun, withInterpolatedPose, type RunState } from '@/lib/nightrail/game';
 import { NightrailRenderer3D } from '@/lib/nightrail/renderer3d';
 import { NightrailAudio } from '@/lib/nightrail/audio';
 import { LEVELS, LEVEL_ORDER } from '@/lib/nightrail/levels';
@@ -395,7 +395,7 @@ export function NightrailGame() {
           run.train.mode === 'airborne',
         );
 
-        renderer.draw(run, dt);
+        withInterpolatedPose(run, () => renderer.draw(run, dt));
         hudRef.current?.sync(run);
 
         if (run.phase === 'runComplete' || run.phase === 'crashed') {

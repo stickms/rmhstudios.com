@@ -192,6 +192,11 @@ export function PlinkoGame({ coins, setCoins }: Props) {
       let lastTimestamp: number | null = null;
       let animStartTime = 0;
       let accumulator = 0;
+      // Ball position before the latest physics step — the draw blends from
+      // here, so the ball moves continuously on 120/144/240Hz panels instead
+      // of hitching between 60Hz steps.
+      let prevX = ball.x;
+      let prevY = ball.y;
 
       function frame(timestamp: number) {
         if (!lastTimestamp) {
@@ -212,6 +217,8 @@ export function PlinkoGame({ coins, setCoins }: Props) {
 
         // Step physics in fixed increments (deterministic)
         while (accumulator >= FIXED_DT) {
+          prevX = ball.x;
+          prevY = ball.y;
           physicsTick(ball, (peg) => {
             lastHitPeg = peg;
             lastHitTime = timestamp;
@@ -223,13 +230,18 @@ export function PlinkoGame({ coins, setCoins }: Props) {
             finish();
             return;
           }
+
+          // Trail points are per physics STEP, not per frame, so the trail
+          // spans the same stretch of time at every refresh rate (it used to
+          // be 2.4× shorter on a 144Hz panel).
+          trail.push({ x: ball.x, y: ball.y });
+          if (trail.length > TRAIL_LENGTH) trail.shift();
         }
 
-        // Update trail
-        trail.push({ x: ball.x, y: ball.y });
-        if (trail.length > TRAIL_LENGTH) trail.shift();
-
-        ballPos.current = { x: ball.x, y: ball.y };
+        const a = accumulator / FIXED_DT;
+        const drawX = prevX + (ball.x - prevX) * a;
+        const drawY = prevY + (ball.y - prevY) * a;
+        ballPos.current = { x: drawX, y: drawY };
 
         // Peg glow (fades over 200ms)
         const glowPeg =
@@ -242,7 +254,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
           const scale = 0.4 + ((i + 1) / trail.length) * 0.4;
           drawBallTrail(ctx, trail[i].x, trail[i].y, alpha, scale);
         }
-        drawBall(ctx, ball.x, ball.y);
+        drawBall(ctx, drawX, drawY);
 
         animRef.current = requestAnimationFrame(frame);
       }

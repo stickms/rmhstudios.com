@@ -279,6 +279,12 @@ const ALLOW = new Set<string>([
   'lib/kowloon-knockout/net/session.ts',
   'lib/library/epub-raster.ts',
   'lib/library/page-store.ts',
+  // Display refresh-rate probe for the 3D governor's target. Bounded by
+  // construction, not by mount: exactly SAMPLE_FRAMES (40) callbacks, once per
+  // document, then it stops for good and only the cached number is read. It
+  // runs only on pages that mount a governed Canvas, and writes nothing to the
+  // DOM.
+  'lib/render/refresh-rate.ts',
   'lib/rmhmusic/spotify-player.ts',
   'lib/rmhvibe/vibe.server.ts',
   'lib/vega/VegaGame.ts',

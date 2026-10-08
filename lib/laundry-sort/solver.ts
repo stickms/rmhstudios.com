@@ -135,6 +135,13 @@ export interface Garment {
   readonly vel: Float32Array;
   /** `3 * count` positions at the end of the previous tick — see {@link Garment.speed}. */
   readonly lastTickPos: Float32Array;
+  /**
+   * `3 * count` positions at the START of the latest tick. Render-only: the
+   * cloth is drawn as a blend of this and {@link Garment.pos} weighted by
+   * `Match.alpha`, so it moves continuously on a 144/240Hz display instead of
+   * hitching between 60Hz ticks. The simulation never reads it.
+   */
+  readonly renderPrev: Float32Array;
   /** `count` inverse masses. Zero pins a particle; the solver never does. */
   readonly invMass: Float32Array;
 
@@ -336,6 +343,7 @@ export class ClothWorld {
       prev,
       vel,
       lastTickPos: Float32Array.from(pos),
+      renderPrev: Float32Array.from(pos),
       invMass,
       state: 'falling',
       resolvedBin: null,
@@ -400,6 +408,7 @@ export class ClothWorld {
   /** Advance one fixed tick. `dt` must be the constant the caller committed to. */
   step(dt: number, substeps: number): void {
     const h = dt / substeps;
+    for (const g of this.garments) g.renderPrev.set(g.pos);
     // The aerodynamic normal is a whole-garment property and changes slowly;
     // once a tick is plenty, and it keeps the substep loop free of cross
     // products.

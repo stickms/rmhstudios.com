@@ -4,6 +4,7 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
+import { frameAlpha } from '@/lib/render/frame-alpha';
 import { Instance, Instances, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useRfsStore } from '@/lib/rmh-farming-sim/store';
@@ -92,7 +93,7 @@ function LocalController({ grid }: { grid: number }) {
 
         // follow camera (fixed iso-ish offset, scaled by zoom)
         const z = zoom.current;
-        camera.position.lerp(camTarget.current.set(px + 0 * z, 13 * z, pz + 11 * z), 0.12);
+        camera.position.lerp(camTarget.current.set(px + 0 * z, 13 * z, pz + 11 * z), frameAlpha(0.12, dt));
         camera.lookAt(px, 0.5, pz);
 
         // throttled network position update
@@ -279,9 +280,9 @@ function RemotePlayer({ player, grid }: { player: PresencePlayer; grid: number }
     const ref = useRef<THREE.Group>(null);
     const target = useRef(new THREE.Vector3(player.x - grid / 2, 0, player.z - grid / 2));
     target.current.set(player.x - grid / 2, 0, player.z - grid / 2);
-    useFrame(() => {
+    useFrame((_, dt) => {
         if (!ref.current) return;
-        ref.current.position.lerp(target.current, 0.2);
+        ref.current.position.lerp(target.current, frameAlpha(0.2, dt));
         ref.current.rotation.y = player.dir;
     });
     return (

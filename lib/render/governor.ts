@@ -55,6 +55,26 @@ export function shouldDownscale(monitor: FrametimeMonitor, budgetMs: number): bo
     return monitor.full() && monitor.averageMs() > budgetMs;
 }
 
+/**
+ * The governor's target for a display of `refreshHz`.
+ *
+ * A fixed 50fps target is right for a 60Hz panel and wrong for anything
+ * faster: at 144Hz a scene holding 55fps never misses it, so the governor never
+ * steps in and the player sees a third of the frames their display can show.
+ * So the target follows the panel — 80% of its rate, so ordinary jitter never
+ * trips it — floored at the old 50 (a 60Hz panel is unchanged) and capped at
+ * 144Hz's share (≈115fps), because chasing 240fps would spend resolution on
+ * frames few people can tell apart from 144. Downscale-only and at most three
+ * steps (`useRenderQuality`), so the worst case is "one tier lower, smooth".
+ */
+export const MAX_TARGET_REFRESH_HZ = 144;
+export const TARGET_SHARE_OF_REFRESH = 0.8;
+
+export function targetFpsForRefresh(refreshHz: number): number {
+    const hz = Math.min(Math.max(refreshHz, 0), MAX_TARGET_REFRESH_HZ);
+    return Math.max(DEFAULT_TARGET_FPS, hz * TARGET_SHARE_OF_REFRESH);
+}
+
 /** Per-frame budget in ms for a target framerate. */
 export function budgetMsFor(targetFps: number = DEFAULT_TARGET_FPS): number {
     return 1000 / targetFps;

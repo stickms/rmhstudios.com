@@ -5,9 +5,12 @@ import { useFrame } from '@react-three/fiber';
 import { useRenderTier } from './RenderTierContext';
 import { useGraphicsStore } from '@/lib/kowloon-knockout/render/graphicsStore';
 import { FrametimeMonitor, shouldDownscale } from '@/lib/kowloon-knockout/render/governor';
+import { budgetMsFor, targetFpsForRefresh } from '@/lib/render/governor';
+import { displayRefreshHz } from '@/lib/render/refresh-rate';
 
-const TARGET_FPS = 50;
-const BUDGET_MS = 1000 / TARGET_FPS;   // 20ms
+// Target follows the display (50fps floor at 60Hz, ~115fps on 144Hz+) — see
+// `targetFpsForRefresh` in lib/render/governor.ts for why a fixed 50 let a
+// high-refresh player sit at a third of their panel's rate untouched.
 const WINDOW = 90;                      // ~1.5s at 60fps
 const FPS_PUBLISH_EVERY = 20;           // throttle store writes
 
@@ -31,7 +34,7 @@ export default function Governor() {
         }
 
         if (preference !== 'auto') return;
-        if (shouldDownscale(monitor, BUDGET_MS)) {
+        if (shouldDownscale(monitor, budgetMsFor(targetFpsForRefresh(displayRefreshHz())))) {
             downscale();
             monitor.reset(); // cooldown: re-sample a full window before stepping again
         }
