@@ -2,13 +2,13 @@
  * RMHHomes — post / edit a listing (/homes/submit, /homes/submit?edit=<id>)
  */
 import { useEffect, useState } from 'react';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { Loader2 } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useSession } from '@/components/Providers';
-import { Button } from '@/components/ui/button';
 import { ListingForm } from '@/components/homes/ListingForm';
 import type { Listing } from '@/lib/homes/types';
+import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 
 export const Route = createFileRoute('/_site/homes/submit')({
   head: () => ({ meta: [{ title: 'RMHHomes — Post a listing' }] }),
@@ -55,12 +55,13 @@ function HomesSubmitPage() {
   if (!session) {
     return (
       <PageLayout title={title} backTo="/homes" wide>
-        <div className="mx-auto max-w-md px-4 py-20 text-center text-site-text-dim">
-          <p className="mb-4">Sign in to post a home on RMHHomes.</p>
-          <Button asChild>
-            <Link to="/login" search={{ callbackURL: '/homes/submit' }}>Sign in</Link>
-          </Button>
-        </div>
+        {/* The sentence is still untranslated English, exactly as it was — this
+            whole route has no `useTranslation`, and minting a key here means
+            landing it in all 16 catalogs to keep the parity gate green. Left as
+            pre-existing debt rather than half-translated: what changes here is
+            the SHAPE (it was a `max-w-md py-20` block with a default-variant
+            Button where every sibling prompt uses accent), not the copy. */}
+        <SignedOutPrompt callbackURL="/homes/submit" title="Sign in to post a home on RMHHomes." />
       </PageLayout>
     );
   }

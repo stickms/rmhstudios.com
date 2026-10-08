@@ -844,7 +844,11 @@ gated off there too, via `html.app-route`).
   **`pressable`** onto a tappable surface for the standard press
   acknowledgement rather than re-deriving a scale.
 - **iOS large title:** `components/ui/large-title.tsx` is the collapsing
-  title/nav-bar pair. Scroll position maps _continuously_ onto
+  title/nav-bar pair. **It currently has no consumers** — standard pages take
+  `PageLayout`/`ColumnHeader` — and until 2026-08-13 it could not have had any:
+  its bar is `sticky top-0`, and radial.css de-sticks everything a page renders,
+  so the bar was statically positioned wherever it was used and the pair was
+  inert. It carries `.site-sticky-pinned` now, which is the sanctioned opt-out. Scroll position maps _continuously_ onto
   scale/opacity/translation and onto the bar's scroll-edge material, so the
   title tracks the finger 1:1 and reverses mid-gesture instead of popping
   between two states at a CSS threshold. Transform/opacity only — the collapse
@@ -857,9 +861,12 @@ gated off there too, via `html.app-route`).
   `useScroll` layer → GPU transforms, static under reduced motion) and
   `hooks/useSpatialParallax.ts`, the marketing shell's restrained background
   parallax. The latter is **gated on a consumer being present on the page**
-  (`.rmhp-root, .rmhc-root, .rmht, .spatial-design-hero`), because it writes an
-  inherited custom property to `<html>` and used to do so on the feed, every
-  profile and every settings page for an effect nothing there could show. The
+  (`.rmhp-root, .rmhc-root, .rmht, .spatial-design-hero`) and **writes to that
+  consumer element, not to `<html>`** — a root custom property is inherited by
+  the whole document, so writing one per frame restyles every element on the
+  page. It also had a `pointermove` half until 2026-08-13; that is deleted, both
+  because nothing here tracks the cursor and because its consumers' unitless `0`
+  fallback made the entire `translate3d()` invalid, so it had never applied. The
   principle that survives both: a single sliding layer is just movement — layers
   moving at _different_ rates read as depth — and no React render runs per frame.
 - `<MotionConfig reducedMotion="user">` wraps the app (`Providers.tsx`), so

@@ -123,7 +123,7 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
 
       {/* Current bet */}
       {player.currentBet > 0 && (
-        <span className="text-[10px] text-site-warning font-bold">{t("bet-amount", { defaultValue: "Bet: {{amount}}", amount: player.currentBet })}</span>
+        <span className="text-[10px] text-site-warning font-bold">{t("bet-amount-holdem-table", { defaultValue: "Bet: {{amount}}", amount: player.currentBet })}</span>
       )}
 
       {/* Last action */}

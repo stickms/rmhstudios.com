@@ -140,7 +140,7 @@ export function ContentDashboard() {
                   precise than it is. */}
               {dashboard.storage.unmeasured > 0 && (
                 <p className="text-sm text-site-text-muted">
-                  {t('admin-content-unmeasured', {
+                  {t('admin-content-unmeasured', { defaultValue_one: "{{count}} song has no recorded size, so the total above is a floor.",
                     defaultValue:
                       '{{count}} songs have no recorded size, so the total above is a floor.',
                     count: dashboard.storage.unmeasured,
@@ -244,7 +244,7 @@ export function ContentDashboard() {
               </Button>
               {orphans !== null && (
                 <p className="text-sm text-site-text-secondary">
-                  {t('admin-content-orphan-count', {
+                  {t('admin-content-orphan-count', { defaultValue_one: '{{count}} object with no song pointing at it.',
                     defaultValue: '{{count}} objects with no song pointing at them.',
                     count: orphans.length,
                   })}

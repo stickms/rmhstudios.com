@@ -1,8 +1,9 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { gameRouteHead } from '@/lib/seo-catalog';
-
-const FONTS_URL =
-  'https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400..800&display=swap';
+// EB Garamond, self-hosted with `font-display: optional` (app/fonts/) and
+// preloaded — lib/fonts/self-hosted.ts.
+import ebGaramondCss from '@/app/fonts/eb-garamond.css?url';
+import ebGaramondLatin from '@fontsource-variable/eb-garamond/files/eb-garamond-latin-wght-normal.woff2?url';
 
 function VersecraftLayout() {
   return (
@@ -13,6 +14,10 @@ function VersecraftLayout() {
 }
 
 export const Route = createFileRoute('/versecraft')({
-  head: () => gameRouteHead('versecraft', { fontsUrl: FONTS_URL }),
+  head: () =>
+    gameRouteHead('versecraft', {
+      links: [{ rel: 'stylesheet', href: ebGaramondCss }],
+      fontPreloads: [ebGaramondLatin],
+    }),
   component: VersecraftLayout,
 });

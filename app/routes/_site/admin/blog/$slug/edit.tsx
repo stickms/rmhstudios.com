@@ -37,7 +37,12 @@ function EditBlogPostPage() {
   return (
     <Suspense
       fallback={
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-site-bg">
+        // A route-level loading state has no reason to escape the shell — and
+        // could not anyway: `fixed inset-0 z-50` here is measured inside
+        // `.radial-frame`'s stacking context (pinned at 1), so the top bar and
+        // the hub orb stayed painted over this "takeover" and it read as a
+        // half-blanked page.
+        <div className="flex min-h-[60dvh] items-center justify-center">
           <Spinner size={32} />
         </div>
       }

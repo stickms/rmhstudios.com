@@ -187,7 +187,7 @@ export function StorefrontColumn({
  const validForm = form.title.trim().length >= 2 && parseInt(form.price, 10) > 0;
 
  return (
- <div className="min-h-screen">
+ <div>
  <PinnedHero
  screens={2}
  eyebrow={

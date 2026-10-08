@@ -136,21 +136,36 @@ export function RadialHub() {
   // the old static import. Deliberately idle-scheduled so it never competes with
   // the page's own first paint, and a no-op where requestIdleCallback is absent
   // (Safari) beyond a short timer.
+  // The two paths RACE; they are not an either/or, and that distinction is the
+  // whole point of this effect.
+  //
+  // It used to be a branch: browsers WITH `requestIdleCallback` got idle with a
+  // 3000ms timeout and no timer, everything else got a 1500ms timer. So on
+  // Chrome and Android — the majority — the globe's chunk could still be
+  // unresolved three seconds after the shell mounted, and idle is exactly what a
+  // freshly-hydrated feed does not have. The orb is the site's primary
+  // navigation control, so "tapped within the first few seconds" is the common
+  // case, not the edge one: the phase flipped, `Suspense` rendered its `null`
+  // fallback, and the veil and orb played the whole 500ms morph with a hole
+  // where the globe should be. `onPointerDown={preloadGlobe}` does not save it —
+  // that fires on the same event that opens the menu, so the import starts and
+  // the animation starts together, and on touch there is no hover to warm it
+  // earlier.
+  //
+  // Now: idle if it comes, a short timer regardless, whichever lands first.
   useEffect(() => {
-    const idle = (
-      window as typeof window & {
-        requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
-      }
-    ).requestIdleCallback;
-    if (idle) {
-      const handle = idle(preloadGlobe, { timeout: 3000 });
-      return () =>
-        (
-          window as typeof window & { cancelIdleCallback?: (h: number) => void }
-        ).cancelIdleCallback?.(handle);
-    }
-    const timer = setTimeout(preloadGlobe, 1500);
-    return () => clearTimeout(timer);
+    const w = window as typeof window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      cancelIdleCallback?: (h: number) => void;
+    };
+    // Well inside the window in which someone reaches for the orb, and late
+    // enough to stay behind the page's own first paint.
+    const timer = setTimeout(preloadGlobe, 800);
+    const handle = w.requestIdleCallback?.(preloadGlobe, { timeout: 800 });
+    return () => {
+      clearTimeout(timer);
+      if (handle !== undefined) w.cancelIdleCallback?.(handle);
+    };
   }, []);
 
   // Block background scroll + wire Escape while the menu is active.

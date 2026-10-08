@@ -188,7 +188,7 @@ export default function RmhStudyLanding() {
                       htmlFor="study-short-break"
                       className="block text-xs font-medium mb-1 text-(--app-text-muted)"
                     >
-                      {t('short-break', {
+                      {t('short-break-rmh-study-landing', {
                         defaultValue: 'Short Break: {{minutes}} min',
                         minutes: shortBreakMinutes,
                       })}
@@ -208,7 +208,7 @@ export default function RmhStudyLanding() {
                       htmlFor="study-long-break"
                       className="block text-xs font-medium mb-1 text-(--app-text-muted)"
                     >
-                      {t('long-break', {
+                      {t('long-break-rmh-study-landing', {
                         defaultValue: 'Long Break: {{minutes}} min',
                         minutes: longBreakMinutes,
                       })}
@@ -231,7 +231,7 @@ export default function RmhStudyLanding() {
                     htmlFor="study-sessions"
                     className="block text-xs font-medium mb-1 text-(--app-text-muted)"
                   >
-                    {t('sessions-before-long-break', {
+                    {t('sessions-before-long-break-rmh-study-landing', {
                       defaultValue: 'Sessions before long break: {{sessions}}',
                       sessions,
                     })}
@@ -355,8 +355,8 @@ export default function RmhStudyLanding() {
                           : r.timerPhase === 'working'
                             ? t('phase-focusing', { defaultValue: 'Focusing' })
                             : r.timerPhase === 'short_break'
-                              ? t('phase-short-break', { defaultValue: 'Short break' })
-                              : t('phase-long-break', { defaultValue: 'Long break' })}
+                              ? t('phase-short-break-rmh-study-landing', { defaultValue: 'Short break' })
+                              : t('phase-long-break-rmh-study-landing', { defaultValue: 'Long break' })}
                       </div>
                     </div>
                     <div className="text-xs font-mono text-(--app-text-muted)">

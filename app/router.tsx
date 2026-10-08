@@ -2,6 +2,7 @@ import { createRouter as createTanStackRouter } from '@tanstack/react-router';
 import { routeTree } from './routeTree.gen';
 import { RoutePending } from '@/components/ui/RoutePending';
 import { startViewportPrefetch } from '@/lib/viewport-prefetch';
+import { installNotFoundHeadGuard } from '@/lib/router/not-found-head';
 
 // `getRouter()` runs once per client page load and once per SSR request. The
 // viewport prefetcher is a browser-only, page-lifetime singleton, so it is
@@ -47,6 +48,13 @@ export function getRouter() {
     defaultPendingMs: 180,
     defaultPendingMinMs: 220,
   });
+
+  // A 404 thrown by a nested loader: the server builds <head> only up to the
+  // not-found boundary, the client's hydrate() builds it for every match, and a
+  // <script> the server never sent fails hydration for the whole document —
+  // wiping <html>'s pre-paint attributes. This applies the server's cut on the
+  // client too. See lib/router/not-found-head.ts.
+  installNotFoundHeadGuard(router.looseRoutesById);
 
   // The intent preload above is hover-driven, so it never fires on a touch
   // device. This warms the first few links that are actually on screen instead

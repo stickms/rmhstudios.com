@@ -1,10 +1,10 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { TrashPanel } from '@/components/trash/TrashPanel';
 import { BulkCleanupPanel } from '@/components/trash/BulkCleanupPanel';
-import { Button } from '@/components/ui/button';
 import { useSession } from '@/components/Providers';
+import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 
 /**
  * `/trash` — the recycle bin plus the bulk cleanup tools (plan I1 + I2).
@@ -17,10 +17,8 @@ import { useSession } from '@/components/Providers';
  */
 export const Route = createFileRoute('/_site/trash')({
   head: () => ({
-    meta: [{ title: 'Trash | RMH Studios' }, { name: 'robots', content: 'noindex' }],
-  }),
-  component: TrashPage,
-});
+    meta: [{ title: 'Trash | RMH Studios' }, { name: 'robots', content: 'noindex' }] }),
+  component: TrashPage });
 
 function TrashPage() {
   const { t } = useTranslation('settings-content');
@@ -30,8 +28,7 @@ function TrashPage() {
     <PageLayout
       title={t('trash-page-title', { defaultValue: 'Trash' })}
       description={t('trash-page-description', {
-        defaultValue: 'Restore something you deleted, or clear out a lot of it at once.',
-      })}
+        defaultValue: 'Restore something you deleted, or clear out a lot of it at once.' })}
       backTo="/settings"
       breadcrumbs={[{ label: 'Settings', to: '/settings' }, { label: 'Trash' }]}
     >
@@ -42,14 +39,11 @@ function TrashPage() {
             <BulkCleanupPanel />
           </>
         ) : (
-          <div className="flex flex-col items-center gap-3 py-16 text-center">
-            <p className="font-medium text-site-text">
-              {t('trash-signed-out', { defaultValue: 'Sign in to see your deleted content' })}
-            </p>
-            <Link to="/login" search={{ callbackURL: '/trash' }}>
-              <Button variant="accent">{t('trash-sign-in', { defaultValue: 'Sign in' })}</Button>
-            </Link>
-          </div>
+          <SignedOutPrompt
+            callbackURL="/trash"
+            title={t('trash-signed-out', { defaultValue: 'Sign in to see your deleted content' })}
+            actionLabel={t('trash-sign-in', { defaultValue: 'Sign in' })}
+          />
         )}
       </div>
     </PageLayout>

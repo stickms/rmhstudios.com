@@ -60,10 +60,11 @@
   --rad-rail-nav: 0px;
   --rad-rail-live: 0px;
   --rad-measure: 0px;
-  /* Single source of truth for the top bar's height — every sticky offset and
-     every `100dvh - bar` minimum reads it, so the bar can't grow out of sync
-     with the space reserved under it. */
-  --rad-topbar-h: 3.5rem;
+  /* The top bar's height is declared on :root (just below this block), not
+     here. Everything inside the shell still inherits it; declaring it at the
+     root is what lets chrome mounted OUTSIDE the shell — CallOverlay's banner,
+     from Providers — offset itself by the bar's real height instead of
+     hardcoding a duplicate of it. */
   /* Height of the bottom-right floating corner (back-to-top stacked over the
      compose button). Every full-height desktop panel stops this far short of the
      viewport bottom, so a floating control can never land on top of one. */
@@ -246,6 +247,23 @@ html.perf-lite .radial-backdrop__blob {
   animation: none;
   will-change: auto;
 }
+/* Handheld tier — the same axis globals.css introduces for the aurora, applied
+   to the two layers here that the `min-width: 768px` gates above do NOT cover.
+   Those gates stop at phones, so a coarse-pointer TABLET (768–1024px) was still
+   running six breathing rings plus four drifting blobs, full-screen and forever,
+   underneath every backdrop-filter on the page — the exact cost the phone rules
+   exist to avoid, on a device with the same thermal ceiling. Composition is
+   kept; only the motion stops. */
+@media (pointer: coarse) and (max-width: 1024px) {
+  .radial-backdrop__ring,
+  .radial-backdrop__blob {
+    animation: none;
+    will-change: auto;
+  }
+  .radial-backdrop__rings {
+    will-change: auto;
+  }
+}
 @keyframes radial-blob-drift {
   0% {
     transform: translate3d(0, 0, 0) scale(1);
@@ -269,6 +287,43 @@ html.perf-lite .radial-backdrop__blob {
 }
 
 /* ── Top utility bar ──────────────────────────────────────────────────── */
+/* Single source of truth for the top bar's height — every sticky offset and
+   every `100dvh - bar` minimum reads it, so the bar can't grow out of sync with
+   the space reserved under it.
+
+   On :root rather than on `.radial-shell` so body-level chrome can read it too.
+   `CallOverlay`'s persistent banner is mounted from `Providers`, outside the
+   shell, and used to sit at `top: 0` with `z-[120]` — which covered the entire
+   top bar (brand, search, messages, notifications, avatar) for the whole
+   duration of a call, from DIAL time, on every viewport under ~900px. It offsets
+   by this now. */
+:root {
+  --rad-topbar-h: 3.5rem;
+}
+@media (min-width: 768px) {
+  :root {
+    --rad-topbar-h: 4rem;
+  }
+}
+
+/* The error and 404 pages are mounted from BOTH `__root` (outside the shell,
+   where a viewport-height centred block is right) and `_site` (inside it, where
+   `.radial-shell__main` already guarantees
+   `calc(100dvh - var(--rad-topbar-h))` plus its own padding and `pb-dock`). The
+   `min-h-dvh` they carry for the first case adds a full extra viewport of dead
+   scroll in the second, so it is cancelled where the shell has already paid for
+   it — rather than dropped, which would break the root-level case. */
+.radial-shell__main .error-page {
+  min-height: 0;
+}
+
+/* CallOverlay's persistent banner (components/call/CallOverlay.tsx). It is
+   body-level chrome, so it clears the bar by moving rather than by out-ranking
+   it — and only where there IS a bar. */
+body:has(.radial-shell) .call-banner {
+  top: var(--rad-topbar-h);
+}
+
 .radial-topbar {
   position: sticky;
   top: 0;
@@ -1145,6 +1200,34 @@ html.perf-lite .radial-backdrop__blob {
 .radial-shell:has(.radial-hub[data-phase='open']) .radial-topbar,
 .radial-shell:has(.radial-hub[data-phase='open']) .radial-frame {
   filter: blur(var(--hub-page-blur, 20px));
+  /* The transition lives HERE, on the open state, so it governs the way IN and
+     NOT the way out. That asymmetry is the fix for a reported bug: the whole
+     feed disappeared for the length of the close and then popped back.
+
+     Why it looked like the close's fault when it is really the open's. A
+     `filter` is only cheap on a subtree that HOLDS STILL and fits in a
+     rasterised buffer, and `.radial-frame` is neither small nor bounded — it is
+     the entire document-height feed. When that buffer cannot be maintained the
+     layer renders EMPTY, which is exactly the bet this block's own `ios-webkit`
+     note describes losing. While the menu is open you cannot see it, because
+     the veil is painted over the top. On close the veil's opacity lands first
+     (0.3s, ahead of its 0.5s clip-path, by its own design) while the filter was
+     still transitioning for 0.32s — so the veil got out of the way and revealed
+     a blank page, and the feed snapped back the instant `filter` reached `none`.
+
+     Dropping the filter instantly on close removes the window entirely: the
+     feed is back on the first frame of the close and is revealed by the
+     shrinking veil, which is what the wipe was always supposed to show. It also
+     stops 320ms of document-height re-rasterisation during the exact gesture
+     that is spending its whole budget on being smooth — so this is cheaper as
+     well as correct.
+
+     If a blank ever shows on the way IN too (the same buffer, during the 0.32s
+     before the growing veil covers it), the answer is not a longer transition —
+     it is to stop filtering `.radial-frame` at all and let the veil carry the
+     separation alone, which is already what `perf-lite`, `reduce-transparency`
+     and `ios-webkit` do a few rules below. */
+  transition: filter 0.32s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
 }
 /* …and the "rasterises once" above is only true if the blurred layer HOLDS
    STILL. `.radial-backdrop` does not: it owns the breathing rings and the
@@ -1168,10 +1251,11 @@ html.perf-lite .radial-backdrop__blob {
 .radial-topbar,
 .radial-frame {
   filter: none;
-  /* Shorter than the veil's 0.5s: every frame of a blur transition is a fresh
-     rasterisation of the page, so this is the one part of the open that should
-     not linger. */
-  transition: filter 0.32s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
+  /* No `transition` here on purpose — see the note on the `[data-phase='open']`
+     rule above. It used to sit on this base rule, which made it govern BOTH
+     directions; the 0.32s it then spent unwinding on the way out is what left
+     the feed blank for the length of the close. The way in still eases, because
+     that transition is declared on the open state itself. */
 }
 
 /* The degradation tiers opt out and lean on the veil, which is already opaque
@@ -2389,9 +2473,6 @@ html.ios-webkit .radial-hub__veil {
 
 /* ── Desktop refinements ──────────────────────────────────────────────── */
 @media (min-width: 768px) {
-  .radial-shell {
-    --rad-topbar-h: 4rem;
-  }
   .radial-wheel__slot,
   .radial-wheel__lead {
     max-width: 38rem;
@@ -2594,11 +2675,10 @@ html.ios-webkit .radial-hub__veil {
   border: var(--site-border-width, 1px) solid var(--site-border);
   box-shadow: var(--site-shadow);
   overflow: hidden;
-  /* `.glass-overlay` supplies the blur, the glint and the viewport caps; its 62%
-     tint is calibrated for dialogs that sit over a scrim. These panels sit
-     directly over live content with no scrim, so take the same material at the
-     shared no-scrim menu opacity (globals.css). */
-  background-color: color-mix(in srgb, var(--site-bg) var(--site-glass-menu-opacity), transparent);
+  /* No fill override — see the matching note on `.lib-ctx` (library.css). The
+     62% this was written against is long gone: `.glass-overlay` is 90% with a
+     78% floor and follows the Glass clarity slider, which a flat repaint cannot.
+     `.glass-overlay` still supplies the blur, the glint and the viewport caps. */
 }
 @media (max-width: 559.98px) {
   .rad-panel {
@@ -2911,7 +2991,22 @@ html.ios-webkit .radial-hub__veil {
    away with the content instead of pinning. (The shell's own top bar + hub stay
    fixed — that's radial chrome, not page chrome, and neither uses these hooks.)
    Editor-internal toolbars keep their own `position` — this only unpins page
-   chrome. */
+   chrome.
+
+   `.site-sticky-pinned` is the OPT-OUT, and it exists because the rule above is
+   about page chrome that merely wants to hover, not about surfaces whose whole
+   purpose is to stay. Two were being caught by the generic
+   `.site-sticky-secondary`:
+
+     · the desktop split-view MAP on /homes, which scrolled out of view after one
+       screenful — so from the second screen of results you were browsing a grid
+       of listings with no map, which is the entire point of the layout;
+     · the feed's "N new posts" pill, which is a notification about content
+       above you and is useless once it has scrolled past.
+
+   Anything reaching for this has to be a surface that stops working when it
+   scrolls away. "It looks better pinned" is what the rule above already says
+   no to. */
 .radial-shell
   :is(
     .site-sticky-chrome,
@@ -2919,8 +3014,8 @@ html.ios-webkit .radial-hub__veil {
     [data-slot='context-rail'],
     .lib-explorer,
     .tab-sheet-scroll
-  ),
-.radial-shell__main .sticky {
+  ):not(.site-sticky-pinned),
+.radial-shell__main .sticky:not(.site-sticky-pinned) {
   position: static !important;
   inset-block-start: auto !important;
   top: auto !important;
@@ -3057,7 +3152,15 @@ html.ios-webkit .radial-hub__veil {
      never listed here, so it stayed a 33px target on every page of the site. */
   .radial-topbar__avatar,
   .rad-live__row,
-  .rad-deck__row {
+  .rad-deck__row,
+  /* The quick panels' own rows — each search result, each notification, each
+     message thread, and every entry in the account menu. They are ~36px and sit
+     4px apart, and they are the most-tapped rows on the site's only persistent
+     chrome; they were simply never added here alongside the live-rail rows this
+     block's comment records fixing. */
+  .rad-panel__row,
+  .rad-panel__identity,
+  .rad-panel__more {
     position: relative;
   }
   .radial-topbar__btn::after,
@@ -3065,7 +3168,10 @@ html.ios-webkit .radial-hub__veil {
   .radial-topbar__brand::after,
   .radial-topbar__avatar::after,
   .rad-live__row::after,
-  .rad-deck__row::after {
+  .rad-deck__row::after,
+  .rad-panel__row::after,
+  .rad-panel__identity::after,
+  .rad-panel__more::after {
     content: '';
     position: absolute;
     top: 50%;
@@ -3076,9 +3182,12 @@ html.ios-webkit .radial-hub__veil {
     min-width: var(--site-touch-target);
     min-height: var(--site-touch-target);
   }
-  /* The rail/deck rows are full-width already, so they only need the height. */
+  /* The rail/deck/panel rows are full-width already, so they only need height. */
   .rad-live__row::after,
-  .rad-deck__row::after {
+  .rad-deck__row::after,
+  .rad-panel__row::after,
+  .rad-panel__identity::after,
+  .rad-panel__more::after {
     min-width: 0;
   }
 }

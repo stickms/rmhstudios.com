@@ -99,6 +99,26 @@ export interface AnchoredMenuProps {
   side?: PlacementSide;
   /** Which edge of the trigger the panel lines up with. */
   align?: PlacementAlign;
+  /**
+   * ARIA role for the panel. `menu` (the default) goes with `MenuItem` rows and
+   * the roving focus below. An **autocomplete** attached to a text field is
+   * `listbox`: its options are described BY the field, which keeps the
+   * `aria-activedescendant` relationship the field owns.
+   */
+  role?: 'menu' | 'listbox';
+  /**
+   * Move focus into the panel on open, and hand it back on close. On by
+   * default, because that is what `role="menu"` promises.
+   *
+   * An **autocomplete must turn it off**: its panel opens while the user is
+   * still typing, and pulling focus out of the field on the first keystroke
+   * makes the field impossible to type in. Those callers keep focus in the
+   * input and drive the panel from it — they want this component for the three
+   * things it does that an in-place `absolute top-full` cannot (portal out of
+   * the frame's stacking context, flip when the preferred side has no room, cap
+   * to the room that side actually has), not for its keyboard.
+   */
+  focusOnOpen?: boolean;
   className?: string;
   children: ReactNode;
 }
@@ -120,6 +140,8 @@ export function AnchoredMenu({
   label,
   side = 'bottom',
   align = 'end',
+  role = 'menu',
+  focusOnOpen = true,
   className,
   children,
 }: AnchoredMenuProps) {
@@ -150,6 +172,11 @@ export function AnchoredMenu({
     const natural = panel.offsetHeight;
     if (prevMax) panel.style.setProperty('--anchored-menu-max-h', prevMax);
     else panel.style.removeProperty('--anchored-menu-max-h');
+
+    // The anchor's WIDTH, published for callers that must match it. An
+    // autocomplete's list is the field's list and has to be exactly as wide as
+    // the field; a menu is sized by its own content and ignores this.
+    panel.style.setProperty('--anchored-menu-anchor-w', `${Math.round(rect.width)}px`);
 
     const next = resolveAnchoredPlacement({
       anchor: rect,
@@ -291,7 +318,7 @@ export function AnchoredMenu({
   // the tab order — move focus in on open and hand it back on close, or a
   // keyboard user is dropped at the bottom of the document.
   useEffect(() => {
-    if (!open) return;
+    if (!open || !focusOnOpen) return;
     const trigger = anchorRef.current;
     // Captured now: by cleanup time React may already have detached the node.
     const panel = panelRef.current;
@@ -320,7 +347,7 @@ export function AnchoredMenu({
       const orphaned = !active || active === document.body;
       if (orphaned || panel?.contains(active)) trigger?.focus?.();
     };
-  }, [open, anchorRef]);
+  }, [open, anchorRef, focusOnOpen]);
 
   const style: CSSProperties = placement
     ? ({
@@ -339,9 +366,14 @@ export function AnchoredMenu({
       {present &&
         typeof document !== 'undefined' &&
         createPortal(
+          // The panel DOES carry an interactive role and `tabIndex={-1}`. The
+          // rule fires only because `role` is a prop (`menu | listbox`) and so
+          // cannot be resolved statically; both values are interactive roles,
+          // and the union type is what stops a caller passing anything else.
+          // eslint-disable-next-line jsx-a11y/no-static-element-interactions
           <div
             ref={panelRef}
-            role="menu"
+            role={role}
             aria-label={label}
             tabIndex={-1}
             // Themes restyle through `[data-slot]` (components/CLAUDE.md), and

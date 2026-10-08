@@ -59,7 +59,7 @@ export function AddToListSheet({ targetUserId }: { targetUserId: string }) {
           ) ?? null,
       );
     } catch {
-      toast.error(t('error', { defaultValue: "Couldn't update the list" }));
+      toast.error(t('error-add-to-list-sheet', { defaultValue: "Couldn't update the list" }));
     } finally {
       setPending(null);
     }

@@ -381,7 +381,7 @@ function VoiceChip() {
       <Mic aria-hidden className="size-3.5" />
       {state.megaphone ? <Megaphone aria-hidden className="size-3.5" /> : null}
       {state.radio ? <Radio aria-hidden className="size-3.5" /> : null}
-      {state.on ? t('talking', { defaultValue: 'Talking' }) : t('hold-v', { defaultValue: 'Hold V' })}
+      {state.on ? t('talking-hud', { defaultValue: 'Talking' }) : t('hold-v', { defaultValue: 'Hold V' })}
     </Chip>
   );
 }

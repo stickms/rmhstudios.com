@@ -8,6 +8,7 @@
  * yet have no `id`; for those we surface a hint instead of controls.
  */
 import { useEffect, useState } from 'react';
+import { LibraryDialogShell } from './LibraryDialogShell';
 import { useTranslation } from 'react-i18next';
 import { ArrowUp, ArrowDown, Pencil, Star, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { useConfirm } from '@/components/ui/confirm-dialog';
@@ -162,7 +163,7 @@ export function LibraryEditModal({
   }
 
   return (
-    <div className="lib-upload__overlay" role="dialog" aria-modal="true" aria-label={t('edit-metadata', { defaultValue: 'Edit metadata' })} onMouseDown={onClose}>
+    <LibraryDialogShell onClose={onClose} label={t('edit-metadata', { defaultValue: 'Edit metadata' })}>
       <div className="lib-upload" onMouseDown={(e) => e.stopPropagation()}>
         <div className="lib-upload__head">
           <h2 className="lib-upload__title">{t('edit-metadata', { defaultValue: 'Edit metadata' })}</h2>
@@ -192,6 +193,6 @@ export function LibraryEditModal({
           </button>
         </div>
       </div>
-    </div>
+    </LibraryDialogShell>
   );
 }

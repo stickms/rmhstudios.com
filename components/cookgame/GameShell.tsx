@@ -1,12 +1,13 @@
 "use client";
-import React, { Suspense } from 'react';
+import { Suspense } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
-
-const CookGameGame = React.lazy(() =>
-  import('./CookGameGame').then((m) => ({ default: m.CookGameGame })),
-);
+// Static, not `lazy()`: the shell already rides in the /cookgame route's own
+// chunk, which Start loads before hydrating. A second `lazy()` here blanked the
+// server-rendered game to "LOADING..." for ~1.5s and brought it back
+// (docs/fouc-audit-2026-10-06.md §13).
+import { CookGameGame } from './CookGameGame';
 
 export function GameShell({ userName }: { userName?: string | null }) {
   const goBack = useBackOrFallback();

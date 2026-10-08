@@ -100,7 +100,7 @@ function PuzzlesIndex() {
           to="/strategies/puzzles/leaderboard"
           className="text-xs text-white/30 hover:text-white/50 transition-colors"
         >
-          {t("leaderboards", { defaultValue: "Leaderboards →" })}
+          {t("leaderboards-index", { defaultValue: "Leaderboards →" })}
         </Link>
       </div>
     </div>

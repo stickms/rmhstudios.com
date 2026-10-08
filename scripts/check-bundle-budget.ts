@@ -98,11 +98,77 @@ const OUT_DIR = path.join(ROOT, '.output', 'public');
  * tree produced entry chunks of 267,233 / 268,726 / 269,212 B (a 0.7% spread),
  * so a much tighter band would be flaky rather than strict.
  *
+ * **2026-09-13 — entry raised 294,000 → 296,500 B (OPT-01 line).** The bytes
+ * were bought by **Rebar & Rutabaga** (`/services/rebar-rutabaga`), the
+ * molecular-gastronomy restaurant page under Services. Measured on this tree:
+ * `origin/main` 292,045 B, the feature branch 294,510 B — +2,465 B, against
+ * 1,955 B of headroom.
+ *
+ * What is actually in that number is the part that CANNOT be split: the route
+ * module itself. `routeTree.gen.ts` imports all 739 route modules statically,
+ * so a route's `head()` — its title, description, canonical and, here, the
+ * `Restaurant` JSON-LD with its address and menu literals — is entry weight the
+ * moment the route exists, plus the `restaurantSchema()` builder it calls in
+ * `lib/schema.ts` (already on the critical path via `__root.tsx`'s site-wide
+ * Organization/WebSite JSON-LD).
+ *
+ * Splitting was measured before raising, not assumed. `React.lazy()` on the
+ * page's three section components moved the entry by ~100 B, and on the menu
+ * globe alone by ~100 B: the component bodies, the copy deck and the canvas
+ * were already being emitted as async route chunks by rolldown. Three Suspense
+ * boundaries that defer server-rendered content to buy 0.03% of the budget is
+ * complexity pretending to be an optimisation, so the page imports its sections
+ * directly and the raise carries the route module instead. (This is the
+ * opposite finding to the Slice It! raise above, whose two heaviest bodies were
+ * genuinely worth deferring — hence the measurement rather than the habit.)
+ *
+ * The new band is measured + 0.68%, the same headroom ratio the 2026-08-07 band
+ * carried, so it still absorbs the ~0.7% build-to-build spread documented above
+ * rather than being flaky-tight.
+ *
+ * **2026-10-06 — entry raised 296,500 → 299,000 B (OPT-01 line).** The bytes
+ * were bought by **Dunesday** (`/dunesday`), the MCU + Dune marathon planner.
+ * Measured on this tree with `vite build --sourcemap` (maps stripped):
+ * `main` before Dunesday (bd1fc49) 295,908 B, with it 296,823 B — +915 B, against
+ * 592 B of headroom.
+ *
+ * As with Rebar & Rutabaga, what is left is the part that cannot be split:
+ * the route's registration and `head()` in the statically imported route
+ * tree. Everything else was trimmed before raising — the meta description and
+ * the catalog's long description were cut to a sentence and a redundant meta
+ * tag dropped (together ~400 B) — and the page body, its 7.css stylesheet,
+ * the gadgets and the sound engine are all in the route's own async chunk.
+ * The new band is measured + 0.68%, the same ratio as the previous raises.
+ *
+ * **2026-10-07 — entry raised 299,000 → 307,700 B (OPT-01 line).** The bytes
+ * were bought by **no finished page blanking to a spinner during hydration**
+ * (docs/fouc-audit-2026-10-06.md §13). Measured on this tree with
+ * `vite build --sourcemap`: `main` (45584d5) 290.5 KB, this branch 305,601 B —
+ * about +8 KB.
+ *
+ * Thirty-two routes server-rendered their page inside an inner `lazy()` (two
+ * more one component down); if anything updated the boundary before that chunk
+ * arrived, React threw the server markup away and showed "Loading…" for
+ * 90–1800ms. The fix imports the page statically, so it rides in the route
+ * component's own chunk — which Start loads BEFORE hydrating. The page itself stays out of the entry (verified by
+ * per-module sourcemap attribution, not assumed). What lands here is each
+ * route's lazy-component stub now carrying Vite's `__vite__mapDeps` preload list
+ * for the bigger chunk — ~100–500 B per route, ~6 KB in all — plus ~2 KB of new
+ * shell code: the not-found head guard (`lib/router/not-found-head.ts`), the
+ * account appearance seed (`lib/appearance/account-seed.ts`) and the client
+ * entry that gives a production hydration error its component stack
+ * (`app/client.tsx`). The preload list
+ * is not dead weight: a client navigation into a game now fetches its whole
+ * chunk graph in parallel instead of route-chunk-then-lazy-chunk.
+ *
+ * The critical path is still 3.5% (raw) and 3.9% (brotli) under its own budgets.
+ * The new band is measured + 0.68%, the same ratio as the previous raises.
+ *
  * Budgets that only ever move up are theatre. Per OPT-01: raising one requires
  * a line in the PR body naming the user-visible feature that bought the bytes.
  */
 const BUDGETS = {
-  entryRaw: 294_000,
+  entryRaw: 307_700,
   criticalPathRaw: 1_291_000,
   criticalPathBrotli: 370_000,
 };

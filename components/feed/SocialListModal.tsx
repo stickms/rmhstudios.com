@@ -6,7 +6,7 @@ import { UserAvatar } from'@/components/ui/UserAvatar';
 import { Spinner } from'@/components/ui/spinner';
 import { Dialog, DialogContent, DialogTitle } from'@/components/ui/dialog';
 import { Link } from'@tanstack/react-router';
-import { authClient } from'@/lib/auth-client';
+import { useSession } from'@/components/Providers';
 
 interface SocialUser {
  id: string;
@@ -34,7 +34,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  const sentinelRef = useRef<HTMLDivElement>(null);
  const initialFetched = useRef(false);
  const fetchingRef = useRef(false);
- const { data: session } = authClient.useSession();
+ const { data: session } = useSession();
 
  const { t } = useTranslation('feed');
  const title = type ==='followers'? t('followers', { defaultValue:'Followers'}) : t('following', { defaultValue:'Following'});
@@ -186,7 +186,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  <button
  onClick={() => handleFollowToggle(user)}
  disabled={followingInProgress.has(user.id)}
- className={`shrink-0 px-4 py-1.5 rounded-site-sm text-xs font-bold transition-[color,background-color,border-color,transform] duration-site-fast active:scale-95 ${
+ className={`shrink-0 px-4 py-1.5 rounded-site-sm text-xs font-bold transition-[color,background-color,border-color,scale] duration-site-fast active:scale-95 ${
  user.isFollowing
  ?'border border-site-border text-site-text hover:border-site-danger hover:text-site-danger hover:bg-site-danger/10'
  :'bg-site-accent text-site-bg hover:bg-site-accent-hover'

@@ -30,10 +30,10 @@ export function AssistChip({ seat, assists, showSeat = true }: AssistChipProps) 
   if (assists.grabAssist) active.push(t('assist.grab', { defaultValue: 'Grab assist' }));
   if (assists.stickyGrip) active.push(t('assist.sticky', { defaultValue: 'Sticky grip' }));
   if (assists.autoGrab) active.push(t('assist.auto', { defaultValue: 'Auto-grab' }));
-  if (assists.slowMo) active.push(t('assist.slowmo', { defaultValue: 'Slow-mo' }));
+  if (assists.slowMo) active.push(t('assist.slowmo-chip', { defaultValue: 'Slow-mo' }));
   if (assists.extraCheckpoints) active.push(t('assist.checkpoints', { defaultValue: 'Extra checkpoints' }));
   if (assists.noFallDamage) active.push(t('assist.nofall', { defaultValue: 'No fall damage' }));
-  if (assists.oneHanded) active.push(t('assist.onehanded', { defaultValue: 'One-handed' }));
+  if (assists.oneHanded) active.push(t('assist.onehanded-chip', { defaultValue: 'One-handed' }));
 
   if (active.length === 0) return null;
 

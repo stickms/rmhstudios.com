@@ -47,7 +47,12 @@ export async function spentThisMonth(userId: string): Promise<number> {
 
 export interface BudgetStatus {
   tier: Tier;
+  /** The tier allowance PLUS any compute bought from RMH Datacenter (W2). */
   limitMicros: number;
+  /** The tier's own allowance, before anything bought. */
+  tierLimitMicros: number;
+  /** Bought this month. Zero for almost everyone. */
+  grantedMicros: number;
   spentMicros: number;
   remainingMicros: number;
   /** 0–1, clamped. Drives the meter on /wallet. */
@@ -60,17 +65,54 @@ export interface BudgetStatus {
  * ledger, it just reports zero spend.
  */
 export async function budgetStatus(userId: string): Promise<BudgetStatus> {
-  const [tier, spentMicros] = await Promise.all([getUserTier(userId), spentThisMonth(userId)]);
-  const limitMicros = MONTHLY_BUDGET_MICROS[tier];
+  const [tier, spentMicros, grantedMicros] = await Promise.all([
+    getUserTier(userId),
+    spentThisMonth(userId),
+    // Compute bought from RMH Datacenter (W2). This is the join that makes
+    // buying a pack mean something — without it the grant is a row nobody
+    // reads and the datacenter is selling a receipt.
+    grantedMicrosThisMonth(userId),
+  ]);
+  const tierLimitMicros = MONTHLY_BUDGET_MICROS[tier];
+  const limitMicros = tierLimitMicros + grantedMicros;
   const remainingMicros = Math.max(0, limitMicros - spentMicros);
   return {
     tier,
     limitMicros,
+    tierLimitMicros,
+    grantedMicros,
     spentMicros,
     remainingMicros,
     usedFraction: limitMicros > 0 ? Math.min(1, spentMicros / limitMicros) : 1,
     exhausted: remainingMicros <= 0,
   };
+}
+
+/**
+ * Micro-dollars this member bought this month.
+ *
+ * Kept here rather than imported from `lib/datacenter/compute.server.ts` to
+ * avoid a cycle: that module imports `MONTHLY_BUDGET_MICROS` from this one.
+ * The query is three lines and the alternative is a shared module for one
+ * aggregate.
+ *
+ * Fails to zero rather than throwing, matching `assertAiBudget`'s fail-open
+ * posture: a member losing purchased headroom because one table was briefly
+ * unavailable is a worse outcome than their ceiling being the tier's for a
+ * minute.
+ */
+async function grantedMicrosThisMonth(userId: string): Promise<number> {
+  try {
+    const now = new Date();
+    const month = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+    const agg = await prisma.computeGrant.aggregate({
+      where: { userId, month },
+      _sum: { aiMicros: true },
+    });
+    return Number(agg._sum.aiMicros ?? 0);
+  } catch {
+    return 0;
+  }
 }
 
 /**

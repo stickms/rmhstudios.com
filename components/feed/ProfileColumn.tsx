@@ -10,7 +10,7 @@ import { GiftSubDialog } from'@/components/economy/GiftSubDialog';
 import { useNavigate } from'@tanstack/react-router';
 import { Button } from'@/components/ui/button';
 import { authClient } from'@/lib/auth-client';
-import { useResolvedUser } from'@/components/Providers';
+import { useResolvedUser, useSession } from'@/components/Providers';
 import { VirtualPostList } from'./VirtualPostList';
 import { LiquidTabs } from'@/components/ui/liquid-tabs';
 import { AchievementsColumn } from'./AchievementsColumn';
@@ -104,7 +104,7 @@ export function ProfileColumn({
  const scriptLoadedRef = useRef(false);
 
  const { t } = useTranslation('feed');
- const { data: session } = authClient.useSession();
+ const { data: session } = useSession();
  const navigate = useNavigate();
  const [messageSending, setMessageSending] = useState(false);
  const [messageError, setMessageError] = useState<string | null>(null);

@@ -28,6 +28,11 @@
  */
 
 import type { CoinTxnType, Prisma, PrismaClient } from '@prisma/client';
+// Relative, never `@/` — this module is bundled into the socket server, and
+// server/CLAUDE.md gotcha 7 is about this exact file: a `@/lib/economy/ledger-core`
+// specifier that esbuild could not map emitted a literal require() and killed the
+// whole hub on boot, with no build error.
+import { assertPlayAllowedOn } from './play-limits-core';
 
 /** Any Prisma client: the base client or an interactive-transaction client. */
 export type Db = Prisma.TransactionClient | PrismaClient;
@@ -275,6 +280,20 @@ function creditInner(
  * Throws `InsufficientFundsError` when the balance can't cover it — the check
  * IS the conditional update below, not a prior read, so concurrent debits
  * cannot both succeed against the same coins.
+ *
+ * ## Responsible play (W8)
+ *
+ * A debit classified `WAGER` is additionally checked against the member's own
+ * limits before it is allowed, and throws an `AppError` when they have asked us
+ * to refuse it. This is the ONLY enforcement point for those limits, and it is
+ * here rather than in the seven risk surfaces for two reasons: every one of
+ * them already books its stake as `WAGER`, so one check covers all of them
+ * including the next one; and the check then runs inside the same transaction
+ * as the decrement, so two stakes racing cannot both see the same headroom and
+ * each pass.
+ *
+ * Only debits are checked. A payout is a credit, and an excluded member is
+ * still paid what a table owes them.
  */
 export async function debitCoinsOn(
   client: Db & Partial<TxCapable>,
@@ -285,6 +304,8 @@ export async function debitCoinsOn(
   assertAmount(amount);
 
   return execute(client, opts, async (db) => {
+    if (opts.type === 'WAGER') await assertPlayAllowedOn(db, userId, amount);
+
     await ensureProfile(db, userId);
 
     const debit = await db.userProfile.updateMany({

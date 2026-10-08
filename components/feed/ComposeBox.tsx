@@ -42,6 +42,7 @@ import { buildOptimizedUrl } from '@/components/ui/OptimizedImage';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
+import { OverlayPanel } from '@/components/ui/overlay-panel';
 import { ScheduleControl } from '@/components/ui/schedule-control';
 import { useSmartPaste, type MediaRejection } from '@/hooks/useSmartPaste';
 import { postWithOutbox, subscribeOutbox } from '@/lib/offline/outbox';
@@ -703,7 +704,7 @@ export function ComposeBox({
 
           {/* Poll creator */}
           {attachment === 'poll' && (
-            <div className="mt-2 border border-site-border rounded-site p-3 bg-site-surface/20">
+            <div className="glass-fill mt-2 rounded-site p-3">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">
                   {t('poll-heading', { defaultValue: 'Poll' })}
@@ -818,7 +819,7 @@ export function ComposeBox({
 
           {/* GIF picker */}
           {attachment === 'gif' && (
-            <div className="mt-2 border border-site-border rounded-site p-3 bg-site-surface/20">
+            <div className="glass-fill mt-2 rounded-site p-3">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">
                   {t('gif-heading', { defaultValue: 'GIF' })}
@@ -899,7 +900,7 @@ export function ComposeBox({
                         setImageUrls((prev) => prev.filter((_, j) => j !== i));
                         setImageAlts((prev) => prev.filter((_, j) => j !== i));
                       }}
-                      className="absolute top-1 right-1 p-0.5 rounded-full bg-site-media-scrim-strong text-site-media-ink opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-1 right-1 flex size-11 items-center justify-center rounded-full bg-site-media-scrim-strong text-site-media-ink transition-opacity sm:size-auto sm:p-0.5 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -1160,14 +1161,7 @@ export function ComposeBox({
 
       {/* Post visibility (audience) picker — opened from the (+) menu */}
       {audienceOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <button
-            type="button"
-            aria-label={t('close', { defaultValue: 'Close' })}
-            tabIndex={-1}
-            className="absolute inset-0 bg-site-media-scrim-strong"
-            onClick={() => setAudienceOpen(false)}
-          />
+        <OverlayPanel open onClose={() => setAudienceOpen(false)}>
           <motion.div
             variants={modalContent}
             initial="initial"
@@ -1210,19 +1204,12 @@ export function ComposeBox({
               ))}
             </div>
           </motion.div>
-        </div>
+        </OverlayPanel>
       )}
 
       {/* Who-can-reply picker — opened from the (+) menu */}
       {replyOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <button
-            type="button"
-            aria-label={t('close', { defaultValue: 'Close' })}
-            tabIndex={-1}
-            className="absolute inset-0 bg-site-media-scrim-strong"
-            onClick={() => setReplyOpen(false)}
-          />
+        <OverlayPanel open onClose={() => setReplyOpen(false)}>
           <motion.div
             variants={modalContent}
             initial="initial"
@@ -1265,16 +1252,12 @@ export function ComposeBox({
               ))}
             </div>
           </motion.div>
-        </div>
+        </OverlayPanel>
       )}
 
       {/* Unlock-price popover — opened from the (+) menu */}
       {showPriceModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-site-media-scrim-strong"
-            onClick={() => setShowPriceModal(false)}
-          />
+        <OverlayPanel open onClose={() => setShowPriceModal(false)}>
           <motion.div
             variants={modalContent}
             initial="initial"
@@ -1335,16 +1318,12 @@ export function ComposeBox({
               </Button>
             </div>
           </motion.div>
-        </div>
+        </OverlayPanel>
       )}
 
       {/* Markdown cheat sheet — opened from the (+) menu */}
       {showCheatSheet && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-site-media-scrim-strong"
-            onClick={() => setShowCheatSheet(false)}
-          />
+        <OverlayPanel open onClose={() => setShowCheatSheet(false)}>
           <motion.div
             variants={modalContent}
             initial="initial"
@@ -1419,16 +1398,12 @@ export function ComposeBox({
               </tbody>
             </table>
           </motion.div>
-        </div>
+        </OverlayPanel>
       )}
 
       {/* Image alt-text editor — opened from the ALT pill on a preview image */}
       {altEditIndex !== null && imageUrls[altEditIndex] && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-site-media-scrim-strong"
-            onClick={() => setAltEditIndex(null)}
-          />
+        <OverlayPanel open onClose={() => setAltEditIndex(null)}>
           <motion.div
             variants={modalContent}
             initial="initial"
@@ -1493,7 +1468,7 @@ export function ComposeBox({
               </Button>
             </div>
           </motion.div>
-        </div>
+        </OverlayPanel>
       )}
     </div>
   );

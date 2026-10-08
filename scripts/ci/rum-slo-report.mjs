@@ -7,6 +7,15 @@ import process from 'node:process';
 const ROOT = process.cwd();
 const STRICT = process.argv.includes('--strict');
 const JSON_OUTPUT = process.argv.includes('--json');
+/**
+ * Split every row by device form factor.
+ *
+ * Off by default because it divides each row's sample count three ways and a
+ * thin window would report INSUFFICIENT everywhere. On when you are asking the
+ * question this dimension was added for — "is mobile slower than desktop, and
+ * on which metric" — which a pooled percentile structurally cannot answer.
+ */
+const BY_DEVICE = process.argv.includes('--by-device');
 const minSamplesArg = process.argv.find((arg) => arg.startsWith('--min-samples='));
 const p95MultiplierArg = process.argv.find((arg) => arg.startsWith('--p95-multiplier='));
 const MIN_SAMPLES = Number.parseInt(minSamplesArg?.split('=', 2)[1] || '20', 10);
@@ -79,11 +88,18 @@ const grouped = new Map();
 for (const sample of samples) {
   const threshold = thresholds?.[sample.routeClass]?.[sample.name];
   if (!Number.isFinite(threshold)) continue;
-  const key = `${sample.routeClass}:${sample.name}`;
+  // A client cached from before the device dimension shipped sends no form
+  // factor. Bucketing those as `unknown` keeps them in the report — dropping
+  // them would silently shrink the population every time the beacon changes.
+  const device = BY_DEVICE ? sample.formFactor || 'unknown' : null;
+  const key = BY_DEVICE
+    ? `${sample.routeClass}:${sample.name}:${device}`
+    : `${sample.routeClass}:${sample.name}`;
   if (!grouped.has(key)) {
     grouped.set(key, {
       routeClass: sample.routeClass,
       metric: sample.name,
+      device,
       threshold,
       values: [],
     });
@@ -102,6 +118,7 @@ const rows = [...grouped.values()]
     return {
       routeClass: group.routeClass,
       metric: group.metric,
+      ...(group.device ? { device: group.device } : {}),
       samples: group.values.length,
       threshold: group.threshold,
       p50,
@@ -113,16 +130,25 @@ const rows = [...grouped.values()]
       pass: enoughSamples && !p75Breach && !p95Breach,
     };
   })
-  .sort((a, b) => a.routeClass.localeCompare(b.routeClass) || a.metric.localeCompare(b.metric));
+  .sort(
+    (a, b) =>
+      a.routeClass.localeCompare(b.routeClass) ||
+      a.metric.localeCompare(b.metric) ||
+      (a.device || '').localeCompare(b.device || ''),
+  );
 
 if (JSON_OUTPUT) {
   console.log(
     JSON.stringify({ minSamples: MIN_SAMPLES, p95Multiplier: P95_MULTIPLIER, rows }, null, 2),
   );
 } else {
+  const deviceCol = BY_DEVICE ? ' Device |' : '';
+  const deviceSep = BY_DEVICE ? '---|' : '';
   console.log('\nRUM SLO summary\n');
-  console.log('| Class | Metric | Samples | p50 | p75 / budget | p95 / severe band | Result |');
-  console.log('|---|---|---:|---:|---:|---:|---|');
+  console.log(
+    `| Class |${deviceCol} Metric | Samples | p50 | p75 / budget | p95 / severe band | Result |`,
+  );
+  console.log(`|---|${deviceSep}---|---:|---:|---:|---:|---|`);
   for (const row of rows) {
     const result = !row.enoughSamples
       ? `INSUFFICIENT (<${MIN_SAMPLES})`
@@ -130,7 +156,7 @@ if (JSON_OUTPUT) {
         ? 'PASS'
         : `FAIL${row.p75Breach ? ' p75' : ''}${row.p95Breach ? ' p95' : ''}`;
     console.log(
-      `| ${row.routeClass} | ${row.metric} | ${row.samples} | ` +
+      `| ${row.routeClass} |${BY_DEVICE ? ` ${row.device} |` : ''} ${row.metric} | ${row.samples} | ` +
         `${formatValue(row.metric, row.p50)} | ` +
         `${formatValue(row.metric, row.p75)} / ${formatValue(row.metric, row.threshold)} | ` +
         `${formatValue(row.metric, row.p95)} / ${formatValue(row.metric, row.threshold * P95_MULTIPLIER)} | ` +
@@ -138,6 +164,25 @@ if (JSON_OUTPUT) {
     );
   }
   console.log();
+  if (BY_DEVICE) {
+    // The whole point of the split: state the gap outright rather than leaving
+    // the reader to diff two rows by eye.
+    const byMetric = new Map();
+    for (const row of rows) {
+      if (!byMetric.has(row.metric)) byMetric.set(row.metric, {});
+      byMetric.get(row.metric)[row.device] = row.p75;
+    }
+    const gaps = [...byMetric.entries()]
+      .filter(([, d]) => Number.isFinite(d.mobile) && Number.isFinite(d.desktop) && d.desktop > 0)
+      .map(([metric, d]) => ({ metric, ratio: d.mobile / d.desktop }));
+    if (gaps.length) {
+      console.log('Mobile / desktop p75 ratio (>1 means mobile is slower):\n');
+      for (const { metric, ratio } of gaps.sort((a, b) => b.ratio - a.ratio)) {
+        console.log(`  ${metric.padEnd(6)} ${ratio.toFixed(2)}×`);
+      }
+      console.log();
+    }
+  }
 }
 
 if (STRICT && rows.some((row) => !row.pass)) {

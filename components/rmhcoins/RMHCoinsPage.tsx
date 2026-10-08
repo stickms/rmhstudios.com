@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearch } from '@tanstack/react-router';
 import { Loader2, TrendingUp, Gamepad2 } from 'lucide-react';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
 import { toast } from 'sonner';
@@ -14,7 +14,7 @@ import { PredictionsMarketTab } from '@/components/predictions/PredictionsMarket
 
 export function RMHCoinsPage() {
   const { t } = useTranslation("c-rmhcoins");
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session, isPending } = useSession();
   const [coins, setCoins] = useState(0);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);

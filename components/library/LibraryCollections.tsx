@@ -11,6 +11,7 @@
  * already live in a collection) and calls `onChanged` after each change.
  */
 import { useEffect, useMemo, useState } from 'react';
+import { LibraryDialogShell } from './LibraryDialogShell';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Check, FolderPlus, ImagePlus, Layers, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -373,7 +374,7 @@ function ViewModal({
       : null;
 
   return (
-    <div className="lib-upload__overlay" role="dialog" aria-modal="true" onMouseDown={onClose}>
+    <LibraryDialogShell onClose={onClose}>
       <div className="lib-upload lib-coll-modal" onMouseDown={(e) => e.stopPropagation()}>
         <div className="lib-upload__head">
           <div className="lib-collections__group-titles">
@@ -404,7 +405,7 @@ function ViewModal({
           </div>
         )}
       </div>
-    </div>
+    </LibraryDialogShell>
   );
 }
 
@@ -467,7 +468,7 @@ function CreateModal({
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
   return (
-    <div className="lib-upload__overlay" role="dialog" aria-modal="true" onMouseDown={onClose}>
+    <LibraryDialogShell onClose={onClose}>
       <div
         className="lib-upload"
         onMouseDown={(e) => e.stopPropagation()}
@@ -525,7 +526,7 @@ function CreateModal({
           </button>
         </div>
       </div>
-    </div>
+    </LibraryDialogShell>
   );
 }
 
@@ -568,7 +569,7 @@ function AddBooksModal({
   }, [books, isAdmin, myHandle, query]);
 
   return (
-    <div className="lib-upload__overlay" role="dialog" aria-modal="true" onMouseDown={onClose}>
+    <LibraryDialogShell onClose={onClose}>
       <div className="lib-upload" onMouseDown={(e) => e.stopPropagation()}>
         <div className="lib-upload__head">
           <h2 className="lib-upload__title">
@@ -631,6 +632,6 @@ function AddBooksModal({
           </button>
         </div>
       </div>
-    </div>
+    </LibraryDialogShell>
   );
 }

@@ -1,0 +1,12 @@
+-- Per-hour gaming seconds, so sleep can be inferred from ACTIVITY rather than
+-- from presence.
+--
+-- `firstSeenAt`/`lastSeenAt` are touched by status sessions, and a status
+-- session only closes when Discord reports "offline" — idle keeps it open. For
+-- anyone who leaves the desktop client running overnight that makes "last seen"
+-- 23:59 and "first seen" 00:00 every single day, so the gap between them is
+-- zero and no night is ever inferred.
+--
+-- The hourly histograms are the honest signal, but messages and voice alone
+-- would read a six-hour gaming session as sleep. This is the missing third.
+ALTER TABLE "discord_watch_day" ADD COLUMN IF NOT EXISTS "hourlyGamingSec" JSONB;

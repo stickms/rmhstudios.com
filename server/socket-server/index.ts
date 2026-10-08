@@ -79,8 +79,10 @@ import {
   handleMassiveMarchDisconnect,
 } from './handlers/massive-march';
 import { registerBumsRushHandlers, handleBumsRushDisconnect } from './handlers/bums-rush';
+import { registerGlobeSetHandlers, handleGlobeSetDisconnect } from './handlers/globeset';
 import { registerSpacesHandlers, handleSpacesDisconnect } from './handlers/spaces';
 import { registerPartyHandlers, handlePartyDisconnect } from './handlers/party';
+import { registerMatchmakingHandlers, handleMatchmakingDisconnect } from './handlers/matchmaking';
 import { registerCallHandlers, handleCallDisconnect } from './handlers/call';
 import { registerGroupCallHandlers, handleGroupCallDisconnect } from './handlers/group-call';
 
@@ -292,7 +294,13 @@ async function verifyDiscordActivityToken(token: string): Promise<DiscordIdentit
   const info = (await res.json()) as {
     application?: { id?: string };
     expires?: string;
-    user?: { id?: string; username?: string; global_name?: string | null; avatar?: string | null; discriminator?: string };
+    user?: {
+      id?: string;
+      username?: string;
+      global_name?: string | null;
+      avatar?: string | null;
+      discriminator?: string;
+    };
   };
 
   if (info?.application?.id !== appId) return null;
@@ -507,10 +515,12 @@ io.on('connection', (socket) => {
   registerGabrielsHornHandlers(io, socket);
   registerMassiveMarchHandlers(io, socket);
   registerBumsRushHandlers(io, socket);
+  registerGlobeSetHandlers(io, socket);
 
   // Platform expansion (§4, §5): live Spaces + cross-game party.
   registerSpacesHandlers(io, socket);
   registerPartyHandlers(io, socket);
+  registerMatchmakingHandlers(io, socket);
   registerCallHandlers(io, socket);
   registerGroupCallHandlers(io, socket);
 
@@ -520,6 +530,7 @@ io.on('connection', (socket) => {
 
     handleSpacesDisconnect(io, socket);
     handlePartyDisconnect(io, socket);
+    handleMatchmakingDisconnect(socket);
     void handleCallDisconnect(io, socket);
     void handleGroupCallDisconnect(io, socket);
     handleSynapseStormDisconnect(io, socket);
@@ -544,6 +555,7 @@ io.on('connection', (socket) => {
     handleGabrielsHornDisconnect(io, socket);
     handleMassiveMarchDisconnect(io, socket);
     handleBumsRushDisconnect(io, socket);
+    handleGlobeSetDisconnect(io, socket);
 
     cleanupRateLimits(socket.id);
   });

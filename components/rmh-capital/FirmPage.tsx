@@ -10,9 +10,9 @@ export default function FirmPage() {
       <section className="pagehead">
         <div className="container pagehead-inner">
           <span className="eyebrow reveal">{t("our-firm", { defaultValue: "Our Firm" })}</span>
-          <h1 className="serif reveal d1">{t("hero-heading", { defaultValue: "A firm built around the client, not the product." })}</h1>
+          <h1 className="serif reveal d1">{t("hero-heading-firm-page", { defaultValue: "A firm built around the client, not the product." })}</h1>
           <p className="lede reveal d2">
-            {t("hero-lede", { defaultValue: "RMH Capital is an integrated investment bank and financial platform. We bring advisory, capital, and intelligence to a single relationship — and we stay with our clients through every stage of their growth." })}
+            {t("hero-lede-firm-page", { defaultValue: "RMH Capital is an integrated investment bank and financial platform. We bring advisory, capital, and intelligence to a single relationship — and we stay with our clients through every stage of their growth." })}
           </p>
         </div>
       </section>
@@ -123,8 +123,8 @@ export default function FirmPage() {
         <div className="container">
           <div className="cta-band reveal">
             <span className="eyebrow center">{t("work-with-us", { defaultValue: "Work With Us" })}</span>
-            <h2 style={{ marginTop: 18 }}>{t("cta-heading", { defaultValue: "Bring the whole firm to your next decision." })}</h2>
-            <p>{t("cta-body", { defaultValue: "Whether you're raising your first round or weighing a transformative acquisition, our teams are ready to help." })}</p>
+            <h2 style={{ marginTop: 18 }}>{t("cta-heading-firm-page", { defaultValue: "Bring the whole firm to your next decision." })}</h2>
+            <p>{t("cta-body-firm-page", { defaultValue: "Whether you're raising your first round or weighing a transformative acquisition, our teams are ready to help." })}</p>
             <Link className="btn btn-gold" to="/rmh-capital/contact">{t("cta-link", { defaultValue: "Contact RMH Capital" })} <span className="arw">→</span></Link>
           </div>
         </div>

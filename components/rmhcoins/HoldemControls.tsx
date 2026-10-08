@@ -109,7 +109,7 @@ export function HoldemControls() {
         ) : isSittingOut ? (
           <p className="text-sm">{t("sit-in-to-play", { defaultValue: "Sit in to start playing!" })}</p>
         ) : (
-          <p className="text-sm">{t("waiting-for-players", { defaultValue: "Waiting for more players to sit in..." })}</p>
+          <p className="text-sm">{t("waiting-for-players-holdem-controls", { defaultValue: "Waiting for more players to sit in..." })}</p>
         )}
         {isBusted ? rebuyButton : sitButton}
         {roomInfo && (

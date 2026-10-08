@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Loader2, MapPin, X, Star, LocateFixed } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import { usePopPresence } from '@/hooks/usePopPresence';
+import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import type { RidePlace } from '@/lib/rideshare/geo';
 
 interface GeocodeResult {
@@ -51,7 +51,6 @@ export function LocationSearch({
   // The RESULTS are what is held through the close, not just a flag: `choose()`
   // clears the list on the same tick it closes the menu, and a list that emptied
   // itself mid-exit would collapse to a bare pill on the way out.
-  const list = usePopPresence(open && results.length > 0 && !value ? results : null);
 
   function useCurrentLocation() {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
@@ -152,7 +151,7 @@ export function LocationSearch({
       <label className="mb-1.5 block text-xs font-medium text-site-text-muted">{label}</label>
 
       {value ? (
-        <div className="flex items-center gap-2 rounded-site-sm border border-site-border bg-site-surface px-3 py-2.5 sm:py-2">
+        <div className="flex items-center gap-2 glass-inset rounded-site-sm px-3 py-2.5 sm:py-2">
           <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${dotClassName}`} />
           <span className="min-w-0 flex-1 truncate text-sm text-site-text" title={value.label}>
             {value.label}
@@ -176,7 +175,7 @@ export function LocationSearch({
               onChange={(e) => setQuery(e.target.value)}
               onFocus={() => results.length && setOpen(true)}
               placeholder={placeholder ?? t('search-placeholder', { defaultValue: 'Search for an address or place' })}
-              className="w-full rounded-site-sm border border-site-border bg-site-surface py-2.5 pl-8 pr-9 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 sm:py-2 sm:text-sm"
+              className="w-full glass-inset rounded-site-sm py-2.5 pl-8 pr-9 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 sm:py-2 sm:text-sm"
               autoComplete="off"
             />
             {loading && (
@@ -215,26 +214,40 @@ export function LocationSearch({
 
       {error && <p className="mt-1 text-xs text-site-danger">{error}</p>}
 
-      {list.present && (
-        <ul
-          data-motion="pop"
-          data-state={list.state}
-          className="absolute z-30 mt-1 max-h-64 w-full origin-top overflow-auto glass-overlay"
-        >
-          {list.present.map((r, i) => (
-            <li key={`${r.lat},${r.lng},${i}`} className="border-b border-site-border/60 last:border-0">
-              <button
-                type="button"
-                onClick={() => choose(r)}
-                className="flex w-full items-start gap-2 px-3 py-2.5 text-left text-sm text-site-text transition-colors hover:bg-site-surface-hover"
-              >
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-site-text-muted" />
-                <span className="min-w-0 flex-1">{r.label}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      {/* PORTALLED — see the note on the homes LocationSearch. This is the worst
+          instance of the same bug: at 360x640 on /rideshare/ride the Drop-off
+          list ran into the bottom 76px where the hub orb sits at z-80, and a tap
+          on an address behind the accent disc opened the radial navigation
+          overlay instead of selecting it. AnchoredMenu portals out of the
+          frame's stacking context, flips when the side below has no room, and
+          caps its height to the room that side actually has. */}
+      <AnchoredMenu
+        open={open && results.length > 0 && !value}
+        onClose={() => setOpen(false)}
+        anchorRef={boxRef}
+        role="listbox"
+        align="start"
+        focusOnOpen={false}
+        // Reuses the field's own placeholder key rather than minting a new one:
+        // a new key has to land in all 16 locale catalogs to keep the i18n
+        // parity gate green, and this string already names exactly this list.
+        label={t('search-placeholder', { defaultValue: 'Search for an address or place' })}
+        className="w-[var(--anchored-menu-anchor-w)] max-h-64"
+      >
+        {results.map((r, i) => (
+          <button
+            key={`${r.lat},${r.lng},${i}`}
+            type="button"
+            role="option"
+            aria-selected={false}
+            onClick={() => choose(r)}
+            className="flex w-full min-h-9 pointer-coarse:min-h-11 items-start gap-2.5 rounded-site-sm px-3 py-2 text-left text-sm text-site-text transition-colors duration-site hover:bg-site-surface-hover focus-visible:bg-site-surface-hover"
+          >
+            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-site-text-muted" aria-hidden />
+            <span className="min-w-0 flex-1">{r.label}</span>
+          </button>
+        ))}
+      </AnchoredMenu>
     </div>
   );
 }

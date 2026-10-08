@@ -11,7 +11,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import { useLobbyInvite } from '@/hooks/useLobbyLink';
 import { useDreamRift } from '@/lib/dream-rift/store';
 import { LocalTransport, SocketTransport } from '@/lib/dream-rift/net/transport';
@@ -43,7 +43,7 @@ function ScreenRouter() {
     const setScreen = useDreamRift((s) => s.setScreen);
     const setMode = useDreamRift((s) => s.setMode);
     const setResult = useDreamRift((s) => s.setResult);
-    const session = authClient.useSession();
+    const session = useSession();
 
     const [startInfo, setStartInfo] = useState<StartInfo | null>(null);
 

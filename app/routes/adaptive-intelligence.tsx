@@ -2,10 +2,12 @@ import { createFileRoute } from '@tanstack/react-router'
 import RmhtechLanding from '@/components/rmhtech/RmhtechLanding'
 import rmhtechCss from '@/components/rmhtech/rmhtech.css?url'
 import { buildMeta, buildCanonical } from '@/lib/seo'
-import { deferredFontScript, preconnectGoogleFonts } from '@/lib/fonts/deferred'
-
-const FONTS_URL =
-  'https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&family=JetBrains+Mono:wght@400;500&display=swap'
+// Fraunces, self-hosted with `font-display: optional` (app/fonts/), its upright
+// Latin file — the headlines — preloaded. JetBrains Mono is the site's own. See
+// lib/fonts/self-hosted.ts.
+import frauncesCss from '@/app/fonts/fraunces.css?url'
+import frauncesLatin from '@fontsource-variable/fraunces/files/fraunces-latin-opsz-normal.woff2?url'
+import { preloadFont } from '@/lib/fonts/self-hosted'
 
 const PATH = '/adaptive-intelligence'
 const TITLE = 'Adaptive Intelligence — the trustworthy substrate for AI-driven biology'
@@ -28,11 +30,9 @@ export const Route = createFileRoute('/adaptive-intelligence')({
       { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/brand/adaptive-intelligence-favicon-16.png' },
       { rel: 'apple-touch-icon', href: '/brand/adaptive-intelligence-apple-touch.png' },
       { rel: 'stylesheet', href: rmhtechCss },
-      ...preconnectGoogleFonts(),
+      { rel: 'stylesheet', href: frauncesCss },
+      preloadFont(frauncesLatin),
     ],
-    // Idle-deferred rather than a render-blocking <link> — see
-    // `lib/fonts/deferred.ts`.
-    scripts: [{ children: deferredFontScript(FONTS_URL) }],
   }),
   component: RmhtechLanding,
 })

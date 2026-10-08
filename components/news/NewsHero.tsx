@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Link } from '@tanstack/react-router';
 import useEmblaCarousel from 'embla-carousel-react';
 import { useInView } from 'framer-motion';
@@ -28,8 +29,21 @@ export function NewsHero({ articles }: NewsHeroProps) {
   const containerRef = useRef(null);
   const isInView = useInView(containerRef, { once: true, amount: 0.3 });
   const [isPaused, setIsPaused] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const reduced = useReducedMotion();
   const progressRef = useRef({ elapsed: 0, lastTick: 0 });
+  /**
+   * The progress bar's own node. Progress is written straight to its
+   * `transform` rather than held in state, because `setProgress` on every
+   * animation frame re-rendered this whole hero subtree ~360 times per six-second
+   * cycle — and `isInView` is `{ once: true }`, so the loop never stopped and
+   * `scrollNext()` restarted it forever. `AnimatedCount` documents this exact
+   * antipattern and fixes it the same way: a value that only CSS reads does not
+   * belong in React state.
+   */
+  const barRef = useRef<HTMLSpanElement | null>(null);
+  const paintProgress = useCallback((value: number) => {
+    if (barRef.current) barRef.current.style.transform = `scaleX(${value})`;
+  }, []);
 
   const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
   const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
@@ -41,7 +55,7 @@ export function NewsHero({ articles }: NewsHeroProps) {
     const onSelect = () => {
       setSelectedIndex(emblaApi.selectedScrollSnap());
       progressRef.current.elapsed = 0;
-      setProgress(0);
+      paintProgress(0);
     };
     onSelect();
     emblaApi.on('select', onSelect);
@@ -49,9 +63,16 @@ export function NewsHero({ articles }: NewsHeroProps) {
       setScrollSnaps(emblaApi.scrollSnapList());
       onSelect();
     });
-  }, [emblaApi]);
+  }, [emblaApi, paintProgress]);
 
   useEffect(() => {
+    // Reduced motion stops the carousel advancing at all. The loop is neither
+    // framer (so the global `MotionConfig reducedMotion` misses it) nor a CSS
+    // animation (so the `@media (prefers-reduced-motion: reduce) *` reset misses
+    // it too) — so without this a visitor who asked for less motion got an
+    // unrequested full-width carousel moving every six seconds. That is exactly
+    // what the preference is asking not to be shown.
+    if (reduced) return;
     if (!emblaApi || !isInView || isPaused) return;
     const p = progressRef.current;
     p.lastTick = performance.now();
@@ -62,13 +83,13 @@ export function NewsHero({ articles }: NewsHeroProps) {
       if (p.elapsed >= AUTO_ADVANCE_MS) {
         emblaApi.scrollNext();
       } else {
-        setProgress(p.elapsed / AUTO_ADVANCE_MS);
+        paintProgress(p.elapsed / AUTO_ADVANCE_MS);
         rafId = requestAnimationFrame(tick);
       }
     };
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [emblaApi, isInView, isPaused, selectedIndex]);
+  }, [emblaApi, isInView, isPaused, selectedIndex, reduced, paintProgress]);
 
   if (articles.length === 0) return null;
 
@@ -156,11 +177,9 @@ export function NewsHero({ articles }: NewsHeroProps) {
                 >
                   {index === selectedIndex && (
                     <span
+                      ref={barRef}
                       className="absolute inset-0 rounded-site bg-site-accent"
-                      style={{
-                        transform: `scaleX(${progress})`,
-                        transformOrigin: 'left',
-                      }}
+                      style={{ transform: 'scaleX(0)', transformOrigin: 'left' }}
                     />
                   )}
                 </span>

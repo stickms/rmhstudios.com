@@ -9,7 +9,7 @@ import {
   useMemo,
 } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useLocation } from '@tanstack/react-router';
+import { useLocation, useRouterState } from '@tanstack/react-router';
 import { MotionConfig, LazyMotion } from 'framer-motion';
 import { Toaster } from 'sonner';
 import { authClient } from '@/lib/auth-client';
@@ -241,6 +241,13 @@ export const THEME_EXCLUDED_ROUTES = [
   // Daylight-white <html> under a page that has gone dark, which a desktop
   // hides and every phone overscroll reveals.
   '/sohumtracker',
+  // Discord Activities — the gateway picker, RMHbox and Lights Out, each in
+  // Discord's own palette. Full-screen games like every other entry here, but in
+  // no catalog because they only make sense inside Discord's iframe. Unlisted,
+  // they were the one game tier that received the SITE theme: a Graphite or
+  // accent pick restyled the root after hydration, and `html:not(.app-route)`
+  // reserved a scrollbar gutter beside a page that never scrolls.
+  '/discord',
 ].filter((href) => href.startsWith('/'));
 
 /**
@@ -483,16 +490,41 @@ export function Providers({
       .catch(() => {});
   }, [userId]);
 
-  const isAppRoute = isAppThemeRoute(pathname);
+  // A 404 the ROOT renders is a site page whatever its URL: `NotFound` is drawn
+  // in `--site-*` tokens, so an app-tier ground under it is a dark field around a
+  // Daylight card. The pre-paint script makes the same call from the same flag
+  // (`notFoundThemeScript` in `__root.tsx`), so the two agree from frame 0.
+  const globalNotFound = useRouterState({ select: (s) => s.matches[0]?.globalNotFound === true });
+  const isAppRoute = isAppThemeRoute(pathname) && !globalNotFound;
 
-  // Toggle app-route class so CSS can disable scrollbar-gutter on game/app pages
+  // `html.app-route` resolves the site surfaces to their opaque twins, withholds
+  // `scrollbar-gutter: stable` and gates the aurora off — all three visible from
+  // the first frame, all three in `app/globals.css`.
+  //
+  // The class is now stamped pre-paint by `themeScript` in `__root.tsx` from the
+  // same `app` boolean that picks the ground, so on a hard load this `toggle`
+  // runs with an unchanged value and does not invalidate style. It is kept — and
+  // must be — for the two cases the inline script cannot reach: a CLIENT
+  // navigation from a site page into a game (the script runs once per document,
+  // not once per route) and the recovery path if that script threw. Before the
+  // pre-paint stamp existed this was the only writer, so every game loaded with
+  // translucent surfaces over its own backdrop, a reserved scrollbar gutter and a
+  // live aurora, then snapped out of all three after hydration. See the
+  // `app-route` section of that script's docblock.
   useEffect(() => {
     document.documentElement.classList.toggle('app-route', isAppRoute);
   }, [isAppRoute]);
 
-  // Resolve the device effect tier once. `html.perf-lite` is read by the aurora
+  // Re-assert the device effect tier. `html.perf-lite` is read by the aurora
   // layers, the radial blob field, the GL tier gate, glass-lens, canvas2d-fx and
   // the liquid morph/pop motions — see lib/perf-tier.ts.
+  //
+  // The class is now applied pre-paint by PERF_TIER_SCRIPT in `__root.tsx`, so
+  // this is a no-op on every normal load (`toggle` with an unchanged value does
+  // not invalidate style) and exists only as the recovery path if that inline
+  // script threw. It must NOT be removed and it must NOT become the primary
+  // stamp again: from here the class lands after hydration, which is precisely
+  // the load window the tier is supposed to make cheap.
   useEffect(() => applyPerfTier(), []);
 
   // Scrollbars reveal on scroll rather than sitting on screen permanently
@@ -930,14 +962,23 @@ export function Providers({
                   // own stacking. A plain translucent --site-surface with no
                   // blur would let the page ghost through the message.
                   style: {
-                    background:
-                      'color-mix(in srgb, var(--site-surface-opaque, var(--site-surface)) 82%, transparent)',
+                    // The SAME expression `.glass-overlay` uses (globals.css
+                    // §L4), not a third answer. This was a flat 82% of
+                    // `--site-surface-opaque`, which meant a toast was thinner
+                    // than every other floating surface, had no legibility
+                    // floor, and — unlike the tier — ignored the Glass clarity
+                    // slider entirely. A toast is the one L4 surface that
+                    // appears unbidden and is gone in four seconds, so it is the
+                    // last one that can afford to ghost.
+                    background: 'var(--site-glass-overlay-fill)',
                     backdropFilter:
                       'blur(calc(var(--site-glass-blur-overlay) * var(--glass-blur-factor, 1))) saturate(var(--site-glass-saturate))',
                     WebkitBackdropFilter:
                       'blur(calc(var(--site-glass-blur-overlay) * var(--glass-blur-factor, 1))) saturate(var(--site-glass-saturate))',
                     border: '1px solid var(--site-border)',
-                    borderRadius: 'var(--site-radius-sm)',
+                    // A toast is a panel, not a control: `--site-radius`, the
+                    // same curve every other floating panel takes.
+                    borderRadius: 'var(--site-radius)',
                     boxShadow: 'var(--site-shadow)',
                     color: 'var(--site-text)',
                   },

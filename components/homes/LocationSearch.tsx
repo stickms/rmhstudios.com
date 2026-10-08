@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Loader2, MapPin, Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { usePopPresence } from '@/hooks/usePopPresence';
+import { AnchoredMenu } from '@/components/ui/anchored-menu';
 
 export interface HomesPlace {
   label: string;
@@ -42,7 +42,6 @@ export function LocationSearch({
   // The RESULTS are what is held through the close, not just a flag: choosing a
   // suggestion clears the list on the same tick it closes the menu, and a list
   // that emptied itself mid-exit would collapse to a bare pill on the way out.
-  const list = usePopPresence(open && results.length > 0 ? results : null);
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -123,26 +122,41 @@ export function LocationSearch({
         )}
       </div>
 
-      {list.present && (
-        <ul
-          data-motion="pop"
-          data-state={list.state}
-          className="absolute z-30 mt-1.5 max-h-72 w-full origin-top overflow-auto glass-overlay py-1"
-        >
-          {list.present.map((r, i) => (
-            <li key={`${r.lat},${r.lng},${i}`}>
-              <button
-                type="button"
-                onClick={() => choose(r)}
-                className="flex w-full items-start gap-2 px-3 py-2 text-left text-sm text-site-text transition-colors hover:bg-site-surface-hover"
-              >
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-site-text-dim" />
-                <span className="line-clamp-2">{r.label}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      {/* The suggestion list PORTALS, and on this screen that is a functional
+          fix rather than a tidy-up. It used to be `absolute z-30` inside the
+          page, i.e. inside `.radial-frame`'s stacking context (pinned at 1),
+          with no collision flip and no viewport fit — so on a short viewport
+          the list ran down into the bottom 76px where the hub orb lives at
+          z-80, and a tap on an address behind the orb's accent disc did not
+          select the address: it OPENED THE RADIAL NAVIGATION OVERLAY.
+
+          `focusOnOpen={false}` because this is an autocomplete: the panel opens
+          while the user is still typing, and pulling focus out of the field on
+          the first keystroke would make it impossible to type in. */}
+      <AnchoredMenu
+        open={open && results.length > 0}
+        onClose={() => setOpen(false)}
+        anchorRef={boxRef}
+        role="listbox"
+        align="start"
+        focusOnOpen={false}
+        label={placeholder ?? 'Location suggestions'}
+        className="w-[var(--anchored-menu-anchor-w)] max-h-72"
+      >
+        {results.map((r, i) => (
+          <button
+            key={`${r.lat},${r.lng},${i}`}
+            type="button"
+            role="option"
+            aria-selected={false}
+            onClick={() => choose(r)}
+            className="flex w-full min-h-9 pointer-coarse:min-h-11 items-start gap-2.5 rounded-site-sm px-3 py-2 text-left text-sm text-site-text transition-colors duration-site hover:bg-site-surface-hover focus-visible:bg-site-surface-hover"
+          >
+            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-site-text-dim" aria-hidden />
+            <span className="line-clamp-2">{r.label}</span>
+          </button>
+        ))}
+      </AnchoredMenu>
     </div>
   );
 }

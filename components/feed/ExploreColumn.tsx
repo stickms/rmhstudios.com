@@ -243,7 +243,7 @@ export function ExploreColumn({
   const exploreTab: ExploreTab = (EXPLORE_TABS.has(tab) ? tab : 'top') as ExploreTab;
 
   return (
-    <div className="min-h-screen">
+    <div>
       {/* Tabs first, then the field — the shared page order (`PageTabs`). The
           field is an ordinary control that filters within whichever tab is
           selected, not the page's header; the title is `PageLayout`'s. */}

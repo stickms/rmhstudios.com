@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { History, Trash2, Play } from 'lucide-react';
 
-import { cn, timeAgoShort } from '@/lib/utils';
+import { timeAgoShort } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -13,7 +13,6 @@ import { IconButton } from '@/components/ui/icon-button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { useConfirm } from '@/components/ui/confirm-dialog';
-import { HorizontalScroller } from '@/components/ui/horizontal-scroller';
 import {
   HISTORY_ENTITY_TYPES,
   progressRatio,
@@ -21,6 +20,7 @@ import {
   type HistoryEntityType,
 } from '@/lib/history/constants';
 import type { HistoryView } from '@/lib/history/history.server';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
 
 interface HistoryData {
   items: HistoryView[];
@@ -108,23 +108,6 @@ export function HistoryList({ initial }: { initial: HistoryData }) {
     }
   }
 
-  const chip = (value: HistoryEntityType | 'all', label: string) => (
-    <button
-      key={value}
-      type="button"
-      onClick={() => setFilter(value)}
-      aria-pressed={filter === value}
-      className={cn(
-        'shrink-0 rounded-full px-3 py-1.5 text-sm transition-colors',
-        filter === value
-          ? 'bg-site-accent text-site-accent-fg'
-          : 'glass-fill text-site-text-muted hover:border-site-border-bright',
-      )}
-    >
-      {label}
-    </button>
-  );
-
   return (
     <div className="px-4 pt-4 pb-12">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -138,14 +121,25 @@ export function HistoryList({ initial }: { initial: HistoryData }) {
         </Button>
       </div>
 
-      <HorizontalScroller
-        aria-label={t('filter-history', { defaultValue: 'Filter history' })}
+      {/* A scrolling row of mutually-exclusive filter chips is a tab strip.
+          `LiquidTabs scroll` is the shared renderer AND the shared scroller, so
+          this drops both the `chip()` helper — which was byte-identical to the
+          one in `SavesHub`, copy-pasted between two files — and the
+          `HorizontalScroller` wrapping it. */}
+      <LiquidTabs
+        tabs={[
+          { id: 'all', label: t('all', { defaultValue: 'All' }) },
+          ...HISTORY_ENTITY_TYPES.map((type) => ({
+            id: type,
+            label: t(`type-${type}`, { defaultValue: type }),
+          })),
+        ]}
+        value={filter}
+        onChange={(id) => setFilter(id as HistoryEntityType | 'all')}
+        scroll
         className="mb-4"
-        surface="pill"
-      >
-        {chip('all', t('all', { defaultValue: 'All' }))}
-        {HISTORY_ENTITY_TYPES.map((type) => chip(type, t(`type-${type}`, { defaultValue: type })))}
-      </HorizontalScroller>
+        aria-label={t('filter-history', { defaultValue: 'Filter history' })}
+      />
 
       {items.length === 0 && !loading ? (
         <EmptyState

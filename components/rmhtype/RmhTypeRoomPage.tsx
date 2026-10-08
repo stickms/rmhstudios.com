@@ -451,7 +451,7 @@ export default function RmhTypeRoom() {
                 disabled={finished}
                 className="shrink-0 w-full px-4 py-3 rounded-lg font-mono border border-(--app-border) bg-(--app-bg) text-(--app-text) outline-none focus:ring-1 focus:ring-(--app-accent) rmhtype-typing-input"
                 autoFocus
-                placeholder={finished ? t("waiting-for-others", { defaultValue: "Waiting for others..." }) : t("start-typing", { defaultValue: "Start typing..." })}
+                placeholder={finished ? t("waiting-for-others", { defaultValue: "Waiting for others..." }) : t("start-typing-rmh-type-room-page", { defaultValue: "Start typing..." })}
               />
 
               {/* Progress bars — hidden on short viewports via CSS */}

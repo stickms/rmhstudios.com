@@ -37,6 +37,7 @@ import urCNews from "@/locales/ur/c-news.json";
 import urCNightrail from "@/locales/ur/c-nightrail.json";
 import urCPredictions from "@/locales/ur/c-predictions.json";
 import urCProfileModules from "@/locales/ur/c-profile-modules.json";
+import urCRebarRutabaga from "@/locales/ur/c-rebar-rutabaga.json";
 import urCRideshare from "@/locales/ur/c-rideshare.json";
 import urCRmhCapital from "@/locales/ur/c-rmh-capital.json";
 import urCRmhPmc from "@/locales/ur/c-rmh-pmc.json";
@@ -81,6 +82,7 @@ import urRRmhcode from "@/locales/ur/r-rmhcode.json";
 import urRSecret from "@/locales/ur/r-secret.json";
 import urRSliceIt from "@/locales/ur/r-slice-it.json";
 import urRSohumbum from "@/locales/ur/r-sohumbum.json";
+import urRSohumtracker from "@/locales/ur/r-sohumtracker.json";
 import urRStrategies from "@/locales/ur/r-strategies.json";
 import urRStudio from "@/locales/ur/r-studio.json";
 import urRideshare from "@/locales/ur/rideshare.json";
@@ -131,6 +133,7 @@ const urResources = {
   "c-nightrail": urCNightrail,
   "c-predictions": urCPredictions,
   "c-profile-modules": urCProfileModules,
+  "c-rebar-rutabaga": urCRebarRutabaga,
   "c-rideshare": urCRideshare,
   "c-rmh-capital": urCRmhCapital,
   "c-rmh-pmc": urCRmhPmc,
@@ -175,6 +178,7 @@ const urResources = {
   "r-secret": urRSecret,
   "r-slice-it": urRSliceIt,
   "r-sohumbum": urRSohumbum,
+  "r-sohumtracker": urRSohumtracker,
   "r-strategies": urRStrategies,
   "r-studio": urRStudio,
   "rideshare": urRideshare,

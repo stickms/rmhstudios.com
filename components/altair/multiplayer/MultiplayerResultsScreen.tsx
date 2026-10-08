@@ -42,7 +42,7 @@ export default function MultiplayerResultsScreen({
             <p className="text-(--altair-text-muted) mt-2 text-sm">
               {results.sharedKills} kills | {Math.floor(results.timeSurvived / 60)}:{String(Math.floor(results.timeSurvived % 60)).padStart(2, '0')} survived
               {results.bossesDefeated.length > 0 && ` | ${results.bossesDefeated.length} boss${results.bossesDefeated.length > 1 ? 'es' : ''} defeated`}
-              {results.doubleTime && ` | ${t("double-time", { defaultValue: "Double Time" })}`}
+              {results.doubleTime && ` | ${t("double-time-lobby-waiting", { defaultValue: "Double Time" })}`}
             </p>
           </div>
 

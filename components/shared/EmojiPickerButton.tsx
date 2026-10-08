@@ -1,9 +1,9 @@
 'use client';
 
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useRef, useState } from 'react';
 import { Smile } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { usePopPresence } from '@/hooks/usePopPresence';
+import { AnchoredMenu } from '@/components/ui/anchored-menu';
 
 const EmojiPickerPanel = lazy(() => import('./EmojiPickerPanel'));
 
@@ -35,30 +35,14 @@ export function EmojiPickerButton({
 }: EmojiPickerButtonProps) {
   const { t } = useTranslation('feed');
   const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-  // The shared bloom (globals.css §7.1) — held mounted for its close.
-  const { present, state } = usePopPresence(open);
-
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (e: MouseEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('mousedown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [open]);
+  // Outside-press dismissal, Escape, the close animation and the presence hold
+  // all live in AnchoredMenu now — this file used to carry its own copy of the
+  // first two, and the outside test was against a `rootRef` the panel no longer
+  // renders inside.
 
   return (
-    <div ref={rootRef} className={`relative ${className}`}>
+    <div className={`relative ${className}`}>
       <button
         ref={triggerRef}
         type="button"
@@ -70,20 +54,37 @@ export function EmojiPickerButton({
       >
         <Smile className="w-5 h-5" />
       </button>
-      {present && (
-        <div
-          ref={panelRef}
-          data-motion="pop"
-          data-state={state}
-          // The picker renders its own emoji and re-renders as you scroll/pick;
-          // exclude it from the app-wide twemoji observer so it never rewrites a
-          // node the picker owns (which crashes React) and never walks its huge
-          // subtree on every scroll mutation.
-          data-no-twemoji
-          className={`absolute right-0 z-50 ${
-            direction === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'
-          }`}
-        >
+      {/* PORTALLED, because the 300x360 panel is bigger than the boxes it opens
+          inside. Every host — EditPostModal, ProfileEditModal, ComposeModal — is
+          a `.glass-overlay`, which declares `overflow-y: auto`; `overflow-y:
+          auto` with a visible `overflow-x` computes overflow-x to `auto` too, so
+          BOTH axes clip. The worst case is EditPostModal, where the trigger is
+          pinned to the LEFT of the footer (`mr-auto`) while this panel is
+          right-anchored: most of the emoji grid was cut off at the dialog border
+          with no way to scroll to it.
+
+          z-60 at body level, not the old local z-50, because it has to clear the
+          z-50 dialog it was opened from — the same band `Select` uses for
+          exactly that reason. `focusOnOpen={false}`: the panel has its own
+          search field and grid, and pulling focus to the first cell would skip
+          it. AnchoredMenu also supplies the collision flip that `direction` was
+          approximating by hand, so the caller's preference is now a hint that
+          gets overridden when the chosen side has no room. */}
+      <AnchoredMenu
+        open={open}
+        onClose={() => setOpen(false)}
+        anchorRef={triggerRef}
+        side={direction === 'up' ? 'top' : 'bottom'}
+        align="end"
+        focusOnOpen={false}
+        label={t('emoji-picker-open', { defaultValue: 'Add emoji' })}
+        // The picker renders its own emoji and re-renders as you scroll/pick;
+        // exclude it from the app-wide twemoji observer so it never rewrites a
+        // node the picker owns (which crashes React) and never walks its huge
+        // subtree on every scroll mutation.
+        className="z-[60] p-0"
+      >
+        <div data-no-twemoji>
           <Suspense
             fallback={
               <div className="w-[300px] h-[360px] rounded-site border border-site-border bg-site-bg animate-pulse" />
@@ -92,7 +93,7 @@ export function EmojiPickerButton({
             <EmojiPickerPanel onSelect={onSelect} />
           </Suspense>
         </div>
-      )}
+      </AnchoredMenu>
     </div>
   );
 }

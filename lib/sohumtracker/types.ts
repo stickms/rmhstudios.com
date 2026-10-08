@@ -104,6 +104,7 @@ export interface WatchDayDTO {
   /** 24 entries, index 0 = local midnight. Null when the day predates them. */
   hourlyMessages: number[] | null;
   hourlyVoiceSec: number[] | null;
+  hourlyGamingSec: number[] | null;
 
   firstSeenAt: string | null;
   lastSeenAt: string | null;

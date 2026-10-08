@@ -144,8 +144,6 @@ function resetLibraryOrbit(element: HTMLElement | null) {
   if (!element) return;
   element.style.setProperty('--lib-orbit-x', '0deg');
   element.style.setProperty('--lib-orbit-y', '0deg');
-  element.style.setProperty('--lib-orbit-glow-x', '50%');
-  element.style.setProperty('--lib-orbit-glow-y', '50%');
   element.removeAttribute('data-orbit-active');
 }
 
@@ -175,10 +173,18 @@ function useLibraryOrbit() {
     const rect = target.getBoundingClientRect();
     const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
     const y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
+    // The two ROTATIONS stay: a tilt is a transform, which composites, and this
+    // is direct manipulation of the object under the finger — the one thing
+    // design.md §3 keeps when it retires cursor tracking.
+    //
+    // The two GLOW writes are gone. They moved the centre of a `radial-gradient`
+    // (library.css), and a gradient's position is PAINT: following the pointer
+    // re-rasterised the whole tile on every move, across a grid of them, which
+    // is exactly the cost §3 names when it says nothing slides a gradient. The
+    // glow is centred now and reads as the light on the object, which is what
+    // the rest of the site's glass does.
     target.style.setProperty('--lib-orbit-x', `${((0.5 - y) * 7).toFixed(2)}deg`);
     target.style.setProperty('--lib-orbit-y', `${((x - 0.5) * 8).toFixed(2)}deg`);
-    target.style.setProperty('--lib-orbit-glow-x', `${(x * 100).toFixed(1)}%`);
-    target.style.setProperty('--lib-orbit-glow-y', `${(y * 100).toFixed(1)}%`);
     target.setAttribute('data-orbit-active', '');
   };
 

@@ -17,9 +17,20 @@ import { join } from 'node:path';
  *     file that spins a rAF loop forever while the page is at rest.
  *   - a listed file no longer uses rAF → remove it from the list (keep it honest).
  *
- * The shared MOTION-TIER files below are the freeze-relevant ones (they mount on
- * every page); each is verified idle-at-rest / one-shot:
+ * The shared MOTION-TIER files below are the freeze-relevant ones; each is
+ * verified idle-at-rest / one-shot:
  *   - components/ui/liquid-morph.tsx  — idle sampler, stops after SETTLE_FRAMES.
+ *                                       NOT a shared motion-tier file, despite
+ *                                       having been listed as one that "mounts on
+ *                                       every page": its only consumer is the
+ *                                       internal /liquid-glass demo route. The
+ *                                       entry stays because the rAF is real and
+ *                                       still needs sanctioning; the CLAIM is
+ *                                       corrected, because an allowlist whose
+ *                                       reasons are wrong is one nobody can audit.
+ *                                       `liquid-tabs.tsx:243` — the component its
+ *                                       docblock names first — uses a plain
+ *                                       `layoutId` spring and no morph at all.
  *   - components/ui/liquid-tabs.tsx   — one-shot rAF to move focus after a tab key.
  *   - hooks/useLiquidBackground.ts    — rAF used as a per-event THROTTLE
  *                                       (one-shot). `useGlassLight.ts`,
@@ -52,6 +63,37 @@ import { join } from 'node:path';
  *                                       transform/opacity/custom properties, skips
  *                                       every write on a frame where nothing moved,
  *                                       and reads no layout.
+ *   - components/rideshare/cars/LiquidCarStage.tsx — the RMH family of cars'
+ *                                       turntable. Idle-at-rest by construction
+ *                                       and NOT bounded by mount, which matters
+ *                                       because unlike the globe it sits on a
+ *                                       content page you might read for a
+ *                                       minute: the scene's `frame()` returns
+ *                                       false the instant the throw has settled,
+ *                                       the wobble has died and the last ripple
+ *                                       has expired, and the loop is not
+ *                                       rescheduled. Drag, poke, a body swap, a
+ *                                       resize and a theme change each start it
+ *                                       again. There is deliberately no idle
+ *                                       spin, so a car nobody is touching runs
+ *                                       no loop at all; an IntersectionObserver
+ *                                       stops it off-screen on top of that, and
+ *                                       the effect cancels the pending frame on
+ *                                       unmount.
+ *   - components/rmhfashion/FashionStage.tsx — RMH Fashion's figure turntable.
+ *                                       The same construction as the car stage
+ *                                       above and idle-at-rest for the same
+ *                                       reason: `frame()` returns false once the
+ *                                       throw has settled, the sway has died and
+ *                                       the last ripple has expired, and the
+ *                                       loop is not rescheduled. Dressing,
+ *                                       dyeing, a figure slider, a drag, a poke
+ *                                       and a theme change each start it again.
+ *                                       There is no idle spin, so a dressed
+ *                                       figure nobody is touching runs no loop;
+ *                                       an IntersectionObserver stops it
+ *                                       off-screen, and the effect cancels the
+ *                                       pending frame on unmount.
  *   - components/temple-of-joy/TempleGlobes.tsx — the temple's globe field: the
  *                                       spin/ripple/wobble loop for one to eight
  *                                       liquid globes. Bounded by MOUNT, like the
@@ -115,6 +157,24 @@ const ALLOW = new Set<string>([
   // where the frame outlives the screen.
   'components/bums-rush/useLevelSession.ts',
   'components/cursed-logic/MinigameOverlay.tsx',
+  // GlobeSet's globe: the seven cards of the daily deal pinned to a sphere you
+  // turn. Idle-at-rest, which is the standard this has to meet because /daily
+  // is a game surface a player leaves open. A frame is scheduled only while a
+  // finger is down, while the release is still coasting (the coast decays to a
+  // hard REST_DEG_PER_S floor, then stops), while a focused card is gliding to
+  // the front (which converges and clears its own target), or while the
+  // gyroscope is live — and the sensor's own loop is the one in
+  // `useDeviceAttitude`, already listed below. The effect that starts it
+  // returns a teardown whose first statement is `cancelAnimationFrame`, so
+  // switching to the flat board or leaving the page ends it.
+  // Dunesday 7 desktop: the draggable soap-bubble physics (BubbleWorld) and the
+  // wallpaper parallax throttle (`rafThrottle`, one-shot per pointer event). The
+  // bubble loop is a self-contained toy like the games': it runs only while the
+  // desktop (or the screen saver) is mounted, skips frames while
+  // `document.hidden`, is never started under reduced motion, and is cancelled
+  // on unmount. Transform-only, writes nothing to <html>.
+  'components/dunesday/os/frame.ts',
+  'components/daily-puzzles/globeset/GlobeSetGlobe.tsx',
   'components/dream-rift/MenuBackdrop.tsx',
   // One-shot, not a loop: a single deferred frame that restores the caret after
   // a smart-paste rewrites the textarea value (B16). It schedules no successor,
@@ -126,9 +186,10 @@ const ALLOW = new Set<string>([
   'components/forest-explorer/story/StoryGame.tsx',
   'components/forest-explorer/story/StoryNarration.tsx',
   'components/forest-explorer/story/StoryToast.tsx',
-  // The ONE loop behind the debt counter's three spatial views (the 3D terrain,
-  // the 4D projection and the debt globe). It is a `_site` page rather than a
-  // game, so it is held to the idle-at-rest standard and meets it three times
+  // The ONE loop behind every canvas view on the site tier: the debt counter's
+  // three spatial views (the 3D terrain, the 4D projection and the debt globe)
+  // and the Rebar & Rutabaga menu globe. These are `_site` pages rather than
+  // games, so it is held to the idle-at-rest standard and meets it three times
   // over: a frame is scheduled only while the canvas is intersecting AND the tab
   // is foreground AND either React says it is animating or the renderer's own
   // return value says it has not settled. That last channel is what lets a
@@ -137,7 +198,7 @@ const ALLOW = new Set<string>([
   // inside the loop. Cancelled on unmount, on leaving the viewport, and on the
   // tab going to the background. A page parked on the analytics panel with
   // nothing moving schedules no frames at all.
-  'components/kaikai-debt/stats/canvas-stage.ts',
+  'hooks/useCanvasStage.ts',
   'components/slice-it/GameCanvas.tsx',
   'components/slice-it/HUD.tsx',
   // Replay playback (R4). Idle at rest: the loop only exists while the replay
@@ -170,6 +231,8 @@ const ALLOW = new Set<string>([
   'components/neon-driftway/NeonDriftwayGame.tsx',
   'components/nightrail/NightrailGame.tsx',
   'components/news/NewsHero.tsx',
+  'components/rideshare/cars/LiquidCarStage.tsx',
+  'components/rmhfashion/FashionStage.tsx',
   'components/rmh-capital/ContactPage.tsx',
   // `components/rmh-capital/shared.tsx` came OUT on 2026-08-12: its rAF was the
   // deferred `querySelectorAll` inside `useReveal(key)`, and the reveal is now a

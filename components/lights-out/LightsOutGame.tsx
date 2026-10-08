@@ -28,7 +28,7 @@ import {
 } from '@/lib/lights-out/persistence';
 import { getPerformanceRating, generateShareText } from '@/lib/lights-out/share';
 import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLeaderboard';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import { fetchResultFromServer, saveResult as saveGenericResult } from '@/lib/daily-puzzles/persistence';
 import {
     Sparkles, RotateCcw, Trophy, Undo2, Lightbulb, Flag,
@@ -113,7 +113,7 @@ export function LightsOutGame() {
     }, [dateKey, initPuzzle, shape, seed, computeOptimal]);
 
     // Sync from server for signed-in users
-    const session = authClient.useSession();
+    const session = useSession();
 
     useEffect(() => {
         if (!session.data || !isToday) return;
@@ -254,10 +254,29 @@ export function LightsOutGame() {
         setShowHistory(false);
     };
 
+    // The loading state wears the board's own frame — `.app-page`, the column and
+    // the back link — so the board arrives INTO it. It used to be a bare centred
+    // "Loading..." box; React reused that div as the board's column when the
+    // effect above built the grid, so a 100x33 box became a 640x769 column and its
+    // padding landed a frame later: 0.10 of layout shift under the 125% font
+    // scale, measured by testing/e2e/fouc.mjs (docs/fouc-audit-2026-10-06.md §9).
+    // The grid is built in an effect rather than server-rendered because today's
+    // puzzle depends on the visitor's LOCAL date, which the server cannot know.
     if (!grid) {
         return (
-            <div className="min-h-100 flex items-center justify-center">
-                <div className="animate-pulse text-site-text-muted">{t("loading", { defaultValue: "Loading..." })}</div>
+            <div className="app-page">
+            <div className="max-w-lg mx-auto w-full px-4 py-8">
+                <Link
+                    to="/daily"
+                    className="inline-flex items-center gap-1.5 text-site-text-muted hover:text-site-text text-sm mb-6 transition-colors"
+                >
+                    <ArrowLeft className="w-4 h-4" />
+                    {t("back-to-daily-puzzles", { defaultValue: "Back to Daily Puzzles" })}
+                </Link>
+                <div className="min-h-100 flex items-center justify-center">
+                    <div className="animate-pulse text-site-text-muted">{t("loading", { defaultValue: "Loading..." })}</div>
+                </div>
+            </div>
             </div>
         );
     }
@@ -272,7 +291,24 @@ export function LightsOutGame() {
         : null;
 
     return (
-        <div className="max-w-lg mx-auto px-4 py-8">
+        // `.app-page` is the contract for exactly what this is: a full-screen
+        // screen that is a DOCUMENT (app/globals.css §"Full-screen app/game
+        // layout helpers"). This was a bare `max-w-lg mx-auto` column, which cost
+        // 0.182 of layout shift after first contentful paint — measured by
+        // `testing/e2e/fouc.mjs` against a 0.1 budget — and the cause was not the
+        // column's height but the SCROLLBAR. `/daily` is in the games catalog, so
+        // `html.app-route` withholds `scrollbar-gutter: stable`; when the puzzle's
+        // content grew past the window the document gained a scrollbar, the
+        // viewport narrowed by its width, and `mx-auto` re-centred the whole
+        // column sideways in front of the reader. `.app-page` is the documented
+        // exception that takes the gutter back (`html.app-route:has(.app-page)`),
+        // and it brings the rest of the contract with it: `100svh` rather than
+        // `100vh` as the floor, so a short puzzle fills the window without
+        // inventing a scrollbar on a phone, plus the home-indicator inset on the
+        // last row. The column stays nested inside it so the flex direction
+        // applies to the page and not to the puzzle's own rows.
+        <div className="app-page">
+        <div className="max-w-lg mx-auto w-full px-4 py-8">
             {/* Back to Daily Puzzles */}
             <Link
                 to="/daily"
@@ -635,7 +671,7 @@ export function LightsOutGame() {
                                                                 p.save.dnf ? 'text-site-danger' : 'text-amber-400'
                                                             }`}
                                                         >
-                                                            {p.save.dnf ? 'DNF' : t("moves-count", { defaultValue: "{{count}} moves", count: p.save.moves })}
+                                                            {p.save.dnf ? 'DNF' : t("moves-count", { defaultValue_one: "{{count}} move", defaultValue: "{{count}} moves", count: p.save.moves })}
                                                         </span>
                                                     </>
                                                 ) : (
@@ -657,6 +693,7 @@ export function LightsOutGame() {
                     )}
                 </AnimatePresence>
             </div>
+        </div>
         </div>
     );
 }

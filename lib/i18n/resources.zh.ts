@@ -37,6 +37,7 @@ import zhCNews from "@/locales/zh/c-news.json";
 import zhCNightrail from "@/locales/zh/c-nightrail.json";
 import zhCPredictions from "@/locales/zh/c-predictions.json";
 import zhCProfileModules from "@/locales/zh/c-profile-modules.json";
+import zhCRebarRutabaga from "@/locales/zh/c-rebar-rutabaga.json";
 import zhCRideshare from "@/locales/zh/c-rideshare.json";
 import zhCRmhCapital from "@/locales/zh/c-rmh-capital.json";
 import zhCRmhPmc from "@/locales/zh/c-rmh-pmc.json";
@@ -83,6 +84,7 @@ import zhRRmhcode from "@/locales/zh/r-rmhcode.json";
 import zhRSecret from "@/locales/zh/r-secret.json";
 import zhRSliceIt from "@/locales/zh/r-slice-it.json";
 import zhRSohumbum from "@/locales/zh/r-sohumbum.json";
+import zhRSohumtracker from "@/locales/zh/r-sohumtracker.json";
 import zhRStrategies from "@/locales/zh/r-strategies.json";
 import zhRStudio from "@/locales/zh/r-studio.json";
 import zhRideshare from "@/locales/zh/rideshare.json";
@@ -133,6 +135,7 @@ const zhResources = {
   "c-nightrail": zhCNightrail,
   "c-predictions": zhCPredictions,
   "c-profile-modules": zhCProfileModules,
+  "c-rebar-rutabaga": zhCRebarRutabaga,
   "c-rideshare": zhCRideshare,
   "c-rmh-capital": zhCRmhCapital,
   "c-rmh-pmc": zhCRmhPmc,
@@ -179,6 +182,7 @@ const zhResources = {
   "r-secret": zhRSecret,
   "r-slice-it": zhRSliceIt,
   "r-sohumbum": zhRSohumbum,
+  "r-sohumtracker": zhRSohumtracker,
   "r-strategies": zhRStrategies,
   "r-studio": zhRStudio,
   "rideshare": zhRideshare,

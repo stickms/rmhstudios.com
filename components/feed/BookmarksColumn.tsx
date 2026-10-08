@@ -53,7 +53,7 @@ export function BookmarksColumn({
  };
 
  return (
- <div className="min-h-screen">
+ <div>
  <ColumnHeader icon={Bookmark} title={t('bookmarks-title', { defaultValue:'Bookmarks'})} />
 
  {loading && (

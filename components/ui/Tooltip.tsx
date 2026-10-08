@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { usePopPresence } from '@/hooks/usePopPresence';
 import { createPortal } from 'react-dom';
-import { m as motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { DURATION, EASE } from '@/lib/motion';
 
 interface TooltipProps {
  content: React.ReactNode;
@@ -26,6 +25,8 @@ interface TooltipProps {
 /** Keep-on-screen inset, and how close the arrow may get to the bubble's corner. */
 const VIEWPORT_MARGIN = 8;
 const ARROW_INSET = 12;
+/** Gap between the trigger and the bubble — the 8px the transform already used. */
+const ARROW_GAP = 8;
 
 export function Tooltip({ content, children, className, delay = 0.2 }: TooltipProps) {
  const [isVisible, setIsVisible] = useState(false);
@@ -34,6 +35,10 @@ export function Tooltip({ content, children, className, delay = 0.2 }: TooltipPr
  const [centre, setCentre] = useState<number | null>(null);
  // How far the arrow moves to keep pointing at the trigger after that clamp.
  const [arrowDx, setArrowDx] = useState(0);
+ /** Flipped below the trigger because there was no room above it. */
+ const [below, setBelow] = useState(false);
+ // Holds the bubble mounted for the length of its close (globals.css §7.1).
+ const { present, state } = usePopPresence(isVisible);
  const triggerRef = useRef<HTMLSpanElement>(null);
  const bubbleRef = useRef<HTMLDivElement>(null);
  const [mounted, setMounted] = useState(false);
@@ -75,6 +80,7 @@ export function Tooltip({ content, children, className, delay = 0.2 }: TooltipPr
  setIsVisible(false);
  setCentre(null);
  setArrowDx(0);
+ setBelow(false);
  }, []);
 
  useEffect(() => {
@@ -108,6 +114,14 @@ export function Tooltip({ content, children, className, delay = 0.2 }: TooltipPr
  if (!isVisible) return;
  const el = bubbleRef.current;
  if (!el) return;
+ // WHICH SIDE. The bubble was pinned above the trigger unconditionally, so a
+ // tooltip on anything in the top row of the viewport — the shell's own top
+ // bar, the first row of a table, a sticky header — rendered off the top of
+ // the screen with its text clipped. The horizontal clamp below has always
+ // existed; this is its missing vertical half.
+ const height = el.offsetHeight;
+ setBelow(coords.top - height - ARROW_GAP < VIEWPORT_MARGIN);
+
  const half = el.offsetWidth / 2;
  const min = VIEWPORT_MARGIN + half;
  const max = window.innerWidth - VIEWPORT_MARGIN - half;
@@ -118,11 +132,9 @@ export function Tooltip({ content, children, className, delay = 0.2 }: TooltipPr
  // short of the corners so it never grows out of the bubble's rounded end.
  const limit = Math.max(0, half - ARROW_INSET);
  setArrowDx(Math.min(Math.max(coords.left - next, -limit), limit));
- }, [isVisible, coords.left, content]);
+ }, [isVisible, coords.left, coords.top, content]);
 
- const tooltipContent = (
- <AnimatePresence>
- {isVisible && (
+ const tooltipContent = present ? (
  <div
  role="tooltip"
  id={tooltipId}
@@ -134,16 +146,25 @@ export function Tooltip({ content, children, className, delay = 0.2 }: TooltipPr
  pointerEvents: 'none',
  }}
  >
- <motion.div
+ {/* `data-motion="pop"` — the site's one enter/exit vocabulary for floating
+ surfaces (globals.css §7.1), which every other popover, menu and select
+ already speaks. This was the last floating surface still animating from
+ its own framer transition, at its own timing, which is exactly the
+ "three different answers" §7.1 was opened to end. `usePopPresence`
+ supplies the close, since React unmounts this the instant it hides. */}
+ <div
  ref={bubbleRef}
- initial={{ opacity: 0, scale: 0.9, y: 0, x: "-50%" }}
- animate={{ opacity: 1, scale: 1, y: -8, x: "-50%" }}
- exit={{ opacity: 0, scale: 0.9, y: 0, x: "-50%" }}
- transition={{ duration: DURATION.fast, ease: EASE.standard }}
+ data-motion="pop"
+ data-state={state}
  style={{
  position: "absolute",
- bottom: 0,
+ bottom: below ? "auto" : 0,
+ top: below ? 0 : "auto",
  left: 0,
+ transform: `translate(-50%, ${below ? ARROW_GAP : -ARROW_GAP}px)`,
+ // The bloom scales from the edge nearest the trigger, so a flipped
+ // tooltip grows downward out of it rather than upward into it.
+ ["--motion-origin" as string]: below ? "top center" : "bottom center",
  maxWidth: `calc(100vw - ${VIEWPORT_MARGIN * 2}px)`,
  }}
  className={cn(
@@ -157,26 +178,37 @@ export function Tooltip({ content, children, className, delay = 0.2 }: TooltipPr
  )}
  >
  {content}
- {/* Arrow: a border triangle in the BORDER colour with a second, 1px-higher
- triangle in the surface colour over it, so it reads as the bubble's own
- hairline-outlined tail. A single border-coloured triangle (what this
- was) is a translucent grey notch that does not match the bubble it
- hangs off. */}
+ {/* Arrow: a border triangle in the BORDER colour with a second, 1px-inset
+ triangle in the bubble's own fill over it, so it reads as the bubble's
+ hairline-outlined tail. The fill is `--site-glass-overlay-fill`, the
+ same expression `.glass-overlay` paints with — it used to be the OPAQUE
+ `--site-bg`, which showed as a solid notch hanging off a translucent
+ bubble, and which ignored the Glass clarity slider the bubble follows.
+ A border colour cannot be a background, which is why the tier's fill
+ had to be given a name to be reachable here at all. */}
  <span
  aria-hidden
- className="absolute top-full -translate-x-1/2 border-4 border-transparent border-t-site-border"
- style={{ left: `calc(50% + ${arrowDx}px)` }}
- />
- <span
- aria-hidden
- className="absolute top-full -mt-px -translate-x-1/2 border-4 border-transparent border-t-site-bg"
- style={{ left: `calc(50% + ${arrowDx}px)` }}
- />
- </motion.div>
- </div>
+ className={cn(
+ "absolute -translate-x-1/2 border-4 border-transparent",
+ below ? "bottom-full border-b-site-border" : "top-full border-t-site-border",
  )}
- </AnimatePresence>
- );
+ style={{ left: `calc(50% + ${arrowDx}px)` }}
+ />
+ <span
+ aria-hidden
+ className={cn(
+ "absolute -translate-x-1/2 border-4 border-transparent",
+ below ? "bottom-full -mb-px" : "top-full -mt-px",
+ )}
+ style={{
+ left: `calc(50% + ${arrowDx}px)`,
+ [below ? "borderBottomColor" : "borderTopColor"]:
+ "var(--site-glass-overlay-fill)",
+ }}
+ />
+ </div>
+ </div>
+ ) : null;
 
  return (
  <>

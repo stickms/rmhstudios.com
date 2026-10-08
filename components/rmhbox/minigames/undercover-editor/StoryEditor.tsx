@@ -155,7 +155,7 @@ export default function StoryEditor({
 
       {/* Story prompt */}
       <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-3">
-        <p className="text-[10px] uppercase tracking-wider text-(--app-text-muted) mb-1">{t("prompt-label", { defaultValue: "Prompt" })}</p>
+        <p className="text-[10px] uppercase tracking-wider text-(--app-text-muted) mb-1">{t("prompt-label-story-editor", { defaultValue: "Prompt" })}</p>
         <p className="text-sm italic text-(--app-accent)">&ldquo;{editableStory.prompt}&rdquo;</p>
       </div>
 

@@ -31,7 +31,7 @@ export function RouteErrorFallback({ error, reset, info }: RouteErrorFallbackPro
  return (
  <div
  role="alert"
- className="flex min-h-dvh w-full flex-col items-center justify-center bg-site-bg px-6 py-16 text-center"
+ className="error-page flex min-h-dvh w-full flex-col items-center justify-center bg-site-bg px-6 py-16 text-center"
  >
  <div className="glass-fill flex w-full max-w-lg flex-col items-center gap-7 p-8 sm:p-10">
  <div className="glass-fill flex h-16 w-16 items-center justify-center rounded-full text-site-text">

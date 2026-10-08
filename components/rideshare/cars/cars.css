@@ -1,0 +1,57 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   The RMH family of cars — the stage's own tokens.
+
+   Only the numbers the WebGL renderer cannot read off a Tailwind class live
+   here: the three cage alphas, which are the SAME decision the navigation
+   globe's `--cage-*` tokens make (radial.css §the wireframe cage) and are stated
+   as plain numbers rather than colours so the renderer can multiply by them
+   without needing a resolved `<color>` from an engine that may not implement
+   `@property`. The ink itself is `--site-text` and `--site-accent`, read from
+   this element's own computed style, so every theme repaints the fleet.
+
+   Everything else about the stage — its surface, its radius, its border — is an
+   ordinary glass class on the element in the TSX. Nothing is hardcoded here.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.rmhcar-stage {
+  /* The globe's three tiers, a shade firmer: a 1px GL line antialiases thinner
+     than a canvas stroke of the same width, so matching the globe's numbers
+     exactly rendered the cage noticeably fainter than the cage it is quoting. */
+  --rmhcar-cage-minor: 0.28;
+  --rmhcar-cage-parallel: 0.2;
+  --rmhcar-cage-major: 0.52;
+}
+
+/* High contrast is not a darker theme, it is a LEGIBILITY mode: a wireframe at
+   22% ink is exactly the sort of thing it exists to stop shipping. The cage goes
+   to full strength and the three tiers keep only enough separation to still read
+   as three tiers. */
+.style-high-contrast .rmhcar-stage {
+  --rmhcar-cage-minor: 0.62;
+  --rmhcar-cage-parallel: 0.5;
+  --rmhcar-cage-major: 1;
+}
+
+/* The stage is a fixed-ratio box so the camera framing (which is solved against
+   the fleet's extents, not the viewport) is the same shape on every screen. */
+.rmhcar-stage {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  width: 100%;
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .rmhcar-stage {
+    aspect-ratio: 2 / 1;
+  }
+}
+
+.rmhcar-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* The whole stage is a drag surface, so the browser must not claim the gesture
+     for a scroll or a pinch first. */
+  touch-action: none;
+}

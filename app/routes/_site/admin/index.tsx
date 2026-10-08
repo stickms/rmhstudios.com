@@ -44,7 +44,7 @@ function AdminDashboardPage() {
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("user-builds-title", { defaultValue: "All User Builds" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
-              {t("user-builds-description", { defaultValue: "Moderate and search through all submitted builds from the community. Edit metadata and change visibilities." })}
+              {t("user-builds-description-index", { defaultValue: "Moderate and search through all submitted builds from the community. Edit metadata and change visibilities." })}
             </p>
           </Link>
 
@@ -71,7 +71,7 @@ function AdminDashboardPage() {
               )}
             </h2>
             <p className="text-site-text-muted text-sm mt-2">
-              {t("moderation-queue-description", { defaultValue: "Review user reports of posts, comments, profiles, and builds. Resolve, dismiss, or take content down." })}
+              {t("moderation-queue-description-index", { defaultValue: "Review user reports of posts, comments, profiles, and builds. Resolve, dismiss, or take content down." })}
             </p>
           </Link>
 

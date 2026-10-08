@@ -363,13 +363,21 @@
   inset: 0;
   z-index: 2;
   pointer-events: none;
+  /* Centred, and it stays centred. The `--mx`/`--my` this used to read were
+     written on every raw `pointermove` (storefront.tsx) — a gradient's position
+     is paint, so following the cursor re-rasterised the whole card at pointer
+     rate. Only opacity animates now, which composites.
+
+     `mix-blend-mode` goes with it: it forces the card into its own stacking
+     context and makes the glow's cost depend on everything painted beneath it,
+     for a soft-light pass nobody can identify once the highlight stopped
+     moving. */
   background: radial-gradient(
-    320px circle at var(--mx, 50%) var(--my, 50%),
+    320px circle at 50% 50%,
     rgba(255, 255, 255, 0.18),
     rgba(255, 255, 255, 0) 60%
   );
   opacity: 0;
-  mix-blend-mode: soft-light;
   transition: opacity 240ms ease;
 }
 .store-spot__link:hover .store-spot__glow,

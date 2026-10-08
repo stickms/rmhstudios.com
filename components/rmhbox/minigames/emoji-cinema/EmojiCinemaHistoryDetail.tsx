@@ -73,7 +73,7 @@ export default function EmojiCinemaHistoryDetail({ gameLog, players }: HistoryDe
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-(--app-text)">{t("round-label", { defaultValue: "Round {{num}}", num: roundNum })}</span>
               <span className="text-xs text-(--app-text-muted)">
-                {t("producer-label", { defaultValue: "Producer: {{name}}", name: producer?.userName ?? t("unknown", { defaultValue: "Unknown" }) })}
+                {t("producer-label-emoji-cinema-history-detail", { defaultValue: "Producer: {{name}}", name: producer?.userName ?? t("unknown", { defaultValue: "Unknown" }) })}
               </span>
             </div>
 

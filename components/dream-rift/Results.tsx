@@ -7,14 +7,14 @@
  */
 
 import { useEffect, useState } from 'react';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import { useDreamRift } from '@/lib/dream-rift/store';
 import { CHARACTERS } from '@/lib/dream-rift/render/sprites';
 import { saveHiScore } from '@/lib/dream-rift/highscore';
 
 export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () => void; onMenu: () => void; onLeaderboard: () => void }) {
     const result = useDreamRift((s) => s.result);
-    const session = authClient.useSession();
+    const session = useSession();
     const [submitState, setSubmitState] = useState<'idle' | 'saving' | 'done' | 'error'>('idle');
     const [submitMsg, setSubmitMsg] = useState('');
 

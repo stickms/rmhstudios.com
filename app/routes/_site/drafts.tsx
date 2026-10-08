@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
@@ -6,11 +6,11 @@ import { FileText } from 'lucide-react';
 import { ColumnHeader } from '@/components/feed/ColumnHeader';
 import { DraftsColumn } from '@/components/feed/DraftsColumn';
 import { useSession } from '@/components/Providers';
-import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from 'react-i18next';
 import { auth } from '@/lib/auth';
 import { listScheduled } from '@/lib/scheduled/list.server';
+import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 
 // Prefetch drafts + scheduled server-side. `null` when signed out (the page
 // gates on the client session and shows a sign-in prompt).
@@ -24,8 +24,7 @@ const fetchDrafts = createServerFn({ method: 'GET' }).handler(async () => {
 export const Route = createFileRoute('/_site/drafts')({
   head: () => ({ meta: [{ title: 'Drafts | RMH Studios' }] }),
   loader: () => fetchDrafts(),
-  component: DraftsPage,
-});
+  component: DraftsPage });
 
 function DraftsPage() {
   const { t } = useTranslation('site');
@@ -53,14 +52,10 @@ function DraftsPage() {
                 <Spinner />
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
-                <p className="font-medium text-site-text">
-                  {t('sign-in-to-manage-drafts', { defaultValue: 'Sign in to manage drafts' })}
-                </p>
-                <Link to="/login" search={{ callbackURL: '/drafts' }}>
-                  <Button variant="accent">{t('sign-in', { defaultValue: 'Sign in' })}</Button>
-                </Link>
-              </div>
+              <SignedOutPrompt
+                callbackURL="/drafts"
+                title={t('sign-in-to-manage-drafts', { defaultValue: 'Sign in to manage drafts' })}
+              />
             )}
           </>
         )}

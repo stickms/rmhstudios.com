@@ -37,6 +37,7 @@ import esCNews from "@/locales/es/c-news.json";
 import esCNightrail from "@/locales/es/c-nightrail.json";
 import esCPredictions from "@/locales/es/c-predictions.json";
 import esCProfileModules from "@/locales/es/c-profile-modules.json";
+import esCRebarRutabaga from "@/locales/es/c-rebar-rutabaga.json";
 import esCRideshare from "@/locales/es/c-rideshare.json";
 import esCRmhCapital from "@/locales/es/c-rmh-capital.json";
 import esCRmhPmc from "@/locales/es/c-rmh-pmc.json";
@@ -81,6 +82,7 @@ import esRRmhcode from "@/locales/es/r-rmhcode.json";
 import esRSecret from "@/locales/es/r-secret.json";
 import esRSliceIt from "@/locales/es/r-slice-it.json";
 import esRSohumbum from "@/locales/es/r-sohumbum.json";
+import esRSohumtracker from "@/locales/es/r-sohumtracker.json";
 import esRStrategies from "@/locales/es/r-strategies.json";
 import esRStudio from "@/locales/es/r-studio.json";
 import esRideshare from "@/locales/es/rideshare.json";
@@ -131,6 +133,7 @@ const esResources = {
   "c-nightrail": esCNightrail,
   "c-predictions": esCPredictions,
   "c-profile-modules": esCProfileModules,
+  "c-rebar-rutabaga": esCRebarRutabaga,
   "c-rideshare": esCRideshare,
   "c-rmh-capital": esCRmhCapital,
   "c-rmh-pmc": esCRmhPmc,
@@ -175,6 +178,7 @@ const esResources = {
   "r-secret": esRSecret,
   "r-slice-it": esRSliceIt,
   "r-sohumbum": esRSohumbum,
+  "r-sohumtracker": esRSohumtracker,
   "r-strategies": esRStrategies,
   "r-studio": esRStudio,
   "rideshare": esRideshare,

@@ -150,7 +150,7 @@ export function RideshareLanding() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.05 }}
-                  className="group flex flex-col rounded-site border border-site-border bg-site-surface/80 p-5 transition-colors hover:border-site-accent/50"
+                  className="group flex flex-col glass-fill rounded-site p-5 transition-colors hover:border-site-accent/50"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex h-11 w-11 items-center justify-center rounded-site bg-site-accent/15 text-site-accent">
@@ -190,7 +190,7 @@ export function RideshareLanding() {
             {RIDER_STEPS_KEYS.map((step, i) => (
               <div
                 key={step.titleKey}
-                className="rounded-site border border-site-border bg-site-surface/80 p-5"
+                className="glass-fill rounded-site p-5"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-site-sm bg-site-surface-hover text-site-accent">
                   <step.icon className="h-5 w-5" />
@@ -214,7 +214,7 @@ export function RideshareLanding() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="mt-12 overflow-hidden rounded-site border border-site-border bg-site-surface/80 p-8 md:flex md:items-center md:justify-between md:gap-8"
+          className="mt-12 overflow-hidden glass-fill rounded-site p-8 md:flex md:items-center md:justify-between md:gap-8"
         >
           <div className="max-w-lg">
             <div className="flex items-center gap-2 text-site-accent">
@@ -271,7 +271,7 @@ function PriceEstimator() {
       </p>
 
       <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
-        <div className="rounded-site border border-site-border bg-site-surface/80 p-5">
+        <div className="glass-fill rounded-site p-5">
           <div className="mb-2 flex items-center justify-between">
             <label htmlFor="estimator-distance" className="text-sm font-medium text-site-text">
               {t('trip-distance', { defaultValue: 'Trip distance' })}

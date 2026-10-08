@@ -3,12 +3,19 @@
 /**
  * When he sleeps — inferred, and labelled as inferred.
  *
- * The tracker sees Discord, not a bedroom. What it actually knows is when he
- * stopped being visible and when he turned up again, and the gap between those
- * two is his night only insofar as he is on Discord right up to it and back on
- * it soon after. Given everything else on this page, that is not a heroic
+ * The tracker sees Discord, not a bedroom. What it knows is which hours he did
+ * something in — sent a message, sat in voice, had a game open — and a night is
+ * the longest run of hours across one midnight in which he did none of them.
+ * That is his sleep only insofar as he is on Discord right up to it and back on
+ * it soon after, which given everything else on this page is not a heroic
  * assumption — but it IS an assumption, so the card says so in its own footer
  * rather than presenting a guess in the same voice as the measured figures.
+ *
+ * It reads ACTIVITY rather than presence on purpose. "Last seen" is written by
+ * status sessions, which stay open through idle and close only on a real
+ * sign-off, so for someone who leaves the desktop client running every day comes
+ * back as seen from 00:00 to 23:59 and no night is ever found. That is the bug
+ * this card shipped with; `inferSleep` carries the full account.
  *
  * The strip is one row per night on an 18:00-anchored axis, which is the only
  * axis on which "he went to bed at 4am" reads as late rather than as early.
@@ -62,9 +69,9 @@ export function SleepCard({ days }: { days: WatchDayDTO[] }) {
             {t('sleep-empty-title', { defaultValue: 'No nights inferred yet' })}
           </span>
           <span className="stk-empty__body">
-            {t('sleep-empty-body', {
+            {t('sleep-empty-body-quiet', {
               defaultValue:
-                'A night needs two consecutive tracked days: the last thing he did on one and the first thing he did on the next. There have not been two in a row yet.',
+                'A night is the longest stretch of hours across one midnight in which he sent nothing, joined no voice channel and had no game open. That needs two consecutive tracked days, and there have not been two in a row yet.',
             })}
           </span>
         </p>
@@ -113,9 +120,9 @@ export function SleepCard({ days }: { days: WatchDayDTO[] }) {
         <svg
           viewBox={`0 0 ${PLOT_W} ${plotH}`}
           role="img"
-          aria-label={t('sleep-alt', {
+          aria-label={t('sleep-alt-quiet', {
             defaultValue:
-              'One bar per night, from the last thing he did that evening to the first thing the next day',
+              'One bar per night, spanning the hours in which he did nothing on Discord at all',
           })}
         >
           {/* Hour rules every three hours from 18:00. */}
@@ -173,9 +180,9 @@ export function SleepCard({ days }: { days: WatchDayDTO[] }) {
       </div>
 
       <p className="stk-chart__readout">
-        {t('sleep-caveat', {
+        {t('sleep-caveat-quiet', {
           defaultValue:
-            'Inferred, not measured: this is the gap between the last thing he did one day and the first thing he did the next. Gaps under 3h or over 15h are not counted as a night.',
+            'Inferred, not measured: the longest run of hours with no messages, no voice and no game open. Read to the hour, and gaps under 3h or over 15h are not counted as a night. Being signed in does not count as being awake — he leaves Discord running.',
         })}
       </p>
 
@@ -185,8 +192,8 @@ export function SleepCard({ days }: { days: WatchDayDTO[] }) {
           <thead>
             <tr>
               <th scope="col">{t('sleep-col-night', { defaultValue: 'Night of' })}</th>
-              <th scope="col">{t('sleep-col-slept', { defaultValue: 'Last seen' })}</th>
-              <th scope="col">{t('sleep-col-woke', { defaultValue: 'Back on' })}</th>
+              <th scope="col">{t('sleep-col-quiet-from', { defaultValue: 'Quiet from' })}</th>
+              <th scope="col">{t('sleep-col-quiet-to', { defaultValue: 'Active again' })}</th>
               <th scope="col">{t('sleep-col-hours', { defaultValue: 'Hours' })}</th>
             </tr>
           </thead>

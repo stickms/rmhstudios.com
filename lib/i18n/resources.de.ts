@@ -37,6 +37,7 @@ import deCNews from "@/locales/de/c-news.json";
 import deCNightrail from "@/locales/de/c-nightrail.json";
 import deCPredictions from "@/locales/de/c-predictions.json";
 import deCProfileModules from "@/locales/de/c-profile-modules.json";
+import deCRebarRutabaga from "@/locales/de/c-rebar-rutabaga.json";
 import deCRideshare from "@/locales/de/c-rideshare.json";
 import deCRmhCapital from "@/locales/de/c-rmh-capital.json";
 import deCRmhPmc from "@/locales/de/c-rmh-pmc.json";
@@ -81,6 +82,7 @@ import deRRmhcode from "@/locales/de/r-rmhcode.json";
 import deRSecret from "@/locales/de/r-secret.json";
 import deRSliceIt from "@/locales/de/r-slice-it.json";
 import deRSohumbum from "@/locales/de/r-sohumbum.json";
+import deRSohumtracker from "@/locales/de/r-sohumtracker.json";
 import deRStrategies from "@/locales/de/r-strategies.json";
 import deRStudio from "@/locales/de/r-studio.json";
 import deRideshare from "@/locales/de/rideshare.json";
@@ -131,6 +133,7 @@ const deResources = {
   "c-nightrail": deCNightrail,
   "c-predictions": deCPredictions,
   "c-profile-modules": deCProfileModules,
+  "c-rebar-rutabaga": deCRebarRutabaga,
   "c-rideshare": deCRideshare,
   "c-rmh-capital": deCRmhCapital,
   "c-rmh-pmc": deCRmhPmc,
@@ -175,6 +178,7 @@ const deResources = {
   "r-secret": deRSecret,
   "r-slice-it": deRSliceIt,
   "r-sohumbum": deRSohumbum,
+  "r-sohumtracker": deRSohumtracker,
   "r-strategies": deRStrategies,
   "r-studio": deRStudio,
   "rideshare": deRideshare,

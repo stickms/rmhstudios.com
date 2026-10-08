@@ -172,12 +172,12 @@ export default function GameHUD() {
 
         {/* Kills */}
         <div className="text-xs font-mono text-white/60">
-          <span className="text-white/90 font-bold">{kills}</span> {t("kills", { defaultValue: "kills" })}
+          <span className="text-white/90 font-bold">{kills}</span> {t("kills-game-hud", { defaultValue: "kills" })}
         </div>
 
         {/* Coins */}
         <div className="text-xs font-mono text-(--altair-warning)">
-          {coins} <span className="text-white/40">{t("coins", { defaultValue: "coins" })}</span>
+          {coins} <span className="text-white/40">{t("coins-game-hud", { defaultValue: "coins" })}</span>
         </div>
       </div>
 

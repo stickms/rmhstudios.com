@@ -176,7 +176,7 @@ export function PlaylistsColumn({
  };
 
  return (
- <div className={embedded ?'lib-playlists':'min-h-screen'}>
+ <div className={embedded ?'lib-playlists': undefined}>
  {!embedded && (
  <ColumnHeader
  icon={ListMusic}

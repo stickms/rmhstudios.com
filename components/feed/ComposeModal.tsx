@@ -17,8 +17,7 @@ import { AIGenerateButton } from'./AIGenerateButton';
 import { MentionTextarea } from'./MentionTextarea';
 import { EmojiPickerButton } from'@/components/shared/EmojiPickerButton';
 import { useEmojiInsert } from'@/lib/emoji/use-emoji-insert';
-import { authClient } from'@/lib/auth-client';
-import { useResolvedUser } from'@/components/Providers';
+import { useResolvedUser, useSession } from'@/components/Providers';
 import { buildOptimizedUrl } from'@/components/ui/OptimizedImage';
 import { Button } from'@/components/ui/button';
 import { MenuItem } from '@/components/ui/menu';
@@ -88,7 +87,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  const textareaRef = useRef<HTMLTextAreaElement>(null);
  const insertEmoji = useEmojiInsert(textareaRef, content, setContent);
  const { prependItem } = useFeedStore();
- const { data: session } = authClient.useSession();
+ const { data: session } = useSession();
  const { resolved: resolvedUser } = useResolvedUser();
 
  const remaining = MAX_RMHARK_LENGTH - content.length;
@@ -424,7 +423,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
 
  {/* Poll creator */}
  {attachment ==='poll'&& (
- <div className="mt-2 border border-site-border rounded-site p-3 bg-site-surface/20">
+ <div className="glass-fill mt-2 rounded-site p-3">
  <div className="flex items-center justify-between mb-2">
  <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">
  Poll
@@ -511,7 +510,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
 
  {/* GIF picker */}
  {attachment ==='gif'&& (
- <div className="mt-2 border border-site-border rounded-site p-3 bg-site-surface/20">
+ <div className="glass-fill mt-2 rounded-site p-3">
  <div className="flex items-center justify-between mb-2">
  <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">
  {t('gif-heading', { defaultValue:'GIF'})}
@@ -590,7 +589,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  setImageUrls((prev) => prev.filter((_, j) => j !== i));
  setImageAlts((prev) => prev.filter((_, j) => j !== i));
  }}
- className="absolute top-1 right-1 p-0.5 rounded-full bg-site-media-scrim-strong text-site-media-ink opacity-0 group-hover:opacity-100 transition-opacity"
+ className="absolute top-1 right-1 flex size-11 items-center justify-center rounded-full bg-site-media-scrim-strong text-site-media-ink transition-opacity sm:size-auto sm:p-0.5 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
  >
  <X className="w-3.5 h-3.5"/>
  </button>

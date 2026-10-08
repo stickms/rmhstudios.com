@@ -27,6 +27,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import {
   ChevronDown,
@@ -197,11 +198,17 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
 
   if (phase === 'idle') return null;
 
+  // Both shapes portal to <body>. This mounts from `Providers`, outside
+  // `.radial-frame`, so z-120 is already body-level today — the portal makes
+  // that true wherever it is rendered, and keeps the fixed overlay clear of any
+  // blurred glass ancestor (design-language §4/§5.6). Only reached on the
+  // client: the surface is lazy-loaded and `phase` is idle during SSR.
+
   /* ── Incoming: a dialog, because it needs an answer now ─────────────────── */
   if (phase === 'incoming') {
     const callerName = ringingFrom?.name || ringingFrom?.handle || null;
 
-    return (
+    return createPortal(
       <div
         className="fixed inset-0 z-[120] flex items-center justify-center p-4"
         role="dialog"
@@ -286,7 +293,8 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
               : t('answer-hint', { defaultValue: 'Answering asks for microphone access.' })}
           </p>
         </div>
-      </div>
+      </div>,
+      document.body,
     );
   }
 
@@ -314,7 +322,7 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
         ? endReasonLabel(endReason, t)
         : t('in-call', { defaultValue: "You're in the call" });
 
-  return (
+  return createPortal(
     <div
       className="pointer-events-none fixed inset-x-0 top-0 z-[120] flex justify-center px-2"
       style={{ paddingTop: 'max(0.5rem, var(--safe-top, 0px))' }}
@@ -449,6 +457,7 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
           </p>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

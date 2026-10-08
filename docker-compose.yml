@@ -505,7 +505,7 @@ services:
   # is for local dev/smoke-testing — hit it directly on the published port
   # (e.g. curl -r 0-1023 http://127.0.0.1:7007/models/<key> → 206). It reads
   # from the same S3-compatible bucket as bot-worker (S3_* from env_file; locally
-  # S3_ENDPOINT points at the minio service below), so it waits for minio.
+  # S3_ENDPOINT points at the minio service below, in production at R2).
   assets:
     <<: *common
     # Runs the Go /app/bin/assets binary, so it uses the full image (built by the
@@ -523,9 +523,14 @@ services:
     environment:
       - ASSETS_PORT=${PORT_ASSETS:-7007}
     command: ['/app/bin/assets']
-    depends_on:
-      minio:
-        condition: service_healthy
+    # No depends_on minio. It reads the bucket lazily, per range request, so it
+    # has nothing to wait for at boot — and which bucket it reads is decided by
+    # S3_ENDPOINT, which in production is R2, not a container on this network.
+    # Removing it is also required, not just tidy: with minio behind the
+    # `local-s3` profile below, an unprofiled service declaring a hard
+    # dependency on it makes the whole project invalid —
+    #   service "assets" depends on undefined service "minio"
+    # — so `docker compose config` fails before anything starts.
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:${PORT_ASSETS:-7007}/health']
       interval: 30s
@@ -649,9 +654,18 @@ services:
       retries: 5
 
   # ─── MinIO (S3-compatible object storage) ──────────────────────────────────
+  # LOCAL ONLY (profile `local-s3`). Production media lives in Cloudflare R2, so
+  # a production deploy has no use for a MinIO container — and before this was
+  # gated it had a strong opinion about one anyway: on 2026-09-14 the bootstrap
+  # sidecar below could not pull `minio/mc` from Docker Hub, `docker compose up`
+  # returned non-zero, and deploy.sh Step 4 aborted the whole deploy BEFORE the
+  # web hotswap. The site kept serving the previous release (Step 4b never ran),
+  # but a dev-only bucket helper had just gated every user-facing service on an
+  # anonymous Docker Hub pull. Enable with COMPOSE_PROFILES=local-s3.
   minio:
     image: minio/minio:RELEASE.2025-04-22T22-12-26Z
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-minio
+    profiles: ['local-s3']
     restart: unless-stopped
     # Resource limits — starting point (audit §5.2). S3-compatible store; sized
     # for dev/smoke use (prod media lives in Cloudflare R2).
@@ -681,6 +695,7 @@ services:
   minio-init:
     image: minio/mc:RELEASE.2025-04-16T18-13-26Z
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-minio-init
+    profiles: ['local-s3']
     depends_on:
       minio:
         condition: service_healthy

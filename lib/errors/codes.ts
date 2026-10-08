@@ -56,6 +56,18 @@ export const ERROR_CODES = {
     i18n: 'errors:stakeLimit',
     text: "You've reached the limit you set",
   },
+  /// Responsible play (W8). Both are the member's own earlier decision being
+  /// honoured, not a moderation action, and the copy has to read that way.
+  SELF_EXCLUDED: {
+    http: 403,
+    i18n: 'errors:selfExcluded',
+    text: "You've excluded yourself from staking coins",
+  },
+  COOL_OFF_ACTIVE: {
+    http: 403,
+    i18n: 'errors:coolOff',
+    text: "You're taking a break from staking coins",
+  },
 
   // --- AI ------------------------------------------------------------------
   AI_UNAVAILABLE: { http: 503, i18n: 'errors:aiUnavailable', text: 'AI features are offline' },

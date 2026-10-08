@@ -58,6 +58,32 @@ function isTwemojiExempt(el: HTMLElement): boolean {
 }
 
 /**
+ * Whether React has hydrated (or created) this node. React stores the node's
+ * fiber on it under an own `__reactFiber$<random>` key the moment it adopts it;
+ * server markup that has not been hydrated yet has no such key.
+ */
+function isReactOwned(node: Element): boolean {
+ return Object.keys(node).some((key) => key.startsWith('__reactFiber$'));
+}
+
+/** `node` and every element under it are React-owned (ignoring our own <img>s). */
+function isSubtreeHydrated(node: Element): boolean {
+ if (!isReactOwned(node)) return false;
+ const all = node.getElementsByTagName('*');
+ for (let i = 0; i < all.length; i++) {
+ const d = all[i];
+ if (d.tagName === 'IMG' && d.classList.contains('emoji')) continue;
+ if (!isReactOwned(d)) return false;
+ }
+ return true;
+}
+
+function whenIdle(fn: () => void) {
+ if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(fn, { timeout: 250 });
+ else window.setTimeout(fn, 100);
+}
+
+/**
  * Replaces native emoji characters with Twemoji SVGs inside its subtree so
  * emojis look identical on every platform (instead of OS-specific glyphs).
  *
@@ -75,6 +101,18 @@ function isTwemojiExempt(el: HTMLElement): boolean {
  * effect runs, and the first thing that effect does is a full-subtree parse, so
  * whatever rendered while the chunk was in flight is picked up anyway. Native
  * glyphs (correct, just OS-styled) show for those few frames.
+ *
+ * **The initial pass only touches markup React has already hydrated.** React 19
+ * hydrates nested Suspense boundaries in later passes — after this provider's
+ * mount effect has run — so a whole-subtree parse rewrote emoji text into <img>s
+ * inside server markup React had not adopted yet, and when React got there the
+ * text no longer matched: #418, and the boundary was thrown away and re-rendered
+ * on the client. Measured on /daily/outcast and /daily/spectrum, whose loading
+ * screen leads with an emoji (docs/fouc-audit-2026-10-06.md §13). So the pass
+ * rewrites an emoji only once its element and everything under it are
+ * React-owned, and retries the rest when the browser is idle until they are. A
+ * node React has adopted is safe to rewrite for the same reason the
+ * MutationObserver path below always was.
  */
 export function TwemojiProvider({ children, className, tag: Tag = 'span' }: TwemojiProviderProps) {
  const ref = useRef<HTMLElement>(null);
@@ -92,7 +130,29 @@ export function TwemojiProvider({ children, className, tag: Tag = 'span' }: Twem
 
  const parse = (target: HTMLElement) => twemoji.parse(target, PARSE_OPTIONS);
 
- parse(el); // initial pass over existing content
+ // Initial pass over existing content — hydrated content only, see above.
+ let attempts = 0;
+ const initialPass = () => {
+ if (cancelled || !el.isConnected) return;
+ const parents = new Set<HTMLElement>();
+ const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+ for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+ const text = n.nodeValue;
+ if (!text || !twemoji.test(text)) continue;
+ const parent = n.parentElement;
+ if (parent && !isTwemojiExempt(parent)) parents.add(parent);
+ }
+ let waiting = 0;
+ for (const parent of parents) {
+ if (!parent.isConnected) continue;
+ if (isSubtreeHydrated(parent)) parse(parent);
+ else waiting++;
+ }
+ // Bounded: markup nothing ever hydrates (a third-party insertion) must not
+ // keep this polling for the life of the page.
+ if (waiting > 0 && ++attempts < 40) whenIdle(initialPass);
+ };
+ initialPass();
 
  let queued = false;
  const pending = new Set<HTMLElement>();

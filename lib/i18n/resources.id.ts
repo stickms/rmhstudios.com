@@ -37,6 +37,7 @@ import idCNews from "@/locales/id/c-news.json";
 import idCNightrail from "@/locales/id/c-nightrail.json";
 import idCPredictions from "@/locales/id/c-predictions.json";
 import idCProfileModules from "@/locales/id/c-profile-modules.json";
+import idCRebarRutabaga from "@/locales/id/c-rebar-rutabaga.json";
 import idCRideshare from "@/locales/id/c-rideshare.json";
 import idCRmhCapital from "@/locales/id/c-rmh-capital.json";
 import idCRmhPmc from "@/locales/id/c-rmh-pmc.json";
@@ -81,6 +82,7 @@ import idRRmhcode from "@/locales/id/r-rmhcode.json";
 import idRSecret from "@/locales/id/r-secret.json";
 import idRSliceIt from "@/locales/id/r-slice-it.json";
 import idRSohumbum from "@/locales/id/r-sohumbum.json";
+import idRSohumtracker from "@/locales/id/r-sohumtracker.json";
 import idRStrategies from "@/locales/id/r-strategies.json";
 import idRStudio from "@/locales/id/r-studio.json";
 import idRideshare from "@/locales/id/rideshare.json";
@@ -131,6 +133,7 @@ const idResources = {
   "c-nightrail": idCNightrail,
   "c-predictions": idCPredictions,
   "c-profile-modules": idCProfileModules,
+  "c-rebar-rutabaga": idCRebarRutabaga,
   "c-rideshare": idCRideshare,
   "c-rmh-capital": idCRmhCapital,
   "c-rmh-pmc": idCRmhPmc,
@@ -175,6 +178,7 @@ const idResources = {
   "r-secret": idRSecret,
   "r-slice-it": idRSliceIt,
   "r-sohumbum": idRSohumbum,
+  "r-sohumtracker": idRSohumtracker,
   "r-strategies": idRStrategies,
   "r-studio": idRStudio,
   "rideshare": idRideshare,

@@ -420,7 +420,12 @@ export function LiquidTabs({
         // same value reads as a correctly-rounded rectangle instead of a stretched
         // lozenge, which is what a 9999px radius degrades into. One value, right in
         // both states, and it tracks each theme's own radius scale.
-        'w-full min-w-0 max-w-full rounded-[var(--site-radius)] border border-site-border bg-site-surface p-1 shadow-site-sm',
+        // `.glass-fill` (L1): the tray is a container of repeated children, which
+        // is that tier's exact role — and it supplies the border and the shadow
+        // this was adding by hand, plus the degradation rules the hand-rolled box
+        // had none of. This is the site's ONLY sanctioned tab strip, so the shape
+        // it uses is the shape every switcher on the site inherits.
+        'glass-fill w-full min-w-0 max-w-full rounded-[var(--site-radius)] p-1',
         className,
       )}
     >

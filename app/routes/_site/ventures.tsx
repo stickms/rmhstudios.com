@@ -1,7 +1,16 @@
 import { useCallback } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, Atom, Brain, Check, Landmark, Shield, type LucideIcon } from 'lucide-react';
+import {
+  ArrowRight,
+  Atom,
+  Brain,
+  Check,
+  Landmark,
+  Server,
+  Shield,
+  type LucideIcon,
+} from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
 import { PageTabs } from '@/components/feed/PageTabs';
@@ -19,7 +28,13 @@ import { buildMeta, buildCanonical } from '@/lib/seo';
  * prominent link-out. The microsites stay reachable directly at their own URLs.
  */
 
-const VENTURE_TABS = ['rmh-capital', 'rmh-pmc', 'adaptive-intelligence', 'deeplink'] as const;
+const VENTURE_TABS = [
+  'rmh-capital',
+  'rmh-datacenter',
+  'rmh-pmc',
+  'adaptive-intelligence',
+  'deeplink',
+] as const;
 type VentureTab = (typeof VENTURE_TABS)[number];
 
 interface VentureDef {
@@ -58,6 +73,23 @@ const VENTURES: VentureDef[] = [
       ['ventures-capital-f2', 'Concentrated in what the group already operates'],
       ['ventures-capital-f3', 'Research, strategy, and portfolio commentary'],
       ['ventures-capital-f4', 'Direct line to the investment desk'],
+    ],
+  },
+  {
+    id: 'rmh-datacenter',
+    icon: Server,
+    href: '/rmh-datacenter',
+    navKey: 'nav-rmh-datacenter',
+    name: 'RMH Datacenter',
+    descKey: 'ventures-datacenter-desc',
+    desc: 'The infrastructure arm — six owned campuses, 148 MW of contracted power and a private backbone between them, sold as colocation, bare metal and liquid-cooled accelerated compute.',
+    ctaKey: 'ventures-datacenter-cta',
+    cta: 'Visit RMH Datacenter',
+    features: [
+      ['ventures-datacenter-f1', 'Six campuses across three continents, all owned'],
+      ['ventures-datacenter-f2', 'Colocation sold by drawn kilowatts, not rack units'],
+      ['ventures-datacenter-f3', '40 kW liquid-cooled racks for accelerated compute'],
+      ['ventures-datacenter-f4', 'One AS, 400G between sites, no egress between halls'],
     ],
   },
   {
@@ -119,7 +151,7 @@ export const Route = createFileRoute('/_site/ventures')({
     meta: buildMeta({
       title: 'RMH Ventures | RMH Studios',
       description:
-        'RMH Ventures — RMH Capital, RMH PMC, Adaptive Intelligence, and RMH Deeplink: the brands and programmes built around RMH Studios.',
+        'RMH Ventures — RMH Capital, RMH Datacenter, RMH PMC, Adaptive Intelligence, and RMH Deeplink: the brands and programmes built around RMH Studios.',
       path: '/ventures',
     }),
     links: [buildCanonical('/ventures')],

@@ -37,6 +37,7 @@ import jaCNews from "@/locales/ja/c-news.json";
 import jaCNightrail from "@/locales/ja/c-nightrail.json";
 import jaCPredictions from "@/locales/ja/c-predictions.json";
 import jaCProfileModules from "@/locales/ja/c-profile-modules.json";
+import jaCRebarRutabaga from "@/locales/ja/c-rebar-rutabaga.json";
 import jaCRideshare from "@/locales/ja/c-rideshare.json";
 import jaCRmhCapital from "@/locales/ja/c-rmh-capital.json";
 import jaCRmhPmc from "@/locales/ja/c-rmh-pmc.json";
@@ -81,6 +82,7 @@ import jaRRmhcode from "@/locales/ja/r-rmhcode.json";
 import jaRSecret from "@/locales/ja/r-secret.json";
 import jaRSliceIt from "@/locales/ja/r-slice-it.json";
 import jaRSohumbum from "@/locales/ja/r-sohumbum.json";
+import jaRSohumtracker from "@/locales/ja/r-sohumtracker.json";
 import jaRStrategies from "@/locales/ja/r-strategies.json";
 import jaRStudio from "@/locales/ja/r-studio.json";
 import jaRideshare from "@/locales/ja/rideshare.json";
@@ -131,6 +133,7 @@ const jaResources = {
   "c-nightrail": jaCNightrail,
   "c-predictions": jaCPredictions,
   "c-profile-modules": jaCProfileModules,
+  "c-rebar-rutabaga": jaCRebarRutabaga,
   "c-rideshare": jaCRideshare,
   "c-rmh-capital": jaCRmhCapital,
   "c-rmh-pmc": jaCRmhPmc,
@@ -175,6 +178,7 @@ const jaResources = {
   "r-secret": jaRSecret,
   "r-slice-it": jaRSliceIt,
   "r-sohumbum": jaRSohumbum,
+  "r-sohumtracker": jaRSohumtracker,
   "r-strategies": jaRStrategies,
   "r-studio": jaRStudio,
   "rideshare": jaRideshare,

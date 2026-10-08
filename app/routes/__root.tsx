@@ -31,6 +31,12 @@ import { registerServiceWorker } from '@/lib/sw-register';
 import { organizationSchema, websiteSchema, jsonLdScript } from '@/lib/schema';
 import { DEFAULT_OG_IMAGE, OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, absoluteUrl } from '@/lib/seo';
 import { getRequestSession } from '@/lib/auth-session.server';
+import { prisma } from '@/lib/prisma.server';
+import {
+  accountAppearanceSeed,
+  accountSeedScript,
+  type AppearanceSeed,
+} from '@/lib/appearance/account-seed';
 import {
   APP_ROUTE_THEME_BG,
   APP_THEME_BG,
@@ -39,6 +45,7 @@ import {
 } from '@/stores/themeStore';
 import { ACCENT_MAP } from '@/lib/appearance';
 import { GLASS_LEVEL_VARS, GLASS_LEVEL_KEY } from '@/lib/appearance/prefs';
+import { PERF_TIER_SCRIPT } from '@/lib/perf-tier';
 import appCss from '@/app/globals.css?url';
 // The Latin subset of the self-hosted body font. Imported for its hashed URL so
 // the document can PRELOAD it — see the `links` block in `head()` below.
@@ -102,8 +109,30 @@ const getInitialUser = createServerFn({ method: 'GET' }).handler(async () => {
     const session = await getRequestSession();
     const u = session?.user;
     // `resolved: true` = we asked and got an answer, whatever it was.
-    if (!u) return { user: null, resolved: true };
+    if (!u) return { user: null, resolved: true, appearanceSeed: null };
+    // The account's saved appearance, merged with the account-sync's own rules
+    // and expressed as the localStorage writes `themeScript` reads — see
+    // lib/appearance/account-seed.ts. One indexed lookup on a session we have
+    // already resolved; a failure here degrades to the idle sync rather than
+    // taking the user lookup down with it.
+    const appearanceRow = await prisma.appearancePreference
+      .findUnique({
+        where: { userId: u.id },
+        select: {
+          style: true,
+          accent: true,
+          fontScale: true,
+          density: true,
+          readableFont: true,
+          customAccent: true,
+          reduceMotion: true,
+          glassLevel: true,
+          colorVision: true,
+        },
+      })
+      .catch(() => null);
     return {
+      appearanceSeed: appearanceRow ? accountAppearanceSeed(appearanceRow) : null,
       user: {
         id: u.id,
         name: u.name ?? null,
@@ -131,7 +160,7 @@ const getInitialUser = createServerFn({ method: 'GET' }).handler(async () => {
     // post RMHarks" — under load, which invites a duplicate login and reads as
     // having been logged out. The shell renders a neutral pending state for
     // `resolved: false` instead, and the client session backfills the truth.
-    return { user: null, resolved: false };
+    return { user: null, resolved: false, appearanceSeed: null };
   }
 });
 
@@ -175,13 +204,56 @@ const getInitialUser = createServerFn({ method: 'GET' }).handler(async () => {
  * both halves agree from frame 0 — see `slice-it.css` and `pf2ecal.css`. Each
  * scopes it to its own descendants, so neither can touch the site theme.
  *
- * An entry with `system: true` starts from `prefers-color-scheme` rather than
- * from dark when nothing is stored, which is what lets a page default to "follow
- * the OS" without persisting an answer that goes stale the next time the OS
- * flips. `appRouteGround` in `stores/themeStore.ts` is the same resolution in
+ * The entry's shape is documented where it lives (`APP_ROUTE_THEME_BG` in
+ * `stores/themeStore.ts`); the three options this script has to honour are
+ * `system` (start from `prefers-color-scheme` rather than from a fixed default,
+ * for a page that follows the OS and persists nothing), `defaultDark` (what to
+ * assume when nothing is stored — true unless the page opens light, as Temple of
+ * Joy does) and `darkWhen` (for a page that stores a NAMED theme instead of a
+ * boolean). `appRouteGround` in `stores/themeStore.ts` is the same resolution in
  * TypeScript, for the runtime after hydration — change the two together.
+ *
+ * ## `app-route`
+ *
+ * The same `app` boolean that picks the ground also stamps `html.app-route`,
+ * because that class is not decoration either — `app/globals.css` keys three
+ * things off it that are visible from the first frame:
+ *
+ *  - `--site-surface` and friends resolve to their OPAQUE twins (the aurora is
+ *    gated off on these routes, so a translucent surface has no shared scene to
+ *    sample and just greys out — the block's own comment says light-theme apps
+ *    composited to ≈#8a8a8a and "lost all their contrast").
+ *  - `scrollbar-gutter: stable` is withheld, because an app route does not scroll
+ *    the document.
+ *  - the `.site-aurora` layers paint nothing.
+ *
+ * It used to be applied ONLY by the `useEffect` in `components/Providers.tsx`,
+ * i.e. after hydration, so every game and full-screen app loaded with the site's
+ * translucent surfaces, a reserved scrollbar gutter and a live aurora, and then
+ * snapped out of all three at once — a full-width horizontal jog plus a contrast
+ * pop, measured at ~1.9s after first contentful paint on `/isleworks` by
+ * `testing/e2e/fouc.mjs`. The effect STAYS: it is the client-navigation path (a
+ * soft nav from a site page into a game never re-runs this script) and the
+ * recovery path if this one throws, exactly as `PERF_TIER_SCRIPT`'s re-assert in
+ * `Providers` is. What changed is that it is now a no-op on a hard load, which is
+ * where the flash was.
  */
-const themeScript = `(function(){try{var m=${JSON.stringify(THEME_BG)};var B=${JSON.stringify(APP_THEME_BG)};var RB=${JSON.stringify(APP_ROUTE_THEME_BG)};var D=${JSON.stringify(DEFAULT_STYLE)};var EX=${JSON.stringify(THEME_EXCLUDED_ROUTES)};var XC=${JSON.stringify(THEME_EXCLUDED_EXCEPTIONS)};var s=localStorage.getItem("rmh-style");if(!s||!m.hasOwnProperty(s)){if(s)localStorage.setItem("rmh-style",D);s=D}var app=false;var p=location.pathname;var _u=function(b){return p===b||p.indexOf(b+"/")===0};var _x=false;for(var j=0;j<XC.length;j++){if(_u(XC[j])){_x=true;break}}if(!_x){for(var i=0;i<EX.length;i++){if(_u(EX[i])){app=true;break}}}if(s!=="default"&&!app){document.documentElement.classList.add("style-"+s)}var GV=${JSON.stringify(GLASS_LEVEL_VARS)};var gl=parseInt(localStorage.getItem(${JSON.stringify(GLASS_LEVEL_KEY)}),10);if(gl===0&&localStorage.getItem("rmh-reduce-transparency")==="1"){gl=2}if(isNaN(gl)||gl<0||gl>4){gl=2}if(gl===0){document.documentElement.classList.add("reduce-transparency")}else if(GV[gl]){document.documentElement.style.setProperty("--glass-user-blur",String(GV[gl].blur));document.documentElement.style.setProperty("--glass-user-tint",String(GV[gl].tint))}var bg=app?B:m[s];if(app){for(var rk in RB){if(_u(rk)){var ro=RB[rk];var rd=ro.system?(!!window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches):true;try{var rj=JSON.parse(localStorage.getItem(ro.key)||"null");var rs=(rj&&rj.state)?rj.state:rj;if(rs&&typeof rs[ro.darkFlag]==="boolean")rd=rs[ro.darkFlag]}catch(e){}bg=rd?ro.dark:ro.light;document.documentElement.setAttribute("data-app-dark",rd?"1":"0");break}}}var UT=localStorage.getItem("rmh-user-theme");if(UT&&s!=="high-contrast"&&!app){try{var utj=JSON.parse(UT);if(utj&&utj.vars){var uts=document.documentElement.style;for(var uk in utj.vars){uts.setProperty(uk,utj.vars[uk])}if(typeof utj.bg==="string")bg=utj.bg}}catch(e){}}window.__themeBg=bg;document.documentElement.style.backgroundColor=bg;var _hx=(""+bg).replace(/^#/,"");if(_hx.length===3){_hx=_hx.charAt(0)+_hx.charAt(0)+_hx.charAt(1)+_hx.charAt(1)+_hx.charAt(2)+_hx.charAt(2)}if(/^[0-9a-fA-F]{6}$/.test(_hx)){var _cv=function(x){x/=255;return x<=0.03928?x/12.92:Math.pow((x+0.055)/1.055,2.4)};var _lm=0.2126*_cv(parseInt(_hx.substr(0,2),16))+0.7152*_cv(parseInt(_hx.substr(2,2),16))+0.0722*_cv(parseInt(_hx.substr(4,2),16));document.documentElement.style.colorScheme=_lm<0.5?"dark":"light"}if(!document.documentElement.classList.contains("ios-webkit")){var t=document.querySelector('meta[name="theme-color"][data-rmh-theme]');if(t)t.content=bg;else{t=document.createElement("meta");t.name="theme-color";t.content=bg;t.setAttribute("data-rmh-theme","");document.head.appendChild(t)}}var A=${JSON.stringify(ACCENT_MAP)};var ac=localStorage.getItem("rmh-accent");if(ac&&A[ac]&&!app){var d=document.documentElement.style;d.setProperty("--site-accent",A[ac].value);d.setProperty("--site-accent-fg",A[ac].fg);d.setProperty("--site-accent-hover","color-mix(in oklab,"+A[ac].value+" 82%, #000)");d.setProperty("--site-accent-dim","color-mix(in oklab,"+A[ac].value+" 15%, transparent)");d.setProperty("--site-glass-light","color-mix(in srgb,"+A[ac].value+" 20%, rgba(255,255,255,0.14))")}var fs=localStorage.getItem("rmh-font-scale");if(fs&&/^(875|1125|1250)$/.test(fs)){document.documentElement.style.fontSize=(parseInt(fs,10)/10)+"%"}if(localStorage.getItem("rmh-density")==="compact"){document.documentElement.setAttribute("data-density","compact")}if(localStorage.getItem("rmh-readable-font")==="1"){document.documentElement.classList.add("readable-font")}if(localStorage.getItem("rmh-reduce-motion")==="1"){document.documentElement.classList.add("reduce-motion")}var cvm=localStorage.getItem("rmh-color-vision");if(cvm==="deuteranopia"||cvm==="protanopia"||cvm==="tritanopia"){document.documentElement.setAttribute("data-color-vision",cvm)}var ca=localStorage.getItem("rmh-custom-accent");if(ca&&/^#[0-9a-fA-F]{6}$/.test(ca)&&!app){var cr=parseInt(ca.substr(1,2),16),cg=parseInt(ca.substr(3,2),16),cb=parseInt(ca.substr(5,2),16);var cl=(0.2126*cr+0.7152*cg+0.0722*cb)/255;var cf=cl>0.55?"#111111":"#ffffff";var dc=document.documentElement.style;dc.setProperty("--site-accent",ca);dc.setProperty("--site-accent-fg",cf);dc.setProperty("--site-accent-hover","color-mix(in oklab,"+ca+" 82%, #000)");dc.setProperty("--site-accent-dim","color-mix(in oklab,"+ca+" 15%, transparent)");dc.setProperty("--site-glass-light","color-mix(in srgb,"+ca+" 20%, rgba(255,255,255,0.14))")}}catch(e){}})()`;
+function buildThemeScript(siteTier: boolean): string {
+  return `(function(){try{var m=${JSON.stringify(THEME_BG)};var B=${JSON.stringify(APP_THEME_BG)};var RB=${JSON.stringify(APP_ROUTE_THEME_BG)};var D=${JSON.stringify(DEFAULT_STYLE)};var EX=${JSON.stringify(THEME_EXCLUDED_ROUTES)};var XC=${JSON.stringify(THEME_EXCLUDED_EXCEPTIONS)};var s=localStorage.getItem("rmh-style");if(!s||!m.hasOwnProperty(s)){if(s)localStorage.setItem("rmh-style",D);s=D}var app=false;var NF=${siteTier ? 1 : 0};var p=location.pathname;var _u=function(b){return p===b||p.indexOf(b+"/")===0};var _x=false;for(var j=0;j<XC.length;j++){if(_u(XC[j])){_x=true;break}}if(!_x&&!NF){for(var i=0;i<EX.length;i++){if(_u(EX[i])){app=true;break}}}if(s!=="default"&&!app){document.documentElement.classList.add("style-"+s)}if(app){document.documentElement.classList.add("app-route")}var GV=${JSON.stringify(GLASS_LEVEL_VARS)};var gl=parseInt(localStorage.getItem(${JSON.stringify(GLASS_LEVEL_KEY)}),10);if(gl===0&&localStorage.getItem("rmh-reduce-transparency")==="1"){gl=2}if(isNaN(gl)||gl<0||gl>4){gl=2}if(gl===0){document.documentElement.classList.add("reduce-transparency")}else if(GV[gl]){document.documentElement.style.setProperty("--glass-user-blur",String(GV[gl].blur));document.documentElement.style.setProperty("--glass-user-tint",String(GV[gl].tint))}var bg=app?B:m[s];if(app){for(var rk in RB){if(_u(rk)){var ro=RB[rk];var rd=ro.system?(!!window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches):(ro.defaultDark!==false);try{var rj=JSON.parse(localStorage.getItem(ro.key)||"null");var rs=(rj&&rj.state)?rj.state:rj;var rf=rs?rs[ro.darkFlag]:undefined;if(ro.darkWhen!==undefined){if(typeof rf==="string")rd=(rf===ro.darkWhen)}else if(typeof rf==="boolean")rd=rf}catch(e){}bg=rd?ro.dark:ro.light;document.documentElement.setAttribute("data-app-dark",rd?"1":"0");break}}}var UT=localStorage.getItem("rmh-user-theme");if(UT&&s!=="high-contrast"&&!app){try{var utj=JSON.parse(UT);if(utj&&utj.vars){var uts=document.documentElement.style;for(var uk in utj.vars){uts.setProperty(uk,utj.vars[uk])}if(typeof utj.bg==="string")bg=utj.bg}}catch(e){}}window.__themeBg=bg;document.documentElement.style.backgroundColor=bg;var _hx=(""+bg).replace(/^#/,"");if(_hx.length===3){_hx=_hx.charAt(0)+_hx.charAt(0)+_hx.charAt(1)+_hx.charAt(1)+_hx.charAt(2)+_hx.charAt(2)}if(/^[0-9a-fA-F]{6}$/.test(_hx)){var _cv=function(x){x/=255;return x<=0.03928?x/12.92:Math.pow((x+0.055)/1.055,2.4)};var _lm=0.2126*_cv(parseInt(_hx.substr(0,2),16))+0.7152*_cv(parseInt(_hx.substr(2,2),16))+0.0722*_cv(parseInt(_hx.substr(4,2),16));document.documentElement.style.colorScheme=_lm<0.5?"dark":"light"}if(!document.documentElement.classList.contains("ios-webkit")){var t=document.querySelector('meta[name="theme-color"][data-rmh-theme]');if(t)t.content=bg;else{t=document.createElement("meta");t.name="theme-color";t.content=bg;t.setAttribute("data-rmh-theme","");document.head.appendChild(t)}}var A=${JSON.stringify(ACCENT_MAP)};var ac=localStorage.getItem("rmh-accent");if(ac&&A[ac]&&!app){var d=document.documentElement.style;d.setProperty("--site-accent",A[ac].value);d.setProperty("--site-accent-fg",A[ac].fg);d.setProperty("--site-accent-hover","color-mix(in oklab,"+A[ac].value+" 82%, #000)");d.setProperty("--site-accent-dim","color-mix(in oklab,"+A[ac].value+" 15%, transparent)");d.setProperty("--site-glass-light","color-mix(in srgb,"+A[ac].value+" 20%, rgba(255,255,255,0.14))")}var fs=localStorage.getItem("rmh-font-scale");if(fs&&/^(875|1125|1250)$/.test(fs)){document.documentElement.style.fontSize=(parseInt(fs,10)/10)+"%"}if(localStorage.getItem("rmh-density")==="compact"){document.documentElement.setAttribute("data-density","compact")}if(localStorage.getItem("rmh-readable-font")==="1"){document.documentElement.classList.add("readable-font")}if(localStorage.getItem("rmh-reduce-motion")==="1"){document.documentElement.classList.add("reduce-motion")}var cvm=localStorage.getItem("rmh-color-vision");if(cvm==="deuteranopia"||cvm==="protanopia"||cvm==="tritanopia"){document.documentElement.setAttribute("data-color-vision",cvm)}var ca=localStorage.getItem("rmh-custom-accent");if(ca&&/^#[0-9a-fA-F]{6}$/.test(ca)&&!app){var cr=parseInt(ca.substr(1,2),16),cg=parseInt(ca.substr(3,2),16),cb=parseInt(ca.substr(5,2),16);var cl=(0.2126*cr+0.7152*cg+0.0722*cb)/255;var cf=cl>0.55?"#111111":"#ffffff";var dc=document.documentElement.style;dc.setProperty("--site-accent",ca);dc.setProperty("--site-accent-fg",cf);dc.setProperty("--site-accent-hover","color-mix(in oklab,"+ca+" 82%, #000)");dc.setProperty("--site-accent-dim","color-mix(in oklab,"+ca+" 15%, transparent)");dc.setProperty("--site-glass-light","color-mix(in srgb,"+ca+" 20%, rgba(255,255,255,0.14))")}}catch(e){}})()`;
+}
+
+const themeScript = buildThemeScript(false);
+
+/**
+ * `themeScript` for a GLOBAL 404 — one the root's `notFoundComponent` renders.
+ *
+ * The script picks the tier from the URL, so `/slice-it/player/<nobody>` used to
+ * pre-paint Slice It's dark app ground under the site's Daylight `NotFound` card;
+ * whatever the URL, a root-level 404 is a SITE page. The root `head()` runs after
+ * the loaders on the server, so it already knows, and `Providers` reads the same
+ * `globalNotFound` flag to agree after hydration.
+ */
+const notFoundThemeScript = buildThemeScript(true);
 
 /**
  * Mark iOS WebKit before first paint so its compositor-safe glass tier applies
@@ -199,14 +271,6 @@ const platformScript = `(function(){try{var u=navigator.userAgent||"";var ios=/i
 const localeScript = `(function(){try{var m=document.cookie.match(/(?:^|; )rmh-lang=([^;]+)/);var l=m?decodeURIComponent(m[1]):"en";var S=${JSON.stringify([...LOCALES])};var R=${JSON.stringify([...RTL_LOCALES])};if(S.indexOf(l)<0)l="en";document.documentElement.lang=l;document.documentElement.setAttribute("dir",R.indexOf(l)>=0?"rtl":"ltr")}catch(e){}})()`;
 
 const bodyThemeScript = `if(window.__themeBg)document.body.style.backgroundColor=window.__themeBg`;
-
-/**
- * Deferred font loading script — loads decorative/theme fonts after the page
- * is interactive via requestIdleCallback, keeping them off the critical path.
- * (Inter, the body/display font, is now self-hosted via @fontsource-variable/inter
- * imported in globals.css — no Google Fonts request on the critical path.)
- */
-const deferredFontsScript = `(function(){var u="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100..800&family=Playfair+Display:wght@400..900&family=Bangers&family=Bebas+Neue&family=Cinzel:wght@400..900&family=Patrick+Hand&display=swap";function l(){var k=document.createElement("link");k.rel="stylesheet";k.href=u;document.head.appendChild(k)}if("requestIdleCallback"in window)requestIdleCallback(l);else setTimeout(l,200)})()`;
 
 /**
  * Paths that must never be speculatively prefetched (OPT-04).
@@ -352,6 +416,7 @@ export const Route = createRootRoute({
       withTimeout(getInitialUser(), SESSION_LOADER_TIMEOUT_MS, {
         user: null,
         resolved: false,
+        appearanceSeed: null,
       }),
       getInitialI18n(),
     ]);
@@ -360,14 +425,38 @@ export const Route = createRootRoute({
       sessionResolved: user.resolved,
       locale: i18n.locale,
       i18nResources: i18n.resources,
+      appearanceSeed: user.appearanceSeed,
     };
   },
   head: (ctx) => {
     const discord = ctx.matches?.some((m) => m.fullPath?.startsWith('/discord'));
+    const seed = (ctx.loaderData as { appearanceSeed?: AppearanceSeed | null } | undefined)
+      ?.appearanceSeed;
+    const accountSeed = seed ? accountSeedScript(seed) : null;
+    // Set on the root match when the root's notFoundComponent renders (see
+    // `notFoundThemeScript`). Read from `ctx.match` — this route's own match,
+    // which the server fetches fresh for head() — not `ctx.matches`, which there
+    // is the snapshot taken before the loaders ran. The client's hydrate()
+    // restores the flag before running this head, so both sides emit the same
+    // script.
+    const globalNotFound = ctx.match?.globalNotFound === true;
 
     if (discord) {
-      // Minimal head for Discord Activity — no inline scripts or external fonts
-      // (Discord's CSP blocks them, causing hydration mismatch)
+      // Minimal head for a Discord Activity: no external fonts, no preconnects,
+      // no speculation rules or JSON-LD — nothing that leaves the origin, because
+      // inside the Activity iframe every request has to go through Discord's
+      // URL-mapping proxy and a third-party font host is not mapped.
+      //
+      // It DOES carry the pre-paint scripts. This head used to ship none, on the
+      // stated grounds that Discord's CSP blocks inline scripts — but the
+      // document it produces has always carried inline scripts regardless: the
+      // `$tsr` dehydration script TanStack Start emits on every SSR page, which
+      // hydration cannot run without. These routes hydrate in Discord, so inline
+      // scripts run there. What the empty list actually did was leave nothing
+      // applied before first paint, so the whole appearance landed after
+      // hydration: the ground went white → black, and under a 125% font scale
+      // every rem-sized thing on the page grew by a quarter
+      // (docs/fouc-audit-2026-10-06.md §6).
       return {
         meta: [
           { charSet: 'utf-8' },
@@ -375,7 +464,13 @@ export const Route = createRootRoute({
           { title: 'RMHBox' },
         ],
         links: [{ rel: 'stylesheet', href: appCss }],
-        scripts: [],
+        scripts: [
+          { children: platformScript },
+          { children: PERF_TIER_SCRIPT },
+          ...(accountSeed ? [{ children: accountSeed }] : []),
+          { children: globalNotFound ? notFoundThemeScript : themeScript },
+          { children: localeScript },
+        ],
       };
     }
 
@@ -425,8 +520,6 @@ export const Route = createRootRoute({
           title: 'RMH Studios',
           href: '/opensearch.xml',
         },
-        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
         // Inter's Latin subset, requested in parallel with the stylesheet rather
         // than after it. A font declared inside a stylesheet is not discoverable
         // until that sheet has been downloaded AND parsed, and globals.css is
@@ -449,11 +542,22 @@ export const Route = createRootRoute({
       ],
       scripts: [
         { children: platformScript },
-        { children: themeScript },
+        // The device effect tier, stamped BEFORE first paint for the same
+        // reason `platformScript` above stamps `ios-webkit` there: the class
+        // selects a stylesheet, so applying it after hydration means the
+        // devices it protects render the full effect stack for the entire
+        // load. See lib/perf-tier.ts §PERF_TIER_SCRIPT.
+        { children: PERF_TIER_SCRIPT },
+        // A signed-in visitor's ACCOUNT appearance, written into localStorage so
+        // that `themeScript` — the next line, and unchanged — paints the
+        // account's theme on the first frame instead of this device's. Without
+        // it the account sync in Providers reconciled the two at idle and the
+        // whole document flipped themes seconds after load for anyone whose
+        // devices disagreed. Absent for signed-out visitors and for an account
+        // with nothing saved. lib/appearance/account-seed.ts has the rules.
+        ...(accountSeed ? [{ children: accountSeed }] : []),
+        { children: globalNotFound ? notFoundThemeScript : themeScript },
         { children: localeScript },
-        // Inter (body font) is self-hosted via globals.css; decorative/theme fonts
-        // stay idle-deferred (loaded from Google Fonts after the page is interactive).
-        { children: deferredFontsScript },
         // Browser-driven document prefetch on hover. Ignored by engines that
         // don't implement it; see SPECULATION_EXCLUDED_PATHS for the safety list.
         { type: 'speculationrules', children: speculationRules },

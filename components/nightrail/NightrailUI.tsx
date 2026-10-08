@@ -37,7 +37,7 @@ import {
   Trophy,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import { TRICK_LIST } from '@/lib/nightrail/constants';
 import { LEVELS, LEVEL_ORDER } from '@/lib/nightrail/levels';
 import type { LevelId, RunStats, TrickDirection } from '@/lib/nightrail/types';
@@ -129,7 +129,7 @@ export function NightrailUI({
 }: Props) {
   const { t } = useTranslation('c-nightrail');
   const navigate = useNavigate();
-  const session = authClient.useSession();
+  const session = useSession();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
   // A ref, not the state flag, guards the POST: state updates are async, and

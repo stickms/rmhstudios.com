@@ -95,8 +95,14 @@ export function LargeTitle({
 
   return (
     <div ref={ref} className={cn('relative', className)}>
-      {/* Sticky bar: holds the compact title + controls, and owns the material. */}
-      <div className="sticky top-0 z-20">
+      {/* Sticky bar: holds the compact title + controls, and owns the material.
+          `.site-sticky-pinned` is load-bearing, not decoration: radial.css
+          de-sticks everything a page renders (`.radial-shell__main .sticky` ->
+          `position: static !important`) so content routes flow like the feed.
+          Without the opt-out this bar was statically positioned everywhere it
+          would ever be used, which made the whole collapsing pair inert — the
+          title scrolled away and no bar ever arrived. */}
+      <div className="site-sticky-pinned sticky top-0 z-20">
         <motion.div
           aria-hidden
           className="glass-chrome absolute inset-0 border-b border-site-border"

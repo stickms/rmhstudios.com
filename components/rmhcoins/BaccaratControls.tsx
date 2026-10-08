@@ -98,7 +98,7 @@ export function BaccaratControls({ coins }: Props) {
   if (tablePhase === 'idle') {
     return (
       <div className="text-center text-site-text-dim py-4">
-        <p className="text-sm">{t("waiting-next-round", { defaultValue: "Waiting for the next round..." })}</p>
+        <p className="text-sm">{t("waiting-next-round-baccarat-controls", { defaultValue: "Waiting for the next round..." })}</p>
       </div>
     );
   }
@@ -226,7 +226,7 @@ export function BaccaratControls({ coins }: Props) {
       <div className="text-center py-4">
         {r && <p className={`text-lg font-bold ${r.color}`}>{r.label}</p>}
         {lastResult?.isNatural && (
-          <p className="text-xs text-site-accent mt-0.5">{t("natural", { defaultValue: "Natural!" })}</p>
+          <p className="text-xs text-site-accent mt-0.5">{t("natural-baccarat-controls", { defaultValue: "Natural!" })}</p>
         )}
         {payout > 0 && (
           <p className="text-sm text-site-text-dim mt-1 animate-bounce">

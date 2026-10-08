@@ -734,7 +734,7 @@ export function CursedLogicGame() {
           {lastRound.overdraw && (
             <p className="text-amber-400/80 text-xs">{t("overdraw-penalty", { defaultValue: "Overdraw penalty applied" })}</p>
           )}
-          <p className="text-white/40 text-sm">{t("next-round", { defaultValue: "Next round..." })}</p>
+          <p className="text-white/40 text-sm">{t("next-round-cursed-logic-game", { defaultValue: "Next round..." })}</p>
         </div>
       )}
 

@@ -17,7 +17,7 @@ import { saveResultWithSync, fetchResultFromServer } from '@/lib/daily-puzzles/p
 import { generateOutcastShare } from '@/lib/daily-puzzles/share';
 import { fetchDailyPuzzle } from '@/lib/daily-puzzles/client';
 import { PuzzleLoading } from '@/components/daily-puzzles/PuzzleLoading';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import { PastPuzzlesSection } from '@/components/daily-puzzles/PastPuzzlesSection';
 import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLeaderboard';
 
@@ -76,7 +76,7 @@ function OutcastGameContent({ puzzle, dateKey, isToday }: { puzzle: OutcastPuzzl
         }
     }, [dateKey]);
 
-    const session = authClient.useSession();
+    const session = useSession();
 
     useEffect(() => {
         if (session.data && !hasCompleted('outcast', dateKey)) {

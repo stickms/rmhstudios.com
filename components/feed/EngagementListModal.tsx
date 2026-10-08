@@ -66,7 +66,7 @@ export function EngagementListModal({ open, onClose, postId, commentId, type }: 
  key={user.id}
  to={`/u/${user.handle || user.id}`as string}
  onClick={onClose}
- className="flex items-center gap-3 px-5 py-3 hover:bg-site-surface-hover active:scale-[0.99] transition-[background-color,transform] duration-site-fast border-b border-site-border/50"
+ className="flex items-center gap-3 px-5 py-3 hover:bg-site-surface-hover active:scale-[0.99] transition-[background-color,scale] duration-site-fast border-b border-site-border/50"
  >
  <UserAvatar user={user} linkToProfile={false} />
  <div className="min-w-0">

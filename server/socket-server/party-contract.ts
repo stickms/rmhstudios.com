@@ -50,7 +50,35 @@ export interface PartyJoinable {
    * before granting a seat.
    */
   seatWithTicket?(socket: Socket, ticket: PartyTicket): Promise<void>;
+
+  /**
+   * Reclaim a room the party never actually occupied. Called once,
+   * {@link PARTY_ROOM_GRACE_MS} after the room was made; the game deletes it
+   * only if nobody has taken a seat.
+   *
+   * **Not optional in practice, despite the `?`.** Every game here deletes its
+   * rooms when the last PLAYER leaves, which means a room that never had a
+   * player has no path to deletion at all: a leader who queues a game and then
+   * closes the tab leaks one room, permanently, in the busiest process on the
+   * system. Only a game whose rooms are already swept on a timer can leave this
+   * out, and none currently can.
+   *
+   * Implementations must be idempotent and must never remove a room that has
+   * someone in it — the timer can land after a real match has started in that
+   * room.
+   */
+  reapIfEmpty?(roomId: string): void;
 }
+
+/**
+ * How long a party room may sit unoccupied before it is reclaimed.
+ *
+ * Comfortably longer than {@link PARTY_TICKET_TTL_MS}, because the ticket only
+ * has to survive until the member's client asks to join; the member themselves
+ * has to load a game bundle, and on a cold cache over a bad connection that is
+ * not a 60-second proposition.
+ */
+export const PARTY_ROOM_GRACE_MS = 5 * 60_000;
 
 /** The registry of party-enabled games, keyed by game id. */
 export const partyGames = new Map<string, PartyJoinable>();

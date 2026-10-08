@@ -34,6 +34,7 @@ import { generateRoomCode, sanitizeUserName } from '../utils';
 import {
   registerPartyGame,
   verifyPartyTicket,
+  PARTY_ROOM_GRACE_MS,
   type PartyMember,
   type PartyTicket,
 } from '../party-contract';
@@ -574,7 +575,15 @@ function ensureGc(io: Server): void {
           changed = true;
         }
       }
-      if (room.clients.size === 0 && room.seats.size === 0) {
+      // A party room is created empty, with each member's id in
+      // `reservedUserIds`, and stays empty until they have loaded the game.
+      // Destroying it on the next 15-second tick — well inside the party
+      // ticket's own 60-second life — is how a queued party arrives to find no
+      // room. Outstanding reservations inside the grace window hold it open;
+      // nothing else changes, and an ordinary emptied room still goes now.
+      const awaitingParty =
+        room.reservedUserIds.size > 0 && now - room.lastActivityAt <= PARTY_ROOM_GRACE_MS;
+      if (!awaitingParty && room.clients.size === 0 && room.seats.size === 0) {
         destroyRoom(io, room);
         continue;
       }

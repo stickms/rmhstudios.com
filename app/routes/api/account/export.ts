@@ -45,6 +45,9 @@ export const Route = createFileRoute('/api/account/export')({
             mutes,
             sessions,
             ladder,
+            memories,
+            playLimits,
+            gameAssists,
           ] = await Promise.all([
             prisma.user.findUnique({
               where: { id: userId },
@@ -157,6 +160,27 @@ export const Route = createFileRoute('/api/account/export')({
                 orderBy: { createdAt: 'desc' },
               }),
             ]),
+
+            // Member memory (M3). A store of facts the site asserts about
+            // somebody is only defensible if they can read all of it, which
+            // means it belongs in the export as much as their posts do.
+            prisma.memberMemory.findMany({
+              where: { userId },
+              take: CAP,
+              select: {
+                key: true,
+                value: true,
+                source: true,
+                confirmedAt: true,
+                expiresAt: true,
+                createdAt: true,
+                updatedAt: true,
+              },
+            }),
+            // Responsible play (W8) and game assists (P7): settings somebody
+            // set about themselves, so theirs to take with them.
+            prisma.userPlayLimits.findUnique({ where: { userId } }),
+            prisma.gameAssistPreference.findUnique({ where: { userId } }),
           ]);
 
           const [
@@ -189,6 +213,11 @@ export const Route = createFileRoute('/api/account/export')({
             achievements,
             moderation: { blocks, mutes },
             sessions,
+            // What the site remembers about you (M3), and the two sets of
+            // limits you set on yourself (W8, P7).
+            memory: memories,
+            playLimits,
+            gameAssists,
             rmhLadder: {
               preferences: ladderPrefs,
               // Salary expectations, work authorization and EEO answers — the

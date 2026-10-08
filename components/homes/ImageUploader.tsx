@@ -139,7 +139,7 @@ export function ImageUploader({ value, aiImages, onChange, max = 8 }: ImageUploa
                   <Sparkles className="h-3 w-3" /> AI
                 </span>
               )}
-              <div className="absolute inset-0 flex items-start justify-end gap-1 p-1 opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="absolute inset-0 flex items-start justify-end gap-1 p-1 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
                 {i !== 0 && (
                   <button
                     type="button"

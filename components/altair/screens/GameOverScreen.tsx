@@ -165,7 +165,7 @@ export default function GameOverScreen({ onPlayAgain, onMetaShop, onMenu }: Game
               )}
               {doubleTime && (
                 <div className="flex justify-between text-(--altair-text-muted)">
-                  <span>{t("double-time", { defaultValue: "Double Time (×1.5)" })}</span>
+                  <span>{t("double-time-game-over-screen", { defaultValue: "Double Time (×1.5)" })}</span>
                   <span className="text-(--altair-warning)">×1.5</span>
                 </div>
               )}

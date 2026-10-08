@@ -10,7 +10,7 @@ import { fadeRise } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import { MessageSquare } from 'lucide-react';
 
 interface Comment {
@@ -30,7 +30,7 @@ interface SongCommentsProps {
 
 export function SongComments({ songId }: SongCommentsProps) {
   const { t } = useTranslation('c-game');
-  const session = authClient.useSession();
+  const session = useSession();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [isLoading, setIsLoading] = useState(false);

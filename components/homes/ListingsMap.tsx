@@ -137,7 +137,22 @@ export function ListingsMap({
           {pins.map((l) => {
             const active = l.id === activeId;
             return (
-              <Marker key={l.id} longitude={l.lng} latitude={l.lat} anchor="bottom">
+              // The lift lives on the MARKER, not on the button inside it.
+              // MapLibre writes a `transform` on every marker wrapper and never
+              // assigns marker elements a z-index, so each wrapper is its own
+              // stacking context and inter-marker order is pure DOM order — a
+              // `z-10` on the button was measured inside its OWN marker and
+              // could not compete with the marker next to it. In dense results
+              // the highlighted pin stayed underneath its neighbours with its
+              // grown edge poking out from behind one, which reads as a
+              // rendering glitch rather than a selection.
+              <Marker
+                key={l.id}
+                longitude={l.lng}
+                latitude={l.lat}
+                anchor="bottom"
+                style={{ zIndex: active ? 1 : 0 }}
+              >
                 <button
                   type="button"
                   onMouseEnter={() => onActive(l.id)}
@@ -148,7 +163,7 @@ export function ListingsMap({
                   }}
                   className={`cursor-pointer rounded-full px-2.5 py-1 text-xs font-bold shadow-site ring-1 transition ${
                     active
-                      ? 'z-10 scale-110 bg-site-text text-site-bg ring-2 ring-site-accent'
+                      ? 'scale-110 bg-site-text text-site-bg ring-2 ring-site-accent'
                       : 'bg-site-accent text-site-accent-fg ring-site-border-bright hover:scale-105 hover:ring-2 hover:ring-site-text/70'
                   }`}
                 >

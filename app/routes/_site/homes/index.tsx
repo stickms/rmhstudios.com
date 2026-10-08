@@ -315,7 +315,7 @@ function HomesBrowsePage() {
             {desktopSplit ? (
               <div className="grid gap-4 lg:grid-cols-[1fr_minmax(320px,42%)]">
                 <div>{renderGrid()}</div>
-                <div className="site-sticky-secondary h-[calc(100dvh-var(--site-sticky-secondary-top)-var(--site-sticky-edge))]">
+                <div className="site-sticky-secondary site-sticky-pinned h-[calc(100dvh-var(--site-sticky-secondary-top)-var(--site-sticky-edge))]">
                   <ListingsMap
                     listings={listings}
                     center={center}

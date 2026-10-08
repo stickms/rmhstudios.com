@@ -27,6 +27,13 @@ export type MatchReason =
   | 'acronym'
   | 'tokens'
   | 'trigram'
+  /**
+   * Found by meaning rather than by any shared characters (M1). The only
+   * reason a result can carry without the query appearing in it at all, which
+   * is exactly why it is worth naming separately: it is the one the UI should
+   * be able to label, and the one to look at first when a result looks wrong.
+   */
+  | 'semantic'
   | 'none';
 
 export interface FieldScore {

@@ -29,10 +29,10 @@ export default function CommandPage() {
           <div className="sechead reveal">
             <div className="secref">§01</div>
             <div className="sechead-body">
-              <span className="desig">{t("s01-desig", { defaultValue: "The Mission" })}</span>
-              <h2>{t("s01-heading", { defaultValue: "Organized around the mission, not the product." })}</h2>
+              <span className="desig">{t("s01-desig-command-page", { defaultValue: "The Mission" })}</span>
+              <h2>{t("s01-heading-command-page", { defaultValue: "Organized around the mission, not the product." })}</h2>
               <p className="lede">
-                {t("s01-lede", { defaultValue: "Most private security firms are assembled around what they sell — a guard contract, a training package, a convoy. We built RMH PMC the other way around: every element exists to serve the mission in front of it, and is held under one command until that mission is complete." })}
+                {t("s01-lede-command-page", { defaultValue: "Most private security firms are assembled around what they sell — a guard contract, a training package, a convoy. We built RMH PMC the other way around: every element exists to serve the mission in front of it, and is held under one command until that mission is complete." })}
               </p>
             </div>
           </div>
@@ -69,8 +69,8 @@ export default function CommandPage() {
           <div className="sechead reveal">
             <div className="secref">§02</div>
             <div className="sechead-body">
-              <span className="desig">{t("s02-desig", { defaultValue: "Operating Principles" })}</span>
-              <h2>{t("s02-heading", { defaultValue: "The standards every task is run against." })}</h2>
+              <span className="desig">{t("s02-desig-command-page", { defaultValue: "Operating Principles" })}</span>
+              <h2>{t("s02-heading-command-page", { defaultValue: "The standards every task is run against." })}</h2>
             </div>
           </div>
           <div className="valuegrid">
@@ -128,8 +128,8 @@ export default function CommandPage() {
           <div className="sechead reveal">
             <div className="secref">§03</div>
             <div className="sechead-body">
-              <span className="desig">{t("s03-desig", { defaultValue: "Command Structure" })}</span>
-              <h2>{t("s03-heading", { defaultValue: "One operations center. Eyes on, around the clock." })}</h2>
+              <span className="desig">{t("s03-desig-command-page", { defaultValue: "Command Structure" })}</span>
+              <h2>{t("s03-heading-command-page", { defaultValue: "One operations center. Eyes on, around the clock." })}</h2>
               <p className="lede">
                 {t("s03-lede", { defaultValue: "Every deployed element reports to a single global operations center, manned without interruption." })}
               </p>
@@ -192,11 +192,11 @@ export default function CommandPage() {
           <div className="sechead reveal">
             <div className="secref">§04</div>
             <div className="sechead-body">
-              <span className="desig">{t("s04-desig", { defaultValue: "Ethics" })}</span>
-              <h2>{t("s04-heading", { defaultValue: "On ethics." })}</h2>
+              <span className="desig">{t("s04-desig-command-page", { defaultValue: "Ethics" })}</span>
+              <h2>{t("s04-heading-command-page", { defaultValue: "On ethics." })}</h2>
             </div>
           </div>
-          <p className="lede reveal d1">{t("s04-lede", { defaultValue: "We follow the rules of engagement. All of them." })}</p>
+          <p className="lede reveal d1">{t("s04-lede-command-page", { defaultValue: "We follow the rules of engagement. All of them." })}</p>
         </div>
       </section>
 
@@ -206,10 +206,10 @@ export default function CommandPage() {
       <section className="sec tight">
         <div className="container">
           <div className="cta-band reveal">
-            <span className="desig center">{t("cta-desig", { defaultValue: "Engage" })}</span>
-            <h2 style={{ marginTop: 16 }}>{t("cta-heading", { defaultValue: "Put one command behind your hardest problem." })}</h2>
+            <span className="desig center">{t("cta-desig-command-page", { defaultValue: "Engage" })}</span>
+            <h2 style={{ marginTop: 16 }}>{t("cta-heading-command-page", { defaultValue: "Put one command behind your hardest problem." })}</h2>
             <p>
-              {t("cta-body", { defaultValue: "If the outcome cannot be left to chance, the conversation starts the same way every time: a briefing, under non-disclosure, with the people who would actually run the task." })}
+              {t("cta-body-command-page", { defaultValue: "If the outcome cannot be left to chance, the conversation starts the same way every time: a briefing, under non-disclosure, with the people who would actually run the task." })}
             </p>
             <Link className="btn btn-amber" to="/rmh-pmc/contact">
               {t("cta-btn", { defaultValue: "Request a briefing" })} <span className="arw">→</span>

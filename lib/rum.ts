@@ -70,6 +70,122 @@ function navigationTraceId(): string | undefined {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Device context                                                             */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The device dimension every beacon carries.
+ *
+ * Without this the RUM store pools phones and desktops into one population, and
+ * the site's dominant performance fact becomes invisible: this platform's load
+ * cost is overwhelmingly main-thread JavaScript and GPU compositing, both of
+ * which a phone pays 4–6× for. A mobile-only regression of that size shows up
+ * in a pooled p75 as mild drift, which is why six consecutive audits
+ * (`docs/performance-audit-*.md`, `docs/loading-audit-2026-08-11/`) measured
+ * only unthrottled desktop Chromium and none of them could see it.
+ *
+ * ## Every field here is deliberately low-cardinality
+ *
+ * `/api/rum` is anonymous and reduces the pathname to a first-segment label
+ * before logging precisely so a sample cannot identify a visitor. Device
+ * signals are the other half of that risk — raw `devicePixelRatio`,
+ * `deviceMemory` and `hardwareConcurrency` together are a usable fingerprint —
+ * so each is bucketed to the handful of values that change a *decision*:
+ *
+ *   formFactor  3 values    which population a sample belongs to
+ *   vw          6 buckets   which layout the visitor actually got
+ *   dpr         3 buckets   how many physical pixels the blur passes cover
+ *   mem/cores   quantised   the `perf-lite` inputs, so the tier is auditable
+ *   net         5 values    whether request count or CPU is the binding cost
+ *   saveData    boolean     an explicit "send me less" from the visitor
+ *
+ * That is enough to answer "is mobile slower, and is it CPU or network", and
+ * not enough to single anyone out.
+ */
+interface RumDevice {
+  formFactor?: 'mobile' | 'tablet' | 'desktop';
+  vw?: number;
+  dpr?: number;
+  mem?: number;
+  cores?: number;
+  net?: string;
+  saveData?: boolean;
+}
+
+/** The `navigator.connection` shape read below — none of it is standard. */
+interface NetworkInformationLike {
+  saveData?: boolean;
+  effectiveType?: string;
+}
+
+/**
+ * Viewport-width buckets, chosen to be the site's own breakpoints rather than
+ * round numbers: 768 is `useIsMobile`, 1280 is the `xl` rail reveal, and 1440
+ * is where `RadialLiveRail` actually appears. A bucket boundary that does not
+ * correspond to a layout change would split one population in half for no
+ * reason.
+ */
+const VW_BUCKETS = [360, 768, 1024, 1280, 1440, 1920] as const;
+
+function bucketWidth(width: number): number {
+  let chosen: number = VW_BUCKETS[0];
+  for (const edge of VW_BUCKETS) {
+    if (width >= edge) chosen = edge;
+  }
+  return chosen;
+}
+
+/**
+ * Resolved once per page load and memoised.
+ *
+ * A form factor is derived from the POINTER first and the width second: a
+ * desktop browser resized to 400px is still a desktop for every cost this
+ * beacon exists to measure (it has the CPU, the GPU and the mains power), and
+ * classifying it as mobile would poison the population with the fast case —
+ * exactly the mistake this field is being added to correct.
+ */
+let device: RumDevice | undefined;
+
+function deviceContext(): RumDevice {
+  if (device) return device;
+  device = {};
+  try {
+    const coarse = window.matchMedia?.('(pointer: coarse)').matches ?? false;
+    const width = window.innerWidth || 0;
+    if (width > 0) {
+      device.vw = bucketWidth(width);
+      device.formFactor = !coarse ? 'desktop' : width < 768 ? 'mobile' : 'tablet';
+    }
+    const ratio = window.devicePixelRatio;
+    if (typeof ratio === 'number' && Number.isFinite(ratio) && ratio > 0) {
+      // Whole steps: the blur/paint cost that makes DPR worth recording scales
+      // with physical pixels, and 2.625 vs 2.75 does not change any decision.
+      device.dpr = Math.min(3, Math.max(1, Math.round(ratio)));
+    }
+    const nav = navigator as Navigator & {
+      deviceMemory?: number;
+      connection?: NetworkInformationLike;
+    };
+    // Already quantised by spec (0.25/0.5/1/2/4/8) and Chromium-only; absent
+    // means unknown, which is NOT the same as low and must not be defaulted.
+    if (typeof nav.deviceMemory === 'number' && nav.deviceMemory > 0) {
+      device.mem = nav.deviceMemory;
+    }
+    if (typeof nav.hardwareConcurrency === 'number' && nav.hardwareConcurrency > 0) {
+      // Capped: past 16 the exact count stops predicting anything about how
+      // this site loads, and the long tail is identifying.
+      device.cores = Math.min(16, Math.round(nav.hardwareConcurrency));
+    }
+    const connection = nav.connection;
+    if (typeof connection?.effectiveType === 'string') device.net = connection.effectiveType;
+    if (connection?.saveData === true) device.saveData = true;
+  } catch {
+    /* telemetry must never throw */
+  }
+  return device;
+}
+
+/* -------------------------------------------------------------------------- */
 /* Beacon shape                                                               */
 /* -------------------------------------------------------------------------- */
 
@@ -151,6 +267,10 @@ function send(sample: RumSample, attribution: RumAttribution = {}): void {
       path: window.location.pathname.slice(0, 200),
       ts: new Date().toISOString(),
       traceId: navigationTraceId(),
+      // Spread BEFORE the attribution so a future attribution field can never
+      // be shadowed by a device key; the two namespaces are disjoint today and
+      // this keeps that a property of the code rather than of the field names.
+      ...deviceContext(),
       ...attribution,
     });
     if (typeof navigator.sendBeacon === 'function') {

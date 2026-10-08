@@ -72,7 +72,7 @@ export function DeckViewer({ cards, pileLabel, onClose }: Props) {
                   {card.damage > 0 && <span className="text-red-400">⚔{card.getEffectiveDamage()}{card.echo ? ' ×2' : ''}{card.aoe ? ' AOE' : ''}</span>}
                   {card.shield > 0 && <span className="text-blue-400">🛡{card.getEffectiveShield()}{card.echo ? ' ×2' : ''}</span>}
                   {card.draw ? <span className="text-cyan-400">+{card.draw} {t("draw-label", { defaultValue: "draw" })}</span> : null}
-                  {card.leech ? <span className="text-emerald-400">{t("leech-label", { leech: card.leech, defaultValue: "Leech {{leech}}%" })}</span> : null}
+                  {card.leech ? <span className="text-emerald-400">{t("leech-label-deck-viewer", { leech: card.leech, defaultValue: "Leech {{leech}}%" })}</span> : null}
                 </div>
                 <p className="text-[10px] text-slate-400 italic line-clamp-2">{card.effect}</p>
               </div>

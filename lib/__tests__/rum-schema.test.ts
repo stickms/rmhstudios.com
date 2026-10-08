@@ -24,6 +24,7 @@ import {
   normalizeSelector,
   normalizeScript,
   normalizeReasons,
+  normalizeEffectiveType,
 } from '@/app/routes/api/rum';
 
 /** Exactly what `lib/rum.ts` sent before OPT-35 landed. */
@@ -229,5 +230,71 @@ describe('cardinality normalization', () => {
     expect(normalizeScript(undefined)).toBeUndefined();
     expect(normalizeReasons('')).toBeUndefined();
     expect(normalizeReasons(', ,')).toBeUndefined();
+  });
+});
+
+/**
+ * The device dimension. These are compatibility tests first and feature tests
+ * second: the failure they exist to prevent is not "the form factor is wrong",
+ * it is "adding a field 400'd every beacon the site collects" — the same class
+ * of mistake the attribution fields above are pinned against.
+ */
+describe('device context', () => {
+  const DEVICE = {
+    formFactor: 'mobile',
+    vw: 360,
+    dpr: 3,
+    mem: 4,
+    cores: 8,
+    net: '4g',
+    saveData: false,
+  } as const;
+
+  it('accepts a full device block', () => {
+    const parsed = MetricSchema.safeParse({ ...OLD_SHAPE, ...DEVICE });
+    expect(parsed.success).toBe(true);
+    expect(parsed.success && parsed.data).toMatchObject(DEVICE);
+  });
+
+  it('still accepts a beacon with no device block at all', () => {
+    // The load-bearing case: every client cached from before this shipped.
+    const parsed = MetricSchema.parse(OLD_SHAPE);
+    for (const key of ['formFactor', 'vw', 'dpr', 'mem', 'cores', 'net', 'saveData'] as const) {
+      expect(parsed[key]).toBeUndefined();
+    }
+  });
+
+  it('accepts a partial device block', () => {
+    // Safari reports neither deviceMemory nor connection; Firefox reports no
+    // connection. Each absence is normal, not a malformed beacon.
+    expect(MetricSchema.safeParse({ ...OLD_SHAPE, formFactor: 'desktop', dpr: 2 }).success).toBe(
+      true,
+    );
+  });
+
+  it('rejects a forged form factor rather than opening a new series', () => {
+    expect(MetricSchema.safeParse({ ...OLD_SHAPE, formFactor: 'toaster' }).success).toBe(false);
+  });
+
+  it('rejects out-of-range device numbers', () => {
+    expect(MetricSchema.safeParse({ ...OLD_SHAPE, vw: 99_999 }).success).toBe(false);
+    expect(MetricSchema.safeParse({ ...OLD_SHAPE, dpr: -1 }).success).toBe(false);
+    expect(MetricSchema.safeParse({ ...OLD_SHAPE, cores: 1.5 }).success).toBe(false);
+  });
+
+  it('keeps an unfamiliar effectiveType out of the cardinality budget', () => {
+    expect(normalizeEffectiveType('4G')).toBe('4g');
+    expect(normalizeEffectiveType('slow-2g')).toBe('slow-2g');
+    // A future spec value is logged as `other`, not as its own series…
+    expect(normalizeEffectiveType('5g')).toBe('other');
+    // …but "not reported" stays distinct from "reported as something new".
+    expect(normalizeEffectiveType(undefined)).toBeUndefined();
+    expect(normalizeEffectiveType('  ')).toBeUndefined();
+  });
+
+  it('does not reject a beacon carrying an unfamiliar effectiveType', () => {
+    // The schema must stay permissive where the normalizer is strict: a 400
+    // loses the whole sample, `other` loses one field's precision.
+    expect(MetricSchema.safeParse({ ...OLD_SHAPE, net: '5g' }).success).toBe(true);
   });
 });

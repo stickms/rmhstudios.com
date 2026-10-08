@@ -112,6 +112,17 @@ export interface GameCapabilities {
   save: SaveScope;
   accessibility: readonly AccessibilityFeature[];
   descriptors?: readonly ContentDescriptor[];
+  /**
+   * The party system can seat a whole party into this game in one step (P1).
+   *
+   * Subject to the honesty rule like everything else here, and mechanically
+   * checked: `game-capabilities.test.ts` reads the `registerPartyGame(...)`
+   * calls out of `server/socket-server/handlers/**` and holds this field to
+   * exactly that set. It cannot be set aspirationally — a game claiming it
+   * without a registry entry fails the build, and a game that registers
+   * without claiming it fails too, so the badge can never drift from the code.
+   */
+  partyCapable?: true;
 }
 
 /** Keyed by `GameInfo.id`. Held to exact parity with `games` by the test file. */
@@ -202,7 +213,15 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
   },
   'synapse-storm': {
     genre: ['action', 'puzzle'],
-    players: ['single', 'async-leaderboard'],
+    // `online-versus` added 2026-09-19 (P1). The entry claimed single-player
+    // plus a leaderboard, which understated the game: it ships a lobby client
+    // (components/synapse-storm/Lobby.tsx, MultiplayerMenu.tsx, MultiplayerGame.tsx
+    // over lib/synapse-storm/multiplayerClient.ts) against an 8-seat server
+    // handler with its own SSLobby/SSMatch models. The existing realtime check
+    // is one-directional — it catches a game CLAIMING online play without a
+    // module, not one hiding the module it has — so this sat unflagged.
+    players: ['single', 'online-versus', 'async-leaderboard'],
+    maxPlayers: 8, // server: MAX_SS_PLAYERS
     input: { supported: ['mouse', 'touch', 'keyboard'], required: [] },
     sessionMinutes: [3, 10],
     engine: 'dom',
@@ -211,6 +230,7 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     save: 'none',
     accessibility: [],
     descriptors: ['flashing'],
+    partyCapable: true,
   },
   'temple-of-joy': {
     genre: ['idle'],
@@ -244,6 +264,7 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     demanding: true,
     save: 'none',
     accessibility: [],
+    partyCapable: true,
   },
   'forest-explorer': {
     genre: ['narrative', 'puzzle'],
@@ -282,6 +303,7 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     demanding: false,
     save: 'own-table',
     accessibility: [],
+    partyCapable: true,
   },
   'kowloon-knockout': {
     genre: ['fighting', 'action'],
@@ -294,6 +316,7 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     save: 'none',
     accessibility: [],
     descriptors: ['violence'],
+    partyCapable: true,
   },
   cookgame: {
     genre: ['simulation', 'strategy'],
@@ -366,6 +389,7 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     demanding: false,
     save: 'none',
     accessibility: ['no-timed-input'],
+    partyCapable: true,
   },
   nightrail: {
     genre: ['racing', 'arcade'],

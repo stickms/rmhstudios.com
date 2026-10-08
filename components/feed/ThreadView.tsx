@@ -12,7 +12,7 @@ import type { FeedItem } from'@/lib/feed-types';
 export function ThreadView({ items }: { items: FeedItem[] }) {
  const { t } = useTranslation('feed');
  return (
- <div className="min-h-screen">
+ <div>
  <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
  <Link
  to="/"

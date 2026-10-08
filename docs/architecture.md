@@ -25,7 +25,7 @@
    │     doctrine-worker + vibe-worker + bot-worker +  │
    │     streak-saver)                                 │
    │  status:7008 (Go)   assets:7007 (Go)              │
-   │  redis / redis-state · minio:9000/9001 (infra)    │
+   │  redis / redis-state (infra; minio = local-s3)    │
    ▼                                                   ▼
  PostgreSQL                                     R2/S3 (media)
 ```

@@ -37,6 +37,7 @@ import koCNews from "@/locales/ko/c-news.json";
 import koCNightrail from "@/locales/ko/c-nightrail.json";
 import koCPredictions from "@/locales/ko/c-predictions.json";
 import koCProfileModules from "@/locales/ko/c-profile-modules.json";
+import koCRebarRutabaga from "@/locales/ko/c-rebar-rutabaga.json";
 import koCRideshare from "@/locales/ko/c-rideshare.json";
 import koCRmhCapital from "@/locales/ko/c-rmh-capital.json";
 import koCRmhPmc from "@/locales/ko/c-rmh-pmc.json";
@@ -81,6 +82,7 @@ import koRRmhcode from "@/locales/ko/r-rmhcode.json";
 import koRSecret from "@/locales/ko/r-secret.json";
 import koRSliceIt from "@/locales/ko/r-slice-it.json";
 import koRSohumbum from "@/locales/ko/r-sohumbum.json";
+import koRSohumtracker from "@/locales/ko/r-sohumtracker.json";
 import koRStrategies from "@/locales/ko/r-strategies.json";
 import koRStudio from "@/locales/ko/r-studio.json";
 import koRideshare from "@/locales/ko/rideshare.json";
@@ -131,6 +133,7 @@ const koResources = {
   "c-nightrail": koCNightrail,
   "c-predictions": koCPredictions,
   "c-profile-modules": koCProfileModules,
+  "c-rebar-rutabaga": koCRebarRutabaga,
   "c-rideshare": koCRideshare,
   "c-rmh-capital": koCRmhCapital,
   "c-rmh-pmc": koCRmhPmc,
@@ -175,6 +178,7 @@ const koResources = {
   "r-secret": koRSecret,
   "r-slice-it": koRSliceIt,
   "r-sohumbum": koRSohumbum,
+  "r-sohumtracker": koRSohumtracker,
   "r-strategies": koRStrategies,
   "r-studio": koRStudio,
   "rideshare": koRideshare,

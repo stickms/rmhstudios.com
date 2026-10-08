@@ -1,0 +1,463 @@
+/* Minesweeper (Windows 7) — imported from dunesday.css. Every selector is scoped to .ds-ms. */
+
+.ds-ms {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  color: #1e1e1e;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ── Menu bar ─────────────────────────────────────────────────────────── */
+.ds-ms .ds-ms__menubar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 6px;
+  border-bottom: 1px solid #d5dfe5;
+  background: linear-gradient(#fbfdff, #e9eef6);
+}
+
+.ds-ms .ds-ms__menubtn {
+  padding: 3px 9px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  cursor: default;
+}
+
+.ds-ms .ds-ms__menubtn:hover,
+.ds-ms .ds-ms__menubtn[aria-expanded='true'] {
+  border-color: #a8d8eb;
+  background: linear-gradient(#f2fafe, #dbeefa);
+}
+
+.ds-ms .ds-ms__menubtn:focus-visible {
+  outline: 1px dotted #000;
+  outline-offset: -3px;
+}
+
+.ds-ms .ds-ms__spacer {
+  flex: 1;
+}
+
+.ds-ms .ds-ms__flagmode {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+}
+
+.ds-ms .ds-ms__flagmode--on {
+  box-shadow: inset 0 0 0 2px #3c7fb1;
+}
+
+/* ── Board ────────────────────────────────────────────────────────────── */
+.ds-ms .ds-ms__host {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: auto;
+  padding: 10px;
+  background: linear-gradient(#e7eef8, #c9d7ea);
+  overscroll-behavior: contain;
+}
+
+.ds-ms .ds-ms__board {
+  --ms-cell: 24px;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 3px;
+  border: 1px solid #6f8db8;
+  border-radius: 4px;
+  background: #8ea9cf;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8),
+    0 2px 8px rgba(30, 60, 110, 0.25);
+  touch-action: manipulation;
+}
+
+.ds-ms .ds-ms__row {
+  display: grid;
+  grid-template-columns: repeat(var(--ms-cols), var(--ms-cell));
+  gap: 1px;
+}
+
+.ds-ms .ds-ms__cell {
+  position: relative;
+  width: var(--ms-cell);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #2c5aa0;
+  border-radius: 3px;
+  font:
+    700 calc(var(--ms-cell) * 0.6) / 1 'Segoe UI',
+    Tahoma,
+    sans-serif;
+  color: #1e1e1e;
+  cursor: default;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+.ds-ms .ds-ms__cell:focus-visible {
+  outline: 2px solid #ffb400;
+  outline-offset: -2px;
+  z-index: 1;
+}
+
+/* Glossy blue raised tile */
+.ds-ms .ds-ms__cell--closed {
+  background:
+    linear-gradient(
+      rgba(255, 255, 255, 0.55),
+      rgba(255, 255, 255, 0.08) 48%,
+      rgba(255, 255, 255, 0) 52%
+    ),
+    linear-gradient(#7fa6e3, #3f6fc4 55%, #2f5fb3);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -1px 0 rgba(10, 30, 80, 0.35);
+}
+
+.ds-ms .ds-ms__board--ready .ds-ms__cell--closed:hover,
+.ds-ms .ds-ms__board--playing .ds-ms__cell--closed:hover {
+  background:
+    linear-gradient(
+      rgba(255, 255, 255, 0.65),
+      rgba(255, 255, 255, 0.15) 48%,
+      rgba(255, 255, 255, 0) 52%
+    ),
+    linear-gradient(#a7c6f3, #5d8fdc 55%, #4a7cd0);
+}
+
+.ds-ms .ds-ms__board--ready .ds-ms__cell--closed:active,
+.ds-ms .ds-ms__board--playing .ds-ms__cell--closed:active {
+  background: linear-gradient(#5a83c8, #3b65ad);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+/* Revealed tile */
+.ds-ms .ds-ms__cell--open {
+  border-color: #b7c3d4;
+  background: linear-gradient(#f7f9fc, #dfe6ef);
+  box-shadow: inset 0 1px 1px rgba(80, 100, 130, 0.18);
+}
+
+.ds-ms .ds-ms__cell--n1 {
+  color: #1c3fc8;
+}
+.ds-ms .ds-ms__cell--n2 {
+  color: #1f7a1f;
+}
+.ds-ms .ds-ms__cell--n3 {
+  color: #c81e1e;
+}
+.ds-ms .ds-ms__cell--n4 {
+  color: #182a7a;
+}
+.ds-ms .ds-ms__cell--n5 {
+  color: #7a1616;
+}
+.ds-ms .ds-ms__cell--n6 {
+  color: #0f8080;
+}
+.ds-ms .ds-ms__cell--n7 {
+  color: #000;
+}
+.ds-ms .ds-ms__cell--n8 {
+  color: #6e6e6e;
+}
+
+.ds-ms .ds-ms__cell--mine {
+  color: #111;
+  background: linear-gradient(#f3f3f3, #cfd4db);
+}
+
+.ds-ms .ds-ms__cell--boom {
+  border-color: #8a0f0f;
+  background: radial-gradient(circle, #ffd27a 0%, #f2502a 55%, #b51616 100%);
+}
+
+.ds-ms .ds-ms__cell--wrong {
+  background: linear-gradient(#f3d6d6, #dca8a8);
+  border-color: #a85a5a;
+}
+
+.ds-ms .ds-ms__glyph {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.ds-ms .ds-ms__glyph svg {
+  width: 62%;
+  height: 62%;
+}
+
+.ds-ms .ds-ms__flag {
+  color: #e2261c;
+}
+
+.ds-ms .ds-ms__flag svg:first-child {
+  fill: #e2261c;
+  stroke: #5a0b07;
+}
+
+.ds-ms .ds-ms__cross {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  color: #111;
+  stroke-width: 3;
+}
+
+.ds-ms .ds-ms__q {
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+/* ── Status bar ───────────────────────────────────────────────────────── */
+.ds-ms .ds-ms__status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 12px;
+  border-top: 1px solid #c3d0e2;
+  background: linear-gradient(#f4f7fb, #e2e9f3);
+  font-size: 13px;
+}
+
+.ds-ms .ds-ms__counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 70px;
+  color: #1b3a6b;
+}
+
+.ds-ms .ds-ms__counter:last-child {
+  justify-content: flex-end;
+}
+
+.ds-ms .ds-ms__counter-value {
+  min-width: 3ch;
+  padding: 1px 6px;
+  border: 1px solid #9fb3d1;
+  border-radius: 3px;
+  background: #fff;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  text-align: center;
+}
+
+.ds-ms .ds-ms__level {
+  color: #4a5a72;
+  font-size: 12px;
+}
+
+.ds-ms .ds-ms__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── In-app dialogs ───────────────────────────────────────────────────── */
+.ds-ms .ds-ms__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  background: rgba(220, 230, 245, 0.55);
+}
+
+.ds-ms .ds-ms__dialog {
+  width: min(360px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  padding: 14px 16px 12px;
+  border: 1px solid #6b85a8;
+  border-radius: 6px;
+  background: linear-gradient(#ffffff, #f0f3f8);
+  box-shadow:
+    0 0 0 4px rgba(170, 200, 235, 0.55),
+    0 8px 24px rgba(20, 40, 80, 0.35);
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.ds-ms .ds-ms__dlg-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  color: #1e3287;
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.ds-ms .ds-ms__dlg-text {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.ds-ms .ds-ms__dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 14px;
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+
+.ds-ms .ds-ms__dl dt {
+  color: #4a5a72;
+}
+
+.ds-ms .ds-ms__dl dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.ds-ms .ds-ms__dlg-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.ds-ms .ds-ms__fields {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.ds-ms .ds-ms__field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.ds-ms .ds-ms__field input {
+  width: 72px;
+  padding: 3px 5px;
+  border: 1px solid #abadb3;
+  border-radius: 2px;
+  background: #fff;
+  color: #000;
+  font: inherit;
+}
+
+.ds-ms .ds-ms__field input:focus {
+  border-color: #3d7bad;
+  outline: none;
+  box-shadow: 0 0 0 1px #3d7bad;
+}
+
+.ds-ms .ds-ms__error {
+  margin: 0 0 10px;
+  color: #b00020;
+  font-size: 12px;
+}
+
+.ds-ms .ds-ms__stats {
+  width: 100%;
+  margin-bottom: 12px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.ds-ms .ds-ms__stats th,
+.ds-ms .ds-ms__stats td {
+  padding: 4px 6px;
+  border-bottom: 1px solid #dde4ee;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
+.ds-ms .ds-ms__stats thead th {
+  color: #4a5a72;
+  font-weight: 400;
+}
+
+.ds-ms .ds-ms__stats tbody th {
+  font-weight: 600;
+}
+
+/* ── Motion (opt-in only) ─────────────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  .ds-ms .ds-ms__cell {
+    transition:
+      background-color 120ms ease,
+      box-shadow 120ms ease;
+  }
+
+  .ds-ms .ds-ms__cell--boom {
+    animation: ds-ms-boom 420ms ease-out;
+  }
+
+  .ds-ms .ds-ms__dialog {
+    animation: ds-ms-pop 180ms ease-out;
+  }
+
+  .ds-ms:is(.ds-os--still *) .ds-ms__cell,
+  .ds-ms:is(.ds-os--still *) .ds-ms__cell--boom,
+  .ds-ms:is(.ds-os--still *) .ds-ms__dialog {
+    transition: none;
+    animation: none;
+  }
+}
+
+@keyframes ds-ms-boom {
+  0% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes ds-ms-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .ds-ms .ds-ms__cell--closed {
+    border-color: ButtonText;
+  }
+  .ds-ms .ds-ms__cell--open {
+    border-color: GrayText;
+  }
+}

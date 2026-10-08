@@ -37,6 +37,7 @@ import ruCNews from "@/locales/ru/c-news.json";
 import ruCNightrail from "@/locales/ru/c-nightrail.json";
 import ruCPredictions from "@/locales/ru/c-predictions.json";
 import ruCProfileModules from "@/locales/ru/c-profile-modules.json";
+import ruCRebarRutabaga from "@/locales/ru/c-rebar-rutabaga.json";
 import ruCRideshare from "@/locales/ru/c-rideshare.json";
 import ruCRmhCapital from "@/locales/ru/c-rmh-capital.json";
 import ruCRmhPmc from "@/locales/ru/c-rmh-pmc.json";
@@ -81,6 +82,7 @@ import ruRRmhcode from "@/locales/ru/r-rmhcode.json";
 import ruRSecret from "@/locales/ru/r-secret.json";
 import ruRSliceIt from "@/locales/ru/r-slice-it.json";
 import ruRSohumbum from "@/locales/ru/r-sohumbum.json";
+import ruRSohumtracker from "@/locales/ru/r-sohumtracker.json";
 import ruRStrategies from "@/locales/ru/r-strategies.json";
 import ruRStudio from "@/locales/ru/r-studio.json";
 import ruRideshare from "@/locales/ru/rideshare.json";
@@ -131,6 +133,7 @@ const ruResources = {
   "c-nightrail": ruCNightrail,
   "c-predictions": ruCPredictions,
   "c-profile-modules": ruCProfileModules,
+  "c-rebar-rutabaga": ruCRebarRutabaga,
   "c-rideshare": ruCRideshare,
   "c-rmh-capital": ruCRmhCapital,
   "c-rmh-pmc": ruCRmhPmc,
@@ -175,6 +178,7 @@ const ruResources = {
   "r-secret": ruRSecret,
   "r-slice-it": ruRSliceIt,
   "r-sohumbum": ruRSohumbum,
+  "r-sohumtracker": ruRSohumtracker,
   "r-strategies": ruRStrategies,
   "r-studio": ruRStudio,
   "rideshare": ruRideshare,

@@ -19,7 +19,7 @@ import {
  searchShortcodes,
  replaceCompletedShortcode,
 } from'@/lib/emoji/shortcode-matcher';
-import { usePopPresence } from '@/hooks/usePopPresence';
+import { AnchoredMenu } from '@/components/ui/anchored-menu';
 
 interface UserSuggestion {
  id: string;
@@ -93,7 +93,6 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
  const [loading, setLoading] = useState(false);
  // The shared bloom (globals.css §7.1) — held mounted for its close.
  const popAnchorRef = useRef<HTMLSpanElement>(null);
- const popPanelRef = useRef<HTMLDivElement>(null);
 
  // Ignore stale fetches and re-open the menu only for fresh input.
  const requestSeq = useRef(0);
@@ -218,7 +217,6 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
 
  const isOpen = trigger !== null && (loading || suggestions.length > 0);
  const query = trigger?.query ??'';
- const { present: popPresent, state: popState } = usePopPresence(isOpen && position !== null);
 
  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
  if (isOpen && suggestions.length > 0) {
@@ -289,7 +287,12 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
  }}
  />
 
- {popPresent && position && (
+ {/* A 1x1 invisible span parked at the CARET. This popup is anchored to a
+ position in the text rather than to a control, and AnchoredMenu measures
+ against an element — so the span is the element. It renders for the whole
+ time the popup is open (it used to be gated on the presence hook, which is
+ the panel's lifetime, not the anchor's). */}
+ {isOpen && position && (
  <span
  ref={popAnchorRef}
  aria-hidden
@@ -297,22 +300,31 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
  style={{ top: position.top, left: Math.max(0, position.left) }}
  />
  )}
- {isOpen && position && (
- <div
- ref={popPanelRef}
- data-motion="pop"
- data-state={popState}
- className="absolute z-50 w-64 max-h-64 origin-top overflow-y-auto glass-overlay py-1"
- style={{ top: position.top, left: Math.max(0, position.left) }}
- // Keep focus in the textarea when clicking a row.
- onMouseDown={(e) => e.preventDefault()}
+ {/* PORTALLED. As an in-place `absolute z-50` this was measured inside
+ `.radial-frame`'s stacking context (pinned at 1) — and the composer's root
+ is `.glass-pane`, whose `backdrop-filter` opens a stacking context of its
+ own, so the suggestion list painted behind the first feed card. It also had
+ no collision flip: typing an @mention near the bottom of the screen ran the
+ list off the viewport. `focusOnOpen={false}` — focus must stay in the
+ textarea, which is what is driving it. */}
+ <AnchoredMenu
+ open={isOpen && position !== null}
+ onClose={close}
+ anchorRef={popAnchorRef}
+ role="listbox"
+ side="bottom"
+ align="start"
+ focusOnOpen={false}
+ label={tl("searching", { defaultValue:"Searching…"})}
+ className="w-64 max-h-64"
  >
+ <div>
  {loading && suggestions.length === 0 ? (
  <div className="px-3 py-2 text-xs text-site-text-dim">{tl("searching", { defaultValue:"Searching…"})}</div>
  ) : (
  suggestions.map((suggestion, i) => {
  const active = i === activeIndex;
- const rowClass = `flex items-center gap-2 w-full px-3 py-2 text-left transition-colors ${
+ const rowClass = `flex min-h-9 pointer-coarse:min-h-11 items-center gap-2.5 w-full rounded-site-sm px-3 py-2 text-left transition-colors duration-site ${
  active ?'bg-site-surface-hover':'hover:bg-site-surface-hover'
  }`;
  if (suggestion.kind ==='user') {
@@ -323,6 +335,8 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
  type="button"
  className={rowClass}
  onMouseEnter={() => setActiveIndex(i)}
+ // Keeps focus in the textarea when a row is pressed.
+ onMouseDown={(e) => e.preventDefault()}
  onClick={() => applySuggestion(suggestion)}
  >
  <span className="w-7 h-7 rounded-full bg-white/10 shrink-0 overflow-hidden flex items-center justify-center text-xs font-bold text-site-text">
@@ -358,6 +372,8 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
  type="button"
  className={rowClass}
  onMouseEnter={() => setActiveIndex(i)}
+ // Keeps focus in the textarea when a row is pressed.
+ onMouseDown={(e) => e.preventDefault()}
  onClick={() => applySuggestion(suggestion)}
  >
  <span className="w-7 h-7 shrink-0 flex items-center justify-center text-lg">
@@ -378,6 +394,8 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
  type="button"
  className={rowClass}
  onMouseEnter={() => setActiveIndex(i)}
+ // Keeps focus in the textarea when a row is pressed.
+ onMouseDown={(e) => e.preventDefault()}
  onClick={() => applySuggestion(suggestion)}
  >
  <span className="w-7 h-7 rounded-full bg-site-accent/15 text-site-accent shrink-0 flex items-center justify-center text-sm font-bold">
@@ -396,7 +414,7 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
  })
  )}
  </div>
- )}
+ </AnchoredMenu>
  </div>
  );
  },

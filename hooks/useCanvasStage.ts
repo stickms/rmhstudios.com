@@ -37,16 +37,40 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 
-/** Every colour a spatial view draws in, resolved to strings a canvas accepts. */
+/** Every colour a canvas view draws in, resolved to strings a canvas accepts. */
 export interface StagePaint {
-  /** The eight categorical hues, in `DEBT_CATEGORIES` order. */
-  categories: string[];
-  /** The five sequential steps, pale end first. */
-  sequential: string[];
+  /**
+   * The caller's categorical hues, in the order its {@link StagePaintSpec}
+   * listed them — the debt ledger's eight categories, the menu's nine pearls.
+   */
+  palette: string[];
+  /** The caller's sequential ramp, pale end first. Empty if it asked for none. */
+  ramp: string[];
   /** The theme's text ink. Every lighter weight is `globalAlpha` on this. */
   ink: string;
   /** The theme's page background — the surface ring around a hovered mark. */
   surface: string;
+}
+
+/**
+ * Which CSS custom properties a view's palette is read from, and what to draw if
+ * one cannot be resolved.
+ *
+ * The hook does not know any page's colours: a view names its own variables and
+ * ships its own fallbacks, which is what lets the debt ledger, the 4D projection
+ * and the Rebar & Rutabaga menu globe share one loop without sharing a palette.
+ * Fallbacks are per-token, so a browser that cannot resolve one value loses that
+ * one colour rather than the whole chart.
+ */
+export interface StagePaintSpec {
+  /** Custom-property names for the categorical hues. */
+  palette: readonly string[];
+  /** Custom-property names for the sequential ramp. May be empty. */
+  ramp?: readonly string[];
+  /** Literal colours, positionally matching `palette`. */
+  paletteFallback: readonly string[];
+  /** Literal colours, positionally matching `ramp`. */
+  rampFallback?: readonly string[];
 }
 
 /** What a renderer is handed each frame. The object is reused; never retain it. */
@@ -74,40 +98,16 @@ export interface StageFrame {
  */
 export type StageRenderer = (ctx: CanvasRenderingContext2D, frame: StageFrame) => boolean | void;
 
-const FALLBACK_PAINT: StagePaint = {
-  categories: [
-    'rgb(218 118 0)',
-    'rgb(0 98 212)',
-    'rgb(0 168 77)',
-    'rgb(146 0 254)',
-    'rgb(174 146 0)',
-    'rgb(186 0 122)',
-    'rgb(0 166 186)',
-    'rgb(229 0 38)',
-  ],
-  sequential: [
-    'rgb(250 156 78)',
-    'rgb(236 127 31)',
-    'rgb(213 104 0)',
-    'rgb(187 83 0)',
-    'rgb(161 63 0)',
-  ],
+/**
+ * What a view draws with before its first paint resolve, and if the element is
+ * gone. Ink and surface only: a palette belongs to the caller's spec.
+ */
+const BASE_PAINT: StagePaint = {
+  palette: [],
+  ramp: [],
   ink: 'rgb(20 20 20)',
   surface: 'rgb(255 255 255)',
 };
-
-const CATEGORY_VARS = [
-  '--kd-cat-food',
-  '--kd-cat-transit',
-  '--kd-cat-rent',
-  '--kd-cat-gear',
-  '--kd-cat-gambling',
-  '--kd-cat-emotional',
-  '--kd-cat-temporal',
-  '--kd-cat-other',
-];
-
-const SEQUENTIAL_VARS = ['--kd-seq-1', '--kd-seq-2', '--kd-seq-3', '--kd-seq-4', '--kd-seq-5'];
 
 /**
  * Read the palette off an element.
@@ -117,19 +117,21 @@ const SEQUENTIAL_VARS = ['--kd-seq-1', '--kd-seq-2', '--kd-seq-3', '--kd-seq-4',
  * the same literals the stylesheet carries, so a failure here is invisible
  * rather than a chart drawn in black.
  */
-function readPaint(el: Element): StagePaint {
+function readPaint(el: Element, spec: StagePaintSpec): StagePaint {
   const cs = getComputedStyle(el);
   const token = (name: string, fallback: string) => {
     const value = cs.getPropertyValue(name).trim();
     return /^(rgb|rgba|#|color\()/i.test(value) ? value : fallback;
   };
   return {
-    categories: CATEGORY_VARS.map((name, i) => token(name, FALLBACK_PAINT.categories[i]!)),
-    sequential: SEQUENTIAL_VARS.map((name, i) => token(name, FALLBACK_PAINT.sequential[i]!)),
+    palette: spec.palette.map((name, i) => token(name, spec.paletteFallback[i] ?? BASE_PAINT.ink)),
+    ramp: (spec.ramp ?? []).map((name, i) =>
+      token(name, spec.rampFallback?.[i] ?? BASE_PAINT.ink),
+    ),
     // `color` is already a resolved colour on every engine — it is the one
     // channel that never needs the fallback dance above.
-    ink: cs.color || FALLBACK_PAINT.ink,
-    surface: token('--site-bg', FALLBACK_PAINT.surface),
+    ink: cs.color || BASE_PAINT.ink,
+    surface: token('--site-bg', BASE_PAINT.surface),
   };
 }
 
@@ -148,6 +150,7 @@ const MAX_DPR = 2;
 export function useCanvasStage(
   render: StageRenderer,
   animate: boolean,
+  paintSpec: StagePaintSpec,
 ): {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   /** Ask for one more frame. Cheap and idempotent — safe to call from an event. */
@@ -158,6 +161,13 @@ export function useCanvasStage(
   renderRef.current = render;
   const animateRef = useRef(animate);
   animateRef.current = animate;
+
+  // Held in a ref, not a dependency: a caller that builds its spec inline would
+  // otherwise tear down and re-mount the whole loop on every render. The spec is
+  // read at the moments the palette is resolved (mount, resize, theme change),
+  // which is exactly when a changed one should take effect.
+  const paintSpecRef = useRef(paintSpec);
+  paintSpecRef.current = paintSpec;
 
   const dirtyRef = useRef(true);
   const kickRef = useRef<() => void>(() => {});
@@ -178,7 +188,7 @@ export function useCanvasStage(
     if (!canvas) return;
 
     let ctx: CanvasRenderingContext2D | null = null;
-    let paint = FALLBACK_PAINT;
+    let paint = BASE_PAINT;
     const frame: StageFrame = { width: 0, height: 0, paint, nowMs: 0, dt: 0 };
 
     let raf = 0;
@@ -210,7 +220,7 @@ export function useCanvasStage(
     };
 
     const readTheme = () => {
-      paint = readPaint(canvas);
+      paint = readPaint(canvas, paintSpecRef.current);
       frame.paint = paint;
       dirtyRef.current = true;
     };

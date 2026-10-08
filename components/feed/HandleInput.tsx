@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback, type KeyboardEvent } from'react';
 import { useTranslation } from'react-i18next';
 import { BadgeCheck } from'lucide-react';
-import { usePopPresence } from '@/hooks/usePopPresence';
+import { AnchoredMenu } from '@/components/ui/anchored-menu';
 
 interface UserSuggestion {
  id: string;
@@ -65,11 +65,11 @@ export function HandleInput({ value, onChange, multiple = false, placeholder, cl
  const [activeIndex, setActiveIndex] = useState(0);
  const [loading, setLoading] = useState(false);
  const requestSeq = useRef(0);
- // The shared bloom (globals.css §7.1) — held mounted for its close.
- const popPanelRef = useRef<HTMLDivElement>(null);
- const { present: popPresent, state: popState } = usePopPresence(
- open && (loading || suggestions.length > 0),
- );
+ // The wrapper is the anchor AnchoredMenu measures against and the element an
+ // outside press is tested inside, so a press on the field itself never closes
+ // the panel. AnchoredMenu owns the enter/exit animation and the presence hold.
+ const boxRef = useRef<HTMLDivElement>(null);
+ const popOpen = open && (loading || suggestions.length > 0);
 
  const { t } = useTranslation('feed');
  const { token, start } = currentToken(value, multiple);
@@ -147,7 +147,7 @@ export function HandleInput({ value, onChange, multiple = false, placeholder, cl
  };
 
  return (
- <div className="relative">
+ <div className="relative"ref={boxRef}>
  <input
  {...rest}
  ref={inputRef}
@@ -162,13 +162,25 @@ export function HandleInput({ value, onChange, multiple = false, placeholder, cl
  autoComplete="off"
  />
 
- {popPresent && (
- <div
- ref={popPanelRef}
- data-motion="pop"
- data-state={popState}
- className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 origin-top overflow-y-auto glass-overlay py-1"
- onMouseDown={(e) => e.preventDefault()}
+ {/* PORTALLED. In place this was `absolute … z-50`, and z-50 is not what it
+ looks like here: `RankedColumn` puts `LIFT_CARD` (a `hover:-translate-y-0.5`)
+ on the section that holds this field, so WHILE THE POINTER IS OVER IT — which
+ it is, because you just clicked the field — that section is a stacking context
+ and its whole subtree paints before the block below. You saw the first row or
+ two and the rest went under the challenge cards; move the pointer away and it
+ popped into view, so it read as intermittent, and on touch it never reproduced
+ at all. No z-index inside a transformed ancestor can fix that. Dropping the
+ hover lift would only leave the trap for the next card that gains one.
+ `focusOnOpen={false}`: this is a combobox and focus must stay in the input. */}
+ <AnchoredMenu
+ open={popOpen}
+ onClose={close}
+ anchorRef={boxRef}
+ role="listbox"
+ align="start"
+ focusOnOpen={false}
+ label={t("searching", { defaultValue:"Searching…"})}
+ className="w-[var(--anchored-menu-anchor-w)] max-h-60"
  >
  {loading && suggestions.length === 0 ? (
  <div className="px-3 py-2 text-xs text-site-text-dim">{t("searching", { defaultValue:"Searching…"})}</div>
@@ -181,6 +193,12 @@ export function HandleInput({ value, onChange, multiple = false, placeholder, cl
  i === activeIndex ?'bg-site-surface-active':'hover:bg-site-surface-hover'
  }`}
  onMouseEnter={() => setActiveIndex(i)}
+ // Keeps the input focused: the field's `onBlur` closes the list, so
+ // without this the press would dismiss the panel before its own
+ // click landed. It lived on the panel wrapper before this file
+ // portalled; a bare div carrying a pointer handler is a static
+ // interactive element, and the rows are already buttons.
+ onMouseDown={(e) => e.preventDefault()}
  onClick={() => apply(u)}
  >
  <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-xs font-bold text-site-text">
@@ -207,8 +225,7 @@ export function HandleInput({ value, onChange, multiple = false, placeholder, cl
  </button>
  ))
  )}
- </div>
- )}
+ </AnchoredMenu>
  </div>
  );
 }

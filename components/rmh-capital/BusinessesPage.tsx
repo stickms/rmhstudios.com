@@ -10,7 +10,7 @@ export default function BusinessesPage() {
           <span className="eyebrow reveal">{t("businesses-eyebrow", { defaultValue: "Our Businesses" })}</span>
           <h1 className="serif reveal d1">{t("businesses-headline", { defaultValue: "Six businesses. One continuous relationship." })}</h1>
           <p className="lede reveal d2">
-            {t("businesses-lede", { defaultValue: "Each business leads in its discipline. Together, they let a client raise, grow, advise, transact, and own — every step ordered along the arc a company travels, from first round to public markets and beyond." })}
+            {t("businesses-lede-businesses-page", { defaultValue: "Each business leads in its discipline. Together, they let a client raise, grow, advise, transact, and own — every step ordered along the arc a company travels, from first round to public markets and beyond." })}
           </p>
         </div>
       </section>
@@ -122,12 +122,12 @@ export default function BusinessesPage() {
       <section className="section tight">
         <div className="container">
           <div className="cta-band reveal">
-            <span className="eyebrow center">{t("cta-eyebrow", { defaultValue: "One Platform" })}</span>
+            <span className="eyebrow center">{t("cta-eyebrow-businesses-page", { defaultValue: "One Platform" })}</span>
             <h2 style={{ marginTop: 18 }}>{t("cta-headline", { defaultValue: "The advantage is in the connections." })}</h2>
             <p>
               {t("cta-desc", { defaultValue: "A founder we back through venture can become a banking client, an advisory client, and a co-investment partner over a decade. Talk to us about where you are on the arc." })}
             </p>
-            <Link className="btn btn-gold" to="/rmh-capital/contact">{t("cta-link", { defaultValue: "Start a conversation" })} <span className="arw">→</span></Link>
+            <Link className="btn btn-gold" to="/rmh-capital/contact">{t("cta-link-businesses-page", { defaultValue: "Start a conversation" })} <span className="arw">→</span></Link>
           </div>
         </div>
       </section>

@@ -37,6 +37,7 @@ import viCNews from "@/locales/vi/c-news.json";
 import viCNightrail from "@/locales/vi/c-nightrail.json";
 import viCPredictions from "@/locales/vi/c-predictions.json";
 import viCProfileModules from "@/locales/vi/c-profile-modules.json";
+import viCRebarRutabaga from "@/locales/vi/c-rebar-rutabaga.json";
 import viCRideshare from "@/locales/vi/c-rideshare.json";
 import viCRmhCapital from "@/locales/vi/c-rmh-capital.json";
 import viCRmhPmc from "@/locales/vi/c-rmh-pmc.json";
@@ -81,6 +82,7 @@ import viRRmhcode from "@/locales/vi/r-rmhcode.json";
 import viRSecret from "@/locales/vi/r-secret.json";
 import viRSliceIt from "@/locales/vi/r-slice-it.json";
 import viRSohumbum from "@/locales/vi/r-sohumbum.json";
+import viRSohumtracker from "@/locales/vi/r-sohumtracker.json";
 import viRStrategies from "@/locales/vi/r-strategies.json";
 import viRStudio from "@/locales/vi/r-studio.json";
 import viRideshare from "@/locales/vi/rideshare.json";
@@ -131,6 +133,7 @@ const viResources = {
   "c-nightrail": viCNightrail,
   "c-predictions": viCPredictions,
   "c-profile-modules": viCProfileModules,
+  "c-rebar-rutabaga": viCRebarRutabaga,
   "c-rideshare": viCRideshare,
   "c-rmh-capital": viCRmhCapital,
   "c-rmh-pmc": viCRmhPmc,
@@ -175,6 +178,7 @@ const viResources = {
   "r-secret": viRSecret,
   "r-slice-it": viRSliceIt,
   "r-sohumbum": viRSohumbum,
+  "r-sohumtracker": viRSohumtracker,
   "r-strategies": viRStrategies,
   "r-studio": viRStudio,
   "rideshare": viRideshare,

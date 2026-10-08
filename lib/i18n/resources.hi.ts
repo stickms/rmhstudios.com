@@ -37,6 +37,7 @@ import hiCNews from "@/locales/hi/c-news.json";
 import hiCNightrail from "@/locales/hi/c-nightrail.json";
 import hiCPredictions from "@/locales/hi/c-predictions.json";
 import hiCProfileModules from "@/locales/hi/c-profile-modules.json";
+import hiCRebarRutabaga from "@/locales/hi/c-rebar-rutabaga.json";
 import hiCRideshare from "@/locales/hi/c-rideshare.json";
 import hiCRmhCapital from "@/locales/hi/c-rmh-capital.json";
 import hiCRmhPmc from "@/locales/hi/c-rmh-pmc.json";
@@ -81,6 +82,7 @@ import hiRRmhcode from "@/locales/hi/r-rmhcode.json";
 import hiRSecret from "@/locales/hi/r-secret.json";
 import hiRSliceIt from "@/locales/hi/r-slice-it.json";
 import hiRSohumbum from "@/locales/hi/r-sohumbum.json";
+import hiRSohumtracker from "@/locales/hi/r-sohumtracker.json";
 import hiRStrategies from "@/locales/hi/r-strategies.json";
 import hiRStudio from "@/locales/hi/r-studio.json";
 import hiRideshare from "@/locales/hi/rideshare.json";
@@ -131,6 +133,7 @@ const hiResources = {
   "c-nightrail": hiCNightrail,
   "c-predictions": hiCPredictions,
   "c-profile-modules": hiCProfileModules,
+  "c-rebar-rutabaga": hiCRebarRutabaga,
   "c-rideshare": hiCRideshare,
   "c-rmh-capital": hiCRmhCapital,
   "c-rmh-pmc": hiCRmhPmc,
@@ -175,6 +178,7 @@ const hiResources = {
   "r-secret": hiRSecret,
   "r-slice-it": hiRSliceIt,
   "r-sohumbum": hiRSohumbum,
+  "r-sohumtracker": hiRSohumtracker,
   "r-strategies": hiRStrategies,
   "r-studio": hiRStudio,
   "rideshare": hiRideshare,

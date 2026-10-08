@@ -73,8 +73,10 @@ export function HorizontalScroller({
  data-slot="horizontal-scroller"
  className={cn(
  'group/scroll relative min-w-0 max-w-full',
- surface === 'fill' && 'bg-site-surface border border-site-border rounded-site p-1.5',
- surface === 'pill' && 'bg-site-surface border border-site-border rounded-full p-1',
+ // `.glass-fill` (L1): a tray holding repeated children is exactly that tier,
+ // and L1 has no blur so there is no budget cost to nesting one.
+ surface === 'fill' && 'glass-fill rounded-site p-1.5',
+ surface === 'pill' && 'glass-fill rounded-full p-1',
  className,
  )}
  >

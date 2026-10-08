@@ -44,7 +44,7 @@ export function RideChat({ messages, currentUserId, onSend, disabled, otherName 
   }
 
   return (
-    <div className="flex flex-col rounded-site border border-site-border bg-site-surface/80">
+    <div className="flex flex-col glass-fill rounded-site">
       <div className="flex items-center gap-2 border-b border-site-border px-4 py-2.5">
         <MessageCircle className="h-4 w-4 text-site-accent" />
         <span className="text-sm font-semibold text-site-text">
@@ -84,7 +84,7 @@ export function RideChat({ messages, currentUserId, onSend, disabled, otherName 
           disabled={disabled}
           maxLength={500}
           placeholder={disabled ? t("chat-unavailable", { defaultValue: "Chat unavailable" }) : t("type-message", { defaultValue: "Type a message…" })}
-          className="min-w-0 flex-1 rounded-site-sm border border-site-border bg-site-surface px-3 py-2.5 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 disabled:opacity-50 sm:py-2 sm:text-sm"
+          className="min-w-0 flex-1 glass-inset rounded-site-sm px-3 py-2.5 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 disabled:opacity-50 sm:py-2 sm:text-sm"
         />
         <button
           type="submit"

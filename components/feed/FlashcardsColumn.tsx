@@ -135,7 +135,7 @@ export function FlashcardsColumn({
   );
 
   return (
-    <div className="min-h-screen">
+    <div>
       <ColumnHeader
         icon={BookOpen}
         title={t('flashcards-title', { defaultValue: 'Flashcards' })}

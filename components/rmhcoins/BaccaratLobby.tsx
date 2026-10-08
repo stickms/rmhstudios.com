@@ -164,7 +164,7 @@ export function BaccaratLobby() {
               <div className="flex flex-col gap-0.5">
                 <span className="text-sm font-bold text-site-text">{room.name}</span>
                 <span className="text-xs text-site-text-dim">
-                  {t("hosted-by", { defaultValue: "hosted by {{name}}", name: room.ownerName })}
+                  {t("hosted-by-baccarat-lobby", { defaultValue: "hosted by {{name}}", name: room.ownerName })}
                   {room.inProgress && (
                     <span className="ml-1.5 text-site-accent">{t("in-progress", { defaultValue: "In progress" })}</span>
                   )}

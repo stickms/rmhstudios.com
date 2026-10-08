@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 269 routes. 137 render inside the standard site shell (sidebar, nav, context rail); 132 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 280 routes. 144 render inside the standard site shell (sidebar, nav, context rail); 136 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -102,6 +102,12 @@ Standard pages, rendered inside the sidebar shell.
 | `/rideshare` | RMH Rideshare — Rides across the community | public | `app/routes/_site/rideshare/index.tsx` |
 | `/rideshare/drive` | Drive with RMH Rideshare | public | `app/routes/_site/rideshare/drive.tsx` |
 | `/rideshare/ride` | Request a ride — RMH Rideshare | public | `app/routes/_site/rideshare/ride.tsx` |
+| `/rmh-datacenter` | — | public | `app/routes/_site/rmh-datacenter/index.tsx` |
+| `/rmh-datacenter/contact` | — | public | `app/routes/_site/rmh-datacenter/contact.tsx` |
+| `/rmh-datacenter/facilities` | — | public | `app/routes/_site/rmh-datacenter/facilities.tsx` |
+| `/rmh-datacenter/network` | — | public | `app/routes/_site/rmh-datacenter/network.tsx` |
+| `/rmh-datacenter/platform` | — | public | `app/routes/_site/rmh-datacenter/platform.tsx` |
+| `/rmh-datacenter/power` | — | public | `app/routes/_site/rmh-datacenter/power.tsx` |
 | `/rmhladder` | RMH Ladder \| Verified Early-Career Jobs | public | `app/routes/_site/rmhladder/index.tsx` |
 | `/rmhladder/alerts` | — | sign-in | `app/routes/_site/rmhladder/alerts.tsx` |
 | `/rmhladder/companies` | — | admin | `app/routes/_site/rmhladder/companies.tsx` |
@@ -113,8 +119,9 @@ Standard pages, rendered inside the sidebar shell.
 | `/rmhladder/settings` | — | sign-in | `app/routes/_site/rmhladder/settings.tsx` |
 | `/roadmap` | Roadmap & requests | public | `app/routes/_site/roadmap.tsx` |
 | `/saves` | Saved | public | `app/routes/_site/saves/index.tsx` |
+| `/schedule` | Schedule | public | `app/routes/_site/schedule.tsx` |
 | `/search` | redirects to `/explore` | public | `app/routes/_site/search.tsx` |
-| `/services` | Services | public | `app/routes/_site/services.tsx` |
+| `/services` | Services | public | `app/routes/_site/services/index.tsx` |
 | `/settings` | Settings | public | `app/routes/_site/settings/index.tsx` |
 | `/settings/account-status` | Account status | public | `app/routes/_site/settings/account-status.tsx` |
 | `/settings/appearance` | Appearance | public | `app/routes/_site/settings/appearance.tsx` |
@@ -171,6 +178,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/altair/multiplayer/:lobbyId` | — | sign-in | `app/routes/altair/multiplayer/$lobbyId.tsx` |
 | `/black-lives-matter` | Black Lives Matter | public | `app/routes/black-lives-matter.tsx` |
 | `/blog/rss.xml` | RMH Studios — Blog | public | `app/routes/blog.rss[.]xml.ts` |
+| `/breaches` | Breaches | public | `app/routes/breaches.tsx` |
 | `/bums-rush` | — | public | `app/routes/bums-rush.tsx` |
 | `/cookgame` | — | public | `app/routes/cookgame.tsx` |
 | `/cookies` | Cookie Policy | public | `app/routes/cookies.tsx` |
@@ -179,6 +187,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/daily` | Daily Puzzles — a new set every day | public | `app/routes/daily/index.tsx` |
 | `/daily/alibi` | — | public | `app/routes/daily/alibi.tsx` |
 | `/daily/chainlink` | — | public | `app/routes/daily/chainlink.tsx` |
+| `/daily/globeset` | GlobeSet — the daily globe puzzle | public | `app/routes/daily/globeset.tsx` |
 | `/daily/impostor` | — | public | `app/routes/daily/impostor.tsx` |
 | `/daily/lights-out` | — | public | `app/routes/daily/lights-out.tsx` |
 | `/daily/outcast` | — | public | `app/routes/daily/outcast.tsx` |
@@ -190,6 +199,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/discord/lights-out` | — | public | `app/routes/discord/lights-out.tsx` |
 | `/discord/rmhbox` | — | public | `app/routes/discord/rmhbox.tsx` |
 | `/dream-rift` | — | public | `app/routes/dream-rift.tsx` |
+| `/dunesday` | Dunesday — MCU + Dune Marathon Planner | public | `app/routes/dunesday.tsx` |
 | `/embed/post/:id` | — | public | `app/routes/embed.post.$id.tsx` |
 | `/embed/replay/:id` | — | public | `app/routes/embed.replay.$id.tsx` |
 | `/forest-explorer` | — | public | `app/routes/forest-explorer/index.tsx` |
@@ -257,6 +267,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/secret/signal-forge` | Signal Forge | public | `app/routes/secret/signal-forge.tsx` |
 | `/secret/vega` | Project Vega | public | `app/routes/secret/vega.tsx` |
 | `/security` | Security | public | `app/routes/security.tsx` |
+| `/services/rebar-rutabaga` | Rebar & Rutabaga | public | `app/routes/services.rebar-rutabaga.tsx` |
 | `/sitemap.xml` | — | public | `app/routes/sitemap[.]xml.ts` |
 | `/sitemaps/:name` | — | public | `app/routes/sitemaps.$name.ts` |
 | `/slice-it` | Slice It! | public | `app/routes/slice-it/index.tsx` |

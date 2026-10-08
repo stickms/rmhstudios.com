@@ -446,7 +446,7 @@ function ConversationRow({
  to={`/messages/${conv.id}`as string}
  // Row separators come from the container's divide-y (§8.4), not a per-row
  // border, so rows read as one dense card rather than stacked slabs.
- className="flex items-center gap-3 px-4 py-3 hover:bg-site-surface/50 active:scale-[0.99] transition-[background-color,transform] duration-site-fast"
+ className="flex items-center gap-3 px-4 py-3 hover:bg-site-surface/50 active:scale-[0.99] transition-[background-color,scale] duration-site-fast"
  >
  <UserAvatar
  src={conv.otherUser.image ?? undefined}

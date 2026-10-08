@@ -81,6 +81,24 @@ export const MetricSchema = z.object({
 
   /* bfcache — the disqualifiers, comma-separated. */
   reasons: diagnostic,
+
+  /* Device context — the dimension that makes a mobile-only regression
+     visible instead of averaging it into a pooled percentile. Every field is
+     bucketed client-side (`lib/rum.ts` §Device context) and re-bounded here,
+     because the client is not trusted: an enum rejects a forged form factor
+     outright, and the numeric caps stop a hostile beacon from opening a new
+     time series per value. */
+  formFactor: z.enum(['mobile', 'tablet', 'desktop']).optional(),
+  vw: z.number().int().nonnegative().max(10_000).optional(),
+  dpr: z.number().min(0).max(10).optional(),
+  mem: z.number().min(0).max(1_024).optional(),
+  cores: z.number().int().nonnegative().max(1_024).optional(),
+  /* Not an enum: `effectiveType` is '4g' | '3g' | '2g' | 'slow-2g' today, but
+     it is a living spec and a value this schema has not heard of must be
+     logged as-is rather than 400 the whole beacon. Normalized before it is
+     logged. */
+  net: z.string().max(32).optional(),
+  saveData: z.boolean().optional(),
 });
 
 export type RumMetricInput = z.infer<typeof MetricSchema>;
@@ -155,6 +173,24 @@ export function normalizeReasons(value: string | undefined): string | undefined 
   return [...new Set(tokens)].sort().join(',').slice(0, REASONS_MAX) || undefined;
 }
 
+/**
+ * Reduce `navigator.connection.effectiveType` to a lowercase token.
+ *
+ * The schema accepts any short string (the spec can add values), so this is
+ * what keeps the logged field low-cardinality: anything that is not one of the
+ * four shipped tokens is collapsed to `other` rather than becoming its own
+ * series. `undefined` stays `undefined` — "not reported" and "reported as
+ * something unfamiliar" are different facts.
+ */
+const EFFECTIVE_TYPES = new Set(['slow-2g', '2g', '3g', '4g']);
+
+export function normalizeEffectiveType(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const token = value.trim().toLowerCase();
+  if (!token) return undefined;
+  return EFFECTIVE_TYPES.has(token) ? token : 'other';
+}
+
 export const Route = createFileRoute('/api/rum')({
   server: {
     handlers: {
@@ -197,6 +233,16 @@ export const Route = createFileRoute('/api/rum')({
             elementRenderDelay: m.elementRenderDelay,
             shifted: normalizeSelector(m.shifted),
             reasons: normalizeReasons(m.reasons),
+            // Device context. Absent for any client cached from before this
+            // shipped, which is why the reporter treats a missing form factor
+            // as its own `unknown` bucket rather than dropping the sample.
+            formFactor: m.formFactor,
+            vw: m.vw,
+            dpr: m.dpr,
+            mem: m.mem,
+            cores: m.cores,
+            net: normalizeEffectiveType(m.net),
+            saveData: m.saveData,
           };
 
           // Every valid sample is emitted so the log pipeline can calculate p75

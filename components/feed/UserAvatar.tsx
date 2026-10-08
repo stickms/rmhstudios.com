@@ -77,7 +77,7 @@ function UserAvatarImpl({ user, size ='md', linkToProfile = true }: UserAvatarPr
  return (
  <Link
  to={userProfileHref(user)}
- className="block shrink-0 rounded-full transition-[transform,opacity] duration-site-fast hover:opacity-90 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+ className="block shrink-0 rounded-full transition-[scale,opacity] duration-site-fast hover:opacity-90 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
  >
  {avatar}
  </Link>

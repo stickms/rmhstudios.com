@@ -13,6 +13,8 @@ import type { Build } from '@/lib/user-builds-types';
 import { useTranslation } from 'react-i18next';
 import { Reveal } from '@/components/motion';
 import { LIFT_CARD } from '@/components/feed/motionHelpers';
+import { PageLayout } from '@/components/feed/PageLayout';
+import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 
 export const Route = createFileRoute('/_site/user-builds/manage')({
   // `noindex`: one account's own builds (and `Disallow`ed in robots.txt).
@@ -76,56 +78,47 @@ function ManageContent() {
 
   if (isPending) {
     return (
-      <div className="min-h-screen bg-site-bg pt-20 pb-12 flex items-center justify-center">
-        <Spinner size={32} />
-      </div>
+      <PageLayout title={t('my-builds', { defaultValue: 'My Builds' })} backTo="/user-builds" wide>
+        <div className="flex min-h-[40dvh] items-center justify-center">
+          <Spinner size={32} />
+        </div>
+      </PageLayout>
     );
   }
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-site-bg pt-20 pb-12">
-        <div className="max-w-md mx-auto px-4 text-center">
-          <div className="p-8 rounded-site border border-site-border bg-site-surface">
-            <Boxes className="w-12 h-12 text-site-accent mx-auto mb-4" />
-            <h1 className="text-xl font-semibold text-site-text mb-2">
-              {t('sign-in-required', { defaultValue: 'Sign In Required' })}
-            </h1>
-            <p className="text-site-text-muted mb-6">
-              {t('sign-in-to-manage', {
-                defaultValue: 'You need to sign in to manage your builds.',
-              })}
-            </p>
-            <Link to="/login" search={{ callbackURL: '/user-builds/manage' }}>
-              <Button variant="accent" className="w-full bg-site-accent hover:bg-site-accent">
-                {t('sign-in', { defaultValue: 'Sign In' })}
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
+      <PageLayout title={t('my-builds', { defaultValue: 'My Builds' })} backTo="/user-builds" wide>
+        <SignedOutPrompt
+          icon={Boxes}
+          callbackURL="/user-builds/manage"
+          title={t('sign-in-required', { defaultValue: 'Sign In Required' })}
+          description={t('sign-in-to-manage', {
+            defaultValue: 'You need to sign in to manage your builds.',
+          })}
+          actionLabel={t('sign-in', { defaultValue: 'Sign In' })}
+        />
+      </PageLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-site-bg pt-20 pb-12">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Reveal className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-site-text flex items-center gap-3 mb-2">
-              <Boxes className="w-8 h-8 text-site-accent" />
-              {t('my-builds', { defaultValue: 'My Builds' })}
-            </h1>
-            <p className="text-site-text-muted">
-              {t('manage-subtitle', { defaultValue: 'Manage your published and draft builds' })}
-            </p>
-          </div>
-          <Link to="/user-builds/submit">
-            <Button variant="accent" className="bg-site-accent hover:bg-site-accent">
-              <Plus className="w-4 h-4 mr-2" /> {t('new-build', { defaultValue: 'New Build' })}
-            </Button>
-          </Link>
-        </Reveal>
+    // The hand-rolled `<h1>` + subtitle + action row becomes the frame's own
+    // title/description/headerRight, so this page's header is the same object as
+    // every other route's instead of a lookalike at a different size.
+    <PageLayout
+      title={t('my-builds', { defaultValue: 'My Builds' })}
+      description={t('manage-subtitle', { defaultValue: 'Manage your published and draft builds' })}
+      backTo="/user-builds"
+      wide
+      headerRight={
+        <Link to="/user-builds/submit">
+          <Button variant="accent">
+            <Plus className="w-4 h-4" /> {t('new-build', { defaultValue: 'New Build' })}
+          </Button>
+        </Link>
+      }
+    >
 
         {loading ? (
           <div className="flex justify-center py-12">
@@ -218,8 +211,7 @@ function ManageContent() {
             ))}
           </Reveal>
         )}
-      </div>
-    </div>
+    </PageLayout>
   );
 }
 
@@ -227,7 +219,7 @@ function ManageBuildsPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-site-bg pt-20 pb-12 flex items-center justify-center">
+        <div className="flex min-h-[60dvh] items-center justify-center">
           <Spinner size={32} />
         </div>
       }

@@ -39,7 +39,7 @@ export function CommunityListSkeleton({ count = 6 }: { count?: number }) {
  */
 export function CommunitiesSkeleton() {
  return (
- <div className="min-h-screen">
+ <div>
  {/* Real ColumnHeader, skeleton contents: the drawer button is live and
  usable while the page loads, and the header doesn't shift when the real
  one swaps in. */}
