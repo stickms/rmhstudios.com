@@ -98,7 +98,7 @@ export function NeumorphicModal({
           <DialogPrimitive.Close asChild>
             <button
               className="absolute top-6 right-6 p-2 rounded-xl text-slice-text-light hover:text-slice-text transition-colors shadow-[4px_4px_8px_var(--slice-shadow-dark),-4px_-4px_8px_var(--slice-shadow-light)] active:shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]"
-              aria-label={t('close', { defaultValue: 'Close' })}
+              aria-label={t('close-neumorphic-modal', { defaultValue: 'Close' })}
             >
               <X className="w-4 h-4" />
             </button>

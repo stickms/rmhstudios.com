@@ -109,7 +109,7 @@ function AdminReportsPage() {
   };
 
   return (
-    <PageLayout title={t('moderation-queue', { defaultValue: 'Moderation Queue' })} wide backTo="/admin">
+    <PageLayout title={t('moderation-queue-title', { defaultValue: 'Moderation Queue' })} wide backTo="/admin">
       <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
         <div className="flex items-center gap-2 text-site-text-muted text-sm">
           <Flag className="h-5 w-5 text-site-accent shrink-0" />
@@ -131,7 +131,7 @@ function AdminReportsPage() {
           value={status}
           onChange={(id) => setStatus(id as (typeof STATUS_TABS)[number])}
           scroll
-          aria-label={t('moderation-queue-reports', { defaultValue: 'Moderation queue' })}
+          aria-label={t('moderation-queue', { defaultValue: 'Moderation queue' })}
         />
 
         {loading ? (
