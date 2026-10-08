@@ -9,7 +9,17 @@ interface VUMeterProps {
 }
 
 /**
- * Canvas-rendered VU meter at 30fps.
+ * Canvas-rendered VU meter.
+ *
+ * Idle at rest: the frame loop runs only while the displayed level is still
+ * easing toward `level`, then stops. It used to reschedule itself forever and
+ * repaint an unchanged meter on every vsync — two master meters plus one per
+ * channel strip, so a mixer at rest cost (2 + channels) canvas repaints per
+ * frame, 2.4× as many on a 144Hz panel as on a 60Hz one. A prop change re-runs
+ * the effect, which is what wakes it.
+ *
+ * The easing is time-based (a half-life, not a per-frame factor) so the needle
+ * falls at the same speed at 60, 144 or 240Hz.
  */
 export function VUMeter({ level, peak = 0, width = 8, height = 120, horizontal = false }: VUMeterProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -21,8 +31,9 @@ export function VUMeter({ level, peak = 0, width = 8, height = 120, horizontal =
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let raf: number;
-    const draw = () => {
+    let raf = 0;
+    let last = 0;
+    const draw = (now: number) => {
       const dpr = window.devicePixelRatio || 1;
       const w = horizontal ? height : width;
       const h = horizontal ? width : height;
@@ -44,8 +55,13 @@ export function VUMeter({ level, peak = 0, width = 8, height = 120, horizontal =
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(dpr, dpr);
 
-      // Smooth falloff
-      animLevel.current += (level - animLevel.current) * 0.3;
+      // Smooth falloff — the old per-frame factor of 0.3 at 60Hz, expressed as
+      // a frame-rate-independent decay (k = 1 - 0.7^(dt/16.67ms)).
+      const dt = last ? Math.min(100, now - last) : 1000 / 60;
+      last = now;
+      animLevel.current += (level - animLevel.current) * (1 - Math.pow(0.7, dt / (1000 / 60)));
+      const settled = Math.abs(level - animLevel.current) < 0.002;
+      if (settled) animLevel.current = level;
       const l = Math.max(0, Math.min(1, animLevel.current));
 
       // Explicit, because the per-frame `canvas.width` write that used to clear
@@ -97,7 +113,7 @@ export function VUMeter({ level, peak = 0, width = 8, height = 120, horizontal =
         }
       }
 
-      raf = requestAnimationFrame(draw);
+      if (!settled) raf = requestAnimationFrame(draw);
     };
 
     raf = requestAnimationFrame(draw);
