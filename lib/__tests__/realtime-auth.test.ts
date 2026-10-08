@@ -24,6 +24,7 @@ const ROOT = path.resolve(__dirname, '..', '..');
 /** Every module that opens a socket through the shared factory. */
 const CLIENTS = [
   'lib/call/store.ts',
+  'lib/groupcall/store.ts',
   'lib/rmhtype/socket.ts',
   'lib/rmhstudy/socket.ts',
   'lib/rmhtube/socket.ts',
