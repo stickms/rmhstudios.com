@@ -181,8 +181,9 @@ interface GlassPaneProps extends React.HTMLAttributes<HTMLDivElement> {
  */
  refract?: boolean;
  /**
- * Add the ambient "liquid" sheen — a slow specular that drifts across the pane
- * like light over wet glass. In v2 the sheen is a background layer (no pseudo),
+ * Add the "liquid" sheen — one slow specular sweep across the pane on arrival,
+ * like light over wet glass, then still (a looping sheen keeps the page from
+ * ever going idle — perf audit 2026-10-08). In v2 the sheen is a background layer (no pseudo),
  * so it composes freely with `refract` and `interactive` on the same pane.
  * Signature surfaces only; ration it like `refract` (≤2–3 per page).
  */

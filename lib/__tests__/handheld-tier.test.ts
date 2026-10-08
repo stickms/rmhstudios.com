@@ -1,5 +1,5 @@
 /**
- * The handheld tier — one media query, four files, no drift.
+ * The handheld tier — one media query, three files, no drift.
  *
  * ## What this tier is, and why it needed to exist
  *
@@ -54,9 +54,12 @@ const RADIAL = read('components/radial/radial.css');
 const HOOK = read('hooks/useLiquidBackground.ts');
 
 describe('the handheld query is identical everywhere it appears', () => {
+  // radial.css used to carry it too, for a block that stopped the ring/blob
+  // animations on tablets. Those animations no longer exist on any tier (see
+  // static-backdrop.test.ts), so neither does the block. The near-miss check
+  // below still scans radial.css, so a reintroduced variant is still caught.
   it.each([
     ['app/globals.css', GLOBALS],
-    ['components/radial/radial.css', RADIAL],
     ['hooks/useLiquidBackground.ts', HOOK],
   ])('%s carries the exact query', (_file, source) => {
     expect(source).toContain(HANDHELD_QUERY);
@@ -146,16 +149,14 @@ describe('the CSS half actually stops the motion', () => {
     expect(perfLite.slice(0, 600)).toContain('--glass-blur-cap-tier');
   });
 
-  it('stops the radial rings and blob field on handheld tablets too', () => {
-    // The `min-width: 768px` gates in radial.css stop at phones, so a
-    // coarse-pointer tablet was running six breathing rings and four drifting
-    // blobs full-screen and forever.
-    const start = RADIAL.indexOf(`@media ${HANDHELD_QUERY}`);
-    expect(start).toBeGreaterThan(-1);
-    const block = RADIAL.slice(start, start + 400);
-    expect(block).toContain('.radial-backdrop__ring');
-    expect(block).toContain('.radial-backdrop__blob');
-    expect(block).toMatch(/animation:\s*none/);
+  it('the radial rings and blob field need no handheld override — they never move', () => {
+    // This used to assert a handheld block in radial.css that switched off six
+    // breathing rings and four drifting blobs on coarse-pointer tablets. Those
+    // animations are gone on EVERY tier now (perf audit 2026-10-08), so there is
+    // nothing left for a handheld rule to stop; static-backdrop.test.ts is the
+    // gate that keeps it that way. Pinned here so a reintroduced handheld block
+    // reads as the signal it would be: someone put the motion back.
+    expect(RADIAL).not.toMatch(/\.radial-backdrop__(ring|blob)[^{]*\{[^}]*animation\s*:\s*(?!none)/);
   });
 });
 

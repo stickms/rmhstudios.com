@@ -139,28 +139,43 @@
   border-radius: 50%;
   opacity: calc(0.5 - var(--i) * 0.06);
 }
-/* Mobile-first: keep the backdrop cheap. The two largest rings extend far past
-   the viewport (huge composited layers), and a fixed full-screen element with
-   6 infinitely-animating circles is a real, continuous GPU cost on phones — the
-   kind that makes first paint + scroll feel slow. So on small screens: fewer
-   rings and NO animation. The breathe + pointer-parallax are a desktop nicety. */
+/* Phones draw the inner three rings only: the outer three extend far past a
+   narrow viewport and add nothing there but pixels. */
 .radial-backdrop__ring:nth-child(n + 4) {
   display: none;
 }
 @media (min-width: 768px) {
-  .radial-backdrop__rings {
-    will-change: transform;
-  }
   .radial-backdrop__ring:nth-child(n + 4) {
     display: block;
   }
 }
-@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
-  .radial-backdrop__ring {
-    animation: radial-breathe 14s ease-in-out infinite;
-    animation-delay: calc(var(--i) * -1.6s);
-  }
-}
+/* ── The backdrop is STATIC, on every tier (perf audit 2026-10-08) ────────
+   The rings used to "breathe" (a 14s scale loop, six of them) and the blob
+   field below used to drift (26s, four of them), forever, on every `_site`
+   route at ≥768px — with the two aurora layers in globals.css drifting
+   underneath. None of it was ever *still*, so the page never went idle: the
+   compositor produced a new full-viewport frame on every vsync for as long as
+   the tab was open, whether or not anyone was looking.
+
+   Measured on `/` at 1920×1080, vsync-capped headless Chromium (software GL —
+   absolute numbers are pessimistic, the ratios are the point):
+
+                               browser CPU at rest   frames/s at rest   rAF fps
+     everything animating           1020 ms/s              16             16.7
+     rings still breathing          1050 ms/s              15             17.7
+     blobs still drifting           1090 ms/s              32             35.2
+     nothing animating                63 ms/s               0             60
+
+   One perpetual layer is enough to keep the page from idling; the six rings
+   (up to 148vmin square each) were the most expensive single one. On a real
+   GPU the same work is fill rate at every vsync — 2.4× the frames on a 144Hz
+   panel, 4× on a 240Hz one — and it competes directly with the scroll and
+   interaction frames a high-refresh display exists to show.
+
+   Phones and coarse-pointer tablets already rendered this backdrop still
+   (the handheld tier); desktop now matches. The geometry, colours and depth
+   are unchanged — only the motion is gone. `lib/__tests__/static-backdrop.test.ts`
+   fails the build if an animation returns to any backdrop layer. */
 /* ── Metaball blob field ──────────────────────────────────────────────────
    A few huge, very faint blobs drifting behind everything, stretching toward
    each other, swelling together and pulling apart again — the lava-lamp
@@ -193,7 +208,6 @@
     color-mix(in srgb, var(--site-text) 6%, transparent) 55%,
     transparent 100%
   );
-  will-change: transform;
 }
 .radial-backdrop__blob:nth-child(1) {
   left: 6%;
@@ -232,57 +246,12 @@
    Rule: never put `filter: url(…)` on a full-viewport layer that has animating
    children, and never expect a goo ramp to fuse near-transparent shapes.
    `lib/__tests__/filter-cost-budget.test.ts` fails the build if this returns. */
-@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+/* The field composes the scene from tablet width up. It is static (see the
+   note above the blob rule), so phones skip it only because a narrow viewport
+   has no room for four 18rem gradients — not for cost. */
+@media (min-width: 768px) {
   .radial-backdrop__field {
     display: block;
-  }
-  .radial-backdrop__blob {
-    animation: radial-blob-drift 26s ease-in-out infinite alternate;
-    animation-delay: calc(var(--i) * -6s);
-  }
-}
-/* Low-end tier: same treatment the aurora layers get in globals.css — the field
-   still composes the scene, it just stops moving (and stops holding layers). */
-html.perf-lite .radial-backdrop__blob {
-  animation: none;
-  will-change: auto;
-}
-/* Handheld tier — the same axis globals.css introduces for the aurora, applied
-   to the two layers here that the `min-width: 768px` gates above do NOT cover.
-   Those gates stop at phones, so a coarse-pointer TABLET (768–1024px) was still
-   running six breathing rings plus four drifting blobs, full-screen and forever,
-   underneath every backdrop-filter on the page — the exact cost the phone rules
-   exist to avoid, on a device with the same thermal ceiling. Composition is
-   kept; only the motion stops. */
-@media (pointer: coarse) and (max-width: 1024px) {
-  .radial-backdrop__ring,
-  .radial-backdrop__blob {
-    animation: none;
-    will-change: auto;
-  }
-  .radial-backdrop__rings {
-    will-change: auto;
-  }
-}
-@keyframes radial-blob-drift {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(6vw, -4vh, 0) scale(1.18);
-  }
-  100% {
-    transform: translate3d(-5vw, 5vh, 0) scale(0.9);
-  }
-}
-
-@keyframes radial-breathe {
-  0%,
-  100% {
-    transform: translate(-50%, -50%) scale(1);
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1.035);
   }
 }
 
@@ -1230,20 +1199,10 @@ body:has(.radial-shell) .call-banner {
   transition: filter 0.32s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
 }
 /* …and the "rasterises once" above is only true if the blurred layer HOLDS
-   STILL. `.radial-backdrop` does not: it owns the breathing rings and the
-   drifting blob field, which animate forever — so while the menu was open the
-   compositor re-ran a 20px full-viewport blur on every one of their frames, for
-   motion nobody can see through 20px of blur and an opaque veil. Measured on the
-   globe drag (headless Chromium, 4x CPU throttle): dropping this blur alone took
-   the gesture from 5.0fps to 7.9fps.
-
-   Paused rather than `animation: none` so the layers freeze exactly where they
-   are — cutting to the keyframe origin would show as a jump on the way back out,
-   underneath a blur that is itself only 0.32s long. */
-.radial-shell:has(.radial-hub[data-phase='open']) .radial-backdrop__ring,
-.radial-shell:has(.radial-hub[data-phase='open']) .radial-backdrop__blob {
-  animation-play-state: paused;
-}
+   STILL. `.radial-backdrop` used to own breathing rings and a drifting blob
+   field that animated forever, so this block once had to pause them while the
+   menu was open. The backdrop is static now on every tier (see the note above
+   `.radial-backdrop__field`), so there is nothing left to pause. */
 .radial-shell:has(.radial-hub:not([data-phase='closed'])) .radial-feed__compose {
   visibility: hidden;
 }
@@ -2909,7 +2868,6 @@ html.ios-webkit .radial-hub__veil {
 
 /* ── Reduced motion: kill all continuous / decorative animation ───────── */
 @media (prefers-reduced-motion: reduce) {
-  .radial-backdrop__ring,
   .radial-feed__empty .radial-core {
     animation: none !important;
   }

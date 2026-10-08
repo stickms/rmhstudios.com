@@ -36,10 +36,14 @@ RMH mark is that centre, and it is always on screen.
   screen, swells, and dissolves into a glass sphere with every destination
   pinned to it. You _turn_ it to find where you want to go, hold on a
   destination, and let go to travel.
-- Behind everything, a fixed **ring backdrop**, a drifting field of soft blobs
-  and a slowly-breathing **aurora canvas** keep the surface feeling continuous —
-  one scene, not a stack of screens. It moves on its own, ambiently; it does not
-  follow you (§3).
+- Behind everything, a fixed **ring backdrop**, a field of soft blobs and an
+  **aurora canvas** keep the surface feeling continuous — one scene, not a stack
+  of screens. It is **still**: it neither follows you (§3) nor moves on its own.
+  It used to drift and breathe forever, and a backdrop that is never still is a
+  page that never goes idle — a full composite on every vsync, 144 or 240 times a
+  second on a high-refresh panel, for decoration nobody is watching
+  ([perf audit 2026-10-08](docs/performance-audit-2026-10-08.md)). Motion is
+  spent on what you touch.
 
 The consequence worth internalising: **navigating is a physical act here.** That
 raises the bar on the physics (§4) and it means chrome is never allowed to be
@@ -49,11 +53,11 @@ inert.
 
 The material is Apple's Liquid Glass, used _theatrically_ rather than literally:
 layered translucent glass with **live optics** — a specular rim glint on every
-tier, frosted edge bevels, micro-noise, a slowly drifting aurora canvas, and
-travelling sheens that ride the compositor.
+tier, frosted edge bevels, micro-noise, a shared aurora canvas, and sheens that
+sweep once on arrival or on hover — never in a loop.
 
 The distinction that matters: a surface here is **translucent over a shared
-scene**, not an opaque card with a shadow. Every pane samples the same drifting
+scene**, not an opaque card with a shadow. Every pane samples the same
 aurora, so panes at different depths relate to each other automatically, and a
 theme change is a change of _light_, not a repaint of a thousand components.
 
