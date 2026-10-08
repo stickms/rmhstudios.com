@@ -382,7 +382,7 @@ describe('FOUC contract: hydration', () => {
    * client; this keeps it installed.
    */
   it('the router applies the server-side not-found head cut on the client', () => {
-    expect(read('app/router.tsx')).toMatch(/installNotFoundHeadGuard\(router\.looseRoutesById\)/);
+    expect(read('app/router.tsx')).toMatch(/installNotFoundHeadGuard\(router\.routesById\)/);
   });
 
   /**

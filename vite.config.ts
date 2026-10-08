@@ -332,6 +332,11 @@ export default defineConfig({
         '.prisma',
         '@resvg/resvg-js',
         'satori',
+        // satori (>= 0.33) shapes text with harfbuzzjs, which reads `hb.wasm`
+        // from beside its own module at runtime. An import trace copies the .js
+        // and misses the .wasm, so every OG card 500s; the trailing `*` asks
+        // for a full-package trace instead.
+        'harfbuzzjs*',
         'esbuild',
         'reflect-metadata',
       ],
