@@ -122,28 +122,27 @@ func (c *ChromedpCapturer) Capture(ctx context.Context, slug, html string) (stri
 
 	// Ask Chromium to rasterize straight to WebP (no Go-side image library
 	// needed) — much smaller than PNG for these gallery thumbnails.
-	var webp []byte
-	err := chromedp.Run(runCtx,
+	err := chromedp.Do(runCtx,
 		chromedp.EmulateViewport(viewportWidth, viewportHeight, chromedp.EmulateScale(thumbDeviceScale)),
 		chromedp.Navigate(dataURL),
 		// networkidle can never fire on animation-heavy pages, so we don't block
 		// on it; the settle sleep below gives modules + first paint time instead.
 		chromedp.Sleep(settleDelay),
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			buf, capErr := page.CaptureScreenshot().
-				WithFormat(page.CaptureScreenshotFormatWebp).
-				WithQuality(thumbQuality).
-				Do(ctx)
-			if capErr != nil {
-				return capErr
-			}
-			webp = buf
-			return nil
-		}),
 	)
 	if err != nil {
 		return "", fmt.Errorf("vibeworker: capture %s: %w", slug, err)
 	}
+	// chromedp's own CaptureScreenshot action is PNG-only, so call the CDP
+	// command directly to get WebP at our quality.
+	quality := int64(thumbQuality)
+	shot, err := chromedp.Call(runCtx, page.CaptureScreenshot, page.CaptureScreenshotParams{
+		Format:  page.CaptureScreenshotFormatWebp,
+		Quality: &quality,
+	})
+	if err != nil {
+		return "", fmt.Errorf("vibeworker: capture %s: %w", slug, err)
+	}
+	webp := shot.Data
 
 	// Upload to object storage (R2 in prod, .uploads locally) under the same key
 	// the web app serves from. No more local db/ volume write.

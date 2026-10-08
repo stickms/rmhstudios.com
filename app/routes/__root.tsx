@@ -251,7 +251,7 @@ const themeScript = buildThemeScript(false);
  * pre-paint Slice It's dark app ground under the site's Daylight `NotFound` card;
  * whatever the URL, a root-level 404 is a SITE page. The root `head()` runs after
  * the loaders on the server, so it already knows, and `Providers` reads the same
- * `globalNotFound` flag to agree after hydration.
+ * `_notFound` flag to agree after hydration.
  */
 const notFoundThemeScript = buildThemeScript(true);
 
@@ -439,7 +439,7 @@ export const Route = createRootRoute({
     // is the snapshot taken before the loaders ran. The client's hydrate()
     // restores the flag before running this head, so both sides emit the same
     // script.
-    const globalNotFound = ctx.match?.globalNotFound === true;
+    const globalNotFound = ctx.match?._notFound === true;
 
     if (discord) {
       // Minimal head for a Discord Activity: no external fonts, no preconnects,

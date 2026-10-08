@@ -15,6 +15,26 @@ updates:
         update-types: ["minor", "patch"]
       types:
         patterns: ["@types/*"]
+    # Deliberate holds. Each names what lifts it; remove the entry when it does.
+    ignore:
+      # 4.5+ grows zod past its dated cap in the entry closure
+      # (scripts/check-entry-composition.ts). Lifts when zod leaves the shell.
+      - dependency-name: "zod"
+        versions: [">=4.5.0"]
+      # 0.35.2+ ships an Emscripten yoga loader that reads `__dirname` inside
+      # its ESM build, so importing satori throws and every OG card 500s.
+      - dependency-name: "satori"
+        versions: [">=0.35.2"]
+      # @better-auth/stripe's peer range stops at stripe ^22.
+      - dependency-name: "stripe"
+        update-types: ["version-update:semver-major"]
+      # typescript-eslint supports typescript <6.1. Type-checking already runs
+      # on TS 7 through the `typescript-native` alias.
+      - dependency-name: "typescript"
+        versions: [">=6.1.0"]
+      # Types track the runtime: Node 24 (Dockerfile, .nvmrc, engines).
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
 
   # GitHub Actions used by the workflows.
   - package-ecosystem: github-actions

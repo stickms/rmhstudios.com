@@ -164,13 +164,43 @@ const OUT_DIR = path.join(ROOT, '.output', 'public');
  * The critical path is still 3.5% (raw) and 3.9% (brotli) under its own budgets.
  * The new band is measured + 0.68%, the same ratio as the previous raises.
  *
+ * **2026-10-08 — entry raised 307,700 → 537,900 B; critical-path brotli
+ * LOWERED 370,000 → 359,500 B (OPT-01 line).** No feature bought these bytes:
+ * the same code moved. Vite 8.2 → 8.3 brought rolldown 1.2.3 → 1.2.13, whose
+ * automatic chunking folds the small shared chunks of the static graph into the
+ * entry instead of emitting each as its own file. Bisected by upgrading ONLY
+ * `vite` on a clean `main` (dbc9f9b): entry 298.9 → 517.1 KB, critical path
+ * 112 → 62 chunks, brotli 347.9 → 330.2 KB. With every other dependency at
+ * latest too, measured with `vite build --sourcemap`:
+ *
+ *   | metric                | main (dbc9f9b) | this tree |
+ *   | --------------------- | -------------: | --------: |
+ *   | entry, raw            |      306,088 B | 534,208 B |
+ *   | critical path, raw    |    1,247,737 B | 1,245,932 B |
+ *   | critical path, brotli |      356,219 B | 347,293 B |
+ *   | chunks on the path    |            112 |        67 |
+ *
+ * Every page downloads the whole critical path before it hydrates, so this is
+ * fewer bytes in 45 fewer requests — the regression the entry budget exists to
+ * catch (a library leaking onto every page) would grow the critical path, and
+ * it shrank. Unlike `codeSplitting.minSize` (measured and rejected in
+ * vite.config.ts), the chunks merged here were already on the critical path;
+ * nothing route-only was pulled in. React 19.3 grows react-dom by ~28 KB raw,
+ * which the merge more than pays for. zod is held at 4.4.x: 4.5 and 4.6 grow
+ * it past its dated entry-composition cap, and that cap shrinks, not grows.
+ *
+ * The entry band is measured + 0.68%, as before. The brotli band is
+ * re-anchored to the new measurement + 3.5% (the original 2026-08-05
+ * headroom), handing back the ~9 KB this upgrade saved instead of letting it
+ * become slack for the next regression to spend.
+ *
  * Budgets that only ever move up are theatre. Per OPT-01: raising one requires
  * a line in the PR body naming the user-visible feature that bought the bytes.
  */
 const BUDGETS = {
-  entryRaw: 307_700,
+  entryRaw: 537_900,
   criticalPathRaw: 1_291_000,
-  criticalPathBrotli: 370_000,
+  criticalPathBrotli: 359_500,
 };
 
 /**

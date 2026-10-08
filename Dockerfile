@@ -50,9 +50,9 @@ ARG WEB_IMAGE=runner
 # Cached as long as package.json / lockfile don't change.
 # Prisma files are NOT copied here — schema changes should only trigger
 # a fast `prisma generate`, not a full 70s+ pnpm install.
-FROM node:24.18.0-alpine AS deps
+FROM node:24.21.0-alpine AS deps
 
-RUN corepack enable && corepack prepare pnpm@10.29.1 --activate
+RUN corepack enable && corepack prepare pnpm@10.34.6 --activate
 
 WORKDIR /app
 
@@ -342,7 +342,7 @@ RUN rm -rf /app/.output/public/library \
 # from the go-services module using the official Go toolchain. The binaries
 # are statically linked (CGO_ENABLED=0) so they drop cleanly into the musl
 # Alpine runner without libc ceremony.
-FROM golang:1.26.5-alpine AS go-builder
+FROM golang:1.27.1-alpine AS go-builder
 
 WORKDIR /build
 
@@ -382,7 +382,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} \
 #     deploy/hotswap-web.sh skip the web hotswap entirely (no second container,
 #     no health wait, no Apache reload) when nothing web-facing changed.
 # The heavier bits live in the runner-full stage below (supervisor + status).
-FROM node:24.18.0-alpine AS runner
+FROM node:24.21.0-alpine AS runner
 
 # curl: container healthchecks (compose) + the deploy's port probes.
 # ca-certificates: outbound TLS (R2 sync, DeepSeek, Discord, etc.).

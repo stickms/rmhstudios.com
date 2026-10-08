@@ -493,7 +493,7 @@ export function Providers({
   // in `--site-*` tokens, so an app-tier ground under it is a dark field around a
   // Daylight card. The pre-paint script makes the same call from the same flag
   // (`notFoundThemeScript` in `__root.tsx`), so the two agree from frame 0.
-  const globalNotFound = useRouterState({ select: (s) => s.matches[0]?.globalNotFound === true });
+  const globalNotFound = useRouterState({ select: (s) => s.matches[0]?._notFound === true });
   const isAppRoute = isAppThemeRoute(pathname) && !globalNotFound;
 
   // `html.app-route` resolves the site surfaces to their opaque twins, withholds

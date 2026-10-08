@@ -54,7 +54,7 @@ export function getRouter() {
   // <script> the server never sent fails hydration for the whole document —
   // wiping <html>'s pre-paint attributes. This applies the server's cut on the
   // client too. See lib/router/not-found-head.ts.
-  installNotFoundHeadGuard(router.looseRoutesById);
+  installNotFoundHeadGuard(router.routesById);
 
   // The intent preload above is hover-driven, so it never fires on a touch
   // device. This warms the first few links that are actually on screen instead
