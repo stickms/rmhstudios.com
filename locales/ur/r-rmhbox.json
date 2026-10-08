@@ -28,6 +28,7 @@
   "pagination-next": "اگلا",
   "pagination-previous": "پچھلا",
   "pagination-range": "{{from}}–{{to}} میں سے {{total}}",
+  "player-count-of-max": "{{count}}/{{max}} کھلاڑی",
   "player-count_one": "{{count}} کھلاڑی",
   "player-count_other": "{{count}} کھلاڑی",
   "player-range": "{{minPlayers}}–{{maxPlayers}} کھلاڑی",

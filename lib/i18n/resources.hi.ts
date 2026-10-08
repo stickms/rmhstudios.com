@@ -15,6 +15,7 @@ import hiCCursedLogic from "@/locales/hi/c-cursed-logic.json";
 import hiCDailyPuzzles from "@/locales/hi/c-daily-puzzles.json";
 import hiCDoctrine from "@/locales/hi/c-doctrine.json";
 import hiCDreamRift from "@/locales/hi/c-dream-rift.json";
+import hiCDunesday from "@/locales/hi/c-dunesday.json";
 import hiCEconomy from "@/locales/hi/c-economy.json";
 import hiCForestExplorer from "@/locales/hi/c-forest-explorer.json";
 import hiCGabrielsHorn from "@/locales/hi/c-gabriels-horn.json";
@@ -40,11 +41,13 @@ import hiCProfileModules from "@/locales/hi/c-profile-modules.json";
 import hiCRebarRutabaga from "@/locales/hi/c-rebar-rutabaga.json";
 import hiCRideshare from "@/locales/hi/c-rideshare.json";
 import hiCRmhCapital from "@/locales/hi/c-rmh-capital.json";
+import hiCRmhDatacenter from "@/locales/hi/c-rmh-datacenter.json";
 import hiCRmhPmc from "@/locales/hi/c-rmh-pmc.json";
 import hiCRmhbox from "@/locales/hi/c-rmhbox.json";
 import hiCRmhcalculator from "@/locales/hi/c-rmhcalculator.json";
 import hiCRmhcode from "@/locales/hi/c-rmhcode.json";
 import hiCRmhcoins from "@/locales/hi/c-rmhcoins.json";
+import hiCRmhfashion from "@/locales/hi/c-rmhfashion.json";
 import hiCRmhmusic from "@/locales/hi/c-rmhmusic.json";
 import hiCRmhstudy from "@/locales/hi/c-rmhstudy.json";
 import hiCRmhtech from "@/locales/hi/c-rmhtech.json";
@@ -67,6 +70,7 @@ import hiCVoidBreaker from "@/locales/hi/c-void-breaker.json";
 import hiCWager from "@/locales/hi/c-wager.json";
 import hiCWishlist from "@/locales/hi/c-wishlist.json";
 import hiCommon from "@/locales/hi/common.json";
+import hiErrors from "@/locales/hi/errors.json";
 import hiFeed from "@/locales/hi/feed.json";
 import hiGamesHub from "@/locales/hi/games-hub.json";
 import hiGroups from "@/locales/hi/groups.json";
@@ -111,6 +115,7 @@ const hiResources = {
   "c-daily-puzzles": hiCDailyPuzzles,
   "c-doctrine": hiCDoctrine,
   "c-dream-rift": hiCDreamRift,
+  "c-dunesday": hiCDunesday,
   "c-economy": hiCEconomy,
   "c-forest-explorer": hiCForestExplorer,
   "c-gabriels-horn": hiCGabrielsHorn,
@@ -136,11 +141,13 @@ const hiResources = {
   "c-rebar-rutabaga": hiCRebarRutabaga,
   "c-rideshare": hiCRideshare,
   "c-rmh-capital": hiCRmhCapital,
+  "c-rmh-datacenter": hiCRmhDatacenter,
   "c-rmh-pmc": hiCRmhPmc,
   "c-rmhbox": hiCRmhbox,
   "c-rmhcalculator": hiCRmhcalculator,
   "c-rmhcode": hiCRmhcode,
   "c-rmhcoins": hiCRmhcoins,
+  "c-rmhfashion": hiCRmhfashion,
   "c-rmhmusic": hiCRmhmusic,
   "c-rmhstudy": hiCRmhstudy,
   "c-rmhtech": hiCRmhtech,
@@ -163,6 +170,7 @@ const hiResources = {
   "c-wager": hiCWager,
   "c-wishlist": hiCWishlist,
   "common": hiCommon,
+  "errors": hiErrors,
   "feed": hiFeed,
   "games-hub": hiGamesHub,
   "groups": hiGroups,
