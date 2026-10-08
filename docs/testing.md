@@ -225,6 +225,26 @@ against `pnpm dev` — it must run against `.output`. Its commit-time half,
 Full detail, including why each detector asks its question when it does:
 [`fouc.md`](./fouc.md).
 
+### 6. Frame-budget audit (not in CI)
+
+`testing/e2e/frame-budget.mjs` drives the **built** app and asks the question a
+high-refresh display asks of a page: does it go **idle** at rest, and how much
+headroom does it have while scrolling? Per route it counts compositor frames
+produced with nobody touching the page, browser-wide CPU at rest (every
+Chromium process, so compositor/GPU cost is visible — main-thread metrics never
+see it), perpetual animations by selector, and rAF cadence idle and scrolling.
+
+```bash
+pnpm build && PORT=7005 node .output/server/index.mjs &
+BASE_URL=http://localhost:7005 node testing/e2e/frame-budget.mjs              # default route set
+BASE_URL=http://localhost:7005 node testing/e2e/frame-budget.mjs --all --gate # every page; fail if a site page never idles
+```
+
+Absolute fps here is SwiftShader's, so compare builds and routes, not devices.
+Its commit-time half is `lib/__tests__/static-backdrop.test.ts` (in
+`GATE_TESTS`). Findings and the measured before/after:
+[`performance-audit-2026-10-08.md`](./performance-audit-2026-10-08.md).
+
 ### Coverage
 
 ```bash
