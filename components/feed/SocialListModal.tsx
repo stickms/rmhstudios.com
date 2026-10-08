@@ -6,7 +6,7 @@ import { UserAvatar } from'@/components/ui/UserAvatar';
 import { Spinner } from'@/components/ui/spinner';
 import { Dialog, DialogContent, DialogTitle } from'@/components/ui/dialog';
 import { Link } from'@tanstack/react-router';
-import { authClient } from'@/lib/auth-client';
+import { useSession } from'@/components/Providers';
 
 interface SocialUser {
  id: string;
@@ -34,7 +34,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  const sentinelRef = useRef<HTMLDivElement>(null);
  const initialFetched = useRef(false);
  const fetchingRef = useRef(false);
- const { data: session } = authClient.useSession();
+ const { data: session } = useSession();
 
  const { t } = useTranslation('feed');
  const title = type ==='followers'? t('followers', { defaultValue:'Followers'}) : t('following', { defaultValue:'Following'});

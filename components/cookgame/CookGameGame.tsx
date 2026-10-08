@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 import { useCookgameStore } from '@/lib/cookgame/store';
@@ -165,6 +165,13 @@ export function CookGameGame() {
       >
         <AdaptiveQuality onDownscale={downscale} />
         <Lighting />
+        {/* The scene's own boundary. `<Physics>` suspends while rapier's WASM
+            initialises, and R3F forwards a suspension inside the canvas to the
+            nearest DOM <Suspense> — GameShell's, so the HUD and the whole game
+            dropped back to "LOADING..." for ~2s after they had painted
+            (docs/fouc-audit-2026-10-06.md §13). Caught here, the 3D world fills
+            in when it is ready and nothing already on screen goes away. */}
+        <Suspense fallback={null}>
         <Physics>
           <TownScene />
           <PlayerController />
@@ -198,6 +205,7 @@ export function CookGameGame() {
           <BuyerNPC buyerId="vera" position={VERA_POSITION} />
           <BuyerNPC buyerId="silas" position={SILAS_POSITION} />
         </Physics>
+        </Suspense>
       </Canvas>
 
       {/* DOM overlays (outside the canvas) */}

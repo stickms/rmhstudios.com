@@ -1,12 +1,14 @@
 // app/routes/daily/spectrum.tsx
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 
-const SpectrumGame = lazy(() =>
-  import('@/components/daily-puzzles/SpectrumGame').then((m) => ({ default: m.SpectrumGame })),
-);
+// Static, not `lazy()`: Start already splits this route's component into its own
+// chunk and loads it BEFORE hydrating. An inner `lazy()` can still be pending at
+// hydration, and an update reaching the boundary then swaps the server-rendered
+// page for the fallback (docs/fouc-audit-2026-10-06.md §13).
+import { SpectrumGame } from '@/components/daily-puzzles/SpectrumGame';
 
 function SpectrumPage() {
   return (

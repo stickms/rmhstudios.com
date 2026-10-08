@@ -505,7 +505,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  className="mt-2 ml-2 flex items-center gap-1.5 text-xs font-medium text-site-accent hover:underline"
  >
  <MessageCircle className="w-3.5 h-3.5"/>
- {t('show-more-replies', { count: countDescendants(comment.replies), defaultValue:'Show {{count}} more reply', defaultValue_plural:'Show {{count}} more replies'})}
+ {t('show-more-replies', { count: countDescendants(comment.replies), defaultValue_one:'Show {{count}} more reply', defaultValue:'Show {{count}} more replies'})}
  </button>
  ) : (
  <div className="mt-2 ml-2 border-l-2 border-site-border pl-3 space-y-1">

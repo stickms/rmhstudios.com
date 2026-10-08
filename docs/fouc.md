@@ -43,15 +43,37 @@ Not "the page was blank and then it wasn't" — that is loading. A FOUC is
 **content the reader could already see changing how it looks**. The audit is six
 detectors, each measuring one way that happens.
 
-| #   | Detector    | What it measures                                                                                                                                                                                                                                              | Gated                |
-| --- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| 1   | `ground`    | The document background at first contentful paint vs. settled, as a relative-luminance delta. The largest coloured surface on screen; the whole reason `themeScript` exists.                                                                                  | ✅                   |
-| 2   | `restyle`   | Any root-level visual input moving after first paint: the `<html>` theme class, `dir`, `color-scheme`, root font family/size, `--site-accent`, `--site-surface`, `data-density`, `data-color-vision`, `data-app-dark`. Each one restyles the entire document. | ✅                   |
-| 3   | `late-css`  | A stylesheet that **entered the cascade** after first paint **and** whose selectors matched elements that were already on the page at that moment.                                                                                                            | ✅                   |
-| 3b  | `font-swap` | Visible text set in a family that only finished loading after first paint — `font-display: swap` means the reader watched it reflow.                                                                                                                          | ✅                   |
-| 4   | `hydration` | React hydration mismatches. The server markup paints, React throws it away and re-renders: a flash by construction.                                                                                                                                           | ✅                   |
-| 5   | `shift`     | Layout shift accumulated after first paint. The measurable consequence of unstyled becoming styled.                                                                                                                                                           | ✅                   |
-| 6   | `frame`     | Real compositor frames from `Page.startScreencast`, reduced to a 24×48 luma signature and compared against the settled frame.                                                                                                                                 | ✅ (divergence only) |
+| #   | Detector    | What it measures                                                                                                                                                                                                                                                    | Gated                |
+| --- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| 1   | `ground`    | The document background at first contentful paint vs. settled, as a relative-luminance delta. The largest coloured surface on screen; the whole reason `themeScript` exists.                                                                                        | ✅                   |
+| 2   | `restyle`   | Any root-level visual input moving after first paint: the `<html>` theme class, `dir`, `color-scheme`, root font family/size, `--site-accent`, `--site-surface`, `data-density`, `data-color-vision`, `data-app-dark`. Each one restyles the entire document.       | ✅                   |
+| 3   | `late-css`  | A stylesheet that **entered the cascade** after first paint **and** whose selectors matched elements that were already on the page at that moment.                                                                                                                  | ✅                   |
+| 3b  | `font-swap` | Visible text set in a family that only finished loading after first paint — `font-display: swap` means the reader watched it reflow. Faces declared `font-display: optional` are exempt: past their ~100ms window they are not used at all, so they cannot swap.    | ✅                   |
+| 4   | `hydration` | React hydration mismatches. The server markup paints, React throws it away and re-renders: a flash by construction. Heard on BOTH channels React uses — `console.error` (development builds) and the window `error` event `reportError` raises (production builds). | ✅                   |
+| 5   | `shift`     | Layout shift accumulated after first paint. The measurable consequence of unstyled becoming styled.                                                                                                                                                                 | ✅                   |
+| 6   | `frame`     | Real compositor frames from `Page.startScreencast`, reduced to a 24×48 luma signature and compared against the settled frame.                                                                                                                                       | ✅ (divergence only) |
+
+### Why detector 4 listens for `error` events, not just the console
+
+A production React build does not log a hydration mismatch. Its default
+`onRecoverableError` is `reportError`, which dispatches an `error` event on
+`window` carrying `Minified React error #418`. Until 2026-10-07 the instrument
+only patched `console.error`, so against the builds it audits it could not fire —
+and it never did, while `/login` threw #418 on every signed-out redirect and a
+nested 404 threw it on every load. That matters more than one bad subtree: with no
+Suspense boundary between the mismatch and the document, React re-renders the
+WHOLE document, and React 19 resets `<html>`'s attributes to its props when it
+does — wiping every class, `data-*` attribute and inline style the pre-paint
+scripts set. The `hydration` sabotage in the self-test reports a #418 exactly the
+way production React does, so this cannot go deaf again unnoticed.
+
+### Why the sample window is ten seconds
+
+Some writers are deliberately deferred: the account appearance sync in
+`Providers.tsx` waits for idle (`requestIdleCallback`, 2s timeout), and under the
+audit's 4× CPU throttle that measured **8.6s** after navigation. A flash there is
+as real as one at 500ms, and a 4s window could not see it. `--window <ms>` changes
+it; the run header says when a shorter window would hide idle-gated work.
 
 ### Why detector 3 asks its question when it does
 
@@ -216,14 +238,16 @@ Re-derive it with `FOUC_DEBUG=1`, which prints the per-frame distance series.
 An audit that passes because its instrument broke is a claim of coverage with
 nothing behind it, and this harness has already failed that way once: a regex
 escape eaten by a template literal killed `INSTRUMENT_SOURCE`, and every page came
-back clean. `--self-test` sabotages a real page four ways and asserts the matching
-detector catches each one:
+back clean. `--self-test` sabotages a real page once per provable detector and
+asserts the matching detector catches each one:
 
 | Sabotage                                                                | Must be caught by |
 | ----------------------------------------------------------------------- | ----------------- |
 | Repaint the document ground 600ms after first paint                     | `ground`          |
 | Add a class to `<html>` after first paint                               | `restyle`         |
 | Link a stylesheet after first paint whose selectors match live elements | `late-css`        |
+| Load a `swap` web face after first paint and set visible text in it     | `font-swap`       |
+| Report React #418 through `reportError`, as a production build does     | `hydration`       |
 | Cover the viewport with an opaque panel, then remove it                 | `frame`           |
 
 **Run it before trusting a green audit.** The missing-instrument case is itself a
@@ -235,8 +259,8 @@ passing quietly — but the self-test is what proves the live ones still work.
 The runtime audit needs a build and a server, so it runs before a release. A FOUC
 regression lands in a commit. `lib/__tests__/fouc-contract.test.ts` is the part of
 the same audit that can be proved from source alone, so it runs in `pnpm test` and
-in the commit gate. It fails on the two mistakes that produced every flash the
-audit found:
+in the commit gate. It fails on the mistakes that produced every flash the audit
+found:
 
 1. **A root-level visual decision applied only after hydration.** The gate scans
    `Providers.tsx`, `themeStore.ts`, `lib/appearance/prefs.ts` and
@@ -246,6 +270,22 @@ audit found:
    the duration of a View Transition, with no persisted state behind them) are the
    only exemption, and entries come out of that list rather than going in.
 2. **A page nobody audited** — the coverage dichotomy above.
+3. **A hydration mismatch waiting to happen.** Nothing but `Providers.tsx` may
+   render from `authClient.useSession()` (it disagrees with the server on the
+   first client render); `app/router.tsx` must keep the not-found head guard
+   installed; and a route module imports its page statically — an inner `lazy()`
+   can still be pending at hydration, and any update that reaches the boundary
+   then swaps the server-rendered page for its fallback. The `lazy()`s that cannot
+   do that (client-only scenes, on-demand panels, auth-only admin) are a reviewed,
+   one-directional allowlist.
+4. **English copy that changes after paint.** A non-bundled namespace renders
+   from each call's `defaultValue` until its catalog backfills, so every such
+   default must equal its `locales/en` entry, plural forms included
+   (`lib/__tests__/i18n-default-drift.test.ts`).
+5. **A display face that can swap.** No page loads from Google Fonts, and every
+   generated `@font-face` in `app/fonts/` is `font-display: optional`
+   (`scripts/gen-self-hosted-fonts.ts`; `pnpm fonts:check` runs in the commit gate
+   when the fonts or their packages change).
 
 Neither check substitutes for running the audit. Both are what stop the audit's
 result from quietly expiring.

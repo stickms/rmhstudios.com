@@ -3299,7 +3299,7 @@ export function GameCanvas() {
                     setIsPaused(false);
                   }}
                 >
-                  {t('retry', { defaultValue: 'RETRY' })}
+                  {t('retry-game-canvas', { defaultValue: 'RETRY' })}
                 </Button>
                 <Button
                   size="lg"
@@ -3491,7 +3491,7 @@ export function GameCanvas() {
                 {isMultiplayer && loadingPlayers.length > 0 && (
                   <div className="space-y-2 pt-2">
                     <p className="text-[11px] font-black text-slice-text-light uppercase tracking-widest text-center">
-                      {t('waiting-for-players', { defaultValue: 'Waiting for players...' })}
+                      {t('waiting-for-players-game-canvas', { defaultValue: 'Waiting for players...' })}
                     </p>
                     {/* Overall bar: X / total loaded */}
                     <div className="h-2 bg-slice-bg rounded-full shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] overflow-hidden">
@@ -3518,7 +3518,7 @@ export function GameCanvas() {
                           ) : (
                             <span className="flex items-center gap-1 text-[11px] font-bold text-slice-text-light">
                               <span className="w-3 h-3 border-2 border-slate-400 border-t-blue-500 rounded-full animate-spin inline-block" />
-                              {t('loading', { defaultValue: 'Loading' })}
+                              {t('loading-game-canvas', { defaultValue: 'Loading' })}
                             </span>
                           )}
                         </div>

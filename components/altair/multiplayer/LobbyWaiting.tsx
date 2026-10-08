@@ -254,7 +254,7 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
                 {/* Double Time */}
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-(--altair-text-muted) flex items-center gap-1">
-                    <Zap size={12} /> {t('double-time', { defaultValue: 'Double Time' })}
+                    <Zap size={12} /> {t('double-time-lobby-waiting', { defaultValue: 'Double Time' })}
                   </span>
                   <button
                     onClick={() => handleUpdateSettings({ doubleTime: !lobby.settings.doubleTime })}
@@ -280,7 +280,7 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
                 </span>
                 {lobby.settings.doubleTime && (
                   <span className="px-2 py-1 rounded-md bg-(--altair-warning-dim) text-(--altair-warning) flex items-center gap-1">
-                    <Zap size={12} /> {t('double-time', { defaultValue: 'Double Time' })}
+                    <Zap size={12} /> {t('double-time-lobby-waiting', { defaultValue: 'Double Time' })}
                   </span>
                 )}
                 {lobby.settings.dropInAllowed && (

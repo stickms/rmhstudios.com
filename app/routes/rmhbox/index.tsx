@@ -211,7 +211,7 @@ function RMHboxLanding() {
                     )}
                   </div>
                   <div className="text-sm text-(--app-text-muted)">
-                    {t("player-count", { defaultValue: "{{count}}/{{max}} players", count: lobby.playerCount, max: lobby.maxPlayers })}
+                    {t("player-count-of-max", { defaultValue: "{{count}}/{{max}} players", count: lobby.playerCount, max: lobby.maxPlayers })}
                   </div>
                 </div>
               ))}

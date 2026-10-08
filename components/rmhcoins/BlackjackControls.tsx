@@ -267,7 +267,7 @@ export function BlackjackControls({ coins }: Props) {
     return (
       <div className="text-center text-site-text-dim py-4">
         <p className="text-sm">
-          {t("waiting-for-player", { defaultValue: "Waiting for {{name}}...", name: currentPlayer?.userName ?? 'player' })}
+          {t("waiting-for-player-blackjack-controls", { defaultValue: "Waiting for {{name}}...", name: currentPlayer?.userName ?? 'player' })}
         </p>
       </div>
     );
@@ -294,10 +294,10 @@ export function BlackjackControls({ coins }: Props) {
     }
 
     const resultText: Record<string, { label: string; color: string }> = {
-      blackjack: { label: t("result-blackjack", { defaultValue: "Blackjack! (3:2)" }), color: 'text-site-accent' },
-      win: { label: t("result-win", { defaultValue: "You win!" }), color: 'text-site-success' },
-      push: { label: t("result-push", { defaultValue: "Push" }), color: 'text-casino-seat-1' },
-      lose: { label: t("result-lose", { defaultValue: "You lose" }), color: 'text-site-danger' },
+      blackjack: { label: t("result-blackjack-blackjack-controls", { defaultValue: "Blackjack! (3:2)" }), color: 'text-site-accent' },
+      win: { label: t("result-win-blackjack-controls", { defaultValue: "You win!" }), color: 'text-site-success' },
+      push: { label: t("result-push-blackjack-controls", { defaultValue: "Push" }), color: 'text-casino-seat-1' },
+      lose: { label: t("result-lose-blackjack-controls", { defaultValue: "You lose" }), color: 'text-site-danger' },
     };
 
     const r = resultText[myResult.result] ?? { label: '', color: '' };
@@ -312,7 +312,7 @@ export function BlackjackControls({ coins }: Props) {
         )}
         {myResult.insuranceBet > 0 && myResult.insuranceResult && (
           <p className={`text-xs mt-1 ${myResult.insuranceResult === 'won' ? 'text-casino-seat-1' : 'text-site-text-dim'}`}>
-            {myResult.insuranceResult === 'won' ? t("insurance-paid-out", { defaultValue: "Insurance paid out!" }) : t("insurance-lost", { defaultValue: "Insurance lost" })}
+            {myResult.insuranceResult === 'won' ? t("insurance-paid-out", { defaultValue: "Insurance paid out!" }) : t("insurance-lost-blackjack-controls", { defaultValue: "Insurance lost" })}
           </p>
         )}
         <p className="text-xs text-site-text-dim mt-2">{t("next-round-soon", { defaultValue: "Next round starting soon..." })}</p>

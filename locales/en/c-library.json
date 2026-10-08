@@ -94,6 +94,7 @@
   "show-book-details": "Show book details",
   "size-limit": "Up to {{maxMb}} MB.",
   "status-analyzing": "Reading the file…",
+  "status-analyzing-upload-modal": "Reading…",
   "status-drafting": "Generating title & description…",
   "status-uploading": "Publishing…",
   "storage-not-durable": "Object storage is not configured on the server, so uploads will not persist (they 404 after a while). Set the S3_* / R2 environment variables.",

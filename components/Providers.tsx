@@ -9,7 +9,7 @@ import {
   useMemo,
 } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useLocation } from '@tanstack/react-router';
+import { useLocation, useRouterState } from '@tanstack/react-router';
 import { MotionConfig, LazyMotion } from 'framer-motion';
 import { Toaster } from 'sonner';
 import { authClient } from '@/lib/auth-client';
@@ -240,6 +240,13 @@ export const THEME_EXCLUDED_ROUTES = [
   // Daylight-white <html> under a page that has gone dark, which a desktop
   // hides and every phone overscroll reveals.
   '/sohumtracker',
+  // Discord Activities — the gateway picker, RMHbox and Lights Out, each in
+  // Discord's own palette. Full-screen games like every other entry here, but in
+  // no catalog because they only make sense inside Discord's iframe. Unlisted,
+  // they were the one game tier that received the SITE theme: a Graphite or
+  // accent pick restyled the root after hydration, and `html:not(.app-route)`
+  // reserved a scrollbar gutter beside a page that never scrolls.
+  '/discord',
 ].filter((href) => href.startsWith('/'));
 
 /**
@@ -482,7 +489,12 @@ export function Providers({
       .catch(() => {});
   }, [userId]);
 
-  const isAppRoute = isAppThemeRoute(pathname);
+  // A 404 the ROOT renders is a site page whatever its URL: `NotFound` is drawn
+  // in `--site-*` tokens, so an app-tier ground under it is a dark field around a
+  // Daylight card. The pre-paint script makes the same call from the same flag
+  // (`notFoundThemeScript` in `__root.tsx`), so the two agree from frame 0.
+  const globalNotFound = useRouterState({ select: (s) => s.matches[0]?.globalNotFound === true });
+  const isAppRoute = isAppThemeRoute(pathname) && !globalNotFound;
 
   // `html.app-route` resolves the site surfaces to their opaque twins, withholds
   // `scrollbar-gutter: stable` and gates the aurora off — all three visible from

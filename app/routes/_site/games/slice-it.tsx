@@ -1,12 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { Suspense, lazy } from 'react';
+import { Suspense } from 'react';
 
 import { PageLayout } from '@/components/feed/PageLayout';
 import { GAMES_INDEX_PATH } from '@/lib/seo-catalog';
 import { breadcrumbSchema, jsonLdScript, videoGameSchema } from '@/lib/schema';
 import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
 import { sliceItHub, type HubPayload } from '@/lib/slice-it/hub.server';
+
+// Static, not `lazy()`: Start already splits this route's component into its own
+// chunk and loads it BEFORE hydrating. An inner `lazy()` can still be pending at
+// hydration, and an update reaching the boundary then swaps the server-rendered
+// page for the fallback (docs/fouc-audit-2026-10-06.md §13).
+import { SliceItHub } from '@/components/slice-it/SliceItHub';
 
 /**
  * V12 — Slice It!'s own indexable surface.
@@ -63,17 +69,6 @@ export const Route = createFileRoute('/_site/games/slice-it')({
   loader: () => fetchHub(),
   component: SliceItHubPage,
 });
-
-/**
- * Lazy for the same reason the admin dashboard is: `routeTree.gen.ts` imports
- * every route module statically, so a top-level import here lands in the entry
- * chunk every page downloads (OPT-01). The loader still runs server-side, so
- * the page's SEO and its data are unaffected — only the client component split
- * moves.
- */
-const SliceItHub = lazy(() =>
-  import('@/components/slice-it/SliceItHub').then((m) => ({ default: m.SliceItHub })),
-);
 
 function SliceItHubPage() {
   const data = Route.useLoaderData();

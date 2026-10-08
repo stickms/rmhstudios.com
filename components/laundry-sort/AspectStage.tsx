@@ -19,6 +19,17 @@
  * the pointer mapping reads it), and because `aspect-ratio` combined with both
  * `max-width` and `max-height` still resolves differently across browsers when
  * the container is the constrained axis.
+ *
+ * The FIRST paint is sized by CSS, though, and that is not the `aspect-ratio`
+ * this rules out. `.ls-stage-inset` is a size container occupying exactly the
+ * frame's content box — the box `measure()` reads — and `.ls-stage-box` is
+ * `min(100cqw, 100cqh × 16/9)` by `min(100cqh, 100cqw × 9/16)`: the same
+ * largest-16:9-that-fits arithmetic as `measure()`, written as two `min()`s with
+ * no aspect-ratio or max-* clamp for browsers to disagree about. Before it, the
+ * stage was 0×0 in the server HTML and jumped to the letterbox once JS had
+ * measured — 0.443 of layout shift after first paint, the largest the FOUC audit
+ * measured anywhere (docs/fouc-audit-2026-10-06.md §4). The measured pixel size
+ * still wins once it lands; it is the same box, so nothing moves.
  */
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -88,10 +99,10 @@ export function AspectStage({ children, outerChildren, className }: Props) {
       className={cn('ls-stage-frame relative h-full w-full overflow-hidden', className)}
     >
       {outerChildren}
-      <div className="absolute inset-0 flex items-center justify-center">
+      <div className="ls-stage-inset flex items-center justify-center">
         <div
           data-slot="laundry-stage"
-          className="relative overflow-hidden rounded-site bg-black shadow-site"
+          className="ls-stage-box relative overflow-hidden rounded-site bg-black shadow-site"
           style={{ width: size.width || undefined, height: size.height || undefined }}
         >
           {size.width > 0 ? children : null}

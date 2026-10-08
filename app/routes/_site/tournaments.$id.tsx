@@ -143,14 +143,14 @@ function TournamentDetailPage() {
 
   if (loading) {
     return (
-      <PageLayout title={t('title', { defaultValue: 'Tournament' })} backTo="/tournaments" wide>
+      <PageLayout title={t('title-tournaments-id', { defaultValue: 'Tournament' })} backTo="/tournaments" wide>
         <div className="h-64 rounded-site glass-fill animate-pulse" />
       </PageLayout>
     );
   }
   if (!tourney) {
     return (
-      <PageLayout title={t('title', { defaultValue: 'Tournament' })} backTo="/tournaments" wide>
+      <PageLayout title={t('title-tournaments-id', { defaultValue: 'Tournament' })} backTo="/tournaments" wide>
         <p className="text-site-text-dim py-12 text-center">
           {t('not-found', { defaultValue: 'This tournament no longer exists.' })}
         </p>
@@ -184,7 +184,7 @@ function TournamentDetailPage() {
             ? t('registering', { defaultValue: 'Registering' })
             : tourney.status === 'LIVE'
               ? t('live', { defaultValue: 'Live' })
-              : t('done', { defaultValue: 'Finished' })}
+              : t('done-tournaments-id', { defaultValue: 'Finished' })}
         </Badge>
       }
     >
@@ -301,7 +301,7 @@ function TournamentDetailPage() {
               }
               loading={busy}
             >
-              {t('cancel', { defaultValue: 'Cancel & refund' })}
+              {t('cancel-tournaments-id', { defaultValue: 'Cancel & refund' })}
             </Button>
           )}
         </div>
@@ -310,7 +310,7 @@ function TournamentDetailPage() {
         {(tourney.status === 'LIVE' || tourney.status === 'COMPLETE') && (
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-wide text-site-text-dim mb-2">
-              {t('bracket', { defaultValue: 'Bracket' })}
+              {t('bracket-tournaments-id', { defaultValue: 'Bracket' })}
             </h2>
             <BracketView
               tournament={tourney}

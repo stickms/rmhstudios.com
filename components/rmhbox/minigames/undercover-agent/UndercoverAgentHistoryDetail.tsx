@@ -243,7 +243,7 @@ export default function UndercoverAgentHistoryDetail({
             <span className="font-bold text-(--app-accent)">
               {winningTeam === 'red' ? t("team-red", { defaultValue: "Red" }) : winningTeam === 'blue' ? t("team-blue", { defaultValue: "Blue" }) : winningTeam === 'draw' ? t("draw", { defaultValue: "Draw" }) : t("team-named", { defaultValue: "Team {{name}}", name: winningTeam })}
             </span>
-            {winningTeam !== 'draw' && ' ' + t("wins", { defaultValue: "wins" })}
+            {winningTeam !== 'draw' && ' ' + t("wins-undercover-agent-history-detail", { defaultValue: "wins" })}
             {winCondition && ` — ${winCondition.replace(/_/g, ' ')}`}
           </p>
           {endAction.payload.redAgentsRevealed != null && (

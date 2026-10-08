@@ -505,7 +505,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
       return (
         <div className="flex flex-col items-center gap-4 p-4">
           <h2 className="text-xl font-bold text-(--app-text)">{t("gallery-walk", { defaultValue: "Gallery Walk" })}</h2>
-          <p className="text-sm text-(--app-text-muted)">{t("prompt-label", { defaultValue: "Prompt:" })} &quot;{prompt}&quot;</p>
+          <p className="text-sm text-(--app-text-muted)">{t("prompt-label-market-results-screen", { defaultValue: "Prompt:" })} &quot;{prompt}&quot;</p>
           <GalleryCarousel drawings={galleryDrawings} />
         </div>
       );

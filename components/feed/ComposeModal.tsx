@@ -17,8 +17,7 @@ import { AIGenerateButton } from'./AIGenerateButton';
 import { MentionTextarea } from'./MentionTextarea';
 import { EmojiPickerButton } from'@/components/shared/EmojiPickerButton';
 import { useEmojiInsert } from'@/lib/emoji/use-emoji-insert';
-import { authClient } from'@/lib/auth-client';
-import { useResolvedUser } from'@/components/Providers';
+import { useResolvedUser, useSession } from'@/components/Providers';
 import { buildOptimizedUrl } from'@/components/ui/OptimizedImage';
 import { Button } from'@/components/ui/button';
 import { MenuItem } from '@/components/ui/menu';
@@ -88,7 +87,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  const textareaRef = useRef<HTMLTextAreaElement>(null);
  const insertEmoji = useEmojiInsert(textareaRef, content, setContent);
  const { prependItem } = useFeedStore();
- const { data: session } = authClient.useSession();
+ const { data: session } = useSession();
  const { resolved: resolvedUser } = useResolvedUser();
 
  const remaining = MAX_RMHARK_LENGTH - content.length;

@@ -28,7 +28,7 @@ import {
 } from '@/lib/lights-out/persistence';
 import { getPerformanceRating, generateShareText } from '@/lib/lights-out/share';
 import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLeaderboard';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import { fetchResultFromServer, saveResult as saveGenericResult } from '@/lib/daily-puzzles/persistence';
 import {
     Sparkles, RotateCcw, Trophy, Undo2, Lightbulb, Flag,
@@ -113,7 +113,7 @@ export function LightsOutGame() {
     }, [dateKey, initPuzzle, shape, seed, computeOptimal]);
 
     // Sync from server for signed-in users
-    const session = authClient.useSession();
+    const session = useSession();
 
     useEffect(() => {
         if (!session.data || !isToday) return;
@@ -254,10 +254,29 @@ export function LightsOutGame() {
         setShowHistory(false);
     };
 
+    // The loading state wears the board's own frame — `.app-page`, the column and
+    // the back link — so the board arrives INTO it. It used to be a bare centred
+    // "Loading..." box; React reused that div as the board's column when the
+    // effect above built the grid, so a 100x33 box became a 640x769 column and its
+    // padding landed a frame later: 0.10 of layout shift under the 125% font
+    // scale, measured by testing/e2e/fouc.mjs (docs/fouc-audit-2026-10-06.md §9).
+    // The grid is built in an effect rather than server-rendered because today's
+    // puzzle depends on the visitor's LOCAL date, which the server cannot know.
     if (!grid) {
         return (
-            <div className="min-h-100 flex items-center justify-center">
-                <div className="animate-pulse text-site-text-muted">{t("loading", { defaultValue: "Loading..." })}</div>
+            <div className="app-page">
+            <div className="max-w-lg mx-auto w-full px-4 py-8">
+                <Link
+                    to="/daily"
+                    className="inline-flex items-center gap-1.5 text-site-text-muted hover:text-site-text text-sm mb-6 transition-colors"
+                >
+                    <ArrowLeft className="w-4 h-4" />
+                    {t("back-to-daily-puzzles", { defaultValue: "Back to Daily Puzzles" })}
+                </Link>
+                <div className="min-h-100 flex items-center justify-center">
+                    <div className="animate-pulse text-site-text-muted">{t("loading", { defaultValue: "Loading..." })}</div>
+                </div>
+            </div>
             </div>
         );
     }
@@ -652,7 +671,7 @@ export function LightsOutGame() {
                                                                 p.save.dnf ? 'text-site-danger' : 'text-amber-400'
                                                             }`}
                                                         >
-                                                            {p.save.dnf ? 'DNF' : t("moves-count", { defaultValue: "{{count}} moves", count: p.save.moves })}
+                                                            {p.save.dnf ? 'DNF' : t("moves-count", { defaultValue_one: "{{count}} move", defaultValue: "{{count}} moves", count: p.save.moves })}
                                                         </span>
                                                     </>
                                                 ) : (

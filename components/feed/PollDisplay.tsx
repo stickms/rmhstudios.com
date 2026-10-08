@@ -3,7 +3,7 @@
 import { useState } from'react';
 import { useTranslation } from'react-i18next';
 import { Check } from'lucide-react';
-import { authClient } from'@/lib/auth-client';
+import { useSession } from'@/components/Providers';
 import { yieldToMain } from'@/lib/scheduler';
 import type { FeedPoll } from'@/lib/feed-types';
 
@@ -17,7 +17,7 @@ interface PollDisplayProps {
 
 export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProps) {
  const { t } = useTranslation("feed");
- const { data: session } = authClient.useSession();
+ const { data: session } = useSession();
  const [localPoll, setLocalPoll] = useState(poll);
  const [voting, setVoting] = useState(false);
 

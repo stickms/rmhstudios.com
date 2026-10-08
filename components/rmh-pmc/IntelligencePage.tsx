@@ -178,10 +178,10 @@ export default function IntelligencePage() {
       <section className="sec tight">
         <div className="container">
           <div className="cta-band reveal">
-            <span className="desig center">{t("cta-desig", { defaultValue: "Cleared Distribution" })}</span>
+            <span className="desig center">{t("cta-desig-intelligence-page", { defaultValue: "Cleared Distribution" })}</span>
             <h2 style={{ marginTop: 18 }}>{t("cta-heading", { defaultValue: "Read the version we don't release." })}</h2>
             <p>
-              {t("cta-body", { defaultValue: "Clients on a standing engagement receive named-theater assessments, warning thresholds, and a direct line to the cell that wrote them. The public feed is the part we can show." })}
+              {t("cta-body-intelligence-page", { defaultValue: "Clients on a standing engagement receive named-theater assessments, warning thresholds, and a direct line to the cell that wrote them. The public feed is the part we can show." })}
             </p>
             <Link className="btn btn-amber" to="/rmh-pmc/contact">
               {t("cta-button", { defaultValue: "Request a briefing" })} <span className="arw">→</span>

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Loader2, Lightbulb } from 'lucide-react';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import { formatDuration } from '@/lib/globeset/game';
 
 type LeaderboardEntry = {
@@ -71,7 +71,7 @@ export function DailyPuzzleLeaderboard({
   const [submitted, setSubmitted] = useState(false);
 
   const { t } = useTranslation('c-daily-puzzles');
-  const session = authClient.useSession();
+  const session = useSession();
   const isLightsOut = gameMode === 'lights-out';
   const isTimed = TIMED_MODES.has(gameMode);
 

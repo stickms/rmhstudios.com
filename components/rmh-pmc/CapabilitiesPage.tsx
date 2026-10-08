@@ -16,7 +16,7 @@ export default function CapabilitiesPage() {
           <span className="desig">{t("lines-of-operation", { defaultValue: "Lines of Operation" })}</span>
           <h1>{t("hero-heading", { defaultValue: "Seven capabilities. One chain of command." })}</h1>
           <p className="lede">
-            {t("hero-lede", { defaultValue: "We are organized like a real staff — each line carries its section designator. Together they let a client protect people, hold ground, train a force, supply it, understand the threat, plan the response, and reshape the picture entirely — without ever leaving the command." })}
+            {t("hero-lede-capabilities-page", { defaultValue: "We are organized like a real staff — each line carries its section designator. Together they let a client protect people, hold ground, train a force, supply it, understand the threat, plan the response, and reshape the picture entirely — without ever leaving the command." })}
           </p>
         </div>
       </section>
@@ -184,10 +184,10 @@ export default function CapabilitiesPage() {
       <section className="sec tight">
         <div className="container">
           <div className="cta-band reveal">
-            <span className="desig center">{t("cta-desig", { defaultValue: "One Command" })}</span>
-            <h2 style={{ marginTop: 18 }}>{t("cta-heading", { defaultValue: "The advantage is in the chain of command." })}</h2>
+            <span className="desig center">{t("cta-desig-capabilities-page", { defaultValue: "One Command" })}</span>
+            <h2 style={{ marginTop: 18 }}>{t("cta-heading-capabilities-page", { defaultValue: "The advantage is in the chain of command." })}</h2>
             <p>
-              {t("cta-body", { defaultValue: "No single line works alone — protection draws on intelligence, logistics carries them all, and plans tie them together under one staff. Tell us the problem; we will bring the whole company to it." })}
+              {t("cta-body-capabilities-page", { defaultValue: "No single line works alone — protection draws on intelligence, logistics carries them all, and plans tie them together under one staff. Tell us the problem; we will bring the whole company to it." })}
             </p>
             <Link className="btn btn-amber" to="/rmh-pmc/contact">{t("cta-link", { defaultValue: "Request a briefing" })} <span className="arw">→</span></Link>
           </div>

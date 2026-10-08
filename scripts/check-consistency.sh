@@ -366,6 +366,7 @@ else
     lib/__tests__/api-handler-adoption.test.ts
     lib/__tests__/i18n-catalogs.test.ts
     lib/__tests__/i18n-config.test.ts
+    lib/__tests__/i18n-default-drift.test.ts
     lib/__tests__/game-registry-consistency.test.ts
     lib/__tests__/server-bundle-copies.test.ts
     lib/__tests__/test-discovery.test.ts
@@ -441,6 +442,20 @@ else
       fi
     else
       skip "image variants" "public/images untouched"
+    fi
+
+    # app/fonts/*.css is generated from the Fontsource packages with
+    # `font-display: optional` rewritten in. A Fontsource bump that renames or
+    # re-subsets a file would leave those rules pointing at nothing — every
+    # display face silently falling back — so a change to either side regenerates.
+    if has '^(package\.json|pnpm-lock\.yaml|app/fonts/|scripts/gen-self-hosted-fonts\.ts$)'; then
+      if pnpm run fonts:check; then
+        pass "self-hosted font stylesheets are current"
+      else
+        fail "app/fonts is stale — run pnpm fonts:generate"
+      fi
+    else
+      skip "self-hosted fonts" "fonts and their packages untouched"
     fi
   fi
 fi

@@ -105,11 +105,11 @@ function AdminReportsPage() {
       body: JSON.stringify(body),
     });
     if (res.ok) toast.success(kind === 'ban' ? t('user-banned', { defaultValue: 'User banned' }) : t('strike-issued', { defaultValue: 'Strike issued' }));
-    else toast.error(t('action-failed', { defaultValue: 'Action failed' }));
+    else toast.error(t('action-failed-appeals', { defaultValue: 'Action failed' }));
   };
 
   return (
-    <PageLayout title={t('moderation-queue', { defaultValue: 'Moderation Queue' })} wide backTo="/admin">
+    <PageLayout title={t('moderation-queue-title', { defaultValue: 'Moderation Queue' })} wide backTo="/admin">
       <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
         <div className="flex items-center gap-2 text-site-text-muted text-sm">
           <Flag className="h-5 w-5 text-site-accent shrink-0" />

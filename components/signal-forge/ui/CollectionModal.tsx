@@ -66,7 +66,7 @@ export function CollectionModal({ gameState, onClose }: Props) {
                         {card.damage > 0 && <span className="text-red-400">⚔️ {card.getEffectiveDamage()}{card.echo ? t("echo-suffix", { defaultValue: " (Echo +50%)" }) : ''}{card.aoe ? t("aoe-suffix", { defaultValue: " [AOE]" }) : ''}</span>}
                         {card.shield > 0 && <span className="text-blue-400">🛡️ {card.getEffectiveShield()}{card.echo ? t("echo-suffix", { defaultValue: " (Echo +50%)" }) : ''}</span>}
                         {card.draw ? <span className="text-cyan-400">📥 +{card.draw} {t("draw-label", { defaultValue: "draw" })}</span> : null}
-                        {card.tempoGain ? <span className="text-purple-400">🎵 +{card.tempoGain} {t("tempo-label", { defaultValue: "tempo" })}</span> : null}
+                        {card.tempoGain ? <span className="text-purple-400">🎵 +{card.tempoGain} {t("tempo-label-collection-modal", { defaultValue: "tempo" })}</span> : null}
                         {card.leech ? <span className="text-emerald-400">🧛 {t("leech-label", { defaultValue: "Leech {{pct}}%", pct: card.leech })}</span> : null}
                         {card.selfDamage ? <span className="text-red-300">💔 {t("self-dmg-label", { defaultValue: "Self-dmg {{val}}", val: card.selfDamage })}</span> : null}
                         {card.stabilize ? <span className="text-sky-400">🧹 {t("purge-glitch-label", { defaultValue: "Purge {{val}} Glitch", val: card.stabilize })}</span> : null}

@@ -28,7 +28,7 @@ import { SongComments } from './SongComments';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import type { Difficulty, SliceSong } from '@/lib/slice-it/types';
 import { Slider } from '@/components/ui/slider';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import { toast } from 'sonner';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
@@ -96,7 +96,7 @@ export function SongDetailsPanel({
 }: SongDetailsPanelProps) {
   const { t } = useTranslation('c-game');
   const { modifiers, setModifiers } = useSliceItStore();
-  const session = authClient.useSession();
+  const session = useSession();
   // `isOwner` is decided by the server and shipped on the DTO. Comparing a
   // session id against a `uploadedBy` field here meant the API had to leak a
   // user id to every anonymous visitor just so the owner could see an edit
@@ -233,7 +233,7 @@ export function SongDetailsPanel({
     if (!file) return;
     if (file.size > MAX_COVER_SIZE) {
       toast.error(
-        t('cover-too-large', {
+        t('cover-too-large-song-details-panel', {
           defaultValue: 'Cover image too large ({{size}} MB). Maximum size is 10 MB.',
           size: (file.size / 1024 / 1024).toFixed(1),
         }),
@@ -401,7 +401,7 @@ export function SongDetailsPanel({
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
                   className="bg-(--slice-input-bg) text-slice-text border-(--slice-input-border) shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]"
-                  placeholder={t('description-placeholder', {
+                  placeholder={t('description-placeholder-song-details-panel', {
                     defaultValue: 'Optional description...',
                   })}
                 />
@@ -414,7 +414,7 @@ export function SongDetailsPanel({
                 onClick={() => setShowEdit(false)}
                 disabled={isSaving}
               >
-                {t('cancel', { defaultValue: 'Cancel' })}
+                {t('cancel-neumorphic-modal', { defaultValue: 'Cancel' })}
               </Button>
               <Button
                 className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold gap-2"

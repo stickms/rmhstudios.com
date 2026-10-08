@@ -47,14 +47,14 @@ export function SliceItHub({ data }: { data: HubPayload }) {
           </Link>
           <span className="text-sm text-site-text-secondary inline-flex items-center gap-1.5">
             <Music className="size-4" aria-hidden />
-            {t('hub-total-songs', {
+            {t('hub-total-songs', { defaultValue_one: '{{count}} chart',
               defaultValue: '{{count}} charts',
               count: data.totals.songs,
             })}
           </span>
           <span className="text-sm text-site-text-secondary inline-flex items-center gap-1.5">
             <Trophy className="size-4" aria-hidden />
-            {t('hub-total-runs', {
+            {t('hub-total-runs', { defaultValue_one: '{{count}} score set',
               defaultValue: '{{count}} scores set',
               count: data.totals.runs,
             })}
@@ -90,7 +90,7 @@ export function SliceItHub({ data }: { data: HubPayload }) {
                     <span className="block truncate font-medium text-site-text">{chart.title}</span>
                     <span className="block truncate text-sm text-site-text-secondary">
                       {chart.artist} · {duration(chart.duration)} ·{' '}
-                      {t('hub-plays', { defaultValue: '{{count}} plays', count: chart.plays })}
+                      {t('hub-plays', { defaultValue_one: '{{count}} play', defaultValue: '{{count}} plays', count: chart.plays })}
                     </span>
                   </span>
                 </Card>
@@ -164,7 +164,7 @@ export function SliceItHub({ data }: { data: HubPayload }) {
                       {charter.user.name ?? charter.user.username}
                     </span>
                     <span className="block truncate text-sm text-site-text-secondary">
-                      {t('hub-uploads', {
+                      {t('hub-uploads', { defaultValue_one: '{{count}} upload',
                         defaultValue: '{{count}} uploads',
                         count: charter.uploads,
                       })}

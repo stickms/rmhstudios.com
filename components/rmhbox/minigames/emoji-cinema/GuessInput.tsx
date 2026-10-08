@@ -130,7 +130,7 @@ export default function GuessInput({ onSubmit, disabled, maxGuesses, guessesUsed
         </button>
       </div>
       <span className="text-xs text-(--app-text-muted)">
-        {t("guesses-remaining", { count: remaining, defaultValue: "{{count}} guess remaining", defaultValue_other: "{{count}} guesses remaining" })}
+        {t("guesses-remaining-guess-input", { count: remaining, defaultValue: "{{count}} guess remaining", defaultValue_other: "{{count}} guesses remaining" })}
       </span>
     </div>
   );

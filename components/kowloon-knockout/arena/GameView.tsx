@@ -105,7 +105,7 @@ export default function GameView() {
                 <div className="kk-controls-hint">
                     <span><kbd>WASD</kbd> {t('move', { defaultValue: 'Move' })}</span>
                     <span><kbd>Space</kbd> {t('block', { defaultValue: 'Block' })}</span>
-                    <span><kbd>J K L U</kbd> {t('punches', { defaultValue: 'Punches' })}</span>
+                    <span><kbd>J K L U</kbd> {t('punches-game-view', { defaultValue: 'Punches' })}</span>
                 </div>
             )}
         </div>

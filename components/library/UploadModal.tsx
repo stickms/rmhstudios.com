@@ -423,7 +423,7 @@ export function UploadModal({
               : readyCount > 1
                 ? t('publish-n', { count: readyCount, defaultValue: `Publish ${readyCount} books` })
                 : analyzing && readyCount === 0
-                  ? t('status-analyzing', { defaultValue: 'Reading…' })
+                  ? t('status-analyzing-upload-modal', { defaultValue: 'Reading…' })
                   : t('publish', { defaultValue: 'Publish' })}
           </button>
         </div>

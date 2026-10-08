@@ -4,7 +4,7 @@
  * Checks auth status server-side and passes it to the client component.
  */
 
-import { lazy, Suspense } from 'react'
+import { Suspense } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
@@ -12,7 +12,11 @@ import { auth } from '@/lib/auth'
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
 
-const VersecraftClient = lazy(() => import('@/components/versecraft/VersecraftClient').then(m => ({ default: m.VersecraftClient })))
+// Static, not `lazy()`: Start already splits this route's component into its own
+// chunk and loads it BEFORE hydrating. An inner `lazy()` can still be pending at
+// hydration, and an update reaching the boundary then swaps the server-rendered
+// page for the fallback (docs/fouc-audit-2026-10-06.md §13).
+import { VersecraftClient } from '@/components/versecraft/VersecraftClient'
 
 const checkLoginStatus = createServerFn({ method: 'GET' }).handler(async () => {
   try {

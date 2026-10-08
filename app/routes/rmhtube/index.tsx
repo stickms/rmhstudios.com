@@ -2,12 +2,16 @@
  * RMH Tube Landing Route
  */
 
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 
-const RmhTubePage = lazy(() => import('@/components/rmhtube/RmhTubeLanding'));
+// Static, not `lazy()`: Start already splits this route's component into its own
+// chunk and loads it BEFORE hydrating. An inner `lazy()` can still be pending at
+// hydration, and an update reaching the boundary then swaps the server-rendered
+// page for the fallback (docs/fouc-audit-2026-10-06.md §13).
+import RmhTubePage from '@/components/rmhtube/RmhTubeLanding';
 
 export const Route = createFileRoute('/rmhtube/')({
   component: RmhTubeRoute,

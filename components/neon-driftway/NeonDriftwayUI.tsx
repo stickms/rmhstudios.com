@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Play, ArrowLeft, RotateCcw, Trophy, Lock, Users, Glasses, Compass, Eye } from 'lucide-react';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import { useNavigate } from '@tanstack/react-router';
 import { LEVELS } from '@/lib/neon-driftway/constants';
 import type { LevelId, RunStats } from '@/lib/neon-driftway/types';
@@ -55,7 +55,7 @@ export function NeonDriftwayUI({
   const { t } = useTranslation("c-neon-driftway");
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
-  const session = authClient.useSession();
+  const session = useSession();
   const navigate = useNavigate();
 
   const fetchLeaderboard = useCallback(async () => {

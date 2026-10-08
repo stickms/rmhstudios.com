@@ -115,6 +115,23 @@
     env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
 }
 
+/* The frame's CONTENT box (inset by the same safe areas as the padding above),
+   as a size container — so the stage below can be sized from it in CSS, before
+   any script has measured anything. See AspectStage.tsx. */
+.ls-stage-inset {
+  position: absolute;
+  inset: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+    env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  container-type: size;
+}
+
+/* The largest 16:9 box that fits — `measure()` in AspectStage.tsx, in CSS. Two
+   min()s, no aspect-ratio and no max-* clamp. */
+.ls-stage-box {
+  width: min(100cqw, calc(100cqh * 16 / 9));
+  height: min(100cqh, calc(100cqw * 9 / 16));
+}
+
 .ls-panel {
   background: var(--ls-panel);
   border: 1px solid var(--ls-border);

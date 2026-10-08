@@ -11,7 +11,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from "react-i18next";
 import { Button } from '@/components/ui/button';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import { LeaderboardPanel, submitScoreToServer, fetchLeaderboardData } from './LeaderboardPanel';
 
 interface Props {
@@ -22,7 +22,7 @@ interface Props {
 
 export function GameOverScreen({ score, floor, onReturnToLanding }: Props) {
   const { t } = useTranslation("c-signal-forge");
-  const session = authClient.useSession();
+  const session = useSession();
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);

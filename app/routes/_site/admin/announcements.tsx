@@ -200,7 +200,7 @@ function AdminAnnouncementsPage() {
 
   return (
     <PageLayout
-      title={t('announcements-title', { defaultValue: 'Announcements' })}
+      title={t('announcements-title-announcements', { defaultValue: 'Announcements' })}
       backTo="/admin"
       backLabel={t('back-to-admin', { defaultValue: 'Back to admin' })}
       wide

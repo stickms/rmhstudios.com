@@ -19,7 +19,7 @@ export const HUD: React.FC<HUDProps> = ({ state }) => {
             </div>
 
             <div className="hud-section hud-combo">
-                <span className="hud-label">{t("combo", { defaultValue: "Combo" })}</span>
+                <span className="hud-label">{t("combo-hud", { defaultValue: "Combo" })}</span>
                 <span className={`hud-value combo-value ${state.combo >= 5 ? 'combo-active' : ''}`}>
                     {state.combo >= 3 ? `x${state.combo}` : '—'}
                 </span>
@@ -56,7 +56,7 @@ export const HUD: React.FC<HUDProps> = ({ state }) => {
             </div>
 
             <div className="hud-section hud-stat">
-                <span className="hud-label">{t("solved", { defaultValue: "Solved" })}</span>
+                <span className="hud-label">{t("solved-hud", { defaultValue: "Solved" })}</span>
                 <span className="hud-value">{state.puzzlesSolved}</span>
             </div>
 

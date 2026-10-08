@@ -272,7 +272,7 @@ function Lobby({ selfId }: { selfId: string | null }) {
             {t('copy-invite-link', { defaultValue: 'Copy invite link' })}
           </CopyButton>
           <Button type="button" variant="ghost" size="sm" onClick={() => leaveRoom()}>
-            {t('globeset-race-leave', { defaultValue: 'Leave' })}
+            {t('globeset-race-leave-globe-set-race', { defaultValue: 'Leave' })}
           </Button>
         </div>
       </div>

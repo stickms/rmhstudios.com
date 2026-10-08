@@ -184,7 +184,7 @@ export function ExploreGame() {
                                     : 'bg-black/50 border-white/10 text-white/40'
                             }`}
                         >
-                            {flashlightOn ? t("flashlight-on", { defaultValue: "🔦 ON" }) : t("flashlight-off", { defaultValue: "🔦 OFF" })}
+                            {flashlightOn ? t("flashlight-on-explore-game", { defaultValue: "🔦 ON" }) : t("flashlight-off-explore-game", { defaultValue: "🔦 OFF" })}
                         </span>
                     )}
                     <button

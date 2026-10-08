@@ -399,8 +399,8 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
         >
           <p className="text-sm uppercase tracking-wider text-(--app-text-muted)">
             {totalRounds > 0
-              ? t("round-of", { defaultValue: "Round {{current}} of {{total}}", current: currentRound, total: totalRounds })
-              : t("round-number", { defaultValue: "Round {{current}}", current: currentRound })}
+              ? t("round-of-category-crash-results", { defaultValue: "Round {{current}} of {{total}}", current: currentRound, total: totalRounds })
+              : t("round-number-rhyme-time-game", { defaultValue: "Round {{current}}", current: currentRound })}
           </p>
           <motion.h1
             initial={{ opacity: 0, y: 30 }}

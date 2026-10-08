@@ -205,7 +205,7 @@ export default function LevelUpScreen({ onReroll }: LevelUpScreenProps) {
 
         {/* Keyboard hint */}
         <div className="text-center mt-3 text-[10px] text-(--altair-text-dim) font-mono hidden sm:block">
-          {t("keyboard-hint", { defaultValue: "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick", count: choices.length })}
+          {t("keyboard-hint-level-up-screen", { defaultValue: "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick", count: choices.length })}
         </div>
 
         {/* Reroll button */}

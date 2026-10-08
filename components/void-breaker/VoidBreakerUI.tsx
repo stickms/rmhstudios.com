@@ -12,7 +12,7 @@ import {
 import { CHARACTERS, getCharacter, type CharacterId } from '@/lib/void-breaker/characters';
 import { WEAPONS, getWeapon, type WeaponId } from '@/lib/void-breaker/weapons';
 import { MODIFIERS, combineModifiers, type ModifierId } from '@/lib/void-breaker/modifiers';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import { useNavigate } from '@tanstack/react-router';
 import type { RunStats } from '@/lib/void-breaker/types';
 
@@ -63,7 +63,7 @@ export function VoidBreakerUI({
   const [showSettings, setShowSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showForge, setShowForge] = useState(false);
-  const session = authClient.useSession();
+  const session = useSession();
   const navigate = useNavigate();
 
   const fetchLb = useCallback(async () => {

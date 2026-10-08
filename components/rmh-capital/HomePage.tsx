@@ -144,10 +144,10 @@ export default function HomePage() {
       <section className="section">
         <div className="container">
           <div className="shead reveal">
-            <span className="eyebrow">{t("insights-eyebrow", { defaultValue: "Latest Perspectives" })}</span>
+            <span className="eyebrow">{t("insights-eyebrow-home-page", { defaultValue: "Latest Perspectives" })}</span>
             <h2 className="serif">{t("insights-heading", { defaultValue: "Intelligence from across the platform." })}</h2>
             <p className="lede">
-              {t("insights-lede", { defaultValue: "Research and commentary from the teams advising on the deals, markets, and companies shaping the year ahead." })}
+              {t("insights-lede-home-page", { defaultValue: "Research and commentary from the teams advising on the deals, markets, and companies shaping the year ahead." })}
             </p>
           </div>
 

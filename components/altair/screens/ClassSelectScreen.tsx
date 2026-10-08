@@ -350,7 +350,7 @@ function DoubleTimeToggle({
         </div>
         <div className="flex items-center gap-2">
           <Zap size={16} className={enabled ? 'text-(--altair-warning)' : 'text-(--altair-text-dim)'} />
-          <span className="text-sm font-semibold text-(--altair-text)">{t("double-time", { defaultValue: "Double Time" })}</span>
+          <span className="text-sm font-semibold text-(--altair-text)">{t("double-time-lobby-waiting", { defaultValue: "Double Time" })}</span>
           <span className="text-[10px] text-(--altair-text-dim)">{t("double-time-speed", { defaultValue: "2x game speed" })}</span>
         </div>
       </button>
@@ -371,7 +371,7 @@ function DoubleTimeToggle({
         </div>
         <div className="flex items-center gap-2">
           <Lock size={14} className="text-(--altair-text-dim)" />
-          <span className="text-sm font-semibold text-(--altair-text-dim)">{t("double-time", { defaultValue: "Double Time" })}</span>
+          <span className="text-sm font-semibold text-(--altair-text-dim)">{t("double-time-lobby-waiting", { defaultValue: "Double Time" })}</span>
           <span className="text-[10px] text-(--altair-text-dim)">{t("locked", { defaultValue: "Locked" })}</span>
         </div>
       </div>
@@ -382,7 +382,7 @@ function DoubleTimeToggle({
           <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-(--altair-surface) border-r border-b border-(--altair-border)" />
           <div className="relative flex flex-col items-center text-center gap-1.5">
             <Zap size={16} className="text-(--altair-warning)" />
-            <span className="text-xs font-bold text-(--altair-text)">{t("double-time", { defaultValue: "Double Time" })}</span>
+            <span className="text-xs font-bold text-(--altair-text)">{t("double-time-lobby-waiting", { defaultValue: "Double Time" })}</span>
             <p className="text-[11px] text-(--altair-text-muted) leading-snug">
               {t("double-time-unlock-hint", { defaultValue: "Complete a run (survive 20:00) to unlock 2x game speed mode" })}
             </p>

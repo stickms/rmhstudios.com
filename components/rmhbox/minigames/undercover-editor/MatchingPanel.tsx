@@ -164,7 +164,7 @@ export default function MatchingPanel({
               <div className="flex flex-col gap-1 rounded-lg bg-(--app-surface)/60 p-3 text-sm leading-relaxed">
                 <span className="text-(--app-text)">
                   <span className="opacity-50 text-xs">
-                    {t('prompt-label', { defaultValue: '(prompt)' })}
+                    {t('prompt-label-matching-panel', { defaultValue: '(prompt)' })}
                   </span>{' '}
                   {story.prompt}
                 </span>

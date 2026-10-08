@@ -6,7 +6,7 @@ import { m as motion, AnimatePresence } from 'framer-motion';
 import { Calendar, ChevronDown, ChevronUp, Play, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { formatDateKey, getTodayEST } from '@/lib/daily-puzzles/seed';
 import { getCompletedDates, syncFromServer, type PuzzleResult } from '@/lib/daily-puzzles/persistence';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 
 interface PastPuzzlesSectionProps {
     gameMode: string;
@@ -25,7 +25,7 @@ export function PastPuzzlesSection({
     const { t } = useTranslation("c-daily-puzzles");
     const [showHistory, setShowHistory] = useState(false);
     const [completedMap, setCompletedMap] = useState<Record<string, PuzzleResult>>({});
-    const session = authClient.useSession();
+    const session = useSession();
     const todayKey = formatDateKey(getTodayEST());
     const isToday = selectedDateKey === todayKey;
 

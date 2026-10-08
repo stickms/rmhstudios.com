@@ -2,14 +2,18 @@
  * Signal Forge Route
  */
 
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 
-const SignalForgeGame = lazy(() => import('@/components/signal-forge/SignalForgeGame').then(m => ({ default: m.SignalForgeGame })));
+// Static, not `lazy()`: Start already splits this route's component into its own
+// chunk and loads it BEFORE hydrating. An inner `lazy()` can still be pending at
+// hydration, and an update reaching the boundary then swaps the server-rendered
+// page for the fallback (docs/fouc-audit-2026-10-06.md §13).
+import { SignalForgeGame } from '@/components/signal-forge/SignalForgeGame';
 
 export const Route = createFileRoute('/secret/signal-forge')({
   head: () => ({

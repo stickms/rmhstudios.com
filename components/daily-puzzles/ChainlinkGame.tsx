@@ -35,7 +35,7 @@ import {
 import { generateChainlinkShare } from '@/lib/daily-puzzles/share';
 import { fetchDailyPuzzle } from '@/lib/daily-puzzles/client';
 import { PuzzleLoading } from '@/components/daily-puzzles/PuzzleLoading';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import { PastPuzzlesSection } from '@/components/daily-puzzles/PastPuzzlesSection';
 import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLeaderboard';
 
@@ -90,7 +90,7 @@ function ChainlinkGameContent({ puzzle, dateKey, isToday }: { puzzle: ChainlinkP
         }
     }, [dateKey]);
 
-    const session = authClient.useSession();
+    const session = useSession();
 
     useEffect(() => {
         if (session.data && !hasCompleted('chainlink', dateKey)) {

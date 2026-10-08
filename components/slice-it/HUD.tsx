@@ -154,7 +154,7 @@ export function HUD({ engine }: HUDProps) {
               down by. */}
           <div className="bg-slice-bg shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] rounded-2xl px-4 py-2">
             <div className="text-[10px] sm:text-xs text-slice-text-muted uppercase tracking-wider font-bold leading-none mb-1">
-              {t('score', { defaultValue: 'Score' })}
+              {t('score-hud', { defaultValue: 'Score' })}
             </div>
             <div className="flex items-baseline gap-2.5">
               <span className="text-xl sm:text-2xl font-bold text-slice-text leading-tight tabular-nums">

@@ -124,7 +124,7 @@ export function RhythmHeatmap({
           </span>
           {model.busiest && model.busiest.count > 0 && (
             <span>
-              {t('stats.rhythm.peak', {
+              {t('stats.rhythm.peak', { defaultValue_one: 'Busiest: {{day}} at {{hour}}:00 UTC ({{count}} line)',
                 defaultValue: 'Busiest: {{day}} at {{hour}}:00 UTC ({{count}} lines)',
                 day: weekdayLabel(model.busiest.weekday, t),
                 hour: String(model.busiest.hour).padStart(2, '0'),

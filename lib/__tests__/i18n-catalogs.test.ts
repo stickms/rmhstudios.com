@@ -130,24 +130,71 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'validation-password',
   ],
   library: ['no-books-hint', 'no-books-title', 'no-results-hint'],
-  'games-hub': ['no-guides-hint', 'no-reviews-hint'],
+  'games-hub': ['no-guides-hint', 'no-reviews-hint', 'guide-body-guide-view'],
   'c-rmhmusic': ['back-to-builds'],
   'c-rmhcalculator': ['back-to-builds'],
-  'c-news': ['filters', 'no-articles-hint', 'no-articles-yet', 'no-articles-yet-hint'],
-  'c-lights-out': ['cell-label', 'hint-described'],
+  'c-news': [
+    'filters',
+    'no-articles-hint',
+    'no-articles-yet',
+    'no-articles-yet-hint',
+    'read-our-take-news-card',
+  ],
+  'c-lights-out': [
+    'cell-label',
+    'hint-described',
+    'daily-puzzle-lights-out-discord-activity',
+    'goal-description-lights-out-discord-activity',
+    'goal-label-lights-out-discord-activity',
+  ],
   // ── Direct lobby links (2026-08-06) ────────────────────────────────────
   // The copy-the-invite-link affordance every multiplayer lobby grew beside
   // its join code. English-only until `pnpm i18n:translate &&
   // pnpm i18n:resources` runs — the pipeline needs DEEPSEEK_API_KEY, which is
   // not available in this environment. Runtime falls back to English per key.
   'c-gabriels-horn': ['copy-invite-link', 'copy-link-failed'],
-  'c-kowloon-knockout': ['copy-link'],
+  'c-kowloon-knockout': ['copy-link', 'punches-game-view'],
   'c-laundry-sort': ['copy-invite-link', 'copy-link-failed', 'link-copied'],
-  'c-massive-march': ['copy-link'],
-  'c-neon-driftway': ['copy-code', 'copy-invite-link'],
-  'c-rmhbox': ['copy-invite-link'],
-  'c-rmhcoins': ['copy-invite-link'],
-  'c-synapse-storm': ['copy-invite-link'],
+  'c-massive-march': ['copy-link', 'talking-hud'],
+  'c-neon-driftway': ['copy-code', 'copy-invite-link', 'select-level-ndwmultiplayer-lobby'],
+  'c-rmhbox': [
+    'copy-invite-link',
+    'finished-clicks-wiki-race-game',
+    'host-controls-host-control-modal',
+    'producer-label-emoji-cinema-history-detail',
+    'prompt-label-market-results-screen',
+    'prompt-label-matching-panel',
+    'prompt-label-story-editor',
+    'ready-player-list',
+    'round-number-category-crash-history-detail',
+    'round-number-rhyme-time-game',
+    'round-of-category-crash-results',
+    'round-skipped-emoji-cinema-game',
+    'wins-undercover-agent-history-detail',
+    'finished-rank-wiki-race-results',
+    'guesses-remaining-guess-input',
+    'round-number-minimalist-masterpiece-history-detail',
+    'score-pts-rmhbox-discord-activity',
+    'total-score-minimalist-masterpiece-history-detail',
+    'won-by-minimalist-masterpiece-history-detail',
+    'players-count-host-control-modal',
+  ],
+  'c-rmhcoins': [
+    'copy-invite-link',
+    'bet-amount-holdem-table',
+    'hosted-by-baccarat-lobby',
+    'insurance-lost-blackjack-controls',
+    'natural-baccarat-controls',
+    'result-blackjack-blackjack-controls',
+    'result-lose-blackjack-controls',
+    'result-push-blackjack-controls',
+    'result-win-blackjack-controls',
+    'sitting-out-holdem-session-stats',
+    'waiting-for-player-blackjack-controls',
+    'waiting-for-players-holdem-controls',
+    'waiting-next-round-baccarat-controls',
+  ],
+  'c-synapse-storm': ['copy-invite-link', 'combo-hud', 'solved-hud'],
   // SortableList reorder controls (commit 443451a, the §15 groundwork
   // primitives) landed in en/c-ui.json but weren't machine-translated. Runtime
   // falls back to English per key. Remove once `pnpm i18n:translate &&
@@ -567,6 +614,7 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'stat-solved-today',
     'stat-streak',
     'view-results-short',
+    'globeset-race-leave-globe-set-race',
   ],
   // ── Slice It settings that had no control (2026-08-08) ─────────────────
   // The accessibility (`A2`/`A3`/`A7`), HUD (`H9`), practice-aid (`P4`),
@@ -692,6 +740,17 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'mod-no-fail',
     'mod-s-random',
     'mod-tap-holds',
+    'cancel-neumorphic-modal',
+    'close-neumorphic-modal',
+    'change-multiplayer-lobby',
+    'cover-too-large-song-details-panel',
+    'description-placeholder-song-details-panel',
+    'loading-game-canvas',
+    'mod-spin-leaderboard',
+    'retry-game-canvas',
+    'score-hud',
+    'start-game-multiplayer-lobby',
+    'waiting-for-players-game-canvas',
   ],
   // ── Extract backlog flushed (2026-09-15) ───────────────────────────────
   // 369 English strings that were live in the source but had never been
@@ -709,6 +768,11 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   // Expect this whole block to come back out in that workflow's PR.
   admin: [
     'security-reports',
+    // FOUC audit (2026-10-07) split keys — see that block below.
+    'action-failed-appeals',
+    'announcements-title-announcements',
+    'moderation-queue-description-index',
+    'user-builds-description-index',
   ],
   'c-bums-rush': [
     'action.aim-left',
@@ -731,8 +795,10 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'assist.nofall',
     'assist.nofall-hint',
     'assist.onehanded',
+    'assist.onehanded-chip', // FOUC audit split (AssistChip's short label)
     'assist.onehanded-hint',
     'assist.slowmo',
+    'assist.slowmo-chip', // FOUC audit split (AssistChip's short label)
     'assist.slowmo-hint',
     'assist.smoothing',
     'assist.smoothing-hint',
@@ -995,6 +1061,81 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'request-vote',
     'request-vote-failed',
   ],
+  // ── FOUC audit (2026-10-07) ─────────────────────────────────────────────
+  // Keys split off a key that two call sites were sharing with DIFFERENT text.
+  // The English catalog held one of the two, so once the non-core catalog
+  // loaded, the other page's copy flipped to it after first paint — and, when
+  // the catalog won the race with hydration, failed hydration outright
+  // (docs/fouc-audit-2026-10-06.md §21). English-only until
+  // `pnpm i18n:translate && pnpm i18n:resources` runs, as above. (The
+  // admin keys sit in the `admin` list of the backlog block above — an
+  // object literal cannot name a namespace twice.)
+  'c-altair': [
+    'coins-game-hud',
+    'double-time-game-over-screen',
+    'double-time-lobby-waiting',
+    'keyboard-hint-level-up-screen',
+    'kills-game-hud',
+  ],
+  'c-cursed-logic': ['next-round-cursed-logic-game'],
+  'c-forest-explorer': ['flashlight-off-explore-game', 'flashlight-on-explore-game'],
+  'c-library': ['status-analyzing-upload-modal'],
+  'c-lists': ['error-add-to-list-sheet'],
+  'c-rmh-capital': [
+    'businesses-lede-businesses-page',
+    'cta-body-firm-page',
+    'cta-eyebrow-businesses-page',
+    'cta-heading-firm-page',
+    'cta-link-businesses-page',
+    'hero-heading-firm-page',
+    'hero-lede-firm-page',
+    'insights-eyebrow-home-page',
+    'insights-lede-home-page',
+    'value-long-term-body-careers-page',
+  ],
+  'c-rmh-pmc': [
+    'cta-body-capabilities-page',
+    'cta-body-command-page',
+    'cta-body-home-page',
+    'cta-body-intelligence-page',
+    'cta-desig-capabilities-page',
+    'cta-desig-command-page',
+    'cta-desig-intelligence-page',
+    'cta-heading-capabilities-page',
+    'cta-heading-command-page',
+    'cta-heading-home-page',
+    'hero-lede-capabilities-page',
+    's01-desig-command-page',
+    's01-heading-command-page',
+    's01-lede-command-page',
+    's02-desig-command-page',
+    's02-heading-command-page',
+    's03-desig-command-page',
+    's03-heading-command-page',
+    's04-desig-command-page',
+    's04-heading-command-page',
+    's04-lede-command-page',
+  ],
+  'c-rmhstudy': [
+    'long-break-rmh-study-landing',
+    'phase-long-break-rmh-study-landing',
+    'phase-short-break-rmh-study-landing',
+    'sessions-before-long-break-rmh-study-landing',
+    'short-break-rmh-study-landing',
+  ],
+  'c-rmhtype': ['rounds-rmh-type-multiplayer-page', 'start-typing-rmh-type-room-page'],
+  'c-signal-forge': ['tempo-label-collection-modal', 'leech-label-deck-viewer'],
+  'c-tournaments': [
+    'bracket-tournaments-id',
+    'cancel-tournaments-id',
+    'done-tournaments-id',
+    'host-tournaments-index',
+    'single-elim-tournaments-index',
+    'title-tournaments-id',
+  ],
+  'c-user-builds': ['view-source-build-card'],
+  'r-strategies': ['leaderboards-index'],
+  'r-rmhbox': ['player-count-of-max'],
 };
 
 // ─── Registry parity ────────────────────────────────────────────────────────

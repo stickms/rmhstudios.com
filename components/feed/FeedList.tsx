@@ -270,8 +270,8 @@ export function FeedList({
  <ArrowUp className="w-4 h-4"/>
  {t('new-posts', {
  count: pendingItems.length,
- defaultValue:'{{count}} new post',
- defaultValue_plural:'{{count}} new posts',
+ defaultValue_one:'{{count}} new post',
+ defaultValue:'{{count}} new posts',
  })}
  </button>
  </div>
