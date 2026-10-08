@@ -15,6 +15,7 @@
   "submit-report": "Invia segnalazione",
   "submitting": "Invio in corso…",
   "toast-error": "Impossibile inviare la segnalazione. Riprova.",
+  "toast-invalid": "Manca qualcosa in quel report. Controlla e riprova.",
   "toast-sign-in": "Accedi per segnalare un contenuto.",
   "toast-success": "Grazie — il nostro team esaminerà la segnalazione."
 }

@@ -1,0 +1,7 @@
+{
+  "bulk-confirm-title_one": "Process {{count}} {{unit}}?",
+  "bulk-history-processed_one": "{{count}} processed",
+  "bulk-preview-count_one": "{{count}} {{unit}} match this filter",
+  "trash-days-left_one": "{{count}} days left",
+  "trash-window-note_one": "Posts and comments you delete stay here for {{count}} days, then go for good."
+}
