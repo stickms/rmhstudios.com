@@ -68,8 +68,11 @@ function StatTile({
   value: number;
   icon?: typeof Coins;
 }) {
+  // L1 fill, not a pane: a stat tile is repeated content, and repeated content
+  // carries no backdrop blur (design-language §5 budget) — each blurred tile
+  // was re-blurred on every scroll frame (perf audit 2026-10-08, scroll).
   return (
-    <Card className="p-4" pane>
+    <Card className="p-4">
       <div className="text-xs uppercase tracking-wide text-site-text-dim">{label}</div>
       <div className="text-2xl font-bold flex items-center gap-1.5 tabular-nums">
         {Icon ? <Icon className="size-5 text-site-warning" aria-hidden /> : null}

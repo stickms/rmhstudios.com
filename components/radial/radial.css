@@ -2083,21 +2083,37 @@ html.ios-webkit .radial-hub__veil {
    `lib/perf-tier.ts`: it is what tells the component to stand down, and if the
    two ever disagreed the column would get both rakes at once, or neither.
 
-   The keyframes and the JS pass draw the same cylinder from the same numbers
-   (15deg of tilt, 150px of depth against a 1500px perspective, ~0.8 opacity at
-   the edge). One difference is inherent and deliberate: `view()` normalises
-   progress over the card's whole cover range — viewport height PLUS card height
-   — where the JS pass measures in viewport halves, so a card reaches the screen
-   edge a little before the keyframes reach their endpoint. The rake is
-   correspondingly gentler at the very top and bottom of the screen. Matching it
-   exactly would need the card's own height, which CSS cannot see here, and the
-   gap is smaller than the difference between two card sizes. */
-@keyframes radial-wheel-rake {
+   **The rake happens at the edges, and a card fully on screen is flat** (perf
+   audit 2026-10-08, scroll). It used to run over the card's whole `cover`
+   range — tilting continuously from the moment it entered until it left, flat
+   only at the exact centre — which meant EVERY card on screen carried a 3D
+   transform and its own compositor layer for its entire time in view, all of
+   them re-composited on every scroll frame. Two animations now split it:
+   `radial-wheel-rake-in` over `entry` (the card tips up from 15deg to flat as
+   it comes in at the bottom) and `radial-wheel-rake-out` over `exit` (flat to
+   15deg as it leaves at the top). In between, with `fill: none`, a card has no
+   transform at all and scrolls as part of the page. Same cylinder at the edges,
+   cards that are being read are flat, and only the one or two cards crossing an
+   edge are layers. Measured on `/` with a 40-post feed (desktop, all-process
+   CPU per scroll frame): 10.3ms with the full-range rake, 7.7ms edge-only,
+   6.9ms with no rake at all.
+
+   The keyframes and the JS pass in `RadialWheel.tsx` draw the same thing from
+   the same numbers — 15deg of tilt and 150px of depth against a 1500px
+   perspective, 0.8 opacity at the far edge, driven by the fraction of the card
+   that is off screen. */
+@keyframes radial-wheel-rake-in {
   from {
     transform: perspective(1500px) translateZ(-150px) rotateX(-15deg);
     opacity: 0.8;
   }
-  50% {
+  to {
+    transform: perspective(1500px) translateZ(0) rotateX(0deg);
+    opacity: 1;
+  }
+}
+@keyframes radial-wheel-rake-out {
+  from {
     transform: perspective(1500px) translateZ(0) rotateX(0deg);
     opacity: 1;
   }
@@ -2112,10 +2128,12 @@ html.ios-webkit .radial-hub__veil {
        page applies to itself as you scroll is unrequested motion, and continuous
        decorative GPU work is what `perf-lite` exists to drop. */
     html:not(.reduce-motion):not(.perf-lite) .radial-wheel__slot {
-      animation-name: radial-wheel-rake;
+      animation-name: radial-wheel-rake-in, radial-wheel-rake-out;
       animation-timing-function: linear;
-      animation-timeline: view();
-      animation-range: cover 0% cover 100%;
+      animation-timeline: view(), view();
+      animation-range:
+        entry 0% entry 100%,
+        exit 0% exit 100%;
       /* Fill stays `none` on purpose. With `both` every slot in the feed would
          hold an endpoint transform forever, which is a stacking context and a
          promotion candidate per card — the same permanent-layer problem

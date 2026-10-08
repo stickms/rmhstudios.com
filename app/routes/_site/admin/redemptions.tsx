@@ -97,7 +97,7 @@ function AdminRedemptionsPage() {
           {rows.map((r) => {
             const Icon = KIND_ICON[r.kind];
             return (
-              <Card key={r.id} className="p-4 space-y-3" pane>
+              <Card key={r.id} className="p-4 space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2 min-w-0">
                     <Icon className="size-5 text-site-accent shrink-0" aria-hidden />
