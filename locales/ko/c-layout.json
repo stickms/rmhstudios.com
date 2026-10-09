@@ -5,6 +5,7 @@
   "edit-layout-desc": "Reorder, add, or remove the widgets on your home page.",
   "expand-widget": "Expand {{name}}",
   "for-you": "For you",
+  "hide": "{{name}} 숨기기",
   "home-widgets": "Home widgets",
   "home-widgets-desc": "Choose which widgets appear on your home page and in what order.",
   "layout": "Layout",
@@ -15,5 +16,7 @@
   "reset": "Reset to default",
   "sidebar": "Sidebar",
   "sidebar-desc": "Drag the tabs into the order you want, or hide the ones you don’t use. Hidden tabs stay reachable from search and their link.",
+  "sidebar-reorder-hint": "드래그하여 순서를 변경하세요. 눈 아이콘으로 탭을 숨길 수 있으며, 숨긴 탭은 검색에 계속 표시됩니다.",
+  "unhide": "{{name}} 표시",
   "your-widgets": "Your widgets"
 }

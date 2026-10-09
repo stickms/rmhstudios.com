@@ -15,6 +15,7 @@
   "submit-report": "Raporu gönder",
   "submitting": "Gönderiliyor…",
   "toast-error": "Rapor gönderilemedi. Lütfen tekrar deneyin.",
+  "toast-invalid": "Bu raporda bir şeyler eksik. Lütfen kontrol edip tekrar deneyin.",
   "toast-sign-in": "İçerik bildirmek için lütfen oturum açın.",
   "toast-success": "Teşekkürler — ekibimiz bunu inceleyecek."
 }
