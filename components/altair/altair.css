@@ -219,18 +219,6 @@
   animation: altair-slide-up 0.25s ease-out;
 }
 
-/* ─── Utilities ─────────────────────────────────────────────────── */
-
-.altair-glass {
-  background: rgba(42, 34, 24, 0.88);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.altair-light .altair-glass {
-  background: rgba(250, 246, 240, 0.88);
-}
-
 /* ─── Parchment / Paper Texture ────────────────────────────────── */
 
 .altair-parchment,

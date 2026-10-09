@@ -70,3 +70,59 @@ describe('route files do not import stylesheets', () => {
     ).toEqual([]);
   });
 });
+
+/**
+ * The same trap for JavaScript. Found by the CSS/JS audit 2026-10-09 with a
+ * sourcemap attribution of the entry chunk:
+ *
+ * - `rmhbox/minigames/$minigameId/history.tsx` had a bare
+ *   `import '@/lib/rmhbox/history-display-registrations'` — ~8 KB of RMHbox
+ *   config in every page's entry (a side-effect import has no binding for the
+ *   splitter to follow, exactly like a bare CSS import);
+ * - `_site/rideshare/index.tsx` EXPORTED its page component. The splitter can't
+ *   move an exported binding out of the route module, so the whole landing page
+ *   (~9 KB) was in the entry too.
+ *
+ * Side effects belong behind a binding the component uses
+ * (`lib/rmhbox/history-display.ts`), and a page module exports its `Route`.
+ */
+const ALLOWED_EXPORTS = new Map<string, string>([
+  // A localStorage key string, read by the sign-up flow — costs nothing.
+  ['app/routes/ref.$code.tsx', 'REFERRAL_CODE_KEY'],
+]);
+
+describe('route files keep their definitions small', () => {
+  const pages = walk(ROUTES).filter((f) => f.endsWith('.tsx'));
+
+  it('no bare side-effect import of a module', () => {
+    const offenders: string[] = [];
+    for (const file of pages) {
+      const src = readFileSync(file, 'utf8');
+      for (const [, spec] of src.matchAll(/^import\s+['"]([^'"]+)['"]/gm)) {
+        if (!spec.endsWith('.css')) offenders.push(`${relative(ROOT, file)} → ${spec}`);
+      }
+    }
+    expect(
+      offenders,
+      'a side-effect import in a route file runs from the entry chunk of every page — import it from a module the component uses',
+    ).toEqual([]);
+  });
+
+  it('a page route exports only its Route', () => {
+    const offenders: string[] = [];
+    for (const file of pages) {
+      const rel = relative(ROOT, file);
+      const src = readFileSync(file, 'utf8');
+      for (const [, name] of src.matchAll(
+        /^export\s+(?:default\s+)?(?:async\s+)?(?:function|const|let|class)\s+([A-Za-z_$][\w$]*)/gm,
+      )) {
+        if (name === 'Route' || ALLOWED_EXPORTS.get(rel) === name) continue;
+        offenders.push(`${rel} exports ${name}`);
+      }
+    }
+    expect(
+      offenders,
+      'an exported binding (and everything it references) cannot be split out of the route definition — move it to a module under components/ or lib/',
+    ).toEqual([]);
+  });
+});

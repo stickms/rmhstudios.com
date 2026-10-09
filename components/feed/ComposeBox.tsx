@@ -514,7 +514,7 @@ export function ComposeBox({
         </p>
         <Link to="/login" search={{ callbackURL: undefined }}>
           <Button variant="accent" size="sm">
-            {t('sign-in', { defaultValue: 'Sign In' })}
+            {t('sign-in', { defaultValue: 'Sign in' })}
           </Button>
         </Link>
       </div>
@@ -728,7 +728,7 @@ export function ComposeBox({
                 type="text"
                 value={poll.question}
                 onChange={(e) => setPoll((p) => ({ ...p, question: e.target.value }))}
-                placeholder={t('poll-question-placeholder', { defaultValue: 'Ask a question...' })}
+                placeholder={t('poll-question-placeholder', { defaultValue: 'Ask a question…' })}
                 aria-label={t('poll-question-aria', { defaultValue: 'Poll question' })}
                 maxLength={MAX_POLL_QUESTION_LENGTH}
                 className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm p-2 border border-site-border outline-none focus:border-site-accent transition-colors mb-2"
@@ -746,8 +746,8 @@ export function ComposeBox({
                         setPoll((p) => ({ ...p, options: newOptions }));
                       }}
                       placeholder={t('poll-option-placeholder', {
-                        count: i + 1,
-                        defaultValue: 'Option {{count}}',
+                        index: i + 1,
+                        defaultValue: 'Option {{index}}',
                       })}
                       aria-label={t('poll-option-aria', {
                         count: i + 1,
@@ -970,7 +970,7 @@ export function ComposeBox({
               <AIGenerateButton
                 request={{ mode: 'post', draft: content }}
                 onGenerated={(text) => setContent(text)}
-                title={t('ai-generate-title', { defaultValue: 'Generate a post with AI' })}
+                title={t('ai-generate-title', { defaultValue: 'Generate a reply with AI' })}
               />
 
               {/* AI image button — locked (greyed + upgrade nudge) below HARD-R */}
@@ -1155,7 +1155,7 @@ export function ComposeBox({
 
               <Button variant="accent" size="sm" disabled={!canSubmit} onClick={handleSubmit}>
                 {submitting
-                  ? t('posting', { defaultValue: 'Posting...' })
+                  ? t('posting', { defaultValue: 'Posting…' })
                   : t('post-button', { defaultValue: 'Post' })}
               </Button>
             </div>

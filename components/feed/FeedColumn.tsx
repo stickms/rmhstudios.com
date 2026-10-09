@@ -186,7 +186,7 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
 
         <header data-slot="feed-header" className="feed-search">
           <label htmlFor="feed-search" className="sr-only">
-            {t('search-placeholder', { defaultValue: 'Search posts and people' })}
+            {t('search-placeholder', { defaultValue: 'Search people, posts, builds…' })}
           </label>
           <Search aria-hidden />
           <input
@@ -195,7 +195,7 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
             type="text"
             value={searchInput}
             onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder={t('search-placeholder', { defaultValue: 'Search posts and people' })}
+            placeholder={t('search-placeholder', { defaultValue: 'Search people, posts, builds…' })}
             enterKeyHint="search"
             onKeyDown={(e) => {
               if (e.key === 'Escape') clearSearch();

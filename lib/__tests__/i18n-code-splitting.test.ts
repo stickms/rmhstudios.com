@@ -9,11 +9,12 @@ import { LOCALE_LOADERS } from '@/lib/i18n/resources';
  * client — the per-language catalogs must stay code-split behind dynamic
  * `import()`, never statically bundled.
  *
- * The one intentional exception is `resources.en-core` (the small core-namespace
- * English catalog), which is statically bundled as the universal per-key
- * fallback. Every other catalog — including the full English one
- * (`resources.en`) — must load lazily, so a single page load fetches only the
- * active locale (its core inlined by the SSR loader, the rest as one chunk).
+ * There is no exception, English included. Until 2026-10-09 the core English
+ * namespaces (`resources.en-core`, ~136 KB minified) were statically bundled as
+ * the per-key fallback; English now renders from each call's defaultValue and
+ * the whole catalog — `resources.en` — loads lazily like every other, so a page
+ * load fetches only the active locale (a non-en core inlined by the SSR loader,
+ * the rest as one chunk).
  *
  * These are SOURCE checks (no build required) so they run in the normal suite
  * and fail fast the moment someone reintroduces a static locale import.
@@ -23,11 +24,10 @@ const ROOT = process.cwd();
 
 // A per-locale catalog specifier: `resources.<locale>` (the full per-language
 // module, incl. `resources.en`) or a raw `locales/<locale>/…` JSON path.
-// `resources.en-core` is deliberately NOT matched — the `(?![\w-])` lookahead
-// rejects the trailing `-core`, since the core catalog is the one we DO bundle.
+// `resources.en-core` (and any other `resources.<locale>-…` split) matches too.
 const LOCALE_ALT = LOCALES.join('|');
 const CATALOG_SPECIFIER = new RegExp(
-  `(?:resources\\.(?:${LOCALE_ALT})(?![\\w-])|(?:^|/)locales/(?:${LOCALE_ALT})/)`,
+  `(?:resources\\.(?:${LOCALE_ALT})(?![\\w])|(?:^|/)locales/(?:${LOCALE_ALT})/)`,
 );
 
 /**
@@ -98,7 +98,7 @@ describe('i18n code-splitting (only the selected locale reaches the client)', ()
     }
   });
 
-  it('the client loader (resources.ts) statically imports only en-core; every locale is dynamic', () => {
+  it('the client loader (resources.ts) statically imports no catalog; every locale is dynamic', () => {
     const src = readFileSync(join(ROOT, 'lib/i18n/resources.ts'), 'utf8');
     // No per-locale catalog is statically imported here — they must all be
     // reached via the dynamic import() loaders in LOCALE_LOADERS.

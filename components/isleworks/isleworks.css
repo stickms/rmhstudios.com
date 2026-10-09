@@ -247,11 +247,6 @@
   background: #74dcb2;
 }
 
-.isw-btn--danger[aria-pressed='true'] {
-  background: rgb(239 115 112 / 30%);
-  border-color: rgb(239 115 112 / 65%);
-}
-
 .isw-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
@@ -582,16 +577,6 @@
 .isw-chip--bad {
   background: rgb(239 115 112 / 22%);
   color: #ffc9c7;
-}
-
-.isw-chip--good {
-  background: rgb(94 207 162 / 20%);
-  color: #b9f0da;
-}
-
-.isw-chip--warn {
-  background: rgb(249 164 92 / 22%);
-  color: #ffd9b6;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════

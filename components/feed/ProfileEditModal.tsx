@@ -180,7 +180,7 @@ function EditorPreview({
  {name || t('display-name-placeholder', { defaultValue:'Your display name'})}
  </p>
  <p className="truncate text-xs text-site-text-dim">
- @{handle || t('handle-placeholder', { defaultValue:'your_handle'})}
+ @{handle || t('handle-placeholder', { defaultValue:'@handle'})}
  </p>
  <p
  className={cn(

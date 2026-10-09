@@ -20,6 +20,8 @@ app/
     <game>.tsx       full-screen games/apps (top level, no shell)
     sitemap[.]xml.ts /sitemap.xml ([.]= escaped literal dot)
   globals.css        theme tokens: base + curated themes as .style-* classes (see design-language.md)
+  site-tier.css      entry sheet for _site pages: Tailwind + globals.css, minus game/app-only sources
+  app-tier.css       entry sheet for full-screen routes: the superset (lib/style-tier.ts picks)
   router.tsx         router config: intent preloading, pending component timings
   routeTree.gen.ts   GENERATED (~487 KB) — never edit by hand
   icon.svg
@@ -205,5 +207,9 @@ rest yourself:
 4. Server-only modules use the `*.server.ts` suffix and live in `lib/` — a
    Vite plugin stubs them out of the client bundle. Never import one from
    client component code (see `lib/CLAUDE.md`).
-5. `globals.css` is the single theme source — new UI must use the `--site-*`
+5. Adding a new game or app directory? `lib/__tests__/style-tiers.test.ts`
+   will ask you to add it to `site-tier.css`'s skip list (one line), so its
+   utilities stay off every site page. Importing game code into a site page
+   fails the same test — that page would be missing its utilities.
+6. `globals.css` is the single theme source — new UI must use the `--site-*`
    token utilities, not hardcoded colors (see `docs/design-language.md`).

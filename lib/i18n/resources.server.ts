@@ -17,8 +17,9 @@
 // (app/routes/__root.tsx `getInitialI18n`) awaits `preloadLocale(locale)` BEFORE
 // render, so the *synchronous* getServerI18n → localeCoreResources path
 // (lib/i18n/instances.ts) still reads a warm bundle. English needs nothing here:
-// its core namespaces are statically bundled client-side (EN_CORE_RESOURCES) and
-// getServerI18n only calls localeCoreResources for non-en locales.
+// SSR renders it from each call's defaultValue (the client bundles no English
+// catalog either), and getServerI18n only calls localeCoreResources for non-en
+// locales.
 import { CORE_NAMESPACES, DEFAULT_LOCALE, type Locale } from '@/lib/i18n/config';
 import { LOCALE_LOADERS, type LocaleBundle } from '@/lib/i18n/resources';
 

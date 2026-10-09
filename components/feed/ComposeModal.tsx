@@ -358,7 +358,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
 
  <Button variant="accent"size="sm"disabled={!canSubmit} onClick={handleSubmit}>
  {submitting
- ? t('posting', { defaultValue:'Posting...'})
+ ? t('posting', { defaultValue:'Posting…'})
  : t('post', { defaultValue:'Post'})}
  </Button>
  </div>
@@ -444,7 +444,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  value={poll.question}
  onChange={(e) => setPoll((p) => ({ ...p, question: e.target.value }))}
  placeholder={t('poll-question-placeholder', {
- defaultValue:'Ask a question...',
+ defaultValue:'Ask a question…',
  })}
  maxLength={MAX_POLL_QUESTION_LENGTH}
  className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm p-2 border border-site-border outline-none focus:border-site-accent transition-colors mb-2"
@@ -462,8 +462,8 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  setPoll((p) => ({ ...p, options: newOptions }));
  }}
  placeholder={t('poll-option-placeholder', {
- count: i + 1,
- defaultValue:'Option {{count}}',
+ index: i + 1,
+ defaultValue:'Option {{index}}',
  })}
  maxLength={MAX_POLL_OPTION_LENGTH}
  className="flex-1 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm p-2 border border-site-border outline-none focus:border-site-accent transition-colors"

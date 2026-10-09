@@ -519,7 +519,7 @@ export function PostDetail({ postId }: PostDetailProps) {
  onClick={handleSubmit}
  >
  {submitting
- ? t('posting', { defaultValue:'Posting...'})
+ ? t('posting', { defaultValue:'Posting…'})
  : t('reply', { defaultValue:'Reply'})}
  </Button>
  </div>

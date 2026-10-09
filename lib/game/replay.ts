@@ -20,6 +20,7 @@
  */
 
 import { z } from 'zod';
+import { LIGHTS_OUT_VERSION, SLICE_IT_VERSION } from './replay-meta';
 import { createSeededRng } from '@/lib/lights-out/seed';
 import { getDailyShape, isActiveCell, getShapeLabel } from '@/lib/lights-out/shapes';
 import { generatePuzzle, toggleCellInGrid, isSolved, type Grid } from '@/lib/lights-out/lights-out';
@@ -27,6 +28,9 @@ import {
   DAILY_PUZZLE_VERSION,
   dailyPuzzleReplaySchema,
 } from '@/lib/daily-puzzles/replay-schema';
+
+// Version tags live in ./replay-meta (zod-free, for route definitions).
+export { LIGHTS_OUT_VERSION, SLICE_IT_VERSION };
 
 /** A JSON-serializable value — replay payloads are stored as JSON and travel
  * through server-function loaders, so the element type must be serializable
@@ -133,7 +137,6 @@ export const REPLAY_SIZE_CAP = 256 * 1024;
  * accepts the run only if the board ends solved.
  * ------------------------------------------------------------------ */
 
-export const LIGHTS_OUT_VERSION = 'lo-1';
 
 /** A move is a clicked cell [row, col]. Bounds are generous but finite (anti-DoS). */
 const lightsOutMove = z.tuple([z.number().int().min(0).max(31), z.number().int().min(0).max(31)]);
@@ -201,7 +204,6 @@ function verifyLightsOut(data: unknown): { score: number } | null {
  * (`R8`) and never on the request path.
  * ------------------------------------------------------------------ */
 
-export const SLICE_IT_VERSION = 'si-1';
 
 const sliceItJudgment = z.enum(['perfect', 'great', 'good', 'miss']);
 
@@ -366,9 +368,6 @@ export function getReplayable(game: string): ReplayableGame | undefined {
 /** Games that can be captured, for UI menus. */
 export const REPLAYABLE_GAME_IDS = Object.keys(replayableGames);
 
-/** Display titles for the capturable games (kept in sync with lib/games.ts). */
-export const REPLAY_GAME_TITLES: Record<string, string> = {
-  'lights-out': 'Lights Out',
-  'slice-it': 'Slice It!',
-  'daily-puzzle': 'Daily Puzzles',
-};
+// Titles and version tags live in a zod-free module so route definitions can
+// read them without pulling this file's schemas into the entry chunk.
+export { REPLAY_GAME_TITLES } from './replay-meta';

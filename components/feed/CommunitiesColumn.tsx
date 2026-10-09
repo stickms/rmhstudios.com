@@ -141,7 +141,7 @@ export function CommunitiesColumn({
             containerClassName="flex-1"
             value={query}
             onValueChange={setQuery}
-            placeholder={t('search-communities', { defaultValue: 'Search communities…' })}
+            placeholder={t('search-communities', { defaultValue: 'Search communities' })}
             aria-label={t('search-communities', { defaultValue: 'Search communities' })}
           />
           {session && (
@@ -167,7 +167,7 @@ export function CommunitiesColumn({
             <SearchField
               value={query}
               onValueChange={setQuery}
-              placeholder={t('search-communities', { defaultValue: 'Search communities…' })}
+              placeholder={t('search-communities', { defaultValue: 'Search communities' })}
               aria-label={t('search-communities', { defaultValue: 'Search communities' })}
             />
           </div>

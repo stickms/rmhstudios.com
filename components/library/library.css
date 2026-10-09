@@ -12,11 +12,6 @@
      lose the cascade again. */
 }
 
-.lib__empty {
-  text-align: center;
-  padding: 64px 16px;
-}
-
 /* ─── Bookshelf ─────────────────────────────────────────────────────────────── */
 .lib__shelf {
   --col: 168px;
@@ -2103,67 +2098,6 @@
   );
 }
 
-.lib-search {
-  position: relative;
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  width: min(780px, 100%);
-  min-height: 50px;
-  margin-top: clamp(0px, 1vw, 10px);
-  border: 1px solid color-mix(in srgb, var(--site-text, #fff) 13%, transparent);
-  border-radius: var(--site-radius, 14px);
-  background: color-mix(in srgb, var(--site-text, #fff) 5%, transparent);
-  color: var(--site-text-dim, #77777f);
-  transition:
-    border-color 160ms ease,
-    background 160ms ease;
-}
-.lib-search:focus-within {
-  border-color: color-mix(in srgb, var(--site-accent, #9b7ad8) 68%, var(--site-text, #fff));
-  background: color-mix(in srgb, var(--site-text, #fff) 7%, transparent);
-}
-.lib-search > svg {
-  position: absolute;
-  inset-inline-start: 16px;
-  pointer-events: none;
-}
-.lib-search input {
-  width: 100%;
-  min-width: 0;
-  height: 48px;
-  padding: 0 48px;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: var(--site-text, #f5f5f7);
-  font: inherit;
-  /* Floored on touch so focusing it can't zoom the page — see
-     `--site-field-font-floor` in globals.css. */
-  font-size: max(0.9rem, var(--site-field-font-floor));
-}
-.lib-search input::placeholder {
-  color: var(--site-text-dim, #66666d);
-}
-.lib-search button {
-  position: absolute;
-  inset-inline-end: 8px;
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--site-text-muted, #88888f);
-  cursor: pointer;
-}
-.lib-search button:hover {
-  color: var(--site-text, #fff);
-  background: color-mix(in srgb, var(--site-text, #fff) 8%, transparent);
-}
-
 /* Music (playlists) folded into the library as a first-class section. The
    embedded PlaylistsColumn drops its own header; this wrapper just aligns its
    content under the section heading. */
@@ -2604,9 +2538,6 @@
 }
 
 @media (max-width: 800px) {
-  .lib-search {
-    margin-top: 0;
-  }
   .lib-reader__bar {
     min-height: 56px;
     padding-inline: 8px;
@@ -2741,46 +2672,6 @@
 .lib-explorer > * {
   position: relative;
   z-index: 1;
-}
-
-.lib-explorer__search-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-}
-
-.lib--glass-playground .lib-search {
-  width: 100%;
-  min-height: 44px;
-  margin: 0;
-  border-color: transparent;
-  border-radius: 999px;
-  background: var(--site-glass-tint);
-}
-
-.lib--glass-playground .lib-search:focus-within {
-  border-color: var(--site-accent);
-  background: var(--site-surface-hover);
-  box-shadow: 0 0 0 3px var(--site-accent-dim);
-}
-
-.lib--glass-playground .lib-search input {
-  height: 42px;
-  padding-inline: 44px;
-  font-size: 1rem;
-}
-
-.lib--glass-playground .lib-nav {
-  width: 100%;
-  max-width: none;
-  margin: 0;
-  padding: 0;
-}
-
-.lib--glass-playground .lib-nav [role='tab'] {
-  min-height: 38px;
-  padding-inline: 13px;
 }
 
 /* Each content family uses the same outer bubble and internal spacing rhythm.
@@ -2988,8 +2879,7 @@
   background-color: var(--site-glass-tint);
 }
 
-.lib--glass-playground .lib-edit__migrate,
-.lib--glass-playground .lib__empty {
+.lib--glass-playground .lib-edit__migrate {
   max-width: var(--lib-content);
   margin: 14px auto 0;
   border-radius: var(--site-radius);
@@ -3004,16 +2894,6 @@
   .lib-explorer {
     inset-block-start: 6px;
     padding: 7px;
-  }
-
-  .lib-explorer__search-row {
-    grid-template-columns: 1fr;
-    gap: 3px;
-  }
-
-  .lib--glass-playground .lib-nav [role='tab'] {
-    min-height: 36px;
-    padding-inline: 11px;
   }
 
   .lib--glass-playground .lib-section-shell {

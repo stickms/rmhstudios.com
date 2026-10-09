@@ -179,11 +179,11 @@ export function HandleInput({ value, onChange, multiple = false, placeholder, cl
  role="listbox"
  align="start"
  focusOnOpen={false}
- label={t("searching", { defaultValue:"Searching…"})}
+ label={t("searching", { defaultValue:"Searching..."})}
  className="w-[var(--anchored-menu-anchor-w)] max-h-60"
  >
  {loading && suggestions.length === 0 ? (
- <div className="px-3 py-2 text-xs text-site-text-dim">{t("searching", { defaultValue:"Searching…"})}</div>
+ <div className="px-3 py-2 text-xs text-site-text-dim">{t("searching", { defaultValue:"Searching..."})}</div>
  ) : (
  suggestions.map((u, i) => (
  <button

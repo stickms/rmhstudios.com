@@ -181,7 +181,6 @@
 
 /* ════ HERO — declassified brief ════ */
 .rmhp-root .brief{position:relative;min-height:clamp(600px,90vh,860px);display:flex;align-items:center;overflow:hidden;border-bottom:1px solid var(--line-soft)}
-.rmhp-root .brief-grid{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.5}
 .rmhp-root .brief-content{position:relative;z-index:2;max-width:880px;padding:48px 0}
 .rmhp-root .brief-meta{display:flex;flex-wrap:wrap;gap:10px 26px;margin-bottom:30px}
 .rmhp-root .brief h1{font-family:var(--display);font-weight:800;font-stretch:125%;text-transform:uppercase;color:var(--bone);font-size:clamp(40px,6.6vw,92px);line-height:0.9;letter-spacing:0.008em;margin:0 0 28px;max-width:16ch}
@@ -416,7 +415,6 @@
     html:not(.reduce-motion) .rmhp-root .reveal.d1 { animation-range: entry 6% entry 52%; }
     html:not(.reduce-motion) .rmhp-root .reveal.d2 { animation-range: entry 12% entry 58%; }
     html:not(.reduce-motion) .rmhp-root .reveal.d3 { animation-range: entry 18% entry 64%; }
-    html:not(.reduce-motion) .rmhp-root .reveal.d4 { animation-range: entry 24% entry 70%; }
   }
 }
 @keyframes rmhp-reveal-in {

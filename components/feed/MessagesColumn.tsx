@@ -257,7 +257,7 @@ export function MessagesColumn({
  </p>
  <Link to="/login"search={{ callbackURL: undefined }}>
  <Button variant="accent"size="sm">
- {t('sign-in', { defaultValue:'Sign In'})}
+ {t('sign-in', { defaultValue:'Sign in'})}
  </Button>
  </Link>
  </div>

@@ -11,7 +11,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { useTranslation } from 'react-i18next';
 import { getReplay } from '@/lib/replays.server';
-import { REPLAY_GAME_TITLES } from '@/lib/game/replay';
+import { REPLAY_GAME_TITLES } from '@/lib/game/replay-meta';
 import { GameReplayPlayer } from '@/components/replays/GameReplayPlayer';
 
 const fetchEmbed = createServerFn({ method: 'GET' })

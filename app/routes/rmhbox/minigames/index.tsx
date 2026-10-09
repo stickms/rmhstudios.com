@@ -132,7 +132,10 @@ export const Route = createFileRoute('/rmhbox/minigames/')({
   head: () => ({
     meta: buildMeta({
       title: 'RMHbox minigames — the full list | RMH Studios',
-      description: `All ${getAllMinigames().length} RMHbox minigames: word, trivia, action and creative rounds, with leaderboards and match history for each.`,
+      // No count here: reading it from the registry put the whole registry in
+      // every page's entry chunk, because head() is part of the route definition.
+      description:
+        'Every RMHbox minigame: word, trivia, action and creative rounds, with leaderboards and match history for each.',
       path: '/rmhbox/minigames',
     }),
     links: [buildCanonical('/rmhbox/minigames')],

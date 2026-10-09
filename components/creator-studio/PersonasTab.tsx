@@ -109,13 +109,13 @@ export function PersonasTab({ seed }: { seed: number }) {
         {p.isPublic === false && (
           <>
             <span aria-hidden> · </span>
-            <Lock className="h-3 w-3" /> {t('private', { defaultValue: 'private' })}
+            <Lock className="h-3 w-3" /> {t('private', { defaultValue: 'Private' })}
           </>
         )}
         {showOwner && p.owner && (
           <>
             <span aria-hidden> · </span>
-            {t('by-owner', { owner: p.owner.name || p.owner.handle || t('someone', { defaultValue: 'someone' }), defaultValue: 'by {{owner}}' })}
+            {t('by-owner', { owner: p.owner.name || p.owner.handle || t('someone', { defaultValue: 'Someone' }), defaultValue: 'by {{owner}}' })}
           </>
         )}
       </span>

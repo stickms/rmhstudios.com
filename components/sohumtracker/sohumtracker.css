@@ -806,18 +806,6 @@
   stroke-dasharray: 3 3;
 }
 
-.stk-chart__area {
-  fill: var(--stk-accent-dim);
-}
-
-.stk-chart__line {
-  fill: none;
-  stroke: var(--stk-accent);
-  stroke-width: 2;
-  stroke-linejoin: round;
-  stroke-linecap: round;
-}
-
 /* The readout sits under the plot rather than floating over it: a tooltip that
    follows a finger on a phone is a tooltip under the finger. */
 .stk-chart__readout {
@@ -1450,30 +1438,6 @@
   color: var(--stk-text-faint);
 }
 
-/* ── Skeleton ─────────────────────────────────────────────────────────────── */
-
-.stk-skel {
-  border-radius: var(--stk-r-md);
-  background: linear-gradient(
-    90deg,
-    var(--stk-surface) 25%,
-    var(--stk-surface-hover) 50%,
-    var(--stk-surface) 75%
-  );
-  background-size: 400% 100%;
-  animation: stk-shimmer 1.4s ease-in-out infinite;
-}
-
-@keyframes stk-shimmer {
-  from {
-    background-position: 100% 0;
-  }
-
-  to {
-    background-position: 0 0;
-  }
-}
-
 /* ── Utility ──────────────────────────────────────────────────────────────── */
 
 /* The clip is applied to a WRAPPER, never to a <table> directly: table layout
@@ -1596,8 +1560,7 @@
 /* ── Reduced motion ───────────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
-  .stk-pulse,
-  .stk-skel {
+  .stk-pulse {
     animation: none;
   }
 

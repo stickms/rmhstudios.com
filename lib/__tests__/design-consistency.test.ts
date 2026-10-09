@@ -727,14 +727,14 @@ function cssViolations(src: string): { hex: number; radius: number } {
  * `creator-studio.css`, then the rest.
  */
 const CSS_DEBT: Record<string, { hex: number; radius: number }> = {
-  'components/library/library.css': { hex: 42, radius: 33 },
-  'components/creator-studio/creator-studio.css': { hex: 32, radius: 5 },
+  'components/library/library.css': { hex: 31, radius: 33 },
+  'components/creator-studio/creator-studio.css': { hex: 27, radius: 5 },
   'components/rmhtech/rmhtech.css': { hex: 16, radius: 5 },
-  'components/library/album-admin.css': { hex: 12, radius: 10 },
+  'components/library/album-admin.css': { hex: 6, radius: 4 },
   'components/library/album-viewer.css': { hex: 7, radius: 3 },
   'components/creator-studio/storefront.css': { hex: 5, radius: 3 },
-  'components/rmhladder/rmhladder.css': { hex: 0, radius: 14 },
-  'components/feed/feed.css': { hex: 0, radius: 7 },
+  'components/rmhladder/rmhladder.css': { hex: 0, radius: 6 },
+  'components/feed/feed.css': { hex: 0, radius: 2 },
   'components/security/security.css': { hex: 0, radius: 4 },
   'components/rmhcalculator/rmhcalculator.css': { hex: 0, radius: 3 },
   'components/library/book-3d.css': { hex: 1, radius: 2 },

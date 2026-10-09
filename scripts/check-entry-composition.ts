@@ -46,7 +46,7 @@ const OUT_DIR = path.join(ROOT, '.output', 'public');
  * `pixi.js` is absent from the client graph entirely (it is built separately
  * into `public/vibe-packages` by `scripts/build-vibe-packages.ts`); it stays
  * listed so that importing it into the app graph trips the wire.
- * `zod` is a live violation — see KNOWN_VIOLATIONS.
+ * `zod` was a live violation until 2026-10-09 — see KNOWN_VIOLATIONS.
  *
  * 2026-08-08: `twemoji-parser` came OFF this list because the package is gone,
  * not because the rule relaxed. It was the archived second Twemoji library, kept
@@ -76,32 +76,15 @@ const FORBIDDEN: Record<string, string> = {
  *   • not present   → FAIL, asking you to DELETE the entry (it was fixed)
  * so a stale baseline cannot quietly become permanent.
  *
- * `zod` (71,421 B / 69.7 KB, measured 2026-08-05): a REGRESSION against
- * docs/performance-audit-2026-08-04.md §2, which removed a 69.7 KB zod chunk
- * from the critical path by splitting shell schemas into `*-schema.ts`
- * siblings. It is back, at almost exactly the same weight, via NINE
- * module-scope `import { z } from 'zod'` sites that the entry reaches:
- *
- *   lib/catalog/types.ts:24          (entry → apps-*.js → schemas-*.js)
- *   lib/game/replay.ts:22
- *   app/routes/_site/rmhladder/{alerts,companies,jobs,pipeline,review,settings}.tsx
- *   app/routes/_site/rmhladder/jobs/$jobId.tsx
- *
- * The route files count because `app/routeTree.gen.ts` imports all 739 route
- * modules statically, so a top-level import in ANY route module is on every
- * page. Module-scope `z.object(...)` calls are not tree-shakeable, so the whole
- * validator rides the shell.
- *
- * Fix: move each schema into a `*-schema.ts` sibling (the convention the 08-04
- * audit established) and keep plain TypeScript types in the runtime module.
- * Then delete this entry — the check below will insist on it.
+ * `zod` was the one entry here from 2026-08-05 (71,421 B, a regression via
+ * module-scope `import { z }` sites the entry reached) until the CSS/JS audit of
+ * 2026-10-09 took it out: the last carriers were `lib/game/replay.ts` (read by
+ * three route `head()`s for a title map — now `lib/game/replay-meta.ts`) and the
+ * `/slice-it/` `validateSearch` schema (now the hand-rolled, zod-free
+ * `lib/slice-it/library-search.ts`). Its baseline was deleted; `zod` in the
+ * entry is a plain FAIL again.
  */
-const KNOWN_VIOLATIONS: Record<string, { maxBytes: number; note: string }> = {
-  zod: {
-    maxBytes: 74_000, // measured 71,421 B on 2026-08-05 + a ~3.6% band
-    note: 'pre-existing regression — 9 module-scope `import { z } from "zod"` sites on the critical path',
-  },
-};
+const KNOWN_VIOLATIONS: Record<string, { maxBytes: number; note: string }> = {};
 
 type SourceMap = {
   sources: string[];

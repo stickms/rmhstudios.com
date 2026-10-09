@@ -6,7 +6,7 @@ import { ArrowLeft } from 'lucide-react';
 import { DarkModeWrapper } from '@/components/slice-it/DarkModeWrapper';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { SliceItLoading } from '@/components/slice-it/SliceItLoading';
-import { librarySearchSchema } from '@/lib/slice-it/library-filters';
+import { validateLibrarySearch } from '@/lib/slice-it/library-search';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 
@@ -63,9 +63,9 @@ function SliceItPage() {
 export const Route = createFileRoute('/slice-it/')({
   // L18 — the library's search/sort/view state lives here now instead of in
   // component state, so it survives navigation, is shareable, and is
-  // back-button correct. `librarySearchSchema` passes through `?lobby=` (the
+  // back-button correct. `validateLibrarySearch` passes through `?lobby=` (the
   // multiplayer join-code param `MultiplayerLobby.tsx` reads) untouched.
-  validateSearch: librarySearchSchema,
+  validateSearch: validateLibrarySearch,
   /**
    * The game itself is `authGate: true`, so a crawler sees a sign-in gate
    * rather than the library — which is exactly why `V12` added `/games/slice-it`

@@ -38,7 +38,7 @@ import { versionsOf } from '@/lib/speedrun/versions';
 // Titles for the games that can record a replay. A board can only exist for one
 // of those, so this map covers every option the picker can show; the id is the
 // fallback rather than a second hardcoded list that would drift from the first.
-import { REPLAY_GAME_TITLES } from '@/lib/game/replay';
+import { REPLAY_GAME_TITLES } from '@/lib/game/replay-meta';
 import {
   ALL_VERSIONS,
   type SpeedrunCategoryView,

@@ -93,137 +93,6 @@
   --ds-ground: #0b1a3a;
 }
 
-/* ── The scene: fixed parallax layers behind everything ─────────────────── */
-
-.ds-scene {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  overflow: hidden;
-  pointer-events: none;
-  background: linear-gradient(
-    180deg,
-    var(--ds-sky-top) 0%,
-    var(--ds-sky-mid) 45%,
-    var(--ds-sky-low) 100%
-  );
-}
-
-.ds-layer {
-  position: absolute;
-  inset: -10% -5%;
-  will-change: transform;
-}
-
-.ds-sun {
-  position: absolute;
-  top: 6%;
-  right: 10%;
-  width: 38vmin;
-  height: 38vmin;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(255, 255, 255, 0.95) 0%,
-    rgba(255, 252, 220, 0.6) 18%,
-    rgba(255, 255, 255, 0) 62%
-  );
-}
-
-.ds-flare {
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(255, 255, 255, 0.5) 0%,
-    rgba(160, 230, 255, 0.18) 55%,
-    rgba(255, 255, 255, 0) 70%
-  );
-}
-
-.ds[data-night='true'] .ds-sun {
-  background: radial-gradient(
-    circle,
-    rgba(230, 240, 255, 0.9) 0%,
-    rgba(160, 200, 255, 0.35) 14%,
-    rgba(255, 255, 255, 0) 50%
-  );
-  width: 22vmin;
-  height: 22vmin;
-}
-
-.ds-aurora {
-  position: absolute;
-  inset: 0 -20% 40% -20%;
-  opacity: 0;
-  background:
-    radial-gradient(60% 40% at 30% 30%, rgba(45, 226, 200, 0.35), transparent 70%),
-    radial-gradient(50% 35% at 70% 20%, rgba(130, 90, 255, 0.3), transparent 70%),
-    radial-gradient(40% 30% at 50% 45%, rgba(60, 180, 255, 0.28), transparent 70%);
-  filter: blur(20px);
-}
-
-.ds[data-night='true'] .ds-aurora {
-  opacity: 1;
-}
-
-.ds-stars {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  background-image:
-    radial-gradient(1.5px 1.5px at 10% 20%, #fff, transparent),
-    radial-gradient(1px 1px at 30% 8%, #fff, transparent),
-    radial-gradient(1.5px 1.5px at 55% 15%, #fff, transparent),
-    radial-gradient(1px 1px at 72% 30%, #fff, transparent),
-    radial-gradient(1.5px 1.5px at 88% 12%, #fff, transparent),
-    radial-gradient(1px 1px at 42% 33%, #fff, transparent),
-    radial-gradient(1px 1px at 18% 40%, #fff, transparent),
-    radial-gradient(1.5px 1.5px at 64% 5%, #fff, transparent);
-}
-
-.ds[data-night='true'] .ds-stars {
-  opacity: 0.9;
-}
-
-.ds-cloud {
-  position: absolute;
-  width: 34vmax;
-  height: 10vmax;
-  border-radius: 999px;
-  background: radial-gradient(
-    ellipse at 50% 60%,
-    rgba(255, 255, 255, 0.95),
-    rgba(255, 255, 255, 0.55) 45%,
-    rgba(255, 255, 255, 0) 70%
-  );
-  filter: blur(2px);
-}
-
-.ds[data-night='true'] .ds-cloud {
-  opacity: 0.18;
-}
-
-.ds-hills,
-.ds-dunes {
-  position: absolute;
-  left: -5%;
-  right: -5%;
-  bottom: 0;
-  height: 46vh;
-}
-
-.ds-hills svg,
-.ds-dunes svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-.ds-dunes {
-  opacity: 0;
-}
-
 .ds-bubble {
   position: absolute;
   bottom: -60px;
@@ -251,230 +120,6 @@
   100% {
     transform: translate3d(-12px, -115vh, 0);
   }
-}
-
-.ds-cloud--drift {
-  animation: ds-drift 90s linear infinite alternate;
-}
-
-@keyframes ds-drift {
-  from {
-    translate: -6vw 0;
-  }
-  to {
-    translate: 6vw 0;
-  }
-}
-
-/* Scroll-driven parallax: each layer travels a different distance over the
-   whole document scroll; the dunes rise and the hills sink as you go, so the
-   page walks from an Aero meadow to Arrakis. */
-@supports (animation-timeline: scroll()) {
-  .ds-par-1 {
-    animation: ds-par-1 linear both;
-    animation-timeline: scroll(root block);
-  }
-  .ds-par-2 {
-    animation: ds-par-2 linear both;
-    animation-timeline: scroll(root block);
-  }
-  .ds-par-3 {
-    animation: ds-par-3 linear both;
-    animation-timeline: scroll(root block);
-  }
-  .ds-par-hills {
-    animation: ds-par-hills linear both;
-    animation-timeline: scroll(root block);
-  }
-  .ds-par-dunes {
-    animation: ds-par-dunes linear both;
-    animation-timeline: scroll(root block);
-  }
-}
-
-@keyframes ds-par-1 {
-  to {
-    transform: translate3d(0, -6vh, 0);
-  }
-}
-@keyframes ds-par-2 {
-  to {
-    transform: translate3d(0, -16vh, 0);
-  }
-}
-@keyframes ds-par-3 {
-  to {
-    transform: translate3d(0, -30vh, 0);
-  }
-}
-@keyframes ds-par-hills {
-  0% {
-    transform: translate3d(0, 0, 0);
-    opacity: 1;
-  }
-  70% {
-    opacity: 0.9;
-  }
-  100% {
-    transform: translate3d(0, 40vh, 0);
-    opacity: 0;
-  }
-}
-@keyframes ds-par-dunes {
-  0% {
-    transform: translate3d(0, 30vh, 0);
-    opacity: 0;
-  }
-  45% {
-    opacity: 0.4;
-  }
-  100% {
-    transform: translate3d(0, 0, 0);
-    opacity: 1;
-  }
-}
-
-/* The JS fallback (no scroll timelines) writes `transform` on these layers
-   directly; with scroll timelines present it never runs. */
-
-/* ── Layout ─────────────────────────────────────────────────────────────── */
-
-.ds-main {
-  position: relative;
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 0 16px 120px;
-}
-
-.ds-section {
-  scroll-margin-top: 84px;
-  margin-top: 40px;
-}
-
-.ds-grid-2 {
-  display: grid;
-  gap: 20px;
-}
-
-@media (min-width: 900px) {
-  .ds-grid-2 {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  }
-}
-
-/* ── Top bar ────────────────────────────────────────────────────────────── */
-
-.ds-topbar {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  padding-top: var(--safe-top, 0px);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(220, 242, 255, 0.55));
-  border-bottom: 1px solid rgba(255, 255, 255, 0.9);
-  box-shadow: 0 2px 12px rgba(10, 70, 130, 0.15);
-  backdrop-filter: blur(14px) saturate(1.4);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
-}
-
-.ds[data-night='true'] .ds-topbar {
-  background: linear-gradient(180deg, rgba(20, 44, 96, 0.8), rgba(10, 26, 64, 0.7));
-  border-bottom-color: rgba(150, 210, 255, 0.25);
-}
-
-.ds-topbar-inner {
-  max-width: 1120px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 16px;
-  padding-left: max(16px, var(--safe-left, 0px));
-  padding-right: max(16px, var(--safe-right, 0px));
-}
-
-.ds-brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: var(--ds-ink);
-  text-decoration: none;
-}
-
-.ds-nav {
-  display: none;
-  gap: 4px;
-  margin-left: auto;
-}
-
-@media (min-width: 760px) {
-  .ds-nav {
-    display: flex;
-  }
-}
-
-.ds-nav a {
-  padding: 6px 12px;
-  border-radius: 999px;
-  color: var(--ds-ink-soft);
-  font-size: 14px;
-  text-decoration: none;
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
-}
-
-.ds-nav a:hover {
-  background: rgba(255, 255, 255, 0.6);
-  color: var(--ds-ink);
-}
-
-.ds[data-night='true'] .ds-nav a:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.ds-topbar-actions {
-  display: flex;
-  gap: 6px;
-  margin-left: auto;
-}
-
-@media (min-width: 760px) {
-  .ds-topbar-actions {
-    margin-left: 8px;
-  }
-}
-
-/* ── Orbs, glossy buttons ───────────────────────────────────────────────── */
-
-.ds-orb {
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  color: #fff;
-  background:
-    radial-gradient(circle at 50% 120%, rgba(140, 255, 255, 0.9), rgba(140, 255, 255, 0) 60%),
-    linear-gradient(180deg, #5fd2ff 0%, #1d9be0 55%, #0b6fb8 100%);
-  box-shadow:
-    0 2px 6px rgba(10, 80, 150, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  overflow: hidden;
-}
-
-.ds-orb::before {
-  content: '';
-  position: absolute;
-  inset: 2px 5px 50% 5px;
-  border-radius: 50% 50% 45% 45%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.1));
-}
-
-.ds-orb > * {
-  position: relative;
 }
 
 .ds-btn {
@@ -613,219 +258,6 @@
   box-shadow:
     0 2px 8px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
-}
-
-/* ── Hero ───────────────────────────────────────────────────────────────── */
-
-.ds-hero {
-  position: relative;
-  min-height: 86svh;
-  display: grid;
-  align-content: center-safe;
-  justify-items: center;
-  text-align: center;
-  padding: 48px 0 24px;
-}
-
-.ds-kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ds-aqua-deep);
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.95);
-  box-shadow: 0 2px 10px rgba(10, 80, 150, 0.15);
-}
-
-.ds[data-night='true'] .ds-kicker {
-  color: var(--ds-aqua);
-  background: rgba(14, 34, 78, 0.7);
-  border-color: rgba(150, 210, 255, 0.3);
-}
-
-.ds-wordmark {
-  margin: 18px 0 6px;
-  font-size: clamp(56px, 13vw, 148px);
-  line-height: 0.95;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  background: linear-gradient(
-    180deg,
-    #ffffff 0%,
-    #e9f8ff 38%,
-    #7fd3ff 50%,
-    #2a9be4 72%,
-    #0d6fbf 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  filter: drop-shadow(0 4px 10px rgba(5, 60, 120, 0.35))
-    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.9));
-}
-
-.ds-wordmark .ds-wordmark-sand {
-  background: linear-gradient(180deg, #fff6df 0%, #ffe3a3 40%, #f0b354 55%, #c98b37 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.ds-reflection {
-  font-size: clamp(56px, 13vw, 148px);
-  line-height: 0.6;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  transform: scaleY(-1);
-  height: 0.35em;
-  overflow: hidden;
-  opacity: 0.25;
-  background: linear-gradient(0deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0) 70%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  user-select: none;
-  pointer-events: none;
-}
-
-.ds-tagline {
-  max-width: 640px;
-  margin: 8px auto 0;
-  font-size: clamp(16px, 2.2vw, 20px);
-  color: var(--ds-ink-soft);
-}
-
-.ds-countdown {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 14px;
-  margin: 28px 0 8px;
-}
-
-.ds-count-bubble {
-  position: relative;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  width: clamp(72px, 18vw, 104px);
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 50% 115%, rgba(120, 240, 255, 0.85), rgba(120, 240, 255, 0) 55%),
-    radial-gradient(
-      circle at 50% 40%,
-      rgba(255, 255, 255, 0.45),
-      rgba(80, 180, 240, 0.4) 70%,
-      rgba(20, 120, 200, 0.6) 100%
-    );
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  box-shadow:
-    0 8px 22px rgba(10, 90, 170, 0.3),
-    inset 0 -6px 14px rgba(0, 90, 170, 0.25);
-  overflow: hidden;
-  color: #fff;
-  text-shadow: 0 1px 3px rgba(0, 60, 120, 0.6);
-}
-
-.ds-count-bubble::before {
-  content: '';
-  position: absolute;
-  top: 6%;
-  left: 18%;
-  width: 64%;
-  height: 40%;
-  border-radius: 50%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0));
-}
-
-.ds-count-value {
-  position: relative;
-  font-size: clamp(24px, 6vw, 38px);
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-
-.ds-count-label {
-  position: relative;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  opacity: 0.95;
-}
-
-.ds-finales {
-  display: grid;
-  gap: 14px;
-  width: 100%;
-  max-width: 720px;
-  margin-top: 24px;
-}
-
-@media (min-width: 640px) {
-  .ds-finales {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-.ds-finale {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  text-align: left;
-}
-
-.ds-finale-icon {
-  flex: none;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  display: grid;
-  place-items: center;
-  color: #fff;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.6),
-    0 2px 6px rgba(0, 0, 0, 0.2);
-}
-
-.ds-finale-icon--mcu {
-  background: linear-gradient(180deg, #ff7b6b, #c8232c);
-}
-
-.ds-finale-icon--dune {
-  background: linear-gradient(180deg, #ffd58a, #c98b37);
-}
-
-.ds-scroll-cue {
-  margin-top: 26px;
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  color: var(--ds-ink-soft);
-  font-size: 13px;
-  text-decoration: none;
-}
-
-.ds-scroll-cue svg {
-  animation: ds-bob 1.8s ease-in-out infinite;
-}
-
-@keyframes ds-bob {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(6px);
-  }
 }
 
 /* ── Status ribbon ──────────────────────────────────────────────────────── */
@@ -1204,10 +636,6 @@
     0 2px 8px rgba(10, 70, 130, 0.12);
 }
 
-.ds-day--done {
-  opacity: 0.6;
-}
-
 .ds-day--skip {
   opacity: 0.75;
   background: repeating-linear-gradient(
@@ -1332,25 +760,6 @@
   background: linear-gradient(90deg, var(--ds-field-edge), transparent);
 }
 
-.ds-meter {
-  height: 6px;
-  margin-top: 6px;
-  border-radius: 999px;
-  background: rgba(150, 190, 220, 0.3);
-  overflow: hidden;
-}
-
-.ds-meter > span {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #5fd2ff, #1592de);
-}
-
-.ds-meter--over > span {
-  background: linear-gradient(90deg, #ffd58a, #e98a2b);
-}
-
 /* Month grid */
 .ds-months {
   display: grid;
@@ -1443,10 +852,6 @@
 
 /* ── Watchlist ──────────────────────────────────────────────────────────── */
 
-.ds-group {
-  margin-top: 14px;
-}
-
 .ds-group-head {
   display: flex;
   align-items: center;
@@ -1464,132 +869,11 @@
   text-align: left;
 }
 
-.ds-group-head .ds-meter {
-  flex: 1;
-  max-width: 160px;
-  margin: 0 0 0 auto;
-}
-
-.ds-title-row {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 12px;
-  align-items: center;
-  padding: 10px 12px;
-  margin-top: 6px;
-}
-
-.ds-title-row--off {
-  opacity: 0.55;
-}
-
-.ds-title-row--seen .ds-title-name {
-  text-decoration: line-through;
-  text-decoration-color: rgba(47, 154, 42, 0.7);
-  text-decoration-thickness: 2px;
-}
-
-.ds-title-name {
-  font-weight: 700;
-  font-size: 15px;
-}
-
-.ds-title-hook {
-  font-size: 13px;
-  color: var(--ds-ink-soft);
-}
-
-.ds-title-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin-top: 4px;
-  font-size: 12px;
-  color: var(--ds-ink-faint);
-}
-
-.ds-title-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.ds-watch-orb {
-  position: relative;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 1px solid var(--ds-field-edge);
-  background: radial-gradient(circle at 50% 35%, #ffffff, #d6ebf8);
-  box-shadow:
-    inset 0 -3px 6px rgba(10, 70, 130, 0.15),
-    0 1px 3px rgba(10, 70, 130, 0.2);
-  color: transparent;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  padding: 0;
-  transition: transform 0.15s ease;
-}
-
-.ds[data-night='true'] .ds-watch-orb {
-  background: radial-gradient(circle at 50% 35%, #2c4f8f, #142d5c);
-}
-
-.ds-watch-orb[aria-pressed='true'] {
-  color: #fff;
-  border-color: rgba(30, 110, 30, 0.6);
-  background:
-    radial-gradient(circle at 50% 120%, rgba(200, 255, 160, 0.9), rgba(200, 255, 160, 0) 60%),
-    linear-gradient(180deg, #8ae65c 0%, #4cbf33 60%, #2f9a2a 100%);
-  box-shadow:
-    0 2px 8px rgba(40, 130, 30, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
-}
-
-.ds-watch-orb:active {
-  transform: scale(0.92);
-}
-
 .ds-toolbar {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
-}
-
-.ds-search {
-  flex: 1 1 200px;
-}
-
-/* ── Buddy chat (MSN-era messenger window) ──────────────────────────────── */
-
-.ds-buddy-launch {
-  position: fixed;
-  right: calc(16px + var(--safe-right, 0px));
-  bottom: calc(16px + var(--safe-bottom, 0px));
-  z-index: 30;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px 6px 6px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.95);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(205, 236, 255, 0.85));
-  box-shadow: 0 8px 24px rgba(10, 80, 150, 0.3);
-  color: var(--ds-ink);
-  font: inherit;
-  font-weight: 700;
-  font-size: 14px;
-  cursor: pointer;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-.ds[data-night='true'] .ds-buddy-launch {
-  background: linear-gradient(180deg, rgba(40, 80, 150, 0.92), rgba(15, 40, 90, 0.9));
-  border-color: rgba(150, 210, 255, 0.35);
 }
 
 .ds-buddy-avatar {
@@ -1630,33 +914,6 @@
   border-radius: 50%;
   border: 2px solid #fff;
   background: #39d353;
-}
-
-.ds-buddy {
-  position: fixed;
-  z-index: 40;
-  left: calc(8px + var(--safe-left, 0px));
-  right: calc(8px + var(--safe-right, 0px));
-  bottom: calc(8px + var(--safe-bottom, 0px));
-  max-height: min(78svh, 640px);
-  display: flex;
-  flex-direction: column;
-  border-radius: var(--ds-radius);
-  background: var(--ds-glass-strong);
-  border: 1px solid var(--ds-glass-edge);
-  box-shadow: 0 18px 50px rgba(5, 50, 110, 0.4);
-  backdrop-filter: blur(20px) saturate(1.5);
-  -webkit-backdrop-filter: blur(20px) saturate(1.5);
-  overflow: hidden;
-}
-
-@media (min-width: 640px) {
-  .ds-buddy {
-    left: auto;
-    right: calc(20px + var(--safe-right, 0px));
-    bottom: calc(20px + var(--safe-bottom, 0px));
-    width: 400px;
-  }
 }
 
 .ds-buddy-head {
@@ -1867,49 +1124,6 @@
   display: block;
 }
 
-/* ── Footer ─────────────────────────────────────────────────────────────── */
-
-.ds-footer {
-  margin-top: 56px;
-  padding: 18px;
-  text-align: center;
-  font-size: 12px;
-  color: var(--ds-ink-soft);
-}
-
-.ds-footer-badges {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.ds-88x31 {
-  display: inline-grid;
-  place-items: center;
-  width: 88px;
-  height: 31px;
-  border-radius: 3px;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.03em;
-  color: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.25);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
-}
-
-.ds-88x31:nth-child(1) {
-  background: linear-gradient(180deg, #6fd4ff, #1278c4);
-}
-.ds-88x31:nth-child(2) {
-  background: linear-gradient(180deg, #9cf27a, #2f9a2a);
-}
-.ds-88x31:nth-child(3) {
-  background: linear-gradient(180deg, #ffd58a, #c98b37);
-}
-
 .ds-sr-only {
   position: absolute;
   width: 1px;
@@ -1926,39 +1140,9 @@
   color: var(--ds-ink-soft);
 }
 
-.ds-faint {
-  color: var(--ds-ink-faint);
-}
-
-.ds-h2 {
-  margin: 0;
-  font-size: 15px;
-}
-
-.ds-section-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0 0 14px;
-  font-size: clamp(24px, 4vw, 32px);
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  color: var(--ds-ink);
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
-}
-
-.ds[data-night='true'] .ds-section-title {
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-}
-
 /* ── Print: just the schedule, on white ─────────────────────────────────── */
 
 @media print {
-  .ds-scene,
-  .ds-topbar,
-  .ds-hero,
-  .ds-buddy,
-  .ds-buddy-launch,
   .ds-balloons,
   .ds-no-print {
     display: none !important;
@@ -2009,16 +1193,6 @@ html.reduce-motion .ds-bubble {
   vertical-align: middle;
 }
 
-.ds-pill-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  width: auto;
-  height: 22px;
-  padding: 0 8px;
-  border-radius: 999px;
-}
-
 @media (max-width: 520px) {
   .ds-seg button {
     white-space: normal;
@@ -2035,13 +1209,6 @@ html.reduce-motion .ds-bubble {
   .ds-weekday .ds-hint {
     font-size: 10px;
     text-align: center;
-  }
-  .ds-title-row {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-  .ds-title-actions {
-    grid-column: 2;
-    justify-content: flex-end;
   }
   .ds-day {
     grid-template-columns: 52px minmax(0, 1fr);
@@ -2186,12 +1353,6 @@ html.reduce-motion .ds-bubble {
   margin-top: 12px;
 }
 
-.ds-group-head .ds-group-progress {
-  flex: 1;
-  max-width: 180px;
-  margin: 0 0 0 auto;
-}
-
 /* 7.css paints the fill on `[role=progressbar] > div`; ours is a span (so the
    bar is valid inside the watch list's group-header buttons), so its four
    fill rules are restated here for spans — values copied from 7.css v0.21.1. */
@@ -2266,18 +1427,6 @@ html.reduce-motion .ds-bubble {
 
 /* ── Poppable bubbles ──────────────────────────────────────────────────── */
 
-/* Empty sky is clickable: the hero and the page column let clicks fall
-   through to the scene, and only their real content takes them back. */
-.ds-main,
-.ds-hero {
-  pointer-events: none;
-}
-
-.ds-main > :not(.ds-hero),
-.ds-hero > * {
-  pointer-events: auto;
-}
-
 .ds-bubble {
   pointer-events: auto;
   cursor: pointer;
@@ -2290,65 +1439,6 @@ html.reduce-motion .ds-bubble {
   opacity: 0 !important;
   scale: 1.6;
   pointer-events: none;
-}
-
-/* ── Sunset, swooshes, sparkles, butterflies ───────────────────────────── */
-
-.ds-sun {
-  transition:
-    right 1.6s cubic-bezier(0.16, 1, 0.3, 1),
-    top 1.6s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.ds-sunset {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 170, 90, 0) 20%,
-    rgba(255, 170, 90, 0.55) 70%,
-    rgba(255, 120, 60, 0.6) 100%
-  );
-  transition: opacity 1.6s ease;
-  pointer-events: none;
-}
-
-.ds-swoosh {
-  position: absolute;
-  left: -10%;
-  width: 120%;
-  top: 8%;
-  height: 70%;
-  opacity: 0.9;
-  mix-blend-mode: screen;
-}
-
-.ds-swoosh path {
-  animation: ds-swoosh 14s ease-in-out infinite alternate;
-  transform-origin: center;
-}
-
-.ds-swoosh-2 {
-  animation-duration: 18s !important;
-  animation-delay: -6s !important;
-}
-
-.ds-swoosh-3 {
-  animation-duration: 11s !important;
-  animation-delay: -3s !important;
-}
-
-@keyframes ds-swoosh {
-  from {
-    transform: translate3d(-3%, 2%, 0) scaleY(0.9);
-  }
-  to {
-    transform: translate3d(3%, -3%, 0) scaleY(1.15);
-  }
-}
-
-.ds[data-night='true'] .ds-swoosh {
-  opacity: 0.35;
 }
 
 .ds-sparkle {
@@ -2374,10 +1464,6 @@ html.reduce-motion .ds-bubble {
     opacity: 0.95;
     transform: scale(1) rotate(45deg);
   }
-}
-
-.ds-butterflies {
-  pointer-events: none;
 }
 
 .ds-butterfly {
@@ -2455,21 +1541,6 @@ html.reduce-motion .ds-bubble {
   }
   to {
     offset-distance: 100%;
-  }
-}
-
-/* ── Vista Sidebar gadgets ─────────────────────────────────────────────── */
-
-.ds-gadgets {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 8px;
-}
-
-@media (min-width: 860px) {
-  .ds-gadgets {
-    grid-template-columns: 160px minmax(0, 1.4fr) minmax(0, 1fr) 160px;
   }
 }
 
@@ -2670,139 +1741,6 @@ html.reduce-motion .ds-bubble {
   letter-spacing: 0.08em;
 }
 
-/* ── Start orb + Start menu ────────────────────────────────────────────── */
-
-.ds-start {
-  position: relative;
-}
-
-.ds-start-orb {
-  position: relative;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  border-radius: 50%;
-  border: 1px solid rgba(0, 30, 60, 0.6);
-  cursor: pointer;
-  background:
-    radial-gradient(circle at 50% 120%, rgba(120, 220, 255, 0.95), rgba(120, 220, 255, 0) 55%),
-    radial-gradient(circle at 50% 50%, #1d6fb8 0%, #0b3a6e 70%, #061c38 100%);
-  box-shadow:
-    0 0 0 2px rgba(255, 255, 255, 0.35),
-    0 3px 10px rgba(0, 40, 90, 0.5),
-    inset 0 -4px 10px rgba(80, 200, 255, 0.6);
-  transition:
-    box-shadow 0.25s ease,
-    transform 0.2s ease;
-  overflow: hidden;
-}
-
-.ds-start-orb::before {
-  content: '';
-  position: absolute;
-  inset: 2px 6px 52% 6px;
-  border-radius: 50%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.05));
-}
-
-.ds-start-orb:hover,
-.ds-start-orb[aria-expanded='true'] {
-  box-shadow:
-    0 0 0 2px rgba(255, 255, 255, 0.5),
-    0 0 18px 6px rgba(80, 200, 255, 0.75),
-    inset 0 -4px 12px rgba(120, 230, 255, 0.9);
-}
-
-.ds-start-orb:active {
-  transform: scale(0.94);
-}
-
-.ds-start-flag {
-  position: absolute;
-  inset: 11px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2px;
-  transform: perspective(40px) rotateY(-14deg) skewY(-4deg);
-}
-
-.ds-start-flag span {
-  border-radius: 2px 5px 2px 5px;
-}
-
-.ds-start-flag span:nth-child(1) {
-  background: linear-gradient(135deg, #ff8a5c, #e3341a);
-}
-.ds-start-flag span:nth-child(2) {
-  background: linear-gradient(135deg, #b3ef6a, #4cae1c);
-}
-.ds-start-flag span:nth-child(3) {
-  background: linear-gradient(135deg, #7ad0ff, #1a7fe0);
-}
-.ds-start-flag span:nth-child(4) {
-  background: linear-gradient(135deg, #ffe27a, #f0a414);
-}
-
-.ds-start-menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  z-index: 50;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  width: min(420px, calc(100vw - 32px));
-  padding: 8px;
-  gap: 8px;
-  border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.6);
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.35) 70px, transparent 100px),
-    linear-gradient(180deg, rgba(40, 90, 150, 0.82), rgba(10, 30, 70, 0.9));
-  box-shadow:
-    0 18px 40px rgba(0, 20, 50, 0.5),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.45);
-  backdrop-filter: blur(14px) saturate(1.4);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
-}
-
-@media (min-width: 520px) {
-  .ds-start-menu {
-    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
-  }
-}
-
-.ds-start-left {
-  display: grid;
-  gap: 2px;
-  padding: 6px;
-  border-radius: 6px;
-  background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.4);
-}
-
-.ds-start-right {
-  display: grid;
-  align-content: start;
-  gap: 4px;
-  padding: 6px 2px;
-}
-
-.ds-start-user {
-  display: grid;
-  place-items: center;
-  margin: 0 auto 6px;
-  width: 56px;
-  height: 56px;
-  border-radius: 8px;
-  background: linear-gradient(180deg, #fff, #d8ecfa);
-  border: 2px solid rgba(255, 255, 255, 0.9);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-}
-
-.ds-start-user .ds-buddy-avatar {
-  font-size: 20px;
-}
-
 .ds-start-item {
   display: flex;
   align-items: center;
@@ -2830,30 +1768,6 @@ html.reduce-motion .ds-bubble {
   outline: none;
   border-color: #7da2ce;
   background: linear-gradient(180deg, #f2f8fd, #d3e8fb);
-}
-
-.ds-start-icon {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 7px;
-  color: #fff;
-  background: linear-gradient(180deg, #5fd2ff, #0d74c0);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
-}
-
-.ds-start-item--side {
-  color: #fff;
-  font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
-}
-
-.ds-start-item--side:hover,
-.ds-start-item--side:focus-visible {
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.5);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.08));
 }
 
 /* ── Boot splash ───────────────────────────────────────────────────────── */
@@ -3164,63 +2078,13 @@ html:has(.ds)::-webkit-scrollbar-thumb {
     linear-gradient(180deg, #7cc9ff, #1a7fd0);
 }
 
-/* ── Glowing hero wordmark + orb pulse ─────────────────────────────────── */
-
-.ds-wordmark {
-  animation: ds-glow 5s ease-in-out infinite;
-}
-
-@keyframes ds-glow {
-  0%,
-  100% {
-    filter: drop-shadow(0 4px 10px rgba(5, 60, 120, 0.35))
-      drop-shadow(0 1px 0 rgba(255, 255, 255, 0.9));
-  }
-  50% {
-    filter: drop-shadow(0 4px 22px rgba(80, 200, 255, 0.65))
-      drop-shadow(0 1px 0 rgba(255, 255, 255, 0.9));
-  }
-}
-
-.ds-count-bubble {
-  animation: ds-float 6s ease-in-out infinite;
-}
-
-.ds-count-bubble:nth-child(2) {
-  animation-delay: -1.5s;
-}
-.ds-count-bubble:nth-child(3) {
-  animation-delay: -3s;
-}
-.ds-count-bubble:nth-child(4) {
-  animation-delay: -4.5s;
-}
-
-@keyframes ds-float {
-  0%,
-  100% {
-    translate: 0 0;
-  }
-  50% {
-    translate: 0 -8px;
-  }
-}
-
-.ds-buddy-launch {
-  animation: ds-float 5s ease-in-out infinite;
-}
-
 /* Reduced motion: none of the above moves. */
 @media (prefers-reduced-motion: reduce) {
-  .ds-butterflies,
-  .ds-sparkle,
-  .ds-swoosh {
+  .ds-sparkle {
     display: none;
   }
 }
 
-html.reduce-motion .ds-butterflies,
-html.reduce-motion .ds-sparkle,
-html.reduce-motion .ds-swoosh {
+html.reduce-motion .ds-sparkle {
   display: none;
 }

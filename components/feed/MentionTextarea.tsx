@@ -315,12 +315,12 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
  side="bottom"
  align="start"
  focusOnOpen={false}
- label={tl("searching", { defaultValue:"Searching…"})}
+ label={tl("searching", { defaultValue:"Searching..."})}
  className="w-64 max-h-64"
  >
  <div>
  {loading && suggestions.length === 0 ? (
- <div className="px-3 py-2 text-xs text-site-text-dim">{tl("searching", { defaultValue:"Searching…"})}</div>
+ <div className="px-3 py-2 text-xs text-site-text-dim">{tl("searching", { defaultValue:"Searching..."})}</div>
  ) : (
  suggestions.map((suggestion, i) => {
  const active = i === activeIndex;

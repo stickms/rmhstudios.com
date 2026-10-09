@@ -184,16 +184,6 @@
  * is `.neumorphic-inset`; the timeline the notes sit in is `.editor-timeline`.
  */
 
-/* Pressed state. Neumorphism's affordance is depth, so "active" is the
-   raised surface becoming inset — the button physically goes down. */
-.neumorphic-pressed {
-  background: var(--slice-bg);
-  box-shadow:
-    inset 4px 4px 8px var(--slice-shadow-dark),
-    inset -4px -4px 8px var(--slice-shadow-light);
-  border-radius: 15px;
-}
-
 /* Toolbar buttons: smaller radius and shadow so a row of them does not read as
    a row of pillows. Scale the offsets with the element, not a fixed 9px. */
 .neumorphic-sm {
@@ -224,8 +214,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .neumorphic,
-  .neumorphic-sm,
-  .neumorphic-pressed {
+  .neumorphic-sm {
     transition: none;
   }
 }
@@ -405,7 +394,6 @@
 .neumorphic-chip,
 .neumorphic-chrome,
 .neumorphic-inset,
-.neumorphic-pressed,
 .neumorphic-active {
   transition:
     box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1),

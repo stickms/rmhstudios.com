@@ -14,7 +14,7 @@
  * Client-safe: the admin UI renders the same list the API seeds from.
  */
 
-import { LIGHTS_OUT_VERSION, SLICE_IT_VERSION } from '@/lib/game/replay';
+import { LIGHTS_OUT_VERSION, SLICE_IT_VERSION } from '@/lib/game/replay-meta';
 import type { SpeedrunMetric } from './types';
 
 export interface SpeedrunCategorySeed {

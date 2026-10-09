@@ -14,44 +14,7 @@
   -webkit-font-smoothing: antialiased;
 }
 
-/* ─── Typography ────────────────────────────────────────────────────────────── */
-.vibe-eyebrow {
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--site-text-dim);
-}
-
-.vibe-title {
-  /* Scales to its container's width (cqi), not the viewport — so the line fits
-     whether it's full-bleed or inside the narrower sidebar layout. Stays on one
-     line (nowrap) across phones → desktop; wraps only when truly too narrow
-     (see media query below). Falls back to vw where no container is present. */
-  font-size: clamp(1.6rem, 8vw, 6.5rem);
-  font-size: clamp(1.6rem, 8.5cqi, 6.5rem);
-  font-weight: 700;
-  line-height: 1.02;
-  letter-spacing: -0.04em;
-  color: var(--site-text);
-  white-space: nowrap;
-  max-width: 100%;
-}
-
 /* Absolute last resort on very narrow screens: allow a balanced wrap. */
-@media (max-width: 340px) {
-  .vibe-title {
-    white-space: normal;
-    text-wrap: balance;
-  }
-}
-
-.vibe-tag {
-  font-size: clamp(0.95rem, 1.5vw, 1.15rem);
-  font-weight: 400;
-  line-height: 1.5;
-  color: var(--site-text-muted);
-}
 
 .vibe-hint {
   font-size: 0.78rem;
@@ -99,21 +62,6 @@
    flicker a hairline rather than lift anything. */
 .vibe-dock:focus-within {
   border-color: var(--site-border-bright);
-}
-
-.vibe-dock__input {
-  width: 100%;
-  min-width: 0;
-  background: transparent;
-  border: 0;
-  outline: 0;
-  color: var(--site-text);
-  font: inherit;
-  font-size: 1rem;
-}
-
-.vibe-dock__input::placeholder {
-  color: var(--site-text-dim);
 }
 
 /* textarea variant — taller, lightly rounded, with a footer row (model toggle +
@@ -611,158 +559,9 @@
   .vibe-rise-3 {
     animation: none;
   }
-
-  /* Gallery: no reveal/zoom/pulse — show everything immediately. */
-  .vibe-card,
-  .vibe-card.is-in {
-    opacity: 1;
-    transform: none;
-    animation: none;
-  }
-  .vibe-card__img,
-  .vibe-card__img.is-loaded,
-  .vibe-card:hover .vibe-card__img.is-loaded {
-    transform: none;
-    transition: opacity 200ms ease;
-  }
-  .vibe-card__placeholder,
   .vibe-gallery__loading {
     animation: none;
   }
-}
-
-/* ─── Ghost link (low-emphasis "Browse pages") ──────────────────────────────── */
-.vibe-ghost-link {
-  display: inline-block;
-  font-size: 0.82rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  color: var(--site-text-dim);
-  text-decoration: none;
-  transition:
-    color 160ms ease,
-    transform 160ms ease;
-}
-
-.vibe-ghost-link:hover {
-  color: var(--site-text);
-  transform: translateY(-1px);
-}
-
-/* ─── Account (log in / welcome back) ──────────────────────────────────────── */
-/* Lift the whole row above the input dock, whose backdrop-filter creates a
- * stacking context that would otherwise paint over the open menu. */
-.vibe-account-row {
-  position: relative;
-  z-index: 40;
-}
-
-.vibe-account {
-  position: relative;
-  display: inline-flex;
-  justify-content: center;
-}
-
-.vibe-account__trigger {
-  display: inline-block;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  text-decoration: none;
-  transition: color 160ms ease;
-}
-
-.vibe-account__trigger:hover {
-  color: var(--site-text);
-}
-
-.vibe-account__menu {
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 20;
-  min-width: 220px;
-  padding: 6px;
-  border-radius: 16px;
-  border: 1px solid var(--site-border);
-  background: var(--site-surface);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55);
-  animation: vibe-rise-soft 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  text-align: left;
-}
-
-.vibe-account__header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px 10px;
-}
-
-.vibe-account__avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 9999px;
-  object-fit: cover;
-  border: 1px solid var(--site-border);
-  flex-shrink: 0;
-}
-
-.vibe-account__id {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.vibe-account__name {
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--site-text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.vibe-account__handle {
-  font-size: 0.74rem;
-  color: var(--site-text-dim);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.vibe-account__sep {
-  height: 1px;
-  margin: 2px 6px 4px;
-  background: var(--site-surface);
-}
-
-.vibe-account__item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 9px 12px;
-  border: none;
-  border-radius: 10px;
-  background: none;
-  cursor: pointer;
-  font-size: 0.82rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  color: var(--site-text);
-  text-decoration: none;
-  transition:
-    background 160ms ease,
-    color 160ms ease;
-}
-
-.vibe-account__item:hover {
-  background: var(--site-surface);
-  color: var(--site-text);
 }
 
 /* ─── Gallery ───────────────────────────────────────────────────────────────── */
@@ -855,94 +654,6 @@
   cursor: progress;
 }
 
-.vibe-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 18px;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: clamp(16px, 4vw, 40px);
-}
-
-.vibe-card {
-  display: flex;
-  flex-direction: column;
-  border-radius: 16px;
-  overflow: hidden;
-  background: var(--site-surface);
-  border: 0.5px solid var(--site-border);
-  text-decoration: none;
-  color: inherit;
-  /* Hidden until revealed by .is-in (scroll-into-view). Hover only animates
-     shadow/border here — the reveal owns transform, so they never conflict. */
-  opacity: 0;
-  transition:
-    border-color 250ms ease,
-    box-shadow 250ms ease;
-  will-change: transform, opacity;
-}
-
-.vibe-card.is-in {
-  animation: vibe-card-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-@keyframes vibe-card-in {
-  from {
-    opacity: 0;
-    transform: translateY(20px) scale(0.985);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.vibe-card:hover {
-  border-color: var(--site-border);
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
-}
-
-.vibe-card__thumb {
-  position: relative;
-  aspect-ratio: 16 / 10;
-  overflow: hidden;
-  background: linear-gradient(135deg, #1c1c1e, #0a0a0a);
-}
-
-.vibe-card__img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0;
-  transform: scale(1.06);
-  /* Soft fade + slow settle on load; doubles as a gentle zoom-in on hover. */
-  transition:
-    opacity 450ms ease,
-    transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.vibe-card__img.is-loaded {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.vibe-card:hover .vibe-card__img.is-loaded {
-  transform: scale(1.05);
-}
-
-.vibe-card__placeholder {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, #2a2a2e, #131315);
-  color: rgba(245, 245, 247, 0.5);
-  font-size: 2.4rem;
-  font-weight: 700;
-  /* "still rendering" cue — gentle breathing while the worker makes the thumb. */
-  animation: vibe-pulse 1.8s ease-in-out infinite;
-}
-
 @keyframes vibe-pulse {
   0%,
   100% {
@@ -953,38 +664,6 @@
   }
 }
 
-.vibe-card__body {
-  padding: 12px 14px 14px;
-}
-
-.vibe-card__title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--site-text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.vibe-card__desc {
-  margin-top: 4px;
-  font-size: 0.78rem;
-  line-height: 1.45;
-  color: var(--site-text-muted);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.vibe-card__meta {
-  margin-top: 8px;
-  font-size: 0.7rem;
-  color: var(--site-text-dim);
-}
-
-.vibe-gallery__empty,
 .vibe-gallery__loading {
   text-align: center;
   padding: 48px 16px;

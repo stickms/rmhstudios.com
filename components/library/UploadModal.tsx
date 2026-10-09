@@ -220,7 +220,7 @@ export function UploadModal({
       const allowMany = isAdmin;
       const room = allowMany ? MAX_BATCH - itemsRef.current.length : 1;
       if (room <= 0) {
-        setError(t('error-too-many', { max: MAX_BATCH, defaultValue: `You can upload up to ${MAX_BATCH} files at once.` }));
+        setError(t('error-too-many', { max: MAX_BATCH, defaultValue: 'You can upload up to {{max}} files at once.' }));
         return;
       }
       const accepted: UploadItem[] = [];
@@ -422,7 +422,7 @@ export function UploadModal({
             {publishing
               ? t('status-uploading', { defaultValue: 'Publishing…' })
               : readyCount > 1
-                ? t('publish-n', { count: readyCount, defaultValue: `Publish ${readyCount} books` })
+                ? t('publish-n', { count: readyCount, defaultValue_one: 'Publish {{count}} book', defaultValue: 'Publish {{count}} books' })
                 : analyzing && readyCount === 0
                   ? t('status-analyzing-upload-modal', { defaultValue: 'Reading…' })
                   : t('publish', { defaultValue: 'Publish' })}
@@ -561,7 +561,7 @@ function UploadRow({
   const locked = generating || it.status === 'uploading' || it.status === 'done';
   const pagesLabel = it.pages
     ? it.format === 'epub'
-      ? t('n-sections', { count: it.pages, defaultValue: `${it.pages} sections` })
+      ? t('n-sections', { count: it.pages, defaultValue_one: '{{count}} section', defaultValue: '{{count}} sections' })
       : `${it.pages} pages`
     : '';
 
