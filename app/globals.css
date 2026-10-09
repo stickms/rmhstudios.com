@@ -3307,6 +3307,18 @@ html.readable-font body {
   .vibe-app:has([data-floating='cookie']) {
     --float-lift-cookie: 156px;
   }
+  /* The notice is server-rendered for everyone (lib/cookie-consent.ts) and
+     hidden pre-paint for a visitor who already answered. Until hydration
+     unmounts it, it is still IN the DOM, so the `:has()` lift above would
+     still match — this keeps the floating stack exactly where it would be
+     without it, so there is nothing to shift when it goes. (0,2,1) beats the
+     (0,2,0) above. */
+  html.cookie-consented .vibe-app {
+    --float-lift-cookie: 0px;
+  }
+  html.cookie-consented [data-floating='cookie'] {
+    display: none;
+  }
   .vibe-app:has([data-floating='miniplayer']) {
     --float-lift-miniplayer: 68px;
   }

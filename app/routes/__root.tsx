@@ -46,6 +46,7 @@ import {
 import { ACCENT_MAP } from '@/lib/appearance';
 import { GLASS_LEVEL_VARS, GLASS_LEVEL_KEY } from '@/lib/appearance/prefs';
 import { PERF_TIER_SCRIPT } from '@/lib/perf-tier';
+import { COOKIE_CONSENT_SCRIPT } from '@/lib/cookie-consent';
 import appCss from '@/app/globals.css?url';
 // The Latin subset of the self-hosted body font. Imported for its hashed URL so
 // the document can PRELOAD it — see the `links` block in `head()` below.
@@ -558,6 +559,9 @@ export const Route = createRootRoute({
         ...(accountSeed ? [{ children: accountSeed }] : []),
         { children: globalNotFound ? notFoundThemeScript : themeScript },
         { children: localeScript },
+        // Hides the server-rendered cookie notice before first paint for a
+        // visitor who has already answered it — lib/cookie-consent.ts.
+        { children: COOKIE_CONSENT_SCRIPT },
         // Browser-driven document prefetch on hover. Ignored by engines that
         // don't implement it; see SPECULATION_EXCLUDED_PATHS for the safety list.
         { type: 'speculationrules', children: speculationRules },

@@ -65,6 +65,29 @@ async function backfillEnRest(): Promise<void> {
   }
 }
 
+/**
+ * Run `work` once the page has loaded and the main thread is idle.
+ *
+ * For the English backfill below. Its chunk is ~140 KB gzip (every non-core
+ * namespace), and it used to be requested the moment the client i18n instance
+ * initialised — i.e. in the middle of hydration, competing for the network
+ * with the route's own JS on a slow connection and then re-rendering every
+ * consumer of the namespaces it added. Nothing on screen depends on it: every
+ * English `t()` call carries its `defaultValue`, and those are held identical
+ * to the catalog (lib/__tests__/i18n-default-drift.test.ts). So it waits for
+ * `load` plus an idle period instead (perf audit 2026-10-08, Lighthouse).
+ */
+function afterLoadIdle(work: () => void): void {
+  if (typeof window === 'undefined') return;
+  const w = window as Window & {
+    requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+  };
+  const idle = () =>
+    w.requestIdleCallback ? w.requestIdleCallback(work, { timeout: 3000 }) : window.setTimeout(work, 1500);
+  if (document.readyState === 'complete') idle();
+  else window.addEventListener('load', idle, { once: true });
+}
+
 const localeRestBackfilled = new Set<Locale>();
 
 /**
@@ -119,9 +142,10 @@ export function ensureClientLocale(locale: Locale, initialResources?: LocaleBund
     if (locale !== DEFAULT_LOCALE && initialResources) resources[locale] = initialResources;
     clientI18n.use(initReactI18next).init(buildInitOptions(locale, resources));
     clientReady = true;
-    // Backfill the non-core en namespaces from their own chunk (off the critical
-    // path) so the full English catalog is available without bloating the entry.
-    void backfillEnRest();
+    // Backfill the non-core en namespaces from their own chunk, after load and
+    // idle (see afterLoadIdle) — so the full English catalog is available
+    // without bloating the entry OR competing with hydration for the network.
+    afterLoadIdle(() => void backfillEnRest());
     if (locale !== DEFAULT_LOCALE) {
       // The server now hands down only the CORE locale namespaces (perf audit
       // §4.1). With a core payload present, backfill the rest of THIS language
