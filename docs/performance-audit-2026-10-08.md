@@ -445,6 +445,128 @@ see *Not done*.
 
 ---
 
+## Part 2 — scrolling and Lighthouse (2026-10-09)
+
+Follow-up asks: **fix the scrolling on `/` and `/creator-studio`, and boost the
+Lighthouse scores.**
+
+### A correction first
+
+The *Scroll, where it is still under 60* table above measured `/` on a near-empty
+local feed, and later in the session the container's Postgres had stopped, so
+`/` rendered its empty state with nothing to scroll. Both made the home-feed
+numbers unreliable. Everything below is on a **seeded 40-post feed** with the
+database up, and scroll cost is measured as **all-process CPU per scroll frame**
+(three 3-second runs, median) rather than fps at the 60Hz cap — at 60Hz both
+pages can read "60fps" while one has twice the per-frame cost of the other, and
+it is the per-frame cost that decides 144/240Hz.
+
+### Scroll
+
+| Per scroll frame, desktop (software GL — compare, don't read as device numbers) | Before | After |
+| --- | ---: | ---: |
+| `/` | 14.0 ms | **8.8 ms** |
+| `/creator-studio` | 22.4 ms (≈42fps) | **14.5 ms** (60fps at the cap) |
+
+Bisected on the live build before anything changed:
+
+| Cause | Cost | Fix |
+| --- | ---: | --- |
+| The feed rake ran over each card's whole `cover` range, so every card on screen carried a 3D transform and its own layer, re-composited every frame | ~3.1 ms on `/` (10.3 vs 6.9 with no rake) | **Edge-only rake**: `radial-wheel-rake-in` over `entry`, `-out` over `exit`; flat — no transform, no layer — while fully in view. 7.7 ms. The JS fallback uses the same model, so both paths still draw one cylinder |
+| The cookie notice's 30px backdrop blur, fixed over the feed for every first-time visitor on every page, re-blurred under each scroll frame | ~3.3 ms on `/` | `.glass-overlay.glass-opaque` — L4 elevation, no backdrop blur |
+| Three repeated stat tiles on `<Card pane>` (repeated content takes L1 fill, design-language §5); also the admin redemptions rows | ~3.4 ms on `/creator-studio` | `<Card>` (`.glass-fill`) |
+
+Blur **radius** was tested and is not the term that matters: 18px, 10px, 6px and
+3px cost the same, and even a saturate-only `backdrop-filter` cost most of it. Any
+backdrop-filter on a surface with moving content behind it is the cost. What is
+left on `/creator-studio` is one large singular form panel, which is a
+`.glass-pane` by role and was kept.
+
+### Lighthouse — first, measure it the way production serves it
+
+The local Node server speaks HTTP/1.1 and sends HTML uncompressed (111 KB for
+`/`); production is behind Cloudflare and Apache `mod_deflate`. Lighthouse's
+mobile model queued ~200 requests over six HTTP/1.1 connections and charged the
+uncompressed document. A small HTTP/2 + brotli proxy in front of the local
+server (lab-only, not committed) moved the **baseline** by ~15 points:
+
+| Mobile, median of 3 | HTTP/1.1 local | Behind HTTP/2 + brotli |
+| --- | ---: | ---: |
+| `/` | 55 | **69** |
+| `/games` | 50 | **65** |
+| `/news` | 53 | **70** |
+
+Desktop was already 97–98 behind HTTP/2. **Mobile is where the points are.**
+
+### What shipped, and what it bought
+
+| Mobile score, median of 3 | Baseline | + SSR cookie notice + deferred en catalog | + CSS off the entry |
+| --- | ---: | ---: | ---: |
+| `/` | 69 | 73 | 72 |
+| `/games` | 65 | 70 | 71 |
+| `/news` | 70 | 76 | 75 |
+| desktop (all three) | 97–98 | 98–99 | 98–99 |
+
+(±2 is run-to-run noise at n=3.)
+
+1. **The cookie notice was the LCP element of every first visit.** Consent is in
+   `localStorage`, so the notice mounted after hydration from a lazy chunk and
+   painted seconds after the page. It is now server-rendered identically for
+   everyone (anonymous HTML is CDN-cached and must not vary per visitor), and a
+   pre-paint head script — `lib/cookie-consent.ts`, the theme/locale pattern —
+   hides it before first paint for a visitor who already answered; CSS also zeroes
+   its floating-stack lift so nothing shifts when hydration unmounts it. Verified:
+   new visitors see it in the first frame, consented visitors never see it, no
+   hydration errors, accept/reload/reset all work. LCP 5.1 → 4.3s on `/`.
+2. **The ~140 KB-gzip non-core English catalog** was requested at client i18n init
+   — mid-hydration — and re-rendered every consumer when it landed. It now waits
+   for `load` + idle. Invisible: English `defaultValue`s equal the catalog
+   (`i18n-default-drift.test.ts`). Non-English backfills stay immediate.
+3. **Feature stylesheets were render-blocking on every page.** Seven route files
+   imported the library, RMH Vibe, store, creator-studio, builds and RMH Music
+   sheets with a bare top-level `import '….css'`, which stays in the route
+   *definition* — imported statically by `routeTree.gen.ts`, i.e. the entry. The
+   entry `index-*.css` was **107 KB raw / ~21 KB gzip, 99.8% unused on `/`**; it is
+   now **13 KB / 3.3 KB**. Each sheet is imported by the components that use its
+   classes (mapped by every exclusive class name, not by prefix), and route JSX
+   that uses feature classes renders a null style carrier. That surfaced a
+   dependency the global sheet had masked — `/games` and `/apps` render the builds
+   gallery, styled partly by `storefront.css`; Lighthouse caught the 0.039 shift
+   and co-location removed it. Two route `validateSearch`s read a constant from the
+   `ArcadeSection` component, dragging it into the entry; it now lives in a
+   UI-free module. Gate: `lib/__tests__/route-css-imports.test.ts`.
+
+### What was measured and deliberately not shipped
+
+**Inside Lighthouse's runner, the 70 `<link rel="modulepreload">` hints hold the
+first frame for ~2 seconds.** With the HTML rewritten by the proxy:
+
+| `/` mobile, Lighthouse | Observed first paint | Simulated FCP | Score |
+| --- | ---: | ---: | ---: |
+| as shipped | ~2290 ms | 3.9 s | 69 |
+| no JS at all | 188 ms | 1.4 s | 99 |
+| module script removed, preloads kept | 1290–2270 ms | 3.3 s | 81–83 |
+| preloads removed, module script kept | ~215 ms | 2.2 s | 66–72 |
+
+The trace shows why the score follows it: the compositor drops every frame
+(`DroppedFrame`, no main frame sent) until ~2.28s while the renderer's main thread
+is idle — so Lighthouse's model charges all the JS fetched before that paint to
+FCP. But the same Chrome binary, with Lighthouse's flags, a fresh profile and the
+same Moto G emulation, driven by Playwright (with and without the cache disabled,
+with and without tracing and screenshots) paints at **~270 ms** every time. The
+hold is specific to Lighthouse's page-load runner. [Angular issue
+#55380](https://github.com/angular/angular/issues/55380) reports the same
+"removing modulepreload improved FCP/LCP in Lighthouse" observation; no Chromium
+source documents a mechanism.
+
+Removing the preloads for real would have made real visitors pay a module
+waterfall — measured: TBT 126 → 461 ms on `/`, `/games` LCP 5.4 → 6.3 s, scores
+69→68 / 65→63 / 70→70. **Not shipped.** The cost of chasing this number is real
+users' hydration time; the field metrics (`lib/rum.ts`, by device) are the place
+to judge FCP, and they are unaffected by it.
+
+---
+
 ## Not done, and why
 
 - **3D landing scenes render continuously.** Cookgame, Isleworks, Nightrail,
@@ -459,19 +581,13 @@ see *Not done*.
   refresh rate (`displayRefreshHz()` now exists), split by device class the way
   `--by-device` already splits the rest. It touches the client, the `/api/rum`
   schema, the SLO bands and the report script, so it is its own change.
-- **Scroll below 60 on three routes** (*Results → Scroll*). The home feed's cost
-  is the wheel's per-card 3D rake; `/apps` and `/creator-studio` pay for glass
-  panes re-blurring as they scroll over the fixed backdrop. Both are what
-  SwiftShader exaggerates most and both are the design, so the next step is a
-  GPU device measurement, not a change. If one is confirmed on hardware, the
-  levers are a flatter rake (opacity only, no `rotateX`) and moving those
-  panes from `.glass-pane` to `.glass-fill` per the ≤8-blurred-surfaces budget.
-- **Render-blocking CSS** is ~107 KB gzip on `_site` routes (`globals` alone
-  72 KB); Lighthouse's mobile model charges it ~2.5s. A critical-CSS split is a
-  load-time project of its own.
-- **On a sparse page the LCP element is the cookie notice** — a lazily mounted
-  overlay, so LCP waits on hydration. With a real feed above it the feed text
-  wins, so this mostly affects empty/short pages.
+- **Scroll** — fixed in Part 2 for `/` and `/creator-studio`. What remains there
+  is one singular `.glass-pane` form panel, kept by role. A GPU device pass
+  would still be the honest final word on both.
+- **Render-blocking CSS** — the entry sheet is fixed (Part 2: 107 KB → 13 KB).
+  `globals.css` itself is still ~71 KB gzip and render-blocking; splitting a
+  critical subset out of it is a load-time project of its own.
+- **The cookie notice as LCP** — fixed in Part 2 (server-rendered).
 - **An unset `XAI_API_KEY` takes every SSR route down.** A module-scope
   `new OpenAI({ apiKey: process.env.XAI_API_KEY || '' })` throws at import, so a
   deployment missing that one key returns 500 on every page. Found while
