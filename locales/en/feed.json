@@ -1537,5 +1537,8 @@
   "your-ratings": "Your ratings",
   "your-top-post": "Your top post",
   "your-year-on-rmh": "Your year on RMH",
-  "explore-more-link": "More on Explore"
+  "explore-more-link": "More on Explore",
+  "search-signed-out-scope": "Showing games, apps and pages.",
+  "search-signed-out-cta": "Sign in to search people and posts",
+  "search-no-matches-signed-out": "No games, apps or pages match. Sign in to search people and posts."
 }

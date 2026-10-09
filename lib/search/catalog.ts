@@ -116,7 +116,10 @@ export const SITE_DESTINATIONS: SiteDestination[] = [
     title: 'Predictions',
     href: '/predictions',
     iconName: 'TrendingUp',
-    keywords: 'bets markets coins wagers forecasts',
+    // The casino tables live on this page's Games tab, so their names are how
+    // people look for it ("blackjack" found nothing before 2026-10-09).
+    keywords:
+      'bets markets coins wagers forecasts casino blackjack poker holdem baccarat roulette tables',
     description: 'Prediction markets settled in coins.',
   },
   {
@@ -234,6 +237,26 @@ export const SITE_DESTINATIONS: SiteDestination[] = [
     description: 'Appearance, language, notifications and account.',
   },
   {
+    // Theme and accent live here, and nobody searches for "appearance" — they
+    // search for the thing they want to change ("dark mode" found a game).
+    id: 'appearance',
+    title: 'Appearance',
+    href: '/settings/appearance',
+    iconName: 'Palette',
+    keywords:
+      'theme dark mode light mode midnight daylight high contrast accent colour color font text size density reduce motion transparency',
+    description: 'Theme, accent colour, text size and motion.',
+  },
+  {
+    id: 'notification-settings',
+    title: 'Notification settings',
+    href: '/settings/notifications',
+    iconName: 'Bell',
+    keywords: 'notifications push email alerts mute settings',
+    requiresAuth: true,
+    description: 'Choose what you are notified about, and how.',
+  },
+  {
     id: 'security',
     title: 'Passkeys & Security',
     href: '/settings/security',
@@ -251,10 +274,180 @@ export const SITE_DESTINATIONS: SiteDestination[] = [
     requiresAuth: true,
     description: 'Export or delete your data.',
   },
+  // ── Coverage added by the 2026-10-09 search audit ─────────────────────────
+  // Each of these is a real destination that a plain-word query could not
+  // reach from search or ⌘K: "tournament", "rideshare", "services", "events"
+  // and friends returned nothing, or only a fuzzy near-miss.
+  {
+    id: 'tournaments',
+    title: 'Tournaments',
+    href: '/tournaments',
+    iconName: 'Trophy',
+    keywords: 'tournament bracket competition compete cup event prize',
+    description: 'Brackets and competitions across the games.',
+  },
+  {
+    id: 'speedruns',
+    title: 'Speedruns',
+    href: '/speedruns',
+    iconName: 'Timer',
+    keywords: 'speedrun speed run times records fastest leaderboard',
+    description: 'Fastest times and run records.',
+  },
+  {
+    id: 'wagers',
+    title: 'Wagers',
+    href: '/wager',
+    iconName: 'Coins',
+    keywords: 'wager bet challenge coins head to head',
+    description: 'Head-to-head coin wagers.',
+  },
+  {
+    id: 'events',
+    title: 'Events',
+    href: '/communities?tab=events',
+    iconName: 'Calendar',
+    keywords: 'events calendar rsvp meetup schedule happening',
+    description: 'Community events to RSVP to.',
+  },
+  {
+    id: 'spaces',
+    title: 'Spaces',
+    href: '/communities?tab=spaces',
+    iconName: 'Radio',
+    keywords: 'spaces live audio voice rooms talk listen',
+    description: 'Live audio rooms.',
+  },
+  {
+    id: 'shop',
+    title: 'Shop',
+    href: '/store?tab=shop',
+    iconName: 'ShoppingBag',
+    keywords: 'shop cosmetics name colour badges frames buy coins',
+    description: 'Cosmetics you buy with coins.',
+  },
+  {
+    id: 'market',
+    title: 'Marketplace',
+    href: '/store?tab=market',
+    iconName: 'Store',
+    keywords: 'market marketplace trade sell listings players',
+    description: 'The player-to-player marketplace.',
+  },
+  {
+    id: 'services',
+    title: 'Services',
+    href: '/services',
+    iconName: 'LayoutGrid',
+    keywords: 'services housing homes jobs careers rideshare ride taxi uber restaurant',
+    description: 'Housing, career and transportation tools.',
+  },
+  {
+    id: 'rideshare',
+    title: 'RMH Rideshare',
+    href: '/rideshare',
+    iconName: 'Car',
+    keywords: 'rideshare ride taxi uber lyft driver drive trip car',
+    description: 'Request a ride or sign up to drive.',
+  },
+  {
+    id: 'cars',
+    title: 'RMH Cars',
+    href: '/services/cars',
+    iconName: 'Car',
+    keywords: 'cars fleet vehicles models 3d',
+    description: 'The fleet behind RMH Rideshare, in 3D.',
+  },
+  {
+    id: 'fashion',
+    title: 'RMH Fashion',
+    href: '/services/fashion',
+    iconName: 'Shirt',
+    keywords: 'fashion clothes wardrobe outfit style 3d',
+    description: 'A 3D wardrobe built around a figure you design.',
+  },
+  {
+    id: 'ventures',
+    title: 'RMH Ventures',
+    href: '/ventures',
+    iconName: 'Rocket',
+    keywords: 'ventures capital datacenter pmc adaptive intelligence deeplink brands company',
+    description: 'The brands and programmes built around RMH Studios.',
+  },
+  {
+    id: 'developer',
+    title: 'Developer API',
+    href: '/developer',
+    iconName: 'Terminal',
+    keywords: 'developer api keys rest openapi docs integration webhooks',
+    description: 'API keys and docs for building on RMH Studios.',
+  },
+  {
+    id: 'earnings',
+    title: 'Creator earnings',
+    href: '/create/earnings',
+    iconName: 'Wallet',
+    keywords: 'creator studio earnings tips payouts redeem analytics',
+    requiresAuth: true,
+    description: 'Tips, payouts and creator analytics.',
+  },
+  {
+    id: 'emoji-packs',
+    title: 'Emoji packs',
+    href: '/emoji-packs',
+    iconName: 'Smile',
+    keywords: 'emoji stickers packs custom reactions',
+    description: 'Custom emoji and sticker packs.',
+  },
+  {
+    id: 'history',
+    title: 'History',
+    href: '/history',
+    iconName: 'History',
+    keywords: 'history recently viewed watched played continue resume',
+    requiresAuth: true,
+    description: 'What you recently viewed, watched and played.',
+  },
+  {
+    id: 'drafts',
+    title: 'Drafts',
+    href: '/drafts',
+    iconName: 'FileText',
+    keywords: 'drafts unsent posts scheduled saved',
+    requiresAuth: true,
+    description: 'Posts you started and have not sent.',
+  },
+  {
+    id: 'recap',
+    title: 'Weekly recap',
+    href: '/recap',
+    iconName: 'Sparkles',
+    keywords: 'recap weekly summary stats wrapped year review',
+    requiresAuth: true,
+    description: 'Your week on RMH, in numbers.',
+  },
 ];
 
 /** Field weights per catalog kind — a title match always beats a keyword match. */
 const CATALOG_WEIGHTS = { title: 1, tags: 0.72, description: 0.6, long: 0.4 } as const;
+
+/**
+ * Every listed game, app and destination title, deduplicated — what the
+ * query-expansion model is told exists, so it can map a vague or misspelled
+ * query onto a real name (see `expandSearchQuery`). Computed once: the catalog
+ * is static for the life of the process.
+ */
+let namesCache: string[] | null = null;
+export function catalogNames(): string[] {
+  if (namesCache) return namesCache;
+  const all = [
+    ...games.filter((g) => !g.unlisted).map((g) => g.title),
+    ...apps.filter((a) => !a.hidden && !a.unlisted).map((a) => a.title),
+    ...SITE_DESTINATIONS.map((d) => d.title),
+  ];
+  namesCache = [...new Set(all)];
+  return namesCache;
+}
 
 export interface CatalogSearchOptions {
   /** Drop auth-gated destinations for signed-out visitors. */

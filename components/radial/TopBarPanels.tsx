@@ -27,6 +27,8 @@ import { useResolvedUser, useSession } from '@/components/Providers';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { QuickPanel, QuickPanelMoreIcon, QuickPanelNote, QuickPanelSkeleton } from './QuickPanel';
 import { useReservedRows } from '@/hooks/useReservedRows';
+import { AVATAR_KINDS, KIND_ICON, useKindLabel } from '@/components/search/SearchHitRow';
+import type { SearchHit, SearchResponse } from '@/lib/search/types';
 
 /**
  * Rows every list preview caps itself at — the notifications request asks for
@@ -84,18 +86,25 @@ function usePanelData<T>(open: boolean, url: string | null, enabled = true) {
 
 /* ── Search ──────────────────────────────────────────────────────────────── */
 
-interface SearchHit {
-  people: Array<{ id: string; name: string | null; handle: string | null; image: string | null }>;
-  posts: Array<{
-    id: string;
-    content: string;
-    createdAt: string;
-    user: { id: string; name: string | null; handle: string | null };
-  }>;
-}
+/** Rows the preview shows — the strongest of the ranked cross-kind list. */
+const SEARCH_PREVIEW = 6;
 
+/**
+ * The top bar's search preview. It asks `/api/search` the same question the
+ * Explore page does (`tab=top`, the ranked cross-kind list) and renders it with
+ * the same per-kind vocabulary (`KIND_ICON`, `useKindLabel`), so the two
+ * surfaces cannot disagree about what a query finds.
+ *
+ * They used to. This panel asked the legacy `type=all` shape and rendered only
+ * its `people` and `posts` arrays — so searching a game, an app or a page by its
+ * exact name here said "No matches yet" while Explore listed it first. And it
+ * told signed-out visitors to sign in before searching at all, when the
+ * catalog half of search needs no account (`/api/search` answers it
+ * anonymously now).
+ */
 export function SearchPanel({ open, onClose, anchorRef }: PanelProps) {
   const { t } = useTranslation('feed');
+  const kindLabel = useKindLabel();
   const navigate = useNavigate();
   const { data: session } = useSession();
   const [query, setQuery] = useState('');
@@ -115,10 +124,10 @@ export function SearchPanel({ open, onClose, anchorRef }: PanelProps) {
     }
   }, [open]);
 
-  const ready = debounced.length >= 2 && Boolean(session);
-  const { data, failed } = usePanelData<SearchHit>(
+  const ready = debounced.length >= 2;
+  const { data, failed } = usePanelData<Pick<SearchResponse, 'top'>>(
     open,
-    ready ? `/api/search?q=${encodeURIComponent(debounced)}&type=all` : null,
+    ready ? `/api/search?q=${encodeURIComponent(debounced)}&tab=top` : null,
   );
 
   const submit = useCallback(
@@ -132,8 +141,12 @@ export function SearchPanel({ open, onClose, anchorRef }: PanelProps) {
     [query, navigate, onClose],
   );
 
-  const people = data?.people?.slice(0, 4) ?? [];
-  const posts = data?.posts?.slice(0, 3) ?? [];
+  // A glance, so only what search is sure of when it is sure of anything —
+  // Explore files the rest under "Less certain matches", which a six-row
+  // preview has no room to label. With no confident hit, the best guesses show.
+  const top = data?.top ?? [];
+  const confident = top.filter((hit) => hit.confidence !== 'low');
+  const hits = (confident.length > 0 ? confident : top).slice(0, SEARCH_PREVIEW);
 
   return (
     <QuickPanel
@@ -160,17 +173,15 @@ export function SearchPanel({ open, onClose, anchorRef }: PanelProps) {
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={t('search-placeholder', { defaultValue: 'Search people, posts, builds…' })}
+          placeholder={t('search-placeholder-universal', {
+            defaultValue: 'Search anything — people, posts, games, writing…',
+          })}
           aria-label={t('search', { defaultValue: 'Search' })}
           autoComplete="off"
         />
       </form>
 
-      {!session ? (
-        <QuickPanelNote>
-          {t('search-sign-in', { defaultValue: 'Sign in to search people and posts.' })}
-        </QuickPanelNote>
-      ) : debounced.length < 2 ? (
+      {debounced.length < 2 ? (
         <QuickPanelNote>
           {t('search-hint', { defaultValue: 'Type at least two characters.' })}
         </QuickPanelNote>
@@ -180,57 +191,69 @@ export function SearchPanel({ open, onClose, anchorRef }: PanelProps) {
         </QuickPanelNote>
       ) : !data ? (
         <QuickPanelNote>{t('loading', { defaultValue: 'Loading…' })}</QuickPanelNote>
-      ) : people.length === 0 && posts.length === 0 ? (
+      ) : hits.length === 0 ? (
         <QuickPanelNote>
-          {t('search-no-matches', { defaultValue: 'No matches yet.' })}
+          {session
+            ? t('search-no-matches', { defaultValue: 'No matches yet.' })
+            : t('search-no-matches-signed-out', {
+                defaultValue: 'No games, apps or pages match. Sign in to search people and posts.',
+              })}
         </QuickPanelNote>
       ) : (
-        <>
-          {people.length > 0 && (
-            <section className="rad-panel__group">
-              <h3>{t('people', { defaultValue: 'People' })}</h3>
-              {people.map((p) => (
-                <Link
-                  key={p.id}
-                  to={`/u/${p.handle || p.id}` as string}
-                  className="rad-panel__row"
-                  onClick={onClose}
-                >
-                  <UserAvatar
-                    src={p.image ?? undefined}
-                    alt={p.name || 'User'}
-                    size={28}
-                    fallbackName={p.name ?? undefined}
-                  />
-                  <span className="rad-panel__row-main">
-                    <strong>{p.name || p.handle}</strong>
-                    {p.handle && <small>@{p.handle}</small>}
-                  </span>
-                </Link>
-              ))}
-            </section>
-          )}
-          {posts.length > 0 && (
-            <section className="rad-panel__group">
-              <h3>{t('posts', { defaultValue: 'Posts' })}</h3>
-              {posts.map((post) => (
-                <Link
-                  key={post.id}
-                  to={`/u/${post.user.handle || post.user.id}/post/${post.id}` as string}
-                  className="rad-panel__row"
-                  onClick={onClose}
-                >
-                  <span className="rad-panel__row-main">
-                    <strong>{post.user.name || post.user.handle}</strong>
-                    <small>{post.content}</small>
-                  </span>
-                </Link>
-              ))}
-            </section>
-          )}
-        </>
+        <section className="rad-panel__group">
+          {hits.map((hit) => (
+            <SearchPreviewRow
+              key={hit.key}
+              hit={hit}
+              kindLabel={kindLabel(hit.kind)}
+              onNavigate={onClose}
+            />
+          ))}
+        </section>
       )}
     </QuickPanel>
+  );
+}
+
+/** One preview row: the hit's face or kind glyph, its title, and what it is. */
+function SearchPreviewRow({
+  hit,
+  kindLabel,
+  onNavigate,
+}: {
+  hit: SearchHit;
+  kindLabel: string;
+  onNavigate: () => void;
+}) {
+  const Icon = KIND_ICON[hit.kind];
+  const body = (
+    <>
+      {AVATAR_KINDS.has(hit.kind) ? (
+        <UserAvatar src={hit.image ?? undefined} alt="" size={28} fallbackName={hit.title || 'U'} />
+      ) : (
+        <Icon aria-hidden />
+      )}
+      <span className="rad-panel__row-main">
+        <strong>{hit.title}</strong>
+        <small>{hit.subtitle ? `${kindLabel} · ${hit.subtitle}` : kindLabel}</small>
+      </span>
+    </>
+  );
+  const external = Boolean(hit.meta?.external) || /^https?:\/\//.test(hit.href);
+  return external ? (
+    <a
+      href={hit.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="rad-panel__row"
+      onClick={onNavigate}
+    >
+      {body}
+    </a>
+  ) : (
+    <Link to={hit.href as string} className="rad-panel__row" onClick={onNavigate}>
+      {body}
+    </Link>
   );
 }
 

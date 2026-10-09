@@ -29,7 +29,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { cn } from '@/lib/utils';
 import type { SearchHit, SearchKind } from '@/lib/search/types';
 
-const KIND_ICON: Record<SearchKind, LucideIcon> = {
+export const KIND_ICON: Record<SearchKind, LucideIcon> = {
   person: User,
   post: MessageSquare,
   build: Package,
@@ -103,7 +103,7 @@ export function useKindHeading(): (kind: SearchKind) => string {
 }
 
 /** Kinds identified by a face rather than a glyph. */
-const AVATAR_KINDS: ReadonlySet<SearchKind> = new Set<SearchKind>(['person', 'post']);
+export const AVATAR_KINDS: ReadonlySet<SearchKind> = new Set<SearchKind>(['person', 'post']);
 
 const ROW_CLASS =
   'flex w-full items-start gap-3 px-4 py-2.5 text-left transition-colors hover:bg-site-surface-hover';

@@ -305,6 +305,11 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     // UI minimalism audit (2026-10-09): the live rail's footer link, renamed
     // from "Explore everything" under a new key. Same pipeline caveat.
     'explore-more-link',
+    // Search audit (2026-10-09): what a signed-out search covers, now that
+    // /api/search answers signed-out visitors from the static catalog.
+    'search-no-matches-signed-out',
+    'search-signed-out-cta',
+    'search-signed-out-scope',
     // Extract backlog, 2026-09-15 — see the block at the end of this map.
     'drop-images-here',
     'edit-history-added',
