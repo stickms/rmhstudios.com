@@ -21,6 +21,8 @@ import { useBookState } from '@/lib/library/reader-store';
 import { BookCanvas } from './BookCanvas';
 import { Dropdown, MarksMenu, ChapterMenu, ScrubBar, type Chapter } from './BookReader';
 import { ReaderDetails } from './ReaderDetails';
+import '@/components/library/library.css';
+import '@/components/rmhvibe/vibe.css';
 
 const THEME_KEY = 'rmh-epub-theme';
 const THEMES: EpubTheme[] = ['light', 'sepia', 'dark'];

@@ -19,6 +19,7 @@ import {
 } from '@/lib/rmhvibe/vibe-types';
 import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
 import { usePopPresence } from '@/hooks/usePopPresence';
+import '@/components/rmhvibe/vibe.css';
 
 export function ModelSelect({
   value,

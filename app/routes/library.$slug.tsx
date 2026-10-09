@@ -12,8 +12,8 @@ import { lazy, Suspense } from 'react';
 import { getBook } from '@/lib/library/library.server';
 import { buildCanonical } from '@/lib/seo';
 import { bookSchema, jsonLdScript } from '@/lib/schema';
-import '@/components/rmhvibe/vibe.css';
-import '@/components/library/library.css';
+import { VibeStyles } from '@/components/rmhvibe/VibeStyles';
+import { LibraryStyles } from '@/components/library/LibraryStyles';
 
 // The reader components pull in three.js / @react-three/fiber (the 3D book-flip
 // canvas + the epub rasteriser) — ~1.3 MB of vendor JS. They MUST stay lazy:
@@ -83,8 +83,12 @@ function ReaderFallback() {
 function Reader() {
   const { book } = Route.useLoaderData();
   return (
-    <Suspense fallback={<ReaderFallback />}>
-      {book.format === 'epub' ? <EpubReader book={book} /> : <BookReader book={book} />}
-    </Suspense>
+    <>
+      <VibeStyles />
+      <LibraryStyles />
+      <Suspense fallback={<ReaderFallback />}>
+        {book.format === 'epub' ? <EpubReader book={book} /> : <BookReader book={book} />}
+      </Suspense>
+    </>
   );
 }

@@ -24,6 +24,7 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ArrowRight, Info } from 'lucide-react';
 import { IMAGE_VARIANTS, variantUrl } from '@/lib/images/variants.gen';
+import '@/components/creator-studio/storefront.css';
 
 /** A single thing on the shelf — a game, app, persona, build, or page. */
 export type StoreItem = {

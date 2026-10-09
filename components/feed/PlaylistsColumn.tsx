@@ -19,6 +19,7 @@ import { Input } from'@/components/ui/input';
 import { EmptyState } from'@/components/ui/empty-state';
 import { useConfirm } from'@/components/ui/confirm-dialog';
 import { ColumnHeader } from'./ColumnHeader';
+import '@/components/library/library.css';
 
 interface Summary {
  id: string;

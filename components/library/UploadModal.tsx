@@ -19,6 +19,7 @@ import { Check, Loader2, Plus, Trash2, X } from 'lucide-react';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { analyzeBook, isEpubFile } from '@/lib/library/pdf-client';
 import { libraryPdfMaxBytes } from '@/lib/library/upload-validation';
+import '@/components/library/library.css';
 
 type ItemStatus = 'queued' | 'analyzing' | 'drafting' | 'ready' | 'uploading' | 'done' | 'error';
 

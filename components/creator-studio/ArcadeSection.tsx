@@ -33,9 +33,9 @@ import { Spinner } from '@/components/ui/spinner';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
 import { ArcadeHub } from '@/components/arcade/ArcadeHub';
 import { LeaderboardColumn } from '@/components/feed/LeaderboardColumn';
+import '@/components/creator-studio/creator-studio.css';
 
-export const ARCADE_SUB_TABS = ['challenges', 'leaderboard'] as const;
-export type ArcadeSubTab = (typeof ARCADE_SUB_TABS)[number];
+import type { ArcadeSubTab } from './arcade-tabs';
 
 /** The board payload, taken from the column that renders it. */
 type LeaderboardData = React.ComponentProps<typeof LeaderboardColumn>['initialData'];

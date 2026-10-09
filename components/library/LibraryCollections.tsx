@@ -21,6 +21,8 @@ import { useReveal } from './LibraryReveal';
 import { LibraryContextMenu, useContextMenu, type MenuItem } from './LibraryContextMenu';
 import { BlurImage } from '@/components/ui/BlurImage';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import '@/components/library/library.css';
+import '@/components/rmhvibe/vibe.css';
 
 /** Cover image styled to fill the 3D book cover (absolute inset-0), with blur-up. */
 const COVER_WRAP = 'absolute inset-0 z-0 h-full w-full rounded-[3px_6px_6px_3px]';

@@ -2,6 +2,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { BookOpen, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { LibraryBook } from '@/lib/library/library';
+import '@/components/library/library.css';
 
 type ReaderChapter = { title: string; page: number; depth: number };
 

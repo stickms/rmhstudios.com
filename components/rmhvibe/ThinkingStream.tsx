@@ -4,6 +4,7 @@
  */
 
 import { useStickToBottom } from '@/hooks/useStickToBottom';
+import '@/components/rmhvibe/vibe.css';
 
 export function ThinkingStream({ text, className = '' }: { text: string; className?: string }) {
   // `useStickToBottom`, not `scrollTop = scrollHeight` in an effect. The old form
