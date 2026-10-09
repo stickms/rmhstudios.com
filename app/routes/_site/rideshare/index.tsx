@@ -121,7 +121,7 @@ export function RideshareLanding() {
               </Link>
               <Link
                 to="/rideshare/drive"
-                className="inline-flex items-center gap-2 rounded-site border border-site-border bg-site-surface px-6 py-3 text-sm font-semibold text-site-text transition-transform hover:scale-105 hover:border-site-border-bright"
+                className="inline-flex items-center gap-2 rounded-site glass-fill px-6 py-3 text-sm font-semibold text-site-text transition-transform hover:scale-105 hover:border-site-border-bright"
               >
                 <Car className="h-4 w-4" />{' '}
                 {t('become-a-driver', { defaultValue: 'Become a driver' })}

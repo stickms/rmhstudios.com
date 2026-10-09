@@ -83,13 +83,13 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
  <>
  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
  {stats.map((s) => (
- <div key={s.label} className="rounded-site border border-site-border bg-site-surface p-3">
+ <div key={s.label} className="rounded-site glass-fill p-3">
  <s.icon className="h-4 w-4 text-site-text-dim"/>
  <p className="mt-1 text-lg font-bold text-site-text">{fmt(s.value)}</p>
  <p className="text-[11px] text-site-text-dim">{s.label}</p>
  </div>
  ))}
- <div className="rounded-site border border-site-border bg-site-surface p-3">
+ <div className="rounded-site glass-fill p-3">
  <TrendingUp className="h-4 w-4 text-site-text-dim"/>
  <p className="mt-1 text-lg font-bold text-site-text">
  {(data.engagementRate * 100).toFixed(1)}%
@@ -99,7 +99,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
  </div>
 
  {data.isPaid && (
- <div className="mt-3 flex items-center justify-between rounded-site border border-site-border bg-site-surface p-3">
+ <div className="mt-3 flex items-center justify-between rounded-site glass-fill p-3">
  <div className="flex items-center gap-2">
  <Unlock className="h-4 w-4 text-site-accent"/>
  <div>

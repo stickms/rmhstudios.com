@@ -475,7 +475,7 @@ export function ProfilePanel({ open, onClose, anchorRef }: PanelProps) {
             <strong>{t('profile', { defaultValue: 'Profile' })}</strong>
           </span>
         </Link>
-        <Link to="/wallet" className="rad-panel__row" onClick={onClose}>
+        <Link to="/predictions" className="rad-panel__row" onClick={onClose}>
           <Wallet aria-hidden />
           <span className="rad-panel__row-main">
             <strong>{t('nav-wallet', { defaultValue: 'Wallet' })}</strong>

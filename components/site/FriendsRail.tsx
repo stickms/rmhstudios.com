@@ -37,7 +37,7 @@ export function FriendsRail() {
   if (friends === null) return null;
 
   return (
-    <section className="rounded-site border border-site-border bg-site-surface p-4">
+    <section className="rounded-site glass-fill p-4">
       <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-bold text-site-text">
         <Users className="h-5 w-5 text-site-accent" aria-hidden />
         {t('friends-rail-title', { defaultValue: 'Friends' })}

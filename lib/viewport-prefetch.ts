@@ -51,10 +51,18 @@ const SCAN_LIMIT = 40;
 
 /**
  * How long to wait after a client-side navigation resolves before re-scanning.
- * The router's `onResolved` fires before React commits the new page, so an
- * immediate re-scan would observe the outgoing document's links.
+ *
+ * Two reasons, and the second sets the number. The router's `onResolved` fires
+ * before React commits the new page, so an immediate re-scan would observe the
+ * outgoing document's links. And a speculative preload is not free for the page
+ * that is arriving: `preloadRoute` runs Vite's preload helper, which inserts the
+ * target route's STYLESHEET into <head> — and a new stylesheet restyles every
+ * element on the page. At 100ms (+ the dwell) that recalc landed inside the
+ * incoming page's first frames, as a second full-page style pass while it was
+ * still settling (docs/ui-perf-audit-2026-10-09.md, NAV-3). A beat after the
+ * page has painted and its entrance has finished, the same work is invisible.
  */
-const REARM_DELAY_MS = 100;
+const REARM_DELAY_MS = 1200;
 
 /**
  * Paths that must never be speculatively fetched, mirroring the `where.not`

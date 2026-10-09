@@ -28,6 +28,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { MemberFeatureGrid } from '@/components/membership/MemberFeatureGrid';
 import { TIER_RANK as RANK } from '@/lib/entitlements/tiers';
+import { DeferOnNavigate } from '@/components/ui/defer-on-navigate';
 import type { MemberFeature } from '@/lib/entitlements/features';
 
 // `TIER_RANK` used to be re-declared here with a note not to import the shared
@@ -248,36 +249,41 @@ export function MembershipPanel({
       {/* Content padding only — the center-column width is governed by the
           surrounding AnimatedMain so the gutters match blog/library. The old
           section divider is gone (§8.4): the plans float over the aurora. */}
-      <div className="relative px-5 pb-16 pt-12 sm:px-8 sm:pt-16">
-        {/* ── Status banner ──────────────────────────────────── */}
-        {status && (
-          <Reveal
-            className={`mb-10 flex items-center justify-between gap-3 rounded-site border px-5 py-3.5 text-sm ${
-              status === 'success'
-                ? 'border-[color:var(--site-success)]/30 bg-[color:var(--site-success)]/10 text-[color:var(--site-success)]'
-                : 'border-site-border bg-site-surface text-site-text-muted'
-            }`}
-          >
-            <span>
-              {status === 'success'
-                ? t('status-success', {
-                    defaultValue: 'Welcome aboard — your membership is being activated.',
-                  })
-                : t('status-cancelled', {
-                    defaultValue: 'Checkout cancelled. No charge was made.',
-                  })}
-            </span>
-            <button
-              type="button"
-              onClick={() => setStatus(null)}
-              className="shrink-0 opacity-60 hover:opacity-100"
+      {/* Everything under the pinned hero is below the fold on arrival — the
+          hero fills the first screen — so on a page switch it is built after
+          the hero has painted. A feature deep link scrolls into this part, so
+          that arrival renders it at once. */}
+      <DeferOnNavigate enabled={!highlightFeature} minHeight="100vh">
+        <div className="relative px-5 pb-16 pt-12 sm:px-8 sm:pt-16">
+          {/* ── Status banner ──────────────────────────────────── */}
+          {status && (
+            <Reveal
+              className={`mb-10 flex items-center justify-between gap-3 rounded-site border px-5 py-3.5 text-sm ${
+                status === 'success'
+                  ? 'border-[color:var(--site-success)]/30 bg-[color:var(--site-success)]/10 text-[color:var(--site-success)]'
+                  : 'border-site-border bg-site-surface text-site-text-muted'
+              }`}
             >
-              <X className="h-4 w-4" />
-            </button>
-          </Reveal>
-        )}
+              <span>
+                {status === 'success'
+                  ? t('status-success', {
+                      defaultValue: 'Welcome aboard — your membership is being activated.',
+                    })
+                  : t('status-cancelled', {
+                      defaultValue: 'Checkout cancelled. No charge was made.',
+                    })}
+              </span>
+              <button
+                type="button"
+                onClick={() => setStatus(null)}
+                className="shrink-0 opacity-60 hover:opacity-100"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </Reveal>
+          )}
 
-        {/* ── Plan grid ──────────────────────────────────────────
+          {/* ── Plan grid ──────────────────────────────────────────
             Sized off the CONTAINER, not the viewport. This panel renders inside
             the site's centre column, which stays ~640px however wide the screen
             gets, so the old `xl:grid-cols-4` viewport breakpoint put four cards
@@ -286,183 +292,188 @@ export function MembershipPanel({
             Container queries make the card count answer to the space that
             actually exists: two up in the centre column, four only when a host
             genuinely has room for them. */}
-        <div className="@container">
-          <RevealGroup className="grid items-stretch gap-4 @md:grid-cols-2 @5xl:grid-cols-4">
-            {PLANS.map((plan) => {
-              const isCurrent = !signedOut && tier === plan.tier;
-              const owned = !signedOut && RANK[tier] > RANK[plan.tier];
-              const copy = COPY[plan.tier];
-              const cta =
-                RANK[tier] < RANK[plan.tier] && tier !== 'free'
-                  ? t('upgrade', { defaultValue: 'Upgrade' })
-                  : t('subscribe', { defaultValue: 'Subscribe' });
-              return (
-                <RevealItem key={plan.tier} className="flex">
-                  {/* Card is a plain <article> so its CSS hover/featured
+          <div className="@container">
+            <RevealGroup className="grid items-stretch gap-4 @md:grid-cols-2 @5xl:grid-cols-4">
+              {PLANS.map((plan) => {
+                const isCurrent = !signedOut && tier === plan.tier;
+                const owned = !signedOut && RANK[tier] > RANK[plan.tier];
+                const copy = COPY[plan.tier];
+                const cta =
+                  RANK[tier] < RANK[plan.tier] && tier !== 'free'
+                    ? t('upgrade', { defaultValue: 'Upgrade' })
+                    : t('subscribe', { defaultValue: 'Subscribe' });
+                return (
+                  <RevealItem key={plan.tier} className="flex">
+                    {/* Card is a plain <article> so its CSS hover/featured
                       transforms aren't clobbered by the RevealItem motion node's
                       inline transform. */}
-                  <article
-                    // Floating L2 slabs (§8.4): .glass-pane owns the frost/tint/
-                    // border/ring; the featured tier additionally takes the page's
-                    // one prism refract slot + ambient sheen + per-element lens.
-                    data-glass-lens={plan.featured ? '' : undefined}
-                    className={cn(
-                      'pricing-card group relative flex w-full flex-col glass-pane rounded-site p-5',
-                      // Clearance for the ribbon that straddles the top edge.
-                      plan.featured &&
-                        'pricing-card--featured glass-refract glass-refract--prism glass-liquid pt-7',
-                    )}
-                  >
-                    {plan.featured && (
-                      <span className="pricing-ribbon">
-                        {t('most-popular', { defaultValue: 'Most popular' })}
-                      </span>
-                    )}
-
-                    {/* Name and status sit in ONE flow row. The "Current" chip
-                        used to be absolutely positioned over the top-right
-                        corner, where it landed on top of the tier name. */}
-                    <div className="flex items-start justify-between gap-2">
-                      <h3
-                        className={cn(
-                          'font-display text-2xl font-bold leading-tight tracking-tight',
-                          plan.featured ? 'text-site-warning' : 'text-site-text',
-                        )}
-                      >
-                        {copy.name}
-                      </h3>
-                      {isCurrent && (
-                        <Badge
-                          variant="accent"
-                          size="sm"
-                          className="mt-1 font-mono uppercase tracking-widest"
-                        >
-                          {t('current-badge', { defaultValue: 'Current' })}
-                        </Badge>
+                    <article
+                      // Floating L2 slabs (§8.4): .glass-pane owns the frost/tint/
+                      // border/ring; the featured tier additionally takes the page's
+                      // one prism refract slot + ambient sheen + per-element lens.
+                      data-glass-lens={plan.featured ? '' : undefined}
+                      className={cn(
+                        'pricing-card group relative flex w-full flex-col glass-pane rounded-site p-5',
+                        // Clearance for the ribbon that straddles the top edge.
+                        plan.featured &&
+                          'pricing-card--featured glass-refract glass-refract--prism glass-liquid pt-7',
                       )}
-                    </div>
-
-                    <p className="mt-1.5 min-h-10 text-sm leading-snug text-site-text-muted">
-                      {copy.tagline}
-                    </p>
-
-                    {/* `flex-wrap` + `break-words`: a long localised price or a
-                        word like "Custom" now wraps inside the card instead of
-                        running out through its right border. */}
-                    <p className="mt-4 flex flex-wrap items-baseline gap-x-1.5">
-                      <span className="font-mono text-3xl font-semibold tracking-tight text-site-text tabular-nums break-words">
-                        {plan.price}
-                      </span>
-                      {copy.period && (
-                        <span className="font-mono text-xs text-site-text-muted">
-                          {copy.period}
+                    >
+                      {plan.featured && (
+                        <span className="pricing-ribbon">
+                          {t('most-popular', { defaultValue: 'Most popular' })}
                         </span>
                       )}
-                    </p>
 
-                    <div className="my-5 h-px w-full bg-gradient-to-r from-site-border to-transparent" />
-
-                    <ul className="flex flex-1 flex-col gap-2.5">
-                      {copy.features.map((f) => (
-                        <li key={f} className="flex items-start gap-2.5 text-sm text-site-text">
-                          {/* Token utilities — this was an inline `style` with a
-                              hand-written color-mix, invisible to the themes. */}
-                          <span
-                            className={cn(
-                              'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full',
-                              plan.featured ? 'bg-site-warning/20' : 'bg-site-accent-dim',
-                            )}
+                      {/* Name and status sit in ONE flow row. The "Current" chip
+                        used to be absolutely positioned over the top-right
+                        corner, where it landed on top of the tier name. */}
+                      <div className="flex items-start justify-between gap-2">
+                        <h3
+                          className={cn(
+                            'font-display text-2xl font-bold leading-tight tracking-tight',
+                            plan.featured ? 'text-site-warning' : 'text-site-text',
+                          )}
+                        >
+                          {copy.name}
+                        </h3>
+                        {isCurrent && (
+                          <Badge
+                            variant="accent"
+                            size="sm"
+                            className="mt-1 font-mono uppercase tracking-widest"
                           >
-                            <Check
-                              className={cn(
-                                'h-2.5 w-2.5',
-                                plan.featured ? 'text-site-warning' : 'text-site-accent',
-                              )}
-                              aria-hidden
-                            />
-                          </span>
-                          <span className="leading-snug">{f}</span>
-                        </li>
-                      ))}
-                    </ul>
+                            {t('current-badge', { defaultValue: 'Current' })}
+                          </Badge>
+                        )}
+                      </div>
 
-                    {/* CTAs are the shared `Button` primitive (§5.2) rather than
+                      <p className="mt-1.5 min-h-10 text-sm leading-snug text-site-text-muted">
+                        {copy.tagline}
+                      </p>
+
+                      {/* `flex-wrap` + `break-words`: a long localised price or a
+                        word like "Custom" now wraps inside the card instead of
+                        running out through its right border. */}
+                      <p className="mt-4 flex flex-wrap items-baseline gap-x-1.5">
+                        <span className="font-mono text-3xl font-semibold tracking-tight text-site-text tabular-nums break-words">
+                          {plan.price}
+                        </span>
+                        {copy.period && (
+                          <span className="font-mono text-xs text-site-text-muted">
+                            {copy.period}
+                          </span>
+                        )}
+                      </p>
+
+                      <div className="my-5 h-px w-full bg-gradient-to-r from-site-border to-transparent" />
+
+                      <ul className="flex flex-1 flex-col gap-2.5">
+                        {copy.features.map((f) => (
+                          <li key={f} className="flex items-start gap-2.5 text-sm text-site-text">
+                            {/* Token utilities — this was an inline `style` with a
+                              hand-written color-mix, invisible to the themes. */}
+                            <span
+                              className={cn(
+                                'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full',
+                                plan.featured ? 'bg-site-warning/20' : 'bg-site-accent-dim',
+                              )}
+                            >
+                              <Check
+                                className={cn(
+                                  'h-2.5 w-2.5',
+                                  plan.featured ? 'text-site-warning' : 'text-site-accent',
+                                )}
+                                aria-hidden
+                              />
+                            </span>
+                            <span className="leading-snug">{f}</span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      {/* CTAs are the shared `Button` primitive (§5.2) rather than
                         three hand-rolled pills with inline background styles.
                         `h-auto min-h-11` + `whitespace-normal` override the
                         primitive's fixed height and nowrap so a two-word label —
                         or a longer translation of one — grows the button instead
                         of spilling over its own border. */}
-                    <div className="mt-6">
-                      {/* A tier you already hold has nothing to click, so it gets
+                      <div className="mt-6">
+                        {/* A tier you already hold has nothing to click, so it gets
                           the quiet dashed status pill rather than a disabled
                           fill. A greyed-out `bg-site-accent` button reads as a
                           heavy slab that still looks pressable, and it competed
                           with the one real call to action on the page. */}
-                      {isCurrent || owned || (plan.cta === 'current' && !signedOut) ? (
-                        <p className="flex min-h-11 items-center justify-center rounded-[var(--site-control-radius)] border border-dashed border-site-border px-3 py-2.5 text-center text-sm font-medium text-site-text-muted">
-                          {isCurrent
-                            ? t('your-current-plan', { defaultValue: 'Your current plan' })
-                            : owned
-                              ? t('included', { defaultValue: 'Included' })
-                              : t('free-forever', { defaultValue: 'Free forever' })}
-                        </p>
-                      ) : plan.cta === 'current' ? (
-                        <Button
-                          asChild
-                          variant="accent"
-                          className="h-auto min-h-11 w-full whitespace-normal py-2.5 text-center"
-                        >
-                          <a href="/login">
-                            {t('get-started-free', { defaultValue: 'Get started — free' })}
+                        {isCurrent || owned || (plan.cta === 'current' && !signedOut) ? (
+                          <p className="flex min-h-11 items-center justify-center rounded-[var(--site-control-radius)] border border-dashed border-site-border px-3 py-2.5 text-center text-sm font-medium text-site-text-muted">
+                            {isCurrent
+                              ? t('your-current-plan', { defaultValue: 'Your current plan' })
+                              : owned
+                                ? t('included', { defaultValue: 'Included' })
+                                : t('free-forever', { defaultValue: 'Free forever' })}
+                          </p>
+                        ) : plan.cta === 'current' ? (
+                          <Button
+                            asChild
+                            variant="accent"
+                            className="h-auto min-h-11 w-full whitespace-normal py-2.5 text-center"
+                          >
+                            <a href="/login">
+                              {t('get-started-free', { defaultValue: 'Get started — free' })}
+                              <ArrowUpRight aria-hidden />
+                            </a>
+                          </Button>
+                        ) : plan.cta === 'subscribe' ? (
+                          <Button
+                            type="button"
+                            onClick={() => subscribe(plan.tier as 'starter' | 'pro')}
+                            loading={busy === plan.tier}
+                            // Ink tracks its surface: each variant carries its own
+                            // paired foreground token, so neither fill can end up
+                            // painting its label in the other's colour.
+                            variant={plan.featured ? 'warning' : 'accent'}
+                            className="h-auto min-h-11 w-full whitespace-normal py-2.5 text-center"
+                          >
+                            {cta}
                             <ArrowUpRight aria-hidden />
-                          </a>
-                        </Button>
-                      ) : plan.cta === 'subscribe' ? (
-                        <Button
-                          type="button"
-                          onClick={() => subscribe(plan.tier as 'starter' | 'pro')}
-                          loading={busy === plan.tier}
-                          // Ink tracks its surface: each variant carries its own
-                          // paired foreground token, so neither fill can end up
-                          // painting its label in the other's colour.
-                          variant={plan.featured ? 'warning' : 'accent'}
-                          className="h-auto min-h-11 w-full whitespace-normal py-2.5 text-center"
-                        >
-                          {cta}
-                          <ArrowUpRight aria-hidden />
-                        </Button>
-                      ) : (
-                        <Button
-                          asChild
-                          variant="outline"
-                          className="h-auto min-h-11 w-full whitespace-normal py-2.5 text-center"
-                        >
-                          <a href="mailto:team@rmhstudios.com?subject=Enterprise%20plan">
-                            {t('contact-team', { defaultValue: 'Contact team' })}
-                            <ArrowUpRight aria-hidden />
-                          </a>
-                        </Button>
-                      )}
-                    </div>
-                  </article>
-                </RevealItem>
-              );
-            })}
-          </RevealGroup>
-        </div>
+                          </Button>
+                        ) : (
+                          <Button
+                            asChild
+                            variant="outline"
+                            className="h-auto min-h-11 w-full whitespace-normal py-2.5 text-center"
+                          >
+                            <a href="mailto:team@rmhstudios.com?subject=Enterprise%20plan">
+                              {t('contact-team', { defaultValue: 'Contact team' })}
+                              <ArrowUpRight aria-hidden />
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    </article>
+                  </RevealItem>
+                );
+              })}
+            </RevealGroup>
+          </div>
 
-        {/* ── What a membership unlocks ──────────────────────── */}
-        {/* Rendered from the same registry the API routes gate on, so this
+          {/* ── What a membership unlocks ──────────────────────── */}
+          {/* Rendered from the same registry the API routes gate on, so this
             list cannot drift from what is actually enforced. */}
-        <MemberFeatureGrid tier={tier} highlight={highlightFeature ?? null} signedOut={signedOut} />
+          <MemberFeatureGrid
+            tier={tier}
+            highlight={highlightFeature ?? null}
+            signedOut={signedOut}
+          />
 
-        {/* ── Footnote ───────────────────────────────────────── */}
-        <Reveal as="p" className="mt-12 text-center font-mono text-xs text-site-text-muted">
-          {t('billing-footnote', {
-            defaultValue: 'Billed monthly · cancel anytime · secure checkout by Stripe',
-          })}
-        </Reveal>
-      </div>
+          {/* ── Footnote ───────────────────────────────────────── */}
+          <Reveal as="p" className="mt-12 text-center font-mono text-xs text-site-text-muted">
+            {t('billing-footnote', {
+              defaultValue: 'Billed monthly · cancel anytime · secure checkout by Stripe',
+            })}
+          </Reveal>
+        </div>
+      </DeferOnNavigate>
     </section>
   );
 }

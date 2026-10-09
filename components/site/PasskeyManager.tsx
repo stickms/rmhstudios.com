@@ -142,7 +142,7 @@ export function PasskeyManager() {
       </p>
 
       {!supported && (
-        <p className="mb-3 rounded-site-sm border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text-dim">
+        <p className="mb-3 rounded-site-sm glass-fill px-3 py-2 text-sm text-site-text-dim">
           {t('passkeys-unsupported', {
             defaultValue: 'This browser does not support passkeys.',
           })}

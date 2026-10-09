@@ -632,7 +632,7 @@ a.sec-card:hover .sec-card__tag--link { color: var(--site-accent-hover); }
   box-sizing: border-box;
   padding: 12px 14px;
   border-radius: var(--site-radius-sm);
-  background: var(--site-glass-ink);
+  background: color-mix(in srgb, var(--site-text) 5%, var(--site-glass-tint-strong)); /* the field fill — see .glass-inset */
   border: 1px solid var(--site-border);
   color: var(--site-text);
   font: inherit;

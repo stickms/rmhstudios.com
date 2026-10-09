@@ -97,7 +97,7 @@ export function RecapColumn({
  <RevealGroup as="div"className="grid grid-cols-2 gap-2 sm:grid-cols-3">
  {STAT_META.map(({ key, labelKey, labelDefault, icon: Icon }) => (
  <RevealItem key={key}>
- <div className={`rounded-site border border-site-border bg-site-surface p-3 text-center ${LIFT_CARD}`}>
+ <div className={`rounded-site glass-fill p-3 text-center ${LIFT_CARD}`}>
  <Icon className="mx-auto h-5 w-5 text-site-accent"/>
  <p className="mt-1 text-2xl font-bold text-site-text">{recap[key] as number}</p>
  <p className="text-xs text-site-text-muted">{t(labelKey, { defaultValue: labelDefault })}</p>
@@ -109,7 +109,7 @@ export function RecapColumn({
 
  {recap.topPost && (
  <Reveal>
- <div className={`rounded-site border border-site-border bg-site-surface p-4 ${LIFT_CARD}`}>
+ <div className={`rounded-site glass-fill p-4 ${LIFT_CARD}`}>
  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('recap-top-post', { defaultValue:'Your top post'})}</p>
  <p className="line-clamp-3 text-sm text-site-text">{recap.topPost.content}</p>
  <p className="mt-1 text-xs text-site-text-muted">
@@ -123,7 +123,7 @@ export function RecapColumn({
  <Reveal>
  <Link
  to="/achievements"
- className={`block rounded-site border border-site-border bg-site-surface p-3 text-center text-sm font-medium text-site-accent hover:bg-site-surface-hover ${LIFT_CARD}`}
+ className={`block rounded-site glass-fill p-3 text-center text-sm font-medium text-site-accent hover:bg-site-surface-hover ${LIFT_CARD}`}
  >
  {t('recap-view-achievements', { defaultValue:'View your achievements →'})}
  </Link>

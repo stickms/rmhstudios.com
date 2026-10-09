@@ -207,7 +207,7 @@ export function RankedColumn({
  {/* Issue a challenge */}
  <Reveal
  as="section"
- className={`rounded-site border border-site-border bg-site-surface p-4 ${LIFT_CARD}`}
+ className={`rounded-site glass-fill p-4 ${LIFT_CARD}`}
  >
  <h2 id="ranked-challenge-heading"className="mb-2 text-sm font-bold text-site-text">
  {t('challenge-a-player', { defaultValue:'Challenge a player'})}
@@ -256,7 +256,7 @@ export function RankedColumn({
  {incoming.map((c) => (
  <div
  key={c.id}
- className={`flex items-center gap-2 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}
+ className={`flex items-center gap-2 rounded-site glass-fill p-2.5 ${LIFT_CARD}`}
  >
  <UserAvatar user={c.user} />
  <div className="min-w-0 flex-1">
@@ -310,7 +310,7 @@ export function RankedColumn({
  {outgoing.map((c) => (
  <div
  key={c.id}
- className={`flex items-center gap-2 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}
+ className={`flex items-center gap-2 rounded-site glass-fill p-2.5 ${LIFT_CARD}`}
  >
  <UserAvatar user={c.user} />
  <div className="min-w-0 flex-1">
@@ -340,7 +340,7 @@ export function RankedColumn({
  {ratings.map((r) => (
  <div
  key={r.game}
- className={`flex items-center justify-between gap-2 rounded-site border border-site-border bg-site-surface px-3 py-2.5 ${LIFT_CARD}`}
+ className={`flex items-center justify-between gap-2 rounded-site glass-fill px-3 py-2.5 ${LIFT_CARD}`}
  >
  <span className="flex min-w-0 items-center gap-2">
  <span className="truncate text-sm font-medium text-site-text">
@@ -392,7 +392,7 @@ export function RankedColumn({
  {lb.map((row) => (
  <div
  key={row.user.id}
- className={`flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}
+ className={`flex items-center gap-3 rounded-site glass-fill p-2.5 ${LIFT_CARD}`}
  >
  <span className="w-5 text-center text-xs font-bold text-site-text-dim">
  {row.rank}

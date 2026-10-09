@@ -212,7 +212,7 @@ function AdminAnnouncementsPage() {
         </div>
 
         {/* Create form */}
-        <div className="space-y-3 rounded-site border border-site-border bg-site-surface p-4">
+        <div className="space-y-3 rounded-site glass-fill p-4">
           <div className="relative">
             <input className={`${inputCls} pr-10`} placeholder={t('title-placeholder', { defaultValue: 'Title' })} value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} />
             <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
@@ -468,7 +468,7 @@ function AdminAnnouncementsPage() {
         ) : (
           <ul className="space-y-2">
             {list.map((a) => (
-              <li key={a.id} className="rounded-site border border-site-border bg-site-surface p-3">
+              <li key={a.id} className="rounded-site glass-fill p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">

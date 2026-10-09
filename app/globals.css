@@ -1727,17 +1727,25 @@ html.app-route {
     backdrop-filter: blur(8px);
   }
 
-  /* Recessed wells (inputs, search fields) — a hole in the glass: dark top inner
-     shadow, faint light bottom inner edge (§4.2). No backdrop blur (legibility). */
+  /* Fields (inputs, search fields, segmented-control tracks) — a FLUSH pool of
+     the same liquid glass, not a hole punched in it. No backdrop blur
+     (legibility).
+
+     This tier used to be a "recessed well": a dark inner shadow under the top
+     edge on the theme's darkest ink. That is a deboss — it read as a slot
+     carved into the page, which is not this site's material. Everything else
+     here, the globe first of all, is glass lit from above that sits ON the page
+     and never in it. So a field is now the theme's own ink at a whisper over
+     the strong glass tint: on Daylight it greys slightly off white, on Midnight
+     it lifts slightly off black — Liquid Glass's fill, not a cut — with the
+     half-strength hairline that defines its edge, and no shadow at all
+     (docs/ui-perf-audit-2026-10-09.md, DEB-1). One expression, every theme: no
+     per-theme field token to forget. */
   .glass-inset {
-    background: var(--site-glass-ink);
-    /* §4.35: wells keep a border at half strength so a recessed field still reads
-       as carved INTO the sheet (not outlined on it) now that slabs go borderless. */
+    background: color-mix(in srgb, var(--site-text) 5%, var(--site-glass-tint-strong));
     border: var(--site-border-width) solid color-mix(in srgb, var(--site-border) 50%, transparent);
     border-radius: var(--site-radius-sm);
-    box-shadow:
-      inset 0 1px 2px rgb(0 0 0 / 0.35),
-      inset 0 -1px 0 var(--site-glass-rim-soft);
+    box-shadow: none;
   }
 
   /* ── `.textarea-autosize` — grow with the content, without a layout read ────
@@ -3826,7 +3834,7 @@ body {
       textarea
     ):not([data-slot]) {
     color: var(--site-text);
-    background: var(--site-glass-ink);
+    background: color-mix(in srgb, var(--site-text) 5%, var(--site-glass-tint-strong));
     border: var(--site-border-width) solid color-mix(in srgb, var(--site-border) 60%, transparent);
     border-radius: var(--site-radius-sm);
   }
@@ -3834,7 +3842,7 @@ body {
   :where(.vibe-app) select:not([data-slot='select']) {
     min-block-size: 2.5rem;
     color: var(--site-text);
-    background-color: var(--site-glass-ink);
+    background-color: color-mix(in srgb, var(--site-text) 5%, var(--site-glass-tint-strong));
     border: var(--site-border-width) solid color-mix(in srgb, var(--site-border) 60%, transparent);
     border-radius: var(--site-radius-sm);
   }
@@ -6181,7 +6189,7 @@ html.reduce-motion .u-parallax {
 /* ==========================================================================
    LiquidTabs — the segmented control (2026-10-09)
    ------------------------------------------------------------------------
-   A neutral raised THUMB on a recessed TRACK, one row, labels never truncated.
+   A neutral raised THUMB on a flush TRACK, one row, labels never truncated.
    The reasoning is in the `liquid-tabs.tsx` docblock; the short version:
 
      - the active tab used to be a solid accent pill — on the default theme the
@@ -6256,12 +6264,12 @@ html.reduce-motion .u-parallax {
   mask-image: linear-gradient(to left, transparent, #000 2rem, #000 calc(100% - 2rem), transparent);
 }
 
-/* The track. It rides `.glass-inset` (the recessed-well tier), whose fill is
-   near-white on the default theme — a white thumb would vanish into it. A
-   neutral tint of the theme's own ink makes the well read as recessed in light
-   AND dark themes without a per-theme token. */
+/* The track. It rides `.glass-inset` (the field tier) and takes a touch more of
+   the theme's ink than a text field, so the opaque thumb separates from it on
+   Daylight (white on near-white would vanish) and on Midnight alike. It is a
+   flush fill like every field, not a recessed well — see `.glass-inset`. */
 [data-slot='liquid-tabs-sheet'] {
-  background: color-mix(in srgb, var(--site-text) 5%, var(--site-glass-ink));
+  background: color-mix(in srgb, var(--site-text) 7%, var(--site-glass-tint-strong));
 }
 
 /* The thumb. */

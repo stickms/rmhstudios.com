@@ -111,7 +111,7 @@ the surface _is_, not by how you want it to look — the tier decides the cost.
 | **L2** | `.glass-pane`    | Singular panels: heroes, composers, settings sections | Blur. Budgeted.                        |
 | **L3** | `.glass-chrome`  | Persistent chrome: sticky headers, rails, docks       | Blur; condenses on scroll.             |
 | **L4** | `.glass-overlay` | Floating UI: dialogs, popovers, menus, toasts         | Blur; more opaque so text can't ghost. |
-| —      | `.glass-inset`   | Recessed wells: inputs, search fields                 | A hole in the sheet.                   |
+| —      | `.glass-inset`   | Fields: inputs, search fields, tab tracks             | A flush pool of the glass. No shadow.  |
 | —      | `.glass-scrim`   | Dialog and drawer backdrops                           | —                                      |
 
 Modifiers (`.glass-interactive`, `.glass-refract`, `.glass-liquid`,
@@ -143,6 +143,16 @@ keyboard path.
 border-site-border rounded-site shadow-site-sm` renders the same _box_ as
 `.glass-fill` and none of its _material_ — no noise, no glint, and nothing for
 the degradation tiers to switch off. Reach for the tier.
+
+**Nothing is debossed.** Glass sits _on_ the page and is lit from above — the
+globe is the reference object: a specular bloom, a bright rim, depth that rises
+toward you. A dark inner shadow under a top edge reads the other way, as a slot
+carved _into_ the page, and that is not this material. Fields are the theme's ink
+at a whisper over the glass tint (`.glass-inset`): they grey slightly off a light
+page and lift slightly off a dark one, with a hairline and no shadow. An inset
+_highlight_ (a light top rim) is the glint and is fine; an inset _shadow_ is not.
+`design-consistency.test.ts` fails a site-tier `shadow-inner` or dark
+`shadow-[inset_…]` (audit: `docs/ui-perf-audit-2026-10-09.md`).
 
 **Budgets are real.** Backdrop blur is per-element GPU work: at most ~8 blurred
 surfaces per viewport, and **zero on repeated list items**. This is why L1 exists

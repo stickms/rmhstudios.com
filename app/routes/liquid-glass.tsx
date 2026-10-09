@@ -118,8 +118,8 @@ const TIERS = [
   {
     cls: 'glass-inset',
     name: '.glass-inset',
-    label: 'Inset',
-    note: 'Recessed wells — inputs, search fields. A hole in the glass — no ring, no slab.',
+    label: 'Field',
+    note: 'Fields — inputs, search fields, tab tracks. A flush pool of the glass, never a hole cut in it.',
   },
 ] as const;
 
@@ -653,7 +653,7 @@ function PrimitiveGallery() {
             <label htmlFor="lg-textarea" className="text-sm text-site-text-muted">
               Textarea
             </label>
-            <Textarea id="lg-textarea" placeholder="A longer, recessed text well…" />
+            <Textarea id="lg-textarea" placeholder="A longer text field…" />
           </div>
           <div className="flex flex-col gap-3">
             <span className="text-sm text-site-text-muted">Switch</span>
@@ -713,12 +713,12 @@ function PrimitiveGallery() {
 
       {/* EmptyState */}
       <div className="flex flex-col gap-3">
-        <GroupHeading>EmptyState — etched medallion</GroupHeading>
+        <GroupHeading>EmptyState — glass medallion</GroupHeading>
         <Card pane>
           <EmptyState
             icon={Wind}
             title="Nothing here yet"
-            description="The icon sits sandblasted into a recessed glass-inset medallion."
+            description="The icon rests on a small glass-fill medallion."
             action={
               <Button size="sm" variant="outline">
                 Take action

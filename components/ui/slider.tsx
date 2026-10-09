@@ -34,8 +34,9 @@ function Slider({
  <SliderPrimitive.Track
  data-slot="slider-track"
  className={cn(
- // Track = a recessed glass tube; range = accent liquid filling it.
- 'bg-site-border shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)] relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5',
+ // Track = a flush hairline of the theme's border ink (no inner shadow:
+ // the field tier is a fill, never a deboss); range = accent liquid in it.
+ 'bg-site-border relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5',
  )}
  >
  <SliderPrimitive.Range

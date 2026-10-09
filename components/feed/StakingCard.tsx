@@ -65,7 +65,7 @@ export function StakingCard() {
 
  if (loading) {
  return (
- <section className="rounded-site border border-site-border bg-site-surface p-4">
+ <section className="rounded-site glass-fill p-4">
  <div className="flex justify-center py-4">
  <Spinner size={20} />
  </div>
@@ -78,7 +78,7 @@ export function StakingCard() {
  const validAmt = Number.isFinite(amt) && amt > 0;
 
  return (
- <section className="rounded-site border border-site-border bg-site-surface p-4">
+ <section className="rounded-site glass-fill p-4">
  <div className="mb-3 flex items-center justify-between">
  <div className="flex items-center gap-2">
  <PiggyBank className="h-4 w-4 text-site-accent"/>
