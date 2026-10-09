@@ -1,0 +1,201 @@
+/* ==========================================================================
+   SITE-TIER ENTRY SHEET — what every `_site` page (and the content pages in
+   `lib/style-tier.ts`'s SITE_SHEET_ROUTES) loads, render-blocking.
+
+   It is `globals.css` — the one body every page shares — plus Tailwind's
+   utilities for the code that can render inside the site shell, and NOT for the
+   ~60 full-screen games and apps that never do. Tailwind's scanner cannot know
+   which page a class name ends up on, so before this split the site's only
+   stylesheet carried every utility any game used: 70 KB gzip render-blocking on
+   `/`, 77% of it Tailwind utilities, a large share of those from games no site
+   page renders (perf audit 2026-10-09, "CSS tiers").
+
+   Its sibling `app-tier.css` is the SUPERSET: the same body and every utility,
+   site and game alike. Full-screen routes load that one instead. Why a superset
+   rather than "site utilities here, game utilities there": React never removes a
+   stylesheet once it has inserted it, so after a visit to a game its sheet stays
+   in the document. Two partial sheets would then interleave in an order Tailwind
+   never sorted — a game sheet's `p-4` landing after the site sheet's `px-2` —
+   and change what a site page looks like. A superset that lingers only repeats
+   rules the site sheet already has, in the same relative order, so nothing can
+   change. `lib/style-tier.ts` is the other half of that guarantee (a document
+   that already holds the superset keeps using it).
+
+   THE LIST BELOW IS A MANIFEST, NOT A STYLE DECISION. Each line is a directory
+   or route file that is never imported from the site shell — checked, not
+   assumed: `lib/__tests__/style-tiers.test.ts` walks the import graph from
+   `__root`, `_site` and the site-sheet routes and fails if any of them reaches
+   an excluded path (that would be a site page missing its utilities), and fails
+   if a game/app-only directory is missing from this list (that would be its
+   utilities back on every page). The test prints the line to add or remove.
+   ========================================================================== */
+@import 'tailwindcss';
+@import './globals.css';
+
+/* Full-screen games and apps — components/ and lib/ directories no site page imports. */
+@source not "../components/altair";
+@source not "../components/blm";
+@source not "../components/breaches";
+@source not "../components/breakpoint";
+@source not "../components/bums-rush";
+@source not "../components/cookgame";
+@source not "../components/covid";
+@source not "../components/cursed-logic";
+@source not "../components/daily-puzzles";
+@source not "../components/design";
+@source not "../components/doctrine";
+@source not "../components/dream-rift";
+@source not "../components/dunesday";
+@source not "../components/forest-explorer";
+@source not "../components/gabriels-horn";
+@source not "../components/house-always-wins";
+@source not "../components/isleworks";
+@source not "../components/kaikai-debt";
+@source not "../components/kowloon-knockout";
+@source not "../components/laundry-sort";
+@source not "../components/lights-out";
+@source not "../components/lockdown";
+@source not "../components/massive-march";
+@source not "../components/neon-driftway";
+@source not "../components/nightrail";
+@source not "../components/optimization";
+@source not "../components/pf2ecal";
+@source not "../components/rebar-rutabaga";
+@source not "../components/render";
+@source not "../components/replays";
+@source not "../components/rmh-capital";
+@source not "../components/rmh-farming-sim";
+@source not "../components/rmh-pmc";
+@source not "../components/rmhbox";
+@source not "../components/rmhcalculator";
+@source not "../components/rmhcode";
+@source not "../components/rmhstudy";
+@source not "../components/rmhtech";
+@source not "../components/rmhtube";
+@source not "../components/rmhtype";
+@source not "../components/security";
+@source not "../components/signal-forge";
+@source not "../components/sohumbum";
+@source not "../components/sohumtracker";
+@source not "../components/studio";
+@source not "../components/synapse-storm";
+@source not "../components/temple-of-joy";
+@source not "../components/vega";
+@source not "../components/velum2099";
+@source not "../components/versecraft";
+@source not "../components/void-breaker";
+@source not "../lib/altair";
+@source not "../lib/audio";
+@source not "../lib/breakpoint";
+@source not "../lib/bums-rush";
+@source not "../lib/cookgame";
+@source not "../lib/cursed-logic";
+@source not "../lib/daily-puzzles";
+@source not "../lib/doctrine";
+@source not "../lib/dream-rift";
+@source not "../lib/dunesday";
+@source not "../lib/forest-explorer";
+@source not "../lib/gabriels-horn";
+@source not "../lib/game-saves";
+@source not "../lib/globeset";
+@source not "../lib/house-always-wins";
+@source not "../lib/isleworks";
+@source not "../lib/kaikai-debt";
+@source not "../lib/kowloon-knockout";
+@source not "../lib/laundry-sort";
+@source not "../lib/lights-out";
+@source not "../lib/massive-march";
+@source not "../lib/neon-driftway";
+@source not "../lib/nightrail";
+@source not "../lib/pf2ecal";
+@source not "../lib/pwa";
+@source not "../lib/rebar-rutabaga";
+@source not "../lib/rmh-farming-sim";
+@source not "../lib/rmhbox";
+@source not "../lib/rmhcalculator";
+@source not "../lib/rmhstudy";
+@source not "../lib/rmhtube";
+@source not "../lib/rmhtype";
+@source not "../lib/signal-forge";
+@source not "../lib/sohumtracker";
+@source not "../lib/store";
+@source not "../lib/studio";
+@source not "../lib/synapse-storm";
+@source not "../lib/temple-of-joy";
+@source not "../lib/vega";
+@source not "../lib/velum2099";
+@source not "../lib/versecraft";
+@source not "../lib/void-breaker";
+
+/* Their route files (top-level routes that render one of the directories above). */
+@source not "./routes/adaptive-intelligence.tsx";
+@source not "./routes/altair.tsx";
+@source not "./routes/altair";
+@source not "./routes/black-lives-matter.tsx";
+@source not "./routes/breaches.tsx";
+@source not "./routes/bums-rush.tsx";
+@source not "./routes/cookgame.tsx";
+@source not "./routes/cookies.tsx";
+@source not "./routes/copyright.tsx";
+@source not "./routes/covid.tsx";
+@source not "./routes/daily.tsx";
+@source not "./routes/daily";
+@source not "./routes/design.tsx";
+@source not "./routes/discord";
+@source not "./routes/dream-rift.tsx";
+@source not "./routes/dunesday.tsx";
+@source not "./routes/embed.replay.$id.tsx";
+@source not "./routes/forest-explorer.tsx";
+@source not "./routes/forest-explorer";
+@source not "./routes/gabriels-horn.tsx";
+@source not "./routes/house-always-wins.tsx";
+@source not "./routes/isleworks.tsx";
+@source not "./routes/kaikaidebtcounter.tsx";
+@source not "./routes/kowloon-knockout.tsx";
+@source not "./routes/kowloon-knockout";
+@source not "./routes/laundry-sort.tsx";
+@source not "./routes/massive-march.tsx";
+@source not "./routes/neon-driftway.tsx";
+@source not "./routes/nightrail.tsx";
+@source not "./routes/optimization.tsx";
+@source not "./routes/pf2ecal.tsx";
+@source not "./routes/privacy.tsx";
+@source not "./routes/replays.$id.tsx";
+@source not "./routes/rmh-capital.tsx";
+@source not "./routes/rmh-capital";
+@source not "./routes/rmh-farming-sim.tsx";
+@source not "./routes/rmh-farming-sim";
+@source not "./routes/rmh-pmc.tsx";
+@source not "./routes/rmh-pmc";
+@source not "./routes/rmhbox.tsx";
+@source not "./routes/rmhbox";
+@source not "./routes/rmhcalculator.tsx";
+@source not "./routes/rmhcode.tsx";
+@source not "./routes/rmhcode";
+@source not "./routes/rmhstudy.tsx";
+@source not "./routes/rmhstudy";
+@source not "./routes/rmhtube.tsx";
+@source not "./routes/rmhtube";
+@source not "./routes/rmhtype.tsx";
+@source not "./routes/rmhtype";
+@source not "./routes/rochester-offensive.tsx";
+@source not "./routes/secret.tsx";
+@source not "./routes/secret";
+@source not "./routes/security.tsx";
+@source not "./routes/services.rebar-rutabaga.tsx";
+@source not "./routes/slice-it.tsx";
+@source not "./routes/slice-it";
+@source not "./routes/sohumbum.tsx";
+@source not "./routes/sohumtracker";
+@source not "./routes/strategies.tsx";
+@source not "./routes/strategies";
+@source not "./routes/studio.tsx";
+@source not "./routes/studio";
+@source not "./routes/synapse-storm.tsx";
+@source not "./routes/temple-of-joy.tsx";
+@source not "./routes/temple-of-joy";
+@source not "./routes/terms.tsx";
+@source not "./routes/velum2099.tsx";
+@source not "./routes/versecraft.tsx";
+@source not "./routes/versecraft";
+@source not "./routes/void-breaker.tsx";

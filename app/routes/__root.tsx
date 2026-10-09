@@ -49,7 +49,11 @@ import { GLASS_LEVEL_VARS, GLASS_LEVEL_KEY } from '@/lib/appearance/prefs';
 import { PERF_TIER_SCRIPT } from '@/lib/perf-tier';
 import { MEDIA_REVEAL_SCRIPT } from '@/lib/media-reveal';
 import { COOKIE_CONSENT_SCRIPT } from '@/lib/cookie-consent';
-import appCss from '@/app/globals.css?url';
+// Two entry sheets over the one `globals.css` body — app/site-tier.css explains
+// the split, lib/style-tier.ts picks per route.
+import siteTierCss from '@/app/site-tier.css?url';
+import appTierCss from '@/app/app-tier.css?url';
+import { hasStylesheet, styleTierFor } from '@/lib/style-tier';
 // The Latin subset of the self-hosted body font. Imported for its hashed URL so
 // the document can PRELOAD it — see the `links` block in `head()` below.
 import interLatinWoff2 from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
@@ -443,6 +447,13 @@ export const Route = createRootRoute({
     // restores the flag before running this head, so both sides emit the same
     // script.
     const globalNotFound = ctx.match?._notFound === true;
+    const appCss =
+      styleTierFor(
+        (ctx.matches ?? []).map((m) => m.routeId),
+        hasStylesheet(appTierCss),
+      ) === 'app'
+        ? appTierCss
+        : siteTierCss;
 
     if (discord) {
       // Minimal head for a Discord Activity: no external fonts, no preconnects,
@@ -525,9 +536,9 @@ export const Route = createRootRoute({
         },
         // Inter's Latin subset, requested in parallel with the stylesheet rather
         // than after it. A font declared inside a stylesheet is not discoverable
-        // until that sheet has been downloaded AND parsed, and globals.css is
-        // 433 KB — so the 47 KB font that renders essentially all of the page's
-        // text used to start on the far side of that, and `font-display: swap`
+        // until that sheet has been downloaded AND parsed, and the entry sheet
+        // is ~315 KB on a site page — so the 47 KB font that renders essentially
+        // all of the page's text used to start on the far side of that, and `font-display: swap`
         // paid for it with a visible fallback-to-Inter reflow. Only the Latin
         // subset is preloaded: the other six (Cyrillic, Greek, Vietnamese, …)
         // stay behind their `unicode-range` so a Latin-script visitor never

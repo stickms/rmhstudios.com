@@ -9,11 +9,12 @@
  *
  * ## Why every DetailComponent is `lazy()`
  *
- * This module is imported for its side effects by
- * `app/routes/rmhbox/minigames/$minigameId/history.tsx`, and `routeTree.gen.ts`
- * imports every route module statically — so whatever this file pulls in ends up
- * in the SHARED CLIENT ENTRY that every page of the site loads before it can
- * hydrate. Importing the nine detail views eagerly put **46.9 KB of
+ * This module is imported for its side effects — today through
+ * `./history-display.ts`, which keeps it out of the route definition (until
+ * 2026-10-09 `app/routes/rmhbox/minigames/$minigameId/history.tsx` imported it
+ * directly, and `routeTree.gen.ts` imports every route module statically) — so
+ * whatever this file pulls in could end up in the SHARED CLIENT ENTRY that every
+ * page of the site loads before it can hydrate. Importing the nine detail views eagerly put **46.9 KB of
  * `components/rmhbox`** there, plus a Twemoji library (13.6 KB — then the
  * archived `twemoji-parser`, now `@twemoji/api`) which only
  * `EmojiCinemaHistoryDetail` reaches, on the homepage's critical path.

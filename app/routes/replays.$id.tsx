@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Clock, Trophy } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { getReplay } from '@/lib/replays.server';
-import { REPLAY_GAME_TITLES } from '@/lib/game/replay';
+import { REPLAY_GAME_TITLES } from '@/lib/game/replay-meta';
 import { buildMeta, buildCanonical, ogCardPath } from '@/lib/seo';
 import { GameReplayPlayer } from '@/components/replays/GameReplayPlayer';
 

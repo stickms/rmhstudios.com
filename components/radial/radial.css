@@ -2238,12 +2238,6 @@ html.ios-webkit .radial-hub__veil {
   font-size: clamp(1rem, 4vw, 1.3rem);
   letter-spacing: 0.1em;
 }
-.radial-core__count {
-  font-size: 0.62rem;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.08em;
-  opacity: 0.72;
-}
 
 /* ── RMHark card ──────────────────────────────────────────────────────── */
 .rmhark__link {
@@ -3006,7 +3000,7 @@ html.ios-webkit .radial-hub__veil {
    nav, so it re-runs — carrying the home's flowy feel to every page. The
    no-preference gate turns it off under reduced-motion. */
 @media (prefers-reduced-motion: no-preference) {
-  .radial-shell:not([data-home]) :is(.page-heading, .lib-hero, .cstudio-head) {
+  .radial-shell:not([data-home]) .page-heading {
     animation: radial-page-rise 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)) both;
   }
 }
@@ -3142,7 +3136,6 @@ html.ios-webkit .radial-hub__veil {
   .rad-rail__item,
   .rad-live__row,
   .rad-deck__row,
-  .rad-deck__tab,
   .rad-panel__row,
   .rad-panel__identity,
   .rad-panel__more {

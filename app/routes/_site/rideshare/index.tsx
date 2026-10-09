@@ -82,7 +82,7 @@ const RIDER_STEPS_KEYS = [
   },
 ];
 
-export function RideshareLanding() {
+function RideshareLanding() {
   const { t } = useTranslation('rideshare');
   return (
     <PageLayout title="RMH Rideshare" wide>

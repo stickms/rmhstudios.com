@@ -15,15 +15,6 @@
   overflow-x: clip;
 }
 
-.site-shell__main {
-  display: block;
-  width: 100%;
-  min-width: 0;
-  margin-inline: auto;
-  padding: 0.75rem 0 0;
-  outline: none;
-}
-
 [data-slot='site-main-column'] {
   min-width: 0;
 }
@@ -49,236 +40,6 @@
   box-shadow: 0 1px 0 color-mix(in srgb, var(--site-text) 2%, transparent);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-}
-
-.site-nav__bar,
-.site-nav__tabs {
-  width: min(100%, 1280px);
-  margin-inline: auto;
-}
-
-.site-nav__bar {
-  display: flex;
-  min-height: 3.75rem;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: max(0.35rem, env(safe-area-inset-top)) 0.75rem 0.35rem;
-}
-
-.site-nav__identity,
-.site-nav__brand,
-.site-nav__wordmark,
-.site-nav__utilities,
-.site-nav__utility,
-.site-nav__profile {
-  display: flex;
-  align-items: center;
-}
-
-.site-nav__identity {
-  min-width: 0;
-}
-
-.site-nav__menu {
-  margin-inline: -0.55rem 0.15rem;
-}
-
-.site-nav__brand {
-  min-width: 0;
-  gap: 0.6rem;
-  color: var(--site-text);
-}
-
-.site-nav__mark {
-  display: grid;
-  width: 2rem;
-  height: 2rem;
-  flex: 0 0 auto;
-  place-items: center;
-  border-radius: 0.65rem;
-  /* Monochrome mark — an inverted chip (ink in light, paper in dark), never a
-     coloured badge. Keeps the wordmark strictly black/white. */
-  background: var(--site-text);
-  color: var(--site-bg);
-  font-size: 0.9rem;
-  font-weight: 800;
-  letter-spacing: -0.05em;
-}
-
-.site-nav__wordmark {
-  min-width: 0;
-  flex-direction: column;
-  align-items: flex-start;
-  line-height: 1.05;
-}
-
-.site-nav__wordmark strong {
-  font-size: 0.9rem;
-  font-weight: 800;
-  letter-spacing: -0.035em;
-}
-
-.site-nav__wordmark small {
-  margin-top: 0.18rem;
-  color: var(--site-text-dim);
-  font-size: 0.625rem;
-  font-weight: 650;
-}
-
-.site-nav__utilities {
-  flex-shrink: 0;
-  gap: 0.25rem;
-}
-
-.site-nav__utility,
-.site-nav__profile {
-  min-width: 2.75rem;
-  min-height: 2.75rem;
-  justify-content: center;
-  border-radius: var(--site-control-radius);
-  color: var(--site-text-muted);
-  transition:
-    color 200ms var(--ease-out, ease),
-    background-color 200ms var(--ease-out, ease),
-    transform var(--site-press-duration, 160ms) var(--ease-out, ease);
-}
-
-.site-nav__utility svg {
-  width: 1.15rem;
-  height: 1.15rem;
-  stroke-width: 1.9;
-}
-
-.site-nav__profile {
-  padding-inline: 0.8rem;
-  background: var(--site-accent);
-  color: var(--site-accent-fg);
-  font-size: 0.75rem;
-  font-weight: 750;
-}
-
-.site-nav__profile:has(img) {
-  padding: 0.25rem;
-  background: var(--site-surface);
-}
-
-.site-nav__tabs {
-  display: flex;
-  gap: 0.15rem;
-  overflow-x: auto;
-  padding: 0 0.6rem 0.45rem;
-  overscroll-behavior-x: contain;
-  scrollbar-width: none;
-  scroll-padding-inline: 0.6rem;
-  touch-action: pan-x pan-y;
-}
-
-.site-nav__tabs::-webkit-scrollbar {
-  display: none;
-}
-
-.site-nav__tab {
-  position: relative;
-  display: inline-flex;
-  min-height: 2.4rem;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  padding-inline: 0.85rem;
-  border-radius: 0.75rem;
-  color: var(--site-text-muted);
-  font-size: 0.78rem;
-  font-weight: 560;
-  letter-spacing: -0.01em;
-  white-space: nowrap;
-  transition:
-    color 200ms var(--ease-out, ease),
-    background-color 200ms var(--ease-out, ease);
-}
-
-/* Active tab stays strictly monochrome — strong ink text with one hairline
-   accent underline as the single restrained hint of colour. */
-.site-nav__tab[data-active] {
-  color: var(--site-text);
-  font-weight: 640;
-}
-
-.site-nav__tab[data-active]::after {
-  content: '';
-  position: absolute;
-  right: 0.85rem;
-  bottom: -0.42rem;
-  left: 0.85rem;
-  height: 2px;
-  border-radius: 999px;
-  background: var(--site-accent);
-}
-
-/* Bottom dock */
-
-.mobile-dock {
-  position: fixed;
-  z-index: 50;
-  right: 0.5rem;
-  bottom: calc(0.5rem + env(safe-area-inset-bottom));
-  left: 0.5rem;
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  min-height: 4.25rem;
-  padding: 0.35rem;
-  border: 1px solid var(--site-border);
-  border-radius: 1.35rem;
-  background: color-mix(in srgb, var(--site-surface) 92%, transparent);
-  box-shadow: var(--site-shadow);
-  backdrop-filter: blur(22px) saturate(140%);
-  -webkit-backdrop-filter: blur(22px) saturate(140%);
-}
-
-.mobile-dock__link {
-  display: flex;
-  min-width: 0;
-  min-height: 3.5rem;
-  align-items: center;
-  justify-content: center;
-  gap: 0.18rem;
-  flex-direction: column;
-  border-radius: 1rem;
-  color: var(--site-text-dim);
-  font-size: 0.58rem;
-  font-weight: 700;
-}
-
-.mobile-dock__link svg {
-  width: 1.15rem;
-  height: 1.15rem;
-  stroke-width: 1.9;
-}
-
-.mobile-dock__link[data-active] {
-  color: var(--site-accent);
-  background: var(--site-accent-dim);
-}
-
-.mobile-dock__link[data-primary] {
-  width: 3.15rem;
-  min-width: 3.15rem;
-  height: 3.15rem;
-  min-height: 3.15rem;
-  align-self: center;
-  justify-self: center;
-  border-radius: 1rem;
-  background: var(--site-accent);
-  color: var(--site-accent-fg);
-}
-
-.mobile-dock__link[data-primary] span {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
 }
 
 /* Page headers */
@@ -644,15 +405,6 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .site-nav__utility:hover {
-    background: var(--site-surface-hover);
-    color: var(--site-text);
-  }
-
-  .site-nav__tab:hover,
-  .mobile-dock__link:hover {
-    color: var(--site-accent);
-  }
 
   .social-post:hover {
     border-color: var(--site-border-bright);
@@ -667,10 +419,6 @@
    now, and that rule presses it with the independent `scale` property. Leaving
    it here would apply BOTH, and a `transform: scale()` multiplied by a `scale`
    is a 0.94 double-squish (globals.css §glass-interactive:active). */
-.site-nav__utility:active,
-.site-nav__profile:active,
-.site-nav__tab:active,
-.mobile-dock__link:active,
 .feed-tabs button:active {
   transform: scale(0.97);
 }
@@ -819,32 +567,6 @@
 }
 
 @media (min-width: 768px) {
-  .site-shell__main {
-    display: flex;
-    width: min(100%, 1280px);
-    align-items: flex-start;
-    gap: 1.5rem;
-    padding: 1.5rem;
-  }
-
-  .site-nav__bar {
-    min-height: 4rem;
-    padding-inline: 1.25rem;
-  }
-
-  .site-nav__tabs {
-    padding-inline: 1.1rem;
-  }
-
-  .site-nav__menu,
-  .mobile-dock {
-    display: none;
-  }
-
-  .site-nav__mark {
-    width: 2.15rem;
-    height: 2.15rem;
-  }
 
   .page-heading,
   .feed-search,
@@ -884,20 +606,7 @@
   }
 }
 
-@media (min-width: 1024px) {
-  .site-nav__tabs {
-    justify-content: center;
-  }
-}
-
 @media (max-width: 419px) {
-  .site-nav__wordmark small {
-    display: none;
-  }
-
-  .site-nav__mark {
-    display: none;
-  }
 
   .feed-heading__live {
     padding-inline: 0.55rem;
@@ -910,8 +619,7 @@
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .site-nav,
-  .mobile-dock {
+  .site-nav {
     background: var(--site-surface);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
@@ -919,10 +627,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .site-nav__utility,
-  .site-nav__profile,
-  .site-nav__tab,
-  .mobile-dock__link,
   .feed-tabs button,
   .social-post {
     transform: none !important;

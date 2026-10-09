@@ -15,11 +15,9 @@ import { Select } from '@/components/ui/select';
 import { ChevronDown, ChevronUp, Search, ArrowUpDown, Filter } from 'lucide-react';
 import RMHboxHeader from '@/components/rmhbox/RMHboxHeader';
 import { MINIGAME_REGISTRY } from '@/lib/rmhbox/minigame-registry';
-import { getHistoryDisplay } from '@/lib/rmhbox/history-display-registry';
-import type { GameLog } from '@/lib/rmhbox/history-display-registry';
-
-// Ensure history display registrations are loaded
-import '@/lib/rmhbox/history-display-registrations';
+// From `history-display`, not the bare registry: it loads the registrations
+// too, and keeps them with this route's component chunk (see that module).
+import { getHistoryDisplay, type GameLog } from '@/lib/rmhbox/history-display';
 
 interface MatchEntry {
   id: string;

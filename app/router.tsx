@@ -3,6 +3,8 @@ import { routeTree } from './routeTree.gen';
 import { RoutePending } from '@/components/ui/RoutePending';
 import { startViewportPrefetch } from '@/lib/viewport-prefetch';
 import { installNotFoundHeadGuard } from '@/lib/router/not-found-head';
+import { installStyleTierPreload } from '@/lib/style-tier';
+import appTierCss from '@/app/app-tier.css?url';
 
 // `getRouter()` runs once per client page load and once per SSR request. The
 // viewport prefetcher is a browser-only, page-lifetime singleton, so it is
@@ -62,6 +64,9 @@ export function getRouter() {
   if (typeof document !== 'undefined' && !viewportPrefetchStarted) {
     viewportPrefetchStarted = true;
     startViewportPrefetch(router);
+    // A switch from a site page into a game or app needs the app-tier sheet;
+    // start it alongside the route's chunk rather than after (lib/style-tier.ts).
+    installStyleTierPreload(router, appTierCss);
   }
 
   return router;

@@ -236,8 +236,14 @@ useful (turning the globe) keeps working.
 
 ## 1. The token contract (`app/globals.css`)
 
-Tailwind v4 is imported at the top of `app/globals.css`; an `@theme inline`
-block binds the `--site-*` variables to utility classes. The `:root` block is
+Tailwind v4 is imported by the two **entry sheets** that wrap `app/globals.css`
+— `app/site-tier.css` (what `_site` pages load; it skips the utilities only
+full-screen games and apps use) and `app/app-tier.css` (the superset every
+full-screen route loads). `lib/style-tier.ts` picks one per route, and
+`lib/__tests__/style-tiers.test.ts` keeps the site sheet's skip list honest;
+`app/site-tier.css`'s header explains why the app tier is a superset. Inside
+`globals.css`, an `@theme inline` block binds the `--site-*` variables to
+utility classes. The `:root` block is
 the **default theme** — the strict-monochrome Radial Avant-Garde Glass baseline (a
 light palette: white canvas, ink text and accent). At runtime the default is the
 **absence** of any `.style-*` class on `<html>`; a `.style-default` block also

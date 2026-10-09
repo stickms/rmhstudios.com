@@ -25,169 +25,20 @@ import {
   MAX_SONG_DURATION_SEC,
   SONGS_PAGE_SIZE,
   SONGS_PAGE_SIZE_MAX,
-  SONG_SORTS,
-  type SongSort,
 } from './constants';
 import { SONG_GENRES, normaliseTags } from './taxonomy';
 import type { SliceSong, SongPage } from './types';
+import {
+  LIBRARY_SORTS,
+  SORT_DIRECTIONS,
+  type LibrarySort,
+  type SortDirection,
+} from './library-search';
 
-/* ─── Sorting ────────────────────────────────────────────────────────────── */
-
-/**
- * Sort keys the table's columns need that the grid's dropdown never did:
- * `artist`, `bpm` and `plays` are plain `Song` columns the grid just never
- * exposed a control for; `yourScore` needs a per-viewer join (see the route).
- */
-/**
- * `relevance` (L14) is here rather than in `SONG_SORTS` for the same reason the
- * other four are: it is not part of the vocabulary the wider game agrees on. It
- * is also the one sort that is *undefined without a query* — there is no
- * relevance ordering for "show me everything" — so the route falls back to
- * `recent` when `q` is empty, and the library defaults to it whenever a search
- * IS typed. That default is the actual fix L14 asks for: before it, typing a
- * query re-filtered the list and left it ordered by upload date.
- */
-export const LIBRARY_EXTRA_SORTS = ['artist', 'bpm', 'plays', 'yourScore', 'relevance'] as const;
-export type LibraryExtraSort = (typeof LIBRARY_EXTRA_SORTS)[number];
-
-export const LIBRARY_SORTS = [...SONG_SORTS, ...LIBRARY_EXTRA_SORTS] as const;
-export type LibrarySort = SongSort | LibraryExtraSort;
-
-export const SORT_DIRECTIONS = ['asc', 'desc'] as const;
-export type SortDirection = (typeof SORT_DIRECTIONS)[number];
-
-/**
- * The direction a sort runs when the caller does not say — i.e. what the grid's
- * dropdown already meant by each of the five base {@link SongSort} values, plus
- * a sensible default for the four table-only ones.
- */
-export const DEFAULT_SORT_DIRECTION: Record<LibrarySort, SortDirection> = {
-  recent: 'desc',
-  popular: 'desc',
-  liked: 'desc',
-  title: 'asc',
-  duration: 'asc',
-  /** Hardest first — "find something at my level" is asked upward, not down. */
-  difficulty: 'desc',
-  artist: 'asc',
-  bpm: 'asc',
-  plays: 'desc',
-  yourScore: 'desc',
-  /** Best match first. `asc` on relevance is not a thing anyone wants. */
-  relevance: 'desc',
-};
-
-/** Sort keys that need a signed-in viewer to mean anything. */
-export const AUTH_ONLY_SORTS: readonly LibrarySort[] = ['yourScore'];
-
-/* ─── View mode ──────────────────────────────────────────────────────────── */
-
-export const LIBRARY_VIEWS = ['grid', 'table'] as const;
-export type LibraryView = (typeof LIBRARY_VIEWS)[number];
-
-/* ─── URL search params (L18) ───────────────────────────────────────────── */
-
-/**
- * `validateSearch` for `/slice-it/`. Every field has a `.catch()` fallback, so
- * parsing an arbitrary (hand-edited, stale, or malformed) URL can never throw —
- * a bad `?sort=` degrades to `recent` rather than 500ing the route.
- *
- * `.passthrough()` — this route already carries an unrelated search param
- * (`?lobby=<code>`, the multiplayer join-by-link code read by `MainMenu.tsx`/
- * `MultiplayerLobby.tsx` via `useSearch({ strict: false })`). A plain
- * `z.object()` would silently strip anything not listed here, which is exactly
- * how library filters would end up breaking join links neither owns. Passing
- * unknown keys through untouched keeps the two concerns independent.
- */
-export const librarySearchSchema = z
-  .object({
-    /**
-     * `.default()` on every field, and it is load-bearing for the whole app —
-     * not a style choice.
-     *
-     * TanStack derives a `Link`'s required `search` prop from this schema's
-     * INPUT type. Without a default, `q` is a required input, so every
-     * `<Link to="/slice-it">` anywhere in the codebase must pass a full filter
-     * object — which broke three unrelated files (the chart editor's back link,
-     * the library's own navigate, the player profile) the moment this route
-     * gained `validateSearch`. `.default()` makes the input optional and the
-     * output defined, so a bare link still works and readers still get a value.
-     */
-    q: z.string().trim().max(120).default('').catch(''),
-    sort: z.enum(LIBRARY_SORTS).default('recent').catch('recent'),
-    /**
-     * L15 — the artist facet. A normalised `artistKey`, never a display name:
-     * this value goes into an equality filter against an indexed column, and
-     * putting the typed spelling in the URL would put the substring bug back.
-     * Built by `artistKeyOf()` in `lib/slice-it/artist.ts`.
-     */
-    artist: z.string().trim().max(200).optional().catch(undefined),
-    /**
-     * L16 — the library filtered to one pack, in the pack's own order. A pack
-     * is a view of the library rather than a separate screen, so it reuses the
-     * card, the lamps, the preview and the score column instead of a second
-     * list that would have to grow all of them again.
-     */
-    packId: z.string().uuid().optional().catch(undefined),
-    /** Only meaningful for the table's per-column toggle; the grid ignores it. */
-    dir: z.enum(SORT_DIRECTIONS).optional().catch(undefined),
-    view: z.enum(LIBRARY_VIEWS).default('grid').catch('grid'),
-  })
-  .passthrough()
-  /**
-   * Never throws.
-   *
-   * Each field already `.catch()`es, which covers a bad *value* — but not a
-   * payload that is not an object at all. TanStack Router hands `validateSearch`
-   * whatever is in the URL, so `?` garbage, a hand-edited link or a stale
-   * bookmark can produce `null` or a string here, and a throw at that point
-   * fails the navigation rather than the filter. Same reasoning as `ModifiersZ`
-   * in `lib/slice-it/modifiers.ts`: clamp to something usable, never hang up on
-   * the caller.
-   */
-  .catch(() => ({ ...DEFAULT_LIBRARY_SEARCH }));
-export type LibrarySearch = z.infer<typeof librarySearchSchema>;
-
-export const DEFAULT_LIBRARY_SEARCH: LibrarySearch = {
-  q: '',
-  sort: 'recent',
-  artist: undefined,
-  dir: undefined,
-  view: 'grid',
-};
-
-/**
- * The sort a browse should run under, given what the user has actually asked
- * for (L14).
- *
- * Two rules, and they are the difference between "search works" and "search
- * returns the right rows in the wrong order":
- *
- * - A query with the *default* sort still selected means the user typed words
- *   and expressed no opinion about ordering — that is a request for relevance,
- *   not for "newest of the things that matched".
- * - `relevance` with no query has nothing to rank by, so it degrades to
- *   `recent` rather than producing an arbitrary order. This is reachable from a
- *   hand-edited URL and from clearing the search box with the sort left alone.
- */
-export function effectiveLibrarySort(sort: LibrarySort, query: string | undefined): LibrarySort {
-  const hasQuery = Boolean(query && query.trim());
-  if (!hasQuery) return sort === 'relevance' ? 'recent' : sort;
-  return sort === 'recent' ? 'relevance' : sort;
-}
-
-/**
- * Re-normalize whatever `useSearch({ strict: false })` hands back.
- *
- * `validateSearch` on the route already does this once at navigation time;
- * this second pass is a defensive backstop for callers (both `SongLibrary` and
- * `MultiplayerLobby` mount under `/slice-it/`) that read search loosely typed
- * rather than through `Route.useSearch()`, and it is cheap enough to always run.
- */
-export function normalizeLibrarySearch(raw: unknown): LibrarySearch {
-  const parsed = librarySearchSchema.safeParse(raw && typeof raw === 'object' ? raw : {});
-  return parsed.success ? parsed.data : { ...DEFAULT_LIBRARY_SEARCH };
-}
+// The URL contract (sorts, views, the `/slice-it/` validator) lives in a
+// zod-free module so the route definition can import it; re-exported here so
+// the components and the API route keep one import path.
+export * from './library-search';
 
 /* ─── API query params ──────────────────────────────────────────────────── */
 
