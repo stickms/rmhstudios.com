@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, lazy, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Link, useLocation } from '@tanstack/react-router';
+import { Link, useLocation, useRouterState } from '@tanstack/react-router';
 import { Bell, MessageCircle, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useResolvedUser, useSession } from '@/components/Providers';
@@ -332,8 +332,17 @@ interface RadialShellProps {
  */
 export function RadialShell({ children, overlays }: RadialShellProps) {
   const { t } = useTranslation('common');
-  const { pathname } = useLocation();
-  const isHome = pathname === '/';
+  // The home layout follows the page actually ON SCREEN, not the URL. The URL
+  // changes the instant a navigation starts, while the outgoing page stays
+  // rendered until the incoming one (or its pending skeleton) commits — so
+  // keying the shell on `pathname` dropped the home spacing under the still-
+  // visible feed and jolted it 14px for a frame on every switch away from Home
+  // (docs/ui-perf-audit-2026-10-09.md, SLOW-3). `resolvedLocation` moves with
+  // the commit; it is unset only before the first resolve, where the two agree.
+  const renderedPathname = useRouterState({
+    select: (s) => (s.resolvedLocation ?? s.location).pathname,
+  });
+  const isHome = renderedPathname === '/';
   const [railSlot, setRailSlot] = useState<HTMLElement | null>(null);
   const railSlotRef = useRef<HTMLDivElement | null>(null);
 

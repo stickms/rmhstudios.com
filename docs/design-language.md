@@ -808,6 +808,18 @@ gated off there too, via `html.app-route`).
 
 ## 7. Motion
 
+- **Arrivals fade in — automatically.** Two site-wide mechanisms make a slow
+  connection read as "filling in" rather than "popping in", and neither needs
+  anything from a component: every `<img>` fades from 0 to 1 as its bytes land
+  (`lib/media-reveal.ts` + globals.css), and content that replaces a
+  `Skeleton`, `Spinner`, `[data-skeleton]` or `[aria-busy="true"]` placeholder
+  fades in (`lib/swap-reveal.ts`). Both are opacity-only (they cannot shift
+  layout), skip reduced motion, and never touch the LCP image
+  (`fetchpriority="high"`). So: **render a canonical placeholder while you wait**
+  (it is what the reveal keys on), **reserve the content's box** (width/height
+  or aspect-ratio on media, a skeleton the size of what replaces it), and put
+  `data-no-reveal` on anything that must not fade (a live value that updates
+  in place). Do not hand-roll a per-component fade for the same job.
 - **Radial motion (the shipped layer).** The radial UI is CSS/rAF-driven and
   framer-motion-free for the shell: the feed **wheel** rakes each card onto a
   shallow cylinder from a **scroll-driven CSS animation** (`animation-timeline:
