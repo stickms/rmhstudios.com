@@ -400,6 +400,12 @@ interface LiquidGlobeProps {
    * not a control is a drag surface; see the listener that consumes this.
    */
   surfaceRef?: RefObject<HTMLElement | null>;
+  /**
+   * An invisible warm-up mount (see RadialHub's rehearsal). Everything runs —
+   * the mount, the canvas, the first frames — except anything a person could
+   * feel: no haptics. Fixed for the life of the mount.
+   */
+  rehearsal?: boolean;
 }
 
 export function LiquidGlobe({
@@ -409,12 +415,16 @@ export function LiquidGlobe({
   tabIndex,
   rootRef,
   surfaceRef,
+  rehearsal = false,
 }: LiquidGlobeProps) {
   const { t } = useTranslation('feed');
   const navigate = useNavigate();
   const reduced = useReducedMotion();
 
   const nodes = useMemo(() => place(items), [items]);
+  // Read through a ref so the frame loop and handlers can check it without it
+  // becoming an effect dependency; it never changes for a given mount.
+  const quiet = useRef(rehearsal);
 
   const stageRef = useRef<HTMLDivElement | null>(null);
   const cageRef = useRef<HTMLCanvasElement | null>(null);
@@ -548,6 +558,11 @@ export function LiquidGlobe({
     rot.current.pitch = n ? clamp(-n.lat + 9, -PITCH_LIMIT, PITCH_LIMIT) : -8;
     rot.current.vYaw = 0;
     rot.current.vPitch = 0;
+    // A rehearsal turns the globe half a revolution on the settle spring, so the
+    // frame loop's projection, magnet and paint run hot for every frame of the
+    // warm-up. A globe that sits still paints once and goes idle — which left the
+    // first REAL open running that code cold.
+    if (quiet.current) settle.current = { yaw: rot.current.yaw + 180, pitch: rot.current.pitch };
     dirty.current = true;
     // Orientation is chosen once per mount (the hub mounts this on open), not on
     // every route change behind an open menu.
@@ -636,7 +651,7 @@ export function LiquidGlobe({
 
   const go = useCallback(
     (node: GlobeNode) => {
-      vibrate(18);
+      if (!quiet.current) vibrate(18);
       swallowClick.current = true;
       if (node.external) {
         window.location.href = node.href;
@@ -1343,7 +1358,7 @@ export function LiquidGlobe({
           readyRef.current = false;
           setReady(false);
         }
-        if (lockIdx >= 0) vibrate(6);
+        if (lockIdx >= 0 && !quiet.current) vibrate(6);
       }
       // Both rates ride the frozen dwell, so a confident lock also drains
       // proportionally fast — the ring keeps one consistent sense of "how much
@@ -1357,7 +1372,7 @@ export function LiquidGlobe({
       if (clamped >= 1 && !readyRef.current) {
         readyRef.current = true;
         setReady(true);
-        vibrate([10, 30, 16]);
+        if (!quiet.current) vibrate([10, 30, 16]);
       } else if (clamped < 1 && readyRef.current) {
         readyRef.current = false;
         setReady(false);
