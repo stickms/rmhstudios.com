@@ -1,6 +1,7 @@
 'use client';
 
 import type { AnyRouter } from '@tanstack/react-router';
+import { prefersLessData, shouldSpeculate } from '@/lib/network-quality';
 
 /**
  * OPT-33 — viewport prefetch for the first on-screen links, connection-aware.
@@ -74,65 +75,10 @@ const REARM_DELAY_MS = 1200;
  */
 const NEVER_PREFETCH = [/^\/api(\/|$)/, /^\/login/, /^\/logout/, /^\/checkout/, /^\/admin(\/|$)/];
 
-type NetworkInformation = { saveData?: boolean; effectiveType?: string };
-
-function getConnection(): NetworkInformation | undefined {
-  const nav = (globalThis as { navigator?: Navigator & { connection?: NetworkInformation } })
-    .navigator;
-  return nav?.connection;
-}
-
-/**
- * `@media (prefers-reduced-data: reduce)` — the CSS-level expression of the same
- * intent as Save-Data, exposed by browsers that dropped the `Save-Data` header.
- * A browser that doesn't know the feature evaluates the query to `not all`, so
- * an unknown feature reads as `false` (= no preference), which is correct.
- */
-function prefersReducedData(): boolean {
-  const mm = (globalThis as { matchMedia?: (query: string) => { matches: boolean } }).matchMedia;
-  if (typeof mm !== 'function') return false;
-  try {
-    return mm.call(globalThis, '(prefers-reduced-data: reduce)').matches === true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Has the user (or their OS/browser) asked us to use less data?
- *
- * This is the *user-preference* half of the policy and is deliberately separate
- * from `shouldSpeculate`'s network-quality half: an explicit "use less data"
- * must suppress every speculative fetch we make, including the media warming in
- * `hooks/useIntentPreload`, which fires on a much stronger signal (a real
- * hover) and is otherwise happy to run on a slow connection.
- */
-export function prefersLessData(): boolean {
-  return getConnection()?.saveData === true || prefersReducedData();
-}
-
-/**
- * Is speculative prefetching appropriate right now?
- *
- * Three guards, each for a different failure:
- *  - `saveData` / `prefers-reduced-data` — the user explicitly asked for less
- *    data. Speculation is the first thing that should go.
- *  - `effectiveType` — on 2g/slow-2g/3g a speculative request does not arrive
- *    "for free"; it queues ahead of the content the user is actually looking at
- *    and makes the current page slower to win a navigation that may not happen.
- *  - a missing `navigator.connection` (Safari, Firefox) means "no signal", which
- *    must read as *yes*, not as a crash and not as a blanket opt-out — those
- *    browsers are a large share of the mobile traffic this exists for.
- */
-export function shouldSpeculate(): boolean {
-  const connection = getConnection();
-  if (!connection) return !prefersReducedData();
-  if (connection.saveData === true) return false;
-  if (prefersReducedData()) return false;
-  // `effectiveType` is absent on some implementations even when `connection`
-  // exists; absent is "unknown", which follows the same assume-yes rule.
-  return connection.effectiveType === undefined || connection.effectiveType === '4g';
-}
+// The network/data policy lives in lib/network-quality (one reader of
+// `navigator.connection` for the whole client, and the only one that honours the
+// site's own Data Saver setting). Re-exported so existing importers keep working.
+export { prefersLessData, shouldSpeculate };
 
 /**
  * Resolve an anchor to a route path we are allowed to prefetch, or `null`.

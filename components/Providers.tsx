@@ -62,6 +62,8 @@ import type { LocaleBundle } from '@/lib/i18n/resources';
 import { recoverViewTransition } from '@/lib/view-transition';
 import { applyPerfTier } from '@/lib/perf-tier';
 import { installScrollbarReveal } from '@/lib/scrollbar-reveal';
+import { installSwapReveal } from '@/lib/swap-reveal';
+import { isRetryable, maxRetries, retryDelayMs } from '@/lib/http';
 
 // perf audit §4.3: build the QueryClient PER component instance (via useState
 // below), not once at module scope. A module-scope client is shared by every
@@ -76,7 +78,13 @@ function makeQueryClient() {
       queries: {
         staleTime: 60_000, // 1 minute — serve cached data before refetching
         gcTime: 10 * 60_000, // keep unused data 10 min so back-nav doesn't refetch
-        retry: 1,
+        // Retry only what retrying can fix — a dropped connection, a timeout, a
+        // 429 or a 5xx — never a 4xx the user needs to see now. One more attempt
+        // on a 2G-class link, exponential backoff with jitter, and a server's
+        // Retry-After honoured (lib/http). Offline, React Query's default
+        // `networkMode: 'online'` pauses queries and resumes them on reconnect.
+        retry: (failureCount, error) => failureCount < maxRetries() && isRetryable(error),
+        retryDelay: (attempt, error) => retryDelayMs(attempt, error),
         // Slow-WiFi friendly: don't re-hit the network just because the user
         // tab-switched. Reconnects still revalidate stale data.
         refetchOnWindowFocus: false,
@@ -529,6 +537,10 @@ export function Providers({
   // Scrollbars reveal on scroll rather than sitting on screen permanently
   // (lib/scrollbar-reveal.ts + the §Scrollbars block in app/globals.css).
   useEffect(() => installScrollbarReveal(), []);
+
+  // Content that replaces a skeleton/spinner fades in rather than snapping in —
+  // what a slow connection makes visible on every loading state (lib/swap-reveal).
+  useEffect(() => installSwapReveal(), []);
 
   // Hydrate style from localStorage on mount. Self-heal legacy values: any
   // retired style still persisted from before a catalog change (e.g. the old

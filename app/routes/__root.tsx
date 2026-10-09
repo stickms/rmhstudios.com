@@ -47,6 +47,7 @@ import {
 import { ACCENT_MAP } from '@/lib/appearance';
 import { GLASS_LEVEL_VARS, GLASS_LEVEL_KEY } from '@/lib/appearance/prefs';
 import { PERF_TIER_SCRIPT } from '@/lib/perf-tier';
+import { MEDIA_REVEAL_SCRIPT } from '@/lib/media-reveal';
 import { COOKIE_CONSENT_SCRIPT } from '@/lib/cookie-consent';
 import appCss from '@/app/globals.css?url';
 // The Latin subset of the self-hosted body font. Imported for its hashed URL so
@@ -550,6 +551,9 @@ export const Route = createRootRoute({
         // devices it protects render the full effect stack for the entire
         // load. See lib/perf-tier.ts §PERF_TIER_SCRIPT.
         { children: PERF_TIER_SCRIPT },
+        // Must precede every <img>: marks images as their bytes land so they
+        // fade in instead of popping in on a slow connection (lib/media-reveal).
+        { children: MEDIA_REVEAL_SCRIPT },
         // A signed-in visitor's ACCOUNT appearance, written into localStorage so
         // that `themeScript` — the next line, and unchanged — paints the
         // account's theme on the first frame instead of this device's. Without
