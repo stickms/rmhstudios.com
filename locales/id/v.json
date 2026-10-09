@@ -1,5 +1,6 @@
 {
   "backfill-thumbs": "Backfill all page thumbnails",
+  "backfill-thumbs-done_one": "{{count}} halaman telah diantrekan untuk render ulang thumbnail. Halaman akan diperbarui saat worker memprosesnya.",
   "backfill-thumbs-done_other": "Queued {{count}} page(s) for thumbnail re-render. They will refresh as the worker processes them.",
   "backfill-thumbs-failed": "Failed to queue thumbnail backfill. Try again.",
   "empty-gallery": "Belum ada halaman — jadilah yang pertama membuatnya.",
@@ -10,6 +11,7 @@
   "open-page": "Open page",
   "pages-title": "Halaman",
   "prompt-aria-label": "Jelaskan halaman yang ingin Anda buat",
+  "prompt-heading": "Jelaskan halaman yang ingin dibuat",
   "prompt-placeholder": "Ke mana Anda ingin pergi?",
   "search-aria-label": "Cari halaman",
   "search-placeholder": "Cari halaman..."

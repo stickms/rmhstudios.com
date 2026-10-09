@@ -1,0 +1,9 @@
+{
+  "bracket-tournaments-id": "Bracket",
+  "cancel-tournaments-id": "Cancel & refund",
+  "done-tournaments-id": "Finished",
+  "host-tournaments-index": "Host",
+  "players-count_one": "{{count}} players",
+  "single-elim-tournaments-index": "Single elim",
+  "title-tournaments-id": "Tournament"
+}

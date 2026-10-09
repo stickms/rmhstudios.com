@@ -40,6 +40,7 @@
   "incident-feed": "Incident Feed",
   "incidents": "Incidents",
   "leaderboards": "Leaderboards",
+  "leaderboards-index": "Leaderboards →",
   "loading": "Loading...",
   "loading-puzzle": "Loading puzzle...",
   "min-remaining_one": "{{count}} min remaining",

@@ -1,0 +1,9 @@
+{
+  "lamp-cleared_one": "{{count}} cleared",
+  "lamp-cleared_other": "{{count}} cleared",
+  "lamp-fc_one": "{{count}} FC",
+  "lamp-fc_other": "{{count}} FC",
+  "lamp-perfect_one": "{{count}} perfect",
+  "lamp-perfect_other": "{{count}} perfect",
+  "remove-selected": "Remove selected"
+}

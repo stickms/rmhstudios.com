@@ -75,6 +75,7 @@
   "version-history": "Versionsverlauf",
   "view-demo": "Demo ansehen",
   "view-source": "Quellcode anzeigen",
+  "view-source-build-card": "Quelle anzeigen",
   "views-count_one": "{{count}} Aufruf",
   "views-count_other": "{{count}} Aufrufe",
   "write-comment": "Schreibe einen Kommentar...",

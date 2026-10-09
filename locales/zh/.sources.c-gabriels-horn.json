@@ -1,0 +1,8 @@
+{
+  "card-count_one": "{{count}} card",
+  "copy-invite-link": "Copy invite link",
+  "copy-link-failed": "Could not copy the link.",
+  "deck-left_one": "{{count}} card left in the deck",
+  "outcome_one": "{{name}} draws {{count}}.",
+  "results-with_one": "Holding {{count}} card after {{rounds}} rounds."
+}

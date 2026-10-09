@@ -28,6 +28,7 @@
   "pagination-next": "Sonraki",
   "pagination-previous": "Önceki",
   "pagination-range": "{{from}}–{{to}} / {{total}}",
+  "player-count-of-max": "{{count}}/{{max}} oyuncu",
   "player-count_one": "{{count}} oyuncu",
   "player-count_other": "{{count}} oyuncu",
   "player-range": "{{minPlayers}}–{{maxPlayers}} oyuncu",

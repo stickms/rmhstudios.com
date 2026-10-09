@@ -1,0 +1,5 @@
+{
+  "hide": "Hide {{name}}",
+  "sidebar-reorder-hint": "Drag to reorder. Hide a tab with the eye — hidden tabs stay in search.",
+  "unhide": "Show {{name}}"
+}
