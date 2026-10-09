@@ -22,7 +22,7 @@
  * the frame or spill over the content column.
  */
 
-import { Suspense, lazy, type ReactNode } from 'react';
+import { Suspense, lazy, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 
@@ -54,24 +54,40 @@ export function RadialLiveRail({ children }: { children?: ReactNode }) {
   // wider query than the CSS reveal would starve the rail, and on a narrower one
   // would pay for a column the viewer cannot see.
   const visible = useMediaQuery(RAIL_QUERY);
+  // Latches true: once the ambient column has been revealed it stays revealed
+  // across navigations (the rail outlives the page).
+  const [ambientReady, setAmbientReady] = useState(false);
 
+  // Order is the layout-shift fix (2026-10-09). The ambient column — the same on
+  // every page — comes FIRST, and the page's own contribution (PageLayout's
+  // `rightSidebar`, portalled into the slot) comes AFTER it. It used to be the
+  // other way round, so navigating between a page with rail content (a profile:
+  // ~850px of it) and one without moved every ambient card by that much — a
+  // 0.099 layout shift on a single click, the largest left on the site. With the
+  // page's part last, swapping it moves nothing above it.
+  //
+  // On a first load the page slot waits for the ambient column (which fills
+  // invisibly — see RadialLiveRailContent) so the two appear together; otherwise
+  // the ambient column would land on top of a slot that was already showing.
   return (
     <aside
       className="rad-rail rad-rail--live"
       aria-label={t('discover', { defaultValue: 'Discover' })}
     >
       <div className="rad-rail__scroll">
-        {/* Page-contributed content (PageLayout's `rightSidebar`) lands here. It
-            stays mounted at every width — and stays OUT of the lazy chunk — so
-            the portal target exists as soon as the shell does, which is what
-            `rail-slot.tsx` relies on. */}
-        {children}
-
         {visible && (
           <Suspense fallback={null}>
-            <RadialLiveRailContent />
+            <RadialLiveRailContent onReady={setAmbientReady} />
           </Suspense>
         )}
+
+        {/* The page slot stays mounted at every width — and stays OUT of the
+            lazy chunk — so the portal target exists as soon as the shell does,
+            which is what `rail-slot.tsx` relies on. Below the rail's breakpoint
+            the rail is not displayed at all, so there is nothing to wait for. */}
+        <div className="rad-live__page" data-ready={ambientReady || !visible ? 'true' : 'false'}>
+          {children}
+        </div>
       </div>
     </aside>
   );

@@ -31,13 +31,24 @@ const LiquidGlobe = lazy(() =>
 );
 
 let globePreloaded = false;
+let globeModule: Promise<unknown> | null = null;
 function preloadGlobe() {
-  if (globePreloaded) return;
+  if (globePreloaded) return globeModule;
   globePreloaded = true;
-  void import('./LiquidGlobe');
+  globeModule = import('./LiquidGlobe');
+  return globeModule;
 }
 
+/**
+ * The rehearsal runs once per page load, whichever hub instance gets there.
+ */
+let rehearsed = false;
+/** How long the invisible warm-up mount stays up: a few painted frames. */
+const REHEARSAL_MS = 600;
+
 type HubUser = { id: string; handle?: string | null; isAdmin?: boolean };
+
+const noop = () => {};
 
 /** closed → open (the orb expands INTO the globe) → closing → closed. */
 type Phase = 'closed' | 'open' | 'closing';
@@ -84,6 +95,23 @@ export function RadialHub() {
    */
   const restoreFocus = useRef(false);
   const menuVisible = phase === 'open' || phase === 'closing';
+  /**
+   * The first-open rehearsal (2026-10-09).
+   *
+   * Preloading the chunk was not enough to make the FIRST open as smooth as the
+   * second. Everything the open does for the first time still happened inside
+   * the 500ms morph: the globe's code paths compiling on first call, its first
+   * React mount, its canvas backing store being allocated and uploaded, its
+   * layers rasterising for the first time, and the GPU setting up the programs
+   * for the page blur and the veil's circular mask. Every later open reuses all
+   * of that, which is why only the first one hitched.
+   *
+   * So the hub pays for it once, while the page is idle and before anyone
+   * reaches for the orb: it mounts the globe for a few frames, invisibly —
+   * fixed, 1% opacity, no pointer events, `inert`, haptics off — beside a tiny
+   * element that uses the same blur and mask, then unmounts it.
+   */
+  const [rehearsing, setRehearsing] = useState(false);
 
   const leaves = useMemo<NavLeaf[]>(() => {
     const out: NavLeaf[] = [];
@@ -160,13 +188,33 @@ export function RadialHub() {
     };
     // Well inside the window in which someone reaches for the orb, and late
     // enough to stay behind the page's own first paint.
-    const timer = setTimeout(preloadGlobe, 800);
-    const handle = w.requestIdleCallback?.(preloadGlobe, { timeout: 800 });
+    // Once the chunk is in, rehearse the open — see `rehearsing` below.
+    const warm = () => {
+      void preloadGlobe()?.then(() => {
+        if (rehearsed || phaseRef.current !== 'closed') return;
+        rehearsed = true;
+        setRehearsing(true);
+      });
+    };
+    const timer = setTimeout(warm, 800);
+    const handle = w.requestIdleCallback?.(warm, { timeout: 800 });
     return () => {
       clearTimeout(timer);
       if (handle !== undefined) w.cancelIdleCallback?.(handle);
     };
   }, []);
+
+  // The rehearsal ends itself after a few frames, and is cut short by a real
+  // open (the effect re-runs on `phase` and the real globe takes over).
+  useEffect(() => {
+    if (!rehearsing) return;
+    if (phase !== 'closed') {
+      setRehearsing(false);
+      return;
+    }
+    const timer = setTimeout(() => setRehearsing(false), REHEARSAL_MS);
+    return () => clearTimeout(timer);
+  }, [rehearsing, phase]);
 
   // Block background scroll + wire Escape while the menu is active.
   //
@@ -378,6 +426,24 @@ export function RadialHub() {
           </button>
         </div>
       </div>
+
+      {/* Outside the overlay on purpose: the overlay is `visibility: hidden`
+          while the hub is closed, and a rehearsal that never paints warms
+          nothing. */}
+      {rehearsing && phase === 'closed' && (
+        <div className="radial-hub__rehearsal" aria-hidden inert>
+          <Suspense fallback={null}>
+            <LiquidGlobe
+              items={leaves}
+              pathname={pathname}
+              onDismiss={noop}
+              tabIndex={-1}
+              rehearsal
+            />
+          </Suspense>
+          <span className="radial-hub__rehearsal-fx" />
+        </div>
+      )}
     </div>
   );
 }
