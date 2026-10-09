@@ -23,6 +23,7 @@ import { TwemojiProvider } from '@/components/ui/TwemojiProvider';
 import { NavigationProgress } from '@/components/ui/NavigationProgress';
 import { BackNavAnimation } from '@/components/ui/BackNavAnimation';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
+import { markDocumentHydrated } from '@/components/ui/defer-on-navigate';
 import { RouteErrorFallback } from '@/components/errors/RouteErrorFallback';
 import { NotFound } from '@/components/errors/NotFound';
 import { installGlobalErrorHandlers } from '@/lib/client-errors';
@@ -657,6 +658,9 @@ function RootComponent() {
     installGlobalErrorHandlers();
     initWebVitals();
     registerServiceWorker();
+    // From here on, a mount is a page switch, not hydration — the point after
+    // which `DeferOnNavigate` may split a page's first render.
+    markDocumentHydrated();
   }, []);
 
   // Inside a Discord Activity iframe, all routes must stay within /discord/*.

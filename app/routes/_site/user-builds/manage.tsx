@@ -125,7 +125,7 @@ function ManageContent() {
             <Spinner size={32} />
           </div>
         ) : builds.length === 0 ? (
-          <Reveal className="text-center py-12 rounded-site border border-site-border bg-site-surface">
+          <Reveal className="text-center py-12 rounded-site glass-fill">
             <Boxes className="w-12 h-12 text-site-text-dim mx-auto mb-4" />
             <h2 className="text-lg font-semibold text-site-text mb-2">
               {t('no-builds-yet', { defaultValue: 'No builds yet' })}
@@ -147,7 +147,7 @@ function ManageContent() {
             {builds.map((build) => (
               <div
                 key={build.id}
-                className={`flex items-center gap-4 p-4 rounded-site border border-site-border bg-site-surface ${LIFT_CARD}`}
+                className={`flex items-center gap-4 p-4 rounded-site glass-fill ${LIFT_CARD}`}
               >
                 {build.thumbnailUrl ? (
                   <img

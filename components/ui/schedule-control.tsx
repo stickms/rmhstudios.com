@@ -100,7 +100,7 @@ export function ScheduleControl({
         value={value}
         min={min || undefined}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-site-sm border border-site-border bg-site-surface px-2 py-1 text-xs text-site-text outline-none transition-colors focus:border-site-accent"
+        className="rounded-site-sm glass-inset px-2 py-1 text-xs text-site-text outline-none transition-colors focus:border-site-accent"
       />
       {zone && (
         <span className="text-xs text-site-text-dim" title={zone}>

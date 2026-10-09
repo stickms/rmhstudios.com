@@ -12,11 +12,12 @@ import {
   type Ref,
   type RefObject,
 } from 'react';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate, useRouter } from '@tanstack/react-router';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { vibrate } from '@/lib/shared/platform';
+import { prefersLessData } from '@/lib/viewport-prefetch';
 import {
   DECELERATION,
   RIPPLE,
@@ -109,6 +110,8 @@ const IDLE_SPIN = 5.5;
 const DWELL_MS = 620;
 /** Hold required after a decisive flick. Never goes below this. */
 const DWELL_MIN_MS = 260;
+/** How long a pin must stay locked before its route is preloaded (see `warmLocked`). */
+const LOCK_PRELOAD_SETTLE_MS = 90;
 /** Angular speed (deg/s) at or under which an approach reads as browsing. */
 const BROWSING_SPEED = 150;
 /** Angular speed (deg/s) at or over which it reads as certainty. */
@@ -419,9 +422,49 @@ export function LiquidGlobe({
 }: LiquidGlobeProps) {
   const { t } = useTranslation('feed');
   const navigate = useNavigate();
+  const router = useRouter();
   const reduced = useReducedMotion();
 
   const nodes = useMemo(() => place(items), [items]);
+
+  /* ── Warm the destination in the reticle ──────────────────────────────────
+     On a phone the globe IS the navigation, and none of the router's intent
+     preloading reaches it: there is no hover, and the press that grabs the globe
+     lands on the stage rather than on a <Link>. So the first byte of a
+     destination used to leave only once the dwell had completed and `go` ran —
+     its loader and its code both on the critical path of the page switch.
+
+     A pin locking into the reticle is a stronger signal than a hover: the user
+     has aimed at it, and the dwell they must now hold (260–620ms) is time the
+     preload gets for free. A short settle keeps a flick that sweeps several
+     pins through the reticle from warming each one it passes; the router's own
+     preload cache dedupes repeats. Never in the idle rehearsal, never for an
+     external link, and never when the user has asked to save data
+     (docs/ui-perf-audit-2026-10-09.md, NAV-4). */
+  const lockPreload = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const warmLocked = useCallback(
+    (idx: number) => {
+      if (lockPreload.current !== null) {
+        clearTimeout(lockPreload.current);
+        lockPreload.current = null;
+      }
+      const node = idx >= 0 ? nodes[idx] : undefined;
+      if (!node || node.external || quiet.current || prefersLessData()) return;
+      lockPreload.current = setTimeout(() => {
+        lockPreload.current = null;
+        void Promise.resolve(router.preloadRoute({ to: node.href } as never)).catch(() => {});
+      }, LOCK_PRELOAD_SETTLE_MS);
+    },
+    [nodes, router],
+  );
+  const warmLockedRef = useRef(warmLocked);
+  warmLockedRef.current = warmLocked;
+  useEffect(
+    () => () => {
+      if (lockPreload.current !== null) clearTimeout(lockPreload.current);
+    },
+    [],
+  );
   // Read through a ref so the frame loop and handlers can check it without it
   // becoming an effect dependency; it never changes for a given mount.
   const quiet = useRef(rehearsal);
@@ -1354,6 +1397,7 @@ export function LiquidGlobe({
           dwellRef.current = DWELL_MS + (DWELL_MIN_MS - DWELL_MS) * confidence;
         }
         setLock(lockIdx);
+        warmLockedRef.current(lockIdx);
         if (readyRef.current) {
           readyRef.current = false;
           setReady(false);

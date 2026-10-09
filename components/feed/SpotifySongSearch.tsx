@@ -151,7 +151,7 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
  )}
 
  {!loading && results.length > 0 && (
- <div className="max-h-48 overflow-y-auto space-y-0.5 rounded-site border border-site-border bg-site-surface">
+ <div className="max-h-48 overflow-y-auto space-y-0.5 rounded-site glass-fill">
  {results.map((track) => {
  const isSelected = selected?.id === track.id;
  return (

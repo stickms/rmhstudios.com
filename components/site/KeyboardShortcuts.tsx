@@ -28,16 +28,24 @@ export const SHORTCUTS_HELP_EVENT = 'rmh:shortcuts-help';
 
 const SEQUENCE_TIMEOUT_MS = 1500;
 
-// "g then <key>" navigation targets.
-const GO_TARGETS: Array<{ key: string; href: string; tKey: string; label: string }> = [
+// "g then <key>" navigation targets. Each points at the page's real address,
+// never at a legacy path that redirects (`/notifications`, `/wallet`): a
+// redirect is a second navigation — and, on a cold load, a second round trip.
+const GO_TARGETS: Array<{
+  key: string;
+  href: string;
+  search?: Record<string, string>;
+  tKey: string;
+  label: string;
+}> = [
   { key: 'h', href: '/', tKey: 'kbd-go-home', label: 'Home' },
   { key: 'e', href: '/explore', tKey: 'kbd-go-explore', label: 'Explore & search' },
-  { key: 'n', href: '/notifications', tKey: 'kbd-go-notifications', label: 'Notifications' },
+  { key: 'n', href: '/messages', search: { tab: 'notifications' }, tKey: 'kbd-go-notifications', label: 'Notifications' },
   { key: 'm', href: '/messages', tKey: 'kbd-go-messages', label: 'Messages' },
   { key: 'b', href: '/saves', tKey: 'kbd-go-bookmarks', label: 'Saved' },
   { key: 'l', href: '/library', tKey: 'kbd-go-library', label: 'Library' },
   { key: 'c', href: '/communities', tKey: 'kbd-go-communities', label: 'Communities' },
-  { key: 'w', href: '/wallet', tKey: 'kbd-go-wallet', label: 'Wallet' },
+  { key: 'w', href: '/predictions', tKey: 'kbd-go-wallet', label: 'Wallet' },
   { key: 'p', href: '/progress', tKey: 'kbd-go-progress', label: 'Progress' },
   { key: 'd', href: '/daily', tKey: 'kbd-go-daily', label: 'Daily puzzles' },
   { key: 's', href: '/settings', tKey: 'kbd-go-settings', label: 'Settings' },
@@ -102,7 +110,7 @@ export function KeyboardShortcuts() {
         if (target) {
           e.preventDefault();
           setHelpOpen(false);
-          navigate({ to: target.href });
+          navigate({ to: target.href, search: target.search } as never);
         }
         return;
       }

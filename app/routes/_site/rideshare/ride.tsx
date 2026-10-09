@@ -341,7 +341,7 @@ function RequestRidePage() {
                 </div>
 
                 {routing && !routeInfo && (
-                  <div className="mt-4 flex items-center gap-2 rounded-site border border-site-border bg-site-surface px-4 py-3 text-sm text-site-text-muted">
+                  <div className="mt-4 flex items-center gap-2 rounded-site glass-fill px-4 py-3 text-sm text-site-text-muted">
                     <Loader2 className="h-4 w-4 animate-spin" />{' '}
                     {t('calculating-route', { defaultValue: 'Calculating route…' })}
                   </div>

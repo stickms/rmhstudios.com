@@ -955,3 +955,44 @@ describe('design consistency — section headings (minimalism audit 2026-10-09)'
     ).toEqual([]);
   });
 });
+
+/**
+ * Nothing on the site tier is debossed.
+ *
+ * Glass here sits ON the page and is lit from above — the liquid globe is the
+ * reference object. A dark INNER shadow reads the other way, as a slot carved
+ * into the page, and before the 2026-10-09 navigation/deboss audit that is what
+ * every field, search box, segmented-control track and slider track looked like:
+ * `.glass-inset` was a "recessed well" with `inset 0 1px 2px rgb(0 0 0 / .35)`.
+ * The tier is a flush fill now (globals.css), and this keeps a hand-written
+ * deboss from coming back one className at a time.
+ *
+ * What it catches: Tailwind's `shadow-inner` (a dark inset by definition) and an
+ * arbitrary `shadow-[inset_…]` whose colour is black or a black-based rgba. A
+ * light inset HIGHLIGHT (`inset_0_1px_0_var(--site-glass-rim-soft)`, a coloured
+ * rim) is the glass glint and is left alone. Full-screen apps own their own
+ * material (Slice It!'s neumorphism is deliberate) and are out of scope.
+ */
+describe('design consistency — no debossed surfaces (audit 2026-10-09)', () => {
+  it('no site-tier shadow-inner or dark inset shadow', () => {
+    const debossed =
+      /\bshadow-inner\b|\bshadow-\[inset_[^\]]*(?:rgba?\(0,\s*0,\s*0|rgb\(0_0_0|#000\b|black)/g;
+    const offenders: Violation[] = [];
+    for (const file of SITE_FILES) {
+      const src = readFileSync(join(ROOT, file), 'utf8');
+      debossed.lastIndex = 0;
+      let m: RegExpExecArray | null;
+      while ((m = debossed.exec(src))) {
+        offenders.push({ file, line: lineAt(src, m.index), detail: m[0] });
+      }
+    }
+    expect(
+      offenders,
+      report(
+        'Debossed surface — fields are a flush `.glass-inset` fill; glass is lit from ' +
+          'above and never carved into the page (design.md §3, "Nothing is debossed")',
+        offenders,
+      ),
+    ).toEqual([]);
+  });
+});

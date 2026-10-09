@@ -1287,7 +1287,7 @@ export function ComposeBox({
                 defaultValue: 'Charge coins to unlock this post. Leave empty to keep it free.',
               })}
             </p>
-            <div className="flex items-center gap-2 rounded-site border border-site-border bg-site-surface px-3 py-2">
+            <div className="flex items-center gap-2 rounded-site glass-fill px-3 py-2">
               <Coins className="h-4 w-4 text-site-text-muted" />
               <input
                 type="number"
@@ -1461,7 +1461,7 @@ export function ComposeBox({
               placeholder={t('alt-text-placeholder', {
                 defaultValue: 'e.g. A golden retriever running on a beach at sunset',
               })}
-              className="w-full resize-none rounded-site-sm border border-site-border bg-site-surface p-2 text-sm text-site-text placeholder:text-site-text-dim outline-none focus:border-site-accent transition-colors"
+              className="w-full resize-none rounded-site-sm glass-inset p-2 text-sm text-site-text placeholder:text-site-text-dim outline-none focus:border-site-accent transition-colors"
             />
             <div className="mt-3 flex items-center justify-between">
               <span className="text-xs font-mono text-site-text-dim">

@@ -473,7 +473,7 @@ export function NotificationsColumn({
  </div>
  ) : items.length === 0 ? (
  <Reveal className="flex flex-col items-center justify-center gap-3 px-6 py-24 text-center">
- <div className="rounded-site border border-site-border bg-site-surface p-4">
+ <div className="rounded-site glass-fill p-4">
  <Bell className="h-8 w-8 text-site-text-muted"/>
  </div>
  <p className="font-medium text-site-text">

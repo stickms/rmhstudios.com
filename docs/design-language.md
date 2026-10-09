@@ -493,7 +493,7 @@ role, not by looks — the tier decides blur cost (see the redesign doc §6 budg
 | `.glass-pane`                       | L2 (blur+noise) | Singular panels: heroes, composers, settings sections, tier cards. Budgeted.                        |
 | `.glass-chrome` (`--aside` variant) | L3              | Persistent chrome: sidebar, sticky headers, mobile dock. Condenses on scroll via `[data-scrolled]`. |
 | `.glass-overlay`                    | L4              | Floating UI: dialogs, popovers, menus, command palette, toasts, tooltips.                           |
-| `.glass-inset`                      | —               | Recessed wells: inputs, search fields.                                                              |
+| `.glass-inset`                      | —               | Fields: inputs, search fields, tab tracks. A flush fill of the glass — never a recessed well.       |
 | `.glass-scrim`                      | —               | Dialog/drawer backdrops.                                                                            |
 
 Modifiers layer **on top of** a tier class. Each carries a per-page budget —
@@ -604,7 +604,7 @@ in `globals.css` for it to be possible at all, and both are load-bearing:
   hairline (it is what separates one repeated row from the next), and a border-box
   layer under an opaque border is painted over anyway.
 
-Wells (`.glass-inset`, half-strength border) carry no glint. Pseudo contract:
+Fields (`.glass-inset`, half-strength border) carry no glint and no shadow. Pseudo contract:
 `::before` is refraction-only (the masked lens band) or the aside blur; `::after`
 is the travelling sheen on `.glass-liquid` (§5.1.2) and otherwise free, now that
 the pointer light that used to own it is gone (§5.1.1) — a component may take it
@@ -960,7 +960,7 @@ gated off there too, via `html.app-route`).
   **below** the page title, never inside header chrome (§5.45; see
   `page-consistency.md`). Since the 2026-10-09 minimalism audit the strip is a
   **segmented control**: a neutral raised **thumb** (`[data-tab-thumb]`, opaque
-  surface + hairline + small shadow) on a recessed `.glass-inset` **track**,
+  surface + hairline + small shadow) on a flush `.glass-inset` **track**,
   with the label in full ink. The accent fill is reserved for actions — a solid
   accent pill read exactly like a primary button. High contrast keeps the
   filled accent thumb. The thumb's paint is `--tab-thumb-bg` / `-ink` /

@@ -208,7 +208,7 @@ export function DeckStudyColumn({
  </span>
  </header>
  <div className="p-4">
- <div className="flex min-h-64 flex-col items-center justify-center rounded-site border border-site-border bg-site-surface p-8 text-center">
+ <div className="flex min-h-64 flex-col items-center justify-center rounded-site glass-fill p-8 text-center">
  <p className="text-lg font-semibold text-site-text">{card.front}</p>
  {revealed && (
  <>
@@ -287,7 +287,7 @@ export function DeckStudyColumn({
 
  {deck.isOwner && (
  <Reveal
- className={`rounded-site border border-site-border bg-site-surface p-3 ${LIFT_CARD}`}
+ className={`rounded-site glass-fill p-3 ${LIFT_CARD}`}
  >
  <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
  <Plus className="h-3.5 w-3.5"/> {t('add-a-card', { defaultValue:'Add a card'})}
@@ -337,7 +337,7 @@ export function DeckStudyColumn({
  {cards.map((c) => (
  <div
  key={c.id}
- className={`rounded-site-sm border border-site-border bg-site-surface p-3 ${LIFT_CARD}`}
+ className={`rounded-site-sm glass-fill p-3 ${LIFT_CARD}`}
  >
  <p className="text-sm font-medium text-site-text">{c.front}</p>
  <p className="mt-0.5 text-sm text-site-text-muted">{c.back}</p>

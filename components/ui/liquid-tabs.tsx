@@ -26,7 +26,7 @@
  *  - Under reduced motion the capsule jumps (no spring) — the `layoutId`
  *    element stays so the active state is still visible.
  *  - No i18n here: labels/aria-label come from callers (already translated).
- *  - `sheet` (default true, §5.45): the tablist rides its own recessed track so
+ *  - `sheet` (default true, §5.45): the tablist rides its own flush track so
  *    a tab strip reads as a standalone control placed BELOW a hero/title (never
  *    buried in header chrome). Pass `sheet={false}` where the caller supplies
  *    its own container.
@@ -39,7 +39,7 @@
  * tab strip and a primary action therefore showed two identical black pills
  * with opposite meanings: one is where you are, the other is something you can
  * do. It is now Apple's segmented-control grammar instead — a neutral, raised
- * THUMB (opaque surface, hairline, small shadow) on a recessed track, with the
+ * THUMB (opaque surface, hairline, small shadow) on a flush track, with the
  * label in full-strength ink. The accent fill is reserved for actions.
  * High contrast keeps the filled accent thumb, because there the material is
  * gone and a hairline-on-black thumb would be the only cue (see globals.css).
@@ -316,10 +316,18 @@ export function LiquidTabs({
   // ── Overflow: keep the active tab in view, fade whichever edge has more ──
   //
   // Both are written to the strip itself (never to <html>) and only when the
-  // value changes, so a scroll costs one comparison per edge. There is no
-  // observer loop: the edges are re-measured on the strip's own `scroll`, on a
-  // window resize, and when the selection changes — the only three things that
-  // can change them.
+  // value changes, so a scroll costs one comparison per edge. The edges are
+  // re-measured on the strip's own `scroll`, when the strip or its content
+  // changes size, and when the selection changes — the only things that can
+  // change them.
+  //
+  // Never measured synchronously on mount. A strip mounts as part of a page
+  // switch, and reading `scrollWidth` in a mount effect forced style + layout
+  // of the ENTIRE incoming page mid-commit — which the next effect's DOM write
+  // then invalidated, so the page was laid out twice before its first paint.
+  // On a 4×-throttled CPU that one read was 120–330ms of every tabbed page
+  // switch (docs/ui-perf-audit-2026-10-09.md, NAV-1). A ResizeObserver
+  // callback runs AFTER the frame's own layout, so the same read there is free.
   const syncEdges = useCallback(() => {
     const el = listRef.current;
     if (!el) return;
@@ -333,35 +341,76 @@ export function LiquidTabs({
     if (el.dataset.fadeEnd !== end) el.dataset.fadeEnd = end;
   }, []);
 
-  useEffect(() => {
-    const el = listRef.current;
-    if (!el) return;
-    syncEdges();
-    el.addEventListener('scroll', syncEdges, { passive: true });
-    window.addEventListener('resize', syncEdges);
-    return () => {
-      el.removeEventListener('scroll', syncEdges);
-      window.removeEventListener('resize', syncEdges);
-    };
-  }, [syncEdges]);
-
   // Bring the selected tab into view inside the strip — by moving the STRIP's
   // scroll offset directly. `scrollIntoView()` would also scroll the document
   // to reach a strip below the fold, yanking the page on first paint.
+  // `smooth` only once the strip is on screen: the first reveal jumps.
+  const revealActive = useCallback(
+    (smooth: boolean) => {
+      const el = listRef.current;
+      if (!el || el.scrollWidth <= el.clientWidth) return;
+      const active = el.querySelector<HTMLElement>('[data-tab-active="true"]');
+      if (!active) return;
+      const inset = 24; // clear the edge fade
+      const left = active.offsetLeft;
+      const right = left + active.offsetWidth;
+      const view = el.scrollLeft;
+      const behavior = smooth && !reduced ? 'smooth' : 'auto';
+      if (left - inset < view) el.scrollTo({ left: Math.max(0, left - inset), behavior });
+      else if (right + inset > view + el.clientWidth)
+        el.scrollTo({ left: right + inset - el.clientWidth, behavior });
+    },
+    [reduced],
+  );
+
+  const revealRef = useRef(revealActive);
+  revealRef.current = revealActive;
+  const measuredRef = useRef(false);
+
   useEffect(() => {
     const el = listRef.current;
-    if (!el || el.scrollWidth <= el.clientWidth) return;
-    const active = el.querySelector<HTMLElement>('[data-tab-active="true"]');
-    if (!active) return;
-    const inset = 24; // clear the edge fade
-    const left = active.offsetLeft;
-    const right = left + active.offsetWidth;
-    const view = el.scrollLeft;
-    if (left - inset < view) el.scrollTo({ left: Math.max(0, left - inset), behavior: reduced ? 'auto' : 'smooth' });
-    else if (right + inset > view + el.clientWidth)
-      el.scrollTo({ left: right + inset - el.clientWidth, behavior: reduced ? 'auto' : 'smooth' });
-    syncEdges();
-  }, [value, reduced, syncEdges]);
+    if (!el) return;
+    el.addEventListener('scroll', syncEdges, { passive: true });
+    if (typeof ResizeObserver === 'undefined') {
+      syncEdges();
+      revealRef.current(false);
+      measuredRef.current = true;
+      window.addEventListener('resize', syncEdges);
+      return () => {
+        el.removeEventListener('scroll', syncEdges);
+        window.removeEventListener('resize', syncEdges);
+      };
+    }
+    // Observes the strip (its own width) and its first child (the row's content
+    // width moves with it), so a viewport resize, a font swap or a label change
+    // all re-measure — after layout, never during it.
+    const ro = new ResizeObserver(() => {
+      if (!measuredRef.current) {
+        measuredRef.current = true;
+        revealRef.current(false);
+      }
+      syncEdges();
+    });
+    ro.observe(el);
+    for (const child of Array.from(el.children)) ro.observe(child);
+    return () => {
+      ro.disconnect();
+      el.removeEventListener('scroll', syncEdges);
+    };
+  }, [syncEdges]);
+
+  // A selection change. In link mode it arrives with a page switch, so the read
+  // waits for the next frame — by then every effect of the commit has written
+  // its DOM and the layout this forces is the one the frame paints. Before the
+  // first measurement the observer above owns the reveal.
+  useEffect(() => {
+    if (!measuredRef.current) return;
+    const raf = requestAnimationFrame(() => {
+      revealActive(true);
+      syncEdges();
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [value, revealActive, syncEdges]);
 
   // The strip is its own scroller, so its padding (not the sheet's) is what keeps
   // the thumb's shadow from being clipped at the scroll box edge.
@@ -456,11 +505,11 @@ export function LiquidTabs({
       className={cn(
         // Always full width: the track spans its container.
         //
-        // `.glass-inset` (the recessed-well tier): a segmented control's track
-        // is carved INTO the page and the thumb sits raised in it — the same
-        // role an input well plays. It also supplies the degradation rules
+        // `.glass-inset` (the field tier): a segmented control's track is a
+        // flush fill on the page and the thumb sits raised on it — the same
+        // role an input field plays. It also supplies the degradation rules
         // (high contrast, reduced transparency, print) for free. globals.css
-        // tints the well neutrally so a white thumb reads on a white page.
+        // tints the track neutrally so a white thumb reads on a white page.
         //
         // `--site-radius` (22px on the default theme), NOT `--site-control-radius`
         // (9999px): on one row the track is ~44px tall, so 22px IS the pill, and

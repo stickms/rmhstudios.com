@@ -109,7 +109,7 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  onChange={(e) => onQueryChange(e.target.value)}
  placeholder={t('deck-search-placeholder', { defaultValue:'Search public decks…'})}
  aria-label={t('deck-search-label', { defaultValue:'Search public decks'})}
- className="w-full rounded-site-sm border border-site-border bg-site-surface py-2 pl-9 pr-3 text-sm text-site-text outline-none focus:border-site-accent"
+ className="w-full rounded-site-sm glass-inset py-2 pl-9 pr-3 text-sm text-site-text outline-none focus:border-site-accent"
  />
  </div>
 
@@ -129,7 +129,7 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  return (
  <div
  key={deck.id}
- className="flex flex-col rounded-site border border-site-border bg-site-surface p-4"
+ className="flex flex-col rounded-site glass-fill p-4"
  >
  <Link to="/study/$deckId"params={{ deckId: deck.id }} className="min-w-0">
  <h2 className="truncate text-sm font-bold text-site-text hover:text-site-accent">

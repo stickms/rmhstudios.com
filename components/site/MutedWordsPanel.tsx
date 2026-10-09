@@ -136,7 +136,7 @@ export function MutedWordsPanel() {
         <ul className="mt-4 flex flex-wrap gap-2">
           {words.map((w) => (
             <li key={w}>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-site-border bg-site-surface px-3 py-1 text-sm text-site-text">
+              <span className="inline-flex items-center gap-1.5 rounded-full glass-fill px-3 py-1 text-sm text-site-text">
                 {w}
                 <button
                   type="button"

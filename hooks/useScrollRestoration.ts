@@ -99,6 +99,18 @@ function topOf(s: Scroller): number {
   return s.win ? window.scrollY : s.el.scrollTop;
 }
 
+// The scroller's offset as of its last `scroll` event, or as last set here.
+//
+// Reading `scrollY` forces style and layout up to date, and this hook's cleanup
+// runs in React's MUTATION phase — after the incoming page's DOM has been
+// inserted and before the effects that finish it. Reading there laid the whole
+// new page out once mid-commit, only for the next effect's write to invalidate
+// it again (docs/ui-perf-audit-2026-10-09.md, NAV-2). Every way the offset can
+// change raises a `scroll` event (a user scroll, a clamp when content shrinks,
+// a programmatic scroll), so the value the listener last saw IS the current
+// one — no read needed at the moment of leaving.
+let lastTop = 0;
+
 // Always instant. `html { scroll-behavior: smooth }` (globals.css) applies to
 // programmatic scrolls too — including a plain `scrollTop =` assignment — so
 // without an explicit behavior every reset/restore here animated. That broke
@@ -148,6 +160,7 @@ export function useScrollRestoration() {
       const target = positions.get(key) as number;
       root.classList.add('nav-restoring');
       let tries = 0;
+      lastTop = target;
       const apply = () => {
         applyScroll(s, target);
         if (++tries < 12 && Math.abs(topOf(s) - target) > 1) {
@@ -169,7 +182,12 @@ export function useScrollRestoration() {
       // the mobile container (which the router doesn't reset). Skipped on first
       // mount so an initial/reloaded position is left to the router/browser, and
       // on a page that claimed this href change as an in-page filter.
-      if (!claimSuppression(window.location.pathname)) applyScroll(s, 0);
+      // Already at the top (nothing scrolled since the last reset) → nothing to
+      // do, and `scrollTo` would force a layout of the page being committed.
+      if (!claimSuppression(window.location.pathname) && lastTop !== 0) {
+        applyScroll(s, 0);
+        lastTop = 0;
+      }
     }
 
     // Remember this location's offset as the user scrolls, so leaving in any
@@ -187,7 +205,8 @@ export function useScrollRestoration() {
     // buying throttling either: browsers already coalesce scroll events to one
     // per frame, and all this does with the value is write it to a Map.
     const onScroll = () => {
-      remember(key, topOf(s));
+      lastTop = topOf(s);
+      remember(key, lastTop);
     };
     const scrollTarget: Window | HTMLElement = s.win ? window : s.el;
     scrollTarget.addEventListener('scroll', onScroll, { passive: true });
@@ -197,7 +216,7 @@ export function useScrollRestoration() {
       if (clearTimer) clearTimeout(clearTimer);
       root.classList.remove('nav-restoring');
       scrollTarget.removeEventListener('scroll', onScroll);
-      remember(key, topOf(s)); // capture the leave position for the next return
+      remember(key, lastTop); // capture the leave position for the next return
     };
   }, [href]);
 }

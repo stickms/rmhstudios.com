@@ -681,7 +681,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  placeholder={t('message-placeholder', { name: group.name, defaultValue:'Message…'})}
  rows={1}
  maxLength={2000}
- className="max-h-32 w-full resize-none rounded-site border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+ className="max-h-32 w-full resize-none rounded-site glass-inset px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
  />
  </div>
  <Button variant="accent"size="sm"disabled={!canSend} onClick={send} className="h-9">
@@ -707,7 +707,7 @@ type TFn = ReturnType<typeof useTranslation>['t'];
 function PollView({ poll, onVote, t }: { poll: Poll; onVote: (idx: number) => void; t: TFn }) {
  const voted = poll.myVote !== null;
  return (
- <div className="mt-1.5 w-64 max-w-full rounded-site border border-site-border bg-site-surface p-3">
+ <div className="mt-1.5 w-64 max-w-full rounded-site glass-fill p-3">
  <p className="mb-2 text-sm font-semibold text-site-text">{poll.question}</p>
  <div className="flex flex-col gap-1.5">
  {poll.options.map((o, i) => {

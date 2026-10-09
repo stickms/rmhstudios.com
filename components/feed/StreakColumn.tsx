@@ -81,7 +81,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  <div className="space-y-8 p-4">
  {/* Current streak hero */}
  <Reveal>
- <section className="flex flex-col items-center gap-3 rounded-site border border-site-border bg-site-surface p-6 text-center">
+ <section className="flex flex-col items-center gap-3 rounded-site glass-fill p-6 text-center">
  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-site-warning/15">
  <Flame className="h-10 w-10 fill-site-warning/30 text-site-warning"/>
  </div>
@@ -112,7 +112,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  <RevealGroup as="div"className="grid grid-cols-2 gap-3">
  <RevealItem>
  <div
- className={`rounded-site border border-site-border bg-site-surface p-4 ${LIFT_CARD}`}
+ className={`rounded-site glass-fill p-4 ${LIFT_CARD}`}
  >
  <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
  <Trophy className="h-3.5 w-3.5"/>{''}
@@ -128,7 +128,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  </RevealItem>
  <RevealItem>
  <div
- className={`rounded-site border border-site-border bg-site-surface p-4 ${LIFT_CARD}`}
+ className={`rounded-site glass-fill p-4 ${LIFT_CARD}`}
  >
  <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
  <CalendarCheck className="h-3.5 w-3.5"/>{''}
@@ -146,7 +146,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  {/* Next milestone */}
  {next && (
  <Reveal>
- <section className="rounded-site border border-site-border bg-site-surface p-4">
+ <section className="rounded-site glass-fill p-4">
  <div className="mb-2 flex items-center justify-between">
  <h2 className="text-sm font-semibold text-site-text">
  {t('next-milestone', { defaultValue:'Next milestone'})}

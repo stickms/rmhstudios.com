@@ -353,7 +353,7 @@ export function RightSidebar({
           ))}
         </div>
         <Link
-          to="/blog"
+          to="/library"
           aria-label={t('show-more-blog', { defaultValue: 'Show more blog posts' })}
           className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors"
         >

@@ -33,6 +33,7 @@ import { PartyBar } from '@/components/party/PartyBar';
 import { RankedSummary } from '@/components/creator-studio/RankedSummary';
 import { CreatorStudioStyles } from '@/components/creator-studio/CreatorStudioStyles';
 import { ArcadeSection } from '@/components/creator-studio/ArcadeSection';
+import { DeferOnNavigate } from '@/components/ui/defer-on-navigate';
 // Read by `validateSearch` (the route definition, which is in every page's
 // entry) — so it comes from the UI-free module, not ArcadeSection. See
 // components/creator-studio/arcade-tabs.ts.
@@ -47,9 +48,7 @@ export const Route = createFileRoute('/_site/games/')({
   // held locally so `/leaderboard` can deep-link the board even when the viewer
   // is already on this page and it never remounts.
   validateSearch: (search: Record<string, unknown>): { sub?: ArcadeSubTab } =>
-    ARCADE_SUB_TABS.includes(search.sub as ArcadeSubTab)
-      ? { sub: search.sub as ArcadeSubTab }
-      : {},
+    ARCADE_SUB_TABS.includes(search.sub as ArcadeSubTab) ? { sub: search.sub as ArcadeSubTab } : {},
   head: definePage({
     path: '/games',
     title: 'Games | RMH Studios',
@@ -65,7 +64,8 @@ export const Route = createFileRoute('/_site/games/')({
 
 function GamesIndexPage() {
   const { t } = useTranslation('site');
-  const { sub = 'challenges' } = Route.useSearch();
+  const search = Route.useSearch();
+  const { sub = 'challenges' } = search;
   const navigate = useNavigate();
   const games = useMemo(() => listCuratedBuilds().filter((b) => b.kind === 'game'), []);
 
@@ -107,7 +107,13 @@ function GamesIndexPage() {
           />
         </div>
         <div className="px-4 pt-6 pb-12">
-          <ArcadeSection sub={sub} onSubChange={setArcadeSub} />
+          {/* Below the whole catalog; built after the top of the page has
+              painted on a page switch (it carries its own tab strip and
+              panels). A `?sub=` deep link is the one arrival that is ABOUT
+              this panel, so it renders straight away there. */}
+          <DeferOnNavigate enabled={!search.sub} minHeight="40vh">
+            <ArcadeSection sub={sub} onSubChange={setArcadeSub} />
+          </DeferOnNavigate>
         </div>
       </PageLayout>
     </>

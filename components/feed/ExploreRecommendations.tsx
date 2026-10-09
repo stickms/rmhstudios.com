@@ -214,7 +214,7 @@ export function ExploreRecommendations({
  <Link
  key={tag.tag}
  to={`/tag/${tag.tag}`as string}
- className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface px-3 py-1 text-sm text-site-text transition-colors duration-site hover:border-site-accent/50"
+ className="inline-flex items-center gap-1 rounded-full glass-fill px-3 py-1 text-sm text-site-text transition-colors duration-site hover:border-site-accent/50"
  >
  <Hash className="h-3 w-3 text-site-accent"/>
  {tag.tag}
@@ -234,7 +234,7 @@ export function ExploreRecommendations({
  <Link
  key={u.id}
  to={`/u/${u.handle || u.id}`as string}
- className={`flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}
+ className={`flex items-center gap-3 rounded-site glass-fill p-2.5 ${LIFT_CARD}`}
  >
  <UserAvatar src={u.image} alt={u.name || t('user-alt', { defaultValue:'User'})} size={36} fallbackName={u.name ||'U'} />
  <div className="min-w-0">
@@ -292,7 +292,7 @@ export function ExploreRecommendations({
  <Link
  key={c.id}
  to={`/c/${c.slug}`as string}
- className={`flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}
+ className={`flex items-center gap-3 rounded-site glass-fill p-2.5 ${LIFT_CARD}`}
  >
  <div
  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-site text-xl"
@@ -325,7 +325,7 @@ export function ExploreRecommendations({
  <a
  key={b.id}
  href={b.href}
- className={`flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}
+ className={`flex items-center gap-3 rounded-site glass-fill p-2.5 ${LIFT_CARD}`}
  >
  <BuildThumb src={b.thumbnailUrl} title={b.title} />
  <div className="min-w-0">
@@ -338,7 +338,7 @@ export function ExploreRecommendations({
  <Link
  key={b.id}
  to={`/user-builds/${b.slug}`as string}
- className={`flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}
+ className={`flex items-center gap-3 rounded-site glass-fill p-2.5 ${LIFT_CARD}`}
  >
  <BuildThumb src={b.thumbnailUrl} title={b.title} />
  <div className="min-w-0">
