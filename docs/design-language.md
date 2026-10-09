@@ -77,7 +77,8 @@ without a single component change.
 
 **Current companions:** [radial UI + the globe](../components/radial/README.md) ·
 [the per-page checklist](./page-consistency.md) ·
-[UI audit 2026-08-01](./ui-audit-2026-08-01.md) (the most recent site-tier pass) ·
+[UI audit 2026-10-09](./ui-audit-2026-10-09.md) (the most recent site-tier pass) ·
+[UI audit 2026-08-01](./ui-audit-2026-08-01.md) ·
 [performance audit 2026-08-01](./performance-audit-2026-08-01.md) (why the
 cursor effects went).
 
@@ -131,7 +132,7 @@ per-page checklist with code.)
    phone width and a desktop width, and once with reduced motion on. Three
    themes × two widths is the floor; the audit matrix in
    `docs/ui-audit-2026-07-28.md` §1 is the extended version, and
-   `docs/ui-audit-2026-08-01.md` is the most recent pass over the site tier.
+   `docs/ui-audit-2026-10-09.md` is the most recent pass over the site tier.
 
 **When the system does not have what you need**, extend the system — add the
 token, add the variant, add the primitive — and say so in the commit message.
@@ -955,16 +956,22 @@ gated off there too, via `html.app-route`).
   wake the normally-idle sampler. (Comments in `liquid-morph.tsx` still say
   "shader body" in places — that is the deleted GL tier, and the SVG/CSS path
   they describe is the one that always ran.)
-- **Liquid tabs:** tab strips use `components/ui/liquid-tabs.tsx` — each rides
-  its own L1 **glass sheet** (`glass-fill glass-bevel-sm rounded-full` pill,
-  `sheet` prop default) placed **below** the hero/page-title capsule, never
-  inside header chrome (§5.45; see `page-consistency.md`). The active capsule is
-  a `layoutId` glass pill that flows between tabs on `SPRING.snappy` and jumps
-  under reduced motion; on capable engines it also **morphs** — velocity
-  squash/stretch plus a `#glass-goo` metaball trail (`liquid-morph.tsx`, §5.47),
-  stripped under reduced-motion / perf-lite / high-contrast. Link-based or
-  `aria-controls`-rich tab bars keep their own markup and add the `layoutId`
-  capsule directly (creator studio, RMHLadder).
+- **Liquid tabs:** tab strips use `components/ui/liquid-tabs.tsx`, placed
+  **below** the page title, never inside header chrome (§5.45; see
+  `page-consistency.md`). Since the 2026-10-09 minimalism audit the strip is a
+  **segmented control**: a neutral raised **thumb** (`[data-tab-thumb]`, opaque
+  surface + hairline + small shadow) on a recessed `.glass-inset` **track**,
+  with the label in full ink. The accent fill is reserved for actions — a solid
+  accent pill read exactly like a primary button. High contrast keeps the
+  filled accent thumb. The thumb's paint is `--tab-thumb-bg` / `-ink` /
+  `-border` on the strip, so a game re-skins it with variables (Slice It!).
+  **One row; labels never truncate:** ≤4 tabs split the track equally, more
+  size to their labels, and a strip that still overflows scrolls with an edge
+  fade and keeps the active tab in view — it never wraps into a grid. The thumb
+  is a `layoutId` element that flows between tabs on `SPRING.snappy` and jumps
+  under reduced motion. Link-mode strips (`renderTab`) get the same thumb.
+  A hub whose "tabs" would be product names (/services, /ventures) is a list
+  (`HubLinkRow`), not a strip.
 - **Liquid opens:** card→detail navigations morph the clicked glass slab into
   the detail hero via `runViewTransition(el, { liquid: true })` + `liquidVTName()`
   (`lib/view-transition.ts`, §5.48) — the VT name is set at click time and

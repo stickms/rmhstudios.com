@@ -550,6 +550,8 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     // showcases now listed on the /services hub. Same pipeline caveat.
     'services-cars-desc',
     'services-fashion-desc',
+    // /help's title, which was a hardcoded English "Help" in a bespoke header.
+    'help-title',
     // The accessible name of the Games ⇄ Apps catalog strip (2026-08-08). Same
     // pipeline caveat as the `feed` block above — English-only until
     // `pnpm i18n:translate && pnpm i18n:resources` runs.
