@@ -331,7 +331,7 @@ export function DeckStudyColumn({
  <Reveal as="section">
  <h2 className="site-section-label mb-2 flex items-center gap-1.5">
  <RotateCcw className="h-3.5 w-3.5"/>{''}
- {t('card-count', { count: cards.length, defaultValue:'{{count}} card'})}
+ {t('card-count', { count: cards.length, defaultValue_one:'{{count}} card', defaultValue:'{{count}} cards'})}
  </h2>
  <div className="space-y-1">
  {cards.map((c) => (

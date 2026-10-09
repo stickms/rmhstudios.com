@@ -135,7 +135,7 @@ export function AnalyticsDashboard() {
           {t('top-posts', { defaultValue: 'Top posts by impressions' })}
         </h3>
         {data.topPosts.length === 0 ? (
-          <p className="text-sm text-site-text-dim">{t('no-posts-yet', { defaultValue: 'No posts yet.' })}</p>
+          <p className="text-sm text-site-text-dim">{t('no-posts-yet', { defaultValue: 'No posts yet. Be the first!' })}</p>
         ) : (
           <ul className="space-y-2">
             {data.topPosts.map((p) => (

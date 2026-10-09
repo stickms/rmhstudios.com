@@ -95,7 +95,7 @@ function ComposePlaceholder({ onActivate }: { onActivate?: () => void }) {
  painted at the default size and visibly shrank a moment later.
  The two cards are otherwise identical — keep them that way. */}
  <Button variant="accent"size="sm">
- {t('sign-in', { defaultValue:'Sign In'})}
+ {t('sign-in', { defaultValue:'Sign in'})}
  </Button>
  </Link>
  </div>

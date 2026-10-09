@@ -299,7 +299,7 @@ export function BookReader({ book }: { book: LibraryBook }) {
   const bookmarked = marks.state.bookmarks.some((b) => b.page === curPage);
   const toggleBookmark = useCallback(() => {
     const chapter = [...chapters].reverse().find((c) => c.page <= curPage);
-    const label = chapter ? chapter.title : t('page-n', { page: curPage, defaultValue: `Page ${curPage}` });
+    const label = chapter ? chapter.title : t('page-n', { page: curPage, defaultValue: 'Page {{page}}' });
     marks.toggleBookmark(curPage, label);
   }, [chapters, curPage, marks, t]);
 
@@ -727,7 +727,7 @@ export function MarksMenu({
                 className="lib-marks__textarea"
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                placeholder={t('note-placeholder', { page: curPage, defaultValue: `Add a note for page ${curPage}…` })}
+                placeholder={t('note-placeholder', { page: curPage, defaultValue: 'Add a note for page {{page}}…' })}
                 rows={2}
               />
               <button type="submit" className="lib-marks__add" disabled={!draft.trim()}>
@@ -747,7 +747,7 @@ export function MarksMenu({
                       }}
                     >
                       <span className="lib-marks__note-text">{n.text}</span>
-                      <span className="lib-marks__item-page">{t('page-n', { page: n.page, defaultValue: `Page ${n.page}` })}</span>
+                      <span className="lib-marks__item-page">{t('page-n', { page: n.page, defaultValue: 'Page {{page}}' })}</span>
                     </button>
                     <button
                       type="button"

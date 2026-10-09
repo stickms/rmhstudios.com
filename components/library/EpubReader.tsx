@@ -143,7 +143,7 @@ export function EpubReader({ book }: { book: LibraryBook }) {
   const bookmarked = marks.state.bookmarks.some((b) => b.page === curPage);
   const toggleBookmark = useCallback(() => {
     const ch = [...chapters].reverse().find((c) => c.page <= curPage);
-    const label = ch ? ch.title : t('page-n', { page: curPage, defaultValue: `Page ${curPage}` });
+    const label = ch ? ch.title : t('page-n', { page: curPage, defaultValue: 'Page {{page}}' });
     marks.toggleBookmark(curPage, label);
   }, [chapters, curPage, marks, t]);
 

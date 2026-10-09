@@ -124,7 +124,7 @@ export function FlashcardsColumn({
           })}
           {showOwner && d.user
             ? t('deck-by-owner', {
-                owner: d.user.name || d.user.handle || t('someone', { defaultValue: 'someone' }),
+                owner: d.user.name || d.user.handle || t('someone', { defaultValue: 'Someone' }),
                 defaultValue: '· by {{owner}}',
               })
             : ''}

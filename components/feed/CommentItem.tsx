@@ -429,7 +429,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  autoFocus
  value={replyContent}
  onChange={setReplyContent}
- placeholder={t('reply-placeholder', { handle: freshCommentUser.handle || freshCommentUser.name ||'Unknown', defaultValue:'Reply to @{{handle}}...'})}
+ placeholder={t('reply-placeholder', { handle: freshCommentUser.handle || freshCommentUser.name ||'Unknown', defaultValue:'Post your reply...'})}
  rows={2}
  maxLength={MAX_COMMENT_LENGTH}
  className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-xs rounded-site-sm p-2 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
@@ -479,7 +479,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  onClick={handleSubmitReply}
  className="h-6 text-xs px-2.5"
  >
- {submitting ? t('posting', { defaultValue:'Posting...'}) : t('reply', { defaultValue:'Reply'})}
+ {submitting ? t('posting', { defaultValue:'Posting…'}) : t('reply', { defaultValue:'Reply'})}
  </Button>
  </div>
  </div>

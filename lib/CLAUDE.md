@@ -136,7 +136,12 @@ don't remove that plugin.
   more directories and more `en/*.json` files than are registered, and anything
   unregistered is **never loaded** (the UI silently serves `defaultValue`s).
   Adding a namespace file means adding it to `NAMESPACES` in the same commit.
-- **Only `en` is statically bundled**; other locales are code-split chunks in
+- **No catalog is statically bundled — not even English.** English renders
+  from each `t()` call's `defaultValue` (server and client alike), and
+  `locales/en` is backfilled at idle for fallback. So every call needs a
+  **literal** default equal to the catalog — interpolate (`'Page {{page}}'`),
+  never `${}` — and `lib/__tests__/i18n-default-drift.test.ts` enforces both.
+  Other locales are code-split chunks in
   the auto-generated `lib/i18n/resources.<locale>.ts` files. SSR lazily loads
   only the _active_ locale on demand via `resources.server.ts`
   (`preloadLocale()` is awaited in the `__root.tsx` root loader before render;

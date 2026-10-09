@@ -60,7 +60,7 @@ export function CircleManager() {
       if (next.has(id)) next.delete(id);
       else {
         if (next.size >= MAX_CIRCLE) {
-          toast.error(t('limit', { defaultValue: `Up to ${MAX_CIRCLE} close friends` }));
+          toast.error(t('limit', { max: MAX_CIRCLE, defaultValue: 'Up to {{max}} close friends' }));
           return prev;
         }
         next.add(id);

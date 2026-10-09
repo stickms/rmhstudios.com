@@ -107,7 +107,7 @@ export function AchievementsColumn({
  <div className="flex items-center gap-3 text-sm text-site-text-muted">
  <span>
  <strong className="text-site-text">{data.stats.unlocked}</strong> / {data.stats.total}{' '}
- {t('unlocked', { defaultValue:'unlocked'})}
+ {t('unlocked', { defaultValue:'Unlocked!'})}
  </span>
  <span aria-hidden>·</span>
  <span className="inline-flex items-center gap-1">

@@ -909,7 +909,7 @@ export function ConversationView({
         </p>
         <Link to="/login" search={{ callbackURL: undefined }}>
           <Button variant="accent" size="sm">
-            {t('sign-in', { defaultValue: 'Sign In' })}
+            {t('sign-in', { defaultValue: 'Sign in' })}
           </Button>
         </Link>
       </div>
@@ -1020,7 +1020,7 @@ export function ConversationView({
                   className="text-sm text-site-accent hover:underline disabled:opacity-50"
                 >
                   {loadingOlder
-                    ? t('loading', { defaultValue: 'Loading...' })
+                    ? t('loading', { defaultValue: 'Loading…' })
                     : t('load-older-messages', { defaultValue: 'Load older messages' })}
                 </button>
               </div>
@@ -1030,7 +1030,7 @@ export function ConversationView({
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <p className="text-sm text-site-text-muted">
                   {t('no-messages-yet', {
-                    defaultValue: 'No messages yet. Send one to start the conversation!',
+                    defaultValue: 'No messages yet',
                   })}
                 </p>
               </div>

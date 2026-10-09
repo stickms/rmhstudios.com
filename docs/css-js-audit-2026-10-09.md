@@ -193,12 +193,67 @@ baseline is deleted and zod in the entry is a plain failure again.
 side-effect import of a module in a route file; a page route exports only its
 `Route`), mutation-checked.
 
-| Critical path (`main` → this branch) | Before | After |
-|---|---:|---:|
-| Eager JS, brotli (`scripts/ci/bundle-budget.ts`) | 303.1 KB (over its 300 band) | **278.3 KB** |
-| Entry chunk, raw (CI gate) | 628.6 KB | **594.1 KB** |
-| Critical path, raw (CI gate) | 1,202.3 KB | **1,090.5 KB** (−9%) |
-| Critical path, brotli (CI gate) | 336.6 KB | **309.9 KB** (−8%) |
+| Critical path (`main` → JS-1 → JS-2) | `main` | after JS-1 | after JS-2 |
+|---|---:|---:|---:|
+| Eager JS, brotli (`scripts/ci/bundle-budget.ts`) | 303.1 KB (over its 300 band) | 278.3 KB | **242.7 KB** |
+| Entry chunk, raw (CI gate, budget 525.3 KB) | 628.6 KB ✗ | 594.1 KB ✗ | **460.2 KB ✓** |
+| Critical path, raw (CI gate) | 1,202.3 KB | 1,090.5 KB | **956.6 KB** (−20%) |
+| Critical path, brotli (CI gate) | 336.6 KB | 309.9 KB | **274.4 KB** (−18%) |
+
+## JS-2 — No translation catalog on the critical path, English included
+
+After JS-1 the CI gate's *entry raw* row was still red (594 KB against 525 KB —
+red on `main` too, at 628 KB). The largest single item left in the entry was the
+**English core catalog, ~136 KB minified**: 13 namespaces (`feed` alone is
+74 KB of JSON) bundled so the shell and feed could hydrate in English. The
+sourcemap charges it to `react-i18next/I18nextProvider.js`, which is why the
+composition table read "react-i18next 138 KB".
+
+Nothing on screen needs it. Every `t()` call carries a `defaultValue`, so
+English can render from those on the server and on the client's first render
+alike — hydration matches by construction — and the catalog can arrive at idle,
+as the non-core English catalog already did. That is safe only if every default
+says exactly what the catalog says, so that the catalog landing changes nothing.
+It did not, quite:
+
+| Found | Count | Fix |
+|---|---:|---|
+| Core defaults that drifted from the catalog (casing, `...` vs `…`, stale copy) | 33 | Default aligned to the catalog — the text users already saw, so nothing visible changes |
+| Plural calls passing one default for both forms | 4 | `defaultValue_one` + `defaultValue` |
+| English catalog plurals that were wrong ("Show 3 more **reply**", "3 new **post**") | 2 | `_other` corrected in `locales/en/feed.json` |
+| `poll-option-placeholder`: catalog `Option {{index}}`, code passed `count` — rendered "Option " with no number | 2 call sites | Pass `index` (Arabic had grown bogus plural forms off the stray `count`; it now uses its base translation) |
+| Template-literal defaults (`` `Page ${n}` ``) the extractor can't read, so it wrote `""` into every locale — and i18next returns `""` as-is, so the text went **blank** once the catalog loaded | 17 calls / 19 keys in `admin`, `c-library`, `c-circle` | Interpolated defaults (`'Page {{page}}'`), English catalog filled in; the other locales keep their `""` placeholder, which the translate workflow picks up because the English source changed |
+
+Then `resources.en-core.ts` is deleted and no catalog is bundled: the server
+renders English from defaults (`getServerI18n`), the client initialises with no
+English resources, and `backfillEn()` loads the whole catalog after `load` +
+idle — for other locales' fallback and anything read without a default.
+
+**Gates.** `i18n-default-drift.test.ts` now covers every namespace (it used to
+exempt the bundled ones — the 41 drifts were hiding there) and gained a rule:
+every call with a literal key carries a **literal** default (a template-literal
+default is reported as none, with the reason). `i18n-code-splitting.test.ts`
+lost its `resources.en-core` exception. Both mutation-checked.
+
+**Verified at runtime**, because 58 core calls build their key from data and no
+static check can vouch for those: each page rendered twice from the same build —
+once with the English catalog request **blocked** (what a visitor sees before the
+backfill) and once with it loaded — diffing every visible text node plus
+`placeholder`, `aria-label`, `title` and `alt`, with the command palette and the
+shortcuts sheet opened on each.
+
+| Pass | Renders | Strings | Differences |
+|---|---:|---:|---:|
+| Signed out, 34 pages × 1440 + 390 px | 68 | ~21,900 | **0** |
+| Signed in, 16 pages (settings, messages, notifications, wallet, profile…) × 2 widths | 32 | ~12,400 | **0** (one render came back signed-out and was re-run clean twice) |
+| German locale (`rmh-lang=de`), 6 pages | 6 | ~2,200 | **0** — German renders server-side, English fallback unchanged |
+
+No new hydration errors. Five pages (`/games`, `/apps`, `/store`,
+`/leaderboard`, `/pricing`) log React #418 with or without the catalog — and on
+the PR's previous commit, and on a fresh build of `main`. It is pre-existing: on
+`/games` the server renders "Loading your standings…" where the client renders
+the signed-out state, and the stack points into the subtree
+`DeferOnNavigate` wraps. Out of scope here; reported separately.
 
 ### The eager-CSS budget was measuring the wrong file
 
@@ -240,17 +295,8 @@ the budget never saw it. It now counts the site-tier sheet. Honest figure:
 
 ## Not done (and why)
 
-- **The English core catalog is the largest thing left in the entry: ~136 KB
-  minified** (the sourcemap charges it to `react-i18next/I18nextProvider.js`; it
-  is `resources.en-core.ts`). The non-core English catalog was already deferred
-  on the grounds that English `defaultValue`s equal the catalog — but
-  `i18n-default-drift.test.ts` deliberately exempts the core namespaces, and with
-  that exemption lifted it reports **41 drifting core keys** (several are one
-  key used with two wordings, e.g. `feed:private` as "private" and "Private").
-  Path: give each drifting call its own key (CLAUDE.md: new wording is a new
-  key), extend the drift gate to core, then backfill English core at idle like
-  the rest. That is also what brings the CI gate's *entry raw* row (594 KB
-  against 525 KB — already red on `main` at 628 KB) back under budget.
+- **React #418 on five pages, pre-existing on `main`** (JS-2 above). A
+  session-dependent render mismatch, not a size or i18n issue.
 - **App-route-only rules still in `globals.css`** (`.app-viewport`, `.app-page`,
   `html.app-route …`, ~2.5 KB raw): some top-level pages that take the site sheet
   also get `html.app-route`, so moving them needs a per-route audit for ~0.5 KB

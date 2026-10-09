@@ -348,7 +348,7 @@ export function FeedList({
  onClick={retry}
  className="px-5 py-2 rounded-site-sm bg-site-accent text-site-accent-fg text-sm font-bold hover:bg-site-accent-hover transition-colors"
  >
- {t('retry', { defaultValue:'Retry'})}
+ {t('retry', { defaultValue:'Try again'})}
  </button>
  </div>
  )}
@@ -401,7 +401,7 @@ export function FeedList({
  onClick={retry}
  className="px-4 py-1.5 rounded-site-sm border border-site-border bg-site-surface text-site-text text-sm font-medium hover:bg-site-surface-hover transition-colors"
  >
- {t('retry', { defaultValue:'Retry'})}
+ {t('retry', { defaultValue:'Try again'})}
  </button>
  </div>
  )}

@@ -75,7 +75,7 @@ function AdminPredictionsPage() {
   }
 
   async function resolve(id: string, outcome: 'YES' | 'NO') {
-    if (!(await confirm({ title: t('resolve-confirm', { defaultValue: `Resolve this market to ${outcome}? This pays out winners and cannot be undone.`, outcome }), danger: true }))) {
+    if (!(await confirm({ title: t('resolve-confirm', { defaultValue: 'Resolve this market to {{outcome}}? This pays out winners and cannot be undone.', outcome }), danger: true }))) {
       return;
     }
     setBusy(id);
@@ -90,7 +90,7 @@ function AdminPredictionsPage() {
         toast.error(data.error || 'Failed');
         return;
       }
-      toast.success(t('resolved-paid', { defaultValue: `Resolved ${outcome} — paid ${data.payouts} coins`, outcome, payouts: data.payouts }));
+      toast.success(t('resolved-paid', { defaultValue: 'Resolved {{outcome}} — paid {{payouts}} coins', outcome, payouts: data.payouts }));
       load();
     } finally {
       setBusy(null);

@@ -678,7 +678,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  send();
  }
  }}
- placeholder={t('message-placeholder', { name: group.name, defaultValue:'Message…'})}
+ placeholder={t('message-placeholder', { name: group.name, defaultValue:'Message {{name}}…'})}
  rows={1}
  maxLength={2000}
  className="max-h-32 w-full resize-none rounded-site glass-inset px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
