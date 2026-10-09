@@ -356,6 +356,8 @@ else
     lib/__tests__/motion-pop-spring.test.ts
     lib/__tests__/game-viewport-consistency.test.ts
     lib/__tests__/filter-cost-budget.test.ts
+    lib/__tests__/static-backdrop.test.ts
+    lib/__tests__/route-css-imports.test.ts
     lib/__tests__/theme-tokens.test.ts
     lib/__tests__/appearance-contrast.test.ts
     lib/__tests__/color-vision-a11y.test.ts

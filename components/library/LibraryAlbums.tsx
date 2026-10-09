@@ -14,6 +14,7 @@ import { BlurImage } from '@/components/ui/BlurImage';
 import { ViewTransitionLink } from '@/components/ui/ViewTransitionLink';
 import { albumCoverVTName } from '@/lib/view-transition';
 import { useIntentPreload } from '@/hooks/useIntentPreload';
+import '@/components/library/library.css';
 
 // How many of an album's photos to warm on hover. The viewer preloads a window
 // around whatever slide it lands on, so a small head start covers the opening

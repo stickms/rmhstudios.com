@@ -21,15 +21,17 @@ architecture. Two ideas, one language:
   hub** that, when tapped, sends the orb to the middle of the screen and swells
   it into a **liquid globe** — the destinations pinned to a glass sphere you
   turn, hold and let go of to travel — and that **ripples when you poke it**. A
-  fixed **ring backdrop**, a drifting blob field and a slowly breathing aurora
-  keep the whole surface feeling liquid and continuous. Mobile-first, with a
+  fixed **ring backdrop**, a soft blob field and the aurora keep the whole
+  surface feeling continuous — and **still**: nothing in the backdrop animates,
+  on any tier, so a page at rest goes idle (§5.5 Living backdrop;
+  `lib/__tests__/static-backdrop.test.ts`). Mobile-first, with a
   strict **high-contrast monochrome** palette.
 - **Avant-garde glass.** The material is Apple's Liquid Glass used
   _theatrically_, not literally: physically-plausible layered translucent glass
   with **live optics** — an always-on specular rim glint lit by a static scene
   sun, lens-model edge refraction (with an optional chromatic **prism** on one
-  flagship surface), a two-layer drifting aurora canvas, micro-noise, and
-  travelling liquid sheens that ride the compositor — deployed for signature
+  flagship surface), a two-layer aurora canvas, micro-noise, and liquid sheens
+  that sweep once on arrival or on hover — deployed for signature
   radial moments (the menu is an **expanding circular veil** growing from the
   centre, not a drawn disc, with a glass sphere suspended in it). It is
   expressed as an **elevation system of explicit CSS classes** (`.glass-fill` /
@@ -46,8 +48,7 @@ without a single component change.
 > layer (shell, hub, liquid globe, wheel feed) ships in
 > [`components/radial/`](../components/radial/README.md), and the **Liquid Glass
 > material is rendered on top of it**: the radial shell no longer demotes the
-> glass classes to flat cards, the aurora canvas paints and drifts behind
-> everything, and surfaces are translucent by token (`--site-surface` is a tint,
+> glass classes to flat cards, the aurora canvas paints behind everything, and surfaces are translucent by token (`--site-surface` is a tint,
 > not paper) so both the `.glass-*` tiers and the many pages that simply paint
 > `bg-site-surface` sample the same scene. The elevation tiers, rim glint (on L1
 > as well as L2+), frosted edge bevel and travelling sheen are all on. The
@@ -699,8 +700,8 @@ close-button clearance stay consistent.
 
 The `_site` layout route delegates to `components/feed/SiteShell.tsx`, which now
 renders the **radial shell** ([`components/radial/RadialShell.tsx`](../components/radial/RadialShell.tsx)):
-a fixed **ring backdrop** (concentric hairlines plus a drifting blob field — it
-is static under the pointer now, §5.1.1), a slim sticky **utility top bar**
+a fixed **ring backdrop** (concentric hairlines plus a soft blob field — static:
+it neither follows the pointer, §5.1.1, nor animates on its own, §5.5), a slim sticky **utility top bar**
 (brand · search · inbox · avatar), the **frame** and the central **RMH hub**
 (`RadialHub`). The shell's backdrop layer paints only the rings and blobs; the
 **aurora canvas** is the document's own `.site-aurora` element (rendered in
@@ -817,8 +818,8 @@ gated off there too, via `html.app-route`).
   **liquid globe** under an expanding `clip-path` **circular veil** (CSS phase
   machine + one mount-bounded rAF loop for the sphere's spin, dwell and ripple),
   and page headers/heroes rise in on mount (`radial-page-rise`). The **ring
-  backdrop** and its blob field drift on their own compositor keyframes — they no
-  longer parallax to the pointer (§5.1.1). All of it is `transform`/`opacity`
+  backdrop** and its blob field are static — no pointer parallax (§5.1.1) and no
+  ambient keyframes (§5.5 Living backdrop). All of it is `transform`/`opacity`
   only and gated off under reduced motion; optional scroll **haptics**
   (`navigator.vibrate`) tick as cards cross the focus line.
 - **framer-motion** is the animation library. Reach for the shared motion
@@ -894,11 +895,20 @@ gated off there too, via `html.app-route`).
 - **Living backdrop (two layers, one host):** the aurora is the shared scene
   every `backdrop-filter` on the page samples. Both layers are pseudo-elements
   of **`.site-aurora`**, a leaf element rendered in `app/routes/__root.tsx`:
-  `::before` runs an ultra-slow transform-only `aurora-drift` keyframe, and a
-  far-field `::after` (per-theme `--site-aurora-far-*` stops) counter-drifts on
-  its own slower keyframe, so the two separate into depth on their own. Both are
-  gated off under reduced motion, `html.perf-lite` and `html.app-route`, and
-  stop in high-contrast (canvas is `none` there).
+  `::before` is the near field and `::after` (per-theme `--site-aurora-far-*`
+  stops) the far field, offset so the two read as depth. **Neither animates.**
+  Both used to run ultra-slow infinite drift keyframes (34s / 52s), with the
+  rings breathing and the blobs drifting in `radial.css` on top — each
+  "transform-only, compositor, costs the main thread nothing", and each claim
+  true. What it cost was idleness: one perpetual layer means the page renders a
+  new frame every vsync forever. Measured on `/` (1920×1080, vsync-capped
+  Chromium): ~1020ms/s of browser CPU and 16.7fps with the motion, 63ms/s and a
+  locked 60fps without it — and removing `backdrop-filter` instead changed
+  nothing ([perf audit 2026-10-08](performance-audit-2026-10-08.md)). The only
+  movement left is the opt-in device-tilt parallax (event-driven `translate`,
+  below), which settles. `lib/__tests__/static-backdrop.test.ts` fails the build
+  if a backdrop layer animates again. Both layers are gated off under
+  `html.app-route` and stop in high-contrast (canvas is `none` there).
 
   Two details are load-bearing. **The host is not `<body>` and not `<html>`.**
   The layers used to be `body::before/::after`, which forced their offset custom

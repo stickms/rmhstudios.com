@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
+import { frameAlpha } from '@/lib/render/frame-alpha';
 import { Vector2, Vector3 } from 'three';
 import {
     distToRiver,
@@ -64,7 +65,7 @@ export function Player() {
 
         const speed = (k['ShiftLeft'] || k['ShiftRight']) ? 9 : 5;
         if (input.lengthSq() > 0) input.normalize().multiplyScalar(speed);
-        localVel.current.lerp(input, 0.15);
+        localVel.current.lerp(input, frameAlpha(0.15, delta));
 
         const camForward = scratch.camForward;
         camera.getWorldDirection(camForward);

@@ -91,8 +91,12 @@ const panelIntentProps = {
  * spent on a backdrop are frames not spent on the thing the pointer is actually
  * heading for.
  *
- * What is left is static geometry plus the CSS blob field's own slow keyframes,
- * which run on the compositor and cost the main thread nothing.
+ * What is left is static geometry, full stop. The rings used to breathe and the
+ * blobs to drift on CSS keyframes — "compositor-only, free for the main thread",
+ * which was true, and beside the point: a backdrop that never holds still is a
+ * page that never goes idle, re-composited on every vsync for as long as the tab
+ * is open (perf audit 2026-10-08; the measured table is above
+ * `.radial-backdrop__field` in radial.css).
  */
 function RadialBackdrop() {
   return (
@@ -102,13 +106,10 @@ function RadialBackdrop() {
           <span key={i} className="radial-backdrop__ring" style={{ ['--i' as string]: i }} />
         ))}
       </div>
-      {/* Blob field: a few slow-drifting blobs that swell together and pull
-          apart like lava — the liquid substrate the glass surfaces float over.
-          The fusing comes from the blobs' own soft-edged gradients, and always
-          did: a viewport-sized SVG filter with animating children re-rasterises
-          every frame and cost this page ~4x its frame time (see the cost note in
-          radial.css above the field's media query). CSS still keeps the whole
-          layer off phones / reduced-motion. */}
+      {/* Blob field: a few soft, overlapping blobs — the liquid substrate the
+          glass surfaces float over. Static (see above); the soft-edged
+          gradients do the fusing, never an SVG filter (see the cost note in
+          radial.css). CSS keeps the layer off phone widths. */}
       <div className="radial-backdrop__field">
         {[0, 1, 2, 3].map((i) => (
           <span key={i} className="radial-backdrop__blob" style={{ ['--i' as string]: i }} />

@@ -308,9 +308,14 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                   {ts('setlists', { defaultValue: 'Setlists' })}
                 </span>
               </Button>
+              {/* Three pulses on arrival, then still. It used to pulse forever,
+                  and while signed out it sits under the full-menu
+                  `backdrop-blur-xl` sign-in veil — so every pulse frame re-blurred
+                  the whole menu: 10fps and a full core at rest on desktop,
+                  60fps / idle with the pulse stopped (perf audit 2026-10-08). */}
               <Button
                 variant="outline"
-                className="h-10 shrink-0 bg-linear-to-r from-violet-500 to-blue-500 text-white border-none hover:from-violet-400 hover:to-blue-400 font-black px-3 sm:px-5 rounded-lg transition-colors uppercase tracking-wide text-xs shadow-[0_0_12px_rgba(139,92,246,0.5)] hover:shadow-[0_0_20px_rgba(139,92,246,0.7)] animate-pulse hover:animate-none"
+                className="h-10 shrink-0 bg-linear-to-r from-violet-500 to-blue-500 text-white border-none hover:from-violet-400 hover:to-blue-400 font-black px-3 sm:px-5 rounded-lg transition-colors uppercase tracking-wide text-xs shadow-[0_0_12px_rgba(139,92,246,0.5)] hover:shadow-[0_0_20px_rgba(139,92,246,0.7)] animate-pulse-settle hover:animate-none"
                 onClick={() => setShowMultiplayer(true)}
               >
                 <svg

@@ -44,6 +44,8 @@ import { useBookState, type Bookmark as BookmarkT, type Note } from '@/lib/libra
 import { usePopPresence } from '@/hooks/usePopPresence';
 import { BookCanvas } from './BookCanvas';
 import { ReaderDetails } from './ReaderDetails';
+import '@/components/library/library.css';
+import '@/components/rmhvibe/vibe.css';
 
 // Minimal shape of the pdfjs document we use — avoids a hard type dep on pdfjs.
 type OutlineNode = { title: string; dest: string | unknown[] | null; items: OutlineNode[] };

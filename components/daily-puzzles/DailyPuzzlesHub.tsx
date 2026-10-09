@@ -306,7 +306,7 @@ export function DailyPuzzlesHub() {
 
   return (
     <div className="relative mx-auto max-w-5xl px-4 pb-10">
-      <AuroraBackground reduced={reduced} />
+      <AuroraBackground />
 
       <div className="relative">
         {/* ── Hero ────────────────────────────────────────────────────────── */}
@@ -523,30 +523,25 @@ function StatTile({
 
 /* ── Aurora background ─────────────────────────────────────────────────────── */
 
-function AuroraBackground({ reduced }: { reduced: boolean }) {
-  // A few slow-drifting accent blobs behind the content. Decorative + inert.
+function AuroraBackground() {
+  // A few soft accent blobs behind the content. Decorative + inert — and STILL.
+  // They used to drift and swell forever on a framer `repeat: Infinity` loop:
+  // three 64px-`blur` layers re-scaled from the main thread every frame, so the
+  // hub never went idle (2.1 cores and 41fps at rest on desktop, perf audit
+  // 2026-10-08). A scaled blur cannot be cached; a static one is rasterised once.
+  // Same rule as the site backdrop (lib/__tests__/static-backdrop.test.ts).
   const blobs = [
-    { color: DESK_MODES[2].accent, className: 'left-[-8%] top-[2%] h-72 w-72', delay: 0 },
-    { color: DESK_MODES[4].accent, className: 'right-[-6%] top-[18%] h-80 w-80', delay: 1.2 },
-    { color: DESK_MODES[1].accent, className: 'left-[24%] top-[40%] h-64 w-64', delay: 2.4 },
+    { color: DESK_MODES[2].accent, className: 'left-[-8%] top-[2%] h-72 w-72' },
+    { color: DESK_MODES[4].accent, className: 'right-[-6%] top-[18%] h-80 w-80' },
+    { color: DESK_MODES[1].accent, className: 'left-[24%] top-[40%] h-64 w-64' },
   ];
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
       {blobs.map((b, i) => (
-        <motion.div
+        <div
           key={i}
           className={`absolute rounded-full blur-3xl ${b.className}`}
           style={{ background: hexToRgba(b.color, 0.14) }}
-          animate={
-            reduced
-              ? undefined
-              : { x: [0, 24, -16, 0], y: [0, -18, 14, 0], scale: [1, 1.08, 0.96, 1] }
-          }
-          transition={
-            reduced
-              ? undefined
-              : { duration: 18, delay: b.delay, repeat: Infinity, ease: 'easeInOut' }
-          }
         />
       ))}
     </div>

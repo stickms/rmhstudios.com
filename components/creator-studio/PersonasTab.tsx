@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Storefront, type StoreItem } from '@/components/creator-studio/storefront';
 import { runLiquidOpen, liquidVTName } from '@/lib/view-transition';
+import '@/components/creator-studio/storefront.css';
 
 interface Persona {
   id: string;

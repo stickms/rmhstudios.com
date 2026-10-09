@@ -18,6 +18,8 @@ import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
 import { DEFAULT_VIBE_MODEL, type VibeModel } from '@/lib/rmhvibe/vibe-types';
 import type { VibeCard } from '@/lib/rmhvibe/vibe.server';
 import { Storefront, type StoreItem } from '@/components/creator-studio/storefront';
+import '@/components/creator-studio/storefront.css';
+import '@/components/rmhvibe/vibe.css';
 
 export type VibeGallery = { items: VibeCard[]; nextCursor: string | null };
 

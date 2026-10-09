@@ -34,7 +34,7 @@ import { DEFAULT_VIBE_MODEL, type VibeModel } from '@/lib/rmhvibe/vibe-types';
 import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
 import { ThinkingStream } from '@/components/rmhvibe/ThinkingStream';
 import { VibeProgress } from '@/components/rmhvibe/VibeProgress';
-import '@/components/rmhvibe/vibe.css';
+import { VibeStyles } from '@/components/rmhvibe/VibeStyles';
 
 // Background-build polling cadence + guards (see the generating-status effect).
 const POLL_INTERVAL_MS = 1500;
@@ -365,215 +365,218 @@ function VibeViewer() {
   if (status === 'error') return <VibeGenerationFailed />;
 
   return (
-    <div className="fixed inset-0 bg-black">
-      <iframe
-        key={renderKey}
-        ref={iframeRef}
-        title="Vibe page"
-        srcDoc={html}
-        sandbox="allow-scripts allow-forms allow-modals allow-pointer-lock"
-        className="h-full w-full border-0"
-        onLoad={(e) => {
-          // Move focus into the iframe so keyboard-driven pages (spacebar, arrow
-          // keys, WASD, etc.) receive input immediately without a manual click.
-          try {
-            e.currentTarget.contentWindow?.focus();
-          } catch {
-            /* cross-origin focus call — safe to ignore */
-          }
-        }}
-      />
+    <>
+      <VibeStyles />
+      <div className="fixed inset-0 bg-black">
+        <iframe
+          key={renderKey}
+          ref={iframeRef}
+          title="Vibe page"
+          srcDoc={html}
+          sandbox="allow-scripts allow-forms allow-modals allow-pointer-lock"
+          className="h-full w-full border-0"
+          onLoad={(e) => {
+            // Move focus into the iframe so keyboard-driven pages (spacebar, arrow
+            // keys, WASD, etc.) receive input immediately without a manual click.
+            try {
+              e.currentTarget.contentWindow?.focus();
+            } catch {
+              /* cross-origin focus call — safe to ignore */
+            }
+          }}
+        />
 
-      {/* Floating toolbar — top-right */}
-      <div className="vibe-toolbar fixed right-[calc(0.75rem+var(--safe-right))] top-[calc(0.75rem+var(--safe-top))] z-40">
-        <Link
-          to="/v"
-          aria-label={t('back-to-pages', { defaultValue: 'Back to pages' })}
-          className="vibe-toolbar__icon"
-        >
-          <ArrowLeft size={17} />
-        </Link>
-        <button
-          type="button"
-          onClick={handleShare}
-          aria-label={t('copy-share-link', { defaultValue: 'Copy share link' })}
-          className="vibe-toolbar__icon"
-        >
-          {copied ? <Check size={17} /> : <Share2 size={16} />}
-        </button>
-        <button
-          type="button"
-          onClick={toggleHistory}
-          aria-label={t('version-history', { defaultValue: 'Version history' })}
-          aria-pressed={historyOpen}
-          className="vibe-toolbar__icon"
-        >
-          <History size={17} />
-        </button>
-        <button type="button" onClick={() => setPanelOpen((v) => !v)} className="vibe-toolbar__cta">
-          <Pencil size={15} />
-          {t('customize', { defaultValue: 'Customize' })}
-        </button>
-      </div>
-
-      {/* Banner shown while previewing an earlier variant */}
-      {viewingOlder && (
-        <div className="vibe-version-banner fixed left-1/2 top-[calc(0.75rem+var(--safe-top))] z-40 -translate-x-1/2">
-          <span>
-            {t('viewing-earlier-version', { defaultValue: 'Viewing an earlier version' })}
-          </span>
-          <button type="button" onClick={backToLatest} className="vibe-version-banner__btn">
-            <RotateCcw size={13} />
-            {t('back-to-latest', { defaultValue: 'Back to latest' })}
+        {/* Floating toolbar — top-right */}
+        <div className="vibe-toolbar fixed right-[calc(0.75rem+var(--safe-right))] top-[calc(0.75rem+var(--safe-top))] z-40">
+          <Link
+            to="/v"
+            aria-label={t('back-to-pages', { defaultValue: 'Back to pages' })}
+            className="vibe-toolbar__icon"
+          >
+            <ArrowLeft size={17} />
+          </Link>
+          <button
+            type="button"
+            onClick={handleShare}
+            aria-label={t('copy-share-link', { defaultValue: 'Copy share link' })}
+            className="vibe-toolbar__icon"
+          >
+            {copied ? <Check size={17} /> : <Share2 size={16} />}
+          </button>
+          <button
+            type="button"
+            onClick={toggleHistory}
+            aria-label={t('version-history', { defaultValue: 'Version history' })}
+            aria-pressed={historyOpen}
+            className="vibe-toolbar__icon"
+          >
+            <History size={17} />
+          </button>
+          <button type="button" onClick={() => setPanelOpen((v) => !v)} className="vibe-toolbar__cta">
+            <Pencil size={15} />
+            {t('customize', { defaultValue: 'Customize' })}
           </button>
         </div>
-      )}
 
-      {/* Version history panel — slides in from the right */}
-      <div
-        className={`vibe-history-dock fixed right-0 top-0 z-40 h-full pt-[var(--safe-top)] pb-[var(--safe-bottom)] pr-[var(--safe-right)] transition-transform duration-site-slow ease-out ${
-          historyOpen ? 'translate-x-0' : 'pointer-events-none translate-x-full'
-        }`}
-      >
-        <div className="vibe-history flex h-full flex-col">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="vibe-panel__title">
-              {t('version-history', { defaultValue: 'Version history' })}
-            </p>
-            <button
-              type="button"
-              onClick={() => setHistoryOpen(false)}
-              aria-label={t('close-history', { defaultValue: 'Close history' })}
-              className="vibe-panel__close"
-            >
-              <X size={16} />
+        {/* Banner shown while previewing an earlier variant */}
+        {viewingOlder && (
+          <div className="vibe-version-banner fixed left-1/2 top-[calc(0.75rem+var(--safe-top))] z-40 -translate-x-1/2">
+            <span>
+              {t('viewing-earlier-version', { defaultValue: 'Viewing an earlier version' })}
+            </span>
+            <button type="button" onClick={backToLatest} className="vibe-version-banner__btn">
+              <RotateCcw size={13} />
+              {t('back-to-latest', { defaultValue: 'Back to latest' })}
             </button>
           </div>
+        )}
 
-          <div className="vibe-history__list flex-1 overflow-y-auto">
-            {loadingVersions && (
-              <div className="vibe-history__empty">
-                <Loader2 size={18} className="animate-spin" />
-              </div>
-            )}
-            {!loadingVersions && versions && versions.length === 0 && (
-              <p className="vibe-history__empty">
-                {t('no-history', { defaultValue: 'No history yet.' })}
+        {/* Version history panel — slides in from the right */}
+        <div
+          className={`vibe-history-dock fixed right-0 top-0 z-40 h-full pt-[var(--safe-top)] pb-[var(--safe-bottom)] pr-[var(--safe-right)] transition-transform duration-site-slow ease-out ${
+            historyOpen ? 'translate-x-0' : 'pointer-events-none translate-x-full'
+          }`}
+        >
+          <div className="vibe-history flex h-full flex-col">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="vibe-panel__title">
+                {t('version-history', { defaultValue: 'Version history' })}
               </p>
-            )}
-            {!loadingVersions &&
-              versions &&
-              versions
-                .map((v, i) => ({ v, label: i + 1 }))
-                .reverse()
-                .map(({ v, label }) => {
-                  const isActive =
-                    activeVersionId === v.id ||
-                    (activeVersionId === null && v.id === latestVersionId);
-                  return (
-                    <button
-                      key={v.id}
-                      type="button"
-                      onClick={() => void previewVersion(v.id)}
-                      disabled={busy}
-                      className={`vibe-history__item ${isActive ? 'vibe-history__item--active' : ''}`}
-                    >
-                      <div className="vibe-history__item-head">
-                        <span className="vibe-history__ver">
-                          v{label}
-                          {v.id === latestVersionId && (
-                            <span className="vibe-history__badge">
-                              {t('latest-badge', { defaultValue: 'latest' })}
-                            </span>
-                          )}
-                        </span>
-                        <time className="vibe-history__time">{formatVersionDate(v.createdAt)}</time>
-                      </div>
-                      <p className="vibe-history__prompt">{v.title || v.prompt}</p>
-                    </button>
-                  );
-                })}
-          </div>
-
-          {viewingOlder && (
-            <p className="vibe-history__hint">
-              {t('history-branch-hint', {
-                defaultValue: "Hit Customize to branch a new version from the one you're viewing.",
-              })}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Slide-up customize panel */}
-      <div
-        className={`vibe-panel-dock fixed inset-x-0 bottom-0 z-40 transition-transform duration-site-slow ease-out ${
-          panelOpen ? 'translate-y-0' : 'pointer-events-none translate-y-full'
-        }`}
-      >
-        <div className="vibe-panel mx-auto">
-          <div className="mb-2 flex items-center justify-between gap-3">
-            <p className="vibe-panel__title">
-              {t('customize-this-page', { defaultValue: 'Customize this page' })}
-            </p>
-            <div className="flex items-center gap-2">
-              <ModelSelect value={model} onChange={setModel} disabled={busy} />
               <button
                 type="button"
-                onClick={() => setPanelOpen(false)}
-                aria-label={t('close', { defaultValue: 'Close' })}
+                onClick={() => setHistoryOpen(false)}
+                aria-label={t('close-history', { defaultValue: 'Close history' })}
                 className="vibe-panel__close"
               >
                 <X size={16} />
               </button>
             </div>
+
+            <div className="vibe-history__list flex-1 overflow-y-auto">
+              {loadingVersions && (
+                <div className="vibe-history__empty">
+                  <Loader2 size={18} className="animate-spin" />
+                </div>
+              )}
+              {!loadingVersions && versions && versions.length === 0 && (
+                <p className="vibe-history__empty">
+                  {t('no-history', { defaultValue: 'No history yet.' })}
+                </p>
+              )}
+              {!loadingVersions &&
+                versions &&
+                versions
+                  .map((v, i) => ({ v, label: i + 1 }))
+                  .reverse()
+                  .map(({ v, label }) => {
+                    const isActive =
+                      activeVersionId === v.id ||
+                      (activeVersionId === null && v.id === latestVersionId);
+                    return (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => void previewVersion(v.id)}
+                        disabled={busy}
+                        className={`vibe-history__item ${isActive ? 'vibe-history__item--active' : ''}`}
+                      >
+                        <div className="vibe-history__item-head">
+                          <span className="vibe-history__ver">
+                            v{label}
+                            {v.id === latestVersionId && (
+                              <span className="vibe-history__badge">
+                                {t('latest-badge', { defaultValue: 'latest' })}
+                              </span>
+                            )}
+                          </span>
+                          <time className="vibe-history__time">{formatVersionDate(v.createdAt)}</time>
+                        </div>
+                        <p className="vibe-history__prompt">{v.title || v.prompt}</p>
+                      </button>
+                    );
+                  })}
+            </div>
+
+            {viewingOlder && (
+              <p className="vibe-history__hint">
+                {t('history-branch-hint', {
+                  defaultValue: "Hit Customize to branch a new version from the one you're viewing.",
+                })}
+              </p>
+            )}
           </div>
+        </div>
 
-          {busy &&
-            (content ? (
-              <VibeProgress content={content} className="vibe-progress--sm mb-3" />
-            ) : (
-              <ThinkingStream text={thinking} className="vibe-think--sm mb-3" />
-            ))}
+        {/* Slide-up customize panel */}
+        <div
+          className={`vibe-panel-dock fixed inset-x-0 bottom-0 z-40 transition-transform duration-site-slow ease-out ${
+            panelOpen ? 'translate-y-0' : 'pointer-events-none translate-y-full'
+          }`}
+        >
+          <div className="vibe-panel mx-auto">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="vibe-panel__title">
+                {t('customize-this-page', { defaultValue: 'Customize this page' })}
+              </p>
+              <div className="flex items-center gap-2">
+                <ModelSelect value={model} onChange={setModel} disabled={busy} />
+                <button
+                  type="button"
+                  onClick={() => setPanelOpen(false)}
+                  aria-label={t('close', { defaultValue: 'Close' })}
+                  className="vibe-panel__close"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
 
-          <div className="flex items-end gap-2">
-            <textarea
-              ref={inputRef}
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  void handleCustomize();
-                }
-              }}
-              rows={2}
-              placeholder={t('customize-placeholder', {
-                defaultValue: 'Make it darker, add a pricing section, more neon…',
-              })}
-              disabled={busy}
-              className="vibe-panel__input min-h-11 flex-1"
-            />
-            <button
-              type="button"
-              onClick={() => void handleCustomize()}
-              disabled={busy || !prompt.trim()}
-              aria-label={t('apply-customization', { defaultValue: 'Apply customization' })}
-              className="vibe-panel__submit"
-            >
-              {busy ? <Loader2 size={18} className="animate-spin" /> : <CornerDownLeft size={18} />}
-            </button>
+            {busy &&
+              (content ? (
+                <VibeProgress content={content} className="vibe-progress--sm mb-3" />
+              ) : (
+                <ThinkingStream text={thinking} className="vibe-think--sm mb-3" />
+              ))}
+
+            <div className="flex items-end gap-2">
+              <textarea
+                ref={inputRef}
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    void handleCustomize();
+                  }
+                }}
+                rows={2}
+                placeholder={t('customize-placeholder', {
+                  defaultValue: 'Make it darker, add a pricing section, more neon…',
+                })}
+                disabled={busy}
+                className="vibe-panel__input min-h-11 flex-1"
+              />
+              <button
+                type="button"
+                onClick={() => void handleCustomize()}
+                disabled={busy || !prompt.trim()}
+                aria-label={t('apply-customization', { defaultValue: 'Apply customization' })}
+                className="vibe-panel__submit"
+              >
+                {busy ? <Loader2 size={18} className="animate-spin" /> : <CornerDownLeft size={18} />}
+              </button>
+            </div>
+
+            {busy && (
+              <p className="vibe-panel__hint mt-2">
+                {t('reimagining', { defaultValue: 'Reimagining your page…' })}
+              </p>
+            )}
+            {error && <p className="vibe-panel__error mt-2">{error}</p>}
           </div>
-
-          {busy && (
-            <p className="vibe-panel__hint mt-2">
-              {t('reimagining', { defaultValue: 'Reimagining your page…' })}
-            </p>
-          )}
-          {error && <p className="vibe-panel__error mt-2">{error}</p>}
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

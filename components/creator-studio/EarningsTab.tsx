@@ -110,9 +110,9 @@ export function EarningsTab() {
         </p>
       </div>
 
-      {/* Stat tiles */}
+      {/* Stat tiles — L1 fills: repeated content takes no backdrop blur (design-language §5). */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <Card className="p-4" pane>
+        <Card className="p-4">
           <div className="text-xs uppercase tracking-wide text-site-text-dim">
             {t('redeemable', { defaultValue: 'Redeemable' })}
           </div>
@@ -121,7 +121,7 @@ export function EarningsTab() {
             {loading ? '—' : earnings?.redeemable ?? 0}
           </div>
         </Card>
-        <Card className="p-4" pane>
+        <Card className="p-4">
           <div className="text-xs uppercase tracking-wide text-site-text-dim">
             {t('lifetime', { defaultValue: 'Lifetime earned' })}
           </div>
@@ -129,7 +129,7 @@ export function EarningsTab() {
             {loading ? '—' : earnings?.lifetimeEarned ?? 0}
           </div>
         </Card>
-        <Card className="p-4 col-span-2 sm:col-span-1" pane>
+        <Card className="p-4 col-span-2 sm:col-span-1">
           <div className="text-xs uppercase tracking-wide text-site-text-dim">
             {t('balance', { defaultValue: 'Coin balance' })}
           </div>

@@ -285,7 +285,7 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
       )}
     >
       {status === 'LIVE' && (
-        <span className="h-2 w-2 animate-pulse rounded-full bg-site-danger" aria-hidden />
+        <span className="h-2 w-2 animate-pulse-settle rounded-full bg-site-danger" aria-hidden />
       )}
       {status === 'LIVE'
         ? t('space-status-live', { defaultValue: 'Live' })

@@ -27,16 +27,14 @@
    Neon Animations
    ============================================================ */
 
-@keyframes neonPulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.85;
-  }
-}
-
+/* There is no neonPulse any more. It swung opacity 1 ↔ 0.85 forever
+   on 13 large layers (the skyline, four signs, four strips, two glows, the
+   title) — a flicker too faint to read as one, that kept the menu from ever
+   going idle: ~1.6 cores and 26fps at rest on desktop, a locked 60fps and
+   ~zero frames at rest with it frozen (perf audit 2026-10-08). The keyframe
+   also OVERRODE each layer's authored opacity (0.05–0.15), so what players
+   actually saw was the ~0.92 mid-point; those layers now declare exactly that,
+   statically, and look the same. */
 @keyframes neonFlicker {
   0% {
     opacity: 1;
@@ -220,7 +218,7 @@
     radial-gradient(1px 1px at 72px 88%, #33ccff20 0%, transparent 100%),
     radial-gradient(1px 1px at 25px 75%, #cc33ff20 0%, transparent 100%);
   background-size: 80px 100%;
-  animation: neonPulse 4s ease-in-out infinite;
+  opacity: 0.92; /* static neon — see the note under "Neon Animations" */
 }
 
 /* Neon signs — Chinese characters floating in the scene */
@@ -242,7 +240,7 @@
   border-color: var(--neon-pink);
   text-shadow: 0 0 8px var(--neon-pink), 0 0 16px var(--neon-pink);
   box-shadow: 0 0 6px rgba(255, 51, 102, 0.3), inset 0 0 6px rgba(255, 51, 102, 0.1);
-  animation: neonPulse 3s ease-in-out infinite;
+  opacity: 0.92; /* static neon — see the note under "Neon Animations" */
 }
 
 .kowloon-knockout .neon-sign-2 {
@@ -252,7 +250,7 @@
   border-color: var(--neon-blue);
   text-shadow: 0 0 8px var(--neon-blue), 0 0 16px var(--neon-blue);
   box-shadow: 0 0 6px rgba(51, 204, 255, 0.3), inset 0 0 6px rgba(51, 204, 255, 0.1);
-  animation: neonPulse 4s ease-in-out infinite 1s;
+  opacity: 0.92; /* static neon — see the note under "Neon Animations" */
 }
 
 .kowloon-knockout .neon-sign-3 {
@@ -262,7 +260,7 @@
   border-color: var(--neon-yellow);
   text-shadow: 0 0 8px var(--neon-yellow), 0 0 16px var(--neon-yellow);
   box-shadow: 0 0 6px rgba(255, 204, 0, 0.3), inset 0 0 6px rgba(255, 204, 0, 0.1);
-  animation: neonPulse 3.5s ease-in-out infinite 0.5s;
+  opacity: 0.92; /* static neon — see the note under "Neon Animations" */
   font-size: 12px;
 }
 
@@ -273,7 +271,7 @@
   border-color: var(--neon-green);
   text-shadow: 0 0 8px var(--neon-green), 0 0 16px var(--neon-green);
   box-shadow: 0 0 6px rgba(51, 255, 153, 0.3), inset 0 0 6px rgba(51, 255, 153, 0.1);
-  animation: neonPulse 5s ease-in-out infinite 2s;
+  opacity: 0.92; /* static neon — see the note under "Neon Animations" */
   font-size: 11px;
 }
 
@@ -289,8 +287,7 @@
   bottom: 10%;
   left: 20%;
   background: linear-gradient(180deg, transparent, var(--neon-pink), var(--neon-pink), transparent);
-  opacity: 0.15;
-  animation: neonPulse 3s ease-in-out infinite;
+  opacity: 0.92; /* static neon — see the note under "Neon Animations" */
 }
 
 .kowloon-knockout .neon-strip-2 {
@@ -298,8 +295,7 @@
   bottom: 15%;
   right: 22%;
   background: linear-gradient(180deg, transparent, var(--neon-blue), var(--neon-blue), transparent);
-  opacity: 0.12;
-  animation: neonPulse 4s ease-in-out infinite 1.5s;
+  opacity: 0.92; /* static neon — see the note under "Neon Animations" */
 }
 
 .kowloon-knockout .neon-strip-3 {
@@ -307,8 +303,7 @@
   bottom: 5%;
   left: 35%;
   background: linear-gradient(180deg, transparent, var(--neon-yellow), transparent);
-  opacity: 0.1;
-  animation: neonPulse 3.5s ease-in-out infinite 0.8s;
+  opacity: 0.92; /* static neon — see the note under "Neon Animations" */
 }
 
 .kowloon-knockout .neon-strip-4 {
@@ -316,8 +311,7 @@
   bottom: 12%;
   right: 38%;
   background: linear-gradient(180deg, transparent, var(--neon-purple), transparent);
-  opacity: 0.08;
-  animation: neonPulse 5s ease-in-out infinite 2.5s;
+  opacity: 0.92; /* static neon — see the note under "Neon Animations" */
 }
 
 /* Ambient glow spots */
@@ -334,8 +328,7 @@
   bottom: 10%;
   left: 5%;
   background: var(--neon-pink);
-  opacity: 0.06;
-  animation: neonPulse 6s ease-in-out infinite;
+  opacity: 0.92; /* static neon — see the note under "Neon Animations" */
 }
 
 .kowloon-knockout .menu-glow-blue {
@@ -344,8 +337,7 @@
   bottom: 15%;
   right: 8%;
   background: var(--neon-blue);
-  opacity: 0.05;
-  animation: neonPulse 5s ease-in-out infinite 1s;
+  opacity: 0.92; /* static neon — see the note under "Neon Animations" */
 }
 
 .kowloon-knockout .menu-content {
@@ -358,7 +350,7 @@
 
 .kowloon-knockout .title-container {
   text-align: center;
-  animation: neonPulse 4s ease-in-out infinite;
+  opacity: 0.92; /* static neon — see the note under "Neon Animations" */
 }
 
 .kowloon-knockout .title-container.neon-flicker {

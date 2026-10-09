@@ -136,6 +136,22 @@ export interface RunState {
   seed: number;
   /** Leftover time carried between frames by the fixed-step accumulator. */
   accumulator: number;
+  /**
+   * The train's pose as it was BEFORE the most recent fixed step, or null when
+   * there is nothing to interpolate from (fresh run, pause, wreck). Read only
+   * by {@link withInterpolatedPose}; the simulation never looks at it.
+   */
+  prevPose: TrainPose | null;
+}
+
+/** The continuous kinematic fields the renderer draws the train from. */
+export interface TrainPose {
+  s: number;
+  lateral: number;
+  height: number;
+  yaw: number;
+  roll: number;
+  pitch: number;
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -290,6 +306,7 @@ export function createRun(level: LevelConfig, seed = 1): RunState {
     prev: emptyInput(),
     seed,
     accumulator: 0,
+    prevPose: null,
   };
 }
 
@@ -876,6 +893,7 @@ export function stepRun(state: RunState, input: InputState, frameSeconds: number
     // rather than banked: resuming must not fast-forward the time spent in the
     // pause menu.
     state.accumulator = 0;
+    state.prevPose = null;
     stepEphemera(state, Math.min(frameSeconds, 0.05));
     return;
   }
@@ -886,6 +904,7 @@ export function stepRun(state: RunState, input: InputState, frameSeconds: number
   while (state.accumulator >= FIXED_STEP && steps < MAX_STEPS_PER_FRAME) {
     state.accumulator -= FIXED_STEP;
     steps += 1;
+    capturePose(state);
 
     if (state.phase === 'countdown') {
       state.countdown -= FIXED_STEP;
@@ -915,6 +934,80 @@ export function stepRun(state: RunState, input: InputState, frameSeconds: number
   }
 
   state.prev = { ...input };
+}
+
+// ── Render interpolation ────────────────────────────────────────────────────
+//
+// The sim runs at a fixed 120Hz and the display at whatever it is. Drawn raw,
+// a 144Hz panel gets 0 steps on one frame in six and 1 on the rest; a 240Hz one
+// gets 0 on every other frame — the train visibly hitches forward in uneven
+// strides at exactly the speeds this game is about. The fix is the standard one
+// for a fixed timestep: draw a blend of the last two sim states, weighted by how
+// far real time has run into the next step (`accumulator / FIXED_STEP`). Motion
+// is then continuous at any refresh rate, for at most one step (8.3ms) of visual
+// latency. Gameplay, collisions and scoring are untouched — only the six fields
+// the renderer reads are blended, and only for the duration of the draw.
+
+function capturePose(state: RunState): void {
+  const t = state.train;
+  const p = state.prevPose ?? (state.prevPose = { s: 0, lateral: 0, height: 0, yaw: 0, roll: 0, pitch: 0 });
+  p.s = t.s;
+  p.lateral = t.lateral;
+  p.height = t.height;
+  p.yaw = t.yaw;
+  p.roll = t.roll;
+  p.pitch = t.pitch;
+}
+
+/** Shortest-path angle blend, so a spin that wraps or resets on landing never sweeps backwards. */
+function lerpAngle(a: number, b: number, t: number): number {
+  const d = Math.atan2(Math.sin(b - a), Math.cos(b - a));
+  return a + d * t;
+}
+
+/** Anything moving further than this in one step is a respawn, not motion. */
+const TELEPORT_METRES = 6;
+const scratchPose: TrainPose = { s: 0, lateral: 0, height: 0, yaw: 0, roll: 0, pitch: 0 };
+
+/**
+ * Run `draw` with the train temporarily set to its interpolated pose, then put
+ * the simulated pose back. A no-op wrapper when there is nothing to blend from.
+ */
+export function withInterpolatedPose<T>(state: RunState, draw: () => T): T {
+  const prev = state.prevPose;
+  const t = state.train;
+  if (
+    !prev ||
+    Math.abs(t.s - prev.s) > TELEPORT_METRES ||
+    Math.abs(t.lateral - prev.lateral) > TELEPORT_METRES ||
+    Math.abs(t.height - prev.height) > TELEPORT_METRES
+  ) {
+    return draw();
+  }
+  const a = clamp(state.accumulator / FIXED_STEP, 0, 1);
+  const cur = scratchPose;
+  cur.s = t.s;
+  cur.lateral = t.lateral;
+  cur.height = t.height;
+  cur.yaw = t.yaw;
+  cur.roll = t.roll;
+  cur.pitch = t.pitch;
+  t.s = prev.s + (cur.s - prev.s) * a;
+  t.lateral = prev.lateral + (cur.lateral - prev.lateral) * a;
+  t.height = prev.height + (cur.height - prev.height) * a;
+  t.yaw = lerpAngle(prev.yaw, cur.yaw, a);
+  t.roll = lerpAngle(prev.roll, cur.roll, a);
+  t.pitch = lerpAngle(prev.pitch, cur.pitch, a);
+  try {
+    return draw();
+  } finally {
+    t.s = cur.s;
+    t.lateral = cur.lateral;
+    t.height = cur.height;
+    t.yaw = cur.yaw;
+    t.roll = cur.roll;
+    t.pitch = cur.pitch;
+  }
 }
 
 /** Fraction of the track covered, 0 → 1. Drives the HUD progress rail. */

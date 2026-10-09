@@ -225,6 +225,16 @@ export class LaundryMatch {
     return this.ticks * FIXED_DT;
   }
 
+  /**
+   * How far real time has run into the next tick, 0 → 1. The renderer blends
+   * each garment from `renderPrev` to `pos` by this, so cloth motion is
+   * continuous at any refresh rate. Updated atomically with the positions in
+   * {@link advance}, so a reader always sees a matching pair.
+   */
+  get alpha(): number {
+    return Math.min(1, Math.max(0, this.accumulator / FIXED_DT));
+  }
+
   /** Simulated seconds left, floored at zero. */
   get remaining(): number {
     return Math.max(0, (this.totalTicks - this.ticks) * FIXED_DT);

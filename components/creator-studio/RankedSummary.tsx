@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { Swords, ChevronDown, ArrowUpRight } from 'lucide-react';
+import '@/components/creator-studio/creator-studio.css';
 
 interface Rating {
   game: string;

@@ -18,13 +18,13 @@ export function GatewayArch({ position, scale = 1, id }: GatewayArchProps) {
     // Portal appears when the gateway event is triggered
     const isOpen = storyFlags[`${id.split('_')[0]}_gateway_opened`] ?? false;
 
-    useFrame((state) => {
+    useFrame((state, delta) => {
         if (!portalRef.current) return;
         const mat = portalRef.current.material as MeshStandardMaterial;
         if (isOpen) {
             mat.opacity = 0.5 + Math.sin(state.clock.elapsedTime * 2) * 0.15;
             mat.emissiveIntensity = 1.2 + Math.sin(state.clock.elapsedTime * 1.5) * 0.4;
-            portalRef.current.rotation.y += 0.005;
+            portalRef.current.rotation.y += 0.3 * delta; // 0.005 rad/frame at 60Hz
         } else {
             mat.opacity = 0;
         }

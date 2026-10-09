@@ -20,9 +20,10 @@ import { useTranslation } from 'react-i18next';
 import { Cookie } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ADSENSE_CLIENT_ID } from '@/lib/ads/adsense';
+import { COOKIE_CONSENT_STORAGE_KEY, COOKIE_CONSENTED_CLASS } from '@/lib/cookie-consent';
 
 export type CookieConsentChoice = 'all' | 'essential';
-const STORAGE_KEY = 'rmh-cookie-consent';
+const STORAGE_KEY = COOKIE_CONSENT_STORAGE_KEY;
 
 export function getCookieConsent(): CookieConsentChoice | null {
   if (typeof window === 'undefined') return null;
@@ -93,11 +94,22 @@ export function CookieConsent() {
   const { t } = useTranslation('common');
   // Start hidden; decide on the client after mount to avoid an SSR/hydration
   // mismatch (localStorage isn't available during SSR).
-  const [visible, setVisible] = useState(false);
+  // Rendered on the server and on the first client render for EVERYONE (the
+  // anonymous HTML is shared, so it cannot vary per visitor), so it paints with
+  // the page instead of seconds later — it was the LCP element on a first visit.
+  // A visitor who already answered never sees it: the pre-paint
+  // COOKIE_CONSENT_SCRIPT in <head> stamps `html.cookie-consented`, CSS hides
+  // the notice under it, and this effect unmounts it. See lib/cookie-consent.ts.
+  const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    if (getCookieConsent() === null) setVisible(true);
-    const onReset = () => setVisible(getCookieConsent() === null);
+    if (getCookieConsent() !== null) setVisible(false);
+    const onReset = () => {
+      const show = getCookieConsent() === null;
+      // The pre-paint class would keep a re-shown notice hidden.
+      if (show) document.documentElement.classList.remove(COOKIE_CONSENTED_CLASS);
+      setVisible(show);
+    };
     window.addEventListener('rmh:cookie-consent-reset', onReset);
     return () => window.removeEventListener('rmh:cookie-consent-reset', onReset);
   }, []);
@@ -123,7 +135,14 @@ export function CookieConsent() {
       // 32% fill with no legibility floor, tuned for something you read THROUGH
       // on the way to the content behind it. `.glass-overlay` also supplies its
       // own shadow, so the hand-added `shadow-site` goes with it.
-      className="glass-overlay bottom-above-dock fixed inset-x-3 z-40 mx-auto max-w-2xl rounded-site p-4"
+      //
+      // `.glass-opaque` on top of it: L4 elevation (rim, shadow, legibility), no
+      // backdrop blur. This notice sits fixed over the feed on EVERY page for
+      // every first-time visitor until dismissed, so a 30px backdrop blur under
+      // it was re-run on every scroll frame of a first visit — the single
+      // largest scroll cost on `/` (perf audit 2026-10-08: ~3.3ms of ~10ms per
+      // frame). Opaque also reads better for a notice you are required to read.
+      className="glass-overlay glass-opaque bottom-above-dock fixed inset-x-3 z-40 mx-auto max-w-2xl rounded-site p-4"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Cookie className="hidden h-5 w-5 shrink-0 text-site-accent sm:block" aria-hidden />

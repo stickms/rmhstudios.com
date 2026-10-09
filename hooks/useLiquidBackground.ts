@@ -3,9 +3,10 @@
 import { useEffect } from 'react';
 
 /**
- * Makes the aurora canvas reactive to movement — the second half of the site's
- * "liquid" backdrop (the first is the ambient `aurora-drift` keyframe in
- * globals.css). One rAF-throttled listener maps input motion to a small parallax
+ * Makes the aurora canvas reactive to movement — the only motion the site's
+ * backdrop has (the ambient `aurora-drift` keyframe it used to sit alongside is
+ * gone: a backdrop that never holds still is a page that never goes idle — perf
+ * audit 2026-10-08, lib/__tests__/static-backdrop.test.ts). One rAF-throttled listener maps input motion to a small parallax
  * offset written as CSS custom properties (`--aurora-mx` / `--aurora-my`, in px)
  * on the `.site-aurora` host; its two layers read them through their `translate`
  * longhand (which composes with the drift animation's `transform`), and a CSS
@@ -25,8 +26,7 @@ import { useEffect } from 'react';
  * re-composited two viewport-sized gradient layers on every frame the mouse moved
  * — an unbroken stream of them during exactly the gestures (drag, scroll, hover
  * along a grid) that have a frame budget to defend. On a fine pointer this hook now
- * attaches **no listener at all**; the ambient `aurora-drift` keyframe, which is a
- * compositor animation with no main-thread cost, carries the backdrop alone.
+ * attaches **no listener at all**, and the backdrop simply holds still.
  * Tilt survives because it is explicit — the visitor turned it on — and because it
  * is the one input a touch device has.
  *
@@ -197,8 +197,8 @@ export function useLiquidBackground(): void {
     };
 
     // Cursor input is deliberately NOT wired here any more (see the header note):
-    // a fine-pointer machine gets the ambient `aurora-drift` keyframe and nothing
-    // else, so no listener, no rAF and no style write happens while the mouse
+    // a fine-pointer machine gets a still backdrop and nothing else, so no
+    // listener, no rAF and no style write happens while the mouse
     // moves. Tilt is the only live input, and only where the visitor asked for it.
     if (!finePointer && 'DeviceOrientationEvent' in window) {
       const needsPermission =

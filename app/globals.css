@@ -1343,9 +1343,8 @@ html:not(.app-route) .site-aurora::before {
      which is fine, it's the crisp in-viewport aurora. Painting the aurora BEHIND
      the browser chrome is handled by the root canvas background (see the mobile
      html:not(.app-route) rule), the one layer iOS lets reach those strips. */
-  /* Oversized by 14% on every side so the slow drift + the pointer/motion
-     parallax below can translate the layer a few percent without ever revealing
-     an unpainted edge. */
+  /* Oversized by 14% on every side so the tilt parallax below can translate
+     the layer a few percent without ever revealing an unpainted edge. */
   inset: -14%;
   z-index: -1;
   background-image: var(--site-canvas);
@@ -1353,46 +1352,28 @@ html:not(.app-route) .site-aurora::before {
   background-size: 100% 100%;
   pointer-events: none;
   transform-origin: center;
-  /* Two independent transform channels compose here (translate applies before
-     transform): `translate` carries the live pointer / device-motion parallax
-     (written as --aurora-mx/--aurora-my by hooks/useLiquidBackground), while the
-     `aurora-drift` keyframes animate `transform` for the ambient flow. Easing the
-     translate gives the reactive follow a liquid trail instead of a hard snap. */
+  /* `translate` carries the opt-in device-tilt parallax (written as
+     --aurora-mx/--aurora-my by hooks/useLiquidBackground, event-driven, never a
+     loop); the transition gives that follow a liquid trail.
+
+     There is NO ambient drift any more. Both aurora layers used to run an
+     infinite 34s/52s scale-rotate-drift keyframe so the backdrop "was never
+     static". That was exactly the problem: a backdrop that is never static is a
+     page that never goes idle — a new full-viewport composite on every vsync,
+     forever, 2.4× as many on a 144Hz panel as on a 60Hz one. Handhelds already
+     had it frozen (the handheld block below); desktop now matches. Measured cost
+     and the companion change to the radial rings/blobs: the note above
+     `.radial-backdrop__field` in components/radial/radial.css. Gate:
+     lib/__tests__/static-backdrop.test.ts. */
   translate: var(--aurora-mx, 0px) var(--aurora-my, 0px);
   transition: translate 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-  animation: aurora-drift 34s ease-in-out infinite alternate;
-  will-change: transform, translate;
-}
-
-/* The ambient "liquid" flow: an ultra-slow scale/rotate/drift so the shared
-   backdrop every glass surface samples is never static — glass reads as living
-   material. Transform-only (GPU-composited, no per-frame layout/paint). Neutered
-   automatically under reduced motion by the global 0.01ms animation reset. */
-/* 5 stops (same 34s, same amplitude as the original 3) — a less elliptical,
-   more organic path so the near field never reads as a looping ellipse. */
-@keyframes aurora-drift {
-  0% {
-    transform: scale(1.06) rotate(0deg) translate3d(0, 0, 0);
-  }
-  25% {
-    transform: scale(1.1) rotate(0.5deg) translate3d(1.2%, -0.6%, 0);
-  }
-  50% {
-    transform: scale(1.13) rotate(0.7deg) translate3d(1.6%, -1.4%, 0);
-  }
-  75% {
-    transform: scale(1.09) rotate(-0.3deg) translate3d(-0.6%, 0.4%, 0);
-  }
-  100% {
-    transform: scale(1.07) rotate(-0.7deg) translate3d(-1.5%, 1.2%, 0);
-  }
 }
 
 /* Aurora layer 2 — the far field (§5.1). A depth sibling behind the near layer:
-   it counter-drifts slower and follows the pointer at −0.6× the near layer's
-   parallax (reusing --aurora-mx/my written by useLiquidBackground — NO new JS),
-   so pointer motion resolves into depth rather than a flat slide. z-index:-2
-   keeps it behind the near layer. Same kill-switches as the near layer below. */
+   it follows the tilt at −0.6× the near layer's parallax (reusing --aurora-mx/my
+   written by useLiquidBackground — NO new JS), so motion resolves into depth
+   rather than a flat slide. z-index:-2 keeps it behind the near layer. Same
+   kill-switches as the near layer below. */
 html:not(.app-route):not(.style-high-contrast) .site-aurora::after {
   content: '';
   position: absolute;
@@ -1412,23 +1393,10 @@ html:not(.app-route):not(.style-high-contrast) .site-aurora::after {
     );
   translate: calc(var(--aurora-mx, 0px) * -0.6) calc(var(--aurora-my, 0px) * -0.6);
   transition: translate 0.9s cubic-bezier(0.22, 1, 0.36, 1); /* lazier trail */
-  animation: aurora-drift-far 52s ease-in-out infinite alternate;
-  will-change: transform, translate;
-}
-@keyframes aurora-drift-far {
-  0% {
-    transform: scale(1.1) rotate(0.4deg) translate3d(-1.2%, 0.8%, 0);
-  }
-  50% {
-    transform: scale(1.04) rotate(-0.5deg) translate3d(1.4%, -1%, 0);
-  }
-  100% {
-    transform: scale(1.12) rotate(0.3deg) translate3d(-0.8%, 1.2%, 0);
-  }
 }
 
 /* Low-end devices and high-contrast (canvas is `none` there) pay nothing for the
-   ambient flow or the parallax follow — both aurora layers. */
+   parallax follow — both aurora layers. */
 html.perf-lite .site-aurora::before,
 html.perf-lite .site-aurora::after,
 html.style-high-contrast .site-aurora::before,
@@ -2059,12 +2027,18 @@ html.app-route {
     );
     mix-blend-mode: screen;
     transform: translate3d(-92.3%, 0, 0);
-    animation: glass-sheen 9s ease-in-out infinite;
-    /* Promotes the band to its own composited layer up front, so the first
-       frame of a sweep does not stall waiting for a raster. Safe here in a way
-       it is not on `[data-fluid-press]` (see the note in §Interaction): this is
-       ≤3 elements per page, by contract, not several hundred. */
-    will-change: transform;
+    /* ONE sweep on arrival, then the band rests off-pane for good. It used to
+       loop forever (`infinite`), which — like the old aurora drift — meant the
+       page holding it never went idle: a blended layer re-composited on every
+       vsync for as long as the tab stayed open (perf audit 2026-10-08,
+       lib/__tests__/static-backdrop.test.ts). A single pass still reads the
+       material as liquid; a perpetual one was a battery cost on the pricing
+       and login pages and a frame-budget cost on every high-refresh panel.
+       Both keyframe ends are off-pane, so the hand-off to the resting
+       transform at the end is invisible. No `will-change`: the browser promotes
+       the band for the life of the animation on its own, and a permanent hint
+       would hold a layer for a band that no longer moves. */
+    animation: glass-sheen 9s ease-in-out 1;
   }
   html.perf-lite .glass-liquid::after {
     animation: none; /* band rests off-pane — nothing stuck mid-sweep */
@@ -2859,6 +2833,15 @@ html.readable-font body {
   --radius-bum-sm: var(--bum-radius-sm);
   --radius-bum-lg: var(--bum-radius-lg);
 
+  /* `animate-pulse-settle` — Tailwind's pulse, three times, then at rest. For
+     an indicator that has to catch the eye on arrival (a LIVE dot, a call to
+     action) without keeping the page from ever going idle: an `animate-pulse`
+     that never stops is one perpetual animation, and one is enough to make the
+     compositor render every vsync for as long as the tab is open (perf audit
+     2026-10-08). Loading placeholders keep plain `animate-pulse` — they are
+     transient by construction. */
+  --animate-pulse-settle: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) 3;
+
   /* Altair Specific */
   --color-neon-glow: #d8b4fe;
   --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -3323,6 +3306,18 @@ html.readable-font body {
   }
   .vibe-app:has([data-floating='cookie']) {
     --float-lift-cookie: 156px;
+  }
+  /* The notice is server-rendered for everyone (lib/cookie-consent.ts) and
+     hidden pre-paint for a visitor who already answered. Until hydration
+     unmounts it, it is still IN the DOM, so the `:has()` lift above would
+     still match — this keeps the floating stack exactly where it would be
+     without it, so there is nothing to shift when it goes. (0,2,1) beats the
+     (0,2,0) above. */
+  html.cookie-consented .vibe-app {
+    --float-lift-cookie: 0px;
+  }
+  html.cookie-consented [data-floating='cookie'] {
+    display: none;
   }
   .vibe-app:has([data-floating='miniplayer']) {
     --float-lift-miniplayer: 68px;

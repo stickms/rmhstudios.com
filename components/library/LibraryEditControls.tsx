@@ -14,6 +14,7 @@ import { ArrowUp, ArrowDown, Pencil, Star, Eye, EyeOff, Trash2 } from 'lucide-re
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import type { LibraryBook } from '@/lib/library/library';
 import { LibraryContextMenu, type MenuItem, type MenuPos } from './LibraryContextMenu';
+import '@/components/library/library.css';
 
 async function patchBook(id: string, body: Record<string, unknown>): Promise<string | null> {
   const res = await fetch(`/api/admin/library/${id}`, {

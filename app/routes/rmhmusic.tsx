@@ -9,7 +9,7 @@ import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
 import { appRouteHead } from '@/lib/seo-catalog';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequestSession } from '@/lib/auth-session.server';
-import '@/components/rmhmusic/rmhmusic.css';
+import { RmhMusicStyles } from '@/components/rmhmusic/RmhMusicStyles';
 
 const checkAuth = createServerFn({ method: 'GET' }).handler(async () => {
   const session = await getRequestSession();
@@ -26,6 +26,7 @@ export const Route = createFileRoute('/rmhmusic')({
   // the app's black backdrop.
   component: () => (
     <div className="app-theme rmhmusic-theme">
+      <RmhMusicStyles />
       <Outlet />
     </div>
   ),

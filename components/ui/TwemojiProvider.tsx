@@ -17,10 +17,20 @@ const SKIP = new Set(['21aa', '21a9']);
 // package ships pointing at jsdelivr. The previous implementation hard-coded the
 // long-dead twemoji.maxcdn.com host, which is why emojis silently stopped
 // rendering. Returning `false` skips an icon and leaves the native glyph.
+// Asset URLs that have already failed to load this session. Once an emoji's
+// SVG has errored, it is never offered again — the native glyph stays. Without
+// this, a blocked CDN (ad-blocker, restrictive CSP, offline) became an infinite
+// loop per emoji on screen: <img> errors → `onAssetError` restores the glyph →
+// the MutationObserver sees new emoji text → parse inserts the <img> again →
+// it errors again… measured at ~4 cycles a second per emoji, forever, so the
+// page never went idle (perf audit 2026-10-08, /daily: seven card icons).
+const FAILED_ASSETS = new Set<string>();
+
 const twemojiCallback: ParseCallback = (icon, options) => {
  if (SKIP.has(icon)) return false;
  const o = options as { base: string; size: string; ext: string };
- return `${o.base}${o.size}/${icon}${o.ext}`;
+ const url = `${o.base}${o.size}/${icon}${o.ext}`;
+ return FAILED_ASSETS.has(url) ? false : url;
 };
 
 const PARSE_OPTIONS = {
@@ -165,13 +175,24 @@ export function TwemojiProvider({ children, className, tag: Tag = 'span' }: Twem
  }
  };
 
+ // Only text that actually contains an emoji is worth a parse. Without this
+ // test every text change anywhere under the provider — a ticking countdown,
+ // an animated score, a chat timestamp — queued a frame and a subtree walk to
+ // find nothing: on /daily that was a rAF + parse ~16 times a second at rest
+ // (perf audit 2026-10-08). `twemoji.test` is one regex over the new text.
+ const hasEmoji = (n: Node) => {
+ const text = n.nodeType === Node.TEXT_NODE ? n.nodeValue : n.textContent;
+ return !!text && twemoji.test(text);
+ };
  observer = new MutationObserver((records) => {
  for (const rec of records) {
  if (rec.type === 'characterData') {
+ if (!hasEmoji(rec.target)) continue;
  const t = parseTarget(rec.target);
  if (t && !isTwemojiExempt(t)) pending.add(t);
  } else {
  rec.addedNodes.forEach((n) => {
+ if (!hasEmoji(n)) return;
  const t = parseTarget(n);
  if (t && !isTwemojiExempt(t)) pending.add(t);
  });
@@ -199,8 +220,12 @@ export function TwemojiProvider({ children, className, tag: Tag = 'span' }: Twem
  const onAssetError = (event: Event) => {
  const target = event.target as HTMLElement | null;
  if (!target || target.tagName !== 'IMG' || !target.classList.contains('emoji')) return;
- const glyph = (target as HTMLImageElement).alt;
+ const img = target as HTMLImageElement;
+ const glyph = img.alt;
  if (!glyph) return;
+ // Record the failure BEFORE restoring the glyph: the restore is itself a
+ // mutation the observer will see, and the parse it triggers must skip it.
+ FAILED_ASSETS.add(img.getAttribute('src') ?? img.src);
  target.replaceWith(document.createTextNode(glyph));
  };
  el.addEventListener('error', onAssetError, true);

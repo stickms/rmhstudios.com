@@ -446,8 +446,9 @@ function LiquidGlassLab() {
           title="Liquid sheen — living material"
           description={
             <>
-              <Mono>.glass-liquid</Mono> (or <Mono>&lt;GlassPane liquid&gt;</Mono>) drifts a slow
-              specular band across the surface like light travelling over wet glass — now a
+              <Mono>.glass-liquid</Mono> (or <Mono>&lt;GlassPane liquid&gt;</Mono>) sweeps one slow
+              specular band across the surface on arrival, like light travelling over wet glass,
+              then rests — a loop would keep the page from ever going idle. It is a
               background layer, so it composes freely with refraction and the pointer light on the
               same pane. Signature surfaces only; ration it. The right card uses{' '}
               <Mono>.glass-sheen-hover</Mono>, the one-shot sweep signature CTAs (and{' '}
@@ -464,7 +465,7 @@ function LiquidGlassLab() {
                 <Waves className="mx-auto h-6 w-6 text-site-accent" aria-hidden />
                 <span className="text-base font-semibold text-site-text">Ambient sheen</span>
                 <Mono>.glass-liquid</Mono>
-                <span className="text-xs text-site-text-dim">a band drifts across every ~9s</span>
+                <span className="text-xs text-site-text-dim">one sweep on arrival, then still</span>
               </div>
             </GlassPane>
             <div className="glass-pane glass-sheen-hover relative flex h-44 items-center justify-center overflow-hidden rounded-site p-6">
