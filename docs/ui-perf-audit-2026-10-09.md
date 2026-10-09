@@ -1,4 +1,4 @@
-# Page-Switch Lag, First-Load Redirects & Debossed Surfaces — 2026-10-09
+# Page-Switch Lag, Slow Networks, First-Load Redirects & Debossed Surfaces — 2026-10-09
 
 > The owner reported three things together: surfaces that look **debossed** —
 > sunk into the page — when that is not the site's material; pages that feel
@@ -11,7 +11,8 @@
 > "Nothing is debossed"), [`design-language.md`](./design-language.md).
 >
 > Finding IDs: `NAV-x` page switches, `LOAD-x` first load, `DEB-x` debossed
-> surfaces, `CON-x` material consistency. Code comments cite them.
+> surfaces, `CON-x` material consistency, `SLOW-x` slow networks and device
+> range (Part 2). Code comments cite them.
 
 ---
 
@@ -243,3 +244,133 @@ and track on `/explore`, `/library`, `/liquid-glass`; full pages for `/settings`
 `/communities`, `/games`, `/predictions`), and a 390px pass for the switch
 smoke test. No new console errors (a signed-out 401 from an API probe is
 pre-existing).
+
+---
+
+## Part 2 — Slow networks, every device
+
+The follow-up brief: try slow connections too; paint the page with what is
+known and fill it in progressively; give every wait a loading state and every
+arrival a smooth reveal; no layout shift; and make the networking hold up for
+any visitor, browser, connection, device and screen.
+
+### How it was measured
+
+Same production build, now behind a small gzip proxy so the HTML crosses the
+emulated link at production size (the local Nitro server sends it raw; Apache
+deflates it in production: 115 KB → 20 KB). A filmstrip (Chrome screencast),
+every layout shift with its source elements, first paint, and when pending
+skeletons/spinners clear, for cold loads and page switches, across:
+
+| Profile | CPU | RTT | Downlink | Width |
+|---|---|---|---|---|
+| High-res desktop | 1× | 40 ms | 50 Mbit/s | 2560 |
+| Tablet on 4G | 2× | 100 ms | 9 Mbit/s | 768 |
+| Phone on 3G | 4× | 300 ms | 1.6 Mbit/s | 390 |
+| Low-end phone on 2G-class | 6× | 1200 ms | 250 kbit/s | 390 |
+
+Content was seeded (12 users, 60 posts, communities, blog posts) so the
+data-driven pages had something to load.
+
+### What a slow connection showed
+
+- **No layout shift on loads.** Server rendering paints pages complete, and
+  the earlier CLS pass held: cold loads were 0 on every profile.
+- **One shift on every switch away from Home** (SLOW-3, below).
+- **Pop-in.** Text and layout paint long before images do (the default avatar
+  landed ~5 s after first paint on 3G), and content that replaces a skeleton
+  or spinner appeared in a single frame.
+- **First paint is bandwidth-bound.** On 3G, 87 requests / ~580 KB start before
+  first paint: ~83 KB of render-blocking CSS (70 KB of it `globals.css`, 77% of
+  which is Tailwind utilities generated from every game and app) competing with
+  ~80 `modulepreload` hints. Locally that is HTTP/1.1 with no prioritisation;
+  in production Cloudflare serves HTTP/2+ and sends the CSS first, so local
+  numbers are pessimistic here (see "Not done").
+
+### SLOW-1 [fixed] Images fade in instead of popping in — site-wide
+
+`lib/media-reveal.ts`: a pre-paint script installs one capture-phase
+`load`/`error` listener and marks each `<img>` as its bytes land; `globals.css`
+fades it from 0 to 1. Opacity only (cannot shift layout); no JavaScript means
+nothing is hidden; reduced motion, the LCP image (`fetchpriority=high`), images
+without a `src`, full-screen apps and `data-no-reveal` are exempt; print forces
+full opacity. Verified: across 10 pages at 390 and 1440px, every loaded image
+ends visible (none stuck at 0) and no page errors.
+
+### SLOW-2 [fixed] Content that replaces a placeholder fades in — site-wide
+
+`lib/swap-reveal.ts`, installed once from `Providers`: a `MutationObserver`
+that, when a batch removes a `Skeleton`, `Spinner`/`RadialLoader`,
+`[data-skeleton]` or `[aria-busy="true"]`, fades in (WAAPI, opacity only, 260ms)
+the elements added to the same parent. That covers the ~200 `loading ?
+<Skeleton/> : …` and Suspense-fallback sites without editing them. Bounded (24
+elements per batch), skips route pending UI (the page entrance already
+animates it), honours reduced motion and `data-no-reveal`. Verified firing on
+the home feed and profile tab swaps under 3G.
+
+### SLOW-3 [fixed] The shell jolted 14px on every switch away from Home
+
+`RadialShell` keyed its home spacing on the URL, which changes the moment a
+navigation starts, while the outgoing feed stays on screen until the next page
+commits — so the still-visible feed shifted 14px for a frame (CLS 0.0146 on
+every switch from `/`). It now keys on the router's `resolvedLocation`, which
+moves with the commit. Page-switch CLS: **0.0146 → 0** on every route tested.
+
+### SLOW-4 [fixed] One network policy, honouring the Data Saver setting
+
+`lib/network-quality.ts` replaces five private readers of
+`navigator.connection` for new code and the prefetchers: a connection class
+(`offline` / `slow` / `moderate` / `fast` / `unknown`) from `effectiveType`,
+the live `rtt`, and — for Safari and Firefox, which have no Network
+Information API — the round trip this page load actually measured (its TCP
+handshake). Before, those browsers always read as "fast".
+**The site's own Data Saver setting was ignored** by both speculative
+prefetchers (only the browser's Save-Data flag was read); `on` now stops them,
+and `useDataSaver`'s `auto` uses the same classification. Speculation now also
+stops on 3G (it already stopped on 2G). Unit-tested.
+
+### SLOW-5 [fixed] Retries that only retry what can succeed
+
+`lib/http.ts`: `HttpError` (status + Retry-After), `TimeoutError`, and
+`fetchJson` with a connection-aware timeout (15/25/45 s), caller abort
+composition and idempotent-only retries. The QueryClient's global policy now
+retries transport failures, timeouts, 408/425/429 and 5xx — never another 4xx
+— up to 2 times (3 on a 2G-class link) with exponential backoff, equal jitter
+and the server's Retry-After honoured; offline, React Query pauses and resumes
+on reconnect. The unused duplicate `HttpError`/`fetchJson` in
+`hooks/useResource.ts` now re-exports these. Unit-tested.
+
+### SLOW-6 [fixed] The default avatar was 27 KB
+
+A 400×400 PNG preloaded on most pages and never shown above ~120 CSS px. Now
+256×256, 32 colours: **9 KB**, visually identical, same URL (stored user
+records keep working).
+
+### Results
+
+| Profile | Cold load CLS | Page-switch CLS | Page-switch feedback |
+|---|---:|---:|---|
+| 2560 desktop | 0 | 0 | content in ≤250 ms |
+| 768 tablet, 4G | 0 | 0 | content in ~500 ms |
+| 390 phone, 3G | 0 | 0.0146 → **0** | pending skeleton in ≤250 ms, content ~1–2 s |
+| 390 low-end, 2G-class | 0 | 0 | pending skeleton immediately, content 7–11 s |
+
+### Not done (and why)
+
+- **First paint on 2G-class links is ~10 s.** It is bandwidth: render-blocking
+  CSS (~83 KB) plus ~300 KB of JS module preloads on a 31 KB/s link. Two
+  levers, both bigger than this pass:
+  1. *Lower the module preloads' priority* (`fetchpriority="low"` keeps them
+     parallel but behind the CSS). They are emitted by TanStack Start's
+     `HeadContent` with no hook for attributes; patching the framework or
+     rewriting the HTML outside React (hydration) is the cost.
+  2. *Split `globals.css`.* 77% of it is Tailwind utilities generated from
+     every game and app. Scoping `@source` per tier needs a second CSS entry
+     for the full-screen tier.
+- **Adaptive font preload via Client Hints** (`Save-Data` / `ECT`: skip the
+  47 KB Inter preload on slow links; its fallback is metric-matched, so nothing
+  reflows). Signed-out HTML is cached by `server/nitro/anon-html-cache.ts`, so
+  varying the document by those headers needs the cache key to vary too.
+- **Bare `fetch` in components.** Most data in the app is fetched in effects,
+  not through React Query; those call sites don't get the retry policy until
+  they move to `fetchJson`/`useResource`. New code should use them.

@@ -4731,6 +4731,32 @@ input[type='number'] {
   font-family: var(--dr-serif-body);
 }
 
+/* ─── Images fade in as their bytes land (lib/media-reveal.ts) ────────────
+ * `html.media-reveal` is stamped by a pre-paint script that also marks every
+ * <img> `data-loaded` on load/error, so without JavaScript nothing is hidden.
+ * Opacity only — never layout — so it cannot shift anything. The LCP image
+ * (`fetchpriority=high`), an image with no src (it would never load), opted-out
+ * images and reduced motion are never hidden. Full-screen apps keep their own
+ * image handling. Base layer, so a component's own fade utilities still win. */
+@layer base {
+  @media (prefers-reduced-motion: no-preference) {
+    html.media-reveal:not(.reduce-motion):not(.app-route)
+      img[src]:not([src='']):not([fetchpriority='high']):not([data-no-reveal]) {
+      transition: opacity 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    html.media-reveal:not(.reduce-motion):not(.app-route)
+      img[src]:not([src='']):not([fetchpriority='high']):not([data-no-reveal]):not([data-loaded]) {
+      opacity: 0;
+    }
+  }
+  /* Paper has no load event to wait for. */
+  @media print {
+    html.media-reveal img {
+      opacity: 1 !important;
+    }
+  }
+}
+
 /* ─── Per-page content transition ────────────────────────────────────────
  * Only the content column(s) animate on navigation — the left nav rail lives
  * outside the content <main> (see app/routes/_site.tsx), so it never moves.
