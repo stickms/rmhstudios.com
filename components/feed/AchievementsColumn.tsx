@@ -148,7 +148,7 @@ export function AchievementsColumn({
  if (list.length === 0) return null;
  return (
  <section key={cat}>
- <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 className="site-section-label mb-2">
  {CATEGORY_LABELS[cat]}
  </h2>
  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">

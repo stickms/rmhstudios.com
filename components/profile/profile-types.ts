@@ -1,8 +1,15 @@
+import type { AchievementStripData } from '@/lib/achievements/strip';
 import type { ProfileModule } from '@/lib/profile/modules';
 import type { UserStatus } from '@/lib/profile/status';
 
 export interface ProfileData {
   id: string;
+  /**
+   * The header's achievement strip, when the server sent it with the page
+   * (profile route loader). Absent on client refetches; the strip then fetches
+   * its own.
+   */
+  achievementStrip?: AchievementStripData;
   name: string | null;
   username: string | null;
   handle: string | null;

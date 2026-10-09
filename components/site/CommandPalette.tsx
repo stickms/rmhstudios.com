@@ -13,8 +13,9 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import Fuse from 'fuse.js';
 import { useTranslation } from 'react-i18next';
+import { normalizeQuery } from '@/lib/search/normalize';
+import { MATCH_FLOOR, scoreRecord } from '@/lib/search/score';
 import {
   Home,
   Compass,
@@ -46,6 +47,21 @@ import {
   SlidersHorizontal,
   CornerDownLeft,
   HelpCircle,
+  Palette,
+  Timer,
+  Coins,
+  Calendar,
+  Radio,
+  Store,
+  Car,
+  Shirt,
+  Rocket,
+  Terminal,
+  Smile,
+  History,
+  FileText,
+  Sparkles,
+  AppWindow,
   type LucideIcon,
 } from 'lucide-react';
 import { games } from '@/lib/games';
@@ -64,7 +80,7 @@ const ComposeModal = lazy(() =>
 );
 
 // The open event + opener live in a dependency-free module so callers can trigger
-// the palette without importing fuse.js / the games+apps registries this file
+// the palette without importing the games+apps registries and scorer this file
 // pulls in. Re-exported here for back-compat with existing import sites.
 export { COMMAND_PALETTE_EVENT, openCommandPalette } from './command-palette-bus';
 import { COMMAND_PALETTE_EVENT } from './command-palette-bus';
@@ -117,6 +133,21 @@ const DESTINATION_ICONS: Record<string, LucideIcon> = {
   SlidersHorizontal,
   KeyRound,
   ShieldUser,
+  Palette,
+  Timer,
+  Coins,
+  Calendar,
+  Radio,
+  Store,
+  Car,
+  Shirt,
+  Rocket,
+  Terminal,
+  Smile,
+  History,
+  FileText,
+  Sparkles,
+  AppWindow,
 };
 
 /**
@@ -388,26 +419,32 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
     return list;
   }, [t, signedIn, userHandle, go, setStyle]);
 
-  const fuse = useMemo(
-    () =>
-      new Fuse(commands, {
-        keys: [
-          { name: 'label', weight: 0.7 },
-          { name: 'keywords', weight: 0.3 },
-        ],
-        threshold: 0.35,
-        ignoreLocation: true,
-      }),
-    [commands],
-  );
-
+  // Ranked by the SAME scorer the Explore page and the top-bar panel use
+  // (`lib/search/score.ts`), not a matcher of its own. This used Fuse.js, so ⌘K,
+  // the top bar and /explore were three engines with three ideas of what
+  // "tournament" or "dark mode" should find. Normalise once per keystroke and
+  // score every command; the label is weighted like a title, the keywords like
+  // tags, and anything under the shared match floor is noise.
   const results = useMemo(() => {
-    if (!query.trim()) {
+    const raw = query.trim();
+    if (!raw) {
       // Default view: actions + pages, in catalog order (themes/games only when searched).
       return commands.filter((c) => c.section === 'actions' || c.section === 'pages');
     }
-    return fuse.search(query.trim()).map((r) => r.item);
-  }, [query, commands, fuse]);
+    const normalized = normalizeQuery(raw);
+    if (!normalized) return [];
+    return commands
+      .map((c) => ({
+        c,
+        score: scoreRecord(normalized, [
+          { value: c.label, weight: 1 },
+          { value: c.keywords, weight: 0.6 },
+        ]).score,
+      }))
+      .filter((r) => r.score >= MATCH_FLOOR)
+      .sort((a, b) => b.score - a.score)
+      .map((r) => r.c);
+  }, [query, commands]);
 
   // Local fuzzy results + server search results (people/posts sections).
   const combined = useMemo(() => {
@@ -472,7 +509,10 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
       )}
       <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
         <DialogPrimitive.Portal>
-          <DialogPrimitive.Overlay data-motion="fade" className="fixed inset-0 z-[90] glass-scrim" />
+          <DialogPrimitive.Overlay
+            data-motion="fade"
+            className="fixed inset-0 z-[90] glass-scrim"
+          />
           {/* Plain `glass-overlay` — no `glass-refract`/`--prism` here any more.
               The displacement lens those classes exist to carry is PARKED (see
               the note in globals.css §3.3–3.6), so all they contributed was

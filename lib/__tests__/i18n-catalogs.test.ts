@@ -84,6 +84,13 @@ const KNOWN_PARTIAL_PLURALS: Record<string, string[]> = {
 // orphan key a locale has that English does not — still fails the suite. Shrink
 // this map (ideally to {}) the moment the translate pipeline is run.
 const KNOWN_UNTRANSLATED: Record<string, string[]> = {
+  // UI minimalism audit (2026-10-09): /create's prompt heading, which replaced
+  // the second "RMH Studios presents / The everything platform." hero.
+  // English-only until the translate pipeline runs (needs DEEPSEEK_API_KEY).
+  v: ['prompt-heading'],
+  // The Predictions Open/Resolved/Mine filter moved onto LiquidTabs and needed
+  // an accessible name for the strip (2026-10-09). Same pipeline caveat.
+  'c-predictions': ['filter-aria-label'],
   // ── The Next 100 (2026-08-05) ──────────────────────────────────────────
   // Badge-rarity tiers (F7), profile-completeness steps (B22) and the shared
   // Undo affordance (B1). English-only until `pnpm i18n:translate &&
@@ -298,6 +305,14 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'cars-xl-tagline',
   ],
   feed: [
+    // UI minimalism audit (2026-10-09): the live rail's footer link, renamed
+    // from "Explore everything" under a new key. Same pipeline caveat.
+    'explore-more-link',
+    // Search audit (2026-10-09): what a signed-out search covers, now that
+    // /api/search answers signed-out visitors from the static catalog.
+    'search-no-matches-signed-out',
+    'search-signed-out-cta',
+    'search-signed-out-scope',
     // Extract backlog, 2026-09-15 — see the block at the end of this map.
     'drop-images-here',
     'edit-history-added',
@@ -531,6 +546,12 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'settings-premium-themes-or',
   ],
   site: [
+    // UI minimalism audit (2026-10-09): one-line descriptions for the two 3D
+    // showcases now listed on the /services hub. Same pipeline caveat.
+    'services-cars-desc',
+    'services-fashion-desc',
+    // /help's title, which was a hardcoded English "Help" in a bespoke header.
+    'help-title',
     // The accessible name of the Games ⇄ Apps catalog strip (2026-08-08). Same
     // pipeline caveat as the `feed` block above — English-only until
     // `pnpm i18n:translate && pnpm i18n:resources` runs.

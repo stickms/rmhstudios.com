@@ -20,9 +20,20 @@
 import { apiCache } from '@/lib/cache';
 import { expandSearchQuery, isAITextConfigured, type QueryExpansion } from '@/lib/ai/text.server';
 import { normalizeQuery } from './normalize';
+import { catalogNames } from './catalog';
 
-/** Hard ceiling on how long a search will wait for the model. */
-export const EXPAND_TIMEOUT_MS = 1_500;
+/**
+ * Hard ceiling on how long a search will wait for the model.
+ *
+ * Was 1.5s, which is shorter than a typical chat completion — so on most weak
+ * queries the race resolved to "no expansion", cached that empty answer for a
+ * minute, and the assist pass silently did nothing. That was most of "the AI
+ * lookup doesn't always work". The assist is already a separate, second request
+ * that only fires after the user has stopped typing and the lexical results are
+ * on screen, so waiting longer costs nothing visible: the results do not move
+ * until something better arrives.
+ */
+export const EXPAND_TIMEOUT_MS = 4_000;
 const CACHE_TTL_MS = 6 * 60 * 60 * 1_000;
 const FAILURE_TTL_MS = 60_000;
 const EMPTY: QueryExpansion = { terms: [], correction: '' };
@@ -52,7 +63,7 @@ export async function expandQuery(rawQuery: string): Promise<QueryExpansion> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const result = await Promise.race([
-      expandSearchQuery(rawQuery),
+      expandSearchQuery(rawQuery, catalogNames()),
       new Promise<QueryExpansion>((resolve) => {
         timer = setTimeout(() => resolve(EMPTY), EXPAND_TIMEOUT_MS);
       }),

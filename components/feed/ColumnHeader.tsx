@@ -50,6 +50,31 @@ export function ColumnHeader({
   className,
 }: ColumnHeaderProps) {
   const Heading = headingLevel;
+
+  // The PAGE title. When this header is the page's h1 (a `PageFrame` route —
+  // Bookmarks, Drafts, Ranked, Help, a tag page, Flashcards …) it renders in
+  // exactly the markup and classes `PageLayout` uses: flat display type on the
+  // backdrop, actions in the header's action slot, no glyph. It used to be a
+  // small icon + text-2xl title in a glass capsule, so ~25 routes titled
+  // themselves in a different face, size and container from the ~90
+  // `PageLayout` routes beside them — the most visible of the "different
+  // styles" the 2026-10-09 consistency audit found. Embedded h2 headers and
+  // headers with custom content (a search field) keep the compact row below.
+  if (title && !children && headingLevel === 'h1') {
+    return (
+      <header data-slot="page-header" className={cn('page-heading', className)}>
+        <div className="page-heading__content">
+          <div className="min-w-0">
+            <h1 className="site-display-3">
+              <span className="min-w-0 truncate">{title}</span>
+            </h1>
+          </div>
+          {actions && <div data-slot="page-header-action">{actions}</div>}
+        </div>
+      </header>
+    );
+  }
+
   return (
     <header
       className={cn(

@@ -242,14 +242,14 @@ export function FlashcardsColumn({
       <div className="space-y-6 p-4">
         {mine.length > 0 && (
           <Reveal as="section">
-            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-muted">
+            <h2 className="site-section-label mb-2">
               {t('your-decks', { defaultValue: 'Your decks' })}
             </h2>
             <div className="space-y-2">{mine.map((d) => DeckCard(d))}</div>
           </Reveal>
         )}
         <Reveal as="section">
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-muted">
+          <h2 className="site-section-label mb-2">
             {t('public-decks', { defaultValue: 'Public decks' })}
           </h2>
           {popular.length === 0 ? (

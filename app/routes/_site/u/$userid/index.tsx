@@ -13,6 +13,8 @@ import { personSchema, jsonLdScript } from '@/lib/schema';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, ogCardPath, SITE_URL } from '@/lib/seo';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { getProfile } from '@/lib/profile.server';
+import { listAchievements } from '@/lib/achievements.server';
+import { pickAchievementStrip } from '@/lib/achievements/strip';
 
 const fetchProfileData = createServerFn({ method: 'GET' })
   .validator((id: string) => id)
@@ -27,7 +29,15 @@ const fetchProfileData = createServerFn({ method: 'GET' })
       isAdmin: Boolean((session?.user as { isAdmin?: boolean } | undefined)?.isAdmin),
     };
 
-    const [sidebar, profile] = await Promise.all([getSidebarData(), getProfile(id, viewer)]);
+    const [sidebar, found] = await Promise.all([getSidebarData(), getProfile(id, viewer)]);
+    // The header's achievement strip rides with the page rather than arriving
+    // after hydration and growing the header under the reader (see
+    // lib/achievements/strip.ts). A failure here just means the strip falls
+    // back to its own client fetch.
+    const achievements = found ? await listAchievements(found.id).catch(() => null) : null;
+    const profile = found
+      ? { ...found, achievementStrip: achievements ? pickAchievementStrip(achievements) : undefined }
+      : null;
 
     let meta = {
       title: 'User Not Found | RMH',

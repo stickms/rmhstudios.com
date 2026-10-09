@@ -213,13 +213,16 @@ export function PagesTab({
 
   return (
     <div className="vibe-gallery">
-      {/* Prompt hero: generate a new page. */}
+      {/* The prompt: generate a new page. This used to be a second full hero —
+          an untranslated "RMH Studios presents" eyebrow over a display-size
+          "The everything platform." — stacked under the page's own title and
+          tabs, so /create opened with two headlines before its one control. A
+          plain section heading says what the box is for. */}
       <section className="vibe-gallery__hero">
-        <p className="vibe-rise vibe-presents mb-3">RMH Studios presents</p>
-        <h2 className="vibe-rise-2 vibe-title">
-          {t('hero-headline', { defaultValue: 'The everything platform.' })}
+        <h2 className="vibe-rise site-display-4">
+          {t('prompt-heading', { defaultValue: 'Describe a page to generate' })}
         </h2>
-        <div className="mt-8 flex w-full justify-center">
+        <div className="mt-6 flex w-full justify-center">
           <div className="glass-pane vibe-dock vibe-dock--area vibe-rise-soft">
             <textarea
               ref={inputRef}

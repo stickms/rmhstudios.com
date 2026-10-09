@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { isFeedImageUrl } from "@/lib/storage/keys";
 
-export const MAX_RMHARK_LENGTH = 280;
+import { MAX_RMHARK_LENGTH } from "@/lib/rmhark-limits";
+
+export { MAX_RMHARK_LENGTH };
 export const MAX_RMHARK_IMAGES = 4;
 // Per-image alt text (accessibility). Kept generous so screen-reader users get
 // a full description; empty string = "no description provided".

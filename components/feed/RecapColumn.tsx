@@ -67,7 +67,6 @@ export function RecapColumn({
  <>
  {/* Pinned scroll-narrative hero — marquee moment for the weekly review. */}
  <PinnedHero
- eyebrow={t('recap-your-week', { defaultValue:'Your week on RMH'})}
  title={
  <>
  {t('recap-weekly-headline', { defaultValue:'Weekly'})}{''}
@@ -92,7 +91,7 @@ export function RecapColumn({
  <div className="space-y-4 p-4">
  {/* Stat grid */}
  <Reveal>
- <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 className="site-section-label mb-3">
  {t('recap-stats-heading', { defaultValue:'This week'})}
  </h2>
  <RevealGroup as="div"className="grid grid-cols-2 gap-2 sm:grid-cols-3">

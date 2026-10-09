@@ -35,5 +35,6 @@
   "trading-closed": "Trading closed — awaiting resolution.",
   "view-subject": "View the subject",
   "volume": "{{n}} vol",
-  "your-position": "You: {{yes}} YES / {{no}} NO"
+  "your-position": "You: {{yes}} YES / {{no}} NO",
+  "filter-aria-label": "Filter markets"
 }

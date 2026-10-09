@@ -181,7 +181,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  {/* Milestones list */}
  <Reveal>
  <section>
- <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 className="site-section-label mb-2">
  {t('milestones-heading', { defaultValue:'Milestones'})}
  </h2>
  <div className="space-y-2">

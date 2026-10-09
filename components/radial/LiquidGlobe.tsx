@@ -1842,11 +1842,10 @@ export function LiquidGlobe({
       {/* TITLE — a fixed billing card, not a running commentary. The destination
           under the reticle names itself AT the pin (radial.css keeps the locked
           pin's label even at the widths where the rest are hidden), which is
-          where the eye already is, so this space is free to be the marquee. */}
+          where the eye already is, so this space is free to be the marquee.
+          No "RMH PRESENTS" kicker above it any more — the same stock eyebrow
+          the 2026-10-09 minimalism pass removed from every page title. */}
       <div className="radial-globe__title">
-        <p className="radial-globe__presents">
-          {t('globe-presents', { defaultValue: 'RMH Presents' })}
-        </p>
         <p className="radial-globe__wordmark">
           {t('globe-wordmark', { defaultValue: 'The Liquid Globe' })}
         </p>

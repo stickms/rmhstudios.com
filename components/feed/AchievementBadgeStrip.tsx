@@ -9,29 +9,32 @@
 import { useEffect, useState } from'react';
 import { useTranslation } from'react-i18next';
 import { Trophy } from'lucide-react';
-import { TIER_ORDER, TIER_COLORS, type AchievementTier } from'@/lib/achievements/catalog';
-
-interface StripAchievement {
- id: string;
- name: string;
- icon: string;
- tier: AchievementTier;
- unlocked: boolean;
- unlockedAt: string | null;
-}
+import { TIER_COLORS } from'@/lib/achievements/catalog';
+import {
+ pickAchievementStrip,
+ type AchievementStripData,
+ type StripAchievement,
+} from'@/lib/achievements/strip';
 
 export function AchievementBadgeStrip({
  userId,
+ initial,
  onShowAll,
 }: {
  userId: string;
+ /** Server-rendered strip (profile loader). When present, nothing is fetched. */
+ initial?: AchievementStripData;
  onShowAll?: () => void;
 }) {
  const { t } = useTranslation('feed');
- const [top, setTop] = useState<StripAchievement[]>([]);
- const [unlockedCount, setUnlockedCount] = useState(0);
+ const [top, setTop] = useState<StripAchievement[]>(initial?.top ?? []);
+ const [unlockedCount, setUnlockedCount] = useState(initial?.unlocked ?? 0);
+ // Read once: a later client refetch of the profile carries no strip, and that
+ // must not trigger a fetch for data the page already painted.
+ const [seeded] = useState(Boolean(initial));
 
  useEffect(() => {
+ if (seeded) return;
  let cancelled = false;
  (async () => {
  try {
@@ -44,15 +47,9 @@ export function AchievementBadgeStrip({
  achievements: StripAchievement[];
  };
  if (cancelled) return;
- const unlocked = data.achievements
- .filter((a) => a.unlocked)
- .sort(
- (a, b) =>
- TIER_ORDER[b.tier] - TIER_ORDER[a.tier] ||
- new Date(b.unlockedAt ?? 0).getTime() - new Date(a.unlockedAt ?? 0).getTime()
- );
- setTop(unlocked.slice(0, 3));
- setUnlockedCount(data.stats.unlocked);
+ const strip = pickAchievementStrip(data);
+ setTop(strip.top);
+ setUnlockedCount(strip.unlocked);
  } catch {
  // Strip is decorative — fail silently.
  }
@@ -60,7 +57,7 @@ export function AchievementBadgeStrip({
  return () => {
  cancelled = true;
  };
- }, [userId]);
+ }, [userId, seeded]);
 
  if (top.length === 0) return null;
 

@@ -253,7 +253,7 @@ export function EarningsTab() {
       {/* History */}
       {requests.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-site-text-dim mb-2">
+          <h3 className="site-section-label mb-2">
             {t('history', { defaultValue: 'Requests' })}
           </h3>
           <div className="space-y-2">

@@ -206,7 +206,7 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
 
       {/* Recent tips */}
       <div className="space-y-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-site-text-dim">
+        <h2 className="site-section-label">
           {t('recent-tips', { defaultValue: 'Recent tips' })}
         </h2>
         {recentTips.length === 0 ? (

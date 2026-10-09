@@ -53,14 +53,6 @@
   color: var(--site-text-muted);
 }
 
-/* thin "RMH Studios presents" lead-in above the title */
-.vibe-presents {
-  font-size: clamp(0.82rem, 1.6vw, 1.05rem);
-  font-weight: 300;
-  letter-spacing: 0.02em;
-  color: var(--site-text-muted);
-}
-
 .vibe-hint {
   font-size: 0.78rem;
   font-weight: 500;
@@ -787,7 +779,9 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: clamp(48px, 12vh, 120px) clamp(16px, 4vw, 40px) clamp(40px, 8vh, 72px);
+  /* Section-sized, not hero-sized: this sits under /create's own title and tab
+     strip, so the old 12vh of top padding read as a second page starting. */
+  padding: clamp(24px, 4vh, 40px) clamp(16px, 4vw, 40px) clamp(24px, 5vh, 48px);
 }
 
 .vibe-gallery__head {

@@ -890,3 +890,68 @@ describe('site pages take the shared frame', () => {
     ).toEqual([]);
   });
 });
+
+/**
+ * Section headings are `.site-section-label`, not a hand-typed uppercase label.
+ *
+ * Before the 2026-10-09 minimalism audit, 39 site-tier `<h2>`/`<h3>` elements
+ * spelled "a small heading for a group on this page" as a tiny, uppercase,
+ * letter-spaced, dimmed label — in 20+ different class combinations. Each one
+ * looked like it came from a different product, and together they turned every
+ * page into a stack of eyebrows. There is one style for it now (globals.css
+ * `.site-section-label`), and this keeps `uppercase` off site-tier headings so
+ * the variants cannot regrow one call site at a time.
+ *
+ * Scope is deliberately narrow — headings only. An uppercase micro-label on a
+ * stat ("LIFETIME EARNED" over a number), a badge, or a table header is a data
+ * label, not a section heading, and is left alone.
+ */
+/**
+ * Brand and editorial surfaces whose small caps are their own typographic voice,
+ * not a site section heading: a restaurant's menu, a car family's spec sheet, a
+ * fashion lookbook, the long-form roadmap, and the /liquid-glass material demo.
+ * One-directional, like every allowlist in this file — entries come out, they do
+ * not go in.
+ */
+const SECTION_LABEL_ALLOW = new Set([
+  join('components', 'rebar-rutabaga', 'Reservations.tsx'),
+  join('components', 'rebar-rutabaga', 'TastingMenu.tsx'),
+  join('components', 'rideshare', 'cars', 'CarFamily.tsx'),
+  join('components', 'rmhfashion', 'FashionStudio.tsx'),
+  join('components', 'roadmap', 'RoadmapSection.tsx'),
+  join('app', 'routes', 'liquid-glass.tsx'),
+]);
+
+describe('design consistency — section headings (minimalism audit 2026-10-09)', () => {
+  it('no site-tier h2/h3 is styled as an uppercase eyebrow', () => {
+    const heading = /<(h2|h3)\b[^>]*\bclassName=(["'])([^"']*)\2/g;
+    const offenders: Violation[] = [];
+    for (const file of SITE_FILES) {
+      if (SECTION_LABEL_ALLOW.has(file)) continue;
+      const src = readFileSync(join(ROOT, file), 'utf8');
+      heading.lastIndex = 0;
+      let m: RegExpExecArray | null;
+      while ((m = heading.exec(src))) {
+        if (/(^|\s)uppercase(\s|$)/.test(m[3])) {
+          offenders.push({ file, line: lineAt(src, m.index), detail: `<${m[1]}> with uppercase` });
+        }
+      }
+    }
+    // The allowlist only shrinks: an entry that no longer violates must be removed.
+    for (const file of SECTION_LABEL_ALLOW) {
+      const src = readFileSync(join(ROOT, file), 'utf8');
+      expect(
+        /<(h2|h3)\b[^>]*\bclassName=(["'])[^"']*\buppercase\b/.test(src),
+        `${file} no longer has an uppercase heading — remove it from SECTION_LABEL_ALLOW`,
+      ).toBe(true);
+    }
+    expect(
+      offenders,
+      report(
+        'Uppercase section heading — use `site-section-label` (globals.css) for the ' +
+          'heading of a group within a page',
+        offenders,
+      ),
+    ).toEqual([]);
+  });
+});

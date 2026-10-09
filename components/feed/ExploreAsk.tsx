@@ -50,7 +50,7 @@ function Answer({
 
   return (
     <div className="glass-fill rounded-site px-3.5 py-3">
-      <div className="mb-1.5 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+      <div className="site-section-label mb-1.5 flex items-center gap-2">
         <Sparkles className="h-3.5 w-3.5 text-site-accent" aria-hidden />
         {t('ai-answer', { defaultValue: 'AI answer' })}
       </div>
@@ -117,7 +117,7 @@ function AskTheFeed() {
     <AskShell>
       <label
         htmlFor="ask-feed"
-        className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim"
+        className="site-section-label mb-2 flex items-center gap-1.5"
       >
         <Sparkles className="h-3.5 w-3.5 text-site-accent" aria-hidden />
         {t('ask-the-feed', { defaultValue: 'Ask the feed' })}

@@ -277,6 +277,8 @@ import { Route as SiteRmhladderReviewRouteImport } from './routes/_site/rmhladde
 import { Route as SiteRmhladderSettingsRouteImport } from './routes/_site/rmhladder/settings'
 import { Route as SiteSavesIndexRouteImport } from './routes/_site/saves/index'
 import { Route as SiteServicesIndexRouteImport } from './routes/_site/services/index'
+import { Route as SiteServicesCarsRouteImport } from './routes/_site/services/cars'
+import { Route as SiteServicesFashionRouteImport } from './routes/_site/services/fashion'
 import { Route as SiteSettingsIndexRouteImport } from './routes/_site/settings/index'
 import { Route as SiteSettingsAccountStatusRouteImport } from './routes/_site/settings/account-status'
 import { Route as SiteSettingsAppearanceRouteImport } from './routes/_site/settings/appearance'
@@ -2275,6 +2277,16 @@ const SiteSavesIndexRoute = SiteSavesIndexRouteImport.update({
 const SiteServicesIndexRoute = SiteServicesIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => SiteServicesRoute,
+} as any)
+const SiteServicesCarsRoute = SiteServicesCarsRouteImport.update({
+  id: '/cars',
+  path: '/cars',
+  getParentRoute: () => SiteServicesRoute,
+} as any)
+const SiteServicesFashionRoute = SiteServicesFashionRouteImport.update({
+  id: '/fashion',
+  path: '/fashion',
   getParentRoute: () => SiteServicesRoute,
 } as any)
 const SiteSettingsIndexRoute = SiteSettingsIndexRouteImport.update({
@@ -5916,6 +5928,8 @@ export interface FileRoutesByFullPath {
   '/rmhladder/resume': typeof SiteRmhladderResumeRoute
   '/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/rmhladder/settings': typeof SiteRmhladderSettingsRoute
+  '/services/cars': typeof SiteServicesCarsRoute
+  '/services/fashion': typeof SiteServicesFashionRoute
   '/settings/account-status': typeof SiteSettingsAccountStatusRoute
   '/settings/appearance': typeof SiteSettingsAppearanceRoute
   '/settings/circle': typeof SiteSettingsCircleRoute
@@ -6811,6 +6825,8 @@ export interface FileRoutesByTo {
   '/rmhladder/resume': typeof SiteRmhladderResumeRoute
   '/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/rmhladder/settings': typeof SiteRmhladderSettingsRoute
+  '/services/cars': typeof SiteServicesCarsRoute
+  '/services/fashion': typeof SiteServicesFashionRoute
   '/settings/account-status': typeof SiteSettingsAccountStatusRoute
   '/settings/appearance': typeof SiteSettingsAppearanceRoute
   '/settings/circle': typeof SiteSettingsCircleRoute
@@ -7734,6 +7750,8 @@ export interface FileRoutesById {
   '/_site/rmhladder/resume': typeof SiteRmhladderResumeRoute
   '/_site/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/_site/rmhladder/settings': typeof SiteRmhladderSettingsRoute
+  '/_site/services/cars': typeof SiteServicesCarsRoute
+  '/_site/services/fashion': typeof SiteServicesFashionRoute
   '/_site/settings/account-status': typeof SiteSettingsAccountStatusRoute
   '/_site/settings/appearance': typeof SiteSettingsAppearanceRoute
   '/_site/settings/circle': typeof SiteSettingsCircleRoute
@@ -8657,6 +8675,8 @@ export interface FileRouteTypes {
     | '/rmhladder/resume'
     | '/rmhladder/review'
     | '/rmhladder/settings'
+    | '/services/cars'
+    | '/services/fashion'
     | '/settings/account-status'
     | '/settings/appearance'
     | '/settings/circle'
@@ -9552,6 +9572,8 @@ export interface FileRouteTypes {
     | '/rmhladder/resume'
     | '/rmhladder/review'
     | '/rmhladder/settings'
+    | '/services/cars'
+    | '/services/fashion'
     | '/settings/account-status'
     | '/settings/appearance'
     | '/settings/circle'
@@ -10474,6 +10496,8 @@ export interface FileRouteTypes {
     | '/_site/rmhladder/resume'
     | '/_site/rmhladder/review'
     | '/_site/rmhladder/settings'
+    | '/_site/services/cars'
+    | '/_site/services/fashion'
     | '/_site/settings/account-status'
     | '/_site/settings/appearance'
     | '/_site/settings/circle'
@@ -13566,6 +13590,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/services/'
       preLoaderRoute: typeof SiteServicesIndexRouteImport
+      parentRoute: typeof SiteServicesRoute
+    }
+    '/_site/services/cars': {
+      id: '/_site/services/cars'
+      path: '/cars'
+      fullPath: '/services/cars'
+      preLoaderRoute: typeof SiteServicesCarsRouteImport
+      parentRoute: typeof SiteServicesRoute
+    }
+    '/_site/services/fashion': {
+      id: '/_site/services/fashion'
+      path: '/fashion'
+      fullPath: '/services/fashion'
+      preLoaderRoute: typeof SiteServicesFashionRouteImport
       parentRoute: typeof SiteServicesRoute
     }
     '/_site/settings/': {
@@ -18260,10 +18298,14 @@ const SiteRmhladderRouteWithChildren = SiteRmhladderRoute._addFileChildren(
 )
 
 interface SiteServicesRouteChildren {
+  SiteServicesCarsRoute: typeof SiteServicesCarsRoute
+  SiteServicesFashionRoute: typeof SiteServicesFashionRoute
   SiteServicesIndexRoute: typeof SiteServicesIndexRoute
 }
 
 const SiteServicesRouteChildren: SiteServicesRouteChildren = {
+  SiteServicesCarsRoute: SiteServicesCarsRoute,
+  SiteServicesFashionRoute: SiteServicesFashionRoute,
   SiteServicesIndexRoute: SiteServicesIndexRoute,
 }
 

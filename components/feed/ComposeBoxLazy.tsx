@@ -8,6 +8,7 @@ import { useSession, useResolvedUser } from'@/components/Providers';
 import { buildOptimizedUrl } from'@/components/ui/OptimizedImage';
 import { useIdleReady } from'@/hooks/useIdleReady';
 import { readComposeDraft } from'@/hooks/useComposeDraft';
+import { MAX_RMHARK_LENGTH } from '@/lib/rmhark-limits';
 
 /**
  * Deferred wrapper around {@link ComposeBox}.
@@ -102,16 +103,17 @@ function ComposePlaceholder({ onActivate }: { onActivate?: () => void }) {
  }
 
  return (
- <div className="glass-pane social-composer px-4 py-3">
+ <div className="glass-pane social-composer relative px-4 py-3">
  <div className="flex gap-3">
- {/* Avatar — matches ComposeBox's resting avatar exactly */}
- <div className="w-10 h-10 rounded-full bg-site-surface-hover ring-1 ring-site-border flex items-center justify-center text-site-text font-bold text-sm shrink-0 overflow-hidden">
+ {/* Avatar — the same box and classes as ComposeBox's, so the swap cannot
+ move or re-ring it. `eager`: it is above the fold, and `lazy` here
+ painted an empty circle for a frame between the initial and the image. */}
+ <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-site-text font-bold text-sm ring-2 ring-site-bg shrink-0">
  {image ? (
- // Optimized at ~2x the 40px display size (avoids the raw CDN original).
  <img
  src={buildOptimizedUrl(image, 80, 80)}
  alt={name || t('user-alt', { defaultValue:'User'})}
- loading="lazy"
+ loading="eager"
  decoding="async"
  width={40}
  height={40}
@@ -122,22 +124,27 @@ function ComposePlaceholder({ onActivate }: { onActivate?: () => void }) {
  )}
  </div>
 
- {/* Input area — a button that reads as the textarea's placeholder and
- mounts the real composer on focus/click. */}
+ {/* The composer's own well and toolbar row, rendered inert. This used to
+ be bare placeholder text over four grey dots, ~40px shorter than the
+ real composer and laid out differently, so every signed-in feed load
+ shifted the whole wheel down when the chunk mounted (CLS 0.033 on a
+ phone) and visibly swapped one composer for another. Same element,
+ same classes, same rows: the swap is now a no-op to layout. */}
  <div className="flex-1 min-w-0">
- <button
- type="button"
+ <textarea
+ readOnly
+ rows={3}
  onClick={activate}
  onFocus={activate}
- className="w-full min-h-[4.5rem] text-left text-base text-site-text-muted cursor-text py-1"
- >
- {t('compose-placeholder', { defaultValue:"What's on your mind?"})}
- </button>
- {/* Faint toolbar row so the placeholder's height tracks the real one. */}
- <div className="mt-1 flex items-center gap-2"aria-hidden>
- {[0, 1, 2, 3].map((i) => (
- <span key={i} className="h-8 w-8 rounded-full bg-site-surface-hover"/>
- ))}
+ placeholder={t('compose-placeholder', { defaultValue:"What's on your mind?"})}
+ aria-label={t('compose-placeholder', { defaultValue:"What's on your mind?"})}
+ className="block w-full glass-inset text-site-text placeholder:text-site-text-dim text-base resize-none px-3 py-2 outline-none cursor-text"
+ />
+ <div className="flex items-center justify-between mt-2"aria-hidden>
+ <span className="text-xs font-mono text-site-text-dim">{MAX_RMHARK_LENGTH}</span>
+ <Button variant="accent"size="sm"disabled tabIndex={-1}>
+ {t('post-button', { defaultValue:'Post'})}
+ </Button>
  </div>
  </div>
  </div>

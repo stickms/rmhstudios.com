@@ -329,7 +329,7 @@ export function DeckStudyColumn({
  )}
 
  <Reveal as="section">
- <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 className="site-section-label mb-2 flex items-center gap-1.5">
  <RotateCcw className="h-3.5 w-3.5"/>{''}
  {t('card-count', { count: cards.length, defaultValue:'{{count}} card'})}
  </h2>

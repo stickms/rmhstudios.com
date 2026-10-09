@@ -66,7 +66,7 @@ export function BracketView({ tournament, canReport, reportingId, onReport }: Pr
       <div className="flex gap-4 min-w-max">
         {rounds.map(([round, matches]) => (
           <div key={round} className="flex flex-col gap-3 min-w-[220px]">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-site-text-dim px-1">
+            <h3 className="site-section-label px-1">
               {roundLabel(round, rounds.length)}
             </h3>
             {matches.map((m) => {

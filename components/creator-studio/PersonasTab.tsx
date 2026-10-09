@@ -225,7 +225,7 @@ export function PersonasTab({ seed }: { seed: number }) {
 
       {mine.length > 0 && (
         <section className="mb-6">
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('your-personas', { defaultValue: 'Your personas' })}</h2>
+          <h2 className="site-section-label mb-2">{t('your-personas', { defaultValue: 'Your personas' })}</h2>
           <div className="store-personas__mine">
             {mine.map((p) => (
               <Link

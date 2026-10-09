@@ -25,8 +25,12 @@ import { ChevronDown } from 'lucide-react';
 import { ScrollScene } from '@/components/motion';
 
 export interface PinnedHeroProps {
-  /** Small mono eyebrow above the headline. */
-  eyebrow: string;
+  /**
+   * Small mono eyebrow above the headline. Optional, and usually better left
+   * out: where the hero sits under a page title or a selected tab, the eyebrow
+   * only repeats it (UI minimalism audit, 2026-10-09).
+   */
+  eyebrow?: string;
   /** Display headline (may include <br/> and an accent <span>). */
   title: ReactNode;
   /** Supporting line under the headline. */
@@ -64,7 +68,7 @@ function HeroFrame({
     actions: MotionStyle;
     cue: MotionStyle;
   };
-  eyebrow: string;
+  eyebrow?: string;
   title: ReactNode;
   subtitle: string;
   actions?: ReactNode;
@@ -92,15 +96,17 @@ function HeroFrame({
         />
       </motion.div>
 
-      <motion.p
-        className="font-mono text-xs font-medium uppercase tracking-[0.22em] text-site-text-muted sm:text-sm"
-        style={styles.eyebrow}
-      >
-        {eyebrow}
-      </motion.p>
+      {eyebrow && (
+        <motion.p
+          className="mb-5 font-mono text-xs font-medium uppercase tracking-[0.22em] text-site-text-muted sm:text-sm"
+          style={styles.eyebrow}
+        >
+          {eyebrow}
+        </motion.p>
+      )}
 
       <Heading
-        className="mt-5 max-w-4xl text-5xl font-semibold leading-[1.05] tracking-[-0.022em] text-site-text sm:text-6xl lg:text-7xl"
+        className="max-w-4xl text-5xl font-semibold leading-[1.05] tracking-[-0.022em] text-site-text sm:text-6xl lg:text-7xl"
         style={{ ...styles.title, fontFamily: 'var(--site-font-display)' }}
       >
         {title}

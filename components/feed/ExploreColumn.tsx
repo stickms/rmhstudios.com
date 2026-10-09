@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { useSession } from '@/components/Providers';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PostListSkeleton } from '@/components/ui/skeletons/PostCardSkeleton';
@@ -118,6 +119,7 @@ export function ExploreColumn({
   blogPosts?: DiscoveryBlogPost[];
 }) {
   const { t } = useTranslation('feed');
+  const { data: session } = useSession();
   const tabLabel = useTabLabel();
   const kindHeading = useKindHeading();
   const navigate = useNavigate();
@@ -270,6 +272,24 @@ export function ExploreColumn({
 
       {/* One AI slot, two forms — see `ExploreAsk`. */}
       <ExploreAsk query={hasQuery ? trimmed : ''} />
+
+      {/* Signed out, /api/search answers from the static catalog only (games,
+          apps, pages). Say so, rather than letting the People tab read as "no
+          one by that name exists". */}
+      {hasQuery && !session && (
+        <p className="px-4 py-2 text-sm text-site-text-muted">
+          {t('search-signed-out-scope', {
+            defaultValue: 'Showing games, apps and pages.',
+          })}{' '}
+          <Link
+            to="/login"
+            search={{ callbackURL: '/explore' }}
+            className="font-semibold text-site-accent hover:underline"
+          >
+            {t('search-signed-out-cta', { defaultValue: 'Sign in to search people and posts' })}
+          </Link>
+        </p>
+      )}
 
       {/* "Did you mean" — offered whenever the best match is not convincing, so
           a near-miss (a typo, or the wrong name for a game) is one tap from the

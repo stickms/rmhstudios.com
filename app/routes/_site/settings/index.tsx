@@ -168,7 +168,7 @@ function SettingsPage() {
           <ThemeGallery />
 
           <div className="mt-5 border-t border-site-border pt-4">
-            <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-site-text-muted">
+            <h3 className="site-section-label mb-2">
               {t('settings-accent-title', { defaultValue: 'Accent color' })}
             </h3>
             <p className="mb-3 text-xs text-site-text-muted">
@@ -239,7 +239,7 @@ function SettingsPage() {
 
           {groups.map(({ group, items }) => (
             <div key={group} className="mt-4">
-              <h3 className="mb-1 text-xs font-bold uppercase tracking-wider text-site-text-muted">
+              <h3 className="site-section-label mb-1">
                 {GROUP_LABELS[group](t)}
               </h3>
               <div className="-mx-3 flex flex-col">

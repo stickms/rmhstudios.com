@@ -138,10 +138,21 @@ export function tokenSimilarity(q: string, t: string): number {
   if (q.length >= 3 && t.includes(q)) return 0.62 + 0.18 * ratio;
 
   // Typo tolerance. Only worth attempting when the lengths are comparable.
+  //
+  // Two edits apart is as often a DIFFERENT word as a typo of this one —
+  // "racing" is two edits from "pricing", "help" two from "held" — and the old
+  // rule let both through at ~0.68, above the medium band, so a search for a
+  // racing game listed the Pricing page beside it. Real two-edit typos almost
+  // never touch the first letter (it is the one you look at), so a second edit
+  // is only accepted when the first letters agree, and it costs a little more
+  // than the first. One-edit typos ("islworks", "jhon") are unaffected.
   if (q.length >= 3) {
     const budget = editBudget(Math.min(q.length, t.length));
     const d = boundedEditDistance(q, t, budget);
-    if (d <= budget) return Math.max(0, 1 - d / Math.max(q.length, t.length)) * 0.95;
+    if (d <= 1 || (d <= budget && q[0] === t[0])) {
+      const base = Math.max(0, 1 - d / Math.max(q.length, t.length)) * 0.95;
+      return d >= 2 ? base * 0.88 : base;
+    }
   }
 
   return diceCoefficient(q, t) * 0.6;

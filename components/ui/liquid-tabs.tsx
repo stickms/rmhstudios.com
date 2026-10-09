@@ -26,36 +26,58 @@
  *  - Under reduced motion the capsule jumps (no spring) — the `layoutId`
  *    element stays so the active state is still visible.
  *  - No i18n here: labels/aria-label come from callers (already translated).
- *  - `sheet` (default true, §5.45): the tablist rides its own L1 glass pill so a
- *    tab strip reads as a standalone, tactile control placed BELOW a hero/title
- *    (never buried in header chrome). Pass `sheet={false}` where the caller
- *    supplies its own container.
- *  - **It is a segmented control, so it behaves like one.** The strip is a GRID of
- *    equal columns that spans its container (`repeat(auto-fit, minmax(…, 1fr))`,
- *    see the `[data-slot='liquid-tabs']` rules in globals.css). Two consequences,
- *    both deliberate and both matching Apple's control rather than a chip row:
- *      1. **Every segment is the same width and the track is always full.** Tabs
- *         no longer size to their own content, so two or three of them can't sit
- *         adrift in a wide sheet with dead space around them — they split it.
- *      2. **Nothing scrolls. Ever.** When the tabs stop fitting, `auto-fit` wraps
- *         them onto further rows of equal columns. A horizontal scroll track hides
- *         destinations behind a gesture with no affordance, and Apple's own
- *         guidance is that a segmented control which doesn't fit is the wrong
- *         control — not one to make swipeable. Wrapping keeps every label visible
- *         and every target tappable, which is also what the audit asked for when
- *         it flagged icon-only strips as glyph-guessing (AUD-320).
- *    This replaced a flex row of `shrink-0` pills that was either centred with a
- *    ResizeObserver measurement or scrolled in a `tab-sheet-scroll` track; the
- *    grid needs neither, so both are gone.
+ *  - `sheet` (default true, §5.45): the tablist rides its own recessed track so
+ *    a tab strip reads as a standalone control placed BELOW a hero/title (never
+ *    buried in header chrome). Pass `sheet={false}` where the caller supplies
+ *    its own container.
+ *
+ * ## Selection reads as selection, not as a button (2026-10-09)
+ *
+ * The active tab used to be a solid accent capsule — on the default theme a
+ * black pill with white ink, which is ALSO exactly what every primary button on
+ * the site looks like ("New", "Create a community", "Sign in"). A page with a
+ * tab strip and a primary action therefore showed two identical black pills
+ * with opposite meanings: one is where you are, the other is something you can
+ * do. It is now Apple's segmented-control grammar instead — a neutral, raised
+ * THUMB (opaque surface, hairline, small shadow) on a recessed track, with the
+ * label in full-strength ink. The accent fill is reserved for actions.
+ * High contrast keeps the filled accent thumb, because there the material is
+ * gone and a hairline-on-black thumb would be the only cue (see globals.css).
+ * The thumb's colours are `--tab-thumb-*` custom properties on the strip, so a
+ * game that re-skins it (Slice It!) sets two variables rather than forking.
+ *
+ * ## One row. Labels never truncate. (2026-10-09)
+ *
+ * The strip used to be a CSS grid of equal columns that WRAPPED onto further
+ * rows when the tabs stopped fitting. In practice that produced two failures,
+ * both measured on the live site:
+ *   - equal columns ellipsed long labels long before the strip wrapped —
+ *     /services rendered six product names as "RMHH…", "RMHL…", "Rebar …",
+ *     /library showed "Everyt…" and "Collect…" at 1440px;
+ *   - and when it did wrap, a phone got a 2×3 grid of identical buttons that
+ *     no longer read as tabs and spent ~150px of the first screen.
+ * Now: up to {@link EQUAL_SEGMENT_MAX} tabs split the track into equal segments
+ * (the segmented control); more than that size to their own labels. Either way
+ * a segment never shrinks below its label. If the row still doesn't fit, it
+ * scrolls horizontally — with an edge fade on whichever side has more, and the
+ * active tab kept in view — rather than wrapping. A partly visible label at a
+ * faded edge is the affordance a wrapped grid never had.
  */
 
-import { useId, useRef } from 'react';
+import { useCallback, useEffect, useId, useRef } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { m as motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { SPRING } from '@/lib/motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { NotificationBadge } from '@/components/ui/notification-badge';
+
+/**
+ * Strips with this many tabs or fewer are a segmented control — equal segments
+ * spanning the track. Beyond it the tabs size to their labels, because an equal
+ * share of a phone's width is narrower than "Collections".
+ */
+const EQUAL_SEGMENT_MAX = 4;
 
 export interface LiquidTab {
   id: string;
@@ -104,16 +126,14 @@ interface LiquidTabsProps {
    */
   sheet?: boolean;
   /**
-   * @deprecated No-op — this is now the only behaviour. Every strip stretches its
-   * tabs to equal width and its sheet to the full column width, because that is
-   * what a segmented control is (see the layout note in the module docblock).
+   * @deprecated No-op — every strip spans the full column width; short strips
+   * split it into equal segments (see the layout note in the module docblock).
    * Still accepted so no caller has to change; safe to delete at any call site.
    */
   fullWidth?: boolean;
   /**
-   * @deprecated No-op — strips no longer scroll horizontally at any width. A strip
-   * that outgrows its container wraps onto further rows of equal segments instead,
-   * so no destination is hidden behind a swipe (see the module docblock).
+   * @deprecated No-op — a strip that outgrows its container always scrolls in one
+   * row with an edge fade (see the module docblock); there is nothing to opt into.
    * Still accepted so no caller has to change; safe to delete at any call site.
    */
   scroll?: boolean;
@@ -214,53 +234,51 @@ export function LiquidTabs({
       ? 'min-h-9 pointer-coarse:min-h-11 px-3 py-2 text-xs'
       : 'min-h-10 pointer-coarse:min-h-11 px-3.5 py-2.5 text-sm';
 
+  const equal = tabs.length <= EQUAL_SEGMENT_MAX;
+
   const itemClass = (active: boolean) =>
     cn(
-      // `flex` (not `inline-flex`) and no `shrink-0`: each tab now fills its own
-      // grid column, so it is the column that sets the width and the tab that
-      // centres its content inside it — the segmented-control geometry. The
-      // `min-w-0` + `overflow-hidden` pair lets an over-long label ellipsis
-      // instead of pushing out of its segment.
-      'relative flex min-w-0 items-center justify-center gap-1.5 overflow-hidden rounded-[var(--site-control-radius)] font-medium whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-40',
+      // A flex item that may GROW but never SHRINK below its label (the
+      // `min-w-max` + `shrink-0` pair, with the basis set per mode in
+      // globals.css). That is the whole truncation fix: the row scrolls before
+      // a label is ever ellipsed.
+      'relative flex min-w-max shrink-0 items-center justify-center gap-1.5 rounded-[var(--site-control-radius)] font-medium whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-40',
       pad,
       // Tighter, more square padding while the strip is glyph-only; it relaxes
       // at md, where the labels come back (see globals.css).
       iconOnly && (size === 'sm' ? 'px-2.5 md:px-3' : 'px-3 md:px-4'),
-      // NOT `text-site-accent-fg` here. That ink is only correct ON the accent
-      // capsule, and the capsule is a separate element — when it failed to
-      // render (observed on high-contrast, where accent-fg is black on a black
-      // strip) the active label measured 1.0:1 and the strip read as empty.
-      // The base colour is legible on the strip in both modes; globals.css
-      // flips it to accent-fg only when the capsule is actually present.
+      // Full-strength ink on the active tab, muted on the rest. The ink is the
+      // strip's `--tab-thumb-ink` only once the thumb is actually painted (see
+      // globals.css) — on high contrast the thumb is the accent, and a label in
+      // accent-fg with no thumb behind it measured 1.0:1.
       active ? 'text-site-text' : 'text-site-text-muted hover:text-site-text',
     );
 
-  // The active capsule — identical material in both modes. Outer element owns the
-  // layoutId projection (position morph); the inner span carries the material +
-  // velocity squash, so scaling never fights framer-motion's projection transform.
+  // The active thumb — identical material in both modes. Outer element owns the
+  // layoutId projection (position morph); the inner span carries the material,
+  // so scaling never fights framer-motion's projection transform. The material
+  // itself (`--tab-thumb-*`) lives in globals.css so themes and games re-skin it
+  // with two custom properties.
   const capsule = (active: boolean) =>
     active ? (
       <motion.span
         layoutId={layoutId}
         aria-hidden
-        // The hook globals.css uses to decide whether accent-fg ink is safe.
+        // The hook globals.css uses to decide whether the thumb ink is safe.
         data-tab-capsule=""
         className="absolute inset-0"
         transition={reduced ? { duration: 0 } : SPRING.snappy}
       >
-        <span className="absolute inset-0 rounded-[var(--site-control-radius)] bg-site-accent" />
+        <span
+          data-tab-thumb=""
+          className="absolute inset-0 rounded-[var(--site-control-radius)]"
+        />
       </motion.span>
     ) : null;
 
-  // Icon + label + count/badge, each above the capsule at z-1. In `iconOnly` mode
+  // Icon + label + count/badge, each above the thumb at z-1. In `iconOnly` mode
   // a tab that has an icon hides its label visually but keeps it as the
   // `sr-only` accessible name (the button/link also gets a `title` tooltip).
-  //
-  // The label also carries `liquid-tabs__label`, which globals.css uses to hide
-  // labels on PHONES for any tab that has an icon (`data-has-icon` on the
-  // control) — that is what keeps crowded strips from needing a horizontal
-  // scroll on small screens. It hides them with the sr-only technique, so the
-  // accessible name survives either way.
   const content = (tab: LiquidTab) => {
     const Icon = tab.icon;
     const compactLabel = iconOnly && Boolean(Icon);
@@ -277,9 +295,7 @@ export function LiquidTabs({
         )}
         <span
           className={cn(
-            // `truncate` (with the item's `min-w-0`) so a long label ellipses
-            // inside its segment rather than widening or escaping it.
-            'liquid-tabs__label relative z-1 min-w-0 truncate',
+            'liquid-tabs__label relative z-1',
             // Not `sr-only` outright: globals.css applies the sr-only technique
             // below md and lets the label render from md up.
             compactLabel && 'liquid-tabs__label--compact',
@@ -297,53 +313,80 @@ export function LiquidTabs({
     );
   };
 
-  // A segmented control, so the LAYOUT is a grid of equal columns (see the
-  // `[data-slot='liquid-tabs']` rules in globals.css) rather than a flex row of
-  // content-sized pills. `data-tab-size` / `data-tab-icon-only` pick the minimum
-  // segment width there; everything else about the strip is width-independent.
-  const innerClass = cn('relative w-full min-w-0', !sheet && className);
+  // ── Overflow: keep the active tab in view, fade whichever edge has more ──
+  //
+  // Both are written to the strip itself (never to <html>) and only when the
+  // value changes, so a scroll costs one comparison per edge. There is no
+  // observer loop: the edges are re-measured on the strip's own `scroll`, on a
+  // window resize, and when the selection changes — the only three things that
+  // can change them.
+  const syncEdges = useCallback(() => {
+    const el = listRef.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    // Logical start/end, so the fade lands on the right side in RTL too
+    // (`scrollLeft` runs 0 → −max there).
+    const pos = Math.abs(el.scrollLeft);
+    const start = max > 1 && pos > 1 ? 'true' : 'false';
+    const end = max > 1 && pos < max - 1 ? 'true' : 'false';
+    if (el.dataset.fadeStart !== start) el.dataset.fadeStart = start;
+    if (el.dataset.fadeEnd !== end) el.dataset.fadeEnd = end;
+  }, []);
 
-  // How much room this strip's longest label actually needs, published for the
-  // phone rule in globals.css to raise `--tab-seg-min` with. A character count
-  // in `ch` plus the segment's own padding — no measurement pass, no observer
-  // (the grid replaced one deliberately), and it only has to be right enough to
-  // decide how many columns fit. Strips whose labels are short are unaffected,
-  // because the rule takes `max()` of this and the existing floor.
-  const longestLabel = tabs.reduce((n, t) => Math.max(n, t.label.length), 0);
-  const hasCounter = tabs.some((t) => typeof t.count === 'number' || typeof t.badge === 'number');
-  // Deliberately NOT `ch`: the property is written on the strip, whose font-size
-  // is the inherited 1rem, while the labels render at text-sm/text-xs — so `ch`
-  // over-measured by ~30% and pushed nine short labels down to two columns.
-  // 0.58em per character, in the label's own size, plus that size's horizontal
-  // padding (`pad` below) and the counter slot when present. The coefficient is
-  // measured, not guessed: "Communities" renders 88px at 14px — 0.571em/char —
-  // and an earlier 0.5em under-reserved it by 11px, so the strip still packed
-  // three columns and still ellipsed the word it was widened for.
-  const labelRem = size === 'sm' ? 0.75 : 0.875;
-  const padRem = size === 'sm' ? 1.5 : 1.75;
-  const segContent = iconOnly
-    ? undefined
-    : `${(longestLabel * labelRem * 0.58 + padRem + (hasCounter ? 1.75 : 0)).toFixed(2)}rem`;
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    syncEdges();
+    el.addEventListener('scroll', syncEdges, { passive: true });
+    window.addEventListener('resize', syncEdges);
+    return () => {
+      el.removeEventListener('scroll', syncEdges);
+      window.removeEventListener('resize', syncEdges);
+    };
+  }, [syncEdges]);
+
+  // Bring the selected tab into view inside the strip — by moving the STRIP's
+  // scroll offset directly. `scrollIntoView()` would also scroll the document
+  // to reach a strip below the fold, yanking the page on first paint.
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el || el.scrollWidth <= el.clientWidth) return;
+    const active = el.querySelector<HTMLElement>('[data-tab-active="true"]');
+    if (!active) return;
+    const inset = 24; // clear the edge fade
+    const left = active.offsetLeft;
+    const right = left + active.offsetWidth;
+    const view = el.scrollLeft;
+    if (left - inset < view) el.scrollTo({ left: Math.max(0, left - inset), behavior: reduced ? 'auto' : 'smooth' });
+    else if (right + inset > view + el.clientWidth)
+      el.scrollTo({ left: right + inset - el.clientWidth, behavior: reduced ? 'auto' : 'smooth' });
+    syncEdges();
+  }, [value, reduced, syncEdges]);
+
+  // The strip is its own scroller, so its padding (not the sheet's) is what keeps
+  // the thumb's shadow from being clipped at the scroll box edge.
+  const innerClass = cn('relative w-full min-w-0', sheet ? 'p-1' : className);
 
   const items = tabs.map((tab) => {
     const active = tab.id === value;
     if (link) {
-      // Link mode: the caller's interactive element and the capsule share a
-      // `relative` wrapper — the capsule sits behind the link (a link can't host
-      // the layoutId element AND be the focus/aria target cleanly).
+      // Link mode: the caller's interactive element and the thumb share a
+      // `relative` wrapper — the thumb sits behind the link (a link can't host
+      // the layoutId element AND be the focus/aria target cleanly). The wrapper
+      // is the flex item; the link fills it.
       return (
         <div
           key={tab.id}
           data-has-icon={tab.icon ? '' : undefined}
           data-tab-active={active ? 'true' : 'false'}
-          className="relative min-w-0"
+          className="relative flex min-w-max shrink-0"
         >
           {capsule(active)}
           {renderTab!(tab, {
             active,
             id: tabId(tab.id),
             'aria-current': active ? 'page' : undefined,
-            className: itemClass(active),
+            className: cn(itemClass(active), 'flex-1'),
             title: tab.icon ? tab.label : undefined,
             children: content(tab),
           })}
@@ -375,31 +418,31 @@ export function LiquidTabs({
     );
   });
 
+  // Shared attributes. `data-tab-fit` picks the flex basis in globals.css:
+  // `equal` segments for a short strip, `content` widths for a long one.
+  const listProps = {
+    'aria-label': ariaLabel,
+    'data-slot': 'liquid-tabs',
+    'data-tab-size': size,
+    'data-tab-fit': equal ? 'equal' : 'content',
+    'data-tab-icon-only': iconOnly ? '' : undefined,
+    'data-fade-start': 'false',
+    'data-fade-end': 'false',
+    className: innerClass,
+  } as const;
+
   // Link mode → a <nav> (aria-current semantics); tablist mode → role="tablist"
   // with roving nav.
   const list = link ? (
-    <nav
-      ref={listRef as React.Ref<HTMLElement>}
-      aria-label={ariaLabel}
-      data-slot="liquid-tabs"
-      data-tab-size={size}
-      data-tab-icon-only={iconOnly ? '' : undefined}
-      style={segContent ? ({ '--tab-seg-content': segContent } as React.CSSProperties) : undefined}
-      className={innerClass}
-    >
+    <nav ref={listRef as React.Ref<HTMLElement>} {...listProps}>
       {items}
     </nav>
   ) : (
     <div
       ref={listRef as React.Ref<HTMLDivElement>}
       role="tablist"
-      aria-label={ariaLabel}
       onKeyDown={onKeyDown}
-      data-slot="liquid-tabs"
-      data-tab-size={size}
-      data-tab-icon-only={iconOnly ? '' : undefined}
-      style={segContent ? ({ '--tab-seg-content': segContent } as React.CSSProperties) : undefined}
-      className={innerClass}
+      {...listProps}
     >
       {items}
     </div>
@@ -411,21 +454,18 @@ export function LiquidTabs({
     <div
       data-slot="liquid-tabs-sheet"
       className={cn(
-        // Always full width: a segmented control's track spans its container, and
-        // a `w-fit` track is what left two or three tabs adrift in a wide sheet.
+        // Always full width: the track spans its container.
+        //
+        // `.glass-inset` (the recessed-well tier): a segmented control's track
+        // is carved INTO the page and the thumb sits raised in it — the same
+        // role an input well plays. It also supplies the degradation rules
+        // (high contrast, reduced transparency, print) for free. globals.css
+        // tints the well neutrally so a white thumb reads on a white page.
         //
         // `--site-radius` (22px on the default theme), NOT `--site-control-radius`
-        // (9999px): on a single row the track is ~44px tall, so 22px IS the pill —
-        // identical to the capsule radius. But when the strip wraps to two rows the
-        // same value reads as a correctly-rounded rectangle instead of a stretched
-        // lozenge, which is what a 9999px radius degrades into. One value, right in
-        // both states, and it tracks each theme's own radius scale.
-        // `.glass-fill` (L1): the tray is a container of repeated children, which
-        // is that tier's exact role — and it supplies the border and the shadow
-        // this was adding by hand, plus the degradation rules the hand-rolled box
-        // had none of. This is the site's ONLY sanctioned tab strip, so the shape
-        // it uses is the shape every switcher on the site inherits.
-        'glass-fill w-full min-w-0 max-w-full rounded-[var(--site-radius)] p-1',
+        // (9999px): on one row the track is ~44px tall, so 22px IS the pill, and
+        // it tracks each theme's own radius scale.
+        'glass-inset w-full min-w-0 max-w-full rounded-[var(--site-radius)]',
         className,
       )}
     >

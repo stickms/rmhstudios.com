@@ -185,7 +185,7 @@ export function ArcadeHub({
 
         {/* How it works */}
         <div className="rounded-site border border-site-border bg-site-surface/60 p-4">
-          <h2 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+          <h2 className="site-section-label mb-1.5">
             {t('arcade-how-title', { defaultValue: 'How it works' })}
           </h2>
           <p className="text-sm leading-relaxed text-site-text-muted">
