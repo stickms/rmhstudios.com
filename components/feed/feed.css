@@ -300,11 +300,13 @@
   align-items: center;
 }
 
-/* The eyebrow row. Type/tracking/colour now come from `.site-kicker` (applied in
-   PageLayout) so it tracks the shared kicker tokens; only layout lives here.
-   AUD-001/002 are still honoured by those tokens: 11px floor, muted (not dim). */
+/* The meta row above the title. It used to be an uppercase eyebrow on every
+   page ("RMH STUDIOS PRESENTS"); it now renders only when there is a back link
+   to hold, in plain sentence case (UI minimalism audit, 2026-10-09). */
 .page-heading__meta {
   min-height: 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
 .page-heading__back {
@@ -335,8 +337,13 @@
 .page-heading__content {
   justify-content: space-between;
   gap: 1rem;
-  margin-top: 0.65rem;
   align-items: flex-end;
+}
+
+/* Space above the title only when something sits above it — with no meta row
+   the title is the first thing in the header and owns the top edge. */
+.page-heading__content:not(:first-child) {
+  margin-top: 0.65rem;
 }
 
 /* Size/weight/leading/tracking come from `.site-display-3` on the element. Only

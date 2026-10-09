@@ -351,7 +351,7 @@ export function MDXEditor({
             className={`h-full ${!isPreviewMode ? 'hidden lg:block' : 'block'} bg-site-bg overflow-y-auto relative border-l border-site-border lg:border-none min-h-0`}
           >
             <div className="glass-chrome site-sticky-contained flex h-16 w-full items-center justify-between gap-3 px-4 py-3">
-              <h2 className="font-display text-sm font-bold uppercase tracking-wider text-site-text-dim">
+              <h2 className="site-section-label">
                 {t('live-preview', { defaultValue: 'Live Preview' })}
               </h2>
               <Button

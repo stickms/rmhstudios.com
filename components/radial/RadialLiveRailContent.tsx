@@ -24,8 +24,8 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Link } from '@tanstack/react-router';
-import { Hash, Sparkles, UserPlus } from 'lucide-react';
+import { Link, useRouterState } from '@tanstack/react-router';
+import { ArrowRight, Hash, UserPlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -140,6 +140,14 @@ export function RadialLiveRailContent() {
 
   const tags = explore?.trendingTags?.slice(0, 6) ?? [];
   const people = explore?.suggestedUsers?.slice(0, 3) ?? [];
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  // The "more" link is the footer of the two Explore previews above it, so it
+  // exists only when one of them does — and never on /explore itself, where it
+  // linked to the page you were already on. It used to be a full-width outlined
+  // pill, "Explore everything" with a Sparkles glyph (the site's AI icon), on
+  // every page and on an empty rail, so it read as a separate AI feature rather
+  // than as the nav's Explore page, which is all it opens.
+  const showExploreLink = (tags.length > 0 || people.length > 0) && pathname !== '/explore';
 
   return (
     <>
@@ -193,10 +201,12 @@ export function RadialLiveRailContent() {
         </section>
       )}
 
-      <Link to="/explore" search={{ q: '', tab: 'top' }} className="rad-live__explore">
-        <Sparkles aria-hidden />
-        {t('explore-more', { defaultValue: 'Explore everything' })}
-      </Link>
+      {showExploreLink && (
+        <Link to="/explore" search={{ q: '', tab: 'top' }} className="rad-live__explore">
+          {t('explore-more-link', { defaultValue: 'More on Explore' })}
+          <ArrowRight aria-hidden />
+        </Link>
+      )}
     </>
   );
 }

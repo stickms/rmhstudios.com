@@ -206,7 +206,7 @@ export function ExploreRecommendations({
  {/* Trending tags */}
  {showTrending && data && data.trendingTags.length > 0 && (
  <RevealItem as="section"className="border-b border-site-border p-4">
- <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 className="site-section-label mb-2 flex items-center gap-1.5">
  <TrendingUp className="h-3.5 w-3.5"/> {t('trending-heading', { defaultValue:'Trending'})}
  </h2>
  <div className="flex flex-wrap gap-2">
@@ -228,7 +228,7 @@ export function ExploreRecommendations({
  {/* Who to follow */}
  {showPeople && data && data.suggestedUsers.length > 0 && (
  <RevealItem as="section"className="border-b border-site-border p-4">
- <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('who-to-follow', { defaultValue:'Who to follow'})}</h2>
+ <h2 className="site-section-label mb-2">{t('who-to-follow', { defaultValue:'Who to follow'})}</h2>
  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
  {data.suggestedUsers.map((u) => (
  <Link
@@ -251,7 +251,7 @@ export function ExploreRecommendations({
  gate as "who to follow" rather than being a fourth thing on Top only. */}
  {showPeople && tipLeaders.length > 0 && (
  <RevealItem as="section"className="border-b border-site-border p-4">
- <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 className="site-section-label mb-2 flex items-center gap-1.5">
  <Coins className="h-3.5 w-3.5 text-site-warning"/>{''}
  {t('top-supported-this-week', { defaultValue:'Top supported this week'})}
  </h2>
@@ -284,7 +284,7 @@ export function ExploreRecommendations({
  {/* Communities to discover */}
  {showCommunities && data && data.communities.length > 0 && (
  <RevealItem as="section"className="border-b border-site-border p-4">
- <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 className="site-section-label mb-2 flex items-center gap-1.5">
  <Users className="h-3.5 w-3.5"/> {t('communities-heading', { defaultValue:'Communities'})}
  </h2>
  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -317,7 +317,7 @@ export function ExploreRecommendations({
  {showBuilds && (
  builds.length > 0 ? (
  <RevealItem as="section"className="p-4">
- <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 className="site-section-label mb-2 flex items-center gap-1.5">
  <Package className="h-3.5 w-3.5"/> {t('builds-heading', { defaultValue:'Builds to try'})}
  </h2>
  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -358,7 +358,7 @@ export function ExploreRecommendations({
  {showBlog && (
  blogPosts.length > 0 ? (
  <RevealItem as="section"className="py-2">
- <h2 className="flex items-center gap-1.5 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 className="site-section-label flex items-center gap-1.5 px-4 py-1">
  <BookOpen className="h-3.5 w-3.5"/> {t('blog-heading', { defaultValue:'From the blog'})}
  </h2>
  {blogPosts.map((p) => (
@@ -453,7 +453,7 @@ export function ExploreRecommendations({
  {/* Hot posts — feed cards keep their own entrance; the block reveals once. */}
  {showHot && data && data.hotPosts.length > 0 && (
  <RevealItem as="section">
- <h2 className="px-4 pt-4 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('hot-this-week', { defaultValue:'Hot this week'})}</h2>
+ <h2 className="site-section-label px-4 pt-4">{t('hot-this-week', { defaultValue:'Hot this week'})}</h2>
  <div className="divide-y divide-site-border">
  {data.hotPosts.map((item) => (
  <RMHarkCard key={item.id} item={item} />
@@ -506,7 +506,7 @@ function SectionHeading({
 }) {
  return (
  <div className="mb-2 flex items-baseline justify-between gap-3">
- <h2 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 className="site-section-label flex items-center gap-1.5">
  <Icon className="h-3.5 w-3.5"aria-hidden /> {label}
  </h2>
  <Link

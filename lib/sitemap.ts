@@ -108,6 +108,8 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   // a page whose whole value is that today's contents differ from yesterday's.
   { loc: '/schedule', changefreq: 'daily', priority: 0.7 },
   { loc: '/services', changefreq: 'monthly', priority: 0.6 },
+  { loc: '/services/cars', changefreq: 'monthly', priority: 0.4 },
+  { loc: '/services/fashion', changefreq: 'monthly', priority: 0.4 },
   { loc: '/store', changefreq: 'weekly', priority: 0.5 },
   { loc: '/study', changefreq: 'weekly', priority: 0.5 },
   { loc: '/study/browse', changefreq: 'daily', priority: 0.5 },

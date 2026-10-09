@@ -406,8 +406,13 @@ describe('FOUC contract: hydration', () => {
       'admin-only MDX editor, behind auth: not in the audit, nothing public to swap',
     'app/routes/_site/admin/blog/new.tsx': 'admin-only MDX editor, behind auth',
     'app/routes/_site/admin/slice-it-content.tsx': 'admin-only dashboard, behind auth',
-    'app/routes/_site/services/index.tsx':
-      'the car and fashion previews open from a click inside the page; the page itself is static',
+    // The two 3D showcases moved off /services' tab strip onto pages of their
+    // own (minimalism audit, 2026-10-09). The page header is server-rendered;
+    // only the three.js stage is lazy, behind a height-holding fallback.
+    'app/routes/_site/services/cars.tsx':
+      'the three.js fleet stage is client-only; title and lede server-render, the fallback holds its height',
+    'app/routes/_site/services/fashion.tsx':
+      'the three.js wardrobe stage is client-only; title and lede server-render, the fallback holds its height',
     'app/routes/altair/index.tsx':
       'client-only game screen: the server renders the fallback, so there is no server markup to lose',
     'app/routes/altair/multiplayer/$lobbyId.tsx':

@@ -249,7 +249,7 @@ export function RankedColumn({
  {/* Incoming challenges */}
  {incoming.length > 0 && (
  <Reveal as="section">
- <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 className="site-section-label mb-2">
  {t('challenges-for-you', { defaultValue:'Challenges for you'})}
  </h2>
  <div className="space-y-2">
@@ -303,7 +303,7 @@ export function RankedColumn({
  {/* Outgoing challenges */}
  {outgoing.length > 0 && (
  <Reveal as="section">
- <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 className="site-section-label mb-2">
  {t('your-challenges', { defaultValue:'Your challenges'})}
  </h2>
  <div className="space-y-2">
@@ -333,7 +333,7 @@ export function RankedColumn({
  {/* Your ratings */}
  {ratings.length > 0 && (
  <Reveal as="section">
- <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 className="site-section-label mb-2">
  {t('your-ratings', { defaultValue:'Your ratings'})}
  </h2>
  <div className="space-y-1">
@@ -363,7 +363,7 @@ export function RankedColumn({
  {/* Leaderboard */}
  <Reveal as="section">
  <div className="mb-2 flex items-center justify-between">
- <h2 id="ranked-leaderboard-heading"className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 id="ranked-leaderboard-heading"className="site-section-label flex items-center gap-1.5">
  <Trophy className="h-3.5 w-3.5"/> {t('leaderboard', { defaultValue:'Leaderboard'})}
  </h2>
  <Select

@@ -83,7 +83,6 @@ export function WrappedColumn({
  <div>
  {/* Pinned scroll-narrative hero — marquee moment for the year review. */}
  <PinnedHero
- eyebrow={t('your-year-on-rmh', { defaultValue:'Your year on RMH'})}
  title={
  <>
  {data.year}{''}
@@ -117,7 +116,7 @@ export function WrappedColumn({
 
  {/* Stat tiles */}
  <Reveal>
- <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 className="site-section-label mb-3">
  {t('wrapped-stats-heading', { defaultValue:'Your year in numbers'})}
  </h2>
  <RevealGroup as="div"className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -152,7 +151,7 @@ export function WrappedColumn({
  {/* Top post */}
  {data.topPost && (
  <Reveal>
- <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 className="site-section-label mb-2">
  {t('your-top-post', { defaultValue:'Your top post'})}
  </h2>
  <Link

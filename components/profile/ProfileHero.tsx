@@ -611,7 +611,7 @@ export function ProfileHero({
 
       {profile.modules?.length || profile.isOwnProfile ? (
         <div className="pt-1">
-          <div className="mb-2 flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+          <div className="site-section-label mb-2 flex items-center gap-2 px-1">
             <Trophy className="size-3.5" aria-hidden />
             {t('profile-showcase', { defaultValue: 'Showcase' })}
           </div>

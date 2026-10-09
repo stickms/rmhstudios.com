@@ -155,7 +155,7 @@ export function KeyboardShortcuts() {
               {t('kbd-title', { defaultValue: 'Keyboard shortcuts' })}
             </DialogPrimitive.Title>
 
-            <h3 className="mt-3 text-xs font-bold uppercase tracking-wider text-site-text-dim">
+            <h3 className="site-section-label mt-3">
               {t('kbd-section-general', { defaultValue: 'General' })}
             </h3>
             <ul className="mt-1 divide-y divide-site-border/50">
@@ -173,7 +173,7 @@ export function KeyboardShortcuts() {
               />
             </ul>
 
-            <h3 className="mt-4 text-xs font-bold uppercase tracking-wider text-site-text-dim">
+            <h3 className="site-section-label mt-4">
               {t('kbd-section-goto', { defaultValue: 'Go to' })}
             </h3>
             <ul className="mt-1 divide-y divide-site-border/50">

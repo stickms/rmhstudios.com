@@ -800,26 +800,26 @@ body:has(.radial-shell) .call-banner {
 .rad-live__explore {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.7rem 1rem;
-  border-radius: 999px;
-  border: 1px solid var(--site-border-bright);
-  color: var(--site-text);
+  align-self: flex-start;
+  gap: 0.35rem;
+  min-height: var(--site-touch-target);
+  padding-inline: 0.75rem;
+  border-radius: var(--site-radius-sm);
+  color: var(--site-text-muted);
   text-decoration: none;
   font-size: 0.84rem;
-  font-weight: 700;
+  font-weight: 600;
   transition:
-    background-color 0.18s ease,
-    color 0.18s ease;
+    background-color var(--site-transition-speed) ease,
+    color var(--site-transition-speed) ease;
 }
 .rad-live__explore:hover {
-  background: var(--site-accent);
-  color: var(--site-accent-fg);
+  color: var(--site-text);
+  background: var(--site-surface-hover);
 }
 .rad-live__explore svg {
-  width: 1rem;
-  height: 1rem;
+  width: 0.9rem;
+  height: 0.9rem;
 }
 
 /* Grouping wrapper — generates no box (children are fixed), it just carries the

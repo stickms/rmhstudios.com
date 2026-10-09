@@ -67,7 +67,7 @@ export function SavedSearches({ currentQuery }: { currentQuery: string }) {
   return (
     <div className="border-b border-site-border px-4 py-3">
       <div className="mb-2 flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-site-text-muted">
+        <span className="site-section-label flex items-center gap-1.5">
           <Bookmark className="h-3.5 w-3.5" aria-hidden />
           {t('saved-searches', { defaultValue: 'Saved searches' })}
         </span>

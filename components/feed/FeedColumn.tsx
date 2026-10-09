@@ -224,7 +224,7 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
           aria-label={t('people', { defaultValue: 'People' })}
         >
           <div className="px-4 py-2">
-            <p className="text-xs font-semibold text-site-text-dim uppercase tracking-wide mb-1">
+            <p className="site-section-label mb-1">
               {t('people', { defaultValue: 'People' })}
             </p>
           </div>

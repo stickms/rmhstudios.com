@@ -174,7 +174,7 @@ export function SearchHitSection({
   return (
     <section className={cn('py-2', className)}>
       {heading && (
-        <h2 className="px-4 py-1 text-xs font-semibold uppercase text-site-text-dim">{heading}</h2>
+        <h2 className="site-section-label px-4 py-1">{heading}</h2>
       )}
       {hits.map((hit) => (
         <SearchHitRow key={hit.key} hit={hit} showKind={showKind} />

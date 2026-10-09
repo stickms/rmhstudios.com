@@ -5412,6 +5412,22 @@ body {
   text-transform: uppercase;
   color: var(--site-text-muted);
 }
+/* ── Section label ────────────────────────────────────────────────────────
+   The heading of a group INSIDE a page — "Trending", "Who to follow",
+   "Milestones", "Accent color". It used to be retyped by hand as a tiny
+   uppercase, letter-spaced, dimmed label in 20+ variants (`tracking-wide` vs
+   `-wider`, `dim` vs `muted`, `xs` vs `sm`, semibold vs bold) across 39 call
+   sites. It is one style now, in sentence case at full ink — a heading you
+   read rather than an eyebrow you decode (UI minimalism audit, 2026-10-09).
+   `lib/__tests__/design-consistency.test.ts` keeps uppercase off site-tier
+   h2/h3 so the variants don't regrow. */
+.site-section-label {
+  font-size: 0.875rem;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: -0.006em;
+  color: var(--site-text);
+}
 .site-lede {
   max-width: 34rem;
   font-size: var(--site-lede-size);
@@ -6163,82 +6179,130 @@ html.reduce-motion .u-parallax {
 }
 
 /* ==========================================================================
-   LiquidTabs — active ink, and the 44px floor
+   LiquidTabs — the segmented control (2026-10-09)
    ------------------------------------------------------------------------
-   The active tab's label is only allowed to take `--site-accent-fg` when the
-   accent capsule is actually painted behind it. The capsule is a sibling
-   element (framer-motion owns its layout projection), so the two can come
-   apart: on high-contrast the strip rendered with accent-fg (black) labels and
-   no capsule, measuring 1.0:1 — a tab strip with no visible tabs. Keying the
-   flip on the capsule's presence means the failure mode is "no highlight",
-   not "no text".
+   A neutral raised THUMB on a recessed TRACK, one row, labels never truncated.
+   The reasoning is in the `liquid-tabs.tsx` docblock; the short version:
+
+     - the active tab used to be a solid accent pill — on the default theme the
+       exact black pill every primary BUTTON is, so "where you are" and "what you
+       can do" looked identical. The accent is for actions now; selection is a
+       raised neutral thumb, Apple's segmented-control grammar.
+     - the strip used to be a wrapping grid of equal columns, which ellipsed long
+       labels ("RMHH…", "Everyt…") and turned six tabs into a 2×3 button grid on
+       a phone. It is one row now: equal segments up to four tabs, label-sized
+       beyond that, and a horizontal scroll with an edge fade when even that
+       doesn't fit.
+
+   The thumb's paint is three custom properties on the strip so a theme or a game
+   (Slice It!) re-skins it without forking the component.
    ========================================================================== */
+[data-slot='liquid-tabs'] {
+  /* Opaque in light themes; in dark ones a lifted grey, because the opaque
+     surface there is near-black and would sink INTO the track instead of
+     sitting on it. `light-dark()` keys on each theme's own `color-scheme`. The
+     first declaration is the fallback for an engine without `light-dark()`. */
+  --tab-thumb-bg: var(--site-surface-opaque);
+  --tab-thumb-bg: light-dark(
+    var(--site-surface-opaque),
+    color-mix(in srgb, var(--site-surface-opaque) 78%, var(--site-text))
+  );
+  --tab-thumb-ink: var(--site-text);
+  --tab-thumb-border: color-mix(in srgb, var(--site-border) 80%, transparent);
+
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  /* One row; overflow scrolls, never wraps. */
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+[data-slot='liquid-tabs']::-webkit-scrollbar {
+  display: none;
+}
+
+/* Flex basis per mode. Items carry `min-w-max shrink-0`, so in both modes a
+   segment can grow to fill the track but can never be squeezed below its label. */
+[data-slot='liquid-tabs'][data-tab-fit='equal'] > * {
+  flex: 1 0 0%;
+}
+[data-slot='liquid-tabs'][data-tab-fit='content'] > * {
+  flex: 1 0 auto;
+}
+
+/* The edge fade — only on a side that actually has more tabs past it. Set by
+   `liquid-tabs.tsx` on the strip's own scroll; the mask is on the scroller, so
+   it fades the viewport edge, not a particular tab. */
+[data-slot='liquid-tabs'][data-fade-start='true'] {
+  mask-image: linear-gradient(to right, transparent, #000 2rem);
+}
+[data-slot='liquid-tabs'][data-fade-end='true'] {
+  mask-image: linear-gradient(to left, transparent, #000 2rem);
+}
+[data-slot='liquid-tabs'][data-fade-start='true'][data-fade-end='true'] {
+  mask-image: linear-gradient(to right, transparent, #000 2rem, #000 calc(100% - 2rem), transparent);
+}
+[dir='rtl'] [data-slot='liquid-tabs'][data-fade-start='true'] {
+  mask-image: linear-gradient(to left, transparent, #000 2rem);
+}
+[dir='rtl'] [data-slot='liquid-tabs'][data-fade-end='true'] {
+  mask-image: linear-gradient(to right, transparent, #000 2rem);
+}
+[dir='rtl'] [data-slot='liquid-tabs'][data-fade-start='true'][data-fade-end='true'] {
+  mask-image: linear-gradient(to left, transparent, #000 2rem, #000 calc(100% - 2rem), transparent);
+}
+
+/* The track. It rides `.glass-inset` (the recessed-well tier), whose fill is
+   near-white on the default theme — a white thumb would vanish into it. A
+   neutral tint of the theme's own ink makes the well read as recessed in light
+   AND dark themes without a per-theme token. */
+[data-slot='liquid-tabs-sheet'] {
+  background: color-mix(in srgb, var(--site-text) 5%, var(--site-glass-ink));
+}
+
+/* The thumb. */
+[data-tab-thumb] {
+  background: var(--tab-thumb-bg);
+  border: var(--site-border-width) solid var(--tab-thumb-border);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.08),
+    0 2px 8px -2px rgb(0 0 0 / 0.1);
+}
+
+/* Ink on the thumb. Keyed on the thumb's PRESENCE, not on `aria-selected`: the
+   thumb is a separate element (framer-motion owns its projection), and on high
+   contrast a label in accent-fg with no thumb behind it once measured 1.0:1 — a
+   tab strip with no visible tabs. Keying the flip on the thumb means the failure
+   mode is "no highlight", never "no text". */
 [data-slot='liquid-tabs'] [data-tab-active='true']:has([data-tab-capsule]),
-/* Link mode puts the capsule beside the control rather than inside it, so the
+/* Link mode puts the thumb beside the control rather than inside it, so the
    ink has to reach one level down. */
 [data-slot='liquid-tabs']
   [data-tab-active='true']:has([data-tab-capsule])
   > :where(a, button) {
-  color: var(--site-accent-fg);
+  color: var(--tab-thumb-ink);
 }
 
-/* ==========================================================================
-   The segmented-control grid (§5.45)
-   ------------------------------------------------------------------------
-   `LiquidTabs` lays its tabs out as EQUAL COLUMNS spanning the track, not as a
-   flex row of content-sized pills. One declaration buys both halves of the
-   Apple segmented-control behaviour:
-
-     - equal widths, track always full — `1fr` columns, so two tabs take half
-       each instead of huddling in the middle of a wide sheet;
-     - no horizontal scrolling, ever — `auto-fit` packs as many columns as fit
-       and WRAPS the rest onto further rows, all still equal width. Apple's
-       guidance is that a segmented control which doesn't fit is the wrong
-       control, not one to make swipeable, and a scroll track hides destinations
-       behind a gesture with no affordance.
-
-   `--tab-seg-min` is the width below which a column will not be squeezed — hit
-   it and the strip wraps rather than shrinking further. `min(…, 100%)` is the
-   standard `auto-fit` guard: without it a container narrower than the minimum
-   overflows instead of collapsing to a single column.
-
-   This replaced a ResizeObserver that measured whether the strip fitted (to
-   decide whether centring it was safe) plus a `tab-sheet-scroll` overflow track.
-   The grid needs neither.
-   ========================================================================== */
-[data-slot='liquid-tabs'] {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(var(--tab-seg-min, 6.5rem), 100%), 1fr));
-  align-items: center;
-  gap: 0.25rem;
+/* High contrast is the absence of the material, so a hairline-and-shadow thumb
+   would be the only cue — and the shadow is stripped there. It keeps the filled
+   accent thumb with its paired ink. */
+.style-high-contrast [data-slot='liquid-tabs'] {
+  --tab-thumb-bg: var(--site-accent);
+  --tab-thumb-ink: var(--site-accent-fg);
+  --tab-thumb-border: var(--site-accent);
 }
-[data-slot='liquid-tabs'][data-tab-size='sm'] {
-  --tab-seg-min: 5.5rem;
-}
-/* A glyph strip needs far less room per segment than a labelled one, so it packs
-   more columns before it wraps. */
-[data-slot='liquid-tabs'][data-tab-icon-only] {
-  --tab-seg-min: 3.25rem;
-}
-
-/* Phones: the segment minimum comes from the strip's own longest label.
-   The grid only wraps to another row once a column can no longer meet
-   `--tab-seg-min`, so that minimum is also the promise about what fits. A flat
-   5.5rem broke the promise — a 390px screen packed three ~108px columns and
-   then ellipsed "Notifications" (85px of text in an 80px content box). But a
-   flat *larger* value is just as wrong in the other direction: RMHLadder's nine
-   short labels ("Jobs", "Alerts", "Health") fit three-up comfortably, and
-   forcing 8rem dropped them to two columns over five rows.
-   `liquid-tabs.tsx` therefore measures its own labels and writes
-   `--tab-seg-content`; the strip takes whichever is larger. Strips with short
-   labels keep their dense grid, and only the ones that need the room wrap. */
-@media (max-width: 767.98px) {
-  [data-slot='liquid-tabs']:not([data-tab-icon-only]) {
-    --tab-seg-min: max(5.5rem, var(--tab-seg-content, 0px));
+@media (forced-colors: active) {
+  [data-tab-thumb] {
+    background: Highlight;
+    border-color: Highlight;
   }
-  /* Glyph strips are unaffected — their segment holds an icon, not a word. */
-  [data-slot='liquid-tabs'][data-tab-icon-only] {
-    --tab-seg-min: 3.25rem;
+  [data-slot='liquid-tabs'] [data-tab-active='true']:has([data-tab-capsule]),
+  [data-slot='liquid-tabs'] [data-tab-active='true']:has([data-tab-capsule]) > :where(a, button) {
+    color: HighlightText;
   }
 }
 
@@ -6254,23 +6318,15 @@ html.reduce-motion .u-parallax {
 /* ==========================================================================
    Compact tab strips on small screens
    ------------------------------------------------------------------------
-   This used to hide the LABEL of every icon-bearing tab below 640px, on the
-   theory that the icon plus the accessible name were enough. They are not: it
-   left six near-interchangeable glyphs as the entirety of a page's navigation
-   (radio-waves = "Spaces", storefront vs bag on /market), and on /leaderboard
-   the page's name existed only inside a tab strip's aria-label — so no word
-   identifying the page appeared anywhere on a phone. Recognition, not recall.
-
-   Labels stay. A strip that doesn't fit now WRAPS onto further rows of equal
-   segments (see the segmented-control grid above) rather than scrolling, so there
-   is room for the labels at every width and nothing is hidden behind a swipe.
-   `iconOnly` callers keep a glyph strip on phones only — see below.
+   Labels stay at every width: a strip of near-interchangeable glyphs as the
+   entirety of a page's navigation is recall, not recognition (radio-waves =
+   "Spaces", storefront vs bag on /market). What phones give up instead is the
+   ICON — the label is the information and the glyph is decoration.
+   `iconOnly` callers are the exception: there the glyph IS the label, so it
+   stays and its text goes sr-only below md.
    ========================================================================== */
 @media (max-width: 767.98px) {
-  /* The one remaining label-hiding case: a caller that explicitly asked for a
-     compact strip. Even then the labels return at md, where there is room —
-     /library's six-way media switcher was abstract glyphs at EVERY width.
-     sr-only technique, never display:none, so the accessible name survives. */
+  /* sr-only technique, never display:none, so the accessible name survives. */
   [data-slot='liquid-tabs'] .liquid-tabs__label--compact {
     position: absolute;
     width: 1px;
@@ -6283,26 +6339,8 @@ html.reduce-motion .u-parallax {
     border-width: 0;
   }
 
-  /* Wrapping and shrink behaviour used to be patched in here for flex strips.
-     The grid above owns both at every width now.
-
-     What phones DO still need is room for the words. In a segmented control every
-     column is as wide as the widest one needs to be, so on a 320px screen a
-     three-tab strip gives each segment ~96px — and an icon plus its gap eats a
-     quarter of that, which is what turned "Messages" into "Messa…". The label is
-     the information and the glyph is decoration, so the glyph is what goes: below
-     md a strip that shows labels drops its icons and spends the width on text.
-     `iconOnly` strips are the exception — there the glyph IS the label, so it
-     stays (and its own label is the thing hidden, just above).
-
-     `> svg`, NOT `> svg:first-child`: the ACTIVE tab renders the flowing capsule
-     as its first child (`{capsule(active)}{content(tab)}` in liquid-tabs.tsx),
-     so `:first-child` matched every tab except the active one. The result was
-     backwards — the tab whose name matters most was the only one still paying
-     ~24px for a glyph, which is what turned the selected tab into "Messa…" on
-     /messages and "Everyt…" on /library while its neighbours showed their full
-     labels. The capsule and the count/badge are spans, so a plain child
-     combinator hits the icon and only the icon. */
+  /* `> svg`, NOT `> svg:first-child`: the ACTIVE tab renders the thumb as its
+     first child, so `:first-child` matched every tab except the active one. */
   [data-slot='liquid-tabs']:not([data-tab-icon-only]) :is(button, a) > svg {
     display: none;
   }

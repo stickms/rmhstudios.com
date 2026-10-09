@@ -224,7 +224,6 @@ export function ShopColumn({
  viewport-heights below the fold and no product was visible on the
  first screen at any size. */
           screens={1.2}
-          eyebrow={t('shop-eyebrow', { defaultValue: 'Cosmetics & flair' })}
           title={t('shop-title', { defaultValue: 'Shop' })}
           subtitle={t('shop-hero-sub', {
             defaultValue:

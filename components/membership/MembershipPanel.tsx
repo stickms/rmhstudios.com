@@ -201,7 +201,6 @@ export function MembershipPanel({
       {/* ── Signature pinned hero ────────────────────────────── */}
       <PinnedHero
         as={headingLevel}
-        eyebrow={t('membership-title', { defaultValue: 'Membership' })}
         title={
           <>
             {t('hero-heading-line1', { defaultValue: 'Choose your' })} <br />
