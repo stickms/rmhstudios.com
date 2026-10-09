@@ -107,7 +107,16 @@ function LivePulse({ active }: { active: boolean }) {
     };
   }, [active]);
 
-  if (!count) return null;
+  // Hold the pill's slot while the count is in flight. It used to render
+  // nothing until the fetch resolved and then appear at the TOP of the rail,
+  // pushing every card under it down ~47px on every page load (the largest
+  // layout shift left on desktop, 2026-10-09). An empty pill of the right size
+  // costs nothing and moves nothing; it only collapses if the count comes back
+  // as zero, which a signed-in viewer — who is online themselves — never sees.
+  if (count === 0) return null;
+  if (count === null) {
+    return <section className="rad-live__pulse rad-live__pulse--pending" aria-hidden />;
+  }
 
   return (
     <section className="rad-live__pulse">

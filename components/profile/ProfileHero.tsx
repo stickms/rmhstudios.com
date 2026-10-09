@@ -512,7 +512,11 @@ export function ProfileHero({
           ) : null}
 
           <div className="mt-4">
-            <AchievementBadgeStrip userId={profile.id} onShowAll={onShowAchievements} />
+            <AchievementBadgeStrip
+              userId={profile.id}
+              initial={profile.achievementStrip}
+              onShowAll={onShowAchievements}
+            />
           </div>
 
           {!profile.isOwnProfile ? (

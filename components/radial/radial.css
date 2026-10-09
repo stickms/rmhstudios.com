@@ -708,6 +708,12 @@ body:has(.radial-shell) .call-banner {
   font-size: 0.82rem;
   color: var(--site-text-muted);
 }
+/* The reserved slot while the count loads: same box, no ink. `min-block-size`
+   is the populated pill's own height (0.82rem text at its line height plus the
+   0.55rem padding top and bottom), so the swap moves nothing below it. */
+.rad-live__pulse--pending {
+  min-block-size: calc(0.82rem * 1.5 + 1.1rem + 2 * var(--site-border-width, 1px));
+}
 .rad-live__dot {
   position: relative;
   width: 0.5rem;
@@ -1095,7 +1101,8 @@ body:has(.radial-shell) .call-banner {
 
      Translucent, not opaque: the page underneath is ALREADY blurred (the three
      shell layers take `filter: blur(20px)` while the hub is open, further down
-     this file), and at 82–100% ground none of that was visible — the menu read
+     this file — the feed is faded rather than blurred, see there), and at
+     82–100% ground none of that was visible — the menu read
      as a blank screen with a globe on it rather than as the page sinking away
      behind frosted glass. Letting it through costs nothing extra, because the
      blurred layers are frozen while the hub is open (their ambient animations
@@ -1165,9 +1172,16 @@ body:has(.radial-shell) .call-banner {
    whole time anyway, so it is hidden rather than left to slide about behind the
    veil. This is also why the resting state is `filter: none` and not
    `blur(0)`: a zero-radius blur still creates the containing block. */
+/* `.radial-frame` is NOT in this rule any more (2026-10-09). It is the whole
+   feed — a subtree as tall as the document — and blurring it meant Chromium
+   rasterised a document-height blurred layer inside the 500ms open morph. The
+   first open paid for all of it (later opens partly reuse the tiles), which is
+   the "the globe lags the first time I open it" report. The note at the end of
+   this comment predicted exactly this and named the fix: stop filtering the
+   frame. The backdrop and the top bar are viewport-bounded, so their blur stays;
+   the feed fades instead (the opacity rule just below this one). */
 .radial-shell:has(.radial-hub[data-phase='open']) .radial-backdrop,
-.radial-shell:has(.radial-hub[data-phase='open']) .radial-topbar,
-.radial-shell:has(.radial-hub[data-phase='open']) .radial-frame {
+.radial-shell:has(.radial-hub[data-phase='open']) .radial-topbar {
   filter: blur(var(--hub-page-blur, 20px));
   /* The transition lives HERE, on the open state, so it governs the way IN and
      NOT the way out. That asymmetry is the fix for a reported bug: the whole
@@ -1198,6 +1212,27 @@ body:has(.radial-shell) .call-banner {
      and `ios-webkit` do a few rules below. */
   transition: filter 0.32s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
 }
+/* The feed itself is HIDDEN behind the open hub, not blurred (2026-10-09).
+
+   Blurring `.radial-frame` meant Chromium built a document-height blurred render
+   surface inside the 500ms open morph — the first open paid for all of it, which
+   is the "the globe lags the first time" report. Leaving it unblurred left the
+   feed legible straight through the veil, competing with the pin labels. And
+   `opacity` does not work here: the wheel's cards are 3D-transformed, and
+   Chromium painted them at full strength through `opacity: 0` on this ancestor
+   (measured: 34% ink at a point the frame reported as fully transparent).
+
+   `visibility` is inherited, so it reaches the 3D cards, and it costs nothing to
+   apply. It is delayed by the length of the morph (MOTION_MS in RadialHub), so
+   the page stays put while the veil wipes over it and only drops out once the
+   veil fully covers it — what is left behind the globe is the blurred backdrop,
+   which is the depth the old blur was for. On close the base rule has no delay,
+   so the page is back on the first frame and the shrinking veil reveals it. */
+.radial-shell:has(.radial-hub[data-phase='open']) .radial-frame {
+  visibility: hidden;
+  transition: visibility 0s linear 0.5s;
+}
+
 /* …and the "rasterises once" above is only true if the blurred layer HOLDS
    STILL. `.radial-backdrop` used to own breathing rings and a drifting blob
    field that animated forever, so this block once had to pause them while the
@@ -1240,13 +1275,10 @@ body:has(.radial-shell) .call-banner {
    surfaces can wedge WebKit's compositor". Same engine, same shape of problem. */
 html.perf-lite .radial-shell:has(.radial-hub[data-phase='open']) .radial-backdrop,
 html.perf-lite .radial-shell:has(.radial-hub[data-phase='open']) .radial-topbar,
-html.perf-lite .radial-shell:has(.radial-hub[data-phase='open']) .radial-frame,
 html.reduce-transparency .radial-shell:has(.radial-hub[data-phase='open']) .radial-backdrop,
 html.reduce-transparency .radial-shell:has(.radial-hub[data-phase='open']) .radial-topbar,
-html.reduce-transparency .radial-shell:has(.radial-hub[data-phase='open']) .radial-frame,
 html.ios-webkit .radial-shell:has(.radial-hub[data-phase='open']) .radial-backdrop,
-html.ios-webkit .radial-shell:has(.radial-hub[data-phase='open']) .radial-topbar,
-html.ios-webkit .radial-shell:has(.radial-hub[data-phase='open']) .radial-frame {
+html.ios-webkit .radial-shell:has(.radial-hub[data-phase='open']) .radial-topbar {
   filter: none;
 }
 /* The veil is translucent ONLY because the page behind it is blurred (see its
@@ -1784,18 +1816,6 @@ html.ios-webkit .radial-hub__veil {
   /* Nothing here takes a pointer: the sphere above owns the whole gesture, and a
      stray press on the wordmark must never interrupt a drag. */
   pointer-events: none;
-}
-.radial-globe__presents {
-  margin: 0;
-  font-size: 0.62rem;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: 0.24em;
-  /* Tracking adds space AFTER the last glyph too, which shifts a centred line
-     visibly left. The matching indent puts it back on the axis. */
-  text-indent: 0.24em;
-  text-transform: uppercase;
-  color: var(--site-text-muted);
 }
 .radial-globe__wordmark {
   margin: 0;

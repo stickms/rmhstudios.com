@@ -507,18 +507,15 @@ function Library() {
           // The playground, the explorer and the shelves below are untouched — and
           // so is the per-book 3D inspect button, which is where turning a volume
           // over with the phone lives now.
+          //
+          // The shared `Button`, labelled at every width. It was a bespoke
+          // `.lib-upload__open` pill whose label collapsed below 640px, which left
+          // an unlabelled upload glyph alone on its own row under the lede.
           session.data ? (
-            <button
-              type="button"
-              className="lib-upload__open"
-              onClick={() => setUploadOpen(true)}
-              aria-label={t('upload-label', { defaultValue: 'Upload a PDF' })}
-            >
-              <Upload size={15} aria-hidden="true" />
-              <span className="lib-upload__open-label">
-                {t('upload-button', { defaultValue: 'Add a book' })}
-              </span>
-            </button>
+            <Button variant="outline" size="sm" onClick={() => setUploadOpen(true)}>
+              <Upload className="size-4" aria-hidden="true" />
+              {t('upload-button', { defaultValue: 'Add a book' })}
+            </Button>
           ) : undefined
         }
       >

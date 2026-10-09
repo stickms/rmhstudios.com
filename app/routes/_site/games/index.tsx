@@ -88,24 +88,26 @@ function GamesIndexPage() {
       >
         <CatalogTabs active="/games" />
         {/* The player half, moved off `/create` when its Games tab was removed.
-            It sits above the catalog because these are the return-visit surfaces
-            — today's challenges, your ranked standing, the party you can join —
-            and it costs a signed-out visitor almost nothing: `PartyBar` renders
-            null with no session and `RankedSummary` collapses to a single
-            sign-in line, so the catalog stays this page's first real content for
-            the crawler and the first-time visitor alike. */}
+            Only the two COMPACT surfaces sit above the catalog — the party bar
+            (null with no session) and the one-line Ranked summary. The Arcade
+            Pass comes after the games: signed out it is a full panel with its
+            own tab strip and a "sign in to play" block, and above the catalog
+            it pushed every game below the fold on a "browse the games" page
+            (UI minimalism audit, 2026-10-09). */}
         <div className="flex flex-col gap-4 px-4 pt-2">
           <PartyBar inline />
           <RankedSummary />
-          <ArcadeSection sub={sub} onSubChange={setArcadeSub} />
         </div>
-        <div className="px-4 pb-12">
+        <div className="px-4">
           <CuratedBuildsTab
             curated={games}
             seed={0}
             searchPlaceholder={t('search-games-placeholder', { defaultValue: 'Search games...' })}
             emptyLabel={t('empty-games', { defaultValue: 'No games match that search.' })}
           />
+        </div>
+        <div className="px-4 pt-6 pb-12">
+          <ArcadeSection sub={sub} onSubChange={setArcadeSub} />
         </div>
       </PageLayout>
     </>

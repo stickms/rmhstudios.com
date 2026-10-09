@@ -626,7 +626,7 @@ export function ComposeBox({
               alt={
                 resolvedUser?.name || session.user.name || t('user-alt', { defaultValue: 'User' })
               }
-              loading="lazy"
+              loading="eager"
               decoding="async"
               width={40}
               height={40}
@@ -652,7 +652,11 @@ export function ComposeBox({
             maxLength={MAX_RMHARK_LENGTH}
             // Recessed text well (§8.3): .glass-inset carries the border, radius and
             // inner shadow; accent border on focus is the input affordance.
-            className="w-full glass-inset text-site-text placeholder:text-site-text-dim text-base resize-none px-3 py-2 outline-none transition-colors focus:border-site-accent"
+            // `block`: a textarea is inline-block by default, so its wrapper
+            // reserved ~6px of baseline descender space under it — a gap nobody
+            // meant, and the last 6px of layout shift when this composer replaced
+            // its placeholder (which has no wrapper) on the feed.
+            className="block w-full glass-inset text-site-text placeholder:text-site-text-dim text-base resize-none px-3 py-2 outline-none transition-colors focus:border-site-accent"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                 handleSubmit();

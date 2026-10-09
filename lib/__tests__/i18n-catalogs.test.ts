@@ -88,6 +88,9 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   // the second "RMH Studios presents / The everything platform." hero.
   // English-only until the translate pipeline runs (needs DEEPSEEK_API_KEY).
   v: ['prompt-heading'],
+  // The Predictions Open/Resolved/Mine filter moved onto LiquidTabs and needed
+  // an accessible name for the strip (2026-10-09). Same pipeline caveat.
+  'c-predictions': ['filter-aria-label'],
   // ── The Next 100 (2026-08-05) ──────────────────────────────────────────
   // Badge-rarity tiers (F7), profile-completeness steps (B22) and the shared
   // Undo affordance (B1). English-only until `pnpm i18n:translate &&
