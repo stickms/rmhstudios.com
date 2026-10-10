@@ -135,8 +135,10 @@ docker system df                          # Docker's own split: images vs cache
 
 The usual real culprit is non-Docker cruft in `/home` (dev-tool caches like
 `~/.vscode-server`, `~/.cache`, `~/.npm`, `~/go`) that `docker system df` won't
-show. Docker's own footprint is small — `runner-full` is `FROM` the slim image,
-so they largely share layers.
+show. Docker's own footprint is small — `runner` and `runner-full` are both
+built on the same `runtime-base` stage, so they share their base layers, and the
+full image's Chromium layer only changes when it is refreshed (monthly), not on
+every deploy.
 
 **If you attach a genuinely separate large volume**, move Docker's data-root onto
 it so the images no longer compete with the root disk (one-time, brief downtime):

@@ -94,6 +94,17 @@ logger.warn = (msg, options) => {
   originalWarn(msg, options);
 };
 
+// `"use client"` (on ~1,200 modules, a holdover from the Next.js era) means
+// nothing to TanStack Start, which has no React Server Components, so Rolldown's
+// "module level directive may not be preserved" check is pure noise here. It is
+// switched OFF at the source rather than filtered in `onwarn`: filtering still
+// builds every diagnostic (a code frame per file, ~2,500 of them across the client
+// and Nitro builds — 90% of the build's log volume) only to throw it away, and in
+// the Docker build all of that is streamed through BuildKit's progress output.
+// Shared by every Rolldown invocation below, including Nitro's server build,
+// which does not inherit `build.rolldownOptions`.
+const rolldownChecks = { moduleLevelDirective: false };
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function onwarn(warning: any, warn: any) {
   if (warning.code === 'UNRESOLVED_IMPORT' && warning.exporter?.includes('.prisma/client')) return;
@@ -371,6 +382,7 @@ export default defineConfig({
         fileURLToPath(new URL('./server/nitro/otel.ts', import.meta.url)),
       ],
       rollupConfig: {
+        checks: rolldownChecks,
         external: heavyExternals.map(
           (pkg) => new RegExp(`^${pkg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(/.+)?$`),
         ),
@@ -393,7 +405,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 4000,
     sourcemap: false,
     reportCompressedSize: false,
-    rolldownOptions: { onwarn },
+    rolldownOptions: { onwarn, checks: rolldownChecks },
   },
   environments: {
     client: {
@@ -403,6 +415,7 @@ export default defineConfig({
       build: {
         rolldownOptions: {
           onwarn,
+          checks: rolldownChecks,
           output: {
             manualChunks,
           },

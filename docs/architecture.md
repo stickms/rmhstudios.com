@@ -51,7 +51,7 @@ The root `Dockerfile` builds both production images; `vite build` runs once:
 | Image                   | Target        | Contents                                                                                                                              | Runs                                        |
 | ----------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
 | `rmhstudios-app` (slim) | `runner`      | Node app: `.output/` (Nitro) + `dist-server/*.cjs` bundles                                                                            | web, socket, rmhbox, rmhtube, ladder-worker, homes-worker, jobs |
-| `rmhstudios-app-full`   | `runner-full` | slim image + Chromium + git + Go binaries in `/app/bin/` (built by the Dockerfile's `go-builder` stage — plain `go build`, not Bazel) | supervisor, status, assets                  |
+| `rmhstudios-app-full`   | `runner-full` | shared runtime base + Chromium + Go binaries in `/app/bin/` (built by the Dockerfile's `go-builder` stage — plain `go build`, not Bazel); no Node app layers | supervisor, status, assets                  |
 
 ## 3. Deploy pipeline (push → production)
 
