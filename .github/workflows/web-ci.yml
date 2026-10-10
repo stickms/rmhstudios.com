@@ -186,6 +186,21 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      # The responsive image variants `build:frontend:sourcemap` generates are
+      # gitignored, so every run used to re-encode all ~290 AVIF/WebP files from
+      # scratch before Vite could start. Their filenames carry a hash of the
+      # source image and the generator skips any file that already exists, so a
+      # restored set is only ever topped up with what changed — never wrong. (A
+      # stale encode from an older script version could survive a restore-keys
+      # hit, but these files are only built here, never shipped: the Docker build
+      # generates its own in the `image-variants` stage.)
+      - name: Restore image variants
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: public/images/_variants
+          key: image-variants-${{ runner.os }}-${{ hashFiles('public/images/**', 'scripts/gen-image-variants.ts', 'pnpm-lock.yaml') }}
+          restore-keys: |
+            image-variants-${{ runner.os }}-
       # `--sourcemap` (vs the plain `build:frontend`) is what lets the
       # entry-composition gate attribute chunk bytes back to a package: the
       # client build is minified with no module boundaries left in it, so

@@ -5,16 +5,13 @@
 #   The old pipeline built `runner` (slim web), pushed it, then built
 #   `runner-full` FROM that pushed image in a SECOND invocation — serializing the
 #   full image ~1.5-2.5 min behind the slim one and re-pulling the web image over
-#   the network. `bake web full` solves both targets in a SINGLE BuildKit graph:
-#   the expensive `vite-builder` stage (the ~5 min long pole) is a shared node,
-#   so it is built exactly once and `full` derives from the in-graph `runner`
-#   (WEB_IMAGE=runner, the Dockerfile's default self-contained path) with no
-#   re-pull. The Go build + Chromium apk layer that `full` adds run in parallel
-#   with the frontend build, not after it.
+#   the network. `bake web full` solves both targets in a SINGLE BuildKit graph
+#   and pushes each as soon as its own half of the graph is done.
 #
-#   Even in the worst case where BuildKit did NOT dedupe the shared stage, both
-#   images still build CORRECTLY — the only cost would be vite running twice —
-#   so this is a performance change, not a correctness risk.
+#   The two images now share only `runtime-base` (Node + curl/ffmpeg + the app
+#   user). `full` is Go binaries + Chromium on that base and does not depend on
+#   the vite build at all, so it finishes and pushes while vite is still running
+#   — it is off the critical path entirely.
 #
 # Invoked by .github/workflows/deploy.yml:
 #   docker buildx bake --push web full
@@ -155,8 +152,18 @@ variable "IMAGE_COMPRESSION" {
   default = "gzip"
 }
 
-# The full frontend build args, shared by both targets so the in-graph
-# vite-builder stage they both depend on resolves to ONE cache key.
+# ── Chromium refresh cadence ────────────────────────────────────────────────
+# The full image's `apk add chromium` layer is cached across commits (it sits on
+# runtime-base, not on per-commit output). Keying it on the month keeps Alpine's
+# Chromium security updates flowing without paying the rebuild — and the ~400 MB
+# VPS pull — on every deploy: the first build of each month refreshes it, the
+# rest reuse it. Override with an explicit value to force a refresh now.
+variable "CHROMIUM_REFRESH" {
+  default = formatdate("YYYY-MM", timestamp())
+}
+
+# The frontend build args (they key the vite-builder stage). Only the web target
+# takes them: the full image no longer contains the frontend build.
 function "frontend_args" {
   params = []
   result = {
@@ -218,9 +225,10 @@ target "web" {
   cache-to = EXPORT_CACHE == "true" ? ["type=registry,ref=${IMAGE_WEB}:buildcache,mode=max,image-manifest=true,oci-mediatypes=true,ignore-error=true"] : []
 }
 
-# ── Full image (runner-full): supervisor, status — + Go bins + Chromium ──────
-# FROM the in-graph `runner` (WEB_IMAGE defaults to "runner"), so it shares the
-# slim image's whole graph — the frontend build is NOT repeated.
+# ── Full image (runner-full): supervisor, status, assets — Go bins + Chromium ─
+# FROM runtime-base, not from `runner` (see Stage 4b in the Dockerfile): it uses
+# nothing from the Node build, so it does not take the frontend args and does not
+# wait for vite.
 target "full" {
   context    = "."
   dockerfile = "Dockerfile"
@@ -231,28 +239,34 @@ target "full" {
     "${IMAGE_FULL}:${GIT_SHA}",
     "${IMAGE_FULL}:latest",
   ]
-  # Same frontend args (they key the shared vite-builder stage) + WEB_IMAGE left
-  # at its "runner" default so the stage is derived in-graph, not re-pulled.
-  args = merge(frontend_args(), {
-    WEB_IMAGE = "runner"
-  })
+  args = {
+    CHROMIUM_REFRESH = CHROMIUM_REFRESH
+  }
   # Same compression as `web` — these two images share layers on the VPS, so a
   # split algorithm would defeat that dedupe as well as being half a migration.
   output = [
     "type=image,compression=${IMAGE_COMPRESSION},force-compression=${IMAGE_COMPRESSION != "gzip"}",
   ]
-  # Read the web buildcache too (shared base layers). Keep reading the existing
-  # full cache while it is useful, but do not export it on every deploy.
-  cache-from = [
-    "type=registry,ref=${IMAGE_FULL}:buildcache",
-    "type=registry,ref=${IMAGE_WEB}:buildcache",
-  ]
-  # The web target already exports the expensive shared graph (deps, Prisma,
-  # Vite, server bundles) at mode=max. Exporting even a mode=min full cache still
-  # serialized 392/407 MB layers after both images were pushed: 59s in run
-  # 29943953406, ending in a harmless GHCR auth timeout. The full-only Go build
-  # (~25s) and Chromium install (~8s) run in parallel with Vite, so persisting
-  # them costs more critical-path time than rebuilding them. Omitting cache-to is
-  # also fail-soft by construction: a missing/stale cache simply causes a cold
-  # full-only stage while the actual image push remains the correctness gate.
+  # INLINE cache, read back from the previous push of this same image. Every
+  # layer worth caching here (runtime-base, Chromium, the Go binaries) is IN the
+  # final image, which is exactly what inline (mode=min) cache covers, and it
+  # costs no upload: the cache metadata rides in the image config that is pushed
+  # anyway. That is what keeps the Chromium layer byte-identical from one deploy
+  # to the next, so the VPS pulls nothing new for it.
+  #
+  # (The old registry-exported full cache was dropped for cost — 392/407 MB of
+  # export after both pushes, 59s in run 29943953406 — and back then those layers
+  # changed every commit anyway, because Chromium sat on top of .output. Neither
+  # is true now, and inline cache has no export tail to pay.)
+  #
+  # The inline image is the ONLY cache source, deliberately — do not add the web
+  # buildcache "for runtime-base". Measured (local registry, fresh builder per
+  # run, BuildKit v0.33): with both sources the Chromium RUN missed on every
+  # build, so it got a new digest each time and the VPS re-pulled it; with the
+  # inline source alone, a rebuild hit every step and produced a byte-identical
+  # image (same config digest). runtime-base is a ~1s rebuild when it does miss.
+  # A missing or stale cache is fail-soft by construction: it costs a cold apk +
+  # Go build, both in parallel with vite, never a wrong image.
+  cache-from = ["type=registry,ref=${IMAGE_FULL}:latest"]
+  cache-to   = ["type=inline"]
 }

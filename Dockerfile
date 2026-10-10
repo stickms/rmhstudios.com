@@ -3,22 +3,24 @@
 # rmhstudios.com — Multi-stage Docker build (cache-optimized)
 #
 # Produces TWO runner images from one shared build graph:
-#   - runner       (slim): web, socket, rmhbox, rmhtube  — Node only, no Chromium
-#   - runner-full         : supervisor, status           — + Go bins, Chromium, git
+#   - runner       (slim): web, socket, rmhbox, rmhtube, Node workers — Node only
+#   - runner-full         : supervisor, status, assets — Go bins + Chromium, no app layers
 # Each service overrides the CMD via docker-compose.yml. Splitting keeps Chromium
-# (~300-400 MB) and the Go binaries off the four user-facing services, and makes
-# the slim image invariant to go-services changes (so the web hotswap can be
-# skipped when nothing web-facing moved).
+# (~300-400 MB) and the Go binaries off the user-facing services, and makes each
+# image invariant to the other's inputs: a Go-only change leaves the slim image
+# byte-identical (so the web hotswap is skipped), and a web-only change leaves the
+# full image's layers untouched (so the VPS pulls nothing new for it).
 #
 # Architecture: ARM64 (aarch64)
 #
 # Build graph (BuildKit executes independent stages in PARALLEL):
 #
-#   deps ──→ prisma-generate ──┬──→ server-builder (esbuild, env-agnostic)
-#                              └──→ vite-builder   (vite build, env-specific)
+#   deps ──┬──→ image-variants (sharp, cached on public/images)
+#          └──→ prisma-generate ──┬──→ server-builder (esbuild, env-agnostic)
+#                                 └──→ vite-builder   (vite build, env-specific)
 #
-#   server-builder + vite-builder + prod-deps → runner (slim)
-#   runner + go-builder + apk(chromium,git)    → runner-full
+#   runtime-base + server-builder + vite-builder + prod-deps → runner (slim)
+#   runtime-base + apk(chromium) + go-builder                → runner-full
 #
 # Cache strategy:
 #   - pnpm store mount  → avoids re-downloading packages between builds
@@ -35,16 +37,6 @@
 #     cache-wiped host repopulates deps/prisma/vite from a registry instead of a
 #     cold rebuild (needs a buildx container builder — deploy/setup-buildx-cache.sh)
 # ─────────────────────────────────────────────────────────────────────────────
-
-# Base image for the runner-full stage (see Stage 4b). Declared here as a global
-# ARG so the FROM below can interpolate it. Default `runner` keeps a standalone
-# `docker build --target runner-full` self-contained (builds the whole graph). The
-# deploy overrides it with the ALREADY-BUILT slim web image tag so runner-full
-# starts FROM a concrete image and never re-derives the vite-builder stage — that
-# is what guarantees the expensive frontend build runs exactly once per deploy
-# (BuildKit won't share the `COPY --exclude … . .` layer across the two target
-# builds, so building runner-full FROM the stage rebuilt vite a second time).
-ARG WEB_IMAGE=runner
 
 # ── Stage 1: Install dependencies ──────────────────────────────────────────
 # Cached as long as package.json / lockfile don't change.
@@ -161,7 +153,38 @@ COPY tsconfig.json ./
 COPY scripts/build-vibe-packages.ts ./scripts/build-vibe-packages.ts
 COPY lib/rmhvibe/vibe-packages.ts ./lib/rmhvibe/vibe-packages.ts
 
-RUN pnpm run build-vibe-packages
+# The assertion that the runner used to make with a RUN of its own, next to the
+# COPY that places these files. It lives here now because the runner's COPYs are
+# `--link` and must not be followed by a RUN (see Stage 4); the guarantee is the
+# same, since the runner copies this exact directory.
+RUN pnpm run build-vibe-packages \
+    && test -f public/vibe-packages/react.js
+
+# ── Stage 2c: Responsive image variants (cached on public/images) ─────────────
+# scripts/gen-image-variants.ts encodes an AVIF + WebP at up to four widths for
+# every master under public/images/** (~290 files). The variants are gitignored
+# AND dockerignored, so the encode always starts cold here — and it used to run
+# inside vite-builder's RUN, whose cache key is the whole source tree. Every
+# deploy therefore re-encoded every image from scratch on the critical path, for
+# output that depends on nothing but the masters (measured cold on 4 cores: 220s
+# serial; 57s since the script runs a parallel pool — still far too much to pay
+# per commit for unchanged art).
+#
+# As its own stage it depends only on the encoder's inputs: the installed sharp
+# (`deps`, NOT prisma-generate — a schema change must not re-encode images), the
+# script, and public/images. BuildKit's registry layer cache then skips it on
+# every deploy that didn't touch art, and when art does change it runs in
+# PARALLEL with prisma-generate rather than inside the vite RUN.
+#
+# It also emits lib/images/variants.gen.ts. vite-builder takes that regenerated
+# manifest along with the files, exactly as the in-RUN step used to overwrite the
+# committed one, so the manifest and the files can never disagree in the image.
+FROM deps AS image-variants
+
+COPY scripts/gen-image-variants.ts ./scripts/gen-image-variants.ts
+COPY public/images ./public/images/
+
+RUN pnpm exec tsx scripts/gen-image-variants.ts
 
 # ── Stage 3: Vite/Nitro build (env-specific) ─────────────────────────────
 # BuildKit executes this IN PARALLEL with server-builder (stage 2).
@@ -192,6 +215,15 @@ COPY --exclude=go-services \
      --exclude=server/status --exclude=server/vibe-worker \
      --exclude=server/shared . .
 
+# Responsive image variants + their regenerated manifest, from the cached stage
+# above. Unlike the vibe packages (next note), these DO have to land before
+# `vite build`: Nitro bakes every public file into its build-time asset manifest
+# (.output/server/worker.mjs lists each /images/_variants/* URL), and a file the
+# manifest doesn't know is never served — so they cannot be dropped in later.
+# After the context COPY so the regenerated manifest wins over the committed one.
+COPY --from=image-variants /app/public/images/_variants ./public/images/_variants
+COPY --from=image-variants /app/lib/images/variants.gen.ts ./lib/images/variants.gen.ts
+
 # NOTE: the hosted vibe-package bundles are deliberately NOT copied in here.
 #
 # They used to be, with the reasoning "it must exist before `vite build` so Nitro
@@ -209,8 +241,8 @@ COPY --exclude=go-services \
 #
 # So the runner stage copies them to that same destination directly, and
 # vibe-builder now runs fully parallel with this stage instead of gating it. The
-# `.output/public/vibe-packages/react.js` assertion moved to the runner with them,
-# so the guarantee is unchanged — it is just checked where the files now land.
+# `react.js` assertion is made in vibe-builder itself, on the exact directory the
+# runner copies, so the guarantee is unchanged.
 # See docs/performance-audit-2026-08-12.md §3.2.
 
 ARG COMPOSE_PROJECT_NAME=rmhstudios
@@ -294,17 +326,14 @@ RUN rm -rf .output \
     # Anything not yet translated falls back to English at runtime.
     && echo "[i18n] regenerating resource modules from committed locales (translation runs in CI, not here)" \
     && pnpm exec tsx scripts/gen-i18n-resources.ts \
-    # Responsive image variants (OPT-24). This is NOT optional decoration: the
-    # manifest lib/images/variants.gen.ts is COMMITTED while the files it names
-    # under public/images/_variants/ are gitignored and generated here, and
-    # every consumer emits a `srcSet` for the paths the manifest lists. A
-    # `srcset` carrying `w` descriptors REPLACES `src` in the candidate set, so
-    # if the files are absent the browser has nothing else to try — the art does
-    # not fall back to the master, it fails outright (catalog cards drop to their
-    # letter placeholder, everything on OptimizedImage breaks). This step is why
-    # `pnpm build` chains images:variants before `vite build`; this RUN calls
-    # `vite build` directly, so it has to chain it too.
-    && pnpm run images:variants \
+    # Responsive image variants (OPT-24) are NOT generated here any more — they
+    # come from the cached image-variants stage, COPYd in above. They are still
+    # NOT optional decoration: the files under public/images/_variants/ are
+    # gitignored, and every consumer emits a `srcSet` for the paths the manifest
+    # lists. A `srcset` carrying `w` descriptors REPLACES `src` in the candidate
+    # set, so if the files were absent the art would not fall back to the master,
+    # it would fail outright. That is why `pnpm build` chains images:variants
+    # before `vite build`, and why the COPY above is not removable.
     && NODE_OPTIONS='--max-old-space-size=8192' pnpm exec vite build \
     && node scripts/fix-ssr-css-hash.mjs \
     && pnpm exec tsx scripts/ci/bundle-budget.ts
@@ -314,7 +343,7 @@ RUN rm -rf .output \
 # COPY --from it directly — no need to first `cp -a` the (~1.5 GB) tree to a
 # second path, which only cost disk + wall-clock every build.
 # (The vibe-packages assertion is NOT here — those files no longer pass through
-# this stage. It lives in the runner stage, next to the COPY that places them.)
+# this stage. It lives in vibe-builder, which produces them.)
 RUN test -d /app/.output && \
     test -f /app/.output/server/index.mjs && \
     test -f /app/.output/public/robots.txt
@@ -382,7 +411,11 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} \
 #     deploy/hotswap-web.sh skip the web hotswap entirely (no second container,
 #     no health wait, no Apache reload) when nothing web-facing changed.
 # The heavier bits live in the runner-full stage below (supervisor + status).
-FROM node:24.21.0-alpine AS runner
+#
+# ── Shared runtime base (both images start here) ─────────────────────────────
+# Everything below this line in either image is a layer on top of these, so the
+# two images share them on the VPS. Nothing here depends on app source.
+FROM node:24.21.0-alpine AS runtime-base
 
 # curl: container healthchecks (compose) + the deploy's port probes.
 # ca-certificates: outbound TLS (R2 sync, DeepSeek, Discord, etc.).
@@ -398,32 +431,49 @@ ENV HOSTNAME=0.0.0.0
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 app
 
+# ── Stage 4: Slim runner (continued) ──────────────────────────────────────────
+# Every COPY here is `--link`, and there is deliberately no RUN after the first
+# one. That is a build-time optimisation, not style:
+#
+# A plain COPY is applied ON TOP of its parent's filesystem, so BuildKit has to
+# materialise the parent first. With the layer cache imported from GHCR, the
+# cached node_modules layer is only a REMOTE reference — so the first non-cached
+# COPY after it (the per-commit .output) forced BuildKit to download that layer
+# from the registry just to stack on it: 18.7s of the deploy's critical path
+# (deploy run 37999110833, `COPY --from=prod-deps` "DONE 18.7s" right after vite
+# finished), for a layer whose bytes then went straight back to GHCR unchanged.
+# A `--link` layer is built independently of what is below it, so a cached layer
+# stays a remote reference end to end — it is cross-repo mounted on push, never
+# pulled. A RUN would need the merged filesystem and undo that, hence the
+# vibe-packages assertion living in vibe-builder's RUN rather than here.
+#
+# `--chown` is numeric because a `--link` copy cannot read this image's
+# /etc/passwd: 1001:1001 is app:nodejs from runtime-base above.
+FROM runtime-base AS runner
+
 # ─── Production-only node_modules ───────────────────────────────────────
 # Sourced from prod-deps (not prisma-generate) — excludes devDependencies
 # (vite, esbuild, typescript, eslint, etc.) for a significantly smaller image.
 # Includes @prisma/client from the prod prisma generate run.
 # Rebuilds only when lockfile OR prisma schema changes.
-COPY --from=prod-deps --chown=app:nodejs /app/node_modules ./node_modules
+COPY --link --from=prod-deps --chown=1001:1001 /app/node_modules ./node_modules
 
 # ─── Nitro server output ────────────────────────────────────────────────
 # .output/ contains the Nitro server bundle, static assets, and public files.
-COPY --from=vite-builder --chown=app:nodejs /app/.output ./.output
+COPY --link --from=vite-builder --chown=1001:1001 /app/.output ./.output
 
 # ─── Hosted vibe-package bundles ────────────────────────────────────────
 # Standalone browser bundles (three, pixi, p5, framer-motion, …) that generated
 # vibe pages load by URL. They are NOT part of the Vite module graph, so they are
 # copied to their final destination here rather than routed through vite-builder
 # — which is what lets vibe-builder run in parallel with the Vite build instead of
-# gating it. Placed AFTER the .output COPY so it cannot clobber them.
+# gating it. Placed AFTER the .output COPY so it cannot clobber them. (The
+# `react.js` assertion lives in vibe-builder: see the note above this stage.)
 # See docs/performance-audit-2026-08-12.md §3.2.
-COPY --from=vibe-builder --chown=app:nodejs /app/public/vibe-packages ./.output/public/vibe-packages
-
-# The assertion that moved with the files. Kept as its own layer so a failure
-# names the thing that broke rather than surfacing inside an unrelated step.
-RUN test -f /app/.output/public/vibe-packages/react.js
+COPY --link --from=vibe-builder --chown=1001:1001 /app/public/vibe-packages ./.output/public/vibe-packages
 
 # ─── Custom server bundles (from env-agnostic stage) ────────────────────
-COPY --from=server-builder --chown=app:nodejs /app/dist-server ./dist-server
+COPY --link --from=server-builder --chown=1001:1001 /app/dist-server ./dist-server
 
 # ─── Supporting files (from build context, not a builder stage) ─────────
 # NOTE: content/ is intentionally NOT copied. It's untracked, host-only seed
@@ -433,11 +483,11 @@ COPY --from=server-builder --chown=app:nodejs /app/dist-server ./dist-server
 # image reads content/. Since the build moved to CI (where content/ isn't in the
 # checkout), baking it would fail; to run a seed script against it, bind-mount the
 # host content/ into a one-shot container (like deploy.sh does for public/).
-COPY --chown=app:nodejs scripts ./scripts
-COPY --chown=app:nodejs data ./data
-COPY --chown=app:nodejs prisma ./prisma
-COPY --chown=app:nodejs prisma.config.ts ./prisma.config.ts
-COPY --chown=app:nodejs package.json ./package.json
+COPY --link --chown=1001:1001 scripts ./scripts
+COPY --link --chown=1001:1001 data ./data
+COPY --link --chown=1001:1001 prisma ./prisma
+COPY --link --chown=1001:1001 prisma.config.ts ./prisma.config.ts
+COPY --link --chown=1001:1001 package.json ./package.json
 
 USER app
 
@@ -445,36 +495,49 @@ EXPOSE 7005 7001 7676 7003
 
 CMD ["node", ".output/server/index.mjs"]
 
-# ── Stage 4b: Full runtime (Go supervisor + status) ──────────────────────────
-# Adds, on top of the slim runner, everything ONLY the background fleet needs:
-#   - Go binaries: supervisor runs 5 workers as goroutines; status is the Go
-#     status page server (the remaining hubs/gateway are available for future
-#     compose wiring).
+# ── Stage 4b: Full runtime (Go supervisor + status + assets) ─────────────────
+# Everything ONLY the background fleet needs:
+#   - Go binaries: supervisor runs the workers as goroutines; status is the Go
+#     status page server; assets serves the R2-backed static paths.
 #   - Chromium + fonts: the vibe-worker captures gallery thumbnails via Go
 #     chromedp, which drives the system Chromium (musl Alpine can't run
 #     Playwright's own download — point it at the OS Chromium below).
-# Used ONLY by the `supervisor` and `status` compose services. Because Chromium
-# is the slow apk layer, isolating it here means a web/source change never
-# re-runs it, and a go-services change never touches the slim web image.
+# Used ONLY by the `supervisor`, `status` and `assets` compose services.
 #
-# FROM ${WEB_IMAGE} (default `runner`; the deploy passes the already-built slim
-# web image tag). Building FROM the concrete web image means this stage does NOT
-# depend on `runner`/`vite-builder` in the graph, so the deploy's supervisor build
-# skips the vite build entirely — the web build already produced it. WEB_IMAGE is
-# the global ARG declared before the first FROM (in scope for every FROM line).
-FROM ${WEB_IMAGE} AS runner-full
+# FROM runtime-base, NOT FROM runner. Those three services are Go binaries: they
+# never read node_modules, .output, dist-server or scripts/ (vibe-worker renders
+# from a data: URL; the only path any of them touches is the /app/db volume). The
+# image used to be built FROM the slim runner anyway, which put Chromium ABOVE the
+# per-commit .output layer — so although this stage was meant to isolate "the
+# slow apk layer", every web change re-ran it (deploy run 37999110833: apk 7.4s,
+# then 14.5s re-compressing ~400 MB of Chromium, then a push), and the VPS
+# re-pulled and re-extracted Chromium on every single deploy. It also made this
+# image wait for the whole vite build, though it uses nothing from it.
+#
+# From runtime-base, Chromium sits on layers that never change with app source,
+# so it is cached (inline cache on this image — see docker-bake.hcl) and a
+# web-only commit gives this image no new layers at all. It still shares
+# runtime-base with the slim image on the VPS, so splitting costs no disk.
+#
+# CHROMIUM_REFRESH busts the apk layer on a schedule (docker-bake.hcl passes the
+# year-month), so Chromium keeps picking up Alpine's security updates — roughly
+# monthly, where it used to happen per commit only as a side effect of the bug
+# above.
+FROM runtime-base AS runner-full
 
-USER root
-RUN apk add --no-cache \
+ARG CHROMIUM_REFRESH=
+RUN echo "chromium refresh: ${CHROMIUM_REFRESH:-unset}" \
+    && apk add --no-cache \
     chromium nss freetype harfbuzz ttf-freefont font-noto-emoji
 
 # Reuse the system Chromium for chromedp/Playwright instead of a (musl-incompatible) download.
 ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
-# ─── Go binaries (supervisor, status, bot-worker, hubs, gateway) ────────
-# Compiled in the go-builder stage (CGO_ENABLED=0, fully static).
-COPY --from=go-builder --chown=app:nodejs /app/bin/ /app/bin/
+# ─── Go binaries (supervisor, status, assets, workers) ──────────────────
+# Compiled in the go-builder stage (CGO_ENABLED=0, fully static). `--link` so the
+# cached Chromium layer below stays a remote reference (see Stage 4).
+COPY --link --from=go-builder --chown=1001:1001 /app/bin/ /app/bin/
 
 USER app
 
