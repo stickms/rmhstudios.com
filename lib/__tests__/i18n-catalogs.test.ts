@@ -544,6 +544,12 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'settings-back',
     'settings-premium-themes-equip-link',
     'settings-premium-themes-or',
+    // UX/QoL batch (plan U1–U15, 2026-10-11) — English-only until the translate pipeline runs.
+    'dm-reply',
+    'remind-later',
+    'remind-me',
+    'remind-post-label',
+    'snooze',
   ],
   site: [
     // UI minimalism audit (2026-10-09): one-line descriptions for the two 3D
@@ -772,6 +778,14 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'score-hud',
     'start-game-multiplayer-lobby',
     'waiting-for-players-game-canvas',
+    // UX/QoL batch (plan U1–U15, 2026-10-11) — English-only until the translate pipeline runs.
+    'moment-dismiss',
+    'moment-first',
+    'moment-pb',
+    'moment-previous',
+    'moment-rank',
+    'moment-share',
+    'shortcut-restart',
   ],
   // ── Extract backlog flushed (2026-09-15) ───────────────────────────────
   // 369 English strings that were live in the source but had never been
@@ -1157,6 +1171,29 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   'c-user-builds': ['view-source-build-card'],
   'r-strategies': ['leaderboards-index'],
   'r-rmhbox': ['player-count-of-max'],
+  'settings-notifications': [
+    // UX/QoL batch (plan U1–U15, 2026-10-11) — English-only until the translate pipeline runs.
+    'tab-badge',
+    'tab-badge-desc',
+  ],
+  'c-saves': [
+    // UX/QoL batch (plan U1–U15, 2026-10-11) — English-only until the translate pipeline runs.
+    'remind-cancel',
+    'remind-cancel-error',
+    'remind-error',
+    'remind-hour',
+    'remind-pick',
+    'remind-presets',
+    'remind-save',
+    'remind-set',
+    'remind-title',
+    'remind-tomorrow',
+    'remind-tonight',
+    'remind-week',
+    'reminders',
+    'reminders-empty-desc',
+    'reminders-empty-title',
+  ],
 };
 
 // ─── Registry parity ────────────────────────────────────────────────────────

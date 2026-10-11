@@ -281,5 +281,12 @@
   "you-badge": "YOU",
   "you-label": "YOU",
   "your-plays": "Your plays",
-  "your-track": "YOUR TRACK"
+  "your-track": "YOUR TRACK",
+  "moment-dismiss": "Dismiss",
+  "moment-first": "First score on the board",
+  "moment-pb": "New personal best",
+  "moment-previous": "Previous best {{value}}",
+  "moment-rank": "Rank #{{rank}}",
+  "moment-share": "Share",
+  "shortcut-restart": "Restart"
 }

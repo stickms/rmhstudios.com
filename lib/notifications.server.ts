@@ -154,6 +154,9 @@ const UNMUTABLE_ENTITY_TYPES: ReadonlySet<string> = new Set([
   // New-device / new-location sign-in alerts (B11). The email goes out
   // regardless; this is what puts the matching row in the notification centre.
   'security',
+  // A reminder the user set for themselves (U7). Turning off "system"
+  // notifications is not a request to silently drop a reminder they asked for.
+  'reminder',
 ]);
 
 /** True when the recipient has this notification type turned off. */

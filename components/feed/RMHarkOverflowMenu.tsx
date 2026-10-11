@@ -27,6 +27,7 @@ import {
  Pencil,
  Languages,
  TrendingUp,
+ AlarmClock,
 } from'lucide-react';
 import { toast } from'sonner';
 import { useTranslation } from'react-i18next';
@@ -57,6 +58,7 @@ const InsightsModal = lazy(() =>
  import('./InsightsModal').then((m) => ({ default: m.InsightsModal })),
 );
 const ShareModal = lazy(() => import('./ShareModal').then((m) => ({ default: m.ShareModal })));
+const RemindMeDialog = lazy(() => import('@/components/reminders/RemindMeDialog'));
 
 export interface RMHarkTranslateControl {
  translating: boolean;
@@ -107,6 +109,7 @@ export function RMHarkOverflowMenu({
  const [tipOpen, setTipOpen] = useState(false);
  const [editOpen, setEditOpen] = useState(false);
  const [insightsOpen, setInsightsOpen] = useState(false);
+ const [remindOpen, setRemindOpen] = useState(false);
  const [pinned, setPinned] = useState(!!item.pinned);
  const [bookmarked, setBookmarked] = useState(!!item.bookmarked);
  const triggerRef = useRef<HTMLButtonElement>(null);
@@ -116,7 +119,8 @@ export function RMHarkOverflowMenu({
  // Latch: mount a lazy modal the first time it opens, then keep it mounted so
  // its close animation still runs (a bare `open && <Modal/>`would unmount
  // mid-animation). The lazy import fires on first open, not at hydration.
- const mounted = useRef({ share: false, report: false, tip: false, edit: false });
+ const mounted = useRef({ share: false, report: false, tip: false, edit: false, remind: false });
+ mounted.current.remind ||= remindOpen;
  mounted.current.share ||= shareModalOpen;
  mounted.current.report ||= reportOpen;
  mounted.current.tip ||= tipOpen;
@@ -312,6 +316,17 @@ export function RMHarkOverflowMenu({
  : t('bookmark-label', { defaultValue:'Bookmark'})}
  </MenuItem>
  )}
+ {session && (
+ <MenuItem
+ icon={AlarmClock}
+ onSelect={() => {
+ setMenuOpen(false);
+ setRemindOpen(true);
+ }}
+ >
+ {t('remind-me', { defaultValue:'Remind me'})}
+ </MenuItem>
+ )}
  <MenuItem
  icon={Heart}
  onSelect={() => {
@@ -443,6 +458,23 @@ export function RMHarkOverflowMenu({
  </Suspense>
  )}
 
+ {mounted.current.remind && (
+ <Suspense fallback={null}>
+ <RemindMeDialog
+ open={remindOpen}
+ onOpenChange={setRemindOpen}
+ target={{
+ kind:'post',
+ targetId: actualId,
+ label: t('remind-post-label', {
+ defaultValue:'Post by {{name}}',
+ name: item.user?.name || item.user?.handle ||'someone',
+ }),
+ url: `/u/${item.user?.handle || item.user?.id}/post/${actualId}`,
+ }}
+ />
+ </Suspense>
+ )}
  {mounted.current.report && (
  <Suspense fallback={null}>
  <ReportDialog

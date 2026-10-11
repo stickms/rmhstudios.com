@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Copy, EyeOff, MoreHorizontal, Pencil, Undo2 } from 'lucide-react';
+import { Copy, EyeOff, MoreHorizontal, Pencil, Reply, Undo2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem } from '@/components/ui/menu';
@@ -33,6 +33,7 @@ export function MessageActions({
   onEdit,
   onUnsend,
   onHide,
+  onReply,
   className,
 }: {
   message: {
@@ -46,6 +47,8 @@ export function MessageActions({
   onEdit: () => void;
   onUnsend: () => void;
   onHide: () => void;
+  /** Quote this message into the composer — the menu twin of swipe-to-reply. */
+  onReply?: () => void;
   className?: string;
 }) {
   const { t } = useTranslation('feed');
@@ -110,6 +113,18 @@ export function MessageActions({
               defaultValue: 'Editing closes {{minutes}} minutes after sending',
             })}
           </p>
+        )}
+
+        {copyable && onReply && (
+          <MenuItem
+            icon={Reply}
+            onSelect={() => {
+              setOpen(false);
+              onReply();
+            }}
+          >
+            {t('dm-reply', { defaultValue: 'Reply' })}
+          </MenuItem>
         )}
 
         {copyable && (

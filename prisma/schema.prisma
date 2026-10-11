@@ -347,6 +347,7 @@ model User {
   marketListingsSold   MarketListing[]  @relation("MarketSeller")
   marketListingsBought MarketListing[]  @relation("MarketBuyer")
   sharedMoments        SharedMoment[]
+  reminders            Reminder[]
 
   // ─── Parity / QOL / customization (2026-07-20 design) ────────────────────
   saveFolders         SaveFolder[]
@@ -7131,6 +7132,31 @@ model SharedMoment {
 
   @@index([userId, createdAt(sort: Desc)])
   @@map("shared_moment")
+}
+
+/// "Remind me about this" / snooze (plan U7). One pending reminder per
+/// (user, kind, target): setting it again moves it. The jobs worker fires due
+/// rows every minute as an ordinary notification, then stamps `firedAt`.
+/// `url` + `label` are snapshotted at creation so firing needs no per-kind
+/// lookup; `url` is always a same-site path (validated at the route).
+model Reminder {
+  id        String    @id @default(cuid())
+  userId    String
+  kind      String    @db.VarChar(24) // 'post' | 'notification' | 'event' | 'listing' | 'page'
+  targetId  String    @db.VarChar(128)
+  label     String    @db.VarChar(140)
+  url       String    @db.VarChar(512)
+  note      String?   @db.VarChar(140)
+  remindAt  DateTime
+  firedAt   DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, kind, targetId])
+  @@index([remindAt, firedAt])
+  @@index([userId, firedAt, remindAt])
+  @@map("reminder")
 }
 
 // ─── Parity / QOL / customization (2026-07-20 design) ───────────────────────

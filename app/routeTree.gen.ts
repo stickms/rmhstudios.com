@@ -500,6 +500,8 @@ import { Route as ApiRecommendIndexRouteImport } from './routes/api/recommend/in
 import { Route as ApiRecommendFeedbackRouteImport } from './routes/api/recommend/feedback'
 import { Route as ApiReferralsClaimRouteImport } from './routes/api/referrals/claim'
 import { Route as ApiReferralsMeRouteImport } from './routes/api/referrals/me'
+import { Route as ApiRemindersIndexRouteImport } from './routes/api/reminders/index'
+import { Route as ApiRemindersIdRouteImport } from './routes/api/reminders/$id'
 import { Route as ApiReplaysIndexRouteImport } from './routes/api/replays/index'
 import { Route as ApiReplaysIdRouteImport } from './routes/api/replays/$id'
 import { Route as ApiRequestsIndexRouteImport } from './routes/api/requests/index'
@@ -3414,6 +3416,16 @@ const ApiReferralsMeRoute = ApiReferralsMeRouteImport.update({
   path: '/api/referrals/me',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRemindersIndexRoute = ApiRemindersIndexRouteImport.update({
+  id: '/api/reminders/',
+  path: '/api/reminders/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRemindersIdRoute = ApiRemindersIdRouteImport.update({
+  id: '/api/reminders/$id',
+  path: '/api/reminders/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiReplaysIndexRoute = ApiReplaysIndexRouteImport.update({
   id: '/api/replays/',
   path: '/api/replays/',
@@ -6121,6 +6133,7 @@ export interface FileRoutesByFullPath {
   '/api/recommend/feedback': typeof ApiRecommendFeedbackRoute
   '/api/referrals/claim': typeof ApiReferralsClaimRoute
   '/api/referrals/me': typeof ApiReferralsMeRoute
+  '/api/reminders/$id': typeof ApiRemindersIdRoute
   '/api/replays/$id': typeof ApiReplaysIdRoute
   '/api/requests/$id': typeof ApiRequestsIdRouteWithChildren
   '/api/rideshare/directions': typeof ApiRideshareDirectionsRoute
@@ -6297,6 +6310,7 @@ export interface FileRoutesByFullPath {
   '/api/profile-links/': typeof ApiProfileLinksIndexRoute
   '/api/ranked/': typeof ApiRankedIndexRoute
   '/api/recommend/': typeof ApiRecommendIndexRoute
+  '/api/reminders/': typeof ApiRemindersIndexRoute
   '/api/replays/': typeof ApiReplaysIndexRoute
   '/api/requests/': typeof ApiRequestsIndexRoute
   '/api/saves/': typeof ApiSavesIndexRoute
@@ -7019,6 +7033,7 @@ export interface FileRoutesByTo {
   '/api/recommend/feedback': typeof ApiRecommendFeedbackRoute
   '/api/referrals/claim': typeof ApiReferralsClaimRoute
   '/api/referrals/me': typeof ApiReferralsMeRoute
+  '/api/reminders/$id': typeof ApiRemindersIdRoute
   '/api/replays/$id': typeof ApiReplaysIdRoute
   '/api/requests/$id': typeof ApiRequestsIdRouteWithChildren
   '/api/rideshare/directions': typeof ApiRideshareDirectionsRoute
@@ -7195,6 +7210,7 @@ export interface FileRoutesByTo {
   '/api/profile-links': typeof ApiProfileLinksIndexRoute
   '/api/ranked': typeof ApiRankedIndexRoute
   '/api/recommend': typeof ApiRecommendIndexRoute
+  '/api/reminders': typeof ApiRemindersIndexRoute
   '/api/replays': typeof ApiReplaysIndexRoute
   '/api/requests': typeof ApiRequestsIndexRoute
   '/api/saves': typeof ApiSavesIndexRoute
@@ -7945,6 +7961,7 @@ export interface FileRoutesById {
   '/api/recommend/feedback': typeof ApiRecommendFeedbackRoute
   '/api/referrals/claim': typeof ApiReferralsClaimRoute
   '/api/referrals/me': typeof ApiReferralsMeRoute
+  '/api/reminders/$id': typeof ApiRemindersIdRoute
   '/api/replays/$id': typeof ApiReplaysIdRoute
   '/api/requests/$id': typeof ApiRequestsIdRouteWithChildren
   '/api/rideshare/directions': typeof ApiRideshareDirectionsRoute
@@ -8121,6 +8138,7 @@ export interface FileRoutesById {
   '/api/profile-links/': typeof ApiProfileLinksIndexRoute
   '/api/ranked/': typeof ApiRankedIndexRoute
   '/api/recommend/': typeof ApiRecommendIndexRoute
+  '/api/reminders/': typeof ApiRemindersIndexRoute
   '/api/replays/': typeof ApiReplaysIndexRoute
   '/api/requests/': typeof ApiRequestsIndexRoute
   '/api/saves/': typeof ApiSavesIndexRoute
@@ -8871,6 +8889,7 @@ export interface FileRouteTypes {
     | '/api/recommend/feedback'
     | '/api/referrals/claim'
     | '/api/referrals/me'
+    | '/api/reminders/$id'
     | '/api/replays/$id'
     | '/api/requests/$id'
     | '/api/rideshare/directions'
@@ -9047,6 +9066,7 @@ export interface FileRouteTypes {
     | '/api/profile-links/'
     | '/api/ranked/'
     | '/api/recommend/'
+    | '/api/reminders/'
     | '/api/replays/'
     | '/api/requests/'
     | '/api/saves/'
@@ -9769,6 +9789,7 @@ export interface FileRouteTypes {
     | '/api/recommend/feedback'
     | '/api/referrals/claim'
     | '/api/referrals/me'
+    | '/api/reminders/$id'
     | '/api/replays/$id'
     | '/api/requests/$id'
     | '/api/rideshare/directions'
@@ -9945,6 +9966,7 @@ export interface FileRouteTypes {
     | '/api/profile-links'
     | '/api/ranked'
     | '/api/recommend'
+    | '/api/reminders'
     | '/api/replays'
     | '/api/requests'
     | '/api/saves'
@@ -10694,6 +10716,7 @@ export interface FileRouteTypes {
     | '/api/recommend/feedback'
     | '/api/referrals/claim'
     | '/api/referrals/me'
+    | '/api/reminders/$id'
     | '/api/replays/$id'
     | '/api/requests/$id'
     | '/api/rideshare/directions'
@@ -10870,6 +10893,7 @@ export interface FileRouteTypes {
     | '/api/profile-links/'
     | '/api/ranked/'
     | '/api/recommend/'
+    | '/api/reminders/'
     | '/api/replays/'
     | '/api/requests/'
     | '/api/saves/'
@@ -11436,6 +11460,7 @@ export interface RootRouteChildren {
   ApiRecommendFeedbackRoute: typeof ApiRecommendFeedbackRoute
   ApiReferralsClaimRoute: typeof ApiReferralsClaimRoute
   ApiReferralsMeRoute: typeof ApiReferralsMeRoute
+  ApiRemindersIdRoute: typeof ApiRemindersIdRoute
   ApiReplaysIdRoute: typeof ApiReplaysIdRoute
   ApiRequestsIdRoute: typeof ApiRequestsIdRouteWithChildren
   ApiRideshareDirectionsRoute: typeof ApiRideshareDirectionsRoute
@@ -11564,6 +11589,7 @@ export interface RootRouteChildren {
   ApiProfileLinksIndexRoute: typeof ApiProfileLinksIndexRoute
   ApiRankedIndexRoute: typeof ApiRankedIndexRoute
   ApiRecommendIndexRoute: typeof ApiRecommendIndexRoute
+  ApiRemindersIndexRoute: typeof ApiRemindersIndexRoute
   ApiReplaysIndexRoute: typeof ApiReplaysIndexRoute
   ApiRequestsIndexRoute: typeof ApiRequestsIndexRoute
   ApiSavesIndexRoute: typeof ApiSavesIndexRoute
@@ -15164,6 +15190,20 @@ declare module '@tanstack/react-router' {
       path: '/api/referrals/me'
       fullPath: '/api/referrals/me'
       preLoaderRoute: typeof ApiReferralsMeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/reminders/': {
+      id: '/api/reminders/'
+      path: '/api/reminders'
+      fullPath: '/api/reminders/'
+      preLoaderRoute: typeof ApiRemindersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/reminders/$id': {
+      id: '/api/reminders/$id'
+      path: '/api/reminders/$id'
+      fullPath: '/api/reminders/$id'
+      preLoaderRoute: typeof ApiRemindersIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/replays/': {
@@ -20171,6 +20211,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRecommendFeedbackRoute: ApiRecommendFeedbackRoute,
   ApiReferralsClaimRoute: ApiReferralsClaimRoute,
   ApiReferralsMeRoute: ApiReferralsMeRoute,
+  ApiRemindersIdRoute: ApiRemindersIdRoute,
   ApiReplaysIdRoute: ApiReplaysIdRoute,
   ApiRequestsIdRoute: ApiRequestsIdRouteWithChildren,
   ApiRideshareDirectionsRoute: ApiRideshareDirectionsRoute,
@@ -20299,6 +20340,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiProfileLinksIndexRoute: ApiProfileLinksIndexRoute,
   ApiRankedIndexRoute: ApiRankedIndexRoute,
   ApiRecommendIndexRoute: ApiRecommendIndexRoute,
+  ApiRemindersIndexRoute: ApiRemindersIndexRoute,
   ApiReplaysIndexRoute: ApiReplaysIndexRoute,
   ApiRequestsIndexRoute: ApiRequestsIndexRoute,
   ApiSavesIndexRoute: ApiSavesIndexRoute,

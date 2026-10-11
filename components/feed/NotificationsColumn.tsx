@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo, useRef } from'react';
+import { lazy, Suspense, useEffect, useState, useCallback, useMemo, useRef } from'react';
 import { useNavigate } from'@tanstack/react-router';
 import { useTranslation } from'react-i18next';
 import { formatDistanceToNow } from'date-fns';
@@ -22,6 +22,7 @@ import {
  MapPin,
  Settings2,
  BriefcaseBusiness,
+ AlarmClock,
 } from'lucide-react';
 import { toast } from'sonner';
 import { UserAvatar } from'@/components/ui/UserAvatar';
@@ -33,6 +34,11 @@ import { NOTIFICATIONS_READ_EVENT } from'@/lib/useNotificationCount';
 import { yieldToMain } from'@/lib/scheduler';
 import { usePushSubscription } from'@/lib/usePushSubscription';
 import { ColumnHeader } from'./ColumnHeader';
+import { SwipeRow } from'@/components/ui/swipe-row';
+import { IconButton } from'@/components/ui/icon-button';
+import type { RemindTarget } from'@/components/reminders/RemindMeDialog';
+
+const RemindMeDialog = lazy(() => import('@/components/reminders/RemindMeDialog'));
 
 type NotificationType ='LIKE'|'COMMENT'|'REPLY'|'FOLLOW'|'MENTION'|'REPOST'|'SYSTEM';
 
@@ -278,6 +284,7 @@ export function NotificationsColumn({
  const [nextCursor, setNextCursor] = useState<string | null>(initialData?.nextCursor ?? null);
  const [loading, setLoading] = useState(!initialData);
  const [loadingMore, setLoadingMore] = useState(false);
+ const [remindTarget, setRemindTarget] = useState<RemindTarget | null>(null);
 
  const load = useCallback(async (cursor?: string) => {
  try {
@@ -513,17 +520,34 @@ export function NotificationsColumn({
  defaultValue:'{{name}} and {{count}} others',
  })
  : firstName;
+ const snooze = () =>
+ setRemindTarget({
+ kind:'notification',
+ targetId: n.id,
+ label:
+ n.preview?.slice(0, 120) ||
+ `${actorName} ${t(`notification-verb-${n.type.toLowerCase()}`, { defaultValue: meta.verb })}`,
+ url: resolveLink(n) ??'/notifications',
+ });
  return (
  <li key={g.key}>
+ <SwipeRow
+ trailing={{
+ icon: AlarmClock,
+ label: t('snooze', { defaultValue:'Later'}),
+ onAction: snooze,
+ }}
+ >
+ <div className={`flex items-start ${g.read ?'':'bg-site-accent-dim/40'}`}>
  <button
  type="button"
  onClick={() => handleClick(n)}
  disabled={!clickable}
- className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-[background-color,scale] duration-site-fast ${
+ className={`flex min-w-0 flex-1 items-start gap-3 py-3 ps-4 pe-1 text-left transition-[background-color,scale] duration-site-fast ${
  clickable
  ?'cursor-pointer hover:bg-site-surface-hover active:scale-[0.99]'
  :'cursor-default'
- } ${g.read ?'':'bg-site-accent-dim/40'}`}
+ }`}
  >
  {sys ? (
  <span
@@ -595,6 +619,16 @@ export function NotificationsColumn({
  <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-site-accent"/>
  )}
  </button>
+ <IconButton
+ icon={AlarmClock}
+ variant="ghost"
+ size="icon-sm"
+ className="me-2 mt-3 shrink-0 text-site-text-dim"
+ onClick={snooze}
+ label={t('remind-later', { defaultValue:'Remind me later'})}
+ />
+ </div>
+ </SwipeRow>
  </li>
  );
  })}
@@ -607,6 +641,17 @@ export function NotificationsColumn({
  {t('load-more', { defaultValue:'Load more'})}
  </Button>
  </div>
+ )}
+ {remindTarget && (
+ <Suspense fallback={null}>
+ <RemindMeDialog
+ open
+ onOpenChange={(open) => {
+ if (!open) setRemindTarget(null);
+ }}
+ target={remindTarget}
+ />
+ </Suspense>
  )}
  </div>
  );
