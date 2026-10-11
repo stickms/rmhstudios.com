@@ -492,6 +492,7 @@ import { Route as ApiProfileLayoutRouteImport } from './routes/api/profile/layou
 import { Route as ApiProfileMeRouteImport } from './routes/api/profile/me'
 import { Route as ApiProfileStatusRouteImport } from './routes/api/profile/status'
 import { Route as ApiPromoFreeMonthRouteImport } from './routes/api/promo/free-month'
+import { Route as ApiPushActionRouteImport } from './routes/api/push/action'
 import { Route as ApiPushPublicKeyRouteImport } from './routes/api/push/public-key'
 import { Route as ApiPushSubscribeRouteImport } from './routes/api/push/subscribe'
 import { Route as ApiRankedIndexRouteImport } from './routes/api/ranked/index'
@@ -3373,6 +3374,11 @@ const ApiPromoFreeMonthRoute = ApiPromoFreeMonthRouteImport.update({
   path: '/api/promo/free-month',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPushActionRoute = ApiPushActionRouteImport.update({
+  id: '/api/push/action',
+  path: '/api/push/action',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPushPublicKeyRoute = ApiPushPublicKeyRouteImport.update({
   id: '/api/push/public-key',
   path: '/api/push/public-key',
@@ -6109,6 +6115,7 @@ export interface FileRoutesByFullPath {
   '/api/profile/me': typeof ApiProfileMeRoute
   '/api/profile/status': typeof ApiProfileStatusRoute
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
+  '/api/push/action': typeof ApiPushActionRoute
   '/api/push/public-key': typeof ApiPushPublicKeyRoute
   '/api/push/subscribe': typeof ApiPushSubscribeRoute
   '/api/recommend/feedback': typeof ApiRecommendFeedbackRoute
@@ -7006,6 +7013,7 @@ export interface FileRoutesByTo {
   '/api/profile/me': typeof ApiProfileMeRoute
   '/api/profile/status': typeof ApiProfileStatusRoute
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
+  '/api/push/action': typeof ApiPushActionRoute
   '/api/push/public-key': typeof ApiPushPublicKeyRoute
   '/api/push/subscribe': typeof ApiPushSubscribeRoute
   '/api/recommend/feedback': typeof ApiRecommendFeedbackRoute
@@ -7931,6 +7939,7 @@ export interface FileRoutesById {
   '/api/profile/me': typeof ApiProfileMeRoute
   '/api/profile/status': typeof ApiProfileStatusRoute
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
+  '/api/push/action': typeof ApiPushActionRoute
   '/api/push/public-key': typeof ApiPushPublicKeyRoute
   '/api/push/subscribe': typeof ApiPushSubscribeRoute
   '/api/recommend/feedback': typeof ApiRecommendFeedbackRoute
@@ -8856,6 +8865,7 @@ export interface FileRouteTypes {
     | '/api/profile/me'
     | '/api/profile/status'
     | '/api/promo/free-month'
+    | '/api/push/action'
     | '/api/push/public-key'
     | '/api/push/subscribe'
     | '/api/recommend/feedback'
@@ -9753,6 +9763,7 @@ export interface FileRouteTypes {
     | '/api/profile/me'
     | '/api/profile/status'
     | '/api/promo/free-month'
+    | '/api/push/action'
     | '/api/push/public-key'
     | '/api/push/subscribe'
     | '/api/recommend/feedback'
@@ -10677,6 +10688,7 @@ export interface FileRouteTypes {
     | '/api/profile/me'
     | '/api/profile/status'
     | '/api/promo/free-month'
+    | '/api/push/action'
     | '/api/push/public-key'
     | '/api/push/subscribe'
     | '/api/recommend/feedback'
@@ -11418,6 +11430,7 @@ export interface RootRouteChildren {
   ApiPresenceOnlineCountRoute: typeof ApiPresenceOnlineCountRoute
   ApiProfileLinksReverifyRoute: typeof ApiProfileLinksReverifyRoute
   ApiPromoFreeMonthRoute: typeof ApiPromoFreeMonthRoute
+  ApiPushActionRoute: typeof ApiPushActionRoute
   ApiPushPublicKeyRoute: typeof ApiPushPublicKeyRoute
   ApiPushSubscribeRoute: typeof ApiPushSubscribeRoute
   ApiRecommendFeedbackRoute: typeof ApiRecommendFeedbackRoute
@@ -15095,6 +15108,13 @@ declare module '@tanstack/react-router' {
       path: '/api/promo/free-month'
       fullPath: '/api/promo/free-month'
       preLoaderRoute: typeof ApiPromoFreeMonthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/push/action': {
+      id: '/api/push/action'
+      path: '/api/push/action'
+      fullPath: '/api/push/action'
+      preLoaderRoute: typeof ApiPushActionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/push/public-key': {
@@ -20145,6 +20165,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPresenceOnlineCountRoute: ApiPresenceOnlineCountRoute,
   ApiProfileLinksReverifyRoute: ApiProfileLinksReverifyRoute,
   ApiPromoFreeMonthRoute: ApiPromoFreeMonthRoute,
+  ApiPushActionRoute: ApiPushActionRoute,
   ApiPushPublicKeyRoute: ApiPushPublicKeyRoute,
   ApiPushSubscribeRoute: ApiPushSubscribeRoute,
   ApiRecommendFeedbackRoute: ApiRecommendFeedbackRoute,

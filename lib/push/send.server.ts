@@ -41,6 +41,46 @@ export interface PushPayload {
   url?: string;
   /** Coalesces notifications with the same tag on the device. */
   tag?: string;
+  /**
+   * The `Notification` row this push mirrors. Present only when there IS a
+   * row — it is what an action button acts on (`/api/push/action`).
+   */
+  nid?: string;
+  /** Up to two buttons (every browser caps visible actions at two). */
+  actions?: PushAction[];
+}
+
+/**
+ * What a notification button does (plan U6). The server never trusts the
+ * worker for a target: the route re-reads the notification row and derives
+ * the post / user from it, so the only thing the device chooses is the verb.
+ */
+export type PushActionId = 'like' | 'follow-back' | 'mark-read';
+
+export interface PushAction {
+  action: PushActionId;
+  title: string;
+}
+
+const ACTION_TITLES: Record<PushActionId, string> = {
+  like: 'Like',
+  'follow-back': 'Follow back',
+  'mark-read': 'Mark as read',
+};
+
+/**
+ * The buttons a notification offers. Only verbs that are safe to do blind
+ * (idempotent, reversible, scoped to the recipient) — never a reply, which
+ * needs the page, and never anything destructive.
+ */
+export function pushActionsFor(type: NotificationType, entityType?: string | null): PushAction[] {
+  const verbs: PushActionId[] = [];
+  // Only a mention points at someone ELSE's post. COMMENT / LIKE / REPOST rows
+  // carry the recipient's own post id, and liking your own post is not a reply.
+  if (type === 'MENTION' && entityType === 'rmhark') verbs.push('like');
+  if (type === 'FOLLOW' && entityType === 'user') verbs.push('follow-back');
+  verbs.push('mark-read');
+  return verbs.slice(0, 2).map((action) => ({ action, title: ACTION_TITLES[action] }));
 }
 
 /**
