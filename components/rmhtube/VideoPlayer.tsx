@@ -711,7 +711,12 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
       sample,
       // An uncalibrated clock would seek everyone by the size of their own
       // clock offset — the exact bug the ping/pong handshake exists to remove.
-      canCorrect: !suppressed && !hiddenRef.current && hasClockSync(),
+      // …and never while the viewer has paused their own player: chasing a
+      // paused element seeked it forward every cooldown, re-fetching and
+      // flicking the frame for someone who had deliberately stopped (found
+      // by logging every currentTime write in a live run, 2026-10-11). The
+      // tap / Resync that ends the pause forces one seek instead.
+      canCorrect: !suppressed && !hiddenRef.current && hasClockSync() && !userPausedRef.current,
       canNudge: CONTINUOUS_RATE_PROVIDERS.has(itemRef.current?.mediaType ?? 'direct'),
       force: forceResyncRef.current,
       nudging: nudgingRef.current,

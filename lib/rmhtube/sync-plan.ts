@@ -184,9 +184,11 @@ export function planSync(input: SyncPlanInput): SyncPlan {
   // Mid-band: close the gap by running slightly fast or slow, which nobody
   // sees, instead of jumping, which everybody does.
   if (canNudge) {
-    // Proportional: a second behind runs faster than a quarter-second behind,
-    // between the floor that is inaudible and the ceiling that is not.
-    const amount = Math.min(SYNC_MAX_NUDGE_RATE, Math.max(SYNC_NUDGE_RATE, absDrift * 0.08));
+    // Proportional: 0.2 s off runs 5 % fast or slow, 0.4 s and beyond the full
+    // 10 % — between the floor that is inaudible and the ceiling that is not.
+    // (A gain of 0.08 left a 0.4 s post-seek residual at the 5 % floor, eight
+    // seconds to close.)
+    const amount = Math.min(SYNC_MAX_NUDGE_RATE, Math.max(SYNC_NUDGE_RATE, absDrift * 0.25));
     const rate = roomRate * (drift > 0 ? 1 + amount : 1 - amount);
     return { action: 'rate', rate, drift };
   }
