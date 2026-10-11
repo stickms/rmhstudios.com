@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 615 files across 145 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 617 files across 145 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -917,7 +917,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/profile`
 
-16 routes.
+18 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -926,6 +926,8 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/profile/:id/follow` | `POST` | `app/routes/api/profile/$id/follow.ts` |
 | `/api/profile/:id/followers` | `GET` | `app/routes/api/profile/$id/followers.ts` |
 | `/api/profile/:id/following` | `GET` | `app/routes/api/profile/$id/following.ts` |
+| `/api/profile/:id/guestbook` | `GET` `PATCH` `POST` | `app/routes/api/profile/$id/guestbook.ts` |
+| `/api/profile/:id/guestbook/:entryId` | `DELETE` `PATCH` | `app/routes/api/profile/$id/guestbook.$entryId.ts` |
 | `/api/profile/:id/likes` | `GET` | `app/routes/api/profile/$id/likes.ts` |
 | `/api/profile/:id/membership` | `DELETE` `POST` | `app/routes/api/profile/$id/membership.ts` |
 | `/api/profile/:id/rmharks` | `GET` | `app/routes/api/profile/$id/rmharks.ts` |

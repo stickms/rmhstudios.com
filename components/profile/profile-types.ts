@@ -25,6 +25,8 @@ export interface ProfileData {
   links?: { label: string; url: string }[];
   bannerUrl?: string | null;
   showLikes: boolean;
+  /** Plan U15 — 'off' | 'following' | 'everyone'. Older payloads omit it. */
+  guestbookMode?: string;
   dmPrivacy: string;
   profileSongSpotifyId: string | null;
   profileSongTitle: string | null;

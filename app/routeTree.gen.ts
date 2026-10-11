@@ -770,6 +770,7 @@ import { Route as ApiProfileLinksIdVerifyRouteImport } from './routes/api/profil
 import { Route as ApiProfileIdFollowRouteImport } from './routes/api/profile/$id/follow'
 import { Route as ApiProfileIdFollowersRouteImport } from './routes/api/profile/$id/followers'
 import { Route as ApiProfileIdFollowingRouteImport } from './routes/api/profile/$id/following'
+import { Route as ApiProfileIdGuestbookRouteImport } from './routes/api/profile/$id/guestbook'
 import { Route as ApiProfileIdLikesRouteImport } from './routes/api/profile/$id/likes'
 import { Route as ApiProfileIdMembershipRouteImport } from './routes/api/profile/$id/membership'
 import { Route as ApiProfileIdRmharksRouteImport } from './routes/api/profile/$id/rmharks'
@@ -894,6 +895,7 @@ import { Route as ApiPf2ecalSessionsIdRecapRouteImport } from './routes/api/pf2e
 import { Route as ApiPf2ecalSessionsIdResponseRouteImport } from './routes/api/pf2ecal/sessions.$id.response'
 import { Route as ApiPlaylistsIdItemsIndexRouteImport } from './routes/api/playlists/$id/items/index'
 import { Route as ApiPlaylistsIdItemsItemIdRouteImport } from './routes/api/playlists/$id/items/$itemId'
+import { Route as ApiProfileIdGuestbookEntryIdRouteImport } from './routes/api/profile/$id/guestbook.$entryId'
 import { Route as ApiRideshareRidesIdMessagesRouteImport } from './routes/api/rideshare/rides/$id/messages'
 import { Route as ApiRideshareRidesIdRateRouteImport } from './routes/api/rideshare/rides/$id/rate'
 import { Route as ApiRideshareRidesIdSyncRouteImport } from './routes/api/rideshare/rides/$id/sync'
@@ -4822,6 +4824,11 @@ const ApiProfileIdFollowingRoute = ApiProfileIdFollowingRouteImport.update({
   path: '/following',
   getParentRoute: () => ApiProfileIdRoute,
 } as any)
+const ApiProfileIdGuestbookRoute = ApiProfileIdGuestbookRouteImport.update({
+  id: '/guestbook',
+  path: '/guestbook',
+  getParentRoute: () => ApiProfileIdRoute,
+} as any)
 const ApiProfileIdLikesRoute = ApiProfileIdLikesRouteImport.update({
   id: '/likes',
   path: '/likes',
@@ -5473,6 +5480,12 @@ const ApiPlaylistsIdItemsItemIdRoute =
     id: '/api/playlists/$id/items/$itemId',
     path: '/api/playlists/$id/items/$itemId',
     getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiProfileIdGuestbookEntryIdRoute =
+  ApiProfileIdGuestbookEntryIdRouteImport.update({
+    id: '/$entryId',
+    path: '/$entryId',
+    getParentRoute: () => ApiProfileIdGuestbookRoute,
   } as any)
 const ApiRideshareRidesIdMessagesRoute =
   ApiRideshareRidesIdMessagesRouteImport.update({
@@ -6438,6 +6451,7 @@ export interface FileRoutesByFullPath {
   '/api/profile/$id/follow': typeof ApiProfileIdFollowRoute
   '/api/profile/$id/followers': typeof ApiProfileIdFollowersRoute
   '/api/profile/$id/following': typeof ApiProfileIdFollowingRoute
+  '/api/profile/$id/guestbook': typeof ApiProfileIdGuestbookRouteWithChildren
   '/api/profile/$id/likes': typeof ApiProfileIdLikesRoute
   '/api/profile/$id/membership': typeof ApiProfileIdMembershipRoute
   '/api/profile/$id/rmharks': typeof ApiProfileIdRmharksRoute
@@ -6580,6 +6594,7 @@ export interface FileRoutesByFullPath {
   '/api/pf2ecal/sessions/$id/recap': typeof ApiPf2ecalSessionsIdRecapRoute
   '/api/pf2ecal/sessions/$id/response': typeof ApiPf2ecalSessionsIdResponseRoute
   '/api/playlists/$id/items/$itemId': typeof ApiPlaylistsIdItemsItemIdRoute
+  '/api/profile/$id/guestbook/$entryId': typeof ApiProfileIdGuestbookEntryIdRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
   '/api/rideshare/rides/$id/sync': typeof ApiRideshareRidesIdSyncRoute
@@ -7338,6 +7353,7 @@ export interface FileRoutesByTo {
   '/api/profile/$id/follow': typeof ApiProfileIdFollowRoute
   '/api/profile/$id/followers': typeof ApiProfileIdFollowersRoute
   '/api/profile/$id/following': typeof ApiProfileIdFollowingRoute
+  '/api/profile/$id/guestbook': typeof ApiProfileIdGuestbookRouteWithChildren
   '/api/profile/$id/likes': typeof ApiProfileIdLikesRoute
   '/api/profile/$id/membership': typeof ApiProfileIdMembershipRoute
   '/api/profile/$id/rmharks': typeof ApiProfileIdRmharksRoute
@@ -7480,6 +7496,7 @@ export interface FileRoutesByTo {
   '/api/pf2ecal/sessions/$id/recap': typeof ApiPf2ecalSessionsIdRecapRoute
   '/api/pf2ecal/sessions/$id/response': typeof ApiPf2ecalSessionsIdResponseRoute
   '/api/playlists/$id/items/$itemId': typeof ApiPlaylistsIdItemsItemIdRoute
+  '/api/profile/$id/guestbook/$entryId': typeof ApiProfileIdGuestbookEntryIdRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
   '/api/rideshare/rides/$id/sync': typeof ApiRideshareRidesIdSyncRoute
@@ -8266,6 +8283,7 @@ export interface FileRoutesById {
   '/api/profile/$id/follow': typeof ApiProfileIdFollowRoute
   '/api/profile/$id/followers': typeof ApiProfileIdFollowersRoute
   '/api/profile/$id/following': typeof ApiProfileIdFollowingRoute
+  '/api/profile/$id/guestbook': typeof ApiProfileIdGuestbookRouteWithChildren
   '/api/profile/$id/likes': typeof ApiProfileIdLikesRoute
   '/api/profile/$id/membership': typeof ApiProfileIdMembershipRoute
   '/api/profile/$id/rmharks': typeof ApiProfileIdRmharksRoute
@@ -8408,6 +8426,7 @@ export interface FileRoutesById {
   '/api/pf2ecal/sessions/$id/recap': typeof ApiPf2ecalSessionsIdRecapRoute
   '/api/pf2ecal/sessions/$id/response': typeof ApiPf2ecalSessionsIdResponseRoute
   '/api/playlists/$id/items/$itemId': typeof ApiPlaylistsIdItemsItemIdRoute
+  '/api/profile/$id/guestbook/$entryId': typeof ApiProfileIdGuestbookEntryIdRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
   '/api/rideshare/rides/$id/sync': typeof ApiRideshareRidesIdSyncRoute
@@ -9194,6 +9213,7 @@ export interface FileRouteTypes {
     | '/api/profile/$id/follow'
     | '/api/profile/$id/followers'
     | '/api/profile/$id/following'
+    | '/api/profile/$id/guestbook'
     | '/api/profile/$id/likes'
     | '/api/profile/$id/membership'
     | '/api/profile/$id/rmharks'
@@ -9336,6 +9356,7 @@ export interface FileRouteTypes {
     | '/api/pf2ecal/sessions/$id/recap'
     | '/api/pf2ecal/sessions/$id/response'
     | '/api/playlists/$id/items/$itemId'
+    | '/api/profile/$id/guestbook/$entryId'
     | '/api/rideshare/rides/$id/messages'
     | '/api/rideshare/rides/$id/rate'
     | '/api/rideshare/rides/$id/sync'
@@ -10094,6 +10115,7 @@ export interface FileRouteTypes {
     | '/api/profile/$id/follow'
     | '/api/profile/$id/followers'
     | '/api/profile/$id/following'
+    | '/api/profile/$id/guestbook'
     | '/api/profile/$id/likes'
     | '/api/profile/$id/membership'
     | '/api/profile/$id/rmharks'
@@ -10236,6 +10258,7 @@ export interface FileRouteTypes {
     | '/api/pf2ecal/sessions/$id/recap'
     | '/api/pf2ecal/sessions/$id/response'
     | '/api/playlists/$id/items/$itemId'
+    | '/api/profile/$id/guestbook/$entryId'
     | '/api/rideshare/rides/$id/messages'
     | '/api/rideshare/rides/$id/rate'
     | '/api/rideshare/rides/$id/sync'
@@ -11021,6 +11044,7 @@ export interface FileRouteTypes {
     | '/api/profile/$id/follow'
     | '/api/profile/$id/followers'
     | '/api/profile/$id/following'
+    | '/api/profile/$id/guestbook'
     | '/api/profile/$id/likes'
     | '/api/profile/$id/membership'
     | '/api/profile/$id/rmharks'
@@ -11163,6 +11187,7 @@ export interface FileRouteTypes {
     | '/api/pf2ecal/sessions/$id/recap'
     | '/api/pf2ecal/sessions/$id/response'
     | '/api/playlists/$id/items/$itemId'
+    | '/api/profile/$id/guestbook/$entryId'
     | '/api/rideshare/rides/$id/messages'
     | '/api/rideshare/rides/$id/rate'
     | '/api/rideshare/rides/$id/sync'
@@ -17082,6 +17107,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProfileIdFollowingRouteImport
       parentRoute: typeof ApiProfileIdRoute
     }
+    '/api/profile/$id/guestbook': {
+      id: '/api/profile/$id/guestbook'
+      path: '/guestbook'
+      fullPath: '/api/profile/$id/guestbook'
+      preLoaderRoute: typeof ApiProfileIdGuestbookRouteImport
+      parentRoute: typeof ApiProfileIdRoute
+    }
     '/api/profile/$id/likes': {
       id: '/api/profile/$id/likes'
       path: '/likes'
@@ -17949,6 +17981,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/playlists/$id/items/$itemId'
       preLoaderRoute: typeof ApiPlaylistsIdItemsItemIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/profile/$id/guestbook/$entryId': {
+      id: '/api/profile/$id/guestbook/$entryId'
+      path: '/$entryId'
+      fullPath: '/api/profile/$id/guestbook/$entryId'
+      preLoaderRoute: typeof ApiProfileIdGuestbookEntryIdRouteImport
+      parentRoute: typeof ApiProfileIdGuestbookRoute
     }
     '/api/rideshare/rides/$id/messages': {
       id: '/api/rideshare/rides/$id/messages'
@@ -19031,10 +19070,24 @@ const ApiMessagesRouteWithChildren = ApiMessagesRoute._addFileChildren(
   ApiMessagesRouteChildren,
 )
 
+interface ApiProfileIdGuestbookRouteChildren {
+  ApiProfileIdGuestbookEntryIdRoute: typeof ApiProfileIdGuestbookEntryIdRoute
+}
+
+const ApiProfileIdGuestbookRouteChildren: ApiProfileIdGuestbookRouteChildren = {
+  ApiProfileIdGuestbookEntryIdRoute: ApiProfileIdGuestbookEntryIdRoute,
+}
+
+const ApiProfileIdGuestbookRouteWithChildren =
+  ApiProfileIdGuestbookRoute._addFileChildren(
+    ApiProfileIdGuestbookRouteChildren,
+  )
+
 interface ApiProfileIdRouteChildren {
   ApiProfileIdFollowRoute: typeof ApiProfileIdFollowRoute
   ApiProfileIdFollowersRoute: typeof ApiProfileIdFollowersRoute
   ApiProfileIdFollowingRoute: typeof ApiProfileIdFollowingRoute
+  ApiProfileIdGuestbookRoute: typeof ApiProfileIdGuestbookRouteWithChildren
   ApiProfileIdLikesRoute: typeof ApiProfileIdLikesRoute
   ApiProfileIdMembershipRoute: typeof ApiProfileIdMembershipRoute
   ApiProfileIdRmharksRoute: typeof ApiProfileIdRmharksRoute
@@ -19044,6 +19097,7 @@ const ApiProfileIdRouteChildren: ApiProfileIdRouteChildren = {
   ApiProfileIdFollowRoute: ApiProfileIdFollowRoute,
   ApiProfileIdFollowersRoute: ApiProfileIdFollowersRoute,
   ApiProfileIdFollowingRoute: ApiProfileIdFollowingRoute,
+  ApiProfileIdGuestbookRoute: ApiProfileIdGuestbookRouteWithChildren,
   ApiProfileIdLikesRoute: ApiProfileIdLikesRoute,
   ApiProfileIdMembershipRoute: ApiProfileIdMembershipRoute,
   ApiProfileIdRmharksRoute: ApiProfileIdRmharksRoute,

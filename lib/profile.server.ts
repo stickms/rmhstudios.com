@@ -44,6 +44,7 @@ const profileSelect = {
       website: true,
       links: true,
       showLikes: true,
+      guestbookMode: true,
       dmPrivacy: true,
       profileSongSpotifyId: true,
       profileSongTitle: true,
@@ -94,6 +95,8 @@ export interface ProfilePayload {
   links: ProfileLink[];
   bannerUrl: string | null;
   showLikes: boolean;
+  /** Plan U15 — 'off' | 'following' | 'everyone'. */
+  guestbookMode: string;
   dmPrivacy: string;
   profileSongSpotifyId: string | null;
   profileSongTitle: string | null;
@@ -228,6 +231,7 @@ export async function getProfile(
     links: parseProfileLinks(user.profile?.links),
     bannerUrl: user.profile?.bannerUrl ?? null,
     showLikes: user.profile?.showLikes ?? false,
+    guestbookMode: user.profile?.guestbookMode ?? 'off',
     dmPrivacy: user.profile?.dmPrivacy ?? 'EVERYONE',
     profileSongSpotifyId: user.profile?.profileSongSpotifyId ?? null,
     profileSongTitle: user.profile?.profileSongTitle ?? null,

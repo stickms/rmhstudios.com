@@ -1545,5 +1545,6 @@
   "remind-later": "Remind me later",
   "remind-me": "Remind me",
   "remind-post-label": "Post by {{name}}",
-  "snooze": "Later"
+  "snooze": "Later",
+  "guestbook-tab": "Guestbook"
 }

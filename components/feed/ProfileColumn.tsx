@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from'react';
+import { lazy, Suspense, useEffect, useState, useRef, useCallback } from'react';
 import { useTranslation } from'react-i18next';
 import { toast } from'sonner';
 import { BadgeCheck, ShieldCheck } from'lucide-react';
@@ -24,7 +24,10 @@ import { ProfileShowcase } from'@/components/profile/ProfileShowcase';
 import { ProfileHero } from'@/components/profile/ProfileHero';
 import type { ProfileData } from'@/components/profile/profile-types';
 
-type ProfileTab ='rmharks'|'likes'|'achievements';
+type ProfileTab ='rmharks'|'likes'|'achievements'|'guestbook';
+
+// Plan U15 — loaded the first time the tab is opened, never on a plain profile view.
+const GuestbookPanel = lazy(() => import('@/components/profile/GuestbookPanel'));
 
 interface SpotifyController {
  addListener: (
@@ -172,7 +175,8 @@ export function ProfileColumn({
  setLikedHasMore(true);
  setLoadingLiked(false);
  likedInitialFetched.current = false;
- setTab('rmharks');
+ // `/u/<id>#guestbook` (the guestbook notification's link) opens that tab.
+ setTab(window.location.hash ==='#guestbook'?'guestbook':'rmharks');
  }, [userId]);
 
  // Spotify IFrame API — load script & create controller for profile song
@@ -451,6 +455,8 @@ export function ProfileColumn({
  }
 
  const showLikesTab = profile.isOwnProfile || profile.showLikes;
+ const showGuestbookTab =
+ profile.isOwnProfile || (!!profile.guestbookMode && profile.guestbookMode !=='off');
 
  // An equipped premium theme recolors this profile by overriding the accent CSS
  // variables for the column's subtree (follow button, links, name, tab indicator,
@@ -538,6 +544,9 @@ export function ProfileColumn({
  ? [{ id:'likes', label: t('likes', { defaultValue:'Likes'}) }]
  : []),
  { id:'achievements', label: t('achievements', { defaultValue:'Achievements'}) },
+ ...(showGuestbookTab
+ ? [{ id:'guestbook', label: t('guestbook-tab', { defaultValue:'Guestbook'}) }]
+ : []),
  ]}
  value={tab}
  onChange={(id) => handleTabChange(id as ProfileTab)}
@@ -624,6 +633,21 @@ export function ProfileColumn({
  <div className="p-4">
  <AchievementsColumn userId={profile.id} hideHeader />
  </div>
+ )}
+
+ {tab ==='guestbook'&& (
+ <Suspense
+ fallback={
+ <div className="flex justify-center py-12">
+ <Spinner />
+ </div>
+ }
+ >
+ <GuestbookPanel
+ ownerId={profile.id}
+ onModeChange={(mode) => setProfile((p) => (p ? { ...p, guestbookMode: mode } : p))}
+ />
+ </Suspense>
  )}
 
  {/* Tip dialog (non-owner) */}
