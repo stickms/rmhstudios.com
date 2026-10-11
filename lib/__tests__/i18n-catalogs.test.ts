@@ -168,7 +168,18 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   'c-kowloon-knockout': ['copy-link', 'punches-game-view'],
   'c-laundry-sort': ['copy-invite-link', 'copy-link-failed', 'link-copied'],
   'c-massive-march': ['copy-link', 'talking-hud'],
-  'c-neon-driftway': ['copy-code', 'copy-invite-link', 'select-level-ndwmultiplayer-lobby'],
+  'c-neon-driftway': [
+    'copy-code',
+    'copy-invite-link',
+    'select-level-ndwmultiplayer-lobby',
+    // UX/QoL batch (plan U1–U15, 2026-10-11) — English-only until the translate pipeline runs.
+    'ghost-mode-off',
+    'ghost-mode-pb',
+    'ghost-mode-top',
+    'ghost-pb-label',
+    'ghost-toggle-aria',
+    'ghost-top-label',
+  ],
   'c-rmhbox': [
     'copy-invite-link',
     'finished-clicks-wiki-race-game',

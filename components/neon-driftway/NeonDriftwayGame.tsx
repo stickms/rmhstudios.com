@@ -43,6 +43,14 @@ import {
 import type { GameState, InputState, LevelId, RunStats } from '@/lib/neon-driftway/types';
 import { isFullscreen, isLowPowerDevice, supportsWebGL, toggleFullscreen } from '@/lib/shared/platform';
 import { useGameSession } from '@/hooks/useGameSession';
+import {
+  GhostPlayer,
+  GhostRecorder,
+  readGhostMode,
+  writeGhostMode,
+  type GhostMode,
+  type GhostTrace,
+} from '@/lib/neon-driftway/ghost';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { NeonDriftwayUI } from './NeonDriftwayUI';
 import { NeonDriftwayTouchControls } from './NeonDriftwayTouchControls';
@@ -142,6 +150,39 @@ export function NeonDriftwayGame() {
   const unlocksRef = useRef(unlockedLevels);
   const stereoRef = useRef(false);
   const multiplayerRoomRef = useRef<string | null>(null);
+
+  // ── Ghost racing (U9) — record solo runs, race your best (or the board's) ──
+  const ghostRecorderRef = useRef(new GhostRecorder());
+  const ghostPlayerRef = useRef<GhostPlayer | null>(null);
+  const [ghostMode, setGhostModeState] = useState<GhostMode>('pb');
+  useEffect(() => setGhostModeState(readGhostMode()), []);
+  const setGhostMode = useCallback((mode: GhostMode) => {
+    writeGhostMode(mode);
+    setGhostModeState(mode);
+  }, []);
+  /** Fetched after the run starts, so a ghost never delays the countdown. */
+  const loadGhost = useCallback(
+    (levelId: LevelId, mode: GhostMode) => {
+      ghostPlayerRef.current = null;
+      if (mode === 'off') return;
+      void fetch(`/api/replays/ghost?game=neon-driftway&level=${levelId}&vs=${mode}`, {
+        credentials: 'include',
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((body: { ghost: { data: GhostTrace; owner: { name: string | null; handle: string | null } } | null } | null) => {
+          const ghost = body?.ghost;
+          const game = gameRef.current;
+          if (!ghost || !game || game.isMultiplayer || ghost.data.level !== levelId) return;
+          const name =
+            mode === 'pb'
+              ? t('ghost-pb-label', { defaultValue: 'Your best' })
+              : ghost.owner.name || ghost.owner.handle || t('ghost-top-label', { defaultValue: 'World #1' });
+          ghostPlayerRef.current = new GhostPlayer(ghost.data, name);
+        })
+        .catch(() => {});
+    },
+    [t],
+  );
   const positionTickRef = useRef(0);
   const scoreTickRef = useRef(0);
 
@@ -470,6 +511,12 @@ export function NeonDriftwayGame() {
         }
 
         game.update(dt, inputRef.current);
+        if (!game.isMultiplayer) {
+          if (game.state === 'playing') {
+            ghostRecorderRef.current.sample(game.elapsedMs, game.car.x, game.distance);
+          }
+          ghostPlayerRef.current?.apply(game.elapsedMs, game.remotePlayers);
+        }
         renderer.draw(game, dt, sample);
         hudRef.current?.sync(game, {
           multiplayer: game.isMultiplayer,
@@ -609,13 +656,16 @@ export function NeonDriftwayGame() {
     const game = gameRef.current;
     if (!game) return;
     game.isMultiplayer = false;
+    game.remotePlayers.clear();
     game.startLevel(levelId);
+    ghostRecorderRef.current.reset();
+    loadGhost(levelId, ghostMode);
     rendererRef.current?.setLevel(LEVELS[levelId]);
     rendererRef.current?.recenterView();
     setCurrentLevel(levelId);
     setRunStats(null);
     setUiState('playing');
-  }, []);
+  }, [loadGhost, ghostMode]);
 
   const handleTouchPause = useCallback(() => {
     const game = gameRef.current;
@@ -650,6 +700,7 @@ export function NeonDriftwayGame() {
     positionTickRef.current = 0;
     scoreTickRef.current = 0;
     game.isMultiplayer = true;
+    ghostPlayerRef.current = null;
     game.remotePlayers.clear();
     game.startLevel(levelId);
     rendererRef.current?.setLevel(LEVELS[levelId]);
@@ -811,6 +862,9 @@ export function NeonDriftwayGame() {
         canOfferHeadLook={canOfferHeadLook}
         headsetDetected={headsetDetected}
         onSelectMode={handleSelectMode}
+        ghostMode={ghostMode}
+        onGhostModeChange={setGhostMode}
+        getGhostTrace={() => ghostRecorderRef.current.trace(currentLevel)}
       />
     </div>
   );

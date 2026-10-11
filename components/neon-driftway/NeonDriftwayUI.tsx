@@ -1,10 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { ResultMomentSlot, useScoreMoment } from '@/components/games/result-moment-slot';
+import { parseScoreMoment, ResultMomentSlot, useScoreMoment } from '@/components/games/result-moment-slot';
+import { GHOST_MODES, type GhostMode, type GhostTrace } from '@/lib/neon-driftway/ghost';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { Play, ArrowLeft, RotateCcw, Trophy, Lock, Users, Glasses, Compass, Eye } from 'lucide-react';
+import { Play, ArrowLeft, RotateCcw, Trophy, Lock, Users, Glasses, Compass, Eye, Ghost } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { useNavigate } from '@tanstack/react-router';
 import { LEVELS } from '@/lib/neon-driftway/constants';
@@ -42,6 +43,9 @@ export function NeonDriftwayUI({
   canOfferHeadLook,
   headsetDetected,
   onSelectMode,
+  ghostMode,
+  onGhostModeChange,
+  getGhostTrace,
 }: {
   uiState: 'menu' | 'levelSelect' | 'playing' | 'gameOver' | 'levelComplete' | 'multiplayerMenu' | 'lobby' | 'multiplayerPlaying' | 'multiplayerGameOver';
   unlockedLevels: Set<LevelId>;
@@ -52,6 +56,11 @@ export function NeonDriftwayUI({
   onStartLevel: (id: LevelId) => void;
   onContinueEndless: () => void;
   onGoToMultiplayer?: () => void;
+  /** U9 — which ghost solo runs race against. */
+  ghostMode: GhostMode;
+  onGhostModeChange: (mode: GhostMode) => void;
+  /** The run just finished, as a ghost trace (null if too short). */
+  getGhostTrace: () => GhostTrace | null;
 } & VrProps) {
   const { t } = useTranslation("c-neon-driftway");
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -91,11 +100,28 @@ export function NeonDriftwayUI({
             level: runStats.level,
           }),
         });
-        void takeScoreMoment(res);
+        const body: unknown = res.ok ? await res.json().catch(() => null) : null;
+        void takeScoreMoment(body);
+        // A new personal best becomes this level's ghost (U9). Only on a best,
+        // so a player stores one trace per level however often they play.
+        const trace = parseScoreMoment(body) ? getGhostTrace() : null;
+        if (trace) {
+          void fetch('/api/replays/ghost', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              game: 'neon-driftway',
+              level: trace.level,
+              data: trace,
+              score: Math.round(runStats.score),
+              durationMs: Math.round(runStats.timeSurvivedMs),
+            }),
+          }).catch(() => {});
+        }
         fetchLeaderboard();
       } catch { /* ignore */ }
     })();
-  }, [uiState, runStats, scoreSubmitted, session.data, fetchLeaderboard, takeScoreMoment]);
+  }, [uiState, runStats, scoreSubmitted, session.data, fetchLeaderboard, takeScoreMoment, getGhostTrace]);
 
   // Reset submit flag when starting new game
   useEffect(() => {
@@ -273,6 +299,20 @@ export function NeonDriftwayUI({
           </button>
 
           <h2 className="text-2xl sm:text-3xl font-black text-white text-center tracking-tight">{t("select-level", { defaultValue: "SELECT LEVEL" })}</h2>
+
+          <button
+            type="button"
+            onClick={() => onGhostModeChange(GHOST_MODES[(GHOST_MODES.indexOf(ghostMode) + 1) % GHOST_MODES.length])}
+            className="mx-auto flex items-center gap-2 rounded-full border border-zinc-600 bg-zinc-900/80 px-3 py-1.5 text-xs text-zinc-300 transition-colors hover:border-cyan-500 hover:text-white"
+            aria-label={t("ghost-toggle-aria", { defaultValue: "Change race ghost" })}
+          >
+            <Ghost className="h-3.5 w-3.5" aria-hidden />
+            {ghostMode === 'pb'
+              ? t("ghost-mode-pb", { defaultValue: "Ghost: your best" })
+              : ghostMode === 'top'
+                ? t("ghost-mode-top", { defaultValue: "Ghost: world #1" })
+                : t("ghost-mode-off", { defaultValue: "Ghost: off" })}
+          </button>
 
           <div className="grid gap-3">
             {levelIds.map(id => {

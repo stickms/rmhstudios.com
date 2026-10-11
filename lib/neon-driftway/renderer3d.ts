@@ -775,7 +775,8 @@ export class NeonDriftwayRenderer3D {
   }
 
   private updateGhosts(game: NeonDriftwayEngine): void {
-    if (!game.isMultiplayer) {
+    // Solo runs can carry one race ghost (U9) through the same map.
+    if (!game.isMultiplayer && game.remotePlayers.size === 0) {
       for (const ghost of this.ghosts) ghost.group.visible = false;
       return;
     }

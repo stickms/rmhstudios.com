@@ -504,6 +504,7 @@ import { Route as ApiRemindersIndexRouteImport } from './routes/api/reminders/in
 import { Route as ApiRemindersIdRouteImport } from './routes/api/reminders/$id'
 import { Route as ApiReplaysIndexRouteImport } from './routes/api/replays/index'
 import { Route as ApiReplaysIdRouteImport } from './routes/api/replays/$id'
+import { Route as ApiReplaysGhostRouteImport } from './routes/api/replays/ghost'
 import { Route as ApiRequestsIndexRouteImport } from './routes/api/requests/index'
 import { Route as ApiRequestsIdRouteImport } from './routes/api/requests/$id'
 import { Route as ApiRideshareDirectionsRouteImport } from './routes/api/rideshare/directions'
@@ -3438,6 +3439,11 @@ const ApiReplaysIdRoute = ApiReplaysIdRouteImport.update({
   path: '/api/replays/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiReplaysGhostRoute = ApiReplaysGhostRouteImport.update({
+  id: '/api/replays/ghost',
+  path: '/api/replays/ghost',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRequestsIndexRoute = ApiRequestsIndexRouteImport.update({
   id: '/api/requests/',
   path: '/api/requests/',
@@ -6148,6 +6154,7 @@ export interface FileRoutesByFullPath {
   '/api/referrals/me': typeof ApiReferralsMeRoute
   '/api/reminders/$id': typeof ApiRemindersIdRoute
   '/api/replays/$id': typeof ApiReplaysIdRoute
+  '/api/replays/ghost': typeof ApiReplaysGhostRoute
   '/api/requests/$id': typeof ApiRequestsIdRouteWithChildren
   '/api/rideshare/directions': typeof ApiRideshareDirectionsRoute
   '/api/rideshare/driver': typeof ApiRideshareDriverRoute
@@ -7050,6 +7057,7 @@ export interface FileRoutesByTo {
   '/api/referrals/me': typeof ApiReferralsMeRoute
   '/api/reminders/$id': typeof ApiRemindersIdRoute
   '/api/replays/$id': typeof ApiReplaysIdRoute
+  '/api/replays/ghost': typeof ApiReplaysGhostRoute
   '/api/requests/$id': typeof ApiRequestsIdRouteWithChildren
   '/api/rideshare/directions': typeof ApiRideshareDirectionsRoute
   '/api/rideshare/driver': typeof ApiRideshareDriverRoute
@@ -7980,6 +7988,7 @@ export interface FileRoutesById {
   '/api/referrals/me': typeof ApiReferralsMeRoute
   '/api/reminders/$id': typeof ApiRemindersIdRoute
   '/api/replays/$id': typeof ApiReplaysIdRoute
+  '/api/replays/ghost': typeof ApiReplaysGhostRoute
   '/api/requests/$id': typeof ApiRequestsIdRouteWithChildren
   '/api/rideshare/directions': typeof ApiRideshareDirectionsRoute
   '/api/rideshare/driver': typeof ApiRideshareDriverRoute
@@ -8910,6 +8919,7 @@ export interface FileRouteTypes {
     | '/api/referrals/me'
     | '/api/reminders/$id'
     | '/api/replays/$id'
+    | '/api/replays/ghost'
     | '/api/requests/$id'
     | '/api/rideshare/directions'
     | '/api/rideshare/driver'
@@ -9812,6 +9822,7 @@ export interface FileRouteTypes {
     | '/api/referrals/me'
     | '/api/reminders/$id'
     | '/api/replays/$id'
+    | '/api/replays/ghost'
     | '/api/requests/$id'
     | '/api/rideshare/directions'
     | '/api/rideshare/driver'
@@ -10741,6 +10752,7 @@ export interface FileRouteTypes {
     | '/api/referrals/me'
     | '/api/reminders/$id'
     | '/api/replays/$id'
+    | '/api/replays/ghost'
     | '/api/requests/$id'
     | '/api/rideshare/directions'
     | '/api/rideshare/driver'
@@ -11487,6 +11499,7 @@ export interface RootRouteChildren {
   ApiReferralsMeRoute: typeof ApiReferralsMeRoute
   ApiRemindersIdRoute: typeof ApiRemindersIdRoute
   ApiReplaysIdRoute: typeof ApiReplaysIdRoute
+  ApiReplaysGhostRoute: typeof ApiReplaysGhostRoute
   ApiRequestsIdRoute: typeof ApiRequestsIdRouteWithChildren
   ApiRideshareDirectionsRoute: typeof ApiRideshareDirectionsRoute
   ApiRideshareDriverRoute: typeof ApiRideshareDriverRoute
@@ -15243,6 +15256,13 @@ declare module '@tanstack/react-router' {
       path: '/api/replays/$id'
       fullPath: '/api/replays/$id'
       preLoaderRoute: typeof ApiReplaysIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/replays/ghost': {
+      id: '/api/replays/ghost'
+      path: '/api/replays/ghost'
+      fullPath: '/api/replays/ghost'
+      preLoaderRoute: typeof ApiReplaysGhostRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/requests/': {
@@ -20267,6 +20287,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiReferralsMeRoute: ApiReferralsMeRoute,
   ApiRemindersIdRoute: ApiRemindersIdRoute,
   ApiReplaysIdRoute: ApiReplaysIdRoute,
+  ApiReplaysGhostRoute: ApiReplaysGhostRoute,
   ApiRequestsIdRoute: ApiRequestsIdRouteWithChildren,
   ApiRideshareDirectionsRoute: ApiRideshareDirectionsRoute,
   ApiRideshareDriverRoute: ApiRideshareDriverRoute,
