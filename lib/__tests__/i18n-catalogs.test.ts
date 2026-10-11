@@ -1279,6 +1279,7 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'sync-buffering',
     'sync-catching-up',
     'sync-idle',
+    'sync-jump-live',
     'sync-leader',
     'sync-paused-local',
     'sync-resync',

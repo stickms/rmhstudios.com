@@ -135,9 +135,16 @@ describe('planSync', () => {
     expect(at({ sample: sample({ ready: false }) })).toMatchObject({ action: 'hold', reason: 'not-ready' });
   });
 
-  it('reports settled inside the soft band', () => {
-    const plan = at({ sample: sample({ position: 100.2 }) });
-    expect(plan).toMatchObject({ action: 'settled', rate: 1 });
+  it('reports settled inside the band', () => {
+    expect(at({ sample: sample({ position: 100.15 }) })).toMatchObject({ action: 'settled', rate: 1 });
+    // A player without fine rate control tolerates up to the soft band.
+    expect(at({ canNudge: false, sample: sample({ position: 100.4 }) })).toMatchObject({ action: 'settled', rate: 1 });
+  });
+
+  it('does not leave a nudge-capable player 0.4 s off for good', () => {
+    // The old entry threshold was the 0.5 s soft band: a viewer that started
+    // 0.4 s off stayed there (HLS run, 2026-10-11).
+    expect(at({ sample: sample({ position: 100.4 }) })).toMatchObject({ action: 'rate' });
   });
 
   it('nudges the rate in the mid band, in the direction that closes the gap', () => {

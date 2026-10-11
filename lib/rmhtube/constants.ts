@@ -67,6 +67,8 @@ export const SYNC_NUDGE_RATE = 0.05; // ±5% playback-rate nudge while closing a
  * it forever — half a second out is an echo between two laptops in one room.
  */
 export const SYNC_SETTLE_TARGET_S = 0.1;
+/** A player that can nudge starts doing so past this gap (and stops at SYNC_SETTLE_TARGET_S). */
+export const SYNC_NUDGE_ENTER_S = 0.2;
 /**
  * Bigger gaps nudge harder, up to this (proportional nudging). 10 % is about
  * where a sped-up voice starts to sound sped up, even with pitch preserved.

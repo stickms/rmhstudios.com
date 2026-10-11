@@ -192,6 +192,7 @@
   "sync-buffering": "Buffering",
   "sync-catching-up": "Catching up",
   "sync-idle": "Not playing",
+  "sync-jump-live": "Jump to live",
   "sync-leader": "You lead",
   "sync-paused-local": "You paused",
   "sync-resync": "Resync now",

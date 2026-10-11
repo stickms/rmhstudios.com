@@ -16,6 +16,7 @@ import { RefreshCw } from 'lucide-react';
 import { usePopPresence } from '@/hooks/usePopPresence';
 import { getBestRtt, getClockOffset } from '@/lib/rmhtube/clock';
 import { requestResync, syncHealth, syncStats, type SyncHealth } from '@/lib/rmhtube/sync-stats';
+import { useRmhTubeStore } from '@/lib/rmhtube/store';
 
 const POLL_MS = 500;
 
@@ -38,6 +39,7 @@ export default function SyncStatus() {
   const [open, setOpen] = useState(false);
   const [, setTick] = useState(0);
   const panel = usePopPresence(open);
+  const isLive = useRmhTubeStore((s) => s.room?.videoState.mode === 'live');
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -128,7 +130,9 @@ export default function SyncStatus() {
             className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-medium transition-colors bg-(--app-accent-dim) text-(--app-accent) hover:bg-(--app-surface-hover)"
           >
             <RefreshCw className="h-3.5 w-3.5" aria-hidden />
-            {t('sync-resync', { defaultValue: 'Resync now' })}
+            {isLive
+              ? t('sync-jump-live', { defaultValue: 'Jump to live' })
+              : t('sync-resync', { defaultValue: 'Resync now' })}
           </button>
         </div>
       )}

@@ -83,6 +83,14 @@ const CONTINUOUS_RATE_PROVIDERS = new Set(['direct', 'vimeo']);
 const PLAY_RETRY_MS = 1_000;
 
 /**
+ * A live source has no shared position, but everyone should start near the
+ * live edge: a player found further behind it than this when a live item
+ * starts is moved to `LIVE_EDGE_TARGET_S` behind the edge, once per item.
+ */
+const LIVE_EDGE_SLACK_S = 12;
+const LIVE_EDGE_TARGET_S = 6;
+
+/**
  * After the room's rate changes, the leader does not report its element's rate
  * for this long. Embedded players apply a rate asynchronously (YouTube posts
  * it to its iframe), so for a moment the element still reads the OLD rate —
@@ -257,6 +265,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
   const userPausedRef = useRef(false);
   /** Last room revision this player acted on — see `runLeaderTick`. */
   const lastAppliedRevRef = useRef(-1);
+  /** The live item this player has already placed at the live edge (see the tick). */
+  const liveSnapRef = useRef<{ itemId: string | null; force: boolean }>({ itemId: null, force: false });
   const durationProbeRef = useRef<{ duration: number; at: number; decided: boolean } | null>(null);
   const reportedMetaRef = useRef<{ itemId: string; duration: number | null; live: boolean } | null>(null);
 
@@ -437,6 +447,36 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
         : null;
 
     const live = detectLive(sample.duration, durationProbeRef, now, itemRef.current?.live ?? false);
+
+    // ── Start a live item at the live edge ──
+    // Until the leader reports a stream as live (the URL can't say), the room
+    // treats it as a VOD at 0, and a viewer placed by that anchor sat at the
+    // start of the DVR window — 20 s behind everyone — for the rest of the
+    // stream, because a live room never moves anyone (HLS run, 2026-10-11).
+    // Once per item, or on "Resync now", a live player well behind the edge
+    // is moved up to it. After that, pausing and DVR seeks are the room's and
+    // the viewer's own business.
+    const liveItemId = itemRef.current?.id ?? null;
+    if (
+      (state.mode === 'live' || (isLeaderRef.current && live)) &&
+      sample.ready &&
+      sample.seekableEnd != null &&
+      liveItemId &&
+      (liveSnapRef.current.force || liveSnapRef.current.itemId !== liveItemId)
+    ) {
+      const behind = sample.seekableEnd - sample.position;
+      if (liveSnapRef.current.force || behind > LIVE_EDGE_SLACK_S) {
+        suppressUntilRef.current = now + SEEK_COOLDOWN_MS;
+        lastSampleRef.current = null;
+        try {
+          el.currentTime = Math.max(sample.seekableStart ?? 0, sample.seekableEnd - LIVE_EDGE_TARGET_S);
+        } catch {
+          // Not seekable yet; the flag stays set and the next tick tries again.
+          return;
+        }
+      }
+      liveSnapRef.current = { itemId: liveItemId, force: false };
+    }
 
     if (isLeaderRef.current) {
       runLeaderTick(el, sample, observation, state, now, suppressed, live, outOfBand);
@@ -845,6 +885,11 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
   // re-reports on the next tick.
   useEffect(() => {
     const unregister = registerResync(() => {
+      // On a live source there is no room position to rejoin: "resync" means
+      // "back to the live edge", for the leader as much as anyone.
+      if (useRmhTubeStore.getState().room?.videoState.mode === 'live') {
+        liveSnapRef.current = { itemId: null, force: true };
+      }
       if (isLeaderRef.current) {
         lastHostReportRef.current = 0;
         return;

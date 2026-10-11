@@ -49,7 +49,19 @@ run, 19/19 checks:
 | Leadership → Bob, Bob scrubs natively | 0.003 s; old leader's native play overruled |
 | Leader tab closed → failover to host → leader returns | 0.045 s / 0.036 s |
 
-Start-at (`#t=30`) put both players at exactly 30.00. The script is not
+Start-at (`#t=30`) put both players at exactly 30.00.
+
+The same script then ran against streams generated locally with ffmpeg
+(VP9/Opus in fMP4, served cross-origin):
+
+| Source | Result |
+| ------ | ------ |
+| HLS VOD (`hls.js`), full scenario incl. leadership + failover | 19/19 — steady state 0.01–0.06 s, native pause 0.000 s, failover 0.05 s |
+| DASH VOD (`dash.js`), controls scenario | 14/14 — steady state 0.04–0.07 s, native scrub 0.005 s |
+| Live HLS (sliding 20 s window) | 10/10 — all players start ~8 s behind the edge together; site + native play/pause mirrored; a viewer's DVR seek and local pause left alone; Jump to live returns them to the edge |
+
+YouTube, Twitch and Vimeo could not be run: this environment's network
+policy denies their hosts. The script is not
 checked in (it needs a database, a session per user and a media file); the
 unit, simulation and hub suites are the regression gate.
 
@@ -75,8 +87,10 @@ unit, simulation and hub suites are the regression gate.
 | 16 | Room changes applied on the next 250 ms tick, and unevenly (leader vs. viewers) | Everyone settled a fixed ~0.2 s off the leader, inside the band nothing corrects | Out-of-band tick on every new `rev`, for leader and viewers |
 | 17 | `connectToRmhTube` checked for a client before awaiting the session | Two sockets per tab; the hub kicked one with `DUPLICATE_SESSION` | The in-flight connect is shared |
 | 18 | Sync chip read the plan's drift, which is 0 while corrections are suspended | "In sync" shown to a viewer who had paused | Offset measured directly; "You paused" state |
+| 19 | A player that wasn't already nudging treated anything under 0.5 s as settled | An HLS viewer started 0.40 s off and stayed there | Nudge-capable players start correcting past 0.2 s (`SYNC_NUDGE_ENTER_S`) |
+| 20 | An `.m3u8` is assumed VOD until the leader reports it live; viewers were placed by that VOD anchor at "0" | On a live HLS stream, viewers sat at the start of the DVR window, ~20 s behind the leader, for good | Once per live item a player well behind the live edge moves up to it; "Resync now" becomes **Jump to live** |
 
-Rows 14–18 were found by a live run (§1.1), not by the unit suites — the
+Rows 14–20 were found by a live run (§1.1), not by the unit suites — the
 simulation measured seek cost with perfect knowledge of when frames resumed,
 which a real player never has. It now uses the same tick-based feedback.
 
@@ -102,9 +116,11 @@ rate nudge, while YouTube only offers discrete speeds and so corrects by seek.
 channel, YouTube live, live HLS)** — no timeline, so play/pause is mirrored and
 position is never compared; the seek bar and ±10 s hide.
 
-Not covered by an automated test: a real browser driving the real
-YouTube/Twitch/Vimeo iframes (their APIs need the network and a visible
-window). The tick logic they feed is the same code the simulation exercises.
+Not yet run in a real browser: the YouTube, Twitch and Vimeo iframes (the
+test environment's network policy denies their hosts). The tick logic they
+feed is the same code the simulation and the HLS/DASH/native runs exercise;
+what differs per provider is the custom element's media API, i.e. how
+faithfully `currentTime`, `paused`, `playbackRate` and `seekable` report.
 
 ## 4. Features
 

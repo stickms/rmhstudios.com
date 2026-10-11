@@ -28,6 +28,7 @@ import {
   SYNC_SETTLE_TARGET_S,
   SYNC_MAX_SEEK_LEAD_S,
   SYNC_PAUSED_TOLERANCE_S,
+  SYNC_NUDGE_ENTER_S,
   SYNC_MAX_NUDGE_RATE,
   SYNC_HARD_TOLERANCE_NUDGE_S,
 } from './constants';
@@ -166,8 +167,16 @@ export function planSync(input: SyncPlanInput): SyncPlan {
       : { action: 'hold', reason: 'paused', drift };
   }
 
-  // Hysteresis: a nudge that has started runs on down to the settle target.
-  const settleBand = input.nudging && canNudge ? SYNC_SETTLE_TARGET_S : SYNC_SOFT_TOLERANCE_S;
+  // Hysteresis: a nudge starts past SYNC_NUDGE_ENTER_S and runs on down to the
+  // settle target. Entry used to be the 0.5 s soft tolerance, which let a
+  // viewer that started 0.4 s off stay there for good — a rate nudge is
+  // inaudible, so there is no reason to tolerate a gap that size on a player
+  // that can make one (HLS run, 2026-10-11).
+  const settleBand = !canNudge
+    ? SYNC_SOFT_TOLERANCE_S
+    : input.nudging
+      ? SYNC_SETTLE_TARGET_S
+      : SYNC_NUDGE_ENTER_S;
   if (absDrift <= settleBand) {
     return { action: 'settled', rate: roomRate, drift };
   }
