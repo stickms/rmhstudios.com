@@ -237,5 +237,22 @@ export function genericAdapter(gameId: string): GameAdapter {
     leaderboard(limit: number): Promise<LeaderboardRow[]> {
       return genericLeaderboardRows(gameId, { take: limit });
     },
+
+    lowerIsBetter,
+
+    async personalBest(userId: string): Promise<number | null> {
+      const row = await prisma.gameStat.findUnique({
+        where: { gameId_userId: { gameId, userId } },
+        select: { score: true },
+      });
+      return row?.score ?? null;
+    },
+
+    async rankOf(score: number): Promise<number> {
+      const better = await prisma.gameStat.count({
+        where: { gameId, score: lowerIsBetter ? { lt: score } : { gt: score } },
+      });
+      return better + 1;
+    },
   };
 }

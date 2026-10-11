@@ -40,7 +40,7 @@ export const Route = createFileRoute('/api/neon-driftway/score')({
             { status: result.status },
           );
         }
-        return Response.json({ success: true, linked: true });
+        return Response.json({ success: true, linked: true, moment: result.moment ?? null });
       }),
     },
   },

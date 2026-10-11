@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { ResultMomentSlot, useScoreMoment } from '@/components/games/result-moment-slot';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Play, ArrowLeft, RotateCcw, Trophy, Lock, Users, Glasses, Compass, Eye } from 'lucide-react';
@@ -55,6 +56,7 @@ export function NeonDriftwayUI({
   const { t } = useTranslation("c-neon-driftway");
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
+  const [scoreMoment, takeScoreMoment, clearScoreMoment] = useScoreMoment();
   const session = useSession();
   const navigate = useNavigate();
 
@@ -78,7 +80,7 @@ export function NeonDriftwayUI({
     setScoreSubmitted(true);
     (async () => {
       try {
-        await fetch('/api/neon-driftway/score', {
+        const res = await fetch('/api/neon-driftway/score', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -89,15 +91,19 @@ export function NeonDriftwayUI({
             level: runStats.level,
           }),
         });
+        void takeScoreMoment(res);
         fetchLeaderboard();
       } catch { /* ignore */ }
     })();
-  }, [uiState, runStats, scoreSubmitted, session.data, fetchLeaderboard]);
+  }, [uiState, runStats, scoreSubmitted, session.data, fetchLeaderboard, takeScoreMoment]);
 
   // Reset submit flag when starting new game
   useEffect(() => {
-    if (uiState === 'playing') setScoreSubmitted(false);
-  }, [uiState]);
+    if (uiState === 'playing') {
+      setScoreSubmitted(false);
+      clearScoreMoment();
+    }
+  }, [uiState, clearScoreMoment]);
 
   if (uiState === 'playing' || uiState === 'multiplayerPlaying' || uiState === 'multiplayerMenu' || uiState === 'lobby') return null;
 
@@ -319,6 +325,7 @@ export function NeonDriftwayUI({
 
     return (
       <div className="absolute inset-0 flex items-center-safe justify-center-safe z-40 pointer-events-auto bg-black/80 backdrop-blur-sm overflow-y-auto">
+        <ResultMomentSlot moment={scoreMoment} gameName="Neon Driftway" onDismiss={clearScoreMoment} />
         <div className="max-w-md w-full px-4 space-y-3 sm:space-y-4 py-6">
           <h2 className="text-3xl sm:text-4xl font-black text-red-500 text-center tracking-tight">{t("crashed", { defaultValue: "CRASHED" })}</h2>
 
@@ -412,6 +419,7 @@ export function NeonDriftwayUI({
 
     return (
       <div className="absolute inset-0 flex items-center-safe justify-center-safe z-40 pointer-events-auto bg-black/80 backdrop-blur-sm overflow-y-auto">
+        <ResultMomentSlot moment={scoreMoment} gameName="Neon Driftway" onDismiss={clearScoreMoment} />
         <div className="max-w-md w-full px-4 space-y-3 sm:space-y-4 py-6">
           <h2 className="text-3xl sm:text-4xl font-black text-green-400 text-center tracking-tight">{t("level-complete", { defaultValue: "LEVEL COMPLETE!" })}</h2>
 

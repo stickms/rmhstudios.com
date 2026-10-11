@@ -11,9 +11,11 @@ import { useKeyboardInset } from '@/hooks/useKeyboardInset';
 import { useLobbyInvite } from '@/hooks/useLobbyLink';
 import './SynapseStorm.css';
 import { useGameSession } from '@/hooks/useGameSession';
+import { ResultMomentSlot, useScoreMoment } from '@/components/games/result-moment-slot';
 
 interface SynapseStormGameProps {
-    onSaveScore?: (data: ScoreSaveData) => Promise<void>;
+    /** Resolves with the score endpoint's JSON body (or nothing for a guest). */
+    onSaveScore?: (data: ScoreSaveData) => Promise<unknown>;
     currentUserId?: string;
 }
 
@@ -22,9 +24,13 @@ type TopLevelView = 'main' | 'multiplayer';
 export const SynapseStormGame: React.FC<SynapseStormGameProps> = ({ onSaveScore, currentUserId }) => {
     const [topView, setTopView] = useState<TopLevelView>('main');
     const [scoreSaved, setScoreSaved] = useState(false);
+    const [scoreMoment, takeScoreMoment, clearScoreMoment] = useScoreMoment();
     const { state, startGame, solvePuzzle, skipMemoryPhase, returnToMenu } = useGameEngine();
     // Session contract: keep the screen on while a round is running.
     useGameSession({ id: 'synapse-storm', active: state.status === 'playing' });
+    useEffect(() => {
+        if (state.status === 'playing') clearScoreMoment();
+    }, [state.status, clearScoreMoment]);
 
     // Several puzzle types are typed, so a keyboard can be up at any moment
     // during a run. Publishing its height lets the shell end where the keyboard
@@ -48,7 +54,10 @@ export const SynapseStormGame: React.FC<SynapseStormGameProps> = ({ onSaveScore,
                 maxCombo: state.maxCombo,
                 peakDifficulty: state.difficulty,
                 totalTime: state.totalTime,
-            }).then(() => setScoreSaved(true));
+            }).then((body) => {
+                setScoreSaved(true);
+                void takeScoreMoment(body);
+            });
         }
     }, [state.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -73,6 +82,9 @@ export const SynapseStormGame: React.FC<SynapseStormGameProps> = ({ onSaveScore,
                 )}
                 {state.status === 'playing' && (
                     <GameBoard state={state} onSolve={solvePuzzle} onSkipPhase={skipMemoryPhase} />
+                )}
+                {state.status === 'gameover' && (
+                    <ResultMomentSlot moment={scoreMoment} gameName="Synapse Storm" onDismiss={clearScoreMoment} />
                 )}
                 {state.status === 'gameover' && (
                     <GameOver state={state} onRestart={startGame} onMenu={returnToMenu} currentUserId={currentUserId} scoreSaved={scoreSaved} />

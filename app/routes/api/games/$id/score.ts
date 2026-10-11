@@ -40,7 +40,7 @@ export const Route = createFileRoute('/api/games/$id/score')({
               { status: result.status },
             );
           }
-          return Response.json({ success: true });
+          return Response.json({ success: true, moment: result.moment ?? null });
         },
       ),
     },
