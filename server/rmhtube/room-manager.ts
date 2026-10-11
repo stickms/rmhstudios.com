@@ -129,6 +129,7 @@ export class RoomManager {
     socket.on(C2S.ROOM_CREATE_INVITE, validated(socket, C2S.ROOM_CREATE_INVITE, CreateInviteSchema, (s, p) => this.createInvite(s, p)));
     socket.on(C2S.ROOM_SET_STATUS, validated(socket, C2S.ROOM_SET_STATUS, SetStatusSchema, (s, p) => this.setStatus(s, p)));
     socket.on(C2S.ROOM_CHECK_HISTORY, validated(socket, C2S.ROOM_CHECK_HISTORY, CheckHistorySchema, (s, p) => this.checkHistory(s, p)));
+    socket.on(C2S.ROOM_REQUEST_CONTROL, validated(socket, C2S.ROOM_REQUEST_CONTROL, EmptyPayloadSchema, (s) => this.requestControl(s)));
   }
 
   handleDisconnect(socket: Socket): void {
@@ -648,6 +649,20 @@ export class RoomManager {
     });
 
     logger.info({ event: 'leader_changed', roomId, newLeaderUserId: payload.targetUserId, byUserId: userId });
+  }
+
+  /**
+   * A viewer asks for playback control. Broadcast so the host and leader see
+   * it (as a badge with a one-click "give control" in the member list); the
+   * decision stays theirs — this never moves leadership by itself.
+   */
+  private requestControl(socket: Socket): void {
+    const userId = socket.data.userId as string;
+    const room = this.getRoomForUser(userId);
+    if (!room || room.leaderUserId === userId) return;
+    const member = room.members.get(userId);
+    if (!member?.isConnected) return;
+    this.broadcastAction(room, 'CONTROL_REQUESTED', { userId, userName: member.userName });
   }
 
   // ─── Phase 4.2: Ban List ──────────────────────────────────────

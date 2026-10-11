@@ -11,7 +11,24 @@
 import { useCallback, useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePopPresence } from '@/hooks/usePopPresence';
-import { Play, Pause, SkipForward, Volume2, VolumeX, Volume1, Subtitles, Gauge, PictureInPicture2, Maximize, Minimize } from 'lucide-react';
+import {
+  Play,
+  Pause,
+  SkipForward,
+  Volume2,
+  VolumeX,
+  Volume1,
+  Subtitles,
+  Gauge,
+  PictureInPicture2,
+  Maximize,
+  Minimize,
+  RotateCcw,
+  RotateCw,
+  Hand,
+  Star,
+} from 'lucide-react';
+import SeekBar, { seekRoom } from './SeekBar';
 import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
 import { getServerNow } from '@/lib/rmhtube/clock';
@@ -32,7 +49,15 @@ interface HostControlsProps {
   onFullscreen?: () => void;
 }
 
-export default function HostControls({ isHost, isLeader = isHost, videoState, currentItem, onSkip, onPiP, onFullscreen }: HostControlsProps) {
+export default function HostControls({
+  isHost,
+  isLeader = isHost,
+  videoState,
+  currentItem,
+  onSkip,
+  onPiP,
+  onFullscreen,
+}: HostControlsProps) {
   const playing = videoState?.playing ?? false;
   const currentTime = videoState?.currentTime ?? 0;
   const duration = currentItem?.duration ?? null;
@@ -46,7 +71,7 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
   const captionsEnabled = useRmhTubeStore((s) => s.settings.captionsEnabled);
   const updateSettings = useRmhTubeStore((s) => s.updateSettings);
 
-  const { t } = useTranslation("c-rmhtube");
+  const { t } = useTranslation('c-rmhtube');
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   // Held mounted for its close (globals.css §7.1); the outside-click listener
   // below stays on the raw flag.
@@ -95,7 +120,9 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
       }
       emit(playing ? C2S.SYNC_PAUSE : C2S.SYNC_PLAY, {});
     } else {
-      toast.info(t("only-leader-playback", { defaultValue: "Only the leader can control playback" }));
+      toast.info(
+        t('only-leader-playback', { defaultValue: 'Only the leader can control playback' }),
+      );
     }
   }, [isLeader, playing, t]);
 
@@ -104,7 +131,7 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
       emit(C2S.QUEUE_SKIP, {});
       onSkip?.();
     } else {
-      toast.info(t("only-leader-skip", { defaultValue: "Only the leader can skip" }));
+      toast.info(t('only-leader-skip', { defaultValue: 'Only the leader can skip' }));
     }
   }, [isLeader, onSkip, t]);
 
@@ -112,27 +139,33 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
     updateSettings({ muted: !muted });
   }, [muted, updateSettings]);
 
-  const handleVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const vol = parseFloat(e.target.value);
-    updateSettings({ masterVolume: vol, muted: vol === 0 });
-  }, [updateSettings]);
+  const handleVolumeChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const vol = parseFloat(e.target.value);
+      updateSettings({ masterVolume: vol, muted: vol === 0 });
+    },
+    [updateSettings],
+  );
 
   const handleCaptionsToggle = useCallback(() => {
     updateSettings({ captionsEnabled: !captionsEnabled });
   }, [captionsEnabled, updateSettings]);
 
-  const handleSpeedSelect = useCallback((speed: number) => {
-    if (!isLeader) {
-      toast.info(t("only-leader-speed", { defaultValue: "Only the leader can change speed" }));
-      return;
-    }
-    emit(C2S.SYNC_SET_SPEED, { speed });
-    setShowSpeedMenu(false);
-  }, [isLeader, t]);
+  const handleSpeedSelect = useCallback(
+    (speed: number) => {
+      if (!isLeader) {
+        toast.info(t('only-leader-speed', { defaultValue: 'Only the leader can change speed' }));
+        return;
+      }
+      emit(C2S.SYNC_SET_SPEED, { speed });
+      setShowSpeedMenu(false);
+    },
+    [isLeader, t],
+  );
 
   const handleSpeedCycle = useCallback(() => {
     if (!isLeader) return;
-    const idx = PLAYBACK_SPEEDS.indexOf(currentSpeed as typeof PLAYBACK_SPEEDS[number]);
+    const idx = PLAYBACK_SPEEDS.indexOf(currentSpeed as (typeof PLAYBACK_SPEEDS)[number]);
     const nextIdx = idx === -1 ? 2 : (idx + 1) % PLAYBACK_SPEEDS.length; // default to 1x then next
     emit(C2S.SYNC_SET_SPEED, { speed: PLAYBACK_SPEEDS[nextIdx] });
   }, [isLeader, currentSpeed]);
@@ -140,6 +173,26 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
   const handlePiP = useCallback(() => {
     onPiP?.();
   }, [onPiP]);
+
+  /** ±10 s from where the room IS (projected), not the last anchor. */
+  const handleJump = useCallback(
+    (delta: number) => {
+      const vs = useRmhTubeStore.getState().room?.videoState;
+      if (!vs || !isLeader) return;
+      seekRoom(extrapolate(vs, getServerNow()) + delta);
+    },
+    [isLeader],
+  );
+
+  const handleControlRequest = useCallback(() => {
+    if (isHost) {
+      const me = useRmhTubeStore.getState().room?.myUserId;
+      if (me) emit(C2S.ROOM_SET_LEADER, { targetUserId: me });
+      return;
+    }
+    emit(C2S.ROOM_REQUEST_CONTROL, {});
+    toast.info(t('control-requested', { defaultValue: 'Asked the host and leader for control' }));
+  }, [isHost, t]);
 
   const handleFullscreenToggle = useCallback(() => {
     if (onFullscreen) {
@@ -153,144 +206,213 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
 
   if (!currentItem) return null;
 
-  const VolumeIcon = muted || masterVolume === 0
-    ? VolumeX
-    : masterVolume < 0.5
-      ? Volume1
-      : Volume2;
+  const VolumeIcon = muted || masterVolume === 0 ? VolumeX : masterVolume < 0.5 ? Volume1 : Volume2;
 
   const pipSupported = typeof document !== 'undefined' && document.pictureInPictureEnabled;
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2 border-b border-(--app-border) bg-(--app-bg-subtle)">
-      {/* Play/Pause — visible to all */}
-      <button
-        onClick={handlePlayPause}
-        className="shrink-0 rounded-full p-2 transition-colors bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)"
-      >
-        {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-      </button>
-
-      {/* Now playing title */}
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate text-(--app-text)">
-          {currentItem.title}
-        </p>
-        {isLive ? (
-          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-(--app-danger)">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-(--app-danger)" aria-hidden />
-            {t("live", { defaultValue: "Live" })}
-          </p>
-        ) : (
-          <p className="text-xs text-(--app-text-dim)">
-            {formatDuration(currentTime)} / {formatDuration(duration)}
-          </p>
-        )}
-      </div>
-
-      {/* Volume — always visible */}
-      <div className="shrink-0 flex items-center gap-1.5">
+    <div className="border-b border-(--app-border)">
+      <div className="flex items-center gap-3 px-4 py-2 bg-(--app-bg-subtle)">
+        {/* Play/Pause — visible to all */}
         <button
-          onClick={handleMuteToggle}
-          className="rounded-md p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
-          title={muted ? t("unmute", { defaultValue: "Unmute" }) : t("mute", { defaultValue: "Mute" })}
+          onClick={handlePlayPause}
+          className="shrink-0 rounded-full p-2 transition-colors bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)"
         >
-          <VolumeIcon className="h-4 w-4" />
+          {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
         </button>
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.05}
-          value={muted ? 0 : masterVolume}
-          onChange={handleVolumeChange}
-          className="w-20 h-1 accent-(--app-accent) cursor-pointer"
-          title={t("volume-pct", { defaultValue: "Volume: {{pct}}%", pct: Math.round((muted ? 0 : masterVolume) * 100) })}
-        />
-      </div>
 
-      {/* Captions toggle — always visible */}
-      <button
-        onClick={handleCaptionsToggle}
-        className={`shrink-0 rounded-md p-2 transition-colors ${
-          captionsEnabled
-            ? 'text-(--app-accent) bg-(--app-accent-dim)'
-            : 'text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)'
-        }`}
-        title={captionsEnabled ? t("disable-captions", { defaultValue: "Disable captions" }) : t("enable-captions", { defaultValue: "Enable captions" })}
-      >
-        <Subtitles className="h-4 w-4" />
-      </button>
+        {isLeader && !isLive && (
+          <>
+            <button
+              onClick={() => handleJump(-10)}
+              className="shrink-0 rounded-md p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+              title={t('back-10', { defaultValue: 'Back 10 seconds' })}
+              aria-label={t('back-10', { defaultValue: 'Back 10 seconds' })}
+            >
+              <RotateCcw className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => handleJump(10)}
+              className="shrink-0 rounded-md p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+              title={t('forward-10', { defaultValue: 'Forward 10 seconds' })}
+              aria-label={t('forward-10', { defaultValue: 'Forward 10 seconds' })}
+            >
+              <RotateCw className="h-4 w-4" />
+            </button>
+          </>
+        )}
 
-      {/* Playback Speed — host can change, non-host reads current speed.
-          Hidden on a broadcast: the providers ignore the rate on a live edge. */}
-      <div className={`relative shrink-0 ${isLive ? 'hidden' : ''}`} ref={speedMenuRef}>
+        {!isLeader && (
+          <button
+            onClick={handleControlRequest}
+            className="shrink-0 flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors text-(--app-info) hover:bg-(--app-info-dim)"
+            title={
+              isHost
+                ? t('take-control', { defaultValue: 'Take control' })
+                : t('request-control', { defaultValue: 'Request control' })
+            }
+          >
+            {isHost ? (
+              <Star className="h-3.5 w-3.5" aria-hidden />
+            ) : (
+              <Hand className="h-3.5 w-3.5" aria-hidden />
+            )}
+            <span className="hidden sm:inline">
+              {isHost
+                ? t('take-control', { defaultValue: 'Take control' })
+                : t('request-control', { defaultValue: 'Request control' })}
+            </span>
+          </button>
+        )}
+
+        {/* Now playing title */}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium truncate text-(--app-text)">{currentItem.title}</p>
+          {isLive ? (
+            <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-(--app-danger)">
+              <span
+                className="inline-block h-1.5 w-1.5 rounded-full bg-(--app-danger)"
+                aria-hidden
+              />
+              {t('live', { defaultValue: 'Live' })}
+            </p>
+          ) : (
+            <p className="text-xs text-(--app-text-dim)">
+              {/* Live position is on the seek bar below; this is the fallback
+                when the duration is not known yet. */}
+              {duration ? formatDuration(duration) : formatDuration(currentTime)}
+            </p>
+          )}
+        </div>
+
+        {/* Volume — always visible */}
+        <div className="shrink-0 flex items-center gap-1.5">
+          <button
+            onClick={handleMuteToggle}
+            className="rounded-md p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+            title={
+              muted ? t('unmute', { defaultValue: 'Unmute' }) : t('mute', { defaultValue: 'Mute' })
+            }
+          >
+            <VolumeIcon className="h-4 w-4" />
+          </button>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={muted ? 0 : masterVolume}
+            onChange={handleVolumeChange}
+            className="w-20 h-1 accent-(--app-accent) cursor-pointer"
+            title={t('volume-pct', {
+              defaultValue: 'Volume: {{pct}}%',
+              pct: Math.round((muted ? 0 : masterVolume) * 100),
+            })}
+          />
+        </div>
+
+        {/* Captions toggle — always visible */}
         <button
-          onClick={() => setShowSpeedMenu((v) => !v)}
-          onDoubleClick={isLeader ? handleSpeedCycle : undefined}
-          className={`rounded-md p-2 transition-colors flex items-center gap-1 ${
-            currentSpeed !== 1
+          onClick={handleCaptionsToggle}
+          className={`shrink-0 rounded-md p-2 transition-colors ${
+            captionsEnabled
               ? 'text-(--app-accent) bg-(--app-accent-dim)'
               : 'text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)'
           }`}
-          title={isLeader ? t("speed-title-leader", { defaultValue: "Playback speed: {{speed}}x (click to change)", speed: currentSpeed }) : t("speed-title", { defaultValue: "Playback speed: {{speed}}x", speed: currentSpeed })}
+          title={
+            captionsEnabled
+              ? t('disable-captions', { defaultValue: 'Disable captions' })
+              : t('enable-captions', { defaultValue: 'Enable captions' })
+          }
         >
-          <Gauge className="h-4 w-4" />
-          <span className="text-xs font-medium">{currentSpeed}x</span>
+          <Subtitles className="h-4 w-4" />
         </button>
 
-        {/* Speed dropdown — visible to all, handler guards permissions */}
-        {speedMenu.present && (
-          <div
-            data-motion="pop"
-            data-state={speedMenu.state}
-            className="absolute bottom-full mb-1 right-0 origin-bottom-right z-50 rounded-lg border border-(--app-border) bg-(--app-surface) shadow-lg py-1 min-w-25"
+        {/* Playback Speed — host can change, non-host reads current speed.
+          Hidden on a broadcast: the providers ignore the rate on a live edge. */}
+        <div className={`relative shrink-0 ${isLive ? 'hidden' : ''}`} ref={speedMenuRef}>
+          <button
+            onClick={() => setShowSpeedMenu((v) => !v)}
+            onDoubleClick={isLeader ? handleSpeedCycle : undefined}
+            className={`rounded-md p-2 transition-colors flex items-center gap-1 ${
+              currentSpeed !== 1
+                ? 'text-(--app-accent) bg-(--app-accent-dim)'
+                : 'text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)'
+            }`}
+            title={
+              isLeader
+                ? t('speed-title-leader', {
+                    defaultValue: 'Playback speed: {{speed}}x (click to change)',
+                    speed: currentSpeed,
+                  })
+                : t('speed-title', {
+                    defaultValue: 'Playback speed: {{speed}}x',
+                    speed: currentSpeed,
+                  })
+            }
           >
-            {PLAYBACK_SPEEDS.map((speed) => (
-              <button
-                key={speed}
-                onClick={() => handleSpeedSelect(speed)}
-                className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
-                  speed === currentSpeed
-                    ? 'text-(--app-accent) bg-(--app-accent-dim) font-medium'
-                    : 'text-(--app-text) hover:bg-(--app-surface-hover)'
-                }`}
-              >
-                {speed}x
-              </button>
-            ))}
-          </div>
+            <Gauge className="h-4 w-4" />
+            <span className="text-xs font-medium">{currentSpeed}x</span>
+          </button>
+
+          {/* Speed dropdown — visible to all, handler guards permissions */}
+          {speedMenu.present && (
+            <div
+              data-motion="pop"
+              data-state={speedMenu.state}
+              className="absolute bottom-full mb-1 right-0 origin-bottom-right z-50 rounded-lg border border-(--app-border) bg-(--app-surface) shadow-lg py-1 min-w-25"
+            >
+              {PLAYBACK_SPEEDS.map((speed) => (
+                <button
+                  key={speed}
+                  onClick={() => handleSpeedSelect(speed)}
+                  className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
+                    speed === currentSpeed
+                      ? 'text-(--app-accent) bg-(--app-accent-dim) font-medium'
+                      : 'text-(--app-text) hover:bg-(--app-surface-hover)'
+                  }`}
+                >
+                  {speed}x
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* PiP — always visible (when browser supports it) */}
+        {pipSupported && (
+          <button
+            onClick={handlePiP}
+            className="shrink-0 rounded-md p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+            title={t('picture-in-picture', { defaultValue: 'Picture-in-Picture' })}
+          >
+            <PictureInPicture2 className="h-4 w-4" />
+          </button>
         )}
-      </div>
 
-      {/* PiP — always visible (when browser supports it) */}
-      {pipSupported && (
+        {/* Fullscreen toggle — always visible */}
         <button
-          onClick={handlePiP}
+          onClick={handleFullscreenToggle}
           className="shrink-0 rounded-md p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
-          title={t("picture-in-picture", { defaultValue: "Picture-in-Picture" })}
+          title={
+            isFullscreen
+              ? t('exit-fullscreen', { defaultValue: 'Exit fullscreen' })
+              : t('fullscreen', { defaultValue: 'Fullscreen' })
+          }
         >
-          <PictureInPicture2 className="h-4 w-4" />
+          {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
         </button>
-      )}
 
-      {/* Fullscreen toggle — always visible */}
-      <button
-        onClick={handleFullscreenToggle}
-        className="shrink-0 rounded-md p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
-        title={isFullscreen ? t("exit-fullscreen", { defaultValue: "Exit fullscreen" }) : t("fullscreen", { defaultValue: "Fullscreen" })}
-      >
-        {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
-      </button>
-
-      {/* Skip — visible to all */}
-      <button
-        onClick={handleSkip}
-        className="shrink-0 rounded-md p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
-        title={t("skip-to-next", { defaultValue: "Skip to next" })}
-      >
-        <SkipForward className="h-4 w-4" />
-      </button>
+        {/* Skip — visible to all */}
+        <button
+          onClick={handleSkip}
+          className="shrink-0 rounded-md p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+          title={t('skip-to-next', { defaultValue: 'Skip to next' })}
+        >
+          <SkipForward className="h-4 w-4" />
+        </button>
+      </div>
+      {!isLive && duration ? <SeekBar duration={duration} isLeader={isLeader} /> : null}
     </div>
   );
 }

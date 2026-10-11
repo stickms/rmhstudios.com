@@ -128,6 +128,22 @@ describe('RMHTube hub — leadership', () => {
     );
   });
 
+  it('a viewer can ask for control; it is announced, never granted by itself', async () => {
+    const [host, viewer] = await users('host', 'viewer');
+    await roomWith(host, viewer);
+    viewer.emit(C2S.ROOM_REQUEST_CONTROL);
+    const req = await waitFor(
+      () => host.actions.find((x) => x.type === 'CONTROL_REQUESTED'),
+      'request announced',
+    );
+    expect(req.data.userId).toBe(viewer.id);
+    // The leader asking for control it already has is a no-op.
+    host.emit(C2S.ROOM_REQUEST_CONTROL);
+    await sleep(200);
+    expect(host.actions.filter((x) => x.type === 'CONTROL_REQUESTED')).toHaveLength(1);
+    expect(host.actions.some((x) => x.type === 'LEADER_CHANGED')).toBe(false);
+  });
+
   it('leadership cannot be handed to someone who is not connected', async () => {
     const [host, gone] = await users('host', 'gone');
     await roomWith(host, gone);

@@ -1257,6 +1257,15 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'bring-back',
     'popped-out',
     'raw-link-check',
+    'back-10',
+    'control-requested',
+    'forward-10',
+    'make-leader-named',
+    'request-control',
+    'seek-bar',
+    'seek-bar-readonly',
+    'take-control',
+    'wants-control',
   ],
   'c-nightrail': [
     // UX/QoL batch (plan U1–U15, 2026-10-11) — English-only until the translate pipeline runs.

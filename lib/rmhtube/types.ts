@@ -111,6 +111,8 @@ export interface ClientRoomState {
   playedItems: ClientQueueItem[];
   // Phase 4: Ban List (host/mod only)
   bannedUsers: BannedUser[];
+  /** Members who asked for control since the last handover (client-side only). */
+  controlRequests?: string[];
 }
 
 export type UserPresenceStatus = 'watching' | 'afk' | 'brb';

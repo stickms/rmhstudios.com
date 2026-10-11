@@ -31,7 +31,7 @@ function host(routes: {
     if (r.type) headers.set('content-type', r.type);
     if ('disposition' in r && r.disposition) headers.set('content-disposition', r.disposition);
     const body = 'body' in r && r.body ? r.body : null;
-    return new Response(method === 'HEAD' ? null : body, { status: r.status ?? 200, headers });
+    return new Response(method === "HEAD" || !body ? null : new Blob([body as BlobPart]), { status: r.status ?? 200, headers });
   };
   return { fetcher, calls };
 }

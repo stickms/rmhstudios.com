@@ -83,6 +83,7 @@ export const config = {
     'rmhtube:room:create_invite': { max: 5,   windowMs: 3_600_000 },
     'rmhtube:room:set_status':    { max: 10,  windowMs: 60_000 },
     'rmhtube:room:check_history': { max: 10,  windowMs: 60_000 },
+    'rmhtube:room:request_control': { max: 3, windowMs: 60_000 },
 
     // Sync. The leader reports every 2 s (30/min) and both sides fire extra on
     // tab-return, so the ceiling sits at four times the steady rate.

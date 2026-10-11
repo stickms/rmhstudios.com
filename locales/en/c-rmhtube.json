@@ -212,5 +212,14 @@
   "your-settings-note": "Saved on this device only",
   "bring-back": "Bring it back",
   "popped-out": "Playing in a pop-out window",
-  "raw-link-check": "Direct link — we'll check it's a playable video when you add it."
+  "raw-link-check": "Direct link — we'll check it's a playable video when you add it.",
+  "back-10": "Back 10 seconds",
+  "control-requested": "Asked the host and leader for control",
+  "forward-10": "Forward 10 seconds",
+  "make-leader-named": "Make {{name}} the leader",
+  "request-control": "Request control",
+  "seek-bar": "Seek",
+  "seek-bar-readonly": "Playback position",
+  "take-control": "Take control",
+  "wants-control": "Wants control"
 }
