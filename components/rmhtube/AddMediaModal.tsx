@@ -1,22 +1,43 @@
 /**
  * AddMediaModal — URL input with paste detection and preview.
+ *
+ * Two shortcuts on top of the single link:
+ *  - **Start at** — "1:30", "90", "1m30s". Stored on the item as its start
+ *    offset (`withStart`), which the hub makes the item's first anchor, so the
+ *    whole room starts there. A link that already carries one (`?t=`, `#t=`)
+ *    fills it in.
+ *  - **Several links at once** — pasting text with more than one URL queues
+ *    them all (up to `MAX_BATCH`, inside the hub's add rate limit).
  */
 'use client';
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { X, Link as LinkIcon, Radio } from 'lucide-react';
-import { maybeRawMediaUrl, parseMedia } from '@/lib/rmhtube/media';
+import { X, Link as LinkIcon, Radio, ListPlus } from 'lucide-react';
+import { maybeRawMediaUrl, parseMedia, parseTimestamp, startOffset, withStart } from '@/lib/rmhtube/media';
+import { formatDuration } from '@/lib/rmhtube/utils';
 import { useTranslation } from 'react-i18next';
 
 interface AddMediaModalProps {
   onClose: () => void;
-  onAdd: (url: string, title: string) => void;
+  onAdd: (items: Array<{ url: string; title: string }>) => void;
+}
+
+/** The hub allows 20 adds a minute; leave room for the next manual one. */
+const MAX_BATCH = 15;
+
+function linksIn(text: string): string[] {
+  return text
+    .split(/\s+/)
+    .map((s) => s.trim())
+    .filter((s) => /^https?:\/\//i.test(s) && (parseMedia(s) || maybeRawMediaUrl(s)));
 }
 
 export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
   const { t } = useTranslation("c-rmhtube");
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
+  const [start, setStart] = useState('');
+  const [batch, setBatch] = useState<string[] | null>(null);
   const [error, setError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -31,8 +52,27 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
   // CDN URL, `/video/123`). The server asks the host what it is when it's added.
   const rawCandidate = useMemo(() => !media && !!url.trim() && maybeRawMediaUrl(url.trim()), [media, url]);
 
+  const startSeconds = useMemo(() => parseTimestamp(start), [start]);
+  const startInvalid = start.trim() !== '' && startSeconds === null;
+
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLInputElement>) => {
+    const links = linksIn(e.clipboardData.getData('text'));
+    if (links.length < 2) return;
+    e.preventDefault();
+    setBatch(links.slice(0, MAX_BATCH));
+    setError('');
+  }, []);
+
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
+    if (batch) {
+      onAdd(batch.map((u) => ({ url: u, title: '' })));
+      return;
+    }
+    if (startInvalid) {
+      setError(t("error-start-time", { defaultValue: "Start time should look like 1:30, 90 or 1m30s." }));
+      return;
+    }
     const trimmedUrl = url.trim();
     if (!trimmedUrl) {
       setError(t("error-enter-url", { defaultValue: "Please enter a URL" }));
@@ -44,8 +84,8 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
       }));
       return;
     }
-    onAdd(trimmedUrl, title.trim());
-  }, [url, title, onAdd, t]);
+    onAdd([{ url: start.trim() ? withStart(trimmedUrl, startSeconds) : trimmedUrl, title: title.trim() }]);
+  }, [url, title, start, startSeconds, startInvalid, batch, onAdd, t]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -65,6 +105,29 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {batch ? (
+            <div>
+              <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-(--app-text-muted)">
+                <ListPlus className="h-4 w-4" aria-hidden />
+                {t("batch-count", { defaultValue_one: "{{count}} link found", defaultValue: "{{count}} links found", count: batch.length })}
+              </p>
+              <ul className="max-h-48 space-y-1 overflow-y-auto rounded-lg border border-(--app-border) bg-(--app-bg) p-2 text-xs">
+                {batch.map((link) => (
+                  <li key={link} className="truncate text-(--app-text-muted)" title={link}>
+                    {link}
+                  </li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                onClick={() => setBatch(null)}
+                className="mt-2 text-xs text-(--app-text-dim) underline hover:text-(--app-text)"
+              >
+                {t("batch-cancel", { defaultValue: "Add one link instead" })}
+              </button>
+            </div>
+          ) : (
+          <>
           {/* URL Input */}
           <div>
             <label htmlFor="media-url" className="block text-sm font-medium mb-1 text-(--app-text-muted)">
@@ -77,7 +140,13 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
                 id="media-url"
                 type="url"
                 value={url}
-                onChange={(e) => { setUrl(e.target.value); setError(''); }}
+                onChange={(e) => {
+                  setUrl(e.target.value);
+                  setError('');
+                  const linked = startOffset(e.target.value.trim());
+                  if (linked > 0) setStart(formatDuration(linked));
+                }}
+                onPaste={handlePaste}
                 placeholder={t("url-placeholder", { defaultValue: "https://youtube.com/watch?v=..." })}
                 className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
               />
@@ -132,13 +201,37 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
             />
           </div>
 
+          {/* Start offset (optional) — becomes the item's first anchor */}
+          {media?.liveHint !== 'live' && (
+            <div>
+              <label htmlFor="media-start" className="block text-sm font-medium mb-1 text-(--app-text-muted)">
+                {t("start-at-label", { defaultValue: "Start at" })} <span className="text-(--app-text-dim)">{t("optional", { defaultValue: "(optional)" })}</span>
+              </label>
+              <input
+                id="media-start"
+                type="text"
+                inputMode="numeric"
+                value={start}
+                onChange={(e) => { setStart(e.target.value); setError(''); }}
+                maxLength={12}
+                placeholder="0:00"
+                aria-invalid={startInvalid || undefined}
+                className="w-32 px-4 py-2.5 rounded-lg border border-(--app-border) bg-(--app-bg) text-(--app-text) tabular-nums placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
+              />
+            </div>
+          )}
+          </>
+          )}
+
           {/* Submit */}
           <button
             type="submit"
-            disabled={!url.trim()}
+            disabled={!batch && !url.trim()}
             className="w-full py-2.5 rounded-lg font-semibold text-(--app-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
           >
-            {t("add-to-queue", { defaultValue: "Add to Queue" })}
+            {batch
+              ? t("add-batch-to-queue", { defaultValue: "Add {{count}} to Queue", count: batch.length })
+              : t("add-to-queue", { defaultValue: "Add to Queue" })}
           </button>
         </form>
       </div>

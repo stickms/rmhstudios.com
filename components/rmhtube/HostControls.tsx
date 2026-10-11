@@ -29,6 +29,7 @@ import {
   Star,
 } from 'lucide-react';
 import SeekBar, { seekRoom } from './SeekBar';
+import SyncStatus from './SyncStatus';
 import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
 import { getServerNow } from '@/lib/rmhtube/clock';
@@ -284,6 +285,8 @@ export default function HostControls({
             </p>
           )}
         </div>
+
+        <SyncStatus />
 
         {/* Volume — always visible */}
         <div className="shrink-0 flex items-center gap-1.5">

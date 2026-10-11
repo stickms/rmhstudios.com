@@ -41,6 +41,7 @@ import {
   StallSchema,
 } from '../../lib/rmhtube/schemas';
 import { extrapolate, reanchor, initialVideoState } from '../../lib/rmhtube/sync-math';
+import { startOffset } from '../../lib/rmhtube/media';
 import { PEER_WAIT_MAX_MS, PEER_WAIT_COOLDOWN_MS } from '../../lib/rmhtube/constants';
 import type { VideoState } from '../../lib/rmhtube/types';
 import type { RoomManager } from './room-manager';
@@ -467,8 +468,12 @@ export class SyncEngine {
    */
   onMediaChanged(room: RmhTubeRoom): VideoState {
     const now = Date.now();
+    const mode = room.currentItem?.live ? 'live' : 'vod';
     room.videoState = {
-      ...initialVideoState(now, room.currentItem?.live ? 'live' : 'vod'),
+      ...initialVideoState(now, mode),
+      // A "start at 1:30" link is the item's first anchor, so every player —
+      // the leader's included — starts there (see `startOffset`).
+      currentTime: mode === 'vod' && room.currentItem ? startOffset(room.currentItem.url) : 0,
       rev: room.videoState.rev + 1,
     };
     // A new item invalidates whoever was buffering the old one — including the

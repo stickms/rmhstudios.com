@@ -17,7 +17,7 @@
  */
 
 import { safeFetch } from '../ssrf-guard.server';
-import type { ParsedMedia } from './media';
+import { playableUrl, startOffset, withStart, type ParsedMedia } from './media';
 
 export type ProbedKind = 'progressive' | 'hls' | 'dash';
 
@@ -57,14 +57,16 @@ export function sniffMedia(bytes: Uint8Array): ProbedKind | null {
 
 /** The media item for a probed link. */
 export function probedMedia(rawUrl: string, kind: ProbedKind, disposition?: string | null): ParsedMedia {
-  const url = new URL(rawUrl);
+  // The engine hint replaces the fragment, so a start offset is put back after.
+  const start = startOffset(rawUrl);
+  const url = new URL(playableUrl(rawUrl));
   if (kind === 'hls' && !/\.m3u8$/i.test(url.pathname)) url.hash = '.m3u8';
   if (kind === 'dash' && !/\.mpd$/i.test(url.pathname)) url.hash = '.mpd';
   const fromDisposition = disposition?.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i)?.[1];
   const fromPath = decodeURIComponent(url.pathname.split('/').filter(Boolean).pop() ?? '');
   return {
     mediaType: 'direct',
-    url: url.toString(),
+    url: withStart(url.toString(), start),
     id: null,
     liveHint: kind === 'progressive' ? 'vod' : 'unknown',
     thumbnailUrl: null,

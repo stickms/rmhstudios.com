@@ -235,6 +235,20 @@ describe('RMHTube hub — queue advancement', () => {
   });
 });
 
+describe('RMHTube hub — start offsets', () => {
+  it('a "start at" link is the item’s first anchor, so the whole room starts there', async () => {
+    const [host, viewer] = await users('host', 'viewer');
+    await roomWith(host, viewer);
+    host.emit(C2S.QUEUE_ADD, { url: 'https://youtu.be/dQw4w9WgXcQ?t=1m30s' });
+    const np = await waitFor(() => nowPlaying(viewer)[0], 'now playing');
+    expect((np.data.videoState as { currentTime: number }).currentTime).toBe(90);
+
+    host.emit(C2S.SYNC_PLAY);
+    const playing = await waitFor(() => viewer.states.find((s) => s.playing), 'playing');
+    expect(extrapolate(playing, playing.updatedAt)).toBeGreaterThanOrEqual(90);
+  });
+});
+
 describe('RMHTube hub — waiting for a buffering viewer', () => {
   it('pauses the room for a stalled viewer and resumes when they recover', async () => {
     const [host, viewer] = await users('host', 'viewer');

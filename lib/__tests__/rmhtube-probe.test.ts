@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('@/lib/ssrf-guard.server', () => ({ safeFetch: vi.fn() }));
 
 import { classifyContentType, probeMediaUrl, sniffMedia } from '@/lib/rmhtube/probe.server';
-import { isNativeVideo, maybeRawMediaUrl, parseMedia } from '@/lib/rmhtube/media';
+import { isNativeVideo, maybeRawMediaUrl, parseMedia, playableUrl } from '@/lib/rmhtube/media';
 
 /**
  * Raw media links (RMHTube): links with no provider and no file extension are
@@ -88,6 +88,13 @@ describe('probeMediaUrl', () => {
     expect(media?.liveHint).toBe('unknown');
     // …and the pop-out treats it as a stream, not a native <video>.
     expect(isNativeVideo('direct', media!.url)).toBe(false);
+  });
+
+  it('keeps a start offset on a probed link alongside the engine hint', async () => {
+    const { fetcher } = host({ head: { type: 'application/vnd.apple.mpegurl' } });
+    const media = await probeMediaUrl('https://live.example.com/stream/abc#t=1:00', fetcher);
+    expect(media?.url).toBe('https://live.example.com/stream/abc#t=60&.m3u8');
+    expect(playableUrl(media!.url)).toBe('https://live.example.com/stream/abc#.m3u8');
   });
 
   it('refuses web pages, errors and blocked hosts', async () => {

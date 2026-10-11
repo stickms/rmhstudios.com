@@ -33,6 +33,7 @@ import {
   useEffect,
   useCallback,
   useState,
+  useMemo,
   useImperativeHandle,
   forwardRef,
   lazy,
@@ -54,6 +55,8 @@ import {
 } from '@/lib/rmhtube/constants';
 import { planSync, observePosition, type PlayerSample, type PositionObservation } from '@/lib/rmhtube/sync-plan';
 import { extrapolate } from '@/lib/rmhtube/sync-math';
+import { playableUrl } from '@/lib/rmhtube/media';
+import { registerResync, syncStats } from '@/lib/rmhtube/sync-stats';
 import { getServerNow, hasClockSync } from '@/lib/rmhtube/clock';
 import { toast } from '@/lib/rmhtube/toast-store';
 import { bindMediaElement } from '@/lib/media/media-session';
@@ -191,7 +194,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
   const playerRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const url = item?.url ?? null;
+  // Without its start offset: the room's first anchor applies that (startOffset).
+  const url = useMemo(() => (item ? playableUrl(item.url) : null), [item]);
   const masterVolume = useRmhTubeStore((s) => s.settings.masterVolume);
   const muted = useRmhTubeStore((s) => s.settings.muted);
   const captionsEnabled = useRmhTubeStore((s) => s.settings.captionsEnabled);
@@ -440,6 +444,11 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
     live: boolean,
   ) {
     const currentItem = itemRef.current;
+    syncStats.role = 'leader';
+    syncStats.driftS = null;
+    syncStats.rate = sample.rate;
+    syncStats.buffering = sample.buffering;
+    syncStats.updatedAt = now;
 
     if (currentItem && sample.ready) {
       const duration = !live && Number.isFinite(sample.duration) && sample.duration > 0
@@ -459,10 +468,13 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
     // deliberate change (the app's own controls, a keyboard shortcut, a chat
     // timestamp jump, a peer wait), never on a routine re-anchor — so it is
     // what tells the leader whether to follow or to report.
-    const roomChanged = state.rev !== lastAppliedRevRef.current;
-    lastAppliedRevRef.current = state.rev;
+    // Consumed only once the element can act on it: a new item's first anchor
+    // (its start offset included) arrives while the source is still loading,
+    // and spending the rev then left the leader at 0 and the room elsewhere.
+    const roomChanged = sample.ready && state.rev !== lastAppliedRevRef.current;
+    if (sample.ready) lastAppliedRevRef.current = state.rev;
 
-    if (sample.ready && roomChanged) {
+    if (roomChanged) {
       // Something moved the room. The leader's player is the source of truth
       // for what it is doing, but not for what it was asked to do — the app's
       // play button, ←/→, and a chat timestamp all speak through the room, and
@@ -646,8 +658,16 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
       seekLeadS: seekLeadRef.current,
     });
 
+    syncStats.role = 'viewer';
+    syncStats.driftS = state.mode === 'vod' && sample.ready ? plan.drift : null;
+    syncStats.rate = sample.rate;
+    syncStats.seekLeadS = seekLeadRef.current;
+    syncStats.buffering = sample.buffering;
+    syncStats.updatedAt = now;
+
     switch (plan.action) {
       case 'seek':
+        syncStats.seeks += 1;
         forceResyncRef.current = false;
         // Land, then fine-tune: the seek is only as accurate as the latency
         // estimate, so the residual is nudged down rather than left standing.
@@ -777,6 +797,28 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
       emit(C2S.SYNC_STALL, { stalled: false });
     }
   }, []);
+
+  // "Resync" from the status chip: a viewer snaps to the room, a leader
+  // re-reports on the next tick.
+  useEffect(() => {
+    const unregister = registerResync(() => {
+      if (isLeaderRef.current) {
+        lastHostReportRef.current = 0;
+        return;
+      }
+      userPausedRef.current = false;
+      emit(C2S.SYNC_REQUEST, {});
+      forceResyncRef.current = true;
+    });
+    return () => {
+      unregister();
+      syncStats.role = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    syncStats.seeks = 0;
+  }, [url]);
 
   // The room's rate is the baseline the tick nudges around.
   useEffect(() => { setAppliedRate(roomRate); }, [roomRate]);

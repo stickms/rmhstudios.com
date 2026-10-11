@@ -10,7 +10,7 @@
 import { describe, it, expect } from 'vitest';
 import { extrapolate, reanchor, isNewerAnchor, initialVideoState } from '@/lib/rmhtube/sync-math';
 import { planSync, observePosition, targetPosition, type PlayerSample } from '@/lib/rmhtube/sync-plan';
-import { parseMedia } from '@/lib/rmhtube/media';
+import { parseMedia, parseTimestamp, playableUrl, startOffset, withStart, isNativeVideo } from '@/lib/rmhtube/media';
 import type { VideoState } from '@/lib/rmhtube/types';
 
 const base = (over: Partial<VideoState> = {}): VideoState => ({
@@ -246,9 +246,9 @@ describe('parseMedia', () => {
     expect(parseMedia('https://www.youtube.com/watch?v=dQw4w9WgXcQ')?.liveHint).toBe('vod');
   });
 
-  it('normalises a YouTube link, keeping only the start time', () => {
+  it('normalises a YouTube link, keeping only the start time (as the shared #t=)', () => {
     const parsed = parseMedia('https://youtu.be/dQw4w9WgXcQ?t=42&si=trackingjunk');
-    expect(parsed?.url).toBe('https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=42');
+    expect(parsed?.url).toBe('https://www.youtube.com/watch?v=dQw4w9WgXcQ#t=42');
   });
 
   it('rejects YouTube pages that are not videos', () => {
@@ -296,5 +296,65 @@ describe('parseMedia', () => {
     expect(parseMedia('javascript:alert(1)')).toBeNull();
     expect(parseMedia('data:text/html,<script>alert(1)</script>')).toBeNull();
     expect(parseMedia('not a url at all')).toBeNull();
+  });
+});
+
+describe('start offsets', () => {
+  // "Start at 1:30" used to reach only the player (YouTube's ?t=), so the
+  // leader began at 1:30 while the room's anchor — and every viewer — said 0.
+  // It is now the item's first anchor; these pin the parsing that feeds it.
+  it('reads every common timestamp form', () => {
+    expect(parseTimestamp('90')).toBe(90);
+    expect(parseTimestamp('90.5')).toBe(90.5);
+    expect(parseTimestamp('90s')).toBe(90);
+    expect(parseTimestamp('1m30s')).toBe(90);
+    expect(parseTimestamp('1h2m3s')).toBe(3723);
+    expect(parseTimestamp('1:30')).toBe(90);
+    expect(parseTimestamp('01:02:03')).toBe(3723);
+    expect(parseTimestamp('npt:12')).toBe(12);
+    expect(parseTimestamp('10,20')).toBe(10);
+    for (const bad of ['', 'abc', '1:2:3:4', '0', '-5', 'm', 'NaN']) expect(parseTimestamp(bad), bad).toBeNull();
+  });
+
+  it('carries the start on every provider as #t= and strips it from what the player gets', () => {
+    const cases: Array<[string, number]> = [
+      ['https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=1m30s', 90],
+      ['https://www.youtube.com/embed/dQw4w9WgXcQ?start=45', 45],
+      ['https://www.twitch.tv/videos/123456789?t=1h0m5s', 3605],
+      ['https://vimeo.com/123456789#t=30s', 30],
+      ['https://cdn.example.com/movie.mp4#t=12.5', 12.5],
+      ['https://cdn.example.com/movie.mp4#t=10,20', 10],
+    ];
+    for (const [raw, start] of cases) {
+      const media = parseMedia(raw)!;
+      expect(startOffset(media.url), raw).toBe(start);
+      const play = playableUrl(media.url);
+      expect(startOffset(play), raw).toBe(0);
+      expect(play, raw).not.toMatch(/[?&#]t=|start=/);
+    }
+  });
+
+  it('reads the legacy ?t= on YouTube items queued before #t= existed', () => {
+    const legacy = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=42';
+    expect(startOffset(legacy)).toBe(42);
+    expect(playableUrl(legacy)).toBe('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+  });
+
+  it('never touches a non-YouTube query (a signed URL can have its own t=)', () => {
+    const signed = 'https://cdn.example.com/v.mp4?t=abc123&sig=xyz';
+    expect(startOffset(signed)).toBe(0);
+    expect(playableUrl(signed)).toBe(signed);
+  });
+
+  it('keeps the engine hint beside a start offset', () => {
+    const hinted = withStart('https://cdn.example.com/live/playlist#.m3u8', 30);
+    expect(startOffset(hinted)).toBe(30);
+    expect(playableUrl(hinted)).toBe('https://cdn.example.com/live/playlist#.m3u8');
+    expect(isNativeVideo('direct', hinted)).toBe(false);
+    expect(isNativeVideo('direct', 'https://cdn.example.com/movie.mp4#t=30')).toBe(true);
+  });
+
+  it('ignores a start on a live broadcast', () => {
+    expect(startOffset(parseMedia('https://www.twitch.tv/somestreamer?t=30')!.url)).toBe(0);
   });
 });
