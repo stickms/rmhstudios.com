@@ -16,7 +16,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { isLowPowerDevice, requestScreenWakeLock, supportsWebGL } from '@/lib/shared/platform';
+import { isLowPowerDevice, supportsWebGL } from '@/lib/shared/platform';
+import { useGameSession } from '@/hooks/useGameSession';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { createRun, emptyInput, stepRun, withInterpolatedPose, type RunState } from '@/lib/nightrail/game';
 import { NightrailRenderer3D } from '@/lib/nightrail/renderer3d';
@@ -329,10 +330,15 @@ export function NightrailGame() {
     startLevel(level);
   }, [startLevel]);
 
-  useEffect(() => {
-    if (uiState !== 'playing') return;
-    return requestScreenWakeLock();
-  }, [uiState]);
+  // Session contract: screen on while riding, pause when the tab hides.
+  // Restart stays on the game's own R binding (input.restart).
+  useGameSession({
+    id: 'nightrail',
+    active: uiState === 'playing',
+    onPause: () => {
+      if (runRef.current?.phase === 'playing') runRef.current.phase = 'paused';
+    },
+  });
 
   // ── The single rAF loop ──
 

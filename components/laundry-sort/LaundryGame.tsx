@@ -45,6 +45,7 @@ import { VersusTicker } from './hud/VersusTicker';
 import { WashLegend } from './hud/WashLegend';
 import './laundry.css';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
+import { useGameSession } from '@/hooks/useGameSession';
 
 export function LaundryGame() {
   const { t } = useTranslation('c-laundry-sort');
@@ -68,6 +69,8 @@ export function LaundryGame() {
   const error = useLaundryStore((s) => s.error);
 
   const running = screen === 'playing';
+  // Session contract: keep the screen on through a match.
+  useGameSession({ id: 'laundry-sort', active: running });
 
   // ── Connection ────────────────────────────────────────────────────────────
 

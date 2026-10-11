@@ -13,6 +13,7 @@ import { RadialHub } from './RadialHub';
 import { RadialNavRail } from './RadialNavRail';
 import { RadialLiveRail } from './RadialLiveRail';
 import { RailSlotContext } from './rail-slot';
+import { TabBadge } from '@/components/site/TabBadge';
 
 /**
  * The four quick panels, behind a lazy boundary — same treatment, and the same
@@ -188,6 +189,7 @@ function RadialTopBar() {
 
   return (
     <header className="radial-topbar">
+      <TabBadge count={unread + notifications} />
       <Link
         to="/"
         className="radial-topbar__brand"

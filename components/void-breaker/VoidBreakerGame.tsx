@@ -1,5 +1,6 @@
 'use client';
 
+import { useGameSession } from '@/hooks/useGameSession';
 import { useRef, useEffect, useCallback, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { asset } from '@/lib/storage/asset';
@@ -243,6 +244,10 @@ export function VoidBreakerGame() {
       window.removeEventListener('blur', blur);
     };
   }, [pauseMusic]);
+
+  // Session contract: keep the screen on during a run. Pause-on-hide is the
+  // window `blur` handler above, which already fires when the tab hides.
+  useGameSession({ id: 'void-breaker', active: uiState === 'playing' });
 
   // Mouse aim
   useEffect(() => {

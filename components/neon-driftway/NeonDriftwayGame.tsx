@@ -41,7 +41,8 @@ import {
   LEVELS, LEVEL_2_UNLOCK_DISTANCE, LEVEL_3_UNLOCK_DISTANCE, MPS_PER_UNIT,
 } from '@/lib/neon-driftway/constants';
 import type { GameState, InputState, LevelId, RunStats } from '@/lib/neon-driftway/types';
-import { isFullscreen, isLowPowerDevice, requestScreenWakeLock, supportsWebGL, toggleFullscreen } from '@/lib/shared/platform';
+import { isFullscreen, isLowPowerDevice, supportsWebGL, toggleFullscreen } from '@/lib/shared/platform';
+import { useGameSession } from '@/hooks/useGameSession';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { NeonDriftwayUI } from './NeonDriftwayUI';
 import { NeonDriftwayTouchControls } from './NeonDriftwayTouchControls';
@@ -424,12 +425,17 @@ export function NeonDriftwayGame() {
     };
   }, []);
 
-  // ── Keep the screen on while driving ──
+  // ── Session contract: screen on while driving, pause when the tab hides.
+  //    Restart stays on the game's own R binding (input.restart). ──
 
-  useEffect(() => {
-    if (uiState !== 'playing' && uiState !== 'multiplayerPlaying') return;
-    return requestScreenWakeLock();
-  }, [uiState]);
+  useGameSession({
+    id: 'neon-driftway',
+    active: uiState === 'playing' || uiState === 'multiplayerPlaying',
+    onPause: () => {
+      const game = gameRef.current;
+      if (game?.state === 'playing' && !game.isMultiplayer) game.state = 'paused' as GameState;
+    },
+  });
 
   // ── Frame loop ──
 

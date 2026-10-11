@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 
 import { Switch } from '@/components/ui/switch';
 import { Spinner } from '@/components/ui/spinner';
+import { readTabBadgePref, writeTabBadgePref } from '@/lib/tab-badge';
 import {
   NOTIFY_CATEGORIES,
   CATEGORY_DEFAULTS,
@@ -208,6 +209,38 @@ export function NotificationSettings() {
         </div>
         <p className="mt-2 text-xs text-site-text-dim">{prefs.tz}</p>
       </section>
+
+      <TabBadgeToggle />
     </div>
+  );
+}
+
+/** Device-local: whether this browser shows "(3)" and a dot on the tab. */
+function TabBadgeToggle() {
+  const { t } = useTranslation('settings-notifications');
+  const [on, setOn] = useState(true);
+  useEffect(() => setOn(readTabBadgePref()), []);
+  return (
+    <section>
+      <label className="flex items-center justify-between gap-3">
+        <span className="min-w-0">
+          <span className="block text-sm font-semibold text-site-text">
+            {t('tab-badge', { defaultValue: 'Unread count in browser tab' })}
+          </span>
+          <span className="block text-xs text-site-text-muted">
+            {t('tab-badge-desc', {
+              defaultValue: 'Shows the number of unread messages and notifications in the tab title and icon on this device.',
+            })}
+          </span>
+        </span>
+        <Switch
+          checked={on}
+          onCheckedChange={(v) => {
+            setOn(v);
+            writeTabBadgePref(v);
+          }}
+        />
+      </label>
+    </section>
   );
 }

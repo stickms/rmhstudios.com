@@ -13,6 +13,7 @@ import { loadHiScore } from '@/lib/dream-rift/highscore';
 import type { Transport } from '@/lib/dream-rift/net/transport';
 import type { Difficulty } from '@/lib/dream-rift/types';
 import { useDreamRift } from '@/lib/dream-rift/store';
+import { useGameSession } from '@/hooks/useGameSession';
 import { useRuntime } from './runtime';
 import { MobileControls } from './MobileControls';
 import { DialogueOverlay, PauseOverlay, StageBanner } from './Overlays';
@@ -80,6 +81,17 @@ export function GameStage({ start, onExit }: { start: StartInfo; onExit: () => v
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // Session contract: screen on during a stage; a solo run pauses when the
+    // tab hides (co-op can't pause for everyone, so it only keeps the screen on).
+    useGameSession({
+        id: 'dream-rift',
+        active: true,
+        onPause: () => {
+            const s = useDreamRift.getState();
+            if (s.mode === 'single' && !s.paused) s.setPaused(true);
+        },
+    });
 
     const paused = useDreamRift((s) => s.paused);
     const showHitbox = useDreamRift((s) => s.showHitbox);

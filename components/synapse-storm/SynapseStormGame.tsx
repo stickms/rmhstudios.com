@@ -10,6 +10,7 @@ import type { ScoreSaveData } from '../../lib/synapse-storm/persistence';
 import { useKeyboardInset } from '@/hooks/useKeyboardInset';
 import { useLobbyInvite } from '@/hooks/useLobbyLink';
 import './SynapseStorm.css';
+import { useGameSession } from '@/hooks/useGameSession';
 
 interface SynapseStormGameProps {
     onSaveScore?: (data: ScoreSaveData) => Promise<void>;
@@ -22,6 +23,8 @@ export const SynapseStormGame: React.FC<SynapseStormGameProps> = ({ onSaveScore,
     const [topView, setTopView] = useState<TopLevelView>('main');
     const [scoreSaved, setScoreSaved] = useState(false);
     const { state, startGame, solvePuzzle, skipMemoryPhase, returnToMenu } = useGameEngine();
+    // Session contract: keep the screen on while a round is running.
+    useGameSession({ id: 'synapse-storm', active: state.status === 'playing' });
 
     // Several puzzle types are typed, so a keyboard can be up at any moment
     // during a run. Publishing its height lets the shell end where the keyboard

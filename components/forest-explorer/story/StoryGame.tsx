@@ -1,5 +1,6 @@
 'use client';
 
+import { useGameSession } from '@/hooks/useGameSession';
 import { Canvas } from '@react-three/fiber';
 import { useState, useEffect, useCallback, useRef } from 'react';
 // `m as motion`, not `motion`: `Providers` wraps the app in `LazyMotion`, and `m`
@@ -91,6 +92,15 @@ export function StoryGame() {
             return () => clearTimeout(timer);
         }
     }, [storyFlags.act3_forest_restored, currentAct]);
+
+    // Session contract: screen on while exploring, pause when the tab hides.
+    useGameSession({
+        id: 'forest-explorer',
+        active: !showMenu && !showCompletion,
+        onPause: () => {
+            if (!showPuzzleOverlay && !journalOpen) setPaused(true);
+        },
+    });
 
     // ESC key → explicit pause (only when no overlay is active)
     useEffect(() => {

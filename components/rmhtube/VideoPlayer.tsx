@@ -56,6 +56,7 @@ import { planSync, observePosition, type PlayerSample, type PositionObservation 
 import { extrapolate } from '@/lib/rmhtube/sync-math';
 import { getServerNow, hasClockSync } from '@/lib/rmhtube/clock';
 import { toast } from '@/lib/rmhtube/toast-store';
+import { bindMediaElement } from '@/lib/media/media-session';
 import type { ClientQueueItem, VideoState } from '@/lib/rmhtube/types';
 
 const ReactPlayer = lazy(() => import('react-player'));
@@ -257,6 +258,15 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
     el.addEventListener('volumechange', onVolumeChange);
     return () => el.removeEventListener('volumechange', onVolumeChange);
   }, [ready, updateSettings]);
+
+  // ─── OS media controls follow the element (metadata + handlers are owned by
+  // the room page, which knows who may control the room) ───────────
+  useEffect(() => {
+    if (!ready) return;
+    const el = playerRef.current;
+    if (!el) return;
+    return bindMediaElement(el);
+  }, [ready, item?.id]);
 
   // ─── Captions ──────────────────────────────────────────────────
   //

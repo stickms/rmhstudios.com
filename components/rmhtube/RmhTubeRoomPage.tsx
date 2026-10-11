@@ -18,6 +18,7 @@ import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { S2C, C2S } from '@/lib/rmhtube/events';
 import { SHORTCUTS, AUTO_AFK_TIMEOUT_MS } from '@/lib/rmhtube/constants';
 import { toast } from '@/lib/rmhtube/toast-store';
+import { clearMediaSession, setMediaHandlers, setMediaMeta } from '@/lib/media/media-session';
 import RmhTubeHeader from '@/components/rmhtube/RmhTubeHeader';
 import SettingsPanel from '@/components/rmhtube/SettingsPanel';
 import VideoPlayer from '@/components/rmhtube/VideoPlayer';
@@ -123,6 +124,38 @@ export default function RmhTubeRoomPage() {
       if (afkTimerRef.current) clearTimeout(afkTimerRef.current);
     };
   }, []);
+
+  // ─── Lock-screen / media-key controls ───────────────────────────
+  //
+  // Everyone gets the title and artwork. Only the leader gets handlers, and
+  // they go through the same socket events as the keyboard shortcuts below, so
+  // a headset button can never pause the room for a viewer who couldn't
+  // pause it from the page.
+  const mediaItemId = room?.currentItem?.id ?? null;
+  const mediaTitle = room?.currentItem?.title ?? null;
+  const mediaArt = room?.currentItem?.thumbnailUrl ?? null;
+  const mediaRoomName = room?.name ?? '';
+  const isMediaLeader = !!room && room.leaderUserId === room.myUserId;
+  useEffect(() => {
+    if (!mediaItemId || !mediaTitle) {
+      clearMediaSession();
+      return;
+    }
+    setMediaMeta({ title: mediaTitle, artist: mediaRoomName, album: 'RMHTube', artwork: mediaArt });
+    const current = () => useRmhTubeStore.getState().room?.videoState.currentTime ?? 0;
+    setMediaHandlers(
+      isMediaLeader
+        ? {
+            play: () => emit(C2S.SYNC_PLAY, {}),
+            pause: () => emit(C2S.SYNC_PAUSE, {}),
+            seekTo: (time) => emit(C2S.SYNC_SEEK, { time }),
+            seekBy: (delta) => emit(C2S.SYNC_SEEK, { time: Math.max(0, current() + delta) }),
+            next: () => emit(C2S.QUEUE_SKIP, {}),
+          }
+        : {},
+    );
+  }, [mediaItemId, mediaTitle, mediaArt, mediaRoomName, isMediaLeader]);
+  useEffect(() => () => clearMediaSession(), []);
 
   // ─── Keyboard Shortcuts (Phase 2.3) ─────────────────────────────
   useEffect(() => {
