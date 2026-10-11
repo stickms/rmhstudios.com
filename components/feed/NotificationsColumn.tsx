@@ -37,6 +37,7 @@ import { ColumnHeader } from'./ColumnHeader';
 import { SwipeRow } from'@/components/ui/swipe-row';
 import { IconButton } from'@/components/ui/icon-button';
 import type { RemindTarget } from'@/components/reminders/RemindMeDialog';
+import { isSiteRelativePath } from'@/lib/reminders/schema';
 
 const RemindMeDialog = lazy(() => import('@/components/reminders/RemindMeDialog'));
 
@@ -527,7 +528,11 @@ export function NotificationsColumn({
  label:
  n.preview?.slice(0, 120) ||
  `${actorName} ${t(`notification-verb-${n.type.toLowerCase()}`, { defaultValue: meta.verb })}`,
- url: resolveLink(n) ??'/notifications',
+ // A reminder only ever opens a same-site path (the route enforces it).
+ url: (() => {
+ const link = resolveLink(n);
+ return link && isSiteRelativePath(link) ? link :'/notifications';
+ })(),
  });
  return (
  <li key={g.key}>

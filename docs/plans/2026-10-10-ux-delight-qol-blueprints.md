@@ -620,3 +620,26 @@ check in the default, `light` and `high-contrast` themes at 375 px and
 desktop. New strings go through `t()` with `pnpm i18n:extract`; no new
 namespace is needed except possibly `reminders` and `guestbook`, which must
 be added to `NAMESPACES` in `lib/i18n/config.ts`.
+
+## §4 — Implementation status (2026-10-11)
+
+Built: U1, U3, U4, U5, U6, U7, U9, U10, U11, U14, U15. Not built (not
+requested in this batch): U2, U8, U12, U13. Where the build differs from the
+blueprint above, the build wins and the reason is here.
+
+| #   | Where it landed | Differences from the blueprint |
+| --- | --- | --- |
+| U1  | `lib/media/media-session.ts`; bound in `lib/rmhmusic/spotify-player.ts`, `components/rmhtube/{VideoPlayer,RmhTubeRoomPage}.tsx` | RMHMusic gets play/pause everywhere and seek only outside a room; skip is not offered (it is a leader socket action). RMHTube handlers are leader-only and go through the same socket events as the keyboard shortcuts. |
+| U3  | `hooks/useGameSession.ts`, gate `lib/__tests__/game-session.test.ts` | No shared `<PausedOverlay>`: every adopting game already had its own pause UI, so `onPause` opens that instead. 12 games adopt it; 11 are documented exemptions (turn-based, idle, online-only) in the gate's one-directional list. |
+| U4  | `lib/game/submit.server.ts` (`moment`, `classifyRun`), `components/games/{ResultMoment,result-moment-slot}.tsx` | Wired into Void Breaker, Neon Driftway, Nightrail and Synapse Storm. Share reuses `ShareMomentSheet` (kind `arcade`). |
+| U5  | `components/site/TabBadge.tsx`, `lib/tab-badge.ts` | Also wires the installed-app badge, which `useAppBadge` had never been mounted to do. Quiet hours are not consulted client-side. |
+| U6  | `lib/push/send.server.ts` (`pushActionsFor`), `public/sw.js`, `app/routes/api/push/action.ts` | Uses the session cookie instead of an HMAC token: the worker's fetch is same-origin, and the route derives the target from the caller's own notification row, so a token added nothing. Verbs: Like (mentions), Follow back, Mark as read. |
+| U7  | `prisma` `Reminder`, `lib/reminders/*`, `app/routes/api/reminders/*`, `components/reminders/*` | Posts (overflow menu) and notifications (button + swipe). Pending list is a "Reminders" chip in `/saves`. Reminders bypass the "system" mute. |
+| U9  | `lib/neon-driftway/ghost.ts`, `app/routes/api/replays/ghost.ts`, `getGhost`/`saveGhost` in `lib/replays.server.ts` | Neon Driftway only. Uses a 10 Hz position trace (a `keyframe` replay) rather than re-simulating inputs. "World #1" is tied to the validated leaderboard. No live split delta. |
+| U10 | `components/shared/pop-out.tsx` | RMHTube pops out for native `<video>` only: YouTube/Twitch/Vimeo/HLS/DASH players are custom elements, which never upgrade in a PiP window's separate registry, so those keep classic video PiP. The music mini-player pops out everywhere. |
+| U11 | `components/ui/swipe-row.tsx` | DMs have no threaded replies, so swipe-to-reply quotes the message into the composer; the same action is in the message menu. |
+| U14 | `lib/game/photo-mode.ts`, `components/games/PhotoMode.tsx`, both 3D renderers | Neon Driftway frames from the cockpit rig (it has no exterior car model); Nightrail offsets its chase camera from a frozen pose. No depth of field; no direct post-to-feed — download or native share. |
+| U15 | `prisma` `GuestbookEntry` + `UserProfile.guestbookMode`, `lib/guestbook/*`, `components/profile/GuestbookPanel.tsx` | The owner sets the mode inside the tab rather than in profile settings. Visitors report the author through the existing user report flow. |
+
+New English strings are in `locales/en` and listed in `KNOWN_UNTRANSLATED`
+(`lib/__tests__/i18n-catalogs.test.ts`) until the translate pipeline runs.

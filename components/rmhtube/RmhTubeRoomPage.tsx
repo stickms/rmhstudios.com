@@ -20,6 +20,7 @@ import { SHORTCUTS, AUTO_AFK_TIMEOUT_MS } from '@/lib/rmhtube/constants';
 import { toast } from '@/lib/rmhtube/toast-store';
 import { clearMediaSession, setMediaHandlers, setMediaMeta } from '@/lib/media/media-session';
 import { PopOutPortal, usePopOut } from '@/components/shared/pop-out';
+import { isNativeVideo } from '@/lib/rmhtube/media';
 import { PictureInPicture2 } from 'lucide-react';
 import RmhTubeHeader from '@/components/rmhtube/RmhTubeHeader';
 import SettingsPanel from '@/components/rmhtube/SettingsPanel';
@@ -274,13 +275,29 @@ export default function RmhTubeRoomPage() {
   }, [room]);
 
   const handlePiP = useCallback(() => {
-    if (!popOut.supported) {
-      videoPlayerRef.current?.togglePiP();
+    if (popOut.win) {
+      popOut.close();
       return;
     }
-    if (popOut.win) popOut.close();
-    else void popOut.open({ width: 480, height: 420 });
+    // The pop-out can only host a native <video>; every other provider is a
+    // custom element that would not upgrade in the PiP window (see
+    // isNativeVideo). Those keep the browser's own video PiP, as before.
+    const item = useRmhTubeStore.getState().room?.currentItem;
+    if (popOut.supported && item && isNativeVideo(item.mediaType, item.url)) {
+      void popOut.open({ width: 480, height: 420 });
+      return;
+    }
+    videoPlayerRef.current?.togglePiP();
   }, [popOut]);
+
+  // A queue that moves on to a non-native source brings the player home.
+  const currentMediaType = room?.currentItem?.mediaType;
+  const currentUrl = room?.currentItem?.url;
+  useEffect(() => {
+    if (popOut.win && !(currentMediaType && currentUrl && isNativeVideo(currentMediaType, currentUrl))) {
+      popOut.close();
+    }
+  }, [popOut, currentMediaType, currentUrl]);
   pipRef.current = handlePiP;
 
   const handleFullscreen = useCallback(() => {

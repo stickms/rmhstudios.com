@@ -74,6 +74,7 @@
 @source not "../components/rmhtube";
 @source not "../components/rmhtype";
 @source not "../components/security";
+@source not "../components/share";
 @source not "../components/signal-forge";
 @source not "../components/sohumbum";
 @source not "../components/sohumtracker";
@@ -116,6 +117,7 @@
 @source not "../lib/rmhstudy";
 @source not "../lib/rmhtube";
 @source not "../lib/rmhtype";
+@source not "../lib/shortcuts";
 @source not "../lib/signal-forge";
 @source not "../lib/sohumtracker";
 @source not "../lib/store";

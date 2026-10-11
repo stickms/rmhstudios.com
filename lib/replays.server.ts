@@ -16,7 +16,7 @@ import { prisma } from '@/lib/prisma.server';
 import { getReplayable, REPLAY_SIZE_CAP, type ReplayData } from '@/lib/game/replay';
 import { verifyDailyPuzzle } from '@/lib/daily-puzzles/replay.server';
 import { getGameAdapter } from '@/lib/game/adapters.server';
-import { userDisplaySelect, resolveUserDisplay } from '@/lib/user-display';
+import { userChipSelect, userDisplaySelect, resolveUserDisplay } from '@/lib/user-display';
 
 /** Typed failure modes so API routes can map to precise HTTP statuses. */
 export type ReplayErrorCode =
@@ -237,7 +237,7 @@ const GHOST_GAMES = new Set(['neon-driftway']);
 export interface GhostView {
   replayId: string;
   data: unknown;
-  owner: { id: string; name: string | null; handle: string | null };
+  owner: { id: string; name: string | null; handle: string | null; image: string | null };
 }
 
 const ghostWhere = (game: string, level: number) => ({
@@ -295,7 +295,7 @@ export async function getGhost(input: {
   const select = {
     id: true,
     data: true,
-    user: { select: { id: true, name: true, handle: true } },
+    user: { select: userChipSelect },
   } as const;
 
   if (input.vs === 'pb') {

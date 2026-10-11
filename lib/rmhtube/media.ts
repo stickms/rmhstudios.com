@@ -241,6 +241,23 @@ function isAdaptive(pathname: string): boolean {
   return HLS_EXTENSION.test(pathname) || DASH_EXTENSION.test(pathname);
 }
 
+/**
+ * Whether the player for this item is a plain `<video>` (a progressive file).
+ *
+ * Every other provider — YouTube, Twitch, Vimeo, HLS, DASH — is a custom
+ * element, and custom elements only upgrade in the window whose registry
+ * defined them. Rendered into a Document Picture-in-Picture window they would
+ * stay inert, so the pop-out (U10) is offered for native video only.
+ */
+export function isNativeVideo(mediaType: MediaType, url: string): boolean {
+  if (mediaType !== 'direct') return false;
+  try {
+    return !isAdaptive(new URL(url).pathname);
+  } catch {
+    return false;
+  }
+}
+
 // ─── Back-compat helpers ─────────────────────────────────────────
 
 /**
