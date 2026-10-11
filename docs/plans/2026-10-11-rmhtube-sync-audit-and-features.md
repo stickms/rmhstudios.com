@@ -54,10 +54,11 @@ Start-at (`#t=30`) put both players at exactly 30.00.
 The same script then ran against streams generated locally with ffmpeg
 (VP9/Opus in fMP4, served cross-origin):
 
-| Source | Result |
+| Source | Result (final round, after every fix below) |
 | ------ | ------ |
-| HLS VOD (`hls.js`), full scenario incl. leadership + failover | 19/19 — steady state 0.01–0.06 s, native pause 0.000 s, failover 0.05 s |
-| DASH VOD (`dash.js`), controls scenario | 14/14 — steady state 0.04–0.07 s, native scrub 0.005 s |
+| Native WebM, full scenario ×2 | 19/19 both — steady state 0.002–0.08 s, native scrub 0.01–0.07 s, native pause 0.000 s, Resync 0.02–0.03 s, failover 0.05 s |
+| HLS VOD (`hls.js`), full scenario | 19/19 — steady state 0.03 s, native scrub 0.01 s, Resync 0.02 s, failover 0.01 s |
+| DASH VOD (`dash.js`), controls scenario | 14/14 — steady state 0.08–0.09 s, native scrub 0.007 s, Resync 0.05 s |
 | Live HLS (sliding 20 s window) | 10/10 — all players start ~8 s behind the edge together; site + native play/pause mirrored; a viewer's DVR seek and local pause left alone; Jump to live returns them to the edge |
 
 YouTube, Twitch and Vimeo could not be run: this environment's network
@@ -89,8 +90,10 @@ unit, simulation and hub suites are the regression gate.
 | 18 | Sync chip read the plan's drift, which is 0 while corrections are suspended | "In sync" shown to a viewer who had paused | Offset measured directly; "You paused" state |
 | 19 | A player that wasn't already nudging treated anything under 0.5 s as settled | An HLS viewer started 0.40 s off and stayed there | Nudge-capable players start correcting past 0.2 s (`SYNC_NUDGE_ENTER_S`) |
 | 20 | An `.m3u8` is assumed VOD until the leader reports it live; viewers were placed by that VOD anchor at "0" | On a live HLS stream, viewers sat at the start of the DVR window, ~20 s behind the leader, for good | Once per live item a player well behind the live edge moves up to it; "Resync now" becomes **Jump to live** |
+| 21 | A viewer who paused their own player was still "corrected" | Seeked forward every 1.5 s while paused — a re-fetch and a jumping frame — then resumed from a stale chase position ~0.4 s off | No corrections during a local pause; the tap/Resync that ends it forces one seek (lands within 0.01 s) |
+| 22 | Nudge gain 0.08 | A 0.4 s residual ran at the 5 % floor: 8 s to close | Gain 0.25 — 0.4 s and up runs the full 10 % |
 
-Rows 14–20 were found by a live run (§1.1), not by the unit suites — the
+Rows 14–22 were found by a live run (§1.1), not by the unit suites — the
 simulation measured seek cost with perfect knowledge of when frames resumed,
 which a real player never has. It now uses the same tick-based feedback.
 
