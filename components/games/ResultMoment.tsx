@@ -46,7 +46,10 @@ export default function ResultMoment({
       : t('moment-pb', { defaultValue: 'New personal best' });
   const detail = [
     moment.previous !== null
-      ? t('moment-previous', { defaultValue: 'Previous best {{value}}', value: moment.previous.toLocaleString() })
+      ? t('moment-previous', {
+          defaultValue: 'Previous best {{value}}',
+          value: moment.previous.toLocaleString(),
+        })
       : null,
     moment.rank !== null
       ? t('moment-rank', { defaultValue: 'Rank #{{rank}}', rank: moment.rank.toLocaleString() })
@@ -74,7 +77,9 @@ export default function ResultMoment({
             {headline}
           </span>
           <span className="block text-lg font-semibold tabular-nums text-site-text">{score}</span>
-          {detail ? <span className="block truncate text-xs text-site-text-muted">{detail}</span> : null}
+          {detail ? (
+            <span className="block truncate text-xs text-site-text-muted">{detail}</span>
+          ) : null}
         </span>
         <button
           type="button"
@@ -99,7 +104,11 @@ export default function ResultMoment({
             open={sharing}
             onOpenChange={setSharing}
             kind="arcade"
-            payload={{ title: gameName, value: score, subtitle: [headline, detail].filter(Boolean).join(' · ') }}
+            payload={{
+              title: gameName,
+              value: score,
+              subtitle: [headline, detail].filter(Boolean).join(' · '),
+            }}
           />
         </Suspense>
       ) : null}

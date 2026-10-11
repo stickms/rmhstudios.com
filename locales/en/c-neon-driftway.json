@@ -88,5 +88,7 @@
   "ghost-mode-top": "Ghost: world #1",
   "ghost-pb-label": "Your best",
   "ghost-toggle-aria": "Change race ghost",
-  "ghost-top-label": "World #1"
+  "ghost-top-label": "World #1",
+  "paused-photo-hint": "Press P for photo mode",
+  "photo-mode": "Photo mode"
 }

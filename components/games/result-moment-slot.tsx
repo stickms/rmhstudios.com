@@ -54,7 +54,9 @@ export function useScoreMoment() {
   const [moment, setMoment] = useState<ScoreMomentView | null>(null);
   const take = useCallback(async (resOrBody: unknown) => {
     const next =
-      resOrBody instanceof Response ? await readScoreMoment(resOrBody) : parseScoreMoment(resOrBody);
+      resOrBody instanceof Response
+        ? await readScoreMoment(resOrBody)
+        : parseScoreMoment(resOrBody);
     if (next) setMoment(next);
   }, []);
   const clear = useCallback(() => setMoment(null), []);

@@ -22,11 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MenuItem } from '@/components/ui/menu';
-import {
-  resolvePreset,
-  type ReminderKind,
-  type ReminderPreset,
-} from '@/lib/reminders/schema';
+import { resolvePreset, type ReminderKind, type ReminderPreset } from '@/lib/reminders/schema';
 
 export interface RemindTarget {
   kind: ReminderKind;
@@ -71,7 +67,11 @@ export default function RemindMeDialog({
         toast.error(data.error || t('remind-error', { defaultValue: "Couldn't set the reminder" }));
         return;
       }
-      const when = at.toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' });
+      const when = at.toLocaleString(undefined, {
+        weekday: 'short',
+        hour: 'numeric',
+        minute: '2-digit',
+      });
       toast.success(t('remind-set', { defaultValue: 'Reminder set for {{when}}', when }));
       onOpenChange(false);
     } catch {
@@ -84,7 +84,11 @@ export default function RemindMeDialog({
   const presets: Array<{ id: ReminderPreset; icon: typeof Timer; label: string }> = [
     { id: 'hour', icon: Timer, label: t('remind-hour', { defaultValue: 'In 1 hour' }) },
     { id: 'tonight', icon: Moon, label: t('remind-tonight', { defaultValue: 'Tonight' }) },
-    { id: 'tomorrow', icon: Sun, label: t('remind-tomorrow', { defaultValue: 'Tomorrow morning' }) },
+    {
+      id: 'tomorrow',
+      icon: Sun,
+      label: t('remind-tomorrow', { defaultValue: 'Tomorrow morning' }),
+    },
     { id: 'week', icon: CalendarClock, label: t('remind-week', { defaultValue: 'Next week' }) },
   ];
 

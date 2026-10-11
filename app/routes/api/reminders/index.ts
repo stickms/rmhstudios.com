@@ -12,10 +12,7 @@ export const Route = createFileRoute('/api/reminders/')({
     handlers: {
       GET: defineHandler({ rateLimit: 'read' }, async ({ userId }) => {
         const reminders = await listPendingReminders(userId);
-        return Response.json(
-          { reminders },
-          { headers: { 'Cache-Control': 'private, no-store' } },
-        );
+        return Response.json({ reminders }, { headers: { 'Cache-Control': 'private, no-store' } });
       }),
       POST: defineHandler(
         { rateLimit: 'write', body: createReminderSchema },

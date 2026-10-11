@@ -51,7 +51,9 @@ let baseIconReady: Promise<HTMLImageElement | null> | null = null;
 let currentBlobUrl: string | null = null;
 
 function iconLink(): HTMLLinkElement | null {
-  return document.querySelector<HTMLLinkElement>('link[rel="icon"][type="image/svg+xml"], link[rel="icon"]');
+  return document.querySelector<HTMLLinkElement>(
+    'link[rel="icon"][type="image/svg+xml"], link[rel="icon"]',
+  );
 }
 
 function loadBaseIcon(): Promise<HTMLImageElement | null> {
@@ -90,11 +92,14 @@ export async function setFaviconDot(on: boolean): Promise<void> {
   if (!ctx) return;
   ctx.drawImage(img, 0, 0, size, size);
   // The theme's accent, read once per redraw (which only happens on 0 ↔ n).
-  const accent = getComputedStyle(document.documentElement).getPropertyValue('--site-accent').trim();
+  const accent = getComputedStyle(document.documentElement)
+    .getPropertyValue('--site-accent')
+    .trim();
   const r = size * 0.22;
   ctx.beginPath();
   ctx.arc(size - r - 2, r + 2, r + 3, 0, Math.PI * 2);
-  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--site-bg').trim() || '#000';
+  ctx.fillStyle =
+    getComputedStyle(document.documentElement).getPropertyValue('--site-bg').trim() || '#000';
   ctx.fill();
   ctx.beginPath();
   ctx.arc(size - r - 2, r + 2, r, 0, Math.PI * 2);

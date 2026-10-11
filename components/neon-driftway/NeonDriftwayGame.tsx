@@ -24,7 +24,7 @@
  *    a bare phone is just a broken-looking game.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   neonDriftwaySave,
@@ -43,6 +43,9 @@ import {
 import type { GameState, InputState, LevelId, RunStats } from '@/lib/neon-driftway/types';
 import { isFullscreen, isLowPowerDevice, supportsWebGL, toggleFullscreen } from '@/lib/shared/platform';
 import { useGameSession } from '@/hooks/useGameSession';
+
+// U14 — loaded only when a player opens photo mode.
+const PhotoMode = lazy(() => import('@/components/games/PhotoMode'));
 import {
   GhostPlayer,
   GhostRecorder,
@@ -150,6 +153,18 @@ export function NeonDriftwayGame() {
   const unlocksRef = useRef(unlockedLevels);
   const stereoRef = useRef(false);
   const multiplayerRoomRef = useRef<string | null>(null);
+
+  // ── Photo mode (U14): solo only; the sim is paused for the whole session ──
+  const [photoMode, setPhotoMode] = useState(false);
+  const photoModeRef = useRef(false);
+  photoModeRef.current = photoMode;
+  const openPhotoMode = useCallback(() => {
+    const game = gameRef.current;
+    if (!game || game.isMultiplayer || stereoRef.current) return;
+    if (game.state !== 'playing' && game.state !== 'paused') return;
+    if (game.state === 'playing') game.state = 'paused' as GameState;
+    setPhotoMode(true);
+  }, []);
 
   // ── Ghost racing (U9) — record solo runs, race your best (or the board's) ──
   const ghostRecorderRef = useRef(new GhostRecorder());
@@ -424,9 +439,16 @@ export function NeonDriftwayGame() {
         case 'KeyA': case 'ArrowLeft': input.left = down; break;
         case 'KeyD': case 'ArrowRight': input.right = down; break;
         case 'ShiftLeft': case 'ShiftRight': input.boost = down; break;
-        case 'Escape': input.pause = down; break;
+        // In photo mode Escape closes the panel; it must not also unpause.
+        case 'Escape': if (!photoModeRef.current) input.pause = down; break;
         case 'KeyR': input.restart = down; break;
         case 'KeyE': input.ability = down; break;
+        case 'KeyP':
+          if (down && !e.repeat) {
+            if (photoModeRef.current) setPhotoMode(false);
+            else openPhotoMode();
+          }
+          break;
       }
 
       if (down && e.code === 'KeyC') rendererRef.current?.recenterView();
@@ -464,7 +486,8 @@ export function NeonDriftwayGame() {
       window.removeEventListener('keyup', ku);
       window.removeEventListener('blur', blur);
     };
-  }, []);
+    // `openPhotoMode` is stable (no deps), so this still binds exactly once.
+  }, [openPhotoMode]);
 
   // ── Session contract: screen on while driving, pause when the tab hides.
   //    Restart stays on the game's own R binding (input.restart). ──
@@ -675,6 +698,7 @@ export function NeonDriftwayGame() {
   }, []);
 
   const handleCanvasPointerUp = useCallback(() => {
+    if (photoModeRef.current) return;
     const game = gameRef.current;
     if (game?.state === 'paused') game.resume();
   }, []);
@@ -752,7 +776,17 @@ export function NeonDriftwayGame() {
         style={{ touchAction: 'none' }}
       />
 
-      <NeonDriftwayHud ref={hudRef} stereo={viewMode === 'vr'} visible={playing} />
+      <NeonDriftwayHud ref={hudRef} stereo={viewMode === 'vr'} visible={playing && !photoMode} />
+
+      {photoMode && rendererRef.current && (
+        <Suspense fallback={null}>
+          <PhotoMode
+            adapter={rendererRef.current}
+            gameName="Neon Driftway"
+            onExit={() => setPhotoMode(false)}
+          />
+        </Suspense>
+      )}
 
       {/* Viewer mode hides every menu affordance, so keep one way out. */}
       {viewMode === 'vr' && (
@@ -769,9 +803,10 @@ export function NeonDriftwayGame() {
         inputRef={inputRef}
         onPause={handleTouchPause}
         onRecenter={handleRecenter}
+        onPhoto={uiState === 'playing' && viewMode !== 'vr' ? openPhotoMode : undefined}
         showRecenter={gyroStatus === 'active'}
         stereo={viewMode === 'vr'}
-        visible={playing && (isTouchDevice || viewMode === 'vr')}
+        visible={playing && !photoMode && (isTouchDevice || viewMode === 'vr')}
       />
 
       {(uiState === 'multiplayerMenu' || uiState === 'lobby') && (

@@ -42,8 +42,7 @@ function toView(r: Row): ReminderView {
 }
 
 export type SetReminderResult =
-  | { ok: true; reminder: ReminderView }
-  | { ok: false; status: number; error: string };
+  { ok: true; reminder: ReminderView } | { ok: false; status: number; error: string };
 
 /** Create or move the user's reminder for one target. */
 export async function setReminder(

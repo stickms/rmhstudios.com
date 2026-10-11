@@ -17,7 +17,7 @@
 
 import type { MutableRefObject } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pause, RotateCcw } from 'lucide-react';
+import { Camera, Pause, RotateCcw } from 'lucide-react';
 import type { InputState } from '@/lib/neon-driftway/types';
 
 /** The button-shaped inputs — `steer` is an axis and is driven by head yaw. */
@@ -26,6 +26,8 @@ type ButtonInput = Exclude<keyof InputState, 'steer'>;
 interface Props {
   inputRef: MutableRefObject<InputState>;
   onPause: () => void;
+  /** Opens photo mode (U14); omitted where it isn't available (multiplayer, VR). */
+  onPhoto?: () => void;
   onRecenter: () => void;
   /** Show the recenter control only when head look is actually running. */
   showRecenter: boolean;
@@ -36,6 +38,7 @@ interface Props {
 export function NeonDriftwayTouchControls({
   inputRef,
   onPause,
+  onPhoto,
   onRecenter,
   showRecenter,
   stereo,
@@ -112,6 +115,16 @@ export function NeonDriftwayTouchControls({
             aria-label={t('recenter-view', { defaultValue: 'Recenter view' })}
           >
             <RotateCcw className="h-4 w-4 text-white/75" aria-hidden="true" />
+          </button>
+        )}
+        {onPhoto && (
+          <button
+            type="button"
+            onClick={onPhoto}
+            className={`${button} pointer-events-auto h-10 w-10 bg-black/50 active:bg-white/20`}
+            aria-label={t('photo-mode', { defaultValue: 'Photo mode' })}
+          >
+            <Camera className="h-4 w-4 text-white/75" aria-hidden="true" />
           </button>
         )}
         <button

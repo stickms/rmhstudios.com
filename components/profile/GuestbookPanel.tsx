@@ -56,7 +56,10 @@ export default function GuestbookPanel({
   useEffect(() => {
     let cancelled = false;
     void load().then((p) => {
-      if (!cancelled) setPage(p ?? { mode: 'off', isOwner: false, canSign: false, entries: [], nextCursor: null });
+      if (!cancelled)
+        setPage(
+          p ?? { mode: 'off', isOwner: false, canSign: false, entries: [], nextCursor: null },
+        );
     });
     return () => {
       cancelled = true;
@@ -84,7 +87,9 @@ export default function GuestbookPanel({
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
-        toast.error(data.error || t('guestbook-sign-error', { defaultValue: "Couldn't sign the guestbook" }));
+        toast.error(
+          data.error || t('guestbook-sign-error', { defaultValue: "Couldn't sign the guestbook" }),
+        );
         return;
       }
       setDraft('');
@@ -113,7 +118,10 @@ export default function GuestbookPanel({
 
   async function toggleHidden(entry: GuestbookEntryView) {
     const hidden = !entry.hidden;
-    setPage((p) => p && { ...p, entries: p.entries.map((e) => (e.id === entry.id ? { ...e, hidden } : e)) });
+    setPage(
+      (p) =>
+        p && { ...p, entries: p.entries.map((e) => (e.id === entry.id ? { ...e, hidden } : e)) },
+    );
     const res = await fetch(`${base}/${encodeURIComponent(entry.id)}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -173,7 +181,9 @@ export default function GuestbookPanel({
             <option value="following">
               {t('guestbook-mode-following', { defaultValue: 'People I follow' })}
             </option>
-            <option value="everyone">{t('guestbook-mode-everyone', { defaultValue: 'Everyone' })}</option>
+            <option value="everyone">
+              {t('guestbook-mode-everyone', { defaultValue: 'Everyone' })}
+            </option>
           </Select>
         </div>
       ) : null}
@@ -197,7 +207,13 @@ export default function GuestbookPanel({
             <span className="text-xs tabular-nums text-site-text-dim">
               {draft.length}/{GUESTBOOK_BODY_MAX}
             </span>
-            <Button type="submit" variant="accent" size="sm" loading={sending} disabled={!draft.trim()}>
+            <Button
+              type="submit"
+              variant="accent"
+              size="sm"
+              loading={sending}
+              disabled={!draft.trim()}
+            >
               {t('guestbook-sign', { defaultValue: 'Sign' })}
             </Button>
           </div>
@@ -214,17 +230,23 @@ export default function GuestbookPanel({
           }
           description={
             page.isOwner && page.mode === 'off'
-              ? t('guestbook-open-hint', { defaultValue: 'Open it above to let visitors leave a note.' })
+              ? t('guestbook-open-hint', {
+                  defaultValue: 'Open it above to let visitors leave a note.',
+                })
               : undefined
           }
         />
       ) : (
         <ul className="glass-fill divide-y divide-site-border overflow-hidden">
           {page.entries.map((entry) => {
-            const name = entry.author.name || entry.author.handle || t('someone', { defaultValue: 'Someone' });
+            const name =
+              entry.author.name || entry.author.handle || t('someone', { defaultValue: 'Someone' });
             const href = `/u/${entry.author.handle || entry.author.id}`;
             return (
-              <li key={entry.id} className={`flex items-start gap-3 px-4 py-3 ${entry.hidden ? 'opacity-60' : ''}`}>
+              <li
+                key={entry.id}
+                className={`flex items-start gap-3 px-4 py-3 ${entry.hidden ? 'opacity-60' : ''}`}
+              >
                 <Link to={href} className="shrink-0">
                   <UserAvatar src={entry.author.image} alt={name} size={36} fallbackName={name} />
                 </Link>
@@ -237,7 +259,9 @@ export default function GuestbookPanel({
                       {formatDistanceToNow(new Date(entry.createdAt), { addSuffix: true })}
                     </span>
                   </p>
-                  <p className="mt-0.5 whitespace-pre-line break-words text-sm text-site-text">{entry.body}</p>
+                  <p className="mt-0.5 whitespace-pre-line break-words text-sm text-site-text">
+                    {entry.body}
+                  </p>
                 </div>
                 {page.isOwner ? (
                   <IconButton

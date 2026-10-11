@@ -30,7 +30,14 @@ export const Route = createFileRoute('/api/push/action')({
         const userId = session.user.id;
         const n = await prisma.notification.findFirst({
           where: { id: body.nid, userId },
-          select: { id: true, type: true, entityType: true, entityId: true, actorId: true, read: true },
+          select: {
+            id: true,
+            type: true,
+            entityType: true,
+            entityId: true,
+            actorId: true,
+            read: true,
+          },
         });
         if (!n) return Response.json({ error: 'Not found' }, { status: 404 });
 

@@ -154,36 +154,34 @@ export function SwipeRow({
       {enabled && trailing ? (
         <SwipeReveal ref={trailRef} action={trailing} side="trailing" />
       ) : null}
-      <div
-        ref={contentRef}
-        className="relative transition-[translate] duration-site"
-      >
+      <div ref={contentRef} className="relative transition-[translate] duration-site">
         {children}
       </div>
     </div>
   );
 }
 
-const SwipeReveal = forwardRef<HTMLDivElement, { action: SwipeAction; side: 'leading' | 'trailing' }>(
-  function SwipeReveal({ action, side }, ref) {
-    const Icon = action.icon;
-    return (
-      <div
-        ref={ref}
-        aria-hidden
-        className={cn(
-          // Zero width at rest; the gesture sizes it to the uncovered gap.
-          'absolute inset-y-0 w-0 overflow-hidden',
-          'flex flex-col items-center justify-center gap-1 text-xs font-medium whitespace-nowrap',
-          'bg-site-surface text-site-text-muted transition-[width,background-color,color] duration-site',
-          side === 'leading'
-            ? 'left-0 group-data-[armed=leading]/swipe:bg-site-accent group-data-[armed=leading]/swipe:text-site-accent-fg'
-            : 'right-0 group-data-[armed=trailing]/swipe:bg-site-accent group-data-[armed=trailing]/swipe:text-site-accent-fg',
-        )}
-      >
-        <Icon className="h-5 w-5 shrink-0" />
-        {action.label}
-      </div>
-    );
-  },
-);
+const SwipeReveal = forwardRef<
+  HTMLDivElement,
+  { action: SwipeAction; side: 'leading' | 'trailing' }
+>(function SwipeReveal({ action, side }, ref) {
+  const Icon = action.icon;
+  return (
+    <div
+      ref={ref}
+      aria-hidden
+      className={cn(
+        // Zero width at rest; the gesture sizes it to the uncovered gap.
+        'absolute inset-y-0 w-0 overflow-hidden',
+        'flex flex-col items-center justify-center gap-1 text-xs font-medium whitespace-nowrap',
+        'bg-site-surface text-site-text-muted transition-[width,background-color,color] duration-site',
+        side === 'leading'
+          ? 'left-0 group-data-[armed=leading]/swipe:bg-site-accent group-data-[armed=leading]/swipe:text-site-accent-fg'
+          : 'right-0 group-data-[armed=trailing]/swipe:bg-site-accent group-data-[armed=trailing]/swipe:text-site-accent-fg',
+      )}
+    >
+      <Icon className="h-5 w-5 shrink-0" />
+      {action.label}
+    </div>
+  );
+});

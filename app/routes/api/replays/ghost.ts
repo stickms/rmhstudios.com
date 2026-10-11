@@ -20,7 +20,11 @@ const postBody = z.object({
   level: z.number().int().min(1).max(3),
   data: z.record(z.string(), z.unknown()),
   score: z.number().int().min(0).max(100_000_000),
-  durationMs: z.number().int().min(0).max(24 * 60 * 60 * 1000),
+  durationMs: z
+    .number()
+    .int()
+    .min(0)
+    .max(24 * 60 * 60 * 1000),
 });
 
 export const Route = createFileRoute('/api/replays/ghost')({
@@ -49,7 +53,10 @@ export const Route = createFileRoute('/api/replays/ghost')({
             return Response.json({ id: saved.id }, { status: 201 });
           } catch (err) {
             if (err instanceof ReplayError) {
-              return Response.json({ error: 'Invalid ghost' }, { status: err.code === 'TOO_LARGE' ? 413 : 400 });
+              return Response.json(
+                { error: 'Invalid ghost' },
+                { status: err.code === 'TOO_LARGE' ? 413 : 400 },
+              );
             }
             throw err;
           }

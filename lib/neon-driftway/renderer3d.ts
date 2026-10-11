@@ -26,6 +26,7 @@
  * adapts to whatever frame budget the device actually has.
  */
 
+import { photoPixelRatio, type PhotoCamera } from '@/lib/game/photo-mode';
 import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -380,6 +381,7 @@ export class NeonDriftwayRenderer3D {
 
     this.updateLook(dt, game);
     this.updateCarRig(dt, game);
+    if (this.photo) this.applyPhotoCamera(this.photo);
     this.updateRoad(game);
     this.updateStreamedProps(game);
     this.updateObstacles(game);
@@ -409,6 +411,57 @@ export class NeonDriftwayRenderer3D {
     this.pmrem?.dispose();
     this.composer?.dispose();
     this.renderer.dispose();
+  }
+
+  // ── Photo mode (U14) ──────────────────────────────────────────────────────
+
+  private photo: PhotoCamera | null = null;
+
+  /** Override the cockpit camera (sim paused) — `null` restores normal play. */
+  setPhotoCamera(camera: PhotoCamera | null): void {
+    this.photo = camera;
+    if (!camera) this.updateProjection();
+  }
+
+  private applyPhotoCamera(p: PhotoCamera): void {
+    const toRad = Math.PI / 180;
+    // The camera rides the car rig, so these are cockpit-relative: look around
+    // from the seat, or rise/pull back far enough to frame the hood and road.
+    this.camera.position.set(EYE_X, EYE_HEIGHT + p.rise, EYE_Z + p.back);
+    this.camera.rotation.set(p.pitch * toRad, p.yaw * toRad, p.roll * toRad, 'YXZ');
+    if (this.camera.fov !== p.fov) {
+      this.camera.fov = p.fov;
+      this.camera.updateProjectionMatrix();
+    }
+  }
+
+  /**
+   * One frame at up to 2× resolution, with `filter` (a CSS filter string)
+   * baked in through a 2D canvas. Read back in the same task as the render, so
+   * no `preserveDrawingBuffer` (and its per-frame cost) is needed.
+   */
+  async capturePhoto(filter: string): Promise<Blob | null> {
+    if (this.disposed || this.stereo) return null;
+    const ratio = photoPixelRatio(this.renderer.getPixelRatio(), this.width, this.height);
+    this.renderer.setPixelRatio(ratio);
+    this.renderer.setSize(this.width, this.height, false);
+    this.composer?.setPixelRatio(ratio);
+    this.composer?.setSize(this.width, this.height);
+    this.renderFrame();
+
+    const src = this.renderer.domElement;
+    const out = document.createElement('canvas');
+    out.width = src.width;
+    out.height = src.height;
+    const ctx = out.getContext('2d');
+    if (ctx) {
+      ctx.filter = filter;
+      ctx.drawImage(src, 0, 0);
+    }
+    this.applyResolution();
+    this.renderFrame();
+    if (!ctx) return null;
+    return new Promise((resolve) => out.toBlob(resolve, 'image/webp', 0.92));
   }
 
   // ── Resolution + projection ───────────────────────────────────────────────

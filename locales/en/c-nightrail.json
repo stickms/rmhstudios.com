@@ -53,5 +53,7 @@
   "tricks-landed": "Tricks landed",
   "tricktionary": "Tricktionary",
   "tricktionary-hint": "Flick a direction in the air. Each new trick in a combo raises the multiplier — repeat one and it pays half.",
-  "unlock-hint": "Finish a line with cargo aboard to open the next one"
+  "unlock-hint": "Finish a line with cargo aboard to open the next one",
+  "photo-mode": "Photo mode",
+  "photo-mode-key": "Photo mode (P)"
 }

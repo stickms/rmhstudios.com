@@ -179,6 +179,8 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'ghost-pb-label',
     'ghost-toggle-aria',
     'ghost-top-label',
+    'paused-photo-hint',
+    'photo-mode',
   ],
   'c-rmhbox': [
     'copy-invite-link',
@@ -803,6 +805,25 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'moment-rank',
     'moment-share',
     'shortcut-restart',
+    'photo-again',
+    'photo-back',
+    'photo-capture',
+    'photo-download',
+    'photo-exit',
+    'photo-fov',
+    'photo-look',
+    'photo-look-noir',
+    'photo-look-none',
+    'photo-look-vivid',
+    'photo-look-warm',
+    'photo-mode',
+    'photo-pitch',
+    'photo-preview',
+    'photo-reset',
+    'photo-rise',
+    'photo-roll',
+    'photo-share',
+    'photo-yaw',
   ],
   // ── Extract backlog flushed (2026-09-15) ───────────────────────────────
   // 369 English strings that were live in the source but had never been
@@ -1235,6 +1256,11 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     // UX/QoL batch (plan U1–U15, 2026-10-11) — English-only until the translate pipeline runs.
     'bring-back',
     'popped-out',
+  ],
+  'c-nightrail': [
+    // UX/QoL batch (plan U1–U15, 2026-10-11) — English-only until the translate pipeline runs.
+    'photo-mode',
+    'photo-mode-key',
   ],
 };
 
