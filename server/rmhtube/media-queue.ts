@@ -24,6 +24,7 @@ import {
 } from '../../lib/rmhtube/schemas';
 import { parseMedia } from '../../lib/rmhtube/media';
 import { QueueSkipSchema } from '../../lib/rmhtube/schemas';
+import { probeMediaUrl } from '../../lib/rmhtube/probe.server';
 import type { RoomManager } from './room-manager';
 import type { SyncEngine } from './sync-engine';
 import type { QueueItem, RmhTubeRoom } from './types';
@@ -114,11 +115,20 @@ export class MediaQueue {
     // One parser decides what a URL is, and it is written against the player's
     // own matchers — so anything accepted here is something the player can
     // actually load.
-    const media = parseMedia(payload.url);
+    // A link the URL alone can't place (no provider, no extension — a signed
+    // CDN link, `/video/123`) is asked what it is before it is refused.
+    const media = parseMedia(payload.url) ?? (await probeMediaUrl(payload.url));
+    // The room may have changed while the probe was out.
+    if (this.roomManager.getRoomForUser(userId) !== room) return;
+    if (room.queue.length >= config.MAX_QUEUE_SIZE) {
+      socket.emit(S2C.ERROR, { code: 'QUEUE_FULL', message: 'Queue is full.' });
+      return;
+    }
     if (!media) {
       socket.emit(S2C.ERROR, {
         code: 'INVALID_URL',
-        message: 'Unsupported link. Use a YouTube video, a Twitch channel or VOD, Vimeo, or a direct video/stream URL.',
+        message:
+          "That link isn't a video we can play. Use YouTube, Twitch, Vimeo, or any direct video/audio file or HLS/DASH stream link.",
       });
       return;
     }

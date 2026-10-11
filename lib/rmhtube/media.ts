@@ -252,7 +252,10 @@ function isAdaptive(pathname: string): boolean {
 export function isNativeVideo(mediaType: MediaType, url: string): boolean {
   if (mediaType !== 'direct') return false;
   try {
-    return !isAdaptive(new URL(url).pathname);
+    const u = new URL(url);
+    // A probed stream without an extension carries it as a `#.m3u8` / `#.mpd`
+    // hint (see probe.server.ts), so the hash counts too.
+    return !isAdaptive(u.pathname) && !isAdaptive(u.hash.replace(/^#/, '/'));
   } catch {
     return false;
   }
@@ -272,4 +275,23 @@ export function detectMediaType(url: string): MediaType | null {
 export function extractYouTubeId(url: string): string | null {
   const media = parseMedia(url);
   return media?.mediaType === 'youtube' ? media.id : null;
+}
+
+/**
+ * Could this be a raw media link the server can identify by asking the host?
+ * True for any http(s) URL `parseMedia` doesn't place and that isn't a known
+ * provider's page (a YouTube channel, a Twitch clip) — those are definitely not
+ * playable, and probing them would only fetch an HTML page.
+ */
+export function maybeRawMediaUrl(raw: string): boolean {
+  let u: URL;
+  try {
+    u = new URL(raw.trim());
+  } catch {
+    return false;
+  }
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') return false;
+  const host = u.hostname.replace(/^www\./, '').toLowerCase();
+  if (YOUTUBE_HOSTS.has(host) || host.endsWith('twitch.tv') || host.endsWith('vimeo.com')) return false;
+  return true;
 }

@@ -5,7 +5,7 @@
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { X, Link as LinkIcon, Radio } from 'lucide-react';
-import { parseMedia } from '@/lib/rmhtube/media';
+import { maybeRawMediaUrl, parseMedia } from '@/lib/rmhtube/media';
 import { useTranslation } from 'react-i18next';
 
 interface AddMediaModalProps {
@@ -27,6 +27,9 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
   // The same parser the server validates with, so the preview and the outcome
   // cannot disagree.
   const media = useMemo(() => (url.trim() ? parseMedia(url.trim()) : null), [url]);
+  // No provider or extension, but it could still be a raw video link (a signed
+  // CDN URL, `/video/123`). The server asks the host what it is when it's added.
+  const rawCandidate = useMemo(() => !media && !!url.trim() && maybeRawMediaUrl(url.trim()), [media, url]);
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +38,7 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
       setError(t("error-enter-url", { defaultValue: "Please enter a URL" }));
       return;
     }
-    if (!parseMedia(trimmedUrl)) {
+    if (!parseMedia(trimmedUrl) && !maybeRawMediaUrl(trimmedUrl)) {
       setError(t("error-unsupported-url", {
         defaultValue: "That link can't be played here. Use a YouTube video or live stream, a Twitch channel or VOD, Vimeo, or a direct video/stream URL (.mp4, .webm, .m3u8).",
       }));
@@ -100,6 +103,13 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
                   )}
                 </p>
               </div>
+            )}
+            {rawCandidate && (
+              <p className="mt-2 text-xs text-(--app-text-muted)">
+                {t("raw-link-check", {
+                  defaultValue: "Direct link — we'll check it's a playable video when you add it.",
+                })}
+              </p>
             )}
             {error && (
               <p className="mt-1 text-xs text-(--app-danger)">{error}</p>

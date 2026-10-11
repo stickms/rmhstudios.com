@@ -1256,6 +1256,7 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     // UX/QoL batch (plan U1–U15, 2026-10-11) — English-only until the translate pipeline runs.
     'bring-back',
     'popped-out',
+    'raw-link-check',
   ],
   'c-nightrail': [
     // UX/QoL batch (plan U1–U15, 2026-10-11) — English-only until the translate pipeline runs.
