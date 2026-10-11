@@ -104,6 +104,8 @@ export class RoomManager {
   readonly userRoomIndex = new Map<string, string>();
   /** Disconnection grace period timers (userId → timeout handle) */
   readonly graceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  /** Leader-failover timers (roomId → timeout handle); see `scheduleLeaderFailover`. */
+  private readonly leaderFailoverTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   private gcInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -153,7 +155,64 @@ export class RoomManager {
     }, config.DISCONNECT_GRACE_PERIOD_MS);
     this.graceTimers.set(userId, timer);
 
+    if (room.leaderUserId === userId) this.scheduleLeaderFailover(room);
+
     logger.info({ event: 'member_disconnected', roomId, userId, grace: config.DISCONNECT_GRACE_PERIOD_MS });
+  }
+
+  // ─── Leader failover ─────────────────────────────────────────
+
+  /**
+   * The leader dropped. Give them `LEADER_FAILOVER_MS` to come back (a refresh,
+   * a network blip), then hand control to someone connected — the host when
+   * they are here, otherwise whoever has been in the room longest. Without
+   * this a closed laptop left the room playing with nobody able to pause it,
+   * and (since only the leader reports `ended`) the queue never advanced.
+   */
+  private scheduleLeaderFailover(room: RmhTubeRoom): void {
+    clearTimeout(this.leaderFailoverTimers.get(room.id));
+    const departed = room.leaderUserId;
+    const timer = setTimeout(() => {
+      this.leaderFailoverTimers.delete(room.id);
+      const current = this.rooms.get(room.id);
+      if (!current || current.leaderUserId !== departed) return;
+      if (current.members.get(departed)?.isConnected) return;
+      const host = current.members.get(current.hostUserId);
+      const next = host?.isConnected && host.userId !== departed
+        ? host
+        : this.getLongestConnectedMember(current);
+      if (!next || !next.isConnected || next.userId === departed) return;
+      current.leaderUserId = next.userId;
+      this.broadcastAction(current, 'LEADER_CHANGED', {
+        newLeaderUserId: next.userId,
+        newLeaderUserName: next.userName,
+        reason: 'failover',
+      });
+      logger.info({ event: 'leader_failover', roomId: current.id, from: departed, to: next.userId });
+    }, config.LEADER_FAILOVER_MS);
+    this.leaderFailoverTimers.set(room.id, timer);
+  }
+
+  /**
+   * A member reconnected. If they are the leader the room chose and failover
+   * moved control elsewhere while they were gone, give it back.
+   */
+  restoreDesignatedLeader(room: RmhTubeRoom, userId: string): void {
+    if (room.leaderUserId === userId) {
+      clearTimeout(this.leaderFailoverTimers.get(room.id));
+      this.leaderFailoverTimers.delete(room.id);
+      return;
+    }
+    if (room.designatedLeaderUserId !== userId) return;
+    const member = room.members.get(userId);
+    if (!member?.isConnected) return;
+    room.leaderUserId = userId;
+    this.broadcastAction(room, 'LEADER_CHANGED', {
+      newLeaderUserId: userId,
+      newLeaderUserName: member.userName,
+      reason: 'restored',
+    });
+    logger.info({ event: 'leader_restored', roomId: room.id, userId });
   }
 
   // ─── Room CRUD ───────────────────────────────────────────────
@@ -212,6 +271,8 @@ export class RoomManager {
       name: payload.name ? sanitizeString(payload.name, 64) : null,
       hostUserId: userId,
       leaderUserId: userId,
+      designatedLeaderUserId: userId,
+      leaderLastReportAt: now,
       settings,
       members: new Map([[userId, host]]),
       queue: [],
@@ -282,6 +343,7 @@ export class RoomManager {
             socket.join(roomId);
             socket.emit(S2C.ROOM_STATE_SNAPSHOT, this.buildClientState(room, userId));
             this.broadcastAction(room, 'MEMBER_CONNECTED', { userId });
+            this.restoreDesignatedLeader(room, userId);
 
             logger.info({ event: 'member_rejoined', roomId, userId, userName });
             return;
@@ -416,6 +478,7 @@ export class RoomManager {
 
         // Leader also transfers to the new host
         room.leaderUserId = nextHost.userId;
+        room.designatedLeaderUserId = nextHost.userId;
 
         this.broadcastAction(room, 'HOST_TRANSFERRED', {
           newHostUserId: nextHost.userId,
@@ -435,6 +498,7 @@ export class RoomManager {
       const nextLeader = (host?.isConnected ? host : null) ?? this.getLongestConnectedMember(room);
       if (nextLeader) {
         room.leaderUserId = nextLeader.userId;
+        room.designatedLeaderUserId = nextLeader.userId;
         this.broadcastAction(room, 'LEADER_CHANGED', {
           newLeaderUserId: nextLeader.userId,
           newLeaderUserName: nextLeader.userName,
@@ -496,6 +560,7 @@ export class RoomManager {
 
     // Also transfer leader to the new host
     room.leaderUserId = payload.targetUserId;
+    room.designatedLeaderUserId = payload.targetUserId;
 
     this.broadcastAction(room, 'HOST_TRANSFERRED', {
       newHostUserId: payload.targetUserId,
@@ -563,9 +628,19 @@ export class RoomManager {
 
     const target = room.members.get(payload.targetUserId);
     if (!target) return;
+    // A leader who is not connected cannot report or control anything — the
+    // room would play on with nobody able to pause it until failover undid it.
+    if (!target.isConnected) {
+      socket.emit(S2C.ERROR, { code: 'NOT_CONNECTED', message: `${target.userName} is not connected right now.` });
+      return;
+    }
+    if (room.leaderUserId === payload.targetUserId) return;
 
     room.leaderUserId = payload.targetUserId;
+    room.designatedLeaderUserId = payload.targetUserId;
     room.lastActivityAt = Date.now();
+    clearTimeout(this.leaderFailoverTimers.get(room.id));
+    this.leaderFailoverTimers.delete(room.id);
 
     this.broadcastAction(room, 'LEADER_CHANGED', {
       newLeaderUserId: payload.targetUserId,
@@ -805,6 +880,8 @@ export class RoomManager {
   // ─── Disband ─────────────────────────────────────────────────
 
   private disbandRoom(roomId: string, reason: string): void {
+    clearTimeout(this.leaderFailoverTimers.get(roomId));
+    this.leaderFailoverTimers.delete(roomId);
     const room = this.rooms.get(roomId);
     if (!room) return;
 
@@ -1070,6 +1147,8 @@ export class RoomManager {
       name: dbRoom.name,
       hostUserId: dbRoom.hostId,
       leaderUserId: dbRoom.hostId,
+      designatedLeaderUserId: dbRoom.hostId,
+      leaderLastReportAt: now,
       settings: {
         isPublic: dbRoom.isPublic,
         maxMembers: dbRoom.maxMembers,

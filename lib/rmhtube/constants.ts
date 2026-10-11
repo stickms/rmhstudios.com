@@ -55,6 +55,25 @@ export const POSITION_JUMP_TOLERANCE_S = 0.75;
 export const SYNC_SOFT_TOLERANCE_S = 0.5;
 export const SYNC_HARD_TOLERANCE_S = 2;
 export const SYNC_NUDGE_RATE = 0.05; // ±5% playback-rate nudge while closing a gap
+/**
+ * Once a rate nudge has started, keep nudging until the gap is this small.
+ * Stopping at the soft tolerance (0.5 s) left every viewer parked just inside
+ * it forever — half a second out is an echo between two laptops in one room.
+ */
+export const SYNC_SETTLE_TARGET_S = 0.1;
+/**
+ * Bigger gaps nudge harder, up to this (proportional nudging). 10 % is about
+ * where a sped-up voice starts to sound sped up, even with pitch preserved.
+ */
+export const SYNC_MAX_NUDGE_RATE = 0.1;
+/**
+ * The seek threshold for players that CAN nudge. With seeks led by their own
+ * measured latency (they land on the room, not behind it), a 1.25 s gap is
+ * cheaper to jump than to spend 15–30 s audibly speeding through.
+ */
+export const SYNC_HARD_TOLERANCE_NUDGE_S = 1.25;
+/** Most a seek is ever led by to cover its own buffering (see `seekLeadS`). */
+export const SYNC_MAX_SEEK_LEAD_S = 1.5;
 
 /** Consecutive stalled ticks before a viewer tells the room it is buffering. */
 export const STALL_REPORT_TICKS = 8; // ≈2 s at SYNC_TICK_INTERVAL_MS

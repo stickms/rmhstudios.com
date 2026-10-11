@@ -65,6 +65,35 @@ export class SyncEngine {
     private roomManager: RoomManager,
   ) {}
 
+  /**
+   * Advances the room's queue — wired to `MediaQueue.advanceQueue` at boot
+   * (the queue is constructed after this engine, and owns the queue).
+   */
+  private advance: ((room: RmhTubeRoom) => void) | null = null;
+
+  setAdvanceHandler(advance: (room: RmhTubeRoom) => void): void {
+    this.advance = advance;
+  }
+
+  /**
+   * A room whose projected position has run past the end of a known-length
+   * item with nobody advancing it. A present leader's player reports `ended`
+   * (and pauses) at the real end, long before the grace runs out, so this only
+   * fires when there is no one left to do it — and then the queue moves on
+   * instead of sitting on a finished video forever.
+   */
+  private advanceIfOverrun(room: RmhTubeRoom, now: number): boolean {
+    const item = room.currentItem;
+    const vs = room.videoState;
+    if (!item || !this.advance) return false;
+    if (vs.mode !== 'vod' || !vs.playing || vs.stalled) return false;
+    if (!item.duration || item.duration <= 0) return false;
+    if (extrapolate(vs, now) < item.duration + config.END_OF_ITEM_GRACE_S) return false;
+    logger.info({ event: 'auto_advance_overrun', roomId: room.id, itemId: item.id });
+    this.advance(room);
+    return true;
+  }
+
   // ─── Wiring ──────────────────────────────────────────────────
 
   handleConnection(socket: Socket): void {
@@ -146,6 +175,7 @@ export class SyncEngine {
     if (!room) return;
 
     const now = Date.now();
+    room.leaderLastReportAt = now;
     // Trust the leader's stamp inside a sane window, fall back to ours outside
     // it. A wrong anchor time moves every viewer, so a clock we cannot believe
     // is worse than the latency we are trying to remove.
@@ -388,6 +418,8 @@ export class SyncEngine {
 
         // A wait can end on a timeout, which has no inbound event to trigger it.
         if (room.peerWait.startedAt !== null) this.evaluatePeerWait(room, now);
+
+        if (this.advanceIfOverrun(room, now)) continue;
 
         if (room.members.size <= 1) continue;
 

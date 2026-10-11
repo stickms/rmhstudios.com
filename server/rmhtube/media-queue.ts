@@ -23,6 +23,7 @@ import {
   ReactionSchema,
 } from '../../lib/rmhtube/schemas';
 import { parseMedia } from '../../lib/rmhtube/media';
+import { QueueSkipSchema } from '../../lib/rmhtube/schemas';
 import type { RoomManager } from './room-manager';
 import type { SyncEngine } from './sync-engine';
 import type { QueueItem, RmhTubeRoom } from './types';
@@ -45,7 +46,7 @@ export class MediaQueue {
     socket.on(C2S.QUEUE_REMOVE, validated(socket, C2S.QUEUE_REMOVE, QueueRemoveSchema, (s, p) => this.removeFromQueue(s, p)));
     socket.on(C2S.QUEUE_REORDER, validated(socket, C2S.QUEUE_REORDER, QueueReorderSchema, (s, p) => this.reorderQueue(s, p)));
     socket.on(C2S.QUEUE_PLAY_ITEM, validated(socket, C2S.QUEUE_PLAY_ITEM, QueuePlayItemSchema, (s, p) => this.playItem(s, p)));
-    socket.on(C2S.QUEUE_SKIP, validated(socket, C2S.QUEUE_SKIP, EmptySchema, (s) => this.skipCurrent(s)));
+    socket.on(C2S.QUEUE_SKIP, validated(socket, C2S.QUEUE_SKIP, QueueSkipSchema, (s, p) => this.skipCurrent(s, p)));
     socket.on(C2S.QUEUE_VOTE_SKIP, validated(socket, C2S.QUEUE_VOTE_SKIP, EmptySchema, (s) => this.voteSkip(s)));
     socket.on(C2S.QUEUE_META, validated(socket, C2S.QUEUE_META, QueueMetaSchema, (s, p) => this.applyMeta(s, p)));
     socket.on(C2S.REACTION_SEND, validated(socket, C2S.REACTION_SEND, ReactionSchema, (s, p) => this.sendReaction(s, p)));
@@ -296,13 +297,18 @@ export class MediaQueue {
 
   // ─── Skip Current ────────────────────────────────────────────
 
-  private skipCurrent(socket: Socket): void {
+  private skipCurrent(socket: Socket, payload?: { itemId?: string }): void {
     const userId = socket.data.userId as string;
     const room = this.roomManager.getRoomForUser(userId);
     if (!room || !this.isLeader(room, userId)) {
       socket.emit(S2C.ERROR, { code: 'NOT_LEADER', message: 'Only the leader can skip.' });
       return;
     }
+    // A skip that names an item only skips THAT item. An auto-advance on
+    // `ended` can arrive twice (the element's event plus a late duplicate) or
+    // after the room has already moved on (server overrun advance, another
+    // tab); without this each extra one silently skipped an unwatched video.
+    if (payload?.itemId && room.currentItem?.id !== payload.itemId) return;
 
     this.advanceQueue(room);
   }

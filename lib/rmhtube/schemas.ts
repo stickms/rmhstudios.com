@@ -149,6 +149,13 @@ export const ChatPinSchema = z.object({
 
 // ─── Phase 4: Leader Management ──────────────────────────────────
 
+/**
+ * `itemId` names the item being skipped. Auto-advance on `ended` always sends
+ * it, so a duplicate or late skip can never move past an unwatched item; a
+ * manual skip button may omit it.
+ */
+export const QueueSkipSchema = z.object({ itemId: z.string().max(64).optional() }).optional();
+
 export const SetLeaderSchema = z.object({
   targetUserId: z.string(),
 });

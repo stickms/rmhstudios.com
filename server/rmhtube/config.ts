@@ -41,6 +41,20 @@ export const config = {
   ROOM_IDLE_TIMEOUT_MS: envInt('RMHTUBE_IDLE_TIMEOUT', 30 * 60 * 1000),
   ROOM_EMPTY_TIMEOUT_MS: envInt('RMHTUBE_EMPTY_TIMEOUT', 5 * 60 * 1000),
   DISCONNECT_GRACE_PERIOD_MS: envInt('RMHTUBE_GRACE_MS', 120_000),
+  /**
+   * How long a disconnected leader keeps control before it fails over to
+   * someone connected. Long enough to ride out a page refresh or a network
+   * blip; short enough that a closed laptop does not leave the room with no
+   * one able to pause or skip for the full two-minute grace period.
+   */
+  LEADER_FAILOVER_MS: envInt('RMHTUBE_LEADER_FAILOVER_MS', 8_000),
+  /**
+   * The room advances on its own once its projected position is this far past
+   * the item's known duration. A leader who is present reports `ended` long
+   * before this; it only fires when nobody is left to (a failover gap, a tab
+   * that froze on the last frame), which used to stall the queue for good.
+   */
+  END_OF_ITEM_GRACE_S: envInt('RMHTUBE_END_GRACE_S', 4),
   ROOM_GC_INTERVAL_MS: envInt('RMHTUBE_GC_INTERVAL', 60_000),
 
   // ─── Rate Limits ───

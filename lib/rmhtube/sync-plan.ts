@@ -21,7 +21,15 @@
  */
 
 import { extrapolate } from './sync-math';
-import { SYNC_SOFT_TOLERANCE_S, SYNC_HARD_TOLERANCE_S, SYNC_NUDGE_RATE } from './constants';
+import {
+  SYNC_SOFT_TOLERANCE_S,
+  SYNC_HARD_TOLERANCE_S,
+  SYNC_NUDGE_RATE,
+  SYNC_SETTLE_TARGET_S,
+  SYNC_MAX_SEEK_LEAD_S,
+  SYNC_MAX_NUDGE_RATE,
+  SYNC_HARD_TOLERANCE_NUDGE_S,
+} from './constants';
 import type { VideoState } from './types';
 
 /** One observation of the local player. */
@@ -61,6 +69,19 @@ export interface SyncPlanInput {
   canNudge: boolean;
   /** Realign hard regardless of drift (media change, resync, tab return). */
   force: boolean;
+  /**
+   * A nudge is already in progress. With it, the planner keeps nudging until
+   * the gap is under `SYNC_SETTLE_TARGET_S` instead of stopping the moment it
+   * re-enters the soft band (hysteresis). Optional; defaults to false.
+   */
+  nudging?: boolean;
+  /**
+   * Seconds this player typically spends buffering after a seek. A seek to
+   * the room's position lands that far behind, because the room keeps playing
+   * while the player refills — so while the room plays, the seek is led by
+   * this much (capped at `SYNC_MAX_SEEK_LEAD_S`). Optional; defaults to 0.
+   */
+  seekLeadS?: number;
 }
 
 export type SyncPlan =
@@ -123,8 +144,17 @@ export function planSync(input: SyncPlanInput): SyncPlan {
     return { action: 'hold', reason: 'buffering', drift };
   }
 
-  if (force || absDrift > SYNC_HARD_TOLERANCE_S) {
-    return { action: 'seek', to: target, drift };
+  // A player that can nudge closes mid-sized gaps smoothly, so it only needs
+  // to jump for bigger ones; one that can't tolerates up to the full 2 s.
+  const hardTolerance = canNudge ? SYNC_HARD_TOLERANCE_NUDGE_S : SYNC_HARD_TOLERANCE_S;
+  if (force || absDrift > hardTolerance) {
+    // Lead a seek on a playing room by the time the player will spend refilling,
+    // so it lands where the room will be, not where it was.
+    const lead = state.playing
+      ? Math.min(Math.max(0, input.seekLeadS ?? 0), SYNC_MAX_SEEK_LEAD_S) * roomRate
+      : 0;
+    const to = sample.seekableEnd != null ? Math.min(target + lead, sample.seekableEnd) : target + lead;
+    return { action: 'seek', to, drift };
   }
 
   // While the room is paused the anchor is static, so any residual gap is the
@@ -135,14 +165,19 @@ export function planSync(input: SyncPlanInput): SyncPlan {
       : { action: 'hold', reason: 'paused', drift };
   }
 
-  if (absDrift <= SYNC_SOFT_TOLERANCE_S) {
+  // Hysteresis: a nudge that has started runs on down to the settle target.
+  const settleBand = input.nudging && canNudge ? SYNC_SETTLE_TARGET_S : SYNC_SOFT_TOLERANCE_S;
+  if (absDrift <= settleBand) {
     return { action: 'settled', rate: roomRate, drift };
   }
 
   // Mid-band: close the gap by running slightly fast or slow, which nobody
   // sees, instead of jumping, which everybody does.
   if (canNudge) {
-    const rate = roomRate * (drift > 0 ? 1 + SYNC_NUDGE_RATE : 1 - SYNC_NUDGE_RATE);
+    // Proportional: a second behind runs faster than a quarter-second behind,
+    // between the floor that is inaudible and the ceiling that is not.
+    const amount = Math.min(SYNC_MAX_NUDGE_RATE, Math.max(SYNC_NUDGE_RATE, absDrift * 0.08));
+    const rate = roomRate * (drift > 0 ? 1 + amount : 1 - amount);
     return { action: 'rate', rate, drift };
   }
 

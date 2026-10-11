@@ -9,7 +9,7 @@ import type { RealtimeStatus, PeerWaitState } from '@/lib/shared/realtime/types'
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { nanoid } from 'nanoid';
-import { isNewerAnchor, initialVideoState } from './sync-math';
+import { acceptServerAnchor, initialVideoState, type PendingLocalAnchor } from './sync-math';
 import type {
   ClientRoomState,
   ClientMemberInfo,
@@ -100,6 +100,13 @@ function sanitizeSettings(raw: unknown): RmhTubeUserSettings {
  */
 const CHAT_SCROLLBACK = 200;
 
+/**
+ * The leader's unconfirmed optimistic anchor, if any (see
+ * `acceptServerAnchor`). Module state rather than store state: it is
+ * bookkeeping for the merge rule, and nothing renders from it.
+ */
+let pendingLocalAnchor: PendingLocalAnchor | null = null;
+
 // ─── Store Interface ─────────────────────────────────────────────
 
 export interface RmhTubeStore {
@@ -155,19 +162,33 @@ export const useRmhTubeStore = create<RmhTubeStore>()(
       },
 
       applyFullSync: (fullState) => {
+        pendingLocalAnchor = null;
         set({ room: fullState, lastSeq: fullState.seq, systemMessages: [] });
       },
 
       applyVideoState: (videoState) => {
         set((state) => {
           if (!state.room) return {};
-          if (!isNewerAnchor(state.room.videoState, videoState)) return {};
+          if (!acceptServerAnchor(state.room.videoState, videoState, pendingLocalAnchor, Date.now())) {
+            return {};
+          }
+          // The server has spoken at (or past) our optimistic revision.
+          if (pendingLocalAnchor && videoState.rev >= pendingLocalAnchor.baseRev) pendingLocalAnchor = null;
           return { room: { ...state.room, videoState } };
         });
       },
 
       setVideoState: (videoState) => {
-        set((state) => (state.room ? { room: { ...state.room, videoState } } : {}));
+        set((state) => {
+          if (!state.room) return {};
+          if (videoState.rev > state.room.videoState.rev) {
+            pendingLocalAnchor = {
+              baseRev: pendingLocalAnchor?.baseRev ?? state.room.videoState.rev,
+              at: Date.now(),
+            };
+          }
+          return { room: { ...state.room, videoState } };
+        });
       },
 
       updateSettings: (partial) => {

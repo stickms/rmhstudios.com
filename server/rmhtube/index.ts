@@ -68,6 +68,7 @@ io.use(authMiddleware);
 const roomManager   = new RoomManager(io);
 const syncEngine    = new SyncEngine(io, roomManager);
 const mediaQueue    = new MediaQueue(io, roomManager, syncEngine);
+syncEngine.setAdvanceHandler((room) => mediaQueue.advanceQueue(room));
 const chatHandler   = new ChatHandler(io, roomManager);
 const reconnection  = new ReconnectionHandler(io, roomManager);
 

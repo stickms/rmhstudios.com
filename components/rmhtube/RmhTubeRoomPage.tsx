@@ -19,6 +19,8 @@ import { S2C, C2S } from '@/lib/rmhtube/events';
 import { SHORTCUTS, AUTO_AFK_TIMEOUT_MS } from '@/lib/rmhtube/constants';
 import { toast } from '@/lib/rmhtube/toast-store';
 import { clearMediaSession, setMediaHandlers, setMediaMeta } from '@/lib/media/media-session';
+import { extrapolate } from '@/lib/rmhtube/sync-math';
+import { getServerNow } from '@/lib/rmhtube/clock';
 import { PopOutPortal, usePopOut } from '@/components/shared/pop-out';
 import { isNativeVideo } from '@/lib/rmhtube/media';
 import { PictureInPicture2 } from 'lucide-react';
@@ -39,6 +41,12 @@ import OnboardingTour from '@/components/rmhtube/OnboardingTour';
 import { useRouter, useParams } from '@tanstack/react-router';
 
 type MobileTab = 'queue' | 'chat' | 'members';
+
+/** Where the room's playhead is right now (the anchor projected to server time). */
+function roomPosition(): number {
+  const vs = useRmhTubeStore.getState().room?.videoState;
+  return vs ? extrapolate(vs, getServerNow()) : 0;
+}
 
 export default function RmhTubeRoomPage() {
   const { t } = useTranslation("c-rmhtube");
@@ -150,14 +158,13 @@ export default function RmhTubeRoomPage() {
       return;
     }
     setMediaMeta({ title: mediaTitle, artist: mediaRoomName, album: 'RMHTube', artwork: mediaArt });
-    const current = () => useRmhTubeStore.getState().room?.videoState.currentTime ?? 0;
     setMediaHandlers(
       isMediaLeader
         ? {
             play: () => emit(C2S.SYNC_PLAY, {}),
             pause: () => emit(C2S.SYNC_PAUSE, {}),
             seekTo: (time) => emit(C2S.SYNC_SEEK, { time }),
-            seekBy: (delta) => emit(C2S.SYNC_SEEK, { time: Math.max(0, current() + delta) }),
+            seekBy: (delta) => emit(C2S.SYNC_SEEK, { time: Math.max(0, roomPosition() + delta) }),
             next: () => emit(C2S.QUEUE_SKIP, {}),
           }
         : {},
@@ -187,15 +194,15 @@ export default function RmhTubeRoomPage() {
         case SHORTCUTS.SEEK_BACK:
           e.preventDefault();
           if (canControl) {
-            const time = Math.max(0, (store.room?.videoState.currentTime ?? 0) - 10);
-            emit(C2S.SYNC_SEEK, { time });
+            // From where the room IS, not the last anchor — which can be two
+            // seconds behind it while playing.
+            emit(C2S.SYNC_SEEK, { time: Math.max(0, roomPosition() - 10) });
           }
           break;
         case SHORTCUTS.SEEK_FORWARD:
           e.preventDefault();
           if (canControl) {
-            const time = (store.room?.videoState.currentTime ?? 0) + 10;
-            emit(C2S.SYNC_SEEK, { time });
+            emit(C2S.SYNC_SEEK, { time: roomPosition() + 10 });
           }
           break;
         case SHORTCUTS.VOLUME_UP:
@@ -269,10 +276,15 @@ export default function RmhTubeRoomPage() {
     // The server accepts a skip from the LEADER, not the host. When the two
     // were different people this asked the wrong one, the server answered
     // NOT_LEADER, and the queue simply stopped at the end of a video.
-    if (room && room.myUserId === room.leaderUserId) {
-      emit(C2S.QUEUE_SKIP, {});
+    //
+    // It names the item that ended: a duplicate `ended`, or one that lands
+    // after the room already moved on, is then ignored by the server instead
+    // of skipping an unwatched video.
+    const current = useRmhTubeStore.getState().room;
+    if (current && current.myUserId === current.leaderUserId && current.currentItem) {
+      emit(C2S.QUEUE_SKIP, { itemId: current.currentItem.id });
     }
-  }, [room]);
+  }, []);
 
   const handlePiP = useCallback(() => {
     if (popOut.win) {

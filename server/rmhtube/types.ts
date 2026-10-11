@@ -62,6 +62,15 @@ export interface RmhTubeRoom {
   name: string | null;
   hostUserId: string;
   leaderUserId: string;
+  /**
+   * Who the host (or a previous leader) actually CHOSE to lead. Failover can
+   * hand control to someone else while that person is disconnected; when they
+   * come back, control goes back to them rather than staying wherever the
+   * failover happened to put it.
+   */
+  designatedLeaderUserId: string;
+  /** Server-clock ms of the leader's last `sync:host_state` report. */
+  leaderLastReportAt: number;
   settings: RoomSettings;
   members: Map<string, RmhTubeMember>;
   queue: QueueItem[];

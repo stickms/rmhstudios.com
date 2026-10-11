@@ -15,6 +15,7 @@ import { Play, Pause, SkipForward, Volume2, VolumeX, Volume1, Subtitles, Gauge, 
 import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
 import { getServerNow } from '@/lib/rmhtube/clock';
+import { extrapolate } from '@/lib/rmhtube/sync-math';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { formatDuration } from '@/lib/rmhtube/utils';
 import { PLAYBACK_SPEEDS } from '@/lib/rmhtube/constants';
@@ -80,10 +81,15 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
       // heartbeat that still says the opposite.
       const room = useRmhTubeStore.getState().room;
       if (room) {
+        const now = getServerNow();
         useRmhTubeStore.getState().setVideoState({
           ...room.videoState,
+          // Re-anchored at the projected position: keeping the old anchor's
+          // `currentTime` with a fresh `updatedAt` rewound the leader's own view
+          // by however long it had been since the last heartbeat.
+          currentTime: extrapolate(room.videoState, now),
           playing: !playing,
-          updatedAt: getServerNow(),
+          updatedAt: now,
           rev: room.videoState.rev + 1,
         });
       }

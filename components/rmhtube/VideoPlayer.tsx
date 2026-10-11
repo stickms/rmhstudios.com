@@ -61,11 +61,34 @@ import type { ClientQueueItem, VideoState } from '@/lib/rmhtube/types';
 
 const ReactPlayer = lazy(() => import('react-player'));
 
+/**
+ * Providers whose element honours `playbackRate` at all. Twitch's player
+ * ignores it (its getter always says 1), so "correcting" it would only nag.
+ */
+const RATE_CAPABLE_PROVIDERS = new Set(['direct', 'youtube', 'vimeo']);
+
 /** Providers with continuous playback rates, where a ±5% nudge is invisible. */
 const CONTINUOUS_RATE_PROVIDERS = new Set(['direct', 'vimeo']);
 
 /** A rejected `play()` is not retried faster than this. */
 const PLAY_RETRY_MS = 1_000;
+
+/**
+ * After the room's rate changes, the leader does not report its element's rate
+ * for this long. Embedded players apply a rate asynchronously (YouTube posts
+ * it to its iframe), so for a moment the element still reads the OLD rate —
+ * and reporting that undid the change the leader had just made from the
+ * site's speed menu.
+ */
+const RATE_SETTLE_MS = 2_000;
+
+/**
+ * A member who has just become leader follows the room for this long before
+ * their player is allowed to drive it. Their element was a viewer's a moment
+ * ago — possibly paused by the browser, mid-seek, or still loading — and
+ * reporting that state straight away paused or rewound everyone.
+ */
+const LEADER_HANDOFF_GRACE_MS = 2_000;
 
 /**
  * A tick this much later than scheduled means the page was throttled or frozen.
@@ -189,6 +212,21 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
   itemRef.current = item;
   const needsGestureRef = useRef(needsGesture);
   needsGestureRef.current = needsGesture;
+  /** The rate the element is SUPPOSED to be at, and when that last changed. */
+  const appliedRateRef = useRef(appliedRate);
+  const appliedRateAtRef = useRef(0);
+  if (appliedRateRef.current !== appliedRate) {
+    appliedRateRef.current = appliedRate;
+    appliedRateAtRef.current = Date.now();
+  }
+  const rateSettleUntilRef = useRef(0);
+  /** A nudge (or a post-seek fine-tune) is in progress — see `planSync`'s hysteresis. */
+  const nudgingRef = useRef(false);
+  /** EMA of this player's seek → frames-flowing latency, seconds. */
+  const seekLeadRef = useRef(0);
+  /** When the last correction seek was issued, until playback is seen again. */
+  const seekAtRef = useRef<number | null>(null);
+  const leaderSinceRef = useRef(isLeader ? 0 : -1);
 
   const lastSampleRef = useRef<{ position: number; at: number } | null>(null);
   /** Nothing is measured or issued before this instant (see SEEK_COOLDOWN_MS). */
@@ -210,6 +248,22 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
   const durationProbeRef = useRef<{ duration: number; at: number; decided: boolean } | null>(null);
   const reportedMetaRef = useRef<{ itemId: string; duration: number | null; live: boolean } | null>(null);
 
+  // ─── Leadership changes hands ──────────────────────────────────
+  //
+  // Becoming leader: follow the room first (force the "room changed" branch)
+  // and hold back reports for the handoff grace. Losing it: drop any
+  // gesture prompt the leader path raised; the viewer path re-raises its own.
+  useEffect(() => {
+    if (isLeader) {
+      leaderSinceRef.current = Date.now();
+      lastAppliedRevRef.current = -1;
+      lastHostReportRef.current = Date.now();
+    } else {
+      leaderSinceRef.current = -1;
+      forceResyncRef.current = true;
+    }
+  }, [isLeader]);
+
   // ─── Reset per item ────────────────────────────────────────────
   useEffect(() => {
     setReady(false);
@@ -224,6 +278,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
     forceResyncRef.current = true;
     lastHostReportRef.current = 0;
     lastAppliedRevRef.current = -1;
+    nudgingRef.current = false;
+    seekAtRef.current = null;
     if (reportedStallRef.current) {
       reportedStallRef.current = false;
       emit(C2S.SYNC_STALL, { stalled: false });
@@ -412,9 +468,24 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
       // play button, ←/→, and a chat timestamp all speak through the room, and
       // without this the element never heard them: it kept reporting the old
       // state and the tick below dutifully undid the request.
+      // The room's rate moved (the site's speed menu, a co-leader): apply it
+      // now and stop trusting the element's own rate until it has landed.
+      if (Math.abs(sample.rate - state.playbackRate) > 0.01) {
+        rateSettleUntilRef.current = now + RATE_SETTLE_MS;
+        try {
+          el.playbackRate = state.playbackRate;
+        } catch {
+          // Some providers reject a rate before the source is ready.
+        }
+      }
       if (playing !== state.playing) {
         if (state.playing) {
-          void Promise.resolve(el.play()).catch(() => undefined);
+          void Promise.resolve(el.play()).catch(() => {
+            // The browser refused (autoplay policy). A leader whose player
+            // cannot play must not report "paused" to the whole room — it asks
+            // for a tap instead, and the room keeps going meanwhile.
+            setNeedsGesture(true);
+          });
         } else {
           el.pause();
         }
@@ -433,6 +504,14 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
           return;
         }
       }
+    }
+
+    // A fresh leader, or one whose player the browser is holding paused, follows
+    // the room and reports nothing — otherwise its not-yet-playing element
+    // would pause (or rewind) everyone the instant it took over.
+    if (now - leaderSinceRef.current < LEADER_HANDOFF_GRACE_MS || needsGestureRef.current) {
+      if (needsGestureRef.current && playing && state.playing) setNeedsGesture(false);
+      return;
     }
 
     // Playback edges, detected from the position and the paused flag — never
@@ -456,8 +535,14 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
       suppressUntilRef.current = now + SEEK_COOLDOWN_MS;
     }
 
-    // The leader changed speed through the provider's own menu.
-    if (sample.ready && !suppressed && Math.abs(sample.rate - state.playbackRate) > 0.01) {
+    // The leader changed speed through the provider's own menu (not merely the
+    // element still catching up with a rate the room just set).
+    if (
+      sample.ready &&
+      !suppressed &&
+      now >= rateSettleUntilRef.current &&
+      Math.abs(sample.rate - state.playbackRate) > 0.01
+    ) {
       emit(C2S.SYNC_SET_SPEED, { speed: sample.rate });
     }
 
@@ -510,6 +595,9 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
         });
       }
     } else if (!state.playing && !sample.paused) {
+      // The room is paused and the element just started: that was the
+      // viewer's own play button (or a media key). Say why it stops.
+      if (!wasPlayingRef.current) controlToast();
       selfPausedRef.current = true;
       el.pause();
     } else if (state.playing && !sample.paused) {
@@ -528,6 +616,22 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
 
     updateStallReport(sample, observation);
 
+    // ── Learn how long a seek costs this player ──
+    // The first tick where the playhead moves at speed again after a correction
+    // seek closes the measurement. It feeds the seek lead, so the next seek
+    // lands where the room WILL be once the player has refilled.
+    if (
+      seekAtRef.current !== null &&
+      state.playing &&
+      observation &&
+      !sample.buffering &&
+      observation.delta > observation.expected * 0.5
+    ) {
+      const measured = Math.min(3, (now - seekAtRef.current) / 1000);
+      seekLeadRef.current = seekLeadRef.current === 0 ? measured : seekLeadRef.current * 0.7 + measured * 0.3;
+      seekAtRef.current = null;
+    }
+
     // ── Correction ──
     const plan = planSync({
       state,
@@ -538,11 +642,17 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
       canCorrect: !suppressed && !hiddenRef.current && hasClockSync(),
       canNudge: CONTINUOUS_RATE_PROVIDERS.has(itemRef.current?.mediaType ?? 'direct'),
       force: forceResyncRef.current,
+      nudging: nudgingRef.current,
+      seekLeadS: seekLeadRef.current,
     });
 
     switch (plan.action) {
       case 'seek':
         forceResyncRef.current = false;
+        // Land, then fine-tune: the seek is only as accurate as the latency
+        // estimate, so the residual is nudged down rather than left standing.
+        nudgingRef.current = true;
+        seekAtRef.current = now;
         suppressUntilRef.current = now + SEEK_COOLDOWN_MS;
         lastSampleRef.current = null;
         try {
@@ -553,13 +663,36 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
         break;
       case 'settled':
         forceResyncRef.current = false;
+        nudgingRef.current = false;
         setAppliedRate(plan.rate);
         break;
       case 'rate':
+        nudgingRef.current = true;
         setAppliedRate(plan.rate);
         break;
       case 'hold':
         break;
+    }
+
+    // ── Unauthorised speed change ──
+    // The provider's own speed menu is a native control a viewer can reach.
+    // The room's rate is only re-applied on a React render, which a viewer's
+    // menu never causes — so without this the element simply stayed at the
+    // viewer's speed and drifted until every tick was a seek.
+    if (
+      state.mode === 'vod' &&
+      sample.ready &&
+      !suppressed &&
+      RATE_CAPABLE_PROVIDERS.has(itemRef.current?.mediaType ?? 'direct') &&
+      now - appliedRateAtRef.current > RATE_SETTLE_MS &&
+      Math.abs(sample.rate - appliedRateRef.current) > 0.01
+    ) {
+      controlToast();
+      try {
+        el.playbackRate = appliedRateRef.current;
+      } catch {
+        // Not ready for a rate yet; the next tick tries again.
+      }
     }
   }
 
@@ -711,7 +844,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
 
       {/* The environment paused this viewer while the room plays on. We cannot
           resume without a gesture, so we ask for one. */}
-      {needsGesture && !isLeader && (
+      {needsGesture && (
         <button
           onClick={handleGestureTap}
           className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-black/60 text-(--app-text) backdrop-blur-sm"
