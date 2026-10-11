@@ -53,7 +53,13 @@ import {
   MIN_BUFFER_AHEAD_S,
   SYNC_HARD_TOLERANCE_S,
 } from '@/lib/rmhtube/constants';
-import { planSync, observePosition, type PlayerSample, type PositionObservation } from '@/lib/rmhtube/sync-plan';
+import {
+  planSync,
+  observePosition,
+  refineSeekLead,
+  type PlayerSample,
+  type PositionObservation,
+} from '@/lib/rmhtube/sync-plan';
 import { extrapolate } from '@/lib/rmhtube/sync-math';
 import { playableUrl } from '@/lib/rmhtube/media';
 import { registerResync, syncStats } from '@/lib/rmhtube/sync-stats';
@@ -230,6 +236,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
   const seekLeadRef = useRef(0);
   /** When the last correction seek was issued, until playback is seen again. */
   const seekAtRef = useRef<number | null>(null);
+  /** The lead (media s) the in-flight correction seek was aimed with. */
+  const seekLeadUsedRef = useRef(0);
   const leaderSinceRef = useRef(isLeader ? 0 : -1);
 
   const lastSampleRef = useRef<{ position: number; at: number } | null>(null);
@@ -393,9 +401,15 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
   //
   // Held in a ref and reassigned each render so the interval below is created
   // once per source and never runs a stale closure.
-  const tickRef = useRef<() => void>(() => {});
+  const tickRef = useRef<(outOfBand?: boolean) => void>(() => {});
 
-  tickRef.current = () => {
+  /**
+   * `outOfBand`: run now because the room changed, not because the interval
+   * fired. Such a tick applies the room to the element and nothing else — its
+   * gap from the last tick is arbitrary, so it observes no position change
+   * (that would read as a stall or a jump) and reports nothing.
+   */
+  tickRef.current = (outOfBand = false) => {
     const el = playerRef.current;
     const room = useRmhTubeStore.getState().room;
     if (!el || !room) return;
@@ -403,8 +417,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
     const state = room.videoState;
     const now = Date.now();
     const sample = readSample(el);
-    const previous = lastSampleRef.current;
-    lastSampleRef.current = { position: sample.position, at: now };
+    const previous = outOfBand ? null : lastSampleRef.current;
+    if (!outOfBand) lastSampleRef.current = { position: sample.position, at: now };
     const suppressed = now < suppressUntilRef.current;
 
     // A tick that arrived far late spans a throttle or a freeze; the position
@@ -425,9 +439,9 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
     const live = detectLive(sample.duration, durationProbeRef, now, itemRef.current?.live ?? false);
 
     if (isLeaderRef.current) {
-      runLeaderTick(el, sample, observation, state, now, suppressed, live);
+      runLeaderTick(el, sample, observation, state, now, suppressed, live, outOfBand);
     } else {
-      runViewerTick(el, sample, observation, state, now, suppressed);
+      runViewerTick(el, sample, observation, state, now, suppressed, outOfBand);
     }
 
     wasPlayingRef.current = !sample.paused;
@@ -442,10 +456,12 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
     now: number,
     suppressed: boolean,
     live: boolean,
+    outOfBand: boolean,
   ) {
     const currentItem = itemRef.current;
     syncStats.role = 'leader';
     syncStats.driftS = null;
+    syncStats.localPause = false;
     syncStats.rate = sample.rate;
     syncStats.buffering = sample.buffering;
     syncStats.updatedAt = now;
@@ -518,6 +534,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
       }
     }
 
+    if (outOfBand) return;
+
     // A fresh leader, or one whose player the browser is holding paused, follows
     // the room and reports nothing — otherwise its not-yet-playing element
     // would pause (or rewind) everyone the instant it took over.
@@ -529,7 +547,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
     // Playback edges, detected from the position and the paused flag — never
     // from `seeked`, which the providers invent (see the module comment).
     if (sample.ready && playing !== state.playing && !suppressed) {
-      emit(playing ? C2S.SYNC_PLAY : C2S.SYNC_PAUSE, {});
+      emit(playing ? C2S.SYNC_PLAY : C2S.SYNC_PAUSE, live ? {} : { time: sample.position });
       // Reflect it locally at once so the controls answer the click rather than
       // the round trip. The bumped `rev` is consumed by the branch above on the
       // next tick, where the element already agrees, so it is a no-op there.
@@ -581,6 +599,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
     state: VideoState,
     now: number,
     suppressed: boolean,
+    outOfBand: boolean,
   ) {
     // ── Did the viewer (or their OS) pause us? ──
     // Only a playing→paused transition counts. Testing the steady paused state
@@ -626,11 +645,12 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
       forceResyncRef.current = true;
     }
 
-    updateStallReport(sample, observation);
+    if (!outOfBand) updateStallReport(sample, observation);
 
     // ── Learn how long a seek costs this player ──
     // The first tick where the playhead moves at speed again after a correction
-    // seek closes the measurement. It feeds the seek lead, so the next seek
+    // seek closes the measurement: how far off the room it landed says how far
+    // off the lead was (refineSeekLead). It feeds the next seek, so that one
     // lands where the room WILL be once the player has refilled.
     if (
       seekAtRef.current !== null &&
@@ -639,8 +659,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
       !sample.buffering &&
       observation.delta > observation.expected * 0.5
     ) {
-      const measured = Math.min(3, (now - seekAtRef.current) / 1000);
-      seekLeadRef.current = seekLeadRef.current === 0 ? measured : seekLeadRef.current * 0.7 + measured * 0.3;
+      const landed = sample.position - extrapolate(state, getServerNow());
+      seekLeadRef.current = refineSeekLead(seekLeadRef.current, seekLeadUsedRef.current, landed, state.playbackRate);
       seekAtRef.current = null;
     }
 
@@ -659,7 +679,13 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
     });
 
     syncStats.role = 'viewer';
-    syncStats.driftS = state.mode === 'vod' && sample.ready ? plan.drift : null;
+    // Measured here rather than taken from the plan: a suspended plan reports
+    // 0, which read as "In sync" while this viewer sat paused.
+    syncStats.driftS =
+      state.mode === 'vod' && sample.ready && hasClockSync()
+        ? sample.position - extrapolate(state, getServerNow())
+        : null;
+    syncStats.localPause = userPausedRef.current;
     syncStats.rate = sample.rate;
     syncStats.seekLeadS = seekLeadRef.current;
     syncStats.buffering = sample.buffering;
@@ -668,6 +694,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
     switch (plan.action) {
       case 'seek':
         syncStats.seeks += 1;
+        seekLeadUsedRef.current = plan.lead;
         forceResyncRef.current = false;
         // Land, then fine-tune: the seek is only as accurate as the latency
         // estimate, so the residual is nudged down rather than left standing.
@@ -758,6 +785,22 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
     if (!url) return;
     const interval = setInterval(() => tickRef.current(), SYNC_TICK_INTERVAL_MS);
     return () => clearInterval(interval);
+  }, [url]);
+
+  // Act on a deliberate room change (play, pause, seek, speed) the moment it
+  // lands instead of on the next tick. Waiting cost up to 250 ms per change —
+  // and unevenly: when viewers waited and the leader didn't (or the reverse),
+  // the room settled with everyone a fixed ~0.2 s off the leader, inside the
+  // band nothing corrects (two-browser run, 2026-10-11).
+  useEffect(() => {
+    if (!url) return;
+    let lastRev = useRmhTubeStore.getState().room?.videoState.rev;
+    return useRmhTubeStore.subscribe((s) => {
+      const rev = s.room?.videoState.rev;
+      if (rev === lastRev) return;
+      lastRev = rev;
+      queueMicrotask(() => tickRef.current(true));
+    });
   }, [url]);
 
   // ─── Visibility ────────────────────────────────────────────────

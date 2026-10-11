@@ -28,6 +28,31 @@ Those suites run in `pnpm test`; the integration suite drives the real
 RoomManager / SyncEngine / MediaQueue over real sockets. Each of them was
 mutation-checked: reverting the fix makes its case fail.
 
+### 1.1 Live run (three browsers)
+
+A Playwright script drove three signed-in Chromium sessions (host, two
+viewers) against `vite dev` + the real hub + Postgres, on a 10-minute WebM
+served as a raw link, and measured `<video>.currentTime` across tabs. Final
+run, 19/19 checks:
+
+| Scenario | Viewer − leader (median) |
+| -------- | ------------------------ |
+| Site Play, steady state | 0.04 s (B), 0.04 s (C) |
+| Leader native scrub → viewers | 0.004 s |
+| Site −10 s | 0.10 s |
+| Leader native pause | 0.000 s (same frame) |
+| Leader native play | 0.14 s, closing |
+| Leader native 1.5× | 0.16 s, closing |
+| Viewer native scrub +20 s → snapped back | 0.03 s |
+| Viewer native 2× → restored to 1× | 0.10 s |
+| Viewer native pause | stays local, "You paused", Resync → 0.10 s |
+| Leadership → Bob, Bob scrubs natively | 0.003 s; old leader's native play overruled |
+| Leader tab closed → failover to host → leader returns | 0.045 s / 0.036 s |
+
+Start-at (`#t=30`) put both players at exactly 30.00. The script is not
+checked in (it needs a database, a session per user and a media file); the
+unit, simulation and hub suites are the regression gate.
+
 ## 2. Desync causes found and fixed
 
 | # | Cause | Symptom | Fix |
@@ -45,6 +70,15 @@ mutation-checked: reverting the fix makes its case fail.
 | 11 | ←/→ and media-key seek from the stale anchor | Jump measured from up to 2 s ago | `roomPosition()` projects the anchor first |
 | 12 | Start time (`?t=`) reached only the player | Leader at 1:30, room at 0:00, one dragged to the other | Start offset is the item's first anchor (`startOffset` / `playableUrl`) |
 | 13 | Leader spent a room `rev` while its new source was loading | Leader never applied the new item's anchor | `rev` consumed only once the element is ready |
+| 14 | Seek cost timed from "seek issued" to "next tick that sees playback" | Even an instant player learned a ~1.4 s lead and landed that far **ahead** after every correction | `refineSeekLead`: the residual drift after the seek measures the cost directly |
+| 15 | A native pause anchored at the server's projection, not the leader's frame; paused gaps < 0.5 s never corrected | Room frozen with viewers ~0.4 s apart, and resumed that way | `SYNC_PAUSE/PLAY { time }` from the leader's player; paused tolerance 0.2 s |
+| 16 | Room changes applied on the next 250 ms tick, and unevenly (leader vs. viewers) | Everyone settled a fixed ~0.2 s off the leader, inside the band nothing corrects | Out-of-band tick on every new `rev`, for leader and viewers |
+| 17 | `connectToRmhTube` checked for a client before awaiting the session | Two sockets per tab; the hub kicked one with `DUPLICATE_SESSION` | The in-flight connect is shared |
+| 18 | Sync chip read the plan's drift, which is 0 while corrections are suspended | "In sync" shown to a viewer who had paused | Offset measured directly; "You paused" state |
+
+Rows 14–18 were found by a live run (§1.1), not by the unit suites — the
+simulation measured seek cost with perfect knowledge of when frames resumed,
+which a real player never has. It now uses the same tick-based feedback.
 
 ## 3. Control matrix — native vs. site controls
 

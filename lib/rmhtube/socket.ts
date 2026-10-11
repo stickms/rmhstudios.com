@@ -53,13 +53,33 @@ function stopClockSync() {
 
 // ─── Connection ─────────────────────────────────────────────────────────────
 
-export async function connectToRmhTube(): Promise<Socket> {
+/**
+ * The connect in flight. `client` is only assigned after the session lookup
+ * resolves, so two callers inside that window (React's dev double-mount, or
+ * the landing page handing over to the room page) each built a client: the
+ * first socket leaked with every handler still bound, and the hub — which
+ * allows one socket per user — kicked one of them with DUPLICATE_SESSION.
+ */
+let connecting: Promise<Socket> | null = null;
+
+export function connectToRmhTube(): Promise<Socket> {
   if (client) {
     client.reconnectNow();
-    return client.socket;
+    return Promise.resolve(client.socket);
   }
+  connecting ??= openClient().finally(() => {
+    connecting = null;
+  });
+  return connecting;
+}
 
+/** Bumped by a disconnect, so a connect that was mid-flight does not resurrect the client. */
+let generation = 0;
+
+async function openClient(): Promise<Socket> {
+  const started = generation;
   const session = await authClient.getSession();
+  if (started !== generation) throw new Error('Disconnected');
   if (!session?.data?.session?.token) {
     store().setConnectionStatus('error');
     throw new Error('Not authenticated');
@@ -206,6 +226,7 @@ export function reconnectNow(): void {
 }
 
 export function disconnectFromRmhTube(): void {
+  generation += 1;
   stopClockSync();
   for (const timer of typingTimers.values()) clearTimeout(timer);
   typingTimers.clear();

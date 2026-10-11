@@ -9,7 +9,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { extrapolate, reanchor, isNewerAnchor, initialVideoState } from '@/lib/rmhtube/sync-math';
-import { planSync, observePosition, targetPosition, type PlayerSample } from '@/lib/rmhtube/sync-plan';
+import { planSync, observePosition, refineSeekLead, targetPosition, type PlayerSample } from '@/lib/rmhtube/sync-plan';
 import { parseMedia, parseTimestamp, playableUrl, startOffset, withStart, isNativeVideo } from '@/lib/rmhtube/media';
 import type { VideoState } from '@/lib/rmhtube/types';
 
@@ -181,11 +181,28 @@ describe('planSync', () => {
       .toMatchObject({ action: 'hold', reason: 'ended' });
   });
 
-  it('does not chase a frame-sized gap while the room is paused', () => {
+  it('does not chase a frame-sized gap while the room is paused, but does not resume half a second off', () => {
     const paused = base({ playing: false, updatedAt: 10_000 });
-    expect(at({ state: paused, sample: sample({ position: 100.3 }) }))
+    expect(at({ state: paused, sample: sample({ position: 100.1 }) }))
       .toMatchObject({ action: 'hold', reason: 'paused' });
+    // 0.45 s used to be left standing — and the room resumed with this viewer
+    // that far off (two-browser run, 2026-10-11).
+    expect(at({ state: paused, sample: sample({ position: 100.45 }) })).toMatchObject({ action: 'seek', to: 100 });
     expect(at({ state: paused, sample: sample({ position: 90 }) })).toMatchObject({ action: 'seek' });
+  });
+
+  it('learns a seek cost from how the seek landed, not from tick timing', () => {
+    // An instant player that was led by 1.4 s lands 1.4 s ahead: the cost was 0.
+    expect(refineSeekLead(1.4, 1.4, 1.4)).toBeCloseTo(0.84, 5);
+    expect(refineSeekLead(0, 0, 0)).toBe(0);
+    // A player that stalled 0.8 s after an unled seek lands 0.8 s behind.
+    expect(refineSeekLead(0, 0, -0.8)).toBeCloseTo(0.8, 5);
+    // At 2x the room moves 1.6 s in that 0.8 s.
+    expect(refineSeekLead(0, 0, -1.6, 2)).toBeCloseTo(0.8, 5);
+    // Converges on the true cost when it keeps being used.
+    let lead = 2;
+    for (let i = 0; i < 12; i++) lead = refineSeekLead(lead, lead, lead - 0.3);
+    expect(lead).toBeCloseTo(0.3, 2);
   });
 });
 

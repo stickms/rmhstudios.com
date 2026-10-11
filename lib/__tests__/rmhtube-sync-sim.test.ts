@@ -22,7 +22,7 @@ import {
   OPTIMISTIC_ANCHOR_TTL_MS,
   reanchor,
 } from '@/lib/rmhtube/sync-math';
-import { observePosition, planSync, type PlayerSample } from '@/lib/rmhtube/sync-plan';
+import { observePosition, planSync, refineSeekLead, type PlayerSample } from '@/lib/rmhtube/sync-plan';
 import {
   POSITION_JUMP_TOLERANCE_S,
   SEEK_COOLDOWN_MS,
@@ -98,6 +98,8 @@ interface Viewer {
   /** EMA of measured seek-to-playing latency, seconds (VideoPlayer does the same). */
   seekLeadS: number;
   seekAt: number | null;
+  /** The lead the in-flight correction seek was aimed with (media s). */
+  seekLeadUsed: number;
   /** Until when this viewer is recovering from its own network hiccup. */
   hiccupUntil: number;
 }
@@ -133,6 +135,7 @@ function runParty(opts: {
     canNudge: opts.canNudge,
     nudging: false,
     seekLeadS: 0,
+    seekLeadUsed: 0,
     seekAt: null,
     hiccupUntil: 0,
   }));
@@ -173,12 +176,6 @@ function runParty(opts: {
       const p = v.player;
       if (p.stallMs > 0) {
         p.stallMs -= STEP;
-        if (p.stallMs <= 0 && v.seekAt !== null) {
-          // Frames flowing again: fold this seek's latency into the estimate.
-          const measured = (now - v.seekAt) / 1000;
-          v.seekLeadS = v.seekLeadS === 0 ? measured : v.seekLeadS * 0.7 + measured * 0.3;
-          v.seekAt = null;
-        }
       } else if (!p.paused) p.position = Math.min(p.duration, p.position + (STEP / 1000) * p.rate);
 
       if (now % SYNC_TICK_INTERVAL_MS !== 0) return;
@@ -197,15 +194,22 @@ function runParty(opts: {
       const prev = v.lastSample;
       v.lastSample = { position: p.position, at: now };
       const suppressed = now < v.suppressUntil;
-      if (prev) {
-        observePosition(prev.position, p.position, now - prev.at, p.rate, !p.paused, POSITION_JUMP_TOLERANCE_S);
-      }
+      const obs = prev
+        ? observePosition(prev.position, p.position, now - prev.at, p.rate, !p.paused, POSITION_JUMP_TOLERANCE_S)
+        : null;
 
       // Mirror play/pause.
       if (v.anchor.playing && p.paused) p.paused = false;
       else if (!v.anchor.playing && !p.paused) p.paused = true;
 
       const serverNow = now + v.clockErrorMs;
+      // The player cannot see when frames resumed — only, on a tick, that the
+      // playhead moves at speed again and where it is. Same as VideoPlayer.
+      if (v.seekAt !== null && v.anchor.playing && obs && p.stallMs <= 0 && obs.delta > obs.expected * 0.5) {
+        const landed = p.position - extrapolate(v.anchor, serverNow);
+        v.seekLeadS = refineSeekLead(v.seekLeadS, v.seekLeadUsed, landed, v.anchor.playbackRate);
+        v.seekAt = null;
+      }
       const plan = planSync({
         state: v.anchor,
         serverNow,
@@ -224,6 +228,7 @@ function runParty(opts: {
           // planner in fine-tune mode so the residual is nudged down to 0.1 s.
           v.nudging = true;
           v.seekAt = now;
+          v.seekLeadUsed = plan.lead;
           v.seeks += 1;
           v.suppressUntil = now + SEEK_COOLDOWN_MS;
           v.lastSample = null;

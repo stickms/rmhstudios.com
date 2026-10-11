@@ -84,6 +84,21 @@ describe('RMHTube hub — timeline propagation', () => {
     expect([...revs].sort((a, b) => a - b)).toEqual(revs);
   });
 
+  it('a pause from the leader’s own player freezes the room on the leader’s frame', async () => {
+    const [host, viewer] = await users('host', 'viewer');
+    await roomWith(host, viewer);
+    host.emit(C2S.QUEUE_ADD, { url: MP4_A });
+    await waitFor(() => nowPlaying(viewer).length === 1, 'now playing');
+    host.emit(C2S.SYNC_PLAY);
+    const playing = await waitFor(() => viewer.states.find((s) => s.playing), 'playing');
+    host.emit(C2S.SYNC_PAUSE, { time: 12.34 });
+    const paused = await waitFor(
+      () => viewer.states.find((s) => !s.playing && s.rev > playing.rev),
+      'paused',
+    );
+    expect(paused.currentTime).toBe(12.34);
+  });
+
   it('a viewer cannot move the room', async () => {
     const [host, viewer] = await users('host', 'viewer');
     await roomWith(host, viewer);

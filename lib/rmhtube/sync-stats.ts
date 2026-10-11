@@ -19,6 +19,8 @@ export interface SyncStats {
   /** Measured cost of one seek on this player, in seconds. */
   seekLeadS: number;
   buffering: boolean;
+  /** This viewer paused their own player; the room plays on without them. */
+  localPause: boolean;
   /** `Date.now()` of the last write; stale stats read as idle. */
   updatedAt: number;
 }
@@ -30,10 +32,11 @@ export const syncStats: SyncStats = {
   seeks: 0,
   seekLeadS: 0,
   buffering: false,
+  localPause: false,
   updatedAt: 0,
 };
 
-export type SyncHealth = 'idle' | 'leader' | 'buffering' | 'synced' | 'catching-up';
+export type SyncHealth = 'idle' | 'leader' | 'paused' | 'buffering' | 'synced' | 'catching-up';
 
 const STALE_MS = 2_000;
 
@@ -41,6 +44,7 @@ const STALE_MS = 2_000;
 export function syncHealth(stats: SyncStats, now: number): SyncHealth {
   if (!stats.role || now - stats.updatedAt > STALE_MS) return 'idle';
   if (stats.role === 'leader') return 'leader';
+  if (stats.localPause) return 'paused';
   if (stats.buffering) return 'buffering';
   if (stats.driftS === null || Math.abs(stats.driftS) <= SYNC_SOFT_TOLERANCE_S) return 'synced';
   return 'catching-up';

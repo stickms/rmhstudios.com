@@ -37,6 +37,7 @@ import {
   HostStateSchema,
   SeekSchema,
   SetSpeedSchema,
+  PlaybackEdgeSchema,
   PingSchema,
   StallSchema,
 } from '../../lib/rmhtube/schemas';
@@ -104,11 +105,11 @@ export class SyncEngine {
     );
     socket.on(
       C2S.SYNC_PLAY,
-      validated(socket, C2S.SYNC_PLAY, EmptySchema, (s) => this.onPlay(s)),
+      validated(socket, C2S.SYNC_PLAY, PlaybackEdgeSchema, (s, p) => this.onPlay(s, p)),
     );
     socket.on(
       C2S.SYNC_PAUSE,
-      validated(socket, C2S.SYNC_PAUSE, EmptySchema, (s) => this.onPause(s)),
+      validated(socket, C2S.SYNC_PAUSE, PlaybackEdgeSchema, (s, p) => this.onPause(s, p)),
     );
     socket.on(
       C2S.SYNC_SEEK,
@@ -215,14 +216,15 @@ export class SyncEngine {
 
   // ─── Leader edges ────────────────────────────────────────────
 
-  private onPlay(socket: Socket): void {
+  private onPlay(socket: Socket, payload?: { time?: number }): void {
     const room = this.leaderRoom(socket);
     if (!room) return;
     const now = Date.now();
-    // Resume from the effective position, so a pause of any length does not
-    // move the playhead.
+    // Resume from the leader's playhead when it says where that is (its own
+    // player's play button), else from the effective position, so a pause of
+    // any length does not move the playhead.
     this.setState(room, {
-      currentTime: extrapolate(room.videoState, now),
+      currentTime: this.edgePosition(room, payload, now),
       playing: true,
       stalled: false,
     }, now);
@@ -240,17 +242,23 @@ export class SyncEngine {
     }
   }
 
-  private onPause(socket: Socket): void {
+  private onPause(socket: Socket, payload?: { time?: number }): void {
     const room = this.leaderRoom(socket);
     if (!room) return;
     const now = Date.now();
     this.setState(room, {
-      currentTime: extrapolate(room.videoState, now),
+      currentTime: this.edgePosition(room, payload, now),
       playing: false,
     }, now);
     room.lastActivityAt = now;
     // A deliberate pause by the leader supersedes any wait the room was in.
     if (room.peerWait.startedAt !== null) this.endPeerWait(room, 'leader_paused', now);
+  }
+
+  /** Where a play/pause edge happened: the leader's frame if it sent one (VOD only). */
+  private edgePosition(room: RmhTubeRoom, payload: { time?: number } | undefined, now: number): number {
+    if (room.videoState.mode === 'vod' && payload?.time !== undefined) return payload.time;
+    return extrapolate(room.videoState, now);
   }
 
   private onSeek(socket: Socket, payload: { time: number }): void {

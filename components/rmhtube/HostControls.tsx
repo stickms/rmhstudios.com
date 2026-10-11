@@ -217,6 +217,7 @@ export default function HostControls({
         {/* Play/Pause — visible to all */}
         <button
           onClick={handlePlayPause}
+          aria-label={playing ? t('pause', { defaultValue: 'Pause' }) : t('play', { defaultValue: 'Play' })}
           className="shrink-0 rounded-full p-2 transition-colors bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)"
         >
           {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}

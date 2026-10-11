@@ -54,6 +54,12 @@ export const POSITION_JUMP_TOLERANCE_S = 0.75;
 //   |drift| > HARD           → seek
 export const SYNC_SOFT_TOLERANCE_S = 0.5;
 export const SYNC_HARD_TOLERANCE_S = 2;
+/**
+ * A paused room's anchor is static and a paused seek costs nothing visible, so
+ * a viewer is put on the frame rather than left up to half a second off it —
+ * which is where it would otherwise resume from, out of sync.
+ */
+export const SYNC_PAUSED_TOLERANCE_S = 0.2;
 export const SYNC_NUDGE_RATE = 0.05; // ±5% playback-rate nudge while closing a gap
 /**
  * Once a rate nudge has started, keep nudging until the gap is this small.

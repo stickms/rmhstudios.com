@@ -22,6 +22,7 @@ const POLL_MS = 500;
 const DOT: Record<SyncHealth, string> = {
   idle: 'bg-(--app-text-dim)',
   leader: 'bg-(--app-info)',
+  paused: 'bg-(--app-warning)',
   buffering: 'bg-(--app-warning)',
   synced: 'bg-(--app-success)',
   'catching-up': 'bg-(--app-warning)',
@@ -68,6 +69,7 @@ export default function SyncStatus() {
   const label: Record<SyncHealth, string> = {
     idle: t('sync-idle', { defaultValue: 'Not playing' }),
     leader: t('sync-leader', { defaultValue: 'You lead' }),
+    paused: t('sync-paused-local', { defaultValue: 'You paused' }),
     buffering: t('sync-buffering', { defaultValue: 'Buffering' }),
     synced: t('sync-synced', { defaultValue: 'In sync' }),
     'catching-up': t('sync-catching-up', { defaultValue: 'Catching up' }),

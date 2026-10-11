@@ -1267,6 +1267,8 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'take-control',
     'wants-control',
     // RMHTube features (2026-10-11): start offsets, multi-link add, sync status.
+    'pause',
+    'play',
     'add-batch-to-queue_one',
     'add-batch-to-queue_other',
     'batch-cancel',
@@ -1278,6 +1280,7 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'sync-catching-up',
     'sync-idle',
     'sync-leader',
+    'sync-paused-local',
     'sync-resync',
     'sync-stat-clock',
     'sync-stat-offset',
