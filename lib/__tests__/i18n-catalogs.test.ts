@@ -138,7 +138,12 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   ],
   library: ['no-books-hint', 'no-books-title', 'no-results-hint'],
   'games-hub': ['no-guides-hint', 'no-reviews-hint', 'guide-body-guide-view'],
-  'c-rmhmusic': ['back-to-builds'],
+  'c-rmhmusic': [
+    'back-to-builds',
+    // UX/QoL batch (plan U1–U15, 2026-10-11) — English-only until the translate pipeline runs.
+    'mini-pop-in',
+    'mini-pop-out',
+  ],
   'c-rmhcalculator': ['back-to-builds'],
   'c-news': [
     'filters',
@@ -1214,6 +1219,11 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'reminders',
     'reminders-empty-desc',
     'reminders-empty-title',
+  ],
+  'c-rmhtube': [
+    // UX/QoL batch (plan U1–U15, 2026-10-11) — English-only until the translate pipeline runs.
+    'bring-back',
+    'popped-out',
   ],
 };
 

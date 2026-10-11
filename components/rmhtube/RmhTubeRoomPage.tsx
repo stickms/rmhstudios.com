@@ -19,6 +19,8 @@ import { S2C, C2S } from '@/lib/rmhtube/events';
 import { SHORTCUTS, AUTO_AFK_TIMEOUT_MS } from '@/lib/rmhtube/constants';
 import { toast } from '@/lib/rmhtube/toast-store';
 import { clearMediaSession, setMediaHandlers, setMediaMeta } from '@/lib/media/media-session';
+import { PopOutPortal, usePopOut } from '@/components/shared/pop-out';
+import { PictureInPicture2 } from 'lucide-react';
 import RmhTubeHeader from '@/components/rmhtube/RmhTubeHeader';
 import SettingsPanel from '@/components/rmhtube/SettingsPanel';
 import VideoPlayer from '@/components/rmhtube/VideoPlayer';
@@ -52,6 +54,11 @@ export default function RmhTubeRoomPage() {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const videoPlayerRef = useRef<VideoPlayerHandle>(null);
+  // U10 — Document PiP pop-out (video + chat in a floating window). Falls back
+  // to the element's classic video PiP where the API doesn't exist.
+  const popOut = usePopOut();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const pipRef = useRef<() => void>(() => {});
   const afkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Track screen size to render only one layout (prevents duplicate video players)
@@ -214,7 +221,7 @@ export default function RmhTubeRoomPage() {
           if (canControl) emit(C2S.QUEUE_SKIP, {});
           break;
         case SHORTCUTS.TOGGLE_PIP:
-          videoPlayerRef.current?.togglePiP();
+          pipRef.current();
           break;
         case SHORTCUTS.SHOW_SHORTCUTS:
           if (e.shiftKey) {
@@ -267,8 +274,14 @@ export default function RmhTubeRoomPage() {
   }, [room]);
 
   const handlePiP = useCallback(() => {
-    videoPlayerRef.current?.togglePiP();
-  }, []);
+    if (!popOut.supported) {
+      videoPlayerRef.current?.togglePiP();
+      return;
+    }
+    if (popOut.win) popOut.close();
+    else void popOut.open({ width: 480, height: 420 });
+  }, [popOut]);
+  pipRef.current = handlePiP;
 
   const handleFullscreen = useCallback(() => {
     videoPlayerRef.current?.toggleFullscreen();
@@ -300,8 +313,14 @@ export default function RmhTubeRoomPage() {
   const isHost = room.myUserId === room.hostUserId;
   const isLeader = room.myUserId === room.leaderUserId;
 
+  // One player element; it lives in the page or in the pop-out, never both
+  // (two players would both try to drive the room's playhead).
+  const player = (
+    <VideoPlayer ref={videoPlayerRef} item={room.currentItem} isLeader={isLeader} onEnded={handleVideoEnded} />
+  );
+
   return (
-    <div className={`app-viewport ${densityClass} ${theaterMode ? 'rmhtube-theater-mode' : ''}`}>
+    <div ref={rootRef} className={`app-viewport ${densityClass} ${theaterMode ? 'rmhtube-theater-mode' : ''}`}>
       {/* Header */}
       <div className="flex items-center border-b border-(--app-border)">
         <div className="flex-1">
@@ -344,7 +363,7 @@ export default function RmhTubeRoomPage() {
             <div className={`flex flex-col min-h-0 overflow-hidden ${!theaterMode ? 'border-r border-(--app-border)' : ''}`}>
               {/* Video player */}
               <div className={`shrink-0 p-4 pb-2 *:max-h-full rmhtube-video-container ${theaterMode ? 'max-h-[85%]' : 'max-h-[70%]'}`}>
-                <VideoPlayer ref={videoPlayerRef} item={room.currentItem} isLeader={isLeader} onEnded={handleVideoEnded} />
+                {popOut.win ? <PoppedOutNotice onReturn={popOut.close} /> : player}
               </div>
 
               {/* Controls / Now playing bar */}
@@ -412,7 +431,7 @@ export default function RmhTubeRoomPage() {
           /* Mobile layout */
           <div className="flex flex-col h-full min-h-0">
             <div className="shrink-0 p-3 pb-0">
-              <VideoPlayer ref={videoPlayerRef} item={room.currentItem} isLeader={isLeader} onEnded={handleVideoEnded} />
+              {popOut.win ? <PoppedOutNotice onReturn={popOut.close} /> : player}
             </div>
 
             <div className="shrink-0">
@@ -457,10 +476,41 @@ export default function RmhTubeRoomPage() {
       </div>
 
       {/* Modals */}
+      {popOut.win && (
+        <PopOutPortal
+          win={popOut.win}
+          themeClassName={`${rootRef.current?.closest('.app-theme')?.className ?? 'app-theme'} flex flex-col h-screen bg-(--app-bg)`}
+        >
+          <div className="shrink-0">{player}</div>
+          <div className="flex-1 min-h-0 overflow-hidden border-t border-(--app-border)">
+            <ChatPanel />
+          </div>
+        </PopOutPortal>
+      )}
       {showShortcuts && <ShortcutsOverlay onClose={() => setShowShortcuts(false)} />}
       {showBanList && <BanListModal onClose={() => setShowBanList(false)} />}
       {showInviteModal && <InviteLinkModal roomId={roomId} onClose={() => setShowInviteModal(false)} />}
       <OnboardingTour />
+    </div>
+  );
+}
+
+/** Where the player was, while it plays in the pop-out window (U10). */
+function PoppedOutNotice({ onReturn }: { onReturn: () => void }) {
+  const { t } = useTranslation('c-rmhtube');
+  return (
+    <div className="relative flex w-full aspect-video flex-col items-center justify-center gap-3 rounded-xl bg-(--app-surface) text-center">
+      <PictureInPicture2 className="h-8 w-8 text-(--app-text-muted)" aria-hidden />
+      <p className="text-sm text-(--app-text-muted)">
+        {t('popped-out', { defaultValue: 'Playing in a pop-out window' })}
+      </p>
+      <button
+        type="button"
+        onClick={onReturn}
+        className="rounded-lg border border-(--app-border) px-3 py-1.5 text-sm font-medium text-(--app-text) transition-colors hover:bg-(--app-surface-hover)"
+      >
+        {t('bring-back', { defaultValue: 'Bring it back' })}
+      </button>
     </div>
   );
 }

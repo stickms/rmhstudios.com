@@ -12,12 +12,13 @@
  * socket events are emitted, so room sync can't be broken from this surface.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Play, Pause, Music, X, Maximize2 } from 'lucide-react';
+import { Play, Pause, Music, X, Maximize2, PictureInPicture2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
 import { usePreviewPlayer } from '@/lib/rmhmusic/spotify-player';
+import { PopOutPortal, usePopOut } from '@/components/shared/pop-out';
 
 function MiniPlayerInner() {
   const { t } = useTranslation('c-rmhmusic');
@@ -26,6 +27,9 @@ function MiniPlayerInner() {
   const setCurrentTrack = useRmhMusicStore((s) => s.setCurrentTrack);
   const setPlayback = useRmhMusicStore((s) => s.setPlayback);
   const { pause, resume } = usePreviewPlayer();
+  // U10 — float the controls above other tabs (Document PiP, Chromium). The
+  // dock hides while they are popped out so there is one set of controls.
+  const popOut = usePopOut();
   const [progress, setProgress] = useState(0);
   const interval = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -57,21 +61,23 @@ function MiniPlayerInner() {
     setCurrentTrack(null);
   };
 
-  return (
-    <div
-      className="glass-overlay fixed bottom-above-dock left-2 right-2 z-40 mx-auto max-w-sm overflow-hidden md:bottom-4 md:left-auto md:right-4"
-      // §5.5x A.1: floating-bottom stack member — globals.css lifts it above the
-      // cookie bar (and back-to-top above it) so the stack never overlaps.
-      data-floating="miniplayer"
-      role="region"
-      aria-label={t('mini-player', { defaultValue: 'Music mini-player' })}
-    >
+  // One control row for both homes (dock and pop-out); `extra` is what only
+  // the in-page dock offers (open the full player, stop).
+  const controls = (extra?: ReactNode) => (
+    <>
       <div className="h-0.5 w-full bg-site-surface-active">
-        <div className="h-full bg-site-accent transition-[width] duration-200" style={{ width: `${percent}%` }} />
+        <div
+          className="h-full bg-site-accent transition-[width] duration-200"
+          style={{ width: `${percent}%` }}
+        />
       </div>
       <div className="flex items-center gap-2.5 p-2">
         {currentTrack.albumArt ? (
-          <img src={currentTrack.albumArt} alt="" className="h-10 w-10 shrink-0 rounded-site-sm object-cover" />
+          <img
+            src={currentTrack.albumArt}
+            alt=""
+            className="h-10 w-10 shrink-0 rounded-site-sm object-cover"
+          />
         ) : (
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-site-sm bg-site-bg">
             <Music className="h-4 w-4 text-site-text-muted" aria-hidden />
@@ -93,22 +99,65 @@ function MiniPlayerInner() {
         >
           {playback.isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
         </button>
-        <Link
-          to="/rmhmusic/player"
-          aria-label={t('mini-open', { defaultValue: 'Open player' })}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text"
-        >
-          <Maximize2 className="h-4 w-4" />
-        </Link>
-        <button
-          type="button"
-          onClick={stop}
-          aria-label={t('mini-close', { defaultValue: 'Stop and close' })}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text"
-        >
-          <X className="h-4 w-4" />
-        </button>
+        {popOut.supported ? (
+          <button
+            type="button"
+            onClick={() =>
+              popOut.win ? popOut.close() : void popOut.open({ width: 360, height: 72 })
+            }
+            aria-label={
+              popOut.win
+                ? t('mini-pop-in', { defaultValue: 'Return to page' })
+                : t('mini-pop-out', { defaultValue: 'Pop out player' })
+            }
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text"
+          >
+            <PictureInPicture2 className="h-4 w-4" />
+          </button>
+        ) : null}
+        {extra}
       </div>
+    </>
+  );
+
+  if (popOut.win) {
+    return (
+      <PopOutPortal win={popOut.win} themeClassName="bg-site-bg">
+        <div role="region" aria-label={t('mini-player', { defaultValue: 'Music mini-player' })}>
+          {controls()}
+        </div>
+      </PopOutPortal>
+    );
+  }
+
+  return (
+    <div
+      className="glass-overlay fixed bottom-above-dock left-2 right-2 z-40 mx-auto max-w-sm overflow-hidden md:bottom-4 md:left-auto md:right-4"
+      // §5.5x A.1: floating-bottom stack member — globals.css lifts it above the
+      // cookie bar (and back-to-top above it) so the stack never overlaps.
+      data-floating="miniplayer"
+      role="region"
+      aria-label={t('mini-player', { defaultValue: 'Music mini-player' })}
+    >
+      {controls(
+        <>
+          <Link
+            to="/rmhmusic/player"
+            aria-label={t('mini-open', { defaultValue: 'Open player' })}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text"
+          >
+            <Maximize2 className="h-4 w-4" />
+          </Link>
+          <button
+            type="button"
+            onClick={stop}
+            aria-label={t('mini-close', { defaultValue: 'Stop and close' })}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </>,
+      )}
     </div>
   );
 }

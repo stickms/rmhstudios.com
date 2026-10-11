@@ -608,9 +608,16 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
   }, [url]);
 
   // ─── Visibility ────────────────────────────────────────────────
+  //
+  // Read from the document the player actually lives in: popped out into a
+  // Document PiP window (U10) the player stays visible while the page's own
+  // tab is hidden, and keying off the page would freeze sync for exactly the
+  // viewer who is still watching.
   useEffect(() => {
+    const doc = containerRef.current?.ownerDocument ?? document;
+    hiddenRef.current = doc.visibilityState === 'hidden';
     function onVisibility() {
-      const hidden = document.visibilityState === 'hidden';
+      const hidden = doc.visibilityState === 'hidden';
       hiddenRef.current = hidden;
       if (hidden) return;
 
@@ -625,9 +632,9 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
         forceResyncRef.current = true;
       }
     }
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => document.removeEventListener('visibilitychange', onVisibility);
-  }, []);
+    doc.addEventListener('visibilitychange', onVisibility);
+    return () => doc.removeEventListener('visibilitychange', onVisibility);
+  }, [url]);
 
   // Clear the stall if we unmount mid-buffer, so the room is not left waiting
   // for a viewer who has gone.
