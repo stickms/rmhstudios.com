@@ -15,6 +15,7 @@ import esCCursedLogic from "@/locales/es/c-cursed-logic.json";
 import esCDailyPuzzles from "@/locales/es/c-daily-puzzles.json";
 import esCDoctrine from "@/locales/es/c-doctrine.json";
 import esCDreamRift from "@/locales/es/c-dream-rift.json";
+import esCDunesday from "@/locales/es/c-dunesday.json";
 import esCEconomy from "@/locales/es/c-economy.json";
 import esCForestExplorer from "@/locales/es/c-forest-explorer.json";
 import esCGabrielsHorn from "@/locales/es/c-gabriels-horn.json";
@@ -111,6 +112,7 @@ const esResources = {
   "c-daily-puzzles": esCDailyPuzzles,
   "c-doctrine": esCDoctrine,
   "c-dream-rift": esCDreamRift,
+  "c-dunesday": esCDunesday,
   "c-economy": esCEconomy,
   "c-forest-explorer": esCForestExplorer,
   "c-gabriels-horn": esCGabrielsHorn,

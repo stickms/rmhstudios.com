@@ -15,6 +15,7 @@ import deCCursedLogic from "@/locales/de/c-cursed-logic.json";
 import deCDailyPuzzles from "@/locales/de/c-daily-puzzles.json";
 import deCDoctrine from "@/locales/de/c-doctrine.json";
 import deCDreamRift from "@/locales/de/c-dream-rift.json";
+import deCDunesday from "@/locales/de/c-dunesday.json";
 import deCEconomy from "@/locales/de/c-economy.json";
 import deCForestExplorer from "@/locales/de/c-forest-explorer.json";
 import deCGabrielsHorn from "@/locales/de/c-gabriels-horn.json";
@@ -111,6 +112,7 @@ const deResources = {
   "c-daily-puzzles": deCDailyPuzzles,
   "c-doctrine": deCDoctrine,
   "c-dream-rift": deCDreamRift,
+  "c-dunesday": deCDunesday,
   "c-economy": deCEconomy,
   "c-forest-explorer": deCForestExplorer,
   "c-gabriels-horn": deCGabrielsHorn,
