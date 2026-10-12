@@ -327,6 +327,7 @@ function mapOwn(r: any, userId: string | null, displayMap: Map<string, ResolvedU
     imageAlts: isDeleted ? undefined : r.imageAlts,
     isSensitive: isDeleted ? false : (r.isSensitive ?? false),
     replyControl: r.replyControl ?? 'EVERYONE',
+    isTake: r.isTake || undefined,
     reactions: [], // filled in by loadReactionSummaries after the query
     threadReplyCount: r.threadReplyCount ?? 0,
     deletedAt: r.deletedAt?.toISOString() || null,
@@ -364,6 +365,7 @@ function mapRepost(
     imageAlts: isDeleted ? undefined : r.imageAlts,
     isSensitive: isDeleted ? false : (r.isSensitive ?? false),
     replyControl: r.replyControl ?? 'EVERYONE',
+    isTake: r.isTake || undefined,
     reactions: [], // filled in by loadReactionSummaries after the query
     deletedAt: r.deletedAt?.toISOString() || null,
     deletedByAdmin: r.deletedByAdmin,

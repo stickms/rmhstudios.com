@@ -88,6 +88,8 @@ export const createRMHarkSchema = z
     unlockPrice: z.number().int().min(0).max(1_000_000).optional(),
     // Optional community to post into (viewer must be a member).
     communityId: z.string().max(64).optional(),
+    // Take meter (X6): readers vote agree/disagree; the split shows after voting.
+    isTake: z.boolean().optional(),
   })
   .refine(
     (data) =>
