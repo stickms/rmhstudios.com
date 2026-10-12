@@ -161,7 +161,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/ventures` | RMH Ventures | public | `app/routes/_site/ventures.tsx` |
 | `/wager` | Wager Matches | public | `app/routes/_site/wager.index.tsx` |
 | `/wager/:id` | Wager Match | public | `app/routes/_site/wager.$id.tsx` |
-| `/wallet` | redirects to `/predictions` | public | `app/routes/_site/wallet.tsx` |
+| `/wallet` | Wallet | public | `app/routes/_site/wallet.tsx` |
 | `/wishlist` | redirects to `/saves?tab=wishlist` | public | `app/routes/_site/wishlist.tsx` |
 | `/wrapped` | Wrapped | public | `app/routes/_site/wrapped.tsx` |
 

@@ -19,6 +19,7 @@ import { runProgression, type ProgressionJob } from '@/lib/social/engagement-eff
 import { registerEventReminderWorker } from '@/lib/events.server';
 import { registerDigestCron } from '@/lib/digest/pipeline.server';
 import { registerMaintenanceCrons } from '@/lib/jobs/maintenance.server';
+import { registerEconomyCrons } from '@/lib/economy/jobs.server';
 import { ANALYSIS_QUEUE, registerAnalysisWorker } from '@/lib/slice-it/analysis-queue.server';
 import { REGEN_QUEUE, registerRegenCron } from '@/lib/slice-it/regen.server';
 import { PF2E_REMINDER_QUEUE, registerPf2eReminderCron } from '@/lib/pf2ecal/reminders.server';
@@ -158,6 +159,16 @@ async function main() {
       queue: 'platform.maintenance',
       err: (e as Error)?.message,
     });
+  }
+
+  // Economy-plus (2026-10-12 batch): community goal deadlines + refunds (C5),
+  // scheduled gift delivery (C7) and the daily wishlist price alerts (C8). These
+  // move coins, so each handler is idempotent and claims its work conditionally.
+  try {
+    await registerEconomyCrons(boss);
+    log.info({ event: 'jobs.started', queue: 'economy' });
+  } catch (e) {
+    log.error({ event: 'jobs.register_failed', queue: 'economy', err: (e as Error)?.message });
   }
 
   const shutdown = async (sig: string) => {
