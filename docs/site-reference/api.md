@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 618 files across 145 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 622 files across 145 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -1096,7 +1096,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/rmharks`
 
-24 routes.
+27 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -1105,6 +1105,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/rmharks/:id/bookmark` | `POST` | `app/routes/api/rmharks/$id/bookmark.ts` |
 | `/api/rmharks/:id/comment` | `GET` `POST` | `app/routes/api/rmharks/$id/comment.ts` |
 | `/api/rmharks/:id/comment/:commentId` | `DELETE` | `app/routes/api/rmharks/$id/comment/$commentId.ts` |
+| `/api/rmharks/:id/comment/:commentId/hide` | `POST` | `app/routes/api/rmharks/$id/comment/$commentId/hide.ts` |
 | `/api/rmharks/:id/comment/:commentId/like` | `GET` `POST` | `app/routes/api/rmharks/$id/comment/$commentId/like.ts` |
 | `/api/rmharks/:id/comment/:commentId/repost` | `GET` `POST` | `app/routes/api/rmharks/$id/comment/$commentId/repost.ts` |
 | `/api/rmharks/:id/comment/:commentId/view` | `POST` | `app/routes/api/rmharks/$id/comment/$commentId/view.ts` |
@@ -1112,10 +1113,12 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/rmharks/:id/insights` | `GET` | `app/routes/api/rmharks/$id/insights.ts` |
 | `/api/rmharks/:id/like` | `GET` `POST` | `app/routes/api/rmharks/$id/like.ts` |
 | `/api/rmharks/:id/pin` | `POST` | `app/routes/api/rmharks/$id/pin.ts` |
+| `/api/rmharks/:id/quotes` | `GET` | `app/routes/api/rmharks/$id/quotes.ts` |
 | `/api/rmharks/:id/react` | `POST` | `app/routes/api/rmharks/$id/react.ts` |
 | `/api/rmharks/:id/repost` | `GET` `POST` | `app/routes/api/rmharks/$id/repost.ts` |
 | `/api/rmharks/:id/similar` | `GET` | `app/routes/api/rmharks/$id/similar.ts` |
 | `/api/rmharks/:id/summary` | `GET` | `app/routes/api/rmharks/$id/summary.ts` |
+| `/api/rmharks/:id/take` | `GET` `POST` | `app/routes/api/rmharks/$id/take.ts` |
 | `/api/rmharks/:id/translate` | `GET` | `app/routes/api/rmharks/$id/translate.ts` |
 | `/api/rmharks/:id/unlock` | `POST` | `app/routes/api/rmharks/$id/unlock.ts` |
 | `/api/rmharks/:id/view` | `POST` | `app/routes/api/rmharks/$id/view.ts` |
@@ -1260,10 +1263,11 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/settings`
 
-3 routes.
+4 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
+| `/api/settings/alt-text` | `GET` `POST` | `app/routes/api/settings/alt-text.ts` |
 | `/api/settings/email-digest` | `POST` | `app/routes/api/settings/email-digest.ts` |
 | `/api/settings/game-assists` | `GET` `POST` | `app/routes/api/settings/game-assists.ts` |
 | `/api/settings/play-limits` | `GET` `POST` | `app/routes/api/settings/play-limits.ts` |

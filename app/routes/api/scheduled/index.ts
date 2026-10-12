@@ -13,6 +13,7 @@ import {
 } from '@/lib/rmhark-schema';
 import { ownsFeedImageUrl } from '@/lib/storage/keys';
 import { listScheduled } from '@/lib/scheduled/list.server';
+import { altTextViolation } from '@/lib/feed/alt-text.server';
 
 const pollSchema = z.object({
   question: z.string().min(1).max(MAX_POLL_QUESTION_LENGTH),
@@ -73,6 +74,11 @@ export const Route = createFileRoute('/api/scheduled/')({
 
           if (d.imageUrls?.length && !d.imageUrls.every((u) => ownsFeedImageUrl(u, userId))) {
             return Response.json({ error: 'Invalid image reference' }, { status: 400 });
+          }
+
+          const altError = await altTextViolation(userId, d.imageUrls, d.imageAlts);
+          if (altError) {
+            return Response.json({ error: altError }, { status: 400 });
           }
 
           let scheduledAt: Date | null = null;
