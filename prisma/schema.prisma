@@ -446,6 +446,10 @@ model User {
   pf2eRecaps          Pf2eRecap[]           @relation("Pf2eRecapAuthor")
   pf2eSettingsEdits   Pf2eSettings[]        @relation("Pf2eSettingsEditor")
 
+  // ─── Feature ideas 2026-10-12 (docs/plans/2026-10-12-feature-ideas-every-surface.md)
+  // Back-relations for the models at the end of this file. One line per field,
+  // each package's lines together; never re-align this block.
+
   @@index([isBot])
   @@index([followerCount])
   // Backs the nightly finalize-deletion sweep; partial in effect since the
@@ -9680,3 +9684,8 @@ model DunesdayPlan {
   @@index([discordWebhookUrl, discordDaily])
   @@map("dunesday_plan")
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Feature ideas 2026-10-12 — docs/plans/2026-10-12-feature-ideas-every-surface.md
+// Each feature package appends its models below under its own header comment.
+// ═════════════════════════════════════════════════════════════════════════════

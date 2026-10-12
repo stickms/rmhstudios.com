@@ -73,6 +73,8 @@ export const NAMESPACES = [
   "r-rmhbox", "r-rmhcode", "r-secret", "r-slice-it", "r-sohumbum",
   "r-sohumtracker",
   "r-strategies", "r-studio",
+  // Feature-ideas namespaces (docs/plans/2026-10-12-feature-ideas-every-surface.md),
+  // one per line so parallel additions merge cleanly.
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 
