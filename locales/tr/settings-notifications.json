@@ -17,5 +17,7 @@
   "quiet-end": "Quiet hours end",
   "quiet-hours": "Quiet hours",
   "quiet-start": "Quiet hours start",
+  "tab-badge": "Tarayıcı sekmesindeki okunmamış sayısı",
+  "tab-badge-desc": "Bu cihazda sekme başlığında ve simgesinde okunmamış mesaj ve bildirim sayısını gösterir.",
   "to": "To"
 }

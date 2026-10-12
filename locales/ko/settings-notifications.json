@@ -17,5 +17,7 @@
   "quiet-end": "Quiet hours end",
   "quiet-hours": "Quiet hours",
   "quiet-start": "Quiet hours start",
+  "tab-badge": "브라우저 탭의 읽지 않은 개수",
+  "tab-badge-desc": "이 기기의 탭 제목과 아이콘에 읽지 않은 메시지 및 알림 수를 표시합니다.",
   "to": "To"
 }

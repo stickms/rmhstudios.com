@@ -1,0 +1,20 @@
+{
+  "aiBudget": "Anda telah menggunakan jatah AI bulan ini",
+  "aiUnavailable": "Fitur AI sedang offline",
+  "conflict": "Orang lain mengubah ini lebih dulu",
+  "coolOff": "Anda sedang mengambil jeda dari staking koin",
+  "forbidden": "Anda tidak memiliki akses ke ini",
+  "gone": "Itu telah kedaluwarsa",
+  "insufficientCoins": "Koin Anda tidak cukup",
+  "internal": "Terjadi kesalahan di sisi kami",
+  "invalidInput": "Periksa formulir dan coba lagi",
+  "notFound": "Itu tidak ada (atau telah dihapus)",
+  "queryBudget": "Permintaan itu terlalu mahal untuk dilayani",
+  "quotaExceeded": "Penyimpanan Anda habis",
+  "rateLimited": "Pelankan sebentar",
+  "selfExcluded": "Anda telah mengecualikan diri dari staking koin",
+  "stakeLimit": "Anda telah mencapai batas yang Anda tetapkan",
+  "storageUnavailable": "Unggahan sementara tidak tersedia",
+  "unauthorized": "Masuk untuk melanjutkan",
+  "upgradeRequired": "Fitur ini memerlukan keanggotaan"
+}

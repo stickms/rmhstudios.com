@@ -27,6 +27,7 @@
   "pagination-next": "Next",
   "pagination-previous": "Previous",
   "pagination-range": "{{from}}–{{to}} of {{total}}",
+  "player-count-of-max": "{{count}}/{{max}} players",
   "player-count_one": "{{count}} players",
   "player-count_other": "{{count}} players",
   "player-range": "{{minPlayers}}–{{maxPlayers}} players",

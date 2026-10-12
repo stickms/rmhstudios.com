@@ -17,5 +17,7 @@
   "quiet-end": "Quiet hours end",
   "quiet-hours": "Quiet hours",
   "quiet-start": "Quiet hours start",
+  "tab-badge": "عدد غير المقروء في تبويب المتصفح",
+  "tab-badge-desc": "يعرض عدد الرسائل والإشعارات غير المقروءة في عنوان التبويب وأيقونته على هذا الجهاز.",
   "to": "To"
 }

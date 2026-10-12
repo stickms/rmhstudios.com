@@ -1,3 +1,22 @@
 {
-  "skipToContent": "Skip to content"
+  "add-to-calendar": "Add to calendar",
+  "calendar-google": "Google Calendar",
+  "calendar-ics": "Download .ics",
+  "calendar-outlook": "Outlook",
+  "event-organizer-time": "({{time}} for the organiser)",
+  "notFound.explore-search": "Explore & search",
+  "profile-completeness": "Profile {{percent}}% complete",
+  "profile-step-avatar": "Add a profile picture",
+  "profile-step-bio": "Write a short bio",
+  "profile-step-follow": "Follow a few people",
+  "profile-step-links": "Add a link",
+  "profile-step-post": "Share your first post",
+  "profile-step-theme": "Pick a theme",
+  "rarity-common": "Common",
+  "rarity-epic": "Epic",
+  "rarity-legendary": "Legendary",
+  "rarity-rare": "Rare",
+  "rarity-uncommon": "Uncommon",
+  "skipToContent": "Skip to content",
+  "undo": "Undo"
 }

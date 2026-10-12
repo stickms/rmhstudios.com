@@ -15,6 +15,7 @@ import viCCursedLogic from "@/locales/vi/c-cursed-logic.json";
 import viCDailyPuzzles from "@/locales/vi/c-daily-puzzles.json";
 import viCDoctrine from "@/locales/vi/c-doctrine.json";
 import viCDreamRift from "@/locales/vi/c-dream-rift.json";
+import viCDunesday from "@/locales/vi/c-dunesday.json";
 import viCEconomy from "@/locales/vi/c-economy.json";
 import viCForestExplorer from "@/locales/vi/c-forest-explorer.json";
 import viCGabrielsHorn from "@/locales/vi/c-gabriels-horn.json";
@@ -40,11 +41,13 @@ import viCProfileModules from "@/locales/vi/c-profile-modules.json";
 import viCRebarRutabaga from "@/locales/vi/c-rebar-rutabaga.json";
 import viCRideshare from "@/locales/vi/c-rideshare.json";
 import viCRmhCapital from "@/locales/vi/c-rmh-capital.json";
+import viCRmhDatacenter from "@/locales/vi/c-rmh-datacenter.json";
 import viCRmhPmc from "@/locales/vi/c-rmh-pmc.json";
 import viCRmhbox from "@/locales/vi/c-rmhbox.json";
 import viCRmhcalculator from "@/locales/vi/c-rmhcalculator.json";
 import viCRmhcode from "@/locales/vi/c-rmhcode.json";
 import viCRmhcoins from "@/locales/vi/c-rmhcoins.json";
+import viCRmhfashion from "@/locales/vi/c-rmhfashion.json";
 import viCRmhmusic from "@/locales/vi/c-rmhmusic.json";
 import viCRmhstudy from "@/locales/vi/c-rmhstudy.json";
 import viCRmhtech from "@/locales/vi/c-rmhtech.json";
@@ -67,6 +70,7 @@ import viCVoidBreaker from "@/locales/vi/c-void-breaker.json";
 import viCWager from "@/locales/vi/c-wager.json";
 import viCWishlist from "@/locales/vi/c-wishlist.json";
 import viCommon from "@/locales/vi/common.json";
+import viErrors from "@/locales/vi/errors.json";
 import viFeed from "@/locales/vi/feed.json";
 import viGamesHub from "@/locales/vi/games-hub.json";
 import viGroups from "@/locales/vi/groups.json";
@@ -111,6 +115,7 @@ const viResources = {
   "c-daily-puzzles": viCDailyPuzzles,
   "c-doctrine": viCDoctrine,
   "c-dream-rift": viCDreamRift,
+  "c-dunesday": viCDunesday,
   "c-economy": viCEconomy,
   "c-forest-explorer": viCForestExplorer,
   "c-gabriels-horn": viCGabrielsHorn,
@@ -136,11 +141,13 @@ const viResources = {
   "c-rebar-rutabaga": viCRebarRutabaga,
   "c-rideshare": viCRideshare,
   "c-rmh-capital": viCRmhCapital,
+  "c-rmh-datacenter": viCRmhDatacenter,
   "c-rmh-pmc": viCRmhPmc,
   "c-rmhbox": viCRmhbox,
   "c-rmhcalculator": viCRmhcalculator,
   "c-rmhcode": viCRmhcode,
   "c-rmhcoins": viCRmhcoins,
+  "c-rmhfashion": viCRmhfashion,
   "c-rmhmusic": viCRmhmusic,
   "c-rmhstudy": viCRmhstudy,
   "c-rmhtech": viCRmhtech,
@@ -163,6 +170,7 @@ const viResources = {
   "c-wager": viCWager,
   "c-wishlist": viCWishlist,
   "common": viCommon,
+  "errors": viErrors,
   "feed": viFeed,
   "games-hub": viGamesHub,
   "groups": viGroups,

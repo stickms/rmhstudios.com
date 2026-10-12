@@ -1,0 +1,17 @@
+{
+  "remind-cancel": "Cancel reminder",
+  "remind-cancel-error": "Couldn't cancel the reminder",
+  "remind-error": "Couldn't set the reminder",
+  "remind-hour": "In 1 hour",
+  "remind-pick": "Pick a time",
+  "remind-presets": "Quick times",
+  "remind-save": "Set",
+  "remind-set": "Reminder set for {{when}}",
+  "remind-title": "Remind me",
+  "remind-tomorrow": "Tomorrow morning",
+  "remind-tonight": "Tonight",
+  "remind-week": "Next week",
+  "reminders": "Reminders",
+  "reminders-empty-desc": "Use \"Remind me\" on a post or notification to bring it back later.",
+  "reminders-empty-title": "No reminders"
+}
