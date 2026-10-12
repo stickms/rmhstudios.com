@@ -27,6 +27,10 @@ import {
   SOHUMTRACKER_ALERT_QUEUE,
   registerSohumTrackerAlertCron,
 } from '@/lib/sohumtracker/alerts.server';
+import {
+  PROFILE_VISIT_SWEEP_QUEUE,
+  registerProfileVisitSweepCron,
+} from '@/lib/profile/visit-sweep.server';
 
 const log = createLogger('jobs');
 
@@ -156,6 +160,19 @@ async function main() {
     log.error({
       event: 'jobs.register_failed',
       queue: 'platform.maintenance',
+      err: (e as Error)?.message,
+    });
+  }
+
+  // P9 — nightly sweep of the profile visitor-counter dedupe ledger (rows older
+  // than two days). Housekeeping only: the counter total is stored on the profile.
+  try {
+    await registerProfileVisitSweepCron(boss);
+    log.info({ event: 'jobs.started', queue: PROFILE_VISIT_SWEEP_QUEUE });
+  } catch (e) {
+    log.error({
+      event: 'jobs.register_failed',
+      queue: PROFILE_VISIT_SWEEP_QUEUE,
       err: (e as Error)?.message,
     });
   }
