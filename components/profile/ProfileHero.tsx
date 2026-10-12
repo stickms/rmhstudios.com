@@ -38,6 +38,7 @@ import { buildOptimizedUrl } from '@/components/ui/OptimizedImage';
 import { safeHref } from '@/lib/url-safety';
 import { getFeaturedProfileLink } from '@/lib/profile/featured-links';
 import { SITE_URL } from '@/lib/seo';
+import { ProfileIdentityExtras } from './plus/ProfileIdentityExtras';
 import type { ProfileData } from './profile-types';
 
 const DEFAULT_AVATAR = '/images/social/default_avatar.png';
@@ -287,6 +288,7 @@ export function ProfileHero({
                   <AnimatedCount value={profile.coins} format={(value) => value.toLocaleString()} />
                 </Link>
               </div>
+              <ProfileIdentityExtras profile={profile} name={name} />
             </div>
 
             <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">

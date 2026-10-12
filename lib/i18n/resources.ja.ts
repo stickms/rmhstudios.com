@@ -15,6 +15,7 @@ import jaCCursedLogic from "@/locales/ja/c-cursed-logic.json";
 import jaCDailyPuzzles from "@/locales/ja/c-daily-puzzles.json";
 import jaCDoctrine from "@/locales/ja/c-doctrine.json";
 import jaCDreamRift from "@/locales/ja/c-dream-rift.json";
+import jaCDunesday from "@/locales/ja/c-dunesday.json";
 import jaCEconomy from "@/locales/ja/c-economy.json";
 import jaCForestExplorer from "@/locales/ja/c-forest-explorer.json";
 import jaCGabrielsHorn from "@/locales/ja/c-gabriels-horn.json";
@@ -111,6 +112,7 @@ const jaResources = {
   "c-daily-puzzles": jaCDailyPuzzles,
   "c-doctrine": jaCDoctrine,
   "c-dream-rift": jaCDreamRift,
+  "c-dunesday": jaCDunesday,
   "c-economy": jaCEconomy,
   "c-forest-explorer": jaCForestExplorer,
   "c-gabriels-horn": jaCGabrielsHorn,

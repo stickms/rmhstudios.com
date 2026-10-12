@@ -6,11 +6,16 @@
  * whereas the Appearance section controls the site-wide theme for this viewer.
  */
 
+import { lazy, Suspense } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { ProfileCosmetics } from '@/components/settings/ProfileCosmetics';
 import { useSession } from '@/components/Providers';
+import { useIdleReady } from '@/hooks/useIdleReady';
+
+// P05 — pronouns, /now, Top Four, stamps, profile card… loaded after the page is idle.
+const ProfilePlusSettings = lazy(() => import('@/components/profile/plus/ProfilePlusSettings'));
 
 export const Route = createFileRoute('/_site/settings/profile')({
   head: () => ({
@@ -23,6 +28,7 @@ function ProfileCustomizationPage() {
   const { t } = useTranslation('feed');
   const { data: session, isPending } = useSession();
   const signedIn = !!session?.user;
+  const idle = useIdleReady();
   const handle = (session?.user as { handle?: string | null } | undefined)?.handle;
 
   const settingsLabel = t('settings', { defaultValue: 'Settings' });
@@ -59,6 +65,11 @@ function ProfileCustomizationPage() {
           })}
         </p>
         {!isPending && !signedIn ? signInPrompt : <ProfileCosmetics />}
+        {signedIn && idle ? (
+          <Suspense fallback={null}>
+            <ProfilePlusSettings />
+          </Suspense>
+        ) : null}
       </div>
     </PageLayout>
   );
