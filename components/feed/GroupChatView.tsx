@@ -33,6 +33,19 @@ import { ReactionMenu } from'@/components/shared/ReactionMenu';
 import { ReactionChips } from'@/components/shared/ReactionChips';
 import { groupReactions, type ReactionRow } from'@/lib/social/reactions';
 import { useItemReactionTrigger } from'@/lib/emoji/use-reaction-trigger';
+import { ChatHeaderPlus } from'@/components/chat-plus/ChatHeaderPlus';
+import { ChatPinnedBar } from'@/components/chat-plus/ChatPinnedBar';
+import { ChatPlusHost } from'@/components/chat-plus/ChatPlusHost';
+import { ChatSystemLine } from'@/components/chat-plus/ChatSystemLine';
+import { ChatRichBody } from'@/components/chat-plus/ChatRichBody';
+import { ChecklistComposer } from'@/components/chat-plus/ChecklistComposer';
+import { MessageBadges, ThreadChip } from'@/components/chat-plus/MessageBadges';
+import { GroupMessageMenu } from'@/components/chat-plus/MessagePlusItems';
+import { useSlashCommands } from'@/components/chat-plus/useSlashCommands';
+import { useChatMeta, useChatTheme, useChatUpdates, useExpiring } from'@/components/chat-plus/hooks';
+import { applyChatUpdate } from'@/lib/chat-plus/apply-update';
+import { emitChatUpdate } from'@/lib/chat-plus/client-bus';
+import { isCardKind, isLineKind, type ChatUpdate } from'@/lib/chat-plus/types';
 
 interface Sender {
  id: string;
@@ -55,6 +68,12 @@ interface Msg {
  imageUrls?: string[];
  poll?: Poll | null;
  reactions?: ReactionRow[];
+ /** P04 — message kind (text when absent), structured payload, forward hops, thread replies, expiry. */
+ kind?: string;
+ meta?: unknown;
+ forwardCount?: number;
+ replyCount?: number;
+ expiresAt?: string | null;
 }
 interface Group {
  id: string;
@@ -97,6 +116,14 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  const historyIds = useRef<Set<string>>(new Set());
  const reducedMotion = useReducedMotion();
  const insertEmoji = useEmojiInsert(inputRef, input, setInput);
+ // P04 — per-chat extras (see components/chat-plus).
+ const chatRef = useMemo(() => ({ kind:'group'as const, id }), [id]);
+ const chatTheme = useChatTheme(chatRef);
+ const { data: chatMeta } = useChatMeta(chatRef);
+ const pinnedIds = useMemo(
+ () => new Set((chatMeta?.pins ?? []).map((p) => p.messageId)),
+ [chatMeta?.pins],
+ );
  const reactionTriggerFor = useItemReactionTrigger((x, y, messageId) =>
  setReactionMenu({ x, y, messageId }),
  );
@@ -130,6 +157,21 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  const patchMessage = useCallback((messageId: string, patch: Partial<Msg>) => {
  setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, ...patch } : m)));
  }, []);
+
+ // P04: checklist ticks and thread counts from other members.
+ useChatUpdates(chatRef, (u) => setMessages((prev) => applyChatUpdate(prev, u, currentUserId)));
+ const slash = useSlashCommands({
+ chat: chatRef,
+ draft: input,
+ setDraft: setInput,
+ inputRef,
+ onPosted: (raw) => appendMessages([raw as Msg]),
+ onPickGif: (url) => {
+ setGifUrl(url);
+ setTimeout(() => inputRef.current?.focus(), 0);
+ },
+ });
+ const shownMessages = useExpiring(messages);
 
  // Toggle the viewer's reaction row on a message (optimistic on raw rows).
  const applyRowToggle = useCallback(
@@ -256,6 +298,13 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  /* ignore malformed event */
  }
  });
+ es.addEventListener('chat-update', (e) => {
+ try {
+ emitChatUpdate(JSON.parse((e as MessageEvent).data) as ChatUpdate);
+ } catch {
+ /* ignore malformed event */
+ }
+ });
  es.onerror = () => {
  connected = false;
  startPolling();
@@ -340,6 +389,9 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  : null;
  const hasMedia = !!gifUrl || imageUrls.length > 0;
  if ((!text && !hasMedia && !poll) || sending) return;
+
+ // M4: slash commands run instead of being sent as text.
+ if (text.startsWith('/') && !hasMedia && !poll && (await slash.tryRun(text))) return;
 
  setSending(true);
  const pendingGif = gifUrl;
@@ -450,7 +502,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  const canSend = (input.trim() || gifUrl || imageUrls.length > 0 || pollDraft) && !sending;
 
  return (
- <div className="flex h-screen flex-col">
+ <div className="flex h-screen flex-col"style={chatTheme.rootStyle}>
  <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
  <Link
  to="/messages"
@@ -468,6 +520,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  {t('member-count', { count: group.members.length, defaultValue:'{{count}} members'})}
  </p>
  </div>
+ <ChatHeaderPlus chat={chatRef} />
  <button
  onClick={leave}
  className="text-site-text-dim hover:text-site-danger"
@@ -477,18 +530,44 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  <LogOut className="h-4 w-4"/>
  </button>
  </header>
+ <ChatPinnedBar
+ chat={chatRef}
+ viewerId={currentUserId}
+ names={Object.fromEntries(group.members.map((mem) => [mem.id, mem.name || mem.handle]))}
+ />
 
- <div ref={scrollRef} onScroll={handleScroll} className="flex-1 space-y-3 overflow-y-auto p-4">
- {messages.map((m) => {
+ <div
+ ref={scrollRef}
+ onScroll={handleScroll}
+ className="flex-1 space-y-3 overflow-y-auto p-4"
+ style={chatTheme.wallpaper}
+ >
+ {shownMessages.map((m) => {
  const mine = m.sender.id === currentUserId;
  const animateIn = !reducedMotion && !historyIds.current.has(m.id);
+ // P04: centred lines (timer, pin, tip…) and card kinds (dice, checklist…).
+ if (isLineKind(m.kind)) {
+ return (
+ <ChatSystemLine
+ key={m.id}
+ meta={m.meta}
+ fallback={m.content}
+ viewerId={currentUserId}
+ nameOf={(uid) => {
+ const mem = group.members.find((x) => x.id === uid);
+ return mem ? mem.name || mem.handle : null;
+ }}
+ />
+ );
+ }
+ const isCard = isCardKind(m.kind);
  return (
  <motion.div
  key={m.id}
  initial={animateIn ? { opacity: 0, y: 8 } : false}
  animate={{ opacity: 1, y: 0 }}
  transition={{ duration: 0.26, ease: EASE_OUT_EXPO }}
- className={`flex gap-2 ${mine ?'flex-row-reverse':''}`}
+ className={`group flex gap-2 ${mine ?'flex-row-reverse':''}`}
  >
  {/* Show the sender's avatar on every message — including your own
  (right-aligned), matching the 1:1 chat layout. */}
@@ -501,7 +580,17 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  t('member-fallback', { defaultValue:'Member'})}
  </p>
  )}
- {m.content && (
+ <MessageBadges forwardCount={m.forwardCount} pinned={pinnedIds.has(m.id)} />
+ {isCard && (
+ <ChatRichBody
+ chat={chatRef}
+ messageId={m.id}
+ kind={m.kind ??'text'}
+ meta={m.meta}
+ authorName={mine ? t('you-label', { defaultValue:'You'}) : m.sender.name || m.sender.handle || t('member-fallback', { defaultValue:'Member'})}
+ />
+ )}
+ {!isCard && m.content && (
  // Received bubbles use a high-contrast light fill so they read
  // clearly against the black chat background; sent bubbles keep
  // the accent colour. (`bg-site-text`is theme-adaptive.)
@@ -526,6 +615,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  />
  )}
  {m.poll && <PollView poll={m.poll} onVote={(idx) => vote(m.id, idx)} t={t} />}
+ <ThreadChip groupId={id} messageId={m.id} count={m.replyCount ?? 0} className={mine ?'ml-auto flex':''} />
  {(m.reactions?.length ?? 0) > 0 && (
  <ReactionChips
  reactions={groupReactions(m.reactions ?? [], currentUserId)}
@@ -534,6 +624,17 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  />
  )}
  </div>
+ <GroupMessageMenu
+ chat={chatRef}
+ message={{
+ id: m.id,
+ content: m.content,
+ kind: m.kind,
+ forwardCount: m.forwardCount,
+ threadable: true,
+ }}
+ className="md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+ />
  </motion.div>
  );
  })}
@@ -666,13 +767,16 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  onSelect={insertEmoji}
  className="flex h-9 items-center"
  />
+ <ChecklistComposer chat={chatRef} onPosted={(raw) => appendMessages([raw as Msg])} disabled={sending} />
  <div className="flex-1 min-w-0">
+ {slash.popover}
  <MentionTextarea
  ref={inputRef}
  value={input}
  onChange={setInput}
  priorityUsers={memberSuggestions}
  onKeyDown={(e) => {
+ if (slash.onKeyDown(e)) return;
  if (e.key ==='Enter'&& !e.shiftKey) {
  e.preventDefault();
  send();
@@ -689,6 +793,8 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  </Button>
  </div>
  </div>
+
+ <ChatPlusHost viewerId={currentUserId} />
 
  {reactionMenu && (
  <ReactionMenu

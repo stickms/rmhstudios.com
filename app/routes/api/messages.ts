@@ -6,6 +6,7 @@ import { ownsFeedImageUrl } from '@/lib/storage/keys';
 import { gifUrlSchema, feedImageUrlSchema } from '@/lib/rmhark-schema';
 import { listConversations } from '@/lib/messages.server';
 import { z } from 'zod';
+import { messageStamp } from '@/lib/chat-plus/post.server';
 
 const sendMessageSchema = z.object({
   recipientId: z.string().min(1),
@@ -24,7 +25,11 @@ export const Route = createFileRoute('/api/messages')({
       GET: defineHandler({}, async ({ request, session }) => {
         const url = new URL(request.url);
         const cursor = url.searchParams.get('cursor');
-        const result = await listConversations(session.user.id, { cursor });
+        // M1: `?folder=<id>` or `?filter=unread` narrow the list server-side so
+        // pagination stays correct while a folder tab is selected.
+        const folderId = url.searchParams.get('folder');
+        const unreadOnly = url.searchParams.get('filter') === 'unread';
+        const result = await listConversations(session.user.id, { cursor, folderId, unreadOnly });
         return Response.json(result);
       }),
       POST: defineHandler(
@@ -123,6 +128,7 @@ export const Route = createFileRoute('/api/messages')({
                   content: content ?? '',
                   gifUrl: gifUrl ?? null,
                   imageUrls: imageUrls ?? [],
+                  ...messageStamp(conversation.disappearAfterSec, { content, gifUrl, imageUrls }),
                 },
               }),
               prisma.conversation.update({
@@ -141,6 +147,7 @@ export const Route = createFileRoute('/api/messages')({
               gifUrl: message.gifUrl,
               imageUrls: message.imageUrls,
               reactions: [],
+              expiresAt: message.expiresAt?.toISOString() ?? null,
             };
 
             // Notify recipient via SSE with message payload
