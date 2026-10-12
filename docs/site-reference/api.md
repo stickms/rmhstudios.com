@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 618 files across 145 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 631 files across 147 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -237,6 +237,32 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/casino/rooms` | `GET` | `app/routes/api/casino/rooms.ts` |
+
+## `/api/chat-folders`
+
+3 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/chat-folders` | `GET` `POST` | `app/routes/api/chat-folders/index.ts` |
+| `/api/chat-folders/:id` | `DELETE` `PATCH` | `app/routes/api/chat-folders/$id.ts` |
+| `/api/chat-folders/:id/items` | `PUT` | `app/routes/api/chat-folders/$id/items.ts` |
+
+## `/api/chats`
+
+9 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/chats/:kind/:id/checklist` | `POST` `PUT` | `app/routes/api/chats/$kind/$id/checklist.ts` |
+| `/api/chats/:kind/:id/command` | `POST` | `app/routes/api/chats/$kind/$id/command.ts` |
+| `/api/chats/:kind/:id/media` | `GET` | `app/routes/api/chats/$kind/$id/media.ts` |
+| `/api/chats/:kind/:id/meta` | `GET` | `app/routes/api/chats/$kind/$id/meta.ts` |
+| `/api/chats/:kind/:id/pin` | `POST` | `app/routes/api/chats/$kind/$id/pin.ts` |
+| `/api/chats/:kind/:id/settings` | `PATCH` `PUT` | `app/routes/api/chats/$kind/$id/settings.ts` |
+| `/api/chats/:kind/:id/thread/:messageId` | `GET` `POST` | `app/routes/api/chats/$kind/$id/thread/$messageId.ts` |
+| `/api/chats/:kind/:id/vote` | `POST` | `app/routes/api/chats/$kind/$id/vote.ts` |
+| `/api/chats/forward` | `POST` | `app/routes/api/chats/forward.ts` |
 
 ## `/api/circle`
 
@@ -729,7 +755,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/messages`
 
-17 routes.
+18 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -745,6 +771,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/messages/:conversationId/unsend` | `POST` | `app/routes/api/messages/$conversationId/unsend.ts` |
 | `/api/messages/:conversationId/voice` | `POST` | `app/routes/api/messages/$conversationId/voice.ts` |
 | `/api/messages/read-all` | `POST` | `app/routes/api/messages/read-all.ts` |
+| `/api/messages/saved` | `GET` `POST` | `app/routes/api/messages/saved.ts` |
 | `/api/messages/search` | `GET` | `app/routes/api/messages/search.ts` |
 | `/api/messages/sidebar` | `GET` | `app/routes/api/messages/sidebar.ts` |
 | `/api/messages/stream` | `GET` | `app/routes/api/messages/stream.ts` |

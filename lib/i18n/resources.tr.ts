@@ -15,6 +15,7 @@ import trCCursedLogic from "@/locales/tr/c-cursed-logic.json";
 import trCDailyPuzzles from "@/locales/tr/c-daily-puzzles.json";
 import trCDoctrine from "@/locales/tr/c-doctrine.json";
 import trCDreamRift from "@/locales/tr/c-dream-rift.json";
+import trCDunesday from "@/locales/tr/c-dunesday.json";
 import trCEconomy from "@/locales/tr/c-economy.json";
 import trCForestExplorer from "@/locales/tr/c-forest-explorer.json";
 import trCGabrielsHorn from "@/locales/tr/c-gabriels-horn.json";
@@ -111,6 +112,7 @@ const trResources = {
   "c-daily-puzzles": trCDailyPuzzles,
   "c-doctrine": trCDoctrine,
   "c-dream-rift": trCDreamRift,
+  "c-dunesday": trCDunesday,
   "c-economy": trCEconomy,
   "c-forest-explorer": trCForestExplorer,
   "c-gabriels-horn": trCGabrielsHorn,

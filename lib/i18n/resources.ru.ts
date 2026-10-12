@@ -15,6 +15,7 @@ import ruCCursedLogic from "@/locales/ru/c-cursed-logic.json";
 import ruCDailyPuzzles from "@/locales/ru/c-daily-puzzles.json";
 import ruCDoctrine from "@/locales/ru/c-doctrine.json";
 import ruCDreamRift from "@/locales/ru/c-dream-rift.json";
+import ruCDunesday from "@/locales/ru/c-dunesday.json";
 import ruCEconomy from "@/locales/ru/c-economy.json";
 import ruCForestExplorer from "@/locales/ru/c-forest-explorer.json";
 import ruCGabrielsHorn from "@/locales/ru/c-gabriels-horn.json";
@@ -111,6 +112,7 @@ const ruResources = {
   "c-daily-puzzles": ruCDailyPuzzles,
   "c-doctrine": ruCDoctrine,
   "c-dream-rift": ruCDreamRift,
+  "c-dunesday": ruCDunesday,
   "c-economy": ruCEconomy,
   "c-forest-explorer": ruCForestExplorer,
   "c-gabriels-horn": ruCGabrielsHorn,
