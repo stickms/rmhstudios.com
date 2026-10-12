@@ -37,10 +37,12 @@ import {
   HostStateSchema,
   SeekSchema,
   SetSpeedSchema,
+  PlaybackEdgeSchema,
   PingSchema,
   StallSchema,
 } from '../../lib/rmhtube/schemas';
 import { extrapolate, reanchor, initialVideoState } from '../../lib/rmhtube/sync-math';
+import { startOffset } from '../../lib/rmhtube/media';
 import { PEER_WAIT_MAX_MS, PEER_WAIT_COOLDOWN_MS } from '../../lib/rmhtube/constants';
 import type { VideoState } from '../../lib/rmhtube/types';
 import type { RoomManager } from './room-manager';
@@ -65,6 +67,35 @@ export class SyncEngine {
     private roomManager: RoomManager,
   ) {}
 
+  /**
+   * Advances the room's queue — wired to `MediaQueue.advanceQueue` at boot
+   * (the queue is constructed after this engine, and owns the queue).
+   */
+  private advance: ((room: RmhTubeRoom) => void) | null = null;
+
+  setAdvanceHandler(advance: (room: RmhTubeRoom) => void): void {
+    this.advance = advance;
+  }
+
+  /**
+   * A room whose projected position has run past the end of a known-length
+   * item with nobody advancing it. A present leader's player reports `ended`
+   * (and pauses) at the real end, long before the grace runs out, so this only
+   * fires when there is no one left to do it — and then the queue moves on
+   * instead of sitting on a finished video forever.
+   */
+  private advanceIfOverrun(room: RmhTubeRoom, now: number): boolean {
+    const item = room.currentItem;
+    const vs = room.videoState;
+    if (!item || !this.advance) return false;
+    if (vs.mode !== 'vod' || !vs.playing || vs.stalled) return false;
+    if (!item.duration || item.duration <= 0) return false;
+    if (extrapolate(vs, now) < item.duration + config.END_OF_ITEM_GRACE_S) return false;
+    logger.info({ event: 'auto_advance_overrun', roomId: room.id, itemId: item.id });
+    this.advance(room);
+    return true;
+  }
+
   // ─── Wiring ──────────────────────────────────────────────────
 
   handleConnection(socket: Socket): void {
@@ -74,11 +105,11 @@ export class SyncEngine {
     );
     socket.on(
       C2S.SYNC_PLAY,
-      validated(socket, C2S.SYNC_PLAY, EmptySchema, (s) => this.onPlay(s)),
+      validated(socket, C2S.SYNC_PLAY, PlaybackEdgeSchema, (s, p) => this.onPlay(s, p)),
     );
     socket.on(
       C2S.SYNC_PAUSE,
-      validated(socket, C2S.SYNC_PAUSE, EmptySchema, (s) => this.onPause(s)),
+      validated(socket, C2S.SYNC_PAUSE, PlaybackEdgeSchema, (s, p) => this.onPause(s, p)),
     );
     socket.on(
       C2S.SYNC_SEEK,
@@ -146,6 +177,7 @@ export class SyncEngine {
     if (!room) return;
 
     const now = Date.now();
+    room.leaderLastReportAt = now;
     // Trust the leader's stamp inside a sane window, fall back to ours outside
     // it. A wrong anchor time moves every viewer, so a clock we cannot believe
     // is worse than the latency we are trying to remove.
@@ -184,14 +216,15 @@ export class SyncEngine {
 
   // ─── Leader edges ────────────────────────────────────────────
 
-  private onPlay(socket: Socket): void {
+  private onPlay(socket: Socket, payload?: { time?: number }): void {
     const room = this.leaderRoom(socket);
     if (!room) return;
     const now = Date.now();
-    // Resume from the effective position, so a pause of any length does not
-    // move the playhead.
+    // Resume from the leader's playhead when it says where that is (its own
+    // player's play button), else from the effective position, so a pause of
+    // any length does not move the playhead.
     this.setState(room, {
-      currentTime: extrapolate(room.videoState, now),
+      currentTime: this.edgePosition(room, payload, now),
       playing: true,
       stalled: false,
     }, now);
@@ -209,17 +242,23 @@ export class SyncEngine {
     }
   }
 
-  private onPause(socket: Socket): void {
+  private onPause(socket: Socket, payload?: { time?: number }): void {
     const room = this.leaderRoom(socket);
     if (!room) return;
     const now = Date.now();
     this.setState(room, {
-      currentTime: extrapolate(room.videoState, now),
+      currentTime: this.edgePosition(room, payload, now),
       playing: false,
     }, now);
     room.lastActivityAt = now;
     // A deliberate pause by the leader supersedes any wait the room was in.
     if (room.peerWait.startedAt !== null) this.endPeerWait(room, 'leader_paused', now);
+  }
+
+  /** Where a play/pause edge happened: the leader's frame if it sent one (VOD only). */
+  private edgePosition(room: RmhTubeRoom, payload: { time?: number } | undefined, now: number): number {
+    if (room.videoState.mode === 'vod' && payload?.time !== undefined) return payload.time;
+    return extrapolate(room.videoState, now);
   }
 
   private onSeek(socket: Socket, payload: { time: number }): void {
@@ -389,6 +428,8 @@ export class SyncEngine {
         // A wait can end on a timeout, which has no inbound event to trigger it.
         if (room.peerWait.startedAt !== null) this.evaluatePeerWait(room, now);
 
+        if (this.advanceIfOverrun(room, now)) continue;
+
         if (room.members.size <= 1) continue;
 
         // The *effective* state: the timeline keeps advancing even when the
@@ -435,8 +476,12 @@ export class SyncEngine {
    */
   onMediaChanged(room: RmhTubeRoom): VideoState {
     const now = Date.now();
+    const mode = room.currentItem?.live ? 'live' : 'vod';
     room.videoState = {
-      ...initialVideoState(now, room.currentItem?.live ? 'live' : 'vod'),
+      ...initialVideoState(now, mode),
+      // A "start at 1:30" link is the item's first anchor, so every player —
+      // the leader's included — starts there (see `startOffset`).
+      currentTime: mode === 'vod' && room.currentItem ? startOffset(room.currentItem.url) : 0,
       rev: room.videoState.rev + 1,
     };
     // A new item invalidates whoever was buffering the old one — including the

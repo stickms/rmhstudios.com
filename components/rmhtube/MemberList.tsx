@@ -280,8 +280,20 @@ export default function MemberList() {
         <h3 className="text-sm font-semibold text-(--app-text-muted)">
           {t("members-header", { defaultValue: "Members ({{count}})", count: room.members.length })}
         </h3>
-        {/* Status selector for current user */}
-        {myMember && <StatusSelector currentStatus={myMember.status} />}
+        <div className="flex items-center gap-1.5">
+          {/* The host can always take playback control back. */}
+          {isHost && !isLeader && (
+            <button
+              onClick={() => handleSetLeader(room.myUserId)}
+              className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors text-(--app-info) hover:bg-(--app-info-dim)"
+            >
+              <Star className="h-3 w-3" aria-hidden />
+              {t("take-control", { defaultValue: "Take control" })}
+            </button>
+          )}
+          {/* Status selector for current user */}
+          {myMember && <StatusSelector currentStatus={myMember.status} />}
+        </div>
       </div>
 
       {/* Member list */}
@@ -292,7 +304,10 @@ export default function MemberList() {
           const memberIsLeader = member.isLeader;
 
           // Determine which controls are available for this member
-          const showMakeLeader = canSetLeader && !isMe && !memberIsLeader;
+          // A disconnected member can't report or control anything, and the
+          // server refuses the handover anyway.
+          const showMakeLeader = canSetLeader && !isMe && !memberIsLeader && member.isConnected;
+          const wantsControl = (room.controlRequests ?? []).includes(member.userId) && !memberIsLeader;
           const showKick = isHost && !isMe;
           const showBan = isHost && !isMe;
           const showTransfer = isHost && !isMe;
@@ -334,6 +349,11 @@ export default function MemberList() {
                   {isMe && (
                     <span className="text-xs text-(--app-text-dim)">{t("you-label", { defaultValue: "(you)" })}</span>
                   )}
+                  {wantsControl && (
+                    <span className="rounded-full bg-(--app-info-dim) px-1.5 py-0.5 text-[10px] font-semibold text-(--app-info)">
+                      {t("wants-control", { defaultValue: "Wants control" })}
+                    </span>
+                  )}
                 </div>
                 {/* Presence badge (afk / brb) shown below the name row */}
                 {member.status !== 'watching' && (
@@ -370,8 +390,11 @@ export default function MemberList() {
                   {showMakeLeader && (
                     <button
                       onClick={() => handleSetLeader(member.userId)}
-                      className="rounded p-1 transition-colors text-(--app-text-dim) hover:text-(--app-info) hover:bg-(--app-info-dim)"
+                      className={`rounded p-1 transition-colors hover:text-(--app-info) hover:bg-(--app-info-dim) ${
+                        wantsControl ? 'text-(--app-info) bg-(--app-info-dim)' : 'text-(--app-text-dim)'
+                      }`}
                       title={t("make-leader", { defaultValue: "Make leader" })}
+                      aria-label={t("make-leader-named", { defaultValue: "Make {{name}} the leader", name: member.userName })}
                     >
                       <Star className="h-3 w-3" />
                     </button>

@@ -23,6 +23,8 @@ import {
   ReactionSchema,
 } from '../../lib/rmhtube/schemas';
 import { parseMedia } from '../../lib/rmhtube/media';
+import { QueueSkipSchema } from '../../lib/rmhtube/schemas';
+import { probeMediaUrl } from '../../lib/rmhtube/probe.server';
 import type { RoomManager } from './room-manager';
 import type { SyncEngine } from './sync-engine';
 import type { QueueItem, RmhTubeRoom } from './types';
@@ -45,7 +47,7 @@ export class MediaQueue {
     socket.on(C2S.QUEUE_REMOVE, validated(socket, C2S.QUEUE_REMOVE, QueueRemoveSchema, (s, p) => this.removeFromQueue(s, p)));
     socket.on(C2S.QUEUE_REORDER, validated(socket, C2S.QUEUE_REORDER, QueueReorderSchema, (s, p) => this.reorderQueue(s, p)));
     socket.on(C2S.QUEUE_PLAY_ITEM, validated(socket, C2S.QUEUE_PLAY_ITEM, QueuePlayItemSchema, (s, p) => this.playItem(s, p)));
-    socket.on(C2S.QUEUE_SKIP, validated(socket, C2S.QUEUE_SKIP, EmptySchema, (s) => this.skipCurrent(s)));
+    socket.on(C2S.QUEUE_SKIP, validated(socket, C2S.QUEUE_SKIP, QueueSkipSchema, (s, p) => this.skipCurrent(s, p)));
     socket.on(C2S.QUEUE_VOTE_SKIP, validated(socket, C2S.QUEUE_VOTE_SKIP, EmptySchema, (s) => this.voteSkip(s)));
     socket.on(C2S.QUEUE_META, validated(socket, C2S.QUEUE_META, QueueMetaSchema, (s, p) => this.applyMeta(s, p)));
     socket.on(C2S.REACTION_SEND, validated(socket, C2S.REACTION_SEND, ReactionSchema, (s, p) => this.sendReaction(s, p)));
@@ -113,11 +115,20 @@ export class MediaQueue {
     // One parser decides what a URL is, and it is written against the player's
     // own matchers — so anything accepted here is something the player can
     // actually load.
-    const media = parseMedia(payload.url);
+    // A link the URL alone can't place (no provider, no extension — a signed
+    // CDN link, `/video/123`) is asked what it is before it is refused.
+    const media = parseMedia(payload.url) ?? (await probeMediaUrl(payload.url));
+    // The room may have changed while the probe was out.
+    if (this.roomManager.getRoomForUser(userId) !== room) return;
+    if (room.queue.length >= config.MAX_QUEUE_SIZE) {
+      socket.emit(S2C.ERROR, { code: 'QUEUE_FULL', message: 'Queue is full.' });
+      return;
+    }
     if (!media) {
       socket.emit(S2C.ERROR, {
         code: 'INVALID_URL',
-        message: 'Unsupported link. Use a YouTube video, a Twitch channel or VOD, Vimeo, or a direct video/stream URL.',
+        message:
+          "That link isn't a video we can play. Use YouTube, Twitch, Vimeo, or any direct video/audio file or HLS/DASH stream link.",
       });
       return;
     }
@@ -296,13 +307,18 @@ export class MediaQueue {
 
   // ─── Skip Current ────────────────────────────────────────────
 
-  private skipCurrent(socket: Socket): void {
+  private skipCurrent(socket: Socket, payload?: { itemId?: string }): void {
     const userId = socket.data.userId as string;
     const room = this.roomManager.getRoomForUser(userId);
     if (!room || !this.isLeader(room, userId)) {
       socket.emit(S2C.ERROR, { code: 'NOT_LEADER', message: 'Only the leader can skip.' });
       return;
     }
+    // A skip that names an item only skips THAT item. An auto-advance on
+    // `ended` can arrive twice (the element's event plus a late duplicate) or
+    // after the room has already moved on (server overrun advance, another
+    // tab); without this each extra one silently skipped an unwatched video.
+    if (payload?.itemId && room.currentItem?.id !== payload.itemId) return;
 
     this.advanceQueue(room);
   }

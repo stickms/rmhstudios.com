@@ -84,3 +84,41 @@ export function isNewerAnchor(current: VideoState | null | undefined, next: Vide
   if (next.rev !== current.rev) return next.rev > current.rev;
   return next.updatedAt >= current.updatedAt;
 }
+
+/**
+ * A local optimistic anchor the leader applied ahead of the server: `baseRev`
+ * is the revision it was built on (it carries `baseRev + 1`), `at` when.
+ */
+export interface PendingLocalAnchor {
+  baseRev: number;
+  at: number;
+}
+
+/**
+ * How long a local optimistic anchor may hold off the server's.
+ *
+ * The leader's controls answer the click before the round trip by applying
+ * `rev + 1` locally. If the server never applies that edge — leadership moved
+ * mid-click, the socket was down, the event was rate-limited — the server's
+ * revision never catches up, and `isNewerAnchor` would reject every anchor it
+ * sends from then on: that viewer's player is cut off from the room until
+ * somebody else happens to change something. Past this window the server wins.
+ */
+export const OPTIMISTIC_ANCHOR_TTL_MS = 3_000;
+
+/**
+ * Should an anchor from the server replace the one this client holds?
+ * Normally that is `isNewerAnchor`. The exception is an unconfirmed local
+ * optimistic anchor older than the TTL: then any server anchor built on the
+ * same base (or later) is accepted, because the server is the room.
+ */
+export function acceptServerAnchor(
+  current: VideoState | null | undefined,
+  next: VideoState,
+  pending: PendingLocalAnchor | null,
+  now: number,
+): boolean {
+  if (isNewerAnchor(current, next)) return true;
+  if (!pending) return false;
+  return now - pending.at > OPTIMISTIC_ANCHOR_TTL_MS && next.rev >= pending.baseRev;
+}

@@ -44,9 +44,9 @@ export function SynapseStormGate() {
     };
   }, [signedIn, session.isPending]);
 
-  const handleSaveScore = async (data: ScoreSaveData) => {
-    if (!signedIn) return;
-    await saveSynapseStormScore(data);
+  const handleSaveScore = async (data: ScoreSaveData): Promise<unknown> => {
+    if (!signedIn) return null;
+    return saveSynapseStormScore(data);
   };
 
   if (session.isPending || loading) {

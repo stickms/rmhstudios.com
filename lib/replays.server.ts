@@ -15,7 +15,8 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { getReplayable, REPLAY_SIZE_CAP, type ReplayData } from '@/lib/game/replay';
 import { verifyDailyPuzzle } from '@/lib/daily-puzzles/replay.server';
-import { userDisplaySelect, resolveUserDisplay } from '@/lib/user-display';
+import { getGameAdapter } from '@/lib/game/adapters.server';
+import { userChipSelect, userDisplaySelect, resolveUserDisplay } from '@/lib/user-display';
 
 /** Typed failure modes so API routes can map to precise HTTP statuses. */
 export type ReplayErrorCode =
@@ -224,4 +225,102 @@ export async function listReplaysForGame(game: string, limit = 20): Promise<Repl
       },
     };
   });
+}
+
+/* ------------------------------------------------------------------ *
+ * Ghosts (plan U9)
+ * ------------------------------------------------------------------ */
+
+/** Games whose keyframe replays double as race ghosts, keyed by their level field. */
+const GHOST_GAMES = new Set(['neon-driftway']);
+
+export interface GhostView {
+  replayId: string;
+  data: unknown;
+  owner: { id: string; name: string | null; handle: string | null; image: string | null };
+}
+
+const ghostWhere = (game: string, level: number) => ({
+  game,
+  version: getReplayable(game)?.version,
+  data: { path: ['level'], equals: level },
+});
+
+/**
+ * Save a ghost and drop the same player's older ghosts for that level, so a
+ * player holds one ghost per level no matter how many bests they set. Ghosts
+ * are `unlisted` — they exist to be raced, not browsed.
+ */
+export async function saveGhost(input: {
+  userId: string;
+  game: string;
+  level: number;
+  data: unknown;
+  score: number;
+  durationMs: number;
+}): Promise<SavedReplay> {
+  if (!GHOST_GAMES.has(input.game)) throw new ReplayError('UNKNOWN_GAME');
+  const saved = await saveReplay({
+    userId: input.userId,
+    game: input.game,
+    data: input.data,
+    score: input.score,
+    durationMs: input.durationMs,
+    visibility: 'unlisted',
+  });
+  await prisma.gameReplay
+    .deleteMany({
+      where: { userId: input.userId, id: { not: saved.id }, ...ghostWhere(input.game, input.level) },
+    })
+    .catch(() => {});
+  return saved;
+}
+
+/**
+ * The ghost to race.
+ *
+ * - `pb`: the caller's own best ghost on this level.
+ * - `top`: the best ghost among the top of the VALIDATED leaderboard. A ghost's
+ *   own score is client-reported, so ranking ghosts by it would let a forged
+ *   upload become everyone's "world #1"; instead the owner must hold a real
+ *   board position, and their ghost may not claim more than that board score.
+ */
+export async function getGhost(input: {
+  game: string;
+  level: number;
+  vs: 'pb' | 'top';
+  viewerId: string | null;
+}): Promise<GhostView | null> {
+  if (!GHOST_GAMES.has(input.game)) return null;
+  const select = {
+    id: true,
+    data: true,
+    user: { select: userChipSelect },
+  } as const;
+
+  if (input.vs === 'pb') {
+    if (!input.viewerId) return null;
+    const row = await prisma.gameReplay.findFirst({
+      where: { userId: input.viewerId, ...ghostWhere(input.game, input.level) },
+      orderBy: [{ score: 'desc' }, { createdAt: 'desc' }],
+      select,
+    });
+    return row ? { replayId: row.id, data: row.data, owner: row.user } : null;
+  }
+
+  const board = (await getGameAdapter(input.game)?.leaderboard(5)) ?? [];
+  for (const entry of board) {
+    if (!entry.userId) continue;
+    const row = await prisma.gameReplay.findFirst({
+      where: {
+        userId: entry.userId,
+        score: { lte: entry.score },
+        ...ghostWhere(input.game, input.level),
+      },
+      orderBy: [{ score: 'desc' }, { createdAt: 'desc' }],
+      select,
+    });
+    if (row) return { replayId: row.id, data: row.data, owner: row.user };
+  }
+  return null;
 }

@@ -14,6 +14,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { HorizontalScroller } from '@/components/ui/horizontal-scroller';
 import type { HydratedSave, SaveFolderView } from '@/lib/saves/types';
+import { RemindersList } from '@/components/reminders/RemindersList';
 
 interface HubData {
   items: HydratedSave[];
@@ -22,6 +23,9 @@ interface HubData {
 }
 
 type FolderFilter = 'all' | 'default' | string;
+
+/** Not a folder: the pending-reminders view (U7). Folder ids are cuids, so this can't collide. */
+const REMINDERS = '__reminders';
 
 export function SavesHub({ initial }: { initial: HubData }) {
   const { t } = useTranslation('c-saves');
@@ -62,6 +66,7 @@ export function SavesHub({ initial }: { initial: HubData }) {
       setMounted(true);
       return;
     }
+    if (filter === REMINDERS) return;
     void load(filter);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
@@ -128,6 +133,7 @@ export function SavesHub({ initial }: { initial: HubData }) {
         {chip('all', t('all', { defaultValue: 'All' }))}
         {chip('default', t('unfiled', { defaultValue: 'Saved' }))}
         {folders.map((f) => chip(f.id, f.name, f.count))}
+        {chip(REMINDERS, t('reminders', { defaultValue: 'Reminders' }))}
         {creating ? (
           <span className="flex shrink-0 items-center gap-1">
             <Input
@@ -157,7 +163,9 @@ export function SavesHub({ initial }: { initial: HubData }) {
         )}
       </HorizontalScroller>
 
-      {items.length === 0 && !loading ? (
+      {filter === REMINDERS ? (
+        <RemindersList />
+      ) : items.length === 0 && !loading ? (
         <EmptyState
           icon={Bookmark}
           title={t('empty-title', { defaultValue: 'Nothing saved here yet' })}
@@ -175,7 +183,7 @@ export function SavesHub({ initial }: { initial: HubData }) {
         </ul>
       )}
 
-      {cursor ? (
+      {filter === REMINDERS ? null : cursor ? (
         <div className="mt-4 flex justify-center">
           <Button variant="outline" onClick={() => load(filter, true, cursor)} loading={loading}>
             {t('load-more', { defaultValue: 'Load more' })}

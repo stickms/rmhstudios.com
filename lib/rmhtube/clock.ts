@@ -30,6 +30,11 @@ export function getClockOffset(): number {
   return offsetMs;
 }
 
+/** Round trip of the sample the offset came from, in ms (null before one). */
+export function getBestRtt(): number | null {
+  return Number.isFinite(bestRtt) ? bestRtt : null;
+}
+
 export function hasClockSync(): boolean {
   return hasSynced;
 }

@@ -35,7 +35,7 @@ export const Route = createFileRoute('/api/void-breaker/score')({
             { status: result.status },
           );
         }
-        return Response.json({ success: true, linked: true });
+        return Response.json({ success: true, linked: true, moment: result.moment ?? null });
       }),
     },
   },

@@ -3,6 +3,12 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useRmhMusicStore } from './store';
 import type { TrackInfo } from './types';
+import {
+  bindMediaElement,
+  clearMediaSession,
+  setMediaHandlers,
+  setMediaMeta,
+} from '@/lib/media/media-session';
 
 let audioSingleton: HTMLAudioElement | null = null;
 
@@ -10,8 +16,48 @@ function getAudio(): HTMLAudioElement {
   if (!audioSingleton) {
     audioSingleton = new Audio();
     audioSingleton.preload = 'auto';
+    bindOsControls(audioSingleton);
   }
   return audioSingleton;
+}
+
+/**
+ * Lock-screen / media-key controls, bound once to the singleton so they keep
+ * working after the full player unmounts (the site-shell MiniPlayer keeps the
+ * audio alive). Play/pause are local — exactly what the in-page buttons do,
+ * room or not. Seeking is offered only outside a room, where it cannot desync
+ * anyone; skip is a leader action over the socket and is not offered here.
+ */
+function bindOsControls(audio: HTMLAudioElement): void {
+  bindMediaElement(audio);
+  const apply = (track: TrackInfo | null, inRoom: boolean) => {
+    if (!track) {
+      clearMediaSession();
+      return;
+    }
+    setMediaMeta({ title: track.title, artist: track.artist, artwork: track.albumArt || null });
+    setMediaHandlers({
+      play: () => void audio.play().catch(() => {}),
+      pause: () => audio.pause(),
+      ...(inRoom
+        ? {}
+        : {
+            seekTo: (s: number) => {
+              audio.currentTime = s;
+            },
+            seekBy: (d: number) => {
+              audio.currentTime = Math.max(0, audio.currentTime + d);
+            },
+          }),
+    });
+  };
+  const initial = useRmhMusicStore.getState();
+  apply(initial.currentTrack, !!initial.room);
+  useRmhMusicStore.subscribe((s, prev) => {
+    if (s.currentTrack !== prev.currentTrack || !!s.room !== !!prev.room) {
+      apply(s.currentTrack, !!s.room);
+    }
+  });
 }
 
 export function usePreviewPlayer() {

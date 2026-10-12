@@ -20,7 +20,7 @@
  */
 
 import { z } from 'zod';
-import { LIGHTS_OUT_VERSION, SLICE_IT_VERSION } from './replay-meta';
+import { LIGHTS_OUT_VERSION, NEON_DRIFTWAY_GHOST_VERSION, SLICE_IT_VERSION } from './replay-meta';
 import { createSeededRng } from '@/lib/lights-out/seed';
 import { getDailyShape, isActiveCell, getShapeLabel } from '@/lib/lights-out/shapes';
 import { generatePuzzle, toggleCellInGrid, isSolved, type Grid } from '@/lib/lights-out/lights-out';
@@ -326,6 +326,31 @@ function verifySliceIt(data: unknown): { score: number } | null {
 }
 
 /* ------------------------------------------------------------------ *
+ * Neon Driftway — ghost traces (plan U9).
+ *
+ * A `keyframe` replay: 10 Hz samples of [elapsedMs, x, distance] used only to
+ * draw a ghost car. There is no verifier and the score is never trusted (see
+ * `replayScoreIsTrusted`); the leaderboard keeps using the score pipeline.
+ * Bounds are finite on every axis so a payload can't be made expensive.
+ * ------------------------------------------------------------------ */
+
+const neonDriftwayGhostSchema = z.object({
+  level: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  samples: z
+    .array(
+      z.tuple([
+        z.number().int().min(0).max(24 * 60 * 60 * 1000),
+        z.number().finite().min(-50).max(50),
+        z.number().finite().min(0).max(10_000_000),
+      ]),
+    )
+    .min(10)
+    .max(6_000),
+});
+
+export type NeonDriftwayGhostReplay = z.infer<typeof neonDriftwayGhostSchema>;
+
+/* ------------------------------------------------------------------ *
  * Registry
  * ------------------------------------------------------------------ */
 
@@ -358,6 +383,12 @@ export const replayableGames: Record<string, ReplayableGame> = {
     version: DAILY_PUZZLE_VERSION,
     schema: dailyPuzzleReplaySchema,
     serverVerified: true,
+  },
+  'neon-driftway': {
+    game: 'neon-driftway',
+    version: NEON_DRIFTWAY_GHOST_VERSION,
+    kind: 'keyframe',
+    schema: neonDriftwayGhostSchema,
   },
 };
 

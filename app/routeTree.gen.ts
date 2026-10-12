@@ -492,6 +492,7 @@ import { Route as ApiProfileLayoutRouteImport } from './routes/api/profile/layou
 import { Route as ApiProfileMeRouteImport } from './routes/api/profile/me'
 import { Route as ApiProfileStatusRouteImport } from './routes/api/profile/status'
 import { Route as ApiPromoFreeMonthRouteImport } from './routes/api/promo/free-month'
+import { Route as ApiPushActionRouteImport } from './routes/api/push/action'
 import { Route as ApiPushPublicKeyRouteImport } from './routes/api/push/public-key'
 import { Route as ApiPushSubscribeRouteImport } from './routes/api/push/subscribe'
 import { Route as ApiRankedIndexRouteImport } from './routes/api/ranked/index'
@@ -499,8 +500,11 @@ import { Route as ApiRecommendIndexRouteImport } from './routes/api/recommend/in
 import { Route as ApiRecommendFeedbackRouteImport } from './routes/api/recommend/feedback'
 import { Route as ApiReferralsClaimRouteImport } from './routes/api/referrals/claim'
 import { Route as ApiReferralsMeRouteImport } from './routes/api/referrals/me'
+import { Route as ApiRemindersIndexRouteImport } from './routes/api/reminders/index'
+import { Route as ApiRemindersIdRouteImport } from './routes/api/reminders/$id'
 import { Route as ApiReplaysIndexRouteImport } from './routes/api/replays/index'
 import { Route as ApiReplaysIdRouteImport } from './routes/api/replays/$id'
+import { Route as ApiReplaysGhostRouteImport } from './routes/api/replays/ghost'
 import { Route as ApiRequestsIndexRouteImport } from './routes/api/requests/index'
 import { Route as ApiRequestsIdRouteImport } from './routes/api/requests/$id'
 import { Route as ApiRideshareDirectionsRouteImport } from './routes/api/rideshare/directions'
@@ -767,6 +771,7 @@ import { Route as ApiProfileLinksIdVerifyRouteImport } from './routes/api/profil
 import { Route as ApiProfileIdFollowRouteImport } from './routes/api/profile/$id/follow'
 import { Route as ApiProfileIdFollowersRouteImport } from './routes/api/profile/$id/followers'
 import { Route as ApiProfileIdFollowingRouteImport } from './routes/api/profile/$id/following'
+import { Route as ApiProfileIdGuestbookRouteImport } from './routes/api/profile/$id/guestbook'
 import { Route as ApiProfileIdLikesRouteImport } from './routes/api/profile/$id/likes'
 import { Route as ApiProfileIdMembershipRouteImport } from './routes/api/profile/$id/membership'
 import { Route as ApiProfileIdRmharksRouteImport } from './routes/api/profile/$id/rmharks'
@@ -891,6 +896,7 @@ import { Route as ApiPf2ecalSessionsIdRecapRouteImport } from './routes/api/pf2e
 import { Route as ApiPf2ecalSessionsIdResponseRouteImport } from './routes/api/pf2ecal/sessions.$id.response'
 import { Route as ApiPlaylistsIdItemsIndexRouteImport } from './routes/api/playlists/$id/items/index'
 import { Route as ApiPlaylistsIdItemsItemIdRouteImport } from './routes/api/playlists/$id/items/$itemId'
+import { Route as ApiProfileIdGuestbookEntryIdRouteImport } from './routes/api/profile/$id/guestbook.$entryId'
 import { Route as ApiRideshareRidesIdMessagesRouteImport } from './routes/api/rideshare/rides/$id/messages'
 import { Route as ApiRideshareRidesIdRateRouteImport } from './routes/api/rideshare/rides/$id/rate'
 import { Route as ApiRideshareRidesIdSyncRouteImport } from './routes/api/rideshare/rides/$id/sync'
@@ -3373,6 +3379,11 @@ const ApiPromoFreeMonthRoute = ApiPromoFreeMonthRouteImport.update({
   path: '/api/promo/free-month',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPushActionRoute = ApiPushActionRouteImport.update({
+  id: '/api/push/action',
+  path: '/api/push/action',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPushPublicKeyRoute = ApiPushPublicKeyRouteImport.update({
   id: '/api/push/public-key',
   path: '/api/push/public-key',
@@ -3408,6 +3419,16 @@ const ApiReferralsMeRoute = ApiReferralsMeRouteImport.update({
   path: '/api/referrals/me',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRemindersIndexRoute = ApiRemindersIndexRouteImport.update({
+  id: '/api/reminders/',
+  path: '/api/reminders/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRemindersIdRoute = ApiRemindersIdRouteImport.update({
+  id: '/api/reminders/$id',
+  path: '/api/reminders/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiReplaysIndexRoute = ApiReplaysIndexRouteImport.update({
   id: '/api/replays/',
   path: '/api/replays/',
@@ -3416,6 +3437,11 @@ const ApiReplaysIndexRoute = ApiReplaysIndexRouteImport.update({
 const ApiReplaysIdRoute = ApiReplaysIdRouteImport.update({
   id: '/api/replays/$id',
   path: '/api/replays/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiReplaysGhostRoute = ApiReplaysGhostRouteImport.update({
+  id: '/api/replays/ghost',
+  path: '/api/replays/ghost',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRequestsIndexRoute = ApiRequestsIndexRouteImport.update({
@@ -4804,6 +4830,11 @@ const ApiProfileIdFollowingRoute = ApiProfileIdFollowingRouteImport.update({
   path: '/following',
   getParentRoute: () => ApiProfileIdRoute,
 } as any)
+const ApiProfileIdGuestbookRoute = ApiProfileIdGuestbookRouteImport.update({
+  id: '/guestbook',
+  path: '/guestbook',
+  getParentRoute: () => ApiProfileIdRoute,
+} as any)
 const ApiProfileIdLikesRoute = ApiProfileIdLikesRouteImport.update({
   id: '/likes',
   path: '/likes',
@@ -5455,6 +5486,12 @@ const ApiPlaylistsIdItemsItemIdRoute =
     id: '/api/playlists/$id/items/$itemId',
     path: '/api/playlists/$id/items/$itemId',
     getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiProfileIdGuestbookEntryIdRoute =
+  ApiProfileIdGuestbookEntryIdRouteImport.update({
+    id: '/$entryId',
+    path: '/$entryId',
+    getParentRoute: () => ApiProfileIdGuestbookRoute,
   } as any)
 const ApiRideshareRidesIdMessagesRoute =
   ApiRideshareRidesIdMessagesRouteImport.update({
@@ -6109,12 +6146,15 @@ export interface FileRoutesByFullPath {
   '/api/profile/me': typeof ApiProfileMeRoute
   '/api/profile/status': typeof ApiProfileStatusRoute
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
+  '/api/push/action': typeof ApiPushActionRoute
   '/api/push/public-key': typeof ApiPushPublicKeyRoute
   '/api/push/subscribe': typeof ApiPushSubscribeRoute
   '/api/recommend/feedback': typeof ApiRecommendFeedbackRoute
   '/api/referrals/claim': typeof ApiReferralsClaimRoute
   '/api/referrals/me': typeof ApiReferralsMeRoute
+  '/api/reminders/$id': typeof ApiRemindersIdRoute
   '/api/replays/$id': typeof ApiReplaysIdRoute
+  '/api/replays/ghost': typeof ApiReplaysGhostRoute
   '/api/requests/$id': typeof ApiRequestsIdRouteWithChildren
   '/api/rideshare/directions': typeof ApiRideshareDirectionsRoute
   '/api/rideshare/driver': typeof ApiRideshareDriverRoute
@@ -6290,6 +6330,7 @@ export interface FileRoutesByFullPath {
   '/api/profile-links/': typeof ApiProfileLinksIndexRoute
   '/api/ranked/': typeof ApiRankedIndexRoute
   '/api/recommend/': typeof ApiRecommendIndexRoute
+  '/api/reminders/': typeof ApiRemindersIndexRoute
   '/api/replays/': typeof ApiReplaysIndexRoute
   '/api/requests/': typeof ApiRequestsIndexRoute
   '/api/saves/': typeof ApiSavesIndexRoute
@@ -6417,6 +6458,7 @@ export interface FileRoutesByFullPath {
   '/api/profile/$id/follow': typeof ApiProfileIdFollowRoute
   '/api/profile/$id/followers': typeof ApiProfileIdFollowersRoute
   '/api/profile/$id/following': typeof ApiProfileIdFollowingRoute
+  '/api/profile/$id/guestbook': typeof ApiProfileIdGuestbookRouteWithChildren
   '/api/profile/$id/likes': typeof ApiProfileIdLikesRoute
   '/api/profile/$id/membership': typeof ApiProfileIdMembershipRoute
   '/api/profile/$id/rmharks': typeof ApiProfileIdRmharksRoute
@@ -6559,6 +6601,7 @@ export interface FileRoutesByFullPath {
   '/api/pf2ecal/sessions/$id/recap': typeof ApiPf2ecalSessionsIdRecapRoute
   '/api/pf2ecal/sessions/$id/response': typeof ApiPf2ecalSessionsIdResponseRoute
   '/api/playlists/$id/items/$itemId': typeof ApiPlaylistsIdItemsItemIdRoute
+  '/api/profile/$id/guestbook/$entryId': typeof ApiProfileIdGuestbookEntryIdRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
   '/api/rideshare/rides/$id/sync': typeof ApiRideshareRidesIdSyncRoute
@@ -7006,12 +7049,15 @@ export interface FileRoutesByTo {
   '/api/profile/me': typeof ApiProfileMeRoute
   '/api/profile/status': typeof ApiProfileStatusRoute
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
+  '/api/push/action': typeof ApiPushActionRoute
   '/api/push/public-key': typeof ApiPushPublicKeyRoute
   '/api/push/subscribe': typeof ApiPushSubscribeRoute
   '/api/recommend/feedback': typeof ApiRecommendFeedbackRoute
   '/api/referrals/claim': typeof ApiReferralsClaimRoute
   '/api/referrals/me': typeof ApiReferralsMeRoute
+  '/api/reminders/$id': typeof ApiRemindersIdRoute
   '/api/replays/$id': typeof ApiReplaysIdRoute
+  '/api/replays/ghost': typeof ApiReplaysGhostRoute
   '/api/requests/$id': typeof ApiRequestsIdRouteWithChildren
   '/api/rideshare/directions': typeof ApiRideshareDirectionsRoute
   '/api/rideshare/driver': typeof ApiRideshareDriverRoute
@@ -7187,6 +7233,7 @@ export interface FileRoutesByTo {
   '/api/profile-links': typeof ApiProfileLinksIndexRoute
   '/api/ranked': typeof ApiRankedIndexRoute
   '/api/recommend': typeof ApiRecommendIndexRoute
+  '/api/reminders': typeof ApiRemindersIndexRoute
   '/api/replays': typeof ApiReplaysIndexRoute
   '/api/requests': typeof ApiRequestsIndexRoute
   '/api/saves': typeof ApiSavesIndexRoute
@@ -7314,6 +7361,7 @@ export interface FileRoutesByTo {
   '/api/profile/$id/follow': typeof ApiProfileIdFollowRoute
   '/api/profile/$id/followers': typeof ApiProfileIdFollowersRoute
   '/api/profile/$id/following': typeof ApiProfileIdFollowingRoute
+  '/api/profile/$id/guestbook': typeof ApiProfileIdGuestbookRouteWithChildren
   '/api/profile/$id/likes': typeof ApiProfileIdLikesRoute
   '/api/profile/$id/membership': typeof ApiProfileIdMembershipRoute
   '/api/profile/$id/rmharks': typeof ApiProfileIdRmharksRoute
@@ -7456,6 +7504,7 @@ export interface FileRoutesByTo {
   '/api/pf2ecal/sessions/$id/recap': typeof ApiPf2ecalSessionsIdRecapRoute
   '/api/pf2ecal/sessions/$id/response': typeof ApiPf2ecalSessionsIdResponseRoute
   '/api/playlists/$id/items/$itemId': typeof ApiPlaylistsIdItemsItemIdRoute
+  '/api/profile/$id/guestbook/$entryId': typeof ApiProfileIdGuestbookEntryIdRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
   '/api/rideshare/rides/$id/sync': typeof ApiRideshareRidesIdSyncRoute
@@ -7931,12 +7980,15 @@ export interface FileRoutesById {
   '/api/profile/me': typeof ApiProfileMeRoute
   '/api/profile/status': typeof ApiProfileStatusRoute
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
+  '/api/push/action': typeof ApiPushActionRoute
   '/api/push/public-key': typeof ApiPushPublicKeyRoute
   '/api/push/subscribe': typeof ApiPushSubscribeRoute
   '/api/recommend/feedback': typeof ApiRecommendFeedbackRoute
   '/api/referrals/claim': typeof ApiReferralsClaimRoute
   '/api/referrals/me': typeof ApiReferralsMeRoute
+  '/api/reminders/$id': typeof ApiRemindersIdRoute
   '/api/replays/$id': typeof ApiReplaysIdRoute
+  '/api/replays/ghost': typeof ApiReplaysGhostRoute
   '/api/requests/$id': typeof ApiRequestsIdRouteWithChildren
   '/api/rideshare/directions': typeof ApiRideshareDirectionsRoute
   '/api/rideshare/driver': typeof ApiRideshareDriverRoute
@@ -8112,6 +8164,7 @@ export interface FileRoutesById {
   '/api/profile-links/': typeof ApiProfileLinksIndexRoute
   '/api/ranked/': typeof ApiRankedIndexRoute
   '/api/recommend/': typeof ApiRecommendIndexRoute
+  '/api/reminders/': typeof ApiRemindersIndexRoute
   '/api/replays/': typeof ApiReplaysIndexRoute
   '/api/requests/': typeof ApiRequestsIndexRoute
   '/api/saves/': typeof ApiSavesIndexRoute
@@ -8239,6 +8292,7 @@ export interface FileRoutesById {
   '/api/profile/$id/follow': typeof ApiProfileIdFollowRoute
   '/api/profile/$id/followers': typeof ApiProfileIdFollowersRoute
   '/api/profile/$id/following': typeof ApiProfileIdFollowingRoute
+  '/api/profile/$id/guestbook': typeof ApiProfileIdGuestbookRouteWithChildren
   '/api/profile/$id/likes': typeof ApiProfileIdLikesRoute
   '/api/profile/$id/membership': typeof ApiProfileIdMembershipRoute
   '/api/profile/$id/rmharks': typeof ApiProfileIdRmharksRoute
@@ -8381,6 +8435,7 @@ export interface FileRoutesById {
   '/api/pf2ecal/sessions/$id/recap': typeof ApiPf2ecalSessionsIdRecapRoute
   '/api/pf2ecal/sessions/$id/response': typeof ApiPf2ecalSessionsIdResponseRoute
   '/api/playlists/$id/items/$itemId': typeof ApiPlaylistsIdItemsItemIdRoute
+  '/api/profile/$id/guestbook/$entryId': typeof ApiProfileIdGuestbookEntryIdRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
   '/api/rideshare/rides/$id/sync': typeof ApiRideshareRidesIdSyncRoute
@@ -8856,12 +8911,15 @@ export interface FileRouteTypes {
     | '/api/profile/me'
     | '/api/profile/status'
     | '/api/promo/free-month'
+    | '/api/push/action'
     | '/api/push/public-key'
     | '/api/push/subscribe'
     | '/api/recommend/feedback'
     | '/api/referrals/claim'
     | '/api/referrals/me'
+    | '/api/reminders/$id'
     | '/api/replays/$id'
+    | '/api/replays/ghost'
     | '/api/requests/$id'
     | '/api/rideshare/directions'
     | '/api/rideshare/driver'
@@ -9037,6 +9095,7 @@ export interface FileRouteTypes {
     | '/api/profile-links/'
     | '/api/ranked/'
     | '/api/recommend/'
+    | '/api/reminders/'
     | '/api/replays/'
     | '/api/requests/'
     | '/api/saves/'
@@ -9164,6 +9223,7 @@ export interface FileRouteTypes {
     | '/api/profile/$id/follow'
     | '/api/profile/$id/followers'
     | '/api/profile/$id/following'
+    | '/api/profile/$id/guestbook'
     | '/api/profile/$id/likes'
     | '/api/profile/$id/membership'
     | '/api/profile/$id/rmharks'
@@ -9306,6 +9366,7 @@ export interface FileRouteTypes {
     | '/api/pf2ecal/sessions/$id/recap'
     | '/api/pf2ecal/sessions/$id/response'
     | '/api/playlists/$id/items/$itemId'
+    | '/api/profile/$id/guestbook/$entryId'
     | '/api/rideshare/rides/$id/messages'
     | '/api/rideshare/rides/$id/rate'
     | '/api/rideshare/rides/$id/sync'
@@ -9753,12 +9814,15 @@ export interface FileRouteTypes {
     | '/api/profile/me'
     | '/api/profile/status'
     | '/api/promo/free-month'
+    | '/api/push/action'
     | '/api/push/public-key'
     | '/api/push/subscribe'
     | '/api/recommend/feedback'
     | '/api/referrals/claim'
     | '/api/referrals/me'
+    | '/api/reminders/$id'
     | '/api/replays/$id'
+    | '/api/replays/ghost'
     | '/api/requests/$id'
     | '/api/rideshare/directions'
     | '/api/rideshare/driver'
@@ -9934,6 +9998,7 @@ export interface FileRouteTypes {
     | '/api/profile-links'
     | '/api/ranked'
     | '/api/recommend'
+    | '/api/reminders'
     | '/api/replays'
     | '/api/requests'
     | '/api/saves'
@@ -10061,6 +10126,7 @@ export interface FileRouteTypes {
     | '/api/profile/$id/follow'
     | '/api/profile/$id/followers'
     | '/api/profile/$id/following'
+    | '/api/profile/$id/guestbook'
     | '/api/profile/$id/likes'
     | '/api/profile/$id/membership'
     | '/api/profile/$id/rmharks'
@@ -10203,6 +10269,7 @@ export interface FileRouteTypes {
     | '/api/pf2ecal/sessions/$id/recap'
     | '/api/pf2ecal/sessions/$id/response'
     | '/api/playlists/$id/items/$itemId'
+    | '/api/profile/$id/guestbook/$entryId'
     | '/api/rideshare/rides/$id/messages'
     | '/api/rideshare/rides/$id/rate'
     | '/api/rideshare/rides/$id/sync'
@@ -10677,12 +10744,15 @@ export interface FileRouteTypes {
     | '/api/profile/me'
     | '/api/profile/status'
     | '/api/promo/free-month'
+    | '/api/push/action'
     | '/api/push/public-key'
     | '/api/push/subscribe'
     | '/api/recommend/feedback'
     | '/api/referrals/claim'
     | '/api/referrals/me'
+    | '/api/reminders/$id'
     | '/api/replays/$id'
+    | '/api/replays/ghost'
     | '/api/requests/$id'
     | '/api/rideshare/directions'
     | '/api/rideshare/driver'
@@ -10858,6 +10928,7 @@ export interface FileRouteTypes {
     | '/api/profile-links/'
     | '/api/ranked/'
     | '/api/recommend/'
+    | '/api/reminders/'
     | '/api/replays/'
     | '/api/requests/'
     | '/api/saves/'
@@ -10985,6 +11056,7 @@ export interface FileRouteTypes {
     | '/api/profile/$id/follow'
     | '/api/profile/$id/followers'
     | '/api/profile/$id/following'
+    | '/api/profile/$id/guestbook'
     | '/api/profile/$id/likes'
     | '/api/profile/$id/membership'
     | '/api/profile/$id/rmharks'
@@ -11127,6 +11199,7 @@ export interface FileRouteTypes {
     | '/api/pf2ecal/sessions/$id/recap'
     | '/api/pf2ecal/sessions/$id/response'
     | '/api/playlists/$id/items/$itemId'
+    | '/api/profile/$id/guestbook/$entryId'
     | '/api/rideshare/rides/$id/messages'
     | '/api/rideshare/rides/$id/rate'
     | '/api/rideshare/rides/$id/sync'
@@ -11418,12 +11491,15 @@ export interface RootRouteChildren {
   ApiPresenceOnlineCountRoute: typeof ApiPresenceOnlineCountRoute
   ApiProfileLinksReverifyRoute: typeof ApiProfileLinksReverifyRoute
   ApiPromoFreeMonthRoute: typeof ApiPromoFreeMonthRoute
+  ApiPushActionRoute: typeof ApiPushActionRoute
   ApiPushPublicKeyRoute: typeof ApiPushPublicKeyRoute
   ApiPushSubscribeRoute: typeof ApiPushSubscribeRoute
   ApiRecommendFeedbackRoute: typeof ApiRecommendFeedbackRoute
   ApiReferralsClaimRoute: typeof ApiReferralsClaimRoute
   ApiReferralsMeRoute: typeof ApiReferralsMeRoute
+  ApiRemindersIdRoute: typeof ApiRemindersIdRoute
   ApiReplaysIdRoute: typeof ApiReplaysIdRoute
+  ApiReplaysGhostRoute: typeof ApiReplaysGhostRoute
   ApiRequestsIdRoute: typeof ApiRequestsIdRouteWithChildren
   ApiRideshareDirectionsRoute: typeof ApiRideshareDirectionsRoute
   ApiRideshareDriverRoute: typeof ApiRideshareDriverRoute
@@ -11551,6 +11627,7 @@ export interface RootRouteChildren {
   ApiProfileLinksIndexRoute: typeof ApiProfileLinksIndexRoute
   ApiRankedIndexRoute: typeof ApiRankedIndexRoute
   ApiRecommendIndexRoute: typeof ApiRecommendIndexRoute
+  ApiRemindersIndexRoute: typeof ApiRemindersIndexRoute
   ApiReplaysIndexRoute: typeof ApiReplaysIndexRoute
   ApiRequestsIndexRoute: typeof ApiRequestsIndexRoute
   ApiSavesIndexRoute: typeof ApiSavesIndexRoute
@@ -15097,6 +15174,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPromoFreeMonthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/push/action': {
+      id: '/api/push/action'
+      path: '/api/push/action'
+      fullPath: '/api/push/action'
+      preLoaderRoute: typeof ApiPushActionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/push/public-key': {
       id: '/api/push/public-key'
       path: '/api/push/public-key'
@@ -15146,6 +15230,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiReferralsMeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/reminders/': {
+      id: '/api/reminders/'
+      path: '/api/reminders'
+      fullPath: '/api/reminders/'
+      preLoaderRoute: typeof ApiRemindersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/reminders/$id': {
+      id: '/api/reminders/$id'
+      path: '/api/reminders/$id'
+      fullPath: '/api/reminders/$id'
+      preLoaderRoute: typeof ApiRemindersIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/replays/': {
       id: '/api/replays/'
       path: '/api/replays'
@@ -15158,6 +15256,13 @@ declare module '@tanstack/react-router' {
       path: '/api/replays/$id'
       fullPath: '/api/replays/$id'
       preLoaderRoute: typeof ApiReplaysIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/replays/ghost': {
+      id: '/api/replays/ghost'
+      path: '/api/replays/ghost'
+      fullPath: '/api/replays/ghost'
+      preLoaderRoute: typeof ApiReplaysGhostRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/requests/': {
@@ -17022,6 +17127,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProfileIdFollowingRouteImport
       parentRoute: typeof ApiProfileIdRoute
     }
+    '/api/profile/$id/guestbook': {
+      id: '/api/profile/$id/guestbook'
+      path: '/guestbook'
+      fullPath: '/api/profile/$id/guestbook'
+      preLoaderRoute: typeof ApiProfileIdGuestbookRouteImport
+      parentRoute: typeof ApiProfileIdRoute
+    }
     '/api/profile/$id/likes': {
       id: '/api/profile/$id/likes'
       path: '/likes'
@@ -17889,6 +18001,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/playlists/$id/items/$itemId'
       preLoaderRoute: typeof ApiPlaylistsIdItemsItemIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/profile/$id/guestbook/$entryId': {
+      id: '/api/profile/$id/guestbook/$entryId'
+      path: '/$entryId'
+      fullPath: '/api/profile/$id/guestbook/$entryId'
+      preLoaderRoute: typeof ApiProfileIdGuestbookEntryIdRouteImport
+      parentRoute: typeof ApiProfileIdGuestbookRoute
     }
     '/api/rideshare/rides/$id/messages': {
       id: '/api/rideshare/rides/$id/messages'
@@ -18971,10 +19090,24 @@ const ApiMessagesRouteWithChildren = ApiMessagesRoute._addFileChildren(
   ApiMessagesRouteChildren,
 )
 
+interface ApiProfileIdGuestbookRouteChildren {
+  ApiProfileIdGuestbookEntryIdRoute: typeof ApiProfileIdGuestbookEntryIdRoute
+}
+
+const ApiProfileIdGuestbookRouteChildren: ApiProfileIdGuestbookRouteChildren = {
+  ApiProfileIdGuestbookEntryIdRoute: ApiProfileIdGuestbookEntryIdRoute,
+}
+
+const ApiProfileIdGuestbookRouteWithChildren =
+  ApiProfileIdGuestbookRoute._addFileChildren(
+    ApiProfileIdGuestbookRouteChildren,
+  )
+
 interface ApiProfileIdRouteChildren {
   ApiProfileIdFollowRoute: typeof ApiProfileIdFollowRoute
   ApiProfileIdFollowersRoute: typeof ApiProfileIdFollowersRoute
   ApiProfileIdFollowingRoute: typeof ApiProfileIdFollowingRoute
+  ApiProfileIdGuestbookRoute: typeof ApiProfileIdGuestbookRouteWithChildren
   ApiProfileIdLikesRoute: typeof ApiProfileIdLikesRoute
   ApiProfileIdMembershipRoute: typeof ApiProfileIdMembershipRoute
   ApiProfileIdRmharksRoute: typeof ApiProfileIdRmharksRoute
@@ -18984,6 +19117,7 @@ const ApiProfileIdRouteChildren: ApiProfileIdRouteChildren = {
   ApiProfileIdFollowRoute: ApiProfileIdFollowRoute,
   ApiProfileIdFollowersRoute: ApiProfileIdFollowersRoute,
   ApiProfileIdFollowingRoute: ApiProfileIdFollowingRoute,
+  ApiProfileIdGuestbookRoute: ApiProfileIdGuestbookRouteWithChildren,
   ApiProfileIdLikesRoute: ApiProfileIdLikesRoute,
   ApiProfileIdMembershipRoute: ApiProfileIdMembershipRoute,
   ApiProfileIdRmharksRoute: ApiProfileIdRmharksRoute,
@@ -20145,12 +20279,15 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPresenceOnlineCountRoute: ApiPresenceOnlineCountRoute,
   ApiProfileLinksReverifyRoute: ApiProfileLinksReverifyRoute,
   ApiPromoFreeMonthRoute: ApiPromoFreeMonthRoute,
+  ApiPushActionRoute: ApiPushActionRoute,
   ApiPushPublicKeyRoute: ApiPushPublicKeyRoute,
   ApiPushSubscribeRoute: ApiPushSubscribeRoute,
   ApiRecommendFeedbackRoute: ApiRecommendFeedbackRoute,
   ApiReferralsClaimRoute: ApiReferralsClaimRoute,
   ApiReferralsMeRoute: ApiReferralsMeRoute,
+  ApiRemindersIdRoute: ApiRemindersIdRoute,
   ApiReplaysIdRoute: ApiReplaysIdRoute,
+  ApiReplaysGhostRoute: ApiReplaysGhostRoute,
   ApiRequestsIdRoute: ApiRequestsIdRouteWithChildren,
   ApiRideshareDirectionsRoute: ApiRideshareDirectionsRoute,
   ApiRideshareDriverRoute: ApiRideshareDriverRoute,
@@ -20278,6 +20415,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiProfileLinksIndexRoute: ApiProfileLinksIndexRoute,
   ApiRankedIndexRoute: ApiRankedIndexRoute,
   ApiRecommendIndexRoute: ApiRecommendIndexRoute,
+  ApiRemindersIndexRoute: ApiRemindersIndexRoute,
   ApiReplaysIndexRoute: ApiReplaysIndexRoute,
   ApiRequestsIndexRoute: ApiRequestsIndexRoute,
   ApiSavesIndexRoute: ApiSavesIndexRoute,

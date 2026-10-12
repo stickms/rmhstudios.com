@@ -65,6 +65,19 @@ export interface GameAdapter {
   leaderboard(limit: number): Promise<LeaderboardRow[]>;
   /** Name of the ranked metric, for API consumers ('highScore', 'totalScore'…). */
   metric: string;
+  /**
+   * The player's stored best before this run, or null if they have none — what
+   * lets a submission say "new personal best" (plan U4). One indexed read on
+   * the unique `userId` key.
+   */
+  personalBest?(userId: string): Promise<number | null>;
+  /**
+   * 1-based rank `score` would hold on the board. Only called on a personal
+   * best, so the COUNT never runs on an ordinary submission.
+   */
+  rankOf?(score: number): Promise<number>;
+  /** True when a smaller score is better (time trials). Defaults to false. */
+  lowerIsBetter?: boolean;
 }
 
 /** Fallback display name when a game doesn't collect one. */
@@ -72,6 +85,13 @@ const ANON = 'Player';
 
 const voidBreaker: GameAdapter = {
   metric: 'highScore',
+  async personalBest(userId) {
+    const row = await prisma.voidBreakerPlayer.findUnique({ where: { userId }, select: { highScore: true } });
+    return row?.highScore ?? null;
+  },
+  async rankOf(score) {
+    return 1 + (await prisma.voidBreakerPlayer.count({ where: { highScore: { gt: score } } }));
+  },
   async submit({ userId, score, progress, username, durationMs }) {
     const existing = await prisma.voidBreakerPlayer.findUnique({ where: { userId } });
     if (existing) {
@@ -117,6 +137,13 @@ const voidBreaker: GameAdapter = {
 
 const neonDriftway: GameAdapter = {
   metric: 'highScore',
+  async personalBest(userId) {
+    const row = await prisma.neonDriftwayPlayer.findUnique({ where: { userId }, select: { highScore: true } });
+    return row?.highScore ?? null;
+  },
+  async rankOf(score) {
+    return 1 + (await prisma.neonDriftwayPlayer.count({ where: { highScore: { gt: score } } }));
+  },
   async submit({ userId, score, progress, username, durationMs, meta }) {
     // Difficulty level (1-3); tracked as a personal best alongside the score.
     const level = Math.min(Math.max(Math.round(meta?.level ?? 1), 1), 3);
@@ -166,6 +193,13 @@ const neonDriftway: GameAdapter = {
 
 const nightrail: GameAdapter = {
   metric: 'highScore',
+  async personalBest(userId) {
+    const row = await prisma.nightrailPlayer.findUnique({ where: { userId }, select: { highScore: true } });
+    return row?.highScore ?? null;
+  },
+  async rankOf(score) {
+    return 1 + (await prisma.nightrailPlayer.count({ where: { highScore: { gt: score } } }));
+  },
   async submit({ userId, score, progress, username, meta }) {
     // Level 1-5, and the peak combo multiplier the run reached. The multiplier
     // is stored alongside the score because it is the number that separates a
@@ -225,6 +259,13 @@ const nightrail: GameAdapter = {
 
 const signalForge: GameAdapter = {
   metric: 'highScore',
+  async personalBest(userId) {
+    const row = await prisma.signalForgePlayer.findUnique({ where: { userId }, select: { highScore: true } });
+    return row?.highScore ?? null;
+  },
+  async rankOf(score) {
+    return 1 + (await prisma.signalForgePlayer.count({ where: { highScore: { gt: score } } }));
+  },
   async submit({ userId, score, progress, username }) {
     const existing = await prisma.signalForgePlayer.findUnique({ where: { userId } });
     if (existing) {
@@ -267,6 +308,13 @@ const signalForge: GameAdapter = {
 
 const synapseStorm: GameAdapter = {
   metric: 'highScore',
+  async personalBest(userId) {
+    const row = await prisma.synapseStormPlayer.findUnique({ where: { userId }, select: { highScore: true } });
+    return row?.highScore ?? null;
+  },
+  async rankOf(score) {
+    return 1 + (await prisma.synapseStormPlayer.count({ where: { highScore: { gt: score } } }));
+  },
   // No `username` column — this table joins to the account for its display name.
   async submit({ userId, score, progress, durationMs, meta }) {
     const puzzlesSolved = Math.max(0, Math.round(meta?.puzzlesSolved ?? 0));

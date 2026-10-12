@@ -61,6 +61,8 @@ export const C2S = {
   ROOM_CREATE_INVITE:   'rmhtube:room:create_invite',
   ROOM_SET_STATUS:      'rmhtube:room:set_status',
   ROOM_CHECK_HISTORY:   'rmhtube:room:check_history',
+  /** A viewer asks the host / leader to hand them playback control. */
+  ROOM_REQUEST_CONTROL: 'rmhtube:room:request_control',
 } as const;
 
 // ─── Server → Client Events ─────────────────────────────────────

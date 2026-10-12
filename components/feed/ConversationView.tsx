@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { m as motion } from 'framer-motion';
-import { Loader2, ArrowLeft, Send, ImagePlus, ImagePlay, X, Plus } from 'lucide-react';
+import { Loader2, ArrowLeft, Send, ImagePlus, ImagePlay, X, Plus, Reply } from 'lucide-react';
+import { SwipeRow } from '@/components/ui/swipe-row';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { EASE_OUT_EXPO } from '@/components/motion';
 import { Spinner } from '@/components/ui/spinner';
@@ -185,6 +186,15 @@ export function ConversationView({
     newest && newest.senderId !== session?.user.id && !newest.deletedAt && newest.content.trim()
       ? newest.id
       : null;
+
+  // Swipe-to-reply (U11). DMs have no threaded replies, so a reply quotes the
+  // message into the composer — the same thing people already did by hand.
+  const quoteReply = useCallback((content: string) => {
+    const line = content.replace(/\s+/g, ' ').trim();
+    const quoted = line.length > 80 ? `${line.slice(0, 80)}…` : line;
+    setInput((prev) => `> ${quoted}\n${prev}`);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }, []);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -1098,6 +1108,17 @@ export function ConversationView({
                       </span>
                     </div>
                   )}
+                  <SwipeRow
+                    leading={
+                      canReact && !isEditing && !isVoice && msg.content.trim()
+                        ? {
+                            icon: Reply,
+                            label: t('dm-reply', { defaultValue: 'Reply' }),
+                            onAction: () => quoteReply(msg.content),
+                          }
+                        : undefined
+                    }
+                  >
                   <div
                     className={`group flex items-end gap-2 ${isLastInGroup ? 'mb-3' : 'mb-0.5'} ${isSelf ? 'flex-row-reverse' : ''}`}
                   >
@@ -1191,10 +1212,12 @@ export function ConversationView({
                         onEdit={() => setEditingId(msg.id)}
                         onUnsend={() => handleUnsend(msg.id)}
                         onHide={() => handleHide(msg.id)}
+                        onReply={isVoice ? undefined : () => quoteReply(msg.content)}
                         className="md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
                       />
                     )}
                   </div>
+                  </SwipeRow>
                   {(msg.reactions?.length ?? 0) > 0 && (
                     <ReactionChips
                       reactions={groupReactions(msg.reactions ?? [], session.user.id)}

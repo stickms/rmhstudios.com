@@ -24,7 +24,7 @@
  *    a bare phone is just a broken-looking game.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   neonDriftwaySave,
@@ -41,7 +41,19 @@ import {
   LEVELS, LEVEL_2_UNLOCK_DISTANCE, LEVEL_3_UNLOCK_DISTANCE, MPS_PER_UNIT,
 } from '@/lib/neon-driftway/constants';
 import type { GameState, InputState, LevelId, RunStats } from '@/lib/neon-driftway/types';
-import { isFullscreen, isLowPowerDevice, requestScreenWakeLock, supportsWebGL, toggleFullscreen } from '@/lib/shared/platform';
+import { isFullscreen, isLowPowerDevice, supportsWebGL, toggleFullscreen } from '@/lib/shared/platform';
+import { useGameSession } from '@/hooks/useGameSession';
+
+// U14 — loaded only when a player opens photo mode.
+const PhotoMode = lazy(() => import('@/components/games/PhotoMode'));
+import {
+  GhostPlayer,
+  GhostRecorder,
+  readGhostMode,
+  writeGhostMode,
+  type GhostMode,
+  type GhostTrace,
+} from '@/lib/neon-driftway/ghost';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { NeonDriftwayUI } from './NeonDriftwayUI';
 import { NeonDriftwayTouchControls } from './NeonDriftwayTouchControls';
@@ -141,6 +153,51 @@ export function NeonDriftwayGame() {
   const unlocksRef = useRef(unlockedLevels);
   const stereoRef = useRef(false);
   const multiplayerRoomRef = useRef<string | null>(null);
+
+  // ── Photo mode (U14): solo only; the sim is paused for the whole session ──
+  const [photoMode, setPhotoMode] = useState(false);
+  const photoModeRef = useRef(false);
+  photoModeRef.current = photoMode;
+  const openPhotoMode = useCallback(() => {
+    const game = gameRef.current;
+    if (!game || game.isMultiplayer || stereoRef.current) return;
+    if (game.state !== 'playing' && game.state !== 'paused') return;
+    if (game.state === 'playing') game.state = 'paused' as GameState;
+    setPhotoMode(true);
+  }, []);
+
+  // ── Ghost racing (U9) — record solo runs, race your best (or the board's) ──
+  const ghostRecorderRef = useRef(new GhostRecorder());
+  const ghostPlayerRef = useRef<GhostPlayer | null>(null);
+  const [ghostMode, setGhostModeState] = useState<GhostMode>('pb');
+  useEffect(() => setGhostModeState(readGhostMode()), []);
+  const setGhostMode = useCallback((mode: GhostMode) => {
+    writeGhostMode(mode);
+    setGhostModeState(mode);
+  }, []);
+  /** Fetched after the run starts, so a ghost never delays the countdown. */
+  const loadGhost = useCallback(
+    (levelId: LevelId, mode: GhostMode) => {
+      ghostPlayerRef.current = null;
+      if (mode === 'off') return;
+      void fetch(`/api/replays/ghost?game=neon-driftway&level=${levelId}&vs=${mode}`, {
+        credentials: 'include',
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((body: { ghost: { data: GhostTrace; owner: { name: string | null; handle: string | null } } | null } | null) => {
+          const ghost = body?.ghost;
+          const game = gameRef.current;
+          if (!ghost || !game || game.isMultiplayer || ghost.data.level !== levelId) return;
+          const name =
+            mode === 'pb'
+              ? t('ghost-pb-label', { defaultValue: 'Your best' })
+              : ghost.owner.name || ghost.owner.handle || t('ghost-top-label', { defaultValue: 'World #1' });
+          ghostPlayerRef.current = new GhostPlayer(ghost.data, name);
+        })
+        .catch(() => {});
+    },
+    [t],
+  );
   const positionTickRef = useRef(0);
   const scoreTickRef = useRef(0);
 
@@ -382,9 +439,16 @@ export function NeonDriftwayGame() {
         case 'KeyA': case 'ArrowLeft': input.left = down; break;
         case 'KeyD': case 'ArrowRight': input.right = down; break;
         case 'ShiftLeft': case 'ShiftRight': input.boost = down; break;
-        case 'Escape': input.pause = down; break;
+        // In photo mode Escape closes the panel; it must not also unpause.
+        case 'Escape': if (!photoModeRef.current) input.pause = down; break;
         case 'KeyR': input.restart = down; break;
         case 'KeyE': input.ability = down; break;
+        case 'KeyP':
+          if (down && !e.repeat) {
+            if (photoModeRef.current) setPhotoMode(false);
+            else openPhotoMode();
+          }
+          break;
       }
 
       if (down && e.code === 'KeyC') rendererRef.current?.recenterView();
@@ -422,14 +486,20 @@ export function NeonDriftwayGame() {
       window.removeEventListener('keyup', ku);
       window.removeEventListener('blur', blur);
     };
-  }, []);
+    // `openPhotoMode` is stable (no deps), so this still binds exactly once.
+  }, [openPhotoMode]);
 
-  // ── Keep the screen on while driving ──
+  // ── Session contract: screen on while driving, pause when the tab hides.
+  //    Restart stays on the game's own R binding (input.restart). ──
 
-  useEffect(() => {
-    if (uiState !== 'playing' && uiState !== 'multiplayerPlaying') return;
-    return requestScreenWakeLock();
-  }, [uiState]);
+  useGameSession({
+    id: 'neon-driftway',
+    active: uiState === 'playing' || uiState === 'multiplayerPlaying',
+    onPause: () => {
+      const game = gameRef.current;
+      if (game?.state === 'playing' && !game.isMultiplayer) game.state = 'paused' as GameState;
+    },
+  });
 
   // ── Frame loop ──
 
@@ -464,6 +534,12 @@ export function NeonDriftwayGame() {
         }
 
         game.update(dt, inputRef.current);
+        if (!game.isMultiplayer) {
+          if (game.state === 'playing') {
+            ghostRecorderRef.current.sample(game.elapsedMs, game.car.x, game.distance);
+          }
+          ghostPlayerRef.current?.apply(game.elapsedMs, game.remotePlayers);
+        }
         renderer.draw(game, dt, sample);
         hudRef.current?.sync(game, {
           multiplayer: game.isMultiplayer,
@@ -603,13 +679,16 @@ export function NeonDriftwayGame() {
     const game = gameRef.current;
     if (!game) return;
     game.isMultiplayer = false;
+    game.remotePlayers.clear();
     game.startLevel(levelId);
+    ghostRecorderRef.current.reset();
+    loadGhost(levelId, ghostMode);
     rendererRef.current?.setLevel(LEVELS[levelId]);
     rendererRef.current?.recenterView();
     setCurrentLevel(levelId);
     setRunStats(null);
     setUiState('playing');
-  }, []);
+  }, [loadGhost, ghostMode]);
 
   const handleTouchPause = useCallback(() => {
     const game = gameRef.current;
@@ -619,6 +698,7 @@ export function NeonDriftwayGame() {
   }, []);
 
   const handleCanvasPointerUp = useCallback(() => {
+    if (photoModeRef.current) return;
     const game = gameRef.current;
     if (game?.state === 'paused') game.resume();
   }, []);
@@ -644,6 +724,7 @@ export function NeonDriftwayGame() {
     positionTickRef.current = 0;
     scoreTickRef.current = 0;
     game.isMultiplayer = true;
+    ghostPlayerRef.current = null;
     game.remotePlayers.clear();
     game.startLevel(levelId);
     rendererRef.current?.setLevel(LEVELS[levelId]);
@@ -695,7 +776,17 @@ export function NeonDriftwayGame() {
         style={{ touchAction: 'none' }}
       />
 
-      <NeonDriftwayHud ref={hudRef} stereo={viewMode === 'vr'} visible={playing} />
+      <NeonDriftwayHud ref={hudRef} stereo={viewMode === 'vr'} visible={playing && !photoMode} />
+
+      {photoMode && rendererRef.current && (
+        <Suspense fallback={null}>
+          <PhotoMode
+            adapter={rendererRef.current}
+            gameName="Neon Driftway"
+            onExit={() => setPhotoMode(false)}
+          />
+        </Suspense>
+      )}
 
       {/* Viewer mode hides every menu affordance, so keep one way out. */}
       {viewMode === 'vr' && (
@@ -712,9 +803,10 @@ export function NeonDriftwayGame() {
         inputRef={inputRef}
         onPause={handleTouchPause}
         onRecenter={handleRecenter}
+        onPhoto={uiState === 'playing' && viewMode !== 'vr' ? openPhotoMode : undefined}
         showRecenter={gyroStatus === 'active'}
         stereo={viewMode === 'vr'}
-        visible={playing && (isTouchDevice || viewMode === 'vr')}
+        visible={playing && !photoMode && (isTouchDevice || viewMode === 'vr')}
       />
 
       {(uiState === 'multiplayerMenu' || uiState === 'lobby') && (
@@ -805,6 +897,9 @@ export function NeonDriftwayGame() {
         canOfferHeadLook={canOfferHeadLook}
         headsetDetected={headsetDetected}
         onSelectMode={handleSelectMode}
+        ghostMode={ghostMode}
+        onGhostModeChange={setGhostMode}
+        getGhostTrace={() => ghostRecorderRef.current.trace(currentLevel)}
       />
     </div>
   );

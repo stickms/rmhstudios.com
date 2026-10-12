@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { ResultMomentSlot, useScoreMoment } from '@/components/games/result-moment-slot';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -59,6 +60,7 @@ export function VoidBreakerUI({
   const { t } = useTranslation("c-void-breaker");
   const [lb, setLb] = useState<LBEntry[]>([]);
   const [submitted, setSubmitted] = useState(false);
+  const [scoreMoment, takeScoreMoment, clearScoreMoment] = useScoreMoment();
   const [showLore, setShowLore] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -90,7 +92,7 @@ export function VoidBreakerUI({
     setSubmitted(true);
     (async () => {
       try {
-        await fetch('/api/void-breaker/score', {
+        const res = await fetch('/api/void-breaker/score', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -98,14 +100,18 @@ export function VoidBreakerUI({
             enemiesKilled: runStats.enemiesKilled, timeMs: runStats.timeSurvivedMs,
           }),
         });
+        void takeScoreMoment(res);
         fetchLb();
       } catch { /* ignore */ }
     })();
-  }, [uiState, runStats, submitted, session.data, fetchLb]);
+  }, [uiState, runStats, submitted, session.data, fetchLb, takeScoreMoment]);
 
   useEffect(() => {
-    if (uiState === 'playing') setSubmitted(false);
-  }, [uiState]);
+    if (uiState === 'playing') {
+      setSubmitted(false);
+      clearScoreMoment();
+    }
+  }, [uiState, clearScoreMoment]);
 
   if (uiState === 'playing') return null;
 
@@ -638,6 +644,7 @@ export function VoidBreakerUI({
     const timeStr = `${Math.floor(secs / 60)}:${(secs % 60).toString().padStart(2, '0')}`;
     return (
       <div className="absolute inset-0 flex items-center-safe justify-center-safe z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
+        <ResultMomentSlot moment={scoreMoment} gameName="Void Breaker" onDismiss={clearScoreMoment} />
         <div className="vb-anim max-w-md w-full px-4 space-y-3 py-6"
           style={{ animation: 'vb-scale-in 0.4s cubic-bezier(0.22,1.2,0.36,1) both' }}>
           <div className="text-center space-y-1">

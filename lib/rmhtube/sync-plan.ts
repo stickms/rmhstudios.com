@@ -21,7 +21,17 @@
  */
 
 import { extrapolate } from './sync-math';
-import { SYNC_SOFT_TOLERANCE_S, SYNC_HARD_TOLERANCE_S, SYNC_NUDGE_RATE } from './constants';
+import {
+  SYNC_SOFT_TOLERANCE_S,
+  SYNC_HARD_TOLERANCE_S,
+  SYNC_NUDGE_RATE,
+  SYNC_SETTLE_TARGET_S,
+  SYNC_MAX_SEEK_LEAD_S,
+  SYNC_PAUSED_TOLERANCE_S,
+  SYNC_NUDGE_ENTER_S,
+  SYNC_MAX_NUDGE_RATE,
+  SYNC_HARD_TOLERANCE_NUDGE_S,
+} from './constants';
 import type { VideoState } from './types';
 
 /** One observation of the local player. */
@@ -61,13 +71,26 @@ export interface SyncPlanInput {
   canNudge: boolean;
   /** Realign hard regardless of drift (media change, resync, tab return). */
   force: boolean;
+  /**
+   * A nudge is already in progress. With it, the planner keeps nudging until
+   * the gap is under `SYNC_SETTLE_TARGET_S` instead of stopping the moment it
+   * re-enters the soft band (hysteresis). Optional; defaults to false.
+   */
+  nudging?: boolean;
+  /**
+   * Seconds this player typically spends buffering after a seek. A seek to
+   * the room's position lands that far behind, because the room keeps playing
+   * while the player refills — so while the room plays, the seek is led by
+   * this much (capped at `SYNC_MAX_SEEK_LEAD_S`). Optional; defaults to 0.
+   */
+  seekLeadS?: number;
 }
 
 export type SyncPlan =
   /** Do nothing this tick. */
   | { action: 'hold'; reason: HoldReason; drift: number }
-  /** Jump the playhead. */
-  | { action: 'seek'; to: number; drift: number }
+  /** Jump the playhead. `lead` is how far past the room's position it aims (media s). */
+  | { action: 'seek'; to: number; drift: number; lead: number }
   /** Close the gap by running slightly off the room's rate. */
   | { action: 'rate'; rate: number; drift: number }
   /** In sync — make sure the rate is back on the room's. */
@@ -123,26 +146,50 @@ export function planSync(input: SyncPlanInput): SyncPlan {
     return { action: 'hold', reason: 'buffering', drift };
   }
 
-  if (force || absDrift > SYNC_HARD_TOLERANCE_S) {
-    return { action: 'seek', to: target, drift };
+  // A player that can nudge closes mid-sized gaps smoothly, so it only needs
+  // to jump for bigger ones; one that can't tolerates up to the full 2 s.
+  const hardTolerance = canNudge ? SYNC_HARD_TOLERANCE_NUDGE_S : SYNC_HARD_TOLERANCE_S;
+  if (force || absDrift > hardTolerance) {
+    // Lead a seek on a playing room by the time the player will spend refilling,
+    // so it lands where the room will be, not where it was.
+    const lead = state.playing
+      ? Math.min(Math.max(0, input.seekLeadS ?? 0), SYNC_MAX_SEEK_LEAD_S) * roomRate
+      : 0;
+    const to = sample.seekableEnd != null ? Math.min(target + lead, sample.seekableEnd) : target + lead;
+    return { action: 'seek', to, drift, lead: to - target };
   }
 
-  // While the room is paused the anchor is static, so any residual gap is the
-  // player sitting a frame off. Not worth a seek — it would be visible.
+  // While the room is paused the anchor is static: a gap under a few frames is
+  // not worth a seek, anything more is where this viewer would resume from.
   if (!state.playing) {
-    return absDrift > SYNC_SOFT_TOLERANCE_S
-      ? { action: 'seek', to: target, drift }
+    return absDrift > SYNC_PAUSED_TOLERANCE_S
+      ? { action: 'seek', to: target, drift, lead: 0 }
       : { action: 'hold', reason: 'paused', drift };
   }
 
-  if (absDrift <= SYNC_SOFT_TOLERANCE_S) {
+  // Hysteresis: a nudge starts past SYNC_NUDGE_ENTER_S and runs on down to the
+  // settle target. Entry used to be the 0.5 s soft tolerance, which let a
+  // viewer that started 0.4 s off stay there for good — a rate nudge is
+  // inaudible, so there is no reason to tolerate a gap that size on a player
+  // that can make one (HLS run, 2026-10-11).
+  const settleBand = !canNudge
+    ? SYNC_SOFT_TOLERANCE_S
+    : input.nudging
+      ? SYNC_SETTLE_TARGET_S
+      : SYNC_NUDGE_ENTER_S;
+  if (absDrift <= settleBand) {
     return { action: 'settled', rate: roomRate, drift };
   }
 
   // Mid-band: close the gap by running slightly fast or slow, which nobody
   // sees, instead of jumping, which everybody does.
   if (canNudge) {
-    const rate = roomRate * (drift > 0 ? 1 + SYNC_NUDGE_RATE : 1 - SYNC_NUDGE_RATE);
+    // Proportional: 0.2 s off runs 5 % fast or slow, 0.4 s and beyond the full
+    // 10 % — between the floor that is inaudible and the ceiling that is not.
+    // (A gain of 0.08 left a 0.4 s post-seek residual at the 5 % floor, eight
+    // seconds to close.)
+    const amount = Math.min(SYNC_MAX_NUDGE_RATE, Math.max(SYNC_NUDGE_RATE, absDrift * 0.25));
+    const rate = roomRate * (drift > 0 ? 1 + amount : 1 - amount);
     return { action: 'rate', rate, drift };
   }
 
@@ -193,4 +240,20 @@ export function observePosition(
     // player is supposed to sit still.
     stalled: playing && elapsedMs > 0 && delta <= 0 && expected > 0,
   };
+}
+
+/**
+ * Learn this player's seek cost from how a seek actually landed.
+ *
+ * A seek aimed `leadUsed` past the room, on a player that then spent `L`
+ * seconds refilling, is found `leadUsed − L·rate` off the room once it plays at
+ * speed again. So the residual drift measures `L` directly — no timing of when
+ * frames resumed, which a 250 ms tick (and the cooldown after a seek) can only
+ * over-estimate. Timing it that way taught a player that seeks instantly to
+ * lead every seek by ~1.4 s and land that far AHEAD (found in a two-browser
+ * run, 2026-10-11).
+ */
+export function refineSeekLead(current: number, leadUsed: number, driftAfter: number, roomRate = 1): number {
+  const measured = Math.min(SYNC_MAX_SEEK_LEAD_S, Math.max(0, (leadUsed - driftAfter) / (roomRate || 1)));
+  return current === 0 ? measured : current * 0.6 + measured * 0.4;
 }

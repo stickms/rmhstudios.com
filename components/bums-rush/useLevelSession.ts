@@ -68,6 +68,7 @@ import {
   type SeatInputState,
   type TouchArmState,
 } from '@/lib/bums-rush/input';
+import { useGameSession } from '@/hooks/useGameSession';
 import {
   GuestInterpolator,
   HostLoop,
@@ -233,6 +234,10 @@ export function useLevelSession(options: LevelSessionOptions): LevelSessionApi {
 
   const pausedRef = useRef(paused);
   pausedRef.current = paused;
+
+  // Session contract: screen on during a level. Pause-on-hide is the
+  // session's own visibility handler below (it knows about local seats).
+  useGameSession({ id: 'bums-rush', active: status === 'running' && !paused });
 
   const joinPendingRef = useRef<PendingJoin | null>(pendingJoin);
   joinPendingRef.current = pendingJoin;

@@ -1,5 +1,6 @@
 "use client";
 
+import { useGameSession } from "@/hooks/useGameSession";
 import { useRef, useEffect, useState, useCallback, type CSSProperties } from "react";
 import { GameEngine, type StoreAccess } from "@/lib/house-always-wins/engine/GameEngine";
 import { IntroScene } from "@/lib/house-always-wins/scenes/IntroScene";
@@ -51,6 +52,16 @@ export function HouseAlwaysWinsGame() {
   useEffect(() => {
     menuOpenRef.current = menuOpen;
   }, [menuOpen]);
+
+  // Session contract: screen on while playing; hiding the tab opens the pause
+  // menu (unless a dialogue, poker hand or ending already owns the screen).
+  useGameSession({
+    id: "house-always-wins",
+    active: !ending,
+    onPause: () => {
+      if (!dialogue && !pokerOpen) setMenuOpen(true);
+    },
+  });
 
   // Pause the platformer whenever a React overlay owns the screen.
   useEffect(() => {

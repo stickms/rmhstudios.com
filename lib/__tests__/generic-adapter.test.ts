@@ -34,6 +34,8 @@ const { gameStat, GENERIC_GAME, TIMED_GAME } = vi.hoisted(() => ({
     upsert: vi.fn(),
     updateMany: vi.fn(),
     findMany: vi.fn(),
+    findUnique: vi.fn(),
+    count: vi.fn(),
   },
   GENERIC_GAME: {
     id: 'test-only-generic',
@@ -362,5 +364,41 @@ describe('leaderboard reads', () => {
   it('short-circuits a zero-row read', async () => {
     expect(await genericLeaderboardRows(GENERIC_GAME.id, { take: 0 })).toEqual([]);
     expect(gameStat.findMany).not.toHaveBeenCalled();
+  });
+});
+
+describe('personal-best moments (U4)', () => {
+  it('classifyRun: first score, improvement, and the no-moment cases', async () => {
+    const { classifyRun } = await import('@/lib/game/submit.server');
+    expect(classifyRun(100, null, false)).toBe('first-score');
+    expect(classifyRun(101, 100, false)).toBe('pb');
+    expect(classifyRun(100, 100, false)).toBeNull(); // a tie is not a new best
+    expect(classifyRun(99, 100, false)).toBeNull();
+    expect(classifyRun(0, null, false)).toBeNull(); // an instant quit is not a moment
+    // An unreadable stored best must not be mistaken for "first score".
+    expect(classifyRun(500, undefined, false)).toBeNull();
+    // Time trials: lower wins.
+    expect(classifyRun(59_000, 60_000, true)).toBe('pb');
+    expect(classifyRun(61_000, 60_000, true)).toBeNull();
+  });
+
+  it('generic personalBest reads the stored best, null when the player has none', async () => {
+    const adapter = genericAdapter(GENERIC_GAME.id);
+    gameStat.findUnique.mockResolvedValueOnce({ score: 420 });
+    expect(await adapter.personalBest!(USER)).toBe(420);
+    gameStat.findUnique.mockResolvedValueOnce(null);
+    expect(await adapter.personalBest!(USER)).toBeNull();
+  });
+
+  it('generic rankOf counts strictly better rows in the game direction', async () => {
+    gameStat.count.mockResolvedValue(4);
+    expect(await genericAdapter(GENERIC_GAME.id).rankOf!(500)).toBe(5);
+    expect(gameStat.count).toHaveBeenLastCalledWith({
+      where: { gameId: GENERIC_GAME.id, score: { gt: 500 } },
+    });
+    await genericAdapter(TIMED_GAME.id).rankOf!(60_000);
+    expect(gameStat.count).toHaveBeenLastCalledWith({
+      where: { gameId: TIMED_GAME.id, score: { lt: 60_000 } },
+    });
   });
 });

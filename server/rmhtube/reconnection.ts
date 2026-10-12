@@ -65,6 +65,7 @@ export class ReconnectionHandler {
 
     // Send full state snapshot to the reconnecting user
     socket.emit(S2C.ROOM_STATE_SNAPSHOT, this.roomManager.buildClientState(room, userId));
+    this.roomManager.restoreDesignatedLeader(room, userId);
 
     logger.info({ event: 'member_reconnected', roomId: room.id, userId, userName });
   }

@@ -347,6 +347,9 @@ model User {
   marketListingsSold   MarketListing[]  @relation("MarketSeller")
   marketListingsBought MarketListing[]  @relation("MarketBuyer")
   sharedMoments        SharedMoment[]
+  reminders            Reminder[]
+  guestbookOwned       GuestbookEntry[] @relation("GuestbookOwner")
+  guestbookSigned      GuestbookEntry[] @relation("GuestbookAuthor")
 
   // ─── Parity / QOL / customization (2026-07-20 design) ────────────────────
   saveFolders         SaveFolder[]
@@ -2946,6 +2949,9 @@ model UserProfile {
   // activity itself is ephemeral (expires with the heartbeat) — no column.
   presenceVisibility    String    @default("mutuals") @db.VarChar(12)
   presenceDetail        Boolean   @default(true)
+  // Profile guestbook (plan U15): who may sign — 'off' (default), 'following'
+  // (people this user follows) or 'everyone'. Opt-in by design.
+  guestbookMode         String    @default("off") @db.VarChar(12)
   // Reader content control: feed posts whose text contains any of these words
   // are hidden from this user (case-insensitive substring match). Opt-in.
   mutedWords            String[]  @default([])
@@ -7131,6 +7137,51 @@ model SharedMoment {
 
   @@index([userId, createdAt(sort: Desc)])
   @@map("shared_moment")
+}
+
+/// Profile guestbook (plan U15) — short notes visitors leave on a profile.
+/// Owner-controlled (`UserProfile.guestbookMode`); the owner can hide any entry
+/// (soft, `hiddenAt`), the author can delete their own. One entry per author
+/// per owner per day is enforced on `(authorId, ownerId, createdAt)`.
+model GuestbookEntry {
+  id        String    @id @default(cuid())
+  ownerId   String
+  authorId  String
+  body      String    @db.VarChar(280)
+  hiddenAt  DateTime?
+  createdAt DateTime  @default(now())
+
+  owner  User @relation("GuestbookOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  author User @relation("GuestbookAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@index([authorId, ownerId, createdAt])
+  @@map("guestbook_entry")
+}
+
+/// "Remind me about this" / snooze (plan U7). One pending reminder per
+/// (user, kind, target): setting it again moves it. The jobs worker fires due
+/// rows every minute as an ordinary notification, then stamps `firedAt`.
+/// `url` + `label` are snapshotted at creation so firing needs no per-kind
+/// lookup; `url` is always a same-site path (validated at the route).
+model Reminder {
+  id        String    @id @default(cuid())
+  userId    String
+  kind      String    @db.VarChar(24) // 'post' | 'notification' | 'event' | 'listing' | 'page'
+  targetId  String    @db.VarChar(128)
+  label     String    @db.VarChar(140)
+  url       String    @db.VarChar(512)
+  note      String?   @db.VarChar(140)
+  remindAt  DateTime
+  firedAt   DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, kind, targetId])
+  @@index([remindAt, firedAt])
+  @@index([userId, firedAt, remindAt])
+  @@map("reminder")
 }
 
 // ─── Parity / QOL / customization (2026-07-20 design) ───────────────────────

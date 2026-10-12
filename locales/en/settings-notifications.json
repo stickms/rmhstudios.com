@@ -17,5 +17,7 @@
   "quiet-end": "Quiet hours end",
   "quiet-hours": "Quiet hours",
   "quiet-start": "Quiet hours start",
-  "to": "To"
+  "to": "To",
+  "tab-badge": "Unread count in browser tab",
+  "tab-badge-desc": "Shows the number of unread messages and notifications in the tab title and icon on this device."
 }

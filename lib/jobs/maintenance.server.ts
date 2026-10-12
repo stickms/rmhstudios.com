@@ -18,6 +18,7 @@ import { sweepIdempotencyKeys } from '@/lib/api/idempotency.server';
 import { flushDueHeldNotifications } from '@/lib/notify/held.server';
 import { finalizeDueDeletions } from '@/lib/account/deletion.server';
 import { runIndexSweep } from '@/lib/search/indexer.server';
+import { fireDueReminders } from '@/lib/reminders/reminders.server';
 
 export const OUTBOX_DRAIN_QUEUE = 'outbox.drain';
 export const MAINTENANCE_QUEUE = 'platform.maintenance';
@@ -25,6 +26,7 @@ export const RARITY_ROLLUP_QUEUE = 'achievements.rarity';
 export const QUIET_HOURS_FLUSH_QUEUE = 'notify.quiet-hours-flush';
 export const DELETION_SWEEP_QUEUE = 'account.finalize-deletions';
 export const EMBEDDING_SWEEP_QUEUE = 'search.embedding-sweep';
+export const REMINDER_FIRE_QUEUE = 'reminders.fire';
 
 /**
  * Every minute. The outbox is the delivery path for webhooks and
@@ -53,6 +55,12 @@ export const DELETION_SWEEP_CRON = '10 4 * * *';
  * configured, which is the default.
  */
 export const EMBEDDING_SWEEP_CRON = '*/5 * * * *';
+/**
+ * Every minute (U7). A reminder is a promise about a specific time, so its
+ * lateness is bounded by this cadence; the query is one index range scan on
+ * `(remindAt, firedAt)` and is empty almost every run.
+ */
+export const REMINDER_FIRE_CRON = '* * * * *';
 
 /**
  * Recompute achievement rarity (F7).
@@ -119,6 +127,7 @@ export async function registerMaintenanceCrons(boss: PgBoss): Promise<void> {
   await boss.createQueue(QUIET_HOURS_FLUSH_QUEUE);
   await boss.createQueue(DELETION_SWEEP_QUEUE);
   await boss.createQueue(EMBEDDING_SWEEP_QUEUE);
+  await boss.createQueue(REMINDER_FIRE_QUEUE);
 
   await boss.schedule(OUTBOX_DRAIN_QUEUE, OUTBOX_DRAIN_CRON, {}, { tz: 'UTC' });
   await boss.schedule(MAINTENANCE_QUEUE, MAINTENANCE_CRON, {}, { tz: 'UTC' });
@@ -126,6 +135,7 @@ export async function registerMaintenanceCrons(boss: PgBoss): Promise<void> {
   await boss.schedule(QUIET_HOURS_FLUSH_QUEUE, QUIET_HOURS_FLUSH_CRON, {}, { tz: 'UTC' });
   await boss.schedule(DELETION_SWEEP_QUEUE, DELETION_SWEEP_CRON, {}, { tz: 'UTC' });
   await boss.schedule(EMBEDDING_SWEEP_QUEUE, EMBEDDING_SWEEP_CRON, {}, { tz: 'UTC' });
+  await boss.schedule(REMINDER_FIRE_QUEUE, REMINDER_FIRE_CRON, {}, { tz: 'UTC' });
 
   await boss.work(QUIET_HOURS_FLUSH_QUEUE, async () => {
     await flushDueHeldNotifications();
@@ -137,6 +147,10 @@ export async function registerMaintenanceCrons(boss: PgBoss): Promise<void> {
 
   await boss.work(EMBEDDING_SWEEP_QUEUE, async () => {
     await runIndexSweep();
+  });
+
+  await boss.work(REMINDER_FIRE_QUEUE, async () => {
+    await fireDueReminders();
   });
 
   await boss.work(OUTBOX_DRAIN_QUEUE, async () => {

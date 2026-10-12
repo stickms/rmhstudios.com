@@ -8,7 +8,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import { sendPushToUser, pushTitleFor } from '@/lib/push/send.server';
+import { sendPushToUser, pushTitleFor, pushActionsFor } from '@/lib/push/send.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { redisEnabled, redisGetJSON, redisSetJSON, redisIncrBy } from '@/lib/redis.server';
 import type { NotificationType } from '@prisma/client';
@@ -154,6 +154,9 @@ const UNMUTABLE_ENTITY_TYPES: ReadonlySet<string> = new Set([
   // New-device / new-location sign-in alerts (B11). The email goes out
   // regardless; this is what puts the matching row in the notification centre.
   'security',
+  // A reminder the user set for themselves (U7). Turning off "system"
+  // notifications is not a request to silently drop a reminder they asked for.
+  'reminder',
 ]);
 
 /** True when the recipient has this notification type turned off. */
@@ -198,7 +201,8 @@ export async function createNotification(input: CreateNotificationInput): Promis
       }
     }
 
-    await prisma.notification.create({
+    const created = await prisma.notification.create({
+      select: { id: true },
       data: {
         userId: input.userId,
         actorId: input.actorId ?? null,
@@ -224,6 +228,8 @@ export async function createNotification(input: CreateNotificationInput): Promis
       body: input.preview ?? undefined,
       url: input.link ?? '/notifications',
       tag: input.entityType && input.entityId ? `${input.entityType}:${input.entityId}` : undefined,
+      nid: created.id,
+      actions: pushActionsFor(input.type, input.entityType),
     });
   } catch (err) {
     console.error('[notifications] failed to create notification:', err);

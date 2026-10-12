@@ -14,9 +14,14 @@
  * a handful of times per run.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Camera } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { isLowPowerDevice, requestScreenWakeLock, supportsWebGL } from '@/lib/shared/platform';
+import { isLowPowerDevice, supportsWebGL } from '@/lib/shared/platform';
+import { useGameSession } from '@/hooks/useGameSession';
+
+// U14 — loaded only when a player opens photo mode.
+const PhotoMode = lazy(() => import('@/components/games/PhotoMode'));
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { createRun, emptyInput, stepRun, withInterpolatedPose, type RunState } from '@/lib/nightrail/game';
 import { NightrailRenderer3D } from '@/lib/nightrail/renderer3d';
@@ -92,6 +97,10 @@ export function NightrailGame() {
   const rendererRef = useRef<NightrailRenderer3D | null>(null);
   const audioRef = useRef<NightrailAudio | null>(null);
   const hudRef = useRef<HudHandle>(null);
+  const photoModeRef = useRef(false);
+  // The key handler is bound once; these always point at the newest callbacks.
+  const openPhotoModeRef = useRef<() => void>(() => {});
+  const closePhotoModeRef = useRef<() => void>(() => {});
   const inputRef = useRef<InputState>(emptyInput());
 
   const [uiState, setUiState] = useState<UIState>('menu');
@@ -217,7 +226,14 @@ export function NightrailGame() {
           input.boost = down;
           break;
         case 'Escape':
-          input.pause = down;
+          // In photo mode Escape closes the panel; it must not also unpause.
+          if (!photoModeRef.current) input.pause = down;
+          break;
+        case 'KeyP':
+          if (down && !e.repeat) {
+            if (photoModeRef.current) closePhotoModeRef.current();
+            else openPhotoModeRef.current();
+          }
           break;
         case 'KeyR':
           input.restart = down;
@@ -329,10 +345,15 @@ export function NightrailGame() {
     startLevel(level);
   }, [startLevel]);
 
-  useEffect(() => {
-    if (uiState !== 'playing') return;
-    return requestScreenWakeLock();
-  }, [uiState]);
+  // Session contract: screen on while riding, pause when the tab hides.
+  // Restart stays on the game's own R binding (input.restart).
+  useGameSession({
+    id: 'nightrail',
+    active: uiState === 'playing',
+    onPause: () => {
+      if (runRef.current?.phase === 'playing') runRef.current.phase = 'paused';
+    },
+  });
 
   // ── The single rAF loop ──
 
@@ -427,9 +448,27 @@ export function NightrailGame() {
     return () => cancelAnimationFrame(rafId);
   }, [webglReady, reducedMotion]);
 
+  // ── Photo mode (U14): pause the run, hide the HUD, frame a shot ──
+  const [photoMode, setPhotoMode] = useState(false);
+  const openPhotoMode = useCallback(() => {
+    const run = runRef.current;
+    if (!run || uiStateRef.current !== 'playing') return;
+    if (run.phase !== 'playing' && run.phase !== 'paused') return;
+    run.phase = 'paused';
+    photoModeRef.current = true;
+    setPhotoMode(true);
+  }, []);
+  const closePhotoMode = useCallback(() => {
+    photoModeRef.current = false;
+    setPhotoMode(false);
+  }, []);
+  openPhotoModeRef.current = openPhotoMode;
+  closePhotoModeRef.current = closePhotoMode;
+
   // Tapping the scene resumes — the pause panel is drawn by the HUD, which is
   // `pointer-events-none`, so the canvas underneath is what receives the tap.
   const resume = useCallback(() => {
+    if (photoModeRef.current) return;
     const run = runRef.current;
     if (run?.phase === 'paused') run.phase = 'playing';
     audioRef.current?.unlock();
@@ -466,9 +505,28 @@ export function NightrailGame() {
         style={{ touchAction: 'none' }}
       />
 
-      <NightrailHud ref={hudRef} visible={uiState === 'playing'} />
+      <NightrailHud ref={hudRef} visible={uiState === 'playing' && !photoMode} />
 
-      <NightrailTouchControls inputRef={inputRef} visible={uiState === 'playing'} />
+      <NightrailTouchControls inputRef={inputRef} visible={uiState === 'playing' && !photoMode} />
+
+      {uiState === 'playing' && !photoMode && (
+        <button
+          type="button"
+          onClick={openPhotoMode}
+          aria-label={t('photo-mode', { defaultValue: 'Photo mode' })}
+          title={t('photo-mode-key', { defaultValue: 'Photo mode (P)' })}
+          className="absolute z-30 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white/75 backdrop-blur-sm transition-colors hover:text-white"
+          style={{ top: 'calc(var(--safe-top) + 3.5rem)', right: 'calc(var(--safe-right) + 0.65rem)' }}
+        >
+          <Camera className="h-4 w-4" aria-hidden />
+        </button>
+      )}
+
+      {photoMode && rendererRef.current && (
+        <Suspense fallback={null}>
+          <PhotoMode adapter={rendererRef.current} gameName="Nightrail" onExit={closePhotoMode} />
+        </Suspense>
+      )}
 
       <NightrailUI
         uiState={uiState}
