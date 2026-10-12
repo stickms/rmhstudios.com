@@ -20,8 +20,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { LiquidTab } from '@/components/ui/liquid-tabs';
 import { apiJson } from './api';
 
-export const WALLET_TABS = ['goals', 'statement', 'community', 'gifts'] as const;
-export type WalletTab = (typeof WALLET_TABS)[number];
+import { WALLET_TABS, type WalletTab } from '@/lib/economy/wallet-tabs';
+export { WALLET_TABS, type WalletTab };
 
 const SavingsGoalsPanel = lazy(() => import('./SavingsGoalsPanel'));
 const StatementPanel = lazy(() => import('./StatementPanel'));

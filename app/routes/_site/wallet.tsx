@@ -11,7 +11,8 @@
 import { useCallback } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { definePage } from '@/lib/route/define-page';
-import { WALLET_TABS, WalletPage, type WalletTab } from '@/components/economy-plus/WalletPage';
+import { WalletPage } from '@/components/economy-plus/WalletPage';
+import { WALLET_TABS, type WalletTab } from '@/lib/economy/wallet-tabs';
 
 export const Route = createFileRoute('/_site/wallet')({
   head: definePage({
