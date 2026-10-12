@@ -17,5 +17,7 @@
   "quiet-end": "Quiet hours end",
   "quiet-hours": "Quiet hours",
   "quiet-start": "Quiet hours start",
+  "tab-badge": "Nombre de messages non lus dans l'onglet du navigateur",
+  "tab-badge-desc": "Affiche le nombre de messages et de notifications non lus dans le titre et l'icône de l'onglet sur cet appareil.",
   "to": "To"
 }

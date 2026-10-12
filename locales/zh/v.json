@@ -1,5 +1,6 @@
 {
   "backfill-thumbs": "Backfill all page thumbnails",
+  "backfill-thumbs-done_one": "已排队 {{count}} 个页面进行缩略图重新渲染。工作进程处理时它们将自动刷新。",
   "backfill-thumbs-done_other": "Queued {{count}} page(s) for thumbnail re-render. They will refresh as the worker processes them.",
   "backfill-thumbs-failed": "Failed to queue thumbnail backfill. Try again.",
   "empty-gallery": "还没有页面——来做第一个吧。",
@@ -10,6 +11,7 @@
   "open-page": "Open page",
   "pages-title": "页面",
   "prompt-aria-label": "描述您想要创建的页面",
+  "prompt-heading": "描述要生成的页面",
   "prompt-placeholder": "你想去哪里？",
   "search-aria-label": "搜索页面",
   "search-placeholder": "搜索页面..."

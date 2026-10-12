@@ -17,5 +17,7 @@
   "quiet-end": "Quiet hours end",
   "quiet-hours": "Quiet hours",
   "quiet-start": "Quiet hours start",
+  "tab-badge": "Количество непрочитанных во вкладке браузера",
+  "tab-badge-desc": "Показывает количество непрочитанных сообщений и уведомлений в заголовке вкладки и на значке на этом устройстве.",
   "to": "To"
 }

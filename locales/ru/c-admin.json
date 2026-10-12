@@ -6,7 +6,7 @@
   "content-label": "Содержание",
   "content-placeholder": "Write your post in Markdown…",
   "date-label": "Дата",
-  "delete-confirm": "Вы уверены, что хотите удалить «{{title}}»? Это действие нельзя отменить.",
+  "delete-confirm": "Удаление \"{{title}}\" нельзя отменить.",
   "delete-failed": "Не удалось удалить пост",
   "delete-post": "Удалить пост",
   "delete-success": "Пост блога удалён: {{slug}}.",

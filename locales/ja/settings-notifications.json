@@ -17,5 +17,7 @@
   "quiet-end": "Quiet hours end",
   "quiet-hours": "Quiet hours",
   "quiet-start": "Quiet hours start",
+  "tab-badge": "ブラウザタブの未読数",
+  "tab-badge-desc": "このデバイスのタブタイトルとアイコンに未読メッセージと通知の件数を表示します。",
   "to": "To"
 }

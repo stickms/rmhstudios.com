@@ -15,6 +15,7 @@ import trCCursedLogic from "@/locales/tr/c-cursed-logic.json";
 import trCDailyPuzzles from "@/locales/tr/c-daily-puzzles.json";
 import trCDoctrine from "@/locales/tr/c-doctrine.json";
 import trCDreamRift from "@/locales/tr/c-dream-rift.json";
+import trCDunesday from "@/locales/tr/c-dunesday.json";
 import trCEconomy from "@/locales/tr/c-economy.json";
 import trCForestExplorer from "@/locales/tr/c-forest-explorer.json";
 import trCGabrielsHorn from "@/locales/tr/c-gabriels-horn.json";
@@ -40,11 +41,13 @@ import trCProfileModules from "@/locales/tr/c-profile-modules.json";
 import trCRebarRutabaga from "@/locales/tr/c-rebar-rutabaga.json";
 import trCRideshare from "@/locales/tr/c-rideshare.json";
 import trCRmhCapital from "@/locales/tr/c-rmh-capital.json";
+import trCRmhDatacenter from "@/locales/tr/c-rmh-datacenter.json";
 import trCRmhPmc from "@/locales/tr/c-rmh-pmc.json";
 import trCRmhbox from "@/locales/tr/c-rmhbox.json";
 import trCRmhcalculator from "@/locales/tr/c-rmhcalculator.json";
 import trCRmhcode from "@/locales/tr/c-rmhcode.json";
 import trCRmhcoins from "@/locales/tr/c-rmhcoins.json";
+import trCRmhfashion from "@/locales/tr/c-rmhfashion.json";
 import trCRmhmusic from "@/locales/tr/c-rmhmusic.json";
 import trCRmhstudy from "@/locales/tr/c-rmhstudy.json";
 import trCRmhtech from "@/locales/tr/c-rmhtech.json";
@@ -67,6 +70,7 @@ import trCVoidBreaker from "@/locales/tr/c-void-breaker.json";
 import trCWager from "@/locales/tr/c-wager.json";
 import trCWishlist from "@/locales/tr/c-wishlist.json";
 import trCommon from "@/locales/tr/common.json";
+import trErrors from "@/locales/tr/errors.json";
 import trFeed from "@/locales/tr/feed.json";
 import trGamesHub from "@/locales/tr/games-hub.json";
 import trGroups from "@/locales/tr/groups.json";
@@ -111,6 +115,7 @@ const trResources = {
   "c-daily-puzzles": trCDailyPuzzles,
   "c-doctrine": trCDoctrine,
   "c-dream-rift": trCDreamRift,
+  "c-dunesday": trCDunesday,
   "c-economy": trCEconomy,
   "c-forest-explorer": trCForestExplorer,
   "c-gabriels-horn": trCGabrielsHorn,
@@ -136,11 +141,13 @@ const trResources = {
   "c-rebar-rutabaga": trCRebarRutabaga,
   "c-rideshare": trCRideshare,
   "c-rmh-capital": trCRmhCapital,
+  "c-rmh-datacenter": trCRmhDatacenter,
   "c-rmh-pmc": trCRmhPmc,
   "c-rmhbox": trCRmhbox,
   "c-rmhcalculator": trCRmhcalculator,
   "c-rmhcode": trCRmhcode,
   "c-rmhcoins": trCRmhcoins,
+  "c-rmhfashion": trCRmhfashion,
   "c-rmhmusic": trCRmhmusic,
   "c-rmhstudy": trCRmhstudy,
   "c-rmhtech": trCRmhtech,
@@ -163,6 +170,7 @@ const trResources = {
   "c-wager": trCWager,
   "c-wishlist": trCWishlist,
   "common": trCommon,
+  "errors": trErrors,
   "feed": trFeed,
   "games-hub": trGamesHub,
   "groups": trGroups,

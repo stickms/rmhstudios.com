@@ -18,6 +18,7 @@
   "tip-dialog-description": "أرسل عملات إلى {{recipient}} لإظهار بعض التقدير.",
   "tip-dialog-title": "أرسل إكرامية",
   "tip-error": "تعذر إرسال الإكرامية",
+  "tip-invalid": "مبلغ الإكرامية هذا غير مسموح به.",
   "tip-sign-in": "يرجى تسجيل الدخول للإكرامية.",
   "tip-success": "أرسل {{amount}} عملة كإكرامية{{recipient}}!"
 }

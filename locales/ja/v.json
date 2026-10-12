@@ -1,5 +1,6 @@
 {
   "backfill-thumbs": "Backfill all page thumbnails",
+  "backfill-thumbs-done_one": "サムネイル再レンダリング用に{{count}}ページをキューに追加しました。ワーカーが処理すると更新されます。",
   "backfill-thumbs-done_other": "Queued {{count}} page(s) for thumbnail re-render. They will refresh as the worker processes them.",
   "backfill-thumbs-failed": "Failed to queue thumbnail backfill. Try again.",
   "empty-gallery": "まだページがありません — 最初の1ページを作りましょう。",
@@ -10,6 +11,7 @@
   "open-page": "Open page",
   "pages-title": "ページ",
   "prompt-aria-label": "作成したいページを説明してください",
+  "prompt-heading": "生成するページを説明してください",
   "prompt-placeholder": "どこへ行きたいですか？",
   "search-aria-label": "ページを検索",
   "search-placeholder": "ページを検索…"
