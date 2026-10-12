@@ -543,6 +543,7 @@ import { Route as ApiScheduledIndexRouteImport } from './routes/api/scheduled/in
 import { Route as ApiScheduledIdRouteImport } from './routes/api/scheduled/$id'
 import { Route as ApiSearchSavedRouteImport } from './routes/api/search/saved'
 import { Route as ApiServicesRebarReservationsRouteImport } from './routes/api/services/rebar-reservations'
+import { Route as ApiSettingsAltTextRouteImport } from './routes/api/settings/alt-text'
 import { Route as ApiSettingsEmailDigestRouteImport } from './routes/api/settings/email-digest'
 import { Route as ApiSettingsGameAssistsRouteImport } from './routes/api/settings/game-assists'
 import { Route as ApiSettingsPlayLimitsRouteImport } from './routes/api/settings/play-limits'
@@ -790,10 +791,12 @@ import { Route as ApiRmharksIdHistoryRouteImport } from './routes/api/rmharks/$i
 import { Route as ApiRmharksIdInsightsRouteImport } from './routes/api/rmharks/$id/insights'
 import { Route as ApiRmharksIdLikeRouteImport } from './routes/api/rmharks/$id/like'
 import { Route as ApiRmharksIdPinRouteImport } from './routes/api/rmharks/$id/pin'
+import { Route as ApiRmharksIdQuotesRouteImport } from './routes/api/rmharks/$id/quotes'
 import { Route as ApiRmharksIdReactRouteImport } from './routes/api/rmharks/$id/react'
 import { Route as ApiRmharksIdRepostRouteImport } from './routes/api/rmharks/$id/repost'
 import { Route as ApiRmharksIdSimilarRouteImport } from './routes/api/rmharks/$id/similar'
 import { Route as ApiRmharksIdSummaryRouteImport } from './routes/api/rmharks/$id/summary'
+import { Route as ApiRmharksIdTakeRouteImport } from './routes/api/rmharks/$id/take'
 import { Route as ApiRmharksIdTranslateRouteImport } from './routes/api/rmharks/$id/translate'
 import { Route as ApiRmharksIdUnlockRouteImport } from './routes/api/rmharks/$id/unlock'
 import { Route as ApiRmharksIdViewRouteImport } from './routes/api/rmharks/$id/view'
@@ -933,6 +936,7 @@ import { Route as ApiV1UsersHandleFollowingRouteImport } from './routes/api/v1/u
 import { Route as ApiV1UsersHandlePostsRouteImport } from './routes/api/v1/users/$handle/posts'
 import { Route as ApiAdminAlbumsIdSlidesSlideIdRouteImport } from './routes/api/admin/albums/$id/slides/$slideId'
 import { Route as ApiGroupChatsIdMessagesMessageIdVoteRouteImport } from './routes/api/group-chats/$id/messages/$messageId/vote'
+import { Route as ApiRmharksIdCommentCommentIdHideRouteImport } from './routes/api/rmharks/$id/comment/$commentId/hide'
 import { Route as ApiRmharksIdCommentCommentIdLikeRouteImport } from './routes/api/rmharks/$id/comment/$commentId/like'
 import { Route as ApiRmharksIdCommentCommentIdRepostRouteImport } from './routes/api/rmharks/$id/comment/$commentId/repost'
 import { Route as ApiRmharksIdCommentCommentIdViewRouteImport } from './routes/api/rmharks/$id/comment/$commentId/view'
@@ -3635,6 +3639,11 @@ const ApiServicesRebarReservationsRoute =
     path: '/api/services/rebar-reservations',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiSettingsAltTextRoute = ApiSettingsAltTextRouteImport.update({
+  id: '/api/settings/alt-text',
+  path: '/api/settings/alt-text',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSettingsEmailDigestRoute = ApiSettingsEmailDigestRouteImport.update({
   id: '/api/settings/email-digest',
   path: '/api/settings/email-digest',
@@ -4928,6 +4937,11 @@ const ApiRmharksIdPinRoute = ApiRmharksIdPinRouteImport.update({
   path: '/pin',
   getParentRoute: () => ApiRmharksIdRoute,
 } as any)
+const ApiRmharksIdQuotesRoute = ApiRmharksIdQuotesRouteImport.update({
+  id: '/quotes',
+  path: '/quotes',
+  getParentRoute: () => ApiRmharksIdRoute,
+} as any)
 const ApiRmharksIdReactRoute = ApiRmharksIdReactRouteImport.update({
   id: '/react',
   path: '/react',
@@ -4946,6 +4960,11 @@ const ApiRmharksIdSimilarRoute = ApiRmharksIdSimilarRouteImport.update({
 const ApiRmharksIdSummaryRoute = ApiRmharksIdSummaryRouteImport.update({
   id: '/summary',
   path: '/summary',
+  getParentRoute: () => ApiRmharksIdRoute,
+} as any)
+const ApiRmharksIdTakeRoute = ApiRmharksIdTakeRouteImport.update({
+  id: '/take',
+  path: '/take',
   getParentRoute: () => ApiRmharksIdRoute,
 } as any)
 const ApiRmharksIdTranslateRoute = ApiRmharksIdTranslateRouteImport.update({
@@ -5691,6 +5710,12 @@ const ApiGroupChatsIdMessagesMessageIdVoteRoute =
     path: '/$messageId/vote',
     getParentRoute: () => ApiGroupChatsIdMessagesRoute,
   } as any)
+const ApiRmharksIdCommentCommentIdHideRoute =
+  ApiRmharksIdCommentCommentIdHideRouteImport.update({
+    id: '/hide',
+    path: '/hide',
+    getParentRoute: () => ApiRmharksIdCommentCommentIdRoute,
+  } as any)
 const ApiRmharksIdCommentCommentIdLikeRoute =
   ApiRmharksIdCommentCommentIdLikeRouteImport.update({
     id: '/like',
@@ -6189,6 +6214,7 @@ export interface FileRoutesByFullPath {
   '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
   '/api/search/saved': typeof ApiSearchSavedRouteWithChildren
   '/api/services/rebar-reservations': typeof ApiServicesRebarReservationsRoute
+  '/api/settings/alt-text': typeof ApiSettingsAltTextRoute
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
   '/api/settings/game-assists': typeof ApiSettingsGameAssistsRoute
   '/api/settings/play-limits': typeof ApiSettingsPlayLimitsRoute
@@ -6477,10 +6503,12 @@ export interface FileRoutesByFullPath {
   '/api/rmharks/$id/insights': typeof ApiRmharksIdInsightsRoute
   '/api/rmharks/$id/like': typeof ApiRmharksIdLikeRoute
   '/api/rmharks/$id/pin': typeof ApiRmharksIdPinRoute
+  '/api/rmharks/$id/quotes': typeof ApiRmharksIdQuotesRoute
   '/api/rmharks/$id/react': typeof ApiRmharksIdReactRoute
   '/api/rmharks/$id/repost': typeof ApiRmharksIdRepostRoute
   '/api/rmharks/$id/similar': typeof ApiRmharksIdSimilarRoute
   '/api/rmharks/$id/summary': typeof ApiRmharksIdSummaryRoute
+  '/api/rmharks/$id/take': typeof ApiRmharksIdTakeRoute
   '/api/rmharks/$id/translate': typeof ApiRmharksIdTranslateRoute
   '/api/rmharks/$id/unlock': typeof ApiRmharksIdUnlockRoute
   '/api/rmharks/$id/view': typeof ApiRmharksIdViewRoute
@@ -6640,6 +6668,7 @@ export interface FileRoutesByFullPath {
   '/api/study/decks/$id/': typeof ApiStudyDecksIdIndexRoute
   '/api/admin/albums/$id/slides/$slideId': typeof ApiAdminAlbumsIdSlidesSlideIdRoute
   '/api/group-chats/$id/messages/$messageId/vote': typeof ApiGroupChatsIdMessagesMessageIdVoteRoute
+  '/api/rmharks/$id/comment/$commentId/hide': typeof ApiRmharksIdCommentCommentIdHideRoute
   '/api/rmharks/$id/comment/$commentId/like': typeof ApiRmharksIdCommentCommentIdLikeRoute
   '/api/rmharks/$id/comment/$commentId/repost': typeof ApiRmharksIdCommentCommentIdRepostRoute
   '/api/rmharks/$id/comment/$commentId/view': typeof ApiRmharksIdCommentCommentIdViewRoute
@@ -7092,6 +7121,7 @@ export interface FileRoutesByTo {
   '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
   '/api/search/saved': typeof ApiSearchSavedRouteWithChildren
   '/api/services/rebar-reservations': typeof ApiServicesRebarReservationsRoute
+  '/api/settings/alt-text': typeof ApiSettingsAltTextRoute
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
   '/api/settings/game-assists': typeof ApiSettingsGameAssistsRoute
   '/api/settings/play-limits': typeof ApiSettingsPlayLimitsRoute
@@ -7380,10 +7410,12 @@ export interface FileRoutesByTo {
   '/api/rmharks/$id/insights': typeof ApiRmharksIdInsightsRoute
   '/api/rmharks/$id/like': typeof ApiRmharksIdLikeRoute
   '/api/rmharks/$id/pin': typeof ApiRmharksIdPinRoute
+  '/api/rmharks/$id/quotes': typeof ApiRmharksIdQuotesRoute
   '/api/rmharks/$id/react': typeof ApiRmharksIdReactRoute
   '/api/rmharks/$id/repost': typeof ApiRmharksIdRepostRoute
   '/api/rmharks/$id/similar': typeof ApiRmharksIdSimilarRoute
   '/api/rmharks/$id/summary': typeof ApiRmharksIdSummaryRoute
+  '/api/rmharks/$id/take': typeof ApiRmharksIdTakeRoute
   '/api/rmharks/$id/translate': typeof ApiRmharksIdTranslateRoute
   '/api/rmharks/$id/unlock': typeof ApiRmharksIdUnlockRoute
   '/api/rmharks/$id/view': typeof ApiRmharksIdViewRoute
@@ -7543,6 +7575,7 @@ export interface FileRoutesByTo {
   '/api/study/decks/$id': typeof ApiStudyDecksIdIndexRoute
   '/api/admin/albums/$id/slides/$slideId': typeof ApiAdminAlbumsIdSlidesSlideIdRoute
   '/api/group-chats/$id/messages/$messageId/vote': typeof ApiGroupChatsIdMessagesMessageIdVoteRoute
+  '/api/rmharks/$id/comment/$commentId/hide': typeof ApiRmharksIdCommentCommentIdHideRoute
   '/api/rmharks/$id/comment/$commentId/like': typeof ApiRmharksIdCommentCommentIdLikeRoute
   '/api/rmharks/$id/comment/$commentId/repost': typeof ApiRmharksIdCommentCommentIdRepostRoute
   '/api/rmharks/$id/comment/$commentId/view': typeof ApiRmharksIdCommentCommentIdViewRoute
@@ -8023,6 +8056,7 @@ export interface FileRoutesById {
   '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
   '/api/search/saved': typeof ApiSearchSavedRouteWithChildren
   '/api/services/rebar-reservations': typeof ApiServicesRebarReservationsRoute
+  '/api/settings/alt-text': typeof ApiSettingsAltTextRoute
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
   '/api/settings/game-assists': typeof ApiSettingsGameAssistsRoute
   '/api/settings/play-limits': typeof ApiSettingsPlayLimitsRoute
@@ -8311,10 +8345,12 @@ export interface FileRoutesById {
   '/api/rmharks/$id/insights': typeof ApiRmharksIdInsightsRoute
   '/api/rmharks/$id/like': typeof ApiRmharksIdLikeRoute
   '/api/rmharks/$id/pin': typeof ApiRmharksIdPinRoute
+  '/api/rmharks/$id/quotes': typeof ApiRmharksIdQuotesRoute
   '/api/rmharks/$id/react': typeof ApiRmharksIdReactRoute
   '/api/rmharks/$id/repost': typeof ApiRmharksIdRepostRoute
   '/api/rmharks/$id/similar': typeof ApiRmharksIdSimilarRoute
   '/api/rmharks/$id/summary': typeof ApiRmharksIdSummaryRoute
+  '/api/rmharks/$id/take': typeof ApiRmharksIdTakeRoute
   '/api/rmharks/$id/translate': typeof ApiRmharksIdTranslateRoute
   '/api/rmharks/$id/unlock': typeof ApiRmharksIdUnlockRoute
   '/api/rmharks/$id/view': typeof ApiRmharksIdViewRoute
@@ -8474,6 +8510,7 @@ export interface FileRoutesById {
   '/api/study/decks/$id/': typeof ApiStudyDecksIdIndexRoute
   '/api/admin/albums/$id/slides/$slideId': typeof ApiAdminAlbumsIdSlidesSlideIdRoute
   '/api/group-chats/$id/messages/$messageId/vote': typeof ApiGroupChatsIdMessagesMessageIdVoteRoute
+  '/api/rmharks/$id/comment/$commentId/hide': typeof ApiRmharksIdCommentCommentIdHideRoute
   '/api/rmharks/$id/comment/$commentId/like': typeof ApiRmharksIdCommentCommentIdLikeRoute
   '/api/rmharks/$id/comment/$commentId/repost': typeof ApiRmharksIdCommentCommentIdRepostRoute
   '/api/rmharks/$id/comment/$commentId/view': typeof ApiRmharksIdCommentCommentIdViewRoute
@@ -8954,6 +8991,7 @@ export interface FileRouteTypes {
     | '/api/scheduled/$id'
     | '/api/search/saved'
     | '/api/services/rebar-reservations'
+    | '/api/settings/alt-text'
     | '/api/settings/email-digest'
     | '/api/settings/game-assists'
     | '/api/settings/play-limits'
@@ -9242,10 +9280,12 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/insights'
     | '/api/rmharks/$id/like'
     | '/api/rmharks/$id/pin'
+    | '/api/rmharks/$id/quotes'
     | '/api/rmharks/$id/react'
     | '/api/rmharks/$id/repost'
     | '/api/rmharks/$id/similar'
     | '/api/rmharks/$id/summary'
+    | '/api/rmharks/$id/take'
     | '/api/rmharks/$id/translate'
     | '/api/rmharks/$id/unlock'
     | '/api/rmharks/$id/view'
@@ -9405,6 +9445,7 @@ export interface FileRouteTypes {
     | '/api/study/decks/$id/'
     | '/api/admin/albums/$id/slides/$slideId'
     | '/api/group-chats/$id/messages/$messageId/vote'
+    | '/api/rmharks/$id/comment/$commentId/hide'
     | '/api/rmharks/$id/comment/$commentId/like'
     | '/api/rmharks/$id/comment/$commentId/repost'
     | '/api/rmharks/$id/comment/$commentId/view'
@@ -9857,6 +9898,7 @@ export interface FileRouteTypes {
     | '/api/scheduled/$id'
     | '/api/search/saved'
     | '/api/services/rebar-reservations'
+    | '/api/settings/alt-text'
     | '/api/settings/email-digest'
     | '/api/settings/game-assists'
     | '/api/settings/play-limits'
@@ -10145,10 +10187,12 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/insights'
     | '/api/rmharks/$id/like'
     | '/api/rmharks/$id/pin'
+    | '/api/rmharks/$id/quotes'
     | '/api/rmharks/$id/react'
     | '/api/rmharks/$id/repost'
     | '/api/rmharks/$id/similar'
     | '/api/rmharks/$id/summary'
+    | '/api/rmharks/$id/take'
     | '/api/rmharks/$id/translate'
     | '/api/rmharks/$id/unlock'
     | '/api/rmharks/$id/view'
@@ -10308,6 +10352,7 @@ export interface FileRouteTypes {
     | '/api/study/decks/$id'
     | '/api/admin/albums/$id/slides/$slideId'
     | '/api/group-chats/$id/messages/$messageId/vote'
+    | '/api/rmharks/$id/comment/$commentId/hide'
     | '/api/rmharks/$id/comment/$commentId/like'
     | '/api/rmharks/$id/comment/$commentId/repost'
     | '/api/rmharks/$id/comment/$commentId/view'
@@ -10787,6 +10832,7 @@ export interface FileRouteTypes {
     | '/api/scheduled/$id'
     | '/api/search/saved'
     | '/api/services/rebar-reservations'
+    | '/api/settings/alt-text'
     | '/api/settings/email-digest'
     | '/api/settings/game-assists'
     | '/api/settings/play-limits'
@@ -11075,10 +11121,12 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/insights'
     | '/api/rmharks/$id/like'
     | '/api/rmharks/$id/pin'
+    | '/api/rmharks/$id/quotes'
     | '/api/rmharks/$id/react'
     | '/api/rmharks/$id/repost'
     | '/api/rmharks/$id/similar'
     | '/api/rmharks/$id/summary'
+    | '/api/rmharks/$id/take'
     | '/api/rmharks/$id/translate'
     | '/api/rmharks/$id/unlock'
     | '/api/rmharks/$id/view'
@@ -11238,6 +11286,7 @@ export interface FileRouteTypes {
     | '/api/study/decks/$id/'
     | '/api/admin/albums/$id/slides/$slideId'
     | '/api/group-chats/$id/messages/$messageId/vote'
+    | '/api/rmharks/$id/comment/$commentId/hide'
     | '/api/rmharks/$id/comment/$commentId/like'
     | '/api/rmharks/$id/comment/$commentId/repost'
     | '/api/rmharks/$id/comment/$commentId/view'
@@ -11528,6 +11577,7 @@ export interface RootRouteChildren {
   ApiScheduleAdminRoute: typeof ApiScheduleAdminRoute
   ApiScheduledIdRoute: typeof ApiScheduledIdRouteWithChildren
   ApiServicesRebarReservationsRoute: typeof ApiServicesRebarReservationsRoute
+  ApiSettingsAltTextRoute: typeof ApiSettingsAltTextRoute
   ApiSettingsEmailDigestRoute: typeof ApiSettingsEmailDigestRoute
   ApiSettingsGameAssistsRoute: typeof ApiSettingsGameAssistsRoute
   ApiSettingsPlayLimitsRoute: typeof ApiSettingsPlayLimitsRoute
@@ -15531,6 +15581,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiServicesRebarReservationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/settings/alt-text': {
+      id: '/api/settings/alt-text'
+      path: '/api/settings/alt-text'
+      fullPath: '/api/settings/alt-text'
+      preLoaderRoute: typeof ApiSettingsAltTextRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/settings/email-digest': {
       id: '/api/settings/email-digest'
       path: '/api/settings/email-digest'
@@ -17260,6 +17317,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmharksIdPinRouteImport
       parentRoute: typeof ApiRmharksIdRoute
     }
+    '/api/rmharks/$id/quotes': {
+      id: '/api/rmharks/$id/quotes'
+      path: '/quotes'
+      fullPath: '/api/rmharks/$id/quotes'
+      preLoaderRoute: typeof ApiRmharksIdQuotesRouteImport
+      parentRoute: typeof ApiRmharksIdRoute
+    }
     '/api/rmharks/$id/react': {
       id: '/api/rmharks/$id/react'
       path: '/react'
@@ -17286,6 +17350,13 @@ declare module '@tanstack/react-router' {
       path: '/summary'
       fullPath: '/api/rmharks/$id/summary'
       preLoaderRoute: typeof ApiRmharksIdSummaryRouteImport
+      parentRoute: typeof ApiRmharksIdRoute
+    }
+    '/api/rmharks/$id/take': {
+      id: '/api/rmharks/$id/take'
+      path: '/take'
+      fullPath: '/api/rmharks/$id/take'
+      preLoaderRoute: typeof ApiRmharksIdTakeRouteImport
       parentRoute: typeof ApiRmharksIdRoute
     }
     '/api/rmharks/$id/translate': {
@@ -18261,6 +18332,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGroupChatsIdMessagesMessageIdVoteRouteImport
       parentRoute: typeof ApiGroupChatsIdMessagesRoute
     }
+    '/api/rmharks/$id/comment/$commentId/hide': {
+      id: '/api/rmharks/$id/comment/$commentId/hide'
+      path: '/hide'
+      fullPath: '/api/rmharks/$id/comment/$commentId/hide'
+      preLoaderRoute: typeof ApiRmharksIdCommentCommentIdHideRouteImport
+      parentRoute: typeof ApiRmharksIdCommentCommentIdRoute
+    }
     '/api/rmharks/$id/comment/$commentId/like': {
       id: '/api/rmharks/$id/comment/$commentId/like'
       path: '/like'
@@ -19174,6 +19252,7 @@ const ApiProfileRouteWithChildren = ApiProfileRoute._addFileChildren(
 )
 
 interface ApiRmharksIdCommentCommentIdRouteChildren {
+  ApiRmharksIdCommentCommentIdHideRoute: typeof ApiRmharksIdCommentCommentIdHideRoute
   ApiRmharksIdCommentCommentIdLikeRoute: typeof ApiRmharksIdCommentCommentIdLikeRoute
   ApiRmharksIdCommentCommentIdRepostRoute: typeof ApiRmharksIdCommentCommentIdRepostRoute
   ApiRmharksIdCommentCommentIdViewRoute: typeof ApiRmharksIdCommentCommentIdViewRoute
@@ -19181,6 +19260,8 @@ interface ApiRmharksIdCommentCommentIdRouteChildren {
 
 const ApiRmharksIdCommentCommentIdRouteChildren: ApiRmharksIdCommentCommentIdRouteChildren =
   {
+    ApiRmharksIdCommentCommentIdHideRoute:
+      ApiRmharksIdCommentCommentIdHideRoute,
     ApiRmharksIdCommentCommentIdLikeRoute:
       ApiRmharksIdCommentCommentIdLikeRoute,
     ApiRmharksIdCommentCommentIdRepostRoute:
@@ -19213,10 +19294,12 @@ interface ApiRmharksIdRouteChildren {
   ApiRmharksIdInsightsRoute: typeof ApiRmharksIdInsightsRoute
   ApiRmharksIdLikeRoute: typeof ApiRmharksIdLikeRoute
   ApiRmharksIdPinRoute: typeof ApiRmharksIdPinRoute
+  ApiRmharksIdQuotesRoute: typeof ApiRmharksIdQuotesRoute
   ApiRmharksIdReactRoute: typeof ApiRmharksIdReactRoute
   ApiRmharksIdRepostRoute: typeof ApiRmharksIdRepostRoute
   ApiRmharksIdSimilarRoute: typeof ApiRmharksIdSimilarRoute
   ApiRmharksIdSummaryRoute: typeof ApiRmharksIdSummaryRoute
+  ApiRmharksIdTakeRoute: typeof ApiRmharksIdTakeRoute
   ApiRmharksIdTranslateRoute: typeof ApiRmharksIdTranslateRoute
   ApiRmharksIdUnlockRoute: typeof ApiRmharksIdUnlockRoute
   ApiRmharksIdViewRoute: typeof ApiRmharksIdViewRoute
@@ -19230,10 +19313,12 @@ const ApiRmharksIdRouteChildren: ApiRmharksIdRouteChildren = {
   ApiRmharksIdInsightsRoute: ApiRmharksIdInsightsRoute,
   ApiRmharksIdLikeRoute: ApiRmharksIdLikeRoute,
   ApiRmharksIdPinRoute: ApiRmharksIdPinRoute,
+  ApiRmharksIdQuotesRoute: ApiRmharksIdQuotesRoute,
   ApiRmharksIdReactRoute: ApiRmharksIdReactRoute,
   ApiRmharksIdRepostRoute: ApiRmharksIdRepostRoute,
   ApiRmharksIdSimilarRoute: ApiRmharksIdSimilarRoute,
   ApiRmharksIdSummaryRoute: ApiRmharksIdSummaryRoute,
+  ApiRmharksIdTakeRoute: ApiRmharksIdTakeRoute,
   ApiRmharksIdTranslateRoute: ApiRmharksIdTranslateRoute,
   ApiRmharksIdUnlockRoute: ApiRmharksIdUnlockRoute,
   ApiRmharksIdViewRoute: ApiRmharksIdViewRoute,
@@ -20316,6 +20401,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiScheduleAdminRoute: ApiScheduleAdminRoute,
   ApiScheduledIdRoute: ApiScheduledIdRouteWithChildren,
   ApiServicesRebarReservationsRoute: ApiServicesRebarReservationsRoute,
+  ApiSettingsAltTextRoute: ApiSettingsAltTextRoute,
   ApiSettingsEmailDigestRoute: ApiSettingsEmailDigestRoute,
   ApiSettingsGameAssistsRoute: ApiSettingsGameAssistsRoute,
   ApiSettingsPlayLimitsRoute: ApiSettingsPlayLimitsRoute,

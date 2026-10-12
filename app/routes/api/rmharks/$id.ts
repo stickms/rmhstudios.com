@@ -113,6 +113,8 @@ export const Route = createFileRoute('/api/rmharks/$id')({
           poll: isDeleted || locked ? undefined : pollData,
           gifUrl: isDeleted || locked ? undefined : (rmhark.gifUrl ?? undefined),
           imageUrls: isDeleted || locked ? undefined : rmhark.imageUrls,
+          imageAlts: isDeleted || locked ? undefined : rmhark.imageAlts,
+          isTake: rmhark.isTake || undefined,
           locked,
           unlockPrice: rmhark.unlockPrice ?? undefined,
           deletedAt: rmhark.deletedAt?.toISOString() || null,

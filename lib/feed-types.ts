@@ -93,6 +93,8 @@ export interface FeedItem {
   isSensitive?: boolean;
   /** Who can reply to this post. */
   replyControl?: "EVERYONE" | "FOLLOWING" | "MENTIONED";
+  /** Take meter (X6): readers vote agree/disagree. The split is NOT in the payload. */
+  isTake?: boolean;
 
   /** Grouped-by-emoji reaction summary (server-side via `groupReactions`). */
   reactions?: ReactionSummary[];

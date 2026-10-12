@@ -200,6 +200,7 @@ export function mapRmharkToFeedItem(
     imageAlts: r.imageAlts ?? undefined,
     isSensitive: r.isSensitive ?? false,
     replyControl: r.replyControl ?? 'EVERYONE',
+    isTake: r.isTake || undefined,
     reactions: reactionsOverride ?? groupReactions(r.reactions ?? [], viewerId),
     threadReplyCount: r.threadReplyCount ?? 0,
   };

@@ -20,6 +20,7 @@ import { ownsFeedImageUrl } from '@/lib/storage/keys';
 import { publishDueForUser } from '@/lib/scheduled/publish.server';
 import { screenNewContent } from '@/lib/moderation/auto-moderate.server';
 import { apiCache } from '@/lib/cache';
+import { altTextViolation } from '@/lib/feed/alt-text.server';
 
 /** Throttle window for the lazy scheduled-post probe on the feed read path. */
 const SCHEDULED_PROBE_TTL_MS = 60_000;
@@ -139,10 +140,18 @@ export const Route = createFileRoute('/api/rmharks')({
             replyControl,
             unlockPrice,
             communityId,
+            isTake,
           } = input;
 
           if (imageUrls?.length && !imageUrls.every((u) => ownsFeedImageUrl(u, session.user.id))) {
             return Response.json({ error: 'Invalid image reference' }, { status: 400 });
+          }
+
+          // Require-alt-text mode (X12): the author's own setting, enforced here
+          // as well as in the composer. Only looked up when the post has images.
+          const altError = await altTextViolation(session.user.id, imageUrls, imageAlts);
+          if (altError) {
+            return Response.json({ error: altError }, { status: 400 });
           }
 
           // Trim alt text and clamp to the number of images so the two arrays stay
@@ -192,6 +201,7 @@ export const Route = createFileRoute('/api/rmharks')({
                 replyControl: replyControl ?? 'EVERYONE',
                 unlockPrice: unlockPrice && unlockPrice > 0 ? unlockPrice : null,
                 communityId: communityId ?? null,
+                isTake: isTake ?? false,
               },
               include: {
                 user: { select: userDisplaySelect },
@@ -305,6 +315,7 @@ export const Route = createFileRoute('/api/rmharks')({
             imageAlts: rmhark.imageAlts,
             isSensitive: rmhark.isSensitive,
             replyControl: rmhark.replyControl,
+            isTake: rmhark.isTake || undefined,
             reactions: [],
           };
 

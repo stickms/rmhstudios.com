@@ -449,6 +449,9 @@ model User {
   // ─── Feature ideas 2026-10-12 (docs/plans/2026-10-12-feature-ideas-every-surface.md)
   // Back-relations for the models at the end of this file. One line per field,
   // each package's lines together; never re-align this block.
+  // P01 feed-plus: X6 take votes, X12 require-alt-text
+  rmharkTakeVotes RMHarkTakeVote[]
+  requireAltText  Boolean         @default(false)
 
   @@index([isBot])
   @@index([followerCount])
@@ -2699,6 +2702,14 @@ model RMHark {
   threadReplyCount     Int                  @default(0)
   postAnalyticsDailies PostAnalyticsDaily[]
 
+  // P01 feed-plus X6: take meter. A post marked `isTake` collects one
+  // agree/disagree vote per member; the denormalized tallies are only ever
+  // exposed to voters and the author (see lib/feed/take.server.ts).
+  isTake            Boolean          @default(false)
+  takeAgreeCount    Int              @default(0)
+  takeDisagreeCount Int              @default(0)
+  takeVotes         RMHarkTakeVote[]
+
   @@index([userId])
   @@index([createdAt(sort: Desc)])
   // Composite index backing keyset pagination on (createdAt desc, id desc)
@@ -2780,6 +2791,10 @@ model RMHarkComment {
   deletedByAdmin Boolean   @default(false)
 
   reactions RMHarkCommentReaction[]
+
+  /// P01 feed-plus X2: set when the ROOT post's author hides this reply. The
+  /// reply stays readable under a "Hidden replies" disclosure; null = visible.
+  hiddenAt DateTime?
 
   @@index([rmheetId, createdAt(sort: Desc)])
   @@index([userId, createdAt(sort: Desc)])
@@ -9689,3 +9704,22 @@ model DunesdayPlan {
 // Feature ideas 2026-10-12 — docs/plans/2026-10-12-feature-ideas-every-surface.md
 // Each feature package appends its models below under its own header comment.
 // ═════════════════════════════════════════════════════════════════════════════
+
+// ── P01 feed-a: X6 ──
+// One agree/disagree vote per member per take. The tallies live on `rmheet`
+// (takeAgreeCount / takeDisagreeCount); this table is what makes a vote
+// once-only and lets a viewer's own vote be read back.
+model RMHarkTakeVote {
+  id        String   @id @default(cuid())
+  rmheetId  String
+  userId    String
+  agree     Boolean
+  createdAt DateTime @default(now())
+
+  rmhark RMHark @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([rmheetId, userId])
+  @@index([userId])
+  @@map("rmheet_take_vote")
+}

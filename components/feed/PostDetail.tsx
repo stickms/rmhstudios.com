@@ -14,6 +14,7 @@ import { useFreshUser, useUserDisplayStore } from'@/stores/userDisplayStore';
 import { useFeedStore } from'@/stores/feedStore';
 import { RMHarkActions } from'./RMHarkActions';
 import { CommentItem } from'./CommentItem';
+import { HiddenRepliesGroup } from'./HiddenReplies';
 import { AIGenerateButton } from'./AIGenerateButton';
 import { MentionTextarea } from'./MentionTextarea';
 import type { Comment } from'./CommentItem';
@@ -22,6 +23,7 @@ import { Link, useNavigate } from'@tanstack/react-router';
 import type { FeedItem } from'@/lib/feed-types';
 import { RMHarkContent, extractFirstUrl } from'./RMHarkContent';
 import { PollDisplay } from'./PollDisplay';
+import { TakeMeterLazy } from'./TakeMeterLazy';
 import { GifEmbed } from'./GifEmbed';
 import { PostImageGrid } from'./PostImageGrid';
 import { SensitiveMedia } from'./SensitiveMedia';
@@ -236,6 +238,17 @@ export function PostDetail({ postId }: PostDetailProps) {
  [bumpFeedComment],
  );
 
+ // X2: flip a reply's hidden flag in place (it regroups under "Hidden replies").
+ const handleHiddenChange = useCallback((commentId: string, hidden: boolean) => {
+ const setDeep = (list: Comment[]): Comment[] =>
+ list.map((c) => ({
+ ...c,
+ ...(c.id === commentId ? { hidden } : {}),
+ ...(c.replies?.length ? { replies: setDeep(c.replies) } : {}),
+ }));
+ setComments((prev) => setDeep(prev));
+ }, []);
+
  const formatFullDate = (dateStr: string) => {
  const d = new Date(dateStr);
  return d.toLocaleDateString('en-US', {
@@ -363,6 +376,13 @@ export function PostDetail({ postId }: PostDetailProps) {
  setPost((prev) => (prev ? { ...prev, poll: updatedPoll } : prev))
  }
  />
+ </div>
+ )}
+
+ {/* Take meter (X6) — only on posts the author marked as a take */}
+ {post.isTake && !post.locked && (
+ <div className="mb-3">
+ <TakeMeterLazy postId={postId} />
  </div>
  )}
 
@@ -556,17 +576,20 @@ export function PostDetail({ postId }: PostDetailProps) {
  // owner's"double load animation"). `initial={false}`mounts the
  // replies already-settled — the page/morph is the single entrance;
  // reduced motion collapsed this anyway.
+ <>
  <motion.div
  className="divide-y divide-site-border"
  variants={staggerContainer(0.03)}
  initial={false}
  animate="animate"
  >
- {comments.map((comment, i) => {
+ {comments.filter((c) => !c.hidden).map((comment, i) => {
  const node = (
  <CommentItem
  comment={comment}
  postId={postId}
+ postAuthorId={post.user?.id}
+ onHiddenChange={handleHiddenChange}
  sessionUser={
  session?.user
  ? {
@@ -589,6 +612,31 @@ export function PostDetail({ postId }: PostDetailProps) {
  );
  })}
  </motion.div>
+ <HiddenRepliesGroup count={comments.filter((c) => c.hidden).length}>
+ {comments
+ .filter((c) => c.hidden)
+ .map((comment) => (
+ <CommentItem
+ key={comment.id}
+ comment={comment}
+ postId={postId}
+ postAuthorId={post.user?.id}
+ onHiddenChange={handleHiddenChange}
+ sessionUser={
+ session?.user
+ ? {
+ ...session.user,
+ image: resolvedUser?.image || session.user.image,
+ name: resolvedUser?.name || session.user.name,
+ }
+ : undefined
+ }
+ onReplyAdded={handleReplyAdded}
+ onCommentRemoved={handleCommentRemoved}
+ />
+ ))}
+ </HiddenRepliesGroup>
+ </>
  )}
  </div>
  )}

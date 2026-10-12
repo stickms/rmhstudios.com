@@ -116,6 +116,8 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
               : false,
             deletedAt: c.deletedAt?.toISOString() || null,
             deletedByAdmin: c.deletedByAdmin,
+            // X2: the post author folded this reply under "Hidden replies".
+            hidden: c.hiddenAt != null,
             reactions: groupReactions(c.reactions, userId),
           };
         };
