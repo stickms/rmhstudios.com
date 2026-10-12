@@ -32,7 +32,18 @@ import { z } from 'zod';
  * site most likely to attract a copyright claim was the one with no report
  * button.
  */
-export const REPORT_ENTITY_TYPES = ['rmhark', 'comment', 'user', 'build', 'dm', 'song'] as const;
+export const REPORT_ENTITY_TYPES = [
+  'rmhark',
+  'comment',
+  'user',
+  'build',
+  'dm',
+  'song',
+  // P05: profile stamps (P5) and member-run webrings (P6) — user-made names and
+  // images that appear on other people's pages, so they need a report path.
+  'stamp',
+  'webring',
+] as const;
 export type ReportEntityType = (typeof REPORT_ENTITY_TYPES)[number];
 
 /**

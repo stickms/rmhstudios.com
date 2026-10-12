@@ -22,34 +22,15 @@ import { useUserDisplayStore } from'@/stores/userDisplayStore';
 import { useOptimisticAction } from'@/hooks/useOptimisticAction';
 import { ProfileShowcase } from'@/components/profile/ProfileShowcase';
 import { ProfileHero } from'@/components/profile/ProfileHero';
+import { useProfileSong } from'@/hooks/useProfileSong';
 import type { ProfileData } from'@/components/profile/profile-types';
 
 type ProfileTab ='rmharks'|'likes'|'achievements'|'guestbook';
 
 // Plan U15 — loaded the first time the tab is opened, never on a plain profile view.
 const GuestbookPanel = lazy(() => import('@/components/profile/GuestbookPanel'));
-
-interface SpotifyController {
- addListener: (
- event:'playback_update',
- listener: (event: { data: { isPaused: boolean } }) => void,
- ) => void;
- pause: () => void;
- play: () => void;
-}
-
-interface SpotifyIframeApi {
- createController: (
- container: HTMLElement,
- options: { uri: string; width: number; height: number },
- ready: (controller: SpotifyController) => void,
- ) => void;
-}
-
-type SpotifyWindow = Window & {
- SpotifyIframeApi?: SpotifyIframeApi;
- onSpotifyIframeApiReady?: (api: SpotifyIframeApi) => void;
-};
+// P7 — only fetched when a visitor taps a song that has no preview clip.
+const ProfileSongEmbed = lazy(() => import('@/components/profile/plus/ProfileSongEmbed'));
 
 export function ProfileColumn({
  userId,
@@ -100,11 +81,13 @@ export function ProfileColumn({
  const likedSentinelRef = useRef<HTMLDivElement>(null);
  const likedInitialFetched = useRef(false);
 
- // Spotify IFrame API state
- const [isPlaying, setIsPlaying] = useState(false);
- const embedContainerRef = useRef<HTMLDivElement>(null);
- const controllerRef = useRef<SpotifyController | null>(null);
- const scriptLoadedRef = useRef(false);
+ // Profile song (P7): tap-to-play preview or tap-to-load Spotify embed; nothing
+ // is fetched or loaded until the visitor taps.
+ const song = useProfileSong(
+ profile
+ ? { spotifyId: profile.profileSongSpotifyId, previewUrl: profile.profileSongPreviewUrl }
+ : null,
+ );
 
  const { t } = useTranslation('feed');
  const { data: session } = useSession();
@@ -178,59 +161,6 @@ export function ProfileColumn({
  // `/u/<id>#guestbook` (the guestbook notification's link) opens that tab.
  setTab(window.location.hash ==='#guestbook'?'guestbook':'rmharks');
  }, [userId]);
-
- // Spotify IFrame API — load script & create controller for profile song
- useEffect(() => {
- const spotifyId = profile?.profileSongSpotifyId;
- if (!spotifyId) return;
-
- let cancelled = false;
-
- const initController = (iframeApi: SpotifyIframeApi) => {
- if (cancelled || !embedContainerRef.current) return;
- iframeApi.createController(
- embedContainerRef.current,
- { uri: `spotify:track:${spotifyId}`, width: 0, height: 0 },
- (ctrl) => {
- if (cancelled) return;
- controllerRef.current = ctrl;
- ctrl.addListener('playback_update', (e: { data: { isPaused: boolean } }) => {
- setIsPlaying(!e.data.isPaused);
- });
- },
- );
- };
-
- const spotifyWindow = window as SpotifyWindow;
- if (spotifyWindow.SpotifyIframeApi) {
- initController(spotifyWindow.SpotifyIframeApi);
- } else if (!scriptLoadedRef.current) {
- scriptLoadedRef.current = true;
- spotifyWindow.onSpotifyIframeApiReady = (iframeApi) => {
- spotifyWindow.SpotifyIframeApi = iframeApi;
- initController(iframeApi);
- };
- const script = document.createElement('script');
- script.src ='https://open.spotify.com/embed/iframe-api/v1';
- script.async = true;
- document.body.appendChild(script);
- }
-
- return () => {
- cancelled = true;
- controllerRef.current = null;
- };
- }, [profile?.profileSongSpotifyId]);
-
- const handleTogglePlay = useCallback(() => {
- const ctrl = controllerRef.current;
- if (!ctrl) return;
- if (isPlaying) {
- ctrl.pause();
- } else {
- ctrl.play();
- }
- }, [isPlaying]);
 
  // Fetch RMHarks
  const fetchRMHarks = useCallback(async () => {
@@ -502,11 +432,11 @@ export function ProfileColumn({
  displayName={displayName}
  displayImage={displayImage}
  signedIn={Boolean(session)}
- isPlaying={isPlaying}
+ isPlaying={song.isPlaying}
  membershipBusy={membershipBusy}
  messageSending={messageSending}
  messageError={messageError}
- onTogglePlay={handleTogglePlay}
+ onTogglePlay={song.toggle}
  onEdit={() => setShowEdit(true)}
  onFollow={handleFollowToggle}
  onMessage={handleMessage}
@@ -646,6 +576,16 @@ export function ProfileColumn({
  <GuestbookPanel
  ownerId={profile.id}
  onModeChange={(mode) => setProfile((p) => (p ? { ...p, guestbookMode: mode } : p))}
+ />
+ </Suspense>
+ )}
+
+ {song.embedOpen && profile.profileSongSpotifyId && (
+ <Suspense fallback={null}>
+ <ProfileSongEmbed
+ spotifyId={profile.profileSongSpotifyId}
+ title={profile.profileSongTitle}
+ onClose={song.closeEmbed}
  />
  </Suspense>
  )}

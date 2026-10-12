@@ -77,6 +77,7 @@ export const NAMESPACES = [
   // one per line so parallel additions merge cleanly.
   "f-feed-plus",
   "f-economy-plus",
+  "f-profile-plus",
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 

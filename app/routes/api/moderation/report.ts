@@ -45,6 +45,20 @@ async function resolveTargetUser(entityType: string, entityId: string): Promise<
         });
         return song?.uploadedBy ?? null;
       }
+      case 'stamp': {
+        const stamp = await prisma.stamp.findUnique({
+          where: { id: entityId },
+          select: { creatorId: true },
+        });
+        return stamp?.creatorId ?? null;
+      }
+      case 'webring': {
+        const ring = await prisma.webring.findUnique({
+          where: { id: entityId },
+          select: { ownerId: true },
+        });
+        return ring?.ownerId ?? null;
+      }
       case 'user':
         return entityId;
       default:

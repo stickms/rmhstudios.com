@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { lazy, Suspense, useEffect, useState, useRef, useCallback } from 'react';
 import { m as motion } from 'framer-motion';
 import { Loader2, ArrowLeft, Send, ImagePlus, ImagePlay, X, Plus, Reply } from 'lucide-react';
 import { SwipeRow } from '@/components/ui/swipe-row';
@@ -40,6 +40,9 @@ import { MessageEditor } from '@/components/messages/MessageEditor';
 import { DeletedMessage } from '@/components/messages/DeletedMessage';
 import { VoiceComposer, type SentVoiceMessage } from '@/components/voice/VoiceComposer';
 import { VoicePlayer } from '@/components/voice/VoicePlayer';
+
+// P4 — "It's 2:14 AM for Ana": a tiny lazy chunk, fetched after the header is idle.
+const DmLocalTime = lazy(() => import('@/components/profile/plus/LocalTime'));
 
 interface Message {
   id: string;
@@ -991,6 +994,9 @@ export function ConversationView({
                 {otherUser.username && (
                   <p className="text-xs text-site-text-dim">@{otherUser.username}</p>
                 )}
+                <Suspense fallback={null}>
+                  <DmLocalTime userId={otherUser.id} name={otherUser.name || 'Unknown'} />
+                </Suspense>
               </div>
             </Link>
           )}

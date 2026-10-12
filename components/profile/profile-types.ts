@@ -35,6 +35,10 @@ export interface ProfileData {
   profileSongAlbumArt: string | null;
   status?: UserStatus | null;
   modules?: ProfileModule[];
+  /** P05 identity extras — absent on older payloads. */
+  pronouns?: string | null;
+  timezone?: string | null;
+  pronunciationUrl?: string | null;
   followerCount: number;
   followingCount: number;
   rmharkCount: number;

@@ -3,12 +3,14 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
 import { logAdminAction } from '@/lib/admin-audit.server';
+import { takedownStamp } from '@/lib/profile/stamps.server';
+import { takedownRing } from '@/lib/profile/webrings.server';
 
 /**
  * POST /api/admin/reports/$id — act on a report. Admin only.
  * Body: { action: 'review' | 'resolve' | 'dismiss', note?, deleteContent? }
- * When deleteContent is true on a rmhark/comment report, the content is
- * soft-deleted (deletedByAdmin) as part of resolving.
+ * When deleteContent is true on a rmhark/comment/stamp/webring report, the content is
+ * soft-deleted (deletedByAdmin, or removedAt for stamps and rings) as part of resolving.
  */
 const actionSchema = z.object({
   action: z.enum(['review', 'resolve', 'dismiss']),
@@ -51,6 +53,10 @@ export const Route = createFileRoute('/api/admin/reports/$id')({
                   where: { id: report.entityId },
                   data: { deletedAt: new Date(), deletedByAdmin: true },
                 });
+              } else if (report.entityType === 'stamp') {
+                await takedownStamp(report.entityId);
+              } else if (report.entityType === 'webring') {
+                await takedownRing(report.entityId);
               }
             } catch (e) {
               console.error('Report content takedown failed:', e);

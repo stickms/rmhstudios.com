@@ -457,6 +457,14 @@ model User {
   communityGoalPledges       CommunityGoalPledge[]
   scheduledGiftsSent         ScheduledGift[]       @relation("ScheduledGiftSender")
   scheduledGiftsReceived     ScheduledGift[]       @relation("ScheduledGiftRecipient")
+  // P05 profiles (P1-P10)
+  profilePlus          ProfilePlus?
+  stampsCreated        Stamp[]            @relation("StampCreator")
+  profileStamps        ProfileStamp[]
+  webringsOwned        Webring[]          @relation("WebringOwner")
+  webringMemberships   WebringMember[]
+  endorsementsGiven    SkillEndorsement[] @relation("EndorsementGiven")
+  endorsementsReceived SkillEndorsement[] @relation("EndorsementReceived")
 
   @@index([isBot])
   @@index([followerCount])
@@ -9844,4 +9852,138 @@ model ScheduledGift {
   @@index([recipientId, status, deliverAt])
   @@index([senderId, createdAt(sort: Desc)])
   @@map("scheduled_gift")
+// ── P05: P1-P10 (profiles & identity) ──
+
+/// The small per-member scalars the profile features need (pronouns, timezone,
+/// /now, pronunciation clip, visitor counter). One optional row per member, kept
+/// off `user_profile` so the hottest table on the site is not widened and so a
+/// member who never touches these features costs nothing.
+model ProfilePlus {
+  userId String @id
+  /// "she/her", "they/them" - free text, validated to letters and separators.
+  pronouns String? @db.VarChar(40)
+  /// Opt-in IANA zone ("America/New_York"). Null = the member does not share it.
+  timezone String? @db.VarChar(64)
+  /// The /now block: plain text, links allowed, at most 500 characters.
+  nowText      String?   @db.VarChar(500)
+  nowUpdatedAt DateTime?
+  /// Object-storage key of the <=5 s name-pronunciation clip, and its length.
+  pronunciationKey String? @db.VarChar(200)
+  pronunciationMs  Int?
+  /// Opt-in retro hit counter. `visitCount` only ever moves through
+  /// `recordProfileVisit`, which dedupes per visitor per day.
+  counterEnabled Boolean @default(false)
+  visitCount     Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  visits ProfileVisitDay[]
+
+  @@map("profile_plus")
+}
+
+/// Dedupe ledger for the visitor counter: one row per (profile, day, visitor
+/// hash). The hash is salted with the profile id and the day, so it cannot be
+/// joined across profiles or days. Rows older than two days are swept.
+model ProfileVisitDay {
+  profileId String
+  day       DateTime @db.Date
+  visitor   String   @db.VarChar(40)
+
+  profile ProfilePlus @relation(fields: [profileId], references: [userId], onDelete: Cascade)
+
+  @@id([profileId, day, visitor])
+  @@index([day])
+  @@map("profile_visit_day")
+}
+
+/// A member-made stamp (a tiny image badge). Image limits are enforced at upload
+/// (`lib/profile/stamps.ts`). `removedAt` is the moderation takedown.
+model Stamp {
+  id        String    @id @default(cuid())
+  creatorId String
+  name      String    @db.VarChar(40)
+  imageKey  String    @db.VarChar(200)
+  imageUrl  String    @db.VarChar(300)
+  width     Int
+  height    Int
+  bytes     Int
+  /// Denormalised count of profile walls carrying it (for "popular").
+  addCount  Int       @default(0)
+  removedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  creator    User           @relation("StampCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  placements ProfileStamp[]
+
+  @@index([creatorId, createdAt(sort: Desc)])
+  @@index([removedAt, createdAt(sort: Desc)])
+  @@index([removedAt, addCount(sort: Desc)])
+  @@map("stamp")
+}
+
+/// A stamp on a member's profile wall (cap enforced in `addStampToWall`).
+model ProfileStamp {
+  userId    String
+  stampId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stamp Stamp @relation(fields: [stampId], references: [id], onDelete: Cascade)
+
+  @@id([userId, stampId])
+  @@index([stampId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("profile_stamp")
+}
+
+/// A member-run webring. Order is join order (`lib/profile/webring.ts`).
+model Webring {
+  id          String    @id @default(cuid())
+  slug        String    @unique @db.VarChar(64)
+  name        String    @db.VarChar(60)
+  description String?   @db.VarChar(280)
+  ownerId     String
+  memberCount Int       @default(0)
+  removedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  owner   User            @relation("WebringOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members WebringMember[]
+
+  @@index([ownerId])
+  @@index([removedAt, memberCount(sort: Desc)])
+  @@map("webring")
+}
+
+model WebringMember {
+  ringId   String
+  userId   String
+  joinedAt DateTime @default(now())
+
+  ring Webring @relation(fields: [ringId], references: [id], onDelete: Cascade)
+  user User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([ringId, userId])
+  @@index([userId])
+  @@index([ringId, joinedAt])
+  @@map("webring_member")
+}
+
+/// "I vouch for this member's <skill>". `skill` is one of the fixed ids in
+/// `lib/profile/skills.ts`; one endorsement per endorser per skill per member.
+model SkillEndorsement {
+  endorserId String
+  targetId   String
+  skill      String   @db.VarChar(32)
+  createdAt  DateTime @default(now())
+
+  endorser User @relation("EndorsementGiven", fields: [endorserId], references: [id], onDelete: Cascade)
+  target   User @relation("EndorsementReceived", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@id([endorserId, targetId, skill])
+  @@index([targetId, skill])
+  @@map("skill_endorsement")
 }

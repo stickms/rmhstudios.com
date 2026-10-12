@@ -11,6 +11,10 @@ import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { ProfileCosmetics } from '@/components/settings/ProfileCosmetics';
 import { useSession } from '@/components/Providers';
+import { useIdleReady } from '@/hooks/useIdleReady';
+
+// P05 — pronouns, /now, Top Four, stamps, profile card… loaded after the page is idle.
+import ProfilePlusSettings from '@/components/profile/plus/ProfilePlusSettings';
 
 export const Route = createFileRoute('/_site/settings/profile')({
   head: () => ({
@@ -23,6 +27,7 @@ function ProfileCustomizationPage() {
   const { t } = useTranslation('feed');
   const { data: session, isPending } = useSession();
   const signedIn = !!session?.user;
+  const idle = useIdleReady();
   const handle = (session?.user as { handle?: string | null } | undefined)?.handle;
 
   const settingsLabel = t('settings', { defaultValue: 'Settings' });
@@ -59,6 +64,9 @@ function ProfileCustomizationPage() {
           })}
         </p>
         {!isPending && !signedIn ? signInPrompt : <ProfileCosmetics />}
+        {signedIn && idle ? (
+                      <ProfilePlusSettings />
+                  ) : null}
       </div>
     </PageLayout>
   );
