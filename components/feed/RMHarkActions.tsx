@@ -12,6 +12,11 @@ import type { FeedItem } from'@/lib/feed-types';
 const ComposeModal = lazy(() =>
  import('./ComposeModal').then((m) => ({ default: m.ComposeModal })),
 );
+// Quotes view (X10) — its own chunk, fetched the first time "View quotes" is picked.
+const QuotesDialog = lazy(() =>
+ import('./QuotesDialog').then((m) => ({ default: m.QuotesDialog })),
+);
+import { QuotesMenuItem } from './QuotesMenuItem';
 import { useTranslation } from'react-i18next';
 import { useOptimisticAction } from'@/hooks/useOptimisticAction';
 import { useSignInPrompt } from'@/hooks/useSignInPrompt';
@@ -46,6 +51,9 @@ export function RMHarkActions({ item, onUpdate, className }: RMHarkActionsProps)
  // Latch so the quote modal stays mounted after first open (close animation).
  const quoteMounted = useRef(false);
  quoteMounted.current ||= quoteOpen;
+ const [quotesOpen, setQuotesOpen] = useState(false);
+ const quotesMounted = useRef(false);
+ quotesMounted.current ||= quotesOpen;
  const repostBtnRef = useRef<HTMLButtonElement>(null);
  // The button also spans the count slot, so the menu buds off the round icon
  // surface instead — that circle is what reads as the trigger on screen.
@@ -197,6 +205,14 @@ export function RMHarkActions({ item, onUpdate, className }: RMHarkActionsProps)
  >
  {t('quote', { defaultValue:'Quote'})}
  </MenuItem>
+ {(item.repostCount ?? 0) > 0 && (
+ <QuotesMenuItem
+ onSelect={() => {
+ setRepostMenu(false);
+ setQuotesOpen(true);
+ }}
+ />
+ )}
  </AnchoredMenu>
  </div>
 
@@ -206,6 +222,16 @@ export function RMHarkActions({ item, onUpdate, className }: RMHarkActionsProps)
  open={quoteOpen}
  onClose={() => setQuoteOpen(false)}
  quoteItem={{ id: item.actualId ?? item.id, content: item.content, user: item.user }}
+ />
+ </Suspense>
+ )}
+
+ {quotesMounted.current && (
+ <Suspense fallback={null}>
+ <QuotesDialog
+ open={quotesOpen}
+ onClose={() => setQuotesOpen(false)}
+ postId={item.actualId ?? item.id}
  />
  </Suspense>
  )}

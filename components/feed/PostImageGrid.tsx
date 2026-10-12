@@ -7,6 +7,7 @@ import { useTranslation } from'react-i18next';
 import { BlurImage } from'@/components/ui/BlurImage';
 import { knownSize, rememberSize } from'@/lib/image-aspect';
 import { runLiquidOpen, liquidVTName } from'@/lib/view-transition';
+import { AltChip } from './AltChip';
 
 interface PostImageGridProps {
  urls: string[];
@@ -139,6 +140,7 @@ function GridImage({
  imgClassName="transition-transform duration-site group-hover:scale-[1.02]"
  priority={priority}
  />
+ <AltChip alt={alt} />
  </button>
  );
  }
@@ -168,6 +170,7 @@ function GridImage({
  className="w-full"
  priority={priority}
  />
+ <AltChip alt={alt} />
  </button>
  );
  }
@@ -196,6 +199,7 @@ function GridImage({
  onNaturalSize={onNaturalSize}
  priority={priority}
  />
+ <AltChip alt={alt} />
  </button>
  );
 }

@@ -6,6 +6,8 @@ import { PenLine } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useFeedStore } from '@/stores/feedStore';
 import { useFeedSSE } from '@/hooks/useFeedSSE';
+import { useCaughtUpMarker } from '@/hooks/useCaughtUpMarker';
+import { CaughtUpDivider } from '@/components/feed/CaughtUpDivider';
 import { type InitialFeed } from '@/components/feed/FeedColumn';
 import { ComposeBoxLazy } from '@/components/feed/ComposeBoxLazy';
 import { RadialLoader } from '@/components/ui/radial-loader';
@@ -113,9 +115,20 @@ function FeedWheel({ initial }: { initial: InitialFeed }) {
     if (s.hasMore && !s.loading) void s.fetchNextPage();
   }, []);
 
+  // X7: the "You're all caught up" divider goes before the first post from the
+  // previous visit. Plain For You home only — a filtered or searched surface has
+  // no "new since last time".
+  const caughtUpBeforeId = useCaughtUpMarker(items, filter === 'all' && !search);
+
   const wheelItems = useMemo<RadialWheelItem[]>(
-    () => items.map((item) => ({ id: item.id, node: <WheelCard item={item} /> })),
-    [items],
+    () =>
+      items.flatMap((item) => {
+        const card = { id: item.id, node: <WheelCard item={item} /> };
+        return item.id === caughtUpBeforeId
+          ? [{ id: 'caught-up-divider', node: <CaughtUpDivider /> }, card]
+          : [card];
+      }),
+    [items, caughtUpBeforeId],
   );
 
   // The inline "rmhark compose box" that heads the feed — the first rmhark comes
