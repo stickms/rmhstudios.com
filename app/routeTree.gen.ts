@@ -362,6 +362,9 @@ import { Route as ApiCallsHistoryRouteImport } from './routes/api/calls/history'
 import { Route as ApiCallsIceRouteImport } from './routes/api/calls/ice'
 import { Route as ApiCallsPrivacyRouteImport } from './routes/api/calls/privacy'
 import { Route as ApiCasinoRoomsRouteImport } from './routes/api/casino/rooms'
+import { Route as ApiChatFoldersIndexRouteImport } from './routes/api/chat-folders/index'
+import { Route as ApiChatFoldersIdRouteImport } from './routes/api/chat-folders/$id'
+import { Route as ApiChatsForwardRouteImport } from './routes/api/chats/forward'
 import { Route as ApiCoinsIndexRouteImport } from './routes/api/coins/index'
 import { Route as ApiCoinsBetRouteImport } from './routes/api/coins/bet'
 import { Route as ApiCoinsClaimRouteImport } from './routes/api/coins/claim'
@@ -449,6 +452,7 @@ import { Route as ApiMassiveMarchCampaignsRouteImport } from './routes/api/massi
 import { Route as ApiMemoryIndexRouteImport } from './routes/api/memory/index'
 import { Route as ApiMessagesConversationIdRouteImport } from './routes/api/messages/$conversationId'
 import { Route as ApiMessagesReadAllRouteImport } from './routes/api/messages/read-all'
+import { Route as ApiMessagesSavedRouteImport } from './routes/api/messages/saved'
 import { Route as ApiMessagesSearchRouteImport } from './routes/api/messages/search'
 import { Route as ApiMessagesSidebarRouteImport } from './routes/api/messages/sidebar'
 import { Route as ApiMessagesStreamRouteImport } from './routes/api/messages/stream'
@@ -694,6 +698,7 @@ import { Route as ApiAlbumsAssetSplatRouteImport } from './routes/api/albums/ass
 import { Route as ApiAnnouncementsIdVoteRouteImport } from './routes/api/announcements/$id/vote'
 import { Route as ApiAwardsIdHideRouteImport } from './routes/api/awards/$id.hide'
 import { Route as ApiBuildsCoverFileRouteImport } from './routes/api/builds/cover/$file'
+import { Route as ApiChatFoldersIdItemsRouteImport } from './routes/api/chat-folders/$id/items'
 import { Route as ApiCommentsCommentIdReactRouteImport } from './routes/api/comments/$commentId/react'
 import { Route as ApiCommentsCommentIdTranslateRouteImport } from './routes/api/comments/$commentId/translate'
 import { Route as ApiCommunitiesSlugIndexRouteImport } from './routes/api/communities/$slug/index'
@@ -915,6 +920,13 @@ import { Route as ApiAdminUsersIdGrantMembershipRouteImport } from './routes/api
 import { Route as ApiAdminUsersIdSetCoinsRouteImport } from './routes/api/admin/users/$id/set-coins'
 import { Route as ApiAdminUsersIdStrikeRouteImport } from './routes/api/admin/users/$id/strike'
 import { Route as ApiAdminWagerIdResolveRouteImport } from './routes/api/admin/wager/$id/resolve'
+import { Route as ApiChatsKindIdChecklistRouteImport } from './routes/api/chats/$kind/$id/checklist'
+import { Route as ApiChatsKindIdCommandRouteImport } from './routes/api/chats/$kind/$id/command'
+import { Route as ApiChatsKindIdMediaRouteImport } from './routes/api/chats/$kind/$id/media'
+import { Route as ApiChatsKindIdMetaRouteImport } from './routes/api/chats/$kind/$id/meta'
+import { Route as ApiChatsKindIdPinRouteImport } from './routes/api/chats/$kind/$id/pin'
+import { Route as ApiChatsKindIdSettingsRouteImport } from './routes/api/chats/$kind/$id/settings'
+import { Route as ApiChatsKindIdVoteRouteImport } from './routes/api/chats/$kind/$id/vote'
 import { Route as ApiCommunitiesSlugAnnouncementsIdRouteImport } from './routes/api/communities/$slug/announcements/$id'
 import { Route as ApiCommunitiesSlugMembersUserIdRouteImport } from './routes/api/communities/$slug/members/$userId'
 import { Route as ApiDeveloperKeysIdUsageRouteImport } from './routes/api/developer/keys/$id/usage'
@@ -971,6 +983,7 @@ import { Route as ApiV1UsersHandleFollowersRouteImport } from './routes/api/v1/u
 import { Route as ApiV1UsersHandleFollowingRouteImport } from './routes/api/v1/users/$handle/following'
 import { Route as ApiV1UsersHandlePostsRouteImport } from './routes/api/v1/users/$handle/posts'
 import { Route as ApiAdminAlbumsIdSlidesSlideIdRouteImport } from './routes/api/admin/albums/$id/slides/$slideId'
+import { Route as ApiChatsKindIdThreadMessageIdRouteImport } from './routes/api/chats/$kind/$id/thread/$messageId'
 import { Route as ApiGroupChatsIdMessagesMessageIdVoteRouteImport } from './routes/api/group-chats/$id/messages/$messageId/vote'
 import { Route as ApiRmharksIdCommentCommentIdHideRouteImport } from './routes/api/rmharks/$id/comment/$commentId/hide'
 import { Route as ApiRmharksIdCommentCommentIdLikeRouteImport } from './routes/api/rmharks/$id/comment/$commentId/like'
@@ -2753,6 +2766,21 @@ const ApiCasinoRoomsRoute = ApiCasinoRoomsRouteImport.update({
   path: '/api/casino/rooms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiChatFoldersIndexRoute = ApiChatFoldersIndexRouteImport.update({
+  id: '/api/chat-folders/',
+  path: '/api/chat-folders/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiChatFoldersIdRoute = ApiChatFoldersIdRouteImport.update({
+  id: '/api/chat-folders/$id',
+  path: '/api/chat-folders/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiChatsForwardRoute = ApiChatsForwardRouteImport.update({
+  id: '/api/chats/forward',
+  path: '/api/chats/forward',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCoinsIndexRoute = ApiCoinsIndexRouteImport.update({
   id: '/api/coins/',
   path: '/api/coins/',
@@ -3195,6 +3223,11 @@ const ApiMessagesConversationIdRoute =
 const ApiMessagesReadAllRoute = ApiMessagesReadAllRouteImport.update({
   id: '/read-all',
   path: '/read-all',
+  getParentRoute: () => ApiMessagesRoute,
+} as any)
+const ApiMessagesSavedRoute = ApiMessagesSavedRouteImport.update({
+  id: '/saved',
+  path: '/saved',
   getParentRoute: () => ApiMessagesRoute,
 } as any)
 const ApiMessagesSearchRoute = ApiMessagesSearchRouteImport.update({
@@ -4449,6 +4482,11 @@ const ApiBuildsCoverFileRoute = ApiBuildsCoverFileRouteImport.update({
   path: '/api/builds/cover/$file',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiChatFoldersIdItemsRoute = ApiChatFoldersIdItemsRouteImport.update({
+  id: '/items',
+  path: '/items',
+  getParentRoute: () => ApiChatFoldersIdRoute,
+} as any)
 const ApiCommentsCommentIdReactRoute =
   ApiCommentsCommentIdReactRouteImport.update({
     id: '/api/comments/$commentId/react',
@@ -5616,6 +5654,41 @@ const ApiAdminWagerIdResolveRoute = ApiAdminWagerIdResolveRouteImport.update({
   path: '/api/admin/wager/$id/resolve',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiChatsKindIdChecklistRoute = ApiChatsKindIdChecklistRouteImport.update({
+  id: '/api/chats/$kind/$id/checklist',
+  path: '/api/chats/$kind/$id/checklist',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiChatsKindIdCommandRoute = ApiChatsKindIdCommandRouteImport.update({
+  id: '/api/chats/$kind/$id/command',
+  path: '/api/chats/$kind/$id/command',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiChatsKindIdMediaRoute = ApiChatsKindIdMediaRouteImport.update({
+  id: '/api/chats/$kind/$id/media',
+  path: '/api/chats/$kind/$id/media',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiChatsKindIdMetaRoute = ApiChatsKindIdMetaRouteImport.update({
+  id: '/api/chats/$kind/$id/meta',
+  path: '/api/chats/$kind/$id/meta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiChatsKindIdPinRoute = ApiChatsKindIdPinRouteImport.update({
+  id: '/api/chats/$kind/$id/pin',
+  path: '/api/chats/$kind/$id/pin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiChatsKindIdSettingsRoute = ApiChatsKindIdSettingsRouteImport.update({
+  id: '/api/chats/$kind/$id/settings',
+  path: '/api/chats/$kind/$id/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiChatsKindIdVoteRoute = ApiChatsKindIdVoteRouteImport.update({
+  id: '/api/chats/$kind/$id/vote',
+  path: '/api/chats/$kind/$id/vote',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCommunitiesSlugAnnouncementsIdRoute =
   ApiCommunitiesSlugAnnouncementsIdRouteImport.update({
     id: '/$id',
@@ -5928,6 +6001,12 @@ const ApiAdminAlbumsIdSlidesSlideIdRoute =
     id: '/$slideId',
     path: '/$slideId',
     getParentRoute: () => ApiAdminAlbumsIdSlidesRoute,
+  } as any)
+const ApiChatsKindIdThreadMessageIdRoute =
+  ApiChatsKindIdThreadMessageIdRouteImport.update({
+    id: '/api/chats/$kind/$id/thread/$messageId',
+    path: '/api/chats/$kind/$id/thread/$messageId',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const ApiGroupChatsIdMessagesMessageIdVoteRoute =
   ApiGroupChatsIdMessagesMessageIdVoteRouteImport.update({
@@ -6285,6 +6364,8 @@ export interface FileRoutesByFullPath {
   '/api/calls/ice': typeof ApiCallsIceRoute
   '/api/calls/privacy': typeof ApiCallsPrivacyRoute
   '/api/casino/rooms': typeof ApiCasinoRoomsRoute
+  '/api/chat-folders/$id': typeof ApiChatFoldersIdRouteWithChildren
+  '/api/chats/forward': typeof ApiChatsForwardRoute
   '/api/coins/bet': typeof ApiCoinsBetRoute
   '/api/coins/claim': typeof ApiCoinsClaimRoute
   '/api/coins/gift': typeof ApiCoinsGiftRoute
@@ -6360,6 +6441,7 @@ export interface FileRoutesByFullPath {
   '/api/massive-march/campaigns': typeof ApiMassiveMarchCampaignsRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
   '/api/messages/read-all': typeof ApiMessagesReadAllRoute
+  '/api/messages/saved': typeof ApiMessagesSavedRoute
   '/api/messages/search': typeof ApiMessagesSearchRoute
   '/api/messages/sidebar': typeof ApiMessagesSidebarRoute
   '/api/messages/stream': typeof ApiMessagesStreamRoute
@@ -6571,6 +6653,7 @@ export interface FileRoutesByFullPath {
   '/api/awards/': typeof ApiAwardsIndexRoute
   '/api/battlepass/': typeof ApiBattlepassIndexRoute
   '/api/bulk/': typeof ApiBulkIndexRoute
+  '/api/chat-folders/': typeof ApiChatFoldersIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
   '/api/communities/': typeof ApiCommunitiesIndexRoute
   '/api/community-goals/': typeof ApiCommunityGoalsIndexRoute
@@ -6644,6 +6727,7 @@ export interface FileRoutesByFullPath {
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/awards/$id/hide': typeof ApiAwardsIdHideRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
+  '/api/chat-folders/$id/items': typeof ApiChatFoldersIdItemsRoute
   '/api/comments/$commentId/react': typeof ApiCommentsCommentIdReactRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
   '/api/communities/$slug/announcements': typeof ApiCommunitiesSlugAnnouncementsRouteWithChildren
@@ -6872,6 +6956,13 @@ export interface FileRoutesByFullPath {
   '/api/admin/users/$id/set-coins': typeof ApiAdminUsersIdSetCoinsRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
   '/api/admin/wager/$id/resolve': typeof ApiAdminWagerIdResolveRoute
+  '/api/chats/$kind/$id/checklist': typeof ApiChatsKindIdChecklistRoute
+  '/api/chats/$kind/$id/command': typeof ApiChatsKindIdCommandRoute
+  '/api/chats/$kind/$id/media': typeof ApiChatsKindIdMediaRoute
+  '/api/chats/$kind/$id/meta': typeof ApiChatsKindIdMetaRoute
+  '/api/chats/$kind/$id/pin': typeof ApiChatsKindIdPinRoute
+  '/api/chats/$kind/$id/settings': typeof ApiChatsKindIdSettingsRoute
+  '/api/chats/$kind/$id/vote': typeof ApiChatsKindIdVoteRoute
   '/api/communities/$slug/announcements/$id': typeof ApiCommunitiesSlugAnnouncementsIdRoute
   '/api/communities/$slug/members/$userId': typeof ApiCommunitiesSlugMembersUserIdRoute
   '/api/developer/keys/$id/usage': typeof ApiDeveloperKeysIdUsageRoute
@@ -6928,6 +7019,7 @@ export interface FileRoutesByFullPath {
   '/api/storefront/products/$id/': typeof ApiStorefrontProductsIdIndexRoute
   '/api/study/decks/$id/': typeof ApiStudyDecksIdIndexRoute
   '/api/admin/albums/$id/slides/$slideId': typeof ApiAdminAlbumsIdSlidesSlideIdRoute
+  '/api/chats/$kind/$id/thread/$messageId': typeof ApiChatsKindIdThreadMessageIdRoute
   '/api/group-chats/$id/messages/$messageId/vote': typeof ApiGroupChatsIdMessagesMessageIdVoteRoute
   '/api/rmharks/$id/comment/$commentId/hide': typeof ApiRmharksIdCommentCommentIdHideRoute
   '/api/rmharks/$id/comment/$commentId/like': typeof ApiRmharksIdCommentCommentIdLikeRoute
@@ -7228,6 +7320,8 @@ export interface FileRoutesByTo {
   '/api/calls/ice': typeof ApiCallsIceRoute
   '/api/calls/privacy': typeof ApiCallsPrivacyRoute
   '/api/casino/rooms': typeof ApiCasinoRoomsRoute
+  '/api/chat-folders/$id': typeof ApiChatFoldersIdRouteWithChildren
+  '/api/chats/forward': typeof ApiChatsForwardRoute
   '/api/coins/bet': typeof ApiCoinsBetRoute
   '/api/coins/claim': typeof ApiCoinsClaimRoute
   '/api/coins/gift': typeof ApiCoinsGiftRoute
@@ -7303,6 +7397,7 @@ export interface FileRoutesByTo {
   '/api/massive-march/campaigns': typeof ApiMassiveMarchCampaignsRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
   '/api/messages/read-all': typeof ApiMessagesReadAllRoute
+  '/api/messages/saved': typeof ApiMessagesSavedRoute
   '/api/messages/search': typeof ApiMessagesSearchRoute
   '/api/messages/sidebar': typeof ApiMessagesSidebarRoute
   '/api/messages/stream': typeof ApiMessagesStreamRoute
@@ -7514,6 +7609,7 @@ export interface FileRoutesByTo {
   '/api/awards': typeof ApiAwardsIndexRoute
   '/api/battlepass': typeof ApiBattlepassIndexRoute
   '/api/bulk': typeof ApiBulkIndexRoute
+  '/api/chat-folders': typeof ApiChatFoldersIndexRoute
   '/api/coins': typeof ApiCoinsIndexRoute
   '/api/communities': typeof ApiCommunitiesIndexRoute
   '/api/community-goals': typeof ApiCommunityGoalsIndexRoute
@@ -7587,6 +7683,7 @@ export interface FileRoutesByTo {
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/awards/$id/hide': typeof ApiAwardsIdHideRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
+  '/api/chat-folders/$id/items': typeof ApiChatFoldersIdItemsRoute
   '/api/comments/$commentId/react': typeof ApiCommentsCommentIdReactRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
   '/api/communities/$slug/announcements': typeof ApiCommunitiesSlugAnnouncementsRouteWithChildren
@@ -7815,6 +7912,13 @@ export interface FileRoutesByTo {
   '/api/admin/users/$id/set-coins': typeof ApiAdminUsersIdSetCoinsRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
   '/api/admin/wager/$id/resolve': typeof ApiAdminWagerIdResolveRoute
+  '/api/chats/$kind/$id/checklist': typeof ApiChatsKindIdChecklistRoute
+  '/api/chats/$kind/$id/command': typeof ApiChatsKindIdCommandRoute
+  '/api/chats/$kind/$id/media': typeof ApiChatsKindIdMediaRoute
+  '/api/chats/$kind/$id/meta': typeof ApiChatsKindIdMetaRoute
+  '/api/chats/$kind/$id/pin': typeof ApiChatsKindIdPinRoute
+  '/api/chats/$kind/$id/settings': typeof ApiChatsKindIdSettingsRoute
+  '/api/chats/$kind/$id/vote': typeof ApiChatsKindIdVoteRoute
   '/api/communities/$slug/announcements/$id': typeof ApiCommunitiesSlugAnnouncementsIdRoute
   '/api/communities/$slug/members/$userId': typeof ApiCommunitiesSlugMembersUserIdRoute
   '/api/developer/keys/$id/usage': typeof ApiDeveloperKeysIdUsageRoute
@@ -7871,6 +7975,7 @@ export interface FileRoutesByTo {
   '/api/storefront/products/$id': typeof ApiStorefrontProductsIdIndexRoute
   '/api/study/decks/$id': typeof ApiStudyDecksIdIndexRoute
   '/api/admin/albums/$id/slides/$slideId': typeof ApiAdminAlbumsIdSlidesSlideIdRoute
+  '/api/chats/$kind/$id/thread/$messageId': typeof ApiChatsKindIdThreadMessageIdRoute
   '/api/group-chats/$id/messages/$messageId/vote': typeof ApiGroupChatsIdMessagesMessageIdVoteRoute
   '/api/rmharks/$id/comment/$commentId/hide': typeof ApiRmharksIdCommentCommentIdHideRoute
   '/api/rmharks/$id/comment/$commentId/like': typeof ApiRmharksIdCommentCommentIdLikeRoute
@@ -8199,6 +8304,8 @@ export interface FileRoutesById {
   '/api/calls/ice': typeof ApiCallsIceRoute
   '/api/calls/privacy': typeof ApiCallsPrivacyRoute
   '/api/casino/rooms': typeof ApiCasinoRoomsRoute
+  '/api/chat-folders/$id': typeof ApiChatFoldersIdRouteWithChildren
+  '/api/chats/forward': typeof ApiChatsForwardRoute
   '/api/coins/bet': typeof ApiCoinsBetRoute
   '/api/coins/claim': typeof ApiCoinsClaimRoute
   '/api/coins/gift': typeof ApiCoinsGiftRoute
@@ -8274,6 +8381,7 @@ export interface FileRoutesById {
   '/api/massive-march/campaigns': typeof ApiMassiveMarchCampaignsRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
   '/api/messages/read-all': typeof ApiMessagesReadAllRoute
+  '/api/messages/saved': typeof ApiMessagesSavedRoute
   '/api/messages/search': typeof ApiMessagesSearchRoute
   '/api/messages/sidebar': typeof ApiMessagesSidebarRoute
   '/api/messages/stream': typeof ApiMessagesStreamRoute
@@ -8485,6 +8593,7 @@ export interface FileRoutesById {
   '/api/awards/': typeof ApiAwardsIndexRoute
   '/api/battlepass/': typeof ApiBattlepassIndexRoute
   '/api/bulk/': typeof ApiBulkIndexRoute
+  '/api/chat-folders/': typeof ApiChatFoldersIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
   '/api/communities/': typeof ApiCommunitiesIndexRoute
   '/api/community-goals/': typeof ApiCommunityGoalsIndexRoute
@@ -8558,6 +8667,7 @@ export interface FileRoutesById {
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/awards/$id/hide': typeof ApiAwardsIdHideRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
+  '/api/chat-folders/$id/items': typeof ApiChatFoldersIdItemsRoute
   '/api/comments/$commentId/react': typeof ApiCommentsCommentIdReactRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
   '/api/communities/$slug/announcements': typeof ApiCommunitiesSlugAnnouncementsRouteWithChildren
@@ -8786,6 +8896,13 @@ export interface FileRoutesById {
   '/api/admin/users/$id/set-coins': typeof ApiAdminUsersIdSetCoinsRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
   '/api/admin/wager/$id/resolve': typeof ApiAdminWagerIdResolveRoute
+  '/api/chats/$kind/$id/checklist': typeof ApiChatsKindIdChecklistRoute
+  '/api/chats/$kind/$id/command': typeof ApiChatsKindIdCommandRoute
+  '/api/chats/$kind/$id/media': typeof ApiChatsKindIdMediaRoute
+  '/api/chats/$kind/$id/meta': typeof ApiChatsKindIdMetaRoute
+  '/api/chats/$kind/$id/pin': typeof ApiChatsKindIdPinRoute
+  '/api/chats/$kind/$id/settings': typeof ApiChatsKindIdSettingsRoute
+  '/api/chats/$kind/$id/vote': typeof ApiChatsKindIdVoteRoute
   '/api/communities/$slug/announcements/$id': typeof ApiCommunitiesSlugAnnouncementsIdRoute
   '/api/communities/$slug/members/$userId': typeof ApiCommunitiesSlugMembersUserIdRoute
   '/api/developer/keys/$id/usage': typeof ApiDeveloperKeysIdUsageRoute
@@ -8842,6 +8959,7 @@ export interface FileRoutesById {
   '/api/storefront/products/$id/': typeof ApiStorefrontProductsIdIndexRoute
   '/api/study/decks/$id/': typeof ApiStudyDecksIdIndexRoute
   '/api/admin/albums/$id/slides/$slideId': typeof ApiAdminAlbumsIdSlidesSlideIdRoute
+  '/api/chats/$kind/$id/thread/$messageId': typeof ApiChatsKindIdThreadMessageIdRoute
   '/api/group-chats/$id/messages/$messageId/vote': typeof ApiGroupChatsIdMessagesMessageIdVoteRoute
   '/api/rmharks/$id/comment/$commentId/hide': typeof ApiRmharksIdCommentCommentIdHideRoute
   '/api/rmharks/$id/comment/$commentId/like': typeof ApiRmharksIdCommentCommentIdLikeRoute
@@ -9170,6 +9288,8 @@ export interface FileRouteTypes {
     | '/api/calls/ice'
     | '/api/calls/privacy'
     | '/api/casino/rooms'
+    | '/api/chat-folders/$id'
+    | '/api/chats/forward'
     | '/api/coins/bet'
     | '/api/coins/claim'
     | '/api/coins/gift'
@@ -9245,6 +9365,7 @@ export interface FileRouteTypes {
     | '/api/massive-march/campaigns'
     | '/api/messages/$conversationId'
     | '/api/messages/read-all'
+    | '/api/messages/saved'
     | '/api/messages/search'
     | '/api/messages/sidebar'
     | '/api/messages/stream'
@@ -9456,6 +9577,7 @@ export interface FileRouteTypes {
     | '/api/awards/'
     | '/api/battlepass/'
     | '/api/bulk/'
+    | '/api/chat-folders/'
     | '/api/coins/'
     | '/api/communities/'
     | '/api/community-goals/'
@@ -9529,6 +9651,7 @@ export interface FileRouteTypes {
     | '/api/announcements/$id/vote'
     | '/api/awards/$id/hide'
     | '/api/builds/cover/$file'
+    | '/api/chat-folders/$id/items'
     | '/api/comments/$commentId/react'
     | '/api/comments/$commentId/translate'
     | '/api/communities/$slug/announcements'
@@ -9757,6 +9880,13 @@ export interface FileRouteTypes {
     | '/api/admin/users/$id/set-coins'
     | '/api/admin/users/$id/strike'
     | '/api/admin/wager/$id/resolve'
+    | '/api/chats/$kind/$id/checklist'
+    | '/api/chats/$kind/$id/command'
+    | '/api/chats/$kind/$id/media'
+    | '/api/chats/$kind/$id/meta'
+    | '/api/chats/$kind/$id/pin'
+    | '/api/chats/$kind/$id/settings'
+    | '/api/chats/$kind/$id/vote'
     | '/api/communities/$slug/announcements/$id'
     | '/api/communities/$slug/members/$userId'
     | '/api/developer/keys/$id/usage'
@@ -9813,6 +9943,7 @@ export interface FileRouteTypes {
     | '/api/storefront/products/$id/'
     | '/api/study/decks/$id/'
     | '/api/admin/albums/$id/slides/$slideId'
+    | '/api/chats/$kind/$id/thread/$messageId'
     | '/api/group-chats/$id/messages/$messageId/vote'
     | '/api/rmharks/$id/comment/$commentId/hide'
     | '/api/rmharks/$id/comment/$commentId/like'
@@ -10113,6 +10244,8 @@ export interface FileRouteTypes {
     | '/api/calls/ice'
     | '/api/calls/privacy'
     | '/api/casino/rooms'
+    | '/api/chat-folders/$id'
+    | '/api/chats/forward'
     | '/api/coins/bet'
     | '/api/coins/claim'
     | '/api/coins/gift'
@@ -10188,6 +10321,7 @@ export interface FileRouteTypes {
     | '/api/massive-march/campaigns'
     | '/api/messages/$conversationId'
     | '/api/messages/read-all'
+    | '/api/messages/saved'
     | '/api/messages/search'
     | '/api/messages/sidebar'
     | '/api/messages/stream'
@@ -10399,6 +10533,7 @@ export interface FileRouteTypes {
     | '/api/awards'
     | '/api/battlepass'
     | '/api/bulk'
+    | '/api/chat-folders'
     | '/api/coins'
     | '/api/communities'
     | '/api/community-goals'
@@ -10472,6 +10607,7 @@ export interface FileRouteTypes {
     | '/api/announcements/$id/vote'
     | '/api/awards/$id/hide'
     | '/api/builds/cover/$file'
+    | '/api/chat-folders/$id/items'
     | '/api/comments/$commentId/react'
     | '/api/comments/$commentId/translate'
     | '/api/communities/$slug/announcements'
@@ -10700,6 +10836,13 @@ export interface FileRouteTypes {
     | '/api/admin/users/$id/set-coins'
     | '/api/admin/users/$id/strike'
     | '/api/admin/wager/$id/resolve'
+    | '/api/chats/$kind/$id/checklist'
+    | '/api/chats/$kind/$id/command'
+    | '/api/chats/$kind/$id/media'
+    | '/api/chats/$kind/$id/meta'
+    | '/api/chats/$kind/$id/pin'
+    | '/api/chats/$kind/$id/settings'
+    | '/api/chats/$kind/$id/vote'
     | '/api/communities/$slug/announcements/$id'
     | '/api/communities/$slug/members/$userId'
     | '/api/developer/keys/$id/usage'
@@ -10756,6 +10899,7 @@ export interface FileRouteTypes {
     | '/api/storefront/products/$id'
     | '/api/study/decks/$id'
     | '/api/admin/albums/$id/slides/$slideId'
+    | '/api/chats/$kind/$id/thread/$messageId'
     | '/api/group-chats/$id/messages/$messageId/vote'
     | '/api/rmharks/$id/comment/$commentId/hide'
     | '/api/rmharks/$id/comment/$commentId/like'
@@ -11083,6 +11227,8 @@ export interface FileRouteTypes {
     | '/api/calls/ice'
     | '/api/calls/privacy'
     | '/api/casino/rooms'
+    | '/api/chat-folders/$id'
+    | '/api/chats/forward'
     | '/api/coins/bet'
     | '/api/coins/claim'
     | '/api/coins/gift'
@@ -11158,6 +11304,7 @@ export interface FileRouteTypes {
     | '/api/massive-march/campaigns'
     | '/api/messages/$conversationId'
     | '/api/messages/read-all'
+    | '/api/messages/saved'
     | '/api/messages/search'
     | '/api/messages/sidebar'
     | '/api/messages/stream'
@@ -11369,6 +11516,7 @@ export interface FileRouteTypes {
     | '/api/awards/'
     | '/api/battlepass/'
     | '/api/bulk/'
+    | '/api/chat-folders/'
     | '/api/coins/'
     | '/api/communities/'
     | '/api/community-goals/'
@@ -11442,6 +11590,7 @@ export interface FileRouteTypes {
     | '/api/announcements/$id/vote'
     | '/api/awards/$id/hide'
     | '/api/builds/cover/$file'
+    | '/api/chat-folders/$id/items'
     | '/api/comments/$commentId/react'
     | '/api/comments/$commentId/translate'
     | '/api/communities/$slug/announcements'
@@ -11670,6 +11819,13 @@ export interface FileRouteTypes {
     | '/api/admin/users/$id/set-coins'
     | '/api/admin/users/$id/strike'
     | '/api/admin/wager/$id/resolve'
+    | '/api/chats/$kind/$id/checklist'
+    | '/api/chats/$kind/$id/command'
+    | '/api/chats/$kind/$id/media'
+    | '/api/chats/$kind/$id/meta'
+    | '/api/chats/$kind/$id/pin'
+    | '/api/chats/$kind/$id/settings'
+    | '/api/chats/$kind/$id/vote'
     | '/api/communities/$slug/announcements/$id'
     | '/api/communities/$slug/members/$userId'
     | '/api/developer/keys/$id/usage'
@@ -11726,6 +11882,7 @@ export interface FileRouteTypes {
     | '/api/storefront/products/$id/'
     | '/api/study/decks/$id/'
     | '/api/admin/albums/$id/slides/$slideId'
+    | '/api/chats/$kind/$id/thread/$messageId'
     | '/api/group-chats/$id/messages/$messageId/vote'
     | '/api/rmharks/$id/comment/$commentId/hide'
     | '/api/rmharks/$id/comment/$commentId/like'
@@ -11882,6 +12039,8 @@ export interface RootRouteChildren {
   ApiCallsIceRoute: typeof ApiCallsIceRoute
   ApiCallsPrivacyRoute: typeof ApiCallsPrivacyRoute
   ApiCasinoRoomsRoute: typeof ApiCasinoRoomsRoute
+  ApiChatFoldersIdRoute: typeof ApiChatFoldersIdRouteWithChildren
+  ApiChatsForwardRoute: typeof ApiChatsForwardRoute
   ApiCoinsBetRoute: typeof ApiCoinsBetRoute
   ApiCoinsClaimRoute: typeof ApiCoinsClaimRoute
   ApiCoinsGiftRoute: typeof ApiCoinsGiftRoute
@@ -12103,6 +12262,7 @@ export interface RootRouteChildren {
   ApiAwardsIndexRoute: typeof ApiAwardsIndexRoute
   ApiBattlepassIndexRoute: typeof ApiBattlepassIndexRoute
   ApiBulkIndexRoute: typeof ApiBulkIndexRoute
+  ApiChatFoldersIndexRoute: typeof ApiChatFoldersIndexRoute
   ApiCoinsIndexRoute: typeof ApiCoinsIndexRoute
   ApiCommunitiesIndexRoute: typeof ApiCommunitiesIndexRoute
   ApiCommunityGoalsIndexRoute: typeof ApiCommunityGoalsIndexRoute
@@ -12283,6 +12443,13 @@ export interface RootRouteChildren {
   ApiAdminPredictionsIdModerateRoute: typeof ApiAdminPredictionsIdModerateRoute
   ApiAdminPredictionsIdResolveRoute: typeof ApiAdminPredictionsIdResolveRoute
   ApiAdminWagerIdResolveRoute: typeof ApiAdminWagerIdResolveRoute
+  ApiChatsKindIdChecklistRoute: typeof ApiChatsKindIdChecklistRoute
+  ApiChatsKindIdCommandRoute: typeof ApiChatsKindIdCommandRoute
+  ApiChatsKindIdMediaRoute: typeof ApiChatsKindIdMediaRoute
+  ApiChatsKindIdMetaRoute: typeof ApiChatsKindIdMetaRoute
+  ApiChatsKindIdPinRoute: typeof ApiChatsKindIdPinRoute
+  ApiChatsKindIdSettingsRoute: typeof ApiChatsKindIdSettingsRoute
+  ApiChatsKindIdVoteRoute: typeof ApiChatsKindIdVoteRoute
   ApiDunesdayFeedsFeedIdCalendarDoticsRoute: typeof ApiDunesdayFeedsFeedIdCalendarDoticsRoute
   ApiDunesdayFeedsFeedIdRssDotxmlRoute: typeof ApiDunesdayFeedsFeedIdRssDotxmlRoute
   ApiGiftsScheduledIdUnwrapRoute: typeof ApiGiftsScheduledIdUnwrapRoute
@@ -12301,6 +12468,7 @@ export interface RootRouteChildren {
   ApiShopLoadoutsIdIndexRoute: typeof ApiShopLoadoutsIdIndexRoute
   ApiStorefrontProductsIdIndexRoute: typeof ApiStorefrontProductsIdIndexRoute
   ApiStudyDecksIdIndexRoute: typeof ApiStudyDecksIdIndexRoute
+  ApiChatsKindIdThreadMessageIdRoute: typeof ApiChatsKindIdThreadMessageIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -14776,6 +14944,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCasinoRoomsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/chat-folders/': {
+      id: '/api/chat-folders/'
+      path: '/api/chat-folders'
+      fullPath: '/api/chat-folders/'
+      preLoaderRoute: typeof ApiChatFoldersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/chat-folders/$id': {
+      id: '/api/chat-folders/$id'
+      path: '/api/chat-folders/$id'
+      fullPath: '/api/chat-folders/$id'
+      preLoaderRoute: typeof ApiChatFoldersIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/chats/forward': {
+      id: '/api/chats/forward'
+      path: '/api/chats/forward'
+      fullPath: '/api/chats/forward'
+      preLoaderRoute: typeof ApiChatsForwardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/coins/': {
       id: '/api/coins/'
       path: '/api/coins'
@@ -15383,6 +15572,13 @@ declare module '@tanstack/react-router' {
       path: '/read-all'
       fullPath: '/api/messages/read-all'
       preLoaderRoute: typeof ApiMessagesReadAllRouteImport
+      parentRoute: typeof ApiMessagesRoute
+    }
+    '/api/messages/saved': {
+      id: '/api/messages/saved'
+      path: '/saved'
+      fullPath: '/api/messages/saved'
+      preLoaderRoute: typeof ApiMessagesSavedRouteImport
       parentRoute: typeof ApiMessagesRoute
     }
     '/api/messages/search': {
@@ -17100,6 +17296,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiBuildsCoverFileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/chat-folders/$id/items': {
+      id: '/api/chat-folders/$id/items'
+      path: '/items'
+      fullPath: '/api/chat-folders/$id/items'
+      preLoaderRoute: typeof ApiChatFoldersIdItemsRouteImport
+      parentRoute: typeof ApiChatFoldersIdRoute
+    }
     '/api/comments/$commentId/react': {
       id: '/api/comments/$commentId/react'
       path: '/api/comments/$commentId/react'
@@ -18647,6 +18850,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminWagerIdResolveRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/chats/$kind/$id/checklist': {
+      id: '/api/chats/$kind/$id/checklist'
+      path: '/api/chats/$kind/$id/checklist'
+      fullPath: '/api/chats/$kind/$id/checklist'
+      preLoaderRoute: typeof ApiChatsKindIdChecklistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/chats/$kind/$id/command': {
+      id: '/api/chats/$kind/$id/command'
+      path: '/api/chats/$kind/$id/command'
+      fullPath: '/api/chats/$kind/$id/command'
+      preLoaderRoute: typeof ApiChatsKindIdCommandRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/chats/$kind/$id/media': {
+      id: '/api/chats/$kind/$id/media'
+      path: '/api/chats/$kind/$id/media'
+      fullPath: '/api/chats/$kind/$id/media'
+      preLoaderRoute: typeof ApiChatsKindIdMediaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/chats/$kind/$id/meta': {
+      id: '/api/chats/$kind/$id/meta'
+      path: '/api/chats/$kind/$id/meta'
+      fullPath: '/api/chats/$kind/$id/meta'
+      preLoaderRoute: typeof ApiChatsKindIdMetaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/chats/$kind/$id/pin': {
+      id: '/api/chats/$kind/$id/pin'
+      path: '/api/chats/$kind/$id/pin'
+      fullPath: '/api/chats/$kind/$id/pin'
+      preLoaderRoute: typeof ApiChatsKindIdPinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/chats/$kind/$id/settings': {
+      id: '/api/chats/$kind/$id/settings'
+      path: '/api/chats/$kind/$id/settings'
+      fullPath: '/api/chats/$kind/$id/settings'
+      preLoaderRoute: typeof ApiChatsKindIdSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/chats/$kind/$id/vote': {
+      id: '/api/chats/$kind/$id/vote'
+      path: '/api/chats/$kind/$id/vote'
+      fullPath: '/api/chats/$kind/$id/vote'
+      preLoaderRoute: typeof ApiChatsKindIdVoteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/communities/$slug/announcements/$id': {
       id: '/api/communities/$slug/announcements/$id'
       path: '/$id'
@@ -19038,6 +19290,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/admin/albums/$id/slides/$slideId'
       preLoaderRoute: typeof ApiAdminAlbumsIdSlidesSlideIdRouteImport
       parentRoute: typeof ApiAdminAlbumsIdSlidesRoute
+    }
+    '/api/chats/$kind/$id/thread/$messageId': {
+      id: '/api/chats/$kind/$id/thread/$messageId'
+      path: '/api/chats/$kind/$id/thread/$messageId'
+      fullPath: '/api/chats/$kind/$id/thread/$messageId'
+      preLoaderRoute: typeof ApiChatsKindIdThreadMessageIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/group-chats/$id/messages/$messageId/vote': {
       id: '/api/group-chats/$id/messages/$messageId/vote'
@@ -19865,6 +20124,7 @@ const ApiMessagesConversationIdRouteWithChildren =
 interface ApiMessagesRouteChildren {
   ApiMessagesConversationIdRoute: typeof ApiMessagesConversationIdRouteWithChildren
   ApiMessagesReadAllRoute: typeof ApiMessagesReadAllRoute
+  ApiMessagesSavedRoute: typeof ApiMessagesSavedRoute
   ApiMessagesSearchRoute: typeof ApiMessagesSearchRoute
   ApiMessagesSidebarRoute: typeof ApiMessagesSidebarRoute
   ApiMessagesStreamRoute: typeof ApiMessagesStreamRoute
@@ -19875,6 +20135,7 @@ interface ApiMessagesRouteChildren {
 const ApiMessagesRouteChildren: ApiMessagesRouteChildren = {
   ApiMessagesConversationIdRoute: ApiMessagesConversationIdRouteWithChildren,
   ApiMessagesReadAllRoute: ApiMessagesReadAllRoute,
+  ApiMessagesSavedRoute: ApiMessagesSavedRoute,
   ApiMessagesSearchRoute: ApiMessagesSearchRoute,
   ApiMessagesSidebarRoute: ApiMessagesSidebarRoute,
   ApiMessagesStreamRoute: ApiMessagesStreamRoute,
@@ -20211,6 +20472,17 @@ const ApiAdminUsersRouteChildren: ApiAdminUsersRouteChildren = {
 const ApiAdminUsersRouteWithChildren = ApiAdminUsersRoute._addFileChildren(
   ApiAdminUsersRouteChildren,
 )
+
+interface ApiChatFoldersIdRouteChildren {
+  ApiChatFoldersIdItemsRoute: typeof ApiChatFoldersIdItemsRoute
+}
+
+const ApiChatFoldersIdRouteChildren: ApiChatFoldersIdRouteChildren = {
+  ApiChatFoldersIdItemsRoute: ApiChatFoldersIdItemsRoute,
+}
+
+const ApiChatFoldersIdRouteWithChildren =
+  ApiChatFoldersIdRoute._addFileChildren(ApiChatFoldersIdRouteChildren)
 
 interface ApiCommunityPagesIdRouteChildren {
   ApiCommunityPagesIdRevisionsRoute: typeof ApiCommunityPagesIdRevisionsRoute
@@ -21029,6 +21301,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCallsIceRoute: ApiCallsIceRoute,
   ApiCallsPrivacyRoute: ApiCallsPrivacyRoute,
   ApiCasinoRoomsRoute: ApiCasinoRoomsRoute,
+  ApiChatFoldersIdRoute: ApiChatFoldersIdRouteWithChildren,
+  ApiChatsForwardRoute: ApiChatsForwardRoute,
   ApiCoinsBetRoute: ApiCoinsBetRoute,
   ApiCoinsClaimRoute: ApiCoinsClaimRoute,
   ApiCoinsGiftRoute: ApiCoinsGiftRoute,
@@ -21250,6 +21524,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAwardsIndexRoute: ApiAwardsIndexRoute,
   ApiBattlepassIndexRoute: ApiBattlepassIndexRoute,
   ApiBulkIndexRoute: ApiBulkIndexRoute,
+  ApiChatFoldersIndexRoute: ApiChatFoldersIndexRoute,
   ApiCoinsIndexRoute: ApiCoinsIndexRoute,
   ApiCommunitiesIndexRoute: ApiCommunitiesIndexRoute,
   ApiCommunityGoalsIndexRoute: ApiCommunityGoalsIndexRoute,
@@ -21431,6 +21706,13 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminPredictionsIdModerateRoute: ApiAdminPredictionsIdModerateRoute,
   ApiAdminPredictionsIdResolveRoute: ApiAdminPredictionsIdResolveRoute,
   ApiAdminWagerIdResolveRoute: ApiAdminWagerIdResolveRoute,
+  ApiChatsKindIdChecklistRoute: ApiChatsKindIdChecklistRoute,
+  ApiChatsKindIdCommandRoute: ApiChatsKindIdCommandRoute,
+  ApiChatsKindIdMediaRoute: ApiChatsKindIdMediaRoute,
+  ApiChatsKindIdMetaRoute: ApiChatsKindIdMetaRoute,
+  ApiChatsKindIdPinRoute: ApiChatsKindIdPinRoute,
+  ApiChatsKindIdSettingsRoute: ApiChatsKindIdSettingsRoute,
+  ApiChatsKindIdVoteRoute: ApiChatsKindIdVoteRoute,
   ApiDunesdayFeedsFeedIdCalendarDoticsRoute:
     ApiDunesdayFeedsFeedIdCalendarDoticsRoute,
   ApiDunesdayFeedsFeedIdRssDotxmlRoute: ApiDunesdayFeedsFeedIdRssDotxmlRoute,
@@ -21450,6 +21732,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiShopLoadoutsIdIndexRoute: ApiShopLoadoutsIdIndexRoute,
   ApiStorefrontProductsIdIndexRoute: ApiStorefrontProductsIdIndexRoute,
   ApiStudyDecksIdIndexRoute: ApiStudyDecksIdIndexRoute,
+  ApiChatsKindIdThreadMessageIdRoute: ApiChatsKindIdThreadMessageIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

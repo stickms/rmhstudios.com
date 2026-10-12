@@ -1,5 +1,19 @@
 -- P04 messaging (M1 M3 M5 M6 M7 M8 M9 M10): additive only — new nullable/defaulted
 -- columns on existing tables, four new tables, and a backfill of attachFlags for old rows.
+--
+-- migration-safety: acknowledged[create-index-not-concurrent] the five indexes on
+-- "direct_message" / "group_message" take a SHARE lock (reads continue, writes wait)
+-- for the length of each build, and Prisma's migration transaction forbids
+-- CONCURRENTLY. At this site's message volume each build is a sub-second scan.
+-- LARGE-TABLE DEPLOY NOTE: if either table has grown into the millions of rows,
+-- build these out of band first, off-peak, and the IF-less statements below will
+-- then fail fast — so instead mark this migration applied after running:
+--   CREATE INDEX CONCURRENTLY IF NOT EXISTS "direct_message_conversationId_attachFlags_createdAt_idx" ON "direct_message"("conversationId","attachFlags","createdAt");
+--   CREATE INDEX CONCURRENTLY IF NOT EXISTS "direct_message_expiresAt_idx" ON "direct_message"("expiresAt");
+--   CREATE INDEX CONCURRENTLY IF NOT EXISTS "group_message_groupId_attachFlags_createdAt_idx" ON "group_message"("groupId","attachFlags","createdAt");
+--   CREATE INDEX CONCURRENTLY IF NOT EXISTS "group_message_threadParentId_createdAt_idx" ON "group_message"("threadParentId","createdAt");
+--   CREATE INDEX CONCURRENTLY IF NOT EXISTS "group_message_expiresAt_idx" ON "group_message"("expiresAt");
+-- (and the rest of this file's DDL), then `prisma migrate resolve --applied 20261012100400_messaging_plus`.
 
 -- AlterTable
 ALTER TABLE "conversation" ADD COLUMN     "disappearAfterSec" INTEGER,

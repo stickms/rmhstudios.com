@@ -378,6 +378,14 @@ export const COIN_FLOWS: readonly CoinFlow[] = [
     note: 'Member to member.',
   },
   {
+    id: 'chat-tip',
+    kind: 'transfer',
+    surface: '/messages — the /tip slash command',
+    source: 'lib/chat-plus/tip.server.ts',
+    bounded: false,
+    note: 'Member to member inside a DM or group chat; same transferCoins path as a post tip.',
+  },
+  {
     id: 'coin-gift',
     kind: 'transfer',
     surface: 'Sending coins to someone',
