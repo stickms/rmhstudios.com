@@ -452,6 +452,11 @@ model User {
   // P01 feed-plus: X6 take votes, X12 require-alt-text
   rmharkTakeVotes RMHarkTakeVote[]
   requireAltText  Boolean         @default(false)
+  savingsGoals               SavingsGoal[]
+  loadoutPresets             LoadoutPreset[]
+  communityGoalPledges       CommunityGoalPledge[]
+  scheduledGiftsSent         ScheduledGift[]       @relation("ScheduledGiftSender")
+  scheduledGiftsReceived     ScheduledGift[]       @relation("ScheduledGiftRecipient")
 
   @@index([isBot])
   @@index([followerCount])
@@ -7291,6 +7296,10 @@ model WishlistEntry {
   entityId    String // catalog key | itemId | creatorId
   targetPrice Int? // coins; market alerts only
   createdAt   DateTime @default(now())
+  // P10 (C8): price-drop / daily-shop alert state, written only by the daily alert job.
+  lastSeenPrice Int?
+  lastAlertKey  String?   @db.VarChar(40)
+  lastAlertAt   DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -9722,4 +9731,115 @@ model RMHarkTakeVote {
   @@unique([rmheetId, userId])
   @@index([userId])
   @@map("rmheet_take_vote")
+// ── P10: C1 C5 C6 C7 C8 ──
+
+/// A coin savings goal (C1). A goal is a view over the balance: it never locks
+/// coins and never touches the ledger. `targetCoins` is a snapshot taken
+/// server-side when the goal is set (catalog price / cheapest live listing /
+/// the member's own number).
+model SavingsGoal {
+  id          String    @id @default(cuid())
+  userId      String
+  /// 'shop_item' | 'market_cosmetic' | 'custom'
+  kind        String    @db.VarChar(16)
+  /// Catalog id for shop_item / market_cosmetic; null for custom.
+  itemId      String?   @db.VarChar(64)
+  title       String    @db.VarChar(80)
+  targetCoins Int
+  createdAt   DateTime  @default(now())
+  reachedAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("savings_goal")
+}
+
+/// A named set of equipped cosmetics (C6). `itemIds` are catalog ids, at most
+/// one per kind; applying a preset equips the ones the member still owns.
+model LoadoutPreset {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String   @db.VarChar(40)
+  itemIds   String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+  @@map("loadout_preset")
+}
+
+/// A site-wide all-or-nothing goal pot (C5). Statuses: OPEN -> FUNDED (target
+/// reached; pledging closes) -> FULFILLED (admin delivered the unlock), or
+/// OPEN -> REFUNDING (deadline passed short of target, or admin cancelled)
+/// -> REFUNDED once every pledge has been returned through the ledger.
+/// Not built on `Pool`: a pool settles to a beneficiary user and has a
+/// per-member creator; a community goal settles to nobody and is admin-run.
+model CommunityGoal {
+  id          String    @id @default(cuid())
+  title       String    @db.VarChar(120)
+  description String    @default("") @db.VarChar(600)
+  /// What reaching the goal unlocks, shown on the card ("The Aurora theme").
+  unlock      String    @db.VarChar(160)
+  targetCoins Int
+  raisedCoins Int       @default(0)
+  deadline    DateTime
+  status      String    @default("OPEN") @db.VarChar(12)
+  createdById String
+  createdAt   DateTime  @default(now())
+  fundedAt    DateTime?
+  fulfilledAt DateTime?
+  refundedAt  DateTime?
+
+  pledges CommunityGoalPledge[]
+
+  @@index([status, deadline])
+  @@index([createdAt(sort: Desc)])
+  @@map("community_goal")
+}
+
+model CommunityGoalPledge {
+  id         BigInt    @id @default(autoincrement())
+  goalId     String
+  userId     String
+  coins      Int
+  /// Set when this pledge was returned, so a partial refund sweep is
+  /// resumable and can never pay the same pledge twice.
+  refundedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  goal CommunityGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([goalId, refundedAt])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("community_goal_pledge")
+}
+
+/// A store gift that arrives on a date (C7). Paid at send time through the
+/// ledger; delivered (or refunded) exactly once by the delivery job.
+/// Statuses: SCHEDULED -> DELIVERED | CANCELLED | REFUNDED.
+model ScheduledGift {
+  id          String    @id @default(cuid())
+  senderId    String
+  /// Null only if the recipient's account was deleted before delivery.
+  recipientId String?
+  itemId      String    @db.VarChar(64)
+  price       Int
+  message     String?   @db.VarChar(200)
+  deliverAt   DateTime
+  status      String    @default("SCHEDULED") @db.VarChar(12)
+  createdAt   DateTime  @default(now())
+  deliveredAt DateTime?
+  unwrappedAt DateTime?
+
+  sender    User  @relation("ScheduledGiftSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient User? @relation("ScheduledGiftRecipient", fields: [recipientId], references: [id], onDelete: SetNull)
+
+  @@index([status, deliverAt])
+  @@index([recipientId, status, deliverAt])
+  @@index([senderId, createdAt(sort: Desc)])
+  @@map("scheduled_gift")
 }
