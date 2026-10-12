@@ -15,6 +15,7 @@ import hiCCursedLogic from "@/locales/hi/c-cursed-logic.json";
 import hiCDailyPuzzles from "@/locales/hi/c-daily-puzzles.json";
 import hiCDoctrine from "@/locales/hi/c-doctrine.json";
 import hiCDreamRift from "@/locales/hi/c-dream-rift.json";
+import hiCDunesday from "@/locales/hi/c-dunesday.json";
 import hiCEconomy from "@/locales/hi/c-economy.json";
 import hiCForestExplorer from "@/locales/hi/c-forest-explorer.json";
 import hiCGabrielsHorn from "@/locales/hi/c-gabriels-horn.json";
@@ -111,6 +112,7 @@ const hiResources = {
   "c-daily-puzzles": hiCDailyPuzzles,
   "c-doctrine": hiCDoctrine,
   "c-dream-rift": hiCDreamRift,
+  "c-dunesday": hiCDunesday,
   "c-economy": hiCEconomy,
   "c-forest-explorer": hiCForestExplorer,
   "c-gabriels-horn": hiCGabrielsHorn,

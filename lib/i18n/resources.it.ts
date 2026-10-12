@@ -15,6 +15,7 @@ import itCCursedLogic from "@/locales/it/c-cursed-logic.json";
 import itCDailyPuzzles from "@/locales/it/c-daily-puzzles.json";
 import itCDoctrine from "@/locales/it/c-doctrine.json";
 import itCDreamRift from "@/locales/it/c-dream-rift.json";
+import itCDunesday from "@/locales/it/c-dunesday.json";
 import itCEconomy from "@/locales/it/c-economy.json";
 import itCForestExplorer from "@/locales/it/c-forest-explorer.json";
 import itCGabrielsHorn from "@/locales/it/c-gabriels-horn.json";
@@ -111,6 +112,7 @@ const itResources = {
   "c-daily-puzzles": itCDailyPuzzles,
   "c-doctrine": itCDoctrine,
   "c-dream-rift": itCDreamRift,
+  "c-dunesday": itCDunesday,
   "c-economy": itCEconomy,
   "c-forest-explorer": itCForestExplorer,
   "c-gabriels-horn": itCGabrielsHorn,
