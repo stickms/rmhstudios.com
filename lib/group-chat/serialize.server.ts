@@ -16,6 +16,11 @@ export const groupMessageSelect = {
   imageUrls: true,
   pollQuestion: true,
   pollOptions: true,
+  kind: true,
+  meta: true,
+  forwardCount: true,
+  replyCount: true,
+  expiresAt: true,
   sender: { select: userDisplaySelect },
   reactions: { select: { emoji: true, userId: true } },
 } as const;
@@ -28,6 +33,11 @@ type GroupMessageRow = {
   imageUrls: string[];
   pollQuestion: string | null;
   pollOptions: string[];
+  kind?: string;
+  meta?: unknown;
+  forwardCount?: number;
+  replyCount?: number;
+  expiresAt?: Date | null;
   sender: Parameters<typeof resolveUser>[0];
   reactions: ReactionRow[];
 };
@@ -83,6 +93,11 @@ export async function serializeGroupMessages(
       imageUrls: m.imageUrls,
       poll,
       reactions: m.reactions,
+      kind: m.kind ?? 'text',
+      meta: m.meta ?? null,
+      forwardCount: m.forwardCount ?? 0,
+      replyCount: m.replyCount ?? 0,
+      expiresAt: m.expiresAt?.toISOString() ?? null,
     };
   });
 }

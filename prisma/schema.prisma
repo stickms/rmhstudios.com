@@ -447,6 +447,9 @@ model User {
   pf2eSettingsEdits   Pf2eSettings[]        @relation("Pf2eSettingsEditor")
 
   // ─── Feature ideas 2026-10-12 (docs/plans/2026-10-12-feature-ideas-every-surface.md)
+  chatFolders    ChatFolder[]
+  chatPins       ChatPin[]
+  dmPollVotes    DirectPollVote[]
   // Back-relations for the models at the end of this file. One line per field,
   // each package's lines together; never re-align this block.
 
@@ -3494,6 +3497,10 @@ model Conversation {
   participantOne User            @relation("ConversationParticipantOne", fields: [participantOneId], references: [id], onDelete: Cascade)
   participantTwo User            @relation("ConversationParticipantTwo", fields: [participantTwoId], references: [id], onDelete: Cascade)
   messages       DirectMessage[]
+  /// M3 — disappearing-messages timer in seconds (3600 | 86400 | 604800). Null = off.
+  disappearAfterSec Int?
+  /// M9 — chat theme preset (lib/chat-plus/themes.ts), "<accent>.<wallpaper>". Null = default.
+  themeKey          String? @db.VarChar(24)
 
   @@unique([participantOneId, participantTwoId])
   @@index([participantOneId, lastMessageAt(sort: Desc)])
@@ -3525,14 +3532,28 @@ model DirectMessage {
   audioUrl        String?   @db.VarChar(500)
   audioDurationMs Int?
   audioPeaks      Float[]   @default([])
+  /// P04 — message kind: text | system | tip | dice | coin | checklist | poll.
+  /// Non-text kinds keep a readable fallback in `content` for previews and search.
+  kind            String    @default("text") @db.VarChar(16)
+  /// P04 — kind-specific payload (checklist items, dice rolls, system action…).
+  meta            Json?
+  /// M3 — set at send time from the chat's timer; hidden at read time once past.
+  expiresAt       DateTime?
+  /// M6 — bit 1 = has image/GIF/voice, bit 2 = has a link. One column, one index.
+  attachFlags     Int       @default(0)
+  /// M10 — how many times this message has been forwarded to reach here.
+  forwardCount    Int       @default(0)
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
   reactions DirectMessageReaction[]
+  pollVotes DirectPollVote[]
 
   @@index([conversationId, createdAt])
   @@index([senderId])
+  @@index([conversationId, attachFlags, createdAt])
+  @@index([expiresAt])
   @@map("direct_message")
 }
 
@@ -3701,6 +3722,10 @@ model GroupChat {
   owner    User              @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   members  GroupChatMember[]
   messages GroupMessage[]
+  /// M3 — disappearing-messages timer in seconds (3600 | 86400 | 604800). Null = off.
+  disappearAfterSec Int?
+  /// M9 — chat theme preset (lib/chat-plus/themes.ts), "<accent>.<wallpaper>". Null = default.
+  themeKey          String? @db.VarChar(24)
 
   @@map("group_chat")
 }
@@ -3744,14 +3769,34 @@ model GroupMessage {
   audioUrl        String?   @db.VarChar(500)
   audioDurationMs Int?
   audioPeaks      Float[]   @default([])
+  /// P04 — message kind: text | system | tip | dice | coin | checklist | poll.
+  /// Non-text kinds keep a readable fallback in `content` for previews and search.
+  kind            String    @default("text") @db.VarChar(16)
+  /// P04 — kind-specific payload (checklist items, dice rolls, system action…).
+  meta            Json?
+  /// M3 — set at send time from the chat's timer; hidden at read time once past.
+  expiresAt       DateTime?
+  /// M6 — bit 1 = has image/GIF/voice, bit 2 = has a link. One column, one index.
+  attachFlags     Int       @default(0)
+  /// M10 — how many times this message has been forwarded to reach here.
+  forwardCount    Int       @default(0)
+  /// M7 — set on a reply posted in a side thread; null on top-level messages.
+  threadParentId  String?
+  /// M7 — denormalised reply count on the parent, so the list needs no extra query.
+  replyCount      Int       @default(0)
 
   group     GroupChat       @relation(fields: [groupId], references: [id], onDelete: Cascade)
   sender    User            @relation(fields: [senderId], references: [id], onDelete: Cascade)
   pollVotes GroupPollVote[]
 
   reactions GroupMessageReaction[]
+  threadParent  GroupMessage?  @relation("GroupMessageThread", fields: [threadParentId], references: [id], onDelete: Cascade)
+  threadReplies GroupMessage[] @relation("GroupMessageThread")
 
   @@index([groupId, createdAt])
+  @@index([groupId, attachFlags, createdAt])
+  @@index([threadParentId, createdAt])
+  @@index([expiresAt])
   @@map("group_message")
 }
 
@@ -8020,6 +8065,10 @@ model ConversationPref {
   muteUntil    DateTime?
   mentionsOnly Boolean   @default(false)
   pinned       Boolean   @default(false)
+  /// M8 — don't send read receipts here (and don't see theirs). DM only.
+  hideReceipts Boolean   @default(false)
+  /// M8 — don't send typing indicators here (and don't see theirs). DM only.
+  hideTyping   Boolean   @default(false)
   updatedAt    DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -9689,3 +9738,71 @@ model DunesdayPlan {
 // Feature ideas 2026-10-12 — docs/plans/2026-10-12-feature-ideas-every-surface.md
 // Each feature package appends its models below under its own header comment.
 // ═════════════════════════════════════════════════════════════════════════════
+
+// ── P04: M1 M3 M5 M6 M7 M8 M9 M10 (messaging) ──
+// Columns added to existing models (kind/meta/expiresAt/attachFlags/forwardCount
+// on direct_message + group_message, thread columns on group_message, timer and
+// theme on conversation + group_chat, receipt/typing toggles on conversation_pref)
+// live next to those models. New tables follow.
+
+/// M1 — a user-defined folder over their DM + group-chat lists.
+model ChatFolder {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String   @db.VarChar(40)
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items ChatFolderItem[]
+
+  @@index([userId, position])
+  @@map("chat_folder")
+}
+
+/// M1 — one chat inside a folder. `scopeKey` is `dm:<conversationId>` or
+/// `group:<groupId>` (same namespace as ConversationPref).
+model ChatFolderItem {
+  folderId  String
+  scopeKey  String   @db.VarChar(80)
+  createdAt DateTime @default(now())
+
+  folder ChatFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  @@id([folderId, scopeKey])
+  @@map("chat_folder_item")
+}
+
+/// M6 — a pinned message in a DM or group chat. No FK to the message (it can be
+/// either table); the expiry sweep and the read path drop pins whose message is gone.
+model ChatPin {
+  id         String   @id @default(cuid())
+  scopeKey   String   @db.VarChar(80)
+  messageId  String   @db.VarChar(40)
+  pinnedById String
+  createdAt  DateTime @default(now())
+
+  pinnedBy User @relation(fields: [pinnedById], references: [id], onDelete: Cascade)
+
+  @@unique([scopeKey, messageId])
+  @@index([scopeKey, createdAt(sort: Desc)])
+  @@index([messageId])
+  @@map("chat_pin")
+}
+
+/// P04 (/poll in a DM) — a vote on a `kind = "poll"` direct message. Group chats
+/// keep using GroupPollVote.
+model DirectPollVote {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  optionIdx Int
+  createdAt DateTime @default(now())
+
+  message DirectMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@map("direct_poll_vote")
+}

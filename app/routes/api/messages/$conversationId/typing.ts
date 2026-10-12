@@ -3,6 +3,7 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { notifyUser } from '@/lib/message-events';
 import { z } from 'zod';
+import { getPairPrivacy } from '@/lib/chat-plus/receipts.server';
 
 const typingSchema = z.object({ isTyping: z.boolean() });
 
@@ -32,6 +33,17 @@ export const Route = createFileRoute('/api/messages/$conversationId/typing')({
           conversation.participantOneId === userId
             ? conversation.participantTwoId
             : conversation.participantOneId;
+
+        // M8: typing indicators are reciprocal. If either participant has them
+        // switched off for this conversation, nothing is published at all — the
+        // gate is here at the source, not in the receiving client.
+        if (otherUserId !== userId) {
+          const privacy = await getPairPrivacy(conversationId, [
+            conversation.participantOneId,
+            conversation.participantTwoId,
+          ]);
+          if (privacy.typingHidden) return Response.json({ success: true, suppressed: true });
+        }
 
         notifyUser(otherUserId, {
           type: 'typing',

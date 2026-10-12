@@ -25,6 +25,7 @@
  */
 
 import { DELETED_BY_SENDER } from '@/lib/messages/edit-policy';
+import type { PollView } from '@/lib/chat-plus/types';
 
 /** The columns this module reads. Structural, so a Prisma row satisfies it. */
 export interface StoredMessage {
@@ -42,6 +43,12 @@ export interface StoredMessage {
   audioDurationMs?: number | null;
   audioPeaks?: number[] | null;
   reactions?: { emoji: string; userId: string }[];
+  /** P04 — absent on rows read before the columns existed (treated as text). */
+  kind?: string | null;
+  meta?: unknown;
+  forwardCount?: number | null;
+  /** M3 — when the message disappears. */
+  expiresAt?: Date | string | null;
 }
 
 /** What the client renders. `content` is already redacted where it must be. */
@@ -63,6 +70,16 @@ export interface MessageView {
   audioDurationMs: number | null;
   audioPeaks: number[];
   reactions: { emoji: string; userId: string }[];
+  /** P04 — `text` for every ordinary message. */
+  kind: string;
+  /** P04 — structured payload for non-text kinds (checklist items, dice rolls…). */
+  meta: unknown;
+  /** M10 — how many times this message has been forwarded. */
+  forwardCount: number;
+  /** M3 — ISO time the message disappears, or null. Lets an open client hide it on the dot. */
+  expiresAt: string | null;
+  /** P04 — tallies for `kind = 'poll'`, attached by the thread read path. */
+  poll?: PollView | null;
 }
 
 function iso(value: Date | string | null | undefined): string | null {
@@ -104,6 +121,10 @@ export function toMessageView(row: StoredMessage, opts: ViewOptions = {}): Messa
     audioDurationMs: row.audioDurationMs ?? null,
     audioPeaks: row.audioPeaks ?? [],
     reactions: row.reactions ?? [],
+    kind: row.kind ?? 'text',
+    meta: row.meta ?? null,
+    forwardCount: row.forwardCount ?? 0,
+    expiresAt: iso(row.expiresAt),
   };
 
   if (!deletedAt || opts.forModerator) return base;
@@ -117,6 +138,7 @@ export function toMessageView(row: StoredMessage, opts: ViewOptions = {}): Messa
     audioDurationMs: null,
     audioPeaks: [],
     reactions: [],
+    meta: null,
     deletedBy: base.deletedBy ?? DELETED_BY_SENDER,
   };
 }

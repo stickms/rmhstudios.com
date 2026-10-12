@@ -19,6 +19,7 @@ import { runProgression, type ProgressionJob } from '@/lib/social/engagement-eff
 import { registerEventReminderWorker } from '@/lib/events.server';
 import { registerDigestCron } from '@/lib/digest/pipeline.server';
 import { registerMaintenanceCrons } from '@/lib/jobs/maintenance.server';
+import { CHAT_EXPIRY_QUEUE, registerChatExpiryCron } from '@/lib/chat-plus/expiry.server';
 import { ANALYSIS_QUEUE, registerAnalysisWorker } from '@/lib/slice-it/analysis-queue.server';
 import { REGEN_QUEUE, registerRegenCron } from '@/lib/slice-it/regen.server';
 import { PF2E_REMINDER_QUEUE, registerPf2eReminderCron } from '@/lib/pf2ecal/reminders.server';
@@ -156,6 +157,19 @@ async function main() {
     log.error({
       event: 'jobs.register_failed',
       queue: 'platform.maintenance',
+      err: (e as Error)?.message,
+    });
+  }
+
+  // M3 — disappearing messages. Expiry is enforced at read time; this sweep only
+  // deletes the rows (and skips any message with an open report).
+  try {
+    await registerChatExpiryCron(boss);
+    log.info({ event: 'jobs.started', queue: CHAT_EXPIRY_QUEUE });
+  } catch (e) {
+    log.error({
+      event: 'jobs.register_failed',
+      queue: CHAT_EXPIRY_QUEUE,
       err: (e as Error)?.message,
     });
   }

@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
+import { liveMessages } from '@/lib/chat-plus/expiry.server';
 import { redisEnabled, redisGetJSON, redisSetJSON } from '@/lib/redis.server';
 import { subscribeUser, type MessageNotification } from '@/lib/message-events';
 
@@ -14,6 +15,8 @@ function countUnreadFromDb(userId: string): Promise<number> {
     where: {
       senderId: { not: userId },
       read: false,
+      // M3: an expired disappearing message is not unread, it is gone.
+      AND: [liveMessages()],
       conversation: {
         OR: [{ participantOneId: userId }, { participantTwoId: userId }],
       },
@@ -89,6 +92,11 @@ export const Route = createFileRoute('/api/messages/stream')({
                 // this the recipient keeps reading a message the sender has
                 // already retracted until the next poll.
                 send(event.type, JSON.stringify(event.mutation));
+                return;
+              }
+              if (event.type === 'chat-update') {
+                // Pins, settings, ticks and receipts: no effect on unread counts.
+                send('chat-update', JSON.stringify(event.update));
                 return;
               }
               if (event.type === 'message-reaction') {

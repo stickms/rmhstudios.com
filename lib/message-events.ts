@@ -7,6 +7,7 @@
 
 import { createBus, type RealtimeBus } from '@/lib/realtime-bus.server';
 import type { ReactionRow } from '@/lib/social/reactions';
+import type { ChatUpdate, PollView } from '@/lib/chat-plus/types';
 
 export type MessagePayload = {
   id: string;
@@ -26,6 +27,13 @@ export type MessagePayload = {
   audioPeaks?: number[];
   /** Set once edited, so a late-joining client renders the marker (H1). */
   editedAt?: string | null;
+  /** P04 — message kind (text when absent), its structured payload and forward hops. */
+  kind?: string;
+  meta?: unknown;
+  forwardCount?: number;
+  /** M3 — when the message disappears (ISO), or null. */
+  expiresAt?: string | null;
+  poll?: PollView | null;
 };
 
 /**
@@ -75,7 +83,10 @@ export type MessageNotification =
   // H1 — edit / unsend. Both must reach an open client immediately, or the
   // recipient goes on reading a message the sender has already retracted.
   | { type: "message-edited"; mutation: MessageMutationPayload }
-  | { type: "message-deleted"; mutation: MessageMutationPayload };
+  | { type: "message-deleted"; mutation: MessageMutationPayload }
+  // P04 — checklist ticks, pins, settings, DM poll tallies and read receipts all
+  // ride one event type on this same channel (see lib/chat-plus/types.ts).
+  | { type: "chat-update"; update: ChatUpdate };
 
 type Listener = (event: MessageNotification) => void;
 

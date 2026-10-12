@@ -19,9 +19,16 @@ const MAX_GROUPS = 100;
 export const Route = createFileRoute('/api/group-chats/')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ session }) => {
+      GET: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
         if (!session) return Response.json({ groups: [], signedIn: false });
-        return Response.json(await listGroupChats(session.user.id));
+        // M1: `?folder=<id>` / `?filter=unread` for the folder tabs.
+        const url = new URL(request.url);
+        return Response.json(
+          await listGroupChats(session.user.id, {
+            folderId: url.searchParams.get('folder'),
+            unreadOnly: url.searchParams.get('filter') === 'unread',
+          }),
+        );
       }),
 
       POST: defineHandler(
