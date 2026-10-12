@@ -9731,6 +9731,8 @@ model RMHarkTakeVote {
   @@unique([rmheetId, userId])
   @@index([userId])
   @@map("rmheet_take_vote")
+}
+
 // ── P10: C1 C5 C6 C7 C8 ──
 
 /// A coin savings goal (C1). A goal is a view over the balance: it never locks

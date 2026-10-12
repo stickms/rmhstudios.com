@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 622 files across 145 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 637 files across 148 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -256,7 +256,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/coins`
 
-6 routes.
+7 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -265,6 +265,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/coins/claim` | `POST` | `app/routes/api/coins/claim.ts` |
 | `/api/coins/gift` | `POST` | `app/routes/api/coins/gift.ts` |
 | `/api/coins/purchase` | `POST` | `app/routes/api/coins/purchase.ts` |
+| `/api/coins/statement` | `GET` | `app/routes/api/coins/statement.ts` |
 | `/api/coins/tip` | `POST` | `app/routes/api/coins/tip.ts` |
 
 ## `/api/comments`
@@ -290,6 +291,16 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/communities/:slug/join` | `POST` | `app/routes/api/communities/$slug/join.ts` |
 | `/api/communities/:slug/members` | `GET` | `app/routes/api/communities/$slug/members.ts` |
 | `/api/communities/:slug/members/:userId` | `DELETE` `PATCH` | `app/routes/api/communities/$slug/members/$userId.ts` |
+
+## `/api/community-goals`
+
+3 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/community-goals` | `GET` `POST` | `app/routes/api/community-goals/index.ts` |
+| `/api/community-goals/:id/admin` | `POST` | `app/routes/api/community-goals/$id/admin.ts` |
+| `/api/community-goals/:id/pledge` | `POST` | `app/routes/api/community-goals/$id/pledge.ts` |
 
 ## `/api/community-pages`
 
@@ -415,6 +426,15 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/dunesday/sync/:feedId` | `DELETE` `GET` `PUT` | `app/routes/api/dunesday/sync.$feedId.ts` |
 | `/api/dunesday/sync/:feedId/discord` | `POST` `PUT` | `app/routes/api/dunesday/sync.$feedId.discord.ts` |
 
+## `/api/economy`
+
+2 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/economy/savings-goals` | `GET` `POST` | `app/routes/api/economy/savings-goals/index.ts` |
+| `/api/economy/savings-goals/:id` | `DELETE` | `app/routes/api/economy/savings-goals/$id.ts` |
+
 ## `/api/email`
 
 1 route.
@@ -538,6 +558,16 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/gift-sub` | `GET` `POST` | `app/routes/api/gift-sub.ts` |
+
+## `/api/gifts`
+
+3 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/gifts/scheduled` | `GET` `POST` | `app/routes/api/gifts/scheduled/index.ts` |
+| `/api/gifts/scheduled/:id` | `DELETE` | `app/routes/api/gifts/scheduled/$id/index.ts` |
+| `/api/gifts/scheduled/:id/unwrap` | `POST` | `app/routes/api/gifts/scheduled/$id/unwrap.ts` |
 
 ## `/api/globeset`
 
@@ -1274,13 +1304,19 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/shop`
 
-3 routes.
+9 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/shop` | `GET` | `app/routes/api/shop/index.ts` |
+| `/api/shop/bundle` | `POST` | `app/routes/api/shop/bundle.ts` |
+| `/api/shop/daily` | `GET` | `app/routes/api/shop/daily.ts` |
 | `/api/shop/equip` | `POST` | `app/routes/api/shop/equip.ts` |
+| `/api/shop/loadouts` | `GET` `POST` | `app/routes/api/shop/loadouts/index.ts` |
+| `/api/shop/loadouts/:id` | `DELETE` | `app/routes/api/shop/loadouts/$id/index.ts` |
+| `/api/shop/loadouts/:id/apply` | `POST` | `app/routes/api/shop/loadouts/$id/apply.ts` |
 | `/api/shop/purchase` | `POST` | `app/routes/api/shop/purchase.ts` |
+| `/api/shop/search` | `GET` | `app/routes/api/shop/search.ts` |
 
 ## `/api/signal-forge`
 
