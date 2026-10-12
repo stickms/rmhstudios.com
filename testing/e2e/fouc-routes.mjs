@@ -42,6 +42,11 @@ const ROUTE_TREE = join(REPO_ROOT, 'app/routeTree.gen.ts');
  * to the same thing while still claiming `'content'`.
  */
 export const DYNAMIC_ROUTE_FIXTURES = {
+  '/rings/$slug': {
+    path: '/rings/fouc-audit',
+    fidelity: 'shell',
+    why: 'A non-existent ring renders the not-found state inside the same PageLayout shell; the ring body loads client-side.',
+  },
   '/admin/albums/$id': {
     path: null,
     fidelity: 'shell',

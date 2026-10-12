@@ -64,9 +64,7 @@ function ProfileCustomizationPage() {
           })}
         </p>
         {!isPending && !signedIn ? signInPrompt : <ProfileCosmetics />}
-        {signedIn && idle ? (
-                      <ProfilePlusSettings />
-                  ) : null}
+        {signedIn && idle ? <ProfilePlusSettings /> : null}
       </div>
     </PageLayout>
   );

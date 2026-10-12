@@ -9852,6 +9852,8 @@ model ScheduledGift {
   @@index([recipientId, status, deliverAt])
   @@index([senderId, createdAt(sort: Desc)])
   @@map("scheduled_gift")
+}
+
 // ── P05: P1-P10 (profiles & identity) ──
 
 /// The small per-member scalars the profile features need (pronouns, timezone,

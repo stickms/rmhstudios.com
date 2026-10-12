@@ -72,6 +72,7 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   { loc: '/library', changefreq: 'daily', priority: 0.8 },
   { loc: '/news', changefreq: 'daily', priority: 0.8 },
   { loc: '/communities', changefreq: 'daily', priority: 0.8 },
+  { loc: '/rings', changefreq: 'weekly', priority: 0.4 },
   // `/rmhladder`, `/homes` and `/rmhcode` are apps, so `catalogRoutes()`
   // already emits them — listing them here too would put the same URL in the
   // sitemap twice, which Search Console reports as a warning.
@@ -443,6 +444,8 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   // C1 — the chart editor. Auth-gated, and a chart's public surface is
   // `/games/slice-it` and the song's page, not its editing view.
   '/slice-it/edit/$songId': null,
+  // Member-run webrings: no sitemap shard enumerates them yet.
+  '/rings/$slug': null,
 
   // Dynamic and deliberately unlisted.
   '/deeplink/$page': null, // sub-pages of the raw-HTML Deeplink microsite

@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 637 files across 148 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 656 files across 150 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -947,12 +947,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/profile`
 
-18 routes.
+28 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/profile` | `PATCH` | `app/routes/api/profile.ts` |
 | `/api/profile/:id` | `GET` | `app/routes/api/profile/$id.ts` |
+| `/api/profile/:id/card` | `GET` | `app/routes/api/profile/$id/card.ts` |
+| `/api/profile/:id/endorsements` | `GET` `PUT` | `app/routes/api/profile/$id/endorsements.ts` |
 | `/api/profile/:id/follow` | `POST` | `app/routes/api/profile/$id/follow.ts` |
 | `/api/profile/:id/followers` | `GET` | `app/routes/api/profile/$id/followers.ts` |
 | `/api/profile/:id/following` | `GET` | `app/routes/api/profile/$id/following.ts` |
@@ -960,7 +962,12 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/profile/:id/guestbook/:entryId` | `DELETE` `PATCH` | `app/routes/api/profile/$id/guestbook.$entryId.ts` |
 | `/api/profile/:id/likes` | `GET` | `app/routes/api/profile/$id/likes.ts` |
 | `/api/profile/:id/membership` | `DELETE` `POST` | `app/routes/api/profile/$id/membership.ts` |
+| `/api/profile/:id/plus` | `GET` | `app/routes/api/profile/$id/plus.ts` |
+| `/api/profile/:id/pronunciation` | `GET` | `app/routes/api/profile/$id/pronunciation.ts` |
 | `/api/profile/:id/rmharks` | `GET` | `app/routes/api/profile/$id/rmharks.ts` |
+| `/api/profile/:id/stamps` | `GET` | `app/routes/api/profile/$id/stamps.ts` |
+| `/api/profile/:id/visit` | `POST` | `app/routes/api/profile/$id/visit.ts` |
+| `/api/profile/:id/webrings` | `GET` | `app/routes/api/profile/$id/webrings.ts` |
 | `/api/profile/analytics` | `GET` | `app/routes/api/profile/analytics.ts` |
 | `/api/profile/avatar` | `DELETE` `POST` | `app/routes/api/profile/avatar.ts` |
 | `/api/profile/avatar/:filename` | `GET` | `app/routes/api/profile/avatar/$filename.ts` |
@@ -968,7 +975,10 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/profile/banner/:filename` | `GET` | `app/routes/api/profile/banner/$filename.ts` |
 | `/api/profile/layout` | `GET` `PUT` | `app/routes/api/profile/layout.ts` |
 | `/api/profile/me` | `GET` | `app/routes/api/profile/me.ts` |
+| `/api/profile/plus` | `GET` `PUT` | `app/routes/api/profile/plus.ts` |
+| `/api/profile/pronunciation` | `DELETE` `POST` | `app/routes/api/profile/pronunciation.ts` |
 | `/api/profile/status` | `DELETE` `PUT` | `app/routes/api/profile/status.ts` |
+| `/api/profile/top-four` | `GET` `PUT` | `app/routes/api/profile/top-four.ts` |
 
 ## `/api/profile-links`
 
@@ -1426,6 +1436,18 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/staking/deposit` | `POST` | `app/routes/api/staking/deposit.ts` |
 | `/api/staking/withdraw` | `POST` | `app/routes/api/staking/withdraw.ts` |
 
+## `/api/stamps`
+
+5 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/stamps` | `GET` `POST` | `app/routes/api/stamps/index.ts` |
+| `/api/stamps/:id` | `DELETE` | `app/routes/api/stamps/$id.ts` |
+| `/api/stamps/:id/wall` | `DELETE` `POST` | `app/routes/api/stamps/$id/wall.ts` |
+| `/api/stamps/image/:filename` | `GET` | `app/routes/api/stamps/image/$filename.ts` |
+| `/api/stamps/mine` | `GET` | `app/routes/api/stamps/mine.ts` |
+
 ## `/api/storefront`
 
 4 routes.
@@ -1657,6 +1679,17 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/wager/:id/accept` | `POST` | `app/routes/api/wager/$id/accept.ts` |
 | `/api/wager/:id/cancel` | `POST` | `app/routes/api/wager/$id/cancel.ts` |
 | `/api/wager/:id/report` | `POST` | `app/routes/api/wager/$id/report.ts` |
+
+## `/api/webrings`
+
+4 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/webrings` | `GET` `POST` | `app/routes/api/webrings/index.ts` |
+| `/api/webrings/:slug` | `DELETE` `GET` | `app/routes/api/webrings/$slug.ts` |
+| `/api/webrings/:slug/hop` | `GET` | `app/routes/api/webrings/$slug/hop.ts` |
+| `/api/webrings/:slug/membership` | `DELETE` `POST` | `app/routes/api/webrings/$slug/membership.ts` |
 
 ## `/api/wheel`
 

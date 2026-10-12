@@ -219,7 +219,50 @@ export const COIN_FLOWS: readonly CoinFlow[] = [
     note: 'Discretionary. The only faucet with no rule behind it, which is why it is typed ADMIN.',
   },
 
+  {
+    id: 'community-goal-refund',
+    kind: 'faucet',
+    surface: '/wallet?tab=community — a goal that missed its deadline or was cancelled',
+    source: 'lib/economy/community-goal.server.ts',
+    bounded: false,
+    note: 'Returns exactly what was pledged, once per pledge (claimed refundedAt + ledger key); supply-neutral across the pair.',
+    pairsWith: 'community-goal-pledge',
+  },
+  {
+    id: 'scheduled-gift-refund',
+    kind: 'faucet',
+    surface: '/wallet?tab=gifts — a cancelled or undeliverable scheduled gift',
+    source: 'lib/gifting/scheduled-gift.server.ts',
+    bounded: false,
+    note: 'Refunds the price paid at send time, at most once (shared idempotency key); supply-neutral across the pair.',
+    pairsWith: 'scheduled-gift-payment',
+  },
+
   // ── Sinks ─────────────────────────────────────────────────────────────────
+  {
+    id: 'community-goal-pledge',
+    kind: 'sink',
+    surface: '/wallet?tab=community',
+    source: 'lib/economy/community-goal.server.ts',
+    bounded: false,
+    note: 'Escrowed against a site-wide goal; funded goals keep it (a true sink), missed ones refund it.',
+  },
+  {
+    id: 'scheduled-gift-payment',
+    kind: 'sink',
+    surface: '/wallet?tab=gifts — a store gift scheduled for a future date',
+    source: 'lib/gifting/scheduled-gift.server.ts',
+    bounded: false,
+    note: 'Paid at send time; the item is granted on delivery, or the payment refunded.',
+  },
+  {
+    id: 'daily-shop-bundle',
+    kind: 'sink',
+    surface: '/store?tab=daily — build-your-bundle',
+    source: 'lib/shop/daily-shop.server.ts',
+    bounded: false,
+    note: 'Three featured items at a discount, debited and granted in one transaction.',
+  },
   {
     id: 'shop-purchase',
     kind: 'sink',
