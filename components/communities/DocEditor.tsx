@@ -25,6 +25,7 @@ import ReactMarkdown from 'react-markdown';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { ReadabilityMeter } from '@/components/reading/ReadabilityMeter';
 import { cn } from '@/lib/utils';
 
 export interface DocDraft {
@@ -102,6 +103,8 @@ export function DocEditor({
           aria-label={t('doc-body-label', { defaultValue: 'Page content' })}
         />
       )}
+
+      {!preview ? <ReadabilityMeter text={body} /> : null}
 
       {askSummary ? (
         <Input

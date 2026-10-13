@@ -7,6 +7,7 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useAdminReviewCount } from '@/lib/useAdminReviewCount';
 import { AdminQotdLink } from '@/components/posts-plus/AdminQotdLink';
+import { AdminReadingLink } from '@/components/reading/admin/AdminReadingLink';
 
 export const Route = createFileRoute('/_site/admin/')({
   head: () => ({
@@ -214,6 +215,7 @@ function AdminDashboardPage() {
           </Link>
 
           <AdminQotdLink />
+          <AdminReadingLink />
         </div>
       </div>
     </PageLayout>

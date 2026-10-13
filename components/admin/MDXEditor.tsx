@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import ReactMarkdown from 'react-markdown';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { MarkdownEditor } from '@/components/admin/MarkdownEditor';
+import { ReadabilityMeter } from '@/components/reading/ReadabilityMeter';
 // The published article's own element map — importing it (rather than
 // re-listing a subset here, which is what this file used to do and which had
 // already fallen behind by six elements) is what makes this pane a preview.
@@ -339,6 +340,7 @@ export function MDXEditor({
                     })}
                   />
                 </div>
+                <ReadabilityMeter text={content} className="mt-3" />
               </div>
             </div>
           </ResizablePanel>
