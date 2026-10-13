@@ -588,7 +588,11 @@ import { Route as ApiRmhladderExportRouteImport } from './routes/api/rmhladder/e
 import { Route as ApiRmhladderImportRouteImport } from './routes/api/rmhladder/import'
 import { Route as ApiRmhladderPrepRouteImport } from './routes/api/rmhladder/prep'
 import { Route as ApiRmhladderSearchesRouteImport } from './routes/api/rmhladder/searches'
+import { Route as ApiRmhtubeCommentaryRouteImport } from './routes/api/rmhtube/commentary'
+import { Route as ApiRmhtubeHeatRouteImport } from './routes/api/rmhtube/heat'
 import { Route as ApiRmhtubeOembedRouteImport } from './routes/api/rmhtube/oembed'
+import { Route as ApiRmhtubeTimedCommentsRouteImport } from './routes/api/rmhtube/timed-comments'
+import { Route as ApiRmhtubeWatchLaterRouteImport } from './routes/api/rmhtube/watch-later'
 import { Route as ApiRmhtypeKeystatsRouteImport } from './routes/api/rmhtype/keystats'
 import { Route as ApiRmhtypePracticeTestRouteImport } from './routes/api/rmhtype/practice-test'
 import { Route as ApiSavesIndexRouteImport } from './routes/api/saves/index'
@@ -4021,9 +4025,29 @@ const ApiRmhladderSearchesRoute = ApiRmhladderSearchesRouteImport.update({
   path: '/api/rmhladder/searches',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRmhtubeCommentaryRoute = ApiRmhtubeCommentaryRouteImport.update({
+  id: '/api/rmhtube/commentary',
+  path: '/api/rmhtube/commentary',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRmhtubeHeatRoute = ApiRmhtubeHeatRouteImport.update({
+  id: '/api/rmhtube/heat',
+  path: '/api/rmhtube/heat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRmhtubeOembedRoute = ApiRmhtubeOembedRouteImport.update({
   id: '/api/rmhtube/oembed',
   path: '/api/rmhtube/oembed',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRmhtubeTimedCommentsRoute = ApiRmhtubeTimedCommentsRouteImport.update({
+  id: '/api/rmhtube/timed-comments',
+  path: '/api/rmhtube/timed-comments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRmhtubeWatchLaterRoute = ApiRmhtubeWatchLaterRouteImport.update({
+  id: '/api/rmhtube/watch-later',
+  path: '/api/rmhtube/watch-later',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRmhtypeKeystatsRoute = ApiRmhtypeKeystatsRouteImport.update({
@@ -7232,7 +7256,11 @@ export interface FileRoutesByFullPath {
   '/api/rmhladder/import': typeof ApiRmhladderImportRoute
   '/api/rmhladder/prep': typeof ApiRmhladderPrepRoute
   '/api/rmhladder/searches': typeof ApiRmhladderSearchesRoute
+  '/api/rmhtube/commentary': typeof ApiRmhtubeCommentaryRoute
+  '/api/rmhtube/heat': typeof ApiRmhtubeHeatRoute
   '/api/rmhtube/oembed': typeof ApiRmhtubeOembedRoute
+  '/api/rmhtube/timed-comments': typeof ApiRmhtubeTimedCommentsRoute
+  '/api/rmhtube/watch-later': typeof ApiRmhtubeWatchLaterRoute
   '/api/rmhtype/keystats': typeof ApiRmhtypeKeystatsRoute
   '/api/rmhtype/practice-test': typeof ApiRmhtypePracticeTestRoute
   '/api/saves/folders': typeof ApiSavesFoldersRouteWithChildren
@@ -8297,7 +8325,11 @@ export interface FileRoutesByTo {
   '/api/rmhladder/import': typeof ApiRmhladderImportRoute
   '/api/rmhladder/prep': typeof ApiRmhladderPrepRoute
   '/api/rmhladder/searches': typeof ApiRmhladderSearchesRoute
+  '/api/rmhtube/commentary': typeof ApiRmhtubeCommentaryRoute
+  '/api/rmhtube/heat': typeof ApiRmhtubeHeatRoute
   '/api/rmhtube/oembed': typeof ApiRmhtubeOembedRoute
+  '/api/rmhtube/timed-comments': typeof ApiRmhtubeTimedCommentsRoute
+  '/api/rmhtube/watch-later': typeof ApiRmhtubeWatchLaterRoute
   '/api/rmhtype/keystats': typeof ApiRmhtypeKeystatsRoute
   '/api/rmhtype/practice-test': typeof ApiRmhtypePracticeTestRoute
   '/api/saves/folders': typeof ApiSavesFoldersRouteWithChildren
@@ -9390,7 +9422,11 @@ export interface FileRoutesById {
   '/api/rmhladder/import': typeof ApiRmhladderImportRoute
   '/api/rmhladder/prep': typeof ApiRmhladderPrepRoute
   '/api/rmhladder/searches': typeof ApiRmhladderSearchesRoute
+  '/api/rmhtube/commentary': typeof ApiRmhtubeCommentaryRoute
+  '/api/rmhtube/heat': typeof ApiRmhtubeHeatRoute
   '/api/rmhtube/oembed': typeof ApiRmhtubeOembedRoute
+  '/api/rmhtube/timed-comments': typeof ApiRmhtubeTimedCommentsRoute
+  '/api/rmhtube/watch-later': typeof ApiRmhtubeWatchLaterRoute
   '/api/rmhtype/keystats': typeof ApiRmhtypeKeystatsRoute
   '/api/rmhtype/practice-test': typeof ApiRmhtypePracticeTestRoute
   '/api/saves/folders': typeof ApiSavesFoldersRouteWithChildren
@@ -10483,7 +10519,11 @@ export interface FileRouteTypes {
     | '/api/rmhladder/import'
     | '/api/rmhladder/prep'
     | '/api/rmhladder/searches'
+    | '/api/rmhtube/commentary'
+    | '/api/rmhtube/heat'
     | '/api/rmhtube/oembed'
+    | '/api/rmhtube/timed-comments'
+    | '/api/rmhtube/watch-later'
     | '/api/rmhtype/keystats'
     | '/api/rmhtype/practice-test'
     | '/api/saves/folders'
@@ -11548,7 +11588,11 @@ export interface FileRouteTypes {
     | '/api/rmhladder/import'
     | '/api/rmhladder/prep'
     | '/api/rmhladder/searches'
+    | '/api/rmhtube/commentary'
+    | '/api/rmhtube/heat'
     | '/api/rmhtube/oembed'
+    | '/api/rmhtube/timed-comments'
+    | '/api/rmhtube/watch-later'
     | '/api/rmhtype/keystats'
     | '/api/rmhtype/practice-test'
     | '/api/saves/folders'
@@ -12640,7 +12684,11 @@ export interface FileRouteTypes {
     | '/api/rmhladder/import'
     | '/api/rmhladder/prep'
     | '/api/rmhladder/searches'
+    | '/api/rmhtube/commentary'
+    | '/api/rmhtube/heat'
     | '/api/rmhtube/oembed'
+    | '/api/rmhtube/timed-comments'
+    | '/api/rmhtube/watch-later'
     | '/api/rmhtype/keystats'
     | '/api/rmhtype/practice-test'
     | '/api/saves/folders'
@@ -13526,7 +13574,11 @@ export interface RootRouteChildren {
   ApiRmhladderImportRoute: typeof ApiRmhladderImportRoute
   ApiRmhladderPrepRoute: typeof ApiRmhladderPrepRoute
   ApiRmhladderSearchesRoute: typeof ApiRmhladderSearchesRoute
+  ApiRmhtubeCommentaryRoute: typeof ApiRmhtubeCommentaryRoute
+  ApiRmhtubeHeatRoute: typeof ApiRmhtubeHeatRoute
   ApiRmhtubeOembedRoute: typeof ApiRmhtubeOembedRoute
+  ApiRmhtubeTimedCommentsRoute: typeof ApiRmhtubeTimedCommentsRoute
+  ApiRmhtubeWatchLaterRoute: typeof ApiRmhtubeWatchLaterRoute
   ApiRmhtypeKeystatsRoute: typeof ApiRmhtypeKeystatsRoute
   ApiRmhtypePracticeTestRoute: typeof ApiRmhtypePracticeTestRoute
   ApiSavesFoldersRoute: typeof ApiSavesFoldersRouteWithChildren
@@ -17937,11 +17989,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmhladderSearchesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/rmhtube/commentary': {
+      id: '/api/rmhtube/commentary'
+      path: '/api/rmhtube/commentary'
+      fullPath: '/api/rmhtube/commentary'
+      preLoaderRoute: typeof ApiRmhtubeCommentaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rmhtube/heat': {
+      id: '/api/rmhtube/heat'
+      path: '/api/rmhtube/heat'
+      fullPath: '/api/rmhtube/heat'
+      preLoaderRoute: typeof ApiRmhtubeHeatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/rmhtube/oembed': {
       id: '/api/rmhtube/oembed'
       path: '/api/rmhtube/oembed'
       fullPath: '/api/rmhtube/oembed'
       preLoaderRoute: typeof ApiRmhtubeOembedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rmhtube/timed-comments': {
+      id: '/api/rmhtube/timed-comments'
+      path: '/api/rmhtube/timed-comments'
+      fullPath: '/api/rmhtube/timed-comments'
+      preLoaderRoute: typeof ApiRmhtubeTimedCommentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rmhtube/watch-later': {
+      id: '/api/rmhtube/watch-later'
+      path: '/api/rmhtube/watch-later'
+      fullPath: '/api/rmhtube/watch-later'
+      preLoaderRoute: typeof ApiRmhtubeWatchLaterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/rmhtype/keystats': {
@@ -23798,7 +23878,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhladderImportRoute: ApiRmhladderImportRoute,
   ApiRmhladderPrepRoute: ApiRmhladderPrepRoute,
   ApiRmhladderSearchesRoute: ApiRmhladderSearchesRoute,
+  ApiRmhtubeCommentaryRoute: ApiRmhtubeCommentaryRoute,
+  ApiRmhtubeHeatRoute: ApiRmhtubeHeatRoute,
   ApiRmhtubeOembedRoute: ApiRmhtubeOembedRoute,
+  ApiRmhtubeTimedCommentsRoute: ApiRmhtubeTimedCommentsRoute,
+  ApiRmhtubeWatchLaterRoute: ApiRmhtubeWatchLaterRoute,
   ApiRmhtypeKeystatsRoute: ApiRmhtypeKeystatsRoute,
   ApiRmhtypePracticeTestRoute: ApiRmhtypePracticeTestRoute,
   ApiSavesFoldersRoute: ApiSavesFoldersRouteWithChildren,

@@ -13,6 +13,8 @@ import { authClient } from '@/lib/auth-client';
 import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
 import type { PeerWaitState } from '@/lib/shared/realtime/types';
 import { useRmhTubeStore } from './store';
+import { usePartyStore } from './party-store';
+import type { PartyState } from './party';
 import { C2S, S2C } from './events';
 import { toast } from './toast-store';
 import { recordPong, beginClockSyncBurst, resetClock } from './clock';
@@ -144,6 +146,8 @@ function registerHandlers(socket: Socket) {
   // `applyVideoState` checks.
   socket.on(S2C.SYNC_STATE, (videoState: VideoState) => store().applyVideoState(videoState));
 
+  socket.on(S2C.PARTY_STATE, (state: PartyState) => usePartyStore.getState().setParty(state));
+
   // ─── Chat ─────────────────────────────────────────────────────────────
   socket.on(S2C.CHAT_TYPING_INDICATOR, (data: { userId: string; userName: string }) => {
     const room = store().room;
@@ -234,6 +238,7 @@ export function disconnectFromRmhTube(): void {
   client?.destroy();
   client = null;
   store().reset();
+  usePartyStore.getState().reset();
 }
 
 export function emit(event: string, data?: unknown, options?: { queue?: boolean }): boolean {

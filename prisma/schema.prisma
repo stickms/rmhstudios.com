@@ -447,6 +447,10 @@ model User {
   pf2eSettingsEdits   Pf2eSettings[]        @relation("Pf2eSettingsEditor")
 
   // ─── Feature ideas 2026-10-12 (docs/plans/2026-10-12-feature-ideas-every-surface.md)
+  // P20 watch parties: F1 timed comments, F17 watch later, T5 commentary tracks
+  rmhtubeTimedComments       RmhTubeTimedComment[]
+  rmhtubeWatchLater          RmhTubeWatchLater[]
+  rmhtubeCommentaryTracks    RmhTubeCommentaryTrack[]
   // P11 gifting: G1 birthdays, G2 advent, G3 gift exchange, G4 kudos, F2 mixtape exchange
   birthday                   UserBirthday?
   adventClaims               AdventClaim[]
@@ -11352,4 +11356,62 @@ model Kudos {
   @@index([toId, createdAt(sort: Desc)])
   @@index([fromId, createdAt])
   @@map("kudos")
+}
+
+// ── P20 watch parties: F1, F17, T3, T5 ──
+// Comments pinned to a media timestamp, keyed by the media URL.
+model RmhTubeTimedComment {
+  id        String   @id @default(cuid())
+  mediaUrl  String   @db.VarChar(1024)
+  userId    String
+  atSec     Int
+  body      String   @db.VarChar(200)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([mediaUrl, atSec])
+  @@index([userId])
+  @@map("rmhtube_timed_comment")
+}
+
+// A member's personal "watch later" queue.
+model RmhTubeWatchLater {
+  id        String   @id @default(cuid())
+  userId    String
+  url       String   @db.VarChar(1024)
+  title     String   @db.VarChar(256)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, url])
+  @@index([userId, createdAt])
+  @@map("rmhtube_watch_later")
+}
+
+// Reactions + rewinds per 10 s bucket of a media URL (batched in from the hub).
+model RmhTubeHeatBucket {
+  mediaUrl String @db.VarChar(1024)
+  bucket   Int
+  count    Int    @default(0)
+
+  @@id([mediaUrl, bucket])
+  @@map("rmhtube_heat_bucket")
+}
+
+// A recorded text commentary track: `lines` is [{ t: seconds, text }].
+model RmhTubeCommentaryTrack {
+  id        String   @id @default(cuid())
+  mediaUrl  String   @db.VarChar(1024)
+  userId    String
+  title     String   @db.VarChar(80)
+  lines     Json
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([mediaUrl, createdAt])
+  @@index([userId])
+  @@map("rmhtube_commentary_track")
 }
