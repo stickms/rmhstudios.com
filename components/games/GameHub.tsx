@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { EmptyState } from '@/components/ui/empty-state';
 import { StarRating } from './StarRating';
+import { GameTracker } from '@/components/arcade/GameTracker';
 import type { ReviewView, RatingAgg, GuideSummary } from '@/lib/games/reviews';
 
 interface GameHubData {
@@ -119,6 +120,8 @@ export function GameHub({ data }: { data: GameHubData }) {
           </a>
         </Button>
       </Card>
+
+      <GameTracker gameId={data.gameId} signedIn={data.signedIn} />
 
       {/* Your review */}
       {data.signedIn ? (

@@ -24,6 +24,8 @@ import { TitleScreen, CharacterSelect, LobbyBrowser, LobbyRoom } from './Menus';
 import { ResultScreen } from './Results';
 import { Leaderboard } from './Leaderboard';
 import { SettingsScreen } from './SettingsScreen';
+import { planRun, useArcadeRun } from '@/lib/arcade/run-client';
+import { ChallengeNotice } from '@/components/arcade/ChallengeNotice';
 
 function randomSeed(): number {
     return Math.floor(Math.random() * 0x7fffffff) || 1;
@@ -75,13 +77,19 @@ function ScreenRouter() {
     }, [invite, setMode, setScreen]);
 
     const startSingle = useCallback(
-        (char: PlayerId, difficulty: Difficulty) => {
+        async (pickedChar: PlayerId, pickedDifficulty: Difficulty) => {
             const name = session.data?.user?.name || 'Dreamer';
+            // A seed link or the daily mutator fixes the seed and may force difficulty + character.
+            const plan = await planRun('dream-rift', `${pickedDifficulty}-${pickedChar}`);
+            const char = (plan.options?.character as PlayerId | undefined) ?? pickedChar;
+            const difficulty = (plan.options?.difficulty as Difficulty | undefined) ?? pickedDifficulty;
+            const seed = plan.kind === 'free' ? randomSeed() : plan.seed;
+            if (plan.kind === 'free') useArcadeRun.getState().set({ ...plan, seed });
             setStartInfo({
                 transport: new LocalTransport(),
                 roster: [{ slot: 0, userId: session.data?.user?.id || 'local', name, charId: char, isHost: true, isLocal: true }],
                 difficulty,
-                seed: randomSeed(),
+                seed,
             });
             setMode('single');
             setResult(null);
@@ -109,7 +117,12 @@ function ScreenRouter() {
             setScreen('lobby-browser');
             setStartInfo(null);
         } else if (startInfo) {
-            setStartInfo({ ...startInfo, transport: new LocalTransport(), seed: randomSeed() });
+            // A seed/daily challenge replays its own seed; a free run gets a fresh one.
+            const run = useArcadeRun.getState().run;
+            const seed = run && run.kind !== 'free' ? run.seed : randomSeed();
+            if (run && run.kind === 'daily') useArcadeRun.getState().set({ ...run, counted: false });
+            else if (run) useArcadeRun.getState().set({ ...run, seed });
+            setStartInfo({ ...startInfo, transport: new LocalTransport(), seed });
             useDreamRift.getState().setPaused(false);
             setScreen('playing');
         }
@@ -159,6 +172,7 @@ function ScreenRouter() {
 
     return (
         <div className="fixed inset-0 h-[100dvh] w-screen overflow-hidden bg-black text-white">
+            <ChallengeNotice />
             <div className="h-full w-full overflow-auto">{body}</div>
             {showExit && (
                 <button type="button" onClick={fullExit} className="dr-serif absolute right-3 top-3 z-50 rounded-sm border border-[rgba(231,205,140,0.3)] bg-black/40 px-3 py-1.5 text-xs tracking-wider text-[color:var(--dr-cream-dim)] backdrop-blur transition hover:border-[rgba(231,205,140,0.6)] hover:text-[color:var(--dr-cream)]">

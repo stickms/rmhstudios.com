@@ -55,6 +55,7 @@ import { CommandPaletteMount } from '@/components/site/CommandPaletteMount';
 import { CallMount } from '@/components/call/CallMount';
 import { ThemePreviewBar } from '@/components/themes/ThemePreviewBar';
 import { RecentsTracker } from '@/components/site/RecentsTracker';
+import { PatchNotesMount } from '@/components/arcade/PatchNotesMount';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
 import { ConfirmProvider } from '@/components/ui/confirm-dialog';
 import type { Locale } from '@/lib/i18n/config';
@@ -927,6 +928,7 @@ export function Providers({
                   <SilentErrorBoundary label="global-chrome">
                     <CommandPaletteMount />
                     <RecentsTracker />
+                    <PatchNotesMount />
                     {/* §14: the floating try-before-buy / preview-on-site confirm bar,
                         mounted globally so it survives navigation under a previewed theme. */}
                     <ThemePreviewBar />

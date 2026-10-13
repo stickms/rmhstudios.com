@@ -19,6 +19,7 @@ import { runProgression, type ProgressionJob } from '@/lib/social/engagement-eff
 import { registerEventReminderWorker } from '@/lib/events.server';
 import { registerDigestCron } from '@/lib/digest/pipeline.server';
 import { registerMaintenanceCrons } from '@/lib/jobs/maintenance.server';
+import { registerArcadeCrons } from '@/lib/arcade/jobs.server';
 import { registerEconomyCrons } from '@/lib/economy/jobs.server';
 import { registerCommunityCrons } from '@/lib/communities/jobs.server';
 import { registerGiftingCrons } from '@/lib/gifting/jobs.server';
@@ -169,6 +170,13 @@ async function main() {
       queue: 'platform.maintenance',
       err: (e as Error)?.message,
     });
+  }
+
+  try {
+    await registerArcadeCrons(boss);
+    log.info({ event: 'jobs.started', queue: 'arcade.rivals' });
+  } catch (e) {
+    log.error({ event: 'jobs.register_failed', queue: 'arcade.rivals', err: (e as Error)?.message });
   }
 
   // Economy-plus (2026-10-12 batch): community goal deadlines + refunds (C5),

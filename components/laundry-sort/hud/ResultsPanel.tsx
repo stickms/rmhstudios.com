@@ -16,6 +16,8 @@ import { Medal, RotateCcw, Home, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useLaundryStore } from '@/lib/laundry-sort/store';
+import { RunPanel } from '@/components/arcade/RunPanel';
+import { useSession } from '@/components/Providers';
 import { laundryNet } from '@/lib/laundry-sort/net/client';
 
 const PLACE_COLOR = ['var(--ls-warn)', '#cbd5e1', '#d08a52'];
@@ -33,6 +35,8 @@ export function ResultsPanel({
   const soloResult = useLaundryStore((s) => s.soloResult);
   const selfSocketId = useLaundryStore((s) => s.selfSocketId);
   const lobby = useLaundryStore((s) => s.lobby);
+  const { data: session } = useSession();
+  const signedIn = Boolean(session?.user?.id);
 
   const isVersus = mode === 'versus' && results !== null;
 
@@ -134,6 +138,11 @@ export function ResultsPanel({
                   })}
                 </p>
               ) : null}
+              <RunPanel
+                score={soloResult.stats.score}
+                detail={{ sorted: soloResult.stats.sorted }}
+                signedIn={signedIn}
+              />
             </div>
           ) : null}
 
