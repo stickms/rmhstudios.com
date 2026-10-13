@@ -30,6 +30,7 @@ import { useFreshUser } from'@/stores/userDisplayStore';
 import { relativeTimeShort } from'@/lib/utils';
 import { RelativeTime } from'@/components/ui/RelativeTime';
 import { EditHistoryButton } from'./EditHistory';
+import { FlairChip } from'@/components/communities/FlairChip';
 import { useTranslation } from'react-i18next';
 import { useLocaleStore } from'@/stores/localeStore';
 import { LOCALE_TO_LANGUAGE_NAME } from'@/lib/i18n/config';
@@ -381,6 +382,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  />
  ) : (
  <>
+ {item.communityFlair && <FlairChip flair={item.communityFlair} className="mt-1.5"/>}
  {/* Content */}
  {item.content && (
  <RMHarkContent

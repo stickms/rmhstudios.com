@@ -11,6 +11,9 @@ import { createComment } from '@/lib/social/engagement.server';
 import { groupReactions } from '@/lib/social/reactions';
 import { canReplyToPost, type ReplyControl } from '@/lib/feed/reply-control.server';
 import { decodeCursor, encodeCursor, keysetWhere, type FeedCursor } from '@/lib/feed/cursor';
+import { gateCommunityContent, logRemoved } from '@/lib/communities/gate.server';
+import { recordModItem } from '@/lib/communities/automod.server';
+import { derivePostKind } from '@/lib/communities/automod';
 
 /** Top-level comments returned per page (keyset-paginated, newest-first). */
 const TOP_LEVEL_PAGE = 20;
@@ -258,7 +261,7 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
           // always reply to their own post.
           const target = await prisma.rMHark.findUnique({
             where: { id },
-            select: { userId: true, replyControl: true, content: true },
+            select: { userId: true, replyControl: true, content: true, communityId: true },
           });
           if (!target) {
             return Response.json({ error: 'Post not found' }, { status: 404 });
@@ -278,6 +281,84 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
             );
           }
 
+          // Community gate (S2 verification, N4 AutoMod) for comments on a
+          // community's posts.
+          let flagRule: string | null = null;
+          if (target.communityId) {
+            const gate = await gateCommunityContent({
+              communityId: target.communityId,
+              userId: session.user.id,
+              target: 'comment',
+              content: input.content,
+              postKind: derivePostKind({ content: input.content }),
+            });
+            if (gate.kind === 'deny') {
+              return Response.json({ error: gate.error, code: gate.code }, { status: gate.status });
+            }
+            if (gate.kind === 'remove') {
+              await logRemoved({
+                communityId: target.communityId,
+                entityType: 'comment',
+                postId: id,
+                authorId: session.user.id,
+                ruleName: gate.ruleName,
+                content: input.content,
+              });
+              return Response.json(
+                {
+                  error: `Your comment was removed by this community's AutoMod rule "${gate.ruleName}".`,
+                  code: 'automod_removed',
+                },
+                { status: 422 },
+              );
+            }
+            if (gate.kind === 'hold') {
+              // A held comment does not exist yet: the text waits in the mod queue
+              // and is created (with its notifications) only if a mod approves it.
+              const itemId = await recordModItem({
+                communityId: target.communityId,
+                entityType: 'comment',
+                entityId: null,
+                postId: id,
+                authorId: session.user.id,
+                action: 'hold',
+                ruleName: gate.ruleName,
+                snapshot: input.content,
+                payload: { content: input.content.trim(), parentId: input.parentId ?? null },
+              });
+              const author = await prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: userDisplaySelect,
+              });
+              return Response.json(
+                {
+                  id: `held_${itemId}`,
+                  content: input.content.trim(),
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                  rmheetId: id,
+                  parentId: input.parentId ?? null,
+                  userId: session.user.id,
+                  user: author ? resolveUser(author) : undefined,
+                  likeCount: 0,
+                  repostCount: 0,
+                  viewCount: 0,
+                  replyCount: 0,
+                  liked: false,
+                  reposted: false,
+                  replies: [],
+                  deletedAt: null,
+                  deletedByAdmin: false,
+                  reactions: [],
+                  pending: true,
+                  held: true,
+                },
+                { status: 201 },
+              );
+            }
+            if (gate.kind === 'allow' && gate.flag) flagRule = gate.flag.ruleName;
+          }
+
           // Delegate to the shared engagement service (counters, SSE, notifications,
           // mention fan-out, XP, quests, achievements, and webhooks all live there).
           const result = await createComment({
@@ -290,6 +371,19 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
             return Response.json({ error: 'Post not found' }, { status: 404 });
           }
           const comment = result.comment;
+
+          if (target.communityId && flagRule) {
+            await recordModItem({
+              communityId: target.communityId,
+              entityType: 'comment',
+              entityId: comment.id,
+              postId: id,
+              authorId: session.user.id,
+              action: 'flag',
+              ruleName: flagRule,
+              snapshot: comment.content,
+            }).catch((e) => console.error('automod queue error:', e));
+          }
 
           // Maintain the parent comment's denormalized reply tally when this is a
           // reply. Atomic column increment (best-effort — the counter is reconciled

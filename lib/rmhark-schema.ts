@@ -90,6 +90,9 @@ export const createRMHarkSchema = z
     communityId: z.string().max(64).optional(),
     // Take meter (X6): readers vote agree/disagree; the split shows after voting.
     isTake: z.boolean().optional(),
+    // P06 communities-plus: flair (N1) and challenge entry (N5); community posts only.
+    flairId: z.string().max(64).optional(),
+    challengeId: z.string().max(64).optional(),
   })
   .refine(
     (data) =>
