@@ -103,23 +103,39 @@ const PAGE = 30;
 
 export async function listSaves(
   userId: string,
-  opts: { folderId?: string | null | 'default'; type?: SaveEntityType; cursor?: string } = {},
+  opts: {
+    folderId?: string | null | 'default';
+    type?: SaveEntityType;
+    cursor?: string;
+    /** X9: case-insensitive match against the owner's notes. */
+    q?: string;
+  } = {},
 ): Promise<ListSavesResult> {
   const where: {
     userId: string;
     folderId?: string | null;
     entityType?: SaveEntityType;
+    note?: { contains: string; mode: 'insensitive' };
   } = { userId };
   if (opts.folderId === 'default') where.folderId = null;
   else if (opts.folderId) where.folderId = opts.folderId;
   if (opts.type) where.entityType = opts.type;
+  const q = opts.q?.trim().slice(0, 100);
+  if (q) where.note = { contains: q, mode: 'insensitive' };
 
   const rows = await prisma.savedItem.findMany({
     where,
     orderBy: { createdAt: 'desc' },
     take: PAGE + 1,
     ...(opts.cursor ? { cursor: { id: opts.cursor }, skip: 1 } : {}),
-    select: { id: true, entityType: true, entityId: true, folderId: true, createdAt: true },
+    select: {
+      id: true,
+      entityType: true,
+      entityId: true,
+      folderId: true,
+      createdAt: true,
+      note: true,
+    },
   });
 
   const hasMore = rows.length > PAGE;
@@ -134,6 +150,7 @@ type SavedRow = {
   entityId: string;
   folderId: string | null;
   createdAt: Date;
+  note?: string | null;
 };
 
 /**
@@ -199,6 +216,7 @@ export async function hydrateSaves(
       entityId: r.entityId,
       folderId: r.folderId,
       createdAt: r.createdAt.toISOString(),
+      note: r.note ?? null,
     };
     if (r.entityType === 'rmhark') {
       const p = postMap.get(r.entityId);
@@ -232,4 +250,23 @@ export async function hydrateSaves(
     // Types without a hydrator yet (song/tube_video/…) — render a neutral card.
     return { ...base, title: '', subtitle: null, href: null, thumbnail: null, tombstone: true };
   });
+}
+
+/**
+ * X9: set (or clear, with null) the private note on one of the caller's saves.
+ * `updateMany` scoped by `userId` is the ownership check - a note can never be
+ * written to, or read back from, someone else's row.
+ */
+export async function setSaveNote(
+  userId: string,
+  entityType: SaveEntityType,
+  entityId: string,
+  note: string | null,
+): Promise<boolean> {
+  const clean = note?.trim() ? note.trim().slice(0, 500) : null;
+  const res = await prisma.savedItem.updateMany({
+    where: { userId, entityType, entityId },
+    data: { note: clean },
+  });
+  return res.count > 0;
 }

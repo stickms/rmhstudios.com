@@ -201,6 +201,8 @@ export function mapRmharkToFeedItem(
     isSensitive: r.isSensitive ?? false,
     replyControl: r.replyControl ?? 'EVERYONE',
     isTake: r.isTake || undefined,
+    seriesId: r.seriesId ?? undefined,
+    expiresAt: r.expiresAt?.toISOString(),
     reactions: reactionsOverride ?? groupReactions(r.reactions ?? [], viewerId),
     threadReplyCount: r.threadReplyCount ?? 0,
   };

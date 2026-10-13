@@ -2,6 +2,7 @@ import { z } from "zod";
 import { isFeedImageUrl } from "@/lib/storage/keys";
 
 import { MAX_RMHARK_LENGTH } from "@/lib/rmhark-limits";
+import { postsPlusComposeFields } from "@/lib/posts-plus/constants";
 
 export { MAX_RMHARK_LENGTH };
 export const MAX_RMHARK_IMAGES = 4;
@@ -90,6 +91,8 @@ export const createRMHarkSchema = z
     communityId: z.string().max(64).optional(),
     // Take meter (X6): readers vote agree/disagree; the split shows after voting.
     isTake: z.boolean().optional(),
+    // posts-plus: X8 expiry (ttl), X5 series, X4 question-of-the-day answer.
+    ...postsPlusComposeFields,
   })
   .refine(
     (data) =>

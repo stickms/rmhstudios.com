@@ -95,6 +95,10 @@ export interface FeedItem {
   replyControl?: "EVERYONE" | "FOLLOWING" | "MENTIONED";
   /** Take meter (X6): readers vote agree/disagree. The split is NOT in the payload. */
   isTake?: boolean;
+  /** posts-plus X5: id of the series this post is a part of (details load lazily). */
+  seriesId?: string;
+  /** posts-plus X8: ISO time after which the post disappears (author-chosen TTL). */
+  expiresAt?: string;
 
   /** Grouped-by-emoji reaction summary (server-side via `groupReactions`). */
   reactions?: ReactionSummary[];
