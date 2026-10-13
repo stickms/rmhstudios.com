@@ -24,6 +24,7 @@ import type { FeedItem } from'@/lib/feed-types';
 import { RMHarkContent, extractFirstUrl } from'./RMHarkContent';
 import { PollDisplay } from'./PollDisplay';
 import { TakeMeterLazy } from'./TakeMeterLazy';
+import { PostPlusBadges } from'@/components/posts-plus/PostPlusBadges';
 import { GifEmbed } from'./GifEmbed';
 import { PostImageGrid } from'./PostImageGrid';
 import { SensitiveMedia } from'./SensitiveMedia';
@@ -384,6 +385,16 @@ export function PostDetail({ postId }: PostDetailProps) {
  <div className="mb-3">
  <TakeMeterLazy postId={postId} />
  </div>
+ )}
+
+ {/* Series part (X5) and auto-delete (X8) badges */}
+ {!post.locked && (
+ <PostPlusBadges
+ postId={postId}
+ seriesId={post.seriesId}
+ expiresAt={post.expiresAt}
+ className="mb-3"
+ />
  )}
 
  {/* Image / GIF — hidden behind a content warning when marked sensitive.

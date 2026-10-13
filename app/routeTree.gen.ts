@@ -95,6 +95,7 @@ import { Route as SitePlaylistsRouteImport } from './routes/_site/playlists'
 import { Route as SitePredictionsRouteImport } from './routes/_site/predictions'
 import { Route as SitePricingRouteImport } from './routes/_site/pricing'
 import { Route as SiteProgressRouteImport } from './routes/_site/progress'
+import { Route as SiteQotdRouteImport } from './routes/_site/qotd'
 import { Route as SiteQuotesRouteImport } from './routes/_site/quotes'
 import { Route as SiteRankedRouteImport } from './routes/_site/ranked'
 import { Route as SiteRecapRouteImport } from './routes/_site/recap'
@@ -218,6 +219,7 @@ import { Route as SiteAdminLibraryRouteImport } from './routes/_site/admin/libra
 import { Route as SiteAdminLibraryQuotaRouteImport } from './routes/_site/admin/library-quota'
 import { Route as SiteAdminLibraryStorageRouteImport } from './routes/_site/admin/library-storage'
 import { Route as SiteAdminPredictionsRouteImport } from './routes/_site/admin/predictions'
+import { Route as SiteAdminQotdRouteImport } from './routes/_site/admin/qotd'
 import { Route as SiteAdminRedemptionsRouteImport } from './routes/_site/admin/redemptions'
 import { Route as SiteAdminReportsRouteImport } from './routes/_site/admin/reports'
 import { Route as SiteAdminRideshareRouteImport } from './routes/_site/admin/rideshare'
@@ -278,6 +280,8 @@ import { Route as SiteRmhladderResumeRouteImport } from './routes/_site/rmhladde
 import { Route as SiteRmhladderReviewRouteImport } from './routes/_site/rmhladder/review'
 import { Route as SiteRmhladderSettingsRouteImport } from './routes/_site/rmhladder/settings'
 import { Route as SiteSavesIndexRouteImport } from './routes/_site/saves/index'
+import { Route as SiteSeriesIndexRouteImport } from './routes/_site/series.index'
+import { Route as SiteSeriesIdRouteImport } from './routes/_site/series.$id'
 import { Route as SiteServicesIndexRouteImport } from './routes/_site/services/index'
 import { Route as SiteServicesCarsRouteImport } from './routes/_site/services/cars'
 import { Route as SiteServicesFashionRouteImport } from './routes/_site/services/fashion'
@@ -506,6 +510,9 @@ import { Route as ApiPromoFreeMonthRouteImport } from './routes/api/promo/free-m
 import { Route as ApiPushActionRouteImport } from './routes/api/push/action'
 import { Route as ApiPushPublicKeyRouteImport } from './routes/api/push/public-key'
 import { Route as ApiPushSubscribeRouteImport } from './routes/api/push/subscribe'
+import { Route as ApiQotdAnswersRouteImport } from './routes/api/qotd/answers'
+import { Route as ApiQotdArchiveRouteImport } from './routes/api/qotd/archive'
+import { Route as ApiQotdTodayRouteImport } from './routes/api/qotd/today'
 import { Route as ApiRankedIndexRouteImport } from './routes/api/ranked/index'
 import { Route as ApiRecommendIndexRouteImport } from './routes/api/recommend/index'
 import { Route as ApiRecommendFeedbackRouteImport } from './routes/api/recommend/feedback'
@@ -548,13 +555,18 @@ import { Route as ApiRmhtypeKeystatsRouteImport } from './routes/api/rmhtype/key
 import { Route as ApiRmhtypePracticeTestRouteImport } from './routes/api/rmhtype/practice-test'
 import { Route as ApiSavesIndexRouteImport } from './routes/api/saves/index'
 import { Route as ApiSavesFoldersRouteImport } from './routes/api/saves/folders'
+import { Route as ApiSavesNoteRouteImport } from './routes/api/saves/note'
 import { Route as ApiScheduleIndexRouteImport } from './routes/api/schedule/index'
 import { Route as ApiScheduleAdminRouteImport } from './routes/api/schedule/admin'
 import { Route as ApiScheduledIndexRouteImport } from './routes/api/scheduled/index'
 import { Route as ApiScheduledIdRouteImport } from './routes/api/scheduled/$id'
+import { Route as ApiScheduledCapsulesRouteImport } from './routes/api/scheduled/capsules'
 import { Route as ApiSearchSavedRouteImport } from './routes/api/search/saved'
+import { Route as ApiSeriesIndexRouteImport } from './routes/api/series/index'
+import { Route as ApiSeriesIdRouteImport } from './routes/api/series/$id'
 import { Route as ApiServicesRebarReservationsRouteImport } from './routes/api/services/rebar-reservations'
 import { Route as ApiSettingsAltTextRouteImport } from './routes/api/settings/alt-text'
+import { Route as ApiSettingsAutoDeleteRouteImport } from './routes/api/settings/auto-delete'
 import { Route as ApiSettingsEmailDigestRouteImport } from './routes/api/settings/email-digest'
 import { Route as ApiSettingsGameAssistsRouteImport } from './routes/api/settings/game-assists'
 import { Route as ApiSettingsPlayLimitsRouteImport } from './routes/api/settings/play-limits'
@@ -688,6 +700,8 @@ import { Route as ApiAdminLibraryQuotaRequestsRouteImport } from './routes/api/a
 import { Route as ApiAdminLibraryReorderRouteImport } from './routes/api/admin/library/reorder'
 import { Route as ApiAdminLibraryStorageHealthRouteImport } from './routes/api/admin/library/storage-health'
 import { Route as ApiAdminPredictionsIndexRouteImport } from './routes/api/admin/predictions/index'
+import { Route as ApiAdminQotdIndexRouteImport } from './routes/api/admin/qotd/index'
+import { Route as ApiAdminQotdIdRouteImport } from './routes/api/admin/qotd/$id'
 import { Route as ApiAdminRedemptionsIndexRouteImport } from './routes/api/admin/redemptions/index'
 import { Route as ApiAdminRedemptionsIdRouteImport } from './routes/api/admin/redemptions/$id'
 import { Route as ApiAdminReportsIdRouteImport } from './routes/api/admin/reports/$id'
@@ -846,6 +860,9 @@ import { Route as ApiRmhtubeSubscribeChannelIdRouteImport } from './routes/api/r
 import { Route as ApiSavesFoldersIdRouteImport } from './routes/api/saves/folders.$id'
 import { Route as ApiScheduledIdPublishRouteImport } from './routes/api/scheduled/$id/publish'
 import { Route as ApiSearchSavedIdRouteImport } from './routes/api/search/saved.$id'
+import { Route as ApiSeriesIdFollowRouteImport } from './routes/api/series/$id/follow'
+import { Route as ApiSeriesIdPostsRouteImport } from './routes/api/series/$id/posts'
+import { Route as ApiSeriesPostPostIdRouteImport } from './routes/api/series/post/$postId'
 import { Route as ApiShopLoadoutsIndexRouteImport } from './routes/api/shop/loadouts/index'
 import { Route as ApiSliceItAdminContentRouteImport } from './routes/api/slice-it/admin/content'
 import { Route as ApiSliceItAdminReviewRouteImport } from './routes/api/slice-it/admin/review'
@@ -954,6 +971,7 @@ import { Route as ApiRmhladderResumeIdAnalyzeRouteImport } from './routes/api/rm
 import { Route as ApiRmhladderResumeIdConfirmRouteImport } from './routes/api/rmhladder/resume/$id/confirm'
 import { Route as ApiRmhmusicGuessIdIndexRouteImport } from './routes/api/rmhmusic/guess/$id/index'
 import { Route as ApiRmhmusicGuessIdAttemptRouteImport } from './routes/api/rmhmusic/guess/$id/attempt'
+import { Route as ApiSeriesIdPostsPostIdRouteImport } from './routes/api/series/$id/posts/$postId'
 import { Route as ApiShopLoadoutsIdIndexRouteImport } from './routes/api/shop/loadouts/$id/index'
 import { Route as ApiShopLoadoutsIdApplyRouteImport } from './routes/api/shop/loadouts/$id/apply'
 import { Route as ApiSliceItChartsIdReviewsRouteImport } from './routes/api/slice-it/charts/$id/reviews'
@@ -1420,6 +1438,11 @@ const SitePricingRoute = SitePricingRouteImport.update({
 const SiteProgressRoute = SiteProgressRouteImport.update({
   id: '/progress',
   path: '/progress',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteQotdRoute = SiteQotdRouteImport.update({
+  id: '/qotd',
+  path: '/qotd',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteQuotesRoute = SiteQuotesRouteImport.update({
@@ -2037,6 +2060,11 @@ const SiteAdminPredictionsRoute = SiteAdminPredictionsRouteImport.update({
   path: '/predictions',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
+const SiteAdminQotdRoute = SiteAdminQotdRouteImport.update({
+  id: '/qotd',
+  path: '/qotd',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
 const SiteAdminRedemptionsRoute = SiteAdminRedemptionsRouteImport.update({
   id: '/redemptions',
   path: '/redemptions',
@@ -2341,6 +2369,16 @@ const SiteRmhladderSettingsRoute = SiteRmhladderSettingsRouteImport.update({
 const SiteSavesIndexRoute = SiteSavesIndexRouteImport.update({
   id: '/saves/',
   path: '/saves/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteSeriesIndexRoute = SiteSeriesIndexRouteImport.update({
+  id: '/series/',
+  path: '/series/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteSeriesIdRoute = SiteSeriesIdRouteImport.update({
+  id: '/series/$id',
+  path: '/series/$id',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteServicesIndexRoute = SiteServicesIndexRouteImport.update({
@@ -3502,6 +3540,21 @@ const ApiPushSubscribeRoute = ApiPushSubscribeRouteImport.update({
   path: '/api/push/subscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiQotdAnswersRoute = ApiQotdAnswersRouteImport.update({
+  id: '/api/qotd/answers',
+  path: '/api/qotd/answers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiQotdArchiveRoute = ApiQotdArchiveRouteImport.update({
+  id: '/api/qotd/archive',
+  path: '/api/qotd/archive',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiQotdTodayRoute = ApiQotdTodayRouteImport.update({
+  id: '/api/qotd/today',
+  path: '/api/qotd/today',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRankedIndexRoute = ApiRankedIndexRouteImport.update({
   id: '/api/ranked/',
   path: '/api/ranked/',
@@ -3712,6 +3765,11 @@ const ApiSavesFoldersRoute = ApiSavesFoldersRouteImport.update({
   path: '/api/saves/folders',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSavesNoteRoute = ApiSavesNoteRouteImport.update({
+  id: '/api/saves/note',
+  path: '/api/saves/note',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiScheduleIndexRoute = ApiScheduleIndexRouteImport.update({
   id: '/api/schedule/',
   path: '/api/schedule/',
@@ -3732,10 +3790,25 @@ const ApiScheduledIdRoute = ApiScheduledIdRouteImport.update({
   path: '/api/scheduled/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiScheduledCapsulesRoute = ApiScheduledCapsulesRouteImport.update({
+  id: '/api/scheduled/capsules',
+  path: '/api/scheduled/capsules',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSearchSavedRoute = ApiSearchSavedRouteImport.update({
   id: '/saved',
   path: '/saved',
   getParentRoute: () => ApiSearchRoute,
+} as any)
+const ApiSeriesIndexRoute = ApiSeriesIndexRouteImport.update({
+  id: '/api/series/',
+  path: '/api/series/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSeriesIdRoute = ApiSeriesIdRouteImport.update({
+  id: '/api/series/$id',
+  path: '/api/series/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiServicesRebarReservationsRoute =
   ApiServicesRebarReservationsRouteImport.update({
@@ -3746,6 +3819,11 @@ const ApiServicesRebarReservationsRoute =
 const ApiSettingsAltTextRoute = ApiSettingsAltTextRouteImport.update({
   id: '/api/settings/alt-text',
   path: '/api/settings/alt-text',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSettingsAutoDeleteRoute = ApiSettingsAutoDeleteRouteImport.update({
+  id: '/api/settings/auto-delete',
+  path: '/api/settings/auto-delete',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSettingsEmailDigestRoute = ApiSettingsEmailDigestRouteImport.update({
@@ -4429,6 +4507,16 @@ const ApiAdminPredictionsIndexRoute =
     path: '/api/admin/predictions/',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAdminQotdIndexRoute = ApiAdminQotdIndexRouteImport.update({
+  id: '/api/admin/qotd/',
+  path: '/api/admin/qotd/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminQotdIdRoute = ApiAdminQotdIdRouteImport.update({
+  id: '/api/admin/qotd/$id',
+  path: '/api/admin/qotd/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminRedemptionsIndexRoute =
   ApiAdminRedemptionsIndexRouteImport.update({
     id: '/api/admin/redemptions/',
@@ -5269,6 +5357,21 @@ const ApiSearchSavedIdRoute = ApiSearchSavedIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiSearchSavedRoute,
 } as any)
+const ApiSeriesIdFollowRoute = ApiSeriesIdFollowRouteImport.update({
+  id: '/follow',
+  path: '/follow',
+  getParentRoute: () => ApiSeriesIdRoute,
+} as any)
+const ApiSeriesIdPostsRoute = ApiSeriesIdPostsRouteImport.update({
+  id: '/posts',
+  path: '/posts',
+  getParentRoute: () => ApiSeriesIdRoute,
+} as any)
+const ApiSeriesPostPostIdRoute = ApiSeriesPostPostIdRouteImport.update({
+  id: '/api/series/post/$postId',
+  path: '/api/series/post/$postId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiShopLoadoutsIndexRoute = ApiShopLoadoutsIndexRouteImport.update({
   id: '/api/shop/loadouts/',
   path: '/api/shop/loadouts/',
@@ -5845,6 +5948,11 @@ const ApiRmhmusicGuessIdAttemptRoute =
     path: '/api/rmhmusic/guess/$id/attempt',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiSeriesIdPostsPostIdRoute = ApiSeriesIdPostsPostIdRouteImport.update({
+  id: '/$postId',
+  path: '/$postId',
+  getParentRoute: () => ApiSeriesIdPostsRoute,
+} as any)
 const ApiShopLoadoutsIdIndexRoute = ApiShopLoadoutsIdIndexRouteImport.update({
   id: '/api/shop/loadouts/$id/',
   path: '/api/shop/loadouts/$id/',
@@ -6131,6 +6239,7 @@ export interface FileRoutesByFullPath {
   '/predictions': typeof SitePredictionsRoute
   '/pricing': typeof SitePricingRoute
   '/progress': typeof SiteProgressRoute
+  '/qotd': typeof SiteQotdRoute
   '/quotes': typeof SiteQuotesRoute
   '/ranked': typeof SiteRankedRoute
   '/recap': typeof SiteRecapRoute
@@ -6253,6 +6362,7 @@ export interface FileRoutesByFullPath {
   '/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
   '/admin/library-storage': typeof SiteAdminLibraryStorageRoute
   '/admin/predictions': typeof SiteAdminPredictionsRoute
+  '/admin/qotd': typeof SiteAdminQotdRoute
   '/admin/redemptions': typeof SiteAdminRedemptionsRoute
   '/admin/reports': typeof SiteAdminReportsRoute
   '/admin/rideshare': typeof SiteAdminRideshareRoute
@@ -6295,6 +6405,7 @@ export interface FileRoutesByFullPath {
   '/rmhladder/resume': typeof SiteRmhladderResumeRoute
   '/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/rmhladder/settings': typeof SiteRmhladderSettingsRoute
+  '/series/$id': typeof SiteSeriesIdRoute
   '/services/cars': typeof SiteServicesCarsRoute
   '/services/fashion': typeof SiteServicesFashionRoute
   '/settings/account-status': typeof SiteSettingsAccountStatusRoute
@@ -6486,6 +6597,9 @@ export interface FileRoutesByFullPath {
   '/api/push/action': typeof ApiPushActionRoute
   '/api/push/public-key': typeof ApiPushPublicKeyRoute
   '/api/push/subscribe': typeof ApiPushSubscribeRoute
+  '/api/qotd/answers': typeof ApiQotdAnswersRoute
+  '/api/qotd/archive': typeof ApiQotdArchiveRoute
+  '/api/qotd/today': typeof ApiQotdTodayRoute
   '/api/recommend/feedback': typeof ApiRecommendFeedbackRoute
   '/api/referrals/claim': typeof ApiReferralsClaimRoute
   '/api/referrals/me': typeof ApiReferralsMeRoute
@@ -6522,11 +6636,15 @@ export interface FileRoutesByFullPath {
   '/api/rmhtype/keystats': typeof ApiRmhtypeKeystatsRoute
   '/api/rmhtype/practice-test': typeof ApiRmhtypePracticeTestRoute
   '/api/saves/folders': typeof ApiSavesFoldersRouteWithChildren
+  '/api/saves/note': typeof ApiSavesNoteRoute
   '/api/schedule/admin': typeof ApiScheduleAdminRoute
   '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
+  '/api/scheduled/capsules': typeof ApiScheduledCapsulesRoute
   '/api/search/saved': typeof ApiSearchSavedRouteWithChildren
+  '/api/series/$id': typeof ApiSeriesIdRouteWithChildren
   '/api/services/rebar-reservations': typeof ApiServicesRebarReservationsRoute
   '/api/settings/alt-text': typeof ApiSettingsAltTextRoute
+  '/api/settings/auto-delete': typeof ApiSettingsAutoDeleteRoute
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
   '/api/settings/game-assists': typeof ApiSettingsGameAssistsRoute
   '/api/settings/play-limits': typeof ApiSettingsPlayLimitsRoute
@@ -6638,6 +6756,7 @@ export interface FileRoutesByFullPath {
   '/rmh-datacenter/': typeof SiteRmhDatacenterIndexRoute
   '/rmhladder/': typeof SiteRmhladderIndexRoute
   '/saves/': typeof SiteSavesIndexRoute
+  '/series/': typeof SiteSeriesIndexRoute
   '/services/': typeof SiteServicesIndexRoute
   '/settings/': typeof SiteSettingsIndexRoute
   '/spaces/': typeof SiteSpacesIndexRoute
@@ -6683,6 +6802,7 @@ export interface FileRoutesByFullPath {
   '/api/saves/': typeof ApiSavesIndexRoute
   '/api/schedule/': typeof ApiScheduleIndexRoute
   '/api/scheduled/': typeof ApiScheduledIndexRoute
+  '/api/series/': typeof ApiSeriesIndexRoute
   '/api/shop/': typeof ApiShopIndexRoute
   '/api/spaces/': typeof ApiSpacesIndexRoute
   '/api/staking/': typeof ApiStakingIndexRoute
@@ -6718,6 +6838,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
   '/api/admin/library/reorder': typeof ApiAdminLibraryReorderRoute
   '/api/admin/library/storage-health': typeof ApiAdminLibraryStorageHealthRoute
+  '/api/admin/qotd/$id': typeof ApiAdminQotdIdRoute
   '/api/admin/redemptions/$id': typeof ApiAdminRedemptionsIdRoute
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
@@ -6858,6 +6979,9 @@ export interface FileRoutesByFullPath {
   '/api/saves/folders/$id': typeof ApiSavesFoldersIdRoute
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/search/saved/$id': typeof ApiSearchSavedIdRoute
+  '/api/series/$id/follow': typeof ApiSeriesIdFollowRoute
+  '/api/series/$id/posts': typeof ApiSeriesIdPostsRouteWithChildren
+  '/api/series/post/$postId': typeof ApiSeriesPostPostIdRoute
   '/api/slice-it/admin/content': typeof ApiSliceItAdminContentRoute
   '/api/slice-it/admin/review': typeof ApiSliceItAdminReviewRoute
   '/api/slice-it/admin/takedown': typeof ApiSliceItAdminTakedownRoute
@@ -6914,6 +7038,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/albums/': typeof ApiAdminAlbumsIndexRoute
   '/api/admin/library/': typeof ApiAdminLibraryIndexRoute
   '/api/admin/predictions/': typeof ApiAdminPredictionsIndexRoute
+  '/api/admin/qotd/': typeof ApiAdminQotdIndexRoute
   '/api/admin/redemptions/': typeof ApiAdminRedemptionsIndexRoute
   '/api/communities/$slug/': typeof ApiCommunitiesSlugIndexRoute
   '/api/creator/redeem/': typeof ApiCreatorRedeemIndexRoute
@@ -6986,6 +7111,7 @@ export interface FileRoutesByFullPath {
   '/api/rmhladder/resume/$id/analyze': typeof ApiRmhladderResumeIdAnalyzeRoute
   '/api/rmhladder/resume/$id/confirm': typeof ApiRmhladderResumeIdConfirmRoute
   '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
+  '/api/series/$id/posts/$postId': typeof ApiSeriesIdPostsPostIdRoute
   '/api/shop/loadouts/$id/apply': typeof ApiShopLoadoutsIdApplyRoute
   '/api/slice-it/charts/$id/reviews': typeof ApiSliceItChartsIdReviewsRoute
   '/api/slice-it/charts/$id/revisions': typeof ApiSliceItChartsIdRevisionsRoute
@@ -7090,6 +7216,7 @@ export interface FileRoutesByTo {
   '/predictions': typeof SitePredictionsRoute
   '/pricing': typeof SitePricingRoute
   '/progress': typeof SiteProgressRoute
+  '/qotd': typeof SiteQotdRoute
   '/quotes': typeof SiteQuotesRoute
   '/ranked': typeof SiteRankedRoute
   '/recap': typeof SiteRecapRoute
@@ -7209,6 +7336,7 @@ export interface FileRoutesByTo {
   '/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
   '/admin/library-storage': typeof SiteAdminLibraryStorageRoute
   '/admin/predictions': typeof SiteAdminPredictionsRoute
+  '/admin/qotd': typeof SiteAdminQotdRoute
   '/admin/redemptions': typeof SiteAdminRedemptionsRoute
   '/admin/reports': typeof SiteAdminReportsRoute
   '/admin/rideshare': typeof SiteAdminRideshareRoute
@@ -7251,6 +7379,7 @@ export interface FileRoutesByTo {
   '/rmhladder/resume': typeof SiteRmhladderResumeRoute
   '/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/rmhladder/settings': typeof SiteRmhladderSettingsRoute
+  '/series/$id': typeof SiteSeriesIdRoute
   '/services/cars': typeof SiteServicesCarsRoute
   '/services/fashion': typeof SiteServicesFashionRoute
   '/settings/account-status': typeof SiteSettingsAccountStatusRoute
@@ -7442,6 +7571,9 @@ export interface FileRoutesByTo {
   '/api/push/action': typeof ApiPushActionRoute
   '/api/push/public-key': typeof ApiPushPublicKeyRoute
   '/api/push/subscribe': typeof ApiPushSubscribeRoute
+  '/api/qotd/answers': typeof ApiQotdAnswersRoute
+  '/api/qotd/archive': typeof ApiQotdArchiveRoute
+  '/api/qotd/today': typeof ApiQotdTodayRoute
   '/api/recommend/feedback': typeof ApiRecommendFeedbackRoute
   '/api/referrals/claim': typeof ApiReferralsClaimRoute
   '/api/referrals/me': typeof ApiReferralsMeRoute
@@ -7478,11 +7610,15 @@ export interface FileRoutesByTo {
   '/api/rmhtype/keystats': typeof ApiRmhtypeKeystatsRoute
   '/api/rmhtype/practice-test': typeof ApiRmhtypePracticeTestRoute
   '/api/saves/folders': typeof ApiSavesFoldersRouteWithChildren
+  '/api/saves/note': typeof ApiSavesNoteRoute
   '/api/schedule/admin': typeof ApiScheduleAdminRoute
   '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
+  '/api/scheduled/capsules': typeof ApiScheduledCapsulesRoute
   '/api/search/saved': typeof ApiSearchSavedRouteWithChildren
+  '/api/series/$id': typeof ApiSeriesIdRouteWithChildren
   '/api/services/rebar-reservations': typeof ApiServicesRebarReservationsRoute
   '/api/settings/alt-text': typeof ApiSettingsAltTextRoute
+  '/api/settings/auto-delete': typeof ApiSettingsAutoDeleteRoute
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
   '/api/settings/game-assists': typeof ApiSettingsGameAssistsRoute
   '/api/settings/play-limits': typeof ApiSettingsPlayLimitsRoute
@@ -7594,6 +7730,7 @@ export interface FileRoutesByTo {
   '/rmh-datacenter': typeof SiteRmhDatacenterIndexRoute
   '/rmhladder': typeof SiteRmhladderIndexRoute
   '/saves': typeof SiteSavesIndexRoute
+  '/series': typeof SiteSeriesIndexRoute
   '/services': typeof SiteServicesIndexRoute
   '/settings': typeof SiteSettingsIndexRoute
   '/spaces': typeof SiteSpacesIndexRoute
@@ -7639,6 +7776,7 @@ export interface FileRoutesByTo {
   '/api/saves': typeof ApiSavesIndexRoute
   '/api/schedule': typeof ApiScheduleIndexRoute
   '/api/scheduled': typeof ApiScheduledIndexRoute
+  '/api/series': typeof ApiSeriesIndexRoute
   '/api/shop': typeof ApiShopIndexRoute
   '/api/spaces': typeof ApiSpacesIndexRoute
   '/api/staking': typeof ApiStakingIndexRoute
@@ -7674,6 +7812,7 @@ export interface FileRoutesByTo {
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
   '/api/admin/library/reorder': typeof ApiAdminLibraryReorderRoute
   '/api/admin/library/storage-health': typeof ApiAdminLibraryStorageHealthRoute
+  '/api/admin/qotd/$id': typeof ApiAdminQotdIdRoute
   '/api/admin/redemptions/$id': typeof ApiAdminRedemptionsIdRoute
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
@@ -7814,6 +7953,9 @@ export interface FileRoutesByTo {
   '/api/saves/folders/$id': typeof ApiSavesFoldersIdRoute
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/search/saved/$id': typeof ApiSearchSavedIdRoute
+  '/api/series/$id/follow': typeof ApiSeriesIdFollowRoute
+  '/api/series/$id/posts': typeof ApiSeriesIdPostsRouteWithChildren
+  '/api/series/post/$postId': typeof ApiSeriesPostPostIdRoute
   '/api/slice-it/admin/content': typeof ApiSliceItAdminContentRoute
   '/api/slice-it/admin/review': typeof ApiSliceItAdminReviewRoute
   '/api/slice-it/admin/takedown': typeof ApiSliceItAdminTakedownRoute
@@ -7870,6 +8012,7 @@ export interface FileRoutesByTo {
   '/api/admin/albums': typeof ApiAdminAlbumsIndexRoute
   '/api/admin/library': typeof ApiAdminLibraryIndexRoute
   '/api/admin/predictions': typeof ApiAdminPredictionsIndexRoute
+  '/api/admin/qotd': typeof ApiAdminQotdIndexRoute
   '/api/admin/redemptions': typeof ApiAdminRedemptionsIndexRoute
   '/api/communities/$slug': typeof ApiCommunitiesSlugIndexRoute
   '/api/creator/redeem': typeof ApiCreatorRedeemIndexRoute
@@ -7942,6 +8085,7 @@ export interface FileRoutesByTo {
   '/api/rmhladder/resume/$id/analyze': typeof ApiRmhladderResumeIdAnalyzeRoute
   '/api/rmhladder/resume/$id/confirm': typeof ApiRmhladderResumeIdConfirmRoute
   '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
+  '/api/series/$id/posts/$postId': typeof ApiSeriesIdPostsPostIdRoute
   '/api/shop/loadouts/$id/apply': typeof ApiShopLoadoutsIdApplyRoute
   '/api/slice-it/charts/$id/reviews': typeof ApiSliceItChartsIdReviewsRoute
   '/api/slice-it/charts/$id/revisions': typeof ApiSliceItChartsIdRevisionsRoute
@@ -8070,6 +8214,7 @@ export interface FileRoutesById {
   '/_site/predictions': typeof SitePredictionsRoute
   '/_site/pricing': typeof SitePricingRoute
   '/_site/progress': typeof SiteProgressRoute
+  '/_site/qotd': typeof SiteQotdRoute
   '/_site/quotes': typeof SiteQuotesRoute
   '/_site/ranked': typeof SiteRankedRoute
   '/_site/recap': typeof SiteRecapRoute
@@ -8193,6 +8338,7 @@ export interface FileRoutesById {
   '/_site/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
   '/_site/admin/library-storage': typeof SiteAdminLibraryStorageRoute
   '/_site/admin/predictions': typeof SiteAdminPredictionsRoute
+  '/_site/admin/qotd': typeof SiteAdminQotdRoute
   '/_site/admin/redemptions': typeof SiteAdminRedemptionsRoute
   '/_site/admin/reports': typeof SiteAdminReportsRoute
   '/_site/admin/rideshare': typeof SiteAdminRideshareRoute
@@ -8235,6 +8381,7 @@ export interface FileRoutesById {
   '/_site/rmhladder/resume': typeof SiteRmhladderResumeRoute
   '/_site/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/_site/rmhladder/settings': typeof SiteRmhladderSettingsRoute
+  '/_site/series/$id': typeof SiteSeriesIdRoute
   '/_site/services/cars': typeof SiteServicesCarsRoute
   '/_site/services/fashion': typeof SiteServicesFashionRoute
   '/_site/settings/account-status': typeof SiteSettingsAccountStatusRoute
@@ -8426,6 +8573,9 @@ export interface FileRoutesById {
   '/api/push/action': typeof ApiPushActionRoute
   '/api/push/public-key': typeof ApiPushPublicKeyRoute
   '/api/push/subscribe': typeof ApiPushSubscribeRoute
+  '/api/qotd/answers': typeof ApiQotdAnswersRoute
+  '/api/qotd/archive': typeof ApiQotdArchiveRoute
+  '/api/qotd/today': typeof ApiQotdTodayRoute
   '/api/recommend/feedback': typeof ApiRecommendFeedbackRoute
   '/api/referrals/claim': typeof ApiReferralsClaimRoute
   '/api/referrals/me': typeof ApiReferralsMeRoute
@@ -8462,11 +8612,15 @@ export interface FileRoutesById {
   '/api/rmhtype/keystats': typeof ApiRmhtypeKeystatsRoute
   '/api/rmhtype/practice-test': typeof ApiRmhtypePracticeTestRoute
   '/api/saves/folders': typeof ApiSavesFoldersRouteWithChildren
+  '/api/saves/note': typeof ApiSavesNoteRoute
   '/api/schedule/admin': typeof ApiScheduleAdminRoute
   '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
+  '/api/scheduled/capsules': typeof ApiScheduledCapsulesRoute
   '/api/search/saved': typeof ApiSearchSavedRouteWithChildren
+  '/api/series/$id': typeof ApiSeriesIdRouteWithChildren
   '/api/services/rebar-reservations': typeof ApiServicesRebarReservationsRoute
   '/api/settings/alt-text': typeof ApiSettingsAltTextRoute
+  '/api/settings/auto-delete': typeof ApiSettingsAutoDeleteRoute
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
   '/api/settings/game-assists': typeof ApiSettingsGameAssistsRoute
   '/api/settings/play-limits': typeof ApiSettingsPlayLimitsRoute
@@ -8578,6 +8732,7 @@ export interface FileRoutesById {
   '/_site/rmh-datacenter/': typeof SiteRmhDatacenterIndexRoute
   '/_site/rmhladder/': typeof SiteRmhladderIndexRoute
   '/_site/saves/': typeof SiteSavesIndexRoute
+  '/_site/series/': typeof SiteSeriesIndexRoute
   '/_site/services/': typeof SiteServicesIndexRoute
   '/_site/settings/': typeof SiteSettingsIndexRoute
   '/_site/spaces/': typeof SiteSpacesIndexRoute
@@ -8623,6 +8778,7 @@ export interface FileRoutesById {
   '/api/saves/': typeof ApiSavesIndexRoute
   '/api/schedule/': typeof ApiScheduleIndexRoute
   '/api/scheduled/': typeof ApiScheduledIndexRoute
+  '/api/series/': typeof ApiSeriesIndexRoute
   '/api/shop/': typeof ApiShopIndexRoute
   '/api/spaces/': typeof ApiSpacesIndexRoute
   '/api/staking/': typeof ApiStakingIndexRoute
@@ -8658,6 +8814,7 @@ export interface FileRoutesById {
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
   '/api/admin/library/reorder': typeof ApiAdminLibraryReorderRoute
   '/api/admin/library/storage-health': typeof ApiAdminLibraryStorageHealthRoute
+  '/api/admin/qotd/$id': typeof ApiAdminQotdIdRoute
   '/api/admin/redemptions/$id': typeof ApiAdminRedemptionsIdRoute
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
@@ -8798,6 +8955,9 @@ export interface FileRoutesById {
   '/api/saves/folders/$id': typeof ApiSavesFoldersIdRoute
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/search/saved/$id': typeof ApiSearchSavedIdRoute
+  '/api/series/$id/follow': typeof ApiSeriesIdFollowRoute
+  '/api/series/$id/posts': typeof ApiSeriesIdPostsRouteWithChildren
+  '/api/series/post/$postId': typeof ApiSeriesPostPostIdRoute
   '/api/slice-it/admin/content': typeof ApiSliceItAdminContentRoute
   '/api/slice-it/admin/review': typeof ApiSliceItAdminReviewRoute
   '/api/slice-it/admin/takedown': typeof ApiSliceItAdminTakedownRoute
@@ -8854,6 +9014,7 @@ export interface FileRoutesById {
   '/api/admin/albums/': typeof ApiAdminAlbumsIndexRoute
   '/api/admin/library/': typeof ApiAdminLibraryIndexRoute
   '/api/admin/predictions/': typeof ApiAdminPredictionsIndexRoute
+  '/api/admin/qotd/': typeof ApiAdminQotdIndexRoute
   '/api/admin/redemptions/': typeof ApiAdminRedemptionsIndexRoute
   '/api/communities/$slug/': typeof ApiCommunitiesSlugIndexRoute
   '/api/creator/redeem/': typeof ApiCreatorRedeemIndexRoute
@@ -8926,6 +9087,7 @@ export interface FileRoutesById {
   '/api/rmhladder/resume/$id/analyze': typeof ApiRmhladderResumeIdAnalyzeRoute
   '/api/rmhladder/resume/$id/confirm': typeof ApiRmhladderResumeIdConfirmRoute
   '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
+  '/api/series/$id/posts/$postId': typeof ApiSeriesIdPostsPostIdRoute
   '/api/shop/loadouts/$id/apply': typeof ApiShopLoadoutsIdApplyRoute
   '/api/slice-it/charts/$id/reviews': typeof ApiSliceItChartsIdReviewsRoute
   '/api/slice-it/charts/$id/revisions': typeof ApiSliceItChartsIdRevisionsRoute
@@ -9055,6 +9217,7 @@ export interface FileRouteTypes {
     | '/predictions'
     | '/pricing'
     | '/progress'
+    | '/qotd'
     | '/quotes'
     | '/ranked'
     | '/recap'
@@ -9177,6 +9340,7 @@ export interface FileRouteTypes {
     | '/admin/library-quota'
     | '/admin/library-storage'
     | '/admin/predictions'
+    | '/admin/qotd'
     | '/admin/redemptions'
     | '/admin/reports'
     | '/admin/rideshare'
@@ -9219,6 +9383,7 @@ export interface FileRouteTypes {
     | '/rmhladder/resume'
     | '/rmhladder/review'
     | '/rmhladder/settings'
+    | '/series/$id'
     | '/services/cars'
     | '/services/fashion'
     | '/settings/account-status'
@@ -9410,6 +9575,9 @@ export interface FileRouteTypes {
     | '/api/push/action'
     | '/api/push/public-key'
     | '/api/push/subscribe'
+    | '/api/qotd/answers'
+    | '/api/qotd/archive'
+    | '/api/qotd/today'
     | '/api/recommend/feedback'
     | '/api/referrals/claim'
     | '/api/referrals/me'
@@ -9446,11 +9614,15 @@ export interface FileRouteTypes {
     | '/api/rmhtype/keystats'
     | '/api/rmhtype/practice-test'
     | '/api/saves/folders'
+    | '/api/saves/note'
     | '/api/schedule/admin'
     | '/api/scheduled/$id'
+    | '/api/scheduled/capsules'
     | '/api/search/saved'
+    | '/api/series/$id'
     | '/api/services/rebar-reservations'
     | '/api/settings/alt-text'
+    | '/api/settings/auto-delete'
     | '/api/settings/email-digest'
     | '/api/settings/game-assists'
     | '/api/settings/play-limits'
@@ -9562,6 +9734,7 @@ export interface FileRouteTypes {
     | '/rmh-datacenter/'
     | '/rmhladder/'
     | '/saves/'
+    | '/series/'
     | '/services/'
     | '/settings/'
     | '/spaces/'
@@ -9607,6 +9780,7 @@ export interface FileRouteTypes {
     | '/api/saves/'
     | '/api/schedule/'
     | '/api/scheduled/'
+    | '/api/series/'
     | '/api/shop/'
     | '/api/spaces/'
     | '/api/staking/'
@@ -9642,6 +9816,7 @@ export interface FileRouteTypes {
     | '/api/admin/library/quota-requests'
     | '/api/admin/library/reorder'
     | '/api/admin/library/storage-health'
+    | '/api/admin/qotd/$id'
     | '/api/admin/redemptions/$id'
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
@@ -9782,6 +9957,9 @@ export interface FileRouteTypes {
     | '/api/saves/folders/$id'
     | '/api/scheduled/$id/publish'
     | '/api/search/saved/$id'
+    | '/api/series/$id/follow'
+    | '/api/series/$id/posts'
+    | '/api/series/post/$postId'
     | '/api/slice-it/admin/content'
     | '/api/slice-it/admin/review'
     | '/api/slice-it/admin/takedown'
@@ -9838,6 +10016,7 @@ export interface FileRouteTypes {
     | '/api/admin/albums/'
     | '/api/admin/library/'
     | '/api/admin/predictions/'
+    | '/api/admin/qotd/'
     | '/api/admin/redemptions/'
     | '/api/communities/$slug/'
     | '/api/creator/redeem/'
@@ -9910,6 +10089,7 @@ export interface FileRouteTypes {
     | '/api/rmhladder/resume/$id/analyze'
     | '/api/rmhladder/resume/$id/confirm'
     | '/api/rmhmusic/guess/$id/attempt'
+    | '/api/series/$id/posts/$postId'
     | '/api/shop/loadouts/$id/apply'
     | '/api/slice-it/charts/$id/reviews'
     | '/api/slice-it/charts/$id/revisions'
@@ -10014,6 +10194,7 @@ export interface FileRouteTypes {
     | '/predictions'
     | '/pricing'
     | '/progress'
+    | '/qotd'
     | '/quotes'
     | '/ranked'
     | '/recap'
@@ -10133,6 +10314,7 @@ export interface FileRouteTypes {
     | '/admin/library-quota'
     | '/admin/library-storage'
     | '/admin/predictions'
+    | '/admin/qotd'
     | '/admin/redemptions'
     | '/admin/reports'
     | '/admin/rideshare'
@@ -10175,6 +10357,7 @@ export interface FileRouteTypes {
     | '/rmhladder/resume'
     | '/rmhladder/review'
     | '/rmhladder/settings'
+    | '/series/$id'
     | '/services/cars'
     | '/services/fashion'
     | '/settings/account-status'
@@ -10366,6 +10549,9 @@ export interface FileRouteTypes {
     | '/api/push/action'
     | '/api/push/public-key'
     | '/api/push/subscribe'
+    | '/api/qotd/answers'
+    | '/api/qotd/archive'
+    | '/api/qotd/today'
     | '/api/recommend/feedback'
     | '/api/referrals/claim'
     | '/api/referrals/me'
@@ -10402,11 +10588,15 @@ export interface FileRouteTypes {
     | '/api/rmhtype/keystats'
     | '/api/rmhtype/practice-test'
     | '/api/saves/folders'
+    | '/api/saves/note'
     | '/api/schedule/admin'
     | '/api/scheduled/$id'
+    | '/api/scheduled/capsules'
     | '/api/search/saved'
+    | '/api/series/$id'
     | '/api/services/rebar-reservations'
     | '/api/settings/alt-text'
+    | '/api/settings/auto-delete'
     | '/api/settings/email-digest'
     | '/api/settings/game-assists'
     | '/api/settings/play-limits'
@@ -10518,6 +10708,7 @@ export interface FileRouteTypes {
     | '/rmh-datacenter'
     | '/rmhladder'
     | '/saves'
+    | '/series'
     | '/services'
     | '/settings'
     | '/spaces'
@@ -10563,6 +10754,7 @@ export interface FileRouteTypes {
     | '/api/saves'
     | '/api/schedule'
     | '/api/scheduled'
+    | '/api/series'
     | '/api/shop'
     | '/api/spaces'
     | '/api/staking'
@@ -10598,6 +10790,7 @@ export interface FileRouteTypes {
     | '/api/admin/library/quota-requests'
     | '/api/admin/library/reorder'
     | '/api/admin/library/storage-health'
+    | '/api/admin/qotd/$id'
     | '/api/admin/redemptions/$id'
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
@@ -10738,6 +10931,9 @@ export interface FileRouteTypes {
     | '/api/saves/folders/$id'
     | '/api/scheduled/$id/publish'
     | '/api/search/saved/$id'
+    | '/api/series/$id/follow'
+    | '/api/series/$id/posts'
+    | '/api/series/post/$postId'
     | '/api/slice-it/admin/content'
     | '/api/slice-it/admin/review'
     | '/api/slice-it/admin/takedown'
@@ -10794,6 +10990,7 @@ export interface FileRouteTypes {
     | '/api/admin/albums'
     | '/api/admin/library'
     | '/api/admin/predictions'
+    | '/api/admin/qotd'
     | '/api/admin/redemptions'
     | '/api/communities/$slug'
     | '/api/creator/redeem'
@@ -10866,6 +11063,7 @@ export interface FileRouteTypes {
     | '/api/rmhladder/resume/$id/analyze'
     | '/api/rmhladder/resume/$id/confirm'
     | '/api/rmhmusic/guess/$id/attempt'
+    | '/api/series/$id/posts/$postId'
     | '/api/shop/loadouts/$id/apply'
     | '/api/slice-it/charts/$id/reviews'
     | '/api/slice-it/charts/$id/revisions'
@@ -10993,6 +11191,7 @@ export interface FileRouteTypes {
     | '/_site/predictions'
     | '/_site/pricing'
     | '/_site/progress'
+    | '/_site/qotd'
     | '/_site/quotes'
     | '/_site/ranked'
     | '/_site/recap'
@@ -11116,6 +11315,7 @@ export interface FileRouteTypes {
     | '/_site/admin/library-quota'
     | '/_site/admin/library-storage'
     | '/_site/admin/predictions'
+    | '/_site/admin/qotd'
     | '/_site/admin/redemptions'
     | '/_site/admin/reports'
     | '/_site/admin/rideshare'
@@ -11158,6 +11358,7 @@ export interface FileRouteTypes {
     | '/_site/rmhladder/resume'
     | '/_site/rmhladder/review'
     | '/_site/rmhladder/settings'
+    | '/_site/series/$id'
     | '/_site/services/cars'
     | '/_site/services/fashion'
     | '/_site/settings/account-status'
@@ -11349,6 +11550,9 @@ export interface FileRouteTypes {
     | '/api/push/action'
     | '/api/push/public-key'
     | '/api/push/subscribe'
+    | '/api/qotd/answers'
+    | '/api/qotd/archive'
+    | '/api/qotd/today'
     | '/api/recommend/feedback'
     | '/api/referrals/claim'
     | '/api/referrals/me'
@@ -11385,11 +11589,15 @@ export interface FileRouteTypes {
     | '/api/rmhtype/keystats'
     | '/api/rmhtype/practice-test'
     | '/api/saves/folders'
+    | '/api/saves/note'
     | '/api/schedule/admin'
     | '/api/scheduled/$id'
+    | '/api/scheduled/capsules'
     | '/api/search/saved'
+    | '/api/series/$id'
     | '/api/services/rebar-reservations'
     | '/api/settings/alt-text'
+    | '/api/settings/auto-delete'
     | '/api/settings/email-digest'
     | '/api/settings/game-assists'
     | '/api/settings/play-limits'
@@ -11501,6 +11709,7 @@ export interface FileRouteTypes {
     | '/_site/rmh-datacenter/'
     | '/_site/rmhladder/'
     | '/_site/saves/'
+    | '/_site/series/'
     | '/_site/services/'
     | '/_site/settings/'
     | '/_site/spaces/'
@@ -11546,6 +11755,7 @@ export interface FileRouteTypes {
     | '/api/saves/'
     | '/api/schedule/'
     | '/api/scheduled/'
+    | '/api/series/'
     | '/api/shop/'
     | '/api/spaces/'
     | '/api/staking/'
@@ -11581,6 +11791,7 @@ export interface FileRouteTypes {
     | '/api/admin/library/quota-requests'
     | '/api/admin/library/reorder'
     | '/api/admin/library/storage-health'
+    | '/api/admin/qotd/$id'
     | '/api/admin/redemptions/$id'
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
@@ -11721,6 +11932,9 @@ export interface FileRouteTypes {
     | '/api/saves/folders/$id'
     | '/api/scheduled/$id/publish'
     | '/api/search/saved/$id'
+    | '/api/series/$id/follow'
+    | '/api/series/$id/posts'
+    | '/api/series/post/$postId'
     | '/api/slice-it/admin/content'
     | '/api/slice-it/admin/review'
     | '/api/slice-it/admin/takedown'
@@ -11777,6 +11991,7 @@ export interface FileRouteTypes {
     | '/api/admin/albums/'
     | '/api/admin/library/'
     | '/api/admin/predictions/'
+    | '/api/admin/qotd/'
     | '/api/admin/redemptions/'
     | '/api/communities/$slug/'
     | '/api/creator/redeem/'
@@ -11849,6 +12064,7 @@ export interface FileRouteTypes {
     | '/api/rmhladder/resume/$id/analyze'
     | '/api/rmhladder/resume/$id/confirm'
     | '/api/rmhmusic/guess/$id/attempt'
+    | '/api/series/$id/posts/$postId'
     | '/api/shop/loadouts/$id/apply'
     | '/api/slice-it/charts/$id/reviews'
     | '/api/slice-it/charts/$id/revisions'
@@ -12144,6 +12360,9 @@ export interface RootRouteChildren {
   ApiPushActionRoute: typeof ApiPushActionRoute
   ApiPushPublicKeyRoute: typeof ApiPushPublicKeyRoute
   ApiPushSubscribeRoute: typeof ApiPushSubscribeRoute
+  ApiQotdAnswersRoute: typeof ApiQotdAnswersRoute
+  ApiQotdArchiveRoute: typeof ApiQotdArchiveRoute
+  ApiQotdTodayRoute: typeof ApiQotdTodayRoute
   ApiRecommendFeedbackRoute: typeof ApiRecommendFeedbackRoute
   ApiReferralsClaimRoute: typeof ApiReferralsClaimRoute
   ApiReferralsMeRoute: typeof ApiReferralsMeRoute
@@ -12175,10 +12394,14 @@ export interface RootRouteChildren {
   ApiRmhtypeKeystatsRoute: typeof ApiRmhtypeKeystatsRoute
   ApiRmhtypePracticeTestRoute: typeof ApiRmhtypePracticeTestRoute
   ApiSavesFoldersRoute: typeof ApiSavesFoldersRouteWithChildren
+  ApiSavesNoteRoute: typeof ApiSavesNoteRoute
   ApiScheduleAdminRoute: typeof ApiScheduleAdminRoute
   ApiScheduledIdRoute: typeof ApiScheduledIdRouteWithChildren
+  ApiScheduledCapsulesRoute: typeof ApiScheduledCapsulesRoute
+  ApiSeriesIdRoute: typeof ApiSeriesIdRouteWithChildren
   ApiServicesRebarReservationsRoute: typeof ApiServicesRebarReservationsRoute
   ApiSettingsAltTextRoute: typeof ApiSettingsAltTextRoute
+  ApiSettingsAutoDeleteRoute: typeof ApiSettingsAutoDeleteRoute
   ApiSettingsEmailDigestRoute: typeof ApiSettingsEmailDigestRoute
   ApiSettingsGameAssistsRoute: typeof ApiSettingsGameAssistsRoute
   ApiSettingsPlayLimitsRoute: typeof ApiSettingsPlayLimitsRoute
@@ -12292,6 +12515,7 @@ export interface RootRouteChildren {
   ApiSavesIndexRoute: typeof ApiSavesIndexRoute
   ApiScheduleIndexRoute: typeof ApiScheduleIndexRoute
   ApiScheduledIndexRoute: typeof ApiScheduledIndexRoute
+  ApiSeriesIndexRoute: typeof ApiSeriesIndexRoute
   ApiShopIndexRoute: typeof ApiShopIndexRoute
   ApiSpacesIndexRoute: typeof ApiSpacesIndexRoute
   ApiStakingIndexRoute: typeof ApiStakingIndexRoute
@@ -12316,6 +12540,7 @@ export interface RootRouteChildren {
   ApiAdminLibraryQuotaRequestsRoute: typeof ApiAdminLibraryQuotaRequestsRoute
   ApiAdminLibraryReorderRoute: typeof ApiAdminLibraryReorderRoute
   ApiAdminLibraryStorageHealthRoute: typeof ApiAdminLibraryStorageHealthRoute
+  ApiAdminQotdIdRoute: typeof ApiAdminQotdIdRoute
   ApiAdminRedemptionsIdRoute: typeof ApiAdminRedemptionsIdRoute
   ApiAdminRideshareApplicationsRoute: typeof ApiAdminRideshareApplicationsRoute
   ApiAdminRideshareRidesRoute: typeof ApiAdminRideshareRidesRoute
@@ -12393,6 +12618,7 @@ export interface RootRouteChildren {
   ApiRmhladderResumeIdRoute: typeof ApiRmhladderResumeIdRouteWithChildren
   ApiRmhmusicSpotifySearchRoute: typeof ApiRmhmusicSpotifySearchRoute
   ApiRmhtubeSubscribeChannelIdRoute: typeof ApiRmhtubeSubscribeChannelIdRoute
+  ApiSeriesPostPostIdRoute: typeof ApiSeriesPostPostIdRoute
   ApiSliceItAdminContentRoute: typeof ApiSliceItAdminContentRoute
   ApiSliceItAdminReviewRoute: typeof ApiSliceItAdminReviewRoute
   ApiSliceItAdminTakedownRoute: typeof ApiSliceItAdminTakedownRoute
@@ -12414,6 +12640,7 @@ export interface RootRouteChildren {
   ApiAdminAlbumsIndexRoute: typeof ApiAdminAlbumsIndexRoute
   ApiAdminLibraryIndexRoute: typeof ApiAdminLibraryIndexRoute
   ApiAdminPredictionsIndexRoute: typeof ApiAdminPredictionsIndexRoute
+  ApiAdminQotdIndexRoute: typeof ApiAdminQotdIndexRoute
   ApiAdminRedemptionsIndexRoute: typeof ApiAdminRedemptionsIndexRoute
   ApiCommunitiesSlugIndexRoute: typeof ApiCommunitiesSlugIndexRoute
   ApiCreatorRedeemIndexRoute: typeof ApiCreatorRedeemIndexRoute
@@ -13073,6 +13300,13 @@ declare module '@tanstack/react-router' {
       path: '/progress'
       fullPath: '/progress'
       preLoaderRoute: typeof SiteProgressRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/qotd': {
+      id: '/_site/qotd'
+      path: '/qotd'
+      fullPath: '/qotd'
+      preLoaderRoute: typeof SiteQotdRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/quotes': {
@@ -13936,6 +14170,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminPredictionsRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
+    '/_site/admin/qotd': {
+      id: '/_site/admin/qotd'
+      path: '/qotd'
+      fullPath: '/admin/qotd'
+      preLoaderRoute: typeof SiteAdminQotdRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
     '/_site/admin/redemptions': {
       id: '/_site/admin/redemptions'
       path: '/redemptions'
@@ -14354,6 +14595,20 @@ declare module '@tanstack/react-router' {
       path: '/saves'
       fullPath: '/saves/'
       preLoaderRoute: typeof SiteSavesIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/series/': {
+      id: '/_site/series/'
+      path: '/series'
+      fullPath: '/series/'
+      preLoaderRoute: typeof SiteSeriesIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/series/$id': {
+      id: '/_site/series/$id'
+      path: '/series/$id'
+      fullPath: '/series/$id'
+      preLoaderRoute: typeof SiteSeriesIdRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/services/': {
@@ -15952,6 +16207,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPushSubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/qotd/answers': {
+      id: '/api/qotd/answers'
+      path: '/api/qotd/answers'
+      fullPath: '/api/qotd/answers'
+      preLoaderRoute: typeof ApiQotdAnswersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/qotd/archive': {
+      id: '/api/qotd/archive'
+      path: '/api/qotd/archive'
+      fullPath: '/api/qotd/archive'
+      preLoaderRoute: typeof ApiQotdArchiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/qotd/today': {
+      id: '/api/qotd/today'
+      path: '/api/qotd/today'
+      fullPath: '/api/qotd/today'
+      preLoaderRoute: typeof ApiQotdTodayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/ranked/': {
       id: '/api/ranked/'
       path: '/api/ranked'
@@ -16246,6 +16522,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSavesFoldersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/saves/note': {
+      id: '/api/saves/note'
+      path: '/api/saves/note'
+      fullPath: '/api/saves/note'
+      preLoaderRoute: typeof ApiSavesNoteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/schedule/': {
       id: '/api/schedule/'
       path: '/api/schedule'
@@ -16274,12 +16557,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiScheduledIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/scheduled/capsules': {
+      id: '/api/scheduled/capsules'
+      path: '/api/scheduled/capsules'
+      fullPath: '/api/scheduled/capsules'
+      preLoaderRoute: typeof ApiScheduledCapsulesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/search/saved': {
       id: '/api/search/saved'
       path: '/saved'
       fullPath: '/api/search/saved'
       preLoaderRoute: typeof ApiSearchSavedRouteImport
       parentRoute: typeof ApiSearchRoute
+    }
+    '/api/series/': {
+      id: '/api/series/'
+      path: '/api/series'
+      fullPath: '/api/series/'
+      preLoaderRoute: typeof ApiSeriesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/series/$id': {
+      id: '/api/series/$id'
+      path: '/api/series/$id'
+      fullPath: '/api/series/$id'
+      preLoaderRoute: typeof ApiSeriesIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/services/rebar-reservations': {
       id: '/api/services/rebar-reservations'
@@ -16293,6 +16597,13 @@ declare module '@tanstack/react-router' {
       path: '/api/settings/alt-text'
       fullPath: '/api/settings/alt-text'
       preLoaderRoute: typeof ApiSettingsAltTextRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/settings/auto-delete': {
+      id: '/api/settings/auto-delete'
+      path: '/api/settings/auto-delete'
+      fullPath: '/api/settings/auto-delete'
+      preLoaderRoute: typeof ApiSettingsAutoDeleteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/settings/email-digest': {
@@ -17224,6 +17535,20 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/predictions'
       fullPath: '/api/admin/predictions/'
       preLoaderRoute: typeof ApiAdminPredictionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/qotd/': {
+      id: '/api/admin/qotd/'
+      path: '/api/admin/qotd'
+      fullPath: '/api/admin/qotd/'
+      preLoaderRoute: typeof ApiAdminQotdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/qotd/$id': {
+      id: '/api/admin/qotd/$id'
+      path: '/api/admin/qotd/$id'
+      fullPath: '/api/admin/qotd/$id'
+      preLoaderRoute: typeof ApiAdminQotdIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/redemptions/': {
@@ -18332,6 +18657,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSearchSavedIdRouteImport
       parentRoute: typeof ApiSearchSavedRoute
     }
+    '/api/series/$id/follow': {
+      id: '/api/series/$id/follow'
+      path: '/follow'
+      fullPath: '/api/series/$id/follow'
+      preLoaderRoute: typeof ApiSeriesIdFollowRouteImport
+      parentRoute: typeof ApiSeriesIdRoute
+    }
+    '/api/series/$id/posts': {
+      id: '/api/series/$id/posts'
+      path: '/posts'
+      fullPath: '/api/series/$id/posts'
+      preLoaderRoute: typeof ApiSeriesIdPostsRouteImport
+      parentRoute: typeof ApiSeriesIdRoute
+    }
+    '/api/series/post/$postId': {
+      id: '/api/series/post/$postId'
+      path: '/api/series/post/$postId'
+      fullPath: '/api/series/post/$postId'
+      preLoaderRoute: typeof ApiSeriesPostPostIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/shop/loadouts/': {
       id: '/api/shop/loadouts/'
       path: '/api/shop/loadouts'
@@ -19088,6 +19434,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmhmusicGuessIdAttemptRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/series/$id/posts/$postId': {
+      id: '/api/series/$id/posts/$postId'
+      path: '/$postId'
+      fullPath: '/api/series/$id/posts/$postId'
+      preLoaderRoute: typeof ApiSeriesIdPostsPostIdRouteImport
+      parentRoute: typeof ApiSeriesIdPostsRoute
+    }
     '/api/shop/loadouts/$id/': {
       id: '/api/shop/loadouts/$id/'
       path: '/api/shop/loadouts/$id'
@@ -19353,6 +19706,7 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminLibraryQuotaRoute: typeof SiteAdminLibraryQuotaRoute
   SiteAdminLibraryStorageRoute: typeof SiteAdminLibraryStorageRoute
   SiteAdminPredictionsRoute: typeof SiteAdminPredictionsRoute
+  SiteAdminQotdRoute: typeof SiteAdminQotdRoute
   SiteAdminRedemptionsRoute: typeof SiteAdminRedemptionsRoute
   SiteAdminReportsRoute: typeof SiteAdminReportsRoute
   SiteAdminRideshareRoute: typeof SiteAdminRideshareRoute
@@ -19379,6 +19733,7 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminLibraryQuotaRoute: SiteAdminLibraryQuotaRoute,
   SiteAdminLibraryStorageRoute: SiteAdminLibraryStorageRoute,
   SiteAdminPredictionsRoute: SiteAdminPredictionsRoute,
+  SiteAdminQotdRoute: SiteAdminQotdRoute,
   SiteAdminRedemptionsRoute: SiteAdminRedemptionsRoute,
   SiteAdminReportsRoute: SiteAdminReportsRoute,
   SiteAdminRideshareRoute: SiteAdminRideshareRoute,
@@ -19508,6 +19863,7 @@ interface SiteRouteChildren {
   SitePredictionsRoute: typeof SitePredictionsRoute
   SitePricingRoute: typeof SitePricingRoute
   SiteProgressRoute: typeof SiteProgressRoute
+  SiteQotdRoute: typeof SiteQotdRoute
   SiteQuotesRoute: typeof SiteQuotesRoute
   SiteRankedRoute: typeof SiteRankedRoute
   SiteRecapRoute: typeof SiteRecapRoute
@@ -19548,6 +19904,7 @@ interface SiteRouteChildren {
   SiteRmhDatacenterNetworkRoute: typeof SiteRmhDatacenterNetworkRoute
   SiteRmhDatacenterPlatformRoute: typeof SiteRmhDatacenterPlatformRoute
   SiteRmhDatacenterPowerRoute: typeof SiteRmhDatacenterPowerRoute
+  SiteSeriesIdRoute: typeof SiteSeriesIdRoute
   SiteSettingsAccountStatusRoute: typeof SiteSettingsAccountStatusRoute
   SiteSettingsAppearanceRoute: typeof SiteSettingsAppearanceRoute
   SiteSettingsCircleRoute: typeof SiteSettingsCircleRoute
@@ -19585,6 +19942,7 @@ interface SiteRouteChildren {
   SiteRingsIndexRoute: typeof SiteRingsIndexRoute
   SiteRmhDatacenterIndexRoute: typeof SiteRmhDatacenterIndexRoute
   SiteSavesIndexRoute: typeof SiteSavesIndexRoute
+  SiteSeriesIndexRoute: typeof SiteSeriesIndexRoute
   SiteSettingsIndexRoute: typeof SiteSettingsIndexRoute
   SiteSpacesIndexRoute: typeof SiteSpacesIndexRoute
   SiteStoreIndexRoute: typeof SiteStoreIndexRoute
@@ -19624,6 +19982,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SitePredictionsRoute: SitePredictionsRoute,
   SitePricingRoute: SitePricingRoute,
   SiteProgressRoute: SiteProgressRoute,
+  SiteQotdRoute: SiteQotdRoute,
   SiteQuotesRoute: SiteQuotesRoute,
   SiteRankedRoute: SiteRankedRoute,
   SiteRecapRoute: SiteRecapRoute,
@@ -19664,6 +20023,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteRmhDatacenterNetworkRoute: SiteRmhDatacenterNetworkRoute,
   SiteRmhDatacenterPlatformRoute: SiteRmhDatacenterPlatformRoute,
   SiteRmhDatacenterPowerRoute: SiteRmhDatacenterPowerRoute,
+  SiteSeriesIdRoute: SiteSeriesIdRoute,
   SiteSettingsAccountStatusRoute: SiteSettingsAccountStatusRoute,
   SiteSettingsAppearanceRoute: SiteSettingsAppearanceRoute,
   SiteSettingsCircleRoute: SiteSettingsCircleRoute,
@@ -19701,6 +20061,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteRingsIndexRoute: SiteRingsIndexRoute,
   SiteRmhDatacenterIndexRoute: SiteRmhDatacenterIndexRoute,
   SiteSavesIndexRoute: SiteSavesIndexRoute,
+  SiteSeriesIndexRoute: SiteSeriesIndexRoute,
   SiteSettingsIndexRoute: SiteSettingsIndexRoute,
   SiteSpacesIndexRoute: SiteSpacesIndexRoute,
   SiteStoreIndexRoute: SiteStoreIndexRoute,
@@ -20705,6 +21066,31 @@ const ApiScheduledIdRouteWithChildren = ApiScheduledIdRoute._addFileChildren(
   ApiScheduledIdRouteChildren,
 )
 
+interface ApiSeriesIdPostsRouteChildren {
+  ApiSeriesIdPostsPostIdRoute: typeof ApiSeriesIdPostsPostIdRoute
+}
+
+const ApiSeriesIdPostsRouteChildren: ApiSeriesIdPostsRouteChildren = {
+  ApiSeriesIdPostsPostIdRoute: ApiSeriesIdPostsPostIdRoute,
+}
+
+const ApiSeriesIdPostsRouteWithChildren =
+  ApiSeriesIdPostsRoute._addFileChildren(ApiSeriesIdPostsRouteChildren)
+
+interface ApiSeriesIdRouteChildren {
+  ApiSeriesIdFollowRoute: typeof ApiSeriesIdFollowRoute
+  ApiSeriesIdPostsRoute: typeof ApiSeriesIdPostsRouteWithChildren
+}
+
+const ApiSeriesIdRouteChildren: ApiSeriesIdRouteChildren = {
+  ApiSeriesIdFollowRoute: ApiSeriesIdFollowRoute,
+  ApiSeriesIdPostsRoute: ApiSeriesIdPostsRouteWithChildren,
+}
+
+const ApiSeriesIdRouteWithChildren = ApiSeriesIdRoute._addFileChildren(
+  ApiSeriesIdRouteChildren,
+)
+
 interface ApiSliceItChartsIdRouteChildren {
   ApiSliceItChartsIdReviewsRoute: typeof ApiSliceItChartsIdReviewsRoute
   ApiSliceItChartsIdRevisionsRoute: typeof ApiSliceItChartsIdRevisionsRoute
@@ -21406,6 +21792,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPushActionRoute: ApiPushActionRoute,
   ApiPushPublicKeyRoute: ApiPushPublicKeyRoute,
   ApiPushSubscribeRoute: ApiPushSubscribeRoute,
+  ApiQotdAnswersRoute: ApiQotdAnswersRoute,
+  ApiQotdArchiveRoute: ApiQotdArchiveRoute,
+  ApiQotdTodayRoute: ApiQotdTodayRoute,
   ApiRecommendFeedbackRoute: ApiRecommendFeedbackRoute,
   ApiReferralsClaimRoute: ApiReferralsClaimRoute,
   ApiReferralsMeRoute: ApiReferralsMeRoute,
@@ -21437,10 +21826,14 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhtypeKeystatsRoute: ApiRmhtypeKeystatsRoute,
   ApiRmhtypePracticeTestRoute: ApiRmhtypePracticeTestRoute,
   ApiSavesFoldersRoute: ApiSavesFoldersRouteWithChildren,
+  ApiSavesNoteRoute: ApiSavesNoteRoute,
   ApiScheduleAdminRoute: ApiScheduleAdminRoute,
   ApiScheduledIdRoute: ApiScheduledIdRouteWithChildren,
+  ApiScheduledCapsulesRoute: ApiScheduledCapsulesRoute,
+  ApiSeriesIdRoute: ApiSeriesIdRouteWithChildren,
   ApiServicesRebarReservationsRoute: ApiServicesRebarReservationsRoute,
   ApiSettingsAltTextRoute: ApiSettingsAltTextRoute,
+  ApiSettingsAutoDeleteRoute: ApiSettingsAutoDeleteRoute,
   ApiSettingsEmailDigestRoute: ApiSettingsEmailDigestRoute,
   ApiSettingsGameAssistsRoute: ApiSettingsGameAssistsRoute,
   ApiSettingsPlayLimitsRoute: ApiSettingsPlayLimitsRoute,
@@ -21554,6 +21947,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSavesIndexRoute: ApiSavesIndexRoute,
   ApiScheduleIndexRoute: ApiScheduleIndexRoute,
   ApiScheduledIndexRoute: ApiScheduledIndexRoute,
+  ApiSeriesIndexRoute: ApiSeriesIndexRoute,
   ApiShopIndexRoute: ApiShopIndexRoute,
   ApiSpacesIndexRoute: ApiSpacesIndexRoute,
   ApiStakingIndexRoute: ApiStakingIndexRoute,
@@ -21578,6 +21972,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminLibraryQuotaRequestsRoute: ApiAdminLibraryQuotaRequestsRoute,
   ApiAdminLibraryReorderRoute: ApiAdminLibraryReorderRoute,
   ApiAdminLibraryStorageHealthRoute: ApiAdminLibraryStorageHealthRoute,
+  ApiAdminQotdIdRoute: ApiAdminQotdIdRoute,
   ApiAdminRedemptionsIdRoute: ApiAdminRedemptionsIdRoute,
   ApiAdminRideshareApplicationsRoute: ApiAdminRideshareApplicationsRoute,
   ApiAdminRideshareRidesRoute: ApiAdminRideshareRidesRoute,
@@ -21656,6 +22051,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhladderResumeIdRoute: ApiRmhladderResumeIdRouteWithChildren,
   ApiRmhmusicSpotifySearchRoute: ApiRmhmusicSpotifySearchRoute,
   ApiRmhtubeSubscribeChannelIdRoute: ApiRmhtubeSubscribeChannelIdRoute,
+  ApiSeriesPostPostIdRoute: ApiSeriesPostPostIdRoute,
   ApiSliceItAdminContentRoute: ApiSliceItAdminContentRoute,
   ApiSliceItAdminReviewRoute: ApiSliceItAdminReviewRoute,
   ApiSliceItAdminTakedownRoute: ApiSliceItAdminTakedownRoute,
@@ -21677,6 +22073,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminAlbumsIndexRoute: ApiAdminAlbumsIndexRoute,
   ApiAdminLibraryIndexRoute: ApiAdminLibraryIndexRoute,
   ApiAdminPredictionsIndexRoute: ApiAdminPredictionsIndexRoute,
+  ApiAdminQotdIndexRoute: ApiAdminQotdIndexRoute,
   ApiAdminRedemptionsIndexRoute: ApiAdminRedemptionsIndexRoute,
   ApiCommunitiesSlugIndexRoute: ApiCommunitiesSlugIndexRoute,
   ApiCreatorRedeemIndexRoute: ApiCreatorRedeemIndexRoute,

@@ -223,6 +223,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'A well-formed date with no record behind it.',
   },
+  '/series/$id': {
+    path: '/series/fouc-audit',
+    fidelity: 'shell',
+    why: 'Not-found branch of a post series page.',
+  },
   '/sohumtracker/$date': {
     path: '/sohumtracker/2026-01-01',
     fidelity: 'shell',

@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 669 files across 152 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 683 files across 154 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -46,7 +46,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/admin`
 
-40 routes.
+42 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -76,6 +76,8 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/admin/predictions` | `GET` | `app/routes/api/admin/predictions/index.ts` |
 | `/api/admin/predictions/:id/moderate` | `POST` | `app/routes/api/admin/predictions/$id/moderate.ts` |
 | `/api/admin/predictions/:id/resolve` | `POST` | `app/routes/api/admin/predictions/$id/resolve.ts` |
+| `/api/admin/qotd` | `GET` `POST` | `app/routes/api/admin/qotd/index.ts` |
+| `/api/admin/qotd/:id` | `DELETE` | `app/routes/api/admin/qotd/$id.ts` |
 | `/api/admin/redemptions` | `GET` | `app/routes/api/admin/redemptions/index.ts` |
 | `/api/admin/redemptions/:id` | `POST` | `app/routes/api/admin/redemptions/$id.ts` |
 | `/api/admin/reports` | `GET` | `app/routes/api/admin/reports.ts` |
@@ -1052,6 +1054,16 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/push/public-key` | `GET` | `app/routes/api/push/public-key.ts` |
 | `/api/push/subscribe` | `DELETE` `POST` | `app/routes/api/push/subscribe.ts` |
 
+## `/api/qotd`
+
+3 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/qotd/answers` | `GET` | `app/routes/api/qotd/answers.ts` |
+| `/api/qotd/archive` | `GET` | `app/routes/api/qotd/archive.ts` |
+| `/api/qotd/today` | `GET` | `app/routes/api/qotd/today.ts` |
+
 ## `/api/quests`
 
 1 route.
@@ -1283,13 +1295,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/saves`
 
-3 routes.
+4 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/saves` | `DELETE` `GET` `POST` | `app/routes/api/saves/index.ts` |
 | `/api/saves/folders` | `GET` `POST` | `app/routes/api/saves/folders.ts` |
 | `/api/saves/folders/:id` | `DELETE` `PATCH` | `app/routes/api/saves/folders.$id.ts` |
+| `/api/saves/note` | `PUT` | `app/routes/api/saves/note.ts` |
 
 ## `/api/schedule`
 
@@ -1302,13 +1315,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/scheduled`
 
-3 routes.
+4 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/scheduled` | `GET` `POST` | `app/routes/api/scheduled/index.ts` |
 | `/api/scheduled/:id` | `DELETE` `PATCH` | `app/routes/api/scheduled/$id.ts` |
 | `/api/scheduled/:id/publish` | `POST` | `app/routes/api/scheduled/$id/publish.ts` |
+| `/api/scheduled/capsules` | `GET` | `app/routes/api/scheduled/capsules.ts` |
 
 ## `/api/search`
 
@@ -1320,6 +1334,19 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/search/saved` | `GET` `POST` | `app/routes/api/search/saved.ts` |
 | `/api/search/saved/:id` | `DELETE` `PATCH` | `app/routes/api/search/saved.$id.ts` |
 
+## `/api/series`
+
+6 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/series` | `GET` `POST` | `app/routes/api/series/index.ts` |
+| `/api/series/:id` | `DELETE` `GET` `PATCH` | `app/routes/api/series/$id.ts` |
+| `/api/series/:id/follow` | `DELETE` `PUT` | `app/routes/api/series/$id/follow.ts` |
+| `/api/series/:id/posts` | `POST` | `app/routes/api/series/$id/posts.ts` |
+| `/api/series/:id/posts/:postId` | `DELETE` `PATCH` | `app/routes/api/series/$id/posts/$postId.ts` |
+| `/api/series/post/:postId` | `GET` | `app/routes/api/series/post/$postId.ts` |
+
 ## `/api/services`
 
 1 route.
@@ -1330,11 +1357,12 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/settings`
 
-4 routes.
+5 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/settings/alt-text` | `GET` `POST` | `app/routes/api/settings/alt-text.ts` |
+| `/api/settings/auto-delete` | `GET` `PUT` | `app/routes/api/settings/auto-delete.ts` |
 | `/api/settings/email-digest` | `POST` | `app/routes/api/settings/email-digest.ts` |
 | `/api/settings/game-assists` | `GET` `POST` | `app/routes/api/settings/game-assists.ts` |
 | `/api/settings/play-limits` | `GET` `POST` | `app/routes/api/settings/play-limits.ts` |

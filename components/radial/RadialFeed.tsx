@@ -10,6 +10,7 @@ import { useCaughtUpMarker } from '@/hooks/useCaughtUpMarker';
 import { CaughtUpDivider } from '@/components/feed/CaughtUpDivider';
 import { type InitialFeed } from '@/components/feed/FeedColumn';
 import { ComposeBoxLazy } from '@/components/feed/ComposeBoxLazy';
+import { QotdCardLazy } from '@/components/posts-plus/QotdCardLazy';
 import { RadialLoader } from '@/components/ui/radial-loader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RadialWheel, type RadialWheelItem } from './RadialWheel';
@@ -134,7 +135,13 @@ function FeedWheel({ initial }: { initial: InitialFeed }) {
   // The inline "rmhark compose box" that heads the feed — the first rmhark comes
   // right after it. ComposeBoxLazy handles the signed-out state itself (same as
   // the classic feed column).
-  const composeLead = <ComposeBoxLazy />;
+  const composeLead = (
+    <>
+      {/* X4: today's question, above the composer; lazy, signed-in only, dismissible. */}
+      {filter === 'all' && !search && <QotdCardLazy />}
+      <ComposeBoxLazy />
+    </>
+  );
 
   if (wheelItems.length === 0) {
     // Distinguish a genuine empty timeline from a first-load error.
