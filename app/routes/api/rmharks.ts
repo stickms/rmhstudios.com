@@ -21,6 +21,7 @@ import { publishDueForUser } from '@/lib/scheduled/publish.server';
 import { screenNewContent } from '@/lib/moderation/auto-moderate.server';
 import { apiCache } from '@/lib/cache';
 import { altTextViolation } from '@/lib/feed/alt-text.server';
+import { planPostsPlus, recordPostsPlusTx, afterPostsPlus } from '@/lib/posts-plus/compose.server';
 
 /** Throttle window for the lazy scheduled-post probe on the feed read path. */
 const SCHEDULED_PROBE_TTL_MS = 60_000;
@@ -141,6 +142,9 @@ export const Route = createFileRoute('/api/rmharks')({
             unlockPrice,
             communityId,
             isTake,
+            ttl,
+            seriesId,
+            qotdDay,
           } = input;
 
           if (imageUrls?.length && !imageUrls.every((u) => ownsFeedImageUrl(u, session.user.id))) {
@@ -153,6 +157,19 @@ export const Route = createFileRoute('/api/rmharks')({
           if (altError) {
             return Response.json({ error: altError }, { status: 400 });
           }
+
+          // posts-plus: expiry (X8), series (X5) and question-of-the-day (X4) fields.
+          const planned = await planPostsPlus(session.user.id, {
+            ttl,
+            seriesId,
+            qotdDay,
+            audience,
+            communityId,
+          });
+          if (!planned.plan) {
+            return Response.json({ error: planned.error }, { status: 400 });
+          }
+          const plusPlan = planned.plan;
 
           // Trim alt text and clamp to the number of images so the two arrays stay
           // index-aligned even if the client sends a longer/whitespace-only list.
@@ -202,6 +219,8 @@ export const Route = createFileRoute('/api/rmharks')({
                 unlockPrice: unlockPrice && unlockPrice > 0 ? unlockPrice : null,
                 communityId: communityId ?? null,
                 isTake: isTake ?? false,
+                expiresAt: plusPlan.expiresAt,
+                seriesId: plusPlan.seriesId,
               },
               include: {
                 user: { select: userDisplaySelect },
@@ -237,6 +256,8 @@ export const Route = createFileRoute('/api/rmharks')({
                 data: { repostCount: { increment: 1 } },
               });
             }
+
+            await recordPostsPlusTx(tx, created.id, session.user.id, plusPlan);
 
             if (poll) {
               await tx.rMHarkPoll.create({
@@ -316,6 +337,8 @@ export const Route = createFileRoute('/api/rmharks')({
             isSensitive: rmhark.isSensitive,
             replyControl: rmhark.replyControl,
             isTake: rmhark.isTake || undefined,
+            seriesId: rmhark.seriesId ?? undefined,
+            expiresAt: rmhark.expiresAt?.toISOString(),
             reactions: [],
           };
 
@@ -447,6 +470,8 @@ export const Route = createFileRoute('/api/rmharks')({
               console.error('post achievement error:', e);
             }
           })();
+
+          afterPostsPlus(item.id, session.user.id, plusPlan);
 
           return Response.json(item, { status: 201 });
         },

@@ -9,6 +9,7 @@ import { editRMHarkSchema } from '@/lib/rmhark-schema';
 import { canViewPost } from '@/lib/feed/audience.server';
 import { isLocked } from '@/lib/feed/map-feed-item.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
+import { isExpired } from '@/lib/posts-plus/constants';
 
 export const Route = createFileRoute('/api/rmharks/$id')({
   server: {
@@ -57,6 +58,11 @@ export const Route = createFileRoute('/api/rmharks/$id')({
         });
 
         if (!rmhark) {
+          return Response.json({ error: 'Not found' }, { status: 404 });
+        }
+
+        // posts-plus X8: a post past its TTL is gone at read time, before the sweep runs.
+        if (isExpired(rmhark.expiresAt)) {
           return Response.json({ error: 'Not found' }, { status: 404 });
         }
 
@@ -115,6 +121,8 @@ export const Route = createFileRoute('/api/rmharks/$id')({
           imageUrls: isDeleted || locked ? undefined : rmhark.imageUrls,
           imageAlts: isDeleted || locked ? undefined : rmhark.imageAlts,
           isTake: rmhark.isTake || undefined,
+          seriesId: rmhark.seriesId ?? undefined,
+          expiresAt: rmhark.expiresAt?.toISOString(),
           locked,
           unlockPrice: rmhark.unlockPrice ?? undefined,
           deletedAt: rmhark.deletedAt?.toISOString() || null,

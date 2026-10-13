@@ -6,6 +6,7 @@ import type { FeedItem, FeedPoll } from '@/lib/feed-types';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { audienceWhere } from '@/lib/feed/audience.server';
 import { applyLock, loadBoundedReactionSummaries } from '@/lib/feed/map-feed-item.server';
+import { isExpired } from '@/lib/posts-plus/constants';
 
 function pollInclude(userId: string | null) {
   return {
@@ -134,7 +135,7 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
         const aud = audienceWhere(viewerId, viewerFollowsOwner ? [userId] : []);
 
         // Fetch user's own RMHarks and their reposts in parallel (exclude deleted)
-        const [rmharks, reposts] = await Promise.all([
+        const [rmharksRaw, repostsRaw] = await Promise.all([
           prisma.rMHark.findMany({
             where: {
               userId,
@@ -162,6 +163,11 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
             },
           }),
         ]);
+
+        // posts-plus X8: posts past their TTL are hidden at read time (the sweep
+        // job soft-deletes them within minutes; this closes the gap).
+        const rmharks = rmharksRaw.filter((r) => !isExpired(r.expiresAt));
+        const reposts = repostsRaw.filter((rp) => !isExpired(rp.rmhark.expiresAt));
 
         // Bounded reaction summaries for every post on the page (own + the posts
         // underlying reposts), two aggregate queries total (perf audit §2.3).
@@ -193,6 +199,8 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
               imageAlts: r.imageAlts ?? undefined,
               isSensitive: r.isSensitive ?? false,
               isTake: r.isTake || undefined,
+              seriesId: r.seriesId ?? undefined,
+              expiresAt: r.expiresAt?.toISOString(),
               reactions: reactionSummaries.get(r.id) ?? [],
             },
             r,
@@ -225,6 +233,8 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
               imageAlts: r.imageAlts ?? undefined,
               isSensitive: r.isSensitive ?? false,
               isTake: r.isTake || undefined,
+              seriesId: r.seriesId ?? undefined,
+              expiresAt: r.expiresAt?.toISOString(),
               reactions: reactionSummaries.get(r.id) ?? [],
             },
             r,
@@ -272,6 +282,8 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
                 imageAlts: p.imageAlts ?? undefined,
                 isSensitive: p.isSensitive ?? false,
                 isTake: p.isTake || undefined,
+                seriesId: p.seriesId ?? undefined,
+                expiresAt: p.expiresAt?.toISOString(),
                 reactions: pinnedSummaries.get(p.id) ?? [],
               },
               p,
