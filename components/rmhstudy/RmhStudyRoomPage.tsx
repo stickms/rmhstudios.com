@@ -77,7 +77,9 @@ export default function RmhStudyRoom() {
     let mounted = true;
     async function init() {
       try {
-        await connectToRmhStudy(roomCode);
+        // `?bd=` is a body-doubling match id (calendar F5): it lets the hub open the pair's room.
+        const matchId = new URLSearchParams(window.location.search).get('bd') ?? undefined;
+        await connectToRmhStudy(roomCode, matchId);
       } catch (err) {
         if (mounted) toast.error(err instanceof Error ? err.message : t('connection-failed', { defaultValue: 'Connection failed' }));
       }

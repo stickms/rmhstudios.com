@@ -4,7 +4,7 @@
  * Create or join a study room with synced Pomodoro timers.
  */
 
-import { useEffect, useState, useCallback } from 'react';
+import { lazy, Suspense, useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BookOpen, Clock, Users, Globe, RefreshCw, Layers, ArrowRight } from 'lucide-react';
 import { connectToRmhStudy, getSocket, disconnectFromRmhStudy, emit } from '@/lib/rmhstudy/socket';
@@ -14,6 +14,10 @@ import { toast } from '@/lib/rmhstudy/toast-store';
 import RmhStudyHeader from '@/components/rmhstudy/RmhStudyHeader';
 import type { PublicStudyRoomInfo } from '@/lib/rmhstudy/types';
 import { useRouter } from '@tanstack/react-router';
+import { useIdleReady } from '@/hooks/useIdleReady';
+
+// F5 — body-doubling match; fetched after idle, not with the landing.
+const BodyDoublePanel = lazy(() => import('@/components/rmhstudy/BodyDoublePanel'));
 
 export default function RmhStudyLanding() {
   const { t } = useTranslation('c-rmhstudy');
@@ -25,6 +29,7 @@ export default function RmhStudyLanding() {
   const [shortBreakMinutes, setShortBreakMinutes] = useState(5);
   const [longBreakMinutes, setLongBreakMinutes] = useState(15);
   const [sessions, setSessions] = useState(4);
+  const idle = useIdleReady();
 
   useEffect(() => {
     let mounted = true;
@@ -150,6 +155,12 @@ export default function RmhStudyLanding() {
             </div>
             <ArrowRight className="h-5 w-5 shrink-0 text-(--app-text-muted) transition-transform group-hover:translate-x-1" />
           </button>
+
+          {idle && (
+            <Suspense fallback={null}>
+              <BodyDoublePanel />
+            </Suspense>
+          )}
 
           <div className="grid md:grid-cols-2 gap-6">
             {/* Create Room */}

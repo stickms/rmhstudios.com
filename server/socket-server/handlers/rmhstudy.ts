@@ -539,6 +539,77 @@ function clearDisconnectTimer(userId: string): void {
   }
 }
 
+/**
+ * Create a room with `userId` as host and join the socket to it. Shared by the
+ * `rmhstudy:room:create` event and by a body-doubling match opening its room.
+ */
+function createRoomForSocket(
+  io: Server,
+  socket: Socket,
+  userId: string,
+  userName: string,
+  rawSettings: Record<string, unknown> | undefined,
+  isPublic: boolean,
+  fixedCode?: string,
+): string {
+  // Remove from any existing room
+  const existingRoomCode = socketRoomMap.get(socket.id);
+  if (existingRoomCode) {
+    removePlayerFromRoom(io, userId, existingRoomCode);
+  }
+
+  // Generate unique room code (a body-doubling match brings its own)
+  let code = fixedCode ?? generateRoomCode(6);
+  let attempts = 0;
+  while (!fixedCode && rooms.has(code) && attempts < 20) { code = generateRoomCode(6); attempts++; }
+
+  const settings = parseSettings(rawSettings);
+
+  const room: StudyRoom = {
+    code,
+    hostUserId: userId,
+    isPublic,
+    settings,
+    timer: {
+      phase: 'idle',
+      remainingMs: 0,
+      totalMs: 0,
+      sessionNumber: 0,
+      totalSessions: settings.sessionsBeforeLongBreak,
+      paused: false,
+    },
+    timerInterval: null,
+    members: new Map(),
+    bannedUsers: [],
+    chat: [],
+    chatReactions: new Map(),
+    workPhaseStartedAt: null,
+  };
+
+  const member: RoomMember = {
+    socketId: socket.id,
+    userId,
+    userName,
+    avatarUrl: (socket.data.avatarUrl as string) ?? null,
+    isConnected: true,
+    status: 'idle',
+    tasks: [],
+    joinedAt: Date.now(),
+  };
+
+  room.members.set(userId, member);
+  rooms.set(code, room);
+  userSocketMap.set(userId, socket.id);
+  socketUserMap.set(socket.id, userId);
+  socketRoomMap.set(socket.id, code);
+
+  socket.join(socketRoom(code));
+  broadcastRoomState(io, room);
+
+  logger.info({ event: 'rmhstudy_room_created', roomCode: code, userId, userName });
+  return code;
+}
+
 // ─── Event Handlers ───
 
 export function registerRmhStudyHandlers(io: Server, socket: Socket): void {
@@ -565,67 +636,69 @@ export function registerRmhStudyHandlers(io: Server, socket: Socket): void {
       : (socket.data.userName as string) || 'Player';
     if (!userId) { emitError(socket, 'Not authenticated'); return; }
 
-    // Remove from any existing room
-    const existingRoomCode = socketRoomMap.get(socket.id);
-    if (existingRoomCode) {
-      removePlayerFromRoom(io, userId, existingRoomCode);
-    }
-
-    // Generate unique room code
-    let code = generateRoomCode(6);
-    let attempts = 0;
-    while (rooms.has(code) && attempts < 20) { code = generateRoomCode(6); attempts++; }
-
-    const settings = parseSettings(payload?.settings);
-    const isPublic = typeof payload?.isPublic === 'boolean' ? payload.isPublic : false;
-
-    const room: StudyRoom = {
-      code,
-      hostUserId: userId,
-      isPublic,
-      settings,
-      timer: {
-        phase: 'idle',
-        remainingMs: 0,
-        totalMs: 0,
-        sessionNumber: 0,
-        totalSessions: settings.sessionsBeforeLongBreak,
-        paused: false,
-      },
-      timerInterval: null,
-      members: new Map(),
-      bannedUsers: [],
-      chat: [],
-      chatReactions: new Map(),
-      workPhaseStartedAt: null,
-    };
-
-    const member: RoomMember = {
-      socketId: socket.id,
+    createRoomForSocket(
+      io,
+      socket,
       userId,
       userName,
-      avatarUrl: (socket.data.avatarUrl as string) ?? null,
-      isConnected: true,
-      status: 'idle',
-      tasks: [],
-      joinedAt: Date.now(),
-    };
-
-    room.members.set(userId, member);
-    rooms.set(code, room);
-    userSocketMap.set(userId, socket.id);
-    socketUserMap.set(socket.id, userId);
-    socketRoomMap.set(socket.id, code);
-
-    socket.join(socketRoom(code));
-    broadcastRoomState(io, room);
-
-    logger.info({ event: 'rmhstudy_room_created', roomCode: code, userId, userName });
+      payload?.settings,
+      typeof payload?.isPublic === 'boolean' ? payload.isPublic : false,
+    );
   });
 
   // ─── Join Room ───
-  socket.on('rmhstudy:room:join', (payload: {
+  /** Open a body-doubling match's room if the caller is one of the pair and the session window is open. */
+  const openMatchRoom = async (roomCode: string, matchId: string, userId: string, userName: string) => {
+    try {
+      const db = getPrismaClient() as unknown as {
+        studyBuddyMatch: {
+          findUnique(args: unknown): Promise<{
+            roomCode: string;
+            lengthMin: number;
+            startsAt: Date;
+            endsAt: Date;
+            userAId: string;
+            userBId: string;
+          } | null>;
+        };
+      };
+      const match = await db.studyBuddyMatch.findUnique({
+        where: { id: matchId },
+        select: { roomCode: true, lengthMin: true, startsAt: true, endsAt: true, userAId: true, userBId: true },
+      });
+      if (!match || match.roomCode !== roomCode || (match.userAId !== userId && match.userBId !== userId)) {
+        emitError(socket, 'Room not found');
+        return;
+      }
+      const now = Date.now();
+      if (now < new Date(match.startsAt).getTime() - 5 * 60_000) {
+        emitError(socket, 'Your study session has not opened yet. Come back a few minutes before it starts.');
+        return;
+      }
+      if (now > new Date(match.endsAt).getTime()) {
+        emitError(socket, 'This study session has ended.');
+        return;
+      }
+      // The partner may have opened it while we were reading the match.
+      if (getRoomByCode(roomCode)) { handleJoin({ roomCode }); return; }
+      createRoomForSocket(
+        io,
+        socket,
+        userId,
+        userName,
+        { workDurationMs: match.lengthMin * 60_000, sessionsBeforeLongBreak: 1 },
+        false,
+        roomCode,
+      );
+    } catch (err) {
+      logger.error({ event: 'rmhstudy_match_room_failed', roomCode, matchId, err: (err as Error)?.message });
+      emitError(socket, 'Could not open your study room.');
+    }
+  };
+
+  const handleJoin = (payload: {
     roomCode?: string;
+    matchId?: string;
     userId?: string;
     userName?: string;
   }) => {
@@ -646,7 +719,14 @@ export function registerRmhStudyHandlers(io: Server, socket: Socket): void {
     if (!roomCode || !userId) { emitError(socket, 'Missing roomCode or not authenticated'); return; }
 
     const room = getRoomByCode(roomCode);
-    if (!room) { emitError(socket, 'Room not found'); return; }
+    if (!room) {
+      // A body-doubling match (calendar F5) carries its own room code; the first of
+      // the pair to arrive inside the session window opens the room.
+      const matchId = typeof payload?.matchId === 'string' ? payload.matchId.slice(0, 40) : '';
+      if (matchId) { void openMatchRoom(roomCode, matchId, userId, userName); return; }
+      emitError(socket, 'Room not found');
+      return;
+    }
 
     // Ban check
     if (room.bannedUsers.some((b) => b.userId === userId)) {
@@ -702,7 +782,8 @@ export function registerRmhStudyHandlers(io: Server, socket: Socket): void {
     socket.emit('rmhstudy:task:list', { tasks: member.tasks });
 
     logger.info({ event: 'rmhstudy_player_joined', roomCode, userId, userName });
-  });
+  };
+  socket.on('rmhstudy:room:join', handleJoin);
 
   // ─── Leave Room ───
   socket.on('rmhstudy:room:leave', (payload: { roomCode?: string }) => {

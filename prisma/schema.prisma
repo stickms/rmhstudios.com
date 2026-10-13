@@ -454,6 +454,19 @@ model User {
   communityChallengeVotes    CommunityChallengeVote[]
   communityCensusAnswered    CommunityCensusParticipant[]
   communityContributorScores CommunityContributorScore[]
+  // P09 calendar: K1 polls, K2 office hours, K3 feed, K4 occurrence RSVPs, F5 study buddy
+  availabilityPolls          AvailabilityPoll[]
+  availabilityResponses      AvailabilityPollResponse[]
+  availabilityInvites        AvailabilityPollInvitee[]
+  officeHoursConfig          OfficeHoursConfig?
+  officeHoursBookingsAsHost  OfficeHoursBooking[]      @relation("OfficeHoursHost")
+  officeHoursBookingsAsGuest OfficeHoursBooking[]      @relation("OfficeHoursGuest")
+  calendarFeed               CalendarFeed?
+  calendarFeedSlots          CalendarFeedSlot[]
+  eventOccurrenceRsvps       EventOccurrenceRsvp[]
+  studyBuddyRequests         StudyBuddyRequest[]
+  studyBuddyMatchesA         StudyBuddyMatch[]         @relation("StudyBuddyA")
+  studyBuddyMatchesB         StudyBuddyMatch[]         @relation("StudyBuddyB")
   chatFolders    ChatFolder[]
   chatPins       ChatPin[]
   dmPollVotes    DirectPollVote[]
@@ -7162,6 +7175,15 @@ model CommunityEvent {
   capacity    Int?
   canceledAt  DateTime?
   createdAt   DateTime       @default(now())
+  /// P09 K4 — compact repeat rule ('W' weekly, 'M' monthly on the same nth weekday). Null = one-off.
+  recurrence      String?   @db.VarChar(4)
+  /// P09 K4 — last day a repeating event may occur. Null = until cancelled.
+  recurUntil      DateTime?
+  /// P09 K4 — IANA timezone the repeat keeps its wall-clock time in (so a 8pm event stays 8pm across DST).
+  recurTz         String?   @db.VarChar(64)
+  /// P09 K4 — optional host rotation (user ids, in order). Occurrence n is hosted by [n % length].
+  rotatingHostIds String[]  @default([])
+  occurrenceRsvps EventOccurrenceRsvp[]
 
   host      User        @relation("EventHost", fields: [hostId], references: [id], onDelete: Cascade)
   community Community?  @relation(fields: [communityId], references: [id], onDelete: Cascade)
@@ -7178,6 +7200,8 @@ model EventRsvp {
   userId    String
   status    String   @db.VarChar(8) // 'going' | 'maybe'
   createdAt DateTime @default(now())
+  /// P09 K4 — on a repeating event, this RSVP carries over to every occurrence.
+  everyTime Boolean  @default(false)
 
   event CommunityEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
   user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -10409,4 +10433,219 @@ model CommunitySister {
   @@id([communityId, relatedCommunityId])
   @@index([relatedCommunityId])
   @@map("community_sister")
+}
+
+// ── P09 calendar: K1 K2 K3 K4 F5 ──
+
+/// K1 — an availability poll ("when can everyone make it?"). The slot grid is
+/// not stored: it is derived from (tz, firstDay, days, dayStartHour, dayEndHour,
+/// slotMin) by lib/calendar/poll-slots.ts, so a respondent's answers are one
+/// character per slot, in slot order.
+model AvailabilityPoll {
+  id             String    @id @default(cuid())
+  creatorId      String
+  title          String    @db.VarChar(120)
+  description    String    @default("") @db.VarChar(500)
+  /// IANA timezone the organiser picked the daily hour window in.
+  tz             String    @db.VarChar(64)
+  /// First day of the range, YYYY-MM-DD in `tz`.
+  firstDay       String    @db.VarChar(10)
+  days           Int
+  dayStartHour   Int
+  dayEndHour     Int
+  slotMin        Int
+  /// Optional attachment: a community (lock-in creates its event) or a group chat (lock-in notifies it).
+  communityId    String?   @db.VarChar(40)
+  groupChatId    String?   @db.VarChar(40)
+  lockedStartMin Int?
+  lockedEndMin   Int?
+  lockedAt       DateTime?
+  lockedEventId  String?   @db.VarChar(40)
+  createdAt      DateTime  @default(now())
+
+  creator   User                     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  responses AvailabilityPollResponse[]
+  invitees  AvailabilityPollInvitee[]
+
+  @@index([creatorId, createdAt(sort: Desc)])
+  @@index([communityId])
+  @@index([groupChatId])
+  @@map("availability_poll")
+}
+
+/// One member's answers: a string, one char per slot — '0' no, '1' yes, '2' if need be.
+model AvailabilityPollResponse {
+  id        String   @id @default(cuid())
+  pollId    String
+  userId    String
+  answers   String   @db.VarChar(720)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  poll AvailabilityPoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  user User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, userId])
+  @@index([userId, updatedAt(sort: Desc)])
+  @@map("availability_poll_response")
+}
+
+/// A REQUIRED invitee: a slot only makes the shortlist when every invitee can make it.
+model AvailabilityPollInvitee {
+  id     String @id @default(cuid())
+  pollId String
+  userId String
+
+  poll AvailabilityPoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  user User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, userId])
+  @@index([userId])
+  @@map("availability_poll_invitee")
+}
+
+/// K2 — a member's office-hours settings. Bookable slots are derived from the
+/// weekly windows, never stored.
+model OfficeHoursConfig {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  title      String   @default("") @db.VarChar(80)
+  blurb      String   @default("") @db.VarChar(300)
+  tz         String   @db.VarChar(64)
+  slotMin    Int      @default(30)
+  /// Cap on bookings per calendar week (host timezone). Null = unlimited.
+  maxPerWeek Int?
+  enabled    Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user    User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  windows OfficeHoursWindow[]
+
+  @@map("office_hours_config")
+}
+
+/// A recurring weekly window, in the config's timezone. weekday 0 = Sunday.
+model OfficeHoursWindow {
+  id          String @id @default(cuid())
+  configId    String
+  weekday     Int
+  startMinute Int
+  endMinute   Int
+
+  config OfficeHoursConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId])
+  @@map("office_hours_window")
+}
+
+/// One booked slot. The unique (hostId, startsAt) is what makes booking race-safe;
+/// cancelling deletes the row so the slot frees up.
+model OfficeHoursBooking {
+  id        String   @id @default(cuid())
+  hostId    String
+  guestId   String
+  startsAt  DateTime
+  endsAt    DateTime
+  note      String   @default("") @db.VarChar(300)
+  createdAt DateTime @default(now())
+
+  host  User @relation("OfficeHoursHost", fields: [hostId], references: [id], onDelete: Cascade)
+  guest User @relation("OfficeHoursGuest", fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@unique([hostId, startsAt])
+  @@index([guestId, startsAt])
+  @@map("office_hours_booking")
+}
+
+/// K3 — the private tokenised calendar feed. The token is the credential
+/// (calendar apps poll with no cookies); rotating replaces it.
+model CalendarFeed {
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  token     String    @unique @db.VarChar(64)
+  enabled   Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  rotatedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("calendar_feed")
+}
+
+/// K3 — a programming-grid slot the member opted into.
+model CalendarFeedSlot {
+  id        String   @id @default(cuid())
+  userId    String
+  slotId    String   @db.VarChar(40)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, slotId])
+  @@map("calendar_feed_slot")
+}
+
+/// K4 — an RSVP to ONE occurrence of a repeating event (an "every time" RSVP
+/// lives on EventRsvp.everyTime instead).
+model EventOccurrenceRsvp {
+  id           String   @id @default(cuid())
+  eventId      String
+  userId       String
+  occurrenceAt DateTime
+  status       String   @db.VarChar(8) // 'going' | 'maybe'
+  createdAt    DateTime @default(now())
+
+  event CommunityEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId, occurrenceAt])
+  @@index([eventId, occurrenceAt])
+  @@index([userId, occurrenceAt])
+  @@map("event_occurrence_rsvp")
+}
+
+/// F5 — a request to body-double. 'now' requests queue for ten minutes; 'slot'
+/// requests are matched against others for the same subject, length and slot.
+model StudyBuddyRequest {
+  id         String   @id @default(cuid())
+  userId     String
+  subjectKey String   @db.VarChar(48)
+  subject    String   @db.VarChar(60)
+  lengthMin  Int
+  mode       String   @db.VarChar(4) // 'now' | 'slot'
+  startsAt   DateTime
+  expiresAt  DateTime
+  status     String   @default("waiting") @db.VarChar(10) // waiting | matched | expired | canceled
+  matchId    String?  @db.VarChar(40)
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, subjectKey, lengthMin, startsAt])
+  @@index([userId, status])
+  @@index([status, expiresAt])
+  @@map("study_buddy_request")
+}
+
+/// F5 — two members paired for a session. The room is created lazily by the
+/// socket hub when the first of them joins `roomCode`, and only inside the
+/// session window, so a no-show costs nothing.
+model StudyBuddyMatch {
+  id        String   @id @default(cuid())
+  roomCode  String   @unique @db.VarChar(8)
+  subject   String   @db.VarChar(60)
+  lengthMin Int
+  startsAt  DateTime
+  endsAt    DateTime
+  userAId   String
+  userBId   String
+  createdAt DateTime @default(now())
+
+  userA User @relation("StudyBuddyA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB User @relation("StudyBuddyB", fields: [userBId], references: [id], onDelete: Cascade)
+
+  @@index([userAId, startsAt])
+  @@index([userBId, startsAt])
+  @@map("study_buddy_match")
 }
