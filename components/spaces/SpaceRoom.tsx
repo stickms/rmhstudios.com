@@ -14,6 +14,9 @@ import { ensureTrailingSlash } from '@/lib/url';
 import { cn } from '@/lib/utils';
 import { SPACE_C2S, SPACE_S2C } from '@/lib/spaces/events';
 import type { SpacePinned, SpaceStatus, SpaceView } from '@/lib/spaces/types';
+import { SlowModeBar, useSlowModeBlock } from '@/components/safety/SlowModeBar';
+import { bindSlowModeEvents } from '@/lib/safety/slow-mode-store';
+import { slowModeEvents } from '@/lib/safety/slow-mode-events';
 
 interface LiveMessage {
   id: string;
@@ -193,6 +196,7 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
       setStatus('ENDED');
       toast(t('space-ended', { defaultValue: 'This Space has ended' }));
     });
+    bindSlowModeEvents(socket, 'space');
     socket.on(SPACE_S2C.ERROR, (e: { message?: string }) => {
       if (e?.message) toast.error(e.message);
     });
@@ -211,16 +215,17 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages.length]);
 
+  const slowBlock = useSlowModeBlock('space');
   const sendMessage = useCallback(() => {
     const body = draft.trim();
-    if (!body) return;
+    if (!body || slowBlock.secondsLeft > 0) return;
     if (!viewerId) {
       toast.error(t('space-sign-in-to-chat', { defaultValue: 'Sign in to chat' }));
       return;
     }
     socketRef.current?.emit(SPACE_C2S.CHAT, { spaceId: initialSpace.id, body });
     setDraft('');
-  }, [draft, viewerId, initialSpace.id, t]);
+  }, [draft, viewerId, initialSpace.id, t, slowBlock.secondsLeft]);
 
   const react = useCallback(
     (emoji: string) => {
@@ -437,6 +442,13 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
               </button>
             ))}
           </div>
+          <SlowModeBar
+            scope="space"
+            isHost={isHost}
+            onSet={(seconds) =>
+              socketRef.current?.emit(slowModeEvents('space').SET, { spaceId: initialSpace.id, seconds })
+            }
+          />
           <form
             className="flex items-center gap-2"
             onSubmit={(e) => {
@@ -460,7 +472,7 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
               type="submit"
               size="sm"
               variant="accent"
-              disabled={!draft.trim() || !viewerId}
+              disabled={!draft.trim() || !viewerId || slowBlock.secondsLeft > 0}
               aria-label={t('space-send', { defaultValue: 'Send' })}
             >
               <Send className="h-4 w-4" aria-hidden />

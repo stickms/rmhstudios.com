@@ -2,6 +2,7 @@
  * Admin Dashboard Route
  */
 
+import { AdminSafetyLink } from '@/components/safety/AdminSafetyLink';
 import { useTranslation } from "react-i18next";
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { PageLayout } from '@/components/feed/PageLayout';
@@ -214,6 +215,7 @@ function AdminDashboardPage() {
             </p>
           </Link>
 
+          <AdminSafetyLink />
           <AdminQotdLink />
           <AdminReadingLink />
         </div>

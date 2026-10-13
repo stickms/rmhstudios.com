@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 307 routes. 171 render inside the standard site shell (sidebar, nav, context rail); 136 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 310 routes. 174 render inside the standard site shell (sidebar, nav, context rail); 136 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -41,6 +41,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/redemptions` | Redemption Queue | admin | `app/routes/_site/admin/redemptions.tsx` |
 | `/admin/reports` | Moderation Queue | admin | `app/routes/_site/admin/reports.tsx` |
 | `/admin/rideshare` | Rideshare Applications | admin | `app/routes/_site/admin/rideshare.tsx` |
+| `/admin/safety` | Safety Tools | admin | `app/routes/_site/admin/safety.tsx` |
 | `/admin/security-reports` | Security Reports | admin | `app/routes/_site/admin/security-reports.tsx` |
 | `/admin/slice-it` | Slice It ranked pool | admin | `app/routes/_site/admin/slice-it.tsx` |
 | `/admin/slice-it-content` | Slice It content & storage | admin | `app/routes/_site/admin/slice-it-content.tsx` |
@@ -104,6 +105,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/notifications` | redirects to `/messages?tab=notifications` | public | `app/routes/_site/notifications.tsx` |
 | `/office-hours` | Office hours | public | `app/routes/_site/office-hours/index.tsx` |
 | `/office-hours/:userId` | Book office hours | public | `app/routes/_site/office-hours/$userId.tsx` |
+| `/out` | — | public | `app/routes/_site/out.tsx` |
 | `/personas` | redirects to `/create/personas` | public | `app/routes/_site/personas/index.tsx` |
 | `/personas/:id` | Persona | public | `app/routes/_site/personas/$id.tsx` |
 | `/playlists` | redirects to `/library?view=music` | public | `app/routes/_site/playlists.tsx` |
@@ -137,6 +139,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/rmhladder/review` | — | admin | `app/routes/_site/rmhladder/review.tsx` |
 | `/rmhladder/settings` | — | sign-in | `app/routes/_site/rmhladder/settings.tsx` |
 | `/roadmap` | Roadmap & requests | public | `app/routes/_site/roadmap.tsx` |
+| `/safety/pile-on` | — | public | `app/routes/_site/safety/pile-on.tsx` |
 | `/saves` | Saved | public | `app/routes/_site/saves/index.tsx` |
 | `/schedule` | Schedule | public | `app/routes/_site/schedule.tsx` |
 | `/search` | redirects to `/explore` | public | `app/routes/_site/search.tsx` |

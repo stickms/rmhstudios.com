@@ -226,6 +226,8 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/create/earnings': 'personal', // the viewer's own coins, views and payouts
   '/bookmarks': 'redirect', // → /saves
   '/drafts': 'personal',
+  '/out': 'noindex', // link-warning interstitial; the destination rides in ?url=
+  '/safety/pile-on': 'personal', // the author's one-tap notice from a notification
   '/history': 'personal',
   '/alexdebtcounter': 'redirect', // → /kaikaidebtcounter (the counter's subject is Kaikai)
   '/sohumbum2': 'redirect', // → /sohumtracker (renamed; the old link was already shared)
@@ -292,6 +294,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/admin/announcements': 'admin',
   '/admin/appeals': 'admin',
   '/admin/audit': 'admin',
+  '/admin/safety': 'admin',
   '/admin/blog': 'admin',
   '/admin/blog/new': 'admin',
   '/admin/economy': 'admin',

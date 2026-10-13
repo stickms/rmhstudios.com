@@ -127,6 +127,8 @@ export const createCommentSchema = z.object({
     .min(1, "Comment cannot be empty")
     .max(MAX_COMMENT_LENGTH, `Comment must be at most ${MAX_COMMENT_LENGTH} characters`),
   parentId: z.string().optional(),
+  // S1: set when the author chose to post after the "reconsider" prompt.
+  confirmReconsider: z.boolean().optional(),
 });
 
 export type CreateRMHarkInput = z.infer<typeof createRMHarkSchema>;

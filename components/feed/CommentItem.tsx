@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from'react';
 import { Link } from'@tanstack/react-router';
+import { useReconsider } from'@/components/safety/use-reconsider';
 import { MessageCircle, Repeat2, Heart, Eye, Trash2, MoreHorizontal, Repeat, BadgeCheck, ShieldCheck, Languages, Image as ImageIcon } from'lucide-react';
 import { Button } from'@/components/ui/button';
 import { useConfirm } from'@/components/ui/confirm-dialog';
@@ -256,18 +257,23 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  />
  );
 
+ const reconsider = useReconsider();
  const handleSubmitReply = async () => {
  if (!replyContent.trim() || submitting) return;
  setSubmitting(true);
  try {
- const res = await fetch(`/api/rmharks/${postId}/comment`, {
+ const res = await reconsider((confirmReconsider) =>
+ fetch(`/api/rmharks/${postId}/comment`, {
  method:'POST',
  headers: {'Content-Type':'application/json'},
  body: JSON.stringify({
  content: replyContent.trim(),
  parentId: comment.id,
+ confirmReconsider,
  }),
- });
+ }),
+ );
+ if (!res) return;
  if (res.ok) {
  const newReply = await res.json();
  onReplyAdded?.(comment.id, newReply);

@@ -447,6 +447,8 @@ model User {
   pf2eSettingsEdits   Pf2eSettings[]        @relation("Pf2eSettingsEditor")
 
   // ─── Feature ideas 2026-10-12 (docs/plans/2026-10-12-feature-ideas-every-surface.md)
+  // P14 safety: S7 pile-on guard
+  pileOnGuards               PileOnGuard[]
   // P12 forecasting: G6 market comments
   predictionComments         PredictionComment[]
   // P07 arcade: E1/E12 seeded runs, E2 backlog, E6 achievement tips, E11 rivals
@@ -11576,4 +11578,58 @@ model PredictionComment {
   @@index([predictionId, createdAt(sort: Desc)])
   @@index([userId])
   @@map("prediction_comment")
+}
+
+// ── P14 safety: S4 mod macros, S6 link warnings, S7 pile-on guard ──
+// Canned moderator responses with {{user}}/{{reason}} variables. `communityId`
+// null = a site-wide admin macro; set = that community's mods' macro. Plain
+// columns (no FK) so a departing mod never deletes a team's macros.
+model ModMacro {
+  id          String   @id @default(cuid())
+  communityId String?
+  createdById String
+  title       String   @db.VarChar(80)
+  body        String   @db.VarChar(1000)
+  createdAt   DateTime @default(now())
+
+  @@index([communityId, createdAt])
+  @@map("mod_macro")
+}
+
+// Admin-editable domain rules for the /out interstitial: DENY always warns,
+// ALLOW exempts a domain from the first-seen warning.
+model LinkDomainRule {
+  domain    String   @id @db.VarChar(255)
+  kind      String   @db.VarChar(8)
+  note      String?  @db.VarChar(200)
+  addedById String
+  createdAt DateTime @default(now())
+
+  @@map("link_domain_rule")
+}
+
+// The first time any link to a domain was shown on the site. A domain first
+// seen in the last few days is "new" and gets the interstitial.
+model SeenLinkDomain {
+  domain      String   @id @db.VarChar(255)
+  firstSeenAt DateTime @default(now())
+
+  @@map("seen_link_domain")
+}
+
+// One row per post that tripped the pile-on guard. status: OFFERED (author was
+// notified), ACTIVE (reply control limited until expiresAt), REVERTED, DISMISSED.
+model PileOnGuard {
+  postId          String             @id
+  authorId        String
+  previousControl RMHarkReplyControl @default(EVERYONE)
+  status          String             @db.VarChar(12)
+  offeredAt       DateTime           @default(now())
+  expiresAt       DateTime?
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
+  @@index([status, expiresAt])
+  @@map("pile_on_guard")
 }

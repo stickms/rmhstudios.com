@@ -35,6 +35,8 @@ import { getServerNow } from '@/lib/rmhtube/clock';
 import type { ChatMessage, ChatEntry, SystemMessage } from '@/lib/rmhtube/types';
 import { usePopPresence } from '@/hooks/usePopPresence';
 import { useStickToBottom } from '@/hooks/useStickToBottom';
+import { SlowModeBar, useSlowModeBlock } from '@/components/safety/SlowModeBar';
+import { slowModeEvents } from '@/lib/safety/slow-mode-events';
 import ChatMediaEmbed, { parseMessageMedia } from './ChatMediaEmbed';
 
 // ─── Helpers ──────────────────────────────────────────────────────
@@ -355,11 +357,12 @@ export default function ChatPanel() {
 
   // ─── Send ──────────────────────────────────────────────────────
 
+  const slowBlock = useSlowModeBlock('tube');
   const handleSend = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
       const content = message.trim();
-      if (!content || !members) return;
+      if (!content || !members || slowBlock.secondsLeft > 0) return;
 
       const mentionUserIds = [...content.matchAll(/@(\w+)/g)]
         .map((match) => members.find((m) => m.userName === match[1])?.userId)
@@ -386,7 +389,7 @@ export default function ChatPanel() {
       setShowMentionDropdown(false);
       scrollToBottom();
     },
-    [message, members, replyTo, attachTimestamp, shortcodes, scrollToBottom],
+    [message, members, replyTo, attachTimestamp, shortcodes, scrollToBottom, slowBlock.secondsLeft],
   );
 
   // ─── Message actions ───────────────────────────────────────────
@@ -589,6 +592,13 @@ export default function ChatPanel() {
       )}
 
       {/* Composer */}
+      <SlowModeBar
+        scope="tube"
+        isHost={isHost}
+        onSet={(seconds) => emit(slowModeEvents('tube').SET, { seconds })}
+        tier="app"
+        className="text-(--app-text-dim)"
+      />
       <form onSubmit={handleSend} className="flex gap-2 px-1.5 py-3 border-t border-(--app-border)">
         <div className="relative flex-1 min-w-0">
           <input
@@ -639,7 +649,7 @@ export default function ChatPanel() {
         />
         <button
           type="submit"
-          disabled={!message.trim()}
+          disabled={!message.trim() || slowBlock.secondsLeft > 0}
           aria-label={t('send', { defaultValue: 'Send' })}
           className="shrink-0 rounded-lg px-3 py-2 transition-colors disabled:opacity-50 bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)"
         >

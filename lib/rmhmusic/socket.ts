@@ -13,6 +13,7 @@ import { authClient } from '@/lib/auth-client';
 import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
 import { useRmhMusicStore } from './store';
 import { S2C } from './events';
+import { bindSlowModeEvents } from '@/lib/safety/slow-mode-store';
 
 let client: RealtimeClient | null = null;
 
@@ -100,6 +101,7 @@ function registerHandlers(socket: Socket) {
     if (room) useRmhMusicStore.setState({ room: { ...room, queue: data.queue } });
   });
 
+  bindSlowModeEvents(socket, 'music');
   socket.on(S2C.ERROR, (error) => console.error('[RmhMusic] Server error:', error));
   socket.on(S2C.ROOM_DISBANDED, () => store().leaveRoom());
 }

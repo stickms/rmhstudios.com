@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
+import { MacroField } from '@/components/safety/MacroField';
 import type { ModItemDTO } from '@/lib/communities/plus-schema';
 
 export function ModQueue({ slug }: { slug: string }) {
@@ -17,6 +18,8 @@ export function ModQueue({ slug }: { slug: string }) {
   const [view, setView] = useState<'pending' | 'log'>('pending');
   const [items, setItems] = useState<ModItemDTO[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  // S4: per-item message to the author, filled from a macro.
+  const [messages, setMessages] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     setItems(null);
@@ -32,7 +35,10 @@ export function ModQueue({ slug }: { slug: string }) {
 
   const decide = async (item: ModItemDTO, decision: 'approve' | 'remove') => {
     setBusy(item.id);
-    const res = await plusFetch(communityApi(slug, `/modqueue/${item.id}`), 'POST', { decision });
+    const res = await plusFetch(communityApi(slug, `/modqueue/${item.id}`), 'POST', {
+      decision,
+      message: decision === 'remove' ? messages[item.id]?.trim() || undefined : undefined,
+    });
     setBusy(null);
     if (!res.ok) {
       toast.error(res.error || t('queue-error', { defaultValue: "Couldn't update the item" }));
@@ -95,6 +101,14 @@ export function ModQueue({ slug }: { slug: string }) {
                 <span>{formatDistanceToNow(new Date(i.createdAt), { addSuffix: true })}</span>
               </div>
               <p className="whitespace-pre-wrap break-words text-sm text-site-text">{i.snapshot}</p>
+              {i.status === 'PENDING' && (
+                <MacroField
+                  scope={{ kind: 'community', slug }}
+                  vars={{ user: i.author.name || i.author.handle || undefined, reason: i.ruleName }}
+                  value={messages[i.id] ?? ''}
+                  onChange={(v) => setMessages((m) => ({ ...m, [i.id]: v }))}
+                />
+              )}
               {i.status === 'PENDING' ? (
                 <div className="flex justify-end gap-2">
                   <Button
