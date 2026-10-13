@@ -270,6 +270,8 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/studio/themes': 'redirect', // → /settings/themes
   '/user-builds/manage': 'personal',
   // P09 calendar: private scheduling tools, each page carries a `noindex` meta tag.
+  '/advent': 'noindex', // the viewer's own doors (P11 G2)
+  '/exchange': 'noindex', // gift and mixtape exchanges: the viewer's own list and the new-exchange form
   '/when': 'noindex', // availability polls: a member's own list and the new-poll form
   '/office-hours': 'noindex', // a member's own office-hours settings and bookings
   '/user-builds/submit': 'auth-gated',
@@ -464,6 +466,7 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/rings/$slug': null,
   // P09 calendar: a poll is a private link between the people it was sent to, and an
   // office-hours page is a booking form — both `noindex`.
+  '/exchange/$id': null, // an exchange is a private link between its members, noindex
   '/when/$id': null,
   '/office-hours/$userId': null,
 

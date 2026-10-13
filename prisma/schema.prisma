@@ -447,6 +447,14 @@ model User {
   pf2eSettingsEdits   Pf2eSettings[]        @relation("Pf2eSettingsEditor")
 
   // ─── Feature ideas 2026-10-12 (docs/plans/2026-10-12-feature-ideas-every-surface.md)
+  // P11 gifting: G1 birthdays, G2 advent, G3 gift exchange, G4 kudos, F2 mixtape exchange
+  birthday                   UserBirthday?
+  adventClaims               AdventClaim[]
+  giftExchangesOrganised     GiftExchange[]       @relation("GiftExchangeOrganiser")
+  giftExchangeMemberships    GiftExchangeMember[] @relation("GiftExchangeMemberUser")
+  giftExchangeRecipientOf    GiftExchangeMember[] @relation("GiftExchangeMemberRecipient")
+  kudosSent                  Kudos[]              @relation("KudosFrom")
+  kudosReceived              Kudos[]              @relation("KudosTo")
   // P03 discovery: A3 digest, A4 custom feeds, A5 memories, A6 keyword alerts, A7 watches
   customFeeds                CustomFeed[]
   customFeedSubscriptions    CustomFeedSubscription[]
@@ -11244,4 +11252,104 @@ model FriendlyChallenge {
   @@index([opponentId, status])
   @@index([challengerId, status])
   @@map("friendly_challenge")
+}
+
+// ── P11: G1 G2 G3 G4 F2 ──
+
+/// Opt-in birthday (G1): month/day only, never a year. Row present = opted in.
+model UserBirthday {
+  userId           String   @id
+  month            Int
+  day              Int
+  /// Last calendar year followers were nudged, so the daily job is idempotent.
+  lastNotifiedYear Int?
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([month, day])
+  @@map("user_birthday")
+}
+
+/// One opened advent door per member per year (G2). The unique key is the
+/// once-per-day guarantee; the coin grant is keyed off the row's identity.
+model AdventClaim {
+  id        String   @id @default(cuid())
+  userId    String
+  year      Int
+  door      Int
+  coins     Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, year, door])
+  @@map("advent_claim")
+}
+
+/// A gift (G3) or RMHMusic mixtape (F2) exchange. The draw is stored with its
+/// seed so a disputed result can be re-run (lib/gifting/secret-santa.ts).
+model GiftExchange {
+  id          String    @id @default(cuid())
+  organizerId String
+  kind        String    @default("GIFT") @db.VarChar(8) // GIFT | MIXTAPE
+  title       String    @db.VarChar(80)
+  theme       String?   @db.VarChar(80)
+  /// Max coins per gift (GIFT only).
+  budget      Int?
+  /// Sign-ups close and the draw runs at this time.
+  drawAt      DateTime
+  /// Pairings become visible to every member after this time.
+  revealAt    DateTime
+  status      String    @default("OPEN") @db.VarChar(10) // OPEN | DRAWN | FAILED | CANCELLED
+  seed        Int?
+  singleCycle Boolean?
+  drawnAt     DateTime?
+  createdAt   DateTime  @default(now())
+
+  organizer User                 @relation("GiftExchangeOrganiser", fields: [organizerId], references: [id], onDelete: Cascade)
+  members   GiftExchangeMember[]
+
+  @@index([organizerId])
+  @@index([status, drawAt])
+  @@map("gift_exchange")
+}
+
+model GiftExchangeMember {
+  id          String    @id @default(cuid())
+  exchangeId  String
+  userId      String
+  /// Set by the draw. Only the owner may read it before revealAt.
+  recipientId String?
+  /// User ids this member asks not to be paired with ("not my roommate").
+  excludeIds  String[]
+  /// Mixtape (F2): up to 10 { id, title, artist, albumArt, previewUrl }.
+  tracks      Json?
+  giftedAt    DateTime?
+  createdAt   DateTime  @default(now())
+
+  exchange  GiftExchange @relation(fields: [exchangeId], references: [id], onDelete: Cascade)
+  user      User         @relation("GiftExchangeMemberUser", fields: [userId], references: [id], onDelete: Cascade)
+  recipient User?        @relation("GiftExchangeMemberRecipient", fields: [recipientId], references: [id], onDelete: SetNull)
+
+  @@unique([exchangeId, userId])
+  @@index([userId])
+  @@index([recipientId])
+  @@map("gift_exchange_member")
+}
+
+/// A free, non-coin thank-you note with a reason (G4).
+model Kudos {
+  id        String   @id @default(cuid())
+  fromId    String
+  toId      String
+  reason    String   @db.VarChar(200)
+  createdAt DateTime @default(now())
+
+  from User @relation("KudosFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to   User @relation("KudosTo", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@index([toId, createdAt(sort: Desc)])
+  @@index([fromId, createdAt])
+  @@map("kudos")
 }

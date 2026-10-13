@@ -15,6 +15,8 @@ import { useIdleReady } from '@/hooks/useIdleReady';
 
 // P05 — pronouns, /now, Top Four, stamps, profile card… loaded after the page is idle.
 import ProfilePlusSettings from '@/components/profile/plus/ProfilePlusSettings';
+// P11 — opt-in birthday (G1).
+import BirthdaySettings from '@/components/gifting/BirthdaySettings';
 
 export const Route = createFileRoute('/_site/settings/profile')({
   head: () => ({
@@ -65,6 +67,7 @@ function ProfileCustomizationPage() {
         </p>
         {!isPending && !signedIn ? signInPrompt : <ProfileCosmetics />}
         {signedIn && idle ? <ProfilePlusSettings /> : null}
+        {signedIn && idle ? <BirthdaySettings /> : null}
       </div>
     </PageLayout>
   );

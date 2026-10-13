@@ -25,6 +25,8 @@ import type {
   ScheduledGiftsPayload,
   SentGiftView,
 } from '@/lib/gifting/scheduled-gift';
+import GiftingLinks from '@/components/gifting/GiftingLinks';
+import BirthdayGiftButton from '@/components/gifting/BirthdayGiftButton';
 import { ApiError, apiJson, errorCode, newIdempotencyKey } from './api';
 import { ItemPicker, type PickedItem } from './ItemPicker';
 
@@ -86,6 +88,7 @@ export default function ScheduledGiftsPanel() {
       </section>
 
       <SendGiftForm />
+      <GiftingLinks />
 
       <section aria-labelledby="gifts-sent" className="space-y-3">
         <h2 id="gifts-sent" className="site-section-label px-1">
@@ -342,6 +345,7 @@ function SendGiftForm() {
             value={when}
             onChange={(e) => setWhen(e.target.value)}
           />
+          <BirthdayGiftButton recipient={recipient} onPick={setWhen} />
         </div>
         <Textarea
           value={message}

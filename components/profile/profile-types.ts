@@ -27,6 +27,8 @@ export interface ProfileData {
   showLikes: boolean;
   /** Plan U15 — 'off' | 'following' | 'everyone'. Older payloads omit it. */
   guestbookMode?: string;
+  /** G1 — true only on the owner's opted-in birthday. */
+  birthdayToday?: boolean;
   dmPrivacy: string;
   profileSongSpotifyId: string | null;
   profileSongTitle: string | null;

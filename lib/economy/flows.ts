@@ -229,6 +229,14 @@ export const COIN_FLOWS: readonly CoinFlow[] = [
     pairsWith: 'community-goal-pledge',
   },
   {
+    id: 'advent-door',
+    kind: 'faucet',
+    surface: '/advent — today\'s door, December 1–24',
+    source: 'lib/gifting/advent.server.ts',
+    bounded: true,
+    note: '25 coins a door, one door a day (unique claim row + ledger key), 600 coins per member per year at most.',
+  },
+  {
     id: 'scheduled-gift-refund',
     kind: 'faucet',
     surface: '/wallet?tab=gifts — a cancelled or undeliverable scheduled gift',
