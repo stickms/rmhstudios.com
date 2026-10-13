@@ -26,6 +26,7 @@ import { HELD_BY, recordModItem } from '@/lib/communities/automod.server';
 import { derivePostKind } from '@/lib/communities/automod';
 import { listFlairs } from '@/lib/communities/flairs.server';
 import { challengeEntryError } from '@/lib/communities/challenge.server';
+import { enqueuePostDiscovery } from '@/lib/discovery/jobs.server';
 import { planPostsPlus, recordPostsPlusTx, afterPostsPlus } from '@/lib/posts-plus/compose.server';
 
 /** Throttle window for the lazy scheduled-post probe on the feed read path. */
@@ -589,6 +590,8 @@ export const Route = createFileRoute('/api/rmharks')({
           })();
 
           afterPostsPlus(item.id, session.user.id, plusPlan);
+          // Keyword alerts + community watchers: matched by the jobs worker, never inline.
+          void enqueuePostDiscovery(item.id);
 
           return Response.json(item, { status: 201 });
         },

@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 728 files across 160 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 737 files across 162 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -448,6 +448,19 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/discord/sync-score` | `POST` | `app/routes/api/discord/sync-score.ts` |
 | `/api/discord/token` | `POST` | `app/routes/api/discord/token.ts` |
 
+## `/api/discovery`
+
+6 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/discovery/alerts` | `DELETE` `GET` `POST` | `app/routes/api/discovery/alerts.ts` |
+| `/api/discovery/memories` | `GET` `PUT` | `app/routes/api/discovery/memories.ts` |
+| `/api/discovery/surprise` | `GET` | `app/routes/api/discovery/surprise.ts` |
+| `/api/discovery/today` | `GET` | `app/routes/api/discovery/today.ts` |
+| `/api/discovery/trending/:tag` | `GET` | `app/routes/api/discovery/trending/$tag.ts` |
+| `/api/discovery/watch` | `GET` `PUT` | `app/routes/api/discovery/watch.ts` |
+
 ## `/api/doctrine`
 
 17 routes.
@@ -571,6 +584,16 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/feedback` | `GET` `POST` | `app/routes/api/feedback.ts` |
+
+## `/api/feeds`
+
+3 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/feeds` | `GET` `POST` | `app/routes/api/feeds/index.ts` |
+| `/api/feeds/:id` | `DELETE` `GET` `PATCH` | `app/routes/api/feeds/$id.ts` |
+| `/api/feeds/:id/subscribe` | `DELETE` `POST` | `app/routes/api/feeds/$id/subscribe.ts` |
 
 ## `/api/forest-explorer`
 

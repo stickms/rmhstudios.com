@@ -5,7 +5,7 @@
  * notifies people about posts they did not ask about.
  */
 import { describe, it, expect } from 'vitest';
-import { compileAlert, matches, trippedAlerts } from '@/lib/search/keyword-alerts';
+import { compileAlert, fold, matches, trippedAlerts } from '@/lib/search/keyword-alerts';
 
 describe('keyword alerts', () => {
   it('matches whole words, case- and accent-insensitively', () => {
@@ -42,5 +42,18 @@ describe('keyword alerts', () => {
   it('reports which alerts tripped', () => {
     const alerts = [compileAlert('bingo')!, compileAlert('swiss')!];
     expect(trippedAlerts(alerts, 'Swiss bracket tonight')).toEqual(['swiss']);
+  });
+});
+
+describe('alert anchors (fan-out index)', () => {
+  it('picks a required word that every matching post must contain', async () => {
+    const { alertAnchor } = await import('@/lib/search/keyword-alerts');
+    expect(alertAnchor('"slice it" charts -leak')).toBe('charts');
+    expect(alertAnchor('#Café')).toBe('cafe');
+    expect(alertAnchor('-leak')).toBeNull();
+    // Whatever the anchor is, a post that matches the alert contains it as a whole word.
+    const a = compileAlert('"slice it" charts -leak')!;
+    expect(matches(a, 'New Slice-it CHARTS today')).toBe(true);
+    expect(fold('New Slice-it CHARTS today').match(/[\p{L}\p{N}]+/gu)).toContain(alertAnchor('"slice it" charts -leak'));
   });
 });

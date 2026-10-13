@@ -238,6 +238,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'A well-formed date with no record behind it.',
   },
+  '/feeds/$id': {
+    path: '/feeds/fouc-audit',
+    fidelity: 'shell',
+    why: 'Not-found branch of a custom feed page.',
+  },
   '/series/$id': {
     path: '/series/fouc-audit',
     fidelity: 'shell',

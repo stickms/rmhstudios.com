@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 296 routes. 160 render inside the standard site shell (sidebar, nav, context rail); 136 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 299 routes. 163 render inside the standard site shell (sidebar, nav, context rail); 136 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -66,6 +66,8 @@ Standard pages, rendered inside the sidebar shell.
 | `/emoji-packs` | Emoji & sticker packs | public | `app/routes/_site/emoji-packs.tsx` |
 | `/events` | redirects to `/communities?tab=events` | public | `app/routes/_site/events.tsx` |
 | `/explore` | Explore | public | `app/routes/_site/explore.tsx` |
+| `/feeds` | Custom feeds | public | `app/routes/_site/feeds.index.tsx` |
+| `/feeds/:id` | Feed | public | `app/routes/_site/feeds.$id.tsx` |
 | `/games` | Games | public | `app/routes/_site/games/index.tsx` |
 | `/games/:gameId` | — | public | `app/routes/_site/games/$gameId.tsx` |
 | `/games/:gameId/guides/:guideId` | — | public | `app/routes/_site/games/$gameId_.guides.$guideId.tsx` |
@@ -160,6 +162,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/study/browse` | Browse decks | public | `app/routes/_site/study/browse.tsx` |
 | `/tag/:tag` | — | public | `app/routes/_site/tag.$tag.tsx` |
 | `/thread/:rootId` | — | public | `app/routes/_site/thread/$rootId.tsx` |
+| `/today` | Today on RMH | public | `app/routes/_site/today.tsx` |
 | `/tournaments` | Tournaments | public | `app/routes/_site/tournaments.index.tsx` |
 | `/tournaments/:id` | — | public | `app/routes/_site/tournaments.$id.tsx` |
 | `/trash` | Trash | public | `app/routes/_site/trash.tsx` |
