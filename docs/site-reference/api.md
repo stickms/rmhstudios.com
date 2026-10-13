@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 757 files across 169 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 761 files across 169 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -1427,12 +1427,16 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/rmhtube`
 
-2 routes.
+6 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
+| `/api/rmhtube/commentary` | `GET` `POST` | `app/routes/api/rmhtube/commentary.ts` |
+| `/api/rmhtube/heat` | `GET` | `app/routes/api/rmhtube/heat.ts` |
 | `/api/rmhtube/oembed` | `GET` | `app/routes/api/rmhtube/oembed.ts` |
 | `/api/rmhtube/subscribe/:channelId` | `POST` | `app/routes/api/rmhtube/subscribe/$channelId.ts` |
+| `/api/rmhtube/timed-comments` | `DELETE` `GET` `POST` | `app/routes/api/rmhtube/timed-comments.ts` |
+| `/api/rmhtube/watch-later` | `DELETE` `GET` `POST` | `app/routes/api/rmhtube/watch-later.ts` |
 
 ## `/api/rmhtype`
 

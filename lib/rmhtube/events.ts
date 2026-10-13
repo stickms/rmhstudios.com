@@ -63,6 +63,16 @@ export const C2S = {
   ROOM_CHECK_HISTORY:   'rmhtube:room:check_history',
   /** A viewer asks the host / leader to hand them playback control. */
   ROOM_REQUEST_CONTROL: 'rmhtube:room:request_control',
+
+  // Watch-party extras (P20): predictions + bingo
+  PARTY_SYNC:             'rmhtube:party:sync',
+  PARTY_PREDICT_OPEN:     'rmhtube:party:predict_open',
+  PARTY_PREDICT_PICK:     'rmhtube:party:predict_pick',
+  PARTY_PREDICT_RESOLVE:  'rmhtube:party:predict_resolve',
+  PARTY_BINGO_START:      'rmhtube:party:bingo_start',
+  PARTY_BINGO_CALL:       'rmhtube:party:bingo_call',
+  PARTY_BINGO_CLAIM:      'rmhtube:party:bingo_claim',
+  PARTY_BINGO_END:        'rmhtube:party:bingo_end',
 } as const;
 
 // ─── Server → Client Events ─────────────────────────────────────
@@ -108,4 +118,7 @@ export const S2C = {
   // Phase 4: Invite Links
   ROOM_INVITE_CREATED:  'rmhtube:room:invite_created',
   ROOM_HISTORY_STATUS:  'rmhtube:room:history_status',
+
+  // Watch-party extras (P20): full party state, to the room or one socket
+  PARTY_STATE:          'rmhtube:party:state',
 } as const;

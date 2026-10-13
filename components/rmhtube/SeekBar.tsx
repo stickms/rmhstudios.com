@@ -24,6 +24,7 @@ import { getServerNow } from '@/lib/rmhtube/clock';
 import { extrapolate } from '@/lib/rmhtube/sync-math';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { formatDuration } from '@/lib/rmhtube/utils';
+import HeatStrip from './HeatStrip';
 
 const TICK_MS = 250;
 const SEEK_KEYS = new Set([
@@ -90,6 +91,7 @@ export default function SeekBar({ duration, isLeader }: { duration: number; isLe
       >
         {dragValue !== null ? formatDuration(dragValue) : formatDuration(0)}
       </span>
+      <div className="relative flex flex-1 items-center">
       {isLeader ? (
         <input
           ref={inputRef}
@@ -100,7 +102,7 @@ export default function SeekBar({ duration, isLeader }: { duration: number; isLe
           defaultValue={0}
           aria-label={t('seek-bar', { defaultValue: 'Seek' })}
           aria-valuetext={dragValue !== null ? formatDuration(dragValue) : undefined}
-          className="h-1 flex-1 cursor-pointer accent-(--app-accent)"
+          className="h-1 w-full cursor-pointer accent-(--app-accent)"
           onPointerDown={() => {
             draggingRef.current = true;
           }}
@@ -122,7 +124,7 @@ export default function SeekBar({ duration, isLeader }: { duration: number; isLe
           aria-label={t('seek-bar-readonly', { defaultValue: 'Playback position' })}
           aria-valuemin={0}
           aria-valuemax={Math.round(duration)}
-          className="relative h-1 flex-1 overflow-hidden rounded-full bg-(--app-surface-active)"
+          className="relative h-1 w-full overflow-hidden rounded-full bg-(--app-surface-active)"
         >
           <div
             ref={fillRef}
@@ -131,6 +133,8 @@ export default function SeekBar({ duration, isLeader }: { duration: number; isLe
           />
         </div>
       )}
+      <HeatStrip duration={duration} />
+      </div>
       <span className="w-12 shrink-0 text-xs tabular-nums text-(--app-text-dim)">
         {formatDuration(duration)}
       </span>

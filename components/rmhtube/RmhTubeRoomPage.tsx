@@ -38,6 +38,7 @@ import ShortcutsOverlay from '@/components/rmhtube/ShortcutsOverlay';
 import BanListModal from '@/components/rmhtube/BanListModal';
 import InviteLinkModal from '@/components/rmhtube/InviteLinkModal';
 import OnboardingTour from '@/components/rmhtube/OnboardingTour';
+import PartyLauncher, { PartyOverlaySlot } from '@/components/rmhtube/party/PartyLauncher';
 import { useRouter, useParams } from '@tanstack/react-router';
 
 type MobileTab = 'queue' | 'chat' | 'members';
@@ -379,6 +380,7 @@ export default function RmhTubeRoomPage() {
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
             </button>
           )}
+          <PartyLauncher />
           <SettingsPanel />
         </div>
       </div>
@@ -391,8 +393,9 @@ export default function RmhTubeRoomPage() {
             {/* Left column: Video + Controls + Queue */}
             <div className={`flex flex-col min-h-0 overflow-hidden ${!theaterMode ? 'border-r border-(--app-border)' : ''}`}>
               {/* Video player */}
-              <div className={`shrink-0 p-4 pb-2 *:max-h-full rmhtube-video-container ${theaterMode ? 'max-h-[85%]' : 'max-h-[70%]'}`}>
+              <div className={`relative shrink-0 p-4 pb-2 *:max-h-full rmhtube-video-container ${theaterMode ? 'max-h-[85%]' : 'max-h-[70%]'}`}>
                 {popOut.win ? <PoppedOutNotice onReturn={popOut.close} /> : player}
+                <PartyOverlaySlot />
               </div>
 
               {/* Controls / Now playing bar */}
@@ -459,8 +462,9 @@ export default function RmhTubeRoomPage() {
         ) : (
           /* Mobile layout */
           <div className="flex flex-col h-full min-h-0">
-            <div className="shrink-0 p-3 pb-0">
+            <div className="relative shrink-0 p-3 pb-0">
               {popOut.win ? <PoppedOutNotice onReturn={popOut.close} /> : player}
+              <PartyOverlaySlot />
             </div>
 
             <div className="shrink-0">

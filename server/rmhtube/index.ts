@@ -17,6 +17,7 @@ import { RoomManager } from './room-manager';
 import { SyncEngine } from './sync-engine';
 import { MediaQueue } from './media-queue';
 import { ChatHandler } from './chat-handler';
+import { PartyHandler } from './party-handler';
 import { ReconnectionHandler } from './reconnection';
 import { cleanupRateLimits } from './rate-limit';
 import { disconnectPrisma } from './prisma-client';
@@ -70,6 +71,7 @@ const syncEngine    = new SyncEngine(io, roomManager);
 const mediaQueue    = new MediaQueue(io, roomManager, syncEngine);
 syncEngine.setAdvanceHandler((room) => mediaQueue.advanceQueue(room));
 const chatHandler   = new ChatHandler(io, roomManager);
+const partyHandler  = new PartyHandler(io, roomManager);
 const reconnection  = new ReconnectionHandler(io, roomManager);
 
 // ─── Connection handler ──────────────────────────────────────────
@@ -84,6 +86,7 @@ io.on('connection', (socket) => {
 
   // Register domain event handlers
   roomManager.handleConnection(socket);
+  partyHandler.handleConnection(socket); // before syncEngine: it reads a seek pre-apply
   syncEngine.handleConnection(socket);
   mediaQueue.handleConnection(socket);
   chatHandler.handleConnection(socket);
@@ -99,6 +102,7 @@ io.on('connection', (socket) => {
 // ─── Periodic tasks ──────────────────────────────────────────────
 
 syncEngine.startHeartbeat();
+partyHandler.start();
 roomManager.startGarbageCollector();
 
 // ─── Graceful shutdown ───────────────────────────────────────────
@@ -111,6 +115,7 @@ function shutdown(signal: string): void {
   });
 
   syncEngine.stopHeartbeat();
+  void partyHandler.stop();
   roomManager.stopGarbageCollector();
 
   httpServer.close(() => {
