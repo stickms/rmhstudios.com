@@ -453,6 +453,13 @@ model User {
   communityChallengeEntries  CommunityChallengeEntry[]
   communityChallengeVotes    CommunityChallengeVote[]
   communityCensusAnswered    CommunityCensusParticipant[]
+  // P13 reading: L1 highlights, L3 goal, L7 shelves, L5 stories
+  readingHighlights          ReadingHighlight[]
+  readingGoals               ReadingGoal[]
+  readingShelfEntries        ReadingShelfEntry[]
+  readingPrefs               ReadingPrefs?
+  glossaryTermsCreated       GlossaryTerm[]    @relation("GlossaryTermAuthor")
+  newsStoriesCreated         NewsStory[]       @relation("NewsStoryAuthor")
   communityContributorScores CommunityContributorScore[]
   chatFolders    ChatFolder[]
   chatPins       ChatPin[]
@@ -10409,4 +10416,186 @@ model CommunitySister {
   @@id([communityId, relatedCommunityId])
   @@index([relatedCommunityId])
   @@map("community_sister")
+}
+
+// ── P13 reading: L1 L3 L5 L6 L7 L8 ──
+enum ReadingDocKind {
+  library
+  blog
+  news
+}
+
+enum ReadingGoalUnit {
+  books
+  pages
+}
+
+enum ReadingShelf {
+  want
+  reading
+  read
+}
+
+/// L1 — a member's highlight (and optional note) on a library book unit, a blog
+/// post or a news article. The anchor is the text-anchor.ts quote selector:
+/// exact text + 32 chars of context each side + offsets, re-anchored on load.
+/// `unit` is "" for articles, "p12" (PDF page) or "c3" (EPUB chapter) for books.
+/// `version` is a short hash of the unit text at highlight time.
+model ReadingHighlight {
+  id        String         @id @default(cuid())
+  userId    String
+  docKind   ReadingDocKind
+  docKey    String         @db.VarChar(200)
+  unit      String         @default("") @db.VarChar(16)
+  exact     String         @db.VarChar(2000)
+  prefix    String         @default("") @db.VarChar(64)
+  suffix    String         @default("") @db.VarChar(64)
+  start     Int
+  end       Int
+  version   String         @default("") @db.VarChar(16)
+  note      String?        @db.VarChar(2000)
+  isPublic  Boolean        @default(false)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  user     User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  passages ReadingHighlightPassage[]
+
+  @@index([userId, docKind, docKey])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([docKind, docKey, isPublic])
+  @@map("reading_highlight")
+}
+
+/// L8 — per-passage reader counter. A "passage" is a sentence, identified by a
+/// hash of its normalised text. `readers` counts distinct members with a public
+/// highlight touching it, maintained incrementally on highlight create/delete.
+model ReadingPassageStat {
+  id        String         @id @default(cuid())
+  docKind   ReadingDocKind
+  docKey    String         @db.VarChar(200)
+  unit      String         @default("") @db.VarChar(16)
+  passage   String         @db.VarChar(24)
+  sample    String         @db.VarChar(400)
+  start     Int            @default(0)
+  readers   Int            @default(0)
+  updatedAt DateTime       @updatedAt
+
+  links ReadingHighlightPassage[]
+
+  @@unique([docKind, docKey, unit, passage])
+  @@index([docKind, docKey, readers])
+  @@map("reading_passage_stat")
+}
+
+/// L8 — joins a public highlight to the passages it counted toward, so removal
+/// can decrement exactly what creation incremented.
+model ReadingHighlightPassage {
+  highlightId String
+  statId      String
+  userId      String
+
+  highlight ReadingHighlight   @relation(fields: [highlightId], references: [id], onDelete: Cascade)
+  stat      ReadingPassageStat @relation(fields: [statId], references: [id], onDelete: Cascade)
+
+  @@id([highlightId, statId])
+  @@index([statId, userId])
+  @@map("reading_highlight_passage")
+}
+
+/// L3 — a member's yearly reading goal, in books or pages.
+model ReadingGoal {
+  id        String          @id @default(cuid())
+  userId    String
+  year      Int
+  unit      ReadingGoalUnit
+  target    Int
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, year])
+  @@map("reading_goal")
+}
+
+/// L7 — a library item on a member's want / reading / read shelf. `docSlug` is
+/// the library slug (static catalogue books have no row, so no FK). `pages` is a
+/// snapshot of the page count when the entry was written, for the L3 page goal.
+model ReadingShelfEntry {
+  id         String       @id @default(cuid())
+  userId     String
+  docSlug    String       @db.VarChar(200)
+  title      String       @db.VarChar(300)
+  shelf      ReadingShelf
+  pages      Int          @default(0)
+  finishedAt DateTime?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, docSlug])
+  @@index([userId, shelf, updatedAt(sort: Desc)])
+  @@index([userId, finishedAt])
+  @@map("reading_shelf_entry")
+}
+
+/// L7 — per-shelf privacy (default private) for a member's shelves.
+model ReadingPrefs {
+  userId        String  @id
+  wantPublic    Boolean @default(false)
+  readingPublic Boolean @default(false)
+  readPublic    Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("reading_prefs")
+}
+
+/// L5 — a news "story": a set of related articles shown as one timeline.
+model NewsStory {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String   @db.VarChar(160)
+  summary     String   @default("") @db.VarChar(600)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy User?              @relation("NewsStoryAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  articles  NewsStoryArticle[]
+
+  @@map("news_story")
+}
+
+/// L5 — membership of a news article (by slug) in a story. An article belongs to
+/// at most one story, hence the unique slug.
+model NewsStoryArticle {
+  id          String   @id @default(cuid())
+  storyId     String
+  articleSlug String   @unique
+  addedAt     DateTime @default(now())
+
+  story NewsStory @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@index([storyId])
+  @@map("news_story_article")
+}
+
+/// L6 — an admin-managed lore glossary term. `aliases` also auto-link.
+model GlossaryTerm {
+  id          String   @id @default(cuid())
+  term        String   @db.VarChar(80)
+  termKey     String   @unique @db.VarChar(80)
+  aliases     String[]
+  definition  String   @db.VarChar(600)
+  linkUrl     String?  @db.VarChar(300)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy User? @relation("GlossaryTermAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@map("glossary_term")
 }
