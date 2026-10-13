@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 768 files across 169 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 773 files across 170 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -46,7 +46,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/admin`
 
-49 routes.
+50 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -67,6 +67,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/admin/curated-builds/image/:filename` | `GET` | `app/routes/api/admin/curated-builds/image/$filename.ts` |
 | `/api/admin/curated-builds/image/proxy` | `GET` | `app/routes/api/admin/curated-builds/image/proxy.ts` |
 | `/api/admin/economy` | `GET` | `app/routes/api/admin/economy.ts` |
+| `/api/admin/forecasting/seasons` | `POST` | `app/routes/api/admin/forecasting/seasons.ts` |
 | `/api/admin/gift-exchanges/:id/verify` | `GET` | `app/routes/api/admin/gift-exchanges/$id/verify.ts` |
 | `/api/admin/library` | `GET` | `app/routes/api/admin/library/index.ts` |
 | `/api/admin/library/:id` | `DELETE` `PATCH` | `app/routes/api/admin/library/$id.ts` |
@@ -620,6 +621,15 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/feeds/:id` | `DELETE` `GET` `PATCH` | `app/routes/api/feeds/$id.ts` |
 | `/api/feeds/:id/subscribe` | `DELETE` `POST` | `app/routes/api/feeds/$id/subscribe.ts` |
 
+## `/api/forecasting`
+
+2 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/forecasting/calibration` | `GET` | `app/routes/api/forecasting/calibration.ts` |
+| `/api/forecasting/seasons` | `GET` | `app/routes/api/forecasting/seasons.ts` |
+
 ## `/api/forest-explorer`
 
 1 route.
@@ -1095,12 +1105,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/predictions`
 
-3 routes.
+5 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/predictions` | `GET` `POST` | `app/routes/api/predictions/index.ts` |
 | `/api/predictions/:id` | `GET` | `app/routes/api/predictions/$id.ts` |
+| `/api/predictions/:id/comments` | `GET` `POST` | `app/routes/api/predictions/$id/comments.ts` |
+| `/api/predictions/:id/devils-advocate` | `POST` | `app/routes/api/predictions/$id/devils-advocate.ts` |
 | `/api/predictions/:id/trade` | `POST` | `app/routes/api/predictions/$id/trade.ts` |
 
 ## `/api/preferences`

@@ -447,6 +447,8 @@ model User {
   pf2eSettingsEdits   Pf2eSettings[]        @relation("Pf2eSettingsEditor")
 
   // ─── Feature ideas 2026-10-12 (docs/plans/2026-10-12-feature-ideas-every-surface.md)
+  // P12 forecasting: G6 market comments
+  predictionComments         PredictionComment[]
   // P07 arcade: E1/E12 seeded runs, E2 backlog, E6 achievement tips, E11 rivals
   arcadeSeedRuns             ArcadeSeedRun[]
   gamePlayStatuses           GamePlayStatus[]
@@ -3174,6 +3176,8 @@ model Prediction {
 
   creator   User?                @relation("PredictionCreator", fields: [creatorId], references: [id], onDelete: SetNull)
   positions PredictionPosition[]
+  seasonMarkets PredictionSeasonMarket[]
+  comments PredictionComment[]
 
   @@index([status, createdAt(sort: Desc)])
   @@index([resolverKey, status]) // resolver settlement sweeps
@@ -3192,6 +3196,7 @@ model PredictionPosition {
   noShares     Float   @default(0)
   spent        Int     @default(0) // net coins spent (cost basis)
   settled      Boolean @default(false)
+  lastP Float? // implied P(YES) right after the member's latest trade (forecast for scoring)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -11525,4 +11530,50 @@ model ArcadeRival {
   @@index([rivalUserId])
   @@index([updatedAt])
   @@map("arcade_rival")
+}
+
+// ── P12 forecasting: G5 seasons, G6 comment positions ──
+
+/// A forecasting season: a fixed set of existing markets scored by accuracy (points, never coins).
+model PredictionSeason {
+  id        String   @id @default(cuid())
+  title     String   @db.VarChar(80)
+  startsAt  DateTime
+  endsAt    DateTime
+  createdAt DateTime @default(now())
+
+  markets PredictionSeasonMarket[]
+
+  @@index([endsAt])
+  @@map("prediction_season")
+}
+
+model PredictionSeasonMarket {
+  seasonId     String
+  predictionId String
+
+  season     PredictionSeason @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  prediction Prediction       @relation(fields: [predictionId], references: [id], onDelete: Cascade)
+
+  @@id([seasonId, predictionId])
+  @@index([predictionId])
+  @@map("prediction_season_market")
+}
+
+/// A comment on a market, with the commenter's position snapshotted at comment time.
+model PredictionComment {
+  id           String   @id @default(cuid())
+  predictionId String
+  userId       String
+  body         String   @db.VarChar(500)
+  side         String?  @db.VarChar(3) // "YES" | "NO" | null when they held nothing
+  shares       Int      @default(0) // shares on `side` at comment time
+  createdAt    DateTime @default(now())
+
+  prediction Prediction @relation(fields: [predictionId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([predictionId, createdAt(sort: Desc)])
+  @@index([userId])
+  @@map("prediction_comment")
 }
