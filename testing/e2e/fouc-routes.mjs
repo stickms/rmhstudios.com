@@ -138,6 +138,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'Not-found branch of a news article.',
   },
+  '/news/stories/$slug': {
+    path: '/news/stories/fouc-audit-no-such-story',
+    fidelity: 'shell',
+    why: 'Not-found branch of a news story timeline.',
+  },
   '/personas/$id': {
     path: '/personas/fouc-audit',
     fidelity: 'shell',

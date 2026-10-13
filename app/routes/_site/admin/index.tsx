@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useAdminReviewCount } from '@/lib/useAdminReviewCount';
+import { AdminReadingLink } from '@/components/reading/admin/AdminReadingLink';
 
 export const Route = createFileRoute('/_site/admin/')({
   head: () => ({
@@ -211,6 +212,8 @@ function AdminDashboardPage() {
               {t("audit-log-description", { defaultValue: "A record of admin actions — report decisions, bans, strikes, and announcements." })}
             </p>
           </Link>
+
+          <AdminReadingLink />
         </div>
       </div>
     </PageLayout>

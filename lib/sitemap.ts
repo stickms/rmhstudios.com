@@ -226,6 +226,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/messages': 'personal',
   '/notifications': 'personal',
   '/progress': 'personal',
+  '/reading': 'personal', // highlights, shelves and the reading challenge
   '/recap': 'personal',
   '/saves': 'personal',
   '/share': 'personal',
@@ -271,6 +272,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   // ── admin ──
   '/admin': 'admin',
   '/admin/albums': 'admin',
+  '/admin/reading': 'admin',
   '/admin/analytics': 'admin',
   '/admin/announcements': 'admin',
   '/admin/appeals': 'admin',
@@ -472,6 +474,7 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/lists/$id': null, // personal
   '/messages/$conversationId': null, // personal
   '/admin/albums/$id': null,
+  '/news/stories/$slug': null, // curated story timelines, linked from each member article
   '/admin/blog/$slug/edit': null,
   '/altair/multiplayer/$lobbyId': null, // ephemeral lobby
   '/rmhbox/$lobbyId': null,
