@@ -254,6 +254,8 @@ import { Route as SiteMessagesIndexRouteImport } from './routes/_site/messages/i
 import { Route as SiteMessagesConversationIdRouteImport } from './routes/_site/messages/$conversationId'
 import { Route as SiteMomentsIdRouteImport } from './routes/_site/moments.$id'
 import { Route as SiteNewsIndexRouteImport } from './routes/_site/news/index'
+import { Route as SiteOfficeHoursIndexRouteImport } from './routes/_site/office-hours/index'
+import { Route as SiteOfficeHoursUserIdRouteImport } from './routes/_site/office-hours/$userId'
 import { Route as SitePersonasIndexRouteImport } from './routes/_site/personas/index'
 import { Route as SitePersonasIdRouteImport } from './routes/_site/personas/$id'
 import { Route as SiteProfileIdRouteImport } from './routes/_site/profile/$id'
@@ -284,6 +286,7 @@ import { Route as SiteServicesFashionRouteImport } from './routes/_site/services
 import { Route as SiteSettingsIndexRouteImport } from './routes/_site/settings/index'
 import { Route as SiteSettingsAccountStatusRouteImport } from './routes/_site/settings/account-status'
 import { Route as SiteSettingsAppearanceRouteImport } from './routes/_site/settings/appearance'
+import { Route as SiteSettingsCalendarRouteImport } from './routes/_site/settings/calendar'
 import { Route as SiteSettingsCircleRouteImport } from './routes/_site/settings/circle'
 import { Route as SiteSettingsContentRouteImport } from './routes/_site/settings/content'
 import { Route as SiteSettingsLayoutRouteImport } from './routes/_site/settings/layout'
@@ -311,6 +314,8 @@ import { Route as SiteUserBuildsSubmitRouteImport } from './routes/_site/user-bu
 import { Route as SiteVIndexRouteImport } from './routes/_site/v/index'
 import { Route as SiteWagerIndexRouteImport } from './routes/_site/wager.index'
 import { Route as SiteWagerIdRouteImport } from './routes/_site/wager.$id'
+import { Route as SiteWhenIndexRouteImport } from './routes/_site/when/index'
+import { Route as SiteWhenIdRouteImport } from './routes/_site/when/$id'
 import { Route as AltairMultiplayerIndexRouteImport } from './routes/altair/multiplayer/index'
 import { Route as AltairMultiplayerLobbyIdRouteImport } from './routes/altair/multiplayer/$lobbyId'
 import { Route as ApiAccountDeleteRouteImport } from './routes/api/account/delete'
@@ -358,6 +363,8 @@ import { Route as ApiBumsRushClearRouteImport } from './routes/api/bums-rush/cle
 import { Route as ApiBumsRushLeaderboardRouteImport } from './routes/api/bums-rush/leaderboard'
 import { Route as ApiBumsRushProfileRouteImport } from './routes/api/bums-rush/profile'
 import { Route as ApiBumsRushShowdownRouteImport } from './routes/api/bums-rush/showdown'
+import { Route as ApiCalendarFeedIndexRouteImport } from './routes/api/calendar-feed/index'
+import { Route as ApiCalendarTokenRouteImport } from './routes/api/calendar/$token'
 import { Route as ApiCallsHistoryRouteImport } from './routes/api/calls/history'
 import { Route as ApiCallsIceRouteImport } from './routes/api/calls/ice'
 import { Route as ApiCallsPrivacyRouteImport } from './routes/api/calls/privacy'
@@ -468,6 +475,7 @@ import { Route as ApiNewsRejectRouteImport } from './routes/api/news/reject'
 import { Route as ApiNotificationsIndexRouteImport } from './routes/api/notifications/index'
 import { Route as ApiNotificationsPreferencesRouteImport } from './routes/api/notifications/preferences'
 import { Route as ApiNotificationsReadRouteImport } from './routes/api/notifications/read'
+import { Route as ApiOfficeHoursIndexRouteImport } from './routes/api/office-hours/index'
 import { Route as ApiOgPf2ecalRouteImport } from './routes/api/og/pf2ecal'
 import { Route as ApiOgSohumtrackerRouteImport } from './routes/api/og/sohumtracker'
 import { Route as ApiOnboardingIndexRouteImport } from './routes/api/onboarding/index'
@@ -598,6 +606,7 @@ import { Route as ApiStampsMineRouteImport } from './routes/api/stamps/mine'
 import { Route as ApiStreakFreezeRouteImport } from './routes/api/streak.freeze'
 import { Route as ApiStudioOverviewRouteImport } from './routes/api/studio/overview'
 import { Route as ApiStudioTiersRouteImport } from './routes/api/studio/tiers'
+import { Route as ApiStudyBuddyIndexRouteImport } from './routes/api/study-buddy/index'
 import { Route as ApiStudyMarketplaceRouteImport } from './routes/api/study/marketplace'
 import { Route as ApiStudyTutorRouteImport } from './routes/api/study/tutor'
 import { Route as ApiTagsTagRouteImport } from './routes/api/tags/$tag'
@@ -640,6 +649,7 @@ import { Route as ApiWebringsIndexRouteImport } from './routes/api/webrings/inde
 import { Route as ApiWebringsSlugRouteImport } from './routes/api/webrings/$slug'
 import { Route as ApiWheelIndexRouteImport } from './routes/api/wheel/index'
 import { Route as ApiWheelSpinRouteImport } from './routes/api/wheel/spin'
+import { Route as ApiWhenIndexRouteImport } from './routes/api/when/index'
 import { Route as ApiWishlistIndexRouteImport } from './routes/api/wishlist/index'
 import { Route as EmbedPostIdRouteImport } from './routes/embed.post.$id'
 import { Route as EmbedReplayIdRouteImport } from './routes/embed.replay.$id'
@@ -914,6 +924,10 @@ import { Route as ApiWagerIdCancelRouteImport } from './routes/api/wager/$id/can
 import { Route as ApiWagerIdReportRouteImport } from './routes/api/wager/$id/report'
 import { Route as ApiWebringsSlugHopRouteImport } from './routes/api/webrings/$slug/hop'
 import { Route as ApiWebringsSlugMembershipRouteImport } from './routes/api/webrings/$slug/membership'
+import { Route as ApiWhenIdIndexRouteImport } from './routes/api/when/$id/index'
+import { Route as ApiWhenIdIcsRouteImport } from './routes/api/when/$id/ics'
+import { Route as ApiWhenIdLockRouteImport } from './routes/api/when/$id/lock'
+import { Route as ApiWhenIdRespondRouteImport } from './routes/api/when/$id/respond'
 import { Route as RmhboxMinigamesMinigameIdHistoryRouteImport } from './routes/rmhbox/minigames/$minigameId/history'
 import { Route as SiteAdminBlogSlugEditRouteImport } from './routes/_site/admin/blog/$slug/edit'
 import { Route as SiteGamesGameIdGuidesGuideIdRouteImport } from './routes/_site/games/$gameId_.guides.$guideId'
@@ -957,6 +971,10 @@ import { Route as ApiLibraryCollectionIdCoverRouteImport } from './routes/api/li
 import { Route as ApiLibraryCollectionIdItemsRouteImport } from './routes/api/library/collection/$id/items'
 import { Route as ApiMarketListingsIdIndexRouteImport } from './routes/api/market/listings/$id/index'
 import { Route as ApiMarketListingsIdBuyRouteImport } from './routes/api/market/listings/$id/buy'
+import { Route as ApiOfficeHoursBookingsIdIndexRouteImport } from './routes/api/office-hours/bookings/$id/index'
+import { Route as ApiOfficeHoursBookingsIdIcsRouteImport } from './routes/api/office-hours/bookings/$id/ics'
+import { Route as ApiOfficeHoursHostIdIndexRouteImport } from './routes/api/office-hours/host/$id/index'
+import { Route as ApiOfficeHoursHostIdSummaryRouteImport } from './routes/api/office-hours/host/$id/summary'
 import { Route as ApiOgPostIdStoryRouteImport } from './routes/api/og/post/$id/story'
 import { Route as ApiPf2ecalSessionsIdRecapRouteImport } from './routes/api/pf2ecal/sessions.$id.recap'
 import { Route as ApiPf2ecalSessionsIdResponseRouteImport } from './routes/api/pf2ecal/sessions.$id.response'
@@ -2238,6 +2256,16 @@ const SiteNewsIndexRoute = SiteNewsIndexRouteImport.update({
   path: '/news/',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteOfficeHoursIndexRoute = SiteOfficeHoursIndexRouteImport.update({
+  id: '/office-hours/',
+  path: '/office-hours/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteOfficeHoursUserIdRoute = SiteOfficeHoursUserIdRouteImport.update({
+  id: '/office-hours/$userId',
+  path: '/office-hours/$userId',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SitePersonasIndexRoute = SitePersonasIndexRouteImport.update({
   id: '/personas/',
   path: '/personas/',
@@ -2393,6 +2421,11 @@ const SiteSettingsAppearanceRoute = SiteSettingsAppearanceRouteImport.update({
   path: '/settings/appearance',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteSettingsCalendarRoute = SiteSettingsCalendarRouteImport.update({
+  id: '/settings/calendar',
+  path: '/settings/calendar',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteSettingsCircleRoute = SiteSettingsCircleRouteImport.update({
   id: '/settings/circle',
   path: '/settings/circle',
@@ -2527,6 +2560,16 @@ const SiteWagerIndexRoute = SiteWagerIndexRouteImport.update({
 const SiteWagerIdRoute = SiteWagerIdRouteImport.update({
   id: '/wager/$id',
   path: '/wager/$id',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteWhenIndexRoute = SiteWhenIndexRouteImport.update({
+  id: '/when/',
+  path: '/when/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteWhenIdRoute = SiteWhenIdRouteImport.update({
+  id: '/when/$id',
+  path: '/when/$id',
   getParentRoute: () => SiteRoute,
 } as any)
 const AltairMultiplayerIndexRoute = AltairMultiplayerIndexRouteImport.update({
@@ -2763,6 +2806,16 @@ const ApiBumsRushProfileRoute = ApiBumsRushProfileRouteImport.update({
 const ApiBumsRushShowdownRoute = ApiBumsRushShowdownRouteImport.update({
   id: '/api/bums-rush/showdown',
   path: '/api/bums-rush/showdown',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCalendarFeedIndexRoute = ApiCalendarFeedIndexRouteImport.update({
+  id: '/api/calendar-feed/',
+  path: '/api/calendar-feed/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCalendarTokenRoute = ApiCalendarTokenRouteImport.update({
+  id: '/api/calendar/$token',
+  path: '/api/calendar/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCallsHistoryRoute = ApiCallsHistoryRouteImport.update({
@@ -3324,6 +3377,11 @@ const ApiNotificationsPreferencesRoute =
 const ApiNotificationsReadRoute = ApiNotificationsReadRouteImport.update({
   id: '/api/notifications/read',
   path: '/api/notifications/read',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOfficeHoursIndexRoute = ApiOfficeHoursIndexRouteImport.update({
+  id: '/api/office-hours/',
+  path: '/api/office-hours/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiOgPf2ecalRoute = ApiOgPf2ecalRouteImport.update({
@@ -3983,6 +4041,11 @@ const ApiStudioTiersRoute = ApiStudioTiersRouteImport.update({
   path: '/api/studio/tiers',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiStudyBuddyIndexRoute = ApiStudyBuddyIndexRouteImport.update({
+  id: '/api/study-buddy/',
+  path: '/api/study-buddy/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStudyMarketplaceRoute = ApiStudyMarketplaceRouteImport.update({
   id: '/api/study/marketplace',
   path: '/api/study/marketplace',
@@ -4192,6 +4255,11 @@ const ApiWheelIndexRoute = ApiWheelIndexRouteImport.update({
 const ApiWheelSpinRoute = ApiWheelSpinRouteImport.update({
   id: '/api/wheel/spin',
   path: '/api/wheel/spin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWhenIndexRoute = ApiWhenIndexRouteImport.update({
+  id: '/api/when/',
+  path: '/api/when/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiWishlistIndexRoute = ApiWishlistIndexRouteImport.update({
@@ -5645,6 +5713,26 @@ const ApiWebringsSlugMembershipRoute =
     path: '/membership',
     getParentRoute: () => ApiWebringsSlugRoute,
   } as any)
+const ApiWhenIdIndexRoute = ApiWhenIdIndexRouteImport.update({
+  id: '/api/when/$id/',
+  path: '/api/when/$id/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWhenIdIcsRoute = ApiWhenIdIcsRouteImport.update({
+  id: '/api/when/$id/ics',
+  path: '/api/when/$id/ics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWhenIdLockRoute = ApiWhenIdLockRouteImport.update({
+  id: '/api/when/$id/lock',
+  path: '/api/when/$id/lock',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWhenIdRespondRoute = ApiWhenIdRespondRouteImport.update({
+  id: '/api/when/$id/respond',
+  path: '/api/when/$id/respond',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RmhboxMinigamesMinigameIdHistoryRoute =
   RmhboxMinigamesMinigameIdHistoryRouteImport.update({
     id: '/minigames/$minigameId/history',
@@ -5886,6 +5974,30 @@ const ApiMarketListingsIdBuyRoute = ApiMarketListingsIdBuyRouteImport.update({
   path: '/api/market/listings/$id/buy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOfficeHoursBookingsIdIndexRoute =
+  ApiOfficeHoursBookingsIdIndexRouteImport.update({
+    id: '/api/office-hours/bookings/$id/',
+    path: '/api/office-hours/bookings/$id/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiOfficeHoursBookingsIdIcsRoute =
+  ApiOfficeHoursBookingsIdIcsRouteImport.update({
+    id: '/api/office-hours/bookings/$id/ics',
+    path: '/api/office-hours/bookings/$id/ics',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiOfficeHoursHostIdIndexRoute =
+  ApiOfficeHoursHostIdIndexRouteImport.update({
+    id: '/api/office-hours/host/$id/',
+    path: '/api/office-hours/host/$id/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiOfficeHoursHostIdSummaryRoute =
+  ApiOfficeHoursHostIdSummaryRouteImport.update({
+    id: '/api/office-hours/host/$id/summary',
+    path: '/api/office-hours/host/$id/summary',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiOgPostIdStoryRoute = ApiOgPostIdStoryRouteImport.update({
   id: '/story',
   path: '/story',
@@ -6410,6 +6522,7 @@ export interface FileRoutesByFullPath {
   '/lists/$id': typeof SiteListsIdRoute
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/moments/$id': typeof SiteMomentsIdRoute
+  '/office-hours/$userId': typeof SiteOfficeHoursUserIdRoute
   '/personas/$id': typeof SitePersonasIdRoute
   '/profile/$id': typeof SiteProfileIdRoute
   '/rideshare/drive': typeof SiteRideshareDriveRoute
@@ -6432,6 +6545,7 @@ export interface FileRoutesByFullPath {
   '/services/fashion': typeof SiteServicesFashionRoute
   '/settings/account-status': typeof SiteSettingsAccountStatusRoute
   '/settings/appearance': typeof SiteSettingsAppearanceRoute
+  '/settings/calendar': typeof SiteSettingsCalendarRoute
   '/settings/circle': typeof SiteSettingsCircleRoute
   '/settings/content': typeof SiteSettingsContentRoute
   '/settings/layout': typeof SiteSettingsLayoutRoute
@@ -6452,6 +6566,7 @@ export interface FileRoutesByFullPath {
   '/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/wager/$id': typeof SiteWagerIdRoute
+  '/when/$id': typeof SiteWhenIdRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
   '/api/account/delete': typeof ApiAccountDeleteRoute
   '/api/account/export': typeof ApiAccountExportRoute
@@ -6493,6 +6608,7 @@ export interface FileRoutesByFullPath {
   '/api/bums-rush/leaderboard': typeof ApiBumsRushLeaderboardRoute
   '/api/bums-rush/profile': typeof ApiBumsRushProfileRoute
   '/api/bums-rush/showdown': typeof ApiBumsRushShowdownRoute
+  '/api/calendar/$token': typeof ApiCalendarTokenRoute
   '/api/calls/history': typeof ApiCallsHistoryRoute
   '/api/calls/ice': typeof ApiCallsIceRoute
   '/api/calls/privacy': typeof ApiCallsPrivacyRoute
@@ -6765,6 +6881,7 @@ export interface FileRoutesByFullPath {
   '/lists/': typeof SiteListsIndexRoute
   '/messages/': typeof SiteMessagesIndexRoute
   '/news/': typeof SiteNewsIndexRoute
+  '/office-hours/': typeof SiteOfficeHoursIndexRoute
   '/personas/': typeof SitePersonasIndexRoute
   '/rideshare/': typeof SiteRideshareIndexRoute
   '/rings/': typeof SiteRingsIndexRoute
@@ -6780,12 +6897,14 @@ export interface FileRoutesByFullPath {
   '/user-builds/': typeof SiteUserBuildsIndexRoute
   '/v/': typeof SiteVIndexRoute
   '/wager/': typeof SiteWagerIndexRoute
+  '/when/': typeof SiteWhenIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
   '/api/activity/': typeof ApiActivityIndexRoute
   '/api/arcade/': typeof ApiArcadeIndexRoute
   '/api/awards/': typeof ApiAwardsIndexRoute
   '/api/battlepass/': typeof ApiBattlepassIndexRoute
   '/api/bulk/': typeof ApiBulkIndexRoute
+  '/api/calendar-feed/': typeof ApiCalendarFeedIndexRoute
   '/api/chat-folders/': typeof ApiChatFoldersIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
   '/api/communities/': typeof ApiCommunitiesIndexRoute
@@ -6801,6 +6920,7 @@ export interface FileRoutesByFullPath {
   '/api/memory/': typeof ApiMemoryIndexRoute
   '/api/moments/': typeof ApiMomentsIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
+  '/api/office-hours/': typeof ApiOfficeHoursIndexRoute
   '/api/onboarding/': typeof ApiOnboardingIndexRoute
   '/api/personas/': typeof ApiPersonasIndexRoute
   '/api/pf2ecal/': typeof ApiPf2ecalIndexRoute
@@ -6820,12 +6940,14 @@ export interface FileRoutesByFullPath {
   '/api/spaces/': typeof ApiSpacesIndexRoute
   '/api/staking/': typeof ApiStakingIndexRoute
   '/api/stamps/': typeof ApiStampsIndexRoute
+  '/api/study-buddy/': typeof ApiStudyBuddyIndexRoute
   '/api/themes/': typeof ApiThemesIndexRoute
   '/api/tournaments/': typeof ApiTournamentsIndexRoute
   '/api/trash/': typeof ApiTrashIndexRoute
   '/api/wager/': typeof ApiWagerIndexRoute
   '/api/webrings/': typeof ApiWebringsIndexRoute
   '/api/wheel/': typeof ApiWheelIndexRoute
+  '/api/when/': typeof ApiWhenIndexRoute
   '/api/wishlist/': typeof ApiWishlistIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
@@ -7052,6 +7174,9 @@ export interface FileRoutesByFullPath {
   '/api/wager/$id/report': typeof ApiWagerIdReportRoute
   '/api/webrings/$slug/hop': typeof ApiWebringsSlugHopRoute
   '/api/webrings/$slug/membership': typeof ApiWebringsSlugMembershipRoute
+  '/api/when/$id/ics': typeof ApiWhenIdIcsRoute
+  '/api/when/$id/lock': typeof ApiWhenIdLockRoute
+  '/api/when/$id/respond': typeof ApiWhenIdRespondRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/admin/albums/': typeof SiteAdminAlbumsIndexRoute
   '/admin/blog/': typeof SiteAdminBlogIndexRoute
@@ -7084,6 +7209,7 @@ export interface FileRoutesByFullPath {
   '/api/spaces/$id/': typeof ApiSpacesIdIndexRoute
   '/api/storefront/products/': typeof ApiStorefrontProductsIndexRoute
   '/api/study/decks/': typeof ApiStudyDecksIndexRoute
+  '/api/when/$id/': typeof ApiWhenIdIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/games/$gameId/guides/$guideId': typeof SiteGamesGameIdGuidesGuideIdRoute
   '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
@@ -7124,6 +7250,8 @@ export interface FileRoutesByFullPath {
   '/api/library/collection/$id/cover': typeof ApiLibraryCollectionIdCoverRoute
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
   '/api/market/listings/$id/buy': typeof ApiMarketListingsIdBuyRoute
+  '/api/office-hours/bookings/$id/ics': typeof ApiOfficeHoursBookingsIdIcsRoute
+  '/api/office-hours/host/$id/summary': typeof ApiOfficeHoursHostIdSummaryRoute
   '/api/og/post/$id/story': typeof ApiOgPostIdStoryRoute
   '/api/pf2ecal/sessions/$id/recap': typeof ApiPf2ecalSessionsIdRecapRoute
   '/api/pf2ecal/sessions/$id/response': typeof ApiPf2ecalSessionsIdResponseRoute
@@ -7163,6 +7291,8 @@ export interface FileRoutesByFullPath {
   '/api/v1/users/$handle/posts': typeof ApiV1UsersHandlePostsRoute
   '/api/gifts/scheduled/$id/': typeof ApiGiftsScheduledIdIndexRoute
   '/api/market/listings/$id/': typeof ApiMarketListingsIdIndexRoute
+  '/api/office-hours/bookings/$id/': typeof ApiOfficeHoursBookingsIdIndexRoute
+  '/api/office-hours/host/$id/': typeof ApiOfficeHoursHostIdIndexRoute
   '/api/playlists/$id/items/': typeof ApiPlaylistsIdItemsIndexRoute
   '/api/rmhmusic/guess/$id/': typeof ApiRmhmusicGuessIdIndexRoute
   '/api/shop/loadouts/$id/': typeof ApiShopLoadoutsIdIndexRoute
@@ -7385,6 +7515,7 @@ export interface FileRoutesByTo {
   '/lists/$id': typeof SiteListsIdRoute
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/moments/$id': typeof SiteMomentsIdRoute
+  '/office-hours/$userId': typeof SiteOfficeHoursUserIdRoute
   '/personas/$id': typeof SitePersonasIdRoute
   '/profile/$id': typeof SiteProfileIdRoute
   '/rideshare/drive': typeof SiteRideshareDriveRoute
@@ -7407,6 +7538,7 @@ export interface FileRoutesByTo {
   '/services/fashion': typeof SiteServicesFashionRoute
   '/settings/account-status': typeof SiteSettingsAccountStatusRoute
   '/settings/appearance': typeof SiteSettingsAppearanceRoute
+  '/settings/calendar': typeof SiteSettingsCalendarRoute
   '/settings/circle': typeof SiteSettingsCircleRoute
   '/settings/content': typeof SiteSettingsContentRoute
   '/settings/layout': typeof SiteSettingsLayoutRoute
@@ -7427,6 +7559,7 @@ export interface FileRoutesByTo {
   '/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/wager/$id': typeof SiteWagerIdRoute
+  '/when/$id': typeof SiteWhenIdRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
   '/api/account/delete': typeof ApiAccountDeleteRoute
   '/api/account/export': typeof ApiAccountExportRoute
@@ -7468,6 +7601,7 @@ export interface FileRoutesByTo {
   '/api/bums-rush/leaderboard': typeof ApiBumsRushLeaderboardRoute
   '/api/bums-rush/profile': typeof ApiBumsRushProfileRoute
   '/api/bums-rush/showdown': typeof ApiBumsRushShowdownRoute
+  '/api/calendar/$token': typeof ApiCalendarTokenRoute
   '/api/calls/history': typeof ApiCallsHistoryRoute
   '/api/calls/ice': typeof ApiCallsIceRoute
   '/api/calls/privacy': typeof ApiCallsPrivacyRoute
@@ -7740,6 +7874,7 @@ export interface FileRoutesByTo {
   '/lists': typeof SiteListsIndexRoute
   '/messages': typeof SiteMessagesIndexRoute
   '/news': typeof SiteNewsIndexRoute
+  '/office-hours': typeof SiteOfficeHoursIndexRoute
   '/personas': typeof SitePersonasIndexRoute
   '/rideshare': typeof SiteRideshareIndexRoute
   '/rings': typeof SiteRingsIndexRoute
@@ -7755,12 +7890,14 @@ export interface FileRoutesByTo {
   '/user-builds': typeof SiteUserBuildsIndexRoute
   '/v': typeof SiteVIndexRoute
   '/wager': typeof SiteWagerIndexRoute
+  '/when': typeof SiteWhenIndexRoute
   '/altair/multiplayer': typeof AltairMultiplayerIndexRoute
   '/api/activity': typeof ApiActivityIndexRoute
   '/api/arcade': typeof ApiArcadeIndexRoute
   '/api/awards': typeof ApiAwardsIndexRoute
   '/api/battlepass': typeof ApiBattlepassIndexRoute
   '/api/bulk': typeof ApiBulkIndexRoute
+  '/api/calendar-feed': typeof ApiCalendarFeedIndexRoute
   '/api/chat-folders': typeof ApiChatFoldersIndexRoute
   '/api/coins': typeof ApiCoinsIndexRoute
   '/api/communities': typeof ApiCommunitiesIndexRoute
@@ -7776,6 +7913,7 @@ export interface FileRoutesByTo {
   '/api/memory': typeof ApiMemoryIndexRoute
   '/api/moments': typeof ApiMomentsIndexRoute
   '/api/notifications': typeof ApiNotificationsIndexRoute
+  '/api/office-hours': typeof ApiOfficeHoursIndexRoute
   '/api/onboarding': typeof ApiOnboardingIndexRoute
   '/api/personas': typeof ApiPersonasIndexRoute
   '/api/pf2ecal': typeof ApiPf2ecalIndexRoute
@@ -7795,12 +7933,14 @@ export interface FileRoutesByTo {
   '/api/spaces': typeof ApiSpacesIndexRoute
   '/api/staking': typeof ApiStakingIndexRoute
   '/api/stamps': typeof ApiStampsIndexRoute
+  '/api/study-buddy': typeof ApiStudyBuddyIndexRoute
   '/api/themes': typeof ApiThemesIndexRoute
   '/api/tournaments': typeof ApiTournamentsIndexRoute
   '/api/trash': typeof ApiTrashIndexRoute
   '/api/wager': typeof ApiWagerIndexRoute
   '/api/webrings': typeof ApiWebringsIndexRoute
   '/api/wheel': typeof ApiWheelIndexRoute
+  '/api/when': typeof ApiWhenIndexRoute
   '/api/wishlist': typeof ApiWishlistIndexRoute
   '/rmhbox/minigames': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic': typeof SecretCursedLogicIndexRoute
@@ -8027,6 +8167,9 @@ export interface FileRoutesByTo {
   '/api/wager/$id/report': typeof ApiWagerIdReportRoute
   '/api/webrings/$slug/hop': typeof ApiWebringsSlugHopRoute
   '/api/webrings/$slug/membership': typeof ApiWebringsSlugMembershipRoute
+  '/api/when/$id/ics': typeof ApiWhenIdIcsRoute
+  '/api/when/$id/lock': typeof ApiWhenIdLockRoute
+  '/api/when/$id/respond': typeof ApiWhenIdRespondRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/admin/albums': typeof SiteAdminAlbumsIndexRoute
   '/admin/blog': typeof SiteAdminBlogIndexRoute
@@ -8059,6 +8202,7 @@ export interface FileRoutesByTo {
   '/api/spaces/$id': typeof ApiSpacesIdIndexRoute
   '/api/storefront/products': typeof ApiStorefrontProductsIndexRoute
   '/api/study/decks': typeof ApiStudyDecksIndexRoute
+  '/api/when/$id': typeof ApiWhenIdIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/games/$gameId/guides/$guideId': typeof SiteGamesGameIdGuidesGuideIdRoute
   '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
@@ -8099,6 +8243,8 @@ export interface FileRoutesByTo {
   '/api/library/collection/$id/cover': typeof ApiLibraryCollectionIdCoverRoute
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
   '/api/market/listings/$id/buy': typeof ApiMarketListingsIdBuyRoute
+  '/api/office-hours/bookings/$id/ics': typeof ApiOfficeHoursBookingsIdIcsRoute
+  '/api/office-hours/host/$id/summary': typeof ApiOfficeHoursHostIdSummaryRoute
   '/api/og/post/$id/story': typeof ApiOgPostIdStoryRoute
   '/api/pf2ecal/sessions/$id/recap': typeof ApiPf2ecalSessionsIdRecapRoute
   '/api/pf2ecal/sessions/$id/response': typeof ApiPf2ecalSessionsIdResponseRoute
@@ -8138,6 +8284,8 @@ export interface FileRoutesByTo {
   '/api/v1/users/$handle/posts': typeof ApiV1UsersHandlePostsRoute
   '/api/gifts/scheduled/$id': typeof ApiGiftsScheduledIdIndexRoute
   '/api/market/listings/$id': typeof ApiMarketListingsIdIndexRoute
+  '/api/office-hours/bookings/$id': typeof ApiOfficeHoursBookingsIdIndexRoute
+  '/api/office-hours/host/$id': typeof ApiOfficeHoursHostIdIndexRoute
   '/api/playlists/$id/items': typeof ApiPlaylistsIdItemsIndexRoute
   '/api/rmhmusic/guess/$id': typeof ApiRmhmusicGuessIdIndexRoute
   '/api/shop/loadouts/$id': typeof ApiShopLoadoutsIdIndexRoute
@@ -8388,6 +8536,7 @@ export interface FileRoutesById {
   '/_site/lists/$id': typeof SiteListsIdRoute
   '/_site/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/_site/moments/$id': typeof SiteMomentsIdRoute
+  '/_site/office-hours/$userId': typeof SiteOfficeHoursUserIdRoute
   '/_site/personas/$id': typeof SitePersonasIdRoute
   '/_site/profile/$id': typeof SiteProfileIdRoute
   '/_site/rideshare/drive': typeof SiteRideshareDriveRoute
@@ -8410,6 +8559,7 @@ export interface FileRoutesById {
   '/_site/services/fashion': typeof SiteServicesFashionRoute
   '/_site/settings/account-status': typeof SiteSettingsAccountStatusRoute
   '/_site/settings/appearance': typeof SiteSettingsAppearanceRoute
+  '/_site/settings/calendar': typeof SiteSettingsCalendarRoute
   '/_site/settings/circle': typeof SiteSettingsCircleRoute
   '/_site/settings/content': typeof SiteSettingsContentRoute
   '/_site/settings/layout': typeof SiteSettingsLayoutRoute
@@ -8430,6 +8580,7 @@ export interface FileRoutesById {
   '/_site/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/_site/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/_site/wager/$id': typeof SiteWagerIdRoute
+  '/_site/when/$id': typeof SiteWhenIdRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
   '/api/account/delete': typeof ApiAccountDeleteRoute
   '/api/account/export': typeof ApiAccountExportRoute
@@ -8471,6 +8622,7 @@ export interface FileRoutesById {
   '/api/bums-rush/leaderboard': typeof ApiBumsRushLeaderboardRoute
   '/api/bums-rush/profile': typeof ApiBumsRushProfileRoute
   '/api/bums-rush/showdown': typeof ApiBumsRushShowdownRoute
+  '/api/calendar/$token': typeof ApiCalendarTokenRoute
   '/api/calls/history': typeof ApiCallsHistoryRoute
   '/api/calls/ice': typeof ApiCallsIceRoute
   '/api/calls/privacy': typeof ApiCallsPrivacyRoute
@@ -8743,6 +8895,7 @@ export interface FileRoutesById {
   '/_site/lists/': typeof SiteListsIndexRoute
   '/_site/messages/': typeof SiteMessagesIndexRoute
   '/_site/news/': typeof SiteNewsIndexRoute
+  '/_site/office-hours/': typeof SiteOfficeHoursIndexRoute
   '/_site/personas/': typeof SitePersonasIndexRoute
   '/_site/rideshare/': typeof SiteRideshareIndexRoute
   '/_site/rings/': typeof SiteRingsIndexRoute
@@ -8758,12 +8911,14 @@ export interface FileRoutesById {
   '/_site/user-builds/': typeof SiteUserBuildsIndexRoute
   '/_site/v/': typeof SiteVIndexRoute
   '/_site/wager/': typeof SiteWagerIndexRoute
+  '/_site/when/': typeof SiteWhenIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
   '/api/activity/': typeof ApiActivityIndexRoute
   '/api/arcade/': typeof ApiArcadeIndexRoute
   '/api/awards/': typeof ApiAwardsIndexRoute
   '/api/battlepass/': typeof ApiBattlepassIndexRoute
   '/api/bulk/': typeof ApiBulkIndexRoute
+  '/api/calendar-feed/': typeof ApiCalendarFeedIndexRoute
   '/api/chat-folders/': typeof ApiChatFoldersIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
   '/api/communities/': typeof ApiCommunitiesIndexRoute
@@ -8779,6 +8934,7 @@ export interface FileRoutesById {
   '/api/memory/': typeof ApiMemoryIndexRoute
   '/api/moments/': typeof ApiMomentsIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
+  '/api/office-hours/': typeof ApiOfficeHoursIndexRoute
   '/api/onboarding/': typeof ApiOnboardingIndexRoute
   '/api/personas/': typeof ApiPersonasIndexRoute
   '/api/pf2ecal/': typeof ApiPf2ecalIndexRoute
@@ -8798,12 +8954,14 @@ export interface FileRoutesById {
   '/api/spaces/': typeof ApiSpacesIndexRoute
   '/api/staking/': typeof ApiStakingIndexRoute
   '/api/stamps/': typeof ApiStampsIndexRoute
+  '/api/study-buddy/': typeof ApiStudyBuddyIndexRoute
   '/api/themes/': typeof ApiThemesIndexRoute
   '/api/tournaments/': typeof ApiTournamentsIndexRoute
   '/api/trash/': typeof ApiTrashIndexRoute
   '/api/wager/': typeof ApiWagerIndexRoute
   '/api/webrings/': typeof ApiWebringsIndexRoute
   '/api/wheel/': typeof ApiWheelIndexRoute
+  '/api/when/': typeof ApiWhenIndexRoute
   '/api/wishlist/': typeof ApiWishlistIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
@@ -9030,6 +9188,9 @@ export interface FileRoutesById {
   '/api/wager/$id/report': typeof ApiWagerIdReportRoute
   '/api/webrings/$slug/hop': typeof ApiWebringsSlugHopRoute
   '/api/webrings/$slug/membership': typeof ApiWebringsSlugMembershipRoute
+  '/api/when/$id/ics': typeof ApiWhenIdIcsRoute
+  '/api/when/$id/lock': typeof ApiWhenIdLockRoute
+  '/api/when/$id/respond': typeof ApiWhenIdRespondRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/_site/admin/albums/': typeof SiteAdminAlbumsIndexRoute
   '/_site/admin/blog/': typeof SiteAdminBlogIndexRoute
@@ -9062,6 +9223,7 @@ export interface FileRoutesById {
   '/api/spaces/$id/': typeof ApiSpacesIdIndexRoute
   '/api/storefront/products/': typeof ApiStorefrontProductsIndexRoute
   '/api/study/decks/': typeof ApiStudyDecksIndexRoute
+  '/api/when/$id/': typeof ApiWhenIdIndexRoute
   '/_site/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/_site/games/$gameId_/guides/$guideId': typeof SiteGamesGameIdGuidesGuideIdRoute
   '/_site/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
@@ -9102,6 +9264,8 @@ export interface FileRoutesById {
   '/api/library/collection/$id/cover': typeof ApiLibraryCollectionIdCoverRoute
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
   '/api/market/listings/$id/buy': typeof ApiMarketListingsIdBuyRoute
+  '/api/office-hours/bookings/$id/ics': typeof ApiOfficeHoursBookingsIdIcsRoute
+  '/api/office-hours/host/$id/summary': typeof ApiOfficeHoursHostIdSummaryRoute
   '/api/og/post/$id/story': typeof ApiOgPostIdStoryRoute
   '/api/pf2ecal/sessions/$id/recap': typeof ApiPf2ecalSessionsIdRecapRoute
   '/api/pf2ecal/sessions/$id/response': typeof ApiPf2ecalSessionsIdResponseRoute
@@ -9141,6 +9305,8 @@ export interface FileRoutesById {
   '/api/v1/users/$handle/posts': typeof ApiV1UsersHandlePostsRoute
   '/api/gifts/scheduled/$id/': typeof ApiGiftsScheduledIdIndexRoute
   '/api/market/listings/$id/': typeof ApiMarketListingsIdIndexRoute
+  '/api/office-hours/bookings/$id/': typeof ApiOfficeHoursBookingsIdIndexRoute
+  '/api/office-hours/host/$id/': typeof ApiOfficeHoursHostIdIndexRoute
   '/api/playlists/$id/items/': typeof ApiPlaylistsIdItemsIndexRoute
   '/api/rmhmusic/guess/$id/': typeof ApiRmhmusicGuessIdIndexRoute
   '/api/shop/loadouts/$id/': typeof ApiShopLoadoutsIdIndexRoute
@@ -9391,6 +9557,7 @@ export interface FileRouteTypes {
     | '/lists/$id'
     | '/messages/$conversationId'
     | '/moments/$id'
+    | '/office-hours/$userId'
     | '/personas/$id'
     | '/profile/$id'
     | '/rideshare/drive'
@@ -9413,6 +9580,7 @@ export interface FileRouteTypes {
     | '/services/fashion'
     | '/settings/account-status'
     | '/settings/appearance'
+    | '/settings/calendar'
     | '/settings/circle'
     | '/settings/content'
     | '/settings/layout'
@@ -9433,6 +9601,7 @@ export interface FileRouteTypes {
     | '/user-builds/manage'
     | '/user-builds/submit'
     | '/wager/$id'
+    | '/when/$id'
     | '/altair/multiplayer/$lobbyId'
     | '/api/account/delete'
     | '/api/account/export'
@@ -9474,6 +9643,7 @@ export interface FileRouteTypes {
     | '/api/bums-rush/leaderboard'
     | '/api/bums-rush/profile'
     | '/api/bums-rush/showdown'
+    | '/api/calendar/$token'
     | '/api/calls/history'
     | '/api/calls/ice'
     | '/api/calls/privacy'
@@ -9746,6 +9916,7 @@ export interface FileRouteTypes {
     | '/lists/'
     | '/messages/'
     | '/news/'
+    | '/office-hours/'
     | '/personas/'
     | '/rideshare/'
     | '/rings/'
@@ -9761,12 +9932,14 @@ export interface FileRouteTypes {
     | '/user-builds/'
     | '/v/'
     | '/wager/'
+    | '/when/'
     | '/altair/multiplayer/'
     | '/api/activity/'
     | '/api/arcade/'
     | '/api/awards/'
     | '/api/battlepass/'
     | '/api/bulk/'
+    | '/api/calendar-feed/'
     | '/api/chat-folders/'
     | '/api/coins/'
     | '/api/communities/'
@@ -9782,6 +9955,7 @@ export interface FileRouteTypes {
     | '/api/memory/'
     | '/api/moments/'
     | '/api/notifications/'
+    | '/api/office-hours/'
     | '/api/onboarding/'
     | '/api/personas/'
     | '/api/pf2ecal/'
@@ -9801,12 +9975,14 @@ export interface FileRouteTypes {
     | '/api/spaces/'
     | '/api/staking/'
     | '/api/stamps/'
+    | '/api/study-buddy/'
     | '/api/themes/'
     | '/api/tournaments/'
     | '/api/trash/'
     | '/api/wager/'
     | '/api/webrings/'
     | '/api/wheel/'
+    | '/api/when/'
     | '/api/wishlist/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
@@ -10033,6 +10209,9 @@ export interface FileRouteTypes {
     | '/api/wager/$id/report'
     | '/api/webrings/$slug/hop'
     | '/api/webrings/$slug/membership'
+    | '/api/when/$id/ics'
+    | '/api/when/$id/lock'
+    | '/api/when/$id/respond'
     | '/rmhbox/minigames/$minigameId/history'
     | '/admin/albums/'
     | '/admin/blog/'
@@ -10065,6 +10244,7 @@ export interface FileRouteTypes {
     | '/api/spaces/$id/'
     | '/api/storefront/products/'
     | '/api/study/decks/'
+    | '/api/when/$id/'
     | '/admin/blog/$slug/edit'
     | '/games/$gameId/guides/$guideId'
     | '/u/$userid/post/$postid'
@@ -10105,6 +10285,8 @@ export interface FileRouteTypes {
     | '/api/library/collection/$id/cover'
     | '/api/library/collection/$id/items'
     | '/api/market/listings/$id/buy'
+    | '/api/office-hours/bookings/$id/ics'
+    | '/api/office-hours/host/$id/summary'
     | '/api/og/post/$id/story'
     | '/api/pf2ecal/sessions/$id/recap'
     | '/api/pf2ecal/sessions/$id/response'
@@ -10144,6 +10326,8 @@ export interface FileRouteTypes {
     | '/api/v1/users/$handle/posts'
     | '/api/gifts/scheduled/$id/'
     | '/api/market/listings/$id/'
+    | '/api/office-hours/bookings/$id/'
+    | '/api/office-hours/host/$id/'
     | '/api/playlists/$id/items/'
     | '/api/rmhmusic/guess/$id/'
     | '/api/shop/loadouts/$id/'
@@ -10366,6 +10550,7 @@ export interface FileRouteTypes {
     | '/lists/$id'
     | '/messages/$conversationId'
     | '/moments/$id'
+    | '/office-hours/$userId'
     | '/personas/$id'
     | '/profile/$id'
     | '/rideshare/drive'
@@ -10388,6 +10573,7 @@ export interface FileRouteTypes {
     | '/services/fashion'
     | '/settings/account-status'
     | '/settings/appearance'
+    | '/settings/calendar'
     | '/settings/circle'
     | '/settings/content'
     | '/settings/layout'
@@ -10408,6 +10594,7 @@ export interface FileRouteTypes {
     | '/user-builds/manage'
     | '/user-builds/submit'
     | '/wager/$id'
+    | '/when/$id'
     | '/altair/multiplayer/$lobbyId'
     | '/api/account/delete'
     | '/api/account/export'
@@ -10449,6 +10636,7 @@ export interface FileRouteTypes {
     | '/api/bums-rush/leaderboard'
     | '/api/bums-rush/profile'
     | '/api/bums-rush/showdown'
+    | '/api/calendar/$token'
     | '/api/calls/history'
     | '/api/calls/ice'
     | '/api/calls/privacy'
@@ -10721,6 +10909,7 @@ export interface FileRouteTypes {
     | '/lists'
     | '/messages'
     | '/news'
+    | '/office-hours'
     | '/personas'
     | '/rideshare'
     | '/rings'
@@ -10736,12 +10925,14 @@ export interface FileRouteTypes {
     | '/user-builds'
     | '/v'
     | '/wager'
+    | '/when'
     | '/altair/multiplayer'
     | '/api/activity'
     | '/api/arcade'
     | '/api/awards'
     | '/api/battlepass'
     | '/api/bulk'
+    | '/api/calendar-feed'
     | '/api/chat-folders'
     | '/api/coins'
     | '/api/communities'
@@ -10757,6 +10948,7 @@ export interface FileRouteTypes {
     | '/api/memory'
     | '/api/moments'
     | '/api/notifications'
+    | '/api/office-hours'
     | '/api/onboarding'
     | '/api/personas'
     | '/api/pf2ecal'
@@ -10776,12 +10968,14 @@ export interface FileRouteTypes {
     | '/api/spaces'
     | '/api/staking'
     | '/api/stamps'
+    | '/api/study-buddy'
     | '/api/themes'
     | '/api/tournaments'
     | '/api/trash'
     | '/api/wager'
     | '/api/webrings'
     | '/api/wheel'
+    | '/api/when'
     | '/api/wishlist'
     | '/rmhbox/minigames'
     | '/secret/cursed-logic'
@@ -11008,6 +11202,9 @@ export interface FileRouteTypes {
     | '/api/wager/$id/report'
     | '/api/webrings/$slug/hop'
     | '/api/webrings/$slug/membership'
+    | '/api/when/$id/ics'
+    | '/api/when/$id/lock'
+    | '/api/when/$id/respond'
     | '/rmhbox/minigames/$minigameId/history'
     | '/admin/albums'
     | '/admin/blog'
@@ -11040,6 +11237,7 @@ export interface FileRouteTypes {
     | '/api/spaces/$id'
     | '/api/storefront/products'
     | '/api/study/decks'
+    | '/api/when/$id'
     | '/admin/blog/$slug/edit'
     | '/games/$gameId/guides/$guideId'
     | '/u/$userid/post/$postid'
@@ -11080,6 +11278,8 @@ export interface FileRouteTypes {
     | '/api/library/collection/$id/cover'
     | '/api/library/collection/$id/items'
     | '/api/market/listings/$id/buy'
+    | '/api/office-hours/bookings/$id/ics'
+    | '/api/office-hours/host/$id/summary'
     | '/api/og/post/$id/story'
     | '/api/pf2ecal/sessions/$id/recap'
     | '/api/pf2ecal/sessions/$id/response'
@@ -11119,6 +11319,8 @@ export interface FileRouteTypes {
     | '/api/v1/users/$handle/posts'
     | '/api/gifts/scheduled/$id'
     | '/api/market/listings/$id'
+    | '/api/office-hours/bookings/$id'
+    | '/api/office-hours/host/$id'
     | '/api/playlists/$id/items'
     | '/api/rmhmusic/guess/$id'
     | '/api/shop/loadouts/$id'
@@ -11368,6 +11570,7 @@ export interface FileRouteTypes {
     | '/_site/lists/$id'
     | '/_site/messages/$conversationId'
     | '/_site/moments/$id'
+    | '/_site/office-hours/$userId'
     | '/_site/personas/$id'
     | '/_site/profile/$id'
     | '/_site/rideshare/drive'
@@ -11390,6 +11593,7 @@ export interface FileRouteTypes {
     | '/_site/services/fashion'
     | '/_site/settings/account-status'
     | '/_site/settings/appearance'
+    | '/_site/settings/calendar'
     | '/_site/settings/circle'
     | '/_site/settings/content'
     | '/_site/settings/layout'
@@ -11410,6 +11614,7 @@ export interface FileRouteTypes {
     | '/_site/user-builds/manage'
     | '/_site/user-builds/submit'
     | '/_site/wager/$id'
+    | '/_site/when/$id'
     | '/altair/multiplayer/$lobbyId'
     | '/api/account/delete'
     | '/api/account/export'
@@ -11451,6 +11656,7 @@ export interface FileRouteTypes {
     | '/api/bums-rush/leaderboard'
     | '/api/bums-rush/profile'
     | '/api/bums-rush/showdown'
+    | '/api/calendar/$token'
     | '/api/calls/history'
     | '/api/calls/ice'
     | '/api/calls/privacy'
@@ -11723,6 +11929,7 @@ export interface FileRouteTypes {
     | '/_site/lists/'
     | '/_site/messages/'
     | '/_site/news/'
+    | '/_site/office-hours/'
     | '/_site/personas/'
     | '/_site/rideshare/'
     | '/_site/rings/'
@@ -11738,12 +11945,14 @@ export interface FileRouteTypes {
     | '/_site/user-builds/'
     | '/_site/v/'
     | '/_site/wager/'
+    | '/_site/when/'
     | '/altair/multiplayer/'
     | '/api/activity/'
     | '/api/arcade/'
     | '/api/awards/'
     | '/api/battlepass/'
     | '/api/bulk/'
+    | '/api/calendar-feed/'
     | '/api/chat-folders/'
     | '/api/coins/'
     | '/api/communities/'
@@ -11759,6 +11968,7 @@ export interface FileRouteTypes {
     | '/api/memory/'
     | '/api/moments/'
     | '/api/notifications/'
+    | '/api/office-hours/'
     | '/api/onboarding/'
     | '/api/personas/'
     | '/api/pf2ecal/'
@@ -11778,12 +11988,14 @@ export interface FileRouteTypes {
     | '/api/spaces/'
     | '/api/staking/'
     | '/api/stamps/'
+    | '/api/study-buddy/'
     | '/api/themes/'
     | '/api/tournaments/'
     | '/api/trash/'
     | '/api/wager/'
     | '/api/webrings/'
     | '/api/wheel/'
+    | '/api/when/'
     | '/api/wishlist/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
@@ -12010,6 +12222,9 @@ export interface FileRouteTypes {
     | '/api/wager/$id/report'
     | '/api/webrings/$slug/hop'
     | '/api/webrings/$slug/membership'
+    | '/api/when/$id/ics'
+    | '/api/when/$id/lock'
+    | '/api/when/$id/respond'
     | '/rmhbox/minigames/$minigameId/history'
     | '/_site/admin/albums/'
     | '/_site/admin/blog/'
@@ -12042,6 +12257,7 @@ export interface FileRouteTypes {
     | '/api/spaces/$id/'
     | '/api/storefront/products/'
     | '/api/study/decks/'
+    | '/api/when/$id/'
     | '/_site/admin/blog/$slug/edit'
     | '/_site/games/$gameId_/guides/$guideId'
     | '/_site/u/$userid/post/$postid'
@@ -12082,6 +12298,8 @@ export interface FileRouteTypes {
     | '/api/library/collection/$id/cover'
     | '/api/library/collection/$id/items'
     | '/api/market/listings/$id/buy'
+    | '/api/office-hours/bookings/$id/ics'
+    | '/api/office-hours/host/$id/summary'
     | '/api/og/post/$id/story'
     | '/api/pf2ecal/sessions/$id/recap'
     | '/api/pf2ecal/sessions/$id/response'
@@ -12121,6 +12339,8 @@ export interface FileRouteTypes {
     | '/api/v1/users/$handle/posts'
     | '/api/gifts/scheduled/$id/'
     | '/api/market/listings/$id/'
+    | '/api/office-hours/bookings/$id/'
+    | '/api/office-hours/host/$id/'
     | '/api/playlists/$id/items/'
     | '/api/rmhmusic/guess/$id/'
     | '/api/shop/loadouts/$id/'
@@ -12282,6 +12502,7 @@ export interface RootRouteChildren {
   ApiBumsRushLeaderboardRoute: typeof ApiBumsRushLeaderboardRoute
   ApiBumsRushProfileRoute: typeof ApiBumsRushProfileRoute
   ApiBumsRushShowdownRoute: typeof ApiBumsRushShowdownRoute
+  ApiCalendarTokenRoute: typeof ApiCalendarTokenRoute
   ApiCallsHistoryRoute: typeof ApiCallsHistoryRoute
   ApiCallsIceRoute: typeof ApiCallsIceRoute
   ApiCallsPrivacyRoute: typeof ApiCallsPrivacyRoute
@@ -12509,6 +12730,7 @@ export interface RootRouteChildren {
   ApiAwardsIndexRoute: typeof ApiAwardsIndexRoute
   ApiBattlepassIndexRoute: typeof ApiBattlepassIndexRoute
   ApiBulkIndexRoute: typeof ApiBulkIndexRoute
+  ApiCalendarFeedIndexRoute: typeof ApiCalendarFeedIndexRoute
   ApiChatFoldersIndexRoute: typeof ApiChatFoldersIndexRoute
   ApiCoinsIndexRoute: typeof ApiCoinsIndexRoute
   ApiCommunitiesIndexRoute: typeof ApiCommunitiesIndexRoute
@@ -12524,6 +12746,7 @@ export interface RootRouteChildren {
   ApiMemoryIndexRoute: typeof ApiMemoryIndexRoute
   ApiMomentsIndexRoute: typeof ApiMomentsIndexRoute
   ApiNotificationsIndexRoute: typeof ApiNotificationsIndexRoute
+  ApiOfficeHoursIndexRoute: typeof ApiOfficeHoursIndexRoute
   ApiOnboardingIndexRoute: typeof ApiOnboardingIndexRoute
   ApiPersonasIndexRoute: typeof ApiPersonasIndexRoute
   ApiPf2ecalIndexRoute: typeof ApiPf2ecalIndexRoute
@@ -12543,12 +12766,14 @@ export interface RootRouteChildren {
   ApiSpacesIndexRoute: typeof ApiSpacesIndexRoute
   ApiStakingIndexRoute: typeof ApiStakingIndexRoute
   ApiStampsIndexRoute: typeof ApiStampsIndexRoute
+  ApiStudyBuddyIndexRoute: typeof ApiStudyBuddyIndexRoute
   ApiThemesIndexRoute: typeof ApiThemesIndexRoute
   ApiTournamentsIndexRoute: typeof ApiTournamentsIndexRoute
   ApiTrashIndexRoute: typeof ApiTrashIndexRoute
   ApiWagerIndexRoute: typeof ApiWagerIndexRoute
   ApiWebringsIndexRoute: typeof ApiWebringsIndexRoute
   ApiWheelIndexRoute: typeof ApiWheelIndexRoute
+  ApiWhenIndexRoute: typeof ApiWhenIndexRoute
   ApiWishlistIndexRoute: typeof ApiWishlistIndexRoute
   ApiAccountRecoveryCodesRoute: typeof ApiAccountRecoveryCodesRoute
   ApiAccountRecoveryCompleteRoute: typeof ApiAccountRecoveryCompleteRoute
@@ -12670,6 +12895,9 @@ export interface RootRouteChildren {
   ApiV1UsersHandleRoute: typeof ApiV1UsersHandleRouteWithChildren
   ApiVibePkgFileRoute: typeof ApiVibePkgFileRoute
   ApiVibeThumbSlugRoute: typeof ApiVibeThumbSlugRoute
+  ApiWhenIdIcsRoute: typeof ApiWhenIdIcsRoute
+  ApiWhenIdLockRoute: typeof ApiWhenIdLockRoute
+  ApiWhenIdRespondRoute: typeof ApiWhenIdRespondRoute
   ApiAdminAlbumsIndexRoute: typeof ApiAdminAlbumsIndexRoute
   ApiAdminLibraryIndexRoute: typeof ApiAdminLibraryIndexRoute
   ApiAdminPredictionsIndexRoute: typeof ApiAdminPredictionsIndexRoute
@@ -12698,6 +12926,7 @@ export interface RootRouteChildren {
   ApiSpacesIdIndexRoute: typeof ApiSpacesIdIndexRoute
   ApiStorefrontProductsIndexRoute: typeof ApiStorefrontProductsIndexRoute
   ApiStudyDecksIndexRoute: typeof ApiStudyDecksIndexRoute
+  ApiWhenIdIndexRoute: typeof ApiWhenIdIndexRoute
   ApiAccountStrikesIdAppealRoute: typeof ApiAccountStrikesIdAppealRoute
   ApiAdminPredictionsIdModerateRoute: typeof ApiAdminPredictionsIdModerateRoute
   ApiAdminPredictionsIdResolveRoute: typeof ApiAdminPredictionsIdResolveRoute
@@ -12713,6 +12942,8 @@ export interface RootRouteChildren {
   ApiDunesdayFeedsFeedIdRssDotxmlRoute: typeof ApiDunesdayFeedsFeedIdRssDotxmlRoute
   ApiGiftsScheduledIdUnwrapRoute: typeof ApiGiftsScheduledIdUnwrapRoute
   ApiMarketListingsIdBuyRoute: typeof ApiMarketListingsIdBuyRoute
+  ApiOfficeHoursBookingsIdIcsRoute: typeof ApiOfficeHoursBookingsIdIcsRoute
+  ApiOfficeHoursHostIdSummaryRoute: typeof ApiOfficeHoursHostIdSummaryRoute
   ApiPlaylistsIdItemsItemIdRoute: typeof ApiPlaylistsIdItemsItemIdRoute
   ApiRmhmusicGuessIdAttemptRoute: typeof ApiRmhmusicGuessIdAttemptRoute
   ApiShopLoadoutsIdApplyRoute: typeof ApiShopLoadoutsIdApplyRoute
@@ -12722,6 +12953,8 @@ export interface RootRouteChildren {
   ApiStudyDecksIdReviewRoute: typeof ApiStudyDecksIdReviewRoute
   ApiGiftsScheduledIdIndexRoute: typeof ApiGiftsScheduledIdIndexRoute
   ApiMarketListingsIdIndexRoute: typeof ApiMarketListingsIdIndexRoute
+  ApiOfficeHoursBookingsIdIndexRoute: typeof ApiOfficeHoursBookingsIdIndexRoute
+  ApiOfficeHoursHostIdIndexRoute: typeof ApiOfficeHoursHostIdIndexRoute
   ApiPlaylistsIdItemsIndexRoute: typeof ApiPlaylistsIdItemsIndexRoute
   ApiRmhmusicGuessIdIndexRoute: typeof ApiRmhmusicGuessIdIndexRoute
   ApiShopLoadoutsIdIndexRoute: typeof ApiShopLoadoutsIdIndexRoute
@@ -14447,6 +14680,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteNewsIndexRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/office-hours/': {
+      id: '/_site/office-hours/'
+      path: '/office-hours'
+      fullPath: '/office-hours/'
+      preLoaderRoute: typeof SiteOfficeHoursIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/office-hours/$userId': {
+      id: '/_site/office-hours/$userId'
+      path: '/office-hours/$userId'
+      fullPath: '/office-hours/$userId'
+      preLoaderRoute: typeof SiteOfficeHoursUserIdRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/personas/': {
       id: '/_site/personas/'
       path: '/personas'
@@ -14657,6 +14904,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteSettingsAppearanceRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/settings/calendar': {
+      id: '/_site/settings/calendar'
+      path: '/settings/calendar'
+      fullPath: '/settings/calendar'
+      preLoaderRoute: typeof SiteSettingsCalendarRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/settings/circle': {
       id: '/_site/settings/circle'
       path: '/settings/circle'
@@ -14844,6 +15098,20 @@ declare module '@tanstack/react-router' {
       path: '/wager/$id'
       fullPath: '/wager/$id'
       preLoaderRoute: typeof SiteWagerIdRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/when/': {
+      id: '/_site/when/'
+      path: '/when'
+      fullPath: '/when/'
+      preLoaderRoute: typeof SiteWhenIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/when/$id': {
+      id: '/_site/when/$id'
+      path: '/when/$id'
+      fullPath: '/when/$id'
+      preLoaderRoute: typeof SiteWhenIdRouteImport
       parentRoute: typeof SiteRoute
     }
     '/altair/multiplayer/': {
@@ -15173,6 +15441,20 @@ declare module '@tanstack/react-router' {
       path: '/api/bums-rush/showdown'
       fullPath: '/api/bums-rush/showdown'
       preLoaderRoute: typeof ApiBumsRushShowdownRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/calendar-feed/': {
+      id: '/api/calendar-feed/'
+      path: '/api/calendar-feed'
+      fullPath: '/api/calendar-feed/'
+      preLoaderRoute: typeof ApiCalendarFeedIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/calendar/$token': {
+      id: '/api/calendar/$token'
+      path: '/api/calendar/$token'
+      fullPath: '/api/calendar/$token'
+      preLoaderRoute: typeof ApiCalendarTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/calls/history': {
@@ -15943,6 +16225,13 @@ declare module '@tanstack/react-router' {
       path: '/api/notifications/read'
       fullPath: '/api/notifications/read'
       preLoaderRoute: typeof ApiNotificationsReadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/office-hours/': {
+      id: '/api/office-hours/'
+      path: '/api/office-hours'
+      fullPath: '/api/office-hours/'
+      preLoaderRoute: typeof ApiOfficeHoursIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/og/pf2ecal': {
@@ -16855,6 +17144,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiStudioTiersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/study-buddy/': {
+      id: '/api/study-buddy/'
+      path: '/api/study-buddy'
+      fullPath: '/api/study-buddy/'
+      preLoaderRoute: typeof ApiStudyBuddyIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/study/marketplace': {
       id: '/api/study/marketplace'
       path: '/api/study/marketplace'
@@ -17147,6 +17443,13 @@ declare module '@tanstack/react-router' {
       path: '/api/wheel/spin'
       fullPath: '/api/wheel/spin'
       preLoaderRoute: typeof ApiWheelSpinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/when/': {
+      id: '/api/when/'
+      path: '/api/when'
+      fullPath: '/api/when/'
+      preLoaderRoute: typeof ApiWhenIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/wishlist/': {
@@ -19067,6 +19370,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWebringsSlugMembershipRouteImport
       parentRoute: typeof ApiWebringsSlugRoute
     }
+    '/api/when/$id/': {
+      id: '/api/when/$id/'
+      path: '/api/when/$id'
+      fullPath: '/api/when/$id/'
+      preLoaderRoute: typeof ApiWhenIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/when/$id/ics': {
+      id: '/api/when/$id/ics'
+      path: '/api/when/$id/ics'
+      fullPath: '/api/when/$id/ics'
+      preLoaderRoute: typeof ApiWhenIdIcsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/when/$id/lock': {
+      id: '/api/when/$id/lock'
+      path: '/api/when/$id/lock'
+      fullPath: '/api/when/$id/lock'
+      preLoaderRoute: typeof ApiWhenIdLockRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/when/$id/respond': {
+      id: '/api/when/$id/respond'
+      path: '/api/when/$id/respond'
+      fullPath: '/api/when/$id/respond'
+      preLoaderRoute: typeof ApiWhenIdRespondRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rmhbox/minigames/$minigameId/history': {
       id: '/rmhbox/minigames/$minigameId/history'
       path: '/minigames/$minigameId/history'
@@ -19366,6 +19697,34 @@ declare module '@tanstack/react-router' {
       path: '/api/market/listings/$id/buy'
       fullPath: '/api/market/listings/$id/buy'
       preLoaderRoute: typeof ApiMarketListingsIdBuyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/office-hours/bookings/$id/': {
+      id: '/api/office-hours/bookings/$id/'
+      path: '/api/office-hours/bookings/$id'
+      fullPath: '/api/office-hours/bookings/$id/'
+      preLoaderRoute: typeof ApiOfficeHoursBookingsIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/office-hours/bookings/$id/ics': {
+      id: '/api/office-hours/bookings/$id/ics'
+      path: '/api/office-hours/bookings/$id/ics'
+      fullPath: '/api/office-hours/bookings/$id/ics'
+      preLoaderRoute: typeof ApiOfficeHoursBookingsIdIcsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/office-hours/host/$id/': {
+      id: '/api/office-hours/host/$id/'
+      path: '/api/office-hours/host/$id'
+      fullPath: '/api/office-hours/host/$id/'
+      preLoaderRoute: typeof ApiOfficeHoursHostIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/office-hours/host/$id/summary': {
+      id: '/api/office-hours/host/$id/summary'
+      path: '/api/office-hours/host/$id/summary'
+      fullPath: '/api/office-hours/host/$id/summary'
+      preLoaderRoute: typeof ApiOfficeHoursHostIdSummaryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/og/post/$id/story': {
@@ -19930,6 +20289,7 @@ interface SiteRouteChildren {
   SiteListsIdRoute: typeof SiteListsIdRoute
   SiteMessagesConversationIdRoute: typeof SiteMessagesConversationIdRoute
   SiteMomentsIdRoute: typeof SiteMomentsIdRoute
+  SiteOfficeHoursUserIdRoute: typeof SiteOfficeHoursUserIdRoute
   SitePersonasIdRoute: typeof SitePersonasIdRoute
   SiteProfileIdRoute: typeof SiteProfileIdRoute
   SiteRideshareDriveRoute: typeof SiteRideshareDriveRoute
@@ -19942,6 +20302,7 @@ interface SiteRouteChildren {
   SiteRmhDatacenterPowerRoute: typeof SiteRmhDatacenterPowerRoute
   SiteSettingsAccountStatusRoute: typeof SiteSettingsAccountStatusRoute
   SiteSettingsAppearanceRoute: typeof SiteSettingsAppearanceRoute
+  SiteSettingsCalendarRoute: typeof SiteSettingsCalendarRoute
   SiteSettingsCircleRoute: typeof SiteSettingsCircleRoute
   SiteSettingsContentRoute: typeof SiteSettingsContentRoute
   SiteSettingsLayoutRoute: typeof SiteSettingsLayoutRoute
@@ -19962,6 +20323,7 @@ interface SiteRouteChildren {
   SiteUserBuildsManageRoute: typeof SiteUserBuildsManageRoute
   SiteUserBuildsSubmitRoute: typeof SiteUserBuildsSubmitRoute
   SiteWagerIdRoute: typeof SiteWagerIdRoute
+  SiteWhenIdRoute: typeof SiteWhenIdRoute
   SiteAppsIndexRoute: typeof SiteAppsIndexRoute
   SiteBlogIndexRoute: typeof SiteBlogIndexRoute
   SiteBuildsIndexRoute: typeof SiteBuildsIndexRoute
@@ -19972,6 +20334,7 @@ interface SiteRouteChildren {
   SiteListsIndexRoute: typeof SiteListsIndexRoute
   SiteMessagesIndexRoute: typeof SiteMessagesIndexRoute
   SiteNewsIndexRoute: typeof SiteNewsIndexRoute
+  SiteOfficeHoursIndexRoute: typeof SiteOfficeHoursIndexRoute
   SitePersonasIndexRoute: typeof SitePersonasIndexRoute
   SiteRideshareIndexRoute: typeof SiteRideshareIndexRoute
   SiteRingsIndexRoute: typeof SiteRingsIndexRoute
@@ -19985,6 +20348,7 @@ interface SiteRouteChildren {
   SiteUserBuildsIndexRoute: typeof SiteUserBuildsIndexRoute
   SiteVIndexRoute: typeof SiteVIndexRoute
   SiteWagerIndexRoute: typeof SiteWagerIndexRoute
+  SiteWhenIndexRoute: typeof SiteWhenIndexRoute
   SiteHomesListingIdRoute: typeof SiteHomesListingIdRoute
   SiteUUseridIndexRoute: typeof SiteUUseridIndexRoute
   SiteGamesGameIdGuidesGuideIdRoute: typeof SiteGamesGameIdGuidesGuideIdRoute
@@ -20046,6 +20410,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteListsIdRoute: SiteListsIdRoute,
   SiteMessagesConversationIdRoute: SiteMessagesConversationIdRoute,
   SiteMomentsIdRoute: SiteMomentsIdRoute,
+  SiteOfficeHoursUserIdRoute: SiteOfficeHoursUserIdRoute,
   SitePersonasIdRoute: SitePersonasIdRoute,
   SiteProfileIdRoute: SiteProfileIdRoute,
   SiteRideshareDriveRoute: SiteRideshareDriveRoute,
@@ -20058,6 +20423,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteRmhDatacenterPowerRoute: SiteRmhDatacenterPowerRoute,
   SiteSettingsAccountStatusRoute: SiteSettingsAccountStatusRoute,
   SiteSettingsAppearanceRoute: SiteSettingsAppearanceRoute,
+  SiteSettingsCalendarRoute: SiteSettingsCalendarRoute,
   SiteSettingsCircleRoute: SiteSettingsCircleRoute,
   SiteSettingsContentRoute: SiteSettingsContentRoute,
   SiteSettingsLayoutRoute: SiteSettingsLayoutRoute,
@@ -20078,6 +20444,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteUserBuildsManageRoute: SiteUserBuildsManageRoute,
   SiteUserBuildsSubmitRoute: SiteUserBuildsSubmitRoute,
   SiteWagerIdRoute: SiteWagerIdRoute,
+  SiteWhenIdRoute: SiteWhenIdRoute,
   SiteAppsIndexRoute: SiteAppsIndexRoute,
   SiteBlogIndexRoute: SiteBlogIndexRoute,
   SiteBuildsIndexRoute: SiteBuildsIndexRoute,
@@ -20088,6 +20455,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteListsIndexRoute: SiteListsIndexRoute,
   SiteMessagesIndexRoute: SiteMessagesIndexRoute,
   SiteNewsIndexRoute: SiteNewsIndexRoute,
+  SiteOfficeHoursIndexRoute: SiteOfficeHoursIndexRoute,
   SitePersonasIndexRoute: SitePersonasIndexRoute,
   SiteRideshareIndexRoute: SiteRideshareIndexRoute,
   SiteRingsIndexRoute: SiteRingsIndexRoute,
@@ -20101,6 +20469,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteUserBuildsIndexRoute: SiteUserBuildsIndexRoute,
   SiteVIndexRoute: SiteVIndexRoute,
   SiteWagerIndexRoute: SiteWagerIndexRoute,
+  SiteWhenIndexRoute: SiteWhenIndexRoute,
   SiteHomesListingIdRoute: SiteHomesListingIdRoute,
   SiteUUseridIndexRoute: SiteUUseridIndexRoute,
   SiteGamesGameIdGuidesGuideIdRoute: SiteGamesGameIdGuidesGuideIdRoute,
@@ -21765,6 +22134,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiBumsRushLeaderboardRoute: ApiBumsRushLeaderboardRoute,
   ApiBumsRushProfileRoute: ApiBumsRushProfileRoute,
   ApiBumsRushShowdownRoute: ApiBumsRushShowdownRoute,
+  ApiCalendarTokenRoute: ApiCalendarTokenRoute,
   ApiCallsHistoryRoute: ApiCallsHistoryRoute,
   ApiCallsIceRoute: ApiCallsIceRoute,
   ApiCallsPrivacyRoute: ApiCallsPrivacyRoute,
@@ -21992,6 +22362,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAwardsIndexRoute: ApiAwardsIndexRoute,
   ApiBattlepassIndexRoute: ApiBattlepassIndexRoute,
   ApiBulkIndexRoute: ApiBulkIndexRoute,
+  ApiCalendarFeedIndexRoute: ApiCalendarFeedIndexRoute,
   ApiChatFoldersIndexRoute: ApiChatFoldersIndexRoute,
   ApiCoinsIndexRoute: ApiCoinsIndexRoute,
   ApiCommunitiesIndexRoute: ApiCommunitiesIndexRoute,
@@ -22007,6 +22378,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMemoryIndexRoute: ApiMemoryIndexRoute,
   ApiMomentsIndexRoute: ApiMomentsIndexRoute,
   ApiNotificationsIndexRoute: ApiNotificationsIndexRoute,
+  ApiOfficeHoursIndexRoute: ApiOfficeHoursIndexRoute,
   ApiOnboardingIndexRoute: ApiOnboardingIndexRoute,
   ApiPersonasIndexRoute: ApiPersonasIndexRoute,
   ApiPf2ecalIndexRoute: ApiPf2ecalIndexRoute,
@@ -22026,12 +22398,14 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSpacesIndexRoute: ApiSpacesIndexRoute,
   ApiStakingIndexRoute: ApiStakingIndexRoute,
   ApiStampsIndexRoute: ApiStampsIndexRoute,
+  ApiStudyBuddyIndexRoute: ApiStudyBuddyIndexRoute,
   ApiThemesIndexRoute: ApiThemesIndexRoute,
   ApiTournamentsIndexRoute: ApiTournamentsIndexRoute,
   ApiTrashIndexRoute: ApiTrashIndexRoute,
   ApiWagerIndexRoute: ApiWagerIndexRoute,
   ApiWebringsIndexRoute: ApiWebringsIndexRoute,
   ApiWheelIndexRoute: ApiWheelIndexRoute,
+  ApiWhenIndexRoute: ApiWhenIndexRoute,
   ApiWishlistIndexRoute: ApiWishlistIndexRoute,
   ApiAccountRecoveryCodesRoute: ApiAccountRecoveryCodesRoute,
   ApiAccountRecoveryCompleteRoute: ApiAccountRecoveryCompleteRoute,
@@ -22155,6 +22529,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1UsersHandleRoute: ApiV1UsersHandleRouteWithChildren,
   ApiVibePkgFileRoute: ApiVibePkgFileRoute,
   ApiVibeThumbSlugRoute: ApiVibeThumbSlugRoute,
+  ApiWhenIdIcsRoute: ApiWhenIdIcsRoute,
+  ApiWhenIdLockRoute: ApiWhenIdLockRoute,
+  ApiWhenIdRespondRoute: ApiWhenIdRespondRoute,
   ApiAdminAlbumsIndexRoute: ApiAdminAlbumsIndexRoute,
   ApiAdminLibraryIndexRoute: ApiAdminLibraryIndexRoute,
   ApiAdminPredictionsIndexRoute: ApiAdminPredictionsIndexRoute,
@@ -22183,6 +22560,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSpacesIdIndexRoute: ApiSpacesIdIndexRoute,
   ApiStorefrontProductsIndexRoute: ApiStorefrontProductsIndexRoute,
   ApiStudyDecksIndexRoute: ApiStudyDecksIndexRoute,
+  ApiWhenIdIndexRoute: ApiWhenIdIndexRoute,
   ApiAccountStrikesIdAppealRoute: ApiAccountStrikesIdAppealRoute,
   ApiAdminPredictionsIdModerateRoute: ApiAdminPredictionsIdModerateRoute,
   ApiAdminPredictionsIdResolveRoute: ApiAdminPredictionsIdResolveRoute,
@@ -22199,6 +22577,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDunesdayFeedsFeedIdRssDotxmlRoute: ApiDunesdayFeedsFeedIdRssDotxmlRoute,
   ApiGiftsScheduledIdUnwrapRoute: ApiGiftsScheduledIdUnwrapRoute,
   ApiMarketListingsIdBuyRoute: ApiMarketListingsIdBuyRoute,
+  ApiOfficeHoursBookingsIdIcsRoute: ApiOfficeHoursBookingsIdIcsRoute,
+  ApiOfficeHoursHostIdSummaryRoute: ApiOfficeHoursHostIdSummaryRoute,
   ApiPlaylistsIdItemsItemIdRoute: ApiPlaylistsIdItemsItemIdRoute,
   ApiRmhmusicGuessIdAttemptRoute: ApiRmhmusicGuessIdAttemptRoute,
   ApiShopLoadoutsIdApplyRoute: ApiShopLoadoutsIdApplyRoute,
@@ -22208,6 +22588,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStudyDecksIdReviewRoute: ApiStudyDecksIdReviewRoute,
   ApiGiftsScheduledIdIndexRoute: ApiGiftsScheduledIdIndexRoute,
   ApiMarketListingsIdIndexRoute: ApiMarketListingsIdIndexRoute,
+  ApiOfficeHoursBookingsIdIndexRoute: ApiOfficeHoursBookingsIdIndexRoute,
+  ApiOfficeHoursHostIdIndexRoute: ApiOfficeHoursHostIdIndexRoute,
   ApiPlaylistsIdItemsIndexRoute: ApiPlaylistsIdItemsIndexRoute,
   ApiRmhmusicGuessIdIndexRoute: ApiRmhmusicGuessIdIndexRoute,
   ApiShopLoadoutsIdIndexRoute: ApiShopLoadoutsIdIndexRoute,
