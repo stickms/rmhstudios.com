@@ -4,6 +4,7 @@ import { getRequest } from '@tanstack/react-start/server';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { ExploreColumn } from '@/components/feed/ExploreColumn';
+import { SurpriseButton } from '@/components/discovery/SurpriseButton';
 import { SavedSearches } from '@/components/search/SavedSearches';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { auth } from '@/lib/auth';
@@ -87,6 +88,9 @@ function ExplorePage() {
         defaultValue: 'Search people, posts, builds and writing across RMH Studios.',
       })}
     >
+      <div className="flex justify-end px-4 pt-3">
+        <SurpriseButton />
+      </div>
       <SavedSearches currentQuery={q} />
       <ExploreColumn
         initialQuery={q}

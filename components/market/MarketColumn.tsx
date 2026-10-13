@@ -21,6 +21,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { useSession } from '@/components/Providers';
 import { getShopItem } from '@/lib/shop/catalog';
 import { ListingCard, type MarketListingView } from '@/components/market/ListingCard';
+import { WatchControl } from '@/components/discovery/WatchControl';
 import { SellSheet } from '@/components/market/SellSheet';
 
 interface PriceHistoryView {
@@ -158,6 +159,12 @@ export function MarketColumn({
           </option>
         </Select>
       </div>
+
+      {itemFilter && (
+        <div className="flex justify-end border-b border-site-border px-4 py-2">
+          <WatchControl kind="market" targetId={itemFilter} />
+        </div>
+      )}
 
       {itemFilter && history && history.count > 0 && (
         <div className="flex items-center justify-between gap-3 border-b border-site-border px-4 py-3">

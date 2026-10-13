@@ -80,6 +80,7 @@ export const NAMESPACES = [
   "f-calendar",
   "f-posts-plus",
   "f-feed-plus",
+  "f-discovery",
   "f-economy-plus",
   "f-profile-plus",
   "f-messaging",

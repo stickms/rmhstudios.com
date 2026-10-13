@@ -75,3 +75,19 @@ export function matches(alert: CompiledAlert, text: string): boolean {
 export function trippedAlerts(alerts: readonly CompiledAlert[], text: string): string[] {
   return alerts.filter((a) => matches(a, text)).map((a) => a.source);
 }
+
+/**
+ * One required word of an alert (its longest), folded. The fan-out job indexes
+ * alerts by it so a post is checked only against alerts whose anchor appears in
+ * that post — never against every alert. Null when the alert has no positive term.
+ */
+export function alertAnchor(source: string): string | null {
+  let best = '';
+  for (const m of source.trim().slice(0, MAX_ALERT_LENGTH).matchAll(/(-?)(?:"([^"]+)"|(\S+))/g)) {
+    if (m[1]) continue;
+    for (const w of fold(m[2] ?? m[3] ?? '').match(/[\p{L}\p{N}]+/gu) ?? []) {
+      if (w.length > best.length && w.length <= 64) best = w;
+    }
+  }
+  return best || null;
+}

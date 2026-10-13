@@ -107,6 +107,7 @@ import { Route as SiteServicesRouteImport } from './routes/_site/services'
 import { Route as SiteShareRouteImport } from './routes/_site/share'
 import { Route as SiteShopRouteImport } from './routes/_site/shop'
 import { Route as SiteSpeedrunsRouteImport } from './routes/_site/speedruns'
+import { Route as SiteTodayRouteImport } from './routes/_site/today'
 import { Route as SiteTrashRouteImport } from './routes/_site/trash'
 import { Route as SiteVenturesRouteImport } from './routes/_site/ventures'
 import { Route as SiteWalletRouteImport } from './routes/_site/wallet'
@@ -240,6 +241,8 @@ import { Route as SiteCreateBuildsRouteImport } from './routes/_site/create/buil
 import { Route as SiteCreateEarningsRouteImport } from './routes/_site/create/earnings'
 import { Route as SiteCreatePersonasRouteImport } from './routes/_site/create/personas'
 import { Route as SiteDeveloperIndexRouteImport } from './routes/_site/developer/index'
+import { Route as SiteFeedsIndexRouteImport } from './routes/_site/feeds.index'
+import { Route as SiteFeedsIdRouteImport } from './routes/_site/feeds.$id'
 import { Route as SiteGamesIndexRouteImport } from './routes/_site/games/index'
 import { Route as SiteGamesGameIdRouteImport } from './routes/_site/games/$gameId'
 import { Route as SiteGamesSliceItRouteImport } from './routes/_site/games/slice-it'
@@ -402,6 +405,11 @@ import { Route as ApiDiscordEmbedRouteImport } from './routes/api/discord/embed'
 import { Route as ApiDiscordRaceRouteImport } from './routes/api/discord/race'
 import { Route as ApiDiscordSyncScoreRouteImport } from './routes/api/discord/sync-score'
 import { Route as ApiDiscordTokenRouteImport } from './routes/api/discord/token'
+import { Route as ApiDiscoveryAlertsRouteImport } from './routes/api/discovery/alerts'
+import { Route as ApiDiscoveryMemoriesRouteImport } from './routes/api/discovery/memories'
+import { Route as ApiDiscoverySurpriseRouteImport } from './routes/api/discovery/surprise'
+import { Route as ApiDiscoveryTodayRouteImport } from './routes/api/discovery/today'
+import { Route as ApiDiscoveryWatchRouteImport } from './routes/api/discovery/watch'
 import { Route as ApiDoctrineReactionsRouteImport } from './routes/api/doctrine/reactions'
 import { Route as ApiDreamRiftCoopRouteImport } from './routes/api/dream-rift/coop'
 import { Route as ApiDreamRiftLeaderboardRouteImport } from './routes/api/dream-rift/leaderboard'
@@ -417,6 +425,8 @@ import { Route as ApiFeedHashtagSearchRouteImport } from './routes/api/feed/hash
 import { Route as ApiFeedMentionSearchRouteImport } from './routes/api/feed/mention-search'
 import { Route as ApiFeedSignalRouteImport } from './routes/api/feed/signal'
 import { Route as ApiFeedStreamRouteImport } from './routes/api/feed/stream'
+import { Route as ApiFeedsIndexRouteImport } from './routes/api/feeds/index'
+import { Route as ApiFeedsIdRouteImport } from './routes/api/feeds/$id'
 import { Route as ApiForestExplorerSaveRouteImport } from './routes/api/forest-explorer/save'
 import { Route as ApiGabrielsHornHouseRuleRouteImport } from './routes/api/gabriels-horn/house-rule'
 import { Route as ApiGabrielsHornLeaderboardRouteImport } from './routes/api/gabriels-horn/leaderboard'
@@ -754,6 +764,7 @@ import { Route as ApiCreatorRedeemIndexRouteImport } from './routes/api/creator/
 import { Route as ApiCreatorsIdJoinRouteImport } from './routes/api/creators/$id/join'
 import { Route as ApiDeveloperKeysIndexRouteImport } from './routes/api/developer/keys/index'
 import { Route as ApiDeveloperKeysIdRouteImport } from './routes/api/developer/keys/$id'
+import { Route as ApiDiscoveryTrendingTagRouteImport } from './routes/api/discovery/trending/$tag'
 import { Route as ApiDoctrineAdminDisclosuresRouteImport } from './routes/api/doctrine/admin/disclosures'
 import { Route as ApiDoctrineAdminIncidentsRouteImport } from './routes/api/doctrine/admin/incidents'
 import { Route as ApiDoctrineAdminTiersRouteImport } from './routes/api/doctrine/admin/tiers'
@@ -781,6 +792,7 @@ import { Route as ApiEventsIdIndexRouteImport } from './routes/api/events/$id/in
 import { Route as ApiEventsIdIcsRouteImport } from './routes/api/events/$id/ics'
 import { Route as ApiEventsIdRsvpRouteImport } from './routes/api/events/$id/rsvp'
 import { Route as ApiFeedImageFilenameRouteImport } from './routes/api/feed/image/$filename'
+import { Route as ApiFeedsIdSubscribeRouteImport } from './routes/api/feeds/$id/subscribe'
 import { Route as ApiGamesIdGuidesRouteImport } from './routes/api/games/$id.guides'
 import { Route as ApiGamesIdLeaderboardRouteImport } from './routes/api/games/$id/leaderboard'
 import { Route as ApiGamesIdReviewRouteImport } from './routes/api/games/$id.review'
@@ -1553,6 +1565,11 @@ const SiteSpeedrunsRoute = SiteSpeedrunsRouteImport.update({
   path: '/speedruns',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteTodayRoute = SiteTodayRouteImport.update({
+  id: '/today',
+  path: '/today',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteTrashRoute = SiteTrashRouteImport.update({
   id: '/trash',
   path: '/trash',
@@ -2218,6 +2235,16 @@ const SiteDeveloperIndexRoute = SiteDeveloperIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => SiteDeveloperRouteRoute,
+} as any)
+const SiteFeedsIndexRoute = SiteFeedsIndexRouteImport.update({
+  id: '/feeds/',
+  path: '/feeds/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteFeedsIdRoute = SiteFeedsIdRouteImport.update({
+  id: '/feeds/$id',
+  path: '/feeds/$id',
+  getParentRoute: () => SiteRoute,
 } as any)
 const SiteGamesIndexRoute = SiteGamesIndexRouteImport.update({
   id: '/games/',
@@ -3039,6 +3066,31 @@ const ApiDiscordTokenRoute = ApiDiscordTokenRouteImport.update({
   path: '/api/discord/token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDiscoveryAlertsRoute = ApiDiscoveryAlertsRouteImport.update({
+  id: '/api/discovery/alerts',
+  path: '/api/discovery/alerts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDiscoveryMemoriesRoute = ApiDiscoveryMemoriesRouteImport.update({
+  id: '/api/discovery/memories',
+  path: '/api/discovery/memories',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDiscoverySurpriseRoute = ApiDiscoverySurpriseRouteImport.update({
+  id: '/api/discovery/surprise',
+  path: '/api/discovery/surprise',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDiscoveryTodayRoute = ApiDiscoveryTodayRouteImport.update({
+  id: '/api/discovery/today',
+  path: '/api/discovery/today',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDiscoveryWatchRoute = ApiDiscoveryWatchRouteImport.update({
+  id: '/api/discovery/watch',
+  path: '/api/discovery/watch',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDoctrineReactionsRoute = ApiDoctrineReactionsRouteImport.update({
   id: '/api/doctrine/reactions',
   path: '/api/doctrine/reactions',
@@ -3112,6 +3164,16 @@ const ApiFeedSignalRoute = ApiFeedSignalRouteImport.update({
 const ApiFeedStreamRoute = ApiFeedStreamRouteImport.update({
   id: '/api/feed/stream',
   path: '/api/feed/stream',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiFeedsIndexRoute = ApiFeedsIndexRouteImport.update({
+  id: '/api/feeds/',
+  path: '/api/feeds/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiFeedsIdRoute = ApiFeedsIdRouteImport.update({
+  id: '/api/feeds/$id',
+  path: '/api/feeds/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiForestExplorerSaveRoute = ApiForestExplorerSaveRouteImport.update({
@@ -4852,6 +4914,11 @@ const ApiDeveloperKeysIdRoute = ApiDeveloperKeysIdRouteImport.update({
   path: '/api/developer/keys/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDiscoveryTrendingTagRoute = ApiDiscoveryTrendingTagRouteImport.update({
+  id: '/api/discovery/trending/$tag',
+  path: '/api/discovery/trending/$tag',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDoctrineAdminDisclosuresRoute =
   ApiDoctrineAdminDisclosuresRouteImport.update({
     id: '/api/doctrine/admin/disclosures',
@@ -5001,6 +5068,11 @@ const ApiFeedImageFilenameRoute = ApiFeedImageFilenameRouteImport.update({
   id: '/api/feed/image/$filename',
   path: '/api/feed/image/$filename',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ApiFeedsIdSubscribeRoute = ApiFeedsIdSubscribeRouteImport.update({
+  id: '/subscribe',
+  path: '/subscribe',
+  getParentRoute: () => ApiFeedsIdRoute,
 } as any)
 const ApiGamesIdGuidesRoute = ApiGamesIdGuidesRouteImport.update({
   id: '/api/games/$id/guides',
@@ -6599,6 +6671,7 @@ export interface FileRoutesByFullPath {
   '/share': typeof SiteShareRoute
   '/shop': typeof SiteShopRoute
   '/speedruns': typeof SiteSpeedrunsRoute
+  '/today': typeof SiteTodayRoute
   '/trash': typeof SiteTrashRoute
   '/ventures': typeof SiteVenturesRoute
   '/wallet': typeof SiteWalletRoute
@@ -6726,6 +6799,7 @@ export interface FileRoutesByFullPath {
   '/create/builds': typeof SiteCreateBuildsRoute
   '/create/earnings': typeof SiteCreateEarningsRoute
   '/create/personas': typeof SiteCreatePersonasRoute
+  '/feeds/$id': typeof SiteFeedsIdRoute
   '/games/$gameId': typeof SiteGamesGameIdRoute
   '/games/slice-it': typeof SiteGamesSliceItRoute
   '/groups/$id': typeof SiteGroupsIdRoute
@@ -6850,6 +6924,11 @@ export interface FileRoutesByFullPath {
   '/api/discord/race': typeof ApiDiscordRaceRoute
   '/api/discord/sync-score': typeof ApiDiscordSyncScoreRoute
   '/api/discord/token': typeof ApiDiscordTokenRoute
+  '/api/discovery/alerts': typeof ApiDiscoveryAlertsRoute
+  '/api/discovery/memories': typeof ApiDiscoveryMemoriesRoute
+  '/api/discovery/surprise': typeof ApiDiscoverySurpriseRoute
+  '/api/discovery/today': typeof ApiDiscoveryTodayRoute
+  '/api/discovery/watch': typeof ApiDiscoveryWatchRoute
   '/api/doctrine/reactions': typeof ApiDoctrineReactionsRoute
   '/api/dream-rift/coop': typeof ApiDreamRiftCoopRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
@@ -6863,6 +6942,7 @@ export interface FileRoutesByFullPath {
   '/api/feed/mention-search': typeof ApiFeedMentionSearchRoute
   '/api/feed/signal': typeof ApiFeedSignalRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
+  '/api/feeds/$id': typeof ApiFeedsIdRouteWithChildren
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/gabriels-horn/house-rule': typeof ApiGabrielsHornHouseRuleRoute
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
@@ -7098,6 +7178,7 @@ export interface FileRoutesByFullPath {
   '/builds/': typeof SiteBuildsIndexRoute
   '/create/': typeof SiteCreateIndexRoute
   '/developer/': typeof SiteDeveloperIndexRoute
+  '/feeds/': typeof SiteFeedsIndexRoute
   '/games/': typeof SiteGamesIndexRoute
   '/groups/': typeof SiteGroupsIndexRoute
   '/homes/': typeof SiteHomesIndexRoute
@@ -7138,6 +7219,7 @@ export interface FileRoutesByFullPath {
   '/api/community-pages/': typeof ApiCommunityPagesIndexRoute
   '/api/emoji-packs/': typeof ApiEmojiPacksIndexRoute
   '/api/events/': typeof ApiEventsIndexRoute
+  '/api/feeds/': typeof ApiFeedsIndexRoute
   '/api/group-chats/': typeof ApiGroupChatsIndexRoute
   '/api/guides/': typeof ApiGuidesIndexRoute
   '/api/history/': typeof ApiHistoryIndexRoute
@@ -7235,6 +7317,7 @@ export interface FileRoutesByFullPath {
   '/api/community-pages/$id/revisions': typeof ApiCommunityPagesIdRevisionsRoute
   '/api/creators/$id/join': typeof ApiCreatorsIdJoinRoute
   '/api/developer/keys/$id': typeof ApiDeveloperKeysIdRouteWithChildren
+  '/api/discovery/trending/$tag': typeof ApiDiscoveryTrendingTagRoute
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
   '/api/doctrine/admin/incidents': typeof ApiDoctrineAdminIncidentsRoute
   '/api/doctrine/admin/tiers': typeof ApiDoctrineAdminTiersRoute
@@ -7257,6 +7340,7 @@ export interface FileRoutesByFullPath {
   '/api/events/$id/ics': typeof ApiEventsIdIcsRoute
   '/api/events/$id/rsvp': typeof ApiEventsIdRsvpRoute
   '/api/feed/image/$filename': typeof ApiFeedImageFilenameRoute
+  '/api/feeds/$id/subscribe': typeof ApiFeedsIdSubscribeRoute
   '/api/games/$id/guides': typeof ApiGamesIdGuidesRoute
   '/api/games/$id/leaderboard': typeof ApiGamesIdLeaderboardRoute
   '/api/games/$id/review': typeof ApiGamesIdReviewRoute
@@ -7627,6 +7711,7 @@ export interface FileRoutesByTo {
   '/share': typeof SiteShareRoute
   '/shop': typeof SiteShopRoute
   '/speedruns': typeof SiteSpeedrunsRoute
+  '/today': typeof SiteTodayRoute
   '/trash': typeof SiteTrashRoute
   '/ventures': typeof SiteVenturesRoute
   '/wallet': typeof SiteWalletRoute
@@ -7753,6 +7838,7 @@ export interface FileRoutesByTo {
   '/create/builds': typeof SiteCreateBuildsRoute
   '/create/earnings': typeof SiteCreateEarningsRoute
   '/create/personas': typeof SiteCreatePersonasRoute
+  '/feeds/$id': typeof SiteFeedsIdRoute
   '/games/$gameId': typeof SiteGamesGameIdRoute
   '/games/slice-it': typeof SiteGamesSliceItRoute
   '/groups/$id': typeof SiteGroupsIdRoute
@@ -7877,6 +7963,11 @@ export interface FileRoutesByTo {
   '/api/discord/race': typeof ApiDiscordRaceRoute
   '/api/discord/sync-score': typeof ApiDiscordSyncScoreRoute
   '/api/discord/token': typeof ApiDiscordTokenRoute
+  '/api/discovery/alerts': typeof ApiDiscoveryAlertsRoute
+  '/api/discovery/memories': typeof ApiDiscoveryMemoriesRoute
+  '/api/discovery/surprise': typeof ApiDiscoverySurpriseRoute
+  '/api/discovery/today': typeof ApiDiscoveryTodayRoute
+  '/api/discovery/watch': typeof ApiDiscoveryWatchRoute
   '/api/doctrine/reactions': typeof ApiDoctrineReactionsRoute
   '/api/dream-rift/coop': typeof ApiDreamRiftCoopRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
@@ -7890,6 +7981,7 @@ export interface FileRoutesByTo {
   '/api/feed/mention-search': typeof ApiFeedMentionSearchRoute
   '/api/feed/signal': typeof ApiFeedSignalRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
+  '/api/feeds/$id': typeof ApiFeedsIdRouteWithChildren
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/gabriels-horn/house-rule': typeof ApiGabrielsHornHouseRuleRoute
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
@@ -8125,6 +8217,7 @@ export interface FileRoutesByTo {
   '/builds': typeof SiteBuildsIndexRoute
   '/create': typeof SiteCreateIndexRoute
   '/developer': typeof SiteDeveloperIndexRoute
+  '/feeds': typeof SiteFeedsIndexRoute
   '/games': typeof SiteGamesIndexRoute
   '/groups': typeof SiteGroupsIndexRoute
   '/homes': typeof SiteHomesIndexRoute
@@ -8165,6 +8258,7 @@ export interface FileRoutesByTo {
   '/api/community-pages': typeof ApiCommunityPagesIndexRoute
   '/api/emoji-packs': typeof ApiEmojiPacksIndexRoute
   '/api/events': typeof ApiEventsIndexRoute
+  '/api/feeds': typeof ApiFeedsIndexRoute
   '/api/group-chats': typeof ApiGroupChatsIndexRoute
   '/api/guides': typeof ApiGuidesIndexRoute
   '/api/history': typeof ApiHistoryIndexRoute
@@ -8262,6 +8356,7 @@ export interface FileRoutesByTo {
   '/api/community-pages/$id/revisions': typeof ApiCommunityPagesIdRevisionsRoute
   '/api/creators/$id/join': typeof ApiCreatorsIdJoinRoute
   '/api/developer/keys/$id': typeof ApiDeveloperKeysIdRouteWithChildren
+  '/api/discovery/trending/$tag': typeof ApiDiscoveryTrendingTagRoute
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
   '/api/doctrine/admin/incidents': typeof ApiDoctrineAdminIncidentsRoute
   '/api/doctrine/admin/tiers': typeof ApiDoctrineAdminTiersRoute
@@ -8284,6 +8379,7 @@ export interface FileRoutesByTo {
   '/api/events/$id/ics': typeof ApiEventsIdIcsRoute
   '/api/events/$id/rsvp': typeof ApiEventsIdRsvpRoute
   '/api/feed/image/$filename': typeof ApiFeedImageFilenameRoute
+  '/api/feeds/$id/subscribe': typeof ApiFeedsIdSubscribeRoute
   '/api/games/$id/guides': typeof ApiGamesIdGuidesRoute
   '/api/games/$id/leaderboard': typeof ApiGamesIdLeaderboardRoute
   '/api/games/$id/review': typeof ApiGamesIdReviewRoute
@@ -8680,6 +8776,7 @@ export interface FileRoutesById {
   '/_site/share': typeof SiteShareRoute
   '/_site/shop': typeof SiteShopRoute
   '/_site/speedruns': typeof SiteSpeedrunsRoute
+  '/_site/today': typeof SiteTodayRoute
   '/_site/trash': typeof SiteTrashRoute
   '/_site/ventures': typeof SiteVenturesRoute
   '/_site/wallet': typeof SiteWalletRoute
@@ -8808,6 +8905,7 @@ export interface FileRoutesById {
   '/_site/create/builds': typeof SiteCreateBuildsRoute
   '/_site/create/earnings': typeof SiteCreateEarningsRoute
   '/_site/create/personas': typeof SiteCreatePersonasRoute
+  '/_site/feeds/$id': typeof SiteFeedsIdRoute
   '/_site/games/$gameId': typeof SiteGamesGameIdRoute
   '/_site/games/slice-it': typeof SiteGamesSliceItRoute
   '/_site/groups/$id': typeof SiteGroupsIdRoute
@@ -8932,6 +9030,11 @@ export interface FileRoutesById {
   '/api/discord/race': typeof ApiDiscordRaceRoute
   '/api/discord/sync-score': typeof ApiDiscordSyncScoreRoute
   '/api/discord/token': typeof ApiDiscordTokenRoute
+  '/api/discovery/alerts': typeof ApiDiscoveryAlertsRoute
+  '/api/discovery/memories': typeof ApiDiscoveryMemoriesRoute
+  '/api/discovery/surprise': typeof ApiDiscoverySurpriseRoute
+  '/api/discovery/today': typeof ApiDiscoveryTodayRoute
+  '/api/discovery/watch': typeof ApiDiscoveryWatchRoute
   '/api/doctrine/reactions': typeof ApiDoctrineReactionsRoute
   '/api/dream-rift/coop': typeof ApiDreamRiftCoopRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
@@ -8945,6 +9048,7 @@ export interface FileRoutesById {
   '/api/feed/mention-search': typeof ApiFeedMentionSearchRoute
   '/api/feed/signal': typeof ApiFeedSignalRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
+  '/api/feeds/$id': typeof ApiFeedsIdRouteWithChildren
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/gabriels-horn/house-rule': typeof ApiGabrielsHornHouseRuleRoute
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
@@ -9180,6 +9284,7 @@ export interface FileRoutesById {
   '/_site/builds/': typeof SiteBuildsIndexRoute
   '/_site/create/': typeof SiteCreateIndexRoute
   '/_site/developer/': typeof SiteDeveloperIndexRoute
+  '/_site/feeds/': typeof SiteFeedsIndexRoute
   '/_site/games/': typeof SiteGamesIndexRoute
   '/_site/groups/': typeof SiteGroupsIndexRoute
   '/_site/homes/': typeof SiteHomesIndexRoute
@@ -9220,6 +9325,7 @@ export interface FileRoutesById {
   '/api/community-pages/': typeof ApiCommunityPagesIndexRoute
   '/api/emoji-packs/': typeof ApiEmojiPacksIndexRoute
   '/api/events/': typeof ApiEventsIndexRoute
+  '/api/feeds/': typeof ApiFeedsIndexRoute
   '/api/group-chats/': typeof ApiGroupChatsIndexRoute
   '/api/guides/': typeof ApiGuidesIndexRoute
   '/api/history/': typeof ApiHistoryIndexRoute
@@ -9317,6 +9423,7 @@ export interface FileRoutesById {
   '/api/community-pages/$id/revisions': typeof ApiCommunityPagesIdRevisionsRoute
   '/api/creators/$id/join': typeof ApiCreatorsIdJoinRoute
   '/api/developer/keys/$id': typeof ApiDeveloperKeysIdRouteWithChildren
+  '/api/discovery/trending/$tag': typeof ApiDiscoveryTrendingTagRoute
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
   '/api/doctrine/admin/incidents': typeof ApiDoctrineAdminIncidentsRoute
   '/api/doctrine/admin/tiers': typeof ApiDoctrineAdminTiersRoute
@@ -9339,6 +9446,7 @@ export interface FileRoutesById {
   '/api/events/$id/ics': typeof ApiEventsIdIcsRoute
   '/api/events/$id/rsvp': typeof ApiEventsIdRsvpRoute
   '/api/feed/image/$filename': typeof ApiFeedImageFilenameRoute
+  '/api/feeds/$id/subscribe': typeof ApiFeedsIdSubscribeRoute
   '/api/games/$id/guides': typeof ApiGamesIdGuidesRoute
   '/api/games/$id/leaderboard': typeof ApiGamesIdLeaderboardRoute
   '/api/games/$id/review': typeof ApiGamesIdReviewRoute
@@ -9736,6 +9844,7 @@ export interface FileRouteTypes {
     | '/share'
     | '/shop'
     | '/speedruns'
+    | '/today'
     | '/trash'
     | '/ventures'
     | '/wallet'
@@ -9863,6 +9972,7 @@ export interface FileRouteTypes {
     | '/create/builds'
     | '/create/earnings'
     | '/create/personas'
+    | '/feeds/$id'
     | '/games/$gameId'
     | '/games/slice-it'
     | '/groups/$id'
@@ -9987,6 +10097,11 @@ export interface FileRouteTypes {
     | '/api/discord/race'
     | '/api/discord/sync-score'
     | '/api/discord/token'
+    | '/api/discovery/alerts'
+    | '/api/discovery/memories'
+    | '/api/discovery/surprise'
+    | '/api/discovery/today'
+    | '/api/discovery/watch'
     | '/api/doctrine/reactions'
     | '/api/dream-rift/coop'
     | '/api/dream-rift/leaderboard'
@@ -10000,6 +10115,7 @@ export interface FileRouteTypes {
     | '/api/feed/mention-search'
     | '/api/feed/signal'
     | '/api/feed/stream'
+    | '/api/feeds/$id'
     | '/api/forest-explorer/save'
     | '/api/gabriels-horn/house-rule'
     | '/api/gabriels-horn/leaderboard'
@@ -10235,6 +10351,7 @@ export interface FileRouteTypes {
     | '/builds/'
     | '/create/'
     | '/developer/'
+    | '/feeds/'
     | '/games/'
     | '/groups/'
     | '/homes/'
@@ -10275,6 +10392,7 @@ export interface FileRouteTypes {
     | '/api/community-pages/'
     | '/api/emoji-packs/'
     | '/api/events/'
+    | '/api/feeds/'
     | '/api/group-chats/'
     | '/api/guides/'
     | '/api/history/'
@@ -10372,6 +10490,7 @@ export interface FileRouteTypes {
     | '/api/community-pages/$id/revisions'
     | '/api/creators/$id/join'
     | '/api/developer/keys/$id'
+    | '/api/discovery/trending/$tag'
     | '/api/doctrine/admin/disclosures'
     | '/api/doctrine/admin/incidents'
     | '/api/doctrine/admin/tiers'
@@ -10394,6 +10513,7 @@ export interface FileRouteTypes {
     | '/api/events/$id/ics'
     | '/api/events/$id/rsvp'
     | '/api/feed/image/$filename'
+    | '/api/feeds/$id/subscribe'
     | '/api/games/$id/guides'
     | '/api/games/$id/leaderboard'
     | '/api/games/$id/review'
@@ -10764,6 +10884,7 @@ export interface FileRouteTypes {
     | '/share'
     | '/shop'
     | '/speedruns'
+    | '/today'
     | '/trash'
     | '/ventures'
     | '/wallet'
@@ -10890,6 +11011,7 @@ export interface FileRouteTypes {
     | '/create/builds'
     | '/create/earnings'
     | '/create/personas'
+    | '/feeds/$id'
     | '/games/$gameId'
     | '/games/slice-it'
     | '/groups/$id'
@@ -11014,6 +11136,11 @@ export interface FileRouteTypes {
     | '/api/discord/race'
     | '/api/discord/sync-score'
     | '/api/discord/token'
+    | '/api/discovery/alerts'
+    | '/api/discovery/memories'
+    | '/api/discovery/surprise'
+    | '/api/discovery/today'
+    | '/api/discovery/watch'
     | '/api/doctrine/reactions'
     | '/api/dream-rift/coop'
     | '/api/dream-rift/leaderboard'
@@ -11027,6 +11154,7 @@ export interface FileRouteTypes {
     | '/api/feed/mention-search'
     | '/api/feed/signal'
     | '/api/feed/stream'
+    | '/api/feeds/$id'
     | '/api/forest-explorer/save'
     | '/api/gabriels-horn/house-rule'
     | '/api/gabriels-horn/leaderboard'
@@ -11262,6 +11390,7 @@ export interface FileRouteTypes {
     | '/builds'
     | '/create'
     | '/developer'
+    | '/feeds'
     | '/games'
     | '/groups'
     | '/homes'
@@ -11302,6 +11431,7 @@ export interface FileRouteTypes {
     | '/api/community-pages'
     | '/api/emoji-packs'
     | '/api/events'
+    | '/api/feeds'
     | '/api/group-chats'
     | '/api/guides'
     | '/api/history'
@@ -11399,6 +11529,7 @@ export interface FileRouteTypes {
     | '/api/community-pages/$id/revisions'
     | '/api/creators/$id/join'
     | '/api/developer/keys/$id'
+    | '/api/discovery/trending/$tag'
     | '/api/doctrine/admin/disclosures'
     | '/api/doctrine/admin/incidents'
     | '/api/doctrine/admin/tiers'
@@ -11421,6 +11552,7 @@ export interface FileRouteTypes {
     | '/api/events/$id/ics'
     | '/api/events/$id/rsvp'
     | '/api/feed/image/$filename'
+    | '/api/feeds/$id/subscribe'
     | '/api/games/$id/guides'
     | '/api/games/$id/leaderboard'
     | '/api/games/$id/review'
@@ -11816,6 +11948,7 @@ export interface FileRouteTypes {
     | '/_site/share'
     | '/_site/shop'
     | '/_site/speedruns'
+    | '/_site/today'
     | '/_site/trash'
     | '/_site/ventures'
     | '/_site/wallet'
@@ -11944,6 +12077,7 @@ export interface FileRouteTypes {
     | '/_site/create/builds'
     | '/_site/create/earnings'
     | '/_site/create/personas'
+    | '/_site/feeds/$id'
     | '/_site/games/$gameId'
     | '/_site/games/slice-it'
     | '/_site/groups/$id'
@@ -12068,6 +12202,11 @@ export interface FileRouteTypes {
     | '/api/discord/race'
     | '/api/discord/sync-score'
     | '/api/discord/token'
+    | '/api/discovery/alerts'
+    | '/api/discovery/memories'
+    | '/api/discovery/surprise'
+    | '/api/discovery/today'
+    | '/api/discovery/watch'
     | '/api/doctrine/reactions'
     | '/api/dream-rift/coop'
     | '/api/dream-rift/leaderboard'
@@ -12081,6 +12220,7 @@ export interface FileRouteTypes {
     | '/api/feed/mention-search'
     | '/api/feed/signal'
     | '/api/feed/stream'
+    | '/api/feeds/$id'
     | '/api/forest-explorer/save'
     | '/api/gabriels-horn/house-rule'
     | '/api/gabriels-horn/leaderboard'
@@ -12316,6 +12456,7 @@ export interface FileRouteTypes {
     | '/_site/builds/'
     | '/_site/create/'
     | '/_site/developer/'
+    | '/_site/feeds/'
     | '/_site/games/'
     | '/_site/groups/'
     | '/_site/homes/'
@@ -12356,6 +12497,7 @@ export interface FileRouteTypes {
     | '/api/community-pages/'
     | '/api/emoji-packs/'
     | '/api/events/'
+    | '/api/feeds/'
     | '/api/group-chats/'
     | '/api/guides/'
     | '/api/history/'
@@ -12453,6 +12595,7 @@ export interface FileRouteTypes {
     | '/api/community-pages/$id/revisions'
     | '/api/creators/$id/join'
     | '/api/developer/keys/$id'
+    | '/api/discovery/trending/$tag'
     | '/api/doctrine/admin/disclosures'
     | '/api/doctrine/admin/incidents'
     | '/api/doctrine/admin/tiers'
@@ -12475,6 +12618,7 @@ export interface FileRouteTypes {
     | '/api/events/$id/ics'
     | '/api/events/$id/rsvp'
     | '/api/feed/image/$filename'
+    | '/api/feeds/$id/subscribe'
     | '/api/games/$id/guides'
     | '/api/games/$id/leaderboard'
     | '/api/games/$id/review'
@@ -12944,6 +13088,11 @@ export interface RootRouteChildren {
   ApiDiscordRaceRoute: typeof ApiDiscordRaceRoute
   ApiDiscordSyncScoreRoute: typeof ApiDiscordSyncScoreRoute
   ApiDiscordTokenRoute: typeof ApiDiscordTokenRoute
+  ApiDiscoveryAlertsRoute: typeof ApiDiscoveryAlertsRoute
+  ApiDiscoveryMemoriesRoute: typeof ApiDiscoveryMemoriesRoute
+  ApiDiscoverySurpriseRoute: typeof ApiDiscoverySurpriseRoute
+  ApiDiscoveryTodayRoute: typeof ApiDiscoveryTodayRoute
+  ApiDiscoveryWatchRoute: typeof ApiDiscoveryWatchRoute
   ApiDoctrineReactionsRoute: typeof ApiDoctrineReactionsRoute
   ApiDreamRiftCoopRoute: typeof ApiDreamRiftCoopRoute
   ApiDreamRiftLeaderboardRoute: typeof ApiDreamRiftLeaderboardRoute
@@ -12957,6 +13106,7 @@ export interface RootRouteChildren {
   ApiFeedMentionSearchRoute: typeof ApiFeedMentionSearchRoute
   ApiFeedSignalRoute: typeof ApiFeedSignalRoute
   ApiFeedStreamRoute: typeof ApiFeedStreamRoute
+  ApiFeedsIdRoute: typeof ApiFeedsIdRouteWithChildren
   ApiForestExplorerSaveRoute: typeof ApiForestExplorerSaveRoute
   ApiGabrielsHornHouseRuleRoute: typeof ApiGabrielsHornHouseRuleRoute
   ApiGabrielsHornLeaderboardRoute: typeof ApiGabrielsHornLeaderboardRoute
@@ -13162,6 +13312,7 @@ export interface RootRouteChildren {
   ApiCommunityPagesIndexRoute: typeof ApiCommunityPagesIndexRoute
   ApiEmojiPacksIndexRoute: typeof ApiEmojiPacksIndexRoute
   ApiEventsIndexRoute: typeof ApiEventsIndexRoute
+  ApiFeedsIndexRoute: typeof ApiFeedsIndexRoute
   ApiGroupChatsIndexRoute: typeof ApiGroupChatsIndexRoute
   ApiGuidesIndexRoute: typeof ApiGuidesIndexRoute
   ApiHistoryIndexRoute: typeof ApiHistoryIndexRoute
@@ -13243,6 +13394,7 @@ export interface RootRouteChildren {
   ApiCommunityGoalsIdPledgeRoute: typeof ApiCommunityGoalsIdPledgeRoute
   ApiCreatorsIdJoinRoute: typeof ApiCreatorsIdJoinRoute
   ApiDeveloperKeysIdRoute: typeof ApiDeveloperKeysIdRouteWithChildren
+  ApiDiscoveryTrendingTagRoute: typeof ApiDiscoveryTrendingTagRoute
   ApiDoctrineAdminDisclosuresRoute: typeof ApiDoctrineAdminDisclosuresRoute
   ApiDoctrineAdminIncidentsRoute: typeof ApiDoctrineAdminIncidentsRoute
   ApiDoctrineAdminTiersRoute: typeof ApiDoctrineAdminTiersRoute
@@ -14087,6 +14239,13 @@ declare module '@tanstack/react-router' {
       path: '/speedruns'
       fullPath: '/speedruns'
       preLoaderRoute: typeof SiteSpeedrunsRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/today': {
+      id: '/_site/today'
+      path: '/today'
+      fullPath: '/today'
+      preLoaderRoute: typeof SiteTodayRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/trash': {
@@ -15019,6 +15178,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/developer/'
       preLoaderRoute: typeof SiteDeveloperIndexRouteImport
       parentRoute: typeof SiteDeveloperRouteRoute
+    }
+    '/_site/feeds/': {
+      id: '/_site/feeds/'
+      path: '/feeds'
+      fullPath: '/feeds/'
+      preLoaderRoute: typeof SiteFeedsIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/feeds/$id': {
+      id: '/_site/feeds/$id'
+      path: '/feeds/$id'
+      fullPath: '/feeds/$id'
+      preLoaderRoute: typeof SiteFeedsIdRouteImport
+      parentRoute: typeof SiteRoute
     }
     '/_site/games/': {
       id: '/_site/games/'
@@ -16154,6 +16327,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDiscordTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/discovery/alerts': {
+      id: '/api/discovery/alerts'
+      path: '/api/discovery/alerts'
+      fullPath: '/api/discovery/alerts'
+      preLoaderRoute: typeof ApiDiscoveryAlertsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/discovery/memories': {
+      id: '/api/discovery/memories'
+      path: '/api/discovery/memories'
+      fullPath: '/api/discovery/memories'
+      preLoaderRoute: typeof ApiDiscoveryMemoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/discovery/surprise': {
+      id: '/api/discovery/surprise'
+      path: '/api/discovery/surprise'
+      fullPath: '/api/discovery/surprise'
+      preLoaderRoute: typeof ApiDiscoverySurpriseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/discovery/today': {
+      id: '/api/discovery/today'
+      path: '/api/discovery/today'
+      fullPath: '/api/discovery/today'
+      preLoaderRoute: typeof ApiDiscoveryTodayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/discovery/watch': {
+      id: '/api/discovery/watch'
+      path: '/api/discovery/watch'
+      fullPath: '/api/discovery/watch'
+      preLoaderRoute: typeof ApiDiscoveryWatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/doctrine/reactions': {
       id: '/api/doctrine/reactions'
       path: '/api/doctrine/reactions'
@@ -16257,6 +16465,20 @@ declare module '@tanstack/react-router' {
       path: '/api/feed/stream'
       fullPath: '/api/feed/stream'
       preLoaderRoute: typeof ApiFeedStreamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/feeds/': {
+      id: '/api/feeds/'
+      path: '/api/feeds'
+      fullPath: '/api/feeds/'
+      preLoaderRoute: typeof ApiFeedsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/feeds/$id': {
+      id: '/api/feeds/$id'
+      path: '/api/feeds/$id'
+      fullPath: '/api/feeds/$id'
+      preLoaderRoute: typeof ApiFeedsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/forest-explorer/save': {
@@ -18618,6 +18840,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDeveloperKeysIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/discovery/trending/$tag': {
+      id: '/api/discovery/trending/$tag'
+      path: '/api/discovery/trending/$tag'
+      fullPath: '/api/discovery/trending/$tag'
+      preLoaderRoute: typeof ApiDiscoveryTrendingTagRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/doctrine/admin/disclosures': {
       id: '/api/doctrine/admin/disclosures'
       path: '/api/doctrine/admin/disclosures'
@@ -18806,6 +19035,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/feed/image/$filename'
       preLoaderRoute: typeof ApiFeedImageFilenameRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/feeds/$id/subscribe': {
+      id: '/api/feeds/$id/subscribe'
+      path: '/subscribe'
+      fullPath: '/api/feeds/$id/subscribe'
+      preLoaderRoute: typeof ApiFeedsIdSubscribeRouteImport
+      parentRoute: typeof ApiFeedsIdRoute
     }
     '/api/games/$id/guides': {
       id: '/api/games/$id/guides'
@@ -20951,6 +21187,7 @@ interface SiteRouteChildren {
   SiteShareRoute: typeof SiteShareRoute
   SiteShopRoute: typeof SiteShopRoute
   SiteSpeedrunsRoute: typeof SiteSpeedrunsRoute
+  SiteTodayRoute: typeof SiteTodayRoute
   SiteTrashRoute: typeof SiteTrashRoute
   SiteVenturesRoute: typeof SiteVenturesRoute
   SiteWalletRoute: typeof SiteWalletRoute
@@ -20960,6 +21197,7 @@ interface SiteRouteChildren {
   SiteBlogSlugRoute: typeof SiteBlogSlugRoute
   SiteBuildsSlugRoute: typeof SiteBuildsSlugRoute
   SiteCSlugRoute: typeof SiteCSlugRoute
+  SiteFeedsIdRoute: typeof SiteFeedsIdRoute
   SiteGamesGameIdRoute: typeof SiteGamesGameIdRoute
   SiteGamesSliceItRoute: typeof SiteGamesSliceItRoute
   SiteGroupsIdRoute: typeof SiteGroupsIdRoute
@@ -21009,6 +21247,7 @@ interface SiteRouteChildren {
   SiteAppsIndexRoute: typeof SiteAppsIndexRoute
   SiteBlogIndexRoute: typeof SiteBlogIndexRoute
   SiteBuildsIndexRoute: typeof SiteBuildsIndexRoute
+  SiteFeedsIndexRoute: typeof SiteFeedsIndexRoute
   SiteGamesIndexRoute: typeof SiteGamesIndexRoute
   SiteGroupsIndexRoute: typeof SiteGroupsIndexRoute
   SiteHomesIndexRoute: typeof SiteHomesIndexRoute
@@ -21077,6 +21316,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteShareRoute: SiteShareRoute,
   SiteShopRoute: SiteShopRoute,
   SiteSpeedrunsRoute: SiteSpeedrunsRoute,
+  SiteTodayRoute: SiteTodayRoute,
   SiteTrashRoute: SiteTrashRoute,
   SiteVenturesRoute: SiteVenturesRoute,
   SiteWalletRoute: SiteWalletRoute,
@@ -21086,6 +21326,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteBlogSlugRoute: SiteBlogSlugRoute,
   SiteBuildsSlugRoute: SiteBuildsSlugRoute,
   SiteCSlugRoute: SiteCSlugRoute,
+  SiteFeedsIdRoute: SiteFeedsIdRoute,
   SiteGamesGameIdRoute: SiteGamesGameIdRoute,
   SiteGamesSliceItRoute: SiteGamesSliceItRoute,
   SiteGroupsIdRoute: SiteGroupsIdRoute,
@@ -21135,6 +21376,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteAppsIndexRoute: SiteAppsIndexRoute,
   SiteBlogIndexRoute: SiteBlogIndexRoute,
   SiteBuildsIndexRoute: SiteBuildsIndexRoute,
+  SiteFeedsIndexRoute: SiteFeedsIndexRoute,
   SiteGamesIndexRoute: SiteGamesIndexRoute,
   SiteGroupsIndexRoute: SiteGroupsIndexRoute,
   SiteHomesIndexRoute: SiteHomesIndexRoute,
@@ -21971,6 +22213,18 @@ const ApiDunesdaySyncRouteChildren: ApiDunesdaySyncRouteChildren = {
 
 const ApiDunesdaySyncRouteWithChildren = ApiDunesdaySyncRoute._addFileChildren(
   ApiDunesdaySyncRouteChildren,
+)
+
+interface ApiFeedsIdRouteChildren {
+  ApiFeedsIdSubscribeRoute: typeof ApiFeedsIdSubscribeRoute
+}
+
+const ApiFeedsIdRouteChildren: ApiFeedsIdRouteChildren = {
+  ApiFeedsIdSubscribeRoute: ApiFeedsIdSubscribeRoute,
+}
+
+const ApiFeedsIdRouteWithChildren = ApiFeedsIdRoute._addFileChildren(
+  ApiFeedsIdRouteChildren,
 )
 
 interface ApiGuidesIdRouteChildren {
@@ -22878,6 +23132,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDiscordRaceRoute: ApiDiscordRaceRoute,
   ApiDiscordSyncScoreRoute: ApiDiscordSyncScoreRoute,
   ApiDiscordTokenRoute: ApiDiscordTokenRoute,
+  ApiDiscoveryAlertsRoute: ApiDiscoveryAlertsRoute,
+  ApiDiscoveryMemoriesRoute: ApiDiscoveryMemoriesRoute,
+  ApiDiscoverySurpriseRoute: ApiDiscoverySurpriseRoute,
+  ApiDiscoveryTodayRoute: ApiDiscoveryTodayRoute,
+  ApiDiscoveryWatchRoute: ApiDiscoveryWatchRoute,
   ApiDoctrineReactionsRoute: ApiDoctrineReactionsRoute,
   ApiDreamRiftCoopRoute: ApiDreamRiftCoopRoute,
   ApiDreamRiftLeaderboardRoute: ApiDreamRiftLeaderboardRoute,
@@ -22891,6 +23150,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiFeedMentionSearchRoute: ApiFeedMentionSearchRoute,
   ApiFeedSignalRoute: ApiFeedSignalRoute,
   ApiFeedStreamRoute: ApiFeedStreamRoute,
+  ApiFeedsIdRoute: ApiFeedsIdRouteWithChildren,
   ApiForestExplorerSaveRoute: ApiForestExplorerSaveRoute,
   ApiGabrielsHornHouseRuleRoute: ApiGabrielsHornHouseRuleRoute,
   ApiGabrielsHornLeaderboardRoute: ApiGabrielsHornLeaderboardRoute,
@@ -23096,6 +23356,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCommunityPagesIndexRoute: ApiCommunityPagesIndexRoute,
   ApiEmojiPacksIndexRoute: ApiEmojiPacksIndexRoute,
   ApiEventsIndexRoute: ApiEventsIndexRoute,
+  ApiFeedsIndexRoute: ApiFeedsIndexRoute,
   ApiGroupChatsIndexRoute: ApiGroupChatsIndexRoute,
   ApiGuidesIndexRoute: ApiGuidesIndexRoute,
   ApiHistoryIndexRoute: ApiHistoryIndexRoute,
@@ -23179,6 +23440,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCommunityGoalsIdPledgeRoute: ApiCommunityGoalsIdPledgeRoute,
   ApiCreatorsIdJoinRoute: ApiCreatorsIdJoinRoute,
   ApiDeveloperKeysIdRoute: ApiDeveloperKeysIdRouteWithChildren,
+  ApiDiscoveryTrendingTagRoute: ApiDiscoveryTrendingTagRoute,
   ApiDoctrineAdminDisclosuresRoute: ApiDoctrineAdminDisclosuresRoute,
   ApiDoctrineAdminIncidentsRoute: ApiDoctrineAdminIncidentsRoute,
   ApiDoctrineAdminTiersRoute: ApiDoctrineAdminTiersRoute,

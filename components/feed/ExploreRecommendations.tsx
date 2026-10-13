@@ -14,6 +14,7 @@ import {
 } from'lucide-react';
 import { useTranslation } from'react-i18next';
 import { RMHarkCard } from'./RMHarkCard';
+import { WhyTrending } from'@/components/discovery/WhyTrending';
 import { listCuratedBuilds } from'@/lib/builds/curated';
 import { RevealGroup, RevealItem } from'@/components/motion';
 import { Spinner } from'@/components/ui/spinner';
@@ -211,8 +212,8 @@ export function ExploreRecommendations({
  </h2>
  <div className="flex flex-wrap gap-2">
  {data.trendingTags.map((tag) => (
+ <span key={tag.tag} className="inline-flex items-center">
  <Link
- key={tag.tag}
  to={`/tag/${tag.tag}`as string}
  className="inline-flex items-center gap-1 rounded-full glass-fill px-3 py-1 text-sm text-site-text transition-colors duration-site hover:border-site-accent/50"
  >
@@ -220,6 +221,8 @@ export function ExploreRecommendations({
  {tag.tag}
  <span className="text-xs text-site-text-dim">{tag.count}</span>
  </Link>
+ <WhyTrending tag={tag.tag} />
+ </span>
  ))}
  </div>
  </RevealItem>

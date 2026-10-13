@@ -447,6 +447,13 @@ model User {
   pf2eSettingsEdits   Pf2eSettings[]        @relation("Pf2eSettingsEditor")
 
   // ─── Feature ideas 2026-10-12 (docs/plans/2026-10-12-feature-ideas-every-surface.md)
+  // P03 discovery: A3 digest, A4 custom feeds, A5 memories, A6 keyword alerts, A7 watches
+  customFeeds                CustomFeed[]
+  customFeedSubscriptions    CustomFeedSubscription[]
+  memoriesOptIn              MemoriesOptIn?
+  keywordAlerts              KeywordAlert[]
+  keywordAlertHits           KeywordAlertHit[]
+  watches                    Watch[]
   // P06 communities-plus: N3 onboarding answers, N4 mod items, N5 challenge, N6 census, N7 scores
   communityOnboardingAnswers CommunityOnboardingAnswer[]
   communityModItems          CommunityModItem[]
@@ -10996,4 +11003,108 @@ model GlossaryTerm {
   createdBy User? @relation("GlossaryTermAuthor", fields: [createdById], references: [id], onDelete: SetNull)
 
   @@map("glossary_term")
+}
+
+// ── P03 discovery: A3 daily digest, A4 custom feeds, A5 memories, A6 keyword alerts, A7 watch ──
+
+/// A3 — the generated "Today on RMH" front page: one row per UTC day, built by a daily job.
+model DailyDigestSnapshot {
+  day       String   @id @db.VarChar(10)
+  payload   Json
+  createdAt DateTime @default(now())
+
+  @@map("daily_digest_snapshot")
+}
+
+/// A4 — a member-defined feed: tags + people + keywords. Public ones can be subscribed to.
+model CustomFeed {
+  id              String   @id @default(cuid())
+  ownerId         String
+  name            String   @db.VarChar(60)
+  description     String?  @db.VarChar(200)
+  tags            String[]
+  authorIds       String[]
+  keywords        String[]
+  isPublic        Boolean  @default(false)
+  subscriberCount Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  owner         User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  subscriptions CustomFeedSubscription[]
+
+  @@index([ownerId])
+  @@index([isPublic, subscriberCount(sort: Desc)])
+  @@map("custom_feed")
+}
+
+model CustomFeedSubscription {
+  feedId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  feed CustomFeed @relation(fields: [feedId], references: [id], onDelete: Cascade)
+  user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([feedId, userId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("custom_feed_subscription")
+}
+
+/// A5 — a row means the member opted in to "On this day" notifications.
+model MemoriesOptIn {
+  userId    String   @id
+  /// UTC day (YYYY-MM-DD) last notified, so the daily job is idempotent.
+  lastDay   String?  @db.VarChar(10)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("memories_opt_in")
+}
+
+/// A6 — a keyword alert. `anchor` is one required word, indexed, so the fan-out job
+/// finds candidate alerts for a post with one IN query instead of scanning every alert.
+model KeywordAlert {
+  id        String   @id @default(cuid())
+  userId    String
+  query     String   @db.VarChar(80)
+  anchor    String   @db.VarChar(64)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, query])
+  @@index([anchor])
+  @@map("keyword_alert")
+}
+
+/// A6 — dedupe ledger: at most one alert notification per (member, post).
+model KeywordAlertHit {
+  userId    String
+  rmheetId  String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, rmheetId])
+  @@index([createdAt])
+  @@map("keyword_alert_hit")
+}
+
+/// A7 — watch anything. kind: community | build | market. level: all | important.
+/// "Nothing" is the absence of a row.
+model Watch {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String   @db.VarChar(16)
+  targetId  String   @db.VarChar(200)
+  level     String   @db.VarChar(12)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, kind, targetId])
+  @@index([kind, targetId])
+  @@map("watch")
 }

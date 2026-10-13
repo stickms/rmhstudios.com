@@ -32,6 +32,7 @@ import {
   registerSohumTrackerAlertCron,
 } from '@/lib/sohumtracker/alerts.server';
 import { registerPostsPlusCrons } from '@/lib/posts-plus/jobs.server';
+import { registerDiscoveryJobs } from '@/lib/discovery/jobs.server';
 import {
   PROFILE_VISIT_SWEEP_QUEUE,
   registerProfileVisitSweepCron,
@@ -234,6 +235,15 @@ async function main() {
     log.info({ event: 'jobs.started', queue: 'posts-plus' });
   } catch (e) {
     log.error({ event: 'jobs.register_failed', queue: 'posts-plus', err: (e as Error)?.message });
+  }
+
+  // P03 discovery: post-created fan-out (keyword alerts + community watchers), the
+  // daily "On this day" run, and the /today digest snapshot.
+  try {
+    await registerDiscoveryJobs(boss);
+    log.info({ event: 'jobs.started', queue: 'discovery' });
+  } catch (e) {
+    log.error({ event: 'jobs.register_failed', queue: 'discovery', err: (e as Error)?.message });
   }
 
   const shutdown = async (sig: string) => {

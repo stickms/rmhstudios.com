@@ -27,6 +27,7 @@ import { toast } from'sonner';
 import { useTranslation } from'react-i18next';
 import { useOptimisticAction } from'@/hooks/useOptimisticAction';
 import type { FeedItem } from'@/lib/feed-types';
+import { WatchControl } from'@/components/discovery/WatchControl';
 import { FindATimeLink } from'@/components/calendar/FindATimeLink';
 
 interface Announcement {
@@ -214,6 +215,7 @@ export function CommunityColumn({
  {session && community.joined && (
  <FindATimeLink communityId={community.id} variant="button"/>
  )}
+ {session && community.joined && <WatchControl kind="community"targetId={community.id}/>}
  {session && (
  <Button size="sm"variant="outline"onClick={() => setMembersOpen(true)}>
  {t('members-button', { defaultValue:'Members'})}

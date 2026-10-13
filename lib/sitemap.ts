@@ -99,6 +99,8 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   { loc: '/predictions', changefreq: 'daily', priority: 0.5 },
   // The question of the day and its answers (posts-plus X4): new content daily.
   { loc: '/qotd', changefreq: 'daily', priority: 0.5 },
+  // The generated daily front page (P03 A3): rebuilt once a day from one snapshot row.
+  { loc: '/today', changefreq: 'daily', priority: 0.6 },
   // The Kaikai Debt Counter. `daily` rather than `weekly` despite being a joke:
   // the log grows every time anyone adds a line or scrolls past the frontier,
   // so the page's content genuinely changes faster than most of this list.
@@ -231,6 +233,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/reading': 'personal', // highlights, shelves and the reading challenge
   '/recap': 'personal',
   '/saves': 'personal',
+  '/feeds': 'personal', // the viewer's own custom feeds and subscriptions (P03 A4)
   '/series': 'personal', // the viewer's own series and the ones they follow
   '/share': 'personal',
   '/wallet': 'personal',
@@ -471,6 +474,7 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/profile/$id': null, // legacy alias of `/u/$userid`
   '/store/$userid': null, // mirrors the profile; would duplicate it
   '/thread/$rootId': null, // canonicalised to `/u/{handle}/post/{id}`
+  '/feeds/$id': null, // a member-defined feed; `noindex, follow`, reached from /feeds
   '/series/$id': null, // one author's post series; `noindex, follow`, reached from the posts that belong to it
   '/sohumbum2/$date': null, // redirects to `/sohumtracker/{date}`
   // One day of the activity dossier. Unbounded (a new one every day) and

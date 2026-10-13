@@ -10,6 +10,7 @@ import {
   MarketError,
   type BrowseSort,
 } from '@/lib/market/market.server';
+import { watchMarketListing } from '@/lib/discovery/watch.server';
 import { MIN_PRICE, MAX_PRICE } from '@/lib/market/tradable';
 
 /**
@@ -64,6 +65,7 @@ export const Route = createFileRoute('/api/market/listings/')({
             itemId: parsed.data.itemId,
             priceCoins: parsed.data.priceCoins,
           });
+          void watchMarketListing(listing).catch(() => {});
           return Response.json({ success: true, listing });
         } catch (error) {
           if (error instanceof MarketError) {
