@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 302 routes. 166 render inside the standard site shell (sidebar, nav, context rail); 136 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 305 routes. 169 render inside the standard site shell (sidebar, nav, context rail); 136 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -45,6 +45,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/slice-it-content` | Slice It content & storage | admin | `app/routes/_site/admin/slice-it-content.tsx` |
 | `/admin/user-builds` | All User Builds \| Admin | admin | `app/routes/_site/admin/user-builds.tsx` |
 | `/admin/users` | Users \| Admin | admin | `app/routes/_site/admin/users.tsx` |
+| `/advent` | — | public | `app/routes/_site/advent.tsx` |
 | `/alexdebtcounter` | redirects to `/kaikaidebtcounter` | public | `app/routes/_site/alexdebtcounter.tsx` |
 | `/analytics` | Creator Analytics | public | `app/routes/_site/analytics.tsx` |
 | `/apps` | Apps | public | `app/routes/_site/apps/index.tsx` |
@@ -65,6 +66,8 @@ Standard pages, rendered inside the sidebar shell.
 | `/drafts` | Drafts | public | `app/routes/_site/drafts.tsx` |
 | `/emoji-packs` | Emoji & sticker packs | public | `app/routes/_site/emoji-packs.tsx` |
 | `/events` | redirects to `/communities?tab=events` | public | `app/routes/_site/events.tsx` |
+| `/exchange` | — | public | `app/routes/_site/exchange.index.tsx` |
+| `/exchange/:id` | — | public | `app/routes/_site/exchange.$id.tsx` |
 | `/explore` | Explore | public | `app/routes/_site/explore.tsx` |
 | `/feeds` | Custom feeds | public | `app/routes/_site/feeds.index.tsx` |
 | `/feeds/:id` | Feed | public | `app/routes/_site/feeds.$id.tsx` |

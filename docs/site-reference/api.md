@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 745 files across 165 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 757 files across 169 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -46,7 +46,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/admin`
 
-48 routes.
+49 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -67,6 +67,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/admin/curated-builds/image/:filename` | `GET` | `app/routes/api/admin/curated-builds/image/$filename.ts` |
 | `/api/admin/curated-builds/image/proxy` | `GET` | `app/routes/api/admin/curated-builds/image/proxy.ts` |
 | `/api/admin/economy` | `GET` | `app/routes/api/admin/economy.ts` |
+| `/api/admin/gift-exchanges/:id/verify` | `GET` | `app/routes/api/admin/gift-exchanges/$id/verify.ts` |
 | `/api/admin/library` | `GET` | `app/routes/api/admin/library/index.ts` |
 | `/api/admin/library/:id` | `DELETE` `PATCH` | `app/routes/api/admin/library/$id.ts` |
 | `/api/admin/library/migrate` | `POST` | `app/routes/api/admin/library/migrate.ts` |
@@ -98,6 +99,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/admin/users/:id/strike` | `POST` | `app/routes/api/admin/users/$id/strike.ts` |
 | `/api/admin/vibe/backfill-thumbs` | `POST` | `app/routes/api/admin/vibe/backfill-thumbs.ts` |
 | `/api/admin/wager/:id/resolve` | `POST` | `app/routes/api/admin/wager/$id/resolve.ts` |
+
+## `/api/advent`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/advent` | `GET` `POST` | `app/routes/api/advent/index.ts` |
 
 ## `/api/ai`
 
@@ -188,6 +197,15 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/battlepass` | `GET` | `app/routes/api/battlepass/index.ts` |
 | `/api/battlepass/claim` | `POST` | `app/routes/api/battlepass/claim.ts` |
 | `/api/battlepass/unlock` | `POST` | `app/routes/api/battlepass/unlock.ts` |
+
+## `/api/birthday`
+
+2 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/birthday` | `DELETE` `GET` `PUT` | `app/routes/api/birthday/index.ts` |
+| `/api/birthday/next` | `GET` | `app/routes/api/birthday/next.ts` |
 
 ## `/api/bookmarks`
 
@@ -660,6 +678,19 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | ----- | ------- | ------ |
 | `/api/gif/search` | `GET` | `app/routes/api/gif/search.ts` |
 
+## `/api/gift-exchanges`
+
+6 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/gift-exchanges` | `GET` `POST` | `app/routes/api/gift-exchanges/index.ts` |
+| `/api/gift-exchanges/:id` | `DELETE` `GET` | `app/routes/api/gift-exchanges/$id/index.ts` |
+| `/api/gift-exchanges/:id/draw` | `POST` | `app/routes/api/gift-exchanges/$id/draw.ts` |
+| `/api/gift-exchanges/:id/gift` | `POST` | `app/routes/api/gift-exchanges/$id/gift.ts` |
+| `/api/gift-exchanges/:id/join` | `DELETE` `POST` | `app/routes/api/gift-exchanges/$id/join.ts` |
+| `/api/gift-exchanges/:id/me` | `PUT` | `app/routes/api/gift-exchanges/$id/me.ts` |
+
 ## `/api/gift-sub`
 
 1 route.
@@ -804,6 +835,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/kaikai-debt/ledger` | `GET` | `app/routes/api/kaikai-debt/ledger.ts` |
 | `/api/kaikai-debt/stats` | `GET` | `app/routes/api/kaikai-debt/stats.ts` |
 | `/api/kaikai-debt/stream` | `GET` | `app/routes/api/kaikai-debt/stream.ts` |
+
+## `/api/kudos`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/kudos/:id` | `DELETE` | `app/routes/api/kudos/$id.ts` |
 
 ## `/api/laundry-sort`
 
@@ -1080,7 +1119,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/profile`
 
-29 routes.
+30 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -1093,6 +1132,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/profile/:id/following` | `GET` | `app/routes/api/profile/$id/following.ts` |
 | `/api/profile/:id/guestbook` | `GET` `PATCH` `POST` | `app/routes/api/profile/$id/guestbook.ts` |
 | `/api/profile/:id/guestbook/:entryId` | `DELETE` `PATCH` | `app/routes/api/profile/$id/guestbook.$entryId.ts` |
+| `/api/profile/:id/kudos` | `GET` `POST` | `app/routes/api/profile/$id/kudos.ts` |
 | `/api/profile/:id/likes` | `GET` | `app/routes/api/profile/$id/likes.ts` |
 | `/api/profile/:id/membership` | `DELETE` `POST` | `app/routes/api/profile/$id/membership.ts` |
 | `/api/profile/:id/plus` | `GET` | `app/routes/api/profile/$id/plus.ts` |

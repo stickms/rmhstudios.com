@@ -9,6 +9,7 @@ import { getMembershipStatus } from '@/lib/memberships.server';
 import { resolveStatus, type UserStatus } from '@/lib/profile/status';
 import { parseLayout, type ProfileModule } from '@/lib/profile/modules';
 import { pronunciationUrl } from '@/lib/profile/plus';
+import { isBirthdayOn } from '@/lib/gifting/birthday';
 
 /**
  * Coerce the JSON `links` column into a validated ProfileLink[]. Defends the
@@ -35,6 +36,7 @@ const profileSelect = {
   isBot: true,
   createdAt: true,
   lastSeenAt: true,
+  birthday: { select: { month: true, day: true } },
   profile: {
     select: {
       displayName: true,
@@ -101,6 +103,8 @@ export interface ProfilePayload {
   showLikes: boolean;
   /** Plan U15 — 'off' | 'following' | 'everyone'. */
   guestbookMode: string;
+  /** G1 — true only on the owner's opted-in birthday (UTC). */
+  birthdayToday: boolean;
   dmPrivacy: string;
   profileSongSpotifyId: string | null;
   profileSongTitle: string | null;
@@ -242,6 +246,7 @@ export async function getProfile(
     bannerUrl: user.profile?.bannerUrl ?? null,
     showLikes: user.profile?.showLikes ?? false,
     guestbookMode: user.profile?.guestbookMode ?? 'off',
+    birthdayToday: !!user.birthday && isBirthdayOn(user.birthday.month, user.birthday.day, new Date()),
     dmPrivacy: user.profile?.dmPrivacy ?? 'EVERYONE',
     profileSongSpotifyId: user.profile?.profileSongSpotifyId ?? null,
     profileSongTitle: user.profile?.profileSongTitle ?? null,

@@ -21,6 +21,7 @@ import { registerDigestCron } from '@/lib/digest/pipeline.server';
 import { registerMaintenanceCrons } from '@/lib/jobs/maintenance.server';
 import { registerEconomyCrons } from '@/lib/economy/jobs.server';
 import { registerCommunityCrons } from '@/lib/communities/jobs.server';
+import { registerGiftingCrons } from '@/lib/gifting/jobs.server';
 import { CHAT_EXPIRY_QUEUE, registerChatExpiryCron } from '@/lib/chat-plus/expiry.server';
 import { STUDY_BUDDY_QUEUE, registerStudyBuddyCron } from '@/lib/calendar/study-buddy-jobs.server';
 import { ANALYSIS_QUEUE, registerAnalysisWorker } from '@/lib/slice-it/analysis-queue.server';
@@ -178,6 +179,15 @@ async function main() {
     log.info({ event: 'jobs.started', queue: 'economy' });
   } catch (e) {
     log.error({ event: 'jobs.register_failed', queue: 'economy', err: (e as Error)?.message });
+  }
+
+  // Gifting & events (2026-10-12 batch): daily birthday nudges (G1) and the
+  // exchange draw sweep (G3/F2). Both idempotent.
+  try {
+    await registerGiftingCrons(boss);
+    log.info({ event: 'jobs.started', queue: 'gifting' });
+  } catch (e) {
+    log.error({ event: 'jobs.register_failed', queue: 'gifting', err: (e as Error)?.message });
   }
 
   // Communities-plus (2026-10-12 batch): challenge winners (N5) and the daily

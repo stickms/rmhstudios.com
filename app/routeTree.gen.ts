@@ -73,6 +73,7 @@ import { Route as DotwellKnownAssetlinksDotjsonRouteImport } from './routes/[.]w
 import { Route as SiteIndexRouteImport } from './routes/_site/index'
 import { Route as SiteAchievementsRouteImport } from './routes/_site/achievements'
 import { Route as SiteAdminRouteRouteImport } from './routes/_site/admin/route'
+import { Route as SiteAdventRouteImport } from './routes/_site/advent'
 import { Route as SiteAlexdebtcounterRouteImport } from './routes/_site/alexdebtcounter'
 import { Route as SiteAnalyticsRouteImport } from './routes/_site/analytics'
 import { Route as SiteArcadeRouteImport } from './routes/_site/arcade'
@@ -242,6 +243,8 @@ import { Route as SiteCreateBuildsRouteImport } from './routes/_site/create/buil
 import { Route as SiteCreateEarningsRouteImport } from './routes/_site/create/earnings'
 import { Route as SiteCreatePersonasRouteImport } from './routes/_site/create/personas'
 import { Route as SiteDeveloperIndexRouteImport } from './routes/_site/developer/index'
+import { Route as SiteExchangeIndexRouteImport } from './routes/_site/exchange.index'
+import { Route as SiteExchangeIdRouteImport } from './routes/_site/exchange.$id'
 import { Route as SiteFeedsIndexRouteImport } from './routes/_site/feeds.index'
 import { Route as SiteFeedsIdRouteImport } from './routes/_site/feeds.$id'
 import { Route as SiteGamesIndexRouteImport } from './routes/_site/games/index'
@@ -344,6 +347,7 @@ import { Route as ApiAdminEconomyRouteImport } from './routes/api/admin/economy'
 import { Route as ApiAdminReportsRouteImport } from './routes/api/admin/reports'
 import { Route as ApiAdminReviewCountsRouteImport } from './routes/api/admin/review-counts'
 import { Route as ApiAdminUsersRouteImport } from './routes/api/admin/users'
+import { Route as ApiAdventIndexRouteImport } from './routes/api/advent/index'
 import { Route as ApiAiAskFeedRouteImport } from './routes/api/ai/ask-feed'
 import { Route as ApiAiBioRouteImport } from './routes/api/ai/bio'
 import { Route as ApiAiCatchUpRouteImport } from './routes/api/ai/catch-up'
@@ -366,6 +370,8 @@ import { Route as ApiAwardsIndexRouteImport } from './routes/api/awards/index'
 import { Route as ApiBattlepassIndexRouteImport } from './routes/api/battlepass/index'
 import { Route as ApiBattlepassClaimRouteImport } from './routes/api/battlepass/claim'
 import { Route as ApiBattlepassUnlockRouteImport } from './routes/api/battlepass/unlock'
+import { Route as ApiBirthdayIndexRouteImport } from './routes/api/birthday/index'
+import { Route as ApiBirthdayNextRouteImport } from './routes/api/birthday/next'
 import { Route as ApiBuildsConsentRouteImport } from './routes/api/builds/consent'
 import { Route as ApiBuildsReviewRouteImport } from './routes/api/builds/review'
 import { Route as ApiBulkIndexRouteImport } from './routes/api/bulk/index'
@@ -438,6 +444,7 @@ import { Route as ApiGabrielsHornLeaderboardRouteImport } from './routes/api/gab
 import { Route as ApiGameNightIndexRouteImport } from './routes/api/game-night/index'
 import { Route as ApiGameSavesGameIdRouteImport } from './routes/api/game-saves/$gameId'
 import { Route as ApiGifSearchRouteImport } from './routes/api/gif/search'
+import { Route as ApiGiftExchangesIndexRouteImport } from './routes/api/gift-exchanges/index'
 import { Route as ApiGlobesetRecordRouteImport } from './routes/api/globeset/record'
 import { Route as ApiGroupChatsIndexRouteImport } from './routes/api/group-chats/index'
 import { Route as ApiGuidesIndexRouteImport } from './routes/api/guides/index'
@@ -468,6 +475,7 @@ import { Route as ApiKaikaiDebtEntriesRouteImport } from './routes/api/kaikai-de
 import { Route as ApiKaikaiDebtLedgerRouteImport } from './routes/api/kaikai-debt/ledger'
 import { Route as ApiKaikaiDebtStatsRouteImport } from './routes/api/kaikai-debt/stats'
 import { Route as ApiKaikaiDebtStreamRouteImport } from './routes/api/kaikai-debt/stream'
+import { Route as ApiKudosIdRouteImport } from './routes/api/kudos/$id'
 import { Route as ApiLaundrySortLeaderboardRouteImport } from './routes/api/laundry-sort/leaderboard'
 import { Route as ApiLaundrySortScoreRouteImport } from './routes/api/laundry-sort/score'
 import { Route as ApiLeaderboardsGameIdRouteImport } from './routes/api/leaderboards/$gameId'
@@ -809,6 +817,11 @@ import { Route as ApiGamesIdScoreRouteImport } from './routes/api/games/$id/scor
 import { Route as ApiGamesSynapseStormLeaderboardRouteImport } from './routes/api/games/synapse-storm/leaderboard'
 import { Route as ApiGamesSynapseStormSaveRouteImport } from './routes/api/games/synapse-storm/save'
 import { Route as ApiGamesSynapseStormScoreRouteImport } from './routes/api/games/synapse-storm/score'
+import { Route as ApiGiftExchangesIdIndexRouteImport } from './routes/api/gift-exchanges/$id/index'
+import { Route as ApiGiftExchangesIdDrawRouteImport } from './routes/api/gift-exchanges/$id/draw'
+import { Route as ApiGiftExchangesIdGiftRouteImport } from './routes/api/gift-exchanges/$id/gift'
+import { Route as ApiGiftExchangesIdJoinRouteImport } from './routes/api/gift-exchanges/$id/join'
+import { Route as ApiGiftExchangesIdMeRouteImport } from './routes/api/gift-exchanges/$id/me'
 import { Route as ApiGiftsScheduledIndexRouteImport } from './routes/api/gifts/scheduled/index'
 import { Route as ApiGroupChatsIdIndexRouteImport } from './routes/api/group-chats/$id/index'
 import { Route as ApiGroupChatsIdLeaveRouteImport } from './routes/api/group-chats/$id/leave'
@@ -863,6 +876,7 @@ import { Route as ApiProfileIdFollowRouteImport } from './routes/api/profile/$id
 import { Route as ApiProfileIdFollowersRouteImport } from './routes/api/profile/$id/followers'
 import { Route as ApiProfileIdFollowingRouteImport } from './routes/api/profile/$id/following'
 import { Route as ApiProfileIdGuestbookRouteImport } from './routes/api/profile/$id/guestbook'
+import { Route as ApiProfileIdKudosRouteImport } from './routes/api/profile/$id/kudos'
 import { Route as ApiProfileIdLikesRouteImport } from './routes/api/profile/$id/likes'
 import { Route as ApiProfileIdMembershipRouteImport } from './routes/api/profile/$id/membership'
 import { Route as ApiProfileIdPlusRouteImport } from './routes/api/profile/$id/plus'
@@ -989,6 +1003,7 @@ import { Route as ApiAdminAlbumsIdReorderRouteImport } from './routes/api/admin/
 import { Route as ApiAdminAlbumsIdSlidesRouteImport } from './routes/api/admin/albums/$id/slides'
 import { Route as ApiAdminCuratedBuildsImageFilenameRouteImport } from './routes/api/admin/curated-builds/image/$filename'
 import { Route as ApiAdminCuratedBuildsImageProxyRouteImport } from './routes/api/admin/curated-builds/image/proxy'
+import { Route as ApiAdminGiftExchangesIdVerifyRouteImport } from './routes/api/admin/gift-exchanges/$id/verify'
 import { Route as ApiAdminPredictionsIdModerateRouteImport } from './routes/api/admin/predictions/$id/moderate'
 import { Route as ApiAdminPredictionsIdResolveRouteImport } from './routes/api/admin/predictions/$id/resolve'
 import { Route as ApiAdminReadingGlossaryIndexRouteImport } from './routes/api/admin/reading/glossary/index'
@@ -1404,6 +1419,11 @@ const SiteAchievementsRoute = SiteAchievementsRouteImport.update({
 const SiteAdminRouteRoute = SiteAdminRouteRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteAdventRoute = SiteAdventRouteImport.update({
+  id: '/advent',
+  path: '/advent',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteAlexdebtcounterRoute = SiteAlexdebtcounterRouteImport.update({
@@ -2252,6 +2272,16 @@ const SiteDeveloperIndexRoute = SiteDeveloperIndexRouteImport.update({
   path: '/',
   getParentRoute: () => SiteDeveloperRouteRoute,
 } as any)
+const SiteExchangeIndexRoute = SiteExchangeIndexRouteImport.update({
+  id: '/exchange/',
+  path: '/exchange/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteExchangeIdRoute = SiteExchangeIdRouteImport.update({
+  id: '/exchange/$id',
+  path: '/exchange/$id',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteFeedsIndexRoute = SiteFeedsIndexRouteImport.update({
   id: '/feeds/',
   path: '/feeds/',
@@ -2770,6 +2800,11 @@ const ApiAdminUsersRoute = ApiAdminUsersRouteImport.update({
   path: '/api/admin/users',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdventIndexRoute = ApiAdventIndexRouteImport.update({
+  id: '/api/advent/',
+  path: '/api/advent/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAiAskFeedRoute = ApiAiAskFeedRouteImport.update({
   id: '/api/ai/ask-feed',
   path: '/api/ai/ask-feed',
@@ -2878,6 +2913,16 @@ const ApiBattlepassClaimRoute = ApiBattlepassClaimRouteImport.update({
 const ApiBattlepassUnlockRoute = ApiBattlepassUnlockRouteImport.update({
   id: '/api/battlepass/unlock',
   path: '/api/battlepass/unlock',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBirthdayIndexRoute = ApiBirthdayIndexRouteImport.update({
+  id: '/api/birthday/',
+  path: '/api/birthday/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBirthdayNextRoute = ApiBirthdayNextRouteImport.update({
+  id: '/api/birthday/next',
+  path: '/api/birthday/next',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiBuildsConsentRoute = ApiBuildsConsentRouteImport.update({
@@ -3244,6 +3289,11 @@ const ApiGifSearchRoute = ApiGifSearchRouteImport.update({
   path: '/api/gif/search',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGiftExchangesIndexRoute = ApiGiftExchangesIndexRouteImport.update({
+  id: '/api/gift-exchanges/',
+  path: '/api/gift-exchanges/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGlobesetRecordRoute = ApiGlobesetRecordRouteImport.update({
   id: '/api/globeset/record',
   path: '/api/globeset/record',
@@ -3394,6 +3444,11 @@ const ApiKaikaiDebtStatsRoute = ApiKaikaiDebtStatsRouteImport.update({
 const ApiKaikaiDebtStreamRoute = ApiKaikaiDebtStreamRouteImport.update({
   id: '/api/kaikai-debt/stream',
   path: '/api/kaikai-debt/stream',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiKudosIdRoute = ApiKudosIdRouteImport.update({
+  id: '/api/kudos/$id',
+  path: '/api/kudos/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiLaundrySortLeaderboardRoute =
@@ -5168,6 +5223,31 @@ const ApiGamesSynapseStormScoreRoute =
     path: '/api/games/synapse-storm/score',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiGiftExchangesIdIndexRoute = ApiGiftExchangesIdIndexRouteImport.update({
+  id: '/api/gift-exchanges/$id/',
+  path: '/api/gift-exchanges/$id/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGiftExchangesIdDrawRoute = ApiGiftExchangesIdDrawRouteImport.update({
+  id: '/api/gift-exchanges/$id/draw',
+  path: '/api/gift-exchanges/$id/draw',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGiftExchangesIdGiftRoute = ApiGiftExchangesIdGiftRouteImport.update({
+  id: '/api/gift-exchanges/$id/gift',
+  path: '/api/gift-exchanges/$id/gift',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGiftExchangesIdJoinRoute = ApiGiftExchangesIdJoinRouteImport.update({
+  id: '/api/gift-exchanges/$id/join',
+  path: '/api/gift-exchanges/$id/join',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGiftExchangesIdMeRoute = ApiGiftExchangesIdMeRouteImport.update({
+  id: '/api/gift-exchanges/$id/me',
+  path: '/api/gift-exchanges/$id/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGiftsScheduledIndexRoute = ApiGiftsScheduledIndexRouteImport.update({
   id: '/api/gifts/scheduled/',
   path: '/api/gifts/scheduled/',
@@ -5452,6 +5532,11 @@ const ApiProfileIdFollowingRoute = ApiProfileIdFollowingRouteImport.update({
 const ApiProfileIdGuestbookRoute = ApiProfileIdGuestbookRouteImport.update({
   id: '/guestbook',
   path: '/guestbook',
+  getParentRoute: () => ApiProfileIdRoute,
+} as any)
+const ApiProfileIdKudosRoute = ApiProfileIdKudosRouteImport.update({
+  id: '/kudos',
+  path: '/kudos',
   getParentRoute: () => ApiProfileIdRoute,
 } as any)
 const ApiProfileIdLikesRoute = ApiProfileIdLikesRouteImport.update({
@@ -6103,6 +6188,12 @@ const ApiAdminCuratedBuildsImageProxyRoute =
     path: '/proxy',
     getParentRoute: () => ApiAdminCuratedBuildsImageRoute,
   } as any)
+const ApiAdminGiftExchangesIdVerifyRoute =
+  ApiAdminGiftExchangesIdVerifyRouteImport.update({
+    id: '/api/admin/gift-exchanges/$id/verify',
+    path: '/api/admin/gift-exchanges/$id/verify',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminPredictionsIdModerateRoute =
   ApiAdminPredictionsIdModerateRouteImport.update({
     id: '/api/admin/predictions/$id/moderate',
@@ -6705,6 +6796,7 @@ export interface FileRoutesByFullPath {
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/achievements': typeof SiteAchievementsRoute
+  '/advent': typeof SiteAdventRoute
   '/alexdebtcounter': typeof SiteAlexdebtcounterRoute
   '/analytics': typeof SiteAnalyticsRoute
   '/arcade': typeof SiteArcadeRoute
@@ -6866,6 +6958,7 @@ export interface FileRoutesByFullPath {
   '/create/builds': typeof SiteCreateBuildsRoute
   '/create/earnings': typeof SiteCreateEarningsRoute
   '/create/personas': typeof SiteCreatePersonasRoute
+  '/exchange/$id': typeof SiteExchangeIdRoute
   '/feeds/$id': typeof SiteFeedsIdRoute
   '/games/$gameId': typeof SiteGamesGameIdRoute
   '/games/slice-it': typeof SiteGamesSliceItRoute
@@ -6957,6 +7050,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/battlepass/claim': typeof ApiBattlepassClaimRoute
   '/api/battlepass/unlock': typeof ApiBattlepassUnlockRoute
+  '/api/birthday/next': typeof ApiBirthdayNextRoute
   '/api/builds/consent': typeof ApiBuildsConsentRoute
   '/api/builds/review': typeof ApiBuildsReviewRoute
   '/api/bulk/$id': typeof ApiBulkIdRoute
@@ -7042,6 +7136,7 @@ export interface FileRoutesByFullPath {
   '/api/kaikai-debt/ledger': typeof ApiKaikaiDebtLedgerRoute
   '/api/kaikai-debt/stats': typeof ApiKaikaiDebtStatsRoute
   '/api/kaikai-debt/stream': typeof ApiKaikaiDebtStreamRoute
+  '/api/kudos/$id': typeof ApiKudosIdRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
   '/api/leaderboards/$gameId': typeof ApiLeaderboardsGameIdRoute
@@ -7248,6 +7343,7 @@ export interface FileRoutesByFullPath {
   '/builds/': typeof SiteBuildsIndexRoute
   '/create/': typeof SiteCreateIndexRoute
   '/developer/': typeof SiteDeveloperIndexRoute
+  '/exchange/': typeof SiteExchangeIndexRoute
   '/feeds/': typeof SiteFeedsIndexRoute
   '/games/': typeof SiteGamesIndexRoute
   '/groups/': typeof SiteGroupsIndexRoute
@@ -7278,9 +7374,11 @@ export interface FileRoutesByFullPath {
   '/when/': typeof SiteWhenIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
   '/api/activity/': typeof ApiActivityIndexRoute
+  '/api/advent/': typeof ApiAdventIndexRoute
   '/api/arcade/': typeof ApiArcadeIndexRoute
   '/api/awards/': typeof ApiAwardsIndexRoute
   '/api/battlepass/': typeof ApiBattlepassIndexRoute
+  '/api/birthday/': typeof ApiBirthdayIndexRoute
   '/api/bulk/': typeof ApiBulkIndexRoute
   '/api/calendar-feed/': typeof ApiCalendarFeedIndexRoute
   '/api/chat-folders/': typeof ApiChatFoldersIndexRoute
@@ -7293,6 +7391,7 @@ export interface FileRoutesByFullPath {
   '/api/feeds/': typeof ApiFeedsIndexRoute
   '/api/friendly/': typeof ApiFriendlyIndexRoute
   '/api/game-night/': typeof ApiGameNightIndexRoute
+  '/api/gift-exchanges/': typeof ApiGiftExchangesIndexRoute
   '/api/group-chats/': typeof ApiGroupChatsIndexRoute
   '/api/guides/': typeof ApiGuidesIndexRoute
   '/api/history/': typeof ApiHistoryIndexRoute
@@ -7423,6 +7522,10 @@ export interface FileRoutesByFullPath {
   '/api/games/synapse-storm/leaderboard': typeof ApiGamesSynapseStormLeaderboardRoute
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
+  '/api/gift-exchanges/$id/draw': typeof ApiGiftExchangesIdDrawRoute
+  '/api/gift-exchanges/$id/gift': typeof ApiGiftExchangesIdGiftRoute
+  '/api/gift-exchanges/$id/join': typeof ApiGiftExchangesIdJoinRoute
+  '/api/gift-exchanges/$id/me': typeof ApiGiftExchangesIdMeRoute
   '/api/group-chats/$id/leave': typeof ApiGroupChatsIdLeaveRoute
   '/api/group-chats/$id/messages': typeof ApiGroupChatsIdMessagesRouteWithChildren
   '/api/group-chats/$id/react': typeof ApiGroupChatsIdReactRoute
@@ -7470,6 +7573,7 @@ export interface FileRoutesByFullPath {
   '/api/profile/$id/followers': typeof ApiProfileIdFollowersRoute
   '/api/profile/$id/following': typeof ApiProfileIdFollowingRoute
   '/api/profile/$id/guestbook': typeof ApiProfileIdGuestbookRouteWithChildren
+  '/api/profile/$id/kudos': typeof ApiProfileIdKudosRoute
   '/api/profile/$id/likes': typeof ApiProfileIdLikesRoute
   '/api/profile/$id/membership': typeof ApiProfileIdMembershipRoute
   '/api/profile/$id/plus': typeof ApiProfileIdPlusRoute
@@ -7590,6 +7694,7 @@ export interface FileRoutesByFullPath {
   '/api/economy/savings-goals/': typeof ApiEconomySavingsGoalsIndexRoute
   '/api/emoji-packs/$slug/': typeof ApiEmojiPacksSlugIndexRoute
   '/api/events/$id/': typeof ApiEventsIdIndexRoute
+  '/api/gift-exchanges/$id/': typeof ApiGiftExchangesIdIndexRoute
   '/api/gifts/scheduled/': typeof ApiGiftsScheduledIndexRoute
   '/api/group-chats/$id/': typeof ApiGroupChatsIdIndexRoute
   '/api/market/listings/': typeof ApiMarketListingsIndexRoute
@@ -7619,6 +7724,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/albums/$id/slides': typeof ApiAdminAlbumsIdSlidesRouteWithChildren
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
+  '/api/admin/gift-exchanges/$id/verify': typeof ApiAdminGiftExchangesIdVerifyRoute
   '/api/admin/predictions/$id/moderate': typeof ApiAdminPredictionsIdModerateRoute
   '/api/admin/predictions/$id/resolve': typeof ApiAdminPredictionsIdResolveRoute
   '/api/admin/reading/glossary/$id': typeof ApiAdminReadingGlossaryIdRoute
@@ -7758,6 +7864,7 @@ export interface FileRoutesByTo {
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/achievements': typeof SiteAchievementsRoute
+  '/advent': typeof SiteAdventRoute
   '/alexdebtcounter': typeof SiteAlexdebtcounterRoute
   '/analytics': typeof SiteAnalyticsRoute
   '/arcade': typeof SiteArcadeRoute
@@ -7916,6 +8023,7 @@ export interface FileRoutesByTo {
   '/create/builds': typeof SiteCreateBuildsRoute
   '/create/earnings': typeof SiteCreateEarningsRoute
   '/create/personas': typeof SiteCreatePersonasRoute
+  '/exchange/$id': typeof SiteExchangeIdRoute
   '/feeds/$id': typeof SiteFeedsIdRoute
   '/games/$gameId': typeof SiteGamesGameIdRoute
   '/games/slice-it': typeof SiteGamesSliceItRoute
@@ -8007,6 +8115,7 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/battlepass/claim': typeof ApiBattlepassClaimRoute
   '/api/battlepass/unlock': typeof ApiBattlepassUnlockRoute
+  '/api/birthday/next': typeof ApiBirthdayNextRoute
   '/api/builds/consent': typeof ApiBuildsConsentRoute
   '/api/builds/review': typeof ApiBuildsReviewRoute
   '/api/bulk/$id': typeof ApiBulkIdRoute
@@ -8092,6 +8201,7 @@ export interface FileRoutesByTo {
   '/api/kaikai-debt/ledger': typeof ApiKaikaiDebtLedgerRoute
   '/api/kaikai-debt/stats': typeof ApiKaikaiDebtStatsRoute
   '/api/kaikai-debt/stream': typeof ApiKaikaiDebtStreamRoute
+  '/api/kudos/$id': typeof ApiKudosIdRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
   '/api/leaderboards/$gameId': typeof ApiLeaderboardsGameIdRoute
@@ -8298,6 +8408,7 @@ export interface FileRoutesByTo {
   '/builds': typeof SiteBuildsIndexRoute
   '/create': typeof SiteCreateIndexRoute
   '/developer': typeof SiteDeveloperIndexRoute
+  '/exchange': typeof SiteExchangeIndexRoute
   '/feeds': typeof SiteFeedsIndexRoute
   '/games': typeof SiteGamesIndexRoute
   '/groups': typeof SiteGroupsIndexRoute
@@ -8328,9 +8439,11 @@ export interface FileRoutesByTo {
   '/when': typeof SiteWhenIndexRoute
   '/altair/multiplayer': typeof AltairMultiplayerIndexRoute
   '/api/activity': typeof ApiActivityIndexRoute
+  '/api/advent': typeof ApiAdventIndexRoute
   '/api/arcade': typeof ApiArcadeIndexRoute
   '/api/awards': typeof ApiAwardsIndexRoute
   '/api/battlepass': typeof ApiBattlepassIndexRoute
+  '/api/birthday': typeof ApiBirthdayIndexRoute
   '/api/bulk': typeof ApiBulkIndexRoute
   '/api/calendar-feed': typeof ApiCalendarFeedIndexRoute
   '/api/chat-folders': typeof ApiChatFoldersIndexRoute
@@ -8343,6 +8456,7 @@ export interface FileRoutesByTo {
   '/api/feeds': typeof ApiFeedsIndexRoute
   '/api/friendly': typeof ApiFriendlyIndexRoute
   '/api/game-night': typeof ApiGameNightIndexRoute
+  '/api/gift-exchanges': typeof ApiGiftExchangesIndexRoute
   '/api/group-chats': typeof ApiGroupChatsIndexRoute
   '/api/guides': typeof ApiGuidesIndexRoute
   '/api/history': typeof ApiHistoryIndexRoute
@@ -8473,6 +8587,10 @@ export interface FileRoutesByTo {
   '/api/games/synapse-storm/leaderboard': typeof ApiGamesSynapseStormLeaderboardRoute
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
+  '/api/gift-exchanges/$id/draw': typeof ApiGiftExchangesIdDrawRoute
+  '/api/gift-exchanges/$id/gift': typeof ApiGiftExchangesIdGiftRoute
+  '/api/gift-exchanges/$id/join': typeof ApiGiftExchangesIdJoinRoute
+  '/api/gift-exchanges/$id/me': typeof ApiGiftExchangesIdMeRoute
   '/api/group-chats/$id/leave': typeof ApiGroupChatsIdLeaveRoute
   '/api/group-chats/$id/messages': typeof ApiGroupChatsIdMessagesRouteWithChildren
   '/api/group-chats/$id/react': typeof ApiGroupChatsIdReactRoute
@@ -8520,6 +8638,7 @@ export interface FileRoutesByTo {
   '/api/profile/$id/followers': typeof ApiProfileIdFollowersRoute
   '/api/profile/$id/following': typeof ApiProfileIdFollowingRoute
   '/api/profile/$id/guestbook': typeof ApiProfileIdGuestbookRouteWithChildren
+  '/api/profile/$id/kudos': typeof ApiProfileIdKudosRoute
   '/api/profile/$id/likes': typeof ApiProfileIdLikesRoute
   '/api/profile/$id/membership': typeof ApiProfileIdMembershipRoute
   '/api/profile/$id/plus': typeof ApiProfileIdPlusRoute
@@ -8640,6 +8759,7 @@ export interface FileRoutesByTo {
   '/api/economy/savings-goals': typeof ApiEconomySavingsGoalsIndexRoute
   '/api/emoji-packs/$slug': typeof ApiEmojiPacksSlugIndexRoute
   '/api/events/$id': typeof ApiEventsIdIndexRoute
+  '/api/gift-exchanges/$id': typeof ApiGiftExchangesIdIndexRoute
   '/api/gifts/scheduled': typeof ApiGiftsScheduledIndexRoute
   '/api/group-chats/$id': typeof ApiGroupChatsIdIndexRoute
   '/api/market/listings': typeof ApiMarketListingsIndexRoute
@@ -8669,6 +8789,7 @@ export interface FileRoutesByTo {
   '/api/admin/albums/$id/slides': typeof ApiAdminAlbumsIdSlidesRouteWithChildren
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
+  '/api/admin/gift-exchanges/$id/verify': typeof ApiAdminGiftExchangesIdVerifyRoute
   '/api/admin/predictions/$id/moderate': typeof ApiAdminPredictionsIdModerateRoute
   '/api/admin/predictions/$id/resolve': typeof ApiAdminPredictionsIdResolveRoute
   '/api/admin/reading/glossary/$id': typeof ApiAdminReadingGlossaryIdRoute
@@ -8832,6 +8953,7 @@ export interface FileRoutesById {
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/_site/achievements': typeof SiteAchievementsRoute
+  '/_site/advent': typeof SiteAdventRoute
   '/_site/alexdebtcounter': typeof SiteAlexdebtcounterRoute
   '/_site/analytics': typeof SiteAnalyticsRoute
   '/_site/arcade': typeof SiteArcadeRoute
@@ -8994,6 +9116,7 @@ export interface FileRoutesById {
   '/_site/create/builds': typeof SiteCreateBuildsRoute
   '/_site/create/earnings': typeof SiteCreateEarningsRoute
   '/_site/create/personas': typeof SiteCreatePersonasRoute
+  '/_site/exchange/$id': typeof SiteExchangeIdRoute
   '/_site/feeds/$id': typeof SiteFeedsIdRoute
   '/_site/games/$gameId': typeof SiteGamesGameIdRoute
   '/_site/games/slice-it': typeof SiteGamesSliceItRoute
@@ -9085,6 +9208,7 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/battlepass/claim': typeof ApiBattlepassClaimRoute
   '/api/battlepass/unlock': typeof ApiBattlepassUnlockRoute
+  '/api/birthday/next': typeof ApiBirthdayNextRoute
   '/api/builds/consent': typeof ApiBuildsConsentRoute
   '/api/builds/review': typeof ApiBuildsReviewRoute
   '/api/bulk/$id': typeof ApiBulkIdRoute
@@ -9170,6 +9294,7 @@ export interface FileRoutesById {
   '/api/kaikai-debt/ledger': typeof ApiKaikaiDebtLedgerRoute
   '/api/kaikai-debt/stats': typeof ApiKaikaiDebtStatsRoute
   '/api/kaikai-debt/stream': typeof ApiKaikaiDebtStreamRoute
+  '/api/kudos/$id': typeof ApiKudosIdRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
   '/api/leaderboards/$gameId': typeof ApiLeaderboardsGameIdRoute
@@ -9376,6 +9501,7 @@ export interface FileRoutesById {
   '/_site/builds/': typeof SiteBuildsIndexRoute
   '/_site/create/': typeof SiteCreateIndexRoute
   '/_site/developer/': typeof SiteDeveloperIndexRoute
+  '/_site/exchange/': typeof SiteExchangeIndexRoute
   '/_site/feeds/': typeof SiteFeedsIndexRoute
   '/_site/games/': typeof SiteGamesIndexRoute
   '/_site/groups/': typeof SiteGroupsIndexRoute
@@ -9406,9 +9532,11 @@ export interface FileRoutesById {
   '/_site/when/': typeof SiteWhenIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
   '/api/activity/': typeof ApiActivityIndexRoute
+  '/api/advent/': typeof ApiAdventIndexRoute
   '/api/arcade/': typeof ApiArcadeIndexRoute
   '/api/awards/': typeof ApiAwardsIndexRoute
   '/api/battlepass/': typeof ApiBattlepassIndexRoute
+  '/api/birthday/': typeof ApiBirthdayIndexRoute
   '/api/bulk/': typeof ApiBulkIndexRoute
   '/api/calendar-feed/': typeof ApiCalendarFeedIndexRoute
   '/api/chat-folders/': typeof ApiChatFoldersIndexRoute
@@ -9421,6 +9549,7 @@ export interface FileRoutesById {
   '/api/feeds/': typeof ApiFeedsIndexRoute
   '/api/friendly/': typeof ApiFriendlyIndexRoute
   '/api/game-night/': typeof ApiGameNightIndexRoute
+  '/api/gift-exchanges/': typeof ApiGiftExchangesIndexRoute
   '/api/group-chats/': typeof ApiGroupChatsIndexRoute
   '/api/guides/': typeof ApiGuidesIndexRoute
   '/api/history/': typeof ApiHistoryIndexRoute
@@ -9551,6 +9680,10 @@ export interface FileRoutesById {
   '/api/games/synapse-storm/leaderboard': typeof ApiGamesSynapseStormLeaderboardRoute
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
+  '/api/gift-exchanges/$id/draw': typeof ApiGiftExchangesIdDrawRoute
+  '/api/gift-exchanges/$id/gift': typeof ApiGiftExchangesIdGiftRoute
+  '/api/gift-exchanges/$id/join': typeof ApiGiftExchangesIdJoinRoute
+  '/api/gift-exchanges/$id/me': typeof ApiGiftExchangesIdMeRoute
   '/api/group-chats/$id/leave': typeof ApiGroupChatsIdLeaveRoute
   '/api/group-chats/$id/messages': typeof ApiGroupChatsIdMessagesRouteWithChildren
   '/api/group-chats/$id/react': typeof ApiGroupChatsIdReactRoute
@@ -9598,6 +9731,7 @@ export interface FileRoutesById {
   '/api/profile/$id/followers': typeof ApiProfileIdFollowersRoute
   '/api/profile/$id/following': typeof ApiProfileIdFollowingRoute
   '/api/profile/$id/guestbook': typeof ApiProfileIdGuestbookRouteWithChildren
+  '/api/profile/$id/kudos': typeof ApiProfileIdKudosRoute
   '/api/profile/$id/likes': typeof ApiProfileIdLikesRoute
   '/api/profile/$id/membership': typeof ApiProfileIdMembershipRoute
   '/api/profile/$id/plus': typeof ApiProfileIdPlusRoute
@@ -9718,6 +9852,7 @@ export interface FileRoutesById {
   '/api/economy/savings-goals/': typeof ApiEconomySavingsGoalsIndexRoute
   '/api/emoji-packs/$slug/': typeof ApiEmojiPacksSlugIndexRoute
   '/api/events/$id/': typeof ApiEventsIdIndexRoute
+  '/api/gift-exchanges/$id/': typeof ApiGiftExchangesIdIndexRoute
   '/api/gifts/scheduled/': typeof ApiGiftsScheduledIndexRoute
   '/api/group-chats/$id/': typeof ApiGroupChatsIdIndexRoute
   '/api/market/listings/': typeof ApiMarketListingsIndexRoute
@@ -9747,6 +9882,7 @@ export interface FileRoutesById {
   '/api/admin/albums/$id/slides': typeof ApiAdminAlbumsIdSlidesRouteWithChildren
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
+  '/api/admin/gift-exchanges/$id/verify': typeof ApiAdminGiftExchangesIdVerifyRoute
   '/api/admin/predictions/$id/moderate': typeof ApiAdminPredictionsIdModerateRoute
   '/api/admin/predictions/$id/resolve': typeof ApiAdminPredictionsIdResolveRoute
   '/api/admin/reading/glossary/$id': typeof ApiAdminReadingGlossaryIdRoute
@@ -9911,6 +10047,7 @@ export interface FileRouteTypes {
     | '/.well-known/apple-app-site-association'
     | '/.well-known/assetlinks.json'
     | '/achievements'
+    | '/advent'
     | '/alexdebtcounter'
     | '/analytics'
     | '/arcade'
@@ -10072,6 +10209,7 @@ export interface FileRouteTypes {
     | '/create/builds'
     | '/create/earnings'
     | '/create/personas'
+    | '/exchange/$id'
     | '/feeds/$id'
     | '/games/$gameId'
     | '/games/slice-it'
@@ -10163,6 +10301,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/battlepass/claim'
     | '/api/battlepass/unlock'
+    | '/api/birthday/next'
     | '/api/builds/consent'
     | '/api/builds/review'
     | '/api/bulk/$id'
@@ -10248,6 +10387,7 @@ export interface FileRouteTypes {
     | '/api/kaikai-debt/ledger'
     | '/api/kaikai-debt/stats'
     | '/api/kaikai-debt/stream'
+    | '/api/kudos/$id'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
     | '/api/leaderboards/$gameId'
@@ -10454,6 +10594,7 @@ export interface FileRouteTypes {
     | '/builds/'
     | '/create/'
     | '/developer/'
+    | '/exchange/'
     | '/feeds/'
     | '/games/'
     | '/groups/'
@@ -10484,9 +10625,11 @@ export interface FileRouteTypes {
     | '/when/'
     | '/altair/multiplayer/'
     | '/api/activity/'
+    | '/api/advent/'
     | '/api/arcade/'
     | '/api/awards/'
     | '/api/battlepass/'
+    | '/api/birthday/'
     | '/api/bulk/'
     | '/api/calendar-feed/'
     | '/api/chat-folders/'
@@ -10499,6 +10642,7 @@ export interface FileRouteTypes {
     | '/api/feeds/'
     | '/api/friendly/'
     | '/api/game-night/'
+    | '/api/gift-exchanges/'
     | '/api/group-chats/'
     | '/api/guides/'
     | '/api/history/'
@@ -10629,6 +10773,10 @@ export interface FileRouteTypes {
     | '/api/games/synapse-storm/leaderboard'
     | '/api/games/synapse-storm/save'
     | '/api/games/synapse-storm/score'
+    | '/api/gift-exchanges/$id/draw'
+    | '/api/gift-exchanges/$id/gift'
+    | '/api/gift-exchanges/$id/join'
+    | '/api/gift-exchanges/$id/me'
     | '/api/group-chats/$id/leave'
     | '/api/group-chats/$id/messages'
     | '/api/group-chats/$id/react'
@@ -10676,6 +10824,7 @@ export interface FileRouteTypes {
     | '/api/profile/$id/followers'
     | '/api/profile/$id/following'
     | '/api/profile/$id/guestbook'
+    | '/api/profile/$id/kudos'
     | '/api/profile/$id/likes'
     | '/api/profile/$id/membership'
     | '/api/profile/$id/plus'
@@ -10796,6 +10945,7 @@ export interface FileRouteTypes {
     | '/api/economy/savings-goals/'
     | '/api/emoji-packs/$slug/'
     | '/api/events/$id/'
+    | '/api/gift-exchanges/$id/'
     | '/api/gifts/scheduled/'
     | '/api/group-chats/$id/'
     | '/api/market/listings/'
@@ -10825,6 +10975,7 @@ export interface FileRouteTypes {
     | '/api/admin/albums/$id/slides'
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
+    | '/api/admin/gift-exchanges/$id/verify'
     | '/api/admin/predictions/$id/moderate'
     | '/api/admin/predictions/$id/resolve'
     | '/api/admin/reading/glossary/$id'
@@ -10964,6 +11115,7 @@ export interface FileRouteTypes {
     | '/.well-known/apple-app-site-association'
     | '/.well-known/assetlinks.json'
     | '/achievements'
+    | '/advent'
     | '/alexdebtcounter'
     | '/analytics'
     | '/arcade'
@@ -11122,6 +11274,7 @@ export interface FileRouteTypes {
     | '/create/builds'
     | '/create/earnings'
     | '/create/personas'
+    | '/exchange/$id'
     | '/feeds/$id'
     | '/games/$gameId'
     | '/games/slice-it'
@@ -11213,6 +11366,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/battlepass/claim'
     | '/api/battlepass/unlock'
+    | '/api/birthday/next'
     | '/api/builds/consent'
     | '/api/builds/review'
     | '/api/bulk/$id'
@@ -11298,6 +11452,7 @@ export interface FileRouteTypes {
     | '/api/kaikai-debt/ledger'
     | '/api/kaikai-debt/stats'
     | '/api/kaikai-debt/stream'
+    | '/api/kudos/$id'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
     | '/api/leaderboards/$gameId'
@@ -11504,6 +11659,7 @@ export interface FileRouteTypes {
     | '/builds'
     | '/create'
     | '/developer'
+    | '/exchange'
     | '/feeds'
     | '/games'
     | '/groups'
@@ -11534,9 +11690,11 @@ export interface FileRouteTypes {
     | '/when'
     | '/altair/multiplayer'
     | '/api/activity'
+    | '/api/advent'
     | '/api/arcade'
     | '/api/awards'
     | '/api/battlepass'
+    | '/api/birthday'
     | '/api/bulk'
     | '/api/calendar-feed'
     | '/api/chat-folders'
@@ -11549,6 +11707,7 @@ export interface FileRouteTypes {
     | '/api/feeds'
     | '/api/friendly'
     | '/api/game-night'
+    | '/api/gift-exchanges'
     | '/api/group-chats'
     | '/api/guides'
     | '/api/history'
@@ -11679,6 +11838,10 @@ export interface FileRouteTypes {
     | '/api/games/synapse-storm/leaderboard'
     | '/api/games/synapse-storm/save'
     | '/api/games/synapse-storm/score'
+    | '/api/gift-exchanges/$id/draw'
+    | '/api/gift-exchanges/$id/gift'
+    | '/api/gift-exchanges/$id/join'
+    | '/api/gift-exchanges/$id/me'
     | '/api/group-chats/$id/leave'
     | '/api/group-chats/$id/messages'
     | '/api/group-chats/$id/react'
@@ -11726,6 +11889,7 @@ export interface FileRouteTypes {
     | '/api/profile/$id/followers'
     | '/api/profile/$id/following'
     | '/api/profile/$id/guestbook'
+    | '/api/profile/$id/kudos'
     | '/api/profile/$id/likes'
     | '/api/profile/$id/membership'
     | '/api/profile/$id/plus'
@@ -11846,6 +12010,7 @@ export interface FileRouteTypes {
     | '/api/economy/savings-goals'
     | '/api/emoji-packs/$slug'
     | '/api/events/$id'
+    | '/api/gift-exchanges/$id'
     | '/api/gifts/scheduled'
     | '/api/group-chats/$id'
     | '/api/market/listings'
@@ -11875,6 +12040,7 @@ export interface FileRouteTypes {
     | '/api/admin/albums/$id/slides'
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
+    | '/api/admin/gift-exchanges/$id/verify'
     | '/api/admin/predictions/$id/moderate'
     | '/api/admin/predictions/$id/resolve'
     | '/api/admin/reading/glossary/$id'
@@ -12037,6 +12203,7 @@ export interface FileRouteTypes {
     | '/.well-known/apple-app-site-association'
     | '/.well-known/assetlinks.json'
     | '/_site/achievements'
+    | '/_site/advent'
     | '/_site/alexdebtcounter'
     | '/_site/analytics'
     | '/_site/arcade'
@@ -12199,6 +12366,7 @@ export interface FileRouteTypes {
     | '/_site/create/builds'
     | '/_site/create/earnings'
     | '/_site/create/personas'
+    | '/_site/exchange/$id'
     | '/_site/feeds/$id'
     | '/_site/games/$gameId'
     | '/_site/games/slice-it'
@@ -12290,6 +12458,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/battlepass/claim'
     | '/api/battlepass/unlock'
+    | '/api/birthday/next'
     | '/api/builds/consent'
     | '/api/builds/review'
     | '/api/bulk/$id'
@@ -12375,6 +12544,7 @@ export interface FileRouteTypes {
     | '/api/kaikai-debt/ledger'
     | '/api/kaikai-debt/stats'
     | '/api/kaikai-debt/stream'
+    | '/api/kudos/$id'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
     | '/api/leaderboards/$gameId'
@@ -12581,6 +12751,7 @@ export interface FileRouteTypes {
     | '/_site/builds/'
     | '/_site/create/'
     | '/_site/developer/'
+    | '/_site/exchange/'
     | '/_site/feeds/'
     | '/_site/games/'
     | '/_site/groups/'
@@ -12611,9 +12782,11 @@ export interface FileRouteTypes {
     | '/_site/when/'
     | '/altair/multiplayer/'
     | '/api/activity/'
+    | '/api/advent/'
     | '/api/arcade/'
     | '/api/awards/'
     | '/api/battlepass/'
+    | '/api/birthday/'
     | '/api/bulk/'
     | '/api/calendar-feed/'
     | '/api/chat-folders/'
@@ -12626,6 +12799,7 @@ export interface FileRouteTypes {
     | '/api/feeds/'
     | '/api/friendly/'
     | '/api/game-night/'
+    | '/api/gift-exchanges/'
     | '/api/group-chats/'
     | '/api/guides/'
     | '/api/history/'
@@ -12756,6 +12930,10 @@ export interface FileRouteTypes {
     | '/api/games/synapse-storm/leaderboard'
     | '/api/games/synapse-storm/save'
     | '/api/games/synapse-storm/score'
+    | '/api/gift-exchanges/$id/draw'
+    | '/api/gift-exchanges/$id/gift'
+    | '/api/gift-exchanges/$id/join'
+    | '/api/gift-exchanges/$id/me'
     | '/api/group-chats/$id/leave'
     | '/api/group-chats/$id/messages'
     | '/api/group-chats/$id/react'
@@ -12803,6 +12981,7 @@ export interface FileRouteTypes {
     | '/api/profile/$id/followers'
     | '/api/profile/$id/following'
     | '/api/profile/$id/guestbook'
+    | '/api/profile/$id/kudos'
     | '/api/profile/$id/likes'
     | '/api/profile/$id/membership'
     | '/api/profile/$id/plus'
@@ -12923,6 +13102,7 @@ export interface FileRouteTypes {
     | '/api/economy/savings-goals/'
     | '/api/emoji-packs/$slug/'
     | '/api/events/$id/'
+    | '/api/gift-exchanges/$id/'
     | '/api/gifts/scheduled/'
     | '/api/group-chats/$id/'
     | '/api/market/listings/'
@@ -12952,6 +13132,7 @@ export interface FileRouteTypes {
     | '/api/admin/albums/$id/slides'
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
+    | '/api/admin/gift-exchanges/$id/verify'
     | '/api/admin/predictions/$id/moderate'
     | '/api/admin/predictions/$id/resolve'
     | '/api/admin/reading/glossary/$id'
@@ -13185,6 +13366,7 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiBattlepassClaimRoute: typeof ApiBattlepassClaimRoute
   ApiBattlepassUnlockRoute: typeof ApiBattlepassUnlockRoute
+  ApiBirthdayNextRoute: typeof ApiBirthdayNextRoute
   ApiBuildsConsentRoute: typeof ApiBuildsConsentRoute
   ApiBuildsReviewRoute: typeof ApiBuildsReviewRoute
   ApiBulkIdRoute: typeof ApiBulkIdRoute
@@ -13270,6 +13452,7 @@ export interface RootRouteChildren {
   ApiKaikaiDebtLedgerRoute: typeof ApiKaikaiDebtLedgerRoute
   ApiKaikaiDebtStatsRoute: typeof ApiKaikaiDebtStatsRoute
   ApiKaikaiDebtStreamRoute: typeof ApiKaikaiDebtStreamRoute
+  ApiKudosIdRoute: typeof ApiKudosIdRoute
   ApiLaundrySortLeaderboardRoute: typeof ApiLaundrySortLeaderboardRoute
   ApiLaundrySortScoreRoute: typeof ApiLaundrySortScoreRoute
   ApiLeaderboardsGameIdRoute: typeof ApiLeaderboardsGameIdRoute
@@ -13434,9 +13617,11 @@ export interface RootRouteChildren {
   TagTagRssDotxmlRoute: typeof TagTagRssDotxmlRoute
   UHandleRssDotxmlRoute: typeof UHandleRssDotxmlRoute
   ApiActivityIndexRoute: typeof ApiActivityIndexRoute
+  ApiAdventIndexRoute: typeof ApiAdventIndexRoute
   ApiArcadeIndexRoute: typeof ApiArcadeIndexRoute
   ApiAwardsIndexRoute: typeof ApiAwardsIndexRoute
   ApiBattlepassIndexRoute: typeof ApiBattlepassIndexRoute
+  ApiBirthdayIndexRoute: typeof ApiBirthdayIndexRoute
   ApiBulkIndexRoute: typeof ApiBulkIndexRoute
   ApiCalendarFeedIndexRoute: typeof ApiCalendarFeedIndexRoute
   ApiChatFoldersIndexRoute: typeof ApiChatFoldersIndexRoute
@@ -13449,6 +13634,7 @@ export interface RootRouteChildren {
   ApiFeedsIndexRoute: typeof ApiFeedsIndexRoute
   ApiFriendlyIndexRoute: typeof ApiFriendlyIndexRoute
   ApiGameNightIndexRoute: typeof ApiGameNightIndexRoute
+  ApiGiftExchangesIndexRoute: typeof ApiGiftExchangesIndexRoute
   ApiGroupChatsIndexRoute: typeof ApiGroupChatsIndexRoute
   ApiGuidesIndexRoute: typeof ApiGuidesIndexRoute
   ApiHistoryIndexRoute: typeof ApiHistoryIndexRoute
@@ -13561,6 +13747,10 @@ export interface RootRouteChildren {
   ApiGamesSynapseStormLeaderboardRoute: typeof ApiGamesSynapseStormLeaderboardRoute
   ApiGamesSynapseStormSaveRoute: typeof ApiGamesSynapseStormSaveRoute
   ApiGamesSynapseStormScoreRoute: typeof ApiGamesSynapseStormScoreRoute
+  ApiGiftExchangesIdDrawRoute: typeof ApiGiftExchangesIdDrawRoute
+  ApiGiftExchangesIdGiftRoute: typeof ApiGiftExchangesIdGiftRoute
+  ApiGiftExchangesIdJoinRoute: typeof ApiGiftExchangesIdJoinRoute
+  ApiGiftExchangesIdMeRoute: typeof ApiGiftExchangesIdMeRoute
   ApiGroupChatsIdLeaveRoute: typeof ApiGroupChatsIdLeaveRoute
   ApiGroupChatsIdMessagesRoute: typeof ApiGroupChatsIdMessagesRouteWithChildren
   ApiGroupChatsIdReactRoute: typeof ApiGroupChatsIdReactRoute
@@ -13629,6 +13819,7 @@ export interface RootRouteChildren {
   ApiEconomySavingsGoalsIndexRoute: typeof ApiEconomySavingsGoalsIndexRoute
   ApiEmojiPacksSlugIndexRoute: typeof ApiEmojiPacksSlugIndexRoute
   ApiEventsIdIndexRoute: typeof ApiEventsIdIndexRoute
+  ApiGiftExchangesIdIndexRoute: typeof ApiGiftExchangesIdIndexRoute
   ApiGiftsScheduledIndexRoute: typeof ApiGiftsScheduledIndexRoute
   ApiGroupChatsIdIndexRoute: typeof ApiGroupChatsIdIndexRoute
   ApiMarketListingsIndexRoute: typeof ApiMarketListingsIndexRoute
@@ -13649,6 +13840,7 @@ export interface RootRouteChildren {
   ApiStudyDecksIndexRoute: typeof ApiStudyDecksIndexRoute
   ApiWhenIdIndexRoute: typeof ApiWhenIdIndexRoute
   ApiAccountStrikesIdAppealRoute: typeof ApiAccountStrikesIdAppealRoute
+  ApiAdminGiftExchangesIdVerifyRoute: typeof ApiAdminGiftExchangesIdVerifyRoute
   ApiAdminPredictionsIdModerateRoute: typeof ApiAdminPredictionsIdModerateRoute
   ApiAdminPredictionsIdResolveRoute: typeof ApiAdminPredictionsIdResolveRoute
   ApiAdminReadingGlossaryIdRoute: typeof ApiAdminReadingGlossaryIdRoute
@@ -14138,6 +14330,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof SiteAdminRouteRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/advent': {
+      id: '/_site/advent'
+      path: '/advent'
+      fullPath: '/advent'
+      preLoaderRoute: typeof SiteAdventRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/alexdebtcounter': {
@@ -15323,6 +15522,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteDeveloperIndexRouteImport
       parentRoute: typeof SiteDeveloperRouteRoute
     }
+    '/_site/exchange/': {
+      id: '/_site/exchange/'
+      path: '/exchange'
+      fullPath: '/exchange/'
+      preLoaderRoute: typeof SiteExchangeIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/exchange/$id': {
+      id: '/_site/exchange/$id'
+      path: '/exchange/$id'
+      fullPath: '/exchange/$id'
+      preLoaderRoute: typeof SiteExchangeIdRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/feeds/': {
       id: '/_site/feeds/'
       path: '/feeds'
@@ -16037,6 +16250,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminUsersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/advent/': {
+      id: '/api/advent/'
+      path: '/api/advent'
+      fullPath: '/api/advent/'
+      preLoaderRoute: typeof ApiAdventIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/ai/ask-feed': {
       id: '/api/ai/ask-feed'
       path: '/api/ai/ask-feed'
@@ -16189,6 +16409,20 @@ declare module '@tanstack/react-router' {
       path: '/api/battlepass/unlock'
       fullPath: '/api/battlepass/unlock'
       preLoaderRoute: typeof ApiBattlepassUnlockRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/birthday/': {
+      id: '/api/birthday/'
+      path: '/api/birthday'
+      fullPath: '/api/birthday/'
+      preLoaderRoute: typeof ApiBirthdayIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/birthday/next': {
+      id: '/api/birthday/next'
+      path: '/api/birthday/next'
+      fullPath: '/api/birthday/next'
+      preLoaderRoute: typeof ApiBirthdayNextRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/builds/consent': {
@@ -16695,6 +16929,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGifSearchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/gift-exchanges/': {
+      id: '/api/gift-exchanges/'
+      path: '/api/gift-exchanges'
+      fullPath: '/api/gift-exchanges/'
+      preLoaderRoute: typeof ApiGiftExchangesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/globeset/record': {
       id: '/api/globeset/record'
       path: '/api/globeset/record'
@@ -16903,6 +17144,13 @@ declare module '@tanstack/react-router' {
       path: '/api/kaikai-debt/stream'
       fullPath: '/api/kaikai-debt/stream'
       preLoaderRoute: typeof ApiKaikaiDebtStreamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/kudos/$id': {
+      id: '/api/kudos/$id'
+      path: '/api/kudos/$id'
+      fullPath: '/api/kudos/$id'
+      preLoaderRoute: typeof ApiKudosIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/laundry-sort/leaderboard': {
@@ -19292,6 +19540,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGamesSynapseStormScoreRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/gift-exchanges/$id/': {
+      id: '/api/gift-exchanges/$id/'
+      path: '/api/gift-exchanges/$id'
+      fullPath: '/api/gift-exchanges/$id/'
+      preLoaderRoute: typeof ApiGiftExchangesIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/gift-exchanges/$id/draw': {
+      id: '/api/gift-exchanges/$id/draw'
+      path: '/api/gift-exchanges/$id/draw'
+      fullPath: '/api/gift-exchanges/$id/draw'
+      preLoaderRoute: typeof ApiGiftExchangesIdDrawRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/gift-exchanges/$id/gift': {
+      id: '/api/gift-exchanges/$id/gift'
+      path: '/api/gift-exchanges/$id/gift'
+      fullPath: '/api/gift-exchanges/$id/gift'
+      preLoaderRoute: typeof ApiGiftExchangesIdGiftRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/gift-exchanges/$id/join': {
+      id: '/api/gift-exchanges/$id/join'
+      path: '/api/gift-exchanges/$id/join'
+      fullPath: '/api/gift-exchanges/$id/join'
+      preLoaderRoute: typeof ApiGiftExchangesIdJoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/gift-exchanges/$id/me': {
+      id: '/api/gift-exchanges/$id/me'
+      path: '/api/gift-exchanges/$id/me'
+      fullPath: '/api/gift-exchanges/$id/me'
+      preLoaderRoute: typeof ApiGiftExchangesIdMeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/gifts/scheduled/': {
       id: '/api/gifts/scheduled/'
       path: '/api/gifts/scheduled'
@@ -19668,6 +19951,13 @@ declare module '@tanstack/react-router' {
       path: '/guestbook'
       fullPath: '/api/profile/$id/guestbook'
       preLoaderRoute: typeof ApiProfileIdGuestbookRouteImport
+      parentRoute: typeof ApiProfileIdRoute
+    }
+    '/api/profile/$id/kudos': {
+      id: '/api/profile/$id/kudos'
+      path: '/kudos'
+      fullPath: '/api/profile/$id/kudos'
+      preLoaderRoute: typeof ApiProfileIdKudosRouteImport
       parentRoute: typeof ApiProfileIdRoute
     }
     '/api/profile/$id/likes': {
@@ -20552,6 +20842,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminCuratedBuildsImageProxyRouteImport
       parentRoute: typeof ApiAdminCuratedBuildsImageRoute
     }
+    '/api/admin/gift-exchanges/$id/verify': {
+      id: '/api/admin/gift-exchanges/$id/verify'
+      path: '/api/admin/gift-exchanges/$id/verify'
+      fullPath: '/api/admin/gift-exchanges/$id/verify'
+      preLoaderRoute: typeof ApiAdminGiftExchangesIdVerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/predictions/$id/moderate': {
       id: '/api/admin/predictions/$id/moderate'
       path: '/api/admin/predictions/$id/moderate'
@@ -21369,6 +21666,7 @@ interface SiteRouteChildren {
   SiteCreateRouteRoute: typeof SiteCreateRouteRouteWithChildren
   SiteDeveloperRouteRoute: typeof SiteDeveloperRouteRouteWithChildren
   SiteAchievementsRoute: typeof SiteAchievementsRoute
+  SiteAdventRoute: typeof SiteAdventRoute
   SiteAlexdebtcounterRoute: typeof SiteAlexdebtcounterRoute
   SiteAnalyticsRoute: typeof SiteAnalyticsRoute
   SiteArcadeRoute: typeof SiteArcadeRoute
@@ -21412,6 +21710,7 @@ interface SiteRouteChildren {
   SiteBlogSlugRoute: typeof SiteBlogSlugRoute
   SiteBuildsSlugRoute: typeof SiteBuildsSlugRoute
   SiteCSlugRoute: typeof SiteCSlugRoute
+  SiteExchangeIdRoute: typeof SiteExchangeIdRoute
   SiteFeedsIdRoute: typeof SiteFeedsIdRoute
   SiteGamesGameIdRoute: typeof SiteGamesGameIdRoute
   SiteGamesSliceItRoute: typeof SiteGamesSliceItRoute
@@ -21463,6 +21762,7 @@ interface SiteRouteChildren {
   SiteAppsIndexRoute: typeof SiteAppsIndexRoute
   SiteBlogIndexRoute: typeof SiteBlogIndexRoute
   SiteBuildsIndexRoute: typeof SiteBuildsIndexRoute
+  SiteExchangeIndexRoute: typeof SiteExchangeIndexRoute
   SiteFeedsIndexRoute: typeof SiteFeedsIndexRoute
   SiteGamesIndexRoute: typeof SiteGamesIndexRoute
   SiteGroupsIndexRoute: typeof SiteGroupsIndexRoute
@@ -21501,6 +21801,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteCreateRouteRoute: SiteCreateRouteRouteWithChildren,
   SiteDeveloperRouteRoute: SiteDeveloperRouteRouteWithChildren,
   SiteAchievementsRoute: SiteAchievementsRoute,
+  SiteAdventRoute: SiteAdventRoute,
   SiteAlexdebtcounterRoute: SiteAlexdebtcounterRoute,
   SiteAnalyticsRoute: SiteAnalyticsRoute,
   SiteArcadeRoute: SiteArcadeRoute,
@@ -21544,6 +21845,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteBlogSlugRoute: SiteBlogSlugRoute,
   SiteBuildsSlugRoute: SiteBuildsSlugRoute,
   SiteCSlugRoute: SiteCSlugRoute,
+  SiteExchangeIdRoute: SiteExchangeIdRoute,
   SiteFeedsIdRoute: SiteFeedsIdRoute,
   SiteGamesGameIdRoute: SiteGamesGameIdRoute,
   SiteGamesSliceItRoute: SiteGamesSliceItRoute,
@@ -21595,6 +21897,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteAppsIndexRoute: SiteAppsIndexRoute,
   SiteBlogIndexRoute: SiteBlogIndexRoute,
   SiteBuildsIndexRoute: SiteBuildsIndexRoute,
+  SiteExchangeIndexRoute: SiteExchangeIndexRoute,
   SiteFeedsIndexRoute: SiteFeedsIndexRoute,
   SiteGamesIndexRoute: SiteGamesIndexRoute,
   SiteGroupsIndexRoute: SiteGroupsIndexRoute,
@@ -22080,6 +22383,7 @@ interface ApiProfileIdRouteChildren {
   ApiProfileIdFollowersRoute: typeof ApiProfileIdFollowersRoute
   ApiProfileIdFollowingRoute: typeof ApiProfileIdFollowingRoute
   ApiProfileIdGuestbookRoute: typeof ApiProfileIdGuestbookRouteWithChildren
+  ApiProfileIdKudosRoute: typeof ApiProfileIdKudosRoute
   ApiProfileIdLikesRoute: typeof ApiProfileIdLikesRoute
   ApiProfileIdMembershipRoute: typeof ApiProfileIdMembershipRoute
   ApiProfileIdPlusRoute: typeof ApiProfileIdPlusRoute
@@ -22098,6 +22402,7 @@ const ApiProfileIdRouteChildren: ApiProfileIdRouteChildren = {
   ApiProfileIdFollowersRoute: ApiProfileIdFollowersRoute,
   ApiProfileIdFollowingRoute: ApiProfileIdFollowingRoute,
   ApiProfileIdGuestbookRoute: ApiProfileIdGuestbookRouteWithChildren,
+  ApiProfileIdKudosRoute: ApiProfileIdKudosRoute,
   ApiProfileIdLikesRoute: ApiProfileIdLikesRoute,
   ApiProfileIdMembershipRoute: ApiProfileIdMembershipRoute,
   ApiProfileIdPlusRoute: ApiProfileIdPlusRoute,
@@ -23333,6 +23638,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiBattlepassClaimRoute: ApiBattlepassClaimRoute,
   ApiBattlepassUnlockRoute: ApiBattlepassUnlockRoute,
+  ApiBirthdayNextRoute: ApiBirthdayNextRoute,
   ApiBuildsConsentRoute: ApiBuildsConsentRoute,
   ApiBuildsReviewRoute: ApiBuildsReviewRoute,
   ApiBulkIdRoute: ApiBulkIdRoute,
@@ -23418,6 +23724,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiKaikaiDebtLedgerRoute: ApiKaikaiDebtLedgerRoute,
   ApiKaikaiDebtStatsRoute: ApiKaikaiDebtStatsRoute,
   ApiKaikaiDebtStreamRoute: ApiKaikaiDebtStreamRoute,
+  ApiKudosIdRoute: ApiKudosIdRoute,
   ApiLaundrySortLeaderboardRoute: ApiLaundrySortLeaderboardRoute,
   ApiLaundrySortScoreRoute: ApiLaundrySortScoreRoute,
   ApiLeaderboardsGameIdRoute: ApiLeaderboardsGameIdRoute,
@@ -23582,9 +23889,11 @@ const rootRouteChildren: RootRouteChildren = {
   TagTagRssDotxmlRoute: TagTagRssDotxmlRoute,
   UHandleRssDotxmlRoute: UHandleRssDotxmlRoute,
   ApiActivityIndexRoute: ApiActivityIndexRoute,
+  ApiAdventIndexRoute: ApiAdventIndexRoute,
   ApiArcadeIndexRoute: ApiArcadeIndexRoute,
   ApiAwardsIndexRoute: ApiAwardsIndexRoute,
   ApiBattlepassIndexRoute: ApiBattlepassIndexRoute,
+  ApiBirthdayIndexRoute: ApiBirthdayIndexRoute,
   ApiBulkIndexRoute: ApiBulkIndexRoute,
   ApiCalendarFeedIndexRoute: ApiCalendarFeedIndexRoute,
   ApiChatFoldersIndexRoute: ApiChatFoldersIndexRoute,
@@ -23597,6 +23906,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiFeedsIndexRoute: ApiFeedsIndexRoute,
   ApiFriendlyIndexRoute: ApiFriendlyIndexRoute,
   ApiGameNightIndexRoute: ApiGameNightIndexRoute,
+  ApiGiftExchangesIndexRoute: ApiGiftExchangesIndexRoute,
   ApiGroupChatsIndexRoute: ApiGroupChatsIndexRoute,
   ApiGuidesIndexRoute: ApiGuidesIndexRoute,
   ApiHistoryIndexRoute: ApiHistoryIndexRoute,
@@ -23711,6 +24021,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGamesSynapseStormLeaderboardRoute: ApiGamesSynapseStormLeaderboardRoute,
   ApiGamesSynapseStormSaveRoute: ApiGamesSynapseStormSaveRoute,
   ApiGamesSynapseStormScoreRoute: ApiGamesSynapseStormScoreRoute,
+  ApiGiftExchangesIdDrawRoute: ApiGiftExchangesIdDrawRoute,
+  ApiGiftExchangesIdGiftRoute: ApiGiftExchangesIdGiftRoute,
+  ApiGiftExchangesIdJoinRoute: ApiGiftExchangesIdJoinRoute,
+  ApiGiftExchangesIdMeRoute: ApiGiftExchangesIdMeRoute,
   ApiGroupChatsIdLeaveRoute: ApiGroupChatsIdLeaveRoute,
   ApiGroupChatsIdMessagesRoute: ApiGroupChatsIdMessagesRouteWithChildren,
   ApiGroupChatsIdReactRoute: ApiGroupChatsIdReactRoute,
@@ -23779,6 +24093,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiEconomySavingsGoalsIndexRoute: ApiEconomySavingsGoalsIndexRoute,
   ApiEmojiPacksSlugIndexRoute: ApiEmojiPacksSlugIndexRoute,
   ApiEventsIdIndexRoute: ApiEventsIdIndexRoute,
+  ApiGiftExchangesIdIndexRoute: ApiGiftExchangesIdIndexRoute,
   ApiGiftsScheduledIndexRoute: ApiGiftsScheduledIndexRoute,
   ApiGroupChatsIdIndexRoute: ApiGroupChatsIdIndexRoute,
   ApiMarketListingsIndexRoute: ApiMarketListingsIndexRoute,
@@ -23799,6 +24114,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStudyDecksIndexRoute: ApiStudyDecksIndexRoute,
   ApiWhenIdIndexRoute: ApiWhenIdIndexRoute,
   ApiAccountStrikesIdAppealRoute: ApiAccountStrikesIdAppealRoute,
+  ApiAdminGiftExchangesIdVerifyRoute: ApiAdminGiftExchangesIdVerifyRoute,
   ApiAdminPredictionsIdModerateRoute: ApiAdminPredictionsIdModerateRoute,
   ApiAdminPredictionsIdResolveRoute: ApiAdminPredictionsIdResolveRoute,
   ApiAdminReadingGlossaryIdRoute: ApiAdminReadingGlossaryIdRoute,

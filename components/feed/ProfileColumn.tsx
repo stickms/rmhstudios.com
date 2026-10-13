@@ -25,12 +25,16 @@ import { ProfileHero } from'@/components/profile/ProfileHero';
 import { useProfileSong } from'@/hooks/useProfileSong';
 import type { ProfileData } from'@/components/profile/profile-types';
 import { useShelvesTab } from'@/components/reading/useShelvesTab';
+import { useKudosTabLabel } from'@/components/gifting/useKudosTabLabel';
 
-type ProfileTab ='rmharks'|'likes'|'achievements'|'guestbook'|'shelves';
+type ProfileTab ='rmharks'|'likes'|'achievements'|'guestbook'|'shelves'|'kudos';
 
 // Plan U15 — loaded the first time the tab is opened, never on a plain profile view.
 const GuestbookPanel = lazy(() => import('@/components/profile/GuestbookPanel'));
 // P13 reading (L7) — the shelves panel is lazy; only the tiny tab hook ships here.
+// P11 gifting (G4) — kudos panel and the birthday chip load only when needed.
+const KudosPanel = lazy(() => import('@/components/gifting/KudosPanel'));
+const BirthdayBadge = lazy(() => import('@/components/gifting/BirthdayBadge'));
 const ProfileShelvesPanel = lazy(() => import('@/components/reading/ProfileShelves'));
 // P7 — only fetched when a visitor taps a song that has no preview clip.
 const ProfileSongEmbed = lazy(() => import('@/components/profile/plus/ProfileSongEmbed'));
@@ -60,6 +64,7 @@ export function ProfileColumn({
  const [tab, setTab] = useState<ProfileTab>('rmharks');
  const [socialModal, setSocialModal] = useState<'followers'|'following'| null>(null);
  const { refresh: refreshResolvedUser } = useResolvedUser();
+ const kudosTabLabel = useKudosTabLabel();
  const shelvesTab = useShelvesTab(profile?.id, !!profile?.isOwnProfile);
 
  // Use freshest user data from cache (may have been updated by RMHark fetches)
@@ -451,6 +456,12 @@ export function ProfileColumn({
  onShowAchievements={() => handleTabChange('achievements')}
  />
 
+ {profile.birthdayToday && (
+ <Suspense fallback={null}>
+ <BirthdayBadge />
+ </Suspense>
+ )}
+
  <div className="px-3 pt-3">
  <ProfileShowcase
  modules={profile.modules ?? []}
@@ -482,6 +493,7 @@ export function ProfileColumn({
  ? [{ id:'guestbook', label: t('guestbook-tab', { defaultValue:'Guestbook'}) }]
  : []),
  ...(shelvesTab.show ? [{ id:'shelves', label: shelvesTab.label }] : []),
+ { id:'kudos', label: kudosTabLabel },
  ]}
  value={tab}
  onChange={(id) => handleTabChange(id as ProfileTab)}
@@ -582,6 +594,18 @@ export function ProfileColumn({
  ownerId={profile.id}
  onModeChange={(mode) => setProfile((p) => (p ? { ...p, guestbookMode: mode } : p))}
  />
+ </Suspense>
+ )}
+
+ {tab ==='kudos'&& (
+ <Suspense
+ fallback={
+ <div className="flex justify-center py-12">
+ <Spinner />
+ </div>
+ }
+ >
+ <KudosPanel ownerId={profile.id} isOwner={profile.isOwnProfile} />
  </Suspense>
  )}
 

@@ -42,6 +42,11 @@ const ROUTE_TREE = join(REPO_ROOT, 'app/routeTree.gen.ts');
  * to the same thing while still claiming `'content'`.
  */
 export const DYNAMIC_ROUTE_FIXTURES = {
+  '/exchange/$id': {
+    path: '/exchange/fouc-audit',
+    fidelity: 'shell',
+    why: 'A signed-out run renders the sign-in prompt inside the same PageLayout shell; the body needs a session and a seeded exchange.',
+  },
   '/when/$id': {
     path: '/when/fouc-audit',
     fidelity: 'shell',
