@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 737 files across 162 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 745 files across 165 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -603,6 +603,15 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | ----- | ------- | ------ |
 | `/api/forest-explorer/save` | `GET` `POST` | `app/routes/api/forest-explorer/save.ts` |
 
+## `/api/friendly`
+
+2 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/friendly` | `GET` `POST` | `app/routes/api/friendly/index.ts` |
+| `/api/friendly/:id` | `POST` | `app/routes/api/friendly/$id.ts` |
+
 ## `/api/gabriels-horn`
 
 2 routes.
@@ -611,6 +620,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | ----- | ------- | ------ |
 | `/api/gabriels-horn/house-rule` | `POST` | `app/routes/api/gabriels-horn/house-rule.ts` |
 | `/api/gabriels-horn/leaderboard` | `GET` | `app/routes/api/gabriels-horn/leaderboard.ts` |
+
+## `/api/game-night`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/game-night` | `GET` `PATCH` `POST` | `app/routes/api/game-night/index.ts` |
 
 ## `/api/game-saves`
 
@@ -763,6 +780,17 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/internal/notify-typing` | `POST` | `app/routes/api/internal/notify-typing.ts` |
 | `/api/internal/predictions-tick` | `POST` | `app/routes/api/internal/predictions-tick.ts` |
 | `/api/internal/streak-push` | `POST` | `app/routes/api/internal/streak-push.ts` |
+
+## `/api/jams`
+
+4 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/jams` | `GET` `POST` | `app/routes/api/jams/index.ts` |
+| `/api/jams/:slug` | `GET` | `app/routes/api/jams/$slug.ts` |
+| `/api/jams/:slug/entry` | `POST` | `app/routes/api/jams/$slug/entry.ts` |
+| `/api/jams/:slug/rate` | `POST` | `app/routes/api/jams/$slug/rate.ts` |
 
 ## `/api/kaikai-debt`
 
@@ -1690,7 +1718,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/tournaments`
 
-7 routes.
+8 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -1698,6 +1726,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/tournaments/:id` | `GET` | `app/routes/api/tournaments/$id.ts` |
 | `/api/tournaments/:id/cancel` | `POST` | `app/routes/api/tournaments/$id/cancel.ts` |
 | `/api/tournaments/:id/matches/:matchId/report` | `POST` | `app/routes/api/tournaments/$id/matches/$matchId/report.ts` |
+| `/api/tournaments/:id/pickem` | `GET` `PUT` | `app/routes/api/tournaments/$id/pickem.ts` |
 | `/api/tournaments/:id/register` | `POST` | `app/routes/api/tournaments/$id/register.ts` |
 | `/api/tournaments/:id/start` | `POST` | `app/routes/api/tournaments/$id/start.ts` |
 | `/api/tournaments/:id/withdraw` | `POST` | `app/routes/api/tournaments/$id/withdraw.ts` |

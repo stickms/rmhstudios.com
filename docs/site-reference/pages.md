@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 299 routes. 163 render inside the standard site shell (sidebar, nav, context rail); 136 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 302 routes. 166 render inside the standard site shell (sidebar, nav, context rail); 136 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -68,6 +68,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/explore` | Explore | public | `app/routes/_site/explore.tsx` |
 | `/feeds` | Custom feeds | public | `app/routes/_site/feeds.index.tsx` |
 | `/feeds/:id` | Feed | public | `app/routes/_site/feeds.$id.tsx` |
+| `/game-night` | Game Night | public | `app/routes/_site/game-night.tsx` |
 | `/games` | Games | public | `app/routes/_site/games/index.tsx` |
 | `/games/:gameId` | — | public | `app/routes/_site/games/$gameId.tsx` |
 | `/games/:gameId/guides/:guideId` | — | public | `app/routes/_site/games/$gameId_.guides.$guideId.tsx` |
@@ -82,6 +83,8 @@ Standard pages, rendered inside the sidebar shell.
 | `/homes/saved` | redirects to `/homes/manage?tab=saved` | public | `app/routes/_site/homes/saved.tsx` |
 | `/homes/submit` | RMHHomes — Post a listing | public | `app/routes/_site/homes/submit.tsx` |
 | `/homes/watches` | redirects to `/homes/manage?tab=alerts` | public | `app/routes/_site/homes/watches.tsx` |
+| `/jams` | Game Jams | public | `app/routes/_site/jams.index.tsx` |
+| `/jams/:slug` | Game Jam | public | `app/routes/_site/jams.$slug.tsx` |
 | `/leaderboard` | redirects to `/games?sub=leaderboard` | public | `app/routes/_site/leaderboard.tsx` |
 | `/library` | Library | public | `app/routes/_site/library/index.tsx` |
 | `/lists` | redirects to `/saves?tab=lists` | public | `app/routes/_site/lists/index.tsx` |

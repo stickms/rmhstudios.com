@@ -52,6 +52,7 @@ const KIND_TINT: Record<string, string> = {
   'company-report': 'text-site-text-muted',
   season: 'text-site-warning',
   maintenance: 'text-site-text-muted',
+  'game-night': 'text-site-accent',
 };
 
 function SchedulePage() {

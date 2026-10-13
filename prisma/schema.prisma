@@ -458,6 +458,13 @@ model User {
   communityOnboardingAnswers CommunityOnboardingAnswer[]
   communityModItems          CommunityModItem[]
   communityChallengeEntries  CommunityChallengeEntry[]
+  // P08 competitive: E5 pick'em, E7 jams, E9 friendly challenges
+  bracketPicks               BracketPick[]
+  gameJamsCreated            GameJam[]
+  gameJamEntries             GameJamEntry[]
+  gameJamRatings             GameJamRating[]
+  friendlyChallengesSent     FriendlyChallenge[]       @relation("FriendlyChallenger")
+  friendlyChallengesReceived FriendlyChallenge[]       @relation("FriendlyOpponent")
   communityChallengeVotes    CommunityChallengeVote[]
   communityCensusAnswered    CommunityCensusParticipant[]
   // P13 reading: L1 highlights, L3 goal, L7 shelves, L5 stories
@@ -3711,6 +3718,7 @@ model UserBuild {
   grants     BuildGrant[]
   tags       BuildTag[]
   likes      BuildLike[]
+  jamEntries GameJamEntry[]
   comments   BuildComment[]
   views      BuildView[]
   unlocks    BuildUnlock[]
@@ -6935,6 +6943,7 @@ model WagerMatch {
 enum TournamentFormat {
   SINGLE_ELIM
   ROUND_ROBIN
+  SWISS
   DOUBLE_ELIM // reserved — not yet implemented by the bracket engine
 }
 
@@ -6968,6 +6977,7 @@ model Tournament {
   visibility     String           @default("public") @db.VarChar(16)
   createdById    String
   seasonId       String?          @db.VarChar(64) // optional live-ops season link
+  swissRounds    Int? // SWISS only: total rounds, fixed at start
   startsAt       DateTime?
   startedAt      DateTime?
   completedAt    DateTime?
@@ -6978,6 +6988,7 @@ model Tournament {
   entrants  TournamentEntrant[]
   matches   TournamentMatch[]
   payouts   TournamentPayout[]
+  picks     BracketPick[]
 
   @@index([status, startsAt])
   @@index([gameId, status])
@@ -7000,6 +7011,7 @@ model TournamentEntrant {
   matchesAsA TournamentMatch[] @relation("MatchEntrantA")
   matchesAsB TournamentMatch[] @relation("MatchEntrantB")
   matchesWon TournamentMatch[] @relation("MatchWinner")
+  picks      BracketPick[]
 
   @@unique([tournamentId, userId])
   @@index([tournamentId, seed])
@@ -11107,4 +11119,129 @@ model Watch {
   @@unique([userId, kind, targetId])
   @@index([kind, targetId])
   @@map("watch")
+}
+
+// ── P08 competitive: E5 E7 E8 E9 ──
+
+/// A bracket pick'em pick (E5): one predicted finish for one entrant, made while
+/// the tournament is still in REGISTRATION. role is CHAMPION | FINALIST | SEMI;
+/// points are derived from TournamentEntrant.placement, never stored.
+model BracketPick {
+  id           String   @id @default(cuid())
+  tournamentId String
+  userId       String
+  entrantId    String
+  role         String   @db.VarChar(10)
+  createdAt    DateTime @default(now())
+
+  tournament Tournament        @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entrant    TournamentEntrant @relation(fields: [entrantId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, userId, entrantId])
+  @@index([tournamentId, userId])
+  @@map("bracket_pick")
+}
+
+/// A game jam (E7). `theme` is only ever sent to clients once startsAt passes;
+/// submissions close at submitEndsAt, rating at ratingEndsAt.
+model GameJam {
+  id           String   @id @default(cuid())
+  slug         String   @unique @db.VarChar(60)
+  title        String   @db.VarChar(100)
+  description  String   @db.VarChar(1000)
+  theme        String   @db.VarChar(120)
+  startsAt     DateTime
+  submitEndsAt DateTime
+  ratingEndsAt DateTime
+  createdById  String
+  createdAt    DateTime @default(now())
+
+  createdBy User           @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  entries   GameJamEntry[]
+
+  @@index([startsAt])
+  @@map("game_jam")
+}
+
+model GameJamEntry {
+  id        String   @id @default(cuid())
+  jamId     String
+  userId    String
+  buildId   String
+  createdAt DateTime @default(now())
+
+  jam     GameJam         @relation(fields: [jamId], references: [id], onDelete: Cascade)
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  build   UserBuild       @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  ratings GameJamRating[]
+
+  @@unique([jamId, userId])
+  @@unique([jamId, buildId])
+  @@index([userId])
+  @@map("game_jam_entry")
+}
+
+/// One member's 1-5 scores for one entry in four categories.
+model GameJamRating {
+  id         String   @id @default(cuid())
+  entryId    String
+  raterId    String
+  fun        Int
+  creativity Int
+  theme      Int
+  polish     Int
+  createdAt  DateTime @default(now())
+
+  entry GameJamEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  rater User         @relation(fields: [raterId], references: [id], onDelete: Cascade)
+
+  @@unique([entryId, raterId])
+  @@index([raterId])
+  @@map("game_jam_rating")
+}
+
+/// A weekly game-night rotation (E8). weekday 0=Sunday..6 and startMinute are
+/// UTC. `games` is an ordered list of catalog game ids; each gets
+/// `minutesPerGame` and the list loops until `durationMinutes` is up.
+/// `lobbyCodes` maps gameId -> the live join code the host posts on the night.
+model GameNight {
+  id              String   @id @default(cuid())
+  title           String   @db.VarChar(80)
+  weekday         Int
+  startMinute     Int
+  durationMinutes Int
+  minutesPerGame  Int
+  games           Json     @default("[]")
+  lobbyCodes      Json     @default("{}")
+  enabled         Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  @@index([enabled])
+  @@map("game_night")
+}
+
+/// An unranked friendly challenge (E9), optionally with an Elo-gap handicap.
+/// Entirely separate from RankedChallenge: resolving one never touches EloRating.
+model FriendlyChallenge {
+  id             String    @id @default(cuid())
+  game           String    @db.VarChar(40)
+  challengerId   String
+  opponentId     String
+  status         String    @default("pending") @db.VarChar(12) // pending|accepted|declined|done
+  /// Handicap kind (e.g. "hp") + amount, granted to handicapUserId. Null = even match.
+  handicapKind   String?   @db.VarChar(16)
+  handicapAmount Int       @default(0)
+  handicapUserId String?
+  ratingGap      Int       @default(0)
+  winnerId       String?
+  createdAt      DateTime  @default(now())
+  resolvedAt     DateTime?
+
+  challenger User @relation("FriendlyChallenger", fields: [challengerId], references: [id], onDelete: Cascade)
+  opponent   User @relation("FriendlyOpponent", fields: [opponentId], references: [id], onDelete: Cascade)
+
+  @@index([opponentId, status])
+  @@index([challengerId, status])
+  @@map("friendly_challenge")
 }

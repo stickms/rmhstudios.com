@@ -294,6 +294,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'Not-found branch of a thread permalink.',
   },
+  '/jams/$slug': {
+    path: '/jams/fouc-audit',
+    fidelity: 'shell',
+    why: 'Not-found branch of a game jam page.',
+  },
   '/tournaments/$id': {
     path: '/tournaments/fouc-audit',
     fidelity: 'shell',
