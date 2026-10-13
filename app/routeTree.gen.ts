@@ -81,6 +81,7 @@ import { Route as SiteBookmarksRouteImport } from './routes/_site/bookmarks'
 import { Route as SiteCommunitiesRouteImport } from './routes/_site/communities'
 import { Route as SiteCreateRouteRouteImport } from './routes/_site/create/route'
 import { Route as SiteCreatorStudioRouteImport } from './routes/_site/creator-studio'
+import { Route as SiteDailyMutatorRouteImport } from './routes/_site/daily-mutator'
 import { Route as SiteDeveloperRouteRouteImport } from './routes/_site/developer/route'
 import { Route as SiteDraftsRouteImport } from './routes/_site/drafts'
 import { Route as SiteEmojiPacksRouteImport } from './routes/_site/emoji-packs'
@@ -221,6 +222,7 @@ import { Route as SiteAdminEconomyRouteImport } from './routes/_site/admin/econo
 import { Route as SiteAdminLibraryRouteImport } from './routes/_site/admin/library'
 import { Route as SiteAdminLibraryQuotaRouteImport } from './routes/_site/admin/library-quota'
 import { Route as SiteAdminLibraryStorageRouteImport } from './routes/_site/admin/library-storage'
+import { Route as SiteAdminPatchNotesRouteImport } from './routes/_site/admin/patch-notes'
 import { Route as SiteAdminPredictionsRouteImport } from './routes/_site/admin/predictions'
 import { Route as SiteAdminQotdRouteImport } from './routes/_site/admin/qotd'
 import { Route as SiteAdminReadingRouteImport } from './routes/_site/admin/reading'
@@ -365,6 +367,7 @@ import { Route as ApiAltairMetaRouteImport } from './routes/api/altair/meta'
 import { Route as ApiAltairScoreRouteImport } from './routes/api/altair/score'
 import { Route as ApiArcadeIndexRouteImport } from './routes/api/arcade/index'
 import { Route as ApiArcadeClaimRouteImport } from './routes/api/arcade/claim'
+import { Route as ApiArcadeRunsRouteImport } from './routes/api/arcade/runs'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAwardsIndexRouteImport } from './routes/api/awards/index'
 import { Route as ApiBattlepassIndexRouteImport } from './routes/api/battlepass/index'
@@ -755,6 +758,12 @@ import { Route as ApiAdminRideshareRidesRouteImport } from './routes/api/admin/r
 import { Route as ApiAdminVibeBackfillThumbsRouteImport } from './routes/api/admin/vibe/backfill-thumbs'
 import { Route as ApiAlbumsAssetSplatRouteImport } from './routes/api/albums/asset/$'
 import { Route as ApiAnnouncementsIdVoteRouteImport } from './routes/api/announcements/$id/vote'
+import { Route as ApiArcadeBacklogIndexRouteImport } from './routes/api/arcade/backlog/index'
+import { Route as ApiArcadeDailyIndexRouteImport } from './routes/api/arcade/daily/index'
+import { Route as ApiArcadeDailyStartRouteImport } from './routes/api/arcade/daily/start'
+import { Route as ApiArcadePatchNotesIndexRouteImport } from './routes/api/arcade/patch-notes/index'
+import { Route as ApiArcadeRivalIndexRouteImport } from './routes/api/arcade/rival/index'
+import { Route as ApiArcadeTipsIndexRouteImport } from './routes/api/arcade/tips/index'
 import { Route as ApiAwardsIdHideRouteImport } from './routes/api/awards/$id.hide'
 import { Route as ApiBuildsCoverFileRouteImport } from './routes/api/builds/cover/$file'
 import { Route as ApiChatFoldersIdItemsRouteImport } from './routes/api/chat-folders/$id/items'
@@ -1465,6 +1474,11 @@ const SiteCreatorStudioRoute = SiteCreatorStudioRouteImport.update({
   path: '/creator-studio',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteDailyMutatorRoute = SiteDailyMutatorRouteImport.update({
+  id: '/daily-mutator',
+  path: '/daily-mutator',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteDeveloperRouteRoute = SiteDeveloperRouteRouteImport.update({
   id: '/developer',
   path: '/developer',
@@ -2163,6 +2177,11 @@ const SiteAdminLibraryQuotaRoute = SiteAdminLibraryQuotaRouteImport.update({
 const SiteAdminLibraryStorageRoute = SiteAdminLibraryStorageRouteImport.update({
   id: '/library-storage',
   path: '/library-storage',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
+const SiteAdminPatchNotesRoute = SiteAdminPatchNotesRouteImport.update({
+  id: '/patch-notes',
+  path: '/patch-notes',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
 const SiteAdminPredictionsRoute = SiteAdminPredictionsRouteImport.update({
@@ -2892,6 +2911,11 @@ const ApiArcadeIndexRoute = ApiArcadeIndexRouteImport.update({
 const ApiArcadeClaimRoute = ApiArcadeClaimRouteImport.update({
   id: '/api/arcade/claim',
   path: '/api/arcade/claim',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiArcadeRunsRoute = ApiArcadeRunsRouteImport.update({
+  id: '/api/arcade/runs',
+  path: '/api/arcade/runs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
@@ -4880,6 +4904,37 @@ const ApiAnnouncementsIdVoteRoute = ApiAnnouncementsIdVoteRouteImport.update({
   path: '/$id/vote',
   getParentRoute: () => ApiAnnouncementsRoute,
 } as any)
+const ApiArcadeBacklogIndexRoute = ApiArcadeBacklogIndexRouteImport.update({
+  id: '/api/arcade/backlog/',
+  path: '/api/arcade/backlog/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiArcadeDailyIndexRoute = ApiArcadeDailyIndexRouteImport.update({
+  id: '/api/arcade/daily/',
+  path: '/api/arcade/daily/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiArcadeDailyStartRoute = ApiArcadeDailyStartRouteImport.update({
+  id: '/api/arcade/daily/start',
+  path: '/api/arcade/daily/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiArcadePatchNotesIndexRoute =
+  ApiArcadePatchNotesIndexRouteImport.update({
+    id: '/api/arcade/patch-notes/',
+    path: '/api/arcade/patch-notes/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiArcadeRivalIndexRoute = ApiArcadeRivalIndexRouteImport.update({
+  id: '/api/arcade/rival/',
+  path: '/api/arcade/rival/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiArcadeTipsIndexRoute = ApiArcadeTipsIndexRouteImport.update({
+  id: '/api/arcade/tips/',
+  path: '/api/arcade/tips/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAwardsIdHideRoute = ApiAwardsIdHideRouteImport.update({
   id: '/api/awards/$id/hide',
   path: '/api/awards/$id/hide',
@@ -6827,6 +6882,7 @@ export interface FileRoutesByFullPath {
   '/bookmarks': typeof SiteBookmarksRoute
   '/communities': typeof SiteCommunitiesRoute
   '/creator-studio': typeof SiteCreatorStudioRoute
+  '/daily-mutator': typeof SiteDailyMutatorRoute
   '/drafts': typeof SiteDraftsRoute
   '/emoji-packs': typeof SiteEmojiPacksRoute
   '/events': typeof SiteEventsRoute
@@ -6965,6 +7021,7 @@ export interface FileRoutesByFullPath {
   '/admin/library': typeof SiteAdminLibraryRoute
   '/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
   '/admin/library-storage': typeof SiteAdminLibraryStorageRoute
+  '/admin/patch-notes': typeof SiteAdminPatchNotesRoute
   '/admin/predictions': typeof SiteAdminPredictionsRoute
   '/admin/qotd': typeof SiteAdminQotdRoute
   '/admin/reading': typeof SiteAdminReadingRoute
@@ -7071,6 +7128,7 @@ export interface FileRoutesByFullPath {
   '/api/altair/meta': typeof ApiAltairMetaRoute
   '/api/altair/score': typeof ApiAltairScoreRoute
   '/api/arcade/claim': typeof ApiArcadeClaimRoute
+  '/api/arcade/runs': typeof ApiArcadeRunsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/battlepass/claim': typeof ApiBattlepassClaimRoute
   '/api/battlepass/unlock': typeof ApiBattlepassUnlockRoute
@@ -7492,6 +7550,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
+  '/api/arcade/daily/start': typeof ApiArcadeDailyStartRoute
   '/api/awards/$id/hide': typeof ApiAwardsIdHideRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/chat-folders/$id/items': typeof ApiChatFoldersIdItemsRoute
@@ -7714,6 +7773,11 @@ export interface FileRoutesByFullPath {
   '/api/admin/predictions/': typeof ApiAdminPredictionsIndexRoute
   '/api/admin/qotd/': typeof ApiAdminQotdIndexRoute
   '/api/admin/redemptions/': typeof ApiAdminRedemptionsIndexRoute
+  '/api/arcade/backlog/': typeof ApiArcadeBacklogIndexRoute
+  '/api/arcade/daily/': typeof ApiArcadeDailyIndexRoute
+  '/api/arcade/patch-notes/': typeof ApiArcadePatchNotesIndexRoute
+  '/api/arcade/rival/': typeof ApiArcadeRivalIndexRoute
+  '/api/arcade/tips/': typeof ApiArcadeTipsIndexRoute
   '/api/communities/$slug/': typeof ApiCommunitiesSlugIndexRoute
   '/api/creator/redeem/': typeof ApiCreatorRedeemIndexRoute
   '/api/developer/keys/': typeof ApiDeveloperKeysIndexRoute
@@ -7899,6 +7963,7 @@ export interface FileRoutesByTo {
   '/bookmarks': typeof SiteBookmarksRoute
   '/communities': typeof SiteCommunitiesRoute
   '/creator-studio': typeof SiteCreatorStudioRoute
+  '/daily-mutator': typeof SiteDailyMutatorRoute
   '/drafts': typeof SiteDraftsRoute
   '/emoji-packs': typeof SiteEmojiPacksRoute
   '/events': typeof SiteEventsRoute
@@ -8034,6 +8099,7 @@ export interface FileRoutesByTo {
   '/admin/library': typeof SiteAdminLibraryRoute
   '/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
   '/admin/library-storage': typeof SiteAdminLibraryStorageRoute
+  '/admin/patch-notes': typeof SiteAdminPatchNotesRoute
   '/admin/predictions': typeof SiteAdminPredictionsRoute
   '/admin/qotd': typeof SiteAdminQotdRoute
   '/admin/reading': typeof SiteAdminReadingRoute
@@ -8140,6 +8206,7 @@ export interface FileRoutesByTo {
   '/api/altair/meta': typeof ApiAltairMetaRoute
   '/api/altair/score': typeof ApiAltairScoreRoute
   '/api/arcade/claim': typeof ApiArcadeClaimRoute
+  '/api/arcade/runs': typeof ApiArcadeRunsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/battlepass/claim': typeof ApiBattlepassClaimRoute
   '/api/battlepass/unlock': typeof ApiBattlepassUnlockRoute
@@ -8561,6 +8628,7 @@ export interface FileRoutesByTo {
   '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
+  '/api/arcade/daily/start': typeof ApiArcadeDailyStartRoute
   '/api/awards/$id/hide': typeof ApiAwardsIdHideRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/chat-folders/$id/items': typeof ApiChatFoldersIdItemsRoute
@@ -8783,6 +8851,11 @@ export interface FileRoutesByTo {
   '/api/admin/predictions': typeof ApiAdminPredictionsIndexRoute
   '/api/admin/qotd': typeof ApiAdminQotdIndexRoute
   '/api/admin/redemptions': typeof ApiAdminRedemptionsIndexRoute
+  '/api/arcade/backlog': typeof ApiArcadeBacklogIndexRoute
+  '/api/arcade/daily': typeof ApiArcadeDailyIndexRoute
+  '/api/arcade/patch-notes': typeof ApiArcadePatchNotesIndexRoute
+  '/api/arcade/rival': typeof ApiArcadeRivalIndexRoute
+  '/api/arcade/tips': typeof ApiArcadeTipsIndexRoute
   '/api/communities/$slug': typeof ApiCommunitiesSlugIndexRoute
   '/api/creator/redeem': typeof ApiCreatorRedeemIndexRoute
   '/api/developer/keys': typeof ApiDeveloperKeysIndexRoute
@@ -8992,6 +9065,7 @@ export interface FileRoutesById {
   '/_site/bookmarks': typeof SiteBookmarksRoute
   '/_site/communities': typeof SiteCommunitiesRoute
   '/_site/creator-studio': typeof SiteCreatorStudioRoute
+  '/_site/daily-mutator': typeof SiteDailyMutatorRoute
   '/_site/drafts': typeof SiteDraftsRoute
   '/_site/emoji-packs': typeof SiteEmojiPacksRoute
   '/_site/events': typeof SiteEventsRoute
@@ -9131,6 +9205,7 @@ export interface FileRoutesById {
   '/_site/admin/library': typeof SiteAdminLibraryRoute
   '/_site/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
   '/_site/admin/library-storage': typeof SiteAdminLibraryStorageRoute
+  '/_site/admin/patch-notes': typeof SiteAdminPatchNotesRoute
   '/_site/admin/predictions': typeof SiteAdminPredictionsRoute
   '/_site/admin/qotd': typeof SiteAdminQotdRoute
   '/_site/admin/reading': typeof SiteAdminReadingRoute
@@ -9237,6 +9312,7 @@ export interface FileRoutesById {
   '/api/altair/meta': typeof ApiAltairMetaRoute
   '/api/altair/score': typeof ApiAltairScoreRoute
   '/api/arcade/claim': typeof ApiArcadeClaimRoute
+  '/api/arcade/runs': typeof ApiArcadeRunsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/battlepass/claim': typeof ApiBattlepassClaimRoute
   '/api/battlepass/unlock': typeof ApiBattlepassUnlockRoute
@@ -9658,6 +9734,7 @@ export interface FileRoutesById {
   '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
+  '/api/arcade/daily/start': typeof ApiArcadeDailyStartRoute
   '/api/awards/$id/hide': typeof ApiAwardsIdHideRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/chat-folders/$id/items': typeof ApiChatFoldersIdItemsRoute
@@ -9880,6 +9957,11 @@ export interface FileRoutesById {
   '/api/admin/predictions/': typeof ApiAdminPredictionsIndexRoute
   '/api/admin/qotd/': typeof ApiAdminQotdIndexRoute
   '/api/admin/redemptions/': typeof ApiAdminRedemptionsIndexRoute
+  '/api/arcade/backlog/': typeof ApiArcadeBacklogIndexRoute
+  '/api/arcade/daily/': typeof ApiArcadeDailyIndexRoute
+  '/api/arcade/patch-notes/': typeof ApiArcadePatchNotesIndexRoute
+  '/api/arcade/rival/': typeof ApiArcadeRivalIndexRoute
+  '/api/arcade/tips/': typeof ApiArcadeTipsIndexRoute
   '/api/communities/$slug/': typeof ApiCommunitiesSlugIndexRoute
   '/api/creator/redeem/': typeof ApiCreatorRedeemIndexRoute
   '/api/developer/keys/': typeof ApiDeveloperKeysIndexRoute
@@ -10090,6 +10172,7 @@ export interface FileRouteTypes {
     | '/bookmarks'
     | '/communities'
     | '/creator-studio'
+    | '/daily-mutator'
     | '/drafts'
     | '/emoji-packs'
     | '/events'
@@ -10228,6 +10311,7 @@ export interface FileRouteTypes {
     | '/admin/library'
     | '/admin/library-quota'
     | '/admin/library-storage'
+    | '/admin/patch-notes'
     | '/admin/predictions'
     | '/admin/qotd'
     | '/admin/reading'
@@ -10334,6 +10418,7 @@ export interface FileRouteTypes {
     | '/api/altair/meta'
     | '/api/altair/score'
     | '/api/arcade/claim'
+    | '/api/arcade/runs'
     | '/api/auth/$'
     | '/api/battlepass/claim'
     | '/api/battlepass/unlock'
@@ -10755,6 +10840,7 @@ export interface FileRouteTypes {
     | '/api/admin/vibe/backfill-thumbs'
     | '/api/albums/asset/$'
     | '/api/announcements/$id/vote'
+    | '/api/arcade/daily/start'
     | '/api/awards/$id/hide'
     | '/api/builds/cover/$file'
     | '/api/chat-folders/$id/items'
@@ -10977,6 +11063,11 @@ export interface FileRouteTypes {
     | '/api/admin/predictions/'
     | '/api/admin/qotd/'
     | '/api/admin/redemptions/'
+    | '/api/arcade/backlog/'
+    | '/api/arcade/daily/'
+    | '/api/arcade/patch-notes/'
+    | '/api/arcade/rival/'
+    | '/api/arcade/tips/'
     | '/api/communities/$slug/'
     | '/api/creator/redeem/'
     | '/api/developer/keys/'
@@ -11162,6 +11253,7 @@ export interface FileRouteTypes {
     | '/bookmarks'
     | '/communities'
     | '/creator-studio'
+    | '/daily-mutator'
     | '/drafts'
     | '/emoji-packs'
     | '/events'
@@ -11297,6 +11389,7 @@ export interface FileRouteTypes {
     | '/admin/library'
     | '/admin/library-quota'
     | '/admin/library-storage'
+    | '/admin/patch-notes'
     | '/admin/predictions'
     | '/admin/qotd'
     | '/admin/reading'
@@ -11403,6 +11496,7 @@ export interface FileRouteTypes {
     | '/api/altair/meta'
     | '/api/altair/score'
     | '/api/arcade/claim'
+    | '/api/arcade/runs'
     | '/api/auth/$'
     | '/api/battlepass/claim'
     | '/api/battlepass/unlock'
@@ -11824,6 +11918,7 @@ export interface FileRouteTypes {
     | '/api/admin/vibe/backfill-thumbs'
     | '/api/albums/asset/$'
     | '/api/announcements/$id/vote'
+    | '/api/arcade/daily/start'
     | '/api/awards/$id/hide'
     | '/api/builds/cover/$file'
     | '/api/chat-folders/$id/items'
@@ -12046,6 +12141,11 @@ export interface FileRouteTypes {
     | '/api/admin/predictions'
     | '/api/admin/qotd'
     | '/api/admin/redemptions'
+    | '/api/arcade/backlog'
+    | '/api/arcade/daily'
+    | '/api/arcade/patch-notes'
+    | '/api/arcade/rival'
+    | '/api/arcade/tips'
     | '/api/communities/$slug'
     | '/api/creator/redeem'
     | '/api/developer/keys'
@@ -12254,6 +12354,7 @@ export interface FileRouteTypes {
     | '/_site/bookmarks'
     | '/_site/communities'
     | '/_site/creator-studio'
+    | '/_site/daily-mutator'
     | '/_site/drafts'
     | '/_site/emoji-packs'
     | '/_site/events'
@@ -12393,6 +12494,7 @@ export interface FileRouteTypes {
     | '/_site/admin/library'
     | '/_site/admin/library-quota'
     | '/_site/admin/library-storage'
+    | '/_site/admin/patch-notes'
     | '/_site/admin/predictions'
     | '/_site/admin/qotd'
     | '/_site/admin/reading'
@@ -12499,6 +12601,7 @@ export interface FileRouteTypes {
     | '/api/altair/meta'
     | '/api/altair/score'
     | '/api/arcade/claim'
+    | '/api/arcade/runs'
     | '/api/auth/$'
     | '/api/battlepass/claim'
     | '/api/battlepass/unlock'
@@ -12920,6 +13023,7 @@ export interface FileRouteTypes {
     | '/api/admin/vibe/backfill-thumbs'
     | '/api/albums/asset/$'
     | '/api/announcements/$id/vote'
+    | '/api/arcade/daily/start'
     | '/api/awards/$id/hide'
     | '/api/builds/cover/$file'
     | '/api/chat-folders/$id/items'
@@ -13142,6 +13246,11 @@ export interface FileRouteTypes {
     | '/api/admin/predictions/'
     | '/api/admin/qotd/'
     | '/api/admin/redemptions/'
+    | '/api/arcade/backlog/'
+    | '/api/arcade/daily/'
+    | '/api/arcade/patch-notes/'
+    | '/api/arcade/rival/'
+    | '/api/arcade/tips/'
     | '/api/communities/$slug/'
     | '/api/creator/redeem/'
     | '/api/developer/keys/'
@@ -13411,6 +13520,7 @@ export interface RootRouteChildren {
   ApiAltairMetaRoute: typeof ApiAltairMetaRoute
   ApiAltairScoreRoute: typeof ApiAltairScoreRoute
   ApiArcadeClaimRoute: typeof ApiArcadeClaimRoute
+  ApiArcadeRunsRoute: typeof ApiArcadeRunsRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiBattlepassClaimRoute: typeof ApiBattlepassClaimRoute
   ApiBattlepassUnlockRoute: typeof ApiBattlepassUnlockRoute
@@ -13745,6 +13855,7 @@ export interface RootRouteChildren {
   ApiAdminRideshareRidesRoute: typeof ApiAdminRideshareRidesRoute
   ApiAdminVibeBackfillThumbsRoute: typeof ApiAdminVibeBackfillThumbsRoute
   ApiAlbumsAssetSplatRoute: typeof ApiAlbumsAssetSplatRoute
+  ApiArcadeDailyStartRoute: typeof ApiArcadeDailyStartRoute
   ApiAwardsIdHideRoute: typeof ApiAwardsIdHideRoute
   ApiBuildsCoverFileRoute: typeof ApiBuildsCoverFileRoute
   ApiCommentsCommentIdReactRoute: typeof ApiCommentsCommentIdReactRoute
@@ -13863,6 +13974,11 @@ export interface RootRouteChildren {
   ApiAdminPredictionsIndexRoute: typeof ApiAdminPredictionsIndexRoute
   ApiAdminQotdIndexRoute: typeof ApiAdminQotdIndexRoute
   ApiAdminRedemptionsIndexRoute: typeof ApiAdminRedemptionsIndexRoute
+  ApiArcadeBacklogIndexRoute: typeof ApiArcadeBacklogIndexRoute
+  ApiArcadeDailyIndexRoute: typeof ApiArcadeDailyIndexRoute
+  ApiArcadePatchNotesIndexRoute: typeof ApiArcadePatchNotesIndexRoute
+  ApiArcadeRivalIndexRoute: typeof ApiArcadeRivalIndexRoute
+  ApiArcadeTipsIndexRoute: typeof ApiArcadeTipsIndexRoute
   ApiCommunitiesSlugIndexRoute: typeof ApiCommunitiesSlugIndexRoute
   ApiCreatorRedeemIndexRoute: typeof ApiCreatorRedeemIndexRoute
   ApiDeveloperKeysIndexRoute: typeof ApiDeveloperKeysIndexRoute
@@ -14438,6 +14554,13 @@ declare module '@tanstack/react-router' {
       path: '/creator-studio'
       fullPath: '/creator-studio'
       preLoaderRoute: typeof SiteCreatorStudioRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/daily-mutator': {
+      id: '/_site/daily-mutator'
+      path: '/daily-mutator'
+      fullPath: '/daily-mutator'
+      preLoaderRoute: typeof SiteDailyMutatorRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/developer': {
@@ -15418,6 +15541,13 @@ declare module '@tanstack/react-router' {
       path: '/library-storage'
       fullPath: '/admin/library-storage'
       preLoaderRoute: typeof SiteAdminLibraryStorageRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
+    '/_site/admin/patch-notes': {
+      id: '/_site/admin/patch-notes'
+      path: '/patch-notes'
+      fullPath: '/admin/patch-notes'
+      preLoaderRoute: typeof SiteAdminPatchNotesRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
     '/_site/admin/predictions': {
@@ -16426,6 +16556,13 @@ declare module '@tanstack/react-router' {
       path: '/api/arcade/claim'
       fullPath: '/api/arcade/claim'
       preLoaderRoute: typeof ApiArcadeClaimRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/arcade/runs': {
+      id: '/api/arcade/runs'
+      path: '/api/arcade/runs'
+      fullPath: '/api/arcade/runs'
+      preLoaderRoute: typeof ApiArcadeRunsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
@@ -19158,6 +19295,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAnnouncementsIdVoteRouteImport
       parentRoute: typeof ApiAnnouncementsRoute
     }
+    '/api/arcade/backlog/': {
+      id: '/api/arcade/backlog/'
+      path: '/api/arcade/backlog'
+      fullPath: '/api/arcade/backlog/'
+      preLoaderRoute: typeof ApiArcadeBacklogIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/arcade/daily/': {
+      id: '/api/arcade/daily/'
+      path: '/api/arcade/daily'
+      fullPath: '/api/arcade/daily/'
+      preLoaderRoute: typeof ApiArcadeDailyIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/arcade/daily/start': {
+      id: '/api/arcade/daily/start'
+      path: '/api/arcade/daily/start'
+      fullPath: '/api/arcade/daily/start'
+      preLoaderRoute: typeof ApiArcadeDailyStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/arcade/patch-notes/': {
+      id: '/api/arcade/patch-notes/'
+      path: '/api/arcade/patch-notes'
+      fullPath: '/api/arcade/patch-notes/'
+      preLoaderRoute: typeof ApiArcadePatchNotesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/arcade/rival/': {
+      id: '/api/arcade/rival/'
+      path: '/api/arcade/rival'
+      fullPath: '/api/arcade/rival/'
+      preLoaderRoute: typeof ApiArcadeRivalIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/arcade/tips/': {
+      id: '/api/arcade/tips/'
+      path: '/api/arcade/tips'
+      fullPath: '/api/arcade/tips/'
+      preLoaderRoute: typeof ApiArcadeTipsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/awards/$id/hide': {
       id: '/api/awards/$id/hide'
       path: '/api/awards/$id/hide'
@@ -21606,6 +21785,7 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminLibraryRoute: typeof SiteAdminLibraryRoute
   SiteAdminLibraryQuotaRoute: typeof SiteAdminLibraryQuotaRoute
   SiteAdminLibraryStorageRoute: typeof SiteAdminLibraryStorageRoute
+  SiteAdminPatchNotesRoute: typeof SiteAdminPatchNotesRoute
   SiteAdminPredictionsRoute: typeof SiteAdminPredictionsRoute
   SiteAdminQotdRoute: typeof SiteAdminQotdRoute
   SiteAdminReadingRoute: typeof SiteAdminReadingRoute
@@ -21634,6 +21814,7 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminLibraryRoute: SiteAdminLibraryRoute,
   SiteAdminLibraryQuotaRoute: SiteAdminLibraryQuotaRoute,
   SiteAdminLibraryStorageRoute: SiteAdminLibraryStorageRoute,
+  SiteAdminPatchNotesRoute: SiteAdminPatchNotesRoute,
   SiteAdminPredictionsRoute: SiteAdminPredictionsRoute,
   SiteAdminQotdRoute: SiteAdminQotdRoute,
   SiteAdminReadingRoute: SiteAdminReadingRoute,
@@ -21753,6 +21934,7 @@ interface SiteRouteChildren {
   SiteBookmarksRoute: typeof SiteBookmarksRoute
   SiteCommunitiesRoute: typeof SiteCommunitiesRoute
   SiteCreatorStudioRoute: typeof SiteCreatorStudioRoute
+  SiteDailyMutatorRoute: typeof SiteDailyMutatorRoute
   SiteDraftsRoute: typeof SiteDraftsRoute
   SiteEmojiPacksRoute: typeof SiteEmojiPacksRoute
   SiteEventsRoute: typeof SiteEventsRoute
@@ -21888,6 +22070,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteBookmarksRoute: SiteBookmarksRoute,
   SiteCommunitiesRoute: SiteCommunitiesRoute,
   SiteCreatorStudioRoute: SiteCreatorStudioRoute,
+  SiteDailyMutatorRoute: SiteDailyMutatorRoute,
   SiteDraftsRoute: SiteDraftsRoute,
   SiteEmojiPacksRoute: SiteEmojiPacksRoute,
   SiteEventsRoute: SiteEventsRoute,
@@ -23715,6 +23898,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAltairMetaRoute: ApiAltairMetaRoute,
   ApiAltairScoreRoute: ApiAltairScoreRoute,
   ApiArcadeClaimRoute: ApiArcadeClaimRoute,
+  ApiArcadeRunsRoute: ApiArcadeRunsRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiBattlepassClaimRoute: ApiBattlepassClaimRoute,
   ApiBattlepassUnlockRoute: ApiBattlepassUnlockRoute,
@@ -24049,6 +24233,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminRideshareRidesRoute: ApiAdminRideshareRidesRoute,
   ApiAdminVibeBackfillThumbsRoute: ApiAdminVibeBackfillThumbsRoute,
   ApiAlbumsAssetSplatRoute: ApiAlbumsAssetSplatRoute,
+  ApiArcadeDailyStartRoute: ApiArcadeDailyStartRoute,
   ApiAwardsIdHideRoute: ApiAwardsIdHideRoute,
   ApiBuildsCoverFileRoute: ApiBuildsCoverFileRoute,
   ApiCommentsCommentIdReactRoute: ApiCommentsCommentIdReactRoute,
@@ -24169,6 +24354,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminPredictionsIndexRoute: ApiAdminPredictionsIndexRoute,
   ApiAdminQotdIndexRoute: ApiAdminQotdIndexRoute,
   ApiAdminRedemptionsIndexRoute: ApiAdminRedemptionsIndexRoute,
+  ApiArcadeBacklogIndexRoute: ApiArcadeBacklogIndexRoute,
+  ApiArcadeDailyIndexRoute: ApiArcadeDailyIndexRoute,
+  ApiArcadePatchNotesIndexRoute: ApiArcadePatchNotesIndexRoute,
+  ApiArcadeRivalIndexRoute: ApiArcadeRivalIndexRoute,
+  ApiArcadeTipsIndexRoute: ApiArcadeTipsIndexRoute,
   ApiCommunitiesSlugIndexRoute: ApiCommunitiesSlugIndexRoute,
   ApiCreatorRedeemIndexRoute: ApiCreatorRedeemIndexRoute,
   ApiDeveloperKeysIndexRoute: ApiDeveloperKeysIndexRoute,

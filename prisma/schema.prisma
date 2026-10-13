@@ -447,6 +447,13 @@ model User {
   pf2eSettingsEdits   Pf2eSettings[]        @relation("Pf2eSettingsEditor")
 
   // ─── Feature ideas 2026-10-12 (docs/plans/2026-10-12-feature-ideas-every-surface.md)
+  // P07 arcade: E1/E12 seeded runs, E2 backlog, E6 achievement tips, E11 rivals
+  arcadeSeedRuns             ArcadeSeedRun[]
+  gamePlayStatuses           GamePlayStatus[]
+  achievementTips            AchievementTip[]
+  achievementTipVotes        AchievementTipVote[]
+  arcadeRivals               ArcadeRival[]               @relation("ArcadeRivalOwner")
+  arcadeRivalOf              ArcadeRival[]               @relation("ArcadeRivalTarget")
   // P20 watch parties: F1 timed comments, F17 watch later, T5 commentary tracks
   rmhtubeTimedComments       RmhTubeTimedComment[]
   rmhtubeWatchLater          RmhTubeWatchLater[]
@@ -11414,4 +11421,108 @@ model RmhTubeCommentaryTrack {
   @@index([mediaUrl, createdAt])
   @@index([userId])
   @@map("rmhtube_commentary_track")
+}
+
+// ── P07: E1 daily mutator, E2 backlog, E6 achievement guides, E10 patch notes, E11 rivals, E12 shared seeds ──
+
+// One row per (player, daily | shared seed). kind 'daily': seedKey is the UTC
+// day, the row is created when the attempt STARTS (score null) and the first
+// finish is the one that counts. kind 'seed': seedKey is '<seed>:<variant>' and
+// score is the player's best on that seed.
+model ArcadeSeedRun {
+  id         String    @id @default(cuid())
+  kind       String    @db.VarChar(8)
+  gameId     String    @db.VarChar(48)
+  seedKey    String    @db.VarChar(64)
+  userId     String
+  score      Int?
+  detail     Json?
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([kind, gameId, seedKey, userId])
+  @@index([kind, gameId, seedKey, score(sort: Desc)])
+  @@index([userId])
+  @@map("arcade_seed_run")
+}
+
+// Backlog / play status per game. finishMinutes feeds the community median.
+model GamePlayStatus {
+  id            String   @id @default(cuid())
+  userId        String
+  gameId        String   @db.VarChar(64)
+  status        String   @db.VarChar(16)
+  finishMinutes Int?
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId])
+  @@index([gameId, status])
+  @@map("game_play_status")
+}
+
+model AchievementTip {
+  id            String   @id @default(cuid())
+  achievementId String   @db.VarChar(64)
+  userId        String
+  body          String   @db.VarChar(500)
+  votes         Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  user User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vote AchievementTipVote[]
+
+  @@index([achievementId, votes(sort: Desc)])
+  @@index([userId])
+  @@map("achievement_tip")
+}
+
+model AchievementTipVote {
+  tipId  String
+  userId String
+
+  tip  AchievementTip @relation(fields: [tipId], references: [id], onDelete: Cascade)
+  user User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([tipId, userId])
+  @@index([userId])
+  @@map("achievement_tip_vote")
+}
+
+// Admin-authored short patch notes; the client remembers the last version seen.
+model GamePatchNote {
+  id        String   @id @default(cuid())
+  gameId    String   @db.VarChar(64)
+  version   String   @db.VarChar(32)
+  title     String   @db.VarChar(120)
+  body      String   @db.VarChar(1000)
+  createdAt DateTime @default(now())
+
+  @@unique([gameId, version])
+  @@index([gameId, createdAt(sort: Desc)])
+  @@map("game_patch_note")
+}
+
+// The entry just above a player on a game board when first looked up. state
+// 'ahead' = rival is above; 'behind' = the player has since passed them, so a
+// later overtake by the rival is worth one (batched) notification.
+model ArcadeRival {
+  id             String    @id @default(cuid())
+  userId         String
+  gameId         String    @db.VarChar(48)
+  rivalUserId    String
+  state          String    @default("ahead") @db.VarChar(8)
+  lastNotifiedAt DateTime?
+  updatedAt      DateTime  @updatedAt
+
+  user  User @relation("ArcadeRivalOwner", fields: [userId], references: [id], onDelete: Cascade)
+  rival User @relation("ArcadeRivalTarget", fields: [rivalUserId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId])
+  @@index([rivalUserId])
+  @@index([updatedAt])
+  @@map("arcade_rival")
 }

@@ -64,6 +64,7 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   // their own canonicals, so they are listed too. (`/create/earnings` is not:
   // it is one viewer's own dashboard — see EXCLUDED_ROUTES.)
   { loc: '/games', changefreq: 'weekly', priority: 0.9 },
+  { loc: '/daily-mutator', changefreq: 'daily', priority: 0.6 },
   { loc: '/apps', changefreq: 'weekly', priority: 0.9 },
   { loc: '/create', changefreq: 'daily', priority: 0.8 },
   { loc: '/create/builds', changefreq: 'daily', priority: 0.7 },
@@ -295,6 +296,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/admin/blog/new': 'admin',
   '/admin/economy': 'admin',
   '/admin/library': 'admin',
+  '/admin/patch-notes': 'admin',
   '/admin/library-quota': 'redirect', // → /admin/library?tab=appeals
   '/admin/library-storage': 'redirect', // → /admin/library?tab=storage
   '/admin/predictions': 'admin',

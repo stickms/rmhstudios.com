@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 761 files across 169 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 768 files across 169 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -156,12 +156,19 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/arcade`
 
-2 routes.
+9 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/arcade` | `GET` | `app/routes/api/arcade/index.ts` |
+| `/api/arcade/backlog` | `DELETE` `GET` `PUT` | `app/routes/api/arcade/backlog/index.ts` |
 | `/api/arcade/claim` | `POST` | `app/routes/api/arcade/claim.ts` |
+| `/api/arcade/daily` | `GET` | `app/routes/api/arcade/daily/index.ts` |
+| `/api/arcade/daily/start` | `POST` | `app/routes/api/arcade/daily/start.ts` |
+| `/api/arcade/patch-notes` | `GET` `POST` | `app/routes/api/arcade/patch-notes/index.ts` |
+| `/api/arcade/rival` | `GET` | `app/routes/api/arcade/rival/index.ts` |
+| `/api/arcade/runs` | `GET` `POST` | `app/routes/api/arcade/runs.ts` |
+| `/api/arcade/tips` | `GET` `POST` `PUT` | `app/routes/api/arcade/tips/index.ts` |
 
 ## `/api/assistant`
 

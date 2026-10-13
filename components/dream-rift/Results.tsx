@@ -11,6 +11,7 @@ import { useSession } from '@/components/Providers';
 import { useDreamRift } from '@/lib/dream-rift/store';
 import { CHARACTERS } from '@/lib/dream-rift/render/sprites';
 import { saveHiScore } from '@/lib/dream-rift/highscore';
+import { RunPanel } from '@/components/arcade/RunPanel';
 
 export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () => void; onMenu: () => void; onLeaderboard: () => void }) {
     const result = useDreamRift((s) => s.result);
@@ -140,6 +141,12 @@ export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () =
                     <p className="text-xs text-[color:var(--dr-cream-faint)]">Sign in to save your high score to the leaderboard.</p>
                 )}
             </div>
+
+            {!coop && (
+                <div className="mt-4 w-full max-w-sm text-left">
+                    <RunPanel score={result.score} signedIn={!!session.data?.user} />
+                </div>
+            )}
 
             <div className="mt-6 flex w-full max-w-sm gap-3">
                 <button type="button" onClick={onMenu} className="dr-plaque flex-1 rounded-sm py-3 text-sm font-semibold">
