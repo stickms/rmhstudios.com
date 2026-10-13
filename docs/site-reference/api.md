@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 715 files across 159 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 728 files across 160 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -46,7 +46,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/admin`
 
-42 routes.
+48 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -78,6 +78,12 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/admin/predictions/:id/resolve` | `POST` | `app/routes/api/admin/predictions/$id/resolve.ts` |
 | `/api/admin/qotd` | `GET` `POST` | `app/routes/api/admin/qotd/index.ts` |
 | `/api/admin/qotd/:id` | `DELETE` | `app/routes/api/admin/qotd/$id.ts` |
+| `/api/admin/reading/glossary` | `GET` `POST` | `app/routes/api/admin/reading/glossary/index.ts` |
+| `/api/admin/reading/glossary/:id` | `DELETE` `PATCH` | `app/routes/api/admin/reading/glossary/$id.ts` |
+| `/api/admin/reading/stories` | `GET` `POST` | `app/routes/api/admin/reading/stories/index.ts` |
+| `/api/admin/reading/stories/:id` | `DELETE` `PATCH` | `app/routes/api/admin/reading/stories/$id/index.ts` |
+| `/api/admin/reading/stories/:id/articles` | `DELETE` `POST` | `app/routes/api/admin/reading/stories/$id/articles.ts` |
+| `/api/admin/reading/stories/:id/suggest` | `GET` | `app/routes/api/admin/reading/stories/$id/suggest.ts` |
 | `/api/admin/redemptions` | `GET` | `app/routes/api/admin/redemptions/index.ts` |
 | `/api/admin/redemptions/:id` | `POST` | `app/routes/api/admin/redemptions/$id.ts` |
 | `/api/admin/reports` | `GET` | `app/routes/api/admin/reports.ts` |
@@ -1023,7 +1029,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/profile`
 
-28 routes.
+29 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -1041,6 +1047,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/profile/:id/plus` | `GET` | `app/routes/api/profile/$id/plus.ts` |
 | `/api/profile/:id/pronunciation` | `GET` | `app/routes/api/profile/$id/pronunciation.ts` |
 | `/api/profile/:id/rmharks` | `GET` | `app/routes/api/profile/$id/rmharks.ts` |
+| `/api/profile/:id/shelves` | `GET` | `app/routes/api/profile/$id/shelves.ts` |
 | `/api/profile/:id/stamps` | `GET` | `app/routes/api/profile/$id/stamps.ts` |
 | `/api/profile/:id/visit` | `POST` | `app/routes/api/profile/$id/visit.ts` |
 | `/api/profile/:id/webrings` | `GET` | `app/routes/api/profile/$id/webrings.ts` |
@@ -1128,6 +1135,19 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/ranked` | `GET` `POST` | `app/routes/api/ranked/index.ts` |
 | `/api/ranked/:game/leaderboard` | `GET` | `app/routes/api/ranked/$game/leaderboard.ts` |
 | `/api/ranked/challenge/:id` | `POST` | `app/routes/api/ranked/challenge/$id.ts` |
+
+## `/api/reading`
+
+6 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/reading/doc` | `GET` | `app/routes/api/reading/doc.ts` |
+| `/api/reading/goal` | `DELETE` `GET` `PUT` | `app/routes/api/reading/goal.ts` |
+| `/api/reading/highlights` | `GET` `POST` | `app/routes/api/reading/highlights/index.ts` |
+| `/api/reading/highlights/:id` | `DELETE` `PATCH` | `app/routes/api/reading/highlights/$id.ts` |
+| `/api/reading/shelves` | `DELETE` `GET` `PUT` | `app/routes/api/reading/shelves/index.ts` |
+| `/api/reading/shelves/prefs` | `PUT` | `app/routes/api/reading/shelves/prefs.ts` |
 
 ## `/api/ready`
 

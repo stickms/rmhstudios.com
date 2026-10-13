@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 293 routes. 157 render inside the standard site shell (sidebar, nav, context rail); 136 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 296 routes. 160 render inside the standard site shell (sidebar, nav, context rail); 136 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -36,6 +36,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/library-storage` | redirects to `/admin/library?tab=storage` | admin | `app/routes/_site/admin/library-storage.tsx` |
 | `/admin/predictions` | Prediction Markets \| Admin | admin | `app/routes/_site/admin/predictions.tsx` |
 | `/admin/qotd` | Question of the Day \| Admin | admin | `app/routes/_site/admin/qotd.tsx` |
+| `/admin/reading` | Reading tools \| Admin | admin | `app/routes/_site/admin/reading.tsx` |
 | `/admin/redemptions` | Redemption Queue | admin | `app/routes/_site/admin/redemptions.tsx` |
 | `/admin/reports` | Moderation Queue | admin | `app/routes/_site/admin/reports.tsx` |
 | `/admin/rideshare` | Rideshare Applications | admin | `app/routes/_site/admin/rideshare.tsx` |
@@ -89,6 +90,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/moments/:id` | — | public | `app/routes/_site/moments.$id.tsx` |
 | `/music-trivia` | Guess the Song | public | `app/routes/_site/music-trivia.tsx` |
 | `/news` | News | public | `app/routes/_site/news/index.tsx` |
+| `/news/stories/:slug` | — | public | `app/routes/_site/news/stories/$slug.tsx` |
 | `/notifications` | redirects to `/messages?tab=notifications` | public | `app/routes/_site/notifications.tsx` |
 | `/office-hours` | Office hours | public | `app/routes/_site/office-hours/index.tsx` |
 | `/office-hours/:userId` | Book office hours | public | `app/routes/_site/office-hours/$userId.tsx` |
@@ -102,6 +104,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/qotd` | Question of the Day | public | `app/routes/_site/qotd.tsx` |
 | `/quotes` | Steve Jobs Quotes | public | `app/routes/_site/quotes.tsx` |
 | `/ranked` | Ranked | public | `app/routes/_site/ranked.tsx` |
+| `/reading` | My reading | public | `app/routes/_site/reading/index.tsx` |
 | `/recap` | Your Week | public | `app/routes/_site/recap.tsx` |
 | `/rideshare` | RMH Rideshare — Rides across the community | public | `app/routes/_site/rideshare/index.tsx` |
 | `/rideshare/drive` | Drive with RMH Rideshare | public | `app/routes/_site/rideshare/drive.tsx` |
