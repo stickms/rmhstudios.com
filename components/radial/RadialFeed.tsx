@@ -11,11 +11,15 @@ import { CaughtUpDivider } from '@/components/feed/CaughtUpDivider';
 import { type InitialFeed } from '@/components/feed/FeedColumn';
 import { ComposeBoxLazy } from '@/components/feed/ComposeBoxLazy';
 import { QotdCardLazy } from '@/components/posts-plus/QotdCardLazy';
+import { useSession } from '@/components/Providers';
 import { RadialLoader } from '@/components/ui/radial-loader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RadialWheel, type RadialWheelItem } from './RadialWheel';
 import { RadialSideFeed } from './RadialSideFeed';
 import { WheelCard } from './WheelCard';
+
+/** X4: the question-of-the-day card follows this many posts. */
+const QOTD_AFTER = 3;
 
 // The full composer is a heavy chunk (GIF picker, AI buttons, mention/emoji
 // autocomplete) — defer it out of the feed route's initial bundle; it only
@@ -120,16 +124,27 @@ function FeedWheel({ initial }: { initial: InitialFeed }) {
   // previous visit. Plain For You home only — a filtered or searched surface has
   // no "new since last time".
   const caughtUpBeforeId = useCaughtUpMarker(items, filter === 'all' && !search);
+  // X4 slot only for signed-in members on the plain For You view — signed-out
+  // visitors can't answer, and an empty slot would still take the wheel's gap.
+  const { data: session } = useSession();
+  const showQotd = !!session && filter === 'all' && !search;
 
   const wheelItems = useMemo<RadialWheelItem[]>(
     () =>
-      items.flatMap((item) => {
+      items.flatMap((item, i) => {
         const card = { id: item.id, node: <WheelCard item={item} /> };
-        return item.id === caughtUpBeforeId
-          ? [{ id: 'caught-up-divider', node: <CaughtUpDivider /> }, card]
-          : [card];
+        const out =
+          item.id === caughtUpBeforeId
+            ? [{ id: 'caught-up-divider', node: <CaughtUpDivider /> }, card]
+            : [card];
+        // X4: today's question sits after the third post, never above the
+        // composer. It mounts after idle, and anything that appears after paint
+        // at the top of the feed shoves the whole column down (layout shift on
+        // the busiest page); three cards in, it only moves what is below the fold.
+        if (showQotd && i === QOTD_AFTER - 1) out.push({ id: 'qotd-card', node: <QotdCardLazy /> });
+        return out;
       }),
-    [items, caughtUpBeforeId],
+    [items, caughtUpBeforeId, showQotd],
   );
 
   // The inline "rmhark compose box" that heads the feed — the first rmhark comes
@@ -137,8 +152,6 @@ function FeedWheel({ initial }: { initial: InitialFeed }) {
   // the classic feed column).
   const composeLead = (
     <>
-      {/* X4: today's question, above the composer; lazy, signed-in only, dismissible. */}
-      {filter === 'all' && !search && <QotdCardLazy />}
       <ComposeBoxLazy />
     </>
   );

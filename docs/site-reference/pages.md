@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 289 routes. 153 render inside the standard site shell (sidebar, nav, context rail); 136 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 293 routes. 157 render inside the standard site shell (sidebar, nav, context rail); 136 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -35,6 +35,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/library-quota` | redirects to `/admin/library?tab=appeals` | admin | `app/routes/_site/admin/library-quota.tsx` |
 | `/admin/library-storage` | redirects to `/admin/library?tab=storage` | admin | `app/routes/_site/admin/library-storage.tsx` |
 | `/admin/predictions` | Prediction Markets \| Admin | admin | `app/routes/_site/admin/predictions.tsx` |
+| `/admin/qotd` | Question of the Day \| Admin | admin | `app/routes/_site/admin/qotd.tsx` |
 | `/admin/redemptions` | Redemption Queue | admin | `app/routes/_site/admin/redemptions.tsx` |
 | `/admin/reports` | Moderation Queue | admin | `app/routes/_site/admin/reports.tsx` |
 | `/admin/rideshare` | Rideshare Applications | admin | `app/routes/_site/admin/rideshare.tsx` |
@@ -98,6 +99,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/pricing` | redirects to `/store?tab=membership` | public | `app/routes/_site/pricing.tsx` |
 | `/profile/:id` | redirects to `/u/$userid` | public | `app/routes/_site/profile/$id.tsx` |
 | `/progress` | Progress | public | `app/routes/_site/progress.tsx` |
+| `/qotd` | Question of the Day | public | `app/routes/_site/qotd.tsx` |
 | `/quotes` | Steve Jobs Quotes | public | `app/routes/_site/quotes.tsx` |
 | `/ranked` | Ranked | public | `app/routes/_site/ranked.tsx` |
 | `/recap` | Your Week | public | `app/routes/_site/recap.tsx` |
@@ -125,6 +127,8 @@ Standard pages, rendered inside the sidebar shell.
 | `/saves` | Saved | public | `app/routes/_site/saves/index.tsx` |
 | `/schedule` | Schedule | public | `app/routes/_site/schedule.tsx` |
 | `/search` | redirects to `/explore` | public | `app/routes/_site/search.tsx` |
+| `/series` | Series | public | `app/routes/_site/series.index.tsx` |
+| `/series/:id` | Series | public | `app/routes/_site/series.$id.tsx` |
 | `/services` | redirects to `/services/cars` | public | `app/routes/_site/services/index.tsx` |
 | `/services/cars` | RMH Cars | public | `app/routes/_site/services/cars.tsx` |
 | `/services/fashion` | RMH Fashion | public | `app/routes/_site/services/fashion.tsx` |
