@@ -87,7 +87,13 @@ interface PollDraft {
 export function ComposeBox({
   communityId,
   onPosted,
-}: { communityId?: string; onPosted?: (item: any) => void } = {}) {
+  extraBody,
+}: {
+  communityId?: string;
+  onPosted?: (item: any) => void;
+  /** Extra fields merged into the create body (community flair / challenge entry). */
+  extraBody?: Record<string, unknown>;
+} = {}) {
   const [content, setContent] = useState('');
   const [audience, setAudience] = useState<'PUBLIC' | 'FOLLOWERS' | 'PRIVATE' | 'CIRCLE'>('PUBLIC');
   const [replyControl, setReplyControl] = useState<'EVERYONE' | 'FOLLOWING' | 'MENTIONED'>(
@@ -279,6 +285,7 @@ export function ComposeBox({
     const price = parseInt(unlockPrice, 10);
     if (price > 0) body.unlockPrice = price;
     if (communityId) body.communityId = communityId;
+    if (extraBody) Object.assign(body, extraBody);
     return body;
   };
 

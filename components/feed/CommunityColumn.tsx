@@ -14,8 +14,7 @@ import {
  Send,
 } from'lucide-react';
 import { formatDistanceToNow } from'date-fns';
-import { VirtualPostList } from'./VirtualPostList';
-import { ComposeBox } from'./ComposeBox';
+import { CommunityPlusBody } from'@/components/communities/CommunityPlusBody';
 import { Reveal } from'@/components/motion';
 import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
@@ -303,21 +302,8 @@ export function CommunityColumn({
  </Reveal>
  )}
 
- {/* Composer for members */}
- {community.joined && (
- <ComposeBox
- communityId={community.id}
- onPosted={(item) => setItems((prev) => [item, ...prev])}
- />
- )}
-
- {items.length === 0 ? (
- <EmptyState
- description={t('no-posts-yet', { defaultValue:'No posts yet. Be the first!'})}
- />
- ) : (
- <VirtualPostList items={items} />
- )}
+ {/* Composer, tabs (posts · hall of fame · challenge · census · top · mod tools) */}
+ <CommunityPlusBody community={community} items={items} setItems={setItems} />
 
  {announceOpen && (
  <AnnounceDialog slug={slug} onClose={() => setAnnounceOpen(false)} onPosted={onAnnounced} />
