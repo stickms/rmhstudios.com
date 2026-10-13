@@ -27,6 +27,7 @@ import { getCharacter, isCharacterId, type CharacterId } from '@/lib/void-breake
 import { getWeapon, isWeaponId, type WeaponId } from '@/lib/void-breaker/weapons';
 import { canvasGlowEnabled } from '@/lib/render/canvas2d-fx';
 import { combineModifiers, isModifierId, type ModifierId } from '@/lib/void-breaker/modifiers';
+import { parseHandicap } from '@/lib/ranked/handicap';
 import { VoidBreakerUI } from './VoidBreakerUI';
 import { VoidBreakerTouchControls } from './VoidBreakerTouchControls';
 import { saveGame, loadGame, deleteSave, getSaveInfo } from '@/lib/void-breaker/saveSystem';
@@ -495,8 +496,12 @@ export function VoidBreakerGame() {
       gameRef.current.character = getCharacter(characterId);
       gameRef.current.weapon = getWeapon(weaponId);
       const mods = combineModifiers(activeMods);
-      gameRef.current.runModifiers = mods.effects;
-      runCoreMultRef.current = mods.coreMult;
+      // Friendly-challenge handicap (E9): extra max HP, and the run earns no cores.
+      const hc = parseHandicap('void-breaker');
+      gameRef.current.runModifiers = hc
+        ? { ...mods.effects, maxHpDelta: mods.effects.maxHpDelta + hc.amount }
+        : mods.effects;
+      runCoreMultRef.current = hc ? 0 : mods.coreMult;
     }
     gameRef.current?.startGame();
     setRunStats(null);
@@ -686,8 +691,11 @@ export function VoidBreakerGame() {
     game.character = getCharacter(characterId);
     game.weapon = getWeapon(weaponId);
     const mods = combineModifiers(activeMods);
-    game.runModifiers = mods.effects;
-    runCoreMultRef.current = mods.coreMult;
+    const hc = parseHandicap('void-breaker');
+    game.runModifiers = hc
+      ? { ...mods.effects, maxHpDelta: mods.effects.maxHpDelta + hc.amount }
+      : mods.effects;
+    runCoreMultRef.current = hc ? 0 : mods.coreMult;
     const ok = game.hydrateGameState(save.stateJson as Record<string, unknown>);
     if (ok) {
       setRunStats(null);

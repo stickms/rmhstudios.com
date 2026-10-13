@@ -104,6 +104,8 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   // The Kaikai Debt Counter. `daily` rather than `weekly` despite being a joke:
   // the log grows every time anyone adds a line or scrolls past the frontier,
   // so the page's content genuinely changes faster than most of this list.
+  { loc: '/game-night', changefreq: 'weekly', priority: 0.5 },
+  { loc: '/jams', changefreq: 'daily', priority: 0.5 },
   { loc: '/kaikaidebtcounter', changefreq: 'daily', priority: 0.4 },
   { loc: '/quotes', changefreq: 'weekly', priority: 0.4 },
   { loc: '/ranked', changefreq: 'daily', priority: 0.5 },
@@ -443,6 +445,7 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/personas/$id': 'community',
   '/study/$deckId': 'community',
   '/tournaments/$id': 'community',
+  '/jams/$slug': 'community',
   '/homes/listing/$id': 'homes',
   '/rmhladder/jobs/$jobId': 'jobs',
 

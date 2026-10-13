@@ -41,6 +41,7 @@ export function BracketView({ tournament, canReport, reportingId, onReport }: Pr
 
   const roundLabel = (round: number, total: number) => {
     if (tournament.format === 'ROUND_ROBIN') return t('matches', { defaultValue: 'Matches' });
+    if (tournament.format === 'SWISS') return t('round-n', { defaultValue: 'Round {{n}}', n: round });
     const fromEnd = total - round;
     if (fromEnd === 0) return t('final', { defaultValue: 'Final' });
     if (fromEnd === 1) return t('semis', { defaultValue: 'Semifinals' });

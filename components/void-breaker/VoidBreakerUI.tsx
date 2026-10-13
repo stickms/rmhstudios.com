@@ -13,6 +13,7 @@ import {
 import { CHARACTERS, getCharacter, type CharacterId } from '@/lib/void-breaker/characters';
 import { WEAPONS, getWeapon, type WeaponId } from '@/lib/void-breaker/weapons';
 import { MODIFIERS, combineModifiers, type ModifierId } from '@/lib/void-breaker/modifiers';
+import { parseHandicap } from '@/lib/ranked/handicap';
 import { useSession } from '@/components/Providers';
 import { useNavigate } from '@tanstack/react-router';
 import type { RunStats } from '@/lib/void-breaker/types';
@@ -87,6 +88,8 @@ export function VoidBreakerUI({
 
   useEffect(() => {
     if (uiState !== 'gameOver' || !runStats || submitted || !session.data) return;
+    // A handicapped friendly run never reaches the leaderboard.
+    if (parseHandicap('void-breaker')) return;
     const username = session.data.user.name ||
       (session.data.user as unknown as Record<string, string>).username || 'Killer';
     setSubmitted(true);
