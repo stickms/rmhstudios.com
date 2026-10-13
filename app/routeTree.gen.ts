@@ -439,6 +439,8 @@ import { Route as ApiFeedSignalRouteImport } from './routes/api/feed/signal'
 import { Route as ApiFeedStreamRouteImport } from './routes/api/feed/stream'
 import { Route as ApiFeedsIndexRouteImport } from './routes/api/feeds/index'
 import { Route as ApiFeedsIdRouteImport } from './routes/api/feeds/$id'
+import { Route as ApiForecastingCalibrationRouteImport } from './routes/api/forecasting/calibration'
+import { Route as ApiForecastingSeasonsRouteImport } from './routes/api/forecasting/seasons'
 import { Route as ApiForestExplorerSaveRouteImport } from './routes/api/forest-explorer/save'
 import { Route as ApiFriendlyIndexRouteImport } from './routes/api/friendly/index'
 import { Route as ApiFriendlyIdRouteImport } from './routes/api/friendly/$id'
@@ -741,6 +743,7 @@ import { Route as ApiAdminAlbumsReorderRouteImport } from './routes/api/admin/al
 import { Route as ApiAdminAnnouncementsIdRouteImport } from './routes/api/admin/announcements/$id'
 import { Route as ApiAdminAppealsIdRouteImport } from './routes/api/admin/appeals/$id'
 import { Route as ApiAdminCuratedBuildsImageRouteImport } from './routes/api/admin/curated-builds/image'
+import { Route as ApiAdminForecastingSeasonsRouteImport } from './routes/api/admin/forecasting/seasons'
 import { Route as ApiAdminLibraryIndexRouteImport } from './routes/api/admin/library/index'
 import { Route as ApiAdminLibraryIdRouteImport } from './routes/api/admin/library/$id'
 import { Route as ApiAdminLibraryMigrateRouteImport } from './routes/api/admin/library/migrate'
@@ -880,6 +883,8 @@ import { Route as ApiPf2ecalSettingsTestWebhookRouteImport } from './routes/api/
 import { Route as ApiPlaylistsIdIndexRouteImport } from './routes/api/playlists/$id/index'
 import { Route as ApiPoolsIdIndexRouteImport } from './routes/api/pools/$id/index'
 import { Route as ApiPoolsIdContributeRouteImport } from './routes/api/pools/$id/contribute'
+import { Route as ApiPredictionsIdCommentsRouteImport } from './routes/api/predictions/$id/comments'
+import { Route as ApiPredictionsIdDevilsAdvocateRouteImport } from './routes/api/predictions/$id/devils-advocate'
 import { Route as ApiPredictionsIdTradeRouteImport } from './routes/api/predictions/$id/trade'
 import { Route as ApiProfileLinksIdIndexRouteImport } from './routes/api/profile-links/$id/index'
 import { Route as ApiProfileLinksIdVerifyRouteImport } from './routes/api/profile-links/$id/verify'
@@ -3275,6 +3280,17 @@ const ApiFeedsIdRoute = ApiFeedsIdRouteImport.update({
   path: '/api/feeds/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiForecastingCalibrationRoute =
+  ApiForecastingCalibrationRouteImport.update({
+    id: '/api/forecasting/calibration',
+    path: '/api/forecasting/calibration',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiForecastingSeasonsRoute = ApiForecastingSeasonsRouteImport.update({
+  id: '/api/forecasting/seasons',
+  path: '/api/forecasting/seasons',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiForestExplorerSaveRoute = ApiForestExplorerSaveRouteImport.update({
   id: '/api/forest-explorer/save',
   path: '/api/forest-explorer/save',
@@ -4813,6 +4829,12 @@ const ApiAdminCuratedBuildsImageRoute =
     path: '/api/admin/curated-builds/image',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAdminForecastingSeasonsRoute =
+  ApiAdminForecastingSeasonsRouteImport.update({
+    id: '/api/admin/forecasting/seasons',
+    path: '/api/admin/forecasting/seasons',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminLibraryIndexRoute = ApiAdminLibraryIndexRouteImport.update({
   id: '/api/admin/library/',
   path: '/api/admin/library/',
@@ -5567,6 +5589,18 @@ const ApiPoolsIdContributeRoute = ApiPoolsIdContributeRouteImport.update({
   path: '/api/pools/$id/contribute',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPredictionsIdCommentsRoute =
+  ApiPredictionsIdCommentsRouteImport.update({
+    id: '/comments',
+    path: '/comments',
+    getParentRoute: () => ApiPredictionsIdRoute,
+  } as any)
+const ApiPredictionsIdDevilsAdvocateRoute =
+  ApiPredictionsIdDevilsAdvocateRouteImport.update({
+    id: '/devils-advocate',
+    path: '/devils-advocate',
+    getParentRoute: () => ApiPredictionsIdRoute,
+  } as any)
 const ApiPredictionsIdTradeRoute = ApiPredictionsIdTradeRouteImport.update({
   id: '/trade',
   path: '/trade',
@@ -7187,6 +7221,8 @@ export interface FileRoutesByFullPath {
   '/api/feed/signal': typeof ApiFeedSignalRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/feeds/$id': typeof ApiFeedsIdRouteWithChildren
+  '/api/forecasting/calibration': typeof ApiForecastingCalibrationRoute
+  '/api/forecasting/seasons': typeof ApiForecastingSeasonsRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/friendly/$id': typeof ApiFriendlyIdRoute
   '/api/gabriels-horn/house-rule': typeof ApiGabrielsHornHouseRuleRoute
@@ -7537,6 +7573,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
   '/api/admin/appeals/$id': typeof ApiAdminAppealsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
+  '/api/admin/forecasting/seasons': typeof ApiAdminForecastingSeasonsRoute
   '/api/admin/library/$id': typeof ApiAdminLibraryIdRoute
   '/api/admin/library/migrate': typeof ApiAdminLibraryMigrateRoute
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
@@ -7652,6 +7689,8 @@ export interface FileRoutesByFullPath {
   '/api/pf2ecal/sessions/blurbs': typeof ApiPf2ecalSessionsBlurbsRoute
   '/api/pf2ecal/settings/test-webhook': typeof ApiPf2ecalSettingsTestWebhookRoute
   '/api/pools/$id/contribute': typeof ApiPoolsIdContributeRoute
+  '/api/predictions/$id/comments': typeof ApiPredictionsIdCommentsRoute
+  '/api/predictions/$id/devils-advocate': typeof ApiPredictionsIdDevilsAdvocateRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
   '/api/profile-links/$id/verify': typeof ApiProfileLinksIdVerifyRoute
   '/api/profile/$id/card': typeof ApiProfileIdCardRoute
@@ -8265,6 +8304,8 @@ export interface FileRoutesByTo {
   '/api/feed/signal': typeof ApiFeedSignalRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/feeds/$id': typeof ApiFeedsIdRouteWithChildren
+  '/api/forecasting/calibration': typeof ApiForecastingCalibrationRoute
+  '/api/forecasting/seasons': typeof ApiForecastingSeasonsRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/friendly/$id': typeof ApiFriendlyIdRoute
   '/api/gabriels-horn/house-rule': typeof ApiGabrielsHornHouseRuleRoute
@@ -8615,6 +8656,7 @@ export interface FileRoutesByTo {
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
   '/api/admin/appeals/$id': typeof ApiAdminAppealsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
+  '/api/admin/forecasting/seasons': typeof ApiAdminForecastingSeasonsRoute
   '/api/admin/library/$id': typeof ApiAdminLibraryIdRoute
   '/api/admin/library/migrate': typeof ApiAdminLibraryMigrateRoute
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
@@ -8730,6 +8772,8 @@ export interface FileRoutesByTo {
   '/api/pf2ecal/sessions/blurbs': typeof ApiPf2ecalSessionsBlurbsRoute
   '/api/pf2ecal/settings/test-webhook': typeof ApiPf2ecalSettingsTestWebhookRoute
   '/api/pools/$id/contribute': typeof ApiPoolsIdContributeRoute
+  '/api/predictions/$id/comments': typeof ApiPredictionsIdCommentsRoute
+  '/api/predictions/$id/devils-advocate': typeof ApiPredictionsIdDevilsAdvocateRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
   '/api/profile-links/$id/verify': typeof ApiProfileLinksIdVerifyRoute
   '/api/profile/$id/card': typeof ApiProfileIdCardRoute
@@ -9371,6 +9415,8 @@ export interface FileRoutesById {
   '/api/feed/signal': typeof ApiFeedSignalRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/feeds/$id': typeof ApiFeedsIdRouteWithChildren
+  '/api/forecasting/calibration': typeof ApiForecastingCalibrationRoute
+  '/api/forecasting/seasons': typeof ApiForecastingSeasonsRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/friendly/$id': typeof ApiFriendlyIdRoute
   '/api/gabriels-horn/house-rule': typeof ApiGabrielsHornHouseRuleRoute
@@ -9721,6 +9767,7 @@ export interface FileRoutesById {
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
   '/api/admin/appeals/$id': typeof ApiAdminAppealsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
+  '/api/admin/forecasting/seasons': typeof ApiAdminForecastingSeasonsRoute
   '/api/admin/library/$id': typeof ApiAdminLibraryIdRoute
   '/api/admin/library/migrate': typeof ApiAdminLibraryMigrateRoute
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
@@ -9836,6 +9883,8 @@ export interface FileRoutesById {
   '/api/pf2ecal/sessions/blurbs': typeof ApiPf2ecalSessionsBlurbsRoute
   '/api/pf2ecal/settings/test-webhook': typeof ApiPf2ecalSettingsTestWebhookRoute
   '/api/pools/$id/contribute': typeof ApiPoolsIdContributeRoute
+  '/api/predictions/$id/comments': typeof ApiPredictionsIdCommentsRoute
+  '/api/predictions/$id/devils-advocate': typeof ApiPredictionsIdDevilsAdvocateRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
   '/api/profile-links/$id/verify': typeof ApiProfileLinksIdVerifyRoute
   '/api/profile/$id/card': typeof ApiProfileIdCardRoute
@@ -10477,6 +10526,8 @@ export interface FileRouteTypes {
     | '/api/feed/signal'
     | '/api/feed/stream'
     | '/api/feeds/$id'
+    | '/api/forecasting/calibration'
+    | '/api/forecasting/seasons'
     | '/api/forest-explorer/save'
     | '/api/friendly/$id'
     | '/api/gabriels-horn/house-rule'
@@ -10827,6 +10878,7 @@ export interface FileRouteTypes {
     | '/api/admin/announcements/$id'
     | '/api/admin/appeals/$id'
     | '/api/admin/curated-builds/image'
+    | '/api/admin/forecasting/seasons'
     | '/api/admin/library/$id'
     | '/api/admin/library/migrate'
     | '/api/admin/library/quota-requests'
@@ -10942,6 +10994,8 @@ export interface FileRouteTypes {
     | '/api/pf2ecal/sessions/blurbs'
     | '/api/pf2ecal/settings/test-webhook'
     | '/api/pools/$id/contribute'
+    | '/api/predictions/$id/comments'
+    | '/api/predictions/$id/devils-advocate'
     | '/api/predictions/$id/trade'
     | '/api/profile-links/$id/verify'
     | '/api/profile/$id/card'
@@ -11555,6 +11609,8 @@ export interface FileRouteTypes {
     | '/api/feed/signal'
     | '/api/feed/stream'
     | '/api/feeds/$id'
+    | '/api/forecasting/calibration'
+    | '/api/forecasting/seasons'
     | '/api/forest-explorer/save'
     | '/api/friendly/$id'
     | '/api/gabriels-horn/house-rule'
@@ -11905,6 +11961,7 @@ export interface FileRouteTypes {
     | '/api/admin/announcements/$id'
     | '/api/admin/appeals/$id'
     | '/api/admin/curated-builds/image'
+    | '/api/admin/forecasting/seasons'
     | '/api/admin/library/$id'
     | '/api/admin/library/migrate'
     | '/api/admin/library/quota-requests'
@@ -12020,6 +12077,8 @@ export interface FileRouteTypes {
     | '/api/pf2ecal/sessions/blurbs'
     | '/api/pf2ecal/settings/test-webhook'
     | '/api/pools/$id/contribute'
+    | '/api/predictions/$id/comments'
+    | '/api/predictions/$id/devils-advocate'
     | '/api/predictions/$id/trade'
     | '/api/profile-links/$id/verify'
     | '/api/profile/$id/card'
@@ -12660,6 +12719,8 @@ export interface FileRouteTypes {
     | '/api/feed/signal'
     | '/api/feed/stream'
     | '/api/feeds/$id'
+    | '/api/forecasting/calibration'
+    | '/api/forecasting/seasons'
     | '/api/forest-explorer/save'
     | '/api/friendly/$id'
     | '/api/gabriels-horn/house-rule'
@@ -13010,6 +13071,7 @@ export interface FileRouteTypes {
     | '/api/admin/announcements/$id'
     | '/api/admin/appeals/$id'
     | '/api/admin/curated-builds/image'
+    | '/api/admin/forecasting/seasons'
     | '/api/admin/library/$id'
     | '/api/admin/library/migrate'
     | '/api/admin/library/quota-requests'
@@ -13125,6 +13187,8 @@ export interface FileRouteTypes {
     | '/api/pf2ecal/sessions/blurbs'
     | '/api/pf2ecal/settings/test-webhook'
     | '/api/pools/$id/contribute'
+    | '/api/predictions/$id/comments'
+    | '/api/predictions/$id/devils-advocate'
     | '/api/predictions/$id/trade'
     | '/api/profile-links/$id/verify'
     | '/api/profile/$id/card'
@@ -13579,6 +13643,8 @@ export interface RootRouteChildren {
   ApiFeedSignalRoute: typeof ApiFeedSignalRoute
   ApiFeedStreamRoute: typeof ApiFeedStreamRoute
   ApiFeedsIdRoute: typeof ApiFeedsIdRouteWithChildren
+  ApiForecastingCalibrationRoute: typeof ApiForecastingCalibrationRoute
+  ApiForecastingSeasonsRoute: typeof ApiForecastingSeasonsRoute
   ApiForestExplorerSaveRoute: typeof ApiForestExplorerSaveRoute
   ApiFriendlyIdRoute: typeof ApiFriendlyIdRoute
   ApiGabrielsHornHouseRuleRoute: typeof ApiGabrielsHornHouseRuleRoute
@@ -13844,6 +13910,7 @@ export interface RootRouteChildren {
   ApiAdminAlbumsIdRoute: typeof ApiAdminAlbumsIdRouteWithChildren
   ApiAdminAlbumsReorderRoute: typeof ApiAdminAlbumsReorderRoute
   ApiAdminCuratedBuildsImageRoute: typeof ApiAdminCuratedBuildsImageRouteWithChildren
+  ApiAdminForecastingSeasonsRoute: typeof ApiAdminForecastingSeasonsRoute
   ApiAdminLibraryIdRoute: typeof ApiAdminLibraryIdRoute
   ApiAdminLibraryMigrateRoute: typeof ApiAdminLibraryMigrateRoute
   ApiAdminLibraryQuotaRequestsRoute: typeof ApiAdminLibraryQuotaRequestsRoute
@@ -17062,6 +17129,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiFeedsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/forecasting/calibration': {
+      id: '/api/forecasting/calibration'
+      path: '/api/forecasting/calibration'
+      fullPath: '/api/forecasting/calibration'
+      preLoaderRoute: typeof ApiForecastingCalibrationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/forecasting/seasons': {
+      id: '/api/forecasting/seasons'
+      path: '/api/forecasting/seasons'
+      fullPath: '/api/forecasting/seasons'
+      preLoaderRoute: typeof ApiForecastingSeasonsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/forest-explorer/save': {
       id: '/api/forest-explorer/save'
       path: '/api/forest-explorer/save'
@@ -19176,6 +19257,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminCuratedBuildsImageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/forecasting/seasons': {
+      id: '/api/admin/forecasting/seasons'
+      path: '/api/admin/forecasting/seasons'
+      fullPath: '/api/admin/forecasting/seasons'
+      preLoaderRoute: typeof ApiAdminForecastingSeasonsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/library/': {
       id: '/api/admin/library/'
       path: '/api/admin/library'
@@ -20148,6 +20236,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/pools/$id/contribute'
       preLoaderRoute: typeof ApiPoolsIdContributeRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/predictions/$id/comments': {
+      id: '/api/predictions/$id/comments'
+      path: '/comments'
+      fullPath: '/api/predictions/$id/comments'
+      preLoaderRoute: typeof ApiPredictionsIdCommentsRouteImport
+      parentRoute: typeof ApiPredictionsIdRoute
+    }
+    '/api/predictions/$id/devils-advocate': {
+      id: '/api/predictions/$id/devils-advocate'
+      path: '/devils-advocate'
+      fullPath: '/api/predictions/$id/devils-advocate'
+      preLoaderRoute: typeof ApiPredictionsIdDevilsAdvocateRouteImport
+      parentRoute: typeof ApiPredictionsIdRoute
     }
     '/api/predictions/$id/trade': {
       id: '/api/predictions/$id/trade'
@@ -23131,10 +23233,14 @@ const ApiPf2ecalSettingsRouteWithChildren =
   ApiPf2ecalSettingsRoute._addFileChildren(ApiPf2ecalSettingsRouteChildren)
 
 interface ApiPredictionsIdRouteChildren {
+  ApiPredictionsIdCommentsRoute: typeof ApiPredictionsIdCommentsRoute
+  ApiPredictionsIdDevilsAdvocateRoute: typeof ApiPredictionsIdDevilsAdvocateRoute
   ApiPredictionsIdTradeRoute: typeof ApiPredictionsIdTradeRoute
 }
 
 const ApiPredictionsIdRouteChildren: ApiPredictionsIdRouteChildren = {
+  ApiPredictionsIdCommentsRoute: ApiPredictionsIdCommentsRoute,
+  ApiPredictionsIdDevilsAdvocateRoute: ApiPredictionsIdDevilsAdvocateRoute,
   ApiPredictionsIdTradeRoute: ApiPredictionsIdTradeRoute,
 }
 
@@ -23957,6 +24063,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiFeedSignalRoute: ApiFeedSignalRoute,
   ApiFeedStreamRoute: ApiFeedStreamRoute,
   ApiFeedsIdRoute: ApiFeedsIdRouteWithChildren,
+  ApiForecastingCalibrationRoute: ApiForecastingCalibrationRoute,
+  ApiForecastingSeasonsRoute: ApiForecastingSeasonsRoute,
   ApiForestExplorerSaveRoute: ApiForestExplorerSaveRoute,
   ApiFriendlyIdRoute: ApiFriendlyIdRoute,
   ApiGabrielsHornHouseRuleRoute: ApiGabrielsHornHouseRuleRoute,
@@ -24222,6 +24330,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminAlbumsIdRoute: ApiAdminAlbumsIdRouteWithChildren,
   ApiAdminAlbumsReorderRoute: ApiAdminAlbumsReorderRoute,
   ApiAdminCuratedBuildsImageRoute: ApiAdminCuratedBuildsImageRouteWithChildren,
+  ApiAdminForecastingSeasonsRoute: ApiAdminForecastingSeasonsRoute,
   ApiAdminLibraryIdRoute: ApiAdminLibraryIdRoute,
   ApiAdminLibraryMigrateRoute: ApiAdminLibraryMigrateRoute,
   ApiAdminLibraryQuotaRequestsRoute: ApiAdminLibraryQuotaRequestsRoute,
