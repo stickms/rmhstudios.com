@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { OfficeHoursProfileButton } from '@/components/calendar/OfficeHoursProfileButton';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import {
@@ -355,6 +356,7 @@ export function ProfileHero({
                       handle: profile.handle ?? null,
                     }}
                   />
+                  <OfficeHoursProfileButton userId={profile.id} />
                   <Button
                     variant="outline"
                     size="icon"

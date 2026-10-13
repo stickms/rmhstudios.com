@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { httpUrl } from '@/lib/url-safety';
 import { getEvent, updateEvent, cancelEvent, EventError } from '@/lib/events.server';
+import { eventRecurrenceSchema } from '@/lib/calendar/schema';
 
 const venueKindSchema = z.enum(['SPACE', 'TOURNAMENT', 'GAME', 'URL', 'IRL']);
 
@@ -17,6 +18,7 @@ const updateSchema = z
     venueKind: venueKindSchema.optional(),
     venueRef: z.string().trim().max(191).nullable().optional(),
     capacity: z.coerce.number().int().min(1).max(1_000_000).nullable().optional(),
+    recurrence: eventRecurrenceSchema.nullable().optional(),
   })
   .superRefine((d, ctx) => {
     if (
@@ -42,6 +44,8 @@ function mapEventError(err: EventError): [string, number] {
       return ['Invalid start/end time', 400];
     case 'INVALID_VENUE_URL':
       return ['Invalid venue URL', 400];
+    case 'INVALID_RECURRENCE':
+      return ['Invalid repeat settings', 400];
     default:
       return ['Could not update event', 400];
   }

@@ -34,6 +34,7 @@ import { ReactionChips } from'@/components/shared/ReactionChips';
 import { groupReactions, type ReactionRow } from'@/lib/social/reactions';
 import { useItemReactionTrigger } from'@/lib/emoji/use-reaction-trigger';
 import { ChatHeaderPlus } from'@/components/chat-plus/ChatHeaderPlus';
+import { FindATimeLink } from'@/components/calendar/FindATimeLink';
 import { ChatPinnedBar } from'@/components/chat-plus/ChatPinnedBar';
 import { ChatPlusHost } from'@/components/chat-plus/ChatPlusHost';
 import { ChatSystemLine } from'@/components/chat-plus/ChatSystemLine';
@@ -520,6 +521,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  {t('member-count', { count: group.members.length, defaultValue:'{{count}} members'})}
  </p>
  </div>
+ <FindATimeLink groupChatId={group.id} />
  <ChatHeaderPlus chat={chatRef} />
  <button
  onClick={leave}

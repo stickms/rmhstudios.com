@@ -28,6 +28,7 @@ import { toast } from'sonner';
 import { useTranslation } from'react-i18next';
 import { useOptimisticAction } from'@/hooks/useOptimisticAction';
 import type { FeedItem } from'@/lib/feed-types';
+import { FindATimeLink } from'@/components/calendar/FindATimeLink';
 
 interface Announcement {
  id: string;
@@ -211,6 +212,9 @@ export function CommunityColumn({
  </div>
  </div>
  <div className="flex shrink-0 items-center gap-2">
+ {session && community.joined && (
+ <FindATimeLink communityId={community.id} variant="button"/>
+ )}
  {session && (
  <Button size="sm"variant="outline"onClick={() => setMembersOpen(true)}>
  {t('members-button', { defaultValue:'Members'})}

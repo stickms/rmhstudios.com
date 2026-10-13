@@ -42,6 +42,16 @@ const ROUTE_TREE = join(REPO_ROOT, 'app/routeTree.gen.ts');
  * to the same thing while still claiming `'content'`.
  */
 export const DYNAMIC_ROUTE_FIXTURES = {
+  '/when/$id': {
+    path: '/when/fouc-audit',
+    fidelity: 'shell',
+    why: 'A signed-out run renders the sign-in prompt inside the same PageLayout shell; a poll body needs a session and a seeded poll.',
+  },
+  '/office-hours/$userId': {
+    path: '/office-hours/fouc-audit',
+    fidelity: 'shell',
+    why: 'A non-existent host renders the "no office hours" empty state inside the same PageLayout shell.',
+  },
   '/rings/$slug': {
     path: '/rings/fouc-audit',
     fidelity: 'shell',

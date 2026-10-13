@@ -21,6 +21,7 @@ import { registerDigestCron } from '@/lib/digest/pipeline.server';
 import { registerMaintenanceCrons } from '@/lib/jobs/maintenance.server';
 import { registerEconomyCrons } from '@/lib/economy/jobs.server';
 import { CHAT_EXPIRY_QUEUE, registerChatExpiryCron } from '@/lib/chat-plus/expiry.server';
+import { STUDY_BUDDY_QUEUE, registerStudyBuddyCron } from '@/lib/calendar/study-buddy-jobs.server';
 import { ANALYSIS_QUEUE, registerAnalysisWorker } from '@/lib/slice-it/analysis-queue.server';
 import { REGEN_QUEUE, registerRegenCron } from '@/lib/slice-it/regen.server';
 import { PF2E_REMINDER_QUEUE, registerPf2eReminderCron } from '@/lib/pf2ecal/reminders.server';
@@ -198,6 +199,18 @@ async function main() {
     log.error({
       event: 'jobs.register_failed',
       queue: CHAT_EXPIRY_QUEUE,
+      err: (e as Error)?.message,
+    });
+  }
+
+  // F5 — expire unmatched study-buddy requests and tell their owners.
+  try {
+    await registerStudyBuddyCron(boss);
+    log.info({ event: 'jobs.started', queue: STUDY_BUDDY_QUEUE });
+  } catch (e) {
+    log.error({
+      event: 'jobs.register_failed',
+      queue: STUDY_BUDDY_QUEUE,
       err: (e as Error)?.message,
     });
   }

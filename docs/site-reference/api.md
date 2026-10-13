@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 669 files across 152 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 682 files across 157 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -219,6 +219,22 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/bums-rush/leaderboard` | `GET` | `app/routes/api/bums-rush/leaderboard.ts` |
 | `/api/bums-rush/profile` | `GET` `PUT` | `app/routes/api/bums-rush/profile.ts` |
 | `/api/bums-rush/showdown` | `POST` | `app/routes/api/bums-rush/showdown.ts` |
+
+## `/api/calendar`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/calendar/:token` | `GET` | `app/routes/api/calendar/$token.ts` |
+
+## `/api/calendar-feed`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/calendar-feed` | `GET` `PATCH` | `app/routes/api/calendar-feed/index.ts` |
 
 ## `/api/calls`
 
@@ -861,6 +877,18 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/oembed` | `GET` | `app/routes/api/oembed.ts` |
+
+## `/api/office-hours`
+
+5 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/office-hours` | `GET` `PUT` | `app/routes/api/office-hours/index.ts` |
+| `/api/office-hours/bookings/:id` | `DELETE` | `app/routes/api/office-hours/bookings/$id/index.ts` |
+| `/api/office-hours/bookings/:id/ics` | `GET` | `app/routes/api/office-hours/bookings/$id/ics.ts` |
+| `/api/office-hours/host/:id` | `GET` `POST` | `app/routes/api/office-hours/host/$id/index.ts` |
+| `/api/office-hours/host/:id/summary` | `GET` | `app/routes/api/office-hours/host/$id/summary.ts` |
 
 ## `/api/og`
 
@@ -1518,6 +1546,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/study/marketplace` | `GET` | `app/routes/api/study/marketplace.ts` |
 | `/api/study/tutor` | `POST` | `app/routes/api/study/tutor.ts` |
 
+## `/api/study-buddy`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/study-buddy` | `DELETE` `GET` `POST` | `app/routes/api/study-buddy/index.ts` |
+
 ## `/api/tags`
 
 1 route.
@@ -1726,6 +1762,18 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | ----- | ------- | ------ |
 | `/api/wheel` | `GET` | `app/routes/api/wheel/index.ts` |
 | `/api/wheel/spin` | `POST` | `app/routes/api/wheel/spin.ts` |
+
+## `/api/when`
+
+5 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/when` | `GET` `POST` | `app/routes/api/when/index.ts` |
+| `/api/when/:id` | `DELETE` `GET` | `app/routes/api/when/$id/index.ts` |
+| `/api/when/:id/ics` | `GET` | `app/routes/api/when/$id/ics.ts` |
+| `/api/when/:id/lock` | `POST` | `app/routes/api/when/$id/lock.ts` |
+| `/api/when/:id/respond` | `PUT` | `app/routes/api/when/$id/respond.ts` |
 
 ## `/api/wishlist`
 

@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import type { EventDTO, EventVenueKindValue, RsvpResult } from '@/lib/events.server';
 import { EventTime } from './EventTime';
 import { RsvpButton } from './RsvpButton';
+import { EventRecurrenceInfo } from '@/components/calendar/EventRecurrenceInfo';
 
 const VENUE_META: Record<
   EventVenueKindValue,
@@ -162,6 +163,9 @@ export function EventCard({ event, className }: { event: EventDTO; className?: s
           )}
         </div>
       </div>
+      {event.recurrence && !canceled && !past && (
+        <EventRecurrenceInfo event={{ ...event, viewerRsvp }} onChange={onChange} />
+      )}
     </li>
   );
 }

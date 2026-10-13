@@ -249,6 +249,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/settings': 'personal',
   '/settings/account-status': 'personal',
   '/settings/appearance': 'personal',
+  '/settings/calendar': 'personal',
   '/settings/circle': 'personal',
   '/settings/content': 'personal',
   '/settings/layout': 'personal',
@@ -259,6 +260,9 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/settings/themes': 'personal',
   '/studio/themes': 'redirect', // → /settings/themes
   '/user-builds/manage': 'personal',
+  // P09 calendar: private scheduling tools, each page carries a `noindex` meta tag.
+  '/when': 'noindex', // availability polls: a member's own list and the new-poll form
+  '/office-hours': 'noindex', // a member's own office-hours settings and bookings
   '/user-builds/submit': 'auth-gated',
   '/v/new': 'auth-gated',
   '/login': 'noindex',
@@ -446,6 +450,10 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/slice-it/edit/$songId': null,
   // Member-run webrings: no sitemap shard enumerates them yet.
   '/rings/$slug': null,
+  // P09 calendar: a poll is a private link between the people it was sent to, and an
+  // office-hours page is a booking form — both `noindex`.
+  '/when/$id': null,
+  '/office-hours/$userId': null,
 
   // Dynamic and deliberately unlisted.
   '/deeplink/$page': null, // sub-pages of the raw-HTML Deeplink microsite

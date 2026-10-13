@@ -19,17 +19,20 @@ import type { ChatMessage, TimerState, PhaseCompleteEvent, Task } from './types'
 
 let client: RealtimeClient | null = null;
 let pendingRoomCode: string | null = null;
+// A body-doubling match id: lets the hub open the pair's room on first join.
+let pendingMatchId: string | null = null;
 
 const store = () => useRmhStudyStore.getState();
 
 // ─── Connection ─────────────────────────────────────────────────────────────
 
-export async function connectToRmhStudy(roomCode?: string): Promise<Socket> {
+export async function connectToRmhStudy(roomCode?: string, matchId?: string): Promise<Socket> {
   if (roomCode) pendingRoomCode = roomCode;
+  if (matchId) pendingMatchId = matchId;
 
   if (client) {
     if (client.socket.connected && roomCode) {
-      client.emit('rmhstudy:room:join', { roomCode });
+      client.emit('rmhstudy:room:join', { roomCode, matchId: pendingMatchId ?? undefined });
     } else {
       client.reconnectNow();
     }
@@ -56,7 +59,7 @@ export async function connectToRmhStudy(roomCode?: string): Promise<Socket> {
     },
     onConnect: (socket) => {
       const code = store().room?.roomCode ?? pendingRoomCode;
-      if (code) socket.emit('rmhstudy:room:join', { roomCode: code });
+      if (code) socket.emit('rmhstudy:room:join', { roomCode: code, matchId: pendingMatchId ?? undefined });
     },
     bind: registerHandlers,
   });

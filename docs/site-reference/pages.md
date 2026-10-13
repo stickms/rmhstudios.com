@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 284 routes. 148 render inside the standard site shell (sidebar, nav, context rail); 136 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 289 routes. 153 render inside the standard site shell (sidebar, nav, context rail); 136 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -89,6 +89,8 @@ Standard pages, rendered inside the sidebar shell.
 | `/music-trivia` | Guess the Song | public | `app/routes/_site/music-trivia.tsx` |
 | `/news` | News | public | `app/routes/_site/news/index.tsx` |
 | `/notifications` | redirects to `/messages?tab=notifications` | public | `app/routes/_site/notifications.tsx` |
+| `/office-hours` | Office hours | public | `app/routes/_site/office-hours/index.tsx` |
+| `/office-hours/:userId` | Book office hours | public | `app/routes/_site/office-hours/$userId.tsx` |
 | `/personas` | redirects to `/create/personas` | public | `app/routes/_site/personas/index.tsx` |
 | `/personas/:id` | Persona | public | `app/routes/_site/personas/$id.tsx` |
 | `/playlists` | redirects to `/library?view=music` | public | `app/routes/_site/playlists.tsx` |
@@ -129,6 +131,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/settings` | Settings | public | `app/routes/_site/settings/index.tsx` |
 | `/settings/account-status` | Account status | public | `app/routes/_site/settings/account-status.tsx` |
 | `/settings/appearance` | Appearance | public | `app/routes/_site/settings/appearance.tsx` |
+| `/settings/calendar` | Calendar | public | `app/routes/_site/settings/calendar.tsx` |
 | `/settings/circle` | Close Friends | public | `app/routes/_site/settings/circle.tsx` |
 | `/settings/content` | Content preferences | public | `app/routes/_site/settings/content.tsx` |
 | `/settings/layout` | Layout | public | `app/routes/_site/settings/layout.tsx` |
@@ -164,6 +167,8 @@ Standard pages, rendered inside the sidebar shell.
 | `/wager` | Wager Matches | public | `app/routes/_site/wager.index.tsx` |
 | `/wager/:id` | Wager Match | public | `app/routes/_site/wager.$id.tsx` |
 | `/wallet` | Wallet | public | `app/routes/_site/wallet.tsx` |
+| `/when` | Find a time | public | `app/routes/_site/when/index.tsx` |
+| `/when/:id` | Availability poll | public | `app/routes/_site/when/$id.tsx` |
 | `/wishlist` | redirects to `/saves?tab=wishlist` | public | `app/routes/_site/wishlist.tsx` |
 | `/wrapped` | Wrapped | public | `app/routes/_site/wrapped.tsx` |
 
