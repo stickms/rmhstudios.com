@@ -97,6 +97,10 @@ export interface FeedItem {
   isTake?: boolean;
   /** N1: community post flair (community feeds only). */
   communityFlair?: { id: string; name: string; color: string };
+  /** posts-plus X5: id of the series this post is a part of (details load lazily). */
+  seriesId?: string;
+  /** posts-plus X8: ISO time after which the post disappears (author-chosen TTL). */
+  expiresAt?: string;
 
   /** Grouped-by-emoji reaction summary (server-side via `groupReactions`). */
   reactions?: ReactionSummary[];

@@ -26,6 +26,7 @@ import { HELD_BY, recordModItem } from '@/lib/communities/automod.server';
 import { derivePostKind } from '@/lib/communities/automod';
 import { listFlairs } from '@/lib/communities/flairs.server';
 import { challengeEntryError } from '@/lib/communities/challenge.server';
+import { planPostsPlus, recordPostsPlusTx, afterPostsPlus } from '@/lib/posts-plus/compose.server';
 
 /** Throttle window for the lazy scheduled-post probe on the feed read path. */
 const SCHEDULED_PROBE_TTL_MS = 60_000;
@@ -148,6 +149,9 @@ export const Route = createFileRoute('/api/rmharks')({
             isTake,
             flairId,
             challengeId,
+            ttl,
+            seriesId,
+            qotdDay,
           } = input;
 
           if (imageUrls?.length && !imageUrls.every((u) => ownsFeedImageUrl(u, session.user.id))) {
@@ -160,6 +164,19 @@ export const Route = createFileRoute('/api/rmharks')({
           if (altError) {
             return Response.json({ error: altError }, { status: 400 });
           }
+
+          // posts-plus: expiry (X8), series (X5) and question-of-the-day (X4) fields.
+          const planned = await planPostsPlus(session.user.id, {
+            ttl,
+            seriesId,
+            qotdDay,
+            audience,
+            communityId,
+          });
+          if (!planned.plan) {
+            return Response.json({ error: planned.error }, { status: 400 });
+          }
+          const plusPlan = planned.plan;
 
           // Trim alt text and clamp to the number of images so the two arrays stay
           // index-aligned even if the client sends a longer/whitespace-only list.
@@ -277,6 +294,8 @@ export const Route = createFileRoute('/api/rmharks')({
                 // An AutoMod hold is a soft-delete marker: invisible everywhere
                 // until a mod approves it (see automod.server.ts resolvePost).
                 ...(held ? { deletedAt: new Date(), deletedBy: HELD_BY } : {}),
+                expiresAt: plusPlan.expiresAt,
+                seriesId: plusPlan.seriesId,
               },
               include: {
                 user: { select: userDisplaySelect },
@@ -324,6 +343,8 @@ export const Route = createFileRoute('/api/rmharks')({
                 data: { repostCount: { increment: 1 } },
               });
             }
+
+            await recordPostsPlusTx(tx, created.id, session.user.id, plusPlan);
 
             if (poll) {
               await tx.rMHarkPoll.create({
@@ -429,6 +450,8 @@ export const Route = createFileRoute('/api/rmharks')({
             isSensitive: rmhark.isSensitive,
             replyControl: rmhark.replyControl,
             isTake: rmhark.isTake || undefined,
+            seriesId: rmhark.seriesId ?? undefined,
+            expiresAt: rmhark.expiresAt?.toISOString(),
             reactions: [],
           };
           if (communityId && flairId) {
@@ -564,6 +587,8 @@ export const Route = createFileRoute('/api/rmharks')({
               console.error('post achievement error:', e);
             }
           })();
+
+          afterPostsPlus(item.id, session.user.id, plusPlan);
 
           return Response.json(item, { status: 201 });
         },

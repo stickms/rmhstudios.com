@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { auth } from '@/lib/auth';
 import { listScheduled } from '@/lib/scheduled/list.server';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
+import { TimeCapsuleList } from '@/components/posts-plus/TimeCapsuleList';
 
 // Prefetch drafts + scheduled server-side. `null` when signed out (the page
 // gates on the client session and shows a sign-in prompt).
@@ -38,7 +39,10 @@ function DraftsPage() {
     <>
       <PageFrame>
         {session && !isPending ? (
-          <DraftsColumn initialData={drafts} />
+          <>
+            <DraftsColumn initialData={drafts} />
+            <TimeCapsuleList />
+          </>
         ) : (
           /* The gate states get their own header so the mobile drawer button is
              present when signed out / still resolving the session. */

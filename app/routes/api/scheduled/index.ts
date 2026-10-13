@@ -14,6 +14,7 @@ import {
 import { ownsFeedImageUrl } from '@/lib/storage/keys';
 import { listScheduled } from '@/lib/scheduled/list.server';
 import { altTextViolation } from '@/lib/feed/alt-text.server';
+import { capsuleDateError } from '@/lib/posts-plus/constants';
 
 const pollSchema = z.object({
   question: z.string().min(1).max(MAX_POLL_QUESTION_LENGTH),
@@ -38,6 +39,8 @@ const createSchema = z.object({
   communityId: z.string().max(64).optional(),
   // ISO date; omit/null = plain draft. Must be in the future when set.
   scheduledAt: z.string().datetime().nullable().optional(),
+  // Z7: sealed until `scheduledAt` (at least a day out); can't be edited or opened early.
+  capsule: z.boolean().optional(),
 });
 
 const MAX_PENDING = 50;
@@ -92,6 +95,14 @@ export const Route = createFileRoute('/api/scheduled/')({
             }
           }
 
+          if (d.capsule) {
+            if (!scheduledAt) {
+              return Response.json({ error: 'Pick a date to seal the capsule until' }, { status: 400 });
+            }
+            const capsuleError = capsuleDateError(scheduledAt);
+            if (capsuleError) return Response.json({ error: capsuleError }, { status: 400 });
+          }
+
           const pending = await prisma.scheduledPost.count({
             where: { userId, publishedId: null },
           });
@@ -118,6 +129,7 @@ export const Route = createFileRoute('/api/scheduled/')({
               communityId: d.communityId ?? null,
               poll: d.poll ?? undefined,
               scheduledAt,
+              isCapsule: d.capsule === true,
             },
           });
 

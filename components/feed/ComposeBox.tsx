@@ -59,6 +59,12 @@ import {
 import { Link } from '@tanstack/react-router';
 import { TakeMenuItem, TakeChip } from './TakeCompose';
 import { AltTextNotice, useRequireAltText } from './AltTextNotice';
+import {
+  PostsPlusChips,
+  PostsPlusDialogs,
+  PostsPlusMenuItems,
+  usePostsPlusCompose,
+} from '@/components/posts-plus/PostsPlusCompose';
 import { missingAltIndexes } from '@/lib/feed/alt-text';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -102,6 +108,7 @@ export function ComposeBox({
   const [replyOpen, setReplyOpen] = useState(false);
   const [isSensitive, setIsSensitive] = useState(false);
   const [isTake, setIsTake] = useState(false); // X6: readers vote agree/disagree
+  const postsPlus = usePostsPlusCompose(); // X8 expiry, X5 series, X4 QOTD tag, Z7 capsule
   const [pollDuration, setPollDuration] = useState(0); // hours; 0 = no limit
   const [unlockPrice, setUnlockPrice] = useState(''); // coins to unlock;''= free
   const [submitting, setSubmitting] = useState(false);
@@ -286,6 +293,7 @@ export function ComposeBox({
     if (price > 0) body.unlockPrice = price;
     if (communityId) body.communityId = communityId;
     if (extraBody) Object.assign(body, extraBody);
+    Object.assign(body, postsPlus.bodyFields);
     return body;
   };
 
@@ -309,6 +317,7 @@ export function ComposeBox({
     setScheduleAt('');
     setShowPriceModal(false);
     setShowCheatSheet(false);
+    postsPlus.reset();
   };
 
   // A snapshot of the composer's contents, so an optimistic post that fails to
@@ -325,6 +334,7 @@ export function ComposeBox({
     gifUrl,
     imageUrls,
     imageAlts,
+    postsPlus: { ttl: postsPlus.ttl, series: postsPlus.series, answering: postsPlus.answering },
   });
   const restoreDraft = (d: ReturnType<typeof snapshotDraft>) => {
     setContent(d.content);
@@ -338,6 +348,7 @@ export function ComposeBox({
     setGifUrl(d.gifUrl);
     setImageUrls(d.imageUrls);
     setImageAlts(d.imageAlts);
+    postsPlus.restore(d.postsPlus);
   };
 
   // Build the post the user *would* see, so it can appear at the top of the
@@ -764,6 +775,7 @@ export function ComposeBox({
           )}
 
           {isTake && <TakeChip onRemove={() => setIsTake(false)} />}
+          <PostsPlusChips pp={postsPlus} />
 
           {/* Poll creator */}
           {attachment === 'poll' && (
@@ -1118,6 +1130,7 @@ export function ComposeBox({
                   {isSensitive && <Check className="w-4 h-4 text-site-warning" />}
                 </button>
                 <TakeMenuItem active={isTake} onToggle={() => setIsTake((v) => !v)} />
+                <PostsPlusMenuItems pp={postsPlus} onPick={() => setMenuOpen(false)} />
                 <div className="my-1 border-t border-site-border" />
                 <button
                   type="button"
@@ -1223,6 +1236,13 @@ export function ComposeBox({
           </div>
         </div>
       </div>
+
+      <PostsPlusDialogs
+        pp={postsPlus}
+        getBody={buildBody}
+        canSubmit={canSubmit}
+        onSealed={resetForm}
+      />
 
       {/* Post visibility (audience) picker — opened from the (+) menu */}
       {audienceOpen && (

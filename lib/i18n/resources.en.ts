@@ -72,7 +72,11 @@ import enCWager from "@/locales/en/c-wager.json";
 import enCWishlist from "@/locales/en/c-wishlist.json";
 import enCommon from "@/locales/en/common.json";
 import enErrors from "@/locales/en/errors.json";
+import enFEconomyPlus from "@/locales/en/f-economy-plus.json";
 import enFFeedPlus from "@/locales/en/f-feed-plus.json";
+import enFMessaging from "@/locales/en/f-messaging.json";
+import enFPostsPlus from "@/locales/en/f-posts-plus.json";
+import enFProfilePlus from "@/locales/en/f-profile-plus.json";
 import enFeed from "@/locales/en/feed.json";
 import enGamesHub from "@/locales/en/games-hub.json";
 import enGroups from "@/locales/en/groups.json";
@@ -175,7 +179,11 @@ const enResources = {
   "c-wishlist": enCWishlist,
   "common": enCommon,
   "errors": enErrors,
+  "f-economy-plus": enFEconomyPlus,
   "f-feed-plus": enFFeedPlus,
+  "f-messaging": enFMessaging,
+  "f-posts-plus": enFPostsPlus,
+  "f-profile-plus": enFProfilePlus,
   "feed": enFeed,
   "games-hub": enGamesHub,
   "groups": enGroups,

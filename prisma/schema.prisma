@@ -467,6 +467,12 @@ model User {
   studyBuddyRequests         StudyBuddyRequest[]
   studyBuddyMatchesA         StudyBuddyMatch[]         @relation("StudyBuddyA")
   studyBuddyMatchesB         StudyBuddyMatch[]         @relation("StudyBuddyB")
+  // P02 posts-plus: X4 prompts/answers, X5 series, X8 auto-delete
+  qotdPromptsCreated QotdPrompt[]
+  qotdAnswers        QotdAnswer[]
+  postSeries         PostSeries[]
+  postSeriesFollows  PostSeriesFollow[]
+  postAutoDelete     PostAutoDelete?
   chatFolders    ChatFolder[]
   chatPins       ChatPin[]
   dmPollVotes    DirectPollVote[]
@@ -2749,6 +2755,15 @@ model RMHark {
   communityFlair      CommunityPostFlair?
   communityStar       CommunityStarPost?
   communityChallengeEntry CommunityChallengeEntry?
+
+  // P02 posts-plus. `expiresAt` (X8 TTL) and `seriesId` (X5) are read-time hints so
+  // the feed never needs a second query; the tables behind them (post_lifecycle,
+  // post_series_item) are the source of truth and carry the indexes.
+  expiresAt  DateTime?
+  seriesId   String?
+  lifecycle  PostLifecycle?
+  seriesItem PostSeriesItem?
+  qotdAnswer QotdAnswer?
 
   @@index([userId])
   @@index([createdAt(sort: Desc)])
@@ -6113,6 +6128,7 @@ model ScheduledPost {
   poll         Json? // { question, options[], multiSelect, durationHours }
   scheduledAt  DateTime? // null = plain draft
   publishedId  String? // set once published → the created RMHark id
+  isCapsule    Boolean            @default(false) // Z7: sealed until scheduledAt, can't be edited or published early
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
 
@@ -7345,6 +7361,9 @@ model SavedItem {
   entityType String   @db.VarChar(24) // see SAVE_ENTITY_TYPES in lib/saves/types.ts
   entityId   String
   createdAt  DateTime @default(now())
+  /// X9: private note ("why I saved this"), at most 500 characters. Only ever read
+  /// back to the owner of the row.
+  note       String?  @db.VarChar(500)
 
   user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   folder SaveFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
@@ -10648,4 +10667,144 @@ model StudyBuddyMatch {
   @@index([userAId, startsAt])
   @@index([userBId, startsAt])
   @@map("study_buddy_match")
+}
+
+// ── P02 posts-plus: X4 X5 X8 X11 ──
+
+/// X4 — a question-of-the-day prompt. `dayKey` (YYYY-MM-DD, UTC) is null while the
+/// prompt waits in the admin queue and is stamped the first time its day is read;
+/// an admin may also pre-assign a future day. Days with no row fall back to the
+/// built-in list (lib/posts-plus/qotd-builtin.ts).
+model QotdPrompt {
+  id          String   @id @default(cuid())
+  text        String   @db.VarChar(280)
+  dayKey      String?  @unique @db.VarChar(10)
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  createdBy User? @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([dayKey, createdAt])
+  @@map("qotd_prompt")
+}
+
+/// X4 — links an ordinary post to the prompt of a day. The post stays a normal
+/// RMHark; this row is what puts it in the day's thread.
+model QotdAnswer {
+  postId    String   @id
+  userId    String
+  dayKey    String   @db.VarChar(10)
+  createdAt DateTime @default(now())
+
+  post RMHark @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([dayKey, createdAt(sort: Desc)])
+  @@index([userId, dayKey])
+  @@map("qotd_answer")
+}
+
+/// X5 — a named, ordered series of one author's own public posts.
+model PostSeries {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String   @db.VarChar(80)
+  description String?  @db.VarChar(280)
+  postCount   Int      @default(0)
+  followCount Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     PostSeriesItem[]
+  followers PostSeriesFollow[]
+
+  @@index([userId, updatedAt(sort: Desc)])
+  @@map("post_series")
+}
+
+/// X5 — membership + order. One row per post (a post is in at most one series).
+model PostSeriesItem {
+  postId   String   @id
+  seriesId String
+  position Int
+  addedAt  DateTime @default(now())
+
+  post   RMHark     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  series PostSeries @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  @@index([seriesId, position])
+  @@map("post_series_item")
+}
+
+/// X5 — "follow series": notified when a new part is added.
+model PostSeriesFollow {
+  seriesId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  series PostSeries @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([seriesId, userId])
+  @@index([userId])
+  @@index([seriesId, createdAt])
+  @@map("post_series_follow")
+}
+
+/// X8 — per-post lifecycle. `expiresAt` is the TTL the sweep job reads (indexed here
+/// rather than on the hot rmheet table); `keepForever` is set when the author
+/// restores the post from the recycle bin so neither the TTL nor the auto-delete
+/// job takes it again. `userId` is denormalised for the job and has no FK of its
+/// own: the row cascades with the post, which cascades with the author.
+model PostLifecycle {
+  postId      String    @id
+  userId      String
+  expiresAt   DateTime?
+  keepForever Boolean   @default(false)
+
+  post RMHark @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@map("post_lifecycle")
+}
+
+/// X8 — "auto-delete my posts older than N months" (3 / 6 / 12 / 24). One row per
+/// opted-in account; the daily job works through rows oldest-`lastRunAt` first.
+model PostAutoDelete {
+  userId    String    @id
+  months    Int
+  lastRunAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([lastRunAt])
+  @@map("post_auto_delete")
+}
+
+/// X11 — check state for a link shown on a card. `urlKey` is sha256(url) so the
+/// primary key stays short. Rows are created lazily the first time a card's link is
+/// previewed and pruned when nobody has looked at the link for 90 days.
+model LinkCheck {
+  urlKey           String    @id @db.VarChar(64)
+  url              String    @db.Text
+  title            String?   @db.VarChar(300)
+  description      String?   @db.VarChar(500)
+  siteName         String?   @db.VarChar(120)
+  /// 'ok' | 'failing' | 'dead' | 'archived' | 'blocked'
+  status           String    @default("ok") @db.VarChar(10)
+  failCount        Int       @default(0)
+  lastStatusCode   Int?
+  lastCheckedAt    DateTime?
+  nextCheckAt      DateTime
+  archiveUrl       String?   @db.Text
+  archiveTimestamp String?   @db.VarChar(14)
+  lastSeenAt       DateTime  @default(now())
+  createdAt        DateTime  @default(now())
+
+  @@index([nextCheckAt])
+  @@index([lastSeenAt])
+  @@map("link_check")
 }

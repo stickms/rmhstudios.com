@@ -2,6 +2,7 @@ import { z } from "zod";
 import { isFeedImageUrl } from "@/lib/storage/keys";
 
 import { MAX_RMHARK_LENGTH } from "@/lib/rmhark-limits";
+import { postsPlusComposeFields } from "@/lib/posts-plus/constants";
 
 export { MAX_RMHARK_LENGTH };
 export const MAX_RMHARK_IMAGES = 4;
@@ -93,6 +94,8 @@ export const createRMHarkSchema = z
     // P06 communities-plus: flair (N1) and challenge entry (N5); community posts only.
     flairId: z.string().max(64).optional(),
     challengeId: z.string().max(64).optional(),
+    // posts-plus: X8 expiry (ttl), X5 series, X4 question-of-the-day answer.
+    ...postsPlusComposeFields,
   })
   .refine(
     (data) =>

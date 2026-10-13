@@ -3,12 +3,16 @@
 import { useState, useEffect } from'react';
 import { ExternalLink } from'lucide-react';
 import { useNearViewport } from'@/hooks/useNearViewport';
+import { ArchivedCopyLabel } from'@/components/posts-plus/ArchivedCopyLabel';
 
 interface OgData {
  title: string | null;
  description: string | null;
  image: string | null;
  siteName: string;
+ // X11: set when the original is gone and the card points at its Wayback snapshot.
+ archivedUrl?: string;
+ archivedAt?: string | null;
 }
 
 const ogCache = new Map<string, OgData | null>();
@@ -74,7 +78,7 @@ export function LinkPreview({ url, className =''}: LinkPreviewProps) {
 
  return (
  <a
- href={url}
+ href={data.archivedUrl ?? url}
  target="_blank"
  rel="noopener noreferrer"
  onClick={(e) => e.stopPropagation()}
@@ -92,6 +96,7 @@ export function LinkPreview({ url, className =''}: LinkPreviewProps) {
  </div>
  )}
  <div className="px-3 py-2.5">
+ {data.archivedUrl && <ArchivedCopyLabel archivedAt={data.archivedAt} />}
  <p className="text-xs text-site-text-dim mb-0.5 flex items-center gap-1">
  <ExternalLink className="w-3 h-3"/>
  {data.siteName}

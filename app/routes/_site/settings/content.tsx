@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { FeedControlsSettings } from '@/components/settings/FeedControlsSettings';
 import { RequireAltTextSetting } from '@/components/settings/RequireAltTextSetting';
+import { AutoDeleteSetting } from '@/components/posts-plus/AutoDeleteSetting';
 
 export const Route = createFileRoute('/_site/settings/content')({
   head: () => ({
@@ -19,6 +20,7 @@ function ContentSettingsPage() {
     >
       <div className="px-4 pt-4 pb-12">
         <RequireAltTextSetting />
+        <AutoDeleteSetting />
         <FeedControlsSettings />
       </div>
     </PageLayout>

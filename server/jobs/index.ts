@@ -31,6 +31,7 @@ import {
   SOHUMTRACKER_ALERT_QUEUE,
   registerSohumTrackerAlertCron,
 } from '@/lib/sohumtracker/alerts.server';
+import { registerPostsPlusCrons } from '@/lib/posts-plus/jobs.server';
 import {
   PROFILE_VISIT_SWEEP_QUEUE,
   registerProfileVisitSweepCron,
@@ -223,6 +224,16 @@ async function main() {
       queue: STUDY_BUDDY_QUEUE,
       err: (e as Error)?.message,
     });
+  }
+
+  // posts-plus (2026-10-12 batch): post expiry sweep + daily auto-delete (X8), the
+  // dead-link rescue check (X11), and the publisher for due scheduled posts and
+  // time capsules (Z7) so they open on time without their author visiting.
+  try {
+    await registerPostsPlusCrons(boss);
+    log.info({ event: 'jobs.started', queue: 'posts-plus' });
+  } catch (e) {
+    log.error({ event: 'jobs.register_failed', queue: 'posts-plus', err: (e as Error)?.message });
   }
 
   const shutdown = async (sig: string) => {

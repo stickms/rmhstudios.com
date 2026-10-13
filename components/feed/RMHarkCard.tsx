@@ -13,6 +13,7 @@ import { RMHarkContent, extractFirstUrl } from'./RMHarkContent';
 import { ProfileHoverCard } from'./ProfileHoverCard';
 import { PollDisplay } from'./PollDisplay';
 import { TakeMeterLazy } from'./TakeMeterLazy';
+import { PostPlusBadges } from'@/components/posts-plus/PostPlusBadges';
 import { GifEmbed } from'./GifEmbed';
 import { LinkPreview } from'./LinkPreview';
 import { PostImageGrid } from'./PostImageGrid';
@@ -424,6 +425,11 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  {/* Take meter (X6) — only on posts the author marked as a take */}
  {item.isTake && !item.locked && !item.pending && (
  <TakeMeterLazy postId={item.actualId ?? item.id} />
+ )}
+
+ {/* Series part (X5) and auto-delete (X8) badges — nothing for ordinary posts */}
+ {!item.locked && !item.pending && (
+ <PostPlusBadges postId={item.actualId ?? item.id} seriesId={item.seriesId} expiresAt={item.expiresAt} />
  )}
 
  {/* Image / GIF — hidden behind a content warning when marked sensitive */}

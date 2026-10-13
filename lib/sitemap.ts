@@ -97,6 +97,8 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   { loc: '/groups', changefreq: 'weekly', priority: 0.5 },
   { loc: '/help', changefreq: 'monthly', priority: 0.6 },
   { loc: '/predictions', changefreq: 'daily', priority: 0.5 },
+  // The question of the day and its answers (posts-plus X4): new content daily.
+  { loc: '/qotd', changefreq: 'daily', priority: 0.5 },
   // The Kaikai Debt Counter. `daily` rather than `weekly` despite being a joke:
   // the log grows every time anyone adds a line or scrolls past the frontier,
   // so the page's content genuinely changes faster than most of this list.
@@ -228,6 +230,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/progress': 'personal',
   '/recap': 'personal',
   '/saves': 'personal',
+  '/series': 'personal', // the viewer's own series and the ones they follow
   '/share': 'personal',
   '/wallet': 'personal',
   '/trash': 'personal',
@@ -286,6 +289,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/admin/library-quota': 'redirect', // → /admin/library?tab=appeals
   '/admin/library-storage': 'redirect', // → /admin/library?tab=storage
   '/admin/predictions': 'admin',
+  '/admin/qotd': 'admin',
   '/admin/redemptions': 'admin',
   '/admin/reports': 'admin',
   '/admin/rideshare': 'admin',
@@ -465,6 +469,7 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/profile/$id': null, // legacy alias of `/u/$userid`
   '/store/$userid': null, // mirrors the profile; would duplicate it
   '/thread/$rootId': null, // canonicalised to `/u/{handle}/post/{id}`
+  '/series/$id': null, // one author's post series; `noindex, follow`, reached from the posts that belong to it
   '/sohumbum2/$date': null, // redirects to `/sohumtracker/{date}`
   // One day of the activity dossier. Unbounded (a new one every day) and
   // `noindex` like its parent — it exists to be pasted into a chat, where the

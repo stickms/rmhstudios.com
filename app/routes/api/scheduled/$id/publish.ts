@@ -34,6 +34,11 @@ export const Route = createFileRoute('/api/scheduled/$id/publish')({
           return Response.json({ error: 'Already published' }, { status: 409 });
         }
 
+        // Z7: a capsule opens on its date, not before.
+        if (sp.isCapsule && (!sp.scheduledAt || sp.scheduledAt.getTime() > Date.now())) {
+          return Response.json({ error: 'A time capsule is sealed until its date' }, { status: 409 });
+        }
+
         const postId = await publishScheduledPost(sp);
         return Response.json({ success: true, postId });
       }),

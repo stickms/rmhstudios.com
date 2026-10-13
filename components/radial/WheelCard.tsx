@@ -9,6 +9,7 @@ import { RelativeTime } from '@/components/ui/RelativeTime';
 import { RMHarkActions } from '@/components/feed/RMHarkActions';
 import { RmharkMedia } from './RmharkMedia';
 import { TakeMeterLazy } from '@/components/feed/TakeMeterLazy';
+import { PostPlusBadges } from '@/components/posts-plus/PostPlusBadges';
 import { relativeTimeShort } from '@/lib/utils';
 import type { FeedItem } from '@/lib/feed-types';
 
@@ -180,6 +181,13 @@ export const WheelCard = memo(function WheelCard({ item }: { item: FeedItem }) {
         </Link>
       )}
       {take}
+      {isRmhark && !item.locked && !item.pending && (
+        <PostPlusBadges
+          postId={item.actualId ?? item.id}
+          seriesId={item.seriesId}
+          expiresAt={item.expiresAt}
+        />
+      )}
       {actions}
     </article>
   );

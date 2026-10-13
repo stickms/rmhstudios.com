@@ -2,10 +2,13 @@
  * Scheduled-post publisher.
  *
  * Scheduled posts live in `scheduled_post` until their time is due, then are
- * materialized into real RMHarks. There is no background worker, so publishing
- * happens lazily: `publishDueForUser` is called whenever the author touches
- * their drafts list or their own timeline. Already-published rows keep a
- * `publishedId` pointer and are never re-published.
+ * materialized into real RMHarks. Publishing happens two ways: lazily, via
+ * `publishDueForUser` whenever the author touches their drafts list or their own
+ * timeline, and by the `posts.publish-scheduled` job (lib/posts-plus/capsules.server.ts)
+ * so a post goes out on time even if its author never comes back (time capsules
+ * rely on that). Already-published rows keep a `publishedId` pointer and are
+ * never re-published; the row lock in `publishScheduledPost` makes the two paths
+ * safe to race.
  */
 
 import type { ScheduledPost } from '@prisma/client';
@@ -13,6 +16,7 @@ import { prisma } from '@/lib/prisma.server';
 import { awardXp } from '@/lib/xp/engine.server';
 import { progressQuests } from '@/lib/quests/engine.server';
 import { grantAchievement, progressAchievement } from '@/lib/achievements/engine.server';
+import { createNotification } from '@/lib/notifications.server';
 
 interface PollPayload {
   question: string;
@@ -28,6 +32,14 @@ export async function publishScheduledPost(sp: ScheduledPost): Promise<string | 
   const poll = (sp.poll as PollPayload | null) ?? null;
 
   const created = await prisma.$transaction(async (tx) => {
+    // Claim the row. The lazy path and the publish job can pick up the same due
+    // post at the same moment; whoever takes the lock first publishes, the other
+    // sees `publishedId` set once the lock releases and does nothing.
+    const claim = await tx.$queryRaw<{ id: string }[]>`
+      SELECT "id" FROM "scheduled_post"
+      WHERE "id" = ${sp.id} AND "publishedId" IS NULL FOR UPDATE`;
+    if (claim.length === 0) return null;
+
     const post = await tx.rMHark.create({
       data: {
         content: sp.content.trim(),
@@ -84,6 +96,35 @@ export async function publishScheduledPost(sp: ScheduledPost): Promise<string | 
 
     return post;
   });
+
+  if (!created) {
+    // Lost the race; the winner's id is on the row.
+    const row = await prisma.scheduledPost.findUnique({
+      where: { id: sp.id },
+      select: { publishedId: true },
+    });
+    return row?.publishedId ?? null;
+  }
+
+  // Z7: tell the author their time capsule has opened (best-effort).
+  if (sp.isCapsule) {
+    try {
+      const author = await prisma.user.findUnique({
+        where: { id: sp.userId },
+        select: { handle: true },
+      });
+      await createNotification({
+        userId: sp.userId,
+        type: 'SYSTEM',
+        entityType: 'capsule',
+        entityId: created.id,
+        preview: 'Your time capsule has opened',
+        link: `/u/${author?.handle ?? sp.userId}/post/${created.id}`,
+      });
+    } catch (e) {
+      console.error('[scheduled] capsule notification error:', e);
+    }
+  }
 
   // Mirror the compose-path progression/achievements (best-effort).
   try {

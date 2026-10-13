@@ -77,6 +77,7 @@ export const NAMESPACES = [
   // one per line so parallel additions merge cleanly.
   "f-communities-plus",
   "f-calendar",
+  "f-posts-plus",
   "f-feed-plus",
   "f-economy-plus",
   "f-profile-plus",
