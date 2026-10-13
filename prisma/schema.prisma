@@ -447,6 +447,13 @@ model User {
   pf2eSettingsEdits   Pf2eSettings[]        @relation("Pf2eSettingsEditor")
 
   // ─── Feature ideas 2026-10-12 (docs/plans/2026-10-12-feature-ideas-every-surface.md)
+  // P06 communities-plus: N3 onboarding answers, N4 mod items, N5 challenge, N6 census, N7 scores
+  communityOnboardingAnswers CommunityOnboardingAnswer[]
+  communityModItems          CommunityModItem[]
+  communityChallengeEntries  CommunityChallengeEntry[]
+  communityChallengeVotes    CommunityChallengeVote[]
+  communityCensusAnswered    CommunityCensusParticipant[]
+  communityContributorScores CommunityContributorScore[]
   chatFolders    ChatFolder[]
   chatPins       ChatPin[]
   dmPollVotes    DirectPollVote[]
@@ -2725,6 +2732,10 @@ model RMHark {
   takeAgreeCount    Int              @default(0)
   takeDisagreeCount Int              @default(0)
   takeVotes         RMHarkTakeVote[]
+  // P06 communities-plus: N1 flair, N2 starboard, N5 challenge entry
+  communityFlair      CommunityPostFlair?
+  communityStar       CommunityStarPost?
+  communityChallengeEntry CommunityChallengeEntry?
 
   @@index([userId])
   @@index([createdAt(sort: Desc)])
@@ -5961,8 +5972,27 @@ model Community {
   // Denormalized count of non-deleted posts, maintained on post create/delete so
   // the community page never runs COUNT(*) over rmheet. Backfilled in migration.
   postCount   Int      @default(0)
+  // S2: posting requirement. level = none | email | account_age | member_age;
+  // value = days (account_age) or minutes (member_age).
+  verificationLevel String @default("none") @db.VarChar(16)
+  verificationValue Int    @default(0)
+  // N1: every post in the community must carry a flair.
+  flairRequired     Boolean @default(false)
+  // N2: ⭐ reactions needed for the hall of fame.
+  starThreshold     Int     @default(5)
   createdById String
   createdAt   DateTime @default(now())
+
+  flairsP06            CommunityFlair[]
+  starPostsP06         CommunityStarPost[]
+  onboardingQsP06      CommunityOnboardingQuestion[]
+  automodRulesP06      CommunityAutomodRule[]
+  modItemsP06          CommunityModItem[]
+  challengesP06        CommunityChallenge[]
+  censusesP06          CommunityCensus[]
+  contributorScoresP06 CommunityContributorScore[]
+  sistersOutP06        CommunitySister[] @relation("CommunitySisterFrom")
+  sistersInP06         CommunitySister[] @relation("CommunitySisterTo")
 
   createdBy      User                    @relation("CommunityCreator", fields: [createdById], references: [id], onDelete: Cascade)
   members        CommunityMember[]
@@ -5998,6 +6028,10 @@ model CommunityMember {
   userId      String
   role        CommunityRole @default(MEMBER)
   joinedAt    DateTime      @default(now())
+  // N3: flairs this member follows (feed priority) and cosmetic role labels
+  // granted by onboarding answers. Labels never carry permissions.
+  followedFlairIds String[] @default([])
+  roleTags         String[] @default([])
 
   community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -10105,4 +10139,274 @@ model DirectPollVote {
   @@unique([messageId, userId])
   @@index([messageId])
   @@map("direct_poll_vote")
+}
+
+// ── P06: N1 N2 N3 N4 N5 N6 N7 N8 S2 ──
+
+/// N1 — a flair a community's mods define. `color` is a token preset key
+/// (accent | success | warning | danger | neutral), never a raw colour.
+model CommunityFlair {
+  id          String   @id @default(cuid())
+  communityId String
+  name        String   @db.VarChar(24)
+  color       String   @default("accent") @db.VarChar(12)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  community Community            @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  posts     CommunityPostFlair[]
+
+  @@unique([communityId, name])
+  @@index([communityId, position])
+  @@map("community_flair")
+}
+
+/// N1 — the flair on a community post. A side table rather than a column on the
+/// hot `rmheet` table, so the feed schema and its indexes are untouched.
+model CommunityPostFlair {
+  postId    String   @id
+  flairId   String
+  createdAt DateTime @default(now())
+
+  post  RMHark         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  flair CommunityFlair @relation(fields: [flairId], references: [id], onDelete: Cascade)
+
+  @@index([flairId])
+  @@map("community_post_flair")
+}
+
+/// N2 — running count of ⭐ reactions on a community post, maintained by one
+/// indexed upsert per reaction toggle. A post is "in the hall of fame" when
+/// starCount >= community.starThreshold, evaluated at read time so a changed
+/// threshold needs no backfill.
+model CommunityStarPost {
+  postId      String   @id
+  communityId String
+  starCount   Int      @default(0)
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  post      RMHark    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, starCount(sort: Desc)])
+  @@map("community_star_post")
+}
+
+/// N3 — an onboarding question. `options` is a JSON array of
+/// { id, label, roleTag?, flairIds[] }, validated in lib/communities/onboarding.ts.
+model CommunityOnboardingQuestion {
+  id          String   @id @default(cuid())
+  communityId String
+  position    Int      @default(0)
+  prompt      String   @db.VarChar(140)
+  options     Json
+  createdAt   DateTime @default(now())
+
+  community Community                  @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  answers   CommunityOnboardingAnswer[]
+
+  @@index([communityId, position])
+  @@map("community_onboarding_question")
+}
+
+/// N3 — a member's answer (one option per question, once).
+model CommunityOnboardingAnswer {
+  id          String   @id @default(cuid())
+  communityId String
+  questionId  String
+  userId      String
+  optionId    String   @db.VarChar(40)
+  createdAt   DateTime @default(now())
+
+  question CommunityOnboardingQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user     User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, userId])
+  @@index([communityId, userId])
+  @@map("community_onboarding_answer")
+}
+
+/// N4 — an AutoMod rule. `conditions` is JSON validated by lib/communities/automod.ts.
+/// action = flag | hold | remove; appliesTo = posts | comments | both.
+model CommunityAutomodRule {
+  id          String   @id @default(cuid())
+  communityId String
+  name        String   @db.VarChar(60)
+  enabled     Boolean  @default(true)
+  appliesTo   String   @default("both") @db.VarChar(8)
+  action      String   @db.VarChar(8)
+  conditions  Json
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, position])
+  @@map("community_automod_rule")
+}
+
+/// N4 — the community mod queue. HOLD items are hidden until a mod approves
+/// them, FLAG items stay visible but are queued for a look, REMOVE items are the
+/// log of content AutoMod refused. `payload` carries a held comment's body
+/// (a held comment does not exist until approved); `snapshot` is a short text
+/// preview for the queue.
+model CommunityModItem {
+  id          String    @id @default(cuid())
+  communityId String
+  entityType  String    @db.VarChar(8)
+  entityId    String?   @db.VarChar(64)
+  postId      String?   @db.VarChar(64)
+  authorId    String
+  action      String    @db.VarChar(8)
+  ruleName    String    @db.VarChar(60)
+  snapshot    String    @db.VarChar(300)
+  payload     Json?
+  status      String    @default("PENDING") @db.VarChar(10)
+  resolvedById String?
+  resolvedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, status, createdAt(sort: Desc)])
+  @@index([authorId])
+  @@map("community_mod_item")
+}
+
+/// N5 — a weekly challenge. Submissions are open until submitEndsAt, voting
+/// until voteEndsAt; a worker finalizes it (winner flair + notification).
+model CommunityChallenge {
+  id            String    @id @default(cuid())
+  communityId   String
+  title         String    @db.VarChar(80)
+  prompt        String    @db.VarChar(1000)
+  submitEndsAt  DateTime
+  voteEndsAt    DateTime
+  createdById   String
+  winnerEntryId String?
+  finalizedAt   DateTime?
+  createdAt     DateTime  @default(now())
+
+  community Community                 @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  entries   CommunityChallengeEntry[]
+
+  @@index([communityId, createdAt(sort: Desc)])
+  @@index([finalizedAt, voteEndsAt])
+  @@map("community_challenge")
+}
+
+/// N5 — an entry: a community post submitted to a challenge (one per member).
+model CommunityChallengeEntry {
+  id          String   @id @default(cuid())
+  challengeId String
+  postId      String
+  userId      String
+  voteCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  challenge CommunityChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  post      RMHark             @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  votes     CommunityChallengeVote[]
+
+  @@unique([challengeId, userId])
+  @@unique([postId])
+  @@index([challengeId, voteCount(sort: Desc)])
+  @@map("community_challenge_entry")
+}
+
+/// N5 — one vote per member per challenge.
+model CommunityChallengeVote {
+  id          String   @id @default(cuid())
+  challengeId String
+  entryId     String
+  userId      String
+  createdAt   DateTime @default(now())
+
+  entry CommunityChallengeEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  user  User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, userId])
+  @@index([entryId])
+  @@map("community_challenge_vote")
+}
+
+/// N6 — a community census. `questions` is a JSON array of
+/// { id, prompt, kind: single | multi, options: [{ id, label }] }.
+model CommunityCensus {
+  id            String    @id @default(cuid())
+  communityId   String
+  title         String    @db.VarChar(100)
+  description   String?   @db.VarChar(500)
+  questions     Json
+  closesAt      DateTime?
+  closedAt      DateTime?
+  responseCount Int       @default(0)
+  createdById   String
+  createdAt     DateTime  @default(now())
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, createdAt(sort: Desc)])
+  @@map("community_census")
+}
+
+/// N6 — "this member has answered". Deliberately holds no answers: the link
+/// between a person and what they chose does not exist anywhere in the database.
+model CommunityCensusParticipant {
+  censusId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([censusId, userId])
+  @@index([userId])
+  @@map("community_census_participant")
+}
+
+/// N6 — aggregate tally per option; the only place answers are stored.
+model CommunityCensusTally {
+  censusId   String
+  questionId String @db.VarChar(24)
+  optionId   String @db.VarChar(24)
+  count      Int    @default(0)
+
+  @@id([censusId, questionId, optionId])
+  @@map("community_census_tally")
+}
+
+/// N7 — per-community helpfulness score, rebuilt daily by a worker.
+model CommunityContributorScore {
+  communityId    String
+  userId         String
+  starPosts      Int      @default(0)
+  challengeWins  Int      @default(0)
+  score          Int      @default(0)
+  updatedAt      DateTime @default(now()) @updatedAt
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([communityId, userId])
+  @@index([communityId, score(sort: Desc)])
+  @@map("community_contributor_score")
+}
+
+/// N8 — a one-way link from one community to a related one (mutual when the
+/// other community links back). At most 5 per community, enforced in code.
+model CommunitySister {
+  communityId        String
+  relatedCommunityId String
+  position           Int      @default(0)
+  createdAt          DateTime @default(now())
+
+  community Community @relation("CommunitySisterFrom", fields: [communityId], references: [id], onDelete: Cascade)
+  related   Community @relation("CommunitySisterTo", fields: [relatedCommunityId], references: [id], onDelete: Cascade)
+
+  @@id([communityId, relatedCommunityId])
+  @@index([relatedCommunityId])
+  @@map("community_sister")
 }

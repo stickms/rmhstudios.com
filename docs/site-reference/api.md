@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 669 files across 152 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 688 files across 152 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -305,7 +305,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/communities`
 
-8 routes.
+27 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -313,10 +313,29 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/communities/:slug` | `GET` | `app/routes/api/communities/$slug/index.ts` |
 | `/api/communities/:slug/announcements` | `GET` `POST` | `app/routes/api/communities/$slug/announcements.ts` |
 | `/api/communities/:slug/announcements/:id` | `DELETE` | `app/routes/api/communities/$slug/announcements/$id.ts` |
+| `/api/communities/:slug/automod` | `GET` `POST` | `app/routes/api/communities/$slug/automod.ts` |
+| `/api/communities/:slug/automod/:ruleId` | `DELETE` `PATCH` | `app/routes/api/communities/$slug/automod/$ruleId.ts` |
+| `/api/communities/:slug/census` | `GET` `POST` | `app/routes/api/communities/$slug/census.ts` |
+| `/api/communities/:slug/census/:id/answer` | `POST` | `app/routes/api/communities/$slug/census/$id/answer.ts` |
+| `/api/communities/:slug/census/:id/close` | `POST` | `app/routes/api/communities/$slug/census/$id/close.ts` |
+| `/api/communities/:slug/challenge` | `GET` `POST` | `app/routes/api/communities/$slug/challenge.ts` |
+| `/api/communities/:slug/challenge/:id` | `DELETE` | `app/routes/api/communities/$slug/challenge/$id.ts` |
+| `/api/communities/:slug/challenge/vote` | `POST` | `app/routes/api/communities/$slug/challenge/vote.ts` |
+| `/api/communities/:slug/contributors` | `GET` | `app/routes/api/communities/$slug/contributors.ts` |
+| `/api/communities/:slug/extras` | `GET` | `app/routes/api/communities/$slug/extras.ts` |
 | `/api/communities/:slug/feed` | `GET` | `app/routes/api/communities/$slug/feed.ts` |
+| `/api/communities/:slug/flair-follows` | `PUT` | `app/routes/api/communities/$slug/flair-follows.ts` |
+| `/api/communities/:slug/flairs` | `POST` | `app/routes/api/communities/$slug/flairs.ts` |
+| `/api/communities/:slug/flairs/:flairId` | `DELETE` `PATCH` | `app/routes/api/communities/$slug/flairs/$flairId.ts` |
 | `/api/communities/:slug/join` | `POST` | `app/routes/api/communities/$slug/join.ts` |
 | `/api/communities/:slug/members` | `GET` | `app/routes/api/communities/$slug/members.ts` |
 | `/api/communities/:slug/members/:userId` | `DELETE` `PATCH` | `app/routes/api/communities/$slug/members/$userId.ts` |
+| `/api/communities/:slug/modqueue` | `GET` | `app/routes/api/communities/$slug/modqueue.ts` |
+| `/api/communities/:slug/modqueue/:itemId` | `POST` | `app/routes/api/communities/$slug/modqueue/$itemId.ts` |
+| `/api/communities/:slug/onboarding` | `GET` `POST` `PUT` | `app/routes/api/communities/$slug/onboarding.ts` |
+| `/api/communities/:slug/settings` | `PATCH` | `app/routes/api/communities/$slug/settings.ts` |
+| `/api/communities/:slug/sisters` | `PUT` | `app/routes/api/communities/$slug/sisters.ts` |
+| `/api/communities/:slug/starboard` | `GET` | `app/routes/api/communities/$slug/starboard.ts` |
 
 ## `/api/community-goals`
 

@@ -95,6 +95,8 @@ export interface FeedItem {
   replyControl?: "EVERYONE" | "FOLLOWING" | "MENTIONED";
   /** Take meter (X6): readers vote agree/disagree. The split is NOT in the payload. */
   isTake?: boolean;
+  /** N1: community post flair (community feeds only). */
+  communityFlair?: { id: string; name: string; color: string };
 
   /** Grouped-by-emoji reaction summary (server-side via `groupReactions`). */
   reactions?: ReactionSummary[];

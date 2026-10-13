@@ -20,6 +20,7 @@ import { registerEventReminderWorker } from '@/lib/events.server';
 import { registerDigestCron } from '@/lib/digest/pipeline.server';
 import { registerMaintenanceCrons } from '@/lib/jobs/maintenance.server';
 import { registerEconomyCrons } from '@/lib/economy/jobs.server';
+import { registerCommunityCrons } from '@/lib/communities/jobs.server';
 import { CHAT_EXPIRY_QUEUE, registerChatExpiryCron } from '@/lib/chat-plus/expiry.server';
 import { ANALYSIS_QUEUE, registerAnalysisWorker } from '@/lib/slice-it/analysis-queue.server';
 import { REGEN_QUEUE, registerRegenCron } from '@/lib/slice-it/regen.server';
@@ -174,6 +175,15 @@ async function main() {
     log.info({ event: 'jobs.started', queue: 'economy' });
   } catch (e) {
     log.error({ event: 'jobs.register_failed', queue: 'economy', err: (e as Error)?.message });
+  }
+
+  // Communities-plus (2026-10-12 batch): challenge winners (N5) and the daily
+  // top-contributors rebuild (N7). Both idempotent.
+  try {
+    await registerCommunityCrons(boss);
+    log.info({ event: 'jobs.started', queue: 'communities' });
+  } catch (e) {
+    log.error({ event: 'jobs.register_failed', queue: 'communities', err: (e as Error)?.message });
   }
 
   // P9 — nightly sweep of the profile visitor-counter dedupe ledger (rows older
