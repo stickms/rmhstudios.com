@@ -44,6 +44,7 @@ import { auth } from '@/lib/auth';
 import { getAllPosts, type Post } from '@/lib/blog';
 import { PlaylistsColumn } from '@/components/feed/PlaylistsColumn';
 import { LibraryBlogRow } from '@/components/library/LibraryBlogRow';
+import { LibraryReadingMount } from '@/components/reading/LibraryReadingMount';
 import { LibraryRevealProvider, useReveal } from '@/components/library/LibraryReveal';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { AdSlot } from '@/components/ads/AdSlot';
@@ -580,6 +581,8 @@ function Library() {
               />
             }
           />
+
+          {shows('books') ? <LibraryReadingMount /> : null}
 
           <div className="lib-playground" ref={playgroundRef} {...orbit}>
             <LibraryRevealProvider instant={hasFiltered}>
