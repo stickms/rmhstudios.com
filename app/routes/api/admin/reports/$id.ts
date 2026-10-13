@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { takedownStamp } from '@/lib/profile/stamps.server';
+import { createNotification } from '@/lib/notifications.server';
 import { takedownRing } from '@/lib/profile/webrings.server';
 
 /**
@@ -15,6 +16,8 @@ import { takedownRing } from '@/lib/profile/webrings.server';
 const actionSchema = z.object({
   action: z.enum(['review', 'resolve', 'dismiss']),
   note: z.string().max(1000).optional(),
+  // S4: macro-filled message sent to the reported author as a notification.
+  message: z.string().trim().max(1000).optional(),
   deleteContent: z.boolean().optional(),
 });
 
@@ -67,11 +70,21 @@ export const Route = createFileRoute('/api/admin/reports/$id')({
             where: { id: params.id },
             data: {
               status: newStatus,
-              moderatorNote: body.note?.trim() || report.moderatorNote,
+              moderatorNote: body.note?.trim() || body.message || report.moderatorNote,
               resolvedById: terminal ? session.user.id : report.resolvedById,
               resolvedAt: terminal ? new Date() : report.resolvedAt,
             },
           });
+
+          if (body.message && body.action === 'resolve' && report.targetUserId) {
+            await createNotification({
+              userId: report.targetUserId,
+              type: 'SYSTEM',
+              entityType: 'report',
+              entityId: report.id,
+              preview: body.message,
+            });
+          }
 
           await logAdminAction(session.user.id, `report.${body.action}`, {
             targetType: report.entityType,

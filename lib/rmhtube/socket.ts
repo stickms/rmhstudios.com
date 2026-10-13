@@ -17,6 +17,7 @@ import { usePartyStore } from './party-store';
 import type { PartyState } from './party';
 import { C2S, S2C } from './events';
 import { toast } from './toast-store';
+import { bindSlowModeEvents } from '@/lib/safety/slow-mode-store';
 import { recordPong, beginClockSyncBurst, resetClock } from './clock';
 import { CLOCK_SYNC_SAMPLES, CLOCK_SYNC_INTERVAL_MS } from './constants';
 import type { VideoState } from './types';
@@ -188,6 +189,8 @@ function registerHandlers(socket: Socket) {
     const room = store().room;
     if (room) useRmhTubeStore.setState({ room: { ...room, queue: data.queue } });
   });
+
+  bindSlowModeEvents(socket, 'tube');
 
   // ─── Removal / errors ─────────────────────────────────────────────────
   socket.on(S2C.ERROR, (error: { code?: string; message?: string; roomId?: string }) => {

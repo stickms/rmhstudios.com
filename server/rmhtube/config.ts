@@ -122,6 +122,7 @@ export const config = {
     'rmhtube:chat:typing':        { max: 30,  windowMs: 60_000 },
     'rmhtube:chat:react':         { max: 30,  windowMs: 60_000 },
     'rmhtube:chat:pin':           { max: 10,  windowMs: 60_000 },
+    'safety:slowmode:tube:set':   { max: 20,  windowMs: 60_000 },
     'rmhtube:reaction:send':      { max: 30,  windowMs: 60_000 },
   } as Record<string, { max: number; windowMs: number }>,
 

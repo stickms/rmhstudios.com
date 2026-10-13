@@ -94,6 +94,7 @@ import { Route as SiteLeaderboardRouteImport } from './routes/_site/leaderboard'
 import { Route as SiteMarketRouteImport } from './routes/_site/market'
 import { Route as SiteMusicTriviaRouteImport } from './routes/_site/music-trivia'
 import { Route as SiteNotificationsRouteImport } from './routes/_site/notifications'
+import { Route as SiteOutRouteImport } from './routes/_site/out'
 import { Route as SitePlaylistsRouteImport } from './routes/_site/playlists'
 import { Route as SitePredictionsRouteImport } from './routes/_site/predictions'
 import { Route as SitePricingRouteImport } from './routes/_site/pricing'
@@ -229,6 +230,7 @@ import { Route as SiteAdminReadingRouteImport } from './routes/_site/admin/readi
 import { Route as SiteAdminRedemptionsRouteImport } from './routes/_site/admin/redemptions'
 import { Route as SiteAdminReportsRouteImport } from './routes/_site/admin/reports'
 import { Route as SiteAdminRideshareRouteImport } from './routes/_site/admin/rideshare'
+import { Route as SiteAdminSafetyRouteImport } from './routes/_site/admin/safety'
 import { Route as SiteAdminSecurityReportsRouteImport } from './routes/_site/admin/security-reports'
 import { Route as SiteAdminSliceItRouteImport } from './routes/_site/admin/slice-it'
 import { Route as SiteAdminSliceItContentRouteImport } from './routes/_site/admin/slice-it-content'
@@ -294,6 +296,7 @@ import { Route as SiteRmhladderPipelineRouteImport } from './routes/_site/rmhlad
 import { Route as SiteRmhladderResumeRouteImport } from './routes/_site/rmhladder/resume'
 import { Route as SiteRmhladderReviewRouteImport } from './routes/_site/rmhladder/review'
 import { Route as SiteRmhladderSettingsRouteImport } from './routes/_site/rmhladder/settings'
+import { Route as SiteSafetyPileOnRouteImport } from './routes/_site/safety/pile-on'
 import { Route as SiteSavesIndexRouteImport } from './routes/_site/saves/index'
 import { Route as SiteSeriesIndexRouteImport } from './routes/_site/series.index'
 import { Route as SiteSeriesIdRouteImport } from './routes/_site/series.$id'
@@ -346,9 +349,12 @@ import { Route as ApiAdminAppealsRouteImport } from './routes/api/admin/appeals'
 import { Route as ApiAdminAuditLogRouteImport } from './routes/api/admin/audit-log'
 import { Route as ApiAdminBlogRouteImport } from './routes/api/admin/blog'
 import { Route as ApiAdminEconomyRouteImport } from './routes/api/admin/economy'
+import { Route as ApiAdminLinkRulesRouteImport } from './routes/api/admin/link-rules'
+import { Route as ApiAdminModMacrosRouteImport } from './routes/api/admin/mod-macros'
 import { Route as ApiAdminReportsRouteImport } from './routes/api/admin/reports'
 import { Route as ApiAdminReviewCountsRouteImport } from './routes/api/admin/review-counts'
 import { Route as ApiAdminUsersRouteImport } from './routes/api/admin/users'
+import { Route as ApiAdminViewAsRouteImport } from './routes/api/admin/view-as'
 import { Route as ApiAdventIndexRouteImport } from './routes/api/advent/index'
 import { Route as ApiAiAskFeedRouteImport } from './routes/api/ai/ask-feed'
 import { Route as ApiAiBioRouteImport } from './routes/api/ai/bio'
@@ -490,6 +496,7 @@ import { Route as ApiLibraryCollectionsRouteImport } from './routes/api/library/
 import { Route as ApiLibraryDraftRouteImport } from './routes/api/library/draft'
 import { Route as ApiLibraryQuotaRouteImport } from './routes/api/library/quota'
 import { Route as ApiLibraryUploadRouteImport } from './routes/api/library/upload'
+import { Route as ApiLinksCheckRouteImport } from './routes/api/links/check'
 import { Route as ApiListsIndexRouteImport } from './routes/api/lists/index'
 import { Route as ApiListsIdRouteImport } from './routes/api/lists/$id'
 import { Route as ApiMassiveMarchCampaignsRouteImport } from './routes/api/massive-march/campaigns'
@@ -600,6 +607,7 @@ import { Route as ApiRmhtubeTimedCommentsRouteImport } from './routes/api/rmhtub
 import { Route as ApiRmhtubeWatchLaterRouteImport } from './routes/api/rmhtube/watch-later'
 import { Route as ApiRmhtypeKeystatsRouteImport } from './routes/api/rmhtype/keystats'
 import { Route as ApiRmhtypePracticeTestRouteImport } from './routes/api/rmhtype/practice-test'
+import { Route as ApiSafetyPileOnRouteImport } from './routes/api/safety/pile-on'
 import { Route as ApiSavesIndexRouteImport } from './routes/api/saves/index'
 import { Route as ApiSavesFoldersRouteImport } from './routes/api/saves/folders'
 import { Route as ApiSavesNoteRouteImport } from './routes/api/saves/note'
@@ -783,6 +791,7 @@ import { Route as ApiCommunitiesSlugFeedRouteImport } from './routes/api/communi
 import { Route as ApiCommunitiesSlugFlairFollowsRouteImport } from './routes/api/communities/$slug/flair-follows'
 import { Route as ApiCommunitiesSlugFlairsRouteImport } from './routes/api/communities/$slug/flairs'
 import { Route as ApiCommunitiesSlugJoinRouteImport } from './routes/api/communities/$slug/join'
+import { Route as ApiCommunitiesSlugMacrosRouteImport } from './routes/api/communities/$slug/macros'
 import { Route as ApiCommunitiesSlugMembersRouteImport } from './routes/api/communities/$slug/members'
 import { Route as ApiCommunitiesSlugModqueueRouteImport } from './routes/api/communities/$slug/modqueue'
 import { Route as ApiCommunitiesSlugOnboardingRouteImport } from './routes/api/communities/$slug/onboarding'
@@ -1544,6 +1553,11 @@ const SiteNotificationsRoute = SiteNotificationsRouteImport.update({
   path: '/notifications',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteOutRoute = SiteOutRouteImport.update({
+  id: '/out',
+  path: '/out',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SitePlaylistsRoute = SitePlaylistsRouteImport.update({
   id: '/playlists',
   path: '/playlists',
@@ -2219,6 +2233,11 @@ const SiteAdminRideshareRoute = SiteAdminRideshareRouteImport.update({
   path: '/rideshare',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
+const SiteAdminSafetyRoute = SiteAdminSafetyRouteImport.update({
+  id: '/safety',
+  path: '/safety',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
 const SiteAdminSecurityReportsRoute =
   SiteAdminSecurityReportsRouteImport.update({
     id: '/security-reports',
@@ -2550,6 +2569,11 @@ const SiteRmhladderSettingsRoute = SiteRmhladderSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => SiteRmhladderRoute,
 } as any)
+const SiteSafetyPileOnRoute = SiteSafetyPileOnRouteImport.update({
+  id: '/safety/pile-on',
+  path: '/safety/pile-on',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteSavesIndexRoute = SiteSavesIndexRouteImport.update({
   id: '/saves/',
   path: '/saves/',
@@ -2813,6 +2837,16 @@ const ApiAdminEconomyRoute = ApiAdminEconomyRouteImport.update({
   path: '/api/admin/economy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminLinkRulesRoute = ApiAdminLinkRulesRouteImport.update({
+  id: '/api/admin/link-rules',
+  path: '/api/admin/link-rules',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminModMacrosRoute = ApiAdminModMacrosRouteImport.update({
+  id: '/api/admin/mod-macros',
+  path: '/api/admin/mod-macros',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminReportsRoute = ApiAdminReportsRouteImport.update({
   id: '/api/admin/reports',
   path: '/api/admin/reports',
@@ -2826,6 +2860,11 @@ const ApiAdminReviewCountsRoute = ApiAdminReviewCountsRouteImport.update({
 const ApiAdminUsersRoute = ApiAdminUsersRouteImport.update({
   id: '/api/admin/users',
   path: '/api/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminViewAsRoute = ApiAdminViewAsRouteImport.update({
+  id: '/api/admin/view-as',
+  path: '/api/admin/view-as',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAdventIndexRoute = ApiAdventIndexRouteImport.update({
@@ -3541,6 +3580,11 @@ const ApiLibraryUploadRoute = ApiLibraryUploadRouteImport.update({
   path: '/api/library/upload',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiLinksCheckRoute = ApiLinksCheckRouteImport.update({
+  id: '/api/links/check',
+  path: '/api/links/check',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiListsIndexRoute = ApiListsIndexRouteImport.update({
   id: '/api/lists/',
   path: '/api/lists/',
@@ -4098,6 +4142,11 @@ const ApiRmhtypeKeystatsRoute = ApiRmhtypeKeystatsRouteImport.update({
 const ApiRmhtypePracticeTestRoute = ApiRmhtypePracticeTestRouteImport.update({
   id: '/api/rmhtype/practice-test',
   path: '/api/rmhtype/practice-test',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSafetyPileOnRoute = ApiSafetyPileOnRouteImport.update({
+  id: '/api/safety/pile-on',
+  path: '/api/safety/pile-on',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSavesIndexRoute = ApiSavesIndexRouteImport.update({
@@ -5047,6 +5096,12 @@ const ApiCommunitiesSlugJoinRoute = ApiCommunitiesSlugJoinRouteImport.update({
   path: '/api/communities/$slug/join',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCommunitiesSlugMacrosRoute =
+  ApiCommunitiesSlugMacrosRouteImport.update({
+    id: '/api/communities/$slug/macros',
+    path: '/api/communities/$slug/macros',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiCommunitiesSlugMembersRoute =
   ApiCommunitiesSlugMembersRouteImport.update({
     id: '/api/communities/$slug/members',
@@ -6928,6 +6983,7 @@ export interface FileRoutesByFullPath {
   '/market': typeof SiteMarketRoute
   '/music-trivia': typeof SiteMusicTriviaRoute
   '/notifications': typeof SiteNotificationsRoute
+  '/out': typeof SiteOutRoute
   '/playlists': typeof SitePlaylistsRoute
   '/predictions': typeof SitePredictionsRoute
   '/pricing': typeof SitePricingRoute
@@ -7062,6 +7118,7 @@ export interface FileRoutesByFullPath {
   '/admin/redemptions': typeof SiteAdminRedemptionsRoute
   '/admin/reports': typeof SiteAdminReportsRoute
   '/admin/rideshare': typeof SiteAdminRideshareRoute
+  '/admin/safety': typeof SiteAdminSafetyRoute
   '/admin/security-reports': typeof SiteAdminSecurityReportsRoute
   '/admin/slice-it': typeof SiteAdminSliceItRoute
   '/admin/slice-it-content': typeof SiteAdminSliceItContentRoute
@@ -7105,6 +7162,7 @@ export interface FileRoutesByFullPath {
   '/rmhladder/resume': typeof SiteRmhladderResumeRoute
   '/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/rmhladder/settings': typeof SiteRmhladderSettingsRoute
+  '/safety/pile-on': typeof SiteSafetyPileOnRoute
   '/series/$id': typeof SiteSeriesIdRoute
   '/services/cars': typeof SiteServicesCarsRoute
   '/services/fashion': typeof SiteServicesFashionRoute
@@ -7143,9 +7201,12 @@ export interface FileRoutesByFullPath {
   '/api/admin/audit-log': typeof ApiAdminAuditLogRoute
   '/api/admin/blog': typeof ApiAdminBlogRoute
   '/api/admin/economy': typeof ApiAdminEconomyRoute
+  '/api/admin/link-rules': typeof ApiAdminLinkRulesRoute
+  '/api/admin/mod-macros': typeof ApiAdminModMacrosRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
   '/api/admin/review-counts': typeof ApiAdminReviewCountsRoute
   '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
+  '/api/admin/view-as': typeof ApiAdminViewAsRoute
   '/api/ai/ask-feed': typeof ApiAiAskFeedRoute
   '/api/ai/bio': typeof ApiAiBioRoute
   '/api/ai/catch-up': typeof ApiAiCatchUpRoute
@@ -7264,6 +7325,7 @@ export interface FileRoutesByFullPath {
   '/api/library/draft': typeof ApiLibraryDraftRoute
   '/api/library/quota': typeof ApiLibraryQuotaRoute
   '/api/library/upload': typeof ApiLibraryUploadRoute
+  '/api/links/check': typeof ApiLinksCheckRoute
   '/api/lists/$id': typeof ApiListsIdRouteWithChildren
   '/api/massive-march/campaigns': typeof ApiMassiveMarchCampaignsRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
@@ -7357,6 +7419,7 @@ export interface FileRoutesByFullPath {
   '/api/rmhtube/watch-later': typeof ApiRmhtubeWatchLaterRoute
   '/api/rmhtype/keystats': typeof ApiRmhtypeKeystatsRoute
   '/api/rmhtype/practice-test': typeof ApiRmhtypePracticeTestRoute
+  '/api/safety/pile-on': typeof ApiSafetyPileOnRoute
   '/api/saves/folders': typeof ApiSavesFoldersRouteWithChildren
   '/api/saves/note': typeof ApiSavesNoteRoute
   '/api/schedule/admin': typeof ApiScheduleAdminRoute
@@ -7603,6 +7666,7 @@ export interface FileRoutesByFullPath {
   '/api/communities/$slug/flair-follows': typeof ApiCommunitiesSlugFlairFollowsRoute
   '/api/communities/$slug/flairs': typeof ApiCommunitiesSlugFlairsRouteWithChildren
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
+  '/api/communities/$slug/macros': typeof ApiCommunitiesSlugMacrosRoute
   '/api/communities/$slug/members': typeof ApiCommunitiesSlugMembersRouteWithChildren
   '/api/communities/$slug/modqueue': typeof ApiCommunitiesSlugModqueueRouteWithChildren
   '/api/communities/$slug/onboarding': typeof ApiCommunitiesSlugOnboardingRoute
@@ -8014,6 +8078,7 @@ export interface FileRoutesByTo {
   '/market': typeof SiteMarketRoute
   '/music-trivia': typeof SiteMusicTriviaRoute
   '/notifications': typeof SiteNotificationsRoute
+  '/out': typeof SiteOutRoute
   '/playlists': typeof SitePlaylistsRoute
   '/predictions': typeof SitePredictionsRoute
   '/pricing': typeof SitePricingRoute
@@ -8145,6 +8210,7 @@ export interface FileRoutesByTo {
   '/admin/redemptions': typeof SiteAdminRedemptionsRoute
   '/admin/reports': typeof SiteAdminReportsRoute
   '/admin/rideshare': typeof SiteAdminRideshareRoute
+  '/admin/safety': typeof SiteAdminSafetyRoute
   '/admin/security-reports': typeof SiteAdminSecurityReportsRoute
   '/admin/slice-it': typeof SiteAdminSliceItRoute
   '/admin/slice-it-content': typeof SiteAdminSliceItContentRoute
@@ -8188,6 +8254,7 @@ export interface FileRoutesByTo {
   '/rmhladder/resume': typeof SiteRmhladderResumeRoute
   '/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/rmhladder/settings': typeof SiteRmhladderSettingsRoute
+  '/safety/pile-on': typeof SiteSafetyPileOnRoute
   '/series/$id': typeof SiteSeriesIdRoute
   '/services/cars': typeof SiteServicesCarsRoute
   '/services/fashion': typeof SiteServicesFashionRoute
@@ -8226,9 +8293,12 @@ export interface FileRoutesByTo {
   '/api/admin/audit-log': typeof ApiAdminAuditLogRoute
   '/api/admin/blog': typeof ApiAdminBlogRoute
   '/api/admin/economy': typeof ApiAdminEconomyRoute
+  '/api/admin/link-rules': typeof ApiAdminLinkRulesRoute
+  '/api/admin/mod-macros': typeof ApiAdminModMacrosRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
   '/api/admin/review-counts': typeof ApiAdminReviewCountsRoute
   '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
+  '/api/admin/view-as': typeof ApiAdminViewAsRoute
   '/api/ai/ask-feed': typeof ApiAiAskFeedRoute
   '/api/ai/bio': typeof ApiAiBioRoute
   '/api/ai/catch-up': typeof ApiAiCatchUpRoute
@@ -8347,6 +8417,7 @@ export interface FileRoutesByTo {
   '/api/library/draft': typeof ApiLibraryDraftRoute
   '/api/library/quota': typeof ApiLibraryQuotaRoute
   '/api/library/upload': typeof ApiLibraryUploadRoute
+  '/api/links/check': typeof ApiLinksCheckRoute
   '/api/lists/$id': typeof ApiListsIdRouteWithChildren
   '/api/massive-march/campaigns': typeof ApiMassiveMarchCampaignsRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
@@ -8440,6 +8511,7 @@ export interface FileRoutesByTo {
   '/api/rmhtube/watch-later': typeof ApiRmhtubeWatchLaterRoute
   '/api/rmhtype/keystats': typeof ApiRmhtypeKeystatsRoute
   '/api/rmhtype/practice-test': typeof ApiRmhtypePracticeTestRoute
+  '/api/safety/pile-on': typeof ApiSafetyPileOnRoute
   '/api/saves/folders': typeof ApiSavesFoldersRouteWithChildren
   '/api/saves/note': typeof ApiSavesNoteRoute
   '/api/schedule/admin': typeof ApiScheduleAdminRoute
@@ -8686,6 +8758,7 @@ export interface FileRoutesByTo {
   '/api/communities/$slug/flair-follows': typeof ApiCommunitiesSlugFlairFollowsRoute
   '/api/communities/$slug/flairs': typeof ApiCommunitiesSlugFlairsRouteWithChildren
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
+  '/api/communities/$slug/macros': typeof ApiCommunitiesSlugMacrosRoute
   '/api/communities/$slug/members': typeof ApiCommunitiesSlugMembersRouteWithChildren
   '/api/communities/$slug/modqueue': typeof ApiCommunitiesSlugModqueueRouteWithChildren
   '/api/communities/$slug/onboarding': typeof ApiCommunitiesSlugOnboardingRoute
@@ -9121,6 +9194,7 @@ export interface FileRoutesById {
   '/_site/market': typeof SiteMarketRoute
   '/_site/music-trivia': typeof SiteMusicTriviaRoute
   '/_site/notifications': typeof SiteNotificationsRoute
+  '/_site/out': typeof SiteOutRoute
   '/_site/playlists': typeof SitePlaylistsRoute
   '/_site/predictions': typeof SitePredictionsRoute
   '/_site/pricing': typeof SitePricingRoute
@@ -9256,6 +9330,7 @@ export interface FileRoutesById {
   '/_site/admin/redemptions': typeof SiteAdminRedemptionsRoute
   '/_site/admin/reports': typeof SiteAdminReportsRoute
   '/_site/admin/rideshare': typeof SiteAdminRideshareRoute
+  '/_site/admin/safety': typeof SiteAdminSafetyRoute
   '/_site/admin/security-reports': typeof SiteAdminSecurityReportsRoute
   '/_site/admin/slice-it': typeof SiteAdminSliceItRoute
   '/_site/admin/slice-it-content': typeof SiteAdminSliceItContentRoute
@@ -9299,6 +9374,7 @@ export interface FileRoutesById {
   '/_site/rmhladder/resume': typeof SiteRmhladderResumeRoute
   '/_site/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/_site/rmhladder/settings': typeof SiteRmhladderSettingsRoute
+  '/_site/safety/pile-on': typeof SiteSafetyPileOnRoute
   '/_site/series/$id': typeof SiteSeriesIdRoute
   '/_site/services/cars': typeof SiteServicesCarsRoute
   '/_site/services/fashion': typeof SiteServicesFashionRoute
@@ -9337,9 +9413,12 @@ export interface FileRoutesById {
   '/api/admin/audit-log': typeof ApiAdminAuditLogRoute
   '/api/admin/blog': typeof ApiAdminBlogRoute
   '/api/admin/economy': typeof ApiAdminEconomyRoute
+  '/api/admin/link-rules': typeof ApiAdminLinkRulesRoute
+  '/api/admin/mod-macros': typeof ApiAdminModMacrosRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
   '/api/admin/review-counts': typeof ApiAdminReviewCountsRoute
   '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
+  '/api/admin/view-as': typeof ApiAdminViewAsRoute
   '/api/ai/ask-feed': typeof ApiAiAskFeedRoute
   '/api/ai/bio': typeof ApiAiBioRoute
   '/api/ai/catch-up': typeof ApiAiCatchUpRoute
@@ -9458,6 +9537,7 @@ export interface FileRoutesById {
   '/api/library/draft': typeof ApiLibraryDraftRoute
   '/api/library/quota': typeof ApiLibraryQuotaRoute
   '/api/library/upload': typeof ApiLibraryUploadRoute
+  '/api/links/check': typeof ApiLinksCheckRoute
   '/api/lists/$id': typeof ApiListsIdRouteWithChildren
   '/api/massive-march/campaigns': typeof ApiMassiveMarchCampaignsRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
@@ -9551,6 +9631,7 @@ export interface FileRoutesById {
   '/api/rmhtube/watch-later': typeof ApiRmhtubeWatchLaterRoute
   '/api/rmhtype/keystats': typeof ApiRmhtypeKeystatsRoute
   '/api/rmhtype/practice-test': typeof ApiRmhtypePracticeTestRoute
+  '/api/safety/pile-on': typeof ApiSafetyPileOnRoute
   '/api/saves/folders': typeof ApiSavesFoldersRouteWithChildren
   '/api/saves/note': typeof ApiSavesNoteRoute
   '/api/schedule/admin': typeof ApiScheduleAdminRoute
@@ -9797,6 +9878,7 @@ export interface FileRoutesById {
   '/api/communities/$slug/flair-follows': typeof ApiCommunitiesSlugFlairFollowsRoute
   '/api/communities/$slug/flairs': typeof ApiCommunitiesSlugFlairsRouteWithChildren
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
+  '/api/communities/$slug/macros': typeof ApiCommunitiesSlugMacrosRoute
   '/api/communities/$slug/members': typeof ApiCommunitiesSlugMembersRouteWithChildren
   '/api/communities/$slug/modqueue': typeof ApiCommunitiesSlugModqueueRouteWithChildren
   '/api/communities/$slug/onboarding': typeof ApiCommunitiesSlugOnboardingRoute
@@ -10233,6 +10315,7 @@ export interface FileRouteTypes {
     | '/market'
     | '/music-trivia'
     | '/notifications'
+    | '/out'
     | '/playlists'
     | '/predictions'
     | '/pricing'
@@ -10367,6 +10450,7 @@ export interface FileRouteTypes {
     | '/admin/redemptions'
     | '/admin/reports'
     | '/admin/rideshare'
+    | '/admin/safety'
     | '/admin/security-reports'
     | '/admin/slice-it'
     | '/admin/slice-it-content'
@@ -10410,6 +10494,7 @@ export interface FileRouteTypes {
     | '/rmhladder/resume'
     | '/rmhladder/review'
     | '/rmhladder/settings'
+    | '/safety/pile-on'
     | '/series/$id'
     | '/services/cars'
     | '/services/fashion'
@@ -10448,9 +10533,12 @@ export interface FileRouteTypes {
     | '/api/admin/audit-log'
     | '/api/admin/blog'
     | '/api/admin/economy'
+    | '/api/admin/link-rules'
+    | '/api/admin/mod-macros'
     | '/api/admin/reports'
     | '/api/admin/review-counts'
     | '/api/admin/users'
+    | '/api/admin/view-as'
     | '/api/ai/ask-feed'
     | '/api/ai/bio'
     | '/api/ai/catch-up'
@@ -10569,6 +10657,7 @@ export interface FileRouteTypes {
     | '/api/library/draft'
     | '/api/library/quota'
     | '/api/library/upload'
+    | '/api/links/check'
     | '/api/lists/$id'
     | '/api/massive-march/campaigns'
     | '/api/messages/$conversationId'
@@ -10662,6 +10751,7 @@ export interface FileRouteTypes {
     | '/api/rmhtube/watch-later'
     | '/api/rmhtype/keystats'
     | '/api/rmhtype/practice-test'
+    | '/api/safety/pile-on'
     | '/api/saves/folders'
     | '/api/saves/note'
     | '/api/schedule/admin'
@@ -10908,6 +10998,7 @@ export interface FileRouteTypes {
     | '/api/communities/$slug/flair-follows'
     | '/api/communities/$slug/flairs'
     | '/api/communities/$slug/join'
+    | '/api/communities/$slug/macros'
     | '/api/communities/$slug/members'
     | '/api/communities/$slug/modqueue'
     | '/api/communities/$slug/onboarding'
@@ -11319,6 +11410,7 @@ export interface FileRouteTypes {
     | '/market'
     | '/music-trivia'
     | '/notifications'
+    | '/out'
     | '/playlists'
     | '/predictions'
     | '/pricing'
@@ -11450,6 +11542,7 @@ export interface FileRouteTypes {
     | '/admin/redemptions'
     | '/admin/reports'
     | '/admin/rideshare'
+    | '/admin/safety'
     | '/admin/security-reports'
     | '/admin/slice-it'
     | '/admin/slice-it-content'
@@ -11493,6 +11586,7 @@ export interface FileRouteTypes {
     | '/rmhladder/resume'
     | '/rmhladder/review'
     | '/rmhladder/settings'
+    | '/safety/pile-on'
     | '/series/$id'
     | '/services/cars'
     | '/services/fashion'
@@ -11531,9 +11625,12 @@ export interface FileRouteTypes {
     | '/api/admin/audit-log'
     | '/api/admin/blog'
     | '/api/admin/economy'
+    | '/api/admin/link-rules'
+    | '/api/admin/mod-macros'
     | '/api/admin/reports'
     | '/api/admin/review-counts'
     | '/api/admin/users'
+    | '/api/admin/view-as'
     | '/api/ai/ask-feed'
     | '/api/ai/bio'
     | '/api/ai/catch-up'
@@ -11652,6 +11749,7 @@ export interface FileRouteTypes {
     | '/api/library/draft'
     | '/api/library/quota'
     | '/api/library/upload'
+    | '/api/links/check'
     | '/api/lists/$id'
     | '/api/massive-march/campaigns'
     | '/api/messages/$conversationId'
@@ -11745,6 +11843,7 @@ export interface FileRouteTypes {
     | '/api/rmhtube/watch-later'
     | '/api/rmhtype/keystats'
     | '/api/rmhtype/practice-test'
+    | '/api/safety/pile-on'
     | '/api/saves/folders'
     | '/api/saves/note'
     | '/api/schedule/admin'
@@ -11991,6 +12090,7 @@ export interface FileRouteTypes {
     | '/api/communities/$slug/flair-follows'
     | '/api/communities/$slug/flairs'
     | '/api/communities/$slug/join'
+    | '/api/communities/$slug/macros'
     | '/api/communities/$slug/members'
     | '/api/communities/$slug/modqueue'
     | '/api/communities/$slug/onboarding'
@@ -12425,6 +12525,7 @@ export interface FileRouteTypes {
     | '/_site/market'
     | '/_site/music-trivia'
     | '/_site/notifications'
+    | '/_site/out'
     | '/_site/playlists'
     | '/_site/predictions'
     | '/_site/pricing'
@@ -12560,6 +12661,7 @@ export interface FileRouteTypes {
     | '/_site/admin/redemptions'
     | '/_site/admin/reports'
     | '/_site/admin/rideshare'
+    | '/_site/admin/safety'
     | '/_site/admin/security-reports'
     | '/_site/admin/slice-it'
     | '/_site/admin/slice-it-content'
@@ -12603,6 +12705,7 @@ export interface FileRouteTypes {
     | '/_site/rmhladder/resume'
     | '/_site/rmhladder/review'
     | '/_site/rmhladder/settings'
+    | '/_site/safety/pile-on'
     | '/_site/series/$id'
     | '/_site/services/cars'
     | '/_site/services/fashion'
@@ -12641,9 +12744,12 @@ export interface FileRouteTypes {
     | '/api/admin/audit-log'
     | '/api/admin/blog'
     | '/api/admin/economy'
+    | '/api/admin/link-rules'
+    | '/api/admin/mod-macros'
     | '/api/admin/reports'
     | '/api/admin/review-counts'
     | '/api/admin/users'
+    | '/api/admin/view-as'
     | '/api/ai/ask-feed'
     | '/api/ai/bio'
     | '/api/ai/catch-up'
@@ -12762,6 +12868,7 @@ export interface FileRouteTypes {
     | '/api/library/draft'
     | '/api/library/quota'
     | '/api/library/upload'
+    | '/api/links/check'
     | '/api/lists/$id'
     | '/api/massive-march/campaigns'
     | '/api/messages/$conversationId'
@@ -12855,6 +12962,7 @@ export interface FileRouteTypes {
     | '/api/rmhtube/watch-later'
     | '/api/rmhtype/keystats'
     | '/api/rmhtype/practice-test'
+    | '/api/safety/pile-on'
     | '/api/saves/folders'
     | '/api/saves/note'
     | '/api/schedule/admin'
@@ -13101,6 +13209,7 @@ export interface FileRouteTypes {
     | '/api/communities/$slug/flair-follows'
     | '/api/communities/$slug/flairs'
     | '/api/communities/$slug/join'
+    | '/api/communities/$slug/macros'
     | '/api/communities/$slug/members'
     | '/api/communities/$slug/modqueue'
     | '/api/communities/$slug/onboarding'
@@ -13565,9 +13674,12 @@ export interface RootRouteChildren {
   ApiAdminAuditLogRoute: typeof ApiAdminAuditLogRoute
   ApiAdminBlogRoute: typeof ApiAdminBlogRoute
   ApiAdminEconomyRoute: typeof ApiAdminEconomyRoute
+  ApiAdminLinkRulesRoute: typeof ApiAdminLinkRulesRoute
+  ApiAdminModMacrosRoute: typeof ApiAdminModMacrosRoute
   ApiAdminReportsRoute: typeof ApiAdminReportsRouteWithChildren
   ApiAdminReviewCountsRoute: typeof ApiAdminReviewCountsRoute
   ApiAdminUsersRoute: typeof ApiAdminUsersRouteWithChildren
+  ApiAdminViewAsRoute: typeof ApiAdminViewAsRoute
   ApiAiAskFeedRoute: typeof ApiAiAskFeedRoute
   ApiAiBioRoute: typeof ApiAiBioRoute
   ApiAiCatchUpRoute: typeof ApiAiCatchUpRoute
@@ -13686,6 +13798,7 @@ export interface RootRouteChildren {
   ApiLibraryDraftRoute: typeof ApiLibraryDraftRoute
   ApiLibraryQuotaRoute: typeof ApiLibraryQuotaRoute
   ApiLibraryUploadRoute: typeof ApiLibraryUploadRoute
+  ApiLinksCheckRoute: typeof ApiLinksCheckRoute
   ApiListsIdRoute: typeof ApiListsIdRouteWithChildren
   ApiMassiveMarchCampaignsRoute: typeof ApiMassiveMarchCampaignsRoute
   ApiModerationBlockRoute: typeof ApiModerationBlockRoute
@@ -13757,6 +13870,7 @@ export interface RootRouteChildren {
   ApiRmhtubeWatchLaterRoute: typeof ApiRmhtubeWatchLaterRoute
   ApiRmhtypeKeystatsRoute: typeof ApiRmhtypeKeystatsRoute
   ApiRmhtypePracticeTestRoute: typeof ApiRmhtypePracticeTestRoute
+  ApiSafetyPileOnRoute: typeof ApiSafetyPileOnRoute
   ApiSavesFoldersRoute: typeof ApiSavesFoldersRouteWithChildren
   ApiSavesNoteRoute: typeof ApiSavesNoteRoute
   ApiScheduleAdminRoute: typeof ApiScheduleAdminRoute
@@ -13937,6 +14051,7 @@ export interface RootRouteChildren {
   ApiCommunitiesSlugFlairFollowsRoute: typeof ApiCommunitiesSlugFlairFollowsRoute
   ApiCommunitiesSlugFlairsRoute: typeof ApiCommunitiesSlugFlairsRouteWithChildren
   ApiCommunitiesSlugJoinRoute: typeof ApiCommunitiesSlugJoinRoute
+  ApiCommunitiesSlugMacrosRoute: typeof ApiCommunitiesSlugMacrosRoute
   ApiCommunitiesSlugMembersRoute: typeof ApiCommunitiesSlugMembersRouteWithChildren
   ApiCommunitiesSlugModqueueRoute: typeof ApiCommunitiesSlugModqueueRouteWithChildren
   ApiCommunitiesSlugOnboardingRoute: typeof ApiCommunitiesSlugOnboardingRoute
@@ -14712,6 +14827,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof SiteNotificationsRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/out': {
+      id: '/_site/out'
+      path: '/out'
+      fullPath: '/out'
+      preLoaderRoute: typeof SiteOutRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/playlists': {
@@ -15659,6 +15781,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminRideshareRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
+    '/_site/admin/safety': {
+      id: '/_site/admin/safety'
+      path: '/safety'
+      fullPath: '/admin/safety'
+      preLoaderRoute: typeof SiteAdminSafetyRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
     '/_site/admin/security-reports': {
       id: '/_site/admin/security-reports'
       path: '/security-reports'
@@ -16114,6 +16243,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteRmhladderSettingsRouteImport
       parentRoute: typeof SiteRmhladderRoute
     }
+    '/_site/safety/pile-on': {
+      id: '/_site/safety/pile-on'
+      path: '/safety/pile-on'
+      fullPath: '/safety/pile-on'
+      preLoaderRoute: typeof SiteSafetyPileOnRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/saves/': {
       id: '/_site/saves/'
       path: '/saves'
@@ -16478,6 +16614,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminEconomyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/link-rules': {
+      id: '/api/admin/link-rules'
+      path: '/api/admin/link-rules'
+      fullPath: '/api/admin/link-rules'
+      preLoaderRoute: typeof ApiAdminLinkRulesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/mod-macros': {
+      id: '/api/admin/mod-macros'
+      path: '/api/admin/mod-macros'
+      fullPath: '/api/admin/mod-macros'
+      preLoaderRoute: typeof ApiAdminModMacrosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/reports': {
       id: '/api/admin/reports'
       path: '/api/admin/reports'
@@ -16497,6 +16647,13 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/users'
       fullPath: '/api/admin/users'
       preLoaderRoute: typeof ApiAdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/view-as': {
+      id: '/api/admin/view-as'
+      path: '/api/admin/view-as'
+      fullPath: '/api/admin/view-as'
+      preLoaderRoute: typeof ApiAdminViewAsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/advent/': {
@@ -17486,6 +17643,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiLibraryUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/links/check': {
+      id: '/api/links/check'
+      path: '/api/links/check'
+      fullPath: '/api/links/check'
+      preLoaderRoute: typeof ApiLinksCheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/lists/': {
       id: '/api/lists/'
       path: '/api/lists'
@@ -18254,6 +18418,13 @@ declare module '@tanstack/react-router' {
       path: '/api/rmhtype/practice-test'
       fullPath: '/api/rmhtype/practice-test'
       preLoaderRoute: typeof ApiRmhtypePracticeTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/safety/pile-on': {
+      id: '/api/safety/pile-on'
+      path: '/api/safety/pile-on'
+      fullPath: '/api/safety/pile-on'
+      preLoaderRoute: typeof ApiSafetyPileOnRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/saves/': {
@@ -19535,6 +19706,13 @@ declare module '@tanstack/react-router' {
       path: '/api/communities/$slug/join'
       fullPath: '/api/communities/$slug/join'
       preLoaderRoute: typeof ApiCommunitiesSlugJoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/communities/$slug/macros': {
+      id: '/api/communities/$slug/macros'
+      path: '/api/communities/$slug/macros'
+      fullPath: '/api/communities/$slug/macros'
+      preLoaderRoute: typeof ApiCommunitiesSlugMacrosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/communities/$slug/members': {
@@ -21894,6 +22072,7 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminRedemptionsRoute: typeof SiteAdminRedemptionsRoute
   SiteAdminReportsRoute: typeof SiteAdminReportsRoute
   SiteAdminRideshareRoute: typeof SiteAdminRideshareRoute
+  SiteAdminSafetyRoute: typeof SiteAdminSafetyRoute
   SiteAdminSecurityReportsRoute: typeof SiteAdminSecurityReportsRoute
   SiteAdminSliceItRoute: typeof SiteAdminSliceItRoute
   SiteAdminSliceItContentRoute: typeof SiteAdminSliceItContentRoute
@@ -21923,6 +22102,7 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminRedemptionsRoute: SiteAdminRedemptionsRoute,
   SiteAdminReportsRoute: SiteAdminReportsRoute,
   SiteAdminRideshareRoute: SiteAdminRideshareRoute,
+  SiteAdminSafetyRoute: SiteAdminSafetyRoute,
   SiteAdminSecurityReportsRoute: SiteAdminSecurityReportsRoute,
   SiteAdminSliceItRoute: SiteAdminSliceItRoute,
   SiteAdminSliceItContentRoute: SiteAdminSliceItContentRoute,
@@ -22048,6 +22228,7 @@ interface SiteRouteChildren {
   SiteMarketRoute: typeof SiteMarketRoute
   SiteMusicTriviaRoute: typeof SiteMusicTriviaRoute
   SiteNotificationsRoute: typeof SiteNotificationsRoute
+  SiteOutRoute: typeof SiteOutRoute
   SitePlaylistsRoute: typeof SitePlaylistsRoute
   SitePredictionsRoute: typeof SitePredictionsRoute
   SitePricingRoute: typeof SitePricingRoute
@@ -22098,6 +22279,7 @@ interface SiteRouteChildren {
   SiteRmhDatacenterNetworkRoute: typeof SiteRmhDatacenterNetworkRoute
   SiteRmhDatacenterPlatformRoute: typeof SiteRmhDatacenterPlatformRoute
   SiteRmhDatacenterPowerRoute: typeof SiteRmhDatacenterPowerRoute
+  SiteSafetyPileOnRoute: typeof SiteSafetyPileOnRoute
   SiteSeriesIdRoute: typeof SiteSeriesIdRoute
   SiteSettingsAccountStatusRoute: typeof SiteSettingsAccountStatusRoute
   SiteSettingsAppearanceRoute: typeof SiteSettingsAppearanceRoute
@@ -22184,6 +22366,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteMarketRoute: SiteMarketRoute,
   SiteMusicTriviaRoute: SiteMusicTriviaRoute,
   SiteNotificationsRoute: SiteNotificationsRoute,
+  SiteOutRoute: SiteOutRoute,
   SitePlaylistsRoute: SitePlaylistsRoute,
   SitePredictionsRoute: SitePredictionsRoute,
   SitePricingRoute: SitePricingRoute,
@@ -22234,6 +22417,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteRmhDatacenterNetworkRoute: SiteRmhDatacenterNetworkRoute,
   SiteRmhDatacenterPlatformRoute: SiteRmhDatacenterPlatformRoute,
   SiteRmhDatacenterPowerRoute: SiteRmhDatacenterPowerRoute,
+  SiteSafetyPileOnRoute: SiteSafetyPileOnRoute,
   SiteSeriesIdRoute: SiteSeriesIdRoute,
   SiteSettingsAccountStatusRoute: SiteSettingsAccountStatusRoute,
   SiteSettingsAppearanceRoute: SiteSettingsAppearanceRoute,
@@ -23985,9 +24169,12 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminAuditLogRoute: ApiAdminAuditLogRoute,
   ApiAdminBlogRoute: ApiAdminBlogRoute,
   ApiAdminEconomyRoute: ApiAdminEconomyRoute,
+  ApiAdminLinkRulesRoute: ApiAdminLinkRulesRoute,
+  ApiAdminModMacrosRoute: ApiAdminModMacrosRoute,
   ApiAdminReportsRoute: ApiAdminReportsRouteWithChildren,
   ApiAdminReviewCountsRoute: ApiAdminReviewCountsRoute,
   ApiAdminUsersRoute: ApiAdminUsersRouteWithChildren,
+  ApiAdminViewAsRoute: ApiAdminViewAsRoute,
   ApiAiAskFeedRoute: ApiAiAskFeedRoute,
   ApiAiBioRoute: ApiAiBioRoute,
   ApiAiCatchUpRoute: ApiAiCatchUpRoute,
@@ -24106,6 +24293,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiLibraryDraftRoute: ApiLibraryDraftRoute,
   ApiLibraryQuotaRoute: ApiLibraryQuotaRoute,
   ApiLibraryUploadRoute: ApiLibraryUploadRoute,
+  ApiLinksCheckRoute: ApiLinksCheckRoute,
   ApiListsIdRoute: ApiListsIdRouteWithChildren,
   ApiMassiveMarchCampaignsRoute: ApiMassiveMarchCampaignsRoute,
   ApiModerationBlockRoute: ApiModerationBlockRoute,
@@ -24177,6 +24365,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhtubeWatchLaterRoute: ApiRmhtubeWatchLaterRoute,
   ApiRmhtypeKeystatsRoute: ApiRmhtypeKeystatsRoute,
   ApiRmhtypePracticeTestRoute: ApiRmhtypePracticeTestRoute,
+  ApiSafetyPileOnRoute: ApiSafetyPileOnRoute,
   ApiSavesFoldersRoute: ApiSavesFoldersRouteWithChildren,
   ApiSavesNoteRoute: ApiSavesNoteRoute,
   ApiScheduleAdminRoute: ApiScheduleAdminRoute,
@@ -24359,6 +24548,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCommunitiesSlugFlairFollowsRoute: ApiCommunitiesSlugFlairFollowsRoute,
   ApiCommunitiesSlugFlairsRoute: ApiCommunitiesSlugFlairsRouteWithChildren,
   ApiCommunitiesSlugJoinRoute: ApiCommunitiesSlugJoinRoute,
+  ApiCommunitiesSlugMacrosRoute: ApiCommunitiesSlugMacrosRoute,
   ApiCommunitiesSlugMembersRoute: ApiCommunitiesSlugMembersRouteWithChildren,
   ApiCommunitiesSlugModqueueRoute: ApiCommunitiesSlugModqueueRouteWithChildren,
   ApiCommunitiesSlugOnboardingRoute: ApiCommunitiesSlugOnboardingRoute,

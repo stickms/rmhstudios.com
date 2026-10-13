@@ -43,6 +43,8 @@ export const config = {
     'space:react': { max: 60, windowMs: 60_000 },
     'space:pin': { max: 20, windowMs: 60_000 },
     'space:end': { max: 10, windowMs: 60_000 },
+    'safety:slowmode:space:set': { max: 20, windowMs: 60_000 },
+    'safety:slowmode:music:set': { max: 20, windowMs: 60_000 },
     'party:create': { max: 10, windowMs: 60_000 },
     'party:invite': { max: 20, windowMs: 60_000 },
     'party:accept': { max: 20, windowMs: 60_000 },

@@ -114,7 +114,11 @@ export interface OnboardingQuestionDTO {
 
 /* ---- N4 mod queue ------------------------------------------------------ */
 
-export const modDecisionSchema = z.object({ decision: z.enum(['approve', 'remove']) });
+export const modDecisionSchema = z.object({
+  decision: z.enum(['approve', 'remove']),
+  // S4: a macro-filled note sent to the author when their content is removed.
+  message: z.string().trim().max(1000).optional(),
+});
 
 export interface ModItemDTO {
   id: string;

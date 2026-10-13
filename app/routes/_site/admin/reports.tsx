@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { MacroField } from '@/components/safety/MacroField';
 
 export const Route = createFileRoute('/_site/admin/reports')({
   head: () => ({ meta: [{ title: 'Moderation Queue | RMH Studios' }] }),
@@ -52,6 +53,8 @@ function AdminReportsPage() {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // S4: per-report message to the author, filled from a macro.
+  const [messages, setMessages] = useState<Record<string, string>>({});
 
   const load = useCallback(async (s: Status) => {
     setLoading(true);
@@ -78,7 +81,7 @@ function AdminReportsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ action, deleteContent }),
+        body: JSON.stringify({ action, deleteContent, message: messages[id]?.trim() || undefined }),
       });
       if (res.ok) {
         // Remove from the current view when it leaves this status bucket.
@@ -182,6 +185,17 @@ function AdminReportsPage() {
                       </span>
                     )}
                   </div>
+
+                  {(status === 'PENDING' || status === 'REVIEWING') && r.targetUser && (
+                    <div className="mt-4">
+                      <MacroField
+                        scope={{ kind: 'admin' }}
+                        vars={{ user: r.targetUser.name || r.targetUser.handle || undefined, reason: r.reason.replace('_', ' ').toLowerCase() }}
+                        value={messages[r.id] ?? ''}
+                        onChange={(v) => setMessages((m) => ({ ...m, [r.id]: v }))}
+                      />
+                    </div>
+                  )}
 
                   {(status === 'PENDING' || status === 'REVIEWING') && (
                     <div className="mt-4 flex flex-wrap gap-2">

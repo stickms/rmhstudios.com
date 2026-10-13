@@ -14,6 +14,9 @@ import { decodeCursor, encodeCursor, keysetWhere, type FeedCursor } from '@/lib/
 import { gateCommunityContent, logRemoved } from '@/lib/communities/gate.server';
 import { recordModItem } from '@/lib/communities/automod.server';
 import { derivePostKind } from '@/lib/communities/automod';
+import { looksHostile } from '@/lib/safety/reconsider.server';
+import { noteReply } from '@/lib/safety/pile-on.server';
+import { recordLinkDomains } from '@/lib/safety/link-risk.server';
 
 /** Top-level comments returned per page (keyset-paginated, newest-first). */
 const TOP_LEVEL_PAGE = 20;
@@ -359,6 +362,19 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
             if (gate.kind === 'allow' && gate.flag) flagRule = gate.flag.ruleName;
           }
 
+          // S1: one soft "review before posting?" for replies triage reads as
+          // hostile. Skipped when AI is off/slow; resending with the confirm
+          // flag always posts.
+          if (!input.confirmReconsider && (await looksHostile(input.content, session.user.id))) {
+            return Response.json(
+              {
+                code: 'reconsider',
+                error: 'This reply may come across as hostile. Review it before posting?',
+              },
+              { status: 409 },
+            );
+          }
+
           // Delegate to the shared engagement service (counters, SSE, notifications,
           // mention fan-out, XP, quests, achievements, and webhooks all live there).
           const result = await createComment({
@@ -371,6 +387,16 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
             return Response.json({ error: 'Post not found' }, { status: 404 });
           }
           const comment = result.comment;
+
+          await recordLinkDomains(input.content);
+
+          // S7: cheap burst counter; trips at most once per post.
+          void noteReply({
+            postId: id,
+            authorId: target.userId,
+            replierId: session.user.id,
+            replyControl: target.replyControl as ReplyControl,
+          });
 
           if (target.communityId && flagRule) {
             await recordModItem({

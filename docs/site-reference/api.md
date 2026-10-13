@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 773 files across 170 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 779 files across 172 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -46,7 +46,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/admin`
 
-50 routes.
+53 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -75,6 +75,8 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/admin/library/quota-requests` | `GET` `POST` | `app/routes/api/admin/library/quota-requests.ts` |
 | `/api/admin/library/reorder` | `POST` | `app/routes/api/admin/library/reorder.ts` |
 | `/api/admin/library/storage-health` | `GET` | `app/routes/api/admin/library/storage-health.ts` |
+| `/api/admin/link-rules` | `DELETE` `GET` `POST` | `app/routes/api/admin/link-rules.ts` |
+| `/api/admin/mod-macros` | `DELETE` `GET` `POST` | `app/routes/api/admin/mod-macros.ts` |
 | `/api/admin/predictions` | `GET` | `app/routes/api/admin/predictions/index.ts` |
 | `/api/admin/predictions/:id/moderate` | `POST` | `app/routes/api/admin/predictions/$id/moderate.ts` |
 | `/api/admin/predictions/:id/resolve` | `POST` | `app/routes/api/admin/predictions/$id/resolve.ts` |
@@ -99,6 +101,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/admin/users/:id/set-coins` | `POST` | `app/routes/api/admin/users/$id/set-coins.ts` |
 | `/api/admin/users/:id/strike` | `POST` | `app/routes/api/admin/users/$id/strike.ts` |
 | `/api/admin/vibe/backfill-thumbs` | `POST` | `app/routes/api/admin/vibe/backfill-thumbs.ts` |
+| `/api/admin/view-as` | `GET` | `app/routes/api/admin/view-as.ts` |
 | `/api/admin/wager/:id/resolve` | `POST` | `app/routes/api/admin/wager/$id/resolve.ts` |
 
 ## `/api/advent`
@@ -355,7 +358,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/communities`
 
-27 routes.
+28 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -378,6 +381,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/communities/:slug/flairs` | `POST` | `app/routes/api/communities/$slug/flairs.ts` |
 | `/api/communities/:slug/flairs/:flairId` | `DELETE` `PATCH` | `app/routes/api/communities/$slug/flairs/$flairId.ts` |
 | `/api/communities/:slug/join` | `POST` | `app/routes/api/communities/$slug/join.ts` |
+| `/api/communities/:slug/macros` | `DELETE` `GET` `POST` | `app/routes/api/communities/$slug/macros.ts` |
 | `/api/communities/:slug/members` | `GET` | `app/routes/api/communities/$slug/members.ts` |
 | `/api/communities/:slug/members/:userId` | `DELETE` `PATCH` | `app/routes/api/communities/$slug/members/$userId.ts` |
 | `/api/communities/:slug/modqueue` | `GET` | `app/routes/api/communities/$slug/modqueue.ts` |
@@ -895,6 +899,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/library/file/:id` | `GET` | `app/routes/api/library/file/$id.ts` |
 | `/api/library/quota` | `GET` `POST` | `app/routes/api/library/quota.ts` |
 | `/api/library/upload` | `POST` | `app/routes/api/library/upload.ts` |
+
+## `/api/links`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/links/check` | `POST` | `app/routes/api/links/check.ts` |
 
 ## `/api/lists`
 
@@ -1473,6 +1485,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/rum` | `POST` | `app/routes/api/rum.ts` |
+
+## `/api/safety`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/safety/pile-on` | `GET` `POST` | `app/routes/api/safety/pile-on.ts` |
 
 ## `/api/saves`
 

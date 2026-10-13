@@ -19,6 +19,7 @@ import { getTimeline, type FeedSurface } from '@/lib/feed/timeline';
 import { ownsFeedImageUrl } from '@/lib/storage/keys';
 import { publishDueForUser } from '@/lib/scheduled/publish.server';
 import { screenNewContent } from '@/lib/moderation/auto-moderate.server';
+import { recordLinkDomains } from '@/lib/safety/link-risk.server';
 import { apiCache } from '@/lib/cache';
 import { altTextViolation } from '@/lib/feed/alt-text.server';
 import { gateCommunityContent, logRemoved } from '@/lib/communities/gate.server';
@@ -398,6 +399,7 @@ export const Route = createFileRoute('/api/rmharks')({
 
           // Fire-and-forget AI pre-screen for policy violations. Never blocks or
           // delays the post; only files a report for human review if clearly abusive.
+          await recordLinkDomains(rmhark.content);
           if (rmhark.content.trim()) {
             void screenNewContent({
               entityType: 'rmhark',

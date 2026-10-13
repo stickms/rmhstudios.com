@@ -5,6 +5,7 @@ import { useTranslation } from'react-i18next';
 import { ArrowLeft, MessageCircle } from'lucide-react';
 import { toast } from'sonner';
 import { Spinner } from'@/components/ui/spinner';
+import { useReconsider } from'@/components/safety/use-reconsider';
 import { Button } from'@/components/ui/button';
 import { RMHarkOverflowMenu } from'./RMHarkOverflowMenu';
 import { useLocaleStore } from'@/stores/localeStore';
@@ -176,15 +177,19 @@ export function PostDetail({ postId }: PostDetailProps) {
  .finally(() => setLoadingComments(false));
  }, [postId]);
 
+ const reconsider = useReconsider();
  const handleSubmit = async () => {
  if (!commentContent.trim() || submitting) return;
  setSubmitting(true);
  try {
- const res = await fetch(`/api/rmharks/${postId}/comment`, {
+ const res = await reconsider((confirmReconsider) =>
+ fetch(`/api/rmharks/${postId}/comment`, {
  method:'POST',
  headers: {'Content-Type':'application/json'},
- body: JSON.stringify({ content: commentContent.trim() }),
- });
+ body: JSON.stringify({ content: commentContent.trim(), confirmReconsider }),
+ }),
+ );
+ if (!res) return;
  if (res.ok) {
  const comment = await res.json();
  setComments((prev) => [comment, ...prev]);

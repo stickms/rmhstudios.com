@@ -19,6 +19,7 @@ import { flushDueHeldNotifications } from '@/lib/notify/held.server';
 import { finalizeDueDeletions } from '@/lib/account/deletion.server';
 import { runIndexSweep } from '@/lib/search/indexer.server';
 import { fireDueReminders } from '@/lib/reminders/reminders.server';
+import { revertExpiredPileOnGuards } from '@/lib/safety/pile-on.server';
 
 export const OUTBOX_DRAIN_QUEUE = 'outbox.drain';
 export const MAINTENANCE_QUEUE = 'platform.maintenance';
@@ -110,6 +111,11 @@ export async function runMaintenance(): Promise<MaintenanceResult> {
     result.outboxSwept = await sweepOutbox();
   } catch (err) {
     console.error('[maintenance] outbox sweep failed:', (err as Error)?.message);
+  }
+  try {
+    await revertExpiredPileOnGuards();
+  } catch (err) {
+    console.error('[maintenance] pile-on revert failed:', (err as Error)?.message);
   }
   return result;
 }
