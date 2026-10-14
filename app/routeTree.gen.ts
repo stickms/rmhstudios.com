@@ -221,6 +221,7 @@ import { Route as SiteAdminAnnouncementsRouteImport } from './routes/_site/admin
 import { Route as SiteAdminAppealsRouteImport } from './routes/_site/admin/appeals'
 import { Route as SiteAdminAuditRouteImport } from './routes/_site/admin/audit'
 import { Route as SiteAdminEconomyRouteImport } from './routes/_site/admin/economy'
+import { Route as SiteAdminInsightsRouteImport } from './routes/_site/admin/insights'
 import { Route as SiteAdminLibraryRouteImport } from './routes/_site/admin/library'
 import { Route as SiteAdminLibraryQuotaRouteImport } from './routes/_site/admin/library-quota'
 import { Route as SiteAdminLibraryStorageRouteImport } from './routes/_site/admin/library-storage'
@@ -444,6 +445,7 @@ import { Route as ApiEmbedOembedRouteImport } from './routes/api/embed/oembed'
 import { Route as ApiEmojiPacksIndexRouteImport } from './routes/api/emoji-packs/index'
 import { Route as ApiEmojiPacksInstalledRouteImport } from './routes/api/emoji-packs/installed'
 import { Route as ApiEventsIndexRouteImport } from './routes/api/events/index'
+import { Route as ApiExperimentsIndexRouteImport } from './routes/api/experiments/index'
 import { Route as ApiFeedHashtagSearchRouteImport } from './routes/api/feed/hashtag-search'
 import { Route as ApiFeedMentionSearchRouteImport } from './routes/api/feed/mention-search'
 import { Route as ApiFeedSignalRouteImport } from './routes/api/feed/signal'
@@ -523,6 +525,8 @@ import { Route as ApiNeonDriftwayLeaderboardRouteImport } from './routes/api/neo
 import { Route as ApiNeonDriftwayScoreRouteImport } from './routes/api/neon-driftway/score'
 import { Route as ApiNewsApproveRouteImport } from './routes/api/news/approve'
 import { Route as ApiNewsRejectRouteImport } from './routes/api/news/reject'
+import { Route as ApiNoticesActiveRouteImport } from './routes/api/notices/active'
+import { Route as ApiNoticesDismissRouteImport } from './routes/api/notices/dismiss'
 import { Route as ApiNotificationsIndexRouteImport } from './routes/api/notifications/index'
 import { Route as ApiNotificationsPreferencesRouteImport } from './routes/api/notifications/preferences'
 import { Route as ApiNotificationsReadRouteImport } from './routes/api/notifications/read'
@@ -761,6 +765,11 @@ import { Route as ApiAdminAnnouncementsIdRouteImport } from './routes/api/admin/
 import { Route as ApiAdminAppealsIdRouteImport } from './routes/api/admin/appeals/$id'
 import { Route as ApiAdminCuratedBuildsImageRouteImport } from './routes/api/admin/curated-builds/image'
 import { Route as ApiAdminForecastingSeasonsRouteImport } from './routes/api/admin/forecasting/seasons'
+import { Route as ApiAdminInsightsCohortsRouteImport } from './routes/api/admin/insights/cohorts'
+import { Route as ApiAdminInsightsErrorsRouteImport } from './routes/api/admin/insights/errors'
+import { Route as ApiAdminInsightsExperimentsRouteImport } from './routes/api/admin/insights/experiments'
+import { Route as ApiAdminInsightsNoticesRouteImport } from './routes/api/admin/insights/notices'
+import { Route as ApiAdminInsightsRoutesRouteImport } from './routes/api/admin/insights/routes'
 import { Route as ApiAdminLibraryIndexRouteImport } from './routes/api/admin/library/index'
 import { Route as ApiAdminLibraryIdRouteImport } from './routes/api/admin/library/$id'
 import { Route as ApiAdminLibraryMigrateRouteImport } from './routes/api/admin/library/migrate'
@@ -2198,6 +2207,11 @@ const SiteAdminEconomyRoute = SiteAdminEconomyRouteImport.update({
   path: '/economy',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
+const SiteAdminInsightsRoute = SiteAdminInsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
 const SiteAdminLibraryRoute = SiteAdminLibraryRouteImport.update({
   id: '/library',
   path: '/library',
@@ -3324,6 +3338,11 @@ const ApiEventsIndexRoute = ApiEventsIndexRouteImport.update({
   path: '/api/events/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiExperimentsIndexRoute = ApiExperimentsIndexRouteImport.update({
+  id: '/api/experiments/',
+  path: '/api/experiments/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiFeedHashtagSearchRoute = ApiFeedHashtagSearchRouteImport.update({
   id: '/api/feed/hashtag-search',
   path: '/api/feed/hashtag-search',
@@ -3726,6 +3745,16 @@ const ApiNewsApproveRoute = ApiNewsApproveRouteImport.update({
 const ApiNewsRejectRoute = ApiNewsRejectRouteImport.update({
   id: '/api/news/reject',
   path: '/api/news/reject',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiNoticesActiveRoute = ApiNoticesActiveRouteImport.update({
+  id: '/api/notices/active',
+  path: '/api/notices/active',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiNoticesDismissRoute = ApiNoticesDismissRouteImport.update({
+  id: '/api/notices/dismiss',
+  path: '/api/notices/dismiss',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiNotificationsIndexRoute = ApiNotificationsIndexRouteImport.update({
@@ -4939,6 +4968,32 @@ const ApiAdminForecastingSeasonsRoute =
     path: '/api/admin/forecasting/seasons',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAdminInsightsCohortsRoute = ApiAdminInsightsCohortsRouteImport.update({
+  id: '/api/admin/insights/cohorts',
+  path: '/api/admin/insights/cohorts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminInsightsErrorsRoute = ApiAdminInsightsErrorsRouteImport.update({
+  id: '/api/admin/insights/errors',
+  path: '/api/admin/insights/errors',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminInsightsExperimentsRoute =
+  ApiAdminInsightsExperimentsRouteImport.update({
+    id: '/api/admin/insights/experiments',
+    path: '/api/admin/insights/experiments',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminInsightsNoticesRoute = ApiAdminInsightsNoticesRouteImport.update({
+  id: '/api/admin/insights/notices',
+  path: '/api/admin/insights/notices',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminInsightsRoutesRoute = ApiAdminInsightsRoutesRouteImport.update({
+  id: '/api/admin/insights/routes',
+  path: '/api/admin/insights/routes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminLibraryIndexRoute = ApiAdminLibraryIndexRouteImport.update({
   id: '/api/admin/library/',
   path: '/api/admin/library/',
@@ -7170,6 +7225,7 @@ export interface FileRoutesByFullPath {
   '/admin/appeals': typeof SiteAdminAppealsRoute
   '/admin/audit': typeof SiteAdminAuditRoute
   '/admin/economy': typeof SiteAdminEconomyRoute
+  '/admin/insights': typeof SiteAdminInsightsRoute
   '/admin/library': typeof SiteAdminLibraryRoute
   '/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
   '/admin/library-storage': typeof SiteAdminLibraryStorageRoute
@@ -7407,6 +7463,8 @@ export interface FileRoutesByFullPath {
   '/api/neon-driftway/score': typeof ApiNeonDriftwayScoreRoute
   '/api/news/approve': typeof ApiNewsApproveRoute
   '/api/news/reject': typeof ApiNewsRejectRoute
+  '/api/notices/active': typeof ApiNoticesActiveRoute
+  '/api/notices/dismiss': typeof ApiNoticesDismissRoute
   '/api/notifications/preferences': typeof ApiNotificationsPreferencesRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
   '/api/og/pf2ecal': typeof ApiOgPf2ecalRoute
@@ -7641,6 +7699,7 @@ export interface FileRoutesByFullPath {
   '/api/community-pages/': typeof ApiCommunityPagesIndexRoute
   '/api/emoji-packs/': typeof ApiEmojiPacksIndexRoute
   '/api/events/': typeof ApiEventsIndexRoute
+  '/api/experiments/': typeof ApiExperimentsIndexRoute
   '/api/feeds/': typeof ApiFeedsIndexRoute
   '/api/friendly/': typeof ApiFriendlyIndexRoute
   '/api/game-night/': typeof ApiGameNightIndexRoute
@@ -7707,6 +7766,11 @@ export interface FileRoutesByFullPath {
   '/api/admin/appeals/$id': typeof ApiAdminAppealsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/forecasting/seasons': typeof ApiAdminForecastingSeasonsRoute
+  '/api/admin/insights/cohorts': typeof ApiAdminInsightsCohortsRoute
+  '/api/admin/insights/errors': typeof ApiAdminInsightsErrorsRoute
+  '/api/admin/insights/experiments': typeof ApiAdminInsightsExperimentsRoute
+  '/api/admin/insights/notices': typeof ApiAdminInsightsNoticesRoute
+  '/api/admin/insights/routes': typeof ApiAdminInsightsRoutesRoute
   '/api/admin/library/$id': typeof ApiAdminLibraryIdRoute
   '/api/admin/library/migrate': typeof ApiAdminLibraryMigrateRoute
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
@@ -8272,6 +8336,7 @@ export interface FileRoutesByTo {
   '/admin/appeals': typeof SiteAdminAppealsRoute
   '/admin/audit': typeof SiteAdminAuditRoute
   '/admin/economy': typeof SiteAdminEconomyRoute
+  '/admin/insights': typeof SiteAdminInsightsRoute
   '/admin/library': typeof SiteAdminLibraryRoute
   '/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
   '/admin/library-storage': typeof SiteAdminLibraryStorageRoute
@@ -8509,6 +8574,8 @@ export interface FileRoutesByTo {
   '/api/neon-driftway/score': typeof ApiNeonDriftwayScoreRoute
   '/api/news/approve': typeof ApiNewsApproveRoute
   '/api/news/reject': typeof ApiNewsRejectRoute
+  '/api/notices/active': typeof ApiNoticesActiveRoute
+  '/api/notices/dismiss': typeof ApiNoticesDismissRoute
   '/api/notifications/preferences': typeof ApiNotificationsPreferencesRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
   '/api/og/pf2ecal': typeof ApiOgPf2ecalRoute
@@ -8743,6 +8810,7 @@ export interface FileRoutesByTo {
   '/api/community-pages': typeof ApiCommunityPagesIndexRoute
   '/api/emoji-packs': typeof ApiEmojiPacksIndexRoute
   '/api/events': typeof ApiEventsIndexRoute
+  '/api/experiments': typeof ApiExperimentsIndexRoute
   '/api/feeds': typeof ApiFeedsIndexRoute
   '/api/friendly': typeof ApiFriendlyIndexRoute
   '/api/game-night': typeof ApiGameNightIndexRoute
@@ -8809,6 +8877,11 @@ export interface FileRoutesByTo {
   '/api/admin/appeals/$id': typeof ApiAdminAppealsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/forecasting/seasons': typeof ApiAdminForecastingSeasonsRoute
+  '/api/admin/insights/cohorts': typeof ApiAdminInsightsCohortsRoute
+  '/api/admin/insights/errors': typeof ApiAdminInsightsErrorsRoute
+  '/api/admin/insights/experiments': typeof ApiAdminInsightsExperimentsRoute
+  '/api/admin/insights/notices': typeof ApiAdminInsightsNoticesRoute
+  '/api/admin/insights/routes': typeof ApiAdminInsightsRoutesRoute
   '/api/admin/library/$id': typeof ApiAdminLibraryIdRoute
   '/api/admin/library/migrate': typeof ApiAdminLibraryMigrateRoute
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
@@ -9402,6 +9475,7 @@ export interface FileRoutesById {
   '/_site/admin/appeals': typeof SiteAdminAppealsRoute
   '/_site/admin/audit': typeof SiteAdminAuditRoute
   '/_site/admin/economy': typeof SiteAdminEconomyRoute
+  '/_site/admin/insights': typeof SiteAdminInsightsRoute
   '/_site/admin/library': typeof SiteAdminLibraryRoute
   '/_site/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
   '/_site/admin/library-storage': typeof SiteAdminLibraryStorageRoute
@@ -9639,6 +9713,8 @@ export interface FileRoutesById {
   '/api/neon-driftway/score': typeof ApiNeonDriftwayScoreRoute
   '/api/news/approve': typeof ApiNewsApproveRoute
   '/api/news/reject': typeof ApiNewsRejectRoute
+  '/api/notices/active': typeof ApiNoticesActiveRoute
+  '/api/notices/dismiss': typeof ApiNoticesDismissRoute
   '/api/notifications/preferences': typeof ApiNotificationsPreferencesRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
   '/api/og/pf2ecal': typeof ApiOgPf2ecalRoute
@@ -9873,6 +9949,7 @@ export interface FileRoutesById {
   '/api/community-pages/': typeof ApiCommunityPagesIndexRoute
   '/api/emoji-packs/': typeof ApiEmojiPacksIndexRoute
   '/api/events/': typeof ApiEventsIndexRoute
+  '/api/experiments/': typeof ApiExperimentsIndexRoute
   '/api/feeds/': typeof ApiFeedsIndexRoute
   '/api/friendly/': typeof ApiFriendlyIndexRoute
   '/api/game-night/': typeof ApiGameNightIndexRoute
@@ -9939,6 +10016,11 @@ export interface FileRoutesById {
   '/api/admin/appeals/$id': typeof ApiAdminAppealsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/forecasting/seasons': typeof ApiAdminForecastingSeasonsRoute
+  '/api/admin/insights/cohorts': typeof ApiAdminInsightsCohortsRoute
+  '/api/admin/insights/errors': typeof ApiAdminInsightsErrorsRoute
+  '/api/admin/insights/experiments': typeof ApiAdminInsightsExperimentsRoute
+  '/api/admin/insights/notices': typeof ApiAdminInsightsNoticesRoute
+  '/api/admin/insights/routes': typeof ApiAdminInsightsRoutesRoute
   '/api/admin/library/$id': typeof ApiAdminLibraryIdRoute
   '/api/admin/library/migrate': typeof ApiAdminLibraryMigrateRoute
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
@@ -10532,6 +10614,7 @@ export interface FileRouteTypes {
     | '/admin/appeals'
     | '/admin/audit'
     | '/admin/economy'
+    | '/admin/insights'
     | '/admin/library'
     | '/admin/library-quota'
     | '/admin/library-storage'
@@ -10769,6 +10852,8 @@ export interface FileRouteTypes {
     | '/api/neon-driftway/score'
     | '/api/news/approve'
     | '/api/news/reject'
+    | '/api/notices/active'
+    | '/api/notices/dismiss'
     | '/api/notifications/preferences'
     | '/api/notifications/read'
     | '/api/og/pf2ecal'
@@ -11003,6 +11088,7 @@ export interface FileRouteTypes {
     | '/api/community-pages/'
     | '/api/emoji-packs/'
     | '/api/events/'
+    | '/api/experiments/'
     | '/api/feeds/'
     | '/api/friendly/'
     | '/api/game-night/'
@@ -11069,6 +11155,11 @@ export interface FileRouteTypes {
     | '/api/admin/appeals/$id'
     | '/api/admin/curated-builds/image'
     | '/api/admin/forecasting/seasons'
+    | '/api/admin/insights/cohorts'
+    | '/api/admin/insights/errors'
+    | '/api/admin/insights/experiments'
+    | '/api/admin/insights/notices'
+    | '/api/admin/insights/routes'
     | '/api/admin/library/$id'
     | '/api/admin/library/migrate'
     | '/api/admin/library/quota-requests'
@@ -11634,6 +11725,7 @@ export interface FileRouteTypes {
     | '/admin/appeals'
     | '/admin/audit'
     | '/admin/economy'
+    | '/admin/insights'
     | '/admin/library'
     | '/admin/library-quota'
     | '/admin/library-storage'
@@ -11871,6 +11963,8 @@ export interface FileRouteTypes {
     | '/api/neon-driftway/score'
     | '/api/news/approve'
     | '/api/news/reject'
+    | '/api/notices/active'
+    | '/api/notices/dismiss'
     | '/api/notifications/preferences'
     | '/api/notifications/read'
     | '/api/og/pf2ecal'
@@ -12105,6 +12199,7 @@ export interface FileRouteTypes {
     | '/api/community-pages'
     | '/api/emoji-packs'
     | '/api/events'
+    | '/api/experiments'
     | '/api/feeds'
     | '/api/friendly'
     | '/api/game-night'
@@ -12171,6 +12266,11 @@ export interface FileRouteTypes {
     | '/api/admin/appeals/$id'
     | '/api/admin/curated-builds/image'
     | '/api/admin/forecasting/seasons'
+    | '/api/admin/insights/cohorts'
+    | '/api/admin/insights/errors'
+    | '/api/admin/insights/experiments'
+    | '/api/admin/insights/notices'
+    | '/api/admin/insights/routes'
     | '/api/admin/library/$id'
     | '/api/admin/library/migrate'
     | '/api/admin/library/quota-requests'
@@ -12763,6 +12863,7 @@ export interface FileRouteTypes {
     | '/_site/admin/appeals'
     | '/_site/admin/audit'
     | '/_site/admin/economy'
+    | '/_site/admin/insights'
     | '/_site/admin/library'
     | '/_site/admin/library-quota'
     | '/_site/admin/library-storage'
@@ -13000,6 +13101,8 @@ export interface FileRouteTypes {
     | '/api/neon-driftway/score'
     | '/api/news/approve'
     | '/api/news/reject'
+    | '/api/notices/active'
+    | '/api/notices/dismiss'
     | '/api/notifications/preferences'
     | '/api/notifications/read'
     | '/api/og/pf2ecal'
@@ -13234,6 +13337,7 @@ export interface FileRouteTypes {
     | '/api/community-pages/'
     | '/api/emoji-packs/'
     | '/api/events/'
+    | '/api/experiments/'
     | '/api/feeds/'
     | '/api/friendly/'
     | '/api/game-night/'
@@ -13300,6 +13404,11 @@ export interface FileRouteTypes {
     | '/api/admin/appeals/$id'
     | '/api/admin/curated-builds/image'
     | '/api/admin/forecasting/seasons'
+    | '/api/admin/insights/cohorts'
+    | '/api/admin/insights/errors'
+    | '/api/admin/insights/experiments'
+    | '/api/admin/insights/notices'
+    | '/api/admin/insights/routes'
     | '/api/admin/library/$id'
     | '/api/admin/library/migrate'
     | '/api/admin/library/quota-requests'
@@ -13931,6 +14040,8 @@ export interface RootRouteChildren {
   ApiNeonDriftwayScoreRoute: typeof ApiNeonDriftwayScoreRoute
   ApiNewsApproveRoute: typeof ApiNewsApproveRoute
   ApiNewsRejectRoute: typeof ApiNewsRejectRoute
+  ApiNoticesActiveRoute: typeof ApiNoticesActiveRoute
+  ApiNoticesDismissRoute: typeof ApiNoticesDismissRoute
   ApiNotificationsPreferencesRoute: typeof ApiNotificationsPreferencesRoute
   ApiNotificationsReadRoute: typeof ApiNotificationsReadRoute
   ApiOgPf2ecalRoute: typeof ApiOgPf2ecalRoute
@@ -14098,6 +14209,7 @@ export interface RootRouteChildren {
   ApiCommunityPagesIndexRoute: typeof ApiCommunityPagesIndexRoute
   ApiEmojiPacksIndexRoute: typeof ApiEmojiPacksIndexRoute
   ApiEventsIndexRoute: typeof ApiEventsIndexRoute
+  ApiExperimentsIndexRoute: typeof ApiExperimentsIndexRoute
   ApiFeedsIndexRoute: typeof ApiFeedsIndexRoute
   ApiFriendlyIndexRoute: typeof ApiFriendlyIndexRoute
   ApiGameNightIndexRoute: typeof ApiGameNightIndexRoute
@@ -14152,6 +14264,11 @@ export interface RootRouteChildren {
   ApiAdminAlbumsReorderRoute: typeof ApiAdminAlbumsReorderRoute
   ApiAdminCuratedBuildsImageRoute: typeof ApiAdminCuratedBuildsImageRouteWithChildren
   ApiAdminForecastingSeasonsRoute: typeof ApiAdminForecastingSeasonsRoute
+  ApiAdminInsightsCohortsRoute: typeof ApiAdminInsightsCohortsRoute
+  ApiAdminInsightsErrorsRoute: typeof ApiAdminInsightsErrorsRoute
+  ApiAdminInsightsExperimentsRoute: typeof ApiAdminInsightsExperimentsRoute
+  ApiAdminInsightsNoticesRoute: typeof ApiAdminInsightsNoticesRoute
+  ApiAdminInsightsRoutesRoute: typeof ApiAdminInsightsRoutesRoute
   ApiAdminLibraryIdRoute: typeof ApiAdminLibraryIdRoute
   ApiAdminLibraryMigrateRoute: typeof ApiAdminLibraryMigrateRoute
   ApiAdminLibraryQuotaRequestsRoute: typeof ApiAdminLibraryQuotaRequestsRoute
@@ -15846,6 +15963,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminEconomyRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
+    '/_site/admin/insights': {
+      id: '/_site/admin/insights'
+      path: '/insights'
+      fullPath: '/admin/insights'
+      preLoaderRoute: typeof SiteAdminInsightsRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
     '/_site/admin/library': {
       id: '/_site/admin/library'
       path: '/library'
@@ -17407,6 +17531,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiEventsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/experiments/': {
+      id: '/api/experiments/'
+      path: '/api/experiments'
+      fullPath: '/api/experiments/'
+      preLoaderRoute: typeof ApiExperimentsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/feed/hashtag-search': {
       id: '/api/feed/hashtag-search'
       path: '/api/feed/hashtag-search'
@@ -17958,6 +18089,20 @@ declare module '@tanstack/react-router' {
       path: '/api/news/reject'
       fullPath: '/api/news/reject'
       preLoaderRoute: typeof ApiNewsRejectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/notices/active': {
+      id: '/api/notices/active'
+      path: '/api/notices/active'
+      fullPath: '/api/notices/active'
+      preLoaderRoute: typeof ApiNoticesActiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/notices/dismiss': {
+      id: '/api/notices/dismiss'
+      path: '/api/notices/dismiss'
+      fullPath: '/api/notices/dismiss'
+      preLoaderRoute: typeof ApiNoticesDismissRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/notifications/': {
@@ -19624,6 +19769,41 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/forecasting/seasons'
       fullPath: '/api/admin/forecasting/seasons'
       preLoaderRoute: typeof ApiAdminForecastingSeasonsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/insights/cohorts': {
+      id: '/api/admin/insights/cohorts'
+      path: '/api/admin/insights/cohorts'
+      fullPath: '/api/admin/insights/cohorts'
+      preLoaderRoute: typeof ApiAdminInsightsCohortsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/insights/errors': {
+      id: '/api/admin/insights/errors'
+      path: '/api/admin/insights/errors'
+      fullPath: '/api/admin/insights/errors'
+      preLoaderRoute: typeof ApiAdminInsightsErrorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/insights/experiments': {
+      id: '/api/admin/insights/experiments'
+      path: '/api/admin/insights/experiments'
+      fullPath: '/api/admin/insights/experiments'
+      preLoaderRoute: typeof ApiAdminInsightsExperimentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/insights/notices': {
+      id: '/api/admin/insights/notices'
+      path: '/api/admin/insights/notices'
+      fullPath: '/api/admin/insights/notices'
+      preLoaderRoute: typeof ApiAdminInsightsNoticesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/insights/routes': {
+      id: '/api/admin/insights/routes'
+      path: '/api/admin/insights/routes'
+      fullPath: '/api/admin/insights/routes'
+      preLoaderRoute: typeof ApiAdminInsightsRoutesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/library/': {
@@ -22260,6 +22440,7 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminAppealsRoute: typeof SiteAdminAppealsRoute
   SiteAdminAuditRoute: typeof SiteAdminAuditRoute
   SiteAdminEconomyRoute: typeof SiteAdminEconomyRoute
+  SiteAdminInsightsRoute: typeof SiteAdminInsightsRoute
   SiteAdminLibraryRoute: typeof SiteAdminLibraryRoute
   SiteAdminLibraryQuotaRoute: typeof SiteAdminLibraryQuotaRoute
   SiteAdminLibraryStorageRoute: typeof SiteAdminLibraryStorageRoute
@@ -22290,6 +22471,7 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminAppealsRoute: SiteAdminAppealsRoute,
   SiteAdminAuditRoute: SiteAdminAuditRoute,
   SiteAdminEconomyRoute: SiteAdminEconomyRoute,
+  SiteAdminInsightsRoute: SiteAdminInsightsRoute,
   SiteAdminLibraryRoute: SiteAdminLibraryRoute,
   SiteAdminLibraryQuotaRoute: SiteAdminLibraryQuotaRoute,
   SiteAdminLibraryStorageRoute: SiteAdminLibraryStorageRoute,
@@ -24509,6 +24691,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiNeonDriftwayScoreRoute: ApiNeonDriftwayScoreRoute,
   ApiNewsApproveRoute: ApiNewsApproveRoute,
   ApiNewsRejectRoute: ApiNewsRejectRoute,
+  ApiNoticesActiveRoute: ApiNoticesActiveRoute,
+  ApiNoticesDismissRoute: ApiNoticesDismissRoute,
   ApiNotificationsPreferencesRoute: ApiNotificationsPreferencesRoute,
   ApiNotificationsReadRoute: ApiNotificationsReadRoute,
   ApiOgPf2ecalRoute: ApiOgPf2ecalRoute,
@@ -24676,6 +24860,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCommunityPagesIndexRoute: ApiCommunityPagesIndexRoute,
   ApiEmojiPacksIndexRoute: ApiEmojiPacksIndexRoute,
   ApiEventsIndexRoute: ApiEventsIndexRoute,
+  ApiExperimentsIndexRoute: ApiExperimentsIndexRoute,
   ApiFeedsIndexRoute: ApiFeedsIndexRoute,
   ApiFriendlyIndexRoute: ApiFriendlyIndexRoute,
   ApiGameNightIndexRoute: ApiGameNightIndexRoute,
@@ -24730,6 +24915,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminAlbumsReorderRoute: ApiAdminAlbumsReorderRoute,
   ApiAdminCuratedBuildsImageRoute: ApiAdminCuratedBuildsImageRouteWithChildren,
   ApiAdminForecastingSeasonsRoute: ApiAdminForecastingSeasonsRoute,
+  ApiAdminInsightsCohortsRoute: ApiAdminInsightsCohortsRoute,
+  ApiAdminInsightsErrorsRoute: ApiAdminInsightsErrorsRoute,
+  ApiAdminInsightsExperimentsRoute: ApiAdminInsightsExperimentsRoute,
+  ApiAdminInsightsNoticesRoute: ApiAdminInsightsNoticesRoute,
+  ApiAdminInsightsRoutesRoute: ApiAdminInsightsRoutesRoute,
   ApiAdminLibraryIdRoute: ApiAdminLibraryIdRoute,
   ApiAdminLibraryMigrateRoute: ApiAdminLibraryMigrateRoute,
   ApiAdminLibraryQuotaRequestsRoute: ApiAdminLibraryQuotaRequestsRoute,

@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 313 routes. 176 render inside the standard site shell (sidebar, nav, context rail); 137 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 314 routes. 177 render inside the standard site shell (sidebar, nav, context rail); 137 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -31,6 +31,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/blog/:slug/edit` | Edit Blog Post \| Admin | admin | `app/routes/_site/admin/blog/$slug/edit.tsx` |
 | `/admin/blog/new` | Create Blog Post \| Admin | admin | `app/routes/_site/admin/blog/new.tsx` |
 | `/admin/economy` | Coin Economy | admin | `app/routes/_site/admin/economy.tsx` |
+| `/admin/insights` | Insights | admin | `app/routes/_site/admin/insights.tsx` |
 | `/admin/library` | Library \| Admin | admin | `app/routes/_site/admin/library.tsx` |
 | `/admin/library-quota` | redirects to `/admin/library?tab=appeals` | admin | `app/routes/_site/admin/library-quota.tsx` |
 | `/admin/library-storage` | redirects to `/admin/library?tab=storage` | admin | `app/routes/_site/admin/library-storage.tsx` |
