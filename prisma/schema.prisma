@@ -447,6 +447,9 @@ model User {
   pf2eSettingsEdits   Pf2eSettings[]        @relation("Pf2eSettingsEditor")
 
   // ─── Feature ideas 2026-10-12 (docs/plans/2026-10-12-feature-ideas-every-surface.md)
+  // P15 ops: O2 notice dismissals, O5 experiment exposures
+  noticeDismissals           TargetedNoticeDismissal[]
+  experimentExposures        ExperimentExposure[]
   // P21 tools: F4 study plans, F11 calc notebooks, F15 marathon lists
   studyPlans                 StudyPlan[]
   calcNotebooks              CalcNotebook[]
@@ -11689,4 +11692,112 @@ model MarathonList {
 
   @@index([userId, updatedAt])
   @@map("marathon_list")
+}
+
+// ── P15 ops: O1 O2 O3 O4 O5 ──
+// O1: one row per (signup-week cohort, weeks since signup), rewritten by a daily job.
+model CohortRetention {
+  cohortWeek DateTime @db.Date
+  weeksLater Int
+  cohortSize Int
+  active     Int
+  computedAt DateTime @default(now())
+
+  @@id([cohortWeek, weeksLater])
+  @@map("cohort_retention")
+}
+
+// O2: an admin-authored notice for a segment. segment: all | new | game | locale.
+model TargetedNotice {
+  id           String    @id @default(cuid())
+  title        String    @db.VarChar(120)
+  body         String    @db.VarChar(500)
+  linkUrl      String?   @db.VarChar(300)
+  segment      String    @db.VarChar(12)
+  segmentValue String?   @db.VarChar(64)
+  startsAt     DateTime  @default(now())
+  endsAt       DateTime?
+  archivedAt   DateTime?
+  createdById  String?
+  createdAt    DateTime  @default(now())
+
+  dismissals TargetedNoticeDismissal[]
+
+  @@index([archivedAt, startsAt])
+  @@map("targeted_notice")
+}
+
+model TargetedNoticeDismissal {
+  noticeId    String
+  userId      String
+  dismissedAt DateTime @default(now())
+
+  notice TargetedNotice @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([noticeId, userId])
+  @@index([userId])
+  @@map("targeted_notice_dismissal")
+}
+
+// O3: page views per route per UTC day (route = low-cardinality label from /api/rum).
+model RouteViewDay {
+  route String   @db.VarChar(120)
+  day   DateTime @db.Date
+  views Int      @default(0)
+
+  @@id([route, day])
+  @@index([day])
+  @@map("route_view_day")
+}
+
+// O4: client error beacons grouped by fingerprint (message + top frame).
+model ClientErrorGroup {
+  id           String    @id @default(cuid())
+  fingerprint  String    @unique @db.VarChar(40)
+  message      String    @db.VarChar(500)
+  topFrame     String    @db.VarChar(300)
+  source       String    @db.VarChar(64)
+  sampleUrl    String    @db.VarChar(500)
+  count        Int       @default(1)
+  firstSeenAt  DateTime  @default(now())
+  lastSeenAt   DateTime  @default(now())
+  firstRelease String    @db.VarChar(40)
+  lastRelease  String    @db.VarChar(40)
+  resolvedAt   DateTime?
+  regressedAt  DateTime?
+
+  @@index([lastSeenAt])
+  @@map("client_error_group")
+}
+
+// O5: a flag/experiment. testPct = share of members in the "test" arm (sticky hash).
+model Experiment {
+  id          String    @id @default(cuid())
+  key         String    @unique @db.VarChar(64)
+  name        String    @db.VarChar(120)
+  status      String    @default("DRAFT") @db.VarChar(10)
+  testPct     Int       @default(50)
+  createdAt   DateTime  @default(now())
+  startedAt   DateTime?
+
+  exposures ExperimentExposure[]
+
+  @@map("experiment")
+}
+
+model ExperimentExposure {
+  experimentId String
+  userId       String
+  variant      String    @db.VarChar(8)
+  exposedAt    DateTime  @default(now())
+  convertedAt  DateTime?
+
+  experiment Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([experimentId, userId])
+  @@index([experimentId, variant])
+  @@index([userId])
+  @@map("experiment_exposure")
 }

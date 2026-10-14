@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 786 files across 175 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 794 files across 177 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -46,7 +46,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/admin`
 
-53 routes.
+58 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -69,6 +69,11 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/admin/economy` | `GET` | `app/routes/api/admin/economy.ts` |
 | `/api/admin/forecasting/seasons` | `POST` | `app/routes/api/admin/forecasting/seasons.ts` |
 | `/api/admin/gift-exchanges/:id/verify` | `GET` | `app/routes/api/admin/gift-exchanges/$id/verify.ts` |
+| `/api/admin/insights/cohorts` | `GET` `POST` | `app/routes/api/admin/insights/cohorts.ts` |
+| `/api/admin/insights/errors` | `GET` `PATCH` | `app/routes/api/admin/insights/errors.ts` |
+| `/api/admin/insights/experiments` | `GET` `PATCH` `POST` | `app/routes/api/admin/insights/experiments.ts` |
+| `/api/admin/insights/notices` | `DELETE` `GET` `POST` | `app/routes/api/admin/insights/notices.ts` |
+| `/api/admin/insights/routes` | `GET` | `app/routes/api/admin/insights/routes.ts` |
 | `/api/admin/library` | `GET` | `app/routes/api/admin/library/index.ts` |
 | `/api/admin/library/:id` | `DELETE` `PATCH` | `app/routes/api/admin/library/$id.ts` |
 | `/api/admin/library/migrate` | `POST` | `app/routes/api/admin/library/migrate.ts` |
@@ -596,6 +601,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/events/:id/ics` | `GET` | `app/routes/api/events/$id/ics.ts` |
 | `/api/events/:id/rsvp` | `DELETE` `POST` | `app/routes/api/events/$id/rsvp.ts` |
 
+## `/api/experiments`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/experiments` | `GET` `POST` | `app/routes/api/experiments/index.ts` |
+
 ## `/api/explore`
 
 1 route.
@@ -1024,6 +1037,15 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | ----- | ------- | ------ |
 | `/api/news/approve` | `GET` `POST` | `app/routes/api/news/approve.ts` |
 | `/api/news/reject` | `GET` `POST` | `app/routes/api/news/reject.ts` |
+
+## `/api/notices`
+
+2 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/notices/active` | `GET` | `app/routes/api/notices/active.ts` |
+| `/api/notices/dismiss` | `POST` | `app/routes/api/notices/dismiss.ts` |
 
 ## `/api/notifications`
 

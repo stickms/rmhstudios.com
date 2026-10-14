@@ -250,6 +250,12 @@ export const Route = createFileRoute('/api/rum')({
           // treating a single slow navigation as an aggregate percentile.
           // eslint-disable-next-line no-console -- normal metrics are informational, not warnings
           console.info('[rum:metric]', JSON.stringify(metric));
+          if (m.name === 'TTFB') {
+            // Lazy: keeps the DB client out of this module's import graph (schema tests).
+            void import('@/lib/ops/route-views.server').then((v) =>
+              v.recordRouteView(metric.route),
+            );
+          }
           if (m.rating === 'poor') {
             console.warn('[rum:poor]', JSON.stringify(metric));
           }
