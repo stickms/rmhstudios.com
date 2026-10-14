@@ -189,6 +189,7 @@ import { Route as RmhmusicRoomIdRouteImport } from './routes/rmhmusic/$roomId'
 import { Route as RmhmusicPlayerRouteImport } from './routes/rmhmusic/player'
 import { Route as RmhstudyIndexRouteImport } from './routes/rmhstudy/index'
 import { Route as RmhstudyRoomIdRouteImport } from './routes/rmhstudy/$roomId'
+import { Route as RmhstudyPlannerRouteImport } from './routes/rmhstudy/planner'
 import { Route as RmhtubeIndexRouteImport } from './routes/rmhtube/index'
 import { Route as RmhtubeRoomIdRouteImport } from './routes/rmhtube/$roomId'
 import { Route as RmhtypeIndexRouteImport } from './routes/rmhtype/index'
@@ -266,6 +267,8 @@ import { Route as SiteJamsSlugRouteImport } from './routes/_site/jams.$slug'
 import { Route as SiteLibraryIndexRouteImport } from './routes/_site/library/index'
 import { Route as SiteListsIndexRouteImport } from './routes/_site/lists/index'
 import { Route as SiteListsIdRouteImport } from './routes/_site/lists/$id'
+import { Route as SiteMarathonIndexRouteImport } from './routes/_site/marathon.index'
+import { Route as SiteMarathonShareIdRouteImport } from './routes/_site/marathon.$shareId'
 import { Route as SiteMessagesIndexRouteImport } from './routes/_site/messages/index'
 import { Route as SiteMessagesConversationIdRouteImport } from './routes/_site/messages/$conversationId'
 import { Route as SiteMomentsIdRouteImport } from './routes/_site/moments.$id'
@@ -390,6 +393,8 @@ import { Route as ApiBumsRushClearRouteImport } from './routes/api/bums-rush/cle
 import { Route as ApiBumsRushLeaderboardRouteImport } from './routes/api/bums-rush/leaderboard'
 import { Route as ApiBumsRushProfileRouteImport } from './routes/api/bums-rush/profile'
 import { Route as ApiBumsRushShowdownRouteImport } from './routes/api/bums-rush/showdown'
+import { Route as ApiCalcNotebooksIndexRouteImport } from './routes/api/calc-notebooks/index'
+import { Route as ApiCalcNotebooksIdRouteImport } from './routes/api/calc-notebooks/$id'
 import { Route as ApiCalendarFeedIndexRouteImport } from './routes/api/calendar-feed/index'
 import { Route as ApiCalendarTokenRouteImport } from './routes/api/calendar/$token'
 import { Route as ApiCallsHistoryRouteImport } from './routes/api/calls/history'
@@ -499,6 +504,8 @@ import { Route as ApiLibraryUploadRouteImport } from './routes/api/library/uploa
 import { Route as ApiLinksCheckRouteImport } from './routes/api/links/check'
 import { Route as ApiListsIndexRouteImport } from './routes/api/lists/index'
 import { Route as ApiListsIdRouteImport } from './routes/api/lists/$id'
+import { Route as ApiMarathonListsIndexRouteImport } from './routes/api/marathon-lists/index'
+import { Route as ApiMarathonListsIdRouteImport } from './routes/api/marathon-lists/$id'
 import { Route as ApiMassiveMarchCampaignsRouteImport } from './routes/api/massive-march/campaigns'
 import { Route as ApiMemoryIndexRouteImport } from './routes/api/memory/index'
 import { Route as ApiMessagesConversationIdRouteImport } from './routes/api/messages/$conversationId'
@@ -666,6 +673,8 @@ import { Route as ApiStreakFreezeRouteImport } from './routes/api/streak.freeze'
 import { Route as ApiStudioOverviewRouteImport } from './routes/api/studio/overview'
 import { Route as ApiStudioTiersRouteImport } from './routes/api/studio/tiers'
 import { Route as ApiStudyBuddyIndexRouteImport } from './routes/api/study-buddy/index'
+import { Route as ApiStudyPlansIndexRouteImport } from './routes/api/study-plans/index'
+import { Route as ApiStudyPlansIdRouteImport } from './routes/api/study-plans/$id'
 import { Route as ApiStudyMarketplaceRouteImport } from './routes/api/study/marketplace'
 import { Route as ApiStudyTutorRouteImport } from './routes/api/study/tutor'
 import { Route as ApiTagsTagRouteImport } from './routes/api/tags/$tag'
@@ -862,6 +871,7 @@ import { Route as ApiLibraryCoverIdRouteImport } from './routes/api/library/cove
 import { Route as ApiLibraryFileIdRouteImport } from './routes/api/library/file/$id'
 import { Route as ApiListsIdFeedRouteImport } from './routes/api/lists/$id.feed'
 import { Route as ApiListsIdMembersRouteImport } from './routes/api/lists/$id.members'
+import { Route as ApiMarathonListsSharedShareIdRouteImport } from './routes/api/marathon-lists/shared/$shareId'
 import { Route as ApiMarketListingsIndexRouteImport } from './routes/api/market/listings/index'
 import { Route as ApiMessagesConversationIdEditRouteImport } from './routes/api/messages/$conversationId/edit'
 import { Route as ApiMessagesConversationIdHideRouteImport } from './routes/api/messages/$conversationId/hide'
@@ -2028,6 +2038,11 @@ const RmhstudyRoomIdRoute = RmhstudyRoomIdRouteImport.update({
   path: '/$roomId',
   getParentRoute: () => RmhstudyRoute,
 } as any)
+const RmhstudyPlannerRoute = RmhstudyPlannerRouteImport.update({
+  id: '/planner',
+  path: '/planner',
+  getParentRoute: () => RmhstudyRoute,
+} as any)
 const RmhtubeIndexRoute = RmhtubeIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -2412,6 +2427,16 @@ const SiteListsIndexRoute = SiteListsIndexRouteImport.update({
 const SiteListsIdRoute = SiteListsIdRouteImport.update({
   id: '/lists/$id',
   path: '/lists/$id',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteMarathonIndexRoute = SiteMarathonIndexRouteImport.update({
+  id: '/marathon/',
+  path: '/marathon/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteMarathonShareIdRoute = SiteMarathonShareIdRouteImport.update({
+  id: '/marathon/$shareId',
+  path: '/marathon/$shareId',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteMessagesIndexRoute = SiteMessagesIndexRouteImport.update({
@@ -3042,6 +3067,16 @@ const ApiBumsRushShowdownRoute = ApiBumsRushShowdownRouteImport.update({
   path: '/api/bums-rush/showdown',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCalcNotebooksIndexRoute = ApiCalcNotebooksIndexRouteImport.update({
+  id: '/api/calc-notebooks/',
+  path: '/api/calc-notebooks/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCalcNotebooksIdRoute = ApiCalcNotebooksIdRouteImport.update({
+  id: '/api/calc-notebooks/$id',
+  path: '/api/calc-notebooks/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCalendarFeedIndexRoute = ApiCalendarFeedIndexRouteImport.update({
   id: '/api/calendar-feed/',
   path: '/api/calendar-feed/',
@@ -3593,6 +3628,16 @@ const ApiListsIndexRoute = ApiListsIndexRouteImport.update({
 const ApiListsIdRoute = ApiListsIdRouteImport.update({
   id: '/api/lists/$id',
   path: '/api/lists/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMarathonListsIndexRoute = ApiMarathonListsIndexRouteImport.update({
+  id: '/api/marathon-lists/',
+  path: '/api/marathon-lists/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMarathonListsIdRoute = ApiMarathonListsIdRouteImport.update({
+  id: '/api/marathon-lists/$id',
+  path: '/api/marathon-lists/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiMassiveMarchCampaignsRoute =
@@ -4439,6 +4484,16 @@ const ApiStudioTiersRoute = ApiStudioTiersRouteImport.update({
 const ApiStudyBuddyIndexRoute = ApiStudyBuddyIndexRouteImport.update({
   id: '/api/study-buddy/',
   path: '/api/study-buddy/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStudyPlansIndexRoute = ApiStudyPlansIndexRouteImport.update({
+  id: '/api/study-plans/',
+  path: '/api/study-plans/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStudyPlansIdRoute = ApiStudyPlansIdRouteImport.update({
+  id: '/api/study-plans/$id',
+  path: '/api/study-plans/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiStudyMarketplaceRoute = ApiStudyMarketplaceRouteImport.update({
@@ -5479,6 +5534,12 @@ const ApiListsIdMembersRoute = ApiListsIdMembersRouteImport.update({
   path: '/members',
   getParentRoute: () => ApiListsIdRoute,
 } as any)
+const ApiMarathonListsSharedShareIdRoute =
+  ApiMarathonListsSharedShareIdRouteImport.update({
+    id: '/api/marathon-lists/shared/$shareId',
+    path: '/api/marathon-lists/shared/$shareId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiMarketListingsIndexRoute = ApiMarketListingsIndexRouteImport.update({
   id: '/api/market/listings/',
   path: '/api/market/listings/',
@@ -7066,6 +7127,7 @@ export interface FileRoutesByFullPath {
   '/rmhmusic/$roomId': typeof RmhmusicRoomIdRoute
   '/rmhmusic/player': typeof RmhmusicPlayerRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
+  '/rmhstudy/planner': typeof RmhstudyPlannerRoute
   '/rmhtube/$roomId': typeof RmhtubeRoomIdRoute
   '/rmhtype/$roomId': typeof RmhtypeRoomIdRoute
   '/rmhtype/multiplayer': typeof RmhtypeMultiplayerRoute
@@ -7141,6 +7203,7 @@ export interface FileRoutesByFullPath {
   '/homes/watches': typeof SiteHomesWatchesRoute
   '/jams/$slug': typeof SiteJamsSlugRoute
   '/lists/$id': typeof SiteListsIdRoute
+  '/marathon/$shareId': typeof SiteMarathonShareIdRoute
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/moments/$id': typeof SiteMomentsIdRoute
   '/office-hours/$userId': typeof SiteOfficeHoursUserIdRoute
@@ -7236,6 +7299,7 @@ export interface FileRoutesByFullPath {
   '/api/bums-rush/leaderboard': typeof ApiBumsRushLeaderboardRoute
   '/api/bums-rush/profile': typeof ApiBumsRushProfileRoute
   '/api/bums-rush/showdown': typeof ApiBumsRushShowdownRoute
+  '/api/calc-notebooks/$id': typeof ApiCalcNotebooksIdRoute
   '/api/calendar/$token': typeof ApiCalendarTokenRoute
   '/api/calls/history': typeof ApiCallsHistoryRoute
   '/api/calls/ice': typeof ApiCallsIceRoute
@@ -7327,6 +7391,7 @@ export interface FileRoutesByFullPath {
   '/api/library/upload': typeof ApiLibraryUploadRoute
   '/api/links/check': typeof ApiLinksCheckRoute
   '/api/lists/$id': typeof ApiListsIdRouteWithChildren
+  '/api/marathon-lists/$id': typeof ApiMarathonListsIdRoute
   '/api/massive-march/campaigns': typeof ApiMassiveMarchCampaignsRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
   '/api/messages/read-all': typeof ApiMessagesReadAllRoute
@@ -7469,6 +7534,7 @@ export interface FileRoutesByFullPath {
   '/api/streak/freeze': typeof ApiStreakFreezeRoute
   '/api/studio/overview': typeof ApiStudioOverviewRoute
   '/api/studio/tiers': typeof ApiStudioTiersRoute
+  '/api/study-plans/$id': typeof ApiStudyPlansIdRoute
   '/api/study/marketplace': typeof ApiStudyMarketplaceRoute
   '/api/study/tutor': typeof ApiStudyTutorRoute
   '/api/tags/$tag': typeof ApiTagsTagRoute
@@ -7536,6 +7602,7 @@ export interface FileRoutesByFullPath {
   '/jams/': typeof SiteJamsIndexRoute
   '/library/': typeof SiteLibraryIndexRoute
   '/lists/': typeof SiteListsIndexRoute
+  '/marathon/': typeof SiteMarathonIndexRoute
   '/messages/': typeof SiteMessagesIndexRoute
   '/news/': typeof SiteNewsIndexRoute
   '/office-hours/': typeof SiteOfficeHoursIndexRoute
@@ -7565,6 +7632,7 @@ export interface FileRoutesByFullPath {
   '/api/battlepass/': typeof ApiBattlepassIndexRoute
   '/api/birthday/': typeof ApiBirthdayIndexRoute
   '/api/bulk/': typeof ApiBulkIndexRoute
+  '/api/calc-notebooks/': typeof ApiCalcNotebooksIndexRoute
   '/api/calendar-feed/': typeof ApiCalendarFeedIndexRoute
   '/api/chat-folders/': typeof ApiChatFoldersIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
@@ -7583,6 +7651,7 @@ export interface FileRoutesByFullPath {
   '/api/jams/': typeof ApiJamsIndexRoute
   '/api/kaikai-debt/': typeof ApiKaikaiDebtIndexRoute
   '/api/lists/': typeof ApiListsIndexRoute
+  '/api/marathon-lists/': typeof ApiMarathonListsIndexRoute
   '/api/memory/': typeof ApiMemoryIndexRoute
   '/api/moments/': typeof ApiMomentsIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
@@ -7608,6 +7677,7 @@ export interface FileRoutesByFullPath {
   '/api/staking/': typeof ApiStakingIndexRoute
   '/api/stamps/': typeof ApiStampsIndexRoute
   '/api/study-buddy/': typeof ApiStudyBuddyIndexRoute
+  '/api/study-plans/': typeof ApiStudyPlansIndexRoute
   '/api/themes/': typeof ApiThemesIndexRoute
   '/api/tournaments/': typeof ApiTournamentsIndexRoute
   '/api/trash/': typeof ApiTrashIndexRoute
@@ -7727,6 +7797,7 @@ export interface FileRoutesByFullPath {
   '/api/library/file/$id': typeof ApiLibraryFileIdRoute
   '/api/lists/$id/feed': typeof ApiListsIdFeedRoute
   '/api/lists/$id/members': typeof ApiListsIdMembersRoute
+  '/api/marathon-lists/shared/$shareId': typeof ApiMarathonListsSharedShareIdRoute
   '/api/messages/$conversationId/edit': typeof ApiMessagesConversationIdEditRoute
   '/api/messages/$conversationId/hide': typeof ApiMessagesConversationIdHideRoute
   '/api/messages/$conversationId/mutations': typeof ApiMessagesConversationIdMutationsRoute
@@ -8158,6 +8229,7 @@ export interface FileRoutesByTo {
   '/rmhmusic/$roomId': typeof RmhmusicRoomIdRoute
   '/rmhmusic/player': typeof RmhmusicPlayerRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
+  '/rmhstudy/planner': typeof RmhstudyPlannerRoute
   '/rmhtube/$roomId': typeof RmhtubeRoomIdRoute
   '/rmhtype/$roomId': typeof RmhtypeRoomIdRoute
   '/rmhtype/multiplayer': typeof RmhtypeMultiplayerRoute
@@ -8233,6 +8305,7 @@ export interface FileRoutesByTo {
   '/homes/watches': typeof SiteHomesWatchesRoute
   '/jams/$slug': typeof SiteJamsSlugRoute
   '/lists/$id': typeof SiteListsIdRoute
+  '/marathon/$shareId': typeof SiteMarathonShareIdRoute
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/moments/$id': typeof SiteMomentsIdRoute
   '/office-hours/$userId': typeof SiteOfficeHoursUserIdRoute
@@ -8328,6 +8401,7 @@ export interface FileRoutesByTo {
   '/api/bums-rush/leaderboard': typeof ApiBumsRushLeaderboardRoute
   '/api/bums-rush/profile': typeof ApiBumsRushProfileRoute
   '/api/bums-rush/showdown': typeof ApiBumsRushShowdownRoute
+  '/api/calc-notebooks/$id': typeof ApiCalcNotebooksIdRoute
   '/api/calendar/$token': typeof ApiCalendarTokenRoute
   '/api/calls/history': typeof ApiCallsHistoryRoute
   '/api/calls/ice': typeof ApiCallsIceRoute
@@ -8419,6 +8493,7 @@ export interface FileRoutesByTo {
   '/api/library/upload': typeof ApiLibraryUploadRoute
   '/api/links/check': typeof ApiLinksCheckRoute
   '/api/lists/$id': typeof ApiListsIdRouteWithChildren
+  '/api/marathon-lists/$id': typeof ApiMarathonListsIdRoute
   '/api/massive-march/campaigns': typeof ApiMassiveMarchCampaignsRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
   '/api/messages/read-all': typeof ApiMessagesReadAllRoute
@@ -8561,6 +8636,7 @@ export interface FileRoutesByTo {
   '/api/streak/freeze': typeof ApiStreakFreezeRoute
   '/api/studio/overview': typeof ApiStudioOverviewRoute
   '/api/studio/tiers': typeof ApiStudioTiersRoute
+  '/api/study-plans/$id': typeof ApiStudyPlansIdRoute
   '/api/study/marketplace': typeof ApiStudyMarketplaceRoute
   '/api/study/tutor': typeof ApiStudyTutorRoute
   '/api/tags/$tag': typeof ApiTagsTagRoute
@@ -8628,6 +8704,7 @@ export interface FileRoutesByTo {
   '/jams': typeof SiteJamsIndexRoute
   '/library': typeof SiteLibraryIndexRoute
   '/lists': typeof SiteListsIndexRoute
+  '/marathon': typeof SiteMarathonIndexRoute
   '/messages': typeof SiteMessagesIndexRoute
   '/news': typeof SiteNewsIndexRoute
   '/office-hours': typeof SiteOfficeHoursIndexRoute
@@ -8657,6 +8734,7 @@ export interface FileRoutesByTo {
   '/api/battlepass': typeof ApiBattlepassIndexRoute
   '/api/birthday': typeof ApiBirthdayIndexRoute
   '/api/bulk': typeof ApiBulkIndexRoute
+  '/api/calc-notebooks': typeof ApiCalcNotebooksIndexRoute
   '/api/calendar-feed': typeof ApiCalendarFeedIndexRoute
   '/api/chat-folders': typeof ApiChatFoldersIndexRoute
   '/api/coins': typeof ApiCoinsIndexRoute
@@ -8675,6 +8753,7 @@ export interface FileRoutesByTo {
   '/api/jams': typeof ApiJamsIndexRoute
   '/api/kaikai-debt': typeof ApiKaikaiDebtIndexRoute
   '/api/lists': typeof ApiListsIndexRoute
+  '/api/marathon-lists': typeof ApiMarathonListsIndexRoute
   '/api/memory': typeof ApiMemoryIndexRoute
   '/api/moments': typeof ApiMomentsIndexRoute
   '/api/notifications': typeof ApiNotificationsIndexRoute
@@ -8700,6 +8779,7 @@ export interface FileRoutesByTo {
   '/api/staking': typeof ApiStakingIndexRoute
   '/api/stamps': typeof ApiStampsIndexRoute
   '/api/study-buddy': typeof ApiStudyBuddyIndexRoute
+  '/api/study-plans': typeof ApiStudyPlansIndexRoute
   '/api/themes': typeof ApiThemesIndexRoute
   '/api/tournaments': typeof ApiTournamentsIndexRoute
   '/api/trash': typeof ApiTrashIndexRoute
@@ -8819,6 +8899,7 @@ export interface FileRoutesByTo {
   '/api/library/file/$id': typeof ApiLibraryFileIdRoute
   '/api/lists/$id/feed': typeof ApiListsIdFeedRoute
   '/api/lists/$id/members': typeof ApiListsIdMembersRoute
+  '/api/marathon-lists/shared/$shareId': typeof ApiMarathonListsSharedShareIdRoute
   '/api/messages/$conversationId/edit': typeof ApiMessagesConversationIdEditRoute
   '/api/messages/$conversationId/hide': typeof ApiMessagesConversationIdHideRoute
   '/api/messages/$conversationId/mutations': typeof ApiMessagesConversationIdMutationsRoute
@@ -9277,6 +9358,7 @@ export interface FileRoutesById {
   '/rmhmusic/$roomId': typeof RmhmusicRoomIdRoute
   '/rmhmusic/player': typeof RmhmusicPlayerRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
+  '/rmhstudy/planner': typeof RmhstudyPlannerRoute
   '/rmhtube/$roomId': typeof RmhtubeRoomIdRoute
   '/rmhtype/$roomId': typeof RmhtypeRoomIdRoute
   '/rmhtype/multiplayer': typeof RmhtypeMultiplayerRoute
@@ -9353,6 +9435,7 @@ export interface FileRoutesById {
   '/_site/homes/watches': typeof SiteHomesWatchesRoute
   '/_site/jams/$slug': typeof SiteJamsSlugRoute
   '/_site/lists/$id': typeof SiteListsIdRoute
+  '/_site/marathon/$shareId': typeof SiteMarathonShareIdRoute
   '/_site/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/_site/moments/$id': typeof SiteMomentsIdRoute
   '/_site/office-hours/$userId': typeof SiteOfficeHoursUserIdRoute
@@ -9448,6 +9531,7 @@ export interface FileRoutesById {
   '/api/bums-rush/leaderboard': typeof ApiBumsRushLeaderboardRoute
   '/api/bums-rush/profile': typeof ApiBumsRushProfileRoute
   '/api/bums-rush/showdown': typeof ApiBumsRushShowdownRoute
+  '/api/calc-notebooks/$id': typeof ApiCalcNotebooksIdRoute
   '/api/calendar/$token': typeof ApiCalendarTokenRoute
   '/api/calls/history': typeof ApiCallsHistoryRoute
   '/api/calls/ice': typeof ApiCallsIceRoute
@@ -9539,6 +9623,7 @@ export interface FileRoutesById {
   '/api/library/upload': typeof ApiLibraryUploadRoute
   '/api/links/check': typeof ApiLinksCheckRoute
   '/api/lists/$id': typeof ApiListsIdRouteWithChildren
+  '/api/marathon-lists/$id': typeof ApiMarathonListsIdRoute
   '/api/massive-march/campaigns': typeof ApiMassiveMarchCampaignsRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
   '/api/messages/read-all': typeof ApiMessagesReadAllRoute
@@ -9681,6 +9766,7 @@ export interface FileRoutesById {
   '/api/streak/freeze': typeof ApiStreakFreezeRoute
   '/api/studio/overview': typeof ApiStudioOverviewRoute
   '/api/studio/tiers': typeof ApiStudioTiersRoute
+  '/api/study-plans/$id': typeof ApiStudyPlansIdRoute
   '/api/study/marketplace': typeof ApiStudyMarketplaceRoute
   '/api/study/tutor': typeof ApiStudyTutorRoute
   '/api/tags/$tag': typeof ApiTagsTagRoute
@@ -9748,6 +9834,7 @@ export interface FileRoutesById {
   '/_site/jams/': typeof SiteJamsIndexRoute
   '/_site/library/': typeof SiteLibraryIndexRoute
   '/_site/lists/': typeof SiteListsIndexRoute
+  '/_site/marathon/': typeof SiteMarathonIndexRoute
   '/_site/messages/': typeof SiteMessagesIndexRoute
   '/_site/news/': typeof SiteNewsIndexRoute
   '/_site/office-hours/': typeof SiteOfficeHoursIndexRoute
@@ -9777,6 +9864,7 @@ export interface FileRoutesById {
   '/api/battlepass/': typeof ApiBattlepassIndexRoute
   '/api/birthday/': typeof ApiBirthdayIndexRoute
   '/api/bulk/': typeof ApiBulkIndexRoute
+  '/api/calc-notebooks/': typeof ApiCalcNotebooksIndexRoute
   '/api/calendar-feed/': typeof ApiCalendarFeedIndexRoute
   '/api/chat-folders/': typeof ApiChatFoldersIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
@@ -9795,6 +9883,7 @@ export interface FileRoutesById {
   '/api/jams/': typeof ApiJamsIndexRoute
   '/api/kaikai-debt/': typeof ApiKaikaiDebtIndexRoute
   '/api/lists/': typeof ApiListsIndexRoute
+  '/api/marathon-lists/': typeof ApiMarathonListsIndexRoute
   '/api/memory/': typeof ApiMemoryIndexRoute
   '/api/moments/': typeof ApiMomentsIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
@@ -9820,6 +9909,7 @@ export interface FileRoutesById {
   '/api/staking/': typeof ApiStakingIndexRoute
   '/api/stamps/': typeof ApiStampsIndexRoute
   '/api/study-buddy/': typeof ApiStudyBuddyIndexRoute
+  '/api/study-plans/': typeof ApiStudyPlansIndexRoute
   '/api/themes/': typeof ApiThemesIndexRoute
   '/api/tournaments/': typeof ApiTournamentsIndexRoute
   '/api/trash/': typeof ApiTrashIndexRoute
@@ -9939,6 +10029,7 @@ export interface FileRoutesById {
   '/api/library/file/$id': typeof ApiLibraryFileIdRoute
   '/api/lists/$id/feed': typeof ApiListsIdFeedRoute
   '/api/lists/$id/members': typeof ApiListsIdMembersRoute
+  '/api/marathon-lists/shared/$shareId': typeof ApiMarathonListsSharedShareIdRoute
   '/api/messages/$conversationId/edit': typeof ApiMessagesConversationIdEditRoute
   '/api/messages/$conversationId/hide': typeof ApiMessagesConversationIdHideRoute
   '/api/messages/$conversationId/mutations': typeof ApiMessagesConversationIdMutationsRoute
@@ -10398,6 +10489,7 @@ export interface FileRouteTypes {
     | '/rmhmusic/$roomId'
     | '/rmhmusic/player'
     | '/rmhstudy/$roomId'
+    | '/rmhstudy/planner'
     | '/rmhtube/$roomId'
     | '/rmhtype/$roomId'
     | '/rmhtype/multiplayer'
@@ -10473,6 +10565,7 @@ export interface FileRouteTypes {
     | '/homes/watches'
     | '/jams/$slug'
     | '/lists/$id'
+    | '/marathon/$shareId'
     | '/messages/$conversationId'
     | '/moments/$id'
     | '/office-hours/$userId'
@@ -10568,6 +10661,7 @@ export interface FileRouteTypes {
     | '/api/bums-rush/leaderboard'
     | '/api/bums-rush/profile'
     | '/api/bums-rush/showdown'
+    | '/api/calc-notebooks/$id'
     | '/api/calendar/$token'
     | '/api/calls/history'
     | '/api/calls/ice'
@@ -10659,6 +10753,7 @@ export interface FileRouteTypes {
     | '/api/library/upload'
     | '/api/links/check'
     | '/api/lists/$id'
+    | '/api/marathon-lists/$id'
     | '/api/massive-march/campaigns'
     | '/api/messages/$conversationId'
     | '/api/messages/read-all'
@@ -10801,6 +10896,7 @@ export interface FileRouteTypes {
     | '/api/streak/freeze'
     | '/api/studio/overview'
     | '/api/studio/tiers'
+    | '/api/study-plans/$id'
     | '/api/study/marketplace'
     | '/api/study/tutor'
     | '/api/tags/$tag'
@@ -10868,6 +10964,7 @@ export interface FileRouteTypes {
     | '/jams/'
     | '/library/'
     | '/lists/'
+    | '/marathon/'
     | '/messages/'
     | '/news/'
     | '/office-hours/'
@@ -10897,6 +10994,7 @@ export interface FileRouteTypes {
     | '/api/battlepass/'
     | '/api/birthday/'
     | '/api/bulk/'
+    | '/api/calc-notebooks/'
     | '/api/calendar-feed/'
     | '/api/chat-folders/'
     | '/api/coins/'
@@ -10915,6 +11013,7 @@ export interface FileRouteTypes {
     | '/api/jams/'
     | '/api/kaikai-debt/'
     | '/api/lists/'
+    | '/api/marathon-lists/'
     | '/api/memory/'
     | '/api/moments/'
     | '/api/notifications/'
@@ -10940,6 +11039,7 @@ export interface FileRouteTypes {
     | '/api/staking/'
     | '/api/stamps/'
     | '/api/study-buddy/'
+    | '/api/study-plans/'
     | '/api/themes/'
     | '/api/tournaments/'
     | '/api/trash/'
@@ -11059,6 +11159,7 @@ export interface FileRouteTypes {
     | '/api/library/file/$id'
     | '/api/lists/$id/feed'
     | '/api/lists/$id/members'
+    | '/api/marathon-lists/shared/$shareId'
     | '/api/messages/$conversationId/edit'
     | '/api/messages/$conversationId/hide'
     | '/api/messages/$conversationId/mutations'
@@ -11490,6 +11591,7 @@ export interface FileRouteTypes {
     | '/rmhmusic/$roomId'
     | '/rmhmusic/player'
     | '/rmhstudy/$roomId'
+    | '/rmhstudy/planner'
     | '/rmhtube/$roomId'
     | '/rmhtype/$roomId'
     | '/rmhtype/multiplayer'
@@ -11565,6 +11667,7 @@ export interface FileRouteTypes {
     | '/homes/watches'
     | '/jams/$slug'
     | '/lists/$id'
+    | '/marathon/$shareId'
     | '/messages/$conversationId'
     | '/moments/$id'
     | '/office-hours/$userId'
@@ -11660,6 +11763,7 @@ export interface FileRouteTypes {
     | '/api/bums-rush/leaderboard'
     | '/api/bums-rush/profile'
     | '/api/bums-rush/showdown'
+    | '/api/calc-notebooks/$id'
     | '/api/calendar/$token'
     | '/api/calls/history'
     | '/api/calls/ice'
@@ -11751,6 +11855,7 @@ export interface FileRouteTypes {
     | '/api/library/upload'
     | '/api/links/check'
     | '/api/lists/$id'
+    | '/api/marathon-lists/$id'
     | '/api/massive-march/campaigns'
     | '/api/messages/$conversationId'
     | '/api/messages/read-all'
@@ -11893,6 +11998,7 @@ export interface FileRouteTypes {
     | '/api/streak/freeze'
     | '/api/studio/overview'
     | '/api/studio/tiers'
+    | '/api/study-plans/$id'
     | '/api/study/marketplace'
     | '/api/study/tutor'
     | '/api/tags/$tag'
@@ -11960,6 +12066,7 @@ export interface FileRouteTypes {
     | '/jams'
     | '/library'
     | '/lists'
+    | '/marathon'
     | '/messages'
     | '/news'
     | '/office-hours'
@@ -11989,6 +12096,7 @@ export interface FileRouteTypes {
     | '/api/battlepass'
     | '/api/birthday'
     | '/api/bulk'
+    | '/api/calc-notebooks'
     | '/api/calendar-feed'
     | '/api/chat-folders'
     | '/api/coins'
@@ -12007,6 +12115,7 @@ export interface FileRouteTypes {
     | '/api/jams'
     | '/api/kaikai-debt'
     | '/api/lists'
+    | '/api/marathon-lists'
     | '/api/memory'
     | '/api/moments'
     | '/api/notifications'
@@ -12032,6 +12141,7 @@ export interface FileRouteTypes {
     | '/api/staking'
     | '/api/stamps'
     | '/api/study-buddy'
+    | '/api/study-plans'
     | '/api/themes'
     | '/api/tournaments'
     | '/api/trash'
@@ -12151,6 +12261,7 @@ export interface FileRouteTypes {
     | '/api/library/file/$id'
     | '/api/lists/$id/feed'
     | '/api/lists/$id/members'
+    | '/api/marathon-lists/shared/$shareId'
     | '/api/messages/$conversationId/edit'
     | '/api/messages/$conversationId/hide'
     | '/api/messages/$conversationId/mutations'
@@ -12608,6 +12719,7 @@ export interface FileRouteTypes {
     | '/rmhmusic/$roomId'
     | '/rmhmusic/player'
     | '/rmhstudy/$roomId'
+    | '/rmhstudy/planner'
     | '/rmhtube/$roomId'
     | '/rmhtype/$roomId'
     | '/rmhtype/multiplayer'
@@ -12684,6 +12796,7 @@ export interface FileRouteTypes {
     | '/_site/homes/watches'
     | '/_site/jams/$slug'
     | '/_site/lists/$id'
+    | '/_site/marathon/$shareId'
     | '/_site/messages/$conversationId'
     | '/_site/moments/$id'
     | '/_site/office-hours/$userId'
@@ -12779,6 +12892,7 @@ export interface FileRouteTypes {
     | '/api/bums-rush/leaderboard'
     | '/api/bums-rush/profile'
     | '/api/bums-rush/showdown'
+    | '/api/calc-notebooks/$id'
     | '/api/calendar/$token'
     | '/api/calls/history'
     | '/api/calls/ice'
@@ -12870,6 +12984,7 @@ export interface FileRouteTypes {
     | '/api/library/upload'
     | '/api/links/check'
     | '/api/lists/$id'
+    | '/api/marathon-lists/$id'
     | '/api/massive-march/campaigns'
     | '/api/messages/$conversationId'
     | '/api/messages/read-all'
@@ -13012,6 +13127,7 @@ export interface FileRouteTypes {
     | '/api/streak/freeze'
     | '/api/studio/overview'
     | '/api/studio/tiers'
+    | '/api/study-plans/$id'
     | '/api/study/marketplace'
     | '/api/study/tutor'
     | '/api/tags/$tag'
@@ -13079,6 +13195,7 @@ export interface FileRouteTypes {
     | '/_site/jams/'
     | '/_site/library/'
     | '/_site/lists/'
+    | '/_site/marathon/'
     | '/_site/messages/'
     | '/_site/news/'
     | '/_site/office-hours/'
@@ -13108,6 +13225,7 @@ export interface FileRouteTypes {
     | '/api/battlepass/'
     | '/api/birthday/'
     | '/api/bulk/'
+    | '/api/calc-notebooks/'
     | '/api/calendar-feed/'
     | '/api/chat-folders/'
     | '/api/coins/'
@@ -13126,6 +13244,7 @@ export interface FileRouteTypes {
     | '/api/jams/'
     | '/api/kaikai-debt/'
     | '/api/lists/'
+    | '/api/marathon-lists/'
     | '/api/memory/'
     | '/api/moments/'
     | '/api/notifications/'
@@ -13151,6 +13270,7 @@ export interface FileRouteTypes {
     | '/api/staking/'
     | '/api/stamps/'
     | '/api/study-buddy/'
+    | '/api/study-plans/'
     | '/api/themes/'
     | '/api/tournaments/'
     | '/api/trash/'
@@ -13270,6 +13390,7 @@ export interface FileRouteTypes {
     | '/api/library/file/$id'
     | '/api/lists/$id/feed'
     | '/api/lists/$id/members'
+    | '/api/marathon-lists/shared/$shareId'
     | '/api/messages/$conversationId/edit'
     | '/api/messages/$conversationId/hide'
     | '/api/messages/$conversationId/mutations'
@@ -13709,6 +13830,7 @@ export interface RootRouteChildren {
   ApiBumsRushLeaderboardRoute: typeof ApiBumsRushLeaderboardRoute
   ApiBumsRushProfileRoute: typeof ApiBumsRushProfileRoute
   ApiBumsRushShowdownRoute: typeof ApiBumsRushShowdownRoute
+  ApiCalcNotebooksIdRoute: typeof ApiCalcNotebooksIdRoute
   ApiCalendarTokenRoute: typeof ApiCalendarTokenRoute
   ApiCallsHistoryRoute: typeof ApiCallsHistoryRoute
   ApiCallsIceRoute: typeof ApiCallsIceRoute
@@ -13800,6 +13922,7 @@ export interface RootRouteChildren {
   ApiLibraryUploadRoute: typeof ApiLibraryUploadRoute
   ApiLinksCheckRoute: typeof ApiLinksCheckRoute
   ApiListsIdRoute: typeof ApiListsIdRouteWithChildren
+  ApiMarathonListsIdRoute: typeof ApiMarathonListsIdRoute
   ApiMassiveMarchCampaignsRoute: typeof ApiMassiveMarchCampaignsRoute
   ApiModerationBlockRoute: typeof ApiModerationBlockRoute
   ApiModerationMuteRoute: typeof ApiModerationMuteRoute
@@ -13918,6 +14041,7 @@ export interface RootRouteChildren {
   ApiStampsMineRoute: typeof ApiStampsMineRoute
   ApiStudioOverviewRoute: typeof ApiStudioOverviewRoute
   ApiStudioTiersRoute: typeof ApiStudioTiersRoute
+  ApiStudyPlansIdRoute: typeof ApiStudyPlansIdRoute
   ApiStudyMarketplaceRoute: typeof ApiStudyMarketplaceRoute
   ApiStudyTutorRoute: typeof ApiStudyTutorRoute
   ApiTagsTagRoute: typeof ApiTagsTagRoute
@@ -13965,6 +14089,7 @@ export interface RootRouteChildren {
   ApiBattlepassIndexRoute: typeof ApiBattlepassIndexRoute
   ApiBirthdayIndexRoute: typeof ApiBirthdayIndexRoute
   ApiBulkIndexRoute: typeof ApiBulkIndexRoute
+  ApiCalcNotebooksIndexRoute: typeof ApiCalcNotebooksIndexRoute
   ApiCalendarFeedIndexRoute: typeof ApiCalendarFeedIndexRoute
   ApiChatFoldersIndexRoute: typeof ApiChatFoldersIndexRoute
   ApiCoinsIndexRoute: typeof ApiCoinsIndexRoute
@@ -13983,6 +14108,7 @@ export interface RootRouteChildren {
   ApiJamsIndexRoute: typeof ApiJamsIndexRoute
   ApiKaikaiDebtIndexRoute: typeof ApiKaikaiDebtIndexRoute
   ApiListsIndexRoute: typeof ApiListsIndexRoute
+  ApiMarathonListsIndexRoute: typeof ApiMarathonListsIndexRoute
   ApiMemoryIndexRoute: typeof ApiMemoryIndexRoute
   ApiMomentsIndexRoute: typeof ApiMomentsIndexRoute
   ApiNotificationsIndexRoute: typeof ApiNotificationsIndexRoute
@@ -14008,6 +14134,7 @@ export interface RootRouteChildren {
   ApiStakingIndexRoute: typeof ApiStakingIndexRoute
   ApiStampsIndexRoute: typeof ApiStampsIndexRoute
   ApiStudyBuddyIndexRoute: typeof ApiStudyBuddyIndexRoute
+  ApiStudyPlansIndexRoute: typeof ApiStudyPlansIndexRoute
   ApiThemesIndexRoute: typeof ApiThemesIndexRoute
   ApiTournamentsIndexRoute: typeof ApiTournamentsIndexRoute
   ApiTrashIndexRoute: typeof ApiTrashIndexRoute
@@ -14103,6 +14230,7 @@ export interface RootRouteChildren {
   ApiLibraryCollectionIdRoute: typeof ApiLibraryCollectionIdRouteWithChildren
   ApiLibraryCoverIdRoute: typeof ApiLibraryCoverIdRoute
   ApiLibraryFileIdRoute: typeof ApiLibraryFileIdRoute
+  ApiMarathonListsSharedShareIdRoute: typeof ApiMarathonListsSharedShareIdRoute
   ApiOgAppAppIdRoute: typeof ApiOgAppAppIdRoute
   ApiOgBlogSlugRoute: typeof ApiOgBlogSlugRoute
   ApiOgGameGameIdRoute: typeof ApiOgGameGameIdRoute
@@ -15494,6 +15622,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RmhstudyRoomIdRouteImport
       parentRoute: typeof RmhstudyRoute
     }
+    '/rmhstudy/planner': {
+      id: '/rmhstudy/planner'
+      path: '/planner'
+      fullPath: '/rmhstudy/planner'
+      preLoaderRoute: typeof RmhstudyPlannerRouteImport
+      parentRoute: typeof RmhstudyRoute
+    }
     '/rmhtube/': {
       id: '/rmhtube/'
       path: '/'
@@ -16031,6 +16166,20 @@ declare module '@tanstack/react-router' {
       path: '/lists/$id'
       fullPath: '/lists/$id'
       preLoaderRoute: typeof SiteListsIdRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/marathon/': {
+      id: '/_site/marathon/'
+      path: '/marathon'
+      fullPath: '/marathon/'
+      preLoaderRoute: typeof SiteMarathonIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/marathon/$shareId': {
+      id: '/_site/marathon/$shareId'
+      path: '/marathon/$shareId'
+      fullPath: '/marathon/$shareId'
+      preLoaderRoute: typeof SiteMarathonShareIdRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/messages/': {
@@ -16901,6 +17050,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiBumsRushShowdownRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/calc-notebooks/': {
+      id: '/api/calc-notebooks/'
+      path: '/api/calc-notebooks'
+      fullPath: '/api/calc-notebooks/'
+      preLoaderRoute: typeof ApiCalcNotebooksIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/calc-notebooks/$id': {
+      id: '/api/calc-notebooks/$id'
+      path: '/api/calc-notebooks/$id'
+      fullPath: '/api/calc-notebooks/$id'
+      preLoaderRoute: typeof ApiCalcNotebooksIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/calendar-feed/': {
       id: '/api/calendar-feed/'
       path: '/api/calendar-feed'
@@ -17662,6 +17825,20 @@ declare module '@tanstack/react-router' {
       path: '/api/lists/$id'
       fullPath: '/api/lists/$id'
       preLoaderRoute: typeof ApiListsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/marathon-lists/': {
+      id: '/api/marathon-lists/'
+      path: '/api/marathon-lists'
+      fullPath: '/api/marathon-lists/'
+      preLoaderRoute: typeof ApiMarathonListsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/marathon-lists/$id': {
+      id: '/api/marathon-lists/$id'
+      path: '/api/marathon-lists/$id'
+      fullPath: '/api/marathon-lists/$id'
+      preLoaderRoute: typeof ApiMarathonListsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/massive-march/campaigns': {
@@ -18831,6 +19008,20 @@ declare module '@tanstack/react-router' {
       path: '/api/study-buddy'
       fullPath: '/api/study-buddy/'
       preLoaderRoute: typeof ApiStudyBuddyIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/study-plans/': {
+      id: '/api/study-plans/'
+      path: '/api/study-plans'
+      fullPath: '/api/study-plans/'
+      preLoaderRoute: typeof ApiStudyPlansIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/study-plans/$id': {
+      id: '/api/study-plans/$id'
+      path: '/api/study-plans/$id'
+      fullPath: '/api/study-plans/$id'
+      preLoaderRoute: typeof ApiStudyPlansIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/study/marketplace': {
@@ -20204,6 +20395,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/lists/$id/members'
       preLoaderRoute: typeof ApiListsIdMembersRouteImport
       parentRoute: typeof ApiListsIdRoute
+    }
+    '/api/marathon-lists/shared/$shareId': {
+      id: '/api/marathon-lists/shared/$shareId'
+      path: '/api/marathon-lists/shared/$shareId'
+      fullPath: '/api/marathon-lists/shared/$shareId'
+      preLoaderRoute: typeof ApiMarathonListsSharedShareIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/market/listings/': {
       id: '/api/market/listings/'
@@ -22266,6 +22464,7 @@ interface SiteRouteChildren {
   SiteHomesWatchesRoute: typeof SiteHomesWatchesRoute
   SiteJamsSlugRoute: typeof SiteJamsSlugRoute
   SiteListsIdRoute: typeof SiteListsIdRoute
+  SiteMarathonShareIdRoute: typeof SiteMarathonShareIdRoute
   SiteMessagesConversationIdRoute: typeof SiteMessagesConversationIdRoute
   SiteMomentsIdRoute: typeof SiteMomentsIdRoute
   SiteOfficeHoursUserIdRoute: typeof SiteOfficeHoursUserIdRoute
@@ -22316,6 +22515,7 @@ interface SiteRouteChildren {
   SiteJamsIndexRoute: typeof SiteJamsIndexRoute
   SiteLibraryIndexRoute: typeof SiteLibraryIndexRoute
   SiteListsIndexRoute: typeof SiteListsIndexRoute
+  SiteMarathonIndexRoute: typeof SiteMarathonIndexRoute
   SiteMessagesIndexRoute: typeof SiteMessagesIndexRoute
   SiteNewsIndexRoute: typeof SiteNewsIndexRoute
   SiteOfficeHoursIndexRoute: typeof SiteOfficeHoursIndexRoute
@@ -22404,6 +22604,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteHomesWatchesRoute: SiteHomesWatchesRoute,
   SiteJamsSlugRoute: SiteJamsSlugRoute,
   SiteListsIdRoute: SiteListsIdRoute,
+  SiteMarathonShareIdRoute: SiteMarathonShareIdRoute,
   SiteMessagesConversationIdRoute: SiteMessagesConversationIdRoute,
   SiteMomentsIdRoute: SiteMomentsIdRoute,
   SiteOfficeHoursUserIdRoute: SiteOfficeHoursUserIdRoute,
@@ -22454,6 +22655,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteJamsIndexRoute: SiteJamsIndexRoute,
   SiteLibraryIndexRoute: SiteLibraryIndexRoute,
   SiteListsIndexRoute: SiteListsIndexRoute,
+  SiteMarathonIndexRoute: SiteMarathonIndexRoute,
   SiteMessagesIndexRoute: SiteMessagesIndexRoute,
   SiteNewsIndexRoute: SiteNewsIndexRoute,
   SiteOfficeHoursIndexRoute: SiteOfficeHoursIndexRoute,
@@ -22686,11 +22888,13 @@ const RmhmusicRouteWithChildren = RmhmusicRoute._addFileChildren(
 
 interface RmhstudyRouteChildren {
   RmhstudyRoomIdRoute: typeof RmhstudyRoomIdRoute
+  RmhstudyPlannerRoute: typeof RmhstudyPlannerRoute
   RmhstudyIndexRoute: typeof RmhstudyIndexRoute
 }
 
 const RmhstudyRouteChildren: RmhstudyRouteChildren = {
   RmhstudyRoomIdRoute: RmhstudyRoomIdRoute,
+  RmhstudyPlannerRoute: RmhstudyPlannerRoute,
   RmhstudyIndexRoute: RmhstudyIndexRoute,
 }
 
@@ -24204,6 +24408,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiBumsRushLeaderboardRoute: ApiBumsRushLeaderboardRoute,
   ApiBumsRushProfileRoute: ApiBumsRushProfileRoute,
   ApiBumsRushShowdownRoute: ApiBumsRushShowdownRoute,
+  ApiCalcNotebooksIdRoute: ApiCalcNotebooksIdRoute,
   ApiCalendarTokenRoute: ApiCalendarTokenRoute,
   ApiCallsHistoryRoute: ApiCallsHistoryRoute,
   ApiCallsIceRoute: ApiCallsIceRoute,
@@ -24295,6 +24500,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiLibraryUploadRoute: ApiLibraryUploadRoute,
   ApiLinksCheckRoute: ApiLinksCheckRoute,
   ApiListsIdRoute: ApiListsIdRouteWithChildren,
+  ApiMarathonListsIdRoute: ApiMarathonListsIdRoute,
   ApiMassiveMarchCampaignsRoute: ApiMassiveMarchCampaignsRoute,
   ApiModerationBlockRoute: ApiModerationBlockRoute,
   ApiModerationMuteRoute: ApiModerationMuteRoute,
@@ -24413,6 +24619,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStampsMineRoute: ApiStampsMineRoute,
   ApiStudioOverviewRoute: ApiStudioOverviewRoute,
   ApiStudioTiersRoute: ApiStudioTiersRoute,
+  ApiStudyPlansIdRoute: ApiStudyPlansIdRoute,
   ApiStudyMarketplaceRoute: ApiStudyMarketplaceRoute,
   ApiStudyTutorRoute: ApiStudyTutorRoute,
   ApiTagsTagRoute: ApiTagsTagRoute,
@@ -24460,6 +24667,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiBattlepassIndexRoute: ApiBattlepassIndexRoute,
   ApiBirthdayIndexRoute: ApiBirthdayIndexRoute,
   ApiBulkIndexRoute: ApiBulkIndexRoute,
+  ApiCalcNotebooksIndexRoute: ApiCalcNotebooksIndexRoute,
   ApiCalendarFeedIndexRoute: ApiCalendarFeedIndexRoute,
   ApiChatFoldersIndexRoute: ApiChatFoldersIndexRoute,
   ApiCoinsIndexRoute: ApiCoinsIndexRoute,
@@ -24478,6 +24686,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiJamsIndexRoute: ApiJamsIndexRoute,
   ApiKaikaiDebtIndexRoute: ApiKaikaiDebtIndexRoute,
   ApiListsIndexRoute: ApiListsIndexRoute,
+  ApiMarathonListsIndexRoute: ApiMarathonListsIndexRoute,
   ApiMemoryIndexRoute: ApiMemoryIndexRoute,
   ApiMomentsIndexRoute: ApiMomentsIndexRoute,
   ApiNotificationsIndexRoute: ApiNotificationsIndexRoute,
@@ -24503,6 +24712,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStakingIndexRoute: ApiStakingIndexRoute,
   ApiStampsIndexRoute: ApiStampsIndexRoute,
   ApiStudyBuddyIndexRoute: ApiStudyBuddyIndexRoute,
+  ApiStudyPlansIndexRoute: ApiStudyPlansIndexRoute,
   ApiThemesIndexRoute: ApiThemesIndexRoute,
   ApiTournamentsIndexRoute: ApiTournamentsIndexRoute,
   ApiTrashIndexRoute: ApiTrashIndexRoute,
@@ -24600,6 +24810,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiLibraryCollectionIdRoute: ApiLibraryCollectionIdRouteWithChildren,
   ApiLibraryCoverIdRoute: ApiLibraryCoverIdRoute,
   ApiLibraryFileIdRoute: ApiLibraryFileIdRoute,
+  ApiMarathonListsSharedShareIdRoute: ApiMarathonListsSharedShareIdRoute,
   ApiOgAppAppIdRoute: ApiOgAppAppIdRoute,
   ApiOgBlogSlugRoute: ApiOgBlogSlugRoute,
   ApiOgGameGameIdRoute: ApiOgGameGameIdRoute,

@@ -447,6 +447,10 @@ model User {
   pf2eSettingsEdits   Pf2eSettings[]        @relation("Pf2eSettingsEditor")
 
   // ─── Feature ideas 2026-10-12 (docs/plans/2026-10-12-feature-ideas-every-surface.md)
+  // P21 tools: F4 study plans, F11 calc notebooks, F15 marathon lists
+  studyPlans                 StudyPlan[]
+  calcNotebooks              CalcNotebook[]
+  marathonLists              MarathonList[]
   // P14 safety: S7 pile-on guard
   pileOnGuards               PileOnGuard[]
   // P12 forecasting: G6 market comments
@@ -11632,4 +11636,57 @@ model PileOnGuard {
   @@index([authorId])
   @@index([status, expiresAt])
   @@map("pile_on_guard")
+}
+
+// ── P21: tools — F4 exam planner, F11 calculator notebooks, F15 marathon lists ──
+
+// A saved RMHStudy exam plan. The day-by-day view is recomputed from these
+// inputs (lib/rmhstudy/exam-planner.ts), so edits never leave a stale plan.
+model StudyPlan {
+  id             String   @id @default(cuid())
+  userId         String
+  title          String   @db.VarChar(120)
+  examDate       String   @db.VarChar(10)
+  topics         Json
+  hoursByWeekday Json
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@map("study_plan")
+}
+
+// A plain-text RMHCalculator notebook; every line is evaluated on the client.
+model CalcNotebook {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String   @db.VarChar(120)
+  body      String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@map("calc_notebook")
+}
+
+// A member's own watch list for the generalized marathon planner. shareId is
+// the unguessable capability in the public read-only link.
+model MarathonList {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String   @db.VarChar(120)
+  items     Json
+  deadline  String   @db.VarChar(10)
+  shareId   String   @unique @db.VarChar(24)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@map("marathon_list")
 }

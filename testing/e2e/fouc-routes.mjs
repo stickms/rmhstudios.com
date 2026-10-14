@@ -42,6 +42,11 @@ const ROUTE_TREE = join(REPO_ROOT, 'app/routeTree.gen.ts');
  * to the same thing while still claiming `'content'`.
  */
 export const DYNAMIC_ROUTE_FIXTURES = {
+  '/marathon/$shareId': {
+    path: '/marathon/fouc-audit',
+    fidelity: 'shell',
+    why: 'An unknown share id renders the "link is not valid" state inside the same PageLayout shell.',
+  },
   '/exchange/$id': {
     path: '/exchange/fouc-audit',
     fidelity: 'shell',

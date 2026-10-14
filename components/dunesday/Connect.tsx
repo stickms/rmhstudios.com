@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { MarathonLink } from './MarathonLink';
 import { AeroWindow } from './AeroWindow';
 import { toast } from 'sonner';
 import type { CloudSync } from './useCloudSync';
@@ -259,6 +260,7 @@ function SyncedPanels({
       </div>
 
       <DiscordCard sync={sync} />
+      <MarathonLink />
     </div>
   );
 }

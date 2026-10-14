@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 779 files across 172 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 786 files across 175 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -256,6 +256,15 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/bums-rush/leaderboard` | `GET` | `app/routes/api/bums-rush/leaderboard.ts` |
 | `/api/bums-rush/profile` | `GET` `PUT` | `app/routes/api/bums-rush/profile.ts` |
 | `/api/bums-rush/showdown` | `POST` | `app/routes/api/bums-rush/showdown.ts` |
+
+## `/api/calc-notebooks`
+
+2 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/calc-notebooks` | `GET` `POST` | `app/routes/api/calc-notebooks/index.ts` |
+| `/api/calc-notebooks/:id` | `DELETE` `PUT` | `app/routes/api/calc-notebooks/$id.ts` |
 
 ## `/api/calendar`
 
@@ -918,6 +927,16 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/lists/:id` | `DELETE` `GET` `PATCH` | `app/routes/api/lists/$id.ts` |
 | `/api/lists/:id/feed` | `GET` | `app/routes/api/lists/$id.feed.ts` |
 | `/api/lists/:id/members` | `DELETE` `PUT` | `app/routes/api/lists/$id.members.ts` |
+
+## `/api/marathon-lists`
+
+3 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/marathon-lists` | `GET` `POST` | `app/routes/api/marathon-lists/index.ts` |
+| `/api/marathon-lists/:id` | `DELETE` `PUT` | `app/routes/api/marathon-lists/$id.ts` |
+| `/api/marathon-lists/shared/:shareId` | `GET` | `app/routes/api/marathon-lists/shared/$shareId.ts` |
 
 ## `/api/market`
 
@@ -1754,6 +1773,15 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/study-buddy` | `DELETE` `GET` `POST` | `app/routes/api/study-buddy/index.ts` |
+
+## `/api/study-plans`
+
+2 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/study-plans` | `GET` `POST` | `app/routes/api/study-plans/index.ts` |
+| `/api/study-plans/:id` | `DELETE` `PUT` | `app/routes/api/study-plans/$id.ts` |
 
 ## `/api/tags`
 

@@ -16,6 +16,8 @@ import type { PublicStudyRoomInfo } from '@/lib/rmhstudy/types';
 import { useRouter } from '@tanstack/react-router';
 import { useIdleReady } from '@/hooks/useIdleReady';
 
+import PlannerLink from '@/components/rmhstudy/PlannerLink';
+
 // F5 — body-doubling match; fetched after idle, not with the landing.
 const BodyDoublePanel = lazy(() => import('@/components/rmhstudy/BodyDoublePanel'));
 
@@ -155,6 +157,8 @@ export default function RmhStudyLanding() {
             </div>
             <ArrowRight className="h-5 w-5 shrink-0 text-(--app-text-muted) transition-transform group-hover:translate-x-1" />
           </button>
+
+          <PlannerLink />
 
           {idle && (
             <Suspense fallback={null}>
