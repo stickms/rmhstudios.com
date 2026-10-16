@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 325 routes. 188 render inside the standard site shell (sidebar, nav, context rail); 137 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 326 routes. 189 render inside the standard site shell (sidebar, nav, context rail); 137 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -49,6 +49,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/security-reports` | Security Reports | admin | `app/routes/_site/admin/security-reports.tsx` |
 | `/admin/slice-it` | Slice It ranked pool | admin | `app/routes/_site/admin/slice-it.tsx` |
 | `/admin/slice-it-content` | Slice It content & storage | admin | `app/routes/_site/admin/slice-it-content.tsx` |
+| `/admin/studio-challenges` | Studio sample flip \| Admin | admin | `app/routes/_site/admin/studio-challenges.tsx` |
 | `/admin/user-builds` | All User Builds \| Admin | admin | `app/routes/_site/admin/user-builds.tsx` |
 | `/admin/users` | Users \| Admin | admin | `app/routes/_site/admin/users.tsx` |
 | `/advent` | — | public | `app/routes/_site/advent.tsx` |

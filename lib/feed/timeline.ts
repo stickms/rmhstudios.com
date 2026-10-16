@@ -330,6 +330,7 @@ function mapOwn(r: any, userId: string | null, displayMap: Map<string, ResolvedU
     replyControl: r.replyControl ?? 'EVERYONE',
     isTake: r.isTake || undefined,
     hasNote: r.hasNote || undefined,
+    hasEmbed: r.hasEmbed || undefined,
     seriesId: r.seriesId ?? undefined,
     expiresAt: r.expiresAt?.toISOString(),
     reactions: [], // filled in by loadReactionSummaries after the query
@@ -371,6 +372,7 @@ function mapRepost(
     replyControl: r.replyControl ?? 'EVERYONE',
     isTake: r.isTake || undefined,
     hasNote: r.hasNote || undefined,
+    hasEmbed: r.hasEmbed || undefined,
     seriesId: r.seriesId ?? undefined,
     expiresAt: r.expiresAt?.toISOString(),
     reactions: [], // filled in by loadReactionSummaries after the query

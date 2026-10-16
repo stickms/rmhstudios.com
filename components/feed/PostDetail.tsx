@@ -26,6 +26,7 @@ import { RMHarkContent, extractFirstUrl } from'./RMHarkContent';
 import { PollDisplay } from'./PollDisplay';
 import { TakeMeterLazy } from'./TakeMeterLazy';
 import { ContextNotesLazy } from '@/components/context-notes/ContextNotesLazy';
+import { RunnableEmbed } from '@/components/code-embed/RunnableEmbed';
 import { PostPlusBadges } from'@/components/posts-plus/PostPlusBadges';
 import { GifEmbed } from'./GifEmbed';
 import { PostImageGrid } from'./PostImageGrid';
@@ -392,6 +393,8 @@ export function PostDetail({ postId }: PostDetailProps) {
  <TakeMeterLazy postId={postId} />
  </div>
  )}
+
+ {post.hasEmbed && !post.locked && <RunnableEmbed postId={postId} />}
 
  {/* Context notes (X3) — a button until opened; open straight away when a note is visible */}
  {!post.locked && (

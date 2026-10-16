@@ -51,6 +51,7 @@ export async function connectToRmhMusic(): Promise<Socket> {
 
 function registerHandlers(socket: Socket) {
   socket.on(S2C.ROOM_STATE_SNAPSHOT, (fullState) => store().applyFullSync(fullState));
+  socket.on(S2C.RADIO_STATE, (radio) => store().setRadio(radio));
   socket.on(S2C.ROOM_ACTION, (action) => store().applyAction(action));
 
   socket.on(S2C.MUSIC_PLAY, (data) => {

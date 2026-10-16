@@ -98,6 +98,8 @@ export interface FeedItem {
   isTake?: boolean;
   /** X3 — at least one context note is visible; the notes load lazily. */
   hasNote?: boolean;
+  /** F14 — the post carries a runnable code snippet; it loads only on click. */
+  hasEmbed?: boolean;
   /** N1: community post flair (community feeds only). */
   communityFlair?: { id: string; name: string; color: string };
   /** posts-plus X5: id of the series this post is a part of (details load lazily). */

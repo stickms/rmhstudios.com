@@ -314,6 +314,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/admin/economy': 'admin',
   '/admin/delight': 'admin',
   '/admin/canvas': 'admin', // P19 Z5/X3
+  '/admin/studio-challenges': 'admin', // P23 F12
   '/admin/library': 'admin',
   '/admin/patch-notes': 'admin',
   '/admin/release-notes': 'admin',

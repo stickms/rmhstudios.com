@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 844 files across 188 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 853 files across 188 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -46,7 +46,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/admin`
 
-75 routes.
+77 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -117,6 +117,8 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/admin/review-counts` | `GET` | `app/routes/api/admin/review-counts.ts` |
 | `/api/admin/rideshare/applications` | `GET` `PATCH` | `app/routes/api/admin/rideshare/applications.ts` |
 | `/api/admin/rideshare/rides` | `GET` | `app/routes/api/admin/rideshare/rides.ts` |
+| `/api/admin/studio-challenges` | `POST` | `app/routes/api/admin/studio-challenges/index.ts` |
+| `/api/admin/studio-challenges/upload` | `POST` | `app/routes/api/admin/studio-challenges/upload.ts` |
 | `/api/admin/users` | `GET` `PATCH` | `app/routes/api/admin/users.ts` |
 | `/api/admin/users/:id/ban` | `POST` | `app/routes/api/admin/users/$id/ban.ts` |
 | `/api/admin/users/:id/grant-membership` | `POST` | `app/routes/api/admin/users/$id/grant-membership.ts` |
@@ -1517,7 +1519,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/rmharks`
 
-27 routes.
+28 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -1530,6 +1532,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/rmharks/:id/comment/:commentId/like` | `GET` `POST` | `app/routes/api/rmharks/$id/comment/$commentId/like.ts` |
 | `/api/rmharks/:id/comment/:commentId/repost` | `GET` `POST` | `app/routes/api/rmharks/$id/comment/$commentId/repost.ts` |
 | `/api/rmharks/:id/comment/:commentId/view` | `POST` | `app/routes/api/rmharks/$id/comment/$commentId/view.ts` |
+| `/api/rmharks/:id/embed` | `GET` | `app/routes/api/rmharks/$id/embed.ts` |
 | `/api/rmharks/:id/history` | `GET` | `app/routes/api/rmharks/$id/history.ts` |
 | `/api/rmharks/:id/insights` | `GET` | `app/routes/api/rmharks/$id/insights.ts` |
 | `/api/rmharks/:id/like` | `GET` `POST` | `app/routes/api/rmharks/$id/like.ts` |
@@ -1884,10 +1887,16 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/studio`
 
-2 routes.
+8 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
+| `/api/studio/challenges` | `GET` | `app/routes/api/studio/challenges/index.ts` |
+| `/api/studio/challenges/:id` | `GET` | `app/routes/api/studio/challenges/$id/index.ts` |
+| `/api/studio/challenges/:id/entry` | `POST` | `app/routes/api/studio/challenges/$id/entry.ts` |
+| `/api/studio/challenges/:id/vote` | `POST` | `app/routes/api/studio/challenges/$id/vote.ts` |
+| `/api/studio/challenges/audio` | `POST` | `app/routes/api/studio/challenges/audio/index.ts` |
+| `/api/studio/challenges/audio/:filename` | `GET` | `app/routes/api/studio/challenges/audio/$filename.ts` |
 | `/api/studio/overview` | `GET` | `app/routes/api/studio/overview.ts` |
 | `/api/studio/tiers` | `GET` `PUT` | `app/routes/api/studio/tiers.ts` |
 
