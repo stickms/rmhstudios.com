@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { useTranslation } from 'react-i18next';
+import { LegalSummaryBox } from '@/components/access/LegalSummaryBox';
 import { LegalLayout } from '@/components/lockdown/LegalLayout';
 
 export const Route = createFileRoute('/privacy')({
@@ -26,6 +27,7 @@ function PrivacyPage() {
     >
       {/* Document under glass: the whole article body sits on one wide pane. */}
       <div className="legal-content__pane">
+        <LegalSummaryBox kind="privacy" />
         <h2>{t('privacy-s1-heading', { defaultValue: '1. Overview' })}</h2>
         <p>
           {t('privacy-s1-body', {

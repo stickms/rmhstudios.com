@@ -7,6 +7,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { WifiOff, RotateCw } from 'lucide-react';
+import { OfflineGame } from '@/components/access/OfflineGame';
 
 export const Route = createFileRoute('/offline')({
   head: () => ({
@@ -45,6 +46,7 @@ function OfflinePage() {
           <RotateCw className="h-4 w-4" aria-hidden />
           {t('offline-retry', { defaultValue: 'Try again' })}
         </button>
+        <OfflineGame />
       </div>
     </div>
   );
