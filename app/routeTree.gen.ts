@@ -263,6 +263,7 @@ import { Route as SiteGroupsIndexRouteImport } from './routes/_site/groups/index
 import { Route as SiteGroupsIdRouteImport } from './routes/_site/groups/$id'
 import { Route as SiteHomesIndexRouteImport } from './routes/_site/homes/index'
 import { Route as SiteHomesManageRouteImport } from './routes/_site/homes/manage'
+import { Route as SiteHomesRentSplitRouteImport } from './routes/_site/homes/rent-split'
 import { Route as SiteHomesSavedRouteImport } from './routes/_site/homes/saved'
 import { Route as SiteHomesSubmitRouteImport } from './routes/_site/homes/submit'
 import { Route as SiteHomesWatchesRouteImport } from './routes/_site/homes/watches'
@@ -300,6 +301,7 @@ import { Route as SiteRmhladderCompaniesRouteImport } from './routes/_site/rmhla
 import { Route as SiteRmhladderHealthRouteImport } from './routes/_site/rmhladder/health'
 import { Route as SiteRmhladderJobsRouteImport } from './routes/_site/rmhladder/jobs'
 import { Route as SiteRmhladderPipelineRouteImport } from './routes/_site/rmhladder/pipeline'
+import { Route as SiteRmhladderReferralsRouteImport } from './routes/_site/rmhladder/referrals'
 import { Route as SiteRmhladderResumeRouteImport } from './routes/_site/rmhladder/resume'
 import { Route as SiteRmhladderReviewRouteImport } from './routes/_site/rmhladder/review'
 import { Route as SiteRmhladderSettingsRouteImport } from './routes/_site/rmhladder/settings'
@@ -483,6 +485,7 @@ import { Route as ApiHistoryResumeRouteImport } from './routes/api/history/resum
 import { Route as ApiHomesAiImageRouteImport } from './routes/api/homes/ai-image'
 import { Route as ApiHomesGeocodeRouteImport } from './routes/api/homes/geocode'
 import { Route as ApiHomesListingsRouteImport } from './routes/api/homes/listings'
+import { Route as ApiHomesRoommateRouteImport } from './routes/api/homes/roommate'
 import { Route as ApiHomesWatchesRouteImport } from './routes/api/homes/watches'
 import { Route as ApiInternalMatchResultRouteImport } from './routes/api/internal/match-result'
 import { Route as ApiInternalNotifyMessageRouteImport } from './routes/api/internal/notify-message'
@@ -615,7 +618,9 @@ import { Route as ApiRmhladderCalendarRouteImport } from './routes/api/rmhladder
 import { Route as ApiRmhladderEventsRouteImport } from './routes/api/rmhladder/events'
 import { Route as ApiRmhladderExportRouteImport } from './routes/api/rmhladder/export'
 import { Route as ApiRmhladderImportRouteImport } from './routes/api/rmhladder/import'
+import { Route as ApiRmhladderInterviewReportsRouteImport } from './routes/api/rmhladder/interview-reports'
 import { Route as ApiRmhladderPrepRouteImport } from './routes/api/rmhladder/prep'
+import { Route as ApiRmhladderReferralsRouteImport } from './routes/api/rmhladder/referrals'
 import { Route as ApiRmhladderSearchesRouteImport } from './routes/api/rmhladder/searches'
 import { Route as ApiRmhtubeCommentaryRouteImport } from './routes/api/rmhtube/commentary'
 import { Route as ApiRmhtubeHeatRouteImport } from './routes/api/rmhtube/heat'
@@ -976,6 +981,8 @@ import { Route as ApiRmhcodeAuthInitiateRouteImport } from './routes/api/rmhcode
 import { Route as ApiRmhcodeAuthListRouteImport } from './routes/api/rmhcode/auth/list'
 import { Route as ApiRmhcodeAuthRevokeRouteImport } from './routes/api/rmhcode/auth/revoke'
 import { Route as ApiRmhcodeAuthValidateRouteImport } from './routes/api/rmhcode/auth/validate'
+import { Route as ApiRmhladderReferralRequestsIdRouteImport } from './routes/api/rmhladder/referral-requests.$id'
+import { Route as ApiRmhladderReferralsIdRouteImport } from './routes/api/rmhladder/referrals.$id'
 import { Route as ApiRmhladderResumeIndexRouteImport } from './routes/api/rmhladder/resume/index'
 import { Route as ApiRmhladderResumeIdRouteImport } from './routes/api/rmhladder/resume/$id'
 import { Route as ApiRmhmusicGuessIndexRouteImport } from './routes/api/rmhmusic/guess/index'
@@ -1091,6 +1098,7 @@ import { Route as ApiDunesdaySyncFeedIdDiscordRouteImport } from './routes/api/d
 import { Route as ApiGiftsScheduledIdIndexRouteImport } from './routes/api/gifts/scheduled/$id/index'
 import { Route as ApiGiftsScheduledIdUnwrapRouteImport } from './routes/api/gifts/scheduled/$id/unwrap'
 import { Route as ApiHomesListingsIdFavoriteRouteImport } from './routes/api/homes/listings.$id.favorite'
+import { Route as ApiHomesListingsIdRoommateRouteImport } from './routes/api/homes/listings.$id.roommate'
 import { Route as ApiLibraryCollectionIdCoverRouteImport } from './routes/api/library/collection/$id/cover'
 import { Route as ApiLibraryCollectionIdItemsRouteImport } from './routes/api/library/collection/$id/items'
 import { Route as ApiMarketListingsIdIndexRouteImport } from './routes/api/market/listings/$id/index'
@@ -1109,6 +1117,7 @@ import { Route as ApiRideshareRidesIdMessagesRouteImport } from './routes/api/ri
 import { Route as ApiRideshareRidesIdRateRouteImport } from './routes/api/rideshare/rides/$id/rate'
 import { Route as ApiRideshareRidesIdSyncRouteImport } from './routes/api/rideshare/rides/$id/sync'
 import { Route as ApiRmharksIdCommentCommentIdRouteImport } from './routes/api/rmharks/$id/comment/$commentId'
+import { Route as ApiRmhladderReferralsIdRequestRouteImport } from './routes/api/rmhladder/referrals.$id.request'
 import { Route as ApiRmhladderResumeIdAnalyzeRouteImport } from './routes/api/rmhladder/resume/$id/analyze'
 import { Route as ApiRmhladderResumeIdConfirmRouteImport } from './routes/api/rmhladder/resume/$id/confirm'
 import { Route as ApiRmhmusicGuessIdIndexRouteImport } from './routes/api/rmhmusic/guess/$id/index'
@@ -2428,6 +2437,11 @@ const SiteHomesManageRoute = SiteHomesManageRouteImport.update({
   path: '/homes/manage',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteHomesRentSplitRoute = SiteHomesRentSplitRouteImport.update({
+  id: '/homes/rent-split',
+  path: '/homes/rent-split',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteHomesSavedRoute = SiteHomesSavedRouteImport.update({
   id: '/homes/saved',
   path: '/homes/saved',
@@ -2616,6 +2630,11 @@ const SiteRmhladderJobsRoute = SiteRmhladderJobsRouteImport.update({
 const SiteRmhladderPipelineRoute = SiteRmhladderPipelineRouteImport.update({
   id: '/pipeline',
   path: '/pipeline',
+  getParentRoute: () => SiteRmhladderRoute,
+} as any)
+const SiteRmhladderReferralsRoute = SiteRmhladderReferralsRouteImport.update({
+  id: '/referrals',
+  path: '/referrals',
   getParentRoute: () => SiteRmhladderRoute,
 } as any)
 const SiteRmhladderResumeRoute = SiteRmhladderResumeRouteImport.update({
@@ -3541,6 +3560,11 @@ const ApiHomesListingsRoute = ApiHomesListingsRouteImport.update({
   path: '/api/homes/listings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHomesRoommateRoute = ApiHomesRoommateRouteImport.update({
+  id: '/api/homes/roommate',
+  path: '/api/homes/roommate',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHomesWatchesRoute = ApiHomesWatchesRouteImport.update({
   id: '/api/homes/watches',
   path: '/api/homes/watches',
@@ -4213,9 +4237,20 @@ const ApiRmhladderImportRoute = ApiRmhladderImportRouteImport.update({
   path: '/api/rmhladder/import',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRmhladderInterviewReportsRoute =
+  ApiRmhladderInterviewReportsRouteImport.update({
+    id: '/api/rmhladder/interview-reports',
+    path: '/api/rmhladder/interview-reports',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiRmhladderPrepRoute = ApiRmhladderPrepRouteImport.update({
   id: '/api/rmhladder/prep',
   path: '/api/rmhladder/prep',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRmhladderReferralsRoute = ApiRmhladderReferralsRouteImport.update({
+  id: '/api/rmhladder/referrals',
+  path: '/api/rmhladder/referrals',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRmhladderSearchesRoute = ApiRmhladderSearchesRouteImport.update({
@@ -6105,6 +6140,17 @@ const ApiRmhcodeAuthValidateRoute = ApiRmhcodeAuthValidateRouteImport.update({
   path: '/api/rmhcode/auth/validate',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRmhladderReferralRequestsIdRoute =
+  ApiRmhladderReferralRequestsIdRouteImport.update({
+    id: '/api/rmhladder/referral-requests/$id',
+    path: '/api/rmhladder/referral-requests/$id',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiRmhladderReferralsIdRoute = ApiRmhladderReferralsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiRmhladderReferralsRoute,
+} as any)
 const ApiRmhladderResumeIndexRoute = ApiRmhladderResumeIndexRouteImport.update({
   id: '/api/rmhladder/resume/',
   path: '/api/rmhladder/resume/',
@@ -6714,6 +6760,12 @@ const ApiHomesListingsIdFavoriteRoute =
     path: '/favorite',
     getParentRoute: () => ApiHomesListingsIdRoute,
   } as any)
+const ApiHomesListingsIdRoommateRoute =
+  ApiHomesListingsIdRoommateRouteImport.update({
+    id: '/roommate',
+    path: '/roommate',
+    getParentRoute: () => ApiHomesListingsIdRoute,
+  } as any)
 const ApiLibraryCollectionIdCoverRoute =
   ApiLibraryCollectionIdCoverRouteImport.update({
     id: '/cover',
@@ -6817,6 +6869,12 @@ const ApiRmharksIdCommentCommentIdRoute =
     id: '/$commentId',
     path: '/$commentId',
     getParentRoute: () => ApiRmharksIdCommentRoute,
+  } as any)
+const ApiRmhladderReferralsIdRequestRoute =
+  ApiRmhladderReferralsIdRequestRouteImport.update({
+    id: '/request',
+    path: '/request',
+    getParentRoute: () => ApiRmhladderReferralsIdRoute,
   } as any)
 const ApiRmhladderResumeIdAnalyzeRoute =
   ApiRmhladderResumeIdAnalyzeRouteImport.update({
@@ -7319,6 +7377,7 @@ export interface FileRoutesByFullPath {
   '/games/slice-it': typeof SiteGamesSliceItRoute
   '/groups/$id': typeof SiteGroupsIdRoute
   '/homes/manage': typeof SiteHomesManageRoute
+  '/homes/rent-split': typeof SiteHomesRentSplitRoute
   '/homes/saved': typeof SiteHomesSavedRoute
   '/homes/submit': typeof SiteHomesSubmitRoute
   '/homes/watches': typeof SiteHomesWatchesRoute
@@ -7343,6 +7402,7 @@ export interface FileRoutesByFullPath {
   '/rmhladder/health': typeof SiteRmhladderHealthRoute
   '/rmhladder/jobs': typeof SiteRmhladderJobsRouteWithChildren
   '/rmhladder/pipeline': typeof SiteRmhladderPipelineRoute
+  '/rmhladder/referrals': typeof SiteRmhladderReferralsRoute
   '/rmhladder/resume': typeof SiteRmhladderResumeRoute
   '/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/rmhladder/settings': typeof SiteRmhladderSettingsRoute
@@ -7489,6 +7549,7 @@ export interface FileRoutesByFullPath {
   '/api/homes/ai-image': typeof ApiHomesAiImageRoute
   '/api/homes/geocode': typeof ApiHomesGeocodeRoute
   '/api/homes/listings': typeof ApiHomesListingsRouteWithChildren
+  '/api/homes/roommate': typeof ApiHomesRoommateRoute
   '/api/homes/watches': typeof ApiHomesWatchesRoute
   '/api/internal/match-result': typeof ApiInternalMatchResultRoute
   '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
@@ -7600,7 +7661,9 @@ export interface FileRoutesByFullPath {
   '/api/rmhladder/events': typeof ApiRmhladderEventsRoute
   '/api/rmhladder/export': typeof ApiRmhladderExportRoute
   '/api/rmhladder/import': typeof ApiRmhladderImportRoute
+  '/api/rmhladder/interview-reports': typeof ApiRmhladderInterviewReportsRoute
   '/api/rmhladder/prep': typeof ApiRmhladderPrepRoute
+  '/api/rmhladder/referrals': typeof ApiRmhladderReferralsRouteWithChildren
   '/api/rmhladder/searches': typeof ApiRmhladderSearchesRoute
   '/api/rmhtube/commentary': typeof ApiRmhtubeCommentaryRoute
   '/api/rmhtube/heat': typeof ApiRmhtubeHeatRoute
@@ -8011,6 +8074,8 @@ export interface FileRoutesByFullPath {
   '/api/rmhcode/auth/list': typeof ApiRmhcodeAuthListRoute
   '/api/rmhcode/auth/revoke': typeof ApiRmhcodeAuthRevokeRoute
   '/api/rmhcode/auth/validate': typeof ApiRmhcodeAuthValidateRoute
+  '/api/rmhladder/referral-requests/$id': typeof ApiRmhladderReferralRequestsIdRoute
+  '/api/rmhladder/referrals/$id': typeof ApiRmhladderReferralsIdRouteWithChildren
   '/api/rmhladder/resume/$id': typeof ApiRmhladderResumeIdRouteWithChildren
   '/api/rmhmusic/spotify/search': typeof ApiRmhmusicSpotifySearchRoute
   '/api/rmhtube/subscribe/$channelId': typeof ApiRmhtubeSubscribeChannelIdRoute
@@ -8155,6 +8220,7 @@ export interface FileRoutesByFullPath {
   '/api/dunesday/sync/$feedId/discord': typeof ApiDunesdaySyncFeedIdDiscordRoute
   '/api/gifts/scheduled/$id/unwrap': typeof ApiGiftsScheduledIdUnwrapRoute
   '/api/homes/listings/$id/favorite': typeof ApiHomesListingsIdFavoriteRoute
+  '/api/homes/listings/$id/roommate': typeof ApiHomesListingsIdRoommateRoute
   '/api/library/collection/$id/cover': typeof ApiLibraryCollectionIdCoverRoute
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
   '/api/market/listings/$id/buy': typeof ApiMarketListingsIdBuyRoute
@@ -8169,6 +8235,7 @@ export interface FileRoutesByFullPath {
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
   '/api/rideshare/rides/$id/sync': typeof ApiRideshareRidesIdSyncRoute
   '/api/rmharks/$id/comment/$commentId': typeof ApiRmharksIdCommentCommentIdRouteWithChildren
+  '/api/rmhladder/referrals/$id/request': typeof ApiRmhladderReferralsIdRequestRoute
   '/api/rmhladder/resume/$id/analyze': typeof ApiRmhladderResumeIdAnalyzeRoute
   '/api/rmhladder/resume/$id/confirm': typeof ApiRmhladderResumeIdConfirmRoute
   '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
@@ -8440,6 +8507,7 @@ export interface FileRoutesByTo {
   '/games/slice-it': typeof SiteGamesSliceItRoute
   '/groups/$id': typeof SiteGroupsIdRoute
   '/homes/manage': typeof SiteHomesManageRoute
+  '/homes/rent-split': typeof SiteHomesRentSplitRoute
   '/homes/saved': typeof SiteHomesSavedRoute
   '/homes/submit': typeof SiteHomesSubmitRoute
   '/homes/watches': typeof SiteHomesWatchesRoute
@@ -8464,6 +8532,7 @@ export interface FileRoutesByTo {
   '/rmhladder/health': typeof SiteRmhladderHealthRoute
   '/rmhladder/jobs': typeof SiteRmhladderJobsRouteWithChildren
   '/rmhladder/pipeline': typeof SiteRmhladderPipelineRoute
+  '/rmhladder/referrals': typeof SiteRmhladderReferralsRoute
   '/rmhladder/resume': typeof SiteRmhladderResumeRoute
   '/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/rmhladder/settings': typeof SiteRmhladderSettingsRoute
@@ -8610,6 +8679,7 @@ export interface FileRoutesByTo {
   '/api/homes/ai-image': typeof ApiHomesAiImageRoute
   '/api/homes/geocode': typeof ApiHomesGeocodeRoute
   '/api/homes/listings': typeof ApiHomesListingsRouteWithChildren
+  '/api/homes/roommate': typeof ApiHomesRoommateRoute
   '/api/homes/watches': typeof ApiHomesWatchesRoute
   '/api/internal/match-result': typeof ApiInternalMatchResultRoute
   '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
@@ -8721,7 +8791,9 @@ export interface FileRoutesByTo {
   '/api/rmhladder/events': typeof ApiRmhladderEventsRoute
   '/api/rmhladder/export': typeof ApiRmhladderExportRoute
   '/api/rmhladder/import': typeof ApiRmhladderImportRoute
+  '/api/rmhladder/interview-reports': typeof ApiRmhladderInterviewReportsRoute
   '/api/rmhladder/prep': typeof ApiRmhladderPrepRoute
+  '/api/rmhladder/referrals': typeof ApiRmhladderReferralsRouteWithChildren
   '/api/rmhladder/searches': typeof ApiRmhladderSearchesRoute
   '/api/rmhtube/commentary': typeof ApiRmhtubeCommentaryRoute
   '/api/rmhtube/heat': typeof ApiRmhtubeHeatRoute
@@ -9132,6 +9204,8 @@ export interface FileRoutesByTo {
   '/api/rmhcode/auth/list': typeof ApiRmhcodeAuthListRoute
   '/api/rmhcode/auth/revoke': typeof ApiRmhcodeAuthRevokeRoute
   '/api/rmhcode/auth/validate': typeof ApiRmhcodeAuthValidateRoute
+  '/api/rmhladder/referral-requests/$id': typeof ApiRmhladderReferralRequestsIdRoute
+  '/api/rmhladder/referrals/$id': typeof ApiRmhladderReferralsIdRouteWithChildren
   '/api/rmhladder/resume/$id': typeof ApiRmhladderResumeIdRouteWithChildren
   '/api/rmhmusic/spotify/search': typeof ApiRmhmusicSpotifySearchRoute
   '/api/rmhtube/subscribe/$channelId': typeof ApiRmhtubeSubscribeChannelIdRoute
@@ -9276,6 +9350,7 @@ export interface FileRoutesByTo {
   '/api/dunesday/sync/$feedId/discord': typeof ApiDunesdaySyncFeedIdDiscordRoute
   '/api/gifts/scheduled/$id/unwrap': typeof ApiGiftsScheduledIdUnwrapRoute
   '/api/homes/listings/$id/favorite': typeof ApiHomesListingsIdFavoriteRoute
+  '/api/homes/listings/$id/roommate': typeof ApiHomesListingsIdRoommateRoute
   '/api/library/collection/$id/cover': typeof ApiLibraryCollectionIdCoverRoute
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
   '/api/market/listings/$id/buy': typeof ApiMarketListingsIdBuyRoute
@@ -9290,6 +9365,7 @@ export interface FileRoutesByTo {
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
   '/api/rideshare/rides/$id/sync': typeof ApiRideshareRidesIdSyncRoute
   '/api/rmharks/$id/comment/$commentId': typeof ApiRmharksIdCommentCommentIdRouteWithChildren
+  '/api/rmhladder/referrals/$id/request': typeof ApiRmhladderReferralsIdRequestRoute
   '/api/rmhladder/resume/$id/analyze': typeof ApiRmhladderResumeIdAnalyzeRoute
   '/api/rmhladder/resume/$id/confirm': typeof ApiRmhladderResumeIdConfirmRoute
   '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
@@ -9589,6 +9665,7 @@ export interface FileRoutesById {
   '/_site/games/slice-it': typeof SiteGamesSliceItRoute
   '/_site/groups/$id': typeof SiteGroupsIdRoute
   '/_site/homes/manage': typeof SiteHomesManageRoute
+  '/_site/homes/rent-split': typeof SiteHomesRentSplitRoute
   '/_site/homes/saved': typeof SiteHomesSavedRoute
   '/_site/homes/submit': typeof SiteHomesSubmitRoute
   '/_site/homes/watches': typeof SiteHomesWatchesRoute
@@ -9613,6 +9690,7 @@ export interface FileRoutesById {
   '/_site/rmhladder/health': typeof SiteRmhladderHealthRoute
   '/_site/rmhladder/jobs': typeof SiteRmhladderJobsRouteWithChildren
   '/_site/rmhladder/pipeline': typeof SiteRmhladderPipelineRoute
+  '/_site/rmhladder/referrals': typeof SiteRmhladderReferralsRoute
   '/_site/rmhladder/resume': typeof SiteRmhladderResumeRoute
   '/_site/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/_site/rmhladder/settings': typeof SiteRmhladderSettingsRoute
@@ -9759,6 +9837,7 @@ export interface FileRoutesById {
   '/api/homes/ai-image': typeof ApiHomesAiImageRoute
   '/api/homes/geocode': typeof ApiHomesGeocodeRoute
   '/api/homes/listings': typeof ApiHomesListingsRouteWithChildren
+  '/api/homes/roommate': typeof ApiHomesRoommateRoute
   '/api/homes/watches': typeof ApiHomesWatchesRoute
   '/api/internal/match-result': typeof ApiInternalMatchResultRoute
   '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
@@ -9870,7 +9949,9 @@ export interface FileRoutesById {
   '/api/rmhladder/events': typeof ApiRmhladderEventsRoute
   '/api/rmhladder/export': typeof ApiRmhladderExportRoute
   '/api/rmhladder/import': typeof ApiRmhladderImportRoute
+  '/api/rmhladder/interview-reports': typeof ApiRmhladderInterviewReportsRoute
   '/api/rmhladder/prep': typeof ApiRmhladderPrepRoute
+  '/api/rmhladder/referrals': typeof ApiRmhladderReferralsRouteWithChildren
   '/api/rmhladder/searches': typeof ApiRmhladderSearchesRoute
   '/api/rmhtube/commentary': typeof ApiRmhtubeCommentaryRoute
   '/api/rmhtube/heat': typeof ApiRmhtubeHeatRoute
@@ -10281,6 +10362,8 @@ export interface FileRoutesById {
   '/api/rmhcode/auth/list': typeof ApiRmhcodeAuthListRoute
   '/api/rmhcode/auth/revoke': typeof ApiRmhcodeAuthRevokeRoute
   '/api/rmhcode/auth/validate': typeof ApiRmhcodeAuthValidateRoute
+  '/api/rmhladder/referral-requests/$id': typeof ApiRmhladderReferralRequestsIdRoute
+  '/api/rmhladder/referrals/$id': typeof ApiRmhladderReferralsIdRouteWithChildren
   '/api/rmhladder/resume/$id': typeof ApiRmhladderResumeIdRouteWithChildren
   '/api/rmhmusic/spotify/search': typeof ApiRmhmusicSpotifySearchRoute
   '/api/rmhtube/subscribe/$channelId': typeof ApiRmhtubeSubscribeChannelIdRoute
@@ -10425,6 +10508,7 @@ export interface FileRoutesById {
   '/api/dunesday/sync/$feedId/discord': typeof ApiDunesdaySyncFeedIdDiscordRoute
   '/api/gifts/scheduled/$id/unwrap': typeof ApiGiftsScheduledIdUnwrapRoute
   '/api/homes/listings/$id/favorite': typeof ApiHomesListingsIdFavoriteRoute
+  '/api/homes/listings/$id/roommate': typeof ApiHomesListingsIdRoommateRoute
   '/api/library/collection/$id/cover': typeof ApiLibraryCollectionIdCoverRoute
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
   '/api/market/listings/$id/buy': typeof ApiMarketListingsIdBuyRoute
@@ -10439,6 +10523,7 @@ export interface FileRoutesById {
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
   '/api/rideshare/rides/$id/sync': typeof ApiRideshareRidesIdSyncRoute
   '/api/rmharks/$id/comment/$commentId': typeof ApiRmharksIdCommentCommentIdRouteWithChildren
+  '/api/rmhladder/referrals/$id/request': typeof ApiRmhladderReferralsIdRequestRoute
   '/api/rmhladder/resume/$id/analyze': typeof ApiRmhladderResumeIdAnalyzeRoute
   '/api/rmhladder/resume/$id/confirm': typeof ApiRmhladderResumeIdConfirmRoute
   '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
@@ -10738,6 +10823,7 @@ export interface FileRouteTypes {
     | '/games/slice-it'
     | '/groups/$id'
     | '/homes/manage'
+    | '/homes/rent-split'
     | '/homes/saved'
     | '/homes/submit'
     | '/homes/watches'
@@ -10762,6 +10848,7 @@ export interface FileRouteTypes {
     | '/rmhladder/health'
     | '/rmhladder/jobs'
     | '/rmhladder/pipeline'
+    | '/rmhladder/referrals'
     | '/rmhladder/resume'
     | '/rmhladder/review'
     | '/rmhladder/settings'
@@ -10908,6 +10995,7 @@ export interface FileRouteTypes {
     | '/api/homes/ai-image'
     | '/api/homes/geocode'
     | '/api/homes/listings'
+    | '/api/homes/roommate'
     | '/api/homes/watches'
     | '/api/internal/match-result'
     | '/api/internal/notify-message'
@@ -11019,7 +11107,9 @@ export interface FileRouteTypes {
     | '/api/rmhladder/events'
     | '/api/rmhladder/export'
     | '/api/rmhladder/import'
+    | '/api/rmhladder/interview-reports'
     | '/api/rmhladder/prep'
+    | '/api/rmhladder/referrals'
     | '/api/rmhladder/searches'
     | '/api/rmhtube/commentary'
     | '/api/rmhtube/heat'
@@ -11430,6 +11520,8 @@ export interface FileRouteTypes {
     | '/api/rmhcode/auth/list'
     | '/api/rmhcode/auth/revoke'
     | '/api/rmhcode/auth/validate'
+    | '/api/rmhladder/referral-requests/$id'
+    | '/api/rmhladder/referrals/$id'
     | '/api/rmhladder/resume/$id'
     | '/api/rmhmusic/spotify/search'
     | '/api/rmhtube/subscribe/$channelId'
@@ -11574,6 +11666,7 @@ export interface FileRouteTypes {
     | '/api/dunesday/sync/$feedId/discord'
     | '/api/gifts/scheduled/$id/unwrap'
     | '/api/homes/listings/$id/favorite'
+    | '/api/homes/listings/$id/roommate'
     | '/api/library/collection/$id/cover'
     | '/api/library/collection/$id/items'
     | '/api/market/listings/$id/buy'
@@ -11588,6 +11681,7 @@ export interface FileRouteTypes {
     | '/api/rideshare/rides/$id/rate'
     | '/api/rideshare/rides/$id/sync'
     | '/api/rmharks/$id/comment/$commentId'
+    | '/api/rmhladder/referrals/$id/request'
     | '/api/rmhladder/resume/$id/analyze'
     | '/api/rmhladder/resume/$id/confirm'
     | '/api/rmhmusic/guess/$id/attempt'
@@ -11859,6 +11953,7 @@ export interface FileRouteTypes {
     | '/games/slice-it'
     | '/groups/$id'
     | '/homes/manage'
+    | '/homes/rent-split'
     | '/homes/saved'
     | '/homes/submit'
     | '/homes/watches'
@@ -11883,6 +11978,7 @@ export interface FileRouteTypes {
     | '/rmhladder/health'
     | '/rmhladder/jobs'
     | '/rmhladder/pipeline'
+    | '/rmhladder/referrals'
     | '/rmhladder/resume'
     | '/rmhladder/review'
     | '/rmhladder/settings'
@@ -12029,6 +12125,7 @@ export interface FileRouteTypes {
     | '/api/homes/ai-image'
     | '/api/homes/geocode'
     | '/api/homes/listings'
+    | '/api/homes/roommate'
     | '/api/homes/watches'
     | '/api/internal/match-result'
     | '/api/internal/notify-message'
@@ -12140,7 +12237,9 @@ export interface FileRouteTypes {
     | '/api/rmhladder/events'
     | '/api/rmhladder/export'
     | '/api/rmhladder/import'
+    | '/api/rmhladder/interview-reports'
     | '/api/rmhladder/prep'
+    | '/api/rmhladder/referrals'
     | '/api/rmhladder/searches'
     | '/api/rmhtube/commentary'
     | '/api/rmhtube/heat'
@@ -12551,6 +12650,8 @@ export interface FileRouteTypes {
     | '/api/rmhcode/auth/list'
     | '/api/rmhcode/auth/revoke'
     | '/api/rmhcode/auth/validate'
+    | '/api/rmhladder/referral-requests/$id'
+    | '/api/rmhladder/referrals/$id'
     | '/api/rmhladder/resume/$id'
     | '/api/rmhmusic/spotify/search'
     | '/api/rmhtube/subscribe/$channelId'
@@ -12695,6 +12796,7 @@ export interface FileRouteTypes {
     | '/api/dunesday/sync/$feedId/discord'
     | '/api/gifts/scheduled/$id/unwrap'
     | '/api/homes/listings/$id/favorite'
+    | '/api/homes/listings/$id/roommate'
     | '/api/library/collection/$id/cover'
     | '/api/library/collection/$id/items'
     | '/api/market/listings/$id/buy'
@@ -12709,6 +12811,7 @@ export interface FileRouteTypes {
     | '/api/rideshare/rides/$id/rate'
     | '/api/rideshare/rides/$id/sync'
     | '/api/rmharks/$id/comment/$commentId'
+    | '/api/rmhladder/referrals/$id/request'
     | '/api/rmhladder/resume/$id/analyze'
     | '/api/rmhladder/resume/$id/confirm'
     | '/api/rmhmusic/guess/$id/attempt'
@@ -13007,6 +13110,7 @@ export interface FileRouteTypes {
     | '/_site/games/slice-it'
     | '/_site/groups/$id'
     | '/_site/homes/manage'
+    | '/_site/homes/rent-split'
     | '/_site/homes/saved'
     | '/_site/homes/submit'
     | '/_site/homes/watches'
@@ -13031,6 +13135,7 @@ export interface FileRouteTypes {
     | '/_site/rmhladder/health'
     | '/_site/rmhladder/jobs'
     | '/_site/rmhladder/pipeline'
+    | '/_site/rmhladder/referrals'
     | '/_site/rmhladder/resume'
     | '/_site/rmhladder/review'
     | '/_site/rmhladder/settings'
@@ -13177,6 +13282,7 @@ export interface FileRouteTypes {
     | '/api/homes/ai-image'
     | '/api/homes/geocode'
     | '/api/homes/listings'
+    | '/api/homes/roommate'
     | '/api/homes/watches'
     | '/api/internal/match-result'
     | '/api/internal/notify-message'
@@ -13288,7 +13394,9 @@ export interface FileRouteTypes {
     | '/api/rmhladder/events'
     | '/api/rmhladder/export'
     | '/api/rmhladder/import'
+    | '/api/rmhladder/interview-reports'
     | '/api/rmhladder/prep'
+    | '/api/rmhladder/referrals'
     | '/api/rmhladder/searches'
     | '/api/rmhtube/commentary'
     | '/api/rmhtube/heat'
@@ -13699,6 +13807,8 @@ export interface FileRouteTypes {
     | '/api/rmhcode/auth/list'
     | '/api/rmhcode/auth/revoke'
     | '/api/rmhcode/auth/validate'
+    | '/api/rmhladder/referral-requests/$id'
+    | '/api/rmhladder/referrals/$id'
     | '/api/rmhladder/resume/$id'
     | '/api/rmhmusic/spotify/search'
     | '/api/rmhtube/subscribe/$channelId'
@@ -13843,6 +13953,7 @@ export interface FileRouteTypes {
     | '/api/dunesday/sync/$feedId/discord'
     | '/api/gifts/scheduled/$id/unwrap'
     | '/api/homes/listings/$id/favorite'
+    | '/api/homes/listings/$id/roommate'
     | '/api/library/collection/$id/cover'
     | '/api/library/collection/$id/items'
     | '/api/market/listings/$id/buy'
@@ -13857,6 +13968,7 @@ export interface FileRouteTypes {
     | '/api/rideshare/rides/$id/rate'
     | '/api/rideshare/rides/$id/sync'
     | '/api/rmharks/$id/comment/$commentId'
+    | '/api/rmhladder/referrals/$id/request'
     | '/api/rmhladder/resume/$id/analyze'
     | '/api/rmhladder/resume/$id/confirm'
     | '/api/rmhmusic/guess/$id/attempt'
@@ -14131,6 +14243,7 @@ export interface RootRouteChildren {
   ApiHomesAiImageRoute: typeof ApiHomesAiImageRoute
   ApiHomesGeocodeRoute: typeof ApiHomesGeocodeRoute
   ApiHomesListingsRoute: typeof ApiHomesListingsRouteWithChildren
+  ApiHomesRoommateRoute: typeof ApiHomesRoommateRoute
   ApiHomesWatchesRoute: typeof ApiHomesWatchesRoute
   ApiInternalMatchResultRoute: typeof ApiInternalMatchResultRoute
   ApiInternalNotifyMessageRoute: typeof ApiInternalNotifyMessageRoute
@@ -14220,7 +14333,9 @@ export interface RootRouteChildren {
   ApiRmhladderEventsRoute: typeof ApiRmhladderEventsRoute
   ApiRmhladderExportRoute: typeof ApiRmhladderExportRoute
   ApiRmhladderImportRoute: typeof ApiRmhladderImportRoute
+  ApiRmhladderInterviewReportsRoute: typeof ApiRmhladderInterviewReportsRoute
   ApiRmhladderPrepRoute: typeof ApiRmhladderPrepRoute
+  ApiRmhladderReferralsRoute: typeof ApiRmhladderReferralsRouteWithChildren
   ApiRmhladderSearchesRoute: typeof ApiRmhladderSearchesRoute
   ApiRmhtubeCommentaryRoute: typeof ApiRmhtubeCommentaryRoute
   ApiRmhtubeHeatRoute: typeof ApiRmhtubeHeatRoute
@@ -14500,6 +14615,7 @@ export interface RootRouteChildren {
   ApiRmhcodeAuthListRoute: typeof ApiRmhcodeAuthListRoute
   ApiRmhcodeAuthRevokeRoute: typeof ApiRmhcodeAuthRevokeRoute
   ApiRmhcodeAuthValidateRoute: typeof ApiRmhcodeAuthValidateRoute
+  ApiRmhladderReferralRequestsIdRoute: typeof ApiRmhladderReferralRequestsIdRoute
   ApiRmhladderResumeIdRoute: typeof ApiRmhladderResumeIdRouteWithChildren
   ApiRmhmusicSpotifySearchRoute: typeof ApiRmhmusicSpotifySearchRoute
   ApiRmhtubeSubscribeChannelIdRoute: typeof ApiRmhtubeSubscribeChannelIdRoute
@@ -16387,6 +16503,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteHomesManageRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/homes/rent-split': {
+      id: '/_site/homes/rent-split'
+      path: '/homes/rent-split'
+      fullPath: '/homes/rent-split'
+      preLoaderRoute: typeof SiteHomesRentSplitRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/homes/saved': {
       id: '/_site/homes/saved'
       path: '/homes/saved'
@@ -16644,6 +16767,13 @@ declare module '@tanstack/react-router' {
       path: '/pipeline'
       fullPath: '/rmhladder/pipeline'
       preLoaderRoute: typeof SiteRmhladderPipelineRouteImport
+      parentRoute: typeof SiteRmhladderRoute
+    }
+    '/_site/rmhladder/referrals': {
+      id: '/_site/rmhladder/referrals'
+      path: '/referrals'
+      fullPath: '/rmhladder/referrals'
+      preLoaderRoute: typeof SiteRmhladderReferralsRouteImport
       parentRoute: typeof SiteRmhladderRoute
     }
     '/_site/rmhladder/resume': {
@@ -17927,6 +18057,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHomesListingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/homes/roommate': {
+      id: '/api/homes/roommate'
+      path: '/api/homes/roommate'
+      fullPath: '/api/homes/roommate'
+      preLoaderRoute: typeof ApiHomesRoommateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/homes/watches': {
       id: '/api/homes/watches'
       path: '/api/homes/watches'
@@ -18851,11 +18988,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmhladderImportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/rmhladder/interview-reports': {
+      id: '/api/rmhladder/interview-reports'
+      path: '/api/rmhladder/interview-reports'
+      fullPath: '/api/rmhladder/interview-reports'
+      preLoaderRoute: typeof ApiRmhladderInterviewReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/rmhladder/prep': {
       id: '/api/rmhladder/prep'
       path: '/api/rmhladder/prep'
       fullPath: '/api/rmhladder/prep'
       preLoaderRoute: typeof ApiRmhladderPrepRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rmhladder/referrals': {
+      id: '/api/rmhladder/referrals'
+      path: '/api/rmhladder/referrals'
+      fullPath: '/api/rmhladder/referrals'
+      preLoaderRoute: typeof ApiRmhladderReferralsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/rmhladder/searches': {
@@ -21378,6 +21529,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmhcodeAuthValidateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/rmhladder/referral-requests/$id': {
+      id: '/api/rmhladder/referral-requests/$id'
+      path: '/api/rmhladder/referral-requests/$id'
+      fullPath: '/api/rmhladder/referral-requests/$id'
+      preLoaderRoute: typeof ApiRmhladderReferralRequestsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rmhladder/referrals/$id': {
+      id: '/api/rmhladder/referrals/$id'
+      path: '/$id'
+      fullPath: '/api/rmhladder/referrals/$id'
+      preLoaderRoute: typeof ApiRmhladderReferralsIdRouteImport
+      parentRoute: typeof ApiRmhladderReferralsRoute
+    }
     '/api/rmhladder/resume/': {
       id: '/api/rmhladder/resume/'
       path: '/api/rmhladder/resume'
@@ -22183,6 +22348,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHomesListingsIdFavoriteRouteImport
       parentRoute: typeof ApiHomesListingsIdRoute
     }
+    '/api/homes/listings/$id/roommate': {
+      id: '/api/homes/listings/$id/roommate'
+      path: '/roommate'
+      fullPath: '/api/homes/listings/$id/roommate'
+      preLoaderRoute: typeof ApiHomesListingsIdRoommateRouteImport
+      parentRoute: typeof ApiHomesListingsIdRoute
+    }
     '/api/library/collection/$id/cover': {
       id: '/api/library/collection/$id/cover'
       path: '/cover'
@@ -22308,6 +22480,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/rmharks/$id/comment/$commentId'
       preLoaderRoute: typeof ApiRmharksIdCommentCommentIdRouteImport
       parentRoute: typeof ApiRmharksIdCommentRoute
+    }
+    '/api/rmhladder/referrals/$id/request': {
+      id: '/api/rmhladder/referrals/$id/request'
+      path: '/request'
+      fullPath: '/api/rmhladder/referrals/$id/request'
+      preLoaderRoute: typeof ApiRmhladderReferralsIdRequestRouteImport
+      parentRoute: typeof ApiRmhladderReferralsIdRoute
     }
     '/api/rmhladder/resume/$id/analyze': {
       id: '/api/rmhladder/resume/$id/analyze'
@@ -22748,6 +22927,7 @@ interface SiteRmhladderRouteChildren {
   SiteRmhladderHealthRoute: typeof SiteRmhladderHealthRoute
   SiteRmhladderJobsRoute: typeof SiteRmhladderJobsRouteWithChildren
   SiteRmhladderPipelineRoute: typeof SiteRmhladderPipelineRoute
+  SiteRmhladderReferralsRoute: typeof SiteRmhladderReferralsRoute
   SiteRmhladderResumeRoute: typeof SiteRmhladderResumeRoute
   SiteRmhladderReviewRoute: typeof SiteRmhladderReviewRoute
   SiteRmhladderSettingsRoute: typeof SiteRmhladderSettingsRoute
@@ -22760,6 +22940,7 @@ const SiteRmhladderRouteChildren: SiteRmhladderRouteChildren = {
   SiteRmhladderHealthRoute: SiteRmhladderHealthRoute,
   SiteRmhladderJobsRoute: SiteRmhladderJobsRouteWithChildren,
   SiteRmhladderPipelineRoute: SiteRmhladderPipelineRoute,
+  SiteRmhladderReferralsRoute: SiteRmhladderReferralsRoute,
   SiteRmhladderResumeRoute: SiteRmhladderResumeRoute,
   SiteRmhladderReviewRoute: SiteRmhladderReviewRoute,
   SiteRmhladderSettingsRoute: SiteRmhladderSettingsRoute,
@@ -22844,6 +23025,7 @@ interface SiteRouteChildren {
   SiteGamesSliceItRoute: typeof SiteGamesSliceItRoute
   SiteGroupsIdRoute: typeof SiteGroupsIdRoute
   SiteHomesManageRoute: typeof SiteHomesManageRoute
+  SiteHomesRentSplitRoute: typeof SiteHomesRentSplitRoute
   SiteHomesSavedRoute: typeof SiteHomesSavedRoute
   SiteHomesSubmitRoute: typeof SiteHomesSubmitRoute
   SiteHomesWatchesRoute: typeof SiteHomesWatchesRoute
@@ -22985,6 +23167,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteGamesSliceItRoute: SiteGamesSliceItRoute,
   SiteGroupsIdRoute: SiteGroupsIdRoute,
   SiteHomesManageRoute: SiteHomesManageRoute,
+  SiteHomesRentSplitRoute: SiteHomesRentSplitRoute,
   SiteHomesSavedRoute: SiteHomesSavedRoute,
   SiteHomesSubmitRoute: SiteHomesSubmitRoute,
   SiteHomesWatchesRoute: SiteHomesWatchesRoute,
@@ -23905,10 +24088,12 @@ const ApiGuidesIdRouteWithChildren = ApiGuidesIdRoute._addFileChildren(
 
 interface ApiHomesListingsIdRouteChildren {
   ApiHomesListingsIdFavoriteRoute: typeof ApiHomesListingsIdFavoriteRoute
+  ApiHomesListingsIdRoommateRoute: typeof ApiHomesListingsIdRoommateRoute
 }
 
 const ApiHomesListingsIdRouteChildren: ApiHomesListingsIdRouteChildren = {
   ApiHomesListingsIdFavoriteRoute: ApiHomesListingsIdFavoriteRoute,
+  ApiHomesListingsIdRoommateRoute: ApiHomesListingsIdRoommateRoute,
 }
 
 const ApiHomesListingsIdRouteWithChildren =
@@ -24069,6 +24254,33 @@ const ApiRideshareRidesRouteChildren: ApiRideshareRidesRouteChildren = {
 
 const ApiRideshareRidesRouteWithChildren =
   ApiRideshareRidesRoute._addFileChildren(ApiRideshareRidesRouteChildren)
+
+interface ApiRmhladderReferralsIdRouteChildren {
+  ApiRmhladderReferralsIdRequestRoute: typeof ApiRmhladderReferralsIdRequestRoute
+}
+
+const ApiRmhladderReferralsIdRouteChildren: ApiRmhladderReferralsIdRouteChildren =
+  {
+    ApiRmhladderReferralsIdRequestRoute: ApiRmhladderReferralsIdRequestRoute,
+  }
+
+const ApiRmhladderReferralsIdRouteWithChildren =
+  ApiRmhladderReferralsIdRoute._addFileChildren(
+    ApiRmhladderReferralsIdRouteChildren,
+  )
+
+interface ApiRmhladderReferralsRouteChildren {
+  ApiRmhladderReferralsIdRoute: typeof ApiRmhladderReferralsIdRouteWithChildren
+}
+
+const ApiRmhladderReferralsRouteChildren: ApiRmhladderReferralsRouteChildren = {
+  ApiRmhladderReferralsIdRoute: ApiRmhladderReferralsIdRouteWithChildren,
+}
+
+const ApiRmhladderReferralsRouteWithChildren =
+  ApiRmhladderReferralsRoute._addFileChildren(
+    ApiRmhladderReferralsRouteChildren,
+  )
 
 interface ApiSavesFoldersRouteChildren {
   ApiSavesFoldersIdRoute: typeof ApiSavesFoldersIdRoute
@@ -24864,6 +25076,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHomesAiImageRoute: ApiHomesAiImageRoute,
   ApiHomesGeocodeRoute: ApiHomesGeocodeRoute,
   ApiHomesListingsRoute: ApiHomesListingsRouteWithChildren,
+  ApiHomesRoommateRoute: ApiHomesRoommateRoute,
   ApiHomesWatchesRoute: ApiHomesWatchesRoute,
   ApiInternalMatchResultRoute: ApiInternalMatchResultRoute,
   ApiInternalNotifyMessageRoute: ApiInternalNotifyMessageRoute,
@@ -24953,7 +25166,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhladderEventsRoute: ApiRmhladderEventsRoute,
   ApiRmhladderExportRoute: ApiRmhladderExportRoute,
   ApiRmhladderImportRoute: ApiRmhladderImportRoute,
+  ApiRmhladderInterviewReportsRoute: ApiRmhladderInterviewReportsRoute,
   ApiRmhladderPrepRoute: ApiRmhladderPrepRoute,
+  ApiRmhladderReferralsRoute: ApiRmhladderReferralsRouteWithChildren,
   ApiRmhladderSearchesRoute: ApiRmhladderSearchesRoute,
   ApiRmhtubeCommentaryRoute: ApiRmhtubeCommentaryRoute,
   ApiRmhtubeHeatRoute: ApiRmhtubeHeatRoute,
@@ -25235,6 +25450,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhcodeAuthListRoute: ApiRmhcodeAuthListRoute,
   ApiRmhcodeAuthRevokeRoute: ApiRmhcodeAuthRevokeRoute,
   ApiRmhcodeAuthValidateRoute: ApiRmhcodeAuthValidateRoute,
+  ApiRmhladderReferralRequestsIdRoute: ApiRmhladderReferralRequestsIdRoute,
   ApiRmhladderResumeIdRoute: ApiRmhladderResumeIdRouteWithChildren,
   ApiRmhmusicSpotifySearchRoute: ApiRmhmusicSpotifySearchRoute,
   ApiRmhtubeSubscribeChannelIdRoute: ApiRmhtubeSubscribeChannelIdRoute,

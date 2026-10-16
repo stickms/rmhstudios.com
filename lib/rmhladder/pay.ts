@@ -96,3 +96,61 @@ export function parsePay(raw: string | null | undefined): Pay | null {
     maxAnnual: Math.round(hi * k),
   };
 }
+
+/* ── Extraction from posting text (F7) ───────────────────────────────────── */
+
+const AMOUNT = String.raw`[$£€]\s?\d[\d,]*(?:\.\d+)?\s?[kK]?`;
+const PAY_SNIPPET = new RegExp(
+  String.raw`(?:\b(?:USD|CAD|AUD|GBP|EUR)\s?)?${AMOUNT}(?:\s*(?:-|–|—|to)\s*[$£€]?\s?\d[\d,]*(?:\.\d+)?\s?[kK]?)?` +
+    String.raw`(?:\s*(?:\/|per\s|a\s)\s*(?:hour|hr|year|yr|annum|month|mo|week|wk)\b|\s+(?:annually|hourly|monthly))?`,
+  'g',
+);
+/** Money that is in a posting but is not the base pay. */
+const NOT_BASE_PAY =
+  /bonus|relocation|sign-?on|signing|tuition|equity|stock|reimburs|per diem|revenue|funding|raised|assets|billion|million|budget|401|allowance|insurance|HSA|gift|perk|stipend for (?:housing|travel)/i;
+/** Sane annual bounds; anything outside is a parsing accident, not a salary. */
+const MIN_ANNUAL = 8_000;
+const MAX_ANNUAL = 1_500_000;
+
+/**
+ * Finds the first base-pay statement in a posting's text and parses it. Only a
+ * currency-marked amount counts, and it must be a range or carry an explicit
+ * period ("$45/hr", "$80K–$95K"): a lone "$50" is a gift card, not a wage.
+ * Returns null rather than guessing.
+ */
+export function extractPay(text: string | null | undefined): Pay | null {
+  if (!text) return null;
+  for (const m of text.matchAll(PAY_SNIPPET)) {
+    const idx = m.index ?? 0;
+    // Judge by the same sentence only, so a bonus next door does not hide base pay.
+    const before = text.slice(Math.max(0, idx - 60), idx).split(/[.!?\n]\s/).pop() ?? '';
+    const after = text.slice(idx + m[0].length, idx + m[0].length + 60).split(/[.!?\n]\s/)[0] ?? '';
+    const around = `${before}${m[0]}${after}`;
+    if (NOT_BASE_PAY.test(around)) continue;
+    // "$80-95K": the K applies to both ends.
+    const snippet = m[0].replace(
+      /(?<![\d,.])(\d{1,3})(?=\s*(?:-|–|—|to)\s*[$£€]?\s?\d[\d,.]*\s?[kK]\b)/,
+      '$1K',
+    );
+    const isRange = amounts(snippet).length >= 2;
+    const hasPeriod = detectPeriod(snippet) !== null;
+    if (!isRange && !hasPeriod) continue;
+    const pay = parsePay(snippet);
+    if (pay && pay.maxAnnual >= MIN_ANNUAL && pay.maxAnnual <= MAX_ANNUAL) return pay;
+  }
+  return null;
+}
+
+/** "$96k" / "£36k" / "CHF 90k" — whole-thousand shorthand for a yearly amount. */
+function shortMoney(amount: number, currency: string): string {
+  const sym = Object.entries(SYMBOLS).find(([, c]) => c === currency)?.[0];
+  const body = amount >= 1000 ? `${Math.round(amount / 1000)}k` : String(Math.round(amount));
+  return sym ? `${sym}${body}` : `${currency} ${body}`;
+}
+
+/** "≈ $96k/yr" or "≈ $80k–$95k/yr" (never a range of two equal ends). */
+export function formatPay(pay: Pick<Pay, 'currency' | 'minAnnual' | 'maxAnnual'>): string {
+  const lo = shortMoney(pay.minAnnual, pay.currency);
+  const hi = shortMoney(pay.maxAnnual, pay.currency);
+  return `≈ ${lo === hi ? lo : `${lo}–${hi}`}/yr`;
+}

@@ -59,6 +59,13 @@ async function resolveTargetUser(entityType: string, entityId: string): Promise<
         });
         return ring?.ownerId ?? null;
       }
+      case 'ladder-interview': {
+        const rep = await prisma.ladderInterviewReport.findUnique({
+          where: { id: entityId },
+          select: { userId: true },
+        });
+        return rep?.userId ?? null;
+      }
       case 'user':
         return entityId;
       default:

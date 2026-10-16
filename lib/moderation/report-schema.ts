@@ -43,6 +43,8 @@ export const REPORT_ENTITY_TYPES = [
   // images that appear on other people's pages, so they need a report path.
   'stamp',
   'webring',
+  // P22: RMHLadder community interview reports (F8).
+  'ladder-interview',
 ] as const;
 export type ReportEntityType = (typeof REPORT_ENTITY_TYPES)[number];
 

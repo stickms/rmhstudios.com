@@ -78,6 +78,7 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   // already emits them — listing them here too would put the same URL in the
   // sitemap twice, which Search Console reports as a warning.
   { loc: '/rmhladder/jobs', changefreq: 'daily', priority: 0.8 },
+  { loc: '/homes/rent-split', changefreq: 'monthly', priority: 0.4 },
 
   // Secondary site surfaces.
   //
@@ -257,6 +258,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/rmhladder/alerts': 'personal',
   '/rmhladder/health': 'personal',
   '/rmhladder/pipeline': 'personal',
+  '/rmhladder/referrals': 'personal',
   '/rmhladder/resume': 'personal',
   '/rmhladder/review': 'personal',
   '/rmhladder/settings': 'personal',

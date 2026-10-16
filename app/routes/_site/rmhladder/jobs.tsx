@@ -66,7 +66,7 @@ const doSetJobAction = createServerFn({ method: 'POST' })
 const VALID_PRESETS: ReadonlyArray<string> = [
   'new', 'finance', 'consulting', 'tech', 'expiring', 'remote', 'saved', 'ignored',
 ];
-const VALID_SORTS: ReadonlyArray<string> = ['relevance', 'posted', 'deadline'];
+const VALID_SORTS: ReadonlyArray<string> = ['relevance', 'posted', 'deadline', 'pay'];
 
 function asPreset(v: unknown): ListJobsFilters['preset'] {
   return typeof v === 'string' && VALID_PRESETS.includes(v)
@@ -78,6 +78,11 @@ function asSort(v: unknown): ListJobsFilters['sort'] {
   return typeof v === 'string' && VALID_SORTS.includes(v)
     ? (v as NonNullable<ListJobsFilters['sort']>)
     : undefined;
+}
+
+function asMinPay(v: unknown): number | undefined {
+  const n = typeof v === 'string' ? Number(v) : v;
+  return typeof n === 'number' && Number.isInteger(n) && n > 0 && n <= 1_000_000 ? n : undefined;
 }
 
 function asStrings(v: unknown): string[] | undefined {
@@ -100,6 +105,7 @@ export const Route = createFileRoute('/_site/rmhladder/jobs')({
     cities:       asStrings(search.cities),
     programTypes: asStrings(search.programTypes),
     sort:         asSort(search.sort),
+    minPay:       asMinPay(search.minPay),
   }),
   // Make the validated search params available to the loader as deps
   loaderDeps: ({ search }) => search,

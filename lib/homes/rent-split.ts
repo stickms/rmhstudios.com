@@ -67,7 +67,17 @@ export function apportion(totalCents: number, weights: readonly number[]): numbe
   return floors;
 }
 
-export function splitRent(totalCents: number, rooms: readonly Room[], sharedShare = 0.3): Share[] {
+/** One room's rent with every figure that produced it. */
+export interface ShareDetail extends Share {
+  sharedCents: number;
+  privateCents: number;
+}
+
+export function explainSplit(
+  totalCents: number,
+  rooms: readonly Room[],
+  sharedShare = 0.3,
+): ShareDetail[] {
   if (rooms.length === 0 || totalCents <= 0) return [];
   const s = Math.min(1, Math.max(0, sharedShare));
   const points = rooms.map(roomPoints);
@@ -77,5 +87,19 @@ export function splitRent(totalCents: number, rooms: readonly Room[], sharedShar
     rooms.map(() => 1),
   );
   const priv = apportion(totalCents - sharedCents, points);
-  return rooms.map((r, i) => ({ roomId: r.id, points: points[i]!, cents: shared[i]! + priv[i]! }));
+  return rooms.map((r, i) => ({
+    roomId: r.id,
+    points: points[i]!,
+    sharedCents: shared[i]!,
+    privateCents: priv[i]!,
+    cents: shared[i]! + priv[i]!,
+  }));
+}
+
+export function splitRent(totalCents: number, rooms: readonly Room[], sharedShare = 0.3): Share[] {
+  return explainSplit(totalCents, rooms, sharedShare).map(({ roomId, points, cents }) => ({
+    roomId,
+    points,
+    cents,
+  }));
 }

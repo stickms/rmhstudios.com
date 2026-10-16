@@ -207,7 +207,7 @@ function AdminReportsPage() {
                       <Button size="sm" variant="accent" disabled={busyId === r.id} onClick={() => act(r.id, 'resolve')}>
                         {t('resolve', { defaultValue: 'Resolve' })}
                       </Button>
-                      {(r.entityType === 'rmhark' || r.entityType === 'comment' || r.entityType === 'stamp' || r.entityType === 'webring') && (
+                      {(r.entityType === 'rmhark' || r.entityType === 'comment' || r.entityType === 'stamp' || r.entityType === 'webring' || r.entityType === 'ladder-interview') && (
                         <Button size="sm" variant="destructive" disabled={busyId === r.id} onClick={() => act(r.id, 'resolve', true)}>
                           {t('resolve-and-remove-content', { defaultValue: 'Resolve & remove content' })}
                         </Button>
