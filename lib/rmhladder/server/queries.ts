@@ -71,7 +71,9 @@ export interface ListJobsFilters {
   cities?: string[];
   programTypes?: string[];
   includeNonUS?: boolean;
-  sort?: 'relevance' | 'posted' | 'deadline';
+  sort?: 'relevance' | 'posted' | 'deadline' | 'pay';
+  /** Minimum annualized pay (top of the posted range), served by the (status, payMaxAnnual) index. */
+  minPay?: number;
   cursor?: string;
   take?: number;
 }
@@ -210,6 +212,7 @@ export async function listJobs(
     ];
   }
   if (filters.cities?.length) where.city = { in: filters.cities };
+  if (filters.minPay) where.payMaxAnnual = { gte: filters.minPay };
   const programTypes = filters.programTypes?.length
     ? filters.programTypes
     : ctx.preferredProgramTypes;
@@ -276,6 +279,13 @@ export async function listJobs(
   const sort = filters.sort ?? 'relevance';
   if (sort === 'relevance') {
     rows.sort((a, b) => b.finalRelevance - a.finalRelevance);
+  } else if (sort === 'pay') {
+    // Highest posted pay first; jobs that state no pay sink, relevance breaks ties.
+    rows.sort(
+      (a, b) =>
+        ((b.payMaxAnnual as number | null) ?? -1) - ((a.payMaxAnnual as number | null) ?? -1) ||
+        b.finalRelevance - a.finalRelevance,
+    );
   } else if (sort === 'posted') {
     rows.sort(
       (a, b) =>

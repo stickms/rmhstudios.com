@@ -94,6 +94,7 @@ export const NAMESPACES = [
   "f-competitive",
   "f-arcade",
   "f-access",
+  "f-ladder-homes",
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 

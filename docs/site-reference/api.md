@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 802 files across 180 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 809 files across 180 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -836,7 +836,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/homes`
 
-6 routes.
+8 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -845,6 +845,8 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/homes/listings` | `GET` `POST` | `app/routes/api/homes/listings.ts` |
 | `/api/homes/listings/:id` | `DELETE` `GET` `PATCH` | `app/routes/api/homes/listings.$id.ts` |
 | `/api/homes/listings/:id/favorite` | `DELETE` `POST` | `app/routes/api/homes/listings.$id.favorite.ts` |
+| `/api/homes/listings/:id/roommate` | `GET` | `app/routes/api/homes/listings.$id.roommate.ts` |
+| `/api/homes/roommate` | `GET` `PUT` | `app/routes/api/homes/roommate.ts` |
 | `/api/homes/watches` | `DELETE` `GET` `PATCH` `POST` | `app/routes/api/homes/watches.ts` |
 
 ## `/api/image-proxy`
@@ -1499,7 +1501,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/rmhladder`
 
-11 routes.
+16 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -1508,7 +1510,12 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/rmhladder/events` | `POST` | `app/routes/api/rmhladder/events.ts` |
 | `/api/rmhladder/export` | `GET` | `app/routes/api/rmhladder/export.ts` |
 | `/api/rmhladder/import` | `POST` | `app/routes/api/rmhladder/import.ts` |
+| `/api/rmhladder/interview-reports` | `GET` `POST` | `app/routes/api/rmhladder/interview-reports.ts` |
 | `/api/rmhladder/prep` | `POST` | `app/routes/api/rmhladder/prep.ts` |
+| `/api/rmhladder/referral-requests/:id` | `PATCH` | `app/routes/api/rmhladder/referral-requests.$id.ts` |
+| `/api/rmhladder/referrals` | `GET` `POST` | `app/routes/api/rmhladder/referrals.ts` |
+| `/api/rmhladder/referrals/:id` | `DELETE` | `app/routes/api/rmhladder/referrals.$id.ts` |
+| `/api/rmhladder/referrals/:id/request` | `POST` | `app/routes/api/rmhladder/referrals.$id.request.ts` |
 | `/api/rmhladder/resume` | `GET` `POST` | `app/routes/api/rmhladder/resume/index.ts` |
 | `/api/rmhladder/resume/:id` | `DELETE` `GET` | `app/routes/api/rmhladder/resume/$id.ts` |
 | `/api/rmhladder/resume/:id/analyze` | `POST` | `app/routes/api/rmhladder/resume/$id/analyze.ts` |

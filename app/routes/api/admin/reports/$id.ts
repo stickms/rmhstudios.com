@@ -60,6 +60,11 @@ export const Route = createFileRoute('/api/admin/reports/$id')({
                 await takedownStamp(report.entityId);
               } else if (report.entityType === 'webring') {
                 await takedownRing(report.entityId);
+              } else if (report.entityType === 'ladder-interview') {
+                await prisma.ladderInterviewReport.update({
+                  where: { id: report.entityId },
+                  data: { status: 'hidden' },
+                });
               }
             } catch (e) {
               console.error('Report content takedown failed:', e);

@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 316 routes. 179 render inside the standard site shell (sidebar, nav, context rail); 137 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 318 routes. 181 render inside the standard site shell (sidebar, nav, context rail); 137 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -89,6 +89,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/homes` | RMHHomes — Rentals & houses posted by the community | public | `app/routes/_site/homes/index.tsx` |
 | `/homes/listing/:id` | Listing \| RMHHomes | public | `app/routes/_site/homes/listing.$id.tsx` |
 | `/homes/manage` | RMHHomes — Your homes | public | `app/routes/_site/homes/manage.tsx` |
+| `/homes/rent-split` | Fair Rent Split Calculator \| RMHHomes | public | `app/routes/_site/homes/rent-split.tsx` |
 | `/homes/saved` | redirects to `/homes/manage?tab=saved` | public | `app/routes/_site/homes/saved.tsx` |
 | `/homes/submit` | RMHHomes — Post a listing | public | `app/routes/_site/homes/submit.tsx` |
 | `/homes/watches` | redirects to `/homes/manage?tab=alerts` | public | `app/routes/_site/homes/watches.tsx` |
@@ -140,6 +141,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/rmhladder/health` | — | admin | `app/routes/_site/rmhladder/health.tsx` |
 | `/rmhladder/jobs/:jobId` | Job unavailable \| RMH Ladder | sign-in | `app/routes/_site/rmhladder/jobs/$jobId.tsx` |
 | `/rmhladder/pipeline` | — | sign-in | `app/routes/_site/rmhladder/pipeline.tsx` |
+| `/rmhladder/referrals` | Referral Board \| RMH Ladder | sign-in | `app/routes/_site/rmhladder/referrals.tsx` |
 | `/rmhladder/resume` | — | sign-in | `app/routes/_site/rmhladder/resume.tsx` |
 | `/rmhladder/review` | — | admin | `app/routes/_site/rmhladder/review.tsx` |
 | `/rmhladder/settings` | — | sign-in | `app/routes/_site/rmhladder/settings.tsx` |

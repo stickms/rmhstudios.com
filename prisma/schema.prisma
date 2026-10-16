@@ -447,6 +447,11 @@ model User {
   pf2eSettingsEdits   Pf2eSettings[]        @relation("Pf2eSettingsEditor")
 
   // ─── Feature ideas 2026-10-12 (docs/plans/2026-10-12-feature-ideas-every-surface.md)
+  // P22 ladder-homes: F6 referrals, F8 interview reports, F9 roommate quiz
+  ladderReferralOffers       LadderReferralOffer[]
+  ladderReferralRequests     LadderReferralRequest[]
+  ladderInterviewReports     LadderInterviewReport[]
+  homeRoommateProfile        HomeRoommateProfile?
   // P16 devplatform: D5 recipes
   devRecipes                 DevRecipe[]
   // P15 ops: O2 notice dismissals, O5 experiment exposures
@@ -4982,6 +4987,7 @@ model LadderCompany {
   sources          LadderSource[]
   jobs             LadderJob[]
   watchlistEntries LadderWatchlistEntry[]
+  interviewReports LadderInterviewReport[]
 
   @@map("ladder_company")
 }
@@ -5047,6 +5053,10 @@ model LadderJob {
   compensationMax           Int?
   compensationCurrency      String?
   compensationInterval      String?
+  payMinAnnual              Int?
+  payMaxAnnual              Int?
+  payCurrency               String?              @db.VarChar(3)
+  payPeriod                 String?              @db.VarChar(8)
   sponsorshipStatus         String?
   dedupeHash                String
   alternateUrls             String[]             @default([])
@@ -5078,6 +5088,7 @@ model LadderJob {
   @@index([status, earlyCareerClassification])
   @@index([companyId, status])
   @@index([dedupeHash])
+  @@index([status, payMaxAnnual])
   @@map("ladder_job")
 }
 
@@ -11844,4 +11855,85 @@ model ReleaseNote {
 
   @@index([publishedAt])
   @@map("release_note")
+}
+
+// ── P22 ladder-homes: F6, F8, F9 ──
+// F6: a member at a company offers up to `capacity` referrals; applicants send
+// one short pitch each. `normalizedCompany` is the match key (free-text company
+// names, attested by the member), so offers group by company without a catalogue.
+model LadderReferralOffer {
+  id                String   @id @default(cuid())
+  userId            String
+  companyName       String   @db.VarChar(120)
+  normalizedCompany String   @db.VarChar(120)
+  roles             String   @db.VarChar(200)
+  note              String?  @db.VarChar(500)
+  capacity          Int      @default(3)
+  status            String   @default("open") @db.VarChar(8) // open | closed
+  createdAt         DateTime @default(now())
+
+  user     User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requests LadderReferralRequest[]
+
+  @@index([status, normalizedCompany, createdAt])
+  @@index([userId, status])
+  @@map("ladder_referral_offer")
+}
+
+model LadderReferralRequest {
+  id          String    @id @default(cuid())
+  offerId     String
+  applicantId String
+  pitch       String    @db.VarChar(600)
+  status      String    @default("pending") @db.VarChar(10) // pending | accepted | passed | withdrawn
+  respondedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  offer     LadderReferralOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  applicant User                @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+
+  @@unique([offerId, applicantId])
+  @@index([offerId, status, createdAt])
+  @@index([applicantId, status, createdAt])
+  @@map("ladder_referral_request")
+}
+
+// F8: structured community interview reports, listed on the company's jobs and
+// reportable through ContentReport (entityType "ladder-interview"); a takedown
+// sets status to "hidden".
+model LadderInterviewReport {
+  id            String   @id @default(cuid())
+  userId        String
+  companyId     String
+  roleTitle     String   @db.VarChar(120)
+  rounds        Int
+  questionTypes String[] @default([])
+  outcome       String   @db.VarChar(10) // offer | rejected | withdrew | pending
+  difficulty    Int
+  body          String?  @db.VarChar(2000)
+  status        String   @default("visible") @db.VarChar(8) // visible | hidden
+  createdAt     DateTime @default(now())
+
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company LadderCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, status, createdAt(sort: Desc)])
+  @@index([userId, createdAt])
+  @@map("ladder_interview_report")
+}
+
+// F9: one lifestyle-quiz row per member. Answers are 1–5 scales (pets is a
+// choice); only a compatibility percentage ever leaves the server, never the answers.
+model HomeRoommateProfile {
+  userId      String   @id
+  sleep       Int // 1 early bird .. 5 night owl
+  guests      Int // 1 never .. 5 often
+  cleanliness Int // 1 relaxed .. 5 spotless
+  noise       Int // 1 silent .. 5 lively
+  pets        String   @db.VarChar(5) // has | fine | no
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("home_roommate_profile")
 }
