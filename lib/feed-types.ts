@@ -25,6 +25,7 @@ export interface FeedItemUser {
   image?: string | null;
   isVerified?: boolean;
   isAdmin?: boolean;
+  isBot?: boolean;
   /** Equipped shop cosmetics (name color, avatar frame, badge, …). */
   cosmetics?: UserCosmetics;
 }

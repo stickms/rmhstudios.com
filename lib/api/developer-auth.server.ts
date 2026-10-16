@@ -19,11 +19,12 @@ import { getUserTier, hasApiAccess, type Tier } from '@/lib/entitlements';
 import { getActiveBan } from '@/lib/admin-audit.server';
 
 export const KEY_PREFIX = 'rmh_live_';
+export const TEST_KEY_PREFIX = 'rmh_test_';
 
 /** Generate a new plaintext key + its storage hash + display prefix/suffix. */
-export function generateApiKey(): { plaintext: string; hashedKey: string; prefix: string; lastFour: string } {
+export function generateApiKey(testMode = false): { plaintext: string; hashedKey: string; prefix: string; lastFour: string } {
   const secret = randomBytes(24).toString('base64url'); // ~32 url-safe chars
-  const plaintext = `${KEY_PREFIX}${secret}`;
+  const plaintext = `${testMode ? TEST_KEY_PREFIX : KEY_PREFIX}${secret}`;
   return {
     plaintext,
     hashedKey: hashApiKey(plaintext),
@@ -42,6 +43,8 @@ export interface ApiAuthSuccess {
   tier: Tier;
   keyId: string;
   scopes: string[];
+  /** `rmh_test_` sandbox key: the wrapper answers with fixtures, never real data. */
+  testMode: boolean;
 }
 export interface ApiAuthFailure {
   ok: false;
@@ -78,13 +81,13 @@ export async function authenticateApiKey(request: Request): Promise<ApiAuthSucce
   if (!plaintext) {
     return { ok: false, status: 401, code: 'missing_key', message: 'Provide an API key via the Authorization: Bearer header.' };
   }
-  if (!plaintext.startsWith(KEY_PREFIX)) {
+  if (!plaintext.startsWith(KEY_PREFIX) && !plaintext.startsWith(TEST_KEY_PREFIX)) {
     return { ok: false, status: 401, code: 'invalid_key', message: 'Malformed API key.' };
   }
 
   const record = await prisma.developerApiKey.findUnique({
     where: { hashedKey: hashApiKey(plaintext) },
-    select: { id: true, userId: true, revokedAt: true, expiresAt: true, scopes: true },
+    select: { id: true, userId: true, revokedAt: true, expiresAt: true, scopes: true, testMode: true },
   });
   if (!record || record.revokedAt) {
     return { ok: false, status: 401, code: 'invalid_key', message: 'API key is invalid or has been revoked.' };
@@ -107,5 +110,5 @@ export async function authenticateApiKey(request: Request): Promise<ApiAuthSucce
   // Best-effort last-used stamp.
   prisma.developerApiKey.update({ where: { id: record.id }, data: { lastUsedAt: new Date() } }).catch(() => {});
 
-  return { ok: true, userId: record.userId, tier, keyId: record.id, scopes: record.scopes };
+  return { ok: true, userId: record.userId, tier, keyId: record.id, scopes: record.scopes, testMode: record.testMode };
 }

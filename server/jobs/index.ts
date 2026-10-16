@@ -35,6 +35,7 @@ import {
 } from '@/lib/sohumtracker/alerts.server';
 import { registerPostsPlusCrons } from '@/lib/posts-plus/jobs.server';
 import { registerDiscoveryJobs } from '@/lib/discovery/jobs.server';
+import { registerRecipeJobs } from '@/lib/devplatform/recipes.server';
 import {
   PROFILE_VISIT_SWEEP_QUEUE,
   registerProfileVisitSweepCron,
@@ -262,6 +263,14 @@ async function main() {
     log.info({ event: 'jobs.started', queue: 'discovery' });
   } catch (e) {
     log.error({ event: 'jobs.register_failed', queue: 'discovery', err: (e as Error)?.message });
+  }
+
+  // P16 D5: "when X then Y" recipes — polled triggers + personal-best events.
+  try {
+    await registerRecipeJobs(boss);
+    log.info({ event: 'jobs.started', queue: 'devplatform.recipes' });
+  } catch (e) {
+    log.error({ event: 'jobs.register_failed', queue: 'devplatform.recipes', err: (e as Error)?.message });
   }
 
   const shutdown = async (sig: string) => {

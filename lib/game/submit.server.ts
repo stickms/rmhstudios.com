@@ -18,6 +18,7 @@
  */
 
 import { rateLimit } from '@/lib/rate-limit';
+import { emitPersonalBest } from '@/lib/devplatform/recipes.server';
 import { recordGamePlay } from '@/lib/quests/engine.server';
 import { reportGameResult } from '@/lib/game/results.server';
 import { validateScore, rejectionMessage, type ScoreRejection } from '@/lib/game/registry';
@@ -145,7 +146,9 @@ export async function submitGameScore(input: SubmitScoreInput): Promise<SubmitSc
     cleared: progress,
   }).catch(() => {});
 
-  return { ok: true, moment: await momentFor(adapter, score, previous) };
+  const moment = await momentFor(adapter, score, previous);
+  if (moment?.kind === 'pb') void emitPersonalBest(input.userId, input.gameId, score);
+  return { ok: true, moment };
 }
 
 async function momentFor(

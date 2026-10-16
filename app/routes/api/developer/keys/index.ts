@@ -11,6 +11,8 @@ const createSchema = z.object({
   name: z.string().min(1).max(100),
   scopes: z.array(z.string()).optional(),
   expiresInDays: z.number().int().min(1).max(365).optional(),
+  /** `rmh_test_` sandbox key (fixtures for reads, no-op writes). */
+  testMode: z.boolean().optional(),
 });
 const MAX_KEYS = 10;
 
@@ -35,6 +37,7 @@ export const Route = createFileRoute('/api/developer/keys/')({
               prefix: true,
               lastFour: true,
               scopes: true,
+              testMode: true,
               expiresAt: true,
               lastUsedAt: true,
               createdAt: true,
@@ -84,7 +87,7 @@ export const Route = createFileRoute('/api/developer/keys/')({
             ? new Date(Date.now() + body.expiresInDays * 86_400_000)
             : null;
 
-          const { plaintext, hashedKey, prefix, lastFour } = generateApiKey();
+          const { plaintext, hashedKey, prefix, lastFour } = generateApiKey(body.testMode === true);
           const key = await prisma.developerApiKey.create({
             data: {
               userId,
@@ -94,6 +97,7 @@ export const Route = createFileRoute('/api/developer/keys/')({
               lastFour,
               scopes,
               expiresAt,
+              testMode: body.testMode === true,
             },
             select: {
               id: true,

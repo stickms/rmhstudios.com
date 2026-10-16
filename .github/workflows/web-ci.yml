@@ -150,6 +150,7 @@ jobs:
         run: |
           pnpm run docs:api:check
           pnpm run docs:site:check
+          pnpm run sdk:check
       # A HARD GATE again, as of the 2026-08-08 testing audit.
       #
       # This step was `continue-on-error: true` because `i18n-catalogs` was

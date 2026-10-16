@@ -6,6 +6,7 @@ import { ArrowUpRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
+import { ChangelogLink } from '@/components/devplatform/ChangelogLink';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import type { TFunction } from 'i18next';
 import {
@@ -153,6 +154,7 @@ export function WhatsNewModal() {
 
         <div className="spatial-whats-new__footer">
           <span>{t('designed-for-community', { defaultValue: 'Designed for community.' })}</span>
+          <ChangelogLink />
           <Button className="w-full sm:ml-auto sm:w-auto" onClick={() => setOpen(false)}>
             {t('whatsnew-dismiss', { defaultValue: 'Got it' })}
             <ArrowUpRight aria-hidden />

@@ -125,6 +125,8 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   { loc: '/ventures', changefreq: 'monthly', priority: 0.6 },
   { loc: '/wager', changefreq: 'daily', priority: 0.4 },
 
+  { loc: '/changelog', changefreq: 'weekly', priority: 0.4 },
+
   // Developer platform — the API is a promotable product surface.
   { loc: '/developer', changefreq: 'weekly', priority: 0.6 },
 
@@ -303,6 +305,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/admin/economy': 'admin',
   '/admin/library': 'admin',
   '/admin/patch-notes': 'admin',
+  '/admin/release-notes': 'admin',
   '/admin/library-quota': 'redirect', // → /admin/library?tab=appeals
   '/admin/library-storage': 'redirect', // → /admin/library?tab=storage
   '/admin/predictions': 'admin',

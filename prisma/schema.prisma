@@ -447,6 +447,8 @@ model User {
   pf2eSettingsEdits   Pf2eSettings[]        @relation("Pf2eSettingsEditor")
 
   // ─── Feature ideas 2026-10-12 (docs/plans/2026-10-12-feature-ideas-every-surface.md)
+  // P16 devplatform: D5 recipes
+  devRecipes                 DevRecipe[]
   // P15 ops: O2 notice dismissals, O5 experiment exposures
   noticeDismissals           TargetedNoticeDismissal[]
   experimentExposures        ExperimentExposure[]
@@ -3465,6 +3467,8 @@ model DeveloperApiKey {
   lastUsedAt DateTime?
   revokedAt  DateTime?
   createdAt  DateTime  @default(now())
+  /// P16 D1: `rmh_test_` sandbox key. Reads return fixtures, writes are no-ops.
+  testMode   Boolean   @default(false)
 
   user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   idempotencyKeys ApiIdempotencyKey[]
@@ -11800,4 +11804,44 @@ model ExperimentExposure {
   @@index([experimentId, variant])
   @@index([userId])
   @@map("experiment_exposure")
+}
+
+// ── P16 devplatform: D5 recipes, I2 release notes ──
+// "When X then Y" automations. Max 10 per member (enforced in the API). Polled
+// triggers use lastCheckedAt as their cursor so a recipe never fires twice
+// for the same follower / listing.
+model DevRecipe {
+  id            String    @id @default(cuid())
+  userId        String
+  name          String    @db.VarChar(80)
+  trigger       String    @db.VarChar(24) // new_pb | new_follower | price_below
+  triggerConfig Json      @default("{}")
+  action        String    @db.VarChar(24) // discord_webhook | dm_self
+  actionConfig  Json      @default("{}")
+  enabled       Boolean   @default(true)
+  lastCheckedAt DateTime  @default(now())
+  lastFiredAt   DateTime?
+  fireCount     Int       @default(0)
+  lastError     String?   @db.VarChar(200)
+  createdAt     DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, trigger])
+  @@index([enabled, trigger, lastCheckedAt])
+  @@map("dev_recipe")
+}
+
+// Admin-authored changelog entries (drafted with AI, edited by a human).
+model ReleaseNote {
+  id          String    @id @default(cuid())
+  version     String    @db.VarChar(40)
+  title       String    @db.VarChar(160)
+  body        String    @db.Text
+  authorId    String?
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([publishedAt])
+  @@map("release_note")
 }

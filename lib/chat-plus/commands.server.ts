@@ -9,6 +9,9 @@
 import { randomInt } from 'node:crypto';
 import type { Prisma } from '@prisma/client';
 import { z } from 'zod';
+import { prisma } from '@/lib/prisma.server';
+import { rateLimit } from '@/lib/rate-limit';
+import { aiAvailable, gameMasterReply } from '@/lib/devplatform/ai.server';
 import type { ChatAccess } from '@/lib/chat-plus/access.server';
 import { postChatMessage, type PostedMessage } from '@/lib/chat-plus/post.server';
 import { createChecklist } from '@/lib/chat-plus/checklist.server';
@@ -85,6 +88,28 @@ export async function runChatCommand(
       if (!tip.ok) return bad(tip.error);
       const res = await sendChatTip(access, { ...tip.value, senderName });
       return res.ok ? { ok: true, message: res.message } : bad(res.error, res.status);
+    }
+    case 'gm': {
+      if (!parsed.args) return bad('Tell the Game Master what you do, e.g. /gm I open the door');
+      const { allowed } = rateLimit(access.id, { limit: 6, windowMs: 60_000, prefix: 'chat-gm' });
+      if (!allowed) return bad('The Game Master needs a moment. Try again shortly.', 429);
+      if (!aiAvailable()) return bad('The Game Master is not available right now.', 503);
+      const recent = await prisma.groupMessage.findMany({
+        where: { groupId: access.id, deletedAt: null },
+        orderBy: { createdAt: 'desc' },
+        take: 8,
+        select: { content: true },
+      });
+      const narration = await gameMasterReply(
+        parsed.args,
+        recent.map((m) => m.content).reverse(),
+      ).catch(() => null);
+      if (!narration) return bad('The Game Master lost the thread. Try again.', 502);
+      const message = await postChatMessage(access, {
+        senderId: access.viewerId,
+        content: `> ${parsed.args.slice(0, 300)}\n\nGame Master: ${narration}`.slice(0, 1990),
+      });
+      return { ok: true, message };
     }
     default:
       return bad('Unknown command');
