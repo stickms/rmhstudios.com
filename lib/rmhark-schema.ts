@@ -3,6 +3,7 @@ import { isFeedImageUrl } from "@/lib/storage/keys";
 
 import { MAX_RMHARK_LENGTH } from "@/lib/rmhark-limits";
 import { postsPlusComposeFields } from "@/lib/posts-plus/constants";
+import { codeEmbedSchema } from "@/lib/code-embed/shared";
 
 export { MAX_RMHARK_LENGTH };
 export const MAX_RMHARK_IMAGES = 4;
@@ -91,6 +92,8 @@ export const createRMHarkSchema = z
     communityId: z.string().max(64).optional(),
     // Take meter (X6): readers vote agree/disagree; the split shows after voting.
     isTake: z.boolean().optional(),
+    // P23 F14: a runnable HTML/CSS/JS snippet shown click-to-run in a sandboxed iframe.
+    codeEmbed: codeEmbedSchema.optional(),
     // P06 communities-plus: flair (N1) and challenge entry (N5); community posts only.
     flairId: z.string().max(64).optional(),
     challengeId: z.string().max(64).optional(),
@@ -103,6 +106,7 @@ export const createRMHarkSchema = z
       data.poll ||
       data.gifUrl ||
       (data.imageUrls?.length ?? 0) > 0 ||
+      !!data.codeEmbed ||
       !!data.originalId,
     { message: "Post must have text, a poll, an image/GIF, or be a quote" }
   )

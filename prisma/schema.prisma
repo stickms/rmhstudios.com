@@ -447,6 +447,9 @@ model User {
   pf2eSettingsEdits   Pf2eSettings[]        @relation("Pf2eSettingsEditor")
 
   // ─── Feature ideas 2026-10-12 (docs/plans/2026-10-12-feature-ideas-every-surface.md)
+  // P23 creative: F12 studio challenge entries and votes
+  studioChallengeEntries     StudioChallengeEntry[]
+  studioChallengeVotes       StudioChallengeVote[]
   // P19 canvas: Z5 pixel canvas, X3 context notes
   canvasPlacements           CanvasPlacement[]
   canvasCooldowns            CanvasCooldown[]
@@ -2837,6 +2840,9 @@ model RMHark {
   // P19 X3: true while at least one context note on this post is visible (feed reads this boolean only)
   hasNote      Boolean       @default(false)
   contextNotes ContextNote[]
+  // P23 F14: true when the post carries a runnable code snippet (feed reads this boolean only)
+  hasEmbed  Boolean        @default(false)
+  codeEmbed PostCodeEmbed?
 
   @@index([userId])
   @@index([createdAt(sort: Desc)])
@@ -12202,4 +12208,74 @@ model ContextNoteRating {
   @@unique([noteId, raterId])
   @@index([raterId, createdAt(sort: Desc)])
   @@map("context_note_rating")
+}
+
+// ── P23 creative: F12 studio sample flip, F14 runnable code embeds ──
+model StudioChallenge {
+  id           String    @id @default(cuid())
+  title        String    @db.VarChar(120)
+  brief        String    @db.VarChar(1000)
+  sampleKey    String    @db.VarChar(200)
+  sampleName   String    @db.VarChar(120)
+  startsAt     DateTime
+  endsAt       DateTime
+  votingEndsAt DateTime
+  winnerId     String?
+  finalizedAt  DateTime?
+  createdById  String
+  createdAt    DateTime  @default(now())
+
+  entries StudioChallengeEntry[]
+  votes   StudioChallengeVote[]
+
+  @@index([startsAt(sort: Desc)])
+  @@map("studio_challenge")
+}
+
+model StudioChallengeEntry {
+  id          String   @id @default(cuid())
+  challengeId String
+  userId      String
+  title       String   @db.VarChar(120)
+  linkUrl     String?  @db.VarChar(500)
+  audioKey    String?  @db.VarChar(200)
+  voteCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  challenge StudioChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  votes     StudioChallengeVote[]
+
+  @@unique([challengeId, userId])
+  @@index([challengeId, voteCount(sort: Desc)])
+  @@index([userId])
+  @@map("studio_challenge_entry")
+}
+
+// One vote per member per challenge: the composite key is the gate.
+model StudioChallengeVote {
+  challengeId String
+  voterId     String
+  entryId     String
+  createdAt   DateTime @default(now())
+
+  challenge StudioChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  voter     User            @relation(fields: [voterId], references: [id], onDelete: Cascade)
+  entry     StudioChallengeEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@id([challengeId, voterId])
+  @@index([entryId])
+  @@index([voterId])
+  @@map("studio_challenge_vote")
+}
+
+model PostCodeEmbed {
+  postId String @id
+  html   String @db.VarChar(10000)
+  css    String @db.VarChar(10000)
+  js     String @db.VarChar(10000)
+
+  post RMHark @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("post_code_embed")
 }

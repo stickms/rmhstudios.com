@@ -37,6 +37,7 @@ import {
   handleRochesterOffensiveDisconnect,
 } from './handlers/rochester-offensive';
 import { registerRmhMusicHandlers, handleRmhMusicDisconnect } from './handlers/rmhmusic';
+import { registerStudioJamHandlers } from './handlers/studio-jam';
 import {
   registerBlackjackHandlers,
   handleBlackjackDisconnect,
@@ -501,6 +502,7 @@ io.on('connection', (socket) => {
   registerKowloonKnockoutHandlers(io, socket);
   registerRochesterOffensiveHandlers(io, socket);
   registerRmhMusicHandlers(io, socket);
+  registerStudioJamHandlers(io, socket); // F13: self-cleans on disconnect
   registerBlackjackHandlers(io, socket);
   registerHoldemHandlers(io, socket);
   registerBaccaratHandlers(io, socket);

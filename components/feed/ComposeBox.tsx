@@ -65,6 +65,12 @@ import {
   PostsPlusMenuItems,
   usePostsPlusCompose,
 } from '@/components/posts-plus/PostsPlusCompose';
+import {
+  CodeEmbedChip,
+  CodeEmbedDialog,
+  CodeEmbedMenuItem,
+  useCodeEmbedCompose,
+} from '@/components/code-embed/CodeEmbedCompose';
 import { missingAltIndexes } from '@/lib/feed/alt-text';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -108,6 +114,7 @@ export function ComposeBox({
   const [replyOpen, setReplyOpen] = useState(false);
   const [isSensitive, setIsSensitive] = useState(false);
   const [isTake, setIsTake] = useState(false); // X6: readers vote agree/disagree
+  const codeEmbed = useCodeEmbedCompose(); // F14 runnable snippet
   const postsPlus = usePostsPlusCompose(); // X8 expiry, X5 series, X4 QOTD tag, Z7 capsule
   const [pollDuration, setPollDuration] = useState(0); // hours; 0 = no limit
   const [unlockPrice, setUnlockPrice] = useState(''); // coins to unlock;''= free
@@ -178,7 +185,7 @@ export function ComposeBox({
   const requireAlt = useRequireAltText(hasImages);
   const missingAlt = requireAlt ? missingAltIndexes(imageUrls, imageAlts) : [];
   const canSubmit =
-    (hasContent || hasPoll || hasGif || hasImages) &&
+    (hasContent || hasPoll || hasGif || hasImages || !!codeEmbed.embed) &&
     remaining >= 0 &&
     !submitting &&
     missingAlt.length === 0;
@@ -293,7 +300,7 @@ export function ComposeBox({
     if (price > 0) body.unlockPrice = price;
     if (communityId) body.communityId = communityId;
     if (extraBody) Object.assign(body, extraBody);
-    Object.assign(body, postsPlus.bodyFields);
+    Object.assign(body, postsPlus.bodyFields, codeEmbed.bodyFields);
     return body;
   };
 
@@ -318,6 +325,7 @@ export function ComposeBox({
     setShowPriceModal(false);
     setShowCheatSheet(false);
     postsPlus.reset();
+    codeEmbed.reset();
   };
 
   // A snapshot of the composer's contents, so an optimistic post that fails to
@@ -328,6 +336,7 @@ export function ComposeBox({
     replyControl,
     isSensitive,
     isTake,
+    codeEmbed: codeEmbed.embed,
     unlockPrice,
     attachment,
     poll,
@@ -342,6 +351,7 @@ export function ComposeBox({
     setReplyControl(d.replyControl);
     setIsSensitive(d.isSensitive);
     setIsTake(d.isTake);
+    codeEmbed.setEmbed(d.codeEmbed);
     setUnlockPrice(d.unlockPrice);
     setAttachment(d.attachment);
     setPoll(d.poll);
@@ -775,6 +785,7 @@ export function ComposeBox({
           )}
 
           {isTake && <TakeChip onRemove={() => setIsTake(false)} />}
+          <CodeEmbedChip ce={codeEmbed} />
           <PostsPlusChips pp={postsPlus} />
 
           {/* Poll creator */}
@@ -1130,6 +1141,7 @@ export function ComposeBox({
                   {isSensitive && <Check className="w-4 h-4 text-site-warning" />}
                 </button>
                 <TakeMenuItem active={isTake} onToggle={() => setIsTake((v) => !v)} />
+                <CodeEmbedMenuItem ce={codeEmbed} onPick={() => setMenuOpen(false)} />
                 <PostsPlusMenuItems pp={postsPlus} onPick={() => setMenuOpen(false)} />
                 <div className="my-1 border-t border-site-border" />
                 <button
@@ -1237,6 +1249,7 @@ export function ComposeBox({
         </div>
       </div>
 
+      <CodeEmbedDialog ce={codeEmbed} />
       <PostsPlusDialogs
         pp={postsPlus}
         getBody={buildBody}

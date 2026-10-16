@@ -11,6 +11,7 @@ import { useAdminReviewCount } from '@/lib/useAdminReviewCount';
 import { AdminQotdLink } from '@/components/posts-plus/AdminQotdLink';
 import { AdminDelightLink } from '@/components/delight/AdminDelightLink';
 import { AdminCanvasLink } from '@/components/canvas/admin/AdminCanvasLink';
+import { AdminChallengeLink } from '@/components/studio/creative/AdminChallengeLink';
 import { AdminReadingLink } from '@/components/reading/admin/AdminReadingLink';
 import { InsightsLink } from '@/components/admin/InsightsLink';
 
@@ -227,6 +228,7 @@ function AdminDashboardPage() {
           <AdminQotdLink />
           <AdminDelightLink />
           <AdminCanvasLink />
+          <AdminChallengeLink />
           <AdminReadingLink />
         </div>
       </div>

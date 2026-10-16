@@ -15,6 +15,7 @@ import { ProfileHoverCard } from'./ProfileHoverCard';
 import { PollDisplay } from'./PollDisplay';
 import { TakeMeterLazy } from'./TakeMeterLazy';
 import { ContextNotesLazy } from '@/components/context-notes/ContextNotesLazy';
+import { RunnableEmbed } from '@/components/code-embed/RunnableEmbed';
 import { PostPlusBadges } from'@/components/posts-plus/PostPlusBadges';
 import { GifEmbed } from'./GifEmbed';
 import { LinkPreview } from'./LinkPreview';
@@ -428,6 +429,11 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  {/* Take meter (X6) — only on posts the author marked as a take */}
  {item.isTake && !item.locked && !item.pending && (
  <TakeMeterLazy postId={item.actualId ?? item.id} />
+ )}
+
+ {/* Runnable snippet (F14) — click-to-run, never auto-runs in the feed */}
+ {item.hasEmbed && !item.locked && !item.pending && (
+ <RunnableEmbed postId={item.actualId ?? item.id} />
  )}
 
  {/* Context note (X3) — loads lazily, only for posts with a visible note */}

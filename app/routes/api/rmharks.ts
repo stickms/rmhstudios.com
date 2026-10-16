@@ -149,6 +149,7 @@ export const Route = createFileRoute('/api/rmharks')({
             unlockPrice,
             communityId,
             isTake,
+            codeEmbed,
             flairId,
             challengeId,
             ttl,
@@ -293,6 +294,8 @@ export const Route = createFileRoute('/api/rmharks')({
                 unlockPrice: unlockPrice && unlockPrice > 0 ? unlockPrice : null,
                 communityId: communityId ?? null,
                 isTake: isTake ?? false,
+                hasEmbed: !!codeEmbed,
+                ...(codeEmbed ? { codeEmbed: { create: codeEmbed } } : {}),
                 // An AutoMod hold is a soft-delete marker: invisible everywhere
                 // until a mod approves it (see automod.server.ts resolvePost).
                 ...(held ? { deletedAt: new Date(), deletedBy: HELD_BY } : {}),
@@ -453,6 +456,7 @@ export const Route = createFileRoute('/api/rmharks')({
             isSensitive: rmhark.isSensitive,
             replyControl: rmhark.replyControl,
             isTake: rmhark.isTake || undefined,
+            hasEmbed: rmhark.hasEmbed || undefined,
             seriesId: rmhark.seriesId ?? undefined,
             expiresAt: rmhark.expiresAt?.toISOString(),
             reactions: [],

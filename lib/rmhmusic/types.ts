@@ -61,6 +61,8 @@ export interface ClientRoomState {
   chat: ChatMessage[];
   myUserId: string;
   seq: number;
+  /** Community radio (T4): server-driven DJ rotation, no host. */
+  radio?: boolean;
 }
 
 export interface ClientMemberInfo {
@@ -139,3 +141,19 @@ export type RmhMusicErrorCode =
   | 'QUEUE_FULL'
   | 'INTERNAL_ERROR'
   | 'RATE_LIMITED';
+
+// ─── Community radio (T4) ────────────────────────────────────────
+
+export interface RadioView {
+  listeners: number;
+  djs: { userId: string; userName: string; queued: boolean }[];
+  current: {
+    id: string;
+    djUserId: string;
+    djName: string;
+    track: TrackInfo;
+    startedAt: number;
+  } | null;
+  woots: number;
+  mehs: number;
+}

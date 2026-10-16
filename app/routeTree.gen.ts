@@ -246,6 +246,7 @@ import { Route as SiteAdminSafetyRouteImport } from './routes/_site/admin/safety
 import { Route as SiteAdminSecurityReportsRouteImport } from './routes/_site/admin/security-reports'
 import { Route as SiteAdminSliceItRouteImport } from './routes/_site/admin/slice-it'
 import { Route as SiteAdminSliceItContentRouteImport } from './routes/_site/admin/slice-it-content'
+import { Route as SiteAdminStudioChallengesRouteImport } from './routes/_site/admin/studio-challenges'
 import { Route as SiteAdminUserBuildsRouteImport } from './routes/_site/admin/user-builds'
 import { Route as SiteAdminUsersRouteImport } from './routes/_site/admin/users'
 import { Route as SiteAppsIndexRouteImport } from './routes/_site/apps/index'
@@ -821,6 +822,8 @@ import { Route as ApiAdminReleaseNotesDraftRouteImport } from './routes/api/admi
 import { Route as ApiAdminReportsIdRouteImport } from './routes/api/admin/reports/$id'
 import { Route as ApiAdminRideshareApplicationsRouteImport } from './routes/api/admin/rideshare/applications'
 import { Route as ApiAdminRideshareRidesRouteImport } from './routes/api/admin/rideshare/rides'
+import { Route as ApiAdminStudioChallengesIndexRouteImport } from './routes/api/admin/studio-challenges/index'
+import { Route as ApiAdminStudioChallengesUploadRouteImport } from './routes/api/admin/studio-challenges/upload'
 import { Route as ApiAdminVibeBackfillThumbsRouteImport } from './routes/api/admin/vibe/backfill-thumbs'
 import { Route as ApiAlbumsAssetSplatRouteImport } from './routes/api/albums/asset/$'
 import { Route as ApiAnnouncementsIdVoteRouteImport } from './routes/api/announcements/$id/vote'
@@ -992,6 +995,7 @@ import { Route as ApiRidesharePlacesIdRouteImport } from './routes/api/rideshare
 import { Route as ApiRideshareRidesIdRouteImport } from './routes/api/rideshare/rides/$id'
 import { Route as ApiRmharksIdBookmarkRouteImport } from './routes/api/rmharks/$id/bookmark'
 import { Route as ApiRmharksIdCommentRouteImport } from './routes/api/rmharks/$id/comment'
+import { Route as ApiRmharksIdEmbedRouteImport } from './routes/api/rmharks/$id/embed'
 import { Route as ApiRmharksIdHistoryRouteImport } from './routes/api/rmharks/$id/history'
 import { Route as ApiRmharksIdInsightsRouteImport } from './routes/api/rmharks/$id/insights'
 import { Route as ApiRmharksIdLikeRouteImport } from './routes/api/rmharks/$id/like'
@@ -1047,6 +1051,7 @@ import { Route as ApiStampsIdWallRouteImport } from './routes/api/stamps/$id/wal
 import { Route as ApiStampsImageFilenameRouteImport } from './routes/api/stamps/image/$filename'
 import { Route as ApiStorefrontCreatorUseridRouteImport } from './routes/api/storefront/creator/$userid'
 import { Route as ApiStorefrontProductsIndexRouteImport } from './routes/api/storefront/products/index'
+import { Route as ApiStudioChallengesIndexRouteImport } from './routes/api/studio/challenges/index'
 import { Route as ApiStudyDecksIndexRouteImport } from './routes/api/study/decks/index'
 import { Route as ApiThemesIdBuyRouteImport } from './routes/api/themes/$id.buy'
 import { Route as ApiThemesIdPublishRouteImport } from './routes/api/themes/$id.publish'
@@ -1177,6 +1182,11 @@ import { Route as ApiSliceItSongsArtistKeyRouteImport } from './routes/api/slice
 import { Route as ApiSliceItSongsStreamIdRouteImport } from './routes/api/slice-it/songs/stream/$id'
 import { Route as ApiStorefrontProductsIdIndexRouteImport } from './routes/api/storefront/products/$id/index'
 import { Route as ApiStorefrontProductsIdBuyRouteImport } from './routes/api/storefront/products/$id/buy'
+import { Route as ApiStudioChallengesIdIndexRouteImport } from './routes/api/studio/challenges/$id/index'
+import { Route as ApiStudioChallengesIdEntryRouteImport } from './routes/api/studio/challenges/$id/entry'
+import { Route as ApiStudioChallengesIdVoteRouteImport } from './routes/api/studio/challenges/$id/vote'
+import { Route as ApiStudioChallengesAudioIndexRouteImport } from './routes/api/studio/challenges/audio/index'
+import { Route as ApiStudioChallengesAudioFilenameRouteImport } from './routes/api/studio/challenges/audio/$filename'
 import { Route as ApiStudyCardsIdReviewRouteImport } from './routes/api/study/cards/$id/review'
 import { Route as ApiStudyDecksIdIndexRouteImport } from './routes/api/study/decks/$id/index'
 import { Route as ApiStudyDecksIdCloneRouteImport } from './routes/api/study/decks/$id/clone'
@@ -2394,6 +2404,12 @@ const SiteAdminSliceItContentRoute = SiteAdminSliceItContentRouteImport.update({
   path: '/slice-it-content',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
+const SiteAdminStudioChallengesRoute =
+  SiteAdminStudioChallengesRouteImport.update({
+    id: '/studio-challenges',
+    path: '/studio-challenges',
+    getParentRoute: () => SiteAdminRouteRoute,
+  } as any)
 const SiteAdminUserBuildsRoute = SiteAdminUserBuildsRouteImport.update({
   id: '/user-builds',
   path: '/user-builds',
@@ -5319,6 +5335,18 @@ const ApiAdminRideshareRidesRoute = ApiAdminRideshareRidesRouteImport.update({
   path: '/api/admin/rideshare/rides',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminStudioChallengesIndexRoute =
+  ApiAdminStudioChallengesIndexRouteImport.update({
+    id: '/api/admin/studio-challenges/',
+    path: '/api/admin/studio-challenges/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminStudioChallengesUploadRoute =
+  ApiAdminStudioChallengesUploadRouteImport.update({
+    id: '/api/admin/studio-challenges/upload',
+    path: '/api/admin/studio-challenges/upload',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminVibeBackfillThumbsRoute =
   ApiAdminVibeBackfillThumbsRouteImport.update({
     id: '/api/admin/vibe/backfill-thumbs',
@@ -6239,6 +6267,11 @@ const ApiRmharksIdCommentRoute = ApiRmharksIdCommentRouteImport.update({
   path: '/comment',
   getParentRoute: () => ApiRmharksIdRoute,
 } as any)
+const ApiRmharksIdEmbedRoute = ApiRmharksIdEmbedRouteImport.update({
+  id: '/embed',
+  path: '/embed',
+  getParentRoute: () => ApiRmharksIdRoute,
+} as any)
 const ApiRmharksIdHistoryRoute = ApiRmharksIdHistoryRouteImport.update({
   id: '/history',
   path: '/history',
@@ -6517,6 +6550,12 @@ const ApiStorefrontProductsIndexRoute =
   ApiStorefrontProductsIndexRouteImport.update({
     id: '/api/storefront/products/',
     path: '/api/storefront/products/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiStudioChallengesIndexRoute =
+  ApiStudioChallengesIndexRouteImport.update({
+    id: '/api/studio/challenges/',
+    path: '/api/studio/challenges/',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiStudyDecksIndexRoute = ApiStudyDecksIndexRouteImport.update({
@@ -7233,6 +7272,36 @@ const ApiStorefrontProductsIdBuyRoute =
     path: '/api/storefront/products/$id/buy',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiStudioChallengesIdIndexRoute =
+  ApiStudioChallengesIdIndexRouteImport.update({
+    id: '/api/studio/challenges/$id/',
+    path: '/api/studio/challenges/$id/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiStudioChallengesIdEntryRoute =
+  ApiStudioChallengesIdEntryRouteImport.update({
+    id: '/api/studio/challenges/$id/entry',
+    path: '/api/studio/challenges/$id/entry',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiStudioChallengesIdVoteRoute =
+  ApiStudioChallengesIdVoteRouteImport.update({
+    id: '/api/studio/challenges/$id/vote',
+    path: '/api/studio/challenges/$id/vote',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiStudioChallengesAudioIndexRoute =
+  ApiStudioChallengesAudioIndexRouteImport.update({
+    id: '/api/studio/challenges/audio/',
+    path: '/api/studio/challenges/audio/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiStudioChallengesAudioFilenameRoute =
+  ApiStudioChallengesAudioFilenameRouteImport.update({
+    id: '/api/studio/challenges/audio/$filename',
+    path: '/api/studio/challenges/audio/$filename',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiStudyCardsIdReviewRoute = ApiStudyCardsIdReviewRouteImport.update({
   id: '/api/study/cards/$id/review',
   path: '/api/study/cards/$id/review',
@@ -7635,6 +7704,7 @@ export interface FileRoutesByFullPath {
   '/admin/security-reports': typeof SiteAdminSecurityReportsRoute
   '/admin/slice-it': typeof SiteAdminSliceItRoute
   '/admin/slice-it-content': typeof SiteAdminSliceItContentRoute
+  '/admin/studio-challenges': typeof SiteAdminStudioChallengesRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
   '/blog/$slug': typeof SiteBlogSlugRoute
@@ -8200,6 +8270,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
+  '/api/admin/studio-challenges/upload': typeof ApiAdminStudioChallengesUploadRoute
   '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
@@ -8342,6 +8413,7 @@ export interface FileRoutesByFullPath {
   '/api/rideshare/rides/$id': typeof ApiRideshareRidesIdRouteWithChildren
   '/api/rmharks/$id/bookmark': typeof ApiRmharksIdBookmarkRoute
   '/api/rmharks/$id/comment': typeof ApiRmharksIdCommentRouteWithChildren
+  '/api/rmharks/$id/embed': typeof ApiRmharksIdEmbedRoute
   '/api/rmharks/$id/history': typeof ApiRmharksIdHistoryRoute
   '/api/rmharks/$id/insights': typeof ApiRmharksIdInsightsRoute
   '/api/rmharks/$id/like': typeof ApiRmharksIdLikeRoute
@@ -8437,6 +8509,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/qotd/': typeof ApiAdminQotdIndexRoute
   '/api/admin/redemptions/': typeof ApiAdminRedemptionsIndexRoute
   '/api/admin/release-notes/': typeof ApiAdminReleaseNotesIndexRoute
+  '/api/admin/studio-challenges/': typeof ApiAdminStudioChallengesIndexRoute
   '/api/arcade/backlog/': typeof ApiArcadeBacklogIndexRoute
   '/api/arcade/daily/': typeof ApiArcadeDailyIndexRoute
   '/api/arcade/patch-notes/': typeof ApiArcadePatchNotesIndexRoute
@@ -8474,6 +8547,7 @@ export interface FileRoutesByFullPath {
   '/api/slice-it/setlists/': typeof ApiSliceItSetlistsIndexRoute
   '/api/spaces/$id/': typeof ApiSpacesIdIndexRoute
   '/api/storefront/products/': typeof ApiStorefrontProductsIndexRoute
+  '/api/studio/challenges/': typeof ApiStudioChallengesIndexRoute
   '/api/study/decks/': typeof ApiStudyDecksIndexRoute
   '/api/translate/suggest/': typeof ApiTranslateSuggestIndexRoute
   '/api/translate/vote/': typeof ApiTranslateVoteIndexRoute
@@ -8552,6 +8626,9 @@ export interface FileRoutesByFullPath {
   '/api/slice-it/songs/artist/$key': typeof ApiSliceItSongsArtistKeyRoute
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
   '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
+  '/api/studio/challenges/$id/entry': typeof ApiStudioChallengesIdEntryRoute
+  '/api/studio/challenges/$id/vote': typeof ApiStudioChallengesIdVoteRoute
+  '/api/studio/challenges/audio/$filename': typeof ApiStudioChallengesAudioFilenameRoute
   '/api/study/cards/$id/review': typeof ApiStudyCardsIdReviewRoute
   '/api/study/decks/$id/clone': typeof ApiStudyDecksIdCloneRoute
   '/api/study/decks/$id/review': typeof ApiStudyDecksIdReviewRoute
@@ -8577,6 +8654,8 @@ export interface FileRoutesByFullPath {
   '/api/rmhmusic/guess/$id/': typeof ApiRmhmusicGuessIdIndexRoute
   '/api/shop/loadouts/$id/': typeof ApiShopLoadoutsIdIndexRoute
   '/api/storefront/products/$id/': typeof ApiStorefrontProductsIdIndexRoute
+  '/api/studio/challenges/$id/': typeof ApiStudioChallengesIdIndexRoute
+  '/api/studio/challenges/audio/': typeof ApiStudioChallengesAudioIndexRoute
   '/api/study/decks/$id/': typeof ApiStudyDecksIdIndexRoute
   '/api/admin/albums/$id/slides/$slideId': typeof ApiAdminAlbumsIdSlidesSlideIdRoute
   '/api/admin/reading/stories/$id/articles': typeof ApiAdminReadingStoriesIdArticlesRoute
@@ -8807,6 +8886,7 @@ export interface FileRoutesByTo {
   '/admin/security-reports': typeof SiteAdminSecurityReportsRoute
   '/admin/slice-it': typeof SiteAdminSliceItRoute
   '/admin/slice-it-content': typeof SiteAdminSliceItContentRoute
+  '/admin/studio-challenges': typeof SiteAdminStudioChallengesRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
   '/blog/$slug': typeof SiteBlogSlugRoute
@@ -9372,6 +9452,7 @@ export interface FileRoutesByTo {
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
+  '/api/admin/studio-challenges/upload': typeof ApiAdminStudioChallengesUploadRoute
   '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
@@ -9514,6 +9595,7 @@ export interface FileRoutesByTo {
   '/api/rideshare/rides/$id': typeof ApiRideshareRidesIdRouteWithChildren
   '/api/rmharks/$id/bookmark': typeof ApiRmharksIdBookmarkRoute
   '/api/rmharks/$id/comment': typeof ApiRmharksIdCommentRouteWithChildren
+  '/api/rmharks/$id/embed': typeof ApiRmharksIdEmbedRoute
   '/api/rmharks/$id/history': typeof ApiRmharksIdHistoryRoute
   '/api/rmharks/$id/insights': typeof ApiRmharksIdInsightsRoute
   '/api/rmharks/$id/like': typeof ApiRmharksIdLikeRoute
@@ -9609,6 +9691,7 @@ export interface FileRoutesByTo {
   '/api/admin/qotd': typeof ApiAdminQotdIndexRoute
   '/api/admin/redemptions': typeof ApiAdminRedemptionsIndexRoute
   '/api/admin/release-notes': typeof ApiAdminReleaseNotesIndexRoute
+  '/api/admin/studio-challenges': typeof ApiAdminStudioChallengesIndexRoute
   '/api/arcade/backlog': typeof ApiArcadeBacklogIndexRoute
   '/api/arcade/daily': typeof ApiArcadeDailyIndexRoute
   '/api/arcade/patch-notes': typeof ApiArcadePatchNotesIndexRoute
@@ -9646,6 +9729,7 @@ export interface FileRoutesByTo {
   '/api/slice-it/setlists': typeof ApiSliceItSetlistsIndexRoute
   '/api/spaces/$id': typeof ApiSpacesIdIndexRoute
   '/api/storefront/products': typeof ApiStorefrontProductsIndexRoute
+  '/api/studio/challenges': typeof ApiStudioChallengesIndexRoute
   '/api/study/decks': typeof ApiStudyDecksIndexRoute
   '/api/translate/suggest': typeof ApiTranslateSuggestIndexRoute
   '/api/translate/vote': typeof ApiTranslateVoteIndexRoute
@@ -9724,6 +9808,9 @@ export interface FileRoutesByTo {
   '/api/slice-it/songs/artist/$key': typeof ApiSliceItSongsArtistKeyRoute
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
   '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
+  '/api/studio/challenges/$id/entry': typeof ApiStudioChallengesIdEntryRoute
+  '/api/studio/challenges/$id/vote': typeof ApiStudioChallengesIdVoteRoute
+  '/api/studio/challenges/audio/$filename': typeof ApiStudioChallengesAudioFilenameRoute
   '/api/study/cards/$id/review': typeof ApiStudyCardsIdReviewRoute
   '/api/study/decks/$id/clone': typeof ApiStudyDecksIdCloneRoute
   '/api/study/decks/$id/review': typeof ApiStudyDecksIdReviewRoute
@@ -9749,6 +9836,8 @@ export interface FileRoutesByTo {
   '/api/rmhmusic/guess/$id': typeof ApiRmhmusicGuessIdIndexRoute
   '/api/shop/loadouts/$id': typeof ApiShopLoadoutsIdIndexRoute
   '/api/storefront/products/$id': typeof ApiStorefrontProductsIdIndexRoute
+  '/api/studio/challenges/$id': typeof ApiStudioChallengesIdIndexRoute
+  '/api/studio/challenges/audio': typeof ApiStudioChallengesAudioIndexRoute
   '/api/study/decks/$id': typeof ApiStudyDecksIdIndexRoute
   '/api/admin/albums/$id/slides/$slideId': typeof ApiAdminAlbumsIdSlidesSlideIdRoute
   '/api/admin/reading/stories/$id/articles': typeof ApiAdminReadingStoriesIdArticlesRoute
@@ -10007,6 +10096,7 @@ export interface FileRoutesById {
   '/_site/admin/security-reports': typeof SiteAdminSecurityReportsRoute
   '/_site/admin/slice-it': typeof SiteAdminSliceItRoute
   '/_site/admin/slice-it-content': typeof SiteAdminSliceItContentRoute
+  '/_site/admin/studio-challenges': typeof SiteAdminStudioChallengesRoute
   '/_site/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/_site/admin/users': typeof SiteAdminUsersRoute
   '/_site/blog/$slug': typeof SiteBlogSlugRoute
@@ -10572,6 +10662,7 @@ export interface FileRoutesById {
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
+  '/api/admin/studio-challenges/upload': typeof ApiAdminStudioChallengesUploadRoute
   '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
@@ -10714,6 +10805,7 @@ export interface FileRoutesById {
   '/api/rideshare/rides/$id': typeof ApiRideshareRidesIdRouteWithChildren
   '/api/rmharks/$id/bookmark': typeof ApiRmharksIdBookmarkRoute
   '/api/rmharks/$id/comment': typeof ApiRmharksIdCommentRouteWithChildren
+  '/api/rmharks/$id/embed': typeof ApiRmharksIdEmbedRoute
   '/api/rmharks/$id/history': typeof ApiRmharksIdHistoryRoute
   '/api/rmharks/$id/insights': typeof ApiRmharksIdInsightsRoute
   '/api/rmharks/$id/like': typeof ApiRmharksIdLikeRoute
@@ -10809,6 +10901,7 @@ export interface FileRoutesById {
   '/api/admin/qotd/': typeof ApiAdminQotdIndexRoute
   '/api/admin/redemptions/': typeof ApiAdminRedemptionsIndexRoute
   '/api/admin/release-notes/': typeof ApiAdminReleaseNotesIndexRoute
+  '/api/admin/studio-challenges/': typeof ApiAdminStudioChallengesIndexRoute
   '/api/arcade/backlog/': typeof ApiArcadeBacklogIndexRoute
   '/api/arcade/daily/': typeof ApiArcadeDailyIndexRoute
   '/api/arcade/patch-notes/': typeof ApiArcadePatchNotesIndexRoute
@@ -10846,6 +10939,7 @@ export interface FileRoutesById {
   '/api/slice-it/setlists/': typeof ApiSliceItSetlistsIndexRoute
   '/api/spaces/$id/': typeof ApiSpacesIdIndexRoute
   '/api/storefront/products/': typeof ApiStorefrontProductsIndexRoute
+  '/api/studio/challenges/': typeof ApiStudioChallengesIndexRoute
   '/api/study/decks/': typeof ApiStudyDecksIndexRoute
   '/api/translate/suggest/': typeof ApiTranslateSuggestIndexRoute
   '/api/translate/vote/': typeof ApiTranslateVoteIndexRoute
@@ -10924,6 +11018,9 @@ export interface FileRoutesById {
   '/api/slice-it/songs/artist/$key': typeof ApiSliceItSongsArtistKeyRoute
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
   '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
+  '/api/studio/challenges/$id/entry': typeof ApiStudioChallengesIdEntryRoute
+  '/api/studio/challenges/$id/vote': typeof ApiStudioChallengesIdVoteRoute
+  '/api/studio/challenges/audio/$filename': typeof ApiStudioChallengesAudioFilenameRoute
   '/api/study/cards/$id/review': typeof ApiStudyCardsIdReviewRoute
   '/api/study/decks/$id/clone': typeof ApiStudyDecksIdCloneRoute
   '/api/study/decks/$id/review': typeof ApiStudyDecksIdReviewRoute
@@ -10949,6 +11046,8 @@ export interface FileRoutesById {
   '/api/rmhmusic/guess/$id/': typeof ApiRmhmusicGuessIdIndexRoute
   '/api/shop/loadouts/$id/': typeof ApiShopLoadoutsIdIndexRoute
   '/api/storefront/products/$id/': typeof ApiStorefrontProductsIdIndexRoute
+  '/api/studio/challenges/$id/': typeof ApiStudioChallengesIdIndexRoute
+  '/api/studio/challenges/audio/': typeof ApiStudioChallengesAudioIndexRoute
   '/api/study/decks/$id/': typeof ApiStudyDecksIdIndexRoute
   '/api/admin/albums/$id/slides/$slideId': typeof ApiAdminAlbumsIdSlidesSlideIdRoute
   '/api/admin/reading/stories/$id/articles': typeof ApiAdminReadingStoriesIdArticlesRoute
@@ -11207,6 +11306,7 @@ export interface FileRouteTypes {
     | '/admin/security-reports'
     | '/admin/slice-it'
     | '/admin/slice-it-content'
+    | '/admin/studio-challenges'
     | '/admin/user-builds'
     | '/admin/users'
     | '/blog/$slug'
@@ -11772,6 +11872,7 @@ export interface FileRouteTypes {
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
+    | '/api/admin/studio-challenges/upload'
     | '/api/admin/vibe/backfill-thumbs'
     | '/api/albums/asset/$'
     | '/api/announcements/$id/vote'
@@ -11914,6 +12015,7 @@ export interface FileRouteTypes {
     | '/api/rideshare/rides/$id'
     | '/api/rmharks/$id/bookmark'
     | '/api/rmharks/$id/comment'
+    | '/api/rmharks/$id/embed'
     | '/api/rmharks/$id/history'
     | '/api/rmharks/$id/insights'
     | '/api/rmharks/$id/like'
@@ -12009,6 +12111,7 @@ export interface FileRouteTypes {
     | '/api/admin/qotd/'
     | '/api/admin/redemptions/'
     | '/api/admin/release-notes/'
+    | '/api/admin/studio-challenges/'
     | '/api/arcade/backlog/'
     | '/api/arcade/daily/'
     | '/api/arcade/patch-notes/'
@@ -12046,6 +12149,7 @@ export interface FileRouteTypes {
     | '/api/slice-it/setlists/'
     | '/api/spaces/$id/'
     | '/api/storefront/products/'
+    | '/api/studio/challenges/'
     | '/api/study/decks/'
     | '/api/translate/suggest/'
     | '/api/translate/vote/'
@@ -12124,6 +12228,9 @@ export interface FileRouteTypes {
     | '/api/slice-it/songs/artist/$key'
     | '/api/slice-it/songs/stream/$id'
     | '/api/storefront/products/$id/buy'
+    | '/api/studio/challenges/$id/entry'
+    | '/api/studio/challenges/$id/vote'
+    | '/api/studio/challenges/audio/$filename'
     | '/api/study/cards/$id/review'
     | '/api/study/decks/$id/clone'
     | '/api/study/decks/$id/review'
@@ -12149,6 +12256,8 @@ export interface FileRouteTypes {
     | '/api/rmhmusic/guess/$id/'
     | '/api/shop/loadouts/$id/'
     | '/api/storefront/products/$id/'
+    | '/api/studio/challenges/$id/'
+    | '/api/studio/challenges/audio/'
     | '/api/study/decks/$id/'
     | '/api/admin/albums/$id/slides/$slideId'
     | '/api/admin/reading/stories/$id/articles'
@@ -12379,6 +12488,7 @@ export interface FileRouteTypes {
     | '/admin/security-reports'
     | '/admin/slice-it'
     | '/admin/slice-it-content'
+    | '/admin/studio-challenges'
     | '/admin/user-builds'
     | '/admin/users'
     | '/blog/$slug'
@@ -12944,6 +13054,7 @@ export interface FileRouteTypes {
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
+    | '/api/admin/studio-challenges/upload'
     | '/api/admin/vibe/backfill-thumbs'
     | '/api/albums/asset/$'
     | '/api/announcements/$id/vote'
@@ -13086,6 +13197,7 @@ export interface FileRouteTypes {
     | '/api/rideshare/rides/$id'
     | '/api/rmharks/$id/bookmark'
     | '/api/rmharks/$id/comment'
+    | '/api/rmharks/$id/embed'
     | '/api/rmharks/$id/history'
     | '/api/rmharks/$id/insights'
     | '/api/rmharks/$id/like'
@@ -13181,6 +13293,7 @@ export interface FileRouteTypes {
     | '/api/admin/qotd'
     | '/api/admin/redemptions'
     | '/api/admin/release-notes'
+    | '/api/admin/studio-challenges'
     | '/api/arcade/backlog'
     | '/api/arcade/daily'
     | '/api/arcade/patch-notes'
@@ -13218,6 +13331,7 @@ export interface FileRouteTypes {
     | '/api/slice-it/setlists'
     | '/api/spaces/$id'
     | '/api/storefront/products'
+    | '/api/studio/challenges'
     | '/api/study/decks'
     | '/api/translate/suggest'
     | '/api/translate/vote'
@@ -13296,6 +13410,9 @@ export interface FileRouteTypes {
     | '/api/slice-it/songs/artist/$key'
     | '/api/slice-it/songs/stream/$id'
     | '/api/storefront/products/$id/buy'
+    | '/api/studio/challenges/$id/entry'
+    | '/api/studio/challenges/$id/vote'
+    | '/api/studio/challenges/audio/$filename'
     | '/api/study/cards/$id/review'
     | '/api/study/decks/$id/clone'
     | '/api/study/decks/$id/review'
@@ -13321,6 +13438,8 @@ export interface FileRouteTypes {
     | '/api/rmhmusic/guess/$id'
     | '/api/shop/loadouts/$id'
     | '/api/storefront/products/$id'
+    | '/api/studio/challenges/$id'
+    | '/api/studio/challenges/audio'
     | '/api/study/decks/$id'
     | '/api/admin/albums/$id/slides/$slideId'
     | '/api/admin/reading/stories/$id/articles'
@@ -13578,6 +13697,7 @@ export interface FileRouteTypes {
     | '/_site/admin/security-reports'
     | '/_site/admin/slice-it'
     | '/_site/admin/slice-it-content'
+    | '/_site/admin/studio-challenges'
     | '/_site/admin/user-builds'
     | '/_site/admin/users'
     | '/_site/blog/$slug'
@@ -14143,6 +14263,7 @@ export interface FileRouteTypes {
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
+    | '/api/admin/studio-challenges/upload'
     | '/api/admin/vibe/backfill-thumbs'
     | '/api/albums/asset/$'
     | '/api/announcements/$id/vote'
@@ -14285,6 +14406,7 @@ export interface FileRouteTypes {
     | '/api/rideshare/rides/$id'
     | '/api/rmharks/$id/bookmark'
     | '/api/rmharks/$id/comment'
+    | '/api/rmharks/$id/embed'
     | '/api/rmharks/$id/history'
     | '/api/rmharks/$id/insights'
     | '/api/rmharks/$id/like'
@@ -14380,6 +14502,7 @@ export interface FileRouteTypes {
     | '/api/admin/qotd/'
     | '/api/admin/redemptions/'
     | '/api/admin/release-notes/'
+    | '/api/admin/studio-challenges/'
     | '/api/arcade/backlog/'
     | '/api/arcade/daily/'
     | '/api/arcade/patch-notes/'
@@ -14417,6 +14540,7 @@ export interface FileRouteTypes {
     | '/api/slice-it/setlists/'
     | '/api/spaces/$id/'
     | '/api/storefront/products/'
+    | '/api/studio/challenges/'
     | '/api/study/decks/'
     | '/api/translate/suggest/'
     | '/api/translate/vote/'
@@ -14495,6 +14619,9 @@ export interface FileRouteTypes {
     | '/api/slice-it/songs/artist/$key'
     | '/api/slice-it/songs/stream/$id'
     | '/api/storefront/products/$id/buy'
+    | '/api/studio/challenges/$id/entry'
+    | '/api/studio/challenges/$id/vote'
+    | '/api/studio/challenges/audio/$filename'
     | '/api/study/cards/$id/review'
     | '/api/study/decks/$id/clone'
     | '/api/study/decks/$id/review'
@@ -14520,6 +14647,8 @@ export interface FileRouteTypes {
     | '/api/rmhmusic/guess/$id/'
     | '/api/shop/loadouts/$id/'
     | '/api/storefront/products/$id/'
+    | '/api/studio/challenges/$id/'
+    | '/api/studio/challenges/audio/'
     | '/api/study/decks/$id/'
     | '/api/admin/albums/$id/slides/$slideId'
     | '/api/admin/reading/stories/$id/articles'
@@ -15052,6 +15181,7 @@ export interface RootRouteChildren {
   ApiAdminReleaseNotesDraftRoute: typeof ApiAdminReleaseNotesDraftRoute
   ApiAdminRideshareApplicationsRoute: typeof ApiAdminRideshareApplicationsRoute
   ApiAdminRideshareRidesRoute: typeof ApiAdminRideshareRidesRoute
+  ApiAdminStudioChallengesUploadRoute: typeof ApiAdminStudioChallengesUploadRoute
   ApiAdminVibeBackfillThumbsRoute: typeof ApiAdminVibeBackfillThumbsRoute
   ApiAlbumsAssetSplatRoute: typeof ApiAlbumsAssetSplatRoute
   ApiArcadeDailyStartRoute: typeof ApiArcadeDailyStartRoute
@@ -15181,6 +15311,7 @@ export interface RootRouteChildren {
   ApiAdminQotdIndexRoute: typeof ApiAdminQotdIndexRoute
   ApiAdminRedemptionsIndexRoute: typeof ApiAdminRedemptionsIndexRoute
   ApiAdminReleaseNotesIndexRoute: typeof ApiAdminReleaseNotesIndexRoute
+  ApiAdminStudioChallengesIndexRoute: typeof ApiAdminStudioChallengesIndexRoute
   ApiArcadeBacklogIndexRoute: typeof ApiArcadeBacklogIndexRoute
   ApiArcadeDailyIndexRoute: typeof ApiArcadeDailyIndexRoute
   ApiArcadePatchNotesIndexRoute: typeof ApiArcadePatchNotesIndexRoute
@@ -15218,6 +15349,7 @@ export interface RootRouteChildren {
   ApiSliceItSetlistsIndexRoute: typeof ApiSliceItSetlistsIndexRoute
   ApiSpacesIdIndexRoute: typeof ApiSpacesIdIndexRoute
   ApiStorefrontProductsIndexRoute: typeof ApiStorefrontProductsIndexRoute
+  ApiStudioChallengesIndexRoute: typeof ApiStudioChallengesIndexRoute
   ApiStudyDecksIndexRoute: typeof ApiStudyDecksIndexRoute
   ApiTranslateSuggestIndexRoute: typeof ApiTranslateSuggestIndexRoute
   ApiTranslateVoteIndexRoute: typeof ApiTranslateVoteIndexRoute
@@ -15245,6 +15377,9 @@ export interface RootRouteChildren {
   ApiRmhmusicGuessIdAttemptRoute: typeof ApiRmhmusicGuessIdAttemptRoute
   ApiShopLoadoutsIdApplyRoute: typeof ApiShopLoadoutsIdApplyRoute
   ApiStorefrontProductsIdBuyRoute: typeof ApiStorefrontProductsIdBuyRoute
+  ApiStudioChallengesIdEntryRoute: typeof ApiStudioChallengesIdEntryRoute
+  ApiStudioChallengesIdVoteRoute: typeof ApiStudioChallengesIdVoteRoute
+  ApiStudioChallengesAudioFilenameRoute: typeof ApiStudioChallengesAudioFilenameRoute
   ApiStudyCardsIdReviewRoute: typeof ApiStudyCardsIdReviewRoute
   ApiStudyDecksIdCloneRoute: typeof ApiStudyDecksIdCloneRoute
   ApiStudyDecksIdReviewRoute: typeof ApiStudyDecksIdReviewRoute
@@ -15263,6 +15398,8 @@ export interface RootRouteChildren {
   ApiRmhmusicGuessIdIndexRoute: typeof ApiRmhmusicGuessIdIndexRoute
   ApiShopLoadoutsIdIndexRoute: typeof ApiShopLoadoutsIdIndexRoute
   ApiStorefrontProductsIdIndexRoute: typeof ApiStorefrontProductsIdIndexRoute
+  ApiStudioChallengesIdIndexRoute: typeof ApiStudioChallengesIdIndexRoute
+  ApiStudioChallengesAudioIndexRoute: typeof ApiStudioChallengesAudioIndexRoute
   ApiStudyDecksIdIndexRoute: typeof ApiStudyDecksIdIndexRoute
   ApiAdminReadingStoriesIdArticlesRoute: typeof ApiAdminReadingStoriesIdArticlesRoute
   ApiAdminReadingStoriesIdSuggestRoute: typeof ApiAdminReadingStoriesIdSuggestRoute
@@ -16934,6 +17071,13 @@ declare module '@tanstack/react-router' {
       path: '/slice-it-content'
       fullPath: '/admin/slice-it-content'
       preLoaderRoute: typeof SiteAdminSliceItContentRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
+    '/_site/admin/studio-challenges': {
+      id: '/_site/admin/studio-challenges'
+      path: '/studio-challenges'
+      fullPath: '/admin/studio-challenges'
+      preLoaderRoute: typeof SiteAdminStudioChallengesRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
     '/_site/admin/user-builds': {
@@ -20961,6 +21105,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminRideshareRidesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/studio-challenges/': {
+      id: '/api/admin/studio-challenges/'
+      path: '/api/admin/studio-challenges'
+      fullPath: '/api/admin/studio-challenges/'
+      preLoaderRoute: typeof ApiAdminStudioChallengesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/studio-challenges/upload': {
+      id: '/api/admin/studio-challenges/upload'
+      path: '/api/admin/studio-challenges/upload'
+      fullPath: '/api/admin/studio-challenges/upload'
+      preLoaderRoute: typeof ApiAdminStudioChallengesUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/vibe/backfill-thumbs': {
       id: '/api/admin/vibe/backfill-thumbs'
       path: '/api/admin/vibe/backfill-thumbs'
@@ -22158,6 +22316,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmharksIdCommentRouteImport
       parentRoute: typeof ApiRmharksIdRoute
     }
+    '/api/rmharks/$id/embed': {
+      id: '/api/rmharks/$id/embed'
+      path: '/embed'
+      fullPath: '/api/rmharks/$id/embed'
+      preLoaderRoute: typeof ApiRmharksIdEmbedRouteImport
+      parentRoute: typeof ApiRmharksIdRoute
+    }
     '/api/rmharks/$id/history': {
       id: '/api/rmharks/$id/history'
       path: '/history'
@@ -22541,6 +22706,13 @@ declare module '@tanstack/react-router' {
       path: '/api/storefront/products'
       fullPath: '/api/storefront/products/'
       preLoaderRoute: typeof ApiStorefrontProductsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/studio/challenges/': {
+      id: '/api/studio/challenges/'
+      path: '/api/studio/challenges'
+      fullPath: '/api/studio/challenges/'
+      preLoaderRoute: typeof ApiStudioChallengesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/study/decks/': {
@@ -23453,6 +23625,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiStorefrontProductsIdBuyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/studio/challenges/$id/': {
+      id: '/api/studio/challenges/$id/'
+      path: '/api/studio/challenges/$id'
+      fullPath: '/api/studio/challenges/$id/'
+      preLoaderRoute: typeof ApiStudioChallengesIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/studio/challenges/$id/entry': {
+      id: '/api/studio/challenges/$id/entry'
+      path: '/api/studio/challenges/$id/entry'
+      fullPath: '/api/studio/challenges/$id/entry'
+      preLoaderRoute: typeof ApiStudioChallengesIdEntryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/studio/challenges/$id/vote': {
+      id: '/api/studio/challenges/$id/vote'
+      path: '/api/studio/challenges/$id/vote'
+      fullPath: '/api/studio/challenges/$id/vote'
+      preLoaderRoute: typeof ApiStudioChallengesIdVoteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/studio/challenges/audio/': {
+      id: '/api/studio/challenges/audio/'
+      path: '/api/studio/challenges/audio'
+      fullPath: '/api/studio/challenges/audio/'
+      preLoaderRoute: typeof ApiStudioChallengesAudioIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/studio/challenges/audio/$filename': {
+      id: '/api/studio/challenges/audio/$filename'
+      path: '/api/studio/challenges/audio/$filename'
+      fullPath: '/api/studio/challenges/audio/$filename'
+      preLoaderRoute: typeof ApiStudioChallengesAudioFilenameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/study/cards/$id/review': {
       id: '/api/study/cards/$id/review'
       path: '/api/study/cards/$id/review'
@@ -23683,6 +23890,7 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminSecurityReportsRoute: typeof SiteAdminSecurityReportsRoute
   SiteAdminSliceItRoute: typeof SiteAdminSliceItRoute
   SiteAdminSliceItContentRoute: typeof SiteAdminSliceItContentRoute
+  SiteAdminStudioChallengesRoute: typeof SiteAdminStudioChallengesRoute
   SiteAdminUserBuildsRoute: typeof SiteAdminUserBuildsRoute
   SiteAdminUsersRoute: typeof SiteAdminUsersRoute
   SiteAdminIndexRoute: typeof SiteAdminIndexRoute
@@ -23717,6 +23925,7 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminSecurityReportsRoute: SiteAdminSecurityReportsRoute,
   SiteAdminSliceItRoute: SiteAdminSliceItRoute,
   SiteAdminSliceItContentRoute: SiteAdminSliceItContentRoute,
+  SiteAdminStudioChallengesRoute: SiteAdminStudioChallengesRoute,
   SiteAdminUserBuildsRoute: SiteAdminUserBuildsRoute,
   SiteAdminUsersRoute: SiteAdminUsersRoute,
   SiteAdminIndexRoute: SiteAdminIndexRoute,
@@ -24691,6 +24900,7 @@ const ApiRmharksIdCommentRouteWithChildren =
 interface ApiRmharksIdRouteChildren {
   ApiRmharksIdBookmarkRoute: typeof ApiRmharksIdBookmarkRoute
   ApiRmharksIdCommentRoute: typeof ApiRmharksIdCommentRouteWithChildren
+  ApiRmharksIdEmbedRoute: typeof ApiRmharksIdEmbedRoute
   ApiRmharksIdHistoryRoute: typeof ApiRmharksIdHistoryRoute
   ApiRmharksIdInsightsRoute: typeof ApiRmharksIdInsightsRoute
   ApiRmharksIdLikeRoute: typeof ApiRmharksIdLikeRoute
@@ -24710,6 +24920,7 @@ interface ApiRmharksIdRouteChildren {
 const ApiRmharksIdRouteChildren: ApiRmharksIdRouteChildren = {
   ApiRmharksIdBookmarkRoute: ApiRmharksIdBookmarkRoute,
   ApiRmharksIdCommentRoute: ApiRmharksIdCommentRouteWithChildren,
+  ApiRmharksIdEmbedRoute: ApiRmharksIdEmbedRoute,
   ApiRmharksIdHistoryRoute: ApiRmharksIdHistoryRoute,
   ApiRmharksIdInsightsRoute: ApiRmharksIdInsightsRoute,
   ApiRmharksIdLikeRoute: ApiRmharksIdLikeRoute,
@@ -26228,6 +26439,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminReleaseNotesDraftRoute: ApiAdminReleaseNotesDraftRoute,
   ApiAdminRideshareApplicationsRoute: ApiAdminRideshareApplicationsRoute,
   ApiAdminRideshareRidesRoute: ApiAdminRideshareRidesRoute,
+  ApiAdminStudioChallengesUploadRoute: ApiAdminStudioChallengesUploadRoute,
   ApiAdminVibeBackfillThumbsRoute: ApiAdminVibeBackfillThumbsRoute,
   ApiAlbumsAssetSplatRoute: ApiAlbumsAssetSplatRoute,
   ApiArcadeDailyStartRoute: ApiArcadeDailyStartRoute,
@@ -26359,6 +26571,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminQotdIndexRoute: ApiAdminQotdIndexRoute,
   ApiAdminRedemptionsIndexRoute: ApiAdminRedemptionsIndexRoute,
   ApiAdminReleaseNotesIndexRoute: ApiAdminReleaseNotesIndexRoute,
+  ApiAdminStudioChallengesIndexRoute: ApiAdminStudioChallengesIndexRoute,
   ApiArcadeBacklogIndexRoute: ApiArcadeBacklogIndexRoute,
   ApiArcadeDailyIndexRoute: ApiArcadeDailyIndexRoute,
   ApiArcadePatchNotesIndexRoute: ApiArcadePatchNotesIndexRoute,
@@ -26396,6 +26609,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSliceItSetlistsIndexRoute: ApiSliceItSetlistsIndexRoute,
   ApiSpacesIdIndexRoute: ApiSpacesIdIndexRoute,
   ApiStorefrontProductsIndexRoute: ApiStorefrontProductsIndexRoute,
+  ApiStudioChallengesIndexRoute: ApiStudioChallengesIndexRoute,
   ApiStudyDecksIndexRoute: ApiStudyDecksIndexRoute,
   ApiTranslateSuggestIndexRoute: ApiTranslateSuggestIndexRoute,
   ApiTranslateVoteIndexRoute: ApiTranslateVoteIndexRoute,
@@ -26424,6 +26638,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhmusicGuessIdAttemptRoute: ApiRmhmusicGuessIdAttemptRoute,
   ApiShopLoadoutsIdApplyRoute: ApiShopLoadoutsIdApplyRoute,
   ApiStorefrontProductsIdBuyRoute: ApiStorefrontProductsIdBuyRoute,
+  ApiStudioChallengesIdEntryRoute: ApiStudioChallengesIdEntryRoute,
+  ApiStudioChallengesIdVoteRoute: ApiStudioChallengesIdVoteRoute,
+  ApiStudioChallengesAudioFilenameRoute: ApiStudioChallengesAudioFilenameRoute,
   ApiStudyCardsIdReviewRoute: ApiStudyCardsIdReviewRoute,
   ApiStudyDecksIdCloneRoute: ApiStudyDecksIdCloneRoute,
   ApiStudyDecksIdReviewRoute: ApiStudyDecksIdReviewRoute,
@@ -26442,6 +26659,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhmusicGuessIdIndexRoute: ApiRmhmusicGuessIdIndexRoute,
   ApiShopLoadoutsIdIndexRoute: ApiShopLoadoutsIdIndexRoute,
   ApiStorefrontProductsIdIndexRoute: ApiStorefrontProductsIdIndexRoute,
+  ApiStudioChallengesIdIndexRoute: ApiStudioChallengesIdIndexRoute,
+  ApiStudioChallengesAudioIndexRoute: ApiStudioChallengesAudioIndexRoute,
   ApiStudyDecksIdIndexRoute: ApiStudyDecksIdIndexRoute,
   ApiAdminReadingStoriesIdArticlesRoute: ApiAdminReadingStoriesIdArticlesRoute,
   ApiAdminReadingStoriesIdSuggestRoute: ApiAdminReadingStoriesIdSuggestRoute,
