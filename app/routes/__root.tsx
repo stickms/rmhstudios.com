@@ -47,6 +47,7 @@ import {
 import { ACCENT_MAP } from '@/lib/appearance';
 import { GLASS_LEVEL_VARS, GLASS_LEVEL_KEY } from '@/lib/appearance/prefs';
 import { ACCESS_PREPAINT_SCRIPT } from '@/lib/access/prefs';
+import { DELIGHT_PREPAINT_SCRIPT } from '@/lib/delight/season';
 import { PERF_TIER_SCRIPT } from '@/lib/perf-tier';
 import { MEDIA_REVEAL_SCRIPT } from '@/lib/media-reveal';
 import { COOKIE_CONSENT_SCRIPT } from '@/lib/cookie-consent';
@@ -488,6 +489,7 @@ export const Route = createRootRoute({
           ...(accountSeed ? [{ children: accountSeed }] : []),
           { children: globalNotFound ? notFoundThemeScript : themeScript },
           { children: accessScript },
+          { children: DELIGHT_PREPAINT_SCRIPT },
           { children: localeScript },
         ],
       };
@@ -580,6 +582,7 @@ export const Route = createRootRoute({
         ...(accountSeed ? [{ children: accountSeed }] : []),
         { children: globalNotFound ? notFoundThemeScript : themeScript },
           { children: accessScript },
+          { children: DELIGHT_PREPAINT_SCRIPT },
         { children: localeScript },
         // Hides the server-rendered cookie notice before first paint for a
         // visitor who has already answered it — lib/cookie-consent.ts.

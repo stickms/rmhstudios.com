@@ -101,6 +101,9 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   { loc: '/predictions', changefreq: 'daily', priority: 0.5 },
   // The question of the day and its answers (posts-plus X4): new content daily.
   { loc: '/qotd', changefreq: 'daily', priority: 0.5 },
+  // P18 delight: public timeline of site eras, and the daily nominated photo.
+  { loc: '/museum', changefreq: 'monthly', priority: 0.4 },
+  { loc: '/photo-of-the-day', changefreq: 'daily', priority: 0.4 },
   // The generated daily front page (P03 A3): rebuilt once a day from one snapshot row.
   { loc: '/today', changefreq: 'daily', priority: 0.6 },
   // The Kaikai Debt Counter. `daily` rather than `weekly` despite being a joke:
@@ -277,6 +280,8 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/studio/themes': 'redirect', // → /settings/themes
   '/user-builds/manage': 'personal',
   // P09 calendar: private scheduling tools, each page carries a `noindex` meta tag.
+  '/hunt': 'noindex', // P18 Z2: per-member hunt progress
+  '/translate': 'noindex', // P18 Y4: signed-in contribution tool
   '/advent': 'noindex', // the viewer's own doors (P11 G2)
   '/marathon': 'noindex', // P21 F15: a member's own watch lists
   '/exchange': 'noindex', // gift and mixtape exchanges: the viewer's own list and the new-exchange form
@@ -305,6 +310,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/admin/blog': 'admin',
   '/admin/blog/new': 'admin',
   '/admin/economy': 'admin',
+  '/admin/delight': 'admin',
   '/admin/library': 'admin',
   '/admin/patch-notes': 'admin',
   '/admin/release-notes': 'admin',

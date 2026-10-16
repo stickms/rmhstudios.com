@@ -6464,3 +6464,63 @@ html[data-bedtime]:not(.style-high-contrast)::after {
     content: none;
   }
 }
+
+/* ── Delight: seasonal accents + April Fools mode (lib/delight/season.ts) ─────
+   `season-*` and `fools` are set on <html> before first paint. Nothing here
+   exists unless one of those classes does. The ribbon is a static 3px strip with
+   no layout cost; high-contrast and print skip it. */
+html[class*='season-']:not(.style-high-contrast) body::before {
+  content: '';
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 3px;
+  pointer-events: none;
+  z-index: 60;
+  background: var(--delight-ribbon);
+  background-size: 200% 100%;
+}
+html.season-valentines {
+  --delight-ribbon: linear-gradient(90deg, oklch(0.7 0.18 5), oklch(0.8 0.1 350), oklch(0.7 0.18 5));
+}
+html.season-earthday {
+  --delight-ribbon: linear-gradient(90deg, oklch(0.7 0.15 150), oklch(0.7 0.1 230), oklch(0.7 0.15 150));
+}
+html.season-halloween {
+  --delight-ribbon: linear-gradient(90deg, oklch(0.72 0.17 55), oklch(0.45 0.15 305), oklch(0.72 0.17 55));
+}
+html.season-winter {
+  --delight-ribbon: linear-gradient(90deg, oklch(0.7 0.17 25), oklch(0.75 0.15 150), oklch(0.85 0.05 240), oklch(0.7 0.17 25));
+}
+@media (prefers-reduced-motion: no-preference) {
+  html[class*='season-']:not(.reduce-motion) body::before {
+    animation: delight-ribbon 24s linear infinite;
+  }
+}
+@keyframes delight-ribbon {
+  to {
+    background-position: -200% 0;
+  }
+}
+@media print {
+  html[class*='season-'] body::before {
+    content: none;
+  }
+}
+
+/* April Fools: copy-free, purely cosmetic swaps. The member's off switch removes
+   the class (components/delight/DelightMount.tsx). */
+html.fools h1::after {
+  content: ' 🤡';
+  content: ' 🤡' / '';
+}
+html.fools h2::after {
+  content: ' 🎈';
+  content: ' 🎈' / '';
+}
+html.fools .radial-core__mark {
+  font-size: 0;
+}
+html.fools .radial-core__mark::after {
+  content: 'RMHaha';
+  font-size: clamp(1rem, 4vw, 1.3rem);
+}

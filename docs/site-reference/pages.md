@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 318 routes. 181 render inside the standard site shell (sidebar, nav, context rail); 137 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 323 routes. 186 render inside the standard site shell (sidebar, nav, context rail); 137 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -30,6 +30,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/blog` | Manage Blog Posts \| Admin | admin | `app/routes/_site/admin/blog/index.tsx` |
 | `/admin/blog/:slug/edit` | Edit Blog Post \| Admin | admin | `app/routes/_site/admin/blog/$slug/edit.tsx` |
 | `/admin/blog/new` | Create Blog Post \| Admin | admin | `app/routes/_site/admin/blog/new.tsx` |
+| `/admin/delight` | Delight tools \| Admin | admin | `app/routes/_site/admin/delight.tsx` |
 | `/admin/economy` | Coin Economy | admin | `app/routes/_site/admin/economy.tsx` |
 | `/admin/insights` | Insights | admin | `app/routes/_site/admin/insights.tsx` |
 | `/admin/library` | Library \| Admin | admin | `app/routes/_site/admin/library.tsx` |
@@ -93,6 +94,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/homes/saved` | redirects to `/homes/manage?tab=saved` | public | `app/routes/_site/homes/saved.tsx` |
 | `/homes/submit` | RMHHomes — Post a listing | public | `app/routes/_site/homes/submit.tsx` |
 | `/homes/watches` | redirects to `/homes/manage?tab=alerts` | public | `app/routes/_site/homes/watches.tsx` |
+| `/hunt` | — | public | `app/routes/_site/hunt.tsx` |
 | `/jams` | Game Jams | public | `app/routes/_site/jams.index.tsx` |
 | `/jams/:slug` | Game Jam | public | `app/routes/_site/jams.$slug.tsx` |
 | `/leaderboard` | redirects to `/games?sub=leaderboard` | public | `app/routes/_site/leaderboard.tsx` |
@@ -105,6 +107,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/messages` | Inbox | public | `app/routes/_site/messages/index.tsx` |
 | `/messages/:conversationId` | Conversation | public | `app/routes/_site/messages/$conversationId.tsx` |
 | `/moments/:id` | — | public | `app/routes/_site/moments.$id.tsx` |
+| `/museum` | Site museum | public | `app/routes/_site/museum.tsx` |
 | `/music-trivia` | Guess the Song | public | `app/routes/_site/music-trivia.tsx` |
 | `/news` | News | public | `app/routes/_site/news/index.tsx` |
 | `/news/stories/:slug` | — | public | `app/routes/_site/news/stories/$slug.tsx` |
@@ -114,6 +117,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/out` | — | public | `app/routes/_site/out.tsx` |
 | `/personas` | redirects to `/create/personas` | public | `app/routes/_site/personas/index.tsx` |
 | `/personas/:id` | Persona | public | `app/routes/_site/personas/$id.tsx` |
+| `/photo-of-the-day` | Photo of the day | public | `app/routes/_site/photo-of-the-day.tsx` |
 | `/playlists` | redirects to `/library?view=music` | public | `app/routes/_site/playlists.tsx` |
 | `/predictions` | Predictions | public | `app/routes/_site/predictions.tsx` |
 | `/pricing` | redirects to `/store?tab=membership` | public | `app/routes/_site/pricing.tsx` |
@@ -183,6 +187,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/today` | Today on RMH | public | `app/routes/_site/today.tsx` |
 | `/tournaments` | Tournaments | public | `app/routes/_site/tournaments.index.tsx` |
 | `/tournaments/:id` | — | public | `app/routes/_site/tournaments.$id.tsx` |
+| `/translate` | — | public | `app/routes/_site/translate.tsx` |
 | `/trash` | Trash | public | `app/routes/_site/trash.tsx` |
 | `/u/:userid` | User Not Found \| RMH | public | `app/routes/_site/u/$userid/index.tsx` |
 | `/u/:userid/post/:postid` | Post Not Found \| RMH | public | `app/routes/_site/u/$userid/post/$postid.tsx` |
