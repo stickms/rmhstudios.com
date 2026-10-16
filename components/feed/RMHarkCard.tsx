@@ -5,6 +5,7 @@ import { RMHarkActions } from'./RMHarkActions';
 import { useEffect, useRef, useState, useMemo } from'react';
 import { useNavigate, useRouter } from'@tanstack/react-router';
 import { Repeat2, BadgeCheck, ShieldCheck, Pin } from'lucide-react';
+import { AutomatedBadge } from'./AutomatedBadge';
 import { toast } from'sonner';
 import { RMHarkOverflowMenu } from'./RMHarkOverflowMenu';
 import { PostLockedCard } from'./PostLockedCard';
@@ -350,6 +351,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  {item.user.isVerified && (
  <BadgeCheck className="w-4 h-4 text-site-success shrink-0"/>
  )}
+ {item.user.isBot && <AutomatedBadge />}
  {item.user.isAdmin && (
  <span title="Admin"className="inline-flex items-center shrink-0">
  <ShieldCheck className="w-4 h-4 text-site-accent"/>

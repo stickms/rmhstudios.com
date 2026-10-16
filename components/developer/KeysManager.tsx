@@ -20,6 +20,7 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { SCOPES, DEFAULT_SCOPES, scopesByGroup } from '@/lib/api/scopes';
 import { DEVELOPER_DOCS_URL } from '@/lib/docs-site';
 import { KeyUsage } from '@/components/developer/KeyUsage';
+import { TestKeyCreator } from '@/components/developer/TestKeyCreator';
 
 interface ApiKey {
   id: string;
@@ -270,6 +271,13 @@ export function KeysManager() {
           </Button>
         </div>
       </div>
+
+      <TestKeyCreator
+        onCreated={(plaintext) => {
+          setNewKey(plaintext);
+          void load();
+        }}
+      />
 
       {keys.length === 0 ? (
         <p className="rounded-site-sm border border-dashed border-site-border py-6 text-center text-sm text-site-text-muted">

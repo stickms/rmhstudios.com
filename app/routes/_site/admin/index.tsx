@@ -2,6 +2,7 @@
  * Admin Dashboard Route
  */
 
+import { AdminReleaseNotesLink } from '@/components/devplatform/AdminReleaseNotesLink';
 import { AdminSafetyLink } from '@/components/safety/AdminSafetyLink';
 import { useTranslation } from "react-i18next";
 import { createFileRoute, Link } from '@tanstack/react-router';
@@ -145,6 +146,8 @@ function AdminDashboardPage() {
               {t("announcements-description", { defaultValue: "Publish pinned banners shown at the top of everyone's feed. Activate, deactivate, or remove them." })}
             </p>
           </Link>
+
+          <AdminReleaseNotesLink />
 
           <Link
             to="/admin/predictions"

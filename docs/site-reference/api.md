@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 794 files across 177 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 802 files across 180 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -46,7 +46,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/admin`
 
-58 routes.
+61 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -95,6 +95,9 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/admin/reading/stories/:id/suggest` | `GET` | `app/routes/api/admin/reading/stories/$id/suggest.ts` |
 | `/api/admin/redemptions` | `GET` | `app/routes/api/admin/redemptions/index.ts` |
 | `/api/admin/redemptions/:id` | `POST` | `app/routes/api/admin/redemptions/$id.ts` |
+| `/api/admin/release-notes` | `GET` `POST` | `app/routes/api/admin/release-notes/index.ts` |
+| `/api/admin/release-notes/:id` | `DELETE` `PATCH` | `app/routes/api/admin/release-notes/$id.ts` |
+| `/api/admin/release-notes/draft` | `POST` | `app/routes/api/admin/release-notes/draft.ts` |
 | `/api/admin/reports` | `GET` | `app/routes/api/admin/reports.ts` |
 | `/api/admin/reports/:id` | `POST` | `app/routes/api/admin/reports/$id.ts` |
 | `/api/admin/review-counts` | `GET` | `app/routes/api/admin/review-counts.ts` |
@@ -203,6 +206,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | ----- | ------- | ------ |
 | `/api/awards` | `GET` `POST` | `app/routes/api/awards/index.ts` |
 | `/api/awards/:id/hide` | `POST` | `app/routes/api/awards/$id.hide.ts` |
+
+## `/api/badge`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/badge/:userId/:gameId` | `GET` | `app/routes/api/badge/$userId/$gameId.ts` |
 
 ## `/api/battlepass`
 
@@ -700,7 +711,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/games`
 
-8 routes.
+9 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -709,6 +720,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/games/:id/review` | `DELETE` `PUT` | `app/routes/api/games/$id.review.ts` |
 | `/api/games/:id/reviews` | `GET` | `app/routes/api/games/$id.reviews.ts` |
 | `/api/games/:id/score` | `POST` | `app/routes/api/games/$id/score.ts` |
+| `/api/games/how-to-play` | `POST` | `app/routes/api/games/how-to-play.ts` |
 | `/api/games/synapse-storm/leaderboard` | `GET` | `app/routes/api/games/synapse-storm/leaderboard.ts` |
 | `/api/games/synapse-storm/save` | `GET` | `app/routes/api/games/synapse-storm/save.ts` |
 | `/api/games/synapse-storm/score` | `POST` | `app/routes/api/games/synapse-storm/score.ts` |
@@ -1328,6 +1340,15 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | ----- | ------- | ------ |
 | `/api/recap` | `GET` | `app/routes/api/recap.ts` |
 
+## `/api/recipes`
+
+2 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/recipes` | `GET` `POST` | `app/routes/api/recipes/index.ts` |
+| `/api/recipes/:id` | `DELETE` `PATCH` | `app/routes/api/recipes/$id.ts` |
+
 ## `/api/recommend`
 
 2 routes.
@@ -1345,6 +1366,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | ----- | ------- | ------ |
 | `/api/referrals/claim` | `POST` | `app/routes/api/referrals/claim.ts` |
 | `/api/referrals/me` | `GET` | `app/routes/api/referrals/me.ts` |
+
+## `/api/release-notes`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/release-notes` | `GET` | `app/routes/api/release-notes.ts` |
 
 ## `/api/reminders`
 

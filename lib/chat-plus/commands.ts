@@ -25,7 +25,7 @@ import {
 } from '@/lib/chat-plus/types';
 import { TIP_MAX, TIP_MIN } from '@/lib/economy/tip-schema';
 
-export type CommandName = 'roll' | 'flip' | 'poll' | 'remind' | 'tip' | 'gif' | 'checklist';
+export type CommandName = 'roll' | 'flip' | 'poll' | 'remind' | 'tip' | 'gif' | 'checklist' | 'gm';
 
 export interface ChatCommand {
   name: CommandName;
@@ -95,6 +95,14 @@ export const CHAT_COMMANDS: readonly ChatCommand[] = [
     label: 'Search for a GIF',
     where: 'client',
     kinds: ['dm', 'group'],
+  },
+  {
+    name: 'gm',
+    usage: '<what you do>',
+    labelKey: 'cmd-gm',
+    label: 'Ask the AI Game Master to narrate what happens next',
+    where: 'server',
+    kinds: ['group'],
   },
 ] as const;
 

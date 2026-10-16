@@ -78,6 +78,7 @@ import { Route as SiteAlexdebtcounterRouteImport } from './routes/_site/alexdebt
 import { Route as SiteAnalyticsRouteImport } from './routes/_site/analytics'
 import { Route as SiteArcadeRouteImport } from './routes/_site/arcade'
 import { Route as SiteBookmarksRouteImport } from './routes/_site/bookmarks'
+import { Route as SiteChangelogRouteImport } from './routes/_site/changelog'
 import { Route as SiteCommunitiesRouteImport } from './routes/_site/communities'
 import { Route as SiteCreateRouteRouteImport } from './routes/_site/create/route'
 import { Route as SiteCreatorStudioRouteImport } from './routes/_site/creator-studio'
@@ -136,6 +137,7 @@ import { Route as ApiProgressRouteImport } from './routes/api/progress'
 import { Route as ApiPulseRouteImport } from './routes/api/pulse'
 import { Route as ApiReadyRouteImport } from './routes/api/ready'
 import { Route as ApiRecapRouteImport } from './routes/api/recap'
+import { Route as ApiReleaseNotesRouteImport } from './routes/api/release-notes'
 import { Route as ApiRmharksRouteImport } from './routes/api/rmharks'
 import { Route as ApiRumRouteImport } from './routes/api/rum'
 import { Route as ApiSearchRouteImport } from './routes/api/search'
@@ -230,6 +232,7 @@ import { Route as SiteAdminPredictionsRouteImport } from './routes/_site/admin/p
 import { Route as SiteAdminQotdRouteImport } from './routes/_site/admin/qotd'
 import { Route as SiteAdminReadingRouteImport } from './routes/_site/admin/reading'
 import { Route as SiteAdminRedemptionsRouteImport } from './routes/_site/admin/redemptions'
+import { Route as SiteAdminReleaseNotesRouteImport } from './routes/_site/admin/release-notes'
 import { Route as SiteAdminReportsRouteImport } from './routes/_site/admin/reports'
 import { Route as SiteAdminRideshareRouteImport } from './routes/_site/admin/rideshare'
 import { Route as SiteAdminSafetyRouteImport } from './routes/_site/admin/safety'
@@ -461,6 +464,7 @@ import { Route as ApiGabrielsHornHouseRuleRouteImport } from './routes/api/gabri
 import { Route as ApiGabrielsHornLeaderboardRouteImport } from './routes/api/gabriels-horn/leaderboard'
 import { Route as ApiGameNightIndexRouteImport } from './routes/api/game-night/index'
 import { Route as ApiGameSavesGameIdRouteImport } from './routes/api/game-saves/$gameId'
+import { Route as ApiGamesHowToPlayRouteImport } from './routes/api/games/how-to-play'
 import { Route as ApiGifSearchRouteImport } from './routes/api/gif/search'
 import { Route as ApiGiftExchangesIndexRouteImport } from './routes/api/gift-exchanges/index'
 import { Route as ApiGlobesetRecordRouteImport } from './routes/api/globeset/record'
@@ -575,6 +579,8 @@ import { Route as ApiQotdTodayRouteImport } from './routes/api/qotd/today'
 import { Route as ApiRankedIndexRouteImport } from './routes/api/ranked/index'
 import { Route as ApiReadingDocRouteImport } from './routes/api/reading/doc'
 import { Route as ApiReadingGoalRouteImport } from './routes/api/reading/goal'
+import { Route as ApiRecipesIndexRouteImport } from './routes/api/recipes/index'
+import { Route as ApiRecipesIdRouteImport } from './routes/api/recipes/$id'
 import { Route as ApiRecommendIndexRouteImport } from './routes/api/recommend/index'
 import { Route as ApiRecommendFeedbackRouteImport } from './routes/api/recommend/feedback'
 import { Route as ApiReferralsClaimRouteImport } from './routes/api/referrals/claim'
@@ -781,6 +787,9 @@ import { Route as ApiAdminQotdIndexRouteImport } from './routes/api/admin/qotd/i
 import { Route as ApiAdminQotdIdRouteImport } from './routes/api/admin/qotd/$id'
 import { Route as ApiAdminRedemptionsIndexRouteImport } from './routes/api/admin/redemptions/index'
 import { Route as ApiAdminRedemptionsIdRouteImport } from './routes/api/admin/redemptions/$id'
+import { Route as ApiAdminReleaseNotesIndexRouteImport } from './routes/api/admin/release-notes/index'
+import { Route as ApiAdminReleaseNotesIdRouteImport } from './routes/api/admin/release-notes/$id'
+import { Route as ApiAdminReleaseNotesDraftRouteImport } from './routes/api/admin/release-notes/draft'
 import { Route as ApiAdminReportsIdRouteImport } from './routes/api/admin/reports/$id'
 import { Route as ApiAdminRideshareApplicationsRouteImport } from './routes/api/admin/rideshare/applications'
 import { Route as ApiAdminRideshareRidesRouteImport } from './routes/api/admin/rideshare/rides'
@@ -794,6 +803,7 @@ import { Route as ApiArcadePatchNotesIndexRouteImport } from './routes/api/arcad
 import { Route as ApiArcadeRivalIndexRouteImport } from './routes/api/arcade/rival/index'
 import { Route as ApiArcadeTipsIndexRouteImport } from './routes/api/arcade/tips/index'
 import { Route as ApiAwardsIdHideRouteImport } from './routes/api/awards/$id.hide'
+import { Route as ApiBadgeUserIdGameIdRouteImport } from './routes/api/badge/$userId/$gameId'
 import { Route as ApiBuildsCoverFileRouteImport } from './routes/api/builds/cover/$file'
 import { Route as ApiChatFoldersIdItemsRouteImport } from './routes/api/chat-folders/$id/items'
 import { Route as ApiCommentsCommentIdReactRouteImport } from './routes/api/comments/$commentId/react'
@@ -1492,6 +1502,11 @@ const SiteBookmarksRoute = SiteBookmarksRouteImport.update({
   path: '/bookmarks',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteChangelogRoute = SiteChangelogRouteImport.update({
+  id: '/changelog',
+  path: '/changelog',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteCommunitiesRoute = SiteCommunitiesRouteImport.update({
   id: '/communities',
   path: '/communities',
@@ -1780,6 +1795,11 @@ const ApiReadyRoute = ApiReadyRouteImport.update({
 const ApiRecapRoute = ApiRecapRouteImport.update({
   id: '/api/recap',
   path: '/api/recap',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiReleaseNotesRoute = ApiReleaseNotesRouteImport.update({
+  id: '/api/release-notes',
+  path: '/api/release-notes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRmharksRoute = ApiRmharksRouteImport.update({
@@ -2250,6 +2270,11 @@ const SiteAdminReadingRoute = SiteAdminReadingRouteImport.update({
 const SiteAdminRedemptionsRoute = SiteAdminRedemptionsRouteImport.update({
   id: '/redemptions',
   path: '/redemptions',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
+const SiteAdminReleaseNotesRoute = SiteAdminReleaseNotesRouteImport.update({
+  id: '/release-notes',
+  path: '/release-notes',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
 const SiteAdminReportsRoute = SiteAdminReportsRouteImport.update({
@@ -3421,6 +3446,11 @@ const ApiGameSavesGameIdRoute = ApiGameSavesGameIdRouteImport.update({
   path: '/api/game-saves/$gameId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGamesHowToPlayRoute = ApiGamesHowToPlayRouteImport.update({
+  id: '/api/games/how-to-play',
+  path: '/api/games/how-to-play',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGifSearchRoute = ApiGifSearchRouteImport.update({
   id: '/api/gif/search',
   path: '/api/gif/search',
@@ -4001,6 +4031,16 @@ const ApiReadingDocRoute = ApiReadingDocRouteImport.update({
 const ApiReadingGoalRoute = ApiReadingGoalRouteImport.update({
   id: '/api/reading/goal',
   path: '/api/reading/goal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRecipesIndexRoute = ApiRecipesIndexRouteImport.update({
+  id: '/api/recipes/',
+  path: '/api/recipes/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRecipesIdRoute = ApiRecipesIdRouteImport.update({
+  id: '/api/recipes/$id',
+  path: '/api/recipes/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRecommendIndexRoute = ApiRecommendIndexRouteImport.update({
@@ -5053,6 +5093,23 @@ const ApiAdminRedemptionsIdRoute = ApiAdminRedemptionsIdRouteImport.update({
   path: '/api/admin/redemptions/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminReleaseNotesIndexRoute =
+  ApiAdminReleaseNotesIndexRouteImport.update({
+    id: '/api/admin/release-notes/',
+    path: '/api/admin/release-notes/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminReleaseNotesIdRoute = ApiAdminReleaseNotesIdRouteImport.update({
+  id: '/api/admin/release-notes/$id',
+  path: '/api/admin/release-notes/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminReleaseNotesDraftRoute =
+  ApiAdminReleaseNotesDraftRouteImport.update({
+    id: '/api/admin/release-notes/draft',
+    path: '/api/admin/release-notes/draft',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminReportsIdRoute = ApiAdminReportsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -5119,6 +5176,11 @@ const ApiArcadeTipsIndexRoute = ApiArcadeTipsIndexRouteImport.update({
 const ApiAwardsIdHideRoute = ApiAwardsIdHideRouteImport.update({
   id: '/api/awards/$id/hide',
   path: '/api/awards/$id/hide',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBadgeUserIdGameIdRoute = ApiBadgeUserIdGameIdRouteImport.update({
+  id: '/api/badge/$userId/$gameId',
+  path: '/api/badge/$userId/$gameId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiBuildsCoverFileRoute = ApiBuildsCoverFileRouteImport.update({
@@ -7085,6 +7147,7 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof SiteAnalyticsRoute
   '/arcade': typeof SiteArcadeRoute
   '/bookmarks': typeof SiteBookmarksRoute
+  '/changelog': typeof SiteChangelogRoute
   '/communities': typeof SiteCommunitiesRoute
   '/creator-studio': typeof SiteCreatorStudioRoute
   '/daily-mutator': typeof SiteDailyMutatorRoute
@@ -7140,6 +7203,7 @@ export interface FileRoutesByFullPath {
   '/api/pulse': typeof ApiPulseRoute
   '/api/ready': typeof ApiReadyRoute
   '/api/recap': typeof ApiRecapRoute
+  '/api/release-notes': typeof ApiReleaseNotesRoute
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
   '/api/rum': typeof ApiRumRoute
   '/api/search': typeof ApiSearchRouteWithChildren
@@ -7234,6 +7298,7 @@ export interface FileRoutesByFullPath {
   '/admin/qotd': typeof SiteAdminQotdRoute
   '/admin/reading': typeof SiteAdminReadingRoute
   '/admin/redemptions': typeof SiteAdminRedemptionsRoute
+  '/admin/release-notes': typeof SiteAdminReleaseNotesRoute
   '/admin/reports': typeof SiteAdminReportsRoute
   '/admin/rideshare': typeof SiteAdminRideshareRoute
   '/admin/safety': typeof SiteAdminSafetyRoute
@@ -7409,6 +7474,7 @@ export interface FileRoutesByFullPath {
   '/api/gabriels-horn/house-rule': typeof ApiGabrielsHornHouseRuleRoute
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
+  '/api/games/how-to-play': typeof ApiGamesHowToPlayRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/globeset/record': typeof ApiGlobesetRecordRoute
   '/api/guides/$id': typeof ApiGuidesIdRouteWithChildren
@@ -7503,6 +7569,7 @@ export interface FileRoutesByFullPath {
   '/api/qotd/today': typeof ApiQotdTodayRoute
   '/api/reading/doc': typeof ApiReadingDocRoute
   '/api/reading/goal': typeof ApiReadingGoalRoute
+  '/api/recipes/$id': typeof ApiRecipesIdRoute
   '/api/recommend/feedback': typeof ApiRecommendFeedbackRoute
   '/api/referrals/claim': typeof ApiReferralsClaimRoute
   '/api/referrals/me': typeof ApiReferralsMeRoute
@@ -7723,6 +7790,7 @@ export interface FileRoutesByFullPath {
   '/api/predictions/': typeof ApiPredictionsIndexRoute
   '/api/profile-links/': typeof ApiProfileLinksIndexRoute
   '/api/ranked/': typeof ApiRankedIndexRoute
+  '/api/recipes/': typeof ApiRecipesIndexRoute
   '/api/recommend/': typeof ApiRecommendIndexRoute
   '/api/reminders/': typeof ApiRemindersIndexRoute
   '/api/replays/': typeof ApiReplaysIndexRoute
@@ -7778,6 +7846,8 @@ export interface FileRoutesByFullPath {
   '/api/admin/library/storage-health': typeof ApiAdminLibraryStorageHealthRoute
   '/api/admin/qotd/$id': typeof ApiAdminQotdIdRoute
   '/api/admin/redemptions/$id': typeof ApiAdminRedemptionsIdRoute
+  '/api/admin/release-notes/$id': typeof ApiAdminReleaseNotesIdRoute
+  '/api/admin/release-notes/draft': typeof ApiAdminReleaseNotesDraftRoute
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
@@ -7786,6 +7856,7 @@ export interface FileRoutesByFullPath {
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/arcade/daily/start': typeof ApiArcadeDailyStartRoute
   '/api/awards/$id/hide': typeof ApiAwardsIdHideRoute
+  '/api/badge/$userId/$gameId': typeof ApiBadgeUserIdGameIdRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/chat-folders/$id/items': typeof ApiChatFoldersIdItemsRoute
   '/api/comments/$commentId/react': typeof ApiCommentsCommentIdReactRoute
@@ -8011,6 +8082,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/predictions/': typeof ApiAdminPredictionsIndexRoute
   '/api/admin/qotd/': typeof ApiAdminQotdIndexRoute
   '/api/admin/redemptions/': typeof ApiAdminRedemptionsIndexRoute
+  '/api/admin/release-notes/': typeof ApiAdminReleaseNotesIndexRoute
   '/api/arcade/backlog/': typeof ApiArcadeBacklogIndexRoute
   '/api/arcade/daily/': typeof ApiArcadeDailyIndexRoute
   '/api/arcade/patch-notes/': typeof ApiArcadePatchNotesIndexRoute
@@ -8199,6 +8271,7 @@ export interface FileRoutesByTo {
   '/analytics': typeof SiteAnalyticsRoute
   '/arcade': typeof SiteArcadeRoute
   '/bookmarks': typeof SiteBookmarksRoute
+  '/changelog': typeof SiteChangelogRoute
   '/communities': typeof SiteCommunitiesRoute
   '/creator-studio': typeof SiteCreatorStudioRoute
   '/daily-mutator': typeof SiteDailyMutatorRoute
@@ -8251,6 +8324,7 @@ export interface FileRoutesByTo {
   '/api/pulse': typeof ApiPulseRoute
   '/api/ready': typeof ApiReadyRoute
   '/api/recap': typeof ApiRecapRoute
+  '/api/release-notes': typeof ApiReleaseNotesRoute
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
   '/api/rum': typeof ApiRumRoute
   '/api/search': typeof ApiSearchRouteWithChildren
@@ -8345,6 +8419,7 @@ export interface FileRoutesByTo {
   '/admin/qotd': typeof SiteAdminQotdRoute
   '/admin/reading': typeof SiteAdminReadingRoute
   '/admin/redemptions': typeof SiteAdminRedemptionsRoute
+  '/admin/release-notes': typeof SiteAdminReleaseNotesRoute
   '/admin/reports': typeof SiteAdminReportsRoute
   '/admin/rideshare': typeof SiteAdminRideshareRoute
   '/admin/safety': typeof SiteAdminSafetyRoute
@@ -8520,6 +8595,7 @@ export interface FileRoutesByTo {
   '/api/gabriels-horn/house-rule': typeof ApiGabrielsHornHouseRuleRoute
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
+  '/api/games/how-to-play': typeof ApiGamesHowToPlayRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/globeset/record': typeof ApiGlobesetRecordRoute
   '/api/guides/$id': typeof ApiGuidesIdRouteWithChildren
@@ -8614,6 +8690,7 @@ export interface FileRoutesByTo {
   '/api/qotd/today': typeof ApiQotdTodayRoute
   '/api/reading/doc': typeof ApiReadingDocRoute
   '/api/reading/goal': typeof ApiReadingGoalRoute
+  '/api/recipes/$id': typeof ApiRecipesIdRoute
   '/api/recommend/feedback': typeof ApiRecommendFeedbackRoute
   '/api/referrals/claim': typeof ApiReferralsClaimRoute
   '/api/referrals/me': typeof ApiReferralsMeRoute
@@ -8834,6 +8911,7 @@ export interface FileRoutesByTo {
   '/api/predictions': typeof ApiPredictionsIndexRoute
   '/api/profile-links': typeof ApiProfileLinksIndexRoute
   '/api/ranked': typeof ApiRankedIndexRoute
+  '/api/recipes': typeof ApiRecipesIndexRoute
   '/api/recommend': typeof ApiRecommendIndexRoute
   '/api/reminders': typeof ApiRemindersIndexRoute
   '/api/replays': typeof ApiReplaysIndexRoute
@@ -8889,6 +8967,8 @@ export interface FileRoutesByTo {
   '/api/admin/library/storage-health': typeof ApiAdminLibraryStorageHealthRoute
   '/api/admin/qotd/$id': typeof ApiAdminQotdIdRoute
   '/api/admin/redemptions/$id': typeof ApiAdminRedemptionsIdRoute
+  '/api/admin/release-notes/$id': typeof ApiAdminReleaseNotesIdRoute
+  '/api/admin/release-notes/draft': typeof ApiAdminReleaseNotesDraftRoute
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
@@ -8897,6 +8977,7 @@ export interface FileRoutesByTo {
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/arcade/daily/start': typeof ApiArcadeDailyStartRoute
   '/api/awards/$id/hide': typeof ApiAwardsIdHideRoute
+  '/api/badge/$userId/$gameId': typeof ApiBadgeUserIdGameIdRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/chat-folders/$id/items': typeof ApiChatFoldersIdItemsRoute
   '/api/comments/$commentId/react': typeof ApiCommentsCommentIdReactRoute
@@ -9122,6 +9203,7 @@ export interface FileRoutesByTo {
   '/api/admin/predictions': typeof ApiAdminPredictionsIndexRoute
   '/api/admin/qotd': typeof ApiAdminQotdIndexRoute
   '/api/admin/redemptions': typeof ApiAdminRedemptionsIndexRoute
+  '/api/admin/release-notes': typeof ApiAdminReleaseNotesIndexRoute
   '/api/arcade/backlog': typeof ApiArcadeBacklogIndexRoute
   '/api/arcade/daily': typeof ApiArcadeDailyIndexRoute
   '/api/arcade/patch-notes': typeof ApiArcadePatchNotesIndexRoute
@@ -9334,6 +9416,7 @@ export interface FileRoutesById {
   '/_site/analytics': typeof SiteAnalyticsRoute
   '/_site/arcade': typeof SiteArcadeRoute
   '/_site/bookmarks': typeof SiteBookmarksRoute
+  '/_site/changelog': typeof SiteChangelogRoute
   '/_site/communities': typeof SiteCommunitiesRoute
   '/_site/creator-studio': typeof SiteCreatorStudioRoute
   '/_site/daily-mutator': typeof SiteDailyMutatorRoute
@@ -9389,6 +9472,7 @@ export interface FileRoutesById {
   '/api/pulse': typeof ApiPulseRoute
   '/api/ready': typeof ApiReadyRoute
   '/api/recap': typeof ApiRecapRoute
+  '/api/release-notes': typeof ApiReleaseNotesRoute
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
   '/api/rum': typeof ApiRumRoute
   '/api/search': typeof ApiSearchRouteWithChildren
@@ -9484,6 +9568,7 @@ export interface FileRoutesById {
   '/_site/admin/qotd': typeof SiteAdminQotdRoute
   '/_site/admin/reading': typeof SiteAdminReadingRoute
   '/_site/admin/redemptions': typeof SiteAdminRedemptionsRoute
+  '/_site/admin/release-notes': typeof SiteAdminReleaseNotesRoute
   '/_site/admin/reports': typeof SiteAdminReportsRoute
   '/_site/admin/rideshare': typeof SiteAdminRideshareRoute
   '/_site/admin/safety': typeof SiteAdminSafetyRoute
@@ -9659,6 +9744,7 @@ export interface FileRoutesById {
   '/api/gabriels-horn/house-rule': typeof ApiGabrielsHornHouseRuleRoute
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
+  '/api/games/how-to-play': typeof ApiGamesHowToPlayRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/globeset/record': typeof ApiGlobesetRecordRoute
   '/api/guides/$id': typeof ApiGuidesIdRouteWithChildren
@@ -9753,6 +9839,7 @@ export interface FileRoutesById {
   '/api/qotd/today': typeof ApiQotdTodayRoute
   '/api/reading/doc': typeof ApiReadingDocRoute
   '/api/reading/goal': typeof ApiReadingGoalRoute
+  '/api/recipes/$id': typeof ApiRecipesIdRoute
   '/api/recommend/feedback': typeof ApiRecommendFeedbackRoute
   '/api/referrals/claim': typeof ApiReferralsClaimRoute
   '/api/referrals/me': typeof ApiReferralsMeRoute
@@ -9973,6 +10060,7 @@ export interface FileRoutesById {
   '/api/predictions/': typeof ApiPredictionsIndexRoute
   '/api/profile-links/': typeof ApiProfileLinksIndexRoute
   '/api/ranked/': typeof ApiRankedIndexRoute
+  '/api/recipes/': typeof ApiRecipesIndexRoute
   '/api/recommend/': typeof ApiRecommendIndexRoute
   '/api/reminders/': typeof ApiRemindersIndexRoute
   '/api/replays/': typeof ApiReplaysIndexRoute
@@ -10028,6 +10116,8 @@ export interface FileRoutesById {
   '/api/admin/library/storage-health': typeof ApiAdminLibraryStorageHealthRoute
   '/api/admin/qotd/$id': typeof ApiAdminQotdIdRoute
   '/api/admin/redemptions/$id': typeof ApiAdminRedemptionsIdRoute
+  '/api/admin/release-notes/$id': typeof ApiAdminReleaseNotesIdRoute
+  '/api/admin/release-notes/draft': typeof ApiAdminReleaseNotesDraftRoute
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
@@ -10036,6 +10126,7 @@ export interface FileRoutesById {
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/arcade/daily/start': typeof ApiArcadeDailyStartRoute
   '/api/awards/$id/hide': typeof ApiAwardsIdHideRoute
+  '/api/badge/$userId/$gameId': typeof ApiBadgeUserIdGameIdRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/chat-folders/$id/items': typeof ApiChatFoldersIdItemsRoute
   '/api/comments/$commentId/react': typeof ApiCommentsCommentIdReactRoute
@@ -10261,6 +10352,7 @@ export interface FileRoutesById {
   '/api/admin/predictions/': typeof ApiAdminPredictionsIndexRoute
   '/api/admin/qotd/': typeof ApiAdminQotdIndexRoute
   '/api/admin/redemptions/': typeof ApiAdminRedemptionsIndexRoute
+  '/api/admin/release-notes/': typeof ApiAdminReleaseNotesIndexRoute
   '/api/arcade/backlog/': typeof ApiArcadeBacklogIndexRoute
   '/api/arcade/daily/': typeof ApiArcadeDailyIndexRoute
   '/api/arcade/patch-notes/': typeof ApiArcadePatchNotesIndexRoute
@@ -10474,6 +10566,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/arcade'
     | '/bookmarks'
+    | '/changelog'
     | '/communities'
     | '/creator-studio'
     | '/daily-mutator'
@@ -10529,6 +10622,7 @@ export interface FileRouteTypes {
     | '/api/pulse'
     | '/api/ready'
     | '/api/recap'
+    | '/api/release-notes'
     | '/api/rmharks'
     | '/api/rum'
     | '/api/search'
@@ -10623,6 +10717,7 @@ export interface FileRouteTypes {
     | '/admin/qotd'
     | '/admin/reading'
     | '/admin/redemptions'
+    | '/admin/release-notes'
     | '/admin/reports'
     | '/admin/rideshare'
     | '/admin/safety'
@@ -10798,6 +10893,7 @@ export interface FileRouteTypes {
     | '/api/gabriels-horn/house-rule'
     | '/api/gabriels-horn/leaderboard'
     | '/api/game-saves/$gameId'
+    | '/api/games/how-to-play'
     | '/api/gif/search'
     | '/api/globeset/record'
     | '/api/guides/$id'
@@ -10892,6 +10988,7 @@ export interface FileRouteTypes {
     | '/api/qotd/today'
     | '/api/reading/doc'
     | '/api/reading/goal'
+    | '/api/recipes/$id'
     | '/api/recommend/feedback'
     | '/api/referrals/claim'
     | '/api/referrals/me'
@@ -11112,6 +11209,7 @@ export interface FileRouteTypes {
     | '/api/predictions/'
     | '/api/profile-links/'
     | '/api/ranked/'
+    | '/api/recipes/'
     | '/api/recommend/'
     | '/api/reminders/'
     | '/api/replays/'
@@ -11167,6 +11265,8 @@ export interface FileRouteTypes {
     | '/api/admin/library/storage-health'
     | '/api/admin/qotd/$id'
     | '/api/admin/redemptions/$id'
+    | '/api/admin/release-notes/$id'
+    | '/api/admin/release-notes/draft'
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
@@ -11175,6 +11275,7 @@ export interface FileRouteTypes {
     | '/api/announcements/$id/vote'
     | '/api/arcade/daily/start'
     | '/api/awards/$id/hide'
+    | '/api/badge/$userId/$gameId'
     | '/api/builds/cover/$file'
     | '/api/chat-folders/$id/items'
     | '/api/comments/$commentId/react'
@@ -11400,6 +11501,7 @@ export interface FileRouteTypes {
     | '/api/admin/predictions/'
     | '/api/admin/qotd/'
     | '/api/admin/redemptions/'
+    | '/api/admin/release-notes/'
     | '/api/arcade/backlog/'
     | '/api/arcade/daily/'
     | '/api/arcade/patch-notes/'
@@ -11588,6 +11690,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/arcade'
     | '/bookmarks'
+    | '/changelog'
     | '/communities'
     | '/creator-studio'
     | '/daily-mutator'
@@ -11640,6 +11743,7 @@ export interface FileRouteTypes {
     | '/api/pulse'
     | '/api/ready'
     | '/api/recap'
+    | '/api/release-notes'
     | '/api/rmharks'
     | '/api/rum'
     | '/api/search'
@@ -11734,6 +11838,7 @@ export interface FileRouteTypes {
     | '/admin/qotd'
     | '/admin/reading'
     | '/admin/redemptions'
+    | '/admin/release-notes'
     | '/admin/reports'
     | '/admin/rideshare'
     | '/admin/safety'
@@ -11909,6 +12014,7 @@ export interface FileRouteTypes {
     | '/api/gabriels-horn/house-rule'
     | '/api/gabriels-horn/leaderboard'
     | '/api/game-saves/$gameId'
+    | '/api/games/how-to-play'
     | '/api/gif/search'
     | '/api/globeset/record'
     | '/api/guides/$id'
@@ -12003,6 +12109,7 @@ export interface FileRouteTypes {
     | '/api/qotd/today'
     | '/api/reading/doc'
     | '/api/reading/goal'
+    | '/api/recipes/$id'
     | '/api/recommend/feedback'
     | '/api/referrals/claim'
     | '/api/referrals/me'
@@ -12223,6 +12330,7 @@ export interface FileRouteTypes {
     | '/api/predictions'
     | '/api/profile-links'
     | '/api/ranked'
+    | '/api/recipes'
     | '/api/recommend'
     | '/api/reminders'
     | '/api/replays'
@@ -12278,6 +12386,8 @@ export interface FileRouteTypes {
     | '/api/admin/library/storage-health'
     | '/api/admin/qotd/$id'
     | '/api/admin/redemptions/$id'
+    | '/api/admin/release-notes/$id'
+    | '/api/admin/release-notes/draft'
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
@@ -12286,6 +12396,7 @@ export interface FileRouteTypes {
     | '/api/announcements/$id/vote'
     | '/api/arcade/daily/start'
     | '/api/awards/$id/hide'
+    | '/api/badge/$userId/$gameId'
     | '/api/builds/cover/$file'
     | '/api/chat-folders/$id/items'
     | '/api/comments/$commentId/react'
@@ -12511,6 +12622,7 @@ export interface FileRouteTypes {
     | '/api/admin/predictions'
     | '/api/admin/qotd'
     | '/api/admin/redemptions'
+    | '/api/admin/release-notes'
     | '/api/arcade/backlog'
     | '/api/arcade/daily'
     | '/api/arcade/patch-notes'
@@ -12722,6 +12834,7 @@ export interface FileRouteTypes {
     | '/_site/analytics'
     | '/_site/arcade'
     | '/_site/bookmarks'
+    | '/_site/changelog'
     | '/_site/communities'
     | '/_site/creator-studio'
     | '/_site/daily-mutator'
@@ -12777,6 +12890,7 @@ export interface FileRouteTypes {
     | '/api/pulse'
     | '/api/ready'
     | '/api/recap'
+    | '/api/release-notes'
     | '/api/rmharks'
     | '/api/rum'
     | '/api/search'
@@ -12872,6 +12986,7 @@ export interface FileRouteTypes {
     | '/_site/admin/qotd'
     | '/_site/admin/reading'
     | '/_site/admin/redemptions'
+    | '/_site/admin/release-notes'
     | '/_site/admin/reports'
     | '/_site/admin/rideshare'
     | '/_site/admin/safety'
@@ -13047,6 +13162,7 @@ export interface FileRouteTypes {
     | '/api/gabriels-horn/house-rule'
     | '/api/gabriels-horn/leaderboard'
     | '/api/game-saves/$gameId'
+    | '/api/games/how-to-play'
     | '/api/gif/search'
     | '/api/globeset/record'
     | '/api/guides/$id'
@@ -13141,6 +13257,7 @@ export interface FileRouteTypes {
     | '/api/qotd/today'
     | '/api/reading/doc'
     | '/api/reading/goal'
+    | '/api/recipes/$id'
     | '/api/recommend/feedback'
     | '/api/referrals/claim'
     | '/api/referrals/me'
@@ -13361,6 +13478,7 @@ export interface FileRouteTypes {
     | '/api/predictions/'
     | '/api/profile-links/'
     | '/api/ranked/'
+    | '/api/recipes/'
     | '/api/recommend/'
     | '/api/reminders/'
     | '/api/replays/'
@@ -13416,6 +13534,8 @@ export interface FileRouteTypes {
     | '/api/admin/library/storage-health'
     | '/api/admin/qotd/$id'
     | '/api/admin/redemptions/$id'
+    | '/api/admin/release-notes/$id'
+    | '/api/admin/release-notes/draft'
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
@@ -13424,6 +13544,7 @@ export interface FileRouteTypes {
     | '/api/announcements/$id/vote'
     | '/api/arcade/daily/start'
     | '/api/awards/$id/hide'
+    | '/api/badge/$userId/$gameId'
     | '/api/builds/cover/$file'
     | '/api/chat-folders/$id/items'
     | '/api/comments/$commentId/react'
@@ -13649,6 +13770,7 @@ export interface FileRouteTypes {
     | '/api/admin/predictions/'
     | '/api/admin/qotd/'
     | '/api/admin/redemptions/'
+    | '/api/admin/release-notes/'
     | '/api/arcade/backlog/'
     | '/api/arcade/daily/'
     | '/api/arcade/patch-notes/'
@@ -13869,6 +13991,7 @@ export interface RootRouteChildren {
   ApiPulseRoute: typeof ApiPulseRoute
   ApiReadyRoute: typeof ApiReadyRoute
   ApiRecapRoute: typeof ApiRecapRoute
+  ApiReleaseNotesRoute: typeof ApiReleaseNotesRoute
   ApiRmharksRoute: typeof ApiRmharksRouteWithChildren
   ApiRumRoute: typeof ApiRumRoute
   ApiSearchRoute: typeof ApiSearchRouteWithChildren
@@ -13993,6 +14116,7 @@ export interface RootRouteChildren {
   ApiGabrielsHornHouseRuleRoute: typeof ApiGabrielsHornHouseRuleRoute
   ApiGabrielsHornLeaderboardRoute: typeof ApiGabrielsHornLeaderboardRoute
   ApiGameSavesGameIdRoute: typeof ApiGameSavesGameIdRoute
+  ApiGamesHowToPlayRoute: typeof ApiGamesHowToPlayRoute
   ApiGifSearchRoute: typeof ApiGifSearchRoute
   ApiGlobesetRecordRoute: typeof ApiGlobesetRecordRoute
   ApiGuidesIdRoute: typeof ApiGuidesIdRouteWithChildren
@@ -14070,6 +14194,7 @@ export interface RootRouteChildren {
   ApiQotdTodayRoute: typeof ApiQotdTodayRoute
   ApiReadingDocRoute: typeof ApiReadingDocRoute
   ApiReadingGoalRoute: typeof ApiReadingGoalRoute
+  ApiRecipesIdRoute: typeof ApiRecipesIdRoute
   ApiRecommendFeedbackRoute: typeof ApiRecommendFeedbackRoute
   ApiReferralsClaimRoute: typeof ApiReferralsClaimRoute
   ApiReferralsMeRoute: typeof ApiReferralsMeRoute
@@ -14233,6 +14358,7 @@ export interface RootRouteChildren {
   ApiPredictionsIndexRoute: typeof ApiPredictionsIndexRoute
   ApiProfileLinksIndexRoute: typeof ApiProfileLinksIndexRoute
   ApiRankedIndexRoute: typeof ApiRankedIndexRoute
+  ApiRecipesIndexRoute: typeof ApiRecipesIndexRoute
   ApiRecommendIndexRoute: typeof ApiRecommendIndexRoute
   ApiRemindersIndexRoute: typeof ApiRemindersIndexRoute
   ApiReplaysIndexRoute: typeof ApiReplaysIndexRoute
@@ -14276,12 +14402,15 @@ export interface RootRouteChildren {
   ApiAdminLibraryStorageHealthRoute: typeof ApiAdminLibraryStorageHealthRoute
   ApiAdminQotdIdRoute: typeof ApiAdminQotdIdRoute
   ApiAdminRedemptionsIdRoute: typeof ApiAdminRedemptionsIdRoute
+  ApiAdminReleaseNotesIdRoute: typeof ApiAdminReleaseNotesIdRoute
+  ApiAdminReleaseNotesDraftRoute: typeof ApiAdminReleaseNotesDraftRoute
   ApiAdminRideshareApplicationsRoute: typeof ApiAdminRideshareApplicationsRoute
   ApiAdminRideshareRidesRoute: typeof ApiAdminRideshareRidesRoute
   ApiAdminVibeBackfillThumbsRoute: typeof ApiAdminVibeBackfillThumbsRoute
   ApiAlbumsAssetSplatRoute: typeof ApiAlbumsAssetSplatRoute
   ApiArcadeDailyStartRoute: typeof ApiArcadeDailyStartRoute
   ApiAwardsIdHideRoute: typeof ApiAwardsIdHideRoute
+  ApiBadgeUserIdGameIdRoute: typeof ApiBadgeUserIdGameIdRoute
   ApiBuildsCoverFileRoute: typeof ApiBuildsCoverFileRoute
   ApiCommentsCommentIdReactRoute: typeof ApiCommentsCommentIdReactRoute
   ApiCommentsCommentIdTranslateRoute: typeof ApiCommentsCommentIdTranslateRoute
@@ -14401,6 +14530,7 @@ export interface RootRouteChildren {
   ApiAdminPredictionsIndexRoute: typeof ApiAdminPredictionsIndexRoute
   ApiAdminQotdIndexRoute: typeof ApiAdminQotdIndexRoute
   ApiAdminRedemptionsIndexRoute: typeof ApiAdminRedemptionsIndexRoute
+  ApiAdminReleaseNotesIndexRoute: typeof ApiAdminReleaseNotesIndexRoute
   ApiArcadeBacklogIndexRoute: typeof ApiArcadeBacklogIndexRoute
   ApiArcadeDailyIndexRoute: typeof ApiArcadeDailyIndexRoute
   ApiArcadePatchNotesIndexRoute: typeof ApiArcadePatchNotesIndexRoute
@@ -14962,6 +15092,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteBookmarksRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/changelog': {
+      id: '/_site/changelog'
+      path: '/changelog'
+      fullPath: '/changelog'
+      preLoaderRoute: typeof SiteChangelogRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/communities': {
       id: '/_site/communities'
       path: '/communities'
@@ -15366,6 +15503,13 @@ declare module '@tanstack/react-router' {
       path: '/api/recap'
       fullPath: '/api/recap'
       preLoaderRoute: typeof ApiRecapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/release-notes': {
+      id: '/api/release-notes'
+      path: '/api/release-notes'
+      fullPath: '/api/release-notes'
+      preLoaderRoute: typeof ApiReleaseNotesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/rmharks': {
@@ -16024,6 +16168,13 @@ declare module '@tanstack/react-router' {
       path: '/redemptions'
       fullPath: '/admin/redemptions'
       preLoaderRoute: typeof SiteAdminRedemptionsRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
+    '/_site/admin/release-notes': {
+      id: '/_site/admin/release-notes'
+      path: '/release-notes'
+      fullPath: '/admin/release-notes'
+      preLoaderRoute: typeof SiteAdminReleaseNotesRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
     '/_site/admin/reports': {
@@ -17643,6 +17794,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGameSavesGameIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/games/how-to-play': {
+      id: '/api/games/how-to-play'
+      path: '/api/games/how-to-play'
+      fullPath: '/api/games/how-to-play'
+      preLoaderRoute: typeof ApiGamesHowToPlayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/gif/search': {
       id: '/api/gif/search'
       path: '/api/gif/search'
@@ -18439,6 +18597,20 @@ declare module '@tanstack/react-router' {
       path: '/api/reading/goal'
       fullPath: '/api/reading/goal'
       preLoaderRoute: typeof ApiReadingGoalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/recipes/': {
+      id: '/api/recipes/'
+      path: '/api/recipes'
+      fullPath: '/api/recipes/'
+      preLoaderRoute: typeof ApiRecipesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/recipes/$id': {
+      id: '/api/recipes/$id'
+      path: '/api/recipes/$id'
+      fullPath: '/api/recipes/$id'
+      preLoaderRoute: typeof ApiRecipesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/recommend/': {
@@ -19883,6 +20055,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminRedemptionsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/release-notes/': {
+      id: '/api/admin/release-notes/'
+      path: '/api/admin/release-notes'
+      fullPath: '/api/admin/release-notes/'
+      preLoaderRoute: typeof ApiAdminReleaseNotesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/release-notes/$id': {
+      id: '/api/admin/release-notes/$id'
+      path: '/api/admin/release-notes/$id'
+      fullPath: '/api/admin/release-notes/$id'
+      preLoaderRoute: typeof ApiAdminReleaseNotesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/release-notes/draft': {
+      id: '/api/admin/release-notes/draft'
+      path: '/api/admin/release-notes/draft'
+      fullPath: '/api/admin/release-notes/draft'
+      preLoaderRoute: typeof ApiAdminReleaseNotesDraftRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/reports/$id': {
       id: '/api/admin/reports/$id'
       path: '/$id'
@@ -19972,6 +20165,13 @@ declare module '@tanstack/react-router' {
       path: '/api/awards/$id/hide'
       fullPath: '/api/awards/$id/hide'
       preLoaderRoute: typeof ApiAwardsIdHideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/badge/$userId/$gameId': {
+      id: '/api/badge/$userId/$gameId'
+      path: '/api/badge/$userId/$gameId'
+      fullPath: '/api/badge/$userId/$gameId'
+      preLoaderRoute: typeof ApiBadgeUserIdGameIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/builds/cover/$file': {
@@ -22449,6 +22649,7 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminQotdRoute: typeof SiteAdminQotdRoute
   SiteAdminReadingRoute: typeof SiteAdminReadingRoute
   SiteAdminRedemptionsRoute: typeof SiteAdminRedemptionsRoute
+  SiteAdminReleaseNotesRoute: typeof SiteAdminReleaseNotesRoute
   SiteAdminReportsRoute: typeof SiteAdminReportsRoute
   SiteAdminRideshareRoute: typeof SiteAdminRideshareRoute
   SiteAdminSafetyRoute: typeof SiteAdminSafetyRoute
@@ -22480,6 +22681,7 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminQotdRoute: SiteAdminQotdRoute,
   SiteAdminReadingRoute: SiteAdminReadingRoute,
   SiteAdminRedemptionsRoute: SiteAdminRedemptionsRoute,
+  SiteAdminReleaseNotesRoute: SiteAdminReleaseNotesRoute,
   SiteAdminReportsRoute: SiteAdminReportsRoute,
   SiteAdminRideshareRoute: SiteAdminRideshareRoute,
   SiteAdminSafetyRoute: SiteAdminSafetyRoute,
@@ -22594,6 +22796,7 @@ interface SiteRouteChildren {
   SiteAnalyticsRoute: typeof SiteAnalyticsRoute
   SiteArcadeRoute: typeof SiteArcadeRoute
   SiteBookmarksRoute: typeof SiteBookmarksRoute
+  SiteChangelogRoute: typeof SiteChangelogRoute
   SiteCommunitiesRoute: typeof SiteCommunitiesRoute
   SiteCreatorStudioRoute: typeof SiteCreatorStudioRoute
   SiteDailyMutatorRoute: typeof SiteDailyMutatorRoute
@@ -22734,6 +22937,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteAnalyticsRoute: SiteAnalyticsRoute,
   SiteArcadeRoute: SiteArcadeRoute,
   SiteBookmarksRoute: SiteBookmarksRoute,
+  SiteChangelogRoute: SiteChangelogRoute,
   SiteCommunitiesRoute: SiteCommunitiesRoute,
   SiteCreatorStudioRoute: SiteCreatorStudioRoute,
   SiteDailyMutatorRoute: SiteDailyMutatorRoute,
@@ -24520,6 +24724,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPulseRoute: ApiPulseRoute,
   ApiReadyRoute: ApiReadyRoute,
   ApiRecapRoute: ApiRecapRoute,
+  ApiReleaseNotesRoute: ApiReleaseNotesRoute,
   ApiRmharksRoute: ApiRmharksRouteWithChildren,
   ApiRumRoute: ApiRumRoute,
   ApiSearchRoute: ApiSearchRouteWithChildren,
@@ -24644,6 +24849,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGabrielsHornHouseRuleRoute: ApiGabrielsHornHouseRuleRoute,
   ApiGabrielsHornLeaderboardRoute: ApiGabrielsHornLeaderboardRoute,
   ApiGameSavesGameIdRoute: ApiGameSavesGameIdRoute,
+  ApiGamesHowToPlayRoute: ApiGamesHowToPlayRoute,
   ApiGifSearchRoute: ApiGifSearchRoute,
   ApiGlobesetRecordRoute: ApiGlobesetRecordRoute,
   ApiGuidesIdRoute: ApiGuidesIdRouteWithChildren,
@@ -24721,6 +24927,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiQotdTodayRoute: ApiQotdTodayRoute,
   ApiReadingDocRoute: ApiReadingDocRoute,
   ApiReadingGoalRoute: ApiReadingGoalRoute,
+  ApiRecipesIdRoute: ApiRecipesIdRoute,
   ApiRecommendFeedbackRoute: ApiRecommendFeedbackRoute,
   ApiReferralsClaimRoute: ApiReferralsClaimRoute,
   ApiReferralsMeRoute: ApiReferralsMeRoute,
@@ -24884,6 +25091,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPredictionsIndexRoute: ApiPredictionsIndexRoute,
   ApiProfileLinksIndexRoute: ApiProfileLinksIndexRoute,
   ApiRankedIndexRoute: ApiRankedIndexRoute,
+  ApiRecipesIndexRoute: ApiRecipesIndexRoute,
   ApiRecommendIndexRoute: ApiRecommendIndexRoute,
   ApiRemindersIndexRoute: ApiRemindersIndexRoute,
   ApiReplaysIndexRoute: ApiReplaysIndexRoute,
@@ -24927,12 +25135,15 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminLibraryStorageHealthRoute: ApiAdminLibraryStorageHealthRoute,
   ApiAdminQotdIdRoute: ApiAdminQotdIdRoute,
   ApiAdminRedemptionsIdRoute: ApiAdminRedemptionsIdRoute,
+  ApiAdminReleaseNotesIdRoute: ApiAdminReleaseNotesIdRoute,
+  ApiAdminReleaseNotesDraftRoute: ApiAdminReleaseNotesDraftRoute,
   ApiAdminRideshareApplicationsRoute: ApiAdminRideshareApplicationsRoute,
   ApiAdminRideshareRidesRoute: ApiAdminRideshareRidesRoute,
   ApiAdminVibeBackfillThumbsRoute: ApiAdminVibeBackfillThumbsRoute,
   ApiAlbumsAssetSplatRoute: ApiAlbumsAssetSplatRoute,
   ApiArcadeDailyStartRoute: ApiArcadeDailyStartRoute,
   ApiAwardsIdHideRoute: ApiAwardsIdHideRoute,
+  ApiBadgeUserIdGameIdRoute: ApiBadgeUserIdGameIdRoute,
   ApiBuildsCoverFileRoute: ApiBuildsCoverFileRoute,
   ApiCommentsCommentIdReactRoute: ApiCommentsCommentIdReactRoute,
   ApiCommentsCommentIdTranslateRoute: ApiCommentsCommentIdTranslateRoute,
@@ -25054,6 +25265,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminPredictionsIndexRoute: ApiAdminPredictionsIndexRoute,
   ApiAdminQotdIndexRoute: ApiAdminQotdIndexRoute,
   ApiAdminRedemptionsIndexRoute: ApiAdminRedemptionsIndexRoute,
+  ApiAdminReleaseNotesIndexRoute: ApiAdminReleaseNotesIndexRoute,
   ApiArcadeBacklogIndexRoute: ApiArcadeBacklogIndexRoute,
   ApiArcadeDailyIndexRoute: ApiArcadeDailyIndexRoute,
   ApiArcadePatchNotesIndexRoute: ApiArcadePatchNotesIndexRoute,

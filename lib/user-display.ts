@@ -42,6 +42,7 @@ export const userDisplaySelect = {
   handle: true,
   isVerified: true,
   isAdmin: true,
+  isBot: true,
   profile: {
     select: {
       displayName: true,
@@ -91,6 +92,7 @@ type UserWithProfile = {
   image: string | null;
   isVerified?: boolean;
   isAdmin?: boolean;
+  isBot?: boolean;
   profile?: { displayName?: string | null; customImage?: string | null } | null;
 };
 
@@ -117,6 +119,8 @@ export interface ResolvedUser {
   handle: string | null;
   isVerified: boolean;
   isAdmin: boolean;
+  /** Flagged automated account (D4). */
+  isBot?: boolean;
   cosmetics?: EquippedCosmetics;
 }
 
@@ -137,6 +141,7 @@ export function resolveUser(user: UserWithProfileAndId): ResolvedUser {
     handle: user.handle ?? null,
     isVerified: user.isVerified ?? false,
     isAdmin: user.isAdmin ?? false,
+    isBot: user.isBot ?? false,
     ...(cosmetics && Object.keys(cosmetics).length > 0 ? { cosmetics } : {}),
   };
 }

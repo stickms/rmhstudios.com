@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 314 routes. 177 render inside the standard site shell (sidebar, nav, context rail); 137 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 316 routes. 179 render inside the standard site shell (sidebar, nav, context rail); 137 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -40,6 +40,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/qotd` | Question of the Day \| Admin | admin | `app/routes/_site/admin/qotd.tsx` |
 | `/admin/reading` | Reading tools \| Admin | admin | `app/routes/_site/admin/reading.tsx` |
 | `/admin/redemptions` | Redemption Queue | admin | `app/routes/_site/admin/redemptions.tsx` |
+| `/admin/release-notes` | Release notes \| Admin | admin | `app/routes/_site/admin/release-notes.tsx` |
 | `/admin/reports` | Moderation Queue | admin | `app/routes/_site/admin/reports.tsx` |
 | `/admin/rideshare` | Rideshare Applications | admin | `app/routes/_site/admin/rideshare.tsx` |
 | `/admin/safety` | Safety Tools | admin | `app/routes/_site/admin/safety.tsx` |
@@ -59,6 +60,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/builds` | redirects to `/games` | public | `app/routes/_site/builds/index.tsx` |
 | `/builds/:slug` | Build Not Found | public | `app/routes/_site/builds/$slug.tsx` |
 | `/c/:slug` | — | public | `app/routes/_site/c.$slug.tsx` |
+| `/changelog` | Changelog | public | `app/routes/_site/changelog.tsx` |
 | `/communities` | Communities | public | `app/routes/_site/communities.tsx` |
 | `/create` | Create | public | `app/routes/_site/create/index.tsx` |
 | `/create/builds` | User Builds | public | `app/routes/_site/create/builds.tsx` |

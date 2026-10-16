@@ -17,3 +17,4 @@ data/
 
 # Deploy manifests / vendored config
 deploy/
+packages/sdk/
