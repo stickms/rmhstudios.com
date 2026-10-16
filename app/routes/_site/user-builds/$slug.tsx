@@ -10,6 +10,7 @@ import { createFileRoute, notFound } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { createServerFn } from '@tanstack/react-start';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { WatchControl } from '@/components/discovery/WatchControl';
 import { BuildDetail } from '@/components/user-builds';
 import { blurImagePreload } from '@/components/ui/BlurImage';
 import { getPublicBuildDetail } from '@/lib/user-builds-detail.server';
@@ -82,6 +83,9 @@ function BuildPage() {
     >
       <div className="px-4 pt-4 pb-12">
         <BuildDetail build={build} />
+        <div className="mt-6 flex justify-end">
+          <WatchControl kind="build" targetId={build.id} />
+        </div>
       </div>
     </PageLayout>
   );

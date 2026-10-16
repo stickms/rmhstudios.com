@@ -17,7 +17,7 @@
  *    GPU and JS memory and renders nearest-first so fast flipping never pauses.
  */
 
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import {
@@ -44,6 +44,8 @@ import { useBookState, type Bookmark as BookmarkT, type Note } from '@/lib/libra
 import { usePopPresence } from '@/hooks/usePopPresence';
 import { BookCanvas } from './BookCanvas';
 import { ReaderDetails } from './ReaderDetails';
+import { ReaderReadingTools, type ReaderTextSource } from '@/components/reading/ReaderReadingTools';
+import { pdfItemsToText, type PdfTextItem } from '@/lib/reading/pdf-text';
 import '@/components/library/library.css';
 import '@/components/rmhvibe/vibe.css';
 
@@ -61,6 +63,7 @@ type PdfDoc = {
 export type Chapter = { title: string; page: number; depth: number };
 type PdfPage = {
   getViewport: (opts: { scale: number }) => { width: number; height: number };
+  getTextContent: () => Promise<{ items: PdfTextItem[] }>;
   render: (opts: { canvasContext: CanvasRenderingContext2D; viewport: unknown; canvas?: HTMLCanvasElement }) => {
     promise: Promise<void>;
   };
@@ -176,6 +179,7 @@ export function BookReader({ book }: { book: LibraryBook }) {
 
   // The page-raster pipeline. Created once the PDF is open; owns all page textures.
   const storeRef = useRef<PageStore | null>(null);
+  const pdfRef = useRef<PdfDoc | null>(null);
   const [, force] = useReducer((n: number) => n + 1, 0);
   const curPageRef = useRef(1);
 
@@ -228,6 +232,7 @@ export function BookReader({ book }: { book: LibraryBook }) {
         });
         const pdf = (await task.promise) as unknown as PdfDoc;
         if (cancelled) return; // cleanup destroys the task
+        pdfRef.current = pdf;
         const first = await pdf.getPage(1);
         const vp = first.getViewport({ scale: 1 });
         if (cancelled) return;
@@ -254,6 +259,7 @@ export function BookReader({ book }: { book: LibraryBook }) {
       cancelled = true;
       storeRef.current?.destroy();
       storeRef.current = null;
+      pdfRef.current = null;
       void task?.destroy().catch(() => {});
     };
   }, [book.url, hasToc]);
@@ -294,6 +300,25 @@ export function BookReader({ book }: { book: LibraryBook }) {
       marks.setPage(page);
     },
     [marks],
+  );
+
+  // P13 reading (L1): the selectable-text view reads text a page at a time via pdf.js.
+  const textSource = useMemo<ReaderTextSource | null>(
+    () =>
+      status === 'ready' && numPages > 0
+        ? {
+            unitLabel: 'page',
+            count: numPages,
+            current: curPage,
+            unitKey: (n) => `p${n}`,
+            load: async (n) => {
+              const page = await pdfRef.current?.getPage(n);
+              if (!page) return '';
+              return pdfItemsToText((await page.getTextContent()).items);
+            },
+          }
+        : null,
+    [status, numPages, curPage],
   );
 
   const bookmarked = marks.state.bookmarks.some((b) => b.page === curPage);
@@ -388,6 +413,15 @@ export function BookReader({ book }: { book: LibraryBook }) {
               onRemoveNote={marks.removeNote}
             />
           )}
+          <ReaderReadingTools
+            book={book}
+            source={textSource}
+            numPages={numPages}
+            curPage={curPage}
+            ready={status === 'ready'}
+            stageEl={readerRef.current?.querySelector<HTMLElement>('.lib-reader__stage') ?? null}
+            Dropdown={Dropdown}
+          />
           {status === 'ready' && <QualityMenu quality={quality} onChange={setQuality} />}
           <button type="button" className="vibe-toolbar__icon lib-reader__desktop-action" onClick={(event) => openDetails(event.currentTarget)} aria-label={t('book-details', { defaultValue: 'Book details' })} title={t('book-details', { defaultValue: 'Book details' })}>
             <Info size={16} />

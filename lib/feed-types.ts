@@ -25,6 +25,7 @@ export interface FeedItemUser {
   image?: string | null;
   isVerified?: boolean;
   isAdmin?: boolean;
+  isBot?: boolean;
   /** Equipped shop cosmetics (name color, avatar frame, badge, …). */
   cosmetics?: UserCosmetics;
 }
@@ -93,6 +94,18 @@ export interface FeedItem {
   isSensitive?: boolean;
   /** Who can reply to this post. */
   replyControl?: "EVERYONE" | "FOLLOWING" | "MENTIONED";
+  /** Take meter (X6): readers vote agree/disagree. The split is NOT in the payload. */
+  isTake?: boolean;
+  /** X3 — at least one context note is visible; the notes load lazily. */
+  hasNote?: boolean;
+  /** F14 — the post carries a runnable code snippet; it loads only on click. */
+  hasEmbed?: boolean;
+  /** N1: community post flair (community feeds only). */
+  communityFlair?: { id: string; name: string; color: string };
+  /** posts-plus X5: id of the series this post is a part of (details load lazily). */
+  seriesId?: string;
+  /** posts-plus X8: ISO time after which the post disappears (author-chosen TTL). */
+  expiresAt?: string;
 
   /** Grouped-by-emoji reaction summary (server-side via `groupReactions`). */
   reactions?: ReactionSummary[];

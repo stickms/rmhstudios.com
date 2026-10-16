@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { safeFetch, SsrfError } from '@/lib/ssrf-guard.server';
+import { getArchivedCard, noteLinkSeen } from '@/lib/posts-plus/link-rescue.server';
 /**
  * /api/oembed — Resolve media URLs and extract OpenGraph metadata.
  *
@@ -103,6 +104,23 @@ export const Route = createFileRoute('/api/oembed')({
           // ── OpenGraph metadata extraction ─────────────────────────────
           if (type === 'og') {
             try {
+              // X11: a link that has been dead for two checks is served from its
+              // Wayback snapshot, without touching the (gone) original.
+              const archived = await getArchivedCard(url);
+              if (archived) {
+                return Response.json(
+                  {
+                    title: archived.title,
+                    description: archived.description,
+                    image: null,
+                    siteName: archived.siteName || new URL(url).hostname,
+                    archivedUrl: archived.archiveUrl,
+                    archivedAt: archived.archiveTimestamp,
+                  },
+                  { headers: { 'Cache-Control': 'public, max-age=3600, stale-while-revalidate=3600' } },
+                );
+              }
+
               const res = await safeFetch(url, {
                 headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RmhBot/1.0)' },
                 timeoutMs: 5000,
@@ -130,6 +148,9 @@ export const Route = createFileRoute('/api/oembed')({
               if (!title && !description) {
                 return Response.json({ error: 'No metadata found' }, { status: 404 });
               }
+
+              // X11: remember this card's link so the weekly check can watch it.
+              void noteLinkSeen(url, { title, description, siteName });
 
               return Response.json(
                 {

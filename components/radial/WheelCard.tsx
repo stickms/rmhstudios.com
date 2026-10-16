@@ -8,6 +8,8 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import { RMHarkActions } from '@/components/feed/RMHarkActions';
 import { RmharkMedia } from './RmharkMedia';
+import { TakeMeterLazy } from '@/components/feed/TakeMeterLazy';
+import { PostPlusBadges } from '@/components/posts-plus/PostPlusBadges';
 import { relativeTimeShort } from '@/lib/utils';
 import type { FeedItem } from '@/lib/feed-types';
 
@@ -140,6 +142,13 @@ export const WheelCard = memo(function WheelCard({ item }: { item: FeedItem }) {
   // the 541-line card. `useSession` is one app-wide subscription and the
   // feed-store selector is a stable reference, so neither re-renders per tick;
   // the quote composer stays lazy and only mounts once someone opens it.
+  // X6 — the take meter's buttons can't sit inside the card's link, so like the
+  // toolbar it is the link's sibling. Only posts marked as takes mount it.
+  const take =
+    isRmhark && item.isTake && !item.locked && !item.pending ? (
+      <TakeMeterLazy postId={item.actualId ?? item.id} />
+    ) : null;
+
   const actions = isRmhark ? (
     <div className="rmhark__actions">
       <RMHarkActions item={item} />
@@ -170,6 +179,14 @@ export const WheelCard = memo(function WheelCard({ item }: { item: FeedItem }) {
         <Link to={href} className="rmhark__link">
           {body}
         </Link>
+      )}
+      {take}
+      {isRmhark && !item.locked && !item.pending && (
+        <PostPlusBadges
+          postId={item.actualId ?? item.id}
+          seriesId={item.seriesId}
+          expiresAt={item.expiresAt}
+        />
       )}
       {actions}
     </article>

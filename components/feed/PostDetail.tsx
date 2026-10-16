@@ -5,6 +5,7 @@ import { useTranslation } from'react-i18next';
 import { ArrowLeft, MessageCircle } from'lucide-react';
 import { toast } from'sonner';
 import { Spinner } from'@/components/ui/spinner';
+import { useReconsider } from'@/components/safety/use-reconsider';
 import { Button } from'@/components/ui/button';
 import { RMHarkOverflowMenu } from'./RMHarkOverflowMenu';
 import { useLocaleStore } from'@/stores/localeStore';
@@ -14,6 +15,7 @@ import { useFreshUser, useUserDisplayStore } from'@/stores/userDisplayStore';
 import { useFeedStore } from'@/stores/feedStore';
 import { RMHarkActions } from'./RMHarkActions';
 import { CommentItem } from'./CommentItem';
+import { HiddenRepliesGroup } from'./HiddenReplies';
 import { AIGenerateButton } from'./AIGenerateButton';
 import { MentionTextarea } from'./MentionTextarea';
 import type { Comment } from'./CommentItem';
@@ -22,6 +24,10 @@ import { Link, useNavigate } from'@tanstack/react-router';
 import type { FeedItem } from'@/lib/feed-types';
 import { RMHarkContent, extractFirstUrl } from'./RMHarkContent';
 import { PollDisplay } from'./PollDisplay';
+import { TakeMeterLazy } from'./TakeMeterLazy';
+import { ContextNotesLazy } from '@/components/context-notes/ContextNotesLazy';
+import { RunnableEmbed } from '@/components/code-embed/RunnableEmbed';
+import { PostPlusBadges } from'@/components/posts-plus/PostPlusBadges';
 import { GifEmbed } from'./GifEmbed';
 import { PostImageGrid } from'./PostImageGrid';
 import { SensitiveMedia } from'./SensitiveMedia';
@@ -173,15 +179,19 @@ export function PostDetail({ postId }: PostDetailProps) {
  .finally(() => setLoadingComments(false));
  }, [postId]);
 
+ const reconsider = useReconsider();
  const handleSubmit = async () => {
  if (!commentContent.trim() || submitting) return;
  setSubmitting(true);
  try {
- const res = await fetch(`/api/rmharks/${postId}/comment`, {
+ const res = await reconsider((confirmReconsider) =>
+ fetch(`/api/rmharks/${postId}/comment`, {
  method:'POST',
  headers: {'Content-Type':'application/json'},
- body: JSON.stringify({ content: commentContent.trim() }),
- });
+ body: JSON.stringify({ content: commentContent.trim(), confirmReconsider }),
+ }),
+ );
+ if (!res) return;
  if (res.ok) {
  const comment = await res.json();
  setComments((prev) => [comment, ...prev]);
@@ -235,6 +245,17 @@ export function PostDetail({ postId }: PostDetailProps) {
  },
  [bumpFeedComment],
  );
+
+ // X2: flip a reply's hidden flag in place (it regroups under "Hidden replies").
+ const handleHiddenChange = useCallback((commentId: string, hidden: boolean) => {
+ const setDeep = (list: Comment[]): Comment[] =>
+ list.map((c) => ({
+ ...c,
+ ...(c.id === commentId ? { hidden } : {}),
+ ...(c.replies?.length ? { replies: setDeep(c.replies) } : {}),
+ }));
+ setComments((prev) => setDeep(prev));
+ }, []);
 
  const formatFullDate = (dateStr: string) => {
  const d = new Date(dateStr);
@@ -364,6 +385,32 @@ export function PostDetail({ postId }: PostDetailProps) {
  }
  />
  </div>
+ )}
+
+ {/* Take meter (X6) — only on posts the author marked as a take */}
+ {post.isTake && !post.locked && (
+ <div className="mb-3">
+ <TakeMeterLazy postId={postId} />
+ </div>
+ )}
+
+ {post.hasEmbed && !post.locked && <RunnableEmbed postId={postId} />}
+
+ {/* Context notes (X3) — a button until opened; open straight away when a note is visible */}
+ {!post.locked && (
+ <div className="mb-3">
+ <ContextNotesLazy postId={postId} hasNote={post.hasNote} />
+ </div>
+ )}
+
+ {/* Series part (X5) and auto-delete (X8) badges */}
+ {!post.locked && (
+ <PostPlusBadges
+ postId={postId}
+ seriesId={post.seriesId}
+ expiresAt={post.expiresAt}
+ className="mb-3"
+ />
  )}
 
  {/* Image / GIF — hidden behind a content warning when marked sensitive.
@@ -556,17 +603,20 @@ export function PostDetail({ postId }: PostDetailProps) {
  // owner's"double load animation"). `initial={false}`mounts the
  // replies already-settled — the page/morph is the single entrance;
  // reduced motion collapsed this anyway.
+ <>
  <motion.div
  className="divide-y divide-site-border"
  variants={staggerContainer(0.03)}
  initial={false}
  animate="animate"
  >
- {comments.map((comment, i) => {
+ {comments.filter((c) => !c.hidden).map((comment, i) => {
  const node = (
  <CommentItem
  comment={comment}
  postId={postId}
+ postAuthorId={post.user?.id}
+ onHiddenChange={handleHiddenChange}
  sessionUser={
  session?.user
  ? {
@@ -589,6 +639,31 @@ export function PostDetail({ postId }: PostDetailProps) {
  );
  })}
  </motion.div>
+ <HiddenRepliesGroup count={comments.filter((c) => c.hidden).length}>
+ {comments
+ .filter((c) => c.hidden)
+ .map((comment) => (
+ <CommentItem
+ key={comment.id}
+ comment={comment}
+ postId={postId}
+ postAuthorId={post.user?.id}
+ onHiddenChange={handleHiddenChange}
+ sessionUser={
+ session?.user
+ ? {
+ ...session.user,
+ image: resolvedUser?.image || session.user.image,
+ name: resolvedUser?.name || session.user.name,
+ }
+ : undefined
+ }
+ onReplyAdded={handleReplyAdded}
+ onCommentRemoved={handleCommentRemoved}
+ />
+ ))}
+ </HiddenRepliesGroup>
+ </>
  )}
  </div>
  )}

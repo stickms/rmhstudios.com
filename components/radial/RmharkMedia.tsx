@@ -6,6 +6,7 @@ import { EyeOff } from 'lucide-react';
 import { BlurImage } from '@/components/ui/BlurImage';
 import { GifEmbed } from '@/components/feed/GifEmbed';
 import { knownSize } from '@/lib/image-aspect';
+import { AltChip } from '@/components/feed/AltChip';
 
 /** Tiles rendered inline; anything past this is summarised as "+N". */
 const MAX_TILES = 4;
@@ -95,6 +96,7 @@ export const RmharkMedia = memo(function RmharkMedia({
                 className="absolute inset-0"
                 imgClassName="h-full w-full"
               />
+              <AltChip alt={imageAlts?.[i]} />
               {i === tiles.length - 1 && overflow > 0 && (
                 <span className="rmhark__media-more" aria-hidden>
                   +{overflow}

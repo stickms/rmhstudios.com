@@ -33,6 +33,7 @@ import { deduplicateReposts } from './dedupe';
 import type { ReactionSummary } from '../social/reactions';
 import { apiCache } from '../cache';
 import { cachedSWR } from '../cached.server';
+import { isExpired } from '../posts-plus/constants';
 
 export { deduplicateReposts };
 
@@ -327,6 +328,11 @@ function mapOwn(r: any, userId: string | null, displayMap: Map<string, ResolvedU
     imageAlts: isDeleted ? undefined : r.imageAlts,
     isSensitive: isDeleted ? false : (r.isSensitive ?? false),
     replyControl: r.replyControl ?? 'EVERYONE',
+    isTake: r.isTake || undefined,
+    hasNote: r.hasNote || undefined,
+    hasEmbed: r.hasEmbed || undefined,
+    seriesId: r.seriesId ?? undefined,
+    expiresAt: r.expiresAt?.toISOString(),
     reactions: [], // filled in by loadReactionSummaries after the query
     threadReplyCount: r.threadReplyCount ?? 0,
     deletedAt: r.deletedAt?.toISOString() || null,
@@ -364,6 +370,11 @@ function mapRepost(
     imageAlts: isDeleted ? undefined : r.imageAlts,
     isSensitive: isDeleted ? false : (r.isSensitive ?? false),
     replyControl: r.replyControl ?? 'EVERYONE',
+    isTake: r.isTake || undefined,
+    hasNote: r.hasNote || undefined,
+    hasEmbed: r.hasEmbed || undefined,
+    seriesId: r.seriesId ?? undefined,
+    expiresAt: r.expiresAt?.toISOString(),
     reactions: [], // filled in by loadReactionSummaries after the query
     deletedAt: r.deletedAt?.toISOString() || null,
     deletedByAdmin: r.deletedByAdmin,
@@ -821,6 +832,17 @@ async function assembleTimeline(params: GetTimelineParams): Promise<TimelineResu
 }
 
 export async function getTimeline(params: GetTimelineParams): Promise<TimelineResult> {
+  // posts-plus X8: a post past its TTL is hidden at read time - on cache hits
+  // too, since a cached first page can be minutes old - whether or not the sweep
+  // job has soft-deleted it yet.
+  const page = await getTimelineUnfiltered(params);
+  const nowMs = Date.now();
+  return page.items.some((i) => isExpired(i.expiresAt, nowMs))
+    ? { ...page, items: page.items.filter((i) => !isExpired(i.expiresAt, nowMs)) }
+    : page;
+}
+
+async function getTimelineUnfiltered(params: GetTimelineParams): Promise<TimelineResult> {
   // The signed-out For-You first page is identical for every visitor, so serve
   // it from a short stale-while-revalidate cache — landing/logged-out traffic
   // never runs full timeline assembly on the hot path. 30s staleness is

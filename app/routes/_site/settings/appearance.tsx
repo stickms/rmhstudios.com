@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { AppearancePanel } from '@/components/settings/AppearancePanel';
+import { AccessPrefsPanel } from '@/components/access/AccessPrefsPanel';
 import { GameAssistPanel } from '@/components/settings/GameAssistPanel';
 
 export const Route = createFileRoute('/_site/settings/appearance')({
@@ -27,6 +28,7 @@ function AppearanceSettingsPage() {
             usable" looks in one place, and the two halves of that answer —
             the chrome and the games — belong together. */}
         <GameAssistPanel />
+        <AccessPrefsPanel />
       </div>
     </PageLayout>
   );

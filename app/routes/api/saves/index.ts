@@ -16,6 +16,7 @@ export const Route = createFileRoute('/api/saves/')({
         const folderParam = url.searchParams.get('folder'); // id | 'default' | null (all)
         const typeParam = url.searchParams.get('type');
         const cursor = url.searchParams.get('cursor') ?? undefined;
+        const q = url.searchParams.get('q') ?? undefined; // X9: search the owner's notes
         const type =
           typeParam && (SAVE_ENTITY_TYPES as readonly string[]).includes(typeParam)
             ? (typeParam as SaveEntityType)
@@ -26,6 +27,7 @@ export const Route = createFileRoute('/api/saves/')({
             folderId: folderParam === 'default' ? 'default' : folderParam || undefined,
             type,
             cursor,
+            q,
           }),
           listFolders(session.user.id),
         ]);

@@ -16,6 +16,8 @@ export interface ServerRoom {
   seq: number;
   createdAt: number;
   lastActivityAt: number;
+  /** Community radio (T4): persistent, never GC'd, driven by the RadioManager. */
+  radio?: boolean;
 }
 
 export interface ServerMember {

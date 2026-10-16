@@ -46,6 +46,8 @@ import {
 } from '@/stores/themeStore';
 import { ACCENT_MAP } from '@/lib/appearance';
 import { GLASS_LEVEL_VARS, GLASS_LEVEL_KEY } from '@/lib/appearance/prefs';
+import { ACCESS_PREPAINT_SCRIPT } from '@/lib/access/prefs';
+import { DELIGHT_PREPAINT_SCRIPT } from '@/lib/delight/season';
 import { PERF_TIER_SCRIPT } from '@/lib/perf-tier';
 import { MEDIA_REVEAL_SCRIPT } from '@/lib/media-reveal';
 import { COOKIE_CONSENT_SCRIPT } from '@/lib/cookie-consent';
@@ -277,6 +279,9 @@ const platformScript = `(function(){try{var u=navigator.userAgent||"";var ios=/i
  */
 const localeScript = `(function(){try{var m=document.cookie.match(/(?:^|; )rmh-lang=([^;]+)/);var l=m?decodeURIComponent(m[1]):"en";var S=${JSON.stringify([...LOCALES])};var R=${JSON.stringify([...RTL_LOCALES])};if(S.indexOf(l)<0)l="en";document.documentElement.lang=l;document.documentElement.setAttribute("dir",R.indexOf(l)>=0?"rtl":"ltr")}catch(e){}})()`;
 
+/** Pre-paint text spacing, caption style and bedtime mode (lib/access/prefs). */
+const accessScript = ACCESS_PREPAINT_SCRIPT;
+
 const bodyThemeScript = `if(window.__themeBg)document.body.style.backgroundColor=window.__themeBg`;
 
 /**
@@ -483,6 +488,8 @@ export const Route = createRootRoute({
           { children: PERF_TIER_SCRIPT },
           ...(accountSeed ? [{ children: accountSeed }] : []),
           { children: globalNotFound ? notFoundThemeScript : themeScript },
+          { children: accessScript },
+          { children: DELIGHT_PREPAINT_SCRIPT },
           { children: localeScript },
         ],
       };
@@ -574,6 +581,8 @@ export const Route = createRootRoute({
         // with nothing saved. lib/appearance/account-seed.ts has the rules.
         ...(accountSeed ? [{ children: accountSeed }] : []),
         { children: globalNotFound ? notFoundThemeScript : themeScript },
+          { children: accessScript },
+          { children: DELIGHT_PREPAINT_SCRIPT },
         { children: localeScript },
         // Hides the server-rendered cookie notice before first paint for a
         // visitor who has already answered it — lib/cookie-consent.ts.

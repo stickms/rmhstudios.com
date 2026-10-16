@@ -59,3 +59,17 @@ export const QueueReorderSchema = z.object({
   itemId: z.string(),
   newPosition: z.number().int().min(0),
 });
+
+// Community radio (T4): a DJ queues one preview-able track for their next turn.
+export const RadioQueueSchema = z.object({
+  spotifyUri: z.string().min(1).max(100),
+  title: z.string().max(256),
+  artist: z.string().max(256),
+  albumArt: z.string().max(500),
+  durationMs: z.number().int().min(0),
+  previewUrl: z.string().url().max(500),
+});
+
+export const RadioVoteSchema = z.object({
+  vote: z.enum(['woot', 'meh']),
+});

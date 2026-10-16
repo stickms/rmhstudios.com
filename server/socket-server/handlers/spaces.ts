@@ -30,6 +30,18 @@ import { checkRateLimit } from '../rate-limit';
 import { sanitizeString } from '../utils';
 import { SPACE_C2S, SPACE_S2C } from '../../../lib/spaces/events';
 import type { SpacePinned } from '../../../lib/spaces/types';
+import { RoomSlowMode } from '../../shared/room-slow-mode';
+import { slowModeEvents } from '../../../lib/safety/slow-mode-events';
+
+const SLOW = slowModeEvents('space');
+// S3: host-set slow mode + raid protection, one gate per live space.
+const slowMode = new RoomSlowMode(async (userId) => {
+  const row = await getPrismaClient().user.findUnique({
+    where: { id: userId },
+    select: { createdAt: true },
+  });
+  return row ? row.createdAt.getTime() : null;
+});
 
 // ─── Ephemeral in-memory state ──────────────────────────────────
 
@@ -192,7 +204,7 @@ export function registerSpacesHandlers(io: Server, socket: Socket, _ctx?: unknow
   });
 
   // ─── Chat ───
-  socket.on(SPACE_C2S.CHAT, (payload: { spaceId?: string; body?: string }) => {
+  socket.on(SPACE_C2S.CHAT, async (payload: { spaceId?: string; body?: string }) => {
     if (!checkRateLimit(socket.id, SPACE_C2S.CHAT)) {
       socket.emit(SPACE_S2C.ERROR, { message: 'You are sending messages too fast' });
       return;
@@ -210,6 +222,17 @@ export function registerSpacesHandlers(io: Server, socket: Socket, _ctx?: unknow
     const space = spaces.get(spaceId);
     if (!space || space.status !== 'LIVE') return;
     if (!space.members.has(userId)) return; // must have joined
+
+    const verdict = await slowMode.check(spaceId, userId, space.hostId === userId);
+    if (!verdict.ok) {
+      socket.emit(SLOW.REJECTED, {
+        roomId: spaceId,
+        reason: verdict.reason,
+        retryInMs: verdict.reason === 'cooldown' ? verdict.retryInMs : 0,
+      });
+      socket.emit(SLOW.STATE, slowMode.state(spaceId));
+      return;
+    }
 
     const message = {
       id: `sm_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
@@ -232,6 +255,17 @@ export function registerSpacesHandlers(io: Server, socket: Socket, _ctx?: unknow
           logger.warn({ event: 'space_chat_persist_failed', spaceId, error: err.message }),
         );
     }
+  });
+
+  // ─── Slow mode (host only) ───
+  socket.on(SLOW.SET, (payload: { spaceId?: string; seconds?: unknown }) => {
+    if (!checkRateLimit(socket.id, SLOW.SET)) return;
+    const userId = typeof socket.data.userId === 'string' ? socket.data.userId : '';
+    const spaceId = typeof payload?.spaceId === 'string' ? payload.spaceId : '';
+    const space = spaces.get(spaceId);
+    if (!userId || !space || space.hostId !== userId || typeof payload.seconds !== 'number') return;
+    if (slowMode.setCooldown(spaceId, payload.seconds) === null) return;
+    io.to(roomName(spaceId)).emit(SLOW.STATE, slowMode.state(spaceId));
   });
 
   // ─── Reaction (ephemeral) ───

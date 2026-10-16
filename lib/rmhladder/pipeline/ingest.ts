@@ -5,6 +5,7 @@ import { classifyEarlyCareer } from '../classifiers/early-career';
 import type { ProgramType } from '../classifiers/early-career';
 import { computeBaseScore } from '../scoring';
 import { dedupeHash, locationBucket, normalizeTitle } from '../normalize';
+import { extractPay } from '../pay';
 import { computeVerification } from '../verification';
 import type { VerificationEvidence, VerificationStatus } from '../verification';
 import type { NormalizedJob } from '../adapters/types';
@@ -75,6 +76,10 @@ export interface JobAssessmentFields {
   urgencyFlag: boolean;
   graduationYearTarget: number | null;
   schoolYearTarget: string | null;
+  payMinAnnual: number | null;
+  payMaxAnnual: number | null;
+  payCurrency: string | null;
+  payPeriod: string | null;
   // verification outcome
   verificationStatus: VerificationStatus;
   verificationConfidence: number;
@@ -132,6 +137,7 @@ export function assessJob(args: {
   const graduationYearTarget =
     ecResult.classification === 'no' ? null : ecResult.graduationYearTarget;
   const schoolYearTarget = ecResult.classification === 'no' ? null : ecResult.schoolYearTarget;
+  const pay = extractPay(text);
 
   // 5. Build enriched evidence — assessJob is authoritative on usConfirmed
   const enrichedEvidence: VerificationEvidence = {
@@ -233,6 +239,10 @@ export function assessJob(args: {
     urgencyFlag,
     graduationYearTarget,
     schoolYearTarget,
+    payMinAnnual: pay?.minAnnual ?? null,
+    payMaxAnnual: pay?.maxAnnual ?? null,
+    payCurrency: pay?.currency ?? null,
+    payPeriod: pay?.period ?? null,
     verificationStatus: finalStatus,
     verificationConfidence: finalConfidence,
     verificationEvidence,

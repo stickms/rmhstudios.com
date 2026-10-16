@@ -28,6 +28,7 @@
  * answer.
  */
 
+import { liveMessages } from '@/lib/chat-plus/expiry.server';
 import { createHash } from 'node:crypto';
 import { apiCache } from '@/lib/cache';
 import { assertAiBudget } from '@/lib/ai/budget.server';
@@ -126,7 +127,12 @@ async function gatherGroupChat(id: string, userId: string, since: Date | null): 
   if (!membership) return { ok: false, reason: 'no-access' };
 
   const rows = await prisma.groupMessage.findMany({
-    where: { groupId: id, ...(since ? { createdAt: { gt: since } } : {}) },
+    where: {
+      groupId: id,
+      // Disappearing messages (M3) never reach the summarizer once expired.
+      AND: [liveMessages()],
+      ...(since ? { createdAt: { gt: since } } : {}),
+    },
     // Newest-first then reversed: with a cap, the tail is what "what did I
     // miss" means. Ordering ascending would summarize the oldest 100 instead.
     orderBy: { createdAt: 'desc' },

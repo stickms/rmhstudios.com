@@ -8,6 +8,7 @@
 
 import { createBus, type RealtimeBus } from '@/lib/realtime-bus.server';
 import type { ReactionRow } from '@/lib/social/reactions';
+import type { ChatUpdate } from '@/lib/chat-plus/types';
 
 export interface GroupPollPayload {
   question: string;
@@ -28,6 +29,13 @@ export interface GroupMessagePayload {
   poll?: GroupPollPayload | null;
   /** Raw reaction rows, grouped client-side so SSE updates stay cheap. */
   reactions?: ReactionRow[];
+  /** P04 — message kind (text when absent), structured payload, forward hops, thread reply count. */
+  kind?: string;
+  meta?: unknown;
+  forwardCount?: number;
+  replyCount?: number;
+  /** M3 — when the message disappears (ISO), or null. */
+  expiresAt?: string | null;
 }
 
 /** A non-message event on the group channel (e.g. a reaction toggle). Kept
@@ -39,7 +47,14 @@ export interface GroupReactionEventPayload {
   reactions: { emoji: string; userId: string }[];
 }
 
-export type GroupEventPayload = GroupMessagePayload | GroupReactionEventPayload;
+/** P04 — pins, settings, thread counts and checklist ticks on the group channel. */
+export interface GroupChatUpdatePayload {
+  type: 'chat-update';
+  update: ChatUpdate;
+}
+
+export type GroupEventPayload =
+  GroupMessagePayload | GroupReactionEventPayload | GroupChatUpdatePayload;
 
 type Listener = (event: GroupEventPayload) => void;
 
@@ -60,6 +75,9 @@ export function publishGroupMessage(groupId: string, message: GroupMessagePayloa
 
 /** Publish a non-message event (e.g. a reaction toggle) on the group channel,
  *  reusing the same bus/channel plumbing as `publishGroupMessage`. */
-export function publishGroupEvent(groupId: string, payload: GroupReactionEventPayload): void {
+export function publishGroupEvent(
+  groupId: string,
+  payload: GroupReactionEventPayload | GroupChatUpdatePayload,
+): void {
   bus().publish(groupId, payload);
 }

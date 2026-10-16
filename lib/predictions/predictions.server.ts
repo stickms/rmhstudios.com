@@ -154,9 +154,16 @@ export async function placeTrade(
       },
     });
 
+    // Forecast snapshot for season/calibration scoring: P(YES) right after this trade.
+    const lastP = priceYes(
+      market.qYes + (side === 'YES' ? shares : 0),
+      market.qNo + (side === 'NO' ? shares : 0),
+      market.b,
+    );
     await tx.predictionPosition.upsert({
       where: { predictionId_userId: { predictionId, userId } },
       create: {
+        lastP,
         predictionId,
         userId,
         yesShares: side === 'YES' ? shares : 0,
@@ -164,6 +171,7 @@ export async function placeTrade(
         spent: amount,
       },
       update: {
+        lastP,
         yesShares: side === 'YES' ? { increment: shares } : undefined,
         noShares: side === 'NO' ? { increment: shares } : undefined,
         spent: { increment: amount },

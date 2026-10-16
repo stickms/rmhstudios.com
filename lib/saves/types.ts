@@ -54,6 +54,8 @@ export interface HydratedSave {
   thumbnail: string | null;
   /** The target is gone or no longer visible to the viewer. */
   tombstone: boolean;
+  /** X9: the owner's private note on this save (never sent to anyone else). */
+  note: string | null;
 }
 
 export interface SaveFolderView {

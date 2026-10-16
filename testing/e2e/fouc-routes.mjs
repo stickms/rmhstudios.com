@@ -42,6 +42,31 @@ const ROUTE_TREE = join(REPO_ROOT, 'app/routeTree.gen.ts');
  * to the same thing while still claiming `'content'`.
  */
 export const DYNAMIC_ROUTE_FIXTURES = {
+  '/marathon/$shareId': {
+    path: '/marathon/fouc-audit',
+    fidelity: 'shell',
+    why: 'An unknown share id renders the "link is not valid" state inside the same PageLayout shell.',
+  },
+  '/exchange/$id': {
+    path: '/exchange/fouc-audit',
+    fidelity: 'shell',
+    why: 'A signed-out run renders the sign-in prompt inside the same PageLayout shell; the body needs a session and a seeded exchange.',
+  },
+  '/when/$id': {
+    path: '/when/fouc-audit',
+    fidelity: 'shell',
+    why: 'A signed-out run renders the sign-in prompt inside the same PageLayout shell; a poll body needs a session and a seeded poll.',
+  },
+  '/office-hours/$userId': {
+    path: '/office-hours/fouc-audit',
+    fidelity: 'shell',
+    why: 'A non-existent host renders the "no office hours" empty state inside the same PageLayout shell.',
+  },
+  '/rings/$slug': {
+    path: '/rings/fouc-audit',
+    fidelity: 'shell',
+    why: 'A non-existent ring renders the not-found state inside the same PageLayout shell; the ring body loads client-side.',
+  },
   '/admin/albums/$id': {
     path: null,
     fidelity: 'shell',
@@ -133,6 +158,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'Not-found branch of a news article.',
   },
+  '/news/stories/$slug': {
+    path: '/news/stories/fouc-audit-no-such-story',
+    fidelity: 'shell',
+    why: 'Not-found branch of a news story timeline.',
+  },
   '/personas/$id': {
     path: '/personas/fouc-audit',
     fidelity: 'shell',
@@ -218,6 +248,16 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'A well-formed date with no record behind it.',
   },
+  '/feeds/$id': {
+    path: '/feeds/fouc-audit',
+    fidelity: 'shell',
+    why: 'Not-found branch of a custom feed page.',
+  },
+  '/series/$id': {
+    path: '/series/fouc-audit',
+    fidelity: 'shell',
+    why: 'Not-found branch of a post series page.',
+  },
   '/sohumtracker/$date': {
     path: '/sohumtracker/2026-01-01',
     fidelity: 'shell',
@@ -263,6 +303,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     path: '/thread/fouc-audit',
     fidelity: 'shell',
     why: 'Not-found branch of a thread permalink.',
+  },
+  '/jams/$slug': {
+    path: '/jams/fouc-audit',
+    fidelity: 'shell',
+    why: 'Not-found branch of a game jam page.',
   },
   '/tournaments/$id': {
     path: '/tournaments/fouc-audit',

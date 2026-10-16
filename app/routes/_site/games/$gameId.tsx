@@ -8,6 +8,7 @@ import { games } from '@/lib/games';
 import { buildMeta, buildCanonical, ogCardPath } from '@/lib/seo';
 import { jsonLdScript, videoGameSchema, breadcrumbSchema } from '@/lib/schema';
 import { GAMES_INDEX_PATH } from '@/lib/seo-catalog';
+import { aiAvailable } from '@/lib/devplatform/ai.server';
 import { listReviews, getRatingAgg, listGuides } from '@/lib/games/meta.server';
 import type { ReviewView, RatingAgg, GuideSummary } from '@/lib/games/reviews';
 
@@ -22,6 +23,8 @@ interface HubPayload {
   reviews: ReviewView[];
   guides: GuideSummary[];
   signedIn: boolean;
+  /** I1: show the AI "How do I play?" panel. */
+  aiEnabled: boolean;
 }
 
 const fetchHub = createServerFn({ method: 'GET' })
@@ -48,6 +51,7 @@ const fetchHub = createServerFn({ method: 'GET' })
       reviews,
       guides,
       signedIn: !!viewerId,
+      aiEnabled: !!viewerId && aiAvailable(),
     };
   });
 

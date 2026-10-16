@@ -8,6 +8,9 @@ import { notifyUser } from '@/lib/message-events';
 import { ownsFeedImageUrl } from '@/lib/storage/keys';
 import { gifUrlSchema, feedImageUrlSchema } from '@/lib/rmhark-schema';
 import { z } from 'zod';
+import { liveMessages } from '@/lib/chat-plus/expiry.server';
+import { messageStamp } from '@/lib/chat-plus/post.server';
+import { getPairPrivacy, maskReceipts } from '@/lib/chat-plus/receipts.server';
 
 /**
  * Denormalized DM unread counter (per recipient) in Redis. Keeps the polled
@@ -76,7 +79,7 @@ export const Route = createFileRoute('/api/messages/$conversationId')({
         const limit = 50;
 
         const messages = await prisma.directMessage.findMany({
-          where: { conversationId },
+          where: { conversationId, AND: [liveMessages()] },
           orderBy: { createdAt: 'desc' },
           take: limit + 1,
           ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
@@ -116,8 +119,18 @@ export const Route = createFileRoute('/api/messages/$conversationId')({
           })
           .catch((e) => console.error('mark-as-read failed:', e));
 
+        const privacy = await getPairPrivacy(conversationId, [
+          conversation.participantOneId,
+          conversation.participantTwoId,
+        ]);
+        const masked = maskReceipts(
+          items.reverse(),
+          userId,
+          privacy.receiptsHidden && conversation.participantOneId !== conversation.participantTwoId,
+        );
+
         return Response.json({
-          messages: items.reverse().map((m) => ({
+          messages: masked.map((m) => ({
             id: m.id,
             content: m.content,
             senderId: m.senderId,
@@ -167,7 +180,7 @@ export const Route = createFileRoute('/api/messages/$conversationId')({
         // Verify user is a participant
         const conversation = await prisma.conversation.findUnique({
           where: { id: conversationId },
-          select: { participantOneId: true, participantTwoId: true },
+          select: { participantOneId: true, participantTwoId: true, disappearAfterSec: true },
         });
 
         if (!conversation) {
@@ -177,6 +190,9 @@ export const Route = createFileRoute('/api/messages/$conversationId')({
         if (conversation.participantOneId !== userId && conversation.participantTwoId !== userId) {
           return Response.json({ error: 'Forbidden' }, { status: 403 });
         }
+        // M2: a conversation with yourself is Saved Messages — no recipient to
+        // notify, no DM-privacy rule to apply, nothing to count as unread.
+        const isSavedChat = conversation.participantOneId === conversation.participantTwoId;
 
         let body: unknown;
         try {
@@ -222,10 +238,12 @@ export const Route = createFileRoute('/api/messages/$conversationId')({
           );
         }
 
-        const recipient = await prisma.user.findUnique({
-          where: { id: recipientId },
-          select: { profile: { select: { dmPrivacy: true } } },
-        });
+        const recipient = isSavedChat
+          ? null
+          : await prisma.user.findUnique({
+              where: { id: recipientId },
+              select: { profile: { select: { dmPrivacy: true } } },
+            });
 
         const dmPrivacy = recipient?.profile?.dmPrivacy ?? 'EVERYONE';
 
@@ -263,6 +281,9 @@ export const Route = createFileRoute('/api/messages/$conversationId')({
               content: parsed.data.content,
               gifUrl: parsed.data.gifUrl ?? null,
               imageUrls: parsed.data.imageUrls ?? [],
+              read: isSavedChat,
+              // M3 + M6: expiry from the chat's timer, and the shared-media flags.
+              ...messageStamp(conversation.disappearAfterSec, parsed.data),
             },
           }),
           prisma.conversation.update({
@@ -281,17 +302,20 @@ export const Route = createFileRoute('/api/messages/$conversationId')({
           gifUrl: message.gifUrl,
           imageUrls: message.imageUrls,
           reactions: [],
+          expiresAt: message.expiresAt?.toISOString() ?? null,
         };
 
         // Bump the recipient's denormalized unread counter (only if warm) before we
         // notify them, so their SSE stream reads the fresh count without a COUNT.
-        void adjustDmUnread(recipientId, 1);
+        if (!isSavedChat) {
+          void adjustDmUnread(recipientId, 1);
 
-        // Notify recipient via SSE with message payload
-        notifyUser(recipientId, {
-          type: 'new-message',
-          message: messagePayload,
-        });
+          // Notify recipient via SSE with message payload
+          notifyUser(recipientId, {
+            type: 'new-message',
+            message: messagePayload,
+          });
+        }
 
         return Response.json({
           message: messagePayload,

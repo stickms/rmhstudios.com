@@ -5,6 +5,8 @@ import type { JobActionValue } from '@/lib/rmhladder/server/actions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { InterviewReports } from './InterviewReports';
+import { PayBadge } from './PayBadge';
 import { RungMeter } from './RungMeter';
 import { timeAgo } from './time';
 import { safeExternalUrl, sourceDomain, trackApplyClick } from './url';
@@ -88,6 +90,7 @@ export function JobDetail({
             <MapPin className="size-4" aria-hidden />
             {location}
           </p>
+          <PayBadge job={job} className="text-base font-semibold text-site-text" />
         </CardHeader>
 
         <CardContent className="space-y-6">
@@ -134,6 +137,14 @@ export function JobDetail({
                 {summary}
               </p>
             </section>
+          )}
+          {(company as { id?: string } | null)?.id && (
+            <InterviewReports
+              companyId={(company as { id: string }).id}
+              companyName={company?.name ?? ''}
+              roleTitle={job.title as string}
+              isAuthenticated={isAuthenticated}
+            />
           )}
         </CardContent>
 

@@ -20,6 +20,7 @@ import ChatPanel from '@/components/shared/ChatPanel';
 import type { ChatPanelMessage } from '@/components/shared/ChatPanel';
 import type { TimerPhase } from '@/lib/rmhstudy/types';
 import { useParams, useRouter } from '@tanstack/react-router';
+import { useStudyActivityNotification } from '@/components/access/useStudyActivityNotification';
 
 function formatTime(ms: number): string {
   const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
@@ -67,6 +68,14 @@ export default function RmhStudyRoom() {
 
   const [showSettings, setShowSettings] = useState(false);
 
+  // Optional (Settings > Appearance): one notification for the running timer, updated per phase.
+  useStudyActivityNotification({
+    phase: room?.timer.phase ?? 'idle',
+    isPaused: room?.timer.isPaused ?? false,
+    remainingMs: room?.timer.remainingMs ?? 0,
+    roomCode,
+  });
+
   // Moderation state
   const [banTarget, setBanTarget] = useState<{ userId: string; userName: string } | null>(null);
   const [banReason, setBanReason] = useState('');
@@ -77,7 +86,9 @@ export default function RmhStudyRoom() {
     let mounted = true;
     async function init() {
       try {
-        await connectToRmhStudy(roomCode);
+        // `?bd=` is a body-doubling match id (calendar F5): it lets the hub open the pair's room.
+        const matchId = new URLSearchParams(window.location.search).get('bd') ?? undefined;
+        await connectToRmhStudy(roomCode, matchId);
       } catch (err) {
         if (mounted) toast.error(err instanceof Error ? err.message : t('connection-failed', { defaultValue: 'Connection failed' }));
       }

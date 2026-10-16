@@ -8,6 +8,7 @@ import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import type { Market } from './types';
 import { LIFT_CARD } from '@/components/feed/motionHelpers';
 import { useSignInPrompt } from '@/hooks/useSignInPrompt';
+import { MarketExtras } from '@/components/forecasting/MarketExtras';
 
 interface Props {
   market: Market;
@@ -206,6 +207,11 @@ export function PredictionCard({ market, coins, setCoins, onUpdated, signedIn }:
           </span>
         )}
       </div>
+      <MarketExtras
+        marketId={market.id}
+        signedIn={signedIn}
+        held={!hasPos ? null : pos!.yesShares >= pos!.noShares ? 'YES' : 'NO'}
+      />
     </div>
   );
 }

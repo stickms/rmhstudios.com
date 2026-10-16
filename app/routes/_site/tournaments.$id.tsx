@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession } from '@/components/Providers';
 import { BracketView } from '@/components/tournaments/BracketView';
+import { SwissStandings } from '@/components/competitive/SwissStandings';
+import { PickemPanel } from '@/components/competitive/PickemPanel';
 import type { SerializedTournament } from '@/lib/tournaments/tournament.server';
 import { prisma } from '@/lib/prisma.server';
 import { getWagerGame } from '@/lib/wager/eligible-games';
@@ -326,6 +328,14 @@ function TournamentDetailPage() {
               </p>
             )}
           </div>
+        )}
+
+        {tourney.format === 'SWISS' && tourney.status !== 'REGISTRATION' && (
+          <SwissStandings tournament={tourney} />
+        )}
+
+        {tourney.format === 'SINGLE_ELIM' && tourney.status !== 'CANCELLED' && (
+          <PickemPanel tournament={tourney} signedIn={!!viewerId} />
         )}
 
         {/* Entrants */}

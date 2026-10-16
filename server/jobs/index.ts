@@ -19,6 +19,12 @@ import { runProgression, type ProgressionJob } from '@/lib/social/engagement-eff
 import { registerEventReminderWorker } from '@/lib/events.server';
 import { registerDigestCron } from '@/lib/digest/pipeline.server';
 import { registerMaintenanceCrons } from '@/lib/jobs/maintenance.server';
+import { registerArcadeCrons } from '@/lib/arcade/jobs.server';
+import { registerEconomyCrons } from '@/lib/economy/jobs.server';
+import { registerCommunityCrons } from '@/lib/communities/jobs.server';
+import { registerGiftingCrons } from '@/lib/gifting/jobs.server';
+import { CHAT_EXPIRY_QUEUE, registerChatExpiryCron } from '@/lib/chat-plus/expiry.server';
+import { STUDY_BUDDY_QUEUE, registerStudyBuddyCron } from '@/lib/calendar/study-buddy-jobs.server';
 import { ANALYSIS_QUEUE, registerAnalysisWorker } from '@/lib/slice-it/analysis-queue.server';
 import { REGEN_QUEUE, registerRegenCron } from '@/lib/slice-it/regen.server';
 import { PF2E_REMINDER_QUEUE, registerPf2eReminderCron } from '@/lib/pf2ecal/reminders.server';
@@ -27,6 +33,13 @@ import {
   SOHUMTRACKER_ALERT_QUEUE,
   registerSohumTrackerAlertCron,
 } from '@/lib/sohumtracker/alerts.server';
+import { registerPostsPlusCrons } from '@/lib/posts-plus/jobs.server';
+import { registerDiscoveryJobs } from '@/lib/discovery/jobs.server';
+import { registerRecipeJobs } from '@/lib/devplatform/recipes.server';
+import {
+  PROFILE_VISIT_SWEEP_QUEUE,
+  registerProfileVisitSweepCron,
+} from '@/lib/profile/visit-sweep.server';
 
 const log = createLogger('jobs');
 
@@ -158,6 +171,106 @@ async function main() {
       queue: 'platform.maintenance',
       err: (e as Error)?.message,
     });
+  }
+
+  try {
+    await registerArcadeCrons(boss);
+    log.info({ event: 'jobs.started', queue: 'arcade.rivals' });
+  } catch (e) {
+    log.error({ event: 'jobs.register_failed', queue: 'arcade.rivals', err: (e as Error)?.message });
+  }
+
+  // Economy-plus (2026-10-12 batch): community goal deadlines + refunds (C5),
+  // scheduled gift delivery (C7) and the daily wishlist price alerts (C8). These
+  // move coins, so each handler is idempotent and claims its work conditionally.
+  try {
+    await registerEconomyCrons(boss);
+    log.info({ event: 'jobs.started', queue: 'economy' });
+  } catch (e) {
+    log.error({ event: 'jobs.register_failed', queue: 'economy', err: (e as Error)?.message });
+  }
+
+  // Gifting & events (2026-10-12 batch): daily birthday nudges (G1) and the
+  // exchange draw sweep (G3/F2). Both idempotent.
+  try {
+    await registerGiftingCrons(boss);
+    log.info({ event: 'jobs.started', queue: 'gifting' });
+  } catch (e) {
+    log.error({ event: 'jobs.register_failed', queue: 'gifting', err: (e as Error)?.message });
+  }
+
+  // Communities-plus (2026-10-12 batch): challenge winners (N5) and the daily
+  // top-contributors rebuild (N7). Both idempotent.
+  try {
+    await registerCommunityCrons(boss);
+    log.info({ event: 'jobs.started', queue: 'communities' });
+  } catch (e) {
+    log.error({ event: 'jobs.register_failed', queue: 'communities', err: (e as Error)?.message });
+  }
+
+  // P9 — nightly sweep of the profile visitor-counter dedupe ledger (rows older
+  // than two days). Housekeeping only: the counter total is stored on the profile.
+  try {
+    await registerProfileVisitSweepCron(boss);
+    log.info({ event: 'jobs.started', queue: PROFILE_VISIT_SWEEP_QUEUE });
+  } catch (e) {
+    log.error({
+      event: 'jobs.register_failed',
+      queue: PROFILE_VISIT_SWEEP_QUEUE,
+      err: (e as Error)?.message,
+    });
+  }
+
+  // M3 — disappearing messages. Expiry is enforced at read time; this sweep only
+  // deletes the rows (and skips any message with an open report).
+  try {
+    await registerChatExpiryCron(boss);
+    log.info({ event: 'jobs.started', queue: CHAT_EXPIRY_QUEUE });
+  } catch (e) {
+    log.error({
+      event: 'jobs.register_failed',
+      queue: CHAT_EXPIRY_QUEUE,
+      err: (e as Error)?.message,
+    });
+  }
+
+  // F5 — expire unmatched study-buddy requests and tell their owners.
+  try {
+    await registerStudyBuddyCron(boss);
+    log.info({ event: 'jobs.started', queue: STUDY_BUDDY_QUEUE });
+  } catch (e) {
+    log.error({
+      event: 'jobs.register_failed',
+      queue: STUDY_BUDDY_QUEUE,
+      err: (e as Error)?.message,
+    });
+  }
+
+  // posts-plus (2026-10-12 batch): post expiry sweep + daily auto-delete (X8), the
+  // dead-link rescue check (X11), and the publisher for due scheduled posts and
+  // time capsules (Z7) so they open on time without their author visiting.
+  try {
+    await registerPostsPlusCrons(boss);
+    log.info({ event: 'jobs.started', queue: 'posts-plus' });
+  } catch (e) {
+    log.error({ event: 'jobs.register_failed', queue: 'posts-plus', err: (e as Error)?.message });
+  }
+
+  // P03 discovery: post-created fan-out (keyword alerts + community watchers), the
+  // daily "On this day" run, and the /today digest snapshot.
+  try {
+    await registerDiscoveryJobs(boss);
+    log.info({ event: 'jobs.started', queue: 'discovery' });
+  } catch (e) {
+    log.error({ event: 'jobs.register_failed', queue: 'discovery', err: (e as Error)?.message });
+  }
+
+  // P16 D5: "when X then Y" recipes — polled triggers + personal-best events.
+  try {
+    await registerRecipeJobs(boss);
+    log.info({ event: 'jobs.started', queue: 'devplatform.recipes' });
+  } catch (e) {
+    log.error({ event: 'jobs.register_failed', queue: 'devplatform.recipes', err: (e as Error)?.message });
   }
 
   const shutdown = async (sig: string) => {

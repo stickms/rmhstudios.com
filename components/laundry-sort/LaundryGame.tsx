@@ -22,9 +22,11 @@ import { Button } from '@/components/ui/button';
 import { useSession } from '@/components/Providers';
 import { ConnectionBanner } from '@/components/shared/ConnectionStatus';
 import { useLobbyInviteJoin } from '@/hooks/useLobbyLink';
-import { SCORE_PUBLISH_MS } from '@/lib/laundry-sort/constants';
+import { SCORE_PUBLISH_MS, type Difficulty, type MatchDuration } from '@/lib/laundry-sort/constants';
 import { LaundryMatch, type MatchEvent } from '@/lib/laundry-sort/match';
 import { randomSeed } from '@/lib/laundry-sort/rng';
+import { planRun, useArcadeRun } from '@/lib/arcade/run-client';
+import { ChallengeNotice } from '@/components/arcade/ChallengeNotice';
 import { useLaundryStore } from '@/lib/laundry-sort/store';
 import {
   connectLaundry,
@@ -129,13 +131,24 @@ export function LaundryGame() {
 
   // ── Starting a round ──────────────────────────────────────────────────────
 
-  const startSolo = useCallback(() => {
+  const startSolo = useCallback(async () => {
     const state = useLaundryStore.getState();
+    // A seed link or the daily mutator fixes the seed and may force the options.
+    const plan = await planRun('laundry-sort', `${state.difficulty}-${state.durationSec}`);
+    const durationSec = (plan.options?.durationSec as MatchDuration | undefined) ?? state.durationSec;
+    const difficulty = (plan.options?.difficulty as Difficulty | undefined) ?? state.difficulty;
+    if (plan.options) {
+      state.setDuration(durationSec);
+      state.setDifficulty(difficulty);
+    }
     matchRef.current = new LaundryMatch({
-      seed: randomSeed(),
-      durationSec: state.durationSec,
-      difficulty: state.difficulty,
+      seed: plan.kind === 'free' ? randomSeed() : plan.seed,
+      durationSec,
+      difficulty,
     });
+    if (plan.kind === 'free') {
+      useArcadeRun.getState().set({ ...plan, seed: matchRef.current.options.seed });
+    }
     setPopups([]);
     setAwaitingResults(false);
     state.setMode('solo');
@@ -299,6 +312,7 @@ export function LaundryGame() {
 
   return (
     <div className="laundry-root ls-letterbox absolute inset-0 overscroll-none">
+      <ChallengeNotice />
       <AspectStage>
         <GameCanvas
           matchRef={matchRef}

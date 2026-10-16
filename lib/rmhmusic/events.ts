@@ -14,6 +14,11 @@ export const C2S = {
   QUEUE_ADD:          'rmhmusic:queue:add',
   QUEUE_REMOVE:       'rmhmusic:queue:remove',
   QUEUE_REORDER:      'rmhmusic:queue:reorder',
+
+  RADIO_DJ_JOIN:      'rmhmusic:radio:dj_join',
+  RADIO_DJ_LEAVE:     'rmhmusic:radio:dj_leave',
+  RADIO_QUEUE:        'rmhmusic:radio:queue',
+  RADIO_VOTE:         'rmhmusic:radio:vote',
 } as const;
 
 export const S2C = {
@@ -31,6 +36,7 @@ export const S2C = {
   SYNC_HEARTBEAT:      'rmhmusic:sync:heartbeat',
 
   QUEUE_UPDATED:       'rmhmusic:queue:updated',
+  RADIO_STATE:         'rmhmusic:radio:state',
 
   ERROR:               'rmhmusic:error',
 } as const;

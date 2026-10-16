@@ -1,4 +1,6 @@
 import { prisma } from '@/lib/prisma.server';
+import { liveMessages } from '@/lib/chat-plus/expiry.server';
+import { folderChatIds } from '@/lib/chat-plus/folders.server';
 
 export interface GroupChatRow {
   id: string;
@@ -15,10 +17,13 @@ export interface GroupChatRow {
  * prefetched instead of fetched on mount.
  */
 export async function listGroupChats(
-  userId: string
+  userId: string,
+  opts: { folderId?: string | null; unreadOnly?: boolean } = {}
 ): Promise<{ groups: GroupChatRow[]; signedIn: true }> {
+  // M1: a folder narrows the (already complete, unpaginated) list server-side.
+  const inFolder = opts.folderId ? await folderChatIds(userId, opts.folderId, 'group') : undefined;
   const memberships = await prisma.groupChatMember.findMany({
-    where: { userId },
+    where: { userId, ...(inFolder ? { groupId: { in: inFolder } } : {}) },
     select: {
       lastReadAt: true,
       group: {
@@ -27,7 +32,14 @@ export async function listGroupChats(
           name: true,
           lastMessageAt: true,
           _count: { select: { members: true } },
-          messages: { orderBy: { createdAt: 'desc' }, take: 1, select: { content: true, createdAt: true, senderId: true } },
+          messages: {
+            // Expired disappearing messages (M3), side-thread replies (M7) and
+            // system lines never stand in for "the last message".
+            where: { threadParentId: null, kind: { notIn: ['system', 'tip'] }, AND: [liveMessages()] },
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+            select: { content: true, createdAt: true, senderId: true },
+          },
         },
       },
     },
@@ -46,6 +58,7 @@ export async function listGroupChats(
         unread,
       };
     })
+    .filter((g) => !opts.unreadOnly || g.unread)
     .sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
 
   return { groups, signedIn: true };

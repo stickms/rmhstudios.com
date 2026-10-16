@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link, useSearch } from '@tanstack/react-router';
 import { Loader2, TrendingUp, Gamepad2 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
@@ -11,6 +11,11 @@ import { useTranslation } from 'react-i18next';
 import { CoinIcon } from './CoinIcon';
 import { PlayTab } from './PlayTab';
 import { PredictionsMarketTab } from '@/components/predictions/PredictionsMarketTab';
+import { useForecastingTab } from '@/components/forecasting/forecastingTab';
+
+const ForecastingPanel = lazy(() =>
+  import('@/components/forecasting/ForecastingPanel').then((m) => ({ default: m.ForecastingPanel })),
+);
 
 export function RMHCoinsPage() {
   const { t } = useTranslation("c-rmhcoins");
@@ -21,9 +26,10 @@ export function RMHCoinsPage() {
   // A table invite link (`?tab=games&game=holdem&lobby=…`) has to open on the
   // games side, or the person who followed it lands on prediction markets.
   const search = useSearch({ strict: false }) as Record<string, unknown>;
-  const [tab, setTab] = useState<'markets' | 'games'>(
-    search.tab === 'games' ? 'games' : 'markets',
+  const [tab, setTab] = useState<'markets' | 'games' | 'forecasting'>(
+    search.tab === 'games' ? 'games' : search.tab === 'forecasting' ? 'forecasting' : 'markets',
   );
+  const forecastingTab = useForecastingTab();
 
   // Signed out is a supported state, not a redirect. This page used to bounce
   // anyone without a session to /login, which meant the prediction markets —
@@ -80,6 +86,7 @@ export function RMHCoinsPage() {
   const tabs: LiquidTab[] = [
     { id: 'markets', label: t("tab-markets", { defaultValue: "Markets" }), icon: TrendingUp },
     { id: 'games', label: t("tab-games", { defaultValue: "Games" }), icon: Gamepad2 },
+    forecastingTab,
   ];
 
   return (
@@ -131,7 +138,7 @@ export function RMHCoinsPage() {
         <LiquidTabs
           tabs={tabs}
           value={tab}
-          onChange={(id) => setTab(id as 'markets' | 'games')}
+          onChange={(id) => setTab(id as 'markets' | 'games' | 'forecasting')}
           idBase="rmhcoins"
           aria-label={t("tabs-aria", { defaultValue: "Predictions sections" })}
         />
@@ -142,6 +149,12 @@ export function RMHCoinsPage() {
         {tab === 'markets' ? (
           <div id="rmhcoins-panel-markets" role="tabpanel" aria-labelledby="rmhcoins-tab-markets">
             <PredictionsMarketTab coins={coins} setCoins={setCoins} signedIn={signedIn} />
+          </div>
+        ) : tab === 'forecasting' ? (
+          <div id="rmhcoins-panel-forecasting" role="tabpanel" aria-labelledby="rmhcoins-tab-forecasting">
+            <Suspense fallback={<Loader2 className="w-5 h-5 animate-spin mx-auto my-10 text-site-text-dim" />}>
+              <ForecastingPanel signedIn={signedIn} />
+            </Suspense>
           </div>
         ) : (
           <div id="rmhcoins-panel-games" role="tabpanel" aria-labelledby="rmhcoins-tab-games">

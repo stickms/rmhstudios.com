@@ -26,7 +26,8 @@ export type MessageStreamEventType =
   | 'typing'
   | 'message-reaction'
   | 'message-edited'
-  | 'message-deleted';
+  | 'message-deleted'
+  | 'chat-update';
 export type MessageStreamHandler = (type: MessageStreamEventType, data: unknown) => void;
 
 const STREAM_URL = '/api/messages/stream';
@@ -37,6 +38,7 @@ const STREAM_EVENTS: MessageStreamEventType[] = [
   'message-reaction',
   'message-edited',
   'message-deleted',
+  'chat-update',
 ];
 const MAX_RECONNECT_DELAY = 15_000;
 

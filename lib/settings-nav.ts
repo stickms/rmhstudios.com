@@ -19,6 +19,7 @@
 
 import {
   Bell,
+  CalendarDays,
   Gavel,
   KeyRound,
   LayoutDashboard,
@@ -92,6 +93,17 @@ export const SETTINGS_DESTINATIONS: SettingsDestination[] = [
     label: 'Notification channels & quiet hours',
     hint: 'Per-category push, in-app and email',
     keywords: 'push email mute silence dnd schedule',
+    requiresAuth: true,
+  },
+
+  {
+    id: 'calendar',
+    to: '/settings/calendar',
+    group: 'personalization',
+    icon: CalendarDays,
+    label: 'Calendar feed & scheduling',
+    hint: 'Subscribe to your RSVPs and bookings; polls and office hours',
+    keywords: 'ics google calendar apple outlook subscribe feed office hours availability poll find a time',
     requiresAuth: true,
   },
 

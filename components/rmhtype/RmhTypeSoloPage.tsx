@@ -14,6 +14,8 @@ import RmhTypeHeader from '@/components/rmhtype/RmhTypeHeader';
 import type { Difficulty, PassageLength } from '@/lib/rmhtype/types';
 import { useRouter } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { SoloSourcePicker, SourcePracticeNote } from '@/components/rmhtype/SoloSourcePicker';
+import { autoIndent, backspaceIndent, type SoloSource } from '@/lib/rmhtype/sources';
 
 export default function RmhTypeSolo() {
   const router = useRouter();
@@ -32,6 +34,7 @@ export default function RmhTypeSolo() {
   // Empty = the curated passage list. Anything else asks the server to write a
   // passage about it, which makes the run practice-only (no leaderboard).
   const [topic, setTopic] = useState('');
+  const [source, setSource] = useState<SoloSource>('standard');
 
   const { t } = useTranslation("c-rmhtype");
 
@@ -103,13 +106,18 @@ export default function RmhTypeSolo() {
     emit(C2S.SOLO_START, {
       difficulty: soloDifficulty,
       passageLength: soloLength,
-      topic: topic.trim() || undefined,
+      topic: source === 'standard' ? topic.trim() || undefined : undefined,
+      source,
     });
-  }, [soloDifficulty, soloLength, topic, updateSettings]);
+  }, [soloDifficulty, soloLength, topic, source, updateSettings]);
 
-  const handleTyping = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTyping = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (!soloPassage || finished) return;
-    const value = e.target.value;
+    let value = e.target.value;
+    if (source === 'code') {
+      value = backspaceIndent(soloPassage, typedText, value);
+      value = autoIndent(soloPassage, value);
+    }
 
     // Start timer on first keystroke
     if (!startTime) setStartTime(Date.now());
@@ -126,7 +134,7 @@ export default function RmhTypeSolo() {
         errors,
       });
     }
-  }, [soloPassage, soloPassageId, finished, startTime]);
+  }, [soloPassage, soloPassageId, finished, startTime, source, typedText]);
 
   const handleRetry = useCallback(() => {
     useRmhTypeStore.getState().clearSolo();
@@ -137,9 +145,10 @@ export default function RmhTypeSolo() {
       difficulty: settings.soloDifficulty,
       passageLength: settings.soloPassageLength,
       // Retry means "again, like that one" — a fresh passage on the same topic.
-      topic: topic.trim() || undefined,
+      topic: source === 'standard' ? topic.trim() || undefined : undefined,
+      source,
     });
-  }, [settings.soloDifficulty, settings.soloPassageLength, topic]);
+  }, [settings.soloDifficulty, settings.soloPassageLength, topic, source]);
 
   const handleBackToSettings = useCallback(() => {
     useRmhTypeStore.getState().clearSolo();
@@ -207,7 +216,9 @@ export default function RmhTypeSolo() {
                   </div>
                 </div>
 
-                <div>
+                <SoloSourcePicker value={source} onChange={setSource} />
+
+                <div hidden={source !== 'standard'}>
                   <label
                     htmlFor="rmhtype-topic"
                     className="mb-2 flex items-center gap-1.5 text-sm font-medium text-(--app-text-muted)"
@@ -284,7 +295,9 @@ export default function RmhTypeSolo() {
 
               {/* A practice run has its own reason for not posting, and it is
                   not a failure — so it must not wear the failure colour. */}
-              {soloResult.practice ? (
+              {soloResult.practice && source !== 'standard' ? (
+                <SourcePracticeNote source={source} />
+              ) : soloResult.practice ? (
                 <p className="text-sm text-(--app-text-muted) mb-4">
                   {t("practice-run", {
                     defaultValue: "Practice run on a written-to-order passage — not posted to the leaderboard.",
@@ -365,7 +378,7 @@ export default function RmhTypeSolo() {
 
               {/* Passage — fills remaining space, scrolls internally */}
               <div ref={passageRef} className="flex-1 min-h-0 rounded-xl border border-(--app-border) bg-(--app-surface) p-6 rmhtype-passage-scroll">
-                <div className="rmhtype-passage select-none">
+                <div className={`rmhtype-passage select-none${source === 'code' ? ' font-mono whitespace-pre-wrap' : ''}`}>
                   {[...soloPassage].map((char, i) => {
                     let className = 'rmhtype-char-untyped';
                     if (i < typedText.length) {
@@ -374,7 +387,7 @@ export default function RmhTypeSolo() {
                     if (i === typedText.length) className += ' rmhtype-cursor';
                     return (
                       <span key={i} className={className}>
-                        {char}
+                        {char === '\n' ? '\u21b5\n' : char}
                       </span>
                     );
                   })}
@@ -382,19 +395,37 @@ export default function RmhTypeSolo() {
               </div>
 
               {/* Input — pinned below passage, seamless on mobile */}
-              <input
-                ref={inputRef}
-                type="text"
-                value={typedText}
-                onChange={handleTyping}
-                onPaste={(e) => e.preventDefault()}
-                onCopy={(e) => e.preventDefault()}
-                onCut={(e) => e.preventDefault()}
-                disabled={finished}
-                className="shrink-0 w-full px-4 py-3 rounded-lg font-mono border border-(--app-border) bg-(--app-bg) text-(--app-text) outline-none focus:ring-1 focus:ring-(--app-accent) rmhtype-typing-input"
-                autoFocus
-                placeholder={t("start-typing-placeholder", { defaultValue: "Start typing..." })}
-              />
+              {source === 'code' ? (
+                <textarea
+                  ref={inputRef as React.RefObject<HTMLTextAreaElement | null>}
+                  rows={3}
+                  value={typedText}
+                  onChange={handleTyping}
+                  onPaste={(e) => e.preventDefault()}
+                  onCopy={(e) => e.preventDefault()}
+                  onCut={(e) => e.preventDefault()}
+                  disabled={finished}
+                  spellCheck={false}
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  className="shrink-0 w-full px-4 py-3 rounded-lg font-mono border border-(--app-border) bg-(--app-bg) text-(--app-text) outline-none focus:ring-1 focus:ring-(--app-accent) rmhtype-typing-input"
+                  autoFocus
+                />
+              ) : (
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={typedText}
+                  onChange={handleTyping}
+                  onPaste={(e) => e.preventDefault()}
+                  onCopy={(e) => e.preventDefault()}
+                  onCut={(e) => e.preventDefault()}
+                  disabled={finished}
+                  className="shrink-0 w-full px-4 py-3 rounded-lg font-mono border border-(--app-border) bg-(--app-bg) text-(--app-text) outline-none focus:ring-1 focus:ring-(--app-accent) rmhtype-typing-input"
+                  autoFocus
+                  placeholder={t("start-typing-placeholder", { defaultValue: "Start typing..." })}
+                />
+              )}
 
               {/* Progress — hidden on short viewports via CSS */}
               <div className="shrink-0 rmhtype-progress-bar rmhtype-progress-section">

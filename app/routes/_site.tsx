@@ -43,6 +43,11 @@ const FreeMonthModal = lazy(() =>
 const KeyboardShortcuts = lazy(() =>
   import('@/components/site/KeyboardShortcuts').then((m) => ({ default: m.KeyboardShortcuts })),
 );
+const TargetedNoticeBanner = lazy(() =>
+  import('@/components/site/TargetedNoticeBanner').then((m) => ({
+    default: m.TargetedNoticeBanner,
+  })),
+);
 const MiniPlayer = lazy(() =>
   import('@/components/rmhmusic/MiniPlayer').then((m) => ({ default: m.MiniPlayer })),
 );
@@ -89,6 +94,7 @@ function SiteLayout() {
             <FreeMonthModal />
             <KeyboardShortcuts />
             <MiniPlayer />
+            <TargetedNoticeBanner />
           </Suspense>
         </SilentErrorBoundary>
       }

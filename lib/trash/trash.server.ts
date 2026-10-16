@@ -41,6 +41,7 @@ import { feedEventBus } from '@/lib/feed-sse';
 import { linkPostHashtags, unlinkPostHashtags } from '@/lib/tags-extract.server';
 import { screenNewContent } from '@/lib/moderation/auto-moderate.server';
 import { deleteObject } from '@/lib/storage/s3.server';
+import { keepOnRestoreTx } from '@/lib/posts-plus/keep.server';
 import { purgeFromCdn } from '@/lib/storage/cdn.server';
 import {
   TRASH_PAGE_SIZE,
@@ -352,6 +353,9 @@ async function restorePost(
     if (count === 0) return;
     await linkPostHashtags(tx, id, post.content);
     await restorePostCounters(tx, userId, post.communityId);
+    // posts-plus X8: restoring is an explicit "keep this" - neither its TTL nor
+    // the account auto-delete job may take it again.
+    await keepOnRestoreTx(tx, id, userId);
   });
 
   // The post reappears for anyone holding its detail view open. There is no

@@ -14,8 +14,7 @@ import {
  Send,
 } from'lucide-react';
 import { formatDistanceToNow } from'date-fns';
-import { VirtualPostList } from'./VirtualPostList';
-import { ComposeBox } from'./ComposeBox';
+import { CommunityPlusBody } from'@/components/communities/CommunityPlusBody';
 import { Reveal } from'@/components/motion';
 import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
@@ -28,6 +27,8 @@ import { toast } from'sonner';
 import { useTranslation } from'react-i18next';
 import { useOptimisticAction } from'@/hooks/useOptimisticAction';
 import type { FeedItem } from'@/lib/feed-types';
+import { WatchControl } from'@/components/discovery/WatchControl';
+import { FindATimeLink } from'@/components/calendar/FindATimeLink';
 
 interface Announcement {
  id: string;
@@ -211,6 +212,10 @@ export function CommunityColumn({
  </div>
  </div>
  <div className="flex shrink-0 items-center gap-2">
+ {session && community.joined && (
+ <FindATimeLink communityId={community.id} variant="button"/>
+ )}
+ {session && community.joined && <WatchControl kind="community"targetId={community.id}/>}
  {session && (
  <Button size="sm"variant="outline"onClick={() => setMembersOpen(true)}>
  {t('members-button', { defaultValue:'Members'})}
@@ -303,21 +308,8 @@ export function CommunityColumn({
  </Reveal>
  )}
 
- {/* Composer for members */}
- {community.joined && (
- <ComposeBox
- communityId={community.id}
- onPosted={(item) => setItems((prev) => [item, ...prev])}
- />
- )}
-
- {items.length === 0 ? (
- <EmptyState
- description={t('no-posts-yet', { defaultValue:'No posts yet. Be the first!'})}
- />
- ) : (
- <VirtualPostList items={items} />
- )}
+ {/* Composer, tabs (posts · hall of fame · challenge · census · top · mod tools) */}
+ <CommunityPlusBody community={community} items={items} setItems={setItems} />
 
  {announceOpen && (
  <AnnounceDialog slug={slug} onClose={() => setAnnounceOpen(false)} onPosted={onAnnounced} />

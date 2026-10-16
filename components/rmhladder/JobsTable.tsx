@@ -5,6 +5,7 @@ import type { JobActionValue } from '@/lib/rmhladder/server/actions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { PayBadge } from './PayBadge';
 import { RungMeter } from './RungMeter';
 import { safeExternalUrl, sourceDomain, trackApplyClick } from './url';
 
@@ -194,6 +195,7 @@ export function JobsTable({ rows, onRowClick, onAction }: JobsTableProps) {
                   <MapPin className="size-4" aria-hidden />
                   {job.location}
                 </p>
+                <PayBadge job={row} className="block text-sm font-medium text-site-text" />
                 <div className="flex items-center gap-2 text-sm text-site-text-muted">
                   <RungMeter score={row.finalRelevance} size="sm" />
                   <span>
@@ -272,6 +274,7 @@ export function JobsTable({ rows, onRowClick, onAction }: JobsTableProps) {
                         {job.title}
                       </span>
                       <span className="mt-1 block text-xs text-site-text-muted">{job.company}</span>
+                      <PayBadge job={row} className="mt-1 block text-xs font-medium text-site-text" />
                     </button>
                   </td>
                   <td className="px-4 py-4 text-site-text-muted">{job.location}</td>

@@ -26,16 +26,20 @@ import { useTranslation } from 'react-i18next';
 import type { Session } from '@/lib/pf2ecal/types';
 import { zonedDateKey } from '@/lib/pf2ecal/zoned-time';
 import { formatMonthLabel } from './format';
+import { weekStartDay } from '@/lib/access/format';
+import { useAccessPrefs } from '@/lib/access/use-access-prefs';
 import { TRANSITION_FAST } from './motion';
 
 /** Weekday initials in the viewer's locale, starting Sunday. */
-function useWeekdayInitials(): string[] {
+function useWeekdayInitials(weekStart: number): string[] {
   return useMemo(() => {
     const fmt = new Intl.DateTimeFormat(undefined, { weekday: 'short', timeZone: 'UTC' });
     // 2024-01-07 was a Sunday; seven consecutive days from it give the labels
-    // in the order the grid lays them out.
-    return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(Date.UTC(2024, 0, 7 + i))));
-  }, []);
+    // in the order the grid lays them out (rotated by the week-start preference).
+    return Array.from({ length: 7 }, (_, i) =>
+      fmt.format(new Date(Date.UTC(2024, 0, 7 + weekStart + i))),
+    );
+  }, [weekStart]);
 }
 
 interface DayCell {
@@ -44,10 +48,10 @@ interface DayCell {
   outside: boolean;
 }
 
-/** Six weeks starting on the Sunday on or before the 1st — a stable 42 cells. */
-function buildCells(year: number, month: number): DayCell[] {
+/** Six weeks starting on the week-start day on or before the 1st — a stable 42 cells. */
+function buildCells(year: number, month: number, weekStart: number): DayCell[] {
   const first = new Date(Date.UTC(year, month - 1, 1));
-  const leading = first.getUTCDay();
+  const leading = (first.getUTCDay() - weekStart + 7) % 7;
   const cells: DayCell[] = [];
   for (let i = 0; i < 42; i++) {
     const date = new Date(Date.UTC(year, month - 1, 1 - leading + i));
@@ -86,8 +90,9 @@ export function MonthGrid({
   onToday,
 }: MonthGridProps) {
   const { t } = useTranslation('r-pf2ecal');
-  const weekdays = useWeekdayInitials();
-  const cells = useMemo(() => buildCells(year, month), [year, month]);
+  const weekStart = weekStartDay(useAccessPrefs());
+  const weekdays = useWeekdayInitials(weekStart);
+  const cells = useMemo(() => buildCells(year, month, weekStart), [year, month, weekStart]);
 
   const byDay = useMemo(() => {
     const map = new Map<string, Session[]>();

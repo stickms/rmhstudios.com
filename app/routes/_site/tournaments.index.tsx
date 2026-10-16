@@ -1,3 +1,4 @@
+import { SwissLabel } from '@/components/competitive/SwissStandings';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { useCallback, useEffect, useState } from 'react';
@@ -111,7 +112,9 @@ function TournamentsPage() {
                     <p className="text-sm text-site-text-dim truncate">
                       {tourney.gameTitle ?? tourney.gameId}
                       {' · '}
-                      {tourney.format === 'ROUND_ROBIN'
+                      {tourney.format === 'SWISS'
+                        ? <SwissLabel />
+                        : tourney.format === 'ROUND_ROBIN'
                         ? t('round-robin', { defaultValue: 'Round robin' })
                         : t('single-elim-tournaments-index', { defaultValue: 'Single elim' })}
                     </p>

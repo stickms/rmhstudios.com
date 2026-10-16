@@ -21,7 +21,7 @@ export class QueueManager {
 
   private onAdd(socket: Socket, payload: any) {
     const room = this.roomManager.getRoomForSocket(socket.id);
-    if (!room) return;
+    if (!room || room.radio) return;
 
     if (room.queue.length >= MAX_QUEUE_SIZE) {
       socket.emit(S2C.ERROR, { code: 'QUEUE_FULL', message: 'Queue is full' });
@@ -52,7 +52,7 @@ export class QueueManager {
 
   private onRemove(socket: Socket, payload: { itemId: string }) {
     const room = this.roomManager.getRoomForSocket(socket.id);
-    if (!room) return;
+    if (!room || room.radio) return;
 
     const idx = room.queue.findIndex((q) => q.id === payload.itemId);
     if (idx === -1) return;
@@ -65,7 +65,7 @@ export class QueueManager {
 
   private onReorder(socket: Socket, payload: { itemId: string; newPosition: number }) {
     const room = this.roomManager.getRoomForSocket(socket.id);
-    if (!room) return;
+    if (!room || room.radio) return;
 
     const idx = room.queue.findIndex((q) => q.id === payload.itemId);
     if (idx === -1) return;

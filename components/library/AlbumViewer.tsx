@@ -36,6 +36,7 @@ import type { Album, AlbumSlide } from '@/lib/albums';
 import { albumCoverVTName } from '@/lib/view-transition';
 import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
 import { usePopPresence } from '@/hooks/usePopPresence';
+import { CaptionFileButton } from '@/components/access/CaptionFileButton';
 import './album-viewer.css';
 
 const MAX_SCALE = 6;
@@ -98,6 +99,12 @@ export function AlbumViewer({ album }: { album: Album }) {
   } | null>(null);
 
   const slide: AlbumSlide | undefined = slides[order[pos] ?? 0];
+
+  // A member-loaded WebVTT file for the current video slide (blob URL, revoked on change).
+  const [captionUrl, setCaptionUrl] = useState<string | null>(null);
+  useEffect(() => () => { if (captionUrl) URL.revokeObjectURL(captionUrl); }, [captionUrl]);
+  const slideKey = order[pos];
+  useEffect(() => { setCaptionUrl(null); }, [slideKey]);
 
   // Shuffle once mounted.
   useEffect(() => {
@@ -401,6 +408,7 @@ export function AlbumViewer({ album }: { album: Album }) {
           </div>
         </div>
         <div className="av__tools">
+          {slide.type === 'video' && <CaptionFileButton className="av__btn" onUrl={setCaptionUrl} />}
           {slide.type === 'image' && (
             <>
               <button type="button" className="av__btn" onClick={() => zoomBy(1 / 1.3)} disabled={!isZoomed} aria-label={t('album-zoom-out', { defaultValue: 'Zoom out' })}>
@@ -528,7 +536,9 @@ export function AlbumViewer({ album }: { album: Album }) {
             loop
             playsInline
             preload="auto"
-          />
+          >
+            {captionUrl ? <track kind="captions" src={captionUrl} default label="WebVTT" /> : null}
+          </video>
         )}
 
         <button type="button" className="av__nav av__nav--prev" onClick={() => go(-1)} aria-label={t('album-prev', { defaultValue: 'Previous' })}>
