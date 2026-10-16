@@ -103,6 +103,8 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   { loc: '/qotd', changefreq: 'daily', priority: 0.5 },
   // P18 delight: public timeline of site eras, and the daily nominated photo.
   { loc: '/museum', changefreq: 'monthly', priority: 0.4 },
+  // P19 Z5: community pixel canvas (live board, timelapse after the event).
+  { loc: '/canvas', changefreq: 'weekly', priority: 0.4 },
   { loc: '/photo-of-the-day', changefreq: 'daily', priority: 0.4 },
   // The generated daily front page (P03 A3): rebuilt once a day from one snapshot row.
   { loc: '/today', changefreq: 'daily', priority: 0.6 },
@@ -311,6 +313,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/admin/blog/new': 'admin',
   '/admin/economy': 'admin',
   '/admin/delight': 'admin',
+  '/admin/canvas': 'admin', // P19 Z5/X3
   '/admin/library': 'admin',
   '/admin/patch-notes': 'admin',
   '/admin/release-notes': 'admin',

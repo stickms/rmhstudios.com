@@ -96,6 +96,8 @@ export interface FeedItem {
   replyControl?: "EVERYONE" | "FOLLOWING" | "MENTIONED";
   /** Take meter (X6): readers vote agree/disagree. The split is NOT in the payload. */
   isTake?: boolean;
+  /** X3 — at least one context note is visible; the notes load lazily. */
+  hasNote?: boolean;
   /** N1: community post flair (community feeds only). */
   communityFlair?: { id: string; name: string; color: string };
   /** posts-plus X5: id of the series this post is a part of (details load lazily). */

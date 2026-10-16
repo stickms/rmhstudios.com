@@ -14,6 +14,7 @@ import { RMHarkContent, extractFirstUrl } from'./RMHarkContent';
 import { ProfileHoverCard } from'./ProfileHoverCard';
 import { PollDisplay } from'./PollDisplay';
 import { TakeMeterLazy } from'./TakeMeterLazy';
+import { ContextNotesLazy } from '@/components/context-notes/ContextNotesLazy';
 import { PostPlusBadges } from'@/components/posts-plus/PostPlusBadges';
 import { GifEmbed } from'./GifEmbed';
 import { LinkPreview } from'./LinkPreview';
@@ -427,6 +428,11 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  {/* Take meter (X6) — only on posts the author marked as a take */}
  {item.isTake && !item.locked && !item.pending && (
  <TakeMeterLazy postId={item.actualId ?? item.id} />
+ )}
+
+ {/* Context note (X3) — loads lazily, only for posts with a visible note */}
+ {item.hasNote && !item.locked && !item.pending && (
+ <ContextNotesLazy postId={item.actualId ?? item.id} hasNote />
  )}
 
  {/* Series part (X5) and auto-delete (X8) badges — nothing for ordinary posts */}

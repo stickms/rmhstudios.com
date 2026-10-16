@@ -121,6 +121,7 @@ export const Route = createFileRoute('/api/rmharks/$id')({
           imageUrls: isDeleted || locked ? undefined : rmhark.imageUrls,
           imageAlts: isDeleted || locked ? undefined : rmhark.imageAlts,
           isTake: rmhark.isTake || undefined,
+          hasNote: rmhark.hasNote || undefined,
           seriesId: rmhark.seriesId ?? undefined,
           expiresAt: rmhark.expiresAt?.toISOString(),
           locked,
