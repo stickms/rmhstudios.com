@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { useTranslation } from 'react-i18next';
+import { LegalSummaryBox } from '@/components/access/LegalSummaryBox';
 import { LegalLayout } from '@/components/lockdown/LegalLayout';
 
 export const Route = createFileRoute('/terms')({
@@ -27,6 +28,7 @@ function TermsPage() {
     >
       {/* Document under glass: the whole article body sits on one wide pane. */}
       <div className="legal-content__pane">
+        <LegalSummaryBox kind="terms" />
         <h2>{t('terms-h-acceptance', { defaultValue: '1. Acceptance of Terms' })}</h2>
         <p>
           {t('terms-p-acceptance', {

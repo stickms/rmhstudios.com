@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
 import { Spinner } from '@/components/ui/spinner';
 import { readTabBadgePref, writeTabBadgePref } from '@/lib/tab-badge';
+import { mirrorQuietHours } from '@/lib/access/prefs';
 import {
   NOTIFY_CATEGORIES,
   CATEGORY_DEFAULTS,
@@ -88,6 +89,7 @@ export function NotificationSettings() {
       .then((r) => (r.ok ? r.json() : null))
       .then((d: Prefs | null) => {
         if (!d) return;
+        mirrorQuietHours(d.quietStart ?? null, d.quietEnd ?? null);
         setPrefs({
           matrix: d.matrix ?? {},
           quietStart: d.quietStart ?? null,
@@ -100,6 +102,7 @@ export function NotificationSettings() {
 
   function persist(next: Prefs) {
     setPrefs(next);
+    mirrorQuietHours(next.quietStart, next.quietEnd);
     fetch('/api/preferences/notifications', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
