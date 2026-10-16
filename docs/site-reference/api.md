@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 832 files across 186 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 844 files across 188 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -46,7 +46,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/admin`
 
-71 routes.
+75 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -63,6 +63,10 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/admin/appeals/:id` | `POST` | `app/routes/api/admin/appeals/$id.ts` |
 | `/api/admin/audit-log` | `GET` | `app/routes/api/admin/audit-log.ts` |
 | `/api/admin/blog` | `DELETE` `POST` | `app/routes/api/admin/blog.ts` |
+| `/api/admin/canvas` | `GET` `POST` | `app/routes/api/admin/canvas/index.ts` |
+| `/api/admin/canvas/:id` | `DELETE` | `app/routes/api/admin/canvas/$id.ts` |
+| `/api/admin/context-notes` | `GET` | `app/routes/api/admin/context-notes/index.ts` |
+| `/api/admin/context-notes/:id` | `PATCH` | `app/routes/api/admin/context-notes/$id.ts` |
 | `/api/admin/curated-builds/image` | `POST` | `app/routes/api/admin/curated-builds/image.ts` |
 | `/api/admin/curated-builds/image/:filename` | `GET` | `app/routes/api/admin/curated-builds/image/$filename.ts` |
 | `/api/admin/curated-builds/image/proxy` | `GET` | `app/routes/api/admin/curated-builds/image/proxy.ts` |
@@ -318,6 +322,18 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/calls/ice` | `GET` | `app/routes/api/calls/ice.ts` |
 | `/api/calls/privacy` | `GET` `PUT` | `app/routes/api/calls/privacy.ts` |
 
+## `/api/canvas`
+
+5 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/canvas` | `GET` | `app/routes/api/canvas/index.ts` |
+| `/api/canvas/log` | `GET` | `app/routes/api/canvas/log.ts` |
+| `/api/canvas/place` | `POST` | `app/routes/api/canvas/place.ts` |
+| `/api/canvas/state` | `GET` | `app/routes/api/canvas/state.ts` |
+| `/api/canvas/stream` | `GET` | `app/routes/api/canvas/stream.ts` |
+
 ## `/api/casino`
 
 1 route.
@@ -445,6 +461,16 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/community-pages` | `GET` `POST` | `app/routes/api/community-pages/index.ts` |
 | `/api/community-pages/:id` | `DELETE` `PATCH` | `app/routes/api/community-pages/$id.ts` |
 | `/api/community-pages/:id/revisions` | `GET` `POST` | `app/routes/api/community-pages/$id.revisions.ts` |
+
+## `/api/context-notes`
+
+3 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/context-notes` | `GET` `POST` | `app/routes/api/context-notes/index.ts` |
+| `/api/context-notes/:id` | `DELETE` | `app/routes/api/context-notes/$id/index.ts` |
+| `/api/context-notes/:id/rate` | `POST` | `app/routes/api/context-notes/$id/rate.ts` |
 
 ## `/api/creator`
 

@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 323 routes. 186 render inside the standard site shell (sidebar, nav, context rail); 137 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 325 routes. 188 render inside the standard site shell (sidebar, nav, context rail); 137 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -30,6 +30,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/blog` | Manage Blog Posts \| Admin | admin | `app/routes/_site/admin/blog/index.tsx` |
 | `/admin/blog/:slug/edit` | Edit Blog Post \| Admin | admin | `app/routes/_site/admin/blog/$slug/edit.tsx` |
 | `/admin/blog/new` | Create Blog Post \| Admin | admin | `app/routes/_site/admin/blog/new.tsx` |
+| `/admin/canvas` | Canvas \| Admin | admin | `app/routes/_site/admin/canvas.tsx` |
 | `/admin/delight` | Delight tools \| Admin | admin | `app/routes/_site/admin/delight.tsx` |
 | `/admin/economy` | Coin Economy | admin | `app/routes/_site/admin/economy.tsx` |
 | `/admin/insights` | Insights | admin | `app/routes/_site/admin/insights.tsx` |
@@ -61,6 +62,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/builds` | redirects to `/games` | public | `app/routes/_site/builds/index.tsx` |
 | `/builds/:slug` | Build Not Found | public | `app/routes/_site/builds/$slug.tsx` |
 | `/c/:slug` | — | public | `app/routes/_site/c.$slug.tsx` |
+| `/canvas` | Community canvas | public | `app/routes/_site/canvas.tsx` |
 | `/changelog` | Changelog | public | `app/routes/_site/changelog.tsx` |
 | `/communities` | Communities | public | `app/routes/_site/communities.tsx` |
 | `/create` | Create | public | `app/routes/_site/create/index.tsx` |

@@ -447,6 +447,11 @@ model User {
   pf2eSettingsEdits   Pf2eSettings[]        @relation("Pf2eSettingsEditor")
 
   // ─── Feature ideas 2026-10-12 (docs/plans/2026-10-12-feature-ideas-every-surface.md)
+  // P19 canvas: Z5 pixel canvas, X3 context notes
+  canvasPlacements           CanvasPlacement[]
+  canvasCooldowns            CanvasCooldown[]
+  contextNotes               ContextNote[]
+  contextNoteRatings         ContextNoteRating[]
   // P18 delight: Z2 hunt, Z4 fortunes, Z6 photo of the day, Y4 translations
   huntProgress               HuntProgress[]
   fortuneCookies             FortuneCookie[]
@@ -2829,6 +2834,9 @@ model RMHark {
   lifecycle  PostLifecycle?
   seriesItem PostSeriesItem?
   qotdAnswer QotdAnswer?
+  // P19 X3: true while at least one context note on this post is visible (feed reads this boolean only)
+  hasNote      Boolean       @default(false)
+  contextNotes ContextNote[]
 
   @@index([userId])
   @@index([createdAt(sort: Desc)])
@@ -12103,4 +12111,95 @@ model TranslationVote {
   @@unique([suggestionId, userId])
   @@index([userId])
   @@map("translation_vote")
+}
+
+// ── P19 canvas: Z5 community pixel canvas, X3 context notes ──
+// One row per event; `state` is width*height bytes (one palette index per pixel)
+// so a snapshot is a single read. The placement log is the history for the replay.
+model CanvasEvent {
+  id          String   @id @default(cuid())
+  title       String   @db.VarChar(80)
+  width       Int
+  height      Int
+  cooldownSec Int
+  startsAt    DateTime
+  endsAt      DateTime
+  state       Bytes
+  createdById String
+  createdAt   DateTime @default(now())
+
+  placements CanvasPlacement[]
+  cooldowns  CanvasCooldown[]
+
+  @@index([startsAt])
+  @@map("canvas_event")
+}
+
+model CanvasPlacement {
+  id        Int      @id @default(autoincrement())
+  eventId   String
+  userId    String
+  x         Int      @db.SmallInt
+  y         Int      @db.SmallInt
+  color     Int      @db.SmallInt
+  createdAt DateTime @default(now())
+
+  event CanvasEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, id])
+  @@index([userId])
+  @@map("canvas_placement")
+}
+
+// Last placement per member per event; the conditional upsert on this row is the cooldown gate.
+model CanvasCooldown {
+  eventId      String
+  userId       String
+  lastPlacedAt DateTime
+
+  event CanvasEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, userId])
+  @@index([userId])
+  @@map("canvas_cooldown")
+}
+
+model ContextNote {
+  id           String   @id @default(cuid())
+  postId       String
+  authorId     String
+  body         String   @db.VarChar(500)
+  helpfulCount Int      @default(0)
+  notCount     Int      @default(0)
+  // Set by the bridging evaluation; `hidden` is the admin override and always wins.
+  visible      Boolean  @default(false)
+  hidden       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  post    RMHark              @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author  User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  ratings ContextNoteRating[]
+
+  @@unique([postId, authorId])
+  @@index([postId, visible])
+  @@index([authorId])
+  @@index([createdAt(sort: Desc)])
+  @@map("context_note")
+}
+
+model ContextNoteRating {
+  id        String   @id @default(cuid())
+  noteId    String
+  raterId   String
+  helpful   Boolean
+  createdAt DateTime @default(now())
+
+  note  ContextNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  rater User        @relation(fields: [raterId], references: [id], onDelete: Cascade)
+
+  @@unique([noteId, raterId])
+  @@index([raterId, createdAt(sort: Desc)])
+  @@map("context_note_rating")
 }

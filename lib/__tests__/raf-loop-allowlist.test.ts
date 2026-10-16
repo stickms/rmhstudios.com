@@ -147,6 +147,7 @@ const ALLOW = new Set<string>([
   'app/routes/_site/rmhladder/pipeline.tsx',
   'components/assistant/ConciergePanel.tsx',
   'components/breakpoint/GameView.tsx',
+  'components/canvas/CanvasReplay.tsx', // P19 Z5: stops at the last pixel; cancelled on unmount/pause
   // Bum's Rush runs exactly ONE loop for the whole game — engine step, render,
   // input polling and the host's network tick all ride it, which is why the
   // HUD can exist without a second rAF anywhere in `components/bums-rush/`.

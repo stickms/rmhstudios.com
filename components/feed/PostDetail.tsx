@@ -25,6 +25,7 @@ import type { FeedItem } from'@/lib/feed-types';
 import { RMHarkContent, extractFirstUrl } from'./RMHarkContent';
 import { PollDisplay } from'./PollDisplay';
 import { TakeMeterLazy } from'./TakeMeterLazy';
+import { ContextNotesLazy } from '@/components/context-notes/ContextNotesLazy';
 import { PostPlusBadges } from'@/components/posts-plus/PostPlusBadges';
 import { GifEmbed } from'./GifEmbed';
 import { PostImageGrid } from'./PostImageGrid';
@@ -389,6 +390,13 @@ export function PostDetail({ postId }: PostDetailProps) {
  {post.isTake && !post.locked && (
  <div className="mb-3">
  <TakeMeterLazy postId={postId} />
+ </div>
+ )}
+
+ {/* Context notes (X3) — a button until opened; open straight away when a note is visible */}
+ {!post.locked && (
+ <div className="mb-3">
+ <ContextNotesLazy postId={postId} hasNote={post.hasNote} />
  </div>
  )}
 
