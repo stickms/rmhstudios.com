@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 809 files across 180 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 832 files across 186 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -46,7 +46,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/admin`
 
-61 routes.
+71 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -66,6 +66,16 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/admin/curated-builds/image` | `POST` | `app/routes/api/admin/curated-builds/image.ts` |
 | `/api/admin/curated-builds/image/:filename` | `GET` | `app/routes/api/admin/curated-builds/image/$filename.ts` |
 | `/api/admin/curated-builds/image/proxy` | `GET` | `app/routes/api/admin/curated-builds/image/proxy.ts` |
+| `/api/admin/delight/fools` | `GET` `POST` | `app/routes/api/admin/delight/fools/index.ts` |
+| `/api/admin/delight/fortunes` | `GET` | `app/routes/api/admin/delight/fortunes/index.ts` |
+| `/api/admin/delight/fortunes/:id` | `POST` | `app/routes/api/admin/delight/fortunes/$id/index.ts` |
+| `/api/admin/delight/hunts` | `GET` `POST` | `app/routes/api/admin/delight/hunts/index.ts` |
+| `/api/admin/delight/hunts/:id` | `DELETE` `PATCH` | `app/routes/api/admin/delight/hunts/$id/index.ts` |
+| `/api/admin/delight/museum` | `POST` | `app/routes/api/admin/delight/museum/index.ts` |
+| `/api/admin/delight/museum/:id` | `DELETE` `PUT` | `app/routes/api/admin/delight/museum/$id/index.ts` |
+| `/api/admin/delight/translations` | `GET` | `app/routes/api/admin/delight/translations/index.ts` |
+| `/api/admin/delight/translations/:id` | `POST` | `app/routes/api/admin/delight/translations/$id/index.ts` |
+| `/api/admin/delight/translations/export` | `GET` | `app/routes/api/admin/delight/translations/export/index.ts` |
 | `/api/admin/economy` | `GET` | `app/routes/api/admin/economy.ts` |
 | `/api/admin/forecasting/seasons` | `POST` | `app/routes/api/admin/forecasting/seasons.ts` |
 | `/api/admin/gift-exchanges/:id/verify` | `GET` | `app/routes/api/admin/gift-exchanges/$id/verify.ts` |
@@ -480,6 +490,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | ----- | ------- | ------ |
 | `/api/datacenter/compute` | `GET` `POST` | `app/routes/api/datacenter/compute.ts` |
 
+## `/api/delight`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/delight/config` | `GET` | `app/routes/api/delight/config.ts` |
+
 ## `/api/developer`
 
 3 routes.
@@ -675,6 +693,15 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | ----- | ------- | ------ |
 | `/api/forest-explorer/save` | `GET` `POST` | `app/routes/api/forest-explorer/save.ts` |
 
+## `/api/fortune`
+
+2 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/fortune` | `POST` | `app/routes/api/fortune/index.ts` |
+| `/api/fortune/today` | `GET` | `app/routes/api/fortune/today/index.ts` |
+
 ## `/api/friendly`
 
 2 routes.
@@ -848,6 +875,16 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/homes/listings/:id/roommate` | `GET` | `app/routes/api/homes/listings.$id.roommate.ts` |
 | `/api/homes/roommate` | `GET` `PUT` | `app/routes/api/homes/roommate.ts` |
 | `/api/homes/watches` | `DELETE` `GET` `PATCH` `POST` | `app/routes/api/homes/watches.ts` |
+
+## `/api/hunt`
+
+3 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/hunt` | `GET` | `app/routes/api/hunt/index.ts` |
+| `/api/hunt/answer` | `POST` | `app/routes/api/hunt/answer/index.ts` |
+| `/api/hunt/marker` | `GET` | `app/routes/api/hunt/marker/index.ts` |
 
 ## `/api/image-proxy`
 
@@ -1034,6 +1071,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | ----- | ------- | ------ |
 | `/api/moments` | `POST` | `app/routes/api/moments/index.ts` |
 
+## `/api/museum`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/museum` | `GET` | `app/routes/api/museum/index.ts` |
+
 ## `/api/neon-driftway`
 
 2 routes.
@@ -1148,6 +1193,16 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/pf2ecal/sessions/blurbs` | `POST` | `app/routes/api/pf2ecal/sessions.blurbs.ts` |
 | `/api/pf2ecal/settings` | `GET` `PUT` | `app/routes/api/pf2ecal/settings.ts` |
 | `/api/pf2ecal/settings/test-webhook` | `POST` | `app/routes/api/pf2ecal/settings.test-webhook.ts` |
+
+## `/api/photo-of-the-day`
+
+3 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/photo-of-the-day` | `GET` `POST` | `app/routes/api/photo-of-the-day/index.ts` |
+| `/api/photo-of-the-day/:id` | `DELETE` | `app/routes/api/photo-of-the-day/$id/index.ts` |
+| `/api/photo-of-the-day/vote` | `POST` | `app/routes/api/photo-of-the-day/vote/index.ts` |
 
 ## `/api/playlists`
 
@@ -1899,6 +1954,16 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/tournaments/:id/register` | `POST` | `app/routes/api/tournaments/$id/register.ts` |
 | `/api/tournaments/:id/start` | `POST` | `app/routes/api/tournaments/$id/start.ts` |
 | `/api/tournaments/:id/withdraw` | `POST` | `app/routes/api/tournaments/$id/withdraw.ts` |
+
+## `/api/translate`
+
+3 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/translate` | `GET` | `app/routes/api/translate/index.ts` |
+| `/api/translate/suggest` | `POST` | `app/routes/api/translate/suggest/index.ts` |
+| `/api/translate/vote` | `POST` | `app/routes/api/translate/vote/index.ts` |
 
 ## `/api/trash`
 

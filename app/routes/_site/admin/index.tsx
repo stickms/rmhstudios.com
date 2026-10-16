@@ -9,6 +9,7 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useAdminReviewCount } from '@/lib/useAdminReviewCount';
 import { AdminQotdLink } from '@/components/posts-plus/AdminQotdLink';
+import { AdminDelightLink } from '@/components/delight/AdminDelightLink';
 import { AdminReadingLink } from '@/components/reading/admin/AdminReadingLink';
 import { InsightsLink } from '@/components/admin/InsightsLink';
 
@@ -223,6 +224,7 @@ function AdminDashboardPage() {
 
           <AdminSafetyLink />
           <AdminQotdLink />
+          <AdminDelightLink />
           <AdminReadingLink />
         </div>
       </div>

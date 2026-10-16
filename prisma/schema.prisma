@@ -447,6 +447,13 @@ model User {
   pf2eSettingsEdits   Pf2eSettings[]        @relation("Pf2eSettingsEditor")
 
   // ─── Feature ideas 2026-10-12 (docs/plans/2026-10-12-feature-ideas-every-surface.md)
+  // P18 delight: Z2 hunt, Z4 fortunes, Z6 photo of the day, Y4 translations
+  huntProgress               HuntProgress[]
+  fortuneCookies             FortuneCookie[]
+  photoNominations           PhotoNomination[]
+  photoVotes                 PhotoVote[]
+  translationSuggestions     TranslationSuggestion[]
+  translationVotes           TranslationVote[]
   // P22 ladder-homes: F6 referrals, F8 interview reports, F9 roommate quiz
   ladderReferralOffers       LadderReferralOffer[]
   ladderReferralRequests     LadderReferralRequest[]
@@ -11936,4 +11943,164 @@ model HomeRoommateProfile {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("home_roommate_profile")
+}
+
+// ── P18: delight (Z2 hunt, Z3 museum, Z4 fortune, Z6 photo of the day, Z8 flag, Y4 translations) ──
+
+/// Z8: tiny admin key/value switches (e.g. `aprilfools` = "1"). Off when absent.
+model DelightSetting {
+  key       String   @id @db.VarChar(40)
+  value     String   @db.VarChar(200)
+  updatedAt DateTime @updatedAt
+
+  @@map("delight_setting")
+}
+
+/// Z2: one admin-defined clue chain. At most one is active at a time.
+model Hunt {
+  id        String   @id @default(cuid())
+  title     String   @db.VarChar(120)
+  active    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  clues    HuntClue[]
+  progress HuntProgress[]
+
+  @@index([active])
+  @@map("hunt")
+}
+
+model HuntClue {
+  id         String @id @default(cuid())
+  huntId     String
+  position   Int
+  /// Shown by the hidden marker on `hiddenPath`, to members who solved the previous clue.
+  clueText   String @db.VarChar(500)
+  /// Optional vague pointer shown on /hunt, towards the page.
+  hint       String @default("") @db.VarChar(300)
+  /// Normalised (lowercase, trimmed, single-spaced); never sent to members.
+  answer     String @db.VarChar(120)
+  hiddenPath String @db.VarChar(200)
+
+  hunt Hunt @relation(fields: [huntId], references: [id], onDelete: Cascade)
+
+  @@unique([huntId, position])
+  @@map("hunt_clue")
+}
+
+model HuntProgress {
+  id         String    @id @default(cuid())
+  huntId     String
+  userId     String
+  solved     Int       @default(0)
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  durationMs Int?
+
+  hunt Hunt @relation(fields: [huntId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([huntId, userId])
+  @@index([huntId, durationMs])
+  @@index([userId])
+  @@map("hunt_progress")
+}
+
+/// Z3: admin-edited timeline of site eras.
+model SiteEra {
+  id        String   @id @default(cuid())
+  eraDate   DateTime @db.Date
+  title     String   @db.VarChar(120)
+  body      String   @db.VarChar(2000)
+  imageUrl  String?  @db.VarChar(500)
+  createdAt DateTime @default(now())
+
+  @@index([eraDate])
+  @@map("site_era")
+}
+
+/// Z4: community one-liners. `runDate` (UTC YYYY-MM-DD) is claimed lazily, once per day.
+model FortuneCookie {
+  id         String    @id @default(cuid())
+  userId     String
+  text       String    @db.VarChar(140)
+  status     String    @default("pending") @db.VarChar(10) // pending | approved | rejected
+  runDate    String?   @unique @db.VarChar(10)
+  createdAt  DateTime  @default(now())
+  reviewedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
+  @@map("fortune_cookie")
+}
+
+/// Z6: an image a member nominated for a UTC day. One per member per day.
+model PhotoNomination {
+  id        String   @id @default(cuid())
+  userId    String
+  dayKey    String   @db.VarChar(10)
+  imageUrl  String   @db.VarChar(500)
+  caption   String   @default("") @db.VarChar(140)
+  votes     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  casts PhotoVote[]
+
+  @@unique([userId, dayKey])
+  @@index([dayKey, votes(sort: Desc), createdAt])
+  @@map("photo_nomination")
+}
+
+model PhotoVote {
+  id           String   @id @default(cuid())
+  nominationId String
+  userId       String
+  dayKey       String   @db.VarChar(10)
+  createdAt    DateTime @default(now())
+
+  nomination PhotoNomination @relation(fields: [nominationId], references: [id], onDelete: Cascade)
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dayKey])
+  @@index([nominationId])
+  @@map("photo_vote")
+}
+
+/// Y4: a member's suggested translation of one English string. Accepted rows are
+/// exported by an admin as JSON; nothing writes to locales/ at runtime.
+model TranslationSuggestion {
+  id        String   @id @default(cuid())
+  userId    String
+  locale    String   @db.VarChar(8)
+  ns        String   @db.VarChar(64)
+  key       String   @db.VarChar(200)
+  text      String   @db.VarChar(1000)
+  votes     Int      @default(0)
+  status    String   @default("open") @db.VarChar(10) // open | accepted | rejected
+  createdAt DateTime @default(now())
+
+  user  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  casts TranslationVote[]
+
+  @@unique([userId, locale, ns, key])
+  @@index([locale, ns, key])
+  @@index([locale, status])
+  @@map("translation_suggestion")
+}
+
+model TranslationVote {
+  id           String   @id @default(cuid())
+  suggestionId String
+  userId       String
+  createdAt    DateTime @default(now())
+
+  suggestion TranslationSuggestion @relation(fields: [suggestionId], references: [id], onDelete: Cascade)
+  user       User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([suggestionId, userId])
+  @@index([userId])
+  @@map("translation_vote")
 }

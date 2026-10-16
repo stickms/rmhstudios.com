@@ -54,6 +54,7 @@ import { AppI18nProvider } from '@/components/i18n/AppI18nProvider';
 import { CommandPaletteMount } from '@/components/site/CommandPaletteMount';
 import { CallMount } from '@/components/call/CallMount';
 import { AccessMount } from '@/components/access/AccessMount';
+import { DelightMount } from '@/components/delight/DelightMount';
 import { ThemePreviewBar } from '@/components/themes/ThemePreviewBar';
 import { RecentsTracker } from '@/components/site/RecentsTracker';
 import { PatchNotesMount } from '@/components/arcade/PatchNotesMount';
@@ -938,6 +939,7 @@ export function Providers({
                         answering one must survive navigating away. */}
                     <CallMount />
                     <AccessMount />
+                    <DelightMount />
                   </SilentErrorBoundary>
                 </ConfirmProvider>
               </ResolvedUserCtx.Provider>
