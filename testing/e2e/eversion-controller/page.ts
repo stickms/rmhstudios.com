@@ -4,7 +4,7 @@
  *
  * It runs the REAL controller module (`useEversionController.ts`), the REAL
  * runner, the REAL host in worker mode on a transferred canvas, the REAL
- * renderer (stub shaders) and the REAL timeline. Faked, because they belong to
+ * renderer (real shaders) and the REAL timeline. Faked, because they belong to
  * other tasks or to the app: the router (a history-backed object that "renders"
  * a route into `#page` after a delay), the BEFORE scheduler and the capture
  * session (T17 may not have landed; the fakes paint a flat colour so the stub

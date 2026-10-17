@@ -2,7 +2,7 @@
  * The test page's script for `testing/e2e/eversion-gl.mjs` (T23). Bundled by
  * esbuild for that script only — it is not imported by the app.
  *
- * Unlike `renderer-page.ts` (T24, which pins the STUB shaders and a local mesh),
+ * Unlike `renderer-page.ts` (T24, a local mesh),
  * this page runs the REAL shaders on the REAL mesh and the REAL baked LUTs of all
  * five projections. The oracle is the real `thurston.ts` (T08).
  *
@@ -21,6 +21,7 @@ import { getProjection } from '../../projections';
 import { afterDomainTransform, alignAngle, fitEndIsometry } from '../../orientation';
 import { SPIN_AXIS } from '../../domain';
 import { evert, normal, stageParams } from '../../thurston';
+import { Timeline } from '../../timeline';
 
 const o3 = new Float64Array(3);
 function evertOracle(theta: number, phi: number, e: number): [number, number, number] {
@@ -157,15 +158,25 @@ function classify() {
       if (blueAt.length < 20) blueAt.push((i / 4) % w, h - 1 - Math.floor(i / 4 / w));
       blue++;
       if (blueAt.length < 20) blueAt.push((i / 4) % w, h - 1 - Math.floor(i / 4 / w));
-    }
-    else if (Math.abs(r - g) < 14 && Math.abs(g - b) < 14) grey++;
+    } else if (Math.abs(r - g) < 14 && Math.abs(g - b) < 14) grey++;
     else other++;
   }
   const n = w * h;
-  return { red: red / n, blue: blue / n, grey: grey / n, other: other / n, pixels: n, blueAt, redAt };
+  return {
+    red: red / n,
+    blue: blue / n,
+    grey: grey / n,
+    other: other / n,
+    pixels: n,
+    blueAt,
+    redAt,
+  };
 }
 
-const cardCanvas: { before: HTMLCanvasElement | null; after: HTMLCanvasElement | null } = { before: null, after: null };
+const cardCanvas: { before: HTMLCanvasElement | null; after: HTMLCanvasElement | null } = {
+  before: null,
+  after: null,
+};
 
 /**
  * An orientation card for `projection`: a neutral grey page (so a colour can only be a marker) with a cyan disc
@@ -194,7 +205,8 @@ function asymCard(label: string, grey: number, projection: ProjectionId): HTMLCa
   const out = new Float64Array(2);
   // The page position of a sphere point, or null when the projection puts it off the page.
   const at = (thetaDeg: number, phiDeg: number): [number, number] | null => {
-    if (!proj.forward((thetaDeg * Math.PI) / 180, (phiDeg * Math.PI) / 180, fit, out, 0)) return null;
+    if (!proj.forward((thetaDeg * Math.PI) / 180, (phiDeg * Math.PI) / 180, fit, out, 0))
+      return null;
     if (out[0]! < 0.02 || out[0]! > 0.98 || out[1]! < 0.02 || out[1]! > 0.98) return null;
     return [out[0]! * w, out[1]! * h];
   };
@@ -204,7 +216,8 @@ function asymCard(label: string, grey: number, projection: ProjectionId): HTMLCa
     pts = [at(0, 0), at(-45 * f, 0), at(45 * f, 0), at(0, -45 * f), at(0, 20 * f), at(0, 65 * f)];
     if (pts.every((q) => q)) break;
   }
-  if (!pts.every((q) => q)) throw new Error(`asymCard: no layout fits the ${projection} page at ${w}x${h}`);
+  if (!pts.every((q) => q))
+    throw new Error(`asymCard: no layout fits the ${projection} page at ${w}x${h}`);
   const [[cx, cy], [rx], [gx], [, by], [, ay0], [, ay1]] = pts as [number, number][];
   const unit = Math.abs(gx - rx) / 2; // the page distance of 45 degrees of longitude
   const r = 0.3 * unit;
@@ -279,7 +292,11 @@ function readFrame() {
 }
 
 /** A saturated marker colour, or null for neutral page/glass/veil. Hue-based so the lighting cannot hide it. */
-function markerClass(r: number, g: number, b: number): 'red' | 'green' | 'blue' | 'yellow' | 'cyan' | 'magenta' | null {
+function markerClass(
+  r: number,
+  g: number,
+  b: number,
+): 'red' | 'green' | 'blue' | 'yellow' | 'cyan' | 'magenta' | null {
   const T = 60;
   if (r - Math.max(g, b) > T) return 'red';
   if (g - Math.max(r, b) > T) return 'green';
@@ -319,7 +336,14 @@ const api = {
     renderer!.prime({
       projection,
       viewport: { ...VIEW },
-      globe: { yaw: 0, pitch: 0, yawVel: 0, pitchVel: 0, centre: [VIEW.w / 2, VIEW.h / 2], radius: 60 },
+      globe: {
+        yaw: 0,
+        pitch: 0,
+        yawVel: 0,
+        pitchVel: 0,
+        centre: [VIEW.w / 2, VIEW.h / 2],
+        radius: 60,
+      },
       orb: { cx: 0, cy: 0, radius: 10 },
       colours: themed ? THEMED : PLAIN,
       lut,
@@ -354,7 +378,10 @@ const api = {
     renderer!.setTexture('placeholder', after);
     before.close();
     after.close();
-    return { before: cardCanvas.before.toDataURL('image/png'), after: cardCanvas.after.toDataURL('image/png') };
+    return {
+      before: cardCanvas.before.toDataURL('image/png'),
+      after: cardCanvas.after.toDataURL('image/png'),
+    };
   },
 
   /**
@@ -367,7 +394,10 @@ const api = {
     const { px, w, h } = readFrame();
     const classes = ['red', 'green', 'blue', 'yellow', 'cyan', 'magenta'] as const;
     const acc = Object.fromEntries(
-      classes.map((c) => [c, { n: 0, sx: 0, sy: 0, minY: 1e9, maxY: -1, rows: {} as Record<number, number> }]),
+      classes.map((c) => [
+        c,
+        { n: 0, sx: 0, sy: 0, minY: 1e9, maxY: -1, rows: {} as Record<number, number> },
+      ]),
     );
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
@@ -383,7 +413,19 @@ const api = {
         a.rows[y] = (a.rows[y] ?? 0) + 1;
       }
     }
-    const out: Record<string, { n: number; x: number; y: number; minY: number; maxY: number; widthTip: number; widthNeck: number; widthTail: number }> = {};
+    const out: Record<
+      string,
+      {
+        n: number;
+        x: number;
+        y: number;
+        minY: number;
+        maxY: number;
+        widthTip: number;
+        widthNeck: number;
+        widthTail: number;
+      }
+    > = {};
     for (const c of classes) {
       const a = acc[c]!;
       // Arrow shape: mean row width near the tip, at the neck (where the head is widest) and at the tail.
@@ -403,7 +445,16 @@ const api = {
         widthNeck = mean(0.3, 0.45);
         widthTail = mean(0.8, 1);
       }
-      out[c] = { n: a.n, x: a.n ? a.sx / a.n : NaN, y: a.n ? a.sy / a.n : NaN, minY: a.minY, maxY: a.maxY, widthTip, widthNeck, widthTail };
+      out[c] = {
+        n: a.n,
+        x: a.n ? a.sx / a.n : NaN,
+        y: a.n ? a.sy / a.n : NaN,
+        minY: a.minY,
+        maxY: a.maxY,
+        widthTip,
+        widthNeck,
+        widthTail,
+      };
     }
     return { err, w, h, markers: out, png: canvas!.toDataURL('image/png') };
   },
@@ -432,7 +483,16 @@ const api = {
         worstAt = [i % w, Math.floor(i / w)];
       }
     }
-    return { err, w, h, mean: sum / (w * h), max, offShare: off / (w * h), worstAt, png: canvas!.toDataURL('image/png') };
+    return {
+      err,
+      w,
+      h,
+      mean: sum / (w * h),
+      max,
+      offShare: off / (w * h),
+      worstAt,
+      png: canvas!.toDataURL('image/png'),
+    };
   },
 
   /**
@@ -486,6 +546,54 @@ const api = {
     const ctx = gl();
     const err = ctx.getError();
     return { err, png: png ? canvas!.toDataURL('image/png') : null };
+  },
+
+  /**
+   * Draw the real timeline's frame `offsetMs` after POP began (negative: before it), for a hub-sized globe in
+   * the middle and an orb in the bottom-left corner. The run is replayed from the start each call, so a frame
+   * is exactly what the live loop would have drawn at that time.
+   */
+  popFrame(offsetMs: number) {
+    const orb = { cx: 48, cy: VIEW.h - 48, radius: 22 };
+    const tl = new Timeline({
+      viewport: { ...VIEW },
+      globe: {
+        yaw: 0,
+        pitch: 0,
+        yawVel: 0,
+        pitchVel: 0,
+        centre: [VIEW.w / 2, VIEW.h / 2],
+        radius: 60,
+      },
+      orb,
+      thetaAlign: realOrientation().thetaAlign,
+    });
+    let now = 0;
+    tl.start(now);
+    tl.afterReady(now);
+    let popAt = Infinity;
+    let snap: Readonly<TimelineSnapshot> = tl.tick(now);
+    for (let i = 0; i < 4000; i++) {
+      now += 4;
+      snap = tl.tick(now);
+      for (const e of tl.events()) {
+        if (e.stage === 'unwrap-done') tl.reveal(now);
+        if (e.stage === 'pop') popAt = e.t;
+      }
+      if (snap.t >= popAt + offsetMs) break;
+    }
+    renderer!.draw(snap);
+    return {
+      err: gl().getError(),
+      stage: snap.stage,
+      pop: snap.pop,
+      glass: snap.glass,
+      popFade: snap.popFade,
+      radius: snap.radius,
+      centreX: snap.centreX,
+      centreY: snap.centreY,
+      orb,
+    };
   },
 
   /** Draw then classify the pixels (the S#28 histogram). */
@@ -575,13 +683,15 @@ void main() { o = vec4(0.0); }`;
       const s = g.createShader(type)!;
       g.shaderSource(s, src);
       g.compileShader(s);
-      if (!g.getShaderParameter(s, g.COMPILE_STATUS)) throw new Error(g.getShaderInfoLog(s) ?? 'compile');
+      if (!g.getShaderParameter(s, g.COMPILE_STATUS))
+        throw new Error(g.getShaderInfoLog(s) ?? 'compile');
       g.attachShader(prog, s);
     }
     g.bindAttribLocation(prog, 0, 'a_domain');
     g.transformFeedbackVaryings(prog, ['v_N'], g.INTERLEAVED_ATTRIBS);
     g.linkProgram(prog);
-    if (!g.getProgramParameter(prog, g.LINK_STATUS)) throw new Error(g.getProgramInfoLog(prog) ?? 'link');
+    if (!g.getProgramParameter(prog, g.LINK_STATUS))
+      throw new Error(g.getProgramInfoLog(prog) ?? 'link');
 
     const mesh = meshForTier('mid');
     const vc = mesh.vertexCount;
@@ -645,7 +755,14 @@ void main() { o = vec4(0.0); }`;
       }
       perE.push({ e, worstDeg: eWorst, flipped: eFlipped / eSamples });
     }
-    return { samples: n, worstDeg, worstAt, over1deg: over1, worstMidLatDeg: worstAwayFromSeam, perE };
+    return {
+      samples: n,
+      worstDeg,
+      worstAt,
+      over1deg: over1,
+      worstMidLatDeg: worstAwayFromSeam,
+      perE,
+    };
   },
 
   /** Worst absolute error of the GL stack's sin/cos over [-2pi, 2pi] (explains the S#27 floor). */
@@ -699,7 +816,11 @@ void main() { o = vec4(0.0); }`;
     g4.getBufferSubData(g4.COPY_READ_BUFFER, 0, out);
     let worst = 0;
     for (let i = 0; i < n; i++) {
-      worst = Math.max(worst, Math.abs(out[i * 2]! - Math.sin(xs[i]!)), Math.abs(out[i * 2 + 1]! - Math.cos(xs[i]!)));
+      worst = Math.max(
+        worst,
+        Math.abs(out[i * 2]! - Math.sin(xs[i]!)),
+        Math.abs(out[i * 2 + 1]! - Math.cos(xs[i]!)),
+      );
     }
     return worst;
   },
@@ -730,9 +851,11 @@ void main() { o = vec4(0.0); }`;
         else if (log.trim()) logs.push(`${name} ${label} (warning): ${log}`);
         g.attachShader(p, s);
       }
-      if (name === 'feedback') g.transformFeedbackVaryings(p, [...set.feedback.varyings], g.INTERLEAVED_ATTRIBS);
+      if (name === 'feedback')
+        g.transformFeedbackVaryings(p, [...set.feedback.varyings], g.INTERLEAVED_ATTRIBS);
       g.linkProgram(p);
-      if (!g.getProgramParameter(p, g.LINK_STATUS)) logs.push(`${name} link: ${g.getProgramInfoLog(p)}`);
+      if (!g.getProgramParameter(p, g.LINK_STATUS))
+        logs.push(`${name} link: ${g.getProgramInfoLog(p)}`);
     }
     return { webgl2: true, logs, renderer: String(g.getParameter(g.RENDERER)) };
   },

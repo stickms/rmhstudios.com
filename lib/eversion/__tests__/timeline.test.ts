@@ -310,24 +310,28 @@ describe('the default plan (spec §7.1)', () => {
     expect(v[1]!).toBeCloseTo(900 * DEG * 0.001, 12);
   });
 
-  it('pops with an overshoot that settles, ends on the orb, and fires the second ripple', () => {
+  it('pops: shrinks onto the orb, swells while the glass fades, ends on the orb, and fires the second ripple', () => {
     const cfg = config();
     const { tl, wall } = started(cfg);
     tl.afterReady(wall.now);
     runTo(tl, wall, PLAN_MS.unwrap[1] + 1, 10);
     tl.reveal(wall.now);
     let peak = 0;
+    let maxPuff = 0;
     let sawRipple = false;
     let bg = 1;
     for (let i = 0; i < 60; i++) {
       wall.now += 10;
       const s = tl.tick(wall.now);
       peak = Math.max(peak, s.pop);
+      maxPuff = Math.max(maxPuff, s.popFade > 0 && s.popFade < 1 ? s.radius : 0);
       sawRipple ||= s.ripple1Age > 0;
       bg = s.bgAlpha;
     }
-    expect(peak).toBeGreaterThan(1.02);
-    expect(peak).toBeLessThan(1.2);
+    // The shrink is monotone (no undershoot past the orb); the pop is a swell during the fade.
+    expect(peak).toBe(1);
+    expect(maxPuff).toBeGreaterThan(24 * 1.05);
+    expect(maxPuff).toBeLessThan(24 * 1.25);
     expect(sawRipple).toBe(true);
     expect(bg).toBe(0);
     const s = tl.tick(wall.now);

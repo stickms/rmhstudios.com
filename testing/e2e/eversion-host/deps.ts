@@ -1,6 +1,6 @@
 /**
  * Core collaborators for the host e2e (`testing/e2e/eversion-host.mjs`, T25).
- * The REAL renderer (stub shaders) and the REAL `Timeline`; only the two pieces
+ * The REAL renderer (real shaders) and the REAL `Timeline`; only the two pieces
  * that belong to other tasks and may not have landed — the end-isometry fit
  * (T13) and the LUT bake (T07) — are replaced: identity orientation, and an
  * identity-mapping LUT so the page texture reads straight through.

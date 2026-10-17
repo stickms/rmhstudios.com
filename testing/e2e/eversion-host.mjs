@@ -8,7 +8,7 @@
 //
 // No dev server and no build: esbuild bundles a fixture page (the REAL
 // `getEversionHost`) and a fixture worker entry (the REAL `bootWorker`, renderer
-// with the stub shaders, and the real `Timeline`), the page serves the worker
+// with the real shaders, and the real `Timeline`), the page serves the worker
 // as a Blob URL, and the fake origin is served through request interception.
 // Only orientation and the LUT bake (other tasks) are stubbed — see
 // testing/e2e/eversion-host/deps.ts. WebGL2 is SwiftShader.
@@ -144,9 +144,21 @@ try {
       types.at(-1) === 'done',
     types.filter((x) => x !== 'stage').join(' '),
   );
+  // `cover` is what turns the page's cover class on, and the class must go on AFTER the first frame has been
+  // presented (an opaque canvas to hide behind) and BEFORE the effect has moved on: between the `wrap` stage
+  // (emitted with the first tick) and the `evert` stage (600 ms in).
+  const order = busyRun.order;
+  const iWrap = order.indexOf('stage:wrap');
+  const iCover = order.indexOf('cover');
+  const iEvert = order.indexOf('stage:evert');
   check(
-    'cover precedes the second stage event of the run, unwrap-done is a message too',
-    types.indexOf('cover') > -1 && types.filter((x) => x === 'unwrap-done').length === 1,
+    'cover comes after the first frame (wrap) and before the second stage (evert)',
+    iWrap > -1 && iCover > iWrap && iEvert > iCover,
+    order.slice(0, 6).join(' > '),
+  );
+  check(
+    'unwrap-done is a message too, exactly once',
+    types.filter((x) => x === 'unwrap-done').length === 1,
   );
   check(
     'main thread really was blocked ~300 ms',
@@ -198,8 +210,12 @@ try {
   await page.evaluate(() => {
     window.__p = window.__t.run();
   });
-  await sleep(700);
-  const running = await t(page, 'loop');
+  // A fresh worker is probed, then builds its context: give a loaded machine up to 8 s to get frames out.
+  let running = await t(page, 'loop');
+  for (let i = 0; i < 80 && !(running.running && running.frames > 5); i++) {
+    await sleep(100);
+    running = await t(page, 'loop');
+  }
   check(
     'loop is running before the tab is hidden',
     running.running && running.frames > 5,

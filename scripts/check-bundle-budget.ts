@@ -261,10 +261,6 @@ export const EVERSION_RUNTIME_MODULES: ReadonlyArray<{
     fragment: 'lib/eversion/gl/shaders',
     fingerprint: 'vec3 evertNormal(float theta, float phi, Frame fr)',
   },
-  {
-    fragment: 'lib/eversion/gl/stub-shaders',
-    fingerprint: 'return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);',
-  },
   { fragment: 'lib/eversion/gl/uniforms', fingerprint: 'snapshot.ripple0Age, snapshot.ripple1Age' },
   { fragment: 'lib/eversion/gl/governor-tiers' },
   { fragment: 'lib/eversion/capture', fingerprint: 'eversion: capture sandbox did not load' },

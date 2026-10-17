@@ -293,6 +293,7 @@ describe('worker protocol (S§3.3)', () => {
     { type: 'reveal' },
     { type: 'abort' },
     { type: 'visibility', hidden: true },
+    { type: 'probe' },
     { type: 'debug', id: 1, command: { op: 'counters' } },
   ] satisfies ToWorker[];
   const fromWorker = [
@@ -301,6 +302,7 @@ describe('worker protocol (S§3.3)', () => {
     { type: 'stage', stage: 'evert', t: 600 },
     { type: 'need-after-by', deadline: 3000 },
     { type: 'unwrap-done' },
+    { type: 'probe-result', ok: true },
     { type: 'done', frames: 1, dropped: 0, p95: 16.7 },
     { type: 'context-lost' },
     { type: 'error', message: 'x', fatal: true },
@@ -338,6 +340,8 @@ describe('timeline vocabulary (S§7.1)', () => {
       'unwrap',
       'pageAlpha',
       'pop',
+      'glass',
+      'popFade',
     ]);
     expect([...STAGE_IDS]).toEqual([
       'wrap',

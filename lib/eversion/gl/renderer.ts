@@ -57,7 +57,7 @@
  *   2 MB for the duration of one navigation, and is core WebGL2 for `NEAREST`
  *   sampling (only `LINEAR` needs `OES_texture_float_linear`, which not every
  *   mobile GPU has — hence the four-`texelFetch` bilinear in
- *   `stub-shaders.ts#LUT_SAMPLE_GLSL`, which T23 reuses). The CPU encoding
+ *   `LUT_GUARDED_GLSL` in `shaders.ts`). The CPU encoding
  *   (T07) therefore needs NO half-float conversion: the renderer wants exactly
  *   `bakeLut`'s `Float32Array`, `LUT_SIZE[0] × h × 2` floats, row 0 = south pole,
  *   column 0 = `θ = −π`. This amends `uniforms.ts` (which said RG16F) and the
@@ -78,8 +78,7 @@
  *
  * ## Shaders
  *
- * It compiles the stub `ShaderSet` (`stub-shaders.ts`, T24) until T23's
- * `getShaderSet()` is available, then the real one; nothing outside this file
+ * It compiles `getShaderSet()` (`shaders.ts`); nothing outside this file
  * chooses. Programs are compiled eagerly in `createRenderer` (surface and cage;
  * the transform-feedback program is compiled inside each `debugEvaluate` and
  * deleted again, because the product never needs it).
@@ -104,7 +103,6 @@ import type {
 } from '../types';
 import { getShaderSet } from './shaders';
 import type { ProgramSource, ShaderSet } from './shaders';
-import { getStubShaderSet } from './stub-shaders';
 import { ATTRIBUTE_DOMAIN, SAMPLER_UNITS, UNIFORMS } from './uniforms';
 import type { UniformName } from './uniforms';
 
@@ -209,7 +207,7 @@ export function createRenderer(
 
   /* ── Programs ─────────────────────────────────────────────────────────── */
 
-  const shaders = resolveShaderSet();
+  const shaders = getShaderSet();
   const surface = buildProgram(gl, shaders.surface, 'surface', created);
   const cage = buildProgram(gl, shaders.cage, 'cage', created);
 
@@ -347,6 +345,9 @@ export function createRenderer(
     writeStatic();
   }
 
+  /** 1 for the projections whose stretched wedges the shaders turn to glass. */
+  let azimuthal = 0;
+
   /** `prime`- and `resize`-cadence uniforms, for every program that has them. */
   function writeStatic() {
     const g = gl!;
@@ -355,6 +356,7 @@ export function createRenderer(
       g.useProgram(p.program);
       g.uniform2f(l.u_viewport, cssW, cssH);
       g.uniform1f(l.u_pixelRatio, pixelRatio);
+      g.uniform1f(l.u_azimuthal, azimuthal);
       g.uniformMatrix3fv(l.u_mAfter, false, mAfter);
       const c = colours;
       if (c) {
@@ -409,6 +411,8 @@ export function createRenderer(
     g.uniform1f(l.u_afterMix, s.afterMix);
     g.uniform1f(l.u_pageAlpha, s.pageAlpha);
     g.uniform1f(l.u_pop, s.pop);
+    g.uniform1f(l.u_glass, s.glass);
+    g.uniform1f(l.u_popFade, s.popFade);
     g.uniform2f(l.u_ripple, s.ripple0Age, s.ripple1Age);
     g.uniform1f(l.u_cageAlpha, cageAlpha);
   }
@@ -433,6 +437,7 @@ export function createRenderer(
       if (!guard()) return;
       const g = gl;
       colours = p.colours;
+      azimuthal = p.projection === 'lambert' || p.projection === 'stereographic' ? 1 : 0;
       for (let i = 0; i < 9; i++) mAfter[i] = p.mAfter[i];
 
       const width = LUT_SIZE[0];
@@ -488,7 +493,9 @@ export function createRenderer(
       writeFrame(surface, s, evert, cageAlpha);
       g.drawElements(g.TRIANGLES, mesh.indexCount, g.UNSIGNED_INT, 0);
 
-      if (cageAlpha > 0) {
+      // At the flat endpoints (no vertex lifted off the page) the cage has no coverage at all: skip the draw.
+      const morphing = Math.max(Math.min(s.wrap, s.unwrap), s.glass) > 0;
+      if (cageAlpha > 0 && morphing && s.popFade < 1) {
         g.useProgram(cage.program);
         writeFrame(cage, s, evert, cageAlpha);
         g.enable(g.BLEND);
@@ -547,6 +554,12 @@ export function createRenderer(
       for (const p of [surface, cage]) {
         g.deleteProgram(p.program);
         deleted('programs');
+      }
+      // Browsers cap live contexts (Safari's is small) and free a dropped one lazily: give it back now.
+      try {
+        if (!g.isContextLost()) g.getExtension('WEBGL_lose_context')?.loseContext();
+      } catch {
+        /* already gone */
       }
     },
 
@@ -645,18 +658,6 @@ function toBytes(c: Rgba): Uint8Array {
   const b = new Uint8Array(4);
   for (let i = 0; i < 4; i++) b[i] = Math.round(Math.max(0, Math.min(1, c[i])) * 255);
   return b;
-}
-
-/** The real shader set once T23 lands; until then the stub. Any OTHER error is T23's bug and propagates. */
-function resolveShaderSet(): ShaderSet {
-  try {
-    return getShaderSet();
-  } catch (error) {
-    if (error instanceof Error && /getShaderSet not implemented/.test(error.message)) {
-      return getStubShaderSet();
-    }
-    throw error;
-  }
 }
 
 /** Compile one stage; on failure throw the info log with the offending source lines. */

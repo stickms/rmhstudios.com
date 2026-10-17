@@ -5,12 +5,11 @@
  * ## Why this is a contract and not part of either task
  *
  * The renderer (T24) writes uniforms and the shaders (T23) read them, and the
- * two are built in parallel — T24 against a stub shader, T23 against the TS
+ * two were built in parallel — T24 against a stand-in, T23 against the TS
  * oracle. If each chose its own names and types, the integration would be a day
  * of reconciling spellings. Instead the names, GLSL types, update cadence and
- * the snapshot field each is fed from are written down here once. The stub
- * shader (`stub-shaders.ts`, T24) declares the subset it uses with these exact
- * names; the real shaders (T23) declare all of them. A uniform a program does
+ * the snapshot field each is fed from are written down here once. The shaders
+ * (`shaders.ts`) declare them with these exact names. A uniform a program does
  * not use is simply optimised away, and the renderer tolerates a missing location.
  *
  * Constants (`WRAP_WAVE`, `RIM_*`, `LAMBERT_*`, `STAGE_PARAM_COUNT`, …) are NOT
@@ -82,6 +81,8 @@ export const UNIFORMS = [
   { name: 'u_afterMix', type: 'float', cadence: 'frame', from: 'snapshot.afterMix' },
   { name: 'u_pageAlpha', type: 'float', cadence: 'frame', from: 'snapshot.pageAlpha' },
   { name: 'u_pop', type: 'float', cadence: 'frame', from: 'snapshot.pop' },
+  { name: 'u_glass', type: 'float', cadence: 'frame', from: 'snapshot.glass' },
+  { name: 'u_popFade', type: 'float', cadence: 'frame', from: 'snapshot.popFade' },
   {
     name: 'u_ripple',
     type: 'vec2',
@@ -96,6 +97,12 @@ export const UNIFORMS = [
   },
 
   // ── per navigation ──
+  {
+    name: 'u_azimuthal',
+    type: 'float',
+    cadence: 'prime',
+    from: '1 for lambert / stereographic (their stretched wedges become glass), else 0',
+  },
   { name: 'u_viewport', type: 'vec2', cadence: 'prime', from: 'plan.viewport (w, h) in CSS px' },
   { name: 'u_mAfter', type: 'mat3', cadence: 'prime', from: 'RendererPrime.mAfter (column-major)' },
   { name: 'u_colBg', type: 'vec4', cadence: 'prime', from: 'ThemeColours.bg' },

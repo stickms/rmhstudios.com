@@ -255,6 +255,9 @@ export const SIDE_TINT = 0.04;
 /** Fresnel rim: `pow(1 − |n·v|, RIM_POWER) · RIM_STRENGTH` in `--cage-major`. */
 export const RIM_POWER = 3;
 export const RIM_STRENGTH = 0.35;
+/** POP's empty glass globe: body opacity, and the extra opacity the Fresnel rim adds at the silhouette. */
+export const GLASS_FILL = 0.2;
+export const GLASS_RIM_ALPHA = 0.7;
 /** Cage alpha at the start and end of EVERSION, so the pages lead (spec §10.3). */
 export const CAGE_ALPHA_START = 0.35;
 export const CAGE_ALPHA_END = 0.15;

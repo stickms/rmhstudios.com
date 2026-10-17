@@ -39,7 +39,7 @@
  *
  * ## How the machine is organised
  *
- * Motion is twelve channels (`CHANNEL_IDS`), each one or two quintic slots in a
+ * Motion is fourteen channels (`CHANNEL_IDS`), each one or two quintic slots in a
  * single `Float64Array`. Everything that is not motion is a handful of absolute
  * TIMERS (`T_*`): when `evert` starts, when the gate is checked (3000 ms), when
  * the gate opens, when unwrap starts and ends, when POP ends. `process` fires
@@ -189,6 +189,8 @@ const C_AFTER_MIX = CHANNEL_IDS.indexOf('afterMix');
 const C_UNWRAP = CHANNEL_IDS.indexOf('unwrap');
 const C_PAGE_ALPHA = CHANNEL_IDS.indexOf('pageAlpha');
 const C_POP = CHANNEL_IDS.indexOf('pop');
+const C_GLASS = CHANNEL_IDS.indexOf('glass');
+const C_POP_FADE = CHANNEL_IDS.indexOf('popFade');
 
 const CHANNEL_INDEX: Readonly<Record<ChannelId, number>> = {
   wrap: C_WRAP,
@@ -203,6 +205,8 @@ const CHANNEL_INDEX: Readonly<Record<ChannelId, number>> = {
   unwrap: C_UNWRAP,
   pageAlpha: C_PAGE_ALPHA,
   pop: C_POP,
+  glass: C_GLASS,
+  popFade: C_POP_FADE,
 };
 
 /* ── Timers ───────────────────────────────────────────────────────────────── */
@@ -226,10 +230,18 @@ const NTIMERS = 6;
 const UNWRAP_SPAN_MS = UNWRAP_MS + UNWRAP_OVERLAP_MS;
 const EVERT_FINISH_MS = EVERT_OVERLAP_MS;
 const LAND_AFTER_UNWRAP_MS = PLAN_MS.spin[1] - PLAN_MS.unwrap[0];
-/** POP's contraction passes the orb size by this fraction, then settles (spec §7.1 "overshoot"). */
-const POP_OVERSHOOT = 0.08;
-/** Fraction of POP spent reaching the overshoot; the rest settles. */
-const POP_PEAK_FRACTION = 0.6;
+/** Fraction of POP spent shrinking onto the orb (one rest-to-rest quintic; the glass fades after it). */
+const POP_SHRINK_FRACTION = 0.6;
+/**
+ * The pop itself (spec §7.1 "overshoot"): while the glass fades the globe swells by up to this fraction of the
+ * orb's size and falls back, `1 + POP_PUFF · 4f(1 − f)` for the fade `f` - zero value, velocity and
+ * acceleration at both ends because `f` starts and ends at rest, so it is C² and the last frame is exactly the orb.
+ */
+const POP_PUFF = 0.18;
+/** Fraction of POP the empty glass globe takes to condense out of the vanishing page. */
+const POP_GLASS_FRACTION = 0.4;
+/** The glass starts its exit when POP is this far along (the globe is on the orb by then, ~peak). */
+const POP_FADE_FROM = POP_SHRINK_FRACTION;
 /** Re-plan of a settled radius/centre toward a new viewport. */
 const RESIZE_MS = 300;
 /** …and the shortest re-plan of one still in flight. */
@@ -1085,9 +1097,12 @@ class TimelineEngine {
     this.popStarted = true;
     this.popStartT = t;
     this.emit('pop', t);
-    const peak = POP_MS * POP_PEAK_FRACTION;
-    this.plan(C_POP, t, peak, 1 + POP_OVERSHOOT);
-    this.addSlot(C_POP, POP_MS - peak, 1);
+    this.plan(C_POP, t, POP_MS * POP_SHRINK_FRACTION, 1);
+    // The empty glass globe condenses while it shrinks, lands on the orb, and fades out: every
+    // channel starts and ends at rest, so the exit has no hard cut (the last frame is invisible).
+    this.plan(C_GLASS, t, POP_MS * POP_GLASS_FRACTION, 1);
+    this.plan(C_POP_FADE, t, POP_MS * POP_FADE_FROM, 0);
+    this.addSlot(C_POP_FADE, POP_MS * (1 - POP_FADE_FROM), 1);
     this.timer[T_POP_DONE] = t + POP_MS;
   }
 
@@ -1117,6 +1132,10 @@ class TimelineEngine {
     this.eval(C_POP, t, e);
     const pop = e[0]!;
     s.pop = pop;
+    this.eval(C_GLASS, t, e);
+    s.glass = clamp01(e[0]!);
+    this.eval(C_POP_FADE, t, e);
+    s.popFade = clamp01(e[0]!);
     this.eval(C_RADIUS, t, e);
     // The effective radius: the channel × the extent fit (a function of the live `e`), then POP.
     // Inlined copy of {@link eversionRadiusFit}: a call here costs a heap number per frame.
@@ -1147,9 +1166,10 @@ class TimelineEngine {
     const oy = e[0]!;
     this.eval(C_ORB_R, t, e);
     const or = e[0]!;
-    // POP is the glass globe shrinking into the orb; the overshoot (pop > 1)
-    // carries it slightly past, then back.
-    s.radius = r + (or - r) * pop;
+    // POP is the glass globe shrinking into the orb; as the glass fades it swells a little and is gone (the pop).
+    const f = s.popFade;
+    const puff = 1 + POP_PUFF * 4 * f * (1 - f);
+    s.radius = (r + (or - r) * pop) * puff;
     s.centreX = cx + (ox - cx) * pop;
     s.centreY = cy + (oy - cy) * pop;
     s.ripple0Age = this.started ? t / 1000 : -1;

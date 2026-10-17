@@ -9,7 +9,7 @@
 // No dev server and no build, like `eversion-host.mjs`: esbuild bundles a
 // fixture page (testing/e2e/eversion-controller/page.ts) around the REAL
 // controller module, runner, host (worker mode, canvas transferred), renderer
-// (stub shaders) and timeline; the fake origin is served by request
+// (real shaders) and timeline; the fake origin is served by request
 // interception. Faked: the router (history-backed, renders a route into #page
 // after 120 ms), the BEFORE scheduler and capture session (T17 may not have
 // landed), orientation (T13) and the LUT bake (T07) via eversion-host/deps.ts.

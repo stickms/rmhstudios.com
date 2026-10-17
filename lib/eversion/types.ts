@@ -391,6 +391,8 @@ export const CHANNEL_IDS = [
   'unwrap',
   'pageAlpha',
   'pop',
+  'glass',
+  'popFade',
 ] as const;
 export type ChannelId = (typeof CHANNEL_IDS)[number];
 
@@ -406,7 +408,7 @@ export interface TimelineEvent {
  * `tick`, so the hot loop allocates nothing; the object is valid until the next
  * `tick`. Create a zeroed one with `createSnapshot()` (`snapshot.ts`).
  *
- * The first twelve fields carry the channel of the same name (see
+ * The first fourteen fields carry the channel of the same name (see
  * {@link ChannelId}). Two of them differ from the raw channel in one way:
  * `radius`, `centreX` and `centreY` are **effective** values — they already
  * include the POP contraction toward the orb — so the renderer never needs the
@@ -439,8 +441,16 @@ export interface TimelineSnapshot {
   afterMix: number;
   /** Page-texture opacity during reveal, 1 → 0. */
   pageAlpha: number;
-  /** POP progress, 0 → 1, with a transient overshoot above 1 that settles to 1. */
+  /** POP's shrink toward the orb, 0 → 1 (rest to rest, no overshoot; the "pop" is the swell while `popFade` runs). */
   pop: number;
+  /**
+   * The empty glass globe of POP condensing, 0 → 1 over the first part of POP
+   * (0 before it). It drives the same wrap-wave morph as `wrap`, so the globe
+   * curls out of the vanishing page instead of appearing, and its glass fill.
+   */
+  glass: number;
+  /** The glass globe's exit after it has landed on the orb, 0 → 1; opacity is `glass·(1 − popFade)`. */
+  popFade: number;
 
   /**
    * Age in SECONDS of the two ripples: the first is emitted at `start` from the
@@ -585,7 +595,12 @@ export type ToWorker =
       lut: Float32Array | null;
     } & EversionPlan)
   | { type: 'texture'; slot: TextureSlot; bitmap: ImageBitmap }
-  | { type: 'start'; t0: number }
+  /**
+   * `t0` is the main thread's `performance.now()`; `origin` its `performance.timeOrigin`. A worker's clock
+   * has another origin, and the two are related exactly by `timeOrigin` (not by when this message happened
+   * to arrive), so the render side converts deadlines with the origins and ignores message latency.
+   */
+  | { type: 'start'; t0: number; origin?: number }
   | { type: 'fast-forward' }
   | { type: 'after-failed' }
   /** `orb` is the POP target re-measured at the new size (absent: keep the old one). */
@@ -598,6 +613,12 @@ export type ToWorker =
    * its loop while hidden. Not in §3.3 — added by T25.
    */
   | { type: 'visibility'; hidden: boolean }
+  /**
+   * Can this context render at all (WebGL2 on an `OffscreenCanvas`, a frame
+   * scheduler)? Cheap: no program is compiled. The host asks a fresh worker
+   * BEFORE it hands over the page's canvas, because that transfer cannot be undone.
+   */
+  | { type: 'probe' }
   | { type: 'debug'; id: number; command: DebugCommand };
 
 /** Render → main messages. The §3.3 table, plus `ready`, `error` and `debug-result`. */
@@ -610,6 +631,8 @@ export type FromWorker =
   /** The after-gate's deadline on the `performance.now()` base (see {@link TimelineApi.afterDeadline}). */
   | { type: 'need-after-by'; deadline: number }
   | { type: 'unwrap-done' }
+  /** The answer to `probe`. */
+  | { type: 'probe-result'; ok: boolean; reason?: string }
   | ({ type: 'done' } & FrameStats)
   | { type: 'context-lost' }
   /** An unexpected failure in the render side. `fatal` means the run cannot continue. */
@@ -628,6 +651,7 @@ export const TO_WORKER_TYPES = [
   'reveal',
   'abort',
   'visibility',
+  'probe',
   'debug',
 ] as const satisfies readonly ToWorker['type'][];
 
@@ -637,6 +661,7 @@ export const FROM_WORKER_TYPES = [
   'stage',
   'need-after-by',
   'unwrap-done',
+  'probe-result',
   'done',
   'context-lost',
   'error',
@@ -723,6 +748,8 @@ export interface RendererApi {
 
 /** Schedules frames; abstracted so the loop's core is testable and the host owns the real call. */
 export interface FrameScheduler {
+  /** `false` where the environment has no frame scheduler at all (a worker without rAF). Absent means available. */
+  readonly available?: boolean;
   request(callback: (now: number) => void): number;
   cancel(handle: number): void;
 }
@@ -734,8 +761,10 @@ export interface CoreEnv {
   /** Send a message to the main thread (a no-copy transfer list for bitmaps). */
   emit(message: FromWorker, transfer?: Transferable[]): void;
   scheduler: FrameScheduler;
-  /** `performance.now()` on the shared origin. */
+  /** This context's own `performance.now()`. */
   now(): number;
+  /** This context's `performance.timeOrigin` (default: the global one). */
+  timeOrigin?(): number;
 }
 
 /**

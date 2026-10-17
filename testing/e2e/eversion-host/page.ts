@@ -126,7 +126,11 @@ const api = {
     // A real bitmap for each slot: the AFTER one is what opens the timeline's gate.
     post({ type: 'texture', slot: 'before', bitmap: await bitmap('#e63319') });
     post({ type: 'texture', slot: 'after', bitmap: await bitmap('#1966e6') });
-    await new Promise((r) => setTimeout(r, 100));
+    // The worker is probed before the canvas goes to it, then the context and programs are built: wait for
+    // `ready` (bounded) instead of a fixed pause that a loaded machine overruns.
+    for (let i = 0; i < 200 && !log.some((e) => e.m.type === 'ready'); i++) {
+      await new Promise((r) => setTimeout(r, 50));
+    }
     return {
       mode: host.mode,
       ready: log.some((e) => e.m.type === 'ready'),
@@ -143,6 +147,8 @@ const api = {
     return new Promise<{
       stages: string[];
       types: string[];
+      /** Every message in arrival order: `stage:<name>` for stages, else its type. */
+      order: string[];
       stats: { frames: number; dropped: number; p95: number } | null;
       error: string | null;
       mainBlockedMs: number;
@@ -158,6 +164,7 @@ const api = {
           resolve({
             stages: mine.flatMap((x) => (x.type === 'stage' ? [x.stage] : [])),
             types: mine.map((x) => x.type),
+            order: mine.map((x) => (x.type === 'stage' ? `stage:${x.stage}` : x.type)),
             stats: m.type === 'done' ? { frames: m.frames, dropped: m.dropped, p95: m.p95 } : null,
             error: m.type === 'error' ? m.message : null,
             mainBlockedMs: blocked,

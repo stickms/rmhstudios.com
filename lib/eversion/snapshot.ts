@@ -34,6 +34,8 @@ export function createSnapshot(): TimelineSnapshot {
     afterMix: 0,
     pageAlpha: 1,
     pop: 0,
+    glass: 0,
+    popFade: 0,
     ripple0Age: -1,
     ripple1Age: -1,
     bgAlpha: 1,
@@ -59,6 +61,8 @@ export function copySnapshot(
   dst.afterMix = src.afterMix;
   dst.pageAlpha = src.pageAlpha;
   dst.pop = src.pop;
+  dst.glass = src.glass;
+  dst.popFade = src.popFade;
   dst.ripple0Age = src.ripple0Age;
   dst.ripple1Age = src.ripple1Age;
   dst.bgAlpha = src.bgAlpha;

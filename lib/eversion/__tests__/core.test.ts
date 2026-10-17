@@ -85,7 +85,10 @@ class FakeRenderer implements RendererApi {
   }
 }
 
-function rig(timelineOptions?: ConstructorParameters<typeof ScriptedTimeline>[0]) {
+function rig(
+  timelineOptions?: ConstructorParameters<typeof ScriptedTimeline>[0],
+  envOptions: { available?: boolean; webgl2?: boolean } = {},
+) {
   const renderer = new FakeRenderer();
   const timelines: ScriptedTimeline[] = [];
   const out: FromWorker[] = [];
@@ -106,12 +109,14 @@ function rig(timelineOptions?: ConstructorParameters<typeof ScriptedTimeline>[0]
     bakeLut: () => new Float32Array(2),
     orientation: () => ({ thetaAlign: 0, mAfter: new Float64Array(9) }),
     solidBitmap: () => Promise.resolve({ close() {} } as ImageBitmap),
+    probeWebgl2: () => envOptions.webgl2 ?? true,
   };
   const core = createEversionCore(
     {
       mode: 'worker',
       emit: (m) => out.push(m),
       scheduler: {
+        available: envOptions.available,
         request(cb) {
           requests++;
           queue.set(nextHandle, cb);
@@ -122,6 +127,7 @@ function rig(timelineOptions?: ConstructorParameters<typeof ScriptedTimeline>[0]
         },
       },
       now: () => clock,
+      timeOrigin: () => 100_000,
     },
     deps,
   );
@@ -428,5 +434,134 @@ describe('createEversionCore: scrub', () => {
     const end = await scrubTo(20_000, 600);
     expect(end.result.ok).toBe(true);
     expect((end.result.value as { stage: string }).stage).toBe('done');
+  });
+});
+
+/* ── Review fixes (render side) ───────────────────────────────────────────── */
+
+describe('createEversionCore: robustness', () => {
+  const bitmap = () => {
+    const b = {
+      closed: false,
+      close() {
+        this.closed = true;
+      },
+    };
+    return b as unknown as ImageBitmap & { closed: boolean };
+  };
+
+  it('shares the clock through performance.timeOrigin, not the arrival time of start', () => {
+    const r = rig();
+    boot(r);
+    // Main origin is 99 000 ms before the worker's 100 000: main = worker + 1000 whatever t0 says.
+    r.send({ type: 'start', t0: 5000, origin: 99_000 });
+    const need = r.out.find((m) => m.type === 'need-after-by') as { deadline: number };
+    expect(need.deadline).toBe(1000 + 2500 + 1000);
+  });
+
+  it('answers a probe with the capabilities, without touching a renderer', () => {
+    const ok = rig();
+    ok.send({ type: 'probe' });
+    expect(ok.out).toEqual([{ type: 'probe-result', ok: true }]);
+    const noGl = rig(undefined, { webgl2: false });
+    noGl.send({ type: 'probe' });
+    expect(noGl.out[0]).toMatchObject({ type: 'probe-result', ok: false });
+    const noRaf = rig(undefined, { available: false });
+    noRaf.send({ type: 'probe' });
+    expect(noRaf.out[0]).toMatchObject({ type: 'probe-result', ok: false });
+  });
+
+  it('a worker without a frame scheduler says so at init, before ready', () => {
+    const r = rig(undefined, { available: false });
+    r.send({ type: 'init', canvas: {} as OffscreenCanvas, tier: 'low', dprCap: 1 });
+    expect(r.types()).toEqual(['error']);
+    expect(r.out[0]).toMatchObject({ fatal: true });
+  });
+
+  it('abort while the tab is hidden finishes synchronously, in order', () => {
+    const r = rig();
+    boot(r);
+    r.send({ type: 'visibility', hidden: true });
+    r.send({ type: 'start', t0: 0 });
+    expect(r.pending).toBe(0);
+    r.send({ type: 'abort' });
+    expect(r.stages()).toEqual(['reveal', 'pop', 'done']);
+    expect(r.types().at(-1)).toBe('done');
+    expect(r.pending).toBe(0);
+  });
+
+  it('fast-forward while the tab is hidden jumps to completion through unwrap-done, reveal, pop, done', () => {
+    const r = rig();
+    boot(r);
+    r.send({ type: 'visibility', hidden: true });
+    r.send({ type: 'start', t0: 0 });
+    r.send({ type: 'fast-forward' });
+    // The scripted timeline's fast-forward is a mark only; the hidden loop still runs it out.
+    expect(r.stages()).toEqual([
+      'wrap',
+      'evert',
+      'gate-open',
+      'unwrap',
+      'unwrap-done',
+      'reveal',
+      'pop',
+      'done',
+    ]);
+    expect(r.types().filter((t) => t === 'unwrap-done')).toHaveLength(1);
+    expect(r.types().at(-1)).toBe('done');
+  });
+
+  it('a new init forgets a stale hidden flag (e.g. after a lost context)', () => {
+    const r = rig();
+    boot(r);
+    r.send({ type: 'visibility', hidden: true });
+    r.renderer.lostCallback?.();
+    r.send({ type: 'init', canvas: {} as OffscreenCanvas, tier: 'low', dprCap: 1 });
+    r.send(prime);
+    r.send({ type: 'start', t0: 0 });
+    expect(r.pending).toBe(1);
+  });
+
+  it('closes a texture that arrives after the run is over, instead of keeping it resident', () => {
+    const r = rig();
+    boot(r);
+    r.send({ type: 'start', t0: 0 });
+    runToEnd(r);
+    expect(r.types().at(-1)).toBe('done');
+    const late = bitmap();
+    r.send({ type: 'texture', slot: 'after', bitmap: late });
+    expect(late.closed).toBe(true);
+    expect(r.renderer.log.filter((l) => l === 'texture after set')).toHaveLength(0);
+  });
+
+  it('rebuilds the timeline at start when the viewport changed after prime', () => {
+    const r = rig();
+    boot(r);
+    r.send({ type: 'resize', viewport: { w: 640, h: 400, dpr: 1 } });
+    expect(r.timelines).toHaveLength(1);
+    r.send({ type: 'start', t0: 0 });
+    expect(r.timelines).toHaveLength(2);
+    expect(r.timelines[1]!.calls[0]).toMatch(/^start/);
+  });
+
+  it('passes the orb to Timeline.resize while running', () => {
+    const r = rig();
+    boot(r);
+    r.send({ type: 'start', t0: 0 });
+    const calls: unknown[][] = [];
+    const tl = r.timelines[0]!;
+    const original = tl.resize.bind(tl);
+    (tl as unknown as { resize: (...a: unknown[]) => void }).resize = (...a: unknown[]) => {
+      calls.push(a);
+      original(a[0] as number);
+    };
+    r.send({
+      type: 'resize',
+      viewport: { w: 640, h: 400, dpr: 1 },
+      orb: { cx: 5, cy: 6, radius: 7 },
+    });
+    expect(calls[0]![2]).toEqual({ cx: 5, cy: 6, radius: 7 });
+    r.send({ type: 'resize', viewport: { w: 641, h: 400, dpr: 1 } });
+    expect(calls[1]![2]).toEqual({ cx: 5, cy: 6, radius: 7 });
   });
 });

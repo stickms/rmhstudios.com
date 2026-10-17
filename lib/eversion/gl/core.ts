@@ -59,6 +59,7 @@ import type {
   EversionPlan,
   FromWorker,
   Mat3,
+  OrbRect,
   ProjectionId,
   RendererApi,
   RendererOptions,
@@ -89,6 +90,8 @@ export interface CoreDeps {
   bakeLut(projection: ProjectionId, viewport: Viewport): Float32Array;
   /** `θ_align` and `M_after` (spec §4.5, §7.4); the end isometry is memoised, so this is cheap after the first call. */
   orientation(): { thetaAlign: number; mAfter: Mat3 };
+  /** Whether this context can create a WebGL2 context on an `OffscreenCanvas`. Absent: assume it can. */
+  probeWebgl2?(): boolean;
   /** A 1×1 bitmap of one colour, for the `solid-textures` debug op. */
   solidBitmap(colour: Rgba): Promise<ImageBitmap>;
 }
@@ -106,6 +109,13 @@ export function defaultDeps(): CoreDeps {
       const { R } = fitEndIsometry();
       const thetaAlign = alignAngle(R);
       return { thetaAlign, mAfter: afterDomainTransform(R, SPIN_AXIS, thetaAlign) };
+    },
+    probeWebgl2() {
+      if (typeof OffscreenCanvas === 'undefined') return false;
+      const gl = new OffscreenCanvas(1, 1).getContext('webgl2');
+      if (!gl) return false;
+      gl.getExtension('WEBGL_lose_context')?.loseContext();
+      return true;
     },
     solidBitmap(colour) {
       const bytes = new Uint8ClampedArray(4);
@@ -146,6 +156,8 @@ function applyHardCut(s: TimelineSnapshot, channel: ChannelId): void {
 
 /** Step of the scrub op's simulated clock: one 60 Hz frame, well under `MAX_DT_MS`. */
 const SCRUB_STEP_MS = 16;
+/** Bound on {@link settleWhileHidden}'s steps (a hurried run is ~2 s; this is ~16 s of simulated time). */
+const SETTLE_MAX_STEPS = 1000;
 
 /**
  * Create the render-side core over `env`.
@@ -155,10 +167,12 @@ const SCRUB_STEP_MS = 16;
  * The timeline runs on the render side's OWN clock: the frame callback's
  * timestamp. `start.t0` is the MAIN thread's `performance.now()`, and a dedicated
  * worker's time origin is its own creation time, not the page's (spec §3.3 says
- * they share one; they do not). So the core never feeds `t0` to the timeline. It
- * measures the offset between the two clocks once, at `start`, and applies it
- * only where a time crosses back to the main thread (`need-after-by`). In-thread
- * the clocks are the same and the offset is zero. A frame timestamp can also
+ * they share one; they do not). So the core never feeds `t0` to the timeline. The
+ * two clocks differ by exactly the difference of their `performance.timeOrigin`s,
+ * so the offset is `timeOrigin(core) − start.origin` - NOT `t0 − now()`, which
+ * would fold the message's latency into every deadline. It is applied only where
+ * a time crosses back to the main thread (`need-after-by`). In-thread the clocks
+ * are the same and the offset is zero. A frame timestamp can also
  * precede the instant `start` was handled, so the clock handed to the timeline
  * is made monotonic.
  *
@@ -184,6 +198,8 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
   let hidden = false;
   let lost = false;
   let disposed = false;
+  /** The run ended (done/fail) and no `prime` has followed: a late texture has nothing to serve. */
+  let runEnded = false;
 
   let handle: number | null = null;
   let requests = 0;
@@ -195,6 +211,9 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
   let clockOffset = 0;
 
   let afterUploaded = false;
+  /** The viewport (and orb) the current timeline was built for. */
+  let timelineViewport: Viewport | null = null;
+  let timelineOrb: OrbRect | null = null;
   let afterFailed = false;
   let pausedE: number | null = null;
   /** Debug only (`inject-hard-cut`, T35): the channel whose drawn value is stepped, or `null`. */
@@ -261,20 +280,54 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
       }
       framesDrawn++;
 
-      let finished = false;
-      for (const event of timeline.events()) {
-        emit({ type: 'stage', stage: event.stage, t: event.t });
-        if (event.stage === 'unwrap-done') emit({ type: 'unwrap-done' });
-        if (event.stage === 'done') finished = true;
-      }
-      if (finished) finish();
+      if (flushEvents()) finish();
       else schedule();
     } catch (error) {
       fail(error);
     }
   }
 
+  /** Emit the timeline's pending stage events in order; true once `done` was among them. */
+  function flushEvents(): boolean {
+    let finished = false;
+    for (const event of timeline!.events()) {
+      emit({ type: 'stage', stage: event.stage, t: event.t });
+      if (event.stage === 'unwrap-done') emit({ type: 'unwrap-done' });
+      if (event.stage === 'done') finished = true;
+    }
+    return finished;
+  }
+
+  /**
+   * A hidden page draws no frames, so a run that is hurried (abort, fast-forward) would never reach its end
+   * and the navigation would hang until the tab came back. Run the rest of the timeline synchronously instead,
+   * on a simulated clock, nothing drawn: events come out in their usual order (unwrap-done, reveal, pop, done)
+   * and the run ends through the same `finish` as a drawn one. Nobody is looking, so the reveal is answered
+   * here rather than waiting a round trip to the main thread (a later `reveal` message is a no-op).
+   */
+  function settleWhileHidden() {
+    if (!hidden || !running || !timeline) return;
+    for (let i = 0; i < SETTLE_MAX_STEPS && timeline; i++) {
+      const at = tickClock(clock + SCRUB_STEP_MS);
+      timeline.tick(at);
+      let unwrapDone = false;
+      for (const event of timeline.events()) {
+        emit({ type: 'stage', stage: event.stage, t: event.t });
+        if (event.stage === 'unwrap-done') {
+          emit({ type: 'unwrap-done' });
+          unwrapDone = true;
+        }
+        if (event.stage === 'done') {
+          finish();
+          return;
+        }
+      }
+      if (unwrapDone) timeline.reveal(at);
+    }
+  }
+
   function finish() {
+    runEnded = true;
     stopLoop();
     const summary = stats.summary();
     timeline = null;
@@ -286,6 +339,8 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
 
   function fail(error: unknown) {
     stopLoop();
+    runEnded = true;
+    timeline = null;
     emit({
       type: 'error',
       message: error instanceof Error ? error.message : String(error),
@@ -300,15 +355,51 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
     emit({ type: 'context-lost' });
   }
 
+  function probe() {
+    if (mode === 'worker' && env.scheduler.available === false) {
+      emit({
+        type: 'probe-result',
+        ok: false,
+        reason: 'eversion: no frame scheduler is available in this worker',
+      });
+      return;
+    }
+    let ok: boolean;
+    try {
+      ok = deps.probeWebgl2?.() ?? true;
+    } catch {
+      ok = false;
+    }
+    emit({
+      type: 'probe-result',
+      ok,
+      reason: ok ? undefined : 'eversion: WebGL2 is not available here',
+    });
+  }
+
   /* ── Messages ─────────────────────────────────────────────────────────── */
 
   function init(message: Extract<ToWorker, { type: 'init' }>) {
     stopLoop();
+    if (mode === 'worker' && env.scheduler.available === false) {
+      // A worker with no frame scheduler would draw nothing: say so now, before `ready`, so the host
+      // demotes to the main thread instead of failing on the first frame of every navigation.
+      emit({
+        type: 'error',
+        message: 'eversion: no frame scheduler is available in this worker',
+        fatal: true,
+      });
+      return;
+    }
     renderer?.dispose();
     renderer = null;
     timeline = null;
     plan = null;
     lost = false;
+    // The visibility of the previous page life says nothing about this one; the host re-sends the current one.
+    hidden = false;
+    runEnded = false;
+    running = false;
     dprCap = message.dprCap;
     renderer = deps.createRenderer(message.canvas, {
       tier: message.tier,
@@ -325,10 +416,13 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
     plan = { projection, viewport, globe, orb, colours };
     const { thetaAlign, mAfter } = deps.orientation();
     renderer.prime({ ...plan, lut: lut ?? deps.bakeLut(projection, viewport), mAfter });
+    timelineViewport = viewport;
+    timelineOrb = orb;
     timelineConfig = { viewport, globe, orb, thetaAlign };
     timeline = deps.createTimeline(timelineConfig);
     afterUploaded = false;
     afterFailed = false;
+    runEnded = false;
     coverSent = false;
     framesDrawn = 0;
     stats.reset();
@@ -337,6 +431,9 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
   function texture(slot: TextureSlot, bitmap: ImageBitmap) {
     try {
       if (!renderer) throw new Error('eversion: texture before init');
+      // The run is over (done, abort, fatal): nothing will ever draw this, and a resident texture is
+      // megabytes held until the next prime. Close it unseen.
+      if (runEnded && !timeline) return;
       renderer.setTexture(slot, bitmap);
       if (slot === 'after') {
         afterUploaded = true;
@@ -348,11 +445,24 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
     }
   }
 
-  function start(t0: number) {
+  function start(t0: number, origin: number | undefined) {
     if (!renderer || !timeline || !plan) throw new Error('eversion: start before prime');
     if (running) return;
     const now = env.now();
-    clockOffset = mode === 'worker' ? t0 - now : 0;
+    if (mode !== 'worker') clockOffset = 0;
+    else if (origin !== undefined)
+      clockOffset = (env.timeOrigin?.() ?? performance.timeOrigin) - origin;
+    else clockOffset = t0 - now;
+    // A resize between prime and start only reached the plan: the timeline was built for the old viewport.
+    if (
+      timelineConfig &&
+      (viewportChanged(timelineConfig.viewport, timelineViewport) ||
+        timelineConfig.orb !== timelineOrb)
+    ) {
+      timeline = deps.createTimeline(timelineConfig);
+      timelineViewport = timelineConfig.viewport;
+      timelineOrb = timelineConfig.orb;
+    }
     clock = now;
     lastFrameAt = null;
     coverSent = false;
@@ -360,7 +470,7 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
     stats.reset();
     governor = new DprGovernor(Math.min(plan.viewport.dpr, dprCap));
     running = true;
-    timeline.start(now);
+    timeline!.start(now);
     if (afterUploaded) timeline.afterReady(now);
     if (afterFailed) timeline.afterFailed(now);
     const deadline = timeline.afterDeadline(now);
@@ -368,6 +478,10 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
       emit({ type: 'need-after-by', deadline: deadline + clockOffset });
     }
     schedule();
+  }
+
+  function viewportChanged(a: Viewport, b: Viewport | null): boolean {
+    return !b || a.w !== b.w || a.h !== b.h || a.dpr !== b.dpr;
   }
 
   function whenRunning(act: (tl: TimelineApi, now: number) => void) {
@@ -515,10 +629,11 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
             texture(message.slot, message.bitmap);
             break;
           case 'start':
-            start(message.t0);
+            start(message.t0, message.origin);
             break;
           case 'fast-forward':
             whenRunning((tl, now) => tl.fastForward(now));
+            settleWhileHidden();
             break;
           case 'after-failed':
             afterFailed = true;
@@ -526,14 +641,28 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
             break;
           case 'resize':
             renderer?.resize(message.viewport);
-            if (timelineConfig) timelineConfig = { ...timelineConfig, viewport: message.viewport };
-            whenRunning((tl, now) => tl.resize(now, message.viewport));
+            if (message.orb && plan) plan = { ...plan, orb: message.orb };
+            if (timelineConfig) {
+              timelineConfig = {
+                ...timelineConfig,
+                viewport: message.viewport,
+                orb: message.orb ?? timelineConfig.orb,
+              };
+            }
+            // The orb goes along always: a resize that does not move it re-plans to where it already is.
+            whenRunning((tl, now) =>
+              tl.resize(now, message.viewport, message.orb ?? plan?.orb ?? undefined),
+            );
             break;
           case 'reveal':
             whenRunning((tl, now) => tl.reveal(now));
             break;
           case 'abort':
             whenRunning((tl, now) => tl.abort(now));
+            settleWhileHidden();
+            break;
+          case 'probe':
+            probe();
             break;
           case 'visibility':
             setHidden(message.hidden);

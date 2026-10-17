@@ -44,8 +44,8 @@
  *   pole itself, where that formula is 0/0). Orientation is the WINDING normal
  *   `∂φF × ∂θF` — outward at `e = 0`, inward at `e = 1`; the fragment shader
  *   flips it for back faces, so lighting always uses the visible side's normal.
- * - The LUT is `RG32F`/`NEAREST` filtered by hand (see `LUT_SAMPLE_GLSL` in
- *   `stub-shaders.ts` for why). T23 adds the discontinuity guard recommended by
+ * - The LUT is `RG32F`/`NEAREST` filtered by hand (see `LUT_GUARDED_GLSL`
+ *   for why). T23 adds the discontinuity guard recommended by
  *   `projection-lut.ts#sampleLutGuarded`: if any of the four taps differs from
  *   the nearest by more than `JUMP_UV` the nearest tap is returned unblended,
  *   so a projection's cut (or a clamped pole region) never smears a UV across
@@ -69,7 +69,6 @@
  * `--cage-minor` / `--cage-parallel`, like `LiquidGlobe`. Lines near a ripple
  * crest take `--cage-ripple`. The cage fades in with the morph weight.
  *
- * The stub (`stub-shaders.ts`, T24) has the same {@link ShaderSet} shape.
  */
 
 import { GLOBE_PERSP } from '../../globe';
@@ -78,6 +77,8 @@ import {
   EVERSION_STRIPS,
   LAMBERT_BASE,
   LAMBERT_GAIN,
+  GLASS_FILL,
+  GLASS_RIM_ALPHA,
   LIGHT_DIRECTION,
   POLE_EPS,
   RIM_POWER,
@@ -148,6 +149,25 @@ const JUMP_GRAD = 0.25;
 const FLAT_SNAP = 5e-4;
 
 /**
+ * Azimuthal projections (Lambert, stereographic) send the back point to the page's whole border, so the mesh
+ * triangles around it have corners on opposite sides of the page: mid-morph they are stretched wedges whose
+ * interpolated position is nowhere near the page pixel the fragment's own lookup names. The mismatch is measured
+ * in the fragment as the distance, in units of the page's short side, between the interpolated flat position and
+ * the lookup's (WEDGE_FROM..WEDGE_TO, a smooth ramp: ordinary triangles are far below it). A wedge shows the
+ * identity page while the morph is young (so the exact flat endpoint is untouched, WEDGE_EARLY_*), then fades to
+ * GLASS: no page texel, and pushed to the back of the depth buffer so it never hides real page.
+ */
+const WEDGE_FROM = 0.06;
+const WEDGE_TO = 0.22;
+const WEDGE_EARLY_FROM = 0.02;
+const WEDGE_EARLY_TO = 0.12;
+/** The eversion progress band, at each end, over which a wrong-way face turns to glass. */
+const EVERT_END_FROM = 0.02;
+const EVERT_END_TO = 0.08;
+const STRETCH_FROM = 8;
+const STRETCH_TO = 22;
+
+/**
  * The vertex-side page lookup of the duplicated EQUATOR vertices (`|φ'| < 1e-6`; see `mesh.ts#EQUATOR_EPS`) is nudged
  * by this many LUT texels toward the vertex's own side of the equator, so the south copy reads the texel row below a
  * cut along the equator (Peirce's back equator, in either layout) and the north copy the row above. Float32 cannot
@@ -178,6 +198,14 @@ const DEFINES = /* glsl */ `
 #define JUMP_UV ${f(JUMP_UV)}
 #define JUMP_GRAD ${f(JUMP_GRAD)}
 #define FLAT_SNAP ${f(FLAT_SNAP)}
+#define WEDGE_FROM ${f(WEDGE_FROM)}
+#define WEDGE_TO ${f(WEDGE_TO)}
+#define WEDGE_EARLY_FROM ${f(WEDGE_EARLY_FROM)}
+#define WEDGE_EARLY_TO ${f(WEDGE_EARLY_TO)}
+#define EVERT_END_FROM ${f(EVERT_END_FROM)}
+#define EVERT_END_TO ${f(EVERT_END_TO)}
+#define STRETCH_FROM ${f(STRETCH_FROM)}
+#define STRETCH_TO ${f(STRETCH_TO)}
 #define EQUATOR_BIAS ${f(EQUATOR_BIAS_TEXELS)}
 #define POLE_EXTRAP ${f(POLE_EXTRAP)}
 #define LAMBERT_BASE ${f(LAMBERT_BASE)}
@@ -187,6 +215,8 @@ const DEFINES = /* glsl */ `
 #define SIDE_TINT ${f(SIDE_TINT)}
 #define RIM_POWER ${f(RIM_POWER)}
 #define RIM_STRENGTH ${f(RIM_STRENGTH)}
+#define GLASS_FILL ${f(GLASS_FILL)}
+#define GLASS_RIM_ALPHA ${f(GLASS_RIM_ALPHA)}
 #define RIPPLE_SPEED ${f(RIPPLE.speed)}
 #define RIPPLE_WIDTH ${f(RIPPLE.width)}
 #define RIPPLE_AMPLITUDE ${f(RIPPLE.amplitude)}
@@ -362,7 +392,7 @@ vec3 evertNormal(float theta, float phi, Frame fr) {
 /**
  * The page UV of sphere point `(θ, φ)`: four `texelFetch`es of the `RG32F`
  * LUT, bilinear, CLAMPED in both axes (the seam is a discontinuity — see
- * `stub-shaders.ts#LUT_SAMPLE_GLSL`), with the nearest-tap fallback when the
+ * the original LUT sampler), with the nearest-tap fallback when the
  * 2×2 footprint straddles a jump larger than `JUMP_UV`
  * (`projection-lut.ts#sampleLutGuarded`, the CPU twin). Row 0 is the south pole,
  * column 0 is `θ = −π` (`domain.ts#lutTexel`).
@@ -392,6 +422,27 @@ vec2 lutUv(float theta, float phi) {
 }
 `;
 
+/**
+ * `wedge()` for the fragment shaders that declare `u_lut`, `u_viewport`, `u_mAfter`, `u_unwrap`, `u_azimuthal`,
+ * `v_domain`, `v_flat` and `v_morph`: how much of this fragment sits on a stretched azimuthal wedge, 0 to 1
+ * (see {@link WEDGE_FROM}). Always 0 for the other projections and at the flat end.
+ */
+const WEDGE_GLSL = /* glsl */ `
+float wedge() {
+  if (u_azimuthal < 0.5 || v_morph <= 0.0) return 0.0;
+  float cp = cos(v_domain.y);
+  vec3 p = vec3(cp * sin(v_domain.x), -sin(v_domain.y), cp * cos(v_domain.x));
+  vec3 q = u_unwrap < 1.0 ? u_mAfter * p : p;
+  vec2 uvF = clamp(lutUv(atan(q.x, q.z), asin(clamp(-q.y, -1.0, 1.0))), 0.0, 1.0);
+  float err = length(v_flat - (uvF - 0.5) * u_viewport) / min(u_viewport.x, u_viewport.y);
+  return smoothstep(WEDGE_FROM, WEDGE_TO, err);
+}
+/* Of that, the part that has become glass (0 while the morph is young). */
+float wedgeGlass(float wedgeAmount) {
+  return wedgeAmount * smoothstep(WEDGE_EARLY_FROM, WEDGE_EARLY_TO, v_morph);
+}
+`;
+
 /* ═══════════════════════════════════════════════════════════════════════════
    Vertex shader (surface + cage)
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -400,6 +451,7 @@ const VERTEX = `${GLSL_HEADER}
 layout(location = 0) in vec2 a_domain;
 uniform float u_wrap;
 uniform float u_unwrap;
+uniform float u_glass;
 uniform float u_spin;
 uniform float u_tilt;
 uniform float u_radius;
@@ -412,6 +464,7 @@ out vec2 v_domain;
 out float v_morph;
 out vec3 v_nview;
 out vec3 v_pos;
+out vec2 v_flat;
 out float v_ripple;
 /* The cage pass runs this very source; invariance keeps both draws bit-identical so LEQUAL never z-fights. */
 invariant gl_Position;
@@ -494,7 +547,8 @@ void main() {
   vec3 flatPos = vec3((uv - 0.5) * u_viewport, 0.0);
 
   /* The wrap wave: the centre curls onto the globe first, the edges follow (morph.ts). */
-  float s = min(u_wrap, u_unwrap);
+  /* POP's empty glass globe curls out of the vanished page with the same wave (u_glass is 0 before POP). */
+  float s = max(min(u_wrap, u_unwrap), u_glass);
   float d = acos(clamp(pl.z, -1.0, 1.0)) / PI;
   float w = smootherstep01(s * (1.0 + WRAP_WAVE) - WRAP_WAVE * d);
   vec3 pos = flatPos + w * (sphere - flatPos);
@@ -508,10 +562,16 @@ void main() {
   /* Depth spans +-2 radii (the eversion stays inside 1.35 r) rather than +-camDist: ~3x finer steps,
      which keeps the facets on either side of a silhouette edge from tying in the depth test. */
   float ndcZ = clamp(-pos.z / (2.0 * max(u_radius, 1.0)), -1.0, 1.0) * 0.9;
-  gl_Position = vec4(pos.x * 2.0 / u_viewport.x, -pos.y * 2.0 / u_viewport.y, ndcZ * wc, wc);
+  /* POP's empty glass globe travels to the orb in the corner: seen from a camera that stays over the viewport
+     centre it would be stretched into an ellipse by the perspective of its own offset. Its camera follows it
+     (u_glass is 0 for every other stage, which leaves this the viewport-centre camera above, bit for bit). */
+  vec2 eye = (u_centre - 0.5 * u_viewport) * u_glass;
+  vec2 pp = pos.xy + eye * (wc - 1.0);
+  gl_Position = vec4(pp.x * 2.0 / u_viewport.x, -pp.y * 2.0 / u_viewport.y, ndcZ * wc, wc);
   v_domain = a_domain;
   v_morph = w;
   v_pos = pos;
+  v_flat = flatPos.xy;
 }
 `;
 
@@ -524,7 +584,10 @@ in vec2 v_domain;
 in float v_morph;
 in vec3 v_nview;
 in vec3 v_pos;
+in vec2 v_flat;
 in float v_ripple;
+uniform float u_azimuthal;
+uniform float u_evert;
 uniform sampler2D u_lut;
 uniform sampler2D u_before;
 uniform sampler2D u_after;
@@ -534,12 +597,16 @@ uniform vec2 u_viewport;
 uniform float u_unwrap;
 uniform float u_afterMix;
 uniform float u_pageAlpha;
+uniform float u_glass;
+uniform float u_popFade;
 uniform float u_radius;
+uniform vec2 u_centre;
 uniform vec4 u_colVeil;
 uniform vec4 u_colAccent;
 uniform vec4 u_colCageMajor;
 out vec4 outColor;
 ${LUT_GUARDED_GLSL}
+${WEDGE_GLSL}
 void main() {
   float theta = v_domain.x;
   float phi = v_domain.y;
@@ -550,7 +617,29 @@ void main() {
      corners, the AFTER side's cut, the coarse rows of a tall Mercator page) is stretched across the page, and
      its per-fragment lookup is not the pixel it covers. Under it the shown page is the identity by construction;
      a nonzero weight is past the snap and everything is the lookup again. */
-  float flatness = 1.0 - smoothstep(0.0, FLAT_SNAP, v_morph);
+  float wedgeAmt = wedge();
+  float cp0 = cos(phi);
+  vec3 body = vec3(cp0 * sin(theta), -sin(phi), cp0 * cos(theta));
+  if (u_azimuthal > 0.5) {
+    /* Texture stretch: page pixels crossed per screen pixel, measured on the page the fragment's own face reads
+       (about 1 on the flat page, 2-3 on a wrapped sphere). Next to an azimuthal back point it diverges, and what
+       is drawn there is a few texels smeared over a wedge: treat it like the geometric wedge. */
+    vec3 mb = u_mAfter * body;
+    vec2 uvL = gl_FrontFacing ? lutUv(theta, phi) : lutUv(atan(mb.x, mb.z), asin(clamp(-mb.y, -1.0, 1.0)));
+    vec2 lx = dFdx(uvL);
+    vec2 ly = dFdy(uvL);
+    float stretch = max(max(abs(lx.x), abs(lx.y)), max(abs(ly.x), abs(ly.y))) * max(u_viewport.x, u_viewport.y);
+    wedgeAmt = max(wedgeAmt, smoothstep(STRETCH_FROM, STRETCH_TO, stretch));
+    /* Near either end of the eversion one side of the surface is the whole picture (BEFORE outside, AFTER once
+       everted). A fragment facing the OTHER way there is the mesh's folded skirt around the back point, not
+       geometry the viewer should see: it is glass, fading in with the eversion's distance from the end. */
+    float wrongWay = u_evert < 0.5
+      ? (gl_FrontFacing ? 0.0 : 1.0 - smoothstep(EVERT_END_FROM, EVERT_END_TO, u_evert))
+      : (gl_FrontFacing ? smoothstep(1.0 - EVERT_END_TO, 1.0 - EVERT_END_FROM, u_evert) : 0.0);
+    wedgeAmt = max(wedgeAmt, wrongWay);
+  }
+  float wedgeG = wedgeGlass(wedgeAmt);
+  float flatness = max(1.0 - smoothstep(0.0, FLAT_SNAP, v_morph), wedgeAmt - wedgeG);
   vec2 pageUv = v_pos.xy / u_viewport + 0.5;
   bool front = flatness > 0.5 ? u_unwrap >= 1.0 : gl_FrontFacing;
 
@@ -559,8 +648,7 @@ void main() {
   if (front) {
     uv = lutUv(theta, phi);
   } else {
-    float cp = cos(phi);
-    vec3 m = u_mAfter * vec3(cp * sin(theta), -sin(phi), cp * cos(theta));
+    vec3 m = u_mAfter * body;
     uv = lutUv(atan(m.x, m.z), asin(clamp(-m.y, -1.0, 1.0)));
   }
   uv = mix(uv, pageUv, flatness);
@@ -597,17 +685,31 @@ void main() {
   /* Glass is "the UV lies outside [0,1]^2"; antialias the page edge with fwidth (hard across a cut). */
   float edge = min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y));
   float fw = cut ? 0.0 : fwidth(edge);
-  float onPage = clamp(edge / max(fw, 1e-6) + 0.5, 0.0, 1.0);
+  float onPage = clamp(edge / max(fw, 1e-6) + 0.5, 0.0, 1.0) * (1.0 - wedgeG);
   vec3 rgb = mix(u_colVeil.rgb, page, onPage);
 
   /* Fresnel rim in --cage-major: strongest at the silhouette, on page and glass alike. */
   float camDist = 2.0 * GLOBE_PERSP * max(u_radius, 1.0);
-  vec3 toEye = normalize(vec3(0.0, 0.0, camDist) - v_pos);
+  vec3 toEye = normalize(vec3((u_centre - 0.5 * u_viewport) * u_glass, camDist) - v_pos);
   float rim = pow(1.0 - abs(dot(normalize(v_nview), toEye)), RIM_POWER) * RIM_STRENGTH;
   rgb = mix(rgb, u_colCageMajor.rgb, clamp(rim, 0.0, 1.0) * v_morph);
 
   float a = mix(1.0, u_pageAlpha, onPage);
+
+  /* POP: the same sphere, EMPTY. The page is gone; what is left is glass (a faint fill, a bright Fresnel rim),
+     present only where the wrap wave has lifted it off the flat page, so it condenses instead of appearing. It
+     then fades as a whole (popFade) once it has landed on the orb. Every term is continuous in u_glass. */
+  float lift = smoothstep(0.0, 0.5, v_morph);
+  float glassRim = clamp(rim, 0.0, 1.0) * lift;
+  float glassA = clamp(GLASS_FILL * lift + glassRim * GLASS_RIM_ALPHA, 0.0, 1.0);
+  vec3 glassRgb = mix(u_colVeil.rgb, u_colCageMajor.rgb, glassRim);
+  /* The page is gone by the time the glass is half formed, so the globe is never seen with text inside it. */
+  float toGlass = smoothstep(0.0, 0.5, u_glass);
+  rgb = mix(rgb, glassRgb, toGlass);
+  a = mix(a, glassA, toGlass) * (1.0 - u_popFade);
   outColor = vec4(rgb * a, a);
+  /* A stretched wedge is glass, and glass goes to the back so it can never hide real page. */
+  gl_FragDepth = mix(gl_FragCoord.z, 1.0, wedgeG);
 }
 `;
 
@@ -624,9 +726,16 @@ void main() {
  */
 const CAGE_FRAGMENT = `${GLSL_HEADER}
 in vec2 v_domain;
+in vec2 v_flat;
 in float v_morph;
 in float v_ripple;
+uniform sampler2D u_lut;
+uniform vec2 u_viewport;
+uniform mat3 u_mAfter;
+uniform float u_unwrap;
+uniform float u_azimuthal;
 uniform float u_cageAlpha;
+uniform float u_popFade;
 uniform float u_cageWidth;
 uniform float u_pixelRatio;
 uniform vec4 u_colCageMinor;
@@ -634,6 +743,8 @@ uniform vec4 u_colCageParallel;
 uniform vec4 u_colCageMajor;
 uniform vec4 u_colCageRipple;
 out vec4 outColor;
+${LUT_GUARDED_GLSL}
+${WEDGE_GLSL}
 
 /* Coverage of the line nearest to 'angle' among lines every 'step' radians. */
 float lineCover(float angle, float step_) {
@@ -662,8 +773,9 @@ void main() {
   vec4 col = wm > wp ? merCol : parCol;
   col = mix(col, vec4(u_colCageRipple.rgb, max(col.a, u_colCageRipple.a)), v_ripple);
 
-  float a = max(wm, wp) * u_cageAlpha * v_morph;
-  a = clamp(a + v_ripple * max(mer, par) * u_colCageRipple.a * u_cageAlpha * v_morph, 0.0, 1.0);
+  float fade = (1.0 - u_popFade) * (1.0 - wedgeGlass(wedge()));
+  float a = max(wm, wp) * u_cageAlpha * v_morph * fade;
+  a = clamp(a + v_ripple * max(mer, par) * u_colCageRipple.a * u_cageAlpha * v_morph * fade, 0.0, 1.0);
   outColor = vec4(col.rgb * a, a);
 }
 `;

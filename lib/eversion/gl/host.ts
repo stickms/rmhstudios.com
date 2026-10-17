@@ -14,9 +14,12 @@
  *   page's own frame scheduler. Behaviour is identical; the only difference is
  *   that it shares a thread with the route render (mitigated by §8.4).
  * - **Detection cannot see everything.** Whether WebGL2 exists on an
- *   `OffscreenCanvas` in a worker is only knowable by trying, and the try
- *   consumes the canvas (a canvas element's control transfers once). So a worker
- *   that fails to start — a script error, or a fatal `error` before `ready` — is
+ *   `OffscreenCanvas` in a worker (and whether the worker has a frame
+ *   scheduler) is only knowable by trying. The host asks a new worker with a
+ *   cheap `probe` BEFORE the page canvas is transferred (it cannot be taken
+ *   back), holding messages until the answer; a "no" turns this very host into
+ *   an in-thread one on the untouched canvas, so a worker-only failure costs
+ *   nothing. A worker that still fails to start — a script error, or a fatal `error` before `ready` — is
  *   reported to subscribers as usual AND demotes the session's cached mode to
  *   `main`: the controller's fallback path (spec §9.4) runs this navigation
  *   without the effect, and the next host is built in-thread on a fresh canvas.
@@ -144,6 +147,7 @@ export function detectHostMode(force?: HostMode): HostMode {
 /** Remember that the worker path failed so the next host is in-thread. */
 function demote(): void {
   cached = 'main';
+  if (forced === 'worker') forced = undefined;
   try {
     sessionStorage.setItem(DEMOTED_KEY, '1');
   } catch {
@@ -185,7 +189,11 @@ function defaultWorker(): WorkerLike {
   return new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
 }
 
-function createHost(mode: HostMode, options: HostOptions): HostInternals {
+/** A worker that never answers the capability probe is assumed capable after this long (an old or faked worker). */
+const PROBE_TIMEOUT_MS = 2500;
+
+function createHost(initialMode: HostMode, options: HostOptions): HostInternals {
+  let mode: HostMode = initialMode;
   const listeners = new Set<(message: FromWorker) => void>();
   let disposed = false;
   let ready = false;
@@ -217,22 +225,60 @@ function createHost(mode: HostMode, options: HostOptions): HostInternals {
 
   /* ── The transport ────────────────────────────────────────────────────── */
 
-  let sendToCore: (message: ToWorker, transfer?: Transferable[]) => void;
-  let teardown: () => void;
-  let pendingFrames: () => number;
+  let sendToCore: (message: ToWorker, transfer?: Transferable[]) => void = () => {};
+  let teardown: () => void = () => {};
+  let pendingFrames: () => number = () => 0;
 
-  if (mode === 'worker') {
+  /**
+   * The worker transport. A fresh worker is first ASKED whether it can render at all (`probe`: WebGL2 on an
+   * `OffscreenCanvas`, a frame scheduler): the page canvas's control can be transferred once and never back,
+   * so a worker that cannot draw must be found out BEFORE the canvas goes to it. Messages posted meanwhile are
+   * held, in order. If the answer is no (or the worker dies first) the host quietly becomes an in-thread one,
+   * on the same still-untouched canvas, for this navigation and the rest of the session.
+   */
+  function attachWorker() {
     const worker = (options.createWorker ?? defaultWorker)();
-    worker.addEventListener('message', ((e: MessageEvent<FromWorker>) => deliver(e.data)) as never);
-    const crashed = (e: ErrorEvent | MessageEvent) =>
+    let probing = true;
+    let probeTimer: ReturnType<typeof setTimeout> | null = null;
+    const held: Array<[ToWorker, Transferable[] | undefined]> = [];
+
+    const settleProbe = (ok: boolean) => {
+      if (!probing) return;
+      probing = false;
+      if (probeTimer !== null) clearTimeout(probeTimer);
+      probeTimer = null;
+      if (disposed) return;
+      if (!ok) {
+        demote();
+        worker.terminate();
+        attachMainThread();
+      }
+      for (let m = held.shift(); m; m = held.shift()) sendToCore(m[0], m[1]);
+    };
+
+    worker.addEventListener('message', ((e: MessageEvent<FromWorker>) => {
+      if (e.data.type === 'probe-result') {
+        settleProbe(e.data.ok);
+        return;
+      }
+      deliver(e.data);
+    }) as never);
+    const crashed = (e: ErrorEvent | MessageEvent) => {
+      if (probing) {
+        // Died before it could answer: nothing was lost, so take the main-thread route.
+        settleProbe(false);
+        return;
+      }
       deliver({
         type: 'error',
         message: `eversion: worker failed${'message' in e && typeof e.message === 'string' ? `: ${e.message}` : ''}`,
         fatal: true,
       });
+    };
     worker.addEventListener('error', crashed as never);
     worker.addEventListener('messageerror', crashed as never);
-    sendToCore = (message, transfer) => {
+
+    const post = (message: ToWorker, transfer?: Transferable[]) => {
       const list = transfer ? [...transfer] : [];
       let outgoing = message;
       if (message.type === 'init' && message.canvas instanceof HTMLCanvasElement) {
@@ -248,9 +294,23 @@ function createHost(mode: HostMode, options: HostOptions): HostInternals {
       if (message.type === 'start') workerRunning = true;
       worker.postMessage(outgoing, list);
     };
-    teardown = () => worker.terminate();
+    sendToCore = (message, transfer) => {
+      if (probing) held.push([message, transfer]);
+      else post(message, transfer);
+    };
+    teardown = () => {
+      if (probeTimer !== null) clearTimeout(probeTimer);
+      worker.terminate();
+    };
     pendingFrames = () => (workerRunning ? 1 : 0);
-  } else {
+
+    probeTimer = setTimeout(() => settleProbe(true), PROBE_TIMEOUT_MS);
+    worker.postMessage({ type: 'probe' } satisfies ToWorker);
+  }
+
+  /** The in-thread transport: the same core, the page's own frame scheduler. */
+  function attachMainThread() {
+    mode = 'main';
     const pending = new Set<number>();
     const core: EversionCore = createEversionCore(
       {
@@ -301,6 +361,9 @@ function createHost(mode: HostMode, options: HostOptions): HostInternals {
     };
     pendingFrames = () => pending.size;
   }
+
+  if (mode === 'worker') attachWorker();
+  else attachMainThread();
 
   /* ── Page-level wiring ────────────────────────────────────────────────── */
 
@@ -370,7 +433,9 @@ function createHost(mode: HostMode, options: HostOptions): HostInternals {
   /* ── The host ─────────────────────────────────────────────────────────── */
 
   const host: HostInternals = {
-    mode,
+    get mode() {
+      return mode;
+    },
     post(message, transfer) {
       if (disposed) return;
       if (message.type === 'init') {
@@ -387,9 +452,14 @@ function createHost(mode: HostMode, options: HostOptions): HostInternals {
           return;
         }
       }
-      if (message.type === 'start' && document.hidden) {
-        // The core cannot see the page's visibility; tell it before the loop starts.
-        sendToCore({ type: 'visibility', hidden: true });
+      if (message.type === 'init' || message.type === 'start') {
+        // The core cannot see the page's visibility, and a new init resets what it believed: tell it the
+        // truth (shown OR hidden) before every init and start, so a stale 'hidden' never outlives a context.
+        sendToCore({ type: 'visibility', hidden: document.hidden });
+      }
+      if (message.type === 'start') {
+        sendToCore({ ...message, origin: message.origin ?? performance.timeOrigin }, transfer);
+        return;
       }
       sendToCore(message, transfer);
     },

@@ -4,9 +4,8 @@
  *
  * It exposes `window.__t`, a handful of scenario functions the Playwright script
  * calls and asserts on. The renderer under test is the REAL `createRenderer`; the
- * script aliases `../mesh` to a local UV sphere and `./shaders` to "not
- * implemented" so the stub shaders are what run (see `local-mesh.ts`,
- * `no-real-shaders.ts`).
+ * script aliases `../mesh` to a local UV sphere (see `local-mesh.ts`); the shaders
+ * are the real ones.
  */
 
 import { LUT_SIZE } from '../../constants';
@@ -206,28 +205,31 @@ const api = {
     return max;
   },
 
-  /** `debugEvaluate` against the stub's round-sphere `F`. */
+  /**
+   * `debugEvaluate` against the round sphere at e = 0 (`F(p, 0) = p`) and its unit norm at e = 1
+   * (the eversion's endpoints are spheres; the full parity with the TS oracle is `eversion-gl.mjs`).
+   */
   evaluate() {
     const es = new Float32Array([0, 0.25, 0.5, 1]);
     const out = renderer!.debugEvaluate(es);
     const mesh = meshForTier('low');
     let worst = 0;
+    let worstNorm = 0;
     for (let k = 0; k < es.length; k++) {
       for (let v = 0; v < mesh.vertexCount; v += 7) {
         const th = mesh.domain[v * 2];
         const ph = mesh.domain[v * 2 + 1];
-        const s = 1 - 2 * es[k];
-        const want = [
-          Math.cos(ph) * Math.sin(th) * s,
-          -Math.sin(ph) * s,
-          Math.cos(ph) * Math.cos(th) * s,
-        ];
-        for (let c = 0; c < 3; c++) {
-          worst = Math.max(worst, Math.abs(out[(k * mesh.vertexCount + v) * 3 + c] - want[c]));
+        const want = [Math.cos(ph) * Math.sin(th), -Math.sin(ph), Math.cos(ph) * Math.cos(th)];
+        const o = (k * mesh.vertexCount + v) * 3;
+        if (k === 0) {
+          for (let c = 0; c < 3; c++) worst = Math.max(worst, Math.abs(out[o + c] - want[c]));
+        }
+        if (k === 0 || k === es.length - 1) {
+          worstNorm = Math.max(worstNorm, Math.abs(Math.hypot(out[o], out[o + 1], out[o + 2]) - 1));
         }
       }
     }
-    return { length: out.length, expected: es.length * mesh.vertexCount * 3, worst };
+    return { length: out.length, expected: es.length * mesh.vertexCount * 3, worst, worstNorm };
   },
 
   /** For the CDP heap measurement: run `n` draws in one task. */

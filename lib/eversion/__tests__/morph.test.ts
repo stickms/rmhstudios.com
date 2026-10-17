@@ -6,7 +6,7 @@ import { cameraFor, flatPosition, morphPosition, projectToViewport, wrapWeight }
 import { afterDomainTransform } from '../orientation';
 import { PROJECTIONS } from '../projections';
 import { bakeLut, sampleLut } from '../projection-lut';
-import type { FitParams, Projection, Viewport } from '../types';
+import { PROJECTION_IDS, type FitParams, type Projection, type Viewport } from '../types';
 
 /*
  * Morph tests — spec §11.1 tests 15 and 16, over all five real projections.
@@ -123,6 +123,13 @@ describe('morphPosition', () => {
     expect(o[1]).toBeCloseTo(30, 12);
     morphPosition(f, new Float32Array(s), 0.5, o);
     expect(o[0]).toBeCloseTo(15.55, 5);
+  });
+});
+
+describe('the morph suite covers the real projections', () => {
+  it('runs S#15 and S#16 over all five registered projections, not a stand-in', () => {
+    expect(MORPH_TEST_PROJECTIONS.map((p) => p.id).sort()).toEqual([...PROJECTION_IDS].sort());
+    expect(MORPH_TEST_PROJECTIONS).toHaveLength(5);
   });
 });
 

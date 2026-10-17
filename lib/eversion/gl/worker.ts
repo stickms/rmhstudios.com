@@ -58,9 +58,10 @@ export function bootWorker(scope: WorkerScopeLike, deps?: CoreDeps): () => void 
     mode: 'worker',
     emit: (message: FromWorker, transfer?: Transferable[]) => scope.postMessage(message, transfer),
     scheduler: {
+      // Probed, not assumed: the core answers `probe` / `init` with "no" so the host runs in-thread instead.
+      available: typeof scope.requestAnimationFrame === 'function',
       request(callback) {
         if (!scope.requestAnimationFrame) {
-          // The host's detection should have kept this browser on the main thread.
           throw new Error('eversion: requestAnimationFrame is not available in this worker');
         }
         return scope.requestAnimationFrame(callback);
@@ -70,6 +71,7 @@ export function bootWorker(scope: WorkerScopeLike, deps?: CoreDeps): () => void 
       },
     },
     now: () => performance.now(),
+    timeOrigin: () => performance.timeOrigin,
   };
   const core = createEversionCore(env, deps);
   scope.onmessage = (event: MessageEvent) => core.handle(event.data as ToWorker);
