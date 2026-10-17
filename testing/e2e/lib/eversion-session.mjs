@@ -207,7 +207,7 @@ export async function openSession(options = {}) {
    * Screencast frames are only produced when the compositor draws, so a static
    * page yields few — that is the signal, not a bug.
    */
-  async function startRecording({ format = 'png', quality = 80 } = {}) {
+  async function startRecording({ format = 'png', quality = 80, maxWidth, maxHeight } = {}) {
     if (cdp) throw new Error('eversion-session: already recording');
     cdp = await context.newCDPSession(page);
     recorded = [];
@@ -223,7 +223,15 @@ export async function openSession(options = {}) {
       cdp?.send('Page.screencastFrameAck', { sessionId: ev.sessionId }).catch(() => {});
     };
     cdp.on('Page.screencastFrame', onFrame);
-    await cdp.send('Page.startScreencast', { format, quality, everyNthFrame: 1 });
+    await cdp.send('Page.startScreencast', {
+      format,
+      quality,
+      everyNthFrame: 1,
+      // Optional downscale: the smoothness suite compares frames to frames, not to a
+      // screenshot, so a few hundred pixels across is enough and decodes ~10x faster.
+      ...(maxWidth ? { maxWidth } : {}),
+      ...(maxHeight ? { maxHeight } : {}),
+    });
   }
 
   /** Stop and return the frames: `[{ tMs, buffer }]`, ascending. */

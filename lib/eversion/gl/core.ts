@@ -52,6 +52,7 @@ import { getProjection } from '../projections';
 import { copySnapshot, createSnapshot } from '../snapshot';
 import { Timeline } from '../timeline';
 import type {
+  ChannelId,
   CoreEnv,
   DebugCommand,
   EversionCore,
@@ -114,6 +115,35 @@ export function defaultDeps(): CoreDeps {
   };
 }
 
+/**
+ * The size of the step `inject-hard-cut` applies to a channel's drawn value: large
+ * enough to be an unmistakable cut, small enough to stay in the channel's range.
+ */
+function applyHardCut(s: TimelineSnapshot, channel: ChannelId): void {
+  switch (channel) {
+    case 'radius':
+      s.radius *= 0.7;
+      break;
+    case 'evert':
+      s.evert = Math.min(1, s.evert + 0.3);
+      break;
+    case 'spin':
+      s.spin += Math.PI / 2;
+      break;
+    case 'tilt':
+      s.tilt += 0.4;
+      break;
+    case 'wrap':
+      s.wrap = Math.max(0, s.wrap - 0.5);
+      break;
+    case 'centreX':
+      s.centreX += 120;
+      break;
+    default:
+      break;
+  }
+}
+
 /** Step of the scrub op's simulated clock: one 60 Hz frame, well under `MAX_DT_MS`. */
 const SCRUB_STEP_MS = 16;
 
@@ -167,6 +197,8 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
   let afterUploaded = false;
   let afterFailed = false;
   let pausedE: number | null = null;
+  /** Debug only (`inject-hard-cut`, T35): the channel whose drawn value is stepped, or `null`. */
+  let hardCut: ChannelId | null = null;
   const scratch = createSnapshot();
 
   const emit = (message: FromWorker, transfer?: Transferable[]) => {
@@ -219,9 +251,11 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
       lastFrameAt = now;
 
       const snapshot = timeline.tick(tickClock(now));
-      if (pausedE !== null) {
-        copySnapshot(snapshot, scratch).evert = pausedE;
-        renderer.draw(scratch);
+      if (pausedE !== null || hardCut !== null) {
+        const out = copySnapshot(snapshot, scratch);
+        if (hardCut !== null) applyHardCut(out, hardCut);
+        if (pausedE !== null) out.evert = pausedE;
+        renderer.draw(out);
       } else {
         renderer.draw(snapshot);
       }
@@ -245,6 +279,7 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
     const summary = stats.summary();
     timeline = null;
     pausedE = null;
+    hardCut = null;
     renderer?.release();
     emit({ type: 'done', ...summary });
   }
@@ -393,7 +428,11 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
         if (!renderer) throw new Error('eversion: counters before init');
         return { value: renderer.counters() };
       case 'inject-hard-cut':
-        // The re-plan lives in the timeline (T10/T35); there is nothing for the core to skip.
+        // T35's deliberate defect: from the next frame on, the drawn value of one channel
+        // is stepped by a fixed amount with no easing, which is exactly what a re-plan that
+        // forgot to carry the channel's state would look like. It touches only the snapshot
+        // handed to the renderer, never the timeline, and `null` removes it.
+        hardCut = command.channel;
         return {};
       case 'loop':
         return {
