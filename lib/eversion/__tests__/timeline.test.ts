@@ -602,7 +602,9 @@ describe('tick cost', () => {
     let t = wall.now;
     let sink = 0;
     let per = Infinity;
-    let worstGrown = -Infinity;
+    // Best pass, like the cost: a real per-tick allocation shows in every pass, while a JIT
+    // tier-up or a GC racing the stats call lands in one.
+    let bestGrown = Infinity;
     for (let pass = 0; pass < 3; pass++) {
       gc();
       const base0 = space();
@@ -619,10 +621,10 @@ describe('tick cost', () => {
         tl.tick(t);
       }
       per = Math.min(per, ((performance.now() - start) * 1000) / N);
-      worstGrown = Math.max(worstGrown, space() - before - baseline);
+      bestGrown = Math.min(bestGrown, space() - before - baseline);
     }
     expect(sink).toBeGreaterThan(0);
-    expect(worstGrown).toBeLessThan(32 * 1024); // 5000 ticks × even 8 B would be 40 KB
+    expect(bestGrown).toBeLessThan(32 * 1024); // 5000 ticks × even 8 B would be 40 KB
     // Spec target 5 µs; the bound is loose, and scaled by the measured machine load.
     expect(per).toBeLessThan(25 * loadFactor());
   });
