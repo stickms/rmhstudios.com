@@ -35,7 +35,6 @@ import { createRenderer } from '../gl/renderer';
 import { detectHostMode, getEversionHost } from '../gl/host';
 import { getShaderSet } from '../gl/shaders';
 import { buildMesh, meshCounts, meshForTier } from '../mesh';
-import { afterDomainTransform, alignAngle, fitEndIsometry } from '../orientation';
 import { isEversionReady, prefetchEversion } from '../prefetch';
 import {
   aspectBucket,
@@ -141,14 +140,6 @@ const STUBS: StubEntry[] = [
   { name: 'wrapWeight', task: 'T12', call: () => wrapWeight(0, 0) },
   { name: 'morphPosition', task: 'T12', call: () => morphPosition(noArgs, noArgs, 0, noArgs) },
   { name: 'projectToViewport', task: 'T12', call: () => projectToViewport(noArgs, noArgs, noArgs) },
-  // T13 — orientation
-  { name: 'fitEndIsometry', task: 'T13', call: () => fitEndIsometry() },
-  { name: 'alignAngle', task: 'T13', call: () => alignAngle(noArgs) },
-  {
-    name: 'afterDomainTransform',
-    task: 'T13',
-    call: () => afterDomainTransform(noArgs, noArgs, 0),
-  },
   // T17 / T29 — page side (T18, the placeholder, is implemented)
   { name: 'createCapture', task: 'T17', call: () => createCapture() },
   { name: 'captureOnce', task: 'T17', call: () => captureOnce(noArgs) },

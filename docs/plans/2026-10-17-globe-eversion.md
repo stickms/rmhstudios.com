@@ -865,8 +865,11 @@ DOM capture are tested in e2e only.
 13. **No mirror:** compose oracle at `e = 1` → `spin(θ_end)` → camera →
     `P(M_after ·)`. The screen→page-UV Jacobian has `det > 0` and page-up maps
     to screen-up, at 100 points across the visible hemisphere.
-14. **Alignment:** at UNWRAP start, the after page's centre is within 0.1° of
-    the camera-facing point.
+14. **Alignment:** the spin's committed target at UNWRAP start aligns the after
+    page's centre with the camera-facing point, and by the spin landing
+    (4300 ms, before UNWRAP ends) the drawn centre is within 0.1° of it. The
+    spin deliberately overlaps UNWRAP's first half (§7.1), so the instantaneous
+    error at UNWRAP start (~3.6°) is expected. *(Amended 2026-10-17.)*
 
 **Morph (`morph.test.ts`)**
 
