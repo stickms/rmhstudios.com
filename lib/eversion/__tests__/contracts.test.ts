@@ -299,6 +299,7 @@ describe('worker protocol (S§3.3)', () => {
     { type: 'resize', viewport },
     { type: 'reveal' },
     { type: 'abort' },
+    { type: 'visibility', hidden: true },
     { type: 'debug', id: 1, command: { op: 'counters' } },
   ] satisfies ToWorker[];
   const fromWorker = [

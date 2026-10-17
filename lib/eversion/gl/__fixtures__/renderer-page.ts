@@ -63,7 +63,10 @@ function instrumentDrawCalls() {
   const proto = WebGL2RenderingContext.prototype;
   for (const name of ['drawElements', 'drawArrays', 'drawElementsInstanced'] as const) {
     const original = proto[name] as (...a: unknown[]) => void;
-    (proto as unknown as Record<string, unknown>)[name] = function (this: unknown, ...a: unknown[]) {
+    (proto as unknown as Record<string, unknown>)[name] = function (
+      this: unknown,
+      ...a: unknown[]
+    ) {
       drawCalls++;
       return original.apply(this, a);
     };
@@ -89,7 +92,15 @@ function ctx(): WebGL2RenderingContext {
 function pixel(x: number, y: number): [number, number, number] {
   const gl = ctx();
   const out = new Uint8Array(4);
-  gl.readPixels(Math.round(x), canvas!.height - 1 - Math.round(y), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, out);
+  gl.readPixels(
+    Math.round(x),
+    canvas!.height - 1 - Math.round(y),
+    1,
+    1,
+    gl.RGBA,
+    gl.UNSIGNED_BYTE,
+    out,
+  );
   return [out[0], out[1], out[2]];
 }
 
@@ -127,7 +138,14 @@ const api = {
     renderer!.prime({
       projection: 'equirect',
       viewport: { ...VIEW },
-      globe: { yaw: 0, pitch: 0, yawVel: 0, pitchVel: 0, centre: [VIEW.w / 2, VIEW.h / 2], radius: 60 },
+      globe: {
+        yaw: 0,
+        pitch: 0,
+        yawVel: 0,
+        pitchVel: 0,
+        centre: [VIEW.w / 2, VIEW.h / 2],
+        radius: 60,
+      },
       orb: { cx: 0, cy: 0, radius: 10 },
       colours,
       lut: identityLut(),
@@ -199,7 +217,11 @@ const api = {
         const th = mesh.domain[v * 2];
         const ph = mesh.domain[v * 2 + 1];
         const s = 1 - 2 * es[k];
-        const want = [Math.cos(ph) * Math.sin(th) * s, -Math.sin(ph) * s, Math.cos(ph) * Math.cos(th) * s];
+        const want = [
+          Math.cos(ph) * Math.sin(th) * s,
+          -Math.sin(ph) * s,
+          Math.cos(ph) * Math.cos(th) * s,
+        ];
         for (let c = 0; c < 3; c++) {
           worst = Math.max(worst, Math.abs(out[(k * mesh.vertexCount + v) * 3 + c] - want[c]));
         }

@@ -543,7 +543,15 @@ export type DebugCommand =
   | { op: 'solid-textures'; before: Rgba; after: Rgba }
   | { op: 'evaluate'; es: Float32Array }
   | { op: 'counters' }
-  | { op: 'inject-hard-cut'; channel: ChannelId | null };
+  | { op: 'inject-hard-cut'; channel: ChannelId | null }
+  /** Loop bookkeeping, for the "no frame after `done`" and pause checks (T25). */
+  | { op: 'loop' }
+  /**
+   * Deterministically play a fresh timeline to `t` ms (16 ms steps, `AFTER`
+   * becoming ready at `afterAt` if non-null) and draw that frame — the harness
+   * scrubber (T26). Idle-only: refused while a run is in flight.
+   */
+  | { op: 'scrub'; t: number; afterAt: number | null };
 
 /**
  * Main → render messages. Exactly the §3.3 table, plus `debug` (test-only).
@@ -576,6 +584,12 @@ export type ToWorker =
   | { type: 'resize'; viewport: Viewport }
   | { type: 'reveal' }
   | { type: 'abort' }
+  /**
+   * The page was hidden or shown. Only the main thread can read
+   * `document.visibilityState`, so it forwards it (spec §7.7): the core pauses
+   * its loop while hidden. Not in §3.3 — added by T25.
+   */
+  | { type: 'visibility'; hidden: boolean }
   | { type: 'debug'; id: number; command: DebugCommand };
 
 /** Render → main messages. The §3.3 table, plus `ready`, `error` and `debug-result`. */
@@ -605,6 +619,7 @@ export const TO_WORKER_TYPES = [
   'resize',
   'reveal',
   'abort',
+  'visibility',
   'debug',
 ] as const satisfies readonly ToWorker['type'][];
 
@@ -706,6 +721,8 @@ export interface FrameScheduler {
 
 /** What the transport-agnostic core needs from its environment. */
 export interface CoreEnv {
+  /** Reported in `ready`; default `'main'` (T25). */
+  mode?: HostMode;
   /** Send a message to the main thread (a no-copy transfer list for bitmaps). */
   emit(message: FromWorker, transfer?: Transferable[]): void;
   scheduler: FrameScheduler;

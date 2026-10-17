@@ -80,7 +80,11 @@ export interface RendererDebug {
   pauseAt(e: number | null): void;
   /** Fill `before` and `after` with solid colours (spec §11.2 test 28). */
   solidTextures(before: Rgba, after: Rgba): void;
-  counters(): GlCounters;
+  /**
+   * Live GL object counts. A promise in worker mode (the counters live in the
+   * worker); `await` it either way.
+   */
+  counters(): GlCounters | Promise<GlCounters>;
   /** `F(p, e)` for the whole mesh at each `e`, via transform feedback (test 27). */
   evaluate(es: Float32Array): Promise<Float32Array>;
   /** Skip the next re-plan of a channel (T35's deliberately injected hard cut). */

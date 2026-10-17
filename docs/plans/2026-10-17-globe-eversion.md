@@ -1099,6 +1099,7 @@ Each phase is one or more focused commits, green on `pnpm check:consistency`.
 1. **Worker `requestAnimationFrame` on Safari.** If it is unavailable,
    `host.ts` uses the in-thread renderer there (already specified). Measure
    whether iOS then needs the `low` tier to hold the device-lab target.
+   _Resolved by T25 (unverified on device):_ every WebKit engine (Safari and all of iOS) runs the in-thread host until T38 shows worker rAF presenting there (`WEBKIT_USES_WORKER` in `host.ts`); a worker's clock origin also differs from the page's, which `core.ts` corrects at `start`.
 2. **`modern-screenshot` viewport-crop mechanics** with this shell's
    fixed/sticky layers and the `radial.css` de-stick rules. The requirement is
    test 29; the mechanism is open.

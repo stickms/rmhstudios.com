@@ -263,17 +263,7 @@ export function createRenderer(
 
   const fallbackLut = newTexture();
   gl.bindTexture(gl.TEXTURE_2D, fallbackLut);
-  gl.texImage2D(
-    gl.TEXTURE_2D,
-    0,
-    gl.RG32F,
-    1,
-    1,
-    0,
-    gl.RG,
-    gl.FLOAT,
-    new Float32Array([0.5, 0.5]),
-  );
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RG32F, 1, 1, 0, gl.RG, gl.FLOAT, new Float32Array([0.5, 0.5]));
   setLutSamplerState();
 
   bindUnit(SAMPLER_UNITS.lut, fallbackLut);
