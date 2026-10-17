@@ -245,6 +245,116 @@ Its commit-time half is `lib/__tests__/static-backdrop.test.ts` (in
 `GATE_TESTS`). Findings and the measured before/after:
 [`performance-audit-2026-10-08.md`](./performance-audit-2026-10-08.md).
 
+### 7. Globe eversion suites (`lib/eversion/`, `testing/e2e/eversion-*.mjs`)
+
+The hub navigation effect (spec: [`plans/2026-10-17-globe-eversion.md`](./plans/2026-10-17-globe-eversion.md)
+§11) is tested in three layers. The first is part of `pnpm test`; the other two
+need Chromium and are NOT in the main suite.
+
+**a. Unit (in `pnpm test`).** `lib/eversion/__tests__/` covers spec gates 1-24
+(projections, LUT, Thurston oracle, orientation, morph, timeline properties, the
+runner's sequence against scripted ports, the BEFORE scheduler, eligibility,
+flags) plus `bundle-leaks.test.ts`, which gives the static-closure leak scan in
+`scripts/check-bundle-budget.ts` a positive and a negative control and keeps every
+module fingerprint true. `pnpm exec vitest run lib/eversion` runs just these
+(~30 s).
+
+**b. Fixture e2e (no server, no build).** Each script bundles its own fixture
+page with esbuild around the real modules and serves it from a fake origin, with
+WebGL2 from SwiftShader:
+
+```bash
+node testing/e2e/eversion-metrics-selftest.mjs   # the measurement helpers, first
+node testing/e2e/eversion-host.mjs               # worker/main host, frame pacing
+node testing/e2e/eversion-renderer.mjs           # renderer lifecycle
+node testing/e2e/eversion-gl.mjs                 # shaders: parity (S#27), two-sidedness (S#28)
+node testing/e2e/eversion-controller.mjs         # run orchestration against a fake router (~25 s)
+```
+
+`CHROMIUM_PATH=/path/to/chrome` overrides the browser. `eversion-gl.mjs` skips
+Firefox/WebKit when absent (explicit `SKIP` lines) but asserts a floor on the
+number of checks that ran, so a run that skipped its way to green fails.
+
+**c. App e2e (against a running server).** These drive the real app with the
+effect forced on by `?eversion`:
+
+```bash
+# built app (what CI runs): needs DATABASE_URL, BETTER_AUTH_SECRET, BETTER_AUTH_URL
+pnpm run build:frontend:sourcemap && PORT=7005 node .output/server/index.mjs &
+export BASE_URL=http://localhost:7005
+
+node testing/e2e/eversion-load.mjs               # S#40: nothing before load; LCP/TBT; delayed-load control
+PROFILE=desktop THEME=dark node testing/e2e/eversion-hub.mjs   # S#25/26: entry points, dismissals, fallbacks
+node testing/e2e/eversion-edge.mjs               # S#34/35: fallbacks, fault injection, router edge cases
+node testing/e2e/eversion-capture.mjs            # S#29/46: capture fidelity (SSIM), right-edge parity and lifecycle
+```
+
+**Smoothness (S#31/S#32) needs a dev server, not the build.** It does not record the
+screen: it scrubs the timeline in the lab (the core's `scrub` debug op, driven through
+`window.__eversionLab`, present only with `?eversion-debug`) at a fixed step - every 16 ms,
+8 ms within 48 ms of each stage boundary and scripted event - screenshots each still and
+runs the jerk detector over consecutive stills. The verdict therefore does not depend on how
+fast the rig draws (the old screencast sampled ~1.5 fps on software GL and could neither
+pass a clean run nor find an injected cut). The lab route is dev-only, so:
+
+```bash
+EVERSION_LAB_OPEN=1 XAI_API_KEY=x OPENAI_API_KEY=x pnpm exec vite dev --port 7371 --strictPort --host 127.0.0.1
+BASE_URL=http://127.0.0.1:7371 node testing/e2e/eversion-smoothness.mjs --quick   # ~11 min on a loaded 4-core software-GL box
+node testing/e2e/eversion-smoothness.mjs                                          # all themes, 20 seeded fast-forwards
+node testing/e2e/eversion-smoothness.mjs --screencast                             # ALSO the optional real-hub screencast variant (needs >= ~10 fps)
+```
+
+Scenarios: uninterrupted per theme, seeded fast-forwards, AFTER ready at 4 s, a failing (500)
+destination, and a self-proof. A hard cut is a step larger than BOTH its neighbours by 2x (C2
+continuity makes every legitimate speed-up a ramp); the run's median is deliberately not the
+yardstick, because the change per step varies ~100x across one correct run. The self-proof
+injects a 30 % radius step (the `inject-hard-cut` debug op) at 2000 ms and requires the
+detector to flag exactly that step while the unmodified run reports none. Luminance (S#32) is
+read off the same stills. The stills are of the lab's synthetic pages in the theme's own
+background, so what is judged is the effect's motion; the CSS hub and orb fades are not in
+them. CI runs `--quick` against a throwaway dev server in its own step (the glob skips it).
+
+For iteration, a dev server works for everything except the load gate's chunk
+identification: `EVERSION_LAB_OPEN=1 XAI_API_KEY=x OPENAI_API_KEY=x pnpm exec vite dev --port 7331`
+(a git worktree needs its own `pnpm install`; the dummy keys exist because the
+homes image module constructs a client at import time).
+`eversion-lab.mjs` (the admin-only `/eversion-lab` scrub page) needs the dev-only
+`EVERSION_LAB_OPEN` and so is **excluded from CI** - a production build ignores it.
+
+`eversion-load.mjs` (S#40) and `eversion-perf.mjs` (S#43) compare against the
+committed `testing/e2e/baselines/eversion-load.json` and `eversion-frames.json`.
+**A missing baseline fails both gates on CI** (`CI` set; `eversion-perf` only
+informs locally). Neither script ever writes one as a side effect of a run:
+a baseline taken from the run under test would make the gate compare a build with
+itself and pass for ever. Thresholds and the late-`load` negative control are in
+the spec's S#40 amendment. The late-`load` control holds `load` open for 8 s and
+fails if ANY eversion request (the prefetch chunk included, not just the bridge)
+is seen before it; `lib/eversion/__tests__/hub-load-gating.test.ts` pins the same
+rule at source level so a regression fails in `pnpm test` before a browser runs.
+
+**Producing baselines.** They must come from a CI runner on a production build -
+SwiftShader numbers from a laptop would fail every run on CI. Start the `web-ci`
+workflow with `workflow_dispatch` and `update-baselines` ticked: the
+`eversion-e2e` job then runs only `eversion-load.mjs` and `eversion-perf.mjs`
+with `--update-baselines` and uploads `testing/e2e/baselines/` as the
+`eversion-baselines` artifact (14 days). Download it, commit the two JSON files
+in a PR of their own, and say which run produced them. Refresh the same way when a
+deliberate change moves the numbers (a Chromium bump, a slower-but-better effect).
+
+**CI.** The `eversion-e2e` job in `web-ci.yml` builds WITH sourcemaps (the
+attribution checks read them), serves `.output`, and runs every
+`testing/e2e/eversion-*.mjs` except `eversion-lab.mjs` and `eversion-smoothness*.mjs` (own step, above); `eversion-hub.mjs` runs
+once per profile x theme (desktop/mobile x dark/light/high-contrast). The job is
+path-filtered by `eversion-changes` to what the effect depends on: `lib/eversion`,
+`components/radial`, the settings row and its preference API/schema, the theme
+store, `lib/perf-tier*` and `lib/render`, the glass layer, the two English
+namespaces it uses, `package.json`, the lockfile, the Vite config, the bundle
+budget script, the baselines and this workflow - not every route, store or English
+string. It runs nightly on `main`. It is `continue-on-error` until T37 makes it
+blocking, which hides a red job from the PR's checks, so each script's verdict is
+also written to the job summary (`GITHUB_STEP_SUMMARY`) and every failure is an
+`::error::` annotation. Open the job summary after a nightly.
+
 ### Coverage
 
 ```bash
@@ -263,14 +373,15 @@ a target to farm.
 
 Ten workflows live in `.github/workflows/`. The ones that touch tests/quality:
 
-| Workflow                   | Runs                                                                                    | Gate?                                                                                    |
-| -------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `web-ci.yml` (`check` job) | `tsc --noEmit` → `eslint` → docs freshness → `pnpm test`                                | **all block**, tests included (as of 2026-08-08)                                         |
-| `web-ci.yml` (`build` job) | `build:frontend:sourcemap` → bundle budget → entry composition                          | build + both size gates block                                                            |
-| `web-ci.yml` (`audit` job) | `pnpm audit --prod --audit-level=high`                                                  | blocks on high-severity prod advisories                                                  |
-| `epic-tests.yml`           | `playwright install chromium` → `pnpm test:epic`                                        | blocks; **path-filtered** to `scripts/epic/**`                                           |
-| `deploy.yml` (`ci` job)    | `tsc --noEmit` → `eslint` → `pnpm test`                                                 | typecheck + lint block; the **test step is advisory** here by owner decision — see below |
-| `go-microservices.yml`     | `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**` | blocks                                                                                   |
+| Workflow                      | Runs                                                                                    | Gate?                                                                                    |
+| ----------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `web-ci.yml` (`check` job)    | `tsc --noEmit` → `eslint` → docs freshness → `pnpm test`                                | **all block**, tests included (as of 2026-08-08)                                         |
+| `web-ci.yml` (`build` job)    | `build:frontend:sourcemap` → bundle budget → entry composition                          | build + both size gates block                                                            |
+| `web-ci.yml` (`audit` job)    | `pnpm audit --prod --audit-level=high`                                                  | blocks on high-severity prod advisories                                                  |
+| `epic-tests.yml`              | `playwright install chromium` → `pnpm test:epic`                                        | blocks; **path-filtered** to `scripts/epic/**`                                           |
+| `deploy.yml` (`ci` job)       | `tsc --noEmit` → `eslint` → `pnpm test`                                                 | typecheck + lint block; the **test step is advisory** here by owner decision — see below |
+| `web-ci.yml` (`eversion-e2e`) | build with sourcemaps → serve → every `eversion-*.mjs` (hub per profile x theme)        | non-blocking until T37; path-filtered + nightly; see §7                                  |
+| `go-microservices.yml`        | `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**` | blocks                                                                                   |
 
 **Where enforcement lives.** `main` is reached only through a pull request, and
 web-ci's Test step is a hard gate, so a red test stops the change before it

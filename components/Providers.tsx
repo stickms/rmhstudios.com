@@ -37,6 +37,8 @@ import {
   REDUCE_MOTION_KEY,
   GLASS_LEVEL_KEY,
   COLOR_VISION_KEY,
+  NAV_TRANSITION_KEY,
+  isNavTransition,
   isGlassLevel,
   applyGlassLevel,
   isColorVisionMode,
@@ -305,6 +307,7 @@ export function Providers({
   const customAccent = useThemeStore((s) => s.customAccent);
   const reduceMotion = useThemeStore((s) => s.reduceMotion);
   const colorVision = useThemeStore((s) => s.colorVision);
+  const navTransition = useThemeStore((s) => s.navTransition);
   const userTheme = useThemeStore((s) => s.userTheme);
   const userThemePreview = useThemeStore((s) => s.userThemePreview);
   const { pathname } = useLocation();
@@ -591,6 +594,8 @@ export function Providers({
     if (ca && HEX_RE.test(ca)) st.setCustomAccent(ca);
     const cv = localStorage.getItem(COLOR_VISION_KEY);
     if (isColorVisionMode(cv)) st.setColorVision(cv);
+    const nt = localStorage.getItem(NAV_TRANSITION_KEY);
+    if (isNavTransition(nt)) st.setNavTransition(nt);
     // Marketplace user theme (§14): the no-flash script already painted it; hydrate
     // the store so the runtime effect keeps it applied and can clear it on removal.
     try {
@@ -703,6 +708,10 @@ export function Providers({
     applyColorVision(html, colorVision);
     if (colorVision !== 'none') localStorage.setItem(COLOR_VISION_KEY, colorVision);
     else localStorage.removeItem(COLOR_VISION_KEY);
+    // Eversion transition choice: cache only (no DOM effect) so the controller can
+    // read it synchronously; 'random' is the default, expressed by absence.
+    if (navTransition !== 'random') localStorage.setItem(NAV_TRANSITION_KEY, navTransition);
+    else localStorage.removeItem(NAV_TRANSITION_KEY);
     // Custom accent (raw hex) overrides the preset accent applied just above.
     if (customAccent && HEX_RE.test(customAccent) && !isAppRoute) {
       const { hex, fg } = ensureReadableAccent(customAccent);
@@ -754,6 +763,7 @@ export function Providers({
     customAccent,
     reduceMotion,
     colorVision,
+    navTransition,
     userTheme,
     userThemePreview,
   ]);
@@ -863,6 +873,7 @@ export function Providers({
             reduceMotion?: boolean | null;
             glassLevel?: number | null;
             colorVision?: string | null;
+            navTransition?: string | null;
           };
           if ([875, 1000, 1125, 1250].includes(Number(r.fontScale)))
             store.setFontScale(Number(r.fontScale));
@@ -872,6 +883,7 @@ export function Providers({
           if (typeof r.customAccent === 'string' && HEX_RE.test(r.customAccent))
             store.setCustomAccent(r.customAccent);
           if (isColorVisionMode(r.colorVision)) store.setColorVision(r.colorVision);
+          if (isNavTransition(r.navTransition)) store.setNavTransition(r.navTransition);
           // Glass clarity (§5.46): the account stop wins; otherwise map a legacy
           // reduce-transparency flag to stop 0 (Opaque). glassLevel is authoritative
           // for the reduce-transparency class going forward.

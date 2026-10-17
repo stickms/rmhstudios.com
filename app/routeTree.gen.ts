@@ -25,6 +25,7 @@ import { Route as DeeplinkRouteImport } from './routes/deeplink'
 import { Route as DesignRouteImport } from './routes/design'
 import { Route as DreamRiftRouteImport } from './routes/dream-rift'
 import { Route as DunesdayRouteImport } from './routes/dunesday'
+import { Route as EversionLabRouteImport } from './routes/eversion-lab'
 import { Route as ForestExplorerRouteImport } from './routes/forest-explorer'
 import { Route as GabrielsHornRouteImport } from './routes/gabriels-horn'
 import { Route as HandleRouteImport } from './routes/handle'
@@ -1015,6 +1016,11 @@ const DreamRiftRoute = DreamRiftRouteImport.update({
 const DunesdayRoute = DunesdayRouteImport.update({
   id: '/dunesday',
   path: '/dunesday',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EversionLabRoute = EversionLabRouteImport.update({
+  id: '/eversion-lab',
+  path: '/eversion-lab',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForestExplorerRoute = ForestExplorerRouteImport.update({
@@ -5733,6 +5739,7 @@ export interface FileRoutesByFullPath {
   '/design': typeof DesignRoute
   '/dream-rift': typeof DreamRiftRoute
   '/dunesday': typeof DunesdayRoute
+  '/eversion-lab': typeof EversionLabRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/gabriels-horn': typeof GabrielsHornRoute
   '/handle': typeof HandleRoute
@@ -6659,6 +6666,7 @@ export interface FileRoutesByTo {
   '/design': typeof DesignRoute
   '/dream-rift': typeof DreamRiftRoute
   '/dunesday': typeof DunesdayRoute
+  '/eversion-lab': typeof EversionLabRoute
   '/gabriels-horn': typeof GabrielsHornRoute
   '/handle': typeof HandleRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
@@ -7566,6 +7574,7 @@ export interface FileRoutesById {
   '/design': typeof DesignRoute
   '/dream-rift': typeof DreamRiftRoute
   '/dunesday': typeof DunesdayRoute
+  '/eversion-lab': typeof EversionLabRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/gabriels-horn': typeof GabrielsHornRoute
   '/handle': typeof HandleRoute
@@ -8498,6 +8507,7 @@ export interface FileRouteTypes {
     | '/design'
     | '/dream-rift'
     | '/dunesday'
+    | '/eversion-lab'
     | '/forest-explorer'
     | '/gabriels-horn'
     | '/handle'
@@ -9424,6 +9434,7 @@ export interface FileRouteTypes {
     | '/design'
     | '/dream-rift'
     | '/dunesday'
+    | '/eversion-lab'
     | '/gabriels-horn'
     | '/handle'
     | '/house-always-wins'
@@ -10330,6 +10341,7 @@ export interface FileRouteTypes {
     | '/design'
     | '/dream-rift'
     | '/dunesday'
+    | '/eversion-lab'
     | '/forest-explorer'
     | '/gabriels-horn'
     | '/handle'
@@ -11261,6 +11273,7 @@ export interface RootRouteChildren {
   DesignRoute: typeof DesignRoute
   DreamRiftRoute: typeof DreamRiftRoute
   DunesdayRoute: typeof DunesdayRoute
+  EversionLabRoute: typeof EversionLabRoute
   ForestExplorerRoute: typeof ForestExplorerRouteWithChildren
   GabrielsHornRoute: typeof GabrielsHornRoute
   HandleRoute: typeof HandleRoute
@@ -11903,6 +11916,13 @@ declare module '@tanstack/react-router' {
       path: '/dunesday'
       fullPath: '/dunesday'
       preLoaderRoute: typeof DunesdayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/eversion-lab': {
+      id: '/eversion-lab'
+      path: '/eversion-lab'
+      fullPath: '/eversion-lab'
+      preLoaderRoute: typeof EversionLabRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forest-explorer': {
@@ -20048,6 +20068,7 @@ const rootRouteChildren: RootRouteChildren = {
   DesignRoute: DesignRoute,
   DreamRiftRoute: DreamRiftRoute,
   DunesdayRoute: DunesdayRoute,
+  EversionLabRoute: EversionLabRoute,
   ForestExplorerRoute: ForestExplorerRouteWithChildren,
   GabrielsHornRoute: GabrielsHornRoute,
   HandleRoute: HandleRoute,

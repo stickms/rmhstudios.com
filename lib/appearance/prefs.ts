@@ -12,6 +12,8 @@
  * `/api/preferences/appearance` ever receives.
  */
 
+import { NAV_TRANSITIONS, type NavTransition } from '@/lib/eversion/types';
+
 export const FONT_SCALES = [875, 1000, 1125, 1250] as const;
 export type FontScale = (typeof FONT_SCALES)[number];
 export const DEFAULT_FONT_SCALE = 1000;
@@ -122,9 +124,30 @@ export function applyGlassLevel(html: HTMLElement, level: number) {
   }
 }
 
+// ── Navigation transition (globe eversion, spec §9.3) ───────────────────────
+// Which projection the page-to-page eversion uses, or `random` (a fresh draw
+// per navigation). The value list is owned by the eversion contract so the API
+// enum, the select and the controller can never disagree; it is re-exported here
+// because this module is the one the store and the no-flash cache import.
+// `lib/eversion/types.ts` imports nothing at runtime, so this stays zod-free
+// and adds nothing to the client critical path.
+export const DEFAULT_NAV_TRANSITION: NavTransition = 'random';
+export { NAV_TRANSITIONS };
+export type { NavTransition };
+
+export function isNavTransition(v: unknown): v is NavTransition {
+  return typeof v === 'string' && (NAV_TRANSITIONS as readonly string[]).includes(v);
+}
+
+/** An absent or unknown stored value means the default, never an error. */
+export function resolveNavTransition(v: unknown): NavTransition {
+  return isNavTransition(v) ? v : DEFAULT_NAV_TRANSITION;
+}
+
 export const FONT_SCALE_KEY = 'rmh-font-scale';
 export const DENSITY_KEY = 'rmh-density';
 export const READABLE_FONT_KEY = 'rmh-readable-font';
 export const CUSTOM_ACCENT_KEY = 'rmh-custom-accent';
 export const REDUCE_MOTION_KEY = 'rmh-reduce-motion';
 export const COLOR_VISION_KEY = 'rmh-color-vision';
+export const NAV_TRANSITION_KEY = 'rmh-nav-transition';

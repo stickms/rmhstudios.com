@@ -21,6 +21,7 @@ import { prefersLessData } from '@/lib/viewport-prefetch';
 import {
   DECELERATION,
   RIPPLE,
+  VELOCITY_WINDOW_MS,
   VelocityTracker,
   gestureConfidence,
   projectDistance,
@@ -34,6 +35,8 @@ import {
   unrotateSphere,
 } from '@/lib/fluid';
 import { isNavLeafActive, type NavLeaf } from '@/lib/sidebar-nav';
+import type { GlobeStartState } from '@/lib/eversion/types';
+import type { EntryPoint } from '@/lib/eversion/marks';
 
 /**
  * The **liquid globe** navigator — the site's navigation as a glass sphere you
@@ -409,6 +412,26 @@ interface LiquidGlobeProps {
    * feel: no haptics. Fixed for the life of the mount.
    */
   rehearsal?: boolean;
+  /**
+   * Globe Eversion hand-off (docs/plans/2026-10-17-globe-eversion.md §9.1).
+   *
+   * When present, confirming a destination calls this INSTEAD of
+   * `onDismiss()` + `navigate()`: the receiver owns both the hub's dismissal and
+   * the router call, because the effect starts the navigation itself (at `start`,
+   * not at the end — spec §1 Q8) and needs the globe's pose to begin from. It is
+   * given the pose as the hub's own units — degrees and deg/s, CSS px — so the
+   * WebGL sphere can start exactly where this one is.
+   *
+   * Absent, nothing about this component changes. External pins never use it
+   * (they hard-navigate, as always), and neither does the idle rehearsal, which
+   * is never confirmed by a person. Read through a ref, so an unstable callback
+   * from the parent does not re-subscribe the pointer listeners.
+   */
+  onNavigate?: (
+    node: NavLeaf,
+    state: GlobeStartState,
+    entry: Exclude<EntryPoint, 'preview'>,
+  ) => void;
 }
 
 export function LiquidGlobe({
@@ -419,6 +442,7 @@ export function LiquidGlobe({
   rootRef,
   surfaceRef,
   rehearsal = false,
+  onNavigate,
 }: LiquidGlobeProps) {
   const { t } = useTranslation('feed');
   const navigate = useNavigate();
@@ -468,6 +492,8 @@ export function LiquidGlobe({
   // Read through a ref so the frame loop and handlers can check it without it
   // becoming an effect dependency; it never changes for a given mount.
   const quiet = useRef(rehearsal);
+  const onNavigateRef = useRef(onNavigate);
+  onNavigateRef.current = onNavigate;
 
   const stageRef = useRef<HTMLDivElement | null>(null);
   const cageRef = useRef<HTMLCanvasElement | null>(null);
@@ -692,18 +718,138 @@ export function LiquidGlobe({
     return () => ro.disconnect();
   }, []);
 
+  /* ── Where the globe is on screen, for the eversion hand-off ──────────────
+     The WebGL sphere has to start on top of this one, so the hand-off needs the
+     stage's centre in VIEWPORT px — the one number nothing here tracked, because
+     the frame loop works in the stage's own coordinates. It is measured where the
+     size already is (mount, resize) and cached, so `go()` reads no layout.
+
+     Not on mount alone: the globe BLOOMS out of the orb on a scale keyframe about
+     the ROOT's centre, and the stage sits off that centre (the title card and the
+     foot clearance are in the same box), so a rect read mid-bloom is both
+     smaller and displaced. `settled` is therefore only set once the bloom's
+     `animationend` has fired; a confirmation that beats it (a pin click in the
+     first half-second) measures once on the spot rather than hand over a pose
+     that is not where the globe is. */
+  const centreCache = useRef<{ x: number; y: number; settled: boolean } | null>(null);
+  const bloomed = useRef(false);
+  const measureCentre = useCallback(() => {
+    const el = stageRef.current;
+    if (!el) return null;
+    const rect = el.getBoundingClientRect();
+    const next = {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+      settled: bloomed.current,
+    };
+    centreCache.current = next;
+    return next;
+  }, []);
+  // Only when a hand-off is wired: without one the cache has no reader, and the
+  // component must not gain a mount-time layout read or a resize listener.
+  const handOffWired = !!onNavigate;
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage || quiet.current || !handOffWired) return;
+    const root = stage.closest('.radial-globe');
+    const onBloomEnd = (e: Event) => {
+      if (e.target !== root) return;
+      bloomed.current = true;
+      measureCentre();
+    };
+    const onResize = () => {
+      measureCentre();
+    };
+    root?.addEventListener('animationend', onBloomEnd);
+    window.addEventListener('resize', onResize);
+    measureCentre();
+    return () => {
+      root?.removeEventListener('animationend', onBloomEnd);
+      window.removeEventListener('resize', onResize);
+    };
+  }, [measureCentre, handOffWired]);
+
+  /**
+   * The globe's pose at the instant of confirmation, in the hub's units
+   * (degrees, deg/s, CSS px — `GlobeStartState`).
+   *
+   * What the visitor SEES is the pose to hand over, not the aim: `rot` plus the
+   * poke-wobble that is drawn over it (see `draw` in the frame loop). The
+   * velocity follows the same rule. While a finger has been moving, the windowed
+   * tracker is the truth — `rot.v*` is zeroed for the whole of a drag. Once the
+   * finger has been still for longer than the tracker's window (a hold, which is
+   * how most confirmations arrive) its samples are STALE rather than zero, so
+   * they are ignored and the settle spring's own velocity is used: zero for a
+   * hold, the throw's remainder for a pin clicked while the globe coasts.
+   * Clamped to `MAX_SPIN`, the same guard the release throw uses.
+   *
+   * Only refs and one `performance.now()` — no layout read (the centre is cached
+   * above) and nothing written, so the frame loop's "no writes at rest" holds.
+   */
+  const snapshotGlobeState = useCallback((): GlobeStartState => {
+    const r = rot.current;
+    const wob = wobble.current;
+    const fresh = performance.now() - lastMoveAt.current <= VELOCITY_WINDOW_MS;
+    const yawVel = (fresh ? yawV.current.get() : r.vYaw) + (wob ? wob.vYaw : 0);
+    const pitchVel = (fresh ? pitchV.current.get() : r.vPitch) + (wob ? wob.vPitch : 0);
+    const cached = centreCache.current;
+    const c = cached && cached.settled ? cached : measureCentre();
+    return {
+      yaw: r.yaw + (wob ? wob.yaw : 0),
+      pitch: r.pitch + (wob ? wob.pitch : 0),
+      yawVel: clamp(yawVel, -MAX_SPIN, MAX_SPIN),
+      pitchVel: clamp(pitchVel, -MAX_SPIN, MAX_SPIN),
+      centre: [c ? c.x : 0, c ? c.y : 0],
+      radius: sizeRef.current / 2,
+    };
+  }, [measureCentre]);
+
   const go = useCallback(
-    (node: GlobeNode) => {
+    (node: GlobeNode, entry: Exclude<EntryPoint, 'preview'> = 'release') => {
       if (!quiet.current) vibrate(18);
       swallowClick.current = true;
       if (node.external) {
         window.location.href = node.href;
         return;
       }
+      const handOff = onNavigateRef.current;
+      if (handOff && !quiet.current) {
+        handOff(node, snapshotGlobeState(), entry);
+        return;
+      }
       onDismiss();
       void navigate({ to: node.href } as never);
     },
-    [navigate, onDismiss],
+    [navigate, onDismiss, snapshotGlobeState],
+  );
+
+  /**
+   * A pin's own click — a mouse click, a tap that skipped the hold, or Enter on a
+   * focused pin (which the browser delivers as a click). These never ran through
+   * `go()`: the pin is a real `<Link>`, so the router navigated by itself and
+   * this only dismissed the hub. For the eversion hand-off they have to converge
+   * with hold-release, so — when a hand-off is wired, and only for a plain
+   * left-click on an internal pin — the click is claimed (`preventDefault`, which
+   * the Link honours by not navigating) and sent through `go()`. A modified click
+   * (new tab, new window) and every click with no hand-off are exactly what they
+   * were. `go()` arms `swallowClick` for the release that follows a HOLD; a click
+   * IS that release, so the flag is cleared again or it would eat the next tap.
+   */
+  const onPinClick = useCallback(
+    (e: ReactMouseEvent<HTMLElement>, node: GlobeNode) => {
+      const plain = e.button === 0 && !(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey);
+      if (!onNavigateRef.current || quiet.current || node.external || !plain) {
+        onDismiss();
+        return;
+      }
+      e.preventDefault();
+      // Enter on a focused pin is delivered as a click with `detail === 0`; a
+      // pointer click always has at least 1. That is the only way to tell the
+      // two entry points apart, and the marks record which one ran (S#25).
+      go(node, e.detail === 0 ? 'enter' : 'click');
+      swallowClick.current = false;
+    },
+    [go, onDismiss],
   );
 
   /* ── The frame loop ───────────────────────────────────────────────────────
@@ -1819,7 +1965,7 @@ export function LiquidGlobe({
             'data-fluid-press': 'lift',
             'aria-label': label,
             onFocus: () => faceNode(n),
-            onClick: onDismiss,
+            onClick: (e: ReactMouseEvent<HTMLElement>) => onPinClick(e, n),
           };
           return (
             <li
@@ -1853,7 +1999,7 @@ export function LiquidGlobe({
         })}
       </ul>
     ),
-    [nodes, t, tabIndex, faceNode, onDismiss, setPinRef, setLabelRef],
+    [nodes, t, tabIndex, faceNode, onPinClick, setPinRef, setLabelRef],
   );
 
   return (

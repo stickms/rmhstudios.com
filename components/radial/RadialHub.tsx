@@ -3,12 +3,19 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { LogOut, Settings, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser, useSession } from '@/components/Providers';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { SIDEBAR_NAV, isNavGroup, type NavLeaf } from '@/lib/sidebar-nav';
+import { isEversionEnabled } from '@/lib/eversion/flags';
+import type { EntryPoint } from '@/lib/eversion/marks';
+import type { PrefetchResult } from '@/lib/eversion/prefetch';
+import type { GlobeStartState } from '@/lib/eversion/types';
+import type { EversionControllerHandle } from './eversion/useEversionController';
+import { createHandOff } from './hub-handoff';
 import { RmhLogo } from './RmhLogo';
 
 /**
@@ -26,9 +33,52 @@ import { RmhLogo } from './RmhLogo';
  * the import is already resolved before the phase flips, and the Suspense
  * fallback is a frame nobody sees rather than a hole in the animation.
  */
-const LiquidGlobe = lazy(() =>
-  import('./LiquidGlobe').then((m) => ({ default: m.LiquidGlobe })),
-);
+const LiquidGlobe = lazy(() => import('./LiquidGlobe').then((m) => ({ default: m.LiquidGlobe })));
+
+/**
+ * The Globe Eversion's hub-side half (spec §9.2, tasks T32): the BEFORE capture
+ * hook, the run controller and the overlay it draws into, all behind one lazy
+ * boundary. Nothing about it may join this file's static imports — the capture
+ * library, render host and renderer hang off it, and the shell's critical path
+ * (`pnpm check:bundle-budget`, S#39) must not grow by any of them. The only
+ * statics above are the flag and TYPES, which erase. It is rendered only once
+ * the flag is on and the idle warm-up has run, so a visitor without the effect
+ * never fetches it.
+ */
+const EversionBridge = lazy(() => import('./eversion/EversionBridge'));
+
+/** The Settings "Preview" button's event (AppearancePanel.tsx; spec §9.3). */
+const EVERSION_PREVIEW_EVENT = 'rmh:eversion-preview';
+
+/**
+ * Start the Globe Eversion's warm-up, once per page load, and NOT before the page
+ * has finished loading (spec §8.1 / S#40; review R6 M1). The import() of the
+ * prefetch module is itself a network request for its own chunk, so it is the
+ * import that waits for `window` `load` (then one more task, then an idle slot) -
+ * not just the work inside it. A page whose `load` is still pending because of a
+ * slow subresource therefore requests nothing of the effect's. `prefetch.ts`
+ * waits for `load` again itself as defence in depth.
+ */
+const NO_PREFETCH: PrefetchResult = { webgl2: false, tier: 'low', host: 'main' };
+let eversionStart: Promise<PrefetchResult> | null = null;
+function startEversion(): Promise<PrefetchResult> {
+  eversionStart ??= new Promise<PrefetchResult>((resolve) => {
+    const go = () => {
+      const idle = (window as typeof window & { requestIdleCallback?: typeof requestIdleCallback })
+        .requestIdleCallback;
+      const run = () => {
+        void import('@/lib/eversion/prefetch')
+          .then((m) => m.prefetchEversion())
+          .then(resolve, () => resolve(NO_PREFETCH));
+      };
+      // After the load event has finished dispatching, then when the browser is idle.
+      setTimeout(() => (idle ? idle(run, { timeout: 2000 }) : setTimeout(run, 200)), 0);
+    };
+    if (document.readyState === 'complete') go();
+    else window.addEventListener('load', go, { once: true });
+  });
+  return eversionStart;
+}
 
 let globePreloaded = false;
 let globeModule: Promise<unknown> | null = null;
@@ -50,8 +100,13 @@ type HubUser = { id: string; handle?: string | null; isAdmin?: boolean };
 
 const noop = () => {};
 
-/** closed → open (the orb expands INTO the globe) → closing → closed. */
-type Phase = 'closed' | 'open' | 'closing';
+/**
+ * closed → open (the orb expands INTO the globe) → closing → closed, plus the
+ * Globe Eversion's branch: open → everting → closed. `everting` is the hub having
+ * let go of the screen: the veil, globe and foot fade out over the effect's
+ * canvas (radial.css) and the orb stays hidden until the run is over.
+ */
+type Phase = 'closed' | 'open' | 'closing' | 'everting';
 
 // One synchronous motion: the orb, the veil, the globe and the foot all animate
 // together over this long. It also gates how long the overlay stays mounted while
@@ -94,7 +149,33 @@ export function RadialHub() {
    * visitor just landed on, half a second after it rendered.
    */
   const restoreFocus = useRef(false);
-  const menuVisible = phase === 'open' || phase === 'closing';
+  // `everting` keeps the globe mounted: it is fading out OVER the effect's
+  // canvas, and unmounting it would cut that fade to a pop.
+  const menuVisible = phase === 'open' || phase === 'closing' || phase === 'everting';
+  /**
+   * Globe Eversion (flag-gated; see `EversionBridge`). `eversionOn` is resolved
+   * after mount because the flag reads `location`, which the server render does
+   * not have — it is what decides whether LiquidGlobe is handed `onNavigate` at
+   * all, so with the flag off the globe is wired exactly as before. `bridgeWanted`
+   * mounts the lazy half, after the idle warm-up or on the first Settings preview.
+   * `controllerRef` is what the bridge hands up; `null` until it has loaded, and
+   * `null` means "ineligible" — today's navigation.
+   */
+  const [eversionOn, setEversionOn] = useState(false);
+  const [bridgeWanted, setBridgeWanted] = useState(false);
+  const controllerRef = useRef<EversionControllerHandle | null>(null);
+  const pendingPreview = useRef(false);
+  const pendingPreviewRun = useRef<((controller: EversionControllerHandle) => void) | null>(null);
+  const tRef = useRef(t);
+  tRef.current = t;
+  /**
+   * The orb crossfades IN while the glass globe dissolves (radial.css, set from
+   * the runner's `pop` stage): the pop has shrunk the glass to the orb's own rect,
+   * so the orb is already where the eye is looking, and a hard cut after `done`
+   * would leave a gap and then a snap. By the time the run ends it is fully in, so
+   * `closed` holds it there with no replayed fade. Cleared on the next open.
+   */
+  const [orbPopped, setOrbPopped] = useState(false);
   /**
    * The first-open rehearsal (2026-10-09).
    *
@@ -131,15 +212,51 @@ export function RadialHub() {
     timerRef.current = null;
   };
 
+  /**
+   * The hand-off state machine (`hub-handoff.ts`, unit tested). It reaches back
+   * into the hub through `live`, which always holds this render's callbacks, so
+   * the machine itself is built once.
+   */
+  const live = useRef<{ today(node: NavLeaf): void; dismiss(): void }>({
+    today: noop,
+    dismiss: noop,
+  });
+  const handOffMachine = useMemo(
+    () =>
+      createHandOff<NavLeaf>({
+        navigateToday: (node) => live.current.today(node),
+        everting: () => {
+          // The hub stays exactly as it is (`open`) until the run reaches its point
+          // of no return; from here the run owns the screen.
+          clearTimer();
+          restoreFocus.current = false;
+          setPhase('everting');
+        },
+        popFade: () => setOrbPopped(true),
+        closed: (orbIn) => {
+          clearTimer();
+          setOrbPopped(orbIn);
+          setPhase('closed');
+        },
+        dismiss: () => live.current.dismiss(),
+      }),
+    [],
+  );
+
   const close = useCallback(
     (dismissed = false) => {
+      // A confirm is being handed to the effect: the hub is committed to leaving
+      // by the effect's own route, and the pointer-up / click that ended the hold
+      // lands on the (still open) scrim. Closing here would abort the run and
+      // drop the BEFORE bitmap. The hand-off clears its flag before a fallback closes.
+      if (handOffMachine.busy()) return;
       clearTimer();
       restoreFocus.current = dismissed;
       setPhase((p) => (p === 'closed' ? p : 'closing'));
       // Keep the overlay mounted while every layer animates out, then hide it.
       timerRef.current = setTimeout(() => setPhase('closed'), reduced ? 0 : MOTION_MS);
     },
-    [reduced],
+    [reduced, handOffMachine],
   );
 
   /** Navigation-driven close: the destination page owns focus from here. */
@@ -147,6 +264,7 @@ export function RadialHub() {
   const dismiss = useCallback(() => close(true), [close]);
 
   const toggle = useCallback(() => {
+    if (handOffMachine.busy()) return;
     clearTimer();
     setPhase((p) => {
       // Opening is a single synchronous transition — no pre-centring step.
@@ -155,7 +273,7 @@ export function RadialHub() {
       timerRef.current = setTimeout(() => setPhase('closed'), reduced ? 0 : MOTION_MS);
       return 'closing';
     });
-  }, [reduced]);
+  }, [reduced, handOffMachine]);
 
   // Backstop for the intent handlers: fetch the globe during the first idle
   // window after the shell settles. This is what keeps the lazy boundary honest
@@ -190,15 +308,29 @@ export function RadialHub() {
     // enough to stay behind the page's own first paint.
     // Once the chunk is in, rehearse the open — see `rehearsing` below.
     const warm = () => {
+      // Globe eversion: warm its runtime, behind a dynamic import so none of it
+      // joins the shell's static closure (spec §8.1). The flag is a tiny leaf read
+      // statically, so a visitor without the effect fetches nothing at all. This
+      // timer can fire BEFORE `load` on a slow page, so nothing eversion-related is
+      // requested from here until `startEversion` has seen `load` (R6 M1): not the
+      // prefetch chunk, not the bridge. A device that reports no WebGL2 never
+      // mounts the bridge at all (R6 m5).
+      if (isEversionEnabled()) {
+        void startEversion().then((result) => {
+          if (!unmounted && result.webgl2) setBridgeWanted(true);
+        });
+      }
       void preloadGlobe()?.then(() => {
         if (rehearsed || phaseRef.current !== 'closed') return;
         rehearsed = true;
         setRehearsing(true);
       });
     };
+    let unmounted = false;
     const timer = setTimeout(warm, 800);
     const handle = w.requestIdleCallback?.(warm, { timeout: 800 });
     return () => {
+      unmounted = true;
       clearTimeout(timer);
       if (handle !== undefined) w.cancelIdleCallback?.(handle);
     };
@@ -230,7 +362,9 @@ export function RadialHub() {
   useEffect(() => {
     if (phase === 'closed') return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') dismiss();
+      // While everting a key press is the effect's fast-forward (the controller
+      // listens in the capture phase); it must not also dismiss the hub.
+      if (e.key === 'Escape' && phaseRef.current !== 'everting' && !handOffMachine.busy()) dismiss();
     };
     const onWheel = (e: WheelEvent) => {
       if (e.cancelable) e.preventDefault();
@@ -242,7 +376,7 @@ export function RadialHub() {
       window.removeEventListener('keydown', onKey);
       overlay?.removeEventListener('wheel', onWheel);
     };
-  }, [phase, dismiss]);
+  }, [phase, dismiss, handOffMachine]);
 
   // Focus lands on the GLOBE itself, not on its first pin: focusing a pin turns
   // the globe to face it, which would immediately discard the "you are here"
@@ -273,7 +407,86 @@ export function RadialHub() {
     orbRef.current?.focus();
   }, [phase]);
 
+  useEffect(() => {
+    if (phase === 'open') setOrbPopped(false);
+  }, [phase]);
+
   useEffect(() => () => clearTimer(), []);
+
+  // Globe Eversion wiring. With the flag off this effect does one cheap read and
+  // returns: no listener, no fetch, no state change.
+  useEffect(() => {
+    if (!isEversionEnabled()) return;
+    setEversionOn(true);
+    let alive = true;
+    const unavailable = () =>
+      toast.info(
+        tRef.current('eversion-preview-unavailable', {
+          defaultValue: 'This transition cannot play here, so pages change as usual.',
+        }),
+      );
+    const preview = (controller: EversionControllerHandle) => {
+      void controller.preview().then((outcome) => {
+        // `busy` is a preview already running; `traversal` cannot happen here.
+        if (alive && outcome.fallback && outcome.fallback !== 'busy') unavailable();
+      });
+    };
+    const onPreview = () => {
+      const controller = controllerRef.current;
+      if (controller) {
+        preview(controller);
+        return;
+      }
+      // The bridge has not loaded yet: ask for it (after `load`, like everything
+      // else) and run the preview the moment it hands the controller up. A device
+      // that cannot run the effect says so instead of doing nothing.
+      pendingPreview.current = true;
+      void startEversion().then((result) => {
+        if (!alive) return;
+        if (result.webgl2) {
+          setBridgeWanted(true);
+        } else {
+          pendingPreview.current = false;
+          unavailable();
+        }
+      });
+    };
+    pendingPreviewRun.current = preview;
+    window.addEventListener(EVERSION_PREVIEW_EVENT, onPreview);
+    return () => {
+      alive = false;
+      window.removeEventListener(EVERSION_PREVIEW_EVENT, onPreview);
+    };
+  }, []);
+
+  const onController = useCallback((controller: EversionControllerHandle | null) => {
+    controllerRef.current = controller;
+    if (controller && pendingPreview.current) {
+      pendingPreview.current = false;
+      pendingPreviewRun.current?.(controller);
+    }
+  }, []);
+
+  /**
+   * LiquidGlobe's confirm hand-off (hold-release, pin click, Enter). Ineligible -
+   * bridge not loaded, reduced motion, no WebGL2, chunk not ready - is exactly
+   * today's path. Otherwise the hub lets go (`everting`) and the controller
+   * navigates by itself at `start`; the hub must NOT. All of the rules (one
+   * hand-off at a time, who navigates on which outcome) live in `hub-handoff.ts`.
+   * Focus is left to the router either way.
+   */
+  live.current = {
+    today: (node) => {
+      dismissForNavigation();
+      void navigate({ to: node.href } as never);
+    },
+    dismiss,
+  };
+  const handOff = useCallback(
+    (node: NavLeaf, state: GlobeStartState, entry: Exclude<EntryPoint, 'preview'>) =>
+      handOffMachine.confirm(controllerRef.current, node, state, entry),
+    [handOffMachine],
+  );
 
   const signOut = useCallback(async () => {
     await authClient.signOut({
@@ -287,10 +500,11 @@ export function RadialHub() {
     });
   }, [navigate, dismissForNavigation]);
 
-  const tab = menuVisible ? 0 : -1;
+  // Nothing on the hub is operable while it fades over the effect.
+  const tab = phase === 'open' || phase === 'closing' ? 0 : -1;
 
   return (
-    <div className="radial-hub" data-phase={phase}>
+    <div className="radial-hub" data-phase={phase} data-orb-popped={orbPopped ? '' : undefined}>
       <button
         ref={orbRef}
         type="button"
@@ -356,6 +570,7 @@ export function RadialHub() {
               items={leaves}
               pathname={pathname}
               onDismiss={dismissForNavigation}
+              onNavigate={eversionOn ? handOff : undefined}
               tabIndex={tab}
               // The globe's gesture is not confined to the sphere: the whole
               // overlay turns it, except where a real control lives.
@@ -426,6 +641,16 @@ export function RadialHub() {
           </button>
         </div>
       </div>
+
+      {bridgeWanted && (
+        <Suspense fallback={null}>
+          <EversionBridge
+            open={phase === 'open' || phase === 'everting'}
+            motionMs={MOTION_MS}
+            onController={onController}
+          />
+        </Suspense>
+      )}
 
       {/* Outside the overlay on purpose: the overlay is `visibility: hidden`
           while the hub is closed, and a rehearsal that never paints warms

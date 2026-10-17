@@ -5,6 +5,11 @@
    Mobile-first: base rules target phones; @media (min-width) layers on space.
    ========================================================================== */
 
+/* The Globe Eversion's page-side CSS (overlay, cover, settle). Imported here
+   because this file is the one `SiteShell` loads and the overlay lives inside the
+   shell's hub; `@import` must precede every rule, so it sits at the top. */
+@import './eversion/eversion.css';
+
 .radial-shell {
   position: relative;
   min-height: 100dvh;
@@ -1037,6 +1042,14 @@ body:has(.radial-shell) .call-banner {
   visibility: visible;
   pointer-events: auto;
 }
+/* EVERTING — the hub has handed the screen to the eversion and is fading out
+   over the canvas underneath it (see the `everting` block below). The overlay
+   has to stay visible for that fade, and must stop taking input: from this
+   frame on a press belongs to the effect's fast-forward, not to the globe. */
+.radial-hub[data-phase='everting'] .radial-hub__overlay {
+  visibility: visible;
+  pointer-events: none;
+}
 /* The first-open rehearsal (RadialHub `rehearsing`): the globe mounted once,
    invisibly, while the page is idle, so the first real open is not the first
    time its code runs, its canvas is allocated or its layers rasterise. Laid out
@@ -1234,9 +1247,9 @@ body:has(.radial-shell) .call-banner {
    whole time anyway, so it is hidden rather than left to slide about behind the
    veil. This is also why the resting state is `filter: none` and not
    `blur(0)`: a zero-radius blur still creates the containing block. */
-.radial-shell:has(.radial-hub[data-phase='open']) .radial-backdrop,
-.radial-shell:has(.radial-hub[data-phase='open']) .radial-topbar,
-.radial-shell:has(.radial-hub[data-phase='open']) .radial-frame {
+.radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-backdrop,
+.radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-topbar,
+.radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-frame {
   filter: blur(var(--hub-page-blur, 20px));
   /* The transition lives HERE, on the open state, so it governs the way IN and
      NOT the way out. That asymmetry is the fix for a reported bug: the whole
@@ -1307,15 +1320,15 @@ body:has(.radial-shell) .call-banner {
    this way — `hooks/useLiquidBackground.ts` detaches wholesale on `ios-webkit`
    because "moving a fixed, oversized gradient underneath multiple translucent
    surfaces can wedge WebKit's compositor". Same engine, same shape of problem. */
-html.perf-lite .radial-shell:has(.radial-hub[data-phase='open']) .radial-backdrop,
-html.perf-lite .radial-shell:has(.radial-hub[data-phase='open']) .radial-topbar,
-html.perf-lite .radial-shell:has(.radial-hub[data-phase='open']) .radial-frame,
-html.reduce-transparency .radial-shell:has(.radial-hub[data-phase='open']) .radial-backdrop,
-html.reduce-transparency .radial-shell:has(.radial-hub[data-phase='open']) .radial-topbar,
-html.reduce-transparency .radial-shell:has(.radial-hub[data-phase='open']) .radial-frame,
-html.ios-webkit .radial-shell:has(.radial-hub[data-phase='open']) .radial-backdrop,
-html.ios-webkit .radial-shell:has(.radial-hub[data-phase='open']) .radial-topbar,
-html.ios-webkit .radial-shell:has(.radial-hub[data-phase='open']) .radial-frame {
+html.perf-lite .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-backdrop,
+html.perf-lite .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-topbar,
+html.perf-lite .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-frame,
+html.reduce-transparency .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-backdrop,
+html.reduce-transparency .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-topbar,
+html.reduce-transparency .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-frame,
+html.ios-webkit .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-backdrop,
+html.ios-webkit .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-topbar,
+html.ios-webkit .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-frame {
   filter: none;
 }
 /* The veil is translucent ONLY because the page behind it is blurred (see its
@@ -1906,6 +1919,70 @@ html.ios-webkit .radial-hub__veil {
 .radial-hub[data-phase='open'] .radial-hub__foot {
   opacity: 1;
   transform: none;
+}
+
+/* ── EVERTING — the hub hands the screen to the Globe Eversion ──────────────
+   (docs/plans/2026-10-17-globe-eversion.md §9.2 step 3.) The WebGL canvas is
+   already up one z-step beneath the hub's overlay, showing the flat page the
+   visitor was looking at, and the sphere it is about to turn inside out starts
+   exactly where the hub's globe is. So the hub does one thing: it lets go. The
+   veil, the globe and the foot capsule fade OUT over `HUB_FADE_MS` (250 —
+   `lib/eversion/constants.ts`; `eversion-css.test.ts` keeps the two equal) and
+   the orb is hidden.
+
+   Each of these has to RESTATE its open look first, because none of the `open`
+   rules above match this phase: without it the veil would collapse to its
+   `circle(0)` base on the closing curve, the foot would drop back to its docked
+   `translateY`, and the globe would lose its bloom — three different motions,
+   none of them the fade. So every element holds the pose it had at `open` and
+   only `opacity` moves, on one named property each (never `transition-all`).
+
+   The orb is `opacity` + `pointer-events` only. It must NOT change `transform`
+   or anything that lays out: the POP at the end shrinks the glass globe into
+   the orb's rect, and T32 reads that rect — an orb that has slid or resized
+   under its own fade would hand the renderer a target that is not there. */
+.radial-hub[data-phase='everting'] .radial-hub__veil {
+  clip-path: circle(var(--veil-r) at 50% 50%);
+  opacity: 0;
+  transition: opacity 250ms ease;
+}
+.radial-hub[data-phase='everting'] .radial-globe {
+  opacity: 0;
+  transition: opacity 250ms ease;
+}
+.radial-hub[data-phase='everting'] .radial-hub__foot {
+  opacity: 0;
+  transform: none;
+  pointer-events: none;
+  transition: opacity 250ms ease;
+}
+.radial-hub[data-phase='everting'] .radial-hub__orb {
+  opacity: 0;
+  pointer-events: none;
+}
+/* The orb crossfades IN under the dissolving glass (RadialHub `data-orb-popped`,
+   set when the render side reports `pop-fade`). The glass globe has landed on the
+   orb's rect by then and fades out over POP_FADE_MS (208ms), so the orb arrives
+   over that same window (`eversion-css.test.ts` keeps the duration equal to the
+   constant): there is no frame with neither and none with both at full strength.
+   It is raised above the effect's canvas (z 89) for that — the canvas is opaque
+   and would hide it — and falls back to its docked z-index once the run is over.
+   Position never moves; only `opacity` runs, on a named property. */
+.radial-hub[data-phase='everting'][data-orb-popped] .radial-hub__orb {
+  z-index: var(--z-hub-orb-open);
+  opacity: 1;
+  transition: opacity 208ms ease-out;
+}
+/* Once the run is over, finish the same 208ms ramp rather than replaying the
+   closed state's 340ms fade-in: `done` can land a frame or two before the ramp
+   ends, and cutting the transition there would snap the last few percent. */
+.radial-hub[data-phase='closed'][data-orb-popped] .radial-hub__orb {
+  transition: opacity 208ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .radial-hub[data-phase='everting'][data-orb-popped] .radial-hub__orb {
+    transition: none;
+  }
 }
 .radial-hub__identity {
   display: inline-flex;
