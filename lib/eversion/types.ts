@@ -652,7 +652,7 @@ export interface GlCounters {
 
 /** What `renderer.prime` needs beyond the plan: the LUT and the AFTER-side domain transform. */
 export interface RendererPrime extends EversionPlan {
-  /** Baked `RG32F` LUT (spec §5.4); the renderer uploads it as `RG16F` (spec §8.5). */
+  /** Baked `RG32F` LUT (spec §5.4), uploaded as `RG32F` too (T24: RG16F is ~2 px at 4096 px). */
   lut: Float32Array;
   /** `M_after = R⁻¹ ∘ Rot_align` (spec §4.5), column-major, for the AFTER side's domain lookups. */
   mAfter: Mat3;

@@ -120,7 +120,7 @@ export const UNIFORMS = [
     name: 'u_lut',
     type: 'sampler2D',
     cadence: 'bind',
-    from: 'SAMPLER_UNITS.lut — RG16F extended-UV LUT, REPEAT in s',
+    from: 'SAMPLER_UNITS.lut — RG32F extended-UV LUT, NEAREST + clamp, bilinear in the shader (T24)',
   },
   { name: 'u_before', type: 'sampler2D', cadence: 'bind', from: 'SAMPLER_UNITS.before' },
   { name: 'u_after', type: 'sampler2D', cadence: 'bind', from: 'SAMPLER_UNITS.after' },
