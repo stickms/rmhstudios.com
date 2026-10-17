@@ -2,6 +2,8 @@
 
 **Date:** 2026-10-17
 **Status:** Proposed — not implemented.
+**Task plan:** [`2026-10-17-globe-eversion-tasks.md`](./2026-10-17-globe-eversion-tasks.md)
+(39 tasks, dependency graph, parallel waves, traceability to the tests in §11).
 **Scope:** The liquid-globe hub navigator only (`components/radial/LiquidGlobe.tsx`
 via `components/radial/RadialHub.tsx`). Not the Kaikai debt globe, not the Rebar
 & Rutabaga menu globe (they share `lib/globe.ts` but do not navigate).
