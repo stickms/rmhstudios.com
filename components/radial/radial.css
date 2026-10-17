@@ -1973,10 +1973,11 @@ html.ios-webkit .radial-hub__veil {
   opacity: 1;
   transition: opacity 208ms ease-out;
 }
-/* Once the run is over the orb is already fully in: hold it there rather than
-   replaying the closed state's 340ms fade-in from whatever value it had reached. */
+/* Once the run is over, finish the same 208ms ramp rather than replaying the
+   closed state's 340ms fade-in: `done` can land a frame or two before the ramp
+   ends, and cutting the transition there would snap the last few percent. */
 .radial-hub[data-phase='closed'][data-orb-popped] .radial-hub__orb {
-  transition: none;
+  transition: opacity 208ms ease-out;
 }
 @media (prefers-reduced-motion: reduce) {
   .radial-hub[data-phase='everting'][data-orb-popped] .radial-hub__orb {

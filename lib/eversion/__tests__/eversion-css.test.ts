@@ -55,6 +55,13 @@ describe('the orb crossfade (review R5 M1)', () => {
     expect(Number(m![1])).toBe(Math.round(POP_FADE_MS));
   });
 
+  it('keeps the same ramp once the run is over, so a mid-ramp `done` does not snap', () => {
+    const rule = radial.match(
+      /\[data-phase='closed'\]\[data-orb-popped\] \.radial-hub__orb \{[^}]*\}/,
+    )?.[0];
+    expect(rule).toContain(`transition: opacity ${Math.round(POP_FADE_MS)}ms ease-out;`);
+  });
+
   it('raises the orb above the effect canvas for the crossfade', () => {
     expect(radial).toMatch(
       /\[data-phase='everting'\]\[data-orb-popped\] \.radial-hub__orb \{[^}]*z-index: var\(--z-hub-orb-open\)/,
