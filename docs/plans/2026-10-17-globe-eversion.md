@@ -64,7 +64,7 @@ question list in that conversation.
 | 18  | Shading                     | Subtle per-side lighting so the self-intersections read.                                                                                                              |
 | 19  | Mirroring                   | The "after" page is **corrected** so it unwraps right-reading.                                                                                                        |
 | 20  | Exit                        | The empty globe shrinks into the RMH orb's position and **pops** with a ripple.                                                                                       |
-| 21  | Timing                      | **WRAP 700 ms · EVERSION 3200 ms · UNWRAP 700 ms · POP 300 ms** ≈ 4.9 s, velocity carried across stages.                                                              |
+| 21  | Timing                      | **WRAP 700 ms · EVERSION 3200 ms · UNWRAP 700 ms · POP 520 ms** ≈ 5.1 s, velocity carried across stages.                                                              |
 | 22  | Back/forward, deep links    | **No animation.**                                                                                                                                                     |
 | 23  | Weak devices                | Lower mesh resolution / DPR on weak GPUs is acceptable; 60 fps is the target.                                                                                         |
 | 24  | Loading                     | Prefetching **before** navigation is fine, but it **must not affect page content load time.**                                                                         |
@@ -581,7 +581,7 @@ scalar animated by quintic segments:
 | `afterMix`  | placeholder → AFTER crossfade                            | event-driven, 320 ms                                    |
 | `unwrap`    | UNWRAP morph                                             | 1 → 0 over 3800–4600 ms                                 |
 | `pageAlpha` | page texture opacity during reveal                       | 1 → 0 over 180 ms after `reveal`                        |
-| `pop`       | glass globe → orb: radius to orb size, overshoot, ripple | 4600–4900 ms                                            |
+| `pop`       | glass globe → orb: radius to orb size, overshoot, ripple | 4600–5120 ms                                            |
 
 The overlaps make the stage boundaries invisible. There is no frame where every
 channel's velocity is zero until the very end.
@@ -828,7 +828,7 @@ fed from tokens.
   Route announcements are the router's, as today.
 - No flashes: luminance never changes by more than 20 % in under 100 ms (the
   crossfades are ≥ 180 ms). This is checked in §11.2.
-- The 4.9 s duration is always one input away from ≤ 650 ms (§7.6).
+- The 5.1 s duration is always one input away from ≤ 650 ms (§7.6).
 - Focus: nothing is focusable inside the overlay. At `done`, focus goes where
   the router puts it for any navigation.
 
@@ -953,7 +953,7 @@ stalls):
     every re-plan instant are ≤ 1e-9 (analytic, at the boundary).
 18. **Gate:** UNWRAP never starts before AFTER is ready, except at the stretch
     cap or after `after-failed`.
-19. **Bounds:** the total duration is ≤ 4.9 s + 2.5 s cap. After fast-forward,
+19. **Bounds:** the total duration is ≤ 5.1 s + 2.5 s cap. After fast-forward,
     completion is ≤ 650 ms + any gate wait (≤ 1 s cap) + POP.
 20. **Monotone stages:** stage events are emitted in order, each exactly once.
 21. **Spin:** the remaining travel is never negative and never more than 1.5
@@ -1130,7 +1130,7 @@ fast-forward per device, reviewed for visible stutter.
 export const WRAP_MS = 700;
 export const EVERT_MS = 3200;
 export const UNWRAP_MS = 700;
-export const POP_MS = 300;
+export const POP_MS = 520;
 export const EVERT_OVERLAP_MS = 100;
 export const UNWRAP_OVERLAP_MS = 100;
 export const GLOBE_FILL = 0.88; // diameter / min(W,H)

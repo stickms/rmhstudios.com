@@ -35,7 +35,15 @@ import type { Tier } from './types';
 export const WRAP_MS = 700;
 export const EVERT_MS = 3200;
 export const UNWRAP_MS = 700;
-export const POP_MS = 300;
+/**
+ * POP: the empty glass globe condenses, shrinks into the orb (a 650 px move in the hub's worst case) and pops.
+ * 300 ms made the shrink a ~110 px/frame streak; 520 ms keeps the peak under ~65 px/frame at 60 Hz.
+ */
+export const POP_MS = 520;
+/** The glass starts its exit (`popFade` leaves 0) this far into POP: the globe is on the orb by then. */
+export const POP_FADE_FROM = 0.6;
+/** How long the glass takes to fade out, ms: the page's window to crossfade the real orb in (`pop-fade` message). */
+export const POP_FADE_MS = POP_MS * (1 - POP_FADE_FROM);
 
 /** How far EVERSION starts before WRAP ends, so the boundary has no dead frame. */
 export const EVERT_OVERLAP_MS = 100;
@@ -318,7 +326,7 @@ export const DROPPED_FRAME_FACTOR = 1.5;
  * disagree with them. The spec's table lists `evert` as 600–3900 and `unwrap`
  * as 3800–4600: each stage's window is its planned duration PLUS its overlap
  * with the stage before it, which is how WRAP 700 + EVERSION 3200 + UNWRAP 700
- * + POP 300 reaches the table's 4900.
+ * + POP 520 reaches the table's 5120.
  */
 export const PLAN_MS = (() => {
   const evertStart = WRAP_MS - EVERT_OVERLAP_MS;

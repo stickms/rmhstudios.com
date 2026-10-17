@@ -43,6 +43,9 @@ function chromiumPath() {
   return undefined;
 }
 
+// Ramp pixels of the mask view that may touch a jump of more than half: a smooth falloff has none.
+const MASK_JUMP_RATE = 0.02;
+
 let failures = 0;
 function check(name, ok, detail = '') {
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? `  (${detail})` : ''}`);
@@ -89,7 +92,7 @@ try {
   await t('prime', 'equirect', true, { orientation: 'real' });
   await t('cards');
 
-  const offsets = [-20, 0, 40, 80, 120, 170, 200, 230, 260, 290, 300];
+  const offsets = [-20, 0, 60, 130, 200, 280, 340, 400, 440, 480, 505, 520];
   const rows = [];
   for (const off of offsets) {
     const r = await t('popFrame', off);
@@ -127,25 +130,58 @@ try {
     }, off);
   };
   const atReveal = await coverageAt(0);
-  const mid = await coverageAt(150);
-  const end = await coverageAt(300);
+  const mid = await coverageAt(260);
+  const end = await coverageAt(520);
   console.log(
-    `      coverage: reveal ${atReveal.toFixed(4)}, pop+150 ${mid.toFixed(4)}, end ${end.toFixed(4)}`,
+    `      coverage: reveal ${atReveal.toFixed(4)}, pop+260 ${mid.toFixed(4)}, end ${end.toFixed(4)}`,
   );
-  check('the globe condenses: glass is present at pop+150', mid > 0.001, `covered ${mid}`);
+  check('the globe condenses: glass is present at pop+260', mid > 0.001, `covered ${mid}`);
   check('the last frame is invisible (no pixel above alpha 8/255)', end === 0, `covered ${end}`);
 
   for (const id of ['lambert', 'stereographic', 'equirect']) {
     await t('prime', id, true, { orientation: 'real' });
     await t('cards');
     for (const [label, patch] of [
-      ['wrap25', { wrap: 0.25, unwrap: 1 }],
+      ['wrap30', { wrap: 0.3, unwrap: 1 }],
       ['wrap45', { wrap: 0.45, unwrap: 1 }],
-      ['wrap70', { wrap: 0.7, unwrap: 1 }],
+      ['wrap60', { wrap: 0.6, unwrap: 1 }],
+      ['unwrap30', { wrap: 1, unwrap: 0.3 }],
+      ['unwrap45', { wrap: 1, unwrap: 0.45 }],
+      ['unwrap60', { wrap: 1, unwrap: 0.6 }],
     ]) {
       const r = await t('frame', { ...patch, evert: 0, spin: 0.3, tilt: 0.25, afterMix: 1 }, false);
       check(`${id} ${label}: renders without GL error`, r.err === 0);
       await page.screenshot({ path: join(outDir, `${id}-${label}.png`) });
+    }
+  }
+  // The wedge mask itself, through the shader's mask view: it must be a smooth field. The old mask (the
+  // per-vertex mismatch, the 2x2 derivative stretch, gl_FrontFacing) is full of one-pixel 0 -> 1 jumps along
+  // triangle edges and quad blocks; the analytic cap jumps only where two sheets of the surface overlap.
+  await t('init', 'mid', { maskView: true });
+  for (const id of ['lambert', 'stereographic']) {
+    await t('prime', id, true, { orientation: 'real' });
+    await t('cards');
+    for (const [label, patch] of [
+      ['wrap30', { wrap: 0.3, unwrap: 1 }],
+      ['wrap45', { wrap: 0.45, unwrap: 1 }],
+      ['wrap60', { wrap: 0.6, unwrap: 1 }],
+      ['unwrap30', { wrap: 1, unwrap: 0.3 }],
+      ['unwrap45', { wrap: 1, unwrap: 0.45 }],
+      ['unwrap60', { wrap: 1, unwrap: 0.6 }],
+      ['evert03', { wrap: 1, unwrap: 1, evert: 0.03 }],
+      ['evert50', { wrap: 1, unwrap: 1, evert: 0.5 }],
+    ]) {
+      const r = await t('maskStats', { ...patch, spin: 0.3, tilt: 0.25, afterMix: 1 });
+      const rate = r.rampJumps / Math.max(r.rampPairs, 1);
+      console.log(
+        `      mask ${id} ${label}: covered ${r.covered}, ramp ${r.partial}, full ${r.full}, ramp steps >0.6: ${r.rampJumps} of ${r.rampPairs} (${(rate * 100).toFixed(2)}%), all jumps ${r.jumps}, worst ${r.worst.toFixed(2)}`,
+      );
+      check(`${id} ${label}: mask view renders without GL error`, r.err === 0);
+      check(
+        `${id} ${label}: the wedge mask is smooth (few one-pixel jumps)`,
+        rate < MASK_JUMP_RATE,
+        `${r.rampJumps} steps of ${r.rampPairs} ramp pairs`,
+      );
     }
   }
   console.log(`      screenshots in ${outDir}`);

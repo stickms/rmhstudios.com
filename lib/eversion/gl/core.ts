@@ -49,6 +49,7 @@ import { SPIN_AXIS } from '../domain';
 import { afterDomainTransform, alignAngle, fitEndIsometry } from '../orientation';
 import { bakeLut } from '../projection-lut';
 import { getProjection } from '../projections';
+import { POP_FADE_MS } from '../constants';
 import { copySnapshot, createSnapshot } from '../snapshot';
 import { Timeline } from '../timeline';
 import type {
@@ -158,6 +159,11 @@ function applyHardCut(s: TimelineSnapshot, channel: ChannelId): void {
 const SCRUB_STEP_MS = 16;
 /** Bound on {@link settleWhileHidden}'s steps (a hurried run is ~2 s; this is ~16 s of simulated time). */
 const SETTLE_MAX_STEPS = 1000;
+/**
+ * A run whose tab has been hidden this long is run out without drawing, hurried or not: nobody is watching, and
+ * on return it would otherwise replay ~5 s of effect for a navigation that finished long ago.
+ */
+export const HIDDEN_SETTLE_GRACE_MS = 1000;
 
 /**
  * Create the render-side core over `env`.
@@ -216,6 +222,12 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
   let timelineOrb: OrbRect | null = null;
   let afterFailed = false;
   let pausedE: number | null = null;
+  /** An abort or fast-forward reached the running timeline: it is on its way out and must not wait for a frame. */
+  let hurried = false;
+  /** `pop` has been emitted / `pop-fade` has been emitted, for this run. */
+  let popSeen = false;
+  let popFadeSent = false;
+  let hiddenTimer: ReturnType<typeof setTimeout> | null = null;
   /** Debug only (`inject-hard-cut`, T35): the channel whose drawn value is stepped, or `null`. */
   let hardCut: ChannelId | null = null;
   const scratch = createSnapshot();
@@ -279,6 +291,7 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
         renderer.draw(snapshot);
       }
       framesDrawn++;
+      if (!popFadeSent && snapshot.popFade > 0) emitPopFade(snapshot.t);
 
       if (flushEvents()) finish();
       else schedule();
@@ -292,10 +305,38 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
     let finished = false;
     for (const event of timeline!.events()) {
       emit({ type: 'stage', stage: event.stage, t: event.t });
+      if (event.stage === 'pop') popSeen = true;
       if (event.stage === 'unwrap-done') emit({ type: 'unwrap-done' });
       if (event.stage === 'done') finished = true;
     }
     return finished;
+  }
+
+  /** Once per run: the glass has landed on the orb and starts to fade (see the `pop-fade` message). */
+  function emitPopFade(t: number) {
+    if (popFadeSent) return;
+    popFadeSent = true;
+    emit({ type: 'pop-fade', t, fadeMs: POP_FADE_MS });
+  }
+
+  function clearHiddenTimer() {
+    if (hiddenTimer !== null) clearTimeout(hiddenTimer);
+    hiddenTimer = null;
+  }
+
+  /** Arm the grace timer for a run that is hidden (it began hidden, or the tab just left). */
+  function armHiddenSettle() {
+    if (!hidden || !running || hiddenTimer !== null) return;
+    hiddenTimer = setTimeout(() => {
+      hiddenTimer = null;
+      if (hidden && running && !disposed) {
+        try {
+          settleWhileHidden();
+        } catch (error) {
+          fail(error);
+        }
+      }
+    }, HIDDEN_SETTLE_GRACE_MS);
   }
 
   /**
@@ -309,10 +350,12 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
     if (!hidden || !running || !timeline) return;
     for (let i = 0; i < SETTLE_MAX_STEPS && timeline; i++) {
       const at = tickClock(clock + SCRUB_STEP_MS);
-      timeline.tick(at);
+      const snap = timeline.tick(at);
+      if (!popFadeSent && snap.popFade > 0) emitPopFade(snap.t);
       let unwrapDone = false;
       for (const event of timeline.events()) {
         emit({ type: 'stage', stage: event.stage, t: event.t });
+        if (event.stage === 'pop') popSeen = true;
         if (event.stage === 'unwrap-done') {
           emit({ type: 'unwrap-done' });
           unwrapDone = true;
@@ -329,6 +372,9 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
   function finish() {
     runEnded = true;
     stopLoop();
+    clearHiddenTimer();
+    // A run can end without a frame having seen the fade (a settled one, a lost frame): the page still gets it.
+    if (popSeen) emitPopFade(clock);
     const summary = stats.summary();
     timeline = null;
     pausedE = null;
@@ -339,8 +385,15 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
 
   function fail(error: unknown) {
     stopLoop();
+    clearHiddenTimer();
     runEnded = true;
     timeline = null;
+    // The page textures are megabytes held until the next prime/init: a failed run is over, let them go.
+    try {
+      renderer?.release();
+    } catch {
+      /* the context may be the thing that failed */
+    }
     emit({
       type: 'error',
       message: error instanceof Error ? error.message : String(error),
@@ -423,6 +476,8 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
     afterUploaded = false;
     afterFailed = false;
     runEnded = false;
+    hurried = false;
+    clearHiddenTimer();
     coverSent = false;
     framesDrawn = 0;
     stats.reset();
@@ -470,6 +525,9 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
     stats.reset();
     governor = new DprGovernor(Math.min(plan.viewport.dpr, dprCap));
     running = true;
+    hurried = false;
+    popSeen = false;
+    popFadeSent = false;
     timeline!.start(now);
     if (afterUploaded) timeline.afterReady(now);
     if (afterFailed) timeline.afterFailed(now);
@@ -478,6 +536,7 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
       emit({ type: 'need-after-by', deadline: deadline + clockOffset });
     }
     schedule();
+    armHiddenSettle();
   }
 
   function viewportChanged(a: Viewport, b: Viewport | null): boolean {
@@ -493,10 +552,16 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
     hidden = next;
     if (hidden) {
       cancelFrame();
-    } else if (running) {
-      // The gap is not a frame time: skip the interval; the timeline's dt clamp absorbs it.
-      lastFrameAt = null;
-      schedule();
+      // Hurried already (an abort or fast-forward is in flight): no frame will come to finish it, finish it now.
+      if (hurried) settleWhileHidden();
+      else armHiddenSettle();
+    } else {
+      clearHiddenTimer();
+      if (running) {
+        // The gap is not a frame time: skip the interval; the timeline's dt clamp absorbs it.
+        lastFrameAt = null;
+        schedule();
+      }
     }
   }
 
@@ -633,6 +698,7 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
             break;
           case 'fast-forward':
             whenRunning((tl, now) => tl.fastForward(now));
+            if (running) hurried = true;
             settleWhileHidden();
             break;
           case 'after-failed':
@@ -641,7 +707,8 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
             break;
           case 'resize':
             renderer?.resize(message.viewport);
-            if (message.orb && plan) plan = { ...plan, orb: message.orb };
+            // The plan's viewport feeds the DPR governor of the NEXT start; keep it (and the orb) current.
+            if (plan) plan = { ...plan, viewport: message.viewport, orb: message.orb ?? plan.orb };
             if (timelineConfig) {
               timelineConfig = {
                 ...timelineConfig,
@@ -659,6 +726,7 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
             break;
           case 'abort':
             whenRunning((tl, now) => tl.abort(now));
+            if (running) hurried = true;
             settleWhileHidden();
             break;
           case 'probe':
@@ -679,6 +747,7 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
     dispose() {
       if (disposed) return;
       stopLoop();
+      clearHiddenTimer();
       renderer?.dispose();
       renderer = null;
       timeline = null;

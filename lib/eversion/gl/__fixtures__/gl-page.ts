@@ -311,12 +311,12 @@ const api = {
   projections: [...PROJECTION_IDS] as ProjectionId[],
 
   /** (Re)create the renderer on a fresh canvas. Throws with the GLSL log if the real shaders fail. */
-  init(tier: Tier = 'mid') {
+  init(tier: Tier = 'mid', opts: { maskView?: boolean } = {}) {
     canvas?.remove();
     canvas = document.createElement('canvas');
     document.body.appendChild(canvas);
     lastTier = tier;
-    renderer = createRenderer(canvas, { tier, dprCap: 1 });
+    renderer = createRenderer(canvas, { tier, dprCap: 1, maskView: opts.maskView === true });
     return { live: renderer.counters().live };
   },
 
@@ -593,6 +593,70 @@ const api = {
       centreX: snap.centreX,
       centreY: snap.centreY,
       orb,
+    };
+  },
+
+  /**
+   * With `init(tier, { maskView: true })`: draw `patch` and measure the wedge mask the surface shader wrote (red
+   * channel, over the pixels marked as surface by green). A jagged mask (triangle-edge teeth, 2x2 derivative
+   * blocks) is a field with many one-pixel jumps; an analytic one only jumps where two sheets overlap.
+   * Returns the covered count, the pixels whose mask is neither 0 nor 1, and the number of neighbour pairs
+   * (both covered) whose mask differs by more than `jump`, and, of the neighbour pairs that are BOTH on the ramp
+   * (neither 0 nor 1: the outline of a sheet, where the glass behind it shows, is not one), how many step by
+   * more than a quarter (`rampJumps` of `rampPairs`): a jump through the middle of a falloff that should be smooth.
+   */
+  maskStats(patch: Partial<TimelineSnapshot>, jump = 0.5) {
+    renderer!.draw(snapshot(patch));
+    const ctx = gl();
+    const w = canvas!.width;
+    const h = canvas!.height;
+    const px = new Uint8Array(w * h * 4);
+    ctx.readPixels(0, 0, w, h, ctx.RGBA, ctx.UNSIGNED_BYTE, px);
+    const covered = (i: number) => px[i * 4 + 1] === 255 && px[i * 4 + 2] === 0;
+    let cov = 0;
+    let partial = 0;
+    let full = 0;
+    let jumps = 0;
+    let pairs = 0;
+    let worst = 0;
+    let rampJumps = 0;
+    let rampPairs = 0;
+    // The outermost band is where the mask ramp is squeezed into a pixel or two by the page's own edge: steep, not rough.
+    const B = 10;
+    for (let y = B; y < h - B; y++) {
+      for (let x = B; x < w - B; x++) {
+        const i = y * w + x;
+        if (!covered(i)) continue;
+        cov++;
+        const m = px[i * 4] / 255;
+        if (m > 0.02 && m < 0.98) partial++;
+        if (m >= 0.98) full++;
+        for (const j of [x + 1 < w ? i + 1 : -1, y + 1 < h ? i + w : -1]) {
+          if (j < 0 || !covered(j)) continue;
+          pairs++;
+          const d = Math.abs(px[j * 4] / 255 - m);
+          if (d > worst) worst = d;
+          if (d > jump) {
+            jumps++;
+          }
+          const m2 = px[j * 4] / 255;
+          if (m > 0.02 && m < 0.98 && m2 > 0.02 && m2 < 0.98) {
+            rampPairs++;
+            if (d > 0.6) rampJumps++;
+          }
+        }
+      }
+    }
+    return {
+      err: ctx.getError(),
+      covered: cov,
+      partial,
+      full,
+      pairs,
+      jumps,
+      rampJumps,
+      rampPairs,
+      worst,
     };
   },
 

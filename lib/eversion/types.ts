@@ -631,6 +631,12 @@ export type FromWorker =
   /** The after-gate's deadline on the `performance.now()` base (see {@link TimelineApi.afterDeadline}). */
   | { type: 'need-after-by'; deadline: number }
   | { type: 'unwrap-done' }
+  /**
+   * The glass globe has landed on the orb and starts to fade (`popFade` leaves 0), `fadeMs` before it is gone. Sent
+   * once per run, after `pop` and before `done`, from the frame that draws the first faded pixel (or, for a run
+   * settled while the tab is hidden, just before `done`). The page crossfades the real orb in over `fadeMs`.
+   */
+  | { type: 'pop-fade'; t: number; fadeMs: number }
   /** The answer to `probe`. */
   | { type: 'probe-result'; ok: boolean; reason?: string }
   | ({ type: 'done' } & FrameStats)
@@ -661,6 +667,7 @@ export const FROM_WORKER_TYPES = [
   'stage',
   'need-after-by',
   'unwrap-done',
+  'pop-fade',
   'probe-result',
   'done',
   'context-lost',
@@ -715,6 +722,11 @@ export interface RendererOptions {
   onContextLost?: () => void;
   /** Count GL object creation/deletion (the debug build). */
   countObjects?: boolean;
+  /**
+   * The e2e's mask view: the surface shader writes the azimuthal wedge mask (red) and a surface marker (green)
+   * instead of the picture, so a pixel test can look for jaggedness in the mask itself. Never set in production.
+   */
+  maskView?: boolean;
 }
 
 /**

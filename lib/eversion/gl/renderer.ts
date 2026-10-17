@@ -207,22 +207,31 @@ export function createRenderer(
 
   /* ── Programs ─────────────────────────────────────────────────────────── */
 
-  const shaders = getShaderSet();
+  const shaders = getShaderSet({ maskView: options.maskView === true });
   const surface = buildProgram(gl, shaders.surface, 'surface', created);
   const cage = buildProgram(gl, shaders.cage, 'cage', created);
+  /**
+   * The surface with the depth write that sends a masked azimuthal wedge to the back. Compiled on the first prime of
+   * an azimuthal projection (a write to gl_FragDepth turns early-z off, so the other projections run without it).
+   */
+  let surfaceMasked: Program | null = null;
 
   /** Once per program: the sampler units never change (spec §8.4: written once). */
-  for (const p of [surface, cage]) {
-    gl.useProgram(p.program);
-    gl.uniform1i(p.loc.u_lut, SAMPLER_UNITS.lut);
-    gl.uniform1i(p.loc.u_before, SAMPLER_UNITS.before);
-    gl.uniform1i(p.loc.u_after, SAMPLER_UNITS.after);
-    gl.uniform1i(p.loc.u_placeholder, SAMPLER_UNITS.placeholder);
+  function bindSamplers(p: Program) {
+    gl!.useProgram(p.program);
+    gl!.uniform1i(p.loc.u_lut, SAMPLER_UNITS.lut);
+    gl!.uniform1i(p.loc.u_before, SAMPLER_UNITS.before);
+    gl!.uniform1i(p.loc.u_after, SAMPLER_UNITS.after);
+    gl!.uniform1i(p.loc.u_placeholder, SAMPLER_UNITS.placeholder);
   }
+  bindSamplers(surface);
+  bindSamplers(cage);
 
   /* ── Mesh ─────────────────────────────────────────────────────────────── */
 
   const mesh: Mesh = meshForTier(tier);
+  /** The mesh's cell in radians: the scale of the azimuthal wedge mask (the cap is a few cells wide). */
+  const meshCell = Math.max(Math.PI / tierConfig.meshPhi, (2 * Math.PI) / tierConfig.meshTheta);
   const vao = gl.createVertexArray();
   const vbo = gl.createBuffer();
   const ebo = gl.createBuffer();
@@ -351,9 +360,10 @@ export function createRenderer(
   /** `prime`- and `resize`-cadence uniforms, for every program that has them. */
   function writeStatic() {
     const g = gl!;
-    for (const p of [surface, cage]) {
+    for (const p of surfaceMasked ? [surface, surfaceMasked, cage] : [surface, cage]) {
       const l = p.loc;
       g.useProgram(p.program);
+      g.uniform1f(l.u_meshCell, meshCell);
       g.uniform2f(l.u_viewport, cssW, cssH);
       g.uniform1f(l.u_pixelRatio, pixelRatio);
       g.uniform1f(l.u_azimuthal, azimuthal);
@@ -438,6 +448,10 @@ export function createRenderer(
       const g = gl;
       colours = p.colours;
       azimuthal = p.projection === 'lambert' || p.projection === 'stereographic' ? 1 : 0;
+      if (azimuthal && !surfaceMasked) {
+        surfaceMasked = buildProgram(g, shaders.surfaceMasked, 'surface-masked', created);
+        bindSamplers(surfaceMasked);
+      }
       for (let i = 0; i < 9; i++) mAfter[i] = p.mAfter[i];
 
       const width = LUT_SIZE[0];
@@ -489,8 +503,9 @@ export function createRenderer(
 
       g.bindVertexArray(vao);
 
-      g.useProgram(surface.program);
-      writeFrame(surface, s, evert, cageAlpha);
+      const main = azimuthal && surfaceMasked ? surfaceMasked : surface;
+      g.useProgram(main.program);
+      writeFrame(main, s, evert, cageAlpha);
       g.drawElements(g.TRIANGLES, mesh.indexCount, g.UNSIGNED_INT, 0);
 
       // At the flat endpoints (no vertex lifted off the page) the cage has no coverage at all: skip the draw.
@@ -551,7 +566,7 @@ export function createRenderer(
       deleted('buffers');
       g.deleteBuffer(ebo);
       deleted('buffers');
-      for (const p of [surface, cage]) {
+      for (const p of surfaceMasked ? [surface, surfaceMasked, cage] : [surface, cage]) {
         g.deleteProgram(p.program);
         deleted('programs');
       }

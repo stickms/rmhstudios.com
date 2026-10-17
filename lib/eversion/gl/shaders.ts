@@ -103,6 +103,11 @@ export interface ProgramSource {
 export interface ShaderSet {
   /** The page/glass surface. */
   readonly surface: ProgramSource;
+  /**
+   * The surface again, for the azimuthal projections: the same source plus a `gl_FragDepth` write that sends a masked
+   * wedge to the back. Any fragment shader that writes depth loses early-z, so the other projections never use it.
+   */
+  readonly surfaceMasked: ProgramSource;
   /** The cage lines (may share the surface's vertex source with a pass flag). */
   readonly cage: ProgramSource;
   /**
@@ -150,22 +155,34 @@ const FLAT_SNAP = 5e-4;
 
 /**
  * Azimuthal projections (Lambert, stereographic) send the back point to the page's whole border, so the mesh
- * triangles around it have corners on opposite sides of the page: mid-morph they are stretched wedges whose
- * interpolated position is nowhere near the page pixel the fragment's own lookup names. The mismatch is measured
- * in the fragment as the distance, in units of the page's short side, between the interpolated flat position and
- * the lookup's (WEDGE_FROM..WEDGE_TO, a smooth ramp: ordinary triangles are far below it). A wedge shows the
- * identity page while the morph is young (so the exact flat endpoint is untouched, WEDGE_EARLY_*), then fades to
- * GLASS: no page texel, and pushed to the back of the depth buffer so it never hides real page.
+ * triangles around it have corners on opposite sides of the page: mid-morph they are stretched wedges, and the
+ * page texels they carry are smeared. The wedge is masked ANALYTICALLY: a cap on the angular distance of the
+ * fragment's sphere point from the projection's back point, in the frame the fragment's page lookup is made in
+ * (the body for the BEFORE side, `M_after * body` for the AFTER side). It does not depend on how the mesh is
+ * triangulated, on screen-space derivatives (2x2 quad blocks) or on the LUT's nearest-tap guard, so its edge is a
+ * circle with a quintic falloff over a few mesh cells, not a saw of triangle edges.
+ *
+ * The cap is `1` within WEDGE_CAP_FROM mesh cells of the back point and `0` beyond WEDGE_CAP_TO (`u_meshCell` is the
+ * tier's cell, radians). A masked fragment shows the identity page while the morph is young (so the exact flat
+ * endpoint is untouched, WEDGE_EARLY_*), then fades to GLASS: no page texel, a faint fill and a rim like POP's
+ * glass, and pushed to the back of the depth buffer (when it is not in front of anything the glass is what is seen;
+ * in front of real page the page wins, so a stretched triangle can never hide it).
  */
-const WEDGE_FROM = 0.06;
-const WEDGE_TO = 0.22;
+const WEDGE_CAP_FROM = 2.0;
+const WEDGE_CAP_TO = 7.0;
+/** Morph weight at which the vertices' flat positions have stopped mattering (the sphere has taken over). */
+const WEDGE_WRAPPED_FROM = 0.9;
 const WEDGE_EARLY_FROM = 0.02;
 const WEDGE_EARLY_TO = 0.12;
 /** The eversion progress band, at each end, over which a wrong-way face turns to glass. */
 const EVERT_END_FROM = 0.02;
 const EVERT_END_TO = 0.08;
-const STRETCH_FROM = 8;
-const STRETCH_TO = 22;
+/** Half-width of the facing ramp: `dot(normal, toEye)` from `-FACING_BAND` (back) to `+FACING_BAND` (front). */
+const FACING_BAND = 0.12;
+/** The window depth of a fully masked fragment: just inside the far plane (the clear value is exactly 1). */
+const MASK_DEPTH = 0.999999;
+/** How quickly a masked fragment's depth leaves the surface: it is fully at the back by `1 / MASK_DEPTH_RATE`. */
+const MASK_DEPTH_RATE = 4;
 
 /**
  * The vertex-side page lookup of the duplicated EQUATOR vertices (`|φ'| < 1e-6`; see `mesh.ts#EQUATOR_EPS`) is nudged
@@ -198,14 +215,16 @@ const DEFINES = /* glsl */ `
 #define JUMP_UV ${f(JUMP_UV)}
 #define JUMP_GRAD ${f(JUMP_GRAD)}
 #define FLAT_SNAP ${f(FLAT_SNAP)}
-#define WEDGE_FROM ${f(WEDGE_FROM)}
-#define WEDGE_TO ${f(WEDGE_TO)}
+#define WEDGE_CAP_FROM ${f(WEDGE_CAP_FROM)}
+#define WEDGE_CAP_TO ${f(WEDGE_CAP_TO)}
+#define WEDGE_WRAPPED_FROM ${f(WEDGE_WRAPPED_FROM)}
 #define WEDGE_EARLY_FROM ${f(WEDGE_EARLY_FROM)}
 #define WEDGE_EARLY_TO ${f(WEDGE_EARLY_TO)}
 #define EVERT_END_FROM ${f(EVERT_END_FROM)}
 #define EVERT_END_TO ${f(EVERT_END_TO)}
-#define STRETCH_FROM ${f(STRETCH_FROM)}
-#define STRETCH_TO ${f(STRETCH_TO)}
+#define FACING_BAND ${f(FACING_BAND)}
+#define MASK_DEPTH ${f(MASK_DEPTH)}
+#define MASK_DEPTH_RATE ${f(MASK_DEPTH_RATE)}
 #define EQUATOR_BIAS ${f(EQUATOR_BIAS_TEXELS)}
 #define POLE_EXTRAP ${f(POLE_EXTRAP)}
 #define LAMBERT_BASE ${f(LAMBERT_BASE)}
@@ -423,23 +442,35 @@ vec2 lutUv(float theta, float phi) {
 `;
 
 /**
- * `wedge()` for the fragment shaders that declare `u_lut`, `u_viewport`, `u_mAfter`, `u_unwrap`, `u_azimuthal`,
- * `v_domain`, `v_flat` and `v_morph`: how much of this fragment sits on a stretched azimuthal wedge, 0 to 1
- * (see {@link WEDGE_FROM}). Always 0 for the other projections and at the flat end.
+ * `wedge()` for the fragment shaders that declare `u_meshCell`, `u_mAfter`, `u_unwrap`, `u_azimuthal`, `v_domain` and
+ * `v_morph`: how much of this fragment sits on the stretched azimuthal wedge, 0 to 1 (see {@link WEDGE_CAP_FROM}).
+ * Always 0 for the other projections and at the flat end. `wedgeCap(q)` is the same cap for any point `q` of the
+ * unit sphere in a projection's own frame (its back point is `(0, 0, -1)`).
  */
 const WEDGE_GLSL = /* glsl */ `
+uniform float u_meshCell;
+float quintic5(float x) {
+  x = clamp(x, 0.0, 1.0);
+  return x * x * x * (x * (x * 6.0 - 15.0) + 10.0);
+}
+float wedgeCap(vec3 q) {
+  float ang = atan(length(q.xy), -q.z);
+  float from = WEDGE_CAP_FROM * u_meshCell;
+  return 1.0 - quintic5((ang - from) / ((WEDGE_CAP_TO - WEDGE_CAP_FROM) * u_meshCell));
+}
 float wedge() {
   if (u_azimuthal < 0.5 || v_morph <= 0.0) return 0.0;
   float cp = cos(v_domain.y);
   vec3 p = vec3(cp * sin(v_domain.x), -sin(v_domain.y), cp * cos(v_domain.x));
-  vec3 q = u_unwrap < 1.0 ? u_mAfter * p : p;
-  vec2 uvF = clamp(lutUv(atan(q.x, q.z), asin(clamp(-q.y, -1.0, 1.0))), 0.0, 1.0);
-  float err = length(v_flat - (uvF - 0.5) * u_viewport) / min(u_viewport.x, u_viewport.y);
-  return smoothstep(WEDGE_FROM, WEDGE_TO, err);
+  /* The geometric wedge is the vertices' FLAT positions being stretched, so it matters only as far as the vertex
+     is still partway to the flat page: a fully wrapped sphere has none (its back point can be anywhere on screen,
+     e.g. at the centre of the everted globe). */
+  float stillFlat = 1.0 - quintic5((v_morph - WEDGE_WRAPPED_FROM) / (1.0 - WEDGE_WRAPPED_FROM));
+  return wedgeCap(u_unwrap < 1.0 ? u_mAfter * p : p) * stillFlat;
 }
 /* Of that, the part that has become glass (0 while the morph is young). */
 float wedgeGlass(float wedgeAmount) {
-  return wedgeAmount * smoothstep(WEDGE_EARLY_FROM, WEDGE_EARLY_TO, v_morph);
+  return wedgeAmount * quintic5((v_morph - WEDGE_EARLY_FROM) / (WEDGE_EARLY_TO - WEDGE_EARLY_FROM));
 }
 `;
 
@@ -452,6 +483,7 @@ layout(location = 0) in vec2 a_domain;
 uniform float u_wrap;
 uniform float u_unwrap;
 uniform float u_glass;
+uniform float u_pop;
 uniform float u_spin;
 uniform float u_tilt;
 uniform float u_radius;
@@ -564,8 +596,9 @@ void main() {
   float ndcZ = clamp(-pos.z / (2.0 * max(u_radius, 1.0)), -1.0, 1.0) * 0.9;
   /* POP's empty glass globe travels to the orb in the corner: seen from a camera that stays over the viewport
      centre it would be stretched into an ellipse by the perspective of its own offset. Its camera follows it
-     (u_glass is 0 for every other stage, which leaves this the viewport-centre camera above, bit for bit). */
-  vec2 eye = (u_centre - 0.5 * u_viewport) * u_glass;
+     (u_pop is 0 for every other stage, which leaves this the viewport-centre camera above, bit for bit; it is the very
+     channel the centre travels on, so camera and globe move together with no shear). */
+  vec2 eye = (u_centre - 0.5 * u_viewport) * u_pop;
   vec2 pp = pos.xy + eye * (wc - 1.0);
   gl_Position = vec4(pp.x * 2.0 / u_viewport.x, -pp.y * 2.0 / u_viewport.y, ndcZ * wc, wc);
   v_domain = a_domain;
@@ -579,7 +612,10 @@ void main() {
    Surface fragment shader
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const SURFACE_FRAGMENT = `${GLSL_HEADER}
+function surfaceFragment(maskDepth: boolean, maskView: boolean): string {
+  return `${GLSL_HEADER}
+${maskDepth && !maskView ? '#define MASK_TO_BACK 1' : ''}
+${maskView ? '#define MASK_VIEW 1' : ''}
 in vec2 v_domain;
 in float v_morph;
 in vec3 v_nview;
@@ -598,6 +634,7 @@ uniform float u_unwrap;
 uniform float u_afterMix;
 uniform float u_pageAlpha;
 uniform float u_glass;
+uniform float u_pop;
 uniform float u_popFade;
 uniform float u_radius;
 uniform vec2 u_centre;
@@ -610,49 +647,54 @@ ${WEDGE_GLSL}
 void main() {
   float theta = v_domain.x;
   float phi = v_domain.y;
+  float cp0 = cos(phi);
+  vec3 body = vec3(cp0 * sin(theta), -sin(phi), cp0 * cos(theta));
+  vec3 mb = u_mAfter * body;
+
+  /* Which way the surface faces the eye, as a continuous number: the winding normal against the direction to the
+     eye (the camera follows the globe in POP, exactly as the vertex shader's). It drives the mask, which therefore
+     has no per-triangle edge; the page SIDE below is still the rasteriser's, an occlusion edge at the silhouette. */
+  float camDist = 2.0 * GLOBE_PERSP * max(u_radius, 1.0);
+  vec3 toEye = normalize(vec3((u_centre - 0.5 * u_viewport) * u_pop, camDist) - v_pos);
+  float facing = dot(normalize(v_nview), toEye);
+  float frontness = quintic5(0.5 + 0.5 * facing / FACING_BAND);
+
+  /* The azimuthal wedge, masked analytically (see WEDGE_CAP_FROM). Geometry side: the cap about the back point of
+     the frame the VERTEX's flat position was taken in. Texture side: the cap about the back point of the frame this
+     fragment's own lookup is made in, front (BEFORE through the body) and back (AFTER through M_after) blended by
+     the facing ramp. */
+  float wedgeAmt = wedge();
+  if (u_azimuthal > 0.5) {
+    wedgeAmt = max(wedgeAmt, mix(wedgeCap(mb), wedgeCap(body), frontness));
+    /* Near either end of the eversion one side of the surface is the whole picture (BEFORE outside, AFTER once
+       everted). A fragment facing the OTHER way there is the mesh's folded skirt around the back point, not
+       geometry the viewer should see: it is glass, fading in with the eversion's distance from the end. */
+    float wrongWay = u_evert < 0.5
+      ? (1.0 - frontness) * (1.0 - quintic5((u_evert - EVERT_END_FROM) / (EVERT_END_TO - EVERT_END_FROM)))
+      : frontness * quintic5((u_evert - (1.0 - EVERT_END_TO)) / (EVERT_END_TO - EVERT_END_FROM));
+    wedgeAmt = max(wedgeAmt, wrongWay);
+  }
+  float wedgeG = wedgeGlass(wedgeAmt);
 
   /* The flat endpoints ARE the page (S#15: wrap = 0 is the BEFORE capture, the UNWRAP end the AFTER page). Where
      the morph weight is ~0 the fragment shows the page at its own pixel and on the side the phase names, instead
      of trusting the mesh: a triangle whose corners the projection puts on opposite sides of a cut (the Lambert
      corners, the AFTER side's cut, the coarse rows of a tall Mercator page) is stretched across the page, and
      its per-fragment lookup is not the pixel it covers. Under it the shown page is the identity by construction;
-     a nonzero weight is past the snap and everything is the lookup again. */
-  float wedgeAmt = wedge();
-  float cp0 = cos(phi);
-  vec3 body = vec3(cp0 * sin(theta), -sin(phi), cp0 * cos(theta));
-  if (u_azimuthal > 0.5) {
-    /* Texture stretch: page pixels crossed per screen pixel, measured on the page the fragment's own face reads
-       (about 1 on the flat page, 2-3 on a wrapped sphere). Next to an azimuthal back point it diverges, and what
-       is drawn there is a few texels smeared over a wedge: treat it like the geometric wedge. */
-    vec3 mb = u_mAfter * body;
-    vec2 uvL = gl_FrontFacing ? lutUv(theta, phi) : lutUv(atan(mb.x, mb.z), asin(clamp(-mb.y, -1.0, 1.0)));
-    vec2 lx = dFdx(uvL);
-    vec2 ly = dFdy(uvL);
-    float stretch = max(max(abs(lx.x), abs(lx.y)), max(abs(ly.x), abs(ly.y))) * max(u_viewport.x, u_viewport.y);
-    wedgeAmt = max(wedgeAmt, smoothstep(STRETCH_FROM, STRETCH_TO, stretch));
-    /* Near either end of the eversion one side of the surface is the whole picture (BEFORE outside, AFTER once
-       everted). A fragment facing the OTHER way there is the mesh's folded skirt around the back point, not
-       geometry the viewer should see: it is glass, fading in with the eversion's distance from the end. */
-    float wrongWay = u_evert < 0.5
-      ? (gl_FrontFacing ? 0.0 : 1.0 - smoothstep(EVERT_END_FROM, EVERT_END_TO, u_evert))
-      : (gl_FrontFacing ? smoothstep(1.0 - EVERT_END_TO, 1.0 - EVERT_END_FROM, u_evert) : 0.0);
-    wedgeAmt = max(wedgeAmt, wrongWay);
-  }
-  float wedgeG = wedgeGlass(wedgeAmt);
+     a nonzero weight is past the snap and everything is the lookup again. A young wedge is the same. */
   float flatness = max(1.0 - smoothstep(0.0, FLAT_SNAP, v_morph), wedgeAmt - wedgeG);
   vec2 pageUv = v_pos.xy / u_viewport + 0.5;
-  bool front = flatness > 0.5 ? u_unwrap >= 1.0 : gl_FrontFacing;
 
-  /* Which page, and where on it. Back faces read the AFTER page through M_after: P(M_after * p). */
-  vec2 uv;
-  if (front) {
-    uv = lutUv(theta, phi);
-  } else {
-    vec3 m = u_mAfter * body;
-    uv = lutUv(atan(m.x, m.z), asin(clamp(-m.y, -1.0, 1.0)));
-  }
-  uv = mix(uv, pageUv, flatness);
-  vec2 cuv = clamp(uv, 0.0, 1.0);
+  /* 1 = the BEFORE side, 0 = the AFTER side. A blend (not a switch) wherever the page is part way to the flat
+     identity, so nothing flips at a threshold. */
+  float side = mix(gl_FrontFacing ? 1.0 : 0.0, u_unwrap >= 1.0 ? 1.0 : 0.0, flatness);
+
+  /* Where on which page. Back faces read the AFTER page through M_after: P(M_after * p). */
+  vec2 uvF = vec2(0.0);
+  vec2 uvB = vec2(0.0);
+  if (side > 0.0) uvF = mix(lutUv(theta, phi), pageUv, flatness);
+  if (side < 1.0) uvB = mix(lutUv(atan(mb.x, mb.z), asin(clamp(-mb.y, -1.0, 1.0))), pageUv, flatness);
+  vec2 uv = mix(uvB, uvF, side);
 
   /* Across a LUT cut the UV jumps inside one pixel: do not let that pick the lowest mip or smear the edge. */
   vec2 gx = dFdx(uv);
@@ -663,24 +705,22 @@ void main() {
     gy = vec2(0.0, 1e-4);
   }
 
-  vec3 page;
-  if (front) {
-    page = textureGrad(u_before, cuv, gx, gy).rgb;
-  } else {
-    vec3 ph = textureGrad(u_placeholder, cuv, gx, gy).rgb;
-    vec3 af = textureGrad(u_after, cuv, gx, gy).rgb;
-    page = mix(ph, af, u_afterMix);
+  /* Gentle Lambert on the VISIBLE side's normal, and the back side's darken + accent tint (Q18); scaled by the
+     morph weight, since the flat page must be the capture, untouched. */
+  vec3 nn = normalize(v_nview);
+  float litF = LAMBERT_BASE + LAMBERT_GAIN * max(dot(nn, normalize(LIGHT_DIR)), 0.0);
+  float litB = LAMBERT_BASE + LAMBERT_GAIN * max(dot(-nn, normalize(LIGHT_DIR)), 0.0);
+  vec3 page = vec3(0.0);
+  if (side > 0.0) {
+    vec3 pg = textureGrad(u_before, clamp(uvF, 0.0, 1.0), gx, gy).rgb;
+    page += side * mix(pg, pg * litF, v_morph);
   }
-
-  /* Gentle Lambert on the VISIBLE side's normal, and the back side's darken + accent tint (Q18). */
-  vec3 n = normalize(v_nview) * (front ? 1.0 : -1.0);
-  float lit = LAMBERT_BASE + LAMBERT_GAIN * max(dot(n, normalize(LIGHT_DIR)), 0.0);
-  vec3 shaded = page * lit;
-  if (!front) {
-    shaded = mix(shaded * SIDE_DARKEN, u_colAccent.rgb, SIDE_TINT);
+  if (side < 1.0) {
+    vec2 cb = clamp(uvB, 0.0, 1.0);
+    vec3 pg = mix(textureGrad(u_placeholder, cb, gx, gy).rgb, textureGrad(u_after, cb, gx, gy).rgb, u_afterMix);
+    vec3 shaded = mix(pg * litB * SIDE_DARKEN, u_colAccent.rgb, SIDE_TINT);
+    page += (1.0 - side) * mix(pg, shaded, v_morph);
   }
-  /* Scaled by the morph weight: the flat page must be the capture, untouched. */
-  page = mix(page, shaded, v_morph);
 
   /* Glass is "the UV lies outside [0,1]^2"; antialias the page edge with fwidth (hard across a cut). */
   float edge = min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y));
@@ -689,29 +729,41 @@ void main() {
   vec3 rgb = mix(u_colVeil.rgb, page, onPage);
 
   /* Fresnel rim in --cage-major: strongest at the silhouette, on page and glass alike. */
-  float camDist = 2.0 * GLOBE_PERSP * max(u_radius, 1.0);
-  vec3 toEye = normalize(vec3((u_centre - 0.5 * u_viewport) * u_glass, camDist) - v_pos);
-  float rim = pow(1.0 - abs(dot(normalize(v_nview), toEye)), RIM_POWER) * RIM_STRENGTH;
+  float rim = pow(1.0 - abs(facing), RIM_POWER) * RIM_STRENGTH;
   rgb = mix(rgb, u_colCageMajor.rgb, clamp(rim, 0.0, 1.0) * v_morph);
 
   float a = mix(1.0, u_pageAlpha, onPage);
 
-  /* POP: the same sphere, EMPTY. The page is gone; what is left is glass (a faint fill, a bright Fresnel rim),
-     present only where the wrap wave has lifted it off the flat page, so it condenses instead of appearing. It
-     then fades as a whole (popFade) once it has landed on the orb. Every term is continuous in u_glass. */
-  float lift = smoothstep(0.0, 0.5, v_morph);
+  /* Glass: a faint fill and a bright Fresnel rim, present only where the wrap wave has lifted the surface off the
+     flat page, so it condenses instead of appearing. POP's whole globe is this; so is a masked wedge. */
+  float lift = quintic5(v_morph * 2.0);
   float glassRim = clamp(rim, 0.0, 1.0) * lift;
   float glassA = clamp(GLASS_FILL * lift + glassRim * GLASS_RIM_ALPHA, 0.0, 1.0);
   vec3 glassRgb = mix(u_colVeil.rgb, u_colCageMajor.rgb, glassRim);
-  /* The page is gone by the time the glass is half formed, so the globe is never seen with text inside it. */
-  float toGlass = smoothstep(0.0, 0.5, u_glass);
+
+  /* A masked wedge: the glass over the veil it sits against (the clear colour), in place of the page. */
+  rgb = mix(rgb, mix(u_colVeil.rgb, glassRgb, glassA), wedgeG);
+
+  /* POP: the same sphere, EMPTY. The page is gone by the time the glass is half formed, so the globe is never
+     seen with text inside it; it fades as a whole (popFade) once it has landed on the orb. Every term is
+     continuous (quintic) in u_glass. */
+  float toGlass = quintic5(u_glass * 2.0);
   rgb = mix(rgb, glassRgb, toGlass);
   a = mix(a, glassA, toGlass) * (1.0 - u_popFade);
   outColor = vec4(rgb * a, a);
-  /* A stretched wedge is glass, and glass goes to the back so it can never hide real page. */
-  gl_FragDepth = mix(gl_FragCoord.z, 1.0, wedgeG);
+#ifdef MASK_VIEW
+  /* The e2e's view of the mask itself: red is the wedge amount, green marks a surface fragment. It never pushes
+     the fragment back (MASK_TO_BACK is off): the nearest sheet shows, so the field is not cut by depth contests. */
+  outColor = vec4(wedgeAmt, 1.0, 0.0, 1.0);
+#endif
+#ifdef MASK_TO_BACK
+  /* A masked wedge goes to the back, so a stretched triangle can never hide real page (see WEDGE_CAP_FROM). It
+     leaves the surface quickly so the depth contest with real page is decided where the mask is faint. */
+  gl_FragDepth = mix(gl_FragCoord.z, MASK_DEPTH, quintic5(wedgeG * MASK_DEPTH_RATE));
+#endif
 }
 `;
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Cage fragment shader
@@ -801,9 +853,11 @@ void main() { outColor = vec4(0.0); }
 `;
 
 /** The real shader set. */
-export function getShaderSet(): ShaderSet {
+export function getShaderSet(options: { maskView?: boolean } = {}): ShaderSet {
+  const maskView = options.maskView === true;
   return {
-    surface: { vertex: VERTEX, fragment: SURFACE_FRAGMENT },
+    surface: { vertex: VERTEX, fragment: surfaceFragment(false, maskView) },
+    surfaceMasked: { vertex: VERTEX, fragment: surfaceFragment(true, maskView) },
     cage: { vertex: VERTEX, fragment: CAGE_FRAGMENT },
     feedback: { vertex: FEEDBACK_VERTEX, fragment: FEEDBACK_FRAGMENT, varyings: ['v_F'] },
   };

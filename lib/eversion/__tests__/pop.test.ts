@@ -74,8 +74,6 @@ function run(step = 1) {
   return { frames, popAt };
 }
 
-const second = (f: number[], i: number, h: number) => (f[i + 1]! - 2 * f[i]! + f[i - 1]!) / (h * h);
-
 describe('POP: the empty glass globe shrinks into the orb and pops away', () => {
   const { frames, popAt } = run(1);
   const pop = frames.filter((f) => f.t >= popAt);
@@ -126,9 +124,9 @@ describe('POP: the empty glass globe shrinks into the orb and pops away', () => 
     for (let i = peakAt + 1; i < pop.length; i++) {
       expect(pop[i]!.alpha).toBeLessThanOrEqual(pop[i - 1]!.alpha + 1e-12);
     }
-    // 1 ms frames over a 300 ms POP: a quintic never moves more than ~2% per ms.
+    // 1 ms frames over a POP_MS POP: a quintic never moves more than ~1% per ms.
     for (let i = 1; i < pop.length; i++)
-      expect(Math.abs(pop[i]!.alpha - pop[i - 1]!.alpha)).toBeLessThan(0.03);
+      expect(Math.abs(pop[i]!.alpha - pop[i - 1]!.alpha)).toBeLessThan(0.02);
   });
 
   it('the fade starts only once the globe has landed on the orb', () => {
@@ -136,37 +134,86 @@ describe('POP: the empty glass globe shrinks into the orb and pops away', () => 
     expect(start.radius).toBeLessThan(ORB.radius * 1.05);
   });
 
-  it('is C² across unwrap → pop: values and velocities have no step at the hand-over', () => {
-    const h = 1;
+  it('is C² across unwrap → pop: starts at rest, and no step in value or velocity at the hand-over', () => {
     const i0 = frames.findIndex((f) => f.t >= popAt);
     expect(i0).toBeGreaterThan(10);
-    for (const key of ['pop', 'glass', 'popFade', 'radius', 'centreX', 'centreY'] as const) {
-      const series = frames.map((f) => f[key]);
-      // Value step per ms around the hand-over is the same order as the steps either side of it.
-      const around = [i0 - 3, i0 - 2, i0 - 1, i0, i0 + 1, i0 + 2].map((i) =>
-        Math.abs(series[i]! - series[i - 1]!),
-      );
-      const scale = Math.max(...around, 1e-6);
-      expect(Math.abs(series[i0]! - series[i0 - 1]!)).toBeLessThanOrEqual(scale);
-      // Acceleration (second difference) is bounded and has no spike AT the hand-over versus 5 ms later.
-      const a0 = Math.abs(second(series, i0, h));
-      const a1 = Math.abs(second(series, i0 + 5, h));
-      const bound = Math.max(a1, 1e-3) * 10 + 0.2;
-      expect(a0, key).toBeLessThan(bound);
-    }
-    // POP's own channels begin at rest.
+    // POP's own channels begin at rest, exactly.
     expect(frames[i0]!.pop).toBeLessThan(1e-6);
     expect(frames[i0]!.glass).toBeLessThan(1e-6);
     expect(frames[i0]!.popFade).toBe(0);
+    // The first millisecond moves a rest-start quintic by ~10 (h/T)^3 of its range: nothing.
+    expect(frames[i0 + 1]!.pop).toBeLessThan(1e-6);
+    expect(frames[i0 + 1]!.glass).toBeLessThan(1e-5);
   });
 
-  it('no channel jumps anywhere in POP (second differences stay small at 1 ms)', () => {
-    for (const key of ['radius', 'centreX', 'centreY', 'glass', 'popFade'] as const) {
-      const series = pop.map((f) => f[key]);
-      const range = Math.max(...series) - Math.min(...series) || 1;
-      for (let i = 1; i < series.length - 1; i++) {
-        // Quintic accelerations peak near 6x the mean over a 300 ms leg; the bound is generous but jump-proof.
-        expect(Math.abs(second(series, i, 1)) * 1e3, `${key}@${i}`).toBeLessThan(range * 400);
+  /*
+   * Smoothness is a bound on the THIRD difference. A quintic's jerk peaks at 60 R / T^3 (at its two ends), so over
+   * 1 ms steps a channel that is C² has |Δ³| <= 60 R / T^3; a C¹ break (an acceleration step A) puts A h² there,
+   * orders of magnitude more, and a C⁰ break more still. The old "second difference < 400 range" bound sat ~1000x
+   * above the real accelerations and could only catch a value jump.
+   */
+  const SHRINK_MS = POP_MS * 0.6;
+  const GLASS_MS = POP_MS * 0.4;
+  const FADE_MS = POP_MS * 0.4;
+  const quinticJerk = (range: number, ms: number) => (60 * Math.abs(range)) / ms ** 3;
+  const third = (f: number[], i: number) => f[i + 2]! - 3 * f[i + 1]! + 3 * f[i]! - f[i - 1]!;
+  const worstThird = (series: number[]) => {
+    let worst = 0;
+    for (let i = 1; i < series.length - 2; i++) worst = Math.max(worst, Math.abs(third(series, i)));
+    return worst;
+  };
+  /** The window from just before the hand-over to the end: includes the unwrap → pop seam. */
+  const seamAndPop = frames.filter((f) => f.t >= popAt - 8);
+  const bounds = (): Record<string, number> => {
+    const start = frames.find((f) => f.t >= popAt)!;
+    return {
+      pop: quinticJerk(1, SHRINK_MS),
+      glass: quinticJerk(1, GLASS_MS),
+      popFade: quinticJerk(1, FADE_MS),
+      centreX: quinticJerk(ORB.cx - start.centreX, SHRINK_MS),
+      centreY: quinticJerk(ORB.cy - start.centreY, SHRINK_MS),
+      // radius = (r + (orb - r) pop) (1 + 0.18 * 4 f (1 - f)): the shrink's jerk plus the swell's.
+      radius:
+        quinticJerk(start.radius - ORB.radius, SHRINK_MS) +
+        quinticJerk(0.72 * ORB.radius, FADE_MS) * 0.5,
+    };
+  };
+
+  it('every POP channel is C²: no third difference above 1.25x the quintic peak jerk', () => {
+    const b = bounds();
+    for (const key of ['pop', 'glass', 'popFade', 'centreX', 'centreY', 'radius'] as const) {
+      const series = seamAndPop.map((f) => f[key]);
+      expect(worstThird(series), key).toBeLessThanOrEqual(b[key]! * 1.25);
+    }
+  });
+
+  it('the bound can fail: a C¹ break (cubic smoothstep) or a velocity kink (x²) is far above it', () => {
+    const T = GLASS_MS;
+    const ramp = (shape: (x: number) => number) =>
+      Array.from({ length: Math.round(T) + 40 }, (_, i) =>
+        shape(Math.min(Math.max((i - 20) / T, 0), 1)),
+      );
+    const quintic = (x: number) => x * x * x * (x * (x * 6 - 15) + 10);
+    const smoothstep = (x: number) => x * x * (3 - 2 * x);
+    const kink = (x: number) => x * x;
+    const limit = quinticJerk(1, T) * 1.25;
+    expect(worstThird(ramp(quintic))).toBeLessThanOrEqual(limit);
+    expect(worstThird(ramp(smoothstep))).toBeGreaterThan(limit * 5);
+    expect(worstThird(ramp(kink))).toBeGreaterThan(limit * 5);
+  });
+
+  it('no channel steps in value or velocity anywhere in POP (first differences are quintic-smooth)', () => {
+    for (const [key, range, ms] of [
+      ['pop', 1, SHRINK_MS],
+      ['glass', 1, GLASS_MS],
+      ['popFade', 1, FADE_MS],
+    ] as const) {
+      const series = seamAndPop.map((f) => f[key]);
+      // A quintic's velocity peaks at 1.875 R / T; one ms may not move it further than that.
+      for (let i = 1; i < series.length; i++) {
+        expect(Math.abs(series[i]! - series[i - 1]!), `${key}@${i}`).toBeLessThanOrEqual(
+          (1.875 * range * 1.05) / ms,
+        );
       }
     }
   });

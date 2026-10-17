@@ -111,21 +111,33 @@ arrives after the page canvas's with a `ready` instead of forwarding it.
 After UNWRAP the page is revealed (`pageAlpha` 1 → 0 over `REVEAL_MS`) and POP starts at the same instant. The
 flat page has no globe left in it, so POP draws a new one: the same mesh, **empty** (no page texel), as glass.
 
-| Channel   | What                                                                                                                     |
-| --------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `glass`   | 0 → 1 over the first 40% of POP: drives the wrap wave (the globe curls out of the vanishing page) and the glass fill/rim |
-| `pop`     | 0 → 1 over the first 60%: the shrink onto the orb (`radius`/`centre` are the effective values)                           |
-| `popFade` | 0 → 1 over the last 40%: opacity is `glass · (1 − popFade)`; the globe swells by up to 18% (`4f(1−f)`) as it goes        |
+| Channel   | What                                                                                                                                      |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `glass`   | 0 → 1 over the first 40% of POP (`POP_MS` = 520): drives the wrap wave (the globe curls out of the vanishing page) and the glass fill/rim |
+| `pop`     | 0 → 1 over the first 60%: the shrink onto the orb (`radius`/`centre` are the effective values)                                            |
+| `popFade` | 0 → 1 over the last 40%: opacity is `glass · (1 − popFade)`; the globe swells by up to 18% (`4f(1−f)`) as it goes                         |
 
 Every channel starts and ends at rest (quintic), so the hand-over from UNWRAP is C² and the last frame is exactly
-the orb's size and centre, fully transparent. While `glass > 0` the vertex shader's camera follows the globe (a camera
-over the viewport centre would stretch a globe in the corner into an ellipse). `testing/e2e/eversion-pop.mjs` renders
+the orb's size and centre, fully transparent. The vertex shader's camera follows the globe on the `pop` channel (`u_pop`:
+the very channel the centre travels on, so camera and globe never shear; a camera over the viewport centre would
+stretch a globe in the corner into an ellipse). The glass mixes are quintic, like the channels.
+
+**`pop-fade` (FromWorker).** `{ type: 'pop-fade', t, fadeMs }` is sent once per run, after `pop` and before `done`, from
+the frame that draws the first faded pixel (`popFade > 0`, `POP_FADE_FROM` = 60% into POP); `fadeMs` (`POP_FADE_MS`) is
+how long the glass then takes to vanish. It is emitted by the core, so it is identical in worker and in-thread modes, and
+a run settled while the tab is hidden sends it just before `done`. The page crossfades the real orb in over `fadeMs`
+under the dissolving glass instead of cutting it in after `done`. `testing/e2e/eversion-pop.mjs` renders
 the frames (and the Lambert / stereographic mid-morph) to PNGs.
 
-The azimuthal projections' stretched wedge near the back point renders as glass: a fragment whose interpolated flat
-position disagrees with its own lookup, whose texture is stretched past `STRETCH_FROM`, or that faces the wrong way
-near either end of the eversion, fades to glass (no page texel, pushed to the back of the depth buffer), only once the
-morph has left the flat page, so the flat endpoints stay pixel-exact.
+The azimuthal projections' stretched wedge near the back point renders as glass, masked ANALYTICALLY: a quintic cap on
+the angular distance of the fragment's sphere point from the projection's back point (`WEDGE_CAP_FROM`..`WEDGE_CAP_TO`
+mesh cells, `u_meshCell`), taken in the frame the lookup is made in (body for BEFORE, `M_after * body` for AFTER) and
+blended by a smooth `dot(normal, toEye)` ramp, plus a smooth wrong-way-face term near either end of the eversion. It
+never reads triangle edges, `dFdx` (2x2 blocks) or `gl_FrontFacing`, so its edge is a circle, not a saw. A masked
+fragment is a faint fill and a Fresnel rim like POP's glass, sent to the back of the depth buffer so it can never hide
+real page (only the azimuthal program, `surfaceMasked`, writes `gl_FragDepth`; the others keep early-z). The BEFORE/AFTER
+side blends by flatness instead of switching. The mask exists only once the morph has left the flat page, so the flat
+endpoints stay pixel-exact. `testing/e2e/eversion-pop.mjs` checks the mask itself through the shader's mask view.
 
 ## Render-side robustness
 
@@ -135,7 +147,12 @@ morph has left the flat page, so the flat endpoints stay pixel-exact.
   navigation is spent on the failure.
 - **Hidden tab.** The host posts `visibility` before every `init` and `start`; `init` resets the core's flag. An
   `abort` or `fast-forward` while hidden is run out synchronously (no frames drawn): `unwrap-done`, `reveal`, `pop`,
-  `done`, in order.
+  `pop-fade`, `done`, in order - also when the tab hides AFTER the abort/fast-forward is already in flight. A run that
+  merely stays hidden for `HIDDEN_SETTLE_GRACE_MS` (1 s) is settled the same way, so it does not replay ~5 s on return.
+  `fail()` releases the page textures; `resize` keeps `plan.viewport` current.
+- **Worker construction.** A synchronous throw from `new Worker` demotes to the in-thread host. The probe timeout starts
+  when the render side is first needed (not at spawn); a `probe-result: false` that arrives after it demotes the next
+  host; bitmaps held behind an unanswered probe are closed on dispose.
 - **Late textures** after a run has ended are closed, not kept resident. A `resize` between `prime` and `start` rebuilds
   the timeline at `start`; `resize` carries the orb through to `Timeline.resize`.
 - **Clock.** `start` carries `origin` (`performance.timeOrigin`); the worker converts deadlines with the two origins,

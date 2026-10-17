@@ -80,7 +80,12 @@ export const UNIFORMS = [
   },
   { name: 'u_afterMix', type: 'float', cadence: 'frame', from: 'snapshot.afterMix' },
   { name: 'u_pageAlpha', type: 'float', cadence: 'frame', from: 'snapshot.pageAlpha' },
-  { name: 'u_pop', type: 'float', cadence: 'frame', from: 'snapshot.pop' },
+  {
+    name: 'u_pop',
+    type: 'float',
+    cadence: 'frame',
+    from: "snapshot.pop (the glass camera's follow rides the channel the centre travels on)",
+  },
   { name: 'u_glass', type: 'float', cadence: 'frame', from: 'snapshot.glass' },
   { name: 'u_popFade', type: 'float', cadence: 'frame', from: 'snapshot.popFade' },
   {
@@ -102,6 +107,12 @@ export const UNIFORMS = [
     type: 'float',
     cadence: 'prime',
     from: '1 for lambert / stereographic (their stretched wedges become glass), else 0',
+  },
+  {
+    name: 'u_meshCell',
+    type: 'float',
+    cadence: 'prime',
+    from: "the tier mesh's cell, max(π / meshPhi, 2π / meshTheta) radians: the scale of the azimuthal wedge mask",
   },
   { name: 'u_viewport', type: 'vec2', cadence: 'prime', from: 'plan.viewport (w, h) in CSS px' },
   { name: 'u_mAfter', type: 'mat3', cadence: 'prime', from: 'RendererPrime.mAfter (column-major)' },

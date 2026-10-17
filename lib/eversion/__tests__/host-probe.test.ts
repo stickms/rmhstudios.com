@@ -108,3 +108,101 @@ describe('host: the worker is probed before the page canvas is handed over', () 
     expect(worker.terminate).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('host: the probe, its timeout and its failures', () => {
+  const PROBE_TIMEOUT = 2500;
+  const init = () => ({
+    type: 'init' as const,
+    canvas: new FakeCanvas() as never,
+    tier: 'mid' as const,
+    dprCap: 1,
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('does not start the timeout until the render side is first needed', () => {
+    vi.useFakeTimers();
+    const { host, sent } = setup(null);
+    // A worker warmed at hub-open and still fetching its module may take longer than the timeout: nothing is
+    // held yet, so nothing is released on a guess.
+    vi.advanceTimersByTime(PROBE_TIMEOUT * 4);
+    host.post(init());
+    expect(sent.map((m) => m.type)).toEqual(['probe']);
+    vi.advanceTimersByTime(PROBE_TIMEOUT - 1);
+    expect(sent.map((m) => m.type)).toEqual(['probe']);
+    vi.advanceTimersByTime(1);
+    expect(sent.map((m) => m.type)).toEqual(['probe', 'visibility', 'init']);
+  });
+
+  it('a worker that never answers is assumed capable after the timeout and the held messages go out in order', () => {
+    vi.useFakeTimers();
+    const { host, sent } = setup(null);
+    host.post(init());
+    host.post({ type: 'start', t0: 5 });
+    vi.advanceTimersByTime(PROBE_TIMEOUT);
+    expect(sent.map((m) => m.type)).toEqual(['probe', 'visibility', 'init', 'visibility', 'start']);
+    expect(host.mode).toBe('worker');
+  });
+
+  it('a negative answer that arrives after the timeout demotes the NEXT host and does not loop', () => {
+    vi.useFakeTimers();
+    const { host, sent, reply, worker } = setup(null);
+    host.post(init());
+    vi.advanceTimersByTime(PROBE_TIMEOUT);
+    const before = sent.length;
+    reply(false, 'late no');
+    expect(sent.length).toBe(before);
+    expect(worker.terminate).not.toHaveBeenCalled();
+    expect(host.mode).toBe('worker');
+    expect(detectHostMode()).toBe('main');
+  });
+
+  it('a late positive answer changes nothing', () => {
+    vi.useFakeTimers();
+    const { host, sent, reply } = setup(null);
+    host.post(init());
+    vi.advanceTimersByTime(PROBE_TIMEOUT);
+    const before = sent.length;
+    reply(true);
+    expect(sent.length).toBe(before);
+    expect(detectHostMode()).toBe('worker');
+    expect(host.mode).toBe('worker');
+  });
+
+  it('a worker that throws on construction becomes an in-thread host and demotes the session', () => {
+    vi.stubGlobal('requestAnimationFrame', () => 1);
+    vi.stubGlobal('cancelAnimationFrame', () => {});
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    detectHostMode('worker');
+    const host = getEversionHost({
+      createWorker: () => {
+        throw new Error('SecurityError: worker-src');
+      },
+    });
+    expect(host.mode).toBe('main');
+    expect(detectHostMode()).toBe('main');
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('closes the bitmaps it was holding when it is disposed while probing', () => {
+    const { host, worker } = setup(null);
+    const close = vi.fn();
+    host.post({ type: 'texture', slot: 'before', bitmap: { close } as never } as never);
+    host.dispose();
+    expect(close).toHaveBeenCalledTimes(1);
+    expect(worker.terminate).toHaveBeenCalledTimes(1);
+  });
+
+  it('a reply that arrives after the host was disposed neither double-closes nor throws', () => {
+    vi.useFakeTimers();
+    const { host, reply } = setup(null);
+    const close = vi.fn();
+    host.post({ type: 'texture', slot: 'before', bitmap: { close } as never } as never);
+    host.dispose();
+    reply(true);
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+});

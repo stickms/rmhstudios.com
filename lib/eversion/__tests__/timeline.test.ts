@@ -60,7 +60,7 @@ function mulberry32(seed: number): () => number {
 }
 
 const DEG = Math.PI / 180;
-const NOMINAL_END = PLAN_MS.total + STRETCH_CAP_MS; // test 19's bound: 4.9 s + the cap
+const NOMINAL_END = PLAN_MS.total + STRETCH_CAP_MS; // test 19's bound: 5.12 s + the cap
 
 function config(
   over: Partial<Omit<TimelineConfig, 'globe'>> & { globe?: Partial<GlobeStartState> } = {},

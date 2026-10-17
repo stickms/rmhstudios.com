@@ -237,20 +237,40 @@ function createHost(initialMode: HostMode, options: HostOptions): HostInternals 
    * on the same still-untouched canvas, for this navigation and the rest of the session.
    */
   function attachWorker() {
-    const worker = (options.createWorker ?? defaultWorker)();
+    let worker: WorkerLike;
+    try {
+      worker = (options.createWorker ?? defaultWorker)();
+    } catch (error) {
+      // `new Worker` can throw synchronously (a CSP that forbids workers, a blocked module URL, a worker quota).
+      // Nothing has been transferred: this host is simply an in-thread one, and so is the rest of the session.
+      console.warn('eversion: could not start the render worker, rendering in-thread', error);
+      demote();
+      attachMainThread();
+      return;
+    }
     let probing = true;
     let probeTimer: ReturnType<typeof setTimeout> | null = null;
     const held: Array<[ToWorker, Transferable[] | undefined]> = [];
+    /** Held messages carry ImageBitmaps: a host that is dropped (or a worker that is refused) must close them. */
+    const dropHeld = () => {
+      for (let m = held.shift(); m; m = held.shift()) {
+        if (m[0].type === 'texture') m[0].bitmap.close();
+      }
+    };
 
     const settleProbe = (ok: boolean) => {
       if (!probing) return;
       probing = false;
       if (probeTimer !== null) clearTimeout(probeTimer);
       probeTimer = null;
-      if (disposed) return;
+      if (disposed) {
+        dropHeld();
+        return;
+      }
       if (!ok) {
         demote();
         worker.terminate();
+        // The in-thread core takes over for what is held: ImageBitmaps are not transferred, they are just used.
         attachMainThread();
       }
       for (let m = held.shift(); m; m = held.shift()) sendToCore(m[0], m[1]);
@@ -258,7 +278,10 @@ function createHost(initialMode: HostMode, options: HostOptions): HostInternals 
 
     worker.addEventListener('message', ((e: MessageEvent<FromWorker>) => {
       if (e.data.type === 'probe-result') {
-        settleProbe(e.data.ok);
+        if (probing) settleProbe(e.data.ok);
+        // A "no" that arrives after the timeout assumed "yes": the canvas is already the worker's, so this run
+        // takes the failed-init route; the NEXT host must not be a worker.
+        else if (!e.data.ok && mode === 'worker') demote();
         return;
       }
       deliver(e.data);
@@ -295,16 +318,23 @@ function createHost(initialMode: HostMode, options: HostOptions): HostInternals 
       worker.postMessage(outgoing, list);
     };
     sendToCore = (message, transfer) => {
-      if (probing) held.push([message, transfer]);
-      else post(message, transfer);
+      if (probing) {
+        held.push([message, transfer]);
+        // The wait for an answer starts when the render side is first NEEDED, not when the worker was spawned
+        // (the host is warmed at hub-open; a worker module that is still being fetched is not a dead one).
+        if (probeTimer === null && message.type !== 'visibility') {
+          probeTimer = setTimeout(() => settleProbe(true), PROBE_TIMEOUT_MS);
+        }
+      } else post(message, transfer);
     };
     teardown = () => {
       if (probeTimer !== null) clearTimeout(probeTimer);
+      probeTimer = null;
+      dropHeld();
       worker.terminate();
     };
     pendingFrames = () => (workerRunning ? 1 : 0);
 
-    probeTimer = setTimeout(() => settleProbe(true), PROBE_TIMEOUT_MS);
     worker.postMessage({ type: 'probe' } satisfies ToWorker);
   }
 

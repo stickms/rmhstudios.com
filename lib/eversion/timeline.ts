@@ -119,6 +119,7 @@ import {
   MIN_EVERT_RATE,
   PLACEHOLDER_XFADE_MS,
   PLAN_MS,
+  POP_FADE_FROM,
   POP_MS,
   PROJECTED_EXTENT_LIMIT,
   PROJECTED_EXTENT_MAX,
@@ -231,7 +232,7 @@ const UNWRAP_SPAN_MS = UNWRAP_MS + UNWRAP_OVERLAP_MS;
 const EVERT_FINISH_MS = EVERT_OVERLAP_MS;
 const LAND_AFTER_UNWRAP_MS = PLAN_MS.spin[1] - PLAN_MS.unwrap[0];
 /** Fraction of POP spent shrinking onto the orb (one rest-to-rest quintic; the glass fades after it). */
-const POP_SHRINK_FRACTION = 0.6;
+const POP_SHRINK_FRACTION = POP_FADE_FROM;
 /**
  * The pop itself (spec §7.1 "overshoot"): while the glass fades the globe swells by up to this fraction of the
  * orb's size and falls back, `1 + POP_PUFF · 4f(1 − f)` for the fade `f` - zero value, velocity and
@@ -240,8 +241,6 @@ const POP_SHRINK_FRACTION = 0.6;
 const POP_PUFF = 0.18;
 /** Fraction of POP the empty glass globe takes to condense out of the vanishing page. */
 const POP_GLASS_FRACTION = 0.4;
-/** The glass starts its exit when POP is this far along (the globe is on the orb by then, ~peak). */
-const POP_FADE_FROM = POP_SHRINK_FRACTION;
 /** Re-plan of a settled radius/centre toward a new viewport. */
 const RESIZE_MS = 300;
 /** …and the shortest re-plan of one still in flight. */

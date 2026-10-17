@@ -302,6 +302,7 @@ describe('worker protocol (S§3.3)', () => {
     { type: 'stage', stage: 'evert', t: 600 },
     { type: 'need-after-by', deadline: 3000 },
     { type: 'unwrap-done' },
+    { type: 'pop-fade', t: 4000, fadeMs: 208 },
     { type: 'probe-result', ok: true },
     { type: 'done', frames: 1, dropped: 0, p95: 16.7 },
     { type: 'context-lost' },
@@ -398,7 +399,7 @@ describe('constants (S§12, S§8.2, S§6.2)', () => {
       WRAP_MS: 700,
       EVERT_MS: 3200,
       UNWRAP_MS: 700,
-      POP_MS: 300,
+      POP_MS: 520,
       EVERT_OVERLAP_MS: 100,
       UNWRAP_OVERLAP_MS: 100,
       GLOBE_FILL: 0.88,
@@ -424,12 +425,12 @@ describe('constants (S§12, S§8.2, S§6.2)', () => {
     expect([...constants.LUT_SIZE]).toEqual([1024, 512]);
   });
 
-  it('the derived plan reproduces the S§7.1 table and sums to 4.9 s', () => {
+  it('the derived plan reproduces the S§7.1 table and sums to 5.12 s', () => {
     const p = constants.PLAN_MS;
     expect([...p.evert]).toEqual([600, 3900]);
     expect([...p.unwrap]).toEqual([3800, 4600]);
-    expect([...p.pop]).toEqual([4600, 4900]);
-    expect(p.total).toBe(4900);
+    expect([...p.pop]).toEqual([4600, 5120]);
+    expect(p.total).toBe(5120);
     expect(constants.GLOBE_RADIUS_FRACTION).toBeCloseTo(0.44, 12);
   });
 

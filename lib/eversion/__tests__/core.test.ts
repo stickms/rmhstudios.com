@@ -5,8 +5,9 @@
  * file pins the state machine.
  */
 
-import { describe, expect, it } from 'vitest';
-import { createEversionCore } from '../gl/core';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { POP_FADE_MS } from '../constants';
+import { createEversionCore, HIDDEN_SETTLE_GRACE_MS } from '../gl/core';
 import type { CoreDeps } from '../gl/core';
 import { ScriptedTimeline } from '../gl/__fixtures__/scripted-timeline';
 import { Timeline } from '../timeline';
@@ -87,7 +88,7 @@ class FakeRenderer implements RendererApi {
 
 function rig(
   timelineOptions?: ConstructorParameters<typeof ScriptedTimeline>[0],
-  envOptions: { available?: boolean; webgl2?: boolean } = {},
+  envOptions: { available?: boolean; webgl2?: boolean; realTimeline?: boolean } = {},
 ) {
   const renderer = new FakeRenderer();
   const timelines: ScriptedTimeline[] = [];
@@ -101,7 +102,8 @@ function rig(
       renderer.lostCallback = options.onContextLost;
       return renderer;
     },
-    createTimeline: () => {
+    createTimeline: (config) => {
+      if (envOptions.realTimeline) return new Timeline(config);
       const t = new ScriptedTimeline(timelineOptions);
       timelines.push(t);
       return t;
@@ -563,5 +565,142 @@ describe('createEversionCore: robustness', () => {
     expect(calls[0]![2]).toEqual({ cx: 5, cy: 6, radius: 7 });
     r.send({ type: 'resize', viewport: { w: 641, h: 400, dpr: 1 } });
     expect(calls[1]![2]).toEqual({ cx: 5, cy: 6, radius: 7 });
+  });
+});
+
+/* ── The REAL Timeline: hidden settling, pop-fade, failure ──────────────────── */
+
+describe('createEversionCore with the real Timeline', () => {
+  const EXPECTED = ['wrap', 'evert', 'gate-open', 'unwrap', 'unwrap-done', 'reveal', 'pop', 'done'];
+  const realRig = () => rig(undefined, { realTimeline: true });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** The message types around the pop, in order: stages and the fade. */
+  const popOrder = (r: ReturnType<typeof rig>) =>
+    r.out.flatMap((m) =>
+      m.type === 'stage'
+        ? m.stage === 'pop' ||
+          m.stage === 'done' ||
+          m.stage === 'reveal' ||
+          m.stage === 'unwrap-done'
+          ? [m.stage]
+          : []
+        : m.type === 'pop-fade'
+          ? ['pop-fade']
+          : [],
+    );
+
+  it('abort while hidden: unwrap-done, reveal, pop, pop-fade, done, synchronously, nothing drawn', () => {
+    const r = realRig();
+    boot(r);
+    r.send({ type: 'visibility', hidden: true });
+    r.send({ type: 'start', t0: 0 });
+    r.send({ type: 'abort' });
+    expect(r.stages()).toEqual(EXPECTED);
+    expect(popOrder(r)).toEqual(['unwrap-done', 'reveal', 'pop', 'pop-fade', 'done']);
+    expect(r.renderer.draws).toHaveLength(0);
+    expect(r.pending).toBe(0);
+    expect(r.types().filter((t) => t === 'done')).toHaveLength(1);
+    // The late `reveal` from the main thread is a no-op.
+    r.send({ type: 'reveal' });
+    expect(r.types().filter((t) => t === 'done')).toHaveLength(1);
+  });
+
+  it('fast-forward while hidden settles the same way', () => {
+    const r = realRig();
+    boot(r);
+    r.send({ type: 'visibility', hidden: true });
+    r.send({ type: 'start', t0: 0 });
+    r.send({ type: 'fast-forward' });
+    expect(r.stages()).toEqual(EXPECTED);
+    expect(popOrder(r)).toEqual(['unwrap-done', 'reveal', 'pop', 'pop-fade', 'done']);
+    expect(r.renderer.draws).toHaveLength(0);
+  });
+
+  it('the tab hiding AFTER an abort or fast-forward is already in flight settles at once', () => {
+    for (const hurry of ['abort', 'fast-forward'] as const) {
+      const r = realRig();
+      boot(r);
+      r.send({ type: 'start', t0: 0 });
+      r.frame(1016);
+      r.frame(1032);
+      r.send({ type: hurry });
+      expect(r.types()).not.toContain('done');
+      r.send({ type: 'visibility', hidden: true });
+      expect(r.stages().at(-1)).toBe('done');
+      expect(popOrder(r).slice(-5)).toEqual(['unwrap-done', 'reveal', 'pop', 'pop-fade', 'done']);
+      expect(r.pending).toBe(0);
+      expect(r.types().filter((t) => t === 'done')).toHaveLength(1);
+    }
+  });
+
+  it('a run left hidden settles to completion after the grace, not on return', () => {
+    vi.useFakeTimers();
+    const r = realRig();
+    boot(r);
+    r.send({ type: 'visibility', hidden: true });
+    r.send({ type: 'start', t0: 0 });
+    vi.advanceTimersByTime(HIDDEN_SETTLE_GRACE_MS - 1);
+    expect(r.types()).not.toContain('done');
+    vi.advanceTimersByTime(1);
+    expect(r.stages()).toEqual(EXPECTED);
+    expect(popOrder(r)).toEqual(['unwrap-done', 'reveal', 'pop', 'pop-fade', 'done']);
+    expect(r.renderer.draws).toHaveLength(0);
+    // Back on screen: nothing replays.
+    r.send({ type: 'visibility', hidden: false });
+    expect(r.pending).toBe(0);
+  });
+
+  it('a tab that comes back inside the grace keeps its run', () => {
+    vi.useFakeTimers();
+    const r = realRig();
+    boot(r);
+    r.send({ type: 'start', t0: 0 });
+    r.frame(1016);
+    r.send({ type: 'visibility', hidden: true });
+    vi.advanceTimersByTime(HIDDEN_SETTLE_GRACE_MS - 100);
+    r.send({ type: 'visibility', hidden: false });
+    vi.advanceTimersByTime(HIDDEN_SETTLE_GRACE_MS * 3);
+    expect(r.types()).not.toContain('done');
+    expect(r.pending).toBe(1);
+  });
+
+  it('a drawn run emits pop-fade once, between pop and done, as the glass starts to fade', () => {
+    const r = realRig();
+    boot(r);
+    r.send({ type: 'start', t0: 0 });
+    r.send({ type: 'abort' });
+    let now = 1016;
+    for (let i = 0; i < 1000 && r.pending > 0; i++, now += 16) {
+      r.frame(now);
+      if (r.stages().includes('unwrap-done') && !r.stages().includes('reveal'))
+        r.send({ type: 'reveal' });
+    }
+    expect(popOrder(r)).toEqual(['unwrap-done', 'reveal', 'pop', 'pop-fade', 'done']);
+    const fades = r.out.filter((m) => m.type === 'pop-fade');
+    expect(fades).toHaveLength(1);
+    expect(fades[0]).toMatchObject({ fadeMs: POP_FADE_MS });
+    // The first frame that drew the fade (popFade > 0) is the one the message follows.
+    const first = r.renderer.draws.findIndex((d) => d.popFade > 0);
+    expect(first).toBeGreaterThan(0);
+    const fadeAt = r.out.findIndex((m) => m.type === 'pop-fade');
+    const drawsBefore = r.out.slice(0, fadeAt).length;
+    expect(drawsBefore).toBeGreaterThan(0);
+    expect((fades[0] as { t: number }).t).toBeCloseTo(r.renderer.draws[first]!.t, 6);
+  });
+
+  it('a failing frame releases the page textures', () => {
+    const r = realRig();
+    boot(r);
+    r.send({ type: 'start', t0: 0 });
+    r.renderer.draw = () => {
+      throw new Error('boom');
+    };
+    r.frame(1016);
+    expect(r.out.at(-1)).toMatchObject({ type: 'error', fatal: true });
+    expect(r.renderer.log).toContain('release');
   });
 });
