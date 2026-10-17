@@ -13,7 +13,7 @@ another lane's _implementation_ — only on its _contract_.
 ## Implementation status
 
 T01-T37 are implemented and merged dark behind `isEversionEnabled()`; the
-flag (`EVERSION_ENABLED`) is `false` and stays so until T28 and T38 are done. What
+flag (`EVERSION_ENABLED`) was flipped to `true` by the owner ahead of T28 and T38. What
 remains, and what is known:
 
 - **T28 - owner visual sign-off** (the three themes, the projections, the eversion

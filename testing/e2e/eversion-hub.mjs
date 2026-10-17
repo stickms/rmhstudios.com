@@ -26,9 +26,9 @@
 //  dismiss-*   Escape, the X and an outside tap close the hub exactly as before
 //      (focus returns to the orb) and never start a run.
 //  preview   Settings → Appearance → Preview runs the effect in place.
-//  flag-off   without `?eversion` the hub is today's hub: no eversion marks, no
-//      overlay, no eversion module requests beyond the flag leaf, and a pin click
-//      navigates straight away.
+//  reduced-motion   with the effect on for everyone (`EVERSION_ENABLED`), the
+//      remaining way to get today's hub is `prefers-reduced-motion: reduce`: no
+//      eversion marks, no overlay, and a pin confirmation navigates straight away.
 //
 // Faking nothing: real router, real capture, real worker host (SwiftShader).
 // ─────────────────────────────────────────────────────────────────────────────
@@ -153,10 +153,18 @@ async function entryScenario(entry) {
     await confirm(s, entry);
 
     const start = await s.waitForMark(EVERSION_MARKS.start, { timeout: 20_000 });
-    check(name, start.detail?.entry === entry, `start.entry=${start.detail?.entry}, wanted ${entry}`);
+    check(
+      name,
+      start.detail?.entry === entry,
+      `start.entry=${start.detail?.entry}, wanted ${entry}`,
+    );
     check(name, (await phase(s)) === 'everting', `phase at start was ${await phase(s)}`);
     const urlAtStart = new URL(s.page.url()).pathname;
-    check(name, urlAtStart === '/games', `URL at start was ${urlAtStart} (navigate happens at start)`);
+    check(
+      name,
+      urlAtStart === '/games',
+      `URL at start was ${urlAtStart} (navigate happens at start)`,
+    );
 
     // Screenshots: mid-WRAP, mid-EVERSION, mid-UNWRAP (entry-release only).
     if (entry === 'release') {
@@ -179,8 +187,16 @@ async function entryScenario(entry) {
       (n) => EVERSION_MARKS[n],
     );
     const seen = order.map((n) => marks.find((m) => m.name === n)?.startTime);
-    check(name, seen.every((t) => t !== undefined), `missing marks: ${JSON.stringify(seen)}`);
-    check(name, seen.every((t, i) => i === 0 || t >= seen[i - 1]), `marks out of order: ${seen}`);
+    check(
+      name,
+      seen.every((t) => t !== undefined),
+      `missing marks: ${JSON.stringify(seen)}`,
+    );
+    check(
+      name,
+      seen.every((t, i) => i === 0 || t >= seen[i - 1]),
+      `marks out of order: ${seen}`,
+    );
 
     await s.page.waitForFunction(
       () => document.querySelector('.radial-hub')?.getAttribute('data-phase') === 'closed',
@@ -196,7 +212,11 @@ async function entryScenario(entry) {
       orbTab: document.querySelector('.radial-hub__orb').tabIndex,
     }));
     check(name, after.path === '/games', `landed on ${after.path}`);
-    check(name, !after.overlay && !after.cover && !after.settle, `leftovers: ${JSON.stringify(after)}`);
+    check(
+      name,
+      !after.overlay && !after.cover && !after.settle,
+      `leftovers: ${JSON.stringify(after)}`,
+    );
     check(name, after.orbVisible === '1' && after.orbTab === 0, `orb ${JSON.stringify(after)}`);
     // S#25: focus is where the router leaves it for any navigation - in the new
     // page's `main`, or on the body (the router's default) - and never stranded on
@@ -211,7 +231,11 @@ async function entryScenario(entry) {
       };
     });
     check(name, !focus.inHub, `focus left inside the hub/overlay: ${JSON.stringify(focus)}`);
-    check(name, focus.inMain || focus.onBody, `focus is neither in main nor on body: ${JSON.stringify(focus)}`);
+    check(
+      name,
+      focus.inMain || focus.onBody,
+      `focus is neither in main nor on body: ${JSON.stringify(focus)}`,
+    );
     await s.page.focus('.radial-hub__orb');
     check(
       name,
@@ -279,10 +303,10 @@ async function previewScenario() {
   }
 }
 
-/** Without the flag the hub is today's hub. */
-async function flagOffScenario() {
-  const name = 'flag-off';
-  const { s, errors, requests } = await fresh({ eversion: false });
+/** Under reduced motion the hub is today's hub (the effect is on for everyone otherwise). */
+async function reducedMotionScenario() {
+  const name = 'reduced-motion';
+  const { s, errors } = await fresh({ eversion: false, reducedMotion: 'reduce' });
   try {
     await s.page.waitForTimeout(3000);
     await openHub(s);
@@ -290,16 +314,18 @@ async function flagOffScenario() {
     await s.page.keyboard.press('Enter');
     await s.page.waitForURL('**/games', { timeout: SLOW });
     await s.page.waitForTimeout(1000);
-    check(name, (await s.marks()).length === 0, 'eversion marks with the flag off');
+    // The post-load warm-up may still run (its `prefetch` mark); no RUN may start.
+    const runMarks = (await s.marks()).filter((m) => m.name !== EVERSION_MARKS.prefetch);
+    check(
+      name,
+      runMarks.length === 0,
+      `eversion run marks under reduced motion: ${runMarks.map((m) => m.name)}`,
+    );
     check(
       name,
       !(await s.page.evaluate(() => !!document.querySelector('.eversion-overlay'))),
-      'overlay present with the flag off',
+      'overlay present under reduced motion',
     );
-    const heavy = requests.filter((u) =>
-      /eversion\/(prefetch|capture|gl\/|debug)|EversionBridge|useEversionController|modern-screenshot/.test(u),
-    );
-    check(name, heavy.length === 0, `eversion modules fetched with the flag off: ${heavy.slice(0, 3)}`);
     check(name, errors.length === 0, `errors: ${errors.join(' | ')}`);
   } finally {
     await s.close();
@@ -314,7 +340,7 @@ const scenarios = [
   ['dismiss-x', () => dismissScenario('x')],
   ['dismiss-outside', () => dismissScenario('outside')],
   ['preview', previewScenario],
-  ['flag-off', flagOffScenario],
+  ['reduced-motion', reducedMotionScenario],
 ].filter(([n]) => n.includes(ONLY));
 
 console.log(`eversion-hub: ${BASE_URL} profile=${PROFILE} theme=${THEME}`);

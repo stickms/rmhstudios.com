@@ -300,8 +300,9 @@ of the veil-and-navigate: the current page **WRAPs** onto the liquid globe throu
 a map projection, the globe performs Thurston's corrugated sphere **EVERSION**
 with the destination on the inside, the destination **UNWRAPs** onto the live
 page, and a short **POP** shrinks the empty glass globe back onto the hub's orb.
-It is dark: `EVERSION_ENABLED` is `false` until the device lab (T38) and the
-owner's visual sign-off (T28) are done.
+It is **on** for every visitor (`EVERSION_ENABLED = true`), enabled by the owner
+ahead of the device lab (T38) and visual sign-off (T28); set it back to `false`
+to restore today's navigation site-wide.
 
 **Pointers.** The module map, conventions, POP, router/fault cases and
 render-side robustness live in [`lib/eversion/README.md`](../../lib/eversion/README.md);

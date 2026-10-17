@@ -1,7 +1,7 @@
 # Globe Eversion — Navigation Transition Implementation Spec
 
 **Date:** 2026-10-17
-**Status:** Implemented (T01-T37) behind `EVERSION_ENABLED = false` (`lib/eversion/flags.ts`); `?eversion` forces it on for a page load. Remaining: owner sign-off (T28), the device lab (T38) and the one-line flag flip (T39) - see _Implementation status_ below. The amendments recorded in §4–§12 (marked _Amended_) are where the build departed from this text; where they differ, they win.
+**Status:** Implemented (T01-T37) and **enabled for all visitors** (`EVERSION_ENABLED = true` in `lib/eversion/flags.ts`), flipped by the owner ahead of the device lab to judge it in production. Remaining: owner sign-off (T28) and the device lab (T38) - see _Implementation status_ below. The amendments recorded in §4–§12 (marked _Amended_) are where the build departed from this text; where they differ, they win.
 **Task plan:** [`2026-10-17-globe-eversion-tasks.md`](./2026-10-17-globe-eversion-tasks.md)
 (39 tasks, dependency graph, parallel waves, traceability to the tests in §11).
 **Scope:** The liquid-globe hub navigator only (`components/radial/LiquidGlobe.tsx`
@@ -22,7 +22,7 @@ via `components/radial/RadialHub.tsx`). Not the Kaikai debt globe, not the Rebar
 ## Implementation status (T39 docs pass)
 
 Tasks T01-T37 are implemented and merged dark behind `isEversionEnabled()`; the
-flag (`EVERSION_ENABLED`) is `false` and stays so until T28 and T38 are done. What
+flag (`EVERSION_ENABLED`) was flipped to `true` by the owner ahead of T28 and T38. What
 remains, and what is known:
 
 - **T28 - owner visual sign-off** (the three themes, the projections, the eversion

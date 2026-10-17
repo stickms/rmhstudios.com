@@ -1,20 +1,19 @@
 /**
  * The rollout switch (tasks §0 rule 5, T39).
  *
- * Every eversion task merges to `main` behind {@link isEversionEnabled}, which
- * is `false` for visitors until the device lab signs off (T38) and T39 flips
- * {@link EVERSION_ENABLED} in a commit of its own. Reverting that one line
- * restores today's navigation exactly. Until then the e2e suites force the
- * effect on with `?eversion` in the URL, so the work is testable in the built
- * app and invisible to everyone else.
+ * {@link EVERSION_ENABLED} is on for every visitor: the owner enabled it ahead of
+ * the device lab (T38) and visual sign-off (T28), to judge it in production.
+ * Setting it back to `false` restores today's navigation exactly, with
+ * `?eversion` still forcing the effect on for a page load.
  *
- * Client-only in effect: on the server there is no `location`, so the answer is
- * always `false` — the effect has no server-rendered form and the SSR output
- * must not depend on it.
+ * The answer is the same on the server (no `location`, so the query adds
+ * nothing): SSR and hydration agree. Whether a particular navigation may run it
+ * (reduced motion, WebGL2, capture ready) is decided client-side by the
+ * controller.
  */
 
-/** Production default. Flipped to `true` by T39, alone, after the device lab (T38). */
-export const EVERSION_ENABLED = false;
+/** Production default: on. Flip to `false` to turn the effect off site-wide. */
+export const EVERSION_ENABLED = true;
 
 /**
  * The query overrides, read ONCE per page load.
@@ -52,8 +51,8 @@ function queryFlags(): QueryFlags {
 
 /**
  * Whether the eversion may run this page-load: the production flag, or the
- * `?eversion` override (latched at first read, see above). `false` on the server
- * and whenever `location` throws.
+ * `?eversion` override (latched at first read, see above). Without `location`
+ * (the server, or when it throws) only the production flag counts.
  *
  * This answers only "is the feature on". Whether a particular navigation is
  * ELIGIBLE (reduced motion, WebGL2, capture ready) is the controller's

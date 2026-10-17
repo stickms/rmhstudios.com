@@ -535,46 +535,42 @@ describe('isEversionEnabled (T39 rollout switch)', () => {
     resetEversionFlagsForTests();
   });
 
-  it('latches ?eversion for the page load, so client navigation does not turn it off', () => {
-    vi.stubGlobal('location', { search: '?eversion&eversion-debug=1' });
-    expect(isEversionEnabled()).toBe(true);
+  // The effect is on for everyone (EVERSION_ENABLED), so the query override now
+  // matters only for `?eversion-debug`; its latch is what these cases pin.
+  it('latches the query for the page load, so client navigation does not drop it', () => {
+    vi.stubGlobal('location', { search: '?eversion-debug=1' });
+    expect(isEversionDebugEnabled()).toBe(true);
     vi.stubGlobal('location', { search: '' });
-    expect(isEversionEnabled()).toBe(true);
     expect(isEversionDebugEnabled()).toBe(true);
   });
 
   it('does not latch a read made with no location (SSR)', () => {
     vi.stubGlobal('location', undefined);
-    expect(isEversionEnabled()).toBe(false);
-    vi.stubGlobal('location', { search: '?eversion' });
-    expect(isEversionEnabled()).toBe(true);
-  });
-
-  it('is off by default', () => {
-    expect(EVERSION_ENABLED).toBe(false);
-    vi.stubGlobal('location', { search: '' });
-    expect(isEversionEnabled()).toBe(false);
-  });
-
-  it('is off on the server, where there is no location', () => {
-    vi.stubGlobal('location', undefined);
-    expect(isEversionEnabled()).toBe(false);
-  });
-
-  it('turns on with ?eversion, whatever else is in the query', () => {
-    vi.stubGlobal('location', { search: '?eversion' });
-    expect(isEversionEnabled()).toBe(true);
-    resetEversionFlagsForTests();
-    vi.stubGlobal('location', { search: '?a=1&eversion=1' });
-    expect(isEversionEnabled()).toBe(true);
-    // The debug flag is a different key and does not enable the effect.
-    resetEversionFlagsForTests();
+    expect(isEversionDebugEnabled()).toBe(false);
     vi.stubGlobal('location', { search: '?eversion-debug=1' });
-    expect(isEversionEnabled()).toBe(false);
     expect(isEversionDebugEnabled()).toBe(true);
   });
 
-  it('is false, not an exception, when location throws', () => {
+  it('is on by default', () => {
+    expect(EVERSION_ENABLED).toBe(true);
+    vi.stubGlobal('location', { search: '' });
+    expect(isEversionEnabled()).toBe(true);
+  });
+
+  it('answers the same on the server, so SSR and hydration agree', () => {
+    vi.stubGlobal('location', undefined);
+    expect(isEversionEnabled()).toBe(true);
+  });
+
+  it('still honours ?eversion, and the debug key does not imply it', () => {
+    vi.stubGlobal('location', { search: '?a=1&eversion=1' });
+    expect(isEversionEnabled()).toBe(true);
+    resetEversionFlagsForTests();
+    vi.stubGlobal('location', { search: '?eversion' });
+    expect(isEversionDebugEnabled()).toBe(false);
+  });
+
+  it('is the production flag, not an exception, when location throws', () => {
     Object.defineProperty(globalThis, 'location', {
       configurable: true,
       get() {
@@ -582,7 +578,7 @@ describe('isEversionEnabled (T39 rollout switch)', () => {
       },
     });
     try {
-      expect(isEversionEnabled()).toBe(false);
+      expect(isEversionEnabled()).toBe(EVERSION_ENABLED);
       expect(isEversionDebugEnabled()).toBe(false);
     } finally {
       delete (globalThis as { location?: unknown }).location;
