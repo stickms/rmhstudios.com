@@ -853,8 +853,21 @@ DOM capture are tested in e2e only.
 9. **Time continuity:** `max_p ‖F(p, e+δ) − F(p, e)‖ ≤ L·δ` (Lipschitz), and
    the second difference is bounded (C¹ in time). Both are tested at
    δ = 1/2000 across every stage window boundary.
-10. **Bounded:** `max ‖F‖ ≤ 1.35` for all `e`. Radius `0.44·min(W,H)` × 1.35
-    must stay inside the viewport, so the effect never clips.
+10. **Bounded:** `max ‖F‖ ≤ 1.35` for all `e`. _(Amended 2026-10-17.)_ The
+    original wording — radius `0.44·min(W,H)` × 1.35 "stays inside the viewport"
+    — was wrong twice over: 0.44 × 1.35 = 0.594 already exceeds the half short
+    side (0.5), and what reaches the screen is the PROJECTED extent, which adds
+    the perspective magnification `P/(P − z/2)` of the near side (1.365 × radius
+    at its widest, `e` ∈ [0.15, 0.65], for any spin and tilt). The requirement is
+    now: at every `e`, the effective radius × the projected half-extent of the
+    surface is ≤ `0.47·min(W,H)`. This is met by multiplying the radius channel
+    by a C² function of `e` (`eversionRadiusFit`: 1 at `e = 0` and `e ≥ 0.8`,
+    ≈ 0.774 while the surface is widest; a function of `e` rather than a planned
+    channel so it holds under every gate wait and fast-forward). A constant
+    EVERT radius was rejected: it would shrink the globe at the WRAP hand-off
+    and again at UNWRAP, where the 88 % fill (Q15) is the contract. Tested by
+    sampling the real timeline's channel values and evaluating the oracle, with
+    perspective, on a grid (`timeline-smooth.test.ts`).
 11. **Symmetry:** the halfway model `F(·, 0.5)` is invariant under the expected
     symmetry (rotation by `π/n` composed with the reflection), to 1e-6.
 
@@ -878,7 +891,16 @@ DOM capture are tested in e2e only.
     1440×900, 2560×1440) and DPR 1/2/3.
 16. **No fly-ins:** at `s = 0` every glass vertex is on the page border. The
     max screen-space vertex speed over the WRAP channel is ≤ 3× the median
-    vertex speed.
+    vertex speed. _(Amended 2026-10-17.)_ The speed is NORMALISED per vertex by
+    that vertex's own screen route length (`|screen(s=1) − screen(s=0)|`), then
+    max/median ≤ 3. The raw pixel speed ratio is 5.5–18.5 across the five
+    projections and three viewports (reported by `morph.test.ts`, not gated):
+    a page corner travels ~10× as far as a point near the front in the same
+    time, which is geometry, not a fly-in. Normalising isolates the temporal
+    profile, which is what a fly-in would distort. S#15 also covers the AFTER
+    side: at UNWRAP end the vertex is the page pixel of `P(M_after·p)`, and the
+    seam-left column (θ = −π) takes the page's left edge exactly as the shader's
+    clamped LUT lookup does.
 
 **Timeline (`timeline.test.ts`)** — property-based, 10 000 seeded runs, each
 with a random fast-forward instant, random AFTER-arrival time (or never),

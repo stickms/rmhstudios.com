@@ -493,8 +493,13 @@ export interface TimelineApi {
   afterFailed(now: number): void;
   /** Fast-forward with the gate skipped once AFTER is unavailable (spec §9.4 back/forward). */
   abort(now: number): void;
-  /** The viewport changed: re-plan the radius/centre channels toward the new targets. */
-  resize(now: number, viewport: Viewport): void;
+  /**
+   * The viewport changed: re-plan the radius/centre channels toward the new targets.
+   * `orb` (additive, optional) is the orb's rect in the NEW layout: POP's target
+   * glides to it, so a resize that moves the orb mid-flight does not leave POP
+   * aiming at the old position. Omitted, the orb stays where it was.
+   */
+  resize(now: number, viewport: Viewport, orb?: OrbRect): void;
   /** The live DOM is visible underneath: begin `pageAlpha` 1 → 0 and POP. */
   reveal(now: number): void;
   /** Stages reached since the last call, in order; the list is then cleared. */

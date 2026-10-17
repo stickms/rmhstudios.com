@@ -34,7 +34,7 @@ import {
   segmentEnd,
   setSegment,
 } from '../quintic';
-import { Timeline } from '../timeline';
+import { Timeline, eversionRadiusFit } from '../timeline';
 import {
   CHANNEL_IDS,
   STAGE_IDS,
@@ -243,7 +243,9 @@ describe('the default plan (spec §7.1)', () => {
     runTo(tl, wall, 700, 5);
     const s = tl.tick(wall.now);
     expect(s.wrap).toBe(1);
-    expect(s.radius).toBeCloseTo(GLOBE_RADIUS_FRACTION * 800, 9);
+    // EFFECTIVE radius: the channel (0.44·min) × the extent fit at the live `e` (1 − O(e³) just after 600 ms).
+    expect(s.radius).toBeCloseTo(GLOBE_RADIUS_FRACTION * 800 * eversionRadiusFit(s.evert), 9);
+    expect(GLOBE_RADIUS_FRACTION * 800 - s.radius).toBeLessThan(1e-4);
     expect(s.centreX).toBeCloseTo(500, 9);
     expect(s.centreY).toBeCloseTo(400, 9);
     expect(s.hubFade).toBe(0);
@@ -300,12 +302,12 @@ describe('the default plan (spec §7.1)', () => {
     }
   });
 
-  it('copes with a hub thrown too hard to land without overshoot by lowering the velocity', () => {
+  it('copes with a hub thrown too hard for one quintic by braking it, keeping the velocity (C¹)', () => {
     const tl = new Timeline(config({ globe: { yawVel: 900, yaw: 5 } }));
     expect(tl.spinTarget - 5 * DEG).toBeLessThanOrEqual(SPIN_MAX_REMAINING_TURNS * TAU);
     const v = new Float64Array(3);
     tl.sample('spin', 0, v);
-    expect(v[1]!).toBeLessThan(900 * DEG * 0.001);
+    expect(v[1]!).toBeCloseTo(900 * DEG * 0.001, 12);
   });
 
   it('pops with an overshoot that settles, ends on the orb, and fires the second ripple', () => {
@@ -510,13 +512,13 @@ describe('resize (spec §9.4)', () => {
     tl.resize(wall.now, { w: 600, h: 900, dpr: 1 });
     runTo(tl, wall, 1000);
     let s = tl.tick(wall.now);
-    expect(s.radius).toBeCloseTo(GLOBE_RADIUS_FRACTION * 600, 9);
+    expect(s.radius).toBeCloseTo(GLOBE_RADIUS_FRACTION * 600 * eversionRadiusFit(s.evert), 9);
     expect(s.centreX).toBeCloseTo(300, 9);
     expect(s.centreY).toBeCloseTo(450, 9);
     tl.resize(wall.now, { w: 1000, h: 400, dpr: 1 });
     runTo(tl, wall, 1500);
     s = tl.tick(wall.now);
-    expect(s.radius).toBeCloseTo(GLOBE_RADIUS_FRACTION * 400, 9);
+    expect(s.radius).toBeCloseTo(GLOBE_RADIUS_FRACTION * 400 * eversionRadiusFit(s.evert), 9);
     expect(s.centreX).toBeCloseTo(500, 9);
   });
 });
@@ -548,9 +550,17 @@ describe('clock (spec §7.7)', () => {
 
 describe('tick cost', () => {
   it('allocates nothing in steady state and costs microseconds', () => {
+    // Warm every branch `write` has (the radius fit's shrink and grow windows included — a path
+    // first taken inside the measurement would run unoptimised and box doubles): drive a few
+    // whole timelines first.
+    for (let k = 0; k < 12; k++) {
+      const w = started();
+      w.tl.afterReady(w.wall.now);
+      runTo(w.tl, w.wall, PLAN_MS.total + 200, 3);
+    }
     const { tl, wall } = started();
     tl.afterReady(wall.now);
-    // Warm the JIT, then measure in the long middle of the eversion, where no
+    // Then measure in the long middle of the eversion, where no
     // stage transition (which pushes its one event record) can fall inside.
     runTo(tl, wall, 1000);
     for (let i = 0; i < 50_000; i++) tl.tick(wall.now + i * 0.01);
@@ -671,6 +681,7 @@ function scenario(seed: number, out: Outcome): void {
   let afterSeen = false;
   let pi = 0;
   let revealedAt = false;
+  let spinDir = 0;
   let stepsLeft = 20_000;
 
   const drain = (now: number) => {
@@ -740,7 +751,9 @@ function scenario(seed: number, out: Outcome): void {
     lastClock = snap.t;
     const goal = tl.spinTarget;
     if (goal === goal) {
-      const rem = goal - snap.spin;
+      // Direction of the landing: set by the first goal (a hub thrown backwards lands backwards).
+      if (spinDir === 0 && Math.abs(goal - snap.spin) > 1e-9) spinDir = Math.sign(goal - snap.spin);
+      const rem = (goal - snap.spin) * (spinDir || 1);
       if (rem < -SPIN_TOL || rem > SPIN_MAX_REMAINING_TURNS * TAU + SPIN_TOL) {
         fail(`spin remaining ${rem} at t=${snap.t}`);
       }
@@ -801,7 +814,14 @@ function scenario(seed: number, out: Outcome): void {
   );
   if (doneT > bound + MAX_DT_MS + 1e-6) fail(`done at ${doneT} > ${bound}`);
 
-  // 21: the spin ends aligned with zero velocity and acceleration.
+  // 21: the spin ends aligned with zero velocity and acceleration. After a long gate wait the
+  // landing is speed-capped and may outlast `done` (it is orb-sized glass by then): let it finish.
+  for (let k = 0; k < 100; k++) {
+    tl.sample('spin', t0 + wall, sa, 0);
+    if (sa[1] === 0 && sa[2] === 0) break;
+    wall += MAX_DT_MS;
+    tl.tick(t0 + wall);
+  }
   const now = t0 + wall;
   tl.sample('spin', now, sa, 0);
   const turns = (sa[0]! - align) / TAU;

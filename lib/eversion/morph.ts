@@ -55,6 +55,7 @@
 
 import { GLOBE_PERSP } from '../globe';
 import { WRAP_WAVE } from './constants';
+import { THETA_MIN } from './domain';
 import type { FitParams, Projection, Viewport } from './types';
 
 /** The perspective camera for one frame. */
@@ -83,6 +84,9 @@ export function cameraFor(viewport: Viewport, radius: number, out?: Camera): Cam
   return cam;
 }
 
+/** How far inside the domain the seam-left column is evaluated — see {@link flatPosition}. */
+const SEAM_NUDGE = 1e-9;
+
 /**
  * The flat position of sphere point `(θ, φ)` under `projection`/`fit`: the page
  * pixel of its (clamped) extended UV, in camera space (`z = 0`), written to
@@ -94,6 +98,16 @@ export function cameraFor(viewport: Viewport, radius: number, out?: Camera): Cam
  *
  * Clamping a UV that left `[0, 1]²` leaves at least one coordinate at exactly 0
  * or 1, which is what puts every glass vertex ON the page border (S#16).
+ *
+ * **The seam column.** The mesh duplicates its first column: θ = −π is the
+ * seam's LEFT side and θ = +π its right. `wrapTheta` is half-open and maps −π to
+ * +π, so a naive `extended(−π, φ)` lands the left column on the page's RIGHT edge
+ * (u = 1) and the first strip of the mesh would span the whole page. The shader
+ * never has that problem — it reads the baked LUT with a clamped lookup, which
+ * returns column 0 (u ≈ 0) at θ = −π. To be the shader's reference this function
+ * nudges a seam-left θ a hair inside the domain (`SEAM_NUDGE`, 1e-9 rad ≈ 1e-9
+ * of a page width: far below a pixel) so the continuation is taken from the
+ * correct side.
  */
 export function flatPosition(
   theta: number,
@@ -104,6 +118,7 @@ export function flatPosition(
   out: Float64Array,
   offset = 0,
 ): void {
+  if (theta <= THETA_MIN + SEAM_NUDGE) theta = THETA_MIN + SEAM_NUDGE;
   // `out` doubles as the scratch for the UV: the projection writes its two
   // numbers there, then they are overwritten in place by the position.
   projection.extended(theta, phi, fit, out, offset);

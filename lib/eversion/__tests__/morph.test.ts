@@ -1,60 +1,22 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 
-import { GLOBE_RADIUS_FRACTION } from '../constants';
-import { spherePoint } from '../domain';
+import { GLOBE_RADIUS_FRACTION, LUT_SIZE } from '../constants';
+import { spherePoint, THETA_MAX, THETA_MIN } from '../domain';
 import { cameraFor, flatPosition, morphPosition, projectToViewport, wrapWeight } from '../morph';
-import type { EquirectFit, FitParams, Projection, Viewport } from '../types';
+import { afterDomainTransform } from '../orientation';
+import { PROJECTIONS } from '../projections';
+import { bakeLut, sampleLut } from '../projection-lut';
+import type { FitParams, Projection, Viewport } from '../types';
 
 /*
- * Morph tests — spec §11.1 tests 15 and 16.
- *
- * The tests are written against the `Projection` contract, not a particular
- * projection. `MORPH_TEST_PROJECTIONS` is the hook: it lists what the suite runs
- * over. Today it holds a local equirectangular double (the real projections are
- * implemented by other tasks); the orchestrator swaps in
- * `Object.values(PROJECTIONS)` from '../projections' once they land.
+ * Morph tests — spec §11.1 tests 15 and 16, over all five real projections.
  */
 
-/** Equirectangular, honouring the contract (spec §5.3: width ↔ 360° if A ≤ ½, else height ↔ 180°). */
-const equirectDouble: Projection = {
-  id: 'equirect',
-  fit(w, h) {
-    const A = h / w;
-    const wide = A <= 0.5;
-    const fit: EquirectFit = {
-      kind: 'equirect',
-      aspect: A,
-      policy: wide ? 'width' : 'height',
-      lonHalf: wide ? Math.PI : Math.PI / (2 * A),
-      phiMax: wide ? Math.PI * A : Math.PI / 2,
-      halfW: wide ? Math.PI : Math.PI / (2 * A),
-      halfH: wide ? Math.PI * A : Math.PI / 2,
-    };
-    return fit;
-  },
-  forward(theta, phi, fit, out, offset = 0) {
-    this.extended(theta, phi, fit, out, offset);
-    const u = out[offset]!;
-    const v = out[offset + 1]!;
-    return u >= 0 && u <= 1 && v >= 0 && v <= 1;
-  },
-  extended(theta, phi, fit, out, offset = 0) {
-    const f = fit as EquirectFit;
-    const t = Math.atan2(Math.sin(theta), Math.cos(theta)); // wrap to (−π, π]
-    out[offset] = Math.min(Math.max(0.5 + t / (2 * f.halfW), -4), 5);
-    out[offset + 1] = Math.min(Math.max(0.5 - phi / (2 * f.halfH), -4), 5);
-  },
-  inverse(u, v, fit, out, offset = 0) {
-    const f = fit as EquirectFit;
-    out[offset] = (u - 0.5) * 2 * f.halfW;
-    out[offset + 1] = -(v - 0.5) * 2 * f.halfH;
-    return true;
-  },
-  singular: () => false,
-};
+/** The projections the suite runs over: every registered one. */
+export const MORPH_TEST_PROJECTIONS: readonly Projection[] = Object.values(PROJECTIONS);
 
-/** The projections the suite runs over; swap for `Object.values(PROJECTIONS)` when T04–T06 land. */
-export const MORPH_TEST_PROJECTIONS: readonly Projection[] = [equirectDouble];
+/** Raw (un-normalised) S#16 ratios, printed once at the end so the figure is on record. */
+const RAW_RATIOS: string[] = [];
 
 const VIEWPORTS: readonly { w: number; h: number }[] = [
   { w: 360, h: 780 },
@@ -100,7 +62,8 @@ function pagePixel(
   vp: Viewport,
 ): [number, number] {
   const uv = new Float64Array(2);
-  proj.extended(theta, phi, fit, uv);
+  // The seam-left column (θ = −π) belongs to the page's left edge, as in the shader.
+  proj.extended(theta <= THETA_MIN ? THETA_MIN + 1e-7 : theta, phi, fit, uv);
   return [Math.min(Math.max(uv[0]!, 0), 1) * vp.w, Math.min(Math.max(uv[1]!, 0), 1) * vp.h];
 }
 
@@ -190,6 +153,44 @@ describe.each(MORPH_TEST_PROJECTIONS.map((p) => [p.id, p] as const))('%s morph',
       expect(worst).toBeLessThan(0.5);
     });
 
+    // The same check for the UNWRAP end state: the vertex goes to the pixel of
+    // P(M_after · p) (gl/shaders.ts), with the weight's `d` taken from the rotated
+    // point, exactly as the shader does.
+    it.each(DPRS)('S#15 pixel-exact UNWRAP endpoints (M_after side) at DPR %i', (dpr) => {
+      const vp: Viewport = { w, h, dpr };
+      const fit = proj.fit(w, h);
+      const r = radiusFor(vp);
+      const cam = cameraFor(vp, r);
+      // R = −I, an arbitrary alignment: the check must hold for any M.
+      const M = afterDomainTransform(
+        new Float64Array([-1, 0, 0, 0, -1, 0, 0, 0, -1]),
+        [0, 1, 0],
+        0.7,
+      );
+      const flat = new Float64Array(3);
+      const sph = new Float64Array(3);
+      const pos = new Float64Array(3);
+      const scr = new Float64Array(2);
+      const p = new Float64Array(3);
+      let worst = 0;
+      for (const [theta, phi] of gridPoints()) {
+        spherePoint(theta, phi, p);
+        const lx = M[0]! * p[0]! + M[3]! * p[1]! + M[6]! * p[2]!;
+        const ly = M[1]! * p[0]! + M[4]! * p[1]! + M[7]! * p[2]!;
+        const lz = M[2]! * p[0]! + M[5]! * p[1]! + M[8]! * p[2]!;
+        const tTheta = Math.atan2(lx, lz);
+        const tPhi = Math.asin(Math.min(1, Math.max(-1, -ly)));
+        flatPosition(tTheta, tPhi, proj, fit, vp, flat);
+        spherePosition(theta, phi, r, sph);
+        const [px, py] = pagePixel(proj, tTheta, tPhi, fit, vp);
+        const d = Math.acos(Math.min(1, Math.max(-1, lz))) / Math.PI;
+        morphPosition(flat, sph, wrapWeight(0, d), pos);
+        projectToViewport(cam, pos, scr);
+        worst = Math.max(worst, Math.hypot(scr[0]! - px, scr[1]! - py) * dpr);
+      }
+      expect(worst).toBeLessThan(0.5);
+    });
+
     it('S#16 glass vertices lie on the page border at s = 0', () => {
       const vp: Viewport = { w, h, dpr: 1 };
       const fit = proj.fit(w, h);
@@ -238,6 +239,7 @@ describe.each(MORPH_TEST_PROJECTIONS.map((p) => [p.id, p] as const))('%s morph',
       // length isolates the TEMPORAL profile, which is what a fly-in would distort
       // (a vertex that waits and then dashes has a huge normalised peak).
       const STEPS = 120;
+      const rawSpeeds: number[] = [];
       const pos = new Float64Array(3);
       const a = new Float64Array(2);
       const b = new Float64Array(2);
@@ -254,7 +256,9 @@ describe.each(MORPH_TEST_PROJECTIONS.map((p) => [p.id, p] as const))('%s morph',
           projectToViewport(cam, pos, a);
           morphPosition(flats[v]!, spheres[v]!, wrapWeight((k + 1) / STEPS, ds[v]!), pos);
           projectToViewport(cam, pos, b);
-          speeds.push((Math.hypot(b[0]! - a[0]!, b[1]! - a[1]!) * STEPS) / travel);
+          const pxSpeed = Math.hypot(b[0]! - a[0]!, b[1]! - a[1]!) * STEPS;
+          speeds.push(pxSpeed / travel);
+          rawSpeeds.push(pxSpeed);
         }
       }
       // Frames where a vertex has not started (or has finished) are not "moving".
@@ -262,6 +266,56 @@ describe.each(MORPH_TEST_PROJECTIONS.map((p) => [p.id, p] as const))('%s morph',
       const median = moving[moving.length >> 1]!;
       const max = moving[moving.length - 1]!;
       expect(max / median).toBeLessThanOrEqual(3);
+      // Reported, not gated: the RAW pixel-speed ratio (route length included). Vertices
+      // have routes of very different lengths, so this is geometry, not a fly-in.
+      const rawMoving = rawSpeeds.filter((x) => x > 1e-6).sort((x, y) => x - y);
+      const rawRatio = rawMoving[rawMoving.length - 1]! / rawMoving[rawMoving.length >> 1]!;
+      RAW_RATIOS.push(`${proj.id} ${w}x${h}: raw max/median = ${rawRatio.toFixed(1)}`);
+      expect(Number.isFinite(rawRatio)).toBe(true);
     });
   });
 });
+
+afterAll(() => {
+  if (RAW_RATIOS.length)
+    console.warn(`S#16 raw speed ratios (not gated):\n${RAW_RATIOS.join('\n')}`);
+});
+
+describe.each(MORPH_TEST_PROJECTIONS.map((p) => [p.id, p] as const))(
+  '%s seam column agrees with the shader LUT',
+  (_id, proj) => {
+    // The mesh has a θ = −π column (seam-left) and a θ = +π column (seam-right). The shader reads the baked
+    // LUT with a clamped lookup: column 0 at −π, the last column at +π. flatPosition must land on the same
+    // page pixel (to within the LUT's own sampling error: a texel is ~1/1024 of a page).
+    it.each([
+      { w: 1440, h: 900 },
+      { w: 360, h: 780 },
+    ])('θ = ±π at $w×$h', ({ w, h }) => {
+      const vp: Viewport = { w, h, dpr: 1 };
+      const fit = proj.fit(w, h);
+      const lut = bakeLut(proj, fit, LUT_SIZE);
+      const flat = new Float64Array(3);
+      const uv = new Float64Array(2);
+      let worstFrac = 0;
+      for (const theta of [THETA_MIN, THETA_MAX]) {
+        for (let j = 1; j < 24; j++) {
+          // The antipode of the page centre (φ ≈ 0 on the back meridian) is a singular
+          // point of several projections: the LUT's texel is a step there, not a gradient.
+          if (Math.abs(j - 12) <= 1) continue;
+          const phi = -Math.PI / 2 + (Math.PI * j) / 24;
+          flatPosition(theta, phi, proj, fit, vp, flat);
+          sampleLut(lut, LUT_SIZE, theta, phi, uv);
+          const u = Math.min(Math.max(uv[0]!, 0), 1);
+          const v = Math.min(Math.max(uv[1]!, 0), 1);
+          worstFrac = Math.max(
+            worstFrac,
+            Math.abs(flat[0]! - (u - 0.5) * w) / w,
+            Math.abs(flat[1]! - (v - 0.5) * h) / h,
+          );
+        }
+      }
+      // Fraction of the page; a texel's worth of bilinear + clamp error.
+      expect(worstFrac).toBeLessThan(0.02);
+    });
+  },
+);

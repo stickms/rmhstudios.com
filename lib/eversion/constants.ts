@@ -184,8 +184,58 @@ export const POLE_EPS = 0.07;
  */
 export const IMMERSION_MIN = 0.05;
 
-/** `max ‖F‖` over the whole eversion (spec §11.1 test 10): the effect never clips. */
+/**
+ * `max ‖F‖` over the whole eversion (spec §11.1 test 10). Not by itself a no-clip guarantee: what
+ * reaches the screen is the projected extent, {@link PROJECTED_EXTENT_MAX} (amended test 10).
+ */
 export const MAX_EVERSION_EXTENT = 1.35;
+
+/**
+ * The PROJECTED half-extent of the everting surface, in units of the globe radius,
+ * including the perspective division and for ANY spin and any tilt up to ±90°
+ * (it varies by < 0.3 % with tilt). Measured on the oracle over a 128 × 64 grid
+ * at 0.01 steps of `e`: 1.3654 (the plateau for `e` ∈ [0.15, 0.65]), 1.0133 at
+ * `e = 0` (a sphere seen with perspective) and ≈ 1.008 for `e` ≥ 0.72. This is
+ * the design value with a 1 % margin over the grid; the test
+ * `eversion-extent` re-measures it on a different grid. It is larger than
+ * `MAX_EVERSION_EXTENT` because a point at depth `z` is magnified by
+ * `GLOBE_PERSP / (GLOBE_PERSP − z/2)` (spec §11.1 test 10, amended).
+ */
+export const PROJECTED_EXTENT_MAX = 1.38;
+/** The projected half-extent never exceeds this fraction of `min(W, H)` (the short edge is 0.5). */
+export const PROJECTED_EXTENT_LIMIT = 0.47;
+/**
+ * The radius fit window over `e` (see `eversionRadiusFit` in `timeline.ts`):
+ * the globe shrinks over `e` ∈ [shrinkFrom, shrinkTo] to the plateau factor and
+ * grows back over [growFrom, growTo]. The windows are chosen so the fit stays
+ * under `PROJECTED_EXTENT_LIMIT / (GLOBE_RADIUS_FRACTION · extent(e))` at every
+ * `e` — the steep parts of `extent(e)` are `e` ∈ [0.02, 0.15] and [0.65, 0.72].
+ */
+export const RADIUS_FIT_WINDOW = {
+  shrinkFrom: 0,
+  shrinkTo: 0.13,
+  growFrom: 0.64,
+  growTo: 0.8,
+} as const;
+
+/* ── Hand-off and landing limits (spec §7.3, §7.4) ────────────────────────── */
+
+/** The hub clamps its angular velocity to this (`MAX_SPIN` in LiquidGlobe); the timeline defends the same bound. */
+export const HUB_MAX_ANGULAR_SPEED_DEG = 900;
+/** Tilt the hub-inherited motion is kept within, where the hub pose allows (degrees). */
+export const TILT_SANE_DEG = 40;
+/**
+ * Planning cap on the spin's angular speed when it lands after a wait (deg/s).
+ * The nominal rest-to-rest 1.25-turn spin peaks at ≈ 196°/s; this is the same
+ * order, so the landing after a wait never whirls (spec §7.4).
+ */
+export const SPIN_LAND_MAX_DEG_PER_S = 240;
+/**
+ * Longest a post-gate spin landing can take (ms), from the speed cap and the
+ * largest travel (measured worst case over 30 000 phases/gate times: 2950 ms); it
+ * overlaps UNWRAP and POP and may outlast `done`. Asserted by the timeline tests.
+ */
+export const SPIN_LAND_MAX_MS = 3200;
 
 /* ── Shading (spec §10.3) ─────────────────────────────────────────────────── */
 

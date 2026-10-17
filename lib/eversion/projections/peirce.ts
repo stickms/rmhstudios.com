@@ -108,7 +108,8 @@ export const peirce: Projection = {
   id: 'peirce',
 
   fit(w: number, h: number): PeirceFit {
-    const aspect = h / w;
+    // Same degenerate-size guard as the other fits: a 0-px viewport must not give NaN/Infinity.
+    const aspect = Math.max(h, 1) / Math.max(w, 1);
     const a = PEIRCE_SQUARE_HALF;
     return {
       kind: 'peirce',

@@ -50,7 +50,7 @@
  */
 
 import { BEFORE_STALE_MS, CAPTURE_DPR_CAP, CAPTURE_EXCLUDE_SELECTORS } from './constants';
-import type { CaptureApi, CaptureResult } from './types';
+import type { CaptureApi, CaptureResult, Tier } from './types';
 
 /** Cancel handle for a scheduled callback. */
 export type Cancel = () => void;
@@ -90,8 +90,17 @@ export interface BeforeCaptureOptions {
   shouldCapture?: () => boolean;
   staleMs?: number;
   idleTimeoutMs?: number;
-  /** Capture scale ceiling. Tier is not known at open time, so default to the largest. */
+  /**
+   * Capture scale ceiling. Overrides `tier` when given.
+   */
   scaleCap?: number;
+  /**
+   * The render tier, or a getter for it (it can be resolved after the scheduler is
+   * built). Spec §6.2: the scale is `min(dpr, CAPTURE_DPR_CAP[tier])`, so a `low`
+   * device must not pay for a 1.5x bitmap. Read at each capture, not once. When
+   * absent or `undefined` the largest cap (`high`) applies — the old behaviour.
+   */
+  tier?: Tier | (() => Tier | undefined);
   exclude?: readonly string[];
   scheduleIdle?: IdleScheduler;
   now?: () => number;
@@ -123,7 +132,8 @@ export class BeforeCaptureScheduler {
   private readonly motionMs: number;
   private readonly staleMs: number;
   private readonly idleTimeoutMs: number;
-  private readonly scaleCap: number;
+  private readonly scaleCap: number | undefined;
+  private readonly tier: BeforeCaptureOptions['tier'];
   private readonly exclude: readonly string[];
   private readonly scheduleIdle: IdleScheduler;
   private readonly now: () => number;
@@ -154,7 +164,8 @@ export class BeforeCaptureScheduler {
     this.motionMs = options.motionMs;
     this.staleMs = options.staleMs ?? BEFORE_STALE_MS;
     this.idleTimeoutMs = options.idleTimeoutMs ?? IDLE_TIMEOUT_MS;
-    this.scaleCap = options.scaleCap ?? CAPTURE_DPR_CAP.high;
+    this.scaleCap = options.scaleCap;
+    this.tier = options.tier;
     this.exclude = options.exclude ?? CAPTURE_EXCLUDE_SELECTORS;
     this.scheduleIdle = options.scheduleIdle ?? defaultIdleScheduler;
     this.now = options.now ?? (() => Date.now());
@@ -274,16 +285,39 @@ export class BeforeCaptureScheduler {
     this.cancelScheduled = null;
   }
 
+  private currentScaleCap(): number {
+    if (this.scaleCap !== undefined) return this.scaleCap;
+    const tier = typeof this.tier === 'function' ? this.tier() : this.tier;
+    return CAPTURE_DPR_CAP[tier ?? 'high'];
+  }
+
+  /**
+   * Start a capture now unless one is running. If one IS running (a hub
+   * re-opened while the previous open's capture is still winding down after its
+   * abort), wait for it and then capture — silently dropping the request would
+   * leave the new open with no BEFORE at all.
+   */
+  private begin(epoch: number): void {
+    if (epoch !== this.epoch || this.disposed) return;
+    const running = this.inFlight;
+    if (running) {
+      void running.then(() => {
+        if (!this.inFlight) this.begin(epoch);
+      });
+      return;
+    }
+    if (this.shouldCapture && !this.shouldCapture()) return;
+    this.inFlight = this.run(epoch).finally(() => {
+      this.inFlight = null;
+    });
+  }
+
   /** Wait for an idle period, then capture. */
   private queue(epoch: number): void {
     this.cancelScheduled?.();
     this.cancelScheduled = this.scheduleIdle(() => {
       this.cancelScheduled = null;
-      if (epoch !== this.epoch || this.inFlight) return;
-      if (this.shouldCapture && !this.shouldCapture()) return;
-      this.inFlight = this.run(epoch).finally(() => {
-        this.inFlight = null;
-      });
+      this.begin(epoch);
     }, this.idleTimeoutMs);
   }
 
@@ -298,7 +332,7 @@ export class BeforeCaptureScheduler {
       result = await session.captureViewport({
         phase: 'before',
         exclude: this.exclude,
-        scaleCap: this.scaleCap,
+        scaleCap: this.currentScaleCap(),
         signal: abort.signal,
       });
     } catch (err) {

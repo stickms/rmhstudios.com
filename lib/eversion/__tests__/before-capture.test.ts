@@ -259,4 +259,48 @@ describe('BeforeCaptureScheduler', () => {
     expect(capture.api.captureViewport).toHaveBeenCalledTimes(1);
     scheduler.dispose();
   });
+
+  it('queues the capture of a re-open behind a capture still in flight from the previous open', async () => {
+    const capture = makeCapture({ delayMs: 400 });
+    const { scheduler } = make(capture);
+    scheduler.hubOpened();
+    await vi.advanceTimersByTimeAsync(MOTION + 100); // capture #1 is now running
+    expect(capture.api.captureViewport).toHaveBeenCalledTimes(1);
+    scheduler.hubClosed();
+    scheduler.hubOpened();
+    // The new open's idle fires while #1 (400 ms) is still in flight: it must wait, not vanish.
+    await vi.advanceTimersByTimeAsync(MOTION + 50);
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(capture.api.captureViewport).toHaveBeenCalledTimes(2);
+    await expect(scheduler.awaitBefore(BEFORE_GRACE_MS)).resolves.not.toBeNull();
+  });
+
+  it('scales the capture ceiling by tier (spec 6.2), defaulting to the largest', async () => {
+    for (const [tier, cap] of [
+      ['low', 1],
+      ['mid', 1.25],
+      ['high', 1.5],
+    ] as const) {
+      const capture = makeCapture();
+      const { scheduler } = make(capture, { tier });
+      scheduler.hubOpened();
+      await vi.advanceTimersByTimeAsync(MOTION + 100);
+      expect(capture.calls[0].options.scaleCap).toBe(cap);
+      scheduler.dispose();
+    }
+    const late = makeCapture();
+    const known: { tier: 'low' | undefined } = { tier: undefined };
+    const { scheduler } = make(late, { tier: () => known.tier });
+    known.tier = 'low'; // resolved after the scheduler was built
+    scheduler.hubOpened();
+    await vi.advanceTimersByTimeAsync(MOTION + 100);
+    expect(late.calls[0].options.scaleCap).toBe(1);
+    scheduler.dispose();
+    const none = makeCapture();
+    const m = make(none);
+    m.scheduler.hubOpened();
+    await vi.advanceTimersByTimeAsync(MOTION + 100);
+    expect(none.calls[0].options.scaleCap).toBe(1.5);
+    m.scheduler.dispose();
+  });
 });

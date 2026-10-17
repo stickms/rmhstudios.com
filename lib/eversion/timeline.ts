@@ -89,13 +89,21 @@
  *   `FF_REMAINING_MS` (POP, being separate, is not compressed and FF during POP is
  *   ignored); the ratio is never above 1, so FF never slows anything.
  * - **Spin landing from a cruise** (the post-gate landing after a long wait) picks
- *   the SMALLEST valid remaining travel, not the one nearest 1.25 turns: the
- *   page has already turned for seconds, and another turn in 500 ms would be a
- *   whirl.
- * - **Inherited spin velocity** is the one value this module may reduce: if the
- *   hub was thrown so hard that no landing within 1.5 turns avoids overshoot,
- *   `ẋ₀` is scaled down until one exists (about 250°/s for the default plan).
- *   Every later re-plan keeps the live velocity untouched.
+ *   the landing that arrives SOONEST (smallest valid travel), not the one nearest
+ *   1.25 turns: the page has already turned for seconds.
+ * - **Inherited velocity is honoured exactly** (C¹ at t = 0, spec §7.3). A hub
+ *   throw too hard for a single rest-to-rest quintic to absorb gets a braking leg
+ *   first (spin: `planInitialSpin`; tilt: `planInitialTilt`); nothing is scaled
+ *   down. Hub velocities are clamped to the hub's own `MAX_SPIN` (900°/s).
+ * - **The post-gate landing is bounded in speed** (`pickGateLanding`): it takes as
+ *   long as its travel needs at `SPIN_LAND_MAX_DEG_PER_S` (at most
+ *   `SPIN_LAND_MAX_MS`), overlapping UNWRAP and POP; the stage timers are
+ *   unchanged, so after a long wait the spin can still be landing when `done` is
+ *   emitted (the glass is orb-sized by then).
+ * - **The effective radius is fitted to the projected extent** (`eversionRadiusFit`),
+ *   so the everting surface never pokes past the short viewport edge.
+ * - **Resize may carry the orb** (`resize(now, viewport, orb?)`): the orb is three
+ *   hidden channels re-planned like the rest.
  */
 
 import {
@@ -106,16 +114,22 @@ import {
   GATE_WAIT_FROM_MS,
   GLOBE_RADIUS_FRACTION,
   HUB_FADE_MS,
+  HUB_MAX_ANGULAR_SPEED_DEG,
   MAX_DT_MS,
   MIN_EVERT_RATE,
   PLACEHOLDER_XFADE_MS,
   PLAN_MS,
   POP_MS,
+  PROJECTED_EXTENT_LIMIT,
+  PROJECTED_EXTENT_MAX,
+  RADIUS_FIT_WINDOW,
   REVEAL_MS,
+  SPIN_LAND_MAX_DEG_PER_S,
   SPIN_MAX_REMAINING_TURNS,
   SPIN_TILT_DEG,
   SPIN_TURNS,
   STRETCH_CAP_MS,
+  TILT_SANE_DEG,
   UNWRAP_MS,
   UNWRAP_OVERLAP_MS,
 } from './constants';
@@ -140,6 +154,7 @@ import {
   type TimelineApi,
   type TimelineConfig,
   type TimelineEvent,
+  type OrbRect,
   type TimelineSnapshot,
   type Viewport,
 } from './types';
@@ -149,8 +164,17 @@ const DEG = Math.PI / 180;
 /* ── Channels ─────────────────────────────────────────────────────────────── */
 
 const NCH = CHANNEL_IDS.length;
-/** Two slots cover every channel with a two-leg plan (tilt up/down, pop peak/settle). */
-const SLOTS = 2;
+/**
+ * Three hidden channels after the public ones hold the orb's centre and radius, so
+ * a resize that moves the orb is re-planned like everything else (POP's target
+ * glides to the new orb instead of jumping). They are not in `CHANNEL_IDS`.
+ */
+const C_ORB_X = NCH;
+const C_ORB_Y = NCH + 1;
+const C_ORB_R = NCH + 2;
+const NALL = NCH + 3;
+/** Three slots: tilt is decelerate → rise → fall; the spin is decelerate → land; pop is peak → settle. */
+const SLOTS = 3;
 const CH_STRIDE = SLOTS * SEG_STRIDE;
 
 const C_WRAP = CHANNEL_IDS.indexOf('wrap');
@@ -222,16 +246,39 @@ const EVERT_DONE_AT = 0.995;
 const LAND_EPS = 1e-9;
 const LAND_SCAN = 48;
 const SPIN_MAX_REMAINING = SPIN_MAX_REMAINING_TURNS * TAU;
+/** {@link SPIN_LAND_MAX_DEG_PER_S} in rad/ms. */
+const SPIN_LAND_MAX = (SPIN_LAND_MAX_DEG_PER_S * DEG) / 1000;
+/** Peak speed of a rest-to-rest quintic over its mean speed: 15/8. */
+const SPIN_PEAK_FACTOR = 1.875;
+/** Duration factors `planLanding` tries, in order, when the asked-for duration has no valid landing. */
+/** …and only when the least-bad landing strays by more than this (rad): a dust-sized miss is not worth a turn. */
+/** A hub spinning slower than this (rad/ms, 20°/s) lands forward whichever way it drifts. */
+const SPIN_DIR_MIN = (20 * DEG) / 1000;
+/** A candidate this far (rad) on the wrong side counts as ON the goal, not behind it. */
+const LAND_DIR_TOL = 1e-6;
+const LAND_RETIME_TOL = 1e-5;
+const LAND_RETIME: readonly number[] = [0.8, 0.65, 1.25, 1.6, 2, 3, 0.5, 4];
+/** A landing within this factor of the cap is not stretched further. */
+const SPIN_PEAK_SLACK = 1.02;
+/** Braking leg of a hand-off the one-quintic landing cannot absorb. */
+const SPIN_DECEL_MS = 360;
+/** How much of `w·T₂` the landing leg is asked to cover — just above the ½ a non-reversing leg needs. */
+const SPIN_LEG_C: readonly number[] = [0.6, 0.75, 1, 1.4];
+/** Pitch speeds below this (rad/ms, ≈ 10°/s) go straight into the rise: the overshoot is under a degree. */
+const TILT_COAST_MIN = (10 * DEG) / 1000;
+/** Preferred braking time for a pitch throw, ms. */
+const TILT_COAST_MS = 240;
+/** Shortest braking leg, ms: bounds the overshoot of a hub at its pitch limit still moving outward. */
+const TILT_MIN_DECEL_MS = 45;
+/** Travel the braking leg is allowed even when the hub is already beyond the sane tilt (rad). */
+const TILT_MIN_ROOM = 12 * DEG;
+/** Shortest rise to the 18° peak after a braking leg, ms. */
+const TILT_MIN_RISE_MS = 400;
 
 /** After-gate state of the AFTER texture. */
 const AFTER_PENDING = 0;
 const AFTER_FADING = 1;
 const AFTER_FAILED = 2;
-
-/** What `planLanding` aims for. */
-const AIM_INITIAL = 0;
-const AIM_KEEP = 1;
-const AIM_SMALLEST = 2;
 
 /**
  * Test/debug hook: called for every re-plan with the channel, the instant, the
@@ -248,6 +295,12 @@ export type ReplanProbe = (
   after: Float64Array,
 ) => void;
 
+/** A hub angular velocity in deg/s → rad/ms, clamped to the hub's own `MAX_SPIN`. */
+function clampSpeed(degPerS: number): number {
+  const c = Math.max(-HUB_MAX_ANGULAR_SPEED_DEG, Math.min(HUB_MAX_ANGULAR_SPEED_DEG, degPerS));
+  return (c * DEG) / 1000;
+}
+
 function clamp01(x: number): number {
   return x < 0 ? 0 : x > 1 ? 1 : x;
 }
@@ -259,6 +312,13 @@ function clamp01(x: number): number {
  * between samples.
  */
 function landingViolation(v0: number, a0: number, T: number, rem: number): number {
+  // A landing BEHIND the spin is the mirror image of one ahead of it (and a landing ON it, from
+  // a spin that is moving backward, is a backward one).
+  if (rem < 0 || (rem === 0 && v0 < 0)) {
+    v0 = -v0;
+    a0 = -a0;
+    rem = -rem;
+  }
   const V0 = v0 * T;
   const A0 = a0 * T * T;
   const dx = rem - V0 - A0 * 0.5;
@@ -277,8 +337,91 @@ function landingViolation(v0: number, a0: number, T: number, rem: number): numbe
     if (r < lo) lo = r;
     if (r > hi) hi = r;
   }
+  // The remaining travel `r(s)` has a triple root at s = 1 (the landing arrives at rest with no
+  // acceleration), so `r(s) = (1 − s)³·q(s)` with `q` a quadratic, and `r ≥ 0` on [0, 1] exactly
+  // when `q` is. The scan cannot see a dip confined to the last sample interval — where `(1 − s)³`
+  // squashes it to ~1e-6 of `q` — so take `q`'s minimum analytically.
+  const q0 = rem;
+  const q1 = -V0 + 3 * q0;
+  const q2 = -0.5 * A0 + 3 * q1 - 3 * q0;
+  const qEnd = q0 + q1 + q2;
+  if (qEnd < 0 && qEnd < lo) lo = qEnd * 1e-3;
+  if (q2 > 0) {
+    const sv = -q1 / (2 * q2);
+    if (sv > 0 && sv < 1) {
+      const rv = (1 - sv) * (1 - sv) * (1 - sv) * (q0 + q1 * sv + q2 * sv * sv);
+      if (rv < lo) lo = rv;
+    }
+  }
   return (lo < 0 ? -lo : 0) + (hi > SPIN_MAX_REMAINING ? hi - SPIN_MAX_REMAINING : 0);
 }
+
+/**
+ * The fastest the same quintic landing moves (rad/ms): the peak of `|ẋ|` over the
+ * segment, scanned like {@link landingViolation}.
+ */
+function landingPeak(v0: number, a0: number, T: number, rem: number): number {
+  const V0 = v0 * T;
+  const A0 = a0 * T * T;
+  const dx = rem - V0 - A0 * 0.5;
+  const dv = -V0 - A0;
+  const da = -A0;
+  const c3 = 10 * dx - 4 * dv + 0.5 * da;
+  const c4 = -15 * dx + 7 * dv - da;
+  const c5 = 6 * dx - 3 * dv + 0.5 * da;
+  let peak = 0;
+  for (let i = 0; i <= LAND_SCAN; i++) {
+    const s = i / LAND_SCAN;
+    const s2 = s * s;
+    const v = Math.abs(V0 + A0 * s + 3 * c3 * s2 + 4 * c4 * s2 * s + 5 * c5 * s2 * s2);
+    if (v > peak) peak = v;
+  }
+  return peak / T;
+}
+
+/** The plateau of {@link eversionRadiusFit}: the limit over the widest the surface gets. */
+const FIT_FLOOR = PROJECTED_EXTENT_LIMIT / (GLOBE_RADIUS_FRACTION * PROJECTED_EXTENT_MAX);
+
+/**
+ * Factor on the globe radius that keeps the everting surface inside the viewport
+ * (spec §11.1 test 10, amended): the PROJECTED half-extent of the surface —
+ * `max ‖F‖` is 1.336 but perspective magnifies the near side, reaching 1.365 ×
+ * radius — would poke past the short edge at the nominal radius `0.44 · min(W, H)`.
+ * The radius is multiplied by this function of the eversion progress `e`:
+ *
+ *     fit(e) = 1 − (1 − g)·[S(e) − S'(e)]
+ *
+ * with `g = PROJECTED_EXTENT_LIMIT / (GLOBE_RADIUS_FRACTION · PROJECTED_EXTENT_MAX)`
+ * (≈ 0.774), `S` a smootherstep up over the shrink window and `S'` one over the
+ * grow window (`RADIUS_FIT_WINDOW`). Why a function of `e` and not a planned
+ * channel: the extent is a function of `e` alone, and `e` itself is re-planned by
+ * gates and fast-forwards — a radius planned in time would stop matching the
+ * surface the moment `e` was retimed, while this holds for ANY retime. Because
+ * `e` is C² and `S` is C² (zero first and second derivative at both ends) the
+ * effective radius stays C² too; the half-size dip while the surface is at its
+ * widest reads as the glass breathing with the eversion rather than a cut.
+ * It is exactly 1 at `e = 0` and `e ≥ 0.8`, so WRAP/UNWRAP/POP are unaffected.
+ *
+ * `write()` carries an INLINED copy of this body: called as a function it returns
+ * a boxed double, one heap number per frame, and `tick` allocates nothing. The
+ * timeline tests pin the two equal.
+ */
+export function eversionRadiusFit(e: number): number {
+  if (e <= FIT_DOWN_FROM || e >= FIT_UP_TO) return 1;
+  if (e >= FIT_DOWN_TO && e <= FIT_UP_FROM) return FIT_FLOOR;
+  const a = Math.min(Math.max((e - FIT_DOWN_FROM) * FIT_DOWN_INV, 0), 1);
+  const b = Math.min(Math.max((e - FIT_UP_FROM) * FIT_UP_INV, 0), 1);
+  const down = a * a * a * (a * (a * 6 - 15) + 10);
+  const up = b * b * b * (b * (b * 6 - 15) + 10);
+  return 1 - FIT_DEPTH * (down - up);
+}
+const FIT_DOWN_FROM = RADIUS_FIT_WINDOW.shrinkFrom;
+const FIT_DOWN_TO = RADIUS_FIT_WINDOW.shrinkTo;
+const FIT_UP_TO = RADIUS_FIT_WINDOW.growTo;
+const FIT_DOWN_INV = 1 / (RADIUS_FIT_WINDOW.shrinkTo - RADIUS_FIT_WINDOW.shrinkFrom);
+const FIT_UP_FROM = RADIUS_FIT_WINDOW.growFrom;
+const FIT_UP_INV = 1 / (RADIUS_FIT_WINDOW.growTo - RADIUS_FIT_WINDOW.growFrom);
+const FIT_DEPTH = 1 - FIT_FLOOR;
 
 /**
  * State and internals. They live in a base class so that `Timeline` itself
@@ -289,11 +432,13 @@ class TimelineEngine {
   /** Test/debug hook — see {@link ReplanProbe}. */
   replanProbe: ReplanProbe | null = null;
 
-  protected readonly seg = new Float64Array(NCH * CH_STRIDE);
-  protected readonly nSeg = new Uint8Array(NCH);
+  protected readonly seg = new Float64Array(NALL * CH_STRIDE);
+  protected readonly nSeg = new Uint8Array(NALL);
   protected readonly timer = new Float64Array(NTIMERS).fill(Infinity);
   /** Scratch for one `(x, ẋ, ẍ)`. */
   protected readonly tmp = new Float64Array(3);
+  /** Scratch for `compressChannel`: `[t0, end, target]` per leg. */
+  protected readonly legs = new Float64Array(SLOTS * 3);
   protected readonly probeBefore = new Float64Array(3);
   protected readonly probeAfter = new Float64Array(3);
   protected readonly snap: TimelineSnapshot = createSnapshot();
@@ -301,9 +446,6 @@ class TimelineEngine {
 
   protected vpW: number;
   protected vpH: number;
-  protected readonly orbX: number;
-  protected readonly orbY: number;
-  protected readonly orbR: number;
   protected readonly thetaAlign: number;
 
   /** The timeline clock, ms since `start`. */
@@ -340,18 +482,20 @@ class TimelineEngine {
 
   /** The angle the spin is currently landing on, or NaN while it has no goal. */
   protected spinGoal = NaN;
+  /** Which way the spin is heading to land (+1 / −1): kept through the wait, so a landing never turns around. */
+  protected spinDir = 1;
 
   constructor(config: TimelineConfig) {
     const { viewport, globe, orb } = config;
     this.vpW = viewport.w;
     this.vpH = viewport.h;
-    this.orbX = orb.cx;
-    this.orbY = orb.cy;
-    this.orbR = orb.radius;
     this.thetaAlign = config.thetaAlign ?? 0;
 
     // Channels at rest, then the default plan (spec §7.1).
-    for (let c = 0; c < NCH; c++) this.hold(c, 0);
+    for (let c = 0; c < NALL; c++) this.hold(c, 0);
+    this.hold(C_ORB_X, orb.cx);
+    this.hold(C_ORB_Y, orb.cy);
+    this.hold(C_ORB_R, orb.radius);
     this.hold(C_RADIUS, globe.radius);
     this.hold(C_CENTRE_X, globe.centre[0]);
     this.hold(C_CENTRE_Y, globe.centre[1]);
@@ -373,47 +517,141 @@ class TimelineEngine {
     this.plan(C_EVERT, PLAN_MS.evert[0], PLAN_MS.evert[1] - PLAN_MS.evert[0], 1);
     this.plan(C_UNWRAP, PLAN_MS.unwrap[0], UNWRAP_SPAN_MS, 0);
 
-    // Tilt: hub pitch → peak → 0, each leg rest-to-rest at the joint.
-    const tilt0 = globe.pitch * DEG;
-    const tiltV0 = (globe.pitchVel * DEG) / 1000;
-    setSegment(
-      this.seg,
-      C_TILT * CH_STRIDE,
-      0,
-      PLAN_MS.tiltPeakAt,
-      tilt0,
-      tiltV0,
-      0,
-      SPIN_TILT_DEG * DEG,
-      0,
-      0,
-    );
-    this.nSeg[C_TILT] = 1;
-    this.addSlot(C_TILT, PLAN_MS.tiltEnd - PLAN_MS.tiltPeakAt, 0);
+    this.planInitialTilt(globe.pitch * DEG, clampSpeed(globe.pitchVel));
+    this.planInitialSpin(globe.yaw * DEG, clampSpeed(globe.yawVel));
+    this.spinDir = this.spinGoal < globe.yaw * DEG ? -1 : 1;
+  }
 
-    // Spin: inherited ω → θ_align + 2πk with zero ω, ẍ at 4300 ms.
-    const spinT = PLAN_MS.spin[1] - PLAN_MS.spin[0];
-    const spin0 = globe.yaw * DEG;
-    let spinV0 = (globe.yawVel * DEG) / 1000;
-    let rem = this.pickLanding(spin0, spinV0, 0, spinT, SPIN_TURNS * TAU);
-    for (let i = 0; i < 60 && landingViolation(spinV0, 0, spinT, rem) > LAND_EPS; i++) {
-      spinV0 *= 0.85;
-      rem = this.pickLanding(spin0, spinV0, 0, spinT, SPIN_TURNS * TAU);
+  /**
+   * Tilt: hub pitch → peak (18°) → 0. The hub's pitch velocity is honoured exactly
+   * (C¹ at the hand-off). A rest-to-rest quintic that STARTS with a large velocity
+   * swings out far past its start before it can turn (a 900°/s flick reached 172°),
+   * so a velocity above `TILT_COAST_MIN` first gets its own short leg that brakes
+   * it to rest — a symmetric profile whose travel is exactly `|v|·T/2` — with `T`
+   * chosen so the travel stays inside `max(TILT_SANE_DEG, |pitch|)` where the hub
+   * pose allows (and never below `TILT_MIN_DECEL_MS`, which is what bounds the
+   * overshoot of a hub already at its pitch limit and still moving outward). The
+   * rise to the peak then starts from rest, and every joint is C².
+   */
+  protected planInitialTilt(tilt0: number, v0: number): void {
+    const peak = SPIN_TILT_DEG * DEG;
+    const base = C_TILT * CH_STRIDE;
+    const speed = Math.abs(v0);
+    let tStart = 0;
+    let x = tilt0;
+    let vStart = v0;
+    this.nSeg[C_TILT] = 0;
+    if (speed > TILT_COAST_MIN) {
+      const dir = v0 > 0 ? 1 : -1;
+      const bound = Math.max(TILT_SANE_DEG * DEG, Math.abs(tilt0));
+      const room = Math.max(bound - dir * tilt0, 0);
+      const travel = Math.min((speed * TILT_COAST_MS) / 2, Math.max(room, TILT_MIN_ROOM));
+      const td = Math.max((2 * travel) / speed, TILT_MIN_DECEL_MS);
+      x = tilt0 + (dir * speed * td) / 2;
+      setSegment(this.seg, base, 0, td, tilt0, v0, 0, x, 0, 0);
+      this.nSeg[C_TILT] = 1;
+      tStart = td;
+      vStart = 0;
     }
-    this.spinGoal = spin0 + rem;
+    const rise = Math.max(PLAN_MS.tiltPeakAt - tStart, TILT_MIN_RISE_MS);
+    const n = this.nSeg[C_TILT]!;
+    setSegment(this.seg, base + n * SEG_STRIDE, tStart, rise, x, vStart, 0, peak, 0, 0);
+    this.nSeg[C_TILT] = n + 1;
+    this.addSlot(C_TILT, Math.max(PLAN_MS.tiltEnd - (tStart + rise), MIN_SEG_MS), 0);
+  }
+
+  /**
+   * Spin: inherited ω → `θ_align + 2π·k` with zero ω and ẍ at 4300 ms (spec §7.4).
+   *
+   * The spin STARTS at exactly the hub's velocity (C¹ at the hand-off; the previous
+   * code scaled it down until a one-quintic landing existed, cutting a 900°/s throw
+   * to ~200°/s in one frame). When a single quintic cannot land without going
+   * backwards or leaving more than 1.5 turns — a rest-to-rest quintic that starts
+   * at `v` covers at least `v·T/2`, which is 1935° for 900°/s over 4300 ms — the
+   * spin gets two legs in the direction of the throw:
+   *
+   *  1. a braking leg (`SPIN_DECEL_MS`) from `ω₀` to a cruise speed `w` at `ẍ = 0`,
+   *     a symmetric profile covering `(ω₀ + w)/2 · T`, then
+   *  2. a landing from `(x₁, w, 0)` to the alignment at rest.
+   *
+   * For a candidate `k` the total travel `G` is fixed, and `w` follows in closed
+   * form from asking the second leg to cover `c·w·T₂` (`c` just above ½, the
+   * least a leg that starts at `w` can cover without reversing): `w = (G −
+   * ω₀T/2)/(T/2 + c·T₂)`. The candidate nearest the nominal 1.25 turns whose
+   * second leg passes {@link landingViolation} wins, so the remaining travel is
+   * never negative and never above 1.5 turns, at any time — the old invariant
+   * holds without an exception for the braking.
+   */
+  protected planInitialSpin(spin0: number, v0: number): void {
+    const T = PLAN_MS.spin[1] - PLAN_MS.spin[0];
+    const base = C_SPIN * CH_STRIDE;
+    // The throw's direction; a hub that is barely moving lands forward (spec §7.4).
+    const dir = Math.abs(v0) > SPIN_DIR_MIN ? Math.sign(v0) : 1;
+    const rem = this.pickLanding(spin0, v0, 0, T, dir * SPIN_TURNS * TAU, dir);
+    if (landingViolation(v0, 0, T, rem) <= LAND_EPS) {
+      this.spinGoal = spin0 + rem;
+      setSegment(this.seg, base, PLAN_MS.spin[0], T, spin0, v0, 0, this.spinGoal, 0, 0);
+      this.nSeg[C_SPIN] = 1;
+      return;
+    }
+
+    const sigma = dir;
+    const s0 = Math.abs(v0);
+    const td = SPIN_DECEL_MS;
+    const t2 = T - td;
+    const d1 = (s0 * td) / 2;
+    const phase = (((sigma * (this.thetaAlign - spin0)) % TAU) + TAU) % TAU;
+    let bestCost = Infinity;
+    let bestG = 0;
+    let bestW = 0;
+    for (let m = 0; m < 4; m++) {
+      const g = phase + TAU * m;
+      if (g > SPIN_MAX_REMAINING - LAND_EPS) break;
+      if (g <= d1) continue;
+      for (let ci = 0; ci < SPIN_LEG_C.length; ci++) {
+        const w = (g - d1) / (td / 2 + SPIN_LEG_C[ci]! * t2);
+        if (w > s0) continue;
+        const r2 = g - ((s0 + w) * td) / 2;
+        if (landingViolation(w, 0, t2, r2) > LAND_EPS) continue;
+        const cost = Math.abs(g - SPIN_TURNS * TAU);
+        if (cost < bestCost) {
+          bestCost = cost;
+          bestG = g;
+          bestW = w;
+        }
+        break;
+      }
+    }
+    if (bestCost === Infinity) {
+      // Unreachable for a hub speed within its clamp (the candidate window is a full turn wide and
+      // the braking travel is under half a turn); stay valid rather than throw if it ever is.
+      let v = v0;
+      let r = rem;
+      for (let i = 0; i < 60 && landingViolation(v, 0, T, r) > LAND_EPS; i++) {
+        v *= 0.85;
+        r = this.pickLanding(spin0, v, 0, T, dir * SPIN_TURNS * TAU, dir);
+      }
+      this.spinGoal = spin0 + r;
+      setSegment(this.seg, base, PLAN_MS.spin[0], T, spin0, v, 0, this.spinGoal, 0, 0);
+      this.nSeg[C_SPIN] = 1;
+      return;
+    }
+    const x1 = spin0 + (sigma * (s0 + bestW) * td) / 2;
+    this.spinGoal = spin0 + sigma * bestG;
+    setSegment(this.seg, base, PLAN_MS.spin[0], td, spin0, v0, 0, x1, sigma * bestW, 0);
     setSegment(
       this.seg,
-      C_SPIN * CH_STRIDE,
-      PLAN_MS.spin[0],
-      spinT,
-      spin0,
-      spinV0,
+      base + SEG_STRIDE,
+      PLAN_MS.spin[0] + td,
+      t2,
+      x1,
+      sigma * bestW,
       0,
       this.spinGoal,
       0,
       0,
     );
-    this.nSeg[C_SPIN] = 1;
+    this.nSeg[C_SPIN] = 2;
   }
 
   /**
@@ -513,9 +751,10 @@ class TimelineEngine {
   }
 
   protected eval(ch: number, t: number, out: Float64Array): void {
-    let o = ch * CH_STRIDE;
-    if (this.nSeg[ch]! > 1 && t >= this.seg[o + SEG_STRIDE]!) o += SEG_STRIDE;
-    evalSegment(this.seg, o, t, out, 0);
+    const o = ch * CH_STRIDE;
+    let k = this.nSeg[ch]! - 1;
+    while (k > 0 && t < this.seg[o + k * SEG_STRIDE]!) k--;
+    evalSegment(this.seg, o + k * SEG_STRIDE, t, out, 0);
   }
 
   /** Park a channel at `x`, at rest. Used only to seed the initial rest state. */
@@ -545,7 +784,7 @@ class TimelineEngine {
     const x0 = tmp[0]!;
     const v0 = tmp[1]!;
     const a0 = tmp[2]!;
-    const probe = this.replanProbe;
+    const probe = ch < NCH ? this.replanProbe : null;
     if (probe) {
       this.probeBefore[0] = x0;
       this.probeBefore[1] = v0;
@@ -590,23 +829,28 @@ class TimelineEngine {
    */
   protected compressChannel(ch: number, tf: number, r: number): void {
     const n = this.nSeg[ch]!;
-    // Read both legs before any is overwritten.
-    const t0a = this.seg[this.slotBase(ch, 0)]!;
-    const enda = segmentEnd(this.seg, this.slotBase(ch, 0));
-    const x1a = segmentTarget(this.seg, this.slotBase(ch, 0));
-    const t0b = n > 1 ? this.seg[this.slotBase(ch, 1)]! : 0;
-    const endb = n > 1 ? segmentEnd(this.seg, this.slotBase(ch, 1)) : 0;
-    const x1b = n > 1 ? segmentTarget(this.seg, this.slotBase(ch, 1)) : 0;
-
+    // Read every leg before any is overwritten.
+    const legs = this.legs;
+    for (let i = 0; i < n; i++) {
+      const o = this.slotBase(ch, i);
+      legs[i * 3] = this.seg[o]!;
+      legs[i * 3 + 1] = segmentEnd(this.seg, o);
+      legs[i * 3 + 2] = segmentTarget(this.seg, o);
+    }
     const mapT = (t: number) => (t <= tf ? t : tf + (t - tf) * r);
-    if (enda > tf) {
-      const start = t0a <= tf ? tf : mapT(t0a);
-      const end = mapT(enda);
-      this.plan(ch, start, Math.max(end - start, MIN_SEG_MS), x1a);
-      if (n > 1) this.addSlot(ch, Math.max(mapT(endb) - end, MIN_SEG_MS), x1b);
-    } else if (n > 1 && endb > tf) {
-      const start = t0b <= tf ? tf : mapT(t0b);
-      this.plan(ch, start, Math.max(mapT(endb) - start, MIN_SEG_MS), x1b);
+    // The first leg not yet finished restarts from the live state (or, if it has
+    // not begun, from rest at its compressed start); later legs follow end to end.
+    let first = 0;
+    while (first < n && legs[first * 3 + 1]! <= tf) first++;
+    if (first === n) return;
+    const t0 = legs[first * 3]!;
+    const start = t0 <= tf ? tf : mapT(t0);
+    let prevEnd = mapT(legs[first * 3 + 1]!);
+    this.plan(ch, start, Math.max(prevEnd - start, MIN_SEG_MS), legs[first * 3 + 2]!);
+    for (let i = first + 1; i < n; i++) {
+      const end = mapT(legs[i * 3 + 1]!);
+      this.addSlot(ch, Math.max(end - prevEnd, MIN_SEG_MS), legs[i * 3 + 2]!);
+      prevEnd = end;
     }
   }
 
@@ -659,17 +903,19 @@ class TimelineEngine {
       this.plan(C_EVERT, t, tJoint, xJoint, SEG_ASYMPTOTE, vMin, -k * vMin, hold, k);
     }
 
-    // Spin: ease to a constant slow turn.
+    // Spin: ease to a constant slow turn, in the direction it is already going…
     this.eval(C_SPIN, t, tmp);
     const wSlow = TAU / SPIN_WAIT_TURN_MS;
     const tEase = 500;
+    // …the direction of the landing it was heading for.
+    const dir = this.spinDir;
     this.plan(
       C_SPIN,
       t,
       tEase,
-      tmp[0]! + 0.5 * (Math.max(tmp[1]!, 0) + wSlow) * tEase,
+      tmp[0]! + 0.5 * dir * (Math.max(dir * tmp[1]!, 0) + wSlow) * tEase,
       SEG_CRUISE,
-      wSlow,
+      dir * wSlow,
       0,
     );
     this.spinGoal = NaN;
@@ -683,32 +929,105 @@ class TimelineEngine {
   protected postGate(u: number): void {
     const sc = this.scale;
     this.plan(C_EVERT, u, Math.max(EVERT_FINISH_MS * sc, MIN_SEG_MS), 1);
+
+    // The spin: from a cruise the smallest landing that does not go backwards
+    // covers 23°–383°, and in the nominal 500 ms that is 460–1300°/s — a whirl
+    // after seconds of calm. So the landing takes as long as its travel needs at
+    // `SPIN_LAND_MAX_DEG_PER_S` (never less than the nominal time) and is allowed
+    // to run on UNDER the unwrap and the POP, even past `done`: the gate logic
+    // (`gate-open`, `unwrap`, `unwrap-done`, `done` at the same offsets from the
+    // gate) is untouched, the flattening page simply keeps turning while it
+    // flattens (its rotation is weighted out as it reaches the plane) and the
+    // glass that is still turning at `done` is orb-sized. The tilt lands with it.
+    const tmp = this.tmp;
+    this.eval(C_SPIN, u, tmp);
+    const x0 = tmp[0]!;
+    const land = this.pickGateLanding(x0, tmp[1]!, tmp[2]!, LAND_AFTER_UNWRAP_MS * sc);
+    const landBy = u + land.duration;
+    this.spinGoal = x0 + land.rem;
+    if (land.rem !== 0) this.spinDir = land.rem < 0 ? -1 : 1;
+    this.plan(C_SPIN, u, land.duration, this.spinGoal);
+
     this.plan(C_UNWRAP, u, UNWRAP_SPAN_MS * sc, 0);
     this.unwrapEnd = u + UNWRAP_SPAN_MS * sc;
     this.timer[T_UNWRAP] = u;
     this.timer[T_UNWRAP_DONE] = this.unwrapEnd;
-    const landBy = u + LAND_AFTER_UNWRAP_MS * sc;
-    this.planLanding(u, landBy, AIM_SMALLEST);
     // The tilt must be level by the same moment, however far along it is.
     if (this.channelEnd(C_TILT) > landBy) this.plan(C_TILT, u, Math.max(landBy - u, MIN_SEG_MS), 0);
+  }
+
+  /**
+   * The post-gate spin landing: among the alignments `θ_align + 2πk` within 1.5
+   * turns (ahead of or behind the cruise — a landing behind is the mirror image),
+   * those whose quintic never reverses, with its duration stretched until its
+   * peak speed is under {@link SPIN_LAND_MAX} (start from the travel-based
+   * estimate `1.875·|rem|/ω`, the peak of a rest-to-rest quintic, then correct by
+   * the measured peak). The one that lands SOONEST wins, ties going to the
+   * shorter travel. If none exists (unreachable for a cruise) the least bad.
+   */
+  protected pickGateLanding(
+    x0: number,
+    v0: number,
+    a0: number,
+    baseT: number,
+  ): { rem: number; duration: number } {
+    const base = this.thetaAlign - x0;
+    const j0 = Math.round(-base / TAU);
+    // A landing cannot be slower than the speed it starts at (a spin still braking from a throw).
+    const cap = Math.max(SPIN_LAND_MAX, Math.abs(v0));
+    let best: { rem: number; duration: number } | null = null;
+    let least = { rem: base + TAU * j0, duration: Math.max(baseT, MIN_SEG_MS), viol: Infinity };
+    for (let j = j0 - 3; j <= j0 + 3; j++) {
+      const rem = base + TAU * j;
+      const mag = Math.abs(rem);
+      if (mag > SPIN_MAX_REMAINING) continue;
+      // Never turn around to land: the landing is in the direction the spin has been heading.
+      if (rem * this.spinDir < 0) continue;
+      let T = Math.max(baseT, MIN_SEG_MS, (SPIN_PEAK_FACTOR * mag) / cap);
+      let viol = landingViolation(v0, a0, T, rem);
+      for (let i = 0; i < 8 && viol <= LAND_EPS; i++) {
+        const peak = landingPeak(v0, a0, T, rem);
+        if (peak <= cap * SPIN_PEAK_SLACK) break;
+        T *= peak / cap;
+        viol = landingViolation(v0, a0, T, rem);
+      }
+      if (viol > LAND_EPS) {
+        if (viol < least.viol) least = { rem, duration: T, viol };
+      } else if (
+        best === null ||
+        T < best.duration - 1e-9 ||
+        (Math.abs(T - best.duration) <= 1e-9 && mag < Math.abs(best.rem))
+      ) {
+        best = { rem, duration: T };
+      }
+    }
+    return best ?? least;
   }
 
   /* ── Spin landing (spec §7.4) ───────────────────────────────────────────── */
 
   /**
    * The remaining travel `θ_align + 2πk − x0` for the landing, choosing `k`:
-   * among those whose quintic never goes backwards past the goal and never leaves
-   * more than 1.5 turns, the one nearest `target`. If none is valid (an absurd
-   * inherited velocity) the least-bad one is returned.
+   * among those in direction `dir` (a landing never turns around) whose quintic
+   * never goes past the goal and never leaves more than 1.5 turns, the one nearest
+   * `target`. If none is valid the least-bad in that direction is returned.
    */
-  protected pickLanding(x0: number, v0: number, a0: number, T: number, target: number): number {
+  protected pickLanding(
+    x0: number,
+    v0: number,
+    a0: number,
+    T: number,
+    target: number,
+    dir: number,
+  ): number {
     const base = this.thetaAlign - x0;
     const j0 = Math.round((target - base) / TAU);
-    let bestRem = base + TAU * j0;
+    let bestRem = NaN;
     let bestViol = Infinity;
-    for (let i = 0; i <= 8; i++) {
+    for (let i = 0; i <= 10; i++) {
       const j = j0 + (i === 0 ? 0 : i & 1 ? (i + 1) >> 1 : -(i >> 1));
       const rem = base + TAU * j;
+      if (rem * dir < -LAND_DIR_TOL) continue;
       const viol = landingViolation(v0, a0, T, rem);
       if (viol <= LAND_EPS) return rem;
       if (viol < bestViol) {
@@ -716,24 +1035,41 @@ class TimelineEngine {
         bestRem = rem;
       }
     }
-    return bestRem;
+    // Every candidate in the direction was out of reach: the nearest one is the least bad.
+    return bestRem === bestRem ? bestRem : base + TAU * j0;
   }
 
-  /** Re-plan the spin to land on `θ_align + 2πk` at `tEnd` (re-picking `k`). */
-  protected planLanding(tStart: number, tEnd: number, aim: number): void {
+  /**
+   * Re-plan the spin to land on `θ_align + 2πk` at `tEnd` (re-picking `k`), keeping
+   * the direction it was landing in and, among those, the goal nearest the current one.
+   */
+  protected planLanding(tStart: number, tEnd: number): void {
     const tmp = this.tmp;
     this.eval(C_SPIN, tStart, tmp);
     const x0 = tmp[0]!;
     const v0 = tmp[1]!;
     const a0 = tmp[2]!;
-    const T = Math.max(tEnd - tStart, MIN_SEG_MS);
-    const target =
-      aim === AIM_KEEP && !Number.isNaN(this.spinGoal)
-        ? this.spinGoal - x0
-        : aim === AIM_INITIAL
-          ? SPIN_TURNS * TAU
-          : 0;
-    const rem = this.pickLanding(x0, v0, a0, T, target);
+    let T = Math.max(tEnd - tStart, MIN_SEG_MS);
+    const dir = this.spinDir;
+    const target = Number.isNaN(this.spinGoal) ? 0 : this.spinGoal - x0;
+    let rem = this.pickLanding(x0, v0, a0, T, target, dir);
+    // A throw that is still braking when a fast-forward compresses the time left can have NO
+    // alignment within 1.5 turns that it reaches without overshooting. Rather than land on the
+    // least bad (an overshoot and a snap back), retime the landing: other durations move the
+    // window of valid travel, and the landing may then outlast the fast-forward's 650 ms —
+    // the spin finishing late is invisible, a reversal is not.
+    if (landingViolation(v0, a0, T, rem) > LAND_RETIME_TOL) {
+      const T0 = T;
+      for (let i = 0; i < LAND_RETIME.length; i++) {
+        const Ti = Math.max(T0 * LAND_RETIME[i]!, MIN_SEG_MS);
+        const r = this.pickLanding(x0, v0, a0, Ti, target, dir);
+        if (landingViolation(v0, a0, Ti, r) <= LAND_EPS) {
+          T = Ti;
+          rem = r;
+          break;
+        }
+      }
+    }
     this.spinGoal = x0 + rem;
     this.plan(C_SPIN, tStart, T, this.spinGoal);
   }
@@ -782,16 +1118,40 @@ class TimelineEngine {
     const pop = e[0]!;
     s.pop = pop;
     this.eval(C_RADIUS, t, e);
-    const r = e[0]!;
+    // The effective radius: the channel × the extent fit (a function of the live `e`), then POP.
+    // Inlined copy of {@link eversionRadiusFit}: a call here costs a heap number per frame.
+    const ev = s.evert;
+    let fit = 1;
+    if (ev > FIT_DOWN_FROM && ev < FIT_UP_TO) {
+      if (ev >= FIT_DOWN_TO && ev <= FIT_UP_FROM) fit = FIT_FLOOR;
+      else {
+        let a = (ev - FIT_DOWN_FROM) * FIT_DOWN_INV;
+        let b = (ev - FIT_UP_FROM) * FIT_UP_INV;
+        if (a < 0) a = 0;
+        else if (a > 1) a = 1;
+        if (b < 0) b = 0;
+        else if (b > 1) b = 1;
+        fit =
+          1 -
+          FIT_DEPTH * (a * a * a * (a * (a * 6 - 15) + 10) - b * b * b * (b * (b * 6 - 15) + 10));
+      }
+    }
+    const r = e[0]! * fit;
     this.eval(C_CENTRE_X, t, e);
     const cx = e[0]!;
     this.eval(C_CENTRE_Y, t, e);
     const cy = e[0]!;
+    this.eval(C_ORB_X, t, e);
+    const ox = e[0]!;
+    this.eval(C_ORB_Y, t, e);
+    const oy = e[0]!;
+    this.eval(C_ORB_R, t, e);
+    const or = e[0]!;
     // POP is the glass globe shrinking into the orb; the overshoot (pop > 1)
     // carries it slightly past, then back.
-    s.radius = r + (this.orbR - r) * pop;
-    s.centreX = cx + (this.orbX - cx) * pop;
-    s.centreY = cy + (this.orbY - cy) * pop;
+    s.radius = r + (or - r) * pop;
+    s.centreX = cx + (ox - cx) * pop;
+    s.centreY = cy + (oy - cy) * pop;
     s.ripple0Age = this.started ? t / 1000 : -1;
     s.ripple1Age = this.popStarted ? (t - this.popStartT) / 1000 : -1;
     s.bgAlpha = this.revealed ? 0 : 1;
@@ -883,7 +1243,7 @@ export class Timeline extends TimelineEngine implements TimelineApi {
       this.compressChannel(C_UNWRAP, tf, r);
       if (segmentEnd(this.seg, this.slotBase(C_SPIN, this.nSeg[C_SPIN] - 1)) > tf) {
         const end = segmentEnd(this.seg, this.slotBase(C_SPIN, this.nSeg[C_SPIN] - 1));
-        this.planLanding(tf, tf + (end - tf) * r, AIM_KEEP);
+        this.planLanding(tf, tf + (end - tf) * r);
       }
       if (!this.gateOpened) this.recomputeOpen();
     }
@@ -915,7 +1275,7 @@ export class Timeline extends TimelineEngine implements TimelineApi {
     this.fastForward(now);
   }
 
-  resize(now: number, viewport: Viewport): void {
+  resize(now: number, viewport: Viewport, orb?: OrbRect): void {
     this.advance(now);
     this.vpW = viewport.w;
     this.vpH = viewport.h;
@@ -924,6 +1284,12 @@ export class Timeline extends TimelineEngine implements TimelineApi {
     this.replanToward(C_RADIUS, t, this.targetRadius());
     this.replanToward(C_CENTRE_X, t, this.vpW / 2);
     this.replanToward(C_CENTRE_Y, t, this.vpH / 2);
+    // The orb moves with the viewport (it is laid out by the page): POP's target glides to it.
+    if (orb) {
+      this.replanToward(C_ORB_X, t, orb.cx);
+      this.replanToward(C_ORB_Y, t, orb.cy);
+      this.replanToward(C_ORB_R, t, orb.radius);
+    }
   }
 
   reveal(now: number): void {
