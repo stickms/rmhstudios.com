@@ -112,6 +112,10 @@ export const CAPTURE_EXCLUDE_SELECTORS: readonly string[] = [
   '.eversion-overlay',
   '[data-floating="cookie"]',
   '[data-sonner-toaster]',
+  // Dev only: Vite's error overlay is a custom element whose constructor throws
+  // when the capture clones it (`new ErrorOverlay()` with no error), and the
+  // dev server broadcasts an overlay to every open page on ANY server error.
+  'vite-error-overlay',
 ];
 
 /** Attribute the controller puts on `<html>` while the AFTER capture runs (spec §6.4). */

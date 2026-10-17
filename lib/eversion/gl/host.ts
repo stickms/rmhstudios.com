@@ -64,7 +64,7 @@
  */
 
 import { registerDebug } from '../debug';
-import type { RendererDebug } from '../debug';
+import type { HostDebug, RendererDebug } from '../debug';
 import type {
   DebugCommand,
   EversionCore,
@@ -192,6 +192,8 @@ function createHost(mode: HostMode, options: HostOptions): HostInternals {
   let lastStats: FrameStats | null = null;
   let workerRunning = false;
   let canvasRef: HTMLCanvasElement | null = null;
+  /** The page's own canvas has been handed to the render side (see `post`). */
+  let pageCanvasInited = false;
 
   const deliver = (message: FromWorker) => {
     if (message.type === 'ready') ready = true;
@@ -351,6 +353,7 @@ function createHost(mode: HostMode, options: HostOptions): HostInternals {
       },
       lastStats: () => lastStats,
       pendingFrames: () => pendingFrames(),
+      loop: () => ask({ op: 'loop' }) as ReturnType<HostDebug['loop']>,
     });
     return () => {
       a();
@@ -370,6 +373,20 @@ function createHost(mode: HostMode, options: HostOptions): HostInternals {
     mode,
     post(message, transfer) {
       if (disposed) return;
+      if (message.type === 'init') {
+        if (message.canvas instanceof HTMLCanvasElement) {
+          pageCanvasInited = true;
+        } else if (pageCanvasInited) {
+          // The prefetch warm-up's WebGL2 probe (a throwaway `OffscreenCanvas`)
+          // arriving AFTER the controller's own init: the core would re-init on
+          // the probe and the page's renderer would be disposed, leaving the
+          // overlay's canvas blank. The page canvas already has a context, which
+          // answers the probe's question; say so instead.
+          const { tier } = message;
+          queueMicrotask(() => deliver({ type: 'ready', tier, host: mode }));
+          return;
+        }
+      }
       if (message.type === 'start' && document.hidden) {
         // The core cannot see the page's visibility; tell it before the loop starts.
         sendToCore({ type: 'visibility', hidden: true });

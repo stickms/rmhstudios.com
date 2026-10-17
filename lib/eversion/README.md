@@ -63,6 +63,49 @@ Components live in `components/radial/eversion/` (`EversionOverlay.tsx`,
 - Anything that crosses to the worker is a `ToWorker` / `FromWorker` message in
   `types.ts`.
 
+## Router & fault edge cases (T33, spec §9.4)
+
+All of it lives in `runner.ts` (sequence) and `useEversionController.ts` (the real
+ports); `testing/e2e/eversion-edge.mjs` has one scripted check per row.
+
+| Case                             | What happens                                                                                                                                                |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Same route                       | The effect runs; AFTER is the same page re-captured.                                                                                                        |
+| Back / forward mid-run           | `RouterPort.onTraversal` (`popstate`; never fires for our own `pushState`) → `abort`. The AFTER in flight is dropped; reveal crossfades onto the live page. |
+| 404 / error / redirect           | `whenIdle` waits for the router to settle; AFTER captures whatever rendered.                                                                                |
+| A router that never settles      | `whenIdle` is bounded by `ROUTE_SETTLE_TIMEOUT_MS` (= `AFTER_CAPTURE_TIMEOUT_MS`) → `after-failed`; the placeholder is unwrapped.                           |
+| Resize / rotation                | `PagePort.onResize`: one `resize` per frame, only if the viewport changed.                                                                                  |
+| Context lost / fatal after start | `eversion-cover` off, overlay `--fading` (200 ms), run ends `context-lost`. Before start it is a clean `host-error` fallback.                               |
+| Hidden tab                       | `host.ts` posts `visibility`; the core pauses its loop (`debug` op `loop` shows it).                                                                        |
+| Input during POP                 | Ignored from `unwrap-done` on (no `fast-forward` is posted).                                                                                                |
+
+### Host readiness is eligibility, not a wait
+
+The render host's init (worker spawn, shader fetch, program compile) is slow
+cold - seconds on a phone or a software GL - and used to be awaited at release
+with a 600 ms budget, which ended in `host-error` for any release that beat it.
+Now the controller owns a host state (`idle` → `initialising` → `ready`, or
+`failed` after two failed inits) and `ineligibleReason()` reads it:
+
+- `ready` → eligible. `ready()` is a microtask; `HOST_READY_TIMEOUT_MS` (600 ms)
+  only bounds a host that was ready and stopped answering.
+- `initialising` / `idle` → `host-not-ready` **immediately**: the hub runs today's
+  navigation, and an idle host is started so the next release finds it ready. The
+  hub normally starts it itself, 700 ms after it opens (`onHubOpened`).
+- The init has its own budget, `HOST_INIT_TIMEOUT_MS` (20 s), spent while the hub
+  is idle, never at release. Settings → Preview, which has no hub open to warm
+  anything, waits for it (`whenReady`) instead of falling back.
+
+`FallbackReason` gained `host-not-ready` (a `types.ts` amendment).
+
+### One renderer per host
+
+The prefetch warm-up probes WebGL2 with a throwaway `OffscreenCanvas`. If that
+`init` reached the core after the controller's own `init`, the core re-initialised
+on the probe, disposed the page canvas's renderer, and the run "succeeded" while
+drawing to a 1×1 canvas nobody sees. `host.ts` now answers a probe `init` that
+arrives after the page canvas's with a `ready` instead of forwarding it.
+
 ## Amending a contract
 
 `types.ts`, `constants.ts`, `marks.ts`, `flags.ts`, `gl/uniforms.ts` and the stub

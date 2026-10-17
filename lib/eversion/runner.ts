@@ -19,7 +19,8 @@
  * run(node, state)
  *   eligibility ──no──▶ fallback(reason)                      today's path
  *   awaitBefore(BEFORE_GRACE_MS) ──null──▶ fallback(before-*)
- *   host ready ──no──▶ fallback(host-error)
+ *   host ready ──no──▶ fallback(host-error)      (a host still initialising never gets here:
+ *                                                    eligibility says host-not-ready, T33)
  *   overlay mounted ──no──▶ fallback(host-error)
  *   prime · texture(before) · placeholder           ← everything that can fail
  *   ─── point of no return ────────────────────────────────────────────────
@@ -53,7 +54,6 @@ import {
   CAPTURE_DPR_CAP,
   CAPTURE_EXCLUDE_SELECTORS,
 } from './constants';
-import { EVERSION_MARKS } from './marks';
 import type { EntryPoint, EversionMarkDetails, GateOpenReason } from './marks';
 import type {
   CaptureApi,
@@ -74,8 +74,31 @@ import type {
   Viewport,
 } from './types';
 
-/** How long the render side may take to say `ready` before the effect is skipped. */
+/**
+ * How long the render side may take to say `ready` for a host that is ALREADY
+ * initialised. "Host still initialising" is decided earlier, by eligibility (the
+ * controller reports `host-not-ready`, see `HOST_INIT_TIMEOUT_MS`); a ready host
+ * answers in a microtask, so this only bounds a host that was ready and has
+ * since stopped answering.
+ */
 export const HOST_READY_TIMEOUT_MS = 600;
+/**
+ * The budget for a COLD host init (worker spawn, shader fetch, `init` handled,
+ * programs compiled). It is spent while the hub is open and idle, never at
+ * release, so it can be generous: a desktop GPU takes ~100-400 ms, a phone with
+ * a cold shader cache a few seconds, and a software GL (SwiftShader, headless CI)
+ * well over the old 600 ms. A host still initialising when the visitor releases
+ * is "not eligible yet" (`host-not-ready`): today's navigation runs at once and
+ * the init carries on for the next one.
+ */
+export const HOST_INIT_TIMEOUT_MS = 20_000;
+/**
+ * How long the destination may take to settle (route loaded, no pending router
+ * state) before AFTER is declared failed. It is the AFTER capture's own budget
+ * (spec 6.4): a destination slower than that is shown by the final crossfade onto
+ * whatever is live, not by holding the globe stretched while waiting on it.
+ */
+export const ROUTE_SETTLE_TIMEOUT_MS = AFTER_CAPTURE_TIMEOUT_MS;
 /** How long the overlay may take to attach its canvas before the effect is skipped. */
 export const OVERLAY_MOUNT_TIMEOUT_MS = 300;
 /** The context-loss fade (spec §9.4; `.eversion-overlay--fading` in eversion.css is 0.2 s). */
@@ -93,6 +116,13 @@ export interface OverlayPort {
 
 /** What the runner reads from and writes to the document. */
 export interface PagePort {
+  /**
+   * Run `cb` with the new viewport when the window is resized or rotated, at
+   * most once per animation frame (a drag-resize fires many events per frame);
+   * returns the remover. A change that leaves the viewport as it was is not
+   * reported.
+   */
+  onResize(cb: (viewport: Viewport) => void): () => void;
   viewport(): Viewport;
   tier(): Tier;
   colours(): ThemeColours;
@@ -117,6 +147,11 @@ export interface RouterPort {
   navigate(href: string): Promise<unknown> | void;
   /** Resolves when the router has no pending navigation (immediately if none). */
   whenIdle(): Promise<void>;
+  /**
+   * Run `cb` when the visitor traverses history (browser back/forward) - never
+   * for the navigation this run issues itself; returns the remover.
+   */
+  onTraversal(cb: () => void): () => void;
 }
 
 /** The render side's lifecycle, owned by the controller module because the canvas outlives a run. */
@@ -151,7 +186,7 @@ export interface RunnerDeps {
   lut(projection: ProjectionId, viewport: Viewport): Float32Array | null;
   /** The visitor's setting, for the `start` mark's `requested`. */
   requested(): NavTransition;
-  mark<K extends keyof typeof EVERSION_MARKS>(
+  mark<K extends keyof EversionMarkDetails>(
     name: K,
     detail: EversionMarkDetails[K] | undefined,
   ): void;
@@ -281,10 +316,22 @@ export class EversionRunner {
     let unwrapBegun = false;
     let t0 = 0;
     let revealing = false;
+    let aborted = false;
     const ownedBitmaps = new Set<ImageBitmap>();
     let ownCapture: CaptureApi | null = null;
 
-    const post = (...args: Parameters<EversionHost['post']>) => host.post(...args);
+    // Before `start` a throw is the caller's to handle (it falls back). After it
+    // there is no falling back, and the callers are timers and message handlers:
+    // a host that cannot be posted to ends the run as a lost context.
+    const post = (...args: Parameters<EversionHost['post']>) => {
+      try {
+        host.post(...args);
+      } catch (error) {
+        if (!started) throw error;
+        deps.host.discardCanvas();
+        this.loseContext(true, () => teardown('context-lost', undefined, OVERLAY_FADE_MS));
+      }
+    };
 
     const teardown = (end: EversionEnd, stats?: FrameStats, keepOverlayMs = 0) => {
       if (ended) return;
@@ -341,6 +388,9 @@ export class EversionRunner {
           return;
         case 'context-lost':
           deps.host.discardCanvas();
+          // Before `start` nothing has been promised: the prime path sees `fatal`
+          // and falls back (the render side now ignores everything but `init`).
+          if (!started) fatal = true;
           this.loseContext(started, () => teardown('context-lost', undefined, OVERLAY_FADE_MS));
           return;
         case 'error':
@@ -391,16 +441,24 @@ export class EversionRunner {
     /* ── The point of no return: start and navigate in ONE task ───────────── */
 
     this.abortRun = () => {
+      if (ended || aborted) return;
+      aborted = true;
       gateReason = 'abort';
       post({ type: 'abort' });
     };
     listeners.push(
       deps.page.onInput(() => {
-        if (ended || fastForwarded) return;
+        // Once the unwrap has finished only POP is left, and a fast-forward during
+        // POP is ignored (spec 7.6); so is a second one.
+        if (ended || fastForwarded || revealing) return;
         fastForwarded = true;
         post({ type: 'fast-forward' });
       }),
     );
+    // Browser back/forward and a resize or rotation belong to the visitor, not to
+    // this run (spec 9.4): hurry the run, and tell the render side the new viewport.
+    listeners.push(deps.router.onTraversal(() => this.abort()));
+    listeners.push(deps.page.onResize((viewport) => post({ type: 'resize', viewport })));
     t0 = deps.now();
     started = true;
     this.phase = 'running';
@@ -425,14 +483,24 @@ export class EversionRunner {
 
     void (async () => {
       try {
-        await deps.router.whenIdle();
+        // A router that never settles (a loader that hangs, a chunk that never
+        // arrives) must not leave the gate waiting for a texture that cannot come:
+        // it is an AFTER failure like any other, and the run unwraps the placeholder.
+        await withTimeout(deps.router.whenIdle(), ROUTE_SETTLE_TIMEOUT_MS, 'route settle');
         await deps.page.whenAssetsSettled(AFTER_SETTLE_CAP_MS);
         await deps.page.nextFrame();
         await deps.page.nextFrame();
-        if (ended || unwrapBegun) return;
+        if (ended || unwrapBegun || aborted) return;
         let session = deps.capture();
         if (!session) {
           session = ownCapture = await deps.openCapture();
+          // The session took time to open; the run may have ended (or been aborted)
+          // meanwhile, and `setSettle(true)` after teardown would never be undone.
+          if (ended || unwrapBegun || aborted) {
+            ownCapture?.dispose();
+            ownCapture = null;
+            return;
+          }
         }
         deps.page.setSettle(true);
         let result: CaptureResult;
@@ -450,7 +518,7 @@ export class EversionRunner {
         } finally {
           deps.page.setSettle(false);
         }
-        if (ended || unwrapBegun) {
+        if (ended || unwrapBegun || aborted) {
           result.bitmap.close?.();
           return;
         }
@@ -459,7 +527,7 @@ export class EversionRunner {
         this.afterReady = true;
         post({ type: 'texture', slot: 'after', bitmap: result.bitmap });
       } catch {
-        if (ended || afterSent) return;
+        if (ended || afterSent || aborted) return;
         gateReason = 'after-failed';
         post({ type: 'after-failed' });
       }

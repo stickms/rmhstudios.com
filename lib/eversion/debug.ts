@@ -47,6 +47,7 @@ import type {
   CaptureOptions,
   CaptureResult,
   EversionOutcome,
+  FallbackReason,
   FrameStats,
   GlCounters,
   Rgba,
@@ -100,6 +101,14 @@ export interface HostDebug {
   lastStats(): FrameStats | null;
   /** How many `requestAnimationFrame` callbacks are pending (idle-at-rest checks). */
   pendingFrames(): number;
+  /** The render loop's bookkeeping (the core's `loop` debug op): running / hidden / frames drawn. */
+  loop(): Promise<{
+    running: boolean;
+    hidden: boolean;
+    pending: number;
+    requests: number;
+    frames: number;
+  }>;
 }
 
 /** `window.__eversion.controller` (T31). */
@@ -110,8 +119,16 @@ export interface ControllerDebug {
     beforeReady: boolean;
     afterReady: boolean;
   };
-  /** Start a run toward `href` using the current hub pose (the e2e entry point). */
+  /** Start a run toward `href` using the current hub pose (the e2e entry point). Waits for the host to be ready. */
   startTo(href: string): Promise<EversionOutcome>;
+  /**
+   * The controller's eligibility at this instant (what a release would see):
+   * `null`, or why not - `host-not-ready` while the host is still initialising
+   * (which also starts it). Synchronous: a release never waits on the host.
+   */
+  ineligibleReason(): FallbackReason | null;
+  /** Start the host's init if needed; resolves `true` once it is ready. */
+  warmHost(): Promise<boolean>;
 }
 
 /** `window.__eversion.beforeCapture` (T30): the hub's BEFORE-capture scheduler. */

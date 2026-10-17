@@ -419,9 +419,17 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
             ready = true;
           }
           snapshot = tl.tick(at);
+          // The live path answers `unwrap-done` with `reveal`; so does the replay,
+          // or scrubbing to POP/DONE would stall at the unwrap-done state forever.
+          let unwrapDone = false;
+          for (const event of tl.events()) if (event.stage === 'unwrap-done') unwrapDone = true;
+          if (unwrapDone) {
+            tl.reveal(at);
+            snapshot = tl.tick(at);
+            tl.events();
+          }
           if (at >= command.t) break;
         }
-        tl.events();
         const stage = snapshot.stage;
         const t = snapshot.t;
         if (pausedE !== null) {

@@ -834,6 +834,8 @@ export type FallbackReason =
   | 'before-missing'
   | 'before-timeout'
   | 'before-failed'
+  /** The render host is still initialising (cold start); not a failure, just not yet. */
+  | 'host-not-ready'
   | 'host-error';
 
 /** How a run that DID start ended. */

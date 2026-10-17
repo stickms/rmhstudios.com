@@ -75,23 +75,30 @@ describe('peirce — elliptic building blocks', () => {
 });
 
 describe('peirce — S#1 round trip', () => {
-  it('inverse(forward(p)) = p to 1e-9 over a 512×256 grid, away from the cut (1:1, page = whole square)', () => {
-    const fit = fitOf(1, 1);
-    const uv = new Float64Array(2);
-    const back = new Float64Array(2);
-    let worst = 0;
-    let checked = 0;
-    for (const [t, p] of grid(512, 256)) {
-      if (peirce.singular(t, p, fit)) continue;
-      expect(peirce.forward(t, p, fit, uv)).toBe(true);
-      expect(peirce.inverse(uv[0]!, uv[1]!, fit, back)).toBe(true);
-      worst = Math.max(worst, chord(t, p, back[0]!, back[1]!));
-      checked++;
-    }
-    expect(checked).toBeGreaterThan(130_000);
-    expect(worst).toBeLessThan(1e-9);
-    report(`peirce round-trip: worst chord error ${worst.toExponential(2)} over ${checked} points`);
-  });
+  // ~131k forward/inverse pairs: seconds on a quiet core, far longer on a loaded shared one.
+  it(
+    'inverse(forward(p)) = p to 1e-9 over a 512×256 grid, away from the cut (1:1, page = whole square)',
+    { timeout: 60_000 },
+    () => {
+      const fit = fitOf(1, 1);
+      const uv = new Float64Array(2);
+      const back = new Float64Array(2);
+      let worst = 0;
+      let checked = 0;
+      for (const [t, p] of grid(512, 256)) {
+        if (peirce.singular(t, p, fit)) continue;
+        expect(peirce.forward(t, p, fit, uv)).toBe(true);
+        expect(peirce.inverse(uv[0]!, uv[1]!, fit, back)).toBe(true);
+        worst = Math.max(worst, chord(t, p, back[0]!, back[1]!));
+        checked++;
+      }
+      expect(checked).toBeGreaterThan(130_000);
+      expect(worst).toBeLessThan(1e-9);
+      report(
+        `peirce round-trip: worst chord error ${worst.toExponential(2)} over ${checked} points`,
+      );
+    },
+  );
 
   it('holds at 16:9 on every point the page covers, and the glass has no page preimage', () => {
     const fit = fitOf(16, 9);

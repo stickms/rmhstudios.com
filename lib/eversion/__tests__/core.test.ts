@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { createEversionCore } from '../gl/core';
 import type { CoreDeps } from '../gl/core';
 import { ScriptedTimeline } from '../gl/__fixtures__/scripted-timeline';
+import { Timeline } from '../timeline';
 import type {
   FromWorker,
   GlCounters,
@@ -380,5 +381,52 @@ describe('createEversionCore', () => {
     r.core.dispose();
     expect(r.pending).toBe(0);
     expect(r.renderer.log.at(-1)).toBe('dispose');
+  });
+});
+
+describe('createEversionCore: scrub', () => {
+  /** A core over the REAL timeline (the scripted one never reaches POP). */
+  function realRig() {
+    const r = rig();
+    const renderer = r.renderer;
+    const out: FromWorker[] = [];
+    const core = createEversionCore(
+      {
+        mode: 'main',
+        emit: (m) => out.push(m),
+        scheduler: { request: () => 1, cancel: () => {} },
+        now: () => 0,
+      },
+      {
+        createRenderer: () => renderer,
+        createTimeline: (config) => new Timeline(config),
+        bakeLut: () => new Float32Array(2),
+        orientation: () => ({ thetaAlign: 0, mAfter: new Float64Array(9) }),
+        solidBitmap: () => Promise.resolve({ close() {} } as ImageBitmap),
+      },
+    );
+    core.handle({ type: 'init', canvas: {} as OffscreenCanvas, tier: 'low', dprCap: 1 });
+    core.handle(prime);
+    return { core, renderer, out };
+  }
+
+  async function scrubTo(t: number, afterAt: number | null) {
+    const r = realRig();
+    r.core.handle({ type: 'debug', id: 1, command: { op: 'scrub', t, afterAt } });
+    for (let i = 0; i < 5; i++) await Promise.resolve();
+    const result = r.out.find((m) => m.type === 'debug-result') as Extract<
+      FromWorker,
+      { type: 'debug-result' }
+    >;
+    return { result, drawn: r.renderer.draws.at(-1)! };
+  }
+
+  it('answers unwrap-done with a reveal, so scrubbing past it reaches POP and DONE', async () => {
+    const mid = await scrubTo(5200, 600);
+    expect(mid.result.ok).toBe(true);
+    expect((mid.result.value as { stage: string }).stage).not.toBe('unwrap-done');
+    const end = await scrubTo(20_000, 600);
+    expect(end.result.ok).toBe(true);
+    expect((end.result.value as { stage: string }).stage).toBe('done');
   });
 });

@@ -4,7 +4,7 @@
  * controller (T31) will: init with a DOM canvas, prime, textures, start, answer
  * `unwrap-done` with `reveal`, wait for `done`.
  *
- * `window.__WORKER_SRC__` carries the bundled worker entry (`worker.ts`);
+ * `win.__WORKER_SRC__` carries the bundled worker entry (`worker.ts`);
  * the page turns it into a Blob URL, which stands in for the URL Vite rewrites
  * `new URL('./worker.ts', import.meta.url)` to in the app.
  */
@@ -20,12 +20,8 @@ import type {
 } from '../../../lib/eversion/types';
 import { fixtureDeps, identityLut } from './deps';
 
-declare global {
-  interface Window {
-    __WORKER_SRC__: string;
-    __t: typeof api;
-  }
-}
+/** Page globals, typed here (module scope) so the two fixtures never collide on `Window`. */
+const win = window as unknown as { __WORKER_SRC__: string; __t: unknown };
 
 const VIEW = { w: 320, h: 200, dpr: 1 } as const;
 const BEFORE: Rgba = [0.9, 0.2, 0.1, 1];
@@ -96,7 +92,7 @@ const api = {
       coreDeps: fixtureDeps(),
       createWorker: () => {
         const url = URL.createObjectURL(
-          new Blob([window.__WORKER_SRC__], { type: 'text/javascript' }),
+          new Blob([win.__WORKER_SRC__], { type: 'text/javascript' }),
         );
         worker = new Worker(url);
         return worker;
@@ -225,4 +221,4 @@ const api = {
   AFTER,
 };
 
-window.__t = api;
+win.__t = api;

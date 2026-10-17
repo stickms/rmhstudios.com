@@ -15,18 +15,18 @@
 import {
   createDomOverlayPort,
   createEversionController,
+  type RouterLike,
 } from '../../../components/radial/eversion/useEversionController';
 import { getEversionHost, resetEversionHost } from '../../../lib/eversion/gl/host';
 import type { CaptureApi, EversionOutcome, GlobeStartState } from '../../../lib/eversion/types';
 import { fixtureDeps } from '../eversion-host/deps';
 
-declare global {
-  interface Window {
-    __WORKER_SRC__: string;
-    __t: typeof api;
-    __TSR_ROUTER__?: unknown;
-  }
-}
+/** Page globals, typed here (module scope) so the two fixtures never collide on `Window`. */
+const win = window as unknown as {
+  __WORKER_SRC__: string;
+  __t: unknown;
+  __TSR_ROUTER__?: RouterLike;
+};
 
 interface Timed {
   at: number;
@@ -42,7 +42,7 @@ const stamp = (what: string) =>
 let status: 'idle' | 'pending' = 'idle';
 const resolvedListeners = new Set<() => void>();
 const ROUTE_RENDER_MS = 120;
-const fakeRouter = {
+const fakeRouter: RouterLike = {
   get state() {
     return { status };
   },
@@ -69,7 +69,7 @@ const fakeRouter = {
     });
   },
 };
-window.__TSR_ROUTER__ = fakeRouter;
+win.__TSR_ROUTER__ = fakeRouter;
 
 /* ── Fake capture: a flat colour per phase ─────────────────────────────── */
 
@@ -153,21 +153,24 @@ const api = {
       coreDeps: fixtureDeps(),
       createWorker: () => {
         const url = URL.createObjectURL(
-          new Blob([window.__WORKER_SRC__], { type: 'text/javascript' }),
+          new Blob([win.__WORKER_SRC__], { type: 'text/javascript' }),
         );
         return new Worker(url);
       },
     });
     controller = createEversionController(
       {
-        router: fakeRouter as never,
+        router: fakeRouter,
         beforeCapture,
         translate: (key, o) => o?.defaultValue ?? key,
         getOrbRect: () => ({ cx: innerWidth - 40, cy: 40, radius: 20 }),
       },
       { overlay: createDomOverlayPort() },
     );
-    return { slots: window.__eversion?.slots() ?? [] };
+    // The hub warms the host while it is open; this fixture has no hub. A run
+    // released before the host is ready is (correctly) a `host-not-ready` fallback.
+    const hostReady = await controller.warmHost();
+    return { slots: window.__eversion?.slots() ?? [], hostReady };
   },
 
   inject(opts: { before?: 'ok' | 'missing'; after?: 'ok' | 'throw' }) {
@@ -238,4 +241,4 @@ const api = {
   },
 };
 
-window.__t = api;
+win.__t = api;

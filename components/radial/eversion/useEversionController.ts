@@ -12,7 +12,7 @@ import { pickTier } from '@/lib/eversion/gl/governor-tiers';
 import { resolveProjection } from '@/lib/eversion/random';
 import { EVERSION_MARKS } from '@/lib/eversion/marks';
 import type { EntryPoint } from '@/lib/eversion/marks';
-import { EversionRunner, withTimeout } from '@/lib/eversion/runner';
+import { EversionRunner, HOST_INIT_TIMEOUT_MS, withTimeout } from '@/lib/eversion/runner';
 import type {
   HostPort,
   OverlayPort,
@@ -232,6 +232,31 @@ function timeoutPromise(ms: number): Promise<void> {
 
 function createPagePort(getOrb?: () => OrbRect | null): PagePort {
   return {
+    onResize(cb) {
+      // `resize` fires many times per frame while a window is dragged, and
+      // `orientationchange` can fire before the new size is readable: coalesce to
+      // one report per frame, read the size then, and say nothing if it did not change.
+      let last = viewportNow();
+      let frame = 0;
+      const flush = () => {
+        frame = 0;
+        const v = viewportNow();
+        if (v.w === last.w && v.h === last.h && v.dpr === last.dpr) return;
+        last = v;
+        cb(v);
+      };
+      const onChange = () => {
+        if (!frame) frame = requestAnimationFrame(flush);
+      };
+      window.addEventListener('resize', onChange, { passive: true });
+      window.addEventListener('orientationchange', onChange, { passive: true });
+      return () => {
+        window.removeEventListener('resize', onChange);
+        window.removeEventListener('orientationchange', onChange);
+        if (frame) cancelAnimationFrame(frame);
+        frame = 0;
+      };
+    },
     viewport: viewportNow,
     tier: detectTier,
     colours: resolveThemeColours,
@@ -328,6 +353,12 @@ function createRouterPort(router: RouterLike): RouterPort {
         }
       });
     },
+    onTraversal(cb) {
+      // `popstate` fires for back/forward (and `history.go`) and NOT for the
+      // `pushState` our own `navigate` makes, which is exactly the distinction wanted.
+      window.addEventListener('popstate', cb);
+      return () => window.removeEventListener('popstate', cb);
+    },
   };
 }
 
@@ -366,23 +397,46 @@ export function createDomOverlayPort(): OverlayPort {
    The host and its canvas
    ═════════════════════════════════════════════════════════════════════════════ */
 
+/** Where the page's host is in its life (spec 3.2: one host, one persistent canvas). */
+type HostState = 'idle' | 'initialising' | 'ready' | 'failed';
+/** Cold inits that may fail before the host is written off for the page's lifetime. */
+const MAX_HOST_INIT_FAILURES = 2;
+
 /**
  * The page's one host, initialised on the persistent canvas. `init` is sent once
  * per canvas (that is when the programs compile) and `ready` awaited on every
  * call; a failure discards the canvas, because a canvas whose control was
  * transferred to a failed context cannot be reused.
+ *
+ * ## Readiness is a state, not a wait
+ *
+ * The init is started while the hub is open and idle (`warm`), has its own
+ * generous budget ({@link HOST_INIT_TIMEOUT_MS}) and publishes where it is:
+ * `idle` (nothing sent), `initialising`, `ready`, or `failed` (written off after
+ * {@link MAX_HOST_INIT_FAILURES} failures, so a broken GPU is not retried on
+ * every release). The controller's eligibility reads it, so a release before the
+ * init finished is a clean, immediate `host-not-ready` fallback instead of a
+ * 600 ms wait that ends in `host-error` - and starts the init for next time.
  */
-function createHostPort(): HostPort & { warm(tier: Tier): void } {
+function createHostPort(): HostPort & {
+  warm(tier: Tier): void;
+  state(): HostState;
+  whenReady(tier: Tier): Promise<boolean>;
+} {
   let initedFor: HTMLCanvasElement | null = null;
   let readyPromise: Promise<EversionHost> | null = null;
+  let state: HostState = 'idle';
+  let failures = 0;
 
   function init(tier: Tier): Promise<EversionHost> {
     const host = getEversionHost();
     const canvas = getCanvas();
     if (initedFor === canvas && readyPromise) return readyPromise;
     initedFor = canvas;
-    readyPromise = new Promise<EversionHost>((resolve, reject) => {
-      const off = host.subscribe((m) => {
+    state = 'initialising';
+    let off = () => {};
+    const attempt = new Promise<EversionHost>((resolve, reject) => {
+      off = host.subscribe((m) => {
         if (m.type === 'ready') {
           off();
           resolve(host);
@@ -398,20 +452,49 @@ function createHostPort(): HostPort & { warm(tier: Tier): void } {
         reject(error instanceof Error ? error : new Error(String(error)));
       }
     });
-    readyPromise.catch(() => port.discardCanvas());
-    return readyPromise;
+    const mine = (readyPromise = withTimeout(attempt, HOST_INIT_TIMEOUT_MS, 'host init'));
+    mine.then(
+      () => {
+        if (readyPromise === mine) {
+          state = 'ready';
+          failures = 0;
+        }
+      },
+      () => {
+        off();
+        if (readyPromise !== mine) return;
+        failures++;
+        port.discardCanvas();
+        if (failures >= MAX_HOST_INIT_FAILURES) state = 'failed';
+      },
+    );
+    return mine;
   }
 
-  const port: HostPort & { warm(tier: Tier): void } = {
+  const port: HostPort & {
+    warm(tier: Tier): void;
+    state(): HostState;
+    whenReady(tier: Tier): Promise<boolean>;
+  } = {
     ready: (tier, timeoutMs) => withTimeout(init(tier), timeoutMs, 'host ready'),
     discardCanvas() {
       initedFor = null;
       readyPromise = null;
+      if (state !== 'failed') state = 'idle';
       discardCanvas();
     },
     warm(tier) {
+      if (state === 'failed') return;
       init(tier).catch(() => {});
     },
+    state: () => state,
+    whenReady: (tier) =>
+      state === 'failed'
+        ? Promise.resolve(false)
+        : init(tier).then(
+            () => true,
+            () => false,
+          ),
   };
   return port;
 }
@@ -425,6 +508,12 @@ export interface EversionControllerHandle extends EversionController {
   start(node: EversionNode, state: GlobeStartState, entry?: EntryPoint): Promise<EversionOutcome>;
   /** Hurry the run in flight: back/forward (T33). */
   abort(): void;
+  /**
+   * Start the host's init now (if it is not under way) and resolve when it is
+   * ready - `false` if it failed. For callers with no hub open to do it for
+   * them (the debug entry point, the e2e fixtures); the hub never waits on this.
+   */
+  warmHost(): Promise<boolean>;
   /** Observable state, for the debug slot and tests. */
   state: EversionRunner['state'];
   dispose(): void;
@@ -460,13 +549,29 @@ export function createEversionController(
     return capture;
   };
 
+  /**
+   * Eligibility at the moment of release: the hub's own (flag, motion, WebGL2,
+   * chunk) and then the host's. A host that has not finished initialising is not
+   * a failure, it is "not yet": today's navigation runs now, and a host that was
+   * never started is started so the NEXT release finds it ready.
+   */
+  const ineligibleReason = (): FallbackReason | null => {
+    const base = deps.beforeCapture.ineligibleReason();
+    if (base) return base;
+    const state = hostPort.state();
+    if (state === 'ready') return null;
+    if (state === 'failed') return 'host-error';
+    if (state === 'idle') hostPort.warm(detectTier());
+    return 'host-not-ready';
+  };
+
   const page = createPagePort(deps.getOrbRect);
   const runner = new EversionRunner({
     host: hostPort,
     overlay: storeOverlay,
     page,
     router: createRouterPort(deps.router),
-    ineligibleReason: () => deps.beforeCapture.ineligibleReason(),
+    ineligibleReason: () => ineligibleReason(),
     awaitBefore: (grace) => deps.beforeCapture.awaitBefore(grace),
     capture: () => deps.beforeCapture.getCapture(),
     openCapture,
@@ -518,8 +623,8 @@ export function createEversionController(
   };
 
   const handle: EversionControllerHandle = {
-    isEligible: () => deps.beforeCapture.isEligible(),
-    ineligibleReason: () => deps.beforeCapture.ineligibleReason(),
+    isEligible: () => ineligibleReason() === null,
+    ineligibleReason,
 
     onHubOpened() {
       if (!isEversionEnabled() || !deps.beforeCapture.isEligible()) return;
@@ -545,7 +650,12 @@ export function createEversionController(
 
     start: (node, state, entry) => runner.run(node, state, entry),
 
+    warmHost: () => hostPort.whenReady(detectTier()),
+
     async preview() {
+      // No hub was open to warm the host, and a Preview is not time-critical: wait
+      // for it (within the cold-init budget) rather than fall back on a cold click.
+      if (!(await hostPort.whenReady(detectTier()))) return { fallback: 'host-error' };
       const before = async (): Promise<ImageBitmap | null> => {
         try {
           const capture = await openCapture();
@@ -636,9 +746,15 @@ if (typeof window !== 'undefined') {
       const s = ensure()?.state();
       return s ?? { phase: 'idle', coverActive: false, beforeReady: false, afterReady: false };
     },
+    ineligibleReason() {
+      const c = ensure();
+      return c ? c.ineligibleReason() : 'host-error';
+    },
+    warmHost: async () => (await ensure()?.warmHost()) ?? false,
     async startTo(href) {
       const c = ensure();
       if (!c) return { fallback: 'host-error' satisfies FallbackReason };
+      await c.warmHost();
       const v = viewportNow();
       const node: EversionNode = {
         id: 'debug',

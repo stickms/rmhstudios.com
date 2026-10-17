@@ -7,6 +7,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AFTER_CAPTURE_TIMEOUT_MS } from '../constants';
 import { EversionRunner } from '../runner';
 import type { RunnerDeps } from '../runner';
 import type {
@@ -16,6 +17,7 @@ import type {
   FromWorker,
   GlobeStartState,
   ToWorker,
+  Viewport,
 } from '../types';
 
 const NODE = {
@@ -54,6 +56,8 @@ interface Rig {
   emit(message: FromWorker): void;
   routerIdle: { resolve(): void };
   input(): void;
+  traverse(): void;
+  resize(viewport: Viewport): void;
   capture: { captureViewport: ReturnType<typeof vi.fn> };
   runner: EversionRunner;
 }
@@ -77,6 +81,8 @@ function rig(patch: Partial<RunnerDeps> = {}, captureImpl?: () => Promise<unknow
   let resolveIdle!: () => void;
   const idle = new Promise<void>((r) => (resolveIdle = r));
   let inputCb: (() => void) | null = null;
+  let traversalCb: (() => void) | null = null;
+  let resizeCb: ((v: Viewport) => void) | null = null;
   const capture = {
     captureViewport: vi.fn(
       captureImpl ??
@@ -94,6 +100,12 @@ function rig(patch: Partial<RunnerDeps> = {}, captureImpl?: () => Promise<unknow
       unmount: () => log.push('overlay:unmount'),
     },
     page: {
+      onResize(cb) {
+        resizeCb = cb;
+        return () => {
+          resizeCb = null;
+        };
+      },
       viewport: () => ({ w: 800, h: 600, dpr: 1 }),
       tier: () => 'mid',
       colours: () => COLOURS,
@@ -115,6 +127,12 @@ function rig(patch: Partial<RunnerDeps> = {}, captureImpl?: () => Promise<unknow
         log.push(`navigate:${href}`);
       },
       whenIdle: () => idle.then(() => void log.push('router-idle')),
+      onTraversal(cb) {
+        traversalCb = cb;
+        return () => {
+          traversalCb = null;
+        };
+      },
     },
     ineligibleReason: () => null,
     awaitBefore: async () => bitmap(),
@@ -140,6 +158,8 @@ function rig(patch: Partial<RunnerDeps> = {}, captureImpl?: () => Promise<unknow
     },
     routerIdle: { resolve: resolveIdle },
     input: () => inputCb?.(),
+    traverse: () => traversalCb?.(),
+    resize: (v) => resizeCb?.(v),
     capture,
     runner: new EversionRunner(deps),
   };
@@ -413,16 +433,16 @@ describe('eversion runner: AFTER', () => {
     await p;
   });
 
-  it('a router that never settles sends nothing: the timeline stretch cap owns that case', async () => {
+  it('a router that never settles is an AFTER failure at AFTER_CAPTURE_TIMEOUT_MS', async () => {
     const r = rig();
     const p = r.runner.run(NODE, GLOBE);
     await flush();
-    await vi.advanceTimersByTimeAsync(10_000);
-    expect(
-      r.posted.some(
-        (m) => m.type === 'after-failed' || (m.type === 'texture' && m.slot === 'after'),
-      ),
-    ).toBe(false);
+    await vi.advanceTimersByTimeAsync(AFTER_CAPTURE_TIMEOUT_MS - 100);
+    expect(r.posted.some((m) => m.type === 'after-failed')).toBe(false);
+    await vi.advanceTimersByTimeAsync(200);
+    expect(r.posted.filter((m) => m.type === 'after-failed')).toHaveLength(1);
+    expect(r.capture.captureViewport).not.toHaveBeenCalled();
+    expect(r.posted.some((m) => m.type === 'texture' && m.slot === 'after')).toBe(false);
     r.emit(DONE);
     await p;
   });
@@ -441,6 +461,33 @@ describe('eversion runner: AFTER', () => {
     await flush();
     expect(late.close).toHaveBeenCalled();
     expect(r.posted.filter((m) => m.type === 'texture' && m.slot === 'after')).toHaveLength(0);
+  });
+
+  it('a run that ends while the runner is still opening its own capture session never sets the settle attribute', async () => {
+    let openIt!: (c: CaptureApi) => void;
+    const dispose = vi.fn();
+    const own = {
+      captureViewport: vi.fn(),
+      createSession: vi.fn(),
+      dispose,
+    } as unknown as CaptureApi;
+    const r = rig({
+      capture: () => null,
+      openCapture: () => new Promise<CaptureApi>((res) => (openIt = res)),
+    });
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    r.routerIdle.resolve();
+    await flush();
+    r.emit({ type: 'context-lost' });
+    await vi.advanceTimersByTimeAsync(300);
+    await p;
+    openIt(own);
+    await flush();
+    expect(r.log).not.toContain('settle:on');
+    expect(
+      (own as unknown as { captureViewport: ReturnType<typeof vi.fn> }).captureViewport,
+    ).not.toHaveBeenCalled();
   });
 
   it('opens its own capture session when the hub has none, and disposes it', async () => {
@@ -533,5 +580,108 @@ describe('eversion runner: input, abort and faults after start', () => {
     expect(r.runner.state().phase).toBe('running');
     r.emit(DONE);
     expect((await q).end).toBe('done');
+  });
+});
+
+describe('eversion runner: router and viewport edge cases (spec 9.4)', () => {
+  it('back/forward during the run aborts once; the AFTER capture it was waiting for is dropped', async () => {
+    const r = rig();
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    r.traverse();
+    r.traverse();
+    expect(r.posted.filter((m) => m.type === 'abort')).toHaveLength(1);
+    // The router settles after the traversal: nothing may be captured or uploaded for the aborted run.
+    r.routerIdle.resolve();
+    await flush();
+    expect(r.capture.captureViewport).not.toHaveBeenCalled();
+    expect(
+      r.posted.some(
+        (m) => m.type === 'after-failed' || (m.type === 'texture' && m.slot === 'after'),
+      ),
+    ).toBe(false);
+    r.emit({ type: 'stage', stage: 'gate-open', t: 1 });
+    r.emit(DONE);
+    expect(await p).toMatchObject({ fallback: null, end: 'done' });
+    r.traverse(); // listener removed with the run
+    expect(r.posted.filter((m) => m.type === 'abort')).toHaveLength(1);
+  });
+
+  it('a traversal that lands while the AFTER capture is in flight drops its bitmap', async () => {
+    const late = bitmap();
+    let finishCapture!: (v: unknown) => void;
+    const r = rig({}, () => new Promise((res) => (finishCapture = res)));
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    r.routerIdle.resolve();
+    await flush();
+    r.traverse();
+    finishCapture({ bitmap: late, width: 1, height: 1, scale: 1, durationMs: 1 });
+    await flush();
+    expect(late.close).toHaveBeenCalled();
+    expect(r.posted.some((m) => m.type === 'texture' && m.slot === 'after')).toBe(false);
+    r.emit(DONE);
+    await p;
+  });
+
+  it('forwards a resize to the render side as a resize message, and stops with the run', async () => {
+    const r = rig();
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    r.resize({ w: 500, h: 900, dpr: 2 });
+    expect(r.posted.filter((m) => m.type === 'resize')).toEqual([
+      { type: 'resize', viewport: { w: 500, h: 900, dpr: 2 } },
+    ]);
+    r.emit(DONE);
+    await p;
+    r.resize({ w: 1, h: 1, dpr: 1 });
+    expect(r.posted.filter((m) => m.type === 'resize')).toHaveLength(1);
+  });
+
+  it('input once the unwrap is done (POP) is ignored', async () => {
+    const r = rig();
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    r.emit({ type: 'cover' });
+    r.emit({ type: 'unwrap-done' });
+    await flush();
+    r.input();
+    expect(r.posted.some((m) => m.type === 'fast-forward')).toBe(false);
+    r.emit(DONE);
+    await p;
+  });
+
+  it('context loss BEFORE start (during prime) is a clean fallback, never a hung run', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    const r = rig({
+      placeholder: async () => {
+        await gate;
+        return bitmap();
+      },
+    });
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    r.emit({ type: 'context-lost' });
+    release();
+    expect((await p).fallback).toBe('host-error');
+    expect(r.log.some((l) => l.startsWith('navigate'))).toBe(false);
+    expect(r.log).toContain('discardCanvas');
+  });
+
+  it('a host that throws on post after start ends the run as a lost context, without throwing', async () => {
+    const r = rig();
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    // The next post (the reveal, after unwrap-done) hits a dead host.
+    const host = await r.deps.host.ready('mid', 1);
+    host.post = () => {
+      throw new Error('worker gone');
+    };
+    r.emit({ type: 'cover' });
+    r.emit({ type: 'unwrap-done' });
+    await flush();
+    await vi.advanceTimersByTimeAsync(300);
+    expect(await p).toMatchObject({ fallback: null, end: 'context-lost' });
   });
 });

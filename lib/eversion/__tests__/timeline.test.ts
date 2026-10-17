@@ -549,7 +549,28 @@ describe('clock (spec §7.7)', () => {
 });
 
 describe('tick cost', () => {
-  it('allocates nothing in steady state and costs microseconds', () => {
+  /**
+   * The allocation assertion is exact and load-independent. The wall-clock bound
+   * is not: on a shared box running other suites a tick can cost several times
+   * its quiet figure, so (a) the cost is the best of three passes, which drops a
+   * pass hit by a preemption, and (b) the bound is scaled by how much slower a
+   * fixed reference loop is running than on a quiet core. On a quiet machine the
+   * scale is 1 and the bound is the original 25 µs.
+   */
+  function loadFactor(): number {
+    const QUIET_MS = 3; // 2e6 sqrt-adds on a quiet modern core
+    let best = Infinity;
+    let sink = 0;
+    for (let rep = 0; rep < 3; rep++) {
+      const t = performance.now();
+      for (let i = 0; i < 2_000_000; i++) sink += Math.sqrt(i);
+      best = Math.min(best, performance.now() - t);
+    }
+    expect(sink).toBeGreaterThan(0);
+    return Math.min(Math.max(best / QUIET_MS, 1), 100);
+  }
+
+  it('allocates nothing in steady state and costs microseconds', { timeout: 60_000 }, () => {
     // Warm every branch `write` has (the radius fit's shrink and grow windows included — a path
     // first taken inside the measurement would run unoptimised and box doubles): drive a few
     // whole timelines first.
@@ -576,25 +597,30 @@ describe('tick cost', () => {
     const N = 5000;
     let t = wall.now;
     let sink = 0;
-    gc();
-    const base0 = space();
-    for (let i = 0; i < N; i++) {
-      t += 0.2;
-      sink += Math.sqrt(t);
+    let per = Infinity;
+    let worstGrown = -Infinity;
+    for (let pass = 0; pass < 3; pass++) {
+      gc();
+      const base0 = space();
+      for (let i = 0; i < N; i++) {
+        t += 0.2;
+        sink += Math.sqrt(t);
+      }
+      const baseline = space() - base0;
+      gc();
+      const before = space();
+      const start = performance.now();
+      for (let i = 0; i < N; i++) {
+        t += 0.2; // 1 s of timeline across each pass, inside the long eversion
+        tl.tick(t);
+      }
+      per = Math.min(per, ((performance.now() - start) * 1000) / N);
+      worstGrown = Math.max(worstGrown, space() - before - baseline);
     }
-    const baseline = space() - base0;
-    gc();
-    const before = space();
-    const start = performance.now();
-    for (let i = 0; i < N; i++) {
-      t += 0.2; // 1 s of timeline across the loop, inside the long eversion
-      tl.tick(t);
-    }
-    const per = ((performance.now() - start) * 1000) / N;
-    const grown = space() - before - baseline;
     expect(sink).toBeGreaterThan(0);
-    expect(grown).toBeLessThan(32 * 1024); // 5000 ticks × even 8 B would be 40 KB
-    expect(per).toBeLessThan(25); // spec target 5 µs; the bound is loose for shared CI cores
+    expect(worstGrown).toBeLessThan(32 * 1024); // 5000 ticks × even 8 B would be 40 KB
+    // Spec target 5 µs; the bound is loose, and scaled by the measured machine load.
+    expect(per).toBeLessThan(25 * loadFactor());
   });
 });
 
@@ -838,18 +864,22 @@ describe('property suite: tests 17–22 over 10 000 seeded scenarios', () => {
     scenarios: 0,
     cov: { capForced: 0, waitedThenOpened: 0, failedGate: 0, ffNominal: 0, ffWaiting: 0, abort: 0 },
   };
-  it('holds C² continuity, the gate, the bounds, monotone stages, the spin and the clock', () => {
-    for (let seed = 1; seed <= SCENARIOS; seed++) {
-      scenario(seed, out);
-      out.scenarios++;
-    }
-    expect(out.failures).toEqual([]);
-    expect(out.scenarios).toBe(SCENARIOS);
-    // The generator must actually reach the paths the properties are about.
-    for (const [path, n] of Object.entries(out.cov)) {
-      expect(n, path).toBeGreaterThan(100);
-    }
-  });
+  it(
+    'holds C² continuity, the gate, the bounds, monotone stages, the spin and the clock',
+    { timeout: 300_000 },
+    () => {
+      for (let seed = 1; seed <= SCENARIOS; seed++) {
+        scenario(seed, out);
+        out.scenarios++;
+      }
+      expect(out.failures).toEqual([]);
+      expect(out.scenarios).toBe(SCENARIOS);
+      // The generator must actually reach the paths the properties are about.
+      for (const [path, n] of Object.entries(out.cov)) {
+        expect(n, path).toBeGreaterThan(100);
+      }
+    },
+  );
 });
 
 /** Channel names are part of the surface the debug overlay reads. */

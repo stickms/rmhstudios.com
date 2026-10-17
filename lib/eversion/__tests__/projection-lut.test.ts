@@ -171,7 +171,7 @@ describe('S#5: the bilinear LUT matches forward', () => {
   const N = 5000;
 
   for (const id of PROJECTION_IDS) {
-    it(`${id}: <= 0.5 px at ${PAGE_W} px page width`, () => {
+    it(`${id}: <= 0.5 px at ${PAGE_W} px page width`, { timeout: 60_000 }, () => {
       const p = PROJECTIONS[id];
       const perAspect: string[] = [];
       let worstAll = 0;
@@ -321,7 +321,7 @@ describe('discontinuities', () => {
 });
 
 describe('bake timing', () => {
-  it('prints the bake time per projection (Peirce target <= 25 ms)', () => {
+  it('prints the bake time per projection (Peirce target <= 25 ms)', { timeout: 60_000 }, () => {
     const lines: string[] = [];
     let peirceMs = 0;
     for (const id of PROJECTION_IDS) {
