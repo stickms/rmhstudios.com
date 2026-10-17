@@ -36,7 +36,6 @@ import { detectHostMode, getEversionHost } from '../gl/host';
 import { getShaderSet } from '../gl/shaders';
 import { buildMesh, meshCounts, meshForTier } from '../mesh';
 import { afterDomainTransform, alignAngle, fitEndIsometry } from '../orientation';
-import { buildPlaceholder } from '../placeholder';
 import { isEversionReady, prefetchEversion } from '../prefetch';
 import {
   aspectBucket,
@@ -150,14 +149,9 @@ const STUBS: StubEntry[] = [
     task: 'T13',
     call: () => afterDomainTransform(noArgs, noArgs, 0),
   },
-  // T17 / T18 / T29 — page side
+  // T17 / T29 — page side (T18, the placeholder, is implemented)
   { name: 'createCapture', task: 'T17', call: () => createCapture() },
   { name: 'captureOnce', task: 'T17', call: () => captureOnce(noArgs) },
-  {
-    name: 'buildPlaceholder',
-    task: 'T18',
-    call: () => buildPlaceholder(noArgs, noArgs, noArgs, noArgs, noArgs),
-  },
   { name: 'prefetchEversion', task: 'T29', call: () => prefetchEversion() },
   { name: 'isEversionReady', task: 'T29', call: () => isEversionReady() },
   // T23 / T24 / T25 — GL

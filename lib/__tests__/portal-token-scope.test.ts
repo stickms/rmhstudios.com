@@ -55,7 +55,12 @@ function rules(css: string): Array<{ selector: string; body: string; index: numb
 const lineAt = (src: string, index: number) => src.slice(0, index).split('\n').length;
 
 describe('portaled surfaces only use document-level design tokens', () => {
-  const css = readFileSync(join(ROOT, RADIAL_CSS), 'utf8');
+  // `@import …;` statements (eversion.css, at the top) end in `;` not `}`, so the
+  // rule scanners below would read one as the head of the next selector. Blanked,
+  // not removed, to keep line numbers true.
+  const css = readFileSync(join(ROOT, RADIAL_CSS), 'utf8').replace(/^@import[^;]*;/gm, (c) =>
+    c.replace(/[^\n]/g, ' '),
+  );
 
   it('the radial spacing scale is still shell-scoped (guards the premise)', () => {
     // If someone hoists --rad-* to :root this test's premise changes — and the
