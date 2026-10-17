@@ -35,7 +35,6 @@ import { createRenderer } from '../gl/renderer';
 import { detectHostMode, getEversionHost } from '../gl/host';
 import { getShaderSet } from '../gl/shaders';
 import { buildMesh, meshCounts, meshForTier } from '../mesh';
-import { isEversionReady, prefetchEversion } from '../prefetch';
 import {
   aspectBucket,
   bakeLut,
@@ -140,11 +139,9 @@ const STUBS: StubEntry[] = [
   { name: 'wrapWeight', task: 'T12', call: () => wrapWeight(0, 0) },
   { name: 'morphPosition', task: 'T12', call: () => morphPosition(noArgs, noArgs, 0, noArgs) },
   { name: 'projectToViewport', task: 'T12', call: () => projectToViewport(noArgs, noArgs, noArgs) },
-  // T17 / T29 — page side (T18, the placeholder, is implemented)
+  // T17 — page side (T18, the placeholder, and T29, prefetch, are implemented)
   { name: 'createCapture', task: 'T17', call: () => createCapture() },
   { name: 'captureOnce', task: 'T17', call: () => captureOnce(noArgs) },
-  { name: 'prefetchEversion', task: 'T29', call: () => prefetchEversion() },
-  { name: 'isEversionReady', task: 'T29', call: () => isEversionReady() },
   // T23 / T24 / T25 — GL
   { name: 'getShaderSet', task: 'T23', call: () => getShaderSet() },
   { name: 'createRenderer', task: 'T24', call: () => createRenderer(noArgs, noArgs) },

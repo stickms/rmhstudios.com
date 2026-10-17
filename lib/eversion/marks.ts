@@ -44,6 +44,13 @@ export const EVERSION_MARKS = {
   done: 'eversion:done',
   /** The effect did not run; today's path took over. `detail.reason` says why. */
   fallback: 'eversion:fallback',
+  /**
+   * The post-`load` warm-up began (`prefetch.ts`, spec §8.1). Not part of a run —
+   * it has no `EversionMarkDetails` entry. `eversion-load.mjs` (S#40) asserts its
+   * `startTime` is not before the navigation entry's `loadEventStart`, which is
+   * the only way to prove "never before `load`" from inside the page.
+   */
+  prefetch: 'eversion:prefetch',
 } as const;
 export type EversionMarkName = (typeof EVERSION_MARKS)[keyof typeof EVERSION_MARKS];
 

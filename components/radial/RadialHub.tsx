@@ -9,6 +9,7 @@ import { useResolvedUser, useSession } from '@/components/Providers';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { SIDEBAR_NAV, isNavGroup, type NavLeaf } from '@/lib/sidebar-nav';
+import { isEversionEnabled } from '@/lib/eversion/flags';
 import { RmhLogo } from './RmhLogo';
 
 /**
@@ -190,6 +191,13 @@ export function RadialHub() {
     // enough to stay behind the page's own first paint.
     // Once the chunk is in, rehearse the open — see `rehearsing` below.
     const warm = () => {
+      // Globe eversion: warm its runtime in the same idle window, behind a dynamic
+      // import so none of it joins the shell's static closure (spec §8.1). The flag
+      // is a tiny leaf read statically, so a visitor without the effect fetches
+      // nothing at all.
+      if (isEversionEnabled()) {
+        void import('@/lib/eversion/prefetch').then((m) => m.prefetchEversion());
+      }
       void preloadGlobe()?.then(() => {
         if (rehearsed || phaseRef.current !== 'closed') return;
         rehearsed = true;
