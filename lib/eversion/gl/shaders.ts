@@ -147,6 +147,20 @@ const JUMP_GRAD = 0.25;
  */
 const FLAT_SNAP = 5e-4;
 
+/**
+ * The vertex-side page lookup of the duplicated EQUATOR vertices (`|φ'| < 1e-6`; see `mesh.ts#EQUATOR_EPS`) is nudged
+ * by this many LUT texels toward the vertex's own side of the equator, so the south copy reads the texel row below a
+ * cut along the equator (Peirce's back equator, in either layout) and the north copy the row above. Float32 cannot
+ * resolve the copies' own 1e-7 rad offset in the LUT coordinate; 2e-3 texel is ~100 ulps and ~0.002 px of motion.
+ */
+export const EQUATOR_BIAS_TEXELS = 2e-3;
+
+/**
+ * Pole-row extrapolation factor: the half-texel step from the last LUT row to the one below, times this, is added
+ * to the pole vertex's UV (then clamped to the page). 4 = two whole texels past the last row's centre.
+ */
+const POLE_EXTRAP = 4;
+
 const f = (x: number) => x.toFixed(8);
 
 /** `#define`s generated from the constants, so GLSL and TypeScript cannot disagree. */
@@ -164,6 +178,8 @@ const DEFINES = /* glsl */ `
 #define JUMP_UV ${f(JUMP_UV)}
 #define JUMP_GRAD ${f(JUMP_GRAD)}
 #define FLAT_SNAP ${f(FLAT_SNAP)}
+#define EQUATOR_BIAS ${f(EQUATOR_BIAS_TEXELS)}
+#define POLE_EXTRAP ${f(POLE_EXTRAP)}
 #define LAMBERT_BASE ${f(LAMBERT_BASE)}
 #define LAMBERT_GAIN ${f(LAMBERT_GAIN)}
 #define LIGHT_DIR vec3(${LIGHT_DIRECTION.map(f).join(', ')})
@@ -451,10 +467,30 @@ void main() {
      with u_unwrap = 1 and the unwrap with u_wrap = 1; at the hand-over every vertex has w = 1, so nothing jumps. */
   bool unwrapping = u_unwrap < 1.0;
   vec3 pl = unwrapping ? u_mAfter * p : p;
-  vec2 tp = unwrapping ? vec2(atan(pl.x, pl.z), asin(clamp(-pl.y, -1.0, 1.0))) : vec2(theta, phi);
+  /* The longitude atan2 derives at a pole vertex is noise (cos(phi) is ~1e-7 there and GL's sin/cos are not that
+     accurate), which would send each pole-row vertex to a random page column. Lay the pole row out as the
+     last LUT row's centre instead: same longitude as its column, extrapolated to the pole just below. */
+  float lutRows = float(textureSize(u_lut, 0).y);
+  float pitch = PI / lutRows;
+  float phiL = clamp(phi, -HALF_PI + 0.5 * pitch, HALF_PI - 0.5 * pitch);
+  float cpL = cos(phiL);
+  vec3 plL = u_mAfter * vec3(cpL * sin(theta), -sin(phiL), cpL * cos(theta));
+  vec2 tp = unwrapping ? vec2(atan(plL.x, plL.z), asin(clamp(-plL.y, -1.0, 1.0))) : vec2(theta, phi);
+
+  /* The two copies of the duplicated equator row must read opposite sides of an equatorial cut (mesh.ts). */
+  if (abs(tp.y) < 1e-6) {
+    tp.y += (tp.y < 0.0 ? -1.0 : 1.0) * EQUATOR_BIAS * pitch;
+  }
 
   /* The page pixel of the clamped extended UV, in the z = 0 plane (scale exactly 1 there). */
-  vec2 uv = clamp(lutUv(tp.x, tp.y), 0.0, 1.0);
+  vec2 uv = lutUv(tp.x, tp.y);
+  /* The pole row samples the LUT's last texel row, up to half a texel (and, on a tall Mercator page, up to ~8%
+     of the page) short of the true pole; extrapolate its UV past the pole and let the clamp put it on the edge.
+     Overshoot is harmless: the pole row is degenerate in 3D and at the flat end the fragments read their own pixel. */
+  if (abs(phi) > HALF_PI - 1e-5) {
+    uv += (uv - lutUv(tp.x, tp.y - (tp.y < 0.0 ? -1.0 : 1.0) * pitch)) * POLE_EXTRAP;
+  }
+  uv = clamp(uv, 0.0, 1.0);
   vec3 flatPos = vec3((uv - 0.5) * u_viewport, 0.0);
 
   /* The wrap wave: the centre curls onto the globe first, the edges follow (morph.ts). */

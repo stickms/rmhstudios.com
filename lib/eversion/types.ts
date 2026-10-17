@@ -333,12 +333,14 @@ export interface Mesh {
   readonly indexCount: number;
   /**
    * `(θ, φ)` per vertex, interleaved, 2 floats each. The seam is DUPLICATED
-   * (`θ = −π` and `θ = +π` both present) so domain coordinates are continuous
-   * within every triangle.
+   * (`θ = −π` and `θ = +π` both present) and so is the AFTER page's seam at
+   * `θ = 0` (two columns), so domain coordinates are continuous within every
+   * triangle and none straddles either page's edge. Each pole is a full ROW of
+   * vertices at `|φ| = π/2`.
    */
   readonly domain: Float32Array;
   readonly indices: Uint32Array;
-  /** The dedicated triangle fan at each pole — not a row of duplicated vertices. */
+  /** The index range of the pole-row quad band at each pole (degenerate in 3D, covers the flat page's edge). */
   readonly poleFans: { readonly north: IndexRange; readonly south: IndexRange };
 }
 

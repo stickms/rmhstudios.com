@@ -73,12 +73,7 @@ const pct = (x) => `${(x * 100).toFixed(2)}%`;
  * Defects the suite has found and does not yet fix. A listed check that fails is reported XFAIL and does not fail
  * the run; one that PASSES fails the run ("remove it from KNOWN_GAPS") so the list can only shrink.
  */
-const KNOWN_GAPS = new Map([
-  [
-    'S#15 mercator 390x844',
-    'a tall Mercator page: the polar fan triangles (one apex per fan) cannot tile the 19% of the page above the last latitude row, so the flat frame has a comb of veil there (a mesh gap; needs quads or a fan per apex pair)',
-  ],
-]);
+const KNOWN_GAPS = new Map([]);
 function checkKnown(key, name, ok, detail = '') {
   const why = KNOWN_GAPS.get(key);
   if (!why) return check(name, ok, detail);
@@ -330,6 +325,31 @@ try {
     ]) {
       const r = await t('frame', { ...patch, afterMix: 1 }, true);
       shot(`morph-${id}-${name}.png`, r.png);
+    }
+  }
+
+  /* ── 6b. mesh fix: mid-UNWRAP and mid-WRAP frames, mercator / lambert / peirce, for review in `meshfix/` ───── */
+  // A smear band is a column or row of triangles stretched across the page (a page cut inside a triangle). The
+  // asymmetric card has 1-px grid lines, so a stretch shows as a wide solid streak; the structural guarantee is
+  // checked in lib/eversion/__tests__/mesh-layout.test.ts (no triangle spans > 30% of the page in either layout).
+  const fixDir = join(outDir, 'meshfix');
+  mkdirSync(fixDir, { recursive: true });
+  for (const [vw, vh] of [
+    [640, 400],
+    [390, 844],
+  ]) {
+    for (const id of ['mercator', 'lambert', 'peirce']) {
+      await t('setView', vw, vh);
+      await t('init', 'mid');
+      await t('prime', id, true, { lut: 'bucket', orientation: 'real' });
+      await t('asymCards', id);
+      for (const pct25 of [25, 50, 75]) {
+        const r = await t('frame', { wrap: 1, unwrap: pct25 / 100, evert: 1, spin: orient.thetaAlign, tilt: 0, afterMix: 1 }, true);
+        writeFileSync(join(fixDir, `unwrap-${id}-${vw}x${vh}-${pct25}.png`), png(r.png));
+        check(`mesh fix: ${id} ${vw}x${vh} unwrap ${pct25}% renders without GL errors`, r.err === 0);
+      }
+      const w = await t('frame', { wrap: 0.25, unwrap: 1, evert: 0, spin: 0.3, tilt: 0.2, afterMix: 1 }, true);
+      writeFileSync(join(fixDir, `wrap-${id}-${vw}x${vh}-25.png`), png(w.png));
     }
   }
 

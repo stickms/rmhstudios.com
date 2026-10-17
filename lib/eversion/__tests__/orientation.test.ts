@@ -174,6 +174,8 @@ describe('S#12 outward normals by winding', () => {
         (verts[a + 2]! + verts[b + 2]! + verts[c + 2]!) / 3,
       ];
       const nf = n[0]! * cen[0]! + n[1]! * cen[1]! + n[2]! * cen[2]!;
+      // the pole-row quads' pole-side halves have zero area in 3D: no winding to check
+      if (Math.hypot(n[0]!, n[1]!, n[2]!) < 1e-6) continue;
       total++;
       if (wantPositive ? nf <= 0 : nf >= 0) wrong++;
     }
