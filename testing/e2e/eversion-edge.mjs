@@ -40,7 +40,7 @@
 //  redirect           a redirecting route                      (what the redirect lands on is captured)
 //  resize             resize / rotation mid-effect             (one `resize` per frame, forwarded)
 //  context-lost       WebGL context lost mid-effect            (cover off, `--fading`, 200 ms, finishes)
-//  hidden-tab         tab hidden mid-effect                    (`visibility` posted; loop pauses/resumes)
+//  hidden-tab         tab hidden mid-effect                    (`visibility` posted; loop pauses/resumes; a long absence settles the run)
 //  pop-input          input during POP                         (ignored: no fast-forward after reveal)
 //  never-settles      a router that never settles              (`after-failed` at AFTER_CAPTURE_TIMEOUT_MS)
 //  host-not-ready     a release before the host is ready       (synchronous `host-not-ready`, then ready)
@@ -251,20 +251,19 @@ async function assertClean(name, s, errors, run, { expectEnd = 'done' } = {}) {
 }
 
 /** The ordered marks of a run that went the whole way. */
-async function assertFullSequence(name, s) {
+async function assertFullSequence(name, s, { optional = [] } = {}) {
   const marks = await s.marks();
-  const order = ['start', 'cover', 'evert', 'gateOpen', 'unwrap', 'reveal', 'done'].map(
-    (n) => EVERSION_MARKS[n],
-  );
-  const seen = order.map((n) => marks.find((m) => m.name === n)?.startTime);
+  const order = ['start', 'cover', 'evert', 'gateOpen', 'unwrap', 'reveal', 'done'];
+  const seen = order.map((n) => marks.find((m) => m.name === EVERSION_MARKS[n])?.startTime);
   check(
     name,
-    seen.every((t) => t !== undefined),
+    seen.every((t, i) => t !== undefined || optional.includes(order[i])),
     `missing marks: ${JSON.stringify(seen)}`,
   );
+  const present = seen.filter((t) => t !== undefined);
   check(
     name,
-    seen.every((t, i) => i === 0 || t >= seen[i - 1]),
+    present.every((t, i) => i === 0 || t >= present[i - 1]),
     `marks out of order: ${seen}`,
   );
 }
@@ -532,7 +531,7 @@ async function contextLost() {
   }
 }
 
-/** Hidden tab: `visibility` is posted, the loop pauses (no frames), and resumes on return. */
+/** Hidden tab: `visibility` is posted, the loop pauses (no frames) and resumes on a short absence; a long one settles the run. */
 async function hiddenTab() {
   const name = 'hidden-tab';
   const { s, errors } = await fresh({ path: '/' });
@@ -565,15 +564,16 @@ async function hiddenTab() {
       `before: ${JSON.stringify(running)}`,
     );
 
+    // A short absence (inside HIDDEN_SETTLE_GRACE_MS, 1 s): the loop pauses and the run is still alive.
     await setHidden(true);
-    await s.page.waitForTimeout(1500);
+    await s.page.waitForTimeout(400);
     check(
       name,
       (await posts(s, 'visibility')).some((p) => p.hidden === true),
       'visibility:true not posted',
     );
     const h1 = await loop();
-    await s.page.waitForTimeout(2500);
+    await s.page.waitForTimeout(400);
     const h2 = await loop();
     check(
       name,
@@ -593,10 +593,26 @@ async function hiddenTab() {
       { timeout: 30_000 },
     );
 
-    await press(s);
+    // A long absence (past HIDDEN_SETTLE_GRACE_MS, review B / spec §7.7): nobody is watching, so the rest of the
+    // run is settled without drawing instead of being replayed on return. The loop is not running any more.
+    await setHidden(true);
+    let settled = await loop();
+    for (let i = 0; i < 40 && settled.running; i++) {
+      await s.page.waitForTimeout(250);
+      settled = await loop();
+    }
+    check(
+      name,
+      settled.hidden && !settled.running && settled.pending === 0,
+      `run not settled after the grace: ${JSON.stringify(settled)}`,
+    );
+
+    await setHidden(false);
     const run = await finish(s);
     await assertClean(name, s, errors, run);
-    await assertFullSequence(name, s);
+    // A run the render side settled while hidden ends in one synchronous burst (`unwrap-done`, `pop`, `done`), so the
+    // page never gets to mark `reveal` on its own timeline: the one mark a settled run may lack.
+    await assertFullSequence(name, s, { optional: ['reveal'] });
   } finally {
     await s.close();
   }

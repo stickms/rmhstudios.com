@@ -148,6 +148,10 @@ async function coldLoad(browser, route, flagOn, settleMs) {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await context.newPage();
   await page.addInitScript(() => {
+    // The default Resource Timing buffer holds 250 entries, and a production page's own chunks and images fill it
+    // before the hub's warm-up (>= 2 s after load) requests anything: the late chunks would be dropped from
+    // `getEntriesByType('resource')` and "fetched after load" would read 0 for the wrong reason.
+    performance.setResourceTimingBufferSize(5000);
     window.__lcp = 0;
     window.__tasks = [];
     window.__fcp = 0;
