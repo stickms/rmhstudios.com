@@ -9,10 +9,34 @@
  *
  * The same projection serves wrap and unwrap of one navigation.
  */
+import { LAST_PROJECTION_KEY } from './constants';
+import { PROJECTION_IDS, type NavTransition, type ProjectionId } from './types';
 
-/* eslint-disable @typescript-eslint/no-unused-vars -- contract stub: T11 replaces every body, and this line with them */
-import { notImplemented } from './not-implemented';
-import type { NavTransition, ProjectionId } from './types';
+/** Fallback when `sessionStorage` is absent or throws (private windows, sandboxed frames). */
+let lastDraw: ProjectionId | null = null;
+
+function isProjectionId(value: unknown): value is ProjectionId {
+  return typeof value === 'string' && (PROJECTION_IDS as readonly string[]).includes(value);
+}
+
+function readLast(): ProjectionId | null {
+  try {
+    const stored = globalThis.sessionStorage?.getItem(LAST_PROJECTION_KEY);
+    if (isProjectionId(stored)) return stored;
+  } catch {
+    /* storage unavailable: use the module variable */
+  }
+  return lastDraw;
+}
+
+function writeLast(id: ProjectionId): void {
+  lastDraw = id;
+  try {
+    globalThis.sessionStorage?.setItem(LAST_PROJECTION_KEY, id);
+  } catch {
+    /* the module variable above still enforces the rule within this page-load */
+  }
+}
 
 /**
  * Resolve the visitor's setting to the projection to draw. `rng` returns
@@ -23,10 +47,21 @@ export function resolveProjection(
   setting: NavTransition,
   rng: () => number = Math.random,
 ): ProjectionId {
-  return notImplemented('resolveProjection', 'T11');
+  if (setting !== 'random') return setting;
+  const last = readLast();
+  const pool = last ? PROJECTION_IDS.filter((id) => id !== last) : PROJECTION_IDS;
+  // Clamp so an injected rng that returns exactly 1 cannot index past the end.
+  const pick = pool[Math.min(Math.floor(rng() * pool.length), pool.length - 1)]!;
+  writeLast(pick);
+  return pick;
 }
 
 /** Forget the previous draw (tests only). */
 export function resetLastProjection(): void {
-  notImplemented('resetLastProjection', 'T11');
+  lastDraw = null;
+  try {
+    globalThis.sessionStorage?.removeItem(LAST_PROJECTION_KEY);
+  } catch {
+    /* nothing to forget */
+  }
 }
