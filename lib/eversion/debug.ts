@@ -110,8 +110,27 @@ export interface ControllerDebug {
   startTo(href: string): Promise<EversionOutcome>;
 }
 
+/** `window.__eversion.beforeCapture` (T30): the hub's BEFORE-capture scheduler. */
+export interface BeforeCaptureDebug {
+  state(): {
+    open: boolean;
+    /** A capture is scheduled or running. */
+    pending: boolean;
+    held: boolean;
+    /** Age of the held bitmap, ms; `null` when none. */
+    ageMs: number | null;
+    /** Main-thread duration of the last successful capture, ms. */
+    lastDurationMs: number | null;
+    /** How long after the hub opened the last capture started, ms. */
+    lastStartedAfterOpenMs: number | null;
+    captures: number;
+    lastError: string | null;
+  };
+}
+
 /** Every slot, keyed by the name a module registers under. */
 export interface DebugSlots {
+  beforeCapture: BeforeCaptureDebug;
   capture: CaptureDebug;
   placeholder: PlaceholderDebug;
   renderer: RendererDebug;
