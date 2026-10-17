@@ -1,6 +1,5 @@
 /**
- * The test and device-lab surface of the effect (spec §11.2, §11.3; T15 owns
- * this file and everything beyond the registry).
+ * The test and device-lab surface of the effect (spec §11.2, §11.3; T15).
  *
  * ## Why modules register themselves
  *
@@ -16,21 +15,34 @@
  *
  * {@link registerDebug} is a no-op unless `?eversion-debug=1` is in the URL
  * (`isEversionDebugEnabled`), and without the flag `window.__eversion` does not
- * exist. The stats overlay and anything heavy belong in a separate module that
- * T15 loads with a dynamic `import()` only under the flag, so nothing here
- * lands in any static closure (spec §11.3 test 39 asserts it).
+ * exist. Nothing else in this file runs at import time.
  *
- * ## What is implemented now and what is not
+ * ## Two files, because the registry has to be importable statically
  *
- * T01 implements the registry itself — about ten lines — and nothing else,
- * because a `registerDebug` that threw would crash every task that wires its
- * slot before T15 merges, and the whole point of this file is that wiring is
- * independent. The slot SHAPES below are the contract; T15 adds the overlay
- * ({@link mountDebugOverlay}), and each owning task fills its slot.
+ * The spec wants the debug surface out of every static closure (§11.3 gate 39).
+ * But the registrants — capture, placeholder, the renderer, the host, the
+ * controller — call `registerDebug` from their own module scope, so the
+ * registry itself is a static import of theirs. So this file is only the
+ * registry (a few hundred bytes, no DOM, nothing imported but flags and types),
+ * and everything heavy — the stats overlay — lives in `debug-overlay.ts`, which
+ * is reached ONLY through the dynamic `import()` in {@link mountDebugOverlay}.
+ * `__tests__/debug-closure.test.ts` pins that split until T29's permanent bundle
+ * assertion replaces it: nobody imports `debug-overlay` statically.
+ *
+ * ## The loader
+ *
+ * {@link maybeLoadEversionDebug} is the one call site the app needs. T31 (the
+ * controller) and T29 (prefetch) call it once, early on the client; it does
+ * nothing without the flag and otherwise mounts the overlay. It is idempotent.
+ *
+ * ## Slots
+ *
+ * The slot SHAPES below are the contract; each owning task fills its slot:
+ * `capture` (T17), `placeholder` (T18), `renderer` (T24/T25), `host` (T25),
+ * `controller` (T31).
  */
 
 import { isEversionDebugEnabled } from './flags';
-import { notImplemented } from './not-implemented';
 import type {
   CaptureOptions,
   CaptureResult,
@@ -117,6 +129,29 @@ declare global {
   }
 }
 
+const listeners = new Set<() => void>();
+
+/**
+ * Be told when a slot is registered or removed (the overlay re-lists its slots
+ * on it, so it needs no timer). Returns the unsubscribe function.
+ */
+export function onDebugChange(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+function notify(): void {
+  for (const listener of listeners) {
+    try {
+      listener();
+    } catch {
+      /* a broken overlay must not break the module that registered a slot */
+    }
+  }
+}
+
 /**
  * Expose `api` as `window.__eversion[name]`. Returns the function that removes
  * it (call it on dispose). A no-op returning a no-op unless the debug flag is on
@@ -133,16 +168,41 @@ export function registerDebug<K extends DebugSlotName>(name: K, api: DebugSlots[
   });
   const slots: Partial<DebugSlots> = registry;
   slots[name] = api;
+  notify();
   return () => {
-    if (slots[name] === api) delete slots[name];
+    if (slots[name] === api) {
+      delete slots[name];
+      notify();
+    }
+  };
+}
+
+let mounted: Promise<() => void> | null = null;
+
+/**
+ * Mount the fixed, `aria-hidden`, token-coloured stats overlay that prints the
+ * render side's `done` stats (spec §11.3). The overlay module is fetched with a
+ * dynamic `import()` so it is in no static closure. Synchronous for the caller:
+ * the returned function unmounts it whenever the import has finished. A no-op
+ * (returning a no-op) without the debug flag or a `document`. Idempotent: a
+ * second call shares the one overlay.
+ */
+export function mountDebugOverlay(): () => void {
+  if (typeof document === 'undefined' || !isEversionDebugEnabled()) return () => {};
+  mounted ??= import('./debug-overlay').then((m) => m.mountOverlay());
+  const pending = mounted;
+  return () => {
+    if (mounted === pending) mounted = null;
+    void pending.then((dispose) => dispose());
   };
 }
 
 /**
- * Mount the fixed, `aria-hidden`, token-coloured stats overlay that prints the
- * render side's `done` stats (spec §11.3). T15 implements it in a module loaded
- * only under the debug flag; this is the signature callers use.
+ * The call site the app uses (T31/T29): load the debug surface if, and only if,
+ * `?eversion-debug=1` is in the URL. Safe to call on the server and on every
+ * client entry — it returns immediately without the flag.
  */
-export function mountDebugOverlay(): () => void {
-  return notImplemented('mountDebugOverlay', 'T15');
+export function maybeLoadEversionDebug(): () => void {
+  if (typeof window === 'undefined' || !isEversionDebugEnabled()) return () => {};
+  return mountDebugOverlay();
 }

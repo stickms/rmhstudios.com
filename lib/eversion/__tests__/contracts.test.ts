@@ -47,7 +47,6 @@ import {
   toHalfFloat,
 } from '../projection-lut';
 import { cameraFor, flatPosition, morphPosition, projectToViewport, wrapWeight } from '../morph';
-import { mountDebugOverlay } from '../debug';
 import { resetLastProjection, resolveProjection } from '../random';
 import { evert, normal, stageParams } from '../thurston';
 import { Timeline } from '../timeline';
@@ -151,8 +150,6 @@ const STUBS: StubEntry[] = [
     task: 'T13',
     call: () => afterDomainTransform(noArgs, noArgs, 0),
   },
-  // T15 — debug overlay (registerDebug itself is implemented: see below)
-  { name: 'mountDebugOverlay', task: 'T15', call: () => mountDebugOverlay() },
   // T17 / T18 / T29 — page side
   { name: 'createCapture', task: 'T17', call: () => createCapture() },
   { name: 'captureOnce', task: 'T17', call: () => captureOnce(noArgs) },
@@ -701,6 +698,7 @@ describe('source hygiene', () => {
           'prefetch.ts',
           'flags.ts',
           'debug.ts',
+          'debug-overlay.ts',
           'random.ts',
         ].includes(r)
       );
