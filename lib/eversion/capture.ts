@@ -777,7 +777,13 @@ class CaptureSession implements CaptureApi {
     ctx.dpi = scale === 1 ? null : 96 * scale;
     ctx.timeout = Math.max(50, options.timeoutMs ?? CAPTURE_TIMEOUT_MS);
     ctx.backgroundColor = null;
-    ctx.style = { overflow: 'hidden', opacity: '1' };
+    // The clone's layout width IS the fixed box's width (the library pins the root to `ctx.width`,
+    // asserted below). The root must also reserve NO scrollbar gutter of its own: the live page's
+    // `scrollbar-gutter: stable` is already out of `width` (that is what fixedViewport subtracts),
+    // and a gutter reserved a second time inside the clone would narrow its layout by the gutter
+    // and move everything right of the left edge (Chromium ignores it in an image document,
+    // other engines need not). `overflow: hidden` keeps the clone from ever scrolling.
+    ctx.style = { overflow: 'hidden', scrollbarGutter: 'auto', opacity: '1' };
     ctx.fetch.placeholderImage = fill;
     ctx.filter = makeFilter(exclude, flight, { width, height });
 
@@ -828,6 +834,15 @@ class CaptureSession implements CaptureApi {
       tClone = performance.now();
       if (flight.ac.signal.aborted) return;
       const html = root as HTMLElement;
+      // Layout parity with the live page (review R7 Major 2): the clone is laid out in exactly the
+      // fixed box. A different width squeezes or seams the picture against the canvas.
+      const cloneWidth = Number.parseFloat(html.style.getPropertyValue('width'));
+      if (cloneWidth !== width || html.style.getPropertyValue('scrollbar-gutter') !== 'auto') {
+        throw new CaptureError(
+          'failed',
+          `eversion: capture clone is laid out ${cloneWidth}px wide with gutter '${html.style.getPropertyValue('scrollbar-gutter')}', the fixed viewport is ${width}px`,
+        );
+      }
       // The crop: scroll the document by moving the cloned body (see the docblock).
       const body = html.querySelector(':scope > body') as HTMLElement | null;
       if (body) {

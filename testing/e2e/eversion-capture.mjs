@@ -250,7 +250,10 @@ function rightEdge({ data, width, height }, tol = 10) {
   for (let x = width - 1; x >= 0; x--) {
     let lo = 255;
     let hi = 0;
-    for (let y = 0; y < height; y += 2) {
+    // Every row: a 1 px rule (the header's bottom border) is the only thing that reaches the
+    // layout edge on some pages, and a stride of 2 sees it on even rows only, which made the
+    // "edge" the nearest decorated element instead (review R7: the floating back-to-top button).
+    for (let y = 0; y < height; y += 1) {
       const v = data[y * width + x];
       if (v < lo) lo = v;
       if (v > hi) hi = v;

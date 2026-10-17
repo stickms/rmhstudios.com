@@ -1,82 +1,87 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Globe eversion — smoothness and photosensitivity (T35; spec §11.2 S#31, S#32).
-// Playwright against a RUNNING server, driving the real hub and recording the
-// frames the compositor actually presented (CDP screencast).
 //
-//   pnpm exec vite dev --port 7322 --strictPort --host 127.0.0.1      # terminal 1
-//   BASE_URL=http://127.0.0.1:7322 node testing/e2e/eversion-smoothness.mjs --quick
+// DETERMINISTIC STILLS, NOT A SCREENCAST. The detector renders the timeline at a
+// fixed fine step by scrubbing it (the core's `scrub` debug op, driven through the
+// lab page's `window.__eversionLab`), screenshots each still, and runs the jerk
+// detector over consecutive stills. Nothing depends on how fast the rig draws, so
+// it gives the same verdict on a software-GL box (1 fps) as on a GPU (review R7
+// Major 1: the old screencast sampled ~1.5 fps against a 50 ms-clamped timeline,
+// so it flagged natural motion and could not find an injected cut).
 //
-//   --quick               desktop × dark, 3 fast-forward runs
-//   --profiles a,b        desktop | mobile                (default: both; --quick: desktop)
-//   --themes a,b          dark | light | high-contrast    (default: dark,light,high-contrast for the
-//                         uninterrupted run; every other run uses the first)
+// Needs a DEV server with the lab open (a production build ignores EVERSION_LAB_OPEN):
+//
+//   EVERSION_LAB_OPEN=1 XAI_API_KEY=x OPENAI_API_KEY=x pnpm exec vite dev --port 7371 --strictPort --host 127.0.0.1
+//   BASE_URL=http://127.0.0.1:7371 node testing/e2e/eversion-smoothness.mjs --quick
+//
+//   --quick               dark theme, 3 fast-forwards (about 11 min on a loaded 4-core software-GL box)
+//   --themes a,b          dark | light | high-contrast   (default: all three for the uninterrupted
+//                         run; every other scenario uses the first; --quick: dark)
 //   --ff-runs N           fast-forward instants for S#31(b) (default 20; --quick 3)
 //   --seed N              seed of the instants (default 31)
-//   --cut-ratio R         S#31 threshold in multiples of the run's median frame delta (default 4)
-//   --only a,b,c,d,prove  which scenarios: (a) uninterrupted (b) fast-forward (c) 4 s delayed
-//                         destination (d) 500 destination; prove = the detector self-proof
+//   --cut-ratio R         S#31 threshold: a step this many times larger than both neighbours (default 2)
+//   --only a,b,c,d,prove  (a) uninterrupted (b) seeded fast-forwards (c) AFTER arrives at 4 s
+//                         (d) destination fails (500); prove = the detector self-proof
 //   --no-prove            skip the self-proof
+//   --step MS             base still spacing on the timeline, a multiple of 8 (default 16)
+//   --size WxH            lab stage size in px (default 256x168; smaller is faster)
+//   --workers N           lab pages rendering in parallel (default 4)
+//   --screencast          ALSO run the optional screencast variant (real hub; needs >= ~10 fps)
 //   --out DIR             evidence / JSON report directory (default $EVERSION_ARTIFACT_DIR or tmp)
 //
 // Every failure names its S#. Exit code is non-zero if any scenario fails.
 //
+// ## What is rendered
+//
+// The lab draws the real renderer over the real timeline (same core, same shaders) with
+// synthetic BEFORE / AFTER / placeholder pages. What the stills therefore judge is the
+// effect's own motion: radius, centre, spin, tilt, eversion, unwrap, the AFTER crossfade, the
+// page-alpha fade and POP. The CSS hub fade and the orb's fade are outside it.
+//
+// A scenario is a script for the replay: when AFTER becomes ready (`afterAt`), when the user
+// fast-forwards (`ffAt`), or that AFTER fails (`failAt`). A still at timeline time T replays a
+// fresh timeline from 0 in 8 ms steps and draws, so stills at multiples of 8 ms belong to one
+// consistent run, and a re-plan (fast-forward, late AFTER) lands on the same step in all of them.
+//
+// ## Sampling
+//
+// Every `--step` (16 ms) from 0 to the end of the run, plus the odd multiples of 8 ms within
+// 48 ms either side of every stage boundary and scripted event (stage changes read from the stills
+// themselves; AFTER ready, fast-forward, failure, the injected cut): 8 ms spacing exactly where
+// a re-plan could leave a step.
+//
 // ## S#31 — the jerk detector
 //
-// For each recording: the mean absolute per-pixel difference between consecutive
-// frames (`frameDeltaSeries`), normalised by THE RUN'S MEDIAN; any frame above
-// `cut-ratio` x the median outside the documented crossfade windows is a hard cut
-// (`detectHardCuts`). The windows come from the controller's marks, never from
-// hard-coded wall times:
+// `d_i` is the mean absolute per-pixel difference of consecutive stills (`frameDeltaSeries`),
+// scaled to "per 16 ms of timeline" (stills are 8 or 16 ms apart). The scale of `d` varies ~100x
+// across one correct run (a wrap shrinks the page a lot per step, an unwrap barely moves it), so
+// the run's median is no yardstick - the spec's "4x the median" rule is what failed on a loaded rig
+// in review R7 - and the detector asks the local question instead: is this step larger than BOTH of
+// its neighbours by `cut-ratio` (default 2)? C2 continuity makes every legitimate speed-up a ramp
+// (onset from rest, the fast-forward, the AFTER crossfade, POP, the page-alpha fade), and a ramp's
+// steps never exceed the one after them; a re-plan that forgot a channel's state is a step in one
+// frame between two smooth neighbours. The series `d_i / max(d_(i-1), d_(i+1), floor)` is handed to
+// `detectHardCuts` with threshold `cut-ratio`; `floor` is half the run's median over its moving steps
+// (steps under 1e-4 are stationary: a held gate, the tail), so noise between two still frames is not
+// a spike. No window is excluded: the deliberate crossfades are inside the test, and pass it.
 //
-//   hub fade      [start, cover + 1.5 frames]            the CSS fade of the hub over the page
-//   AFTER fade    [gate-open - 320 ms*k - 2 frames, +1]  placeholder -> AFTER (only when after-ready)
-//   reveal + pop  [reveal - 1 frame, done]               page-texture fade and the glass globe's POP
-//
-// `k` is the rig's timeline slowdown (see timelineSlowdown in lib/eversion-drive.mjs):
-// the timeline clamps each frame to 50 ms, so below 20 fps one frame is one 50 ms
-// step whatever the wall time, which is what makes the deltas of a slow run comparable
-// at all, and what makes the crossfade windows 320 timeline-ms x k of wall time.
-//
-// Fast-forward (b) deliberately traverses the rest of the path in 650 ms: per frame
-// that is up to ~7x the median step, so a median rule alone would flag a correct
-// fast-forward. Inside [fast-forward, done] a hard cut is therefore a SPIKE: a
-// delta above the ratio x median that is also > 2.5x BOTH neighbouring deltas (C2
-// continuity makes a legitimate speed-up a ramp, never a spike). Outside that
-// window the plain rule applies. The numbers are printed so the choice can be audited.
-//
-// The self-proof (`prove`) turns on the `inject-hard-cut` debug op (lib/eversion/gl/
-// core.ts) mid-EVERSION: the drawn radius of the globe steps by 30 % in one frame, which
-// is what a re-plan that forgot a channel's state would look like. The detector must
-// FAIL on that recording, at the injected instant. If it does not, the detector is
-// broken, and the suite says so.
+// The self-proof (`prove`) turns on the `inject-hard-cut` debug op from 2000 ms on: the drawn
+// radius of the globe steps by 30 % between two stills, which is what a re-plan that forgot a
+// channel's state would look like. The detector must flag exactly that step (and no other), and the
+// unmodified run must report none. If either fails the detector is broken, and the suite says so.
 //
 // ## S#32 — photosensitivity
 //
-// Relative luminance of every frame (`luminanceSeries`); no two frames within 100 ms
-// may differ by more than 0.20 (`detectLuminanceJumps`). "Within 100 ms" is measured on
-// the timeline axis for the same reason as above: frame times are mapped to timeline
-// time with the run's k, so a 3 fps rig is judged on what a 60 fps one would show. The
-// share of frame pairs that fall inside the window is reported (coverage), because a
-// rig sampling too sparsely checks nothing.
+// Relative luminance of every still (`luminanceSeries`); no two stills within 100 ms of timeline
+// may differ by more than 0.20 (`detectLuminanceJumps`). Stills are at most 16 ms apart, so the
+// coverage is complete by construction (it is printed anyway).
 // ─────────────────────────────────────────────────────────────────────────────
 
-/* global performance -- used only inside page.evaluate() callbacks. */
-import {
-  BASE_URL,
-  EVERSION_MARKS,
-  launchBrowser,
-  openSession,
-  writeArtifact,
-} from './lib/eversion-session.mjs';
-import {
-  RUN_MS,
-  destinationDelayTimeline,
-  interceptDestination,
-  markMap,
-  openApp,
-  sleepUntilPage,
-  timelineSlowdown,
-} from './lib/eversion-drive.mjs';
+/* global performance, localStorage, requestAnimationFrame -- used only inside page.evaluate() / addInitScript callbacks. */
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { BASE_URL, THEMES, launchBrowser, writeArtifact } from './lib/eversion-session.mjs';
+import { FF_REMAINING_MS, PLACEHOLDER_XFADE_MS } from '../../lib/eversion/constants.ts';
 import {
   decodeImage,
   detectHardCuts,
@@ -94,29 +99,39 @@ const opt = (n, d) => {
   return i >= 0 && argv[i + 1] ? argv[i + 1] : d;
 };
 const QUICK = flag('--quick');
-const PROFILES_RUN = opt('--profiles', QUICK ? 'desktop' : 'desktop,mobile').split(',');
 const THEMES_RUN = opt('--themes', QUICK ? 'dark' : 'dark,light,high-contrast').split(',');
 const FF_RUNS = Number(opt('--ff-runs', QUICK ? '3' : '20'));
 const SEED = Number(opt('--seed', '31'));
-const CUT_RATIO = Number(opt('--cut-ratio', '4'));
+const CUT_RATIO = Number(opt('--cut-ratio', '2'));
 const ONLY = new Set(opt('--only', '').split(',').filter(Boolean));
 const PROVE = !flag('--no-prove');
+const STEP = Number(opt('--step', '16'));
+const [SIZE_W, SIZE_H] = opt('--size', '256x168').split('x').map(Number);
+const WORKERS = Number(opt('--workers', '4'));
 if (opt('--out')) process.env.EVERSION_ARTIFACT_DIR = opt('--out');
 const wants = (name) => ONLY.size === 0 || ONLY.has(name);
+if (STEP % 8 !== 0 || STEP <= 0) throw new Error('--step must be a positive multiple of 8');
 
 /** Spec constants the analysis reasons in (lib/eversion/constants.ts). */
-const PLACEHOLDER_XFADE_MS = 320;
+const GRID_MS = 8;
+const RATE_PER_MS = 16;
 const FLASH_JUMP = 0.2;
 const FLASH_WINDOW_MS = 100;
-const SPIKE_NEIGHBOUR = 2.5;
+const FLOOR_OF_MEDIAN = 0.5;
+const STATIONARY = 1e-4;
+const NEAR_MS = 48;
 const FF_INSTANT_RANGE = [100, 4600];
-const HREFS = ['/games', '/library', '/communities', '/store', '/predictions'];
+const AFTER_EARLY_MS = 400;
+const AFTER_LATE_MS = 4000;
+const FAIL_AT_MS = 704;
+const INJECT_AT_MS = 2000;
+const INJECT_CHANNEL = 'radius';
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
 
 class Fail extends Error {}
 const fmt = (n, d = 0) => (typeof n === 'number' && Number.isFinite(n) ? n.toFixed(d) : String(n));
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const grid = (t) => Math.round(t / GRID_MS) * GRID_MS;
 
 function median(xs) {
   if (!xs.length) return 0;
@@ -137,210 +152,238 @@ function rng(seed) {
   };
 }
 
+/* ── The optional screencast variant ──────────────────────────────────────── */
+
+if (flag('--screencast')) {
+  const rest = argv.filter((a) => a !== '--screencast');
+  const r = spawnSync(
+    process.execPath,
+    [fileURLToPath(new URL('./eversion-smoothness-screencast.mjs', import.meta.url)), ...rest],
+    { stdio: 'inherit' },
+  );
+  console.log(`(screencast variant exited ${r.status}; it is rig-limited, see its header)`);
+  // Fall through: the deterministic suite below is the gate.
+}
+
+/* ── The lab pages ────────────────────────────────────────────────────────── */
+
 const report = { scenarios: [] };
 const results = [];
 let browser = null;
 
-async function freshApp(ctx, { debug = false, dest = null } = {}) {
-  const s = await openSession({
-    browser,
-    profile: ctx.profile,
-    theme: ctx.theme,
-    debug,
+async function openLab(theme) {
+  const context = await browser.newContext({
+    viewport: { width: SIZE_W, height: SIZE_H },
+    deviceScaleFactor: 1,
+    colorScheme: THEMES[theme].colorScheme,
   });
-  const errors = [];
-  ctx.sessions.push(s);
-  // The destination interception goes in BEFORE the page loads: the shell preloads the
-  // destination's data at load, so one installed at the click would delay nothing.
-  const intercept = dest
-    ? await interceptDestination(s.page, { mode: dest, match: /routes\/_site\/explore/ })
-    : null;
-  intercept?.arm();
-  const app = await openApp(s, '/', { errors });
-  app.errors = errors;
-  app.intercept = intercept;
-  await s.page.waitForTimeout(8000);
-  return app;
+  await context.addInitScript((entries) => {
+    try {
+      for (const [k, v] of Object.entries(entries)) localStorage.setItem(k, v);
+    } catch {
+      /* storage blocked: the theme falls back to the OS scheme, which is set too */
+    }
+  }, THEMES[theme].localStorage);
+  const page = await context.newPage();
+  const problems = [];
+  page.on('console', (m) => {
+    if (m.type() === 'error') problems.push(m.text());
+  });
+  page.on('pageerror', (e) => problems.push(e.message));
+  await page.goto(`${BASE_URL}/eversion-lab?eversion-debug=1`, { waitUntil: 'load' });
+  if (!page.url().includes('/eversion-lab')) {
+    throw new Fail(`redirected to ${page.url()} - start the dev server with EVERSION_LAB_OPEN=1`);
+  }
+  await page.waitForFunction(() => window.__eversionLab, null, { timeout: 120_000 });
+  // The lab's control panel and the debug overlay sit over a small stage: the stills are of the canvas.
+  await page.addStyleTag({
+    content:
+      '[data-eversion-lab-panel],[data-eversion-lab-stats],[data-eversion-debug-overlay]{visibility:hidden!important}',
+  });
+  await page.waitForTimeout(1500);
+  return { context, page, stage: page.locator('[data-eversion-lab-stage]'), problems };
 }
 
-/**
- * One recorded run through the real hub (pin click). Returns the marks, the
- * frames and the instants the harness acted at (page clock).
- */
-async function recordedRun(
-  app,
-  { href, ffAtTimeline = null, k0 = 1, dest = null, destDelayMs = 0, inject = false },
-) {
-  const { s, page } = app;
-  await app.openHub();
-  await s.clearMarks();
-  // Installed (and armed) by freshApp BEFORE the page loaded: see interceptDestination.
-  const intercept = app.intercept ?? null;
-  await s.startRecording({ format: 'jpeg', quality: 60, maxWidth: 480 });
-  const acted = {};
-  try {
-    await app.confirm('click', href);
-    const began = await app.waitStarted();
-    if (began.kind !== 'started') {
-      throw new Fail(
-        `the run did not start (${began.kind}${began.reason ? `: ${began.reason}` : ''}) — cannot record a run`,
-      );
-    }
-    const cover = await s.waitForMark(EVERSION_MARKS.cover, { timeout: RUN_MS });
-    if (ffAtTimeline !== null) {
-      // The instant is a timeline time; wall time is cover + k0 x (t - 50), k0 from the
-      // uninterrupted run on this rig.
-      const at = cover.startTime + k0 * Math.max(0, ffAtTimeline - 50);
-      await sleepUntilPage(page, at);
-      const finished = await page.evaluate(
-        (n) => performance.getEntriesByName(n, 'mark').length > 0,
-        EVERSION_MARKS.done,
-      );
-      if (!finished) {
-        acted.ffAt = await page.evaluate(() => performance.now());
-        await page.keyboard.press('Escape');
-      }
-    }
-    if (dest === 'hold' || inject) {
-      const evert = await s.waitForMark(EVERSION_MARKS.evert, { timeout: RUN_MS });
-      const k = timelineSlowdown({ cover: cover.startTime, evert: evert.startTime });
-      acted.k = k;
-      if (dest === 'hold') {
-        if (intercept.held() === 0) {
-          throw new Fail(
-            'no request for the destination data was held, so nothing was delayed (the loader did not fetch)',
-          );
-        }
-        const timelineDelay = destinationDelayTimeline(destDelayMs, k);
-        await sleepUntilPage(page, cover.startTime + k * timelineDelay);
-        intercept.release();
-        acted.releasedAt = await page.evaluate(() => performance.now());
-      }
-      if (inject) {
-        await sleepUntilPage(page, cover.startTime + k * 2000);
-        acted.injectAt = await page.evaluate(() => {
-          window.__eversion.renderer.injectHardCut('radius');
-          return performance.now();
-        });
-      }
-    }
-    const marks = await app.waitDone();
-    const frames = await s.stopRecording();
-    if (dest === 'fail' && intercept.failed() === 0) {
-      throw new Fail('no destination data request was failed, so the 500 case did not happen');
-    }
-    return { marks, frames, acted, href };
-  } finally {
-    await s.stopRecording().catch(() => {});
-    intercept?.release();
-  }
+async function openPool(theme) {
+  const pool = [];
+  for (let i = 0; i < WORKERS; i++) pool.push(await openLab(theme));
+  return pool;
 }
 
-/* ── The detectors over a recording ───────────────────────────────────────── */
+const closePool = (pool) => Promise.all(pool.map((p) => p.context.close().catch(() => {})));
 
-async function analyse(run, { cutRatio = CUT_RATIO } = {}) {
-  const m = markMap(run.marks);
-  const done = run.marks.find((x) => x.name === EVERSION_MARKS.done);
-  if (m.start === undefined || m.cover === undefined || m.done === undefined) {
-    throw new Fail(`the run is missing marks: ${JSON.stringify(m)}`);
+/** Scrub `script` to `t` on `lab`; resolves with the core's stage at that time. */
+function scrubStage(lab, script, t, hardCut = null) {
+  return lab.page.evaluate(
+    ([command, cut]) => window.__eversionLab.scrub(command, cut),
+    [{ op: 'scrub', t, ...script }, hardCut],
+  );
+}
+
+/** Scrub and screenshot one still. */
+async function still(lab, script, t, hardCut) {
+  const r = await scrubStage(lab, script, t, hardCut);
+  // The core drew synchronously; give the compositor two frames to present it.
+  await lab.page.evaluate(
+    () => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))),
+  );
+  const png = await lab.stage.screenshot({ type: 'png' });
+  return { t, stage: r.stage, png };
+}
+
+/** Render every time in `times` over the pool; resolves with the stills sorted by time. */
+async function renderAll(pool, script, times, cutAt) {
+  const queue = [...times];
+  const out = [];
+  await Promise.all(
+    pool.map(async (lab) => {
+      for (let t = queue.shift(); t !== undefined; t = queue.shift()) {
+        out.push(await still(lab, script, t, cutAt !== null && t >= cutAt ? INJECT_CHANNEL : null));
+      }
+    }),
+  );
+  return out.sort((a, b) => a.t - b.t);
+}
+
+/** The first multiple of 8 ms at which the replay is `done` (exponential, then bisection). */
+async function runEnd(lab, script) {
+  let hi = 2048;
+  while ((await scrubStage(lab, script, hi)).stage !== 'done') {
+    hi *= 2;
+    if (hi > 60_000) throw new Fail('the scripted timeline never reaches done (60 s)');
   }
-  const k = timelineSlowdown(m);
-  const gate = run.marks.find((x) => x.name === EVERSION_MARKS.gateOpen)?.detail?.reason;
-  const inRun = run.frames.filter((f) => f.tMs >= m.start - 50 && f.tMs <= m.done + 300);
-  if (inRun.length < 8) {
-    throw new Fail(
-      `only ${inRun.length} frames were recorded across the run — cannot judge smoothness`,
-    );
+  let lo = 0;
+  while (hi - lo > GRID_MS) {
+    const mid = grid((lo + hi) / 2);
+    if ((await scrubStage(lab, script, mid)).stage === 'done') hi = mid;
+    else lo = mid;
   }
+  return hi;
+}
+
+/** Render a scripted run: the base grid, then 8 ms stills around every boundary and event. */
+async function captureRun(pool, script, { cutAt = null } = {}) {
+  const end = await runEnd(pool[0], script);
+  const last = end + NEAR_MS;
+  const base = new Set();
+  for (let t = 0; t <= last; t += STEP) base.add(t);
+  if (cutAt !== null) base.add(cutAt);
+  const first = await renderAll(
+    pool,
+    script,
+    [...base].sort((a, b) => a - b),
+    cutAt,
+  );
+
+  const hints = [];
+  for (let i = 1; i < first.length; i++) {
+    if (first[i].stage !== first[i - 1].stage) hints.push(first[i].t);
+  }
+  for (const h of [script.afterAt, script.ffAt, script.failAt, cutAt]) {
+    if (typeof h === 'number') hints.push(h);
+  }
+  const extra = new Set();
+  for (const h of hints) {
+    for (let t = grid(h) - NEAR_MS; t <= h + NEAR_MS; t += GRID_MS) {
+      if (t >= 0 && t <= last && !base.has(t)) extra.add(t);
+    }
+  }
+  const more = await renderAll(
+    pool,
+    script,
+    [...extra].sort((a, b) => a - b),
+    cutAt,
+  );
+  const stills = [...first, ...more].sort((a, b) => a.t - b.t);
+  const popStart = stills.find((s) => s.stage === 'pop' || s.stage === 'done')?.t ?? end;
+  return { script, stills, end, popStart, cutAt };
+}
+
+/* ── The detectors over a set of stills ───────────────────────────────────── */
+
+async function analyse(run) {
+  const { script, stills, end, popStart } = run;
+  if (stills.length < 40) throw new Fail(`only ${stills.length} stills - cannot judge smoothness`);
   const imgs = [];
-  for (const f of inRun) imgs.push(await decodeImage(f.buffer));
-  const times = inRun.map((f) => f.tMs);
-  const deltas = frameDeltaSeries(imgs);
-  const intervals = times.slice(1).map((t, i) => t - times[i]);
-  const fi = median(intervals);
-  const med = Math.max(median(deltas), 1e-5);
+  for (const s of stills) imgs.push(await decodeImage(s.png));
+  const times = stills.map((s) => s.t);
+  const raw = frameDeltaSeries(imgs);
+  // Scaled to "per 16 ms of timeline": stills are 8 or 16 ms apart.
+  const deltas = raw.map((d, i) => (d * RATE_PER_MS) / (times[i + 1] - times[i]));
+  const moving = deltas.filter((d) => d > STATIONARY);
+  const med = Math.max(median(moving), 1e-5);
 
-  const windows = [{ name: 'hub fade', from: m.start - 50, to: m.cover + 1.5 * fi }];
-  if (gate === 'after-ready' && m.gateOpen !== undefined) {
+  // A hard cut is a step LARGER THAN BOTH its neighbours: C2 continuity makes every legitimate
+  // speed-up a ramp (an onset from rest, a fast-forward, the AFTER crossfade, POP), so a
+  // ramp's steps never exceed the one after them. The run's own median is not a usable
+  // yardstick (the change per step varies ~100x between the wrap and the unwrap), only the noise floor.
+  const floor = FLOOR_OF_MEDIAN * med;
+  const spike = deltas.map((d, i) => d / Math.max(deltas[i - 1] ?? 0, deltas[i + 1] ?? 0, floor));
+  const cuts = detectHardCuts(spike, times, { threshold: CUT_RATIO }).map((c) => ({
+    ...c,
+    delta: deltas[c.index],
+    spike: c.delta,
+  }));
+  const maxSpike = spike.length ? Math.max(...spike) : 0;
+  const maxAt = times[spike.indexOf(maxSpike) + 1];
+  const windows = [];
+  if (typeof script.afterAt === 'number') {
     windows.push({
-      name: 'AFTER fade',
-      from: m.gateOpen - PLACEHOLDER_XFADE_MS * k - 2 * fi,
-      to: m.gateOpen + fi,
+      name: 'AFTER crossfade',
+      from: script.afterAt,
+      to: script.afterAt + PLACEHOLDER_XFADE_MS,
     });
   }
-  const revealAt = m.reveal ?? m.done;
-  windows.push({ name: 'reveal + pop', from: revealAt - fi, to: m.done + 300 });
-
-  const cuts = [];
-  const ffWindow = run.acted.ffAt !== undefined ? { from: run.acted.ffAt, to: m.done } : null;
-  const plain = detectHardCuts(deltas, times, {
-    threshold: med * cutRatio,
-    exclude: ffWindow ? [...windows, ffWindow] : windows,
-  });
-  cuts.push(...plain.map((c) => ({ ...c, rule: 'median' })));
-  if (ffWindow) {
-    for (let i = 0; i < deltas.length; i++) {
-      const at = times[i + 1];
-      if (at < ffWindow.from || at > ffWindow.to) continue;
-      if (windows.some((w) => at >= w.from && at <= w.to)) continue;
-      const near = Math.max(deltas[i - 1] ?? 0, deltas[i + 1] ?? 0);
-      if (deltas[i] > med * cutRatio && deltas[i] > SPIKE_NEIGHBOUR * near) {
-        cuts.push({ index: i, atMs: at, delta: deltas[i], rule: 'spike' });
-      }
-    }
+  if (typeof script.ffAt === 'number') {
+    windows.push({ name: 'fast-forward', from: script.ffAt, to: script.ffAt + FF_REMAINING_MS });
   }
-  const outside = deltas.filter((_, i) => {
-    const at = times[i + 1];
-    return !windows.some((w) => at >= w.from && at <= w.to);
-  });
-  const maxOutside = outside.length ? Math.max(...outside) : 0;
+  windows.push({ name: 'reveal + pop', from: popStart, to: end });
 
-  // S#32 on the timeline axis.
+  // S#32 on the timeline axis (exact: stills carry their own timeline time).
   const lums = luminanceSeries(imgs);
-  const axis = times.map((t) => (t < m.cover ? t - m.cover : (t - m.cover) / k));
-  const jumps = detectLuminanceJumps(axis, lums, {
+  const jumps = detectLuminanceJumps(times, lums, {
     threshold: FLASH_JUMP,
     windowMs: FLASH_WINDOW_MS,
   });
   let maxJump = 0;
   let pairs = 0;
   let covered = 0;
-  for (let i = 0; i < axis.length; i++) {
-    for (let j = i + 1; j < axis.length && axis[j] - axis[i] <= FLASH_WINDOW_MS; j++) {
+  for (let i = 0; i < times.length; i++) {
+    for (let j = i + 1; j < times.length && times[j] - times[i] <= FLASH_WINDOW_MS; j++) {
       maxJump = Math.max(maxJump, Math.abs(lums[j] - lums[i]));
     }
-    if (i + 1 < axis.length) {
+    if (i + 1 < times.length) {
       pairs++;
-      if (axis[i + 1] - axis[i] <= FLASH_WINDOW_MS) covered++;
+      if (times[i + 1] - times[i] <= FLASH_WINDOW_MS) covered++;
     }
   }
 
   return {
-    frames: inRun.length,
-    k,
-    gate,
+    stills: stills.length,
+    end,
     medianDelta: med,
-    maxDelta: maxOutside,
-    ratio: maxOutside / med,
+    maxDelta: Math.max(...deltas),
+    maxSpike,
+    maxSpikeAt: maxAt,
     cuts,
     windows,
     jumps,
     maxJump,
     coverage: pairs ? covered / pairs : 0,
-    frameIntervalMs: fi,
-    done: done?.detail,
+    times,
+    deltas,
   };
 }
 
 function line(a) {
-  return `frames ${a.frames}, k ${fmt(a.k, 1)}, median Δ ${fmt(a.medianDelta, 5)}, max Δ outside fades ${fmt(a.maxDelta, 5)} = ${fmt(a.ratio, 2)}x median (limit ${CUT_RATIO}x), cuts ${a.cuts.length}; luminance: max 100 ms jump ${fmt(a.maxJump, 3)} (limit ${FLASH_JUMP}), pair coverage ${fmt(a.coverage * 100)} %`;
+  return `stills ${a.stills} (end ${a.end} ms), step change: median ${fmt(a.medianDelta, 5)}, max ${fmt(a.maxDelta, 5)}; largest step-over-neighbours ${fmt(a.maxSpike, 2)}x at ${fmt(a.maxSpikeAt)} ms (limit ${CUT_RATIO}x), cuts ${a.cuts.length}; luminance: max 100 ms jump ${fmt(a.maxJump, 3)} (limit ${FLASH_JUMP}), pair coverage ${fmt(a.coverage * 100)} %`;
 }
 
 function assertSmooth(label, a) {
   if (a.cuts.length) {
     const c = a.cuts[0];
     throw new Fail(
-      `S#31 (${label}): ${a.cuts.length} hard cut(s); first at ${fmt(c.atMs)} ms (page clock), Δ ${fmt(c.delta, 5)} = ${fmt(c.delta / a.medianDelta, 1)}x the run's median ${fmt(a.medianDelta, 5)} [${c.rule} rule]`,
+      `S#31 (${label}): ${a.cuts.length} hard cut(s); first at ${fmt(c.atMs)} ms (timeline), step ${fmt(c.delta, 5)} = ${fmt(c.spike, 1)}x its larger neighbour (limit ${CUT_RATIO}x; run median ${fmt(a.medianDelta, 5)})`,
     );
   }
   if (a.jumps.length) {
@@ -351,167 +394,179 @@ function assertSmooth(label, a) {
   }
 }
 
-/* ── Scenarios ────────────────────────────────────────────────────────────── */
-
-async function uninterrupted(ctx, state) {
-  const app = await freshApp(ctx);
-  const run = await recordedRun(app, { href: '/games' });
-  const a = await analyse(run);
-  state.k0 = a.k;
-  report.scenarios.push({ ...ctx.tag, scenario: 'uninterrupted', ...strip(a) });
-  ctx.numbers.push(`(a) uninterrupted: ${line(a)}`);
-  assertSmooth('uninterrupted', a);
-  return app;
-}
-
-async function fastForwards(ctx, state, app) {
-  const rand = rng(SEED);
-  const instants = Array.from(
-    { length: FF_RUNS },
-    () => FF_INSTANT_RANGE[0] + rand() * (FF_RUNS ? FF_INSTANT_RANGE[1] - FF_INSTANT_RANGE[0] : 0),
-  );
-  ctx.numbers.push(
-    `(b) fast-forward instants (timeline ms, seed ${SEED}): ${instants.map((t) => fmt(t)).join(' ')}`,
-  );
-  let worst = 0;
-  for (let i = 0; i < instants.length; i++) {
-    const href = HREFS[i % HREFS.length];
-    const run = await recordedRun(app, { href, ffAtTimeline: instants[i], k0: state.k0 ?? 1 });
-    const a = await analyse(run);
-    worst = Math.max(worst, a.ratio);
-    report.scenarios.push({
-      ...ctx.tag,
-      scenario: 'fast-forward',
-      at: instants[i],
-      ffAt: run.acted.ffAt ?? null,
-      ...strip(a),
-    });
-    ctx.numbers.push(`(b) #${i + 1} ff@${fmt(instants[i])} ms → ${href}: ${line(a)}`);
-    if (run.acted.ffAt === undefined) {
-      throw new Fail(
-        `S#31 (fast-forward #${i + 1}): the run had already finished at the chosen instant (${fmt(instants[i])} ms timeline) — the rig's k drifted; rerun`,
-      );
-    }
-    assertSmooth(`fast-forward #${i + 1} at ${fmt(instants[i])} ms`, a);
-  }
-  ctx.numbers.push(`(b) worst ratio over ${instants.length} runs: ${fmt(worst, 2)}x`);
-}
-
-async function delayedDestination(ctx, state) {
-  const app = await freshApp(ctx, { dest: 'hold' });
-  const run = await recordedRun(app, { href: '/explore', dest: 'hold', destDelayMs: 4000 });
-  const a = await analyse(run);
-  report.scenarios.push({ ...ctx.tag, scenario: 'delayed-4s', ...strip(a) });
-  ctx.numbers.push(`(c) 4 s destination (gate '${a.gate}'): ${line(a)}`);
-  assertSmooth('4 s delayed destination', a);
-  state.k0 ??= a.k;
-}
-
-async function failingDestination(ctx) {
-  const app = await freshApp(ctx, { dest: 'fail' });
-  const run = await recordedRun(app, { href: '/explore', dest: 'fail' });
-  const a = await analyse(run);
-  report.scenarios.push({ ...ctx.tag, scenario: 'destination-500', ...strip(a) });
-  ctx.numbers.push(`(d) 500 destination (gate '${a.gate}'): ${line(a)}`);
-  assertSmooth('500 destination', a);
-}
-
-/** The detector must FAIL on a recording with a real, injected hard cut. */
-async function selfProof(ctx) {
-  const app = await freshApp(ctx, { debug: true });
-  const run = await recordedRun(app, { href: '/games', inject: true });
-  const a = await analyse(run);
-  const injectAt = run.acted.injectAt;
-  report.scenarios.push({ ...ctx.tag, scenario: 'self-proof', injectAt, ...strip(a) });
-  ctx.numbers.push(`(prove) injected radius step at ${fmt(injectAt)} ms: ${line(a)}`);
-  if (injectAt === undefined) throw new Fail('S#31 (self-proof): the hard cut was never injected');
-  if (!a.cuts.length) {
-    throw new Fail(
-      `S#31 (self-proof): the detector did NOT flag the injected hard cut (max Δ ${fmt(a.maxDelta, 5)} = ${fmt(a.ratio, 2)}x median, limit ${CUT_RATIO}x). A detector that passes a visible 30 % radius jump proves nothing — the thresholds or the windows are wrong`,
-    );
-  }
-  const near = a.cuts.find(
-    (c) => c.atMs >= injectAt - 50 && c.atMs <= injectAt + 6 * a.frameIntervalMs + 500,
-  );
-  if (!near) {
-    throw new Fail(
-      `S#31 (self-proof): the detector flagged cuts at ${a.cuts.map((c) => fmt(c.atMs)).join(', ')} ms but none near the injection (${fmt(injectAt)} ms)`,
-    );
-  }
-  ctx.numbers.push(
-    `(prove) detector flagged the injected cut at ${fmt(near.atMs)} ms: Δ ${fmt(near.delta, 5)} = ${fmt(near.delta / a.medianDelta, 1)}x median — detector works on the real pipeline`,
-  );
-}
-
 function strip(a) {
-  const { windows, jumps, cuts, ...rest } = a;
+  const { windows, jumps, cuts, times, deltas, ...rest } = a;
   return {
     ...rest,
-    cuts: cuts.map((c) => ({ atMs: c.atMs, delta: c.delta, rule: c.rule })),
+    cuts: cuts.map((c) => ({ atMs: c.atMs, delta: c.delta, spike: c.spike })),
     windows: windows.map((w) => ({ name: w.name, from: Math.round(w.from), to: Math.round(w.to) })),
     jumps: jumps.length,
+    series: times.slice(1).map((t, i) => [t, Number(deltas[i].toFixed(6))]),
   };
+}
+
+/** Evidence for a failing run: the stills either side of the first cut. */
+function saveEvidence(run, a, label) {
+  try {
+    const c = a.cuts[0];
+    if (!c) return;
+    const name = label.replace(/[^a-z0-9]+/gi, '-');
+    writeArtifact(
+      `eversion-smoothness/${name}-before-${a.times[c.index]}.png`,
+      run.stills[c.index].png,
+    );
+    writeArtifact(`eversion-smoothness/${name}-after-${c.atMs}.png`, run.stills[c.index + 1].png);
+  } catch {
+    /* evidence is best-effort */
+  }
+}
+
+/* ── Scenarios ────────────────────────────────────────────────────────────── */
+
+async function runScenario(ctx, pool, scenario, label, script, { assert = true } = {}) {
+  const run = await captureRun(pool, script);
+  const a = await analyse(run);
+  report.scenarios.push({ ...ctx.tag, scenario, script, ...strip(a) });
+  ctx.numbers.push(`${label}: ${line(a)}`);
+  if (assert) {
+    try {
+      assertSmooth(label, a);
+    } catch (e) {
+      saveEvidence(run, a, `${ctx.tag.theme}-${scenario}`);
+      throw e;
+    }
+  }
+  return a;
+}
+
+async function uninterrupted(ctx, pool) {
+  ctx.clean = await runScenario(ctx, pool, 'uninterrupted', '(a) uninterrupted', {
+    afterAt: AFTER_EARLY_MS,
+  });
+}
+
+async function fastForwards(ctx, pool) {
+  const rand = rng(SEED);
+  const instants = Array.from({ length: FF_RUNS }, () =>
+    grid(FF_INSTANT_RANGE[0] + rand() * (FF_INSTANT_RANGE[1] - FF_INSTANT_RANGE[0])),
+  );
+  ctx.numbers.push(`(b) fast-forward instants (timeline ms, seed ${SEED}): ${instants.join(' ')}`);
+  let worst = 0;
+  const failures = [];
+  for (let i = 0; i < instants.length; i++) {
+    try {
+      const a = await runScenario(ctx, pool, 'fast-forward', `(b) #${i + 1} ff@${instants[i]} ms`, {
+        afterAt: AFTER_EARLY_MS,
+        ffAt: instants[i],
+      });
+      worst = Math.max(worst, a.maxSpike);
+    } catch (e) {
+      if (!(e instanceof Fail)) throw e;
+      failures.push(e.message);
+    }
+  }
+  ctx.numbers.push(
+    `(b) worst step-over-neighbours over ${instants.length} runs: ${fmt(worst, 2)}x`,
+  );
+  if (failures.length)
+    throw new Fail(`${failures.length} of ${instants.length} runs: ${failures[0]}`);
+}
+
+async function lateAfter(ctx, pool) {
+  await runScenario(ctx, pool, 'late-after-4s', '(c) AFTER ready at 4 s', {
+    afterAt: AFTER_LATE_MS,
+  });
+}
+
+async function failingDestination(ctx, pool) {
+  await runScenario(ctx, pool, 'destination-500', '(d) destination fails (500)', {
+    afterAt: null,
+    failAt: FAIL_AT_MS,
+  });
+}
+
+/** The detector must pass the unmodified run and FAIL, at the injected instant, on a stepped one. */
+async function selfProof(ctx, pool) {
+  const script = { afterAt: AFTER_EARLY_MS };
+  // The unmodified run is scenario (a)'s when it ran in this invocation; otherwise render it.
+  const clean = ctx.clean ?? (await analyse(await captureRun(pool, script)));
+  ctx.numbers.push(`(prove) unmodified: ${line(clean)}`);
+  if (clean.cuts.length) {
+    throw new Fail(
+      `S#31 (self-proof): the unmodified run reported ${clean.cuts.length} cut(s) (first at ${fmt(clean.cuts[0].atMs)} ms) - the detector has false positives`,
+    );
+  }
+  const run = await captureRun(pool, script, { cutAt: INJECT_AT_MS });
+  const a = await analyse(run);
+  report.scenarios.push({ ...ctx.tag, scenario: 'self-proof', cutAt: INJECT_AT_MS, ...strip(a) });
+  ctx.numbers.push(`(prove) 30 % ${INJECT_CHANNEL} step from ${INJECT_AT_MS} ms: ${line(a)}`);
+  if (!a.cuts.length) {
+    throw new Fail(
+      `S#31 (self-proof): the detector did NOT flag the injected hard cut (largest step over its neighbours ${fmt(a.maxSpike, 2)}x, limit ${CUT_RATIO}x). A detector that passes a visible 30 % radius jump proves nothing`,
+    );
+  }
+  const stray = a.cuts.filter((c) => Math.abs(c.atMs - INJECT_AT_MS) > STEP);
+  if (stray.length) {
+    throw new Fail(
+      `S#31 (self-proof): cuts flagged away from the injection (${INJECT_AT_MS} ms): ${stray.map((c) => fmt(c.atMs)).join(', ')} ms`,
+    );
+  }
+  const hit = a.cuts[0];
+  ctx.numbers.push(
+    `(prove) flagged only the injected cut: ${a.cuts.length} cut at ${fmt(hit.atMs)} ms, step ${fmt(hit.delta, 5)} = ${fmt(hit.spike, 1)}x its larger neighbour`,
+  );
 }
 
 /* ── Plan ─────────────────────────────────────────────────────────────────── */
 
-const firstTheme = THEMES_RUN[0];
-const plan = [];
-for (const profile of PROFILES_RUN) {
-  for (const theme of THEMES_RUN) {
-    const primary = theme === firstTheme;
-    plan.push({ profile, theme, primary });
-  }
-}
-
 console.log(
-  `eversion-smoothness: ${BASE_URL} profiles=${PROFILES_RUN} themes=${THEMES_RUN} ff-runs=${FF_RUNS} seed=${SEED}${QUICK ? ' (quick)' : ''}`,
+  `eversion-smoothness: ${BASE_URL} stills ${SIZE_W}x${SIZE_H} step ${STEP} ms (+8 ms near boundaries) workers=${WORKERS} themes=${THEMES_RUN} ff-runs=${FF_RUNS} seed=${SEED}${QUICK ? ' (quick)' : ''}`,
 );
 
 browser = await launchBrowser();
-for (const item of plan) {
-  const name = `${item.profile}/${item.theme}`;
-  const ctx = {
-    profile: item.profile,
-    theme: item.theme,
-    tag: { profile: item.profile, theme: item.theme },
-    sessions: [],
-    numbers: [],
-  };
-  const state = {};
+for (const theme of THEMES_RUN) {
+  if (!THEMES[theme]) throw new Error(`unknown theme "${theme}"`);
+  const primary = theme === THEMES_RUN[0];
+  const ctx = { tag: { theme }, numbers: [] };
   const steps = [];
-  if (wants('a') || (item.primary && (wants('b') || wants('c') || wants('d')))) {
-    steps.push(['(a) uninterrupted', async () => (state.app = await uninterrupted(ctx, state))]);
+  if (wants('a')) steps.push(['(a) uninterrupted', uninterrupted]);
+  if (primary) {
+    if (wants('b')) steps.push([`(b) ${FF_RUNS} fast-forwards`, fastForwards]);
+    if (wants('c')) steps.push(['(c) AFTER ready at 4 s', lateAfter]);
+    if (wants('d')) steps.push(['(d) destination fails (500)', failingDestination]);
+    if (PROVE && wants('prove')) steps.push(['(prove) detector self-proof', selfProof]);
   }
-  if (item.primary) {
-    if (wants('b'))
-      steps.push([
-        `(b) ${FF_RUNS} fast-forwards`,
-        async () => fastForwards(ctx, state, state.app ?? (state.app = await freshApp(ctx))),
-      ]);
-    if (wants('c'))
-      steps.push(['(c) 4 s delayed destination', () => delayedDestination(ctx, state)]);
-    if (wants('d')) steps.push(['(d) 500 destination', () => failingDestination(ctx)]);
-    if (PROVE && wants('prove') && item.profile === PROFILES_RUN[0]) {
-      steps.push(['(prove) detector self-proof', () => selfProof(ctx)]);
-    }
+  if (!steps.length) continue;
+  let pool;
+  try {
+    pool = await openPool(theme);
+  } catch (e) {
+    const failure = e instanceof Fail ? e.message : `S#31: lab did not open: ${e?.message ?? e}`;
+    results.push({ name: theme, label: 'open the lab', ok: false, failure, secs: 0 });
+    console.log(`FAIL open the lab [${theme}]\n     ${failure}`);
+    continue;
   }
   for (const [label, fn] of steps) {
     const t0 = performance.now();
     let failure = null;
     try {
-      await fn();
+      await fn(ctx, pool);
     } catch (e) {
-      failure = e instanceof Fail ? e.message : `S#31: unexpected ${e?.message ?? e}`;
+      failure = e instanceof Fail ? e.message : `S#31: unexpected ${e?.stack ?? e}`;
     }
     const secs = Math.round((performance.now() - t0) / 1000);
-    results.push({ name, label, ok: !failure, failure, secs });
-    console.log(`${failure ? 'FAIL' : 'PASS'} ${label} [${name}] (${secs} s)`);
+    results.push({ name: theme, label, ok: !failure, failure, secs });
+    console.log(`${failure ? 'FAIL' : 'PASS'} ${label} [${theme}] (${secs} s)`);
     for (const n of ctx.numbers.splice(0)) console.log(`     ${n}`);
     if (failure) console.log(`     ${failure}`);
   }
-  for (const s of ctx.sessions) await s.close().catch(() => {});
-  await sleep(0);
+  const problems = pool.flatMap((p) => p.problems);
+  if (problems.length) {
+    const failure = `lab console errors: ${[...new Set(problems)].slice(0, 3).join(' | ')}`;
+    results.push({ name: theme, label: 'lab page errors', ok: false, failure, secs: 0 });
+    console.log(`FAIL lab page errors [${theme}]\n     ${failure}`);
+  }
+  await closePool(pool);
 }
 await browser.close();
 

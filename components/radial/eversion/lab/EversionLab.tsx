@@ -8,7 +8,7 @@
  *
  * Two ways to look at a frame:
  *  - **Scrub** — the slider replays a fresh timeline deterministically to `t`
- *    (the core's `scrub` debug op, 16 ms steps) and draws that one frame. Idle
+ *    (the core's `scrub` debug op, 8 ms steps) and draws that one frame. Idle
  *    only; no loop runs.
  *  - **Play** — a real run: `prime` → textures → `start`, then the host's own
  *    frame loop until `done`, with the AFTER page arriving at the chosen time.
@@ -25,12 +25,14 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { PLAN_MS, STRETCH_CAP_MS } from '@/lib/eversion/constants';
+import { isEversionDebugEnabled } from '@/lib/eversion/flags';
 import { defaultDeps } from '@/lib/eversion/gl/core';
 import { detectHostMode, getEversionHost, resetEversionHost } from '@/lib/eversion/gl/host';
 import { fitEndIsometry } from '@/lib/eversion/orientation';
 import { resolveProjection } from '@/lib/eversion/random';
 import {
   PROJECTION_IDS,
+  type ChannelId,
   type DebugCommand,
   type EversionHost,
   type FrameStats,
@@ -246,7 +248,13 @@ export function EversionLab() {
       const host = hostRef.current;
       if (!host) return;
       const { w, h, dpr } = viewport();
-      const page = drawSamplePage(slot === 'after' ? 'after' : 'before', w * dpr, h * dpr);
+      let bg: string | undefined;
+      if (isEversionDebugEnabled()) {
+        // Debug (the e2e suites): pages as bright as the theme's own, see drawSamplePage.
+        const [r, g, b] = readThemeColours().bg;
+        bg = `rgb(${Math.round(r * 255)} ${Math.round(g * 255)} ${Math.round(b * 255)})`;
+      }
+      const page = drawSamplePage(slot === 'after' ? 'after' : 'before', w * dpr, h * dpr, bg);
       const bitmap = await createImageBitmap(page);
       host.post({ type: 'texture', slot, bitmap }, [bitmap]);
     },
@@ -285,6 +293,34 @@ export function EversionLab() {
     },
     [ask, projection, sendTexture, solid, viewport],
   );
+
+  // The smoothness detector's door (testing/e2e/eversion-smoothness.mjs): with `?eversion-debug`
+  // only, `window.__eversionLab.scrub` plays a scripted timeline to an absolute time and draws it,
+  // exactly as the scrubber does, optionally with the core's `inject-hard-cut` step applied (the
+  // caller waits for the compositor before it reads pixels). Absent without the flag; the lab
+  // itself is dev/admin only.
+  useEffect(() => {
+    if (!ready || !isEversionDebugEnabled()) return;
+    let cut: ChannelId | null = null;
+    const api = {
+      async scrub(
+        command: Extract<DebugCommand, { op: 'scrub' }>,
+        hardCut: ChannelId | null = null,
+      ) {
+        if (runningRef.current) throw new Error('lab: a run is in flight');
+        if (dirtyRef.current) await prepare(false);
+        if (hardCut !== cut) {
+          cut = hardCut;
+          await ask({ op: 'inject-hard-cut', channel: hardCut });
+        }
+        return ask<{ stage: StageId; t: number }>(command);
+      },
+    };
+    (window as unknown as { __eversionLab?: typeof api }).__eversionLab = api;
+    return () => {
+      delete (window as unknown as { __eversionLab?: typeof api }).__eversionLab;
+    };
+  }, [ask, prepare, ready]);
 
   // Anything that changes the primed plan invalidates it.
   useEffect(() => {

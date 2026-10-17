@@ -401,6 +401,8 @@ jobs:
       #     production build ignores - against this server it can only fail.
       #   • `eversion-hub.mjs` runs below, once per profile x theme, because the
       #     hub's chrome is what differs between them.
+      #   • `eversion-smoothness*.mjs` renders deterministic stills in the lab, so it
+      #     needs the same dev-only route; it has its own step below, against a dev server.
       # S#40's and S#43's baselines must already be committed: a missing one FAILS
       # here (`CI=true`). They are never written by an ordinary run; the manual
       # `update-baselines` dispatch is the one way to produce them (below).
@@ -419,7 +421,7 @@ jobs:
           scripts=()
           for s in "${all[@]}"; do
             case "$s" in
-              */eversion-lab.mjs|*/eversion-hub.mjs) ;;
+              */eversion-lab.mjs|*/eversion-hub.mjs|*/eversion-smoothness.mjs|*/eversion-smoothness-screencast.mjs) ;;
               *) scripts+=("$s") ;;
             esac
           done
@@ -479,6 +481,33 @@ jobs:
             echo "::error::failed: ${failed[*]}"
             exit 1
           fi
+      # S#31/S#32 (smoothness, photosensitivity): deterministic stills of the timeline
+      # scrubbed in the lab, so the verdict does not depend on how fast this runner draws.
+      # The lab route is dev-only (a production build ignores EVERSION_LAB_OPEN), hence
+      # a throwaway dev server on its own port. The dummy keys exist because the homes
+      # image module constructs a client at import time.
+      - name: Eversion smoothness (deterministic stills)
+        if: ${{ !inputs.update-baselines }}
+        env:
+          EVERSION_LAB_OPEN: '1'
+          XAI_API_KEY: ci-not-a-key
+          OPENAI_API_KEY: ci-not-a-key
+        run: |
+          nohup pnpm exec vite dev --port 7371 --strictPort --host 127.0.0.1 > "$EVERSION_ARTIFACT_DIR/vite-dev.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/vite-dev.pid"
+          for i in $(seq 1 90); do
+            if curl -fsS -o /dev/null "http://127.0.0.1:7371/eversion-lab"; then echo "dev server up after ${i}s"; break; fi
+            sleep 1
+          done
+          if BASE_URL=http://127.0.0.1:7371 node testing/e2e/eversion-smoothness.mjs --quick; then
+            echo "| \`eversion-smoothness.mjs --quick\` | PASS |" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "| \`eversion-smoothness.mjs --quick\` | **FAIL** |" >> "$GITHUB_STEP_SUMMARY"
+            echo "::error title=eversion e2e::eversion-smoothness failed"
+            kill "$(cat "$RUNNER_TEMP/vite-dev.pid")" 2>/dev/null || true
+            exit 1
+          fi
+          kill "$(cat "$RUNNER_TEMP/vite-dev.pid")" 2>/dev/null || true
       # The refreshed baselines, for committing. Runs even when a script failed
       # (a refresh run on a dev branch may fail other gates); only with the input.
       - name: Upload refreshed baselines

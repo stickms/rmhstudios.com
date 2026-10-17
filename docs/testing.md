@@ -286,8 +286,33 @@ export BASE_URL=http://localhost:7005
 node testing/e2e/eversion-load.mjs               # S#40: nothing before load; LCP/TBT; delayed-load control
 PROFILE=desktop THEME=dark node testing/e2e/eversion-hub.mjs   # S#25/26: entry points, dismissals, fallbacks
 node testing/e2e/eversion-edge.mjs               # S#34/35: fallbacks, fault injection, router edge cases
-node testing/e2e/eversion-capture.mjs            # S#29/46: capture fidelity (SSIM) and lifecycle
+node testing/e2e/eversion-capture.mjs            # S#29/46: capture fidelity (SSIM), right-edge parity and lifecycle
 ```
+
+**Smoothness (S#31/S#32) needs a dev server, not the build.** It does not record the
+screen: it scrubs the timeline in the lab (the core's `scrub` debug op, driven through
+`window.__eversionLab`, present only with `?eversion-debug`) at a fixed step - every 16 ms,
+8 ms within 48 ms of each stage boundary and scripted event - screenshots each still and
+runs the jerk detector over consecutive stills. The verdict therefore does not depend on how
+fast the rig draws (the old screencast sampled ~1.5 fps on software GL and could neither
+pass a clean run nor find an injected cut). The lab route is dev-only, so:
+
+```bash
+EVERSION_LAB_OPEN=1 XAI_API_KEY=x OPENAI_API_KEY=x pnpm exec vite dev --port 7371 --strictPort --host 127.0.0.1
+BASE_URL=http://127.0.0.1:7371 node testing/e2e/eversion-smoothness.mjs --quick   # ~11 min on a loaded 4-core software-GL box
+node testing/e2e/eversion-smoothness.mjs                                          # all themes, 20 seeded fast-forwards
+node testing/e2e/eversion-smoothness.mjs --screencast                             # ALSO the optional real-hub screencast variant (needs >= ~10 fps)
+```
+
+Scenarios: uninterrupted per theme, seeded fast-forwards, AFTER ready at 4 s, a failing (500)
+destination, and a self-proof. A hard cut is a step larger than BOTH its neighbours by 2x (C2
+continuity makes every legitimate speed-up a ramp); the run's median is deliberately not the
+yardstick, because the change per step varies ~100x across one correct run. The self-proof
+injects a 30 % radius step (the `inject-hard-cut` debug op) at 2000 ms and requires the
+detector to flag exactly that step while the unmodified run reports none. Luminance (S#32) is
+read off the same stills. The stills are of the lab's synthetic pages in the theme's own
+background, so what is judged is the effect's motion; the CSS hub and orb fades are not in
+them. CI runs `--quick` against a throwaway dev server in its own step (the glob skips it).
 
 For iteration, a dev server works for everything except the load gate's chunk
 identification: `EVERSION_LAB_OPEN=1 XAI_API_KEY=x OPENAI_API_KEY=x pnpm exec vite dev --port 7331`
@@ -318,7 +343,7 @@ deliberate change moves the numbers (a Chromium bump, a slower-but-better effect
 
 **CI.** The `eversion-e2e` job in `web-ci.yml` builds WITH sourcemaps (the
 attribution checks read them), serves `.output`, and runs every
-`testing/e2e/eversion-*.mjs` except `eversion-lab.mjs`; `eversion-hub.mjs` runs
+`testing/e2e/eversion-*.mjs` except `eversion-lab.mjs` and `eversion-smoothness*.mjs` (own step, above); `eversion-hub.mjs` runs
 once per profile x theme (desktop/mobile x dark/light/high-contrast). The job is
 path-filtered by `eversion-changes` to what the effect depends on: `lib/eversion`,
 `components/radial`, the settings row and its preference API/schema, the theme

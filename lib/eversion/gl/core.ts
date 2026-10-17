@@ -155,8 +155,8 @@ function applyHardCut(s: TimelineSnapshot, channel: ChannelId): void {
   }
 }
 
-/** Step of the scrub op's simulated clock: one 60 Hz frame, well under `MAX_DT_MS`. */
-const SCRUB_STEP_MS = 16;
+/** Step of the scrub op's simulated clock: half a 60 Hz frame, well under `MAX_DT_MS`. */
+const SCRUB_STEP_MS = 8;
 /** Bound on {@link settleWhileHidden}'s steps (a hurried run is ~2 s; this is ~16 s of simulated time). */
 const SETTLE_MAX_STEPS = 1000;
 /**
@@ -629,12 +629,22 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
         const tl = deps.createTimeline(timelineConfig);
         tl.start(0);
         let ready = command.afterAt === null;
+        let forwarded = command.ffAt == null;
+        let failed = command.failAt == null;
         let snapshot: Readonly<TimelineSnapshot>;
         for (let t = SCRUB_STEP_MS; ; t += SCRUB_STEP_MS) {
           const at = Math.min(t, command.t);
           if (!ready && command.afterAt !== null && at >= command.afterAt) {
             tl.afterReady(at);
             ready = true;
+          }
+          if (!forwarded && command.ffAt != null && at >= command.ffAt) {
+            tl.fastForward(at);
+            forwarded = true;
+          }
+          if (!failed && command.failAt != null && at >= command.failAt) {
+            tl.afterFailed(at);
+            failed = true;
           }
           snapshot = tl.tick(at);
           // The live path answers `unwrap-done` with `reveal`; so does the replay,
@@ -650,9 +660,13 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
         }
         const stage = snapshot.stage;
         const t = snapshot.t;
-        if (pausedE !== null) {
-          copySnapshot(snapshot, scratch).evert = pausedE;
-          renderer.draw(scratch);
+        if (pausedE !== null || hardCut !== null) {
+          // The same debug-only overrides the live loop applies (inject-hard-cut, pause-at),
+          // so the smoothness self-proof can step one channel in a scrubbed still.
+          const out = copySnapshot(snapshot, scratch);
+          if (hardCut !== null) applyHardCut(out, hardCut);
+          if (pausedE !== null) out.evert = pausedE;
+          renderer.draw(out);
         } else {
           renderer.draw(snapshot);
         }

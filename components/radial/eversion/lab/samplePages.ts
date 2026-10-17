@@ -43,8 +43,18 @@ function arrow(
   ctx.restore();
 }
 
-/** Draw one sample page at `w` x `h` pixels. */
-export function drawSamplePage(kind: SampleKind, w: number, h: number): HTMLCanvasElement {
+/**
+ * Draw one sample page at `w` x `h` pixels. `bg` (a CSS colour) replaces the page's
+ * background: the smoothness detector passes the theme's `--site-bg`, so the stage's
+ * brightness is that of a real page in that theme and its photosensitivity check judges
+ * the effect, not a bright demo page against a dark theme.
+ */
+export function drawSamplePage(
+  kind: SampleKind,
+  w: number,
+  h: number,
+  bg?: string,
+): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = Math.max(1, Math.round(w));
   canvas.height = Math.max(1, Math.round(h));
@@ -53,7 +63,7 @@ export function drawSamplePage(kind: SampleKind, w: number, h: number): HTMLCanv
   const p = PALETTE[kind];
   const u = Math.min(w, h) / 100; // one "unit" scales the whole page
 
-  ctx.fillStyle = p.bg;
+  ctx.fillStyle = bg ?? p.bg;
   ctx.fillRect(0, 0, w, h);
 
   // Header bar + title (top-left).

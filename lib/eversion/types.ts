@@ -564,11 +564,22 @@ export type DebugCommand =
   /** Loop bookkeeping, for the "no frame after `done`" and pause checks (T25). */
   | { op: 'loop' }
   /**
-   * Deterministically play a fresh timeline to `t` ms (16 ms steps, `AFTER`
+   * Deterministically play a fresh timeline to `t` ms (8 ms steps, `AFTER`
    * becoming ready at `afterAt` if non-null) and draw that frame — the harness
    * scrubber (T26). Idle-only: refused while a run is in flight.
+   *
+   * Two optional additions script the replay for the smoothness detector (T35):
+   * `ffAt` calls `fastForward` on the first step at or after that time, `failAt`
+   * calls `afterFailed` (the 500 destination). Events land on the 8 ms step grid,
+   * so stills taken at multiples of 8 ms all belong to the same replay.
    */
-  | { op: 'scrub'; t: number; afterAt: number | null };
+  | {
+      op: 'scrub';
+      t: number;
+      afterAt: number | null;
+      ffAt?: number | null;
+      failAt?: number | null;
+    };
 
 /**
  * Main → render messages. Exactly the §3.3 table, plus `debug` (test-only).

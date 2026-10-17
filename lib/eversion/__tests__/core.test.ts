@@ -437,6 +437,45 @@ describe('createEversionCore: scrub', () => {
     expect(end.result.ok).toBe(true);
     expect((end.result.value as { stage: string }).stage).toBe('done');
   });
+
+  it('scripts a fast-forward and a failed AFTER into the replay (the smoothness detector)', async () => {
+    const run = async (t: number, extra: { ffAt?: number | null; failAt?: number | null }) => {
+      const r = realRig();
+      r.core.handle({
+        type: 'debug',
+        id: 1,
+        command: { op: 'scrub', t, afterAt: extra.failAt != null ? null : 400, ...extra },
+      });
+      for (let i = 0; i < 5; i++) await Promise.resolve();
+      const result = r.out.find((m) => m.type === 'debug-result') as Extract<
+        FromWorker,
+        { type: 'debug-result' }
+      >;
+      expect(result.ok).toBe(true);
+      return (result.value as { stage: string }).stage;
+    };
+    // A plain run is still unwrapping at 3.5 s of a run fast-forwarded at 2 s that is done by 3.5 s.
+    expect(await run(3200, {})).not.toBe('done');
+    expect(await run(3200, { ffAt: 2000 })).toBe('done');
+    // A failed AFTER lets the unwrap proceed without it: the run still ends.
+    expect(await run(20_000, { failAt: 704 })).toBe('done');
+  });
+
+  it('applies inject-hard-cut to a scrubbed still, and only while it is set', async () => {
+    const r = realRig();
+    const draw = async (t: number) => {
+      r.core.handle({ type: 'debug', id: 1, command: { op: 'scrub', t, afterAt: 400 } });
+      for (let i = 0; i < 5; i++) await Promise.resolve();
+      return r.renderer.draws.at(-1)!.radius;
+    };
+    const plain = await draw(2000);
+    r.core.handle({ type: 'debug', id: 2, command: { op: 'inject-hard-cut', channel: 'radius' } });
+    for (let i = 0; i < 5; i++) await Promise.resolve();
+    expect(await draw(2000)).toBeCloseTo(plain * 0.7, 6);
+    r.core.handle({ type: 'debug', id: 3, command: { op: 'inject-hard-cut', channel: null } });
+    for (let i = 0; i < 5; i++) await Promise.resolve();
+    expect(await draw(2000)).toBeCloseTo(plain, 6);
+  });
 });
 
 /* ── Review fixes (render side) ───────────────────────────────────────────── */
