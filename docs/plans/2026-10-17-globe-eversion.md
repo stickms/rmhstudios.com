@@ -869,7 +869,7 @@ DOM capture are tested in e2e only.
     page's centre with the camera-facing point, and by the spin landing
     (4300 ms, before UNWRAP ends) the drawn centre is within 0.1° of it. The
     spin deliberately overlaps UNWRAP's first half (§7.1), so the instantaneous
-    error at UNWRAP start (~3.6°) is expected. *(Amended 2026-10-17.)*
+    error at UNWRAP start (~3.6°) is expected. _(Amended 2026-10-17.)_
 
 **Morph (`morph.test.ts`)**
 
@@ -1105,9 +1105,10 @@ Each phase is one or more focused commits, green on `pnpm check:consistency`.
    _Resolved by T25 (unverified on device):_ every WebKit engine (Safari and all of iOS) runs the in-thread host until T38 shows worker rAF presenting there (`WEBKIT_USES_WORKER` in `host.ts`); a worker's clock origin also differs from the page's, which `core.ts` corrects at `start`.
 2. **`modern-screenshot` viewport-crop mechanics** with this shell's
    fixed/sticky layers and the `radial.css` de-stick rules. The requirement is
-   test 29; the mechanism is open.
+   test 29; the mechanism is open. **Resolved (T17):** root = `<html>`, context
+   sized to the viewport, the cloned `<body>` moved by `position: relative; top/left: -scroll` (no ancestor `transform`, which would re-anchor fixed layers); sticky and fixed then resolve as live.
 3. **The exact opaque-glass class** to put on the capture clone (§6.4). Use
-   whatever the Glass clarity "Opaque" stop applies today.
+   whatever the Glass clarity "Opaque" stop applies today. **Resolved (T17):** `html.reduce-transparency` (stop 0). The library inlines computed styles, so a clone-root class cannot re-resolve selectors: the capture applies that class's declarations per cloned node instead (`--site-surface-opaque`, `--site-border`, glint pseudos off).
 4. ~~**Thurston construction licence** (§4.1) — re-derive from the paper unless
    confirmed.~~ **Resolved (T03):** derived from published mathematics, no code
    copied — see [`globe-eversion/thurston-derivation.md`](./globe-eversion/thurston-derivation.md).
