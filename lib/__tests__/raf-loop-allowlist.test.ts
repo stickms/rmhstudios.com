@@ -104,6 +104,9 @@ import { join } from 'node:path';
  *                                       loop. While it runs it writes only
  *                                       transform/opacity/custom properties and
  *                                       strokes one canvas, and reads no layout.
+ *   - components/radial/eversion/useEversionController.ts — the eversion controller's two
+ *                                       one-shot rAF waits (`nextFrame()`): each resolves one
+ *                                       promise and never re-requests a frame.
  *   - lib/eversion/gl/worker.ts, lib/eversion/gl/host.ts — the globe-eversion
  *                                       navigation effect's frame loop (the
  *                                       worker's own scheduler, and the same
@@ -268,6 +271,10 @@ const ALLOW = new Set<string>([
   // `done`/`abort`/`context-lost`; no loop runs at rest.
   'lib/eversion/gl/host.ts',
   'lib/eversion/gl/worker.ts',
+  // Globe eversion (T31): ONE-SHOT rAFs, never a loop. `nextFrame()` resolves a single promise
+  // (the two-frame waits before the AFTER capture and before `reveal`, spec §6.3/§6.6), with a
+  // 100 ms timer so a hidden tab cannot hang it. Nothing re-requests a frame from the callback.
+  'components/radial/eversion/useEversionController.ts',
   'components/temple-of-joy/TempleOfJoyGame.tsx',
   // The headline joy/rate readouts write textContent on a frame loop
   // rather than re-rendering their subtree 60 times a second.

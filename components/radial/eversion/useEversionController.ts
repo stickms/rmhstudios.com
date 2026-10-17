@@ -1,0 +1,660 @@
+'use client';
+
+import { Globe } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { aspectBucket, getBakedLut } from '@/lib/eversion/projection-lut';
+import { buildPlaceholder } from '@/lib/eversion/placeholder';
+import { createCapture } from '@/lib/eversion/capture';
+import { registerDebug, maybeLoadEversionDebug } from '@/lib/eversion/debug';
+import { isEversionEnabled } from '@/lib/eversion/flags';
+import { getEversionHost } from '@/lib/eversion/gl/host';
+import { pickTier } from '@/lib/eversion/gl/governor-tiers';
+import { resolveProjection } from '@/lib/eversion/random';
+import { EVERSION_MARKS } from '@/lib/eversion/marks';
+import type { EntryPoint } from '@/lib/eversion/marks';
+import { EversionRunner, withTimeout } from '@/lib/eversion/runner';
+import type {
+  HostPort,
+  OverlayPort,
+  PagePort,
+  RouterPort,
+  RunnerDeps,
+} from '@/lib/eversion/runner';
+import {
+  BEFORE_GRACE_MS,
+  CAPTURE_DPR_CAP,
+  CAPTURE_EXCLUDE_SELECTORS,
+  TIERS,
+} from '@/lib/eversion/constants';
+import type {
+  CaptureApi,
+  EversionController,
+  EversionHost,
+  EversionNode,
+  EversionOutcome,
+  FallbackReason,
+  GlobeStartState,
+  NavTransition,
+  OrbRect,
+  ProjectionId,
+  Rgba,
+  ThemeColours,
+  Tier,
+  TranslateFn,
+  Viewport,
+} from '@/lib/eversion/types';
+import { isPerfLite } from '@/lib/perf-tier';
+import { useThemeStore } from '@/stores/themeStore';
+import {
+  discardCanvas,
+  fadeOverlay,
+  getCanvas,
+  mountOverlay,
+  unmountOverlay,
+} from './overlay-store';
+import type { UseBeforeCapture } from './useBeforeCapture';
+
+/**
+ * The orchestrator the hub talks to (spec §3.2, §6.3, §9.2; tasks T31).
+ * OWNER: T31. Client-only.
+ *
+ * ## How the hub uses it (T32)
+ *
+ * The hub must not gain a static import of anything in here — the capture
+ * library, the render host and the renderer all hang off this module — so it
+ * loads it with a dynamic `import()` once the effect is wanted (the warm-up,
+ * T29, is what makes that import cheap by the time a visitor releases):
+ *
+ * ```ts
+ * const mod = await import('./eversion/useEversionController');
+ * const controller = mod.createEversionController({ router, beforeCapture, translate: t });
+ * // …render <LazyEversionOverlay /> (React.lazy → ./eversion/EversionOverlay)
+ * controller.start(node, globeState, 'release') // → Promise<EversionOutcome>
+ * ```
+ *
+ * `beforeCapture` is the hub's own `useBeforeCapture` result (the BEFORE
+ * scheduler runs from the hub, not from here), `router` is `useRouter()`. Until
+ * the module has loaded the hub's own `isEligible()` (which includes
+ * `chunkReady`) is false, so today's path runs and this is never needed.
+ *
+ * ## What lives where
+ *
+ * The sequence is `lib/eversion/runner.ts` (framework-free, unit tested). This
+ * file is the real set of ports: the host and its persistent canvas, the
+ * document, the router, the theme, the capture session. It is deliberately
+ * dull — each port is a few lines over a browser API.
+ *
+ * ## Work done while the hub is open, not at release
+ *
+ * `onHubOpened` is idle time: nothing is moving and the visitor is choosing.
+ * Three things that would otherwise cost a hitch at release are done then:
+ * the projection is drawn (`random` included), its LUT is baked (Peirce is
+ * ~45 ms on a desktop — a full dropped-frame run if paid at release), and the
+ * render host is initialised on its canvas, which compiles the programs. At
+ * release the LUT is posted from the cache; if the hub was released before the
+ * idle work ran, `lut` is `null` and the render side bakes it (in the worker,
+ * off the main thread), so the cost is only ever moved, never added.
+ */
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   Colours (spec §10.2)
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+let probe: CanvasRenderingContext2D | null = null;
+
+/** Any CSS colour → RGBA in 0..1, via a 1×1 canvas (which understands everything the page can write). */
+function parseColour(css: string): Rgba | null {
+  const value = css.trim();
+  if (!value || (typeof CSS !== 'undefined' && !CSS.supports('color', value))) return null;
+  try {
+    if (!probe) {
+      const c = document.createElement('canvas');
+      c.width = c.height = 1;
+      probe = c.getContext('2d', { willReadFrequently: true });
+    }
+    if (!probe) return null;
+    probe.clearRect(0, 0, 1, 1);
+    probe.fillStyle = value;
+    probe.fillRect(0, 0, 1, 1);
+    const d = probe.getImageData(0, 0, 1, 1).data;
+    return [d[0]! / 255, d[1]! / 255, d[2]! / 255, d[3]! / 255];
+  } catch {
+    return null;
+  }
+}
+
+const OPAQUE_BLACK: Rgba = [0, 0, 0, 1];
+
+function over(top: Rgba, under: Rgba): Rgba {
+  const a = top[3];
+  return [
+    top[0] * a + under[0] * (1 - a),
+    top[1] * a + under[1] * (1 - a),
+    top[2] * a + under[2] * (1 - a),
+    1,
+  ];
+}
+
+/**
+ * Resolve the effect's palette from computed styles (spec §10.2): `--site-bg`,
+ * `--site-accent`, the registered `--cage-*` tokens, and the veil — the hub's
+ * own `.radial-hub__veil` gradient, whose middle stop is what the visitor sees
+ * behind the globe, composited over `--site-bg` so the canvas can be opaque.
+ * The `--cage-*` fallback is `LiquidGlobe`'s: on an engine without `@property`
+ * the computed value is literal `color-mix(…)` text, so it is mixed here from the
+ * same ink at the same alphas.
+ */
+export function resolveThemeColours(): ThemeColours {
+  const root = document.documentElement;
+  const hub = document.querySelector('.radial-hub') ?? root;
+  const rs = getComputedStyle(root);
+  const hs = getComputedStyle(hub);
+  const bg =
+    parseColour(rs.getPropertyValue('--site-bg')) ??
+    parseColour(rs.backgroundColor) ??
+    OPAQUE_BLACK;
+  const opaqueBg: Rgba = [bg[0], bg[1], bg[2], 1];
+  const accent = parseColour(rs.getPropertyValue('--site-accent')) ?? opaqueBg;
+  const ink = hs.color || 'rgb(0 0 0)';
+  const token = (name: string, alpha: number): Rgba =>
+    parseColour(hs.getPropertyValue(name)) ??
+    parseColour(`color-mix(in srgb, ${ink} ${alpha * 100}%, transparent)`) ?? [
+      0.5,
+      0.5,
+      0.5,
+      alpha,
+    ];
+
+  let veil: Rgba = over([bg[0], bg[1], bg[2], 0.76], opaqueBg);
+  const veilEl = document.querySelector('.radial-hub__veil');
+  if (veilEl) {
+    const image = getComputedStyle(veilEl).backgroundImage;
+    const stops = image.match(/(?:rgba?|color|oklch|oklab|hsla?|lab|lch)\([^)]*\)/g);
+    const mid = stops?.[Math.floor(stops.length / 2)];
+    const parsed = mid ? parseColour(mid) : null;
+    if (parsed) veil = over(parsed, opaqueBg);
+  }
+  return {
+    bg: opaqueBg,
+    veil,
+    accent,
+    cageMinor: token('--cage-minor', 0.2),
+    cageParallel: token('--cage-parallel', 0.13),
+    cageMajor: token('--cage-major', 0.34),
+    cageRipple: token('--cage-ripple', 0.5),
+    cageWidth: parseFloat(hs.getPropertyValue('--cage-width')) || 1,
+  };
+}
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   Ports
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+/** The slice of TanStack's router a run needs (`useRouter()` satisfies it). */
+export interface RouterLike {
+  navigate(options: { to: string }): Promise<unknown>;
+  readonly state: { readonly status: 'idle' | 'pending' };
+  subscribe(event: 'onResolved', fn: () => void): () => void;
+}
+
+export interface EversionControllerDeps {
+  router: RouterLike;
+  /** The hub's `useBeforeCapture` result: BEFORE bitmap, eligibility, the shared capture session. */
+  beforeCapture: Pick<
+    UseBeforeCapture,
+    'awaitBefore' | 'isEligible' | 'ineligibleReason' | 'getCapture'
+  >;
+  translate: TranslateFn;
+  /** The orb's on-screen rect, for the POP target; defaults to measuring `.radial-hub__orb`. */
+  getOrbRect?: () => OrbRect | null;
+}
+
+const IDLE_DELAY_MS = 700;
+
+function viewportNow(): Viewport {
+  return { w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio || 1 };
+}
+
+function detectTier(): Tier {
+  const mobile = window.matchMedia?.('(pointer: coarse) and (max-width: 900px)').matches ?? false;
+  const nav = navigator as Navigator & { deviceMemory?: number };
+  const strong = (nav.hardwareConcurrency ?? 4) >= 8 && (nav.deviceMemory ?? 8) >= 8;
+  return pickTier({
+    renderTier: strong ? 'high' : 'medium',
+    perfLite: isPerfLite(),
+    isMobile: mobile,
+  });
+}
+
+function timeoutPromise(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function createPagePort(getOrb?: () => OrbRect | null): PagePort {
+  return {
+    viewport: viewportNow,
+    tier: detectTier,
+    colours: resolveThemeColours,
+    orbRect(viewport) {
+      const custom = getOrb?.();
+      if (custom) return custom;
+      const orb = document.querySelector('.radial-hub__orb');
+      if (orb) {
+        const r = orb.getBoundingClientRect();
+        if (r.width > 0)
+          return { cx: r.left + r.width / 2, cy: r.top + r.height / 2, radius: r.width / 2 };
+      }
+      return { cx: viewport.w - 36, cy: 36, radius: 20 };
+    },
+    setCover(on) {
+      document.documentElement.classList.toggle('eversion-cover', on);
+    },
+    setSettle(on) {
+      if (on) document.documentElement.setAttribute('data-eversion-settle', '');
+      else document.documentElement.removeAttribute('data-eversion-settle');
+    },
+    async whenAssetsSettled(capMs) {
+      const fonts = document.fonts?.ready ?? Promise.resolve();
+      const pending = Array.from(document.images)
+        .filter((img) => {
+          if (img.complete) return false;
+          const r = img.getBoundingClientRect();
+          return (
+            r.bottom > 0 && r.right > 0 && r.top < window.innerHeight && r.left < window.innerWidth
+          );
+        })
+        .map(
+          (img) =>
+            new Promise<void>((resolve) => {
+              img.addEventListener('load', () => resolve(), { once: true });
+              img.addEventListener('error', () => resolve(), { once: true });
+            }),
+        );
+      await Promise.race([Promise.all([fonts, ...pending]), timeoutPromise(capMs)]);
+    },
+    nextFrame() {
+      // A hidden tab never fires a frame; the timer keeps AFTER from waiting on one.
+      return new Promise<void>((resolve) => {
+        const timer = setTimeout(resolve, 100);
+        requestAnimationFrame(() => {
+          clearTimeout(timer);
+          resolve();
+        });
+      });
+    },
+    onInput(cb) {
+      const onKey = (e: KeyboardEvent) => {
+        if (e.repeat || ['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) return;
+        cb();
+      };
+      const onPointer = () => cb();
+      // Capture phase on `window`: the fading hub above the overlay sees the press first otherwise.
+      window.addEventListener('pointerdown', onPointer, { capture: true, passive: true });
+      window.addEventListener('wheel', onPointer, { capture: true, passive: true });
+      window.addEventListener('keydown', onKey, { capture: true });
+      return () => {
+        window.removeEventListener('pointerdown', onPointer, { capture: true });
+        window.removeEventListener('wheel', onPointer, { capture: true });
+        window.removeEventListener('keydown', onKey, { capture: true });
+      };
+    },
+    currentHref: () => window.location.pathname + window.location.search + window.location.hash,
+  };
+}
+
+function createRouterPort(router: RouterLike): RouterPort {
+  let last: Promise<unknown> = Promise.resolve();
+  return {
+    navigate(href) {
+      // `navigate` pushes history synchronously and resolves when the route has loaded.
+      last = router.navigate({ to: href });
+      return last;
+    },
+    async whenIdle() {
+      try {
+        await last;
+      } catch {
+        /* an error route still renders: AFTER captures it like any page (spec §9.4) */
+      }
+      if (router.state.status === 'idle') return;
+      await new Promise<void>((resolve) => {
+        const off = router.subscribe('onResolved', () => {
+          off();
+          resolve();
+        });
+        if (router.state.status === 'idle') {
+          off();
+          resolve();
+        }
+      });
+    },
+  };
+}
+
+/** The overlay as the React store (`EversionOverlay` renders it). */
+const storeOverlay: OverlayPort = {
+  mount: mountOverlay,
+  fade: fadeOverlay,
+  unmount: unmountOverlay,
+};
+
+/**
+ * An overlay that needs no React: a `div.eversion-overlay` appended to `<body>`.
+ * For the debug entry point and the controller e2e, where no hub is mounted.
+ */
+export function createDomOverlayPort(): OverlayPort {
+  let el: HTMLDivElement | null = null;
+  return {
+    async mount() {
+      el = document.createElement('div');
+      el.className = 'eversion-overlay';
+      el.setAttribute('role', 'presentation');
+      el.appendChild(getCanvas());
+      document.body.appendChild(el);
+    },
+    fade() {
+      el?.classList.add('eversion-overlay--fading');
+    },
+    unmount() {
+      el?.remove();
+      el = null;
+    },
+  };
+}
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   The host and its canvas
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * The page's one host, initialised on the persistent canvas. `init` is sent once
+ * per canvas (that is when the programs compile) and `ready` awaited on every
+ * call; a failure discards the canvas, because a canvas whose control was
+ * transferred to a failed context cannot be reused.
+ */
+function createHostPort(): HostPort & { warm(tier: Tier): void } {
+  let initedFor: HTMLCanvasElement | null = null;
+  let readyPromise: Promise<EversionHost> | null = null;
+
+  function init(tier: Tier): Promise<EversionHost> {
+    const host = getEversionHost();
+    const canvas = getCanvas();
+    if (initedFor === canvas && readyPromise) return readyPromise;
+    initedFor = canvas;
+    readyPromise = new Promise<EversionHost>((resolve, reject) => {
+      const off = host.subscribe((m) => {
+        if (m.type === 'ready') {
+          off();
+          resolve(host);
+        } else if (m.type === 'error' && m.fatal) {
+          off();
+          reject(new Error(m.message));
+        }
+      });
+      try {
+        host.post({ type: 'init', canvas, tier, dprCap: TIERS[tier].canvasDprCap });
+      } catch (error) {
+        off();
+        reject(error instanceof Error ? error : new Error(String(error)));
+      }
+    });
+    readyPromise.catch(() => port.discardCanvas());
+    return readyPromise;
+  }
+
+  const port: HostPort & { warm(tier: Tier): void } = {
+    ready: (tier, timeoutMs) => withTimeout(init(tier), timeoutMs, 'host ready'),
+    discardCanvas() {
+      initedFor = null;
+      readyPromise = null;
+      discardCanvas();
+    },
+    warm(tier) {
+      init(tier).catch(() => {});
+    },
+  };
+  return port;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   The controller
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+export interface EversionControllerHandle extends EversionController {
+  /** `start` with the entry point recorded on the `start` mark (S#25). */
+  start(node: EversionNode, state: GlobeStartState, entry?: EntryPoint): Promise<EversionOutcome>;
+  /** Hurry the run in flight: back/forward (T33). */
+  abort(): void;
+  /** Observable state, for the debug slot and tests. */
+  state: EversionRunner['state'];
+  dispose(): void;
+}
+
+/** Test and e2e seams: replace any port. */
+export type ControllerOverrides = Partial<RunnerDeps>;
+
+/**
+ * Build the controller. One per hub; cheap (it does nothing until the hub opens
+ * or a run starts). `overrides` replaces ports for the e2e, which has no hub, no
+ * BEFORE scheduler and, until T17 lands, no real capture.
+ */
+export function createEversionController(
+  deps: EversionControllerDeps,
+  overrides: ControllerOverrides = {},
+): EversionControllerHandle {
+  const hostPort = createHostPort();
+  const bakedKeys = new Set<string>();
+  let prepared: ProjectionId | null = null;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let ownCaptures: CaptureApi[] = [];
+
+  const setting = (): NavTransition => useThemeStore.getState().navTransition;
+
+  const lutKey = (id: ProjectionId, v: Viewport) =>
+    `${id}:${aspectBucket(Math.max(v.h, 1) / Math.max(v.w, 1))}`;
+
+  const openCapture = async (): Promise<CaptureApi> => {
+    const capture = createCapture();
+    ownCaptures.push(capture);
+    await capture.createSession();
+    return capture;
+  };
+
+  const page = createPagePort(deps.getOrbRect);
+  const runner = new EversionRunner({
+    host: hostPort,
+    overlay: storeOverlay,
+    page,
+    router: createRouterPort(deps.router),
+    ineligibleReason: () => deps.beforeCapture.ineligibleReason(),
+    awaitBefore: (grace) => deps.beforeCapture.awaitBefore(grace),
+    capture: () => deps.beforeCapture.getCapture(),
+    openCapture,
+    placeholder: (node, viewport, colours, tier) =>
+      buildPlaceholder(node, viewport, colours, deps.translate, { tier }),
+    projection() {
+      const id = prepared ?? resolveProjection(setting());
+      prepared = null;
+      return id;
+    },
+    lut(id, viewport) {
+      return bakedKeys.has(lutKey(id, viewport)) ? getBakedLut(id, viewport).data : null;
+    },
+    requested: setting,
+    mark(name, detail) {
+      try {
+        performance.mark(EVERSION_MARKS[name], detail === undefined ? undefined : { detail });
+      } catch {
+        /* marks are observability; never let one break a run */
+      }
+    },
+    now: () => performance.now(),
+    ...overrides,
+  });
+
+  function cancelPrep() {
+    if (timer) clearTimeout(timer);
+    timer = null;
+  }
+
+  const previewNode = (): EversionNode => ({
+    id: 'eversion-preview',
+    href: page.currentHref(),
+    tKey: 'feed:eversion.preview',
+    label: document.title.split(/\s[|–-]\s/)[0] || 'Preview',
+    icon: Globe,
+  });
+
+  const centredGlobe = (): GlobeStartState => {
+    const v = viewportNow();
+    return {
+      yaw: 0,
+      pitch: 0,
+      yawVel: 0,
+      pitchVel: 0,
+      centre: [v.w / 2, v.h / 2],
+      radius: Math.min(v.w, v.h) * 0.3,
+    };
+  };
+
+  const handle: EversionControllerHandle = {
+    isEligible: () => deps.beforeCapture.isEligible(),
+    ineligibleReason: () => deps.beforeCapture.ineligibleReason(),
+
+    onHubOpened() {
+      if (!isEversionEnabled() || !deps.beforeCapture.isEligible()) return;
+      cancelPrep();
+      const id = resolveProjection(setting());
+      prepared = id;
+      timer = setTimeout(() => {
+        timer = null;
+        try {
+          const viewport = viewportNow();
+          getBakedLut(id, viewport);
+          bakedKeys.add(lutKey(id, viewport));
+        } catch {
+          /* the render side bakes it instead */
+        }
+        hostPort.warm(detectTier());
+      }, IDLE_DELAY_MS);
+    },
+
+    onHubClosed() {
+      cancelPrep();
+    },
+
+    start: (node, state, entry) => runner.run(node, state, entry),
+
+    async preview() {
+      const before = async (): Promise<ImageBitmap | null> => {
+        try {
+          const capture = await openCapture();
+          const result = await capture.captureViewport({
+            phase: 'before',
+            exclude: CAPTURE_EXCLUDE_SELECTORS,
+            scaleCap: CAPTURE_DPR_CAP[detectTier()],
+          });
+          return result.bitmap;
+        } catch {
+          return null;
+        }
+      };
+      return runner.run(previewNode(), centredGlobe(), 'preview', {
+        // The capture is its own work, not the hub's 250 ms grace: give it room.
+        before: async () =>
+          withTimeout(before(), BEFORE_GRACE_MS * 4, 'preview capture').catch(() => null),
+      });
+    },
+
+    abort: () => runner.abort(),
+    state: () => runner.state(),
+    dispose() {
+      cancelPrep();
+      runner.abort();
+      for (const c of ownCaptures.splice(0)) c.dispose();
+      ownCaptures = [];
+    },
+  };
+  return handle;
+}
+
+/**
+ * React convenience over {@link createEversionController}: one controller per
+ * mount, disposed on unmount. For callers that already hold this module (the
+ * debug harness, tests); the hub itself builds the controller from the dynamic
+ * `import()` in an effect, because a hook cannot be imported lazily.
+ */
+export function useEversionController(deps: EversionControllerDeps): EversionControllerHandle {
+  const [controller] = useState(() => createEversionController(deps));
+  useEffect(() => () => controller.dispose(), [controller]);
+  return controller;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   Debug (`?eversion-debug=1`)
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+if (typeof window !== 'undefined') {
+  maybeLoadEversionDebug();
+  let debugController: EversionControllerHandle | null = null;
+  const ensure = (): EversionControllerHandle | null => {
+    const router = (window as unknown as { __TSR_ROUTER__?: RouterLike }).__TSR_ROUTER__;
+    if (!router) return null;
+    debugController ??= createEversionController(
+      {
+        router,
+        // No hub, so no BEFORE scheduler: capture on demand through a session of our own.
+        beforeCapture: {
+          isEligible: () => true,
+          ineligibleReason: () => null,
+          getCapture: () => null,
+          awaitBefore: async () => {
+            const capture = createCapture();
+            try {
+              await capture.createSession();
+              const r = await capture.captureViewport({
+                phase: 'before',
+                exclude: CAPTURE_EXCLUDE_SELECTORS,
+                scaleCap: CAPTURE_DPR_CAP[detectTier()],
+              });
+              return r.bitmap;
+            } catch {
+              return null;
+            } finally {
+              capture.dispose();
+            }
+          },
+        },
+        translate: (key, options) => options?.defaultValue ?? key,
+      },
+      { overlay: createDomOverlayPort() },
+    );
+    return debugController;
+  };
+  registerDebug('controller', {
+    state() {
+      const s = ensure()?.state();
+      return s ?? { phase: 'idle', coverActive: false, beforeReady: false, afterReady: false };
+    },
+    async startTo(href) {
+      const c = ensure();
+      if (!c) return { fallback: 'host-error' satisfies FallbackReason };
+      const v = viewportNow();
+      const node: EversionNode = {
+        id: 'debug',
+        href,
+        tKey: 'feed:eversion.debug',
+        label: href,
+        icon: Globe,
+      };
+      return c.start(node, {
+        yaw: 0,
+        pitch: 0,
+        yawVel: 0,
+        pitchVel: 0,
+        centre: [v.w / 2, v.h / 2],
+        radius: Math.min(v.w, v.h) * 0.3,
+      });
+    },
+  });
+}
