@@ -1960,6 +1960,12 @@ html.ios-webkit .radial-hub__veil {
   opacity: 0;
   pointer-events: none;
 }
+/* The run is over (RadialHub `orbPopped`): the pop has left the glass globe at the
+   orb's own rect, so the orb takes over in the same frame — no 340ms fade-in
+   behind it. Only `opacity` is held back; the position never moved. */
+.radial-hub[data-phase='closed'][data-orb-popped] .radial-hub__orb {
+  transition: none;
+}
 .radial-hub__identity {
   display: inline-flex;
   align-items: center;

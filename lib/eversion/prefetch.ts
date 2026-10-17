@@ -61,11 +61,10 @@
  *
  * ## T31 hook
  *
- * TODO(T31): the controller module (`components/radial/eversion/
- * useEversionController.ts`) is written concurrently and is not on this branch.
- * When it lands, add its lazy entry to {@link loadChunks} so it is fetched here
- * too — and ONLY here: it must stay behind a dynamic import so it is in no
- * static closure (S#39 lists it).
+ * The hub's lazy bridge (`components/radial/eversion/EversionBridge.tsx`, which
+ * pulls in the controller and overlay) is fetched here too — and ONLY here and
+ * by the hub's `React.lazy`: it must stay behind a dynamic import so it is in no
+ * static closure (S#39 lists the controller).
  */
 
 import { isEversionEnabled } from './flags';
@@ -106,7 +105,10 @@ function loadChunks() {
     import('modern-screenshot'),
     // `?eversion-debug=1` only; a no-op (and a tiny leaf) otherwise.
     import('./debug').then((m) => m.maybeLoadEversionDebug()),
-    // TODO(T31): import('@/components/radial/eversion/useEversionController')
+    // The hub's lazy half: bridge + controller + overlay (T32). Fetched here so
+    // the first confirm after load does not pay a cold chunk round trip, and
+    // still only ever through a dynamic import — it is in no static closure.
+    import('@/components/radial/eversion/EversionBridge'),
   ]);
 }
 

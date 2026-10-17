@@ -269,6 +269,7 @@ export const EVERSION_RUNTIME_MODULES: ReadonlyArray<{
   { fragment: 'lib/eversion/debug-overlay', fingerprint: 'eversion debug' },
   { fragment: 'node_modules/modern-screenshot' },
   { fragment: 'components/radial/eversion/useEversionController' },
+  { fragment: 'components/radial/eversion/EversionBridge' },
 ];
 
 export interface EversionLeak {

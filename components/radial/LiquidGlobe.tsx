@@ -36,6 +36,7 @@ import {
 } from '@/lib/fluid';
 import { isNavLeafActive, type NavLeaf } from '@/lib/sidebar-nav';
 import type { GlobeStartState } from '@/lib/eversion/types';
+import type { EntryPoint } from '@/lib/eversion/marks';
 
 /**
  * The **liquid globe** navigator — the site's navigation as a glass sphere you
@@ -426,7 +427,11 @@ interface LiquidGlobeProps {
    * is never confirmed by a person. Read through a ref, so an unstable callback
    * from the parent does not re-subscribe the pointer listeners.
    */
-  onNavigate?: (node: NavLeaf, state: GlobeStartState) => void;
+  onNavigate?: (
+    node: NavLeaf,
+    state: GlobeStartState,
+    entry: Exclude<EntryPoint, 'preview'>,
+  ) => void;
 }
 
 export function LiquidGlobe({
@@ -800,7 +805,7 @@ export function LiquidGlobe({
   }, [measureCentre]);
 
   const go = useCallback(
-    (node: GlobeNode) => {
+    (node: GlobeNode, entry: Exclude<EntryPoint, 'preview'> = 'release') => {
       if (!quiet.current) vibrate(18);
       swallowClick.current = true;
       if (node.external) {
@@ -809,7 +814,7 @@ export function LiquidGlobe({
       }
       const handOff = onNavigateRef.current;
       if (handOff && !quiet.current) {
-        handOff(node, snapshotGlobeState());
+        handOff(node, snapshotGlobeState(), entry);
         return;
       }
       onDismiss();
@@ -838,7 +843,10 @@ export function LiquidGlobe({
         return;
       }
       e.preventDefault();
-      go(node);
+      // Enter on a focused pin is delivered as a click with `detail === 0`; a
+      // pointer click always has at least 1. That is the only way to tell the
+      // two entry points apart, and the marks record which one ran (S#25).
+      go(node, e.detail === 0 ? 'enter' : 'click');
       swallowClick.current = false;
     },
     [go, onDismiss],
