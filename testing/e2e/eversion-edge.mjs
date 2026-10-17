@@ -379,6 +379,17 @@ async function redirect() {
 }
 
 /** Resize / rotation: one `resize` per frame, carrying the new viewport, forwarded to the render side. */
+/** The `position: fixed; inset: 0` box (what the controller reports: the viewport minus the scrollbar gutter). */
+const fixedBox = (s) =>
+  s.page.evaluate(() => {
+    const p = document.createElement('div');
+    p.style.cssText = 'position:fixed;inset:0;visibility:hidden';
+    document.documentElement.appendChild(p);
+    const r = p.getBoundingClientRect();
+    p.remove();
+    return { w: r.width, h: r.height };
+  });
+
 async function resize() {
   const name = 'resize';
   const { s, errors } = await fresh({ path: '/' });
@@ -394,10 +405,11 @@ async function resize() {
     await s.page.waitForTimeout(600);
     let sent = await posts(s, 'resize');
     check(name, sent.length === 1, `one resize event → ${sent.length} messages`);
+    let box = await fixedBox(s);
     check(
       name,
-      sent[0].viewport.w === VW + 120 && sent[0].viewport.h === VH + 60,
-      `viewport ${JSON.stringify(sent[0].viewport)}`,
+      sent[0].viewport.w === box.w && sent[0].viewport.h === box.h && box.w >= VW + 120 - 20,
+      `viewport ${JSON.stringify(sent[0].viewport)}, fixed box ${JSON.stringify(box)}`,
     );
 
     // A rotation: the size flips, and the page fires a burst of events in one task.
@@ -418,10 +430,11 @@ async function resize() {
     await s.page.waitForTimeout(600);
     sent = await posts(s, 'resize');
     check(name, sent.length === 2, `a rotation burst → ${sent.length - 1} messages, wanted 1`);
+    box = await fixedBox(s);
     check(
       name,
-      sent[1].viewport.w === VH + 60 && sent[1].viewport.h === VW + 120,
-      `viewport ${JSON.stringify(sent[1].viewport)}`,
+      sent[1].viewport.w === box.w && sent[1].viewport.h === box.h && box.h === VW + 120,
+      `viewport ${JSON.stringify(sent[1].viewport)}, fixed box ${JSON.stringify(box)}`,
     );
 
     // An event that changes nothing says nothing.

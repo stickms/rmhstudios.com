@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { COVER_CLASS, HUB_FADE_MS, SETTLE_ATTRIBUTE } from '../constants';
+import { COVER_CLASS, HUB_FADE_MS, POP_MS, SETTLE_ATTRIBUTE } from '../constants';
 
 /**
  * T19 — the stylesheet half of the effect hangs on three names and one number
@@ -41,5 +41,28 @@ describe("radial.css `data-phase='everting'`", () => {
       expect(block).toMatch(new RegExp(`\\[data-phase='everting'\\] \\.${el} \\{[^}]*opacity: 0;`));
     }
     expect(block).toMatch(/__orb \{[^}]*opacity: 0;[^}]*pointer-events: none;/);
+  });
+});
+
+describe('the orb crossfade (review R5 M1)', () => {
+  it("starts when POP's fade does (60% of POP_MS) and ends with POP", () => {
+    // timeline.ts: POP_FADE_FROM = POP_SHRINK_FRACTION = 0.6. The page-visible
+    // `popFade` event replaces this offset when the timeline publishes one.
+    const rule = radial.match(
+      /\[data-phase='everting'\]\[data-orb-popped\] \.radial-hub__orb \{[^}]*\}/,
+    )?.[0];
+    expect(rule).toBeDefined();
+    const m = rule!.match(/transition: opacity (\d+)ms ease-out (\d+)ms;/);
+    expect(m).not.toBeNull();
+    const [dur, delay] = [Number(m![1]), Number(m![2])];
+    expect(delay).toBe(Math.round(POP_MS * 0.6));
+    expect(delay + dur).toBeLessThanOrEqual(POP_MS);
+    expect(delay + dur).toBeGreaterThanOrEqual(POP_MS - 20);
+  });
+
+  it('raises the orb above the effect canvas for the crossfade', () => {
+    expect(radial).toMatch(
+      /\[data-phase='everting'\]\[data-orb-popped\] \.radial-hub__orb \{[^}]*z-index: var\(--z-hub-orb-open\)/,
+    );
   });
 });

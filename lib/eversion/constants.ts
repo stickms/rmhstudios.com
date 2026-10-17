@@ -96,6 +96,14 @@ export const MAX_DT_MS = 50;
 
 /** How long the controller waits for BEFORE after release (spec §6.2). */
 export const BEFORE_GRACE_MS = 250;
+/**
+ * How long a RELEASE actually waits for a BEFORE capture that is still in
+ * flight. Deliberately far below {@link BEFORE_GRACE_MS}: the visitor has asked
+ * to go somewhere, and the fallback is today's navigation, which must start
+ * within about a frame of today's (review R6 M3). A capture that needs longer
+ * than this is not ready for this release and will be for the next.
+ */
+export const BEFORE_WAIT_MS = 50;
 /** Hard timeout for either capture; on timeout the navigation falls back. */
 export const CAPTURE_TIMEOUT_MS = 600;
 /** Cap on waiting for viewport images to settle before the AFTER capture. */
@@ -351,3 +359,16 @@ export const PLAN_MS = (() => {
     total: popEnd,
   } as const;
 })();
+
+/**
+ * Run watchdog (review R6 M2): the longest a committed run may go without
+ * REPORTING PROGRESS (any stage message from the render side; the runner re-arms
+ * on each) before it is force-ended with a fade. It is a stall window, not a
+ * run length: on a slow GPU the clock-clamped plan legitimately stretches to
+ * several times {@link PLAN_MS}`.total` in wall time (software GL measured at
+ * 10+ s), yet stages keep arriving. Only a run that has gone silent (GPU hang,
+ * dead worker, a host disposed under us) trips it, so it never cuts a healthy one.
+ * The longest legitimate silence is one stage - the gate waiting out
+ * {@link STRETCH_CAP_MS} plus the AFTER capture's timeout - hence the margin.
+ */
+export const MAX_RUN_MS = 30_000;

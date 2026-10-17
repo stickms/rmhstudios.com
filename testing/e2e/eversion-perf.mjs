@@ -49,8 +49,10 @@
 //  S#43  Frame pacing, regression-relative. The worker's `done` stats (frames,
 //        dropped, p95) pooled over the effect runs vs the committed baseline
 //        `baselines/eversion-frames.json`: p95 may not regress > 15 %, the
-//        dropped-frame share not > 2 points. No baseline → written (production
-//        builds only); `--update-baselines` rewrites it.
+//        dropped-frame share not > 2 points. A MISSING baseline FAILS when `CI` is set
+//        (never written implicitly: that would compare a build with itself);
+//        `--update-baselines` rewrites it, on production builds only. On CI that
+//        is the workflow_dispatch input `update-baselines`, which uploads it.
 //  S#44  Main thread. Long tasks (> 50 ms) between `eversion:start` and
 //        `eversion:done`, MINUS what the fallback run shows for the same
 //        destination in [t0, ready + 1 s] (the route's own render — diffing the
@@ -699,7 +701,9 @@ function gate43(effect, production) {
   const baseline = loadBaseline(BASELINE);
   const update = wantsBaselineUpdate();
   const label = `p95 ${current.p95} ms, dropped ${(current.droppedShare * 100).toFixed(2)}%, ${current.framesPerRun} frames/run, n=${stats.length}`;
-  if (update || !baseline) {
+  if (update) {
+    // A deliberate refresh (`--update-baselines`, or the workflow_dispatch input
+    // that uploads the file as an artifact): production builds only.
     if (production) {
       const file = saveBaseline(BASELINE, {
         ...current,
@@ -707,14 +711,7 @@ function gate43(effect, production) {
         runs: stats.length,
         build: 'production',
       });
-      row(
-        'S#43',
-        'frame pacing',
-        label,
-        'baseline',
-        'PASS',
-        `baseline ${update ? 'rewritten' : 'created'}: ${file}`,
-      );
+      row('S#43', 'frame pacing', label, 'baseline', 'PASS', `baseline rewritten: ${file}`);
     } else {
       row(
         'S#43',
@@ -722,9 +719,20 @@ function gate43(effect, production) {
         label,
         'baseline',
         'INFO',
-        `NOT written: ${update ? 'dev-server build' : 'no baseline committed'} — baselines come from production builds only`,
+        'NOT written: dev-server build - baselines come from production builds only',
       );
     }
+    return;
+  }
+  if (!baseline) {
+    // Never written implicitly: a baseline made from the very run under test makes
+    // the gate compare a build with itself and pass for ever. On CI a missing one
+    // is a FAILURE (same as S#40); locally it is information.
+    const detail =
+      'no committed baseline (testing/e2e/baselines/eversion-frames.json) - produce one on a ' +
+      'CI runner via the workflow_dispatch input `update-baselines` and commit the artifact';
+    if (process.env.CI) row('S#43', 'frame pacing', label, 'committed baseline', 'FAIL', detail);
+    else row('S#43', 'frame pacing', label, 'baseline', 'INFO', detail);
     return;
   }
   const cmp = compareToBaseline(current, baseline, {

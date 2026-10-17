@@ -65,6 +65,25 @@ describe('EVERSION_RUNTIME_MODULES', () => {
       }
     }
   });
+
+  // The shell's own sources (they ARE in the static closure) must never contain a
+  // runtime module's fingerprint, or a build without sourcemaps reports a leak that
+  // is only a shared string (review R6 m6: the hub carried 'eversion-preview').
+  it('no fingerprint appears in the shell sources that legitimately ship statically', () => {
+    const shell = [
+      'components/radial/RadialHub.tsx',
+      'components/settings/AppearancePanel.tsx',
+      'lib/eversion/flags.ts',
+      'lib/eversion/marks.ts',
+    ];
+    for (const file of shell) {
+      const text = readFileSync(join(REPO, file), 'utf8');
+      for (const { fingerprint } of EVERSION_RUNTIME_MODULES) {
+        if (!fingerprint) continue;
+        expect(text.includes(fingerprint), `${file} contains ${fingerprint}`).toBe(false);
+      }
+    }
+  });
 });
 
 describe('eversionLeaks', () => {

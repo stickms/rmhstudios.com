@@ -296,19 +296,39 @@ homes image module constructs a client at import time).
 `eversion-lab.mjs` (the admin-only `/eversion-lab` scrub page) needs the dev-only
 `EVERSION_LAB_OPEN` and so is **excluded from CI** - a production build ignores it.
 
-`eversion-load.mjs` compares against the committed
-`testing/e2e/baselines/eversion-load.json`. **A missing baseline fails the gate**;
-only `--update-baselines` writes one, deliberately, on a build you trust, and the
-file is committed. Thresholds and the late-`load` negative control are in the
-spec's S#40 amendment.
+`eversion-load.mjs` (S#40) and `eversion-perf.mjs` (S#43) compare against the
+committed `testing/e2e/baselines/eversion-load.json` and `eversion-frames.json`.
+**A missing baseline fails both gates on CI** (`CI` set; `eversion-perf` only
+informs locally). Neither script ever writes one as a side effect of a run:
+a baseline taken from the run under test would make the gate compare a build with
+itself and pass for ever. Thresholds and the late-`load` negative control are in
+the spec's S#40 amendment. The late-`load` control holds `load` open for 8 s and
+fails if ANY eversion request (the prefetch chunk included, not just the bridge)
+is seen before it; `lib/eversion/__tests__/hub-load-gating.test.ts` pins the same
+rule at source level so a regression fails in `pnpm test` before a browser runs.
+
+**Producing baselines.** They must come from a CI runner on a production build -
+SwiftShader numbers from a laptop would fail every run on CI. Start the `web-ci`
+workflow with `workflow_dispatch` and `update-baselines` ticked: the
+`eversion-e2e` job then runs only `eversion-load.mjs` and `eversion-perf.mjs`
+with `--update-baselines` and uploads `testing/e2e/baselines/` as the
+`eversion-baselines` artifact (14 days). Download it, commit the two JSON files
+in a PR of their own, and say which run produced them. Refresh the same way when a
+deliberate change moves the numbers (a Chromium bump, a slower-but-better effect).
 
 **CI.** The `eversion-e2e` job in `web-ci.yml` builds WITH sourcemaps (the
 attribution checks read them), serves `.output`, and runs every
 `testing/e2e/eversion-*.mjs` except `eversion-lab.mjs`; `eversion-hub.mjs` runs
 once per profile x theme (desktop/mobile x dark/light/high-contrast). The job is
-path-filtered by `eversion-changes` (lib/eversion, components/radial, routes,
-stores, English locales, settings, the baselines and this workflow) and runs
-nightly on `main`. It is `continue-on-error` until T37 makes it blocking.
+path-filtered by `eversion-changes` to what the effect depends on: `lib/eversion`,
+`components/radial`, the settings row and its preference API/schema, the theme
+store, `lib/perf-tier*` and `lib/render`, the glass layer, the two English
+namespaces it uses, `package.json`, the lockfile, the Vite config, the bundle
+budget script, the baselines and this workflow - not every route, store or English
+string. It runs nightly on `main`. It is `continue-on-error` until T37 makes it
+blocking, which hides a red job from the PR's checks, so each script's verdict is
+also written to the job summary (`GITHUB_STEP_SUMMARY`) and every failure is an
+`::error::` annotation. Open the job summary after a nightly.
 
 ### Coverage
 

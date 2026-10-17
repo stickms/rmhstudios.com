@@ -1246,7 +1246,22 @@ iOS's worker/in-thread mode is recorded.
 
 **Acceptance** — The docs freshness checks are green; the flag flip is a
 one-line, revertible commit; reverting it restores today's behaviour exactly
-(verified by T32's flag-off check).
+(verified by T32's flag-off check). Two review findings (R6 m8, m10) land here:
+
+- **The Settings row is hidden while the flag is off** (`NavTransitionRow`,
+  `AppearancePanel.tsx`), so the S§9.3 requirement - a choice of projection with
+  Random as the default - is unreachable by any user until the flip. It is an
+  explicit acceptance item: after the flip, open Settings > Appearance and confirm
+  the row is visible, defaults to Random, persists, and Preview runs. (S#37 passes
+  regardless: it forces the effect on with `?eversion`.)
+- **`?eversion` is honoured in PRODUCTION today** (`flags.ts`): any visitor can opt
+  in while `EVERSION_ENABLED` is `false`. The rollout step above says to keep it as
+  a "no-op override" - that is only true once the flip makes the flag `true`.
+  Decide deliberately whether the param should stay (support/QA) or be dropped from
+  production builds, and do not ship the rollout flag at `false` expecting it inert.
+- **Baselines** (`testing/e2e/baselines/eversion-load.json`, `eversion-frames.json`)
+  must be committed before T37 makes the job blocking, produced on a CI runner via the
+  `update-baselines` dispatch input (docs/testing.md §7).
 
 ---
 

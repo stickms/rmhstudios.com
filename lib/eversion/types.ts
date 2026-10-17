@@ -878,7 +878,11 @@ export type FallbackReason =
   | 'before-failed'
   /** The render host is still initialising (cold start); not a failure, just not yet. */
   | 'host-not-ready'
-  | 'host-error';
+  | 'host-error'
+  /** A run (or its teardown) is still in progress; the caller navigates as today. */
+  | 'busy'
+  /** The visitor pressed Back/Forward while the run was priming: nothing to do, the router already moved. */
+  | 'traversal';
 
 /** How a run that DID start ended. */
 export type EversionEnd = 'done' | 'context-lost' | 'abort';

@@ -145,7 +145,6 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'nav-transition-preview',
     'nav-transition-random',
     'nav-transition-random-desc',
-    'nav-transition-reduced-hint',
     'nav-transition-stereographic',
     'nav-transition-stereographic-desc',
   ],
@@ -345,6 +344,9 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'cars-xl-tagline',
   ],
   feed: [
+    // Globe eversion Settings > Preview on a device that cannot run it (Fix E1,
+    // 2026-10-17). English-only until the translate pipeline runs; remove with it.
+    'eversion-preview-unavailable',
     // UI minimalism audit (2026-10-09): the live rail's footer link, renamed
     // from "Explore everything" under a new key. Same pipeline caveat.
     'explore-more-link',

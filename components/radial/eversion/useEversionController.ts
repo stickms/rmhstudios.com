@@ -4,10 +4,10 @@ import { Globe } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { aspectBucket, getBakedLut } from '@/lib/eversion/projection-lut';
 import { buildPlaceholder } from '@/lib/eversion/placeholder';
-import { createCapture } from '@/lib/eversion/capture';
+import { createCapture, fixedViewport } from '@/lib/eversion/capture';
 import { registerDebug, maybeLoadEversionDebug } from '@/lib/eversion/debug';
 import { isEversionEnabled } from '@/lib/eversion/flags';
-import { getEversionHost } from '@/lib/eversion/gl/host';
+import { getEversionHost, resetEversionHost } from '@/lib/eversion/gl/host';
 import { resolveProjection } from '@/lib/eversion/random';
 import { EVERSION_MARKS } from '@/lib/eversion/marks';
 import type { EntryPoint } from '@/lib/eversion/marks';
@@ -211,8 +211,16 @@ export interface EversionControllerDeps {
 
 const IDLE_DELAY_MS = 700;
 
+/**
+ * The viewport as the effect's `position: fixed; inset: 0` overlay sees it, i.e.
+ * WITHOUT the `scrollbar-gutter: stable` strip (`capture.ts#fixedViewport`). The
+ * canvas backing store, the LUT aspect and the capture must all be this one size:
+ * sizing the canvas to `innerWidth` while the capture is `innerWidth - gutter`
+ * resampled the page twice.
+ */
 function viewportNow(): Viewport {
-  return { w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio || 1 };
+  const { width, height } = fixedViewport();
+  return { w: width, h: height, dpr: window.devicePixelRatio || 1 };
 }
 
 function timeoutPromise(ms: number): Promise<void> {
@@ -303,12 +311,12 @@ function createPagePort(getOrb?: () => OrbRect | null): PagePort {
       };
       const onPointer = () => cb();
       // Capture phase on `window`: the fading hub above the overlay sees the press first otherwise.
+      // Not `wheel`: a scroll is not a skip request, and the inertial tail of a
+      // trackpad flick made just before releasing would fast-forward the run at once.
       window.addEventListener('pointerdown', onPointer, { capture: true, passive: true });
-      window.addEventListener('wheel', onPointer, { capture: true, passive: true });
       window.addEventListener('keydown', onKey, { capture: true });
       return () => {
         window.removeEventListener('pointerdown', onPointer, { capture: true });
-        window.removeEventListener('wheel', onPointer, { capture: true });
         window.removeEventListener('keydown', onKey, { capture: true });
       };
     },
@@ -411,6 +419,7 @@ function createHostPort(): HostPort & {
   warm(tier: Tier): void;
   state(): HostState;
   whenReady(tier: Tier): Promise<boolean>;
+  reset(): void;
 } {
   let initedFor: HTMLCanvasElement | null = null;
   let readyPromise: Promise<EversionHost> | null = null;
@@ -464,6 +473,7 @@ function createHostPort(): HostPort & {
     warm(tier: Tier): void;
     state(): HostState;
     whenReady(tier: Tier): Promise<boolean>;
+    reset(): void;
   } = {
     ready: (tier, timeoutMs) => withTimeout(init(tier), timeoutMs, 'host ready'),
     discardCanvas() {
@@ -477,6 +487,15 @@ function createHostPort(): HostPort & {
       init(tier).catch(() => {});
     },
     state: () => state,
+    reset() {
+      // The host was disposed under us (bfcache restore): everything cached about
+      // it - the ready promise, the canvas it was initialised on, 'ready' - is dead.
+      initedFor = null;
+      readyPromise = null;
+      failures = 0;
+      state = 'idle';
+      discardCanvas();
+    },
     whenReady: (tier) =>
       state === 'failed'
         ? Promise.resolve(false)
@@ -498,7 +517,7 @@ export interface EversionControllerHandle extends EversionController {
     node: EversionNode,
     state: GlobeStartState,
     entry?: EntryPoint,
-    options?: Pick<RunOptions, 'onCommit'>,
+    options?: Pick<RunOptions, 'onCommit' | 'onPopFade'>,
   ): Promise<EversionOutcome>;
   /** Hurry the run in flight: back/forward (T33). */
   abort(): void;
@@ -529,17 +548,32 @@ export function createEversionController(
   const bakedKeys = new Set<string>();
   let prepared: ProjectionId | null = null;
   let timer: ReturnType<typeof setTimeout> | null = null;
-  let ownCaptures: CaptureApi[] = [];
+  const ownCaptures = new Set<CaptureApi>();
 
   const setting = (): NavTransition => useThemeStore.getState().navTransition;
 
   const lutKey = (id: ProjectionId, v: Viewport) =>
     `${id}:${aspectBucket(Math.max(v.h, 1) / Math.max(v.w, 1))}`;
 
+  /**
+   * A capture session of the controller's own. It is forgotten the moment it is
+   * disposed (by its user, or by `dispose()` below): a set that kept every
+   * disposed session alive was a per-navigation heap leak (review R6 M4 / R5 m7).
+   */
   const openCapture = async (): Promise<CaptureApi> => {
     const capture = createCapture();
-    ownCaptures.push(capture);
-    await capture.createSession();
+    ownCaptures.add(capture);
+    const dispose = capture.dispose.bind(capture);
+    capture.dispose = () => {
+      ownCaptures.delete(capture);
+      dispose();
+    };
+    try {
+      await capture.createSession();
+    } catch (error) {
+      capture.dispose();
+      throw error;
+    }
     return capture;
   };
 
@@ -588,6 +622,12 @@ export function createEversionController(
       }
     },
     now: () => performance.now(),
+    get maxRunMs() {
+      // e2e harness only (testing/e2e/lib/eversion-session.mjs): a software-GL page
+      // can stay silent far longer than any device, and is not hung.
+      const v = (window as unknown as { __EVERSION_MAX_RUN_MS?: unknown }).__EVERSION_MAX_RUN_MS;
+      return typeof v === 'number' && v > 0 ? v : undefined;
+    },
     ...overrides,
   });
 
@@ -597,7 +637,10 @@ export function createEversionController(
   }
 
   const previewNode = (): EversionNode => ({
-    id: 'eversion-preview',
+    // Also this module's build fingerprint (scripts/check-bundle-budget.ts): a
+    // literal that appears in no shell source, unlike the event name
+    // `rmh:eversion-preview` the hub and the settings panel both carry.
+    id: 'rmh-eversion-controller:preview',
     href: page.currentHref(),
     tKey: 'feed:eversion.preview',
     label: document.title.split(/\s[|–-]\s/)[0] || 'Preview',
@@ -615,6 +658,20 @@ export function createEversionController(
       radius: Math.min(v.w, v.h) * 0.3,
     };
   };
+
+  /**
+   * bfcache restore (review R5 M5): `pagehide` disposed the render host, so the
+   * cached 'ready' state points at a host that silently ignores `post()`. Drop it
+   * (the next eligibility check re-warms a fresh one) and end any run that was in
+   * flight when the page was frozen, with a fade.
+   */
+  const onPageShow = (event: PageTransitionEvent) => {
+    if (!event.persisted) return;
+    runner.restoreFromCache();
+    hostPort.reset();
+    resetEversionHost();
+  };
+  window.addEventListener('pageshow', onPageShow);
 
   const handle: EversionControllerHandle = {
     isEligible: () => ineligibleReason() === null,
@@ -651,8 +708,12 @@ export function createEversionController(
       // for it (within the cold-init budget) rather than fall back on a cold click.
       if (!(await hostPort.whenReady(detectTier()))) return { fallback: 'host-error' };
       const before = async (): Promise<ImageBitmap | null> => {
+        // Reuse the scheduler's shared session when the bridge has one; otherwise
+        // open one for this capture ALONE and always dispose it - each session owns
+        // a worker and a sandbox iframe, and a Preview must not leave one behind.
+        let own: CaptureApi | null = null;
         try {
-          const capture = await openCapture();
+          const capture = deps.beforeCapture.getCapture() ?? (own = await openCapture());
           const result = await capture.captureViewport({
             phase: 'before',
             exclude: CAPTURE_EXCLUDE_SELECTORS,
@@ -661,6 +722,8 @@ export function createEversionController(
           return result.bitmap;
         } catch {
           return null;
+        } finally {
+          own?.dispose();
         }
       };
       return runner.run(previewNode(), centredGlobe(), 'preview', {
@@ -677,8 +740,9 @@ export function createEversionController(
       // Ends a run in flight outright (cover class, settle attribute, overlay) and
       // makes one still priming fall back: nothing is left to finish it.
       runner.dispose();
-      for (const c of ownCaptures.splice(0)) c.dispose();
-      ownCaptures = [];
+      for (const c of [...ownCaptures]) c.dispose();
+      ownCaptures.clear();
+      window.removeEventListener('pageshow', onPageShow);
     },
   };
   return handle;

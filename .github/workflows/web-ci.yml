@@ -48,7 +48,18 @@ on:
   # always runs the default branch.
   schedule:
     - cron: '17 3 * * *'
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      update-baselines:
+        description: >-
+          Eversion e2e only: run eversion-load / eversion-perf with
+          --update-baselines on this runner and upload the resulting
+          testing/e2e/baselines/*.json as the `eversion-baselines` artifact, for
+          committing. Baselines must come from a CI runner (a laptop's numbers
+          would fail every run here) and from a production build. See
+          docs/testing.md.
+        type: boolean
+        default: false
 
 # Newer pushes to the same ref cancel older in-progress runs.
 concurrency:
@@ -287,7 +298,17 @@ jobs:
           fi
           changed=$(git diff --name-only HEAD^1 HEAD)
           echo "$changed"
-          if echo "$changed" | grep -Eq '^(lib/eversion/|components/radial/|app/globals\.css$|testing/e2e/eversion|testing/e2e/lib/|testing/e2e/baselines/eversion|stores/themeStore|lib/appearance/|components/settings/AppearancePanel|locales/en/|app/routes/|stores/|prisma/schema\.prisma$|app/routes/api/.*appearance|\.github/workflows/web-ci\.yml$)'; then
+          # Only what the effect actually depends on. Deliberately NOT all of
+          # `app/routes/`, `stores/` or `locales/en/` (a 40-minute job for every
+          # route, store or English-string change); the specific files are listed.
+          #   • code and styles: the effect, the hub/shell it lives in, the settings row
+          #     and the preference API/schema that persist its setting, the theme
+          #     store, the perf tier and render governor it reads, the glass layer;
+          #   • tests and baselines: this job's own scripts and committed baselines;
+          #   • build inputs: the lockfile and package.json (modern-screenshot,
+          #     playwright, vite bumps), the Vite config, the bundle-budget script;
+          #   • strings: the two namespaces the effect's UI uses.
+          if echo "$changed" | grep -Eq '^(lib/eversion/|components/radial/|app/globals\.css$|app/routes/eversion-lab\.tsx$|app/routes/api/preferences/appearance\.ts$|testing/e2e/eversion|testing/e2e/lib/|testing/e2e/baselines/|stores/themeStore|lib/appearance/|lib/perf-tier|lib/render/|components/settings/AppearancePanel|components/ui/liquid-|locales/en/(feed|settings-appearance)\.json$|prisma/schema\.prisma$|package\.json$|pnpm-lock\.yaml$|vite\.config\.[cm]?[jt]s$|scripts/check-bundle-budget|\.github/workflows/web-ci\.yml$)'; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
@@ -380,11 +401,18 @@ jobs:
       #     production build ignores - against this server it can only fail.
       #   • `eversion-hub.mjs` runs below, once per profile x theme, because the
       #     hub's chrome is what differs between them.
-      # S#40's baseline must already be committed: a missing one FAILS here
-      # (`CI=true`); only a local run with an explicit flag may write it.
+      # S#40's and S#43's baselines must already be committed: a missing one FAILS
+      # here (`CI=true`). They are never written by an ordinary run; the manual
+      # `update-baselines` dispatch is the one way to produce them (below).
+      #
+      # `continue-on-error` hides a red job from the PR's checks, so every script's
+      # verdict is also written to the job summary (GITHUB_STEP_SUMMARY) and each
+      # failure raised as an `::error::` annotation. Nobody should learn that the
+      # nightly went red by accident.
       - name: Run eversion e2e scripts
         env:
           CI: 'true'
+          UPDATE_BASELINES: ${{ inputs.update-baselines && '1' || '' }}
         run: |
           shopt -s nullglob
           all=(testing/e2e/eversion-*.mjs)
@@ -399,29 +427,68 @@ jobs:
             echo "no testing/e2e/eversion-*.mjs scripts yet — nothing to run"
             exit 0
           fi
+          # Only these two accept --update-baselines; passing it to the rest is harmless
+          # but would hide what a refresh run is for.
+          if [ -n "$UPDATE_BASELINES" ]; then
+            scripts=(testing/e2e/eversion-load.mjs testing/e2e/eversion-perf.mjs)
+            echo "update-baselines: refreshing baselines on this runner"
+          fi
           failed=()
+          passed=()
+          {
+            echo "### Eversion e2e"
+            echo
+            echo "_This job is non-blocking (\`continue-on-error\`): a red row here does not fail the PR check. Look at it._"
+            echo
+            echo "| script | result |"
+            echo "| --- | --- |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          record() { echo "| \`$1\` | $2 |" >> "$GITHUB_STEP_SUMMARY"; }
           for s in "${scripts[@]}"; do
             echo "::group::$s"
-            if node "$s"; then echo "PASS $s"; else echo "FAIL $s"; failed+=("$s"); fi
+            extra=()
+            [ -n "$UPDATE_BASELINES" ] && extra=(--update-baselines)
+            if node "$s" "${extra[@]}"; then
+              echo "PASS $s"; passed+=("$s"); record "$s" "PASS"
+            else
+              echo "FAIL $s"; failed+=("$s"); record "$s" "**FAIL**"
+              echo "::error title=eversion e2e::$s failed"
+            fi
             echo "::endgroup::"
           done
-          if [ -f testing/e2e/eversion-hub.mjs ]; then
+          if [ -f testing/e2e/eversion-hub.mjs ] && [ -z "$UPDATE_BASELINES" ]; then
             for profile in desktop mobile; do
               for theme in dark light high-contrast; do
                 echo "::group::eversion-hub.mjs $profile/$theme"
                 if PROFILE="$profile" THEME="$theme" node testing/e2e/eversion-hub.mjs; then
-                  echo "PASS eversion-hub $profile/$theme"
+                  echo "PASS eversion-hub $profile/$theme"; record "eversion-hub $profile/$theme" "PASS"
                 else
                   echo "FAIL eversion-hub $profile/$theme"; failed+=("eversion-hub:$profile/$theme")
+                  record "eversion-hub $profile/$theme" "**FAIL**"
+                  echo "::error title=eversion e2e::eversion-hub $profile/$theme failed"
                 fi
                 echo "::endgroup::"
               done
             done
           fi
+          {
+            echo
+            echo "${#passed[@]} script(s) passed, ${#failed[@]} failed."
+          } >> "$GITHUB_STEP_SUMMARY"
           if [ ${#failed[@]} -ne 0 ]; then
             echo "::error::failed: ${failed[*]}"
             exit 1
           fi
+      # The refreshed baselines, for committing. Runs even when a script failed
+      # (a refresh run on a dev branch may fail other gates); only with the input.
+      - name: Upload refreshed baselines
+        if: always() && inputs.update-baselines
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: eversion-baselines
+          path: testing/e2e/baselines/
+          if-no-files-found: error
+          retention-days: 14
       - name: Stop the server
         if: always()
         run: kill "$(cat "$RUNNER_TEMP/server.pid")" 2>/dev/null || true

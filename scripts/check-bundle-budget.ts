@@ -273,7 +273,7 @@ export const EVERSION_RUNTIME_MODULES: ReadonlyArray<{
     fragment: 'node_modules/modern-screenshot',
     fingerprint: 'Error receiving message from worker',
   },
-  { fragment: 'components/radial/eversion/useEversionController', fingerprint: 'eversion-preview' },
+  { fragment: 'components/radial/eversion/useEversionController', fingerprint: 'rmh-eversion-controller' },
   { fragment: 'components/radial/eversion/EversionBridge', fingerprint: 'rmh-eversion-bridge' },
 ];
 

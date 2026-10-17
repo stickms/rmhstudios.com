@@ -87,7 +87,7 @@ with a 600 ms budget, which ended in `host-error` for any release that beat it.
 Now the controller owns a host state (`idle` → `initialising` → `ready`, or
 `failed` after two failed inits) and `ineligibleReason()` reads it:
 
-- `ready` → eligible. `ready()` is a microtask; `HOST_READY_TIMEOUT_MS` (600 ms)
+- `ready` → eligible. `ready()` is a microtask; `HOST_READY_TIMEOUT_MS` (100 ms)
   only bounds a host that was ready and stopped answering.
 - `initialising` / `idle` → `host-not-ready` **immediately**: the hub runs today's
   navigation, and an idle host is started so the next release finds it ready. The
@@ -97,6 +97,30 @@ Now the controller owns a host state (`idle` → `initialising` → `ready`, or
   anything, waits for it (`whenReady`) instead of falling back.
 
 `FallbackReason` gained `host-not-ready` (a `types.ts` amendment).
+
+### The fallback adds no delay, and a committed run always ends
+
+- A release waits for an in-flight BEFORE capture for `BEFORE_WAIT_MS` (50 ms) at
+  most (`BEFORE_GRACE_MS` is the capture's own budget, not the visitor's); no bitmap
+  in flight is an immediate fallback. Host ready 100 ms, overlay mount 100 ms: a
+  fallback adds at most ~50 ms in the common cases and a couple of frames in the
+  worst, and the hub stays `open` meanwhile, so there is no flash.
+- Back/forward during priming is honoured: the runner listens from the start of
+  `run()`, cancels cleanly and reports `fallback: 'traversal'`, which the hub answers
+  by closing (the router has already moved; navigating again would stack a push).
+- **Watchdog.** From the point of no return `MAX_RUN_MS` (a stall window, 30 s, re-armed
+  by every stage message so a slow GPU that keeps advancing is never cut) is armed; if the
+  run goes silent it is force-ended with a fade (cover off, overlay dissolves 200 ms) instead of leaving the hub
+  committed under a frozen canvas. `pageshow` with `persisted` (bfcache restore) does
+  the same for a run that was in flight and resets the controller's host state and
+  the render host, which `pagehide` disposed.
+- `FallbackReason` gained `busy` (a run or its teardown is still active) and
+  `traversal`.
+- **Orb crossfade.** The runner calls `onPopFade` on the `pop` stage; the hub sets
+  `data-orb-popped`, and radial.css fades the real orb in over 120 ms starting 60% of
+  `POP_MS` in (when the glass starts dissolving), above the canvas, so the two overlap.
+  `eversion-css.test.ts` ties the offset to `POP_MS`. When the timeline publishes a
+  page-visible `popFade` event, key `onPopFade` off that instead and drop the offset.
 
 ### One renderer per host
 

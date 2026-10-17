@@ -1546,5 +1546,6 @@
   "remind-me": "Remind me",
   "remind-post-label": "Post by {{name}}",
   "snooze": "Later",
-  "guestbook-tab": "Guestbook"
+  "guestbook-tab": "Guestbook",
+  "eversion-preview-unavailable": "This transition cannot play here, so pages change as usual."
 }

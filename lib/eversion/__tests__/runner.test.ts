@@ -7,7 +7,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AFTER_CAPTURE_TIMEOUT_MS } from '../constants';
+import { AFTER_CAPTURE_TIMEOUT_MS, BEFORE_WAIT_MS, MAX_RUN_MS } from '../constants';
 import { EversionRunner } from '../runner';
 import type { RunnerDeps } from '../runner';
 import type {
@@ -190,12 +190,12 @@ describe('eversion runner: the fallback paths (today runs; no overlay, no naviga
     expect(r.log.some((l) => l.startsWith('navigate'))).toBe(false);
   });
 
-  it('BEFORE that took the whole grace is a timeout', async () => {
+  it('BEFORE that took the whole wait is a timeout', async () => {
     let t = 0;
     const r = rig({
       now: () => t,
       awaitBefore: async () => {
-        t += 250;
+        t += BEFORE_WAIT_MS;
         return null;
       },
     });
@@ -235,6 +235,32 @@ describe('eversion runner: the fallback paths (today runs; no overlay, no naviga
     expect((await p).fallback).toBe('host-error');
   });
 
+  it('adds at most ~50 ms to today when the BEFORE bitmap is not ready (R6 M3)', async () => {
+    // Nothing in flight: the fallback is immediate. A capture in flight is awaited
+    // for BEFORE_WAIT_MS at most, and that is the only wait before a BEFORE miss.
+    const waits: number[] = [];
+    const r = rig({
+      awaitBefore: async (grace) => {
+        waits.push(grace);
+        return null;
+      },
+    });
+    expect((await r.runner.run(NODE, GLOBE)).fallback).toBe('before-missing');
+    expect(waits).toEqual([BEFORE_WAIT_MS]);
+    expect(BEFORE_WAIT_MS).toBeLessThanOrEqual(50);
+  });
+
+  it('a host that stops answering costs at most the short ready wait, not 600 ms', async () => {
+    const r = rig({
+      host: { ready: (_tier, ms) => new Promise((_, reject) => setTimeout(reject, ms)), discardCanvas() {} },
+    });
+    const started = Date.now();
+    const p = r.runner.run(NODE, GLOBE);
+    await vi.advanceTimersByTimeAsync(150);
+    expect((await p).fallback).toBe('host-error');
+    expect(Date.now() - started).toBeLessThanOrEqual(150);
+  });
+
   it('placeholder failure (before start): host-error and no navigate', async () => {
     const r = rig({
       placeholder: async () => {
@@ -251,7 +277,7 @@ describe('eversion runner: the fallback paths (today runs; no overlay, no naviga
     const r = rig();
     void r.runner.run(NODE, GLOBE);
     await flush();
-    expect((await r.runner.run(NODE, GLOBE)).fallback).toBe('host-error');
+    expect((await r.runner.run(NODE, GLOBE)).fallback).toBe('busy');
   });
 });
 
@@ -814,5 +840,132 @@ describe('eversion runner: commit point, queued input, teardown (review fixes)',
     const r = rig();
     r.runner.dispose();
     expect((await r.runner.run(NODE, GLOBE)).fallback).toBe('host-error');
+  });
+});
+
+describe('eversion runner: watchdog, pageshow, traversal while priming, pop (Fix E1)', () => {
+  it('a run that never reaches done is force-ended with a fade at MAX_RUN_MS and cleared on teardown', async () => {
+    const r = rig();
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    r.emit({ type: 'cover' });
+    await vi.advanceTimersByTimeAsync(MAX_RUN_MS - 1);
+    expect(r.runner.state().phase).toBe('running');
+    await vi.advanceTimersByTimeAsync(1);
+    // Cover off first, the overlay fades, and only then is it removed - no cut.
+    expect(r.log.lastIndexOf('cover:off')).toBeGreaterThan(r.log.lastIndexOf('cover:on'));
+    expect(r.log).toContain('overlay:fade');
+    expect(r.log).not.toContain('overlay:unmount');
+    await vi.advanceTimersByTimeAsync(250);
+    expect(await p).toMatchObject({ fallback: null, end: 'abort' });
+    expect(r.log).toContain('overlay:unmount');
+    expect(r.posted.map((m) => m.type)).toContain('abort');
+    expect(r.log).toContain('discardCanvas');
+  });
+
+  it('stage messages are progress: a slow but advancing run is not cut', async () => {
+    const r = rig();
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    for (let i = 0; i < 4; i++) {
+      await vi.advanceTimersByTimeAsync(MAX_RUN_MS - 1000);
+      r.emit({ type: 'stage', stage: 'evert', t: 0 } as FromWorker);
+    }
+    expect(r.runner.state().phase).toBe('running');
+    expect(r.log).not.toContain('overlay:fade');
+    r.emit(DONE);
+    await p;
+  });
+
+  it('a finished run leaves no watchdog behind', async () => {
+    const r = rig();
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    r.emit(DONE);
+    await p;
+    const before = r.log.length;
+    await vi.advanceTimersByTimeAsync(MAX_RUN_MS * 2);
+    // Nothing happened after the run ended: no fade, no second teardown, no abort.
+    expect(r.log.slice(before)).not.toContain('overlay:fade');
+    expect(r.log.slice(before)).not.toContain('overlay:unmount');
+    expect(r.posted.map((m) => m.type)).not.toContain('abort');
+  });
+
+  it('a host whose post() is dead cannot leave the run committed forever', async () => {
+    const r = rig();
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    const host = await r.deps.host.ready('mid', 1);
+    host.post = () => {}; // a disposed host: silently ignores everything, never says done
+    await vi.advanceTimersByTimeAsync(MAX_RUN_MS + 300);
+    expect(await p).toMatchObject({ end: 'abort' });
+    expect(r.runner.state().phase).toBe('done');
+  });
+
+  it('restoreFromCache (bfcache pageshow) ends a run in flight with a fade', async () => {
+    const r = rig();
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    r.runner.restoreFromCache();
+    expect(r.log).toContain('overlay:fade');
+    await vi.advanceTimersByTimeAsync(250);
+    expect(await p).toMatchObject({ end: 'abort' });
+    // And it is a no-op with nothing running.
+    r.runner.restoreFromCache();
+  });
+
+  it('back/forward while priming cancels cleanly: no start, no navigate, reason traversal', async () => {
+    const before = bitmap();
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const r = rig({
+      awaitBefore: async () => {
+        await gate;
+        return before;
+      },
+    });
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    r.traverse();
+    release();
+    const out = await p;
+    expect(out.fallback).toBe('traversal');
+    expect(before.close).toHaveBeenCalled();
+    expect(r.posted.map((m) => m.type)).not.toContain('start');
+    expect(r.log.some((l) => l.startsWith('navigate'))).toBe(false);
+    expect(r.runner.state().phase).toBe('idle');
+  });
+
+  it('a traversal during the placeholder wait aborts the half-primed host', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const r = rig({
+      placeholder: async () => {
+        await gate;
+        return bitmap();
+      },
+    });
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    r.traverse();
+    release();
+    expect((await p).fallback).toBe('traversal');
+    expect(r.posted.map((m) => m.type)).toContain('abort');
+    expect(r.posted.map((m) => m.type)).not.toContain('start');
+    expect(r.log.some((l) => l.startsWith('navigate'))).toBe(false);
+  });
+
+  it('onPopFade fires once on the pop stage', async () => {
+    const onPopFade = vi.fn();
+    const r = rig();
+    const p = r.runner.run(NODE, GLOBE, 'release', { onPopFade });
+    await flush();
+    r.emit({ type: 'stage', stage: 'reveal' } as FromWorker);
+    expect(onPopFade).not.toHaveBeenCalled();
+    r.emit({ type: 'stage', stage: 'pop' } as FromWorker);
+    r.emit({ type: 'stage', stage: 'pop' } as FromWorker);
+    expect(onPopFade).toHaveBeenCalledTimes(1);
+    r.emit(DONE);
+    await p;
   });
 });

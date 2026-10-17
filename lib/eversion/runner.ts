@@ -18,7 +18,7 @@
  * ```
  * run(node, state)
  *   eligibility ──no──▶ fallback(reason)                      today's path
- *   awaitBefore(BEFORE_GRACE_MS) ──null──▶ fallback(before-*)
+ *   awaitBefore(BEFORE_WAIT_MS) ──null──▶ fallback(before-*)   (waits <= 50 ms; no bitmap in flight = at once)
  *   host ready ──no──▶ fallback(host-error)      (a host still initialising never gets here:
  *                                                    eligibility says host-not-ready, T33)
  *   overlay mounted ──no──▶ fallback(host-error)
@@ -50,9 +50,10 @@
 import {
   AFTER_CAPTURE_TIMEOUT_MS,
   AFTER_SETTLE_CAP_MS,
-  BEFORE_GRACE_MS,
+  BEFORE_WAIT_MS,
   CAPTURE_DPR_CAP,
   CAPTURE_EXCLUDE_SELECTORS,
+  MAX_RUN_MS,
 } from './constants';
 import type { EntryPoint, EversionMarkDetails, GateOpenReason } from './marks';
 import type {
@@ -79,9 +80,10 @@ import type {
  * initialised. "Host still initialising" is decided earlier, by eligibility (the
  * controller reports `host-not-ready`, see `HOST_INIT_TIMEOUT_MS`); a ready host
  * answers in a microtask, so this only bounds a host that was ready and has
- * since stopped answering.
+ * since stopped answering - and every millisecond of it is delay added to the
+ * fallback navigation, so it is kept to a few frames (review R6 M3).
  */
-export const HOST_READY_TIMEOUT_MS = 600;
+export const HOST_READY_TIMEOUT_MS = 100;
 /**
  * The budget for a COLD host init (worker spawn, shader fetch, `init` handled,
  * programs compiled). It is spent while the hub is open and idle, never at
@@ -99,8 +101,12 @@ export const HOST_INIT_TIMEOUT_MS = 20_000;
  * whatever is live, not by holding the globe stretched while waiting on it.
  */
 export const ROUTE_SETTLE_TIMEOUT_MS = AFTER_CAPTURE_TIMEOUT_MS;
-/** How long the overlay may take to attach its canvas before the effect is skipped. */
-export const OVERLAY_MOUNT_TIMEOUT_MS = 300;
+/**
+ * How long the overlay may take to attach its canvas before the effect is
+ * skipped. React commits it within a frame or two; like the host wait, this is
+ * pure added latency on the fallback path.
+ */
+export const OVERLAY_MOUNT_TIMEOUT_MS = 100;
 /** The context-loss fade (spec §9.4; `.eversion-overlay--fading` in eversion.css is 0.2 s). */
 export const OVERLAY_FADE_MS = 200;
 
@@ -191,6 +197,8 @@ export interface RunnerDeps {
     detail: EversionMarkDetails[K] | undefined,
   ): void;
   now(): number;
+  /** Override of {@link MAX_RUN_MS} (the e2e harness on a software-GL box); default the constant. */
+  maxRunMs?: number;
 }
 
 type Phase = 'idle' | 'priming' | 'running' | 'revealing' | 'done';
@@ -219,6 +227,15 @@ export interface RunOptions {
    * to undo one.
    */
   onCommit?: () => void;
+  /**
+   * Called once when the render side reports the POP stage: the glass globe is
+   * shrinking onto the orb and its fade-out begins part-way through. The hub
+   * starts the real orb's cross-fade-in from here, so the orb and the dissolving
+   * glass overlap instead of the orb cutting in after `done` (review R5 M1).
+   * Keyed off the `pop` stage until the timeline publishes a `popFade` event of
+   * its own; the hub's CSS carries the offset (`eversion-css.test.ts` pins it).
+   */
+  onPopFade?: () => void;
 }
 
 export class EversionRunner {
@@ -229,7 +246,7 @@ export class EversionRunner {
   /** Posts to the host of the run in flight; `null` between runs. */
   private abortRun: (() => void) | null = null;
   /** Ends the run in flight at once, whatever it is doing; `null` between runs. */
-  private forceEnd: (() => void) | null = null;
+  private forceEnd: ((fade?: boolean) => void) | null = null;
   /** `dispose()` was called: a run still priming falls back instead of starting. */
   private disposed = false;
 
@@ -260,6 +277,15 @@ export class EversionRunner {
     this.forceEnd?.();
   }
 
+  /**
+   * The page came back from the back/forward cache (`pageshow` persisted): the
+   * render side was disposed on `pagehide` and a run that was in flight can never
+   * finish. End it now, with a fade, so the hub is not left committed.
+   */
+  restoreFromCache(): void {
+    this.forceEnd?.(true);
+  }
+
   private fallback(reason: FallbackReason, detail?: Partial<EversionMarkDetails['fallback']>) {
     this.deps.mark('fallback', { reason, ...detail });
     return { fallback: reason } satisfies EversionOutcome;
@@ -276,7 +302,7 @@ export class EversionRunner {
     options: RunOptions = {},
   ): Promise<EversionOutcome> {
     const { deps } = this;
-    if (this.phase !== 'idle' && this.phase !== 'done') return this.fallback('host-error');
+    if (this.phase !== 'idle' && this.phase !== 'done') return this.fallback('busy');
 
     if (this.disposed) return this.fallback('host-error');
     const ineligible = deps.ineligibleReason();
@@ -295,33 +321,46 @@ export class EversionRunner {
     let offEarlyInput: (() => void) | null = deps.page.onInput(() => {
       queuedInput = true;
     });
+    // Back/forward while priming (review R6 m2): the router has already moved, so
+    // the run must not then push its own destination on top. It is cancelled and
+    // reported as a `traversal` fallback, which the hub answers by just closing.
+    let traversed = false;
+    let offEarlyTraversal: (() => void) | null = deps.router.onTraversal(() => {
+      traversed = true;
+    });
     const dropEarlyInput = () => {
       offEarlyInput?.();
       offEarlyInput = null;
+      offEarlyTraversal?.();
+      offEarlyTraversal = null;
     };
+    /** Why the priming run must stop now, or `null`. */
+    const cancelReason = (): FallbackReason | null =>
+      this.disposed ? 'host-error' : traversed ? 'traversal' : null;
 
     /* ── Everything that can still fall back ──────────────────────────────── */
 
     let before: ImageBitmap | null;
     const waitStarted = deps.now();
     try {
-      before = await (options.before ?? deps.awaitBefore)(BEFORE_GRACE_MS);
+      before = await (options.before ?? deps.awaitBefore)(BEFORE_WAIT_MS);
     } catch {
       dropEarlyInput();
       this.phase = 'idle';
       return this.fallback('before-failed');
     }
-    if (this.disposed) {
+    const cancelledEarly = cancelReason();
+    if (cancelledEarly) {
       before?.close?.();
       dropEarlyInput();
       this.phase = 'idle';
-      return this.fallback('host-error');
+      return this.fallback(cancelledEarly);
     }
     if (!before) {
       dropEarlyInput();
       this.phase = 'idle';
       return this.fallback(
-        deps.now() - waitStarted >= BEFORE_GRACE_MS * 0.9 ? 'before-timeout' : 'before-missing',
+        deps.now() - waitStarted >= BEFORE_WAIT_MS * 0.9 ? 'before-timeout' : 'before-missing',
       );
     }
     this.beforeReady = true;
@@ -337,11 +376,12 @@ export class EversionRunner {
       this.cleanupFailedPrime();
       return this.fallback('host-error');
     }
-    if (this.disposed) {
+    const cancelledAfterHost = cancelReason();
+    if (cancelledAfterHost) {
       before.close?.();
       dropEarlyInput();
       this.cleanupFailedPrime();
-      return this.fallback('host-error');
+      return this.fallback(cancelledAfterHost);
     }
 
     // A fatal error between here and `start` must still fall back.
@@ -369,6 +409,15 @@ export class EversionRunner {
     let t0 = 0;
     let revealing = false;
     let aborted = false;
+    let popAnnounced = false;
+    // The run watchdog (review R6 M2): armed at the point of no return, re-armed by
+    // every stage message (progress), cleared in teardown.
+    let watchdog: ReturnType<typeof setTimeout> | null = null;
+    const armWatchdog = () => {
+      if (ended || !started) return;
+      if (watchdog) clearTimeout(watchdog);
+      watchdog = setTimeout(() => this.forceEnd?.(true), deps.maxRunMs ?? MAX_RUN_MS);
+    };
     // Bitmaps this run holds and has not yet handed to the render side (the AFTER
     // one, between capture and a successful post). Teardown closes whatever is left.
     const ownedBitmaps = new Set<ImageBitmap>();
@@ -390,6 +439,8 @@ export class EversionRunner {
     const teardown = (end: EversionEnd, stats?: FrameStats, keepOverlayMs = 0) => {
       if (ended) return;
       ended = true;
+      if (watchdog) clearTimeout(watchdog);
+      watchdog = null;
       this.abortRun = null;
       this.forceEnd = null;
       for (const off of listeners.splice(0)) off();
@@ -418,7 +469,16 @@ export class EversionRunner {
           this.setCover(true);
           return;
         case 'stage':
-          if (m.stage === 'evert') deps.mark('evert', {});
+          armWatchdog();
+          if (m.stage === 'pop') {
+            if (popAnnounced) return;
+            popAnnounced = true;
+            try {
+              options.onPopFade?.();
+            } catch {
+              /* the caller's UI hook must never break the run */
+            }
+          } else if (m.stage === 'evert') deps.mark('evert', {});
           else if (m.stage === 'gate-open') {
             deps.mark('gateOpen', { reason: gateReason });
           } else if (m.stage === 'unwrap') {
@@ -505,7 +565,8 @@ export class EversionRunner {
       this.phase = 'idle';
       return this.fallback('host-error');
     }
-    if (this.disposed) {
+    const cancelledAfterPrime = cancelReason();
+    if (cancelledAfterPrime) {
       dropEarlyInput();
       for (const off of listeners.splice(0)) off();
       deps.overlay.unmount();
@@ -515,7 +576,7 @@ export class EversionRunner {
         deps.host.discardCanvas();
       }
       this.phase = 'idle';
-      return this.fallback('host-error');
+      return this.fallback(cancelledAfterPrime);
     }
 
     /* ── The point of no return: start and navigate in ONE task ───────────── */
@@ -526,7 +587,7 @@ export class EversionRunner {
       gateReason = 'abort';
       post({ type: 'abort' });
     };
-    this.forceEnd = () => {
+    this.forceEnd = (fade = false) => {
       if (ended) return;
       if (started) {
         try {
@@ -536,6 +597,12 @@ export class EversionRunner {
         }
         // The render side may still be running on this canvas; do not reuse it.
         deps.host.discardCanvas();
+      }
+      if (fade && started) {
+        // The overlay is showing a frozen or dead frame: dissolve it into the live
+        // page (cover class off first) instead of cutting.
+        this.loseContext(true, () => teardown('abort', undefined, OVERLAY_FADE_MS));
+        return;
       }
       teardown('abort');
     };
@@ -560,6 +627,9 @@ export class EversionRunner {
     t0 = deps.now();
     started = true;
     this.phase = 'running';
+    // A run that cannot end (GPU hang, dead worker, a host disposed under us) must
+    // not hold the hub committed and the screen under a frozen canvas forever.
+    armWatchdog();
     deps.mark('start', {
       requested: deps.requested(),
       projection,

@@ -89,7 +89,16 @@ const PAIRED = { lcp: { maxDelta: 250 }, tbt: { maxDelta: 100 } };
 
 /* ── Which requests are the effect's ───────────────────────────────────── */
 
-const NAME_RE = /eversion|capture|modern-screenshot|(^|\/)worker[-.]|thurston|projection-lut/i;
+const NAME_RE =
+  /eversion|capture|modern-screenshot|(^|\/)worker[-.]|thurston|projection-lut|^prefetch[-.]|useEversionController/i;
+/**
+ * A dev server serves source modules by path. The shell legitimately imports two
+ * tiny leaves statically (the flag, the mark names); anything else under the
+ * effect's directories requested before `load` is a regression. (Built chunks
+ * are recognised by name or by what is inside them, above.)
+ */
+const DEV_SOURCE_RE = /\/(?:lib\/eversion|components\/radial\/eversion)\//;
+const DEV_STATIC_OK = /\/(?:flags|marks)\.ts$/;
 
 /** Basenames of built chunks that contain eversion runtime modules. */
 function eversionChunkNames() {
@@ -118,7 +127,9 @@ function eversionChunkNames() {
 
 const { names: CHUNKS, scanned } = eversionChunkNames();
 const isEversionUrl = (url) => {
-  const base = new URL(url).pathname.split('/').pop() ?? '';
+  const { pathname } = new URL(url);
+  const base = pathname.split('/').pop() ?? '';
+  if (DEV_SOURCE_RE.test(pathname)) return !DEV_STATIC_OK.test(pathname);
   return CHUNKS.has(base) || NAME_RE.test(base);
 };
 

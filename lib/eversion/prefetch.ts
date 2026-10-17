@@ -149,7 +149,11 @@ async function warm(): Promise<PrefetchResult> {
   }
 
   const webgl2 = await new Promise<boolean>((resolve) => {
-    const timer = setTimeout(() => finish(false), WARM_TIMEOUT_MS);
+    // A compile that is merely slow (software GL, a busy box) is not evidence of
+    // "no WebGL2": the hub mounts its bridge on this answer, and the controller's own
+    // host init (with its own, longer budget) is the authority. Only an explicit
+    // fatal error or context loss says no.
+    const timer = setTimeout(() => finish(true), WARM_TIMEOUT_MS);
     const unsubscribe = host.subscribe((message) => {
       if (message.type === 'ready') finish(true);
       else if (message.type === 'error' && message.fatal) finish(false);

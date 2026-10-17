@@ -147,6 +147,13 @@ export async function openSession(options = {}) {
       /* storage blocked: the theme falls back to the OS scheme, which is set too */
     }
   }, stored);
+  // The run watchdog (MAX_RUN_MS, 30 s without a stage) is for a hung GPU. A
+  // software-GL page on a busy CI box can go that long between stages while still
+  // alive, and a gate that measures the effect must not measure the watchdog. The
+  // controller honours this override (RUN watchdog only; nothing else reads it).
+  await context.addInitScript((ms) => {
+    window.__EVERSION_MAX_RUN_MS = ms;
+  }, Number(process.env.EVERSION_E2E_MAX_RUN_MS ?? 600_000));
   const page = await context.newPage();
 
   /** Add the eversion query flags to a path or URL. */
