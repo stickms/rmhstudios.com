@@ -1,7 +1,7 @@
 # Globe Eversion — Task-by-Task Implementation Plan
 
 **Date:** 2026-10-17
-**Status:** Proposed — no task started.
+**Status:** T01–T37 implemented (dark behind `isEversionEnabled()`). Open: T28 (owner visual sign-off), T38 (device lab) and T39's flag flip; see _Implementation status_ below.
 **Spec:** [`2026-10-17-globe-eversion.md`](./2026-10-17-globe-eversion.md) (cited
 below as **S§n** for a section and **S#n** for a numbered test in S§11).
 
@@ -9,6 +9,37 @@ This plan turns the spec into 39 tasks that can be handed to independent
 implementers (human or agent). It is optimised for parallelism: after a single
 contract-freezing task, **22 tasks can start at once**, and no lane waits on
 another lane's _implementation_ — only on its _contract_.
+
+## Implementation status
+
+T01-T37 are implemented and merged dark behind `isEversionEnabled()`; the
+flag (`EVERSION_ENABLED`) is `false` and stays so until T28 and T38 are done. What
+remains, and what is known:
+
+- **T28 - owner visual sign-off** (the three themes, the projections, the eversion
+  itself): open. **T38 - device lab** (the S§11.3 table on real phones/tablets,
+  iOS worker vs in-thread mode): open. **T39 rollout** (the one-line flag flip, the
+  7-day fallback-reason review) waits on both.
+- **Baselines.** `testing/e2e/baselines/eversion-load.json` and `eversion-frames.json`
+  (S#40, S#43) must be generated on a CI runner with the `update-baselines`
+  `workflow_dispatch` input (`docs/testing.md` §7) and committed before the
+  performance job is made blocking.
+- **S#46 not met on software GL.** The capture p95 target (<= 120 ms) is not met on
+  SwiftShader: measured ~200-440 ms median warm. It is a software-rasteriser
+  number; real GPUs are the T38 question.
+- **S#29 / S#30** (capture fidelity, SSIM) measured ~0.96-0.97 before the viewport
+  fix; ~0.99 is expected after it and is re-measured with the baselines.
+- **Known residual.** The azimuthal projections (Lambert, stereographic) show
+  page-edge saw-teeth mid-morph, from clamped vertex UVs near the back point. The
+  analytic wedge mask hides the stretched wedge itself, not this edge.
+- **Thurston provenance.** The construction derives from the University of
+  Minnesota Geometry Center `evert` code (N. Thurston) via M. McGuffin's
+  `sphereEversion`, described there as "freely available" / "used with permission";
+  there is **no explicit licence grant**. No code is copied: the geometry is
+  re-derived and re-implemented ([`globe-eversion/thurston-derivation.md`](./globe-eversion/thurston-derivation.md) §0).
+  If a clean-room source is ever required, the Bednorz-based fallback derivation
+  ([`globe-eversion/bednorz-check.ts`](./globe-eversion/bednorz-check.ts), derivation
+  Appendix A) is available and verified.
 
 ---
 
