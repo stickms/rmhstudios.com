@@ -141,6 +141,12 @@ const SIZE0 = 0.14;
  */
 const JUMP_GRAD = 0.25;
 
+/**
+ * The morph weight below which a fragment is on the flat page for all practical purposes (`w < FLAT_SNAP` moves a
+ * vertex < 0.4 px even on a 1440 px page). Such a fragment shows the page at its own pixel; see the surface shader.
+ */
+const FLAT_SNAP = 5e-4;
+
 const f = (x: number) => x.toFixed(8);
 
 /** `#define`s generated from the constants, so GLSL and TypeScript cannot disagree. */
@@ -157,6 +163,7 @@ const DEFINES = /* glsl */ `
 #define POLE_ZONE ${f(POLE_ZONE)}
 #define JUMP_UV ${f(JUMP_UV)}
 #define JUMP_GRAD ${f(JUMP_GRAD)}
+#define FLAT_SNAP ${f(FLAT_SNAP)}
 #define LAMBERT_BASE ${f(LAMBERT_BASE)}
 #define LAMBERT_GAIN ${f(LAMBERT_GAIN)}
 #define LIGHT_DIR vec3(${LIGHT_DIRECTION.map(f).join(', ')})
@@ -383,6 +390,7 @@ uniform float u_radius;
 uniform vec2 u_centre;
 uniform vec2 u_viewport;
 uniform vec2 u_ripple;
+uniform mat3 u_mAfter;
 uniform sampler2D u_lut;
 out vec2 v_domain;
 out float v_morph;
@@ -438,13 +446,20 @@ void main() {
 
   vec3 sphere = vec3(u_centre - 0.5 * u_viewport, 0.0) + v * u_radius;
 
+  /* UNWRAP flattens onto the AFTER page: the vertex goes to the pixel of P(M_after * p), the very lookup its
+     back face samples (spec 4.5, 5.5), so the page it lands on is the one the fragment shows. The wrap runs
+     with u_unwrap = 1 and the unwrap with u_wrap = 1; at the hand-over every vertex has w = 1, so nothing jumps. */
+  bool unwrapping = u_unwrap < 1.0;
+  vec3 pl = unwrapping ? u_mAfter * p : p;
+  vec2 tp = unwrapping ? vec2(atan(pl.x, pl.z), asin(clamp(-pl.y, -1.0, 1.0))) : vec2(theta, phi);
+
   /* The page pixel of the clamped extended UV, in the z = 0 plane (scale exactly 1 there). */
-  vec2 uv = clamp(lutUv(theta, phi), 0.0, 1.0);
+  vec2 uv = clamp(lutUv(tp.x, tp.y), 0.0, 1.0);
   vec3 flatPos = vec3((uv - 0.5) * u_viewport, 0.0);
 
   /* The wrap wave: the centre curls onto the globe first, the edges follow (morph.ts). */
   float s = min(u_wrap, u_unwrap);
-  float d = acos(clamp(p.z, -1.0, 1.0)) / PI;
+  float d = acos(clamp(pl.z, -1.0, 1.0)) / PI;
   float w = smootherstep01(s * (1.0 + WRAP_WAVE) - WRAP_WAVE * d);
   vec3 pos = flatPos + w * (sphere - flatPos);
 
@@ -479,6 +494,8 @@ uniform sampler2D u_before;
 uniform sampler2D u_after;
 uniform sampler2D u_placeholder;
 uniform mat3 u_mAfter;
+uniform vec2 u_viewport;
+uniform float u_unwrap;
 uniform float u_afterMix;
 uniform float u_pageAlpha;
 uniform float u_radius;
@@ -490,7 +507,16 @@ ${LUT_GUARDED_GLSL}
 void main() {
   float theta = v_domain.x;
   float phi = v_domain.y;
-  bool front = gl_FrontFacing;
+
+  /* The flat endpoints ARE the page (S#15: wrap = 0 is the BEFORE capture, the UNWRAP end the AFTER page). Where
+     the morph weight is ~0 the fragment shows the page at its own pixel and on the side the phase names, instead
+     of trusting the mesh: a triangle whose corners the projection puts on opposite sides of a cut (the Lambert
+     corners, the AFTER side's cut, the coarse rows of a tall Mercator page) is stretched across the page, and
+     its per-fragment lookup is not the pixel it covers. Under it the shown page is the identity by construction;
+     a nonzero weight is past the snap and everything is the lookup again. */
+  float flatness = 1.0 - smoothstep(0.0, FLAT_SNAP, v_morph);
+  vec2 pageUv = v_pos.xy / u_viewport + 0.5;
+  bool front = flatness > 0.5 ? u_unwrap >= 1.0 : gl_FrontFacing;
 
   /* Which page, and where on it. Back faces read the AFTER page through M_after: P(M_after * p). */
   vec2 uv;
@@ -501,6 +527,7 @@ void main() {
     vec3 m = u_mAfter * vec3(cp * sin(theta), -sin(phi), cp * cos(theta));
     uv = lutUv(atan(m.x, m.z), asin(clamp(-m.y, -1.0, 1.0)));
   }
+  uv = mix(uv, pageUv, flatness);
   vec2 cuv = clamp(uv, 0.0, 1.0);
 
   /* Across a LUT cut the UV jumps inside one pixel: do not let that pick the lowest mip or smear the edge. */

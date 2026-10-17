@@ -16,6 +16,10 @@ import { meshForTier } from '../../mesh';
 import { PROJECTION_IDS } from '../../types';
 import type { ProjectionId, Rgba, ThemeColours, Tier, TimelineSnapshot } from '../../types';
 import { createRenderer } from '../renderer';
+import { bakeLut } from '../../projection-lut';
+import { getProjection } from '../../projections';
+import { afterDomainTransform, alignAngle, fitEndIsometry } from '../../orientation';
+import { SPIN_AXIS } from '../../domain';
 import { evert, normal, stageParams } from '../../thurston';
 
 const o3 = new Float64Array(3);
@@ -28,7 +32,8 @@ function normalOracle(theta: number, phi: number, e: number): [number, number, n
   return [o3[0]!, o3[1]!, o3[2]!];
 }
 
-const VIEW = { w: 640, h: 400, dpr: 1 } as const;
+/** The CSS viewport of the current scenario; `setView` changes it (T27 renders at several sizes). */
+let VIEW = { w: 640, h: 400, dpr: 1 };
 
 /** Theme colours that look like the dark theme: used for the screenshots. */
 const THEMED: ThemeColours = {
@@ -55,8 +60,15 @@ const PLAIN: ThemeColours = {
   cageWidth: 1,
 };
 
-/** `M_after`: the end map is `R = −I`; with no alignment spin, `M_after = −I`. Column-major. */
+/** `M_after` for the T23 checks that do not care about orientation: `−I`, column-major. */
 const M_AFTER = new Float64Array([-1, 0, 0, 0, -1, 0, 0, 0, -1]);
+
+/** The REAL end orientation (what `core.ts#defaultDeps().orientation()` hands the renderer). */
+function realOrientation() {
+  const { R } = fitEndIsometry();
+  const thetaAlign = alignAngle(R);
+  return { thetaAlign, mAfter: afterDomainTransform(R, SPIN_AXIS, thetaAlign) };
+}
 
 let canvas: HTMLCanvasElement | null = null;
 let renderer: ReturnType<typeof createRenderer> | null = null;
@@ -153,6 +165,131 @@ function classify() {
   return { red: red / n, blue: blue / n, grey: grey / n, other: other / n, pixels: n, blueAt, redAt };
 }
 
+const cardCanvas: { before: HTMLCanvasElement | null; after: HTMLCanvasElement | null } = { before: null, after: null };
+
+/**
+ * An orientation card for `projection`: a neutral grey page (so a colour can only be a marker) with a cyan disc
+ * at the page centre, a magenta up-arrow above it, a red marker left of centre, green right, blue below, coloured
+ * corner squares and a lop-sided label.
+ *
+ * Marker positions are the page positions of sphere points (red/green at `θ = ∓45°`, blue at `φ = −45°`, the arrow
+ * from `φ = 20°` to `65°`), found through the projection's own `forward` at the fit the LUT was baked with, so they
+ * land on the visible hemisphere whatever the projection's scale (stereographic puts the front hemisphere in a
+ * small patch of the page; mercator on a phone stretches it).
+ */
+function asymCard(label: string, grey: number, projection: ProjectionId): HTMLCanvasElement {
+  const { w, h } = VIEW;
+  const c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  const g = c.getContext('2d')!;
+  const bg = g.createLinearGradient(0, 0, w, h);
+  bg.addColorStop(0, `rgb(${grey + 25},${grey + 25},${grey + 25})`);
+  bg.addColorStop(1, `rgb(${grey - 25},${grey - 25},${grey - 25})`);
+  g.fillStyle = bg;
+  g.fillRect(0, 0, w, h);
+
+  const proj = getProjection(projection);
+  const fit = getBakedLut(projection, VIEW).fit;
+  const out = new Float64Array(2);
+  // The page position of a sphere point, or null when the projection puts it off the page.
+  const at = (thetaDeg: number, phiDeg: number): [number, number] | null => {
+    if (!proj.forward((thetaDeg * Math.PI) / 180, (phiDeg * Math.PI) / 180, fit, out, 0)) return null;
+    if (out[0]! < 0.02 || out[0]! > 0.98 || out[1]! < 0.02 || out[1]! > 0.98) return null;
+    return [out[0]! * w, out[1]! * h];
+  };
+  // Shrink the angular layout until every marker is on the page (a narrow page or a small patch has less room).
+  let pts: ([number, number] | null)[] = [];
+  for (const f of [1, 0.8, 0.6, 0.45, 0.3, 0.2]) {
+    pts = [at(0, 0), at(-45 * f, 0), at(45 * f, 0), at(0, -45 * f), at(0, 20 * f), at(0, 65 * f)];
+    if (pts.every((q) => q)) break;
+  }
+  if (!pts.every((q) => q)) throw new Error(`asymCard: no layout fits the ${projection} page at ${w}x${h}`);
+  const [[cx, cy], [rx], [gx], [, by], [, ay0], [, ay1]] = pts as [number, number][];
+  const unit = Math.abs(gx - rx) / 2; // the page distance of 45 degrees of longitude
+  const r = 0.3 * unit;
+
+  g.fillStyle = '#00ffff';
+  g.beginPath();
+  g.arc(cx, cy, 0.25 * unit, 0, Math.PI * 2);
+  g.fill();
+  // Up-arrow: head (wide) on top, shaft below; ay1 < ay0 because v grows downward.
+  const top = ay1;
+  const bottom = ay0;
+  const neck = top + 0.4 * (bottom - top);
+  g.fillStyle = '#ff00ff';
+  g.beginPath();
+  g.moveTo(cx, top);
+  g.lineTo(cx + 0.3 * unit, neck);
+  g.lineTo(cx - 0.3 * unit, neck);
+  g.closePath();
+  g.fill();
+  g.fillRect(cx - 0.1 * unit, neck, 0.2 * unit, bottom - neck);
+  const box = (x: number, y: number, col: string) => {
+    g.fillStyle = col;
+    g.fillRect(x - r, y - r, 2 * r, 2 * r);
+  };
+  box(rx, cy, '#ff0000');
+  box(gx, cy, '#00ff00');
+  box(cx, by, '#0000ff');
+
+  const m = Math.min(w, h);
+  const k = 0.1 * m;
+  for (const [x, y, col] of [
+    [0, 0, '#ff0000'],
+    [w - k, 0, '#00ff00'],
+    [0, h - k, '#0000ff'],
+    [w - k, h - k, '#ffff00'],
+  ] as const) {
+    g.fillStyle = col;
+    g.fillRect(x, y, k, k);
+  }
+  g.fillStyle = '#000';
+  g.font = `bold ${Math.round(0.14 * m)}px sans-serif`;
+  g.textAlign = 'left';
+  g.textBaseline = 'middle';
+  g.fillText(label, 0.06 * w, h / 2 + 0.2 * m);
+  // A 1-px grid so the SSIM has structure everywhere.
+  g.strokeStyle = 'rgba(0,0,0,0.25)';
+  for (let x = 0; x <= w; x += 20) {
+    g.beginPath();
+    g.moveTo(x + 0.5, 0);
+    g.lineTo(x + 0.5, h);
+    g.stroke();
+  }
+  for (let y = 0; y <= h; y += 20) {
+    g.beginPath();
+    g.moveTo(0, y + 0.5);
+    g.lineTo(w, y + 0.5);
+    g.stroke();
+  }
+  return c;
+}
+
+/** The drawing buffer as top-down RGBA. */
+function readFrame() {
+  const ctx = gl();
+  const w = canvas!.width;
+  const h = canvas!.height;
+  const raw = new Uint8Array(w * h * 4);
+  ctx.readPixels(0, 0, w, h, ctx.RGBA, ctx.UNSIGNED_BYTE, raw);
+  const px = new Uint8Array(w * h * 4);
+  for (let y = 0; y < h; y++) px.set(raw.subarray((h - 1 - y) * w * 4, (h - y) * w * 4), y * w * 4);
+  return { px, w, h };
+}
+
+/** A saturated marker colour, or null for neutral page/glass/veil. Hue-based so the lighting cannot hide it. */
+function markerClass(r: number, g: number, b: number): 'red' | 'green' | 'blue' | 'yellow' | 'cyan' | 'magenta' | null {
+  const T = 60;
+  if (r - Math.max(g, b) > T) return 'red';
+  if (g - Math.max(r, b) > T) return 'green';
+  if (b - Math.max(r, g) > T) return 'blue';
+  if (Math.min(r, g) - b > T) return 'yellow';
+  if (Math.min(g, b) - r > T) return 'cyan';
+  if (Math.min(r, b) - g > T) return 'magenta';
+  return null;
+}
+
 const api = {
   projections: [...PROJECTION_IDS] as ProjectionId[],
 
@@ -166,18 +303,167 @@ const api = {
     return { live: renderer.counters().live };
   },
 
-  prime(projection: ProjectionId, themed: boolean) {
-    const baked = getBakedLut(projection, VIEW);
+  /**
+   * `lut`: `'bucket'` is what the controller posts (the memoised LUT baked at the aspect BUCKET);
+   * `'exact'` bakes at the viewport's own fit. `orientation: 'real'` feeds the true `M_after`.
+   */
+  prime(
+    projection: ProjectionId,
+    themed: boolean,
+    opts: { lut?: 'bucket' | 'exact'; orientation?: 'real' | 'neg-i' | 'identity' } = {},
+  ) {
+    const lut =
+      opts.lut === 'exact'
+        ? bakeLut(getProjection(projection), getProjection(projection).fit(VIEW.w, VIEW.h))
+        : getBakedLut(projection, VIEW).data;
     renderer!.prime({
       projection,
       viewport: { ...VIEW },
       globe: { yaw: 0, pitch: 0, yawVel: 0, pitchVel: 0, centre: [VIEW.w / 2, VIEW.h / 2], radius: 60 },
       orb: { cx: 0, cy: 0, radius: 10 },
       colours: themed ? THEMED : PLAIN,
-      lut: baked.data,
-      mAfter: M_AFTER,
+      lut,
+      mAfter:
+        opts.orientation === 'real'
+          ? realOrientation().mAfter
+          : opts.orientation === 'identity'
+            ? new Float64Array([1, 0, 0, 0, 1, 0, 0, 0, 1])
+            : M_AFTER,
     });
     return { w: canvas!.width, h: canvas!.height };
+  },
+
+  /** Change the CSS viewport (and the cards' size) for the following scenario. */
+  setView(w: number, h: number) {
+    VIEW = { w, h, dpr: 1 };
+  },
+
+  orientation: () => realOrientation(),
+
+  /**
+   * The asymmetric orientation cards (T27), drawn at the current viewport and uploaded as
+   * before/after/placeholder. Returns each card as a PNG for the SSIM comparison.
+   */
+  async asymCards(projection: ProjectionId) {
+    cardCanvas.before = asymCard('BEFORE', 150, projection);
+    cardCanvas.after = asymCard('AFTER', 215, projection);
+    const before = await createImageBitmap(cardCanvas.before);
+    const after = await createImageBitmap(cardCanvas.after);
+    renderer!.setTexture('before', before);
+    renderer!.setTexture('after', after);
+    renderer!.setTexture('placeholder', after);
+    before.close();
+    after.close();
+    return { before: cardCanvas.before.toDataURL('image/png'), after: cardCanvas.after.toDataURL('image/png') };
+  },
+
+  /**
+   * Draw one frame and report where the asymmetric card's markers landed (T27 orientation check):
+   * centroid + pixel count per marker colour, and the arrow's row profile.
+   */
+  markers(patch: Partial<TimelineSnapshot>) {
+    renderer!.draw(snapshot(patch));
+    const err = gl().getError();
+    const { px, w, h } = readFrame();
+    const classes = ['red', 'green', 'blue', 'yellow', 'cyan', 'magenta'] as const;
+    const acc = Object.fromEntries(
+      classes.map((c) => [c, { n: 0, sx: 0, sy: 0, minY: 1e9, maxY: -1, rows: {} as Record<number, number> }]),
+    );
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        const c = markerClass(px[i]!, px[i + 1]!, px[i + 2]!);
+        if (!c) continue;
+        const a = acc[c]!;
+        a.n++;
+        a.sx += x;
+        a.sy += y;
+        a.minY = Math.min(a.minY, y);
+        a.maxY = Math.max(a.maxY, y);
+        a.rows[y] = (a.rows[y] ?? 0) + 1;
+      }
+    }
+    const out: Record<string, { n: number; x: number; y: number; minY: number; maxY: number; widthTip: number; widthNeck: number; widthTail: number }> = {};
+    for (const c of classes) {
+      const a = acc[c]!;
+      // Arrow shape: mean row width near the tip, at the neck (where the head is widest) and at the tail.
+      let widthTip = 0;
+      let widthNeck = 0;
+      let widthTail = 0;
+      if (a.n) {
+        const span = a.maxY - a.minY + 1;
+        const mean = (f0: number, f1: number) => {
+          const from = a.minY + Math.floor(span * f0);
+          const to = Math.max(from + 1, a.minY + Math.floor(span * f1));
+          let t = 0;
+          for (let y = from; y < to; y++) t += a.rows[y] ?? 0;
+          return t / (to - from);
+        };
+        widthTip = mean(0, 0.1);
+        widthNeck = mean(0.3, 0.45);
+        widthTail = mean(0.8, 1);
+      }
+      out[c] = { n: a.n, x: a.n ? a.sx / a.n : NaN, y: a.n ? a.sy / a.n : NaN, minY: a.minY, maxY: a.maxY, widthTip, widthNeck, widthTail };
+    }
+    return { err, w, h, markers: out, png: canvas!.toDataURL('image/png') };
+  },
+
+  /**
+   * Draw one frame and compare it with a card, pixel for pixel (S#15 on the GPU): mean/max absolute
+   * difference over RGB in 0..255, and the share of pixels off by more than 8. Returns the frame PNG.
+   */
+  compare(patch: Partial<TimelineSnapshot>, slot: 'before' | 'after') {
+    renderer!.draw(snapshot(patch));
+    const err = gl().getError();
+    const { px, w, h } = readFrame();
+    const want = cardCanvas[slot]!.getContext('2d')!.getImageData(0, 0, w, h).data;
+    let sum = 0;
+    let max = 0;
+    let off = 0;
+    let worstAt = [0, 0];
+    for (let i = 0; i < w * h; i++) {
+      let d = 0;
+      for (let c = 0; c < 3; c++) d += Math.abs(px[i * 4 + c]! - want[i * 4 + c]!);
+      d /= 3;
+      sum += d;
+      if (d > 8) off++;
+      if (d > max) {
+        max = d;
+        worstAt = [i % w, Math.floor(i / w)];
+      }
+    }
+    return { err, w, h, mean: sum / (w * h), max, offShare: off / (w * h), worstAt, png: canvas!.toDataURL('image/png') };
+  },
+
+  /**
+   * How far the controller's cached (bucket) LUT puts the page from where the viewport's own fit would,
+   * in CSS px at this viewport: max and 99th percentile of |Δuv|·size over texels that are on the page
+   * in both bakes.
+   */
+  lutFitDelta(projection: ProjectionId) {
+    const proj = getProjection(projection);
+    const baked = getBakedLut(projection, VIEW);
+    const exact = bakeLut(proj, proj.fit(VIEW.w, VIEW.h));
+    const n = exact.length / 2;
+    const ds: number[] = [];
+    for (let i = 0; i < n; i++) {
+      const u0 = baked.data[i * 2]!;
+      const v0 = baked.data[i * 2 + 1]!;
+      const u1 = exact[i * 2]!;
+      const v1 = exact[i * 2 + 1]!;
+      if (u0 < 0 || u0 > 1 || v0 < 0 || v0 > 1 || u1 < 0 || u1 > 1 || v1 < 0 || v1 > 1) continue;
+      ds.push(Math.hypot((u0 - u1) * VIEW.w, (v0 - v1) * VIEW.h));
+    }
+    ds.sort((a, b) => a - b);
+    return {
+      bucket: baked.aspectBucket,
+      bucketAspect: baked.aspectBucket / 64,
+      viewportAspect: VIEW.h / VIEW.w,
+      samples: ds.length,
+      max: ds.length ? ds[ds.length - 1]! : 0,
+      p99: ds.length ? ds[Math.floor(ds.length * 0.99)]! : 0,
+      mean: ds.length ? ds.reduce((a, b) => a + b, 0) / ds.length : 0,
+    };
   },
 
   async cards() {
