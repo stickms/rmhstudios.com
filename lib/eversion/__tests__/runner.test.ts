@@ -955,7 +955,7 @@ describe('eversion runner: watchdog, pageshow, traversal while priming, pop (Fix
     expect(r.log.some((l) => l.startsWith('navigate'))).toBe(false);
   });
 
-  it('onPopFade fires once on the pop stage', async () => {
+  it('onPopFade fires once, on pop-fade and not on the pop stage', async () => {
     const onPopFade = vi.fn();
     const r = rig();
     const p = r.runner.run(NODE, GLOBE, 'release', { onPopFade });
@@ -963,7 +963,9 @@ describe('eversion runner: watchdog, pageshow, traversal while priming, pop (Fix
     r.emit({ type: 'stage', stage: 'reveal' } as FromWorker);
     expect(onPopFade).not.toHaveBeenCalled();
     r.emit({ type: 'stage', stage: 'pop' } as FromWorker);
-    r.emit({ type: 'stage', stage: 'pop' } as FromWorker);
+    expect(onPopFade).not.toHaveBeenCalled();
+    r.emit({ type: 'pop-fade', t: 0, fadeMs: 208 } as FromWorker);
+    r.emit({ type: 'pop-fade', t: 0, fadeMs: 208 } as FromWorker);
     expect(onPopFade).toHaveBeenCalledTimes(1);
     r.emit(DONE);
     await p;

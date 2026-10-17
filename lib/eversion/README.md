@@ -116,11 +116,11 @@ Now the controller owns a host state (`idle` → `initialising` → `ready`, or
   the render host, which `pagehide` disposed.
 - `FallbackReason` gained `busy` (a run or its teardown is still active) and
   `traversal`.
-- **Orb crossfade.** The runner calls `onPopFade` on the `pop` stage; the hub sets
-  `data-orb-popped`, and radial.css fades the real orb in over 120 ms starting 60% of
-  `POP_MS` in (when the glass starts dissolving), above the canvas, so the two overlap.
-  `eversion-css.test.ts` ties the offset to `POP_MS`. When the timeline publishes a
-  page-visible `popFade` event, key `onPopFade` off that instead and drop the offset.
+- **Orb crossfade.** The runner calls `onPopFade` on the render side's `pop-fade`
+  message (the glass has landed on the orb and starts its `POP_FADE_MS` exit); the hub
+  sets `data-orb-popped`, and radial.css fades the real orb in over the same 208 ms,
+  above the canvas, so the two overlap. `eversion-css.test.ts` ties the duration to
+  `POP_FADE_MS`.
 
 ### One renderer per host
 

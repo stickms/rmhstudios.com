@@ -1961,18 +1961,17 @@ html.ios-webkit .radial-hub__veil {
   pointer-events: none;
 }
 /* The orb crossfades IN under the dissolving glass (RadialHub `data-orb-popped`,
-   set from the runner's `pop` stage). The glass globe is already at the orb's rect
-   and fades out over the last 40% of POP, so the orb arrives over the same
-   interval: its 120ms opacity ramp starts after the shrink (60% of POP_MS = 180ms;
-   `eversion-css.test.ts` keeps this equal to the timeline) and finishes with the
-   pop, so there is no frame with neither and none with both at full strength.
+   set when the render side reports `pop-fade`). The glass globe has landed on the
+   orb's rect by then and fades out over POP_FADE_MS (208ms), so the orb arrives
+   over that same window (`eversion-css.test.ts` keeps the duration equal to the
+   constant): there is no frame with neither and none with both at full strength.
    It is raised above the effect's canvas (z 89) for that — the canvas is opaque
    and would hide it — and falls back to its docked z-index once the run is over.
    Position never moves; only `opacity` runs, on a named property. */
 .radial-hub[data-phase='everting'][data-orb-popped] .radial-hub__orb {
   z-index: var(--z-hub-orb-open);
   opacity: 1;
-  transition: opacity 120ms ease-out 180ms;
+  transition: opacity 208ms ease-out;
 }
 /* Once the run is over the orb is already fully in: hold it there rather than
    replaying the closed state's 340ms fade-in from whatever value it had reached. */

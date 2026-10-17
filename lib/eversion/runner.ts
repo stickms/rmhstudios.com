@@ -228,12 +228,10 @@ export interface RunOptions {
    */
   onCommit?: () => void;
   /**
-   * Called once when the render side reports the POP stage: the glass globe is
-   * shrinking onto the orb and its fade-out begins part-way through. The hub
-   * starts the real orb's cross-fade-in from here, so the orb and the dissolving
-   * glass overlap instead of the orb cutting in after `done` (review R5 M1).
-   * Keyed off the `pop` stage until the timeline publishes a `popFade` event of
-   * its own; the hub's CSS carries the offset (`eversion-css.test.ts` pins it).
+   * Called once when the render side reports `pop-fade`: the glass globe has
+   * landed on the orb and starts its `POP_FADE_MS` fade-out. The hub crossfades
+   * the real orb in over that same window, so the orb and the dissolving glass
+   * overlap instead of the orb cutting in after `done` (review R5 M1).
    */
   onPopFade?: () => void;
 }
@@ -470,20 +468,22 @@ export class EversionRunner {
           return;
         case 'stage':
           armWatchdog();
-          if (m.stage === 'pop') {
-            if (popAnnounced) return;
-            popAnnounced = true;
-            try {
-              options.onPopFade?.();
-            } catch {
-              /* the caller's UI hook must never break the run */
-            }
-          } else if (m.stage === 'evert') deps.mark('evert', {});
+          if (m.stage === 'evert') deps.mark('evert', {});
           else if (m.stage === 'gate-open') {
             deps.mark('gateOpen', { reason: gateReason });
           } else if (m.stage === 'unwrap') {
             unwrapBegun = true;
             deps.mark('unwrap', {});
+          }
+          return;
+        case 'pop-fade':
+          armWatchdog();
+          if (popAnnounced) return;
+          popAnnounced = true;
+          try {
+            options.onPopFade?.();
+          } catch {
+            /* the caller's UI hook must never break the run */
           }
           return;
         case 'unwrap-done':
