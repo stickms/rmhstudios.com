@@ -245,7 +245,11 @@ Ideas Behind Outside In_ (A K Peters, 1995) — the published math behind
 Thurston's corrugation eversion. **Do not paste code from the Geometry Center
 `evert` sources** unless its licence is confirmed compatible with this repo (the
 repo carries no LICENSE file; treat it as proprietary). Re-derive the
-parametrisation from the paper. The TS oracle (`lib/eversion/thurston.ts`) is
+parametrisation from the paper. _Update (T03): the owner authorised referencing
+`evert`; the construction was read from McGuffin's port of it and re-implemented
+without copying code — provenance and licence text in
+[`globe-eversion/thurston-derivation.md`](./globe-eversion/thurston-derivation.md) §0._
+The TS oracle (`lib/eversion/thurston.ts`) is
 written first and is the reference that the GLSL must match (§11.2).
 
 ### 4.2 Parametrisation
@@ -335,6 +339,24 @@ This section is the correctness core of the effect. Implement it exactly.
   §11.1 composes oracle, spin, camera and projection, and checks that the
   screen→page-UV Jacobian has a positive determinant (no mirror) and that the
   page's up vector points up.
+
+### 4.6 Final construction parameters (T03)
+
+Fixed by [`globe-eversion/thurston-derivation.md`](./globe-eversion/thurston-derivation.md)
+and verified by `globe-eversion/thurston-check.ts`; where this overrides text above, this wins:
+
+- `n = 8` strips; stage windows exactly as in §4.3; `stageParams` writes the five
+  windows to slots 0–4, then `κ = c(1−r)`, `sin πw`, `cos πw` to slots 5–7.
+- Chart: `u = 1 − 2φ/π`, strip coordinate `v = nθ/2π`; body `(x,y,z) = (X,−Z,Y)` of
+  Thurston's frame. The winding normal is `∂φF × ∂θF` (body frame is left-handed).
+- Corrugation amplitude `SIZE0 = 0.14` (Thurston's own is 0.2); no global scale,
+  `max‖F‖ = 1.336`. Minimum immersion 0.089 (`IMMERSION_MIN` stays 0.05).
+- `R = −I` (the antipodal map). The twist is ±π of the caps about the polar axis and
+  π of the belt about the viewer axis, not "π/n".
+- Halfway symmetry (replaces the wording of §11.1 test 11): `D₈`, i.e.
+  `F(θ + 2π/n, φ) = Ry(2π/n) F(θ, φ)` and `F(−θ, −φ) = diag(−1,−1,1) F(θ, φ)` at `e = ½`.
+- Poles (§4.4): constant pole normal is only accurate to ≈ 0.003 rad; use the analytic
+  surface-of-revolution normal for `|φ| > π/2 − POLE_EPS` with `POLE_EPS = 0.07`.
 
 ---
 
@@ -1082,7 +1104,14 @@ Each phase is one or more focused commits, green on `pnpm check:consistency`.
    test 29; the mechanism is open.
 3. **The exact opaque-glass class** to put on the capture clone (§6.4). Use
    whatever the Glass clarity "Opaque" stop applies today.
-4. **Thurston construction licence** (§4.1) — re-derive from the paper unless
-   confirmed.
+4. ~~**Thurston construction licence** (§4.1) — re-derive from the paper unless
+   confirmed.~~ **Resolved (T03):** derived from published mathematics, no code
+   copied — see [`globe-eversion/thurston-derivation.md`](./globe-eversion/thurston-derivation.md).
+   The owner authorised referencing the Geometry Center `evert` code; its geometry
+   generator (read via M. McGuffin's `sphereEversion` 0.4 port; no explicit licence
+   grant exists, only "freely available" and "used with permission") was read for the
+   mathematics only and re-implemented — provenance and verbatim notices in that
+   note's §0. The Bednorz–Bednorz analytic eversion of the first attempt is kept as
+   a verified fallback in its Appendix A.
 5. **Polar fan normals** under the push stage. If test 8's polar check is
    marginal, raise `POLE_EPS` or switch the poles to an analytic chart.
