@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import type { AppliedUserTheme, AppliedUserThemePreview } from '@/lib/themes/tokens';
-import { DEFAULT_COLOR_VISION, type ColorVisionMode } from '@/lib/appearance/prefs';
+import {
+  DEFAULT_COLOR_VISION,
+  DEFAULT_NAV_TRANSITION,
+  type ColorVisionMode,
+  type NavTransition,
+} from '@/lib/appearance/prefs';
 import { colorSchemeForBackground } from '@/lib/appearance/contrast';
 
 // Each theme carries its document background color (`bg`) alongside its catalog
@@ -321,6 +326,13 @@ interface ThemeStore {
    */
   colorVision: ColorVisionMode;
   setColorVision: (value: ColorVisionMode) => void;
+  /**
+   * Globe-eversion navigation transition (spec §9.3). 'random' is the default
+   * and what an absent account row means. Cached in localStorage like
+   * `reduceMotion` and synced to the account.
+   */
+  navTransition: NavTransition;
+  setNavTransition: (value: NavTransition) => void;
 
   // ── Marketplace user themes (§14) ────────────────────────────────────────
   /**
@@ -365,6 +377,8 @@ export const useThemeStore = create<ThemeStore>((set) => ({
   setReduceMotion: (reduceMotion) => set({ reduceMotion }),
   colorVision: DEFAULT_COLOR_VISION,
   setColorVision: (colorVision) => set({ colorVision }),
+  navTransition: DEFAULT_NAV_TRANSITION,
+  setNavTransition: (navTransition) => set({ navTransition }),
   userTheme: null,
   // Applying/removing an owned theme also clears any transient preview.
   setUserTheme: (userTheme) => set({ userTheme, userThemePreview: null }),

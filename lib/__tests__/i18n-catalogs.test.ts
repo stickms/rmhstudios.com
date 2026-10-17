@@ -126,7 +126,29 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   // validation copy, the RMHLadder overview's first pass through t()). Runtime
   // falls back to English per key until `pnpm i18n:translate && pnpm
   // i18n:resources` has been run and the catalogs committed.
-  'settings-appearance': ['browse-themes', 'custom-accent-none', 'theme', 'theme-desc'],
+  'settings-appearance': [
+    'browse-themes',
+    'custom-accent-none',
+    'theme',
+    'theme-desc',
+    // Globe-eversion "Navigation transition" row (T21, 2026-10-17). English-only
+    // until the translate pipeline runs on the en change; remove with it.
+    'nav-transition',
+    'nav-transition-equirect',
+    'nav-transition-equirect-desc',
+    'nav-transition-lambert',
+    'nav-transition-lambert-desc',
+    'nav-transition-mercator',
+    'nav-transition-mercator-desc',
+    'nav-transition-peirce',
+    'nav-transition-peirce-desc',
+    'nav-transition-preview',
+    'nav-transition-random',
+    'nav-transition-random-desc',
+    'nav-transition-reduced-hint',
+    'nav-transition-stereographic',
+    'nav-transition-stereographic-desc',
+  ],
   pages: [
     'already-have-account-prompt',
     'no-account-prompt',
