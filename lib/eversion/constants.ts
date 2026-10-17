@@ -169,10 +169,13 @@ export const HALFWAY_E = 0.5;
 
 /**
  * Latitude band around each pole where normals come from the analytic pole
- * normal rather than finite differences (spec §4.4). PROVISIONAL — T08 tunes it
- * (spec §14 item 5 says to raise it if the polar immersion check is marginal).
+ * normal rather than finite differences (spec §4.4). Tuned in T08 from 0.02 to
+ * 0.07: the surface is an exact surface of revolution for π/2 − |φ| < 0.0741
+ * (the corrugation amplitude is zero there), so the oracle's closed-form normal
+ * is exact out to 0.07, while a constant pole normal is only good to ≈ 0.003 rad
+ * and the finite-difference normal degrades as cos φ → 0.
  */
-export const POLE_EPS = 0.02;
+export const POLE_EPS = 0.07;
 
 /**
  * Smallest allowed `‖∂θF × ∂φF‖ / cos φ` anywhere on the surface at any `e`
