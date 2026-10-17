@@ -220,7 +220,10 @@ export class BeforeCaptureScheduler {
   }
 
   /** The shared capture session (T31 reuses it for AFTER), created on demand. */
-  getCapture(): CaptureApi {
+  getCapture(): CaptureApi | null {
+    // After dispose a fresh session would be an orphan (a context and a sandbox
+    // iframe nobody disposes): there is none to hand out.
+    if (this.disposed) return null;
     this.session ??= this.createCapture();
     return this.session;
   }
@@ -328,6 +331,7 @@ export class BeforeCaptureScheduler {
     let result: CaptureResult;
     try {
       const session = this.getCapture();
+      if (!session) return;
       await session.createSession();
       result = await session.captureViewport({
         phase: 'before',

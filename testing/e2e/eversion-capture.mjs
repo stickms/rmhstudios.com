@@ -88,6 +88,10 @@ const BASE_URL = (process.env.BASE_URL ?? 'http://localhost:7005').replace(/\/$/
 const SSIM_MIN = { desktop: 0.97, mobile: 0.95 };
 const P95_DESKTOP_MS = 120;
 const TIMEOUT_SLACK_MS = 20;
+/** Right-most non-ground column of the capture vs the live page (R6 M8). */
+const EDGE_TOLERANCE_PX = 1;
+/** Mean luma error inside the FAB's rect above which it is deemed absent (it is a saturated pill on the ground). */
+const FAB_MAE_MAX = 12;
 
 /* ── Arguments ───────────────────────────────────────────────────────────── */
 const argv = process.argv.slice(2);
@@ -237,7 +241,38 @@ function mae(a, b, w, rect) {
 }
 
 /** Compare two PNGs; resizes `capture` to the reference size if they differ. */
+/**
+ * Right-most column that is not flat ground: the first column from the right whose
+ * luma range exceeds `tol`. The capture is cropped to the layout viewport (without
+ * the scrollbar gutter, spec 6.4), so BEFORE/AFTER must end where the live page ends.
+ */
+function rightEdge({ data, width, height }, tol = 10) {
+  for (let x = width - 1; x >= 0; x--) {
+    let lo = 255;
+    let hi = 0;
+    for (let y = 0; y < height; y += 2) {
+      const v = data[y * width + x];
+      if (v < lo) lo = v;
+      if (v > hi) hi = v;
+    }
+    if (hi - lo > tol) return x;
+  }
+  return -1;
+}
+
 async function compare(referencePng, capturePng, rect) {
+  // The capture is the FIXED viewport (no scrollbar gutter): a screenshot of the
+  // whole window is cropped to the capture's width so the two are the same box.
+  const capMeta = await sharp(capturePng).metadata();
+  const refMeta = await sharp(referencePng).metadata();
+  let gutterPx = 0;
+  if (capMeta.height === refMeta.height && capMeta.width < refMeta.width) {
+    gutterPx = refMeta.width - capMeta.width;
+    referencePng = await sharp(referencePng)
+      .extract({ left: 0, top: 0, width: capMeta.width, height: refMeta.height })
+      .png()
+      .toBuffer();
+  }
   const ref = await luma(referencePng);
   let cap = await luma(capturePng);
   let resized = false;
@@ -251,7 +286,10 @@ async function compare(referencePng, capturePng, rect) {
       .toBuffer({ resolveWithObject: true });
     cap = { data: r.data, width: r.info.width, height: r.info.height };
   }
+  const edgeDelta = cap.width === ref.width ? Math.abs(rightEdge(cap) - rightEdge(ref)) : NaN;
   return {
+    gutterPx,
+    edgeDelta,
     ssim: ssim(ref.data, cap.data, ref.width, ref.height, rect),
     width: ref.width,
     height: ref.height,
@@ -643,7 +681,9 @@ async function fidelity(browser) {
                 warm,
                 referenceDrift: pair.drift,
                 attempts: pair.attempts,
-                pass: cmp.ssim >= min,
+                gutterPx: cmp.gutterPx,
+                edgeDelta: cmp.edgeDelta,
+                pass: cmp.ssim >= min && !(cmp.edgeDelta > EDGE_TOLERANCE_PX),
                 min,
               };
               rows.push(row);
@@ -652,7 +692,11 @@ async function fidelity(browser) {
                 save(`${tag}.shot.png`, shot);
                 save(`${tag}.capture.png`, pngOf(cap.dataUrl));
               }
-              if (!row.pass) fail(`SSIM ${cmp.ssim.toFixed(4)} < ${min} for ${tag}`);
+              if (cmp.ssim < min) fail(`SSIM ${cmp.ssim.toFixed(4)} < ${min} for ${tag}`);
+              if (cmp.edgeDelta > EDGE_TOLERANCE_PX)
+                fail(
+                  `right edge of the capture is ${cmp.edgeDelta}px from the live page's for ${tag} (limit ${EDGE_TOLERANCE_PX}px; gutter ${cmp.gutterPx}px)`,
+                );
               break;
             } catch (e) {
               if (/context was destroyed|navigation/i.test(e.message) && retry < 2) continue;
@@ -721,7 +765,21 @@ async function behaviours(browser) {
 
   // 4. hub open — the BEFORE capture is taken while the menu is up.
   {
+    // The debug overlay sits over the FAB's corner and is live text; neither the
+    // baseline nor the capture should carry it for this check.
+    await page.evaluate(() => document.getElementById('eversion-debug-overlay')?.remove());
     const baseline = await page.screenshot({ style, caret: 'hide' });
+    const fabRect = await page.evaluate(() => {
+      const r = document.querySelector('.radial-feed__compose')?.getBoundingClientRect();
+      return r && r.width > 8 && r.bottom <= innerHeight
+        ? {
+            x: Math.floor(r.x),
+            y: Math.floor(r.y),
+            width: Math.ceil(r.width),
+            height: Math.ceil(r.height),
+          }
+        : null;
+    });
     const orb = page.locator('.radial-hub__orb').first();
     if (await orb.count()) {
       await orb.click({ timeout: 5000 }).catch(() => {});
@@ -739,10 +797,21 @@ async function behaviours(browser) {
         const cap = await captureIn(page, { scaleCap: 1 });
         const cmp = await compare(baseline, pngOf(cap.dataUrl));
         const ok = cmp.ssim >= SSIM_MIN.desktop;
-        rows.push({ check: 'hub-open', ssimToPreOpenPage: cmp.ssim, pass: ok });
+        // R6 M9: the Compose FAB is hidden live while the hub is open but is part of the
+        // page as it was; its rect in the capture must match the pre-open page.
+        const fab = fabRect ? mae(cmp.cap.data, cmp.ref.data, cmp.cap.width, fabRect) : null;
+        const fabOk = fab === null || fab < FAB_MAE_MAX;
+        rows.push({
+          check: 'hub-open',
+          ssimToPreOpenPage: cmp.ssim,
+          fabMae: fab,
+          pass: ok && fabOk,
+        });
         save('hub-open.capture.png', pngOf(cap.dataUrl));
         if (!ok)
           fail(`hub-open capture differs from the pre-open page: SSIM ${cmp.ssim.toFixed(4)}`);
+        if (!fabOk)
+          fail(`hub-open capture is missing the Compose FAB (MAE ${fab.toFixed(1)} in its rect)`);
         await page.keyboard.press('Escape');
         await page.waitForTimeout(800);
       }
@@ -894,7 +963,8 @@ async function behaviours(browser) {
     const ok =
       res.slots.includes('capture') &&
       res.shot &&
-      res.shot.w === res.shot.viewport[0] &&
+      res.shot.viewport[0] - res.shot.w >= 0 &&
+      res.shot.viewport[0] - res.shot.w <= 24 &&
       res.shot.h === res.shot.viewport[1] &&
       res.last;
     rows.push({ check: 'debug-slot', ...res, pass: !!ok });

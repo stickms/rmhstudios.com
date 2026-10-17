@@ -106,6 +106,18 @@ describe('memo cache', () => {
     expect(getBakedLut('mercator', { w: 1600, h: 900 }) === a).toBe(false);
     clearLutCache();
   });
+
+  it('is an LRU of LUT_CACHE_MAX: the least recently used bake is dropped (R6 M5)', () => {
+    clearLutCache();
+    const view = { w: 1600, h: 900 };
+    const a = getBakedLut('mercator', view);
+    const b = getBakedLut('lambert', view);
+    expect(getBakedLut('mercator', view) === a).toBe(true); // touch a: b is now oldest
+    getBakedLut('equirect', view); // evicts b
+    expect(getBakedLut('mercator', view) === a).toBe(true);
+    expect(getBakedLut('lambert', view) === b).toBe(false);
+    clearLutCache();
+  });
 });
 
 /**

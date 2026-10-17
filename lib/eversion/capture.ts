@@ -5,12 +5,13 @@
  * **dynamically imported** so it is in no static closure (spec §8.1). One
  * context is created per navigation and reused for the BEFORE and AFTER
  * captures, because font embedding and resource fetching are the expensive part
- * and a reused context pays them once; its fetch worker is on.
+ * and a reused context pays them once; it runs without a fetch worker.
  *
  * ## What a capture is
  *
- * Exactly `innerWidth × innerHeight` CSS px at the current scroll, with
- * fixed/sticky elements in their on-screen positions, at
+ * Exactly the layout viewport ({@link fixedViewport}: `innerWidth` minus the
+ * scrollbar gutter, the width of the effect's `position: fixed` overlay) × `innerHeight`
+ * CSS px at the current scroll, with fixed/sticky elements in their on-screen positions, at
  * `min(devicePixelRatio, scaleCap)` and no bigger than `CAPTURE_MAX_DIMENSION`
  * on either side. `CAPTURE_EXCLUDE_SELECTORS` are absent. The result is an
  * `ImageBitmap` whose ownership passes to the caller (`CaptureResult.bitmap`:
@@ -96,8 +97,7 @@
  * `CAPTURE_TIMEOUT_MS`. A timeout rejects with a `CaptureError` within
  * `timeout + 20 ms` (the deadline is checked per cloned node, not only by the
  * timer). Whatever ends a capture early — timeout, abort, `dispose` —
- * also tears the context down (its worker is terminated, its sandbox iframe
- * removed) and turns the library's still-running clone into a no-op, so nothing
+ * also tears the context down (its sandbox iframe is removed and its image cache dropped) and turns the library's still-running clone into a no-op, so nothing
  * of an abandoned capture stays alive; the next capture builds a fresh session.
  * Each capture is recorded as `EVERSION_MEASURES.captureBefore/After`.
  */
@@ -199,6 +199,18 @@ const HUB_HIDDEN_SELECTOR = '.radial-feed__compose';
 /** The library's `defaultComputedStyles` iframe (`__SANDBOX__…`); never part of the page. */
 const SANDBOX_ID_PREFIX = '__SANDBOX__';
 const XHTML_NS = 'http://www.w3.org/1999/xhtml';
+/** Elements that never paint; cloning one costs a style copy for nothing. */
+const NEVER_RENDERED = new Set([
+  'script',
+  'style',
+  'noscript',
+  'template',
+  'link',
+  'meta',
+  'title',
+]);
+/** The image/font cache (`ctx.requests`) is bounded to this many entries between captures. */
+const REQUEST_CACHE_MAX = 32;
 /** How far outside the viewport (as a fraction of it) a block must be before its subtree is dropped. */
 const STUB_MARGIN = 0.5;
 /** Give up on the sandbox iframe loading (a navigation away, a CSP) after this long. */
@@ -310,6 +322,90 @@ function token(name: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
+/**
+ * The size of the layout viewport as `position: fixed` sees it: `innerWidth` minus
+ * the classic scrollbar / reserved `scrollbar-gutter`. The effect's overlay is
+ * `position: fixed; inset: 0`, so its canvas is exactly this wide, and the picture
+ * must be laid out and cropped to the same box: capturing `innerWidth` instead puts
+ * the gutter strip into the picture and the canvas then squeezes it ~0.7% narrower
+ * than the live page. (`documentElement.clientWidth` is not used: Chromium reports
+ * the full width there when only a gutter is reserved.) Falls back to the window.
+ */
+export function fixedViewport(): { width: number; height: number } {
+  const fallback = { width: window.innerWidth, height: window.innerHeight };
+  try {
+    const probe = document.createElement('div');
+    probe.style.cssText = 'position:fixed;inset:0;visibility:hidden;pointer-events:none';
+    document.documentElement.appendChild(probe);
+    const r = probe.getBoundingClientRect();
+    probe.remove();
+    if (r.width >= 1 && r.height >= 1 && r.width <= fallback.width && r.height <= fallback.height) {
+      return { width: r.width, height: r.height };
+    }
+  } catch {
+    /* the window's size */
+  }
+  return fallback;
+}
+
+/**
+ * Run every finite CSS transition / animation / Web Animation to its end, so the
+ * AFTER picture shows the page at rest. `data-eversion-settle` only shortens
+ * durations of transitions that START after it is set; one already running (the
+ * nav highlight the route commit just toggled) keeps its old duration. Infinite
+ * animations (aurora) are left alone, and so is anything inside `exclude` (the hub's
+ * own fade over the canvas).
+ */
+function finishRunningAnimations(exclude: readonly string[]): number {
+  let n = 0;
+  const selector = exclude.join(',');
+  try {
+    for (const a of document.getAnimations()) {
+      if (a.playState === 'finished' || a.playState === 'idle') continue;
+      const end = a.effect?.getComputedTiming().endTime;
+      if (typeof end !== 'number' || !Number.isFinite(end)) continue;
+      const target = (a.effect as KeyframeEffect | null)?.target;
+      if (selector && target instanceof Element && target.closest(selector)) continue;
+      try {
+        a.finish();
+        n++;
+      } catch {
+        /* an animation that cannot finish is left running */
+      }
+    }
+  } catch {
+    /* getAnimations is best-effort */
+  }
+  return n;
+}
+
+/**
+ * While the hub is open `.radial-frame` & co. carry `filter: blur()`, and a filter
+ * makes its element the containing block of every `position: fixed` descendant. Live,
+ * such a descendant (the Compose FAB) is therefore laid out against the 3000 px tall
+ * frame, and the computed `top` the library copies is that frame-relative number.
+ * The clone drops the blur (BEFORE is the page as it was before the hub opened), so
+ * the same element is positioned against the viewport and lands far off screen.
+ * `top`/`bottom` and `left`/`right` are both inlined and over-constrain the box;
+ * keep only the edge the element is closest to, which is the one it was authored
+ * against (`bottom: …` for the FAB).
+ */
+function reanchorFixed(root: HTMLElement): void {
+  for (const part of root.querySelectorAll<HTMLElement>(HUB_BLURRED_SELECTOR)) {
+    for (const el of part.querySelectorAll<HTMLElement>('*')) {
+      const s = el.style;
+      if (s.position !== 'fixed') continue;
+      const [top, bottom, left, right] = [s.top, s.bottom, s.left, s.right].map(parseFloat);
+      if (Number.isFinite(top) && Number.isFinite(bottom)) {
+        s.setProperty(bottom < top ? 'top' : 'bottom', 'auto');
+      }
+      if (Number.isFinite(left) && Number.isFinite(right)) {
+        s.setProperty(right < left ? 'left' : 'right', 'auto');
+      }
+    }
+  }
+}
+
 /** A capture in flight: its abort handle and whether the page was asked to stop caring. */
 interface Flight {
   ac: AbortController;
@@ -332,18 +428,14 @@ function expired(flight: Flight): boolean {
   return true;
 }
 
-/** Lazily import the library and the worker asset URL (a built asset under Vite). */
-async function loadLibrary(): Promise<{ lib: Lib; workerUrl: string | null }> {
-  const lib = await import('modern-screenshot');
-  let workerUrl: string | null;
-  try {
-    // `?url` makes Vite emit the worker as a hashed asset and hand back its URL;
-    // dev serves it from `node_modules`. A failure only costs the fetch worker.
-    workerUrl = (await import('modern-screenshot/worker?url')).default;
-  } catch {
-    workerUrl = null;
-  }
-  return { lib, workerUrl };
+/**
+ * Lazily import the library. No fetch worker: the capture only reads same-origin
+ * and CORS images the HTTP cache already holds, so a worker buys nothing, and
+ * Vite inlines the worker file as a `data:` URL that the production CSP
+ * (`worker-src 'self' blob:`) refuses and that never gets terminated.
+ */
+async function loadLibrary(): Promise<Lib> {
+  return import('modern-screenshot');
 }
 
 /**
@@ -371,6 +463,7 @@ function makeFilter(
   const marginX = view.width * STUB_MARGIN;
   const marginY = view.height * STUB_MARGIN;
   const stubs = new WeakSet<Node>();
+  const floating = new WeakSet<Node>();
 
   const isStub = (el: Element): boolean => {
     if (!el.firstChild) return false;
@@ -385,7 +478,15 @@ function makeFilter(
     if (el.clientWidth === 0 || el.clientHeight === 0) return false;
     if (el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1) return false;
     const position = getComputedStyle(el).position;
-    return position !== 'fixed' && position !== 'sticky';
+    if (position === 'fixed' || position === 'sticky') return false;
+    // A fixed/sticky descendant is out of its ancestors' scrollable overflow, so the
+    // guard above cannot see it: a Compose FAB under a scrolled-away block would be
+    // stubbed away with it. Such ancestors are never stubbed.
+    for (const d of el.querySelectorAll('*')) {
+      const p = getComputedStyle(d).position;
+      if (p === 'fixed' || p === 'sticky') return false;
+    }
+    return true;
   };
 
   return (node: Node): boolean => {
@@ -396,7 +497,7 @@ function makeFilter(
     if (parent && stubs.has(parent)) return false;
     if (node.nodeType !== 1) return true;
     const el = node as Element;
-    if (el.localName === 'head') return false;
+    if (el.localName === 'head' || NEVER_RENDERED.has(el.localName)) return false;
     if (el.id.startsWith(SANDBOX_ID_PREFIX)) return false;
     if (selector) {
       try {
@@ -404,6 +505,16 @@ function makeFilter(
       } catch {
         /* a selector the browser rejects excludes nothing */
       }
+    }
+    // `display: none` paints nothing and nothing in it can: its subtree is pure cost.
+    const cs = getComputedStyle(el);
+    if (cs.display === 'none') return false;
+    // A floating element and everything in it is positioned against the viewport, not
+    // against where the live tree puts it (a FAB inside a blurred, 3000 px tall frame
+    // reads as "outside the viewport"), so none of it is ever a stub.
+    if (cs.position === 'fixed' || cs.position === 'sticky' || (parent && floating.has(parent))) {
+      floating.add(el);
+      return true;
     }
     if (isStub(el)) stubs.add(el);
     return true;
@@ -447,8 +558,13 @@ class CaptureSession implements CaptureApi {
   private disposed = false;
   private tail: Promise<unknown> = Promise.resolve();
   private flights = new Set<Flight>();
-  private lastInfo: { width: number; height: number; scale: number; durationMs: number } | null =
-    null;
+  private lastInfo: {
+    width: number;
+    height: number;
+    scale: number;
+    durationMs: number;
+    stages: Record<string, number>;
+  } | null = null;
   private unregister: () => void;
 
   constructor() {
@@ -469,15 +585,14 @@ class CaptureSession implements CaptureApi {
   }
 
   private async build(): Promise<void> {
-    const { lib, workerUrl } = await loadLibrary();
+    const lib = await loadLibrary();
     if (this.disposed) throw new CaptureError('aborted');
     // The context is created on a detached node: `createContext(node)` waits for
     // every `<img>`/`<video>` under `node` to load (30 s default), which for the
     // whole document includes lazy images that never will. Each capture points
     // `ctx.node` at `<html>` itself, which is all the library reads it for.
     const ctx = await lib.createContext(document.createElement('div'), {
-      workerUrl: workerUrl ?? undefined,
-      workerNumber: 1,
+      workerNumber: 0,
       autoDestruct: false,
       maximumCanvasSize: CAPTURE_MAX_DIMENSION,
       includeStyleProperties: STYLE_PROPERTIES,
@@ -517,6 +632,25 @@ class CaptureSession implements CaptureApi {
       this.lib?.destroyContext(ctx);
     } catch {
       /* the library tolerates a half-built context */
+    }
+  }
+
+  /**
+   * `ctx.requests` memoises every fetched image/font as a base64 string for the life
+   * of the context, which spans navigations. After an AFTER capture the page is
+   * gone: drop all of it (the HTTP cache makes a refetch cheap). Otherwise keep the
+   * newest {@link REQUEST_CACHE_MAX}. Font CSS texts (one per font file) are kept.
+   */
+  private pruneRequests(ctx: Ctx, all: boolean): void {
+    const requests = ctx.requests;
+    if (all) {
+      requests.clear();
+      return;
+    }
+    let excess = requests.size - REQUEST_CACHE_MAX;
+    for (const key of requests.keys()) {
+      if (excess-- <= 0) break;
+      requests.delete(key);
     }
   }
 
@@ -612,8 +746,11 @@ class CaptureSession implements CaptureApi {
 
     // Geometry is read once, synchronously: a scroll during the clone must not
     // tear the picture.
-    const width = Math.max(1, Math.round(window.innerWidth));
-    const height = Math.max(1, Math.round(window.innerHeight));
+    const exclude = options.exclude ?? CAPTURE_EXCLUDE_SELECTORS;
+    if (options.phase === 'after') finishRunningAnimations(exclude);
+    const viewport = fixedViewport();
+    const width = Math.max(1, Math.round(viewport.width));
+    const height = Math.max(1, Math.round(viewport.height));
     const sx = window.scrollX;
     const sy = window.scrollY;
     const scale = Math.min(
@@ -623,7 +760,6 @@ class CaptureSession implements CaptureApi {
       CAPTURE_MAX_DIMENSION / height,
     );
 
-    const exclude = options.exclude ?? CAPTURE_EXCLUDE_SELECTORS;
     const surface = token('--site-surface') || '#808080';
     const opaque = token('--site-surface-opaque') || surface;
     const border = token('--site-border');
@@ -631,6 +767,9 @@ class CaptureSession implements CaptureApi {
     const cover = document.documentElement.classList.contains(COVER_CLASS);
     const hubOpen = !!document.querySelector('.radial-hub:not([data-phase="closed"])');
 
+    // Fonts are embedded per capture for the families THIS page uses; the context
+    // outlives the page, so last page's families must not ride along.
+    ctx.fontFamilies.clear();
     ctx.node = document.documentElement;
     ctx.width = width;
     ctx.height = height;
@@ -683,7 +822,10 @@ class CaptureSession implements CaptureApi {
       return slice;
     };
 
+    let tClone = t0;
+    let tSvg = t0;
     ctx.onCloneNode = (root: Node) => {
+      tClone = performance.now();
       if (flight.ac.signal.aborted) return;
       const html = root as HTMLElement;
       // The crop: scroll the document by moving the cloned body (see the docblock).
@@ -694,6 +836,7 @@ class CaptureSession implements CaptureApi {
         body.style.setProperty('left', `${-sx}px`);
       }
       if (hubOpen) {
+        reanchorFixed(html);
         for (const el of html.querySelectorAll<HTMLElement>(HUB_HIDDEN_SELECTOR)) {
           el.style.setProperty('visibility', 'visible');
           for (const d of el.querySelectorAll<HTMLElement>('*'))
@@ -714,6 +857,7 @@ class CaptureSession implements CaptureApi {
     };
 
     ctx.onCreateForeignObjectSvg = (svg: SVGSVGElement) => {
+      tSvg = performance.now();
       if (flight.ac.signal.aborted) return;
       const style = svg.ownerDocument.createElementNS('http://www.w3.org/2000/svg', 'style');
       style.textContent = OPAQUE_PSEUDO_CSS;
@@ -727,6 +871,8 @@ class CaptureSession implements CaptureApi {
     } finally {
       restoreVideos();
     }
+    const tRaster = performance.now();
+    this.pruneRequests(ctx, options.phase === 'after');
     if (flight.ac.signal.aborted) {
       canvas.width = 0;
       throw flight.ac.signal.reason;
@@ -754,7 +900,15 @@ class CaptureSession implements CaptureApi {
       /* measure is best-effort */
     }
 
-    this.lastInfo = { width: bitmap.width, height: bitmap.height, scale, durationMs };
+    // Where the time went (debug): clone = tree walk + style copy; embed = fonts and
+    // images; raster = SVG serialise + browser layout/paint + canvas copy; bitmap.
+    const stages = {
+      clone: tClone - t0,
+      embed: tSvg - tClone,
+      raster: tRaster - tSvg,
+      bitmap: end - tRaster,
+    };
+    this.lastInfo = { width: bitmap.width, height: bitmap.height, scale, durationMs, stages };
     return { bitmap, width: bitmap.width, height: bitmap.height, scale, durationMs };
   }
 

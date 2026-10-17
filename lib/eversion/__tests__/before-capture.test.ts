@@ -248,6 +248,13 @@ describe('BeforeCaptureScheduler', () => {
     expect(capture.api.captureViewport).toHaveBeenCalledTimes(1);
   });
 
+  it('getCapture after dispose makes no orphan session (R6 m9)', () => {
+    const { scheduler, capture } = make();
+    scheduler.dispose();
+    expect(scheduler.getCapture()).toBeNull();
+    expect(capture.api.dispose).not.toHaveBeenCalled();
+  });
+
   it('with no requestIdleCallback the default scheduler falls back to a timer', async () => {
     const capture = makeCapture();
     const scheduler = new BeforeCaptureScheduler({

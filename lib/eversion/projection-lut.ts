@@ -186,6 +186,8 @@ export function bakeLut(
   return data;
 }
 
+/** LRU bound on the bake memo: the projection in use and the next one prepared. */
+export const LUT_CACHE_MAX = 2;
 const cache = new Map<string, BakedLut>();
 
 /**
@@ -201,7 +203,12 @@ export function getBakedLut(id: ProjectionId, viewport: { w: number; h: number }
   const bucket = aspectBucket(Math.max(viewport.h, 1) / Math.max(viewport.w, 1));
   const key = `${id}:${bucket}`;
   const hit = cache.get(key);
-  if (hit) return hit;
+  if (hit) {
+    // Most recently used goes last.
+    cache.delete(key);
+    cache.set(key, hit);
+    return hit;
+  }
   const projection = getProjection(id);
   const fit = projection.fit(LUT_ASPECT_BUCKETS, bucket);
   const baked: BakedLut = {
@@ -213,6 +220,8 @@ export function getBakedLut(id: ProjectionId, viewport: { w: number; h: number }
     fit,
   };
   cache.set(key, baked);
+  // Each LUT is 2-8 MB; keep the current one and the one being prepared.
+  while (cache.size > LUT_CACHE_MAX) cache.delete(cache.keys().next().value as string);
   return baked;
 }
 
