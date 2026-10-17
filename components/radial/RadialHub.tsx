@@ -30,9 +30,7 @@ import { RmhLogo } from './RmhLogo';
  * the import is already resolved before the phase flips, and the Suspense
  * fallback is a frame nobody sees rather than a hole in the animation.
  */
-const LiquidGlobe = lazy(() =>
-  import('./LiquidGlobe').then((m) => ({ default: m.LiquidGlobe })),
-);
+const LiquidGlobe = lazy(() => import('./LiquidGlobe').then((m) => ({ default: m.LiquidGlobe })));
 
 /**
  * The Globe Eversion's hub-side half (spec §9.2, tasks T32): the BEFORE capture
@@ -133,6 +131,8 @@ export function RadialHub() {
   const [eversionOn, setEversionOn] = useState(false);
   const [bridgeWanted, setBridgeWanted] = useState(false);
   const controllerRef = useRef<EversionControllerHandle | null>(null);
+  /** A confirm has been handed to the controller and has not settled (priming or running). */
+  const handingOff = useRef(false);
   const pendingPreview = useRef(false);
   /**
    * The orb comes back at the moment the run ends, with no fade: the pop has just
@@ -179,6 +179,11 @@ export function RadialHub() {
 
   const close = useCallback(
     (dismissed = false) => {
+      // A confirm is being handed to the effect: the hub is committed to leaving
+      // by the effect's own route, and the pointer-up / click that ended the hold
+      // lands on the (still open) scrim. Closing here would abort the run and
+      // drop the BEFORE bitmap. The hand-off's own fallback clears the flag first.
+      if (handingOff.current) return;
       clearTimer();
       restoreFocus.current = dismissed;
       setPhase((p) => (p === 'closed' ? p : 'closing'));
@@ -193,6 +198,7 @@ export function RadialHub() {
   const dismiss = useCallback(() => close(true), [close]);
 
   const toggle = useCallback(() => {
+    if (handingOff.current) return;
     clearTimer();
     setPhase((p) => {
       // Opening is a single synchronous transition — no pre-centring step.
@@ -240,9 +246,15 @@ export function RadialHub() {
       // import so none of it joins the shell's static closure (spec §8.1). The flag
       // is a tiny leaf read statically, so a visitor without the effect fetches
       // nothing at all.
+      // The bridge is mounted only once the prefetch resolves, and that waits for
+      // `load` (then a task) itself: mounting it on the 800 ms timer would fetch the
+      // bridge chunk on a page whose load event is still pending.
       if (isEversionEnabled()) {
-        void import('@/lib/eversion/prefetch').then((m) => m.prefetchEversion());
-        setBridgeWanted(true);
+        void import('@/lib/eversion/prefetch')
+          .then((m) => m.prefetchEversion())
+          .then(() => {
+            if (!unmounted) setBridgeWanted(true);
+          });
       }
       void preloadGlobe()?.then(() => {
         if (rehearsed || phaseRef.current !== 'closed') return;
@@ -250,9 +262,11 @@ export function RadialHub() {
         setRehearsing(true);
       });
     };
+    let unmounted = false;
     const timer = setTimeout(warm, 800);
     const handle = w.requestIdleCallback?.(warm, { timeout: 800 });
     return () => {
+      unmounted = true;
       clearTimeout(timer);
       if (handle !== undefined) w.cancelIdleCallback?.(handle);
     };
@@ -286,7 +300,7 @@ export function RadialHub() {
     const onKey = (e: KeyboardEvent) => {
       // While everting a key press is the effect's fast-forward (the controller
       // listens in the capture phase); it must not also dismiss the hub.
-      if (e.key === 'Escape' && phaseRef.current !== 'everting') dismiss();
+      if (e.key === 'Escape' && phaseRef.current !== 'everting' && !handingOff.current) dismiss();
     };
     const onWheel = (e: WheelEvent) => {
       if (e.cancelable) e.preventDefault();
@@ -349,7 +363,9 @@ export function RadialHub() {
       // The bridge has not loaded yet: ask for it and run the preview the
       // moment it hands the controller up.
       pendingPreview.current = true;
-      setBridgeWanted(true);
+      void import('@/lib/eversion/prefetch')
+        .then((m) => m.prefetchEversion())
+        .then(() => setBridgeWanted(true));
     };
     window.addEventListener(EVERSION_PREVIEW_EVENT, onPreview);
     return () => window.removeEventListener(EVERSION_PREVIEW_EVENT, onPreview);
@@ -383,24 +399,38 @@ export function RadialHub() {
         today();
         return;
       }
+      if (handingOff.current) return;
+      handingOff.current = true;
       clearTimer();
       restoreFocus.current = false;
-      setPhase('everting');
-      controller.start(node, state, entry).then(
-        (outcome) => {
-          if (outcome.fallback) {
+      // The hub stays exactly as it is (`open`) until the run reaches its point
+      // of no return: eligibility and the BEFORE bitmap are decided first, and a
+      // fallback then closes the hub the ordinary way, with nothing to undo.
+      // Input in this window is the controller's to queue; the hub must not also
+      // act on it (see the Escape handler).
+      controller
+        .start(node, state, entry, {
+          onCommit: () => {
+            setPhase('everting');
+          },
+        })
+        .then(
+          (outcome) => {
+            handingOff.current = false;
+            if (outcome.fallback) {
+              today();
+              return;
+            }
+            setOrbPopped(true);
+            setPhase('closed');
+          },
+          () => {
+            // `start` never rejects by contract; if it does, the visitor still
+            // gets where they asked to go.
+            handingOff.current = false;
             today();
-            return;
-          }
-          setOrbPopped(true);
-          setPhase('closed');
-        },
-        () => {
-          // `start` never rejects by contract; if it does, the visitor still
-          // gets where they asked to go.
-          today();
-        },
-      );
+          },
+        );
     },
     [dismissForNavigation, navigate],
   );
@@ -421,11 +451,7 @@ export function RadialHub() {
   const tab = phase === 'open' || phase === 'closing' ? 0 : -1;
 
   return (
-    <div
-      className="radial-hub"
-      data-phase={phase}
-      data-orb-popped={orbPopped ? '' : undefined}
-    >
+    <div className="radial-hub" data-phase={phase} data-orb-popped={orbPopped ? '' : undefined}>
       <button
         ref={orbRef}
         type="button"
@@ -566,7 +592,7 @@ export function RadialHub() {
       {bridgeWanted && (
         <Suspense fallback={null}>
           <EversionBridge
-            open={phase === 'open'}
+            open={phase === 'open' || phase === 'everting'}
             motionMs={MOTION_MS}
             onController={onController}
           />

@@ -588,7 +588,8 @@ export type ToWorker =
   | { type: 'start'; t0: number }
   | { type: 'fast-forward' }
   | { type: 'after-failed' }
-  | { type: 'resize'; viewport: Viewport }
+  /** `orb` is the POP target re-measured at the new size (absent: keep the old one). */
+  | { type: 'resize'; viewport: Viewport; orb?: OrbRect }
   | { type: 'reveal' }
   | { type: 'abort' }
   /**

@@ -377,9 +377,11 @@ function NavTransitionRow({
   const { t } = useTranslation('settings-appearance');
   const reduced = useReducedMotion();
   // The flag reads `location`, which does not exist during SSR; resolve after
-  // mount so the server and first client render agree (no Preview button).
-  const [canPreview, setCanPreview] = useState(false);
-  useEffect(() => setCanPreview(isEversionEnabled()), []);
+  // mount so the server and first client render agree (no row, no Preview). While
+  // the rollout flag is off the whole row is hidden: a control that changes
+  // nothing the visitor can see is worse than no control.
+  const [enabled, setEnabled] = useState(false);
+  useEffect(() => setEnabled(isEversionEnabled()), []);
 
   const names: Record<NavTransition, string> = {
     random: t('nav-transition-random', { defaultValue: 'Random' }),
@@ -410,6 +412,8 @@ function NavTransitionRow({
     }),
   };
 
+  if (!enabled) return null;
+
   return (
     <div className="py-2.5">
       <div className="flex items-center justify-between gap-4">
@@ -421,6 +425,7 @@ function NavTransitionRow({
           containerClassName="w-48 shrink-0"
           value={value}
           disabled={reduced}
+          aria-describedby="nav-transition-hint"
           onChange={(e) => {
             if (isNavTransition(e.target.value)) onChange(e.target.value);
           }}
@@ -432,14 +437,15 @@ function NavTransitionRow({
           ))}
         </Select>
       </div>
-      <p className="mt-1 text-xs text-site-text-muted">
+      <p id="nav-transition-hint" className="mt-1 text-xs text-site-text-muted">
         {reduced
-          ? t('nav-transition-reduced-hint', {
-              defaultValue: 'Reduced motion is on, so pages change with a simple fade instead.',
+          ? t('nav-transition-reduced-off', {
+              defaultValue:
+                'Reduced motion is on, so this transition is switched off and pages change as usual.',
             })
           : descriptions[value]}
       </p>
-      {canPreview ? (
+      {enabled ? (
         <Button
           type="button"
           variant="outline"

@@ -630,7 +630,7 @@ describe('eversion runner: router and viewport edge cases (spec 9.4)', () => {
     await flush();
     r.resize({ w: 500, h: 900, dpr: 2 });
     expect(r.posted.filter((m) => m.type === 'resize')).toEqual([
-      { type: 'resize', viewport: { w: 500, h: 900, dpr: 2 } },
+      { type: 'resize', viewport: { w: 500, h: 900, dpr: 2 }, orb: { cx: 10, cy: 10, radius: 10 } },
     ]);
     r.emit(DONE);
     await p;
@@ -683,5 +683,136 @@ describe('eversion runner: router and viewport edge cases (spec 9.4)', () => {
     await flush();
     await vi.advanceTimersByTimeAsync(300);
     expect(await p).toMatchObject({ fallback: null, end: 'context-lost' });
+  });
+});
+
+describe('eversion runner: commit point, queued input, teardown (review fixes)', () => {
+  function gatedPlaceholder() {
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    return {
+      release,
+      placeholder: async () => {
+        await gate;
+        return bitmap();
+      },
+    };
+  }
+
+  it('onCommit fires once, at the point of no return, and never on a fallback', async () => {
+    const onCommit = vi.fn();
+    const r = rig();
+    const p = r.runner.run(NODE, GLOBE, 'release', { onCommit });
+    await flush();
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(r.posted.map((m) => m.type)).toContain('start');
+    r.emit(DONE);
+    await p;
+
+    const fallback = vi.fn();
+    const f = rig({ awaitBefore: async () => null });
+    await f.runner.run(NODE, GLOBE, 'release', { onCommit: fallback });
+    expect(fallback).not.toHaveBeenCalled();
+  });
+
+  it('input while still priming is queued and becomes a fast-forward right after start', async () => {
+    const g = gatedPlaceholder();
+    const r = rig({ placeholder: g.placeholder });
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    r.input();
+    r.input();
+    expect(r.posted.some((m) => m.type === 'fast-forward')).toBe(false);
+    g.release();
+    await flush();
+    const types = r.posted.map((m) => m.type);
+    expect(types.filter((t) => t === 'fast-forward')).toHaveLength(1);
+    expect(types.indexOf('fast-forward')).toBeGreaterThan(types.indexOf('start'));
+    r.emit(DONE);
+    await p;
+  });
+
+  it('input during a run that falls back is forgotten (no listener left behind)', async () => {
+    const r = rig({ awaitBefore: async () => null });
+    await r.runner.run(NODE, GLOBE);
+    r.input();
+    expect(r.posted).toEqual([]);
+  });
+
+  it('a non-fatal prime failure aborts the half-primed host and keeps the canvas', async () => {
+    const r = rig({
+      placeholder: async () => {
+        throw new Error('2d');
+      },
+    });
+    const out = await r.runner.run(NODE, GLOBE);
+    expect(out.fallback).toBe('host-error');
+    expect(r.posted.map((m) => m.type)).toContain('abort');
+    expect(r.log).not.toContain('discardCanvas');
+  });
+
+  it('a fatal prime failure discards the canvas instead', async () => {
+    const g = gatedPlaceholder();
+    const r = rig({ placeholder: g.placeholder });
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    r.emit({ type: 'error', fatal: true, message: 'gl' } as FromWorker);
+    g.release();
+    expect((await p).fallback).toBe('host-error');
+    expect(r.log).toContain('discardCanvas');
+  });
+
+  it('an AFTER bitmap whose upload throws is closed, and the run ends as a lost context', async () => {
+    const after = bitmap();
+    const r = rig({}, async () => ({
+      bitmap: after,
+      width: 1,
+      height: 1,
+      scale: 1,
+      durationMs: 1,
+    }));
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    const host = await r.deps.host.ready('mid', 1);
+    host.post = (m) => {
+      if (m.type === 'texture' && m.slot === 'after') throw new Error('worker gone');
+    };
+    r.routerIdle.resolve();
+    await flush();
+    await vi.advanceTimersByTimeAsync(300);
+    expect(after.close).toHaveBeenCalled();
+    expect(await p).toMatchObject({ fallback: null, end: 'context-lost' });
+  });
+
+  it('dispose mid-run aborts and leaves no cover class, settle attribute or overlay', async () => {
+    const r = rig();
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    r.emit({ type: 'cover' });
+    r.runner.dispose();
+    expect(await p).toMatchObject({ fallback: null, end: 'abort' });
+    expect(r.posted.map((m) => m.type)).toContain('abort');
+    expect(r.log.lastIndexOf('cover:off')).toBeGreaterThan(r.log.lastIndexOf('cover:on'));
+    expect(r.log).toContain('overlay:unmount');
+    expect(r.log).toContain('settle:off');
+    expect(r.runner.state().coverActive).toBe(false);
+  });
+
+  it('dispose while priming falls back and starts nothing', async () => {
+    const g = gatedPlaceholder();
+    const r = rig({ placeholder: g.placeholder });
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    r.runner.dispose();
+    g.release();
+    expect((await p).fallback).toBe('host-error');
+    expect(r.posted.map((m) => m.type)).not.toContain('start');
+    expect(r.log.some((l) => l.startsWith('navigate'))).toBe(false);
+  });
+
+  it('a runner that has been disposed falls back at once', async () => {
+    const r = rig();
+    r.runner.dispose();
+    expect((await r.runner.run(NODE, GLOBE)).fallback).toBe('host-error');
   });
 });

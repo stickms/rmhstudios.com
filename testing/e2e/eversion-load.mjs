@@ -25,7 +25,7 @@
 //  D. **Flag OFF changes nothing**: no eversion request at all, no mark.
 //  E. **LCP and TBT** medians over N cold loads (fresh context each run, so no
 //     HTTP cache), flag OFF — i.e. what visitors get — compared with the
-//     committed baseline JSON (`lib/baselines.mjs`; the first run writes it),
+//     committed baseline JSON (`lib/baselines.mjs`; a MISSING baseline fails; `--update-baselines` writes it),
 //     and flag ON vs flag OFF in the SAME run, which is the less noisy
 //     comparison: prefetch is post-`load`, so ON must not be worse.
 //
@@ -51,7 +51,7 @@
 // server is not reachable (nothing was asserted).
 // ─────────────────────────────────────────────────────────────────────────────
 
-/* global performance, PerformanceObserver -- referenced only inside page.evaluate() / addInitScript
+/* global performance, PerformanceObserver, Image -- referenced only inside page.evaluate() / addInitScript
    callbacks, which Playwright serialises and runs in the page. */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -197,6 +197,66 @@ async function coldLoad(browser, route, flagOn, settleMs) {
   };
 }
 
+/* ── Negative control: a page whose `load` is late ─────────────────────── */
+
+/** How long the stalled subresource holds `load` back. Comfortably past the hub's 800 ms warm. */
+const LATE_LOAD_MS = 8000;
+const SLOW_PATH = '/__late-load-probe.png';
+const PIXEL = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+  'base64',
+);
+
+/**
+ * The hub warms its runtime on an 800 ms idle/timer race. If that race were what
+ * released the effect's chunks, a page whose `load` takes longer than 800 ms would
+ * fetch them BEFORE load. This holds `load` open (an image that answers late) well
+ * past the warm and asserts: while `readyState` is not `complete` there are zero
+ * eversion requests and no prefetch mark; once load fires the chunks do arrive
+ * (so the control cannot pass by the warm-up simply being broken).
+ */
+async function lateLoadControl(browser) {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+  await context.route(`**${SLOW_PATH}`, async (route) => {
+    await new Promise((r) => setTimeout(r, LATE_LOAD_MS));
+    await route.fulfill({ status: 200, contentType: 'image/png', body: PIXEL });
+  });
+  await page.addInitScript((path) => {
+    document.addEventListener('DOMContentLoaded', () => {
+      const img = new Image();
+      img.style.display = 'none';
+      img.src = path;
+      document.head.appendChild(img);
+    });
+  }, SLOW_PATH);
+  const early = [];
+  const stamp = Date.now();
+  page.on('request', (r) => {
+    if (isEversionUrl(r.url())) early.push({ url: r.url(), at: Date.now() - stamp });
+  });
+  const url = new URL('/', `${BASE_URL}/`);
+  url.searchParams.set('eversion', '1');
+  await page.goto(url.toString(), { waitUntil: 'domcontentloaded' });
+  // Well past the 800 ms warm and past hydration, still before the image answers.
+  await page.waitForTimeout(LATE_LOAD_MS - 2500);
+  const state = await page.evaluate(() => ({
+    readyState: document.readyState,
+    prefetchMarks: performance.getEntriesByName('eversion:prefetch').length,
+  }));
+  const beforeLoad = [...early];
+  await page.waitForFunction(() => document.readyState === 'complete', null, { timeout: 30000 });
+  await page
+    .waitForFunction(() => performance.getEntriesByName('eversion:prefetch').length > 0, null, {
+      timeout: 15000,
+    })
+    .catch(() => {});
+  await page.waitForTimeout(1500);
+  const afterLoad = early.length - beforeLoad.length;
+  await context.close();
+  return { state, beforeLoad, afterLoad };
+}
+
 /* ── Run ───────────────────────────────────────────────────────────────── */
 
 let failures = 0;
@@ -303,6 +363,25 @@ async function main() {
         on: { lcp: onLcp, tbt: onTbt },
       });
     }
+
+    console.log('\n  negative control: load event delayed ' + LATE_LOAD_MS + ' ms');
+    try {
+      const late = await lateLoadControl(browser);
+      check(
+        'delayed load: the page was still loading at the checkpoint (control is live)',
+        late.state.readyState !== 'complete',
+        late.state.readyState,
+      );
+      check(
+        'delayed load: zero eversion requests before load',
+        late.beforeLoad.length === 0,
+        late.beforeLoad[0]?.url ?? '',
+      );
+      check('delayed load: no prefetch mark before load', late.state.prefetchMarks === 0);
+      check('delayed load: the chunks DO arrive once load has fired', late.afterLoad > 0);
+    } catch (error) {
+      check('delayed-load control ran', false, String(error));
+    }
   } finally {
     await browser.close();
   }
@@ -314,9 +393,17 @@ async function main() {
   }
 
   const base = loadBaseline(BASELINE);
-  if (wantsBaselineUpdate() || !base) {
+  if (wantsBaselineUpdate()) {
     const file = saveBaseline(BASELINE, current);
-    console.log(`\n  ${base ? 'refreshed' : 'no baseline committed — wrote'} ${file} (commit it)`);
+    console.log(`\n  ${base ? 'refreshed' : 'wrote'} ${file} (commit it)`);
+  } else if (!base) {
+    // A missing baseline is a FAILURE, in CI and locally alike: writing one from
+    // the very run under test would make S#40 compare a build with itself.
+    check(
+      'a committed baseline exists (testing/e2e/baselines/eversion-load.json)',
+      false,
+      'none - run once with --update-baselines on a build you trust, and commit the file',
+    );
   } else {
     console.log('\n  vs committed baseline');
     for (const [route] of ROUTES) {

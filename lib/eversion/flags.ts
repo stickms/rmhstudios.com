@@ -17,28 +17,50 @@
 export const EVERSION_ENABLED = false;
 
 /**
- * Read a query-string key off the current URL. Never throws: `location` is
- * missing on the server and in node tests, and can throw in sandboxed frames.
+ * The query overrides, read ONCE per page load.
+ *
+ * The router rewrites the URL on client navigation, dropping `?eversion`. A
+ * per-call read would therefore turn the effect off after the first in-app
+ * navigation (and the hub's bridge, built while it was on, would be left with an
+ * ineligible controller). So the first call that can see a readable `location`
+ * latches the answer for the life of the page. A call with no `location` (the
+ * server, node tests) latches nothing, so SSR never poisons the client's read.
  */
-function hasQueryKey(key: string): boolean {
+interface QueryFlags {
+  eversion: boolean;
+  debug: boolean;
+}
+
+let latched: QueryFlags | null = null;
+
+/** Test-only: forget the latch so a test can stub a different `location`. */
+export function resetEversionFlagsForTests(): void {
+  latched = null;
+}
+
+function queryFlags(): QueryFlags {
+  if (latched) return latched;
   try {
-    if (typeof location === 'undefined') return false;
-    return new URLSearchParams(location.search).has(key);
+    if (typeof location === 'undefined') return { eversion: false, debug: false };
+    const params = new URLSearchParams(location.search);
+    latched = { eversion: params.has('eversion'), debug: params.has('eversion-debug') };
+    return latched;
   } catch {
-    return false;
+    return { eversion: false, debug: false };
   }
 }
 
 /**
  * Whether the eversion may run this page-load: the production flag, or the
- * `?eversion` override. `false` on the server and whenever `location` throws.
+ * `?eversion` override (latched at first read, see above). `false` on the server
+ * and whenever `location` throws.
  *
  * This answers only "is the feature on". Whether a particular navigation is
  * ELIGIBLE (reduced motion, WebGL2, capture ready) is the controller's
  * `isEligible()`.
  */
 export function isEversionEnabled(): boolean {
-  return EVERSION_ENABLED || hasQueryKey('eversion');
+  return EVERSION_ENABLED || queryFlags().eversion;
 }
 
 /**
@@ -47,5 +69,5 @@ export function isEversionEnabled(): boolean {
  * so it appears in no static closure.
  */
 export function isEversionDebugEnabled(): boolean {
-  return hasQueryKey('eversion-debug');
+  return queryFlags().debug;
 }

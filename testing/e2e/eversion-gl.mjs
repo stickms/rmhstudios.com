@@ -47,6 +47,9 @@ const T27_ONLY = process.env.EVERSION_GL_ONLY === 't27';
 const TOL_TARGET = 1e-4;
 const TOL_HARD = 1e-3;
 const NORMAL_HARD_DEG = 1.5;
+/** Floors on executed checks (see the end of the file); 86 measured on a Chromium-only run (Firefox and WebKit absent). */
+const MIN_CHECKS_FULL = 80;
+const MIN_CHECKS_T27 = 10;
 
 function chromiumPath() {
   if (process.env.CHROMIUM_PATH) return process.env.CHROMIUM_PATH;
@@ -64,7 +67,9 @@ function chromiumPath() {
 }
 
 let failures = 0;
+let executed = 0;
 function check(name, ok, detail = '') {
+  executed++;
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? `  (${detail})` : ''}`);
   if (!ok) failures++;
 }
@@ -437,6 +442,14 @@ try {
   check('no console errors or warnings', realErrors.length === 0, realErrors.slice(0, 3).join(' | '));
 } finally {
   await browser.close();
+}
+
+// A run that skipped its way to green has compared nothing. Firefox and WebKit may be absent (their SKIP
+// lines are explicit and expected), but the Chromium sections are not optional: require a floor on the number
+// of checks that actually ran.
+const MIN_CHECKS = T27_ONLY ? MIN_CHECKS_T27 : MIN_CHECKS_FULL;
+if (executed < MIN_CHECKS) {
+  check(`at least ${MIN_CHECKS} checks executed`, false, `only ${executed} ran - sections were skipped`);
 }
 
 console.log(failures === 0 ? '\nall eversion GL checks passed' : `\n${failures} check(s) FAILED`);

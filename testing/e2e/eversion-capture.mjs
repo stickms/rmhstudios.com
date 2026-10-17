@@ -904,6 +904,34 @@ async function behaviours(browser) {
   await context.close();
 }
 
+/* ── Nothing may pass by not running ─────────────────────────────────────── */
+
+/** Behaviour checks that must each have produced a row (exclusion, hub-open, cover, lifecycle, debug-slot). */
+const REQUIRED_CHECKS = ['exclusion', 'hub-open', 'cover', 'lifecycle', 'debug-slot'];
+
+/**
+ * A skipped check is not a passed check. The fidelity matrix and the behaviour checks
+ * both `note` and move on when a precondition is missing (page not scrollable, no orb,
+ * hub never opened); that is right for a developer iterating, wrong for a gate that
+ * could then go green having compared nothing. So: every unscrolled profile x theme x
+ * route cell must have produced a measured row, every required behaviour check must
+ * have a row, and a note that says a check was skipped is a failure.
+ */
+function assertExecuted() {
+  const measured = rows.filter((r) => r.route && Number.isFinite(r.ssim));
+  const unscrolled = measured.filter((r) => !r.route.endsWith('@scroll'));
+  const expected = profiles.length * themes.length * routes.length;
+  if (unscrolled.length < expected) {
+    fail(`only ${unscrolled.length} of ${expected} fidelity cells were measured`);
+  }
+  if (!flag('no-behaviours')) {
+    for (const name of REQUIRED_CHECKS) {
+      if (!rows.some((r) => r.check === name)) fail(`behaviour check "${name}" did not run`);
+    }
+    for (const n of notes) if (/check skipped/.test(n)) fail(`skipped: ${n}`);
+  }
+}
+
 /* ── Report ──────────────────────────────────────────────────────────────── */
 
 function report() {
@@ -978,5 +1006,6 @@ try {
 } finally {
   await browser.close();
 }
+assertExecuted();
 report();
 process.exit(failures.length ? 1 : 0);

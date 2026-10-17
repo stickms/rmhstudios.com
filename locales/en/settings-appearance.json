@@ -27,6 +27,7 @@
   "nav-transition-random": "Random",
   "nav-transition-random-desc": "A different map each time, never the same twice in a row.",
   "nav-transition-reduced-hint": "Reduced motion is on, so pages change with a simple fade instead.",
+  "nav-transition-reduced-off": "Reduced motion is on, so this transition is switched off and pages change as usual.",
   "nav-transition-stereographic": "Stereographic",
   "nav-transition-stereographic-desc": "The globe flattens from one pole outward into a disc.",
   "readable-font": "Readable font",

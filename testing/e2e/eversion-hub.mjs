@@ -198,6 +198,20 @@ async function entryScenario(entry) {
     check(name, after.path === '/games', `landed on ${after.path}`);
     check(name, !after.overlay && !after.cover && !after.settle, `leftovers: ${JSON.stringify(after)}`);
     check(name, after.orbVisible === '1' && after.orbTab === 0, `orb ${JSON.stringify(after)}`);
+    // S#25: focus is where the router leaves it for any navigation - in the new
+    // page's `main`, or on the body (the router's default) - and never stranded on
+    // the hub, a pin, or the overlay. Read before this script moves focus itself.
+    const focus = await s.page.evaluate(() => {
+      const a = document.activeElement;
+      return {
+        tag: a?.tagName ?? null,
+        inMain: !!a?.closest?.('main'),
+        onBody: a === document.body || a === document.documentElement,
+        inHub: !!a?.closest?.('.radial-hub, .eversion-overlay'),
+      };
+    });
+    check(name, !focus.inHub, `focus left inside the hub/overlay: ${JSON.stringify(focus)}`);
+    check(name, focus.inMain || focus.onBody, `focus is neither in main nor on body: ${JSON.stringify(focus)}`);
     await s.page.focus('.radial-hub__orb');
     check(
       name,

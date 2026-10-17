@@ -11,6 +11,7 @@ import { isEversionEnabled } from '@/lib/eversion/flags';
 import { detectHostMode } from '@/lib/eversion/gl/host';
 import { isEversionReady } from '@/lib/eversion/prefetch';
 import type { CaptureApi, FallbackReason } from '@/lib/eversion/types';
+import { detectTier } from './detect-tier';
 
 /**
  * Read the live eligibility inputs. Each reader is individually guarded: a
@@ -90,6 +91,13 @@ export function useBeforeCapture({
     const scheduler = new BeforeCaptureScheduler({
       createCapture,
       motionMs,
+      tier: () => {
+        try {
+          return detectTier();
+        } catch {
+          return undefined;
+        }
+      },
       shouldCapture: () => shouldCaptureBefore(readEligibilityInputs()),
     });
     schedulerRef.current = scheduler;

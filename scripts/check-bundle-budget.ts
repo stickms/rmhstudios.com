@@ -257,19 +257,28 @@ export const EVERSION_RUNTIME_MODULES: ReadonlyArray<{
     fragment: 'lib/eversion/gl/worker',
     fingerprint: 'eversion: requestAnimationFrame is not available in this worker',
   },
-  { fragment: 'lib/eversion/gl/shaders' },
-  { fragment: 'lib/eversion/gl/stub-shaders' },
-  { fragment: 'lib/eversion/gl/uniforms' },
+  {
+    fragment: 'lib/eversion/gl/shaders',
+    fingerprint: 'vec3 evertNormal(float theta, float phi, Frame fr)',
+  },
+  {
+    fragment: 'lib/eversion/gl/stub-shaders',
+    fingerprint: 'return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);',
+  },
+  { fragment: 'lib/eversion/gl/uniforms', fingerprint: 'snapshot.ripple0Age, snapshot.ripple1Age' },
   { fragment: 'lib/eversion/gl/governor-tiers' },
-  { fragment: 'lib/eversion/capture' },
-  { fragment: 'lib/eversion/projection-lut' },
+  { fragment: 'lib/eversion/capture', fingerprint: 'eversion: capture sandbox did not load' },
+  { fragment: 'lib/eversion/projection-lut', fingerprint: 'toHalfFloatSplit: dst length mismatch' },
   { fragment: 'lib/eversion/thurston' },
   { fragment: 'lib/eversion/timeline' },
-  { fragment: 'lib/eversion/prefetch' },
+  { fragment: 'lib/eversion/prefetch', fingerprint: 'eversion: prefetch failed' },
   { fragment: 'lib/eversion/debug-overlay', fingerprint: 'eversion debug' },
-  { fragment: 'node_modules/modern-screenshot' },
-  { fragment: 'components/radial/eversion/useEversionController' },
-  { fragment: 'components/radial/eversion/EversionBridge' },
+  {
+    fragment: 'node_modules/modern-screenshot',
+    fingerprint: 'Error receiving message from worker',
+  },
+  { fragment: 'components/radial/eversion/useEversionController', fingerprint: 'eversion-preview' },
+  { fragment: 'components/radial/eversion/EversionBridge', fingerprint: 'rmh-eversion-bridge' },
 ];
 
 export interface EversionLeak {

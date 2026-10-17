@@ -50,6 +50,10 @@ export interface EversionBridgeProps {
   onController: (controller: EversionControllerHandle | null) => void;
 }
 
+/**
+ * `displayName` is also this module's build fingerprint: `check-bundle-budget`
+ * looks for it in the shell's static closure on builds without sourcemaps.
+ */
 export default function EversionBridge({ open, motionMs, onController }: EversionBridgeProps) {
   const { t } = useTranslation('feed');
   const router = useRouter();
@@ -97,3 +101,5 @@ export default function EversionBridge({ open, motionMs, onController }: Eversio
 
   return <EversionOverlay />;
 }
+
+EversionBridge.displayName = 'rmh-eversion-bridge';

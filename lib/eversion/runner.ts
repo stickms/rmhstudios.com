@@ -211,6 +211,14 @@ export interface RunOptions {
    * it takes the capture on demand.
    */
   before?: (graceMs: number) => Promise<ImageBitmap | null>;
+  /**
+   * Called synchronously at the point of no return, in the same task as `start`
+   * and `navigate`. Before it a `fallback` outcome is still possible and the
+   * caller's UI should be left exactly as it was; from it on the run owns the
+   * screen. The hub flips to its `everting` look here, so a fallback never has
+   * to undo one.
+   */
+  onCommit?: () => void;
 }
 
 export class EversionRunner {
@@ -220,6 +228,10 @@ export class EversionRunner {
   private afterReady = false;
   /** Posts to the host of the run in flight; `null` between runs. */
   private abortRun: (() => void) | null = null;
+  /** Ends the run in flight at once, whatever it is doing; `null` between runs. */
+  private forceEnd: (() => void) | null = null;
+  /** `dispose()` was called: a run still priming falls back instead of starting. */
+  private disposed = false;
 
   constructor(private readonly deps: RunnerDeps) {}
 
@@ -235,6 +247,17 @@ export class EversionRunner {
   /** Hurry the run in flight (back/forward, T33): fast-forward with the gate skipped. */
   abort(): void {
     this.abortRun?.();
+  }
+
+  /**
+   * The owner is going away (the hub's shell unmounted). A run still priming
+   * falls back; a run in flight is aborted and torn down NOW - cover class,
+   * settle attribute and overlay included - because nothing will be left to
+   * finish it. Terminal: a runner is built per controller.
+   */
+  dispose(): void {
+    this.disposed = true;
+    this.forceEnd?.();
   }
 
   private fallback(reason: FallbackReason, detail?: Partial<EversionMarkDetails['fallback']>) {
@@ -255,6 +278,7 @@ export class EversionRunner {
     const { deps } = this;
     if (this.phase !== 'idle' && this.phase !== 'done') return this.fallback('host-error');
 
+    if (this.disposed) return this.fallback('host-error');
     const ineligible = deps.ineligibleReason();
     if (ineligible) return this.fallback(ineligible);
 
@@ -263,6 +287,19 @@ export class EversionRunner {
     this.afterReady = false;
     const href = node.href;
 
+    // Input before `start` is not dropped: a press while the run is still
+    // priming (waiting on BEFORE, the host, the placeholder) is a fast-forward
+    // the visitor asked for, so it is remembered and posted the moment the
+    // render side can take it.
+    let queuedInput = false;
+    let offEarlyInput: (() => void) | null = deps.page.onInput(() => {
+      queuedInput = true;
+    });
+    const dropEarlyInput = () => {
+      offEarlyInput?.();
+      offEarlyInput = null;
+    };
+
     /* ── Everything that can still fall back ──────────────────────────────── */
 
     let before: ImageBitmap | null;
@@ -270,10 +307,18 @@ export class EversionRunner {
     try {
       before = await (options.before ?? deps.awaitBefore)(BEFORE_GRACE_MS);
     } catch {
+      dropEarlyInput();
       this.phase = 'idle';
       return this.fallback('before-failed');
     }
+    if (this.disposed) {
+      before?.close?.();
+      dropEarlyInput();
+      this.phase = 'idle';
+      return this.fallback('host-error');
+    }
     if (!before) {
+      dropEarlyInput();
       this.phase = 'idle';
       return this.fallback(
         deps.now() - waitStarted >= BEFORE_GRACE_MS * 0.9 ? 'before-timeout' : 'before-missing',
@@ -288,6 +333,13 @@ export class EversionRunner {
       await withTimeout(deps.overlay.mount(), OVERLAY_MOUNT_TIMEOUT_MS, 'overlay mount');
     } catch {
       before.close?.();
+      dropEarlyInput();
+      this.cleanupFailedPrime();
+      return this.fallback('host-error');
+    }
+    if (this.disposed) {
+      before.close?.();
+      dropEarlyInput();
       this.cleanupFailedPrime();
       return this.fallback('host-error');
     }
@@ -317,6 +369,8 @@ export class EversionRunner {
     let t0 = 0;
     let revealing = false;
     let aborted = false;
+    // Bitmaps this run holds and has not yet handed to the render side (the AFTER
+    // one, between capture and a successful post). Teardown closes whatever is left.
     const ownedBitmaps = new Set<ImageBitmap>();
     let ownCapture: CaptureApi | null = null;
 
@@ -337,6 +391,7 @@ export class EversionRunner {
       if (ended) return;
       ended = true;
       this.abortRun = null;
+      this.forceEnd = null;
       for (const off of listeners.splice(0)) off();
       this.setCover(false);
       deps.page.setSettle(false);
@@ -431,9 +486,34 @@ export class EversionRunner {
     } catch {
       before?.close?.();
       placeholder?.close?.();
+      dropEarlyInput();
       for (const off of listeners.splice(0)) off();
       deps.overlay.unmount();
-      deps.host.discardCanvas();
+      if (fatal) {
+        // The render side said its context is gone: the canvas cannot be reused.
+        deps.host.discardCanvas();
+      } else {
+        // The host is fine (a post threw, the placeholder failed): do not orphan the
+        // worker's half-primed run on a canvas we are about to forget. Tell it to
+        // stop, and keep the canvas and its compiled programs for the next run.
+        try {
+          host.post({ type: 'abort' });
+        } catch {
+          deps.host.discardCanvas();
+        }
+      }
+      this.phase = 'idle';
+      return this.fallback('host-error');
+    }
+    if (this.disposed) {
+      dropEarlyInput();
+      for (const off of listeners.splice(0)) off();
+      deps.overlay.unmount();
+      try {
+        host.post({ type: 'abort' });
+      } catch {
+        deps.host.discardCanvas();
+      }
       this.phase = 'idle';
       return this.fallback('host-error');
     }
@@ -446,19 +526,37 @@ export class EversionRunner {
       gateReason = 'abort';
       post({ type: 'abort' });
     };
-    listeners.push(
-      deps.page.onInput(() => {
-        // Once the unwrap has finished only POP is left, and a fast-forward during
-        // POP is ignored (spec 7.6); so is a second one.
-        if (ended || fastForwarded || revealing) return;
-        fastForwarded = true;
-        post({ type: 'fast-forward' });
-      }),
-    );
+    this.forceEnd = () => {
+      if (ended) return;
+      if (started) {
+        try {
+          host.post({ type: 'abort' });
+        } catch {
+          /* torn down regardless */
+        }
+        // The render side may still be running on this canvas; do not reuse it.
+        deps.host.discardCanvas();
+      }
+      teardown('abort');
+    };
+    const fastForward = () => {
+      // Once the unwrap has finished only POP is left, and a fast-forward during
+      // POP is ignored (spec 7.6); so is a second one.
+      if (ended || fastForwarded || revealing) return;
+      fastForwarded = true;
+      post({ type: 'fast-forward' });
+    };
+    dropEarlyInput();
+    listeners.push(deps.page.onInput(fastForward));
     // Browser back/forward and a resize or rotation belong to the visitor, not to
     // this run (spec 9.4): hurry the run, and tell the render side the new viewport.
     listeners.push(deps.router.onTraversal(() => this.abort()));
-    listeners.push(deps.page.onResize((viewport) => post({ type: 'resize', viewport })));
+    listeners.push(
+      deps.page.onResize((viewport) =>
+        // The orb moves with the viewport (it is pinned to a corner), and POP targets it.
+        post({ type: 'resize', viewport, orb: deps.page.orbRect(viewport) }),
+      ),
+    );
     t0 = deps.now();
     started = true;
     this.phase = 'running';
@@ -471,6 +569,12 @@ export class EversionRunner {
       entry,
     });
     post({ type: 'start', t0 });
+    if (queuedInput) fastForward();
+    try {
+      options.onCommit?.();
+    } catch {
+      /* the caller's UI hook must never break the run */
+    }
     try {
       const navigated = deps.router.navigate(href);
       if (navigated) navigated.catch(() => {});
@@ -525,7 +629,11 @@ export class EversionRunner {
         gateReason = 'after-ready';
         afterSent = true;
         this.afterReady = true;
+        // Owned until the post succeeds: if it throws, `post` ends the run and
+        // teardown closes it (a transferred bitmap is detached, so a close is harmless).
+        ownedBitmaps.add(result.bitmap);
         post({ type: 'texture', slot: 'after', bitmap: result.bitmap });
+        ownedBitmaps.delete(result.bitmap);
       } catch {
         if (ended || afterSent || aborted) return;
         gateReason = 'after-failed';

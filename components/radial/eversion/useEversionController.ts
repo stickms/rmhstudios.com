@@ -8,7 +8,6 @@ import { createCapture } from '@/lib/eversion/capture';
 import { registerDebug, maybeLoadEversionDebug } from '@/lib/eversion/debug';
 import { isEversionEnabled } from '@/lib/eversion/flags';
 import { getEversionHost } from '@/lib/eversion/gl/host';
-import { pickTier } from '@/lib/eversion/gl/governor-tiers';
 import { resolveProjection } from '@/lib/eversion/random';
 import { EVERSION_MARKS } from '@/lib/eversion/marks';
 import type { EntryPoint } from '@/lib/eversion/marks';
@@ -19,6 +18,7 @@ import type {
   PagePort,
   RouterPort,
   RunnerDeps,
+  RunOptions,
 } from '@/lib/eversion/runner';
 import {
   BEFORE_GRACE_MS,
@@ -43,7 +43,6 @@ import type {
   TranslateFn,
   Viewport,
 } from '@/lib/eversion/types';
-import { isPerfLite } from '@/lib/perf-tier';
 import { useThemeStore } from '@/stores/themeStore';
 import {
   discardCanvas,
@@ -52,6 +51,7 @@ import {
   mountOverlay,
   unmountOverlay,
 } from './overlay-store';
+import { detectTier } from './detect-tier';
 import type { UseBeforeCapture } from './useBeforeCapture';
 
 /**
@@ -213,17 +213,6 @@ const IDLE_DELAY_MS = 700;
 
 function viewportNow(): Viewport {
   return { w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio || 1 };
-}
-
-function detectTier(): Tier {
-  const mobile = window.matchMedia?.('(pointer: coarse) and (max-width: 900px)').matches ?? false;
-  const nav = navigator as Navigator & { deviceMemory?: number };
-  const strong = (nav.hardwareConcurrency ?? 4) >= 8 && (nav.deviceMemory ?? 8) >= 8;
-  return pickTier({
-    renderTier: strong ? 'high' : 'medium',
-    perfLite: isPerfLite(),
-    isMobile: mobile,
-  });
 }
 
 function timeoutPromise(ms: number): Promise<void> {
@@ -505,7 +494,12 @@ function createHostPort(): HostPort & {
 
 export interface EversionControllerHandle extends EversionController {
   /** `start` with the entry point recorded on the `start` mark (S#25). */
-  start(node: EversionNode, state: GlobeStartState, entry?: EntryPoint): Promise<EversionOutcome>;
+  start(
+    node: EversionNode,
+    state: GlobeStartState,
+    entry?: EntryPoint,
+    options?: Pick<RunOptions, 'onCommit'>,
+  ): Promise<EversionOutcome>;
   /** Hurry the run in flight: back/forward (T33). */
   abort(): void;
   /**
@@ -648,7 +642,7 @@ export function createEversionController(
       cancelPrep();
     },
 
-    start: (node, state, entry) => runner.run(node, state, entry),
+    start: (node, state, entry, options) => runner.run(node, state, entry, options),
 
     warmHost: () => hostPort.whenReady(detectTier()),
 
@@ -680,7 +674,9 @@ export function createEversionController(
     state: () => runner.state(),
     dispose() {
       cancelPrep();
-      runner.abort();
+      // Ends a run in flight outright (cover class, settle attribute, overlay) and
+      // makes one still priming fall back: nothing is left to finish it.
+      runner.dispose();
       for (const c of ownCaptures.splice(0)) c.dispose();
       ownCaptures = [];
     },

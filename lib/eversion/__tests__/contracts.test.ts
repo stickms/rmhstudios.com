@@ -1,11 +1,16 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 
 import * as constants from '../constants';
 import { registerDebug } from '../debug';
 import { SPIN_AXIS, THETA_MAX, THETA_MIN, spherePoint, wrapTheta } from '../domain';
-import { isEversionDebugEnabled, isEversionEnabled, EVERSION_ENABLED } from '../flags';
+import {
+  isEversionDebugEnabled,
+  isEversionEnabled,
+  EVERSION_ENABLED,
+  resetEversionFlagsForTests,
+} from '../flags';
 import { EVERSION_MARKS, EVERSION_MEASURES } from '../marks';
 import { PROJECTIONS, forwardUV, getProjection, inverseThetaPhi } from '../projections';
 import { copySnapshot, createSnapshot } from '../snapshot';
@@ -517,8 +522,27 @@ describe('marks', () => {
 });
 
 describe('isEversionEnabled (T39 rollout switch)', () => {
+  beforeEach(() => {
+    resetEversionFlagsForTests();
+  });
   afterEach(() => {
     vi.unstubAllGlobals();
+    resetEversionFlagsForTests();
+  });
+
+  it('latches ?eversion for the page load, so client navigation does not turn it off', () => {
+    vi.stubGlobal('location', { search: '?eversion&eversion-debug=1' });
+    expect(isEversionEnabled()).toBe(true);
+    vi.stubGlobal('location', { search: '' });
+    expect(isEversionEnabled()).toBe(true);
+    expect(isEversionDebugEnabled()).toBe(true);
+  });
+
+  it('does not latch a read made with no location (SSR)', () => {
+    vi.stubGlobal('location', undefined);
+    expect(isEversionEnabled()).toBe(false);
+    vi.stubGlobal('location', { search: '?eversion' });
+    expect(isEversionEnabled()).toBe(true);
   });
 
   it('is off by default', () => {
@@ -535,9 +559,11 @@ describe('isEversionEnabled (T39 rollout switch)', () => {
   it('turns on with ?eversion, whatever else is in the query', () => {
     vi.stubGlobal('location', { search: '?eversion' });
     expect(isEversionEnabled()).toBe(true);
+    resetEversionFlagsForTests();
     vi.stubGlobal('location', { search: '?a=1&eversion=1' });
     expect(isEversionEnabled()).toBe(true);
     // The debug flag is a different key and does not enable the effect.
+    resetEversionFlagsForTests();
     vi.stubGlobal('location', { search: '?eversion-debug=1' });
     expect(isEversionEnabled()).toBe(false);
     expect(isEversionDebugEnabled()).toBe(true);
@@ -560,8 +586,12 @@ describe('isEversionEnabled (T39 rollout switch)', () => {
 });
 
 describe('registerDebug', () => {
+  beforeEach(() => {
+    resetEversionFlagsForTests();
+  });
   afterEach(() => {
     vi.unstubAllGlobals();
+    resetEversionFlagsForTests();
   });
 
   it('is a no-op without the flag and without a window', () => {

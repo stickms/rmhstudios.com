@@ -1,7 +1,8 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 
+import { resetEversionFlagsForTests } from '../flags';
 import { maybeLoadEversionDebug, mountDebugOverlay, onDebugChange, registerDebug } from '../debug';
 
 /**
@@ -89,7 +90,11 @@ describe('debug surface is in no static closure', () => {
 });
 
 describe('loader without the flag', () => {
-  afterEach(() => vi.unstubAllGlobals());
+  beforeEach(() => resetEversionFlagsForTests());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    resetEversionFlagsForTests();
+  });
 
   it('does nothing and leaves window.__eversion undefined', () => {
     const win: { __eversion?: unknown } = {};
@@ -114,7 +119,11 @@ describe('loader without the flag', () => {
 });
 
 describe('registry notifications', () => {
-  afterEach(() => vi.unstubAllGlobals());
+  beforeEach(() => resetEversionFlagsForTests());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    resetEversionFlagsForTests();
+  });
 
   it('tells listeners when a slot is registered and removed, and stops after unsubscribe', () => {
     const win: { __eversion?: { slots(): string[] } } = {};
