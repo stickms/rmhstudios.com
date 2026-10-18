@@ -182,7 +182,7 @@ export function FilterChips({ search, onUpdate, showPersonalPresets = false }: F
           <option value="relevance">{t('ladder.relevance', { defaultValue: 'Relevance' })}</option>
           <option value="posted">{t('ladder.posted', { defaultValue: 'Posted' })}</option>
           <option value="deadline">{t('ladder.deadline', { defaultValue: 'Deadline' })}</option>
-          {search.sort === 'pay' && <option value="pay">Pay</option>}
+          {search.sort === 'pay' && <option value="pay">{t('ladder.pay', { defaultValue: 'Pay' })}</option>}
         </Select>
       </div>
       <PayFilter search={search} onUpdate={onUpdate} />

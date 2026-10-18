@@ -353,3 +353,62 @@ Each template is the algorithm, not the feature. To ship one:
    in `docs/testing.md`: money moves, saved data, private state, auth or
    leaderboard integrity, service health. The four templates already tested
    meet it. The rest likely will once they're wired to coins or leaderboards.
+
+## §4 — Implementation status (2026-10-18)
+
+All 170 ideas were built in 27 packages, one branch each, and merged with the
+repo gates green after every merge: 26 additive migrations, one `f-*` i18n
+namespace per package (English-only until the translate pipeline runs), and
+main's globe eversion merged in and kept as-is.
+
+**Verification on the final head.** Every migration replays onto an empty
+database with no schema drift. `pnpm test`: 388 files, 8,848 tests pass.
+`pnpm check:consistency` passes. The production build passes the bundle budget
+and entry-composition gates.
+
+**Performance.** The critical path, compressed, went from 274.6 KB to 285.9 KB
+(+4%), with 18.6% budget headroom left. The eversion stays off the critical
+path (S#39: 0 modules). Third-party packages in the entry are back at baseline.
+The growth is structural: the generated route tree imports every route module,
+so roughly 200 new routes add about 0.5–0.9 KB each, and the global mounts
+(access, delight, patch notes) add about 1–3.5 KB each. One real leak, the
+wallet page pulled in via a route's `validateSearch`, was found and fixed.
+Feed-adjacent UI (QOTD, the fortune cookie) sits below the fold so nothing
+shifts layout. Floating UI is excluded from the eversion's page capture
+(`data-floating="feature-overlay"`).
+
+**Partial or skipped**, with the reason the code base gave:
+
+- **F16 RMHdle custom words: skipped.** RMHdle is Discord-only; there is no web
+  game or dictionary.
+- **P1 Top Four:** games and apps only; library items are private.
+- **P8 endorsements:** unweighted; there is no skill-to-work data.
+- **N7 contributors:** there is no helpful/accepted-reply signal.
+- **A3 /today:** no records or tournament results section.
+- **A7 watch:** leaderboards and library items skipped; there is no single
+  change event.
+- **E1 daily mutator:** only 2 games accept a client seed.
+- **E9 handicaps:** Void Breaker only.
+- **S6 link warnings:** posts and comments only.
+- **Y5 24h clock:** time formatting is not centralised, so it is not applied
+  site-wide.
+- **Y6 captions:** no trailers exist; settings plus a local `.vtt` loader on
+  album video only.
+- **R5 livery:** local only; multiplayer state has no cosmetic field.
+- **R19 NG+:** the game has no ghosts, so chips and lasers are remixed instead.
+- **R20 codex:** the lore text is newly written and needs a human read.
+- **R21 trick of the week:** Nightrail has no replays, so the entry is a trick
+  chain plus score.
+- **E3 phone controller:** Dream Rift only.
+
+**Needs a human before launch.**
+
+- Look at every new surface in the three themes on a phone and on a desktop;
+  nothing was clicked through in a browser.
+- Run the socket-server hub and pg-boss jobs against real traffic.
+- Review the legal summaries (Y7) and the Altair codex text.
+- If `direct_message`/`group_message` are large, build the messaging indexes
+  CONCURRENTLY out of band (see that migration's header).
+- Redeploy the hubs for radio, live jam, slow mode, controller and bingo.
+- Several game scores in the new modes are client-reported with plausibility
+  checks only.

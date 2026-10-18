@@ -595,6 +595,8 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'guestbook-tab',
   ],
   site: [
+    // Feature batch (2026-10-12) — English-only until the translate pipeline runs.
+    'ladder.pay',
     // UI minimalism audit (2026-10-09): one-line descriptions for the two 3D
     // showcases now listed on the /services hub. Same pipeline caveat.
     'services-cars-desc',
