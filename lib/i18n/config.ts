@@ -76,6 +76,7 @@ export const NAMESPACES = [
   // Feature-ideas namespaces (docs/plans/2026-10-12-feature-ideas-every-surface.md),
   // one per line so parallel additions merge cleanly.
   "f-action",
+  "f-async-games",
   "f-party",
   "f-canvas",
   "f-creative",

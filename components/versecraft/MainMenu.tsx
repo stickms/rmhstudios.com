@@ -7,6 +7,7 @@ import { useGameStore } from '@/lib/versecraft/store';
 import { loadGame } from '@/lib/versecraft/persistence';
 import { spriteUrl } from '@/lib/versecraft/sprites/registry';
 import { ShareSeed } from './ShareSeed';
+import { PublishSeedButton } from './SeedGallery';
 import { GeneratingState } from './GeneratingState';
 
 const FLOATING_WORDS = [
@@ -154,7 +155,7 @@ export function MainMenu() {
                   <button onClick={() => setScreen('cast')} className="rounded-lg px-4 py-2.5 text-sm active:scale-95 transition-transform"
                     style={{ backgroundColor: 'rgba(42,34,53,0.7)', border: '1px solid rgba(196,163,90,0.2)', color: '#e8e0d0' }}>♥ Cast</button>
                 </div>
-                <div className="mt-2 flex justify-center"><ShareSeed seed={world.seed} compact /></div>
+                <div className="mt-2 flex items-center justify-center gap-2"><ShareSeed seed={world.seed} compact /><PublishSeedButton seed={world.seed} /></div>
               </motion.div>
             )}
           </AnimatePresence>

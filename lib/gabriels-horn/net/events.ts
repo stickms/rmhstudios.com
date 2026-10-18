@@ -26,6 +26,8 @@
 import type { Card, CardColor, CardEffect, Phase } from '../constants';
 import type { HouseRules, RuleChange } from '../house-rules';
 
+import type { TableReadRow } from '../table-read';
+
 export const ROOM_PREFIX = 'gh:';
 
 /** Client → server. Every one of these has a rule in `socket-server/config.ts`. */
@@ -260,6 +262,8 @@ export interface GameResults {
   rounds: number;
   /** The table emptied out mid-game rather than reaching a called End. */
   abandoned: boolean;
+  /** R11: what each seat did this game, for the post-game table read. */
+  tableRead?: TableReadRow[];
 }
 
 // ─── Chat ───────────────────────────────────────────────────────────────────

@@ -415,6 +415,13 @@ export class App {
         if (!opts.story) this._mission.onEvent = null;
         this._mission.startSession();
 
+        // R12: the React contract dock listens for the sim and hands us routes to attempt.
+        if (!this._onTakeContract) {
+            this._onTakeContract = (e) => { if (this._mission) this._mission.setContract(e.detail); };
+            window.addEventListener('velum2099:take-contract', this._onTakeContract);
+        }
+        window.dispatchEvent(new CustomEvent('velum2099:sim', { detail: { active: !opts.story } }));
+
         // ── Laser cannon ──
         if (!this._weapon) {
             this._weapon = new Weapon(this.scene, this.vehicle, this._mission, {
@@ -707,8 +714,10 @@ export class App {
         if (this._mission) {
             this._mission.setStoryMode(false);
             this._mission.onEvent = null;
+            this._mission.setContract(null);
             this._mission.suspend();
         }
+        window.dispatchEvent(new CustomEvent('velum2099:sim', { detail: { active: false } }));
         if (this._gameHud) this._gameHud.hide();
         if (this._minimap) this._minimap.hide();
         if (this._mobileControls) this._mobileControls.hide();
@@ -926,6 +935,10 @@ export class App {
 
         // Clean up gameplay systems
         if (this._weapon) { this._weapon.dispose(); this._weapon = null; }
+        if (this._onTakeContract) {
+            window.removeEventListener('velum2099:take-contract', this._onTakeContract);
+            this._onTakeContract = null;
+        }
         if (this._mission) { this._mission.dispose(); this._mission = null; }
         if (this._gameHud) { this._gameHud.dispose(); this._gameHud = null; }
         if (this._minimap) { this._minimap.dispose(); this._minimap = null; }

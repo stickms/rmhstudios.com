@@ -323,7 +323,11 @@ function bankCombo(state: RunState): void {
   }
   const points = Math.round(combo.pending * combo.multiplier);
   state.score += points;
-  state.stats.bestCombo = Math.max(state.stats.bestCombo, points);
+  if (points > state.stats.bestCombo) {
+    state.stats.bestCombo = points;
+    state.stats.bestComboChain = [...combo.chain];
+    state.stats.bestComboMultiplier = combo.multiplier;
+  }
   state.events.push({ type: 'combo', points, multiplier: combo.multiplier });
   addPopup(state, `+${points.toLocaleString()}`, '#7dd3fc', Math.min(3, combo.multiplier / 4));
   combo.pending = 0;

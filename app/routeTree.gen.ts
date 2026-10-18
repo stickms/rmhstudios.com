@@ -485,6 +485,7 @@ import { Route as ApiFriendlyIndexRouteImport } from './routes/api/friendly/inde
 import { Route as ApiFriendlyIdRouteImport } from './routes/api/friendly/$id'
 import { Route as ApiGabrielsHornHouseRuleRouteImport } from './routes/api/gabriels-horn/house-rule'
 import { Route as ApiGabrielsHornLeaderboardRouteImport } from './routes/api/gabriels-horn/leaderboard'
+import { Route as ApiGabrielsHornTableReadRouteImport } from './routes/api/gabriels-horn/table-read'
 import { Route as ApiGameNightIndexRouteImport } from './routes/api/game-night/index'
 import { Route as ApiGameSavesGameIdRouteImport } from './routes/api/game-saves/$gameId'
 import { Route as ApiGamesHowToPlayRouteImport } from './routes/api/games/how-to-play'
@@ -744,6 +745,7 @@ import { Route as ApiV1PostsRouteImport } from './routes/api/v1/posts'
 import { Route as ApiV1WebhooksRouteImport } from './routes/api/v1/webhooks'
 import { Route as ApiVegaLeaderboardRouteImport } from './routes/api/vega/leaderboard'
 import { Route as ApiVegaScoreRouteImport } from './routes/api/vega/score'
+import { Route as ApiVelum2099ContractsRouteImport } from './routes/api/velum2099/contracts'
 import { Route as ApiVersecraftChapterRouteImport } from './routes/api/versecraft/chapter'
 import { Route as ApiVersecraftOutlineRouteImport } from './routes/api/versecraft/outline'
 import { Route as ApiVersecraftProgressRouteImport } from './routes/api/versecraft/progress'
@@ -945,6 +947,8 @@ import { Route as ApiListsIdFeedRouteImport } from './routes/api/lists/$id.feed'
 import { Route as ApiListsIdMembersRouteImport } from './routes/api/lists/$id.members'
 import { Route as ApiMarathonListsSharedShareIdRouteImport } from './routes/api/marathon-lists/shared/$shareId'
 import { Route as ApiMarketListingsIndexRouteImport } from './routes/api/market/listings/index'
+import { Route as ApiMassiveMarchSignalsIndexRouteImport } from './routes/api/massive-march/signals/index'
+import { Route as ApiMassiveMarchSignalsVoteRouteImport } from './routes/api/massive-march/signals/vote'
 import { Route as ApiMessagesConversationIdEditRouteImport } from './routes/api/messages/$conversationId/edit'
 import { Route as ApiMessagesConversationIdHideRouteImport } from './routes/api/messages/$conversationId/hide'
 import { Route as ApiMessagesConversationIdMutationsRouteImport } from './routes/api/messages/$conversationId/mutations'
@@ -955,6 +959,8 @@ import { Route as ApiMessagesConversationIdTypingRouteImport } from './routes/ap
 import { Route as ApiMessagesConversationIdUnsendRouteImport } from './routes/api/messages/$conversationId/unsend'
 import { Route as ApiMessagesConversationIdVoiceRouteImport } from './routes/api/messages/$conversationId/voice'
 import { Route as ApiMessagesVoiceFilenameRouteImport } from './routes/api/messages/voice/$filename'
+import { Route as ApiNightrailTricksIndexRouteImport } from './routes/api/nightrail/tricks/index'
+import { Route as ApiNightrailTricksVoteRouteImport } from './routes/api/nightrail/tricks/vote'
 import { Route as ApiOgAppAppIdRouteImport } from './routes/api/og/app/$appId'
 import { Route as ApiOgBlogSlugRouteImport } from './routes/api/og/blog/$slug'
 import { Route as ApiOgGameGameIdRouteImport } from './routes/api/og/game/$gameId'
@@ -1100,6 +1106,9 @@ import { Route as ApiV1SliceItChartsRouteImport } from './routes/api/v1/slice-it
 import { Route as ApiV1SliceItLeaderboardRouteImport } from './routes/api/v1/slice-it/leaderboard'
 import { Route as ApiV1UsersHandleRouteImport } from './routes/api/v1/users/$handle'
 import { Route as ApiV1WebhooksIdRouteImport } from './routes/api/v1/webhooks/$id'
+import { Route as ApiVersecraftSeedsIndexRouteImport } from './routes/api/versecraft/seeds/index'
+import { Route as ApiVersecraftSeedsForkRouteImport } from './routes/api/versecraft/seeds/fork'
+import { Route as ApiVersecraftSeedsRateRouteImport } from './routes/api/versecraft/seeds/rate'
 import { Route as ApiVibePkgFileRouteImport } from './routes/api/vibe/pkg/$file'
 import { Route as ApiVibeThumbSlugRouteImport } from './routes/api/vibe/thumb/$slug'
 import { Route as ApiWagerIdAcceptRouteImport } from './routes/api/wager/$id/accept'
@@ -3639,6 +3648,12 @@ const ApiGabrielsHornLeaderboardRoute =
     path: '/api/gabriels-horn/leaderboard',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiGabrielsHornTableReadRoute =
+  ApiGabrielsHornTableReadRouteImport.update({
+    id: '/api/gabriels-horn/table-read',
+    path: '/api/gabriels-horn/table-read',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiGameNightIndexRoute = ApiGameNightIndexRouteImport.update({
   id: '/api/game-night/',
   path: '/api/game-night/',
@@ -4950,6 +4965,11 @@ const ApiVegaScoreRoute = ApiVegaScoreRouteImport.update({
   path: '/api/vega/score',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiVelum2099ContractsRoute = ApiVelum2099ContractsRouteImport.update({
+  id: '/api/velum2099/contracts',
+  path: '/api/velum2099/contracts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiVersecraftChapterRoute = ApiVersecraftChapterRouteImport.update({
   id: '/api/versecraft/chapter',
   path: '/api/versecraft/chapter',
@@ -6021,6 +6041,18 @@ const ApiMarketListingsIndexRoute = ApiMarketListingsIndexRouteImport.update({
   path: '/api/market/listings/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMassiveMarchSignalsIndexRoute =
+  ApiMassiveMarchSignalsIndexRouteImport.update({
+    id: '/api/massive-march/signals/',
+    path: '/api/massive-march/signals/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiMassiveMarchSignalsVoteRoute =
+  ApiMassiveMarchSignalsVoteRouteImport.update({
+    id: '/api/massive-march/signals/vote',
+    path: '/api/massive-march/signals/vote',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiMessagesConversationIdEditRoute =
   ApiMessagesConversationIdEditRouteImport.update({
     id: '/edit',
@@ -6081,6 +6113,16 @@ const ApiMessagesVoiceFilenameRoute =
     path: '/voice/$filename',
     getParentRoute: () => ApiMessagesRoute,
   } as any)
+const ApiNightrailTricksIndexRoute = ApiNightrailTricksIndexRouteImport.update({
+  id: '/api/nightrail/tricks/',
+  path: '/api/nightrail/tricks/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiNightrailTricksVoteRoute = ApiNightrailTricksVoteRouteImport.update({
+  id: '/api/nightrail/tricks/vote',
+  path: '/api/nightrail/tricks/vote',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiOgAppAppIdRoute = ApiOgAppAppIdRouteImport.update({
   id: '/api/og/app/$appId',
   path: '/api/og/app/$appId',
@@ -6828,6 +6870,21 @@ const ApiV1WebhooksIdRoute = ApiV1WebhooksIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => ApiV1WebhooksRoute,
+} as any)
+const ApiVersecraftSeedsIndexRoute = ApiVersecraftSeedsIndexRouteImport.update({
+  id: '/api/versecraft/seeds/',
+  path: '/api/versecraft/seeds/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiVersecraftSeedsForkRoute = ApiVersecraftSeedsForkRouteImport.update({
+  id: '/api/versecraft/seeds/fork',
+  path: '/api/versecraft/seeds/fork',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiVersecraftSeedsRateRoute = ApiVersecraftSeedsRateRouteImport.update({
+  id: '/api/versecraft/seeds/rate',
+  path: '/api/versecraft/seeds/rate',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiVibePkgFileRoute = ApiVibePkgFileRouteImport.update({
   id: '/api/vibe/pkg/$file',
@@ -8046,6 +8103,7 @@ export interface FileRoutesByFullPath {
   '/api/friendly/$id': typeof ApiFriendlyIdRoute
   '/api/gabriels-horn/house-rule': typeof ApiGabrielsHornHouseRuleRoute
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
+  '/api/gabriels-horn/table-read': typeof ApiGabrielsHornTableReadRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
   '/api/games/how-to-play': typeof ApiGamesHowToPlayRoute
   '/api/gif/search': typeof ApiGifSearchRoute
@@ -8262,6 +8320,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/webhooks': typeof ApiV1WebhooksRouteWithChildren
   '/api/vega/leaderboard': typeof ApiVegaLeaderboardRoute
   '/api/vega/score': typeof ApiVegaScoreRoute
+  '/api/velum2099/contracts': typeof ApiVelum2099ContractsRoute
   '/api/versecraft/chapter': typeof ApiVersecraftChapterRoute
   '/api/versecraft/outline': typeof ApiVersecraftOutlineRoute
   '/api/versecraft/progress': typeof ApiVersecraftProgressRoute
@@ -8531,6 +8590,7 @@ export interface FileRoutesByFullPath {
   '/api/lists/$id/feed': typeof ApiListsIdFeedRoute
   '/api/lists/$id/members': typeof ApiListsIdMembersRoute
   '/api/marathon-lists/shared/$shareId': typeof ApiMarathonListsSharedShareIdRoute
+  '/api/massive-march/signals/vote': typeof ApiMassiveMarchSignalsVoteRoute
   '/api/messages/$conversationId/edit': typeof ApiMessagesConversationIdEditRoute
   '/api/messages/$conversationId/hide': typeof ApiMessagesConversationIdHideRoute
   '/api/messages/$conversationId/mutations': typeof ApiMessagesConversationIdMutationsRoute
@@ -8541,6 +8601,7 @@ export interface FileRoutesByFullPath {
   '/api/messages/$conversationId/unsend': typeof ApiMessagesConversationIdUnsendRoute
   '/api/messages/$conversationId/voice': typeof ApiMessagesConversationIdVoiceRoute
   '/api/messages/voice/$filename': typeof ApiMessagesVoiceFilenameRoute
+  '/api/nightrail/tricks/vote': typeof ApiNightrailTricksVoteRoute
   '/api/og/app/$appId': typeof ApiOgAppAppIdRoute
   '/api/og/blog/$slug': typeof ApiOgBlogSlugRoute
   '/api/og/game/$gameId': typeof ApiOgGameGameIdRoute
@@ -8665,6 +8726,8 @@ export interface FileRoutesByFullPath {
   '/api/v1/slice-it/leaderboard': typeof ApiV1SliceItLeaderboardRoute
   '/api/v1/users/$handle': typeof ApiV1UsersHandleRouteWithChildren
   '/api/v1/webhooks/$id': typeof ApiV1WebhooksIdRoute
+  '/api/versecraft/seeds/fork': typeof ApiVersecraftSeedsForkRoute
+  '/api/versecraft/seeds/rate': typeof ApiVersecraftSeedsRateRoute
   '/api/vibe/pkg/$file': typeof ApiVibePkgFileRoute
   '/api/vibe/thumb/$slug': typeof ApiVibeThumbSlugRoute
   '/api/wager/$id/accept': typeof ApiWagerIdAcceptRoute
@@ -8712,6 +8775,8 @@ export interface FileRoutesByFullPath {
   '/api/hunt/answer/': typeof ApiHuntAnswerIndexRoute
   '/api/hunt/marker/': typeof ApiHuntMarkerIndexRoute
   '/api/market/listings/': typeof ApiMarketListingsIndexRoute
+  '/api/massive-march/signals/': typeof ApiMassiveMarchSignalsIndexRoute
+  '/api/nightrail/tricks/': typeof ApiNightrailTricksIndexRoute
   '/api/personas/$id/': typeof ApiPersonasIdIndexRoute
   '/api/photo-of-the-day/$id/': typeof ApiPhotoOfTheDayIdIndexRoute
   '/api/photo-of-the-day/vote/': typeof ApiPhotoOfTheDayVoteIndexRoute
@@ -8733,6 +8798,7 @@ export interface FileRoutesByFullPath {
   '/api/study/decks/': typeof ApiStudyDecksIndexRoute
   '/api/translate/suggest/': typeof ApiTranslateSuggestIndexRoute
   '/api/translate/vote/': typeof ApiTranslateVoteIndexRoute
+  '/api/versecraft/seeds/': typeof ApiVersecraftSeedsIndexRoute
   '/api/when/$id/': typeof ApiWhenIdIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/games/$gameId/guides/$guideId': typeof SiteGamesGameIdGuidesGuideIdRoute
@@ -9254,6 +9320,7 @@ export interface FileRoutesByTo {
   '/api/friendly/$id': typeof ApiFriendlyIdRoute
   '/api/gabriels-horn/house-rule': typeof ApiGabrielsHornHouseRuleRoute
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
+  '/api/gabriels-horn/table-read': typeof ApiGabrielsHornTableReadRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
   '/api/games/how-to-play': typeof ApiGamesHowToPlayRoute
   '/api/gif/search': typeof ApiGifSearchRoute
@@ -9470,6 +9537,7 @@ export interface FileRoutesByTo {
   '/api/v1/webhooks': typeof ApiV1WebhooksRouteWithChildren
   '/api/vega/leaderboard': typeof ApiVegaLeaderboardRoute
   '/api/vega/score': typeof ApiVegaScoreRoute
+  '/api/velum2099/contracts': typeof ApiVelum2099ContractsRoute
   '/api/versecraft/chapter': typeof ApiVersecraftChapterRoute
   '/api/versecraft/outline': typeof ApiVersecraftOutlineRoute
   '/api/versecraft/progress': typeof ApiVersecraftProgressRoute
@@ -9739,6 +9807,7 @@ export interface FileRoutesByTo {
   '/api/lists/$id/feed': typeof ApiListsIdFeedRoute
   '/api/lists/$id/members': typeof ApiListsIdMembersRoute
   '/api/marathon-lists/shared/$shareId': typeof ApiMarathonListsSharedShareIdRoute
+  '/api/massive-march/signals/vote': typeof ApiMassiveMarchSignalsVoteRoute
   '/api/messages/$conversationId/edit': typeof ApiMessagesConversationIdEditRoute
   '/api/messages/$conversationId/hide': typeof ApiMessagesConversationIdHideRoute
   '/api/messages/$conversationId/mutations': typeof ApiMessagesConversationIdMutationsRoute
@@ -9749,6 +9818,7 @@ export interface FileRoutesByTo {
   '/api/messages/$conversationId/unsend': typeof ApiMessagesConversationIdUnsendRoute
   '/api/messages/$conversationId/voice': typeof ApiMessagesConversationIdVoiceRoute
   '/api/messages/voice/$filename': typeof ApiMessagesVoiceFilenameRoute
+  '/api/nightrail/tricks/vote': typeof ApiNightrailTricksVoteRoute
   '/api/og/app/$appId': typeof ApiOgAppAppIdRoute
   '/api/og/blog/$slug': typeof ApiOgBlogSlugRoute
   '/api/og/game/$gameId': typeof ApiOgGameGameIdRoute
@@ -9873,6 +9943,8 @@ export interface FileRoutesByTo {
   '/api/v1/slice-it/leaderboard': typeof ApiV1SliceItLeaderboardRoute
   '/api/v1/users/$handle': typeof ApiV1UsersHandleRouteWithChildren
   '/api/v1/webhooks/$id': typeof ApiV1WebhooksIdRoute
+  '/api/versecraft/seeds/fork': typeof ApiVersecraftSeedsForkRoute
+  '/api/versecraft/seeds/rate': typeof ApiVersecraftSeedsRateRoute
   '/api/vibe/pkg/$file': typeof ApiVibePkgFileRoute
   '/api/vibe/thumb/$slug': typeof ApiVibeThumbSlugRoute
   '/api/wager/$id/accept': typeof ApiWagerIdAcceptRoute
@@ -9920,6 +9992,8 @@ export interface FileRoutesByTo {
   '/api/hunt/answer': typeof ApiHuntAnswerIndexRoute
   '/api/hunt/marker': typeof ApiHuntMarkerIndexRoute
   '/api/market/listings': typeof ApiMarketListingsIndexRoute
+  '/api/massive-march/signals': typeof ApiMassiveMarchSignalsIndexRoute
+  '/api/nightrail/tricks': typeof ApiNightrailTricksIndexRoute
   '/api/personas/$id': typeof ApiPersonasIdIndexRoute
   '/api/photo-of-the-day/$id': typeof ApiPhotoOfTheDayIdIndexRoute
   '/api/photo-of-the-day/vote': typeof ApiPhotoOfTheDayVoteIndexRoute
@@ -9941,6 +10015,7 @@ export interface FileRoutesByTo {
   '/api/study/decks': typeof ApiStudyDecksIndexRoute
   '/api/translate/suggest': typeof ApiTranslateSuggestIndexRoute
   '/api/translate/vote': typeof ApiTranslateVoteIndexRoute
+  '/api/versecraft/seeds': typeof ApiVersecraftSeedsIndexRoute
   '/api/when/$id': typeof ApiWhenIdIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/games/$gameId/guides/$guideId': typeof SiteGamesGameIdGuidesGuideIdRoute
@@ -10490,6 +10565,7 @@ export interface FileRoutesById {
   '/api/friendly/$id': typeof ApiFriendlyIdRoute
   '/api/gabriels-horn/house-rule': typeof ApiGabrielsHornHouseRuleRoute
   '/api/gabriels-horn/leaderboard': typeof ApiGabrielsHornLeaderboardRoute
+  '/api/gabriels-horn/table-read': typeof ApiGabrielsHornTableReadRoute
   '/api/game-saves/$gameId': typeof ApiGameSavesGameIdRoute
   '/api/games/how-to-play': typeof ApiGamesHowToPlayRoute
   '/api/gif/search': typeof ApiGifSearchRoute
@@ -10706,6 +10782,7 @@ export interface FileRoutesById {
   '/api/v1/webhooks': typeof ApiV1WebhooksRouteWithChildren
   '/api/vega/leaderboard': typeof ApiVegaLeaderboardRoute
   '/api/vega/score': typeof ApiVegaScoreRoute
+  '/api/velum2099/contracts': typeof ApiVelum2099ContractsRoute
   '/api/versecraft/chapter': typeof ApiVersecraftChapterRoute
   '/api/versecraft/outline': typeof ApiVersecraftOutlineRoute
   '/api/versecraft/progress': typeof ApiVersecraftProgressRoute
@@ -10975,6 +11052,7 @@ export interface FileRoutesById {
   '/api/lists/$id/feed': typeof ApiListsIdFeedRoute
   '/api/lists/$id/members': typeof ApiListsIdMembersRoute
   '/api/marathon-lists/shared/$shareId': typeof ApiMarathonListsSharedShareIdRoute
+  '/api/massive-march/signals/vote': typeof ApiMassiveMarchSignalsVoteRoute
   '/api/messages/$conversationId/edit': typeof ApiMessagesConversationIdEditRoute
   '/api/messages/$conversationId/hide': typeof ApiMessagesConversationIdHideRoute
   '/api/messages/$conversationId/mutations': typeof ApiMessagesConversationIdMutationsRoute
@@ -10985,6 +11063,7 @@ export interface FileRoutesById {
   '/api/messages/$conversationId/unsend': typeof ApiMessagesConversationIdUnsendRoute
   '/api/messages/$conversationId/voice': typeof ApiMessagesConversationIdVoiceRoute
   '/api/messages/voice/$filename': typeof ApiMessagesVoiceFilenameRoute
+  '/api/nightrail/tricks/vote': typeof ApiNightrailTricksVoteRoute
   '/api/og/app/$appId': typeof ApiOgAppAppIdRoute
   '/api/og/blog/$slug': typeof ApiOgBlogSlugRoute
   '/api/og/game/$gameId': typeof ApiOgGameGameIdRoute
@@ -11109,6 +11188,8 @@ export interface FileRoutesById {
   '/api/v1/slice-it/leaderboard': typeof ApiV1SliceItLeaderboardRoute
   '/api/v1/users/$handle': typeof ApiV1UsersHandleRouteWithChildren
   '/api/v1/webhooks/$id': typeof ApiV1WebhooksIdRoute
+  '/api/versecraft/seeds/fork': typeof ApiVersecraftSeedsForkRoute
+  '/api/versecraft/seeds/rate': typeof ApiVersecraftSeedsRateRoute
   '/api/vibe/pkg/$file': typeof ApiVibePkgFileRoute
   '/api/vibe/thumb/$slug': typeof ApiVibeThumbSlugRoute
   '/api/wager/$id/accept': typeof ApiWagerIdAcceptRoute
@@ -11156,6 +11237,8 @@ export interface FileRoutesById {
   '/api/hunt/answer/': typeof ApiHuntAnswerIndexRoute
   '/api/hunt/marker/': typeof ApiHuntMarkerIndexRoute
   '/api/market/listings/': typeof ApiMarketListingsIndexRoute
+  '/api/massive-march/signals/': typeof ApiMassiveMarchSignalsIndexRoute
+  '/api/nightrail/tricks/': typeof ApiNightrailTricksIndexRoute
   '/api/personas/$id/': typeof ApiPersonasIdIndexRoute
   '/api/photo-of-the-day/$id/': typeof ApiPhotoOfTheDayIdIndexRoute
   '/api/photo-of-the-day/vote/': typeof ApiPhotoOfTheDayVoteIndexRoute
@@ -11177,6 +11260,7 @@ export interface FileRoutesById {
   '/api/study/decks/': typeof ApiStudyDecksIndexRoute
   '/api/translate/suggest/': typeof ApiTranslateSuggestIndexRoute
   '/api/translate/vote/': typeof ApiTranslateVoteIndexRoute
+  '/api/versecraft/seeds/': typeof ApiVersecraftSeedsIndexRoute
   '/api/when/$id/': typeof ApiWhenIdIndexRoute
   '/_site/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/_site/games/$gameId_/guides/$guideId': typeof SiteGamesGameIdGuidesGuideIdRoute
@@ -11726,6 +11810,7 @@ export interface FileRouteTypes {
     | '/api/friendly/$id'
     | '/api/gabriels-horn/house-rule'
     | '/api/gabriels-horn/leaderboard'
+    | '/api/gabriels-horn/table-read'
     | '/api/game-saves/$gameId'
     | '/api/games/how-to-play'
     | '/api/gif/search'
@@ -11942,6 +12027,7 @@ export interface FileRouteTypes {
     | '/api/v1/webhooks'
     | '/api/vega/leaderboard'
     | '/api/vega/score'
+    | '/api/velum2099/contracts'
     | '/api/versecraft/chapter'
     | '/api/versecraft/outline'
     | '/api/versecraft/progress'
@@ -12211,6 +12297,7 @@ export interface FileRouteTypes {
     | '/api/lists/$id/feed'
     | '/api/lists/$id/members'
     | '/api/marathon-lists/shared/$shareId'
+    | '/api/massive-march/signals/vote'
     | '/api/messages/$conversationId/edit'
     | '/api/messages/$conversationId/hide'
     | '/api/messages/$conversationId/mutations'
@@ -12221,6 +12308,7 @@ export interface FileRouteTypes {
     | '/api/messages/$conversationId/unsend'
     | '/api/messages/$conversationId/voice'
     | '/api/messages/voice/$filename'
+    | '/api/nightrail/tricks/vote'
     | '/api/og/app/$appId'
     | '/api/og/blog/$slug'
     | '/api/og/game/$gameId'
@@ -12345,6 +12433,8 @@ export interface FileRouteTypes {
     | '/api/v1/slice-it/leaderboard'
     | '/api/v1/users/$handle'
     | '/api/v1/webhooks/$id'
+    | '/api/versecraft/seeds/fork'
+    | '/api/versecraft/seeds/rate'
     | '/api/vibe/pkg/$file'
     | '/api/vibe/thumb/$slug'
     | '/api/wager/$id/accept'
@@ -12392,6 +12482,8 @@ export interface FileRouteTypes {
     | '/api/hunt/answer/'
     | '/api/hunt/marker/'
     | '/api/market/listings/'
+    | '/api/massive-march/signals/'
+    | '/api/nightrail/tricks/'
     | '/api/personas/$id/'
     | '/api/photo-of-the-day/$id/'
     | '/api/photo-of-the-day/vote/'
@@ -12413,6 +12505,7 @@ export interface FileRouteTypes {
     | '/api/study/decks/'
     | '/api/translate/suggest/'
     | '/api/translate/vote/'
+    | '/api/versecraft/seeds/'
     | '/api/when/$id/'
     | '/admin/blog/$slug/edit'
     | '/games/$gameId/guides/$guideId'
@@ -12934,6 +13027,7 @@ export interface FileRouteTypes {
     | '/api/friendly/$id'
     | '/api/gabriels-horn/house-rule'
     | '/api/gabriels-horn/leaderboard'
+    | '/api/gabriels-horn/table-read'
     | '/api/game-saves/$gameId'
     | '/api/games/how-to-play'
     | '/api/gif/search'
@@ -13150,6 +13244,7 @@ export interface FileRouteTypes {
     | '/api/v1/webhooks'
     | '/api/vega/leaderboard'
     | '/api/vega/score'
+    | '/api/velum2099/contracts'
     | '/api/versecraft/chapter'
     | '/api/versecraft/outline'
     | '/api/versecraft/progress'
@@ -13419,6 +13514,7 @@ export interface FileRouteTypes {
     | '/api/lists/$id/feed'
     | '/api/lists/$id/members'
     | '/api/marathon-lists/shared/$shareId'
+    | '/api/massive-march/signals/vote'
     | '/api/messages/$conversationId/edit'
     | '/api/messages/$conversationId/hide'
     | '/api/messages/$conversationId/mutations'
@@ -13429,6 +13525,7 @@ export interface FileRouteTypes {
     | '/api/messages/$conversationId/unsend'
     | '/api/messages/$conversationId/voice'
     | '/api/messages/voice/$filename'
+    | '/api/nightrail/tricks/vote'
     | '/api/og/app/$appId'
     | '/api/og/blog/$slug'
     | '/api/og/game/$gameId'
@@ -13553,6 +13650,8 @@ export interface FileRouteTypes {
     | '/api/v1/slice-it/leaderboard'
     | '/api/v1/users/$handle'
     | '/api/v1/webhooks/$id'
+    | '/api/versecraft/seeds/fork'
+    | '/api/versecraft/seeds/rate'
     | '/api/vibe/pkg/$file'
     | '/api/vibe/thumb/$slug'
     | '/api/wager/$id/accept'
@@ -13600,6 +13699,8 @@ export interface FileRouteTypes {
     | '/api/hunt/answer'
     | '/api/hunt/marker'
     | '/api/market/listings'
+    | '/api/massive-march/signals'
+    | '/api/nightrail/tricks'
     | '/api/personas/$id'
     | '/api/photo-of-the-day/$id'
     | '/api/photo-of-the-day/vote'
@@ -13621,6 +13722,7 @@ export interface FileRouteTypes {
     | '/api/study/decks'
     | '/api/translate/suggest'
     | '/api/translate/vote'
+    | '/api/versecraft/seeds'
     | '/api/when/$id'
     | '/admin/blog/$slug/edit'
     | '/games/$gameId/guides/$guideId'
@@ -14169,6 +14271,7 @@ export interface FileRouteTypes {
     | '/api/friendly/$id'
     | '/api/gabriels-horn/house-rule'
     | '/api/gabriels-horn/leaderboard'
+    | '/api/gabriels-horn/table-read'
     | '/api/game-saves/$gameId'
     | '/api/games/how-to-play'
     | '/api/gif/search'
@@ -14385,6 +14488,7 @@ export interface FileRouteTypes {
     | '/api/v1/webhooks'
     | '/api/vega/leaderboard'
     | '/api/vega/score'
+    | '/api/velum2099/contracts'
     | '/api/versecraft/chapter'
     | '/api/versecraft/outline'
     | '/api/versecraft/progress'
@@ -14654,6 +14758,7 @@ export interface FileRouteTypes {
     | '/api/lists/$id/feed'
     | '/api/lists/$id/members'
     | '/api/marathon-lists/shared/$shareId'
+    | '/api/massive-march/signals/vote'
     | '/api/messages/$conversationId/edit'
     | '/api/messages/$conversationId/hide'
     | '/api/messages/$conversationId/mutations'
@@ -14664,6 +14769,7 @@ export interface FileRouteTypes {
     | '/api/messages/$conversationId/unsend'
     | '/api/messages/$conversationId/voice'
     | '/api/messages/voice/$filename'
+    | '/api/nightrail/tricks/vote'
     | '/api/og/app/$appId'
     | '/api/og/blog/$slug'
     | '/api/og/game/$gameId'
@@ -14788,6 +14894,8 @@ export interface FileRouteTypes {
     | '/api/v1/slice-it/leaderboard'
     | '/api/v1/users/$handle'
     | '/api/v1/webhooks/$id'
+    | '/api/versecraft/seeds/fork'
+    | '/api/versecraft/seeds/rate'
     | '/api/vibe/pkg/$file'
     | '/api/vibe/thumb/$slug'
     | '/api/wager/$id/accept'
@@ -14835,6 +14943,8 @@ export interface FileRouteTypes {
     | '/api/hunt/answer/'
     | '/api/hunt/marker/'
     | '/api/market/listings/'
+    | '/api/massive-march/signals/'
+    | '/api/nightrail/tricks/'
     | '/api/personas/$id/'
     | '/api/photo-of-the-day/$id/'
     | '/api/photo-of-the-day/vote/'
@@ -14856,6 +14966,7 @@ export interface FileRouteTypes {
     | '/api/study/decks/'
     | '/api/translate/suggest/'
     | '/api/translate/vote/'
+    | '/api/versecraft/seeds/'
     | '/api/when/$id/'
     | '/_site/admin/blog/$slug/edit'
     | '/_site/games/$gameId_/guides/$guideId'
@@ -15198,6 +15309,7 @@ export interface RootRouteChildren {
   ApiFriendlyIdRoute: typeof ApiFriendlyIdRoute
   ApiGabrielsHornHouseRuleRoute: typeof ApiGabrielsHornHouseRuleRoute
   ApiGabrielsHornLeaderboardRoute: typeof ApiGabrielsHornLeaderboardRoute
+  ApiGabrielsHornTableReadRoute: typeof ApiGabrielsHornTableReadRoute
   ApiGameSavesGameIdRoute: typeof ApiGameSavesGameIdRoute
   ApiGamesHowToPlayRoute: typeof ApiGamesHowToPlayRoute
   ApiGifSearchRoute: typeof ApiGifSearchRoute
@@ -15387,6 +15499,7 @@ export interface RootRouteChildren {
   ApiV1WebhooksRoute: typeof ApiV1WebhooksRouteWithChildren
   ApiVegaLeaderboardRoute: typeof ApiVegaLeaderboardRoute
   ApiVegaScoreRoute: typeof ApiVegaScoreRoute
+  ApiVelum2099ContractsRoute: typeof ApiVelum2099ContractsRoute
   ApiVersecraftChapterRoute: typeof ApiVersecraftChapterRoute
   ApiVersecraftOutlineRoute: typeof ApiVersecraftOutlineRoute
   ApiVersecraftProgressRoute: typeof ApiVersecraftProgressRoute
@@ -15583,6 +15696,8 @@ export interface RootRouteChildren {
   ApiLibraryCoverIdRoute: typeof ApiLibraryCoverIdRoute
   ApiLibraryFileIdRoute: typeof ApiLibraryFileIdRoute
   ApiMarathonListsSharedShareIdRoute: typeof ApiMarathonListsSharedShareIdRoute
+  ApiMassiveMarchSignalsVoteRoute: typeof ApiMassiveMarchSignalsVoteRoute
+  ApiNightrailTricksVoteRoute: typeof ApiNightrailTricksVoteRoute
   ApiOgAppAppIdRoute: typeof ApiOgAppAppIdRoute
   ApiOgBlogSlugRoute: typeof ApiOgBlogSlugRoute
   ApiOgGameGameIdRoute: typeof ApiOgGameGameIdRoute
@@ -15628,6 +15743,8 @@ export interface RootRouteChildren {
   ApiV1SliceItChartsRoute: typeof ApiV1SliceItChartsRoute
   ApiV1SliceItLeaderboardRoute: typeof ApiV1SliceItLeaderboardRoute
   ApiV1UsersHandleRoute: typeof ApiV1UsersHandleRouteWithChildren
+  ApiVersecraftSeedsForkRoute: typeof ApiVersecraftSeedsForkRoute
+  ApiVersecraftSeedsRateRoute: typeof ApiVersecraftSeedsRateRoute
   ApiVibePkgFileRoute: typeof ApiVibePkgFileRoute
   ApiVibeThumbSlugRoute: typeof ApiVibeThumbSlugRoute
   ApiWhenIdIcsRoute: typeof ApiWhenIdIcsRoute
@@ -15666,6 +15783,8 @@ export interface RootRouteChildren {
   ApiHuntAnswerIndexRoute: typeof ApiHuntAnswerIndexRoute
   ApiHuntMarkerIndexRoute: typeof ApiHuntMarkerIndexRoute
   ApiMarketListingsIndexRoute: typeof ApiMarketListingsIndexRoute
+  ApiMassiveMarchSignalsIndexRoute: typeof ApiMassiveMarchSignalsIndexRoute
+  ApiNightrailTricksIndexRoute: typeof ApiNightrailTricksIndexRoute
   ApiPersonasIdIndexRoute: typeof ApiPersonasIdIndexRoute
   ApiPhotoOfTheDayIdIndexRoute: typeof ApiPhotoOfTheDayIdIndexRoute
   ApiPhotoOfTheDayVoteIndexRoute: typeof ApiPhotoOfTheDayVoteIndexRoute
@@ -15687,6 +15806,7 @@ export interface RootRouteChildren {
   ApiStudyDecksIndexRoute: typeof ApiStudyDecksIndexRoute
   ApiTranslateSuggestIndexRoute: typeof ApiTranslateSuggestIndexRoute
   ApiTranslateVoteIndexRoute: typeof ApiTranslateVoteIndexRoute
+  ApiVersecraftSeedsIndexRoute: typeof ApiVersecraftSeedsIndexRoute
   ApiWhenIdIndexRoute: typeof ApiWhenIdIndexRoute
   ApiAccountStrikesIdAppealRoute: typeof ApiAccountStrikesIdAppealRoute
   ApiAdminGiftExchangesIdVerifyRoute: typeof ApiAdminGiftExchangesIdVerifyRoute
@@ -19080,6 +19200,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGabrielsHornLeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/gabriels-horn/table-read': {
+      id: '/api/gabriels-horn/table-read'
+      path: '/api/gabriels-horn/table-read'
+      fullPath: '/api/gabriels-horn/table-read'
+      preLoaderRoute: typeof ApiGabrielsHornTableReadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/game-night/': {
       id: '/api/game-night/'
       path: '/api/game-night'
@@ -20893,6 +21020,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiVegaScoreRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/velum2099/contracts': {
+      id: '/api/velum2099/contracts'
+      path: '/api/velum2099/contracts'
+      fullPath: '/api/velum2099/contracts'
+      preLoaderRoute: typeof ApiVelum2099ContractsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/versecraft/chapter': {
       id: '/api/versecraft/chapter'
       path: '/api/versecraft/chapter'
@@ -22300,6 +22434,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMarketListingsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/massive-march/signals/': {
+      id: '/api/massive-march/signals/'
+      path: '/api/massive-march/signals'
+      fullPath: '/api/massive-march/signals/'
+      preLoaderRoute: typeof ApiMassiveMarchSignalsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/massive-march/signals/vote': {
+      id: '/api/massive-march/signals/vote'
+      path: '/api/massive-march/signals/vote'
+      fullPath: '/api/massive-march/signals/vote'
+      preLoaderRoute: typeof ApiMassiveMarchSignalsVoteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/messages/$conversationId/edit': {
       id: '/api/messages/$conversationId/edit'
       path: '/edit'
@@ -22369,6 +22517,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/messages/voice/$filename'
       preLoaderRoute: typeof ApiMessagesVoiceFilenameRouteImport
       parentRoute: typeof ApiMessagesRoute
+    }
+    '/api/nightrail/tricks/': {
+      id: '/api/nightrail/tricks/'
+      path: '/api/nightrail/tricks'
+      fullPath: '/api/nightrail/tricks/'
+      preLoaderRoute: typeof ApiNightrailTricksIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/nightrail/tricks/vote': {
+      id: '/api/nightrail/tricks/vote'
+      path: '/api/nightrail/tricks/vote'
+      fullPath: '/api/nightrail/tricks/vote'
+      preLoaderRoute: typeof ApiNightrailTricksVoteRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/og/app/$appId': {
       id: '/api/og/app/$appId'
@@ -23384,6 +23546,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/v1/webhooks/$id'
       preLoaderRoute: typeof ApiV1WebhooksIdRouteImport
       parentRoute: typeof ApiV1WebhooksRoute
+    }
+    '/api/versecraft/seeds/': {
+      id: '/api/versecraft/seeds/'
+      path: '/api/versecraft/seeds'
+      fullPath: '/api/versecraft/seeds/'
+      preLoaderRoute: typeof ApiVersecraftSeedsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/versecraft/seeds/fork': {
+      id: '/api/versecraft/seeds/fork'
+      path: '/api/versecraft/seeds/fork'
+      fullPath: '/api/versecraft/seeds/fork'
+      preLoaderRoute: typeof ApiVersecraftSeedsForkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/versecraft/seeds/rate': {
+      id: '/api/versecraft/seeds/rate'
+      path: '/api/versecraft/seeds/rate'
+      fullPath: '/api/versecraft/seeds/rate'
+      preLoaderRoute: typeof ApiVersecraftSeedsRateRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/vibe/pkg/$file': {
       id: '/api/vibe/pkg/$file'
@@ -26703,6 +26886,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiFriendlyIdRoute: ApiFriendlyIdRoute,
   ApiGabrielsHornHouseRuleRoute: ApiGabrielsHornHouseRuleRoute,
   ApiGabrielsHornLeaderboardRoute: ApiGabrielsHornLeaderboardRoute,
+  ApiGabrielsHornTableReadRoute: ApiGabrielsHornTableReadRoute,
   ApiGameSavesGameIdRoute: ApiGameSavesGameIdRoute,
   ApiGamesHowToPlayRoute: ApiGamesHowToPlayRoute,
   ApiGifSearchRoute: ApiGifSearchRoute,
@@ -26892,6 +27076,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1WebhooksRoute: ApiV1WebhooksRouteWithChildren,
   ApiVegaLeaderboardRoute: ApiVegaLeaderboardRoute,
   ApiVegaScoreRoute: ApiVegaScoreRoute,
+  ApiVelum2099ContractsRoute: ApiVelum2099ContractsRoute,
   ApiVersecraftChapterRoute: ApiVersecraftChapterRoute,
   ApiVersecraftOutlineRoute: ApiVersecraftOutlineRoute,
   ApiVersecraftProgressRoute: ApiVersecraftProgressRoute,
@@ -27090,6 +27275,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiLibraryCoverIdRoute: ApiLibraryCoverIdRoute,
   ApiLibraryFileIdRoute: ApiLibraryFileIdRoute,
   ApiMarathonListsSharedShareIdRoute: ApiMarathonListsSharedShareIdRoute,
+  ApiMassiveMarchSignalsVoteRoute: ApiMassiveMarchSignalsVoteRoute,
+  ApiNightrailTricksVoteRoute: ApiNightrailTricksVoteRoute,
   ApiOgAppAppIdRoute: ApiOgAppAppIdRoute,
   ApiOgBlogSlugRoute: ApiOgBlogSlugRoute,
   ApiOgGameGameIdRoute: ApiOgGameGameIdRoute,
@@ -27135,6 +27322,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1SliceItChartsRoute: ApiV1SliceItChartsRoute,
   ApiV1SliceItLeaderboardRoute: ApiV1SliceItLeaderboardRoute,
   ApiV1UsersHandleRoute: ApiV1UsersHandleRouteWithChildren,
+  ApiVersecraftSeedsForkRoute: ApiVersecraftSeedsForkRoute,
+  ApiVersecraftSeedsRateRoute: ApiVersecraftSeedsRateRoute,
   ApiVibePkgFileRoute: ApiVibePkgFileRoute,
   ApiVibeThumbSlugRoute: ApiVibeThumbSlugRoute,
   ApiWhenIdIcsRoute: ApiWhenIdIcsRoute,
@@ -27173,6 +27362,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHuntAnswerIndexRoute: ApiHuntAnswerIndexRoute,
   ApiHuntMarkerIndexRoute: ApiHuntMarkerIndexRoute,
   ApiMarketListingsIndexRoute: ApiMarketListingsIndexRoute,
+  ApiMassiveMarchSignalsIndexRoute: ApiMassiveMarchSignalsIndexRoute,
+  ApiNightrailTricksIndexRoute: ApiNightrailTricksIndexRoute,
   ApiPersonasIdIndexRoute: ApiPersonasIdIndexRoute,
   ApiPhotoOfTheDayIdIndexRoute: ApiPhotoOfTheDayIdIndexRoute,
   ApiPhotoOfTheDayVoteIndexRoute: ApiPhotoOfTheDayVoteIndexRoute,
@@ -27194,6 +27385,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStudyDecksIndexRoute: ApiStudyDecksIndexRoute,
   ApiTranslateSuggestIndexRoute: ApiTranslateSuggestIndexRoute,
   ApiTranslateVoteIndexRoute: ApiTranslateVoteIndexRoute,
+  ApiVersecraftSeedsIndexRoute: ApiVersecraftSeedsIndexRoute,
   ApiWhenIdIndexRoute: ApiWhenIdIndexRoute,
   ApiAccountStrikesIdAppealRoute: ApiAccountStrikesIdAppealRoute,
   ApiAdminGiftExchangesIdVerifyRoute: ApiAdminGiftExchangesIdVerifyRoute,

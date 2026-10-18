@@ -11,6 +11,8 @@ import { GAMES_INDEX_PATH } from '@/lib/seo-catalog';
 import { aiAvailable } from '@/lib/devplatform/ai.server';
 import { listReviews, getRatingAgg, listGuides } from '@/lib/games/meta.server';
 import type { ReviewView, RatingAgg, GuideSummary } from '@/lib/games/reviews';
+import { getTrickOfTheWeek } from '@/lib/trick-week/trick-week.server';
+import type { TrickView } from '@/lib/trick-week/trick-week';
 
 interface HubPayload {
   gameId: string;
@@ -25,6 +27,8 @@ interface HubPayload {
   signedIn: boolean;
   /** I1: show the AI "How do I play?" panel. */
   aiEnabled: boolean;
+  /** R21: last week's winning Nightrail trick (Nightrail hub only). */
+  trickOfTheWeek: TrickView | null;
 }
 
 const fetchHub = createServerFn({ method: 'GET' })
@@ -35,10 +39,11 @@ const fetchHub = createServerFn({ method: 'GET' })
     const request = getRequest();
     const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
     const viewerId = session?.user.id ?? null;
-    const [reviews, agg, guides] = await Promise.all([
+    const [reviews, agg, guides, trickOfTheWeek] = await Promise.all([
       listReviews(gameId, viewerId),
       getRatingAgg(gameId),
       listGuides(gameId, viewerId),
+      gameId === 'nightrail' ? getTrickOfTheWeek().catch(() => null) : null,
     ]);
     return {
       gameId,
@@ -52,6 +57,7 @@ const fetchHub = createServerFn({ method: 'GET' })
       guides,
       signedIn: !!viewerId,
       aiEnabled: !!viewerId && aiAvailable(),
+      trickOfTheWeek,
     };
   });
 

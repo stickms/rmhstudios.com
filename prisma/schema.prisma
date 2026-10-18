@@ -473,6 +473,16 @@ model User {
   photoNominations           PhotoNomination[]
   photoVotes                 PhotoVote[]
   translationSuggestions     TranslationSuggestion[]
+  // P27 async games: R11 R12 R13 R18 R21
+  hornTableRead              GabrielsHornTableRead?
+  velumContractsMade         VelumContract[]        @relation("VelumContractMaker")
+  velumContractsHeld         VelumContract[]        @relation("VelumContractHolder")
+  versecraftSeedListings     VersecraftSeedListing[]
+  versecraftSeedRatings      VersecraftSeedRating[]
+  marchSignals               MarchSignal[]
+  marchSignalVotes           MarchSignalVote[]
+  nightrailTricks            NightrailTrick[]
+  nightrailTrickVotes        NightrailTrickVote[]
   translationVotes           TranslationVote[]
   // P22 ladder-homes: F6 referrals, F8 interview reports, F9 roommate quiz
   ladderReferralOffers       LadderReferralOffer[]
@@ -2442,6 +2452,7 @@ model VersecraftWorld {
   updatedAt DateTime @default(now()) @updatedAt
 
   chapters VersecraftGenChapter[]
+  seedListing VersecraftSeedListing?
 
   @@index([createdAt(sort: Desc)])
   @@map("versecraft_world")
@@ -12470,4 +12481,153 @@ model FarmFestivalEntry {
   @@unique([festivalKey, userId])
   @@index([festivalKey, score])
   @@map("farm_festival_entry")
+}
+
+// ── P27 async-games: R11 R12 R13 R18 R21 ──
+// R11: per-member career aggregates behind the Gabriel's Horn post-game table read.
+// Claim times are summed in ms so "tell" = mean(lie claim) - mean(truth claim).
+model GabrielsHornTableRead {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  games        Int      @default(0)
+  claims       Int      @default(0)
+  lies         Int      @default(0)
+  calls        Int      @default(0)
+  callsCorrect Int      @default(0)
+  lieClaimMs   Int      @default(0)
+  truthClaimMs Int      @default(0)
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("gabriels_horn_table_read")
+}
+
+// R12: one row per delivery route (pickup chunk -> drop-off chunk, world metres).
+// The row carries the standing record; no coins are paid for holding it.
+model VelumContract {
+  id           String   @id @default(cuid())
+  pickupX      Int
+  pickupZ      Int
+  dropX        Int
+  dropZ        Int
+  creatorId    String
+  holderId     String?
+  bestCentis   Int
+  runs         Int      @default(1)
+  createdAt    DateTime @default(now())
+  recordSetAt  DateTime @default(now())
+
+  creator User  @relation("VelumContractMaker", fields: [creatorId], references: [id], onDelete: Cascade)
+  holder  User? @relation("VelumContractHolder", fields: [holderId], references: [id], onDelete: SetNull)
+
+  @@unique([pickupX, pickupZ, dropX, dropZ])
+  @@index([recordSetAt(sort: Desc)])
+  @@index([creatorId])
+  @@index([holderId])
+  @@map("velum_contract")
+}
+
+// R13: a published Versecraft story seed. `seed` points at the persisted world.
+model VersecraftSeedListing {
+  id          String   @id @default(cuid())
+  seed        String   @unique
+  title       String   @db.VarChar(80)
+  authorId    String
+  ratingSum   Int      @default(0)
+  ratingCount Int      @default(0)
+  forks       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  author  User                   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  world   VersecraftWorld        @relation(fields: [seed], references: [seed], onDelete: Cascade)
+  ratings VersecraftSeedRating[]
+
+  @@index([createdAt(sort: Desc)])
+  @@index([authorId])
+  @@map("versecraft_seed_listing")
+}
+
+model VersecraftSeedRating {
+  listingId String
+  userId    String
+  stars     Int
+  createdAt DateTime @default(now())
+
+  listing VersecraftSeedListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user    User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([listingId, userId])
+  @@index([userId])
+  @@map("versecraft_seed_rating")
+}
+
+// R18: a templated hint left at a puzzle site. `template` is a fixed id; `param`
+// is a glyph id or a small number, never free text.
+model MarchSignal {
+  id        String   @id @default(cuid())
+  siteId    String   @db.VarChar(40)
+  authorId  String
+  template  String   @db.VarChar(24)
+  param     String   @default("") @db.VarChar(16)
+  score     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  author User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  votes  MarchSignalVote[]
+
+  @@unique([siteId, authorId, template, param])
+  @@index([siteId, score(sort: Desc)])
+  @@index([authorId])
+  @@map("march_signal")
+}
+
+model MarchSignalVote {
+  signalId String
+  userId   String
+  value    Int
+
+  signal MarchSignal @relation(fields: [signalId], references: [id], onDelete: Cascade)
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([signalId, userId])
+  @@index([userId])
+  @@map("march_signal_vote")
+}
+
+// R21: a Nightrail trick submitted for the week's vote. Nightrail records no
+// replay, so the clip is the best combo's trick chain + score (bounded by the
+// member's recorded high score). `week` is the UTC Monday, YYYY-MM-DD.
+model NightrailTrick {
+  id        String   @id @default(cuid())
+  week      String   @db.VarChar(10)
+  authorId  String
+  level     Int
+  score     Int
+  multiplier Float
+  chain     String[]
+  votes     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  author     User                 @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  voteRows   NightrailTrickVote[]
+
+  @@unique([week, authorId])
+  @@index([week, votes(sort: Desc)])
+  @@map("nightrail_trick")
+}
+
+model NightrailTrickVote {
+  trickId   String
+  userId    String
+  week      String   @db.VarChar(10)
+  createdAt DateTime @default(now())
+
+  trick NightrailTrick @relation(fields: [trickId], references: [id], onDelete: Cascade)
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([trickId, userId])
+  @@unique([week, userId])
+  @@index([userId])
+  @@map("nightrail_trick_vote")
 }
