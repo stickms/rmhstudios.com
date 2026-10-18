@@ -82,6 +82,7 @@ export const NAMESPACES = [
   "f-devplatform",
   "f-ops",
   "f-tools",
+  "f-worlds",
   "f-safety",
   "f-watch",
   "f-forecasting",

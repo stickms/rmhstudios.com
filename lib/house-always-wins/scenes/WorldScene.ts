@@ -44,6 +44,8 @@ import {
 } from "../sprites/entities";
 import { drawNpc } from "../sprites/npcs";
 
+import { activeRule, readMeta, remixEntities } from "../ngplus";
+
 const CHIP_VALUE = 8;
 const SLOT_TARGET = 2; // bell (see SLOT_SYMBOLS in entities.ts)
 
@@ -193,7 +195,9 @@ export class WorldScene implements Scene {
 
   private buildEntities() {
     const store = this.engine.store;
-    this.ents = this.room.entities.map((spec) => {
+    const meta = readMeta();
+    const specs = meta.slot === "ngplus" ? remixEntities(this.roomId, this.room.entities, meta.seed) : this.room.entities;
+    this.ents = specs.map((spec) => {
       let wT = 1;
       let hT = 1;
       if (spec.kind === "mover") wT = spec.length ?? 3;
@@ -390,7 +394,8 @@ export class WorldScene implements Scene {
       const on = e.spec.onTime ?? 1;
       const off = e.spec.offTime ?? 1;
       const period = on + off;
-      const phase = ((this.time + (e.spec.phase ?? 0) * period) % period);
+      const clock = this.time * (activeRule() === "fastLasers" ? 1.4 : 1);
+      const phase = ((clock + (e.spec.phase ?? 0) * period) % period);
       e.on = phase < on;
     }
   }
@@ -447,9 +452,10 @@ export class WorldScene implements Scene {
       if (e.spec.kind === "chip" && rectIntersect(pr, this.padRect(e.rect, 3))) {
         e.taken = true;
         this.engine.store.setFlag(`chip:${this.roomId}:${e.spec.id}`, true);
-        this.engine.store.addChips(CHIP_VALUE);
+        const chipValue = activeRule() === "highStakes" ? CHIP_VALUE * 1.5 : CHIP_VALUE;
+        this.engine.store.addChips(chipValue);
         this.particles.burst(e.rect.x + 8, e.rect.y + 8, 8, COLORS.chip, { gravity: 120, life: 0.5 });
-        this.engine.toast(`+${CHIP_VALUE} chips`, COLORS.chip);
+        this.engine.toast(`+${chipValue} chips`, COLORS.chip);
         SfxManager.play("chip");
         this.engine.onHudChange();
       } else if (e.spec.kind === "key" && !this.isCaged(e) && rectIntersect(pr, this.padRect(e.rect, 4))) {
@@ -671,7 +677,7 @@ export class WorldScene implements Scene {
           if (Input.interact() && !acted) {
             acted = true;
             if (lock.toll && !this.engine.store.getFlag(`door:${d.id}`)) {
-              this.engine.store.spendChips(d.costChips ?? 0);
+              this.engine.store.spendChips(this.tollOf(d.costChips ?? 0));
               this.engine.store.setFlag(`door:${d.id}`, true);
             }
             this.startFadeToRoom(d.to, d.toDoor);
@@ -726,10 +732,16 @@ export class WorldScene implements Scene {
       return { locked: true, label: `Vault Door — needs ${d.lockedByKey} keys (${this.engine.store.getKeys()}/${d.lockedByKey})`, toll: false };
     }
     if (d.costChips && !this.engine.store.getFlag(`door:${d.id}`)) {
-      const can = this.engine.store.getChips() >= d.costChips;
-      return { locked: !can, label: can ? `Press E — pay ${d.costChips} chips → ${dest}` : `Toll: ${d.costChips} chips`, toll: true };
+      const cost = this.tollOf(d.costChips);
+      const can = this.engine.store.getChips() >= cost;
+      return { locked: !can, label: can ? `Press E — pay ${cost} chips → ${dest}` : `Toll: ${cost} chips`, toll: true };
     }
     return { locked: false, label: `Press E — enter ${dest}`, toll: false };
+  }
+
+  /** NG+ "High Stakes" raises tolls in step with chip value. */
+  private tollOf(cost: number): number {
+    return activeRule() === "highStakes" ? Math.ceil(cost * 1.5) : cost;
   }
 
   private startFadeToRoom(to: RoomId, toDoor: string) {
