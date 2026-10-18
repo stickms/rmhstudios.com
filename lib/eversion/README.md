@@ -185,6 +185,30 @@ bodies behind the globe, bodies in front), only while present.
 `testing/e2e/eversion-look.mjs` renders every tier × aspect × theme and fails on any
 frame-to-frame jump four times its neighbours.
 
+### Smooth at every resolution, on every device (amended 2026-10-18)
+
+- **A pixel budget per tier** (`TIERS[tier].maxCanvasPixels`: 6.2 M / 3.7 M / 1.6 M).
+  The DPR cap alone let a 4K or 5K window at DPR 2 shade 15-30 M pixels a frame; past
+  the budget the canvas DPR is lowered for that viewport, so the per-frame cost is
+  bounded whatever the screen.
+- **The cosmos governs itself.** The DPR governor lowers resolution when frames run
+  long; if they still do with the cosmos on screen, the renderer eases the whole
+  system out over 450 ms (`governCosmos` in `gl/renderer.ts`: ~45 fps for 24 smoothed
+  frames) and does not lay it out again on that page. It is never cut.
+- **The compile waits for a quiet page.** `EversionBridge` initialises the host only
+  after 800 ms with no scroll, wheel, touch, press or key (and in an idle slot where
+  the browser has one), and not while the hub is open: on WebKit the host is
+  in-thread and has no `requestIdleCallback`, so a timer-driven compile could land
+  mid-scroll. The cosmos's programs compile in that same init when the viewport is
+  large enough (`init.precompileCosmos`), never as a hitch at the start of a run.
+- **Cross-browser.** Every engine that runs the effect compiles WebGL through ANGLE's
+  translator (Chromium, Firefox, and WebKit since Safari 15), which is the validator
+  `eversion-gl.mjs` exercises; WebKit gets the in-thread host. The shaders use only
+  GLSL ES 3.00 core (`gl_VertexID`/`gl_InstanceID`, flat varyings, dynamically indexed
+  uniform arrays well under the 224-vector minimum), guard every `pow` base and
+  normalisation against rounding, and need no extension. A browser without WebGL2
+  navigates as it always did.
+
 ## The ending: the run ends with UNWRAP
 
 The animation is WRAP, EVERSION, UNWRAP. There is no stage after UNWRAP (a POP stage, in which an empty glass

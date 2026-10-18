@@ -378,6 +378,8 @@ export function stepCosmos(
   s: Readonly<TimelineSnapshot>,
   viewport: Viewport,
   out: CosmosFrame,
+  /** 0..1: the renderer's frame governor easing the whole system out on a device that cannot afford it. */
+  budget = 1,
 ): void {
   out.cosmos[2] = s.t / 1000;
   if (!scene) {
@@ -393,7 +395,7 @@ export function stepCosmos(
   }
   const arrival = cosmosArrival(s);
   const departure = cosmosDeparture(s);
-  const presence = arrival * departure;
+  const presence = arrival * departure * budget;
   out.presence = presence;
   out.cosmos[0] = presence;
   out.cosmos[1] = scene.stars * presence;
@@ -409,7 +411,7 @@ export function stepCosmos(
   const gx = s.centreX - viewport.w / 2;
   const gy = s.centreY - viewport.h / 2;
   // Arriving and leaving, every body is pushed back behind the globe and its orbit drawn in.
-  const away = 1 - arrival + (1 - departure);
+  const away = 1 - arrival + (1 - departure) + (1 - budget);
   const pushBack = -2.6 * r0 * away;
   const spread = 0.7 + 0.3 * presence;
   // Front bodies show only once the system is fully present (never over the flat page).

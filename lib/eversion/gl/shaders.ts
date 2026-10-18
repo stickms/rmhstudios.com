@@ -654,7 +654,7 @@ vec3 thinFilm(float nv, float t) {
 }
 /* High: a rim whose red, green and blue fall off at slightly different rates (dispersion). */
 vec3 dispersedRim(float facing) {
-  float x = 1.0 - abs(facing);
+  float x = clamp(1.0 - abs(facing), 0.0, 1.0);
   return vec3(pow(x, RIM_POWER * 0.8), pow(x, RIM_POWER), pow(x, RIM_POWER * 1.25)) * RIM_STRENGTH * 0.9;
 }
 `;
@@ -715,7 +715,7 @@ void main() {
   vec4 info = u_bodyInfo[i];
   int kind = int(info.x + 0.5);
   /* How far past the disc the quad reaches: a sun's corona, a ring, an atmosphere's halo. */
-  float extent = kind == 0 ? 4.0 : info.z > 0.0 ? 2.45 : (kind == 2 || kind == 4) ? 1.16 : 1.04;
+  float extent = kind == 0 ? 3.2 : info.z > 0.0 ? 2.45 : (kind == 2 || kind == 4) ? 1.16 : 1.04;
   int k = gl_VertexID % 6;
   vec2 c = vec2(k == 1 || k == 2 || k == 4 ? 1.0 : -1.0, k == 2 || k == 4 || k == 5 ? 1.0 : -1.0);
   /* The globe's camera (vertex shader): on +z at 2 * GLOBE_PERSP * r. */
@@ -838,7 +838,7 @@ void main() {
     float ang = atan(p.y, p.x);
     corona *= 0.82 + 0.3 * pow(abs(sin(ang * 5.0 + t * 0.12)), 6.0) + 0.12 * fbm(vec3(ang * 2.0, r * 1.5, t * 0.2));
 #endif
-    corona *= (1.0 - disc) * smoothstep(4.0, 2.6, d);
+    corona *= (1.0 - disc) * smoothstep(3.2, 2.2, d);
     vec3 glow = A.rgb * corona * max(A.a, 0.35);
     outColor = vec4((core * disc + glow) * alpha, disc * alpha);
     return;
@@ -1198,7 +1198,8 @@ void main() {
   /* Glass: a faint fill and a bright Fresnel rim, present only where the wrap wave has lifted the surface off the
      flat page, so it condenses instead of appearing. A masked wedge is this. */
   float lift = quintic5(v_morph * 2.0);
-  float rim = pow(1.0 - abs(facing), RIM_POWER) * RIM_STRENGTH;
+  /* Clamped: |facing| can round past 1, and pow() of a negative base is undefined (NaN on some mobile GPUs). */
+  float rim = pow(clamp(1.0 - abs(facing), 0.0, 1.0), RIM_POWER) * RIM_STRENGTH;
   float glassRim = clamp(rim, 0.0, 1.0) * lift;
   float glassA = clamp(GLASS_FILL * lift + glassRim * GLASS_RIM_ALPHA, 0.0, 1.0);
   vec3 glassRgb = mix(veil, u_colCageMajor.rgb, glassRim);

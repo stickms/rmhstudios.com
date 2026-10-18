@@ -570,6 +570,12 @@ export type ToWorker =
       dprCap: number;
       /** Optional at init; the authoritative colours arrive with `prime`. */
       colours?: ThemeColours;
+      /**
+       * Compile the cosmos's programs now, with the others (amended 2026-10-18): the page's viewport is large
+       * enough for it (`cosmosEnabled`). Otherwise they compile at the first prime that needs them, which on an
+       * in-thread host is a main-thread hitch at the start of a run.
+       */
+      precompileCosmos?: boolean;
     }
   | ({
       type: 'prime';
@@ -706,6 +712,13 @@ export interface RendererOptions {
    * instead of the picture, so a pixel test can look for jaggedness in the mask itself. Never set in production.
    */
   maskView?: boolean;
+  /**
+   * Let the renderer ease the cosmos out when frames run long with it on screen (default true). Off only in the
+   * look harness, whose software-GL frames are slow by construction and would always trip it.
+   */
+  governCosmos?: boolean;
+  /** Compile the cosmos's programs at construction (see `ToWorker` `init.precompileCosmos`). */
+  precompileCosmos?: boolean;
 }
 
 /**

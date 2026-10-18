@@ -103,7 +103,12 @@ async function setup() {
   canvas.style.height = `${view.h}px`;
   document.body.appendChild(canvas);
   renderer?.dispose();
-  renderer = createRenderer(canvas, { tier, dprCap: TIERS[tier].canvasDprCap });
+  // Software GL is slow by construction: the cosmos governor would always fade it out here.
+  renderer = createRenderer(canvas, {
+    tier,
+    dprCap: TIERS[tier].canvasDprCap,
+    governCosmos: false,
+  });
   orientation ??= realOrientation();
   renderer.prime({
     projection,

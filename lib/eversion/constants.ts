@@ -329,6 +329,15 @@ export interface TierConfig {
   readonly captureDprCap: number;
   /** Anisotropic filtering level for the page textures; 0 = off. */
   readonly anisotropy: number;
+  /**
+   * Ceiling on the canvas's drawing-buffer pixels (amended 2026-10-18). The DPR cap
+   * alone lets a 4K or 5K window at DPR 2 render 15-30 M pixels a frame, every one
+   * of them shaded; past this budget the DPR is lowered for that viewport so the
+   * per-frame cost is bounded at every resolution. Text on the flat frames is never
+   * resampled below a 1:1-ish scale on the screens this binds (it binds only past
+   * ~2560 x 1600 at DPR 1.5).
+   */
+  readonly maxCanvasPixels: number;
 }
 
 /**
@@ -336,9 +345,30 @@ export interface TierConfig {
  * smooth, so 128 is the floor (spec §8.2). `low` is where `perf-lite` starts.
  */
 export const TIERS: Readonly<Record<Tier, TierConfig>> = {
-  high: { meshTheta: 256, meshPhi: 128, canvasDprCap: 2.0, captureDprCap: 1.5, anisotropy: 8 },
-  mid: { meshTheta: 192, meshPhi: 96, canvasDprCap: 1.5, captureDprCap: 1.25, anisotropy: 4 },
-  low: { meshTheta: 128, meshPhi: 64, canvasDprCap: 1.0, captureDprCap: 1.0, anisotropy: 0 },
+  high: {
+    meshTheta: 256,
+    meshPhi: 128,
+    canvasDprCap: 2.0,
+    captureDprCap: 1.5,
+    anisotropy: 8,
+    maxCanvasPixels: 6_200_000,
+  },
+  mid: {
+    meshTheta: 192,
+    meshPhi: 96,
+    canvasDprCap: 1.5,
+    captureDprCap: 1.25,
+    anisotropy: 4,
+    maxCanvasPixels: 3_700_000,
+  },
+  low: {
+    meshTheta: 128,
+    meshPhi: 64,
+    canvasDprCap: 1.0,
+    captureDprCap: 1.0,
+    anisotropy: 0,
+    maxCanvasPixels: 1_600_000,
+  },
 };
 
 /** Capture scale ceiling per tier (spec §6.2) — a view of {@link TIERS}. */

@@ -440,6 +440,7 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
       tier: message.tier,
       dprCap: message.dprCap,
       onContextLost: contextLost,
+      precompileCosmos: message.precompileCosmos === true,
     });
     emit({ type: 'ready', tier: message.tier, host: mode });
   }

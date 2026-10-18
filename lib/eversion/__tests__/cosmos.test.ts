@@ -145,6 +145,18 @@ describe('the frame', () => {
     expect(dark.spaceAmount).toBeGreaterThan(light.spaceAmount * 4);
   });
 
+  it('the frame governor budget eases the whole system out (0 = gone, the fixed light back)', () => {
+    const scene = buildCosmos(DESKTOP, 'high', DARK)!;
+    const out = createCosmosFrame();
+    stepCosmos(scene, snap({ wrap: 1 }), DESKTOP, out, 0.5);
+    expect(out.presence).toBeCloseTo(0.5, 6);
+    stepCosmos(scene, snap({ wrap: 1 }), DESKTOP, out, 0);
+    expect(out.presence).toBe(0);
+    for (let i = 0; i < out.count; i++) expect(out.info[i * 4 + 3]).toBe(0);
+    const len = Math.hypot(...LIGHT_DIRECTION);
+    expect(out.lightDir[0]).toBeCloseTo(LIGHT_DIRECTION[0] / len, 6);
+  });
+
   it('the globe light turns toward the sun with presence and stays a unit vector', () => {
     const scene = buildCosmos(DESKTOP, 'high', DARK)!;
     const out = createCosmosFrame();

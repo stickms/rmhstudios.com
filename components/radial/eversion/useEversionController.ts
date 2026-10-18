@@ -6,6 +6,7 @@ import { aspectBucket, getBakedLut } from '@/lib/eversion/projection-lut';
 import { buildPlaceholder } from '@/lib/eversion/placeholder';
 import { createCapture, fixedViewport } from '@/lib/eversion/capture';
 import { evaluateHostEligibility } from '@/lib/eversion/eligibility';
+import { cosmosEnabled } from '@/lib/eversion/cosmos';
 import { registerDebug, maybeLoadEversionDebug } from '@/lib/eversion/debug';
 import { isEversionDebugEnabled, isEversionEnabled } from '@/lib/eversion/flags';
 import { getEversionHost, resetEversionHost } from '@/lib/eversion/gl/host';
@@ -432,7 +433,13 @@ function createHostPort(): HostPort & {
         }
       });
       try {
-        host.post({ type: 'init', canvas, tier, dprCap: TIERS[tier].canvasDprCap });
+        host.post({
+          type: 'init',
+          canvas,
+          tier,
+          dprCap: TIERS[tier].canvasDprCap,
+          precompileCosmos: cosmosEnabled(viewportNow(), tier),
+        });
       } catch (error) {
         off();
         reject(error instanceof Error ? error : new Error(String(error)));

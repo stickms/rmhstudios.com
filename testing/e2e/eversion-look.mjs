@@ -63,6 +63,10 @@ const SCENARIOS = [
   { name: 'phone-mid-dark', w: 390, h: 844, tier: 'mid', theme: 'dark', cosmos: false },
   { name: 'phone-low-light', w: 390, h: 844, tier: 'low', theme: 'light', cosmos: false },
   { name: 'desktop-low-dark', w: 1440, h: 900, tier: 'low', theme: 'dark', cosmos: false },
+  // Resolution extremes: a 4K window, a 32:9 super-ultrawide, the smallest phone.
+  { name: 'uhd-high-dark', w: 3840, h: 2160, tier: 'high', theme: 'dark', cosmos: true },
+  { name: 'superwide-high-dark', w: 5120, h: 1440, tier: 'high', theme: 'dark', cosmos: true },
+  { name: 'small-phone-low-dark', w: 320, h: 568, tier: 'low', theme: 'dark', cosmos: false },
 ];
 const only = process.env.EVERSION_LOOK_ONLY;
 /** `EVERSION_LOOK_FRAMES_ONLY=1`: write the frames and skip the (slow, ~300-frame) continuity replay. */

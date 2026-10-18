@@ -52,6 +52,60 @@ export interface EversionBridgeProps {
   onController: (controller: EversionControllerHandle | null) => void;
 }
 
+/** How long the page must have been still before the compile may run. */
+const QUIET_MS = 800;
+
+/**
+ * Run `fn` once, after the visitor has left the page alone (no scroll, wheel, touch,
+ * pointer press or key) for {@link QUIET_MS}, in an idle slot where the browser has
+ * `requestIdleCallback`. Where the render host is in-thread (every WebKit browser,
+ * which also has no `requestIdleCallback`) the compile is a main-thread task of a
+ * few hundred ms on a phone: started on a plain timer it could land in the middle
+ * of a scroll and drop its frames. `busy()` defers it further. Returns a cancel.
+ */
+function whenQuiet(fn: () => void, busy: () => boolean): () => void {
+  const w = window as typeof window & {
+    requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+    cancelIdleCallback?: (handle: number) => void;
+  };
+  const events = ['scroll', 'wheel', 'touchstart', 'pointerdown', 'keydown'] as const;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let idle: number | undefined;
+  let done = false;
+  const stop = () => {
+    for (const e of events) window.removeEventListener(e, restart, { capture: true });
+    if (timer !== undefined) clearTimeout(timer);
+    if (idle !== undefined) w.cancelIdleCallback?.(idle);
+    timer = undefined;
+    idle = undefined;
+  };
+  const fire = () => {
+    if (done) return;
+    done = true;
+    stop();
+    fn();
+  };
+  function restart() {
+    if (timer !== undefined) clearTimeout(timer);
+    if (idle !== undefined) w.cancelIdleCallback?.(idle);
+    idle = undefined;
+    timer = setTimeout(() => {
+      timer = undefined;
+      if (busy()) return restart();
+      if (w.requestIdleCallback) idle = w.requestIdleCallback(fire, { timeout: 1000 });
+      else fire();
+    }, QUIET_MS);
+  }
+  for (const e of events) {
+    window.addEventListener(e, restart, { capture: true, passive: true });
+  }
+  restart();
+  return () => {
+    done = true;
+    stop();
+  };
+}
+
 /**
  * `displayName` is also this module's build fingerprint: `check-bundle-budget`
  * looks for it in the shell's static closure on builds without sourcemaps.
@@ -61,6 +115,8 @@ export default function EversionBridge({ open, motionMs, onController }: Eversio
   const router = useRouter();
   const beforeCapture = useBeforeCapture({ open, motionMs });
   const controllerRef = useRef<EversionControllerHandle | null>(null);
+  const openRef = useRef(open);
+  openRef.current = open;
 
   // The controller is built once, but the router, the translator and the
   // capture binding change identity between renders. It reads them through
@@ -87,23 +143,21 @@ export default function EversionBridge({ open, motionMs, onController }: Eversio
     });
     controllerRef.current = controller;
     onController(controller);
-    // Initialise the render host on the page's real canvas now, in the first idle
-    // slot, instead of 700 ms after the hub next opens: that is the program compile,
-    // and a release that beat it used to skip the effect. Once per page; the hub's
-    // own `onHubOpened` warm is then a no-op.
-    const w = window as typeof window & {
-      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
-      cancelIdleCallback?: (handle: number) => void;
-    };
-    // Only for a visitor who can see the effect: reduced motion never compiles anything.
-    const warm = () => {
-      if (live.current.beforeCapture.isEligible()) void controller.warmHost();
-    };
-    const idle = w.requestIdleCallback?.(warm, { timeout: 1500 });
-    const timer = idle === undefined ? setTimeout(warm, 300) : undefined;
+    // Initialise the render host on the page's real canvas once the page is QUIET,
+    // instead of 700 ms after the hub next opens: that is the program compile, and a
+    // release that beat it used to skip the effect. Once per page; the hub's own
+    // `onHubOpened` warm is then a no-op. Only for a visitor who can see the effect:
+    // reduced motion never compiles anything.
+    const cancelWarm = whenQuiet(
+      () => {
+        if (live.current.beforeCapture.isEligible()) void controller.warmHost();
+      },
+      // While the hub is open the visitor is turning the globe (a drag fires no new
+      // press): its own open path warms the host then, after the open morph.
+      () => openRef.current,
+    );
     return () => {
-      if (idle !== undefined) w.cancelIdleCallback?.(idle);
-      if (timer !== undefined) clearTimeout(timer);
+      cancelWarm();
       onController(null);
       controller.dispose();
       controllerRef.current = null;
