@@ -195,6 +195,14 @@ frame-to-frame jump four times its neighbours.
   long; if they still do with the cosmos on screen, the renderer eases the whole
   system out over 450 ms (`governCosmos` in `gl/renderer.ts`: ~45 fps for 24 smoothed
   frames) and does not lay it out again on that page. It is never cut.
+- **Nothing heavy runs while the visitor is moving** (`components/radial/quiet.ts`).
+  The three main-thread costs before a run - evaluating the effect's chunks, the
+  program compile (in-thread on WebKit) and the BEFORE capture (a DOM clone) - all
+  wait for a still page: no scroll, wheel, touch or key lately and no pointer HELD
+  (a drag on the hub's globe fires no new press, so "no input lately" alone misses
+  it), then an idle slot where the browser has one. They used to start on timers
+  and idle-callback timeouts, which fire mid-gesture. A release that beats them
+  pays for them while the hub sits still, inside the bounded waits above.
 - **The compile waits for a quiet page.** `EversionBridge` initialises the host only
   after 800 ms with no scroll, wheel, touch, press or key (and in an idle slot where
   the browser has one), and not while the hub is open: on WebKit the host is

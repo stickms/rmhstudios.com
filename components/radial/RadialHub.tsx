@@ -17,6 +17,7 @@ import type { PrefetchResult } from '@/lib/eversion/prefetch';
 import type { GlobeStartState } from '@/lib/eversion/types';
 import type { EversionControllerHandle } from './eversion/useEversionController';
 import { createHandOff } from './hub-handoff';
+import { whenQuiet } from './quiet';
 import { RmhLogo } from './RmhLogo';
 
 /**
@@ -523,11 +524,18 @@ export function RadialHub() {
 
   // The hub is open: the visitor is about to pick a destination, so the effect's
   // warm-up stops waiting for `load` and idle. Held back until the open morph is
-  // over, so its chunk parsing never lands inside that motion.
+  // over AND the visitor is not dragging the globe (`quiet.ts`), so its chunk
+  // parsing never lands inside either motion. A confirm before then asks at once.
   useEffect(() => {
     if (phase !== 'open' || !eversionOn || controllerRef.current || noEffect.current) return;
-    const timer = setTimeout(wantBridge, MOTION_MS);
-    return () => clearTimeout(timer);
+    let cancelQuiet: (() => void) | null = null;
+    const timer = setTimeout(() => {
+      cancelQuiet = whenQuiet(wantBridge, { quietMs: 250, idleTimeoutMs: 1000 });
+    }, MOTION_MS);
+    return () => {
+      clearTimeout(timer);
+      cancelQuiet?.();
+    };
   }, [phase, eversionOn, wantBridge]);
 
   /**

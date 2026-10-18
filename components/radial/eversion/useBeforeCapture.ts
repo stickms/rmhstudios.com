@@ -12,6 +12,10 @@ import { detectHostMode } from '@/lib/eversion/gl/host';
 import { isEversionReady } from '@/lib/eversion/prefetch';
 import type { CaptureApi, FallbackReason } from '@/lib/eversion/types';
 import { detectTier } from './detect-tier';
+import { whenQuiet } from '../quiet';
+
+/** How long the page must be still (and no pointer held) before the BEFORE capture runs. */
+const CAPTURE_QUIET_MS = 150;
 
 /**
  * Read the live eligibility inputs. Each reader is individually guarded: a
@@ -99,6 +103,13 @@ export function useBeforeCapture({
         }
       },
       shouldCapture: () => shouldCaptureBefore(readEligibilityInputs()),
+      // The capture clones the page on the main thread (~100-300 ms on a desktop,
+      // more on a phone). An idle callback's timeout would fire it in the middle of
+      // a drag on the globe (a drag fires no new press): wait for a still page and
+      // no pointer held instead (`../quiet.ts`). A release before then takes one on
+      // demand, inside its own budget.
+      scheduleIdle: (cb, timeoutMs) =>
+        whenQuiet(cb, { quietMs: CAPTURE_QUIET_MS, idleTimeoutMs: timeoutMs }),
     });
     schedulerRef.current = scheduler;
     const unregister = registerDebug('beforeCapture', { state: () => scheduler.state() });
