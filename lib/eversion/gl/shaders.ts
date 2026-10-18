@@ -89,6 +89,8 @@ import {
   WRAP_WAVE,
 } from '../constants';
 import { JUMP_UV } from '../projection-lut';
+import { COSMOS_MAX_BODIES } from '../cosmos';
+import type { Tier } from '../types';
 
 /** One linked program's sources. */
 export interface ProgramSource {
@@ -115,6 +117,10 @@ export interface ShaderSet {
    * (`renderer.debugEvaluate`, spec §11.2 test 27), and the varying it captures.
    */
   readonly feedback: ProgramSource & { readonly varyings: readonly string[] };
+  /** The cosmos's bodies and its starfield (mid and high only; `null` on low, which never compiles them). */
+  readonly cosmos: ProgramSource | null;
+  readonly stars: ProgramSource | null;
+  readonly quality: Quality;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -475,11 +481,457 @@ float wedgeGlass(float wedgeAmount) {
 `;
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   Quality (amendment 2026-10-18: "optimised on low-end, liquid and photorealistic on high-end")
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * The shader quality a renderer compiles, from its tier: `0` low, `1` mid, `2` high.
+ *
+ * - **0 (low):** exactly the original shading — fixed light, Lambert, side tint, Fresnel rim, the cage. No
+ *   cosmos program is ever compiled. This is the cheap path and it stays bit-for-bit what it was.
+ * - **1 (mid):** a slow liquid swell on the surface (vertex only), the scene's light (it turns toward the
+ *   cosmos's sun), a GGX highlight and a Schlick-Fresnel reflection of a procedural studio environment: a clear
+ *   coat on the page, a dielectric where there is no page. The cosmos, with one sun and plain Lambert.
+ * - **2 (high):** on top, a flowing micro-surface on the shading normal (the "liquid" sheen), a thin-film
+ *   shimmer and a dispersed (chromatic) rim on the glass, the starfield refracted through it; in the cosmos, both
+ *   suns, atmospheres, ocean glint, and shadows (moons on planets, rings on the giant and the giant on its rings).
+ *
+ * Every added term is multiplied by the morph weight (and glass by its lift), so the flat endpoints are the
+ * capture to the bit at every quality (S#29/S#30), and nothing about a run's timing or geometry changes.
+ */
+export type Quality = 0 | 1 | 2;
+export function qualityForTier(tier: Tier | undefined): Quality {
+  return tier === 'high' ? 2 : tier === 'mid' ? 1 : 0;
+}
+
+/** The liquid swell's amplitude, in globe radii (vertex; mid and high). */
+const LIQUID_SWELL = 0.011;
+/** The micro-surface's strength on the shading normal (fragment; high). */
+const LIQUID_NORMAL = 0.16;
+/** How much of the environment the page's clear coat reflects at grazing incidence. */
+const COAT_REFLECT = 0.42;
+/** The page coat's highlight strength. */
+const COAT_SPEC = 0.55;
+/** How much of the environment the glass reflects (times Fresnel). */
+const GLASS_REFLECT = 1.15;
+/** How far (CSS px) the glass displaces what is seen through it, per unit of normal tilt. */
+const GLASS_REFRACT_PX = 26;
+/** Thin-film shimmer strength on the glass (high). */
+const THIN_FILM = 0.22;
+/** GGX roughness (alpha = roughness^2), and the highlight's gain. */
+const ROUGHNESS = 0.24;
+const SPEC_GAIN = 0.32;
+
+const MATERIAL_DEFINES = `
+#define LIQUID_SWELL ${f(LIQUID_SWELL)}
+#define LIQUID_NORMAL ${f(LIQUID_NORMAL)}
+#define COAT_REFLECT ${f(COAT_REFLECT)}
+#define COAT_SPEC ${f(COAT_SPEC)}
+#define GLASS_REFLECT ${f(GLASS_REFLECT)}
+#define GLASS_REFRACT_PX ${f(GLASS_REFRACT_PX)}
+#define THIN_FILM ${f(THIN_FILM)}
+#define ROUGHNESS ${f(ROUGHNESS)}
+#define SPEC_GAIN ${f(SPEC_GAIN)}
+#define COSMOS_N ${COSMOS_MAX_BODIES}
+`;
+
+/** Hashes and value noise, for the starfield and the planets. No texture, no raw colour. */
+const NOISE_GLSL = /* glsl */ `
+float hash12(vec2 p) {
+  vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
+}
+float hash13(vec3 p) {
+  p = fract(p * 0.1031);
+  p += dot(p, p.zyx + 31.32);
+  return fract((p.x + p.y) * p.z);
+}
+float vnoise(vec3 p) {
+  vec3 i = floor(p);
+  vec3 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  float a = mix(hash13(i), hash13(i + vec3(1.0, 0.0, 0.0)), f.x);
+  float b = mix(hash13(i + vec3(0.0, 1.0, 0.0)), hash13(i + vec3(1.0, 1.0, 0.0)), f.x);
+  float c = mix(hash13(i + vec3(0.0, 0.0, 1.0)), hash13(i + vec3(1.0, 0.0, 1.0)), f.x);
+  float d = mix(hash13(i + vec3(0.0, 1.0, 1.0)), hash13(i + vec3(1.0, 1.0, 1.0)), f.x);
+  return mix(mix(a, b, f.y), mix(c, d, f.y), f.z);
+}
+float fbm(vec3 p) {
+  float s = 0.0;
+  float amp = 0.5;
+  for (int o = 0; o < (QUALITY >= 2 ? 4 : 2); o++) {
+    s += amp * vnoise(p);
+    p = p * 2.03 + vec3(1.7, 9.2, 3.1);
+    amp *= 0.5;
+  }
+  return s / (QUALITY >= 2 ? 0.9375 : 0.75);
+}
+
+/* Point stars on three cell grids (CSS px), each ~1 px with a little twinkle. */
+float starLayer(vec2 p, float cell, float thresh, float seed) {
+  vec2 c = floor(p / cell);
+  float h = hash12(c + seed);
+  if (h < thresh) return 0.0;
+  vec2 o = vec2(hash12(c + seed + 17.0), hash12(c + seed + 31.0));
+  vec2 sp = (c + 0.15 + 0.7 * o) * cell;
+  vec2 dd = p - sp;
+  return ((h - thresh) / (1.0 - thresh)) * exp(-dot(dd, dd) / 0.9);
+}
+vec3 starfield(vec2 p, float t) {
+  float s = starLayer(p, 6.0, 0.972, 0.0) + 1.4 * starLayer(p, 13.0, 0.95, 5.0) +
+            1.9 * starLayer(p, 31.0, 0.9, 11.0);
+  float twinkle = 0.78 + 0.22 * sin(t * 2.3 + p.x * 0.071 + p.y * 0.113);
+  return vec3(s * twinkle);
+}
+`;
+
+/**
+ * The liquid-glass material of the surface (mid and high). Reads `u_spin`, `u_tilt`, `u_time`, `u_evert` and
+ * `u_lightCol`; the caller supplies the visible-side normal, the light and the background colour.
+ */
+const MATERIAL_GLSL = /* glsl */ `
+${MATERIAL_DEFINES}
+${NOISE_GLSL}
+float fresnelSchlick(float c) {
+  float m = 1.0 - c;
+  float m2 = m * m;
+  return 0.04 + 0.96 * m2 * m2 * m;
+}
+/* R = Rx(tilt) * Ry(spin), as the vertex shader poses the surface. */
+vec3 poseDir(vec3 q) {
+  float cy = cos(u_spin), sy = sin(u_spin), ct = cos(u_tilt), st = sin(u_tilt);
+  float x1 = q.x * cy + q.z * sy;
+  float z1 = -q.x * sy + q.z * cy;
+  return vec3(x1, q.y * ct - z1 * st, q.y * st + z1 * ct);
+}
+/* High: a flowing micro-surface riding the body's own coordinates (so it travels with the eversion), strongest
+   while the sphere is turning inside out. Its gradient tilts the shading normal: the liquid sheen. */
+vec3 liquidNormal(vec3 n, vec3 body, float w) {
+#if QUALITY >= 2
+  float t = u_time;
+  vec3 k1 = vec3(7.0, 3.0, -4.0);
+  vec3 k2 = vec3(-5.0, 8.0, 2.0);
+  vec3 k3 = vec3(3.0, -6.0, 9.0);
+  vec3 g = k1 * cos(dot(body, k1) + 1.9 * t) * 0.5
+         + k2 * cos(dot(body, k2) - 1.4 * t) * 0.32
+         + k3 * cos(dot(body, k3) + 2.6 * t) * 0.18;
+  g = poseDir(g) / 9.0;
+  g -= n * dot(g, n);
+  float activity = 0.55 + 0.45 * sin(PI * clamp(u_evert, 0.0, 1.0));
+  return normalize(n + g * LIQUID_NORMAL * activity * w);
+#else
+  return n;
+#endif
+}
+/* A studio, not a sky: a soft vertical gradient from the background toward the light's colour, the key light's
+   reflection, and two tall softboxes either side of the viewer. y is DOWN in view space. */
+vec3 envLight(vec3 r, vec3 l, vec3 bg) {
+  float up = clamp(0.5 - 0.5 * r.y, 0.0, 1.0);
+  vec3 sky = mix(bg * 0.55, mix(bg, u_lightCol.rgb, 0.5), up);
+  float key = pow(max(dot(r, l), 0.0), 18.0);
+  float ax = abs(r.x);
+  float strip = smoothstep(0.55, 0.72, ax) * (1.0 - smoothstep(0.86, 0.95, ax)) *
+                smoothstep(-0.2, 0.5, 0.3 - r.y);
+  return sky + u_lightCol.rgb * (key * 1.6 + strip * 0.32);
+}
+/* GGX (Trowbridge-Reitz) highlight with Schlick Fresnel on the half vector. */
+vec3 specularLight(vec3 n, vec3 v, vec3 l) {
+  vec3 h = normalize(l + v);
+  float nh = max(dot(n, h), 0.0);
+  float nl = max(dot(n, l), 0.0);
+  float a = ROUGHNESS * ROUGHNESS;
+  float a2 = a * a;
+  float d = nh * nh * (a2 - 1.0) + 1.0;
+  float D = a2 / (PI * d * d);
+  float spec = D * nl * 0.25 * fresnelSchlick(max(dot(h, v), 0.0));
+  return vec3(min(spec, 8.0) * SPEC_GAIN);
+}
+/* High: interference colours of a thin film, zero-mean so it shimmers without tinting. */
+vec3 thinFilm(float nv, float t) {
+  vec3 phase = vec3(0.0, 0.33, 0.67) + 1.8 * (1.0 - nv) + 0.12 * sin(t * 0.7);
+  return 0.5 * cos(TAU * phase);
+}
+/* High: a rim whose red, green and blue fall off at slightly different rates (dispersion). */
+vec3 dispersedRim(float facing) {
+  float x = 1.0 - abs(facing);
+  return vec3(pow(x, RIM_POWER * 0.8), pow(x, RIM_POWER), pow(x, RIM_POWER * 1.25)) * RIM_STRENGTH * 0.9;
+}
+`;
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   The cosmos (mid and high, large screens; lib/eversion/cosmos.ts)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/** A full-screen triangle for the starfield, drawn first (additive over the clear). */
+const STARS_VERTEX = `${GLSL_HEADER}
+void main() {
+  vec2 c = vec2(gl_VertexID == 1 ? 3.0 : -1.0, gl_VertexID == 2 ? 3.0 : -1.0);
+  gl_Position = vec4(c, 0.0, 1.0);
+}
+`;
+
+function starsFragment(quality: Quality): string {
+  return `${GLSL_HEADER}
+#define QUALITY ${quality}
+${MATERIAL_DEFINES}
+uniform vec4 u_cosmos;
+uniform float u_pixelRatio;
+uniform float u_spin;
+uniform vec4 u_colAccent;
+out vec4 outColor;
+${NOISE_GLSL}
+void main() {
+  /* The sky drifts a little with the globe's spin: parallax, so the camera reads as moving through space. */
+  vec2 p = gl_FragCoord.xy / u_pixelRatio + vec2(u_spin * 14.0, 0.0);
+  vec3 c = starfield(p, u_cosmos.z) * u_cosmos.y;
+#if QUALITY >= 2
+  /* A faint nebula in the accent's hue. */
+  float neb = fbm(vec3(p * 0.0024, 0.37 * u_cosmos.z * 0.05));
+  c += u_colAccent.rgb * smoothstep(0.45, 0.95, neb) * 0.09 * u_cosmos.y;
+#endif
+  /* Premultiplied with alpha 0: light added to whatever the clear is. */
+  outColor = vec4(c, 0.0);
+}
+`;
+}
+
+/**
+ * The bodies: one quad per body (instanced, no vertex buffer), ray-traced as a sphere in the fragment shader.
+ * `u_bodyBase` offsets the instance index, so the bodies behind the globe and those in front are two draws.
+ */
+const COSMOS_VERTEX = `${GLSL_HEADER}
+${MATERIAL_DEFINES}
+uniform vec4 u_bodyPos[COSMOS_N];
+uniform vec4 u_bodyInfo[COSMOS_N];
+uniform float u_bodyBase;
+uniform vec2 u_viewport;
+uniform float u_radius;
+out vec2 v_local;
+flat out int v_index;
+void main() {
+  int i = int(u_bodyBase + 0.5) + gl_InstanceID;
+  vec4 b = u_bodyPos[i];
+  vec4 info = u_bodyInfo[i];
+  int kind = int(info.x + 0.5);
+  /* How far past the disc the quad reaches: a sun's corona, a ring, an atmosphere's halo. */
+  float extent = kind == 0 ? 4.0 : info.z > 0.0 ? 2.45 : (kind == 2 || kind == 4) ? 1.16 : 1.04;
+  int k = gl_VertexID % 6;
+  vec2 c = vec2(k == 1 || k == 2 || k == 4 ? 1.0 : -1.0, k == 2 || k == 4 || k == 5 ? 1.0 : -1.0);
+  /* The globe's camera (vertex shader): on +z at 2 * GLOBE_PERSP * r. */
+  float camDist = 2.0 * GLOBE_PERSP * max(u_radius, 1.0);
+  float wc = max((camDist - b.z) / camDist, 0.25);
+  vec2 centre = b.xy / wc;
+  vec2 pos = centre + c * (b.w / wc) * extent;
+  gl_Position = info.w > 0.0 ? vec4(pos.x * 2.0 / u_viewport.x, -pos.y * 2.0 / u_viewport.y, 0.0, 1.0)
+                             : vec4(2.0, 2.0, 2.0, 1.0);
+  v_local = c * extent;
+  v_index = i;
+}
+`;
+
+function cosmosFragment(quality: Quality): string {
+  return `${GLSL_HEADER}
+#define QUALITY ${quality}
+${MATERIAL_DEFINES}
+in vec2 v_local;
+flat in int v_index;
+uniform vec4 u_bodyPos[COSMOS_N];
+uniform vec4 u_bodyInfo[COSMOS_N];
+uniform vec4 u_bodyAlbedo[COSMOS_N];
+uniform vec4 u_bodyAlbedo2[COSMOS_N];
+uniform vec4 u_sunPos[2];
+uniform vec4 u_sunCol[2];
+uniform vec4 u_cosmos;
+uniform vec4 u_space;
+uniform vec4 u_colVeil;
+out vec4 outColor;
+${NOISE_GLSL}
+
+/* Ring density across its radius (in planet radii): a few bands with a gap, soft at both edges. */
+float ringDensity(float rho) {
+  if (rho < 1.32 || rho > 2.4) return 0.0;
+  float edge = smoothstep(1.32, 1.42, rho) * (1.0 - smoothstep(2.25, 2.4, rho));
+  float bands = 0.55 + 0.45 * sin(rho * 37.0) * sin(rho * 11.0 + 1.3);
+  float gap = 1.0 - 0.85 * (1.0 - smoothstep(0.0, 0.04, abs(rho - 1.86)));
+  return edge * bands * gap;
+}
+
+/* The surface pattern of each kind, on the body's own rotating coordinates. */
+vec3 surfaceAlbedo(int kind, vec3 q, vec3 a1, vec3 a2, float seed, float t, out float water) {
+  water = 0.0;
+  vec3 sp = q * 2.2 + seed;
+  if (kind == 3) {
+    float warp = fbm(sp * 1.4) * 2.4;
+    float bands = 0.5 + 0.5 * sin(q.y * 15.0 + warp);
+    vec3 c = mix(a1, a2, bands);
+    /* A storm. */
+    float storm = 1.0 - smoothstep(0.0, 0.16, length(vec2(q.x * 0.7 - 0.28, q.y - 0.32)));
+    return mix(c, a2 * 0.8, storm * 0.8);
+  }
+  if (kind == 2) {
+    float land = smoothstep(0.52, 0.56, fbm(sp * 1.2));
+    water = 1.0 - land;
+    vec3 c = mix(a1, a2, land);
+    float cloud = smoothstep(0.55, 0.8, fbm(sp * 1.8 + vec3(t * 0.04, 0.0, 0.0)));
+    return mix(c, mix(a1, vec3(dot(a1, vec3(0.3)) + 0.7), 0.9), cloud * 0.85);
+  }
+  if (kind == 4) {
+    float bands = 0.5 + 0.5 * sin(q.y * 6.0 + fbm(sp) * 1.2);
+    return mix(a1, a2, bands * 0.6);
+  }
+  /* rocky and moons: mottled ground and pocks */
+  float n = fbm(sp * 1.6);
+  float pock = smoothstep(0.62, 0.7, vnoise(sp * 5.0));
+  return mix(a2, a1, n) * (1.0 - 0.3 * pock);
+}
+
+/* High: how much of sun k's light reaches world point wp (moons and planets cast shadows on each other). */
+float occlusion(vec3 wp, vec3 l, int self) {
+#if QUALITY >= 2
+  float lit = 1.0;
+  for (int j = 0; j < COSMOS_N; j++) {
+    if (j == self) continue;
+    vec4 o = u_bodyPos[j];
+    vec4 info = u_bodyInfo[j];
+    if (info.w <= 0.0 || int(info.x + 0.5) == 0) continue;
+    vec3 oc = wp - o.xyz;
+    float b = dot(oc, l);
+    if (b > 0.0) continue;
+    float c = dot(oc, oc) - o.w * o.w;
+    float h = b * b - c;
+    /* soft-edged: the penumbra is the band where the ray grazes the occluder */
+    lit *= 1.0 - smoothstep(-0.15, 0.25, h / max(o.w * o.w, 1.0)) * 0.92;
+  }
+  return lit;
+#else
+  return 1.0;
+#endif
+}
+
+void main() {
+  int i = v_index;
+  vec4 B = u_bodyPos[i];
+  vec4 info = u_bodyInfo[i];
+  vec4 A = u_bodyAlbedo[i];
+  vec4 A2 = u_bodyAlbedo2[i];
+  float alpha = info.w;
+  vec2 p = v_local;
+  float d = length(p);
+  float aa = max(fwidth(d), 1e-3);
+  int kind = int(info.x + 0.5);
+  float t = u_cosmos.z;
+  float disc = 1.0 - smoothstep(1.0 - aa, 1.0 + aa, d);
+
+  if (kind == 0) {
+    /* A star: limb-darkened disc, granulation on high, and a corona added to whatever is behind it. */
+    float mu = sqrt(max(1.0 - d * d, 0.0));
+    /* White-hot at the centre, the star's colour toward a darkened limb: brighter than any background, so it
+       reads as a light source on a light theme too. */
+    vec3 core = mix(A.rgb, vec3(1.0), 0.6 * mu) * (0.72 + 0.28 * pow(mu, 0.5));
+#if QUALITY >= 2
+    core *= 0.92 + 0.16 * fbm(vec3(p * 5.0, t * 0.3));
+#endif
+    float r = max(d - 1.0, 0.0);
+    float corona = exp(-3.2 * r) * 0.55 + exp(-0.75 * r) * 0.16;
+#if QUALITY >= 2
+    float ang = atan(p.y, p.x);
+    corona *= 0.82 + 0.3 * pow(abs(sin(ang * 5.0 + t * 0.12)), 6.0) + 0.12 * fbm(vec3(ang * 2.0, r * 1.5, t * 0.2));
+#endif
+    corona *= (1.0 - disc) * smoothstep(4.0, 2.6, d);
+    vec3 glow = A.rgb * corona * max(A.a, 0.35);
+    outColor = vec4((core * disc + glow) * alpha, disc * alpha);
+    return;
+  }
+
+  /* The sphere's visible point and normal (y down, z toward the viewer), and its place in the world. */
+  vec3 N = vec3(p, sqrt(max(1.0 - d * d, 0.0)));
+  vec3 wp = B.xyz + N * B.w;
+  float rot = t * 0.12 + info.y;
+  vec3 q = vec3(N.x * cos(rot) + N.z * sin(rot), N.y, -N.x * sin(rot) + N.z * cos(rot));
+  float water;
+  vec3 albedo = surfaceAlbedo(kind, q, A.rgb, A2.rgb, info.y, t, water);
+
+  /* Ambient from the sky, and a faint fill from the viewer's side (the globe's own glow) so a moon's night side
+     reads as a body, not a hole. */
+  vec3 ambient = mix(u_colVeil.rgb, u_space.rgb, u_space.a) * 0.1 + u_sunCol[0].rgb * u_sunCol[0].a * 0.04;
+  vec3 light = ambient + u_sunCol[0].rgb * u_sunCol[0].a * 0.1 * max(N.z, 0.0);
+  vec3 glint = vec3(0.0);
+  vec3 limb = vec3(0.0);
+  vec3 L0 = normalize(u_sunPos[0].xyz - wp);
+  /* The ring's plane, tilted toward the viewer. */
+  vec3 nr = normalize(vec3(0.16, -cos(info.z), sin(info.z)));
+  for (int k = 0; k < (QUALITY >= 2 ? 2 : 1); k++) {
+    vec4 sun = u_sunCol[k];
+    if (sun.a <= 0.0) continue;
+    vec3 l = normalize(u_sunPos[k].xyz - wp);
+    float nl = max(dot(N, l), 0.0);
+    float sh = occlusion(wp, l, i);
+#if QUALITY >= 2
+    if (info.z > 0.0) {
+      /* The ring's shadow on the planet. */
+      float tt = -dot(N, nr) / dot(l, nr);
+      if (tt > 0.0) sh *= 1.0 - 0.75 * ringDensity(length(N + l * tt));
+    }
+    if (kind == 2) {
+      vec3 h = normalize(l + vec3(0.0, 0.0, 1.0));
+      glint += sun.rgb * sun.a * pow(max(dot(N, h), 0.0), 90.0) * water * sh * 0.9;
+    }
+#endif
+    light += sun.rgb * sun.a * nl * sh;
+    /* Atmosphere: forward-scattered light at the limb, on the lit side. */
+    float rim = pow(1.0 - N.z, 2.6) * A.a;
+    limb += mix(A.rgb, sun.rgb, 0.55) * rim * smoothstep(-0.25, 0.4, dot(vec3(p, 0.0), l)) * sun.a;
+  }
+  vec3 col = albedo * light + glint + limb * 0.9;
+  vec4 sphere = vec4(col * disc, disc);
+
+  /* An atmosphere's halo just outside the disc. */
+  if (A.a > 0.0 && d > 1.0) {
+    float h = 1.0 - smoothstep(1.0, 1.14, d);
+    float lit = smoothstep(-0.4, 0.5, dot(normalize(vec3(p, 0.0)), L0));
+    sphere.rgb += mix(A.rgb, u_sunCol[0].rgb, 0.5) * h * h * A.a * 0.55 * lit * u_sunCol[0].a;
+  }
+
+  vec4 outc = sphere;
+  if (info.z > 0.0) {
+    /* The ring: where the view ray meets its plane, composited in depth order with the planet. */
+    float zr = -(p.x * nr.x + p.y * nr.y) / nr.z;
+    vec3 rp = vec3(p, zr);
+    float dens = ringDensity(length(rp));
+    if (dens > 0.0) {
+      vec3 rw = B.xyz + rp * B.w;
+      vec3 l = normalize(u_sunPos[0].xyz - rw);
+      float lit = 0.35 + 0.65 * abs(dot(nr, l));
+#if QUALITY >= 2
+      /* The planet's shadow on its rings. */
+      float b = dot(rp, l);
+      float c = dot(rp, rp) - 1.0;
+      if (b < 0.0 && b * b - c > 0.0) lit *= 0.12;
+#endif
+      vec3 rc = mix(A.rgb, A2.rgb, 0.5 + 0.5 * sin(length(rp) * 23.0)) * lit * u_sunCol[0].rgb * u_sunCol[0].a;
+      float ra = dens * 0.85;
+      vec4 ring = vec4(rc * ra + ambient * ra, ra);
+      bool ringInFront = d >= 1.0 || zr > N.z;
+      outc = ringInFront ? ring + sphere * (1.0 - ring.a) : sphere + ring * (1.0 - sphere.a);
+    }
+  }
+  outColor = outc * alpha;
+}
+`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    Vertex shader (surface + cage)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const VERTEX = `${GLSL_HEADER}
+function vertexSource(quality: Quality): string {
+  return `${GLSL_HEADER}
+#define QUALITY ${quality}
+${MATERIAL_DEFINES}
 layout(location = 0) in vec2 a_domain;
+uniform float u_time;
+uniform float u_evert;
 uniform float u_wrap;
 uniform float u_unwrap;
 uniform float u_spin;
@@ -534,6 +986,16 @@ void main() {
   float ct = cos(u_tilt), st = sin(u_tilt);
   vec3 v = spinTilt(F, cy, sy, ct, st);
   vec3 nv = spinTilt(n, cy, sy, ct, st);
+
+#if QUALITY >= 1
+  /* Liquid: a slow, low-order swell travelling over the surface (it rides the body's own (theta, phi), so it
+     moves with the eversion), stronger while the sphere turns inside out. Added along the normal in radius units;
+     the wrap weight below scales the whole surface back onto the flat page, so the endpoints are untouched. */
+  float swell = sin(3.0 * p.x + 2.0 * p.y + 1.7 * u_time) * 0.55
+              + sin(-2.0 * p.z + 3.0 * p.x - 1.3 * u_time) * 0.3
+              + sin(5.0 * p.y - 2.3 * u_time + 1.1) * 0.15;
+  v += nv * swell * LIQUID_SWELL * (0.45 + 0.55 * sin(PI * clamp(u_evert, 0.0, 1.0)));
+#endif
 
   /* Ripples radiate from the camera-facing point (+z) in VIEW space, as a radial push. */
   vec3 vdir = v / max(length(v), 1e-4);
@@ -597,13 +1059,15 @@ void main() {
   v_flat = flatPos.xy;
 }
 `;
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Surface fragment shader
    ═══════════════════════════════════════════════════════════════════════════ */
 
-function surfaceFragment(maskDepth: boolean, maskView: boolean): string {
+function surfaceFragment(maskDepth: boolean, maskView: boolean, quality: Quality): string {
   return `${GLSL_HEADER}
+#define QUALITY ${quality}
 ${maskDepth && !maskView ? '#define MASK_TO_BACK 1' : ''}
 ${maskView ? '#define MASK_VIEW 1' : ''}
 in vec2 v_domain;
@@ -627,9 +1091,18 @@ uniform float u_radius;
 uniform vec4 u_colVeil;
 uniform vec4 u_colAccent;
 uniform vec4 u_colCageMajor;
+uniform float u_time;
+uniform float u_spin;
+uniform float u_tilt;
+uniform float u_pixelRatio;
+uniform vec3 u_lightDir;
+uniform vec4 u_lightCol;
+uniform vec4 u_space;
+uniform vec4 u_cosmos;
 out vec4 outColor;
 ${LUT_GUARDED_GLSL}
 ${WEDGE_GLSL}
+${quality >= 1 ? MATERIAL_GLSL : ''}
 void main() {
   float theta = v_domain.x;
   float phi = v_domain.y;
@@ -692,10 +1165,19 @@ void main() {
   }
 
   /* Gentle Lambert on the VISIBLE side's normal, and the back side's darken + accent tint (Q18); scaled by the
-     morph weight, since the flat page must be the capture, untouched. */
+     morph weight, since the flat page must be the capture, untouched. Low keeps the fixed light; mid and high take the
+     scene's (it turns toward the cosmos's sun as that arrives, cosmos.ts). */
   vec3 nn = normalize(v_nview);
-  float litF = LAMBERT_BASE + LAMBERT_GAIN * max(dot(nn, normalize(LIGHT_DIR)), 0.0);
-  float litB = LAMBERT_BASE + LAMBERT_GAIN * max(dot(-nn, normalize(LIGHT_DIR)), 0.0);
+#if QUALITY >= 1
+  vec3 L = normalize(u_lightDir);
+  /* The background the glass sits against: the veil, deepened toward space while the cosmos is present. */
+  vec3 veil = mix(u_colVeil.rgb, u_space.rgb, u_space.a);
+#else
+  vec3 L = normalize(LIGHT_DIR);
+  vec3 veil = u_colVeil.rgb;
+#endif
+  float litF = LAMBERT_BASE + LAMBERT_GAIN * max(dot(nn, L), 0.0);
+  float litB = LAMBERT_BASE + LAMBERT_GAIN * max(dot(-nn, L), 0.0);
   vec3 page = vec3(0.0);
   if (side > 0.0) {
     vec3 pg = textureGrad(u_before, clamp(uvF, 0.0, 1.0), gx, gy).rgb;
@@ -712,10 +1194,53 @@ void main() {
   float edge = min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y));
   float fw = cut ? 0.0 : fwidth(edge);
   float onPage = clamp(edge / max(fw, 1e-6) + 0.5, 0.0, 1.0) * (1.0 - wedgeG);
-  vec3 rgb = mix(u_colVeil.rgb, page, onPage);
+
+  /* Glass: a faint fill and a bright Fresnel rim, present only where the wrap wave has lifted the surface off the
+     flat page, so it condenses instead of appearing. A masked wedge is this. */
+  float lift = quintic5(v_morph * 2.0);
+  float rim = pow(1.0 - abs(facing), RIM_POWER) * RIM_STRENGTH;
+  float glassRim = clamp(rim, 0.0, 1.0) * lift;
+  float glassA = clamp(GLASS_FILL * lift + glassRim * GLASS_RIM_ALPHA, 0.0, 1.0);
+  vec3 glassRgb = mix(veil, u_colCageMajor.rgb, glassRim);
+
+#if QUALITY >= 1
+  /* The liquid-glass material (MATERIAL_GLSL): a clear coat over the page and a dielectric where there is no
+     page, lit by the scene's light and a procedural studio environment. Every term is scaled by the morph weight
+     (and the glass by its lift), so at the flat endpoints it is exactly zero and the page is the capture. */
+  vec3 V = toEye;
+  vec3 N = facing >= 0.0 ? nn : -nn;
+  N = liquidNormal(N, body, v_morph);
+  float nv = max(dot(N, V), 1e-3);
+  float F = fresnelSchlick(nv);
+  vec3 R = reflect(-V, N);
+  vec3 env = envLight(R, L, veil);
+  vec3 spec = specularLight(N, V, L) * u_lightCol.rgb;
+
+  /* Page: a thin lacquer. Reflection strongest at grazing angles, where the page is least readable anyway. */
+  vec3 coat = mix(page, env, F * COAT_REFLECT) + spec * COAT_SPEC;
+  page = mix(page, coat, v_morph);
+
+  /* Glass: what is behind it (the veil, or the starfield seen through it, refracted), the environment at Fresnel
+     strength, the highlight, and on high a thin-film shimmer and a dispersed rim. */
+  vec3 behind = veil;
+#if QUALITY >= 2
+  vec2 refr = N.xy * GLASS_REFRACT_PX;
+  behind += starfield(gl_FragCoord.xy / u_pixelRatio + refr, u_cosmos.z) * u_cosmos.y;
+#endif
+  vec3 glass = mix(behind, env, clamp(F * GLASS_REFLECT + 0.06, 0.0, 1.0)) + spec;
+#if QUALITY >= 2
+  glass += thinFilm(nv, u_time) * F * THIN_FILM;
+  glass += dispersedRim(facing) * u_colCageMajor.rgb * lift;
+#else
+  glass = mix(glass, u_colCageMajor.rgb, glassRim * 0.8);
+#endif
+  glassA = clamp(glassA + F * 0.5 * lift, 0.0, 1.0);
+  glassRgb = glass;
+#endif
+
+  vec3 rgb = mix(veil, page, onPage);
 
   /* Fresnel rim in --cage-major: strongest at the silhouette, on page and glass alike. */
-  float rim = pow(1.0 - abs(facing), RIM_POWER) * RIM_STRENGTH;
   rgb = mix(rgb, u_colCageMajor.rgb, clamp(rim, 0.0, 1.0) * v_morph);
 
   /* The whole surface dissolves with the page (amended 2026-10-18): the final dissolve overlaps UNWRAP's tail, so the
@@ -723,15 +1248,12 @@ void main() {
      nothing is left at the viewport's border when the canvas goes. It is 1 until the reveal. */
   float a = u_pageAlpha;
 
-  /* Glass: a faint fill and a bright Fresnel rim, present only where the wrap wave has lifted the surface off the
-     flat page, so it condenses instead of appearing. A masked wedge is this. */
-  float lift = quintic5(v_morph * 2.0);
-  float glassRim = clamp(rim, 0.0, 1.0) * lift;
-  float glassA = clamp(GLASS_FILL * lift + glassRim * GLASS_RIM_ALPHA, 0.0, 1.0);
-  vec3 glassRgb = mix(u_colVeil.rgb, u_colCageMajor.rgb, glassRim);
-
+  /* Where there is no page the surface is glass over the background (the clear colour) it sits against. */
+#if QUALITY >= 1
+  rgb = mix(rgb, mix(veil, glassRgb, glassA), (1.0 - onPage) * lift);
+#endif
   /* A masked wedge: the glass over the veil it sits against (the clear colour), in place of the page. */
-  rgb = mix(rgb, mix(u_colVeil.rgb, glassRgb, glassA), wedgeG);
+  rgb = mix(rgb, mix(veil, glassRgb, glassA), wedgeG);
 
   outColor = vec4(rgb * a, a);
 #ifdef MASK_VIEW
@@ -834,13 +1356,20 @@ out vec4 outColor;
 void main() { outColor = vec4(0.0); }
 `;
 
-/** The real shader set. */
-export function getShaderSet(options: { maskView?: boolean } = {}): ShaderSet {
+/**
+ * The real shader set, for a tier (see {@link Quality}; no tier is the low set, the original shading).
+ */
+export function getShaderSet(options: { maskView?: boolean; tier?: Tier } = {}): ShaderSet {
   const maskView = options.maskView === true;
+  const quality = qualityForTier(options.tier);
+  const vertex = vertexSource(quality);
   return {
-    surface: { vertex: VERTEX, fragment: surfaceFragment(false, maskView) },
-    surfaceMasked: { vertex: VERTEX, fragment: surfaceFragment(true, maskView) },
-    cage: { vertex: VERTEX, fragment: CAGE_FRAGMENT },
+    surface: { vertex, fragment: surfaceFragment(false, maskView, quality) },
+    surfaceMasked: { vertex, fragment: surfaceFragment(true, maskView, quality) },
+    cage: { vertex, fragment: CAGE_FRAGMENT },
     feedback: { vertex: FEEDBACK_VERTEX, fragment: FEEDBACK_FRAGMENT, varyings: ['v_F'] },
+    cosmos: quality >= 1 ? { vertex: COSMOS_VERTEX, fragment: cosmosFragment(quality) } : null,
+    stars: quality >= 1 ? { vertex: STARS_VERTEX, fragment: starsFragment(quality) } : null,
+    quality,
   };
 }

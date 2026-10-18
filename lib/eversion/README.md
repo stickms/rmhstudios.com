@@ -34,6 +34,7 @@ Pure and client-safe unless noted: importable from node vitest, no DOM at import
 | `random.ts`                              | projection draw, never the previous one                         | T11   |
 | `morph.ts`                               | wrap/unwrap morph, camera                                       | T12   |
 | `orientation.ts`                         | end isometry, mirror correction, spin alignment                 | T13   |
+| `cosmos.ts`                              | the planetary system on large screens: layout, presence, frame  | 10-18 |
 | `debug.ts`                               | `registerDebug`, `window.__eversion` slots (client, flag-gated) | T15   |
 | `capture.ts`                             | `modern-screenshot` viewport capture (client)                   | T17   |
 | `placeholder.ts`                         | instant 2D stand-in for the destination (client)                | T18   |
@@ -79,59 +80,48 @@ ports); `testing/e2e/eversion-edge.mjs` has one scripted check per row.
 | Hidden tab                       | `host.ts` posts `visibility`; the core pauses its loop (`debug` op `loop` shows it).                                                                        |
 | Input during the reveal fade     | Ignored from `uncover` on (no `fast-forward` is posted).                                                                                                    |
 
-### Host readiness is eligibility, not a wait
+### It plays on every hub navigation (amended 2026-10-18)
 
-The render host's init (worker spawn, shader fetch, program compile) is slow
-cold - seconds on a phone or a software GL - and used to be awaited at release
-with a 600 ms budget, which ended in `host-error` for any release that beat it.
-Now the controller owns a host state (`idle` → `initialising` → `ready`, or
-`failed` after two failed inits) and `ineligibleReason()` reads it:
+The effect used to be a race the visitor lost whenever they were quick. Three
+things could each skip it silently, and all three are now short waits instead:
 
-- `ready` → eligible. `ready()` is a microtask; `HOST_READY_TIMEOUT_MS` (100 ms)
-  only bounds a host that was ready and stopped answering.
-- `initialising` / `idle` → `host-not-ready` **immediately**: the hub runs today's
-  navigation, and an idle host is started so the next release finds it ready. The
-  hub normally starts it itself, 700 ms after it opens (`onHubOpened`).
-- The init has its own budget, `HOST_INIT_TIMEOUT_MS` (20 s), spent while the hub
-  is idle, never at release. Settings → Preview, which has no hub open to warm
-  anything, waits for it (`whenReady`) instead of falling back.
+| What was not ready                                                                                                    | Before                                              | Now                                                                                                                             |
+| --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| The bridge (controller) had not loaded: the first seconds of a page-load, or a page whose `load` was held up          | Today's navigation                                  | `hub-handoff.ts#confirmWhenReady` waits for it (`CONTROLLER_WAIT_MS` 2.5 s); opening the hub starts the warm-up at once         |
+| The BEFORE picture: the scheduler captures after the 500 ms open morph and an idle slot, so a pick inside ~1 s missed | `BEFORE_WAIT_MS` 50 ms for one in flight, else skip | `BEFORE_WAIT_MS` 1.2 s in total: the one in flight, else one on demand; a page that cannot be captured starts from its stand-in |
+| The render host was still compiling (it compiled 700 ms after the hub opened)                                         | `host-not-ready`: skip, warm for next time          | The bridge initialises it on the real canvas at its first idle slot; a release waits `HOST_READY_TIMEOUT_MS` 2.5 s              |
 
-`FallbackReason` gained `host-not-ready` (a `types.ts` amendment).
+The controller still owns a host state (`idle` → `initialising` → `ready`, or
+`failed` after two failed inits), but only `failed` is an eligibility row now
+(`evaluateHostEligibility`); `idle` is started and waited for. The init has its
+own budget, `HOST_INIT_TIMEOUT_MS` (20 s). The hub stays `open` and still while
+any of this waits, so there is nothing to flash; every wait is bounded.
 
-### "Always evert globe": the performance gates, and what the override does
+### "Always evert globe": longer waits, never an override
 
-Every way the effect is skipped for a PERFORMANCE reason is a short wait that
-gives up so today's navigation is not delayed. The visitor-set switch
-(`themeStore.alwaysEvertGlobe`, Settings > Appearance > Comfort, default off)
-lengthens those waits; it never turns an accessibility or capability check off.
+The visitor-set switch (`themeStore.alwaysEvertGlobe`, Settings > Appearance >
+Comfort) lengthens the waits above for a device too slow for them; it never turns
+an accessibility or capability check off.
 
-| Gate (where)                                                                                                                          | Normal behaviour                                      | With the override                                                                                      |
-| ------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Host still starting (`ineligibleReason()` -> `host-not-ready`)                                                                        | Fall back at once, warm the host for next time        | Eligible; the runner waits for the host (`ALWAYS_EVERT_HOST_WAIT_MS`, 8 s)                             |
-| Host slow to answer (`HOST_READY_TIMEOUT_MS`, 100 ms -> `host-error`)                                                                 | 100 ms, then fall back                                | `ALWAYS_EVERT_HOST_WAIT_MS` (8 s), then fall back                                                      |
-| BEFORE not held / not in flight (`before-missing`, `BEFORE_WAIT_MS` 50 ms -> `before-timeout`)                                        | 50 ms, then fall back                                 | `ALWAYS_EVERT_BEFORE_WAIT_MS` (3 s) for the scheduler's capture, then one on demand inside that budget |
-| Overlay mount (`OVERLAY_MOUNT_TIMEOUT_MS`, 100 ms -> `host-error`)                                                                    | 100 ms, then fall back                                | `ALWAYS_EVERT_OVERLAY_MOUNT_MS` (2 s)                                                                  |
-| Device tier (`detectTier`: `perf-lite` = Save-Data / 2g / < 4 GB / <= 2 cores -> `low`)                                               | Smaller mesh and capture scale; **not** an exclusion  | Unchanged (the tier still keeps the run cheap)                                                         |
-| Frame governor (`DprGovernor`, <= 2 DPR steps)                                                                                        | Lowers resolution mid-run, never cancels              | Unchanged                                                                                              |
-| Run watchdog (`MAX_RUN_MS`, 30 s of silence)                                                                                          | Force-ends a stalled run with a fade                  | Unchanged: the override cannot hang                                                                    |
-| AFTER settle / capture deadlines (`ROUTE_SETTLE_TIMEOUT_MS`, `AFTER_*`)                                                               | `after-failed`: unwrap the placeholder, run continues | Unchanged (not a skip; the run is already committed)                                                   |
-| Reduced motion (OS or site toggle), no WebGL2 / lost context, flag off, chunk not loaded, failed host, traversal, external link, busy | Fall back                                             | **Never overridden**                                                                                   |
+| Gate (where)                                                                                                                          | Default                                               | With the switch                       |
+| ------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------- |
+| Bridge not loaded (`RadialHub` → `confirmWhenReady`)                                                                                  | `CONTROLLER_WAIT_MS` 2.5 s                            | `ALWAYS_CONTROLLER_WAIT_MS` 8 s       |
+| Host still starting or slow to answer (`HOST_READY_TIMEOUT_MS` → `host-error`)                                                        | 2.5 s                                                 | `ALWAYS_EVERT_HOST_WAIT_MS` (8 s)     |
+| BEFORE (in flight, else on demand, else the stand-in; `before-*`)                                                                     | `BEFORE_WAIT_MS` 1.2 s                                | `ALWAYS_EVERT_BEFORE_WAIT_MS` (3 s)   |
+| Overlay mount (`OVERLAY_MOUNT_TIMEOUT_MS` → `host-error`)                                                                             | 500 ms                                                | `ALWAYS_EVERT_OVERLAY_MOUNT_MS` (2 s) |
+| Device tier (`detectTier`: `perf-lite` = Save-Data / 2g / < 4 GB / <= 2 cores -> `low`)                                               | Smaller mesh, cheaper shaders; **not** an exclusion   | Unchanged                             |
+| Frame governor (`DprGovernor`, <= 2 DPR steps)                                                                                        | Lowers resolution mid-run, never cancels              | Unchanged                             |
+| Run watchdog (`MAX_RUN_MS`, 30 s of silence)                                                                                          | Force-ends a stalled run with a fade                  | Unchanged: the switch cannot hang     |
+| AFTER settle / capture deadlines (`ROUTE_SETTLE_TIMEOUT_MS`, `AFTER_*`)                                                               | `after-failed`: unwrap the placeholder, run continues | Unchanged                             |
+| Reduced motion (OS or site toggle), no WebGL2 / lost context, flag off, chunk not loaded, failed host, traversal, external link, busy | Fall back                                             | **Never overridden**                  |
 
-The override reaches the code in three places and nowhere else:
-`eligibility.ts` (`evaluateHostEligibility(hostState, alwaysEvert)`, pure and
-tested in `__tests__/always-evert.test.ts`), the runner's priming section
-(`RunnerDeps.alwaysEvert?()` picks the `ALWAYS_EVERT_*` limits), and the
-controller (`alwaysEvert()` reads `useThemeStore` - already imported, so the
-shell's static closure does not grow - and `awaitBefore` takes a capture on
-demand when the scheduler has none). The limits live in `constants.ts`.
+The switch reaches the code in three places: the runner's priming section
+(`RunnerDeps.alwaysEvert?()` picks the `ALWAYS_EVERT_*` limits), the controller
+(`alwaysEvert()` reads `useThemeStore`), and the hub's controller wait. The limits
+live in `constants.ts` (the hub's two in `RadialHub.tsx`, which may not import it).
 
-### The fallback adds no delay, and a committed run always ends
+### A committed run always ends
 
-- A release waits for an in-flight BEFORE capture for `BEFORE_WAIT_MS` (50 ms) at
-  most (`BEFORE_GRACE_MS` is the capture's own budget, not the visitor's); no bitmap
-  in flight is an immediate fallback. Host ready 100 ms, overlay mount 100 ms: a
-  fallback adds at most ~50 ms in the common cases and a couple of frames in the
-  worst, and the hub stays `open` meanwhile, so there is no flash.
 - Back/forward during priming is honoured: the runner listens from the start of
   `run()`, cancels cleanly and reports `fallback: 'traversal'`, which the hub answers
   by closing (the router has already moved; navigating again would stack a push).
@@ -150,13 +140,50 @@ demand when the scheduler has none). The limits live in `constants.ts`.
   at `done` (the same fade an aborted run already got). `eversion-css.test.ts` pins that
   no `closed`/`everting` rule overrides it.
 
-### One renderer per host
+### One compile per page
 
-The prefetch warm-up probes WebGL2 with a throwaway `OffscreenCanvas`. If that
-`init` reached the core after the controller's own `init`, the core re-initialised
-on the probe, disposed the page canvas's renderer, and the run "succeeded" while
-drawing to a 1×1 canvas nobody sees. `host.ts` now answers a probe `init` that
-arrives after the page canvas's with a `ready` instead of forwarding it.
+The prefetch warm-up used to compile the programs on a throwaway 1 × 1
+`OffscreenCanvas`, and the overlay's `init` then compiled them again on the real
+canvas: two cold compiles, on the main thread wherever the host is in-thread (every
+WebKit browser). Now the warm-up only probes WebGL2 (a detached context, created
+and lost), and `EversionBridge` initialises the host on the persistent canvas once,
+at its first idle slot. `host.ts` still answers a stray probe `init` that arrives
+after the page canvas's with a `ready` instead of forwarding it.
+
+## Quality tiers and the cosmos (amended 2026-10-18)
+
+The shaders are compiled per tier (`gl/shaders.ts#Quality`):
+
+- **low** — the original shading, bit for bit: fixed light, Lambert, side tint,
+  Fresnel rim, the cage. No cosmos program is ever compiled.
+- **mid** — a slow liquid swell on the surface (vertex), the scene's light, a GGX
+  highlight and a Schlick-Fresnel reflection of a procedural studio: a clear coat
+  on the page, a dielectric where there is no page.
+- **high** — on top, a flowing micro-surface on the shading normal (the liquid
+  sheen), a thin-film shimmer, a dispersed rim, and the starfield refracted through
+  the glass.
+
+Every added term is scaled by the morph weight, so the flat endpoints stay the
+capture to the bit (`eversion-gl.mjs` S#15 holds at every tier).
+
+**The cosmos** (`cosmos.ts`; mid and high, viewport ≥ 520 × 860 CSS px): the globe
+in a planetary system laid out along the viewport's LONG axis, whatever the aspect
+ratio — two suns at the far corners, five planets on tilted orbits that pass in
+front of and behind the globe (one ringed giant, one ocean world with clouds and an
+atmosphere), three moons, a starfield and a deepening of the background on dark
+themes. Bodies are ray-traced sphere impostors lit by the suns; on high both suns
+light them and moons, rings and planets shadow one another. The globe's own light
+turns toward the primary sun as the system arrives.
+
+It has no clock of its own: `cosmosPresence(snapshot)` rises over the last 45% of
+WRAP and falls over the first 45% of UNWRAP, quintics of quintic channels, so it is
+continuous through a fast-forward, a gate hold or an abort, and exactly 0 at the
+flat endpoints. Bodies arrive from behind the globe and leave the same way, and a
+body in front of the globe is shown only at full presence, so none is ever drawn
+over the flat page. The renderer draws it in up to three extra calls (stars,
+bodies behind the globe, bodies in front), only while present.
+`testing/e2e/eversion-look.mjs` renders every tier × aspect × theme and fails on any
+frame-to-frame jump four times its neighbours.
 
 ## The ending: the run ends with UNWRAP
 

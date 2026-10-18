@@ -22,9 +22,11 @@
  */
 
 import { STAGE_PARAM_COUNT } from '../constants';
+import { COSMOS_MAX_BODIES } from '../cosmos';
 
 /** GLSL type of a uniform. `float[N]` is a float array of `length` elements. */
-export type UniformType = 'float' | 'vec2' | 'vec4' | 'mat3' | 'float[]' | 'sampler2D';
+export type UniformType =
+  'float' | 'vec2' | 'vec3' | 'vec4' | 'mat3' | 'float[]' | 'vec4[]' | 'sampler2D';
 
 /** When the renderer (re)writes a uniform. */
 export type UniformCadence =
@@ -40,7 +42,7 @@ export type UniformCadence =
 export interface UniformSpec {
   readonly name: string;
   readonly type: UniformType;
-  /** Element count for `float[]`. */
+  /** Element count for `float[]` / `vec4[]`. */
   readonly length?: number;
   readonly cadence: UniformCadence;
   /** Where the value comes from. */
@@ -91,6 +93,81 @@ export const UNIFORMS = [
     type: 'float',
     cadence: 'frame',
     from: 'mix(CAGE_ALPHA_START, CAGE_ALPHA_END, snapshot.evert), computed by the renderer',
+  },
+
+  // ── per frame: the material and the cosmos (amendment 2026-10-18; mid/high shaders only) ──
+  { name: 'u_time', type: 'float', cadence: 'frame', from: 'snapshot.t / 1000 (seconds)' },
+  {
+    name: 'u_lightDir',
+    type: 'vec3',
+    cadence: 'frame',
+    from: 'cosmos.ts#stepCosmos: LIGHT_DIRECTION, turning toward the primary sun with presence',
+  },
+  {
+    name: 'u_lightCol',
+    type: 'vec4',
+    cadence: 'frame',
+    from: "cosmos.ts#stepCosmos: white, toward the primary sun's colour with presence",
+  },
+  {
+    name: 'u_space',
+    type: 'vec4',
+    cadence: 'frame',
+    from: 'cosmos.ts#stepCosmos: the veil deepened toward space (rgb, derived from ThemeColours.veil) and how far (a)',
+  },
+  {
+    name: 'u_cosmos',
+    type: 'vec4',
+    cadence: 'frame',
+    from: 'cosmos.ts#stepCosmos: (presence, starfield strength, snapshot.t / 1000, scene on)',
+  },
+  {
+    name: 'u_bodyPos',
+    type: 'vec4[]',
+    length: COSMOS_MAX_BODIES,
+    cadence: 'frame',
+    from: 'cosmos.ts#stepCosmos: centre (px, viewport-centred) and radius, back to front',
+  },
+  {
+    name: 'u_bodyInfo',
+    type: 'vec4[]',
+    length: COSMOS_MAX_BODIES,
+    cadence: 'frame',
+    from: 'cosmos.ts#stepCosmos: kind, seed, ring tilt, alpha',
+  },
+  {
+    name: 'u_bodyAlbedo',
+    type: 'vec4[]',
+    length: COSMOS_MAX_BODIES,
+    cadence: 'frame',
+    from: "cosmos.ts#stepCosmos: surface albedo (pulled toward ThemeColours.accent) + atmosphere; a sun's colour + intensity",
+  },
+  {
+    name: 'u_bodyAlbedo2',
+    type: 'vec4[]',
+    length: COSMOS_MAX_BODIES,
+    cadence: 'frame',
+    from: 'cosmos.ts#stepCosmos: the secondary surface albedo',
+  },
+  {
+    name: 'u_sunPos',
+    type: 'vec4[]',
+    length: 2,
+    cadence: 'frame',
+    from: 'cosmos.ts#stepCosmos: each sun centre (px) + radius',
+  },
+  {
+    name: 'u_sunCol',
+    type: 'vec4[]',
+    length: 2,
+    cadence: 'frame',
+    from: 'cosmos.ts#stepCosmos: each sun colour + intensity times presence',
+  },
+  {
+    name: 'u_bodyBase',
+    type: 'float',
+    cadence: 'frame',
+    from: 'the first instance of a cosmos draw (0 behind the globe, CosmosFrame.behind in front)',
   },
 
   // ── per navigation ──
