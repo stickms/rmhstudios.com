@@ -41,11 +41,13 @@ import urCProfileModules from "@/locales/ur/c-profile-modules.json";
 import urCRebarRutabaga from "@/locales/ur/c-rebar-rutabaga.json";
 import urCRideshare from "@/locales/ur/c-rideshare.json";
 import urCRmhCapital from "@/locales/ur/c-rmh-capital.json";
+import urCRmhDatacenter from "@/locales/ur/c-rmh-datacenter.json";
 import urCRmhPmc from "@/locales/ur/c-rmh-pmc.json";
 import urCRmhbox from "@/locales/ur/c-rmhbox.json";
 import urCRmhcalculator from "@/locales/ur/c-rmhcalculator.json";
 import urCRmhcode from "@/locales/ur/c-rmhcode.json";
 import urCRmhcoins from "@/locales/ur/c-rmhcoins.json";
+import urCRmhfashion from "@/locales/ur/c-rmhfashion.json";
 import urCRmhmusic from "@/locales/ur/c-rmhmusic.json";
 import urCRmhstudy from "@/locales/ur/c-rmhstudy.json";
 import urCRmhtech from "@/locales/ur/c-rmhtech.json";
@@ -68,6 +70,34 @@ import urCVoidBreaker from "@/locales/ur/c-void-breaker.json";
 import urCWager from "@/locales/ur/c-wager.json";
 import urCWishlist from "@/locales/ur/c-wishlist.json";
 import urCommon from "@/locales/ur/common.json";
+import urErrors from "@/locales/ur/errors.json";
+import urFAccess from "@/locales/ur/f-access.json";
+import urFAction from "@/locales/ur/f-action.json";
+import urFArcade from "@/locales/ur/f-arcade.json";
+import urFAsyncGames from "@/locales/ur/f-async-games.json";
+import urFCalendar from "@/locales/ur/f-calendar.json";
+import urFCanvas from "@/locales/ur/f-canvas.json";
+import urFCommunitiesPlus from "@/locales/ur/f-communities-plus.json";
+import urFCompetitive from "@/locales/ur/f-competitive.json";
+import urFCreative from "@/locales/ur/f-creative.json";
+import urFDelight from "@/locales/ur/f-delight.json";
+import urFDevplatform from "@/locales/ur/f-devplatform.json";
+import urFDiscovery from "@/locales/ur/f-discovery.json";
+import urFEconomyPlus from "@/locales/ur/f-economy-plus.json";
+import urFFeedPlus from "@/locales/ur/f-feed-plus.json";
+import urFForecasting from "@/locales/ur/f-forecasting.json";
+import urFGifting from "@/locales/ur/f-gifting.json";
+import urFLadderHomes from "@/locales/ur/f-ladder-homes.json";
+import urFMessaging from "@/locales/ur/f-messaging.json";
+import urFOps from "@/locales/ur/f-ops.json";
+import urFParty from "@/locales/ur/f-party.json";
+import urFPostsPlus from "@/locales/ur/f-posts-plus.json";
+import urFProfilePlus from "@/locales/ur/f-profile-plus.json";
+import urFReading from "@/locales/ur/f-reading.json";
+import urFSafety from "@/locales/ur/f-safety.json";
+import urFTools from "@/locales/ur/f-tools.json";
+import urFWatch from "@/locales/ur/f-watch.json";
+import urFWorlds from "@/locales/ur/f-worlds.json";
 import urFeed from "@/locales/ur/feed.json";
 import urGamesHub from "@/locales/ur/games-hub.json";
 import urGroups from "@/locales/ur/groups.json";
@@ -138,11 +168,13 @@ const urResources = {
   "c-rebar-rutabaga": urCRebarRutabaga,
   "c-rideshare": urCRideshare,
   "c-rmh-capital": urCRmhCapital,
+  "c-rmh-datacenter": urCRmhDatacenter,
   "c-rmh-pmc": urCRmhPmc,
   "c-rmhbox": urCRmhbox,
   "c-rmhcalculator": urCRmhcalculator,
   "c-rmhcode": urCRmhcode,
   "c-rmhcoins": urCRmhcoins,
+  "c-rmhfashion": urCRmhfashion,
   "c-rmhmusic": urCRmhmusic,
   "c-rmhstudy": urCRmhstudy,
   "c-rmhtech": urCRmhtech,
@@ -165,6 +197,34 @@ const urResources = {
   "c-wager": urCWager,
   "c-wishlist": urCWishlist,
   "common": urCommon,
+  "errors": urErrors,
+  "f-access": urFAccess,
+  "f-action": urFAction,
+  "f-arcade": urFArcade,
+  "f-async-games": urFAsyncGames,
+  "f-calendar": urFCalendar,
+  "f-canvas": urFCanvas,
+  "f-communities-plus": urFCommunitiesPlus,
+  "f-competitive": urFCompetitive,
+  "f-creative": urFCreative,
+  "f-delight": urFDelight,
+  "f-devplatform": urFDevplatform,
+  "f-discovery": urFDiscovery,
+  "f-economy-plus": urFEconomyPlus,
+  "f-feed-plus": urFFeedPlus,
+  "f-forecasting": urFForecasting,
+  "f-gifting": urFGifting,
+  "f-ladder-homes": urFLadderHomes,
+  "f-messaging": urFMessaging,
+  "f-ops": urFOps,
+  "f-party": urFParty,
+  "f-posts-plus": urFPostsPlus,
+  "f-profile-plus": urFProfilePlus,
+  "f-reading": urFReading,
+  "f-safety": urFSafety,
+  "f-tools": urFTools,
+  "f-watch": urFWatch,
+  "f-worlds": urFWorlds,
   "feed": urFeed,
   "games-hub": urGamesHub,
   "groups": urGroups,

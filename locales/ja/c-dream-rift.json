@@ -4,6 +4,7 @@
   "clear": "クリア",
   "continue": "コンティニュー",
   "continues": "コンティニュー",
+  "continues-count_one": "{{count}}件の続き",
   "continues-count_other": "{{count}} コンティニュー",
   "continues-remaining": "残りコンティニュー数:",
   "controls-action": "C — ボム　 A — ダッシュ　 Shift — フォーカス",
