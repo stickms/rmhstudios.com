@@ -65,6 +65,13 @@ import {
   type HouseRules,
 } from '../../../lib/gabriels-horn/house-rules';
 import {
+  emptyAcc,
+  recordCall,
+  recordClaim,
+  type ReadAcc,
+  type TableReadRow,
+} from '../../../lib/gabriels-horn/table-read';
+import {
   C2S,
   ROOM_PREFIX,
   S2C,
@@ -155,6 +162,10 @@ interface Lobby {
 
   log: LogEntry[];
   logSeq: number;
+  /** R11: per-seat claim/call tallies for this game, keyed by socket id. */
+  read: Map<string, ReadAcc>;
+  /** When the claim phase opened, to time each seat's claim. */
+  claimOpenedAt: number;
   chat: ChatMessage[];
   chatSeq: number;
 
@@ -410,6 +421,7 @@ function setPhase(io: Server, lobby: Lobby, phase: Exclude<Phase, 'over'>): void
   const duration = phaseDuration(lobby, phase);
   lobby.phase = phase;
   lobby.phaseEndsAt = Date.now() + duration;
+  if (phase === 'claim') lobby.claimOpenedAt = Date.now();
   touch(lobby);
   emitState(io, lobby);
   lobby.phaseTimer = setTimeout(() => onPhaseTimeout(io, lobby), duration);
@@ -518,6 +530,15 @@ function allClaimsIn(lobby: Lobby): boolean {
   return true;
 }
 
+function readFor(lobby: Lobby, socketId: string): ReadAcc {
+  let acc = lobby.read.get(socketId);
+  if (!acc) {
+    acc = emptyAcc();
+    lobby.read.set(socketId, acc);
+  }
+  return acc;
+}
+
 function resolveCall(
   io: Server,
   lobby: Lobby,
@@ -533,6 +554,7 @@ function resolveCall(
   const wasLie = claimed !== total;
   const correct = (verdict === 'lie') === wasLie;
   const loser = correct ? target : caller;
+  recordCall(readFor(lobby, caller.socketId), correct);
 
   pushLog(lobby, 'call', {
     actorName: caller.name,
@@ -725,6 +747,7 @@ function finishGame(io: Server, lobby: Lobby, abandoned: boolean): void {
     endCalledBy: lobby.endCalledBy,
     rounds: lobby.round,
     abandoned,
+    tableRead: standings.map((row): TableReadRow => ({ socketId: row.socketId, ...readFor(lobby, row.socketId) })),
   };
   pushLog(lobby, 'over', { actorName: standings[0]?.name });
   emitState(io, lobby);
@@ -734,6 +757,9 @@ function finishGame(io: Server, lobby: Lobby, abandoned: boolean): void {
   if (!abandoned) {
     void persistResults(standings).catch((error) => {
       logger.error({ event: 'gabriels_horn_persist_failed', error: String(error) });
+    });
+    void persistTableRead(standings, results.tableRead ?? []).catch((error) => {
+      logger.error({ event: 'gabriels_horn_table_read_failed', error: String(error) });
     });
   }
 
@@ -802,6 +828,7 @@ function startGame(io: Server, lobby: Lobby): void {
   lobby.finalQueue = [];
   lobby.log = [];
   lobby.logSeq = 0;
+  lobby.read = new Map();
 
   for (const seat of lobby.seats.values()) {
     seat.hand = [];
@@ -856,6 +883,8 @@ function createLobby(options: {
     deck: [],
     discard: [],
     log: [],
+    read: new Map(),
+    claimOpenedAt: 0,
     logSeq: 0,
     chat: [],
     chatSeq: 0,
@@ -1216,6 +1245,38 @@ async function persistResults(standings: FinalStanding[]): Promise<void> {
         });
       }
     }),
+  );
+}
+
+/** R11: fold this game's tallies into each member's career row. */
+async function persistTableRead(standings: FinalStanding[], rows: TableReadRow[]): Promise<void> {
+  const prisma = getPrismaClient();
+  const bySocket = new Map(rows.map((row) => [row.socketId, row]));
+  await Promise.all(
+    standings
+      .filter((s) => s.userId)
+      .map(async (s) => {
+        const r = bySocket.get(s.socketId);
+        if (!r || (r.claims === 0 && r.calls === 0)) return;
+        const inc = {
+          games: 1,
+          claims: r.claims,
+          lies: r.lies,
+          calls: r.calls,
+          callsCorrect: r.callsCorrect,
+          lieClaimMs: r.lieClaimMs,
+          truthClaimMs: r.truthClaimMs,
+        };
+        try {
+          await prisma.gabrielsHornTableRead.upsert({
+            where: { userId: s.userId },
+            create: { userId: s.userId, ...inc },
+            update: Object.fromEntries(Object.entries(inc).map(([k, v]) => [k, { increment: v }])),
+          });
+        } catch (error) {
+          logger.warn({ event: 'gabriels_horn_table_read_row_failed', userId: s.userId, error: String(error) });
+        }
+      }),
   );
 }
 
@@ -1647,6 +1708,7 @@ export function registerGabrielsHornHandlers(io: Server, socket: Socket): void {
     }
 
     lobby.claims.set(socket.id, total);
+    recordClaim(readFor(lobby, socket.id), total !== diceTotal(lobby), Date.now() - lobby.claimOpenedAt);
     pushLog(lobby, 'claim', { actorName: seat.name, total });
     touch(lobby);
 

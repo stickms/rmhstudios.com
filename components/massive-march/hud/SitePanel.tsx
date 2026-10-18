@@ -26,6 +26,7 @@ import type { WorldVariant } from '@/lib/massive-march/constants';
 import { puzzleSite, type PuzzleSite } from '@/lib/massive-march/world/sites';
 import { Glyph } from '../Glyph';
 import { BOARD, Chip, INK, MarchButton, Meter, Panel } from '../ui';
+import { SiteSignals } from './SiteSignals';
 
 function near(x: number, z: number, radius: number): boolean {
   return Math.hypot(live.self.x - x, live.self.z - z) <= radius;
@@ -84,6 +85,8 @@ export function SitePanel({ siteId, variant }: { siteId: string; variant: WorldV
           {t('skip-this', { defaultValue: 'Skip this challenge' })}
         </MarchButton>
       ) : null}
+
+      <SiteSignals siteId={site.id} />
     </Panel>
   );
 }

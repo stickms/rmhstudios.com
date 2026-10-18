@@ -1076,7 +1076,9 @@ export function generatePuzzle(
     difficulty: number,
     activeCategories: PuzzleCategory[] = [],
     forceCategory?: PuzzleCategory,
-    gameState?: GameState
+    gameState?: GameState,
+    /** Custom storm (R14): only these categories may spawn. */
+    allowed?: readonly PuzzleCategory[]
 ): PuzzleDefinition {
     if (forceCategory) {
         if (forceCategory === 'meta' && gameState) {
@@ -1085,7 +1087,9 @@ export function generatePuzzle(
         return generators[forceCategory](Math.min(10, Math.max(1, Math.round(difficulty))));
     }
 
-    const availableCategories = getAvailableCategories(difficulty);
+    const availableCategories = getAvailableCategories(difficulty).filter(
+        c => !allowed || allowed.includes(c)
+    );
     let categories = availableCategories;
 
     // Meta requires game state (singleplayer only); exclude if no state
@@ -1102,6 +1106,8 @@ export function generatePuzzle(
 
     // Fallback if we accidentally filtered everything
     if (categories.length === 0) categories = availableCategories.filter(c => c !== 'meta' || gameState);
+    // A custom storm of only meta/powerup with no game state would leave nothing: use the whole pick.
+    if (categories.length === 0) categories = availableCategories;
 
     const category = pick(categories);
     const clampedDifficulty = Math.min(10, Math.max(1, Math.round(difficulty)));

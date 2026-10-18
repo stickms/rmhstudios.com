@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 873 files across 190 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 882 files across 192 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -756,12 +756,13 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/gabriels-horn`
 
-2 routes.
+3 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/gabriels-horn/house-rule` | `POST` | `app/routes/api/gabriels-horn/house-rule.ts` |
 | `/api/gabriels-horn/leaderboard` | `GET` | `app/routes/api/gabriels-horn/leaderboard.ts` |
+| `/api/gabriels-horn/table-read` | `GET` | `app/routes/api/gabriels-horn/table-read.ts` |
 
 ## `/api/game-night`
 
@@ -1057,11 +1058,13 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/massive-march`
 
-1 route.
+3 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/massive-march/campaigns` | `DELETE` `GET` | `app/routes/api/massive-march/campaigns.ts` |
+| `/api/massive-march/signals` | `GET` `POST` | `app/routes/api/massive-march/signals/index.ts` |
+| `/api/massive-march/signals/vote` | `POST` | `app/routes/api/massive-march/signals/vote.ts` |
 
 ## `/api/memory`
 
@@ -1140,6 +1143,15 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | ----- | ------- | ------ |
 | `/api/news/approve` | `GET` `POST` | `app/routes/api/news/approve.ts` |
 | `/api/news/reject` | `GET` `POST` | `app/routes/api/news/reject.ts` |
+
+## `/api/nightrail`
+
+2 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/nightrail/tricks` | `GET` `POST` | `app/routes/api/nightrail/tricks/index.ts` |
+| `/api/nightrail/tricks/vote` | `POST` | `app/routes/api/nightrail/tricks/vote.ts` |
 
 ## `/api/notices`
 
@@ -2107,9 +2119,17 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/vega/leaderboard` | `GET` | `app/routes/api/vega/leaderboard.ts` |
 | `/api/vega/score` | `POST` | `app/routes/api/vega/score.ts` |
 
+## `/api/velum2099`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/velum2099/contracts` | `GET` `POST` | `app/routes/api/velum2099/contracts.ts` |
+
 ## `/api/versecraft`
 
-5 routes.
+8 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -2117,6 +2137,9 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/versecraft/outline` | `POST` | `app/routes/api/versecraft/outline.ts` |
 | `/api/versecraft/progress` | `GET` | `app/routes/api/versecraft/progress.ts` |
 | `/api/versecraft/save` | `GET` `POST` | `app/routes/api/versecraft/save.ts` |
+| `/api/versecraft/seeds` | `GET` `POST` | `app/routes/api/versecraft/seeds/index.ts` |
+| `/api/versecraft/seeds/fork` | `POST` | `app/routes/api/versecraft/seeds/fork.ts` |
+| `/api/versecraft/seeds/rate` | `POST` | `app/routes/api/versecraft/seeds/rate.ts` |
 | `/api/versecraft/world` | `GET` `POST` | `app/routes/api/versecraft/world.ts` |
 
 ## `/api/vibe`

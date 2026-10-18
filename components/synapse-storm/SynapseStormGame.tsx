@@ -7,6 +7,7 @@ import { GameOver } from './GameOver';
 import { MultiplayerGame } from './MultiplayerGame';
 import { MultiplayerProvider } from '../../lib/synapse-storm/MultiplayerProvider';
 import type { ScoreSaveData } from '../../lib/synapse-storm/persistence';
+import type { PuzzleCategory } from '../../lib/synapse-storm/types';
 import { useKeyboardInset } from '@/hooks/useKeyboardInset';
 import { useLobbyInvite } from '@/hooks/useLobbyLink';
 import './SynapseStorm.css';
@@ -25,7 +26,11 @@ export const SynapseStormGame: React.FC<SynapseStormGameProps> = ({ onSaveScore,
     const [topView, setTopView] = useState<TopLevelView>('main');
     const [scoreSaved, setScoreSaved] = useState(false);
     const [scoreMoment, takeScoreMoment, clearScoreMoment] = useScoreMoment();
-    const { state, startGame, solvePuzzle, skipMemoryPhase, returnToMenu } = useGameEngine();
+    const { state, startGame, startCustomGame, solvePuzzle, skipMemoryPhase, returnToMenu } = useGameEngine();
+    // R14: set while the current run is an unranked training storm. Such a run never submits.
+    const [training, setTraining] = useState<PuzzleCategory[] | null>(null);
+    const playStorm = () => { setTraining(null); startGame(); };
+    const playTraining = (categories: PuzzleCategory[]) => { setTraining(categories); startCustomGame(categories); };
     // Session contract: keep the screen on while a round is running.
     useGameSession({ id: 'synapse-storm', active: state.status === 'playing' });
     useEffect(() => {
@@ -46,7 +51,7 @@ export const SynapseStormGame: React.FC<SynapseStormGameProps> = ({ onSaveScore,
     }, [invite]);
 
     useEffect(() => {
-        if (state.status === 'gameover' && onSaveScore) {
+        if (state.status === 'gameover' && onSaveScore && !training) {
             setScoreSaved(false);
             onSaveScore({
                 score: state.score,
@@ -75,7 +80,8 @@ export const SynapseStormGame: React.FC<SynapseStormGameProps> = ({ onSaveScore,
             <div className="app-container">
                 {state.status === 'menu' && (
                     <MainMenu
-                        onStart={startGame}
+                        onStart={playStorm}
+                        onCustom={playTraining}
                         onMultiplayer={() => setTopView('multiplayer')}
                         currentUserId={currentUserId}
                     />
@@ -87,7 +93,7 @@ export const SynapseStormGame: React.FC<SynapseStormGameProps> = ({ onSaveScore,
                     <ResultMomentSlot moment={scoreMoment} gameName="Synapse Storm" onDismiss={clearScoreMoment} />
                 )}
                 {state.status === 'gameover' && (
-                    <GameOver state={state} onRestart={startGame} onMenu={returnToMenu} currentUserId={currentUserId} scoreSaved={scoreSaved} />
+                    <GameOver state={state} onRestart={training ? () => playTraining(training) : playStorm} onMenu={returnToMenu} currentUserId={currentUserId} scoreSaved={scoreSaved} training={!!training} />
                 )}
             </div>
         </div>

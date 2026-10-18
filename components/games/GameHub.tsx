@@ -14,7 +14,9 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { StarRating } from './StarRating';
 import { HowToPlay } from './HowToPlay';
 import { GameTracker } from '@/components/arcade/GameTracker';
+import { NightrailTrickBoard } from './NightrailTrickBoard';
 import type { ReviewView, RatingAgg, GuideSummary } from '@/lib/games/reviews';
+import type { TrickView } from '@/lib/trick-week/trick-week';
 
 interface GameHubData {
   gameId: string;
@@ -26,6 +28,8 @@ interface GameHubData {
   guides: GuideSummary[];
   signedIn: boolean;
   aiEnabled?: boolean;
+  /** R21: only set on the Nightrail hub. */
+  trickOfTheWeek?: TrickView | null;
 }
 
 export function GameHub({ data }: { data: GameHubData }) {
@@ -124,6 +128,10 @@ export function GameHub({ data }: { data: GameHubData }) {
       </Card>
 
       <GameTracker gameId={data.gameId} signedIn={data.signedIn} />
+
+      {data.gameId === 'nightrail' ? (
+        <NightrailTrickBoard winner={data.trickOfTheWeek ?? null} signedIn={data.signedIn} />
+      ) : null}
 
       {/* Your review */}
       {data.signedIn ? (

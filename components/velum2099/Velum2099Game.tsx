@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useLobbyInviteJoin } from '@/hooks/useLobbyLink';
+import { ContractDock } from './ContractDock';
 import './velum2099-global.css';
 import './velum2099-terminal.css';
 
@@ -61,6 +62,7 @@ export function Velum2099Game() {
                 <canvas id="hex-bl" className="hex-corner" style={{ bottom: 0, left: 0 }} />
                 <canvas id="hex-br" className="hex-corner" style={{ bottom: 0, right: 0 }} />
             </div>
+            <ContractDock />
         </div>
     );
 }

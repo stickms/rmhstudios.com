@@ -4,6 +4,7 @@ import type {
     ActivePuzzle,
     DifficultyConfig,
     MemoryPuzzleData,
+    PuzzleCategory,
 } from './types';
 import { generatePuzzle, resetPuzzleCounter } from './generator';
 import { soundManager } from './sounds';
@@ -88,6 +89,8 @@ export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: Multip
     const mpSpawnIndexRef = useRef(0);
     const scoreUpdateThrottleRef = useRef(0);
     const modeRef = useRef(mode);
+    // R14: categories of the unranked custom storm, or null for a normal run.
+    const customRef = useRef<PuzzleCategory[] | null>(null);
     const mpConfigRef = useRef(mpConfig);
 
     useEffect(() => { modeRef.current = mode; }, [mode]);
@@ -140,7 +143,9 @@ export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: Multip
             isPowerup = true;
         }
 
-        const puzzle = generatePuzzle(s.difficulty, activeCategories, isPowerup ? 'powerup' : undefined, s);
+        const allowed = customRef.current;
+        if (allowed && !allowed.includes('powerup')) isPowerup = false;
+        const puzzle = generatePuzzle(s.difficulty, activeCategories, isPowerup ? 'powerup' : undefined, s, allowed ?? undefined);
         const existingPos = s.activePuzzles.filter((p) => !p.solved && !p.expired).map((p) => p.position);
         const activePuzzle: ActivePuzzle = {
             ...puzzle,
@@ -363,7 +368,7 @@ export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: Multip
     }, []);
 
     // Start game
-    const startGame = useCallback(() => {
+    const beginGame = useCallback(() => {
         clearTimers();
         resetPuzzleCounter();
         mpSpawnIndexRef.current = 0;
@@ -397,6 +402,22 @@ export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: Multip
         gameLoopRef.current = setInterval(gameTick, 100);
         ambientRef.current = setInterval(() => soundManager.ambient(), 6000);
     }, [clearTimers, spawnPuzzle, gameTick]);
+
+    // Handlers pass a click event to `startGame`, so the two entry points are
+    // separate functions rather than one with an options argument.
+    const startGame = useCallback(() => {
+        customRef.current = null;
+        beginGame();
+    }, [beginGame]);
+
+    /** R14: an unranked training run drawing only from `categories`. */
+    const startCustomGame = useCallback(
+        (categories: PuzzleCategory[]) => {
+            customRef.current = categories;
+            beginGame();
+        },
+        [beginGame],
+    );
 
     // Solve puzzle
     const solvePuzzle = useCallback((puzzleId: string, correct: boolean) => {
@@ -536,6 +557,7 @@ export function useGameEngine(mode: GameMode = 'singleplayer', mpConfig?: Multip
     return {
         state,
         startGame,
+        startCustomGame,
         solvePuzzle,
         skipMemoryPhase,
         returnToMenu,
