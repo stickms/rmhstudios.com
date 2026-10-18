@@ -364,3 +364,22 @@ export const PLAN_MS = (() => {
  * {@link STRETCH_CAP_MS} plus the AFTER capture's timeout - hence the margin.
  */
 export const MAX_RUN_MS = 30_000;
+
+/* ── "Always evert globe" (spec amendment 2026-10-18) ─────────────────────── */
+
+/**
+ * With the visitor's "Always evert globe" preference on, the release waits this
+ * long for a BEFORE bitmap (the scheduler's in-flight capture, else one taken on
+ * demand) instead of {@link BEFORE_WAIT_MS}. Bounded: the hub sits still while
+ * it waits, so "generous" is a few seconds, never open-ended.
+ */
+export const ALWAYS_EVERT_BEFORE_WAIT_MS = 3000;
+/**
+ * The same preference's wait for a host that is still initialising or has gone
+ * quiet, instead of the 100 ms `HOST_READY_TIMEOUT_MS` (a cold init can take a
+ * few seconds on a phone or a software GL; the init itself is bounded by
+ * `HOST_INIT_TIMEOUT_MS`).
+ */
+export const ALWAYS_EVERT_HOST_WAIT_MS = 8000;
+/** The same preference's wait for the overlay to attach its canvas (React commit under load). */
+export const ALWAYS_EVERT_OVERLAY_MOUNT_MS = 2000;

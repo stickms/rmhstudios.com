@@ -80,6 +80,10 @@ export function AppearancePanel() {
     store.setNavTransition(value);
     void persist({ navTransition: value });
   }
+  function setAlwaysEvertGlobe(value: boolean) {
+    store.setAlwaysEvertGlobe(value);
+    void persist({ alwaysEvertGlobe: value });
+  }
   function applyCustomAccent(hex: string) {
     if (!HEX_RE.test(hex)) return;
     const { hex: adjusted, adjusted: wasAdjusted } = ensureReadableAccent(hex);
@@ -269,6 +273,7 @@ export function AppearancePanel() {
           onChange={setReduceMotion}
         />
         <NavTransitionRow value={store.navTransition} onChange={setNavTransition} />
+        <AlwaysEvertRow checked={store.alwaysEvertGlobe} onChange={setAlwaysEvertGlobe} />
         {/* Tilt effects (§5.5x C.3): only renders on platforms that gate device
             orientation behind a permission prompt (iOS). Self-contained consent. */}
         <TiltEffectsRow />
@@ -329,11 +334,13 @@ function ToggleRow({
   description,
   checked,
   onChange,
+  disabled,
 }: {
   label: string;
   description?: string;
   checked: boolean;
   onChange: (v: boolean) => void;
+  disabled?: boolean;
 }) {
   return (
     <label className="flex items-center justify-between gap-4 py-2.5">
@@ -343,7 +350,7 @@ function ToggleRow({
           <span className="block text-xs text-site-text-muted">{description}</span>
         ) : null}
       </span>
-      <Switch checked={checked} onCheckedChange={onChange} />
+      <Switch checked={checked} onCheckedChange={onChange} disabled={disabled} />
     </label>
   );
 }
@@ -458,5 +465,45 @@ function NavTransitionRow({
         </Button>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * "Always evert globe": force the globe transition on devices where it is
+ * normally skipped to keep navigation fast (a hub released before the page
+ * picture or the renderer is ready, say). Reduced motion always wins, so the
+ * switch is disabled with the reason in its description rather than hidden, and
+ * like the transition picker it is hidden while the rollout flag is off.
+ */
+function AlwaysEvertRow({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  const { t } = useTranslation('settings-appearance');
+  const reduced = useReducedMotion();
+  const [enabled, setEnabled] = useState(false);
+  useEffect(() => setEnabled(isEversionEnabled()), []);
+  if (!enabled) return null;
+  return (
+    <ToggleRow
+      label={t('always-evert-globe', { defaultValue: 'Always evert globe' })}
+      description={
+        reduced
+          ? t('always-evert-globe-reduced-off', {
+              defaultValue:
+                'Reduced motion is on, so the globe transition stays off and pages change as usual.',
+            })
+          : t('always-evert-globe-desc', {
+              defaultValue:
+                'Play the globe transition even on devices where it is normally skipped to keep navigation fast. It may feel slower there. Reduced motion still turns it off.',
+            })
+      }
+      checked={checked}
+      onChange={onChange}
+      disabled={reduced}
+    />
   );
 }

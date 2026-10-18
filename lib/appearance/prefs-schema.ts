@@ -23,6 +23,7 @@ export const appearanceComfortSchema = z.object({
   glassLevel: z.number().int().min(0).max(4).nullable().optional(),
   colorVision: z.enum(COLOR_VISION_MODES).nullable().optional(),
   navTransition: z.enum(NAV_TRANSITIONS).nullable().optional(),
+  alwaysEvertGlobe: z.boolean().optional(),
 });
 
 export type AppearanceComfortInput = z.infer<typeof appearanceComfortSchema>;

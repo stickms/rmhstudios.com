@@ -357,6 +357,15 @@ with the task plan beside it. The components here are in `eversion/`
   azimuthal, equirectangular) with **Random as the default** (it never repeats the
   previous projection) plus a Preview button. After the flip, confirm the row is
   visible, defaults to Random, persists and previews (tasks T39 acceptance).
+- **"Always evert globe".** A switch next to the transition picker
+  (`AlwaysEvertRow` in `AppearancePanel.tsx`; hidden while the flag is off, disabled
+  with a hint while reduced motion is on) that forces the effect on devices where it
+  is normally skipped to keep navigation fast: a host still starting, a BEFORE
+  picture not ready, a slow overlay. It lengthens those bounded waits and never
+  overrides reduced motion, WebGL2, back/forward or a busy runner. Stored as
+  `alwaysEvertGlobe` (account column + `rmh-always-evert-globe` cache), default off.
+  The gate-by-gate table is in
+  [`lib/eversion/README.md`](../../lib/eversion/README.md).
 - **Lab route `/eversion-lab`.** The device-lab and e2e harness
   (`app/routes/eversion-lab.tsx`, `eversion/lab/`): `noindex`, in no sitemap or
   nav, **admin-gated**. `EVERSION_LAB_OPEN=1` skips the admin check for the e2e

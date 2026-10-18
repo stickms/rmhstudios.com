@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { aspectBucket, getBakedLut } from '@/lib/eversion/projection-lut';
 import { buildPlaceholder } from '@/lib/eversion/placeholder';
 import { createCapture, fixedViewport } from '@/lib/eversion/capture';
+import { evaluateHostEligibility } from '@/lib/eversion/eligibility';
 import { registerDebug, maybeLoadEversionDebug } from '@/lib/eversion/debug';
 import { isEversionEnabled } from '@/lib/eversion/flags';
 import { getEversionHost, resetEversionHost } from '@/lib/eversion/gl/host';
@@ -21,6 +22,7 @@ import type {
   RunOptions,
 } from '@/lib/eversion/runner';
 import {
+  ALWAYS_EVERT_BEFORE_WAIT_MS,
   BEFORE_GRACE_MS,
   CAPTURE_DPR_CAP,
   CAPTURE_EXCLUDE_SELECTORS,
@@ -537,6 +539,12 @@ export function createEversionController(
   const ownCaptures = new Set<CaptureApi>();
 
   const setting = (): NavTransition => useThemeStore.getState().navTransition;
+  /**
+   * "Always evert globe": read from the store the controller already reads (no
+   * new import, nothing added to the shell's static closure). Reduced motion is
+   * decided by the hub's eligibility BEFORE this is ever consulted.
+   */
+  const alwaysEvert = (): boolean => useThemeStore.getState().alwaysEvertGlobe;
 
   const lutKey = (id: ProjectionId, v: Viewport) =>
     `${id}:${aspectBucket(Math.max(v.h, 1) / Math.max(v.w, 1))}`;
@@ -573,10 +581,53 @@ export function createEversionController(
     const base = deps.beforeCapture.ineligibleReason();
     if (base) return base;
     const state = hostPort.state();
-    if (state === 'ready') return null;
-    if (state === 'failed') return 'host-error';
     if (state === 'idle') hostPort.warm(detectTier());
-    return 'host-not-ready';
+    // With "Always evert globe" a host that is still starting is waited for by the
+    // runner (bounded) instead of reported as `host-not-ready`; a failed one is not.
+    return evaluateHostEligibility(state, alwaysEvert());
+  };
+
+  /**
+   * A BEFORE capture taken now, for callers with no hub scheduler result (a
+   * Preview) and for "Always evert globe" when the scheduler has nothing for us.
+   * Reuses the scheduler's session when there is one; otherwise opens one for
+   * this capture ALONE and always disposes it - each session owns a worker and a
+   * sandbox iframe, and this must not leave one behind.
+   */
+  const captureBeforeNow = async (timeoutMs?: number): Promise<ImageBitmap | null> => {
+    let own: CaptureApi | null = null;
+    try {
+      const capture = deps.beforeCapture.getCapture() ?? (own = await openCapture());
+      const result = await capture.captureViewport({
+        phase: 'before',
+        exclude: CAPTURE_EXCLUDE_SELECTORS,
+        scaleCap: CAPTURE_DPR_CAP[detectTier()],
+        ...(timeoutMs === undefined ? {} : { timeoutMs }),
+      });
+      return result.bitmap;
+    } catch {
+      return null;
+    } finally {
+      own?.dispose();
+    }
+  };
+
+  /**
+   * The hub's BEFORE bitmap. Normally exactly the scheduler's answer (<= 50 ms,
+   * `null` when nothing is held or in flight). With "Always evert globe" a miss is
+   * not the end: the scheduler gets the generous wait, and if it still has nothing
+   * (the hub was released before its idle capture, or the capture timed out) one is
+   * taken now, within what is left of the same {@link ALWAYS_EVERT_BEFORE_WAIT_MS}.
+   */
+  const awaitBefore = async (grace: number): Promise<ImageBitmap | null> => {
+    const started = performance.now();
+    const held = await deps.beforeCapture.awaitBefore(grace);
+    if (held || !alwaysEvert()) return held;
+    // One budget for both steps, not one each; never less than a capture needs to start.
+    const left = Math.max(500, ALWAYS_EVERT_BEFORE_WAIT_MS - (performance.now() - started));
+    return withTimeout(captureBeforeNow(left), left + 50, 'always-evert BEFORE capture').catch(
+      () => null,
+    );
   };
 
   const page = createPagePort();
@@ -586,7 +637,8 @@ export function createEversionController(
     page,
     router: createRouterPort(deps.router),
     ineligibleReason: () => ineligibleReason(),
-    awaitBefore: (grace) => deps.beforeCapture.awaitBefore(grace),
+    awaitBefore,
+    alwaysEvert,
     capture: () => deps.beforeCapture.getCapture(),
     openCapture,
     placeholder: (node, viewport, colours, tier) =>
@@ -693,25 +745,7 @@ export function createEversionController(
       // No hub was open to warm the host, and a Preview is not time-critical: wait
       // for it (within the cold-init budget) rather than fall back on a cold click.
       if (!(await hostPort.whenReady(detectTier()))) return { fallback: 'host-error' };
-      const before = async (): Promise<ImageBitmap | null> => {
-        // Reuse the scheduler's shared session when the bridge has one; otherwise
-        // open one for this capture ALONE and always dispose it - each session owns
-        // a worker and a sandbox iframe, and a Preview must not leave one behind.
-        let own: CaptureApi | null = null;
-        try {
-          const capture = deps.beforeCapture.getCapture() ?? (own = await openCapture());
-          const result = await capture.captureViewport({
-            phase: 'before',
-            exclude: CAPTURE_EXCLUDE_SELECTORS,
-            scaleCap: CAPTURE_DPR_CAP[detectTier()],
-          });
-          return result.bitmap;
-        } catch {
-          return null;
-        } finally {
-          own?.dispose();
-        }
-      };
+      const before = () => captureBeforeNow();
       return runner.run(previewNode(), centredGlobe(), 'preview', {
         // The capture is its own work, not the hub's 250 ms grace: give it room.
         before: async () =>

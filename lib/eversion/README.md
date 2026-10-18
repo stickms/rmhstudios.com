@@ -98,6 +98,33 @@ Now the controller owns a host state (`idle` → `initialising` → `ready`, or
 
 `FallbackReason` gained `host-not-ready` (a `types.ts` amendment).
 
+### "Always evert globe": the performance gates, and what the override does
+
+Every way the effect is skipped for a PERFORMANCE reason is a short wait that
+gives up so today's navigation is not delayed. The visitor-set switch
+(`themeStore.alwaysEvertGlobe`, Settings > Appearance > Comfort, default off)
+lengthens those waits; it never turns an accessibility or capability check off.
+
+| Gate (where)                                                                                                                          | Normal behaviour                                      | With the override                                                                                      |
+| ------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Host still starting (`ineligibleReason()` -> `host-not-ready`)                                                                        | Fall back at once, warm the host for next time        | Eligible; the runner waits for the host (`ALWAYS_EVERT_HOST_WAIT_MS`, 8 s)                             |
+| Host slow to answer (`HOST_READY_TIMEOUT_MS`, 100 ms -> `host-error`)                                                                 | 100 ms, then fall back                                | `ALWAYS_EVERT_HOST_WAIT_MS` (8 s), then fall back                                                      |
+| BEFORE not held / not in flight (`before-missing`, `BEFORE_WAIT_MS` 50 ms -> `before-timeout`)                                        | 50 ms, then fall back                                 | `ALWAYS_EVERT_BEFORE_WAIT_MS` (3 s) for the scheduler's capture, then one on demand inside that budget |
+| Overlay mount (`OVERLAY_MOUNT_TIMEOUT_MS`, 100 ms -> `host-error`)                                                                    | 100 ms, then fall back                                | `ALWAYS_EVERT_OVERLAY_MOUNT_MS` (2 s)                                                                  |
+| Device tier (`detectTier`: `perf-lite` = Save-Data / 2g / < 4 GB / <= 2 cores -> `low`)                                               | Smaller mesh and capture scale; **not** an exclusion  | Unchanged (the tier still keeps the run cheap)                                                         |
+| Frame governor (`DprGovernor`, <= 2 DPR steps)                                                                                        | Lowers resolution mid-run, never cancels              | Unchanged                                                                                              |
+| Run watchdog (`MAX_RUN_MS`, 30 s of silence)                                                                                          | Force-ends a stalled run with a fade                  | Unchanged: the override cannot hang                                                                    |
+| AFTER settle / capture deadlines (`ROUTE_SETTLE_TIMEOUT_MS`, `AFTER_*`)                                                               | `after-failed`: unwrap the placeholder, run continues | Unchanged (not a skip; the run is already committed)                                                   |
+| Reduced motion (OS or site toggle), no WebGL2 / lost context, flag off, chunk not loaded, failed host, traversal, external link, busy | Fall back                                             | **Never overridden**                                                                                   |
+
+The override reaches the code in three places and nowhere else:
+`eligibility.ts` (`evaluateHostEligibility(hostState, alwaysEvert)`, pure and
+tested in `__tests__/always-evert.test.ts`), the runner's priming section
+(`RunnerDeps.alwaysEvert?()` picks the `ALWAYS_EVERT_*` limits), and the
+controller (`alwaysEvert()` reads `useThemeStore` - already imported, so the
+shell's static closure does not grow - and `awaitBefore` takes a capture on
+demand when the scheduler has none). The limits live in `constants.ts`.
+
 ### The fallback adds no delay, and a committed run always ends
 
 - A release waits for an in-flight BEFORE capture for `BEFORE_WAIT_MS` (50 ms) at

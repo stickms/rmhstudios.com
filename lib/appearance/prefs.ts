@@ -151,3 +151,5 @@ export const CUSTOM_ACCENT_KEY = 'rmh-custom-accent';
 export const REDUCE_MOTION_KEY = 'rmh-reduce-motion';
 export const COLOR_VISION_KEY = 'rmh-color-vision';
 export const NAV_TRANSITION_KEY = 'rmh-nav-transition';
+/** "Always evert globe": cached as '1' when on, absent when off (the default). */
+export const ALWAYS_EVERT_GLOBE_KEY = 'rmh-always-evert-globe';

@@ -50,6 +50,9 @@
 import {
   AFTER_CAPTURE_TIMEOUT_MS,
   AFTER_SETTLE_CAP_MS,
+  ALWAYS_EVERT_BEFORE_WAIT_MS,
+  ALWAYS_EVERT_HOST_WAIT_MS,
+  ALWAYS_EVERT_OVERLAY_MOUNT_MS,
   BEFORE_WAIT_MS,
   CAPTURE_DPR_CAP,
   CAPTURE_EXCLUDE_SELECTORS,
@@ -195,6 +198,13 @@ export interface RunnerDeps {
     detail: EversionMarkDetails[K] | undefined,
   ): void;
   now(): number;
+  /**
+   * The visitor's "Always evert globe" preference: the priming waits (BEFORE,
+   * host ready, overlay mount) use their generous `ALWAYS_EVERT_*` limits instead
+   * of falling back. Never skips an accessibility or capability check, and the
+   * watchdog still applies. Absent means off.
+   */
+  alwaysEvert?(): boolean;
   /** Override of {@link MAX_RUN_MS} (the e2e harness on a software-GL box); default the constant. */
   maxRunMs?: number;
 }
@@ -330,9 +340,11 @@ export class EversionRunner {
     /* ── Everything that can still fall back ──────────────────────────────── */
 
     let before: ImageBitmap | null;
+    const always = deps.alwaysEvert?.() ?? false;
+    const beforeWaitMs = always ? ALWAYS_EVERT_BEFORE_WAIT_MS : BEFORE_WAIT_MS;
     const waitStarted = deps.now();
     try {
-      before = await (options.before ?? deps.awaitBefore)(BEFORE_WAIT_MS);
+      before = await (options.before ?? deps.awaitBefore)(beforeWaitMs);
     } catch {
       dropEarlyInput();
       this.phase = 'idle';
@@ -349,7 +361,7 @@ export class EversionRunner {
       dropEarlyInput();
       this.phase = 'idle';
       return this.fallback(
-        deps.now() - waitStarted >= BEFORE_WAIT_MS * 0.9 ? 'before-timeout' : 'before-missing',
+        deps.now() - waitStarted >= beforeWaitMs * 0.9 ? 'before-timeout' : 'before-missing',
       );
     }
     this.beforeReady = true;
@@ -357,8 +369,15 @@ export class EversionRunner {
     const tier = deps.page.tier();
     let host: EversionHost;
     try {
-      host = await deps.host.ready(tier, HOST_READY_TIMEOUT_MS);
-      await withTimeout(deps.overlay.mount(), OVERLAY_MOUNT_TIMEOUT_MS, 'overlay mount');
+      host = await deps.host.ready(
+        tier,
+        always ? ALWAYS_EVERT_HOST_WAIT_MS : HOST_READY_TIMEOUT_MS,
+      );
+      await withTimeout(
+        deps.overlay.mount(),
+        always ? ALWAYS_EVERT_OVERLAY_MOUNT_MS : OVERLAY_MOUNT_TIMEOUT_MS,
+        'overlay mount',
+      );
     } catch {
       before.close?.();
       dropEarlyInput();

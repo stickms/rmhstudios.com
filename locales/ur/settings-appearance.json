@@ -1,6 +1,9 @@
 {
   "accent-adjusted": "Adjusted the color for readability",
   "accent-hex": "Accent hex",
+  "always-evert-globe": "Always evert globe",
+  "always-evert-globe-desc": "Play the globe transition even on devices where it is normally skipped to keep navigation fast. It may feel slower there. Reduced motion still turns it off.",
+  "always-evert-globe-reduced-off": "Reduced motion is on, so the globe transition stays off and pages change as usual.",
   "browse-themes": "Browse themes",
   "clear": "Reset to theme",
   "color-vision": "Colour vision",
