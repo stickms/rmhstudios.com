@@ -634,6 +634,13 @@ model AppearancePreference {
   /// 'tritanopia'; null/'none' → the untouched palette. Retints the semantic
   /// success/danger/warning tokens only.
   colorVision        String? @db.VarChar(16)
+  /// Globe-eversion navigation transition (spec §9.3): 'random' | one
+  /// projection id (see NAV_TRANSITIONS in lib/eversion/types.ts); null →
+  /// 'random'. Nullable with no backfill so the old image never names it.
+  navTransition      String? @db.VarChar(16)
+  /// "Always evert globe" (spec amendment 2026-10-18): run the eversion even
+  /// where it is skipped for performance. Never overrides reduced motion.
+  alwaysEvertGlobe   Boolean @default(false)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

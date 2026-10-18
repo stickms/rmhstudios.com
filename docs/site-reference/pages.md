@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 326 routes. 189 render inside the standard site shell (sidebar, nav, context rail); 137 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 327 routes. 189 render inside the standard site shell (sidebar, nav, context rail); 138 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -247,6 +247,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/dunesday` | Dunesday — MCU + Dune Marathon Planner | public | `app/routes/dunesday.tsx` |
 | `/embed/post/:id` | — | public | `app/routes/embed.post.$id.tsx` |
 | `/embed/replay/:id` | — | public | `app/routes/embed.replay.$id.tsx` |
+| `/eversion-lab` | — | admin | `app/routes/eversion-lab.tsx` |
 | `/forest-explorer` | — | public | `app/routes/forest-explorer/index.tsx` |
 | `/forest-explorer/explore` | — | public | `app/routes/forest-explorer/explore.tsx` |
 | `/forest-explorer/story` | — | public | `app/routes/forest-explorer/story.tsx` |
