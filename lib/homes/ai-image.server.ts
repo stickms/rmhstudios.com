@@ -22,7 +22,10 @@ import { feedImageKey, feedImageUrl, withImageDimensions } from '@/lib/storage/k
 
 // xAI is OpenAI-SDK compatible; point the base URL at their endpoint.
 const xai = new OpenAI({
-  apiKey: process.env.XAI_API_KEY || '',
+  // `|| 'missing'`, not `|| ''`: the SDK throws on an empty key at CONSTRUCTION, and
+  // `loadEntries()` imports this module before serving any page, so an unset key was
+  // a site-wide 500 (see lib/rmhvibe/vibe-ai.server.ts). Calls are gated on the env var.
+  apiKey: process.env.XAI_API_KEY || 'missing',
   baseURL: 'https://api.x.ai/v1',
   maxRetries: 1,
 });
