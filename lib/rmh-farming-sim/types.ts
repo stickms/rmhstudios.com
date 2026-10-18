@@ -75,6 +75,8 @@ export interface Stats {
     weather: 'sunny' | 'rain';
     shippedValue: number;
     energy: number;
+    /** Today's festival contest progress for this farm; null on ordinary days. */
+    festival?: import('./festivals').FestivalProgress | null;
 }
 
 export interface MemberView {

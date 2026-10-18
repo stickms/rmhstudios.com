@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { useTranslation } from 'react-i18next';
+import { LegalSummaryBox } from '@/components/access/LegalSummaryBox';
 import { LegalLayout } from '@/components/lockdown/LegalLayout';
 
 export const Route = createFileRoute('/cookies')({
@@ -26,6 +27,7 @@ function CookiesPage() {
     >
       {/* Document under glass: the whole article body sits on one wide pane. */}
       <div className="legal-content__pane">
+        <LegalSummaryBox kind="cookies" />
         <h2>{t('cookie-what-heading', { defaultValue: '1. What Are Cookies' })}</h2>
         <p>
           {t('cookie-what-body', {

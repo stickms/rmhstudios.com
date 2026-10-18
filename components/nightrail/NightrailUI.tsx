@@ -38,6 +38,7 @@ import {
   Trophy,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { TrickSubmit } from './TrickSubmit';
 import { useSession } from '@/components/Providers';
 import { TRICK_LIST } from '@/lib/nightrail/constants';
 import { LEVELS, LEVEL_ORDER } from '@/lib/nightrail/levels';
@@ -499,6 +500,8 @@ export function NightrailUI({
             </Button>
           )}
 
+          {signedIn && scoreSubmitted ? <TrickSubmit runStats={runStats} /> : null}
+
           <div className="flex gap-2">
             <Button
               onClick={onRestart}
@@ -621,6 +624,8 @@ export function NightrailUI({
               {t('sign-in-to-submit', { defaultValue: 'Sign In to Submit Score' })}
             </Button>
           )}
+
+          {signedIn && scoreSubmitted ? <TrickSubmit runStats={runStats} /> : null}
 
           <div className="flex gap-2">
             <Button

@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Zap, Brain, Activity, Target, Layers, Timer, Settings2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { GlobalLeaderboard } from './GlobalLeaderboard';
+import { CustomStormPicker } from './CustomStormPicker';
+import type { PuzzleCategory } from '@/lib/synapse-storm/types';
 import { getSettings, setMusicVolume, setSfxVolume } from '@/lib/synapse-storm/settings';
 import { soundManager } from '@/lib/synapse-storm/sounds';
 import { synapseStormMusic } from '@/lib/synapse-storm/music';
@@ -10,6 +12,7 @@ import { synapseStormMusic } from '@/lib/synapse-storm/music';
 interface MainMenuProps {
     onStart: () => void;
     onMultiplayer?: () => void;
+    onCustom?: (categories: PuzzleCategory[]) => void;
     currentUserId?: string;
 }
 
@@ -22,7 +25,7 @@ const FEATURE_KEYS = [
     { icon: <Timer size={14} />, key: 'feature-fast-paced', defaultValue: 'Fast-paced' },
 ];
 
-export const MainMenu: React.FC<MainMenuProps> = ({ onStart, onMultiplayer, currentUserId }) => {
+export const MainMenu: React.FC<MainMenuProps> = ({ onStart, onMultiplayer, onCustom, currentUserId }) => {
     const { t } = useTranslation("c-synapse-storm");
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [musicVol, setMusicVol] = useState(0.25);
@@ -83,6 +86,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStart, onMultiplayer, curr
                             <div className="start-glow" />
                         </button>
                     )}
+                    {onCustom && <CustomStormPicker onStart={onCustom} />}
                 </div>
 
                 <div className="menu-settings-section">

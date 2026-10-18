@@ -2,10 +2,18 @@
  * Admin Dashboard Route
  */
 
+import { AdminReleaseNotesLink } from '@/components/devplatform/AdminReleaseNotesLink';
+import { AdminSafetyLink } from '@/components/safety/AdminSafetyLink';
 import { useTranslation } from "react-i18next";
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useAdminReviewCount } from '@/lib/useAdminReviewCount';
+import { AdminQotdLink } from '@/components/posts-plus/AdminQotdLink';
+import { AdminDelightLink } from '@/components/delight/AdminDelightLink';
+import { AdminCanvasLink } from '@/components/canvas/admin/AdminCanvasLink';
+import { AdminChallengeLink } from '@/components/admin/studio-challenges/AdminChallengeLink';
+import { AdminReadingLink } from '@/components/reading/admin/AdminReadingLink';
+import { InsightsLink } from '@/components/admin/InsightsLink';
 
 export const Route = createFileRoute('/_site/admin/')({
   head: () => ({
@@ -142,6 +150,8 @@ function AdminDashboardPage() {
             </p>
           </Link>
 
+          <AdminReleaseNotesLink />
+
           <Link
             to="/admin/predictions"
             className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
@@ -151,6 +161,8 @@ function AdminDashboardPage() {
               {t("predictions-description", { defaultValue: "Approve or deny submitted predictions, and resolve open markets to YES or NO to pay out winners." })}
             </p>
           </Link>
+
+          <InsightsLink />
 
           <Link
             to="/admin/analytics"
@@ -211,6 +223,13 @@ function AdminDashboardPage() {
               {t("audit-log-description", { defaultValue: "A record of admin actions — report decisions, bans, strikes, and announcements." })}
             </p>
           </Link>
+
+          <AdminSafetyLink />
+          <AdminQotdLink />
+          <AdminDelightLink />
+          <AdminCanvasLink />
+          <AdminChallengeLink />
+          <AdminReadingLink />
         </div>
       </div>
     </PageLayout>

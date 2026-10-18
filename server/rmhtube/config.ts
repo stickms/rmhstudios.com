@@ -85,6 +85,16 @@ export const config = {
     'rmhtube:room:check_history': { max: 10,  windowMs: 60_000 },
     'rmhtube:room:request_control': { max: 3, windowMs: 60_000 },
 
+    // Watch-party extras
+    'rmhtube:party:sync':             { max: 30, windowMs: 60_000 },
+    'rmhtube:party:predict_open':     { max: 10, windowMs: 60_000 },
+    'rmhtube:party:predict_pick':     { max: 20, windowMs: 60_000 },
+    'rmhtube:party:predict_resolve':  { max: 10, windowMs: 60_000 },
+    'rmhtube:party:bingo_start':      { max: 5,  windowMs: 60_000 },
+    'rmhtube:party:bingo_call':       { max: 60, windowMs: 60_000 },
+    'rmhtube:party:bingo_claim':      { max: 10, windowMs: 60_000 },
+    'rmhtube:party:bingo_end':        { max: 10, windowMs: 60_000 },
+
     // Sync. The leader reports every 2 s (30/min) and both sides fire extra on
     // tab-return, so the ceiling sits at four times the steady rate.
     'rmhtube:sync:host_state':    { max: 120, windowMs: 60_000 },
@@ -112,6 +122,7 @@ export const config = {
     'rmhtube:chat:typing':        { max: 30,  windowMs: 60_000 },
     'rmhtube:chat:react':         { max: 30,  windowMs: 60_000 },
     'rmhtube:chat:pin':           { max: 10,  windowMs: 60_000 },
+    'safety:slowmode:tube:set':   { max: 20,  windowMs: 60_000 },
     'rmhtube:reaction:send':      { max: 30,  windowMs: 60_000 },
   } as Record<string, { max: number; windowMs: number }>,
 

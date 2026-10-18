@@ -19,7 +19,16 @@ import { getTimeline, type FeedSurface } from '@/lib/feed/timeline';
 import { ownsFeedImageUrl } from '@/lib/storage/keys';
 import { publishDueForUser } from '@/lib/scheduled/publish.server';
 import { screenNewContent } from '@/lib/moderation/auto-moderate.server';
+import { recordLinkDomains } from '@/lib/safety/link-risk.server';
 import { apiCache } from '@/lib/cache';
+import { altTextViolation } from '@/lib/feed/alt-text.server';
+import { gateCommunityContent, logRemoved } from '@/lib/communities/gate.server';
+import { HELD_BY, recordModItem } from '@/lib/communities/automod.server';
+import { derivePostKind } from '@/lib/communities/automod';
+import { listFlairs } from '@/lib/communities/flairs.server';
+import { challengeEntryError } from '@/lib/communities/challenge.server';
+import { enqueuePostDiscovery } from '@/lib/discovery/jobs.server';
+import { planPostsPlus, recordPostsPlusTx, afterPostsPlus } from '@/lib/posts-plus/compose.server';
 
 /** Throttle window for the lazy scheduled-post probe on the feed read path. */
 const SCHEDULED_PROBE_TTL_MS = 60_000;
@@ -139,11 +148,38 @@ export const Route = createFileRoute('/api/rmharks')({
             replyControl,
             unlockPrice,
             communityId,
+            isTake,
+            codeEmbed,
+            flairId,
+            challengeId,
+            ttl,
+            seriesId,
+            qotdDay,
           } = input;
 
           if (imageUrls?.length && !imageUrls.every((u) => ownsFeedImageUrl(u, session.user.id))) {
             return Response.json({ error: 'Invalid image reference' }, { status: 400 });
           }
+
+          // Require-alt-text mode (X12): the author's own setting, enforced here
+          // as well as in the composer. Only looked up when the post has images.
+          const altError = await altTextViolation(session.user.id, imageUrls, imageAlts);
+          if (altError) {
+            return Response.json({ error: altError }, { status: 400 });
+          }
+
+          // posts-plus: expiry (X8), series (X5) and question-of-the-day (X4) fields.
+          const planned = await planPostsPlus(session.user.id, {
+            ttl,
+            seriesId,
+            qotdDay,
+            audience,
+            communityId,
+          });
+          if (!planned.plan) {
+            return Response.json({ error: planned.error }, { status: 400 });
+          }
+          const plusPlan = planned.plan;
 
           // Trim alt text and clamp to the number of images so the two arrays stay
           // index-aligned even if the client sends a longer/whitespace-only list.
@@ -160,6 +196,71 @@ export const Route = createFileRoute('/api/rmharks')({
             if (!member) {
               return Response.json({ error: 'Join the community to post in it' }, { status: 403 });
             }
+          }
+
+          // Community gate (N1 flair, S2 verification, N4 AutoMod). One call; the
+          // outcome decides below whether the post is refused, held, flagged, or
+          // goes straight through.
+          let held = false;
+          let flagRule: string | null = null;
+          let holdRule = 'AutoMod';
+          if (communityId) {
+            const gate = await gateCommunityContent({
+              communityId,
+              userId: session.user.id,
+              target: 'post',
+              content,
+              postKind: derivePostKind({
+                content,
+                gifUrl,
+                imageUrls,
+                hasPoll: !!poll,
+                isQuote: !!originalId,
+              }),
+              flairId,
+            });
+            if (gate.kind === 'deny') {
+              return Response.json({ error: gate.error, code: gate.code }, { status: gate.status });
+            }
+            if (gate.kind === 'remove') {
+              await logRemoved({
+                communityId,
+                entityType: 'rmhark',
+                postId: null,
+                authorId: session.user.id,
+                ruleName: gate.ruleName,
+                content,
+              });
+              return Response.json(
+                {
+                  error: `Your post was removed by this community's AutoMod rule "${gate.ruleName}".`,
+                  code: 'automod_removed',
+                },
+                { status: 422 },
+              );
+            }
+            if (challengeId) {
+              const challengeError = await challengeEntryError(
+                communityId,
+                challengeId,
+                session.user.id,
+              );
+              if (challengeError) {
+                return Response.json({ error: challengeError, code: 'challenge_closed' }, { status: 409 });
+              }
+            }
+            // A challenge entry is never invisible: a hold becomes a flag so the
+            // mods still see it without the entry vanishing from the contest.
+            if (gate.kind === 'hold' && !challengeId) {
+              held = true;
+              holdRule = gate.ruleName;
+            } else if (gate.kind === 'hold') flagRule = gate.ruleName;
+            else if (gate.kind === 'allow' && gate.flag) flagRule = gate.flag.ruleName;
+          } else if (flairId || challengeId) {
+            return Response.json(
+              { error: 'Flair and challenges only apply to community posts' },
+              { status: 400 },
+            );
           }
 
           // Validate the quoted post exists (and isn't itself a quote, to avoid chains).
@@ -192,6 +293,14 @@ export const Route = createFileRoute('/api/rmharks')({
                 replyControl: replyControl ?? 'EVERYONE',
                 unlockPrice: unlockPrice && unlockPrice > 0 ? unlockPrice : null,
                 communityId: communityId ?? null,
+                isTake: isTake ?? false,
+                hasEmbed: !!codeEmbed,
+                ...(codeEmbed ? { codeEmbed: { create: codeEmbed } } : {}),
+                // An AutoMod hold is a soft-delete marker: invisible everywhere
+                // until a mod approves it (see automod.server.ts resolvePost).
+                ...(held ? { deletedAt: new Date(), deletedBy: HELD_BY } : {}),
+                expiresAt: plusPlan.expiresAt,
+                seriesId: plusPlan.seriesId,
               },
               include: {
                 user: { select: userDisplaySelect },
@@ -201,23 +310,35 @@ export const Route = createFileRoute('/api/rmharks')({
             // Extract @hashtags once at write time into the normalized hashtag /
             // post_hashtag tables (indexed lookups for trending + tag feeds) instead
             // of scanning `content` with ILIKE on read. Same tx as the post insert.
-            await linkPostHashtags(tx, created.id, created.content);
+            // A held post is counted and hashtag-linked when a mod approves it.
+            if (!held) {
+              await linkPostHashtags(tx, created.id, created.content);
 
-            // Maintain the author's denormalized post count atomically with the
-            // insert (profile pages read this column instead of COUNT(*)).
-            const updatedUser = await tx.user.update({
-              where: { id: session.user.id },
-              data: { postCount: { increment: 1 } },
-              select: { postCount: true },
-            });
-            newPostCount = updatedUser.postCount;
-
-            // Maintain the community's denormalized post count in the same tx so the
-            // community page reads this column instead of COUNT(*) over rmheet.
-            if (communityId) {
-              await tx.community.update({
-                where: { id: communityId },
+              // Maintain the author's denormalized post count atomically with the
+              // insert (profile pages read this column instead of COUNT(*)).
+              const updatedUser = await tx.user.update({
+                where: { id: session.user.id },
                 data: { postCount: { increment: 1 } },
+                select: { postCount: true },
+              });
+              newPostCount = updatedUser.postCount;
+
+              // Maintain the community's denormalized post count in the same tx so the
+              // community page reads this column instead of COUNT(*) over rmheet.
+              if (communityId) {
+                await tx.community.update({
+                  where: { id: communityId },
+                  data: { postCount: { increment: 1 } },
+                });
+              }
+            }
+
+            if (communityId && flairId) {
+              await tx.communityPostFlair.create({ data: { postId: created.id, flairId } });
+            }
+            if (communityId && challengeId) {
+              await tx.communityChallengeEntry.create({
+                data: { challengeId, postId: created.id, userId: session.user.id },
               });
             }
 
@@ -227,6 +348,8 @@ export const Route = createFileRoute('/api/rmharks')({
                 data: { repostCount: { increment: 1 } },
               });
             }
+
+            await recordPostsPlusTx(tx, created.id, session.user.id, plusPlan);
 
             if (poll) {
               await tx.rMHarkPoll.create({
@@ -251,8 +374,35 @@ export const Route = createFileRoute('/api/rmharks')({
             return created;
           });
 
+          // AutoMod hold / flag: file the mod-queue entry. A held post stops here —
+          // no feed broadcast, mentions, or progression until a mod approves it.
+          if (communityId && (held || flagRule)) {
+            await recordModItem({
+              communityId,
+              entityType: 'rmhark',
+              entityId: rmhark.id,
+              postId: rmhark.id,
+              authorId: session.user.id,
+              action: held ? 'hold' : 'flag',
+              ruleName: held ? holdRule : (flagRule ?? 'AutoMod'),
+              snapshot: content.trim() || '(media post)',
+            }).catch((e) => console.error('automod queue error:', e));
+          }
+          if (held) {
+            return Response.json(
+              {
+                held: true,
+                id: rmhark.id,
+                message:
+                  'Your post is being held for review by the community moderators. It will appear once approved.',
+              },
+              { status: 202 },
+            );
+          }
+
           // Fire-and-forget AI pre-screen for policy violations. Never blocks or
           // delays the post; only files a report for human review if clearly abusive.
+          await recordLinkDomains(rmhark.content);
           if (rmhark.content.trim()) {
             void screenNewContent({
               entityType: 'rmhark',
@@ -305,8 +455,16 @@ export const Route = createFileRoute('/api/rmharks')({
             imageAlts: rmhark.imageAlts,
             isSensitive: rmhark.isSensitive,
             replyControl: rmhark.replyControl,
+            isTake: rmhark.isTake || undefined,
+            hasEmbed: rmhark.hasEmbed || undefined,
+            seriesId: rmhark.seriesId ?? undefined,
+            expiresAt: rmhark.expiresAt?.toISOString(),
             reactions: [],
           };
+          if (communityId && flairId) {
+            const flair = (await listFlairs(communityId)).find((f) => f.id === flairId);
+            if (flair) item.communityFlair = flair;
+          }
 
           // Attach the quoted original so the card renders it inline immediately.
           if (quotedOriginalId) {
@@ -436,6 +594,10 @@ export const Route = createFileRoute('/api/rmharks')({
               console.error('post achievement error:', e);
             }
           })();
+
+          afterPostsPlus(item.id, session.user.id, plusPlan);
+          // Keyword alerts + community watchers: matched by the jobs worker, never inline.
+          void enqueuePostDiscovery(item.id);
 
           return Response.json(item, { status: 201 });
         },

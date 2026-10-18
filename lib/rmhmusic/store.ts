@@ -13,6 +13,7 @@ import type {
   SpotifyAuthState,
   TrackInfo,
   RoomHistoryEntry,
+  RadioView,
 } from './types';
 
 export interface RmhMusicSettings {
@@ -39,6 +40,9 @@ export interface RmhMusicStore {
   /** Peers the room is paused on, or null when nobody is being waited for. */
   peersWaiting: PeerWaitState | null;
   room: ClientRoomState | null;
+  /** Community radio (T4): rotation, now playing and votes. */
+  radio: RadioView | null;
+  setRadio: (radio: RadioView | null) => void;
   lastSeq: number;
   settings: RmhMusicSettings;
   systemMessages: SystemMessage[];
@@ -79,6 +83,8 @@ export const useRmhMusicStore = create<RmhMusicStore>()(
       connectionStatus: 'idle',
       peersWaiting: null,
       room: null,
+      radio: null,
+      setRadio: (radio) => set({ radio }),
       lastSeq: -1,
       settings: { ...DEFAULT_SETTINGS },
       systemMessages: [],
@@ -118,12 +124,13 @@ export const useRmhMusicStore = create<RmhMusicStore>()(
         set((s) => ({ systemMessages: [...s.systemMessages.slice(-100), msg] }));
       },
 
-      leaveRoom: () => set({ room: null, lastSeq: -1, systemMessages: [] }),
+      leaveRoom: () => set({ room: null, radio: null, lastSeq: -1, systemMessages: [] }),
       reset: () =>
         set({
           connectionStatus: 'disconnected',
           peersWaiting: null,
           room: null,
+          radio: null,
           lastSeq: -1,
           systemMessages: [],
         }),

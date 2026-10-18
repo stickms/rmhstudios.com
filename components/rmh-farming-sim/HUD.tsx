@@ -5,6 +5,8 @@ import { useEffect, useMemo } from 'react';
 import { useRfsStore } from '@/lib/rmh-farming-sim/store';
 import { actions } from '@/lib/rmh-farming-sim/socket';
 import type { HotbarSelection, ToolId } from '@/lib/rmh-farming-sim/types';
+import { FarmTourShare } from './FarmTour';
+import { FestivalBanner } from './FestivalPanel';
 
 const TOOL_ICONS: Record<ToolId, string> = { hoe: '⛏️', can: '💧', scythe: '🌾' };
 const WEATHER_ICON: Record<string, string> = { sunny: '☀️', rain: '🌧️' };
@@ -83,6 +85,7 @@ export default function HUD() {
                 </div>
 
                 <div className="rfs-topbtns">
+                    {isOwnFarm && <FarmTourShare />}
                     <button className="rfs-btn" onClick={() => setShopOpen(true)}>
                         🏪 Shop
                     </button>
@@ -107,6 +110,8 @@ export default function HUD() {
                     )}
                 </div>
             </div>
+
+            <FestivalBanner />
 
             {/* hotbar */}
             <div className="rfs-hotbar">

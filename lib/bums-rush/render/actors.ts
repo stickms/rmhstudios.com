@@ -48,6 +48,7 @@ import {
   type StrokeOptions,
 } from './ink';
 import { seatInk, withAlpha, type BumPalette } from './theme';
+import { headDrawScale } from '../engine/tuning';
 
 const HEAD_R = PHYSICS.HEAD_RADIUS;
 const HAND_R = PHYSICS.HAND_RADIUS;
@@ -701,6 +702,8 @@ export function drawSeat(
   const sx = Number.isFinite(seat.scaleX) && seat.scaleX > 0 ? seat.scaleX : 1;
   const sy = Number.isFinite(seat.scaleY) && seat.scaleY > 0 ? seat.scaleY : 1;
   ctx.scale(Math.min(1 + RENDER.STRETCH_MAX, sx), Math.min(1 + RENDER.STRETCH_MAX, sy));
+  const headScale = headDrawScale();
+  if (headScale !== 1) ctx.scale(headScale, headScale);
 
   const profile = headProfile(seat.cosmetics.head);
   traceHead(profile);
@@ -724,7 +727,7 @@ export function drawSeat(
   // Below ~0.7 zoom the tag is smaller than its own stroke width; drawing it
   // there costs a text raster and reads as a smudge.
   if (deps.showTags && name && deps.zoom > 0.7) {
-    drawNameTag(ctx, name, seat.head.x, seat.head.y + HEAD_R * 1.25, ink, palette);
+    drawNameTag(ctx, name, seat.head.x, seat.head.y + HEAD_R * headScale * 1.25, ink, palette);
   }
 }
 

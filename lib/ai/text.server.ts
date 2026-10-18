@@ -42,6 +42,9 @@ async function chat(
   return res.choices[0]?.message?.content?.trim() ?? '';
 }
 
+/** Raw single-turn completion for feature modules (callers own the prompt). */
+export { chat as aiChat };
+
 export type ComposeAction = 'improve' | 'expand' | 'shorten' | 'casual' | 'formal' | 'fix';
 
 const ACTION_PROMPTS: Record<ComposeAction, string> = {

@@ -5,6 +5,8 @@ import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { KeysManager } from '@/components/developer/KeysManager';
+import { RecipesManager } from '@/components/developer/RecipesManager';
+import { BadgeSnippets } from '@/components/developer/BadgeSnippets';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { DEVELOPER_DOCS_URL } from '@/lib/docs-site';
 
@@ -77,7 +79,11 @@ function DeveloperHome() {
             </Button>
           </div>
         ) : (
-          <KeysManager />
+          <>
+            <KeysManager />
+            <RecipesManager />
+            <BadgeSnippets userId={session.user.id} />
+          </>
         )}
       </div>
     </PageLayout>

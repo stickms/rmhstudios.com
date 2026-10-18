@@ -36,6 +36,7 @@ import { notifyUser } from '@/lib/message-events';
 import { MESSAGE_MAX_LENGTH } from '@/lib/messages/edit-policy';
 import { toMessageView, type MessageView } from '@/lib/messages/message-view';
 import { loadParticipantConversation, otherParticipant } from '@/lib/messages/mutations.server';
+import { messageStamp } from '@/lib/chat-plus/post.server';
 
 /** Human-readable refusal for each policy rejection, with the tier's ceiling. */
 export function voiceRejectionMessage(
@@ -99,10 +100,14 @@ export async function sendVoiceMessage(args: {
   // Same privacy gate the text send path applies. Re-checked here rather than
   // trusted from an earlier request: a recipient can close their DMs between
   // opening a thread and receiving a recording.
-  const recipient = await prisma.user.findUnique({
-    where: { id: recipientId },
-    select: { profile: { select: { dmPrivacy: true } } },
-  });
+  // (Saved Messages — a conversation with yourself — has no recipient to gate.)
+  const isSavedChat = recipientId === args.userId;
+  const recipient = isSavedChat
+    ? null
+    : await prisma.user.findUnique({
+        where: { id: recipientId },
+        select: { profile: { select: { dmPrivacy: true } } },
+      });
   const dmPrivacy = recipient?.profile?.dmPrivacy ?? 'EVERYONE';
   if (dmPrivacy === 'NONE') {
     return { ok: false, status: 403, error: 'This user is no longer accepting messages.' };
@@ -161,6 +166,12 @@ export async function sendVoiceMessage(args: {
         audioUrl: voicePlaybackUrl(filename),
         audioDurationMs: Math.round(args.durationMs),
         audioPeaks: peaks,
+        read: isSavedChat,
+        ...messageStamp(
+          conversation.disappearAfterSec,
+          { content: note, audioUrl: voicePlaybackUrl(filename) },
+          now,
+        ),
       },
       select: {
         id: true,
@@ -176,6 +187,7 @@ export async function sendVoiceMessage(args: {
         audioUrl: true,
         audioDurationMs: true,
         audioPeaks: true,
+        expiresAt: true,
       },
     }),
     prisma.conversation.update({
@@ -186,24 +198,25 @@ export async function sendVoiceMessage(args: {
 
   const view = toMessageView(message);
 
-  notifyUser(recipientId, {
-    type: 'new-message',
-    message: {
-      id: view.id,
-      conversationId: args.conversationId,
-      content: view.content,
-      senderId: view.senderId,
-      read: view.read,
-      createdAt: view.createdAt,
-      gifUrl: view.gifUrl,
-      imageUrls: view.imageUrls,
-      reactions: [],
-      audioUrl: view.audioUrl,
-      audioDurationMs: view.audioDurationMs,
-      audioPeaks: view.audioPeaks,
-      editedAt: view.editedAt,
-    },
-  });
+  if (!isSavedChat)
+    notifyUser(recipientId, {
+      type: 'new-message',
+      message: {
+        id: view.id,
+        conversationId: args.conversationId,
+        content: view.content,
+        senderId: view.senderId,
+        read: view.read,
+        createdAt: view.createdAt,
+        gifUrl: view.gifUrl,
+        imageUrls: view.imageUrls,
+        reactions: [],
+        audioUrl: view.audioUrl,
+        audioDurationMs: view.audioDurationMs,
+        audioPeaks: view.audioPeaks,
+        editedAt: view.editedAt,
+      },
+    });
 
   return { ok: true, message: { ...view, conversationId: args.conversationId } };
 }

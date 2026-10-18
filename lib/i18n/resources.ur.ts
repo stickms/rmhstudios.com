@@ -15,6 +15,7 @@ import urCCursedLogic from "@/locales/ur/c-cursed-logic.json";
 import urCDailyPuzzles from "@/locales/ur/c-daily-puzzles.json";
 import urCDoctrine from "@/locales/ur/c-doctrine.json";
 import urCDreamRift from "@/locales/ur/c-dream-rift.json";
+import urCDunesday from "@/locales/ur/c-dunesday.json";
 import urCEconomy from "@/locales/ur/c-economy.json";
 import urCForestExplorer from "@/locales/ur/c-forest-explorer.json";
 import urCGabrielsHorn from "@/locales/ur/c-gabriels-horn.json";
@@ -111,6 +112,7 @@ const urResources = {
   "c-daily-puzzles": urCDailyPuzzles,
   "c-doctrine": urCDoctrine,
   "c-dream-rift": urCDreamRift,
+  "c-dunesday": urCDunesday,
   "c-economy": urCEconomy,
   "c-forest-explorer": urCForestExplorer,
   "c-gabriels-horn": urCGabrielsHorn,

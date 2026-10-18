@@ -6,6 +6,7 @@ import { useWindowVirtualizer, type VirtualItem } from'@tanstack/react-virtual';
 import { useFeedStore } from'@/stores/feedStore';
 import type { FeedItem as FeedItemType } from'@/lib/feed-types';
 import { FeedItem } from'./FeedItem';
+import { useHideBots } from'@/lib/devplatform/hide-bots';
 import { ArrowUp } from'lucide-react';
 import { Spinner } from'@/components/ui/spinner';
 import { PostListSkeleton } from'@/components/ui/skeletons/PostCardSkeleton';
@@ -80,7 +81,9 @@ export function FeedList({
  // fetch. Only for the default For You surface the prefetch corresponds to.
  const usingInitial =
  !initialized && items.length === 0 && !following && !!initialItems && initialItems.length > 0;
- const displayItems = usingInitial ? initialItems : items;
+ const hideBots = useHideBots();
+ const baseItems = usingInitial ? initialItems : items;
+ const displayItems = hideBots ? baseItems.filter((i) => !i.user?.isBot) : baseItems;
  // Stable ids mean new pages, optimistic posts, and flushed SSE items animate
  // once, while cached/refetched objects and virtualizer remounts never replay.
  const enteringIds = useStableListMotion(

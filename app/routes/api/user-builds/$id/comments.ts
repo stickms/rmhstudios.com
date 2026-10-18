@@ -6,6 +6,7 @@ import { defineHandler } from '@/lib/api/handler.server';
  * POST /api/user-builds/[id]/comments - Add comment
  */
 
+import { watchBuildComment } from '@/lib/discovery/watch.server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
@@ -167,6 +168,8 @@ export const Route = createFileRoute('/api/user-builds/$id/comments')({
 
           return created;
         });
+
+        void watchBuildComment(id, session.user.id, comment.content).catch(() => {});
 
         return Response.json(
           {

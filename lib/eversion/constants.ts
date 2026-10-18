@@ -156,6 +156,9 @@ export const CAPTURE_EXCLUDE_SELECTORS: readonly string[] = [
   '.radial-hub',
   '.eversion-overlay',
   '[data-floating="cookie"]',
+  // Floating UI from the 2026-10-12 feature batch (targeted notices, the April
+  // Fools pill, the site-hunt marker): chrome over the page, not the page.
+  '[data-floating="feature-overlay"]',
   '[data-sonner-toaster]',
   // Dev only: Vite's error overlay is a custom element whose constructor throws
   // when the capture clones it (`new ErrorOverlay()` with no error), and the

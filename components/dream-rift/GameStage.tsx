@@ -12,10 +12,12 @@ import { GameSession, type RosterEntry } from '@/lib/dream-rift/net/session';
 import { loadHiScore } from '@/lib/dream-rift/highscore';
 import type { Transport } from '@/lib/dream-rift/net/transport';
 import type { Difficulty } from '@/lib/dream-rift/types';
+import type { PracticeOutcome, PracticeTarget } from '@/lib/dream-rift/practice';
 import { useDreamRift } from '@/lib/dream-rift/store';
 import { useGameSession } from '@/hooks/useGameSession';
 import { useRuntime } from './runtime';
 import { MobileControls } from './MobileControls';
+import { PhoneControllerHost } from '@/components/party/PhoneControllerHost';
 import { DialogueOverlay, PauseOverlay, StageBanner } from './Overlays';
 
 export interface StartInfo {
@@ -23,6 +25,8 @@ export interface StartInfo {
     roster: RosterEntry[];
     difficulty: Difficulty;
     seed: number;
+    /** Spell practice target; the run is solo, unscored and ends with the card. */
+    practice?: PracticeTarget & { onEnd: (o: PracticeOutcome) => void };
 }
 
 export function GameStage({ start, onExit }: { start: StartInfo; onExit: () => void }) {
@@ -56,6 +60,7 @@ export function GameStage({ start, onExit }: { start: StartInfo; onExit: () => v
             input,
             hiScore,
             spriteAssets: assets,
+            practice: start.practice,
         });
         sessionRef.current = session;
 
@@ -113,6 +118,7 @@ export function GameStage({ start, onExit }: { start: StartInfo; onExit: () => v
             <DialogueOverlay />
             {paused && <PauseOverlay onResume={() => useDreamRift.getState().setPaused(false)} onQuit={onExit} />}
             <MobileControls input={input} />
+            <PhoneControllerHost sink={input} />
         </div>
     );
 }

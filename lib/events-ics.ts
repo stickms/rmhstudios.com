@@ -40,6 +40,16 @@ export interface ICSEvent {
    * exported once and never revised.
    */
   sequence?: number;
+  /**
+   * `CATEGORIES` — lets a subscribing calendar group or colour entries by source
+   * (the personal feed tags each entry: "Event", "Tournament", "Office hours"…).
+   */
+  categories?: string[];
+  /**
+   * Minutes before the start at which the calendar app should alert (one
+   * `VALARM`). Omitted means no alarm, which is right for a bulk feed.
+   */
+  alarmMinutes?: number;
 }
 
 /** Calendar-level properties, for a feed clients subscribe to rather than import once. */
@@ -127,6 +137,18 @@ function veventLines(event: ICSEvent, dtstamp: string): string[] {
   if (event.url) lines.push(`URL:${event.url}`);
   lines.push(`STATUS:${event.canceledAt ? 'CANCELLED' : 'CONFIRMED'}`);
   if (event.sequence) lines.push(`SEQUENCE:${Math.max(0, Math.floor(event.sequence))}`);
+  if (event.categories?.length) {
+    lines.push(`CATEGORIES:${event.categories.map(escapeText).join(',')}`);
+  }
+  if (event.alarmMinutes && event.alarmMinutes > 0) {
+    lines.push(
+      'BEGIN:VALARM',
+      'ACTION:DISPLAY',
+      `DESCRIPTION:${escapeText(event.title)}`,
+      `TRIGGER:-PT${Math.floor(event.alarmMinutes)}M`,
+      'END:VALARM',
+    );
+  }
   lines.push('END:VEVENT');
   return lines;
 }

@@ -75,7 +75,8 @@ export const fetchJobsSchema = z.object({
   q: z.string().max(200).optional(),
   cities: z.array(z.string()).max(50).optional(),
   programTypes: z.array(z.string()).max(50).optional(),
-  sort: z.enum(['relevance', 'posted', 'deadline']).optional(),
+  sort: z.enum(['relevance', 'posted', 'deadline', 'pay']).optional(),
+  minPay: z.number().int().min(1).max(1_000_000).optional(),
   cursor: z.string().regex(/^\d+$/).optional(),
   take: z.number().int().min(1).max(100).optional(),
 });

@@ -13,14 +13,16 @@ import {
 import { CHARACTERS, getCharacter, type CharacterId } from '@/lib/void-breaker/characters';
 import { WEAPONS, getWeapon, type WeaponId } from '@/lib/void-breaker/weapons';
 import { MODIFIERS, combineModifiers, type ModifierId } from '@/lib/void-breaker/modifiers';
+import { parseHandicap } from '@/lib/ranked/handicap';
 import { useSession } from '@/components/Providers';
 import { useNavigate } from '@tanstack/react-router';
 import type { RunStats } from '@/lib/void-breaker/types';
+import { BossRushMenu, BossRushResult } from './BossRush';
 
 type LBEntry = { username: string; highScore: number };
 
 export function VoidBreakerUI({
-  uiState, runStats, onStartGame, onGoToMenu, muted, onToggleMute,
+  uiState, runStats, onStartGame, onStartBossRush, onGoToMenu, muted, onToggleMute,
   musicVolume, onMusicVolumeChange, sfxVolume, onSfxVolumeChange,
   use3D, onSetRenderer,
   reducedFx, onSetReducedFx,
@@ -33,6 +35,7 @@ export function VoidBreakerUI({
   uiState: 'menu' | 'playing' | 'gameOver';
   runStats: RunStats | null;
   onStartGame: () => void;
+  onStartBossRush: () => void;
   onGoToMenu: () => void;
   muted: boolean;
   onToggleMute: () => void;
@@ -87,6 +90,10 @@ export function VoidBreakerUI({
 
   useEffect(() => {
     if (uiState !== 'gameOver' || !runStats || submitted || !session.data) return;
+    // A handicapped friendly run never reaches the leaderboard.
+    if (parseHandicap('void-breaker')) return;
+    // Boss Rush runs are scored on their own board (BossRushResult).
+    if (runStats.bossRush) return;
     const username = session.data.user.name ||
       (session.data.user as unknown as Record<string, string>).username || 'Killer';
     setSubmitted(true);
@@ -601,6 +608,8 @@ export function VoidBreakerUI({
               <span className="font-mono text-xs opacity-80">◈ {meta.cores.toLocaleString()}</span>
             </Button>
 
+            <BossRushMenu onStart={onStartBossRush} />
+
             <div className="flex gap-2">
               <Button onClick={() => setShowHelp(true)} variant="outline"
                 className="flex-1 py-2 border-[#2a2a3a] text-zinc-500 hover:text-[#d4af37] hover:border-[#c9a227]/40">
@@ -704,19 +713,21 @@ export function VoidBreakerUI({
             </div>
           )}
 
+          {runStats.bossRush && <BossRushResult runStats={runStats} signedIn={!!session.data} />}
+
           {!session.data ? (
             <Button onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
               className="w-full bg-[#1a1a24] hover:bg-[#252530] text-[#d4af37] font-bold border border-[#c9a227]/40">
               {t("sign-in-to-submit", { defaultValue: "Sign In to Submit" })}
             </Button>
           ) : (
-            <p className="text-[10px] text-[#c9a227]/80 text-center font-mono">
+            !runStats.bossRush && <p className="text-[10px] text-[#c9a227]/80 text-center font-mono">
               {submitted ? t("score-submitted", { defaultValue: "\u2713 Score submitted" }) : t("score-submitting", { defaultValue: "Submitting\u2026" })}
             </p>
           )}
 
           <div className="flex gap-2 flex-wrap">
-            <Button onClick={onStartGame}
+            <Button onClick={runStats.bossRush ? onStartBossRush : onStartGame}
               className="flex-1 min-w-[100px] font-bold bg-[#1a1a24] hover:bg-[#252530] text-[#d4af37] border border-[#c9a227]/40">
               <RotateCcw className="w-4 h-4 mr-1" /> {t("again", { defaultValue: "Again" })}
             </Button>

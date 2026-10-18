@@ -51,6 +51,8 @@ export class MissionManager {
         this.credits = 0;
         this.best = this._loadBest();
         this.combo = 1;
+        this.contract = null;        // R12: { pickup:{x,z}, drop:{x,z} } being attempted
+        this._route = null;          // pickup/drop of the delivery in flight
 
         // Mission state
         this.phase = 'idle';         // 'idle' | 'pickup' | 'deliver'
@@ -106,6 +108,23 @@ export class MissionManager {
 
     setStoryMode(on) { this._storyMode = !!on; }
 
+    /** R12: attempt a posted route (courier run, fixed pickup + drop-off). null clears it. */
+    setContract(c) {
+        this.contract = c || null;
+        if (!c || this._storyMode) return;
+        this.phase = 'idle';
+        this.target = null;
+        this.timeLeft = null;
+        this.timeMax = null;
+        if (this._beacon) this._beacon.visible = false;
+        this._nextDelay = 0.3;
+        this.onToast('合约已接 — 前往取货点  ·  CONTRACT ACCEPTED', 'info');
+    }
+
+    _emit(name, detail) {
+        if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(name, { detail }));
+    }
+
     /** Raise the wanted level toward a target, spawning pursuit. */
     commandWanted(level, msg) {
         const target = Math.max(0, Math.min(HEAT_MAX, level || 0));
@@ -133,12 +152,15 @@ export class MissionManager {
 
     _offerDelivery(immediate) {
         const p = this.vehicle.position;
-        const t = this.scene.findRoadTarget(p.x, p.z, PICKUP_MIN, PICKUP_MAX)
-            || this.scene.findRoadTarget(p.x, p.z, 40, PICKUP_MAX + 120);
+        const t = this.contract
+            ? { ...this.contract.pickup }
+            : (this.scene.findRoadTarget(p.x, p.z, PICKUP_MIN, PICKUP_MAX)
+                || this.scene.findRoadTarget(p.x, p.z, 40, PICKUP_MAX + 120));
         if (!t) { this._nextDelay = 2; return; } // retry shortly
 
         // ~40% of runs are illicit "drug runs" — pay more but blow your cover.
-        this.isDrug = Math.random() < 0.4;
+        // A contract is always a plain courier run.
+        this.isDrug = this.contract ? false : Math.random() < 0.4;
         this.missionType = this.isDrug ? 'drug' : 'courier';
         this.phase = 'pickup';
         this.target = t;
@@ -150,9 +172,12 @@ export class MissionManager {
     }
 
     _beginDropoff() {
-        const t = this.scene.findRoadTarget(this.target.x, this.target.z, DROPOFF_MIN, DROPOFF_MAX)
-            || this.scene.findRoadTarget(this.target.x, this.target.z, 60, DROPOFF_MAX + 160);
+        const t = this.contract
+            ? { ...this.contract.drop }
+            : (this.scene.findRoadTarget(this.target.x, this.target.z, DROPOFF_MIN, DROPOFF_MAX)
+                || this.scene.findRoadTarget(this.target.x, this.target.z, 60, DROPOFF_MAX + 160));
         if (!t) { this._completeDelivery(); return; }
+        this._route = { pickup: { x: this.target.x, z: this.target.z }, drop: { x: t.x, z: t.z } };
         const dist = Math.hypot(t.x - this.target.x, t.z - this.target.z);
         this.phase = 'deliver';
         this.target = t;
@@ -178,6 +203,16 @@ export class MissionManager {
         this.onToast(`送达完成  +¥${reward}  (x${this.combo.toFixed(1)})  ·  ${tag}`, 'good');
         this.combo = Math.min(4, this.combo + 0.5);
         this._saveBest();
+        if (!this.isDrug && this.timeMax && this._route) {
+            this._emit('velum2099:delivered', {
+                pickupX: Math.round(this._route.pickup.x), pickupZ: Math.round(this._route.pickup.z),
+                dropX: Math.round(this._route.drop.x), dropZ: Math.round(this._route.drop.z),
+                seconds: this.timeMax - (this.timeLeft || 0),
+                contract: !!this.contract,
+            });
+        }
+        this.contract = null;
+        this._route = null;
         this._endDelivery(2.2);
     }
 
@@ -185,6 +220,9 @@ export class MissionManager {
         const penalty = Math.min(this.credits, 80);
         this.credits -= penalty;
         this.combo = 1;
+        if (this.contract) this._emit('velum2099:contract-failed', {});
+        this.contract = null;
+        this._route = null;
         this.onToast(`${reason}  -¥${penalty}  ·  FARE LOST`, 'bad');
         this._endDelivery(2.8);
     }

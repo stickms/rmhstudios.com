@@ -48,6 +48,8 @@
     "backfill-vibe-thumbs": "pnpm exec tsx scripts/backfill-vibe-thumbs.ts",
     "library:metadata": "pnpm exec tsx scripts/generate-library-metadata.ts",
     "docs:api": "pnpm exec tsx scripts/generate-api-docs.ts",
+    "sdk:generate": "pnpm exec tsx scripts/generate-sdk.ts",
+    "sdk:check": "pnpm exec tsx scripts/generate-sdk.ts --check",
     "docs:api:check": "pnpm exec tsx scripts/generate-api-docs.ts --check",
     "bums:manifest": "pnpm exec tsx scripts/bums-rush-manifest.ts",
     "bums:manifest:check": "pnpm exec tsx scripts/bums-rush-manifest.ts --check",

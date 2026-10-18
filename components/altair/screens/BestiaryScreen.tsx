@@ -7,6 +7,7 @@ import { ENEMIES, type EnemyDef } from '@/lib/altair/data/enemies';
 import { BOSSES, type BossDef } from '@/lib/altair/data/bosses';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 import { asset } from '@/lib/storage/asset';
+import CodexPanel, { CodexOpenButton } from '../CodexPanel';
 
 // Sprite paths (matching sprite-defs.ts)
 const ENEMY_SPRITE_PATH: Record<string, string> = {
@@ -101,6 +102,7 @@ export default function BestiaryScreen({ onBack }: BestiaryScreenProps) {
   const { t } = useTranslation("c-altair");
   const [tab, setTab] = useState<Tab>('enemies');
   const [selectedEnemy, setSelectedEnemy] = useState<string | null>(null);
+  const [showCodex, setShowCodex] = useState(false);
   const bestiary = useAltairMetaStore((s) => s.bestiary);
 
   const discovered = (id: string) => !!bestiary[id] && bestiary[id].encountered > 0;
@@ -126,6 +128,12 @@ export default function BestiaryScreen({ onBack }: BestiaryScreenProps) {
             {t("creatures-discovered", { defaultValue: "{{discovered}}/{{total}} creatures discovered", discovered: discoveredEnemies + discoveredBosses, total: totalEnemies + totalBosses })}
           </p>
         </div>
+
+        {showCodex ? (
+          <CodexPanel onBack={() => setShowCodex(false)} />
+        ) : (
+          <>
+        <CodexOpenButton onClick={() => setShowCodex(true)} />
 
         {/* Tabs */}
         <div className="flex gap-1.5">
@@ -170,6 +178,9 @@ export default function BestiaryScreen({ onBack }: BestiaryScreenProps) {
             />
           )}
         </div>
+
+          </>
+        )}
 
         {/* Back button */}
         <button

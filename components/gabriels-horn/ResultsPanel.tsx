@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { Megaphone, Trophy } from 'lucide-react';
 import type { GameResults } from '@/lib/gabriels-horn/net/events';
 import { HornButton, Panel, SeatAvatar } from './ui';
+import { TableReadPanel } from './TableReadPanel';
 
 export function ResultsPanel({
   results,
@@ -95,6 +96,8 @@ export function ResultsPanel({
             ))}
           </ol>
         </Panel>
+
+        <TableReadPanel results={results} selfSocketId={selfSocketId} />
 
         <div className="grid gap-2">
           <HornButton variant="primary" onClick={onRematch}>

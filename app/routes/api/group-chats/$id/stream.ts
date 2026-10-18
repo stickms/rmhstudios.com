@@ -42,6 +42,10 @@ export const Route = createFileRoute('/api/group-chats/$id/stream')({
                 send('reaction', JSON.stringify(event));
                 return;
               }
+              if ('type' in event && event.type === 'chat-update') {
+                send('chat-update', JSON.stringify(event.update));
+                return;
+              }
               send('message', JSON.stringify(event));
             });
 

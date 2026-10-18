@@ -11,6 +11,7 @@ import type { ListJobsFilters } from '@/lib/rmhladder/server/queries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { PayFilter } from './PayFilter';
 
 const PRESETS: { value: NonNullable<ListJobsFilters['preset']>; label: string }[] = [
   { value: 'new', label: 'New' },
@@ -181,8 +182,10 @@ export function FilterChips({ search, onUpdate, showPersonalPresets = false }: F
           <option value="relevance">{t('ladder.relevance', { defaultValue: 'Relevance' })}</option>
           <option value="posted">{t('ladder.posted', { defaultValue: 'Posted' })}</option>
           <option value="deadline">{t('ladder.deadline', { defaultValue: 'Deadline' })}</option>
+          {search.sort === 'pay' && <option value="pay">{t('ladder.pay', { defaultValue: 'Pay' })}</option>}
         </Select>
       </div>
+      <PayFilter search={search} onUpdate={onUpdate} />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { RMHarkActions } from'./RMHarkActions';
 import { useEffect, useRef, useState, useMemo } from'react';
 import { useNavigate, useRouter } from'@tanstack/react-router';
 import { Repeat2, BadgeCheck, ShieldCheck, Pin } from'lucide-react';
+import { AutomatedBadge } from'./AutomatedBadge';
 import { toast } from'sonner';
 import { RMHarkOverflowMenu } from'./RMHarkOverflowMenu';
 import { PostLockedCard } from'./PostLockedCard';
@@ -12,6 +13,10 @@ import { Link } from'@tanstack/react-router';
 import { RMHarkContent, extractFirstUrl } from'./RMHarkContent';
 import { ProfileHoverCard } from'./ProfileHoverCard';
 import { PollDisplay } from'./PollDisplay';
+import { TakeMeterLazy } from'./TakeMeterLazy';
+import { ContextNotesLazy } from '@/components/context-notes/ContextNotesLazy';
+import { RunnableEmbed } from '@/components/code-embed/RunnableEmbed';
+import { PostPlusBadges } from'@/components/posts-plus/PostPlusBadges';
 import { GifEmbed } from'./GifEmbed';
 import { LinkPreview } from'./LinkPreview';
 import { PostImageGrid } from'./PostImageGrid';
@@ -29,6 +34,7 @@ import { useFreshUser } from'@/stores/userDisplayStore';
 import { relativeTimeShort } from'@/lib/utils';
 import { RelativeTime } from'@/components/ui/RelativeTime';
 import { EditHistoryButton } from'./EditHistory';
+import { FlairChip } from'@/components/communities/FlairChip';
 import { useTranslation } from'react-i18next';
 import { useLocaleStore } from'@/stores/localeStore';
 import { LOCALE_TO_LANGUAGE_NAME } from'@/lib/i18n/config';
@@ -347,6 +353,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  {item.user.isVerified && (
  <BadgeCheck className="w-4 h-4 text-site-success shrink-0"/>
  )}
+ {item.user.isBot && <AutomatedBadge />}
  {item.user.isAdmin && (
  <span title="Admin"className="inline-flex items-center shrink-0">
  <ShieldCheck className="w-4 h-4 text-site-accent"/>
@@ -380,6 +387,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  />
  ) : (
  <>
+ {item.communityFlair && <FlairChip flair={item.communityFlair} className="mt-1.5"/>}
  {/* Content */}
  {item.content && (
  <RMHarkContent
@@ -416,6 +424,26 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  postId={item.actualId ?? item.id}
  onUpdate={(updatedPoll) => updateItem(item.id, { poll: updatedPoll })}
  />
+ )}
+
+ {/* Take meter (X6) — only on posts the author marked as a take */}
+ {item.isTake && !item.locked && !item.pending && (
+ <TakeMeterLazy postId={item.actualId ?? item.id} />
+ )}
+
+ {/* Runnable snippet (F14) — click-to-run, never auto-runs in the feed */}
+ {item.hasEmbed && !item.locked && !item.pending && (
+ <RunnableEmbed postId={item.actualId ?? item.id} />
+ )}
+
+ {/* Context note (X3) — loads lazily, only for posts with a visible note */}
+ {item.hasNote && !item.locked && !item.pending && (
+ <ContextNotesLazy postId={item.actualId ?? item.id} hasNote />
+ )}
+
+ {/* Series part (X5) and auto-delete (X8) badges — nothing for ordinary posts */}
+ {!item.locked && !item.pending && (
+ <PostPlusBadges postId={item.actualId ?? item.id} seriesId={item.seriesId} expiresAt={item.expiresAt} />
  )}
 
  {/* Image / GIF — hidden behind a content warning when marked sensitive */}

@@ -15,6 +15,7 @@ import ptCCursedLogic from "@/locales/pt/c-cursed-logic.json";
 import ptCDailyPuzzles from "@/locales/pt/c-daily-puzzles.json";
 import ptCDoctrine from "@/locales/pt/c-doctrine.json";
 import ptCDreamRift from "@/locales/pt/c-dream-rift.json";
+import ptCDunesday from "@/locales/pt/c-dunesday.json";
 import ptCEconomy from "@/locales/pt/c-economy.json";
 import ptCForestExplorer from "@/locales/pt/c-forest-explorer.json";
 import ptCGabrielsHorn from "@/locales/pt/c-gabriels-horn.json";
@@ -111,6 +112,7 @@ const ptResources = {
   "c-daily-puzzles": ptCDailyPuzzles,
   "c-doctrine": ptCDoctrine,
   "c-dream-rift": ptCDreamRift,
+  "c-dunesday": ptCDunesday,
   "c-economy": ptCEconomy,
   "c-forest-explorer": ptCForestExplorer,
   "c-gabriels-horn": ptCGabrielsHorn,

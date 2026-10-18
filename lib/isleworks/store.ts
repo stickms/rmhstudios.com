@@ -79,10 +79,13 @@ interface IsleworksState {
   toasts: Toast[];
   /** Set once the player leaves the title screen. */
   started: boolean;
+  /** Set while viewing someone else's published island: nothing here is saved or changed. */
+  visiting: { code: string; title: string } | null;
   /** Instance ids placed this session, for the rise animation. */
   freshIds: string[];
 
   start: (options?: { fresh?: boolean; seed?: number; saved?: SavedCity | null }) => void;
+  startVisit: (saved: SavedCity, info: { code: string; title: string }) => boolean;
   setTool: (tool: ToolMode) => void;
   rotateTool: (delta: number) => void;
   cancelTool: () => void;
@@ -128,6 +131,7 @@ export const useIsleworks = create<IsleworksState>((set, get) => ({
   overlay: 'none',
   toasts: [],
   started: false,
+  visiting: null,
   freshIds: [],
 
   /**
@@ -141,6 +145,13 @@ export const useIsleworks = create<IsleworksState>((set, get) => ({
   start: ({ fresh = false, seed, saved } = {}) => {
     const city = fresh ? createCity(seed) : (fromSavedCity(saved ?? null) ?? loadCity() ?? createCity(seed));
     set({ ...commit(city), started: true, speed: 1 });
+  },
+
+  startVisit: (saved, info) => {
+    const city = fromSavedCity(saved);
+    if (!city) return false;
+    set({ ...commit(city), started: true, speed: 0, visiting: info, tool: { kind: 'none' } });
+    return true;
   },
 
   setTool: (tool) => set({ tool, selectedId: tool.kind === 'none' ? get().selectedId : null }),
@@ -159,6 +170,7 @@ export const useIsleworks = create<IsleworksState>((set, get) => ({
   setOverlay: (overlay) => set({ overlay }),
 
   setTaxRate: (rate) => {
+    if (get().visiting) return;
     const city = get().city;
     city.taxRate = Math.min(20, Math.max(4, Math.round(rate)));
     set(commit(city));
@@ -166,6 +178,7 @@ export const useIsleworks = create<IsleworksState>((set, get) => ({
 
   placeAt: (x, y) => {
     const state = get();
+    if (state.visiting) return false;
     const tool = state.tool;
     if (tool.kind !== 'place') return false;
     const city = state.city;
@@ -200,6 +213,7 @@ export const useIsleworks = create<IsleworksState>((set, get) => ({
   },
 
   bulldozeAt: (x, y) => {
+    if (get().visiting) return false;
     const state = get();
     const city = state.city;
     const tile = city.tiles[index(x, y, city.width)];
@@ -228,6 +242,7 @@ export const useIsleworks = create<IsleworksState>((set, get) => ({
 
   buyParcelAt: (x, y) => {
     const state = get();
+    if (state.visiting) return false;
     const city = state.city;
     const parcel = parcelIndexFor(x, y, city.width);
     if (city.ownedParcels.includes(parcel)) return false;
@@ -248,6 +263,7 @@ export const useIsleworks = create<IsleworksState>((set, get) => ({
   },
 
   claimObjective: (id) => {
+    if (get().visiting) return;
     const state = get();
     const city = state.city;
     const objective = city.objectives.find((o) => o.id === id);
@@ -261,6 +277,7 @@ export const useIsleworks = create<IsleworksState>((set, get) => ({
 
   advance: () => {
     const state = get();
+    if (state.visiting) return;
     const city = state.city;
     const rng = makeRng(city.seed + city.month * 7919);
 
@@ -280,9 +297,12 @@ export const useIsleworks = create<IsleworksState>((set, get) => ({
     saveCity(city);
   },
 
-  save: () => saveCity(get().city),
+  save: () => {
+    if (!get().visiting) saveCity(get().city);
+  },
 
   reset: () => {
+    if (get().visiting) return;
     clearSave();
     const city = createCity();
     set({

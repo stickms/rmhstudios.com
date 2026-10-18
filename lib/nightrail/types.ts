@@ -330,6 +330,9 @@ export interface RunStats {
   bestMultiplier: number;
   /** Biggest single combo cash-out. */
   bestCombo: number;
+  /** R21: the tricks in that biggest combo, in order, and the multiplier it cashed out at. */
+  bestComboChain?: string[];
+  bestComboMultiplier?: number;
   tricksLanded: number;
   cargoDelivered: number;
   cargoStart: number;

@@ -185,7 +185,7 @@ export interface MatchSummary {
 
 // ─── Game Settings (§12A) ────────────────────────────────────────
 
-export type GameSettingType = 'boolean' | 'integer' | 'float' | 'select';
+export type GameSettingType = 'boolean' | 'integer' | 'float' | 'select' | 'text';
 
 export interface GameSettingDef {
   key: string;
@@ -199,6 +199,8 @@ export interface GameSettingDef {
   step?: number;
   /** For select: array of allowed string values */
   options?: string[];
+  /** For text: max length (default 16) */
+  maxLength?: number;
 }
 
 export type GameSettingsSchema = GameSettingDef[];

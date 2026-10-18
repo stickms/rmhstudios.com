@@ -10,12 +10,17 @@ const POND_RADIUS = 10;
 
 interface GardenState {
     plants: GardenPlant[];
+    /** Someone else's published garden is on screen: read-only, never saved. */
+    visiting: { code: string; title: string } | null;
     /** Bumped every few seconds so growth stages re-render while playing */
     nowTick: number;
     toast: string | null;
     initialized: boolean;
 
     init: () => void;
+    enterVisit: (plants: GardenPlant[], info: { code: string; title: string }) => void;
+    /** Friends' waterings collected from the server: extra growth on every unfinished plant. */
+    applyWaterings: (count: number) => void;
     tick: () => void;
     showToast: (msg: string) => void;
     /** Plant a seed at (x, z). Returns true if planted. */
@@ -28,6 +33,7 @@ let toastTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const useGardenStore = create<GardenState>((set, get) => ({
     plants: [],
+    visiting: null,
     nowTick: 0,
     toast: null,
     initialized: false,
@@ -35,6 +41,19 @@ export const useGardenStore = create<GardenState>((set, get) => ({
     init: () => {
         if (get().initialized) return;
         set({ plants: loadGarden(), nowTick: Date.now(), initialized: true });
+    },
+
+    enterVisit: (plants, info) =>
+        set({ plants: plants.slice(0, MAX_PLANTS), visiting: info, initialized: true, nowTick: Date.now() }),
+
+    applyWaterings: (count) => {
+        const { plants, visiting } = get();
+        if (visiting || count <= 0) return;
+        const now = Date.now();
+        const next = plants.map(p =>
+            stageOf(p, now) === 'bloom' ? p : { ...p, waterBonusMs: p.waterBonusMs + WATER_BONUS_MS * count });
+        set({ plants: next, nowTick: now });
+        saveGarden(next);
     },
 
     tick: () => set({ nowTick: Date.now() }),
@@ -46,7 +65,11 @@ export const useGardenStore = create<GardenState>((set, get) => ({
     },
 
     plantAt: (x: number, z: number) => {
-        const { plants, showToast } = get();
+        const { plants, showToast, visiting } = get();
+        if (visiting) {
+            showToast('You are only visiting - this garden is look-but-don\'t-plant.');
+            return false;
+        }
 
         if (plants.length >= MAX_PLANTS) {
             showToast('The garden is full — the forest asks for room to breathe.');
@@ -89,7 +112,11 @@ export const useGardenStore = create<GardenState>((set, get) => ({
     },
 
     waterNear: (x: number, z: number) => {
-        const { plants, showToast } = get();
+        const { plants, showToast, visiting } = get();
+        if (visiting) {
+            showToast('Open the pause menu and press Water garden to water it.');
+            return true;
+        }
         const now = Date.now();
 
         let nearest = -1;

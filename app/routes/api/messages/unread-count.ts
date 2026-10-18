@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
+import { liveMessages } from '@/lib/chat-plus/expiry.server';
 import { redisEnabled, redisGetJSON, redisSetJSON } from '@/lib/redis.server';
 /** GET /api/messages/unread-count — total unread message count */
 
@@ -15,6 +16,8 @@ function countUnreadFromDb(userId: string): Promise<number> {
     where: {
       senderId: { not: userId },
       read: false,
+      // M3: an expired disappearing message is not unread, it is gone.
+      AND: [liveMessages()],
       conversation: {
         OR: [{ participantOneId: userId }, { participantTwoId: userId }],
       },

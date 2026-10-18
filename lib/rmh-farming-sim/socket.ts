@@ -158,6 +158,7 @@ export const actions = {
     water: (x: number, z: number) => emit(C2S.WATER, { x, z }),
     harvest: (x: number, z: number) => emit(C2S.HARVEST, { x, z }),
     buySeed: (itemId: string, qty: number) => emit(C2S.BUY, { kind: 'seed', itemId, qty }),
+    buyFestival: (itemId: string) => emit(C2S.BUY, { kind: 'festival', itemId, qty: 1 }),
     sell: (itemId: string, qty?: number) => emit(C2S.SELL, { itemId, qty }),
     upgradeTool: (tool: string) => emit(C2S.UPGRADE_TOOL, { tool }),
     sleep: () => emit(C2S.SLEEP),

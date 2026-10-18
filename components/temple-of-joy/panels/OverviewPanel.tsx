@@ -47,6 +47,7 @@ import { SEEDS } from '@/lib/temple-of-joy/minigames/garden';
 import { MAX_GLOBES } from '@/lib/temple-of-joy/data/globes';
 import { useTempleSnapshot } from '../hooks';
 import { TempleSection, Glyph } from '../ui';
+import { EfficiencyBoard } from '../EfficiencyBoard';
 
 export function OverviewPanel() {
   const { t } = useTranslation('c-temple-of-joy');
@@ -264,6 +265,8 @@ export function OverviewPanel() {
             'The garden, the market, the manna and the Sinners are not capped — they run for the whole time you are gone. A night away is worth more than the number above suggests.',
         })}
       </p>
+
+      <EfficiencyBoard />
 
       <TempleSection>{t('section-totals', { defaultValue: 'The temple' })}</TempleSection>
       {totals.map(([label, value]) => (

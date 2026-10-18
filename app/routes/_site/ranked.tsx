@@ -4,6 +4,7 @@ import { buildCanonical, buildMeta } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { RankedColumn } from '@/components/feed/RankedColumn';
+import { FriendlyChallengesLazy } from '@/components/competitive/FriendlyChallengesLazy';
 import { auth } from '@/lib/auth';
 import { getRankedOverview } from '@/lib/ranked.server';
 
@@ -38,6 +39,7 @@ function RankedPage() {
       <PageFrame>
         <RankedColumn initialData={overview} />
       </PageFrame>
+      <FriendlyChallengesLazy />
     </>
   );
 }

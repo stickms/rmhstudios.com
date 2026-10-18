@@ -13,13 +13,15 @@
  * the autosave.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useIsleworks } from '@/lib/isleworks/store';
+import { codeFromLocation } from '@/lib/worlds/schema';
 
 import { BuildPalette } from './hud/BuildPalette';
 import { Rail } from './hud/Rail';
+import { IsleVisit } from './hud/IsleVisit';
 import { StartScreen } from './hud/StartScreen';
 import { Toasts } from './hud/Toasts';
 import { TopBar } from './hud/TopBar';
@@ -33,6 +35,10 @@ const AUTOSAVE_MS = 20_000;
 export default function IsleworksGame() {
   const { t } = useTranslation('c-isleworks');
   const started = useIsleworks((s) => s.started);
+  const visiting = useIsleworks((s) => s.visiting);
+  // `undefined` until the URL has been read, so the title screen never flashes before a visit.
+  const [visitCode, setVisitCode] = useState<string | null | undefined>(undefined);
+  useEffect(() => setVisitCode(codeFromLocation('isleworks')), []);
   const rigRef = useRef<RigHandle | null>(null);
 
   /* Game keys. The camera's Q/E/WASD are handled inside the rig. */
@@ -109,15 +115,16 @@ export default function IsleworksGame() {
         <CityScene rigRef={rigRef} />
       </div>
 
+      {visitCode && <IsleVisit code={visitCode} />}
       {started ? (
         <div className="isw-hud">
           <TopBar rigRef={rigRef} />
-          <Rail />
-          <BuildPalette />
+          {!visiting && <Rail />}
+          {!visiting && <BuildPalette />}
           <Toasts />
         </div>
       ) : (
-        <StartScreen />
+        visitCode === null && <StartScreen />
       )}
 
       <span className="sr-only">

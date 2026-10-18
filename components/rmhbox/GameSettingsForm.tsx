@@ -261,6 +261,34 @@ function SelectSetting({
   );
 }
 
+function TextSetting({
+  def,
+  value,
+  editable,
+  onChange,
+}: {
+  def: GameSettingDef;
+  value: string;
+  editable: boolean;
+  onChange: (v: string) => void;
+}) {
+  const [draft, setDraft] = useState(value);
+  useEffect(() => setDraft(value), [value]);
+  return (
+    <input
+      type="text"
+      value={draft}
+      maxLength={def.maxLength ?? 16}
+      disabled={!editable}
+      aria-label={def.label}
+      onChange={(e) => setDraft(e.target.value.toUpperCase())}
+      onBlur={() => draft !== value && onChange(draft)}
+      onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+      className="h-7 w-24 rounded border border-(--app-border) bg-(--app-bg) px-2 text-center font-mono text-sm uppercase text-(--app-text) disabled:opacity-60"
+    />
+  );
+}
+
 // ─── Setting Row ─────────────────────────────────────────────────
 
 function SettingRow({
@@ -303,6 +331,14 @@ function SettingRow({
           <FloatSetting
             def={def}
             value={value as number}
+            editable={editable}
+            onChange={handleChange}
+          />
+        )}
+        {def.type === 'text' && (
+          <TextSetting
+            def={def}
+            value={value as string}
             editable={editable}
             onChange={handleChange}
           />

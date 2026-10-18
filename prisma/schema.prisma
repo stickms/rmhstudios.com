@@ -446,6 +446,150 @@ model User {
   pf2eRecaps          Pf2eRecap[]           @relation("Pf2eRecapAuthor")
   pf2eSettingsEdits   Pf2eSettings[]        @relation("Pf2eSettingsEditor")
 
+  // ─── Feature ideas 2026-10-12 (docs/plans/2026-10-12-feature-ideas-every-surface.md)
+  // P26 worlds: R6 R7 R8 snapshots, postcards, waterings, festival entries
+  worldSnapshots             WorldSnapshot[]
+  worldPostcards             WorldPostcard[]
+  gardenWaterings            GardenWatering[]
+  farmFestivalEntries        FarmFestivalEntry[]
+  // P24 party: R2 rmhbox packs, R15 connections grids
+  rmhboxPacks                RmhboxPack[]
+  rmhboxPackReports          RmhboxPackReport[]
+  connectionsGrids           ConnectionsGrid[]
+  connectionsPlays           ConnectionsPlay[]
+  // P23 creative: F12 studio challenge entries and votes
+  studioChallengeEntries     StudioChallengeEntry[]
+  studioChallengeVotes       StudioChallengeVote[]
+  // P25 action: R5 Neon Driftway livery
+  ndwLivery                  NdwLivery?
+  // P19 canvas: Z5 pixel canvas, X3 context notes
+  canvasPlacements           CanvasPlacement[]
+  canvasCooldowns            CanvasCooldown[]
+  contextNotes               ContextNote[]
+  contextNoteRatings         ContextNoteRating[]
+  // P18 delight: Z2 hunt, Z4 fortunes, Z6 photo of the day, Y4 translations
+  huntProgress               HuntProgress[]
+  fortuneCookies             FortuneCookie[]
+  photoNominations           PhotoNomination[]
+  photoVotes                 PhotoVote[]
+  translationSuggestions     TranslationSuggestion[]
+  // P27 async games: R11 R12 R13 R18 R21
+  hornTableRead              GabrielsHornTableRead?
+  velumContractsMade         VelumContract[]        @relation("VelumContractMaker")
+  velumContractsHeld         VelumContract[]        @relation("VelumContractHolder")
+  versecraftSeedListings     VersecraftSeedListing[]
+  versecraftSeedRatings      VersecraftSeedRating[]
+  marchSignals               MarchSignal[]
+  marchSignalVotes           MarchSignalVote[]
+  nightrailTricks            NightrailTrick[]
+  nightrailTrickVotes        NightrailTrickVote[]
+  translationVotes           TranslationVote[]
+  // P22 ladder-homes: F6 referrals, F8 interview reports, F9 roommate quiz
+  ladderReferralOffers       LadderReferralOffer[]
+  ladderReferralRequests     LadderReferralRequest[]
+  ladderInterviewReports     LadderInterviewReport[]
+  homeRoommateProfile        HomeRoommateProfile?
+  // P16 devplatform: D5 recipes
+  devRecipes                 DevRecipe[]
+  // P15 ops: O2 notice dismissals, O5 experiment exposures
+  noticeDismissals           TargetedNoticeDismissal[]
+  experimentExposures        ExperimentExposure[]
+  // P21 tools: F4 study plans, F11 calc notebooks, F15 marathon lists
+  studyPlans                 StudyPlan[]
+  calcNotebooks              CalcNotebook[]
+  marathonLists              MarathonList[]
+  // P14 safety: S7 pile-on guard
+  pileOnGuards               PileOnGuard[]
+  // P12 forecasting: G6 market comments
+  predictionComments         PredictionComment[]
+  // P07 arcade: E1/E12 seeded runs, E2 backlog, E6 achievement tips, E11 rivals
+  arcadeSeedRuns             ArcadeSeedRun[]
+  gamePlayStatuses           GamePlayStatus[]
+  achievementTips            AchievementTip[]
+  achievementTipVotes        AchievementTipVote[]
+  arcadeRivals               ArcadeRival[]               @relation("ArcadeRivalOwner")
+  arcadeRivalOf              ArcadeRival[]               @relation("ArcadeRivalTarget")
+  // P20 watch parties: F1 timed comments, F17 watch later, T5 commentary tracks
+  rmhtubeTimedComments       RmhTubeTimedComment[]
+  rmhtubeWatchLater          RmhTubeWatchLater[]
+  rmhtubeCommentaryTracks    RmhTubeCommentaryTrack[]
+  // P11 gifting: G1 birthdays, G2 advent, G3 gift exchange, G4 kudos, F2 mixtape exchange
+  birthday                   UserBirthday?
+  adventClaims               AdventClaim[]
+  giftExchangesOrganised     GiftExchange[]       @relation("GiftExchangeOrganiser")
+  giftExchangeMemberships    GiftExchangeMember[] @relation("GiftExchangeMemberUser")
+  giftExchangeRecipientOf    GiftExchangeMember[] @relation("GiftExchangeMemberRecipient")
+  kudosSent                  Kudos[]              @relation("KudosFrom")
+  kudosReceived              Kudos[]              @relation("KudosTo")
+  // P03 discovery: A3 digest, A4 custom feeds, A5 memories, A6 keyword alerts, A7 watches
+  customFeeds                CustomFeed[]
+  customFeedSubscriptions    CustomFeedSubscription[]
+  memoriesOptIn              MemoriesOptIn?
+  keywordAlerts              KeywordAlert[]
+  keywordAlertHits           KeywordAlertHit[]
+  watches                    Watch[]
+  // P06 communities-plus: N3 onboarding answers, N4 mod items, N5 challenge, N6 census, N7 scores
+  communityOnboardingAnswers CommunityOnboardingAnswer[]
+  communityModItems          CommunityModItem[]
+  communityChallengeEntries  CommunityChallengeEntry[]
+  // P08 competitive: E5 pick'em, E7 jams, E9 friendly challenges
+  bracketPicks               BracketPick[]
+  gameJamsCreated            GameJam[]
+  gameJamEntries             GameJamEntry[]
+  gameJamRatings             GameJamRating[]
+  friendlyChallengesSent     FriendlyChallenge[]       @relation("FriendlyChallenger")
+  friendlyChallengesReceived FriendlyChallenge[]       @relation("FriendlyOpponent")
+  communityChallengeVotes    CommunityChallengeVote[]
+  communityCensusAnswered    CommunityCensusParticipant[]
+  // P13 reading: L1 highlights, L3 goal, L7 shelves, L5 stories
+  readingHighlights          ReadingHighlight[]
+  readingGoals               ReadingGoal[]
+  readingShelfEntries        ReadingShelfEntry[]
+  readingPrefs               ReadingPrefs?
+  glossaryTermsCreated       GlossaryTerm[]    @relation("GlossaryTermAuthor")
+  newsStoriesCreated         NewsStory[]       @relation("NewsStoryAuthor")
+  communityContributorScores CommunityContributorScore[]
+  // P09 calendar: K1 polls, K2 office hours, K3 feed, K4 occurrence RSVPs, F5 study buddy
+  availabilityPolls          AvailabilityPoll[]
+  availabilityResponses      AvailabilityPollResponse[]
+  availabilityInvites        AvailabilityPollInvitee[]
+  officeHoursConfig          OfficeHoursConfig?
+  officeHoursBookingsAsHost  OfficeHoursBooking[]      @relation("OfficeHoursHost")
+  officeHoursBookingsAsGuest OfficeHoursBooking[]      @relation("OfficeHoursGuest")
+  calendarFeed               CalendarFeed?
+  calendarFeedSlots          CalendarFeedSlot[]
+  eventOccurrenceRsvps       EventOccurrenceRsvp[]
+  studyBuddyRequests         StudyBuddyRequest[]
+  studyBuddyMatchesA         StudyBuddyMatch[]         @relation("StudyBuddyA")
+  studyBuddyMatchesB         StudyBuddyMatch[]         @relation("StudyBuddyB")
+  // P02 posts-plus: X4 prompts/answers, X5 series, X8 auto-delete
+  qotdPromptsCreated QotdPrompt[]
+  qotdAnswers        QotdAnswer[]
+  postSeries         PostSeries[]
+  postSeriesFollows  PostSeriesFollow[]
+  postAutoDelete     PostAutoDelete?
+  chatFolders    ChatFolder[]
+  chatPins       ChatPin[]
+  dmPollVotes    DirectPollVote[]
+  // Back-relations for the models at the end of this file. One line per field,
+  // each package's lines together; never re-align this block.
+  // P01 feed-plus: X6 take votes, X12 require-alt-text
+  rmharkTakeVotes RMHarkTakeVote[]
+  requireAltText  Boolean         @default(false)
+  savingsGoals               SavingsGoal[]
+  loadoutPresets             LoadoutPreset[]
+  communityGoalPledges       CommunityGoalPledge[]
+  scheduledGiftsSent         ScheduledGift[]       @relation("ScheduledGiftSender")
+  scheduledGiftsReceived     ScheduledGift[]       @relation("ScheduledGiftRecipient")
+  // P05 profiles (P1-P10)
+  profilePlus          ProfilePlus?
+  stampsCreated        Stamp[]            @relation("StampCreator")
+  profileStamps        ProfileStamp[]
+  webringsOwned        Webring[]          @relation("WebringOwner")
+  webringMemberships   WebringMember[]
+  endorsementsGiven    SkillEndorsement[] @relation("EndorsementGiven")
+  endorsementsReceived SkillEndorsement[] @relation("EndorsementReceived")
+
   @@index([isBot])
   @@index([followerCount])
   // Backs the nightly finalize-deletion sweep; partial in effect since the
@@ -2308,6 +2452,7 @@ model VersecraftWorld {
   updatedAt DateTime @default(now()) @updatedAt
 
   chapters VersecraftGenChapter[]
+  seedListing VersecraftSeedListing?
 
   @@index([createdAt(sort: Desc)])
   @@map("versecraft_world")
@@ -2702,6 +2847,33 @@ model RMHark {
   threadReplyCount     Int                  @default(0)
   postAnalyticsDailies PostAnalyticsDaily[]
 
+  // P01 feed-plus X6: take meter. A post marked `isTake` collects one
+  // agree/disagree vote per member; the denormalized tallies are only ever
+  // exposed to voters and the author (see lib/feed/take.server.ts).
+  isTake            Boolean          @default(false)
+  takeAgreeCount    Int              @default(0)
+  takeDisagreeCount Int              @default(0)
+  takeVotes         RMHarkTakeVote[]
+  // P06 communities-plus: N1 flair, N2 starboard, N5 challenge entry
+  communityFlair      CommunityPostFlair?
+  communityStar       CommunityStarPost?
+  communityChallengeEntry CommunityChallengeEntry?
+
+  // P02 posts-plus. `expiresAt` (X8 TTL) and `seriesId` (X5) are read-time hints so
+  // the feed never needs a second query; the tables behind them (post_lifecycle,
+  // post_series_item) are the source of truth and carry the indexes.
+  expiresAt  DateTime?
+  seriesId   String?
+  lifecycle  PostLifecycle?
+  seriesItem PostSeriesItem?
+  qotdAnswer QotdAnswer?
+  // P19 X3: true while at least one context note on this post is visible (feed reads this boolean only)
+  hasNote      Boolean       @default(false)
+  contextNotes ContextNote[]
+  // P23 F14: true when the post carries a runnable code snippet (feed reads this boolean only)
+  hasEmbed  Boolean        @default(false)
+  codeEmbed PostCodeEmbed?
+
   @@index([userId])
   @@index([createdAt(sort: Desc)])
   // Composite index backing keyset pagination on (createdAt desc, id desc)
@@ -2783,6 +2955,10 @@ model RMHarkComment {
   deletedByAdmin Boolean   @default(false)
 
   reactions RMHarkCommentReaction[]
+
+  /// P01 feed-plus X2: set when the ROOT post's author hides this reply. The
+  /// reply stays readable under a "Hidden replies" disclosure; null = visible.
+  hiddenAt DateTime?
 
   @@index([rmheetId, createdAt(sort: Desc)])
   @@index([userId, createdAt(sort: Desc)])
@@ -3067,6 +3243,8 @@ model Prediction {
 
   creator   User?                @relation("PredictionCreator", fields: [creatorId], references: [id], onDelete: SetNull)
   positions PredictionPosition[]
+  seasonMarkets PredictionSeasonMarket[]
+  comments PredictionComment[]
 
   @@index([status, createdAt(sort: Desc)])
   @@index([resolverKey, status]) // resolver settlement sweeps
@@ -3085,6 +3263,7 @@ model PredictionPosition {
   noShares     Float   @default(0)
   spent        Int     @default(0) // net coins spent (cost basis)
   settled      Boolean @default(false)
+  lastP Float? // implied P(YES) right after the member's latest trade (forecast for scoring)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -3344,6 +3523,8 @@ model DeveloperApiKey {
   lastUsedAt DateTime?
   revokedAt  DateTime?
   createdAt  DateTime  @default(now())
+  /// P16 D1: `rmh_test_` sandbox key. Reads return fixtures, writes are no-ops.
+  testMode   Boolean   @default(false)
 
   user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   idempotencyKeys ApiIdempotencyKey[]
@@ -3497,6 +3678,10 @@ model Conversation {
   participantOne User            @relation("ConversationParticipantOne", fields: [participantOneId], references: [id], onDelete: Cascade)
   participantTwo User            @relation("ConversationParticipantTwo", fields: [participantTwoId], references: [id], onDelete: Cascade)
   messages       DirectMessage[]
+  /// M3 — disappearing-messages timer in seconds (3600 | 86400 | 604800). Null = off.
+  disappearAfterSec Int?
+  /// M9 — chat theme preset (lib/chat-plus/themes.ts), "<accent>.<wallpaper>". Null = default.
+  themeKey          String? @db.VarChar(24)
 
   @@unique([participantOneId, participantTwoId])
   @@index([participantOneId, lastMessageAt(sort: Desc)])
@@ -3528,14 +3713,28 @@ model DirectMessage {
   audioUrl        String?   @db.VarChar(500)
   audioDurationMs Int?
   audioPeaks      Float[]   @default([])
+  /// P04 — message kind: text | system | tip | dice | coin | checklist | poll.
+  /// Non-text kinds keep a readable fallback in `content` for previews and search.
+  kind            String    @default("text") @db.VarChar(16)
+  /// P04 — kind-specific payload (checklist items, dice rolls, system action…).
+  meta            Json?
+  /// M3 — set at send time from the chat's timer; hidden at read time once past.
+  expiresAt       DateTime?
+  /// M6 — bit 1 = has image/GIF/voice, bit 2 = has a link. One column, one index.
+  attachFlags     Int       @default(0)
+  /// M10 — how many times this message has been forwarded to reach here.
+  forwardCount    Int       @default(0)
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
   reactions DirectMessageReaction[]
+  pollVotes DirectPollVote[]
 
   @@index([conversationId, createdAt])
   @@index([senderId])
+  @@index([conversationId, attachFlags, createdAt])
+  @@index([expiresAt])
   @@map("direct_message")
 }
 
@@ -3612,6 +3811,7 @@ model UserBuild {
   grants     BuildGrant[]
   tags       BuildTag[]
   likes      BuildLike[]
+  jamEntries GameJamEntry[]
   comments   BuildComment[]
   views      BuildView[]
   unlocks    BuildUnlock[]
@@ -3704,6 +3904,10 @@ model GroupChat {
   owner    User              @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   members  GroupChatMember[]
   messages GroupMessage[]
+  /// M3 — disappearing-messages timer in seconds (3600 | 86400 | 604800). Null = off.
+  disappearAfterSec Int?
+  /// M9 — chat theme preset (lib/chat-plus/themes.ts), "<accent>.<wallpaper>". Null = default.
+  themeKey          String? @db.VarChar(24)
 
   @@map("group_chat")
 }
@@ -3747,14 +3951,34 @@ model GroupMessage {
   audioUrl        String?   @db.VarChar(500)
   audioDurationMs Int?
   audioPeaks      Float[]   @default([])
+  /// P04 — message kind: text | system | tip | dice | coin | checklist | poll.
+  /// Non-text kinds keep a readable fallback in `content` for previews and search.
+  kind            String    @default("text") @db.VarChar(16)
+  /// P04 — kind-specific payload (checklist items, dice rolls, system action…).
+  meta            Json?
+  /// M3 — set at send time from the chat's timer; hidden at read time once past.
+  expiresAt       DateTime?
+  /// M6 — bit 1 = has image/GIF/voice, bit 2 = has a link. One column, one index.
+  attachFlags     Int       @default(0)
+  /// M10 — how many times this message has been forwarded to reach here.
+  forwardCount    Int       @default(0)
+  /// M7 — set on a reply posted in a side thread; null on top-level messages.
+  threadParentId  String?
+  /// M7 — denormalised reply count on the parent, so the list needs no extra query.
+  replyCount      Int       @default(0)
 
   group     GroupChat       @relation(fields: [groupId], references: [id], onDelete: Cascade)
   sender    User            @relation(fields: [senderId], references: [id], onDelete: Cascade)
   pollVotes GroupPollVote[]
 
   reactions GroupMessageReaction[]
+  threadParent  GroupMessage?  @relation("GroupMessageThread", fields: [threadParentId], references: [id], onDelete: Cascade)
+  threadReplies GroupMessage[] @relation("GroupMessageThread")
 
   @@index([groupId, createdAt])
+  @@index([groupId, attachFlags, createdAt])
+  @@index([threadParentId, createdAt])
+  @@index([expiresAt])
   @@map("group_message")
 }
 
@@ -4814,6 +5038,7 @@ model LadderCompany {
   sources          LadderSource[]
   jobs             LadderJob[]
   watchlistEntries LadderWatchlistEntry[]
+  interviewReports LadderInterviewReport[]
 
   @@map("ladder_company")
 }
@@ -4879,6 +5104,10 @@ model LadderJob {
   compensationMax           Int?
   compensationCurrency      String?
   compensationInterval      String?
+  payMinAnnual              Int?
+  payMaxAnnual              Int?
+  payCurrency               String?              @db.VarChar(3)
+  payPeriod                 String?              @db.VarChar(8)
   sponsorshipStatus         String?
   dedupeHash                String
   alternateUrls             String[]             @default([])
@@ -4910,6 +5139,7 @@ model LadderJob {
   @@index([status, earlyCareerClassification])
   @@index([companyId, status])
   @@index([dedupeHash])
+  @@index([status, payMaxAnnual])
   @@map("ladder_job")
 }
 
@@ -5891,8 +6121,27 @@ model Community {
   // Denormalized count of non-deleted posts, maintained on post create/delete so
   // the community page never runs COUNT(*) over rmheet. Backfilled in migration.
   postCount   Int      @default(0)
+  // S2: posting requirement. level = none | email | account_age | member_age;
+  // value = days (account_age) or minutes (member_age).
+  verificationLevel String @default("none") @db.VarChar(16)
+  verificationValue Int    @default(0)
+  // N1: every post in the community must carry a flair.
+  flairRequired     Boolean @default(false)
+  // N2: ⭐ reactions needed for the hall of fame.
+  starThreshold     Int     @default(5)
   createdById String
   createdAt   DateTime @default(now())
+
+  flairsP06            CommunityFlair[]
+  starPostsP06         CommunityStarPost[]
+  onboardingQsP06      CommunityOnboardingQuestion[]
+  automodRulesP06      CommunityAutomodRule[]
+  modItemsP06          CommunityModItem[]
+  challengesP06        CommunityChallenge[]
+  censusesP06          CommunityCensus[]
+  contributorScoresP06 CommunityContributorScore[]
+  sistersOutP06        CommunitySister[] @relation("CommunitySisterFrom")
+  sistersInP06         CommunitySister[] @relation("CommunitySisterTo")
 
   createdBy      User                    @relation("CommunityCreator", fields: [createdById], references: [id], onDelete: Cascade)
   members        CommunityMember[]
@@ -5928,6 +6177,10 @@ model CommunityMember {
   userId      String
   role        CommunityRole @default(MEMBER)
   joinedAt    DateTime      @default(now())
+  // N3: flairs this member follows (feed priority) and cosmetic role labels
+  // granted by onboarding answers. Labels never carry permissions.
+  followedFlairIds String[] @default([])
+  roleTags         String[] @default([])
 
   community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -5996,6 +6249,7 @@ model ScheduledPost {
   poll         Json? // { question, options[], multiSelect, durationHours }
   scheduledAt  DateTime? // null = plain draft
   publishedId  String? // set once published → the created RMHark id
+  isCapsule    Boolean            @default(false) // Z7: sealed until scheduledAt, can't be edited or published early
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
 
@@ -6788,6 +7042,7 @@ model WagerMatch {
 enum TournamentFormat {
   SINGLE_ELIM
   ROUND_ROBIN
+  SWISS
   DOUBLE_ELIM // reserved — not yet implemented by the bracket engine
 }
 
@@ -6821,6 +7076,7 @@ model Tournament {
   visibility     String           @default("public") @db.VarChar(16)
   createdById    String
   seasonId       String?          @db.VarChar(64) // optional live-ops season link
+  swissRounds    Int? // SWISS only: total rounds, fixed at start
   startsAt       DateTime?
   startedAt      DateTime?
   completedAt    DateTime?
@@ -6831,6 +7087,7 @@ model Tournament {
   entrants  TournamentEntrant[]
   matches   TournamentMatch[]
   payouts   TournamentPayout[]
+  picks     BracketPick[]
 
   @@index([status, startsAt])
   @@index([gameId, status])
@@ -6853,6 +7110,7 @@ model TournamentEntrant {
   matchesAsA TournamentMatch[] @relation("MatchEntrantA")
   matchesAsB TournamentMatch[] @relation("MatchEntrantB")
   matchesWon TournamentMatch[] @relation("MatchWinner")
+  picks      BracketPick[]
 
   @@unique([tournamentId, userId])
   @@index([tournamentId, seed])
@@ -7058,6 +7316,15 @@ model CommunityEvent {
   capacity    Int?
   canceledAt  DateTime?
   createdAt   DateTime       @default(now())
+  /// P09 K4 — compact repeat rule ('W' weekly, 'M' monthly on the same nth weekday). Null = one-off.
+  recurrence      String?   @db.VarChar(4)
+  /// P09 K4 — last day a repeating event may occur. Null = until cancelled.
+  recurUntil      DateTime?
+  /// P09 K4 — IANA timezone the repeat keeps its wall-clock time in (so a 8pm event stays 8pm across DST).
+  recurTz         String?   @db.VarChar(64)
+  /// P09 K4 — optional host rotation (user ids, in order). Occurrence n is hosted by [n % length].
+  rotatingHostIds String[]  @default([])
+  occurrenceRsvps EventOccurrenceRsvp[]
 
   host      User        @relation("EventHost", fields: [hostId], references: [id], onDelete: Cascade)
   community Community?  @relation(fields: [communityId], references: [id], onDelete: Cascade)
@@ -7074,6 +7341,8 @@ model EventRsvp {
   userId    String
   status    String   @db.VarChar(8) // 'going' | 'maybe'
   createdAt DateTime @default(now())
+  /// P09 K4 — on a repeating event, this RSVP carries over to every occurrence.
+  everyTime Boolean  @default(false)
 
   event CommunityEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
   user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -7217,6 +7486,9 @@ model SavedItem {
   entityType String   @db.VarChar(24) // see SAVE_ENTITY_TYPES in lib/saves/types.ts
   entityId   String
   createdAt  DateTime @default(now())
+  /// X9: private note ("why I saved this"), at most 500 characters. Only ever read
+  /// back to the owner of the row.
+  note       String?  @db.VarChar(500)
 
   user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   folder SaveFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
@@ -7279,6 +7551,10 @@ model WishlistEntry {
   entityId    String // catalog key | itemId | creatorId
   targetPrice Int? // coins; market alerts only
   createdAt   DateTime @default(now())
+  // P10 (C8): price-drop / daily-shop alert state, written only by the daily alert job.
+  lastSeenPrice Int?
+  lastAlertKey  String?   @db.VarChar(40)
+  lastAlertAt   DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -8023,6 +8299,10 @@ model ConversationPref {
   muteUntil    DateTime?
   mentionsOnly Boolean   @default(false)
   pinned       Boolean   @default(false)
+  /// M8 — don't send read receipts here (and don't see theirs). DM only.
+  hideReceipts Boolean   @default(false)
+  /// M8 — don't send typing indicators here (and don't see theirs). DM only.
+  hideTyping   Boolean   @default(false)
   updatedAt    DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -9686,4 +9966,2668 @@ model DunesdayPlan {
 
   @@index([discordWebhookUrl, discordDaily])
   @@map("dunesday_plan")
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Feature ideas 2026-10-12 — docs/plans/2026-10-12-feature-ideas-every-surface.md
+// Each feature package appends its models below under its own header comment.
+// ═════════════════════════════════════════════════════════════════════════════
+
+// ── P01 feed-a: X6 ──
+// One agree/disagree vote per member per take. The tallies live on `rmheet`
+// (takeAgreeCount / takeDisagreeCount); this table is what makes a vote
+// once-only and lets a viewer's own vote be read back.
+model RMHarkTakeVote {
+  id        String   @id @default(cuid())
+  rmheetId  String
+  userId    String
+  agree     Boolean
+  createdAt DateTime @default(now())
+
+  rmhark RMHark @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([rmheetId, userId])
+  @@index([userId])
+  @@map("rmheet_take_vote")
+}
+
+// ── P10: C1 C5 C6 C7 C8 ──
+
+/// A coin savings goal (C1). A goal is a view over the balance: it never locks
+/// coins and never touches the ledger. `targetCoins` is a snapshot taken
+/// server-side when the goal is set (catalog price / cheapest live listing /
+/// the member's own number).
+model SavingsGoal {
+  id          String    @id @default(cuid())
+  userId      String
+  /// 'shop_item' | 'market_cosmetic' | 'custom'
+  kind        String    @db.VarChar(16)
+  /// Catalog id for shop_item / market_cosmetic; null for custom.
+  itemId      String?   @db.VarChar(64)
+  title       String    @db.VarChar(80)
+  targetCoins Int
+  createdAt   DateTime  @default(now())
+  reachedAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("savings_goal")
+}
+
+/// A named set of equipped cosmetics (C6). `itemIds` are catalog ids, at most
+/// one per kind; applying a preset equips the ones the member still owns.
+model LoadoutPreset {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String   @db.VarChar(40)
+  itemIds   String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+  @@map("loadout_preset")
+}
+
+/// A site-wide all-or-nothing goal pot (C5). Statuses: OPEN -> FUNDED (target
+/// reached; pledging closes) -> FULFILLED (admin delivered the unlock), or
+/// OPEN -> REFUNDING (deadline passed short of target, or admin cancelled)
+/// -> REFUNDED once every pledge has been returned through the ledger.
+/// Not built on `Pool`: a pool settles to a beneficiary user and has a
+/// per-member creator; a community goal settles to nobody and is admin-run.
+model CommunityGoal {
+  id          String    @id @default(cuid())
+  title       String    @db.VarChar(120)
+  description String    @default("") @db.VarChar(600)
+  /// What reaching the goal unlocks, shown on the card ("The Aurora theme").
+  unlock      String    @db.VarChar(160)
+  targetCoins Int
+  raisedCoins Int       @default(0)
+  deadline    DateTime
+  status      String    @default("OPEN") @db.VarChar(12)
+  createdById String
+  createdAt   DateTime  @default(now())
+  fundedAt    DateTime?
+  fulfilledAt DateTime?
+  refundedAt  DateTime?
+
+  pledges CommunityGoalPledge[]
+
+  @@index([status, deadline])
+  @@index([createdAt(sort: Desc)])
+  @@map("community_goal")
+}
+
+model CommunityGoalPledge {
+  id         BigInt    @id @default(autoincrement())
+  goalId     String
+  userId     String
+  coins      Int
+  /// Set when this pledge was returned, so a partial refund sweep is
+  /// resumable and can never pay the same pledge twice.
+  refundedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  goal CommunityGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([goalId, refundedAt])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("community_goal_pledge")
+}
+
+/// A store gift that arrives on a date (C7). Paid at send time through the
+/// ledger; delivered (or refunded) exactly once by the delivery job.
+/// Statuses: SCHEDULED -> DELIVERED | CANCELLED | REFUNDED.
+model ScheduledGift {
+  id          String    @id @default(cuid())
+  senderId    String
+  /// Null only if the recipient's account was deleted before delivery.
+  recipientId String?
+  itemId      String    @db.VarChar(64)
+  price       Int
+  message     String?   @db.VarChar(200)
+  deliverAt   DateTime
+  status      String    @default("SCHEDULED") @db.VarChar(12)
+  createdAt   DateTime  @default(now())
+  deliveredAt DateTime?
+  unwrappedAt DateTime?
+
+  sender    User  @relation("ScheduledGiftSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient User? @relation("ScheduledGiftRecipient", fields: [recipientId], references: [id], onDelete: SetNull)
+
+  @@index([status, deliverAt])
+  @@index([recipientId, status, deliverAt])
+  @@index([senderId, createdAt(sort: Desc)])
+  @@map("scheduled_gift")
+}
+
+// ── P05: P1-P10 (profiles & identity) ──
+
+/// The small per-member scalars the profile features need (pronouns, timezone,
+/// /now, pronunciation clip, visitor counter). One optional row per member, kept
+/// off `user_profile` so the hottest table on the site is not widened and so a
+/// member who never touches these features costs nothing.
+model ProfilePlus {
+  userId String @id
+  /// "she/her", "they/them" - free text, validated to letters and separators.
+  pronouns String? @db.VarChar(40)
+  /// Opt-in IANA zone ("America/New_York"). Null = the member does not share it.
+  timezone String? @db.VarChar(64)
+  /// The /now block: plain text, links allowed, at most 500 characters.
+  nowText      String?   @db.VarChar(500)
+  nowUpdatedAt DateTime?
+  /// Object-storage key of the <=5 s name-pronunciation clip, and its length.
+  pronunciationKey String? @db.VarChar(200)
+  pronunciationMs  Int?
+  /// Opt-in retro hit counter. `visitCount` only ever moves through
+  /// `recordProfileVisit`, which dedupes per visitor per day.
+  counterEnabled Boolean @default(false)
+  visitCount     Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  visits ProfileVisitDay[]
+
+  @@map("profile_plus")
+}
+
+/// Dedupe ledger for the visitor counter: one row per (profile, day, visitor
+/// hash). The hash is salted with the profile id and the day, so it cannot be
+/// joined across profiles or days. Rows older than two days are swept.
+model ProfileVisitDay {
+  profileId String
+  day       DateTime @db.Date
+  visitor   String   @db.VarChar(40)
+
+  profile ProfilePlus @relation(fields: [profileId], references: [userId], onDelete: Cascade)
+
+  @@id([profileId, day, visitor])
+  @@index([day])
+  @@map("profile_visit_day")
+}
+
+/// A member-made stamp (a tiny image badge). Image limits are enforced at upload
+/// (`lib/profile/stamps.ts`). `removedAt` is the moderation takedown.
+model Stamp {
+  id        String    @id @default(cuid())
+  creatorId String
+  name      String    @db.VarChar(40)
+  imageKey  String    @db.VarChar(200)
+  imageUrl  String    @db.VarChar(300)
+  width     Int
+  height    Int
+  bytes     Int
+  /// Denormalised count of profile walls carrying it (for "popular").
+  addCount  Int       @default(0)
+  removedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  creator    User           @relation("StampCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  placements ProfileStamp[]
+
+  @@index([creatorId, createdAt(sort: Desc)])
+  @@index([removedAt, createdAt(sort: Desc)])
+  @@index([removedAt, addCount(sort: Desc)])
+  @@map("stamp")
+}
+
+/// A stamp on a member's profile wall (cap enforced in `addStampToWall`).
+model ProfileStamp {
+  userId    String
+  stampId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stamp Stamp @relation(fields: [stampId], references: [id], onDelete: Cascade)
+
+  @@id([userId, stampId])
+  @@index([stampId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("profile_stamp")
+}
+
+/// A member-run webring. Order is join order (`lib/profile/webring.ts`).
+model Webring {
+  id          String    @id @default(cuid())
+  slug        String    @unique @db.VarChar(64)
+  name        String    @db.VarChar(60)
+  description String?   @db.VarChar(280)
+  ownerId     String
+  memberCount Int       @default(0)
+  removedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  owner   User            @relation("WebringOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members WebringMember[]
+
+  @@index([ownerId])
+  @@index([removedAt, memberCount(sort: Desc)])
+  @@map("webring")
+}
+
+model WebringMember {
+  ringId   String
+  userId   String
+  joinedAt DateTime @default(now())
+
+  ring Webring @relation(fields: [ringId], references: [id], onDelete: Cascade)
+  user User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([ringId, userId])
+  @@index([userId])
+  @@index([ringId, joinedAt])
+  @@map("webring_member")
+}
+
+/// "I vouch for this member's <skill>". `skill` is one of the fixed ids in
+/// `lib/profile/skills.ts`; one endorsement per endorser per skill per member.
+model SkillEndorsement {
+  endorserId String
+  targetId   String
+  skill      String   @db.VarChar(32)
+  createdAt  DateTime @default(now())
+
+  endorser User @relation("EndorsementGiven", fields: [endorserId], references: [id], onDelete: Cascade)
+  target   User @relation("EndorsementReceived", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@id([endorserId, targetId, skill])
+  @@index([targetId, skill])
+  @@map("skill_endorsement")
+}
+
+// ── P04: M1 M3 M5 M6 M7 M8 M9 M10 (messaging) ──
+// Columns added to existing models (kind/meta/expiresAt/attachFlags/forwardCount
+// on direct_message + group_message, thread columns on group_message, timer and
+// theme on conversation + group_chat, receipt/typing toggles on conversation_pref)
+// live next to those models. New tables follow.
+
+/// M1 — a user-defined folder over their DM + group-chat lists.
+model ChatFolder {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String   @db.VarChar(40)
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items ChatFolderItem[]
+
+  @@index([userId, position])
+  @@map("chat_folder")
+}
+
+/// M1 — one chat inside a folder. `scopeKey` is `dm:<conversationId>` or
+/// `group:<groupId>` (same namespace as ConversationPref).
+model ChatFolderItem {
+  folderId  String
+  scopeKey  String   @db.VarChar(80)
+  createdAt DateTime @default(now())
+
+  folder ChatFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  @@id([folderId, scopeKey])
+  @@map("chat_folder_item")
+}
+
+/// M6 — a pinned message in a DM or group chat. No FK to the message (it can be
+/// either table); the expiry sweep and the read path drop pins whose message is gone.
+model ChatPin {
+  id         String   @id @default(cuid())
+  scopeKey   String   @db.VarChar(80)
+  messageId  String   @db.VarChar(40)
+  pinnedById String
+  createdAt  DateTime @default(now())
+
+  pinnedBy User @relation(fields: [pinnedById], references: [id], onDelete: Cascade)
+
+  @@unique([scopeKey, messageId])
+  @@index([scopeKey, createdAt(sort: Desc)])
+  @@index([messageId])
+  @@map("chat_pin")
+}
+
+/// P04 (/poll in a DM) — a vote on a `kind = "poll"` direct message. Group chats
+/// keep using GroupPollVote.
+model DirectPollVote {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  optionIdx Int
+  createdAt DateTime @default(now())
+
+  message DirectMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@map("direct_poll_vote")
+}
+
+// ── P06: N1 N2 N3 N4 N5 N6 N7 N8 S2 ──
+
+/// N1 — a flair a community's mods define. `color` is a token preset key
+/// (accent | success | warning | danger | neutral), never a raw colour.
+model CommunityFlair {
+  id          String   @id @default(cuid())
+  communityId String
+  name        String   @db.VarChar(24)
+  color       String   @default("accent") @db.VarChar(12)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  community Community            @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  posts     CommunityPostFlair[]
+
+  @@unique([communityId, name])
+  @@index([communityId, position])
+  @@map("community_flair")
+}
+
+/// N1 — the flair on a community post. A side table rather than a column on the
+/// hot `rmheet` table, so the feed schema and its indexes are untouched.
+model CommunityPostFlair {
+  postId    String   @id
+  flairId   String
+  createdAt DateTime @default(now())
+
+  post  RMHark         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  flair CommunityFlair @relation(fields: [flairId], references: [id], onDelete: Cascade)
+
+  @@index([flairId])
+  @@map("community_post_flair")
+}
+
+/// N2 — running count of ⭐ reactions on a community post, maintained by one
+/// indexed upsert per reaction toggle. A post is "in the hall of fame" when
+/// starCount >= community.starThreshold, evaluated at read time so a changed
+/// threshold needs no backfill.
+model CommunityStarPost {
+  postId      String   @id
+  communityId String
+  starCount   Int      @default(0)
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  post      RMHark    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, starCount(sort: Desc)])
+  @@map("community_star_post")
+}
+
+/// N3 — an onboarding question. `options` is a JSON array of
+/// { id, label, roleTag?, flairIds[] }, validated in lib/communities/onboarding.ts.
+model CommunityOnboardingQuestion {
+  id          String   @id @default(cuid())
+  communityId String
+  position    Int      @default(0)
+  prompt      String   @db.VarChar(140)
+  options     Json
+  createdAt   DateTime @default(now())
+
+  community Community                  @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  answers   CommunityOnboardingAnswer[]
+
+  @@index([communityId, position])
+  @@map("community_onboarding_question")
+}
+
+/// N3 — a member's answer (one option per question, once).
+model CommunityOnboardingAnswer {
+  id          String   @id @default(cuid())
+  communityId String
+  questionId  String
+  userId      String
+  optionId    String   @db.VarChar(40)
+  createdAt   DateTime @default(now())
+
+  question CommunityOnboardingQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user     User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, userId])
+  @@index([communityId, userId])
+  @@map("community_onboarding_answer")
+}
+
+/// N4 — an AutoMod rule. `conditions` is JSON validated by lib/communities/automod.ts.
+/// action = flag | hold | remove; appliesTo = posts | comments | both.
+model CommunityAutomodRule {
+  id          String   @id @default(cuid())
+  communityId String
+  name        String   @db.VarChar(60)
+  enabled     Boolean  @default(true)
+  appliesTo   String   @default("both") @db.VarChar(8)
+  action      String   @db.VarChar(8)
+  conditions  Json
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, position])
+  @@map("community_automod_rule")
+}
+
+/// N4 — the community mod queue. HOLD items are hidden until a mod approves
+/// them, FLAG items stay visible but are queued for a look, REMOVE items are the
+/// log of content AutoMod refused. `payload` carries a held comment's body
+/// (a held comment does not exist until approved); `snapshot` is a short text
+/// preview for the queue.
+model CommunityModItem {
+  id          String    @id @default(cuid())
+  communityId String
+  entityType  String    @db.VarChar(8)
+  entityId    String?   @db.VarChar(64)
+  postId      String?   @db.VarChar(64)
+  authorId    String
+  action      String    @db.VarChar(8)
+  ruleName    String    @db.VarChar(60)
+  snapshot    String    @db.VarChar(300)
+  payload     Json?
+  status      String    @default("PENDING") @db.VarChar(10)
+  resolvedById String?
+  resolvedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, status, createdAt(sort: Desc)])
+  @@index([authorId])
+  @@map("community_mod_item")
+}
+
+/// N5 — a weekly challenge. Submissions are open until submitEndsAt, voting
+/// until voteEndsAt; a worker finalizes it (winner flair + notification).
+model CommunityChallenge {
+  id            String    @id @default(cuid())
+  communityId   String
+  title         String    @db.VarChar(80)
+  prompt        String    @db.VarChar(1000)
+  submitEndsAt  DateTime
+  voteEndsAt    DateTime
+  createdById   String
+  winnerEntryId String?
+  finalizedAt   DateTime?
+  createdAt     DateTime  @default(now())
+
+  community Community                 @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  entries   CommunityChallengeEntry[]
+
+  @@index([communityId, createdAt(sort: Desc)])
+  @@index([finalizedAt, voteEndsAt])
+  @@map("community_challenge")
+}
+
+/// N5 — an entry: a community post submitted to a challenge (one per member).
+model CommunityChallengeEntry {
+  id          String   @id @default(cuid())
+  challengeId String
+  postId      String
+  userId      String
+  voteCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  challenge CommunityChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  post      RMHark             @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  votes     CommunityChallengeVote[]
+
+  @@unique([challengeId, userId])
+  @@unique([postId])
+  @@index([challengeId, voteCount(sort: Desc)])
+  @@map("community_challenge_entry")
+}
+
+/// N5 — one vote per member per challenge.
+model CommunityChallengeVote {
+  id          String   @id @default(cuid())
+  challengeId String
+  entryId     String
+  userId      String
+  createdAt   DateTime @default(now())
+
+  entry CommunityChallengeEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  user  User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, userId])
+  @@index([entryId])
+  @@map("community_challenge_vote")
+}
+
+/// N6 — a community census. `questions` is a JSON array of
+/// { id, prompt, kind: single | multi, options: [{ id, label }] }.
+model CommunityCensus {
+  id            String    @id @default(cuid())
+  communityId   String
+  title         String    @db.VarChar(100)
+  description   String?   @db.VarChar(500)
+  questions     Json
+  closesAt      DateTime?
+  closedAt      DateTime?
+  responseCount Int       @default(0)
+  createdById   String
+  createdAt     DateTime  @default(now())
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, createdAt(sort: Desc)])
+  @@map("community_census")
+}
+
+/// N6 — "this member has answered". Deliberately holds no answers: the link
+/// between a person and what they chose does not exist anywhere in the database.
+model CommunityCensusParticipant {
+  censusId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([censusId, userId])
+  @@index([userId])
+  @@map("community_census_participant")
+}
+
+/// N6 — aggregate tally per option; the only place answers are stored.
+model CommunityCensusTally {
+  censusId   String
+  questionId String @db.VarChar(24)
+  optionId   String @db.VarChar(24)
+  count      Int    @default(0)
+
+  @@id([censusId, questionId, optionId])
+  @@map("community_census_tally")
+}
+
+/// N7 — per-community helpfulness score, rebuilt daily by a worker.
+model CommunityContributorScore {
+  communityId    String
+  userId         String
+  starPosts      Int      @default(0)
+  challengeWins  Int      @default(0)
+  score          Int      @default(0)
+  updatedAt      DateTime @default(now()) @updatedAt
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([communityId, userId])
+  @@index([communityId, score(sort: Desc)])
+  @@map("community_contributor_score")
+}
+
+/// N8 — a one-way link from one community to a related one (mutual when the
+/// other community links back). At most 5 per community, enforced in code.
+model CommunitySister {
+  communityId        String
+  relatedCommunityId String
+  position           Int      @default(0)
+  createdAt          DateTime @default(now())
+
+  community Community @relation("CommunitySisterFrom", fields: [communityId], references: [id], onDelete: Cascade)
+  related   Community @relation("CommunitySisterTo", fields: [relatedCommunityId], references: [id], onDelete: Cascade)
+
+  @@id([communityId, relatedCommunityId])
+  @@index([relatedCommunityId])
+  @@map("community_sister")
+}
+
+// ── P09 calendar: K1 K2 K3 K4 F5 ──
+
+/// K1 — an availability poll ("when can everyone make it?"). The slot grid is
+/// not stored: it is derived from (tz, firstDay, days, dayStartHour, dayEndHour,
+/// slotMin) by lib/calendar/poll-slots.ts, so a respondent's answers are one
+/// character per slot, in slot order.
+model AvailabilityPoll {
+  id             String    @id @default(cuid())
+  creatorId      String
+  title          String    @db.VarChar(120)
+  description    String    @default("") @db.VarChar(500)
+  /// IANA timezone the organiser picked the daily hour window in.
+  tz             String    @db.VarChar(64)
+  /// First day of the range, YYYY-MM-DD in `tz`.
+  firstDay       String    @db.VarChar(10)
+  days           Int
+  dayStartHour   Int
+  dayEndHour     Int
+  slotMin        Int
+  /// Optional attachment: a community (lock-in creates its event) or a group chat (lock-in notifies it).
+  communityId    String?   @db.VarChar(40)
+  groupChatId    String?   @db.VarChar(40)
+  lockedStartMin Int?
+  lockedEndMin   Int?
+  lockedAt       DateTime?
+  lockedEventId  String?   @db.VarChar(40)
+  createdAt      DateTime  @default(now())
+
+  creator   User                     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  responses AvailabilityPollResponse[]
+  invitees  AvailabilityPollInvitee[]
+
+  @@index([creatorId, createdAt(sort: Desc)])
+  @@index([communityId])
+  @@index([groupChatId])
+  @@map("availability_poll")
+}
+
+/// One member's answers: a string, one char per slot — '0' no, '1' yes, '2' if need be.
+model AvailabilityPollResponse {
+  id        String   @id @default(cuid())
+  pollId    String
+  userId    String
+  answers   String   @db.VarChar(720)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  poll AvailabilityPoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  user User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, userId])
+  @@index([userId, updatedAt(sort: Desc)])
+  @@map("availability_poll_response")
+}
+
+/// A REQUIRED invitee: a slot only makes the shortlist when every invitee can make it.
+model AvailabilityPollInvitee {
+  id     String @id @default(cuid())
+  pollId String
+  userId String
+
+  poll AvailabilityPoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  user User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, userId])
+  @@index([userId])
+  @@map("availability_poll_invitee")
+}
+
+/// K2 — a member's office-hours settings. Bookable slots are derived from the
+/// weekly windows, never stored.
+model OfficeHoursConfig {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  title      String   @default("") @db.VarChar(80)
+  blurb      String   @default("") @db.VarChar(300)
+  tz         String   @db.VarChar(64)
+  slotMin    Int      @default(30)
+  /// Cap on bookings per calendar week (host timezone). Null = unlimited.
+  maxPerWeek Int?
+  enabled    Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user    User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  windows OfficeHoursWindow[]
+
+  @@map("office_hours_config")
+}
+
+/// A recurring weekly window, in the config's timezone. weekday 0 = Sunday.
+model OfficeHoursWindow {
+  id          String @id @default(cuid())
+  configId    String
+  weekday     Int
+  startMinute Int
+  endMinute   Int
+
+  config OfficeHoursConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId])
+  @@map("office_hours_window")
+}
+
+/// One booked slot. The unique (hostId, startsAt) is what makes booking race-safe;
+/// cancelling deletes the row so the slot frees up.
+model OfficeHoursBooking {
+  id        String   @id @default(cuid())
+  hostId    String
+  guestId   String
+  startsAt  DateTime
+  endsAt    DateTime
+  note      String   @default("") @db.VarChar(300)
+  createdAt DateTime @default(now())
+
+  host  User @relation("OfficeHoursHost", fields: [hostId], references: [id], onDelete: Cascade)
+  guest User @relation("OfficeHoursGuest", fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@unique([hostId, startsAt])
+  @@index([guestId, startsAt])
+  @@map("office_hours_booking")
+}
+
+/// K3 — the private tokenised calendar feed. The token is the credential
+/// (calendar apps poll with no cookies); rotating replaces it.
+model CalendarFeed {
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  token     String    @unique @db.VarChar(64)
+  enabled   Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  rotatedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("calendar_feed")
+}
+
+/// K3 — a programming-grid slot the member opted into.
+model CalendarFeedSlot {
+  id        String   @id @default(cuid())
+  userId    String
+  slotId    String   @db.VarChar(40)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, slotId])
+  @@map("calendar_feed_slot")
+}
+
+/// K4 — an RSVP to ONE occurrence of a repeating event (an "every time" RSVP
+/// lives on EventRsvp.everyTime instead).
+model EventOccurrenceRsvp {
+  id           String   @id @default(cuid())
+  eventId      String
+  userId       String
+  occurrenceAt DateTime
+  status       String   @db.VarChar(8) // 'going' | 'maybe'
+  createdAt    DateTime @default(now())
+
+  event CommunityEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId, occurrenceAt])
+  @@index([eventId, occurrenceAt])
+  @@index([userId, occurrenceAt])
+  @@map("event_occurrence_rsvp")
+}
+
+/// F5 — a request to body-double. 'now' requests queue for ten minutes; 'slot'
+/// requests are matched against others for the same subject, length and slot.
+model StudyBuddyRequest {
+  id         String   @id @default(cuid())
+  userId     String
+  subjectKey String   @db.VarChar(48)
+  subject    String   @db.VarChar(60)
+  lengthMin  Int
+  mode       String   @db.VarChar(4) // 'now' | 'slot'
+  startsAt   DateTime
+  expiresAt  DateTime
+  status     String   @default("waiting") @db.VarChar(10) // waiting | matched | expired | canceled
+  matchId    String?  @db.VarChar(40)
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, subjectKey, lengthMin, startsAt])
+  @@index([userId, status])
+  @@index([status, expiresAt])
+  @@map("study_buddy_request")
+}
+
+/// F5 — two members paired for a session. The room is created lazily by the
+/// socket hub when the first of them joins `roomCode`, and only inside the
+/// session window, so a no-show costs nothing.
+model StudyBuddyMatch {
+  id        String   @id @default(cuid())
+  roomCode  String   @unique @db.VarChar(8)
+  subject   String   @db.VarChar(60)
+  lengthMin Int
+  startsAt  DateTime
+  endsAt    DateTime
+  userAId   String
+  userBId   String
+  createdAt DateTime @default(now())
+
+  userA User @relation("StudyBuddyA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB User @relation("StudyBuddyB", fields: [userBId], references: [id], onDelete: Cascade)
+
+  @@index([userAId, startsAt])
+  @@index([userBId, startsAt])
+  @@map("study_buddy_match")
+}
+
+// ── P02 posts-plus: X4 X5 X8 X11 ──
+
+/// X4 — a question-of-the-day prompt. `dayKey` (YYYY-MM-DD, UTC) is null while the
+/// prompt waits in the admin queue and is stamped the first time its day is read;
+/// an admin may also pre-assign a future day. Days with no row fall back to the
+/// built-in list (lib/posts-plus/qotd-builtin.ts).
+model QotdPrompt {
+  id          String   @id @default(cuid())
+  text        String   @db.VarChar(280)
+  dayKey      String?  @unique @db.VarChar(10)
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  createdBy User? @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([dayKey, createdAt])
+  @@map("qotd_prompt")
+}
+
+/// X4 — links an ordinary post to the prompt of a day. The post stays a normal
+/// RMHark; this row is what puts it in the day's thread.
+model QotdAnswer {
+  postId    String   @id
+  userId    String
+  dayKey    String   @db.VarChar(10)
+  createdAt DateTime @default(now())
+
+  post RMHark @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([dayKey, createdAt(sort: Desc)])
+  @@index([userId, dayKey])
+  @@map("qotd_answer")
+}
+
+/// X5 — a named, ordered series of one author's own public posts.
+model PostSeries {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String   @db.VarChar(80)
+  description String?  @db.VarChar(280)
+  postCount   Int      @default(0)
+  followCount Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     PostSeriesItem[]
+  followers PostSeriesFollow[]
+
+  @@index([userId, updatedAt(sort: Desc)])
+  @@map("post_series")
+}
+
+/// X5 — membership + order. One row per post (a post is in at most one series).
+model PostSeriesItem {
+  postId   String   @id
+  seriesId String
+  position Int
+  addedAt  DateTime @default(now())
+
+  post   RMHark     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  series PostSeries @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  @@index([seriesId, position])
+  @@map("post_series_item")
+}
+
+/// X5 — "follow series": notified when a new part is added.
+model PostSeriesFollow {
+  seriesId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  series PostSeries @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([seriesId, userId])
+  @@index([userId])
+  @@index([seriesId, createdAt])
+  @@map("post_series_follow")
+}
+
+/// X8 — per-post lifecycle. `expiresAt` is the TTL the sweep job reads (indexed here
+/// rather than on the hot rmheet table); `keepForever` is set when the author
+/// restores the post from the recycle bin so neither the TTL nor the auto-delete
+/// job takes it again. `userId` is denormalised for the job and has no FK of its
+/// own: the row cascades with the post, which cascades with the author.
+model PostLifecycle {
+  postId      String    @id
+  userId      String
+  expiresAt   DateTime?
+  keepForever Boolean   @default(false)
+
+  post RMHark @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@map("post_lifecycle")
+}
+
+/// X8 — "auto-delete my posts older than N months" (3 / 6 / 12 / 24). One row per
+/// opted-in account; the daily job works through rows oldest-`lastRunAt` first.
+model PostAutoDelete {
+  userId    String    @id
+  months    Int
+  lastRunAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([lastRunAt])
+  @@map("post_auto_delete")
+}
+
+/// X11 — check state for a link shown on a card. `urlKey` is sha256(url) so the
+/// primary key stays short. Rows are created lazily the first time a card's link is
+/// previewed and pruned when nobody has looked at the link for 90 days.
+model LinkCheck {
+  urlKey           String    @id @db.VarChar(64)
+  url              String    @db.Text
+  title            String?   @db.VarChar(300)
+  description      String?   @db.VarChar(500)
+  siteName         String?   @db.VarChar(120)
+  /// 'ok' | 'failing' | 'dead' | 'archived' | 'blocked'
+  status           String    @default("ok") @db.VarChar(10)
+  failCount        Int       @default(0)
+  lastStatusCode   Int?
+  lastCheckedAt    DateTime?
+  nextCheckAt      DateTime
+  archiveUrl       String?   @db.Text
+  archiveTimestamp String?   @db.VarChar(14)
+  lastSeenAt       DateTime  @default(now())
+  createdAt        DateTime  @default(now())
+
+  @@index([nextCheckAt])
+  @@index([lastSeenAt])
+  @@map("link_check")
+}
+
+// ── P13 reading: L1 L3 L5 L6 L7 L8 ──
+enum ReadingDocKind {
+  library
+  blog
+  news
+}
+
+enum ReadingGoalUnit {
+  books
+  pages
+}
+
+enum ReadingShelf {
+  want
+  reading
+  read
+}
+
+/// L1 — a member's highlight (and optional note) on a library book unit, a blog
+/// post or a news article. The anchor is the text-anchor.ts quote selector:
+/// exact text + 32 chars of context each side + offsets, re-anchored on load.
+/// `unit` is "" for articles, "p12" (PDF page) or "c3" (EPUB chapter) for books.
+/// `version` is a short hash of the unit text at highlight time.
+model ReadingHighlight {
+  id        String         @id @default(cuid())
+  userId    String
+  docKind   ReadingDocKind
+  docKey    String         @db.VarChar(200)
+  unit      String         @default("") @db.VarChar(16)
+  exact     String         @db.VarChar(2000)
+  prefix    String         @default("") @db.VarChar(64)
+  suffix    String         @default("") @db.VarChar(64)
+  start     Int
+  end       Int
+  version   String         @default("") @db.VarChar(16)
+  note      String?        @db.VarChar(2000)
+  isPublic  Boolean        @default(false)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  user     User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  passages ReadingHighlightPassage[]
+
+  @@index([userId, docKind, docKey])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([docKind, docKey, isPublic])
+  @@map("reading_highlight")
+}
+
+/// L8 — per-passage reader counter. A "passage" is a sentence, identified by a
+/// hash of its normalised text. `readers` counts distinct members with a public
+/// highlight touching it, maintained incrementally on highlight create/delete.
+model ReadingPassageStat {
+  id        String         @id @default(cuid())
+  docKind   ReadingDocKind
+  docKey    String         @db.VarChar(200)
+  unit      String         @default("") @db.VarChar(16)
+  passage   String         @db.VarChar(24)
+  sample    String         @db.VarChar(400)
+  start     Int            @default(0)
+  readers   Int            @default(0)
+  updatedAt DateTime       @updatedAt
+
+  links ReadingHighlightPassage[]
+
+  @@unique([docKind, docKey, unit, passage])
+  @@index([docKind, docKey, readers])
+  @@map("reading_passage_stat")
+}
+
+/// L8 — joins a public highlight to the passages it counted toward, so removal
+/// can decrement exactly what creation incremented.
+model ReadingHighlightPassage {
+  highlightId String
+  statId      String
+  userId      String
+
+  highlight ReadingHighlight   @relation(fields: [highlightId], references: [id], onDelete: Cascade)
+  stat      ReadingPassageStat @relation(fields: [statId], references: [id], onDelete: Cascade)
+
+  @@id([highlightId, statId])
+  @@index([statId, userId])
+  @@map("reading_highlight_passage")
+}
+
+/// L3 — a member's yearly reading goal, in books or pages.
+model ReadingGoal {
+  id        String          @id @default(cuid())
+  userId    String
+  year      Int
+  unit      ReadingGoalUnit
+  target    Int
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, year])
+  @@map("reading_goal")
+}
+
+/// L7 — a library item on a member's want / reading / read shelf. `docSlug` is
+/// the library slug (static catalogue books have no row, so no FK). `pages` is a
+/// snapshot of the page count when the entry was written, for the L3 page goal.
+model ReadingShelfEntry {
+  id         String       @id @default(cuid())
+  userId     String
+  docSlug    String       @db.VarChar(200)
+  title      String       @db.VarChar(300)
+  shelf      ReadingShelf
+  pages      Int          @default(0)
+  finishedAt DateTime?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, docSlug])
+  @@index([userId, shelf, updatedAt(sort: Desc)])
+  @@index([userId, finishedAt])
+  @@map("reading_shelf_entry")
+}
+
+/// L7 — per-shelf privacy (default private) for a member's shelves.
+model ReadingPrefs {
+  userId        String  @id
+  wantPublic    Boolean @default(false)
+  readingPublic Boolean @default(false)
+  readPublic    Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("reading_prefs")
+}
+
+/// L5 — a news "story": a set of related articles shown as one timeline.
+model NewsStory {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String   @db.VarChar(160)
+  summary     String   @default("") @db.VarChar(600)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy User?              @relation("NewsStoryAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  articles  NewsStoryArticle[]
+
+  @@map("news_story")
+}
+
+/// L5 — membership of a news article (by slug) in a story. An article belongs to
+/// at most one story, hence the unique slug.
+model NewsStoryArticle {
+  id          String   @id @default(cuid())
+  storyId     String
+  articleSlug String   @unique
+  addedAt     DateTime @default(now())
+
+  story NewsStory @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@index([storyId])
+  @@map("news_story_article")
+}
+
+/// L6 — an admin-managed lore glossary term. `aliases` also auto-link.
+model GlossaryTerm {
+  id          String   @id @default(cuid())
+  term        String   @db.VarChar(80)
+  termKey     String   @unique @db.VarChar(80)
+  aliases     String[]
+  definition  String   @db.VarChar(600)
+  linkUrl     String?  @db.VarChar(300)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy User? @relation("GlossaryTermAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@map("glossary_term")
+}
+
+// ── P03 discovery: A3 daily digest, A4 custom feeds, A5 memories, A6 keyword alerts, A7 watch ──
+
+/// A3 — the generated "Today on RMH" front page: one row per UTC day, built by a daily job.
+model DailyDigestSnapshot {
+  day       String   @id @db.VarChar(10)
+  payload   Json
+  createdAt DateTime @default(now())
+
+  @@map("daily_digest_snapshot")
+}
+
+/// A4 — a member-defined feed: tags + people + keywords. Public ones can be subscribed to.
+model CustomFeed {
+  id              String   @id @default(cuid())
+  ownerId         String
+  name            String   @db.VarChar(60)
+  description     String?  @db.VarChar(200)
+  tags            String[]
+  authorIds       String[]
+  keywords        String[]
+  isPublic        Boolean  @default(false)
+  subscriberCount Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  owner         User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  subscriptions CustomFeedSubscription[]
+
+  @@index([ownerId])
+  @@index([isPublic, subscriberCount(sort: Desc)])
+  @@map("custom_feed")
+}
+
+model CustomFeedSubscription {
+  feedId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  feed CustomFeed @relation(fields: [feedId], references: [id], onDelete: Cascade)
+  user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([feedId, userId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("custom_feed_subscription")
+}
+
+/// A5 — a row means the member opted in to "On this day" notifications.
+model MemoriesOptIn {
+  userId    String   @id
+  /// UTC day (YYYY-MM-DD) last notified, so the daily job is idempotent.
+  lastDay   String?  @db.VarChar(10)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("memories_opt_in")
+}
+
+/// A6 — a keyword alert. `anchor` is one required word, indexed, so the fan-out job
+/// finds candidate alerts for a post with one IN query instead of scanning every alert.
+model KeywordAlert {
+  id        String   @id @default(cuid())
+  userId    String
+  query     String   @db.VarChar(80)
+  anchor    String   @db.VarChar(64)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, query])
+  @@index([anchor])
+  @@map("keyword_alert")
+}
+
+/// A6 — dedupe ledger: at most one alert notification per (member, post).
+model KeywordAlertHit {
+  userId    String
+  rmheetId  String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, rmheetId])
+  @@index([createdAt])
+  @@map("keyword_alert_hit")
+}
+
+/// A7 — watch anything. kind: community | build | market. level: all | important.
+/// "Nothing" is the absence of a row.
+model Watch {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String   @db.VarChar(16)
+  targetId  String   @db.VarChar(200)
+  level     String   @db.VarChar(12)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, kind, targetId])
+  @@index([kind, targetId])
+  @@map("watch")
+}
+
+// ── P08 competitive: E5 E7 E8 E9 ──
+
+/// A bracket pick'em pick (E5): one predicted finish for one entrant, made while
+/// the tournament is still in REGISTRATION. role is CHAMPION | FINALIST | SEMI;
+/// points are derived from TournamentEntrant.placement, never stored.
+model BracketPick {
+  id           String   @id @default(cuid())
+  tournamentId String
+  userId       String
+  entrantId    String
+  role         String   @db.VarChar(10)
+  createdAt    DateTime @default(now())
+
+  tournament Tournament        @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entrant    TournamentEntrant @relation(fields: [entrantId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, userId, entrantId])
+  @@index([tournamentId, userId])
+  @@map("bracket_pick")
+}
+
+/// A game jam (E7). `theme` is only ever sent to clients once startsAt passes;
+/// submissions close at submitEndsAt, rating at ratingEndsAt.
+model GameJam {
+  id           String   @id @default(cuid())
+  slug         String   @unique @db.VarChar(60)
+  title        String   @db.VarChar(100)
+  description  String   @db.VarChar(1000)
+  theme        String   @db.VarChar(120)
+  startsAt     DateTime
+  submitEndsAt DateTime
+  ratingEndsAt DateTime
+  createdById  String
+  createdAt    DateTime @default(now())
+
+  createdBy User           @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  entries   GameJamEntry[]
+
+  @@index([startsAt])
+  @@map("game_jam")
+}
+
+model GameJamEntry {
+  id        String   @id @default(cuid())
+  jamId     String
+  userId    String
+  buildId   String
+  createdAt DateTime @default(now())
+
+  jam     GameJam         @relation(fields: [jamId], references: [id], onDelete: Cascade)
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  build   UserBuild       @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  ratings GameJamRating[]
+
+  @@unique([jamId, userId])
+  @@unique([jamId, buildId])
+  @@index([userId])
+  @@map("game_jam_entry")
+}
+
+/// One member's 1-5 scores for one entry in four categories.
+model GameJamRating {
+  id         String   @id @default(cuid())
+  entryId    String
+  raterId    String
+  fun        Int
+  creativity Int
+  theme      Int
+  polish     Int
+  createdAt  DateTime @default(now())
+
+  entry GameJamEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  rater User         @relation(fields: [raterId], references: [id], onDelete: Cascade)
+
+  @@unique([entryId, raterId])
+  @@index([raterId])
+  @@map("game_jam_rating")
+}
+
+/// A weekly game-night rotation (E8). weekday 0=Sunday..6 and startMinute are
+/// UTC. `games` is an ordered list of catalog game ids; each gets
+/// `minutesPerGame` and the list loops until `durationMinutes` is up.
+/// `lobbyCodes` maps gameId -> the live join code the host posts on the night.
+model GameNight {
+  id              String   @id @default(cuid())
+  title           String   @db.VarChar(80)
+  weekday         Int
+  startMinute     Int
+  durationMinutes Int
+  minutesPerGame  Int
+  games           Json     @default("[]")
+  lobbyCodes      Json     @default("{}")
+  enabled         Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  @@index([enabled])
+  @@map("game_night")
+}
+
+/// An unranked friendly challenge (E9), optionally with an Elo-gap handicap.
+/// Entirely separate from RankedChallenge: resolving one never touches EloRating.
+model FriendlyChallenge {
+  id             String    @id @default(cuid())
+  game           String    @db.VarChar(40)
+  challengerId   String
+  opponentId     String
+  status         String    @default("pending") @db.VarChar(12) // pending|accepted|declined|done
+  /// Handicap kind (e.g. "hp") + amount, granted to handicapUserId. Null = even match.
+  handicapKind   String?   @db.VarChar(16)
+  handicapAmount Int       @default(0)
+  handicapUserId String?
+  ratingGap      Int       @default(0)
+  winnerId       String?
+  createdAt      DateTime  @default(now())
+  resolvedAt     DateTime?
+
+  challenger User @relation("FriendlyChallenger", fields: [challengerId], references: [id], onDelete: Cascade)
+  opponent   User @relation("FriendlyOpponent", fields: [opponentId], references: [id], onDelete: Cascade)
+
+  @@index([opponentId, status])
+  @@index([challengerId, status])
+  @@map("friendly_challenge")
+}
+
+// ── P11: G1 G2 G3 G4 F2 ──
+
+/// Opt-in birthday (G1): month/day only, never a year. Row present = opted in.
+model UserBirthday {
+  userId           String   @id
+  month            Int
+  day              Int
+  /// Last calendar year followers were nudged, so the daily job is idempotent.
+  lastNotifiedYear Int?
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([month, day])
+  @@map("user_birthday")
+}
+
+/// One opened advent door per member per year (G2). The unique key is the
+/// once-per-day guarantee; the coin grant is keyed off the row's identity.
+model AdventClaim {
+  id        String   @id @default(cuid())
+  userId    String
+  year      Int
+  door      Int
+  coins     Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, year, door])
+  @@map("advent_claim")
+}
+
+/// A gift (G3) or RMHMusic mixtape (F2) exchange. The draw is stored with its
+/// seed so a disputed result can be re-run (lib/gifting/secret-santa.ts).
+model GiftExchange {
+  id          String    @id @default(cuid())
+  organizerId String
+  kind        String    @default("GIFT") @db.VarChar(8) // GIFT | MIXTAPE
+  title       String    @db.VarChar(80)
+  theme       String?   @db.VarChar(80)
+  /// Max coins per gift (GIFT only).
+  budget      Int?
+  /// Sign-ups close and the draw runs at this time.
+  drawAt      DateTime
+  /// Pairings become visible to every member after this time.
+  revealAt    DateTime
+  status      String    @default("OPEN") @db.VarChar(10) // OPEN | DRAWN | FAILED | CANCELLED
+  seed        Int?
+  singleCycle Boolean?
+  drawnAt     DateTime?
+  createdAt   DateTime  @default(now())
+
+  organizer User                 @relation("GiftExchangeOrganiser", fields: [organizerId], references: [id], onDelete: Cascade)
+  members   GiftExchangeMember[]
+
+  @@index([organizerId])
+  @@index([status, drawAt])
+  @@map("gift_exchange")
+}
+
+model GiftExchangeMember {
+  id          String    @id @default(cuid())
+  exchangeId  String
+  userId      String
+  /// Set by the draw. Only the owner may read it before revealAt.
+  recipientId String?
+  /// User ids this member asks not to be paired with ("not my roommate").
+  excludeIds  String[]
+  /// Mixtape (F2): up to 10 { id, title, artist, albumArt, previewUrl }.
+  tracks      Json?
+  giftedAt    DateTime?
+  createdAt   DateTime  @default(now())
+
+  exchange  GiftExchange @relation(fields: [exchangeId], references: [id], onDelete: Cascade)
+  user      User         @relation("GiftExchangeMemberUser", fields: [userId], references: [id], onDelete: Cascade)
+  recipient User?        @relation("GiftExchangeMemberRecipient", fields: [recipientId], references: [id], onDelete: SetNull)
+
+  @@unique([exchangeId, userId])
+  @@index([userId])
+  @@index([recipientId])
+  @@map("gift_exchange_member")
+}
+
+/// A free, non-coin thank-you note with a reason (G4).
+model Kudos {
+  id        String   @id @default(cuid())
+  fromId    String
+  toId      String
+  reason    String   @db.VarChar(200)
+  createdAt DateTime @default(now())
+
+  from User @relation("KudosFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to   User @relation("KudosTo", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@index([toId, createdAt(sort: Desc)])
+  @@index([fromId, createdAt])
+  @@map("kudos")
+}
+
+// ── P20 watch parties: F1, F17, T3, T5 ──
+// Comments pinned to a media timestamp, keyed by the media URL.
+model RmhTubeTimedComment {
+  id        String   @id @default(cuid())
+  mediaUrl  String   @db.VarChar(1024)
+  userId    String
+  atSec     Int
+  body      String   @db.VarChar(200)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([mediaUrl, atSec])
+  @@index([userId])
+  @@map("rmhtube_timed_comment")
+}
+
+// A member's personal "watch later" queue.
+model RmhTubeWatchLater {
+  id        String   @id @default(cuid())
+  userId    String
+  url       String   @db.VarChar(1024)
+  title     String   @db.VarChar(256)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, url])
+  @@index([userId, createdAt])
+  @@map("rmhtube_watch_later")
+}
+
+// Reactions + rewinds per 10 s bucket of a media URL (batched in from the hub).
+model RmhTubeHeatBucket {
+  mediaUrl String @db.VarChar(1024)
+  bucket   Int
+  count    Int    @default(0)
+
+  @@id([mediaUrl, bucket])
+  @@map("rmhtube_heat_bucket")
+}
+
+// A recorded text commentary track: `lines` is [{ t: seconds, text }].
+model RmhTubeCommentaryTrack {
+  id        String   @id @default(cuid())
+  mediaUrl  String   @db.VarChar(1024)
+  userId    String
+  title     String   @db.VarChar(80)
+  lines     Json
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([mediaUrl, createdAt])
+  @@index([userId])
+  @@map("rmhtube_commentary_track")
+}
+
+// ── P07: E1 daily mutator, E2 backlog, E6 achievement guides, E10 patch notes, E11 rivals, E12 shared seeds ──
+
+// One row per (player, daily | shared seed). kind 'daily': seedKey is the UTC
+// day, the row is created when the attempt STARTS (score null) and the first
+// finish is the one that counts. kind 'seed': seedKey is '<seed>:<variant>' and
+// score is the player's best on that seed.
+model ArcadeSeedRun {
+  id         String    @id @default(cuid())
+  kind       String    @db.VarChar(8)
+  gameId     String    @db.VarChar(48)
+  seedKey    String    @db.VarChar(64)
+  userId     String
+  score      Int?
+  detail     Json?
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([kind, gameId, seedKey, userId])
+  @@index([kind, gameId, seedKey, score(sort: Desc)])
+  @@index([userId])
+  @@map("arcade_seed_run")
+}
+
+// Backlog / play status per game. finishMinutes feeds the community median.
+model GamePlayStatus {
+  id            String   @id @default(cuid())
+  userId        String
+  gameId        String   @db.VarChar(64)
+  status        String   @db.VarChar(16)
+  finishMinutes Int?
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId])
+  @@index([gameId, status])
+  @@map("game_play_status")
+}
+
+model AchievementTip {
+  id            String   @id @default(cuid())
+  achievementId String   @db.VarChar(64)
+  userId        String
+  body          String   @db.VarChar(500)
+  votes         Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  user User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vote AchievementTipVote[]
+
+  @@index([achievementId, votes(sort: Desc)])
+  @@index([userId])
+  @@map("achievement_tip")
+}
+
+model AchievementTipVote {
+  tipId  String
+  userId String
+
+  tip  AchievementTip @relation(fields: [tipId], references: [id], onDelete: Cascade)
+  user User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([tipId, userId])
+  @@index([userId])
+  @@map("achievement_tip_vote")
+}
+
+// Admin-authored short patch notes; the client remembers the last version seen.
+model GamePatchNote {
+  id        String   @id @default(cuid())
+  gameId    String   @db.VarChar(64)
+  version   String   @db.VarChar(32)
+  title     String   @db.VarChar(120)
+  body      String   @db.VarChar(1000)
+  createdAt DateTime @default(now())
+
+  @@unique([gameId, version])
+  @@index([gameId, createdAt(sort: Desc)])
+  @@map("game_patch_note")
+}
+
+// The entry just above a player on a game board when first looked up. state
+// 'ahead' = rival is above; 'behind' = the player has since passed them, so a
+// later overtake by the rival is worth one (batched) notification.
+model ArcadeRival {
+  id             String    @id @default(cuid())
+  userId         String
+  gameId         String    @db.VarChar(48)
+  rivalUserId    String
+  state          String    @default("ahead") @db.VarChar(8)
+  lastNotifiedAt DateTime?
+  updatedAt      DateTime  @updatedAt
+
+  user  User @relation("ArcadeRivalOwner", fields: [userId], references: [id], onDelete: Cascade)
+  rival User @relation("ArcadeRivalTarget", fields: [rivalUserId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId])
+  @@index([rivalUserId])
+  @@index([updatedAt])
+  @@map("arcade_rival")
+}
+
+// ── P12 forecasting: G5 seasons, G6 comment positions ──
+
+/// A forecasting season: a fixed set of existing markets scored by accuracy (points, never coins).
+model PredictionSeason {
+  id        String   @id @default(cuid())
+  title     String   @db.VarChar(80)
+  startsAt  DateTime
+  endsAt    DateTime
+  createdAt DateTime @default(now())
+
+  markets PredictionSeasonMarket[]
+
+  @@index([endsAt])
+  @@map("prediction_season")
+}
+
+model PredictionSeasonMarket {
+  seasonId     String
+  predictionId String
+
+  season     PredictionSeason @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  prediction Prediction       @relation(fields: [predictionId], references: [id], onDelete: Cascade)
+
+  @@id([seasonId, predictionId])
+  @@index([predictionId])
+  @@map("prediction_season_market")
+}
+
+/// A comment on a market, with the commenter's position snapshotted at comment time.
+model PredictionComment {
+  id           String   @id @default(cuid())
+  predictionId String
+  userId       String
+  body         String   @db.VarChar(500)
+  side         String?  @db.VarChar(3) // "YES" | "NO" | null when they held nothing
+  shares       Int      @default(0) // shares on `side` at comment time
+  createdAt    DateTime @default(now())
+
+  prediction Prediction @relation(fields: [predictionId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([predictionId, createdAt(sort: Desc)])
+  @@index([userId])
+  @@map("prediction_comment")
+}
+
+// ── P14 safety: S4 mod macros, S6 link warnings, S7 pile-on guard ──
+// Canned moderator responses with {{user}}/{{reason}} variables. `communityId`
+// null = a site-wide admin macro; set = that community's mods' macro. Plain
+// columns (no FK) so a departing mod never deletes a team's macros.
+model ModMacro {
+  id          String   @id @default(cuid())
+  communityId String?
+  createdById String
+  title       String   @db.VarChar(80)
+  body        String   @db.VarChar(1000)
+  createdAt   DateTime @default(now())
+
+  @@index([communityId, createdAt])
+  @@map("mod_macro")
+}
+
+// Admin-editable domain rules for the /out interstitial: DENY always warns,
+// ALLOW exempts a domain from the first-seen warning.
+model LinkDomainRule {
+  domain    String   @id @db.VarChar(255)
+  kind      String   @db.VarChar(8)
+  note      String?  @db.VarChar(200)
+  addedById String
+  createdAt DateTime @default(now())
+
+  @@map("link_domain_rule")
+}
+
+// The first time any link to a domain was shown on the site. A domain first
+// seen in the last few days is "new" and gets the interstitial.
+model SeenLinkDomain {
+  domain      String   @id @db.VarChar(255)
+  firstSeenAt DateTime @default(now())
+
+  @@map("seen_link_domain")
+}
+
+// One row per post that tripped the pile-on guard. status: OFFERED (author was
+// notified), ACTIVE (reply control limited until expiresAt), REVERTED, DISMISSED.
+model PileOnGuard {
+  postId          String             @id
+  authorId        String
+  previousControl RMHarkReplyControl @default(EVERYONE)
+  status          String             @db.VarChar(12)
+  offeredAt       DateTime           @default(now())
+  expiresAt       DateTime?
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
+  @@index([status, expiresAt])
+  @@map("pile_on_guard")
+}
+
+// ── P21: tools — F4 exam planner, F11 calculator notebooks, F15 marathon lists ──
+
+// A saved RMHStudy exam plan. The day-by-day view is recomputed from these
+// inputs (lib/rmhstudy/exam-planner.ts), so edits never leave a stale plan.
+model StudyPlan {
+  id             String   @id @default(cuid())
+  userId         String
+  title          String   @db.VarChar(120)
+  examDate       String   @db.VarChar(10)
+  topics         Json
+  hoursByWeekday Json
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@map("study_plan")
+}
+
+// A plain-text RMHCalculator notebook; every line is evaluated on the client.
+model CalcNotebook {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String   @db.VarChar(120)
+  body      String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@map("calc_notebook")
+}
+
+// A member's own watch list for the generalized marathon planner. shareId is
+// the unguessable capability in the public read-only link.
+model MarathonList {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String   @db.VarChar(120)
+  items     Json
+  deadline  String   @db.VarChar(10)
+  shareId   String   @unique @db.VarChar(24)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@map("marathon_list")
+}
+
+// ── P15 ops: O1 O2 O3 O4 O5 ──
+// O1: one row per (signup-week cohort, weeks since signup), rewritten by a daily job.
+model CohortRetention {
+  cohortWeek DateTime @db.Date
+  weeksLater Int
+  cohortSize Int
+  active     Int
+  computedAt DateTime @default(now())
+
+  @@id([cohortWeek, weeksLater])
+  @@map("cohort_retention")
+}
+
+// O2: an admin-authored notice for a segment. segment: all | new | game | locale.
+model TargetedNotice {
+  id           String    @id @default(cuid())
+  title        String    @db.VarChar(120)
+  body         String    @db.VarChar(500)
+  linkUrl      String?   @db.VarChar(300)
+  segment      String    @db.VarChar(12)
+  segmentValue String?   @db.VarChar(64)
+  startsAt     DateTime  @default(now())
+  endsAt       DateTime?
+  archivedAt   DateTime?
+  createdById  String?
+  createdAt    DateTime  @default(now())
+
+  dismissals TargetedNoticeDismissal[]
+
+  @@index([archivedAt, startsAt])
+  @@map("targeted_notice")
+}
+
+model TargetedNoticeDismissal {
+  noticeId    String
+  userId      String
+  dismissedAt DateTime @default(now())
+
+  notice TargetedNotice @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([noticeId, userId])
+  @@index([userId])
+  @@map("targeted_notice_dismissal")
+}
+
+// O3: page views per route per UTC day (route = low-cardinality label from /api/rum).
+model RouteViewDay {
+  route String   @db.VarChar(120)
+  day   DateTime @db.Date
+  views Int      @default(0)
+
+  @@id([route, day])
+  @@index([day])
+  @@map("route_view_day")
+}
+
+// O4: client error beacons grouped by fingerprint (message + top frame).
+model ClientErrorGroup {
+  id           String    @id @default(cuid())
+  fingerprint  String    @unique @db.VarChar(40)
+  message      String    @db.VarChar(500)
+  topFrame     String    @db.VarChar(300)
+  source       String    @db.VarChar(64)
+  sampleUrl    String    @db.VarChar(500)
+  count        Int       @default(1)
+  firstSeenAt  DateTime  @default(now())
+  lastSeenAt   DateTime  @default(now())
+  firstRelease String    @db.VarChar(40)
+  lastRelease  String    @db.VarChar(40)
+  resolvedAt   DateTime?
+  regressedAt  DateTime?
+
+  @@index([lastSeenAt])
+  @@map("client_error_group")
+}
+
+// O5: a flag/experiment. testPct = share of members in the "test" arm (sticky hash).
+model Experiment {
+  id          String    @id @default(cuid())
+  key         String    @unique @db.VarChar(64)
+  name        String    @db.VarChar(120)
+  status      String    @default("DRAFT") @db.VarChar(10)
+  testPct     Int       @default(50)
+  createdAt   DateTime  @default(now())
+  startedAt   DateTime?
+
+  exposures ExperimentExposure[]
+
+  @@map("experiment")
+}
+
+model ExperimentExposure {
+  experimentId String
+  userId       String
+  variant      String    @db.VarChar(8)
+  exposedAt    DateTime  @default(now())
+  convertedAt  DateTime?
+
+  experiment Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([experimentId, userId])
+  @@index([experimentId, variant])
+  @@index([userId])
+  @@map("experiment_exposure")
+}
+
+// ── P16 devplatform: D5 recipes, I2 release notes ──
+// "When X then Y" automations. Max 10 per member (enforced in the API). Polled
+// triggers use lastCheckedAt as their cursor so a recipe never fires twice
+// for the same follower / listing.
+model DevRecipe {
+  id            String    @id @default(cuid())
+  userId        String
+  name          String    @db.VarChar(80)
+  trigger       String    @db.VarChar(24) // new_pb | new_follower | price_below
+  triggerConfig Json      @default("{}")
+  action        String    @db.VarChar(24) // discord_webhook | dm_self
+  actionConfig  Json      @default("{}")
+  enabled       Boolean   @default(true)
+  lastCheckedAt DateTime  @default(now())
+  lastFiredAt   DateTime?
+  fireCount     Int       @default(0)
+  lastError     String?   @db.VarChar(200)
+  createdAt     DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, trigger])
+  @@index([enabled, trigger, lastCheckedAt])
+  @@map("dev_recipe")
+}
+
+// Admin-authored changelog entries (drafted with AI, edited by a human).
+model ReleaseNote {
+  id          String    @id @default(cuid())
+  version     String    @db.VarChar(40)
+  title       String    @db.VarChar(160)
+  body        String    @db.Text
+  authorId    String?
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([publishedAt])
+  @@map("release_note")
+}
+
+// ── P22 ladder-homes: F6, F8, F9 ──
+// F6: a member at a company offers up to `capacity` referrals; applicants send
+// one short pitch each. `normalizedCompany` is the match key (free-text company
+// names, attested by the member), so offers group by company without a catalogue.
+model LadderReferralOffer {
+  id                String   @id @default(cuid())
+  userId            String
+  companyName       String   @db.VarChar(120)
+  normalizedCompany String   @db.VarChar(120)
+  roles             String   @db.VarChar(200)
+  note              String?  @db.VarChar(500)
+  capacity          Int      @default(3)
+  status            String   @default("open") @db.VarChar(8) // open | closed
+  createdAt         DateTime @default(now())
+
+  user     User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requests LadderReferralRequest[]
+
+  @@index([status, normalizedCompany, createdAt])
+  @@index([userId, status])
+  @@map("ladder_referral_offer")
+}
+
+model LadderReferralRequest {
+  id          String    @id @default(cuid())
+  offerId     String
+  applicantId String
+  pitch       String    @db.VarChar(600)
+  status      String    @default("pending") @db.VarChar(10) // pending | accepted | passed | withdrawn
+  respondedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  offer     LadderReferralOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  applicant User                @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+
+  @@unique([offerId, applicantId])
+  @@index([offerId, status, createdAt])
+  @@index([applicantId, status, createdAt])
+  @@map("ladder_referral_request")
+}
+
+// F8: structured community interview reports, listed on the company's jobs and
+// reportable through ContentReport (entityType "ladder-interview"); a takedown
+// sets status to "hidden".
+model LadderInterviewReport {
+  id            String   @id @default(cuid())
+  userId        String
+  companyId     String
+  roleTitle     String   @db.VarChar(120)
+  rounds        Int
+  questionTypes String[] @default([])
+  outcome       String   @db.VarChar(10) // offer | rejected | withdrew | pending
+  difficulty    Int
+  body          String?  @db.VarChar(2000)
+  status        String   @default("visible") @db.VarChar(8) // visible | hidden
+  createdAt     DateTime @default(now())
+
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company LadderCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, status, createdAt(sort: Desc)])
+  @@index([userId, createdAt])
+  @@map("ladder_interview_report")
+}
+
+// F9: one lifestyle-quiz row per member. Answers are 1–5 scales (pets is a
+// choice); only a compatibility percentage ever leaves the server, never the answers.
+model HomeRoommateProfile {
+  userId      String   @id
+  sleep       Int // 1 early bird .. 5 night owl
+  guests      Int // 1 never .. 5 often
+  cleanliness Int // 1 relaxed .. 5 spotless
+  noise       Int // 1 silent .. 5 lively
+  pets        String   @db.VarChar(5) // has | fine | no
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("home_roommate_profile")
+}
+
+// ── P18: delight (Z2 hunt, Z3 museum, Z4 fortune, Z6 photo of the day, Z8 flag, Y4 translations) ──
+
+/// Z8: tiny admin key/value switches (e.g. `aprilfools` = "1"). Off when absent.
+model DelightSetting {
+  key       String   @id @db.VarChar(40)
+  value     String   @db.VarChar(200)
+  updatedAt DateTime @updatedAt
+
+  @@map("delight_setting")
+}
+
+/// Z2: one admin-defined clue chain. At most one is active at a time.
+model Hunt {
+  id        String   @id @default(cuid())
+  title     String   @db.VarChar(120)
+  active    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  clues    HuntClue[]
+  progress HuntProgress[]
+
+  @@index([active])
+  @@map("hunt")
+}
+
+model HuntClue {
+  id         String @id @default(cuid())
+  huntId     String
+  position   Int
+  /// Shown by the hidden marker on `hiddenPath`, to members who solved the previous clue.
+  clueText   String @db.VarChar(500)
+  /// Optional vague pointer shown on /hunt, towards the page.
+  hint       String @default("") @db.VarChar(300)
+  /// Normalised (lowercase, trimmed, single-spaced); never sent to members.
+  answer     String @db.VarChar(120)
+  hiddenPath String @db.VarChar(200)
+
+  hunt Hunt @relation(fields: [huntId], references: [id], onDelete: Cascade)
+
+  @@unique([huntId, position])
+  @@map("hunt_clue")
+}
+
+model HuntProgress {
+  id         String    @id @default(cuid())
+  huntId     String
+  userId     String
+  solved     Int       @default(0)
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  durationMs Int?
+
+  hunt Hunt @relation(fields: [huntId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([huntId, userId])
+  @@index([huntId, durationMs])
+  @@index([userId])
+  @@map("hunt_progress")
+}
+
+/// Z3: admin-edited timeline of site eras.
+model SiteEra {
+  id        String   @id @default(cuid())
+  eraDate   DateTime @db.Date
+  title     String   @db.VarChar(120)
+  body      String   @db.VarChar(2000)
+  imageUrl  String?  @db.VarChar(500)
+  createdAt DateTime @default(now())
+
+  @@index([eraDate])
+  @@map("site_era")
+}
+
+/// Z4: community one-liners. `runDate` (UTC YYYY-MM-DD) is claimed lazily, once per day.
+model FortuneCookie {
+  id         String    @id @default(cuid())
+  userId     String
+  text       String    @db.VarChar(140)
+  status     String    @default("pending") @db.VarChar(10) // pending | approved | rejected
+  runDate    String?   @unique @db.VarChar(10)
+  createdAt  DateTime  @default(now())
+  reviewedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
+  @@map("fortune_cookie")
+}
+
+/// Z6: an image a member nominated for a UTC day. One per member per day.
+model PhotoNomination {
+  id        String   @id @default(cuid())
+  userId    String
+  dayKey    String   @db.VarChar(10)
+  imageUrl  String   @db.VarChar(500)
+  caption   String   @default("") @db.VarChar(140)
+  votes     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  casts PhotoVote[]
+
+  @@unique([userId, dayKey])
+  @@index([dayKey, votes(sort: Desc), createdAt])
+  @@map("photo_nomination")
+}
+
+model PhotoVote {
+  id           String   @id @default(cuid())
+  nominationId String
+  userId       String
+  dayKey       String   @db.VarChar(10)
+  createdAt    DateTime @default(now())
+
+  nomination PhotoNomination @relation(fields: [nominationId], references: [id], onDelete: Cascade)
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dayKey])
+  @@index([nominationId])
+  @@map("photo_vote")
+}
+
+/// Y4: a member's suggested translation of one English string. Accepted rows are
+/// exported by an admin as JSON; nothing writes to locales/ at runtime.
+model TranslationSuggestion {
+  id        String   @id @default(cuid())
+  userId    String
+  locale    String   @db.VarChar(8)
+  ns        String   @db.VarChar(64)
+  key       String   @db.VarChar(200)
+  text      String   @db.VarChar(1000)
+  votes     Int      @default(0)
+  status    String   @default("open") @db.VarChar(10) // open | accepted | rejected
+  createdAt DateTime @default(now())
+
+  user  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  casts TranslationVote[]
+
+  @@unique([userId, locale, ns, key])
+  @@index([locale, ns, key])
+  @@index([locale, status])
+  @@map("translation_suggestion")
+}
+
+model TranslationVote {
+  id           String   @id @default(cuid())
+  suggestionId String
+  userId       String
+  createdAt    DateTime @default(now())
+
+  suggestion TranslationSuggestion @relation(fields: [suggestionId], references: [id], onDelete: Cascade)
+  user       User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([suggestionId, userId])
+  @@index([userId])
+  @@map("translation_vote")
+}
+
+// ── P19 canvas: Z5 community pixel canvas, X3 context notes ──
+// One row per event; `state` is width*height bytes (one palette index per pixel)
+// so a snapshot is a single read. The placement log is the history for the replay.
+model CanvasEvent {
+  id          String   @id @default(cuid())
+  title       String   @db.VarChar(80)
+  width       Int
+  height      Int
+  cooldownSec Int
+  startsAt    DateTime
+  endsAt      DateTime
+  state       Bytes
+  createdById String
+  createdAt   DateTime @default(now())
+
+  placements CanvasPlacement[]
+  cooldowns  CanvasCooldown[]
+
+  @@index([startsAt])
+  @@map("canvas_event")
+}
+
+model CanvasPlacement {
+  id        Int      @id @default(autoincrement())
+  eventId   String
+  userId    String
+  x         Int      @db.SmallInt
+  y         Int      @db.SmallInt
+  color     Int      @db.SmallInt
+  createdAt DateTime @default(now())
+
+  event CanvasEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, id])
+  @@index([userId])
+  @@map("canvas_placement")
+}
+
+// Last placement per member per event; the conditional upsert on this row is the cooldown gate.
+model CanvasCooldown {
+  eventId      String
+  userId       String
+  lastPlacedAt DateTime
+
+  event CanvasEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, userId])
+  @@index([userId])
+  @@map("canvas_cooldown")
+}
+
+model ContextNote {
+  id           String   @id @default(cuid())
+  postId       String
+  authorId     String
+  body         String   @db.VarChar(500)
+  helpfulCount Int      @default(0)
+  notCount     Int      @default(0)
+  // Set by the bridging evaluation; `hidden` is the admin override and always wins.
+  visible      Boolean  @default(false)
+  hidden       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  post    RMHark              @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author  User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  ratings ContextNoteRating[]
+
+  @@unique([postId, authorId])
+  @@index([postId, visible])
+  @@index([authorId])
+  @@index([createdAt(sort: Desc)])
+  @@map("context_note")
+}
+
+model ContextNoteRating {
+  id        String   @id @default(cuid())
+  noteId    String
+  raterId   String
+  helpful   Boolean
+  createdAt DateTime @default(now())
+
+  note  ContextNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  rater User        @relation(fields: [raterId], references: [id], onDelete: Cascade)
+
+  @@unique([noteId, raterId])
+  @@index([raterId, createdAt(sort: Desc)])
+  @@map("context_note_rating")
+}
+
+// ── P23 creative: F12 studio sample flip, F14 runnable code embeds ──
+model StudioChallenge {
+  id           String    @id @default(cuid())
+  title        String    @db.VarChar(120)
+  brief        String    @db.VarChar(1000)
+  sampleKey    String    @db.VarChar(200)
+  sampleName   String    @db.VarChar(120)
+  startsAt     DateTime
+  endsAt       DateTime
+  votingEndsAt DateTime
+  winnerId     String?
+  finalizedAt  DateTime?
+  createdById  String
+  createdAt    DateTime  @default(now())
+
+  entries StudioChallengeEntry[]
+  votes   StudioChallengeVote[]
+
+  @@index([startsAt(sort: Desc)])
+  @@map("studio_challenge")
+}
+
+model StudioChallengeEntry {
+  id          String   @id @default(cuid())
+  challengeId String
+  userId      String
+  title       String   @db.VarChar(120)
+  linkUrl     String?  @db.VarChar(500)
+  audioKey    String?  @db.VarChar(200)
+  voteCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  challenge StudioChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  votes     StudioChallengeVote[]
+
+  @@unique([challengeId, userId])
+  @@index([challengeId, voteCount(sort: Desc)])
+  @@index([userId])
+  @@map("studio_challenge_entry")
+}
+
+// One vote per member per challenge: the composite key is the gate.
+model StudioChallengeVote {
+  challengeId String
+  voterId     String
+  entryId     String
+  createdAt   DateTime @default(now())
+
+  challenge StudioChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  voter     User            @relation(fields: [voterId], references: [id], onDelete: Cascade)
+  entry     StudioChallengeEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@id([challengeId, voterId])
+  @@index([entryId])
+  @@index([voterId])
+  @@map("studio_challenge_vote")
+}
+
+model PostCodeEmbed {
+  postId String @id
+  html   String @db.VarChar(10000)
+  css    String @db.VarChar(10000)
+  js     String @db.VarChar(10000)
+
+  post RMHark @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("post_code_embed")
+}
+
+// ── P24 party: R2 rmhbox packs, R15 connections grids ──
+
+// Member-authored prompt pack for a prompt-based RMHbox minigame (wit-war).
+// Played by entering `code` in the lobby's game settings.
+model RmhboxPack {
+  id          String   @id @default(cuid())
+  code        String   @unique @db.VarChar(6)
+  ownerId     String
+  name        String   @db.VarChar(60)
+  game        String   @default("wit-war") @db.VarChar(24)
+  prompts     Json
+  promptCount Int
+  featured    Boolean  @default(false)
+  hidden      Boolean  @default(false)
+  reportCount Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  owner   User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  reports RmhboxPackReport[]
+
+  @@index([ownerId, createdAt])
+  @@index([hidden, featured, createdAt])
+  @@map("rmhbox_pack")
+}
+
+model RmhboxPackReport {
+  id         String   @id @default(cuid())
+  packId     String
+  reporterId String
+  reason     String   @db.VarChar(200)
+  createdAt  DateTime @default(now())
+
+  pack     RmhboxPack @relation(fields: [packId], references: [id], onDelete: Cascade)
+  reporter User       @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@unique([packId, reporterId])
+  @@index([reporterId])
+  @@map("rmhbox_pack_report")
+}
+
+// A member-authored 4x4 Connections grid: groups = [{ label, items: [4] }] x 4.
+// Counters are denormalised so the list never aggregates plays. dailyDate is the
+// UTC day (YYYY-MM-DD) an admin scheduled this grid as the daily.
+model ConnectionsGrid {
+  id          String   @id @default(cuid())
+  authorId    String
+  title       String   @db.VarChar(80)
+  groups      Json
+  playCount   Int      @default(0)
+  solveCount  Int      @default(0)
+  ratingSum   Int      @default(0)
+  ratingCount Int      @default(0)
+  dailyDate   String?  @unique @db.VarChar(10)
+  hidden      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  author User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  plays  ConnectionsPlay[]
+
+  @@index([authorId, createdAt])
+  @@index([hidden, createdAt])
+  @@map("connections_grid")
+}
+
+// One play per member per grid. found = indices of the groups solved so far;
+// status active | solved | failed (4 mistakes). Guesses are checked server-side.
+model ConnectionsPlay {
+  id        String   @id @default(cuid())
+  gridId    String
+  userId    String
+  found     Json     @default("[]")
+  mistakes  Int      @default(0)
+  status    String   @default("active") @db.VarChar(8)
+  rating    Int?
+  updatedAt DateTime @updatedAt
+
+  grid ConnectionsGrid @relation(fields: [gridId], references: [id], onDelete: Cascade)
+  user User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([gridId, userId])
+  @@index([userId])
+  @@map("connections_play")
+}
+
+// ── P25 action: R5 ──
+// One saved Neon Driftway livery per member, stored as its shareable code
+// (`ND1-base-accent1-accent2-stripe`); the format is validated on write.
+model NdwLivery {
+  userId    String   @id
+  code      String   @db.VarChar(40)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ndw_livery")
+}
+
+// ── P26 worlds: R6 R7 R8 ──
+// One read-only snapshot per member per kind (isleworks island, forest garden,
+// farm tour), reachable by a short share code. Payload is size-capped on write.
+model WorldSnapshot {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String   @db.VarChar(16)
+  code      String   @unique @db.VarChar(10)
+  title     String   @db.VarChar(80)
+  payload   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postcards WorldPostcard[]
+  waterings GardenWatering[]
+
+  @@unique([userId, kind])
+  @@map("world_snapshot")
+}
+
+// A visitor's short note on a snapshot; one per visitor (re-sending replaces it).
+// The owner can hide any of them.
+model WorldPostcard {
+  id         String    @id @default(cuid())
+  snapshotId String
+  authorId   String
+  body       String    @db.VarChar(160)
+  hiddenAt   DateTime?
+  createdAt  DateTime  @default(now())
+
+  snapshot WorldSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  author   User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@unique([snapshotId, authorId])
+  @@index([snapshotId, createdAt])
+  @@index([authorId])
+  @@map("world_postcard")
+}
+
+// One watering per visitor per garden per UTC day; appliedAt is set when the
+// owner's garden has taken the growth bonus on its next load.
+model GardenWatering {
+  id         String    @id @default(cuid())
+  snapshotId String
+  visitorId  String
+  day        String    @db.VarChar(10)
+  appliedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  snapshot WorldSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  visitor  User          @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+
+  @@unique([snapshotId, visitorId, day])
+  @@index([snapshotId, appliedAt])
+  @@index([visitorId])
+  @@map("garden_watering")
+}
+
+// Farming Sim festival contest: harvest value earned on the festival day,
+// written by the authoritative socket handler (never by a client).
+model FarmFestivalEntry {
+  id          String   @id @default(cuid())
+  festivalKey String   @db.VarChar(32)
+  userId      String
+  name        String   @db.VarChar(64)
+  score       Int
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([festivalKey, userId])
+  @@index([festivalKey, score])
+  @@map("farm_festival_entry")
+}
+
+// ── P27 async-games: R11 R12 R13 R18 R21 ──
+// R11: per-member career aggregates behind the Gabriel's Horn post-game table read.
+// Claim times are summed in ms so "tell" = mean(lie claim) - mean(truth claim).
+model GabrielsHornTableRead {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  games        Int      @default(0)
+  claims       Int      @default(0)
+  lies         Int      @default(0)
+  calls        Int      @default(0)
+  callsCorrect Int      @default(0)
+  lieClaimMs   Int      @default(0)
+  truthClaimMs Int      @default(0)
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("gabriels_horn_table_read")
+}
+
+// R12: one row per delivery route (pickup chunk -> drop-off chunk, world metres).
+// The row carries the standing record; no coins are paid for holding it.
+model VelumContract {
+  id           String   @id @default(cuid())
+  pickupX      Int
+  pickupZ      Int
+  dropX        Int
+  dropZ        Int
+  creatorId    String
+  holderId     String?
+  bestCentis   Int
+  runs         Int      @default(1)
+  createdAt    DateTime @default(now())
+  recordSetAt  DateTime @default(now())
+
+  creator User  @relation("VelumContractMaker", fields: [creatorId], references: [id], onDelete: Cascade)
+  holder  User? @relation("VelumContractHolder", fields: [holderId], references: [id], onDelete: SetNull)
+
+  @@unique([pickupX, pickupZ, dropX, dropZ])
+  @@index([recordSetAt(sort: Desc)])
+  @@index([creatorId])
+  @@index([holderId])
+  @@map("velum_contract")
+}
+
+// R13: a published Versecraft story seed. `seed` points at the persisted world.
+model VersecraftSeedListing {
+  id          String   @id @default(cuid())
+  seed        String   @unique
+  title       String   @db.VarChar(80)
+  authorId    String
+  ratingSum   Int      @default(0)
+  ratingCount Int      @default(0)
+  forks       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  author  User                   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  world   VersecraftWorld        @relation(fields: [seed], references: [seed], onDelete: Cascade)
+  ratings VersecraftSeedRating[]
+
+  @@index([createdAt(sort: Desc)])
+  @@index([authorId])
+  @@map("versecraft_seed_listing")
+}
+
+model VersecraftSeedRating {
+  listingId String
+  userId    String
+  stars     Int
+  createdAt DateTime @default(now())
+
+  listing VersecraftSeedListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user    User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([listingId, userId])
+  @@index([userId])
+  @@map("versecraft_seed_rating")
+}
+
+// R18: a templated hint left at a puzzle site. `template` is a fixed id; `param`
+// is a glyph id or a small number, never free text.
+model MarchSignal {
+  id        String   @id @default(cuid())
+  siteId    String   @db.VarChar(40)
+  authorId  String
+  template  String   @db.VarChar(24)
+  param     String   @default("") @db.VarChar(16)
+  score     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  author User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  votes  MarchSignalVote[]
+
+  @@unique([siteId, authorId, template, param])
+  @@index([siteId, score(sort: Desc)])
+  @@index([authorId])
+  @@map("march_signal")
+}
+
+model MarchSignalVote {
+  signalId String
+  userId   String
+  value    Int
+
+  signal MarchSignal @relation(fields: [signalId], references: [id], onDelete: Cascade)
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([signalId, userId])
+  @@index([userId])
+  @@map("march_signal_vote")
+}
+
+// R21: a Nightrail trick submitted for the week's vote. Nightrail records no
+// replay, so the clip is the best combo's trick chain + score (bounded by the
+// member's recorded high score). `week` is the UTC Monday, YYYY-MM-DD.
+model NightrailTrick {
+  id        String   @id @default(cuid())
+  week      String   @db.VarChar(10)
+  authorId  String
+  level     Int
+  score     Int
+  multiplier Float
+  chain     String[]
+  votes     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  author     User                 @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  voteRows   NightrailTrickVote[]
+
+  @@unique([week, authorId])
+  @@index([week, votes(sort: Desc)])
+  @@map("nightrail_trick")
+}
+
+model NightrailTrickVote {
+  trickId   String
+  userId    String
+  week      String   @db.VarChar(10)
+  createdAt DateTime @default(now())
+
+  trick NightrailTrick @relation(fields: [trickId], references: [id], onDelete: Cascade)
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([trickId, userId])
+  @@unique([week, userId])
+  @@index([userId])
+  @@map("nightrail_trick_vote")
 }

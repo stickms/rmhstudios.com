@@ -10,11 +10,13 @@ interface GifPickerProps {
  onSelect: (url: string) => void;
  onClose?: () => void;
  className?: string;
+ /** Pre-filled search (the `/gif cats` slash command). */
+ initialQuery?: string;
 }
 
-export function GifPicker({ onSelect, onClose, className =''}: GifPickerProps) {
+export function GifPicker({ onSelect, onClose, className ='', initialQuery ='' }: GifPickerProps) {
  const { t } = useTranslation('feed');
- const [query, setQuery] = useState('');
+ const [query, setQuery] = useState(initialQuery);
  const [results, setResults] = useState<KlipyGif[]>([]);
  const [next, setNext] = useState<string | null>(null);
  const [loading, setLoading] = useState(true);

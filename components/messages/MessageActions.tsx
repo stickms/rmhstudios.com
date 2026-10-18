@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Copy, EyeOff, MoreHorizontal, Pencil, Reply, Undo2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
@@ -34,6 +34,7 @@ export function MessageActions({
   onUnsend,
   onHide,
   onReply,
+  extra,
   className,
 }: {
   message: {
@@ -49,6 +50,8 @@ export function MessageActions({
   onHide: () => void;
   /** Quote this message into the composer — the menu twin of swipe-to-reply. */
   onReply?: () => void;
+  /** Extra rows appended to the menu (pin / forward — see components/chat-plus). */
+  extra?: (close: () => void) => ReactNode;
   className?: string;
 }) {
   const { t } = useTranslation('feed');
@@ -138,6 +141,8 @@ export function MessageActions({
             {t('message-copy', { defaultValue: 'Copy text' })}
           </MenuItem>
         )}
+
+        {extra?.(() => setOpen(false))}
 
         <MenuItem
           icon={EyeOff}

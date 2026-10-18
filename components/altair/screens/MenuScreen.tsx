@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Play, ShoppingBag, Settings, Trophy, Zap, Users, Clock, Crosshair, Sparkles, Coins, RefreshCw, X, ScrollText, Book } from 'lucide-react';
 import PatchnotesModal from './PatchnotesModal';
+import { CodexBadge } from '../CodexPanel';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 import { useKeyboardNav } from '@/lib/altair/hooks/use-keyboard-nav';
 
@@ -129,6 +130,7 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
         >
           <Book size={18} />
           {t("bestiary", { defaultValue: "Bestiary" })}
+          <CodexBadge />
         </button>
 
         <button

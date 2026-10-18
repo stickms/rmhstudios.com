@@ -12,6 +12,7 @@ import {
  type AchievementTier,
 } from'@/lib/achievements/catalog';
 import { ColumnHeader } from'./ColumnHeader';
+import { AchievementTips } from'@/components/arcade/AchievementTips';
 
 // Library icons per achievement category (replaces emoji badges).
 const CATEGORY_ICON: Record<AchievementCategory, typeof Users> = {
@@ -217,6 +218,7 @@ export function AchievementsColumn({
  </p>
  </div>
  )}
+ {!(a.secret && !a.unlocked) && <AchievementTips achievementId={a.id} name={a.name} />}
  {a.unlocked && a.coinReward > 0 && (
  <p className="mt-0.5 inline-flex items-center gap-0.5 text-[10px] text-site-text-dim">
  <Coins className="h-3 w-3 text-site-warning"/> +{a.coinReward}

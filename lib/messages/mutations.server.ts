@@ -37,6 +37,9 @@ import {
   type MessageView,
 } from '@/lib/messages/message-view';
 import { recordPriorRevision } from '@/lib/messages/edit-history.server';
+import { liveMessages } from '@/lib/chat-plus/expiry.server';
+import { getPairPrivacy, maskReceipts } from '@/lib/chat-plus/receipts.server';
+import { loadDmPolls } from '@/lib/chat-plus/polls.server';
 
 /** Columns every read path needs. One list so no route forgets `deletedAt`. */
 const messageSelect = {
@@ -53,11 +56,17 @@ const messageSelect = {
   audioUrl: true,
   audioDurationMs: true,
   audioPeaks: true,
+  kind: true,
+  meta: true,
+  forwardCount: true,
+  expiresAt: true,
 } as const;
 
 export interface Participants {
   participantOneId: string;
   participantTwoId: string;
+  /** M3 — the conversation's disappearing-messages timer, in seconds. */
+  disappearAfterSec?: number | null;
 }
 
 export type MutationFailure = {
@@ -93,7 +102,7 @@ export async function loadParticipantConversation(
 ): Promise<Participants | null> {
   const conversation = await prisma.conversation.findUnique({
     where: { id: conversationId },
-    select: { participantOneId: true, participantTwoId: true },
+    select: { participantOneId: true, participantTwoId: true, disappearAfterSec: true },
   });
   if (!conversation) return null;
   if (conversation.participantOneId !== userId && conversation.participantTwoId !== userId) {
@@ -150,7 +159,9 @@ export async function loadThreadPage(args: {
 
   const limit = Math.min(Math.max(args.limit ?? 50, 1), 100);
   const rows = await prisma.directMessage.findMany({
-    where: { conversationId: args.conversationId },
+    // Expired disappearing messages do not exist (M3) — enforced here at read
+    // time, so they vanish on the dot whether or not the sweep has run.
+    where: { conversationId: args.conversationId, AND: [liveMessages()] },
     orderBy: { createdAt: 'desc' },
     take: limit + 1,
     ...(args.cursor ? { cursor: { id: args.cursor }, skip: 1 } : {}),
@@ -163,14 +174,30 @@ export async function loadThreadPage(args: {
   // Hides are applied AFTER the page is cut, not as a `NOT IN` in the query: the
   // cursor has to stay stable, and a page that shrinks by two hidden rows is
   // correct, whereas a cursor that skipped them is not resumable.
-  const hidden = await hiddenIdsFor(
-    args.userId,
-    page.map((m) => m.id),
-  );
+  const [hidden, privacy, polls] = await Promise.all([
+    hiddenIdsFor(
+      args.userId,
+      page.map((m) => m.id),
+    ),
+    getPairPrivacy(args.conversationId, [
+      conversation.participantOneId,
+      conversation.participantTwoId,
+    ]),
+    loadDmPolls(page, args.userId),
+  ]);
   const visible = applyHides(page, hidden);
 
+  // M8: when either side has receipts off, nobody learns whether their own
+  // messages were read — the flag is blanked on the way out, not just hidden in
+  // the UI.
+  const views = maskReceipts(
+    visible.reverse().map((row) => ({ ...toMessageView(row), poll: polls.get(row.id) ?? null })),
+    args.userId,
+    privacy.receiptsHidden && conversation.participantOneId !== conversation.participantTwoId,
+  );
+
   return {
-    messages: visible.reverse().map((row) => toMessageView(row)),
+    messages: views,
     nextCursor: hasMore ? page[page.length - 1].id : null,
     hasMore,
   };
@@ -196,6 +223,7 @@ export async function listMutationsSince(args: {
   const rows = await prisma.directMessage.findMany({
     where: {
       conversationId: args.conversationId,
+      AND: [liveMessages()],
       OR: [{ editedAt: { gt: args.since } }, { deletedAt: { gt: args.since } }],
     },
     orderBy: { createdAt: 'asc' },
@@ -299,6 +327,11 @@ export async function editDirectMessage(args: {
     select: messageSelect,
   });
   if (!existing) return failure('not-found');
+
+  // Dice, coin flips, checklists, polls and system lines are not prose.
+  if (existing.kind !== 'text') {
+    return failure('forbidden', 400, 'This kind of message cannot be edited');
+  }
 
   const eligible = editEligibility(existing, args.userId, now.getTime());
   if (!eligible.ok) return failure(eligible.reason);

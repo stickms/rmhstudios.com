@@ -6,13 +6,23 @@ import { PenLine } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useFeedStore } from '@/stores/feedStore';
 import { useFeedSSE } from '@/hooks/useFeedSSE';
+import { useCaughtUpMarker } from '@/hooks/useCaughtUpMarker';
+import { CaughtUpDivider } from '@/components/feed/CaughtUpDivider';
 import { type InitialFeed } from '@/components/feed/FeedColumn';
 import { ComposeBoxLazy } from '@/components/feed/ComposeBoxLazy';
+import { QotdCardLazy } from '@/components/posts-plus/QotdCardLazy';
+import { FortuneCardLazy } from '@/components/delight/FortuneCardLazy';
+import { useSession } from '@/components/Providers';
 import { RadialLoader } from '@/components/ui/radial-loader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RadialWheel, type RadialWheelItem } from './RadialWheel';
 import { RadialSideFeed } from './RadialSideFeed';
 import { WheelCard } from './WheelCard';
+
+/** X4: the question-of-the-day card follows this many posts. */
+const QOTD_AFTER = 3;
+// Z4: the fortune cookie sits further down, safely below the fold.
+const FORTUNE_AFTER = 6;
 
 // The full composer is a heavy chunk (GIF picker, AI buttons, mention/emoji
 // autocomplete) — defer it out of the feed route's initial bundle; it only
@@ -113,15 +123,43 @@ function FeedWheel({ initial }: { initial: InitialFeed }) {
     if (s.hasMore && !s.loading) void s.fetchNextPage();
   }, []);
 
+  // X7: the "You're all caught up" divider goes before the first post from the
+  // previous visit. Plain For You home only — a filtered or searched surface has
+  // no "new since last time".
+  const caughtUpBeforeId = useCaughtUpMarker(items, filter === 'all' && !search);
+  // X4 slot only for signed-in members on the plain For You view — signed-out
+  // visitors can't answer, and an empty slot would still take the wheel's gap.
+  const { data: session } = useSession();
+  const showQotd = !!session && filter === 'all' && !search;
+  const showFortune = filter === 'all' && !search;
+
   const wheelItems = useMemo<RadialWheelItem[]>(
-    () => items.map((item) => ({ id: item.id, node: <WheelCard item={item} /> })),
-    [items],
+    () =>
+      items.flatMap((item, i) => {
+        const card = { id: item.id, node: <WheelCard item={item} /> };
+        const out =
+          item.id === caughtUpBeforeId
+            ? [{ id: 'caught-up-divider', node: <CaughtUpDivider /> }, card]
+            : [card];
+        // X4: today's question sits after the third post, never above the
+        // composer. It mounts after idle, and anything that appears after paint
+        // at the top of the feed shoves the whole column down (layout shift on
+        // the busiest page); three cards in, it only moves what is below the fold.
+        if (showQotd && i === QOTD_AFTER - 1) out.push({ id: 'qotd-card', node: <QotdCardLazy /> });
+        if (showFortune && i === FORTUNE_AFTER - 1) out.push({ id: 'fortune-card', node: <FortuneCardLazy /> });
+        return out;
+      }),
+    [items, caughtUpBeforeId, showQotd, showFortune],
   );
 
   // The inline "rmhark compose box" that heads the feed — the first rmhark comes
   // right after it. ComposeBoxLazy handles the signed-out state itself (same as
   // the classic feed column).
-  const composeLead = <ComposeBoxLazy />;
+  const composeLead = (
+    <>
+      <ComposeBoxLazy />
+    </>
+  );
 
   if (wheelItems.length === 0) {
     // Distinguish a genuine empty timeline from a first-load error.

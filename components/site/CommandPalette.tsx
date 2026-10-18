@@ -14,6 +14,7 @@ import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useNavigate } from '@tanstack/react-router';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useTranslation } from 'react-i18next';
+import { useSurpriseCommand } from '@/components/discovery/useSurprise';
 import { normalizeQuery } from '@/lib/search/normalize';
 import { MATCH_FLOOR, scoreRecord } from '@/lib/search/score';
 import {
@@ -300,6 +301,8 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
     [navigate],
   );
 
+  const surprise = useSurpriseCommand(() => setOpen(false));
+
   const commands = useMemo<Command[]>(() => {
     const list: Command[] = [];
 
@@ -325,6 +328,7 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
       requiresAuth: true,
       run: () => go('/achievements'),
     });
+    list.push(surprise);
     list.push({
       id: 'action-shortcuts',
       label: t('palette-shortcuts', { defaultValue: 'Keyboard shortcuts' }),
@@ -417,7 +421,7 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
     }
 
     return list;
-  }, [t, signedIn, userHandle, go, setStyle]);
+  }, [t, signedIn, userHandle, go, setStyle, surprise]);
 
   // Ranked by the SAME scorer the Explore page and the top-bar panel use
   // (`lib/search/score.ts`), not a matcher of its own. This used Fuse.js, so ⌘K,

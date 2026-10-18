@@ -3,6 +3,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { GameState } from '../../lib/synapse-storm/types';
 import { GlobalLeaderboard } from './GlobalLeaderboard';
+import { TrainingNote } from './CustomStormPicker';
 
 interface GameOverProps {
     state: GameState;
@@ -10,9 +11,11 @@ interface GameOverProps {
     onMenu: () => void;
     currentUserId?: string;
     scoreSaved?: boolean;
+    /** R14: an unranked custom storm — no leaderboard, nothing was submitted. */
+    training?: boolean;
 }
 
-export const GameOver: React.FC<GameOverProps> = ({ state, onRestart, onMenu, currentUserId, scoreSaved }) => {
+export const GameOver: React.FC<GameOverProps> = ({ state, onRestart, onMenu, currentUserId, scoreSaved, training }) => {
     const { t } = useTranslation("c-synapse-storm");
     const accuracy = state.puzzlesSolved > 0
         ? Math.round((state.puzzlesSolved / (state.puzzlesSolved + state.puzzlesMissed)) * 100)
@@ -59,12 +62,16 @@ export const GameOver: React.FC<GameOverProps> = ({ state, onRestart, onMenu, cu
                     </div>
                 </div>
 
-                <GlobalLeaderboard
-                    currentUserId={currentUserId}
-                    currentScore={state.score}
-                    autoRefresh
-                    refreshKey={scoreSaved ? 1 : 0}
-                />
+                {training ? (
+                    <TrainingNote />
+                ) : (
+                    <GlobalLeaderboard
+                        currentUserId={currentUserId}
+                        currentScore={state.score}
+                        autoRefresh
+                        refreshKey={scoreSaved ? 1 : 0}
+                    />
+                )}
 
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginTop: '1rem' }}>
                     <button className="go-button go-restart" onClick={onRestart}>

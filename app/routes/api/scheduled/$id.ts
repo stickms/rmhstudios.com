@@ -26,6 +26,11 @@ export const Route = createFileRoute('/api/scheduled/$id')({
             return Response.json({ error: 'Already published' }, { status: 409 });
           }
 
+          // Z7: a sealed time capsule is cancelled (DELETE), never edited.
+          if (existing.isCapsule) {
+            return Response.json({ error: 'A time capsule is sealed' }, { status: 409 });
+          }
+
           const d = body;
 
           let scheduledAt: Date | null | undefined;

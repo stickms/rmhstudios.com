@@ -421,11 +421,11 @@ else
       skip "tsc --noEmit" "no TypeScript changed"
     fi
 
-    if has '^(lib/api/registry\.ts|lib/games\.ts|lib/apps\.ts|app/routes/)'; then
-      if pnpm run docs:api:check && pnpm run docs:site:check; then
+    if has '^(lib/api/(registry|openapi)\.ts|lib/games\.ts|lib/apps\.ts|app/routes/)'; then
+      if pnpm run docs:api:check && pnpm run docs:site:check && pnpm run sdk:check; then
         pass "generated docs are current"
       else
-        fail "generated docs are stale — run pnpm docs:api && pnpm docs:site"
+        fail "generated docs are stale — run pnpm docs:api && pnpm docs:site && pnpm sdk:generate"
       fi
     else
       skip "docs freshness" "registry/catalog/routes untouched"

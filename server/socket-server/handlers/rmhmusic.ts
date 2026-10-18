@@ -10,11 +10,13 @@ import { RoomManager } from '../../rmhmusic/room-manager';
 import { SyncEngine } from '../../rmhmusic/sync-engine';
 import { QueueManager } from '../../rmhmusic/queue-manager';
 import { ChatHandler } from '../../rmhmusic/chat-handler';
+import { RadioManager } from '../../rmhmusic/radio-manager';
 
 let roomManager: RoomManager | null = null;
 let syncEngine: SyncEngine | null = null;
 let queueManager: QueueManager | null = null;
 let chatHandler: ChatHandler | null = null;
+let radioManager: RadioManager | null = null;
 
 function ensureInit(io: Server) {
   if (roomManager) return;
@@ -22,6 +24,7 @@ function ensureInit(io: Server) {
   syncEngine = new SyncEngine(io, roomManager);
   queueManager = new QueueManager(io, roomManager);
   chatHandler = new ChatHandler(io, roomManager);
+  radioManager = new RadioManager(io, roomManager);
   roomManager.startGC();
   syncEngine.startHeartbeat();
 }
@@ -34,6 +37,7 @@ export function registerRmhMusicHandlers(io: Server, socket: Socket): void {
   syncEngine!.handleConnection(socket);
   queueManager!.handleConnection(socket);
   chatHandler!.handleConnection(socket);
+  radioManager!.handleConnection(socket);
 }
 
 export function handleRmhMusicDisconnect(_io: Server, _socket: Socket): void {

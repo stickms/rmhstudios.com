@@ -37,6 +37,8 @@ import { Select } from '@/components/ui/select';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { ListingsMap } from '@/components/homes/ListingsMap';
 import { FavoriteButton } from '@/components/homes/FavoriteButton';
+import { RentSplitPanel } from '@/components/homes/RentSplitPanel';
+import { RoommateMatch } from '@/components/homes/RoommateMatch';
 import type { Listing, ListingStatus } from '@/lib/homes/types';
 import {
   formatAvailable,
@@ -392,6 +394,17 @@ export function ListingDetailView({ id }: { id: string }) {
               ))}
             </div>
           </div>
+        )}
+
+        {/* Roommate-wanted rooms: lifestyle match with the poster (F9). */}
+        {listing.listingType === 'RENT' &&
+          listing.propertyType === 'ROOM' &&
+          !listing.isOwner &&
+          !isExternal && <RoommateMatch listingId={listing.id} isSignedIn={Boolean(session?.user)} />}
+
+        {/* Multi-bedroom rentals: split the rent fairly between rooms (F10). */}
+        {listing.listingType === 'RENT' && listing.propertyType !== 'ROOM' && listing.beds >= 2 && (
+          <RentSplitPanel rent={listing.price} beds={listing.beds} sqft={listing.sqft} />
         )}
 
         {/* Map */}

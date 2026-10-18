@@ -6,7 +6,7 @@
  * and every graph is produced by DeepSeek — this app performs no math of its own.
  */
 
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { FunctionSquare, LineChart, Sigma } from 'lucide-react';
@@ -15,10 +15,12 @@ import { CALC_MODELS, type CalcModel } from '@/lib/rmhcalculator/types';
 import { ModelToggle } from '@/components/rmhcalculator/ModelToggle';
 import { ScientificCalculator } from '@/components/rmhcalculator/ScientificCalculator';
 import { GraphingCalculator } from '@/components/rmhcalculator/GraphingCalculator';
+import { useNotebookTab } from '@/components/rmhcalculator/useNotebookTab';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 
 const MODEL_STORAGE_KEY = 'rmhcalc:model';
-type Mode = 'scientific' | 'graphing';
+type Mode = 'scientific' | 'graphing' | 'notebook';
+const NotebookTab = lazy(() => import('@/components/rmhcalculator/NotebookTab'));
 
 function isCalcModel(v: unknown): v is CalcModel {
   return typeof v === 'string' && (CALC_MODELS as readonly string[]).includes(v);
@@ -49,6 +51,7 @@ export function RmhCalculatorApp() {
     }
   };
 
+  const notebookTab = useNotebookTab();
   const tabs = [
     {
       id: 'scientific',
@@ -60,6 +63,7 @@ export function RmhCalculatorApp() {
       label: t('tab-graphing', { defaultValue: 'Graphing' }),
       icon: LineChart,
     },
+    notebookTab,
   ];
 
   return (
@@ -115,6 +119,19 @@ export function RmhCalculatorApp() {
         hidden={mode !== 'graphing'}
       >
         {mode === 'graphing' && <GraphingCalculator model={model} />}
+      </main>
+      <main
+        className="rmhcalc__content"
+        id="rmhcalc-mode-panel-notebook"
+        role="tabpanel"
+        aria-labelledby="rmhcalc-mode-tab-notebook"
+        hidden={mode !== 'notebook'}
+      >
+        {mode === 'notebook' && (
+          <Suspense fallback={null}>
+            <NotebookTab />
+          </Suspense>
+        )}
       </main>
     </div>
   );

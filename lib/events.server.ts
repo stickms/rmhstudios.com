@@ -19,6 +19,20 @@ import { getRole, canModerate } from '@/lib/communities/access.server';
 import { createNotification } from '@/lib/notifications.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { isPrivateIp } from '@/lib/ssrf-guard.server';
+import {
+  OccurrenceError,
+  activeSeriesWhere,
+  checkRecurrence,
+  decorateRecurring,
+  isGoingToOccurrence,
+  notifyRotation,
+  occurrenceAfter,
+  rsvpRecurring,
+  unrsvpRecurring,
+  upcomingOccurrenceEventIds,
+  type RecurrenceInput,
+} from '@/lib/calendar/recurring-events.server';
+import type { EventRecurrenceDTO } from '@/lib/calendar/types';
 
 // ─── Types (client-safe: imported as `import type` by the UI) ────────────────
 
@@ -61,6 +75,8 @@ export interface EventDTO {
   maybeCount: number;
   attendees: EventPersonDTO[];
   viewerRsvp: RsvpStatus | null;
+  /** K4 — set on a repeating event; `startsAt`/`host`/counts then describe the shown occurrence. */
+  recurrence?: EventRecurrenceDTO | null;
 }
 
 export interface RsvpResult {
@@ -79,6 +95,8 @@ export interface CreateEventInput {
   venueKind: EventVenueKindValue;
   venueRef?: string | null;
   capacity?: number | null;
+  /** K4 — make the event repeat weekly or monthly, with an optional host rotation. */
+  recurrence?: RecurrenceInput | null;
 }
 
 export interface UpdateEventInput {
@@ -91,6 +109,8 @@ export interface UpdateEventInput {
   venueKind?: EventVenueKindValue;
   venueRef?: string | null;
   capacity?: number | null;
+  /** K4 — set, change (object) or clear (null) the repeat rule. */
+  recurrence?: RecurrenceInput | null;
 }
 
 /** Domain error with a stable `code` the API layer maps to an HTTP status. */
@@ -102,7 +122,8 @@ export class EventError extends Error {
       | 'INVALID_DATES'
       | 'INVALID_VENUE_URL'
       | 'CAPACITY_FULL'
-      | 'CANCELED',
+      | 'CANCELED'
+      | 'INVALID_RECURRENCE',
   ) {
     super(code);
     this.name = 'EventError';
@@ -120,6 +141,8 @@ export interface EventReminderJob {
   eventId: string;
   userId: string;
   offset: ReminderOffset;
+  /** K4 — the occurrence this reminder is for, on a repeating event. */
+  occurrenceAt?: string;
 }
 
 const REMINDER_OFFSETS: { offset: ReminderOffset; leadMs: number }[] = [
@@ -127,8 +150,13 @@ const REMINDER_OFFSETS: { offset: ReminderOffset; leadMs: number }[] = [
   { offset: '15m', leadMs: 15 * 60 * 1000 },
 ];
 
-const reminderKey = (eventId: string, userId: string, offset: ReminderOffset) =>
-  `event-reminder:${eventId}:${userId}:${offset}`;
+const reminderKey = (
+  eventId: string,
+  userId: string,
+  offset: ReminderOffset,
+  occurrenceAt?: Date,
+) =>
+  `event-reminder:${eventId}:${userId}:${offset}${occurrenceAt ? `:${occurrenceAt.getTime()}` : ''}`;
 
 // Idempotent per-process queue creation, memoised so we don't hit the DB on
 // every RSVP. `stately` policy + a per-(event,user,offset) singletonKey gives us
@@ -153,6 +181,8 @@ function ensureQueue(boss: PgBoss): Promise<void> {
 async function scheduleEventReminders(
   event: { id: string; startsAt: Date },
   userId: string,
+  /** K4 — `event.startsAt` is one occurrence of a repeating event. */
+  recurring = false,
 ): Promise<void> {
   const boss = await getBoss();
   if (!boss) return;
@@ -165,10 +195,15 @@ async function scheduleEventReminders(
       const retentionSeconds = Math.ceil((fireAt.getTime() - now) / 1000) + 86_400;
       await boss.send(
         EVENT_REMINDER_QUEUE,
-        { eventId: event.id, userId, offset } satisfies EventReminderJob,
+        {
+          eventId: event.id,
+          userId,
+          offset,
+          ...(recurring ? { occurrenceAt: event.startsAt.toISOString() } : {}),
+        } satisfies EventReminderJob,
         {
           startAfter: fireAt,
-          singletonKey: reminderKey(event.id, userId, offset),
+          singletonKey: reminderKey(event.id, userId, offset, recurring ? event.startsAt : undefined),
           retentionSeconds,
           retryLimit: 2,
         },
@@ -185,14 +220,18 @@ async function scheduleEventReminders(
  * reach a job, the worker's re-check (RSVP must still be 'going') makes it a
  * no-op at fire time, so this is purely an optimisation.
  */
-async function cancelEventReminders(eventId: string, userId: string): Promise<void> {
+async function cancelEventReminders(
+  eventId: string,
+  userId: string,
+  occurrenceAt?: Date,
+): Promise<void> {
   const boss = await getBoss();
   if (!boss) return;
   try {
     await ensureQueue(boss);
     for (const { offset } of REMINDER_OFFSETS) {
       const jobs = await boss.findJobs(EVENT_REMINDER_QUEUE, {
-        key: reminderKey(eventId, userId, offset),
+        key: reminderKey(eventId, userId, offset, occurrenceAt),
       });
       const ids = jobs.filter((j) => j.state === 'created' || j.state === 'retry').map((j) => j.id);
       if (ids.length) await boss.cancel(EVENT_REMINDER_QUEUE, ids);
@@ -210,9 +249,47 @@ async function cancelEventReminders(eventId: string, userId: string): Promise<vo
 export async function runEventReminder(job: EventReminderJob): Promise<void> {
   const event = await prisma.communityEvent.findUnique({
     where: { id: job.eventId },
-    select: { id: true, title: true, canceledAt: true },
+    select: {
+      id: true,
+      title: true,
+      canceledAt: true,
+      hostId: true,
+      startsAt: true,
+      endsAt: true,
+      recurrence: true,
+      recurUntil: true,
+      recurTz: true,
+      rotatingHostIds: true,
+      capacity: true,
+    },
   });
   if (!event || event.canceledAt) return;
+
+  if (event.recurrence) {
+    // K4 — a repeating event: the reminder belongs to one occurrence, and an
+    // "every time" RSVP chains the next occurrence's reminders once this one fires.
+    if (!job.occurrenceAt) return;
+    const at = new Date(job.occurrenceAt);
+    if (!(await isGoingToOccurrence(job.eventId, job.userId, at))) return;
+    const whenRecurring = job.offset === '24h' ? 'tomorrow' : 'in 15 minutes';
+    await createNotification({
+      userId: job.userId,
+      type: 'SYSTEM',
+      entityType: 'event',
+      entityId: event.id,
+      preview: `"${event.title}" starts ${whenRecurring}.`,
+      link: '/events',
+    }).catch(() => {});
+    if (job.offset === '15m') {
+      const standing = await prisma.eventRsvp.findFirst({
+        where: { eventId: event.id, userId: job.userId, everyTime: true },
+        select: { id: true },
+      });
+      const next = standing ? occurrenceAfter(event, at) : null;
+      if (next) await scheduleEventReminders({ id: event.id, startsAt: next }, job.userId, true);
+    }
+    return;
+  }
 
   const rsvp = await prisma.eventRsvp.findUnique({
     where: { eventId_userId: { eventId: job.eventId, userId: job.userId } },
@@ -333,7 +410,7 @@ async function attachAndMap(
     for (const m of mine) viewerRsvps.set(m.eventId, m.status as RsvpStatus);
   }
 
-  return rows.map((row) => {
+  const mapped: EventDTO[] = rows.map((row) => {
     const c = counts.get(row.id) ?? { going: 0, maybe: 0 };
     return {
       id: row.id,
@@ -364,6 +441,8 @@ async function attachAndMap(
       viewerRsvp: viewerRsvps.get(row.id) ?? null,
     };
   });
+  // K4 — repeating events show their next occurrence (time, host, attendance).
+  return rows.some((r) => r.recurrence) ? decorateRecurring(mapped, rows, viewerId) : mapped;
 }
 
 async function summarize(eventId: string, userId: string): Promise<RsvpResult> {
@@ -417,16 +496,35 @@ export async function listEvents(opts: {
   if (opts.scope === 'mine') {
     if (!viewerId) return [];
     const rsvps = await prisma.eventRsvp.findMany({
-      where: { userId: viewerId, event: { startsAt: { gte: now }, canceledAt: null } },
+      where: {
+        userId: viewerId,
+        event: { canceledAt: null, OR: [{ startsAt: { gte: now } }, activeSeriesWhere(now)] },
+      },
       orderBy: { event: { startsAt: 'asc' } },
       take: 60,
       select: { event: { include: eventInclude } },
     });
     rows = rsvps.map((r) => r.event);
+    // K4 — one-off RSVPs to a single occurrence of a repeating event.
+    const seen = new Set(rows.map((r) => r.id));
+    const occurrenceIds = (await upcomingOccurrenceEventIds(viewerId, now)).filter((id) => !seen.has(id));
+    if (occurrenceIds.length) {
+      rows.push(
+        ...(await prisma.communityEvent.findMany({
+          where: { id: { in: occurrenceIds }, canceledAt: null },
+          take: 60,
+          include: eventInclude,
+        })),
+      );
+    }
   } else if (opts.scope === 'community') {
     if (!opts.communityId) return [];
     rows = await prisma.communityEvent.findMany({
-      where: { communityId: opts.communityId, canceledAt: null, startsAt: { gte: now } },
+      where: {
+        communityId: opts.communityId,
+        canceledAt: null,
+        OR: [{ startsAt: { gte: now } }, activeSeriesWhere(now)],
+      },
       orderBy: { startsAt: 'asc' },
       take: 60,
       include: eventInclude,
@@ -435,8 +533,10 @@ export async function listEvents(opts: {
     rows = await prisma.communityEvent.findMany({
       where: {
         canceledAt: null,
-        startsAt: { gte: now },
-        OR: [{ communityId: null }, { community: { isPrivate: false } }],
+        AND: [
+          { OR: [{ startsAt: { gte: now } }, activeSeriesWhere(now)] },
+          { OR: [{ communityId: null }, { community: { isPrivate: false } }] },
+        ],
       },
       orderBy: { startsAt: 'asc' },
       take: 60,
@@ -457,7 +557,11 @@ export async function listMemberCommunityEvents(userId: string): Promise<EventDT
   if (communityIds.length === 0) return [];
 
   const rows = await prisma.communityEvent.findMany({
-    where: { communityId: { in: communityIds }, canceledAt: null, startsAt: { gte: new Date() } },
+    where: {
+      communityId: { in: communityIds },
+      canceledAt: null,
+      OR: [{ startsAt: { gte: new Date() } }, activeSeriesWhere(new Date())],
+    },
     orderBy: { startsAt: 'asc' },
     take: 60,
     include: eventInclude,
@@ -490,8 +594,19 @@ export async function createEvent(input: CreateEventInput): Promise<EventDTO> {
     venueRef = assertSafeVenueUrl(venueRef);
   }
 
+  let recurrenceData: Awaited<ReturnType<typeof checkRecurrence>> | null = null;
+  if (input.recurrence) {
+    recurrenceData = await checkRecurrence(input.recurrence, {
+      communityId: input.communityId ?? null,
+      hostId: input.hostId,
+      startsAt: start,
+    });
+    if (!recurrenceData.ok) throw new EventError('INVALID_RECURRENCE');
+  }
+
   const created = await prisma.communityEvent.create({
     data: {
+      ...(recurrenceData?.ok ? recurrenceData.data : {}),
       hostId: input.hostId,
       communityId: input.communityId ?? null,
       title: input.title.trim(),
@@ -505,18 +620,35 @@ export async function createEvent(input: CreateEventInput): Promise<EventDTO> {
     select: { id: true },
   });
 
+  if (recurrenceData?.ok && recurrenceData.data.rotatingHostIds.length) {
+    notifyRotation(
+      { id: created.id, title: input.title.trim(), hostId: input.hostId },
+      recurrenceData.data.rotatingHostIds.filter((id) => id !== input.hostId),
+    );
+  }
   return (await getEvent(created.id, input.hostId))!;
 }
 
 export async function updateEvent(input: UpdateEventInput): Promise<EventDTO> {
   const event = await prisma.communityEvent.findUnique({
     where: { id: input.id },
-    select: { id: true, hostId: true, venueKind: true, startsAt: true, endsAt: true },
+    select: {
+      id: true,
+      hostId: true,
+      venueKind: true,
+      startsAt: true,
+      endsAt: true,
+      communityId: true,
+    },
   });
   if (!event) throw new EventError('NOT_FOUND');
   if (event.hostId !== input.hostId) throw new EventError('FORBIDDEN');
 
   const data: {
+    recurrence?: string | null;
+    recurTz?: string | null;
+    recurUntil?: Date | null;
+    rotatingHostIds?: string[];
     title?: string;
     description?: string;
     startsAt?: Date;
@@ -553,6 +685,21 @@ export async function updateEvent(input: UpdateEventInput): Promise<EventDTO> {
     data.venueRef = ref;
   }
   if (input.capacity !== undefined) data.capacity = input.capacity ?? null;
+
+  if (input.recurrence === null) {
+    data.recurrence = null;
+    data.recurTz = null;
+    data.recurUntil = null;
+    data.rotatingHostIds = [];
+  } else if (input.recurrence) {
+    const checked = await checkRecurrence(input.recurrence, {
+      communityId: event.communityId,
+      hostId: input.hostId,
+      startsAt: effectiveStart,
+    });
+    if (!checked.ok) throw new EventError('INVALID_RECURRENCE');
+    Object.assign(data, checked.data);
+  }
 
   await prisma.communityEvent.update({ where: { id: input.id }, data });
   return (await getEvent(input.id, input.hostId))!;
@@ -593,13 +740,43 @@ export async function rsvp(
   eventId: string,
   userId: string,
   status: RsvpStatus,
-): Promise<RsvpResult> {
+  /** K4 — only meaningful on a repeating event. */
+  opts: { everyTime?: boolean; occurrenceAt?: Date } = {},
+): Promise<RsvpResult & { occurrenceAt?: string; viewerEveryTime?: boolean }> {
   const event = await prisma.communityEvent.findUnique({
     where: { id: eventId },
-    select: { id: true, startsAt: true, capacity: true, canceledAt: true },
+    select: {
+      id: true,
+      hostId: true,
+      startsAt: true,
+      endsAt: true,
+      capacity: true,
+      canceledAt: true,
+      recurrence: true,
+      recurUntil: true,
+      recurTz: true,
+      rotatingHostIds: true,
+    },
   });
   if (!event) throw new EventError('NOT_FOUND');
   if (event.canceledAt) throw new EventError('CANCELED');
+
+  if (event.recurrence) {
+    try {
+      const done = await rsvpRecurring(event, userId, status, {
+        everyTime: !!opts.everyTime,
+        occurrenceAt: opts.occurrenceAt,
+      });
+      if (status === 'going') await scheduleEventReminders({ id: event.id, startsAt: done.at }, userId, true);
+      else await cancelEventReminders(event.id, userId, done.at);
+      return done.summary;
+    } catch (e) {
+      if (e instanceof OccurrenceError) {
+        throw new EventError(e.code === 'CAPACITY_FULL' ? 'CAPACITY_FULL' : e.code === 'CANCELED' ? 'CANCELED' : e.code === 'NOT_FOUND' ? 'NOT_FOUND' : 'INVALID_DATES');
+      }
+      throw e;
+    }
+  }
 
   await prisma.$transaction(async (tx) => {
     // Enforce capacity for 'going' (count other users already going). Best-effort
@@ -623,7 +800,36 @@ export async function rsvp(
   return summarize(eventId, userId);
 }
 
-export async function unrsvp(eventId: string, userId: string): Promise<RsvpResult> {
+export async function unrsvp(
+  eventId: string,
+  userId: string,
+  /** K4 — on a repeating event: sit out one date, or leave the series. */
+  opts: { scope?: 'occurrence' | 'all'; occurrenceAt?: Date } = {},
+): Promise<RsvpResult & { occurrenceAt?: string; viewerEveryTime?: boolean }> {
+  const series = await prisma.communityEvent.findUnique({
+    where: { id: eventId },
+    select: {
+      id: true,
+      hostId: true,
+      startsAt: true,
+      endsAt: true,
+      capacity: true,
+      recurrence: true,
+      recurUntil: true,
+      recurTz: true,
+      rotatingHostIds: true,
+    },
+  });
+  if (series?.recurrence) {
+    try {
+      const done = await unrsvpRecurring(series, userId, opts.scope ?? 'occurrence', opts.occurrenceAt);
+      await cancelEventReminders(eventId, userId, done.at);
+      return done.summary;
+    } catch (e) {
+      if (e instanceof OccurrenceError) throw new EventError(e.code === 'NOT_FOUND' ? 'NOT_FOUND' : 'INVALID_DATES');
+      throw e;
+    }
+  }
   await prisma.eventRsvp.deleteMany({ where: { eventId, userId } });
   await cancelEventReminders(eventId, userId);
   return summarize(eventId, userId);

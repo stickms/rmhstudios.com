@@ -13,7 +13,6 @@
 
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import ReactMarkdown from 'react-markdown';
 import { useTranslation } from 'react-i18next';
 import { Calendar } from 'lucide-react';
 
@@ -23,7 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { BlurImage, blurImagePreload } from '@/components/ui/BlurImage';
 import { ShareButton } from '@/components/blog/ShareButton';
 import { ArticleTakeaways } from '@/components/blog/ArticleTakeaways';
-import { markdownComponents } from '@/components/blog/MDXAnimations';
+import { ArticleBody } from '@/components/reading/ArticleBody';
 import { getPostBySlug } from '@/lib/blog';
 import { buildCanonical, buildMeta, ogCardPath, SITE_URL } from '@/lib/seo';
 import { articleSchema, jsonLdScript } from '@/lib/schema';
@@ -164,13 +163,12 @@ function BlogPost() {
             takeaways arrive. */}
         <ArticleTakeaways slug={slug} />
 
-        {/* `markdownComponents` carries all of this body's styling — the old
-            `prose prose-invert …` wrapper was inert (no typography plugin) and
-            `prose-invert` would have forced dark-theme ink on the light themes
-            if it ever became live. */}
-        <div className="max-w-none break-words">
-          <ReactMarkdown components={markdownComponents}>{post.content as string}</ReactMarkdown>
-        </div>
+        {/* `markdownComponents` (applied inside ArticleBody) carries all of this
+            body's styling — the old `prose prose-invert …` wrapper was inert (no
+            typography plugin) and `prose-invert` would have forced dark-theme ink
+            on the light themes if it ever became live. ArticleBody adds footnote
+            sidenotes, glossary links, highlights and the reading ruler. */}
+        <ArticleBody kind="blog" slug={slug} content={post.content as string} />
 
         <hr className="border-site-border" />
 

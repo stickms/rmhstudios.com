@@ -9,6 +9,8 @@ import { C2S } from '@/lib/rmhmusic/events';
 import { formatRelativeTime } from '@/lib/rmhmusic/utils';
 import MemberList from './MemberList';
 import { useTranslation } from 'react-i18next';
+import { SlowModeBar, useSlowModeBlock } from '@/components/safety/SlowModeBar';
+import { slowModeEvents } from '@/lib/safety/slow-mode-events';
 
 export default function ChatPanel() {
   const store = useRmhMusicStore();
@@ -31,9 +33,10 @@ export default function ChatPanel() {
     }
   }, [entries.length]);
 
+  const slowBlock = useSlowModeBlock('music');
   function sendMessage() {
     const content = message.trim();
-    if (!content) return;
+    if (!content || slowBlock.secondsLeft > 0) return;
     emit(C2S.ROOM_CHAT, { content });
     setMessage('');
   }
@@ -92,6 +95,11 @@ export default function ChatPanel() {
           </div>
 
           {/* Input */}
+          <SlowModeBar
+            scope="music"
+            isHost={room.hostUserId === room.myUserId}
+            onSet={(seconds) => emit(slowModeEvents('music').SET, { seconds })}
+          />
           <div className="p-3 border-t" style={{ borderColor: 'color-mix(in srgb, var(--site-text) 10%, transparent)' }}>
             <div className="flex gap-2">
               <input
@@ -106,7 +114,7 @@ export default function ChatPanel() {
               />
               <button
                 onClick={sendMessage}
-                disabled={!message.trim()}
+                disabled={!message.trim() || slowBlock.secondsLeft > 0}
                 className="p-2 rounded-lg transition-opacity disabled:opacity-30"
                 style={{ color: 'var(--site-accent)' }}
               >

@@ -4,12 +4,10 @@ import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import { createNotification } from '@/lib/notifications.server';
 import { creditCoins, debitCoins, EscrowError, recordWagerTxn } from '@/lib/wager/escrow.server';
 import { getWagerGame } from '@/lib/wager/eligible-games';
-import {
-  rakeOf,
-  TOURNAMENT_PAYOUT_SPLITS,
-  TOURNAMENT_RAKE_BPS,
-} from '@/lib/wager/constants';
+import { TOURNAMENT_RAKE_BPS } from '@/lib/wager/constants';
 import { generateBracket, resolveBracketRows } from './bracket';
+import { pairRound, recommendedRounds, type Pairing } from './swiss';
+import { computePayouts, resultsFromMatches as resultsFromRows, swissSettlement } from './swiss-flow';
 import { randomUUID } from 'node:crypto';
 
 type Db = PrismaClient;
@@ -32,7 +30,7 @@ export async function createTournament(
     createdById: string;
     name: string;
     gameId: string;
-    format: 'SINGLE_ELIM' | 'ROUND_ROBIN';
+    format: 'SINGLE_ELIM' | 'ROUND_ROBIN' | 'SWISS';
     entryFeeCoins: number;
     seedPoolCoins?: number;
     maxPlayers: number;
@@ -196,6 +194,25 @@ export async function startTournament(
 
   // Seed by join order, then build the bracket over entrant ids.
   const orderedIds = entrants.map((e) => e.id);
+  if (t.format === 'SWISS') {
+    const pairs = pairRound(orderedIds, []);
+    if (!pairs) throw new TournamentError('Could not pair the first round', 'UNPAIRABLE', 400);
+    await db.$transaction(async (tx) => {
+      for (let i = 0; i < entrants.length; i++) {
+        await tx.tournamentEntrant.update({ where: { id: entrants[i].id }, data: { seed: i + 1 } });
+      }
+      await createSwissRound(tx, t.id, 1, pairs);
+      await tx.tournament.update({
+        where: { id: t.id },
+        data: {
+          status: 'LIVE',
+          startedAt: new Date(),
+          swissRounds: Math.max(1, recommendedRounds(orderedIds.length)),
+        },
+      });
+    });
+    return;
+  }
   const bracket = generateBracket(t.format as 'SINGLE_ELIM' | 'ROUND_ROBIN', orderedIds);
 
   // Match ids are minted here rather than discovered from the database, so the
@@ -258,6 +275,66 @@ export async function startTournament(
   }
 }
 
+/** Persist one Swiss round; a bye is recorded as an already-won match. */
+async function createSwissRound(
+  tx: Prisma.TransactionClient,
+  tournamentId: string,
+  round: number,
+  pairs: readonly Pairing[],
+): Promise<void> {
+  const now = new Date();
+  await tx.tournamentMatch.createMany({
+    data: pairs.map((p, slot) => ({
+      tournamentId,
+      round,
+      slot,
+      entrantAId: p.a,
+      entrantBId: p.b,
+      state: p.b === null ? ('COMPLETE' as const) : ('READY' as const),
+      winnerEntrantId: p.b === null ? p.a : null,
+      resultSource: p.b === null ? 'bye' : null,
+      completedAt: p.b === null ? now : null,
+    })),
+  });
+  for (const p of pairs) {
+    if (p.b === null) {
+      await tx.tournamentEntrant.update({ where: { id: p.a }, data: { wins: { increment: 1 } } });
+    }
+  }
+}
+
+/**
+ * After a Swiss match settles: if the round is finished, pair the next one
+ * (server-side, from standings) or complete the event after the last round or
+ * when no rematch-free pairing remains. Safe to race: the unique
+ * (tournament, round, slot) index makes a duplicate next-round insert fail.
+ */
+async function advanceSwiss(tournamentId: string, db: Db): Promise<boolean> {
+  const t = await db.tournament.findUnique({ where: { id: tournamentId } });
+  if (!t || t.status !== 'LIVE' || t.format !== 'SWISS') return false;
+  const matches = await db.tournamentMatch.findMany({ where: { tournamentId } });
+  const current = Math.max(...matches.map((m) => m.round));
+  if (matches.some((m) => m.round === current && m.state !== 'COMPLETE')) return false;
+
+  const entrants = await db.tournamentEntrant.findMany({
+    where: { tournamentId },
+    orderBy: { seed: 'asc' },
+    select: { id: true },
+  });
+  const ids = entrants.map((e) => e.id);
+  const pairs =
+    current < (t.swissRounds ?? 1) ? pairRound(ids, resultsFromRows(matches)) : null;
+  if (pairs) {
+    try {
+      await db.$transaction((tx) => createSwissRound(tx, tournamentId, current + 1, pairs));
+    } catch (err) {
+      if ((err as { code?: string }).code !== 'P2002') throw err; // another request paired it
+    }
+    return false;
+  }
+  return maybeCompleteTournament(tournamentId, db);
+}
+
 // ─── Match settlement + bracket advance ─────────────────────────────────────
 
 async function advanceIntoNext(
@@ -291,12 +368,15 @@ export async function settleMatch(
     if (!match || match.tournamentId !== opts.tournamentId) {
       throw new TournamentError('Match not found', 'NOT_FOUND', 404);
     }
-    if (match.state === 'COMPLETE') return { settled: false, isFinal: false };
+    if (match.state === 'COMPLETE') return { settled: false, isFinal: false, swiss: false };
     const validEntrants = [match.entrantAId, match.entrantBId].filter(Boolean) as string[];
     if (!validEntrants.includes(opts.winnerEntrantId)) {
       throw new TournamentError('Winner must be in this match', 'BAD_WINNER', 400);
     }
     const loserId = validEntrants.find((e) => e !== opts.winnerEntrantId) ?? null;
+    const swiss =
+      (await tx.tournament.findUnique({ where: { id: opts.tournamentId }, select: { format: true } }))
+        ?.format === 'SWISS';
 
     await tx.tournamentMatch.update({
       where: { id: match.id },
@@ -314,16 +394,20 @@ export async function settleMatch(
     if (loserId) {
       await tx.tournamentEntrant.update({
         where: { id: loserId },
-        data: { losses: { increment: 1 }, eliminatedAt: new Date() },
+        data: swiss
+          ? { losses: { increment: 1 } }
+          : { losses: { increment: 1 }, eliminatedAt: new Date() },
       });
     }
     await advanceIntoNext(tx, match, opts.winnerEntrantId);
     const isFinal = match.nextMatchId == null;
-    return { settled: true, isFinal };
+    return { settled: true, isFinal, swiss };
   });
 
   let tournamentComplete = false;
-  if (outcome.settled && outcome.isFinal) {
+  if (outcome.settled && outcome.swiss) {
+    tournamentComplete = await advanceSwiss(opts.tournamentId, db);
+  } else if (outcome.settled && outcome.isFinal) {
     tournamentComplete = await maybeCompleteTournament(opts.tournamentId, db);
   } else if (outcome.settled) {
     // Round-robin has no "final" — check whether every match is decided.
@@ -347,34 +431,38 @@ async function maybeCompleteTournament(tournamentId: string, db: Db): Promise<bo
 
     const entrants = await tx.tournamentEntrant.findMany({ where: { tournamentId } });
 
-    // Rank entrants: round-robin by wins; single-elim by last-eliminated + wins.
-    const ranked = [...entrants].sort((a, b) => {
-      if (t.format === 'ROUND_ROBIN') {
-        if (b.wins !== a.wins) return b.wins - a.wins;
-        return a.losses - b.losses;
-      }
-      // Single-elim: the never-eliminated champion first, then by elimination
-      // time descending (later = better), then by wins.
-      const aElim = a.eliminatedAt?.getTime() ?? Infinity;
-      const bElim = b.eliminatedAt?.getTime() ?? Infinity;
-      if (aElim !== bElim) return bElim - aElim;
-      return b.wins - a.wins;
-    });
+    // Rank entrants: Swiss by standings (points, Buchholz, seed), round-robin
+    // by wins; single-elim by last-eliminated + wins.
+    let ranked = [...entrants];
+    let swissAmounts: Map<string, number> | null = null;
+    if (t.format === 'SWISS') {
+      const matches = await tx.tournamentMatch.findMany({ where: { tournamentId } });
+      const bySeed = [...entrants].sort((a, b) => (a.seed ?? 0) - (b.seed ?? 0));
+      const settlement = swissSettlement(
+        bySeed.map((e) => e.id),
+        matches,
+        t.prizePoolCoins,
+        t.rakeBps,
+      );
+      const byId = new Map(entrants.map((e) => [e.id, e]));
+      ranked = settlement.map((x) => byId.get(x.entrantId)!);
+      swissAmounts = new Map(settlement.map((x) => [x.entrantId, x.amount]));
+    } else {
+      ranked.sort((a, b) => {
+        if (t.format === 'ROUND_ROBIN') {
+          if (b.wins !== a.wins) return b.wins - a.wins;
+          return a.losses - b.losses;
+        }
+        // Single-elim: the never-eliminated champion first, then by elimination
+        // time descending (later = better), then by wins.
+        const aElim = a.eliminatedAt?.getTime() ?? Infinity;
+        const bElim = b.eliminatedAt?.getTime() ?? Infinity;
+        if (aElim !== bElim) return bElim - aElim;
+        return b.wins - a.wins;
+      });
+    }
 
-    // Payout split by entrant-count bucket (largest key <= count).
-    const count = ranked.length;
-    const bucketKey = Object.keys(TOURNAMENT_PAYOUT_SPLITS)
-      .map(Number)
-      .filter((k) => k <= count)
-      .sort((a, b) => b - a)[0];
-    const split = TOURNAMENT_PAYOUT_SPLITS[bucketKey ?? 2] ?? [10_000];
-
-    const rake = rakeOf(t.prizePoolCoins, t.rakeBps);
-    const pool = t.prizePoolCoins - rake;
-    const payouts = split.map((bps) => Math.floor((pool * bps) / 10_000));
-    // Give rounding remainder to first place.
-    const distributed = payouts.reduce((s, p) => s + p, 0);
-    if (payouts.length > 0) payouts[0] += pool - distributed;
+    const { payouts } = computePayouts(t.prizePoolCoins, t.rakeBps, ranked.length);
 
     for (let i = 0; i < ranked.length; i++) {
       const placement = i + 1;
@@ -382,7 +470,7 @@ async function maybeCompleteTournament(tournamentId: string, db: Db): Promise<bo
         where: { id: ranked[i].id },
         data: { placement },
       });
-      const amount = payouts[i] ?? 0;
+      const amount = swissAmounts ? (swissAmounts.get(ranked[i].id) ?? 0) : (payouts[i] ?? 0);
       if (amount > 0) {
         await creditCoins(tx, ranked[i].userId, amount);
         await recordWagerTxn(tx, {
@@ -557,6 +645,7 @@ export interface SerializedTournament {
   prizePoolCoins: number;
   seedPoolCoins: number;
   maxPlayers: number;
+  swissRounds: number | null;
   playerCount: number;
   createdById: string;
   startsAt: string | null;
@@ -598,6 +687,7 @@ function serializeSummary(t: Tournament & { _count: { entrants: number } }): Ser
     prizePoolCoins: t.prizePoolCoins,
     seedPoolCoins: t.seedPoolCoins,
     maxPlayers: t.maxPlayers,
+    swissRounds: t.swissRounds,
     playerCount: t._count.entrants,
     createdById: t.createdById,
     startsAt: t.startsAt?.toISOString() ?? null,

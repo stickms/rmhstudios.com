@@ -33,6 +33,7 @@ export const SLOT_KINDS = [
   'company-report',
   'season',
   'maintenance',
+  'game-night',
 ] as const;
 export type SlotKind = (typeof SLOT_KINDS)[number];
 

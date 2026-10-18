@@ -107,8 +107,8 @@ export function buildOpenApiDocument(): Record<string, unknown> {
     paths,
     components: {
       securitySchemes: {
-        bearerAuth: { type: 'http', scheme: 'bearer', description: 'Authorization: Bearer rmh_live_…' },
-        apiKeyAuth: { type: 'apiKey', in: 'header', name: 'X-API-Key', description: 'X-API-Key: rmh_live_…' },
+        bearerAuth: { type: 'http', scheme: 'bearer', description: 'Authorization: Bearer rmh_live_… (or rmh_test_… for the sandbox)' },
+        apiKeyAuth: { type: 'apiKey', in: 'header', name: 'X-API-Key', description: 'X-API-Key: rmh_live_… (or rmh_test_… for the sandbox)' },
       },
       schemas: {
         Error: {

@@ -15,6 +15,7 @@ import arCCursedLogic from "@/locales/ar/c-cursed-logic.json";
 import arCDailyPuzzles from "@/locales/ar/c-daily-puzzles.json";
 import arCDoctrine from "@/locales/ar/c-doctrine.json";
 import arCDreamRift from "@/locales/ar/c-dream-rift.json";
+import arCDunesday from "@/locales/ar/c-dunesday.json";
 import arCEconomy from "@/locales/ar/c-economy.json";
 import arCForestExplorer from "@/locales/ar/c-forest-explorer.json";
 import arCGabrielsHorn from "@/locales/ar/c-gabriels-horn.json";
@@ -113,6 +114,7 @@ const arResources = {
   "c-daily-puzzles": arCDailyPuzzles,
   "c-doctrine": arCDoctrine,
   "c-dream-rift": arCDreamRift,
+  "c-dunesday": arCDunesday,
   "c-economy": arCEconomy,
   "c-forest-explorer": arCForestExplorer,
   "c-gabriels-horn": arCGabrielsHorn,

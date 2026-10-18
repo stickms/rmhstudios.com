@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { hydratedNumberFormat } from "@/lib/access/prefs"
  
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -10,9 +11,13 @@ export function cn(...inputs: ClassValue[]) {
  * Returns "0" for zero (use a falsy guard at the call site to hide zero counts).
  */
 export function formatCount(count: number): string {
-  if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`
-  if (count >= 1_000) return `${(count / 1_000).toFixed(1)}K`
-  return String(count)
+  if (count < 1_000) return String(count)
+  const [v, suffix] = count >= 1_000_000 ? [count / 1_000_000, 'M'] : [count / 1_000, 'K']
+  // Honours the member's number-format preference (lib/access) once the first
+  // client commit is done; SSR and hydration always use the default "1.5K".
+  const nf = hydratedNumberFormat()
+  if (nf === 'auto') return `${v.toFixed(1)}${suffix}`
+  return `${new Intl.NumberFormat(nf, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(v)}${suffix}`
 }
 
 /**

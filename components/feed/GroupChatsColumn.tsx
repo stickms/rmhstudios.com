@@ -11,6 +11,7 @@ import { HandleInput } from'./HandleInput';
 import { ColumnHeader } from'./ColumnHeader';
 import { useTranslation } from'react-i18next';
 import { SearchField } from'@/components/ui/search-field';
+import { ChatFolderBar } from'@/components/chat-plus/ChatFolderBar';
 
 interface GroupRow {
  id: string;
@@ -41,9 +42,19 @@ export function GroupChatsColumn({
  const [name, setName] = useState('');
  const [members, setMembers] = useState('');
  const [query, setQuery] = useState('');
+ // M1: 'all' | 'unread' | a folder id — filtered server-side.
+ const [folder, setFolder] = useState('all');
+ const folderRef = useRef(folder);
+ folderRef.current = folder;
 
  const load = useCallback(async () => {
- const res = await fetch('/api/group-chats', { credentials:'include'});
+ const qs =
+ folderRef.current === 'all'
+ ? ''
+ : folderRef.current === 'unread'
+ ? '?filter=unread'
+ : `?folder=${encodeURIComponent(folderRef.current)}`;
+ const res = await fetch(`/api/group-chats${qs}`, { credentials:'include'});
  if (res.ok) {
  const data = await res.json();
  setGroups(data.groups ?? []);
@@ -65,6 +76,16 @@ export function GroupChatsColumn({
  active = false;
  };
  }, [load]);
+
+ // Switching folder tabs refetches that folder's list.
+ const firstFolderRun = useRef(true);
+ useEffect(() => {
+ if (firstFolderRun.current) {
+ firstFolderRun.current = false;
+ return;
+ }
+ void load();
+ }, [folder, load]);
 
  async function create() {
  setBusy(true);
@@ -155,6 +176,7 @@ export function GroupChatsColumn({
  aria-label={t('search-groups', { defaultValue:'Search groups'})}
  />
  </ColumnHeader>
+ <ChatFolderBar value={folder} onChange={setFolder} />
 
  {showForm && (
  <div className="border-b border-site-border bg-site-surface/30 p-4">
