@@ -374,6 +374,8 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   // visitor had no way to reach, competing with `/design` (the actual public
   // write-up) for the same queries. It is tooling; developers reach it by URL.
   '/liquid-glass': 'noindex',
+  // The globe-eversion harness (T26): internal tooling, admin-only, noindex.
+  '/eversion-lab': 'admin',
   '/rmh-internal-affairs': 'noindex', // internal microsite
   '/secret': 'noindex', // easter eggs — indexing them defeats the point
   // One tabletop group's scheduling board. Unlisted rather than permissioned:

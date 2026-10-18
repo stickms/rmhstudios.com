@@ -40,7 +40,26 @@ on:
   # runner cap that duplicate could queue AHEAD of deploy's `build`, delaying the
   # release. PRs are still fully gated below; main is reached only via PR, so the
   # checks have already run on the PR head. (`audit` likewise ran on the PR.)
-  workflow_dispatch: {}
+  # Nightly on main: only the `eversion-e2e` job below is MEANT for this (it
+  # catches drift in a rendering effect no PR touched — a Chromium/SwiftShader
+  # bump, a theme-token change). The other jobs run too, because a `schedule`
+  # trigger is workflow-wide and `eversion-e2e` needs `build`; a nightly full
+  # check of main is cheap and a useful canary in its own right. `schedule`
+  # always runs the default branch.
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+    inputs:
+      update-baselines:
+        description: >-
+          Eversion e2e only: run eversion-load / eversion-perf with
+          --update-baselines on this runner and upload the resulting
+          testing/e2e/baselines/*.json as the `eversion-baselines` artifact, for
+          committing. Baselines must come from a CI runner (a laptop's numbers
+          would fail every run here) and from a production build. See
+          docs/testing.md.
+        type: boolean
+        default: false
 
 # Newer pushes to the same ref cancel older in-progress runs.
 concurrency:
@@ -238,3 +257,278 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Production dependency audit
         run: pnpm audit --prod --audit-level=high
+
+  # ── eversion-e2e (globe eversion, spec §11.4; tasks T16) ──────────────────
+  #
+  # The rendering/integration/perf gates (S#25-S#46) run in a real browser
+  # against the BUILT app, so they cannot live in `pnpm test`. This is the one
+  # place they run. Two jobs:
+  #
+  #   • `eversion-changes` decides whether this PR touches anything the effect
+  #     depends on. It is a job, not a `paths:` filter, because the workflow
+  #     already uses `paths-ignore` and GitHub does not allow both; and a
+  #     job-level `if` is what makes the e2e job genuinely SKIPPED (no runner,
+  #     no Chromium download) on an unrelated PR.
+  #   • `eversion-e2e` builds, serves, and runs every
+  #     `testing/e2e/eversion-*.mjs`.
+  #
+  # NON-BLOCKING for now (`continue-on-error`): a brand-new browser gate on
+  # SwiftShader needs a few weeks of runs before its thresholds are trusted.
+  # T37 removes that line and makes it blocking.
+  eversion-changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      run: ${{ steps.filter.outputs.run }}
+    steps:
+      # depth 2: on a PR the checkout is the merge commit, whose first parent is
+      # the base — `HEAD^1..HEAD` is exactly the PR's change.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+      - name: Does this change touch the eversion?
+        id: filter
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          # Nightly and manual runs always go.
+          if [ "$EVENT" != "pull_request" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed=$(git diff --name-only HEAD^1 HEAD)
+          echo "$changed"
+          # Only what the effect actually depends on. Deliberately NOT all of
+          # `app/routes/`, `stores/` or `locales/en/` (a 40-minute job for every
+          # route, store or English-string change); the specific files are listed.
+          #   • code and styles: the effect, the hub/shell it lives in, the settings row
+          #     and the preference API/schema that persist its setting, the theme
+          #     store, the perf tier and render governor it reads, the glass layer;
+          #   • tests and baselines: this job's own scripts and committed baselines;
+          #   • build inputs: the lockfile and package.json (modern-screenshot,
+          #     playwright, vite bumps), the Vite config, the bundle-budget script;
+          #   • strings: the two namespaces the effect's UI uses.
+          if echo "$changed" | grep -Eq '^(lib/eversion/|components/radial/|app/globals\.css$|app/routes/eversion-lab\.tsx$|app/routes/api/preferences/appearance\.ts$|testing/e2e/eversion|testing/e2e/lib/|testing/e2e/baselines/|stores/themeStore|lib/appearance/|lib/perf-tier|lib/render/|components/settings/AppearancePanel|components/ui/liquid-|locales/en/(feed|settings-appearance)\.json$|prisma/schema\.prisma$|package\.json$|pnpm-lock\.yaml$|vite\.config\.[cm]?[jt]s$|scripts/check-bundle-budget|\.github/workflows/web-ci\.yml$)'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  eversion-e2e:
+    needs: [build, eversion-changes]
+    if: needs.eversion-changes.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    continue-on-error: true
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
+      # What a RUNNING server reads and the build/test jobs get away without:
+      # the Prisma pool and the Better Auth secret.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rmh
+      BETTER_AUTH_SECRET: ci-eversion-e2e-not-a-real-secret-0000000000
+      BETTER_AUTH_URL: http://localhost:7005
+      PORT: '7005'
+      BASE_URL: http://localhost:7005
+      # Screencasts, diffs and the server log land here
+      # (testing/e2e/lib/eversion-session.mjs#ARTIFACT_DIR).
+      EVERSION_ARTIFACT_DIR: ${{ github.workspace }}/eversion-artifacts
+    services:
+      postgres:
+        # pgvector's image for the same reason as prisma-migrate-status.yml: the
+        # migration history needs the extension to replay.
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: rmh
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 10
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.21.0
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      # `needs: build` orders and short-circuits (a broken build skips this) but
+      # does not hand over its output — the build job uploads nothing, and an
+      # artefact round-trip of .output would tax EVERY PR to benefit the few that
+      # run this. So build here. WITH sourcemaps: the bundle-attribution checks
+      # (S#39's static-closure scan) read `.map` files to name the modules in a
+      # chunk, and without them they pass vacuously; the maps do not change the
+      # emitted code, so the e2e still runs the shipped shape.
+      - name: Restore image variants
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: public/images/_variants
+          key: image-variants-${{ runner.os }}-${{ hashFiles('public/images/**', 'scripts/gen-image-variants.ts', 'pnpm-lock.yaml') }}
+          restore-keys: |
+            image-variants-${{ runner.os }}-
+      - name: Build
+        run: pnpm run build:frontend:sourcemap
+      - name: Migrate database
+        run: pnpm exec prisma migrate deploy
+      # Chromium for the harness. Sandbox images that pin a browser forbid this;
+      # a runner needs it (`resolveChromiumPath` falls back to Playwright's own
+      # when /opt/pw-browsers is absent).
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Start the built server
+        run: |
+          mkdir -p "$EVERSION_ARTIFACT_DIR"
+          nohup node .output/server/index.mjs > "$EVERSION_ARTIFACT_DIR/server.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/server.pid"
+          for i in $(seq 1 60); do
+            if curl -fsS -o /dev/null "$BASE_URL/"; then echo "server up after ${i}s"; exit 0; fi
+            sleep 1
+          done
+          echo "server did not come up"
+          tail -50 "$EVERSION_ARTIFACT_DIR/server.log"
+          exit 1
+      # Every eversion-*.mjs, in name order, each to completion — a failure in
+      # one must not hide the others — then a single verdict. `nullglob` plus the
+      # length check is the empty-glob guard: with no script yet the pattern
+      # would otherwise reach `node` as a literal and fail for the wrong reason.
+      #
+      # Two exclusions from the glob, both on purpose:
+      #   • `eversion-lab.mjs` needs the dev-only `EVERSION_LAB_OPEN` route, which a
+      #     production build ignores - against this server it can only fail.
+      #   • `eversion-hub.mjs` runs below, once per profile x theme, because the
+      #     hub's chrome is what differs between them.
+      #   • `eversion-smoothness*.mjs` renders deterministic stills in the lab, so it
+      #     needs the same dev-only route; it has its own step below, against a dev server.
+      # S#40's and S#43's baselines must already be committed: a missing one FAILS
+      # here (`CI=true`). They are never written by an ordinary run; the manual
+      # `update-baselines` dispatch is the one way to produce them (below).
+      #
+      # `continue-on-error` hides a red job from the PR's checks, so every script's
+      # verdict is also written to the job summary (GITHUB_STEP_SUMMARY) and each
+      # failure raised as an `::error::` annotation. Nobody should learn that the
+      # nightly went red by accident.
+      - name: Run eversion e2e scripts
+        env:
+          CI: 'true'
+          UPDATE_BASELINES: ${{ inputs.update-baselines && '1' || '' }}
+        run: |
+          shopt -s nullglob
+          all=(testing/e2e/eversion-*.mjs)
+          scripts=()
+          for s in "${all[@]}"; do
+            case "$s" in
+              */eversion-lab.mjs|*/eversion-hub.mjs|*/eversion-smoothness.mjs|*/eversion-smoothness-screencast.mjs) ;;
+              *) scripts+=("$s") ;;
+            esac
+          done
+          if [ ${#scripts[@]} -eq 0 ]; then
+            echo "no testing/e2e/eversion-*.mjs scripts yet — nothing to run"
+            exit 0
+          fi
+          # Only these two accept --update-baselines; passing it to the rest is harmless
+          # but would hide what a refresh run is for.
+          if [ -n "$UPDATE_BASELINES" ]; then
+            scripts=(testing/e2e/eversion-load.mjs testing/e2e/eversion-perf.mjs)
+            echo "update-baselines: refreshing baselines on this runner"
+          fi
+          failed=()
+          passed=()
+          {
+            echo "### Eversion e2e"
+            echo
+            echo "_This job is non-blocking (\`continue-on-error\`): a red row here does not fail the PR check. Look at it._"
+            echo
+            echo "| script | result |"
+            echo "| --- | --- |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          record() { echo "| \`$1\` | $2 |" >> "$GITHUB_STEP_SUMMARY"; }
+          for s in "${scripts[@]}"; do
+            echo "::group::$s"
+            extra=()
+            [ -n "$UPDATE_BASELINES" ] && extra=(--update-baselines)
+            if node "$s" "${extra[@]}"; then
+              echo "PASS $s"; passed+=("$s"); record "$s" "PASS"
+            else
+              echo "FAIL $s"; failed+=("$s"); record "$s" "**FAIL**"
+              echo "::error title=eversion e2e::$s failed"
+            fi
+            echo "::endgroup::"
+          done
+          if [ -f testing/e2e/eversion-hub.mjs ] && [ -z "$UPDATE_BASELINES" ]; then
+            for profile in desktop mobile; do
+              for theme in dark light high-contrast; do
+                echo "::group::eversion-hub.mjs $profile/$theme"
+                if PROFILE="$profile" THEME="$theme" node testing/e2e/eversion-hub.mjs; then
+                  echo "PASS eversion-hub $profile/$theme"; record "eversion-hub $profile/$theme" "PASS"
+                else
+                  echo "FAIL eversion-hub $profile/$theme"; failed+=("eversion-hub:$profile/$theme")
+                  record "eversion-hub $profile/$theme" "**FAIL**"
+                  echo "::error title=eversion e2e::eversion-hub $profile/$theme failed"
+                fi
+                echo "::endgroup::"
+              done
+            done
+          fi
+          {
+            echo
+            echo "${#passed[@]} script(s) passed, ${#failed[@]} failed."
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ ${#failed[@]} -ne 0 ]; then
+            echo "::error::failed: ${failed[*]}"
+            exit 1
+          fi
+      # S#31/S#32 (smoothness, photosensitivity): deterministic stills of the timeline
+      # scrubbed in the lab, so the verdict does not depend on how fast this runner draws.
+      # The lab route is dev-only (a production build ignores EVERSION_LAB_OPEN), hence
+      # a throwaway dev server on its own port. The dummy keys exist because the homes
+      # image module constructs a client at import time.
+      - name: Eversion smoothness (deterministic stills)
+        if: ${{ !inputs.update-baselines }}
+        env:
+          EVERSION_LAB_OPEN: '1'
+          XAI_API_KEY: ci-not-a-key
+          OPENAI_API_KEY: ci-not-a-key
+        run: |
+          nohup pnpm exec vite dev --port 7371 --strictPort --host 127.0.0.1 > "$EVERSION_ARTIFACT_DIR/vite-dev.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/vite-dev.pid"
+          for i in $(seq 1 90); do
+            if curl -fsS -o /dev/null "http://127.0.0.1:7371/eversion-lab"; then echo "dev server up after ${i}s"; break; fi
+            sleep 1
+          done
+          if BASE_URL=http://127.0.0.1:7371 node testing/e2e/eversion-smoothness.mjs --quick; then
+            echo "| \`eversion-smoothness.mjs --quick\` | PASS |" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "| \`eversion-smoothness.mjs --quick\` | **FAIL** |" >> "$GITHUB_STEP_SUMMARY"
+            echo "::error title=eversion e2e::eversion-smoothness failed"
+            kill "$(cat "$RUNNER_TEMP/vite-dev.pid")" 2>/dev/null || true
+            exit 1
+          fi
+          kill "$(cat "$RUNNER_TEMP/vite-dev.pid")" 2>/dev/null || true
+      # The refreshed baselines, for committing. Runs even when a script failed
+      # (a refresh run on a dev branch may fail other gates); only with the input.
+      - name: Upload refreshed baselines
+        if: always() && inputs.update-baselines
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: eversion-baselines
+          path: testing/e2e/baselines/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Stop the server
+        if: always()
+        run: kill "$(cat "$RUNNER_TEMP/server.pid")" 2>/dev/null || true
+      # Only on failure: the screencast frames and diff images a human needs to
+      # see WHY a smoothness or parity gate tripped, plus the server log.
+      - name: Upload artefacts
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: eversion-e2e-artefacts
+          path: ${{ env.EVERSION_ARTIFACT_DIR }}
+          if-no-files-found: ignore
+          retention-days: 7

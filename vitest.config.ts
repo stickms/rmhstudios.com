@@ -54,6 +54,10 @@ export default defineConfig({
       '**/.output/**',
       '**/.tanstack/**',
       '**/coverage/**',
+      // Claude Code agent worktrees (gitignored) are full checkouts of other
+      // branches. Collected, they run a second, stale copy of the whole suite
+      // and fail the commit gate for code that is not in this tree.
+      '.claude/worktrees/**',
       // The epic (book/textbook) content-build pipeline launches Chromium and
       // needs 60s timeouts, so it is its own suite: `pnpm test:epic`
       // (vitest.epic.config.ts), gated by .github/workflows/epic-tests.yml.

@@ -9,6 +9,7 @@ export default function FoolsPill({ onOff }: { onOff: () => void }) {
   return (
     <div
       role="status"
+      data-floating="feature-overlay"
       className="glass-overlay fixed inset-x-0 top-3 z-30 mx-auto flex w-fit max-w-[calc(100vw-2rem)] items-center gap-2 rounded-site px-3 py-1.5 text-sm text-site-text"
     >
       <span>{t('fools-on', { defaultValue: 'April Fools mode is on' })}</span>

@@ -47,6 +47,9 @@ const SKIP_DIRS = new Set([
   '.cache',
   'coverage',
   '.vite',
+  // Agent worktrees (`.claude/worktrees/`, gitignored) are other checkouts —
+  // excluded from `vitest.config.ts` for the same reason.
+  '.claude',
 ]);
 
 /** Every `*.test.ts(x)` on disk, repo-relative and POSIX-separated. */

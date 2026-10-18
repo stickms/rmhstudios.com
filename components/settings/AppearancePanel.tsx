@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { toast } from 'sonner';
@@ -9,6 +9,10 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Select } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { isEversionEnabled } from '@/lib/eversion/flags';
 import { useThemeStore } from '@/stores/themeStore';
 import {
   FONT_SCALES,
@@ -18,6 +22,9 @@ import {
   COLOR_VISION_HINTS,
   type FontScale,
   type ColorVisionMode,
+  type NavTransition,
+  NAV_TRANSITIONS,
+  isNavTransition,
 } from '@/lib/appearance/prefs';
 import { ensureReadableAccent } from '@/lib/appearance/contrast';
 import { TiltEffectsRow } from '@/components/settings/TiltEffectsRow';
@@ -68,6 +75,14 @@ export function AppearancePanel() {
   function setColorVision(value: ColorVisionMode) {
     store.setColorVision(value);
     void persist({ colorVision: value });
+  }
+  function setNavTransition(value: NavTransition) {
+    store.setNavTransition(value);
+    void persist({ navTransition: value });
+  }
+  function setAlwaysEvertGlobe(value: boolean) {
+    store.setAlwaysEvertGlobe(value);
+    void persist({ alwaysEvertGlobe: value });
   }
   function applyCustomAccent(hex: string) {
     if (!HEX_RE.test(hex)) return;
@@ -257,6 +272,8 @@ export function AppearancePanel() {
           checked={store.reduceMotion}
           onChange={setReduceMotion}
         />
+        <NavTransitionRow value={store.navTransition} onChange={setNavTransition} />
+        <AlwaysEvertRow checked={store.alwaysEvertGlobe} onChange={setAlwaysEvertGlobe} />
         {/* Tilt effects (§5.5x C.3): only renders on platforms that gate device
             orientation behind a permission prompt (iOS). Self-contained consent. */}
         <TiltEffectsRow />
@@ -317,11 +334,13 @@ function ToggleRow({
   description,
   checked,
   onChange,
+  disabled,
 }: {
   label: string;
   description?: string;
   checked: boolean;
   onChange: (v: boolean) => void;
+  disabled?: boolean;
 }) {
   return (
     <label className="flex items-center justify-between gap-4 py-2.5">
@@ -331,7 +350,160 @@ function ToggleRow({
           <span className="block text-xs text-site-text-muted">{description}</span>
         ) : null}
       </span>
-      <Switch checked={checked} onCheckedChange={onChange} />
+      <Switch checked={checked} onCheckedChange={onChange} disabled={disabled} />
     </label>
+  );
+}
+
+/**
+ * The event the Preview button dispatches on `window` (spec §9.3). The eversion
+ * controller does not exist yet (T31/T32), and this panel must not import the
+ * heavy effect graph just to start a preview, so the contract is an event: T32
+ * listens for it in the hub and calls `EversionController.preview()`. Until a
+ * listener exists, dispatching it is a harmless no-op.
+ */
+const EVERSION_PREVIEW_EVENT = 'rmh:eversion-preview';
+
+/**
+ * "Navigation transition" (spec §9.3): which projection the globe eversion uses
+ * between pages, or `random`. Reduced motion replaces the effect with a plain
+ * crossfade, so the row is disabled with a hint rather than hidden — hiding it
+ * would make the setting undiscoverable the day reduced motion is switched off.
+ *
+ * Descriptions sit under the select for the CURRENT choice instead of inside
+ * the option rows: the closed control must stay one line on a phone, and the
+ * description is what a user is deciding by.
+ */
+function NavTransitionRow({
+  value,
+  onChange,
+}: {
+  value: NavTransition;
+  onChange: (v: NavTransition) => void;
+}) {
+  const { t } = useTranslation('settings-appearance');
+  const reduced = useReducedMotion();
+  // The flag reads `location`, which does not exist during SSR; resolve after
+  // mount so the server and first client render agree (no row, no Preview). While
+  // the rollout flag is off the whole row is hidden: a control that changes
+  // nothing the visitor can see is worse than no control.
+  const [enabled, setEnabled] = useState(false);
+  useEffect(() => setEnabled(isEversionEnabled()), []);
+
+  const names: Record<NavTransition, string> = {
+    random: t('nav-transition-random', { defaultValue: 'Random' }),
+    mercator: t('nav-transition-mercator', { defaultValue: 'Mercator' }),
+    peirce: t('nav-transition-peirce', { defaultValue: 'Peirce quincuncial' }),
+    stereographic: t('nav-transition-stereographic', { defaultValue: 'Stereographic' }),
+    lambert: t('nav-transition-lambert', { defaultValue: 'Lambert azimuthal' }),
+    equirect: t('nav-transition-equirect', { defaultValue: 'Equirectangular' }),
+  };
+  const descriptions: Record<NavTransition, string> = {
+    random: t('nav-transition-random-desc', {
+      defaultValue: 'A different map each time, never the same twice in a row.',
+    }),
+    mercator: t('nav-transition-mercator-desc', {
+      defaultValue: 'The familiar wall-map unrolling, stretched toward the poles.',
+    }),
+    peirce: t('nav-transition-peirce-desc', {
+      defaultValue: 'The globe folds out into a square that tiles.',
+    }),
+    stereographic: t('nav-transition-stereographic-desc', {
+      defaultValue: 'The globe flattens from one pole outward into a disc.',
+    }),
+    lambert: t('nav-transition-lambert-desc', {
+      defaultValue: 'An equal-area disc centred on the page you are leaving.',
+    }),
+    equirect: t('nav-transition-equirect-desc', {
+      defaultValue: 'A plain grid of latitude and longitude, the simplest unrolling.',
+    }),
+  };
+
+  if (!enabled) return null;
+
+  return (
+    <div className="py-2.5">
+      <div className="flex items-center justify-between gap-4">
+        <Label htmlFor="nav-transition" className="min-w-0 text-sm text-site-text">
+          {t('nav-transition', { defaultValue: 'Navigation transition' })}
+        </Label>
+        <Select
+          id="nav-transition"
+          containerClassName="w-48 shrink-0"
+          value={value}
+          disabled={reduced}
+          aria-describedby="nav-transition-hint"
+          onChange={(e) => {
+            if (isNavTransition(e.target.value)) onChange(e.target.value);
+          }}
+        >
+          {NAV_TRANSITIONS.map((id) => (
+            <option key={id} value={id}>
+              {names[id]}
+            </option>
+          ))}
+        </Select>
+      </div>
+      <p id="nav-transition-hint" className="mt-1 text-xs text-site-text-muted">
+        {reduced
+          ? t('nav-transition-reduced-off', {
+              defaultValue:
+                'Reduced motion is on, so this transition is switched off and pages change as usual.',
+            })
+          : descriptions[value]}
+      </p>
+      {enabled ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="mt-2"
+          disabled={reduced}
+          onClick={() => window.dispatchEvent(new CustomEvent(EVERSION_PREVIEW_EVENT))}
+        >
+          {t('nav-transition-preview', { defaultValue: 'Preview' })}
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * "Always evert globe": force the globe transition on devices where it is
+ * normally skipped to keep navigation fast (a hub released before the page
+ * picture or the renderer is ready, say). Reduced motion always wins, so the
+ * switch is disabled with the reason in its description rather than hidden, and
+ * like the transition picker it is hidden while the rollout flag is off.
+ */
+function AlwaysEvertRow({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  const { t } = useTranslation('settings-appearance');
+  const reduced = useReducedMotion();
+  const [enabled, setEnabled] = useState(false);
+  useEffect(() => setEnabled(isEversionEnabled()), []);
+  if (!enabled) return null;
+  return (
+    <ToggleRow
+      label={t('always-evert-globe', { defaultValue: 'Always evert globe' })}
+      description={
+        reduced
+          ? t('always-evert-globe-reduced-off', {
+              defaultValue:
+                'Reduced motion is on, so the globe transition stays off and pages change as usual.',
+            })
+          : t('always-evert-globe-desc', {
+              defaultValue:
+                'Play the globe transition even on devices where it is normally skipped to keep navigation fast. It may feel slower there. Reduced motion still turns it off.',
+            })
+      }
+      checked={checked}
+      onChange={onChange}
+      disabled={reduced}
+    />
   );
 }

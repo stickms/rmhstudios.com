@@ -51,6 +51,7 @@ export function TargetedNoticeBanner() {
   return (
     <aside
       role="status"
+      data-floating="feature-overlay"
       className="glass-overlay fixed inset-x-4 bottom-4 z-40 mx-auto flex max-w-md items-start gap-3 rounded-site p-4 md:left-auto md:right-4"
     >
       <div className="min-w-0 flex-1 space-y-1">
