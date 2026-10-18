@@ -12,7 +12,7 @@ import {
 } from '@/lib/arcade/seeded';
 
 /** A daily attempt that has been open longer than this is not a real run. */
-const MAX_ATTEMPT_MS = 3 * 60 * 60 * 1000;
+export const MAX_ATTEMPT_MS = 3 * 60 * 60 * 1000;
 
 export interface BoardRow {
   rank: number;
@@ -21,8 +21,8 @@ export interface BoardRow {
   user: ReturnType<typeof resolveUser>;
 }
 
-async function board(
-  kind: 'daily' | 'seed',
+export async function board(
+  kind: 'daily' | 'seed' | 'basket',
   gameId: string,
   seedKey: string,
   take: number,

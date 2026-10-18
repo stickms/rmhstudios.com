@@ -65,6 +65,8 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   // it is one viewer's own dashboard — see EXCLUDED_ROUTES.)
   { loc: '/games', changefreq: 'weekly', priority: 0.9 },
   { loc: '/daily-mutator', changefreq: 'daily', priority: 0.6 },
+  { loc: '/connections', changefreq: 'daily', priority: 0.5 },
+  { loc: '/rmhbox-packs', changefreq: 'weekly', priority: 0.4 },
   { loc: '/apps', changefreq: 'weekly', priority: 0.9 },
   { loc: '/create', changefreq: 'daily', priority: 0.8 },
   { loc: '/create/builds', changefreq: 'daily', priority: 0.7 },
@@ -234,6 +236,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/create/earnings': 'personal', // the viewer's own coins, views and payouts
   '/bookmarks': 'redirect', // → /saves
   '/drafts': 'personal',
+  '/connections/new': 'personal', // signed-in authoring form
   '/out': 'noindex', // link-warning interstitial; the destination rides in ?url=
   '/safety/pile-on': 'personal', // the author's one-tap notice from a notification
   '/history': 'personal',
@@ -517,6 +520,8 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/tag/$tag': null, // unbounded tag space; crawlable via posts, not listed
   '/groups/$id': null, // membership-scoped
   '/spaces/$id': null, // live audio room, gone when it ends
+  '/controller/$code': null, // a phone pad paired to one live game screen
+  '/connections/u/$id': null, // member-made grids: unbounded user content, reached from /connections
   '/wager/$id': null, // settles and becomes stale within a day
   '/lists/$id': null, // personal
   '/messages/$conversationId': null, // personal

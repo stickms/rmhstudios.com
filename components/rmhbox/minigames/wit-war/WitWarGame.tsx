@@ -27,6 +27,7 @@ import WritingPhase from './WritingPhase';
 import VotingPhase from './VotingPhase';
 import MatchupResult from './MatchupResult';
 import WitWarResults from './WitWarResults';
+import AudienceBanner from './AudienceBanner';
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -96,6 +97,9 @@ export default function WitWarGame({ playerId }: MinigameProps) {
   const [roundMatchups, setRoundMatchups] = useState<MatchupData[]>([]);
 
   const players = useRMHboxStore((s) => s.lobby?.players);
+  // R1: viewers beyond the player cap are spectators; their votes are one aggregated "audience" vote.
+  const isAudience = useRMHboxStore((s) => s.lobby?.myRole === 'spectator');
+  const [audienceCount, setAudienceCount] = useState(0);
 
   const handleGameAction = useCallback(
     (data: Record<string, unknown>) => {
@@ -178,6 +182,7 @@ export default function WitWarGame({ playerId }: MinigameProps) {
           setIsAuthor(payload.playerA === playerId || payload.playerB === playerId);
           setMyVote(null);
           setVoteCount(0);
+          setAudienceCount(0);
           setTotalVoters(Math.max((players?.length ?? 0) - 2, 1));
           playSound('swoosh');
           break;
@@ -191,6 +196,12 @@ export default function WitWarGame({ playerId }: MinigameProps) {
           };
           setVoteCount(payload.voteCount);
           setTotalVoters(payload.totalVoters);
+          break;
+        }
+
+        case 'WW_AUDIENCE_COUNT': {
+          const payload = data.payload as { count: number };
+          setAudienceCount(payload.count);
           break;
         }
 
@@ -316,10 +327,11 @@ export default function WitWarGame({ playerId }: MinigameProps) {
   }, []);
 
   const handleCastVote = useCallback((votedForUserId: string) => {
-    emitGameInput('WW_CAST_VOTE', { matchupIndex, votedForUserId });
+    emitGameInput(isAudience ? 'AUDIENCE_VOTE' : 'WW_CAST_VOTE', { matchupIndex, votedForUserId });
+    // Audience members may change their pick (server caps the changes); players lock in.
     setMyVote(votedForUserId);
     playSound('click');
-  }, [matchupIndex]);
+  }, [matchupIndex, isAudience]);
 
   return (
     <div className="flex flex-col items-center w-full max-w-2xl mx-auto px-4">
@@ -368,6 +380,7 @@ export default function WitWarGame({ playerId }: MinigameProps) {
             exit={{ opacity: 0, y: -20 }}
             className="w-full"
           >
+            {isAudience ? <AudienceBanner count={audienceCount} /> : null}
             <VotingPhase
               matchup={currentMatchup}
               matchupIndex={matchupIndex}

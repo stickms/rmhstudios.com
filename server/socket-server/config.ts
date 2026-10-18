@@ -45,6 +45,10 @@ export const config = {
     'space:end': { max: 10, windowMs: 60_000 },
     'safety:slowmode:space:set': { max: 20, windowMs: 60_000 },
     'safety:slowmode:music:set': { max: 20, windowMs: 60_000 },
+    // Phone-as-controller (E3): input is a few events/second per held button
+    'controller:host': { max: 10, windowMs: 60_000 },
+    'controller:join': { max: 20, windowMs: 60_000 },
+    'controller:input': { max: 400, windowMs: 10_000 },
     'party:create': { max: 10, windowMs: 60_000 },
     'party:invite': { max: 20, windowMs: 60_000 },
     'party:accept': { max: 20, windowMs: 60_000 },

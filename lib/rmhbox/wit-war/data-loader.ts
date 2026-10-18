@@ -28,8 +28,9 @@ export function loadPrompts(): string[] {
 export function selectRoundPrompts(
   count: number,
   usedIndices: Set<number>,
+  pool?: string[],
 ): Array<{ index: number; text: string }> {
-  const all = loadPrompts();
+  const all = pool ?? loadPrompts();
   const available = all
     .map((text, index) => ({ index, text }))
     .filter(({ index }) => !usedIndices.has(index));

@@ -16,6 +16,7 @@ import { useDreamRift } from '@/lib/dream-rift/store';
 import { useGameSession } from '@/hooks/useGameSession';
 import { useRuntime } from './runtime';
 import { MobileControls } from './MobileControls';
+import { PhoneControllerHost } from '@/components/party/PhoneControllerHost';
 import { DialogueOverlay, PauseOverlay, StageBanner } from './Overlays';
 
 export interface StartInfo {
@@ -113,6 +114,7 @@ export function GameStage({ start, onExit }: { start: StartInfo; onExit: () => v
             <DialogueOverlay />
             {paused && <PauseOverlay onResume={() => useDreamRift.getState().setPaused(false)} onQuit={onExit} />}
             <MobileControls input={input} />
+            <PhoneControllerHost sink={input} />
         </div>
     );
 }

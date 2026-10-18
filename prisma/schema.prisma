@@ -447,6 +447,11 @@ model User {
   pf2eSettingsEdits   Pf2eSettings[]        @relation("Pf2eSettingsEditor")
 
   // ─── Feature ideas 2026-10-12 (docs/plans/2026-10-12-feature-ideas-every-surface.md)
+  // P24 party: R2 rmhbox packs, R15 connections grids
+  rmhboxPacks                RmhboxPack[]
+  rmhboxPackReports          RmhboxPackReport[]
+  connectionsGrids           ConnectionsGrid[]
+  connectionsPlays           ConnectionsPlay[]
   // P23 creative: F12 studio challenge entries and votes
   studioChallengeEntries     StudioChallengeEntry[]
   studioChallengeVotes       StudioChallengeVote[]
@@ -12278,4 +12283,88 @@ model PostCodeEmbed {
   post RMHark @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@map("post_code_embed")
+}
+
+// ── P24 party: R2 rmhbox packs, R15 connections grids ──
+
+// Member-authored prompt pack for a prompt-based RMHbox minigame (wit-war).
+// Played by entering `code` in the lobby's game settings.
+model RmhboxPack {
+  id          String   @id @default(cuid())
+  code        String   @unique @db.VarChar(6)
+  ownerId     String
+  name        String   @db.VarChar(60)
+  game        String   @default("wit-war") @db.VarChar(24)
+  prompts     Json
+  promptCount Int
+  featured    Boolean  @default(false)
+  hidden      Boolean  @default(false)
+  reportCount Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  owner   User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  reports RmhboxPackReport[]
+
+  @@index([ownerId, createdAt])
+  @@index([hidden, featured, createdAt])
+  @@map("rmhbox_pack")
+}
+
+model RmhboxPackReport {
+  id         String   @id @default(cuid())
+  packId     String
+  reporterId String
+  reason     String   @db.VarChar(200)
+  createdAt  DateTime @default(now())
+
+  pack     RmhboxPack @relation(fields: [packId], references: [id], onDelete: Cascade)
+  reporter User       @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@unique([packId, reporterId])
+  @@index([reporterId])
+  @@map("rmhbox_pack_report")
+}
+
+// A member-authored 4x4 Connections grid: groups = [{ label, items: [4] }] x 4.
+// Counters are denormalised so the list never aggregates plays. dailyDate is the
+// UTC day (YYYY-MM-DD) an admin scheduled this grid as the daily.
+model ConnectionsGrid {
+  id          String   @id @default(cuid())
+  authorId    String
+  title       String   @db.VarChar(80)
+  groups      Json
+  playCount   Int      @default(0)
+  solveCount  Int      @default(0)
+  ratingSum   Int      @default(0)
+  ratingCount Int      @default(0)
+  dailyDate   String?  @unique @db.VarChar(10)
+  hidden      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  author User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  plays  ConnectionsPlay[]
+
+  @@index([authorId, createdAt])
+  @@index([hidden, createdAt])
+  @@map("connections_grid")
+}
+
+// One play per member per grid. found = indices of the groups solved so far;
+// status active | solved | failed (4 mistakes). Guesses are checked server-side.
+model ConnectionsPlay {
+  id        String   @id @default(cuid())
+  gridId    String
+  userId    String
+  found     Json     @default("[]")
+  mistakes  Int      @default(0)
+  status    String   @default("active") @db.VarChar(8)
+  rating    Int?
+  updatedAt DateTime @updatedAt
+
+  grid ConnectionsGrid @relation(fields: [gridId], references: [id], onDelete: Cascade)
+  user User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([gridId, userId])
+  @@index([userId])
+  @@map("connections_play")
 }

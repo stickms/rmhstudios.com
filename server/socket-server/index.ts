@@ -85,6 +85,7 @@ import { registerSpacesHandlers, handleSpacesDisconnect } from './handlers/space
 import { registerPartyHandlers, handlePartyDisconnect } from './handlers/party';
 import { registerMatchmakingHandlers, handleMatchmakingDisconnect } from './handlers/matchmaking';
 import { registerCallHandlers, handleCallDisconnect } from './handlers/call';
+import { registerControllerHandlers, handleControllerDisconnect } from './handlers/controller';
 
 // ─── Startup validation ─────────────────────────────────────────
 
@@ -523,6 +524,7 @@ io.on('connection', (socket) => {
   registerPartyHandlers(io, socket);
   registerMatchmakingHandlers(io, socket);
   registerCallHandlers(io, socket);
+  registerControllerHandlers(io, socket);
 
   // Disconnect cleanup
   socket.on('disconnect', (reason) => {
@@ -532,6 +534,7 @@ io.on('connection', (socket) => {
     handlePartyDisconnect(io, socket);
     handleMatchmakingDisconnect(socket);
     void handleCallDisconnect(io, socket);
+    handleControllerDisconnect(io, socket);
     handleSynapseStormDisconnect(io, socket);
     handleSliceItDisconnect(io, socket);
     handleNeonDriftwayDisconnect(io, socket);
