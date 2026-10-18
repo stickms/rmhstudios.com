@@ -1201,3 +1201,40 @@
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(3px); }
 }
+
+/* ── Training room panel ── */
+.kk-training-panel {
+  position: absolute;
+  top: 72px;
+  left: 8px;
+  width: min(236px, calc(100vw - 16px));
+  max-height: calc(100% - 96px);
+  overflow-y: auto;
+  padding: 8px 10px;
+  background: rgba(5, 0, 16, 0.78);
+  border: 1px solid #33ccff55;
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 9px;
+  line-height: 1.5;
+}
+.kk-training-panel h2 { color: var(--neon-blue); font-size: 10px; letter-spacing: 2px; margin: 0 0 6px; }
+.kk-training-panel h3 { color: var(--neon-yellow); font-size: 8px; letter-spacing: 1px; margin: 6px 0 2px; }
+.kk-training-panel dl { display: grid; grid-template-columns: auto 1fr; gap: 0 10px; margin: 0; }
+.kk-training-panel dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.kk-training-panel p { margin: 0; }
+.kk-train-held { font-size: 14px; color: var(--neon-green); }
+.kk-train-history { color: var(--text-dim); word-break: break-word; }
+.kk-train-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.kk-train-row button {
+  font: inherit;
+  min-height: 28px;
+  padding: 2px 8px;
+  color: var(--neon-blue);
+  background: transparent;
+  border: 1px solid var(--neon-blue);
+  border-radius: 3px;
+  cursor: pointer;
+}
+.kk-train-row button:disabled { opacity: 0.35; cursor: default; }
+.kk-train-row button[aria-pressed='true'] { background: #33ccff33; box-shadow: 0 0 8px #33ccff; }

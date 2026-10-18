@@ -35,6 +35,7 @@ import { useCloudSave } from '@/hooks/useCloudSave';
 import { useLobbyInvite } from '@/hooks/useLobbyLink';
 import { NeonDriftwayEngine } from '@/lib/neon-driftway/game';
 import { NeonDriftwayRenderer3D } from '@/lib/neon-driftway/renderer3d';
+import { getLivery, isCustomLivery, subscribeLivery } from '@/lib/neon-driftway/livery';
 import { GyroTracker, gyroPermissionGateExists, type GyroStatus } from '@/lib/neon-driftway/gyro';
 import { detectHeadset } from '@/lib/neon-driftway/headset';
 import {
@@ -305,6 +306,12 @@ export function NeonDriftwayGame() {
     rendererRef.current = renderer;
     renderer.setLevel(LEVELS[gameRef.current.levelId]);
     renderer.setStereo(stereoRef.current);
+    const applyLivery = () => {
+      const l = getLivery();
+      renderer.setLivery(isCustomLivery(l) ? l : null);
+    };
+    applyLivery();
+    const offLivery = subscribeLivery(applyLivery);
 
     const applySize = () => {
       const rect = container.getBoundingClientRect();
@@ -336,6 +343,7 @@ export function NeonDriftwayGame() {
       canvas.removeEventListener('webglcontextlost', onLost);
       canvas.removeEventListener('webglcontextrestored', onRestored);
       rendererRef.current = null;
+      offLivery();
       renderer.dispose();
     };
   }, [webglReady, reducedMotion, rendererEpoch]);

@@ -3,6 +3,7 @@
 import { m as motion } from 'framer-motion';
 import { useBreakpointStore } from '@/lib/breakpoint/store';
 import { getAgent, ROLE_LABEL } from '@/lib/breakpoint/agents';
+import { AimRangeButton } from './AimRange';
 
 export function MainMenu() {
   const setPhase = useBreakpointStore((s) => s.setPhase);
@@ -64,6 +65,8 @@ export function MainMenu() {
           <button className="bp-cta bp-cta-ghost" onClick={practice}>
             {mode === 'zombies' ? 'PLAY ZOMBIES (SOLO)' : 'PRACTICE VS BOTS'}
           </button>
+
+          <AimRangeButton />
         </div>
 
         <div className="bp-menu-foot">

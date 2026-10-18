@@ -95,7 +95,7 @@ function CharCard({ id, selected, onClick }: { id: PlayerId; selected: boolean; 
 
 // ─── Title ───
 
-export function TitleScreen({ onSingle, onMulti, onLeaderboard, onSettings }: { onSingle: () => void; onMulti: () => void; onLeaderboard: () => void; onSettings: () => void }) {
+export function TitleScreen({ onSingle, onMulti, onLeaderboard, onSettings, extra }: { onSingle: () => void; onMulti: () => void; onLeaderboard: () => void; onSettings: () => void; extra?: React.ReactNode }) {
     const { music, sfx } = useRuntime();
     const [showHelp, setShowHelp] = useState(false);
     useEffect(() => {
@@ -143,6 +143,7 @@ export function TitleScreen({ onSingle, onMulti, onLeaderboard, onSettings }: { 
                 <div className="dr-rise" style={stagger(4)}>
                     <Btn variant="ghost" onClick={() => { sfx.play('menuMove'); onLeaderboard(); }} className="w-full">Leaderboard</Btn>
                 </div>
+                {extra && <div className="dr-rise" style={stagger(4)}>{extra}</div>}
                 <div className="dr-rise flex gap-3" style={stagger(5)}>
                     <Btn variant="ghost" onClick={() => { sfx.play('menuMove'); onSettings(); }} className="flex-1">Settings</Btn>
                     <Btn variant="ghost" onClick={() => { sfx.play('menuMove'); setShowHelp(true); }} className="flex-1">How to Play</Btn>

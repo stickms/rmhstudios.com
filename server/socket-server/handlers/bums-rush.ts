@@ -40,6 +40,7 @@ import {
 } from '../party-contract';
 import { BR_C2S, BR_S2C, DEFAULT_ASSISTS, DEFAULT_COSMETICS, NET, NET_LIMITS } from '../../../lib/bums-rush/constants';
 import { isValidCosmetics } from '../../../lib/bums-rush/cosmetics';
+import { anyModifier, type PartyModifiers } from '../../../lib/bums-rush/modifiers';
 import type {
   Assists,
   Cosmetics,
@@ -151,6 +152,7 @@ interface BRRoom {
   isPrivate: boolean;
   hostSocketId: string;
   levelId: string | null;
+  modifiers?: PartyModifiers;
   phase: Phase;
   seats: Map<SeatIndex, BRSeat>;
   clients: Map<string, BRClient>;
@@ -258,6 +260,7 @@ function roomView(room: BRRoom): RoomView {
     private: room.isPrivate,
     hostClientId: room.hostSocketId,
     levelId: room.levelId,
+    ...(room.modifiers ? { modifiers: room.modifiers } : {}),
     phase: room.phase,
     seats: seatViews(room),
     ...(room.showdown ? { showdown: { ...room.showdown, scores: [...room.showdown.scores] } } : {}),
@@ -342,6 +345,7 @@ function createRoom(options: {
   pendingHostUserId: string | null;
   ranked?: boolean;
   teams?: boolean;
+  modifiers?: PartyModifiers;
 }): BRRoom | null {
   if (rooms.size >= MAX_ROOMS) return null;
   const code = uniqueCode();
@@ -354,6 +358,8 @@ function createRoom(options: {
     isPrivate: options.isPrivate,
     hostSocketId: options.hostSocketId,
     levelId: options.levelId,
+    // Party modifiers exist only in unranked rooms.
+    modifiers: options.ranked === true || !anyModifier(options.modifiers) ? undefined : options.modifiers,
     phase: 'lobby',
     seats: new Map(),
     clients: new Map(),
@@ -707,6 +713,7 @@ export function registerBumsRushHandlers(io: Server, socket: Socket): void {
       pendingHostUserId: null,
       ranked: data.ranked,
       teams: data.teams,
+      modifiers: data.modifiers,
     });
     if (!room) return fail(socket, 'server-busy', BR_C2S.CREATE_ROOM);
 
@@ -1131,6 +1138,12 @@ export function registerBumsRushHandlers(io: Server, socket: Socket): void {
       // ids) need the level manifest, which the hub deliberately does not load
       // — `verifyResult` applies them when the persistence route passes them in.
     });
+
+    // Modified rules are never ranked, whatever the host reports.
+    if (anyModifier(room.modifiers) && verdict.ranked) {
+      verdict.ranked = false;
+      verdict.reasons.push('party-modifiers');
+    }
 
     room.phase = 'results';
     broadcastRoom(io, room);

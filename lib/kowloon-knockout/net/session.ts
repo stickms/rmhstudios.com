@@ -16,6 +16,7 @@ import {
 import { CLASS_DISPLAY, CLASS_STATS } from '@/lib/kowloon-knockout/game/fighters/stats';
 import { createWorld, stepWorld } from '@/lib/kowloon-knockout/game/world';
 import type { MatchConfig } from '@/lib/kowloon-knockout/game/config';
+import { TrainingController } from '@/lib/kowloon-knockout/game/training';
 import { LocalInputSource } from '@/lib/kowloon-knockout/game/input';
 import { actionProgress } from '@/lib/kowloon-knockout/game/combat/actionProgress';
 import { networkClient, type ServerMessage, type MatchSeat } from './client';
@@ -93,6 +94,8 @@ export interface GameSession {
     getHud(): HudState;
     drainFx(): GameEvent[];
     onResult(cb: (winnerSeat: number | null) => void): void;
+    /** Present only in the training room. */
+    readonly training?: TrainingController;
 }
 
 function buildSeatInfo(seat: number, className: FighterClass, team: number, name: string, isLocal: boolean): SeatInfo {
@@ -143,6 +146,7 @@ class FxState {
 // ── Authoritative session (local single-player & multiplayer host) ─────
 class SimSession implements GameSession {
     readonly localSeat: number;
+    readonly training?: TrainingController;
     private world: WorldState;
     private seats = new Map<number, SeatInfo>();
     private input: LocalInputSource | null = null;
@@ -168,13 +172,17 @@ class SimSession implements GameSession {
         if (cmd.punch) r.pendingPunch = cmd.punch;
     };
 
-    constructor(config: MatchConfig, isHost: boolean) {
+    constructor(config: MatchConfig, isHost: boolean, training = false) {
         this.world = createWorld(config);
         this.isHost = isHost;
         for (const s of config.seats) {
             this.seats.set(s.seat, buildSeatInfo(s.seat, s.className, this.world.fighters.find(f => f.seat === s.seat)!.team, s.displayName, s.kind === 'human-local'));
         }
         this.localSeat = config.seats.find(s => s.kind === 'human-local')?.seat ?? 0;
+        if (training) {
+            const dummy = config.seats.find(s => s.kind !== 'human-local')?.seat ?? 1;
+            this.training = new TrainingController(this.localSeat, dummy);
+        }
     }
 
     setInputSource(src: LocalInputSource): void { this.input = src; }
@@ -239,7 +247,9 @@ class SimSession implements GameSession {
             }
         }
 
+        this.training?.beforeStep(this.world, inputs);
         stepWorld(this.world, inputs);
+        this.training?.afterStep(this.world);
 
         if (this.world.events.length) {
             this.fx.ingest(this.world.events, (seat) => this.seats.get(seat)?.accent ?? '#ffcc00');
@@ -497,6 +507,9 @@ class GuestSession implements GameSession {
 // ── Factory ───────────────────────────────────────────────────────────
 export function createLocalSession(config: MatchConfig): GameSession {
     return new SimSession(config, false);
+}
+export function createTrainingSession(config: MatchConfig): GameSession {
+    return new SimSession(config, false, true);
 }
 export function createHostSession(config: MatchConfig): GameSession {
     return new SimSession(config, true);

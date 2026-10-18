@@ -23,6 +23,8 @@ import { GameStage, type StartInfo } from './GameStage';
 import { TitleScreen, CharacterSelect, LobbyBrowser, LobbyRoom } from './Menus';
 import { ResultScreen } from './Results';
 import { Leaderboard } from './Leaderboard';
+import { PracticeEntry, SpellPracticeMenu } from './SpellPractice';
+import { recordAttempt, type PracticeOutcome, type PracticeTarget } from '@/lib/dream-rift/practice';
 import { SettingsScreen } from './SettingsScreen';
 import { planRun, useArcadeRun } from '@/lib/arcade/run-client';
 import { ChallengeNotice } from '@/components/arcade/ChallengeNotice';
@@ -48,6 +50,7 @@ function ScreenRouter() {
     const session = useSession();
 
     const [startInfo, setStartInfo] = useState<StartInfo | null>(null);
+    const [lastPractice, setLastPractice] = useState<PracticeOutcome | null>(null);
 
     // multiplayer: server tells us when the run begins
     useEffect(() => {
@@ -99,17 +102,46 @@ function ScreenRouter() {
         [session.data?.user, setMode, setResult, setScreen],
     );
 
+    const startPractice = useCallback(
+        (target: PracticeTarget) => {
+            const { selectedChar, difficulty } = useDreamRift.getState();
+            setStartInfo({
+                transport: new LocalTransport(),
+                roster: [{ slot: 0, userId: session.data?.user?.id || 'local', name: session.data?.user?.name || 'Dreamer', charId: selectedChar, isHost: true, isLocal: true }],
+                difficulty,
+                seed: randomSeed(),
+                practice: {
+                    ...target,
+                    onEnd: (o) => {
+                        recordAttempt(o);
+                        setLastPractice(o);
+                        setStartInfo(null);
+                        setScreen('practice');
+                    },
+                },
+            });
+            setMode('single');
+            setResult(null);
+            useDreamRift.getState().setPaused(false);
+            setScreen('playing');
+        },
+        [session.data?.user, setMode, setResult, setScreen],
+    );
+
     const exitToMenu = useCallback(() => {
+        const wasPractice = !!startInfo?.practice;
         setStartInfo(null);
         setResult(null);
         useDreamRift.getState().setPaused(false);
-        if (mode === 'multi') {
+        if (wasPractice) {
+            setScreen('practice');
+        } else if (mode === 'multi') {
             leaveLobby();
             setScreen('lobby-browser');
         } else {
             setScreen('title');
         }
-    }, [mode, setResult, setScreen]);
+    }, [mode, startInfo, setResult, setScreen]);
 
     const retry = useCallback(() => {
         setResult(null);
@@ -154,6 +186,9 @@ function ScreenRouter() {
         case 'leaderboard':
             body = <Leaderboard onBack={() => setScreen(mode === 'multi' ? 'lobby-browser' : 'title')} />;
             break;
+        case 'practice':
+            body = <SpellPracticeMenu onStart={startPractice} onBack={() => setScreen('title')} last={lastPractice} />;
+            break;
         case 'settings':
             body = <SettingsScreen onBack={() => setScreen('title')} />;
             break;
@@ -164,6 +199,7 @@ function ScreenRouter() {
                     onMulti={() => { setMode('multi'); setScreen('lobby-browser'); }}
                     onLeaderboard={() => setScreen('leaderboard')}
                     onSettings={() => setScreen('settings')}
+                    extra={<PracticeEntry onOpen={() => setScreen('practice')} />}
                 />
             );
     }

@@ -41,8 +41,9 @@ import {
   LANE_WIDTH, SHOULDER_WIDTH, GUARDRAIL_HEIGHT,
   MAX_OBSTACLES, MAX_PARTICLES, METRES_PER_DISTANCE,
   MPS_PER_UNIT, V_MAX_BOOST, V_MAX_NORMAL, BOOST_MAX,
-  STEER_MAX_LATERAL, roadHalf,
+  STEER_MAX_LATERAL, roadHalf, CAR_BODY_COLOR,
 } from './constants';
+import { drawLivery, type Livery } from './livery';
 
 // ── Framing ─────────────────────────────────────────────────────────────────
 
@@ -194,6 +195,9 @@ export class NeonDriftwayRenderer3D {
   // Cockpit parts that animate
   private steeringWheel = new THREE.Group();
   private hood!: THREE.Mesh;
+  private wheelBoss!: THREE.Mesh;
+  private liveryTexture: THREE.CanvasTexture | null = null;
+  private livery: Livery | null = null;
 
   // Ghost cars
   private ghosts: { group: THREE.Group; label: THREE.Sprite; body: THREE.Mesh }[] = [];
@@ -257,6 +261,32 @@ export class NeonDriftwayRenderer3D {
   }
 
   // ── Public API ────────────────────────────────────────────────────────────
+
+  /** Paint the bonnet and wheel hub with a livery; `null` restores the stock car. */
+  setLivery(livery: Livery | null): void {
+    this.livery = livery;
+    const mat = this.hood.material as THREE.MeshStandardMaterial;
+    const boss = this.wheelBoss.material as THREE.MeshBasicMaterial;
+    this.liveryTexture?.dispose();
+    this.liveryTexture = null;
+    if (!livery) {
+      mat.map = null;
+      mat.color.set(CAR_BODY_COLOR);
+      boss.color.set(0x00d5ff);
+    } else {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      if (ctx) drawLivery(ctx, 256, livery);
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      this.liveryTexture = tex;
+      mat.map = tex;
+      mat.color.set(0xffffff);
+      boss.color.set(`#${livery.accent1}`);
+    }
+    mat.needsUpdate = true;
+  }
 
   /** Re-dress the scene for a level. Cheap enough to call on every run. */
   setLevel(level: LevelConfig): void {
@@ -407,6 +437,7 @@ export class NeonDriftwayRenderer3D {
     for (const texture of this.ghostLabelCache.values()) texture.dispose();
     this.ghostLabelCache.clear();
     this.roadTexture?.dispose();
+    this.liveryTexture?.dispose();
     this.envTarget?.dispose();
     this.pmrem?.dispose();
     this.composer?.dispose();
@@ -566,7 +597,7 @@ export class NeonDriftwayRenderer3D {
     // Wheel turns much further than the car leans — it reads as driver input.
     const steerNorm = clamp(car.vx / STEER_MAX_LATERAL, -1, 1);
     this.steeringWheel.rotation.z = -steerNorm * 2.2;
-    (this.hood.material as THREE.MeshStandardMaterial).color.set(car.bodyColor);
+    if (!this.livery) (this.hood.material as THREE.MeshStandardMaterial).color.set(car.bodyColor);
   }
 
   private updateRoad(game: NeonDriftwayEngine): void {
@@ -1755,6 +1786,7 @@ export class NeonDriftwayRenderer3D {
       new THREE.MeshBasicMaterial({ color: 0x00d5ff }),
     );
     boss.position.z = -0.014;
+    this.wheelBoss = boss;
     this.steeringWheel.add(boss);
     this.steeringWheel.position.set(EYE_X, 0.72, -0.72);
     this.steeringWheel.rotation.x = 1.1;

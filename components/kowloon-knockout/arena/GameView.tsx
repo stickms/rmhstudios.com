@@ -8,12 +8,13 @@ import { useGameStore } from '@/lib/kowloon-knockout/store';
 import { useIsMobile } from '@/lib/studio/hooks/useIsMobile';
 import { LocalInputSource } from '@/lib/kowloon-knockout/game/input';
 import {
-    createLocalSession, createHostSession, createGuestSession,
+    createLocalSession, createTrainingSession, createHostSession, createGuestSession,
     type GameSession, type HudState,
 } from '@/lib/kowloon-knockout/net/session';
 import Arena3D from './Arena3D';
 import HUD from '@/components/kowloon-knockout/HUD';
 import MobileControls from '@/components/kowloon-knockout/MobileControls';
+import { TrainingPanel, TrainingOverlay } from '@/components/kowloon-knockout/TrainingRoom';
 
 // Register the three/webgpu material/object catalogue with R3F before any
 // arena JSX mounts.
@@ -47,6 +48,7 @@ export default function GameView() {
         let s: GameSession;
         if (runtime.kind === 'guest') s = createGuestSession(runtime.seats, runtime.localSeat, runtime.mode);
         else if (runtime.kind === 'host') s = createHostSession(runtime.config);
+        else if (runtime.training) s = createTrainingSession(runtime.config);
         else s = createLocalSession(runtime.config);
 
         s.setInputSource(src);
@@ -96,9 +98,11 @@ export default function GameView() {
                 camera={{ position: [0, 9, 15], fov: 50, near: 0.1, far: 120 }}
             >
                 {session && <Arena3D session={session} seatIds={seatIds} />}
+                {session?.training && <TrainingOverlay session={session} />}
             </Canvas>
 
             {hud && <HUD hud={hud} />}
+            {session?.training && <TrainingPanel training={session.training} />}
             {isMobile && input && <MobileControls input={input} />}
 
             {!isMobile && (

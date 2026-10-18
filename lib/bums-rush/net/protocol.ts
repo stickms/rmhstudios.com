@@ -136,6 +136,8 @@ export const zCreateRoom = z.object({
   /** Showdown only; ignored elsewhere. */
   ranked: z.boolean().optional(),
   teams: z.boolean().optional(),
+  /** Party modifiers; the hub drops them on a ranked Showdown. */
+  modifiers: z.object({ lowGravity: z.boolean(), stickyHands: z.boolean(), giantHeads: z.boolean() }).optional(),
 });
 export type CreateRoomMsg = z.infer<typeof zCreateRoom>;
 

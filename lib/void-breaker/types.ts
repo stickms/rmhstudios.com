@@ -199,6 +199,10 @@ export interface RunStats {
   timeSurvivedMs: number;
   detonations: number;
   bossesKilled: number;
+  /** Boss Rush run (scored on its own board, no cores, never the main board). */
+  bossRush?: boolean;
+  /** Final wave cleared alive. */
+  victory?: boolean;
   maxCombo: number;
   focusUsed: number;
   /** Upgrades acquired this run, for the game-over build summary. */
