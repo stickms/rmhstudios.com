@@ -14,9 +14,9 @@
 //
 // ## Why readiness is polled, not slept
 //
-// The runner only waits HOST_READY_TIMEOUT_MS (600 ms) for the render host at
-// release and BEFORE_GRACE_MS (250 ms) for the held capture, and falls back to
-// today's navigation when either misses. Under software GL on a shared core
+// The runner waits a bounded HOST_READY_TIMEOUT_MS for the render host at
+// release and BEFORE_WAIT_MS for the BEFORE picture, and falls back to today's
+// navigation when either misses. Under software GL on a shared core
 // that is routine on a cold page, and a fallback is correct behaviour the suites
 // must not mistake for a failure of the thing they test. So `openHub` waits for
 // the `beforeCapture` debug slot to say a bitmap is held when the page was
