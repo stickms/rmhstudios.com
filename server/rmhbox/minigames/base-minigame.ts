@@ -215,6 +215,11 @@ export abstract class BaseMinigame {
     // Default no-op — subclasses override for join-in-progress support
   }
 
+  /** Audience (spectator) vote. Default: ignored; games with a voting phase override. */
+  handleAudienceVote(_userId: string, _data: unknown): void {
+    // Default no-op
+  }
+
   /**
    * Called when a player disconnects mid-game.
    * Default: mark as inactive. Subclasses can override for game-specific behavior.

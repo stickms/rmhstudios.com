@@ -17,6 +17,8 @@ import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useLaundryStore } from '@/lib/laundry-sort/store';
 import { RunPanel } from '@/components/arcade/RunPanel';
+import { BasketPanel } from '@/components/arcade/BasketPanel';
+import { useArcadeRun } from '@/lib/arcade/run-client';
 import { useSession } from '@/components/Providers';
 import { laundryNet } from '@/lib/laundry-sort/net/client';
 
@@ -37,6 +39,7 @@ export function ResultsPanel({
   const lobby = useLaundryStore((s) => s.lobby);
   const { data: session } = useSession();
   const signedIn = Boolean(session?.user?.id);
+  const arcadeRun = useArcadeRun((s) => s.run);
 
   const isVersus = mode === 'versus' && results !== null;
 
@@ -138,11 +141,24 @@ export function ResultsPanel({
                   })}
                 </p>
               ) : null}
-              <RunPanel
-                score={soloResult.stats.score}
-                detail={{ sorted: soloResult.stats.sorted }}
-                signedIn={signedIn}
-              />
+              {arcadeRun?.kind === 'basket' ? (
+                <BasketPanel
+                  score={soloResult.stats.score}
+                  stats={{
+                    sorted: soloResult.stats.sorted,
+                    wrong: soloResult.stats.wrong,
+                    missed: soloResult.stats.missed,
+                    bestCombo: soloResult.stats.bestCombo,
+                  }}
+                  signedIn={signedIn}
+                />
+              ) : (
+                <RunPanel
+                  score={soloResult.stats.score}
+                  detail={{ sorted: soloResult.stats.sorted }}
+                  signedIn={signedIn}
+                />
+              )}
             </div>
           ) : null}
 

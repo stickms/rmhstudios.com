@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 853 files across 188 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 864 files across 189 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -184,12 +184,15 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/arcade`
 
-9 routes.
+12 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/arcade` | `GET` | `app/routes/api/arcade/index.ts` |
 | `/api/arcade/backlog` | `DELETE` `GET` `PUT` | `app/routes/api/arcade/backlog/index.ts` |
+| `/api/arcade/basket` | `GET` | `app/routes/api/arcade/basket/index.ts` |
+| `/api/arcade/basket/finish` | `POST` | `app/routes/api/arcade/basket/finish.ts` |
+| `/api/arcade/basket/start` | `POST` | `app/routes/api/arcade/basket/start.ts` |
 | `/api/arcade/claim` | `POST` | `app/routes/api/arcade/claim.ts` |
 | `/api/arcade/daily` | `GET` | `app/routes/api/arcade/daily/index.ts` |
 | `/api/arcade/daily/start` | `POST` | `app/routes/api/arcade/daily/start.ts` |
@@ -463,6 +466,18 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/community-pages` | `GET` `POST` | `app/routes/api/community-pages/index.ts` |
 | `/api/community-pages/:id` | `DELETE` `PATCH` | `app/routes/api/community-pages/$id.ts` |
 | `/api/community-pages/:id/revisions` | `GET` `POST` | `app/routes/api/community-pages/$id.revisions.ts` |
+
+## `/api/connections`
+
+5 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/connections/grids` | `GET` `POST` | `app/routes/api/connections/grids/index.ts` |
+| `/api/connections/grids/:id` | `DELETE` `GET` | `app/routes/api/connections/grids/$id.ts` |
+| `/api/connections/grids/:id/guess` | `POST` | `app/routes/api/connections/grids/$id.guess.ts` |
+| `/api/connections/grids/:id/rate` | `POST` | `app/routes/api/connections/grids/$id.rate.ts` |
+| `/api/connections/grids/:id/schedule` | `POST` | `app/routes/api/connections/grids/$id.schedule.ts` |
 
 ## `/api/context-notes`
 
@@ -1554,12 +1569,15 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/rmhbox`
 
-3 routes.
+6 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/rmhbox/history` | `GET` | `app/routes/api/rmhbox/history.ts` |
 | `/api/rmhbox/leaderboard` | `GET` | `app/routes/api/rmhbox/leaderboard.ts` |
+| `/api/rmhbox/packs` | `GET` `POST` | `app/routes/api/rmhbox/packs/index.ts` |
+| `/api/rmhbox/packs/:id` | `DELETE` `PATCH` | `app/routes/api/rmhbox/packs/$id.ts` |
+| `/api/rmhbox/packs/:id/report` | `POST` | `app/routes/api/rmhbox/packs/$id.report.ts` |
 | `/api/rmhbox/stats` | `GET` | `app/routes/api/rmhbox/stats.ts` |
 
 ## `/api/rmhcalculator`

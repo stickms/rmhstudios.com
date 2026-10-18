@@ -56,6 +56,12 @@ function validateSingleSetting(def: GameSettingDef, value: unknown): boolean | n
       return value;
     }
 
+    case 'text': {
+      if (typeof value !== 'string') return def.default;
+      // Alphanumeric only (pack codes), trimmed to the cap.
+      return value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, def.maxLength ?? 16);
+    }
+
     default:
       return def.default;
   }

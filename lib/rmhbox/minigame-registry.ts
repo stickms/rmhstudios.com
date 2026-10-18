@@ -74,6 +74,7 @@ export const WIT_WAR_SETTINGS: GameSettingsSchema = [
   { key: 'totalRounds', type: 'integer', label: 'Number of Rounds', description: 'How many rounds of prompt matchups to play', default: WW_TOTAL_ROUNDS, min: 1, max: 3, step: 1 },
   { key: 'writingDuration', type: 'integer', label: 'Writing Duration (seconds)', description: 'Time players have to write answers to their prompts', default: WW_WRITING_DURATION, min: 30, max: 120, step: 10 },
   { key: 'votingDuration', type: 'integer', label: 'Voting Duration (seconds)', description: 'Time to vote on each head-to-head matchup', default: WW_VOTING_DURATION, min: 10, max: 30, step: 5 },
+  { key: 'packCode', type: 'text', label: 'Custom Prompt Pack', description: 'Optional 6-character community pack code (leave empty for the built-in prompts)', default: '', maxLength: 6 },
 ];
 
 export const FACT_OR_FRICTION_SETTINGS: GameSettingsSchema = [

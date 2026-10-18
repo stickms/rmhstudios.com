@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { findModifier, isSeededGame, seedKeyOf, type SeededGameId } from '@/lib/arcade/seeded';
 
 export interface RunPlan {
-  kind: 'free' | 'seed' | 'daily';
+  kind: 'free' | 'seed' | 'daily' | 'basket';
   gameId: SeededGameId;
   seed: number;
   variant: string;
@@ -19,7 +19,11 @@ export const useArcadeRun = create<{ run: RunPlan | null; set: (r: RunPlan | nul
   }),
 );
 
-type Pending = { kind: 'seed'; seed: number; variant: string } | { kind: 'daily' } | null;
+type Pending =
+  | { kind: 'seed'; seed: number; variant: string }
+  | { kind: 'daily' }
+  | { kind: 'basket' }
+  | null;
 let pending: Pending | undefined;
 
 /** Read `?seed=&v=` / `?daily=1` once per page load. */
@@ -29,6 +33,7 @@ export function readPending(): Pending {
   if (typeof window === 'undefined') return pending;
   const q = new URLSearchParams(window.location.search);
   if (q.get('daily') === '1') pending = { kind: 'daily' };
+  else if (q.get('basket') === '1') pending = { kind: 'basket' };
   else {
     const seed = Number(q.get('seed'));
     const v = q.get('v');
@@ -36,6 +41,11 @@ export function readPending(): Pending {
       pending = { kind: 'seed', seed, variant: v };
   }
   return pending;
+}
+
+/** Arm today's Laundry Sort basket for the next solo run (consumed by `planRun`). */
+export function armBasket(): void {
+  pending = { kind: 'basket' };
 }
 
 export const freeSeed = () => (Math.random() * 0xffffffff) >>> 0 || 1;
@@ -68,6 +78,29 @@ export async function planRun(gameId: string, currentVariant: string): Promise<R
         options: mod.options,
         counted: false,
       };
+  } else if (p?.kind === 'basket') {
+    pending = null; // one-shot: "Play again" afterwards is a free run
+    if (gameId === 'laundry-sort') {
+      try {
+        const res = await fetch('/api/arcade/basket/start', { method: 'POST' });
+        if (res.ok) {
+          const d = (await res.json()) as {
+            counted: boolean;
+            basket: { day: string; seed: number; options: Record<string, string | number> };
+          };
+          plan = {
+            kind: 'basket',
+            gameId,
+            seed: d.basket.seed,
+            variant: d.basket.day,
+            options: d.basket.options,
+            counted: d.counted,
+          };
+        }
+      } catch {
+        /* falls through to a free run */
+      }
+    }
   } else if (p?.kind === 'daily') {
     try {
       const res = await fetch('/api/arcade/daily/start', { method: 'POST' });

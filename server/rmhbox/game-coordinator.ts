@@ -501,8 +501,17 @@ export class GameCoordinator {
     if (!lobby || lobby.id !== payload.lobbyId) return;
     if (lobby.state !== 'PLAYING' || !lobby.currentGame) return;
 
-    // Spectator input gating (§5.2) — silently drop
-    if (!lobby.players.has(userId)) return;
+    // Spectator input gating (§5.2) — only AUDIENCE_VOTE passes (aggregated by the game)
+    if (!lobby.players.has(userId)) {
+      if (payload.action === 'AUDIENCE_VOTE' && lobby.spectators.has(userId)) {
+        try {
+          lobby.currentGame.handler.handleAudienceVote(userId, payload.data);
+        } catch (err) {
+          logger.error({ event: 'audience_vote_error', lobbyId: lobby.id, userId, error: String(err) });
+        }
+      }
+      return;
+    }
 
     try {
       lobby.currentGame.handler.handleInput(userId, payload.action, payload.data);

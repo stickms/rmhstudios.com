@@ -304,6 +304,16 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'Not-found branch of a thread permalink.',
   },
+  '/controller/$code': {
+    path: '/controller/FOUC00',
+    fidelity: 'shell',
+    why: 'Pad page with no live pairing: renders the not-found state.',
+  },
+  '/connections/u/$id': {
+    path: '/connections/u/fouc-audit',
+    fidelity: 'shell',
+    why: 'Not-found branch of a user-made Connections grid.',
+  },
   '/jams/$slug': {
     path: '/jams/fouc-audit',
     fidelity: 'shell',
