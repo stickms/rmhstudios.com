@@ -9,6 +9,7 @@ import {
   useMemo,
 } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { setSharedQueryClient } from '@/lib/query-client-ref';
 import { useLocation, useRouterState } from '@tanstack/react-router';
 import { MotionConfig, LazyMotion } from 'framer-motion';
 import { Toaster } from 'sonner';
@@ -38,6 +39,7 @@ import {
   GLASS_LEVEL_KEY,
   COLOR_VISION_KEY,
   NAV_TRANSITION_KEY,
+  ALWAYS_EVERT_GLOBE_KEY,
   isNavTransition,
   isGlassLevel,
   applyGlassLevel,
@@ -295,6 +297,12 @@ export function Providers({
 }: ProvidersProps) {
   // Per-request/per-mount QueryClient (perf audit §4.3) — see makeQueryClient.
   const [queryClient] = useState(makeQueryClient);
+  // Lets the globe eversion's AFTER readiness gate ask whether the destination still has queries
+  // loading (lib/query-client-ref.ts: a variable and a type, nothing to bundle).
+  useEffect(() => {
+    setSharedQueryClient(queryClient);
+    return () => setSharedQueryClient(null);
+  }, [queryClient]);
   const session = authClient.useSession();
   const style = useThemeStore((s) => s.style);
   const preview = useThemeStore((s) => s.preview);
@@ -308,6 +316,7 @@ export function Providers({
   const reduceMotion = useThemeStore((s) => s.reduceMotion);
   const colorVision = useThemeStore((s) => s.colorVision);
   const navTransition = useThemeStore((s) => s.navTransition);
+  const alwaysEvertGlobe = useThemeStore((s) => s.alwaysEvertGlobe);
   const userTheme = useThemeStore((s) => s.userTheme);
   const userThemePreview = useThemeStore((s) => s.userThemePreview);
   const { pathname } = useLocation();
@@ -596,6 +605,7 @@ export function Providers({
     if (isColorVisionMode(cv)) st.setColorVision(cv);
     const nt = localStorage.getItem(NAV_TRANSITION_KEY);
     if (isNavTransition(nt)) st.setNavTransition(nt);
+    if (localStorage.getItem(ALWAYS_EVERT_GLOBE_KEY) === '1') st.setAlwaysEvertGlobe(true);
     // Marketplace user theme (§14): the no-flash script already painted it; hydrate
     // the store so the runtime effect keeps it applied and can clear it on removal.
     try {
@@ -712,6 +722,8 @@ export function Providers({
     // read it synchronously; 'random' is the default, expressed by absence.
     if (navTransition !== 'random') localStorage.setItem(NAV_TRANSITION_KEY, navTransition);
     else localStorage.removeItem(NAV_TRANSITION_KEY);
+    if (alwaysEvertGlobe) localStorage.setItem(ALWAYS_EVERT_GLOBE_KEY, '1');
+    else localStorage.removeItem(ALWAYS_EVERT_GLOBE_KEY);
     // Custom accent (raw hex) overrides the preset accent applied just above.
     if (customAccent && HEX_RE.test(customAccent) && !isAppRoute) {
       const { hex, fg } = ensureReadableAccent(customAccent);
@@ -764,6 +776,7 @@ export function Providers({
     reduceMotion,
     colorVision,
     navTransition,
+    alwaysEvertGlobe,
     userTheme,
     userThemePreview,
   ]);
@@ -874,6 +887,7 @@ export function Providers({
             glassLevel?: number | null;
             colorVision?: string | null;
             navTransition?: string | null;
+            alwaysEvertGlobe?: boolean | null;
           };
           if ([875, 1000, 1125, 1250].includes(Number(r.fontScale)))
             store.setFontScale(Number(r.fontScale));
@@ -884,6 +898,8 @@ export function Providers({
             store.setCustomAccent(r.customAccent);
           if (isColorVisionMode(r.colorVision)) store.setColorVision(r.colorVision);
           if (isNavTransition(r.navTransition)) store.setNavTransition(r.navTransition);
+          if (typeof r.alwaysEvertGlobe === 'boolean')
+            store.setAlwaysEvertGlobe(r.alwaysEvertGlobe);
           // Glass clarity (§5.46): the account stop wins; otherwise map a legacy
           // reduce-transparency flag to stop 0 (Opaque). glassLevel is authoritative
           // for the reduce-transparency class going forward.

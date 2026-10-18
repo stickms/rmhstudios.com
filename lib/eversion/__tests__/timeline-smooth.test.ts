@@ -459,7 +459,7 @@ describe('post-gate spin landing (finding 4)', () => {
         events.push(...h.tl.events());
         if (Math.abs(sampled(h.tl, 'spin', h.wall.now)[1]!) > 0) lastMoving = t;
         const snap = h.tl.tick(h.wall.now);
-        if (snap.stage === 'unwrap-done') h.tl.reveal(h.wall.now);
+        if (snap.stage === 'uncover') h.tl.reveal(h.wall.now);
       });
       const at = (s: string) => events.find((e) => e.stage === s)!.t;
       // Never-arriving AFTER: unwrap exactly at the cap, as before.
@@ -487,7 +487,7 @@ describe('resize (finding 5)', () => {
     expect(Math.abs(after.radius - before.radius)).toBeLessThan(1e-9);
     let revealed = false;
     h.to(8000, 5, () => {
-      for (const e of h.tl.events()) if (e.stage === 'unwrap-done' && !revealed) revealed = true;
+      for (const e of h.tl.events()) if (e.stage === 'uncover' && !revealed) revealed = true;
       if (revealed) h.tl.reveal(h.wall.now);
     });
     const end = h.tl.tick(h.wall.now);

@@ -55,6 +55,7 @@ export const Route = createFileRoute('/api/preferences/appearance')({
           glassLevel: row?.glassLevel ?? null,
           colorVision: row?.colorVision ?? null,
           navTransition: row?.navTransition ?? null,
+          alwaysEvertGlobe: row?.alwaysEvertGlobe ?? false,
         });
       }),
 
@@ -72,6 +73,7 @@ export const Route = createFileRoute('/api/preferences/appearance')({
             glassLevel,
             colorVision,
             navTransition,
+            alwaysEvertGlobe,
           } = body;
           // Custom accent is normalized/nudged through the contrast guard so the
           // stored value is guaranteed to carry a legible label (AA).
@@ -86,6 +88,7 @@ export const Route = createFileRoute('/api/preferences/appearance')({
             ...(reduceMotion !== undefined ? { reduceMotion } : {}),
             ...(glassLevel !== undefined ? { glassLevel } : {}),
             ...(navTransition !== undefined ? { navTransition } : {}),
+            ...(alwaysEvertGlobe !== undefined ? { alwaysEvertGlobe } : {}),
             // 'none' is stored as null so the column means "no override".
             ...(colorVision !== undefined
               ? { colorVision: colorVision === 'none' ? null : colorVision }
@@ -114,6 +117,7 @@ export const Route = createFileRoute('/api/preferences/appearance')({
             glassLevel: row.glassLevel ?? null,
             colorVision: row.colorVision ?? null,
             navTransition: row.navTransition ?? null,
+            alwaysEvertGlobe: row.alwaysEvertGlobe ?? false,
           });
         },
       ),

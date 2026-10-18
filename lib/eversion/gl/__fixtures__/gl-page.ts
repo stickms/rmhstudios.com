@@ -10,7 +10,7 @@
  */
 
 import { GLSL_HEADER, EVERSION_GLSL, getShaderSet } from '../shaders';
-import { PLAN_MS } from '../../constants';
+import { PLAN_MS, UNCOVER_LEAD_MS } from '../../constants';
 import { createSnapshot } from '../../snapshot';
 import { getBakedLut } from '../../projection-lut';
 import { meshForTier } from '../../mesh';
@@ -571,11 +571,19 @@ const api = {
     tl.afterReady(now);
     const target = PLAN_MS.unwrap[1] + offsetMs;
     let snap: Readonly<TimelineSnapshot> = tl.tick(now);
+    let uncoverAt = -1;
+    let answered = false;
     for (let i = 0; i < 4000; i++) {
       now += 4;
       snap = tl.tick(now);
       for (const e of tl.events()) {
-        if (e.stage === 'unwrap-done') tl.reveal(now);
+        if (e.stage === 'uncover') uncoverAt = now;
+      }
+      if (uncoverAt >= 0 && !answered && now >= uncoverAt + UNCOVER_LEAD_MS) {
+        answered = true;
+        tl.reveal(now);
+        snap = tl.tick(now);
+        tl.events();
       }
       if (snap.t >= target) break;
     }

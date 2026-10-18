@@ -90,6 +90,70 @@ remains, and what is known:
   the page is already showing, nothing lands on the orb, and it is the same fade
   an aborted run already gets.
 
+### Amendment 2026-10-18 - the ending is a crossfade, and AFTER is captured only when settled
+
+Two owner reports. **(1)** "The fade at the end ... reads like a glitchy extra step. Cross-fade the two instead."
+**Cause:** the hub's `everting` phase holds `.radial-frame/.radial-backdrop/.radial-topbar` at `blur(20px)` until the run
+is over, so the canvas faded onto a BLURRED live page and the hub's `closed` then dropped the blur: a pop after the
+animation. **Change (§6.6a):** `html.eversion-live` keeps the live page sharp, opaque and transition-free from the first
+`cover` (also shows the compose button; the orb's eased fade-in starts when the cover comes off); the stage
+`unwrap-done` is replaced by `uncover`, emitted `REVEAL_MS + UNCOVER_LEAD_MS` (260 ms) before UNWRAP ends; the
+controller's answer `reveal` starts the dissolve, which overlaps UNWRAP's last 200 ms and ends with it
+(`REVEAL_MS` 180 -> 200, new `UNCOVER_LEAD_MS` 60, `PLAN_MS.total` 4780 -> 4600, `PLAN_MS.uncover` 4340, `reveal`
+`[4400, 4600]`); `bgAlpha` follows `pageAlpha` instead of dropping to 0 at `reveal`; stage order is `uncover`,
+`reveal`, `done` on every path. A true crossfade was feasible, so the fade was not removed. **(2)** "Infrequently the
+'after' page hasn't fully loaded when it is captured." **Cause:** the capture waited for the router, fonts and images
+only, not for what the page fetches itself (Home's loader returns its feed unawaited). **Change (§6.4a):** the
+readiness gate `lib/eversion/settle.ts` (see `lib/eversion/README.md`): no first-data query loading, no skeleton in the
+viewport, images and fonts loaded, layout quiet, for 2 frames, bounded by the timeline's `need-after-by`. `AFTER_SETTLE_CAP_MS`
+is replaced by `AFTER_STABLE_FRAMES`, `AFTER_QUIET_MS`, `AFTER_QUIET_CAP_MS`, `AFTER_RENDER_GRACE_MS`,
+`AFTER_CAPTURE_RESERVE_MS`, `AFTER_DECODE_CAP_MS`. Contract changes: `StageId` `unwrap-done` -> `uncover`,
+`FromWorker` `unwrap-done` -> `uncover`, `PagePort.setLive` / `watchSettle` (replacing `whenAssetsSettled`).
+
+### Amendment 2026-10-18 - "Always evert globe" setting
+
+> Owner, verbatim: "add an settings option to override and enable the eversion
+> animation, something like 'always evert globe', to enable the animation even
+> when it might otherwise be disabled due to performance." Where §1.1, §6.3,
+> §9.2 or §9.4 say a slow BEFORE capture or host falls back to today's
+> navigation, **this amendment wins for visitors who turned the setting on.**
+
+- **The setting.** `AppearancePreference.alwaysEvertGlobe Boolean @default(false)`
+  (migration `20261018120000_appearance_always_evert_globe`, additive, NOT NULL
+  with a default so the old image never names it), `alwaysEvertGlobe` on
+  `PUT/GET /api/preferences/appearance`, `themeStore.alwaysEvertGlobe`, the
+  `rmh-always-evert-globe` localStorage cache (`'1'` when on, absent when off), and
+  a switch next to "Navigation transition" in Settings > Appearance > Comfort
+  (hidden while the rollout flag is off). Default **off**.
+- **What it lifts (the performance reasons the run is skipped).** Only the
+  waits that exist to keep the fallback fast: the BEFORE wait (`BEFORE_WAIT_MS`
+  50 ms -> `ALWAYS_EVERT_BEFORE_WAIT_MS` 3 s, and a miss takes a capture on demand
+  inside what is left of that budget instead of falling back), the host-ready
+  wait (`HOST_READY_TIMEOUT_MS` 100 ms -> `ALWAYS_EVERT_HOST_WAIT_MS` 8 s, and a
+  host still initialising is waited for rather than reported `host-not-ready`),
+  and the overlay mount wait (`OVERLAY_MOUNT_TIMEOUT_MS` 100 ms ->
+  `ALWAYS_EVERT_OVERLAY_MOUNT_MS` 2 s). All three are bounded; a run that cannot
+  get a bitmap, a host or an overlay in that time still falls back, and the run
+  watchdog (`MAX_RUN_MS`) is unchanged.
+- **What it does not lift.** `prefers-reduced-motion` and the site's Reduce motion
+  setting (accessibility wins; the switch is disabled with that hint while reduced
+  motion is on), missing WebGL2 or a lost context, the rollout flag, the eversion
+  chunk not being loaded, a host that FAILED (written off after repeated init
+  failures), back/forward traversal, external links, a busy runner, and the frame
+  governor: the DPR governor still steps resolution down to keep the run smooth
+  and never cancels it. The device tier (`perf-lite` / Save-Data / low memory /
+  low cores -> `low`) is not an exclusion today, only a smaller mesh and capture
+  scale, and the setting leaves it alone.
+- **Cost the visitor accepts.** On a device that was being skipped, the hub can sit
+  still for up to a few seconds after release while the picture and renderer are
+  prepared, and the animation itself may drop frames. The setting's description
+  says so.
+- **Where it is read.** `RunnerDeps.alwaysEvert?()` (the runner's three waits) and
+  the controller's `ineligibleReason()` / `awaitBefore` (via the pure
+  `evaluateHostEligibility` in `eligibility.ts`). The controller reads the flag
+  from `useThemeStore`, which it already imports, so nothing is added to the
+  shell's static closure.
+
 ---
 
 ## 0. The effect in one paragraph
@@ -114,33 +178,33 @@ the second derivative, including when the visitor fast-forwards.
 These were settled in the grilling round on 2026-10-17. Numbers refer to the
 question list in that conversation.
 
-| #   | Question                    | Decision                                                                                                                                                                     |
-| --- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Entry points                | **All** of them: hold-and-release on the reticle, pin click, keyboard Enter on a focused pin. External links keep today's hard navigation.                                   |
-| 2   | Which globes                | **Only the hub navigator.**                                                                                                                                                  |
-| 3   | Frequency                   | **Every navigation.** No "first time only", no off switch in Settings (but see §1.1 for the accessibility fallback).                                                         |
-| 4   | Skipping                    | **Click/tap/key fast-forwards smoothly.** No hard cuts, ever.                                                                                                                |
-| 5   | "Before" page               | The page **as it was before the menu opened** — no veil, no globe.                                                                                                           |
-| 6   | Extent                      | **Viewport only** at the current scroll position.                                                                                                                            |
-| 7   | Capture fidelity            | **Fastest viable**, performance-first, but accuracy matters.                                                                                                                 |
-| 8   | "After" page not loaded yet | Navigate for real **underneath** the animation, **and** start with a placeholder on the inside that crossfades to the real capture.                                          |
-| 9   | Slow or failing destination | Eversion **stretches** up to a cap, then unwraps onto whatever is live.                                                                                                      |
-| 10  | Coverage                    | **Full sphere** coverage (both pages).                                                                                                                                       |
-| 11  | Aspect                      | **Fit page width to 360°**; latitude follows the aspect.                                                                                                                     |
-| 12  | Poles                       | **Glass caps** carrying the existing wireframe.                                                                                                                              |
-| 13  | Projection                  | **All five** available: Mercator, Peirce quincuncial, stereographic, Lambert azimuthal equal-area, equirectangular. **User setting**, with **Random** as the default.        |
-| 14  | Look                        | Keep a faint cage, the ripple crest and a fresnel rim — it is still the same glass object.                                                                                   |
-| 15  | Size                        | Diameter **88 % of the shorter viewport side**.                                                                                                                              |
-| 16  | Eversion                    | **Thurston corrugations.**                                                                                                                                                   |
-| 17  | Spin                        | ~**1.25 turns** about a slightly tilted vertical axis, eased to land front-facing and upright.                                                                               |
-| 18  | Shading                     | Subtle per-side lighting so the self-intersections read.                                                                                                                     |
-| 19  | Mirroring                   | The "after" page is **corrected** so it unwraps right-reading.                                                                                                               |
-| 20  | Exit                        | _Amended 2026-10-18:_ **none** - the animation ends when UNWRAP finishes. (Was: the empty globe shrinks into the RMH orb's position and pops with a ripple.)                 |
-| 21  | Timing                      | **WRAP 700 ms · EVERSION 3200 ms · UNWRAP 700 ms** = 4.6 s (+ the 180 ms reveal handoff = 4.78 s), velocity carried across stages. _Amended 2026-10-18: POP 520 ms removed._ |
-| 22  | Back/forward, deep links    | **No animation.**                                                                                                                                                            |
-| 23  | Weak devices                | Lower mesh resolution / DPR on weak GPUs is acceptable; 60 fps is the target.                                                                                                |
-| 24  | Loading                     | Prefetching **before** navigation is fine, but it **must not affect page content load time.**                                                                                |
-| —   | Approach                    | **Hand-rolled WebGL2** + **DOM-to-image capture** (`modern-screenshot`, already a dependency — `lib/library/epub-raster.ts`).                                                |
+| #   | Question                    | Decision                                                                                                                                                                                                                      |
+| --- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Entry points                | **All** of them: hold-and-release on the reticle, pin click, keyboard Enter on a focused pin. External links keep today's hard navigation.                                                                                    |
+| 2   | Which globes                | **Only the hub navigator.**                                                                                                                                                                                                   |
+| 3   | Frequency                   | **Every navigation.** No "first time only", no off switch in Settings (but see §1.1 for the accessibility fallback).                                                                                                          |
+| 4   | Skipping                    | **Click/tap/key fast-forwards smoothly.** No hard cuts, ever.                                                                                                                                                                 |
+| 5   | "Before" page               | The page **as it was before the menu opened** — no veil, no globe.                                                                                                                                                            |
+| 6   | Extent                      | **Viewport only** at the current scroll position.                                                                                                                                                                             |
+| 7   | Capture fidelity            | **Fastest viable**, performance-first, but accuracy matters.                                                                                                                                                                  |
+| 8   | "After" page not loaded yet | Navigate for real **underneath** the animation, **and** start with a placeholder on the inside that crossfades to the real capture.                                                                                           |
+| 9   | Slow or failing destination | Eversion **stretches** up to a cap, then unwraps onto whatever is live.                                                                                                                                                       |
+| 10  | Coverage                    | **Full sphere** coverage (both pages).                                                                                                                                                                                        |
+| 11  | Aspect                      | **Fit page width to 360°**; latitude follows the aspect.                                                                                                                                                                      |
+| 12  | Poles                       | **Glass caps** carrying the existing wireframe.                                                                                                                                                                               |
+| 13  | Projection                  | **All five** available: Mercator, Peirce quincuncial, stereographic, Lambert azimuthal equal-area, equirectangular. **User setting**, with **Random** as the default.                                                         |
+| 14  | Look                        | Keep a faint cage, the ripple crest and a fresnel rim — it is still the same glass object.                                                                                                                                    |
+| 15  | Size                        | Diameter **88 % of the shorter viewport side**.                                                                                                                                                                               |
+| 16  | Eversion                    | **Thurston corrugations.**                                                                                                                                                                                                    |
+| 17  | Spin                        | ~**1.25 turns** about a slightly tilted vertical axis, eased to land front-facing and upright.                                                                                                                                |
+| 18  | Shading                     | Subtle per-side lighting so the self-intersections read.                                                                                                                                                                      |
+| 19  | Mirroring                   | The "after" page is **corrected** so it unwraps right-reading.                                                                                                                                                                |
+| 20  | Exit                        | _Amended 2026-10-18:_ **none** - the animation ends when UNWRAP finishes. (Was: the empty globe shrinks into the RMH orb's position and pops with a ripple.)                                                                  |
+| 21  | Timing                      | **WRAP 700 ms · EVERSION 3200 ms · UNWRAP 700 ms** = 4.6 s (_amended 2026-10-18: the final dissolve is UNWRAP's last 200 ms, so the run is 4.6 s_), velocity carried across stages. _Amended 2026-10-18: POP 520 ms removed._ |
+| 22  | Back/forward, deep links    | **No animation.**                                                                                                                                                                                                             |
+| 23  | Weak devices                | Lower mesh resolution / DPR on weak GPUs is acceptable; 60 fps is the target.                                                                                                                                                 |
+| 24  | Loading                     | Prefetching **before** navigation is fine, but it **must not affect page content load time.**                                                                                                                                 |
+| —   | Approach                    | **Hand-rolled WebGL2** + **DOM-to-image capture** (`modern-screenshot`, already a dependency — `lib/library/epub-raster.ts`).                                                                                                 |
 
 ### 1.1 Decisions this spec makes on the owner's behalf
 
@@ -838,6 +902,9 @@ for dismissals). `onNavigate` → `useEversionController.start()`:
   `pnpm i18n:extract`. Mind design-language §10's two traps: new key for new
   wording; no JSX comment directly before `t()`. When reduced motion is on, the
   row is disabled with a hint that reduced motion replaces the transition.
+- _Amended 2026-10-18:_ a second switch, **Always evert globe** (`alwaysEvertGlobe`,
+  default off), forces the effect where it is skipped for performance; see the
+  amendment under _Implementation status_.
 - Optional, cheap, and worth it: a **Preview** button that runs the effect
   in place, navigating to the current route, so the choice can be judged.
 

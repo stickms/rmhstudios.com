@@ -396,7 +396,7 @@ export async function pageShot(page) {
  *
  * On a healthy rig (k <= 1.5) it is the spec's number. On a slow one the AFTER
  * settle + capture that the spec's real-time run pays after the data arrives
- * (up to AFTER_SETTLE_CAP_MS + the capture) shrink to nothing on the timeline
+ * (up to the readiness gate + the capture) shrink to nothing on the timeline
  * (dividing by k), so a literal 4 s would land AFTER the stretch cap's worth of
  * wait and the data would arrive in time. A delay that is meant to MISS the cap
  * (anything past the gate wait's start, 3000) is therefore moved to just past the cap:

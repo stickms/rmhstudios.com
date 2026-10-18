@@ -39,7 +39,7 @@ import { chromium } from 'playwright';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const fixtures = join(root, 'testing/e2e/eversion-host');
 
-const STAGES = ['wrap', 'evert', 'gate-open', 'unwrap', 'unwrap-done', 'reveal', 'done'];
+const STAGES = ['wrap', 'evert', 'gate-open', 'unwrap', 'uncover', 'reveal', 'done'];
 
 function chromiumPath() {
   if (process.env.CHROMIUM_PATH) return process.env.CHROMIUM_PATH;
@@ -157,8 +157,8 @@ try {
     order.slice(0, 6).join(' > '),
   );
   check(
-    'unwrap-done is a message too, exactly once',
-    types.filter((x) => x === 'unwrap-done').length === 1,
+    'uncover is a message too, exactly once',
+    types.filter((x) => x === 'uncover').length === 1,
   );
   check(
     'main thread really was blocked ~300 ms',

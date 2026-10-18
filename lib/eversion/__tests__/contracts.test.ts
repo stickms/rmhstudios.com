@@ -252,14 +252,7 @@ describe('worker protocol (S§3.3)', () => {
     'reveal',
     'abort',
   ];
-  const SPEC_FROM_WORKER = [
-    'cover',
-    'stage',
-    'need-after-by',
-    'unwrap-done',
-    'done',
-    'context-lost',
-  ];
+  const SPEC_FROM_WORKER = ['cover', 'stage', 'need-after-by', 'uncover', 'done', 'context-lost'];
 
   const viewport = { w: 1440, h: 900, dpr: 1 };
   const rgba = [0, 0, 0, 1] as const;
@@ -300,7 +293,7 @@ describe('worker protocol (S§3.3)', () => {
     { type: 'cover' },
     { type: 'stage', stage: 'evert', t: 600 },
     { type: 'need-after-by', deadline: 3000 },
-    { type: 'unwrap-done' },
+    { type: 'uncover' },
     { type: 'probe-result', ok: true },
     { type: 'done', frames: 1, dropped: 0, p95: 16.7 },
     { type: 'context-lost' },
@@ -344,7 +337,7 @@ describe('timeline vocabulary (S§7.1)', () => {
       'evert',
       'gate-open',
       'unwrap',
-      'unwrap-done',
+      'uncover',
       'reveal',
       'done',
     ]);
@@ -400,7 +393,8 @@ describe('constants (S§12, S§8.2, S§6.2)', () => {
       STAGE_OVERLAP: 0.3,
       WRAP_WAVE: 0.6,
       PLACEHOLDER_XFADE_MS: 320,
-      REVEAL_MS: 180,
+      REVEAL_MS: 200,
+      UNCOVER_LEAD_MS: 60,
       HUB_FADE_MS: 250,
       STRETCH_CAP_MS: 2500,
       FF_REMAINING_MS: 650,
@@ -409,19 +403,24 @@ describe('constants (S§12, S§8.2, S§6.2)', () => {
       MAX_DT_MS: 50,
       BEFORE_GRACE_MS: 250,
       CAPTURE_TIMEOUT_MS: 600,
-      AFTER_SETTLE_CAP_MS: 1200,
+      AFTER_STABLE_FRAMES: 2,
+      AFTER_QUIET_MS: 100,
+      AFTER_QUIET_CAP_MS: 800,
+      AFTER_RENDER_GRACE_MS: 100,
+      AFTER_CAPTURE_RESERVE_MS: 300,
       AFTER_CAPTURE_TIMEOUT_MS: 1500,
       BEFORE_STALE_MS: 30_000,
     });
     expect([...constants.LUT_SIZE]).toEqual([1024, 512]);
   });
 
-  it('the derived plan reproduces the S§7.1 table and sums to 4.78 s (UNWRAP ends at 4.6 s, the reveal fade adds 180 ms)', () => {
+  it("the derived plan reproduces the S§7.1 table and ends at 4.6 s (the final dissolve is UNWRAP's last 200 ms, asked for 60 ms before it)", () => {
     const p = constants.PLAN_MS;
     expect([...p.evert]).toEqual([600, 3900]);
     expect([...p.unwrap]).toEqual([3800, 4600]);
-    expect([...p.reveal]).toEqual([4600, 4780]);
-    expect(p.total).toBe(4780);
+    expect([...p.reveal]).toEqual([4400, 4600]);
+    expect(p.uncover).toBe(4340);
+    expect(p.total).toBe(4600);
     expect('pop' in p).toBe(false);
     expect(constants.GLOBE_RADIUS_FRACTION).toBeCloseTo(0.44, 12);
   });
@@ -702,6 +701,7 @@ describe('source hygiene', () => {
           'capture.ts',
           'placeholder.ts',
           'prefetch.ts',
+          'settle.ts',
           'flags.ts',
           'debug.ts',
           'debug-overlay.ts',

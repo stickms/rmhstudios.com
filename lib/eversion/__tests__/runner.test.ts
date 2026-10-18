@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AFTER_CAPTURE_TIMEOUT_MS, BEFORE_WAIT_MS, MAX_RUN_MS } from '../constants';
 import { EversionRunner } from '../runner';
 import type { RunnerDeps } from '../runner';
+import type { SettleReport, SettleRequest } from '../settle';
 import type {
   CaptureApi,
   EversionHost,
@@ -59,8 +60,25 @@ interface Rig {
   traverse(): void;
   resize(viewport: Viewport): void;
   capture: { captureViewport: ReturnType<typeof vi.fn> };
+  /** The readiness gate: every request it was given, and a way to script what it answers. */
+  settle: {
+    requests: SettleRequest[];
+    /** Hold the gate until `release()` (a destination whose content is late). */
+    hold(): void;
+    release(report?: Partial<SettleReport>): void;
+    /** Replace the answer. */
+    answer(impl: (request: SettleRequest) => Promise<SettleReport>): void;
+  };
   runner: EversionRunner;
 }
+
+const SETTLED: SettleReport = {
+  settled: true,
+  reason: 'settled',
+  waitedMs: 0,
+  frames: 2,
+  last: null,
+};
 
 function rig(patch: Partial<RunnerDeps> = {}, captureImpl?: () => Promise<unknown>): Rig {
   const log: string[] = [];
@@ -83,6 +101,9 @@ function rig(patch: Partial<RunnerDeps> = {}, captureImpl?: () => Promise<unknow
   let inputCb: (() => void) | null = null;
   let traversalCb: (() => void) | null = null;
   let resizeCb: ((v: Viewport) => void) | null = null;
+  const settleRequests: SettleRequest[] = [];
+  let settleImpl: (request: SettleRequest) => Promise<SettleReport> = async () => SETTLED;
+  let releaseHold: ((report: SettleReport) => void) | null = null;
   const capture = {
     captureViewport: vi.fn(
       captureImpl ??
@@ -110,8 +131,18 @@ function rig(patch: Partial<RunnerDeps> = {}, captureImpl?: () => Promise<unknow
       tier: () => 'mid',
       colours: () => COLOURS,
       setCover: (on) => log.push(`cover:${on ? 'on' : 'off'}`),
+      setLive: (on) => log.push(`live:${on ? 'on' : 'off'}`),
       setSettle: (on) => log.push(`settle:${on ? 'on' : 'off'}`),
-      whenAssetsSettled: async () => void log.push('assets'),
+      watchSettle: () => ({
+        async whenSettled(request) {
+          settleRequests.push(request);
+          log.push('gate');
+          const report = await settleImpl(request);
+          log.push(`gate-done:${report.reason}`);
+          return report;
+        },
+        dispose: () => void log.push('watch:dispose'),
+      }),
       nextFrame: async () => void log.push('raf'),
       onInput(cb) {
         inputCb = cb;
@@ -160,6 +191,21 @@ function rig(patch: Partial<RunnerDeps> = {}, captureImpl?: () => Promise<unknow
     traverse: () => traversalCb?.(),
     resize: (v) => resizeCb?.(v),
     capture,
+    settle: {
+      requests: settleRequests,
+      hold() {
+        settleImpl = () =>
+          new Promise<SettleReport>((resolve) => {
+            releaseHold = resolve;
+          });
+      },
+      release(report = {}) {
+        releaseHold?.({ ...SETTLED, ...report });
+      },
+      answer(impl) {
+        settleImpl = impl;
+      },
+    },
     runner: new EversionRunner(deps),
   };
 }
@@ -320,7 +366,7 @@ describe('eversion runner: the sequence', () => {
     expect(r.log).not.toContain('mark:done');
   });
 
-  it('cover class is on only between cover and unwrap-done', async () => {
+  it('cover class is on only between cover and uncover', async () => {
     const r = rig();
     const p = started(r);
     await flush();
@@ -329,7 +375,7 @@ describe('eversion runner: the sequence', () => {
     expect(r.runner.state().coverActive).toBe(true);
     expect(r.log.filter((l) => l.startsWith('cover:'))).toEqual(['cover:on']);
 
-    r.emit({ type: 'unwrap-done' });
+    r.emit({ type: 'uncover' });
     await flush();
     const onAt = r.log.indexOf('cover:on');
     const offAt = r.log.indexOf('cover:off');
@@ -353,13 +399,35 @@ describe('eversion runner: the sequence', () => {
     expect(r.log.filter((l) => l === 'cover:on')).toHaveLength(1);
   });
 
-  it('a duplicate unwrap-done posts reveal once', async () => {
+  it('the live page is handed back sharp from the first cover, and released only after the run has ended', async () => {
+    const r = rig();
+    const p = started(r);
+    await flush();
+    expect(r.log).not.toContain('live:on');
+    r.emit({ type: 'cover' });
+    // Live goes on with (and just before) the cover class: the blur is dropped while the page is invisible.
+    expect(r.log.indexOf('live:on')).toBeGreaterThan(-1);
+    expect(r.log.indexOf('live:on')).toBeLessThan(r.log.indexOf('cover:on'));
+    r.emit({ type: 'uncover' });
+    await flush();
+    // The cover comes off at uncover; the page stays sharp (it is what the canvas dissolves onto).
+    expect(r.log).toContain('cover:off');
+    expect(r.log).not.toContain('live:off');
+    r.emit(DONE);
+    await p;
+    await flush();
+    // Released a couple of frames after the run (the hub has left `everting` by then), never before `done`.
+    expect(r.log.indexOf('live:off')).toBeGreaterThan(r.log.indexOf('mark:done'));
+    expect(r.log.filter((l) => l === 'live:on')).toHaveLength(1);
+  });
+
+  it('a duplicate uncover posts reveal once', async () => {
     const r = rig();
     void started(r);
     await flush();
     r.emit({ type: 'cover' });
-    r.emit({ type: 'unwrap-done' });
-    r.emit({ type: 'unwrap-done' });
+    r.emit({ type: 'uncover' });
+    r.emit({ type: 'uncover' });
     await flush();
     expect(r.posted.filter((m) => m.type === 'reveal')).toHaveLength(1);
   });
@@ -372,9 +440,9 @@ describe('eversion runner: the sequence', () => {
     r.emit(DONE);
     await p;
     expect(r.log).toContain('overlay:unmount');
-    expect(r.log.at(-1)).toBe('mark:done');
+    expect(r.log.filter((l) => l.startsWith('mark:')).at(-1)).toBe('mark:done');
     expect(r.runner.state()).toMatchObject({ phase: 'done', coverActive: false });
-    // The cover class does not outlive the run even if unwrap-done never came.
+    // The cover class does not outlive the run even if uncover never came.
     expect(r.log.lastIndexOf('cover:off')).toBeGreaterThan(r.log.lastIndexOf('cover:on'));
   });
 
@@ -388,7 +456,7 @@ describe('eversion runner: the sequence', () => {
     await flush();
     r.emit({ type: 'stage', stage: 'gate-open', t: 2 });
     r.emit({ type: 'stage', stage: 'unwrap', t: 3 });
-    r.emit({ type: 'unwrap-done' });
+    r.emit({ type: 'uncover' });
     await flush();
     r.emit(DONE);
     await p;
@@ -406,21 +474,19 @@ describe('eversion runner: the sequence', () => {
 });
 
 describe('eversion runner: AFTER', () => {
-  it('waits for the router, assets and two frames, captures with the settle attribute, uploads', async () => {
+  it('waits for the router, then the readiness gate, captures with the settle attribute, uploads', async () => {
     const r = rig();
     const p = r.runner.run(NODE, GLOBE);
     await flush();
     expect(r.capture.captureViewport).not.toHaveBeenCalled(); // router not idle yet
+    expect(r.log).not.toContain('gate');
     r.routerIdle.resolve();
     await flush();
-    const order = r.log.filter((l) => /^(router-idle|assets|raf|settle|post:texture)/.test(l));
-    const iIdle = order.indexOf('router-idle');
-    const iAssets = order.indexOf('assets');
-    expect(iAssets).toBeGreaterThan(iIdle);
-    expect(order.slice(iAssets + 1, iAssets + 3)).toEqual(['raf', 'raf']);
+    const order = r.log.filter((l) => /^(router-idle|gate|settle:on|post:texture)/.test(l));
+    expect(order.indexOf('gate')).toBeGreaterThan(order.indexOf('router-idle'));
     const iOn = r.log.indexOf('settle:on');
     const iOff = r.log.indexOf('settle:off');
-    expect(r.log.indexOf('router-idle')).toBeLessThan(iOn);
+    expect(r.log.indexOf('gate-done:settled')).toBeLessThan(iOn);
     expect(iOff).toBeGreaterThan(iOn);
     const after = r.posted.filter((m) => m.type === 'texture' && m.slot === 'after');
     expect(after).toHaveLength(1);
@@ -428,6 +494,113 @@ describe('eversion runner: AFTER', () => {
       expect.objectContaining({ phase: 'after', scaleCap: 1.25 }),
     );
     expect(r.runner.state().afterReady).toBe(true);
+    r.emit(DONE);
+    await p;
+  });
+
+  it('a destination whose content is late is NOT captured until the gate says it is settled', async () => {
+    const r = rig();
+    r.settle.hold();
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    r.routerIdle.resolve();
+    await flush();
+    // Router idle, gate still waiting (skeletons on screen, a query in flight): nothing captured, nothing sent.
+    expect(r.log).toContain('gate');
+    expect(r.capture.captureViewport).not.toHaveBeenCalled();
+    expect(r.posted.some((m) => m.type === 'texture' && m.slot === 'after')).toBe(false);
+    expect(r.posted.some((m) => m.type === 'after-failed')).toBe(false);
+    // The content lands; only then is the page frozen into a texture.
+    r.settle.release();
+    await flush();
+    expect(r.capture.captureViewport).toHaveBeenCalledTimes(1);
+    expect(r.posted.filter((m) => m.type === 'texture' && m.slot === 'after')).toHaveLength(1);
+    r.emit(DONE);
+    await p;
+  });
+
+  it("the gate is bounded by the timeline's own AFTER deadline (need-after-by), worked back from the cap", async () => {
+    const r = rig();
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    r.routerIdle.resolve();
+    await flush();
+    const req = r.settle.requests[0]!;
+    // Until the render side reports its own, the nominal plan's: start (t0 = 0) + 3800 + the 2500 cap.
+    expect(req.hard()).toBe(6300 - 320 - 300);
+    expect(req.soft()).toBe(req.hard() - 2500);
+    // A slower timeline (a loaded GPU) says so, and the bounds follow it.
+    r.emit({ type: 'need-after-by', deadline: 9000 });
+    expect(req.hard()).toBe(9000 - 320 - 300);
+    expect(req.soft()).toBe(9000 - 320 - 300 - 2500);
+    r.emit(DONE);
+    await p;
+  });
+
+  it('a fast-forward or an abort hurries the gate; an ended run or a started UNWRAP cancels it', async () => {
+    const r = rig();
+    r.settle.hold();
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    r.routerIdle.resolve();
+    await flush();
+    const req = r.settle.requests[0]!;
+    expect(req.hurried()).toBe(false);
+    expect(req.cancelled()).toBe(false);
+    r.input(); // a press: fast-forward
+    expect(req.hurried()).toBe(true);
+    r.emit({ type: 'stage', stage: 'unwrap', t: 1 });
+    expect(req.cancelled()).toBe(true);
+    r.settle.release({ reason: 'cancelled', settled: false });
+    await flush();
+    // Cancelled: nothing is captured for a run that no longer wants AFTER.
+    expect(r.capture.captureViewport).not.toHaveBeenCalled();
+    r.emit(DONE);
+    await p;
+  });
+
+  it('a page that cannot be watched still gets its two frames and a capture (the gate is an improvement, not a dependency)', async () => {
+    const r = rig();
+    r.deps.page.watchSettle = () => {
+      throw new Error('no document');
+    };
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    r.routerIdle.resolve();
+    await flush();
+    expect(r.log).not.toContain('gate');
+    const afterIdle = r.log.slice(r.log.indexOf('router-idle'));
+    expect(afterIdle.filter((l) => l === 'raf').length).toBeGreaterThanOrEqual(2);
+    expect(r.posted.filter((m) => m.type === 'texture' && m.slot === 'after')).toHaveLength(1);
+    r.emit(DONE);
+    await p;
+  });
+
+  it('stops watching the document when the run ends', async () => {
+    const r = rig();
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    r.emit(DONE);
+    await p;
+    expect(r.log).toContain('watch:dispose');
+  });
+
+  it('the debug seam sees the AFTER bitmap and what the gate found, before it is handed over', async () => {
+    const seen: { settle: SettleReport | null }[] = [];
+    const r = rig({
+      afterCaptured: (_bitmap, settle) => {
+        seen.push({ settle });
+        throw new Error('observability must never break a run');
+      },
+    });
+    r.settle.answer(async () => ({ ...SETTLED, reason: 'rested', settled: false, waitedMs: 1234 }));
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    r.routerIdle.resolve();
+    await flush();
+    expect(seen).toHaveLength(1);
+    expect(seen[0]!.settle).toMatchObject({ reason: 'rested', waitedMs: 1234 });
+    expect(r.posted.filter((m) => m.type === 'texture' && m.slot === 'after')).toHaveLength(1);
     r.emit(DONE);
     await p;
   });
@@ -580,10 +753,16 @@ describe('eversion runner: input, abort and faults after start', () => {
     expect(r.log).toContain('discardCanvas');
     expect(r.runner.state().coverActive).toBe(false);
     expect(r.log).not.toContain('overlay:unmount');
+    // The overlay dissolves onto the live page, so the page is the sharp one (live) before the fade begins.
+    expect(r.log.indexOf('live:on')).toBeGreaterThan(-1);
+    expect(r.log.indexOf('live:on')).toBeLessThan(r.log.indexOf('overlay:fade'));
+    expect(r.log).not.toContain('live:off');
     await vi.advanceTimersByTimeAsync(210);
     const out = await p;
     expect(out).toMatchObject({ fallback: null, end: 'context-lost' });
     expect(r.log).toContain('overlay:unmount');
+    await flush();
+    expect(r.log.indexOf('live:off')).toBeGreaterThan(r.log.indexOf('overlay:unmount'));
   });
 
   it('a fatal error after start ends the run the same way; a non-fatal one is ignored', async () => {
@@ -671,7 +850,7 @@ describe('eversion runner: router and viewport edge cases (spec 9.4)', () => {
     const p = r.runner.run(NODE, GLOBE);
     await flush();
     r.emit({ type: 'cover' });
-    r.emit({ type: 'unwrap-done' });
+    r.emit({ type: 'uncover' });
     await flush();
     r.input();
     expect(r.posted.some((m) => m.type === 'fast-forward')).toBe(false);
@@ -701,13 +880,13 @@ describe('eversion runner: router and viewport edge cases (spec 9.4)', () => {
     const r = rig();
     const p = r.runner.run(NODE, GLOBE);
     await flush();
-    // The next post (the reveal, after unwrap-done) hits a dead host.
+    // The next post (the reveal, after uncover) hits a dead host.
     const host = await r.deps.host.ready('mid', 1);
     host.post = () => {
       throw new Error('worker gone');
     };
     r.emit({ type: 'cover' });
-    r.emit({ type: 'unwrap-done' });
+    r.emit({ type: 'uncover' });
     await flush();
     await vi.advanceTimersByTimeAsync(300);
     expect(await p).toMatchObject({ fallback: null, end: 'context-lost' });
@@ -962,7 +1141,7 @@ describe('eversion runner: watchdog, pageshow, traversal while priming (Fix E1)'
     const p = r.runner.run(NODE, GLOBE);
     await flush();
     r.emit({ type: 'cover' });
-    r.emit({ type: 'unwrap-done' });
+    r.emit({ type: 'uncover' });
     await flush();
     expect(r.posted.filter((m) => m.type === 'reveal')).toHaveLength(1);
     r.emit({ type: 'stage', stage: 'reveal', t: 0 });

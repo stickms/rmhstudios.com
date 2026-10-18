@@ -9,7 +9,7 @@
  * the document, the overlay, the clock — is reached through {@link RunnerDeps}.
  * `useEversionController.ts` builds the real set; `__tests__/runner.test.ts`
  * builds a scripted one and asserts the SEQUENCE (the URL changes at `start`,
- * the cover class lives only between `cover` and `unwrap-done`, a fast-forward
+ * the cover class lives only between `cover` and `uncover`, a fast-forward
  * is posted once, a failed capture becomes `after-failed`). A sequence bug in
  * a hook is only visible in a browser; here it is a unit test.
  *
@@ -26,9 +26,11 @@
  *   ─── point of no return ────────────────────────────────────────────────
  *   start ; navigate(href)                          ← the SAME task, no await
  *   cover        → html.eversion-cover on
- *   (route settled · fonts · images · 2 rAF) → capture → texture(after)
+ *   (route idle · AFTER READINESS GATE: no query loading, no skeleton, images and fonts
+ *    loaded, layout quiet - bounded by the timeline's own AFTER deadline) → capture → texture(after)
  *                                    or after-failed on timeout / throw
- *   unwrap-done  → cover off · 2 rAF · reveal
+ *   uncover      → cover off · 2 rAF · reveal   (UNWRAP's last ~260 ms; the page is painted under the canvas)
+ *   reveal       → the canvas dissolves onto the live page WHILE UNWRAP finishes; both end at `done`
  *   done         → overlay off · free · mark · resolve
  * ```
  *
@@ -49,12 +51,18 @@
 
 import {
   AFTER_CAPTURE_TIMEOUT_MS,
-  AFTER_SETTLE_CAP_MS,
+  ALWAYS_EVERT_BEFORE_WAIT_MS,
+  ALWAYS_EVERT_HOST_WAIT_MS,
+  ALWAYS_EVERT_OVERLAY_MOUNT_MS,
   BEFORE_WAIT_MS,
   CAPTURE_DPR_CAP,
   CAPTURE_EXCLUDE_SELECTORS,
   MAX_RUN_MS,
+  PLAN_MS,
+  STRETCH_CAP_MS,
 } from './constants';
+import { afterSettleDeadlines } from './settle';
+import type { SettleReport, SettleRequest } from './settle';
 import type { EntryPoint, EversionMarkDetails, GateOpenReason } from './marks';
 import type {
   CaptureApi,
@@ -133,16 +141,34 @@ export interface PagePort {
   colours(): ThemeColours;
   /** `html.eversion-cover` on or off. */
   setCover(on: boolean): void;
+  /**
+   * `html.eversion-live` on or off: the live page is handed back SHARP and opaque, with no transition on it
+   * (the hub's `everting` look blurs it and holds it so until the hub closes, which would turn the final
+   * dissolve into a fade onto a blurred page followed by a pop to the sharp one). On from the first `cover`,
+   * released a couple of frames after the run ends, once the hub has left `everting`.
+   */
+  setLive(on: boolean): void;
   /** `data-eversion-settle` on or off. */
   setSettle(on: boolean): void;
-  /** `document.fonts.ready` and the viewport's images, each part resolving within `capMs`. */
-  whenAssetsSettled(capMs: number): Promise<void>;
+  /**
+   * Start watching the live document for the AFTER readiness gate (`settle.ts`). Called before the navigation
+   * is issued, so "the page has been quiet" covers the route's own commit.
+   */
+  watchSettle(): SettleWatch;
   /** Resolves on the next animation frame. */
   nextFrame(): Promise<void>;
   /** Run `cb` on the next input that should fast-forward; returns the remover. */
   onInput(cb: () => void): () => void;
   /** Where a Preview run goes: the current route's href. */
   currentHref(): string;
+}
+
+/** The AFTER readiness gate's side of the page: see `settle.ts`. */
+export interface SettleWatch {
+  /** Resolve when the destination is settled, or the bounds in `request` say stop. Never rejects. */
+  whenSettled(request: SettleRequest): Promise<SettleReport>;
+  /** Stop watching. */
+  dispose(): void;
 }
 
 /** The router, narrowed to what a run needs. */
@@ -195,6 +221,18 @@ export interface RunnerDeps {
     detail: EversionMarkDetails[K] | undefined,
   ): void;
   now(): number;
+  /**
+   * Observability seam (debug only): the AFTER bitmap about to be handed to the render side, before the post
+   * detaches it. Must not retain or close it. A throw is swallowed.
+   */
+  afterCaptured?(bitmap: ImageBitmap, settle: SettleReport | null): void;
+  /**
+   * The visitor's "Always evert globe" preference: the priming waits (BEFORE,
+   * host ready, overlay mount) use their generous `ALWAYS_EVERT_*` limits instead
+   * of falling back. Never skips an accessibility or capability check, and the
+   * watchdog still applies. Absent means off.
+   */
+  alwaysEvert?(): boolean;
   /** Override of {@link MAX_RUN_MS} (the e2e harness on a software-GL box); default the constant. */
   maxRunMs?: number;
 }
@@ -238,6 +276,9 @@ export class EversionRunner {
   private forceEnd: ((fade?: boolean) => void) | null = null;
   /** `dispose()` was called: a run still priming falls back instead of starting. */
   private disposed = false;
+  private liveActive = false;
+  /** Bumped by every run, so a release scheduled by an earlier one cannot undo a later run's class. */
+  private liveEpoch = 0;
 
   constructor(private readonly deps: RunnerDeps) {}
 
@@ -298,6 +339,8 @@ export class EversionRunner {
     if (ineligible) return this.fallback(ineligible);
 
     this.phase = 'priming';
+    this.liveEpoch++;
+    this.setLive(false);
     this.beforeReady = false;
     this.afterReady = false;
     const href = node.href;
@@ -330,9 +373,11 @@ export class EversionRunner {
     /* ── Everything that can still fall back ──────────────────────────────── */
 
     let before: ImageBitmap | null;
+    const always = deps.alwaysEvert?.() ?? false;
+    const beforeWaitMs = always ? ALWAYS_EVERT_BEFORE_WAIT_MS : BEFORE_WAIT_MS;
     const waitStarted = deps.now();
     try {
-      before = await (options.before ?? deps.awaitBefore)(BEFORE_WAIT_MS);
+      before = await (options.before ?? deps.awaitBefore)(beforeWaitMs);
     } catch {
       dropEarlyInput();
       this.phase = 'idle';
@@ -349,7 +394,7 @@ export class EversionRunner {
       dropEarlyInput();
       this.phase = 'idle';
       return this.fallback(
-        deps.now() - waitStarted >= BEFORE_WAIT_MS * 0.9 ? 'before-timeout' : 'before-missing',
+        deps.now() - waitStarted >= beforeWaitMs * 0.9 ? 'before-timeout' : 'before-missing',
       );
     }
     this.beforeReady = true;
@@ -357,8 +402,15 @@ export class EversionRunner {
     const tier = deps.page.tier();
     let host: EversionHost;
     try {
-      host = await deps.host.ready(tier, HOST_READY_TIMEOUT_MS);
-      await withTimeout(deps.overlay.mount(), OVERLAY_MOUNT_TIMEOUT_MS, 'overlay mount');
+      host = await deps.host.ready(
+        tier,
+        always ? ALWAYS_EVERT_HOST_WAIT_MS : HOST_READY_TIMEOUT_MS,
+      );
+      await withTimeout(
+        deps.overlay.mount(),
+        always ? ALWAYS_EVERT_OVERLAY_MOUNT_MS : OVERLAY_MOUNT_TIMEOUT_MS,
+        'overlay mount',
+      );
     } catch {
       before.close?.();
       dropEarlyInput();
@@ -398,6 +450,12 @@ export class EversionRunner {
     let t0 = 0;
     let revealing = false;
     let aborted = false;
+    /**
+     * When the timeline needs AFTER by (the end of its stretch cap), on this thread's clock. The render side
+     * reports it with `need-after-by`; until it does, the nominal plan's figure stands.
+     */
+    let needAfterBy = Infinity;
+    let settleWatch: SettleWatch | null = null;
     // The run watchdog (review R6 M2): armed at the point of no return, re-armed by
     // every stage message (progress), cleared in teardown.
     let watchdog: ReturnType<typeof setTimeout> | null = null;
@@ -443,6 +501,8 @@ export class EversionRunner {
         this.phase = 'done';
         deps.mark('done', { frames: 0, dropped: 0, p95: 0, ...stats, end });
         finish(end, stats);
+        // The caller (the hub) leaves `everting` in answer to `finish`: only then may the page blur again.
+        this.releaseLiveSoon();
       };
       if (keepOverlayMs > 0) setTimeout(unmount, keepOverlayMs);
       else unmount();
@@ -451,6 +511,9 @@ export class EversionRunner {
     const onMessage = (m: FromWorker) => {
       if (ended) return;
       switch (m.type) {
+        case 'need-after-by':
+          if (started && Number.isFinite(m.deadline)) needAfterBy = m.deadline;
+          return;
         case 'cover':
           if (!started) return;
           deps.mark('cover', { firstFrameMs: deps.now() - t0 });
@@ -466,7 +529,7 @@ export class EversionRunner {
             deps.mark('unwrap', {});
           }
           return;
-        case 'unwrap-done':
+        case 'uncover':
           if (!started || revealing) return;
           revealing = true;
           void this.reveal(
@@ -599,6 +662,8 @@ export class EversionRunner {
     listeners.push(deps.router.onTraversal(() => this.abort()));
     listeners.push(deps.page.onResize((viewport) => post({ type: 'resize', viewport })));
     t0 = deps.now();
+    // Until the render side reports its own (`need-after-by`, possibly during the `start` post below).
+    needAfterBy = t0 + PLAN_MS.unwrap[0] + STRETCH_CAP_MS;
     started = true;
     this.phase = 'running';
     // A run that cannot end (GPU hang, dead worker, a host disposed under us) must
@@ -619,6 +684,17 @@ export class EversionRunner {
     } catch {
       /* the caller's UI hook must never break the run */
     }
+    // The readiness gate watches the document from BEFORE the navigation, so its quiet window covers the
+    // route's own commit. A page that cannot be watched (no document) is captured as it was before the gate.
+    try {
+      settleWatch = deps.page.watchSettle();
+      listeners.push(() => {
+        settleWatch?.dispose();
+        settleWatch = null;
+      });
+    } catch {
+      settleWatch = null;
+    }
     try {
       const navigated = deps.router.navigate(href);
       if (navigated) navigated.catch(() => {});
@@ -635,9 +711,20 @@ export class EversionRunner {
         // arrives) must not leave the gate waiting for a texture that cannot come:
         // it is an AFTER failure like any other, and the run unwraps the placeholder.
         await withTimeout(deps.router.whenIdle(), ROUTE_SETTLE_TIMEOUT_MS, 'route settle');
-        await deps.page.whenAssetsSettled(AFTER_SETTLE_CAP_MS);
-        await deps.page.nextFrame();
-        await deps.page.nextFrame();
+        // The route being idle says nothing about what the page then fetches for itself (a deferred loader, a
+        // query, a lazy chunk): wait until it is settled, bounded by the timeline's own AFTER deadline.
+        let settle: SettleReport | null = null;
+        if (settleWatch) {
+          settle = await settleWatch.whenSettled({
+            soft: () => afterSettleDeadlines(needAfterBy).soft,
+            hard: () => afterSettleDeadlines(needAfterBy).hard,
+            cancelled: () => ended || unwrapBegun || aborted,
+            hurried: () => fastForwarded,
+          });
+        } else {
+          await deps.page.nextFrame();
+          await deps.page.nextFrame();
+        }
         if (ended || unwrapBegun || aborted) return;
         let session = deps.capture();
         if (!session) {
@@ -670,6 +757,11 @@ export class EversionRunner {
           result.bitmap.close?.();
           return;
         }
+        try {
+          deps.afterCaptured?.(result.bitmap, settle);
+        } catch {
+          /* observability only */
+        }
         gateReason = 'after-ready';
         afterSent = true;
         this.afterReady = true;
@@ -699,6 +791,8 @@ export class EversionRunner {
   }
 
   private loseContext(started: boolean, finishRun: () => void): void {
+    // The overlay is about to dissolve onto the live page: it must be the sharp one.
+    if (started) this.setLive(true);
     this.setCover(false);
     if (started) {
       this.deps.overlay.fade();
@@ -709,7 +803,32 @@ export class EversionRunner {
   private setCover(on: boolean): void {
     if (this.coverActive === on) return;
     this.coverActive = on;
+    // From the first cover the live page is the page the canvas will dissolve onto: sharp, opaque, no transition.
+    if (on) this.setLive(true);
     this.deps.page.setCover(on);
+  }
+
+  private setLive(on: boolean): void {
+    if (this.liveActive === on) return;
+    this.liveActive = on;
+    this.deps.page.setLive(on);
+  }
+
+  /**
+   * Let go of `eversion-live` once the hub has had time to leave `everting` (two frames: the hub closes in the
+   * same breath as the run ends, and a sharp page that blurred again for one frame would be its own glitch).
+   */
+  private releaseLiveSoon(): void {
+    const epoch = this.liveEpoch;
+    void (async () => {
+      try {
+        await this.deps.page.nextFrame();
+        await this.deps.page.nextFrame();
+      } catch {
+        /* release regardless */
+      }
+      if (epoch === this.liveEpoch) this.setLive(false);
+    })();
   }
 
   private cleanupFailedPrime(): void {

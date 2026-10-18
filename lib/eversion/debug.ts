@@ -149,8 +149,24 @@ export interface BeforeCaptureDebug {
   };
 }
 
+/** `window.__eversion.afterCapture` (the AFTER readiness gate; the late-content e2e). */
+export interface AfterCaptureDebug {
+  /**
+   * The AFTER bitmap the most recent run captured (a PNG data URL of exactly the pixels handed to the render
+   * side), when it was taken (page clock) and what the readiness gate saw; `null` before the first run.
+   */
+  last(): {
+    at: number;
+    width: number;
+    height: number;
+    png: string;
+    settle: unknown;
+  } | null;
+}
+
 /** Every slot, keyed by the name a module registers under. */
 export interface DebugSlots {
+  afterCapture: AfterCaptureDebug;
   beforeCapture: BeforeCaptureDebug;
   capture: CaptureDebug;
   placeholder: PlaceholderDebug;

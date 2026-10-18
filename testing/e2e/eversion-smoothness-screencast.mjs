@@ -35,7 +35,7 @@
 //
 //   hub fade      [start, cover + 1.5 frames]            the CSS fade of the hub over the page
 //   AFTER fade    [gate-open - 320 ms*k - 2 frames, +1]  placeholder -> AFTER (only when after-ready)
-//   reveal        [reveal - 1 frame, done]               page-texture fade onto the live page (the end of the run)
+//   reveal        [reveal - 1 frame, done + 300 ms]      the final dissolve onto the live page; it OVERLAPS UNWRAP's tail and ends with it
 //
 // `k` is the rig's timeline slowdown (see timelineSlowdown in lib/eversion-drive.mjs):
 // the timeline clamps each frame to 50 ms, so below 20 fps one frame is one 50 ms

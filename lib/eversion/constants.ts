@@ -65,7 +65,19 @@ export const WRAP_WAVE = 0.6;
 /* ── Timeline gates and re-planning (spec §7.5–7.7) ───────────────────────── */
 
 export const PLACEHOLDER_XFADE_MS = 320;
-export const REVEAL_MS = 180;
+/**
+ * The final dissolve: the canvas's flat AFTER picture crossfades onto the live page (`pageAlpha` and the
+ * canvas clear 1 -> 0, one quintic) while UNWRAP's last stretch finishes underneath it, and both end together
+ * (spec amendment 2026-10-18 §6.6a). It begins {@link UNCOVER_LEAD_MS} after `uncover`, i.e. `REVEAL_MS` before
+ * UNWRAP's end, so the motion never visibly stops before the dissolve starts: the run ends in one movement.
+ */
+export const REVEAL_MS = 200;
+/**
+ * How long before the dissolve the render side asks the page to show itself (`uncover`): the cover class comes
+ * off, two frames paint the live page under the still-opaque canvas, and `reveal` is posted back. ~3 frames at
+ * 60 Hz; a slower page simply starts the dissolve later (it never starts before the live page is painted).
+ */
+export const UNCOVER_LEAD_MS = 60;
 export const HUB_FADE_MS = 250;
 
 /** Extra time the timeline will wait for AFTER past the point it was due. */
@@ -97,8 +109,34 @@ export const BEFORE_GRACE_MS = 250;
 export const BEFORE_WAIT_MS = 50;
 /** Hard timeout for either capture; on timeout the navigation falls back. */
 export const CAPTURE_TIMEOUT_MS = 600;
-/** Cap on waiting for viewport images to settle before the AFTER capture. */
-export const AFTER_SETTLE_CAP_MS = 1200;
+
+/* ── The AFTER readiness gate (spec amendment 2026-10-18 §6.4a; `settle.ts`) ───
+   The destination is captured only once it is SETTLED: route idle, no query loading its first data, no
+   skeleton in the viewport, images and fonts loaded, layout quiet. Everything is bounded by the timeline's own
+   AFTER deadline, worked back from the gate (see `afterSettleDeadlines`). */
+
+/** Consecutive animation frames every readiness condition must hold before AFTER is captured. */
+export const AFTER_STABLE_FRAMES = 2;
+/** The DOM (nodes added or removed, `src` swaps) and the layout (layout-shift entries) must have been still this long. */
+export const AFTER_QUIET_MS = 100;
+/**
+ * Once everything but "quiet" holds, waiting for quiet is bounded by this: a page that never stops mutating
+ * (a ticking clock, a live rail) is a page at rest, not an unsettled one, and must not delay every navigation.
+ */
+export const AFTER_QUIET_CAP_MS = 800;
+/** Past the free window only ACTIVITY (a fetch, an image, a font) holds the capture; it then waits this long for the result to render. */
+export const AFTER_RENDER_GRACE_MS = 100;
+/** Time reserved for the capture itself when working back from the gate's deadline (it is ~100-300 ms; its own timeout is {@link AFTER_CAPTURE_TIMEOUT_MS}). */
+export const AFTER_CAPTURE_RESERVE_MS = 300;
+/** Cap on `img.decode()` of the viewport's images once the page is settled. */
+export const AFTER_DECODE_CAP_MS = 250;
+/**
+ * What counts as "still loading" on screen: the site's skeleton primitive, the router's pending component,
+ * anything that says `aria-busy`, the radial loader mark. Only elements inside the viewport (and outside
+ * {@link CAPTURE_EXCLUDE_SELECTORS}) count.
+ */
+export const LOADING_PLACEHOLDER_SELECTOR =
+  '[data-slot="skeleton"], [data-route-pending], [aria-busy="true"], .rad-loader';
 /** Timeout for the AFTER capture, measured from "settled". */
 export const AFTER_CAPTURE_TIMEOUT_MS = 1500;
 /** A BEFORE capture older than this is retaken on the next idle. */
@@ -325,14 +363,15 @@ export const DROPPED_FRAME_FACTOR = 1.5;
  * disagree with them. The spec's table lists `evert` as 600–3900 and `unwrap`
  * as 3800–4600: each stage's window is its planned duration PLUS its overlap
  * with the stage before it, which is how WRAP 700 + EVERSION 3200 + UNWRAP 700
- * reaches the table's 4600 (UNWRAP's end); the reveal fade adds `REVEAL_MS`.
+ * reaches the table's 4600 (UNWRAP's end), which is also the run's end: the final dissolve is its last `REVEAL_MS`.
  */
 export const PLAN_MS = (() => {
   const evertStart = WRAP_MS - EVERT_OVERLAP_MS;
   const evertEnd = evertStart + EVERT_MS + EVERT_OVERLAP_MS;
   const unwrapStart = evertEnd - UNWRAP_OVERLAP_MS;
   const unwrapEnd = unwrapStart + UNWRAP_MS + UNWRAP_OVERLAP_MS;
-  const revealEnd = unwrapEnd + REVEAL_MS;
+  // The dissolve overlaps UNWRAP's tail and ends with it (`REVEAL_MS`); `uncover` precedes it by the lead.
+  const revealStart = unwrapEnd - REVEAL_MS;
   return {
     wrap: [0, WRAP_MS],
     radius: [0, WRAP_MS],
@@ -346,9 +385,11 @@ export const PLAN_MS = (() => {
     /** …and is back to 0° at this time. */
     tiltEnd: 4300,
     unwrap: [unwrapStart, unwrapEnd],
-    /** The canvas fades onto the identical live page, then `done`. The animation itself ended at `unwrap[1]`. */
-    reveal: [unwrapEnd, revealEnd],
-    total: revealEnd,
+    /** The page is asked to uncover itself (`uncover`) this long before the dissolve starts. */
+    uncover: revealStart - UNCOVER_LEAD_MS,
+    /** The canvas dissolves onto the identical live page while UNWRAP finishes; `done` is the end of both. */
+    reveal: [revealStart, unwrapEnd],
+    total: unwrapEnd,
   } as const;
 })();
 
@@ -364,3 +405,22 @@ export const PLAN_MS = (() => {
  * {@link STRETCH_CAP_MS} plus the AFTER capture's timeout - hence the margin.
  */
 export const MAX_RUN_MS = 30_000;
+
+/* ── "Always evert globe" (spec amendment 2026-10-18) ─────────────────────── */
+
+/**
+ * With the visitor's "Always evert globe" preference on, the release waits this
+ * long for a BEFORE bitmap (the scheduler's in-flight capture, else one taken on
+ * demand) instead of {@link BEFORE_WAIT_MS}. Bounded: the hub sits still while
+ * it waits, so "generous" is a few seconds, never open-ended.
+ */
+export const ALWAYS_EVERT_BEFORE_WAIT_MS = 3000;
+/**
+ * The same preference's wait for a host that is still initialising or has gone
+ * quiet, instead of the 100 ms `HOST_READY_TIMEOUT_MS` (a cold init can take a
+ * few seconds on a phone or a software GL; the init itself is bounded by
+ * `HOST_INIT_TIMEOUT_MS`).
+ */
+export const ALWAYS_EVERT_HOST_WAIT_MS = 8000;
+/** The same preference's wait for the overlay to attach its canvas (React commit under load). */
+export const ALWAYS_EVERT_OVERLAY_MOUNT_MS = 2000;

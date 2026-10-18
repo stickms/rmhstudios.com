@@ -26,6 +26,13 @@
 //  dismiss-*   Escape, the X and an outside tap close the hub exactly as before
 //      (focus returns to the orb) and never start a run.
 //  preview   Settings → Appearance → Preview runs the effect in place.
+//  weak-device-off / weak-device-on / weak-device-on-reduced-motion   "Always evert
+//      globe" (spec amendment 2026-10-18). A weak device is emulated by throttling the
+//      CPU and confirming a pin the moment the hub is open, before the host has
+//      initialised or the BEFORE picture exists. With the setting off the effect is
+//      skipped (no run, the page still navigates); with it on
+//      (the signed-out localStorage path) the same release waits and runs the full
+//      effect; with reduced motion on as well nothing runs (accessibility wins).
 //  reduced-motion   with the effect on for everyone (`EVERSION_ENABLED`), the
 //      remaining way to get today's hub is `prefers-reduced-motion: reduce`: no
 //      eversion marks, no overlay, and a pin confirmation navigates straight away.
@@ -33,7 +40,7 @@
 // Faking nothing: real router, real capture, real worker host (SwiftShader).
 // ─────────────────────────────────────────────────────────────────────────────
 
-/* global MouseEvent, performance, requestAnimationFrame -- used only inside page.evaluate() callbacks. */
+/* global MouseEvent, performance, requestAnimationFrame, localStorage -- used only inside page.evaluate() callbacks. */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { EVERSION_MARKS, openSession, BASE_URL } from './lib/eversion-session.mjs';
@@ -63,6 +70,16 @@ async function shot(page, name) {
 /** A fresh session on `/`, errors collected, the warm-up given time to land. */
 async function fresh(opts = {}) {
   const s = await openSession({ profile: PROFILE, theme: THEME, ...opts });
+  // Per-visitor settings the signed-out path reads from localStorage (before any script runs).
+  if (opts.storage) {
+    await s.page.context().addInitScript((entries) => {
+      try {
+        for (const [k, v] of Object.entries(entries)) localStorage.setItem(k, v);
+      } catch {
+        /* storage blocked */
+      }
+    }, opts.storage);
+  }
   const errors = [];
   s.page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
   s.page.on('console', (m) => {
@@ -203,9 +220,10 @@ async function entryScenario(entry) {
       null,
       { timeout: 5000 },
     );
-    // The orb is hidden for the whole run and returns through the hub's ordinary closed-state fade
-    // (`opacity 0.34s ease`), so it is NOT yet at 1 on the frame `closed` lands: sample the ramp every
-    // frame, and require that it rises monotonically and ends at 1 (an eased fade, not a hard cut).
+    // The orb is hidden for the run and returns through its ordinary eased fade (`opacity 0.34s ease`). Since
+    // 2026-10-18 that fade starts as the cover comes off (`html.eversion-live:not(.eversion-cover)`), under the
+    // dissolving canvas, so it may already be at 1 when `closed` lands. Sample the ramp every frame and require
+    // that it rises monotonically and ends at 1 (an eased fade, not a hard cut).
     const orbRamp = await s.page.evaluate(
       () =>
         new Promise((resolve) => {
@@ -326,6 +344,84 @@ async function previewScenario() {
   }
 }
 
+/**
+ * A weak device, as far as the effect can tell: the CPU is throttled and the pin
+ * is confirmed the instant the hub is open, so neither the host nor the BEFORE
+ * picture is ready (the normal skip: `host-not-ready` / `before-missing`).
+ */
+async function weakDeviceScenario({ name, always, reducedMotion }) {
+  const { s, errors } = await fresh({
+    eversion: reducedMotion ? false : undefined,
+    // The debug surface is how the script knows the hub's controller exists (below).
+    debug: !reducedMotion,
+    storage: always ? { 'rmh-always-evert-globe': '1' } : undefined,
+    reducedMotion: reducedMotion ? 'reduce' : undefined,
+  });
+  try {
+    await untilReady(s);
+    const cdp = await s.page.context().newCDPSession(s.page);
+    if (reducedMotion) {
+      // The strongest form of the check: a FULLY warmed hub (host ready, BEFORE held), so
+      // the only thing standing between the setting and a run is reduced motion.
+      await openHub(s);
+    } else {
+      // The fixed wait of `untilReady` is not a promise on a loaded box: until the
+      // bridge has mounted the hub has no controller and navigates by today's path,
+      // which would make the setting-on case pass or fail for the wrong reason.
+      await s.page.waitForFunction(() => !!globalThis.__eversion?.beforeCapture, null, {
+        timeout: SLOW,
+      });
+      await s.page.click('.radial-hub__orb');
+      await s.page.waitForFunction(
+        () => document.querySelector('.radial-hub')?.getAttribute('data-phase') === 'open',
+      );
+      await cdp.send('Emulation.setCPUThrottlingRate', { rate: 2 });
+    }
+    await s.clearMarks();
+    // Release immediately: no warm-up wait, which is the whole point.
+    const pin = s.page.locator('.radial-globe__pins a[href="/games"]');
+    await pin.focus();
+    await s.page.keyboard.press('Enter');
+
+    if (always && !reducedMotion) {
+      const start = await s
+        .waitForMark(EVERSION_MARKS.start, { timeout: 45_000 })
+        .catch(async (e) => {
+          throw new Error(`${e.message.split('\n')[0]}; marks: ${JSON.stringify(await s.marks())}`);
+        });
+      // The throttle models a weak device while the run PRIMES; once it has committed,
+      // let the software-GL run finish in a sane time (the suite's ceiling is RUN_MS).
+      await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+      check(name, start.detail?.entry === 'enter', `start.entry=${start.detail?.entry}`);
+      await s.waitForMark(EVERSION_MARKS.done, { timeout: RUN_MS });
+      const marks = await s.marks();
+      check(
+        name,
+        !marks.some((m) => m.name === EVERSION_MARKS.fallback),
+        `the override still fell back: ${JSON.stringify(marks.filter((m) => m.name === EVERSION_MARKS.fallback))}`,
+      );
+      check(name, new URL(s.page.url()).pathname === '/games', `landed on ${s.page.url()}`);
+    } else {
+      await s.page.waitForURL('**/games', { timeout: SLOW });
+      await s.page.waitForTimeout(1500);
+      const marks = await s.marks();
+      // An ineligible hub navigates by today's path without ever calling the runner,
+      // so a skip is the ABSENCE of run marks (a `fallback` mark only appears when the
+      // runner itself gives up, which the setting-on case below must not do).
+      const runMarks = marks.filter((m) => m.name !== EVERSION_MARKS.prefetch);
+      check(name, runMarks.length === 0, `a run started: ${runMarks.map((m) => m.name)}`);
+      check(
+        name,
+        !(await s.page.evaluate(() => !!document.querySelector('.eversion-overlay'))),
+        'overlay present',
+      );
+    }
+    check(name, errors.length === 0, `errors: ${errors.join(' | ')}`);
+  } finally {
+    await s.close();
+  }
+}
+
 /** Under reduced motion the hub is today's hub (the effect is on for everyone otherwise). */
 async function reducedMotionScenario() {
   const name = 'reduced-motion';
@@ -363,6 +459,17 @@ const scenarios = [
   ['dismiss-x', () => dismissScenario('x')],
   ['dismiss-outside', () => dismissScenario('outside')],
   ['preview', previewScenario],
+  ['weak-device-off', () => weakDeviceScenario({ name: 'weak-device-off', always: false })],
+  ['weak-device-on', () => weakDeviceScenario({ name: 'weak-device-on', always: true })],
+  [
+    'weak-device-on-reduced-motion',
+    () =>
+      weakDeviceScenario({
+        name: 'weak-device-on-reduced-motion',
+        always: true,
+        reducedMotion: true,
+      }),
+  ],
   ['reduced-motion', reducedMotionScenario],
 ].filter(([n]) => n.includes(ONLY));
 

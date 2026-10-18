@@ -295,6 +295,12 @@ asking not to see; the press still turns the globe as it always did.
 
 ## Globe Eversion (the hub's navigation transition)
 
+> **The ending is one movement (2026-10-18).** The canvas dissolves onto the live page during UNWRAP's last 200 ms and
+> ends with it. While a run owns the page `html.eversion-live` (eversion.css) holds the shell layers sharp and
+> transition-free, because the hub otherwise keeps them at `blur(20px)` until its phase leaves `everting` (the old
+> "glitchy extra step": a fade onto a blurred page, then a pop). The compose button and the orb come in with the
+> dissolve. AFTER is captured only once the destination is settled (`lib/eversion/settle.ts`).
+
 Confirming a destination in the hub can play a one-shot WebGL2 transition instead
 of the veil-and-navigate: the current page **WRAPs** onto the liquid globe through
 a map projection, the globe performs Thurston's corrugated sphere **EVERSION**
@@ -328,8 +334,8 @@ with the task plan beside it. The components here are in `eversion/`
   answer immediately with the ordinary dismiss-and-navigate.
 - **Fast-forward on input.** Once committed, a tap, key press or navigation
   gesture does not abort: the timeline re-plans (quintic, from the channel's
-  current state) and runs the rest of the effect quickly. Input once the unwrap is done
-  (the reveal fade) is ignored. While a run is `busy`, the hub's close / toggle / Escape do nothing.
+  current state) and runs the rest of the effect quickly. Input once the page is being uncovered
+  (the final dissolve, which overlaps UNWRAP's tail) is ignored. While a run is `busy`, the hub's close / toggle / Escape do nothing.
 - **Back/forward never animates.** A traversal during priming reports
   `traversal` and the hub just closes; mid-run it aborts with a crossfade onto
   the live page. A run always ends: a stall watchdog force-ends it with a fade.
@@ -357,6 +363,15 @@ with the task plan beside it. The components here are in `eversion/`
   azimuthal, equirectangular) with **Random as the default** (it never repeats the
   previous projection) plus a Preview button. After the flip, confirm the row is
   visible, defaults to Random, persists and previews (tasks T39 acceptance).
+- **"Always evert globe".** A switch next to the transition picker
+  (`AlwaysEvertRow` in `AppearancePanel.tsx`; hidden while the flag is off, disabled
+  with a hint while reduced motion is on) that forces the effect on devices where it
+  is normally skipped to keep navigation fast: a host still starting, a BEFORE
+  picture not ready, a slow overlay. It lengthens those bounded waits and never
+  overrides reduced motion, WebGL2, back/forward or a busy runner. Stored as
+  `alwaysEvertGlobe` (account column + `rmh-always-evert-globe` cache), default off.
+  The gate-by-gate table is in
+  [`lib/eversion/README.md`](../../lib/eversion/README.md).
 - **Lab route `/eversion-lab`.** The device-lab and e2e harness
   (`app/routes/eversion-lab.tsx`, `eversion/lab/`): `noindex`, in no sitemap or
   nav, **admin-gated**. `EVERSION_LAB_OPEN=1` skips the admin check for the e2e

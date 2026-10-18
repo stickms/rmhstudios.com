@@ -53,7 +53,7 @@ const fixtures = join(root, 'testing/e2e/eversion-controller');
 const MARKS = ['start', 'cover', 'evert', 'gate-open', 'unwrap', 'reveal', 'done'].map(
   (n) => `eversion:${n}`,
 );
-const REVEAL_MS = 180;
+const REVEAL_MS = 200;
 const FF_REMAINING_MS = 650;
 const FF_SLACK_MS = 400; // SwiftShader frames + the key's trip to the worker
 

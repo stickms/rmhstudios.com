@@ -58,13 +58,47 @@
    is listed with `.radial-frame` and the backdrop layer for the same reason the
    hub's own page blur lists all three (they are the three shell siblings). The
    aurora (`.site-aurora`) is a document-level layer under the canvas and is
-   covered by it; that is accepted (spec §6.6). Removed on `unwrap-done`, before
-   `reveal`, so the live page is already painted under the canvas by the time
-   the page texture fades out. */
+   covered by it; that is accepted (spec §6.6). Removed on `uncover` (UNWRAP's
+   last ~260 ms), before `reveal`, so the live page is already painted under
+   the canvas by the time the page texture starts to dissolve. */
 html.eversion-cover .radial-frame,
 html.eversion-cover .radial-backdrop,
 html.eversion-cover .radial-topbar {
   opacity: 0;
+}
+
+/* ── Handing the live page back (spec amendment 2026-10-18 §6.6a) ───────────
+   The final dissolve is a CROSSFADE of the canvas's flat AFTER picture onto the
+   live page, so the live page has to BE that picture: sharp, fully opaque, and
+   not moving on its own.
+
+   What it used to be instead is the owner's "glitchy extra step". The hub holds
+   the shell's three layers at `filter: blur(20px)` for as long as its phase is
+   `open` OR `everting` (radial.css), and `everting` lasts until the run is over.
+   So when the cover came off, the canvas faded onto a 20px-blurred copy of the
+   page, and one frame after the fade the hub closed, the blur dropped and the
+   page popped sharp: a second, separate event after the animation had ended.
+
+   `eversion-live` is set from the first `cover` (the page is invisible then, so
+   dropping the blur is unseen) and released a couple of frames after the run
+   ends, by which time the hub has closed. It also pins `transition: none`, so
+   the layers come back at full opacity in the frame the cover class goes, and it
+   lets the feed's compose button, which the hub hides until it is `closed`,
+   dissolve in with the page instead of popping in a frame after. The orb joins
+   in the same way: with the cover off it starts its ordinary eased fade-in (the
+   base rule's 0.34 s opacity transition) under the dissolving canvas, rather
+   than starting once the dissolve is over. */
+html.eversion-live .radial-shell:has(.radial-hub[data-phase='everting']) .radial-backdrop,
+html.eversion-live .radial-shell:has(.radial-hub[data-phase='everting']) .radial-topbar,
+html.eversion-live .radial-shell:has(.radial-hub[data-phase='everting']) .radial-frame {
+  filter: none;
+  transition: none;
+}
+html.eversion-live .radial-shell:has(.radial-hub[data-phase='everting']) .radial-feed__compose {
+  visibility: visible;
+}
+html.eversion-live:not(.eversion-cover) .radial-hub[data-phase='everting'] .radial-hub__orb {
+  opacity: 1;
 }
 
 /* ── Settling for the AFTER capture (spec §6.4) ────────────────────────────
