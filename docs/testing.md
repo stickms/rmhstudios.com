@@ -259,6 +259,13 @@ flags) plus `bundle-leaks.test.ts`, which gives the static-closure leak scan in
 module fingerprint true. `pnpm exec vitest run lib/eversion` runs just these
 (~30 s).
 
+`settle.test.ts` holds the AFTER readiness gate's decision logic (skeletons, queries, images, fonts, quiet window,
+soft/hard bounds, no latency when settled) and `unwrap-end.test.ts` the overlapping crossfade ending.
+`testing/e2e/eversion-late-content.mjs` (dev server, Chromium; not in CI) delays the destination's `/api`,
+server-fn and image requests by 400-1500 ms, runs the real effect and requires SSIM(AFTER bitmap, settled live page)
+
+> = 0.92 (it scored 0.62 with the gate bypassed, and 0.97-1.00 with it).
+
 **b. Fixture e2e (no server, no build).** Each script bundles its own fixture
 page with esbuild around the real modules and serves it from a fake origin, with
 WebGL2 from SwiftShader:

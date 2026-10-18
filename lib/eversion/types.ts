@@ -344,9 +344,12 @@ export interface Mesh {
  *
  * `wrap` (at `start`) → `evert` (EVERSION begins) → `gate-open` (UNWRAP is
  * permitted: AFTER is ready, or the stretch cap was hit, or `after-failed`) →
- * `unwrap` → `unwrap-done` (the flat page fills the viewport; the controller
- * removes `eversion-cover` and answers with `reveal`) → `reveal` →
- * `done`.
+ * `unwrap` → `uncover` (UNWRAP is in its last stretch, `REVEAL_MS + UNCOVER_LEAD_MS`
+ * from its end: the controller removes `eversion-cover` and answers with `reveal`)
+ * → `reveal` (the live page is painted under the canvas: the dissolve starts,
+ * overlapping UNWRAP's tail) → `done` (UNWRAP and the dissolve end together).
+ * The stage was `unwrap-done` before the 2026-10-18 amendment, when the dissolve
+ * began only after UNWRAP had visibly come to rest.
  *
  * `gate-open` is never emitted before `evert`, even if AFTER arrives early.
  */
@@ -355,7 +358,7 @@ export const STAGE_IDS = [
   'evert',
   'gate-open',
   'unwrap',
-  'unwrap-done',
+  'uncover',
   'reveal',
   'done',
 ] as const;
@@ -424,7 +427,7 @@ export interface TimelineSnapshot {
   hubFade: number;
   /** Placeholder → AFTER crossfade, 0…1. Event-driven (`afterReady`). */
   afterMix: number;
-  /** Page-texture opacity during reveal, 1 → 0. */
+  /** Page-texture opacity during the final dissolve, 1 → 0 (it overlaps UNWRAP's tail). */
   pageAlpha: number;
   /**
    * Age in SECONDS of the ripple emitted at `start` from the front point
@@ -434,8 +437,9 @@ export interface TimelineSnapshot {
   rippleAge: number;
 
   /**
-   * Alpha the canvas is cleared to: `1` until `reveal`, then `0` (spec §10.1).
-   * The switch is invisible because by then the flat page fills the viewport.
+   * Alpha the canvas is cleared to: `1` until `reveal`, then it follows `pageAlpha` down to `0`
+   * (spec §10.1, amended 2026-10-18): whatever is not page dissolves with the page, so nothing
+   * pops out when the dissolve ends.
    */
   bgAlpha: number;
 }
@@ -478,7 +482,10 @@ export interface TimelineApi {
    * The viewport changed: re-plan the radius/centre channels toward the new targets.
    */
   resize(now: number, viewport: Viewport): void;
-  /** The live DOM is visible underneath: begin `pageAlpha` 1 → 0; `done` follows when it lands. */
+  /**
+   * The live DOM is visible underneath (the answer to `uncover`): begin `pageAlpha` 1 → 0; it lands with UNWRAP's
+   * end (or `REVEAL_MS` later if the answer came late) and `done` follows.
+   */
   reveal(now: number): void;
   /** Stages reached since the last call, in order; the list is then cleared. */
   events(): TimelineEvent[];
@@ -608,7 +615,8 @@ export type FromWorker =
   | { type: 'stage'; stage: StageId; t: number }
   /** The after-gate's deadline on the `performance.now()` base (see {@link TimelineApi.afterDeadline}). */
   | { type: 'need-after-by'; deadline: number }
-  | { type: 'unwrap-done' }
+  /** UNWRAP is in its last stretch: take `eversion-cover` off, let the live page paint, answer `reveal`. */
+  | { type: 'uncover' }
   /** The answer to `probe`. */
   | { type: 'probe-result'; ok: boolean; reason?: string }
   | ({ type: 'done' } & FrameStats)
@@ -638,7 +646,7 @@ export const FROM_WORKER_TYPES = [
   'cover',
   'stage',
   'need-after-by',
-  'unwrap-done',
+  'uncover',
   'probe-result',
   'done',
   'context-lost',

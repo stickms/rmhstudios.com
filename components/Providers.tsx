@@ -9,6 +9,7 @@ import {
   useMemo,
 } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { setSharedQueryClient } from '@/lib/query-client-ref';
 import { useLocation, useRouterState } from '@tanstack/react-router';
 import { MotionConfig, LazyMotion } from 'framer-motion';
 import { Toaster } from 'sonner';
@@ -296,6 +297,12 @@ export function Providers({
 }: ProvidersProps) {
   // Per-request/per-mount QueryClient (perf audit §4.3) — see makeQueryClient.
   const [queryClient] = useState(makeQueryClient);
+  // Lets the globe eversion's AFTER readiness gate ask whether the destination still has queries
+  // loading (lib/query-client-ref.ts: a variable and a type, nothing to bundle).
+  useEffect(() => {
+    setSharedQueryClient(queryClient);
+    return () => setSharedQueryClient(null);
+  }, [queryClient]);
   const session = authClient.useSession();
   const style = useThemeStore((s) => s.style);
   const preview = useThemeStore((s) => s.preview);

@@ -30,7 +30,7 @@
  * - `start`: `timeline.start(t0)`, start the loop, emit `need-after-by`. Post
  *   `cover` after the frame AFTER the first draw has been presented.
  * - Each frame: `timeline.tick(now)` → `renderer.draw(snapshot)` → emit `stage`
- *   for each new timeline event (and `unwrap-done`); feed the governor
+ *   for each new timeline event (and `uncover`); feed the governor
  *   (`governor-tiers.ts`).
  * - `fast-forward` / `after-failed` / `resize` / `reveal` / `abort`: forward to
  *   the timeline (resize also to the renderer).
@@ -45,6 +45,7 @@
  * first `start`, no frame is scheduled and no GPU work is issued.
  */
 
+import { UNCOVER_LEAD_MS } from '../constants';
 import { SPIN_AXIS } from '../domain';
 import { afterDomainTransform, alignAngle, fitEndIsometry } from '../orientation';
 import { bakeLut } from '../projection-lut';
@@ -298,7 +299,7 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
     let finished = false;
     for (const event of timeline!.events()) {
       emit({ type: 'stage', stage: event.stage, t: event.t });
-      if (event.stage === 'unwrap-done') emit({ type: 'unwrap-done' });
+      if (event.stage === 'uncover') emit({ type: 'uncover' });
       if (event.stage === 'done') finished = true;
     }
     return finished;
@@ -327,7 +328,7 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
   /**
    * A hidden page draws no frames, so a run that is hurried (abort, fast-forward) would never reach its end
    * and the navigation would hang until the tab came back. Run the rest of the timeline synchronously instead,
-   * on a simulated clock, nothing drawn: events come out in their usual order (unwrap-done, reveal, done)
+   * on a simulated clock, nothing drawn: events come out in their usual order (uncover, reveal, done)
    * and the run ends through the same `finish` as a drawn one. Nobody is looking, so the reveal is answered
    * here rather than waiting a round trip to the main thread (a later `reveal` message is a no-op).
    */
@@ -336,19 +337,19 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
     for (let i = 0; i < SETTLE_MAX_STEPS && timeline; i++) {
       const at = tickClock(clock + SCRUB_STEP_MS);
       timeline.tick(at);
-      let unwrapDone = false;
+      let uncovered = false;
       for (const event of timeline.events()) {
         emit({ type: 'stage', stage: event.stage, t: event.t });
-        if (event.stage === 'unwrap-done') {
-          emit({ type: 'unwrap-done' });
-          unwrapDone = true;
+        if (event.stage === 'uncover') {
+          emit({ type: 'uncover' });
+          uncovered = true;
         }
         if (event.stage === 'done') {
           finish();
           return;
         }
       }
-      if (unwrapDone) timeline.reveal(at);
+      if (uncovered) timeline.reveal(at);
     }
   }
 
@@ -604,6 +605,8 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
         let ready = command.afterAt === null;
         let forwarded = command.ffAt == null;
         let failed = command.failAt == null;
+        let uncoveredAt = -1;
+        let answered = false;
         let snapshot: Readonly<TimelineSnapshot>;
         for (let t = SCRUB_STEP_MS; ; t += SCRUB_STEP_MS) {
           const at = Math.min(t, command.t);
@@ -620,11 +623,12 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
             failed = true;
           }
           snapshot = tl.tick(at);
-          // The live path answers `unwrap-done` with `reveal`; so does the replay,
-          // or scrubbing to the reveal/DONE would stall at the unwrap-done state forever.
-          let unwrapDone = false;
-          for (const event of tl.events()) if (event.stage === 'unwrap-done') unwrapDone = true;
-          if (unwrapDone) {
+          // The live path answers `uncover` with `reveal` one round trip later (`UNCOVER_LEAD_MS`: cover off,
+          // two frames, a post); so does the replay, or scrubbing to the reveal/DONE would stall at the
+          // uncover state forever, and the dissolve would start at a different moment than a real run's.
+          for (const event of tl.events()) if (event.stage === 'uncover') uncoveredAt = event.t;
+          if (uncoveredAt >= 0 && !answered && at >= uncoveredAt + UNCOVER_LEAD_MS) {
+            answered = true;
             tl.reveal(at);
             snapshot = tl.tick(at);
             tl.events();

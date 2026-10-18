@@ -7,12 +7,13 @@ import { buildPlaceholder } from '@/lib/eversion/placeholder';
 import { createCapture, fixedViewport } from '@/lib/eversion/capture';
 import { evaluateHostEligibility } from '@/lib/eversion/eligibility';
 import { registerDebug, maybeLoadEversionDebug } from '@/lib/eversion/debug';
-import { isEversionEnabled } from '@/lib/eversion/flags';
+import { isEversionDebugEnabled, isEversionEnabled } from '@/lib/eversion/flags';
 import { getEversionHost, resetEversionHost } from '@/lib/eversion/gl/host';
 import { resolveProjection } from '@/lib/eversion/random';
 import { EVERSION_MARKS } from '@/lib/eversion/marks';
 import type { EntryPoint } from '@/lib/eversion/marks';
 import { EversionRunner, HOST_INIT_TIMEOUT_MS, withTimeout } from '@/lib/eversion/runner';
+import { createDomProbe, decodeViewportImages, waitForSettled } from '@/lib/eversion/settle';
 import type {
   HostPort,
   OverlayPort,
@@ -222,8 +223,15 @@ function viewportNow(): Viewport {
   return { w: width, h: height, dpr: window.devicePixelRatio || 1 };
 }
 
-function timeoutPromise(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+/** A frame, or 100 ms if the tab is hidden and none will come (a hidden tab never fires one). */
+function nextFrame(): Promise<void> {
+  return new Promise<void>((resolve) => {
+    const timer = setTimeout(resolve, 100);
+    requestAnimationFrame(() => {
+      clearTimeout(timer);
+      resolve();
+    });
+  });
 }
 
 function createPagePort(): PagePort {
@@ -259,39 +267,32 @@ function createPagePort(): PagePort {
     setCover(on) {
       document.documentElement.classList.toggle('eversion-cover', on);
     },
+    setLive(on) {
+      document.documentElement.classList.toggle('eversion-live', on);
+    },
     setSettle(on) {
       if (on) document.documentElement.setAttribute('data-eversion-settle', '');
       else document.documentElement.removeAttribute('data-eversion-settle');
     },
-    async whenAssetsSettled(capMs) {
-      const fonts = document.fonts?.ready ?? Promise.resolve();
-      const pending = Array.from(document.images)
-        .filter((img) => {
-          if (img.complete) return false;
-          const r = img.getBoundingClientRect();
-          return (
-            r.bottom > 0 && r.right > 0 && r.top < window.innerHeight && r.left < window.innerWidth
+    watchSettle() {
+      const probe = createDomProbe();
+      return {
+        async whenSettled(request) {
+          const report = await waitForSettled(
+            probe,
+            { now: () => performance.now(), nextFrame },
+            request,
           );
-        })
-        .map(
-          (img) =>
-            new Promise<void>((resolve) => {
-              img.addEventListener('load', () => resolve(), { once: true });
-              img.addEventListener('error', () => resolve(), { once: true });
-            }),
-        );
-      await Promise.race([Promise.all([fonts, ...pending]), timeoutPromise(capMs)]);
+          // The pictures the capture reads must be decoded, not merely loaded.
+          if (report.reason !== 'cancelled' && report.reason !== 'hurried') {
+            await decodeViewportImages();
+          }
+          return report;
+        },
+        dispose: () => probe.dispose(),
+      };
     },
-    nextFrame() {
-      // A hidden tab never fires a frame; the timer keeps AFTER from waiting on one.
-      return new Promise<void>((resolve) => {
-        const timer = setTimeout(resolve, 100);
-        requestAnimationFrame(() => {
-          clearTimeout(timer);
-          resolve();
-        });
-      });
-    },
+    nextFrame,
     onInput(cb) {
       const onKey = (e: KeyboardEvent) => {
         if (e.repeat || ['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) return;
@@ -520,6 +521,30 @@ export interface EversionControllerHandle extends EversionController {
   dispose(): void;
 }
 
+/** The last AFTER capture, for `window.__eversion.afterCapture` (debug flag only; see `recordAfterCapture`). */
+let lastAfterCapture: {
+  at: number;
+  width: number;
+  height: number;
+  png: string;
+  settle: unknown;
+} | null = null;
+
+/** Debug only: keep a PNG of the AFTER bitmap and what the readiness gate saw, for the late-content e2e. */
+function recordAfterCapture(bitmap: ImageBitmap, settle: unknown): void {
+  const canvas = document.createElement('canvas');
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  canvas.getContext('2d')?.drawImage(bitmap, 0, 0);
+  lastAfterCapture = {
+    at: performance.now(),
+    width: bitmap.width,
+    height: bitmap.height,
+    png: canvas.toDataURL('image/png'),
+    settle,
+  };
+}
+
 /** Test and e2e seams: replace any port. */
 export type ControllerOverrides = Partial<RunnerDeps>;
 
@@ -660,6 +685,7 @@ export function createEversionController(
       }
     },
     now: () => performance.now(),
+    afterCaptured: isEversionDebugEnabled() ? recordAfterCapture : undefined,
     get maxRunMs() {
       // e2e harness only (testing/e2e/lib/eversion-session.mjs): a software-GL page
       // can stay silent far longer than any device, and is not hung.
@@ -821,6 +847,7 @@ if (typeof window !== 'undefined') {
     );
     return debugController;
   };
+  registerDebug('afterCapture', { last: () => lastAfterCapture });
   registerDebug('controller', {
     state() {
       const s = ensure()?.state();

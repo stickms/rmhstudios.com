@@ -171,7 +171,7 @@ export function EversionLab() {
         case 'need-after-by':
           patch({ note: `AFTER needed by ${Math.round(m.deadline)}` });
           break;
-        case 'unwrap-done':
+        case 'uncover':
           // The controller's half of the hand-off: the flat page is on screen, so reveal.
           host.post({ type: 'reveal' });
           break;

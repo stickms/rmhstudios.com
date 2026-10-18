@@ -2,7 +2,7 @@
  * The test page's script for `testing/e2e/eversion-host.mjs` (T25). Bundled by
  * esbuild for that script only. It drives the REAL `getEversionHost` the way the
  * controller (T31) will: init with a DOM canvas, prime, textures, start, answer
- * `unwrap-done` with `reveal`, wait for `done`.
+ * `uncover` with `reveal`, wait for `done`.
  *
  * `win.__WORKER_SRC__` carries the bundled worker entry (`worker.ts`);
  * the page turns it into a Blob URL, which stands in for the URL Vite rewrites
@@ -139,7 +139,7 @@ const api = {
 
   /**
    * Start a run and resolve at `done`. As the controller does, answer
-   * `unwrap-done` with `reveal`. `fastForward` shortens the run; `busyAt` blocks
+   * `uncover` with `reveal`. `fastForward` shortens the run; `busyAt` blocks
    * the main thread for `busyMs` that many ms after start.
    */
   run(options: { fastForward?: boolean; busyAt?: number; busyMs?: number } = {}) {
@@ -156,7 +156,7 @@ const api = {
       let blocked = 0;
       let busyWindow: [number, number] | null = null;
       const unsubscribe = host!.subscribe((m) => {
-        if (m.type === 'unwrap-done') post({ type: 'reveal' });
+        if (m.type === 'uncover') post({ type: 'reveal' });
         if (m.type === 'done' || (m.type === 'error' && m.fatal) || m.type === 'context-lost') {
           unsubscribe();
           const mine = log.map((e) => e.m);

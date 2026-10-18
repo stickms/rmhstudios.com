@@ -718,7 +718,10 @@ void main() {
   float rim = pow(1.0 - abs(facing), RIM_POWER) * RIM_STRENGTH;
   rgb = mix(rgb, u_colCageMajor.rgb, clamp(rim, 0.0, 1.0) * v_morph);
 
-  float a = mix(1.0, u_pageAlpha, onPage);
+  /* The whole surface dissolves with the page (amended 2026-10-18): the final dissolve overlaps UNWRAP's tail, so the
+     page's antialiased edge, any glass left at it and the clear colour (bgAlpha) all follow u_pageAlpha, and
+     nothing is left at the viewport's border when the canvas goes. It is 1 until the reveal. */
+  float a = u_pageAlpha;
 
   /* Glass: a faint fill and a bright Fresnel rim, present only where the wrap wave has lifted the surface off the
      flat page, so it condenses instead of appearing. A masked wedge is this. */

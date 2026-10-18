@@ -271,6 +271,7 @@ export const EVERSION_RUNTIME_MODULES: ReadonlyArray<{
   { fragment: 'lib/eversion/thurston' },
   { fragment: 'lib/eversion/timeline' },
   { fragment: 'lib/eversion/prefetch', fingerprint: 'eversion: prefetch failed' },
+  { fragment: 'lib/eversion/settle', fingerprint: 'eversion: settle probe needs a document' },
   { fragment: 'lib/eversion/debug-overlay', fingerprint: 'eversion debug' },
   {
     fragment: 'node_modules/modern-screenshot',

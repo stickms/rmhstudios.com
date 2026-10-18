@@ -31,13 +31,15 @@
  *   4300 ms, with `k` re-picked at every re-plan so the remaining travel is
  *   never backwards and never more than `SPIN_MAX_REMAINING_TURNS` (test 21).
  * - After `fastForward`, completion is within `FF_REMAINING_MS` plus any gate
- *   wait (≤ `FF_STRETCH_CAP_MS`) plus the reveal fade (test 19).
+ *   wait (≤ `FF_STRETCH_CAP_MS`) plus the reveal dissolve (test 19).
  * - `snapshot.radius/centreX/centreY` are EFFECTIVE (the extent fit folded in); the raw
  *   channel is `sample()`.
- * - The run ENDS at the end of UNWRAP: the flat AFTER page, `unwrap` 0, with every
- *   channel at rest (value, velocity and acceleration; the post-gate spin landing may
- *   still be settling, under a mesh that is flat and so cannot show it). `reveal`
- *   only fades the canvas onto the identical live page, then `done`.
+ * - The run ENDS with UNWRAP: the flat AFTER page, `unwrap` 0, with every channel at
+ *   rest (value, velocity and acceleration; the post-gate spin landing may still be
+ *   settling, under a mesh that is flat and so cannot show it). The final dissolve
+ *   (`reveal`) is not a step after that: it OVERLAPS UNWRAP's last `REVEAL_MS` and ends
+ *   with it, the canvas crossfading onto the identical live page as the motion comes
+ *   to rest, so `done` is the end of both.
  *
  * The default plan is `PLAN_MS` in `constants.ts`.
  *
@@ -46,7 +48,8 @@
  * Motion is eleven channels (`CHANNEL_IDS`), each one or two quintic slots in a
  * single `Float64Array`. Everything that is not motion is a handful of absolute
  * TIMERS (`T_*`): when `evert` starts, when the gate is checked (3000 ms), when
- * the gate opens, when unwrap starts and ends, when the reveal fade ends (`done`). `process` fires
+ * the gate opens, when unwrap starts, when the page is asked to uncover (`uncover`), when the
+ * dissolve and UNWRAP end together (`done`). `process` fires
  * every timer that is due, earliest first, and each handler re-plans at the
  * timer's own time — not at the frame time — so a 50 ms frame that straddles a
  * transition still produces exactly the trajectory a 1 ms frame would. That is
@@ -71,17 +74,22 @@
  *   happened.
  *
  * "Due" is the planned unwrap start, so the cap is 3800 + 2500 = 6300 ms and the
- * worst completion is 6300 + 800 + 300 = 7400 = `PLAN_MS.total` + the cap, which
- * is exactly the bound of test 19.
+ * worst completion is 6300 + 800 = 7100 = `PLAN_MS.total` + the cap (the dissolve
+ * ends with UNWRAP; only a late `reveal` reply adds its own latency), which is the
+ * bound of test 19.
  *
  * ## Decisions the T01 contract left open
  *
- * - **REVEAL after `unwrap-done`.** `reveal(now)` is the controller's
- *   answer to `unwrap-done`; the fade starts at that instant, not at a fixed 4600 ms.
- *   Event order is `unwrap-done`, `reveal` (at the `reveal` call's clock), then
- *   `done` `REVEAL_MS` later. A `reveal` that arrives before `unwrap-done` is remembered and applied
- *   the moment `unwrap-done` fires (so the order holds), and a second `reveal` is
- *   ignored. `bgAlpha` drops to 0 at `reveal`.
+ * - **UNCOVER, then REVEAL, overlapping UNWRAP's tail.** The page must be painted under the
+ *   opaque canvas before the canvas turns transparent, and only the main thread can say
+ *   so. So the timeline emits `uncover` at `unwrapEnd - REVEAL_MS - UNCOVER_LEAD_MS`
+ *   (never before UNWRAP starts): the controller takes the cover class off, waits two frames
+ *   and answers `reveal(now)`. The dissolve (`pageAlpha`, and `bgAlpha` with it, 1 -> 0, one
+ *   quintic) starts at that instant, and ends at `max(reveal + REVEAL_MS, unwrapEnd)`: nominally
+ *   exactly UNWRAP's end, a late reply (a slow page) later, never before. Event order is
+ *   `uncover`, `reveal`, `done` on every path. A `reveal` that arrives before `uncover` is
+ *   remembered and applied the moment `uncover` fires (so the order holds), and a second
+ *   `reveal` is ignored.
  * - **`need-after-by` time base.** `afterDeadline(now)` returns
  *   `now + (capAt − clock)`: the cap instant expressed on the caller's
  *   `performance.now()` base, using the timeline clock projected to `now`
@@ -90,8 +98,9 @@
  *   the clock, not with wall time. The controller should treat it as "after this
  *   AFTER is not going to be used"; calling `afterFailed` then is harmless.
  * - **Fast-forward ratio.** Only the time up to the end of UNWRAP compresses to
- *   `FF_REMAINING_MS` (the reveal fade, being separate, is not compressed and FF after
- *   the reveal is ignored); the ratio is never above 1, so FF never slows anything.
+ *   `FF_REMAINING_MS` (the dissolve and the round trip before it are wall time and do not
+ *   compress, and FF after the reveal is ignored); the ratio is never above 1, so FF never
+ *   slows anything.
  * - **Spin landing from a cruise** (the post-gate landing after a long wait) picks
  *   the landing that arrives SOONEST (smallest valid travel), not the one nearest
  *   1.25 turns: the page has already turned for seconds.
@@ -121,6 +130,7 @@ import {
   MIN_EVERT_RATE,
   PLACEHOLDER_XFADE_MS,
   PLAN_MS,
+  UNCOVER_LEAD_MS,
   PROJECTED_EXTENT_LIMIT,
   PROJECTED_EXTENT_MAX,
   RADIUS_FIT_WINDOW,
@@ -199,14 +209,14 @@ const CHANNEL_INDEX: Readonly<Record<ChannelId, number>> = {
 
 /**
  * Indices double as the tie-break: simultaneous timers fire in this order, which
- * is also `STAGE_IDS` order (`evert` < `gate-open` < `unwrap` < `unwrap-done` <
+ * is also `STAGE_IDS` order (`evert` < `gate-open` < `unwrap` < `uncover` <
  * `done`).
  */
 const T_EVERT = 0;
 const T_WAIT = 1;
 const T_OPEN = 2;
 const T_UNWRAP = 3;
-const T_UNWRAP_DONE = 4;
+const T_UNCOVER = 4;
 const T_DONE = 5;
 const NTIMERS = 6;
 
@@ -455,7 +465,7 @@ class TimelineEngine {
   protected waiting = false;
   protected unwrapStarted = false;
   protected unwrapEnd: number = PLAN_MS.unwrap[1];
-  protected unwrapDone = false;
+  protected uncovered = false;
 
   /* fast-forward and reveal */
   protected ffDone = false;
@@ -693,9 +703,9 @@ class TimelineEngine {
         this.unwrapStarted = true;
         this.emit('unwrap', t);
         break;
-      case T_UNWRAP_DONE:
-        this.unwrapDone = true;
-        this.emit('unwrap-done', t);
+      case T_UNCOVER:
+        this.uncovered = true;
+        this.emit('uncover', t);
         if (this.revealPending) this.doReveal(t);
         break;
       default:
@@ -846,6 +856,15 @@ class TimelineEngine {
     return GLOBE_RADIUS_FRACTION * Math.min(this.vpW, this.vpH);
   }
 
+  /**
+   * When the page is asked to uncover itself for an UNWRAP that starts at `start` and ends at `end`: the dissolve
+   * (`REVEAL_MS`) and the round trip (`UNCOVER_LEAD_MS`) before `end`, but never before UNWRAP starts. Neither
+   * is wall time that compresses with a fast-forward, which is why a hurried UNWRAP uncovers at once.
+   */
+  protected uncoverAt(end: number, start: number): number {
+    return Math.max(end - REVEAL_MS - UNCOVER_LEAD_MS, start);
+  }
+
   /* ── The gate: waiting and opening ──────────────────────────────────────── */
 
   /**
@@ -857,7 +876,7 @@ class TimelineEngine {
     this.waiting = true;
     this.timer[T_WAIT] = Infinity;
     this.timer[T_UNWRAP] = Infinity;
-    this.timer[T_UNWRAP_DONE] = Infinity;
+    this.timer[T_UNCOVER] = Infinity;
     // Eversion that has not started (a fast-forward before 600 ms) starts now.
     if (this.timer[T_EVERT] < Infinity) {
       this.timer[T_EVERT] = t;
@@ -916,7 +935,7 @@ class TimelineEngine {
     // after seconds of calm. So the landing takes as long as its travel needs at
     // `SPIN_LAND_MAX_DEG_PER_S` (never less than the nominal time) and is allowed
     // to run on UNDER the unwrap and the reveal, even past `done`: the gate logic
-    // (`gate-open`, `unwrap`, `unwrap-done`, `done` at the same offsets from the
+    // (`gate-open`, `unwrap`, `uncover`, `done` at the same offsets from the
     // gate) is untouched, the flattening page simply keeps turning while it
     // flattens (its rotation is weighted out as it reaches the plane, and gone
     // at `unwrap` 0). The tilt lands with it.
@@ -932,7 +951,7 @@ class TimelineEngine {
     this.plan(C_UNWRAP, u, UNWRAP_SPAN_MS * sc, 0);
     this.unwrapEnd = u + UNWRAP_SPAN_MS * sc;
     this.timer[T_UNWRAP] = u;
-    this.timer[T_UNWRAP_DONE] = this.unwrapEnd;
+    this.timer[T_UNCOVER] = this.uncoverAt(this.unwrapEnd, u);
     // The tilt must be level by the same moment, however far along it is.
     if (this.channelEnd(C_TILT) > landBy) this.plan(C_TILT, u, Math.max(landBy - u, MIN_SEG_MS), 0);
   }
@@ -1061,10 +1080,13 @@ class TimelineEngine {
     this.revealed = true;
     this.revealPending = false;
     this.emit('reveal', t);
-    this.plan(C_PAGE_ALPHA, t, REVEAL_MS, 0);
+    // The dissolve ends WITH UNWRAP (its motion is at rest then), and never takes less than REVEAL_MS: a reply
+    // that comes back early gets a slightly longer dissolve, a late one (a slow page) a later end.
+    const end = Math.max(t + REVEAL_MS, this.unwrapEnd);
+    this.plan(C_PAGE_ALPHA, t, end - t, 0);
 
-    // The run is over when the canvas has faded onto the identical live page.
-    this.timer[T_DONE] = t + REVEAL_MS;
+    // The run is over when the canvas has dissolved onto the identical live page.
+    this.timer[T_DONE] = end;
   }
 
   /* ── The frame ──────────────────────────────────────────────────────────── */
@@ -1118,7 +1140,9 @@ class TimelineEngine {
     s.centreX = cx;
     s.centreY = cy;
     s.rippleAge = this.started ? t / 1000 : -1;
-    s.bgAlpha = this.revealed ? 0 : 1;
+    // The clear colour dissolves with the page (`pageAlpha` is 1 until `reveal`): nothing outside the page quad
+    // is left to pop out at the end.
+    s.bgAlpha = s.pageAlpha;
   }
 }
 
@@ -1136,7 +1160,7 @@ export class Timeline extends TimelineEngine implements TimelineApi {
     this.timer[T_EVERT] = this.evertAt;
     this.timer[T_WAIT] = GATE_WAIT_FROM_MS;
     this.timer[T_UNWRAP] = this.uPlanned;
-    this.timer[T_UNWRAP_DONE] = this.unwrapEnd;
+    this.timer[T_UNCOVER] = this.uncoverAt(this.unwrapEnd, this.uPlanned);
     this.emit('wrap', 0);
     this.recomputeOpen();
     this.process();
@@ -1201,8 +1225,13 @@ export class Timeline extends TimelineEngine implements TimelineApi {
     } else {
       // `Infinity` (already fired) maps to itself; a past `unwrapEnd` stays put.
       this.timer[T_UNWRAP] = tf + (this.timer[T_UNWRAP]! - tf) * r;
-      this.timer[T_UNWRAP_DONE] = tf + (this.timer[T_UNWRAP_DONE]! - tf) * r;
       if (this.unwrapEnd > tf) this.unwrapEnd = tf + (this.unwrapEnd - tf) * r;
+      // The dissolve and the round trip before it are wall time and do not compress: re-derive the cue from the
+      // compressed end (a hurried UNWRAP uncovers early in it, or at once).
+      if (this.timer[T_UNCOVER]! < Infinity) {
+        const unwrapAt = this.timer[T_UNWRAP]! < Infinity ? this.timer[T_UNWRAP]! : tf;
+        this.timer[T_UNCOVER] = this.uncoverAt(this.unwrapEnd, unwrapAt);
+      }
       this.compressChannel(C_EVERT, tf, r);
       this.compressChannel(C_UNWRAP, tf, r);
       if (segmentEnd(this.seg, this.slotBase(C_SPIN, this.nSeg[C_SPIN] - 1)) > tf) {
@@ -1253,7 +1282,7 @@ export class Timeline extends TimelineEngine implements TimelineApi {
   reveal(now: number): void {
     this.advance(now);
     if (!this.started || this.revealed || this.revealPending) return;
-    if (this.unwrapDone) this.doReveal(this.clock);
+    if (this.uncovered) this.doReveal(this.clock);
     else this.revealPending = true;
     this.process();
   }

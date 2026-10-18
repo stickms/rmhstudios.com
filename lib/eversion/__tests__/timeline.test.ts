@@ -21,6 +21,7 @@ import {
   PLACEHOLDER_XFADE_MS,
   PLAN_MS,
   REVEAL_MS,
+  UNCOVER_LEAD_MS,
   SPIN_MAX_REMAINING_TURNS,
   STRETCH_CAP_MS,
 } from '../constants';
@@ -60,7 +61,7 @@ function mulberry32(seed: number): () => number {
 }
 
 const DEG = Math.PI / 180;
-const NOMINAL_END = PLAN_MS.total + STRETCH_CAP_MS; // test 19's bound: 4.78 s + the cap
+const NOMINAL_END = PLAN_MS.total + STRETCH_CAP_MS; // test 19's bound: 4.6 s + the cap (the dissolve ends with UNWRAP)
 
 function config(
   over: Partial<Omit<TimelineConfig, 'globe'>> & { globe?: Partial<GlobeStartState> } = {},
@@ -223,18 +224,23 @@ describe('the default plan (spec §7.1)', () => {
     tl.tick(wall.now);
     wall.now += 10;
     tl.afterReady(wall.now); // ~10 ms in: the gate waits for evert at 600
-    const ev = runTo(tl, wall, 4601);
+    // The page is asked to uncover itself a dissolve and a round trip before UNWRAP ends...
+    const ev = runTo(tl, wall, PLAN_MS.uncover + UNCOVER_LEAD_MS);
     const byStage = Object.fromEntries(ev.map((e) => [e.stage, e.t]));
     expect(byStage['evert']).toBe(PLAN_MS.evert[0]);
     expect(byStage['gate-open']).toBe(PLAN_MS.evert[0]);
     expect(byStage['unwrap']).toBe(PLAN_MS.unwrap[0]);
-    expect(byStage['unwrap-done']).toBe(PLAN_MS.unwrap[1]);
+    expect(byStage['uncover']).toBe(PLAN_MS.uncover);
+    expect(PLAN_MS.uncover).toBe(PLAN_MS.unwrap[1] - REVEAL_MS - UNCOVER_LEAD_MS);
+    // ...answers (cover off, two frames) and the dissolve ends WITH UNWRAP, at the planned total.
     tl.reveal(wall.now);
     const rest = runTo(tl, wall, 6000);
     expect(rest.map((e) => e.stage)).toEqual(['reveal', 'done']);
     expect(tl.finished).toBe(true);
     const done = rest[1]!;
-    expect(done.t - rest[0]!.t).toBe(REVEAL_MS);
+    expect(rest[0]!.t).toBeGreaterThanOrEqual(PLAN_MS.reveal[0] - 1e-9);
+    expect(done.t).toBe(PLAN_MS.total);
+    expect(PLAN_MS.total).toBe(PLAN_MS.unwrap[1]);
   });
 
   it('wrap, radius, centre and hub fade finish by their planned times', () => {
@@ -332,7 +338,7 @@ describe('the default plan (spec §7.1)', () => {
     expect(s.pageAlpha).toBe(0);
   });
 
-  it('applies a reveal that arrives before unwrap-done at unwrap-done, in order', () => {
+  it('applies a reveal that arrives before uncover at uncover, in order', () => {
     const { tl, wall } = started();
     tl.afterReady(wall.now);
     tl.reveal(wall.now); // far too early
@@ -341,11 +347,11 @@ describe('the default plan (spec §7.1)', () => {
       'evert',
       'gate-open',
       'unwrap',
-      'unwrap-done',
+      'uncover',
       'reveal',
       'done',
     ]);
-    const done = ev.find((e) => e.stage === 'unwrap-done')!;
+    const done = ev.find((e) => e.stage === 'uncover')!;
     expect(ev.find((e) => e.stage === 'reveal')!.t).toBe(done.t);
     // A second reveal is ignored.
     tl.reveal(wall.now);
@@ -391,8 +397,8 @@ describe('the after-gate and stretch (spec §7.5)', () => {
     const gate = ev.find((e) => e.stage === 'gate-open')!;
     expect(gate.t).toBeCloseTo(4000 + PLACEHOLDER_XFADE_MS, 9);
     expect(ev.find((e) => e.stage === 'unwrap')!.t).toBeCloseTo(gate.t, 9);
-    expect(ev.find((e) => e.stage === 'unwrap-done')!.t).toBeCloseTo(
-      gate.t + PLAN_MS.unwrap[1] - PLAN_MS.unwrap[0],
+    expect(ev.find((e) => e.stage === 'uncover')!.t).toBeCloseTo(
+      gate.t + PLAN_MS.unwrap[1] - PLAN_MS.unwrap[0] - REVEAL_MS - UNCOVER_LEAD_MS,
       9,
     );
     const s = tl.tick(wall.now);
@@ -437,17 +443,20 @@ describe('the after-gate and stretch (spec §7.5)', () => {
 /* ── Fast-forward, abort, resize, clock ───────────────────────────────────── */
 
 describe('fast-forward (spec §7.6)', () => {
-  it('completes the remainder in 650 ms (plus the reveal fade) when AFTER is ready', () => {
+  it("completes the remainder in 650 ms (plus the dissolve's round trip) when AFTER is ready", () => {
     const { tl, wall } = started();
     tl.afterReady(wall.now);
     const ev = runTo(tl, wall, 1000);
     tl.fastForward(wall.now);
     const tf = tl.tick(wall.now).t;
     ev.push(...runTo(tl, wall, tf + FF_REMAINING_MS + 1));
-    const done = ev.find((e) => e.stage === 'unwrap-done')!;
-    expect(done.t).toBeCloseTo(tf + FF_REMAINING_MS, 6);
+    // UNWRAP is hurried into FF_REMAINING_MS; the dissolve and its round trip are wall time and are not, so
+    // the page is asked to uncover itself once UNWRAP has started (never before it) and no later than its end.
+    const uncover = ev.find((e) => e.stage === 'uncover')!;
+    expect(uncover.t).toBeGreaterThanOrEqual(ev.find((e) => e.stage === 'unwrap')!.t);
+    expect(uncover.t).toBeLessThanOrEqual(tf + FF_REMAINING_MS);
     tl.reveal(wall.now);
-    ev.push(...runTo(tl, wall, tf + FF_REMAINING_MS + REVEAL_MS + 50));
+    ev.push(...runTo(tl, wall, tf + FF_REMAINING_MS + UNCOVER_LEAD_MS + REVEAL_MS + 50));
     expect(tl.finished).toBe(true);
   });
 
@@ -491,7 +500,7 @@ describe('fast-forward (spec §7.6)', () => {
     tl.abort(wall.now);
     const tf = tl.tick(wall.now).t;
     const ev = runTo(tl, wall, tf + 700);
-    expect(ev.find((e) => e.stage === 'unwrap-done')!.t).toBeLessThanOrEqual(
+    expect(ev.find((e) => e.stage === 'uncover')!.t).toBeLessThanOrEqual(
       tf + FF_REMAINING_MS + 1e-6,
     );
   });
@@ -707,7 +716,7 @@ function scenario(seed: number, out: Outcome): void {
     const ev = tl.events();
     for (let i = 0; i < ev.length; i++) {
       seen.push(ev[i]!);
-      if (ev[i]!.stage === 'unwrap-done' && !revealedAt) {
+      if (ev[i]!.stage === 'uncover' && !revealedAt) {
         revealedAt = true;
         tl.reveal(now);
         const more = tl.events();
@@ -824,7 +833,7 @@ function scenario(seed: number, out: Outcome): void {
   if (ffClock >= 3000) out.cov.ffWaiting++;
   if (plan.some((p) => p.kind === 'abort')) out.cov.abort++;
 
-  // 19: bounds. Allow one frame of reveal latency (the harness answers unwrap-done
+  // 19: bounds. Allow one frame of reveal latency (the harness answers uncover
   // on the frame it sees it).
   const doneT = at('done');
   const bound = Math.min(

@@ -102,17 +102,24 @@ try {
       g.readPixels(0, 0, c.width, c.height, g.RGBA, g.UNSIGNED_BYTE, px);
       let hash = 2166136261;
       let nonOpaque = 0;
+      let aMin = 255;
+      let aMax = 0;
       for (let i = 0; i < px.length; i += 4) {
         for (let k = 0; k < 4; k++) hash = Math.imul(hash ^ px[i + k], 16777619) >>> 0;
         if (px[i + 3] !== 255) nonOpaque++;
+        if (px[i + 3] < aMin) aMin = px[i + 3];
+        if (px[i + 3] > aMax) aMax = px[i + 3];
       }
-      return { r, hash, nonOpaque };
+      return { r, hash, nonOpaque, aMin, aMax };
     }, draw);
   const flat = await pixelsOf({
     name: 'frame',
     args: [{ wrap: 1, unwrap: 0, evert: 1, spin: 0.7, tilt: 0.2, afterMix: 1 }],
   });
-  const offsets = [-120, -60, -20, 0];
+  // The run now ENDS with UNWRAP and the final dissolve ends with it: the last frame is the flat page fully
+  // dissolved (transparent canvas, the live page showing through), the one before it the same flat page at
+  // a fraction of its opacity. Offsets are relative to that end.
+  const offsets = [-200, -100, -20, 0];
   const rows = [];
   for (const off of offsets) {
     const row = await pixelsOf({ name: 'endFrame', args: [off] });
@@ -129,19 +136,51 @@ try {
     rows.every((r) => r.r.err === 0),
   );
   const last = rows[rows.length - 1];
+  const dissolved = await pixelsOf({
+    name: 'frame',
+    args: [
+      { wrap: 1, unwrap: 0, evert: 1, spin: 0.7, tilt: 0.2, afterMix: 1, pageAlpha: 0, bgAlpha: 0 },
+    ],
+  });
+  const half = await pixelsOf({
+    name: 'frame',
+    args: [
+      {
+        wrap: 1,
+        unwrap: 0,
+        evert: 1,
+        spin: 0.7,
+        tilt: 0.2,
+        afterMix: 1,
+        pageAlpha: 0.5,
+        bgAlpha: 0.5,
+      },
+    ],
+  });
   check(
-    'the last UNWRAP frame is unwrap 0 at full page opacity',
-    last.r.unwrap === 0 && last.r.pageAlpha === 1,
+    'the last frame is unwrap 0 with the page fully dissolved',
+    last.r.unwrap === 0 && last.r.pageAlpha === 0,
   );
   check(
-    'the last UNWRAP frame is pixel-identical to the flat AFTER page',
-    last.hash === flat.hash,
-    `${last.hash} vs ${flat.hash}`,
+    'the last frame is pixel-identical to the flat page dissolved to nothing, and transparent everywhere',
+    last.hash === dissolved.hash && last.aMax === 0,
+    `${last.hash} vs ${dissolved.hash}, alpha max ${last.aMax}`,
   );
   check(
-    'the last UNWRAP frame is fully opaque (no globe, no glass)',
-    last.nonOpaque === 0,
-    `${last.nonOpaque} px`,
+    'the flat AFTER page at full opacity is opaque everywhere (no globe, no glass, no hole)',
+    flat.aMin === 255,
+    `alpha min ${flat.aMin}`,
+  );
+  check(
+    'mid-dissolve the flat page is one uniform half-transparent sheet (the clear colour dissolves with it, nothing pops)',
+    half.aMin >= 126 && half.aMax <= 129,
+    `alpha ${half.aMin}..${half.aMax}`,
+  );
+  check(
+    'the dissolve is monotone through the last 200 ms',
+    rows.every((r, i) => i === 0 || r.r.pageAlpha <= rows[i - 1].r.pageAlpha) &&
+      rows.every((r, i) => i === 0 || r.r.unwrap <= rows[i - 1].r.unwrap),
+    rows.map((r) => `${r.r.pageAlpha.toFixed(2)}/${r.r.unwrap.toFixed(3)}`).join(' '),
   );
 
   for (const id of ['lambert', 'stereographic', 'equirect']) {

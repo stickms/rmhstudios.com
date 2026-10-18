@@ -220,9 +220,10 @@ async function entryScenario(entry) {
       null,
       { timeout: 5000 },
     );
-    // The orb is hidden for the whole run and returns through the hub's ordinary closed-state fade
-    // (`opacity 0.34s ease`), so it is NOT yet at 1 on the frame `closed` lands: sample the ramp every
-    // frame, and require that it rises monotonically and ends at 1 (an eased fade, not a hard cut).
+    // The orb is hidden for the run and returns through its ordinary eased fade (`opacity 0.34s ease`). Since
+    // 2026-10-18 that fade starts as the cover comes off (`html.eversion-live:not(.eversion-cover)`), under the
+    // dissolving canvas, so it may already be at 1 when `closed` lands. Sample the ramp every frame and require
+    // that it rises monotonically and ends at 1 (an eased fade, not a hard cut).
     const orbRamp = await s.page.evaluate(
       () =>
         new Promise((resolve) => {

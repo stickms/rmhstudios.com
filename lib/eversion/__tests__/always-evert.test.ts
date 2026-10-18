@@ -158,7 +158,17 @@ function rig(patch: Partial<RunnerDeps>) {
       colours: () => COLOURS,
       setCover() {},
       setSettle() {},
-      whenAssetsSettled: async () => {},
+      setLive() {},
+      watchSettle: () => ({
+        whenSettled: async () => ({
+          settled: true,
+          reason: 'settled',
+          waitedMs: 0,
+          frames: 0,
+          last: null,
+        }),
+        dispose() {},
+      }),
       nextFrame: async () => {},
       onInput: () => () => {},
       currentHref: () => '/here',

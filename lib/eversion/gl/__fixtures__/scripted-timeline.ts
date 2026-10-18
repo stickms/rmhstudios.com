@@ -1,10 +1,10 @@
 /**
  * A small scripted stand-in for the real `Timeline` (T10), for the core's unit
  * tests. It is NOT a model of the effect: it exists so a test can say "the
- * run reaches `evert` at 100 ms and `unwrap-done` at 400 ms" and then watch the
+ * run reaches `evert` at 100 ms and `uncover` at 400 ms" and then watch the
  * core turn that into messages. It honours the one surface rule the core relies
  * on — a clock advanced by `min(now − last, MAX_DT_MS)` — and the real
- * ordering `unwrap-done → reveal → done`, where `reveal` is what starts the
+ * ordering `uncover → reveal → done`, where `reveal` is what starts the
  * fade onto the live page that ends the run.
  */
 
@@ -13,7 +13,7 @@ import { createSnapshot } from '../../snapshot';
 import type { ChannelId, StageId, TimelineApi, TimelineEvent, TimelineSnapshot } from '../../types';
 
 export interface ScriptedTimelineOptions {
-  /** Absolute ms (timeline clock) at which each stage up to `unwrap-done` is reached. */
+  /** Absolute ms (timeline clock) at which each stage up to `uncover` is reached. */
   stages?: readonly [StageId, number][];
   /** Ms from `reveal` to `done`. */
   revealMs?: number;
@@ -24,7 +24,7 @@ const DEFAULT_STAGES: readonly [StageId, number][] = [
   ['evert', 100],
   ['gate-open', 200],
   ['unwrap', 300],
-  ['unwrap-done', 400],
+  ['uncover', 400],
 ];
 
 export class ScriptedTimeline implements TimelineApi {

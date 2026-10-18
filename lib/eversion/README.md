@@ -77,7 +77,7 @@ ports); `testing/e2e/eversion-edge.mjs` has one scripted check per row.
 | Resize / rotation                | `PagePort.onResize`: one `resize` per frame, only if the viewport changed.                                                                                  |
 | Context lost / fatal after start | `eversion-cover` off, overlay `--fading` (200 ms), run ends `context-lost`. Before start it is a clean `host-error` fallback.                               |
 | Hidden tab                       | `host.ts` posts `visibility`; the core pauses its loop (`debug` op `loop` shows it).                                                                        |
-| Input during the reveal fade     | Ignored from `unwrap-done` on (no `fast-forward` is posted).                                                                                                |
+| Input during the reveal fade     | Ignored from `uncover` on (no `fast-forward` is posted).                                                                                                    |
 
 ### Host readiness is eligibility, not a wait
 
@@ -164,11 +164,26 @@ The animation is WRAP, EVERSION, UNWRAP. There is no stage after UNWRAP (a POP s
 globe condensed, shrank onto the hub's orb and faded, was removed at the owner's request on 2026-10-18: the page
 had already unwrapped, so summoning a globe only to dismiss it read as goofy).
 
-When UNWRAP finishes the AFTER page is flat and full-screen, exactly the live page. The core posts `unwrap-done`,
-the controller answers `reveal`, the canvas fades onto the live page (`pageAlpha` 1 → 0 over `REVEAL_MS` = 180,
-one quintic; the two are the same pixels, so it is the handoff, not an effect) and `done` follows. The event order
-is `unwrap-done`, `reveal`, `done` on every path: worker and in-thread, fast-forward, abort, hidden-tab settle and
-the watchdog. `PLAN_MS.total` is 4780 (UNWRAP ends at 4600; `PLAN_MS.reveal` is `[4600, 4780]`).
+The run ends in ONE movement (amended 2026-10-18, the owner's "glitchy extra step"): the final dissolve is a
+crossfade of the canvas's flat AFTER picture onto the identical live page that **overlaps UNWRAP's last `REVEAL_MS`
+(200 ms) and ends with it**. The core posts `uncover` at `unwrapEnd - REVEAL_MS - UNCOVER_LEAD_MS` (60 ms; never
+before UNWRAP starts), the controller takes the cover class off, waits two frames so the live page is painted under the
+still-opaque canvas, and answers `reveal`; the dissolve (`pageAlpha` 1 → 0, one quintic, with the canvas clear `bgAlpha`
+riding on it so nothing outside the page quad pops out at the end) starts there and lands at
+`max(reveal + REVEAL_MS, unwrapEnd)` - nominally exactly UNWRAP's end, a slow page's late answer a little later, never
+earlier. The event order is `uncover`, `reveal`, `done` on every path: worker and in-thread, fast-forward, abort,
+hidden-tab settle and the watchdog (the stage was `unwrap-done` before, and the dissolve began only after UNWRAP had
+visibly stopped). `PLAN_MS.total` is 4600: UNWRAP ends at 4600, `PLAN_MS.uncover` is 4340, `PLAN_MS.reveal` is
+`[4400, 4600]`. Fast-forward compresses UNWRAP, not the dissolve or the round trip (wall time).
+
+**Why it used to read as a separate step (root cause).** The hub holds the shell's three layers
+(`.radial-frame/.radial-backdrop/.radial-topbar`) at `filter: blur(20px)` while its phase is `open` **or `everting`**,
+and `everting` lasts until the run is over. So when the cover came off the canvas faded onto a 20 px-blurred copy of
+the page, and one frame after the fade the hub went `closed`, the blur dropped and the page POPPED sharp; the feed's
+compose button popped in at the same moment and the orb only began its fade after that. `html.eversion-live`
+(`eversion.css`; `PagePort.setLive`) is set from the first `cover` and released two frames after the run ends (once the
+hub has left `everting`): it drops the blur, pins `transition: none`, shows the compose button and starts the orb's
+ordinary eased fade-in as the cover comes off, so the live page under the dissolve is the page.
 
 Every channel is at rest (value, velocity and acceleration) when UNWRAP ends, so the last frame is not a jump:
 `unwrap` ends on a quintic into 0; the others finished earlier (wrap and radius/centre at 700, the eversion at
@@ -196,7 +211,7 @@ UNWRAP frame is pixel-identical to a flat page.
   turns that host into an in-thread one on the untouched canvas and demotes the session; nothing is lost and no
   navigation is spent on the failure.
 - **Hidden tab.** The host posts `visibility` before every `init` and `start`; `init` resets the core's flag. An
-  `abort` or `fast-forward` while hidden is run out synchronously (no frames drawn): `unwrap-done`, `reveal`,
+  `abort` or `fast-forward` while hidden is run out synchronously (no frames drawn): `uncover`, `reveal`,
   `done`, in order - also when the tab hides AFTER the abort/fast-forward is already in flight. A run that
   merely stays hidden for `HIDDEN_SETTLE_GRACE_MS` (1 s) is settled the same way, so it does not replay ~5 s on return.
   `fail()` releases the page textures; `resize` keeps `plan.viewport` current.
@@ -209,6 +224,30 @@ UNWRAP frame is pixel-identical to a flat page.
   not with the arrival time of the message.
 - `renderer.dispose()` calls `WEBGL_lose_context` (browsers cap live contexts); the cage draw is skipped at the flat
   endpoints.
+
+## The AFTER readiness gate (`settle.ts`, amended 2026-10-18)
+
+AFTER used to be captured when the router was idle, fonts were ready and the viewport's `<img>`s had loaded. A route's
+loader settling says nothing about what the page then fetches for itself (Home returns its first feed page UNAWAITED,
+React Query hooks, lazy chunks, Suspense), so a capture could freeze a column of skeletons; UNWRAP laid that picture
+on the screen and the run ended on the real page: the "awkward jump in page content". `settle.ts` is the gate between
+"route idle" and "capture". The page is settled when, for `AFTER_STABLE_FRAMES` (2) frames in a row: no React Query
+query with an observer is loading its FIRST data (`getSharedQueryClient()` from `lib/query-client-ref.ts`, set by
+`Providers`; a type and a variable, nothing for the shell to bundle; background refetches and mutations are not page
+content and are not waited for), no loading placeholder in the viewport (`LOADING_PLACEHOLDER_SELECTOR`: `Skeleton`,
+`RoutePending`, `aria-busy`, the radial loader), every viewport `<img>` complete (then `decode()`d, capped), fonts not
+loading, and the DOM/layout quiet for `AFTER_QUIET_MS` (MutationObserver + `layout-shift`, hub and other excluded UI
+ignored; capped at `AFTER_QUIET_CAP_MS` once everything else holds, so a ticking page is not "unsettled").
+
+It is bounded by the timeline's own AFTER deadline (`need-after-by`), never by a timer of its own: **hard** = cap -
+`PLACEHOLDER_XFADE_MS` - `AFTER_CAPTURE_RESERVE_MS`, **soft** = hard - `STRETCH_CAP_MS`. Before soft waiting is free (the
+eversion is still turning) and all conditions apply; between soft and hard only ACTIVITY (a fetch, an image, a font)
+holds the capture, plus `AFTER_RENDER_GRACE_MS` for its result to render (a permanent skeleton with nothing loading is
+a page at rest and must not stretch every navigation); past hard the page is captured as it is. A fast-forward or
+abort skips the wait. An already-settled page costs the two frames it replaces: no added latency. Late content that
+misses even the hard bound is shown as the page it was and carried onto what it became by the final dissolve (a
+smooth, eased dissolve, not a cut); a second capture swapped in mid-animation would itself be a visible pop, so it is
+deliberately not done. `testing/e2e/eversion-late-content.mjs` is the test that failed before the gate existed.
 
 ## Amending a contract
 

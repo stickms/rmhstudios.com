@@ -36,7 +36,7 @@
 // The lab draws the real renderer over the real timeline (same core, same shaders) with
 // synthetic BEFORE / AFTER / placeholder pages. What the stills therefore judge is the
 // effect's own motion: radius, centre, spin, tilt, eversion, unwrap, the AFTER crossfade, the
-// page-alpha fade (the run ends with UNWRAP, there is no POP stage). The CSS hub fade and the orb's fade are outside it.
+// final dissolve (it overlaps UNWRAP's tail and ends with it; there is no POP stage and no fade after UNWRAP). The CSS hub fade and the orb's fade are outside it.
 //
 // A scenario is a script for the replay: when AFTER becomes ready (`afterAt`), when the user
 // fast-forwards (`ffAt`), or that AFTER fails (`failAt`). A still at timeline time T replays a
@@ -295,14 +295,18 @@ async function captureRun(pool, script, { cutAt = null } = {}) {
     cutAt,
   );
   const stills = [...first, ...more].sort((a, b) => a.t - b.t);
+  // The run's stages in the order the timeline emits them: ... unwrap, uncover (the page is asked to show
+  // itself), reveal (the dissolve starts, overlapping UNWRAP's tail), done (UNWRAP and the dissolve end together).
   const revealStart = stills.find((s) => s.stage === 'reveal' || s.stage === 'done')?.t ?? end;
-  return { script, stills, end, revealStart, cutAt };
+  const uncoverStart =
+    stills.find((s) => ['uncover', 'reveal', 'done'].includes(s.stage))?.t ?? end;
+  return { script, stills, end, revealStart, uncoverStart, cutAt };
 }
 
 /* ── The detectors over a set of stills ───────────────────────────────────── */
 
 async function analyse(run) {
-  const { script, stills, end, revealStart } = run;
+  const { script, stills, end, revealStart, uncoverStart } = run;
   if (stills.length < 40) throw new Fail(`only ${stills.length} stills - cannot judge smoothness`);
   const imgs = [];
   for (const s of stills) imgs.push(await decodeImage(s.png));
@@ -337,6 +341,9 @@ async function analyse(run) {
   if (typeof script.ffAt === 'number') {
     windows.push({ name: 'fast-forward', from: script.ffAt, to: script.ffAt + FF_REMAINING_MS });
   }
+  // The final dissolve OVERLAPS UNWRAP's tail and ends with it, so the two are one window; `uncover` precedes
+  // the dissolve by the round trip, during which the picture is the still-opaque canvas (nothing changes on it).
+  windows.push({ name: 'dissolve + UNWRAP tail', from: uncoverStart, to: end });
   windows.push({ name: 'reveal', from: revealStart, to: end });
 
   // S#32 on the timeline axis (exact: stills carry their own timeline time).

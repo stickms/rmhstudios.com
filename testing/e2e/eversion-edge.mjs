@@ -610,7 +610,7 @@ async function hiddenTab() {
     await setHidden(false);
     const run = await finish(s);
     await assertClean(name, s, errors, run);
-    // A run the render side settled while hidden ends in one synchronous burst (`unwrap-done`, `done`), so the
+    // A run the render side settled while hidden ends in one synchronous burst (`uncover`, `done`), so the
     // page never gets to mark `reveal` on its own timeline: the one mark a settled run may lack.
     await assertFullSequence(name, s, { optional: ['reveal'] });
   } finally {

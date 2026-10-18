@@ -168,7 +168,7 @@ function runToEnd(r: ReturnType<typeof rig>, from = 1016, limit = 200) {
   let now = from;
   for (let i = 0; i < limit && r.pending > 0; i++, now += 16) {
     r.frame(now);
-    if (r.stages().includes('unwrap-done') && !r.timelines[0]!.calls.includes('reveal')) {
+    if (r.stages().includes('uncover') && !r.timelines[0]!.calls.includes('reveal')) {
       r.send({ type: 'reveal' });
     }
   }
@@ -196,14 +196,14 @@ describe('createEversionCore', () => {
       'evert',
       'gate-open',
       'unwrap',
-      'unwrap-done',
+      'uncover',
       'reveal',
       'done',
     ]);
     const done = r.out.at(-1);
     expect(done).toMatchObject({ type: 'done' });
     expect((done as { frames: number }).frames).toBe(r.renderer.draws.length);
-    expect(r.out.filter((m) => m.type === 'unwrap-done')).toHaveLength(1);
+    expect(r.out.filter((m) => m.type === 'uncover')).toHaveLength(1);
     expect(r.pending).toBe(0);
     const requests = r.requests;
     r.send({ type: 'reveal' });
@@ -426,10 +426,10 @@ describe('createEversionCore: scrub', () => {
     return { result, drawn: r.renderer.draws.at(-1)! };
   }
 
-  it('answers unwrap-done with a reveal, so scrubbing past it reaches DONE', async () => {
+  it('answers uncover with a reveal, so scrubbing past it reaches DONE', async () => {
     const mid = await scrubTo(5200, 600);
     expect(mid.result.ok).toBe(true);
-    expect((mid.result.value as { stage: string }).stage).not.toBe('unwrap-done');
+    expect((mid.result.value as { stage: string }).stage).not.toBe('uncover');
     const end = await scrubTo(20_000, 600);
     expect(end.result.ok).toBe(true);
     expect((end.result.value as { stage: string }).stage).toBe('done');
@@ -528,7 +528,7 @@ describe('createEversionCore: robustness', () => {
     expect(r.pending).toBe(0);
   });
 
-  it('fast-forward while the tab is hidden jumps to completion through unwrap-done, reveal, done', () => {
+  it('fast-forward while the tab is hidden jumps to completion through uncover, reveal, done', () => {
     const r = rig();
     boot(r);
     r.send({ type: 'visibility', hidden: true });
@@ -540,11 +540,11 @@ describe('createEversionCore: robustness', () => {
       'evert',
       'gate-open',
       'unwrap',
-      'unwrap-done',
+      'uncover',
       'reveal',
       'done',
     ]);
-    expect(r.types().filter((t) => t === 'unwrap-done')).toHaveLength(1);
+    expect(r.types().filter((t) => t === 'uncover')).toHaveLength(1);
     expect(r.types().at(-1)).toBe('done');
   });
 
@@ -601,30 +601,29 @@ describe('createEversionCore: robustness', () => {
 /* ── The REAL Timeline: hidden settling, failure ──────────────────── */
 
 describe('createEversionCore with the real Timeline', () => {
-  const EXPECTED = ['wrap', 'evert', 'gate-open', 'unwrap', 'unwrap-done', 'reveal', 'done'];
+  const EXPECTED = ['wrap', 'evert', 'gate-open', 'unwrap', 'uncover', 'reveal', 'done'];
   const realRig = () => rig(undefined, { realTimeline: true });
 
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  /** The run's ending, in order: the stage messages from `unwrap-done` on. */
+  /** The run's ending, in order: the stage messages from `uncover` on. */
   const endOrder = (r: ReturnType<typeof rig>) =>
     r.out.flatMap((m) =>
-      m.type === 'stage' &&
-      (m.stage === 'unwrap-done' || m.stage === 'reveal' || m.stage === 'done')
+      m.type === 'stage' && (m.stage === 'uncover' || m.stage === 'reveal' || m.stage === 'done')
         ? [m.stage]
         : [],
     );
 
-  it('abort while hidden: unwrap-done, reveal, done, synchronously, nothing drawn', () => {
+  it('abort while hidden: uncover, reveal, done, synchronously, nothing drawn', () => {
     const r = realRig();
     boot(r);
     r.send({ type: 'visibility', hidden: true });
     r.send({ type: 'start', t0: 0 });
     r.send({ type: 'abort' });
     expect(r.stages()).toEqual(EXPECTED);
-    expect(endOrder(r)).toEqual(['unwrap-done', 'reveal', 'done']);
+    expect(endOrder(r)).toEqual(['uncover', 'reveal', 'done']);
     expect(r.renderer.draws).toHaveLength(0);
     expect(r.pending).toBe(0);
     expect(r.types().filter((t) => t === 'done')).toHaveLength(1);
@@ -640,7 +639,7 @@ describe('createEversionCore with the real Timeline', () => {
     r.send({ type: 'start', t0: 0 });
     r.send({ type: 'fast-forward' });
     expect(r.stages()).toEqual(EXPECTED);
-    expect(endOrder(r)).toEqual(['unwrap-done', 'reveal', 'done']);
+    expect(endOrder(r)).toEqual(['uncover', 'reveal', 'done']);
     expect(r.renderer.draws).toHaveLength(0);
   });
 
@@ -655,7 +654,7 @@ describe('createEversionCore with the real Timeline', () => {
       expect(r.types()).not.toContain('done');
       r.send({ type: 'visibility', hidden: true });
       expect(r.stages().at(-1)).toBe('done');
-      expect(endOrder(r).slice(-3)).toEqual(['unwrap-done', 'reveal', 'done']);
+      expect(endOrder(r).slice(-3)).toEqual(['uncover', 'reveal', 'done']);
       expect(r.pending).toBe(0);
       expect(r.types().filter((t) => t === 'done')).toHaveLength(1);
     }
@@ -671,7 +670,7 @@ describe('createEversionCore with the real Timeline', () => {
     expect(r.types()).not.toContain('done');
     vi.advanceTimersByTime(1);
     expect(r.stages()).toEqual(EXPECTED);
-    expect(endOrder(r)).toEqual(['unwrap-done', 'reveal', 'done']);
+    expect(endOrder(r)).toEqual(['uncover', 'reveal', 'done']);
     expect(r.renderer.draws).toHaveLength(0);
     // Back on screen: nothing replays.
     r.send({ type: 'visibility', hidden: false });
@@ -692,7 +691,7 @@ describe('createEversionCore with the real Timeline', () => {
     expect(r.pending).toBe(1);
   });
 
-  it('a drawn run ends with UNWRAP: the last frame is the flat page, then unwrap-done, reveal, done and nothing more', () => {
+  it('a drawn run ends with UNWRAP: uncover, reveal, done in that order, the dissolve overlapping its tail, nothing after', () => {
     const r = realRig();
     boot(r);
     r.send({ type: 'start', t0: 0 });
@@ -700,20 +699,27 @@ describe('createEversionCore with the real Timeline', () => {
     let now = 1016;
     for (let i = 0; i < 1000 && r.pending > 0; i++, now += 16) {
       r.frame(now);
-      if (r.stages().includes('unwrap-done') && !r.stages().includes('reveal'))
+      if (r.stages().includes('uncover') && !r.stages().includes('reveal'))
         r.send({ type: 'reveal' });
     }
-    expect(endOrder(r)).toEqual(['unwrap-done', 'reveal', 'done']);
+    expect(endOrder(r)).toEqual(['uncover', 'reveal', 'done']);
     expect(r.out.some((m) => (m as { type: string }).type === 'pop-fade')).toBe(false);
-    // The frame that reached unwrap-done is the flat AFTER page (`unwrap` 0, nothing else left to draw).
-    const at = r.out.findIndex((m) => m.type === 'unwrap-done');
+    const at = r.out.findIndex((m) => m.type === 'uncover');
     expect(at).toBeGreaterThan(0);
-    const flat = r.renderer.draws.filter((d) => d.unwrap === 0);
-    expect(flat.length).toBeGreaterThan(0);
-    for (const d of r.renderer.draws.filter((x) => x.stage === 'reveal' || x.stage === 'done')) {
-      expect(d.unwrap).toBe(0);
-      expect(d.radius).toBe(flat[0]!.radius);
+    // The dissolve starts while UNWRAP is still finishing (the page is not yet quite flat), and the two end
+    // together: the frames that draw the dissolve have `unwrap` non-increasing down to exactly 0 at the last.
+    const dissolving = r.renderer.draws.filter((d) => d.pageAlpha < 1);
+    expect(dissolving.length).toBeGreaterThan(1);
+    expect(dissolving[0]!.unwrap).toBeGreaterThan(0);
+    for (let i = 1; i < dissolving.length; i++) {
+      expect(dissolving[i]!.unwrap).toBeLessThanOrEqual(dissolving[i - 1]!.unwrap);
+      expect(dissolving[i]!.pageAlpha).toBeLessThanOrEqual(dissolving[i - 1]!.pageAlpha);
     }
+    const last = r.renderer.draws.at(-1)!;
+    expect(last.unwrap).toBe(0);
+    expect(last.pageAlpha).toBe(0);
+    // The clear colour dissolves with the page, never before it.
+    for (const d of dissolving) expect(d.bgAlpha).toBe(d.pageAlpha);
     // No event or frame follows `done`.
     expect(r.out.at(-1)).toMatchObject({ type: 'done' });
     expect(r.pending).toBe(0);
