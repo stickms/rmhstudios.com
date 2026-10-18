@@ -92,13 +92,13 @@ function useEmptyCopy() {
 }
 
 /**
- * The range in which radial.css renders the deck. Between 1440 and 1600 the
- * site-wide live rail has appeared but the window is not yet wide enough for
- * four columns, so the home-only deck yields its COLUMN and stacks under the
- * wheel instead — it is still rendered, so the fetch has to run there too. (It
- * used to be `display: none` in that band, which took the module off two of the
- * most common laptop widths entirely.) Keep in step with the media queries
- * around `.rad-deck`.
+ * The range in which radial.css renders the deck. From 1440 up the site-wide
+ * live rail is on screen and the page holds to three columns, so the home-only
+ * deck yields its COLUMN and stacks under the wheel instead — it is still
+ * rendered, so the fetch has to run there too. (It used to be `display: none`
+ * from 1440 to 1599, which took the module off two of the most common laptop
+ * widths entirely, and a fourth column from 1600.) Keep in step with the media
+ * queries around `.radial-feed__deck`.
  */
 const DECK_QUERY = '(min-width: 1280px)';
 

@@ -12,22 +12,24 @@
  *
  * ## Governor
  *
- * `FrametimeMonitor` (`lib/render/governor.ts`; window `GOVERNOR_WINDOW`, target
- * `GOVERNOR_TARGET_FPS`) runs in the worker. It is **downscale-only** and steps
+ * `DprGovernor` (window `GOVERNOR_WINDOW`, target `governorTargetFps` of the
+ * display's refresh rate) runs in the worker. It is **downscale-only** and steps
  * the CANVAS DPR — never the mesh, which would pop geometry — by
  * `GOVERNOR_STEP`× per step to a floor of `GOVERNOR_DPR_FLOOR`, at most
  * `GOVERNOR_MAX_STEPS` per navigation. A DPR step changes sharpness, never
  * position, so it does not break the timeline's continuity.
  */
 
-import { FrametimeMonitor } from '@/lib/render/governor';
 import type { RenderTier } from '@/lib/render/tier';
 import {
   DROPPED_FRAME_FACTOR,
   GOVERNOR_DPR_FLOOR,
   GOVERNOR_MAX_STEPS,
+  GOVERNOR_MAX_FPS,
+  GOVERNOR_MIN_FPS,
+  GOVERNOR_REFRESH_SHARE,
   GOVERNOR_STEP,
-  GOVERNOR_TARGET_FPS,
+  GOVERNOR_WARMUP_FRAMES,
   GOVERNOR_WINDOW,
   MAX_DT_MS,
 } from '../constants';
@@ -58,10 +60,20 @@ export function pickTier(inputs: TierInputs): Tier {
   return inputs.isMobile && tier === 'high' ? 'mid' : tier;
 }
 
+/** The frame rate the governor defends on a display of `refreshHz` (see `GOVERNOR_REFRESH_SHARE`). */
+export function governorTargetFps(refreshHz: number): number {
+  const hz = Number.isFinite(refreshHz) && refreshHz > 0 ? refreshHz : 60;
+  const share = hz * GOVERNOR_REFRESH_SHARE;
+  return Math.min(GOVERNOR_MAX_FPS, hz >= 60 ? Math.max(GOVERNOR_MIN_FPS, share) : share);
+}
+
+/** Intervals left out of the window's mean: its worst tenth. */
+const GOVERNOR_TRIM = Math.floor(GOVERNOR_WINDOW / 10);
+
 /**
  * The downscale-only DPR governor. Feed it every frame interval; when the
- * window average misses the target it returns the new cumulative scale to pass
- * to `RendererApi.setDprScale`, else `null`.
+ * window misses the target it returns the new cumulative scale to pass to
+ * `RendererApi.setDprScale`, else `null`.
  *
  * ## What the floor is a floor OF
  *
@@ -73,30 +85,56 @@ export function pickTier(inputs: TierInputs): Tier {
  * `startDpr · scale` below the floor. A `high` tier at DPR 2 can step 2 → 1.5 →
  * 1.125; a `low` tier at 1.0 can step once (0.75) and then has nowhere to go.
  *
+ * ## The target is the display's
+ *
+ * A fixed 55 fps target never stepped in on a 120 Hz panel showing 70 fps — half
+ * of what the panel can show, with the uneven pacing that implies. The target is
+ * `governorTargetFps(refreshHz)`: 57 fps on 60 Hz, 114 on 120 Hz, capped at 144.
+ * The refresh rate is measured on the main thread (`lib/render/refresh-rate.ts`)
+ * and sent with each `start`.
+ *
  * ## Transients are not load
  *
- * `FrametimeMonitor` averages, so one 120 ms route render in a 30-frame window
- * would be enough to trip it — the very hiccup the in-thread mode is expected to
- * have (spec §7.7). Each interval is therefore clamped to `MAX_DT_MS` (the same
- * clamp the timeline applies to its own clock) before it is pushed: one stalled
- * frame cannot move a 30-frame mean past the budget, while a sustained miss
- * still does. After a step the window restarts, so the next step is judged on
+ * Three things keep a hitch from reading as load: the first
+ * `GOVERNOR_WARMUP_FRAMES` intervals of a run are not recorded at all (they carry
+ * the driver's first use of each program); each interval is clamped to
+ * `MAX_DT_MS`; and the window is judged by its TRIMMED mean — the worst tenth of
+ * the window (three frames of thirty) is left out. A route render, a GC or a
+ * decode in the window is ignored, while a run that drops one frame in five
+ * still steps. After a step the window restarts, so the next step is judged on
  * frames drawn at the NEW resolution.
  */
 export class DprGovernor {
-  private readonly monitor = new FrametimeMonitor(GOVERNOR_WINDOW);
-  private readonly budgetMs = 1000 / GOVERNOR_TARGET_FPS;
+  private readonly ring = new Float64Array(GOVERNOR_WINDOW);
+  private readonly sorted = new Float64Array(GOVERNOR_WINDOW);
+  private readonly budgetMs: number;
+  private count = 0;
+  private seen = 0;
   private _steps = 0;
   private _scale = 1;
 
-  /** @param startDpr the canvas DPR in force before any step (viewport DPR, tier-capped). */
-  constructor(private readonly startDpr: number = 1) {}
+  /**
+   * @param startDpr the canvas DPR in force before any step (viewport DPR, tier-capped).
+   * @param refreshHz the display's refresh rate (60 when unknown).
+   */
+  constructor(
+    private readonly startDpr: number = 1,
+    refreshHz = 60,
+  ) {
+    this.budgetMs = 1000 / governorTargetFps(refreshHz);
+  }
+
+  /** The per-frame budget the window is judged against, in ms. */
+  get budget(): number {
+    return this.budgetMs;
+  }
 
   /** Record one frame interval (ms). Returns a new cumulative scale when a step is taken. */
   record(intervalMs: number): number | null {
     if (this._steps >= GOVERNOR_MAX_STEPS) return null;
-    this.monitor.push(Math.min(intervalMs, MAX_DT_MS));
-    if (!this.monitor.full() || this.monitor.averageMs() <= this.budgetMs) return null;
+    if (this.seen++ < GOVERNOR_WARMUP_FRAMES) return null;
+    this.ring[this.count++ % GOVERNOR_WINDOW] = Math.min(intervalMs, MAX_DT_MS);
+    if (this.count < GOVERNOR_WINDOW || this.trimmedMean() <= this.budgetMs) return null;
     const next = this._scale * GOVERNOR_STEP;
     if (this.startDpr * next < GOVERNOR_DPR_FLOOR) {
       // Nowhere left to go: stop sampling for the rest of the navigation.
@@ -105,8 +143,17 @@ export class DprGovernor {
     }
     this._scale = next;
     this._steps++;
-    this.monitor.reset();
+    this.count = 0;
     return next;
+  }
+
+  private trimmedMean(): number {
+    this.sorted.set(this.ring);
+    this.sorted.sort();
+    let sum = 0;
+    const n = GOVERNOR_WINDOW - GOVERNOR_TRIM;
+    for (let i = 0; i < n; i++) sum += this.sorted[i]!;
+    return sum / n;
   }
 
   /** Steps taken so far this navigation (≤ `GOVERNOR_MAX_STEPS`). */
@@ -119,11 +166,12 @@ export class DprGovernor {
     return this._scale;
   }
 
-  /** Forget everything: the next navigation starts untouched. */
+  /** Forget everything: the next navigation starts untouched (and warms up again). */
   reset(): void {
     this._steps = 0;
     this._scale = 1;
-    this.monitor.reset();
+    this.count = 0;
+    this.seen = 0;
   }
 }
 

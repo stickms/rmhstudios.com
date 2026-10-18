@@ -221,6 +221,8 @@ export interface RunnerDeps {
     detail: EversionMarkDetails[K] | undefined,
   ): void;
   now(): number;
+  /** The display's refresh rate in Hz (`lib/render/refresh-rate.ts`): the render side's governor aims at it. */
+  refreshHz?(): number;
   /**
    * Observability seam (debug only): the AFTER bitmap about to be handed to the render side, before the post
    * detaches it. Must not retain or close it. A throw is swallowed.
@@ -677,7 +679,7 @@ export class EversionRunner {
       href,
       entry,
     });
-    post({ type: 'start', t0 });
+    post({ type: 'start', t0, refreshHz: deps.refreshHz?.() });
     if (queuedInput) fastForward();
     try {
       options.onCommit?.();

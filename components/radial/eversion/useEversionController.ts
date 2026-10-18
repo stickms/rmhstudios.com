@@ -45,6 +45,7 @@ import type {
   TranslateFn,
   Viewport,
 } from '@/lib/eversion/types';
+import { displayRefreshHz } from '@/lib/render/refresh-rate';
 import { useThemeStore } from '@/stores/themeStore';
 import {
   discardCanvas,
@@ -564,6 +565,8 @@ export function createEversionController(
   overrides: ControllerOverrides = {},
 ): EversionControllerHandle {
   const hostPort = createHostPort();
+  // Measure the panel's refresh rate now, while the hub is quiet, so the first run's governor aims at it.
+  displayRefreshHz();
   const bakedKeys = new Set<string>();
   let prepared: ProjectionId | null = null;
   let timer: ReturnType<typeof setTimeout> | null = null;
@@ -711,6 +714,7 @@ export function createEversionController(
       }
     },
     now: () => performance.now(),
+    refreshHz: displayRefreshHz,
     afterCaptured: isEversionDebugEnabled() ? recordAfterCapture : undefined,
     get maxRunMs() {
       // e2e harness only (testing/e2e/lib/eversion-session.mjs): a software-GL page

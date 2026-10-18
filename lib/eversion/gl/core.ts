@@ -482,7 +482,7 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
     }
   }
 
-  function start(t0: number, origin: number | undefined) {
+  function start(t0: number, origin: number | undefined, refreshHz: number | undefined) {
     if (!renderer || !timeline || !plan) throw new Error('eversion: start before prime');
     if (running) return;
     const now = env.now();
@@ -500,7 +500,7 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
     coverSent = false;
     framesDrawn = 0;
     stats.reset();
-    governor = new DprGovernor(Math.min(plan.viewport.dpr, dprCap));
+    governor = new DprGovernor(Math.min(plan.viewport.dpr, dprCap), refreshHz);
     running = true;
     hurried = false;
     timeline!.start(now);
@@ -686,7 +686,7 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
             texture(message.slot, message.bitmap);
             break;
           case 'start':
-            start(message.t0, message.origin);
+            start(message.t0, message.origin, message.refreshHz);
             break;
           case 'fast-forward':
             whenRunning((tl, now) => tl.fastForward(now));

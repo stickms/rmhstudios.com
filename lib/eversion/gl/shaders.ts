@@ -1091,6 +1091,7 @@ uniform float u_radius;
 uniform vec4 u_colVeil;
 uniform vec4 u_colAccent;
 uniform vec4 u_colCageMajor;
+uniform float u_whiten;
 uniform float u_time;
 uniform float u_spin;
 uniform float u_tilt;
@@ -1103,6 +1104,17 @@ out vec4 outColor;
 ${LUT_GUARDED_GLSL}
 ${WEDGE_GLSL}
 ${quality >= 1 ? MATERIAL_GLSL : ''}
+/* A dark page is a WHITE planet (owner, 2026-10-18: on a dark theme the page wrapped on the globe was a black ball
+   lost against the dark sky). Its lightness is inverted with the hue kept (c + 1 - 2 L): the dark ground goes near
+   white, light text goes dark, mid-tone accents barely move, so the page stays legible. u_whiten is how dark the
+   theme's page is (0 on a light theme); it rides the morph weight, so it follows the wrap wave in and the unwrap
+   out, and is exactly 0 on the flat first and last frames. */
+vec3 planetTone(vec3 c) {
+  float k = u_whiten * quintic5(v_morph);
+  if (k <= 0.0) return c;
+  float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+  return mix(c, clamp(c + 1.0 - 2.0 * l, 0.0, 1.0), k);
+}
 void main() {
   float theta = v_domain.x;
   float phi = v_domain.y;
@@ -1180,12 +1192,13 @@ void main() {
   float litB = LAMBERT_BASE + LAMBERT_GAIN * max(dot(-nn, L), 0.0);
   vec3 page = vec3(0.0);
   if (side > 0.0) {
-    vec3 pg = textureGrad(u_before, clamp(uvF, 0.0, 1.0), gx, gy).rgb;
+    vec3 pg = planetTone(textureGrad(u_before, clamp(uvF, 0.0, 1.0), gx, gy).rgb);
     page += side * mix(pg, pg * litF, v_morph);
   }
   if (side < 1.0) {
     vec2 cb = clamp(uvB, 0.0, 1.0);
-    vec3 pg = mix(textureGrad(u_placeholder, cb, gx, gy).rgb, textureGrad(u_after, cb, gx, gy).rgb, u_afterMix);
+    vec3 pg = planetTone(
+      mix(textureGrad(u_placeholder, cb, gx, gy).rgb, textureGrad(u_after, cb, gx, gy).rgb, u_afterMix));
     vec3 shaded = mix(pg * litB * SIDE_DARKEN, u_colAccent.rgb, SIDE_TINT);
     page += (1.0 - side) * mix(pg, shaded, v_morph);
   }

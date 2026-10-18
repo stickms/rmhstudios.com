@@ -193,8 +193,27 @@ frame-to-frame jump four times its neighbours.
   bounded whatever the screen.
 - **The cosmos governs itself.** The DPR governor lowers resolution when frames run
   long; if they still do with the cosmos on screen, the renderer eases the whole
-  system out over 450 ms (`governCosmos` in `gl/renderer.ts`: ~45 fps for 24 smoothed
-  frames) and does not lay it out again on that page. It is never cut.
+  system out over 450 ms (`governCosmos` in `gl/renderer.ts`: under ~54 fps for 24
+  smoothed frames) and does not lay it out again on that page. It is never cut.
+- **60 fps is the floor; the display's rate is the aim.** The DPR governor's target is
+  `governorTargetFps(refreshHz)` (`gl/governor-tiers.ts`): 95% of the panel's refresh
+  rate, never under 57 fps on a 60 Hz-or-faster panel, capped at 144 - 57 fps on
+  60 Hz, 114 on 120 Hz, 137 on 144 Hz. The rate is measured on the main thread
+  (`lib/render/refresh-rate.ts`, sampled when the controller is created, while the
+  hub is quiet) and sent with each `start`. A run that keeps up with the panel is
+  never touched; one that falls clearly behind it trades sharpness for frames.
+- **Starting is not load.** The governor skips the first 12 intervals of a run and
+  judges each 30-frame window by its trimmed mean (the worst tenth left out), so the
+  start-of-run hitches, a GC or a route render never trigger a DPR step - which
+  would have added a canvas reallocation, a second hitch, to the first - while a run
+  that drops one frame in five still steps.
+- **Every program is warm before its first frame.** A program's first draw is when
+  the driver really builds it (Metal and D3D key the GPU program by blend state and
+  framebuffer format) and makes the mesh resident: that was the stutter at the start
+  of the first run. `createRenderer` now draws every program it holds once, with its
+  real blend state, into a 1 × 1 scissor of the drawing buffer, cleared after
+  (`warmUp`); the masked surface (azimuthal projections) is compiled there too on mid
+  and high, and a program compiled later is warmed the moment it is.
 - **Nothing heavy runs while the visitor is moving** (`components/radial/quiet.ts`).
   The three main-thread costs before a run - evaluating the effect's chunks, the
   program compile (in-thread on WebKit) and the BEFORE capture (a DOM clone) - all
@@ -216,6 +235,18 @@ frame-to-frame jump four times its neighbours.
   uniform arrays well under the 224-vector minimum), guard every `pow` base and
   normalisation against rounding, and need no extension. A browser without WebGL2
   navigates as it always did.
+
+### The planet is white on dark themes (amended 2026-10-18)
+
+On a dark theme the globe is a dark page wrapped on a sphere, against a darker
+space: it disappeared into the background. While it is a planet, the surface shows
+the page with its lightness reflected (`planetTone` in `gl/shaders.ts`: `c + 1 - 2L`,
+which keeps hue and turns near-black into near-white), weighted by
+`u_whiten · quintic(morph)`. `u_whiten` is how dark the theme's background is
+(`pageDarkness` in `gl/renderer.ts`: 0 for a light theme, 1 under ~18% luminance),
+written once per prime. At the flat endpoints the morph weight is 0, so the BEFORE
+and AFTER pages are the captures to the bit; through WRAP the page eases to white
+as it lifts off, and back to its own colours through UNWRAP.
 
 ## The ending: the run ends with UNWRAP
 
