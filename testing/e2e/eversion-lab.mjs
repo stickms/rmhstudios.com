@@ -21,7 +21,7 @@
 //
 //  1. The route renders and the host reports ready (real WebGL2, SwiftShader).
 //  2. For each of the five projections, at five scrub points (hub, wrap,
-//     mid-evert, unwrap, pop), the scrub completes and the canvas is
+//     mid-evert, unwrap, reveal), the scrub completes and the canvas is
 //     screenshotted. No `console.error` / page error occurs anywhere.
 //  3. The scrubber's END key reaches the end of the timeline (SCRUB_MAX).
 //  4. A real Play run completes and reports frame stats.
@@ -37,7 +37,7 @@ const POINTS = [
   ['Wrap', 350],
   ['Mid-evert', 2250],
   ['Unwrap', 3800],
-  ['Pop', 4600],
+  ['Reveal', 4600],
 ];
 
 const failures = [];

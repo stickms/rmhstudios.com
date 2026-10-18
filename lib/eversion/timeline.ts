@@ -31,18 +31,22 @@
  *   4300 ms, with `k` re-picked at every re-plan so the remaining travel is
  *   never backwards and never more than `SPIN_MAX_REMAINING_TURNS` (test 21).
  * - After `fastForward`, completion is within `FF_REMAINING_MS` plus any gate
- *   wait (≤ `FF_STRETCH_CAP_MS`) plus POP (test 19).
- * - `snapshot.radius/centreX/centreY` are EFFECTIVE (POP folded in); the raw
+ *   wait (≤ `FF_STRETCH_CAP_MS`) plus the reveal fade (test 19).
+ * - `snapshot.radius/centreX/centreY` are EFFECTIVE (the extent fit folded in); the raw
  *   channel is `sample()`.
+ * - The run ENDS at the end of UNWRAP: the flat AFTER page, `unwrap` 0, with every
+ *   channel at rest (value, velocity and acceleration; the post-gate spin landing may
+ *   still be settling, under a mesh that is flat and so cannot show it). `reveal`
+ *   only fades the canvas onto the identical live page, then `done`.
  *
  * The default plan is `PLAN_MS` in `constants.ts`.
  *
  * ## How the machine is organised
  *
- * Motion is fourteen channels (`CHANNEL_IDS`), each one or two quintic slots in a
+ * Motion is eleven channels (`CHANNEL_IDS`), each one or two quintic slots in a
  * single `Float64Array`. Everything that is not motion is a handful of absolute
  * TIMERS (`T_*`): when `evert` starts, when the gate is checked (3000 ms), when
- * the gate opens, when unwrap starts and ends, when POP ends. `process` fires
+ * the gate opens, when unwrap starts and ends, when the reveal fade ends (`done`). `process` fires
  * every timer that is due, earliest first, and each handler re-plans at the
  * timer's own time — not at the frame time — so a 50 ms frame that straddles a
  * transition still produces exactly the trajectory a 1 ms frame would. That is
@@ -72,10 +76,10 @@
  *
  * ## Decisions the T01 contract left open
  *
- * - **POP vs REVEAL after `unwrap-done`.** `reveal(now)` is the controller's
- *   answer to `unwrap-done`; POP starts at that instant, not at a fixed 4600 ms.
- *   Event order is `unwrap-done`, `reveal`, `pop` (all at the `reveal` call's
- *   clock). A `reveal` that arrives before `unwrap-done` is remembered and applied
+ * - **REVEAL after `unwrap-done`.** `reveal(now)` is the controller's
+ *   answer to `unwrap-done`; the fade starts at that instant, not at a fixed 4600 ms.
+ *   Event order is `unwrap-done`, `reveal` (at the `reveal` call's clock), then
+ *   `done` `REVEAL_MS` later. A `reveal` that arrives before `unwrap-done` is remembered and applied
  *   the moment `unwrap-done` fires (so the order holds), and a second `reveal` is
  *   ignored. `bgAlpha` drops to 0 at `reveal`.
  * - **`need-after-by` time base.** `afterDeadline(now)` returns
@@ -86,8 +90,8 @@
  *   the clock, not with wall time. The controller should treat it as "after this
  *   AFTER is not going to be used"; calling `afterFailed` then is harmless.
  * - **Fast-forward ratio.** Only the time up to the end of UNWRAP compresses to
- *   `FF_REMAINING_MS` (POP, being separate, is not compressed and FF during POP is
- *   ignored); the ratio is never above 1, so FF never slows anything.
+ *   `FF_REMAINING_MS` (the reveal fade, being separate, is not compressed and FF after
+ *   the reveal is ignored); the ratio is never above 1, so FF never slows anything.
  * - **Spin landing from a cruise** (the post-gate landing after a long wait) picks
  *   the landing that arrives SOONEST (smallest valid travel), not the one nearest
  *   1.25 turns: the page has already turned for seconds.
@@ -97,13 +101,11 @@
  *   down. Hub velocities are clamped to the hub's own `MAX_SPIN` (900°/s).
  * - **The post-gate landing is bounded in speed** (`pickGateLanding`): it takes as
  *   long as its travel needs at `SPIN_LAND_MAX_DEG_PER_S` (at most
- *   `SPIN_LAND_MAX_MS`), overlapping UNWRAP and POP; the stage timers are
+ *   `SPIN_LAND_MAX_MS`), overlapping UNWRAP and the reveal; the stage timers are
  *   unchanged, so after a long wait the spin can still be landing when `done` is
- *   emitted (the glass is orb-sized by then).
+ *   emitted (the page is flat by then, so the turn is not visible).
  * - **The effective radius is fitted to the projected extent** (`eversionRadiusFit`),
  *   so the everting surface never pokes past the short viewport edge.
- * - **Resize may carry the orb** (`resize(now, viewport, orb?)`): the orb is three
- *   hidden channels re-planned like the rest.
  */
 
 import {
@@ -119,8 +121,6 @@ import {
   MIN_EVERT_RATE,
   PLACEHOLDER_XFADE_MS,
   PLAN_MS,
-  POP_FADE_FROM,
-  POP_MS,
   PROJECTED_EXTENT_LIMIT,
   PROJECTED_EXTENT_MAX,
   RADIUS_FIT_WINDOW,
@@ -155,7 +155,6 @@ import {
   type TimelineApi,
   type TimelineConfig,
   type TimelineEvent,
-  type OrbRect,
   type TimelineSnapshot,
   type Viewport,
 } from './types';
@@ -165,16 +164,8 @@ const DEG = Math.PI / 180;
 /* ── Channels ─────────────────────────────────────────────────────────────── */
 
 const NCH = CHANNEL_IDS.length;
-/**
- * Three hidden channels after the public ones hold the orb's centre and radius, so
- * a resize that moves the orb is re-planned like everything else (POP's target
- * glides to the new orb instead of jumping). They are not in `CHANNEL_IDS`.
- */
-const C_ORB_X = NCH;
-const C_ORB_Y = NCH + 1;
-const C_ORB_R = NCH + 2;
-const NALL = NCH + 3;
-/** Three slots: tilt is decelerate → rise → fall; the spin is decelerate → land; pop is peak → settle. */
+const NALL = NCH;
+/** Three slots: tilt is decelerate → rise → fall; the spin is decelerate → land. */
 const SLOTS = 3;
 const CH_STRIDE = SLOTS * SEG_STRIDE;
 
@@ -189,9 +180,6 @@ const C_TILT = CHANNEL_IDS.indexOf('tilt');
 const C_AFTER_MIX = CHANNEL_IDS.indexOf('afterMix');
 const C_UNWRAP = CHANNEL_IDS.indexOf('unwrap');
 const C_PAGE_ALPHA = CHANNEL_IDS.indexOf('pageAlpha');
-const C_POP = CHANNEL_IDS.indexOf('pop');
-const C_GLASS = CHANNEL_IDS.indexOf('glass');
-const C_POP_FADE = CHANNEL_IDS.indexOf('popFade');
 
 const CHANNEL_INDEX: Readonly<Record<ChannelId, number>> = {
   wrap: C_WRAP,
@@ -205,9 +193,6 @@ const CHANNEL_INDEX: Readonly<Record<ChannelId, number>> = {
   afterMix: C_AFTER_MIX,
   unwrap: C_UNWRAP,
   pageAlpha: C_PAGE_ALPHA,
-  pop: C_POP,
-  glass: C_GLASS,
-  popFade: C_POP_FADE,
 };
 
 /* ── Timers ───────────────────────────────────────────────────────────────── */
@@ -222,7 +207,7 @@ const T_WAIT = 1;
 const T_OPEN = 2;
 const T_UNWRAP = 3;
 const T_UNWRAP_DONE = 4;
-const T_POP_DONE = 5;
+const T_DONE = 5;
 const NTIMERS = 6;
 
 /* ── Local tunables (nothing else needs them; the shared ones are in constants.ts) ── */
@@ -231,16 +216,6 @@ const NTIMERS = 6;
 const UNWRAP_SPAN_MS = UNWRAP_MS + UNWRAP_OVERLAP_MS;
 const EVERT_FINISH_MS = EVERT_OVERLAP_MS;
 const LAND_AFTER_UNWRAP_MS = PLAN_MS.spin[1] - PLAN_MS.unwrap[0];
-/** Fraction of POP spent shrinking onto the orb (one rest-to-rest quintic; the glass fades after it). */
-const POP_SHRINK_FRACTION = POP_FADE_FROM;
-/**
- * The pop itself (spec §7.1 "overshoot"): while the glass fades the globe swells by up to this fraction of the
- * orb's size and falls back, `1 + POP_PUFF · 4f(1 − f)` for the fade `f` - zero value, velocity and
- * acceleration at both ends because `f` starts and ends at rest, so it is C² and the last frame is exactly the orb.
- */
-const POP_PUFF = 0.18;
-/** Fraction of POP the empty glass globe takes to condense out of the vanishing page. */
-const POP_GLASS_FRACTION = 0.4;
 /** Re-plan of a settled radius/centre toward a new viewport. */
 const RESIZE_MS = 300;
 /** …and the shortest re-plan of one still in flight. */
@@ -411,7 +386,7 @@ const FIT_FLOOR = PROJECTED_EXTENT_LIMIT / (GLOBE_RADIUS_FRACTION * PROJECTED_EX
  * `e` is C² and `S` is C² (zero first and second derivative at both ends) the
  * effective radius stays C² too; the half-size dip while the surface is at its
  * widest reads as the glass breathing with the eversion rather than a cut.
- * It is exactly 1 at `e = 0` and `e ≥ 0.8`, so WRAP/UNWRAP/POP are unaffected.
+ * It is exactly 1 at `e = 0` and `e ≥ 0.8`, so WRAP/UNWRAP are unaffected.
  *
  * `write()` carries an INLINED copy of this body: called as a function it returns
  * a boxed double, one heap number per frame, and `tick` allocates nothing. The
@@ -488,8 +463,6 @@ class TimelineEngine {
   protected scale = 1;
   protected revealed = false;
   protected revealPending = false;
-  protected popStarted = false;
-  protected popStartT = -1;
 
   /** The angle the spin is currently landing on, or NaN while it has no goal. */
   protected spinGoal = NaN;
@@ -497,16 +470,13 @@ class TimelineEngine {
   protected spinDir = 1;
 
   constructor(config: TimelineConfig) {
-    const { viewport, globe, orb } = config;
+    const { viewport, globe } = config;
     this.vpW = viewport.w;
     this.vpH = viewport.h;
     this.thetaAlign = config.thetaAlign ?? 0;
 
     // Channels at rest, then the default plan (spec §7.1).
     for (let c = 0; c < NALL; c++) this.hold(c, 0);
-    this.hold(C_ORB_X, orb.cx);
-    this.hold(C_ORB_Y, orb.cy);
-    this.hold(C_ORB_R, orb.radius);
     this.hold(C_RADIUS, globe.radius);
     this.hold(C_CENTRE_X, globe.centre[0]);
     this.hold(C_CENTRE_Y, globe.centre[1]);
@@ -945,11 +915,11 @@ class TimelineEngine {
     // covers 23°–383°, and in the nominal 500 ms that is 460–1300°/s — a whirl
     // after seconds of calm. So the landing takes as long as its travel needs at
     // `SPIN_LAND_MAX_DEG_PER_S` (never less than the nominal time) and is allowed
-    // to run on UNDER the unwrap and the POP, even past `done`: the gate logic
+    // to run on UNDER the unwrap and the reveal, even past `done`: the gate logic
     // (`gate-open`, `unwrap`, `unwrap-done`, `done` at the same offsets from the
     // gate) is untouched, the flattening page simply keeps turning while it
-    // flattens (its rotation is weighted out as it reaches the plane) and the
-    // glass that is still turning at `done` is orb-sized. The tilt lands with it.
+    // flattens (its rotation is weighted out as it reaches the plane, and gone
+    // at `unwrap` 0). The tilt lands with it.
     const tmp = this.tmp;
     this.eval(C_SPIN, u, tmp);
     const x0 = tmp[0]!;
@@ -1085,7 +1055,7 @@ class TimelineEngine {
     this.plan(C_SPIN, tStart, T, this.spinGoal);
   }
 
-  /* ── Reveal and POP ─────────────────────────────────────────────────────── */
+  /* ── Reveal ─────────────────────────────────────────────────────────────── */
 
   protected doReveal(t: number): void {
     this.revealed = true;
@@ -1093,16 +1063,8 @@ class TimelineEngine {
     this.emit('reveal', t);
     this.plan(C_PAGE_ALPHA, t, REVEAL_MS, 0);
 
-    this.popStarted = true;
-    this.popStartT = t;
-    this.emit('pop', t);
-    this.plan(C_POP, t, POP_MS * POP_SHRINK_FRACTION, 1);
-    // The empty glass globe condenses while it shrinks, lands on the orb, and fades out: every
-    // channel starts and ends at rest, so the exit has no hard cut (the last frame is invisible).
-    this.plan(C_GLASS, t, POP_MS * POP_GLASS_FRACTION, 1);
-    this.plan(C_POP_FADE, t, POP_MS * POP_FADE_FROM, 0);
-    this.addSlot(C_POP_FADE, POP_MS * (1 - POP_FADE_FROM), 1);
-    this.timer[T_POP_DONE] = t + POP_MS;
+    // The run is over when the canvas has faded onto the identical live page.
+    this.timer[T_DONE] = t + REVEAL_MS;
   }
 
   /* ── The frame ──────────────────────────────────────────────────────────── */
@@ -1128,15 +1090,8 @@ class TimelineEngine {
     s.afterMix = clamp01(e[0]!);
     this.eval(C_PAGE_ALPHA, t, e);
     s.pageAlpha = clamp01(e[0]!);
-    this.eval(C_POP, t, e);
-    const pop = e[0]!;
-    s.pop = pop;
-    this.eval(C_GLASS, t, e);
-    s.glass = clamp01(e[0]!);
-    this.eval(C_POP_FADE, t, e);
-    s.popFade = clamp01(e[0]!);
     this.eval(C_RADIUS, t, e);
-    // The effective radius: the channel × the extent fit (a function of the live `e`), then POP.
+    // The effective radius: the channel × the extent fit (a function of the live `e`).
     // Inlined copy of {@link eversionRadiusFit}: a call here costs a heap number per frame.
     const ev = s.evert;
     let fit = 1;
@@ -1159,20 +1114,10 @@ class TimelineEngine {
     const cx = e[0]!;
     this.eval(C_CENTRE_Y, t, e);
     const cy = e[0]!;
-    this.eval(C_ORB_X, t, e);
-    const ox = e[0]!;
-    this.eval(C_ORB_Y, t, e);
-    const oy = e[0]!;
-    this.eval(C_ORB_R, t, e);
-    const or = e[0]!;
-    // POP is the glass globe shrinking into the orb; as the glass fades it swells a little and is gone (the pop).
-    const f = s.popFade;
-    const puff = 1 + POP_PUFF * 4 * f * (1 - f);
-    s.radius = (r + (or - r) * pop) * puff;
-    s.centreX = cx + (ox - cx) * pop;
-    s.centreY = cy + (oy - cy) * pop;
-    s.ripple0Age = this.started ? t / 1000 : -1;
-    s.ripple1Age = this.popStarted ? (t - this.popStartT) / 1000 : -1;
+    s.radius = r;
+    s.centreX = cx;
+    s.centreY = cy;
+    s.rippleAge = this.started ? t / 1000 : -1;
     s.bgAlpha = this.revealed ? 0 : 1;
   }
 }
@@ -1205,7 +1150,7 @@ export class Timeline extends TimelineEngine implements TimelineApi {
 
   fastForward(now: number): void {
     this.advance(now);
-    if (!this.started || this.ffDone || this.popStarted) return;
+    if (!this.started || this.ffDone || this.revealed) return;
     this.ffDone = true;
     const tf = this.clock;
 
@@ -1294,7 +1239,7 @@ export class Timeline extends TimelineEngine implements TimelineApi {
     this.fastForward(now);
   }
 
-  resize(now: number, viewport: Viewport, orb?: OrbRect): void {
+  resize(now: number, viewport: Viewport): void {
     this.advance(now);
     this.vpW = viewport.w;
     this.vpH = viewport.h;
@@ -1303,12 +1248,6 @@ export class Timeline extends TimelineEngine implements TimelineApi {
     this.replanToward(C_RADIUS, t, this.targetRadius());
     this.replanToward(C_CENTRE_X, t, this.vpW / 2);
     this.replanToward(C_CENTRE_Y, t, this.vpH / 2);
-    // The orb moves with the viewport (it is laid out by the page): POP's target glides to it.
-    if (orb) {
-      this.replanToward(C_ORB_X, t, orb.cx);
-      this.replanToward(C_ORB_Y, t, orb.cy);
-      this.replanToward(C_ORB_R, t, orb.radius);
-    }
   }
 
   reveal(now: number): void {

@@ -36,7 +36,7 @@
 // The lab draws the real renderer over the real timeline (same core, same shaders) with
 // synthetic BEFORE / AFTER / placeholder pages. What the stills therefore judge is the
 // effect's own motion: radius, centre, spin, tilt, eversion, unwrap, the AFTER crossfade, the
-// page-alpha fade and POP. The CSS hub fade and the orb's fade are outside it.
+// page-alpha fade (the run ends with UNWRAP, there is no POP stage). The CSS hub fade and the orb's fade are outside it.
 //
 // A scenario is a script for the replay: when AFTER becomes ready (`afterAt`), when the user
 // fast-forwards (`ffAt`), or that AFTER fails (`failAt`). A still at timeline time T replays a
@@ -58,7 +58,7 @@
 // the run's median is no yardstick - the spec's "4x the median" rule is what failed on a loaded rig
 // in review R7 - and the detector asks the local question instead: is this step larger than BOTH of
 // its neighbours by `cut-ratio` (default 2)? C2 continuity makes every legitimate speed-up a ramp
-// (onset from rest, the fast-forward, the AFTER crossfade, POP, the page-alpha fade), and a ramp's
+// (onset from rest, the fast-forward, the AFTER crossfade, the page-alpha fade), and a ramp's
 // steps never exceed the one after them; a re-plan that forgot a channel's state is a step in one
 // frame between two smooth neighbours. The series `d_i / max(d_(i-1), d_(i+1), floor)` is handed to
 // `detectHardCuts` with threshold `cut-ratio`; `floor` is half the run's median over its moving steps
@@ -295,14 +295,14 @@ async function captureRun(pool, script, { cutAt = null } = {}) {
     cutAt,
   );
   const stills = [...first, ...more].sort((a, b) => a.t - b.t);
-  const popStart = stills.find((s) => s.stage === 'pop' || s.stage === 'done')?.t ?? end;
-  return { script, stills, end, popStart, cutAt };
+  const revealStart = stills.find((s) => s.stage === 'reveal' || s.stage === 'done')?.t ?? end;
+  return { script, stills, end, revealStart, cutAt };
 }
 
 /* ── The detectors over a set of stills ───────────────────────────────────── */
 
 async function analyse(run) {
-  const { script, stills, end, popStart } = run;
+  const { script, stills, end, revealStart } = run;
   if (stills.length < 40) throw new Fail(`only ${stills.length} stills - cannot judge smoothness`);
   const imgs = [];
   for (const s of stills) imgs.push(await decodeImage(s.png));
@@ -314,7 +314,7 @@ async function analyse(run) {
   const med = Math.max(median(moving), 1e-5);
 
   // A hard cut is a step LARGER THAN BOTH its neighbours: C2 continuity makes every legitimate
-  // speed-up a ramp (an onset from rest, a fast-forward, the AFTER crossfade, POP), so a
+  // speed-up a ramp (an onset from rest, a fast-forward, the AFTER crossfade), so a
   // ramp's steps never exceed the one after them. The run's own median is not a usable
   // yardstick (the change per step varies ~100x between the wrap and the unwrap), only the noise floor.
   const floor = FLOOR_OF_MEDIAN * med;
@@ -337,7 +337,7 @@ async function analyse(run) {
   if (typeof script.ffAt === 'number') {
     windows.push({ name: 'fast-forward', from: script.ffAt, to: script.ffAt + FF_REMAINING_MS });
   }
-  windows.push({ name: 'reveal + pop', from: popStart, to: end });
+  windows.push({ name: 'reveal', from: revealStart, to: end });
 
   // S#32 on the timeline axis (exact: stills carry their own timeline time).
   const lums = luminanceSeries(imgs);

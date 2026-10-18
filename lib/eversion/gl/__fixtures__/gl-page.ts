@@ -10,6 +10,7 @@
  */
 
 import { GLSL_HEADER, EVERSION_GLSL, getShaderSet } from '../shaders';
+import { PLAN_MS } from '../../constants';
 import { createSnapshot } from '../../snapshot';
 import { getBakedLut } from '../../projection-lut';
 import { meshForTier } from '../../mesh';
@@ -344,7 +345,6 @@ const api = {
         centre: [VIEW.w / 2, VIEW.h / 2],
         radius: 60,
       },
-      orb: { cx: 0, cy: 0, radius: 10 },
       colours: themed ? THEMED : PLAIN,
       lut,
       mAfter:
@@ -549,12 +549,11 @@ const api = {
   },
 
   /**
-   * Draw the real timeline's frame `offsetMs` after POP began (negative: before it), for a hub-sized globe in
-   * the middle and an orb in the bottom-left corner. The run is replayed from the start each call, so a frame
-   * is exactly what the live loop would have drawn at that time.
+   * Draw the real timeline's frame `offsetMs` after the end of UNWRAP (`PLAN_MS.unwrap[1]`, negative: before it), for a hub-sized globe in
+   * the middle. The run is replayed from the start each call, so a frame is exactly what the live loop would
+   * have drawn at that time (the reveal is answered at once, as the controller does).
    */
-  popFrame(offsetMs: number) {
-    const orb = { cx: 48, cy: VIEW.h - 48, radius: 22 };
+  endFrame(offsetMs: number) {
     const tl = new Timeline({
       viewport: { ...VIEW },
       globe: {
@@ -565,34 +564,30 @@ const api = {
         centre: [VIEW.w / 2, VIEW.h / 2],
         radius: 60,
       },
-      orb,
       thetaAlign: realOrientation().thetaAlign,
     });
     let now = 0;
     tl.start(now);
     tl.afterReady(now);
-    let popAt = Infinity;
+    const target = PLAN_MS.unwrap[1] + offsetMs;
     let snap: Readonly<TimelineSnapshot> = tl.tick(now);
     for (let i = 0; i < 4000; i++) {
       now += 4;
       snap = tl.tick(now);
       for (const e of tl.events()) {
         if (e.stage === 'unwrap-done') tl.reveal(now);
-        if (e.stage === 'pop') popAt = e.t;
       }
-      if (snap.t >= popAt + offsetMs) break;
+      if (snap.t >= target) break;
     }
     renderer!.draw(snap);
     return {
       err: gl().getError(),
       stage: snap.stage,
-      pop: snap.pop,
-      glass: snap.glass,
-      popFade: snap.popFade,
+      unwrap: snap.unwrap,
+      pageAlpha: snap.pageAlpha,
       radius: snap.radius,
       centreX: snap.centreX,
       centreY: snap.centreY,
-      orb,
     };
   },
 

@@ -18,9 +18,9 @@
  * - The hub flips to its `everting` look only at the controller's commit
  *   (`onCommit`); every earlier failure leaves it exactly as it was and ends in
  *   today's navigation, so a fallback has nothing to undo and cannot flash.
- * - The run's outcome decides the rest: effect ran and ended `done` -> the orb
- *   is already crossfaded in, close with no further fade; ended `abort` /
- *   `context-lost` -> close and let the orb fade in the ordinary way; `traversal`
+ * - The run's outcome decides the rest: effect ran and ended (`done`, `abort`,
+ *   `context-lost`) -> close, and the orb fades in the ordinary closed-state way
+ *   (the effect ends with UNWRAP, so nothing lands on the orb); `traversal`
  *   -> the visitor pressed Back/Forward while priming, just close; any other
  *   fallback, or a rejected promise (never by contract), -> today's navigation.
  * - `busy` is what the hub's close / toggle / Escape consult: the hub is
@@ -37,7 +37,7 @@ export interface HandOffController<N> {
     node: N,
     state: GlobeStartState,
     entry: Exclude<EntryPoint, 'preview'>,
-    options: { onCommit: () => void; onPopFade: () => void },
+    options: { onCommit: () => void },
   ): Promise<EversionOutcome>;
 }
 
@@ -47,10 +47,8 @@ export interface HandOffUi<N> {
   navigateToday(node: N): void;
   /** The run reached its point of no return: show the `everting` look. */
   everting(): void;
-  /** The POP is dissolving the glass: start the orb's crossfade-in. */
-  popFade(): void;
-  /** The run is over (or never was): close the hub; `orbPopped` says whether the orb is already in. */
-  closed(orbPopped: boolean): void;
+  /** The run is over (or never was): close the hub; the orb fades back in the ordinary way. */
+  closed(): void;
   /** Close the menu the ordinary animated way, without navigating. */
   dismiss(): void;
 }
@@ -82,31 +80,26 @@ export function createHandOff<N>(ui: HandOffUi<N>): HandOff<N> {
         return;
       }
       busy = true;
-      controller
-        .start(node, state, entry, {
-          onCommit: () => ui.everting(),
-          onPopFade: () => ui.popFade(),
-        })
-        .then(
-          (outcome) => {
-            busy = false;
-            if (outcome.fallback === 'traversal') {
-              ui.dismiss();
-              return;
-            }
-            if (outcome.fallback) {
-              ui.navigateToday(node);
-              return;
-            }
-            ui.closed(outcome.end === 'done');
-          },
-          () => {
-            // `start` never rejects by contract; if it does, the visitor still
-            // gets where they asked to go.
-            busy = false;
+      controller.start(node, state, entry, { onCommit: () => ui.everting() }).then(
+        (outcome) => {
+          busy = false;
+          if (outcome.fallback === 'traversal') {
+            ui.dismiss();
+            return;
+          }
+          if (outcome.fallback) {
             ui.navigateToday(node);
-          },
-        );
+            return;
+          }
+          ui.closed();
+        },
+        () => {
+          // `start` never rejects by contract; if it does, the visitor still
+          // gets where they asked to go.
+          busy = false;
+          ui.navigateToday(node);
+        },
+      );
     },
   };
 }

@@ -27,7 +27,7 @@
 //  - a spy on `Worker.prototype.postMessage` that logs every message the page
 //    sends the render side (`{type, at, …}` on the page clock, the marks' clock),
 //    which is how "abort was sent", "resize was forwarded once", "visibility was
-//    posted" and "no fast-forward during POP" are observed;
+//    posted" and "no fast-forward during the reveal fade" are observed;
 //  - `unhandledrejection` / `error` collectors (Playwright's `pageerror` is the
 //    second net), so "no console errors or unhandled rejections in any row" is
 //    asserted for every scenario.
@@ -41,7 +41,7 @@
 //  resize             resize / rotation mid-effect             (one `resize` per frame, forwarded)
 //  context-lost       WebGL context lost mid-effect            (cover off, `--fading`, 200 ms, finishes)
 //  hidden-tab         tab hidden mid-effect                    (`visibility` posted; loop pauses/resumes; a long absence settles the run)
-//  pop-input          input during POP                         (ignored: no fast-forward after reveal)
+//  reveal-input       input during the reveal fade             (ignored: no fast-forward after reveal)
 //  never-settles      a router that never settles              (`after-failed` at AFTER_CAPTURE_TIMEOUT_MS)
 //  host-not-ready     a release before the host is ready       (synchronous `host-not-ready`, then ready)
 //
@@ -610,7 +610,7 @@ async function hiddenTab() {
     await setHidden(false);
     const run = await finish(s);
     await assertClean(name, s, errors, run);
-    // A run the render side settled while hidden ends in one synchronous burst (`unwrap-done`, `pop`, `done`), so the
+    // A run the render side settled while hidden ends in one synchronous burst (`unwrap-done`, `done`), so the
     // page never gets to mark `reveal` on its own timeline: the one mark a settled run may lack.
     await assertFullSequence(name, s, { optional: ['reveal'] });
   } finally {
@@ -618,13 +618,13 @@ async function hiddenTab() {
   }
 }
 
-/** Input once the unwrap is done (POP) is ignored: no fast-forward is sent, and the run ends as it would. */
-async function popInput() {
-  const name = 'pop-input';
+/** Input once the unwrap is done (the reveal fade) is ignored: no fast-forward is sent, and the run ends as it would. */
+async function revealInput() {
+  const name = 'reveal-input';
   const { s, errors } = await fresh({ path: '/' });
   try {
     await begin(s, '/games');
-    // No fast-forward before POP: the point is the first (and only) press lands in POP.
+    // No fast-forward before the reveal: the point is the first (and only) press lands in the fade.
     const reveal = await waitMark(s, EVERSION_MARKS.reveal, { timeout: RUN_MS });
     await s.page.evaluate(() => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
@@ -744,7 +744,7 @@ const scenarios = [
   ['resize', resize],
   ['context-lost', contextLost],
   ['hidden-tab', hiddenTab],
-  ['pop-input', popInput],
+  ['reveal-input', revealInput],
   ['never-settles', neverSettles],
   ['host-not-ready', hostNotReady],
 ].filter(([n]) => n.includes(ONLY));

@@ -49,7 +49,6 @@ import { SPIN_AXIS } from '../domain';
 import { afterDomainTransform, alignAngle, fitEndIsometry } from '../orientation';
 import { bakeLut } from '../projection-lut';
 import { getProjection } from '../projections';
-import { POP_FADE_MS } from '../constants';
 import { copySnapshot, createSnapshot } from '../snapshot';
 import { Timeline } from '../timeline';
 import type {
@@ -60,7 +59,6 @@ import type {
   EversionPlan,
   FromWorker,
   Mat3,
-  OrbRect,
   ProjectionId,
   RendererApi,
   RendererOptions,
@@ -217,16 +215,12 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
   let clockOffset = 0;
 
   let afterUploaded = false;
-  /** The viewport (and orb) the current timeline was built for. */
+  /** The viewport the current timeline was built for. */
   let timelineViewport: Viewport | null = null;
-  let timelineOrb: OrbRect | null = null;
   let afterFailed = false;
   let pausedE: number | null = null;
   /** An abort or fast-forward reached the running timeline: it is on its way out and must not wait for a frame. */
   let hurried = false;
-  /** `pop` has been emitted / `pop-fade` has been emitted, for this run. */
-  let popSeen = false;
-  let popFadeSent = false;
   let hiddenTimer: ReturnType<typeof setTimeout> | null = null;
   /** Debug only (`inject-hard-cut`, T35): the channel whose drawn value is stepped, or `null`. */
   let hardCut: ChannelId | null = null;
@@ -291,7 +285,6 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
         renderer.draw(snapshot);
       }
       framesDrawn++;
-      if (!popFadeSent && snapshot.popFade > 0) emitPopFade(snapshot.t);
 
       if (flushEvents()) finish();
       else schedule();
@@ -305,18 +298,10 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
     let finished = false;
     for (const event of timeline!.events()) {
       emit({ type: 'stage', stage: event.stage, t: event.t });
-      if (event.stage === 'pop') popSeen = true;
       if (event.stage === 'unwrap-done') emit({ type: 'unwrap-done' });
       if (event.stage === 'done') finished = true;
     }
     return finished;
-  }
-
-  /** Once per run: the glass has landed on the orb and starts to fade (see the `pop-fade` message). */
-  function emitPopFade(t: number) {
-    if (popFadeSent) return;
-    popFadeSent = true;
-    emit({ type: 'pop-fade', t, fadeMs: POP_FADE_MS });
   }
 
   function clearHiddenTimer() {
@@ -342,7 +327,7 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
   /**
    * A hidden page draws no frames, so a run that is hurried (abort, fast-forward) would never reach its end
    * and the navigation would hang until the tab came back. Run the rest of the timeline synchronously instead,
-   * on a simulated clock, nothing drawn: events come out in their usual order (unwrap-done, reveal, pop, done)
+   * on a simulated clock, nothing drawn: events come out in their usual order (unwrap-done, reveal, done)
    * and the run ends through the same `finish` as a drawn one. Nobody is looking, so the reveal is answered
    * here rather than waiting a round trip to the main thread (a later `reveal` message is a no-op).
    */
@@ -350,12 +335,10 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
     if (!hidden || !running || !timeline) return;
     for (let i = 0; i < SETTLE_MAX_STEPS && timeline; i++) {
       const at = tickClock(clock + SCRUB_STEP_MS);
-      const snap = timeline.tick(at);
-      if (!popFadeSent && snap.popFade > 0) emitPopFade(snap.t);
+      timeline.tick(at);
       let unwrapDone = false;
       for (const event of timeline.events()) {
         emit({ type: 'stage', stage: event.stage, t: event.t });
-        if (event.stage === 'pop') popSeen = true;
         if (event.stage === 'unwrap-done') {
           emit({ type: 'unwrap-done' });
           unwrapDone = true;
@@ -373,8 +356,6 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
     runEnded = true;
     stopLoop();
     clearHiddenTimer();
-    // A run can end without a frame having seen the fade (a settled one, a lost frame): the page still gets it.
-    if (popSeen) emitPopFade(clock);
     const summary = stats.summary();
     timeline = null;
     pausedE = null;
@@ -465,13 +446,12 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
   function prime(message: Extract<ToWorker, { type: 'prime' }>) {
     if (!renderer) throw new Error('eversion: prime before init');
     stopLoop();
-    const { lut, projection, viewport, globe, orb, colours } = message;
-    plan = { projection, viewport, globe, orb, colours };
+    const { lut, projection, viewport, globe, colours } = message;
+    plan = { projection, viewport, globe, colours };
     const { thetaAlign, mAfter } = deps.orientation();
     renderer.prime({ ...plan, lut: lut ?? deps.bakeLut(projection, viewport), mAfter });
     timelineViewport = viewport;
-    timelineOrb = orb;
-    timelineConfig = { viewport, globe, orb, thetaAlign };
+    timelineConfig = { viewport, globe, thetaAlign };
     timeline = deps.createTimeline(timelineConfig);
     afterUploaded = false;
     afterFailed = false;
@@ -509,14 +489,9 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
       clockOffset = (env.timeOrigin?.() ?? performance.timeOrigin) - origin;
     else clockOffset = t0 - now;
     // A resize between prime and start only reached the plan: the timeline was built for the old viewport.
-    if (
-      timelineConfig &&
-      (viewportChanged(timelineConfig.viewport, timelineViewport) ||
-        timelineConfig.orb !== timelineOrb)
-    ) {
+    if (timelineConfig && viewportChanged(timelineConfig.viewport, timelineViewport)) {
       timeline = deps.createTimeline(timelineConfig);
       timelineViewport = timelineConfig.viewport;
-      timelineOrb = timelineConfig.orb;
     }
     clock = now;
     lastFrameAt = null;
@@ -526,8 +501,6 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
     governor = new DprGovernor(Math.min(plan.viewport.dpr, dprCap));
     running = true;
     hurried = false;
-    popSeen = false;
-    popFadeSent = false;
     timeline!.start(now);
     if (afterUploaded) timeline.afterReady(now);
     if (afterFailed) timeline.afterFailed(now);
@@ -648,7 +621,7 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
           }
           snapshot = tl.tick(at);
           // The live path answers `unwrap-done` with `reveal`; so does the replay,
-          // or scrubbing to POP/DONE would stall at the unwrap-done state forever.
+          // or scrubbing to the reveal/DONE would stall at the unwrap-done state forever.
           let unwrapDone = false;
           for (const event of tl.events()) if (event.stage === 'unwrap-done') unwrapDone = true;
           if (unwrapDone) {
@@ -721,19 +694,10 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
             break;
           case 'resize':
             renderer?.resize(message.viewport);
-            // The plan's viewport feeds the DPR governor of the NEXT start; keep it (and the orb) current.
-            if (plan) plan = { ...plan, viewport: message.viewport, orb: message.orb ?? plan.orb };
-            if (timelineConfig) {
-              timelineConfig = {
-                ...timelineConfig,
-                viewport: message.viewport,
-                orb: message.orb ?? timelineConfig.orb,
-              };
-            }
-            // The orb goes along always: a resize that does not move it re-plans to where it already is.
-            whenRunning((tl, now) =>
-              tl.resize(now, message.viewport, message.orb ?? plan?.orb ?? undefined),
-            );
+            // The plan's viewport feeds the DPR governor of the NEXT start; keep it current.
+            if (plan) plan = { ...plan, viewport: message.viewport };
+            if (timelineConfig) timelineConfig = { ...timelineConfig, viewport: message.viewport };
+            whenRunning((tl, now) => tl.resize(now, message.viewport));
             break;
           case 'reveal':
             whenRunning((tl, now) => tl.reveal(now));

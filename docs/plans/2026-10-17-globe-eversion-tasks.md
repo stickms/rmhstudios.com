@@ -1,7 +1,7 @@
 # Globe Eversion — Task-by-Task Implementation Plan
 
 **Date:** 2026-10-17
-**Status:** T01–T37 implemented (dark behind `isEversionEnabled()`). Open: T28 (owner visual sign-off), T38 (device lab) and T39's flag flip; see _Implementation status_ below.
+**Status:** T01–T37 implemented (dark behind `isEversionEnabled()`); **POP removed at owner's request, 2026-10-18** (the effect ends with UNWRAP; see the spec's amendment). Open: T28 (owner visual sign-off), T38 (device lab) and T39's flag flip; see _Implementation status_ below.
 **Spec:** [`2026-10-17-globe-eversion.md`](./2026-10-17-globe-eversion.md) (cited
 below as **S§n** for a section and **S#n** for a numbered test in S§11).
 
@@ -11,6 +11,8 @@ contract-freezing task, **22 tasks can start at once**, and no lane waits on
 another lane's _implementation_ — only on its _contract_.
 
 ## Implementation status
+
+**2026-10-18 - POP removed at the owner's request.** The animation ends when UNWRAP finishes; `PLAN_MS.total` is 4780. Wherever a task below mentions POP, the pop (orb) or the glass globe, read "removed" (spec amendment 2026-10-18). The orb returns through the hub's ordinary closed-state fade.
 
 T01-T37 are implemented and merged dark behind `isEversionEnabled()`; the
 flag (`EVERSION_ENABLED`) was flipped to `true` by the owner ahead of T28 and T38. What
@@ -312,7 +314,7 @@ the owner as a reviewer.
      `inverse(u, v, fit) → [θ, φ]`, `fit(w, h) → FitParams`,
      `singular(θ, φ) → boolean`.
    - `FitParams` (discriminated by projection), `Viewport {w, h, dpr}`,
-     `Tier ('high' | 'mid' | 'low')`, `ThemeColours`, `OrbRect`.
+     `Tier ('high' | 'mid' | 'low')`, `ThemeColours` (and, until 2026-10-18, `OrbRect`).
    - `GlobeStartState {yaw, pitch, yawVel, pitchVel, centre: [x, y], radius}`.
    - `Evert` signature: `evert(θ, φ, e, out: Float64Array, offset?)` — the
      oracle writes into a caller buffer so it never allocates.
@@ -1109,7 +1111,7 @@ driving `controller.start()` from the debug slot on 3 routes: the marks arrive
 in order; the URL changes at `start` (not at the end — asserted by a mark/URL
 timestamp); `eversion-cover` is present only between `cover` and
 `unwrap-done`; the overlay is unmounted after `done`; fast-forward completes
-in ≤ 650 ms + POP when AFTER is ready; an injected BEFORE failure runs today's
+in ≤ 650 ms + the reveal fade when AFTER is ready; an injected BEFORE failure runs today's
 path with no overlay.
 
 ---
@@ -1123,8 +1125,8 @@ path with no overlay.
 **Instructions** — In `RadialHub.tsx`: the new phase `everting`; pass
 `onNavigate` to `LiquidGlobe` → `controller.start(...)`; when ineligible, keep
 calling `dismissForNavigation()` + `navigate()` exactly as today. Hide the orb
-during the run and reveal it on `done`, matched to the pop's final radius and
-position. Focus is left to the router (no orb focus restore after navigation).
+during the run and reveal it on `done` (amended 2026-10-18: by the hub's ordinary
+closed-state fade; the pop it used to match is removed). Focus is left to the router (no orb focus restore after navigation).
 Implement `preview()` (navigate to the current route) and wire T21's button.
 
 **Acceptance** — The three entry points run the full effect end to end in the
@@ -1149,7 +1151,7 @@ behaviourally identical to `main` (existing hub tests green).
 - resize/orientation → `resize` (throttled to one per frame);
 - `context-lost` → the overlay `--fading` class (T19) plus today's finish;
 - a hidden tab → pause;
-- input during POP is ignored.
+- input during the reveal fade is ignored.
 
 **Acceptance** — Each row has a scripted check in T34's S#35 (authored by T34;
 this task makes it green). There are no console errors or unhandled rejections

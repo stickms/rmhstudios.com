@@ -62,7 +62,7 @@ const STAGE_BUTTONS: { label: string; t: number }[] = [
   { label: 'Evert', t: PLAN_MS.evert[0] },
   { label: 'Mid-evert', t: (PLAN_MS.evert[0] + PLAN_MS.evert[1]) / 2 },
   { label: 'Unwrap', t: PLAN_MS.unwrap[0] },
-  { label: 'Pop', t: PLAN_MS.pop[0] },
+  { label: 'Reveal', t: PLAN_MS.reveal[0] },
   { label: 'Done', t: PLAN_MS.total },
 ];
 
@@ -280,7 +280,6 @@ export function EversionLab() {
           centre: [vp.w / 2, vp.h / 2],
           radius: Math.min(vp.w, vp.h) * 0.3,
         },
-        orb: { cx: 48, cy: 48, radius: 20 },
         colours: readThemeColours(),
       });
       await Promise.all([

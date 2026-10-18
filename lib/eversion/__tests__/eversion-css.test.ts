@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { COVER_CLASS, HUB_FADE_MS, POP_FADE_MS, SETTLE_ATTRIBUTE } from '../constants';
+import { COVER_CLASS, HUB_FADE_MS, SETTLE_ATTRIBUTE } from '../constants';
 
 /**
  * T19 — the stylesheet half of the effect hangs on three names and one number
@@ -44,27 +44,25 @@ describe("radial.css `data-phase='everting'`", () => {
   });
 });
 
-describe('the orb crossfade (review R5 M1)', () => {
-  it('runs over the glass fade window (POP_FADE_MS), started by the pop-fade message', () => {
-    const rule = radial.match(
-      /\[data-phase='everting'\]\[data-orb-popped\] \.radial-hub__orb \{[^}]*\}/,
-    )?.[0];
+describe('the orb after the run (the effect ends with UNWRAP)', () => {
+  it('has no crossfade machinery: nothing lands on the orb, so nothing styles a "popped" state', () => {
+    expect(radial).not.toContain('data-orb-popped');
+  });
+
+  it('is hidden by opacity + pointer-events only (it must not slide while hidden)', () => {
+    const rule = radial.match(/\[data-phase='everting'\] \.radial-hub__orb \{[^}]*\}/)?.[0];
     expect(rule).toBeDefined();
-    const m = rule!.match(/transition: opacity (\d+)ms ease-out;/);
-    expect(m).not.toBeNull();
-    expect(Number(m![1])).toBe(Math.round(POP_FADE_MS));
+    expect(rule).not.toMatch(/transform|scale|z-index|width|height|inset|bottom|left/);
   });
 
-  it('keeps the same ramp once the run is over, so a mid-ramp `done` does not snap', () => {
-    const rule = radial.match(
-      /\[data-phase='closed'\]\[data-orb-popped\] \.radial-hub__orb \{[^}]*\}/,
-    )?.[0];
-    expect(rule).toContain(`transition: opacity ${Math.round(POP_FADE_MS)}ms ease-out;`);
-  });
-
-  it('raises the orb above the effect canvas for the crossfade', () => {
-    expect(radial).toMatch(
-      /\[data-phase='everting'\]\[data-orb-popped\] \.radial-hub__orb \{[^}]*z-index: var\(--z-hub-orb-open\)/,
+  it('returns through the ordinary eased fade of the base orb rule, which `closed` leaves in force', () => {
+    const base = radial.match(/\n\.radial-hub__orb \{[^}]*\}/)?.[0];
+    expect(base).toBeDefined();
+    expect(base).toMatch(/\n\s+opacity: 1;/);
+    expect(base).toMatch(/opacity 0\.34s ease/);
+    // No `closed` rule resets that opacity or its transition.
+    expect(radial).not.toMatch(
+      /\[data-phase='closed'\] \.radial-hub__orb \{[^}]*(?:opacity|transition)/,
     );
   });
 });

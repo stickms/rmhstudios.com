@@ -22,7 +22,7 @@
 //      the FULL effect (start … done in order, the entry recorded on `start`),
 //      the URL lands on the destination, `navigate` happened at `start` and not
 //      at the end, the hub returns to `closed`, the overlay is gone, `eversion-
-//      cover` is gone, and the orb is visible and focusable afterwards.
+//      cover` is gone, and the orb fades back in (monotonic ramp to 1, no hard cut) and is focusable afterwards.
 //  dismiss-*   Escape, the X and an outside tap close the hub exactly as before
 //      (focus returns to the orb) and never start a run.
 //  preview   Settings → Appearance → Preview runs the effect in place.
@@ -33,7 +33,7 @@
 // Faking nothing: real router, real capture, real worker host (SwiftShader).
 // ─────────────────────────────────────────────────────────────────────────────
 
-/* global MouseEvent, performance -- used only inside page.evaluate() callbacks. */
+/* global MouseEvent, performance, requestAnimationFrame -- used only inside page.evaluate() callbacks. */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { EVERSION_MARKS, openSession, BASE_URL } from './lib/eversion-session.mjs';
@@ -202,6 +202,29 @@ async function entryScenario(entry) {
       () => document.querySelector('.radial-hub')?.getAttribute('data-phase') === 'closed',
       null,
       { timeout: 5000 },
+    );
+    // The orb is hidden for the whole run and returns through the hub's ordinary closed-state fade
+    // (`opacity 0.34s ease`), so it is NOT yet at 1 on the frame `closed` lands: sample the ramp every
+    // frame, and require that it rises monotonically and ends at 1 (an eased fade, not a hard cut).
+    const orbRamp = await s.page.evaluate(
+      () =>
+        new Promise((resolve) => {
+          const orb = document.querySelector('.radial-hub__orb');
+          const samples = [];
+          const t0 = performance.now();
+          const step = () => {
+            const o = Number(getComputedStyle(orb).opacity);
+            samples.push(o);
+            if (o >= 1 || performance.now() - t0 > 3000) resolve(samples);
+            else requestAnimationFrame(step);
+          };
+          step();
+        }),
+    );
+    check(
+      name,
+      orbRamp.at(-1) === 1 && orbRamp.every((o, i) => i === 0 || o >= orbRamp[i - 1] - 1e-9),
+      `orb opacity ramp ${JSON.stringify(orbRamp.slice(0, 40))}`,
     );
     const after = await s.page.evaluate(() => ({
       path: location.pathname,

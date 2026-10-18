@@ -261,7 +261,10 @@ export const EVERSION_RUNTIME_MODULES: ReadonlyArray<{
     fragment: 'lib/eversion/gl/shaders',
     fingerprint: 'vec3 evertNormal(float theta, float phi, Frame fr)',
   },
-  { fragment: 'lib/eversion/gl/uniforms', fingerprint: 'snapshot.ripple0Age, snapshot.ripple1Age' },
+  {
+    fragment: 'lib/eversion/gl/uniforms',
+    fingerprint: 'snapshot.rippleAge (seconds; -1 = not emitted)',
+  },
   { fragment: 'lib/eversion/gl/governor-tiers' },
   { fragment: 'lib/eversion/capture', fingerprint: 'eversion: capture sandbox did not load' },
   { fragment: 'lib/eversion/projection-lut', fingerprint: 'toHalfFloatSplit: dst length mismatch' },
@@ -273,7 +276,10 @@ export const EVERSION_RUNTIME_MODULES: ReadonlyArray<{
     fragment: 'node_modules/modern-screenshot',
     fingerprint: 'Error receiving message from worker',
   },
-  { fragment: 'components/radial/eversion/useEversionController', fingerprint: 'rmh-eversion-controller' },
+  {
+    fragment: 'components/radial/eversion/useEversionController',
+    fingerprint: 'rmh-eversion-controller',
+  },
   { fragment: 'components/radial/eversion/EversionBridge', fingerprint: 'rmh-eversion-bridge' },
 ];
 

@@ -1179,8 +1179,8 @@ view()`), falling back to a rAF window-scroll pass with cached offsets where
 - **Exception: the Globe Eversion is a one-shot navigation transition, and it
   is longer than 0.3s.** "Nothing here is slower than 0.3s" is the rule for
   state changes; confirming a destination in the hub is a navigation, and the
-  hub may play a ~5s WebGL2 effect instead of the veil (WRAP the page onto the
-  globe, EVERT it, UNWRAP the destination, POP onto the orb —
+  hub may play a ~4.6s WebGL2 effect instead of the veil (WRAP the page onto the
+  globe, EVERT it, UNWRAP the destination, and it ends there —
   `components/radial/README.md` _Globe Eversion_, `lib/eversion/README.md`). It
   is allowed because it stays inside everything else this section protects:
   it is a **one-shot canvas**, mounted for one navigation and removed, not an

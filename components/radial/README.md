@@ -299,12 +299,13 @@ Confirming a destination in the hub can play a one-shot WebGL2 transition instea
 of the veil-and-navigate: the current page **WRAPs** onto the liquid globe through
 a map projection, the globe performs Thurston's corrugated sphere **EVERSION**
 with the destination on the inside, the destination **UNWRAPs** onto the live
-page, and a short **POP** shrinks the empty glass globe back onto the hub's orb.
+page, where the effect **ends** (there is no stage after UNWRAP: the AFTER page is
+flat and full-screen and the canvas hands off to the identical live page).
 It is **on** for every visitor (`EVERSION_ENABLED = true`), enabled by the owner
 ahead of the device lab (T38) and visual sign-off (T28); set it back to `false`
 to restore today's navigation site-wide.
 
-**Pointers.** The module map, conventions, POP, router/fault cases and
+**Pointers.** The module map, conventions, the ending, router/fault cases and
 render-side robustness live in [`lib/eversion/README.md`](../../lib/eversion/README.md);
 the decisions, timeline maths, capture rules and the 46 numbered tests (`S#n`)
 are in the spec,
@@ -327,15 +328,19 @@ with the task plan beside it. The components here are in `eversion/`
   answer immediately with the ordinary dismiss-and-navigate.
 - **Fast-forward on input.** Once committed, a tap, key press or navigation
   gesture does not abort: the timeline re-plans (quintic, from the channel's
-  current state) and runs the rest of the effect quickly. Input during POP is
-  ignored. While a run is `busy`, the hub's close / toggle / Escape do nothing.
+  current state) and runs the rest of the effect quickly. Input once the unwrap is done
+  (the reveal fade) is ignored. While a run is `busy`, the hub's close / toggle / Escape do nothing.
 - **Back/forward never animates.** A traversal during priming reports
   `traversal` and the hub just closes; mid-run it aborts with a crossfade onto
   the live page. A run always ends: a stall watchdog force-ends it with a fade.
 - **Reduced motion** (OS or the account toggle) runs today's veil-and-navigate
   fade unchanged, never the effect. `perf-lite` runs it at the minimum tier.
-- **The orb crossfades in** on the render side's `pop-fade` message
-  (`data-orb-popped`), so there is no hard cut at the end of POP.
+- **The orb returns through the hub's ordinary closed-state fade.** It is hidden
+  during the run (`data-phase='everting'`, `opacity` + `pointer-events` only, so it
+  never moves) and fades back in (`opacity 0.34s ease`, the base `.radial-hub__orb`
+  rule) when the hub goes `closed` at `done`: the live page is already showing, so
+  there is no globe to crossfade with and no hard cut. An aborted or context-lost
+  run gets the same fade.
 
 ### The flag, the settings row and the lab
 

@@ -20,7 +20,7 @@ import {
   MAX_DT_MS,
   PLACEHOLDER_XFADE_MS,
   PLAN_MS,
-  POP_MS,
+  REVEAL_MS,
   SPIN_MAX_REMAINING_TURNS,
   STRETCH_CAP_MS,
 } from '../constants';
@@ -60,7 +60,7 @@ function mulberry32(seed: number): () => number {
 }
 
 const DEG = Math.PI / 180;
-const NOMINAL_END = PLAN_MS.total + STRETCH_CAP_MS; // test 19's bound: 5.12 s + the cap
+const NOMINAL_END = PLAN_MS.total + STRETCH_CAP_MS; // test 19's bound: 4.78 s + the cap
 
 function config(
   over: Partial<Omit<TimelineConfig, 'globe'>> & { globe?: Partial<GlobeStartState> } = {},
@@ -76,7 +76,6 @@ function config(
       radius: 150,
       ...over.globe,
     },
-    orb: over.orb ?? { cx: 60, cy: 660, radius: 24 },
     thetaAlign: over.thetaAlign,
   };
 }
@@ -232,10 +231,10 @@ describe('the default plan (spec §7.1)', () => {
     expect(byStage['unwrap-done']).toBe(PLAN_MS.unwrap[1]);
     tl.reveal(wall.now);
     const rest = runTo(tl, wall, 6000);
-    expect(rest.map((e) => e.stage)).toEqual(['reveal', 'pop', 'done']);
+    expect(rest.map((e) => e.stage)).toEqual(['reveal', 'done']);
     expect(tl.finished).toBe(true);
-    const done = rest[2]!;
-    expect(done.t - rest[1]!.t).toBe(POP_MS);
+    const done = rest[1]!;
+    expect(done.t - rest[0]!.t).toBe(REVEAL_MS);
   });
 
   it('wrap, radius, centre and hub fade finish by their planned times', () => {
@@ -268,8 +267,7 @@ describe('the default plan (spec §7.1)', () => {
     expect(v[1]! * 1000).toBeCloseTo(-30 * DEG, 9);
     expect(s0.radius).toBe(150);
     expect(s0.centreX).toBe(640);
-    expect(s0.ripple0Age).toBe(0);
-    expect(s0.ripple1Age).toBe(-1);
+    expect(s0.rippleAge).toBe(0);
 
     tl.afterReady(wall.now);
     runTo(tl, wall, PLAN_MS.spin[1] + 1);
@@ -310,36 +308,27 @@ describe('the default plan (spec §7.1)', () => {
     expect(v[1]!).toBeCloseTo(900 * DEG * 0.001, 12);
   });
 
-  it('pops: shrinks onto the orb, swells while the glass fades, ends on the orb, and fires the second ripple', () => {
+  it('ends with UNWRAP: the globe stays where it was, the canvas fades onto the live page, then done', () => {
     const cfg = config();
     const { tl, wall } = started(cfg);
     tl.afterReady(wall.now);
     runTo(tl, wall, PLAN_MS.unwrap[1] + 1, 10);
+    const { radius: radiusAtEnd, centreX: centreXAtEnd, centreY: centreYAtEnd } = tl.tick(wall.now);
     tl.reveal(wall.now);
-    let peak = 0;
-    let maxPuff = 0;
-    let sawRipple = false;
     let bg = 1;
     for (let i = 0; i < 60; i++) {
       wall.now += 10;
       const s = tl.tick(wall.now);
-      peak = Math.max(peak, s.pop);
-      maxPuff = Math.max(maxPuff, s.popFade > 0 && s.popFade < 1 ? s.radius : 0);
-      sawRipple ||= s.ripple1Age > 0;
+      // No shrink, no swell: the geometry channels are exactly where UNWRAP left them.
+      expect(s.radius).toBe(radiusAtEnd);
+      expect(s.centreX).toBe(centreXAtEnd);
+      expect(s.centreY).toBe(centreYAtEnd);
       bg = s.bgAlpha;
     }
-    // The shrink is monotone (no undershoot past the orb); the pop is a swell during the fade.
-    expect(peak).toBe(1);
-    expect(maxPuff).toBeGreaterThan(24 * 1.05);
-    expect(maxPuff).toBeLessThan(24 * 1.25);
-    expect(sawRipple).toBe(true);
     expect(bg).toBe(0);
     const s = tl.tick(wall.now);
     expect(tl.finished).toBe(true);
-    expect(s.pop).toBe(1);
-    expect(s.radius).toBeCloseTo(24, 9);
-    expect(s.centreX).toBeCloseTo(60, 9);
-    expect(s.centreY).toBeCloseTo(660, 9);
+    expect(s.unwrap).toBe(0);
     expect(s.pageAlpha).toBe(0);
   });
 
@@ -354,7 +343,6 @@ describe('the default plan (spec §7.1)', () => {
       'unwrap',
       'unwrap-done',
       'reveal',
-      'pop',
       'done',
     ]);
     const done = ev.find((e) => e.stage === 'unwrap-done')!;
@@ -449,7 +437,7 @@ describe('the after-gate and stretch (spec §7.5)', () => {
 /* ── Fast-forward, abort, resize, clock ───────────────────────────────────── */
 
 describe('fast-forward (spec §7.6)', () => {
-  it('completes the remainder in 650 ms (plus POP) when AFTER is ready', () => {
+  it('completes the remainder in 650 ms (plus the reveal fade) when AFTER is ready', () => {
     const { tl, wall } = started();
     tl.afterReady(wall.now);
     const ev = runTo(tl, wall, 1000);
@@ -459,11 +447,11 @@ describe('fast-forward (spec §7.6)', () => {
     const done = ev.find((e) => e.stage === 'unwrap-done')!;
     expect(done.t).toBeCloseTo(tf + FF_REMAINING_MS, 6);
     tl.reveal(wall.now);
-    ev.push(...runTo(tl, wall, tf + FF_REMAINING_MS + POP_MS + 50));
+    ev.push(...runTo(tl, wall, tf + FF_REMAINING_MS + REVEAL_MS + 50));
     expect(tl.finished).toBe(true);
   });
 
-  it('a second fast-forward is a no-op, and so is one during POP', () => {
+  it('a second fast-forward is a no-op, and so is one during the reveal fade', () => {
     const { tl, wall } = started();
     tl.afterReady(wall.now);
     runTo(tl, wall, 800);
@@ -477,12 +465,12 @@ describe('fast-forward (spec §7.6)', () => {
     expect([...b]).toEqual([...a]);
     runTo(tl, wall, 1500);
     tl.reveal(wall.now);
-    const before = tl.tick(wall.now).pop;
+    const before = tl.tick(wall.now).pageAlpha;
     tl.fastForward(wall.now);
     wall.now += 20;
-    const after = tl.tick(wall.now).pop;
-    expect(after).toBeGreaterThanOrEqual(before);
-    runTo(tl, wall, 1500 + POP_MS + 100);
+    const after = tl.tick(wall.now).pageAlpha;
+    expect(after).toBeLessThanOrEqual(before);
+    runTo(tl, wall, 1500 + REVEAL_MS + 100);
     expect(tl.finished).toBe(true);
   });
 
@@ -667,7 +655,6 @@ function scenario(seed: number, out: Outcome): void {
       centre: [vp.w * rnd(), vp.h * rnd()],
       radius: 60 + rnd() * 250,
     },
-    orb: { cx: vp.w * rnd(), cy: vp.h * rnd(), radius: 14 + rnd() * 20 },
     thetaAlign: rnd() < 0.4 ? 0 : (rnd() - 0.5) * TAU,
   };
   const tl = new Timeline(cfg);
@@ -762,7 +749,7 @@ function scenario(seed: number, out: Outcome): void {
         if (ffClock < 0) ffClock = clock;
         tl.abort(now);
       } else if (kind === 'ff') {
-        if (ffClock < 0 && !seen.some((e) => e.stage === 'pop')) ffClock = clock;
+        if (ffClock < 0 && !seen.some((e) => e.stage === 'reveal')) ffClock = clock;
         tl.fastForward(now);
       } else {
         tl.resize(now, { w: 320 + rnd() * 2200, h: 320 + rnd() * 1200, dpr: 1 });
@@ -842,12 +829,12 @@ function scenario(seed: number, out: Outcome): void {
   const doneT = at('done');
   const bound = Math.min(
     NOMINAL_END,
-    ffClock >= 0 ? ffClock + FF_REMAINING_MS + FF_STRETCH_CAP_MS + POP_MS : Infinity,
+    ffClock >= 0 ? ffClock + FF_REMAINING_MS + FF_STRETCH_CAP_MS + REVEAL_MS : Infinity,
   );
   if (doneT > bound + MAX_DT_MS + 1e-6) fail(`done at ${doneT} > ${bound}`);
 
   // 21: the spin ends aligned with zero velocity and acceleration. After a long gate wait the
-  // landing is speed-capped and may outlast `done` (it is orb-sized glass by then): let it finish.
+  // landing is speed-capped and may outlast `done` (the page is flat by then, so the turn is invisible): let it finish.
   for (let k = 0; k < 100; k++) {
     tl.sample('spin', t0 + wall, sa, 0);
     if (sa[1] === 0 && sa[2] === 0) break;

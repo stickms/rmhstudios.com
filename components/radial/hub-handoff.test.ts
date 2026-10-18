@@ -18,7 +18,7 @@ function rig(opts: { eligible?: () => boolean } = {}) {
   const log: string[] = [];
   let settle!: (o: EversionOutcome) => void;
   let reject!: (e: unknown) => void;
-  let hooks!: { onCommit(): void; onPopFade(): void };
+  let hooks!: { onCommit(): void };
   const controller: HandOffController<typeof NODE> = {
     isEligible: opts.eligible ?? (() => true),
     start: (_node, _state, _entry, options) => {
@@ -33,8 +33,7 @@ function rig(opts: { eligible?: () => boolean } = {}) {
   const machine = createHandOff<typeof NODE>({
     navigateToday: (n) => log.push(`today:${n.href}`),
     everting: () => log.push('everting'),
-    popFade: () => log.push('popFade'),
-    closed: (orbIn) => log.push(`closed:${orbIn}`),
+    closed: () => log.push('closed'),
     dismiss: () => log.push('dismiss'),
   });
   const confirm = (c: HandOffController<typeof NODE> | null = controller) =>
@@ -47,7 +46,6 @@ function rig(opts: { eligible?: () => boolean } = {}) {
     settle: (o: EversionOutcome) => settle(o),
     reject: (e: unknown) => reject(e),
     commit: () => hooks.onCommit(),
-    popFade: () => hooks.onPopFade(),
   };
 }
 const flush = async () => {
@@ -67,16 +65,15 @@ describe('hub hand-off', () => {
     expect(no.machine.busy()).toBe(false);
   });
 
-  it('is busy from confirm to settle; commit shows everting; done closes with the orb in', async () => {
+  it('is busy from confirm to settle; commit shows everting; done closes (the orb fades in the ordinary way)', async () => {
     const r = rig();
     r.confirm();
     expect(r.machine.busy()).toBe(true);
     expect(r.log).toEqual(['start']); // nothing changes on screen before the commit
     r.commit();
-    r.popFade();
     r.settle({ fallback: null, end: 'done' });
     await flush();
-    expect(r.log).toEqual(['start', 'everting', 'popFade', 'closed:true']);
+    expect(r.log).toEqual(['start', 'everting', 'closed']);
     expect(r.machine.busy()).toBe(false);
   });
 
@@ -127,7 +124,7 @@ describe('hub hand-off', () => {
       r.commit();
       r.settle({ fallback: null, end });
       await flush();
-      expect(r.log).toEqual(['start', 'everting', 'closed:false']);
+      expect(r.log).toEqual(['start', 'everting', 'closed']);
     }
   });
 

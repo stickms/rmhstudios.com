@@ -88,15 +88,6 @@ export interface ThemeColours {
   cageWidth: number;
 }
 
-/** Where the RMH orb sits — the POP shrinks the glass globe into it (spec §3.2, §9.2). */
-export interface OrbRect {
-  /** Centre, CSS px, viewport coordinates. */
-  cx: number;
-  cy: number;
-  /** Half the orb's bounding-rect width. */
-  radius: number;
-}
-
 /**
  * The hub globe's pose at the instant the visitor confirms (spec §7.3, §9.1).
  * The WebGL sphere starts in exactly this pose, at this size and position,
@@ -130,7 +121,6 @@ export interface EversionPlan {
   projection: ProjectionId;
   viewport: Viewport;
   globe: GlobeStartState;
-  orb: OrbRect;
   colours: ThemeColours;
 }
 
@@ -355,7 +345,7 @@ export interface Mesh {
  * `wrap` (at `start`) → `evert` (EVERSION begins) → `gate-open` (UNWRAP is
  * permitted: AFTER is ready, or the stretch cap was hit, or `after-failed`) →
  * `unwrap` → `unwrap-done` (the flat page fills the viewport; the controller
- * removes `eversion-cover` and answers with `reveal`) → `reveal` → `pop` →
+ * removes `eversion-cover` and answers with `reveal`) → `reveal` →
  * `done`.
  *
  * `gate-open` is never emitted before `evert`, even if AFTER arrives early.
@@ -367,7 +357,6 @@ export const STAGE_IDS = [
   'unwrap',
   'unwrap-done',
   'reveal',
-  'pop',
   'done',
 ] as const;
 export type StageId = (typeof STAGE_IDS)[number];
@@ -390,9 +379,6 @@ export const CHANNEL_IDS = [
   'afterMix',
   'unwrap',
   'pageAlpha',
-  'pop',
-  'glass',
-  'popFade',
 ] as const;
 export type ChannelId = (typeof CHANNEL_IDS)[number];
 
@@ -408,11 +394,10 @@ export interface TimelineEvent {
  * `tick`, so the hot loop allocates nothing; the object is valid until the next
  * `tick`. Create a zeroed one with `createSnapshot()` (`snapshot.ts`).
  *
- * The first fourteen fields carry the channel of the same name (see
- * {@link ChannelId}). Two of them differ from the raw channel in one way:
- * `radius`, `centreX` and `centreY` are **effective** values — they already
- * include the POP contraction toward the orb — so the renderer never needs the
- * orb. Read the raw channel with `Timeline.sample`.
+ * The first eleven fields carry the channel of the same name (see
+ * {@link ChannelId}). `radius`, `centreX` and `centreY` are **effective**
+ * values: the channel times the extent fit (`eversionRadiusFit`). Read the raw
+ * channel with `Timeline.sample`.
  */
 export interface TimelineSnapshot {
   /** Milliseconds since `start` on the timeline's clamped clock. */
@@ -430,9 +415,9 @@ export interface TimelineSnapshot {
   spin: number;
   /** Axis tilt toward the viewer, radians. `R = Rx(tilt)·Ry(spin)` (`SPIN_AXIS`). */
   tilt: number;
-  /** Globe radius in CSS px (effective — includes POP). */
+  /** Globe radius in CSS px (effective: the channel times the extent fit). */
   radius: number;
-  /** Globe centre in CSS px, viewport coordinates (effective — includes POP). */
+  /** Globe centre in CSS px, viewport coordinates (effective: the channel times the extent fit). */
   centreX: number;
   centreY: number;
   /** Hub overlay opacity. Informational on the render side: the hub fades in CSS (spec §9.2). */
@@ -441,25 +426,12 @@ export interface TimelineSnapshot {
   afterMix: number;
   /** Page-texture opacity during reveal, 1 → 0. */
   pageAlpha: number;
-  /** POP's shrink toward the orb, 0 → 1 (rest to rest, no overshoot; the "pop" is the swell while `popFade` runs). */
-  pop: number;
   /**
-   * The empty glass globe of POP condensing, 0 → 1 over the first part of POP
-   * (0 before it). It drives the same wrap-wave morph as `wrap`, so the globe
-   * curls out of the vanishing page instead of appearing, and its glass fill.
+   * Age in SECONDS of the ripple emitted at `start` from the front point
+   * (spec §10.3). `-1` while not yet emitted. It radiates from the camera-facing
+   * point in VIEW space; it is not carried over from the hub's 2D ripples (spec §9.1).
    */
-  glass: number;
-  /** The glass globe's exit after it has landed on the orb, 0 → 1; opacity is `glass·(1 − popFade)`. */
-  popFade: number;
-
-  /**
-   * Age in SECONDS of the two ripples: the first is emitted at `start` from the
-   * front point, the second at POP (spec §10.3). `-1` while not yet emitted.
-   * Both radiate from the camera-facing point in VIEW space; they are not
-   * carried over from the hub's 2D ripples (spec §9.1).
-   */
-  ripple0Age: number;
-  ripple1Age: number;
+  rippleAge: number;
 
   /**
    * Alpha the canvas is cleared to: `1` until `reveal`, then `0` (spec §10.1).
@@ -472,7 +444,6 @@ export interface TimelineSnapshot {
 export interface TimelineConfig {
   viewport: Viewport;
   globe: GlobeStartState;
-  orb: OrbRect;
   /**
    * `θ_align` from `orientation.ts` (spec §7.4): the spin angle at which the
    * AFTER page's centre faces the camera. Defaults to 0 until T13 lands.
@@ -495,7 +466,7 @@ export interface TimelineApi {
   start(t0: number): void;
   /** Advance to `now` and return the (reused) snapshot. */
   tick(now: number): Readonly<TimelineSnapshot>;
-  /** Re-plan every channel to finish within `FF_REMAINING_MS` (spec §7.6). No-op if repeated or during POP. */
+  /** Re-plan every channel to finish within `FF_REMAINING_MS` (spec §7.6). No-op if repeated or once the unwrap has finished. */
   fastForward(now: number): void;
   /** AFTER has been uploaded; begin the placeholder → AFTER crossfade, which opens the gate when done. */
   afterReady(now: number): void;
@@ -505,12 +476,9 @@ export interface TimelineApi {
   abort(now: number): void;
   /**
    * The viewport changed: re-plan the radius/centre channels toward the new targets.
-   * `orb` (additive, optional) is the orb's rect in the NEW layout: POP's target
-   * glides to it, so a resize that moves the orb mid-flight does not leave POP
-   * aiming at the old position. Omitted, the orb stays where it was.
    */
-  resize(now: number, viewport: Viewport, orb?: OrbRect): void;
-  /** The live DOM is visible underneath: begin `pageAlpha` 1 → 0 and POP. */
+  resize(now: number, viewport: Viewport): void;
+  /** The live DOM is visible underneath: begin `pageAlpha` 1 → 0; `done` follows when it lands. */
   reveal(now: number): void;
   /** Stages reached since the last call, in order; the list is then cleared. */
   events(): TimelineEvent[];
@@ -614,8 +582,7 @@ export type ToWorker =
   | { type: 'start'; t0: number; origin?: number }
   | { type: 'fast-forward' }
   | { type: 'after-failed' }
-  /** `orb` is the POP target re-measured at the new size (absent: keep the old one). */
-  | { type: 'resize'; viewport: Viewport; orb?: OrbRect }
+  | { type: 'resize'; viewport: Viewport }
   | { type: 'reveal' }
   | { type: 'abort' }
   /**
@@ -642,12 +609,6 @@ export type FromWorker =
   /** The after-gate's deadline on the `performance.now()` base (see {@link TimelineApi.afterDeadline}). */
   | { type: 'need-after-by'; deadline: number }
   | { type: 'unwrap-done' }
-  /**
-   * The glass globe has landed on the orb and starts to fade (`popFade` leaves 0), `fadeMs` before it is gone. Sent
-   * once per run, after `pop` and before `done`, from the frame that draws the first faded pixel (or, for a run
-   * settled while the tab is hidden, just before `done`). The page crossfades the real orb in over `fadeMs`.
-   */
-  | { type: 'pop-fade'; t: number; fadeMs: number }
   /** The answer to `probe`. */
   | { type: 'probe-result'; ok: boolean; reason?: string }
   | ({ type: 'done' } & FrameStats)
@@ -678,7 +639,6 @@ export const FROM_WORKER_TYPES = [
   'stage',
   'need-after-by',
   'unwrap-done',
-  'pop-fade',
   'probe-result',
   'done',
   'context-lost',

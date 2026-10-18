@@ -281,7 +281,6 @@ describe('worker protocol (S§3.3)', () => {
       projection: 'mercator',
       viewport,
       globe: { yaw: 0, pitch: 0, yawVel: 0, pitchVel: 0, centre: [0, 0], radius: 100 },
-      orb: { cx: 0, cy: 0, radius: 20 },
       colours,
       lut: null,
     },
@@ -302,7 +301,6 @@ describe('worker protocol (S§3.3)', () => {
     { type: 'stage', stage: 'evert', t: 600 },
     { type: 'need-after-by', deadline: 3000 },
     { type: 'unwrap-done' },
-    { type: 'pop-fade', t: 4000, fadeMs: 208 },
     { type: 'probe-result', ok: true },
     { type: 'done', frames: 1, dropped: 0, p95: 16.7 },
     { type: 'context-lost' },
@@ -340,9 +338,6 @@ describe('timeline vocabulary (S§7.1)', () => {
       'afterMix',
       'unwrap',
       'pageAlpha',
-      'pop',
-      'glass',
-      'popFade',
     ]);
     expect([...STAGE_IDS]).toEqual([
       'wrap',
@@ -351,7 +346,6 @@ describe('timeline vocabulary (S§7.1)', () => {
       'unwrap',
       'unwrap-done',
       'reveal',
-      'pop',
       'done',
     ]);
   });
@@ -359,15 +353,13 @@ describe('timeline vocabulary (S§7.1)', () => {
   it('a snapshot carries a number for every channel, and copies field for field', () => {
     const s = createSnapshot();
     for (const id of CHANNEL_IDS) expect(typeof s[id], id).toBe('number');
-    // At rest: flat page, round globe, nothing popped, opaque, no ripples.
+    // At rest: flat page, round globe, opaque, no ripple.
     expect(s).toMatchObject({
       wrap: 0,
       unwrap: 1,
       evert: 0,
-      pop: 0,
       bgAlpha: 1,
-      ripple0Age: -1,
-      ripple1Age: -1,
+      rippleAge: -1,
     });
     const filled = {
       ...s,
@@ -375,7 +367,7 @@ describe('timeline vocabulary (S§7.1)', () => {
       stage: 'unwrap' as const,
       spin: 6.5,
       radius: 400,
-      ripple0Age: 0.3,
+      rippleAge: 0.3,
     };
     const copy = copySnapshot(filled, createSnapshot());
     expect(copy).toEqual(filled);
@@ -399,7 +391,6 @@ describe('constants (S§12, S§8.2, S§6.2)', () => {
       WRAP_MS: 700,
       EVERT_MS: 3200,
       UNWRAP_MS: 700,
-      POP_MS: 520,
       EVERT_OVERLAP_MS: 100,
       UNWRAP_OVERLAP_MS: 100,
       GLOBE_FILL: 0.88,
@@ -425,12 +416,13 @@ describe('constants (S§12, S§8.2, S§6.2)', () => {
     expect([...constants.LUT_SIZE]).toEqual([1024, 512]);
   });
 
-  it('the derived plan reproduces the S§7.1 table and sums to 5.12 s', () => {
+  it('the derived plan reproduces the S§7.1 table and sums to 4.78 s (UNWRAP ends at 4.6 s, the reveal fade adds 180 ms)', () => {
     const p = constants.PLAN_MS;
     expect([...p.evert]).toEqual([600, 3900]);
     expect([...p.unwrap]).toEqual([3800, 4600]);
-    expect([...p.pop]).toEqual([4600, 5120]);
-    expect(p.total).toBe(5120);
+    expect([...p.reveal]).toEqual([4600, 4780]);
+    expect(p.total).toBe(4780);
+    expect('pop' in p).toBe(false);
     expect(constants.GLOBE_RADIUS_FRACTION).toBeCloseTo(0.44, 12);
   });
 

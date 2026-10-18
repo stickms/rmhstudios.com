@@ -426,7 +426,6 @@ describe('S#14 alignment', () => {
       const tl = new Timeline({
         viewport: { w: 1280, h: 720, dpr: 1 },
         globe: { yaw: 40, pitch: 10, yawVel: 25, pitchVel: 0, centre: [640, 360], radius: 150 },
-        orb: { cx: 60, cy: 660, radius: 24 },
         thetaAlign,
       });
       const t0 = 1000;

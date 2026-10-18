@@ -1,7 +1,7 @@
 # Globe Eversion — Navigation Transition Implementation Spec
 
 **Date:** 2026-10-17
-**Status:** Implemented (T01-T37) and **enabled for all visitors** (`EVERSION_ENABLED = true` in `lib/eversion/flags.ts`), flipped by the owner ahead of the device lab to judge it in production. Remaining: owner sign-off (T28) and the device lab (T38) - see _Implementation status_ below. The amendments recorded in §4–§12 (marked _Amended_) are where the build departed from this text; where they differ, they win.
+**Status:** Implemented (T01-T37) and **enabled for all visitors** (`EVERSION_ENABLED = true` in `lib/eversion/flags.ts`), flipped by the owner ahead of the device lab to judge it in production. **POP removed at owner's request, 2026-10-18** - the effect now ends with UNWRAP (see the amendment under _Implementation status_). Remaining: owner sign-off (T28) and the device lab (T38) - see _Implementation status_ below. The amendments recorded in §4–§12 (marked _Amended_) are where the build departed from this text; where they differ, they win.
 **Task plan:** [`2026-10-17-globe-eversion-tasks.md`](./2026-10-17-globe-eversion-tasks.md)
 (39 tasks, dependency graph, parallel waves, traceability to the tests in §11).
 **Scope:** The liquid-globe hub navigator only (`components/radial/LiquidGlobe.tsx`
@@ -20,6 +20,8 @@ via `components/radial/RadialHub.tsx`). Not the Kaikai debt globe, not the Rebar
 > be built, this doc wins unless §14 lists it as open.
 
 ## Implementation status (T39 docs pass)
+
+**2026-10-18: POP removed at the owner's request.** The animation ends when UNWRAP finishes (flat AFTER page, then the reveal handoff, then `done`); `PLAN_MS.total` is 4780. Details in the amendment below.
 
 Tasks T01-T37 are implemented and merged dark behind `isEversionEnabled()`; the
 flag (`EVERSION_ENABLED`) was flipped to `true` by the owner ahead of T28 and T38. What
@@ -50,6 +52,44 @@ remains, and what is known:
   ([`globe-eversion/bednorz-check.ts`](./globe-eversion/bednorz-check.ts), derivation
   Appendix A) is available and verified.
 
+### Amendment 2026-10-18 - POP removed at the owner's request
+
+> The "pop" stage after the unwrap looks goofy: the page has already unwrapped,
+> then a globe summons into existence just to disappear again. **POP is removed.
+> The animation ends when UNWRAP finishes.** (Owner, verbatim: "Remove this 'pop'
+> stage, just end with the unwrap.") Where any other text in this document still
+> describes POP, the glass globe, the shrink onto the orb or the second ripple,
+> **this amendment wins.**
+
+- **Stages and timing.** WRAP 700 · EVERSION 3200 · UNWRAP 700. UNWRAP ends at
+  4600 ms with the AFTER page flat and full-screen, exactly the live page. The
+  reveal (the canvas fading onto the identical live page, `REVEAL_MS` 180) then
+  runs and the run is `done`: `PLAN_MS.total` is **4780** (was 5120), and
+  `PLAN_MS.pop` became `PLAN_MS.reveal = [4600, 4780]`. Event order is
+  `unwrap-done` -> `reveal` -> `done` on every path (worker and in-thread,
+  fast-forward, abort, hidden-tab settle, watchdog). The `pop` stage is gone from
+  `STAGE_IDS`.
+- **Smoothness.** Every channel is at rest (value, velocity, acceleration) at the
+  end of UNWRAP, so there is no jump when the run ends (`unwrap-end.test.ts`). A
+  spin landing after a long gate wait is speed-capped and may still be settling
+  there, under a mesh that is flat at `unwrap` 0 and cannot show it.
+- **Removed.** Channels `pop`, `glass`, `popFade`; snapshot fields of the same
+  names and `ripple1Age` (`ripple0Age` is now `rippleAge`); uniforms `u_pop`,
+  `u_glass`, `u_popFade` (`u_ripple` is a float); the glass-only shader path and
+  the eye-follow camera; constants `POP_MS`, `POP_FADE_FROM`, `POP_FADE_MS`; the
+  `pop-fade` message and `RunOptions.onPopFade`; `OrbRect`, `EversionPlan.orb`,
+  the `orb` argument of `Timeline.resize` and the `resize` message, and
+  `PagePort.orbRect` (the orb was only ever POP's target); the hub's
+  `data-orb-popped` crossfade; `pop.test.ts` (replaced by `unwrap-end.test.ts`);
+  `testing/e2e/eversion-pop.mjs` (its wedge-mask checks live on in
+  `eversion-wedge.mjs`, which also checks that the last UNWRAP frame is
+  pixel-identical to a flat page). `GLASS_FILL` / `GLASS_RIM_ALPHA` stay: the
+  azimuthal projections' masked wedge still renders as glass.
+- **The orb.** Hidden during the run (`data-phase='everting'`) and brought back by
+  the hub's ordinary closed-state fade (`opacity 0.34s ease`) when the run ends:
+  the page is already showing, nothing lands on the orb, and it is the same fade
+  an aborted run already gets.
+
 ---
 
 ## 0. The effect in one paragraph
@@ -62,8 +102,9 @@ and the page you are going to starts on the inside. Both stay painted on their
 own side of the surface throughout the eversion, through every self-intersection.
 When the eversion ends the destination is on the outside and the origin is hidden
 inside. The destination then **unwraps** into the full-screen rectangle, landing
-pixel-for-pixel on the live page. Last, the empty glass globe **shrinks back
-into the RMH orb and pops**. Every channel of motion is eased and continuous to
+pixel-for-pixel on the live page. That is the end: the page is already the live page, and the
+animation stops there (_amended 2026-10-18: the original final "shrinks back into
+the RMH orb and pops" stage was removed_). Every channel of motion is eased and continuous to
 the second derivative, including when the visitor fast-forwards.
 
 ---
@@ -73,33 +114,33 @@ the second derivative, including when the visitor fast-forwards.
 These were settled in the grilling round on 2026-10-17. Numbers refer to the
 question list in that conversation.
 
-| #   | Question                    | Decision                                                                                                                                                              |
-| --- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Entry points                | **All** of them: hold-and-release on the reticle, pin click, keyboard Enter on a focused pin. External links keep today's hard navigation.                            |
-| 2   | Which globes                | **Only the hub navigator.**                                                                                                                                           |
-| 3   | Frequency                   | **Every navigation.** No "first time only", no off switch in Settings (but see §1.1 for the accessibility fallback).                                                  |
-| 4   | Skipping                    | **Click/tap/key fast-forwards smoothly.** No hard cuts, ever.                                                                                                         |
-| 5   | "Before" page               | The page **as it was before the menu opened** — no veil, no globe.                                                                                                    |
-| 6   | Extent                      | **Viewport only** at the current scroll position.                                                                                                                     |
-| 7   | Capture fidelity            | **Fastest viable**, performance-first, but accuracy matters.                                                                                                          |
-| 8   | "After" page not loaded yet | Navigate for real **underneath** the animation, **and** start with a placeholder on the inside that crossfades to the real capture.                                   |
-| 9   | Slow or failing destination | Eversion **stretches** up to a cap, then unwraps onto whatever is live.                                                                                               |
-| 10  | Coverage                    | **Full sphere** coverage (both pages).                                                                                                                                |
-| 11  | Aspect                      | **Fit page width to 360°**; latitude follows the aspect.                                                                                                              |
-| 12  | Poles                       | **Glass caps** carrying the existing wireframe.                                                                                                                       |
-| 13  | Projection                  | **All five** available: Mercator, Peirce quincuncial, stereographic, Lambert azimuthal equal-area, equirectangular. **User setting**, with **Random** as the default. |
-| 14  | Look                        | Keep a faint cage, the ripple crest and a fresnel rim — it is still the same glass object.                                                                            |
-| 15  | Size                        | Diameter **88 % of the shorter viewport side**.                                                                                                                       |
-| 16  | Eversion                    | **Thurston corrugations.**                                                                                                                                            |
-| 17  | Spin                        | ~**1.25 turns** about a slightly tilted vertical axis, eased to land front-facing and upright.                                                                        |
-| 18  | Shading                     | Subtle per-side lighting so the self-intersections read.                                                                                                              |
-| 19  | Mirroring                   | The "after" page is **corrected** so it unwraps right-reading.                                                                                                        |
-| 20  | Exit                        | The empty globe shrinks into the RMH orb's position and **pops** with a ripple.                                                                                       |
-| 21  | Timing                      | **WRAP 700 ms · EVERSION 3200 ms · UNWRAP 700 ms · POP 520 ms** ≈ 5.1 s, velocity carried across stages.                                                              |
-| 22  | Back/forward, deep links    | **No animation.**                                                                                                                                                     |
-| 23  | Weak devices                | Lower mesh resolution / DPR on weak GPUs is acceptable; 60 fps is the target.                                                                                         |
-| 24  | Loading                     | Prefetching **before** navigation is fine, but it **must not affect page content load time.**                                                                         |
-| —   | Approach                    | **Hand-rolled WebGL2** + **DOM-to-image capture** (`modern-screenshot`, already a dependency — `lib/library/epub-raster.ts`).                                         |
+| #   | Question                    | Decision                                                                                                                                                                     |
+| --- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Entry points                | **All** of them: hold-and-release on the reticle, pin click, keyboard Enter on a focused pin. External links keep today's hard navigation.                                   |
+| 2   | Which globes                | **Only the hub navigator.**                                                                                                                                                  |
+| 3   | Frequency                   | **Every navigation.** No "first time only", no off switch in Settings (but see §1.1 for the accessibility fallback).                                                         |
+| 4   | Skipping                    | **Click/tap/key fast-forwards smoothly.** No hard cuts, ever.                                                                                                                |
+| 5   | "Before" page               | The page **as it was before the menu opened** — no veil, no globe.                                                                                                           |
+| 6   | Extent                      | **Viewport only** at the current scroll position.                                                                                                                            |
+| 7   | Capture fidelity            | **Fastest viable**, performance-first, but accuracy matters.                                                                                                                 |
+| 8   | "After" page not loaded yet | Navigate for real **underneath** the animation, **and** start with a placeholder on the inside that crossfades to the real capture.                                          |
+| 9   | Slow or failing destination | Eversion **stretches** up to a cap, then unwraps onto whatever is live.                                                                                                      |
+| 10  | Coverage                    | **Full sphere** coverage (both pages).                                                                                                                                       |
+| 11  | Aspect                      | **Fit page width to 360°**; latitude follows the aspect.                                                                                                                     |
+| 12  | Poles                       | **Glass caps** carrying the existing wireframe.                                                                                                                              |
+| 13  | Projection                  | **All five** available: Mercator, Peirce quincuncial, stereographic, Lambert azimuthal equal-area, equirectangular. **User setting**, with **Random** as the default.        |
+| 14  | Look                        | Keep a faint cage, the ripple crest and a fresnel rim — it is still the same glass object.                                                                                   |
+| 15  | Size                        | Diameter **88 % of the shorter viewport side**.                                                                                                                              |
+| 16  | Eversion                    | **Thurston corrugations.**                                                                                                                                                   |
+| 17  | Spin                        | ~**1.25 turns** about a slightly tilted vertical axis, eased to land front-facing and upright.                                                                               |
+| 18  | Shading                     | Subtle per-side lighting so the self-intersections read.                                                                                                                     |
+| 19  | Mirroring                   | The "after" page is **corrected** so it unwraps right-reading.                                                                                                               |
+| 20  | Exit                        | _Amended 2026-10-18:_ **none** - the animation ends when UNWRAP finishes. (Was: the empty globe shrinks into the RMH orb's position and pops with a ripple.)                 |
+| 21  | Timing                      | **WRAP 700 ms · EVERSION 3200 ms · UNWRAP 700 ms** = 4.6 s (+ the 180 ms reveal handoff = 4.78 s), velocity carried across stages. _Amended 2026-10-18: POP 520 ms removed._ |
+| 22  | Back/forward, deep links    | **No animation.**                                                                                                                                                            |
+| 23  | Weak devices                | Lower mesh resolution / DPR on weak GPUs is acceptable; 60 fps is the target.                                                                                                |
+| 24  | Loading                     | Prefetching **before** navigation is fine, but it **must not affect page content load time.**                                                                                |
+| —   | Approach                    | **Hand-rolled WebGL2** + **DOM-to-image capture** (`modern-screenshot`, already a dependency — `lib/library/epub-raster.ts`).                                                |
 
 ### 1.1 Decisions this spec makes on the owner's behalf
 
@@ -600,22 +641,23 @@ class toggle, not a per-frame write.
 Stages are labels. Motion is carried by **channels**, each an independent
 scalar animated by quintic segments:
 
-| Channel     | Meaning                                                  | Plan                                                    |
-| ----------- | -------------------------------------------------------- | ------------------------------------------------------- |
-| `wrap`      | WRAP morph `s`                                           | 0 → 1 over 0–700 ms                                     |
-| `radius`    | globe radius                                             | hub radius → `0.44·min(W,H)` over 0–700 ms              |
-| `centre`    | globe centre (2D)                                        | hub globe centre → viewport centre over 0–700 ms        |
-| `hubFade`   | hub overlay (veil, pins, 2D cage) opacity                | 1 → 0 over 0–250 ms (CSS, main thread; see §9.2)        |
-| `evert`     | eversion `e`                                             | 0 → 1 over 600–3900 ms (overlaps WRAP's tail by 100 ms) |
-| `spin`      | yaw about the tilted axis                                | inherited ω → ~1.25 turns → aligned, zero ω, by 4300 ms |
-| `tilt`      | axis tilt toward the viewer                              | hub pitch → 18° by 900 ms → 0° by 4300 ms               |
-| `afterMix`  | placeholder → AFTER crossfade                            | event-driven, 320 ms                                    |
-| `unwrap`    | UNWRAP morph                                             | 1 → 0 over 3800–4600 ms                                 |
-| `pageAlpha` | page texture opacity during reveal                       | 1 → 0 over 180 ms after `reveal`                        |
-| `pop`       | glass globe → orb: radius to orb size, overshoot, ripple | 4600–5120 ms                                            |
+| Channel     | Meaning                                   | Plan                                                    |
+| ----------- | ----------------------------------------- | ------------------------------------------------------- |
+| `wrap`      | WRAP morph `s`                            | 0 → 1 over 0–700 ms                                     |
+| `radius`    | globe radius                              | hub radius → `0.44·min(W,H)` over 0–700 ms              |
+| `centre`    | globe centre (2D)                         | hub globe centre → viewport centre over 0–700 ms        |
+| `hubFade`   | hub overlay (veil, pins, 2D cage) opacity | 1 → 0 over 0–250 ms (CSS, main thread; see §9.2)        |
+| `evert`     | eversion `e`                              | 0 → 1 over 600–3900 ms (overlaps WRAP's tail by 100 ms) |
+| `spin`      | yaw about the tilted axis                 | inherited ω → ~1.25 turns → aligned, zero ω, by 4300 ms |
+| `tilt`      | axis tilt toward the viewer               | hub pitch → 18° by 900 ms → 0° by 4300 ms               |
+| `afterMix`  | placeholder → AFTER crossfade             | event-driven, 320 ms                                    |
+| `unwrap`    | UNWRAP morph                              | 1 → 0 over 3800–4600 ms                                 |
+| `pageAlpha` | page texture opacity during reveal        | 1 → 0 over 180 ms after `reveal` (4600–4780 ms)         |
+
+_Amended 2026-10-18: the `pop`, `glass` and `popFade` channels (glass globe → orb, 4600–5120 ms) are removed; the run ends with UNWRAP._
 
 The overlaps make the stage boundaries invisible. There is no frame where every
-channel's velocity is zero until the very end.
+channel's velocity is zero until the very end, which is now the end of UNWRAP (4600 ms).
 
 ### 7.2 Quintic re-planning — the continuity rule
 
@@ -664,7 +706,7 @@ gesture sends `fast-forward`. Every channel is re-planned (§7.2) so that the
 **remaining** timeline completes in `FF_REMAINING = 650 ms`, with the
 after-gate still enforced: if AFTER is not ready, everything up to the gate
 compresses and the gate behaves as in §7.5, with the stretch cap reduced to
-+1000 ms. Fast-forward during POP is ignored. A second fast-forward is a no-op.
++1000 ms. Fast-forward after `unwrap-done` (the reveal fade) is ignored. A second fast-forward is a no-op.
 
 ### 7.7 Clock
 
@@ -726,7 +768,7 @@ break continuity.
   finite-difference taps for the normal): 33 k verts × 3 at `high`, which is
   trivial. The fragment shader does 1 LUT tap + 1 page tap + fresnel.
   Overdraw is ≤ 3 layers inside the corrugations. Depth testing is on, with no
-  sorting and no transparency, until POP.
+  sorting and no transparency, until the reveal fade.
 - **Main thread during the effect:** the after capture (budget §6.2) plus the
   route render the visitor would have paid anyway. Nothing else.
 
@@ -775,9 +817,9 @@ for dismissals). `onNavigate` → `useEversionController.start()`:
 3. Set `data-phase="everting"`. In `radial.css` this fades the veil, globe and
    foot capsule out over 250 ms (`hubFade`) and hides the orb.
 4. `navigate()`.
-5. On `done`: unmount the overlay, set phase `closed`, bring the orb back with
-   the pop's final frame (the orb scales from the pop's end radius, with
-   matching size and position), and let the router's normal focus management
+5. On `done`: unmount the overlay, set phase `closed` (the orb fades back in
+   with the hub's ordinary closed-state fade; _amended 2026-10-18: it used to
+   scale from the pop's end radius_), and let the router's normal focus management
    land focus on the new page (as today: no focus restore to the orb after a
    navigation).
 
@@ -822,9 +864,9 @@ The canvas is **opaque** from its first frame, cleared to the resolved veil
 colour (the `.radial-hub__veil` computed background composited over
 `--site-bg`). At WRAP start the flat page fills the canvas exactly. As it
 curls onto the globe, the veil colour shows around it, which is what the hub
-overlay was showing a moment ago. During `reveal` and POP the canvas switches
+overlay was showing a moment ago. During `reveal` the canvas switches
 to `alpha` output (the context is created `alpha: true, premultipliedAlpha:
-true`) so the live page shows through around the shrinking glass globe.
+true`) so the live page shows through as the flat page fades.
 
 ### 10.2 Theme
 
@@ -851,7 +893,7 @@ fed from tokens.
 - **Ripple crest:** at `start`, one ripple is emitted from the front point.
   It uses the exact `lib/fluid` `RIPPLE` shape, evaluated in the vertex shader
   as a radial displacement. It ties the effect to the globe the visitor just
-  poked. POP emits a second one.
+  poked. (_Amended 2026-10-18: the second ripple at POP is removed with POP._)
 
 ### 10.4 Accessibility
 
@@ -984,8 +1026,8 @@ stalls):
     every re-plan instant are ≤ 1e-9 (analytic, at the boundary).
 18. **Gate:** UNWRAP never starts before AFTER is ready, except at the stretch
     cap or after `after-failed`.
-19. **Bounds:** the total duration is ≤ 5.1 s + 2.5 s cap. After fast-forward,
-    completion is ≤ 650 ms + any gate wait (≤ 1 s cap) + POP.
+19. **Bounds:** the total duration is ≤ 4.78 s + 2.5 s cap (was 5.1 s with POP). After fast-forward,
+    completion is ≤ 650 ms + any gate wait (≤ 1 s cap) + the 180 ms reveal.
 20. **Monotone stages:** stage events are emitted in order, each exactly once.
 21. **Spin:** the remaining travel is never negative and never more than 1.5
     turns. The final angle aligns (test 14) with zero velocity.

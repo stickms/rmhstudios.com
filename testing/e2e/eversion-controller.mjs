@@ -32,7 +32,7 @@
 //  4. The overlay element exists during the run and is gone after `done`;
 //     `data-eversion-settle` and the cover class are gone too.
 //  5. AFTER is captured with `data-eversion-settle` set.
-//  6. Fast-forward completes within 650 ms + POP (+ scheduling slack) of the
+//  6. Fast-forward completes within 650 ms + the reveal fade (+ scheduling slack) of the
 //     key press when AFTER is ready.
 //  7. An injected BEFORE failure resolves `{ fallback }`, marks `fallback`, never
 //     navigates and never creates the overlay.
@@ -53,7 +53,7 @@ const fixtures = join(root, 'testing/e2e/eversion-controller');
 const MARKS = ['start', 'cover', 'evert', 'gate-open', 'unwrap', 'reveal', 'done'].map(
   (n) => `eversion:${n}`,
 );
-const POP_MS = 300;
+const REVEAL_MS = 180;
 const FF_REMAINING_MS = 650;
 const FF_SLACK_MS = 400; // SwiftShader frames + the key's trip to the worker
 
@@ -234,10 +234,10 @@ try {
       // remainder legitimately takes ~12x longer in wall time. Scale the bound by
       // the run's own p95 frame time; on a healthy host the factor is 1.
       const slow = Math.max(1, (doneMark?.detail?.p95 ?? 0) / 50);
-      const bound = (FF_REMAINING_MS + POP_MS + FF_SLACK_MS) * slow;
+      const bound = (FF_REMAINING_MS + REVEAL_MS + FF_SLACK_MS) * slow;
       const took = at(run, 'eversion:done') - run.ffAt;
       check(
-        `${label}: fast-forward finished ${took.toFixed(0)} ms after the key (bound ${bound.toFixed(0)} = (650 + POP + slack) x ${slow.toFixed(1)} frame-time factor)`,
+        `${label}: fast-forward finished ${took.toFixed(0)} ms after the key (bound ${bound.toFixed(0)} = (650 + reveal + slack) x ${slow.toFixed(1)} frame-time factor)`,
         took <= bound,
       );
     }

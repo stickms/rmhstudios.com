@@ -81,18 +81,10 @@ export const UNIFORMS = [
   { name: 'u_afterMix', type: 'float', cadence: 'frame', from: 'snapshot.afterMix' },
   { name: 'u_pageAlpha', type: 'float', cadence: 'frame', from: 'snapshot.pageAlpha' },
   {
-    name: 'u_pop',
+    name: 'u_ripple',
     type: 'float',
     cadence: 'frame',
-    from: "snapshot.pop (the glass camera's follow rides the channel the centre travels on)",
-  },
-  { name: 'u_glass', type: 'float', cadence: 'frame', from: 'snapshot.glass' },
-  { name: 'u_popFade', type: 'float', cadence: 'frame', from: 'snapshot.popFade' },
-  {
-    name: 'u_ripple',
-    type: 'vec2',
-    cadence: 'frame',
-    from: '(snapshot.ripple0Age, snapshot.ripple1Age) (seconds; -1 = not emitted)',
+    from: 'snapshot.rippleAge (seconds; -1 = not emitted)',
   },
   {
     name: 'u_cageAlpha',

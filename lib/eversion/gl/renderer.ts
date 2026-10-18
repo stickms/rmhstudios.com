@@ -17,7 +17,7 @@
  *
  * `draw` allocates nothing, writes the `frame`-cadence uniforms of `UNIFORMS`
  * and makes at most two draw calls — the surface, then the cage over the same
- * triangles. Depth testing is on, with no sorting and no transparency until POP.
+ * triangles. Depth testing is on, with no sorting and no transparency until the reveal fade.
  * Culling is off, so `gl_FrontFacing` selects the page side.
  *
  * ### Which winding is "front" (a correction to the T01 wording)
@@ -420,10 +420,7 @@ export function createRenderer(
     g.uniform2f(l.u_centre, s.centreX, s.centreY);
     g.uniform1f(l.u_afterMix, s.afterMix);
     g.uniform1f(l.u_pageAlpha, s.pageAlpha);
-    g.uniform1f(l.u_pop, s.pop);
-    g.uniform1f(l.u_glass, s.glass);
-    g.uniform1f(l.u_popFade, s.popFade);
-    g.uniform2f(l.u_ripple, s.ripple0Age, s.ripple1Age);
+    g.uniform1f(l.u_ripple, s.rippleAge);
     g.uniform1f(l.u_cageAlpha, cageAlpha);
   }
 
@@ -509,8 +506,8 @@ export function createRenderer(
       g.drawElements(g.TRIANGLES, mesh.indexCount, g.UNSIGNED_INT, 0);
 
       // At the flat endpoints (no vertex lifted off the page) the cage has no coverage at all: skip the draw.
-      const morphing = Math.max(Math.min(s.wrap, s.unwrap), s.glass) > 0;
-      if (cageAlpha > 0 && morphing && s.popFade < 1) {
+      const morphing = Math.min(s.wrap, s.unwrap) > 0;
+      if (cageAlpha > 0 && morphing) {
         g.useProgram(cage.program);
         writeFrame(cage, s, evert, cageAlpha);
         g.enable(g.BLEND);
