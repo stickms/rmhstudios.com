@@ -8,6 +8,7 @@
   "edit": "Edit",
   "edit-build": "Edit Build",
   "error-loading-build": "Kesalahan Memuat Build",
+  "like-count_one": "{{count}} suka",
   "like-count_other": "{{count}} suka",
   "manage-subtitle": "Kelola build Anda yang dipublikasikan dan draf",
   "my-builds": "Build Saya",
@@ -15,7 +16,7 @@
   "no-builds-description": "Buat build pertama Anda dan bagikan dengan komunitas.",
   "no-builds-yet": "Belum ada build",
   "prefer-the-cli": "Lebih suka CLI?",
-  "share-project-with-community": "Bagikan proyek Anda dengan komunitas. Anda dapat menyimpannya sebagai draf dan mempublikasikannya nanti.",
+  "share-project-with-community": "Bagikan proyek Anda dengan komunitas.",
   "sign-in": "Masuk",
   "sign-in-required": "Perlu Masuk",
   "sign-in-to-manage": "Anda perlu masuk untuk mengelola build Anda.",
@@ -23,5 +24,6 @@
   "submit-a-build": "Kirim Build",
   "update-build-details": "Perbarui detail build Anda di bawah ini.",
   "view": "Lihat",
+  "view-count_one": "{{count}} dilihat",
   "view-count_other": "{{count}} tampilan"
 }

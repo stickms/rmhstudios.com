@@ -15,6 +15,7 @@ import ptCCursedLogic from "@/locales/pt/c-cursed-logic.json";
 import ptCDailyPuzzles from "@/locales/pt/c-daily-puzzles.json";
 import ptCDoctrine from "@/locales/pt/c-doctrine.json";
 import ptCDreamRift from "@/locales/pt/c-dream-rift.json";
+import ptCDunesday from "@/locales/pt/c-dunesday.json";
 import ptCEconomy from "@/locales/pt/c-economy.json";
 import ptCForestExplorer from "@/locales/pt/c-forest-explorer.json";
 import ptCGabrielsHorn from "@/locales/pt/c-gabriels-horn.json";
@@ -40,11 +41,13 @@ import ptCProfileModules from "@/locales/pt/c-profile-modules.json";
 import ptCRebarRutabaga from "@/locales/pt/c-rebar-rutabaga.json";
 import ptCRideshare from "@/locales/pt/c-rideshare.json";
 import ptCRmhCapital from "@/locales/pt/c-rmh-capital.json";
+import ptCRmhDatacenter from "@/locales/pt/c-rmh-datacenter.json";
 import ptCRmhPmc from "@/locales/pt/c-rmh-pmc.json";
 import ptCRmhbox from "@/locales/pt/c-rmhbox.json";
 import ptCRmhcalculator from "@/locales/pt/c-rmhcalculator.json";
 import ptCRmhcode from "@/locales/pt/c-rmhcode.json";
 import ptCRmhcoins from "@/locales/pt/c-rmhcoins.json";
+import ptCRmhfashion from "@/locales/pt/c-rmhfashion.json";
 import ptCRmhmusic from "@/locales/pt/c-rmhmusic.json";
 import ptCRmhstudy from "@/locales/pt/c-rmhstudy.json";
 import ptCRmhtech from "@/locales/pt/c-rmhtech.json";
@@ -67,6 +70,7 @@ import ptCVoidBreaker from "@/locales/pt/c-void-breaker.json";
 import ptCWager from "@/locales/pt/c-wager.json";
 import ptCWishlist from "@/locales/pt/c-wishlist.json";
 import ptCommon from "@/locales/pt/common.json";
+import ptErrors from "@/locales/pt/errors.json";
 import ptFeed from "@/locales/pt/feed.json";
 import ptGamesHub from "@/locales/pt/games-hub.json";
 import ptGroups from "@/locales/pt/groups.json";
@@ -111,6 +115,7 @@ const ptResources = {
   "c-daily-puzzles": ptCDailyPuzzles,
   "c-doctrine": ptCDoctrine,
   "c-dream-rift": ptCDreamRift,
+  "c-dunesday": ptCDunesday,
   "c-economy": ptCEconomy,
   "c-forest-explorer": ptCForestExplorer,
   "c-gabriels-horn": ptCGabrielsHorn,
@@ -136,11 +141,13 @@ const ptResources = {
   "c-rebar-rutabaga": ptCRebarRutabaga,
   "c-rideshare": ptCRideshare,
   "c-rmh-capital": ptCRmhCapital,
+  "c-rmh-datacenter": ptCRmhDatacenter,
   "c-rmh-pmc": ptCRmhPmc,
   "c-rmhbox": ptCRmhbox,
   "c-rmhcalculator": ptCRmhcalculator,
   "c-rmhcode": ptCRmhcode,
   "c-rmhcoins": ptCRmhcoins,
+  "c-rmhfashion": ptCRmhfashion,
   "c-rmhmusic": ptCRmhmusic,
   "c-rmhstudy": ptCRmhstudy,
   "c-rmhtech": ptCRmhtech,
@@ -163,6 +170,7 @@ const ptResources = {
   "c-wager": ptCWager,
   "c-wishlist": ptCWishlist,
   "common": ptCommon,
+  "errors": ptErrors,
   "feed": ptFeed,
   "games-hub": ptGamesHub,
   "groups": ptGroups,

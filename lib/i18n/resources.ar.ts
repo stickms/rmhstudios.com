@@ -15,6 +15,7 @@ import arCCursedLogic from "@/locales/ar/c-cursed-logic.json";
 import arCDailyPuzzles from "@/locales/ar/c-daily-puzzles.json";
 import arCDoctrine from "@/locales/ar/c-doctrine.json";
 import arCDreamRift from "@/locales/ar/c-dream-rift.json";
+import arCDunesday from "@/locales/ar/c-dunesday.json";
 import arCEconomy from "@/locales/ar/c-economy.json";
 import arCForestExplorer from "@/locales/ar/c-forest-explorer.json";
 import arCGabrielsHorn from "@/locales/ar/c-gabriels-horn.json";
@@ -40,11 +41,13 @@ import arCProfileModules from "@/locales/ar/c-profile-modules.json";
 import arCRebarRutabaga from "@/locales/ar/c-rebar-rutabaga.json";
 import arCRideshare from "@/locales/ar/c-rideshare.json";
 import arCRmhCapital from "@/locales/ar/c-rmh-capital.json";
+import arCRmhDatacenter from "@/locales/ar/c-rmh-datacenter.json";
 import arCRmhPmc from "@/locales/ar/c-rmh-pmc.json";
 import arCRmhbox from "@/locales/ar/c-rmhbox.json";
 import arCRmhcalculator from "@/locales/ar/c-rmhcalculator.json";
 import arCRmhcode from "@/locales/ar/c-rmhcode.json";
 import arCRmhcoins from "@/locales/ar/c-rmhcoins.json";
+import arCRmhfashion from "@/locales/ar/c-rmhfashion.json";
 import arCRmhmusic from "@/locales/ar/c-rmhmusic.json";
 import arCRmhstudy from "@/locales/ar/c-rmhstudy.json";
 import arCRmhtech from "@/locales/ar/c-rmhtech.json";
@@ -68,6 +71,7 @@ import arCVoidBreaker from "@/locales/ar/c-void-breaker.json";
 import arCWager from "@/locales/ar/c-wager.json";
 import arCWishlist from "@/locales/ar/c-wishlist.json";
 import arCommon from "@/locales/ar/common.json";
+import arErrors from "@/locales/ar/errors.json";
 import arFeed from "@/locales/ar/feed.json";
 import arGamesHub from "@/locales/ar/games-hub.json";
 import arGroups from "@/locales/ar/groups.json";
@@ -113,6 +117,7 @@ const arResources = {
   "c-daily-puzzles": arCDailyPuzzles,
   "c-doctrine": arCDoctrine,
   "c-dream-rift": arCDreamRift,
+  "c-dunesday": arCDunesday,
   "c-economy": arCEconomy,
   "c-forest-explorer": arCForestExplorer,
   "c-gabriels-horn": arCGabrielsHorn,
@@ -138,11 +143,13 @@ const arResources = {
   "c-rebar-rutabaga": arCRebarRutabaga,
   "c-rideshare": arCRideshare,
   "c-rmh-capital": arCRmhCapital,
+  "c-rmh-datacenter": arCRmhDatacenter,
   "c-rmh-pmc": arCRmhPmc,
   "c-rmhbox": arCRmhbox,
   "c-rmhcalculator": arCRmhcalculator,
   "c-rmhcode": arCRmhcode,
   "c-rmhcoins": arCRmhcoins,
+  "c-rmhfashion": arCRmhfashion,
   "c-rmhmusic": arCRmhmusic,
   "c-rmhstudy": arCRmhstudy,
   "c-rmhtech": arCRmhtech,
@@ -166,6 +173,7 @@ const arResources = {
   "c-wager": arCWager,
   "c-wishlist": arCWishlist,
   "common": arCommon,
+  "errors": arErrors,
   "feed": arFeed,
   "games-hub": arGamesHub,
   "groups": arGroups,
