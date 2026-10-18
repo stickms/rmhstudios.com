@@ -185,6 +185,10 @@ export class VoidBreakerEngine {
   shardsCollected = 0;
   detonations = 0;
   bossesKilled = 0;
+  /** Boss Rush: every wave is a boss wave. Set by the UI before startGame(). */
+  bossRush = false;
+  /** True once the final wave is cleared alive (the "first clear" that unlocks Boss Rush). */
+  victory = false;
   focusUsed = 0;
 
   shakeX = 0;
@@ -414,6 +418,7 @@ export class VoidBreakerEngine {
     this.shardsCollected = 0;
     this.detonations = 0;
     this.bossesKilled = 0;
+    this.victory = false;
     this.focusUsed = 0;
     this.nextId = 0;
     this.shotCount = 0;
@@ -515,6 +520,8 @@ export class VoidBreakerEngine {
       timeSurvivedMs: Math.round(this.elapsedMs),
       detonations: this.detonations,
       bossesKilled: this.bossesKilled,
+      bossRush: this.bossRush,
+      victory: this.victory,
       maxCombo: this.maxCombo,
       focusUsed: this.focusUsed,
       upgrades: (Object.entries(this.upgradeStacks) as [UpgradeId, number][])
@@ -741,6 +748,7 @@ export class VoidBreakerEngine {
         // Victory at MAX_WAVE
         if (this.wave >= MAX_WAVE) {
           this.emitSfx('waveClear');
+          this.victory = true;
           this.state = 'gameOver';
           return;
         }
@@ -971,7 +979,10 @@ export class VoidBreakerEngine {
   }
 
   private startNextWave(): void {
-    this.wave++;
+    // Boss Rush skips straight to the next boss wave (5, 10, … 40).
+    this.wave = this.bossRush
+      ? (Math.floor(this.wave / BOSS_WAVE_INTERVAL) + 1) * BOSS_WAVE_INTERVAL
+      : this.wave + 1;
     this.waveEnemiesKilledCount = 0;
 
     // Check ability unlocks

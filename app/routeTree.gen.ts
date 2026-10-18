@@ -552,6 +552,7 @@ import { Route as ApiModerationReportRouteImport } from './routes/api/moderation
 import { Route as ApiMomentsIndexRouteImport } from './routes/api/moments/index'
 import { Route as ApiMuseumIndexRouteImport } from './routes/api/museum/index'
 import { Route as ApiNeonDriftwayLeaderboardRouteImport } from './routes/api/neon-driftway/leaderboard'
+import { Route as ApiNeonDriftwayLiveryRouteImport } from './routes/api/neon-driftway/livery'
 import { Route as ApiNeonDriftwayScoreRouteImport } from './routes/api/neon-driftway/score'
 import { Route as ApiNewsApproveRouteImport } from './routes/api/news/approve'
 import { Route as ApiNewsRejectRouteImport } from './routes/api/news/reject'
@@ -3971,6 +3972,11 @@ const ApiNeonDriftwayLeaderboardRoute =
     path: '/api/neon-driftway/leaderboard',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiNeonDriftwayLiveryRoute = ApiNeonDriftwayLiveryRouteImport.update({
+  id: '/api/neon-driftway/livery',
+  path: '/api/neon-driftway/livery',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiNeonDriftwayScoreRoute = ApiNeonDriftwayScoreRouteImport.update({
   id: '/api/neon-driftway/score',
   path: '/api/neon-driftway/score',
@@ -8044,6 +8050,7 @@ export interface FileRoutesByFullPath {
   '/api/moderation/mute': typeof ApiModerationMuteRoute
   '/api/moderation/report': typeof ApiModerationReportRoute
   '/api/neon-driftway/leaderboard': typeof ApiNeonDriftwayLeaderboardRoute
+  '/api/neon-driftway/livery': typeof ApiNeonDriftwayLiveryRoute
   '/api/neon-driftway/score': typeof ApiNeonDriftwayScoreRoute
   '/api/news/approve': typeof ApiNewsApproveRoute
   '/api/news/reject': typeof ApiNewsRejectRoute
@@ -9243,6 +9250,7 @@ export interface FileRoutesByTo {
   '/api/moderation/mute': typeof ApiModerationMuteRoute
   '/api/moderation/report': typeof ApiModerationReportRoute
   '/api/neon-driftway/leaderboard': typeof ApiNeonDriftwayLeaderboardRoute
+  '/api/neon-driftway/livery': typeof ApiNeonDriftwayLiveryRoute
   '/api/neon-driftway/score': typeof ApiNeonDriftwayScoreRoute
   '/api/news/approve': typeof ApiNewsApproveRoute
   '/api/news/reject': typeof ApiNewsRejectRoute
@@ -10470,6 +10478,7 @@ export interface FileRoutesById {
   '/api/moderation/mute': typeof ApiModerationMuteRoute
   '/api/moderation/report': typeof ApiModerationReportRoute
   '/api/neon-driftway/leaderboard': typeof ApiNeonDriftwayLeaderboardRoute
+  '/api/neon-driftway/livery': typeof ApiNeonDriftwayLiveryRoute
   '/api/neon-driftway/score': typeof ApiNeonDriftwayScoreRoute
   '/api/news/approve': typeof ApiNewsApproveRoute
   '/api/news/reject': typeof ApiNewsRejectRoute
@@ -11697,6 +11706,7 @@ export interface FileRouteTypes {
     | '/api/moderation/mute'
     | '/api/moderation/report'
     | '/api/neon-driftway/leaderboard'
+    | '/api/neon-driftway/livery'
     | '/api/neon-driftway/score'
     | '/api/news/approve'
     | '/api/news/reject'
@@ -12896,6 +12906,7 @@ export interface FileRouteTypes {
     | '/api/moderation/mute'
     | '/api/moderation/report'
     | '/api/neon-driftway/leaderboard'
+    | '/api/neon-driftway/livery'
     | '/api/neon-driftway/score'
     | '/api/news/approve'
     | '/api/news/reject'
@@ -14122,6 +14133,7 @@ export interface FileRouteTypes {
     | '/api/moderation/mute'
     | '/api/moderation/report'
     | '/api/neon-driftway/leaderboard'
+    | '/api/neon-driftway/livery'
     | '/api/neon-driftway/score'
     | '/api/news/approve'
     | '/api/news/reject'
@@ -15135,6 +15147,7 @@ export interface RootRouteChildren {
   ApiModerationMuteRoute: typeof ApiModerationMuteRoute
   ApiModerationReportRoute: typeof ApiModerationReportRoute
   ApiNeonDriftwayLeaderboardRoute: typeof ApiNeonDriftwayLeaderboardRoute
+  ApiNeonDriftwayLiveryRoute: typeof ApiNeonDriftwayLiveryRoute
   ApiNeonDriftwayScoreRoute: typeof ApiNeonDriftwayScoreRoute
   ApiNewsApproveRoute: typeof ApiNewsApproveRoute
   ApiNewsRejectRoute: typeof ApiNewsRejectRoute
@@ -19430,6 +19443,13 @@ declare module '@tanstack/react-router' {
       path: '/api/neon-driftway/leaderboard'
       fullPath: '/api/neon-driftway/leaderboard'
       preLoaderRoute: typeof ApiNeonDriftwayLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/neon-driftway/livery': {
+      id: '/api/neon-driftway/livery'
+      path: '/api/neon-driftway/livery'
+      fullPath: '/api/neon-driftway/livery'
+      preLoaderRoute: typeof ApiNeonDriftwayLiveryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/neon-driftway/score': {
@@ -26557,6 +26577,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiModerationMuteRoute: ApiModerationMuteRoute,
   ApiModerationReportRoute: ApiModerationReportRoute,
   ApiNeonDriftwayLeaderboardRoute: ApiNeonDriftwayLeaderboardRoute,
+  ApiNeonDriftwayLiveryRoute: ApiNeonDriftwayLiveryRoute,
   ApiNeonDriftwayScoreRoute: ApiNeonDriftwayScoreRoute,
   ApiNewsApproveRoute: ApiNewsApproveRoute,
   ApiNewsRejectRoute: ApiNewsRejectRoute,

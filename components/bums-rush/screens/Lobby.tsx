@@ -44,6 +44,9 @@ interface LobbyProps {
   onLeave: () => void;
   onRetryConnection: () => void;
   onBack: () => void;
+  /** Create-room options and in-room badges, supplied by the shell (party modifiers). */
+  createExtras?: React.ReactNode;
+  roomExtras?: React.ReactNode;
 }
 
 export function Lobby({
@@ -57,6 +60,8 @@ export function Lobby({
   onLeave,
   onRetryConnection,
   onBack,
+  createExtras,
+  roomExtras,
 }: LobbyProps) {
   const { t } = useTranslation('c-bums-rush');
   const coarse = useCoarsePointerOnly();
@@ -88,6 +93,8 @@ export function Lobby({
       */}
       <ConnectionBanner status={status} onRetry={onRetryConnection} className="mb-4" />
 
+      {room && roomExtras}
+
       <div
         className="space-y-[clamp(0.75rem,2vmin,1.25rem)]"
         style={{ paddingBottom: 'var(--kb-inset, 0px)' }}
@@ -103,6 +110,7 @@ export function Lobby({
                   defaultValue: 'You get a six-character code and a link. Up to four of you.',
                 })}
               </p>
+              {createExtras}
               <InkButton variant="primary" size="lg" className="mt-4" onClick={onCreate}>
                 <DoorOpen className="size-4" aria-hidden="true" />
                 {t('lobby.create', { defaultValue: 'Open a room' })}

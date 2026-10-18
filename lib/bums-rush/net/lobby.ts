@@ -22,6 +22,7 @@
 
 import { BR_C2S, BR_S2C, DEFAULT_ASSISTS, DEFAULT_COSMETICS, NET } from '../constants';
 import type { Assists, Cosmetics, RoomMode, RoomView, SeatIndex, ShowdownRoundKind } from '../types';
+import type { PartyModifiers } from '../modifiers';
 import { RttWindow } from './migration';
 import type {
   BrErrorMsg,
@@ -226,6 +227,7 @@ export class BumsRushLobby {
     levelId?: string;
     ranked?: boolean;
     teams?: boolean;
+    modifiers?: PartyModifiers;
   }): void {
     emitBumsRush(BR_C2S.CREATE_ROOM, { ...options, ...this.credentials() }, true);
   }

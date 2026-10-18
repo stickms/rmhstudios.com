@@ -25,6 +25,7 @@ import { useDreamRift, type RunResult } from '../store';
 import type { Transport } from './transport';
 import type { BossState, BulletColorName, Difficulty, PlayerShip, PlayerId } from '../types';
 import type { RelayMsg } from './events';
+import { recordReached, type PracticeOutcome, type PracticeTarget } from '../practice';
 
 type DirectorPhase = 'intro' | 'waves' | 'midboss' | 'bridge' | 'preDialogue' | 'boss' | 'postDialogue' | 'stageClear' | 'done';
 
@@ -48,6 +49,8 @@ export interface SessionOpts {
     input: InputManager;
     hiScore: number;
     spriteAssets?: LoadedSpriteAssets | null;
+    /** Spell practice: start straight at one boss card, alone. Never scores or submits. */
+    practice?: PracticeTarget & { onEnd: (o: PracticeOutcome) => void };
 }
 
 export class GameSession {
@@ -82,6 +85,7 @@ export class GameSession {
     private destroyed = false;
     /** Sim frames the run has been active for (drives the "time survived" stat). */
     private runFrames = 0;
+    private practice: SessionOpts['practice'];
     /** Active end-of-run animation (player bursts into particles before results). */
     private ending: { cleared: boolean; frames: number } | null = null;
 
@@ -92,6 +96,7 @@ export class GameSession {
         this.input = opts.input;
         this.difficulty = opts.difficulty;
         this.hiScore = opts.hiScore;
+        this.practice = opts.practice;
         this.isHost = opts.transport.isHost;
         this.localSlot = opts.transport.localSlot;
         this.coop = opts.roster.length > 1;
@@ -113,7 +118,14 @@ export class GameSession {
 
     start(): void {
         this.running = true;
-        this.enterStage(0);
+        if (this.practice) {
+            this.stageIndex = this.practice.stage;
+            this.world.themeColors = stageTheme(this.stageIndex).bulletColors as BulletColorName[];
+            this.renderer.setStage(this.stageIndex, STAGES[this.stageIndex].boss.themeIndex);
+            this.applyPhase(this.practice.boss === 'mid' ? 'midboss' : 'boss');
+        } else {
+            this.enterStage(0);
+        }
         this.last = performance.now();
         this.loop(this.last);
     }
@@ -208,7 +220,7 @@ export class GameSession {
             switch (ev.kind) {
                 case 'graze': this.sfx.play('graze'); break;
                 case 'bomb': this.sfx.play('bomb'); this.renderer.flashScreen('#ffffff', 0.4); break;
-                case 'playerDeath': this.sfx.play('death'); this.onLocalDeath(); break;
+                case 'playerDeath': this.sfx.play('death'); this.onLocalDeath(); if (this.practice) this.endPractice(false, 'died'); break;
                 case 'extend': this.sfx.play('extend'); this.maybeComment('extend'); break;
                 case 'itemCollect': break;
                 case 'enemyKilled': if (Math.random() < 0.08) this.sfx.play('enemyDown'); break;
@@ -355,6 +367,7 @@ export class GameSession {
         if (!boss) {
             // spawn boss on entering the phase (host & clients construct locally)
             this.spawnBoss(def, isMainBoss);
+            if (this.practice && this.practice.card > 0) this.applyBossCard(def, this.practice.card, false);
             return;
         }
         if (boss.introFrames > 0) {
@@ -373,6 +386,10 @@ export class GameSession {
             if (boss.timeLeftFrames <= 0 && card?.timeLimit > 0) timeout = true;
             if (boss.hp <= 0 || timeout) {
                 captured = boss.hp <= 0 && !!card?.isSpell;
+                if (this.practice) {
+                    this.endPractice(boss.hp <= 0, boss.hp <= 0 ? 'captured' : 'timeout');
+                    return;
+                }
                 if (boss.phaseIndex + 1 < boss.cards.length) {
                     this.advanceBossCard(def, boss.phaseIndex + 1, captured);
                 } else {
@@ -409,6 +426,7 @@ export class GameSession {
             name: def.name,
         };
         this.world.spawnBoss(boss);
+        this.noteReached(def, 0);
         this.world.themeColors = stageTheme(this.stageIndex).bulletColors as BulletColorName[];
         this.renderer.setStage(this.stageIndex, def.themeIndex);
         this.renderer.setBossSheet(def.bossSprite);
@@ -425,6 +443,7 @@ export class GameSession {
         const boss = this.world.boss;
         if (!boss) return;
         const card = def.cards[index];
+        this.noteReached(def, index);
         const hp = def.baseHp * card.hp * this.world.diff.bossHp;
         boss.phaseIndex = index;
         boss.hp = hp;
@@ -439,6 +458,22 @@ export class GameSession {
             if (lp) lp.spellsCaptured++;
             this.maybeComment('spellCapture');
         }
+    }
+
+    /** A real run has met this card, so spell practice may offer it. */
+    private noteReached(def: BossDef, card: number): void {
+        if (this.practice) return;
+        const boss = def === STAGES[this.stageIndex].boss ? 'boss' : 'mid';
+        recordReached({ stage: this.stageIndex, boss, card });
+    }
+
+    private practiceOutcome: PracticeOutcome | null = null;
+    private endPractice(captured: boolean, reason: PracticeOutcome['reason']): void {
+        const p = this.practice;
+        if (!p || this.practiceOutcome) return;
+        this.practiceOutcome = { stage: p.stage, boss: p.boss, card: p.card, captured, reason };
+        this.phase = 'done';
+        this.beginEnding(captured);
     }
 
     private defeatBoss(isMainBoss: boolean, captured: boolean): void {
@@ -610,6 +645,10 @@ export class GameSession {
     private finishRun(cleared: boolean): void {
         this.running = false;
         cancelAnimationFrame(this.raf);
+        if (this.practice) {
+            if (this.practiceOutcome) this.practice.onEnd(this.practiceOutcome);
+            return;
+        }
         const lp = this.world.players[this.localSlot] ?? this.world.players[0];
         const joined = this.world.players.filter((p) => p.joined);
         const result: RunResult = {
@@ -795,6 +834,7 @@ export class GameSession {
     // ── hud ──
 
     private updateHiScore(): void {
+        if (this.practice) return;
         const lp = this.world.players[this.localSlot];
         if (lp && lp.score > this.hiScore) this.hiScore = lp.score;
     }

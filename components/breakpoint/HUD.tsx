@@ -1,5 +1,6 @@
 'use client';
 
+import { Crosshair } from './Crosshair';
 import { useEffect, useRef } from 'react';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import type { MatchSnapshot, Actor } from '@/lib/breakpoint/types';
@@ -88,10 +89,7 @@ export function HUD({ snap }: { snap: MatchSnapshot }) {
 
       {/* ── Crosshair ── */}
       {local.alive && (
-        <div className="bp-crosshair" style={{ ['--spread' as string]: `${4 + local.recoil * 14}px` }}>
-          <span className="bp-ch bp-ch-t" /><span className="bp-ch bp-ch-b" />
-          <span className="bp-ch bp-ch-l" /><span className="bp-ch bp-ch-r" />
-        </div>
+        <Crosshair spread={local.recoil * 14} />
       )}
 
       {/* ── Bottom: abilities / health / ammo ── */}

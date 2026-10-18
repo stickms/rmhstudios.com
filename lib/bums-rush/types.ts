@@ -13,6 +13,8 @@
 
 // ─── Geometry ───────────────────────────────────────────────────────────────
 
+import type { PartyModifiers } from './modifiers';
+
 export interface Vec2 {
   x: number;
   y: number;
@@ -360,6 +362,8 @@ export interface RoomView {
   private: boolean;
   hostClientId: string;
   levelId: string | null;
+  /** Party modifiers; only ever set on unranked rooms. */
+  modifiers?: PartyModifiers;
   phase: 'lobby' | 'playing' | 'results';
   seats: SeatView[];
   showdown?: {
@@ -374,6 +378,8 @@ export interface RoomView {
 // ─── Results (§9.8, §10) ────────────────────────────────────────────────────
 
 export interface LevelResult {
+  /** Played with party modifiers: shown on the results card, never recorded. */
+  modded?: boolean;
   levelId: string;
   playerCount: number;
   durationMs: number;

@@ -26,6 +26,7 @@ import { useCloudSave } from '@/hooks/useCloudSave';
 import { getCharacter, isCharacterId, type CharacterId } from '@/lib/void-breaker/characters';
 import { getWeapon, isWeaponId, type WeaponId } from '@/lib/void-breaker/weapons';
 import { canvasGlowEnabled } from '@/lib/render/canvas2d-fx';
+import { markBossRushUnlocked } from '@/lib/void-breaker/bossRush';
 import { combineModifiers, isModifierId, type ModifierId } from '@/lib/void-breaker/modifiers';
 import { parseHandicap } from '@/lib/ranked/handicap';
 import { VoidBreakerUI } from './VoidBreakerUI';
@@ -488,7 +489,7 @@ export function VoidBreakerGame() {
   }, [hud.waveBreak, hud.wave]);
 
   // ── Actions ────────────────────────────────────────────────────────────────
-  const handleStart = useCallback(() => {
+  const startRun = useCallback((rush: boolean) => {
     sfxRef.current?.unlock();
     sfxRef.current?.play('uiClick');
     if (gameRef.current) {
@@ -501,7 +502,9 @@ export function VoidBreakerGame() {
       gameRef.current.runModifiers = hc
         ? { ...mods.effects, maxHpDelta: mods.effects.maxHpDelta + hc.amount }
         : mods.effects;
-      runCoreMultRef.current = hc ? 0 : mods.coreMult;
+      // Boss Rush earns no cores (it skips the wave ramp the core payout assumes).
+      runCoreMultRef.current = hc || rush ? 0 : mods.coreMult;
+      gameRef.current.bossRush = rush;
     }
     gameRef.current?.startGame();
     setRunStats(null);
@@ -510,11 +513,14 @@ export function VoidBreakerGame() {
     showPauseMenuRef.current = false;
     playMusic();
   }, [playMusic, meta, characterId, activeMods]);
+  const handleStart = useCallback(() => startRun(false), [startRun]);
+  const handleStartBossRush = useCallback(() => startRun(true), [startRun]);
 
   /** Save current game state and go to menu. */
   const handleSaveAndQuit = useCallback(() => {
     const game = gameRef.current;
-    if (game) {
+    // A Boss Rush run is not resumable; quitting simply abandons it.
+    if (game && !game.bossRush) {
       const stateBlob = game.serializeGameState();
       saveGame(stateBlob as Record<string, unknown>);
     }
@@ -534,6 +540,7 @@ export function VoidBreakerGame() {
   /** Award Void Cores once per game over. */
   useEffect(() => {
     if (uiState !== 'gameOver' || !runStats) { return; }
+    if (runStats.victory && !runStats.bossRush) markBossRushUnlocked();
     const earned = Math.floor(awardCores(runStats.score, runStats.bossesKilled, runStats.wave) * runCoreMultRef.current);
     setEarnedCores(earned);
     if (earned > 0) {
@@ -687,6 +694,7 @@ export function VoidBreakerGame() {
     if (!save || !save.stateJson) return;
     const game = gameRef.current;
     if (!game) return;
+    game.bossRush = false;
     game.metaBonuses = metaBonuses(meta);
     game.character = getCharacter(characterId);
     game.weapon = getWeapon(weaponId);
@@ -1282,6 +1290,7 @@ export function VoidBreakerGame() {
         uiState={uiState}
         runStats={runStats}
         onStartGame={handleStart}
+        onStartBossRush={handleStartBossRush}
         onGoToMenu={() => { setUiState('menu'); fadeMusic(true); }}
         muted={muted}
         onToggleMute={toggleMute}

@@ -1,5 +1,6 @@
 'use client';
 
+import { LiveryEditorButton } from './LiveryEditor';
 import { useCallback, useEffect, useState } from 'react';
 import { parseScoreMoment, ResultMomentSlot, useScoreMoment } from '@/components/games/result-moment-slot';
 import { GHOST_MODES, type GhostMode, type GhostTrace } from '@/lib/neon-driftway/ghost';
@@ -243,6 +244,7 @@ export function NeonDriftwayUI({
                   <Play className="w-5 h-5 mr-2" />
                   {t("play", { defaultValue: "Play" })}
                 </Button>
+                <LiveryEditorButton />
                 {onGoToMultiplayer && (
                   <Button
                     onClick={onGoToMultiplayer}

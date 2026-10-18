@@ -455,6 +455,8 @@ model User {
   // P23 creative: F12 studio challenge entries and votes
   studioChallengeEntries     StudioChallengeEntry[]
   studioChallengeVotes       StudioChallengeVote[]
+  // P25 action: R5 Neon Driftway livery
+  ndwLivery                  NdwLivery?
   // P19 canvas: Z5 pixel canvas, X3 context notes
   canvasPlacements           CanvasPlacement[]
   canvasCooldowns            CanvasCooldown[]
@@ -12374,4 +12376,17 @@ model ConnectionsPlay {
   @@unique([gridId, userId])
   @@index([userId])
   @@map("connections_play")
+}
+
+// ── P25 action: R5 ──
+// One saved Neon Driftway livery per member, stored as its shareable code
+// (`ND1-base-accent1-accent2-stripe`); the format is validated on write.
+model NdwLivery {
+  userId    String   @id
+  code      String   @db.VarChar(40)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ndw_livery")
 }

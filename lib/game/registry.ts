@@ -80,6 +80,19 @@ export const GAME_SCORE_RULES: readonly GameScoreRules[] = [
     maxProgress: 500,
   },
   {
+    // Boss Rush's own board (generic adapter, GameStat row keyed by this id) so
+    // a rush run can never touch the main Void Breaker board. Not a catalog game.
+    id: 'void-breaker-boss-rush',
+    label: 'Void Breaker Boss Rush',
+    unlisted: true,
+    maxScore: 10_000_000,
+    maxScorePerSecond: 5_000,
+    minDurationMs: 20_000,
+    direction: 'higher-is-better',
+    progressLabel: 'Bosses',
+    maxProgress: 8,
+  },
+  {
     id: 'neon-driftway',
     label: 'Neon Driftway',
     maxScore: 5_000_000,
