@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 327 routes. 189 render inside the standard site shell (sidebar, nav, context rail); 138 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 332 routes. 193 render inside the standard site shell (sidebar, nav, context rail); 139 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -66,6 +66,9 @@ Standard pages, rendered inside the sidebar shell.
 | `/canvas` | Community canvas | public | `app/routes/_site/canvas.tsx` |
 | `/changelog` | Changelog | public | `app/routes/_site/changelog.tsx` |
 | `/communities` | Communities | public | `app/routes/_site/communities.tsx` |
+| `/connections` | Connections Grids | public | `app/routes/_site/connections.index.tsx` |
+| `/connections/new` | Make a Connections Grid | public | `app/routes/_site/connections.new.tsx` |
+| `/connections/u/:id` | Connections Grid | public | `app/routes/_site/connections.u.$id.tsx` |
 | `/create` | Create | public | `app/routes/_site/create/index.tsx` |
 | `/create/builds` | User Builds | public | `app/routes/_site/create/builds.tsx` |
 | `/create/earnings` | Earnings | public | `app/routes/_site/create/earnings.tsx` |
@@ -142,6 +145,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/rmh-datacenter/network` | — | public | `app/routes/_site/rmh-datacenter/network.tsx` |
 | `/rmh-datacenter/platform` | — | public | `app/routes/_site/rmh-datacenter/platform.tsx` |
 | `/rmh-datacenter/power` | — | public | `app/routes/_site/rmh-datacenter/power.tsx` |
+| `/rmhbox-packs` | RMHBox Prompt Packs | public | `app/routes/_site/rmhbox-packs.tsx` |
 | `/rmhladder` | RMH Ladder \| Verified Early-Career Jobs | public | `app/routes/_site/rmhladder/index.tsx` |
 | `/rmhladder/alerts` | — | sign-in | `app/routes/_site/rmhladder/alerts.tsx` |
 | `/rmhladder/companies` | — | admin | `app/routes/_site/rmhladder/companies.tsx` |
@@ -225,6 +229,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/blog/rss.xml` | RMH Studios — Blog | public | `app/routes/blog.rss[.]xml.ts` |
 | `/breaches` | Breaches | public | `app/routes/breaches.tsx` |
 | `/bums-rush` | — | public | `app/routes/bums-rush.tsx` |
+| `/controller/:code` | Phone Controller | public | `app/routes/controller.$code.tsx` |
 | `/cookgame` | — | public | `app/routes/cookgame.tsx` |
 | `/cookies` | Cookie Policy | public | `app/routes/cookies.tsx` |
 | `/copyright` | Copyright | public | `app/routes/copyright.tsx` |
