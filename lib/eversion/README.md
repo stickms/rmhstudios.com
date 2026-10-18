@@ -77,7 +77,7 @@ ports); `testing/e2e/eversion-edge.mjs` has one scripted check per row.
 | Resize / rotation                | `PagePort.onResize`: one `resize` per frame, only if the viewport changed.                                                                                  |
 | Context lost / fatal after start | `eversion-cover` off, overlay `--fading` (200 ms), run ends `context-lost`. Before start it is a clean `host-error` fallback.                               |
 | Hidden tab                       | `host.ts` posts `visibility`; the core pauses its loop (`debug` op `loop` shows it).                                                                        |
-| Input during POP                 | Ignored from `unwrap-done` on (no `fast-forward` is posted).                                                                                                |
+| Input during the reveal fade     | Ignored from `unwrap-done` on (no `fast-forward` is posted).                                                                                                |
 
 ### Host readiness is eligibility, not a wait
 
@@ -116,11 +116,12 @@ Now the controller owns a host state (`idle` → `initialising` → `ready`, or
   the render host, which `pagehide` disposed.
 - `FallbackReason` gained `busy` (a run or its teardown is still active) and
   `traversal`.
-- **Orb crossfade.** The runner calls `onPopFade` on the render side's `pop-fade`
-  message (the glass has landed on the orb and starts its `POP_FADE_MS` exit); the hub
-  sets `data-orb-popped`, and radial.css fades the real orb in over the same 208 ms,
-  above the canvas, so the two overlap. `eversion-css.test.ts` ties the duration to
-  `POP_FADE_MS`.
+- **The orb returns through the hub's ordinary closed-state fade.** The effect ends
+  with UNWRAP, so no globe lands on the orb and there is nothing to crossfade with:
+  the orb stays hidden for the whole run (`data-phase='everting'`) and fades back in
+  with the base `opacity 0.34s ease` of `.radial-hub__orb` when the hub goes `closed`
+  at `done` (the same fade an aborted run already got). `eversion-css.test.ts` pins that
+  no `closed`/`everting` rule overrides it.
 
 ### One renderer per host
 
@@ -130,38 +131,36 @@ on the probe, disposed the page canvas's renderer, and the run "succeeded" while
 drawing to a 1×1 canvas nobody sees. `host.ts` now answers a probe `init` that
 arrives after the page canvas's with a `ready` instead of forwarding it.
 
-## POP, the empty glass globe
+## The ending: the run ends with UNWRAP
 
-After UNWRAP the page is revealed (`pageAlpha` 1 → 0 over `REVEAL_MS`) and POP starts at the same instant. The
-flat page has no globe left in it, so POP draws a new one: the same mesh, **empty** (no page texel), as glass.
+The animation is WRAP, EVERSION, UNWRAP. There is no stage after UNWRAP (a POP stage, in which an empty glass
+globe condensed, shrank onto the hub's orb and faded, was removed at the owner's request on 2026-10-18: the page
+had already unwrapped, so summoning a globe only to dismiss it read as goofy).
 
-| Channel   | What                                                                                                                                      |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `glass`   | 0 → 1 over the first 40% of POP (`POP_MS` = 520): drives the wrap wave (the globe curls out of the vanishing page) and the glass fill/rim |
-| `pop`     | 0 → 1 over the first 60%: the shrink onto the orb (`radius`/`centre` are the effective values)                                            |
-| `popFade` | 0 → 1 over the last 40%: opacity is `glass · (1 − popFade)`; the globe swells by up to 18% (`4f(1−f)`) as it goes                         |
+When UNWRAP finishes the AFTER page is flat and full-screen, exactly the live page. The core posts `unwrap-done`,
+the controller answers `reveal`, the canvas fades onto the live page (`pageAlpha` 1 → 0 over `REVEAL_MS` = 180,
+one quintic; the two are the same pixels, so it is the handoff, not an effect) and `done` follows. The event order
+is `unwrap-done`, `reveal`, `done` on every path: worker and in-thread, fast-forward, abort, hidden-tab settle and
+the watchdog. `PLAN_MS.total` is 4780 (UNWRAP ends at 4600; `PLAN_MS.reveal` is `[4600, 4780]`).
 
-Every channel starts and ends at rest (quintic), so the hand-over from UNWRAP is C² and the last frame is exactly
-the orb's size and centre, fully transparent. The vertex shader's camera follows the globe on the `pop` channel (`u_pop`:
-the very channel the centre travels on, so camera and globe never shear; a camera over the viewport centre would
-stretch a globe in the corner into an ellipse). The glass mixes are quintic, like the channels.
+Every channel is at rest (value, velocity and acceleration) when UNWRAP ends, so the last frame is not a jump:
+`unwrap` ends on a quintic into 0; the others finished earlier (wrap and radius/centre at 700, the eversion at
+3900, spin and tilt at 4300). The one exception is a spin landing after a long gate wait, which is speed-capped
+and may still be settling at UNWRAP's end, under a mesh that is flat at `unwrap` 0 and cannot show it.
+`unwrap-end.test.ts` holds this.
 
-**`pop-fade` (FromWorker).** `{ type: 'pop-fade', t, fadeMs }` is sent once per run, after `pop` and before `done`, from
-the frame that draws the first faded pixel (`popFade > 0`, `POP_FADE_FROM` = 60% into POP); `fadeMs` (`POP_FADE_MS`) is
-how long the glass then takes to vanish. It is emitted by the core, so it is identical in worker and in-thread modes, and
-a run settled while the tab is hidden sends it just before `done`. The page crossfades the real orb in over `fadeMs`
-under the dissolving glass instead of cutting it in after `done`. `testing/e2e/eversion-pop.mjs` renders
-the frames (and the Lambert / stereographic mid-morph) to PNGs.
+The hub orb is hidden during the run and returns through the hub's ordinary closed-state fade (see above).
 
 The azimuthal projections' stretched wedge near the back point renders as glass, masked ANALYTICALLY: a quintic cap on
 the angular distance of the fragment's sphere point from the projection's back point (`WEDGE_CAP_FROM`..`WEDGE_CAP_TO`
 mesh cells, `u_meshCell`), taken in the frame the lookup is made in (body for BEFORE, `M_after * body` for AFTER) and
 blended by a smooth `dot(normal, toEye)` ramp, plus a smooth wrong-way-face term near either end of the eversion. It
 never reads triangle edges, `dFdx` (2x2 blocks) or `gl_FrontFacing`, so its edge is a circle, not a saw. A masked
-fragment is a faint fill and a Fresnel rim like POP's glass, sent to the back of the depth buffer so it can never hide
+fragment is a faint fill and a Fresnel rim, sent to the back of the depth buffer so it can never hide
 real page (only the azimuthal program, `surfaceMasked`, writes `gl_FragDepth`; the others keep early-z). The BEFORE/AFTER
 side blends by flatness instead of switching. The mask exists only once the morph has left the flat page, so the flat
-endpoints stay pixel-exact. `testing/e2e/eversion-pop.mjs` checks the mask itself through the shader's mask view.
+endpoints stay pixel-exact. `testing/e2e/eversion-wedge.mjs` checks the mask itself through the shader's mask view, and that the last
+UNWRAP frame is pixel-identical to a flat page.
 
 ## Render-side robustness
 
@@ -170,15 +169,15 @@ endpoints stay pixel-exact. `testing/e2e/eversion-pop.mjs` checks the mask itsel
   turns that host into an in-thread one on the untouched canvas and demotes the session; nothing is lost and no
   navigation is spent on the failure.
 - **Hidden tab.** The host posts `visibility` before every `init` and `start`; `init` resets the core's flag. An
-  `abort` or `fast-forward` while hidden is run out synchronously (no frames drawn): `unwrap-done`, `reveal`, `pop`,
-  `pop-fade`, `done`, in order - also when the tab hides AFTER the abort/fast-forward is already in flight. A run that
+  `abort` or `fast-forward` while hidden is run out synchronously (no frames drawn): `unwrap-done`, `reveal`,
+  `done`, in order - also when the tab hides AFTER the abort/fast-forward is already in flight. A run that
   merely stays hidden for `HIDDEN_SETTLE_GRACE_MS` (1 s) is settled the same way, so it does not replay ~5 s on return.
   `fail()` releases the page textures; `resize` keeps `plan.viewport` current.
 - **Worker construction.** A synchronous throw from `new Worker` demotes to the in-thread host. The probe timeout starts
   when the render side is first needed (not at spawn); a `probe-result: false` that arrives after it demotes the next
   host; bitmaps held behind an unanswered probe are closed on dispose.
 - **Late textures** after a run has ended are closed, not kept resident. A `resize` between `prime` and `start` rebuilds
-  the timeline at `start`; `resize` carries the orb through to `Timeline.resize`.
+  the timeline at `start`.
 - **Clock.** `start` carries `origin` (`performance.timeOrigin`); the worker converts deadlines with the two origins,
   not with the arrival time of the message.
 - `renderer.dispose()` calls `WEBGL_lose_context` (browsers cap live contexts); the cage draw is skipped at the flat

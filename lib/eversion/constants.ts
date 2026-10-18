@@ -30,20 +30,11 @@
 
 import type { Tier } from './types';
 
-/* ── The five stages (spec §1 Q21, §12) ───────────────────────────────────── */
+/* ── The stages: WRAP, EVERSION, UNWRAP; the run ends with UNWRAP (spec §1 Q21, §12) ── */
 
 export const WRAP_MS = 700;
 export const EVERT_MS = 3200;
 export const UNWRAP_MS = 700;
-/**
- * POP: the empty glass globe condenses, shrinks into the orb (a 650 px move in the hub's worst case) and pops.
- * 300 ms made the shrink a ~110 px/frame streak; 520 ms keeps the peak under ~65 px/frame at 60 Hz.
- */
-export const POP_MS = 520;
-/** The glass starts its exit (`popFade` leaves 0) this far into POP: the globe is on the orb by then. */
-export const POP_FADE_FROM = 0.6;
-/** How long the glass takes to fade out, ms: the page's window to crossfade the real orb in (`pop-fade` message). */
-export const POP_FADE_MS = POP_MS * (1 - POP_FADE_FROM);
 
 /** How far EVERSION starts before WRAP ends, so the boundary has no dead frame. */
 export const EVERT_OVERLAP_MS = 100;
@@ -253,7 +244,7 @@ export const SPIN_LAND_MAX_DEG_PER_S = 240;
 /**
  * Longest a post-gate spin landing can take (ms), from the speed cap and the
  * largest travel (measured worst case over 30 000 phases/gate times: 2950 ms); it
- * overlaps UNWRAP and POP and may outlast `done`. Asserted by the timeline tests.
+ * overlaps UNWRAP and the reveal and may outlast `done`. Asserted by the timeline tests.
  */
 export const SPIN_LAND_MAX_MS = 3200;
 
@@ -271,7 +262,7 @@ export const SIDE_TINT = 0.04;
 /** Fresnel rim: `pow(1 − |n·v|, RIM_POWER) · RIM_STRENGTH` in `--cage-major`. */
 export const RIM_POWER = 3;
 export const RIM_STRENGTH = 0.35;
-/** POP's empty glass globe: body opacity, and the extra opacity the Fresnel rim adds at the silhouette. */
+/** A masked wedge's glass: body opacity, and the extra opacity the Fresnel rim adds at the silhouette. */
 export const GLASS_FILL = 0.2;
 export const GLASS_RIM_ALPHA = 0.7;
 /** Cage alpha at the start and end of EVERSION, so the pages lead (spec §10.3). */
@@ -334,14 +325,14 @@ export const DROPPED_FRAME_FACTOR = 1.5;
  * disagree with them. The spec's table lists `evert` as 600–3900 and `unwrap`
  * as 3800–4600: each stage's window is its planned duration PLUS its overlap
  * with the stage before it, which is how WRAP 700 + EVERSION 3200 + UNWRAP 700
- * + POP 520 reaches the table's 5120.
+ * reaches the table's 4600 (UNWRAP's end); the reveal fade adds `REVEAL_MS`.
  */
 export const PLAN_MS = (() => {
   const evertStart = WRAP_MS - EVERT_OVERLAP_MS;
   const evertEnd = evertStart + EVERT_MS + EVERT_OVERLAP_MS;
   const unwrapStart = evertEnd - UNWRAP_OVERLAP_MS;
   const unwrapEnd = unwrapStart + UNWRAP_MS + UNWRAP_OVERLAP_MS;
-  const popEnd = unwrapEnd + POP_MS;
+  const revealEnd = unwrapEnd + REVEAL_MS;
   return {
     wrap: [0, WRAP_MS],
     radius: [0, WRAP_MS],
@@ -355,8 +346,9 @@ export const PLAN_MS = (() => {
     /** …and is back to 0° at this time. */
     tiltEnd: 4300,
     unwrap: [unwrapStart, unwrapEnd],
-    pop: [unwrapEnd, popEnd],
-    total: popEnd,
+    /** The canvas fades onto the identical live page, then `done`. The animation itself ended at `unwrap[1]`. */
+    reveal: [unwrapEnd, revealEnd],
+    total: revealEnd,
   } as const;
 })();
 

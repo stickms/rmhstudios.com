@@ -164,8 +164,8 @@ const FLAT_SNAP = 5e-4;
  *
  * The cap is `1` within WEDGE_CAP_FROM mesh cells of the back point and `0` beyond WEDGE_CAP_TO (`u_meshCell` is the
  * tier's cell, radians). A masked fragment shows the identity page while the morph is young (so the exact flat
- * endpoint is untouched, WEDGE_EARLY_*), then fades to GLASS: no page texel, a faint fill and a rim like POP's
- * glass, and pushed to the back of the depth buffer (when it is not in front of anything the glass is what is seen;
+ * endpoint is untouched, WEDGE_EARLY_*), then fades to GLASS: no page texel, a faint fill and a Fresnel rim,
+ * and pushed to the back of the depth buffer (when it is not in front of anything the glass is what is seen;
  * in front of real page the page wins, so a stretched triangle can never hide it).
  */
 const WEDGE_CAP_FROM = 2.0;
@@ -482,14 +482,12 @@ const VERTEX = `${GLSL_HEADER}
 layout(location = 0) in vec2 a_domain;
 uniform float u_wrap;
 uniform float u_unwrap;
-uniform float u_glass;
-uniform float u_pop;
 uniform float u_spin;
 uniform float u_tilt;
 uniform float u_radius;
 uniform vec2 u_centre;
 uniform vec2 u_viewport;
-uniform vec2 u_ripple;
+uniform float u_ripple;
 uniform mat3 u_mAfter;
 uniform sampler2D u_lut;
 out vec2 v_domain;
@@ -540,10 +538,9 @@ void main() {
   /* Ripples radiate from the camera-facing point (+z) in VIEW space, as a radial push. */
   vec3 vdir = v / max(length(v), 1e-4);
   float dist = acos(clamp(vdir.z, -1.0, 1.0));
-  float r0 = rippleAt(u_ripple.x, dist);
-  float r1 = rippleAt(u_ripple.y, dist);
-  v += vdir * (r0 + r1);
-  v_ripple = clamp(max(abs(r0), abs(r1)) / RIPPLE_AMPLITUDE, 0.0, 1.0);
+  float r0 = rippleAt(u_ripple, dist);
+  v += vdir * r0;
+  v_ripple = clamp(abs(r0) / RIPPLE_AMPLITUDE, 0.0, 1.0);
 
   vec3 sphere = vec3(u_centre - 0.5 * u_viewport, 0.0) + v * u_radius;
 
@@ -579,8 +576,7 @@ void main() {
   vec3 flatPos = vec3((uv - 0.5) * u_viewport, 0.0);
 
   /* The wrap wave: the centre curls onto the globe first, the edges follow (morph.ts). */
-  /* POP's empty glass globe curls out of the vanished page with the same wave (u_glass is 0 before POP). */
-  float s = max(min(u_wrap, u_unwrap), u_glass);
+  float s = min(u_wrap, u_unwrap);
   float d = acos(clamp(pl.z, -1.0, 1.0)) / PI;
   float w = smootherstep01(s * (1.0 + WRAP_WAVE) - WRAP_WAVE * d);
   vec3 pos = flatPos + w * (sphere - flatPos);
@@ -594,13 +590,7 @@ void main() {
   /* Depth spans +-2 radii (the eversion stays inside 1.35 r) rather than +-camDist: ~3x finer steps,
      which keeps the facets on either side of a silhouette edge from tying in the depth test. */
   float ndcZ = clamp(-pos.z / (2.0 * max(u_radius, 1.0)), -1.0, 1.0) * 0.9;
-  /* POP's empty glass globe travels to the orb in the corner: seen from a camera that stays over the viewport
-     centre it would be stretched into an ellipse by the perspective of its own offset. Its camera follows it
-     (u_pop is 0 for every other stage, which leaves this the viewport-centre camera above, bit for bit; it is the very
-     channel the centre travels on, so camera and globe move together with no shear). */
-  vec2 eye = (u_centre - 0.5 * u_viewport) * u_pop;
-  vec2 pp = pos.xy + eye * (wc - 1.0);
-  gl_Position = vec4(pp.x * 2.0 / u_viewport.x, -pp.y * 2.0 / u_viewport.y, ndcZ * wc, wc);
+  gl_Position = vec4(pos.x * 2.0 / u_viewport.x, -pos.y * 2.0 / u_viewport.y, ndcZ * wc, wc);
   v_domain = a_domain;
   v_morph = w;
   v_pos = pos;
@@ -633,11 +623,7 @@ uniform vec2 u_viewport;
 uniform float u_unwrap;
 uniform float u_afterMix;
 uniform float u_pageAlpha;
-uniform float u_glass;
-uniform float u_pop;
-uniform float u_popFade;
 uniform float u_radius;
-uniform vec2 u_centre;
 uniform vec4 u_colVeil;
 uniform vec4 u_colAccent;
 uniform vec4 u_colCageMajor;
@@ -652,10 +638,10 @@ void main() {
   vec3 mb = u_mAfter * body;
 
   /* Which way the surface faces the eye, as a continuous number: the winding normal against the direction to the
-     eye (the camera follows the globe in POP, exactly as the vertex shader's). It drives the mask, which therefore
+     eye (the camera sits on +z over the viewport centre, as the vertex shader's). It drives the mask, which therefore
      has no per-triangle edge; the page SIDE below is still the rasteriser's, an occlusion edge at the silhouette. */
   float camDist = 2.0 * GLOBE_PERSP * max(u_radius, 1.0);
-  vec3 toEye = normalize(vec3((u_centre - 0.5 * u_viewport) * u_pop, camDist) - v_pos);
+  vec3 toEye = normalize(vec3(0.0, 0.0, camDist) - v_pos);
   float facing = dot(normalize(v_nview), toEye);
   float frontness = quintic5(0.5 + 0.5 * facing / FACING_BAND);
 
@@ -735,7 +721,7 @@ void main() {
   float a = mix(1.0, u_pageAlpha, onPage);
 
   /* Glass: a faint fill and a bright Fresnel rim, present only where the wrap wave has lifted the surface off the
-     flat page, so it condenses instead of appearing. POP's whole globe is this; so is a masked wedge. */
+     flat page, so it condenses instead of appearing. A masked wedge is this. */
   float lift = quintic5(v_morph * 2.0);
   float glassRim = clamp(rim, 0.0, 1.0) * lift;
   float glassA = clamp(GLASS_FILL * lift + glassRim * GLASS_RIM_ALPHA, 0.0, 1.0);
@@ -744,12 +730,6 @@ void main() {
   /* A masked wedge: the glass over the veil it sits against (the clear colour), in place of the page. */
   rgb = mix(rgb, mix(u_colVeil.rgb, glassRgb, glassA), wedgeG);
 
-  /* POP: the same sphere, EMPTY. The page is gone by the time the glass is half formed, so the globe is never
-     seen with text inside it; it fades as a whole (popFade) once it has landed on the orb. Every term is
-     continuous (quintic) in u_glass. */
-  float toGlass = quintic5(u_glass * 2.0);
-  rgb = mix(rgb, glassRgb, toGlass);
-  a = mix(a, glassA, toGlass) * (1.0 - u_popFade);
   outColor = vec4(rgb * a, a);
 #ifdef MASK_VIEW
   /* The e2e's view of the mask itself: red is the wedge amount, green marks a surface fragment. It never pushes
@@ -787,7 +767,6 @@ uniform mat3 u_mAfter;
 uniform float u_unwrap;
 uniform float u_azimuthal;
 uniform float u_cageAlpha;
-uniform float u_popFade;
 uniform float u_cageWidth;
 uniform float u_pixelRatio;
 uniform vec4 u_colCageMinor;
@@ -825,7 +804,7 @@ void main() {
   vec4 col = wm > wp ? merCol : parCol;
   col = mix(col, vec4(u_colCageRipple.rgb, max(col.a, u_colCageRipple.a)), v_ripple);
 
-  float fade = (1.0 - u_popFade) * (1.0 - wedgeGlass(wedge()));
+  float fade = 1.0 - wedgeGlass(wedge());
   float a = max(wm, wp) * u_cageAlpha * v_morph * fade;
   a = clamp(a + v_ripple * max(mer, par) * u_colCageRipple.a * u_cageAlpha * v_morph * fade, 0.0, 1.0);
   outColor = vec4(col.rgb * a, a);

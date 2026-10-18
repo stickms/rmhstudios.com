@@ -35,7 +35,6 @@ import type {
   FallbackReason,
   GlobeStartState,
   NavTransition,
-  OrbRect,
   ProjectionId,
   Rgba,
   ThemeColours,
@@ -205,8 +204,6 @@ export interface EversionControllerDeps {
     'awaitBefore' | 'isEligible' | 'ineligibleReason' | 'getCapture'
   >;
   translate: TranslateFn;
-  /** The orb's on-screen rect, for the POP target; defaults to measuring `.radial-hub__orb`. */
-  getOrbRect?: () => OrbRect | null;
 }
 
 const IDLE_DELAY_MS = 700;
@@ -227,7 +224,7 @@ function timeoutPromise(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function createPagePort(getOrb?: () => OrbRect | null): PagePort {
+function createPagePort(): PagePort {
   return {
     onResize(cb) {
       // `resize` fires many times per frame while a window is dragged, and
@@ -257,17 +254,6 @@ function createPagePort(getOrb?: () => OrbRect | null): PagePort {
     viewport: viewportNow,
     tier: detectTier,
     colours: resolveThemeColours,
-    orbRect(viewport) {
-      const custom = getOrb?.();
-      if (custom) return custom;
-      const orb = document.querySelector('.radial-hub__orb');
-      if (orb) {
-        const r = orb.getBoundingClientRect();
-        if (r.width > 0)
-          return { cx: r.left + r.width / 2, cy: r.top + r.height / 2, radius: r.width / 2 };
-      }
-      return { cx: viewport.w - 36, cy: 36, radius: 20 };
-    },
     setCover(on) {
       document.documentElement.classList.toggle('eversion-cover', on);
     },
@@ -517,7 +503,7 @@ export interface EversionControllerHandle extends EversionController {
     node: EversionNode,
     state: GlobeStartState,
     entry?: EntryPoint,
-    options?: Pick<RunOptions, 'onCommit' | 'onPopFade'>,
+    options?: Pick<RunOptions, 'onCommit'>,
   ): Promise<EversionOutcome>;
   /** Hurry the run in flight: back/forward (T33). */
   abort(): void;
@@ -593,7 +579,7 @@ export function createEversionController(
     return 'host-not-ready';
   };
 
-  const page = createPagePort(deps.getOrbRect);
+  const page = createPagePort();
   const runner = new EversionRunner({
     host: hostPort,
     overlay: storeOverlay,

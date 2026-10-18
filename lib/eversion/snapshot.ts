@@ -14,8 +14,8 @@ import type { TimelineSnapshot } from './types';
 
 /**
  * A snapshot at rest: the round, un-swollen globe before anything has moved —
- * `wrap` 0 (flat page), `unwrap` 1, `evert` 0, nothing popped, the canvas
- * opaque, no ripples. Geometry (`radius`, `centre*`) is 0 until a timeline
+ * `wrap` 0 (flat page), `unwrap` 1, `evert` 0, the canvas
+ * opaque, no ripple. Geometry (`radius`, `centre*`) is 0 until a timeline
  * writes the hub's pose into it.
  */
 export function createSnapshot(): TimelineSnapshot {
@@ -33,11 +33,7 @@ export function createSnapshot(): TimelineSnapshot {
     hubFade: 1,
     afterMix: 0,
     pageAlpha: 1,
-    pop: 0,
-    glass: 0,
-    popFade: 0,
-    ripple0Age: -1,
-    ripple1Age: -1,
+    rippleAge: -1,
     bgAlpha: 1,
   };
 }
@@ -60,11 +56,7 @@ export function copySnapshot(
   dst.hubFade = src.hubFade;
   dst.afterMix = src.afterMix;
   dst.pageAlpha = src.pageAlpha;
-  dst.pop = src.pop;
-  dst.glass = src.glass;
-  dst.popFade = src.popFade;
-  dst.ripple0Age = src.ripple0Age;
-  dst.ripple1Age = src.ripple1Age;
+  dst.rippleAge = src.rippleAge;
   dst.bgAlpha = src.bgAlpha;
   return dst;
 }

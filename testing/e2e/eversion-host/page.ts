@@ -119,7 +119,6 @@ const api = {
         centre: [VIEW.w / 2, VIEW.h / 2],
         radius: 70,
       },
-      orb: { cx: 20, cy: 20, radius: 10 },
       colours,
       lut: identityLut(),
     });

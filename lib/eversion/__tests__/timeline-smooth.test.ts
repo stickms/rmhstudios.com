@@ -2,7 +2,7 @@
  * The review-R1 fixes to the timeline, each pinned by a number: the projected
  * extent never leaves the viewport (spec §11.1 test 10, amended), the tilt does
  * not swing out on a hub throw, the spin starts at EXACTLY the inherited velocity,
- * the post-gate landing never whirls, and a resize can move the orb.
+ * the post-gate landing never whirls, and a resize re-plans the globe.
  *
  * Kept apart from `timeline.test.ts` (the 10 000-scenario property suite) so the
  * two can change independently.
@@ -45,7 +45,6 @@ function config(
       radius: 150,
       ...globe,
     },
-    orb: over.orb ?? { cx: 60, cy: 660, radius: 24 },
     thetaAlign: over.thetaAlign,
   };
 }
@@ -198,8 +197,7 @@ describe('the radius fit (spec §11.1 test 10, amended)', () => {
           if (i === 2 && t > 1500 && t < 1510) h.tl.fastForward(h.wall.now);
           const s = h.tl.tick(h.wall.now);
           // Every 60 ms of timeline, from the moment the eversion has started to the end of UNWRAP
-          // (POP then folds the radius toward the orb, which only ever shrinks it).
-          if (t < 600 || s.pop > 0 || t - sampledAt < 60) return;
+          if (t < 600 || s.stage === 'reveal' || t - sampledAt < 60) return;
           sampledAt = t;
           const ext = projectedExtent(s.evert, s.spin, s.tilt, 64, 32);
           worst = Math.max(worst, (s.radius * ext) / min);
@@ -475,15 +473,15 @@ describe('post-gate spin landing (finding 4)', () => {
   });
 });
 
-/* ── 5. Resize carries the orb ───────────────────────────────────────────── */
+/* ── 5. Resize re-plans the globe ───────────────────────────────────────── */
 
-describe('resize with an orb (finding 5)', () => {
-  it('POP aims at the NEW orb after a resize, and the radius/centre stay continuous', () => {
-    const h = run(config({}, { orb: { cx: 60, cy: 660, radius: 24 } }));
+describe('resize (finding 5)', () => {
+  it('re-plans the radius/centre without a jump, and the run still ends on the new viewport', () => {
+    const h = run(config({}));
     h.tl.afterReady(h.wall.now);
     h.to(2000, 5);
     const before = h.tl.tick(h.wall.now);
-    h.tl.resize(h.wall.now, { w: 900, h: 600, dpr: 1 }, { cx: 800, cy: 40, radius: 30 });
+    h.tl.resize(h.wall.now, { w: 900, h: 600, dpr: 1 });
     const after = h.tl.tick(h.wall.now);
     expect(Math.abs(after.centreX - before.centreX)).toBeLessThan(1e-9);
     expect(Math.abs(after.radius - before.radius)).toBeLessThan(1e-9);
@@ -494,57 +492,8 @@ describe('resize with an orb (finding 5)', () => {
     });
     const end = h.tl.tick(h.wall.now);
     expect(end.stage).toBe('done');
-    expect(end.centreX).toBeCloseTo(800, 6);
-    expect(end.centreY).toBeCloseTo(40, 6);
-    expect(end.radius).toBeCloseTo(30, 6);
-  });
-
-  it('a resize in the middle of POP glides to the new orb instead of jumping', () => {
-    const h = run(config({}, { orb: { cx: 60, cy: 660, radius: 24 } }));
-    h.tl.afterReady(h.wall.now);
-    // Find when POP starts on this schedule, then re-run and resize in the middle of it.
-    const g = run(config({}, { orb: { cx: 60, cy: 660, radius: 24 } }));
-    g.tl.afterReady(g.wall.now);
-    let popAt = -1;
-    g.to(8000, 2, () => {
-      for (const e of g.tl.events()) {
-        if (e.stage === 'unwrap-done') g.tl.reveal(g.wall.now);
-        if (e.stage === 'pop') popAt = e.t;
-      }
-    });
-    expect(popAt).toBeGreaterThan(0);
-    const k = run(config({}, { orb: { cx: 60, cy: 660, radius: 24 } }));
-    k.tl.afterReady(k.wall.now);
-    let resized = false;
-    let prevX = NaN;
-    let maxJump = 0;
-    k.to(8000, 2, (t) => {
-      for (const e of k.tl.events()) if (e.stage === 'unwrap-done') k.tl.reveal(k.wall.now);
-      if (!resized && popAt > 0 && t >= popAt + 120) {
-        resized = true;
-        k.tl.resize(k.wall.now, { w: 1280, h: 720, dpr: 1 }, { cx: 1200, cy: 100, radius: 24 });
-      }
-      const x = k.tl.tick(k.wall.now).centreX;
-      if (!Number.isNaN(prevX)) maxJump = Math.max(maxJump, Math.abs(x - prevX));
-      prevX = x;
-    });
-    expect(resized).toBe(true);
-    // 2 ms frames: the orb moves 1140 px over 300 ms (× pop ≈ 1): at most a few px a frame, never a jump.
-    expect(maxJump).toBeLessThan(25);
-    expect(k.tl.tick(k.wall.now).centreX).toBeCloseTo(1200, 6);
-  });
-
-  it('without an orb argument the orb stays where it was', () => {
-    const h = run(config({}, { orb: { cx: 60, cy: 660, radius: 24 } }));
-    h.tl.afterReady(h.wall.now);
-    h.to(1500, 5);
-    h.tl.resize(h.wall.now, { w: 800, h: 800, dpr: 1 });
-    let revealed = false;
-    h.to(8000, 5, () => {
-      for (const e of h.tl.events()) if (e.stage === 'unwrap-done') revealed = true;
-      if (revealed) h.tl.reveal(h.wall.now);
-    });
-    expect(h.tl.tick(h.wall.now).centreX).toBeCloseTo(60, 6);
+    expect(end.centreX).toBeCloseTo(450, 6);
+    expect(end.centreY).toBeCloseTo(300, 6);
   });
 });
 

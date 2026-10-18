@@ -1,16 +1,16 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Globe-eversion POP and the azimuthal wedge - headless Chromium check with
-// screenshots to look at.
+// Globe-eversion END OF UNWRAP and the azimuthal wedge - headless Chromium check
+// with screenshots to look at.
 //
-//   node testing/e2e/eversion-pop.mjs
-//   EVERSION_POP_OUT=/some/dir   (screenshots; default: <tmpdir>/eversion-pop)
+//   node testing/e2e/eversion-wedge.mjs
+//   EVERSION_WEDGE_OUT=/some/dir   (screenshots; default: <tmpdir>/eversion-wedge)
 //
 // Bundles lib/eversion/gl/__fixtures__/gl-page.ts (the REAL renderer, shaders,
 // mesh, LUTs and Timeline), serves it from a fake origin and drives it:
 //
-//  1. POP: frames from just before the reveal to the end. The empty glass globe
-//     must condense, shrink onto the orb, swell while it fades, and the last
-//     frame must be fully transparent.
+//  1. END OF UNWRAP: frames up to the end of UNWRAP. The run ends there, so the
+//     last frame must be the flat AFTER page, pixel for pixel what a flat page
+//     (`unwrap` 0) draws: no globe, no glass.
 //  2. Lambert / stereographic / equirect mid-morph frames, for review of the
 //     stretched wedge near the back point (it must read as glass, not as
 //     smeared page). The numeric check is that they render without GL errors.
@@ -25,7 +25,7 @@ import { chromium } from 'playwright';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const gl = join(root, 'lib/eversion/gl');
-const outDir = process.env.EVERSION_POP_OUT ?? join(tmpdir(), 'eversion-pop');
+const outDir = process.env.EVERSION_WEDGE_OUT ?? join(tmpdir(), 'eversion-wedge');
 mkdirSync(outDir, { recursive: true });
 
 function chromiumPath() {
@@ -61,8 +61,7 @@ const bundle = await build({
   logLevel: 'error',
 });
 const script = bundle.outputFiles[0].text;
-// A mid-grey page behind the (transparent after reveal) canvas so a faint glass shows up in the screenshots.
-const html = `<!doctype html><meta charset="utf-8"><title>eversion pop</title><body style="margin:0;background:#3a4256"><script>${script.replaceAll('</script', '<\\/script')}</script>`;
+const html = `<!doctype html><meta charset="utf-8"><title>eversion wedge</title><body style="margin:0;background:#3a4256"><script>${script.replaceAll('</script', '<\\/script')}</script>`;
 
 const browser = await chromium.launch({
   executablePath: chromiumPath(),
@@ -92,51 +91,58 @@ try {
   await t('prime', 'equirect', true, { orientation: 'real' });
   await t('cards');
 
-  const offsets = [-20, 0, 60, 130, 200, 280, 340, 400, 440, 480, 505, 520];
-  const rows = [];
-  for (const off of offsets) {
-    const r = await t('popFrame', off);
-    rows.push({ off, ...r });
-    await page.screenshot({ path: join(outDir, `pop-${String(off + 100).padStart(4, '0')}.png`) });
-  }
-  for (const r of rows) {
-    console.log(
-      `      pop+${String(r.off).padStart(4)} ms  stage=${r.stage.padEnd(7)} glass=${r.glass.toFixed(2)} fade=${r.popFade.toFixed(2)} r=${r.radius.toFixed(1)} c=(${r.centreX.toFixed(0)},${r.centreY.toFixed(0)})`,
-    );
-  }
-  check(
-    'no GL error in any POP frame',
-    rows.every((r) => r.err === 0),
-  );
-  const last = rows[rows.length - 1];
-  check(
-    'the last POP frame is fully faded and on the orb',
-    last.popFade === 1 &&
-      Math.abs(last.radius - last.orb.radius) < 1e-6 &&
-      Math.abs(last.centreX - last.orb.cx) < 1e-6,
-  );
-
-  // The canvas is transparent after the reveal, so alpha is exactly where there is glass.
-  const coverageAt = async (off) => {
-    return page.evaluate((offset) => {
-      window.__g.popFrame(offset);
+  // The end of UNWRAP: the run's last drawn frame is the flat AFTER page, exactly the frame a flat page
+  // (`unwrap` 0) draws, with no globe left in it. Pixels are read back and compared to that reference.
+  const pixelsOf = (draw) =>
+    page.evaluate((fn) => {
+      const r = window.__g[fn.name](...fn.args);
       const c = document.querySelector('canvas');
       const g = c.getContext('webgl2');
       const px = new Uint8Array(c.width * c.height * 4);
       g.readPixels(0, 0, c.width, c.height, g.RGBA, g.UNSIGNED_BYTE, px);
-      let covered = 0;
-      for (let i = 3; i < px.length; i += 4) if (px[i] > 8) covered++;
-      return covered / (px.length / 4);
-    }, off);
-  };
-  const atReveal = await coverageAt(0);
-  const mid = await coverageAt(260);
-  const end = await coverageAt(520);
-  console.log(
-    `      coverage: reveal ${atReveal.toFixed(4)}, pop+260 ${mid.toFixed(4)}, end ${end.toFixed(4)}`,
+      let hash = 2166136261;
+      let nonOpaque = 0;
+      for (let i = 0; i < px.length; i += 4) {
+        for (let k = 0; k < 4; k++) hash = Math.imul(hash ^ px[i + k], 16777619) >>> 0;
+        if (px[i + 3] !== 255) nonOpaque++;
+      }
+      return { r, hash, nonOpaque };
+    }, draw);
+  const flat = await pixelsOf({
+    name: 'frame',
+    args: [{ wrap: 1, unwrap: 0, evert: 1, spin: 0.7, tilt: 0.2, afterMix: 1 }],
+  });
+  const offsets = [-120, -60, -20, 0];
+  const rows = [];
+  for (const off of offsets) {
+    const row = await pixelsOf({ name: 'endFrame', args: [off] });
+    rows.push({ off, ...row });
+    await page.screenshot({ path: join(outDir, `end-${String(off + 200).padStart(4, '0')}.png`) });
+  }
+  for (const r of rows) {
+    console.log(
+      `      end${r.off >= 0 ? '+' : ''}${String(r.off).padStart(4)} ms  stage=${r.r.stage.padEnd(11)} unwrap=${r.r.unwrap.toFixed(3)} pageAlpha=${r.r.pageAlpha.toFixed(2)} hash=${r.hash} nonOpaque=${r.nonOpaque}`,
+    );
+  }
+  check(
+    'no GL error in any end-of-UNWRAP frame',
+    rows.every((r) => r.r.err === 0),
   );
-  check('the globe condenses: glass is present at pop+260', mid > 0.001, `covered ${mid}`);
-  check('the last frame is invisible (no pixel above alpha 8/255)', end === 0, `covered ${end}`);
+  const last = rows[rows.length - 1];
+  check(
+    'the last UNWRAP frame is unwrap 0 at full page opacity',
+    last.r.unwrap === 0 && last.r.pageAlpha === 1,
+  );
+  check(
+    'the last UNWRAP frame is pixel-identical to the flat AFTER page',
+    last.hash === flat.hash,
+    `${last.hash} vs ${flat.hash}`,
+  );
+  check(
+    'the last UNWRAP frame is fully opaque (no globe, no glass)',
+    last.nonOpaque === 0,
+    `${last.nonOpaque} px`,
+  );
 
   for (const id of ['lambert', 'stereographic', 'equirect']) {
     await t('prime', id, true, { orientation: 'real' });
@@ -191,5 +197,7 @@ try {
   await browser.close();
 }
 
-console.log(failures === 0 ? '\nall POP checks passed' : `\n${failures} check(s) FAILED`);
+console.log(
+  failures === 0 ? '\nall end-of-UNWRAP and wedge checks passed' : `\n${failures} check(s) FAILED`,
+);
 process.exit(failures === 0 ? 0 : 1);

@@ -268,6 +268,7 @@ node testing/e2e/eversion-metrics-selftest.mjs   # the measurement helpers, firs
 node testing/e2e/eversion-host.mjs               # worker/main host, frame pacing
 node testing/e2e/eversion-renderer.mjs           # renderer lifecycle
 node testing/e2e/eversion-gl.mjs                 # shaders: parity (S#27), two-sidedness (S#28)
+node testing/e2e/eversion-wedge.mjs              # the last UNWRAP frame is the flat page; the azimuthal wedge mask is smooth
 node testing/e2e/eversion-controller.mjs         # run orchestration against a fake router (~25 s)
 ```
 

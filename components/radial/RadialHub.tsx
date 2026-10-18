@@ -169,14 +169,6 @@ export function RadialHub() {
   const tRef = useRef(t);
   tRef.current = t;
   /**
-   * The orb crossfades IN while the glass globe dissolves (radial.css, set from
-   * the runner's `pop` stage): the pop has shrunk the glass to the orb's own rect,
-   * so the orb is already where the eye is looking, and a hard cut after `done`
-   * would leave a gap and then a snap. By the time the run ends it is fully in, so
-   * `closed` holds it there with no replayed fade. Cleared on the next open.
-   */
-  const [orbPopped, setOrbPopped] = useState(false);
-  /**
    * The first-open rehearsal (2026-10-09).
    *
    * Preloading the chunk was not enough to make the FIRST open as smooth as the
@@ -232,10 +224,8 @@ export function RadialHub() {
           restoreFocus.current = false;
           setPhase('everting');
         },
-        popFade: () => setOrbPopped(true),
-        closed: (orbIn) => {
+        closed: () => {
           clearTimer();
-          setOrbPopped(orbIn);
           setPhase('closed');
         },
         dismiss: () => live.current.dismiss(),
@@ -364,7 +354,8 @@ export function RadialHub() {
     const onKey = (e: KeyboardEvent) => {
       // While everting a key press is the effect's fast-forward (the controller
       // listens in the capture phase); it must not also dismiss the hub.
-      if (e.key === 'Escape' && phaseRef.current !== 'everting' && !handOffMachine.busy()) dismiss();
+      if (e.key === 'Escape' && phaseRef.current !== 'everting' && !handOffMachine.busy())
+        dismiss();
     };
     const onWheel = (e: WheelEvent) => {
       if (e.cancelable) e.preventDefault();
@@ -405,10 +396,6 @@ export function RadialHub() {
     if (phase !== 'closed' || !restoreFocus.current) return;
     restoreFocus.current = false;
     orbRef.current?.focus();
-  }, [phase]);
-
-  useEffect(() => {
-    if (phase === 'open') setOrbPopped(false);
   }, [phase]);
 
   useEffect(() => () => clearTimer(), []);
@@ -504,7 +491,7 @@ export function RadialHub() {
   const tab = phase === 'open' || phase === 'closing' ? 0 : -1;
 
   return (
-    <div className="radial-hub" data-phase={phase} data-orb-popped={orbPopped ? '' : undefined}>
+    <div className="radial-hub" data-phase={phase}>
       <button
         ref={orbRef}
         type="button"

@@ -35,7 +35,7 @@
 //
 //   hub fade      [start, cover + 1.5 frames]            the CSS fade of the hub over the page
 //   AFTER fade    [gate-open - 320 ms*k - 2 frames, +1]  placeholder -> AFTER (only when after-ready)
-//   reveal + pop  [reveal - 1 frame, done]               page-texture fade and the glass globe's POP
+//   reveal        [reveal - 1 frame, done]               page-texture fade onto the live page (the end of the run)
 //
 // `k` is the rig's timeline slowdown (see timelineSlowdown in lib/eversion-drive.mjs):
 // the timeline clamps each frame to 50 ms, so below 20 fps one frame is one 50 ms
@@ -274,7 +274,7 @@ async function analyse(run, { cutRatio = CUT_RATIO } = {}) {
     });
   }
   const revealAt = m.reveal ?? m.done;
-  windows.push({ name: 'reveal + pop', from: revealAt - fi, to: m.done + 300 });
+  windows.push({ name: 'reveal', from: revealAt - fi, to: m.done + 300 });
 
   const cuts = [];
   const ffWindow = run.acted.ffAt !== undefined ? { from: run.acted.ffAt, to: m.done } : null;

@@ -39,7 +39,7 @@ import { chromium } from 'playwright';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const fixtures = join(root, 'testing/e2e/eversion-host');
 
-const STAGES = ['wrap', 'evert', 'gate-open', 'unwrap', 'unwrap-done', 'reveal', 'pop', 'done'];
+const STAGES = ['wrap', 'evert', 'gate-open', 'unwrap', 'unwrap-done', 'reveal', 'done'];
 
 function chromiumPath() {
   if (process.env.CHROMIUM_PATH) return process.env.CHROMIUM_PATH;

@@ -68,7 +68,6 @@ import type {
   FromWorker,
   GlobeStartState,
   NavTransition,
-  OrbRect,
   ProjectionId,
   ThemeColours,
   Tier,
@@ -132,7 +131,6 @@ export interface PagePort {
   viewport(): Viewport;
   tier(): Tier;
   colours(): ThemeColours;
-  orbRect(viewport: Viewport): OrbRect;
   /** `html.eversion-cover` on or off. */
   setCover(on: boolean): void;
   /** `data-eversion-settle` on or off. */
@@ -227,13 +225,6 @@ export interface RunOptions {
    * to undo one.
    */
   onCommit?: () => void;
-  /**
-   * Called once when the render side reports `pop-fade`: the glass globe has
-   * landed on the orb and starts its `POP_FADE_MS` fade-out. The hub crossfades
-   * the real orb in over that same window, so the orb and the dissolving glass
-   * overlap instead of the orb cutting in after `done` (review R5 M1).
-   */
-  onPopFade?: () => void;
 }
 
 export class EversionRunner {
@@ -407,7 +398,6 @@ export class EversionRunner {
     let t0 = 0;
     let revealing = false;
     let aborted = false;
-    let popAnnounced = false;
     // The run watchdog (review R6 M2): armed at the point of no return, re-armed by
     // every stage message (progress), cleared in teardown.
     let watchdog: ReturnType<typeof setTimeout> | null = null;
@@ -476,16 +466,6 @@ export class EversionRunner {
             deps.mark('unwrap', {});
           }
           return;
-        case 'pop-fade':
-          armWatchdog();
-          if (popAnnounced) return;
-          popAnnounced = true;
-          try {
-            options.onPopFade?.();
-          } catch {
-            /* the caller's UI hook must never break the run */
-          }
-          return;
         case 'unwrap-done':
           if (!started || revealing) return;
           revealing = true;
@@ -534,7 +514,6 @@ export class EversionRunner {
         projection,
         viewport,
         globe,
-        orb: deps.page.orbRect(viewport),
         colours,
       });
       post({ type: 'texture', slot: 'before', bitmap: before });
@@ -607,8 +586,8 @@ export class EversionRunner {
       teardown('abort');
     };
     const fastForward = () => {
-      // Once the unwrap has finished only POP is left, and a fast-forward during
-      // POP is ignored (spec 7.6); so is a second one.
+      // Once the unwrap has finished only the reveal fade is left, and a fast-forward
+      // during it is ignored (spec 7.6); so is a second one.
       if (ended || fastForwarded || revealing) return;
       fastForwarded = true;
       post({ type: 'fast-forward' });
@@ -618,12 +597,7 @@ export class EversionRunner {
     // Browser back/forward and a resize or rotation belong to the visitor, not to
     // this run (spec 9.4): hurry the run, and tell the render side the new viewport.
     listeners.push(deps.router.onTraversal(() => this.abort()));
-    listeners.push(
-      deps.page.onResize((viewport) =>
-        // The orb moves with the viewport (it is pinned to a corner), and POP targets it.
-        post({ type: 'resize', viewport, orb: deps.page.orbRect(viewport) }),
-      ),
-    );
+    listeners.push(deps.page.onResize((viewport) => post({ type: 'resize', viewport })));
     t0 = deps.now();
     started = true;
     this.phase = 'running';

@@ -6,7 +6,6 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { POP_FADE_MS } from '../constants';
 import { createEversionCore, HIDDEN_SETTLE_GRACE_MS } from '../gl/core';
 import type { CoreDeps } from '../gl/core';
 import { ScriptedTimeline } from '../gl/__fixtures__/scripted-timeline';
@@ -37,7 +36,6 @@ const prime: ToWorker = {
   projection: 'mercator',
   viewport,
   globe: { yaw: 0, pitch: 0, yawVel: 0, pitchVel: 0, centre: [160, 100], radius: 80 },
-  orb: { cx: 10, cy: 10, radius: 8 },
   colours,
   lut: new Float32Array(2),
 };
@@ -200,7 +198,6 @@ describe('createEversionCore', () => {
       'unwrap',
       'unwrap-done',
       'reveal',
-      'pop',
       'done',
     ]);
     const done = r.out.at(-1);
@@ -393,7 +390,7 @@ describe('createEversionCore', () => {
 });
 
 describe('createEversionCore: scrub', () => {
-  /** A core over the REAL timeline (the scripted one never reaches POP). */
+  /** A core over the REAL timeline (the scripted one never reaches the reveal). */
   function realRig() {
     const r = rig();
     const renderer = r.renderer;
@@ -429,7 +426,7 @@ describe('createEversionCore: scrub', () => {
     return { result, drawn: r.renderer.draws.at(-1)! };
   }
 
-  it('answers unwrap-done with a reveal, so scrubbing past it reaches POP and DONE', async () => {
+  it('answers unwrap-done with a reveal, so scrubbing past it reaches DONE', async () => {
     const mid = await scrubTo(5200, 600);
     expect(mid.result.ok).toBe(true);
     expect((mid.result.value as { stage: string }).stage).not.toBe('unwrap-done');
@@ -526,12 +523,12 @@ describe('createEversionCore: robustness', () => {
     r.send({ type: 'start', t0: 0 });
     expect(r.pending).toBe(0);
     r.send({ type: 'abort' });
-    expect(r.stages()).toEqual(['reveal', 'pop', 'done']);
+    expect(r.stages()).toEqual(['reveal', 'done']);
     expect(r.types().at(-1)).toBe('done');
     expect(r.pending).toBe(0);
   });
 
-  it('fast-forward while the tab is hidden jumps to completion through unwrap-done, reveal, pop, done', () => {
+  it('fast-forward while the tab is hidden jumps to completion through unwrap-done, reveal, done', () => {
     const r = rig();
     boot(r);
     r.send({ type: 'visibility', hidden: true });
@@ -545,7 +542,6 @@ describe('createEversionCore: robustness', () => {
       'unwrap',
       'unwrap-done',
       'reveal',
-      'pop',
       'done',
     ]);
     expect(r.types().filter((t) => t === 'unwrap-done')).toHaveLength(1);
@@ -585,7 +581,7 @@ describe('createEversionCore: robustness', () => {
     expect(r.timelines[1]!.calls[0]).toMatch(/^start/);
   });
 
-  it('passes the orb to Timeline.resize while running', () => {
+  it('passes the new viewport to Timeline.resize while running', () => {
     const r = rig();
     boot(r);
     r.send({ type: 'start', t0: 0 });
@@ -596,50 +592,39 @@ describe('createEversionCore: robustness', () => {
       calls.push(a);
       original(a[0] as number);
     };
-    r.send({
-      type: 'resize',
-      viewport: { w: 640, h: 400, dpr: 1 },
-      orb: { cx: 5, cy: 6, radius: 7 },
-    });
-    expect(calls[0]![2]).toEqual({ cx: 5, cy: 6, radius: 7 });
-    r.send({ type: 'resize', viewport: { w: 641, h: 400, dpr: 1 } });
-    expect(calls[1]![2]).toEqual({ cx: 5, cy: 6, radius: 7 });
+    r.send({ type: 'resize', viewport: { w: 640, h: 400, dpr: 1 } });
+    expect(calls[0]).toHaveLength(2);
+    expect(calls[0]![1]).toEqual({ w: 640, h: 400, dpr: 1 });
   });
 });
 
-/* ── The REAL Timeline: hidden settling, pop-fade, failure ──────────────────── */
+/* ── The REAL Timeline: hidden settling, failure ──────────────────── */
 
 describe('createEversionCore with the real Timeline', () => {
-  const EXPECTED = ['wrap', 'evert', 'gate-open', 'unwrap', 'unwrap-done', 'reveal', 'pop', 'done'];
+  const EXPECTED = ['wrap', 'evert', 'gate-open', 'unwrap', 'unwrap-done', 'reveal', 'done'];
   const realRig = () => rig(undefined, { realTimeline: true });
 
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  /** The message types around the pop, in order: stages and the fade. */
-  const popOrder = (r: ReturnType<typeof rig>) =>
+  /** The run's ending, in order: the stage messages from `unwrap-done` on. */
+  const endOrder = (r: ReturnType<typeof rig>) =>
     r.out.flatMap((m) =>
-      m.type === 'stage'
-        ? m.stage === 'pop' ||
-          m.stage === 'done' ||
-          m.stage === 'reveal' ||
-          m.stage === 'unwrap-done'
-          ? [m.stage]
-          : []
-        : m.type === 'pop-fade'
-          ? ['pop-fade']
-          : [],
+      m.type === 'stage' &&
+      (m.stage === 'unwrap-done' || m.stage === 'reveal' || m.stage === 'done')
+        ? [m.stage]
+        : [],
     );
 
-  it('abort while hidden: unwrap-done, reveal, pop, pop-fade, done, synchronously, nothing drawn', () => {
+  it('abort while hidden: unwrap-done, reveal, done, synchronously, nothing drawn', () => {
     const r = realRig();
     boot(r);
     r.send({ type: 'visibility', hidden: true });
     r.send({ type: 'start', t0: 0 });
     r.send({ type: 'abort' });
     expect(r.stages()).toEqual(EXPECTED);
-    expect(popOrder(r)).toEqual(['unwrap-done', 'reveal', 'pop', 'pop-fade', 'done']);
+    expect(endOrder(r)).toEqual(['unwrap-done', 'reveal', 'done']);
     expect(r.renderer.draws).toHaveLength(0);
     expect(r.pending).toBe(0);
     expect(r.types().filter((t) => t === 'done')).toHaveLength(1);
@@ -655,7 +640,7 @@ describe('createEversionCore with the real Timeline', () => {
     r.send({ type: 'start', t0: 0 });
     r.send({ type: 'fast-forward' });
     expect(r.stages()).toEqual(EXPECTED);
-    expect(popOrder(r)).toEqual(['unwrap-done', 'reveal', 'pop', 'pop-fade', 'done']);
+    expect(endOrder(r)).toEqual(['unwrap-done', 'reveal', 'done']);
     expect(r.renderer.draws).toHaveLength(0);
   });
 
@@ -670,7 +655,7 @@ describe('createEversionCore with the real Timeline', () => {
       expect(r.types()).not.toContain('done');
       r.send({ type: 'visibility', hidden: true });
       expect(r.stages().at(-1)).toBe('done');
-      expect(popOrder(r).slice(-5)).toEqual(['unwrap-done', 'reveal', 'pop', 'pop-fade', 'done']);
+      expect(endOrder(r).slice(-3)).toEqual(['unwrap-done', 'reveal', 'done']);
       expect(r.pending).toBe(0);
       expect(r.types().filter((t) => t === 'done')).toHaveLength(1);
     }
@@ -686,7 +671,7 @@ describe('createEversionCore with the real Timeline', () => {
     expect(r.types()).not.toContain('done');
     vi.advanceTimersByTime(1);
     expect(r.stages()).toEqual(EXPECTED);
-    expect(popOrder(r)).toEqual(['unwrap-done', 'reveal', 'pop', 'pop-fade', 'done']);
+    expect(endOrder(r)).toEqual(['unwrap-done', 'reveal', 'done']);
     expect(r.renderer.draws).toHaveLength(0);
     // Back on screen: nothing replays.
     r.send({ type: 'visibility', hidden: false });
@@ -707,7 +692,7 @@ describe('createEversionCore with the real Timeline', () => {
     expect(r.pending).toBe(1);
   });
 
-  it('a drawn run emits pop-fade once, between pop and done, as the glass starts to fade', () => {
+  it('a drawn run ends with UNWRAP: the last frame is the flat page, then unwrap-done, reveal, done and nothing more', () => {
     const r = realRig();
     boot(r);
     r.send({ type: 'start', t0: 0 });
@@ -718,17 +703,21 @@ describe('createEversionCore with the real Timeline', () => {
       if (r.stages().includes('unwrap-done') && !r.stages().includes('reveal'))
         r.send({ type: 'reveal' });
     }
-    expect(popOrder(r)).toEqual(['unwrap-done', 'reveal', 'pop', 'pop-fade', 'done']);
-    const fades = r.out.filter((m) => m.type === 'pop-fade');
-    expect(fades).toHaveLength(1);
-    expect(fades[0]).toMatchObject({ fadeMs: POP_FADE_MS });
-    // The first frame that drew the fade (popFade > 0) is the one the message follows.
-    const first = r.renderer.draws.findIndex((d) => d.popFade > 0);
-    expect(first).toBeGreaterThan(0);
-    const fadeAt = r.out.findIndex((m) => m.type === 'pop-fade');
-    const drawsBefore = r.out.slice(0, fadeAt).length;
-    expect(drawsBefore).toBeGreaterThan(0);
-    expect((fades[0] as { t: number }).t).toBeCloseTo(r.renderer.draws[first]!.t, 6);
+    expect(endOrder(r)).toEqual(['unwrap-done', 'reveal', 'done']);
+    expect(r.out.some((m) => (m as { type: string }).type === 'pop-fade')).toBe(false);
+    // The frame that reached unwrap-done is the flat AFTER page (`unwrap` 0, nothing else left to draw).
+    const at = r.out.findIndex((m) => m.type === 'unwrap-done');
+    expect(at).toBeGreaterThan(0);
+    const flat = r.renderer.draws.filter((d) => d.unwrap === 0);
+    expect(flat.length).toBeGreaterThan(0);
+    for (const d of r.renderer.draws.filter((x) => x.stage === 'reveal' || x.stage === 'done')) {
+      expect(d.unwrap).toBe(0);
+      expect(d.radius).toBe(flat[0]!.radius);
+    }
+    // No event or frame follows `done`.
+    expect(r.out.at(-1)).toMatchObject({ type: 'done' });
+    expect(r.pending).toBe(0);
+    expect(r.renderer.log.at(-1)).toBe('release');
   });
 
   it('a failing frame releases the page textures', () => {

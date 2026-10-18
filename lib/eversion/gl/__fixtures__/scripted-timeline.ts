@@ -4,8 +4,8 @@
  * run reaches `evert` at 100 ms and `unwrap-done` at 400 ms" and then watch the
  * core turn that into messages. It honours the one surface rule the core relies
  * on — a clock advanced by `min(now − last, MAX_DT_MS)` — and the real
- * ordering `unwrap-done → reveal → pop → done`, where `reveal` is what starts
- * POP.
+ * ordering `unwrap-done → reveal → done`, where `reveal` is what starts the
+ * fade onto the live page that ends the run.
  */
 
 import { MAX_DT_MS } from '../../constants';
@@ -15,8 +15,8 @@ import type { ChannelId, StageId, TimelineApi, TimelineEvent, TimelineSnapshot }
 export interface ScriptedTimelineOptions {
   /** Absolute ms (timeline clock) at which each stage up to `unwrap-done` is reached. */
   stages?: readonly [StageId, number][];
-  /** Ms from `reveal` to `pop` (instant) and from `pop` to `done`. */
-  popMs?: number;
+  /** Ms from `reveal` to `done`. */
+  revealMs?: number;
 }
 
 const DEFAULT_STAGES: readonly [StageId, number][] = [
@@ -31,19 +31,19 @@ export class ScriptedTimeline implements TimelineApi {
   readonly calls: string[] = [];
   private readonly snapshot: TimelineSnapshot = createSnapshot();
   private readonly stages: readonly [StageId, number][];
-  private readonly popMs: number;
+  private readonly revealMs: number;
   private pending: TimelineEvent[] = [];
   private next = 0;
   private clock = 0;
   private last = 0;
   private started = false;
   private revealAt: number | null = null;
-  private popped = false;
+  private revealed = false;
   private done = false;
 
   constructor(options: ScriptedTimelineOptions = {}) {
     this.stages = options.stages ?? DEFAULT_STAGES;
-    this.popMs = options.popMs ?? 50;
+    this.revealMs = options.revealMs ?? 50;
   }
 
   get finished(): boolean {
@@ -71,13 +71,13 @@ export class ScriptedTimeline implements TimelineApi {
       this.pending.push({ stage, t });
       s.stage = stage;
     }
-    if (this.revealAt !== null && !this.popped && this.next >= this.stages.length) {
-      this.popped = true;
-      this.pending.push({ stage: 'reveal', t: this.clock }, { stage: 'pop', t: this.clock });
-      s.stage = 'pop';
+    if (this.revealAt !== null && !this.revealed && this.next >= this.stages.length) {
+      this.revealed = true;
+      this.pending.push({ stage: 'reveal', t: this.clock });
+      s.stage = 'reveal';
       s.bgAlpha = 0;
     }
-    if (this.popped && !this.done && this.clock >= this.revealAt! + this.popMs) {
+    if (this.revealed && !this.done && this.clock >= this.revealAt! + this.revealMs) {
       this.done = true;
       this.pending.push({ stage: 'done', t: this.clock });
       s.stage = 'done';

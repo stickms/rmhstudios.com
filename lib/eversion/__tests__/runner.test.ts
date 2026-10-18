@@ -109,7 +109,6 @@ function rig(patch: Partial<RunnerDeps> = {}, captureImpl?: () => Promise<unknow
       viewport: () => ({ w: 800, h: 600, dpr: 1 }),
       tier: () => 'mid',
       colours: () => COLOURS,
-      orbRect: () => ({ cx: 10, cy: 10, radius: 10 }),
       setCover: (on) => log.push(`cover:${on ? 'on' : 'off'}`),
       setSettle: (on) => log.push(`settle:${on ? 'on' : 'off'}`),
       whenAssetsSettled: async () => void log.push('assets'),
@@ -252,7 +251,10 @@ describe('eversion runner: the fallback paths (today runs; no overlay, no naviga
 
   it('a host that stops answering costs at most the short ready wait, not 600 ms', async () => {
     const r = rig({
-      host: { ready: (_tier, ms) => new Promise((_, reject) => setTimeout(reject, ms)), discardCanvas() {} },
+      host: {
+        ready: (_tier, ms) => new Promise((_, reject) => setTimeout(reject, ms)),
+        discardCanvas() {},
+      },
     });
     const started = Date.now();
     const p = r.runner.run(NODE, GLOBE);
@@ -656,7 +658,7 @@ describe('eversion runner: router and viewport edge cases (spec 9.4)', () => {
     await flush();
     r.resize({ w: 500, h: 900, dpr: 2 });
     expect(r.posted.filter((m) => m.type === 'resize')).toEqual([
-      { type: 'resize', viewport: { w: 500, h: 900, dpr: 2 }, orb: { cx: 10, cy: 10, radius: 10 } },
+      { type: 'resize', viewport: { w: 500, h: 900, dpr: 2 } },
     ]);
     r.emit(DONE);
     await p;
@@ -664,7 +666,7 @@ describe('eversion runner: router and viewport edge cases (spec 9.4)', () => {
     expect(r.posted.filter((m) => m.type === 'resize')).toHaveLength(1);
   });
 
-  it('input once the unwrap is done (POP) is ignored', async () => {
+  it('input once the unwrap is done (the reveal fade) is ignored', async () => {
     const r = rig();
     const p = r.runner.run(NODE, GLOBE);
     await flush();
@@ -843,7 +845,7 @@ describe('eversion runner: commit point, queued input, teardown (review fixes)',
   });
 });
 
-describe('eversion runner: watchdog, pageshow, traversal while priming, pop (Fix E1)', () => {
+describe('eversion runner: watchdog, pageshow, traversal while priming (Fix E1)', () => {
   it('a run that never reaches done is force-ended with a fade at MAX_RUN_MS and cleared on teardown', async () => {
     const r = rig();
     const p = r.runner.run(NODE, GLOBE);
@@ -955,18 +957,17 @@ describe('eversion runner: watchdog, pageshow, traversal while priming, pop (Fix
     expect(r.log.some((l) => l.startsWith('navigate'))).toBe(false);
   });
 
-  it('onPopFade fires once, on pop-fade and not on the pop stage', async () => {
-    const onPopFade = vi.fn();
+  it('ends after the reveal: the overlay stays until done, and nothing follows done', async () => {
     const r = rig();
-    const p = r.runner.run(NODE, GLOBE, 'release', { onPopFade });
+    const p = r.runner.run(NODE, GLOBE);
     await flush();
-    r.emit({ type: 'stage', stage: 'reveal' } as FromWorker);
-    expect(onPopFade).not.toHaveBeenCalled();
-    r.emit({ type: 'stage', stage: 'pop' } as FromWorker);
-    expect(onPopFade).not.toHaveBeenCalled();
-    r.emit({ type: 'pop-fade', t: 0, fadeMs: 208 } as FromWorker);
-    r.emit({ type: 'pop-fade', t: 0, fadeMs: 208 } as FromWorker);
-    expect(onPopFade).toHaveBeenCalledTimes(1);
+    r.emit({ type: 'cover' });
+    r.emit({ type: 'unwrap-done' });
+    await flush();
+    expect(r.posted.filter((m) => m.type === 'reveal')).toHaveLength(1);
+    r.emit({ type: 'stage', stage: 'reveal', t: 0 });
+    expect(r.log).not.toContain('overlay:unmount');
+    expect(r.runner.state().phase).toBe('revealing');
     r.emit(DONE);
     await p;
   });

@@ -163,7 +163,6 @@ const api = {
         router: fakeRouter,
         beforeCapture,
         translate: (key, o) => o?.defaultValue ?? key,
-        getOrbRect: () => ({ cx: innerWidth - 40, cy: 40, radius: 20 }),
       },
       { overlay: createDomOverlayPort() },
     );
