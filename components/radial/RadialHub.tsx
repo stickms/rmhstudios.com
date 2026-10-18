@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser, useSession } from '@/components/Providers';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useThemeStore } from '@/stores/themeStore';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { SIDEBAR_NAV, isNavGroup, type NavLeaf } from '@/lib/sidebar-nav';
 import { isEversionEnabled } from '@/lib/eversion/flags';
@@ -58,27 +59,52 @@ const EVERSION_PREVIEW_EVENT = 'rmh:eversion-preview';
  * not just the work inside it. A page whose `load` is still pending because of a
  * slow subresource therefore requests nothing of the effect's. `prefetch.ts`
  * waits for `load` again itself as defence in depth.
+ *
+ * `urgent` is the visitor's own intent (the hub is open, or a destination was
+ * picked): it skips the remaining wait, since the effect is about to be needed
+ * and a page whose `load` is held up by one slow image would otherwise never
+ * play it. Nothing ever passes it for a visitor who has not touched the hub, so
+ * the "nothing before `load`" rule still holds for the page-load itself.
  */
 const NO_PREFETCH: PrefetchResult = { webgl2: false, tier: 'low', host: 'main' };
 let eversionStart: Promise<PrefetchResult> | null = null;
-function startEversion(): Promise<PrefetchResult> {
+let hurryEversion: (() => void) | null = null;
+function startEversion(urgent = false): Promise<PrefetchResult> {
   eversionStart ??= new Promise<PrefetchResult>((resolve) => {
+    let ran = false;
+    let hurried = false;
     const go = () => {
       const idle = (window as typeof window & { requestIdleCallback?: typeof requestIdleCallback })
         .requestIdleCallback;
-      const run = () => {
-        void import('@/lib/eversion/prefetch')
-          .then((m) => m.prefetchEversion())
-          .then(resolve, () => resolve(NO_PREFETCH));
-      };
       // After the load event has finished dispatching, then when the browser is idle.
       setTimeout(() => (idle ? idle(run, { timeout: 2000 }) : setTimeout(run, 200)), 0);
+    };
+    const run = () => {
+      if (ran) return;
+      ran = true;
+      hurryEversion = null;
+      void import('@/lib/eversion/prefetch')
+        .then((m) => m.prefetchEversion({ urgent: hurried }))
+        .then(resolve, () => resolve(NO_PREFETCH));
+    };
+    hurryEversion = () => {
+      hurried = true;
+      run();
     };
     if (document.readyState === 'complete') go();
     else window.addEventListener('load', go, { once: true });
   });
+  if (urgent) hurryEversion?.();
   return eversionStart;
 }
+
+/**
+ * How long a confirm waits for the bridge to hand its controller up when the
+ * visitor got there first (the first seconds of a page-load), before it navigates
+ * the ordinary way. "Always evert globe" waits longer, like its other waits.
+ */
+const CONTROLLER_WAIT_MS = 2500;
+const ALWAYS_CONTROLLER_WAIT_MS = 8000;
 
 let globePreloaded = false;
 let globeModule: Promise<unknown> | null = null;
@@ -166,6 +192,10 @@ export function RadialHub() {
   const controllerRef = useRef<EversionControllerHandle | null>(null);
   const pendingPreview = useRef(false);
   const pendingPreviewRun = useRef<((controller: EversionControllerHandle) => void) | null>(null);
+  /** Confirms waiting for the bridge's controller (`awaitController`). */
+  const controllerWaiters = useRef(new Set<(c: EversionControllerHandle | null) => void>());
+  /** The warm-up said this device cannot run the effect: never wait for a bridge. */
+  const noEffect = useRef(false);
   const tRef = useRef(t);
   tRef.current = t;
   /**
@@ -307,7 +337,9 @@ export function RadialHub() {
       // mounts the bridge at all (R6 m5).
       if (isEversionEnabled()) {
         void startEversion().then((result) => {
-          if (!unmounted && result.webgl2) setBridgeWanted(true);
+          if (unmounted) return;
+          if (result.webgl2) setBridgeWanted(true);
+          else noEffect.current = true;
         });
       }
       void preloadGlobe()?.then(() => {
@@ -452,12 +484,57 @@ export function RadialHub() {
       pendingPreview.current = false;
       pendingPreviewRun.current?.(controller);
     }
+    if (controller) for (const waiter of [...controllerWaiters.current]) waiter(controller);
   }, []);
 
   /**
+   * Ask for the bridge now (the visitor's intent: skip the idle wait). A device
+   * the warm-up says cannot run the effect releases every waiting confirm to the
+   * ordinary navigation.
+   */
+  const wantBridge = useCallback(() => {
+    void startEversion(true).then((result) => {
+      if (result.webgl2) {
+        setBridgeWanted(true);
+        return;
+      }
+      noEffect.current = true;
+      for (const waiter of [...controllerWaiters.current]) waiter(null);
+    });
+  }, []);
+
+  /** The controller, as soon as the bridge hands it up; `null` after `ms` or on a no-effect device. */
+  const awaitController = useCallback(
+    (ms: number) =>
+      new Promise<EversionControllerHandle | null>((resolve) => {
+        if (controllerRef.current) return resolve(controllerRef.current);
+        if (noEffect.current) return resolve(null);
+        const done = (controller: EversionControllerHandle | null) => {
+          clearTimeout(timer);
+          controllerWaiters.current.delete(done);
+          resolve(controller);
+        };
+        const timer = setTimeout(() => done(null), ms);
+        controllerWaiters.current.add(done);
+        wantBridge();
+      }),
+    [wantBridge],
+  );
+
+  // The hub is open: the visitor is about to pick a destination, so the effect's
+  // warm-up stops waiting for `load` and idle. Held back until the open morph is
+  // over, so its chunk parsing never lands inside that motion.
+  useEffect(() => {
+    if (phase !== 'open' || !eversionOn || controllerRef.current || noEffect.current) return;
+    const timer = setTimeout(wantBridge, MOTION_MS);
+    return () => clearTimeout(timer);
+  }, [phase, eversionOn, wantBridge]);
+
+  /**
    * LiquidGlobe's confirm hand-off (hold-release, pin click, Enter). Ineligible -
-   * bridge not loaded, reduced motion, no WebGL2, chunk not ready - is exactly
-   * today's path. Otherwise the hub lets go (`everting`) and the controller
+   * reduced motion, no WebGL2 - is exactly today's path. A bridge that has not
+   * loaded yet is waited for (bounded; see `CONTROLLER_WAIT_MS`), so the first
+   * navigation of a page-load plays the effect too. Otherwise the hub lets go (`everting`) and the controller
    * navigates by itself at `start`; the hub must NOT. All of the rules (one
    * hand-off at a time, who navigates on which outcome) live in `hub-handoff.ts`.
    * Focus is left to the router either way.
@@ -470,9 +547,18 @@ export function RadialHub() {
     dismiss,
   };
   const handOff = useCallback(
-    (node: NavLeaf, state: GlobeStartState, entry: Exclude<EntryPoint, 'preview'>) =>
-      handOffMachine.confirm(controllerRef.current, node, state, entry),
-    [handOffMachine],
+    (node: NavLeaf, state: GlobeStartState, entry: Exclude<EntryPoint, 'preview'>) => {
+      const controller = controllerRef.current;
+      if (controller || noEffect.current) {
+        handOffMachine.confirm(controller, node, state, entry);
+        return;
+      }
+      const ms = useThemeStore.getState().alwaysEvertGlobe
+        ? ALWAYS_CONTROLLER_WAIT_MS
+        : CONTROLLER_WAIT_MS;
+      handOffMachine.confirmWhenReady(awaitController(ms), node, state, entry);
+    },
+    [handOffMachine, awaitController],
   );
 
   const signOut = useCallback(async () => {

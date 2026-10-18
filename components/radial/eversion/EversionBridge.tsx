@@ -34,9 +34,11 @@ import { useBeforeCapture } from './useBeforeCapture';
  *
  * ## What it does while mounted
  *
+ * - initialises the render host on the persistent canvas at the first idle slot
+ *   after it mounts (the one program compile of the page-load);
  * - runs the BEFORE capture scheduler (`useBeforeCapture`) for as long as the hub
  *   is `open`, and tells the controller when the hub opens and closes so it can
- *   do its idle work (projection draw, LUT bake, programs) off the release path;
+ *   do its idle work (projection draw, LUT bake) off the release path;
  * - owns the controller's lifetime: built in an effect (so StrictMode's
  *   mount/unmount/mount disposes one and builds a fresh one), disposed on
  *   unmount, which also aborts a run in flight.
@@ -85,7 +87,23 @@ export default function EversionBridge({ open, motionMs, onController }: Eversio
     });
     controllerRef.current = controller;
     onController(controller);
+    // Initialise the render host on the page's real canvas now, in the first idle
+    // slot, instead of 700 ms after the hub next opens: that is the program compile,
+    // and a release that beat it used to skip the effect. Once per page; the hub's
+    // own `onHubOpened` warm is then a no-op.
+    const w = window as typeof window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      cancelIdleCallback?: (handle: number) => void;
+    };
+    // Only for a visitor who can see the effect: reduced motion never compiles anything.
+    const warm = () => {
+      if (live.current.beforeCapture.isEligible()) void controller.warmHost();
+    };
+    const idle = w.requestIdleCallback?.(warm, { timeout: 1500 });
+    const timer = idle === undefined ? setTimeout(warm, 300) : undefined;
     return () => {
+      if (idle !== undefined) w.cancelIdleCallback?.(idle);
+      if (timer !== undefined) clearTimeout(timer);
       onController(null);
       controller.dispose();
       controllerRef.current = null;

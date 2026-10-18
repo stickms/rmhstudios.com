@@ -22,16 +22,15 @@
  * change within a page-load; the chunk is the only one that can flip to ready
  * later in the same session, so it goes last.
  *
- * ## "Always evert globe" (spec amendment 2026-10-18)
+ * ## The host is not an eligibility row while it is starting (amended 2026-10-18)
  *
- * The visitor can ask for the effect even where it would be skipped to keep
- * navigation fast. That override reaches exactly ONE row here: a host that is
- * not up yet (`host-not-ready`) stops being a reason to fall back (the run waits
- * for it, bounded, in the runner). It never reaches the flag, reduced motion
- * (accessibility wins), WebGL2 (cannot run), the chunk (nothing to run with) or a
- * host that has FAILED. The other performance reasons (BEFORE missing or late,
- * a slow host or overlay) are not eligibility rows at all: they happen inside
- * the run, and the runner lengthens their waits on the same preference.
+ * A render host still initialising used to be `host-not-ready`: today's
+ * navigation, at once. That, with the 50 ms BEFORE wait, is why the effect did
+ * not always play - a visitor quicker than the warm-up never saw it. Now only a
+ * host that has FAILED is a reason here; one that is idle or starting is waited
+ * for (bounded) inside the run, like a BEFORE capture still in flight. The
+ * visitor's "Always evert globe" preference does not reach this module at all
+ * any more: it only lengthens those waits, in the runner and the controller.
  *
  * "Unknown" is ineligible. T25's detection can throw (before it lands, and in a
  * sandboxed frame), and an effect we cannot prove will render must fall back to
@@ -56,8 +55,6 @@ export interface EligibilityInputs {
    * `failed` = written off after repeated init failures.
    */
   hostState?: HostLifeState;
-  /** The visitor's "Always evert globe" preference; absent means off. */
-  alwaysEvert?: boolean;
 }
 
 /** Where the render host is in its life (`useEversionController`'s `HostState`). */
@@ -78,24 +75,18 @@ export function evaluateEligibility(inputs: EligibilityInputs): FallbackReason |
   if (inputs.webgl2 !== true) return 'no-webgl2';
   if (!inputs.chunkReady) return 'chunk-not-ready';
   if (inputs.hostState !== undefined) {
-    return evaluateHostEligibility(inputs.hostState, inputs.alwaysEvert === true);
+    return evaluateHostEligibility(inputs.hostState);
   }
   return null;
 }
 
 /**
  * The host row on its own (the controller composes it after the hub's rows).
- * A host still starting is "not yet": today's navigation runs now, unless the
- * visitor asked for "Always evert globe", in which case the run waits for it. A
- * written-off host cannot run the effect whatever the preference says.
+ * A host still starting is "not yet", and "not yet" is waited for by the run;
+ * only a written-off host cannot run the effect.
  */
-export function evaluateHostEligibility(
-  hostState: HostLifeState,
-  alwaysEvert: boolean,
-): FallbackReason | null {
-  if (hostState === 'ready') return null;
-  if (hostState === 'failed') return 'host-error';
-  return alwaysEvert ? null : 'host-not-ready';
+export function evaluateHostEligibility(hostState: HostLifeState): FallbackReason | null {
+  return hostState === 'failed' ? 'host-error' : null;
 }
 
 /** Convenience: `evaluateEligibility(inputs) === null`. */

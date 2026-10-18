@@ -148,3 +148,45 @@ describe('hub hand-off', () => {
     expect(r.machine.busy()).toBe(true);
   });
 });
+
+describe('hub hand-off before the controller has loaded (amended 2026-10-18)', () => {
+  it('is busy while it waits, then runs the effect the moment the controller arrives', async () => {
+    const r = rig();
+    let arrive!: (c: HandOffController<typeof NODE> | null) => void;
+    r.machine.confirmWhenReady(
+      new Promise((resolve) => (arrive = resolve)),
+      NODE,
+      GLOBE,
+      'release',
+    );
+    expect(r.machine.busy()).toBe(true);
+    expect(r.log).toEqual([]); // no navigation while waiting
+    r.confirm(); // a second confirm meanwhile is nothing
+    expect(r.log).toEqual([]);
+    arrive(r.controller);
+    await flush();
+    expect(r.log).toEqual(['start']);
+    r.commit();
+    r.settle({ fallback: null, end: 'done' });
+    await flush();
+    expect(r.log).toEqual(['start', 'everting', 'closed']);
+    expect(r.machine.busy()).toBe(false);
+  });
+
+  it('a wait that runs out (null) or rejects is today, once, and clears busy', async () => {
+    for (const pending of [Promise.resolve(null), Promise.reject(new Error('chunk'))]) {
+      const r = rig();
+      r.machine.confirmWhenReady(pending, NODE, GLOBE, 'release');
+      await flush();
+      expect(r.log).toEqual(['today:/games']);
+      expect(r.machine.busy()).toBe(false);
+    }
+  });
+
+  it('an ineligible controller after the wait is today', async () => {
+    const r = rig({ eligible: () => false });
+    r.machine.confirmWhenReady(Promise.resolve(r.controller), NODE, GLOBE, 'release');
+    await flush();
+    expect(r.log).toEqual(['today:/games']);
+  });
+});

@@ -25,30 +25,17 @@
  *    called us is the rest of "low priority".
  * 3. Constructs the host — which, in worker mode, constructs the worker (cheap)
  *    and so fetches the worker script.
- * 4. **Warms program compilation without touching the overlay's canvas.** A
- *    canvas element's control transfers to an `OffscreenCanvas` exactly once
- *    (see `gl/host.ts`), and the overlay's canvas does not exist yet. So the
- *    compile happens on a throwaway 1 × 1 `OffscreenCanvas` sent in an ordinary
- *    `init`; the render side replies `ready` once the programs are built, and
- *    that same reply is the WebGL2 probe (no context is created on this thread
- *    in worker mode). The overlay's own `init` later disposes the throwaway
- *    renderer (the core handles a second `init`) and builds a new one.
+ * 4. **Probes WebGL2 and stops there** (amended 2026-10-18). It used to compile
+ *    the programs on a throwaway 1 x 1 `OffscreenCanvas` "to warm the driver",
+ *    and the overlay's own `init` then compiled them all again on the real
+ *    canvas: two cold compiles, on the main thread wherever the host runs in-thread
+ *    (every WebKit browser, i.e. every iPhone) - the costliest thing the effect did
+ *    at rest, on exactly the devices least able to afford it. Now the bridge
+ *    initialises the host on the page's real, persistent canvas as soon as it
+ *    mounts (`EversionBridge`), once, and the answer here is a detached-canvas
+ *    probe: a context created and lost at once, no program.
  *
- *    What this does and does not buy: a different context cannot reuse the
- *    first one's `WebGLProgram` objects, so the overlay's first `init` still
- *    links its programs. What the warm-up removes is everything around that —
- *    fetching and parsing the chunks and the worker script, starting the worker
- *    thread, creating the first GL context in the process (the driver's
- *    one-time initialisation is the slowest part) — and GPU drivers cache
- *    compiled shaders by source, so the second compile in the same process is
- *    far cheaper than the first. The remaining first-`init` cost is a link, not
- *    a cold start; T31 may keep the overlay canvas mounted-but-hidden between
- *    runs if it wants even that gone.
- *
- *    Where there is no `OffscreenCanvas` (older Safari) the compile is skipped
- *    and WebGL2 is probed on a detached `<canvas>` instead, lost immediately.
- *
- * It starts NO frame loop and posts nothing but `init` (idle at rest ≤ 2
+ * It starts NO frame loop and posts nothing to the host (idle at rest ≤ 2
  * frames/s — test 42).
  *
  * ## Idempotent, never rejects, no-op when off
@@ -79,19 +66,27 @@ export interface PrefetchResult {
   host: HostMode;
 }
 
-/** Give up waiting for the first compile after this long; the chunks are still ready. */
-const WARM_TIMEOUT_MS = 15_000;
-
 const NO: PrefetchResult = { webgl2: false, tier: 'low', host: 'main' };
 
 let started: Promise<PrefetchResult> | null = null;
 let ready = false;
+/** Ends a pending {@link afterLoad} wait now: the visitor's intent (see `prefetchEversion`). */
+let hurryLoad: (() => void) | null = null;
 
-/** Resolves once the document has fired `load` AND the load event has finished dispatching. */
-function afterLoad(): Promise<void> {
+/**
+ * Resolves once the document has fired `load` AND the load event has finished
+ * dispatching, or at once when hurried.
+ */
+function afterLoad(urgent: boolean): Promise<void> {
   return new Promise((resolve) => {
-    if (document.readyState === 'complete') setTimeout(resolve, 0);
-    else window.addEventListener('load', () => setTimeout(resolve, 0), { once: true });
+    const done = () => {
+      hurryLoad = null;
+      resolve();
+    };
+    if (urgent) return done();
+    hurryLoad = done;
+    if (document.readyState === 'complete') setTimeout(done, 0);
+    else window.addEventListener('load', () => setTimeout(done, 0), { once: true });
   });
 }
 
@@ -123,15 +118,14 @@ function probeWebgl2(): boolean {
   }
 }
 
-async function warm(): Promise<PrefetchResult> {
-  await afterLoad();
+async function warm(urgent: boolean): Promise<PrefetchResult> {
+  await afterLoad(urgent);
   performance.mark(EVERSION_MARKS.prefetch);
 
   const [{ getEversionHost, detectHostMode }] = await loadChunks();
-  const [{ detectRuntimeQuality }, { pickTier }, { TIERS }, { isPerfLite }] = await Promise.all([
+  const [{ detectRuntimeQuality }, { pickTier }, { isPerfLite }] = await Promise.all([
     import('@/lib/render/runtime'),
     import('./gl/governor-tiers'),
-    import('./constants'),
     import('@/lib/perf-tier'),
   ]);
   const tier = pickTier({
@@ -143,46 +137,26 @@ async function warm(): Promise<PrefetchResult> {
   // whatever the compile below says about WebGL2.
   ready = true;
 
-  const host = getEversionHost();
-  if (typeof OffscreenCanvas === 'undefined') {
-    return { webgl2: probeWebgl2(), tier, host: host.mode };
-  }
-
-  const webgl2 = await new Promise<boolean>((resolve) => {
-    // A compile that is merely slow (software GL, a busy box) is not evidence of
-    // "no WebGL2": the hub mounts its bridge on this answer, and the controller's own
-    // host init (with its own, longer budget) is the authority. Only an explicit
-    // fatal error or context loss says no.
-    const timer = setTimeout(() => finish(true), WARM_TIMEOUT_MS);
-    const unsubscribe = host.subscribe((message) => {
-      if (message.type === 'ready') finish(true);
-      else if (message.type === 'error' && message.fatal) finish(false);
-      else if (message.type === 'context-lost') finish(false);
-    });
-    function finish(ok: boolean) {
-      clearTimeout(timer);
-      unsubscribe();
-      resolve(ok);
-    }
-    host.post({
-      type: 'init',
-      canvas: new OffscreenCanvas(1, 1),
-      tier,
-      dprCap: TIERS[tier].canvasDprCap,
-    });
-  });
-  // A worker that failed to start demotes the cached mode; report what the next host will be.
-  return { webgl2, tier, host: detectHostMode() };
+  // Constructing the host spawns the worker (in worker mode), which fetches its
+  // script and answers the capability probe; nothing is compiled until the bridge
+  // initialises the real canvas. The controller's host init is the authority on
+  // whether the effect can render; this answer only decides whether the bridge mounts.
+  getEversionHost();
+  return { webgl2: probeWebgl2(), tier, host: detectHostMode() };
 }
 
 /**
- * Begin (or join) the warm-up. Waits for `window` `load` first. Resolves with
- * what was learned; never rejects — a failed warm-up resolves with
- * `webgl2: false` so eligibility simply says no.
+ * Begin (or join) the warm-up. Waits for `window` `load` first, unless `urgent`:
+ * the hub passes that only once the visitor has opened it or picked a destination,
+ * so the effect is about to be needed (a call that joins a warm-up still waiting
+ * for `load` hurries it). Resolves with what was learned; never rejects — a failed
+ * warm-up resolves with `webgl2: false` so eligibility simply says no.
  */
-export function prefetchEversion(): Promise<PrefetchResult> {
+export function prefetchEversion(options: { urgent?: boolean } = {}): Promise<PrefetchResult> {
   if (typeof window === 'undefined' || !isEversionEnabled()) return Promise.resolve(NO);
-  started ??= warm().catch((error: unknown) => {
+  const urgent = options.urgent === true;
+  if (urgent) hurryLoad?.();
+  started ??= warm(urgent).catch((error: unknown) => {
     console.error('eversion: prefetch failed', error);
     return NO;
   });

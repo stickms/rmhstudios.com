@@ -3,10 +3,10 @@
  * "Always evert globe" (spec amendment 2026-10-18): the preference lifts the
  * PERFORMANCE reasons the effect is skipped for, and nothing else.
  *
- * Two halves. The pure eligibility rows (a host that is not up yet is the only
- * performance row there), and the runner's priming waits (BEFORE, host ready,
- * overlay mount), which lengthen to the `ALWAYS_EVERT_*` limits instead of falling
- * back. The accessibility and capability rows must never move.
+ * Two halves. The pure eligibility rows (since 2026-10-18 a host that is not up
+ * yet is no longer a row at all: every run waits for it), and the runner's priming
+ * waits (BEFORE, host ready, overlay mount), which lengthen from their defaults to
+ * the `ALWAYS_EVERT_*` limits. The accessibility and capability rows never move.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -23,7 +23,7 @@ import {
   type EligibilityInputs,
   type HostLifeState,
 } from '../eligibility';
-import { EversionRunner } from '../runner';
+import { EversionRunner, HOST_READY_TIMEOUT_MS } from '../runner';
 import type { RunnerDeps } from '../runner';
 import type { EversionHost, EversionNode, FallbackReason, GlobeStartState } from '../types';
 
@@ -35,50 +35,38 @@ const ok: EligibilityInputs = {
   hostState: 'ready',
 };
 
-describe('eligibility with "Always evert globe"', () => {
+describe('eligibility: the host row (amended 2026-10-18)', () => {
   it.each(['idle', 'initialising'] as const)(
-    'a host that is %s: skipped without the override, eligible with it',
+    'a host that is %s is eligible: the run waits for it instead of skipping',
     (hostState) => {
-      expect(evaluateEligibility({ ...ok, hostState })).toBe('host-not-ready');
-      expect(evaluateEligibility({ ...ok, hostState, alwaysEvert: false })).toBe('host-not-ready');
-      expect(evaluateEligibility({ ...ok, hostState, alwaysEvert: true })).toBeNull();
-      expect(isEligibleFor({ ...ok, hostState, alwaysEvert: true })).toBe(true);
+      expect(evaluateEligibility({ ...ok, hostState })).toBeNull();
+      expect(isEligibleFor({ ...ok, hostState })).toBe(true);
     },
   );
 
-  it('a failed host cannot run the effect whatever the preference says', () => {
+  it('a failed host cannot run the effect', () => {
     expect(evaluateEligibility({ ...ok, hostState: 'failed' })).toBe('host-error');
-    expect(evaluateEligibility({ ...ok, hostState: 'failed', alwaysEvert: true })).toBe(
-      'host-error',
-    );
   });
 
-  it('a ready host is eligible either way', () => {
+  it('a ready host is eligible', () => {
     expect(evaluateEligibility(ok)).toBeNull();
-    expect(evaluateEligibility({ ...ok, alwaysEvert: true })).toBeNull();
   });
 
   it('never bypasses reduced motion (accessibility wins)', () => {
     for (const hostState of ['idle', 'initialising', 'ready', 'failed'] as HostLifeState[]) {
-      expect(
-        evaluateEligibility({ ...ok, hostState, reducedMotion: true, alwaysEvert: true }),
-      ).toBe('reduced-motion');
+      expect(evaluateEligibility({ ...ok, hostState, reducedMotion: true })).toBe('reduced-motion');
     }
   });
 
   it.each([false, null] as const)('never bypasses missing WebGL2 (%s)', (webgl2) => {
     for (const hostState of ['idle', 'initialising', 'ready'] as HostLifeState[]) {
-      expect(evaluateEligibility({ ...ok, hostState, webgl2, alwaysEvert: true })).toBe(
-        'no-webgl2',
-      );
+      expect(evaluateEligibility({ ...ok, hostState, webgl2 })).toBe('no-webgl2');
     }
   });
 
   it('never bypasses the rollout flag or an unloaded chunk', () => {
-    expect(evaluateEligibility({ ...ok, flagEnabled: false, alwaysEvert: true })).toBe('flag-off');
-    expect(evaluateEligibility({ ...ok, chunkReady: false, alwaysEvert: true })).toBe(
-      'chunk-not-ready',
-    );
+    expect(evaluateEligibility({ ...ok, flagEnabled: false })).toBe('flag-off');
+    expect(evaluateEligibility({ ...ok, chunkReady: false })).toBe('chunk-not-ready');
   });
 
   it('reduced motion still outranks everything else in the documented order', () => {
@@ -89,7 +77,6 @@ describe('eligibility with "Always evert globe"', () => {
         webgl2: false,
         chunkReady: false,
         hostState: 'initialising',
-        alwaysEvert: true,
       }),
     ).toBe('reduced-motion');
   });
@@ -97,22 +84,17 @@ describe('eligibility with "Always evert globe"', () => {
   it('callers that only decide the hub-side rows (no hostState) are unchanged', () => {
     const { hostState: _omit, ...hubOnly } = ok;
     expect(evaluateEligibility(hubOnly)).toBeNull();
-    expect(evaluateEligibility({ ...hubOnly, alwaysEvert: true })).toBeNull();
   });
 
   it('evaluateHostEligibility is the whole host row', () => {
-    const table: [HostLifeState, boolean, FallbackReason | null][] = [
-      ['ready', false, null],
-      ['ready', true, null],
-      ['idle', false, 'host-not-ready'],
-      ['idle', true, null],
-      ['initialising', false, 'host-not-ready'],
-      ['initialising', true, null],
-      ['failed', false, 'host-error'],
-      ['failed', true, 'host-error'],
+    const table: [HostLifeState, FallbackReason | null][] = [
+      ['ready', null],
+      ['idle', null],
+      ['initialising', null],
+      ['failed', 'host-error'],
     ];
-    for (const [state, always, expected] of table) {
-      expect(evaluateHostEligibility(state, always)).toBe(expected);
+    for (const [state, expected] of table) {
+      expect(evaluateHostEligibility(state)).toBe(expected);
     }
   });
 });
@@ -242,7 +224,7 @@ describe('the runner with "Always evert globe"', () => {
     expect((await r.runner.run(NODE, GLOBE)).fallback).toBe('before-timeout');
   });
 
-  it('gives the host the long wait, and a host slower than 100 ms then runs', async () => {
+  it('gives the host the long wait, and a host slower than the default wait then runs', async () => {
     const asked: number[] = [];
     const slow = (always: boolean) =>
       rig({
@@ -254,7 +236,7 @@ describe('the runner with "Always evert globe"', () => {
               setTimeout(
                 () =>
                   resolve({ mode: 'worker', post() {}, subscribe: () => () => {}, dispose() {} }),
-                1500,
+                HOST_READY_TIMEOUT_MS + 1500,
               );
               setTimeout(reject, ms);
             }),
@@ -262,20 +244,20 @@ describe('the runner with "Always evert globe"', () => {
         },
       });
 
-    // Without the override the host has ~100 ms and a 1.5 s init is a fallback.
+    // Without the override the host has HOST_READY_TIMEOUT_MS, and an init 1.5 s past it is a fallback.
     const off = slow(false);
     const offRun = off.runner.run(NODE, GLOBE);
-    await vi.advanceTimersByTimeAsync(2000);
+    await vi.advanceTimersByTimeAsync(HOST_READY_TIMEOUT_MS + 100);
     expect((await offRun).fallback).toBe('host-error');
 
     // With it the same host is waited for and the run starts (navigate is issued).
     const on = slow(true);
     const logged: string[] = [];
     const onRun = on.runner.run(NODE, GLOBE);
-    await vi.advanceTimersByTimeAsync(1600);
+    await vi.advanceTimersByTimeAsync(HOST_READY_TIMEOUT_MS + 1600);
     logged.push(...on.log);
     expect(logged).toContain('navigate:/games');
-    expect(asked).toEqual([100, ALWAYS_EVERT_HOST_WAIT_MS]);
+    expect(asked).toEqual([HOST_READY_TIMEOUT_MS, ALWAYS_EVERT_HOST_WAIT_MS]);
     on.runner.dispose();
     await onRun;
   });

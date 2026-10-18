@@ -18,9 +18,8 @@
  * ```
  * run(node, state)
  *   eligibility ──no──▶ fallback(reason)                      today's path
- *   awaitBefore(BEFORE_WAIT_MS) ──null──▶ fallback(before-*)   (waits <= 50 ms; no bitmap in flight = at once)
- *   host ready ──no──▶ fallback(host-error)      (a host still initialising never gets here:
- *                                                    eligibility says host-not-ready, T33)
+ *   awaitBefore(BEFORE_WAIT_MS) ──null──▶ fallback(before-*)   (in-flight capture, else one on demand; <= 1.2 s)
+ *   host ready ──no──▶ fallback(host-error)      (a host still initialising is waited for, bounded)
  *   overlay mounted ──no──▶ fallback(host-error)
  *   prime · texture(before) · placeholder           ← everything that can fail
  *   ─── point of no return ────────────────────────────────────────────────
@@ -83,22 +82,22 @@ import type {
 } from './types';
 
 /**
- * How long the render side may take to say `ready` for a host that is ALREADY
- * initialised. "Host still initialising" is decided earlier, by eligibility (the
- * controller reports `host-not-ready`, see `HOST_INIT_TIMEOUT_MS`); a ready host
- * answers in a microtask, so this only bounds a host that was ready and has
- * since stopped answering - and every millisecond of it is delay added to the
- * fallback navigation, so it is kept to a few frames (review R6 M3).
+ * How long a release waits for the render host to say `ready`. A ready host
+ * answers in a microtask. One still initialising (the bridge starts the init on
+ * the page's real canvas as soon as it mounts, so this is the first seconds of a
+ * page-load at most) is waited for rather than skipped: it used to be eligibility's
+ * immediate `host-not-ready`, and so the first navigation of a page-load, and
+ * every navigation on a phone whose compile outlasted the visitor, simply did not
+ * play (2026-10-18). Bounded, because the hub sits still meanwhile.
  */
-export const HOST_READY_TIMEOUT_MS = 100;
+export const HOST_READY_TIMEOUT_MS = 2500;
 /**
  * The budget for a COLD host init (worker spawn, shader fetch, `init` handled,
- * programs compiled). It is spent while the hub is open and idle, never at
- * release, so it can be generous: a desktop GPU takes ~100-400 ms, a phone with
- * a cold shader cache a few seconds, and a software GL (SwiftShader, headless CI)
- * well over the old 600 ms. A host still initialising when the visitor releases
- * is "not eligible yet" (`host-not-ready`): today's navigation runs at once and
- * the init carries on for the next one.
+ * programs compiled). It is spent while the page is idle (the bridge starts it
+ * when it mounts), so it can be generous: a desktop GPU takes ~100-400 ms, a phone
+ * with a cold shader cache a few seconds, and a software GL (SwiftShader, headless
+ * CI) well over the old 600 ms. A release while it is still running waits
+ * {@link HOST_READY_TIMEOUT_MS} for it; the init itself carries on regardless.
  */
 export const HOST_INIT_TIMEOUT_MS = 20_000;
 /**
@@ -110,10 +109,11 @@ export const HOST_INIT_TIMEOUT_MS = 20_000;
 export const ROUTE_SETTLE_TIMEOUT_MS = AFTER_CAPTURE_TIMEOUT_MS;
 /**
  * How long the overlay may take to attach its canvas before the effect is
- * skipped. React commits it within a frame or two; like the host wait, this is
- * pure added latency on the fallback path.
+ * skipped. React commits it within a frame or two; a low-end phone still busy
+ * with the capture it has just taken can take several, and 100 ms skipped the
+ * effect there.
  */
-export const OVERLAY_MOUNT_TIMEOUT_MS = 100;
+export const OVERLAY_MOUNT_TIMEOUT_MS = 500;
 /** The context-loss fade (spec §9.4; `.eversion-overlay--fading` in eversion.css is 0.2 s). */
 export const OVERLAY_FADE_MS = 200;
 

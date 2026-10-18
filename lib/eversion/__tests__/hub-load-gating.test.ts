@@ -19,7 +19,7 @@ const hub = readFileSync(join(process.cwd(), 'components/radial/RadialHub.tsx'),
 
 /** Source text of the top-level `function startEversion` (brace-matched). */
 function startEversionBody(): string {
-  const at = hub.indexOf('function startEversion()');
+  const at = hub.indexOf('function startEversion(');
   expect(at).toBeGreaterThan(-1);
   let depth = 0;
   for (let i = hub.indexOf('{', at); i < hub.length; i++) {
@@ -49,11 +49,17 @@ describe('RadialHub load gating', () => {
 
   it('the bridge is mounted only for a device that reports WebGL2', () => {
     expect(hub).toMatch(/result\.webgl2/);
-    expect(hub).not.toMatch(/prefetchEversion\(\)\)\s*\.then\(\(\) => \{?\s*(?:if \(!unmounted\) )?setBridgeWanted/);
+    expect(hub).not.toMatch(
+      /prefetchEversion\(\)\)\s*\.then\(\(\) => \{?\s*(?:if \(!unmounted\) )?setBridgeWanted/,
+    );
   });
 
   it('the shell statically imports only the flag, the mark types and type-only modules', () => {
-    const statics = [...hub.matchAll(/^import\s+(type\s+)?[^;]*?from\s+'(@\/lib\/eversion\/[^']+|\.\/eversion\/[^']+)';/gms)];
+    const statics = [
+      ...hub.matchAll(
+        /^import\s+(type\s+)?[^;]*?from\s+'(@\/lib\/eversion\/[^']+|\.\/eversion\/[^']+)';/gms,
+      ),
+    ];
     for (const [full, typeOnly, spec] of statics) {
       if (typeOnly) continue;
       expect(spec, full).toBe('@/lib/eversion/flags');
