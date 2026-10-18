@@ -447,6 +447,11 @@ model User {
   pf2eSettingsEdits   Pf2eSettings[]        @relation("Pf2eSettingsEditor")
 
   // ─── Feature ideas 2026-10-12 (docs/plans/2026-10-12-feature-ideas-every-surface.md)
+  // P26 worlds: R6 R7 R8 snapshots, postcards, waterings, festival entries
+  worldSnapshots             WorldSnapshot[]
+  worldPostcards             WorldPostcard[]
+  gardenWaterings            GardenWatering[]
+  farmFestivalEntries        FarmFestivalEntry[]
   // P24 party: R2 rmhbox packs, R15 connections grids
   rmhboxPacks                RmhboxPack[]
   rmhboxPackReports          RmhboxPackReport[]
@@ -12389,4 +12394,80 @@ model NdwLivery {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("ndw_livery")
+}
+
+// ── P26 worlds: R6 R7 R8 ──
+// One read-only snapshot per member per kind (isleworks island, forest garden,
+// farm tour), reachable by a short share code. Payload is size-capped on write.
+model WorldSnapshot {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String   @db.VarChar(16)
+  code      String   @unique @db.VarChar(10)
+  title     String   @db.VarChar(80)
+  payload   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postcards WorldPostcard[]
+  waterings GardenWatering[]
+
+  @@unique([userId, kind])
+  @@map("world_snapshot")
+}
+
+// A visitor's short note on a snapshot; one per visitor (re-sending replaces it).
+// The owner can hide any of them.
+model WorldPostcard {
+  id         String    @id @default(cuid())
+  snapshotId String
+  authorId   String
+  body       String    @db.VarChar(160)
+  hiddenAt   DateTime?
+  createdAt  DateTime  @default(now())
+
+  snapshot WorldSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  author   User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@unique([snapshotId, authorId])
+  @@index([snapshotId, createdAt])
+  @@index([authorId])
+  @@map("world_postcard")
+}
+
+// One watering per visitor per garden per UTC day; appliedAt is set when the
+// owner's garden has taken the growth bonus on its next load.
+model GardenWatering {
+  id         String    @id @default(cuid())
+  snapshotId String
+  visitorId  String
+  day        String    @db.VarChar(10)
+  appliedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  snapshot WorldSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  visitor  User          @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+
+  @@unique([snapshotId, visitorId, day])
+  @@index([snapshotId, appliedAt])
+  @@index([visitorId])
+  @@map("garden_watering")
+}
+
+// Farming Sim festival contest: harvest value earned on the festival day,
+// written by the authoritative socket handler (never by a client).
+model FarmFestivalEntry {
+  id          String   @id @default(cuid())
+  festivalKey String   @db.VarChar(32)
+  userId      String
+  name        String   @db.VarChar(64)
+  score       Int
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([festivalKey, userId])
+  @@index([festivalKey, score])
+  @@map("farm_festival_entry")
 }

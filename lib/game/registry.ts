@@ -93,6 +93,19 @@ export const GAME_SCORE_RULES: readonly GameScoreRules[] = [
     maxProgress: 8,
   },
   {
+    // Temple of Joy's idle-efficiency board: floor(log10(joy per hour) * 100),
+    // derived server-side from the stored save (app/routes/api/temple-of-joy/efficiency.ts).
+    // A double tops out near 10^308, so 31,000 is the honest ceiling.
+    id: 'temple-of-joy-efficiency',
+    label: 'Temple of Joy efficiency',
+    unlisted: true,
+    maxScore: 31_000,
+    minDurationMs: 3_600_000,
+    direction: 'higher-is-better',
+    progressLabel: 'Hours played',
+    maxProgress: 1_000_000,
+  },
+  {
     id: 'neon-driftway',
     label: 'Neon Driftway',
     maxScore: 5_000_000,

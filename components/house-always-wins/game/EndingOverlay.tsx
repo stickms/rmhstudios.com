@@ -1,6 +1,7 @@
 "use client";
 
 import { useHouseAlwaysWinsStore } from "@/lib/store/houseAlwaysWinsStore";
+import { NgPlusOffer } from "./NgPlus";
 
 interface EndingDef {
   title: string;
@@ -60,6 +61,7 @@ export function EndingOverlay({ endingId }: { endingId: string }) {
         <div className="mb-6 font-mono text-[11px] tracking-widest text-[#6b6155]">
           RUN COMPLETE · {deaths} BUST{deaths === 1 ? "" : "S"}
         </div>
+        <NgPlusOffer endingId={endingId} />
         <button
           onClick={playAgain}
           className="rounded-lg border border-[#d4a054]/40 bg-[#d4a054]/10 px-6 py-2.5 font-mono text-sm tracking-wide text-[#f0c674] transition-colors hover:bg-[#d4a054]/20"

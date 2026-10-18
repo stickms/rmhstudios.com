@@ -27,6 +27,7 @@ import { useIsleworks } from '@/lib/isleworks/store';
 import type { BuildingWarning, CityState } from '@/lib/isleworks/types';
 
 import { CatalogIcon } from './icons';
+import { ShareIsland } from './ShareIsland';
 
 const WARNING_TEXT: Record<BuildingWarning, { key: string; fallback: string }> = {
   'no-road': { key: 'warn-no-road', fallback: 'No road access' },
@@ -48,6 +49,7 @@ export function Rail() {
       <Objectives />
       {city.events.length > 0 && <Events city={city} />}
       <CityPanel />
+      <ShareIsland />
     </div>
   );
 }

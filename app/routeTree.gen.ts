@@ -718,6 +718,7 @@ import { Route as ApiStudyPlansIdRouteImport } from './routes/api/study-plans/$i
 import { Route as ApiStudyMarketplaceRouteImport } from './routes/api/study/marketplace'
 import { Route as ApiStudyTutorRouteImport } from './routes/api/study/tutor'
 import { Route as ApiTagsTagRouteImport } from './routes/api/tags/$tag'
+import { Route as ApiTempleOfJoyEfficiencyRouteImport } from './routes/api/temple-of-joy/efficiency'
 import { Route as ApiTempleOfJoySaveRouteImport } from './routes/api/temple-of-joy/save'
 import { Route as ApiThemesIndexRouteImport } from './routes/api/themes/index'
 import { Route as ApiThemesIdRouteImport } from './routes/api/themes/$id'
@@ -760,6 +761,10 @@ import { Route as ApiWheelIndexRouteImport } from './routes/api/wheel/index'
 import { Route as ApiWheelSpinRouteImport } from './routes/api/wheel/spin'
 import { Route as ApiWhenIndexRouteImport } from './routes/api/when/index'
 import { Route as ApiWishlistIndexRouteImport } from './routes/api/wishlist/index'
+import { Route as ApiWorldsFestivalRouteImport } from './routes/api/worlds/festival'
+import { Route as ApiWorldsGardenClaimRouteImport } from './routes/api/worlds/garden-claim'
+import { Route as ApiWorldsPostcardsRouteImport } from './routes/api/worlds/postcards'
+import { Route as ApiWorldsSnapshotsRouteImport } from './routes/api/worlds/snapshots'
 import { Route as EmbedPostIdRouteImport } from './routes/embed.post.$id'
 import { Route as EmbedReplayIdRouteImport } from './routes/embed.replay.$id'
 import { Route as LibraryAlbumsAlbumIdRouteImport } from './routes/library.albums.$albumId'
@@ -1106,6 +1111,7 @@ import { Route as ApiWhenIdIndexRouteImport } from './routes/api/when/$id/index'
 import { Route as ApiWhenIdIcsRouteImport } from './routes/api/when/$id/ics'
 import { Route as ApiWhenIdLockRouteImport } from './routes/api/when/$id/lock'
 import { Route as ApiWhenIdRespondRouteImport } from './routes/api/when/$id/respond'
+import { Route as ApiWorldsVisitCodeRouteImport } from './routes/api/worlds/visit.$code'
 import { Route as RmhboxMinigamesMinigameIdHistoryRouteImport } from './routes/rmhbox/minigames/$minigameId/history'
 import { Route as SiteAdminBlogSlugEditRouteImport } from './routes/_site/admin/blog/$slug/edit'
 import { Route as SiteGamesGameIdGuidesGuideIdRouteImport } from './routes/_site/games/$gameId_.guides.$guideId'
@@ -1216,6 +1222,8 @@ import { Route as ApiV1UsersHandleFollowRouteImport } from './routes/api/v1/user
 import { Route as ApiV1UsersHandleFollowersRouteImport } from './routes/api/v1/users/$handle/followers'
 import { Route as ApiV1UsersHandleFollowingRouteImport } from './routes/api/v1/users/$handle/following'
 import { Route as ApiV1UsersHandlePostsRouteImport } from './routes/api/v1/users/$handle/posts'
+import { Route as ApiWorldsVisitCodePostcardRouteImport } from './routes/api/worlds/visit.$code.postcard'
+import { Route as ApiWorldsVisitCodeWaterRouteImport } from './routes/api/worlds/visit.$code.water'
 import { Route as ApiAdminAlbumsIdSlidesSlideIdRouteImport } from './routes/api/admin/albums/$id/slides/$slideId'
 import { Route as ApiAdminDelightFortunesIdIndexRouteImport } from './routes/api/admin/delight/fortunes/$id/index'
 import { Route as ApiAdminDelightHuntsIdIndexRouteImport } from './routes/api/admin/delight/hunts/$id/index'
@@ -4811,6 +4819,12 @@ const ApiTagsTagRoute = ApiTagsTagRouteImport.update({
   path: '/api/tags/$tag',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTempleOfJoyEfficiencyRoute =
+  ApiTempleOfJoyEfficiencyRouteImport.update({
+    id: '/api/temple-of-joy/efficiency',
+    path: '/api/temple-of-joy/efficiency',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiTempleOfJoySaveRoute = ApiTempleOfJoySaveRouteImport.update({
   id: '/api/temple-of-joy/save',
   path: '/api/temple-of-joy/save',
@@ -5020,6 +5034,26 @@ const ApiWhenIndexRoute = ApiWhenIndexRouteImport.update({
 const ApiWishlistIndexRoute = ApiWishlistIndexRouteImport.update({
   id: '/api/wishlist/',
   path: '/api/wishlist/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWorldsFestivalRoute = ApiWorldsFestivalRouteImport.update({
+  id: '/api/worlds/festival',
+  path: '/api/worlds/festival',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWorldsGardenClaimRoute = ApiWorldsGardenClaimRouteImport.update({
+  id: '/api/worlds/garden-claim',
+  path: '/api/worlds/garden-claim',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWorldsPostcardsRoute = ApiWorldsPostcardsRouteImport.update({
+  id: '/api/worlds/postcards',
+  path: '/api/worlds/postcards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWorldsSnapshotsRoute = ApiWorldsSnapshotsRouteImport.update({
+  id: '/api/worlds/snapshots',
+  path: '/api/worlds/snapshots',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EmbedPostIdRoute = EmbedPostIdRouteImport.update({
@@ -6851,6 +6885,11 @@ const ApiWhenIdRespondRoute = ApiWhenIdRespondRouteImport.update({
   path: '/api/when/$id/respond',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWorldsVisitCodeRoute = ApiWorldsVisitCodeRouteImport.update({
+  id: '/api/worlds/visit/$code',
+  path: '/api/worlds/visit/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RmhboxMinigamesMinigameIdHistoryRoute =
   RmhboxMinigamesMinigameIdHistoryRouteImport.update({
     id: '/minigames/$minigameId/history',
@@ -7470,6 +7509,17 @@ const ApiV1UsersHandlePostsRoute = ApiV1UsersHandlePostsRouteImport.update({
   id: '/posts',
   path: '/posts',
   getParentRoute: () => ApiV1UsersHandleRoute,
+} as any)
+const ApiWorldsVisitCodePostcardRoute =
+  ApiWorldsVisitCodePostcardRouteImport.update({
+    id: '/postcard',
+    path: '/postcard',
+    getParentRoute: () => ApiWorldsVisitCodeRoute,
+  } as any)
+const ApiWorldsVisitCodeWaterRoute = ApiWorldsVisitCodeWaterRouteImport.update({
+  id: '/water',
+  path: '/water',
+  getParentRoute: () => ApiWorldsVisitCodeRoute,
 } as any)
 const ApiAdminAlbumsIdSlidesSlideIdRoute =
   ApiAdminAlbumsIdSlidesSlideIdRouteImport.update({
@@ -8190,6 +8240,7 @@ export interface FileRoutesByFullPath {
   '/api/study/marketplace': typeof ApiStudyMarketplaceRoute
   '/api/study/tutor': typeof ApiStudyTutorRoute
   '/api/tags/$tag': typeof ApiTagsTagRoute
+  '/api/temple-of-joy/efficiency': typeof ApiTempleOfJoyEfficiencyRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
   '/api/themes/$id': typeof ApiThemesIdRouteWithChildren
   '/api/themes/shop': typeof ApiThemesShopRoute
@@ -8223,6 +8274,10 @@ export interface FileRoutesByFullPath {
   '/api/wager/$id': typeof ApiWagerIdRouteWithChildren
   '/api/webrings/$slug': typeof ApiWebringsSlugRouteWithChildren
   '/api/wheel/spin': typeof ApiWheelSpinRoute
+  '/api/worlds/festival': typeof ApiWorldsFestivalRoute
+  '/api/worlds/garden-claim': typeof ApiWorldsGardenClaimRoute
+  '/api/worlds/postcards': typeof ApiWorldsPostcardsRoute
+  '/api/worlds/snapshots': typeof ApiWorldsSnapshotsRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/embed/replay/$id': typeof EmbedReplayIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
@@ -8620,6 +8675,7 @@ export interface FileRoutesByFullPath {
   '/api/when/$id/ics': typeof ApiWhenIdIcsRoute
   '/api/when/$id/lock': typeof ApiWhenIdLockRoute
   '/api/when/$id/respond': typeof ApiWhenIdRespondRoute
+  '/api/worlds/visit/$code': typeof ApiWorldsVisitCodeRouteWithChildren
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/admin/albums/': typeof SiteAdminAlbumsIndexRoute
   '/admin/blog/': typeof SiteAdminBlogIndexRoute
@@ -8769,6 +8825,8 @@ export interface FileRoutesByFullPath {
   '/api/v1/users/$handle/followers': typeof ApiV1UsersHandleFollowersRoute
   '/api/v1/users/$handle/following': typeof ApiV1UsersHandleFollowingRoute
   '/api/v1/users/$handle/posts': typeof ApiV1UsersHandlePostsRoute
+  '/api/worlds/visit/$code/postcard': typeof ApiWorldsVisitCodePostcardRoute
+  '/api/worlds/visit/$code/water': typeof ApiWorldsVisitCodeWaterRoute
   '/api/admin/delight/fools/': typeof ApiAdminDelightFoolsIndexRoute
   '/api/admin/delight/fortunes/': typeof ApiAdminDelightFortunesIndexRoute
   '/api/admin/delight/hunts/': typeof ApiAdminDelightHuntsIndexRoute
@@ -9390,6 +9448,7 @@ export interface FileRoutesByTo {
   '/api/study/marketplace': typeof ApiStudyMarketplaceRoute
   '/api/study/tutor': typeof ApiStudyTutorRoute
   '/api/tags/$tag': typeof ApiTagsTagRoute
+  '/api/temple-of-joy/efficiency': typeof ApiTempleOfJoyEfficiencyRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
   '/api/themes/$id': typeof ApiThemesIdRouteWithChildren
   '/api/themes/shop': typeof ApiThemesShopRoute
@@ -9423,6 +9482,10 @@ export interface FileRoutesByTo {
   '/api/wager/$id': typeof ApiWagerIdRouteWithChildren
   '/api/webrings/$slug': typeof ApiWebringsSlugRouteWithChildren
   '/api/wheel/spin': typeof ApiWheelSpinRoute
+  '/api/worlds/festival': typeof ApiWorldsFestivalRoute
+  '/api/worlds/garden-claim': typeof ApiWorldsGardenClaimRoute
+  '/api/worlds/postcards': typeof ApiWorldsPostcardsRoute
+  '/api/worlds/snapshots': typeof ApiWorldsSnapshotsRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/embed/replay/$id': typeof EmbedReplayIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
@@ -9820,6 +9883,7 @@ export interface FileRoutesByTo {
   '/api/when/$id/ics': typeof ApiWhenIdIcsRoute
   '/api/when/$id/lock': typeof ApiWhenIdLockRoute
   '/api/when/$id/respond': typeof ApiWhenIdRespondRoute
+  '/api/worlds/visit/$code': typeof ApiWorldsVisitCodeRouteWithChildren
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/admin/albums': typeof SiteAdminAlbumsIndexRoute
   '/admin/blog': typeof SiteAdminBlogIndexRoute
@@ -9969,6 +10033,8 @@ export interface FileRoutesByTo {
   '/api/v1/users/$handle/followers': typeof ApiV1UsersHandleFollowersRoute
   '/api/v1/users/$handle/following': typeof ApiV1UsersHandleFollowingRoute
   '/api/v1/users/$handle/posts': typeof ApiV1UsersHandlePostsRoute
+  '/api/worlds/visit/$code/postcard': typeof ApiWorldsVisitCodePostcardRoute
+  '/api/worlds/visit/$code/water': typeof ApiWorldsVisitCodeWaterRoute
   '/api/admin/delight/fools': typeof ApiAdminDelightFoolsIndexRoute
   '/api/admin/delight/fortunes': typeof ApiAdminDelightFortunesIndexRoute
   '/api/admin/delight/hunts': typeof ApiAdminDelightHuntsIndexRoute
@@ -10618,6 +10684,7 @@ export interface FileRoutesById {
   '/api/study/marketplace': typeof ApiStudyMarketplaceRoute
   '/api/study/tutor': typeof ApiStudyTutorRoute
   '/api/tags/$tag': typeof ApiTagsTagRoute
+  '/api/temple-of-joy/efficiency': typeof ApiTempleOfJoyEfficiencyRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
   '/api/themes/$id': typeof ApiThemesIdRouteWithChildren
   '/api/themes/shop': typeof ApiThemesShopRoute
@@ -10651,6 +10718,10 @@ export interface FileRoutesById {
   '/api/wager/$id': typeof ApiWagerIdRouteWithChildren
   '/api/webrings/$slug': typeof ApiWebringsSlugRouteWithChildren
   '/api/wheel/spin': typeof ApiWheelSpinRoute
+  '/api/worlds/festival': typeof ApiWorldsFestivalRoute
+  '/api/worlds/garden-claim': typeof ApiWorldsGardenClaimRoute
+  '/api/worlds/postcards': typeof ApiWorldsPostcardsRoute
+  '/api/worlds/snapshots': typeof ApiWorldsSnapshotsRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/embed/replay/$id': typeof EmbedReplayIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
@@ -11048,6 +11119,7 @@ export interface FileRoutesById {
   '/api/when/$id/ics': typeof ApiWhenIdIcsRoute
   '/api/when/$id/lock': typeof ApiWhenIdLockRoute
   '/api/when/$id/respond': typeof ApiWhenIdRespondRoute
+  '/api/worlds/visit/$code': typeof ApiWorldsVisitCodeRouteWithChildren
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/_site/admin/albums/': typeof SiteAdminAlbumsIndexRoute
   '/_site/admin/blog/': typeof SiteAdminBlogIndexRoute
@@ -11197,6 +11269,8 @@ export interface FileRoutesById {
   '/api/v1/users/$handle/followers': typeof ApiV1UsersHandleFollowersRoute
   '/api/v1/users/$handle/following': typeof ApiV1UsersHandleFollowingRoute
   '/api/v1/users/$handle/posts': typeof ApiV1UsersHandlePostsRoute
+  '/api/worlds/visit/$code/postcard': typeof ApiWorldsVisitCodePostcardRoute
+  '/api/worlds/visit/$code/water': typeof ApiWorldsVisitCodeWaterRoute
   '/api/admin/delight/fools/': typeof ApiAdminDelightFoolsIndexRoute
   '/api/admin/delight/fortunes/': typeof ApiAdminDelightFortunesIndexRoute
   '/api/admin/delight/hunts/': typeof ApiAdminDelightHuntsIndexRoute
@@ -11846,6 +11920,7 @@ export interface FileRouteTypes {
     | '/api/study/marketplace'
     | '/api/study/tutor'
     | '/api/tags/$tag'
+    | '/api/temple-of-joy/efficiency'
     | '/api/temple-of-joy/save'
     | '/api/themes/$id'
     | '/api/themes/shop'
@@ -11879,6 +11954,10 @@ export interface FileRouteTypes {
     | '/api/wager/$id'
     | '/api/webrings/$slug'
     | '/api/wheel/spin'
+    | '/api/worlds/festival'
+    | '/api/worlds/garden-claim'
+    | '/api/worlds/postcards'
+    | '/api/worlds/snapshots'
     | '/embed/post/$id'
     | '/embed/replay/$id'
     | '/library/albums/$albumId'
@@ -12276,6 +12355,7 @@ export interface FileRouteTypes {
     | '/api/when/$id/ics'
     | '/api/when/$id/lock'
     | '/api/when/$id/respond'
+    | '/api/worlds/visit/$code'
     | '/rmhbox/minigames/$minigameId/history'
     | '/admin/albums/'
     | '/admin/blog/'
@@ -12425,6 +12505,8 @@ export interface FileRouteTypes {
     | '/api/v1/users/$handle/followers'
     | '/api/v1/users/$handle/following'
     | '/api/v1/users/$handle/posts'
+    | '/api/worlds/visit/$code/postcard'
+    | '/api/worlds/visit/$code/water'
     | '/api/admin/delight/fools/'
     | '/api/admin/delight/fortunes/'
     | '/api/admin/delight/hunts/'
@@ -13046,6 +13128,7 @@ export interface FileRouteTypes {
     | '/api/study/marketplace'
     | '/api/study/tutor'
     | '/api/tags/$tag'
+    | '/api/temple-of-joy/efficiency'
     | '/api/temple-of-joy/save'
     | '/api/themes/$id'
     | '/api/themes/shop'
@@ -13079,6 +13162,10 @@ export interface FileRouteTypes {
     | '/api/wager/$id'
     | '/api/webrings/$slug'
     | '/api/wheel/spin'
+    | '/api/worlds/festival'
+    | '/api/worlds/garden-claim'
+    | '/api/worlds/postcards'
+    | '/api/worlds/snapshots'
     | '/embed/post/$id'
     | '/embed/replay/$id'
     | '/library/albums/$albumId'
@@ -13476,6 +13563,7 @@ export interface FileRouteTypes {
     | '/api/when/$id/ics'
     | '/api/when/$id/lock'
     | '/api/when/$id/respond'
+    | '/api/worlds/visit/$code'
     | '/rmhbox/minigames/$minigameId/history'
     | '/admin/albums'
     | '/admin/blog'
@@ -13625,6 +13713,8 @@ export interface FileRouteTypes {
     | '/api/v1/users/$handle/followers'
     | '/api/v1/users/$handle/following'
     | '/api/v1/users/$handle/posts'
+    | '/api/worlds/visit/$code/postcard'
+    | '/api/worlds/visit/$code/water'
     | '/api/admin/delight/fools'
     | '/api/admin/delight/fortunes'
     | '/api/admin/delight/hunts'
@@ -14273,6 +14363,7 @@ export interface FileRouteTypes {
     | '/api/study/marketplace'
     | '/api/study/tutor'
     | '/api/tags/$tag'
+    | '/api/temple-of-joy/efficiency'
     | '/api/temple-of-joy/save'
     | '/api/themes/$id'
     | '/api/themes/shop'
@@ -14306,6 +14397,10 @@ export interface FileRouteTypes {
     | '/api/wager/$id'
     | '/api/webrings/$slug'
     | '/api/wheel/spin'
+    | '/api/worlds/festival'
+    | '/api/worlds/garden-claim'
+    | '/api/worlds/postcards'
+    | '/api/worlds/snapshots'
     | '/embed/post/$id'
     | '/embed/replay/$id'
     | '/library/albums/$albumId'
@@ -14703,6 +14798,7 @@ export interface FileRouteTypes {
     | '/api/when/$id/ics'
     | '/api/when/$id/lock'
     | '/api/when/$id/respond'
+    | '/api/worlds/visit/$code'
     | '/rmhbox/minigames/$minigameId/history'
     | '/_site/admin/albums/'
     | '/_site/admin/blog/'
@@ -14852,6 +14948,8 @@ export interface FileRouteTypes {
     | '/api/v1/users/$handle/followers'
     | '/api/v1/users/$handle/following'
     | '/api/v1/users/$handle/posts'
+    | '/api/worlds/visit/$code/postcard'
+    | '/api/worlds/visit/$code/water'
     | '/api/admin/delight/fools/'
     | '/api/admin/delight/fortunes/'
     | '/api/admin/delight/hunts/'
@@ -15270,6 +15368,7 @@ export interface RootRouteChildren {
   ApiStudyMarketplaceRoute: typeof ApiStudyMarketplaceRoute
   ApiStudyTutorRoute: typeof ApiStudyTutorRoute
   ApiTagsTagRoute: typeof ApiTagsTagRoute
+  ApiTempleOfJoyEfficiencyRoute: typeof ApiTempleOfJoyEfficiencyRoute
   ApiTempleOfJoySaveRoute: typeof ApiTempleOfJoySaveRoute
   ApiThemesIdRoute: typeof ApiThemesIdRouteWithChildren
   ApiThemesShopRoute: typeof ApiThemesShopRoute
@@ -15300,6 +15399,10 @@ export interface RootRouteChildren {
   ApiWagerIdRoute: typeof ApiWagerIdRouteWithChildren
   ApiWebringsSlugRoute: typeof ApiWebringsSlugRouteWithChildren
   ApiWheelSpinRoute: typeof ApiWheelSpinRoute
+  ApiWorldsFestivalRoute: typeof ApiWorldsFestivalRoute
+  ApiWorldsGardenClaimRoute: typeof ApiWorldsGardenClaimRoute
+  ApiWorldsPostcardsRoute: typeof ApiWorldsPostcardsRoute
+  ApiWorldsSnapshotsRoute: typeof ApiWorldsSnapshotsRoute
   EmbedPostIdRoute: typeof EmbedPostIdRoute
   EmbedReplayIdRoute: typeof EmbedReplayIdRoute
   LibraryAlbumsAlbumIdRoute: typeof LibraryAlbumsAlbumIdRoute
@@ -15530,6 +15633,7 @@ export interface RootRouteChildren {
   ApiWhenIdIcsRoute: typeof ApiWhenIdIcsRoute
   ApiWhenIdLockRoute: typeof ApiWhenIdLockRoute
   ApiWhenIdRespondRoute: typeof ApiWhenIdRespondRoute
+  ApiWorldsVisitCodeRoute: typeof ApiWorldsVisitCodeRouteWithChildren
   ApiAdminAlbumsIndexRoute: typeof ApiAdminAlbumsIndexRoute
   ApiAdminCanvasIndexRoute: typeof ApiAdminCanvasIndexRoute
   ApiAdminContextNotesIndexRoute: typeof ApiAdminContextNotesIndexRoute
@@ -20607,6 +20711,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTagsTagRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/temple-of-joy/efficiency': {
+      id: '/api/temple-of-joy/efficiency'
+      path: '/api/temple-of-joy/efficiency'
+      fullPath: '/api/temple-of-joy/efficiency'
+      preLoaderRoute: typeof ApiTempleOfJoyEfficiencyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/temple-of-joy/save': {
       id: '/api/temple-of-joy/save'
       path: '/api/temple-of-joy/save'
@@ -20899,6 +21010,34 @@ declare module '@tanstack/react-router' {
       path: '/api/wishlist'
       fullPath: '/api/wishlist/'
       preLoaderRoute: typeof ApiWishlistIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/worlds/festival': {
+      id: '/api/worlds/festival'
+      path: '/api/worlds/festival'
+      fullPath: '/api/worlds/festival'
+      preLoaderRoute: typeof ApiWorldsFestivalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/worlds/garden-claim': {
+      id: '/api/worlds/garden-claim'
+      path: '/api/worlds/garden-claim'
+      fullPath: '/api/worlds/garden-claim'
+      preLoaderRoute: typeof ApiWorldsGardenClaimRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/worlds/postcards': {
+      id: '/api/worlds/postcards'
+      path: '/api/worlds/postcards'
+      fullPath: '/api/worlds/postcards'
+      preLoaderRoute: typeof ApiWorldsPostcardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/worlds/snapshots': {
+      id: '/api/worlds/snapshots'
+      path: '/api/worlds/snapshots'
+      fullPath: '/api/worlds/snapshots'
+      preLoaderRoute: typeof ApiWorldsSnapshotsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/embed/post/$id': {
@@ -23323,6 +23462,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWhenIdRespondRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/worlds/visit/$code': {
+      id: '/api/worlds/visit/$code'
+      path: '/api/worlds/visit/$code'
+      fullPath: '/api/worlds/visit/$code'
+      preLoaderRoute: typeof ApiWorldsVisitCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rmhbox/minigames/$minigameId/history': {
       id: '/rmhbox/minigames/$minigameId/history'
       path: '/minigames/$minigameId/history'
@@ -24092,6 +24238,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/v1/users/$handle/posts'
       preLoaderRoute: typeof ApiV1UsersHandlePostsRouteImport
       parentRoute: typeof ApiV1UsersHandleRoute
+    }
+    '/api/worlds/visit/$code/postcard': {
+      id: '/api/worlds/visit/$code/postcard'
+      path: '/postcard'
+      fullPath: '/api/worlds/visit/$code/postcard'
+      preLoaderRoute: typeof ApiWorldsVisitCodePostcardRouteImport
+      parentRoute: typeof ApiWorldsVisitCodeRoute
+    }
+    '/api/worlds/visit/$code/water': {
+      id: '/api/worlds/visit/$code/water'
+      path: '/water'
+      fullPath: '/api/worlds/visit/$code/water'
+      preLoaderRoute: typeof ApiWorldsVisitCodeWaterRouteImport
+      parentRoute: typeof ApiWorldsVisitCodeRoute
     }
     '/api/admin/albums/$id/slides/$slideId': {
       id: '/api/admin/albums/$id/slides/$slideId'
@@ -26319,6 +26479,19 @@ const ApiV1UsersHandleRouteChildren: ApiV1UsersHandleRouteChildren = {
 const ApiV1UsersHandleRouteWithChildren =
   ApiV1UsersHandleRoute._addFileChildren(ApiV1UsersHandleRouteChildren)
 
+interface ApiWorldsVisitCodeRouteChildren {
+  ApiWorldsVisitCodePostcardRoute: typeof ApiWorldsVisitCodePostcardRoute
+  ApiWorldsVisitCodeWaterRoute: typeof ApiWorldsVisitCodeWaterRoute
+}
+
+const ApiWorldsVisitCodeRouteChildren: ApiWorldsVisitCodeRouteChildren = {
+  ApiWorldsVisitCodePostcardRoute: ApiWorldsVisitCodePostcardRoute,
+  ApiWorldsVisitCodeWaterRoute: ApiWorldsVisitCodeWaterRoute,
+}
+
+const ApiWorldsVisitCodeRouteWithChildren =
+  ApiWorldsVisitCodeRoute._addFileChildren(ApiWorldsVisitCodeRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   SiteRoute: SiteRouteWithChildren,
   AdaptiveIntelligenceRoute: AdaptiveIntelligenceRoute,
@@ -26700,6 +26873,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStudyMarketplaceRoute: ApiStudyMarketplaceRoute,
   ApiStudyTutorRoute: ApiStudyTutorRoute,
   ApiTagsTagRoute: ApiTagsTagRoute,
+  ApiTempleOfJoyEfficiencyRoute: ApiTempleOfJoyEfficiencyRoute,
   ApiTempleOfJoySaveRoute: ApiTempleOfJoySaveRoute,
   ApiThemesIdRoute: ApiThemesIdRouteWithChildren,
   ApiThemesShopRoute: ApiThemesShopRoute,
@@ -26730,6 +26904,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWagerIdRoute: ApiWagerIdRouteWithChildren,
   ApiWebringsSlugRoute: ApiWebringsSlugRouteWithChildren,
   ApiWheelSpinRoute: ApiWheelSpinRoute,
+  ApiWorldsFestivalRoute: ApiWorldsFestivalRoute,
+  ApiWorldsGardenClaimRoute: ApiWorldsGardenClaimRoute,
+  ApiWorldsPostcardsRoute: ApiWorldsPostcardsRoute,
+  ApiWorldsSnapshotsRoute: ApiWorldsSnapshotsRoute,
   EmbedPostIdRoute: EmbedPostIdRoute,
   EmbedReplayIdRoute: EmbedReplayIdRoute,
   LibraryAlbumsAlbumIdRoute: LibraryAlbumsAlbumIdRoute,
@@ -26962,6 +27140,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWhenIdIcsRoute: ApiWhenIdIcsRoute,
   ApiWhenIdLockRoute: ApiWhenIdLockRoute,
   ApiWhenIdRespondRoute: ApiWhenIdRespondRoute,
+  ApiWorldsVisitCodeRoute: ApiWorldsVisitCodeRouteWithChildren,
   ApiAdminAlbumsIndexRoute: ApiAdminAlbumsIndexRoute,
   ApiAdminCanvasIndexRoute: ApiAdminCanvasIndexRoute,
   ApiAdminContextNotesIndexRoute: ApiAdminContextNotesIndexRoute,

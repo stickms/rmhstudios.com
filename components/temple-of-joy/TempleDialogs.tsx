@@ -24,6 +24,7 @@ import { MANNA_KIND_MAP, ripenDuration, levelCost } from '@/lib/temple-of-joy/mi
 import { SOURCES } from '@/lib/temple-of-joy/data/sources';
 import { useTempleSnapshot, useTempleValue } from './hooks';
 import { TempleButton, TempleRow, Glyph } from './ui';
+import { VigilLedger } from './VigilLedger';
 
 export function TempleDialogs() {
   return (
@@ -96,6 +97,8 @@ function VigilDialog() {
             </li>
           )}
         </ul>
+
+        <VigilLedger />
 
         {vigil.sinners > 0 && (
           <p className="toj-dialog-text" style={{ marginTop: '0.9rem' }}>

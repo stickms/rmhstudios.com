@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useRfsStore } from '@/lib/rmh-farming-sim/store';
 import { actions } from '@/lib/rmh-farming-sim/socket';
 import type { ToolId } from '@/lib/rmh-farming-sim/types';
+import { FestivalShop } from './FestivalPanel';
 
 type Tab = 'buy' | 'sell' | 'upgrade';
 
@@ -57,6 +58,7 @@ export default function ShopPanel() {
                 </div>
 
                 <div className="rfs-modal-body">
+                    <FestivalShop />
                     {tab === 'buy' && (
                         <div className="rfs-list">
                             {crops.map((c) => {

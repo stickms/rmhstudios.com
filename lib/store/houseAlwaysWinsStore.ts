@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { AbilityId, QuestState, RoomId } from "@/lib/house-always-wins/types";
+import { activeSlot, slotStorageName } from "@/lib/house-always-wins/ngplus";
 
 interface HouseAlwaysWinsState {
   // Progression
@@ -124,7 +125,8 @@ export const useHouseAlwaysWinsStore = create<HouseAlwaysWinsState>()(
         }),
     }),
     {
-      name: "haw-save-v2",
+      // Classic and New Game+ keep separate saves; the slot is chosen once per page load.
+      name: slotStorageName(activeSlot()),
       version: 2,
     }
   )

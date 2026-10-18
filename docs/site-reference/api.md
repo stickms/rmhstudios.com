@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 865 files across 189 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 873 files across 190 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -1960,10 +1960,11 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/temple-of-joy`
 
-1 route.
+2 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
+| `/api/temple-of-joy/efficiency` | `GET` `POST` | `app/routes/api/temple-of-joy/efficiency.ts` |
 | `/api/temple-of-joy/save` | `DELETE` `GET` `POST` | `app/routes/api/temple-of-joy/save.ts` |
 
 ## `/api/themes`
@@ -2189,6 +2190,20 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/wishlist` | `DELETE` `GET` `POST` | `app/routes/api/wishlist/index.ts` |
+
+## `/api/worlds`
+
+7 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/worlds/festival` | `GET` | `app/routes/api/worlds/festival.ts` |
+| `/api/worlds/garden-claim` | `POST` | `app/routes/api/worlds/garden-claim.ts` |
+| `/api/worlds/postcards` | `POST` | `app/routes/api/worlds/postcards.ts` |
+| `/api/worlds/snapshots` | `DELETE` `GET` `POST` | `app/routes/api/worlds/snapshots.ts` |
+| `/api/worlds/visit/:code` | `GET` | `app/routes/api/worlds/visit.$code.ts` |
+| `/api/worlds/visit/:code/postcard` | `POST` | `app/routes/api/worlds/visit.$code.postcard.ts` |
+| `/api/worlds/visit/:code/water` | `POST` | `app/routes/api/worlds/visit.$code.water.ts` |
 
 ## `/api/wrapped`
 
