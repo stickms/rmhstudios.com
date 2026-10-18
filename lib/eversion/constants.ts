@@ -100,13 +100,19 @@ export const MAX_DT_MS = 50;
 /** How long the controller waits for BEFORE after release (spec §6.2). */
 export const BEFORE_GRACE_MS = 250;
 /**
- * How long a RELEASE actually waits for a BEFORE capture that is still in
- * flight. Deliberately far below {@link BEFORE_GRACE_MS}: the visitor has asked
- * to go somewhere, and the fallback is today's navigation, which must start
- * within about a frame of today's (review R6 M3). A capture that needs longer
- * than this is not ready for this release and will be for the next.
+ * How long a RELEASE waits, in total, for its BEFORE bitmap: the scheduler's
+ * capture if one is in flight, else one taken on demand in what is left.
+ *
+ * It was 50 ms, with no on-demand capture (review R6 M3: "a fallback must start
+ * within a frame of today's navigation"). That made the effect a race the visitor
+ * lost whenever they were quick: the scheduler holds its capture until the hub's
+ * 500 ms open morph is over and the page is idle, so a destination picked within
+ * about a second of opening the hub had no picture yet and was a silent
+ * `before-missing` - the "it doesn't always play" report (2026-10-18). The hub
+ * stays open and still while this runs, so waiting is not a flash; a desktop
+ * capture is ~100-300 ms, a phone's well under this.
  */
-export const BEFORE_WAIT_MS = 50;
+export const BEFORE_WAIT_MS = 1200;
 /** Hard timeout for either capture; on timeout the navigation falls back. */
 export const CAPTURE_TIMEOUT_MS = 600;
 
@@ -323,6 +329,15 @@ export interface TierConfig {
   readonly captureDprCap: number;
   /** Anisotropic filtering level for the page textures; 0 = off. */
   readonly anisotropy: number;
+  /**
+   * Ceiling on the canvas's drawing-buffer pixels (amended 2026-10-18). The DPR cap
+   * alone lets a 4K or 5K window at DPR 2 render 15-30 M pixels a frame, every one
+   * of them shaded; past this budget the DPR is lowered for that viewport so the
+   * per-frame cost is bounded at every resolution. Text on the flat frames is never
+   * resampled below a 1:1-ish scale on the screens this binds (it binds only past
+   * ~2560 x 1600 at DPR 1.5).
+   */
+  readonly maxCanvasPixels: number;
 }
 
 /**
@@ -330,9 +345,30 @@ export interface TierConfig {
  * smooth, so 128 is the floor (spec §8.2). `low` is where `perf-lite` starts.
  */
 export const TIERS: Readonly<Record<Tier, TierConfig>> = {
-  high: { meshTheta: 256, meshPhi: 128, canvasDprCap: 2.0, captureDprCap: 1.5, anisotropy: 8 },
-  mid: { meshTheta: 192, meshPhi: 96, canvasDprCap: 1.5, captureDprCap: 1.25, anisotropy: 4 },
-  low: { meshTheta: 128, meshPhi: 64, canvasDprCap: 1.0, captureDprCap: 1.0, anisotropy: 0 },
+  high: {
+    meshTheta: 256,
+    meshPhi: 128,
+    canvasDprCap: 2.0,
+    captureDprCap: 1.5,
+    anisotropy: 8,
+    maxCanvasPixels: 6_200_000,
+  },
+  mid: {
+    meshTheta: 192,
+    meshPhi: 96,
+    canvasDprCap: 1.5,
+    captureDprCap: 1.25,
+    anisotropy: 4,
+    maxCanvasPixels: 3_700_000,
+  },
+  low: {
+    meshTheta: 128,
+    meshPhi: 64,
+    canvasDprCap: 1.0,
+    captureDprCap: 1.0,
+    anisotropy: 0,
+    maxCanvasPixels: 1_600_000,
+  },
 };
 
 /** Capture scale ceiling per tier (spec §6.2) — a view of {@link TIERS}. */
@@ -420,8 +456,8 @@ export const MAX_RUN_MS = 30_000;
 export const ALWAYS_EVERT_BEFORE_WAIT_MS = 3000;
 /**
  * The same preference's wait for a host that is still initialising or has gone
- * quiet, instead of the 100 ms `HOST_READY_TIMEOUT_MS` (a cold init can take a
- * few seconds on a phone or a software GL; the init itself is bounded by
+ * quiet, instead of `HOST_READY_TIMEOUT_MS` (a cold init can take a few seconds
+ * on a phone or a software GL; the init itself is bounded by
  * `HOST_INIT_TIMEOUT_MS`).
  */
 export const ALWAYS_EVERT_HOST_WAIT_MS = 8000;

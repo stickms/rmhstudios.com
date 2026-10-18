@@ -432,6 +432,7 @@ describe('constants (S§12, S§8.2, S§6.2)', () => {
       canvasDprCap: 2.0,
       captureDprCap: 1.5,
       anisotropy: 8,
+      maxCanvasPixels: 6_200_000,
     });
     expect(constants.TIERS.mid).toEqual({
       meshTheta: 192,
@@ -439,6 +440,7 @@ describe('constants (S§12, S§8.2, S§6.2)', () => {
       canvasDprCap: 1.5,
       captureDprCap: 1.25,
       anisotropy: 4,
+      maxCanvasPixels: 3_700_000,
     });
     expect(constants.TIERS.low).toEqual({
       meshTheta: 128,
@@ -446,6 +448,7 @@ describe('constants (S§12, S§8.2, S§6.2)', () => {
       canvasDprCap: 1.0,
       captureDprCap: 1.0,
       anisotropy: 0,
+      maxCanvasPixels: 1_600_000,
     });
     expect(constants.CAPTURE_DPR_CAP).toEqual({ high: 1.5, mid: 1.25, low: 1.0 });
     expect(constants.CAPTURE_MAX_DIMENSION).toBe(4096);

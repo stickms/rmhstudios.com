@@ -8,7 +8,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AFTER_CAPTURE_TIMEOUT_MS, BEFORE_WAIT_MS, MAX_RUN_MS } from '../constants';
-import { EversionRunner } from '../runner';
+import { EversionRunner, HOST_READY_TIMEOUT_MS, OVERLAY_MOUNT_TIMEOUT_MS } from '../runner';
 import type { RunnerDeps } from '../runner';
 import type { SettleReport, SettleRequest } from '../settle';
 import type {
@@ -276,13 +276,14 @@ describe('eversion runner: the fallback paths (today runs; no overlay, no naviga
   it('overlay that never attaches: host-error', async () => {
     const r = rig({ overlay: { mount: () => new Promise(() => {}), fade() {}, unmount() {} } });
     const p = r.runner.run(NODE, GLOBE);
-    await vi.advanceTimersByTimeAsync(400);
+    await vi.advanceTimersByTimeAsync(OVERLAY_MOUNT_TIMEOUT_MS + 50);
     expect((await p).fallback).toBe('host-error');
   });
 
-  it('adds at most ~50 ms to today when the BEFORE bitmap is not ready (R6 M3)', async () => {
-    // Nothing in flight: the fallback is immediate. A capture in flight is awaited
-    // for BEFORE_WAIT_MS at most, and that is the only wait before a BEFORE miss.
+  it('gives the BEFORE bitmap one bounded budget, BEFORE_WAIT_MS (amended 2026-10-18)', async () => {
+    // The release waits for the picture (in flight, else taken on demand: the
+    // controller's half) instead of skipping the effect at once; one budget, and a
+    // bounded one, because the hub sits still meanwhile.
     const waits: number[] = [];
     const r = rig({
       awaitBefore: async (grace) => {
@@ -292,10 +293,11 @@ describe('eversion runner: the fallback paths (today runs; no overlay, no naviga
     });
     expect((await r.runner.run(NODE, GLOBE)).fallback).toBe('before-missing');
     expect(waits).toEqual([BEFORE_WAIT_MS]);
-    expect(BEFORE_WAIT_MS).toBeLessThanOrEqual(50);
+    expect(BEFORE_WAIT_MS).toBeGreaterThan(50);
+    expect(BEFORE_WAIT_MS).toBeLessThanOrEqual(1500);
   });
 
-  it('a host that stops answering costs at most the short ready wait, not 600 ms', async () => {
+  it('a host that never answers costs HOST_READY_TIMEOUT_MS, then falls back', async () => {
     const r = rig({
       host: {
         ready: (_tier, ms) => new Promise((_, reject) => setTimeout(reject, ms)),
@@ -304,9 +306,9 @@ describe('eversion runner: the fallback paths (today runs; no overlay, no naviga
     });
     const started = Date.now();
     const p = r.runner.run(NODE, GLOBE);
-    await vi.advanceTimersByTimeAsync(150);
+    await vi.advanceTimersByTimeAsync(HOST_READY_TIMEOUT_MS + 50);
     expect((await p).fallback).toBe('host-error');
-    expect(Date.now() - started).toBeLessThanOrEqual(150);
+    expect(Date.now() - started).toBeLessThanOrEqual(HOST_READY_TIMEOUT_MS + 50);
   });
 
   it('placeholder failure (before start): host-error and no navigate', async () => {

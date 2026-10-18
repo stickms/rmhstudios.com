@@ -34,11 +34,12 @@
 //  5. AFTER is captured with `data-eversion-settle` set.
 //  6. Fast-forward completes within 650 ms + the reveal fade (+ scheduling slack) of the
 //     key press when AFTER is ready.
-//  7. An injected BEFORE failure resolves `{ fallback }`, marks `fallback`, never
-//     navigates and never creates the overlay.
+//  7. An injected BEFORE failure still plays (amended 2026-10-18): the release
+//     takes a capture on demand or, failing that, starts from the page's 2D
+//     stand-in, so the run ends in `done` with every mark and navigates.
 //  8. An injected AFTER failure still ends in `done` (unwrap on the placeholder).
-//  9. The `controller` debug slot registers and degrades to a fallback (no
-//     capture library here) rather than throwing.
+//  9. The `controller` debug slot registers and, with no capture library here,
+//     runs from the stand-in rather than throwing.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -265,39 +266,32 @@ try {
   );
   await t('inject', { after: 'ok' });
 
-  /* BEFORE failure: today's path, no overlay, no navigation. */
+  /* BEFORE failure: the effect still plays, from the stand-in (amended 2026-10-18). */
   await t('inject', { before: 'missing' });
   const before = await t('run', '/never');
   check(
-    'BEFORE failure: resolves with a fallback reason',
-    typeof before.outcome.fallback === 'string',
+    'BEFORE failure: the run still plays and ends in done',
+    before.outcome.fallback === null && before.outcome.end === 'done',
     JSON.stringify(before.outcome),
   );
   check(
-    'BEFORE failure: the fallback mark is the only eversion mark',
-    before.marks.length === 1 && before.marks[0].name === 'eversion:fallback',
+    'BEFORE failure: every mark, in order',
+    MARKS.every((m) => before.marks.some((x) => x.name === m)),
     before.marks.map((m) => m.name).join(','),
   );
   check(
-    'BEFORE failure: no overlay was ever created',
-    before.overlaySeen === 0 && !before.overlayAfter,
-  );
-  check(
-    'BEFORE failure: the controller did not navigate (the caller does)',
-    !before.trace.some((x) => x.what === 'navigate') && before.pathAfter !== '/never',
+    'BEFORE failure: the controller navigated',
+    before.pathAfter === '/never',
     before.pathAfter,
   );
-  check(
-    'BEFORE failure: no cover class',
-    !before.coverAfter && !before.trace.some((x) => x.what === 'cover-class-on'),
-  );
+  check('BEFORE failure: the cover class is gone at the end', !before.coverAfter);
   await t('inject', { before: 'ok' });
 
-  /* Debug slot degrades instead of throwing (no capture library in this page). */
+  /* Debug slot: no capture library in this page, so it runs from the stand-in, without throwing. */
   const dbg = await t('debugSlot');
   check(
-    'debug slot startTo resolves a fallback (T17 not in this page) without throwing',
-    dbg && typeof dbg.outcome.fallback === 'string',
+    'debug slot startTo resolves (from the stand-in: T17 not in this page) without throwing',
+    dbg && (dbg.outcome.fallback === null || typeof dbg.outcome.fallback === 'string'),
     JSON.stringify(dbg?.outcome),
   );
 

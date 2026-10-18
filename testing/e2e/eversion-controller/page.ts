@@ -166,8 +166,9 @@ const api = {
       },
       { overlay: createDomOverlayPort() },
     );
-    // The hub warms the host while it is open; this fixture has no hub. A run
-    // released before the host is ready is (correctly) a `host-not-ready` fallback.
+    // The bridge warms the host when it mounts; this fixture has no bridge. A run
+    // released before the host is ready waits for it (bounded); warm it up front
+    // so the timing checks measure the run, not the compile.
     const hostReady = await controller.warmHost();
     return { slots: window.__eversion?.slots() ?? [], hostReady };
   },

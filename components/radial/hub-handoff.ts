@@ -25,6 +25,11 @@
  *   fallback, or a rejected promise (never by contract), -> today's navigation.
  * - `busy` is what the hub's close / toggle / Escape consult: the hub is
  *   committed to leaving by the effect's own route and those must not abort it.
+ * - No controller YET is not "no controller" (amended 2026-10-18): the bridge
+ *   that builds it loads after `load` and an idle slot, so a visitor who picks a
+ *   destination in the first seconds of a page-load beat it and never saw the
+ *   effect. `confirmWhenReady` takes the controller as a promise (the hub bounds
+ *   it), is `busy` while it waits, and then proceeds exactly as `confirm`.
  */
 
 import type { EntryPoint } from '@/lib/eversion/marks';
@@ -63,10 +68,55 @@ export interface HandOff<N> {
     state: GlobeStartState,
     entry: Exclude<EntryPoint, 'preview'>,
   ): void;
+  /**
+   * The same confirm for a controller that is still loading: busy from now, and
+   * `null` (the hub's bound ran out, or the device turned out to have no effect)
+   * is today's navigation. Never rejects by contract; a rejection is `null`.
+   */
+  confirmWhenReady(
+    controller: Promise<HandOffController<N> | null>,
+    node: N,
+    state: GlobeStartState,
+    entry: Exclude<EntryPoint, 'preview'>,
+  ): void;
 }
 
 export function createHandOff<N>(ui: HandOffUi<N>): HandOff<N> {
   let busy = false;
+
+  const run = (
+    controller: HandOffController<N> | null,
+    node: N,
+    state: GlobeStartState,
+    entry: Exclude<EntryPoint, 'preview'>,
+  ) => {
+    if (!controller || !controller.isEligible()) {
+      busy = false;
+      ui.navigateToday(node);
+      return;
+    }
+    busy = true;
+    controller.start(node, state, entry, { onCommit: () => ui.everting() }).then(
+      (outcome) => {
+        busy = false;
+        if (outcome.fallback === 'traversal') {
+          ui.dismiss();
+          return;
+        }
+        if (outcome.fallback) {
+          ui.navigateToday(node);
+          return;
+        }
+        ui.closed();
+      },
+      () => {
+        // `start` never rejects by contract; if it does, the visitor still
+        // gets where they asked to go.
+        busy = false;
+        ui.navigateToday(node);
+      },
+    );
+  };
 
   return {
     busy: () => busy,
@@ -75,30 +125,15 @@ export function createHandOff<N>(ui: HandOffUi<N>): HandOff<N> {
       // First: a confirm while one is in flight is nothing. Eligibility may have
       // flipped meanwhile; acting on it here would navigate twice.
       if (busy) return;
-      if (!controller || !controller.isEligible()) {
-        ui.navigateToday(node);
-        return;
-      }
+      run(controller, node, state, entry);
+    },
+
+    confirmWhenReady(controller, node, state, entry) {
+      if (busy) return;
       busy = true;
-      controller.start(node, state, entry, { onCommit: () => ui.everting() }).then(
-        (outcome) => {
-          busy = false;
-          if (outcome.fallback === 'traversal') {
-            ui.dismiss();
-            return;
-          }
-          if (outcome.fallback) {
-            ui.navigateToday(node);
-            return;
-          }
-          ui.closed();
-        },
-        () => {
-          // `start` never rejects by contract; if it does, the visitor still
-          // gets where they asked to go.
-          busy = false;
-          ui.navigateToday(node);
-        },
+      controller.then(
+        (c) => run(c, node, state, entry),
+        () => run(null, node, state, entry),
       );
     },
   };

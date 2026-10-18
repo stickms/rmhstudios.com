@@ -16,9 +16,17 @@
  * ## Per-frame rules (spec §8.4)
  *
  * `draw` allocates nothing, writes the `frame`-cadence uniforms of `UNIFORMS`
- * and makes at most two draw calls — the surface, then the cage over the same
+ * and makes two draw calls — the surface, then the cage over the same
  * triangles. Depth testing is on, with no sorting and no transparency until the reveal fade.
  * Culling is off, so `gl_FrontFacing` selects the page side.
+ *
+ * With the cosmos (mid/high tier on a large viewport, `cosmos.ts`) and only while
+ * it is present, up to three more: the starfield first, the bodies behind the
+ * globe's plane, and after the cage the bodies in front of it. The bodies are
+ * premultiplied-alpha impostors drawn back to front with no depth test (they are
+ * sorted on the CPU and never intersect the globe), so they cost the globe's
+ * depth buffer nothing and the flat endpoints, where presence is 0, draw exactly
+ * the two calls they always did.
  *
  * ### Which winding is "front" (a correction to the T01 wording)
  *
@@ -85,6 +93,8 @@
  */
 
 import { CAGE_ALPHA_END, CAGE_ALPHA_START, LUT_SIZE, STAGE_PARAM_COUNT, TIERS } from '../constants';
+import { buildCosmos, createCosmosFrame, stepCosmos } from '../cosmos';
+import type { CosmosScene } from '../cosmos';
 import { registerDebug } from '../debug';
 import type { RendererDebug } from '../debug';
 import { meshForTier } from '../mesh';
@@ -108,6 +118,13 @@ import type { UniformName } from './uniforms';
 
 /** `EXT_texture_filter_anisotropic`'s enums, which the DOM typings do not carry. */
 const TEXTURE_MAX_ANISOTROPY_EXT = 0x84fe;
+/** The cosmos governor (see `governCosmos`): a frame this long is slow (~45 fps)... */
+const COSMOS_SLOW_FRAME_MS = 22;
+/** ...for this many frames in a row (smoothed), and the cosmos eases out over this long. */
+const COSMOS_SLOW_FRAMES = 24;
+const COSMOS_FADE_MS = 450;
+/** A gap between draws longer than this is a stall (hidden tab, route render), not a frame. */
+const COSMOS_STALL_MS = 250;
 const MAX_TEXTURE_MAX_ANISOTROPY_EXT = 0x84ff;
 
 type Loc = WebGLUniformLocation | null;
@@ -207,7 +224,7 @@ export function createRenderer(
 
   /* ── Programs ─────────────────────────────────────────────────────────── */
 
-  const shaders = getShaderSet({ maskView: options.maskView === true });
+  const shaders = getShaderSet({ maskView: options.maskView === true, tier });
   const surface = buildProgram(gl, shaders.surface, 'surface', created);
   const cage = buildProgram(gl, shaders.cage, 'cage', created);
   /**
@@ -215,6 +232,45 @@ export function createRenderer(
    * an azimuthal projection (a write to gl_FragDepth turns early-z off, so the other projections run without it).
    */
   let surfaceMasked: Program | null = null;
+  /**
+   * The cosmos's programs, compiled on the first prime that has a scene (a large viewport on a mid/high tier):
+   * a phone never pays for them. They stay compiled for the page's life, like `surfaceMasked`.
+   */
+  let cosmosProgram: Program | null = null;
+  let starsProgram: Program | null = null;
+  let scene: CosmosScene | null = null;
+  /** Varies the sky's phases from one navigation to the next. */
+  let navigations = 0;
+  const cosmosFrame = createCosmosFrame();
+  /**
+   * The cosmos's own frame governor. The DPR governor (core) lowers resolution when
+   * frames run long; if they STILL run long with the cosmos on screen, the cosmos is
+   * the extra the device cannot afford: it eases out (never cut) over
+   * COSMOS_FADE_MS, and stays off on this renderer for the rest of the page's life.
+   * Measured on real time between draws (the loop is frame-paced); a gap longer than
+   * COSMOS_STALL_MS (a hidden tab, a route render) is not a frame and is ignored.
+   */
+  const cosmosGovern = options.governCosmos !== false;
+  let cosmosBudget = 1;
+  let cosmosTarget = 1;
+  let lastDrawAt = -1;
+  let slowEma = 0;
+  let slowFrames = 0;
+  const view = { w: 1, h: 1, dpr: 1 };
+  function compileCosmos() {
+    if (cosmosProgram || !shaders.cosmos || !shaders.stars) return;
+    cosmosProgram = buildProgram(gl!, shaders.cosmos, 'cosmos', created);
+    starsProgram = buildProgram(gl!, shaders.stars, 'stars', created);
+  }
+  if (options.precompileCosmos) compileCosmos();
+  /** Every program the per-navigation uniforms go to. */
+  const programs = (): Program[] => {
+    const list = [surface, cage];
+    if (surfaceMasked) list.push(surfaceMasked);
+    if (cosmosProgram) list.push(cosmosProgram);
+    if (starsProgram) list.push(starsProgram);
+    return list;
+  };
 
   /** Once per program: the sampler units never change (spec §8.4: written once). */
   function bindSamplers(p: Program) {
@@ -340,7 +396,10 @@ export function createRenderer(
   /* ── Sizing and the per-navigation uniforms ───────────────────────────── */
 
   function applySize() {
-    const ratio = Math.max(0.25, Math.min(dpr, options.dprCap) * dprScale);
+    // The tier's pixel budget bounds the per-frame cost at every resolution: a 4K/5K
+    // window at DPR 2 would otherwise shade 15-30 M pixels a frame (constants.ts).
+    const budget = Math.sqrt(tierConfig.maxCanvasPixels / Math.max(1, cssW * cssH));
+    const ratio = Math.max(0.25, Math.min(dpr, options.dprCap, budget) * dprScale);
     const w = Math.max(1, Math.round(cssW * ratio));
     const h = Math.max(1, Math.round(cssH * ratio));
     // Assigning width/height reallocates the drawing buffer even when unchanged.
@@ -360,7 +419,7 @@ export function createRenderer(
   /** `prime`- and `resize`-cadence uniforms, for every program that has them. */
   function writeStatic() {
     const g = gl!;
-    for (const p of surfaceMasked ? [surface, surfaceMasked, cage] : [surface, cage]) {
+    for (const p of programs()) {
       const l = p.loc;
       g.useProgram(p.program);
       g.uniform1f(l.u_meshCell, meshCell);
@@ -422,6 +481,74 @@ export function createRenderer(
     g.uniform1f(l.u_pageAlpha, s.pageAlpha);
     g.uniform1f(l.u_ripple, s.rippleAge);
     g.uniform1f(l.u_cageAlpha, cageAlpha);
+    writeMaterial(p);
+  }
+
+  /** The scene's light, background and clock (`cosmos.ts`), for any program that reads them. */
+  function writeMaterial(p: Program) {
+    const g = gl!;
+    const l = p.loc;
+    const c = cosmosFrame;
+    g.uniform1f(l.u_time, c.cosmos[2]!);
+    g.uniform3fv(l.u_lightDir, c.lightDir);
+    g.uniform4fv(l.u_lightCol, c.lightCol);
+    g.uniform4fv(l.u_space, c.space);
+    g.uniform4fv(l.u_cosmos, c.cosmos);
+  }
+
+  /** The bodies `[from, to)` of this frame, as one instanced draw of a quad each. */
+  function drawBodies(p: Program, from: number, to: number) {
+    if (to <= from) return;
+    const g = gl!;
+    g.uniform1f(p.loc.u_bodyBase, from);
+    g.drawArraysInstanced(g.TRIANGLES, 0, 6, to - from);
+  }
+
+  function writeBodies(p: Program, s: Readonly<TimelineSnapshot>) {
+    const g = gl!;
+    const l = p.loc;
+    const c = cosmosFrame;
+    g.uniform1f(l.u_radius, s.radius);
+    g.uniform1f(l.u_spin, s.spin);
+    g.uniform4fv(l.u_bodyPos, c.pos);
+    g.uniform4fv(l.u_bodyInfo, c.info);
+    g.uniform4fv(l.u_bodyAlbedo, c.albedo);
+    g.uniform4fv(l.u_bodyAlbedo2, c.albedo2);
+    g.uniform4fv(l.u_sunPos, c.sunPos);
+    g.uniform4fv(l.u_sunCol, c.sunCol);
+    writeMaterial(p);
+  }
+
+  function governCosmos() {
+    const now = performance.now();
+    const dt = lastDrawAt < 0 ? 0 : now - lastDrawAt;
+    lastDrawAt = now;
+    if (!scene || !cosmosGovern || dt <= 0 || dt > COSMOS_STALL_MS) return;
+    if (cosmosTarget > 0 && cosmosFrame.presence > 0.5) {
+      slowEma = slowEma === 0 ? dt : slowEma + (dt - slowEma) * 0.15;
+      slowFrames = slowEma > COSMOS_SLOW_FRAME_MS ? slowFrames + 1 : 0;
+      if (slowFrames >= COSMOS_SLOW_FRAMES) cosmosTarget = 0;
+    }
+    if (cosmosBudget !== cosmosTarget) {
+      const step = dt / COSMOS_FADE_MS;
+      cosmosBudget =
+        cosmosTarget < cosmosBudget
+          ? Math.max(cosmosTarget, cosmosBudget - step)
+          : Math.min(cosmosTarget, cosmosBudget + step);
+    }
+  }
+
+  /** (Re)lay the cosmos out for the current viewport and colours; compile its programs the first time. */
+  function layoutCosmos() {
+    view.w = cssW;
+    view.h = cssH;
+    view.dpr = dpr;
+    // A device that could not afford the cosmos once does not get it again this page.
+    scene =
+      colours && shaders.cosmos && cosmosTarget > 0
+        ? buildCosmos(view, tier, colours, navigations)
+        : null;
+    if (scene) compileCosmos();
   }
 
   /** `stageParams` into a reused Float32Array: GL's uniform setters do not take Float64Array. */
@@ -469,6 +596,8 @@ export function createRenderer(
       cssH = p.viewport.h;
       dpr = p.viewport.dpr;
       dprScale = 1;
+      navigations++;
+      layoutCosmos();
       applySize();
     },
 
@@ -493,12 +622,45 @@ export function createRenderer(
       g.depthMask(true);
       g.disable(g.BLEND);
 
+      governCosmos();
+      stepCosmos(scene, s, view, cosmosFrame, cosmosBudget);
       const veil = colours ? colours.veil : WHITE;
+      // The clear is the veil, deepened toward space while the cosmos is present: the
+      // surface's glass mixes the same colour (`u_space`), so the two always agree.
+      const k = cosmosFrame.space[3]!;
+      const bg0 = veil[0] + (cosmosFrame.space[0]! - veil[0]) * k;
+      const bg1 = veil[1] + (cosmosFrame.space[1]! - veil[1]) * k;
+      const bg2 = veil[2] + (cosmosFrame.space[2]! - veil[2]) * k;
       const a = s.bgAlpha;
-      g.clearColor(veil[0] * a, veil[1] * a, veil[2] * a, a);
+      g.clearColor(bg0 * a, bg1 * a, bg2 * a, a);
       g.clear(g.COLOR_BUFFER_BIT | g.DEPTH_BUFFER_BIT);
 
       g.bindVertexArray(vao);
+
+      const cosmosOn = cosmosProgram !== null && cosmosFrame.count > 0 && cosmosFrame.presence > 0;
+      if (cosmosOn && starsProgram && cosmosFrame.cosmos[1]! > 0) {
+        g.useProgram(starsProgram.program);
+        g.uniform1f(starsProgram.loc.u_spin, s.spin);
+        writeMaterial(starsProgram);
+        g.disable(g.DEPTH_TEST);
+        g.depthMask(false);
+        g.enable(g.BLEND);
+        g.blendFunc(g.ONE, g.ONE_MINUS_SRC_ALPHA);
+        g.drawArrays(g.TRIANGLES, 0, 3);
+      }
+      if (cosmosOn && cosmosProgram) {
+        g.useProgram(cosmosProgram.program);
+        writeBodies(cosmosProgram, s);
+        g.disable(g.DEPTH_TEST);
+        g.depthMask(false);
+        g.enable(g.BLEND);
+        g.blendFunc(g.ONE, g.ONE_MINUS_SRC_ALPHA);
+        drawBodies(cosmosProgram, 0, cosmosFrame.behind);
+      }
+      g.enable(g.DEPTH_TEST);
+      g.depthFunc(g.LESS);
+      g.depthMask(true);
+      g.disable(g.BLEND);
 
       const main = azimuthal && surfaceMasked ? surfaceMasked : surface;
       g.useProgram(main.program);
@@ -518,6 +680,18 @@ export function createRenderer(
         g.depthMask(true);
         g.disable(g.BLEND);
       }
+      if (cosmosOn && cosmosProgram && cosmosFrame.count > cosmosFrame.behind) {
+        g.useProgram(cosmosProgram.program);
+        writeBodies(cosmosProgram, s);
+        g.disable(g.DEPTH_TEST);
+        g.depthMask(false);
+        g.enable(g.BLEND);
+        g.blendFunc(g.ONE, g.ONE_MINUS_SRC_ALPHA);
+        drawBodies(cosmosProgram, cosmosFrame.behind, cosmosFrame.count);
+        g.depthMask(true);
+        g.disable(g.BLEND);
+        g.enable(g.DEPTH_TEST);
+      }
       g.bindVertexArray(null);
     },
 
@@ -526,6 +700,7 @@ export function createRenderer(
       cssW = viewport.w;
       cssH = viewport.h;
       dpr = viewport.dpr;
+      layoutCosmos();
       applySize();
     },
 
@@ -542,6 +717,7 @@ export function createRenderer(
       freePage('placeholder');
       freeLut();
       colours = null;
+      scene = null;
       forcedEvert = null;
     },
 
@@ -563,7 +739,7 @@ export function createRenderer(
       deleted('buffers');
       g.deleteBuffer(ebo);
       deleted('buffers');
-      for (const p of surfaceMasked ? [surface, surfaceMasked, cage] : [surface, cage]) {
+      for (const p of programs()) {
         g.deleteProgram(p.program);
         deleted('programs');
       }

@@ -43,7 +43,7 @@
 //  hidden-tab         tab hidden mid-effect                    (`visibility` posted; loop pauses/resumes; a long absence settles the run)
 //  reveal-input       input during the reveal fade             (ignored: no fast-forward after reveal)
 //  never-settles      a router that never settles              (`after-failed` at AFTER_CAPTURE_TIMEOUT_MS)
-//  host-not-ready     a release before the host is ready       (synchronous `host-not-ready`, then ready)
+//  host-not-ready     a release before the host is ready       (synchronous: eligible, init started, then ready)
 //
 // Software GL is slow and the timeline's dt clamp makes wall time meaningless
 // under load, so no assertion here is a wall-clock duration of the effect; the
@@ -702,9 +702,10 @@ async function neverSettles() {
 }
 
 /**
- * A release before the host has finished initialising is "not eligible yet":
- * the answer is immediate (no 600 ms wait), names the reason, starts the init,
- * and the same question later says yes.
+ * A release before the host has finished initialising is NOT a skip (amended
+ * 2026-10-18; it used to be an immediate `host-not-ready`): the answer is
+ * immediate (no wait in the question itself), eligible, and it starts the init,
+ * which the run then waits for (bounded).
  */
 async function hostNotReady() {
   const name = 'host-not-ready';
@@ -715,7 +716,7 @@ async function hostNotReady() {
       const reason = window.__eversion.controller.ineligibleReason();
       return { reason, ms: performance.now() - t0 };
     });
-    check(name, first.reason === 'host-not-ready', `cold reason ${first.reason}`);
+    check(name, first.reason === null, `cold reason ${first.reason}`);
     check(
       name,
       first.ms < 50,
@@ -725,7 +726,7 @@ async function hostNotReady() {
     check(name, ready === true, 'the host never became ready within its init budget');
     const second = await s.page.evaluate(() => window.__eversion.controller.ineligibleReason());
     check(name, second === null, `after init the reason is ${second}`);
-    // And a run now goes the whole way.
+    // And a run goes the whole way.
     await begin(s, '/games');
     await fastForwardAtCover(s);
     const run = await finish(s);

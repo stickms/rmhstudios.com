@@ -6,6 +6,7 @@ import { aspectBucket, getBakedLut } from '@/lib/eversion/projection-lut';
 import { buildPlaceholder } from '@/lib/eversion/placeholder';
 import { createCapture, fixedViewport } from '@/lib/eversion/capture';
 import { evaluateHostEligibility } from '@/lib/eversion/eligibility';
+import { cosmosEnabled } from '@/lib/eversion/cosmos';
 import { registerDebug, maybeLoadEversionDebug } from '@/lib/eversion/debug';
 import { isEversionDebugEnabled, isEversionEnabled } from '@/lib/eversion/flags';
 import { getEversionHost, resetEversionHost } from '@/lib/eversion/gl/host';
@@ -23,7 +24,6 @@ import type {
   RunOptions,
 } from '@/lib/eversion/runner';
 import {
-  ALWAYS_EVERT_BEFORE_WAIT_MS,
   BEFORE_GRACE_MS,
   CAPTURE_DPR_CAP,
   CAPTURE_EXCLUDE_SELECTORS,
@@ -433,7 +433,13 @@ function createHostPort(): HostPort & {
         }
       });
       try {
-        host.post({ type: 'init', canvas, tier, dprCap: TIERS[tier].canvasDprCap });
+        host.post({
+          type: 'init',
+          canvas,
+          tier,
+          dprCap: TIERS[tier].canvasDprCap,
+          precompileCosmos: cosmosEnabled(viewportNow(), tier),
+        });
       } catch (error) {
         off();
         reject(error instanceof Error ? error : new Error(String(error)));
@@ -566,7 +572,8 @@ export function createEversionController(
   const setting = (): NavTransition => useThemeStore.getState().navTransition;
   /**
    * "Always evert globe": read from the store the controller already reads (no
-   * new import, nothing added to the shell's static closure). Reduced motion is
+   * new import, nothing added to the shell's static closure). It only lengthens
+   * the release's waits (the runner's `ALWAYS_EVERT_*` limits). Reduced motion is
    * decided by the hub's eligibility BEFORE this is ever consulted.
    */
   const alwaysEvert = (): boolean => useThemeStore.getState().alwaysEvertGlobe;
@@ -599,22 +606,20 @@ export function createEversionController(
   /**
    * Eligibility at the moment of release: the hub's own (flag, motion, WebGL2,
    * chunk) and then the host's. A host that has not finished initialising is not
-   * a failure, it is "not yet": today's navigation runs now, and a host that was
-   * never started is started so the NEXT release finds it ready.
+   * a failure, it is "not yet", and the run waits for it (bounded); one that was
+   * never started is started now so that wait has something to wait for.
    */
   const ineligibleReason = (): FallbackReason | null => {
     const base = deps.beforeCapture.ineligibleReason();
     if (base) return base;
     const state = hostPort.state();
     if (state === 'idle') hostPort.warm(detectTier());
-    // With "Always evert globe" a host that is still starting is waited for by the
-    // runner (bounded) instead of reported as `host-not-ready`; a failed one is not.
-    return evaluateHostEligibility(state, alwaysEvert());
+    return evaluateHostEligibility(state);
   };
 
   /**
    * A BEFORE capture taken now, for callers with no hub scheduler result (a
-   * Preview) and for "Always evert globe" when the scheduler has nothing for us.
+   * Preview) and for a release the scheduler has nothing for.
    * Reuses the scheduler's session when there is one; otherwise opens one for
    * this capture ALONE and always disposes it - each session owns a worker and a
    * sandbox iframe, and this must not leave one behind.
@@ -638,21 +643,42 @@ export function createEversionController(
   };
 
   /**
-   * The hub's BEFORE bitmap. Normally exactly the scheduler's answer (<= 50 ms,
-   * `null` when nothing is held or in flight). With "Always evert globe" a miss is
-   * not the end: the scheduler gets the generous wait, and if it still has nothing
-   * (the hub was released before its idle capture, or the capture timed out) one is
-   * taken now, within what is left of the same {@link ALWAYS_EVERT_BEFORE_WAIT_MS}.
+   * The hub's BEFORE bitmap, within `grace` (the runner's `BEFORE_WAIT_MS`, or
+   * `ALWAYS_EVERT_BEFORE_WAIT_MS` with the preference on). The scheduler's held or
+   * in-flight capture first; if it has nothing (the hub was released before its
+   * post-morph idle capture, or that capture timed out on a slow device) one is
+   * taken now, in what is left of the same budget. A miss used to be the end of the
+   * effect for that navigation, which is why a quick visitor never saw it.
+   *
+   * A page that cannot be captured at all in that budget (a huge DOM on a slow
+   * phone, a capture that throws) still plays: it starts from the instant 2D
+   * stand-in of the page itself - the one the destination gets while it loads -
+   * instead of being the one page the effect never plays on. The hub covers the
+   * page while it is open, so the stand-in is never seen beside the real thing.
    */
   const awaitBefore = async (grace: number): Promise<ImageBitmap | null> => {
     const started = performance.now();
     const held = await deps.beforeCapture.awaitBefore(grace);
-    if (held || !alwaysEvert()) return held;
+    if (held) return held;
     // One budget for both steps, not one each; never less than a capture needs to start.
-    const left = Math.max(500, ALWAYS_EVERT_BEFORE_WAIT_MS - (performance.now() - started));
-    return withTimeout(captureBeforeNow(left), left + 50, 'always-evert BEFORE capture').catch(
-      () => null,
-    );
+    const left = Math.max(300, grace - (performance.now() - started));
+    const taken = await withTimeout(
+      captureBeforeNow(left),
+      left + 50,
+      'on-demand BEFORE capture',
+    ).catch(() => null);
+    if (taken) return taken;
+    try {
+      return await buildPlaceholder(
+        { ...previewNode(), id: 'rmh-eversion-controller:before-standin' },
+        viewportNow(),
+        resolveThemeColours(),
+        deps.translate,
+        { tier: detectTier() },
+      );
+    } catch {
+      return null;
+    }
   };
 
   const page = createPagePort();

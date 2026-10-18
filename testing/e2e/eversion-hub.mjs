@@ -109,10 +109,10 @@ async function openHub(s) {
     () => document.querySelector('.radial-hub')?.getAttribute('data-phase') === 'open',
   );
   // Past the open morph (500 ms), the BEFORE scheduler's hold-off, and the
-  // controller's idle host init (`onHubOpened` +700 ms, then the programs
-  // compile). The runner only waits HOST_READY_TIMEOUT_MS (600 ms) for the host
-  // at release, so a release before this settles correctly FALLS BACK — which is
-  // not what these scenarios are about. SwiftShader and a dev server make the
+  // host init the bridge starts when it mounts. The runner waits a bounded
+  // HOST_READY_TIMEOUT_MS / BEFORE_WAIT_MS at release and falls back past them,
+  // which on a slow software-GL box is correct but not what these scenarios are
+  // about. SwiftShader and a dev server make the
   // first init slow; a generous fixed wait is the only signal there is.
   await s.page.waitForTimeout(HOST_WARM_MS);
 }
@@ -347,7 +347,10 @@ async function previewScenario() {
 /**
  * A weak device, as far as the effect can tell: the CPU is throttled and the pin
  * is confirmed the instant the hub is open, so neither the host nor the BEFORE
- * picture is ready (the normal skip: `host-not-ready` / `before-missing`).
+ * picture is ready. Since 2026-10-18 the default is a BOUNDED wait for both (it
+ * used to be an immediate skip): on this software-GL box it may play or give up,
+ * so the off case asserts what must always hold - the visitor lands, a run that
+ * started finishes, nothing is left on screen. With the setting on it must play.
  */
 async function weakDeviceScenario({ name, always, reducedMotion }) {
   const { s, errors } = await fresh({
@@ -401,6 +404,18 @@ async function weakDeviceScenario({ name, always, reducedMotion }) {
         `the override still fell back: ${JSON.stringify(marks.filter((m) => m.name === EVERSION_MARKS.fallback))}`,
       );
       check(name, new URL(s.page.url()).pathname === '/games', `landed on ${s.page.url()}`);
+    } else if (!reducedMotion) {
+      await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+      await s.page.waitForURL('**/games', { timeout: SLOW });
+      const started = (await s.marks()).some((m) => m.name === EVERSION_MARKS.start);
+      if (started) await s.waitForMark(EVERSION_MARKS.done, { timeout: RUN_MS });
+      else await s.page.waitForTimeout(1500);
+      check(name, new URL(s.page.url()).pathname === '/games', `landed on ${s.page.url()}`);
+      check(
+        name,
+        !(await s.page.evaluate(() => !!document.querySelector('.eversion-overlay'))),
+        'overlay left on screen',
+      );
     } else {
       await s.page.waitForURL('**/games', { timeout: SLOW });
       await s.page.waitForTimeout(1500);
