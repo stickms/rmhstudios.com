@@ -41,11 +41,13 @@ import jaCProfileModules from "@/locales/ja/c-profile-modules.json";
 import jaCRebarRutabaga from "@/locales/ja/c-rebar-rutabaga.json";
 import jaCRideshare from "@/locales/ja/c-rideshare.json";
 import jaCRmhCapital from "@/locales/ja/c-rmh-capital.json";
+import jaCRmhDatacenter from "@/locales/ja/c-rmh-datacenter.json";
 import jaCRmhPmc from "@/locales/ja/c-rmh-pmc.json";
 import jaCRmhbox from "@/locales/ja/c-rmhbox.json";
 import jaCRmhcalculator from "@/locales/ja/c-rmhcalculator.json";
 import jaCRmhcode from "@/locales/ja/c-rmhcode.json";
 import jaCRmhcoins from "@/locales/ja/c-rmhcoins.json";
+import jaCRmhfashion from "@/locales/ja/c-rmhfashion.json";
 import jaCRmhmusic from "@/locales/ja/c-rmhmusic.json";
 import jaCRmhstudy from "@/locales/ja/c-rmhstudy.json";
 import jaCRmhtech from "@/locales/ja/c-rmhtech.json";
@@ -68,6 +70,34 @@ import jaCVoidBreaker from "@/locales/ja/c-void-breaker.json";
 import jaCWager from "@/locales/ja/c-wager.json";
 import jaCWishlist from "@/locales/ja/c-wishlist.json";
 import jaCommon from "@/locales/ja/common.json";
+import jaErrors from "@/locales/ja/errors.json";
+import jaFAccess from "@/locales/ja/f-access.json";
+import jaFAction from "@/locales/ja/f-action.json";
+import jaFArcade from "@/locales/ja/f-arcade.json";
+import jaFAsyncGames from "@/locales/ja/f-async-games.json";
+import jaFCalendar from "@/locales/ja/f-calendar.json";
+import jaFCanvas from "@/locales/ja/f-canvas.json";
+import jaFCommunitiesPlus from "@/locales/ja/f-communities-plus.json";
+import jaFCompetitive from "@/locales/ja/f-competitive.json";
+import jaFCreative from "@/locales/ja/f-creative.json";
+import jaFDelight from "@/locales/ja/f-delight.json";
+import jaFDevplatform from "@/locales/ja/f-devplatform.json";
+import jaFDiscovery from "@/locales/ja/f-discovery.json";
+import jaFEconomyPlus from "@/locales/ja/f-economy-plus.json";
+import jaFFeedPlus from "@/locales/ja/f-feed-plus.json";
+import jaFForecasting from "@/locales/ja/f-forecasting.json";
+import jaFGifting from "@/locales/ja/f-gifting.json";
+import jaFLadderHomes from "@/locales/ja/f-ladder-homes.json";
+import jaFMessaging from "@/locales/ja/f-messaging.json";
+import jaFOps from "@/locales/ja/f-ops.json";
+import jaFParty from "@/locales/ja/f-party.json";
+import jaFPostsPlus from "@/locales/ja/f-posts-plus.json";
+import jaFProfilePlus from "@/locales/ja/f-profile-plus.json";
+import jaFReading from "@/locales/ja/f-reading.json";
+import jaFSafety from "@/locales/ja/f-safety.json";
+import jaFTools from "@/locales/ja/f-tools.json";
+import jaFWatch from "@/locales/ja/f-watch.json";
+import jaFWorlds from "@/locales/ja/f-worlds.json";
 import jaFeed from "@/locales/ja/feed.json";
 import jaGamesHub from "@/locales/ja/games-hub.json";
 import jaGroups from "@/locales/ja/groups.json";
@@ -138,11 +168,13 @@ const jaResources = {
   "c-rebar-rutabaga": jaCRebarRutabaga,
   "c-rideshare": jaCRideshare,
   "c-rmh-capital": jaCRmhCapital,
+  "c-rmh-datacenter": jaCRmhDatacenter,
   "c-rmh-pmc": jaCRmhPmc,
   "c-rmhbox": jaCRmhbox,
   "c-rmhcalculator": jaCRmhcalculator,
   "c-rmhcode": jaCRmhcode,
   "c-rmhcoins": jaCRmhcoins,
+  "c-rmhfashion": jaCRmhfashion,
   "c-rmhmusic": jaCRmhmusic,
   "c-rmhstudy": jaCRmhstudy,
   "c-rmhtech": jaCRmhtech,
@@ -165,6 +197,34 @@ const jaResources = {
   "c-wager": jaCWager,
   "c-wishlist": jaCWishlist,
   "common": jaCommon,
+  "errors": jaErrors,
+  "f-access": jaFAccess,
+  "f-action": jaFAction,
+  "f-arcade": jaFArcade,
+  "f-async-games": jaFAsyncGames,
+  "f-calendar": jaFCalendar,
+  "f-canvas": jaFCanvas,
+  "f-communities-plus": jaFCommunitiesPlus,
+  "f-competitive": jaFCompetitive,
+  "f-creative": jaFCreative,
+  "f-delight": jaFDelight,
+  "f-devplatform": jaFDevplatform,
+  "f-discovery": jaFDiscovery,
+  "f-economy-plus": jaFEconomyPlus,
+  "f-feed-plus": jaFFeedPlus,
+  "f-forecasting": jaFForecasting,
+  "f-gifting": jaFGifting,
+  "f-ladder-homes": jaFLadderHomes,
+  "f-messaging": jaFMessaging,
+  "f-ops": jaFOps,
+  "f-party": jaFParty,
+  "f-posts-plus": jaFPostsPlus,
+  "f-profile-plus": jaFProfilePlus,
+  "f-reading": jaFReading,
+  "f-safety": jaFSafety,
+  "f-tools": jaFTools,
+  "f-watch": jaFWatch,
+  "f-worlds": jaFWorlds,
   "feed": jaFeed,
   "games-hub": jaGamesHub,
   "groups": jaGroups,

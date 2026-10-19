@@ -16,6 +16,7 @@
   "empty-open": "No open markets right now. Create the first one!",
   "empty-resolved": "No resolved markets yet.",
   "enter-amount": "Enter an amount first",
+  "filter-aria-label": "Filter markets",
   "filter-mine": "Mine",
   "filter-open": "Open",
   "filter-resolved": "Resolved",
