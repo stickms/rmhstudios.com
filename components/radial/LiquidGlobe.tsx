@@ -417,8 +417,9 @@ interface LiquidGlobeProps {
    *
    * When present, confirming a destination calls this INSTEAD of
    * `onDismiss()` + `navigate()`: the receiver owns both the hub's dismissal and
-   * the router call, because the effect starts the navigation itself (at `start`,
-   * not at the end — spec §1 Q8) and needs the globe's pose to begin from. It is
+   * the router call, because the effect starts the navigation itself (before the
+   * animation, so the destination is on the globe from its first frame) and needs
+   * the globe's pose to begin from. It is
    * given the pose as the hub's own units — degrees and deg/s, CSS px — so the
    * WebGL sphere can start exactly where this one is.
    *
@@ -431,6 +432,8 @@ interface LiquidGlobeProps {
     node: NavLeaf,
     state: GlobeStartState,
     entry: Exclude<EntryPoint, 'preview'>,
+    /** The pose at any later moment: the effect starts once the destination is rendered, from the pose then. */
+    live: () => GlobeStartState,
   ) => void;
 }
 
@@ -814,7 +817,7 @@ export function LiquidGlobe({
       }
       const handOff = onNavigateRef.current;
       if (handOff && !quiet.current) {
-        handOff(node, snapshotGlobeState(), entry);
+        handOff(node, snapshotGlobeState(), entry, snapshotGlobeState);
         return;
       }
       onDismiss();

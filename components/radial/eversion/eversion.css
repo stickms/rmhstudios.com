@@ -45,6 +45,62 @@
   transition: opacity 0.2s ease;
 }
 
+/* ── The frozen picture (amended 2026-10-19) ───────────────────────────────
+   The run renders the destination BEFORE the animation, while the hub is still
+   open: the live page changes underneath, so the visitor is shown the page they
+   are leaving as a picture (the BEFORE capture, `overlay-store.ts#holdPicture`).
+
+   While the destination renders, its layer sits just over the page content
+   (`--z-content` + 1: over `.radial-frame` and the backdrop; the cover hides the
+   top bar, whose picture is in the capture) and UNDER every floating element: the
+   cookie bar (z-40), menus and quick panels (`--z-menu`), the mini-player
+   (`--z-floating`). The capture leaves those out as not the page, so a picture
+   above them would make them vanish for the length of the wait; under it they
+   stay on screen exactly as they were. Two frames before the effect starts,
+   `--up` lifts the layer to the overlay's level (it comes after the overlay in
+   the document, so it paints over the canvas, still under the hub): the canvas's
+   first frame can never show above it.
+
+   The picture must look like the page it replaces, which behind an open hub is
+   BLURRED by the same `filter` radial.css gives the shell layers, and is not on
+   the tiers that opt out of that blur (perf-lite, reduce-transparency,
+   ios-webkit: the veil carries it alone there). With the hub closed (the
+   Settings Preview) it is sharp, as the page is.
+
+   It is static: the blur is rasterised once, nothing animates under it. When the
+   effect's first frame is up (`cover`), the same page sharp, `--out` fades it
+   over the hub's own fade (`HOLD_FADE_MS` = `HUB_FADE_MS`): the page comes into
+   focus as the veil leaves instead of snapping sharp. Opacity is the only
+   property that moves. */
+.eversion-hold-layer {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-content) + 1);
+  contain: strict;
+  pointer-events: none;
+  opacity: 1;
+}
+.eversion-hold-layer--up {
+  z-index: calc(var(--z-hub-overlay) - 1);
+}
+.eversion-hold-layer--out {
+  opacity: 0;
+  transition: opacity 250ms ease;
+}
+.eversion-hold {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.radial-hub:is([data-phase='open'], [data-phase='everting']) .eversion-hold {
+  filter: blur(var(--hub-page-blur, 20px));
+}
+html:is(.perf-lite, .reduce-transparency, .ios-webkit) .eversion-hold {
+  filter: none;
+}
+
 /* ── Hiding the live page (spec §6.6) ──────────────────────────────────────
    While the opaque canvas covers the screen, the shell under it would keep
    compositing — and the top bar and the page's glass surfaces carry
@@ -94,6 +150,18 @@ html.eversion-live .radial-shell:has(.radial-hub[data-phase='everting']) .radial
   filter: none;
   transition: none;
 }
+/* The same while the destination is rendered under the frozen picture (the hub
+   is still `open`, the shell already covered): the page is laid out and captured
+   exactly as it will be handed back, not as the blurred layer whose `filter`
+   re-anchors every fixed element in it. Invisible: the shell is covered. */
+html.eversion-live.eversion-cover
+  .radial-shell:has(.radial-hub[data-phase='open'])
+  .radial-backdrop,
+html.eversion-live.eversion-cover .radial-shell:has(.radial-hub[data-phase='open']) .radial-topbar,
+html.eversion-live.eversion-cover .radial-shell:has(.radial-hub[data-phase='open']) .radial-frame {
+  filter: none;
+  transition: none;
+}
 html.eversion-live .radial-shell:has(.radial-hub[data-phase='everting']) .radial-feed__compose {
   visibility: visible;
 }
@@ -113,10 +181,13 @@ html.eversion-live:not(.eversion-cover) .radial-hub[data-phase='everting'] .radi
    the site fills `both`), so the page is captured as it will rest, and nothing
    that depended on an `animationend` event is left waiting for one. Transitions
    are collapsed alike. The attribute is short-lived and set on one element, so
-   the universal selector is paid for only for the length of a capture. */
-html[data-eversion-settle] *,
-html[data-eversion-settle] *::before,
-html[data-eversion-settle] *::after {
+   the universal selector is paid for only for the length of a capture.
+
+   The hub is spared: the destination is captured while it is still open and
+   moving on screen (amended 2026-10-19), and it is not part of the picture. */
+html[data-eversion-settle] *:not(.radial-hub, .radial-hub *),
+html[data-eversion-settle] *:not(.radial-hub, .radial-hub *)::before,
+html[data-eversion-settle] *:not(.radial-hub, .radial-hub *)::after {
   animation-duration: 0.001ms !important;
   animation-delay: 0s !important;
   transition-duration: 0.001ms !important;

@@ -449,6 +449,7 @@ export function createRenderer(
     }
     setSamplerState(true);
     g.generateMipmap(g.TEXTURE_2D);
+    if (slot !== 'before') bindPlaceholder();
   }
 
   function freePage(slot: TextureSlot) {
@@ -456,6 +457,16 @@ export function createRenderer(
     if (!tex) return;
     pages[slot] = dropTexture(tex);
     bindUnit(slotUnit[slot], fallbackPage);
+    if (slot !== 'before') bindPlaceholder();
+  }
+
+  /**
+   * The placeholder unit samples the placeholder page, else the AFTER page, else nothing. The run uploads AFTER
+   * before it starts and no placeholder at all, so the inside of the globe is the destination from the first
+   * frame, and the `afterMix` crossfade the timeline still plays mixes the page with itself.
+   */
+  function bindPlaceholder() {
+    bindUnit(SAMPLER_UNITS.placeholder, pages.placeholder ?? pages.after ?? fallbackPage);
   }
 
   function freeLut() {
@@ -680,6 +691,11 @@ export function createRenderer(
       if (!guard()) return;
       if (bitmap) uploadPage(slot, bitmap);
       else freePage(slot);
+    },
+
+    warm() {
+      if (!guard()) return;
+      warmUp();
     },
 
     draw(s: Readonly<TimelineSnapshot>) {

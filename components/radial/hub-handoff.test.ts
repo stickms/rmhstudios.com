@@ -18,7 +18,7 @@ function rig(opts: { eligible?: () => boolean } = {}) {
   const log: string[] = [];
   let settle!: (o: EversionOutcome) => void;
   let reject!: (e: unknown) => void;
-  let hooks!: { onCommit(): void };
+  let hooks!: { onCommit(): void; globe?: () => GlobeStartState };
   const controller: HandOffController<typeof NODE> = {
     isEligible: opts.eligible ?? (() => true),
     start: (_node, _state, _entry, options) => {
@@ -46,6 +46,7 @@ function rig(opts: { eligible?: () => boolean } = {}) {
     settle: (o: EversionOutcome) => settle(o),
     reject: (e: unknown) => reject(e),
     commit: () => hooks.onCommit(),
+    hooks: () => hooks,
   };
 }
 const flush = async () => {
@@ -188,5 +189,23 @@ describe('hub hand-off before the controller has loaded (amended 2026-10-18)', (
     r.machine.confirmWhenReady(Promise.resolve(r.controller), NODE, GLOBE, 'release');
     await flush();
     expect(r.log).toEqual(['today:/games']);
+  });
+
+  it("hands the controller the globe's live pose, so the effect starts from the globe as it is at start", () => {
+    const r = rig();
+    const live = vi.fn(() => ({ yaw: 7 }) as GlobeStartState);
+    r.machine.confirm(r.controller, NODE, GLOBE, 'release', live);
+    expect(r.log).toEqual(['start']);
+    // Read when the run starts, not at the confirm.
+    expect(live).not.toHaveBeenCalled();
+    expect(r.hooks().globe).toBe(live);
+  });
+
+  it('a run that navigated but could not animate (`abort`, never committed) just closes: no second navigation', async () => {
+    const r = rig();
+    r.confirm();
+    r.settle({ fallback: null, end: 'abort' });
+    await flush();
+    expect(r.log).toEqual(['start', 'closed']);
   });
 });

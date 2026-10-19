@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useSyncExternalStore } from 'react';
-import { overlayAttached, overlayStore } from './overlay-store';
+import { holdLayerAttached, overlayAttached, overlayStore } from './overlay-store';
 
 /**
  * The fixed layer that holds the eversion's canvas (spec §9.2 step 2, §10.4).
@@ -10,7 +10,8 @@ import { overlayAttached, overlayStore } from './overlay-store';
  * Renders nothing at rest. While the controller has a run on, it is one `div`
  * (`.eversion-overlay`, styled in `eversion.css` — which `radial.css` already
  * imports, so this file does not) that ADOPTS the controller's persistent canvas
- * in its ref callback. The controller waits for that adoption before it lets the
+ * in its ref callback, and the frozen picture's layer (`.eversion-hold-layer`,
+ * see `overlay-store.ts`). The controller waits for that adoption before it lets the
  * render side present its first frame, so the canvas is never "ready" while
  * detached.
  *
@@ -36,13 +37,18 @@ export default function EversionOverlay() {
     overlayStore.getServerSnapshot,
   );
   const ref = useCallback((el: HTMLDivElement | null) => overlayAttached(el), []);
+  const holdRef = useCallback((el: HTMLDivElement | null) => holdLayerAttached(el), []);
   if (!state.mounted) return null;
   return (
-    <div
-      ref={ref}
-      role="presentation"
-      className={state.fading ? 'eversion-overlay eversion-overlay--fading' : 'eversion-overlay'}
-    />
+    <>
+      <div
+        ref={ref}
+        role="presentation"
+        className={state.fading ? 'eversion-overlay eversion-overlay--fading' : 'eversion-overlay'}
+      />
+      {/* After the overlay on purpose: lifted to the overlay's level on release, it then paints over the canvas. */}
+      <div ref={holdRef} className="eversion-hold-layer" aria-hidden />
+    </>
   );
 }
 

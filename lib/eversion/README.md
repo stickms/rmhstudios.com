@@ -37,7 +37,6 @@ Pure and client-safe unless noted: importable from node vitest, no DOM at import
 | `cosmos.ts`                              | the planetary system on large screens: layout, presence, frame  | 10-18 |
 | `debug.ts`                               | `registerDebug`, `window.__eversion` slots (client, flag-gated) | T15   |
 | `capture.ts`                             | `modern-screenshot` viewport capture (client)                   | T17   |
-| `placeholder.ts`                         | instant 2D stand-in for the destination (client)                | T18   |
 | `prefetch.ts`                            | post-`load` warm-up (client)                                    | T29   |
 | `gl/uniforms.ts`                         | attribute, sampler units, uniform table — the shader contract   | T01   |
 | `gl/shaders.ts`                          | GLSL ES 3.00 (client)                                           | T23   |
@@ -64,32 +63,76 @@ Components live in `components/radial/eversion/` (`EversionOverlay.tsx`,
 - Anything that crosses to the worker is a `ToWorker` / `FromWorker` message in
   `types.ts`.
 
+## The globe shows real pages, and nothing renders while it moves (amended 2026-10-19)
+
+The owner's report: the globe did not carry the page, it carried the page's ICON, at the start and at the end; and
+the animation still stuttered as it began. Both had one cause. `navigate()` used to be called at `start`, so the
+destination could only be captured mid-animation, once it had loaded and settled; until then the inside of the globe
+showed `placeholder.ts` (the destination's lucide icon and label on `--site-bg`), which is what the curling edges of
+WRAP and the whole EVERSION showed, and what UNWRAP laid on the screen when the capture missed its deadline. A BEFORE
+capture that failed was replaced by the same kind of card. And the destination's render, the readiness gate, the DOM
+clone and both texture uploads all ran inside the animation's first second; on WebKit the render host is in-thread,
+so each of them was a dropped frame.
+
+Now the run renders the destination first (`runner.ts`, the sequence in its docblock):
+
+1. **A frozen picture.** The BEFORE capture is drawn into `.eversion-hold` over the effect's canvas
+   (`overlay-store.ts#holdPicture`), blurred exactly as radial.css blurs the shell behind an open hub (and sharp on the
+   tiers that opt out of that blur, and with the hub closed). Two frames later it is on screen, and the live page under
+   it may change unseen; `eversion-cover` hides the shell beneath it then, so nothing on `<html>` toggles once the globe
+   moves.
+2. **The navigation, while the hub is still open.** The route was preloaded while the pin sat in the reticle
+   (`LiquidGlobe#warmLocked`), so it usually commits at once. The readiness gate (`settle.ts`) is bounded from the
+   navigation: every condition until `DESTINATION_SETTLE_SOFT_MS` (1.5 s), activity only until
+   `DESTINATION_SETTLE_HARD_MS` (4 s). Then the destination is captured (`AFTER_CAPTURE_TIMEOUT_MS`).
+3. **Both pictures on the GPU before the first frame.** AFTER is posted before `start`; the core warms every upload
+   made between runs (`RendererApi.warm`), and the runner waits `UPLOAD_SETTLE_FRAMES` (2) before it starts. With no
+   placeholder uploaded the renderer samples AFTER in the placeholder's unit (`bindPlaceholder`), so the inside of the
+   globe is the destination from the first frame; the timeline's `afterMix` crossfade still runs and mixes the page with
+   itself.
+4. **`start`, from the globe as it is now.** The hub's globe kept turning during the wait, so `start` carries its live
+   pose (`RunOptions.globe`, `LiquidGlobe`'s `snapshotGlobeState` passed through `hub-handoff.ts`); the core rebuilds the
+   timeline from it. `onCommit` flips the hub to `everting` in the same task, and on the first frame (`cover`) the frozen
+   picture fades out over the hub's own fade (`HOLD_FADE_MS` = `HUB_FADE_MS`): the page comes into focus as the veil
+   leaves, instead of snapping sharp under it.
+
+What can no longer happen: a fallback after the navigation (the contract stands: a `fallback` means nothing was
+navigated). A destination that cannot be captured, a render side lost between the navigation and `start`, or a
+`dispose` in that window end the run with `{ fallback: null, end: 'abort' }` and nothing animated: the hub closes onto
+the destination, which is already live. Back/forward there is `traversal`, as it was while priming. `placeholder.ts` and
+its debug slot are gone. While the destination is laid out under the picture the shell is unblurred
+(`html.eversion-live.eversion-cover` with the hub `open`, eversion.css), so it is captured exactly as it will be handed
+back, and `data-eversion-settle` collapses every animation for the capture except the hub's, which is on screen.
+
+BEFORE captures nobody is waiting on yet (ahead of the open, and on the open) get `BACKGROUND_CAPTURE_TIMEOUT_MS` (4 s)
+instead of 600 ms: the clone is sliced, so a slow phone on a long page gets a picture rather than none.
+
 ## Router & fault edge cases (T33, spec §9.4)
 
 All of it lives in `runner.ts` (sequence) and `useEversionController.ts` (the real
 ports); `testing/e2e/eversion-edge.mjs` has one scripted check per row.
 
-| Case                             | What happens                                                                                                                                                |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Same route                       | The effect runs; AFTER is the same page re-captured.                                                                                                        |
-| Back / forward mid-run           | `RouterPort.onTraversal` (`popstate`; never fires for our own `pushState`) → `abort`. The AFTER in flight is dropped; reveal crossfades onto the live page. |
-| 404 / error / redirect           | `whenIdle` waits for the router to settle; AFTER captures whatever rendered.                                                                                |
-| A router that never settles      | `whenIdle` is bounded by `ROUTE_SETTLE_TIMEOUT_MS` (= `AFTER_CAPTURE_TIMEOUT_MS`) → `after-failed`; the placeholder is unwrapped.                           |
-| Resize / rotation                | `PagePort.onResize`: one `resize` per frame, only if the viewport changed.                                                                                  |
-| Context lost / fatal after start | `eversion-cover` off, overlay `--fading` (200 ms), run ends `context-lost`. Before start it is a clean `host-error` fallback.                               |
-| Hidden tab                       | `host.ts` posts `visibility`; the core pauses its loop (`debug` op `loop` shows it).                                                                        |
-| Input during the reveal fade     | Ignored from `uncover` on (no `fast-forward` is posted).                                                                                                    |
+| Case                             | What happens                                                                                                                                                                                                                                   |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Same route                       | The effect runs; AFTER is the same page re-captured.                                                                                                                                                                                           |
+| Back / forward mid-run           | `RouterPort.onTraversal` (`popstate`; never fires for our own `pushState`) → `abort`; reveal crossfades onto the live page. While the destination is still rendering (before `start`) it ends the wait at once: `traversal`, nothing animated. |
+| 404 / error / redirect           | `whenIdle` waits for the router to settle; AFTER captures whatever rendered.                                                                                                                                                                   |
+| A router that never settles      | `whenIdle` is waited on to `DESTINATION_SETTLE_HARD_MS`; the page is then captured as it is.                                                                                                                                                   |
+| Resize / rotation                | `PagePort.onResize`: one `resize` per frame, only if the viewport changed.                                                                                                                                                                     |
+| Context lost / fatal after start | `eversion-cover` off, overlay `--fading` (200 ms), run ends `context-lost`. Before the navigation it is a clean `host-error` fallback; between the navigation and `start` the run ends `abort`, unanimated.                                    |
+| Hidden tab                       | `host.ts` posts `visibility`; the core pauses its loop (`debug` op `loop` shows it).                                                                                                                                                           |
+| Input during the reveal fade     | Ignored from `uncover` on (no `fast-forward` is posted).                                                                                                                                                                                       |
 
 ### It plays on every hub navigation (amended 2026-10-18)
 
 The effect used to be a race the visitor lost whenever they were quick. Three
 things could each skip it silently, and all three are now short waits instead:
 
-| What was not ready                                                                                                    | Before                                              | Now                                                                                                                             |
-| --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| The bridge (controller) had not loaded: the first seconds of a page-load, or a page whose `load` was held up          | Today's navigation                                  | `hub-handoff.ts#confirmWhenReady` waits for it (`CONTROLLER_WAIT_MS` 2.5 s); opening the hub starts the warm-up at once         |
-| The BEFORE picture: the scheduler captures after the 500 ms open morph and an idle slot, so a pick inside ~1 s missed | `BEFORE_WAIT_MS` 50 ms for one in flight, else skip | `BEFORE_WAIT_MS` 1.2 s in total: the one in flight, else one on demand; a page that cannot be captured starts from its stand-in |
-| The render host was still compiling (it compiled 700 ms after the hub opened)                                         | `host-not-ready`: skip, warm for next time          | The bridge initialises it on the real canvas at its first idle slot; a release waits `HOST_READY_TIMEOUT_MS` 2.5 s              |
+| What was not ready                                                                                                    | Before                                              | Now                                                                                                                                                                            |
+| --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| The bridge (controller) had not loaded: the first seconds of a page-load, or a page whose `load` was held up          | Today's navigation                                  | `hub-handoff.ts#confirmWhenReady` waits for it (`CONTROLLER_WAIT_MS` 2.5 s); opening the hub starts the warm-up at once                                                        |
+| The BEFORE picture: the scheduler captures after the 500 ms open morph and an idle slot, so a pick inside ~1 s missed | `BEFORE_WAIT_MS` 50 ms for one in flight, else skip | `BEFORE_WAIT_MS` 1.2 s in total: the one in flight, else one on demand; a page that cannot be captured is navigated to without the effect (never an icon stand-in, 2026-10-19) |
+| The render host was still compiling (it compiled 700 ms after the hub opened)                                         | `host-not-ready`: skip, warm for next time          | The bridge initialises it on the real canvas at its first idle slot; a release waits `HOST_READY_TIMEOUT_MS` 2.5 s                                                             |
 
 The controller still owns a host state (`idle` → `initialising` → `ready`, or
 `failed` after two failed inits), but only `failed` is an eligibility row now
@@ -103,17 +146,17 @@ The visitor-set switch (`themeStore.alwaysEvertGlobe`, Settings > Appearance >
 Comfort) lengthens the waits above for a device too slow for them; it never turns
 an accessibility or capability check off.
 
-| Gate (where)                                                                                                                          | Default                                               | With the switch                       |
-| ------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------- |
-| Bridge not loaded (`RadialHub` → `confirmWhenReady`)                                                                                  | `CONTROLLER_WAIT_MS` 2.5 s                            | `ALWAYS_CONTROLLER_WAIT_MS` 8 s       |
-| Host still starting or slow to answer (`HOST_READY_TIMEOUT_MS` → `host-error`)                                                        | 2.5 s                                                 | `ALWAYS_EVERT_HOST_WAIT_MS` (8 s)     |
-| BEFORE (in flight, else on demand, else the stand-in; `before-*`)                                                                     | `BEFORE_WAIT_MS` 1.2 s                                | `ALWAYS_EVERT_BEFORE_WAIT_MS` (3 s)   |
-| Overlay mount (`OVERLAY_MOUNT_TIMEOUT_MS` → `host-error`)                                                                             | 500 ms                                                | `ALWAYS_EVERT_OVERLAY_MOUNT_MS` (2 s) |
-| Device tier (`detectTier`: `perf-lite` = Save-Data / 2g / < 4 GB / <= 2 cores -> `low`)                                               | Smaller mesh, cheaper shaders; **not** an exclusion   | Unchanged                             |
-| Frame governor (`DprGovernor`, <= 2 DPR steps)                                                                                        | Lowers resolution mid-run, never cancels              | Unchanged                             |
-| Run watchdog (`MAX_RUN_MS`, 30 s of silence)                                                                                          | Force-ends a stalled run with a fade                  | Unchanged: the switch cannot hang     |
-| AFTER settle / capture deadlines (`ROUTE_SETTLE_TIMEOUT_MS`, `AFTER_*`)                                                               | `after-failed`: unwrap the placeholder, run continues | Unchanged                             |
-| Reduced motion (OS or site toggle), no WebGL2 / lost context, flag off, chunk not loaded, failed host, traversal, external link, busy | Fall back                                             | **Never overridden**                  |
+| Gate (where)                                                                                                                          | Default                                             | With the switch                       |
+| ------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- | ------------------------------------- |
+| Bridge not loaded (`RadialHub` → `confirmWhenReady`)                                                                                  | `CONTROLLER_WAIT_MS` 2.5 s                          | `ALWAYS_CONTROLLER_WAIT_MS` 8 s       |
+| Host still starting or slow to answer (`HOST_READY_TIMEOUT_MS` → `host-error`)                                                        | 2.5 s                                               | `ALWAYS_EVERT_HOST_WAIT_MS` (8 s)     |
+| BEFORE (in flight, else on demand; `before-*`)                                                                                        | `BEFORE_WAIT_MS` 1.2 s                              | `ALWAYS_EVERT_BEFORE_WAIT_MS` (3 s)   |
+| Overlay mount (`OVERLAY_MOUNT_TIMEOUT_MS` → `host-error`)                                                                             | 500 ms                                              | `ALWAYS_EVERT_OVERLAY_MOUNT_MS` (2 s) |
+| Device tier (`detectTier`: `perf-lite` = Save-Data / 2g / < 4 GB / <= 2 cores -> `low`)                                               | Smaller mesh, cheaper shaders; **not** an exclusion | Unchanged                             |
+| Frame governor (`DprGovernor`, <= 2 DPR steps)                                                                                        | Lowers resolution mid-run, never cancels            | Unchanged                             |
+| Run watchdog (`MAX_RUN_MS`, 30 s of silence)                                                                                          | Force-ends a stalled run with a fade                | Unchanged: the switch cannot hang     |
+| The destination's capture (`AFTER_CAPTURE_TIMEOUT_MS`, after the `DESTINATION_SETTLE_*` gate)                                         | 1.5 s; a miss ends the run unanimated (`abort`)     | `BACKGROUND_CAPTURE_TIMEOUT_MS` (4 s) |
+| Reduced motion (OS or site toggle), no WebGL2 / lost context, flag off, chunk not loaded, failed host, traversal, external link, busy | Fall back                                           | **Never overridden**                  |
 
 The switch reaches the code in three places: the runner's priming section
 (`RunnerDeps.alwaysEvert?()` picks the `ALWAYS_EVERT_*` limits), the controller
@@ -357,12 +400,12 @@ content and are not waited for), no loading placeholder in the viewport (`LOADIN
 loading, and the DOM/layout quiet for `AFTER_QUIET_MS` (MutationObserver + `layout-shift`, hub and other excluded UI
 ignored; capped at `AFTER_QUIET_CAP_MS` once everything else holds, so a ticking page is not "unsettled").
 
-It is bounded by the timeline's own AFTER deadline (`need-after-by`), never by a timer of its own: **hard** = cap -
-`PLACEHOLDER_XFADE_MS` - `AFTER_CAPTURE_RESERVE_MS`, **soft** = hard - `STRETCH_CAP_MS`. Before soft waiting is free (the
-eversion is still turning) and all conditions apply; between soft and hard only ACTIVITY (a fetch, an image, a font)
+It is bounded from the navigation (amended 2026-10-19: the destination is captured before the animation starts, see
+above): **soft** = navigation + `DESTINATION_SETTLE_SOFT_MS`, **hard** = navigation + `DESTINATION_SETTLE_HARD_MS`. Before
+soft all conditions apply; between soft and hard only ACTIVITY (a fetch, an image, a font)
 holds the capture, plus `AFTER_RENDER_GRACE_MS` for its result to render (a permanent skeleton with nothing loading is
-a page at rest and must not stretch every navigation); past hard the page is captured as it is. A fast-forward or
-abort skips the wait. An already-settled page costs the two frames it replaces: no added latency. Late content that
+a page at rest and must not stretch every navigation); past hard the page is captured as it is. A press while waiting
+(queued as the run's fast-forward) or back/forward skips the wait. An already-settled page costs the two frames it replaces: no added latency. Late content that
 misses even the hard bound is shown as the page it was and carried onto what it became by the final dissolve (a
 smooth, eased dissolve, not a cut); a second capture swapped in mid-animation would itself be a visible pop, so it is
 deliberately not done. `testing/e2e/eversion-late-content.mjs` is the test that failed before the gate existed.

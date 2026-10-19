@@ -190,8 +190,12 @@ const STYLE_PROPERTIES: string[] = `
   .split(/\s+/)
   .filter(Boolean);
 
-/** Shell parts `html.eversion-cover` sets to `opacity: 0` (spec §6.6; `radial.css`). */
-const COVER_HIDDEN_SELECTOR = '.radial-backdrop, .radial-frame';
+/**
+ * Shell parts `html.eversion-cover` sets to `opacity: 0` (spec §6.6; `eversion.css`). All three: the top bar was
+ * added to the cover rule without being added here, and every AFTER taken under the cover then lost it, so the top
+ * bar popped in during the final dissolve. `eversion-css.test.ts` keeps the two lists equal.
+ */
+const COVER_HIDDEN_SELECTOR = '.radial-backdrop, .radial-topbar, .radial-frame';
 /** Shell parts blurred while the hub is open (`radial.css`, `[data-phase='open']`). */
 const HUB_BLURRED_SELECTOR = '.radial-backdrop, .radial-topbar, .radial-frame';
 /** Hidden while the hub is open; part of the page as it was before. */

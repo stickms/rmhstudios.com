@@ -509,7 +509,10 @@ export interface TimelineApi {
    Worker protocol (spec §3.3)
    ═════════════════════════════════════════════════════════════════════════════ */
 
-/** Which page texture a bitmap is for. `placeholder` stands in for `after` until it arrives. */
+/**
+ * Which page texture a bitmap is for. `placeholder` stands in for `after` until it arrives; with no placeholder
+ * uploaded the renderer samples `after` there too (the run uploads AFTER before `start`, amended 2026-10-19).
+ */
 export type TextureSlot = 'before' | 'after' | 'placeholder';
 
 /** Whether the render loop runs in a dedicated worker or on the main thread (spec §3.2). */
@@ -597,8 +600,18 @@ export type ToWorker =
    * `t0` is the main thread's `performance.now()`; `origin` its `performance.timeOrigin`. A worker's clock
    * has another origin, and the two are related exactly by `timeOrigin` (not by when this message happened
    * to arrive), so the render side converts deadlines with the origins and ignores message latency.
+   *
+   * `globe` is the hub's globe as it is at `start` (amended 2026-10-19): the destination is rendered between
+   * `prime` and `start` while the hub stays open and its globe keeps turning, so the pose `prime` carried is
+   * stale by then. Present, it replaces the plan's and the timeline is rebuilt from it.
    */
-  | { type: 'start'; t0: number; origin?: number; refreshHz?: number }
+  | {
+      type: 'start';
+      t0: number;
+      origin?: number;
+      refreshHz?: number;
+      globe?: GlobeStartState;
+    }
   | { type: 'fast-forward' }
   | { type: 'after-failed' }
   | { type: 'resize'; viewport: Viewport }
@@ -740,6 +753,12 @@ export interface RendererApi {
   prime(p: RendererPrime): void;
   /** Upload a page bitmap (the renderer does not close it); `null` frees the slot. */
   setTexture(slot: TextureSlot, bitmap: ImageBitmap | null): void;
+  /**
+   * Draw every program once into a 1×1 scissor of the drawing buffer, cleared after, so what was just uploaded
+   * is resident before the first frame instead of being made so by it. Between runs only: mid-run it would be
+   * presented as a cleared frame.
+   */
+  warm?(): void;
   /** Draw one frame from the timeline's snapshot. */
   draw(snapshot: Readonly<TimelineSnapshot>): void;
   /** The viewport changed (spec §9.4): resize the drawing buffer. */
@@ -915,8 +934,9 @@ export interface EversionController {
   /** The hub closed or the visitor dismissed: free the BEFORE bitmap. */
   onHubClosed(): void;
   /**
-   * Confirm a destination: run the effect, calling `navigate()` immediately at
-   * start. Never throws; resolves when the overlay is gone.
+   * Confirm a destination: run the effect. It navigates while the hub is still
+   * open, behind a frozen picture of the current page, and starts the animation
+   * once the destination is captured. Never throws; resolves when the overlay is gone.
    */
   start(node: EversionNode, state: GlobeStartState): Promise<EversionOutcome>;
   /** Run the effect in place, navigating to the current route (Settings Preview, spec §9.3). */

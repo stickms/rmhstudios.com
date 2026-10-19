@@ -7,7 +7,7 @@
  * renderer (real shaders) and the REAL timeline. Faked, because they belong to
  * other tasks or to the app: the router (a history-backed object that "renders"
  * a route into `#page` after a delay), the BEFORE scheduler and the capture
- * session (T17 may not have landed; the fakes paint a flat colour so the stub
+ * session (the fakes paint a flat colour so the
  * shaders have something to sample), and the two core collaborators that other
  * tasks own (orientation T13, the LUT bake T07) via `fixtureDeps`.
  */
@@ -132,6 +132,27 @@ new MutationObserver(() => {
   if (document.querySelector('.eversion-overlay')) overlaySeen++;
 }).observe(document.body, { childList: true, subtree: true });
 
+// The frozen picture the run shows while the destination renders: on, raised over the canvas, fading out, gone.
+let holdState: 'none' | 'on' | 'up' | 'out' = 'none';
+new MutationObserver(() => {
+  const el = document.querySelector('.eversion-hold');
+  const next = !el
+    ? 'none'
+    : document.querySelector('.eversion-hold-layer--out')
+      ? 'out'
+      : document.querySelector('.eversion-hold-layer--up')
+        ? 'up'
+        : 'on';
+  if (next === holdState) return;
+  holdState = next;
+  stamp(`hold-${next}`);
+}).observe(document.body, {
+  childList: true,
+  subtree: true,
+  attributes: true,
+  attributeFilter: ['class'],
+});
+
 /* ── Setup and runs ────────────────────────────────────────────────────── */
 
 let controller: ReturnType<typeof createEversionController> | null = null;
@@ -162,7 +183,6 @@ const api = {
       {
         router: fakeRouter,
         beforeCapture,
-        translate: (key, o) => o?.defaultValue ?? key,
       },
       { overlay: createDomOverlayPort() },
     );
@@ -221,6 +241,7 @@ const api = {
       trace: [...trace],
       captureSeen: [...captureSeen],
       overlayAfter: !!document.querySelector('.eversion-overlay'),
+      holdAfter: !!document.querySelector('.eversion-hold'),
       overlaySeen,
       coverAfter: document.documentElement.classList.contains('eversion-cover'),
       settleAfter: document.documentElement.hasAttribute('data-eversion-settle'),

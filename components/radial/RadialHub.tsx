@@ -561,8 +561,9 @@ export function RadialHub() {
    * LiquidGlobe's confirm hand-off (hold-release, pin click, Enter). Ineligible -
    * reduced motion, no WebGL2 - is exactly today's path. A bridge that has not
    * loaded yet is waited for (bounded; see `CONTROLLER_WAIT_MS`), so the first
-   * navigation of a page-load plays the effect too. Otherwise the hub lets go (`everting`) and the controller
-   * navigates by itself at `start`; the hub must NOT. All of the rules (one
+   * navigation of a page-load plays the effect too. Otherwise the controller navigates by itself, while the hub
+   * is still open (it renders and captures the destination behind a frozen picture of this page, then lets the
+   * hub go `everting` as the animation starts); the hub must NOT. All of the rules (one
    * hand-off at a time, who navigates on which outcome) live in `hub-handoff.ts`.
    * Focus is left to the router either way.
    */
@@ -574,16 +575,21 @@ export function RadialHub() {
     dismiss,
   };
   const handOff = useCallback(
-    (node: NavLeaf, state: GlobeStartState, entry: Exclude<EntryPoint, 'preview'>) => {
+    (
+      node: NavLeaf,
+      state: GlobeStartState,
+      entry: Exclude<EntryPoint, 'preview'>,
+      live?: () => GlobeStartState,
+    ) => {
       const controller = controllerRef.current;
       if (controller || noEffect.current) {
-        handOffMachine.confirm(controller, node, state, entry);
+        handOffMachine.confirm(controller, node, state, entry, live);
         return;
       }
       const ms = useThemeStore.getState().alwaysEvertGlobe
         ? ALWAYS_CONTROLLER_WAIT_MS
         : CONTROLLER_WAIT_MS;
-      handOffMachine.confirmWhenReady(awaitController(ms), node, state, entry);
+      handOffMachine.confirmWhenReady(awaitController(ms), node, state, entry, live);
     },
     [handOffMachine, awaitController],
   );

@@ -62,7 +62,12 @@
  * retry loop is exactly the kind of background cost this effect must not add.
  */
 
-import { BEFORE_STALE_MS, CAPTURE_DPR_CAP, CAPTURE_EXCLUDE_SELECTORS } from './constants';
+import {
+  BACKGROUND_CAPTURE_TIMEOUT_MS,
+  BEFORE_STALE_MS,
+  CAPTURE_DPR_CAP,
+  CAPTURE_EXCLUDE_SELECTORS,
+} from './constants';
 import type { CaptureApi, CaptureResult, Tier } from './types';
 
 /** Cancel handle for a scheduled callback. */
@@ -407,6 +412,8 @@ export class BeforeCaptureScheduler {
         exclude: this.exclude,
         scaleCap: this.currentScaleCap(),
         signal: abort.signal,
+        // Nobody is waiting on it yet: a slow page gets a real picture rather than none.
+        timeoutMs: BACKGROUND_CAPTURE_TIMEOUT_MS,
       });
     } catch (err) {
       if (epoch === this.epoch) {
@@ -443,6 +450,8 @@ export class BeforeCaptureScheduler {
         exclude: this.exclude,
         scaleCap: this.currentScaleCap(),
         signal: abort.signal,
+        // Nobody is waiting on it yet: a slow page gets a real picture rather than none.
+        timeoutMs: BACKGROUND_CAPTURE_TIMEOUT_MS,
       });
     } catch (err) {
       if (token === this.aheadToken) {

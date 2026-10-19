@@ -21,25 +21,32 @@
  *   awaitBefore(BEFORE_WAIT_MS) ──null──▶ fallback(before-*)   (in-flight capture, else one on demand; <= 1.2 s)
  *   host ready ──no──▶ fallback(host-error)      (a host still initialising is waited for, bounded)
  *   overlay mounted ──no──▶ fallback(host-error)
- *   prime · texture(before) · placeholder           ← everything that can fail
- *   ─── point of no return ────────────────────────────────────────────────
- *   start ; navigate(href)                          ← the SAME task, no await
- *   cover        → html.eversion-cover on
- *   (route idle · AFTER READINESS GATE: no query loading, no skeleton, images and fonts
- *    loaded, layout quiet - bounded by the timeline's own AFTER deadline) → capture → texture(after)
- *                                    or after-failed on timeout / throw
+ *   hold(BEFORE) · prime · texture(before)          ← the frozen picture is up; everything that can fail
+ *   2 rAF                                           (the picture is painted over the live page)
+ *   ─── the navigation: from here a failure never falls back (the URL has moved) ───
+ *   cover ; navigate(href)                          ← the shell is hidden under the picture; the hub is still open
+ *   route idle · READINESS GATE (settle.ts, DESTINATION_SETTLE_*) → capture AFTER → texture(after)
+ *                                    nothing captured, or cancelled → the run ends with no animation (`abort`)
+ *   UPLOAD_SETTLE_FRAMES rAF                        (both pictures resident before the first frame)
+ *   ─── the point of no return ────────────────────────────────────────────
+ *   start (with the hub's globe as it is NOW) ; onCommit (the hub lets go)
+ *   cover message → the frozen picture fades onto the first frame (the same page, sharp)
  *   uncover      → cover off · 2 rAF · reveal   (UNWRAP's last ~260 ms; the page is painted under the canvas)
  *   reveal       → the canvas dissolves onto the live page WHILE UNWRAP finishes; both end at `done`
  *   done         → overlay off · free · mark · resolve
  * ```
  *
- * Everything that can make the effect impossible is done BEFORE the point of no
- * return, because past it the caller has been told nothing and `navigate()` has
- * been called: the contract is that a `fallback` outcome means "the effect did
- * not run, do today's path", so it can never be returned after the navigation
- * was issued. After that point a fault ends the run with `end:
- * 'context-lost'` and the caller does nothing more (the navigation is already
- * under way, which is all today's path would have done).
+ * ## Why the destination is rendered before the animation (amended 2026-10-19)
+ *
+ * It used to be the other way round: `navigate()` at `start`, and AFTER captured whenever the destination
+ * settled, mid-animation. Until it arrived the inside of the globe showed a placeholder (the destination's icon
+ * and label), so the visitor watched an icon turn inside out instead of the page they were going to; a slow
+ * destination unwrapped the icon. And everything the navigation costs on the main thread - the route's render,
+ * the readiness checks, the DOM clone, the texture upload - landed inside the first second of the animation, which
+ * on an in-thread host (WebKit) is the same thread that draws it: the stutter at the start. Now all of it happens
+ * while the hub is still open, behind a frozen picture of the page being left, and the animation starts with both
+ * real pages already on the GPU. The route was preloaded while the visitor held the pin in the reticle
+ * (`LiquidGlobe#warmLocked`), so the wait is usually the readiness gate and one capture.
  *
  * ## Time
  *
@@ -53,14 +60,15 @@ import {
   ALWAYS_EVERT_BEFORE_WAIT_MS,
   ALWAYS_EVERT_HOST_WAIT_MS,
   ALWAYS_EVERT_OVERLAY_MOUNT_MS,
+  BACKGROUND_CAPTURE_TIMEOUT_MS,
   BEFORE_WAIT_MS,
   CAPTURE_DPR_CAP,
   CAPTURE_EXCLUDE_SELECTORS,
+  DESTINATION_SETTLE_HARD_MS,
+  DESTINATION_SETTLE_SOFT_MS,
   MAX_RUN_MS,
-  PLAN_MS,
-  STRETCH_CAP_MS,
+  UPLOAD_SETTLE_FRAMES,
 } from './constants';
-import { afterSettleDeadlines } from './settle';
 import type { SettleReport, SettleRequest } from './settle';
 import type { EntryPoint, EversionMarkDetails, GateOpenReason } from './marks';
 import type {
@@ -101,13 +109,6 @@ export const HOST_READY_TIMEOUT_MS = 2500;
  */
 export const HOST_INIT_TIMEOUT_MS = 20_000;
 /**
- * How long the destination may take to settle (route loaded, no pending router
- * state) before AFTER is declared failed. It is the AFTER capture's own budget
- * (spec 6.4): a destination slower than that is shown by the final crossfade onto
- * whatever is live, not by holding the globe stretched while waiting on it.
- */
-export const ROUTE_SETTLE_TIMEOUT_MS = AFTER_CAPTURE_TIMEOUT_MS;
-/**
  * How long the overlay may take to attach its canvas before the effect is
  * skipped. React commits it within a frame or two; a low-end phone still busy
  * with the capture it has just taken can take several, and 100 ms skipped the
@@ -121,6 +122,19 @@ export const OVERLAY_FADE_MS = 200;
 export interface OverlayPort {
   /** Show the overlay with the canvas attached; resolves once it is in the document. */
   mount(): Promise<void>;
+  /**
+   * Lay a frozen picture (the BEFORE capture, drawn, not kept: the caller transfers the bitmap right after) over
+   * the canvas, so the live page can change underneath unseen while the destination is rendered.
+   */
+  hold(bitmap: ImageBitmap): void;
+  /**
+   * The canvas is about to draw: lift the frozen picture over it. Until then the picture sits under the floating UI
+   * (the cookie bar, menus), which the capture leaves out and which therefore stays on screen while the destination
+   * renders.
+   */
+  raiseHold(): void;
+  /** Crossfade the frozen picture onto the canvas (its first frame is up), then drop it. */
+  releaseHold(): void;
   /** Start the fade-out (context loss). The caller unmounts after {@link OVERLAY_FADE_MS}. */
   fade(): void;
   /** Remove the overlay. The canvas element survives, detached, for the next run. */
@@ -204,12 +218,6 @@ export interface RunnerDeps {
   capture(): CaptureApi | null;
   /** A session of the runner's own, when the BEFORE scheduler has none. Disposed at the end of the run. */
   openCapture(): Promise<CaptureApi>;
-  placeholder(
-    node: EversionNode,
-    viewport: Viewport,
-    colours: ThemeColours,
-    tier: Tier,
-  ): Promise<ImageBitmap>;
   /** The projection for this run: the visitor's setting resolved (and, for `random`, drawn). */
   projection(): ProjectionId;
   /** The baked LUT for `projection` at `viewport` (cached; baked ahead while the hub was open). */
@@ -258,13 +266,20 @@ export interface RunOptions {
    */
   before?: (graceMs: number) => Promise<ImageBitmap | null>;
   /**
-   * Called synchronously at the point of no return, in the same task as `start`
-   * and `navigate`. Before it a `fallback` outcome is still possible and the
-   * caller's UI should be left exactly as it was; from it on the run owns the
-   * screen. The hub flips to its `everting` look here, so a fallback never has
-   * to undo one.
+   * Called synchronously at the point of no return, in the same task as `start`.
+   * Before it the caller's UI should be left exactly as it was (the hub stays open
+   * while the destination is rendered behind the frozen picture); from it on the
+   * run owns the screen. The hub flips to its `everting` look here, so a run that
+   * ends without animating never has to undo one.
    */
   onCommit?: () => void;
+  /**
+   * The globe's pose NOW. The destination is rendered between the confirm and
+   * `start`, and the hub's globe keeps turning meanwhile: the effect starts from
+   * where it is at `start`, not where it was at the confirm. Absent, the pose
+   * given to `run` stands.
+   */
+  globe?: () => GlobeStartState;
 }
 
 export class EversionRunner {
@@ -348,7 +363,7 @@ export class EversionRunner {
     const href = node.href;
 
     // Input before `start` is not dropped: a press while the run is still
-    // priming (waiting on BEFORE, the host, the placeholder) is a fast-forward
+    // priming (waiting on BEFORE, the host, the destination) is a fast-forward
     // the visitor asked for, so it is remembered and posted the moment the
     // render side can take it.
     let queuedInput = false;
@@ -359,8 +374,11 @@ export class EversionRunner {
     // the run must not then push its own destination on top. It is cancelled and
     // reported as a `traversal` fallback, which the hub answers by just closing.
     let traversed = false;
+    /** Set while the run waits on the destination: back/forward ends that wait at once. */
+    let onTraversalNow: (() => void) | null = null;
     let offEarlyTraversal: (() => void) | null = deps.router.onTraversal(() => {
       traversed = true;
+      onTraversalNow?.();
     });
     const dropEarlyInput = () => {
       offEarlyInput?.();
@@ -427,7 +445,8 @@ export class EversionRunner {
       return this.fallback(cancelledAfterHost);
     }
 
-    // A fatal error between here and `start` must still fall back.
+    // A fatal error from the render side before `start`: before the navigation it is a fallback, after it the
+    // run ends without animating.
     let fatal = false;
     let finish!: (end: EversionEnd, stats?: FrameStats) => void;
     const outcome = new Promise<EversionOutcome>((resolve) => {
@@ -446,17 +465,12 @@ export class EversionRunner {
     let started = false;
     let ended = false;
     let fastForwarded = false;
-    let gateReason: GateOpenReason = 'stretch-cap';
-    let afterSent = false;
-    let unwrapBegun = false;
+    let gateReason: GateOpenReason = 'after-ready';
     let t0 = 0;
     let revealing = false;
     let aborted = false;
-    /**
-     * When the timeline needs AFTER by (the end of its stretch cap), on this thread's clock. The render side
-     * reports it with `need-after-by`; until it does, the nominal plan's figure stands.
-     */
-    let needAfterBy = Infinity;
+    /** The frozen picture is over the canvas. */
+    let holding = false;
     let settleWatch: SettleWatch | null = null;
     // The run watchdog (review R6 M2): armed at the point of no return, re-armed by
     // every stage message (progress), cleared in teardown.
@@ -466,14 +480,11 @@ export class EversionRunner {
       if (watchdog) clearTimeout(watchdog);
       watchdog = setTimeout(() => this.forceEnd?.(true), deps.maxRunMs ?? MAX_RUN_MS);
     };
-    // Bitmaps this run holds and has not yet handed to the render side (the AFTER
-    // one, between capture and a successful post). Teardown closes whatever is left.
-    const ownedBitmaps = new Set<ImageBitmap>();
     let ownCapture: CaptureApi | null = null;
 
-    // Before `start` a throw is the caller's to handle (it falls back). After it
-    // there is no falling back, and the callers are timers and message handlers:
-    // a host that cannot be posted to ends the run as a lost context.
+    // Before `start` a throw is the caller's to handle (it falls back, or ends the run unanimated). After it
+    // there is no falling back, and the callers are timers and message handlers: a host that cannot be posted
+    // to ends the run as a lost context.
     const post = (...args: Parameters<EversionHost['post']>) => {
       try {
         host.post(...args);
@@ -482,6 +493,12 @@ export class EversionRunner {
         deps.host.discardCanvas();
         this.loseContext(true, () => teardown('context-lost', undefined, OVERLAY_FADE_MS));
       }
+    };
+
+    const releaseHold = () => {
+      if (!holding) return;
+      holding = false;
+      deps.overlay.releaseHold();
     };
 
     const teardown = (end: EversionEnd, stats?: FrameStats, keepOverlayMs = 0) => {
@@ -494,11 +511,10 @@ export class EversionRunner {
       for (const off of listeners.splice(0)) off();
       this.setCover(false);
       deps.page.setSettle(false);
-      for (const b of ownedBitmaps) b.close?.();
-      ownedBitmaps.clear();
       ownCapture?.dispose();
       ownCapture = null;
       const unmount = () => {
+        holding = false;
         deps.overlay.unmount();
         this.phase = 'done';
         deps.mark('done', { frames: 0, dropped: 0, p95: 0, ...stats, end });
@@ -513,13 +529,13 @@ export class EversionRunner {
     const onMessage = (m: FromWorker) => {
       if (ended) return;
       switch (m.type) {
-        case 'need-after-by':
-          if (started && Number.isFinite(m.deadline)) needAfterBy = m.deadline;
-          return;
         case 'cover':
           if (!started) return;
           deps.mark('cover', { firstFrameMs: deps.now() - t0 });
           this.setCover(true);
+          // The first frame is on screen under the frozen picture, and it is the same page: crossfade onto it
+          // (blurred to sharp, as the hub's veil leaves).
+          releaseHold();
           return;
         case 'stage':
           armWatchdog();
@@ -527,13 +543,13 @@ export class EversionRunner {
           else if (m.stage === 'gate-open') {
             deps.mark('gateOpen', { reason: gateReason });
           } else if (m.stage === 'unwrap') {
-            unwrapBegun = true;
             deps.mark('unwrap', {});
           }
           return;
         case 'uncover':
           if (!started || revealing) return;
           revealing = true;
+          releaseHold();
           void this.reveal(
             () => ended,
             () => {
@@ -548,8 +564,8 @@ export class EversionRunner {
           return;
         case 'context-lost':
           deps.host.discardCanvas();
-          // Before `start` nothing has been promised: the prime path sees `fatal`
-          // and falls back (the render side now ignores everything but `init`).
+          // Before `start` nothing has been promised: the prime path sees `fatal` and stops (the render side now
+          // ignores everything but `init`).
           if (!started) fatal = true;
           this.loseContext(started, () => teardown('context-lost', undefined, OVERLAY_FADE_MS));
           return;
@@ -566,13 +582,37 @@ export class EversionRunner {
       }
     };
 
-    /* ── prime · textures · placeholder ───────────────────────────────────── */
+    /** Undo a prime that cannot go on, BEFORE the navigation: the caller does today's path. */
+    const unprime = (reason: FallbackReason): EversionOutcome => {
+      dropEarlyInput();
+      for (const off of listeners.splice(0)) off();
+      holding = false;
+      deps.overlay.unmount();
+      if (fatal) {
+        // The render side said its context is gone: the canvas cannot be reused.
+        deps.host.discardCanvas();
+      } else {
+        // The host is fine (a post threw): do not orphan the worker's half-primed run on a canvas we are about
+        // to forget. Tell it to stop, and keep the canvas and its compiled programs for the next run.
+        try {
+          host.post({ type: 'abort' });
+        } catch {
+          deps.host.discardCanvas();
+        }
+      }
+      this.phase = 'idle';
+      return this.fallback(reason);
+    };
+
+    /* ── The frozen picture · prime · BEFORE ──────────────────────────────── */
 
     const viewport = deps.page.viewport();
     const colours = deps.page.colours();
     const projection = deps.projection();
-    let placeholder: ImageBitmap | null = null;
     try {
+      // Drawn into the overlay before the bitmap is transferred below.
+      deps.overlay.hold(before);
+      holding = true;
       post({
         type: 'prime',
         lut: deps.lut(projection, viewport),
@@ -583,47 +623,180 @@ export class EversionRunner {
       });
       post({ type: 'texture', slot: 'before', bitmap: before });
       before = null; // transferred
-      placeholder = await deps.placeholder(node, viewport, colours, tier);
+      // The picture must be ON SCREEN before the page under it may change.
+      await deps.page.nextFrame();
+      await deps.page.nextFrame();
       if (fatal) throw new Error('eversion: host failed during prime');
-      post({ type: 'texture', slot: 'placeholder', bitmap: placeholder });
-      placeholder = null;
     } catch {
       before?.close?.();
-      placeholder?.close?.();
+      return unprime('host-error');
+    }
+    const cancelledAfterPrime = cancelReason();
+    if (cancelledAfterPrime) return unprime(cancelledAfterPrime);
+
+    /* ── The destination: navigated under the picture, settled, captured ─── */
+
+    // Interrupts the wait for the destination at once: back/forward, `dispose`, a bfcache restore.
+    let halted = false;
+    let interrupt!: () => void;
+    const interrupted = new Promise<null>((resolve) => {
+      interrupt = () => {
+        halted = true;
+        resolve(null);
+      };
+    });
+    onTraversalNow = interrupt;
+    this.forceEnd = () => interrupt();
+    const stop = () => halted || traversed || fatal || this.disposed;
+
+    /**
+     * The run ends here, after the navigation and before any animation: nothing is left to show the effect with.
+     * Never a fallback (the URL has moved and the destination is live under the picture), except back/forward,
+     * which is `traversal` as it always was. The hub closes onto the page as it is.
+     */
+    const abandon = (): EversionOutcome => {
+      ended = true;
+      this.forceEnd = null;
+      onTraversalNow = null;
       dropEarlyInput();
       for (const off of listeners.splice(0)) off();
-      deps.overlay.unmount();
-      if (fatal) {
-        // The render side said its context is gone: the canvas cannot be reused.
-        deps.host.discardCanvas();
-      } else {
-        // The host is fine (a post threw, the placeholder failed): do not orphan the
-        // worker's half-primed run on a canvas we are about to forget. Tell it to
-        // stop, and keep the canvas and its compiled programs for the next run.
+      deps.page.setSettle(false);
+      ownCapture?.dispose();
+      ownCapture = null;
+      if (fatal) deps.host.discardCanvas();
+      else {
         try {
           host.post({ type: 'abort' });
         } catch {
           deps.host.discardCanvas();
         }
       }
-      this.phase = 'idle';
-      return this.fallback('host-error');
-    }
-    const cancelledAfterPrime = cancelReason();
-    if (cancelledAfterPrime) {
-      dropEarlyInput();
-      for (const off of listeners.splice(0)) off();
+      this.setCover(false);
+      // Released at once, not a couple of frames later: no `everting` look was ever shown to leave.
+      this.liveEpoch++;
+      this.setLive(false);
+      holding = false;
       deps.overlay.unmount();
-      try {
-        host.post({ type: 'abort' });
-      } catch {
-        deps.host.discardCanvas();
-      }
       this.phase = 'idle';
-      return this.fallback(cancelledAfterPrime);
+      if (traversed) return this.fallback('traversal');
+      deps.mark('done', { frames: 0, dropped: 0, p95: 0, end: 'abort' });
+      return { fallback: null, end: 'abort' };
+    };
+
+    // The live page is no longer what the visitor sees: hide the shell under the picture (nothing is repainted,
+    // and nothing toggles on <html> once the globe moves), and watch the document from BEFORE the navigation so
+    // the readiness gate's quiet window covers the route's own commit.
+    this.setCover(true);
+    try {
+      settleWatch = deps.page.watchSettle();
+    } catch {
+      settleWatch = null;
+    }
+    const dropSettleWatch = () => {
+      settleWatch?.dispose();
+      settleWatch = null;
+    };
+    listeners.push(dropSettleWatch);
+    try {
+      const navigated = deps.router.navigate(href);
+      if (navigated) navigated.catch(() => {});
+    } catch {
+      // The router refused synchronously. AFTER captures whatever is live, and the visitor sees the effect over
+      // the page they were on.
     }
 
-    /* ── The point of no return: start and navigate in ONE task ───────────── */
+    const renderDestination = async (): Promise<ImageBitmap | null> => {
+      const from = deps.now();
+      const soft = from + DESTINATION_SETTLE_SOFT_MS;
+      const hard = from + DESTINATION_SETTLE_HARD_MS;
+      try {
+        // The route's own loader (preloaded while the pin sat in the reticle, so usually at once). A router that
+        // never settles is waited on to the hard bound; the page is then taken as it is.
+        await withTimeout(
+          deps.router.whenIdle(),
+          Math.max(0, hard - deps.now()),
+          'route settle',
+        ).catch(() => {});
+        if (stop()) return null;
+        // The route being idle says nothing about what the page then fetches for itself (a deferred loader, a
+        // query, a lazy chunk): the readiness gate waits until it is settled, within the two bounds.
+        let settle: SettleReport | null = null;
+        if (settleWatch) {
+          settle = await settleWatch.whenSettled({
+            soft: () => soft,
+            hard: () => hard,
+            cancelled: stop,
+            hurried: () => queuedInput,
+          });
+        } else {
+          await deps.page.nextFrame();
+          await deps.page.nextFrame();
+        }
+        if (stop()) return null;
+        let session = deps.capture();
+        if (!session) {
+          const opened = await deps.openCapture();
+          // Opened after the run was interrupted: nobody else will dispose it.
+          if (stop()) {
+            opened.dispose();
+            return null;
+          }
+          session = ownCapture = opened;
+        }
+        deps.page.setSettle(true);
+        // "Always evert globe" gives a slow device the time its capture needs rather than no effect.
+        const timeoutMs = always ? BACKGROUND_CAPTURE_TIMEOUT_MS : AFTER_CAPTURE_TIMEOUT_MS;
+        let result: CaptureResult;
+        try {
+          result = await withTimeout(
+            session.captureViewport({
+              phase: 'after',
+              exclude: CAPTURE_EXCLUDE_SELECTORS,
+              scaleCap: CAPTURE_DPR_CAP[tier],
+              timeoutMs,
+            }),
+            timeoutMs + 50,
+            'AFTER capture',
+          );
+        } finally {
+          deps.page.setSettle(false);
+        }
+        if (stop()) {
+          result.bitmap.close?.();
+          return null;
+        }
+        try {
+          deps.afterCaptured?.(result.bitmap, settle);
+        } catch {
+          /* observability only */
+        }
+        return result.bitmap;
+      } catch {
+        return null;
+      }
+    };
+
+    const after = await Promise.race([renderDestination(), interrupted]);
+    dropSettleWatch();
+    if (!after || stop()) {
+      after?.close?.();
+      return abandon();
+    }
+    try {
+      post({ type: 'texture', slot: 'after', bitmap: after });
+    } catch {
+      after.close?.();
+      return abandon();
+    }
+    this.afterReady = true;
+    // The picture goes over the canvas before the canvas can draw anything, and both pages go to the GPU now, not in
+    // the first frame.
+    deps.overlay.raiseHold();
+    for (let i = 0; i < UPLOAD_SETTLE_FRAMES; i++) await deps.page.nextFrame();
+    if (stop()) return abandon();
+    onTraversalNow = null;
+
+    /* ── The point of no return ───────────────────────────────────────────── */
 
     this.abortRun = () => {
       if (ended || aborted) return;
@@ -633,16 +806,14 @@ export class EversionRunner {
     };
     this.forceEnd = (fade = false) => {
       if (ended) return;
-      if (started) {
-        try {
-          host.post({ type: 'abort' });
-        } catch {
-          /* torn down regardless */
-        }
-        // The render side may still be running on this canvas; do not reuse it.
-        deps.host.discardCanvas();
+      try {
+        host.post({ type: 'abort' });
+      } catch {
+        /* torn down regardless */
       }
-      if (fade && started) {
+      // The render side may still be running on this canvas; do not reuse it.
+      deps.host.discardCanvas();
+      if (fade) {
         // The overlay is showing a frozen or dead frame: dissolve it into the live
         // page (cover class off first) instead of cutting.
         this.loseContext(true, () => teardown('abort', undefined, OVERLAY_FADE_MS));
@@ -662,10 +833,19 @@ export class EversionRunner {
     // Browser back/forward and a resize or rotation belong to the visitor, not to
     // this run (spec 9.4): hurry the run, and tell the render side the new viewport.
     listeners.push(deps.router.onTraversal(() => this.abort()));
-    listeners.push(deps.page.onResize((viewport) => post({ type: 'resize', viewport })));
+    listeners.push(deps.page.onResize((v) => post({ type: 'resize', viewport: v })));
+    // The window changed while the destination rendered: the render side re-plans for it at `start`.
+    const current = deps.page.viewport();
+    if (current.w !== viewport.w || current.h !== viewport.h || current.dpr !== viewport.dpr) {
+      post({ type: 'resize', viewport: current });
+    }
+    let pose: GlobeStartState | undefined;
+    try {
+      pose = options.globe?.();
+    } catch {
+      pose = undefined;
+    }
     t0 = deps.now();
-    // Until the render side reports its own (`need-after-by`, possibly during the `start` post below).
-    needAfterBy = t0 + PLAN_MS.unwrap[0] + STRETCH_CAP_MS;
     started = true;
     this.phase = 'running';
     // A run that cannot end (GPU hang, dead worker, a host disposed under us) must
@@ -679,105 +859,13 @@ export class EversionRunner {
       href,
       entry,
     });
-    post({ type: 'start', t0, refreshHz: deps.refreshHz?.() });
+    post({ type: 'start', t0, refreshHz: deps.refreshHz?.(), ...(pose ? { globe: pose } : {}) });
     if (queuedInput) fastForward();
     try {
       options.onCommit?.();
     } catch {
       /* the caller's UI hook must never break the run */
     }
-    // The readiness gate watches the document from BEFORE the navigation, so its quiet window covers the
-    // route's own commit. A page that cannot be watched (no document) is captured as it was before the gate.
-    try {
-      settleWatch = deps.page.watchSettle();
-      listeners.push(() => {
-        settleWatch?.dispose();
-        settleWatch = null;
-      });
-    } catch {
-      settleWatch = null;
-    }
-    try {
-      const navigated = deps.router.navigate(href);
-      if (navigated) navigated.catch(() => {});
-    } catch {
-      // The router refused synchronously. The run continues: AFTER will capture
-      // whatever is live, and the visitor sees the effect over the page they were on.
-    }
-
-    /* ── AFTER ────────────────────────────────────────────────────────────── */
-
-    void (async () => {
-      try {
-        // A router that never settles (a loader that hangs, a chunk that never
-        // arrives) must not leave the gate waiting for a texture that cannot come:
-        // it is an AFTER failure like any other, and the run unwraps the placeholder.
-        await withTimeout(deps.router.whenIdle(), ROUTE_SETTLE_TIMEOUT_MS, 'route settle');
-        // The route being idle says nothing about what the page then fetches for itself (a deferred loader, a
-        // query, a lazy chunk): wait until it is settled, bounded by the timeline's own AFTER deadline.
-        let settle: SettleReport | null = null;
-        if (settleWatch) {
-          settle = await settleWatch.whenSettled({
-            soft: () => afterSettleDeadlines(needAfterBy).soft,
-            hard: () => afterSettleDeadlines(needAfterBy).hard,
-            cancelled: () => ended || unwrapBegun || aborted,
-            hurried: () => fastForwarded,
-          });
-        } else {
-          await deps.page.nextFrame();
-          await deps.page.nextFrame();
-        }
-        if (ended || unwrapBegun || aborted) return;
-        let session = deps.capture();
-        if (!session) {
-          session = ownCapture = await deps.openCapture();
-          // The session took time to open; the run may have ended (or been aborted)
-          // meanwhile, and `setSettle(true)` after teardown would never be undone.
-          if (ended || unwrapBegun || aborted) {
-            ownCapture?.dispose();
-            ownCapture = null;
-            return;
-          }
-        }
-        deps.page.setSettle(true);
-        let result: CaptureResult;
-        try {
-          result = await withTimeout(
-            session.captureViewport({
-              phase: 'after',
-              exclude: CAPTURE_EXCLUDE_SELECTORS,
-              scaleCap: CAPTURE_DPR_CAP[tier],
-              timeoutMs: AFTER_CAPTURE_TIMEOUT_MS,
-            }),
-            AFTER_CAPTURE_TIMEOUT_MS + 50,
-            'AFTER capture',
-          );
-        } finally {
-          deps.page.setSettle(false);
-        }
-        if (ended || unwrapBegun || aborted) {
-          result.bitmap.close?.();
-          return;
-        }
-        try {
-          deps.afterCaptured?.(result.bitmap, settle);
-        } catch {
-          /* observability only */
-        }
-        gateReason = 'after-ready';
-        afterSent = true;
-        this.afterReady = true;
-        // Owned until the post succeeds: if it throws, `post` ends the run and
-        // teardown closes it (a transferred bitmap is detached, so a close is harmless).
-        ownedBitmaps.add(result.bitmap);
-        post({ type: 'texture', slot: 'after', bitmap: result.bitmap });
-        ownedBitmaps.delete(result.bitmap);
-      } catch {
-        if (ended || afterSent || aborted) return;
-        gateReason = 'after-failed';
-        post({ type: 'after-failed' });
-      }
-    })();
 
     return outcome;
   }

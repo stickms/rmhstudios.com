@@ -115,6 +115,35 @@ export const BEFORE_GRACE_MS = 250;
 export const BEFORE_WAIT_MS = 1200;
 /** Hard timeout for either capture; on timeout the navigation falls back. */
 export const CAPTURE_TIMEOUT_MS = 600;
+/**
+ * Timeout for a BEFORE capture nobody is waiting on yet: the one taken ahead of the hub's open while the page is
+ * still, and the one taken while the hub is open. The clone is sliced (it never holds the main thread for a frame),
+ * so a slow phone on a long page is given the time it needs instead of {@link CAPTURE_TIMEOUT_MS}: a missed BEFORE is
+ * a navigation without the effect.
+ */
+export const BACKGROUND_CAPTURE_TIMEOUT_MS = 4000;
+
+/* ── The destination is rendered BEFORE the effect starts (amended 2026-10-19) ──
+   The globe shows real pages on both sides: the page the visitor leaves and the page they land on. So the run
+   navigates while the hub is still open, behind a frozen picture of the current page (`OverlayPort.hold`), waits
+   for the destination to settle (`settle.ts`), captures it, uploads both pictures, and only then starts the
+   animation. Nothing is rendered, cloned or uploaded while the globe moves. */
+
+/** Until this long after the navigation every readiness condition applies (a query, a skeleton, an image, quiet). */
+export const DESTINATION_SETTLE_SOFT_MS = 1500;
+/**
+ * From soft to this, only activity (a fetch, an image, a font) holds the capture; past it the page is taken as it is.
+ * Generous on purpose: a capture of a page whose content was still arriving becomes a jump in content when the
+ * final dissolve lands on the real page, and the hub is open and turning meanwhile, not frozen.
+ */
+export const DESTINATION_SETTLE_HARD_MS = 4000;
+/** Frames between handing the render side its last texture and `start`, so the upload is done before the first frame. */
+export const UPLOAD_SETTLE_FRAMES = 2;
+/**
+ * The frozen picture's crossfade onto the effect's first frame (`.eversion-hold--out` in eversion.css). It is the
+ * hub's own fade: the veil leaves and the page comes into focus in the same movement.
+ */
+export const HOLD_FADE_MS = HUB_FADE_MS;
 
 /* ── The AFTER readiness gate (spec amendment 2026-10-18 §6.4a; `settle.ts`) ───
    The destination is captured only once it is SETTLED: route idle, no query loading its first data, no
@@ -149,8 +178,6 @@ export const AFTER_CAPTURE_TIMEOUT_MS = 1500;
 export const BEFORE_STALE_MS = 30_000;
 /** Both bitmap dimensions are capped here (spec §6.2). */
 export const CAPTURE_MAX_DIMENSION = 4096;
-/** Stroke size of the placeholder's destination icon, in CSS px (spec §6.5). */
-export const PLACEHOLDER_ICON_PX = 96;
 
 /**
  * Elements that are not "the page" and must be absent from a capture (spec

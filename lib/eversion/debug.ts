@@ -20,7 +20,7 @@
  * ## Two files, because the registry has to be importable statically
  *
  * The spec wants the debug surface out of every static closure (§11.3 gate 39).
- * But the registrants — capture, placeholder, the renderer, the host, the
+ * But the registrants — capture, the renderer, the host, the
  * controller — call `registerDebug` from their own module scope, so the
  * registry itself is a static import of theirs. So this file is only the
  * registry (a few hundred bytes, no DOM, nothing imported but flags and types),
@@ -38,7 +38,7 @@
  * ## Slots
  *
  * The slot SHAPES below are the contract; each owning task fills its slot:
- * `capture` (T17), `placeholder` (T18), `renderer` (T24/T25), `host` (T25),
+ * `capture` (T17), `renderer` (T24/T25), `host` (T25),
  * `controller` (T31).
  */
 
@@ -59,20 +59,6 @@ export interface CaptureDebug {
   captureNow(options?: Partial<CaptureOptions>): Promise<CaptureResult>;
   /** The most recent capture's size and main-thread duration. */
   last(): { width: number; height: number; scale: number; durationMs: number } | null;
-}
-
-/** `window.__eversion.placeholder` (T18). */
-export interface PlaceholderDebug {
-  /** Build a placeholder for the current route's nav leaf and report what is in it. */
-  build(): Promise<{
-    width: number;
-    height: number;
-    /** Pixel at each corner, to compare with `--site-bg`. */
-    corners: Rgba[];
-    /** Whether the centre region differs from the background (icon/label drawn). */
-    centreInked: boolean;
-    buildMs: number;
-  }>;
 }
 
 /** `window.__eversion.renderer` (T24/T25). */
@@ -169,7 +155,6 @@ export interface DebugSlots {
   afterCapture: AfterCaptureDebug;
   beforeCapture: BeforeCaptureDebug;
   capture: CaptureDebug;
-  placeholder: PlaceholderDebug;
   renderer: RendererDebug;
   host: HostDebug;
   controller: ControllerDebug;

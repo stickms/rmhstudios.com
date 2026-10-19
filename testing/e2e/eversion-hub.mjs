@@ -20,8 +20,8 @@
 //
 //  entry-release / entry-click / entry-enter   the three ways to confirm a pin run
 //      the FULL effect (start … done in order, the entry recorded on `start`),
-//      the URL lands on the destination, `navigate` happened at `start` and not
-//      at the end, the hub returns to `closed`, the overlay is gone, `eversion-
+//      the URL lands on the destination, `navigate` happened by `start` (the
+//      destination is rendered before the animation) and not at the end, the hub returns to `closed`, the overlay is gone, `eversion-
 //      cover` is gone, and the orb fades back in (monotonic ramp to 1, no hard cut) and is focusable afterwards.
 //  dismiss-*   Escape, the X and an outside tap close the hub exactly as before
 //      (focus returns to the orb) and never start a run.
@@ -180,7 +180,7 @@ async function entryScenario(entry) {
     check(
       name,
       urlAtStart === '/games',
-      `URL at start was ${urlAtStart} (navigate happens at start)`,
+      `URL at start was ${urlAtStart} (the destination is navigated to before start)`,
     );
 
     // Screenshots: mid-WRAP, mid-EVERSION, mid-UNWRAP (entry-release only).

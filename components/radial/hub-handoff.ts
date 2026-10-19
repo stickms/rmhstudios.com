@@ -20,7 +20,9 @@
  *   today's navigation, so a fallback has nothing to undo and cannot flash.
  * - The run's outcome decides the rest: effect ran and ended (`done`, `abort`,
  *   `context-lost`) -> close, and the orb fades in the ordinary closed-state way
- *   (the effect ends with UNWRAP, so nothing lands on the orb); `traversal`
+ *   (the effect ends with UNWRAP, so nothing lands on the orb). `abort` is also
+ *   a run that navigated but never animated (the destination could not be
+ *   captured): the page is already there, so the hub just closes; `traversal`
  *   -> the visitor pressed Back/Forward while priming, just close; any other
  *   fallback, or a rejected promise (never by contract), -> today's navigation.
  * - `busy` is what the hub's close / toggle / Escape consult: the hub is
@@ -42,7 +44,7 @@ export interface HandOffController<N> {
     node: N,
     state: GlobeStartState,
     entry: Exclude<EntryPoint, 'preview'>,
-    options: { onCommit: () => void },
+    options: { onCommit: () => void; globe?: () => GlobeStartState },
   ): Promise<EversionOutcome>;
 }
 
@@ -61,12 +63,16 @@ export interface HandOffUi<N> {
 export interface HandOff<N> {
   /** A hand-off is in flight: close / toggle / Escape must do nothing. */
   busy(): boolean;
-  /** LiquidGlobe's confirm. */
+  /**
+   * LiquidGlobe's confirm. `live` reads the globe's pose at any later moment: the
+   * effect starts once the destination is rendered, and starts from the pose then.
+   */
   confirm(
     controller: HandOffController<N> | null,
     node: N,
     state: GlobeStartState,
     entry: Exclude<EntryPoint, 'preview'>,
+    live?: () => GlobeStartState,
   ): void;
   /**
    * The same confirm for a controller that is still loading: busy from now, and
@@ -78,6 +84,7 @@ export interface HandOff<N> {
     node: N,
     state: GlobeStartState,
     entry: Exclude<EntryPoint, 'preview'>,
+    live?: () => GlobeStartState,
   ): void;
 }
 
@@ -89,6 +96,7 @@ export function createHandOff<N>(ui: HandOffUi<N>): HandOff<N> {
     node: N,
     state: GlobeStartState,
     entry: Exclude<EntryPoint, 'preview'>,
+    live?: () => GlobeStartState,
   ) => {
     if (!controller || !controller.isEligible()) {
       busy = false;
@@ -96,7 +104,10 @@ export function createHandOff<N>(ui: HandOffUi<N>): HandOff<N> {
       return;
     }
     busy = true;
-    controller.start(node, state, entry, { onCommit: () => ui.everting() }).then(
+    const options = live
+      ? { onCommit: () => ui.everting(), globe: live }
+      : { onCommit: () => ui.everting() };
+    controller.start(node, state, entry, options).then(
       (outcome) => {
         busy = false;
         if (outcome.fallback === 'traversal') {
@@ -121,19 +132,19 @@ export function createHandOff<N>(ui: HandOffUi<N>): HandOff<N> {
   return {
     busy: () => busy,
 
-    confirm(controller, node, state, entry) {
+    confirm(controller, node, state, entry, live) {
       // First: a confirm while one is in flight is nothing. Eligibility may have
       // flipped meanwhile; acting on it here would navigate twice.
       if (busy) return;
-      run(controller, node, state, entry);
+      run(controller, node, state, entry, live);
     },
 
-    confirmWhenReady(controller, node, state, entry) {
+    confirmWhenReady(controller, node, state, entry, live) {
       if (busy) return;
       busy = true;
       controller.then(
-        (c) => run(c, node, state, entry),
-        () => run(null, node, state, entry),
+        (c) => run(c, node, state, entry, live),
+        () => run(null, node, state, entry, live),
       );
     },
   };
