@@ -95,7 +95,7 @@
  */
 
 import { CAGE_ALPHA_END, CAGE_ALPHA_START, LUT_SIZE, STAGE_PARAM_COUNT, TIERS } from '../constants';
-import { buildCosmos, createCosmosFrame, stepCosmos } from '../cosmos';
+import { buildCosmos, createCosmosFrame, planetWeight, stepCosmos } from '../cosmos';
 import type { CosmosScene } from '../cosmos';
 import { registerDebug } from '../debug';
 import type { RendererDebug } from '../debug';
@@ -542,6 +542,7 @@ export function createRenderer(
     g.uniform1f(l.u_pageAlpha, s.pageAlpha);
     g.uniform1f(l.u_ripple, s.rippleAge);
     g.uniform1f(l.u_cageAlpha, cageAlpha);
+    g.uniform1f(l.u_planet, planetWeight(s));
     writeMaterial(p);
   }
 

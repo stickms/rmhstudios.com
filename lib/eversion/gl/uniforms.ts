@@ -94,6 +94,12 @@ export const UNIFORMS = [
     cadence: 'frame',
     from: 'mix(CAGE_ALPHA_START, CAGE_ALPHA_END, snapshot.evert), computed by the renderer',
   },
+  {
+    name: 'u_planet',
+    type: 'float',
+    cadence: 'frame',
+    from: 'cosmos.ts#planetWeight(snapshot): how much the globe is a planet (the white-planet tint)',
+  },
 
   // ── per frame: the material and the cosmos (amendment 2026-10-18; mid/high shaders only) ──
   { name: 'u_time', type: 'float', cadence: 'frame', from: 'snapshot.t / 1000 (seconds)' },

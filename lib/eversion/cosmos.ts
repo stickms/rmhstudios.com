@@ -79,6 +79,16 @@ export function cosmosPresence(s: Readonly<TimelineSnapshot>): number {
   return cosmosArrival(s) * cosmosDeparture(s);
 }
 
+/**
+ * How much the globe is a PLANET, 0..1, from the snapshot alone: the weight of the white-planet tint on dark themes
+ * (`planetTone` in gl/shaders.ts). It rises from 10% to 55% of WRAP and is gone 55% of the way into UNWRAP, while
+ * the globe is still round. A weight that rode each vertex's own morph instead left the cap (the last part to
+ * flatten) white until the final frames, then cut to the dark page: a pop at the one moment that must be seamless.
+ */
+export function planetWeight(s: Readonly<TimelineSnapshot>): number {
+  return q5((s.wrap - 0.1) / 0.45) * q5((s.unwrap - 0.45) / 0.5);
+}
+
 /* ── The palette ─────────────────────────────────────────────────────────── */
 
 /**

@@ -242,11 +242,15 @@ On a dark theme the globe is a dark page wrapped on a sphere, against a darker
 space: it disappeared into the background. While it is a planet, the surface shows
 the page with its lightness reflected (`planetTone` in `gl/shaders.ts`: `c + 1 - 2L`,
 which keeps hue and turns near-black into near-white), weighted by
-`u_whiten · quintic(morph)`. `u_whiten` is how dark the theme's background is
+`u_whiten · u_planet`. `u_whiten` is how dark the theme's background is
 (`pageDarkness` in `gl/renderer.ts`: 0 for a light theme, 1 under ~18% luminance),
-written once per prime. At the flat endpoints the morph weight is 0, so the BEFORE
-and AFTER pages are the captures to the bit; through WRAP the page eases to white
-as it lifts off, and back to its own colours through UNWRAP.
+written once per prime. `u_planet` is `cosmos.ts#planetWeight(snapshot)`: it rises
+from 10% to 55% of WRAP and is gone 55% of the way into UNWRAP, uniformly over the
+surface, so the page's own colours are back while the globe is still round. (A
+first version rode each vertex's morph weight, which left the cap, the last part to
+flatten, white until the final frames and then cut to the dark page.) A quick ramp
+on the morph weight keeps any vertex still on the page plane untouched, so the
+BEFORE and AFTER pages are the captures to the bit.
 
 ## The ending: the run ends with UNWRAP
 
