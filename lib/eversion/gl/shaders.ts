@@ -676,12 +676,19 @@ function starsFragment(quality: Quality): string {
 #define QUALITY ${quality}
 ${MATERIAL_DEFINES}
 uniform vec4 u_cosmos;
+uniform vec4 u_space;
+uniform vec4 u_horizon;
+uniform vec2 u_viewport;
 uniform float u_pixelRatio;
 uniform float u_spin;
 uniform vec4 u_colAccent;
 out vec4 outColor;
 ${NOISE_GLSL}
 void main() {
+  /* Space is open inside the horizon (cosmos.ts): a disc around the globe that widens from behind it, never a
+     tint over the whole screen. Outside it the clear (the veil) stays as it is. */
+  vec2 css = vec2(gl_FragCoord.x, float(u_viewport.y) * u_pixelRatio - gl_FragCoord.y) / u_pixelRatio;
+  float open = 1.0 - smoothstep(u_horizon.z - u_horizon.w, u_horizon.z, distance(css, u_horizon.xy));
   /* The sky drifts a little with the globe's spin: parallax, so the camera reads as moving through space. */
   vec2 p = gl_FragCoord.xy / u_pixelRatio + vec2(u_spin * 14.0, 0.0);
   vec3 c = starfield(p, u_cosmos.z) * u_cosmos.y;
@@ -690,8 +697,9 @@ void main() {
   float neb = fbm(vec3(p * 0.0024, 0.37 * u_cosmos.z * 0.05));
   c += u_colAccent.rgb * smoothstep(0.45, 0.95, neb) * 0.09 * u_cosmos.y;
 #endif
-  /* Premultiplied with alpha 0: light added to whatever the clear is. */
-  outColor = vec4(c, 0.0);
+  /* Premultiplied: the deepened sky over the veil, and the light of the stars added, inside the horizon. */
+  float a = u_space.a * open;
+  outColor = vec4(u_space.rgb * a + c * open, a);
 }
 `;
 }
@@ -745,8 +753,15 @@ uniform vec4 u_sunCol[2];
 uniform vec4 u_cosmos;
 uniform vec4 u_space;
 uniform vec4 u_colVeil;
+uniform float u_radius;
 out vec4 outColor;
 ${NOISE_GLSL}
+
+/* The surface's own depth mapping (vertex shader): the globe and the bodies share one depth buffer, so a body
+   behind the globe is hidden by it exactly and one in front of it is in front. */
+float bodyDepth(float z) {
+  return clamp(-z / (2.0 * max(u_radius, 1.0)), -1.0, 1.0) * 0.45 + 0.5;
+}
 
 /* Ring density across its radius (in planet radii): a few bands with a gap, soft at both edges. */
 float ringDensity(float rho) {
@@ -840,6 +855,7 @@ void main() {
 #endif
     corona *= (1.0 - disc) * smoothstep(3.2, 2.2, d);
     vec3 glow = A.rgb * corona * max(A.a, 0.35);
+    gl_FragDepth = bodyDepth(B.z + B.w * sqrt(max(1.0 - d * d, 0.0)));
     outColor = vec4((core * disc + glow) * alpha, disc * alpha);
     return;
   }
@@ -847,6 +863,7 @@ void main() {
   /* The sphere's visible point and normal (y down, z toward the viewer), and its place in the world. */
   vec3 N = vec3(p, sqrt(max(1.0 - d * d, 0.0)));
   vec3 wp = B.xyz + N * B.w;
+  gl_FragDepth = bodyDepth(wp.z);
   float rot = t * 0.12 + info.y;
   vec3 q = vec3(N.x * cos(rot) + N.z * sin(rot), N.y, -N.x * sin(rot) + N.z * cos(rot));
   float water;

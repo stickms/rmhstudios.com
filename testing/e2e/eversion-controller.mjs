@@ -22,24 +22,28 @@
 // `navigate` changes the URL synchronously, and its promise resolves when the
 // route has rendered. When T32 wires the hub, the hub e2e (T34) covers the app.
 //
-// ## What it asserts (the T31 acceptance)
+// ## What it asserts (the T31 acceptance; the order amended 2026-10-19)
 //
 //  1. On three routes: marks in order start, cover, evert, gate-open, unwrap,
 //     reveal, done; each with its `detail`.
-//  2. The URL changes AT `start` (navigate within a frame of the start mark, and
-//     seconds before `done`) — not at the end.
-//  3. `html.eversion-cover` exists only between `cover` and `reveal`.
-//  4. The overlay element exists during the run and is gone after `done`;
+//  2. The destination is rendered BEFORE the animation: the URL changes, the
+//     route renders and AFTER is captured, all before the `start` mark - and the
+//     globe therefore shows the real destination from its first frame.
+//  3. A frozen picture (`.eversion-hold`) is up before the navigation, is raised
+//     over the canvas before `start`, starts its fade only once the first frame is
+//     on screen (the `cover` mark), and is gone after `done`.
+//  4. `html.eversion-cover` is on from the navigation (the shell is hidden under
+//     the picture) until UNWRAP's tail, off before `reveal`.
+//  5. The overlay element exists during the run and is gone after `done`;
 //     `data-eversion-settle` and the cover class are gone too.
-//  5. AFTER is captured with `data-eversion-settle` set.
-//  6. Fast-forward completes within 650 ms + the reveal fade (+ scheduling slack) of the
-//     key press when AFTER is ready.
-//  7. An injected BEFORE failure still plays (amended 2026-10-18): the release
-//     takes a capture on demand or, failing that, starts from the page's 2D
-//     stand-in, so the run ends in `done` with every mark and navigates.
-//  8. An injected AFTER failure still ends in `done` (unwrap on the placeholder).
-//  9. The `controller` debug slot registers and, with no capture library here,
-//     runs from the stand-in rather than throwing.
+//  6. AFTER is captured with `data-eversion-settle` set.
+//  7. Fast-forward completes within 650 ms + the reveal fade (+ scheduling slack) of the
+//     key press.
+//  8. An injected BEFORE failure still plays: the release takes a capture on demand.
+//  9. An injected AFTER failure navigates and ends WITHOUT animating (`abort`, no
+//     `start` mark): there is no picture of the destination to put on the globe.
+// 10. The `controller` debug slot registers and, with no capture library here,
+//     resolves (as a fallback) rather than throwing.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -172,16 +176,21 @@ try {
       JSON.stringify(doneMark?.detail),
     );
 
-    // URL timing: navigate() is in the same task as `start`, seconds before done.
+    // The destination first: navigate, the route renders, AFTER is captured - all before `start`.
     const nav = run.trace.find((x) => x.what === 'navigate');
-    const dt = nav.at - at(run, 'eversion:start');
+    const rendered = run.trace.find((x) => x.what === 'route-rendered');
+    const startAt = at(run, 'eversion:start');
     check(
-      `${label}: the URL changes at start (navigate ${dt.toFixed(1)} ms after the start mark)`,
-      dt >= -1 && dt < 30,
+      `${label}: the URL changes before the animation starts (navigate ${(startAt - nav.at).toFixed(0)} ms before the start mark)`,
+      Boolean(nav) && nav.at < startAt,
     );
     check(
-      `${label}: ...and not at the end (done is ${(at(run, 'eversion:done') - nav.at).toFixed(0)} ms later)`,
-      at(run, 'eversion:done') - nav.at > (ff ? 600 : 3000),
+      `${label}: AFTER is captured before the start mark, after the route rendered`,
+      run.captureSeen.length === 1 &&
+        Boolean(rendered) &&
+        run.captureSeen[0].at >= rendered.at &&
+        run.captureSeen[0].at < startAt,
+      JSON.stringify({ captured: run.captureSeen[0]?.at, rendered: rendered?.at, startAt }),
     );
     check(
       `${label}: the URL is the destination afterwards`,
@@ -189,7 +198,27 @@ try {
       run.pathAfter,
     );
 
-    // Cover window.
+    // The frozen picture: up before the navigation, fading only once the first frame is on screen.
+    const holdOn = run.trace.find((x) => x.what === 'hold-on');
+    const holdOut = run.trace.find((x) => x.what === 'hold-out');
+    check(
+      `${label}: the frozen picture is up before the navigation`,
+      Boolean(holdOn) && holdOn.at <= nav.at,
+    );
+    const holdUp = run.trace.find((x) => x.what === 'hold-up');
+    check(
+      `${label}: ...is raised over the canvas after AFTER is captured, before the start mark`,
+      Boolean(holdUp) && holdUp.at >= run.captureSeen[0].at && holdUp.at <= startAt,
+      `${holdUp ? (startAt - holdUp.at).toFixed(1) : '-'} ms before start`,
+    );
+    check(
+      `${label}: ...and fades only after the first frame (the cover mark)`,
+      Boolean(holdOut) && holdOut.at >= at(run, 'eversion:cover') - 1,
+      `${holdOut ? (holdOut.at - at(run, 'eversion:cover')).toFixed(1) : '-'} ms`,
+    );
+    check(`${label}: the frozen picture is gone after done`, !run.holdAfter);
+
+    // Cover window: from the navigation (under the picture) to UNWRAP's tail.
     const on = run.trace.filter((x) => x.what === 'cover-class-on');
     const off = run.trace.filter((x) => x.what === 'cover-class-off');
     check(
@@ -199,9 +228,9 @@ try {
     );
     if (on.length && off.length) {
       check(
-        `${label}: cover class on at/after the cover mark`,
-        on[0].at >= at(run, 'eversion:cover') - 20,
-        `${(on[0].at - at(run, 'eversion:cover')).toFixed(1)} ms`,
+        `${label}: cover class on by the navigation, under the picture`,
+        on[0].at <= nav.at + 1 && on[0].at >= holdOn.at,
+        `${(on[0].at - nav.at).toFixed(1)} ms`,
       );
       check(
         `${label}: cover class off before reveal, after unwrap`,
@@ -218,11 +247,6 @@ try {
       `${label}: AFTER captured with data-eversion-settle set`,
       run.captureSeen.length === 1 && run.captureSeen[0].settle,
       JSON.stringify(run.captureSeen),
-    );
-    const rendered = run.trace.find((x) => x.what === 'route-rendered');
-    check(
-      `${label}: the route had rendered before the capture`,
-      Boolean(rendered) && run.captureSeen[0].at >= rendered.at,
     );
     check(
       `${label}: controller is done and idle of cover`,
@@ -250,23 +274,28 @@ try {
   assertRun('/apps', await t('run', '/apps', { ffAfterCoverMs: 400 }), { ff: true });
   assertRun('/about', await t('run', '/about', { ffAfterCoverMs: 400 }), { ff: true });
 
-  /* AFTER failure: unwrap proceeds on the placeholder and the run still ends. */
+  /* AFTER failure: the page is navigated to, and the run ends without animating. */
   await t('inject', { after: 'throw' });
-  const failedAfter = await t('run', '/library', { ffAfterCoverMs: 300 });
+  const failedAfter = await t('run', '/library');
   check(
-    'AFTER failure: run still ends in done with the overlay gone',
-    failedAfter.outcome.end === 'done' && !failedAfter.overlayAfter && !failedAfter.coverAfter,
+    'AFTER failure: ends as abort, with the overlay, picture and cover gone',
+    failedAfter.outcome.fallback === null &&
+      failedAfter.outcome.end === 'abort' &&
+      !failedAfter.overlayAfter &&
+      !failedAfter.holdAfter &&
+      !failedAfter.coverAfter &&
+      !failedAfter.settleAfter,
     JSON.stringify(failedAfter.outcome),
   );
   check(
-    'AFTER failure: gate-open mark says after-failed',
-    failedAfter.marks.find((m) => m.name === 'eversion:gate-open')?.detail?.reason ===
-      'after-failed',
-    JSON.stringify(failedAfter.marks.find((m) => m.name === 'eversion:gate-open')?.detail),
+    'AFTER failure: nothing was animated (no start mark) and the URL is the destination',
+    !failedAfter.marks.some((m) => m.name === 'eversion:start') &&
+      failedAfter.pathAfter === '/library',
+    `${failedAfter.marks.map((m) => m.name).join(',')} ${failedAfter.pathAfter}`,
   );
   await t('inject', { after: 'ok' });
 
-  /* BEFORE failure: the effect still plays, from the stand-in (amended 2026-10-18). */
+  /* BEFORE failure: the effect still plays, from a capture taken on demand (amended 2026-10-18). */
   await t('inject', { before: 'missing' });
   const before = await t('run', '/never');
   check(
@@ -287,10 +316,10 @@ try {
   check('BEFORE failure: the cover class is gone at the end', !before.coverAfter);
   await t('inject', { before: 'ok' });
 
-  /* Debug slot: no capture library in this page, so it runs from the stand-in, without throwing. */
+  /* Debug slot: no capture library in this page, so it falls back, without throwing. */
   const dbg = await t('debugSlot');
   check(
-    'debug slot startTo resolves (from the stand-in: T17 not in this page) without throwing',
+    'debug slot startTo resolves (a fallback: no capture library in this page) without throwing',
     dbg && (dbg.outcome.fallback === null || typeof dbg.outcome.fallback === 'string'),
     JSON.stringify(dbg?.outcome),
   );

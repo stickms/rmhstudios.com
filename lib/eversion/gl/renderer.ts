@@ -449,6 +449,7 @@ export function createRenderer(
     }
     setSamplerState(true);
     g.generateMipmap(g.TEXTURE_2D);
+    if (slot !== 'before') bindPlaceholder();
   }
 
   function freePage(slot: TextureSlot) {
@@ -456,6 +457,16 @@ export function createRenderer(
     if (!tex) return;
     pages[slot] = dropTexture(tex);
     bindUnit(slotUnit[slot], fallbackPage);
+    if (slot !== 'before') bindPlaceholder();
+  }
+
+  /**
+   * The placeholder unit samples the placeholder page, else the AFTER page, else nothing. The run uploads AFTER
+   * before it starts and no placeholder at all, so the inside of the globe is the destination from the first
+   * frame, and the `afterMix` crossfade the timeline still plays mixes the page with itself.
+   */
+  function bindPlaceholder() {
+    bindUnit(SAMPLER_UNITS.placeholder, pages.placeholder ?? pages.after ?? fallbackPage);
   }
 
   function freeLut() {
@@ -564,6 +575,7 @@ export function createRenderer(
     g.uniform4fv(l.u_lightCol, c.lightCol);
     g.uniform4fv(l.u_space, c.space);
     g.uniform4fv(l.u_cosmos, c.cosmos);
+    g.uniform4fv(l.u_horizon, c.horizon);
   }
 
   /** The bodies `[from, to)` of this frame, as one instanced draw of a quad each. */
@@ -682,6 +694,11 @@ export function createRenderer(
       else freePage(slot);
     },
 
+    warm() {
+      if (!guard()) return;
+      warmUp();
+    },
+
     draw(s: Readonly<TimelineSnapshot>) {
       if (!guard()) return;
       const g = gl;
@@ -700,20 +717,16 @@ export function createRenderer(
       governCosmos();
       stepCosmos(scene, s, view, cosmosFrame, cosmosBudget);
       const veil = colours ? colours.veil : WHITE;
-      // The clear is the veil, deepened toward space while the cosmos is present: the
-      // surface's glass mixes the same colour (`u_space`), so the two always agree.
-      const k = cosmosFrame.space[3]!;
-      const bg0 = veil[0] + (cosmosFrame.space[0]! - veil[0]) * k;
-      const bg1 = veil[1] + (cosmosFrame.space[1]! - veil[1]) * k;
-      const bg2 = veil[2] + (cosmosFrame.space[2]! - veil[2]) * k;
+      // The clear is the veil. Space is not a tint over it: the starfield pass opens it inside the horizon around
+      // the globe (cosmos.ts), so it widens out from behind the globe instead of fading in everywhere at once.
       const a = s.bgAlpha;
-      g.clearColor(bg0 * a, bg1 * a, bg2 * a, a);
+      g.clearColor(veil[0] * a, veil[1] * a, veil[2] * a, a);
       g.clear(g.COLOR_BUFFER_BIT | g.DEPTH_BUFFER_BIT);
 
       g.bindVertexArray(vao);
 
       const cosmosOn = cosmosProgram !== null && cosmosFrame.count > 0 && cosmosFrame.presence > 0;
-      if (cosmosOn && starsProgram && cosmosFrame.cosmos[1]! > 0) {
+      if (cosmosOn && starsProgram) {
         g.useProgram(starsProgram.program);
         g.uniform1f(starsProgram.loc.u_spin, s.spin);
         writeMaterial(starsProgram);
@@ -722,15 +735,6 @@ export function createRenderer(
         g.enable(g.BLEND);
         g.blendFunc(g.ONE, g.ONE_MINUS_SRC_ALPHA);
         g.drawArrays(g.TRIANGLES, 0, 3);
-      }
-      if (cosmosOn && cosmosProgram) {
-        g.useProgram(cosmosProgram.program);
-        writeBodies(cosmosProgram, s);
-        g.disable(g.DEPTH_TEST);
-        g.depthMask(false);
-        g.enable(g.BLEND);
-        g.blendFunc(g.ONE, g.ONE_MINUS_SRC_ALPHA);
-        drawBodies(cosmosProgram, 0, cosmosFrame.behind);
       }
       g.enable(g.DEPTH_TEST);
       g.depthFunc(g.LESS);
@@ -755,17 +759,21 @@ export function createRenderer(
         g.depthMask(true);
         g.disable(g.BLEND);
       }
-      if (cosmosOn && cosmosProgram && cosmosFrame.count > cosmosFrame.behind) {
+      if (cosmosOn && cosmosProgram) {
+        // Every body, back to front, AFTER the globe and depth-tested against it (each writes the depth of its own
+        // ray-traced point): the globe hides what is behind it and a transiting planet crosses in front, exactly,
+        // with every body opaque. Nothing in the system needs a fade to come or go (cosmos.ts).
         g.useProgram(cosmosProgram.program);
         writeBodies(cosmosProgram, s);
-        g.disable(g.DEPTH_TEST);
+        g.enable(g.DEPTH_TEST);
+        g.depthFunc(g.LEQUAL);
         g.depthMask(false);
         g.enable(g.BLEND);
         g.blendFunc(g.ONE, g.ONE_MINUS_SRC_ALPHA);
-        drawBodies(cosmosProgram, cosmosFrame.behind, cosmosFrame.count);
+        drawBodies(cosmosProgram, 0, cosmosFrame.count);
         g.depthMask(true);
         g.disable(g.BLEND);
-        g.enable(g.DEPTH_TEST);
+        g.depthFunc(g.LESS);
       }
       g.bindVertexArray(null);
     },

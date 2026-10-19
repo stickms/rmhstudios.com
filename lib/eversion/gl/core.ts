@@ -59,6 +59,7 @@ import type {
   EversionCore,
   EversionPlan,
   FromWorker,
+  GlobeStartState,
   Mat3,
   ProjectionId,
   RendererApi,
@@ -486,6 +487,9 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
       // megabytes held until the next prime. Close it unseen.
       if (runEnded && !timeline) return;
       renderer.setTexture(slot, bitmap);
+      // Between prime and start (the run uploads both pages before it starts): make the upload resident now, so
+      // the first frame does not pay for it.
+      if (!running) renderer.warm?.();
       if (slot === 'after') {
         afterUploaded = true;
         if (running && timeline) timeline.afterReady(tickClock(env.now()));
@@ -496,9 +500,21 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
     }
   }
 
-  function start(t0: number, origin: number | undefined, refreshHz: number | undefined) {
+  function start(
+    t0: number,
+    origin: number | undefined,
+    refreshHz: number | undefined,
+    globe: GlobeStartState | undefined,
+  ) {
     if (!renderer || !timeline || !plan) throw new Error('eversion: start before prime');
     if (running) return;
+    // The hub's globe kept turning while the destination rendered: start from where it is now.
+    if (globe && timelineConfig) {
+      plan = { ...plan, globe };
+      timelineConfig = { ...timelineConfig, globe };
+      timeline = deps.createTimeline(timelineConfig);
+      timelineViewport = timelineConfig.viewport;
+    }
     const now = env.now();
     if (mode !== 'worker') clockOffset = 0;
     else if (origin !== undefined)
@@ -705,7 +721,7 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
             texture(message.slot, message.bitmap);
             break;
           case 'start':
-            start(message.t0, message.origin, message.refreshHz);
+            start(message.t0, message.origin, message.refreshHz, message.globe);
             break;
           case 'fast-forward':
             whenRunning((tl, now) => tl.fastForward(now));

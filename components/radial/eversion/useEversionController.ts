@@ -3,7 +3,6 @@
 import { Globe } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { aspectBucket, getBakedLut } from '@/lib/eversion/projection-lut';
-import { buildPlaceholder } from '@/lib/eversion/placeholder';
 import { createCapture, fixedViewport } from '@/lib/eversion/capture';
 import { evaluateHostEligibility } from '@/lib/eversion/eligibility';
 import { cosmosEnabled } from '@/lib/eversion/cosmos';
@@ -42,7 +41,6 @@ import type {
   Rgba,
   ThemeColours,
   Tier,
-  TranslateFn,
   Viewport,
 } from '@/lib/eversion/types';
 import { displayRefreshHz } from '@/lib/render/refresh-rate';
@@ -50,8 +48,13 @@ import { useThemeStore } from '@/stores/themeStore';
 import {
   discardCanvas,
   fadeOverlay,
+  focusPicture,
   getCanvas,
+  holdLayerAttached,
+  holdPicture,
   mountOverlay,
+  raisePicture,
+  releasePicture,
   unmountOverlay,
 } from './overlay-store';
 import { detectTier } from './detect-tier';
@@ -70,7 +73,7 @@ import type { UseBeforeCapture } from './useBeforeCapture';
  *
  * ```ts
  * const mod = await import('./eversion/useEversionController');
- * const controller = mod.createEversionController({ router, beforeCapture, translate: t });
+ * const controller = mod.createEversionController({ router, beforeCapture });
  * // …render <LazyEversionOverlay /> (React.lazy → ./eversion/EversionOverlay)
  * controller.start(node, globeState, 'release') // → Promise<EversionOutcome>
  * ```
@@ -207,7 +210,6 @@ export interface EversionControllerDeps {
     UseBeforeCapture,
     'awaitBefore' | 'isEligible' | 'ineligibleReason' | 'getCapture'
   >;
-  translate: TranslateFn;
 }
 
 const IDLE_DELAY_MS = 700;
@@ -352,6 +354,10 @@ function createRouterPort(router: RouterLike): RouterPort {
 /** The overlay as the React store (`EversionOverlay` renders it). */
 const storeOverlay: OverlayPort = {
   mount: mountOverlay,
+  hold: holdPicture,
+  raiseHold: raisePicture,
+  focusHold: focusPicture,
+  releaseHold: releasePicture,
   fade: fadeOverlay,
   unmount: unmountOverlay,
 };
@@ -362,18 +368,30 @@ const storeOverlay: OverlayPort = {
  */
 export function createDomOverlayPort(): OverlayPort {
   let el: HTMLDivElement | null = null;
+  let layer: HTMLDivElement | null = null;
   return {
     async mount() {
       el = document.createElement('div');
       el.className = 'eversion-overlay';
       el.setAttribute('role', 'presentation');
       el.appendChild(getCanvas());
-      document.body.appendChild(el);
+      layer = document.createElement('div');
+      layer.className = 'eversion-hold-layer';
+      layer.setAttribute('aria-hidden', 'true');
+      document.body.append(el, layer);
+      holdLayerAttached(layer);
     },
+    hold: holdPicture,
+    raiseHold: raisePicture,
+    focusHold: focusPicture,
+    releaseHold: releasePicture,
     fade() {
       el?.classList.add('eversion-overlay--fading');
     },
     unmount() {
+      holdLayerAttached(null);
+      layer?.remove();
+      layer = null;
       el?.remove();
       el = null;
     },
@@ -509,12 +527,12 @@ function createHostPort(): HostPort & {
    ═════════════════════════════════════════════════════════════════════════════ */
 
 export interface EversionControllerHandle extends EversionController {
-  /** `start` with the entry point recorded on the `start` mark (S#25). */
+  /** `start` with the entry point recorded on the `start` mark (S#25), and the hub's live pose (`globe`). */
   start(
     node: EversionNode,
     state: GlobeStartState,
     entry?: EntryPoint,
-    options?: Pick<RunOptions, 'onCommit'>,
+    options?: Pick<RunOptions, 'onCommit' | 'globe'>,
   ): Promise<EversionOutcome>;
   /** Hurry the run in flight: back/forward (T33). */
   abort(): void;
@@ -656,15 +674,14 @@ export function createEversionController(
    * The hub's BEFORE bitmap, within `grace` (the runner's `BEFORE_WAIT_MS`, or
    * `ALWAYS_EVERT_BEFORE_WAIT_MS` with the preference on). The scheduler's held or
    * in-flight capture first; if it has nothing (the hub was released before its
-   * post-morph idle capture, or that capture timed out on a slow device) one is
-   * taken now, in what is left of the same budget. A miss used to be the end of the
+   * post-morph idle capture, or that capture failed on a slow device) one is taken
+   * now, in what is left of the same budget. A miss used to be the end of the
    * effect for that navigation, which is why a quick visitor never saw it.
    *
-   * A page that cannot be captured at all in that budget (a huge DOM on a slow
-   * phone, a capture that throws) still plays: it starts from the instant 2D
-   * stand-in of the page itself - the one the destination gets while it loads -
-   * instead of being the one page the effect never plays on. The hub covers the
-   * page while it is open, so the stand-in is never seen beside the real thing.
+   * A page that cannot be captured at all in that budget is navigated to as
+   * today, without the effect. It used to start from a 2D stand-in (the page's
+   * title and a globe glyph), which put an icon on the globe where the page should
+   * be (2026-10-19): the globe only ever shows the real page.
    */
   const awaitBefore = async (grace: number): Promise<ImageBitmap | null> => {
     const started = performance.now();
@@ -672,23 +689,9 @@ export function createEversionController(
     if (held) return held;
     // One budget for both steps, not one each; never less than a capture needs to start.
     const left = Math.max(300, grace - (performance.now() - started));
-    const taken = await withTimeout(
-      captureBeforeNow(left),
-      left + 50,
-      'on-demand BEFORE capture',
-    ).catch(() => null);
-    if (taken) return taken;
-    try {
-      return await buildPlaceholder(
-        { ...previewNode(), id: 'rmh-eversion-controller:before-standin' },
-        viewportNow(),
-        resolveThemeColours(),
-        deps.translate,
-        { tier: detectTier() },
-      );
-    } catch {
-      return null;
-    }
+    return withTimeout(captureBeforeNow(left), left + 50, 'on-demand BEFORE capture').catch(
+      () => null,
+    );
   };
 
   const page = createPagePort();
@@ -702,8 +705,6 @@ export function createEversionController(
     alwaysEvert,
     capture: () => deps.beforeCapture.getCapture(),
     openCapture,
-    placeholder: (node, viewport, colours, tier) =>
-      buildPlaceholder(node, viewport, colours, deps.translate, { tier }),
     projection() {
       const id = prepared ?? resolveProjection(setting());
       prepared = null;
@@ -898,7 +899,6 @@ if (typeof window !== 'undefined') {
             }
           },
         },
-        translate: (key, options) => options?.defaultValue ?? key,
       },
       { overlay: createDomOverlayPort() },
     );

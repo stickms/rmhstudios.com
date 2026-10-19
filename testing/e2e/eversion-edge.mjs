@@ -42,7 +42,7 @@
 //  context-lost       WebGL context lost mid-effect            (cover off, `--fading`, 200 ms, finishes)
 //  hidden-tab         tab hidden mid-effect                    (`visibility` posted; loop pauses/resumes; a long absence settles the run)
 //  reveal-input       input during the reveal fade             (ignored: no fast-forward after reveal)
-//  never-settles      a router that never settles              (`after-failed` at AFTER_CAPTURE_TIMEOUT_MS)
+//  never-settles      a router that never settles              (waited on to DESTINATION_SETTLE_HARD_MS, then captured as it is)
 //  host-not-ready     a release before the host is ready       (synchronous: eligible, init started, then ready)
 //
 // Software GL is slow and the timeline's dt clamp makes wall time meaningless
@@ -54,7 +54,7 @@
 /* global Worker, history, performance, KeyboardEvent, PointerEvent, Event, PerformanceObserver, MutationObserver, sessionStorage -- used only inside page.evaluate() / addInitScript() callbacks. */
 import { EVERSION_MARKS, openSession, BASE_URL } from './lib/eversion-session.mjs';
 import { EVERSION_MEASURES } from '../../lib/eversion/marks.ts';
-import { AFTER_CAPTURE_TIMEOUT_MS } from '../../lib/eversion/constants.ts';
+import { DESTINATION_SETTLE_HARD_MS } from '../../lib/eversion/constants.ts';
 
 const ONLY = process.env.ONLY ?? '';
 const SLOW = 120_000;
@@ -656,7 +656,10 @@ async function revealInput() {
   }
 }
 
-/** A router whose navigation never settles: AFTER is declared failed at AFTER_CAPTURE_TIMEOUT_MS and the run unwraps the placeholder. */
+/**
+ * A router whose navigation never settles (amended 2026-10-19: the destination is captured before the animation):
+ * the run waits for it to DESTINATION_SETTLE_HARD_MS, then captures the page as it is and plays it.
+ */
 async function neverSettles() {
   const name = 'never-settles';
   const { s, errors } = await fresh({ path: '/' });
@@ -672,41 +675,31 @@ async function neverSettles() {
     });
     await begin(s, '/games');
     const start = await waitMark(s, EVERSION_MARKS.start, { timeout: RUN_MS });
-    await s.page.waitForFunction(
-      () => window.__posts.some((p) => p.type === 'after-failed'),
-      null,
-      {
-        timeout: RUN_MS,
-      },
-    );
-    const failed = (await posts(s, 'after-failed'))[0];
-    const waited = failed.at - start.startTime;
+    const primed = (await posts(s, 'prime'))[0];
+    const waited = start.startTime - primed.at;
     check(
       name,
-      waited >= AFTER_CAPTURE_TIMEOUT_MS - 100,
-      `after-failed after ${Math.round(waited)} ms, before AFTER_CAPTURE_TIMEOUT_MS (${AFTER_CAPTURE_TIMEOUT_MS})`,
+      waited >= DESTINATION_SETTLE_HARD_MS - 100,
+      `started ${Math.round(waited)} ms after the prime, before DESTINATION_SETTLE_HARD_MS (${DESTINATION_SETTLE_HARD_MS})`,
     );
     check(
       name,
-      waited < AFTER_CAPTURE_TIMEOUT_MS + 20_000,
-      `after-failed took ${Math.round(waited)} ms`,
+      waited < DESTINATION_SETTLE_HARD_MS + 20_000,
+      `start took ${Math.round(waited)} ms`,
+    );
+    const after = (await posts(s, 'texture')).filter((p) => p.slot === 'after');
+    check(
+      name,
+      after.length === 1 && after[0].at < start.startTime,
+      'the page was not captured as it was, before the start',
     );
     await press(s);
     const run = await finish(s);
     await assertClean(name, s, errors, run);
     await assertFullSequence(name, s);
     const gate = await mark(s, EVERSION_MARKS.gateOpen);
-    check(name, gate?.detail?.reason === 'after-failed', `gate reason ${gate?.detail?.reason}`);
-    check(
-      name,
-      (await posts(s, 'after-failed')).length === 1,
-      'after-failed posted more than once',
-    );
-    check(
-      name,
-      !(await posts(s, 'texture')).some((p) => p.slot === 'after'),
-      'an AFTER texture was uploaded for a router that never settled',
-    );
+    check(name, gate?.detail?.reason === 'after-ready', `gate reason ${gate?.detail?.reason}`);
+    check(name, (await posts(s, 'after-failed')).length === 0, 'after-failed was posted');
   } finally {
     await s.close();
   }

@@ -113,20 +113,20 @@ describe('PUT /api/preferences/appearance navTransition (S#24)', () => {
 
 describe('navTransition defaults and store', () => {
   it('an absent or unknown value resolves to random', () => {
-    expect(DEFAULT_NAV_TRANSITION).toBe('random');
-    expect(resolveNavTransition(null)).toBe('random');
-    expect(resolveNavTransition(undefined)).toBe('random');
-    expect(resolveNavTransition('wobble')).toBe('random');
+    expect(DEFAULT_NAV_TRANSITION).toBe('mercator');
+    expect(resolveNavTransition(null)).toBe('mercator');
+    expect(resolveNavTransition(undefined)).toBe('mercator');
+    expect(resolveNavTransition('wobble')).toBe('mercator');
     expect(resolveNavTransition('peirce')).toBe('peirce');
     expect(isNavTransition('lambert')).toBe(true);
     expect(isNavTransition('nope')).toBe(false);
   });
 
-  it('the store starts at random and holds what is set', () => {
-    expect(useThemeStore.getState().navTransition).toBe('random');
-    useThemeStore.getState().setNavTransition('mercator');
+  it('the store starts at Mercator and holds what is set', () => {
     expect(useThemeStore.getState().navTransition).toBe('mercator');
     useThemeStore.getState().setNavTransition('random');
+    expect(useThemeStore.getState().navTransition).toBe('random');
+    useThemeStore.getState().setNavTransition('mercator');
   });
 
   it('round-trips through the localStorage cache key', () => {
@@ -138,11 +138,15 @@ describe('navTransition defaults and store', () => {
     };
     // What Providers does: write non-default, remove default, hydrate on boot.
     const write = (v: string) =>
-      v !== 'random' ? ls.setItem(NAV_TRANSITION_KEY, v) : ls.removeItem(NAV_TRANSITION_KEY);
+      v !== DEFAULT_NAV_TRANSITION
+        ? ls.setItem(NAV_TRANSITION_KEY, v)
+        : ls.removeItem(NAV_TRANSITION_KEY);
     write('stereographic');
     expect(resolveNavTransition(ls.getItem(NAV_TRANSITION_KEY))).toBe('stereographic');
     write('random');
-    expect(ls.getItem(NAV_TRANSITION_KEY)).toBeNull();
     expect(resolveNavTransition(ls.getItem(NAV_TRANSITION_KEY))).toBe('random');
+    write('mercator');
+    expect(ls.getItem(NAV_TRANSITION_KEY)).toBeNull();
+    expect(resolveNavTransition(ls.getItem(NAV_TRANSITION_KEY))).toBe('mercator');
   });
 });

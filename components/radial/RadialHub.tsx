@@ -151,6 +151,19 @@ const MOTION_MS = 500;
  * The globe is mounted ONLY while the menu is up, which is what bounds its frame
  * loop — see the note on the loop in `LiquidGlobe.tsx`.
  */
+/** The eversion hand-off's geometry (set on `.radial-hub` at the commit, read by radial.css), cleared when it ends. */
+const HANDOVER_PROPS = [
+  '--eversion-swell',
+  '--eversion-dx',
+  '--eversion-dy',
+  '--eversion-delay',
+  '--eversion-wrap',
+] as const;
+
+function clearHandover(hub: HTMLElement | null): void {
+  if (hub) for (const name of HANDOVER_PROPS) hub.style.removeProperty(name);
+}
+
 export function RadialHub() {
   const { t } = useTranslation('feed');
   const { pathname } = useLocation();
@@ -167,6 +180,8 @@ export function RadialHub() {
   const phaseRef = useRef<Phase>(phase);
   phaseRef.current = phase;
   const orbRef = useRef<HTMLButtonElement | null>(null);
+  /** The hub's root: the eversion hand-off's geometry is set on it as custom properties (radial.css). */
+  const hubRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /**
@@ -255,19 +270,33 @@ export function RadialHub() {
     () =>
       createHandOff<NavLeaf>({
         navigateToday: (node) => live.current.today(node),
-        everting: () => {
+        everting: (handover) => {
           // The hub stays exactly as it is (`open`) until the run reaches its point
-          // of no return; from here the run owns the screen.
+          // of no return; from here the run owns the screen. The globe is handed
+          // over by motion (radial.css, `everting`): these say how far it swells and
+          // travels to land on the effect's sphere, and when.
           clearTimer();
           restoreFocus.current = false;
+          const hub = hubRef.current;
+          if (hub && handover) {
+            hub.style.setProperty('--eversion-swell', String(handover.swell));
+            hub.style.setProperty('--eversion-dx', `${handover.dx}px`);
+            hub.style.setProperty('--eversion-dy', `${handover.dy}px`);
+            hub.style.setProperty('--eversion-delay', `${handover.delayMs}ms`);
+            hub.style.setProperty('--eversion-wrap', `${handover.wrapMs}ms`);
+          }
           setPhase('everting');
         },
         closed: () => {
           clearTimer();
           landFocus.current = true;
+          clearHandover(hubRef.current);
           setPhase('closed');
         },
-        dismiss: () => live.current.dismiss(),
+        dismiss: () => {
+          clearHandover(hubRef.current);
+          live.current.dismiss();
+        },
       }),
     [],
   );
@@ -561,8 +590,9 @@ export function RadialHub() {
    * LiquidGlobe's confirm hand-off (hold-release, pin click, Enter). Ineligible -
    * reduced motion, no WebGL2 - is exactly today's path. A bridge that has not
    * loaded yet is waited for (bounded; see `CONTROLLER_WAIT_MS`), so the first
-   * navigation of a page-load plays the effect too. Otherwise the hub lets go (`everting`) and the controller
-   * navigates by itself at `start`; the hub must NOT. All of the rules (one
+   * navigation of a page-load plays the effect too. Otherwise the controller navigates by itself, while the hub
+   * is still open (it renders and captures the destination behind a frozen picture of this page, then lets the
+   * hub go `everting` as the animation starts); the hub must NOT. All of the rules (one
    * hand-off at a time, who navigates on which outcome) live in `hub-handoff.ts`.
    * Focus is left to the router either way.
    */
@@ -574,16 +604,21 @@ export function RadialHub() {
     dismiss,
   };
   const handOff = useCallback(
-    (node: NavLeaf, state: GlobeStartState, entry: Exclude<EntryPoint, 'preview'>) => {
+    (
+      node: NavLeaf,
+      state: GlobeStartState,
+      entry: Exclude<EntryPoint, 'preview'>,
+      live?: () => GlobeStartState,
+    ) => {
       const controller = controllerRef.current;
       if (controller || noEffect.current) {
-        handOffMachine.confirm(controller, node, state, entry);
+        handOffMachine.confirm(controller, node, state, entry, live);
         return;
       }
       const ms = useThemeStore.getState().alwaysEvertGlobe
         ? ALWAYS_CONTROLLER_WAIT_MS
         : CONTROLLER_WAIT_MS;
-      handOffMachine.confirmWhenReady(awaitController(ms), node, state, entry);
+      handOffMachine.confirmWhenReady(awaitController(ms), node, state, entry, live);
     },
     [handOffMachine, awaitController],
   );
@@ -604,7 +639,7 @@ export function RadialHub() {
   const tab = phase === 'open' || phase === 'closing' ? 0 : -1;
 
   return (
-    <div className="radial-hub" data-phase={phase}>
+    <div ref={hubRef} className="radial-hub" data-phase={phase}>
       <button
         ref={orbRef}
         type="button"

@@ -20,6 +20,21 @@
  * its `div` while a run is on and lets go of it (detached, not destroyed) when
  * the run ends. Only a context loss throws it away ({@link discardCanvas}).
  *
+ * ## The frozen picture
+ *
+ * The run renders and captures the destination BEFORE the animation starts
+ * (`runner.ts`), so for that moment the live page underneath changes while the
+ * visitor must keep seeing the page they are leaving. {@link holdPicture} draws
+ * the BEFORE capture into `.eversion-hold`, blurred like the shell while the hub
+ * is open (`eversion.css`), inside a layer of its own (`.eversion-hold-layer`,
+ * rendered by `EversionOverlay` next to the overlay). The layer sits just over
+ * the page content and under the floating UI (the cookie bar, the mini-player):
+ * the capture leaves those out as not the page, and they stay on screen as they
+ * were while the destination renders. {@link raisePicture} lifts it over the
+ * effect's canvas before the canvas draws, {@link focusPicture} pulls its blur to
+ * sharp as the hub lets go, and {@link releasePicture} drops it once the canvas's
+ * first frame - the same page, sharp - is up under it.
+ *
  * This file imports nothing heavy on purpose: `EversionOverlay` is the one
  * piece the hub may render without the controller chunk, and it needs only this.
  */
@@ -36,6 +51,8 @@ type Listener = () => void;
 const listeners = new Set<Listener>();
 let state: OverlayState = { mounted: false, fading: false };
 let canvas: HTMLCanvasElement | null = null;
+let hold: HTMLCanvasElement | null = null;
+let holdLayer: HTMLElement | null = null;
 let attached = false;
 let waiting: { resolve: () => void; reject: (e: Error) => void } | null = null;
 
@@ -92,6 +109,7 @@ export function fadeOverlay(): void {
 }
 
 export function unmountOverlay(): void {
+  dropPicture();
   waiting?.reject(new Error('eversion: overlay unmounted before it attached'));
   waiting = null;
   attached = false;
@@ -103,11 +121,72 @@ export function overlayAttached(el: HTMLElement | null): void {
   if (!el) {
     attached = false;
     canvas?.remove();
+    dropPicture();
     return;
   }
   const c = getCanvas();
-  if (c.parentElement !== el) el.appendChild(c);
+  if (c.parentElement !== el) el.insertBefore(c, el.firstChild);
   attached = true;
   waiting?.resolve();
   waiting = null;
+}
+
+/** Called by `EversionOverlay`'s second ref with the frozen picture's layer (and with `null` when it leaves). */
+export function holdLayerAttached(el: HTMLElement | null): void {
+  if (!el) dropPicture();
+  holdLayer = el;
+}
+
+/**
+ * Show `bitmap` as the frozen picture until {@link releasePicture}. It is DRAWN (not kept), so the caller may
+ * transfer the bitmap to the render side straight after. Goes into the picture's layer (the React overlay's, or the
+ * debug port's DOM one), else over the canvas. A no-op when neither is in the document.
+ */
+export function holdPicture(bitmap: ImageBitmap): void {
+  const parent = holdLayer ?? canvas?.parentElement;
+  if (!parent) return;
+  dropPicture();
+  const el = document.createElement('canvas');
+  el.className = 'eversion-hold';
+  el.setAttribute('aria-hidden', 'true');
+  el.width = bitmap.width;
+  el.height = bitmap.height;
+  el.getContext('2d')?.drawImage(bitmap, 0, 0);
+  parent.appendChild(el);
+  hold = el;
+}
+
+/** The effect's canvas is about to draw: lift the picture over it (`.eversion-hold-layer--up`). */
+export function raisePicture(): void {
+  if (hold) layerOf(hold).classList.add(UP);
+}
+
+/** The hub has let go: pull the picture's blur to sharp over `HOLD_FADE_MS` (`.eversion-hold-layer--focus`). */
+export function focusPicture(): void {
+  if (hold) layerOf(hold).classList.add(UP, FOCUS);
+}
+
+/** The effect's first frame is up, and it is this same page, sharp: let the picture go. */
+export function releasePicture(): void {
+  dropPicture();
+}
+
+/** Remove the frozen picture at once and give its backing store back. */
+export function dropPicture(): void {
+  holdLayer?.classList.remove(UP, FOCUS);
+  const el = hold;
+  hold = null;
+  if (!el) return;
+  el.classList.remove(UP, FOCUS);
+  el.remove();
+  el.width = 0;
+  el.height = 0;
+}
+
+const UP = 'eversion-hold-layer--up';
+const FOCUS = 'eversion-hold-layer--focus';
+
+/** The element the layer classes go on: the layer, or the picture itself when it had to go over the canvas. */
+function layerOf(el: HTMLElement): HTMLElement {
+  return el.parentElement === holdLayer && holdLayer ? holdLayer : el;
 }

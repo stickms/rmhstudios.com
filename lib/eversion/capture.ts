@@ -190,12 +190,28 @@ const STYLE_PROPERTIES: string[] = `
   .split(/\s+/)
   .filter(Boolean);
 
-/** Shell parts `html.eversion-cover` sets to `opacity: 0` (spec §6.6; `radial.css`). */
-const COVER_HIDDEN_SELECTOR = '.radial-backdrop, .radial-frame';
-/** Shell parts blurred while the hub is open (`radial.css`, `[data-phase='open']`). */
-const HUB_BLURRED_SELECTOR = '.radial-backdrop, .radial-topbar, .radial-frame';
+/**
+ * Shell parts `html.eversion-cover` sets to `opacity: 0` (spec §6.6; `eversion.css`). All three: the top bar was
+ * added to the cover rule without being added here, and every AFTER taken under the cover then lost it, so the top
+ * bar popped in during the final dissolve. `eversion-css.test.ts` keeps the two lists equal.
+ */
+const COVER_HIDDEN_SELECTOR = '.radial-backdrop, .radial-topbar, .radial-frame';
+/**
+ * Shell parts blurred while the hub is open (`radial.css`, `[data-phase='open']`): the three layers and the floating
+ * UI that rides on the page (the cookie bar, the mini-player), which the captures carry (amended 2026-10-19).
+ */
+const HUB_BLURRED_SELECTOR =
+  ".radial-backdrop, .radial-topbar, .radial-frame, [data-floating]:not([data-floating='hub'])";
 /** Hidden while the hub is open; part of the page as it was before. */
 const HUB_HIDDEN_SELECTOR = '.radial-feed__compose';
+/**
+ * The hub's orb is part of the page the visitor lands on (docked at the bottom), so the AFTER picture carries it
+ * and it unwraps into place with the page instead of fading in after the run (amended 2026-10-19). It is captured
+ * while the hub is still open, where it is swollen into the globe and invisible, so the clone gets its docked pose.
+ * The rest of the hub is never the page: AFTER excludes these instead of the whole `.radial-hub`.
+ */
+const HUB_ORB_SELECTOR = '.radial-hub__orb';
+const HUB_NOT_PAGE_SELECTORS = ['.radial-hub__overlay', '.radial-hub__rehearsal'];
 /** The library's `defaultComputedStyles` iframe (`__SANDBOX__…`); never part of the page. */
 const SANDBOX_ID_PREFIX = '__SANDBOX__';
 const XHTML_NS = 'http://www.w3.org/1999/xhtml';
@@ -746,7 +762,10 @@ class CaptureSession implements CaptureApi {
 
     // Geometry is read once, synchronously: a scroll during the clone must not
     // tear the picture.
-    const exclude = options.exclude ?? CAPTURE_EXCLUDE_SELECTORS;
+    const after = options.phase === 'after';
+    const exclude = (options.exclude ?? CAPTURE_EXCLUDE_SELECTORS).flatMap((sel) =>
+      after && sel === '.radial-hub' ? HUB_NOT_PAGE_SELECTORS : [sel],
+    );
     if (options.phase === 'after') finishRunningAnimations(exclude);
     const viewport = fixedViewport();
     const width = Math.max(1, Math.round(viewport.width));
@@ -824,6 +843,13 @@ class CaptureSession implements CaptureApi {
         }
       }
       if (cover && el.matches(COVER_HIDDEN_SELECTOR)) style.setProperty('opacity', '1');
+      if (after && el.matches(HUB_ORB_SELECTOR)) {
+        // Its docked pose (radial.css, the base `.radial-hub__orb` rule), not the open one.
+        style.setProperty('transform', 'translateX(-50%)');
+        style.setProperty('scale', 'none');
+        style.setProperty('opacity', '1');
+        style.setProperty('visibility', 'visible');
+      }
       if (hubOpen && el.matches(HUB_BLURRED_SELECTOR)) style.setProperty('filter', 'none');
       return slice;
     };

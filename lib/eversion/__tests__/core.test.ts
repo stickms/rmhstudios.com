@@ -15,6 +15,7 @@ import type {
   GlCounters,
   RendererApi,
   RendererPrime,
+  TimelineConfig,
   TimelineSnapshot,
   ToWorker,
 } from '../types';
@@ -60,6 +61,9 @@ class FakeRenderer implements RendererApi {
   setTexture(slot: string, bitmap: ImageBitmap | null) {
     this.log.push(`texture ${slot} ${bitmap ? 'set' : 'free'}`);
   }
+  warm() {
+    this.log.push('warm');
+  }
   draw(s: Readonly<TimelineSnapshot>) {
     this.draws.push({ ...s });
     this.log.push('draw');
@@ -90,6 +94,7 @@ function rig(
 ) {
   const renderer = new FakeRenderer();
   const timelines: ScriptedTimeline[] = [];
+  const configs: TimelineConfig[] = [];
   const out: FromWorker[] = [];
   let nextHandle = 1;
   const queue = new Map<number, (now: number) => void>();
@@ -101,6 +106,7 @@ function rig(
       return renderer;
     },
     createTimeline: (config) => {
+      configs.push(config);
       if (envOptions.realTimeline) return new Timeline(config);
       const t = new ScriptedTimeline(timelineOptions);
       timelines.push(t);
@@ -136,6 +142,7 @@ function rig(
     renderer,
     out,
     timelines,
+    configs,
     get pending() {
       return queue.size;
     },
@@ -582,6 +589,45 @@ describe('createEversionCore: robustness', () => {
     r.send({ type: 'texture', slot: 'after', bitmap: late });
     expect(late.closed).toBe(true);
     expect(r.renderer.log.filter((l) => l === 'texture after set')).toHaveLength(0);
+  });
+
+  it('makes pages uploaded before start resident before the first frame, and never warms mid-run', () => {
+    const r = rig();
+    boot(r);
+    const bitmap = (): ImageBitmap => ({ close() {} }) as unknown as ImageBitmap;
+    r.send({ type: 'texture', slot: 'before', bitmap: bitmap() });
+    r.send({ type: 'texture', slot: 'after', bitmap: bitmap() });
+    expect(r.renderer.log.filter((l) => l === 'warm')).toHaveLength(2);
+    expect(r.renderer.log.at(-1)).toBe('warm');
+    r.send({ type: 'start', t0: 0 });
+    // Mid-run a warm-up draw would be presented as a cleared frame.
+    r.send({ type: 'texture', slot: 'after', bitmap: bitmap() });
+    expect(r.renderer.log.filter((l) => l === 'warm')).toHaveLength(2);
+  });
+
+  it('starts from the globe pose `start` carries (the hub kept turning while the destination rendered)', () => {
+    const r = rig();
+    boot(r);
+    const now = {
+      yaw: 40,
+      pitch: -5,
+      yawVel: 12,
+      pitchVel: 0,
+      centre: [150, 90] as const,
+      radius: 70,
+    };
+    r.send({ type: 'start', t0: 0, globe: { ...now, centre: [150, 90] } });
+    expect(r.timelines).toHaveLength(2);
+    expect(r.configs.at(-1)!.globe).toEqual({ ...now, centre: [150, 90] });
+    expect(r.timelines[1]!.calls[0]).toMatch(/^start/);
+    expect(r.timelines[0]!.calls).toHaveLength(0);
+  });
+
+  it('keeps the primed timeline when start carries no pose', () => {
+    const r = rig();
+    boot(r);
+    r.send({ type: 'start', t0: 0 });
+    expect(r.timelines).toHaveLength(1);
   });
 
   it('rebuilds the timeline at start when the viewport changed after prime', () => {

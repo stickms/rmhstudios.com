@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from 'react';
 import { useRouter } from '@tanstack/react-router';
-import { useTranslation } from 'react-i18next';
 import { EversionOverlay } from './EversionOverlay';
 import {
   createEversionController,
@@ -67,18 +66,17 @@ const QUIET_MS = 800;
  * looks for it in the shell's static closure on builds without sourcemaps.
  */
 export default function EversionBridge({ open, motionMs, onController }: EversionBridgeProps) {
-  const { t } = useTranslation('feed');
   const router = useRouter();
   const beforeCapture = useBeforeCapture({ open, motionMs });
   const controllerRef = useRef<EversionControllerHandle | null>(null);
   const openRef = useRef(open);
   openRef.current = open;
 
-  // The controller is built once, but the router, the translator and the
-  // capture binding change identity between renders. It reads them through
-  // this ref so it never holds a stale one.
-  const live = useRef({ router, t, beforeCapture });
-  live.current = { router, t, beforeCapture };
+  // The controller is built once, but the router and the capture binding
+  // change identity between renders. It reads them through this ref so it
+  // never holds a stale one.
+  const live = useRef({ router, beforeCapture });
+  live.current = { router, beforeCapture };
 
   useEffect(() => {
     const controller = createEversionController({
@@ -95,7 +93,6 @@ export default function EversionBridge({ open, motionMs, onController }: Eversio
         ineligibleReason: () => live.current.beforeCapture.ineligibleReason(),
         getCapture: () => live.current.beforeCapture.getCapture(),
       },
-      translate: (key, options) => String(live.current.t(key, options as never)),
     });
     controllerRef.current = controller;
     onController(controller);

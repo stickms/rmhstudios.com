@@ -47,8 +47,9 @@ export const PROJECTION_IDS = [
 export type ProjectionId = (typeof PROJECTION_IDS)[number];
 
 /**
- * The user's setting (spec §9.3): one projection, or `random` (the default —
- * a fresh draw per navigation that is never the previous one). Six values; this
+ * The user's setting (spec §9.3): one projection, or `random` (a fresh draw per
+ * navigation that is never the previous one). The default is Mercator
+ * (`lib/appearance/prefs.ts#DEFAULT_NAV_TRANSITION`, amended 2026-10-19). Six values; this
  * array is the source of truth for the API's zod enum (T20) and the select (T21).
  */
 export const NAV_TRANSITIONS = ['random', ...PROJECTION_IDS] as const;
@@ -143,10 +144,13 @@ export interface FitBase {
   readonly halfH: number;
 }
 
-/** Width ↔ 360° longitude; `y = ln tan(π/4 + φ/2)`, `halfW = π`, `halfH = π·A`. */
+/**
+ * True scale (amended 2026-10-19): `x = θ`, `y = ln tan(π/4 + φ/2)`, `halfW` the longitude that puts one page px on
+ * one screen px at the globe's front point (≤ π), `halfH = A·halfW`.
+ */
 export interface MercatorFit extends FitBase {
   readonly kind: 'mercator';
-  /** `2·atan(e^{π·A}) − π/2` — the latitude where the page ends (spec §5.3). */
+  /** `atan(sinh(halfH))` — the latitude where the page ends (spec §5.3, amended). */
   readonly phiMax: number;
 }
 
@@ -509,7 +513,10 @@ export interface TimelineApi {
    Worker protocol (spec §3.3)
    ═════════════════════════════════════════════════════════════════════════════ */
 
-/** Which page texture a bitmap is for. `placeholder` stands in for `after` until it arrives. */
+/**
+ * Which page texture a bitmap is for. `placeholder` stands in for `after` until it arrives; with no placeholder
+ * uploaded the renderer samples `after` there too (the run uploads AFTER before `start`, amended 2026-10-19).
+ */
 export type TextureSlot = 'before' | 'after' | 'placeholder';
 
 /** Whether the render loop runs in a dedicated worker or on the main thread (spec §3.2). */
@@ -597,8 +604,18 @@ export type ToWorker =
    * `t0` is the main thread's `performance.now()`; `origin` its `performance.timeOrigin`. A worker's clock
    * has another origin, and the two are related exactly by `timeOrigin` (not by when this message happened
    * to arrive), so the render side converts deadlines with the origins and ignores message latency.
+   *
+   * `globe` is the hub's globe as it is at `start` (amended 2026-10-19): the destination is rendered between
+   * `prime` and `start` while the hub stays open and its globe keeps turning, so the pose `prime` carried is
+   * stale by then. Present, it replaces the plan's and the timeline is rebuilt from it.
    */
-  | { type: 'start'; t0: number; origin?: number; refreshHz?: number }
+  | {
+      type: 'start';
+      t0: number;
+      origin?: number;
+      refreshHz?: number;
+      globe?: GlobeStartState;
+    }
   | { type: 'fast-forward' }
   | { type: 'after-failed' }
   | { type: 'resize'; viewport: Viewport }
@@ -740,6 +757,12 @@ export interface RendererApi {
   prime(p: RendererPrime): void;
   /** Upload a page bitmap (the renderer does not close it); `null` frees the slot. */
   setTexture(slot: TextureSlot, bitmap: ImageBitmap | null): void;
+  /**
+   * Draw every program once into a 1×1 scissor of the drawing buffer, cleared after, so what was just uploaded
+   * is resident before the first frame instead of being made so by it. Between runs only: mid-run it would be
+   * presented as a cleared frame.
+   */
+  warm?(): void;
   /** Draw one frame from the timeline's snapshot. */
   draw(snapshot: Readonly<TimelineSnapshot>): void;
   /** The viewport changed (spec §9.4): resize the drawing buffer. */
@@ -884,6 +907,23 @@ export type FallbackReason =
   /** The visitor pressed Back/Forward while the run was priming: nothing to do, the router already moved. */
   | 'traversal';
 
+/**
+ * What the hub needs to hand its globe over to the effect's (amended 2026-10-19), passed with the commit: the
+ * hub's glass globe swells and travels exactly as the effect's sphere does during WRAP, so the page wraps up INTO
+ * it and it dissolves into the planet instead of fading out beside it.
+ */
+export interface EversionHandover {
+  /** The effect's resting radius over the hub globe's: how far the glass globe swells. */
+  swell: number;
+  /** CSS px from the hub globe's centre to the effect's (the viewport's centre). */
+  dx: number;
+  dy: number;
+  /** ms from the commit to the start of WRAP: the frozen page's focus pull. */
+  delayMs: number;
+  /** ms WRAP takes. */
+  wrapMs: number;
+}
+
 /** How a run that DID start ended. */
 export type EversionEnd = 'done' | 'context-lost' | 'abort';
 
@@ -915,8 +955,9 @@ export interface EversionController {
   /** The hub closed or the visitor dismissed: free the BEFORE bitmap. */
   onHubClosed(): void;
   /**
-   * Confirm a destination: run the effect, calling `navigate()` immediately at
-   * start. Never throws; resolves when the overlay is gone.
+   * Confirm a destination: run the effect. It navigates while the hub is still
+   * open, behind a frozen picture of the current page, and starts the animation
+   * once the destination is captured. Never throws; resolves when the overlay is gone.
    */
   start(node: EversionNode, state: GlobeStartState): Promise<EversionOutcome>;
   /** Run the effect in place, navigating to the current route (Settings Preview, spec §9.3). */

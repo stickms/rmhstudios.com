@@ -20,10 +20,29 @@
  * the timeline's channels ({@link cosmosPresence}): it rises with the end of WRAP
  * and falls with the start of UNWRAP, both quintics of quintic channels, so it is
  * continuous in value, velocity and acceleration wherever they are, through a
- * fast-forward, a gate hold or an abort. The bodies arrive from deep behind the
- * globe and leave the same way, so none is ever drawn over the flat page: a body
- * in FRONT of the globe is shown only while the system is fully present. At the
- * flat endpoints presence is exactly 0 and the frame is the page, untouched.
+ * fast-forward, a gate hold or an abort. At the flat endpoints presence is exactly
+ * 0 and the frame is the page, untouched.
+ *
+ * ## It arrives by moving, never by fading (amended 2026-10-19)
+ *
+ * The owner: "no element should simply appear or fade in, everything should morph
+ * smoothly into each other". So nothing in the system is ever translucent on its
+ * way in or out:
+ *
+ * - every body is opaque from the first frame it is drawn. With presence 0 the
+ *   whole system is folded up behind the globe's centre (each offset from the
+ *   globe scaled to 0, pushed back past the globe), and presence SPREADS it out
+ *   along its orbits: the bodies slide out from behind the planet's limb. What
+ *   hides them meanwhile is the globe itself: the renderer depth-tests them against
+ *   the globe's surface (`gl_FragDepth` from the ray-traced point, the surface's own
+ *   depth mapping), so a body behind the globe is occluded exactly, and a planet
+ *   that passes in front of it is in front - there is no front/behind fade;
+ * - space does not tint in uniformly: it opens as a widening horizon around the
+ *   globe ({@link CosmosFrame.horizon}: a disc centred on the globe, from inside its
+ *   silhouette to past the screen's corners), the starfield and the deepened sky
+ *   inside it, the veil outside;
+ * - leaving, the same in reverse: the system folds back behind the globe and the
+ *   horizon closes into it, while the globe is still round.
  *
  * ## Where it runs
  *
@@ -36,6 +55,13 @@
 
 import { GLOBE_RADIUS_FRACTION, LIGHT_DIRECTION } from './constants';
 import type { Rgba, ThemeColours, Tier, TimelineSnapshot, Viewport } from './types';
+
+/** How far behind the globe's centre (in globe radii) a body still folded up sits. */
+const HIDE_DEPTH = 2.6;
+/** The horizon starts this far inside the globe's silhouette (in globe radii), so it opens from behind it. */
+const HORIZON_START = 0.85;
+/** The horizon's soft edge, as a fraction of the viewport's short side. */
+const HORIZON_SOFT = 0.12;
 
 /** Bodies the shader's uniform arrays hold: 2 suns, 5 planets, 3 moons. */
 export const COSMOS_MAX_BODIES = 10;
@@ -214,6 +240,11 @@ export interface CosmosFrame {
   readonly space: Float32Array;
   /** `x` presence, `y` starfield strength, `z` time (s), `w` 1 when the scene is on. */
   readonly cosmos: Float32Array;
+  /**
+   * Where space is open (CSS px, origin top-left, y down): centre `xy` (the globe's), radius `z`, edge softness
+   * `w`. Space, and the starfield in it, are drawn inside; the veil stays outside.
+   */
+  readonly horizon: Float32Array;
 }
 
 export function createCosmosFrame(): CosmosFrame {
@@ -231,6 +262,7 @@ export function createCosmosFrame(): CosmosFrame {
     lightCol: new Float32Array(4),
     space: new Float32Array(4),
     cosmos: new Float32Array(4),
+    horizon: new Float32Array(4),
   };
 }
 
@@ -400,6 +432,7 @@ export function stepCosmos(
     out.cosmos[1] = 0;
     out.cosmos[3] = 0;
     out.space[3] = 0;
+    out.horizon[2] = 0;
     writeDefaultLight(out);
     return;
   }
@@ -420,23 +453,32 @@ export function stepCosmos(
   // The globe's centre relative to the viewport centre: the orbits follow the globe.
   const gx = s.centreX - viewport.w / 2;
   const gy = s.centreY - viewport.h / 2;
-  // Arriving and leaving, every body is pushed back behind the globe and its orbit drawn in.
-  const away = 1 - arrival + (1 - departure) + (1 - budget);
-  const pushBack = -2.6 * r0 * away;
-  const spread = 0.7 + 0.3 * presence;
-  // Front bodies show only once the system is fully present (never over the flat page).
-  const frontAlpha = q5((presence - 0.6) / 0.4);
+  // Folded up behind the globe at presence 0, spread out along the orbits at 1: every offset from the globe's
+  // centre scales with `spread`, and what is not yet out is pushed back past the globe, which hides it.
+  const spread = presence;
+  const pushBack = -HIDE_DEPTH * r0 * (1 - spread);
+
+  // The horizon: from inside the globe's silhouette to past the farthest corner, the same quintic as the bodies.
+  const soft = HORIZON_SOFT * Math.min(viewport.w, viewport.h);
+  const cx = s.centreX;
+  const cy = s.centreY;
+  const far = Math.hypot(Math.max(cx, viewport.w - cx), Math.max(cy, viewport.h - cy)) + soft;
+  const r1 = HORIZON_START * s.radius;
+  out.horizon[0] = cx;
+  out.horizon[1] = cy;
+  out.horizon[2] = r1 + (far - r1) * presence;
+  out.horizon[3] = soft;
 
   let n = 0;
-  // Suns (fixed in the sky; they fade with presence). Their slots are written after the sort.
+  // Suns: fixed in the sky once out; on the way they ride the same spread out from behind the globe.
   for (let i = 0; i < scene.suns.length; i++) {
     const sun = scene.suns[i]!;
-    px[n] = sun.x;
-    py[n] = sun.y;
-    pz[n] = sun.z + pushBack * 0.5;
-    out.sunPos[i * 4] = px[n]!;
-    out.sunPos[i * 4 + 1] = py[n]!;
-    out.sunPos[i * 4 + 2] = pz[n]! + LIGHT_FORWARD * r0;
+    px[n] = gx + (sun.x - gx) * spread;
+    py[n] = gy + (sun.y - gy) * spread;
+    pz[n] = sun.z * spread + pushBack;
+    out.sunPos[i * 4] = sun.x;
+    out.sunPos[i * 4 + 1] = sun.y;
+    out.sunPos[i * 4 + 2] = sun.z + LIGHT_FORWARD * r0;
     out.sunPos[i * 4 + 3] = sun.radius;
     out.sunCol[i * 4] = sun.colour[0];
     out.sunCol[i * 4 + 1] = sun.colour[1];
@@ -466,7 +508,7 @@ export function stepCosmos(
     } else {
       const p = first + o.parent;
       const parent = scene.orbiters[o.parent]!;
-      const a = o.a * parent.radius;
+      const a = o.a * parent.radius * spread;
       x = px[p]! + a * c;
       y = py[p]! + a * sn * Math.sin(o.incl);
       z = pz[p]! + a * sn * Math.cos(o.incl);
@@ -492,44 +534,21 @@ export function stepCosmos(
     order[j + 1] = k;
   }
 
-  // Every slot, in sorted order.
+  // Every slot, in sorted order. Opaque whenever the system is drawn at all: the globe hides what is behind it.
+  const alpha = presence > 0 ? 1 : 0;
   let slot = 0;
   let behind = 0;
   for (let i = 0; i < n; i++) {
     const k = order[i]!;
-    const front = pz[k]! > 0;
-    if (!front) behind++;
+    if (pz[k]! <= 0) behind++;
     if (k < first) {
       const sun = scene.suns[k]!;
-      writeBody(
-        out,
-        slot,
-        px[k]!,
-        py[k]!,
-        pz[k]!,
-        sun.radius * (0.8 + 0.2 * presence),
-        BODY_KIND.sun,
-        k,
-        0,
-        presence * (front ? frontAlpha : 1),
-      );
+      writeBody(out, slot, px[k]!, py[k]!, pz[k]!, sun.radius, BODY_KIND.sun, k, 0, alpha);
       writeColour(out.albedo, slot, sun.colour, sun.intensity);
       writeColour(out.albedo2, slot, sun.colour, 0);
     } else {
       const o = scene.orbiters[k - first]!;
-      const alpha = presence * (front ? frontAlpha : 1);
-      writeBody(
-        out,
-        slot,
-        px[k]!,
-        py[k]!,
-        pz[k]!,
-        o.radius * (0.55 + 0.45 * presence),
-        o.kind,
-        o.seed,
-        o.ring,
-        alpha,
-      );
+      writeBody(out, slot, px[k]!, py[k]!, pz[k]!, o.radius, o.kind, o.seed, o.ring, alpha);
       writeColour(out.albedo, slot, o.albedo, o.atmosphere);
       writeColour(out.albedo2, slot, o.albedo2, 0);
     }

@@ -5,15 +5,18 @@
  *
  * Two halves. The pure eligibility rows (since 2026-10-18 a host that is not up
  * yet is no longer a row at all: every run waits for it), and the runner's priming
- * waits (BEFORE, host ready, overlay mount), which lengthen from their defaults to
- * the `ALWAYS_EVERT_*` limits. The accessibility and capability rows never move.
+ * waits (BEFORE, host ready, overlay mount, the destination's capture), which
+ * lengthen from their defaults to the `ALWAYS_EVERT_*` limits. The accessibility
+ * and capability rows never move.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  AFTER_CAPTURE_TIMEOUT_MS,
   ALWAYS_EVERT_BEFORE_WAIT_MS,
   ALWAYS_EVERT_HOST_WAIT_MS,
   ALWAYS_EVERT_OVERLAY_MOUNT_MS,
+  BACKGROUND_CAPTURE_TIMEOUT_MS,
   BEFORE_WAIT_MS,
 } from '../constants';
 import {
@@ -25,7 +28,14 @@ import {
 } from '../eligibility';
 import { EversionRunner, HOST_READY_TIMEOUT_MS } from '../runner';
 import type { RunnerDeps } from '../runner';
-import type { EversionHost, EversionNode, FallbackReason, GlobeStartState } from '../types';
+import type {
+  CaptureApi,
+  CaptureOptions,
+  EversionHost,
+  EversionNode,
+  FallbackReason,
+  GlobeStartState,
+} from '../types';
 
 const ok: EligibilityInputs = {
   flagEnabled: true,
@@ -132,7 +142,15 @@ function rig(patch: Partial<RunnerDeps>) {
   };
   const deps: RunnerDeps = {
     host: { ready: async () => host, discardCanvas() {} },
-    overlay: { mount: async () => {}, fade() {}, unmount() {} },
+    overlay: {
+      mount: async () => {},
+      hold() {},
+      raiseHold() {},
+      focusHold() {},
+      releaseHold() {},
+      fade() {},
+      unmount() {},
+    },
     page: {
       onResize: () => () => {},
       viewport: () => ({ w: 800, h: 600, dpr: 1 }),
@@ -166,7 +184,6 @@ function rig(patch: Partial<RunnerDeps>) {
     openCapture: async () => {
       throw new Error('not reached');
     },
-    placeholder: async () => bitmap(),
     projection: () => 'mercator',
     lut: () => null,
     requested: () => 'random',
@@ -277,14 +294,32 @@ describe('the runner with "Always evert globe"', () => {
 
   it('gives a slow overlay the long mount wait, and still bounds it', async () => {
     const slowMount = () => new Promise<void>((resolve) => setTimeout(resolve, 800));
-    const off = rig({ overlay: { mount: slowMount, fade() {}, unmount() {} } });
+    const off = rig({
+      overlay: {
+        mount: slowMount,
+        hold() {},
+        raiseHold() {},
+        focusHold() {},
+        releaseHold() {},
+        fade() {},
+        unmount() {},
+      },
+    });
     const offRun = off.runner.run(NODE, GLOBE);
     await vi.advanceTimersByTimeAsync(1000);
     expect((await offRun).fallback).toBe('host-error');
 
     const on = rig({
       alwaysEvert: () => true,
-      overlay: { mount: slowMount, fade() {}, unmount() {} },
+      overlay: {
+        mount: slowMount,
+        hold() {},
+        raiseHold() {},
+        focusHold() {},
+        releaseHold() {},
+        fade() {},
+        unmount() {},
+      },
     });
     const onRun = on.runner.run(NODE, GLOBE);
     await vi.advanceTimersByTimeAsync(900);
@@ -294,7 +329,15 @@ describe('the runner with "Always evert globe"', () => {
 
     const never = rig({
       alwaysEvert: () => true,
-      overlay: { mount: () => new Promise(() => {}), fade() {}, unmount() {} },
+      overlay: {
+        mount: () => new Promise(() => {}),
+        hold() {},
+        raiseHold() {},
+        focusHold() {},
+        releaseHold() {},
+        fade() {},
+        unmount() {},
+      },
     });
     const p = never.runner.run(NODE, GLOBE);
     await vi.advanceTimersByTimeAsync(ALWAYS_EVERT_OVERLAY_MOUNT_MS + 50);
@@ -337,5 +380,27 @@ describe('the runner with "Always evert globe"', () => {
     const p = r.runner.run(NODE, GLOBE);
     await vi.advanceTimersByTimeAsync(600);
     expect((await p).fallback).toBe('traversal');
+  });
+
+  it("gives the destination's capture the background timeout instead of failing a slow device", async () => {
+    for (const [always, expected] of [
+      [false, AFTER_CAPTURE_TIMEOUT_MS],
+      [true, BACKGROUND_CAPTURE_TIMEOUT_MS],
+    ] as const) {
+      const asked: (number | undefined)[] = [];
+      const capture = {
+        captureViewport: async (o: CaptureOptions) => {
+          asked.push(o.timeoutMs);
+          return { bitmap: bitmap(), width: 1, height: 1, scale: 1, durationMs: 1 };
+        },
+      } as unknown as CaptureApi;
+      const r = rig({ alwaysEvert: () => always, capture: () => capture });
+      r.deps.router.whenIdle = async () => {};
+      const p = r.runner.run(NODE, GLOBE);
+      await vi.advanceTimersByTimeAsync(10);
+      expect(asked).toEqual([expected]);
+      r.runner.dispose();
+      await p;
+    }
   });
 });

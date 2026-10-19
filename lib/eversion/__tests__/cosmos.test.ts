@@ -129,23 +129,53 @@ describe('the frame', () => {
     }
   });
 
-  it('sorts back to front and splits at the globe plane; front bodies only at full presence', () => {
+  it('sorts back to front; every body it draws is opaque (it arrives by moving, never by fading)', () => {
     const scene = buildCosmos(DESKTOP, 'high', DARK)!;
     const out = createCosmosFrame();
     for (let t = 0; t < 4600; t += 37) {
-      for (const wrap of [0.7, 0.85, 1]) {
+      for (const wrap of [0.6, 0.7, 0.85, 1]) {
         stepCosmos(scene, snap({ t, wrap }), DESKTOP, out);
         expect(out.count).toBe(COSMOS_MAX_BODIES);
         for (let i = 1; i < out.count; i++) {
           expect(out.pos[i * 4 + 2]!).toBeGreaterThanOrEqual(out.pos[(i - 1) * 4 + 2]!);
         }
-        for (let i = 0; i < out.count; i++) {
-          const front = i >= out.behind;
-          expect(out.pos[i * 4 + 2]! > 0).toBe(front);
-          if (front && out.presence < 0.6) expect(out.info[i * 4 + 3]).toBe(0);
-        }
+        for (let i = 0; i < out.count; i++) expect(out.info[i * 4 + 3]).toBe(1);
       }
     }
+  });
+
+  it('folded up behind the globe while it arrives: every body near its centre and pushed back past it', () => {
+    const scene = buildCosmos(DESKTOP, 'high', DARK)!;
+    const out = createCosmosFrame();
+    const s = snap({ wrap: 0.56 });
+    stepCosmos(scene, s, DESKTOP, out);
+    expect(out.presence).toBeGreaterThan(0);
+    expect(out.presence).toBeLessThan(0.01);
+    for (let i = 0; i < out.count; i++) {
+      const off = Math.hypot(
+        out.pos[i * 4]! - (s.centreX - 720),
+        out.pos[i * 4 + 1]! - (s.centreY - 450),
+      );
+      expect(off).toBeLessThan(0.05 * s.radius);
+      expect(out.pos[i * 4 + 2]!).toBeLessThan(-2 * s.radius);
+    }
+  });
+
+  it('opens space as a horizon around the globe: from inside its silhouette to past every corner', () => {
+    const scene = buildCosmos(DESKTOP, 'high', DARK)!;
+    const out = createCosmosFrame();
+    let last = 0;
+    for (const wrap of [0.56, 0.65, 0.75, 0.85, 0.95, 1]) {
+      const s = snap({ wrap });
+      stepCosmos(scene, s, DESKTOP, out);
+      expect(out.horizon[0]).toBe(s.centreX);
+      expect(out.horizon[1]).toBe(s.centreY);
+      expect(out.horizon[2]!).toBeGreaterThan(last);
+      last = out.horizon[2]!;
+      if (wrap === 0.56) expect(out.horizon[2]!).toBeLessThan(s.radius);
+    }
+    // Fully open: the soft edge is past the farthest corner, so every pixel is space.
+    expect(out.horizon[2]! - out.horizon[3]!).toBeGreaterThanOrEqual(Math.hypot(720, 450) - 1e-2);
   });
 
   it('uses the long axis of any viewport: orbits reach the long edge, the inner ones clear the globe', () => {

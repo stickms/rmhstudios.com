@@ -327,8 +327,8 @@ interface ThemeStore {
   colorVision: ColorVisionMode;
   setColorVision: (value: ColorVisionMode) => void;
   /**
-   * Globe-eversion navigation transition (spec §9.3). 'random' is the default
-   * and what an absent account row means. Cached in localStorage like
+   * Globe-eversion navigation transition (spec §9.3). `DEFAULT_NAV_TRANSITION`
+   * (Mercator) is the default and what an absent account row means. Cached in localStorage like
    * `reduceMotion` and synced to the account.
    */
   navTransition: NavTransition;

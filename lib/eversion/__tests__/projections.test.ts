@@ -11,7 +11,8 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { LUT_UV_EXTENT } from '../constants';
+import { globeK } from '../../globe';
+import { GLOBE_RADIUS_FRACTION, LUT_UV_EXTENT } from '../constants';
 import { PHI_MAX, PHI_MIN, THETA_MAX, THETA_MIN, wrapTheta } from '../domain';
 import { getProjection } from '../projections';
 import type { EquirectFit, FitParams, LambertFit, MercatorFit, Projection } from '../types';
@@ -200,35 +201,41 @@ describe('mercator', () => {
   describe('S#4 fit invariants', () => {
     centreSuite(mercator);
 
-    it.each(ASPECTS)('φ_max matches 2·atan(e^{πA}) − π/2 to 1e-12 at $name', ({ w, h }) => {
+    it.each(ASPECTS)('is true scale: one page px per screen px at the front point, at $name', ({ w, h }) => {
       const fit = mercator.fit(w, h) as MercatorFit;
-      const closed = 2 * Math.atan(Math.exp(Math.PI * (h / w))) - Math.PI / 2;
-      expect(Math.abs(fit.phiMax - closed)).toBeLessThan(1e-12);
+      const screenPerRad = GLOBE_RADIUS_FRACTION * Math.min(w, h) * globeK(1);
+      const pagePerRad = w / (2 * fit.halfW);
+      if (fit.halfW < Math.PI) expect(pagePerRad / screenPerRad).toBeCloseTo(1, 12);
+      else expect(pagePerRad).toBeLessThan(screenPerRad); // a page too wide for the globe closes the gore instead
+      expect(fit.halfH / fit.halfW).toBeCloseTo(h / w, 12);
+    });
+
+    it.each(ASPECTS)('φ_max is atan(sinh(halfH)) to 1e-12 at $name', ({ w, h }) => {
+      const fit = mercator.fit(w, h) as MercatorFit;
+      expect(Math.abs(fit.phiMax - Math.atan(Math.sinh(fit.halfH)))).toBeLessThan(1e-12);
       // …and it is where the page really ends: v = 0 on the north edge.
       const uv = new Float64Array(2);
       expect(mercator.forward(0, fit.phiMax - 1e-9, fit, uv)).toBe(true);
       expect(Math.abs(uv[1]!)).toBeLessThan(1e-6);
       expect(mercator.forward(0, fit.phiMax + 1e-6, fit, uv)).toBe(false);
       expect(mercator.forward(0, -fit.phiMax - 1e-6, fit, uv)).toBe(false);
+      // The left and right edges end at ±halfW: the gore behind is glass.
+      expect(mercator.forward(fit.halfW - 1e-9, 0, fit, uv)).toBe(true);
+      expect(Math.abs(uv[0]! - 1)).toBeLessThan(1e-6);
+      if (fit.halfW < Math.PI - 1e-6) expect(mercator.forward(fit.halfW + 1e-6, 0, fit, uv)).toBe(false);
     });
 
-    it('is 70.6° at 16:9 and about 89.9° at 9:19.5 (spec §5.3)', () => {
-      const deg = (r: number): number => (r * 180) / Math.PI;
-      expect(deg((mercator.fit(1600, 900) as MercatorFit).phiMax)).toBeCloseTo(70.6, 1);
-      expect(deg((mercator.fit(900, 1950) as MercatorFit).phiMax)).toBeGreaterThan(89.85);
-      expect(deg((mercator.fit(900, 1950) as MercatorFit).phiMax)).toBeLessThan(89.95);
-    });
-
-    it.each(ASPECTS)('covers sin φ_max of the sphere (±1 %) at $name', ({ w, h }) => {
+    it.each(ASPECTS)('covers (halfW/π)·sin φ_max of the sphere (±1 %) at $name', ({ w, h }) => {
       const fit = mercator.fit(w, h) as MercatorFit;
       const measured = coveredFraction(mercator, fit);
-      const analytic = Math.sin(fit.phiMax);
+      const analytic = (fit.halfW / Math.PI) * Math.sin(fit.phiMax);
       expect(Math.abs(measured - analytic) / analytic).toBeLessThan(0.01);
     });
   });
 
-  it('wraps the page edges onto the back meridian (the seam)', () => {
-    const fit = mercator.fit(1600, 900);
+  it('meets its own edges on the back meridian (the seam) when the page is wider than the globe', () => {
+    const fit = mercator.fit(4000, 900);
+    expect(fit.halfW).toBe(Math.PI);
     const uv = new Float64Array(2);
     const tp = new Float64Array(2);
     mercator.forward(THETA_MAX, 0.2, fit, uv);
@@ -242,12 +249,14 @@ describe('mercator', () => {
     expect(sphereDistance(THETA_MIN, 0, THETA_MAX, 0)).toBeLessThan(1e-12);
   });
 
-  it('singular() is the glass caps and the seam, not the interior', () => {
+  it('singular() is the glass caps, the back gore and the seam, not the interior', () => {
     const fit = mercator.fit(1600, 900) as MercatorFit;
     expect(mercator.singular(0, 0, fit)).toBe(false);
     expect(mercator.singular(0, fit.phiMax - 0.01, fit)).toBe(false);
     expect(mercator.singular(0, fit.phiMax + 0.01, fit)).toBe(true);
     expect(mercator.singular(0, PHI_MIN, fit)).toBe(true);
+    expect(mercator.singular(fit.halfW - 0.01, 0, fit)).toBe(false);
+    expect(mercator.singular(fit.halfW + 0.01, 0, fit)).toBe(true);
     expect(mercator.singular(Math.PI, 0, fit)).toBe(true);
     expect(mercator.singular(-Math.PI + 1e-5, 0, fit)).toBe(true);
   });

@@ -131,7 +131,15 @@ export function applyGlassLevel(html: HTMLElement, level: number) {
 // because this module is the one the store and the no-flash cache import.
 // `lib/eversion/types.ts` imports nothing at runtime, so this stays zod-free
 // and adds nothing to the client critical path.
-export const DEFAULT_NAV_TRANSITION: NavTransition = 'random';
+//
+// The default is Mercator (amended 2026-10-19; it was `random`): the owner asked
+// for "a better projection of the page onto the sphere". Mercator is conformal, so
+// every letter keeps its shape on the globe (only its size grows toward the
+// poles), the page wraps round the globe like a wall map onto a globe, and it is
+// the same every time. Equirectangular - what NASA's globe textures use - stretches
+// text sideways; Peirce and the azimuthal maps fold the page into petals and
+// wedges. A visitor who chose another keeps it.
+export const DEFAULT_NAV_TRANSITION: NavTransition = 'mercator';
 export { NAV_TRANSITIONS };
 export type { NavTransition };
 

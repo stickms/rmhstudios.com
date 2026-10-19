@@ -35,16 +35,9 @@
 //
 // Under software GL on a shared box a frame takes 0.3–3 s. The timeline clamps
 // each frame's `dt` to 50 ms (spec §7.7), so a 4.9 s effect then takes minutes,
-// and a destination delayed "4 s" of wall clock would arrive when the timeline is
-// 0.1 s in. Where a test is about the timeline, the suite measures the rig's
-// slowdown `k` from the run's own marks (`evert` is timeline t = 600 ms, `cover`
-// is t ≈ 50 ms) and expresses the destination delay in timeline time:
-// `delay = D × k`. On a healthy rig k ≈ 1 and the delays are the spec's literal
-// 1.2 s and 4 s. For the 4 s case the AFTER settle + capture that the spec's
-// real-time run pays after the data arrives shrink to nothing on a slow timeline,
-// so when k > 1.5 the delay is moved to just past the stretch cap (3800 + 2500 +
-// 700 ms; `destinationDelayTimeline` in lib/eversion-drive.mjs) and the AFTER still
-// misses the cap, as the spec intends.
+// and the timeline's own waits stretch with it. A slow DESTINATION is not one of them any more (amended
+// 2026-10-19): the run renders and captures the destination before the animation starts, so S#33's delay is
+// plain wall time spent with the hub open, bounded by DESTINATION_SETTLE_HARD_MS.
 //
 // ## Notes on individual tests
 //
@@ -81,13 +74,15 @@ import {
   leftovers,
   markMap,
   markOrderProblem,
-  destinationDelayTimeline,
   interceptDestination,
   openApp,
   pageShot,
   sleepUntilPage,
-  timelineSlowdown,
 } from './lib/eversion-drive.mjs';
+import {
+  DESTINATION_SETTLE_HARD_MS,
+  DESTINATION_SETTLE_SOFT_MS,
+} from '../../lib/eversion/constants.ts';
 import { ssim } from './lib/image-metrics.mjs';
 
 /* ── CLI ──────────────────────────────────────────────────────────────────── */
@@ -114,11 +109,6 @@ if (opt('--out')) process.env.EVERSION_ARTIFACT_DIR = opt('--out');
 
 /** SSIM floors (spec §11.2 S#29/S#30). */
 const SSIM_MIN = { desktop: 0.97, mobile: 0.95 };
-/** The effect's constants the suite reasons in (lib/eversion/constants.ts). */
-/** Planned UNWRAP start: the stretch cap counts from here (timeline.ts, spec 7.5). */
-const UNWRAP_DUE_MS = 3800;
-const STRETCH_CAP_MS = 2500;
-const COVER_T_MS = 50;
 
 const allErrors = [];
 const results = [];
@@ -320,14 +310,15 @@ async function assertEntryRun(sNum, app, run, { entry, href, ctx }) {
   const done = run.marks.find((x) => x.name === EVERSION_MARKS.done);
   check(sNum, done.detail?.end === 'done', `${entry}: run ended '${done.detail?.end}', not 'done'`);
 
-  // The URL changes AT start (navigate is called in start's task), not at the end.
+  // The URL changes BEFORE start (amended 2026-10-19): the destination is rendered and captured behind the frozen
+  // picture, so the globe carries it from the first frame.
   const navs = await page.evaluate(() => window.__navAt ?? []);
   const nav = navs.find((n) => n.url.startsWith(href));
   check(sNum, nav, `${entry}: no history push to ${href} was seen`);
   check(
     sNum,
-    nav.t >= m.start - 50 && nav.t <= m.cover + 50,
-    `${entry}: history push at ${fmt(nav.t)} ms, expected between start (${fmt(m.start)}) and cover (${fmt(m.cover)})`,
+    nav.t <= m.start + 1,
+    `${entry}: history push at ${fmt(nav.t)} ms, after the start mark (${fmt(m.start)})`,
   );
 
   await page
@@ -444,7 +435,7 @@ async function assertFrames(app, ctx, run, tag) {
     );
     if (sLast < floor) {
       failures.push(
-        `S#30: ${tag}: last page frame before reveal vs the live page after done: SSIM ${fmt(sLast, 4)} < ${floor}; gate-open reason '${gate}'${gate === 'after-failed' ? ' (the AFTER capture failed, so the placeholder was unwrapped)' : ''} (${f2})`,
+        `S#30: ${tag}: last page frame before reveal vs the live page after done: SSIM ${fmt(sLast, 4)} < ${floor}; gate-open reason '${gate}' (${f2})`,
       );
     }
   }
@@ -458,7 +449,6 @@ async function releaseScenario(ctx, { inThread = false } = {}) {
   // Today's navigation is the arbiter of where focus lands (see assertEntryRun); measure it
   // first, on a page of its own, so two heavy pages never share a loaded box.
   await todayBaseline(ctx);
-  let lastErr = null;
   for (let attempt = 1; attempt <= ctx.retries + 1; attempt++) {
     const app = await newApp(ctx, { init: inThread ? [INIT.noOffscreen] : [], warmMs: 8000 });
     try {
@@ -496,12 +486,6 @@ async function releaseScenario(ctx, { inThread = false } = {}) {
           `host '${start.detail.host}' (expected the worker on this browser)`,
         );
       }
-      const gate = run.marks.find((x) => x.name === EVERSION_MARKS.gateOpen)?.detail?.reason;
-      if (gate === 'after-failed' && attempt <= ctx.retries) {
-        lastErr = new Fail(`S#30: AFTER capture failed (gate '${gate}')`);
-        ctx.numbers.push(`S#${sNum} ${tag}: attempt ${attempt} had after-failed (load); retrying`);
-        continue;
-      }
       await assertFrames(app, ctx, run, tag);
       const d = run.marks.find((x) => x.name === EVERSION_MARKS.done).detail;
       ctx.numbers.push(
@@ -512,7 +496,6 @@ async function releaseScenario(ctx, { inThread = false } = {}) {
       await app.s.close();
     }
   }
-  if (lastErr) throw lastErr;
 }
 
 /** Click and Enter entries (S#25). */
@@ -617,22 +600,14 @@ async function externalPinScenario(ctx) {
 
 /* ── S#33: slow destination ───────────────────────────────────────────────── */
 
+/**
+ * A destination whose data arrives late (amended 2026-10-19). The run renders the destination BEFORE it animates,
+ * so nothing starts while the data is held: the hub stays open over the frozen picture. Released inside the free
+ * window (1.2 s) the run waits for it; held to DESTINATION_SETTLE_HARD_MS (4 s) the page is captured as it is at
+ * the hard bound and the final dissolve carries it onto what it became. Either way the gate opens on a ready AFTER
+ * (never the stretch cap: there is no AFTER left to wait for once the globe moves).
+ */
 async function slowDestinationScenario(ctx, delayMs) {
-  // An AFTER capture that misses its 1.5 s budget ends the gate with `after-failed`; on a
-  // box this loaded that is the rig, not the delay under test. Try again, and say so.
-  for (let attempt = 1; ; attempt++) {
-    try {
-      return await slowDestinationOnce(ctx, delayMs);
-    } catch (e) {
-      if (!(e instanceof Fail) || !/after-failed/.test(e.message) || attempt > ctx.retries) throw e;
-      ctx.numbers.push(
-        `S#33 ${delayMs} ms: attempt ${attempt} ended with after-failed (load); retrying`,
-      );
-    }
-  }
-}
-
-async function slowDestinationOnce(ctx, delayMs) {
   let dest = null;
   // Installed before the page loads: the shell preloads the destination's data at load,
   // so a delay armed at the click would delay nothing (see interceptDestination).
@@ -647,58 +622,57 @@ async function slowDestinationOnce(ctx, delayMs) {
   try {
     await app.openHub();
     await s.clearMarks();
+    const confirmedAt = await page.evaluate(() => performance.now());
     await app.confirm('click', '/explore');
+    const releaseAt = confirmedAt + delayMs;
+    await sleepUntilPage(page, Math.min(releaseAt, confirmedAt + DESTINATION_SETTLE_SOFT_MS - 200));
+    check(
+      33,
+      dest.held() > 0,
+      `${delayMs} ms: no request for the destination's data was held, so nothing was delayed (the loader did not fetch, or its function is not under routes/_site/explore)`,
+    );
+    const early = await page.evaluate(
+      (n) => performance.getEntriesByName(n, 'mark').length,
+      EVERSION_MARKS.start,
+    );
+    check(
+      33,
+      early === 0,
+      `${delayMs} ms: the animation started while the destination's data was held`,
+    );
+    await sleepUntilPage(page, releaseAt);
+    dest.release();
     const began = await app.waitStarted();
     check(
       33,
       began.kind === 'started',
       `${delayMs} ms: the run did not start (${began.kind}${began.reason ? `: ${began.reason}` : ''})`,
     );
-    const cover = await s.waitForMark(EVERSION_MARKS.cover, { timeout: RUN_MS });
-    const evert = await s.waitForMark(EVERSION_MARKS.evert, { timeout: RUN_MS });
-    const k = timelineSlowdown({ cover: cover.startTime, evert: evert.startTime });
-    const timelineDelay = destinationDelayTimeline(delayMs, k);
-    const releaseAt = cover.startTime + k * timelineDelay;
-    check(
-      33,
-      dest.held() > 0,
-      `${delayMs} ms: no request for the destination's data was held, so nothing was delayed (the loader did not fetch, or its function is not under routes/_site/explore)`,
-    );
-    await sleepUntilPage(page, releaseAt);
-    dest.release();
     const marks = await app.waitDone();
     const m = markMap(marks);
-    const gateMark = marks.find((x) => x.name === EVERSION_MARKS.gateOpen);
-    check(33, gateMark, `${delayMs} ms: no gate-open mark`);
-    const reason = gateMark.detail?.reason;
+    const waited = m.start - confirmedAt;
+    const reason = marks.find((x) => x.name === EVERSION_MARKS.gateOpen)?.detail?.reason;
     const done = marks.find((x) => x.name === EVERSION_MARKS.done)?.detail;
     check(33, done?.end === 'done', `${delayMs} ms: run ended '${done?.end}'`);
-    const gateTimeline = (m.gateOpen - m.cover) / k + COVER_T_MS;
     ctx.numbers.push(
-      `S#33 ${delayMs} ms: k=${fmt(k, 1)}, released at timeline ${fmt(timelineDelay)}, gate-open '${reason}' at timeline ≈ ${fmt(gateTimeline)} ms`,
+      `S#33 ${delayMs} ms: started ${fmt(waited)} ms after the confirm, gate-open '${reason}'`,
     );
-    if (delayMs >= 4000) {
+    check(
+      33,
+      reason === 'after-ready',
+      `${delayMs} ms: gate-open reason '${reason}', expected 'after-ready'`,
+    );
+    if (delayMs < DESTINATION_SETTLE_SOFT_MS) {
       check(
         33,
-        reason === 'stretch-cap',
-        `4 s delay: gate-open reason '${reason}', expected 'stretch-cap' (the placeholder must be unwrapped at the cap)`,
-      );
-      const want = UNWRAP_DUE_MS + STRETCH_CAP_MS;
-      check(
-        33,
-        gateTimeline >= want * 0.6 && gateTimeline <= want * 1.8,
-        `4 s delay: gate-open at timeline ≈ ${fmt(gateTimeline)} ms, expected near the cap (${want} ms)`,
+        waited >= delayMs,
+        `${delayMs} ms: started ${fmt(waited)} ms after the confirm, before the data arrived`,
       );
     } else {
       check(
         33,
-        reason === 'after-ready',
-        `1.2 s delay: gate-open reason '${reason}', expected 'after-ready' (the cap must not be reached)`,
-      );
-      check(
-        33,
-        gateTimeline < (UNWRAP_DUE_MS + STRETCH_CAP_MS) * 0.95,
-        `1.2 s delay: gate-open at timeline ≈ ${fmt(gateTimeline)} ms, at/after the cap`,
+        waited >= DESTINATION_SETTLE_SOFT_MS && waited < delayMs + 30_000,
+        `${delayMs} ms: started ${fmt(waited)} ms after the confirm (soft bound ${DESTINATION_SETTLE_SOFT_MS}, hard ${DESTINATION_SETTLE_HARD_MS})`,
       );
     }
     // The final crossfade lands on the live page: the destination's content is there.

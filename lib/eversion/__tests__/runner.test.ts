@@ -1,20 +1,31 @@
 // @vitest-environment node
 /**
  * The run orchestration's SEQUENCE, against scripted ports (tasks T31; spec §3.2,
- * §6.3, §9.2). The real ports (host, DOM, router) are exercised by
- * `testing/e2e/eversion-controller.mjs`; this file proves the order of events,
- * which a browser test can only sample.
+ * §6.3, §9.2; the destination-first order amended 2026-10-19). The real ports
+ * (host, DOM, router) are exercised by `testing/e2e/eversion-controller.mjs`; this
+ * file proves the order of events, which a browser test can only sample.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AFTER_CAPTURE_TIMEOUT_MS, BEFORE_WAIT_MS, MAX_RUN_MS } from '../constants';
+import {
+  AFTER_CAPTURE_TIMEOUT_MS,
+  BEFORE_WAIT_MS,
+  DESTINATION_SETTLE_HARD_MS,
+  DESTINATION_SETTLE_SOFT_MS,
+  HOLD_FADE_MS,
+  MAX_RUN_MS,
+  UPLOAD_SETTLE_FRAMES,
+  WRAP_MS,
+} from '../constants';
 import { EversionRunner, HOST_READY_TIMEOUT_MS, OVERLAY_MOUNT_TIMEOUT_MS } from '../runner';
 import type { RunnerDeps } from '../runner';
 import type { SettleReport, SettleRequest } from '../settle';
 import type {
   CaptureApi,
+  EversionHandover,
   EversionHost,
   EversionNode,
+  EversionOutcome,
   FromWorker,
   GlobeStartState,
   ToWorker,
@@ -88,7 +99,9 @@ function rig(patch: Partial<RunnerDeps> = {}, captureImpl?: () => Promise<unknow
     mode: 'worker',
     post(message) {
       posted.push(message);
-      log.push(`post:${message.type}`);
+      log.push(
+        message.type === 'texture' ? `post:texture:${message.slot}` : `post:${message.type}`,
+      );
     },
     subscribe(l) {
       listeners.add(l);
@@ -107,7 +120,10 @@ function rig(patch: Partial<RunnerDeps> = {}, captureImpl?: () => Promise<unknow
   const capture = {
     captureViewport: vi.fn(
       captureImpl ??
-        (async () => ({ bitmap: bitmap(), width: 1, height: 1, scale: 1, durationMs: 1 })),
+        (async () => {
+          log.push('capture');
+          return { bitmap: bitmap(), width: 1, height: 1, scale: 1, durationMs: 1 };
+        }),
     ),
   };
   const deps: RunnerDeps = {
@@ -117,8 +133,12 @@ function rig(patch: Partial<RunnerDeps> = {}, captureImpl?: () => Promise<unknow
     },
     overlay: {
       mount: async () => void log.push('overlay:mount'),
-      fade: () => log.push('overlay:fade'),
-      unmount: () => log.push('overlay:unmount'),
+      hold: () => void log.push('overlay:hold'),
+      raiseHold: () => void log.push('overlay:raise-hold'),
+      focusHold: () => void log.push('overlay:focus-hold'),
+      releaseHold: () => void log.push('overlay:release-hold'),
+      fade: () => void log.push('overlay:fade'),
+      unmount: () => void log.push('overlay:unmount'),
     },
     page: {
       onResize(cb) {
@@ -168,7 +188,6 @@ function rig(patch: Partial<RunnerDeps> = {}, captureImpl?: () => Promise<unknow
     awaitBefore: async () => bitmap(),
     capture: () => capture as unknown as CaptureApi,
     openCapture: async () => capture as unknown as CaptureApi,
-    placeholder: async () => bitmap(),
     projection: () => 'mercator',
     lut: () => null,
     requested: () => 'random',
@@ -211,15 +230,34 @@ function rig(patch: Partial<RunnerDeps> = {}, captureImpl?: () => Promise<unknow
 }
 
 const flush = async () => {
-  for (let i = 0; i < 20; i++) await Promise.resolve();
+  for (let i = 0; i < 1000; i++) await Promise.resolve();
 };
 
+/**
+ * Run to the point of no return: the destination is idle, settled and captured, and `start` is posted (or the run
+ * has ended without it). Resolves with the run's own promise, wrapped so it is not awaited here.
+ */
+async function toStart(
+  r: Rig,
+  ...args: Parameters<EversionRunner['run']> | []
+): Promise<{ run: Promise<EversionOutcome> }> {
+  const run = args.length
+    ? r.runner.run(...(args as Parameters<EversionRunner['run']>))
+    : r.runner.run(NODE, GLOBE, 'release');
+  await flush();
+  r.routerIdle.resolve();
+  await flush();
+  return { run };
+}
+
 const DONE: FromWorker = { type: 'done', frames: 10, dropped: 1, p95: 17 };
+const hasStart = (r: Rig) => r.posted.some((m) => m.type === 'start');
+const navigated = (r: Rig) => r.log.some((l) => l.startsWith('navigate'));
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
-describe('eversion runner: the fallback paths (today runs; no overlay, no navigate)', () => {
+describe('eversion runner: the fallback paths (today runs; nothing navigated)', () => {
   it('ineligible: returns the reason, marks fallback, touches nothing', async () => {
     const r = rig({ ineligibleReason: () => 'reduced-motion' });
     const out = await r.runner.run(NODE, GLOBE);
@@ -232,7 +270,7 @@ describe('eversion runner: the fallback paths (today runs; no overlay, no naviga
     const out = await r.runner.run(NODE, GLOBE);
     expect(out.fallback).toBe('before-missing');
     expect(r.log).not.toContain('overlay:mount');
-    expect(r.log.some((l) => l.startsWith('navigate'))).toBe(false);
+    expect(navigated(r)).toBe(false);
   });
 
   it('BEFORE that took the whole wait is a timeout', async () => {
@@ -270,11 +308,21 @@ describe('eversion runner: the fallback paths (today runs; no overlay, no naviga
     const out = await r.runner.run(NODE, GLOBE);
     expect(out.fallback).toBe('host-error');
     expect(before.close).toHaveBeenCalled();
-    expect(r.log.some((l) => l.startsWith('navigate'))).toBe(false);
+    expect(navigated(r)).toBe(false);
   });
 
   it('overlay that never attaches: host-error', async () => {
-    const r = rig({ overlay: { mount: () => new Promise(() => {}), fade() {}, unmount() {} } });
+    const r = rig({
+      overlay: {
+        mount: () => new Promise(() => {}),
+        hold() {},
+        raiseHold() {},
+        focusHold() {},
+        releaseHold() {},
+        fade() {},
+        unmount() {},
+      },
+    });
     const p = r.runner.run(NODE, GLOBE);
     await vi.advanceTimersByTimeAsync(OVERLAY_MOUNT_TIMEOUT_MS + 50);
     expect((await p).fallback).toBe('host-error');
@@ -311,16 +359,34 @@ describe('eversion runner: the fallback paths (today runs; no overlay, no naviga
     expect(Date.now() - started).toBeLessThanOrEqual(HOST_READY_TIMEOUT_MS + 50);
   });
 
-  it('placeholder failure (before start): host-error and no navigate', async () => {
-    const r = rig({
-      placeholder: async () => {
-        throw new Error('2d');
-      },
-    });
+  it('a prime that cannot be posted: host-error, the picture taken down, no navigate', async () => {
+    const r = rig();
+    const host = await r.deps.host.ready('mid', 1);
+    const post = host.post.bind(host);
+    host.post = (m) => {
+      if (m.type === 'prime') throw new Error('worker gone');
+      post(m);
+    };
     const out = await r.runner.run(NODE, GLOBE);
     expect(out.fallback).toBe('host-error');
-    expect(r.log.some((l) => l.startsWith('navigate'))).toBe(false);
+    expect(navigated(r)).toBe(false);
+    expect(r.log).toContain('overlay:unmount');
+    // The host is fine otherwise: told to stop, its canvas and programs kept.
+    expect(r.posted.map((m) => m.type)).toContain('abort');
+    expect(r.log).not.toContain('discardCanvas');
     expect(r.runner.state().phase).toBe('idle');
+  });
+
+  it('a fatal render-side error before the navigation falls back and discards the canvas', async () => {
+    const r = rig();
+    // The frames that put the picture on screen: the render side reports its loss in the meantime.
+    r.deps.page.nextFrame = async () => {
+      r.emit({ type: 'error', fatal: true, message: 'gl' } as FromWorker);
+    };
+    const out = await r.runner.run(NODE, GLOBE);
+    expect(out.fallback).toBe('host-error');
+    expect(r.log).toContain('discardCanvas');
+    expect(navigated(r)).toBe(false);
   });
 
   it('a second run while one is in flight falls back (the caller navigates as today)', async () => {
@@ -331,88 +397,259 @@ describe('eversion runner: the fallback paths (today runs; no overlay, no naviga
   });
 });
 
-describe('eversion runner: the sequence', () => {
-  function started(r: Rig) {
-    return r.runner.run(NODE, GLOBE, 'release');
-  }
-
-  it('primes, uploads BEFORE and the placeholder, then start and navigate in one task', async () => {
+describe('eversion runner: the destination is rendered before the animation (amended 2026-10-19)', () => {
+  it('picture, prime and BEFORE; then cover and navigate; settle and capture AFTER; upload it; then start', async () => {
     const r = rig();
-    const p = started(r);
-    await flush();
+    const p = (await toStart(r)).run;
     void p;
-    const order = r.log.filter((l) => /^(post|navigate|mark:start)/.test(l));
+    const order = r.log.filter((l) =>
+      /^(overlay:hold|post|cover|navigate|router-idle|gate$|settle|capture|mark:start)/.test(l),
+    );
     expect(order).toEqual([
+      'overlay:hold',
       'post:prime',
-      'post:texture',
-      'post:texture',
+      'post:texture:before',
+      'cover:on',
+      'navigate:/games',
+      'router-idle',
+      'gate',
+      'settle:on',
+      'capture',
+      'settle:off',
+      'post:texture:after',
       'mark:start',
       'post:start',
-      'navigate:/games',
     ]);
-    // Nothing between start and navigate: they are adjacent entries of the log.
-    const i = r.log.indexOf('post:start');
-    expect(r.log[i + 1]).toBe('navigate:/games');
+    // Both real pages and nothing else: no placeholder is ever sent.
     expect(r.posted.filter((m) => m.type === 'texture').map((m) => m.slot)).toEqual([
       'before',
-      'placeholder',
+      'after',
+    ]);
+    expect(r.runner.state()).toMatchObject({ beforeReady: true, afterReady: true });
+  });
+
+  it('the picture is on screen (two frames) before the page under it may change', async () => {
+    const r = rig();
+    await toStart(r);
+    const held = r.log.indexOf('overlay:hold');
+    const nav = r.log.indexOf('navigate:/games');
+    expect(r.log.slice(held, nav).filter((l) => l === 'raf').length).toBeGreaterThanOrEqual(2);
+    // And the shell is hidden under it first.
+    expect(r.log.indexOf('cover:on')).toBeLessThan(nav);
+    expect(r.log.indexOf('cover:on')).toBeGreaterThan(held);
+  });
+
+  it('lifts the picture over the canvas before start, never before the destination is captured', async () => {
+    const r = rig();
+    r.settle.hold();
+    void r.runner.run(NODE, GLOBE);
+    await flush();
+    r.routerIdle.resolve();
+    await flush();
+    // While the destination renders the picture stays under the floating UI.
+    expect(r.log).not.toContain('overlay:raise-hold');
+    r.settle.release();
+    await flush();
+    const raised = r.log.indexOf('overlay:raise-hold');
+    expect(raised).toBeGreaterThan(r.log.indexOf('post:texture:after'));
+    // At least a frame between the raise and the start, so the canvas cannot draw over the picture.
+    expect(
+      r.log.slice(raised, r.log.indexOf('post:start')).filter((l) => l === 'raf').length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(r.log.filter((l) => l === 'overlay:raise-hold')).toHaveLength(1);
+  });
+
+  it('waits UPLOAD_SETTLE_FRAMES after handing over AFTER, so the first frame uploads nothing', async () => {
+    const r = rig();
+    await toStart(r);
+    const uploaded = r.log.indexOf('post:texture:after');
+    const focus = r.log.indexOf('overlay:focus-hold');
+    expect(r.log.slice(uploaded, focus).filter((l) => l === 'raf')).toHaveLength(
+      UPLOAD_SETTLE_FRAMES,
+    );
+  });
+
+  it('the hub lets go first: commit with the hand-over, the picture pulled into focus, THEN the start', async () => {
+    const handovers: EversionHandover[] = [];
+    const r = rig();
+    r.deps.page.onInput = () => () => {};
+    await toStart(r, NODE, GLOBE, 'release', {
+      onCommit: (h) => {
+        handovers.push(h);
+        r.log.push('commit');
+      },
+    });
+    const order = r.log.filter((l) =>
+      /^(overlay:raise-hold|commit|overlay:focus-hold|post:start)/.test(l),
+    );
+    expect(order).toEqual(['overlay:raise-hold', 'commit', 'overlay:focus-hold', 'post:start']);
+    // The hub's globe swells and travels exactly as the effect's sphere will: to 0.44 of the short side, centred.
+    expect(handovers).toEqual([
+      {
+        swell: (0.44 * 600) / GLOBE.radius,
+        dx: 400 - GLOBE.centre[0],
+        dy: 300 - GLOBE.centre[1],
+        delayMs: HOLD_FADE_MS,
+        wrapMs: WRAP_MS,
+      },
     ]);
   });
 
-  it('navigates to the URL at START, before any frame has been reported', async () => {
-    const r = rig();
-    void started(r);
-    await flush();
-    expect(r.log).toContain('navigate:/games');
-    expect(r.log).not.toContain('mark:cover');
-    expect(r.log).not.toContain('mark:done');
+  it('the focus pull lasts HOLD_FADE_MS on the clock before WRAP starts', async () => {
+    let t = 0;
+    const r = rig({ now: () => t });
+    r.deps.page.nextFrame = async () => {
+      t += 16;
+      r.log.push('raf');
+    };
+    await toStart(r);
+    const focus = r.log.indexOf('overlay:focus-hold');
+    const start = r.log.indexOf('post:start');
+    const frames = r.log.slice(focus, start).filter((l) => l === 'raf').length;
+    expect(frames).toBe(Math.ceil(HOLD_FADE_MS / 16));
   });
 
-  it('cover class is on only between cover and uncover', async () => {
+  it('the picture is dropped (not faded) on the first frame: it is that same frame, sharp', async () => {
     const r = rig();
-    const p = started(r);
+    const p = (await toStart(r)).run;
+    expect(r.log).not.toContain('overlay:release-hold');
+    r.emit({ type: 'cover' });
+    expect(r.log.filter((l) => l === 'overlay:release-hold')).toHaveLength(1);
+    r.emit(DONE);
+    await p;
+  });
+
+  it('nothing is navigated, settled, captured or uploaded once the animation runs', async () => {
+    const r = rig();
+    const p = (await toStart(r)).run;
+    const from = r.log.indexOf('post:start');
+    r.emit({ type: 'cover' });
+    r.emit({ type: 'stage', stage: 'evert', t: 1 });
+    r.emit({ type: 'uncover' });
     await flush();
-    expect(r.log).not.toContain('cover:on');
+    r.emit(DONE);
+    await p;
+    const after = r.log.slice(from);
+    expect(after.some((l) => /^(navigate|gate|settle:on|capture|post:texture)/.test(l))).toBe(
+      false,
+    );
+    // And the document is no longer watched while it runs.
+    expect(r.log.indexOf('watch:dispose')).toBeLessThan(from);
+  });
+
+  it('does not start while the destination is still loading', async () => {
+    const r = rig();
+    r.settle.hold();
+    void r.runner.run(NODE, GLOBE);
+    await flush();
+    expect(navigated(r)).toBe(true);
+    expect(hasStart(r)).toBe(false);
+    r.routerIdle.resolve();
+    await flush();
+    // Router idle, gate still waiting (skeletons on screen, a query in flight): nothing captured, nothing started.
+    expect(r.log).toContain('gate');
+    expect(r.capture.captureViewport).not.toHaveBeenCalled();
+    expect(hasStart(r)).toBe(false);
+    // The content lands; only then is the page frozen into a texture, and the effect starts.
+    r.settle.release();
+    await flush();
+    expect(r.capture.captureViewport).toHaveBeenCalledTimes(1);
+    expect(hasStart(r)).toBe(true);
+  });
+
+  it('starts from the globe as it is at start when the caller can say (the hub kept turning)', async () => {
+    const now: GlobeStartState = { ...GLOBE, yaw: 42, yawVel: 3 };
+    const r = rig();
+    await toStart(r, NODE, GLOBE, 'release', { globe: () => now });
+    expect(r.posted.find((m) => m.type === 'prime')).toMatchObject({ globe: GLOBE });
+    expect(r.posted.find((m) => m.type === 'start')).toMatchObject({ globe: now });
+
+    const plain = rig();
+    await toStart(plain);
+    expect(plain.posted.find((m) => m.type === 'start')).not.toHaveProperty('globe');
+  });
+
+  it('a window resized while the destination rendered is sent before start', async () => {
+    let v: Viewport = { w: 800, h: 600, dpr: 1 };
+    const r = rig();
+    r.deps.page.viewport = () => v;
+    r.settle.hold();
+    void r.runner.run(NODE, GLOBE);
+    await flush();
+    v = { w: 600, h: 800, dpr: 1 };
+    r.routerIdle.resolve();
+    await flush();
+    r.settle.release();
+    await flush();
+    const types = r.posted.map((m) => m.type);
+    expect(types.indexOf('resize')).toBeGreaterThan(-1);
+    expect(types.indexOf('resize')).toBeLessThan(types.indexOf('start'));
+    expect(r.posted.find((m) => m.type === 'resize')).toEqual({ type: 'resize', viewport: v });
+  });
+
+  it('cover class: on from the navigation until uncover, once; the cover message does not toggle it', async () => {
+    const r = rig();
+    const p = (await toStart(r)).run;
+    expect(r.log.filter((l) => l.startsWith('cover:'))).toEqual(['cover:on']);
     r.emit({ type: 'cover' });
     expect(r.runner.state().coverActive).toBe(true);
     expect(r.log.filter((l) => l.startsWith('cover:'))).toEqual(['cover:on']);
 
     r.emit({ type: 'uncover' });
     await flush();
-    const onAt = r.log.indexOf('cover:on');
     const offAt = r.log.indexOf('cover:off');
     const revealAt = r.log.indexOf('post:reveal');
-    expect(onAt).toBeGreaterThan(-1);
-    expect(offAt).toBeGreaterThan(onAt);
+    expect(offAt).toBeGreaterThan(r.log.indexOf('post:start'));
     // Off BEFORE reveal, with two rAFs between (spec §6.6).
     expect(revealAt).toBeGreaterThan(offAt);
-    const between = r.log.slice(offAt, revealAt).filter((l) => l === 'raf');
-    expect(between.length).toBeGreaterThanOrEqual(2);
+    expect(r.log.slice(offAt, revealAt).filter((l) => l === 'raf').length).toBeGreaterThanOrEqual(
+      2,
+    );
     expect(r.runner.state().coverActive).toBe(false);
 
     r.emit(DONE);
-    const out = await p;
-    expect(out).toEqual({
+    expect(await p).toEqual({
       fallback: null,
       end: 'done',
       stats: { frames: 10, dropped: 1, p95: 17 },
     });
-    // never turned on again
     expect(r.log.filter((l) => l === 'cover:on')).toHaveLength(1);
   });
 
-  it('the live page is handed back sharp from the first cover, and released only after the run has ended', async () => {
+  it('the frozen picture fades onto the first frame (the cover message), once', async () => {
     const r = rig();
-    const p = started(r);
-    await flush();
-    expect(r.log).not.toContain('live:on');
+    const p = (await toStart(r)).run;
+    expect(r.log).not.toContain('overlay:release-hold');
     r.emit({ type: 'cover' });
-    // Live goes on with (and just before) the cover class: the blur is dropped while the page is invisible.
-    expect(r.log.indexOf('live:on')).toBeGreaterThan(-1);
-    expect(r.log.indexOf('live:on')).toBeLessThan(r.log.indexOf('cover:on'));
+    r.emit({ type: 'cover' });
     r.emit({ type: 'uncover' });
     await flush();
-    // The cover comes off at uncover; the page stays sharp (it is what the canvas dissolves onto).
+    expect(r.log.filter((l) => l === 'overlay:release-hold')).toHaveLength(1);
+    expect(r.log.indexOf('overlay:release-hold')).toBeGreaterThan(r.log.indexOf('mark:cover'));
+    r.emit(DONE);
+    await p;
+  });
+
+  it('a run whose first frame is never reported still lets go of the picture at uncover', async () => {
+    const r = rig();
+    const p = (await toStart(r)).run;
+    r.emit({ type: 'uncover' });
+    await flush();
+    expect(r.log.indexOf('overlay:release-hold')).toBeLessThan(r.log.indexOf('post:reveal'));
+    r.emit(DONE);
+    await p;
+  });
+
+  it('the live page is sharp from the cover, and released only after the run has ended', async () => {
+    const r = rig();
+    const p = (await toStart(r)).run;
+    // Live goes on with (and just before) the cover class, before the navigation: the page is invisible then.
+    expect(r.log.indexOf('live:on')).toBeGreaterThan(-1);
+    expect(r.log.indexOf('live:on')).toBeLessThan(r.log.indexOf('cover:on'));
+    expect(r.log.indexOf('live:on')).toBeLessThan(r.log.indexOf('navigate:/games'));
+    r.emit({ type: 'cover' });
+    r.emit({ type: 'uncover' });
+    await flush();
     expect(r.log).toContain('cover:off');
     expect(r.log).not.toContain('live:off');
     r.emit(DONE);
@@ -425,8 +662,7 @@ describe('eversion runner: the sequence', () => {
 
   it('a duplicate uncover posts reveal once', async () => {
     const r = rig();
-    void started(r);
-    await flush();
+    await toStart(r);
     r.emit({ type: 'cover' });
     r.emit({ type: 'uncover' });
     r.emit({ type: 'uncover' });
@@ -436,8 +672,7 @@ describe('eversion runner: the sequence', () => {
 
   it('done unmounts the overlay, leaves nothing on the document, and resolves', async () => {
     const r = rig();
-    const p = started(r);
-    await flush();
+    const p = (await toStart(r)).run;
     r.emit({ type: 'cover' });
     r.emit(DONE);
     await p;
@@ -448,143 +683,111 @@ describe('eversion runner: the sequence', () => {
     expect(r.log.lastIndexOf('cover:off')).toBeGreaterThan(r.log.lastIndexOf('cover:on'));
   });
 
-  it('emits the stage marks in order with the gate-open reason', async () => {
-    const r = rig();
-    const p = started(r);
-    await flush();
+  it('emits the stage marks in order, the gate opening on a ready AFTER', async () => {
+    const details: { name: string; detail: unknown }[] = [];
+    const r = rig({
+      mark: (name, detail) => void details.push({ name, detail }),
+    });
+    const p = (await toStart(r)).run;
     r.emit({ type: 'cover' });
     r.emit({ type: 'stage', stage: 'evert', t: 1 });
-    r.routerIdle.resolve();
-    await flush();
     r.emit({ type: 'stage', stage: 'gate-open', t: 2 });
     r.emit({ type: 'stage', stage: 'unwrap', t: 3 });
     r.emit({ type: 'uncover' });
     await flush();
     r.emit(DONE);
     await p;
-    const marks = r.log.filter((l) => l.startsWith('mark:'));
-    expect(marks).toEqual([
-      'mark:start',
-      'mark:cover',
-      'mark:evert',
-      'mark:gateOpen',
-      'mark:unwrap',
-      'mark:reveal',
-      'mark:done',
+    expect(details.map((d) => d.name)).toEqual([
+      'start',
+      'cover',
+      'evert',
+      'gateOpen',
+      'unwrap',
+      'reveal',
+      'done',
     ]);
+    expect(details.find((d) => d.name === 'gateOpen')?.detail).toEqual({ reason: 'after-ready' });
   });
 });
 
-describe('eversion runner: AFTER', () => {
-  it('waits for the router, then the readiness gate, captures with the settle attribute, uploads', async () => {
+describe('eversion runner: capturing the destination', () => {
+  it('waits for the router, then the readiness gate, captures with the settle attribute', async () => {
     const r = rig();
-    const p = r.runner.run(NODE, GLOBE);
+    void r.runner.run(NODE, GLOBE);
     await flush();
     expect(r.capture.captureViewport).not.toHaveBeenCalled(); // router not idle yet
     expect(r.log).not.toContain('gate');
     r.routerIdle.resolve();
     await flush();
-    const order = r.log.filter((l) => /^(router-idle|gate|settle:on|post:texture)/.test(l));
-    expect(order.indexOf('gate')).toBeGreaterThan(order.indexOf('router-idle'));
+    expect(r.log.indexOf('gate')).toBeGreaterThan(r.log.indexOf('router-idle'));
     const iOn = r.log.indexOf('settle:on');
-    const iOff = r.log.indexOf('settle:off');
     expect(r.log.indexOf('gate-done:settled')).toBeLessThan(iOn);
-    expect(iOff).toBeGreaterThan(iOn);
-    const after = r.posted.filter((m) => m.type === 'texture' && m.slot === 'after');
-    expect(after).toHaveLength(1);
+    expect(r.log.indexOf('settle:off')).toBeGreaterThan(iOn);
     expect(r.capture.captureViewport).toHaveBeenCalledWith(
-      expect.objectContaining({ phase: 'after', scaleCap: 1.25 }),
+      expect.objectContaining({
+        phase: 'after',
+        scaleCap: 1.25,
+        timeoutMs: AFTER_CAPTURE_TIMEOUT_MS,
+      }),
     );
-    expect(r.runner.state().afterReady).toBe(true);
-    r.emit(DONE);
-    await p;
   });
 
-  it('a destination whose content is late is NOT captured until the gate says it is settled', async () => {
-    const r = rig();
+  it('bounds the gate from the navigation: every condition until soft, activity only until hard', async () => {
+    let t = 1000;
+    const r = rig({ now: () => t });
     r.settle.hold();
-    const p = r.runner.run(NODE, GLOBE);
+    void r.runner.run(NODE, GLOBE);
     await flush();
-    r.routerIdle.resolve();
-    await flush();
-    // Router idle, gate still waiting (skeletons on screen, a query in flight): nothing captured, nothing sent.
-    expect(r.log).toContain('gate');
-    expect(r.capture.captureViewport).not.toHaveBeenCalled();
-    expect(r.posted.some((m) => m.type === 'texture' && m.slot === 'after')).toBe(false);
-    expect(r.posted.some((m) => m.type === 'after-failed')).toBe(false);
-    // The content lands; only then is the page frozen into a texture.
-    r.settle.release();
-    await flush();
-    expect(r.capture.captureViewport).toHaveBeenCalledTimes(1);
-    expect(r.posted.filter((m) => m.type === 'texture' && m.slot === 'after')).toHaveLength(1);
-    r.emit(DONE);
-    await p;
-  });
-
-  it("the gate is bounded by the timeline's own AFTER deadline (need-after-by), worked back from the cap", async () => {
-    const r = rig();
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
+    t = 1100;
     r.routerIdle.resolve();
     await flush();
     const req = r.settle.requests[0]!;
-    // Until the render side reports its own, the nominal plan's: start (t0 = 0) + 3800 + the 2500 cap.
-    expect(req.hard()).toBe(6300 - 320 - 300);
-    expect(req.soft()).toBe(req.hard() - 2500);
-    // A slower timeline (a loaded GPU) says so, and the bounds follow it.
-    r.emit({ type: 'need-after-by', deadline: 9000 });
-    expect(req.hard()).toBe(9000 - 320 - 300);
-    expect(req.soft()).toBe(9000 - 320 - 300 - 2500);
-    r.emit(DONE);
-    await p;
+    expect(req.soft()).toBe(1000 + DESTINATION_SETTLE_SOFT_MS);
+    expect(req.hard()).toBe(1000 + DESTINATION_SETTLE_HARD_MS);
+    expect(DESTINATION_SETTLE_HARD_MS).toBeGreaterThan(DESTINATION_SETTLE_SOFT_MS);
+    // Bounded: the hub sits open while this runs.
+    expect(DESTINATION_SETTLE_HARD_MS).toBeLessThanOrEqual(5000);
   });
 
-  it('a fast-forward or an abort hurries the gate; an ended run or a started UNWRAP cancels it', async () => {
+  it('a press while waiting hurries the gate; back/forward cancels it', async () => {
     const r = rig();
     r.settle.hold();
-    const p = r.runner.run(NODE, GLOBE);
+    void r.runner.run(NODE, GLOBE);
     await flush();
     r.routerIdle.resolve();
     await flush();
     const req = r.settle.requests[0]!;
     expect(req.hurried()).toBe(false);
     expect(req.cancelled()).toBe(false);
-    r.input(); // a press: fast-forward
+    r.input();
     expect(req.hurried()).toBe(true);
-    r.emit({ type: 'stage', stage: 'unwrap', t: 1 });
+    r.traverse();
     expect(req.cancelled()).toBe(true);
-    r.settle.release({ reason: 'cancelled', settled: false });
-    await flush();
-    // Cancelled: nothing is captured for a run that no longer wants AFTER.
-    expect(r.capture.captureViewport).not.toHaveBeenCalled();
-    r.emit(DONE);
-    await p;
   });
 
-  it('a page that cannot be watched still gets its two frames and a capture (the gate is an improvement, not a dependency)', async () => {
+  it('a page that cannot be watched still gets its two frames and a capture', async () => {
     const r = rig();
     r.deps.page.watchSettle = () => {
       throw new Error('no document');
     };
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
-    r.routerIdle.resolve();
-    await flush();
+    await toStart(r);
     expect(r.log).not.toContain('gate');
-    const afterIdle = r.log.slice(r.log.indexOf('router-idle'));
+    const afterIdle = r.log.slice(r.log.indexOf('router-idle'), r.log.indexOf('capture'));
     expect(afterIdle.filter((l) => l === 'raf').length).toBeGreaterThanOrEqual(2);
-    expect(r.posted.filter((m) => m.type === 'texture' && m.slot === 'after')).toHaveLength(1);
-    r.emit(DONE);
-    await p;
+    expect(hasStart(r)).toBe(true);
   });
 
-  it('stops watching the document when the run ends', async () => {
+  it('a router that never settles is waited on to the hard bound, then the page is taken as it is', async () => {
     const r = rig();
     const p = r.runner.run(NODE, GLOBE);
     await flush();
+    await vi.advanceTimersByTimeAsync(DESTINATION_SETTLE_HARD_MS - 100);
+    expect(r.capture.captureViewport).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(200);
+    expect(r.capture.captureViewport).toHaveBeenCalledTimes(1);
+    expect(hasStart(r)).toBe(true);
     r.emit(DONE);
     await p;
-    expect(r.log).toContain('watch:dispose');
   });
 
   it('the debug seam sees the AFTER bitmap and what the gate found, before it is handed over', async () => {
@@ -596,122 +799,27 @@ describe('eversion runner: AFTER', () => {
       },
     });
     r.settle.answer(async () => ({ ...SETTLED, reason: 'rested', settled: false, waitedMs: 1234 }));
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
-    r.routerIdle.resolve();
-    await flush();
+    await toStart(r);
     expect(seen).toHaveLength(1);
     expect(seen[0]!.settle).toMatchObject({ reason: 'rested', waitedMs: 1234 });
-    expect(r.posted.filter((m) => m.type === 'texture' && m.slot === 'after')).toHaveLength(1);
-    r.emit(DONE);
-    await p;
+    expect(hasStart(r)).toBe(true);
   });
 
-  it('a throwing capture sends after-failed, and the gate reason says so', async () => {
-    const r = rig({}, async () => {
-      throw new Error('tainted');
-    });
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
-    r.routerIdle.resolve();
-    await flush();
-    expect(r.posted.some((m) => m.type === 'after-failed')).toBe(true);
-    expect(r.posted.some((m) => m.type === 'texture' && m.slot === 'after')).toBe(false);
-    // The attribute is not left behind.
-    expect(r.log.lastIndexOf('settle:off')).toBeGreaterThan(r.log.lastIndexOf('settle:on'));
-    r.emit(DONE);
-    await p;
-  });
-
-  it('a capture that never returns times out into after-failed', async () => {
-    const r = rig({}, () => new Promise(() => {}));
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
-    r.routerIdle.resolve();
-    await flush();
-    expect(r.posted.some((m) => m.type === 'after-failed')).toBe(false);
-    await vi.advanceTimersByTimeAsync(1600);
-    expect(r.posted.some((m) => m.type === 'after-failed')).toBe(true);
-    r.emit(DONE);
-    await p;
-  });
-
-  it('a router that never settles is an AFTER failure at AFTER_CAPTURE_TIMEOUT_MS', async () => {
-    const r = rig();
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
-    await vi.advanceTimersByTimeAsync(AFTER_CAPTURE_TIMEOUT_MS - 100);
-    expect(r.posted.some((m) => m.type === 'after-failed')).toBe(false);
-    await vi.advanceTimersByTimeAsync(200);
-    expect(r.posted.filter((m) => m.type === 'after-failed')).toHaveLength(1);
-    expect(r.capture.captureViewport).not.toHaveBeenCalled();
-    expect(r.posted.some((m) => m.type === 'texture' && m.slot === 'after')).toBe(false);
-    r.emit(DONE);
-    await p;
-  });
-
-  it('an AFTER that lands after the run ended is closed, not uploaded', async () => {
-    const late = bitmap();
-    let finishCapture!: (v: unknown) => void;
-    const r = rig({}, () => new Promise((res) => (finishCapture = res)));
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
-    r.routerIdle.resolve();
-    await flush();
-    r.emit(DONE);
-    await p;
-    finishCapture({ bitmap: late, width: 1, height: 1, scale: 1, durationMs: 1 });
-    await flush();
-    expect(late.close).toHaveBeenCalled();
-    expect(r.posted.filter((m) => m.type === 'texture' && m.slot === 'after')).toHaveLength(0);
-  });
-
-  it('a run that ends while the runner is still opening its own capture session never sets the settle attribute', async () => {
-    let openIt!: (c: CaptureApi) => void;
+  it('opens its own capture session when the hub has none, and disposes it with the run', async () => {
     const dispose = vi.fn();
     const own = {
-      captureViewport: vi.fn(),
+      captureViewport: vi.fn(async () => ({
+        bitmap: bitmap(),
+        width: 1,
+        height: 1,
+        scale: 1,
+        durationMs: 1,
+      })),
       createSession: vi.fn(),
       dispose,
-    } as unknown as CaptureApi;
-    const r = rig({
-      capture: () => null,
-      openCapture: () => new Promise<CaptureApi>((res) => (openIt = res)),
-    });
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
-    r.routerIdle.resolve();
-    await flush();
-    r.emit({ type: 'context-lost' });
-    await vi.advanceTimersByTimeAsync(300);
-    await p;
-    openIt(own);
-    await flush();
-    expect(r.log).not.toContain('settle:on');
-    expect(
-      (own as unknown as { captureViewport: ReturnType<typeof vi.fn> }).captureViewport,
-    ).not.toHaveBeenCalled();
-  });
-
-  it('opens its own capture session when the hub has none, and disposes it', async () => {
-    const dispose = vi.fn();
-    const own = { captureViewport: r0().captureViewport, createSession: vi.fn(), dispose };
-    function r0() {
-      return {
-        captureViewport: vi.fn(async () => ({
-          bitmap: bitmap(),
-          width: 1,
-          height: 1,
-          scale: 1,
-          durationMs: 1,
-        })),
-      };
-    }
+    };
     const r = rig({ capture: () => null, openCapture: async () => own as unknown as CaptureApi });
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
-    r.routerIdle.resolve();
-    await flush();
+    const p = (await toStart(r)).run;
     expect(own.captureViewport).toHaveBeenCalled();
     r.emit(DONE);
     await p;
@@ -719,11 +827,100 @@ describe('eversion runner: AFTER', () => {
   });
 });
 
+describe('eversion runner: a destination that cannot be captured ends the run unanimated', () => {
+  /** The run navigated, so it is never a fallback (the caller must not navigate again). */
+  function expectAbandoned(r: Rig, out: { fallback: unknown; end?: unknown }) {
+    expect(out).toEqual({ fallback: null, end: 'abort' });
+    expect(navigated(r)).toBe(true);
+    expect(hasStart(r)).toBe(false);
+    expect(r.posted.map((m) => m.type)).toContain('abort');
+    expect(r.log.lastIndexOf('cover:off')).toBeGreaterThan(r.log.lastIndexOf('cover:on'));
+    expect(r.log.lastIndexOf('live:off')).toBeGreaterThan(r.log.lastIndexOf('live:on'));
+    expect(r.log).toContain('overlay:unmount');
+    expect(r.runner.state()).toMatchObject({ phase: 'idle', coverActive: false });
+  }
+
+  it('a throwing capture', async () => {
+    const r = rig({}, async () => {
+      throw new Error('tainted');
+    });
+    const out = await (await toStart(r)).run;
+    expectAbandoned(r, out);
+    // The attribute is not left behind.
+    expect(r.log.lastIndexOf('settle:off')).toBeGreaterThan(r.log.lastIndexOf('settle:on'));
+  });
+
+  it('a capture that never returns times out at AFTER_CAPTURE_TIMEOUT_MS', async () => {
+    const r = rig({}, () => new Promise(() => {}));
+    const p = (await toStart(r)).run;
+    await vi.advanceTimersByTimeAsync(AFTER_CAPTURE_TIMEOUT_MS - 100);
+    expect(r.log).not.toContain('overlay:unmount');
+    await vi.advanceTimersByTimeAsync(200);
+    expectAbandoned(r, await p);
+  });
+
+  it('an AFTER texture that cannot be posted is closed', async () => {
+    const after = bitmap();
+    const r = rig({}, async () => ({
+      bitmap: after,
+      width: 1,
+      height: 1,
+      scale: 1,
+      durationMs: 1,
+    }));
+    const host = await r.deps.host.ready('mid', 1);
+    const post = host.post.bind(host);
+    host.post = (m) => {
+      if (m.type === 'texture' && m.slot === 'after') throw new Error('worker gone');
+      post(m);
+    };
+    const out = await (await toStart(r)).run;
+    expect(after.close).toHaveBeenCalled();
+    expectAbandoned(r, out);
+  });
+
+  it('a render side lost while the destination renders: ends, and its canvas is discarded', async () => {
+    const r = rig();
+    r.settle.hold();
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    r.routerIdle.resolve();
+    await flush();
+    r.emit({ type: 'context-lost' });
+    r.settle.release({ reason: 'cancelled', settled: false });
+    const out = await p;
+    expect(out).toEqual({ fallback: null, end: 'abort' });
+    expect(r.log).toContain('discardCanvas');
+    expect(hasStart(r)).toBe(false);
+    expect(r.capture.captureViewport).not.toHaveBeenCalled();
+  });
+
+  it('a run can follow an abandoned one', async () => {
+    const r = rig({}, async () => {
+      throw new Error('tainted');
+    });
+    await (
+      await toStart(r)
+    ).run;
+    r.capture.captureViewport.mockImplementation(async () => ({
+      bitmap: bitmap(),
+      width: 1,
+      height: 1,
+      scale: 1,
+      durationMs: 1,
+    }));
+    const q = r.runner.run(NODE, GLOBE);
+    await flush();
+    expect(hasStart(r)).toBe(true);
+    r.emit(DONE);
+    expect((await q).end).toBe('done');
+  });
+});
+
 describe('eversion runner: input, abort and faults after start', () => {
   it('input sends one fast-forward, however many presses follow', async () => {
     const r = rig();
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
+    const p = (await toStart(r)).run;
     r.input();
     r.input();
     r.input();
@@ -735,28 +932,26 @@ describe('eversion runner: input, abort and faults after start', () => {
   });
 
   it('abort posts abort and tags the gate reason', async () => {
-    const r = rig();
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
+    const details: { name: string; detail: unknown }[] = [];
+    const r = rig({ mark: (name, detail) => void details.push({ name, detail }) });
+    const p = (await toStart(r)).run;
     r.runner.abort();
     expect(r.posted.some((m) => m.type === 'abort')).toBe(true);
     r.emit({ type: 'stage', stage: 'gate-open', t: 1 });
     r.emit(DONE);
     await p;
+    expect(details.find((d) => d.name === 'gateOpen')?.detail).toEqual({ reason: 'abort' });
   });
 
   it('context loss after start: cover off, overlay fades 200 ms, then unmounts; end is context-lost', async () => {
     const r = rig();
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
+    const p = (await toStart(r)).run;
     r.emit({ type: 'cover' });
     r.emit({ type: 'context-lost' });
     expect(r.log).toContain('overlay:fade');
     expect(r.log).toContain('discardCanvas');
     expect(r.runner.state().coverActive).toBe(false);
     expect(r.log).not.toContain('overlay:unmount');
-    // The overlay dissolves onto the live page, so the page is the sharp one (live) before the fade begins.
-    expect(r.log.indexOf('live:on')).toBeGreaterThan(-1);
     expect(r.log.indexOf('live:on')).toBeLessThan(r.log.indexOf('overlay:fade'));
     expect(r.log).not.toContain('live:off');
     await vi.advanceTimersByTimeAsync(210);
@@ -769,8 +964,7 @@ describe('eversion runner: input, abort and faults after start', () => {
 
   it('a fatal error after start ends the run the same way; a non-fatal one is ignored', async () => {
     const r = rig();
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
+    const p = (await toStart(r)).run;
     r.emit({ type: 'error', message: 'soft', fatal: false });
     expect(r.runner.state().phase).toBe('running');
     r.emit({ type: 'error', message: 'hard', fatal: true });
@@ -780,8 +974,7 @@ describe('eversion runner: input, abort and faults after start', () => {
 
   it('a run can follow a finished one', async () => {
     const r = rig();
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
+    const p = (await toStart(r)).run;
     r.emit(DONE);
     await p;
     const q = r.runner.run(NODE, GLOBE);
@@ -793,22 +986,12 @@ describe('eversion runner: input, abort and faults after start', () => {
 });
 
 describe('eversion runner: router and viewport edge cases (spec 9.4)', () => {
-  it('back/forward during the run aborts once; the AFTER capture it was waiting for is dropped', async () => {
+  it('back/forward during the run aborts once', async () => {
     const r = rig();
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
+    const p = (await toStart(r)).run;
     r.traverse();
     r.traverse();
     expect(r.posted.filter((m) => m.type === 'abort')).toHaveLength(1);
-    // The router settles after the traversal: nothing may be captured or uploaded for the aborted run.
-    r.routerIdle.resolve();
-    await flush();
-    expect(r.capture.captureViewport).not.toHaveBeenCalled();
-    expect(
-      r.posted.some(
-        (m) => m.type === 'after-failed' || (m.type === 'texture' && m.slot === 'after'),
-      ),
-    ).toBe(false);
     r.emit({ type: 'stage', stage: 'gate-open', t: 1 });
     r.emit(DONE);
     expect(await p).toMatchObject({ fallback: null, end: 'done' });
@@ -816,7 +999,7 @@ describe('eversion runner: router and viewport edge cases (spec 9.4)', () => {
     expect(r.posted.filter((m) => m.type === 'abort')).toHaveLength(1);
   });
 
-  it('a traversal that lands while the AFTER capture is in flight drops its bitmap', async () => {
+  it('back/forward while the destination renders: traversal, nothing started, its capture dropped', async () => {
     const late = bitmap();
     let finishCapture!: (v: unknown) => void;
     const r = rig({}, () => new Promise((res) => (finishCapture = res)));
@@ -825,18 +1008,20 @@ describe('eversion runner: router and viewport edge cases (spec 9.4)', () => {
     r.routerIdle.resolve();
     await flush();
     r.traverse();
+    // Resolved at once, without waiting for the capture in flight.
+    expect(await p).toEqual({ fallback: 'traversal' });
+    expect(r.log).toContain('overlay:unmount');
+    expect(r.log.lastIndexOf('cover:off')).toBeGreaterThan(r.log.lastIndexOf('cover:on'));
     finishCapture({ bitmap: late, width: 1, height: 1, scale: 1, durationMs: 1 });
     await flush();
     expect(late.close).toHaveBeenCalled();
     expect(r.posted.some((m) => m.type === 'texture' && m.slot === 'after')).toBe(false);
-    r.emit(DONE);
-    await p;
+    expect(hasStart(r)).toBe(false);
   });
 
   it('forwards a resize to the render side as a resize message, and stops with the run', async () => {
     const r = rig();
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
+    const p = (await toStart(r)).run;
     r.resize({ w: 500, h: 900, dpr: 2 });
     expect(r.posted.filter((m) => m.type === 'resize')).toEqual([
       { type: 'resize', viewport: { w: 500, h: 900, dpr: 2 } },
@@ -849,8 +1034,7 @@ describe('eversion runner: router and viewport edge cases (spec 9.4)', () => {
 
   it('input once the unwrap is done (the reveal fade) is ignored', async () => {
     const r = rig();
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
+    const p = (await toStart(r)).run;
     r.emit({ type: 'cover' });
     r.emit({ type: 'uncover' });
     await flush();
@@ -860,28 +1044,9 @@ describe('eversion runner: router and viewport edge cases (spec 9.4)', () => {
     await p;
   });
 
-  it('context loss BEFORE start (during prime) is a clean fallback, never a hung run', async () => {
-    let release!: () => void;
-    const gate = new Promise<void>((r) => (release = r));
-    const r = rig({
-      placeholder: async () => {
-        await gate;
-        return bitmap();
-      },
-    });
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
-    r.emit({ type: 'context-lost' });
-    release();
-    expect((await p).fallback).toBe('host-error');
-    expect(r.log.some((l) => l.startsWith('navigate'))).toBe(false);
-    expect(r.log).toContain('discardCanvas');
-  });
-
   it('a host that throws on post after start ends the run as a lost context, without throwing', async () => {
     const r = rig();
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
+    const p = (await toStart(r)).run;
     // The next post (the reveal, after uncover) hits a dead host.
     const host = await r.deps.host.ready('mid', 1);
     host.post = () => {
@@ -896,22 +1061,17 @@ describe('eversion runner: router and viewport edge cases (spec 9.4)', () => {
 });
 
 describe('eversion runner: commit point, queued input, teardown (review fixes)', () => {
-  function gatedPlaceholder() {
-    let release!: () => void;
-    const gate = new Promise<void>((r) => (release = r));
-    return {
-      release,
-      placeholder: async () => {
-        await gate;
-        return bitmap();
-      },
-    };
-  }
-
-  it('onCommit fires once, at the point of no return, and never on a fallback', async () => {
+  it('onCommit fires once, just before the start, and never on a fallback or an unanimated run', async () => {
     const onCommit = vi.fn();
     const r = rig();
+    r.settle.hold();
     const p = r.runner.run(NODE, GLOBE, 'release', { onCommit });
+    await flush();
+    r.routerIdle.resolve();
+    await flush();
+    // Navigated, still rendering the destination: the hub is left exactly as it is.
+    expect(onCommit).not.toHaveBeenCalled();
+    r.settle.release();
     await flush();
     expect(onCommit).toHaveBeenCalledTimes(1);
     expect(r.posted.map((m) => m.type)).toContain('start');
@@ -922,23 +1082,29 @@ describe('eversion runner: commit point, queued input, teardown (review fixes)',
     const f = rig({ awaitBefore: async () => null });
     await f.runner.run(NODE, GLOBE, 'release', { onCommit: fallback });
     expect(fallback).not.toHaveBeenCalled();
+
+    const abandoned = vi.fn();
+    const a = rig({}, async () => {
+      throw new Error('tainted');
+    });
+    await (
+      await toStart(a, NODE, GLOBE, 'release', { onCommit: abandoned })
+    ).run;
+    expect(abandoned).not.toHaveBeenCalled();
   });
 
   it('input while still priming is queued and becomes a fast-forward right after start', async () => {
-    const g = gatedPlaceholder();
-    const r = rig({ placeholder: g.placeholder });
-    const p = r.runner.run(NODE, GLOBE);
+    const r = rig();
+    void r.runner.run(NODE, GLOBE);
     await flush();
     r.input();
     r.input();
     expect(r.posted.some((m) => m.type === 'fast-forward')).toBe(false);
-    g.release();
+    r.routerIdle.resolve();
     await flush();
     const types = r.posted.map((m) => m.type);
     expect(types.filter((t) => t === 'fast-forward')).toHaveLength(1);
     expect(types.indexOf('fast-forward')).toBeGreaterThan(types.indexOf('start'));
-    r.emit(DONE);
-    await p;
   });
 
   it('input during a run that falls back is forgotten (no listener left behind)', async () => {
@@ -948,75 +1114,65 @@ describe('eversion runner: commit point, queued input, teardown (review fixes)',
     expect(r.posted).toEqual([]);
   });
 
-  it('a non-fatal prime failure aborts the half-primed host and keeps the canvas', async () => {
-    const r = rig({
-      placeholder: async () => {
-        throw new Error('2d');
-      },
-    });
-    const out = await r.runner.run(NODE, GLOBE);
-    expect(out.fallback).toBe('host-error');
-    expect(r.posted.map((m) => m.type)).toContain('abort');
-    expect(r.log).not.toContain('discardCanvas');
-  });
-
-  it('a fatal prime failure discards the canvas instead', async () => {
-    const g = gatedPlaceholder();
-    const r = rig({ placeholder: g.placeholder });
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
-    r.emit({ type: 'error', fatal: true, message: 'gl' } as FromWorker);
-    g.release();
-    expect((await p).fallback).toBe('host-error');
-    expect(r.log).toContain('discardCanvas');
-  });
-
-  it('an AFTER bitmap whose upload throws is closed, and the run ends as a lost context', async () => {
-    const after = bitmap();
-    const r = rig({}, async () => ({
-      bitmap: after,
-      width: 1,
-      height: 1,
-      scale: 1,
-      durationMs: 1,
-    }));
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
-    const host = await r.deps.host.ready('mid', 1);
-    host.post = (m) => {
-      if (m.type === 'texture' && m.slot === 'after') throw new Error('worker gone');
-    };
-    r.routerIdle.resolve();
-    await flush();
-    await vi.advanceTimersByTimeAsync(300);
-    expect(after.close).toHaveBeenCalled();
-    expect(await p).toMatchObject({ fallback: null, end: 'context-lost' });
-  });
-
   it('dispose mid-run aborts and leaves no cover class, settle attribute or overlay', async () => {
     const r = rig();
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
+    const p = (await toStart(r)).run;
     r.emit({ type: 'cover' });
     r.runner.dispose();
     expect(await p).toMatchObject({ fallback: null, end: 'abort' });
     expect(r.posted.map((m) => m.type)).toContain('abort');
     expect(r.log.lastIndexOf('cover:off')).toBeGreaterThan(r.log.lastIndexOf('cover:on'));
     expect(r.log).toContain('overlay:unmount');
-    expect(r.log).toContain('settle:off');
+    expect(r.log.filter((l) => l.startsWith('settle:')).at(-1)).toBe('settle:off');
     expect(r.runner.state().coverActive).toBe(false);
   });
 
-  it('dispose while priming falls back and starts nothing', async () => {
-    const g = gatedPlaceholder();
-    const r = rig({ placeholder: g.placeholder });
+  it('dispose before the navigation falls back and starts nothing', async () => {
+    let release!: (b: ImageBitmap) => void;
+    const r = rig({ awaitBefore: () => new Promise((res) => (release = res)) });
     const p = r.runner.run(NODE, GLOBE);
     await flush();
     r.runner.dispose();
-    g.release();
+    release(bitmap());
     expect((await p).fallback).toBe('host-error');
-    expect(r.posted.map((m) => m.type)).not.toContain('start');
-    expect(r.log.some((l) => l.startsWith('navigate'))).toBe(false);
+    expect(hasStart(r)).toBe(false);
+    expect(navigated(r)).toBe(false);
+  });
+
+  it('dispose while the destination renders ends the run at once, leaving nothing behind', async () => {
+    const r = rig();
+    r.settle.hold();
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    r.routerIdle.resolve();
+    await flush();
+    r.runner.dispose();
+    expect(await p).toEqual({ fallback: null, end: 'abort' });
+    expect(hasStart(r)).toBe(false);
+    expect(r.log).toContain('overlay:unmount');
+    expect(r.log.lastIndexOf('cover:off')).toBeGreaterThan(r.log.lastIndexOf('cover:on'));
+    expect(r.runner.state().coverActive).toBe(false);
+  });
+
+  it('a run that is disposed while opening its own capture session never sets the settle attribute', async () => {
+    let openIt!: (c: CaptureApi) => void;
+    const own = { captureViewport: vi.fn(), createSession: vi.fn(), dispose: vi.fn() };
+    const r = rig({
+      capture: () => null,
+      openCapture: () => new Promise<CaptureApi>((res) => (openIt = res)),
+    });
+    const p = r.runner.run(NODE, GLOBE);
+    await flush();
+    r.routerIdle.resolve();
+    await flush();
+    r.runner.dispose();
+    await p;
+    openIt(own as unknown as CaptureApi);
+    await flush();
+    expect(r.log).not.toContain('settle:on');
+    expect(own.captureViewport).not.toHaveBeenCalled();
+    // Opened after the run had ended: disposed, not orphaned.
+    expect(own.dispose).toHaveBeenCalled();
   });
 
   it('a runner that has been disposed falls back at once', async () => {
@@ -1029,8 +1185,7 @@ describe('eversion runner: commit point, queued input, teardown (review fixes)',
 describe('eversion runner: watchdog, pageshow, traversal while priming (Fix E1)', () => {
   it('a run that never reaches done is force-ended with a fade at MAX_RUN_MS and cleared on teardown', async () => {
     const r = rig();
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
+    const p = (await toStart(r)).run;
     r.emit({ type: 'cover' });
     await vi.advanceTimersByTimeAsync(MAX_RUN_MS - 1);
     expect(r.runner.state().phase).toBe('running');
@@ -1048,8 +1203,7 @@ describe('eversion runner: watchdog, pageshow, traversal while priming (Fix E1)'
 
   it('stage messages are progress: a slow but advancing run is not cut', async () => {
     const r = rig();
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
+    const p = (await toStart(r)).run;
     for (let i = 0; i < 4; i++) {
       await vi.advanceTimersByTimeAsync(MAX_RUN_MS - 1000);
       r.emit({ type: 'stage', stage: 'evert', t: 0 } as FromWorker);
@@ -1062,8 +1216,7 @@ describe('eversion runner: watchdog, pageshow, traversal while priming (Fix E1)'
 
   it('a finished run leaves no watchdog behind', async () => {
     const r = rig();
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
+    const p = (await toStart(r)).run;
     r.emit(DONE);
     await p;
     const before = r.log.length;
@@ -1076,8 +1229,7 @@ describe('eversion runner: watchdog, pageshow, traversal while priming (Fix E1)'
 
   it('a host whose post() is dead cannot leave the run committed forever', async () => {
     const r = rig();
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
+    const p = (await toStart(r)).run;
     const host = await r.deps.host.ready('mid', 1);
     host.post = () => {}; // a disposed host: silently ignores everything, never says done
     await vi.advanceTimersByTimeAsync(MAX_RUN_MS + 300);
@@ -1087,8 +1239,7 @@ describe('eversion runner: watchdog, pageshow, traversal while priming (Fix E1)'
 
   it('restoreFromCache (bfcache pageshow) ends a run in flight with a fade', async () => {
     const r = rig();
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
+    const p = (await toStart(r)).run;
     r.runner.restoreFromCache();
     expect(r.log).toContain('overlay:fade');
     await vi.advanceTimersByTimeAsync(250);
@@ -1097,7 +1248,7 @@ describe('eversion runner: watchdog, pageshow, traversal while priming (Fix E1)'
     r.runner.restoreFromCache();
   });
 
-  it('back/forward while priming cancels cleanly: no start, no navigate, reason traversal', async () => {
+  it('back/forward while waiting for BEFORE cancels cleanly: no start, no navigate, reason traversal', async () => {
     const before = bitmap();
     let release!: () => void;
     const gate = new Promise<void>((resolve) => (release = resolve));
@@ -1114,34 +1265,30 @@ describe('eversion runner: watchdog, pageshow, traversal while priming (Fix E1)'
     const out = await p;
     expect(out.fallback).toBe('traversal');
     expect(before.close).toHaveBeenCalled();
-    expect(r.posted.map((m) => m.type)).not.toContain('start');
-    expect(r.log.some((l) => l.startsWith('navigate'))).toBe(false);
+    expect(hasStart(r)).toBe(false);
+    expect(navigated(r)).toBe(false);
     expect(r.runner.state().phase).toBe('idle');
   });
 
-  it('a traversal during the placeholder wait aborts the half-primed host', async () => {
-    let release!: () => void;
-    const gate = new Promise<void>((resolve) => (release = resolve));
-    const r = rig({
-      placeholder: async () => {
-        await gate;
-        return bitmap();
-      },
-    });
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
-    r.traverse();
-    release();
-    expect((await p).fallback).toBe('traversal');
+  it('back/forward while the picture goes up aborts the half-primed host, before any navigation', async () => {
+    const r = rig();
+    let traversed = false;
+    r.deps.page.nextFrame = async () => {
+      if (!traversed) {
+        traversed = true;
+        r.traverse();
+      }
+    };
+    const out = await r.runner.run(NODE, GLOBE);
+    expect(out.fallback).toBe('traversal');
     expect(r.posted.map((m) => m.type)).toContain('abort');
-    expect(r.posted.map((m) => m.type)).not.toContain('start');
-    expect(r.log.some((l) => l.startsWith('navigate'))).toBe(false);
+    expect(hasStart(r)).toBe(false);
+    expect(navigated(r)).toBe(false);
   });
 
   it('ends after the reveal: the overlay stays until done, and nothing follows done', async () => {
     const r = rig();
-    const p = r.runner.run(NODE, GLOBE);
-    await flush();
+    const p = (await toStart(r)).run;
     r.emit({ type: 'cover' });
     r.emit({ type: 'uncover' });
     await flush();
