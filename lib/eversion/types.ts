@@ -592,7 +592,7 @@ export type ToWorker =
    * has another origin, and the two are related exactly by `timeOrigin` (not by when this message happened
    * to arrive), so the render side converts deadlines with the origins and ignores message latency.
    */
-  | { type: 'start'; t0: number; origin?: number }
+  | { type: 'start'; t0: number; origin?: number; refreshHz?: number }
   | { type: 'fast-forward' }
   | { type: 'after-failed' }
   | { type: 'resize'; viewport: Viewport }

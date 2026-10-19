@@ -193,6 +193,12 @@ export const UNIFORMS = [
   { name: 'u_colCageMajor', type: 'vec4', cadence: 'prime', from: 'ThemeColours.cageMajor' },
   { name: 'u_colCageRipple', type: 'vec4', cadence: 'prime', from: 'ThemeColours.cageRipple' },
   { name: 'u_cageWidth', type: 'float', cadence: 'prime', from: 'ThemeColours.cageWidth (CSS px)' },
+  {
+    name: 'u_whiten',
+    type: 'float',
+    cadence: 'prime',
+    from: "how dark ThemeColours.bg is (renderer.ts#pageDarkness: 1 dark, 0 light): the globe's white-planet tint",
+  },
 
   // ── when the buffer changes ──
   {

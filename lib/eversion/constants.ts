@@ -382,8 +382,22 @@ export const CAPTURE_DPR_CAP: Readonly<Record<Tier, number>> = {
 
 /** `FrametimeMonitor` window, in frames. */
 export const GOVERNOR_WINDOW = 30;
-/** Frame-rate floor the governor defends. */
-export const GOVERNOR_TARGET_FPS = 55;
+/**
+ * The frame rate the governor defends is this share of the display's refresh rate (`governorTargetFps`): 57 fps
+ * on a 60 Hz panel, 114 on 120 Hz, 137 on 144 Hz — a run that keeps up with the panel is never touched, one that
+ * falls clearly behind it trades sharpness for frames.
+ */
+export const GOVERNOR_REFRESH_SHARE = 0.95;
+/** …never less than this on a panel of 60 Hz or more (the 60 fps floor, less rAF jitter)… */
+export const GOVERNOR_MIN_FPS = 57;
+/** …and never more than this: past 144 Hz, resolution is worth more than frames. */
+export const GOVERNOR_MAX_FPS = 144;
+/**
+ * Intervals ignored at the start of a run: the first frames carry the driver's first use of each program and
+ * texture (and, in-thread, the route's own commit). They are a fixed cost of starting, not a sign of load, and a
+ * DPR step taken on them would add a canvas reallocation — a second hitch — to the first.
+ */
+export const GOVERNOR_WARMUP_FRAMES = 12;
 /** Each step multiplies the canvas DPR by this… */
 export const GOVERNOR_STEP = 0.75;
 /** …down to this floor… */

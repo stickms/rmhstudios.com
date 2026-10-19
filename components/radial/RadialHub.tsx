@@ -176,6 +176,13 @@ export function RadialHub() {
    * visitor just landed on, half a second after it rendered.
    */
   const restoreFocus = useRef(false);
+  /**
+   * An eversion just handed the screen back. The globe held focus through the run
+   * and unmounts with it, which drops focus to <body>: a keyboard user would start
+   * the new page from the top of the document. Land it on the page's <main>, as the
+   * skip link does (spec S#25).
+   */
+  const landFocus = useRef(false);
   // `everting` keeps the globe mounted: it is fading out OVER the effect's
   // canvas, and unmounting it would cut that fade to a pop.
   const menuVisible = phase === 'open' || phase === 'closing' || phase === 'everting';
@@ -257,6 +264,7 @@ export function RadialHub() {
         },
         closed: () => {
           clearTimer();
+          landFocus.current = true;
           setPhase('closed');
         },
         dismiss: () => live.current.dismiss(),
@@ -429,6 +437,14 @@ export function RadialHub() {
     if (phase !== 'closed' || !restoreFocus.current) return;
     restoreFocus.current = false;
     orbRef.current?.focus();
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== 'closed' || !landFocus.current) return;
+    landFocus.current = false;
+    const active = document.activeElement;
+    if (active && active !== document.body) return;
+    document.getElementById('main-content')?.focus({ preventScroll: true });
   }, [phase]);
 
   useEffect(() => () => clearTimer(), []);

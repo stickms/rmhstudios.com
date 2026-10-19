@@ -5,9 +5,10 @@ import {
   GOVERNOR_DPR_FLOOR,
   GOVERNOR_MAX_STEPS,
   GOVERNOR_STEP,
+  GOVERNOR_WARMUP_FRAMES,
   GOVERNOR_WINDOW,
 } from '../constants';
-import { DprGovernor, FrameStatsRecorder, pickTier } from '../gl/governor-tiers';
+import { DprGovernor, FrameStatsRecorder, governorTargetFps, pickTier } from '../gl/governor-tiers';
 
 describe('pickTier', () => {
   it('maps the site tiers onto the effect tiers', () => {
@@ -29,6 +30,32 @@ function feed(g: DprGovernor, ms: number, n: number): (number | null)[] {
   return Array.from({ length: n }, () => g.record(ms));
 }
 
+/** A governor past its warm-up frames (drawn at a comfortable 60 fps). */
+function warm(startDpr: number, refreshHz?: number): DprGovernor {
+  const g = new DprGovernor(startDpr, refreshHz);
+  feed(g, 1000 / 60, GOVERNOR_WARMUP_FRAMES);
+  return g;
+}
+
+describe('governorTargetFps', () => {
+  it('holds 60 fps panels to ~57 fps and aims near the panel above that, capped at 144', () => {
+    expect(governorTargetFps(60)).toBe(57);
+    expect(governorTargetFps(120)).toBeCloseTo(114);
+    expect(governorTargetFps(144)).toBeCloseTo(136.8);
+    expect(governorTargetFps(240)).toBe(144);
+  });
+
+  it('a slower panel (or a throttled rAF) is not held to 60', () => {
+    expect(governorTargetFps(50)).toBeCloseTo(47.5);
+    expect(governorTargetFps(30)).toBeCloseTo(28.5);
+  });
+
+  it('an unknown rate is treated as 60 Hz', () => {
+    expect(governorTargetFps(Number.NaN)).toBe(57);
+    expect(governorTargetFps(0)).toBe(57);
+  });
+});
+
 describe('DprGovernor', () => {
   it('does nothing at 60 fps', () => {
     const g = new DprGovernor(2);
@@ -37,8 +64,16 @@ describe('DprGovernor', () => {
     expect(g.scale).toBe(1);
   });
 
-  it('waits for a full window, then steps by 0.75x', () => {
+  it('ignores the warm-up frames of a run, however slow', () => {
     const g = new DprGovernor(2);
+    expect(feed(g, 50, GOVERNOR_WARMUP_FRAMES).every((r) => r === null)).toBe(true);
+    // The window starts empty after them: one more window of good frames steps nothing.
+    expect(feed(g, 1000 / 60, GOVERNOR_WINDOW).every((r) => r === null)).toBe(true);
+    expect(g.steps).toBe(0);
+  });
+
+  it('waits for a full window, then steps by 0.75x', () => {
+    const g = warm(2);
     const r = feed(g, 25, GOVERNOR_WINDOW);
     expect(r.slice(0, -1).every((x) => x === null)).toBe(true);
     expect(r.at(-1)).toBeCloseTo(GOVERNOR_STEP);
@@ -46,7 +81,7 @@ describe('DprGovernor', () => {
   });
 
   it('takes at most two steps and never goes below the DPR floor', () => {
-    const g = new DprGovernor(2);
+    const g = warm(2);
     const steps = feed(g, 25, GOVERNOR_WINDOW * 6).filter((x) => x !== null);
     expect(steps).toHaveLength(GOVERNOR_MAX_STEPS);
     expect(g.scale).toBeCloseTo(GOVERNOR_STEP ** 2);
@@ -54,21 +89,43 @@ describe('DprGovernor', () => {
   });
 
   it('refuses a step that would cross the floor', () => {
-    const g = new DprGovernor(1);
+    const g = warm(1);
     expect(feed(g, 25, GOVERNOR_WINDOW * 4).filter((x) => x !== null)).toEqual([GOVERNOR_STEP]);
-    const tiny = new DprGovernor(0.8);
+    const tiny = warm(0.8);
     expect(feed(tiny, 25, GOVERNOR_WINDOW * 4).filter((x) => x !== null)).toEqual([]);
   });
 
-  it('one long stall in a window is not load', () => {
-    const g = new DprGovernor(2);
+  it('one long stall in a window is not load, nor are a few hitches', () => {
+    const g = warm(2);
     feed(g, 1000 / 60, GOVERNOR_WINDOW - 1);
     expect(g.record(500)).toBeNull();
-    expect(g.steps).toBe(0);
+    // Three 50 ms hitches in a window of 60 fps frames: the trimmed mean leaves them out.
+    const h = warm(2);
+    const r = [...feed(h, 50, 3), ...feed(h, 1000 / 60, GOVERNOR_WINDOW * 2)];
+    expect(r.every((x) => x === null)).toBe(true);
+    expect(g.steps + h.steps).toBe(0);
+  });
+
+  it('a run that drops one frame in five does step', () => {
+    const g = warm(2);
+    let stepped = false;
+    for (let i = 0; i < GOVERNOR_WINDOW * 2 && !stepped; i++)
+      stepped = g.record(i % 5 === 0 ? 2000 / 60 : 1000 / 60) !== null;
+    expect(stepped).toBe(true);
+  });
+
+  it('aims at the display: 70 fps on a 120 Hz panel steps, and does nothing on a 60 Hz one', () => {
+    const fast = warm(2, 120);
+    expect(feed(fast, 1000 / 70, GOVERNOR_WINDOW).at(-1)).toBeCloseTo(GOVERNOR_STEP);
+    const slow = warm(2, 60);
+    expect(feed(slow, 1000 / 60, GOVERNOR_WINDOW * 2).every((x) => x === null)).toBe(true);
+    // A 120 Hz panel holding its rate is left alone.
+    const held = warm(2, 120);
+    expect(feed(held, 1000 / 120, GOVERNOR_WINDOW * 2).every((x) => x === null)).toBe(true);
   });
 
   it('restarts the window after a step, and reset() forgets everything', () => {
-    const g = new DprGovernor(2);
+    const g = warm(2);
     feed(g, 25, GOVERNOR_WINDOW);
     expect(feed(g, 25, GOVERNOR_WINDOW - 1).every((x) => x === null)).toBe(true);
     g.reset();

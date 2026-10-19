@@ -580,14 +580,10 @@ body:has(.radial-shell) .call-banner {
     display: flex;
   }
 }
-@media (min-width: 1800px) {
-  .radial-shell {
-    --rad-frame-max: min(100%, 116rem);
-    --rad-rail-nav: 18rem;
-    --rad-rail-live: 23rem;
-    --rad-measure: 58rem;
-  }
-}
+/* No wider frame past 1800px (it used to grow to 116rem, ~1856px): the 96rem cap
+   above holds on every display, so a reading column, its rails and the eye's
+   path across them stay the same size on a 27- or 34-inch screen as on a laptop.
+   The window's extra width is margin. */
 
 /* ── Navigation rail ──────────────────────────────────────────────────── */
 .rad-rail__item {
@@ -2620,16 +2616,15 @@ html.ios-webkit .radial-hub__veil {
     max-width: 42rem;
   }
 }
-/* …except in the band where the live rail has just appeared and the window is
-   not yet wide enough for four columns. The live rail is site-wide and the deck
-   is home-only, so the deck yields its COLUMN — but it used to yield its
-   existence: `display: none` from 1440 to 1599 meant the News/Games deck was
-   present at 1280, gone on a 1440 or 1536 laptop, and back at 1600. A module
-   that blinks out across the two most common laptop widths reads as a bug, and
-   its content is simply unreachable there. So in this band it stacks UNDER the
-   wheel instead, at a bounded height. Keep in sync with DECK_QUERY in
-   RadialSideFeed.tsx, which gates the fetch on the same range. */
-@media (min-width: 1440px) and (max-width: 1599.98px) {
+/* …except once the live rail is on screen: THREE columns at most, at every width
+   (owner, 2026-10-18 — on a wide display a fourth column spreads the page so far
+   that the eye travels across the whole screen). The live rail is site-wide and
+   the deck is home-only, so the deck yields its COLUMN and stacks UNDER the wheel
+   at a bounded height. It used to do that only from 1440 to 1599 and become a
+   fourth column at 1600+. (It never yields its existence: `display: none` in
+   that band once made it blink out on the most common laptop widths.) DECK_QUERY
+   in RadialSideFeed.tsx gates the fetch on the deck being shown at all (1280+). */
+@media (min-width: 1440px) {
   .radial-feed__deck {
     grid-template-columns: minmax(0, 1fr);
   }

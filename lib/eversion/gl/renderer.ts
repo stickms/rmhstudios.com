@@ -87,9 +87,11 @@
  * ## Shaders
  *
  * It compiles `getShaderSet()` (`shaders.ts`); nothing outside this file
- * chooses. Programs are compiled eagerly in `createRenderer` (surface and cage;
- * the transform-feedback program is compiled inside each `debugEvaluate` and
- * deleted again, because the product never needs it).
+ * chooses. Programs are compiled eagerly in `createRenderer` (surface and cage,
+ * the masked surface on mid/high, the cosmos's when `precompileCosmos`; the
+ * transform-feedback program is compiled inside each `debugEvaluate` and deleted
+ * again, because the product never needs it), and each is drawn once into a 1×1
+ * scissor (`warmUp`) so its first real frame does not pay the driver's first use.
  */
 
 import { CAGE_ALPHA_END, CAGE_ALPHA_START, LUT_SIZE, STAGE_PARAM_COUNT, TIERS } from '../constants';
@@ -118,8 +120,11 @@ import type { UniformName } from './uniforms';
 
 /** `EXT_texture_filter_anisotropic`'s enums, which the DOM typings do not carry. */
 const TEXTURE_MAX_ANISOTROPY_EXT = 0x84fe;
-/** The cosmos governor (see `governCosmos`): a frame this long is slow (~45 fps)... */
-const COSMOS_SLOW_FRAME_MS = 22;
+/**
+ * The cosmos governor (see `governCosmos`): a frame this long is slow (under ~54 fps — the cosmos is the extra, and
+ * the run's floor is 60 fps)...
+ */
+const COSMOS_SLOW_FRAME_MS = 18.5;
 /** ...for this many frames in a row (smoothed), and the cosmos eases out over this long. */
 const COSMOS_SLOW_FRAMES = 24;
 const COSMOS_FADE_MS = 450;
@@ -228,10 +233,13 @@ export function createRenderer(
   const surface = buildProgram(gl, shaders.surface, 'surface', created);
   const cage = buildProgram(gl, shaders.cage, 'cage', created);
   /**
-   * The surface with the depth write that sends a masked azimuthal wedge to the back. Compiled on the first prime of
-   * an azimuthal projection (a write to gl_FragDepth turns early-z off, so the other projections run without it).
+   * The surface with the depth write that sends a masked azimuthal wedge to the back, for the azimuthal projections
+   * (a write to gl_FragDepth turns early-z off, so the other projections run without it). Compiled here on mid and
+   * high, so a run that draws an azimuthal projection never compiles on its first frame; on low, on the first prime
+   * that needs it.
    */
-  let surfaceMasked: Program | null = null;
+  let surfaceMasked: Program | null =
+    tier === 'low' ? null : buildProgram(gl, shaders.surfaceMasked, 'surface-masked', created);
   /**
    * The cosmos's programs, compiled on the first prime that has a scene (a large viewport on a mid/high tier):
    * a phone never pays for them. They stay compiled for the page's life, like `surfaceMasked`.
@@ -282,6 +290,7 @@ export function createRenderer(
   }
   bindSamplers(surface);
   bindSamplers(cage);
+  if (surfaceMasked) bindSamplers(surfaceMasked);
 
   /* ── Mesh ─────────────────────────────────────────────────────────────── */
 
@@ -333,6 +342,57 @@ export function createRenderer(
   bindUnit(SAMPLER_UNITS.before, fallbackPage);
   bindUnit(SAMPLER_UNITS.after, fallbackPage);
   bindUnit(SAMPLER_UNITS.placeholder, fallbackPage);
+
+  warmUp();
+
+  /**
+   * A program's first draw is expensive on every driver: it is when the GPU program is really built (Metal and D3D
+   * key it by the blend state and the framebuffer's format), and when the mesh and textures it reads are made
+   * resident. On the first frame of a run, that is the stutter at the start. So every program the renderer holds
+   * draws once here — at construction, which the host does at quiet time well before any navigation — with the
+   * blend state it is drawn with, into a 1×1 scissor of the real drawing buffer, cleared again after.
+   */
+  function warmUp() {
+    const g = gl!;
+    g.bindFramebuffer(g.FRAMEBUFFER, null);
+    g.enable(g.SCISSOR_TEST);
+    g.scissor(0, 0, 1, 1);
+    g.viewport(0, 0, 1, 1);
+    g.frontFace(g.CW);
+    g.disable(g.CULL_FACE);
+    g.bindVertexArray(vao);
+    g.enable(g.DEPTH_TEST);
+    g.depthFunc(g.LESS);
+    g.depthMask(true);
+    g.disable(g.BLEND);
+    for (const p of [surface, surfaceMasked]) {
+      if (!p) continue;
+      g.useProgram(p.program);
+      g.drawElements(g.TRIANGLES, mesh.indexCount, g.UNSIGNED_INT, 0);
+    }
+    g.enable(g.BLEND);
+    g.blendFunc(g.ONE, g.ONE_MINUS_SRC_ALPHA);
+    g.depthFunc(g.LEQUAL);
+    g.depthMask(false);
+    g.useProgram(cage.program);
+    g.drawElements(g.TRIANGLES, mesh.indexCount, g.UNSIGNED_INT, 0);
+    g.disable(g.DEPTH_TEST);
+    if (starsProgram) {
+      g.useProgram(starsProgram.program);
+      g.drawArrays(g.TRIANGLES, 0, 3);
+    }
+    if (cosmosProgram) {
+      g.useProgram(cosmosProgram.program);
+      g.drawArraysInstanced(g.TRIANGLES, 0, 6, 1);
+    }
+    g.bindVertexArray(null);
+    g.depthMask(true);
+    g.disable(g.BLEND);
+    g.clearColor(0, 0, 0, 0);
+    g.clear(g.COLOR_BUFFER_BIT | g.DEPTH_BUFFER_BIT);
+    g.disable(g.SCISSOR_TEST);
+    g.flush();
+  }
 
   function bindUnit(unit: number, tex: WebGLTexture | null) {
     gl!.activeTexture(gl!.TEXTURE0 + unit);
@@ -461,6 +521,7 @@ export function createRenderer(
           c.cageRipple[3],
         );
         g.uniform1f(l.u_cageWidth, c.cageWidth);
+        g.uniform1f(l.u_whiten, pageDarkness(c.bg));
       }
     }
   }
@@ -548,7 +609,10 @@ export function createRenderer(
       colours && shaders.cosmos && cosmosTarget > 0
         ? buildCosmos(view, tier, colours, navigations)
         : null;
-    if (scene) compileCosmos();
+    if (scene && !cosmosProgram) {
+      compileCosmos();
+      warmUp();
+    }
   }
 
   /** `stageParams` into a reused Float32Array: GL's uniform setters do not take Float64Array. */
@@ -575,6 +639,7 @@ export function createRenderer(
       if (azimuthal && !surfaceMasked) {
         surfaceMasked = buildProgram(g, shaders.surfaceMasked, 'surface-masked', created);
         bindSamplers(surfaceMasked);
+        warmUp();
       }
       for (let i = 0; i < 9; i++) mAfter[i] = p.mAfter[i];
 
@@ -841,6 +906,16 @@ export function createRenderer(
 /* ═══════════════════════════════════════════════════════════════════════════
    Helpers
    ═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * How dark the theme's page is, 0..1: 1 for a dark theme (luma <= 0.18), 0 for a light one (>= 0.45), smooth
+ * between. Drives the globe's white-planet tint (`planetTone` in shaders.ts).
+ */
+export function pageDarkness(bg: Rgba): number {
+  const l = 0.2126 * bg[0] + 0.7152 * bg[1] + 0.0722 * bg[2];
+  const x = Math.min(1, Math.max(0, (0.45 - l) / (0.45 - 0.18)));
+  return x * x * (3 - 2 * x);
+}
 
 function toBytes(c: Rgba): Uint8Array {
   const b = new Uint8Array(4);
