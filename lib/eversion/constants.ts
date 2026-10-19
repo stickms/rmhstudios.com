@@ -172,8 +172,16 @@ export const AFTER_DECODE_CAP_MS = 250;
  */
 export const LOADING_PLACEHOLDER_SELECTOR =
   '[data-slot="skeleton"], [data-route-pending], [aria-busy="true"], .rad-loader';
-/** Timeout for the AFTER capture, measured from "settled". */
-export const AFTER_CAPTURE_TIMEOUT_MS = 1500;
+/**
+ * Timeout for the AFTER capture, measured from "settled", with or without "Always evert globe" (amended
+ * 2026-10-19). It was 1500, sized for a desktop's 100-300 ms. Since the destination is captured BEFORE the
+ * animation, a miss is a navigation with no effect at all, and a phone missed routinely ("sometimes it's not
+ * playing on mobile"): measured on a 4x-throttled phone profile, hub to /games, the capture took 3.2-4.3 s inside a
+ * run (the clone, the route's new images turned into data URLs, the SVG's layout and paint; the route still
+ * rendering beside it), every run at 1500 ms ended `abort`. A ceiling, not a wait: a fast device starts the
+ * moment its capture is done, and only a slow one uses the headroom.
+ */
+export const AFTER_CAPTURE_TIMEOUT_MS = 6000;
 /** A BEFORE capture older than this is retaken on the next idle. */
 export const BEFORE_STALE_MS = 30_000;
 /** Both bitmap dimensions are capped here (spec §6.2). */

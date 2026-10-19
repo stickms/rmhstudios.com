@@ -62,7 +62,6 @@ import {
   ALWAYS_EVERT_BEFORE_WAIT_MS,
   ALWAYS_EVERT_HOST_WAIT_MS,
   ALWAYS_EVERT_OVERLAY_MOUNT_MS,
-  BACKGROUND_CAPTURE_TIMEOUT_MS,
   GLOBE_RADIUS_FRACTION,
   HOLD_FADE_MS,
   BEFORE_WAIT_MS,
@@ -761,8 +760,8 @@ export class EversionRunner {
           session = ownCapture = opened;
         }
         deps.page.setSettle(true);
-        // "Always evert globe" gives a slow device the time its capture needs rather than no effect.
-        const timeoutMs = always ? BACKGROUND_CAPTURE_TIMEOUT_MS : AFTER_CAPTURE_TIMEOUT_MS;
+        // A phone's budget, not a desktop's: a miss here is a navigation with no effect (constants.ts).
+        const timeoutMs = AFTER_CAPTURE_TIMEOUT_MS;
         let result: CaptureResult;
         try {
           result = await withTimeout(

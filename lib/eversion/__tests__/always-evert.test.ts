@@ -382,10 +382,11 @@ describe('the runner with "Always evert globe"', () => {
     expect((await p).fallback).toBe('traversal');
   });
 
-  it("gives the destination's capture the background timeout instead of failing a slow device", async () => {
+  it("gives the destination's capture the same phone-sized budget with or without the preference", async () => {
+    expect(AFTER_CAPTURE_TIMEOUT_MS).toBeGreaterThanOrEqual(BACKGROUND_CAPTURE_TIMEOUT_MS);
     for (const [always, expected] of [
       [false, AFTER_CAPTURE_TIMEOUT_MS],
-      [true, BACKGROUND_CAPTURE_TIMEOUT_MS],
+      [true, AFTER_CAPTURE_TIMEOUT_MS],
     ] as const) {
       const asked: (number | undefined)[] = [];
       const capture = {

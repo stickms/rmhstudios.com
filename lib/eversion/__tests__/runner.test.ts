@@ -9,6 +9,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   AFTER_CAPTURE_TIMEOUT_MS,
+  BACKGROUND_CAPTURE_TIMEOUT_MS,
   BEFORE_WAIT_MS,
   DESTINATION_SETTLE_HARD_MS,
   DESTINATION_SETTLE_SOFT_MS,
@@ -730,6 +731,14 @@ describe('eversion runner: capturing the destination', () => {
         timeoutMs: AFTER_CAPTURE_TIMEOUT_MS,
       }),
     );
+  });
+
+  it("budgets the destination's capture for a phone, not a desktop: a miss is a navigation with no effect", () => {
+    // Measured 2026-10-19 on a 4x-throttled phone profile: hub to /games, the capture took 3.2-4.3 s inside a run
+    // (the route still rendering, its images new). At the old 1.5 s every such run ended `abort`.
+    expect(AFTER_CAPTURE_TIMEOUT_MS).toBeGreaterThanOrEqual(6000);
+    // Never shorter than a capture nobody is waiting on.
+    expect(AFTER_CAPTURE_TIMEOUT_MS).toBeGreaterThanOrEqual(BACKGROUND_CAPTURE_TIMEOUT_MS);
   });
 
   it('bounds the gate from the navigation: every condition until soft, activity only until hard', async () => {
