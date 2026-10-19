@@ -39,6 +39,19 @@
  * replacement exists, so a slow or failed recapture never leaves the hub with
  * less than it had; `awaitBefore` will not hand out a bitmap that is past stale.
  *
+ * ## Ahead of the open (amended 2026-10-19)
+ *
+ * "While the hub sits open" is not idle on WebKit: the hub's globe drifts until it
+ * is touched and is drawn on the same main thread (and so is the effect itself,
+ * in-thread), so a capture there was a visible hitch in the globe ~0.7 s into
+ * every open. So the binding also calls {@link BeforeCaptureScheduler.prepareAhead}
+ * while the hub is CLOSED and the page is still: that capture is held aside
+ * (`ahead`) and adopted when the hub opens, if it is still fresh, in which case the
+ * open takes no capture at all. The binding calls `invalidate()` whenever the
+ * page may no longer look like it (a scroll, a resize, a route or theme change),
+ * which frees it; the open path above is unchanged and is what runs when nothing
+ * fresh was held.
+ *
  * ## Failure
  *
  * Capture is an enhancement. Every error — timeout, `failed`, a throw from
@@ -115,6 +128,8 @@ export interface BeforeCaptureState {
   held: boolean;
   /** Age of the held bitmap in ms; `null` when none. */
   ageMs: number | null;
+  /** A capture taken ahead of the open (hub closed) is held for the next open. */
+  aheadHeld: boolean;
   /** Duration of the last successful capture, ms. */
   lastDurationMs: number | null;
   /** How long after the hub opened the last capture started, ms. */
@@ -157,6 +172,12 @@ export class BeforeCaptureScheduler {
   private captureCount = 0;
   private lastError: string | null = null;
   private disposed = false;
+  /** The capture taken ahead of the open, adopted by the next `hubOpened` if still fresh. */
+  private ahead: Held | null = null;
+  private aheadInFlight: Promise<void> | null = null;
+  private aheadAbort: AbortController | null = null;
+  /** Bumped by `invalidate()`: an ahead capture started under an older token is discarded. */
+  private aheadToken = 0;
 
   constructor(options: BeforeCaptureOptions) {
     this.createCapture = options.createCapture;
@@ -179,6 +200,15 @@ export class BeforeCaptureScheduler {
     this.lastError = null;
     const epoch = ++this.epoch;
     this.openedAt = this.now();
+    // Taken ahead of the open and still good: the open takes no capture at all.
+    const ahead = this.ahead;
+    this.ahead = null;
+    if (ahead && this.fresh(ahead)) {
+      this.held = ahead;
+      this.armStaleTimer(epoch);
+      return;
+    }
+    if (ahead) this.closeBitmap(ahead.result.bitmap);
     this.motionTimer = setTimeout(() => {
       this.motionTimer = null;
       if (epoch === this.epoch) this.queue(epoch);
@@ -197,6 +227,31 @@ export class BeforeCaptureScheduler {
   }
 
   /**
+   * Capture the page now, ahead of the next open, unless a fresh one is already held
+   * or a capture is running. For the binding to call while the hub is CLOSED and the
+   * page is still; a no-op while open.
+   */
+  prepareAhead(): void {
+    if (this.disposed || this.isOpen || this.aheadInFlight || this.inFlight) return;
+    if (this.ahead && this.fresh(this.ahead)) return;
+    if (this.shouldCapture && !this.shouldCapture()) return;
+    const token = ++this.aheadToken;
+    this.aheadInFlight = this.runAhead(token).finally(() => {
+      this.aheadInFlight = null;
+    });
+  }
+
+  /** The page may no longer look like the capture taken ahead of the open: drop it. */
+  invalidate(): void {
+    this.aheadToken++;
+    this.aheadAbort?.abort();
+    this.aheadAbort = null;
+    const ahead = this.ahead;
+    this.ahead = null;
+    if (ahead) this.closeBitmap(ahead.result.bitmap);
+  }
+
+  /**
    * The BEFORE bitmap, or `null`. Resolves a fresh held bitmap immediately; if a
    * capture is running, waits up to `graceMs` for it. Ownership of the returned
    * bitmap passes to the caller (it is NOT closed here). Never rejects.
@@ -206,7 +261,7 @@ export class BeforeCaptureScheduler {
     const epoch = this.epoch;
     const ready = this.take();
     if (ready) return ready;
-    const running = this.inFlight;
+    const running = this.inFlight ?? this.aheadInFlight;
     if (!running) return null;
     let timer: ReturnType<typeof setTimeout> | undefined;
     await Promise.race([
@@ -231,8 +286,13 @@ export class BeforeCaptureScheduler {
   state(): BeforeCaptureState {
     return {
       open: this.isOpen,
-      pending: this.inFlight !== null || this.cancelScheduled !== null || this.motionTimer !== null,
+      pending:
+        this.inFlight !== null ||
+        this.aheadInFlight !== null ||
+        this.cancelScheduled !== null ||
+        this.motionTimer !== null,
       held: this.held !== null,
+      aheadHeld: this.ahead !== null,
       ageMs: this.held ? this.now() - this.held.takenAt : null,
       lastDurationMs: this.lastDurationMs,
       lastStartedAfterOpenMs: this.lastStartedAfterOpenMs,
@@ -244,6 +304,7 @@ export class BeforeCaptureScheduler {
   /** Hub unmounted: close everything including the capture session. */
   dispose(): void {
     this.hubClosed();
+    this.invalidate();
     this.disposed = true;
     try {
       this.session?.dispose();
@@ -253,11 +314,15 @@ export class BeforeCaptureScheduler {
     this.session = null;
   }
 
+  private fresh(held: Held): boolean {
+    return this.now() - held.takenAt <= this.staleMs;
+  }
+
   /** Hand the held bitmap to the caller if it is still fresh. */
   private take(): ImageBitmap | null {
     const held = this.held;
     if (!held) return null;
-    if (this.now() - held.takenAt > this.staleMs) return null;
+    if (!this.fresh(held)) return null;
     this.held = null;
     this.consumed = true;
     if (this.staleTimer) clearTimeout(this.staleTimer);
@@ -302,7 +367,11 @@ export class BeforeCaptureScheduler {
    */
   private begin(epoch: number): void {
     if (epoch !== this.epoch || this.disposed) return;
-    const running = this.inFlight;
+    // An ahead capture adopted (or finished) in the meantime: nothing to take. And once this open's bitmap has
+    // been handed out (a release before the morph timer fired) a capture would only be thrown away on arrival,
+    // after costing the main thread a clone in the middle of the run.
+    if (this.consumed || (this.held && this.fresh(this.held))) return;
+    const running = this.inFlight ?? this.aheadInFlight;
     if (running) {
       void running.then(() => {
         if (!this.inFlight) this.begin(epoch);
@@ -358,6 +427,52 @@ export class BeforeCaptureScheduler {
     this.lastDurationMs = result.durationMs;
     if (previous) this.closeBitmap(previous.result.bitmap);
     this.armStaleTimer(epoch);
+  }
+
+  /** A capture with the hub closed (`prepareAhead`). */
+  private async runAhead(token: number): Promise<void> {
+    const abort = new AbortController();
+    this.aheadAbort = abort;
+    let result: CaptureResult;
+    try {
+      const session = this.getCapture();
+      if (!session) return;
+      await session.createSession();
+      result = await session.captureViewport({
+        phase: 'before',
+        exclude: this.exclude,
+        scaleCap: this.currentScaleCap(),
+        signal: abort.signal,
+      });
+    } catch (err) {
+      if (token === this.aheadToken) {
+        this.lastError = err instanceof Error ? err.message : String(err);
+      }
+      return;
+    } finally {
+      if (this.aheadAbort === abort) this.aheadAbort = null;
+    }
+    this.captureCount++;
+    if (token !== this.aheadToken || this.disposed) {
+      // Invalidated while it ran: the page moved on.
+      this.closeBitmap(result.bitmap);
+      return;
+    }
+    this.lastDurationMs = result.durationMs;
+    const entry: Held = { result, takenAt: this.now() };
+    if (this.isOpen) {
+      // The hub opened while it ran: it is the open's BEFORE unless the open already has one.
+      if (this.held || this.consumed) {
+        this.closeBitmap(result.bitmap);
+        return;
+      }
+      this.held = entry;
+      this.armStaleTimer(this.epoch);
+      return;
+    }
+    const previous = this.ahead;
+    this.ahead = entry;
+    if (previous) this.closeBitmap(previous.result.bitmap);
   }
 
   /** After `staleMs`, retake on the next idle if the bitmap is still unused. */

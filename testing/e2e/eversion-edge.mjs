@@ -564,6 +564,17 @@ async function hiddenTab() {
       `before: ${JSON.stringify(running)}`,
     );
 
+    // The AFTER capture is main-thread work of its own (a DOM clone): on a loaded rig it can hold the page for
+    // longer than the grace below, and samples taken behind it would read a run the 1 s grace has (correctly)
+    // settled. Hide the tab once it is done, so the hidden window measures the loop, not the capture.
+    await s.page.waitForFunction(
+      () =>
+        window.__posts.some(
+          (p) => (p.type === 'texture' && p.slot === 'after') || p.type === 'after-failed',
+        ),
+      null,
+      { timeout: RUN_MS, polling: 100 },
+    );
     // A short absence (inside HIDDEN_SETTLE_GRACE_MS, 1 s): the loop pauses and the run is still alive.
     await setHidden(true);
     await s.page.waitForTimeout(400);

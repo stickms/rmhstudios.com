@@ -196,6 +196,15 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
   let renderer: RendererApi | null = null;
   let dprCap = 1;
   let governor = new DprGovernor();
+  /**
+   * The DPR scale the governor has settled on for this renderer, kept across runs: a step is a drawing-buffer
+   * reallocation, which on an in-thread host blocks the main thread, so a device that needed one starts its next
+   * runs at that size instead of reallocating at every release and stepping again mid-run. A new renderer (init)
+   * starts at full resolution again.
+   */
+  let dprScale = 1;
+  /** `dprScale` when this run started: the governor's steps are relative to it. */
+  let runScale = 1;
   let plan: EversionPlan | null = null;
   let timelineConfig: TimelineConfig | null = null;
   let timeline: TimelineApi | null = null;
@@ -272,7 +281,10 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
         const interval = now - lastFrameAt;
         stats.record(interval);
         const step = governor.record(interval);
-        if (step !== null) renderer.setDprScale(step);
+        if (step !== null) {
+          dprScale = runScale * step;
+          renderer.setDprScale(dprScale);
+        }
       }
       lastFrameAt = now;
 
@@ -436,11 +448,13 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
     runEnded = false;
     running = false;
     dprCap = message.dprCap;
+    dprScale = 1;
     renderer = deps.createRenderer(message.canvas, {
       tier: message.tier,
       dprCap: message.dprCap,
       onContextLost: contextLost,
       precompileCosmos: message.precompileCosmos === true,
+      viewport: message.viewport,
     });
     emit({ type: 'ready', tier: message.tier, host: mode });
   }
@@ -500,7 +514,8 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
     coverSent = false;
     framesDrawn = 0;
     stats.reset();
-    governor = new DprGovernor(Math.min(plan.viewport.dpr, dprCap), refreshHz);
+    runScale = dprScale;
+    governor = new DprGovernor(Math.min(plan.viewport.dpr, dprCap) * runScale, refreshHz);
     running = true;
     hurried = false;
     timeline!.start(now);
@@ -672,6 +687,10 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
     handle(message: ToWorker) {
       if (disposed || (lost && message.type !== 'init')) {
         if (message.type === 'texture') message.bitmap.close?.();
+        // Lost between runs (a GPU reset, or a context refused right after init): the announcement then had no
+        // run to end, and a dropped `start` would leave this one waiting forever for frames. Say it again, now
+        // that a run is listening; it ends the run as a loss mid-run does.
+        if (!disposed && message.type === 'start') emit({ type: 'context-lost' });
         return;
       }
       try {

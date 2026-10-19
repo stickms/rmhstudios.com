@@ -207,6 +207,30 @@ frame-to-frame jump four times its neighbours.
   start-of-run hitches, a GC or a route render never trigger a DPR step - which
   would have added a canvas reallocation, a second hitch, to the first - while a run
   that drops one frame in five still steps.
+- **On WebKit nothing heavy runs while something moves (amended 2026-10-19).** Every
+  iOS browser and Safari use the in-thread host, so the effect, the hub's globe and the
+  page share one thread. A profile of that path (Chromium forced in-thread, desktop
+  CPU) put ~100 ms of work 0.7 s into every hub opening (the BEFORE capture, the LUT
+  bake), while the globe drifts, and 150-220 ms at release (the canvas's first
+  allocation, blocking on the GPU process). Now:
+  - the BEFORE capture is taken **ahead of the open**, with the hub closed and the page
+    still for 1.2 s (`BeforeCaptureScheduler.prepareAhead`), held aside and adopted by
+    the next open if fresh; a scroll, resize, route or theme change drops it, and the
+    open falls back to capturing after its morph when nothing fresh is held (and none
+    is taken while a run is on screen, e.g. a Preview, which runs without the hub);
+  - the next run's projection is drawn and its LUT baked at quiet time with the hub
+    closed (`controller.prepare`), re-armed at every close;
+  - the drawing buffer is sized for the page's viewport when the host initialises
+    (`init.viewport`), so `prime` at release finds it allocated (and the warm-up draws
+    into the real multisampled buffer);
+  - a DPR step **sticks** for the page's later runs (`core.ts`, `dprScale`), so a phone
+    that needed one starts there instead of reallocating at every release and stepping
+    again mid-run; the DPR floor bounds the page, not the run;
+  - once this open's BEFORE has been handed out, its morph timer no longer starts a
+    capture that would be thrown away on arrival, mid-run;
+  - a context lost **between** runs (sizing at init made it observable there) is
+    announced again when the next `start` arrives: the core drops every message but
+    `init` while lost, and a dropped `start` left that run waiting forever for frames.
 - **Every program is warm before its first frame.** A program's first draw is when
   the driver really builds it (Metal and D3D key the GPU program by blend state and
   framebuffer format) and makes the mesh resident: that was the stutter at the start
