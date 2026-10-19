@@ -442,8 +442,11 @@ export function RadialHub() {
   useEffect(() => {
     if (phase !== 'closed' || !landFocus.current) return;
     landFocus.current = false;
+    // Focus still on the overlay counts as stranded: a mouse press on it focuses the
+    // catcher, which stays mounted but is hidden once closed, so focus falls to <body>
+    // a frame later.
     const active = document.activeElement;
-    if (active && active !== document.body) return;
+    if (active && active !== document.body && !overlayRef.current?.contains(active)) return;
     document.getElementById('main-content')?.focus({ preventScroll: true });
   }, [phase]);
 

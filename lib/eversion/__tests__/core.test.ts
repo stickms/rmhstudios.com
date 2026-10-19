@@ -186,6 +186,19 @@ describe('createEversionCore', () => {
     expect(r.requests).toBe(0);
   });
 
+  it('a context lost BETWEEN runs is announced again at start, so the run ends instead of waiting for frames', () => {
+    const r = rig();
+    boot(r);
+    // Lost while no run is listening (e.g. right after init): the first announcement has no run to end.
+    r.renderer.lostCallback?.();
+    expect(r.types()).toContain('context-lost');
+    const before = r.out.length;
+    r.send(prime);
+    r.send({ type: 'start', t0: 5000 });
+    expect(r.out.slice(before).map((m) => m.type)).toContain('context-lost');
+    expect(r.requests).toBe(0);
+  });
+
   it('emits every stage in order, then done with stats, and schedules nothing after', () => {
     const r = rig();
     boot(r);
@@ -615,6 +628,42 @@ describe('createEversionCore with the real Timeline', () => {
         ? [m.stage]
         : [],
     );
+
+  it("keeps the governor's DPR step for the page's later runs, and a new init starts at full size again", () => {
+    const r = realRig();
+    r.send({ type: 'init', canvas: {} as OffscreenCanvas, tier: 'low', dprCap: 2 });
+    const vp2 = { ...viewport, dpr: 2 };
+    const prime2 = { ...prime, viewport: vp2 } as ToWorker;
+    const run = (from: number) => {
+      r.send(prime2);
+      r.send({ type: 'start', t0: from });
+      let now = from;
+      for (let i = 0; i < 1000 && r.pending > 0; i++) {
+        now += 40;
+        r.frame(now);
+        if (
+          r.stages().filter((x) => x === 'uncover').length >
+          r.stages().filter((x) => x === 'reveal').length
+        ) {
+          r.send({ type: 'reveal' });
+        }
+      }
+      return now;
+    };
+    // 25 fps throughout: the first run steps twice (2 -> 1.5 -> 1.125).
+    let end = run(1000);
+    expect(r.renderer.dprScales).toEqual([0.75, 0.5625]);
+    // The next run starts there (no reset to 1 at prime, so no reallocation at release); still slow, it takes
+    // the one step left above the DPR floor (1.125 -> 0.84) and no more: the floor bounds the page, not the run.
+    end = run(end + 1000);
+    expect(r.renderer.dprScales).toEqual([0.75, 0.5625, 0.421875]);
+    end = run(end + 1000);
+    expect(r.renderer.dprScales).toHaveLength(3);
+    // A new renderer is full size again, and its governor steps from there.
+    r.send({ type: 'init', canvas: {} as OffscreenCanvas, tier: 'low', dprCap: 2 });
+    run(end + 1000);
+    expect(r.renderer.dprScales.slice(3)).toEqual([0.75, 0.5625]);
+  });
 
   it('abort while hidden: uncover, reveal, done, synchronously, nothing drawn', () => {
     const r = realRig();

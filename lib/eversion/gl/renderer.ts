@@ -95,7 +95,7 @@
  */
 
 import { CAGE_ALPHA_END, CAGE_ALPHA_START, LUT_SIZE, STAGE_PARAM_COUNT, TIERS } from '../constants';
-import { buildCosmos, createCosmosFrame, stepCosmos } from '../cosmos';
+import { buildCosmos, createCosmosFrame, planetWeight, stepCosmos } from '../cosmos';
 import type { CosmosScene } from '../cosmos';
 import { registerDebug } from '../debug';
 import type { RendererDebug } from '../debug';
@@ -226,6 +226,8 @@ export function createRenderer(
   const stageScratch = new Float32Array(STAGE_PARAM_COUNT);
   const stageScratch64 = new Float64Array(STAGE_PARAM_COUNT);
   let forcedEvert: number | null = null;
+  /** 1 for the projections whose stretched wedges the shaders turn to glass. */
+  let azimuthal = 0;
 
   /* ── Programs ─────────────────────────────────────────────────────────── */
 
@@ -343,6 +345,15 @@ export function createRenderer(
   bindUnit(SAMPLER_UNITS.after, fallbackPage);
   bindUnit(SAMPLER_UNITS.placeholder, fallbackPage);
 
+  // Sized now (quiet time) for the viewport the host was initialised in, so the run's `prime` finds the buffer
+  // allocated and the warm-up below draws into the real multisampled buffer: at release, an allocation blocks an
+  // in-thread host's main thread on the GPU process (measured: 150-220 ms under load).
+  if (options.viewport) {
+    cssW = options.viewport.w;
+    cssH = options.viewport.h;
+    dpr = options.viewport.dpr;
+    applySize();
+  }
   warmUp();
 
   /**
@@ -473,9 +484,6 @@ export function createRenderer(
     writeStatic();
   }
 
-  /** 1 for the projections whose stretched wedges the shaders turn to glass. */
-  let azimuthal = 0;
-
   /** `prime`- and `resize`-cadence uniforms, for every program that has them. */
   function writeStatic() {
     const g = gl!;
@@ -542,6 +550,7 @@ export function createRenderer(
     g.uniform1f(l.u_pageAlpha, s.pageAlpha);
     g.uniform1f(l.u_ripple, s.rippleAge);
     g.uniform1f(l.u_cageAlpha, cageAlpha);
+    g.uniform1f(l.u_planet, planetWeight(s));
     writeMaterial(p);
   }
 
@@ -660,7 +669,8 @@ export function createRenderer(
       cssW = p.viewport.w;
       cssH = p.viewport.h;
       dpr = p.viewport.dpr;
-      dprScale = 1;
+      // `dprScale` is NOT reset: a step the governor took holds for the page's later runs (core.ts), so a device
+      // that needed it starts at that size instead of reallocating at every release and stepping again mid-run.
       navigations++;
       layoutCosmos();
       applySize();

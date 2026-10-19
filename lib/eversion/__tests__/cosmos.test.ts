@@ -14,6 +14,7 @@ import {
   cosmosEnabled,
   cosmosPresence,
   createCosmosFrame,
+  planetWeight,
   stepCosmos,
 } from '../cosmos';
 import { GLOBE_RADIUS_FRACTION, LIGHT_DIRECTION } from '../constants';
@@ -49,6 +50,33 @@ describe('where the cosmos runs', () => {
     expect(cosmosEnabled({ w: 390, h: 844, dpr: 3 }, 'high')).toBe(false);
     expect(cosmosEnabled({ w: 834, h: 1194, dpr: 2 }, 'high')).toBe(true);
     expect(buildCosmos(DESKTOP, 'low', DARK)).toBeNull();
+  });
+});
+
+describe('the white-planet weight', () => {
+  it('is 0 at both flat endpoints and 1 on the steady sphere', () => {
+    expect(planetWeight(snap({ wrap: 0, unwrap: 1 }))).toBe(0);
+    expect(planetWeight(snap({ wrap: 1, unwrap: 0 }))).toBe(0);
+    expect(planetWeight(snap({ wrap: 1, unwrap: 1 }))).toBe(1);
+  });
+
+  it('is gone 55% of the way into UNWRAP, while the globe is still round', () => {
+    expect(planetWeight(snap({ wrap: 1, unwrap: 0.45 }))).toBe(0);
+    expect(planetWeight(snap({ wrap: 1, unwrap: 0.7 }))).toBeGreaterThan(0);
+  });
+
+  it('never steps: a fine sweep through WRAP then UNWRAP moves it by small amounts only', () => {
+    const N = 2000;
+    let prev = 0;
+    let maxStep = 0;
+    for (let i = 0; i <= 2 * N; i++) {
+      const s = i <= N ? snap({ wrap: i / N, unwrap: 1 }) : snap({ wrap: 1, unwrap: 2 - i / N });
+      const v = planetWeight(s);
+      maxStep = Math.max(maxStep, Math.abs(v - prev));
+      prev = v;
+    }
+    // Quintics over 45% and 50% of a channel: the steepest step is ~1.875 / (0.45 N).
+    expect(maxStep).toBeLessThan(2.1 / (0.45 * N));
   });
 });
 

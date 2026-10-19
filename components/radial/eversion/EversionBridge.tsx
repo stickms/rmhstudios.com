@@ -9,6 +9,7 @@ import {
   type EversionControllerHandle,
   type RouterLike,
 } from './useEversionController';
+import { overlayStore } from './overlay-store';
 import { useBeforeCapture } from './useBeforeCapture';
 import { whenQuiet } from '../quiet';
 
@@ -127,6 +128,20 @@ export default function EversionBridge({ open, motionMs, onController }: Eversio
     if (!controller || !open) return;
     controller.onHubOpened();
     return () => controller.onHubClosed();
+  }, [open]);
+
+  // With the hub closed and the page still: draw the next run's projection and bake its LUT now (`prepare`), so
+  // the hub's opening - on WebKit the thread that also draws the globe - has nothing to do but open. Re-armed at
+  // every close: a navigation changes the page, and `random` draws a new projection per run.
+  useEffect(() => {
+    if (open) return;
+    return whenQuiet(
+      () => {
+        if (live.current.beforeCapture.isEligible()) controllerRef.current?.prepare();
+      },
+      // Not while a run is on screen (Preview runs without opening the hub).
+      { quietMs: QUIET_MS, busy: () => openRef.current || overlayStore.getSnapshot().mounted },
+    );
   }, [open]);
 
   return <EversionOverlay />;

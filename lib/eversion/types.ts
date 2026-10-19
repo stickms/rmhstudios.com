@@ -576,6 +576,12 @@ export type ToWorker =
        * in-thread host is a main-thread hitch at the start of a run.
        */
       precompileCosmos?: boolean;
+      /**
+       * The page's viewport now: the drawing buffer is sized for it at init, at quiet time, so the run's `prime`
+       * (at release) finds it the right size instead of allocating it — on an in-thread host a buffer allocation
+       * blocks the main thread on the GPU process.
+       */
+      viewport?: Viewport;
     }
   | ({
       type: 'prime';
@@ -719,6 +725,8 @@ export interface RendererOptions {
   governCosmos?: boolean;
   /** Compile the cosmos's programs at construction (see `ToWorker` `init.precompileCosmos`). */
   precompileCosmos?: boolean;
+  /** Size the drawing buffer for this viewport at construction (see `ToWorker` `init.viewport`). */
+  viewport?: Viewport;
 }
 
 /**

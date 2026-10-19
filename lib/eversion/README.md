@@ -207,6 +207,30 @@ frame-to-frame jump four times its neighbours.
   start-of-run hitches, a GC or a route render never trigger a DPR step - which
   would have added a canvas reallocation, a second hitch, to the first - while a run
   that drops one frame in five still steps.
+- **On WebKit nothing heavy runs while something moves (amended 2026-10-19).** Every
+  iOS browser and Safari use the in-thread host, so the effect, the hub's globe and the
+  page share one thread. A profile of that path (Chromium forced in-thread, desktop
+  CPU) put ~100 ms of work 0.7 s into every hub opening (the BEFORE capture, the LUT
+  bake), while the globe drifts, and 150-220 ms at release (the canvas's first
+  allocation, blocking on the GPU process). Now:
+  - the BEFORE capture is taken **ahead of the open**, with the hub closed and the page
+    still for 1.2 s (`BeforeCaptureScheduler.prepareAhead`), held aside and adopted by
+    the next open if fresh; a scroll, resize, route or theme change drops it, and the
+    open falls back to capturing after its morph when nothing fresh is held (and none
+    is taken while a run is on screen, e.g. a Preview, which runs without the hub);
+  - the next run's projection is drawn and its LUT baked at quiet time with the hub
+    closed (`controller.prepare`), re-armed at every close;
+  - the drawing buffer is sized for the page's viewport when the host initialises
+    (`init.viewport`), so `prime` at release finds it allocated (and the warm-up draws
+    into the real multisampled buffer);
+  - a DPR step **sticks** for the page's later runs (`core.ts`, `dprScale`), so a phone
+    that needed one starts there instead of reallocating at every release and stepping
+    again mid-run; the DPR floor bounds the page, not the run;
+  - once this open's BEFORE has been handed out, its morph timer no longer starts a
+    capture that would be thrown away on arrival, mid-run;
+  - a context lost **between** runs (sizing at init made it observable there) is
+    announced again when the next `start` arrives: the core drops every message but
+    `init` while lost, and a dropped `start` left that run waiting forever for frames.
 - **Every program is warm before its first frame.** A program's first draw is when
   the driver really builds it (Metal and D3D key the GPU program by blend state and
   framebuffer format) and makes the mesh resident: that was the stutter at the start
@@ -242,11 +266,15 @@ On a dark theme the globe is a dark page wrapped on a sphere, against a darker
 space: it disappeared into the background. While it is a planet, the surface shows
 the page with its lightness reflected (`planetTone` in `gl/shaders.ts`: `c + 1 - 2L`,
 which keeps hue and turns near-black into near-white), weighted by
-`u_whiten · quintic(morph)`. `u_whiten` is how dark the theme's background is
+`u_whiten · u_planet`. `u_whiten` is how dark the theme's background is
 (`pageDarkness` in `gl/renderer.ts`: 0 for a light theme, 1 under ~18% luminance),
-written once per prime. At the flat endpoints the morph weight is 0, so the BEFORE
-and AFTER pages are the captures to the bit; through WRAP the page eases to white
-as it lifts off, and back to its own colours through UNWRAP.
+written once per prime. `u_planet` is `cosmos.ts#planetWeight(snapshot)`: it rises
+from 10% to 55% of WRAP and is gone 55% of the way into UNWRAP, uniformly over the
+surface, so the page's own colours are back while the globe is still round. (A
+first version rode each vertex's morph weight, which left the cap, the last part to
+flatten, white until the final frames and then cut to the dark page.) A quick ramp
+on the morph weight keeps any vertex still on the page plane untouched, so the
+BEFORE and AFTER pages are the captures to the bit.
 
 ## The ending: the run ends with UNWRAP
 

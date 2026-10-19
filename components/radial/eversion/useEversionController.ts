@@ -440,6 +440,7 @@ function createHostPort(): HostPort & {
           tier,
           dprCap: TIERS[tier].canvasDprCap,
           precompileCosmos: cosmosEnabled(viewportNow(), tier),
+          viewport: viewportNow(),
         });
       } catch (error) {
         off();
@@ -523,6 +524,12 @@ export interface EversionControllerHandle extends EversionController {
    * them (the debug entry point, the e2e fixtures); the hub never waits on this.
    */
   warmHost(): Promise<boolean>;
+  /**
+   * Draw the next run's projection and bake its LUT now. The bridge calls it at quiet time while the hub is
+   * closed, so the hub's opening (on WebKit the same thread that draws the globe) never pays for it. A no-op when
+   * the prepared projection's LUT for this viewport is already baked.
+   */
+  prepare(): void;
   /** Observable state, for the debug slot and tests. */
   state: EversionRunner['state'];
   dispose(): void;
@@ -774,8 +781,14 @@ export function createEversionController(
     onHubOpened() {
       if (!isEversionEnabled() || !deps.beforeCapture.isEligible()) return;
       cancelPrep();
-      const id = resolveProjection(setting());
+      // Prepared at quiet time before the hub opened (`prepare`): keep that draw, and when its LUT is already
+      // baked for this viewport there is nothing to do here but make sure the host is warm.
+      const id = prepared ?? resolveProjection(setting());
       prepared = id;
+      if (bakedKeys.has(lutKey(id, viewportNow()))) {
+        hostPort.warm(detectTier());
+        return;
+      }
       timer = setTimeout(() => {
         timer = null;
         try {
@@ -791,6 +804,20 @@ export function createEversionController(
 
     onHubClosed() {
       cancelPrep();
+    },
+
+    prepare() {
+      if (!isEversionEnabled() || !deps.beforeCapture.isEligible()) return;
+      const viewport = viewportNow();
+      const id = prepared ?? resolveProjection(setting());
+      prepared = id;
+      if (bakedKeys.has(lutKey(id, viewport))) return;
+      try {
+        getBakedLut(id, viewport);
+        bakedKeys.add(lutKey(id, viewport));
+      } catch {
+        /* the render side bakes it instead */
+      }
     },
 
     start: (node, state, entry, options) => runner.run(node, state, entry, options),

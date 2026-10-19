@@ -1,8 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
+import { useRouterState } from '@tanstack/react-router';
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
 import { BeforeCaptureScheduler } from '@/lib/eversion/before-capture';
+import { BEFORE_STALE_MS } from '@/lib/eversion/constants';
 import { createCapture } from '@/lib/eversion/capture';
 import { registerDebug } from '@/lib/eversion/debug';
 import { evaluateEligibility, shouldCaptureBefore } from '@/lib/eversion/eligibility';
@@ -12,10 +14,17 @@ import { detectHostMode } from '@/lib/eversion/gl/host';
 import { isEversionReady } from '@/lib/eversion/prefetch';
 import type { CaptureApi, FallbackReason } from '@/lib/eversion/types';
 import { detectTier } from './detect-tier';
+import { overlayStore } from './overlay-store';
 import { whenQuiet } from '../quiet';
 
 /** How long the page must be still (and no pointer held) before the BEFORE capture runs. */
 const CAPTURE_QUIET_MS = 150;
+/**
+ * With the hub closed: how long the page must be still before a capture is taken AHEAD of the next open, and the
+ * least time between two of them (a guard against anything that keeps invalidating it).
+ */
+const AHEAD_QUIET_MS = 1200;
+const AHEAD_MIN_GAP_MS = 5000;
 
 /**
  * Read the live eligibility inputs. Each reader is individually guarded: a
@@ -126,6 +135,66 @@ export function useBeforeCapture({
     scheduler.hubOpened();
     return () => scheduler.hubClosed();
   }, [open, motionMs]);
+
+  // Ahead of the open (before-capture.ts): with the hub closed and the page still, take the capture now, so the
+  // hub's opening - on WebKit drawn on the same thread, with the globe drifting - never pays for one. Anything that
+  // can change what the page looks like drops it: a scroll (of the page or anything in it), a resize, a theme
+  // change on <html>, a route change (this effect re-runs on `pathname`).
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  useEffect(() => {
+    const scheduler = schedulerRef.current;
+    if (!scheduler || open || !isEversionEnabled()) return;
+    scheduler.invalidate();
+    let lastAt = -Infinity;
+    let cancel: () => void = () => {};
+    let gap: ReturnType<typeof setTimeout> | null = null;
+    const arm = () => {
+      cancel();
+      if (gap) clearTimeout(gap);
+      gap = null;
+      cancel = whenQuiet(
+        () => {
+          if (document.hidden) return;
+          const wait = lastAt + AHEAD_MIN_GAP_MS - performance.now();
+          if (wait > 0) {
+            gap = setTimeout(arm, wait);
+            return;
+          }
+          lastAt = performance.now();
+          scheduler.prepareAhead();
+        },
+        // A run started without the hub (Preview) is on screen: not a still page.
+        { quietMs: AHEAD_QUIET_MS, busy: () => overlayStore.getSnapshot().mounted },
+      );
+    };
+    const changed = () => {
+      scheduler.invalidate();
+      arm();
+    };
+    const vv = window.visualViewport;
+    window.addEventListener('scroll', changed, { capture: true, passive: true });
+    window.addEventListener('resize', changed);
+    vv?.addEventListener('resize', changed);
+    document.addEventListener('visibilitychange', arm);
+    // A run coming or going (Preview runs without opening the hub) changes the page.
+    const offOverlay = overlayStore.subscribe(changed);
+    const theme = new MutationObserver(changed);
+    theme.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    // Still on the page past the staleness limit: retake at the next still moment.
+    const refresh = setInterval(arm, BEFORE_STALE_MS);
+    arm();
+    return () => {
+      cancel();
+      if (gap) clearTimeout(gap);
+      clearInterval(refresh);
+      window.removeEventListener('scroll', changed, { capture: true });
+      window.removeEventListener('resize', changed);
+      vv?.removeEventListener('resize', changed);
+      document.removeEventListener('visibilitychange', arm);
+      theme.disconnect();
+      offOverlay();
+    };
+  }, [open, pathname]);
 
   const awaitBefore = useCallback(
     (graceMs: number) => schedulerRef.current?.awaitBefore(graceMs) ?? Promise.resolve(null),

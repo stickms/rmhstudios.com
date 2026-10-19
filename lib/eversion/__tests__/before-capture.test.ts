@@ -282,6 +282,95 @@ describe('BeforeCaptureScheduler', () => {
     await expect(scheduler.awaitBefore(BEFORE_GRACE_MS)).resolves.not.toBeNull();
   });
 
+  describe('ahead of the open', () => {
+    it('a fresh ahead capture is adopted at open, and the open takes no capture of its own', async () => {
+      const { scheduler, capture } = make();
+      scheduler.prepareAhead();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(capture.api.captureViewport).toHaveBeenCalledTimes(1);
+      expect(scheduler.state().aheadHeld).toBe(true);
+      scheduler.hubOpened();
+      expect(scheduler.state().held).toBe(true);
+      await vi.advanceTimersByTimeAsync(MOTION + 1000);
+      expect(capture.api.captureViewport).toHaveBeenCalledTimes(1);
+      expect(await scheduler.awaitBefore(BEFORE_GRACE_MS)).toBe(capture.bitmaps[0]);
+    });
+
+    it('invalidate() frees it, and the open captures after the morph as before', async () => {
+      const { scheduler, capture } = make();
+      scheduler.prepareAhead();
+      await vi.advanceTimersByTimeAsync(0);
+      scheduler.invalidate();
+      expect(capture.bitmaps[0].close).toHaveBeenCalledTimes(1);
+      expect(scheduler.state().aheadHeld).toBe(false);
+      scheduler.hubOpened();
+      await vi.advanceTimersByTimeAsync(MOTION - 1);
+      expect(capture.api.captureViewport).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(100);
+      expect(capture.api.captureViewport).toHaveBeenCalledTimes(2);
+    });
+
+    it('a stale one is not adopted (closed, and replaced by an open capture)', async () => {
+      const { scheduler, capture } = make();
+      scheduler.prepareAhead();
+      await vi.advanceTimersByTimeAsync(BEFORE_STALE_MS + 1);
+      scheduler.hubOpened();
+      expect(capture.bitmaps[0].close).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(MOTION + 100);
+      expect(capture.api.captureViewport).toHaveBeenCalledTimes(2);
+    });
+
+    it('a capture invalidated while it ran is discarded', async () => {
+      const { scheduler, capture } = make(makeCapture({ delayMs: 200 }));
+      scheduler.prepareAhead();
+      await vi.advanceTimersByTimeAsync(50);
+      scheduler.invalidate();
+      expect(capture.calls[0].options.signal?.aborted).toBe(true);
+      await vi.advanceTimersByTimeAsync(300);
+      expect(capture.bitmaps[0].close).toHaveBeenCalledTimes(1);
+      expect(scheduler.state().aheadHeld).toBe(false);
+    });
+
+    it('one still running when the hub opens becomes the open BEFORE, with no second capture', async () => {
+      const { scheduler, capture } = make(makeCapture({ delayMs: 200 }));
+      scheduler.prepareAhead();
+      await vi.advanceTimersByTimeAsync(50);
+      scheduler.hubOpened();
+      // The release comes before the morph ends: awaitBefore waits on the ahead capture.
+      const before = scheduler.awaitBefore(1000);
+      await vi.advanceTimersByTimeAsync(200);
+      expect(await before).toBe(capture.bitmaps[0]);
+      await vi.advanceTimersByTimeAsync(MOTION + 1000);
+      expect(capture.api.captureViewport).toHaveBeenCalledTimes(1);
+    });
+
+    it('is a no-op while open, while one is fresh, and when shouldCapture says no', async () => {
+      const { scheduler, capture } = make();
+      scheduler.hubOpened();
+      scheduler.prepareAhead();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(capture.api.captureViewport).not.toHaveBeenCalled();
+      scheduler.hubClosed();
+      scheduler.prepareAhead();
+      await vi.advanceTimersByTimeAsync(0);
+      scheduler.prepareAhead();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(capture.api.captureViewport).toHaveBeenCalledTimes(1);
+      const off = make(makeCapture(), { shouldCapture: () => false });
+      off.scheduler.prepareAhead();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(off.capture.api.captureViewport).not.toHaveBeenCalled();
+    });
+
+    it('dispose frees an ahead capture', async () => {
+      const { scheduler, capture } = make();
+      scheduler.prepareAhead();
+      await vi.advanceTimersByTimeAsync(0);
+      scheduler.dispose();
+      expect(capture.bitmaps[0].close).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it('scales the capture ceiling by tier (spec 6.2), defaulting to the largest', async () => {
     for (const [tier, cap] of [
       ['low', 1],

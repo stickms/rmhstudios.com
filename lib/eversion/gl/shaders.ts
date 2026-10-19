@@ -1092,6 +1092,7 @@ uniform vec4 u_colVeil;
 uniform vec4 u_colAccent;
 uniform vec4 u_colCageMajor;
 uniform float u_whiten;
+uniform float u_planet;
 uniform float u_time;
 uniform float u_spin;
 uniform float u_tilt;
@@ -1107,10 +1108,12 @@ ${quality >= 1 ? MATERIAL_GLSL : ''}
 /* A dark page is a WHITE planet (owner, 2026-10-18: on a dark theme the page wrapped on the globe was a black ball
    lost against the dark sky). Its lightness is inverted with the hue kept (c + 1 - 2 L): the dark ground goes near
    white, light text goes dark, mid-tone accents barely move, so the page stays legible. u_whiten is how dark the
-   theme's page is (0 on a light theme); it rides the morph weight, so it follows the wrap wave in and the unwrap
-   out, and is exactly 0 on the flat first and last frames. */
+   theme's page is (0 on a light theme); u_planet is how much the globe is a planet (cosmos.ts#planetWeight: in
+   through WRAP, out through the first half of UNWRAP, uniformly, so no part of the surface is left white as it
+   lands). The quick ramp on the morph weight keeps any vertex still on the page plane untouched, so the flat first
+   and last frames are the captures to the bit. */
 vec3 planetTone(vec3 c) {
-  float k = u_whiten * quintic5(v_morph);
+  float k = u_whiten * u_planet * clamp(v_morph * 6.0, 0.0, 1.0);
   if (k <= 0.0) return c;
   float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
   return mix(c, clamp(c + 1.0 - 2.0 * l, 0.0, 1.0), k);
