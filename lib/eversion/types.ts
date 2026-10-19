@@ -47,8 +47,9 @@ export const PROJECTION_IDS = [
 export type ProjectionId = (typeof PROJECTION_IDS)[number];
 
 /**
- * The user's setting (spec §9.3): one projection, or `random` (the default —
- * a fresh draw per navigation that is never the previous one). Six values; this
+ * The user's setting (spec §9.3): one projection, or `random` (a fresh draw per
+ * navigation that is never the previous one). The default is Mercator
+ * (`lib/appearance/prefs.ts#DEFAULT_NAV_TRANSITION`, amended 2026-10-19). Six values; this
  * array is the source of truth for the API's zod enum (T20) and the select (T21).
  */
 export const NAV_TRANSITIONS = ['random', ...PROJECTION_IDS] as const;
@@ -143,10 +144,13 @@ export interface FitBase {
   readonly halfH: number;
 }
 
-/** Width ↔ 360° longitude; `y = ln tan(π/4 + φ/2)`, `halfW = π`, `halfH = π·A`. */
+/**
+ * True scale (amended 2026-10-19): `x = θ`, `y = ln tan(π/4 + φ/2)`, `halfW` the longitude that puts one page px on
+ * one screen px at the globe's front point (≤ π), `halfH = A·halfW`.
+ */
 export interface MercatorFit extends FitBase {
   readonly kind: 'mercator';
-  /** `2·atan(e^{π·A}) − π/2` — the latitude where the page ends (spec §5.3). */
+  /** `atan(sinh(halfH))` — the latitude where the page ends (spec §5.3, amended). */
   readonly phiMax: number;
 }
 
@@ -902,6 +906,23 @@ export type FallbackReason =
   | 'busy'
   /** The visitor pressed Back/Forward while the run was priming: nothing to do, the router already moved. */
   | 'traversal';
+
+/**
+ * What the hub needs to hand its globe over to the effect's (amended 2026-10-19), passed with the commit: the
+ * hub's glass globe swells and travels exactly as the effect's sphere does during WRAP, so the page wraps up INTO
+ * it and it dissolves into the planet instead of fading out beside it.
+ */
+export interface EversionHandover {
+  /** The effect's resting radius over the hub globe's: how far the glass globe swells. */
+  swell: number;
+  /** CSS px from the hub globe's centre to the effect's (the viewport's centre). */
+  dx: number;
+  dy: number;
+  /** ms from the commit to the start of WRAP: the frozen page's focus pull. */
+  delayMs: number;
+  /** ms WRAP takes. */
+  wrapMs: number;
+}
 
 /** How a run that DID start ended. */
 export type EversionEnd = 'done' | 'context-lost' | 'abort';

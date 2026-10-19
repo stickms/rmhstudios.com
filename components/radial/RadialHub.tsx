@@ -151,6 +151,19 @@ const MOTION_MS = 500;
  * The globe is mounted ONLY while the menu is up, which is what bounds its frame
  * loop — see the note on the loop in `LiquidGlobe.tsx`.
  */
+/** The eversion hand-off's geometry (set on `.radial-hub` at the commit, read by radial.css), cleared when it ends. */
+const HANDOVER_PROPS = [
+  '--eversion-swell',
+  '--eversion-dx',
+  '--eversion-dy',
+  '--eversion-delay',
+  '--eversion-wrap',
+] as const;
+
+function clearHandover(hub: HTMLElement | null): void {
+  if (hub) for (const name of HANDOVER_PROPS) hub.style.removeProperty(name);
+}
+
 export function RadialHub() {
   const { t } = useTranslation('feed');
   const { pathname } = useLocation();
@@ -167,6 +180,8 @@ export function RadialHub() {
   const phaseRef = useRef<Phase>(phase);
   phaseRef.current = phase;
   const orbRef = useRef<HTMLButtonElement | null>(null);
+  /** The hub's root: the eversion hand-off's geometry is set on it as custom properties (radial.css). */
+  const hubRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /**
@@ -255,19 +270,33 @@ export function RadialHub() {
     () =>
       createHandOff<NavLeaf>({
         navigateToday: (node) => live.current.today(node),
-        everting: () => {
+        everting: (handover) => {
           // The hub stays exactly as it is (`open`) until the run reaches its point
-          // of no return; from here the run owns the screen.
+          // of no return; from here the run owns the screen. The globe is handed
+          // over by motion (radial.css, `everting`): these say how far it swells and
+          // travels to land on the effect's sphere, and when.
           clearTimer();
           restoreFocus.current = false;
+          const hub = hubRef.current;
+          if (hub && handover) {
+            hub.style.setProperty('--eversion-swell', String(handover.swell));
+            hub.style.setProperty('--eversion-dx', `${handover.dx}px`);
+            hub.style.setProperty('--eversion-dy', `${handover.dy}px`);
+            hub.style.setProperty('--eversion-delay', `${handover.delayMs}ms`);
+            hub.style.setProperty('--eversion-wrap', `${handover.wrapMs}ms`);
+          }
           setPhase('everting');
         },
         closed: () => {
           clearTimer();
           landFocus.current = true;
+          clearHandover(hubRef.current);
           setPhase('closed');
         },
-        dismiss: () => live.current.dismiss(),
+        dismiss: () => {
+          clearHandover(hubRef.current);
+          live.current.dismiss();
+        },
       }),
     [],
   );
@@ -610,7 +639,7 @@ export function RadialHub() {
   const tab = phase === 'open' || phase === 'closing' ? 0 : -1;
 
   return (
-    <div className="radial-hub" data-phase={phase}>
+    <div ref={hubRef} className="radial-hub" data-phase={phase}>
       <button
         ref={orbRef}
         type="button"

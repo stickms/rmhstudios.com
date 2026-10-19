@@ -54,9 +54,11 @@
    (`--z-content` + 1: over `.radial-frame` and the backdrop; the cover hides the
    top bar, whose picture is in the capture) and UNDER every floating element: the
    cookie bar (z-40), menus and quick panels (`--z-menu`), the mini-player
-   (`--z-floating`). The capture leaves those out as not the page, so a picture
-   above them would make them vanish for the length of the wait; under it they
-   stay on screen exactly as they were. Two frames before the effect starts,
+   (`--z-floating`): those stay live and on top while the destination renders.
+   The picture carries them too (they are part of the page, and blurred with it
+   behind an open hub: radial.css), so when the layer is lifted over them it
+   shows them exactly as they were and nothing about them changes. Two frames
+   before the hub lets go,
    `--up` lifts the layer to the overlay's level (it comes after the overlay in
    the document, so it paints over the canvas, still under the hub): the canvas's
    first frame can never show above it.
@@ -67,25 +69,21 @@
    ios-webkit: the veil carries it alone there). With the hub closed (the
    Settings Preview) it is sharp, as the page is.
 
-   It is static: the blur is rasterised once, nothing animates under it. When the
-   effect's first frame is up (`cover`), the same page sharp, `--out` fades it
-   over the hub's own fade (`HOLD_FADE_MS` = `HUB_FADE_MS`): the page comes into
-   focus as the veil leaves instead of snapping sharp. Opacity is the only
-   property that moves. */
+   It is static while it waits: the blur is rasterised once. When the hub lets go
+   (the commit), `--focus` pulls the blur to sharp over the hub's own fade
+   (`HOLD_FADE_MS` = `HUB_FADE_MS`) - the blur RADIUS moves, never an opacity, so
+   there is no double image - and WRAP starts only then, on a canvas whose first
+   frame is this same page, sharp. The picture is then simply dropped
+   (`releasePicture`): it is replaced by itself. */
 .eversion-hold-layer {
   position: fixed;
   inset: 0;
   z-index: calc(var(--z-content) + 1);
   contain: strict;
   pointer-events: none;
-  opacity: 1;
 }
 .eversion-hold-layer--up {
   z-index: calc(var(--z-hub-overlay) - 1);
-}
-.eversion-hold-layer--out {
-  opacity: 0;
-  transition: opacity 250ms ease;
 }
 .eversion-hold {
   position: absolute;
@@ -97,7 +95,11 @@
 .radial-hub:is([data-phase='open'], [data-phase='everting']) .eversion-hold {
   filter: blur(var(--hub-page-blur, 20px));
 }
-html:is(.perf-lite, .reduce-transparency, .ios-webkit) .eversion-hold {
+.radial-hub .eversion-hold-layer--focus .eversion-hold {
+  filter: blur(0px);
+  transition: filter 250ms var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
+}
+html:is(.perf-lite, .reduce-transparency, .ios-webkit) .radial-hub .eversion-hold {
   filter: none;
 }
 
@@ -140,13 +142,17 @@ html.eversion-cover .radial-topbar {
    ends, by which time the hub has closed. It also pins `transition: none`, so
    the layers come back at full opacity in the frame the cover class goes, and it
    lets the feed's compose button, which the hub hides until it is `closed`,
-   dissolve in with the page instead of popping in a frame after. The orb joins
-   in the same way: with the cover off it starts its ordinary eased fade-in (the
-   base rule's 0.34 s opacity transition) under the dissolving canvas, rather
-   than starting once the dissolve is over. */
+   dissolve in with the page instead of popping in a frame after. The floating UI
+   (the cookie bar, the mini-player) drops the blur the open hub gave it in the
+   same way: it is in the AFTER picture, sharp. The orb needs nothing here: it is
+   opaque and docked under the canvas from the commit on (radial.css), and in the
+   AFTER picture, so the dissolve lands on it exactly. */
 html.eversion-live .radial-shell:has(.radial-hub[data-phase='everting']) .radial-backdrop,
 html.eversion-live .radial-shell:has(.radial-hub[data-phase='everting']) .radial-topbar,
-html.eversion-live .radial-shell:has(.radial-hub[data-phase='everting']) .radial-frame {
+html.eversion-live .radial-shell:has(.radial-hub[data-phase='everting']) .radial-frame,
+html.eversion-live
+  .radial-shell:has(.radial-hub[data-phase='everting'])
+  > [data-floating]:not([data-floating='hub']) {
   filter: none;
   transition: none;
 }
@@ -164,9 +170,6 @@ html.eversion-live.eversion-cover .radial-shell:has(.radial-hub[data-phase='open
 }
 html.eversion-live .radial-shell:has(.radial-hub[data-phase='everting']) .radial-feed__compose {
   visibility: visible;
-}
-html.eversion-live:not(.eversion-cover) .radial-hub[data-phase='everting'] .radial-hub__orb {
-  opacity: 1;
 }
 
 /* ── Settling for the AFTER capture (spec §6.4) ────────────────────────────

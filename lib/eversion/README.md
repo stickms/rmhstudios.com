@@ -90,11 +90,20 @@ Now the run renders the destination first (`runner.ts`, the sequence in its docb
    placeholder uploaded the renderer samples AFTER in the placeholder's unit (`bindPlaceholder`), so the inside of the
    globe is the destination from the first frame; the timeline's `afterMix` crossfade still runs and mixes the page with
    itself.
-4. **`start`, from the globe as it is now.** The hub's globe kept turning during the wait, so `start` carries its live
-   pose (`RunOptions.globe`, `LiquidGlobe`'s `snapshotGlobeState` passed through `hub-handoff.ts`); the core rebuilds the
-   timeline from it. `onCommit` flips the hub to `everting` in the same task, and on the first frame (`cover`) the frozen
-   picture fades out over the hub's own fade (`HOLD_FADE_MS` = `HUB_FADE_MS`): the page comes into focus as the veil
-   leaves, instead of snapping sharp under it.
+4. **The hand-over, then `start`.** The picture is lifted over the canvas (`raiseHold`), and at the commit
+   `onCommit(handover)` flips the hub to `everting` with an `EversionHandover`: how far the effect's sphere will swell
+   from the hub's globe and where it travels (`swell`, `dx`, `dy`), and when (`delayMs` = `HOLD_FADE_MS`, `wrapMs` =
+   `WRAP_MS`). Nothing of the hub fades out beside the effect (the owner, 2026-10-19: "no element should simply appear
+   or fade in, everything should morph smoothly into each other"): the veil contracts into the globe, the glass globe
+   swells and travels with WRAP on keyframes (an animated property does not transition when its animation goes) and
+   dissolves into the planet the page becomes, the foot drops off the bottom edge, and the orb is opaque and docked
+   under the canvas, carried home in the AFTER picture (`capture.ts` keeps it, and the floating UI: the cookie bar, the
+   mini-player). Meanwhile `focusHold` pulls the picture's blur radius to sharp over `HOLD_FADE_MS`; only then does
+   `start` run, from the globe's live pose (`RunOptions.globe`), on a canvas whose first frame is that same sharp page,
+   and the picture is dropped on that frame (`cover`).
+5. **The cosmos arrives by moving.** The bodies are opaque from their first frame and spread out from behind the globe
+   (depth-tested against it), and space opens as a horizon disc growing from inside the silhouette past the corners
+   (`cosmos.ts`, the stars pass); on UNWRAP the same in reverse.
 
 What can no longer happen: a fallback after the navigation (the contract stands: a `fallback` means nothing was
 navigated). A destination that cannot be captured, a render side lost between the navigation and `start`, or a

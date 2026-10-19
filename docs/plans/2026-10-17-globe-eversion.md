@@ -190,6 +190,32 @@ is replaced by `AFTER_STABLE_FRAMES`, `AFTER_QUIET_MS`, `AFTER_QUIET_CAP_MS`, `A
 - **Contract changes.** `OverlayPort.hold` / `releaseHold`; `RunOptions.globe`; `ToWorker.start.globe`;
   `RendererApi.warm?`; `HandOffController.start` options and `LiquidGlobe.onNavigate` carry a live pose getter.
 
+### Amendment 2026-10-19 (b) - everything morphs; Mercator at true scale, and the default
+
+> Owner, verbatim: "Visualize every frame and check for seamlessness. No element should simply appear or fade in,
+> everything should morph smoothly into each other." Then: "also use a better projection of the page onto the
+> sphere" and "the projection looks weird still, like the middle is so big? i want the page to look more normal,
+> maybe try conserving shapes". Where §5.1, §5.3, §7.3 or §9.2 step 3 disagree, **this amendment wins.**
+
+- **The default is Mercator** (`DEFAULT_NAV_TRANSITION`; Q13's `random` stays a choice). It is conformal: text keeps
+  its shape, where an equirectangular texture (what globe textures usually use) stretches it.
+- **Mercator is fitted at true scale** (§5.3's "width ↔ 360°" is replaced). 360° of longitude put a 960 px page on a
+  globe 528 px across at 1.7× its size in the middle, and WRAP zoomed into the page to get there. Now
+  `halfW = min(π, (W/2) / (GLOBE_RADIUS_FRACTION · min(W, H) · globeK(1)))`: one page px per screen px at the front
+  point of the eversion globe, `halfH = A·halfW`, `φ_max = atan(sinh(halfH))`. On a landscape screen the page is about
+  the front hemisphere; the caps and the back gore are glass (the gore closes on screens wider than ≈ 3.4:1). The page
+  neither grows nor shrinks as it wraps. The other four projections keep their §5.3 fits.
+- **The hand-over is motion only** (§9.2 step 3). At the commit (`RunOptions.onCommit(EversionHandover)`, now BEFORE
+  `start`) the veil contracts into the globe, the glass globe swells and travels with WRAP (keyframes: an animated
+  property does not transition when its animation goes, so a transition jumped to its end in one frame) and
+  dissolves into the planet the page becomes, the foot drops off the bottom edge; the frozen picture's blur RADIUS is
+  pulled to sharp over `HOLD_FADE_MS` (`OverlayPort.focusHold`) and the run starts on a first frame identical to it,
+  where it is dropped. The orb and the floating UI (cookie bar, mini-player) are in the captures, so they are carried
+  on the page rather than fading in after it.
+- **The cosmos arrives by moving** (amending the 2026-10-18 cosmos): the bodies are opaque from their first frame and
+  spread out from behind the globe, depth-tested against it; space opens as a horizon disc from inside the silhouette
+  past the corners (`u_horizon`), and closes the same way on UNWRAP.
+
 ## 0. The effect in one paragraph
 
 You confirm a destination on the liquid globe. The globe **swells** to fill most
@@ -560,7 +586,7 @@ with read/write wrapped in try/catch).
 
 | Projection      | Fit                                                                                                                                                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `mercator`      | Width ↔ 360° longitude. Latitude `φ_max = 2·atan(e^{π·A}) − π/2`, which gives 70.6° at 16:9 and ≈ 89.9° at 9:19.5. Caps beyond `φ_max` are glass.                                                                               |
+| `mercator`      | _Amended 2026-10-19 (b): true scale, see that amendment._ Was: width ↔ 360° longitude, `φ_max = 2·atan(e^{π·A}) − π/2`. Caps beyond `φ_max` are glass.                                                                          |
 | `equirect`      | Width ↔ 360° if `A ≤ 0.5` (then `φ_max = π·A`). Otherwise height ↔ 180° and width ↔ `360°/(2A)` of longitude, centred front; the remaining back gore is glass. (§1.1-6)                                                         |
 | `peirce`        | The page is **contained** in the projection's square, centred; the parts of the square outside the page are glass. The longer page side ↔ the square's side. (Conformal end to end, so no stretch; coverage is ≈ `min(A,1/A)`.) |
 | `stereographic` | The page is centred on the front tangent plane. Scale so the page's **half-width** subtends 150° from the front point. The rest of the sphere (back cap and, on tall pages, beyond the short sides) is glass.                   |

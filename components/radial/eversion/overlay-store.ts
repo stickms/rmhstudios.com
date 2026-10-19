@@ -31,14 +31,13 @@
  * the page content and under the floating UI (the cookie bar, the mini-player):
  * the capture leaves those out as not the page, and they stay on screen as they
  * were while the destination renders. {@link raisePicture} lifts it over the
- * effect's canvas before the canvas draws, and {@link releasePicture} fades it
- * onto the first frame, which is that same page, sharp.
+ * effect's canvas before the canvas draws, {@link focusPicture} pulls its blur to
+ * sharp as the hub lets go, and {@link releasePicture} drops it once the canvas's
+ * first frame - the same page, sharp - is up under it.
  *
  * This file imports nothing heavy on purpose: `EversionOverlay` is the one
  * piece the hub may render without the controller chunk, and it needs only this.
  */
-
-import { HOLD_FADE_MS } from '@/lib/eversion/constants';
 
 export interface OverlayState {
   /** The overlay `div` is in the tree. */
@@ -54,7 +53,6 @@ let state: OverlayState = { mounted: false, fading: false };
 let canvas: HTMLCanvasElement | null = null;
 let hold: HTMLCanvasElement | null = null;
 let holdLayer: HTMLElement | null = null;
-let holdTimer: ReturnType<typeof setTimeout> | null = null;
 let attached = false;
 let waiting: { resolve: () => void; reject: (e: Error) => void } | null = null;
 
@@ -163,30 +161,30 @@ export function raisePicture(): void {
   if (hold) layerOf(hold).classList.add(UP);
 }
 
-/** The effect's first frame is on screen: fade the picture out over {@link HOLD_FADE_MS}, then drop it. */
+/** The hub has let go: pull the picture's blur to sharp over `HOLD_FADE_MS` (`.eversion-hold-layer--focus`). */
+export function focusPicture(): void {
+  if (hold) layerOf(hold).classList.add(UP, FOCUS);
+}
+
+/** The effect's first frame is up, and it is this same page, sharp: let the picture go. */
 export function releasePicture(): void {
-  const el = hold;
-  if (!el || holdTimer) return;
-  layerOf(el).classList.add(UP, OUT);
-  holdTimer = setTimeout(dropPicture, HOLD_FADE_MS + 50);
+  dropPicture();
 }
 
 /** Remove the frozen picture at once and give its backing store back. */
 export function dropPicture(): void {
-  if (holdTimer) clearTimeout(holdTimer);
-  holdTimer = null;
-  holdLayer?.classList.remove(UP, OUT);
+  holdLayer?.classList.remove(UP, FOCUS);
   const el = hold;
   hold = null;
   if (!el) return;
-  el.classList.remove(UP, OUT);
+  el.classList.remove(UP, FOCUS);
   el.remove();
   el.width = 0;
   el.height = 0;
 }
 
 const UP = 'eversion-hold-layer--up';
-const OUT = 'eversion-hold-layer--out';
+const FOCUS = 'eversion-hold-layer--focus';
 
 /** The element the layer classes go on: the layer, or the picture itself when it had to go over the canvas. */
 function layerOf(el: HTMLElement): HTMLElement {

@@ -12,14 +12,17 @@ import {
   BEFORE_WAIT_MS,
   DESTINATION_SETTLE_HARD_MS,
   DESTINATION_SETTLE_SOFT_MS,
+  HOLD_FADE_MS,
   MAX_RUN_MS,
   UPLOAD_SETTLE_FRAMES,
+  WRAP_MS,
 } from '../constants';
 import { EversionRunner, HOST_READY_TIMEOUT_MS, OVERLAY_MOUNT_TIMEOUT_MS } from '../runner';
 import type { RunnerDeps } from '../runner';
 import type { SettleReport, SettleRequest } from '../settle';
 import type {
   CaptureApi,
+  EversionHandover,
   EversionHost,
   EversionNode,
   EversionOutcome,
@@ -132,6 +135,7 @@ function rig(patch: Partial<RunnerDeps> = {}, captureImpl?: () => Promise<unknow
       mount: async () => void log.push('overlay:mount'),
       hold: () => void log.push('overlay:hold'),
       raiseHold: () => void log.push('overlay:raise-hold'),
+      focusHold: () => void log.push('overlay:focus-hold'),
       releaseHold: () => void log.push('overlay:release-hold'),
       fade: () => void log.push('overlay:fade'),
       unmount: () => void log.push('overlay:unmount'),
@@ -226,7 +230,7 @@ function rig(patch: Partial<RunnerDeps> = {}, captureImpl?: () => Promise<unknow
 }
 
 const flush = async () => {
-  for (let i = 0; i < 100; i++) await Promise.resolve();
+  for (let i = 0; i < 1000; i++) await Promise.resolve();
 };
 
 /**
@@ -313,6 +317,7 @@ describe('eversion runner: the fallback paths (today runs; nothing navigated)', 
         mount: () => new Promise(() => {}),
         hold() {},
         raiseHold() {},
+        focusHold() {},
         releaseHold() {},
         fade() {},
         unmount() {},
@@ -458,10 +463,60 @@ describe('eversion runner: the destination is rendered before the animation (ame
     const r = rig();
     await toStart(r);
     const uploaded = r.log.indexOf('post:texture:after');
-    const start = r.log.indexOf('post:start');
-    expect(r.log.slice(uploaded, start).filter((l) => l === 'raf')).toHaveLength(
+    const focus = r.log.indexOf('overlay:focus-hold');
+    expect(r.log.slice(uploaded, focus).filter((l) => l === 'raf')).toHaveLength(
       UPLOAD_SETTLE_FRAMES,
     );
+  });
+
+  it('the hub lets go first: commit with the hand-over, the picture pulled into focus, THEN the start', async () => {
+    const handovers: EversionHandover[] = [];
+    const r = rig();
+    r.deps.page.onInput = () => () => {};
+    await toStart(r, NODE, GLOBE, 'release', {
+      onCommit: (h) => {
+        handovers.push(h);
+        r.log.push('commit');
+      },
+    });
+    const order = r.log.filter((l) =>
+      /^(overlay:raise-hold|commit|overlay:focus-hold|post:start)/.test(l),
+    );
+    expect(order).toEqual(['overlay:raise-hold', 'commit', 'overlay:focus-hold', 'post:start']);
+    // The hub's globe swells and travels exactly as the effect's sphere will: to 0.44 of the short side, centred.
+    expect(handovers).toEqual([
+      {
+        swell: (0.44 * 600) / GLOBE.radius,
+        dx: 400 - GLOBE.centre[0],
+        dy: 300 - GLOBE.centre[1],
+        delayMs: HOLD_FADE_MS,
+        wrapMs: WRAP_MS,
+      },
+    ]);
+  });
+
+  it('the focus pull lasts HOLD_FADE_MS on the clock before WRAP starts', async () => {
+    let t = 0;
+    const r = rig({ now: () => t });
+    r.deps.page.nextFrame = async () => {
+      t += 16;
+      r.log.push('raf');
+    };
+    await toStart(r);
+    const focus = r.log.indexOf('overlay:focus-hold');
+    const start = r.log.indexOf('post:start');
+    const frames = r.log.slice(focus, start).filter((l) => l === 'raf').length;
+    expect(frames).toBe(Math.ceil(HOLD_FADE_MS / 16));
+  });
+
+  it('the picture is dropped (not faded) on the first frame: it is that same frame, sharp', async () => {
+    const r = rig();
+    const p = (await toStart(r)).run;
+    expect(r.log).not.toContain('overlay:release-hold');
+    r.emit({ type: 'cover' });
+    expect(r.log.filter((l) => l === 'overlay:release-hold')).toHaveLength(1);
+    r.emit(DONE);
+    await p;
   });
 
   it('nothing is navigated, settled, captured or uploaded once the animation runs', async () => {
@@ -1006,7 +1061,7 @@ describe('eversion runner: router and viewport edge cases (spec 9.4)', () => {
 });
 
 describe('eversion runner: commit point, queued input, teardown (review fixes)', () => {
-  it('onCommit fires once, with start, and never on a fallback or an unanimated run', async () => {
+  it('onCommit fires once, just before the start, and never on a fallback or an unanimated run', async () => {
     const onCommit = vi.fn();
     const r = rig();
     r.settle.hold();

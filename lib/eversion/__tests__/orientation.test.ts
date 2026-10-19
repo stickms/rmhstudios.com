@@ -272,9 +272,14 @@ describe('S#13 no mirror; page-up is screen-up', () => {
    * at 100 seeded points of the visible hemisphere, for `projection` and the
    * page-lookup matrix `Mat`.
    */
-  function violations(projectionId: (typeof PROJECTION_IDS)[number], Mat: Mat3, Rend: Mat3) {
+  function violations(
+    projectionId: (typeof PROJECTION_IDS)[number],
+    Mat: Mat3,
+    Rend: Mat3,
+    page: { w: number; h: number } = VIEWPORT,
+  ) {
     const proj = PROJECTIONS[projectionId];
-    const fit = proj.fit(VIEWPORT.w, VIEWPORT.h);
+    const fit = proj.fit(page.w, page.h);
     const rnd = seededRandom(1312);
     const uvOf = (t: number, ph: number): [number, number] => {
       const p = new Float64Array(3);
@@ -344,7 +349,10 @@ describe('S#13 no mirror; page-up is screen-up', () => {
     '%s: the check has teeth — sampling the AFTER page through the plain P(p) mirrors it',
     (id) => {
       const identity = new Float64Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
-      const v = violations(id, identity, R);
+      // The plain lookup shows the visible side the page's BACK half; true-scale Mercator leaves that half glass
+      // on an ordinary screen (nothing to sample), so it is checked on a page wide enough to wrap all the way round.
+      const v = violations(id, identity, R, id === 'mercator' ? { w: 4000, h: 900 } : VIEWPORT);
+      expect(v.n).toBeGreaterThan(0);
       expect(v.mirror + v.up + v.right).toBeGreaterThan(0);
     },
   );

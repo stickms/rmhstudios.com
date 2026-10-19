@@ -39,6 +39,7 @@ import {
   GLASS_LEVEL_KEY,
   COLOR_VISION_KEY,
   NAV_TRANSITION_KEY,
+  DEFAULT_NAV_TRANSITION,
   ALWAYS_EVERT_GLOBE_KEY,
   isNavTransition,
   isGlassLevel,
@@ -722,8 +723,9 @@ export function Providers({
     if (colorVision !== 'none') localStorage.setItem(COLOR_VISION_KEY, colorVision);
     else localStorage.removeItem(COLOR_VISION_KEY);
     // Eversion transition choice: cache only (no DOM effect) so the controller can
-    // read it synchronously; 'random' is the default, expressed by absence.
-    if (navTransition !== 'random') localStorage.setItem(NAV_TRANSITION_KEY, navTransition);
+    // read it synchronously; the default is expressed by absence.
+    if (navTransition !== DEFAULT_NAV_TRANSITION)
+      localStorage.setItem(NAV_TRANSITION_KEY, navTransition);
     else localStorage.removeItem(NAV_TRANSITION_KEY);
     if (alwaysEvertGlobe) localStorage.setItem(ALWAYS_EVERT_GLOBE_KEY, '1');
     else localStorage.removeItem(ALWAYS_EVERT_GLOBE_KEY);

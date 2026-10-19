@@ -19,8 +19,8 @@
  *   (`onCommit`); every earlier failure leaves it exactly as it was and ends in
  *   today's navigation, so a fallback has nothing to undo and cannot flash.
  * - The run's outcome decides the rest: effect ran and ended (`done`, `abort`,
- *   `context-lost`) -> close, and the orb fades in the ordinary closed-state way
- *   (the effect ends with UNWRAP, so nothing lands on the orb). `abort` is also
+ *   `context-lost`) -> close (the orb is already home and opaque under the
+ *   canvas, carried in the destination picture: nothing fades in). `abort` is also
  *   a run that navigated but never animated (the destination could not be
  *   captured): the page is already there, so the hub just closes; `traversal`
  *   -> the visitor pressed Back/Forward while priming, just close; any other
@@ -35,7 +35,7 @@
  */
 
 import type { EntryPoint } from '@/lib/eversion/marks';
-import type { EversionOutcome, GlobeStartState } from '@/lib/eversion/types';
+import type { EversionHandover, EversionOutcome, GlobeStartState } from '@/lib/eversion/types';
 
 /** The slice of the controller the hand-off needs. */
 export interface HandOffController<N> {
@@ -44,7 +44,7 @@ export interface HandOffController<N> {
     node: N,
     state: GlobeStartState,
     entry: Exclude<EntryPoint, 'preview'>,
-    options: { onCommit: () => void; globe?: () => GlobeStartState },
+    options: { onCommit: (handover?: EversionHandover) => void; globe?: () => GlobeStartState },
   ): Promise<EversionOutcome>;
 }
 
@@ -52,9 +52,12 @@ export interface HandOffController<N> {
 export interface HandOffUi<N> {
   /** Today's path: dismiss the hub for navigation and navigate. */
   navigateToday(node: N): void;
-  /** The run reached its point of no return: show the `everting` look. */
-  everting(): void;
-  /** The run is over (or never was): close the hub; the orb fades back in the ordinary way. */
+  /**
+   * The run reached its point of no return: show the `everting` look, handing the globe over with `handover` (how
+   * far it swells and travels, and when) when the run gives one.
+   */
+  everting(handover?: EversionHandover): void;
+  /** The run is over (or never was): close the hub. */
   closed(): void;
   /** Close the menu the ordinary animated way, without navigating. */
   dismiss(): void;
@@ -104,9 +107,8 @@ export function createHandOff<N>(ui: HandOffUi<N>): HandOff<N> {
       return;
     }
     busy = true;
-    const options = live
-      ? { onCommit: () => ui.everting(), globe: live }
-      : { onCommit: () => ui.everting() };
+    const onCommit = (handover?: EversionHandover) => ui.everting(handover);
+    const options = live ? { onCommit, globe: live } : { onCommit };
     controller.start(node, state, entry, options).then(
       (outcome) => {
         busy = false;

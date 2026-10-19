@@ -128,6 +128,12 @@ export const UNIFORMS = [
     from: 'cosmos.ts#stepCosmos: (presence, starfield strength, snapshot.t / 1000, scene on)',
   },
   {
+    name: 'u_horizon',
+    type: 'vec4',
+    cadence: 'frame',
+    from: "cosmos.ts#stepCosmos: where space is open - the globe's centre (CSS px, y down), radius, edge softness",
+  },
+  {
     name: 'u_bodyPos',
     type: 'vec4[]',
     length: COSMOS_MAX_BODIES,

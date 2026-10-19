@@ -48,6 +48,7 @@ import { useThemeStore } from '@/stores/themeStore';
 import {
   discardCanvas,
   fadeOverlay,
+  focusPicture,
   getCanvas,
   holdLayerAttached,
   holdPicture,
@@ -355,6 +356,7 @@ const storeOverlay: OverlayPort = {
   mount: mountOverlay,
   hold: holdPicture,
   raiseHold: raisePicture,
+  focusHold: focusPicture,
   releaseHold: releasePicture,
   fade: fadeOverlay,
   unmount: unmountOverlay,
@@ -381,6 +383,7 @@ export function createDomOverlayPort(): OverlayPort {
     },
     hold: holdPicture,
     raiseHold: raisePicture,
+    focusHold: focusPicture,
     releaseHold: releasePicture,
     fade() {
       el?.classList.add('eversion-overlay--fading');

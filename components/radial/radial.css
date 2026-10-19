@@ -1245,7 +1245,9 @@ body:has(.radial-shell) .call-banner {
    `blur(0)`: a zero-radius blur still creates the containing block. */
 .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-backdrop,
 .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-topbar,
-.radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-frame {
+.radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-frame,
+.radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting']))
+  > [data-floating]:not([data-floating='hub']) {
   filter: blur(var(--hub-page-blur, 20px));
   /* The transition lives HERE, on the open state, so it governs the way IN and
      NOT the way out. That asymmetry is the fix for a reported bug: the whole
@@ -1342,7 +1344,10 @@ html.ios-webkit
   .radial-topbar,
 html.ios-webkit
   .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting']))
-  .radial-frame {
+  .radial-frame,
+html:is(.perf-lite, .reduce-transparency, .ios-webkit)
+  .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting']))
+  > [data-floating]:not([data-floating='hub']) {
   filter: none;
 }
 /* The veil is translucent ONLY because the page behind it is blurred (see its
@@ -1936,45 +1941,78 @@ html.ios-webkit .radial-hub__veil {
 }
 
 /* ── EVERTING — the hub hands the screen to the Globe Eversion ──────────────
-   (docs/plans/2026-10-17-globe-eversion.md §9.2 step 3.) The WebGL canvas is
-   already up one z-step beneath the hub's overlay, showing the flat page the
-   visitor was looking at, and the sphere it is about to turn inside out starts
-   exactly where the hub's globe is. So the hub does one thing: it lets go. The
-   veil, the globe and the foot capsule fade OUT over `HUB_FADE_MS` (250 —
-   `lib/eversion/constants.ts`; `eversion-css.test.ts` keeps the two equal) and
-   the orb is hidden.
+   (docs/plans/2026-10-17-globe-eversion.md §9.2 step 3; amended 2026-10-19.)
+   By the commit the destination is captured and the frozen picture of the page
+   being left is up one z-step beneath the hub's overlay. Nothing here FADES OUT
+   beside the effect; every part of the hub hands over by moving (the owner: "no
+   element should simply appear or fade in, everything should morph smoothly"):
 
-   Each of these has to RESTATE its open look first, because none of the `open`
-   rules above match this phase: without it the veil would collapse to its
-   `circle(0)` base on the closing curve, the foot would drop back to its docked
-   `translateY`, and the globe would lose its bloom — three different motions,
-   none of them the fade. So every element holds the pose it had at `open` and
-   only `opacity` moves, on one named property each (never `transition-all`).
+   - the veil contracts into the globe (its own closing motion, the circle riding
+     in, toward the globe instead of the orb) while the frozen picture's blur is
+     pulled to sharp underneath, over `--eversion-delay` (`HOLD_FADE_MS`);
+   - the glass globe then swells and travels exactly as the effect's sphere does
+     during WRAP (`--eversion-swell`, `--eversion-dx/dy`, `--eversion-wrap`: the
+     run's `EversionHandover`, set on `.radial-hub` by RadialHub), so the page
+     wraps up INTO it, and it dissolves into the planet the page has become in
+     the second half of WRAP - the same sphere, glass turning into page;
+   - the foot capsule drops off the bottom edge.
 
-   The orb is `opacity` + `pointer-events` only: it is already docked, and it must
-   not slide or resize while it is hidden. It comes back when the run ends and the
-   hub goes `closed`, by the ordinary closed-state `opacity 0.34s ease` fade-in
-   above. The effect ends with UNWRAP (the live page is already showing, no globe
-   is left to land on the orb), so there is nothing for it to crossfade with; it
-   is the same fade an aborted run or a plain close already gets. */
+   The orb is opaque from here (pointer-events off) and glides home under the
+   picture and the canvas, which cover it until the final dissolve: the
+   destination picture carries it docked (capture.ts), so it unwraps into place
+   with the page instead of fading in after the run.
+
+   Each property is named (never `transition-all`); the veil RESTATES nothing it
+   does not move. */
 .radial-hub[data-phase='everting'] .radial-hub__veil {
-  clip-path: circle(var(--veil-r) at 50% 50%);
-  opacity: 0;
-  transition: opacity 250ms ease;
+  clip-path: circle(0px at calc(50% - var(--eversion-dx, 0px)) calc(50% - var(--eversion-dy, 0px)));
+  opacity: 1;
+  transition: clip-path var(--eversion-delay, 250ms)
+    var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
 }
+/* KEYFRAMES, not a transition, for the same reason the bloom is: the open globe
+   is held by `globe-in` (fill `both`), and a property an animation was driving
+   does not transition when that animation is taken away. Measured in Chromium:
+   with a transition here the globe jumped to its swollen, invisible end state in
+   the commit's first frame. The `from` frames are `globe-in`'s end, so the
+   change of animation is seamless. */
 .radial-hub[data-phase='everting'] .radial-globe {
-  opacity: 0;
-  transition: opacity 250ms ease;
+  transform-origin: 50% calc(var(--globe-size) / 2);
+  animation:
+    globe-swell var(--eversion-wrap, 700ms) cubic-bezier(0.7, 0, 0.3, 1) var(--eversion-delay, 250ms)
+      both,
+    globe-dissolve calc(var(--eversion-wrap, 700ms) * 0.45) cubic-bezier(0.4, 0, 1, 1)
+      calc(var(--eversion-delay, 250ms) + var(--eversion-wrap, 700ms) * 0.45) both;
+}
+@keyframes globe-swell {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: translate(var(--eversion-dx, 0px), var(--eversion-dy, 0px))
+      scale(var(--eversion-swell, 1));
+  }
+}
+@keyframes globe-dissolve {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 .radial-hub[data-phase='everting'] .radial-hub__foot {
-  opacity: 0;
-  transform: none;
+  opacity: 1;
+  transform: translateY(
+    calc(100% + env(safe-area-inset-bottom, 0px) + clamp(1rem, 4vw, 2rem) + 1rem)
+  );
   pointer-events: none;
-  transition: opacity 250ms ease;
+  transition: transform calc(var(--eversion-delay, 250ms) + 150ms) cubic-bezier(0.55, 0, 1, 0.45);
 }
 .radial-hub[data-phase='everting'] .radial-hub__orb {
-  opacity: 0;
+  opacity: 1;
   pointer-events: none;
+  transition: transform 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
 }
 .radial-hub__identity {
   display: inline-flex;

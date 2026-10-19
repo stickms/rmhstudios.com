@@ -181,17 +181,17 @@ export const CAPTURE_MAX_DIMENSION = 4096;
 
 /**
  * Elements that are not "the page" and must be absent from a capture (spec
- * §6.2). `.radial-hub` and the overlay are certain; the cookie bar
- * (`CookieConsent.tsx` carries `data-floating="cookie"`) and sonner's toaster
- * are the current best match — T17 verifies the list against the live DOM.
+ * §6.2): the hub and the effect's own layers. Floating UI that sits ON the page
+ * - the cookie bar, the feature overlays, the mini-player - is NOT excluded
+ * (amended 2026-10-19): it is part of what the visitor sees, so it wraps onto the
+ * globe with the page and unwraps with the destination instead of vanishing when
+ * the canvas covers it and fading back in after. Sonner's toaster stays out: it is
+ * outside the shell, above everything, and never covered.
  */
 export const CAPTURE_EXCLUDE_SELECTORS: readonly string[] = [
   '.radial-hub',
   '.eversion-overlay',
-  '[data-floating="cookie"]',
-  // Floating UI from the 2026-10-12 feature batch (targeted notices, the April
-  // Fools pill, the site-hunt marker): chrome over the page, not the page.
-  '[data-floating="feature-overlay"]',
+  '.eversion-hold-layer',
   '[data-sonner-toaster]',
   // Dev only: Vite's error overlay is a custom element whose constructor throws
   // when the capture clones it (`new ErrorOverlay()` with no error), and the

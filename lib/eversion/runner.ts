@@ -27,10 +27,12 @@
  *   cover ; navigate(href)                          ← the shell is hidden under the picture; the hub is still open
  *   route idle · READINESS GATE (settle.ts, DESTINATION_SETTLE_*) → capture AFTER → texture(after)
  *                                    nothing captured, or cancelled → the run ends with no animation (`abort`)
- *   UPLOAD_SETTLE_FRAMES rAF                        (both pictures resident before the first frame)
+ *   raiseHold · UPLOAD_SETTLE_FRAMES rAF            (the picture over the canvas; both pictures resident)
  *   ─── the point of no return ────────────────────────────────────────────
- *   start (with the hub's globe as it is NOW) ; onCommit (the hub lets go)
- *   cover message → the frozen picture fades onto the first frame (the same page, sharp)
+ *   onCommit(handover)                              the hub lets go: veil into the globe, globe swells with WRAP
+ *   focusHold · frames until HOLD_FADE_MS           the picture's blur pulled to sharp (a radius, never an opacity)
+ *   start (with the hub's globe as it is NOW)
+ *   cover message → the picture is dropped: the first frame is the same page, sharp
  *   uncover      → cover off · 2 rAF · reveal   (UNWRAP's last ~260 ms; the page is painted under the canvas)
  *   reveal       → the canvas dissolves onto the live page WHILE UNWRAP finishes; both end at `done`
  *   done         → overlay off · free · mark · resolve
@@ -61,6 +63,8 @@ import {
   ALWAYS_EVERT_HOST_WAIT_MS,
   ALWAYS_EVERT_OVERLAY_MOUNT_MS,
   BACKGROUND_CAPTURE_TIMEOUT_MS,
+  GLOBE_RADIUS_FRACTION,
+  HOLD_FADE_MS,
   BEFORE_WAIT_MS,
   CAPTURE_DPR_CAP,
   CAPTURE_EXCLUDE_SELECTORS,
@@ -68,6 +72,7 @@ import {
   DESTINATION_SETTLE_SOFT_MS,
   MAX_RUN_MS,
   UPLOAD_SETTLE_FRAMES,
+  WRAP_MS,
 } from './constants';
 import type { SettleReport, SettleRequest } from './settle';
 import type { EntryPoint, EversionMarkDetails, GateOpenReason } from './marks';
@@ -75,6 +80,7 @@ import type {
   CaptureApi,
   CaptureResult,
   EversionEnd,
+  EversionHandover,
   EversionHost,
   EversionNode,
   EversionOutcome,
@@ -115,6 +121,8 @@ export const HOST_INIT_TIMEOUT_MS = 20_000;
  * effect there.
  */
 export const OVERLAY_MOUNT_TIMEOUT_MS = 500;
+/** Ceiling on the frames the focus pull waits (a hidden tab's "frames" are 100 ms timers). */
+const FOCUS_MAX_FRAMES = 64;
 /** The context-loss fade (spec §9.4; `.eversion-overlay--fading` in eversion.css is 0.2 s). */
 export const OVERLAY_FADE_MS = 200;
 
@@ -133,7 +141,9 @@ export interface OverlayPort {
    * renders.
    */
   raiseHold(): void;
-  /** Crossfade the frozen picture onto the canvas (its first frame is up), then drop it. */
+  /** The hub has let go: pull the frozen picture's blur to sharp (`HOLD_FADE_MS`). WRAP starts once it is. */
+  focusHold(): void;
+  /** The canvas's first frame is up, and it is the same sharp page: drop the frozen picture. */
   releaseHold(): void;
   /** Start the fade-out (context loss). The caller unmounts after {@link OVERLAY_FADE_MS}. */
   fade(): void;
@@ -266,13 +276,12 @@ export interface RunOptions {
    */
   before?: (graceMs: number) => Promise<ImageBitmap | null>;
   /**
-   * Called synchronously at the point of no return, in the same task as `start`.
-   * Before it the caller's UI should be left exactly as it was (the hub stays open
-   * while the destination is rendered behind the frozen picture); from it on the
-   * run owns the screen. The hub flips to its `everting` look here, so a run that
-   * ends without animating never has to undo one.
+   * Called at the point of no return: the destination is captured and on the GPU, and the frozen picture is about
+   * to come into focus; WRAP starts `handover.delayMs` later. Before it the caller's UI should be left exactly as it
+   * was (the hub stays open while the destination renders); from it on the run owns the screen. The hub flips to
+   * its `everting` look here, swelling its globe into the effect's with `handover`.
    */
-  onCommit?: () => void;
+  onCommit?: (handover: EversionHandover) => void;
   /**
    * The globe's pose NOW. The destination is rendered between the confirm and
    * `start`, and the hub's globe keeps turning meanwhile: the effect starts from
@@ -533,8 +542,8 @@ export class EversionRunner {
           if (!started) return;
           deps.mark('cover', { firstFrameMs: deps.now() - t0 });
           this.setCover(true);
-          // The first frame is on screen under the frozen picture, and it is the same page: crossfade onto it
-          // (blurred to sharp, as the hub's veil leaves).
+          // The first frame is on screen under the frozen picture, and it is the same page, as sharp as the picture
+          // now is: let the picture go.
           releaseHold();
           return;
         case 'stage':
@@ -648,6 +657,14 @@ export class EversionRunner {
     onTraversalNow = interrupt;
     this.forceEnd = () => interrupt();
     const stop = () => halted || traversed || fatal || this.disposed;
+    /** The hub globe's pose now (it keeps turning while the destination renders), or `undefined`. */
+    const readPose = (): GlobeStartState | undefined => {
+      try {
+        return options.globe?.();
+      } catch {
+        return undefined;
+      }
+    };
 
     /**
      * The run ends here, after the navigation and before any animation: nothing is left to show the effect with.
@@ -794,6 +811,33 @@ export class EversionRunner {
     deps.overlay.raiseHold();
     for (let i = 0; i < UPLOAD_SETTLE_FRAMES; i++) await deps.page.nextFrame();
     if (stop()) return abandon();
+
+    /* ── The commit: the hub lets go and the page comes into focus ────────── */
+
+    // The hub hands its globe over (it swells and travels exactly as the effect's sphere will) and the frozen
+    // picture's blur is pulled to sharp. WRAP starts only once the picture IS the canvas's first frame: the flat
+    // page, sharp. So nothing crossfades at the start; the picture is simply replaced by itself.
+    const committed = readPose() ?? globe;
+    const now = deps.page.viewport();
+    try {
+      options.onCommit?.({
+        swell: (GLOBE_RADIUS_FRACTION * Math.min(now.w, now.h)) / Math.max(committed.radius, 1),
+        dx: now.w / 2 - committed.centre[0],
+        dy: now.h / 2 - committed.centre[1],
+        delayMs: HOLD_FADE_MS,
+        wrapMs: WRAP_MS,
+      });
+    } catch {
+      /* the caller's UI hook must never break the run */
+    }
+    deps.overlay.focusHold();
+    const focusFrom = deps.now();
+    // Bounded in frames too: a hidden tab's frames are timers, and a clock that does not move must not hang it.
+    for (let i = 0; i < FOCUS_MAX_FRAMES && deps.now() - focusFrom < HOLD_FADE_MS; i++) {
+      if (stop()) break;
+      await deps.page.nextFrame();
+    }
+    if (stop()) return abandon();
     onTraversalNow = null;
 
     /* ── The point of no return ───────────────────────────────────────────── */
@@ -839,12 +883,7 @@ export class EversionRunner {
     if (current.w !== viewport.w || current.h !== viewport.h || current.dpr !== viewport.dpr) {
       post({ type: 'resize', viewport: current });
     }
-    let pose: GlobeStartState | undefined;
-    try {
-      pose = options.globe?.();
-    } catch {
-      pose = undefined;
-    }
+    const pose = readPose();
     t0 = deps.now();
     started = true;
     this.phase = 'running';
@@ -861,11 +900,6 @@ export class EversionRunner {
     });
     post({ type: 'start', t0, refreshHz: deps.refreshHz?.(), ...(pose ? { globe: pose } : {}) });
     if (queuedInput) fastForward();
-    try {
-      options.onCommit?.();
-    } catch {
-      /* the caller's UI hook must never break the run */
-    }
 
     return outcome;
   }
