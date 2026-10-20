@@ -3879,10 +3879,11 @@ select:-webkit-autofill:focus {
 
 /* Keyboard focus — a clear ring that adopts the active theme accent.
    :focus-visible keeps it to keyboard / assistive-tech users (never on
-   mouse/tap). The design-system Button already draws its own ring, so it's
-   excluded to avoid doubling up. */
+   mouse/tap). Button takes this ring too (amended 2026-10-20: it drew its own
+   softer box-shadow ring, which could not turn out from inside it like every
+   other control's, §7.3). */
 a:focus-visible,
-button:not([data-slot='button']):focus-visible,
+button:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 input:focus-visible,
@@ -4972,6 +4973,264 @@ input[type='number'] {
  * re-animating. Toggled by components/ui/BackNavAnimation.tsx. */
 html.nav-pop .page-root > * {
   animation: none !important;
+}
+
+/* ─── §7.3 Eversion: a control's state turns inside out ───────────────────
+ * The navigation globe ends by turning itself inside out; every control on the
+ * site changes state the same way, at the scale of a button (owner, 2026-10-20:
+ * "an eversion animation on state change that smoothly and seamlessly plays …
+ * for hover and focus and click"). The new state is not faded in over the old
+ * one: it emerges from INSIDE it, through a circular edge that sweeps out from
+ * one point to the far corner on a spring, and goes back the same way.
+ *
+ * - One layer per control: `[data-evert]::before`, behind the label, painted in
+ *   `--evert-tint` and clipped to `circle(r at x y)`. Off: r = 0. On: r reaches
+ *   the farthest corner. Nothing else on the control moves, so a label never
+ *   rotates, scales or leaves its pixel grid (§7.1: the retired menu cage).
+ * - The point is where you are. `hooks/useEvertPoint.ts` writes `--evert-x/-y`
+ *   and `--evert-r` on the control itself (never on <html>) once per event: the
+ *   pointer's entry point for a hover, the finger for a press, the exit point as
+ *   a hover leaves, so the state is swallowed back where the pointer went. No
+ *   pointer (keyboard, a programmatic change): the centre. Nothing tracks the
+ *   cursor (§5.1.1): one rect read per enter, press or leave.
+ * - The spring is a TRANSITION on a sampled `linear()` easing (`--evert-ease`,
+ *   `spring(0.3, 0.15)` from lib/fluid.ts; marks that land, `--evert-ease-pop`,
+ *   `spring(0.32, 0.3)`). A transition never plays on mount, so a page that loads
+ *   with boxes ticked does not animate them, and an interrupted one retargets
+ *   from where it is. `lib/__tests__/evert-spring.test.ts` re-derives the stops.
+ * - Cost: `clip-path` on a control-sized layer, `transform` on marks and knobs,
+ *   `opacity` for the press deepening. No shadow, no layout property, no
+ *   gradient position, no filter, no per-frame script.
+ * - Touch: hover is only ever a fine pointer's (`(hover: hover)`), so a phone
+ *   never shows a sticky hover. A press everts from the finger and is held for
+ *   at least `EVERT_MIN_PRESS_MS` so a quick tap is still seen.
+ * - Degradation is here, not in components: reduced motion collapses every
+ *   transition (the state still shows, it just arrives at once), `perf-lite`
+ *   swaps the spring for one short tween, forced colors drop the layer.
+ */
+:root {
+  --evert-in: 0.419s;
+  --evert-ease: linear(0, 0.0322, 0.1102, 0.2123, 0.3234, 0.4335, 0.5364, 0.6287, 0.7088, 0.7764, 0.8322, 0.8772, 0.9128, 0.9403, 0.9612, 0.9766, 0.9876, 0.9953, 1.0004, 1.0036, 1.0053, 1.0061, 1.0063, 1.006, 1.0054, 1.0048, 1.0041, 1.0034, 1.0028, 1.0022, 1.0017, 1.0013, 1);
+  --evert-pop-in: 0.524s;
+  --evert-ease-pop: linear(0, 0.0444, 0.1515, 0.2898, 0.4367, 0.5767, 0.701, 0.8049, 0.8872, 0.949, 0.9926, 1.021, 1.0374, 1.0448, 1.0458, 1.0426, 1.0371, 1.0305, 1.0238, 1.0176, 1.0121, 1.0077, 1.0042, 1.0016, 0.9999, 0.9987, 0.9981, 0.9979, 0.9979, 0.9981, 0.9984, 0.9987, 1);
+}
+@layer components {
+  /* `relative` in this layer so a control's own `absolute`/`fixed` utility still wins. */
+  [data-evert] {
+    position: relative;
+    isolation: isolate;
+  }
+  [data-evert]::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--evert-tint, color-mix(in srgb, currentColor 10%, transparent));
+    clip-path: circle(0 at var(--evert-x, 50%) var(--evert-y, 50%));
+    opacity: var(--evert-rest-opacity, 0.72);
+    pointer-events: none;
+    transition:
+      clip-path var(--evert-in) var(--evert-ease),
+      opacity 0.12s ease-out;
+  }
+  /* On: pressed (pointer or touch), highlighted by a menu's roving focus, or keyboard-focused. */
+  [data-evert]:is([data-pressed], [data-highlighted], :focus-visible, :has(> :focus-visible))::before {
+    clip-path: circle(var(--evert-r, 71%) at var(--evert-x, 50%) var(--evert-y, 50%));
+  }
+  /* A press deepens what is already there (a hovered control is already everted). */
+  [data-evert][data-pressed]::before {
+    opacity: 1;
+  }
+  [data-evert]:is(:disabled, [aria-disabled='true'], [data-disabled])::before {
+    clip-path: circle(0 at var(--evert-x, 50%) var(--evert-y, 50%));
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  @layer components {
+    [data-evert]:hover:not(:disabled, [aria-disabled='true'], [data-disabled])::before {
+      clip-path: circle(var(--evert-r, 71%) at var(--evert-x, 50%) var(--evert-y, 50%));
+    }
+  }
+}
+
+/* What each control everts into. Hover colours are the ones these controls always
+   had; they now arrive by eversion instead of a colour fade. */
+@layer components {
+  [data-slot='button']:is([data-variant='default'], [data-variant='accent']) {
+    --evert-tint: var(--site-accent-hover);
+    --evert-rest-opacity: 1;
+  }
+  [data-slot='button']:is([data-variant='outline'], [data-variant='secondary'], [data-variant='ghost']),
+  [data-slot='menu-item'],
+  [data-slot='select-item'],
+  [role='tab'][data-evert],
+  [data-tab-active][data-evert] {
+    --evert-tint: var(--site-surface-hover);
+    --evert-rest-opacity: 1;
+  }
+  [data-slot='button']:is([data-variant='accent-outline'], [data-variant='accent-ghost']) {
+    --evert-tint: var(--site-accent-dim);
+    --evert-rest-opacity: 1;
+  }
+  [data-slot='menu-item'][data-tone='danger'] {
+    --evert-tint: color-mix(in srgb, var(--site-danger) 10%, transparent);
+  }
+}
+
+/* The focus ring turns out from inside the control: its offset springs from
+   within the border to where it rests (from-only keyframes, so it lands on each
+   element's own offset). Colour and width never animate. Elements running their
+   own animation keep it. */
+@keyframes evert-focus {
+  from {
+    outline-offset: -4px;
+  }
+}
+:is(
+    a,
+    button,
+    select,
+    input,
+    summary,
+    [role='button'],
+    [role='tab'],
+    [role='link'],
+    [role='menuitem'],
+    [role='switch'],
+    [tabindex]:not([tabindex='-1'])
+  ):focus-visible:not([class*='animate-']) {
+  animation: evert-focus var(--evert-pop-in) var(--evert-ease-pop);
+}
+
+/* Switch: the "on" colour everts out of the knob as the knob travels, and swallows
+   back into it. The origin is the knob's resting place on the off side. */
+@layer components {
+  [data-slot='switch']::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--site-accent);
+    clip-path: circle(0 at 0.6875rem 50%);
+    transition: clip-path var(--evert-in) var(--evert-ease);
+    pointer-events: none;
+  }
+  [data-slot='switch'][aria-checked='true']::before {
+    clip-path: circle(2.5rem at 0.6875rem 50%);
+  }
+  [data-slot='switch'] > [data-switch-knob] {
+    position: relative;
+    transition:
+      translate var(--evert-pop-in) var(--evert-ease-pop),
+      background-color var(--evert-in) var(--evert-ease);
+  }
+}
+
+/* Native checkbox and radio: the accent everts out from the centre and the mark
+   springs in after it. Drawn with pseudo-elements, which Gecko does not render on
+   inputs, so Firefox keeps the native control (in the accent, via accent-color),
+   as does forced colors. Zero-specificity and in the components layer, so any
+   control with its own size, radius or colour utilities keeps them. */
+@supports not (-moz-appearance: none) {
+  @media not (forced-colors: active) {
+    @layer components {
+      :where(input[type='checkbox'], input[type='radio']) {
+        appearance: none;
+        position: relative;
+        display: inline-grid;
+        place-content: center;
+        flex-shrink: 0;
+        width: 1rem;
+        height: 1rem;
+        margin: 0;
+        vertical-align: middle;
+        border: 1.5px solid var(--site-border-bright);
+        border-radius: calc(var(--site-radius-sm) * 0.5);
+        background: var(--site-surface-opaque);
+        color: var(--site-accent-fg);
+        cursor: pointer;
+        transition: border-color var(--evert-in) var(--evert-ease);
+      }
+      :where(input[type='radio']) {
+        border-radius: 50%;
+      }
+      :where(input[type='checkbox'], input[type='radio'])::before {
+        content: '';
+        position: absolute;
+        inset: -1.5px;
+        border-radius: inherit;
+        background: var(--site-accent);
+        clip-path: circle(0 at 50% 50%);
+        transition: clip-path var(--evert-in) var(--evert-ease);
+      }
+      :where(input[type='checkbox'], input[type='radio']):is(:checked, :indeterminate)::before {
+        clip-path: circle(75% at 50% 50%);
+      }
+      :where(input[type='checkbox'], input[type='radio']):is(:checked, :indeterminate) {
+        border-color: var(--site-accent);
+      }
+      /* The tick: two borders of an L, turned to a check. It lands after the fill. */
+      :where(input[type='checkbox'])::after {
+        content: '';
+        position: relative;
+        width: 0.3125rem;
+        height: 0.5625rem;
+        margin-top: -0.125rem;
+        border: solid currentColor;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg) scale(0);
+        transition: transform 0.12s ease-in;
+      }
+      :where(input[type='checkbox']):checked::after {
+        transform: rotate(45deg) scale(1);
+        transition: transform var(--evert-pop-in) var(--evert-ease-pop) 0.06s;
+      }
+      :where(input[type='checkbox']):indeterminate::after {
+        width: 0.5rem;
+        height: 0;
+        margin-top: 0;
+        border-width: 0 0 2px;
+        transform: scale(1);
+        transition: transform var(--evert-pop-in) var(--evert-ease-pop) 0.06s;
+      }
+      :where(input[type='radio'])::after {
+        content: '';
+        position: relative;
+        width: 0.375rem;
+        height: 0.375rem;
+        border-radius: 50%;
+        background: currentColor;
+        transform: scale(0);
+        transition: transform 0.12s ease-in;
+      }
+      :where(input[type='radio']):checked::after {
+        transform: scale(1);
+        transition: transform var(--evert-pop-in) var(--evert-ease-pop) 0.06s;
+      }
+      :where(input[type='checkbox'], input[type='radio']):disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+    }
+  }
+}
+
+/* perf-lite: one short tween instead of the sampled settle; the focus ring simply lands. */
+html.perf-lite {
+  --evert-in: 0.16s;
+  --evert-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --evert-pop-in: 0.16s;
+  --evert-ease-pop: cubic-bezier(0.22, 1, 0.36, 1);
+}
+html.perf-lite :focus-visible {
+  animation: none;
+}
+@media (forced-colors: active) {
+  [data-evert]::before,
+  [data-slot='switch']::before {
+    display: none;
+  }
 }
 
 /* ─── Scoped shared-element View Transitions ─────────────────────────────

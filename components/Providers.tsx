@@ -49,6 +49,7 @@ import {
 } from '@/lib/appearance/prefs';
 import { useSpatialParallax } from '@/hooks/useSpatialParallax';
 import { useFluidPressLayer } from '@/hooks/useFluidPress';
+import { useEvertPointLayer } from '@/hooks/useEvertPoint';
 import { useLiquidBackground } from '@/hooks/useLiquidBackground';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { useLocaleStore, writeLocaleCookie } from '@/stores/localeStore';
@@ -355,6 +356,10 @@ export function Providers({
   // any element carrying `data-fluid-press`; it is idle at rest, self-gates on
   // reduced motion, and releases the press if the gesture turns into a scroll.
   useFluidPressLayer();
+
+  // The eversion state layer's input (globals.css §7.3): where each `data-evert` control turns inside out from
+  // (the pointer's entry, the finger, the exit) and when a press is down. Delegated, passive, no frame loop.
+  useEvertPointLayer();
 
   // Sync the locale store to the SSR-resolved locale and reconcile <html lang/dir>
   // so a user whose locale was resolved via Accept-Language (no cookie yet) gets

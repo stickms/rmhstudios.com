@@ -5,32 +5,31 @@ import { Loader2 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
+// Hover, press and focus tints are not colour changes on these classes: each arrives by EVERSION
+// (globals.css §7.3), out of the press point or the pointer's entry point, in the variant's own hover
+// colour (`--evert-tint`). Focus is the site-wide ring (§8), which turns out from inside the button.
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[var(--site-control-radius)] border border-transparent text-[0.78rem] font-semibold tracking-[-0.01em] transition-[scale,color,background-color,border-color,opacity] duration-180 ease-out active:scale-[0.98] disabled:pointer-events-none disabled:opacity-45 disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 outline-none focus-visible:ring-site-accent/35 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-site-bg aria-invalid:ring-site-danger/30 aria-invalid:border-site-danger",
+  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[var(--site-control-radius)] border border-transparent text-[0.78rem] font-semibold tracking-[-0.01em] transition-[scale,color,background-color,border-color,opacity] duration-180 ease-out active:scale-[0.98] disabled:pointer-events-none disabled:opacity-45 disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 aria-invalid:ring-site-danger/30 aria-invalid:border-site-danger",
   {
     variants: {
       variant: {
-        default: 'bg-site-accent text-site-accent-fg hover:bg-site-accent-hover',
-        destructive:
-          'bg-site-danger text-site-danger-fg hover:opacity-85 focus-visible:ring-site-danger/40',
-        danger:
-          'bg-site-danger text-site-danger-fg hover:opacity-85 focus-visible:ring-site-danger/40',
+        default: 'bg-site-accent text-site-accent-fg',
+        destructive: 'bg-site-danger text-site-danger-fg',
+        danger: 'bg-site-danger text-site-danger-fg',
         // The featured-tier fill (/pricing, /store). Existed only as an inline
         // `style={{ background: 'var(--site-warning)' }}` on a hand-rolled
         // button, which is exactly the local copy §5.2 exists to prevent.
-        warning:
-          'bg-site-warning text-site-warning-fg hover:opacity-85 focus-visible:ring-site-warning/40',
+        warning: 'bg-site-warning text-site-warning-fg',
         // Hover was border-brighten-only, which on a transparent fill is close
         // to imperceptible — the outline button reads as inert until clicked.
         // A surface tint gives it the same feedback every other variant has.
-        outline:
-          'border-site-border bg-transparent text-site-text hover:border-site-border-bright hover:bg-site-surface-hover',
-        secondary: 'border-site-border bg-site-surface text-site-text hover:bg-site-surface-hover',
-        ghost: 'text-site-text hover:bg-site-surface-hover',
+        outline: 'border-site-border bg-transparent text-site-text hover:border-site-border-bright',
+        secondary: 'border-site-border bg-site-surface text-site-text',
+        ghost: 'text-site-text',
         link: 'text-site-accent underline-offset-4 hover:underline',
-        accent: 'bg-site-accent text-site-accent-fg hover:bg-site-accent-hover',
-        'accent-outline': 'border border-site-accent text-site-accent hover:bg-site-accent-dim',
-        'accent-ghost': 'text-site-accent hover:bg-site-accent-dim',
+        accent: 'bg-site-accent text-site-accent-fg',
+        'accent-outline': 'border border-site-accent text-site-accent',
+        'accent-ghost': 'text-site-accent',
       },
       size: {
         default: 'h-11 px-5 py-2.5 has-[>svg]:px-4',
@@ -91,6 +90,8 @@ function Button({
       // reduced motion and for the frame before the spring's first tick — the
       // inline `scale` the layer writes wins over it while a finger is down.
       data-fluid-press=""
+      // The state layer (globals.css §7.3). A link-styled button has no surface to turn over.
+      data-evert={variant === 'link' ? undefined : ''}
       className={cn(buttonVariants({ variant, size, className }))}
       disabled={asChild ? disabled : disabled || loading}
       aria-busy={loading || undefined}

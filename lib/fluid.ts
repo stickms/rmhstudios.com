@@ -268,6 +268,55 @@ export function springSettled(
   );
 }
 
+/* ── Springs in CSS ───────────────────────────────────────────────────────── */
+
+/**
+ * The spring's step response from rest, 0 → 1, at `t` seconds: closed form, exact at any `t`, for every damping
+ * regime. It is what a CSS-side spring is sampled from, so the stylesheet and the imperative tier run one motion.
+ */
+export function springResponse(s: Spring, t: number): number {
+  const omega = Math.sqrt(s.stiffness / s.mass);
+  const zeta = s.damping / (2 * Math.sqrt(s.stiffness * s.mass));
+  if (zeta < 1) {
+    const wd = omega * Math.sqrt(1 - zeta * zeta);
+    const e = Math.exp(-zeta * omega * t);
+    return 1 - e * (Math.cos(wd * t) + ((zeta * omega) / wd) * Math.sin(wd * t));
+  }
+  if (zeta === 1) return 1 - Math.exp(-omega * t) * (1 + omega * t);
+  const r = omega * Math.sqrt(zeta * zeta - 1);
+  const r1 = -zeta * omega + r;
+  const r2 = -zeta * omega - r;
+  const c2 = r1 / (r2 - r1);
+  return 1 + (-1 - c2) * Math.exp(r1 * t) + c2 * Math.exp(r2 * t);
+}
+
+/**
+ * How long `s` takes to stay within `epsilon` of its target, in seconds (to the millisecond). A CSS transition
+ * has a fixed length, so a sampled spring runs for exactly this long and its last stop is the target.
+ */
+export function springSettleTime(s: Spring, epsilon = 1e-3): number {
+  let settled = 0;
+  for (let ms = 0; ms <= 3000; ms++) {
+    if (Math.abs(1 - springResponse(s, ms / 1000)) > epsilon) settled = ms + 1;
+  }
+  return settled / 1000;
+}
+
+/**
+ * `s` as a CSS `linear()` easing over `durationS` seconds: `samples + 1` evenly spaced outputs, the first 0 and
+ * the last exactly 1, four decimals each. A transition on it is the spring - overshoot included (`linear()`
+ * outputs may leave [0, 1]) - and, being a transition, it retargets from where it is when interrupted and never
+ * plays on mount.
+ */
+export function springLinearEasing(s: Spring, durationS: number, samples = 32): string {
+  const out: string[] = [];
+  for (let i = 0; i <= samples; i++) {
+    const v = i === 0 ? 0 : i === samples ? 1 : springResponse(s, (i / samples) * durationS);
+    out.push(String(Number(v.toFixed(4))));
+  }
+  return `linear(${out.join(', ')})`;
+}
+
 /* ── Velocity ─────────────────────────────────────────────────────────────── */
 
 /** How far back the tracker looks. UIKit uses a comparable short window. */

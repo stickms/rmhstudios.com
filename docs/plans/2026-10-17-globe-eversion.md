@@ -216,6 +216,21 @@ is replaced by `AFTER_STABLE_FRAMES`, `AFTER_QUIET_MS`, `AFTER_QUIET_CAP_MS`, `A
   spread out from behind the globe, depth-tested against it; space opens as a horizon disc from inside the silhouette
   past the corners (`u_horizon`), and closes the same way on UNWRAP.
 
+### Amendment 2026-10-19 (c) - the destination's capture is budgeted for a phone
+
+> Owner, verbatim: "Sometimes it's not playing on mobile the eversion animation."
+
+- **Cause.** Since the destination is captured before the animation (amendment 2026-10-19), a capture that misses
+  `AFTER_CAPTURE_TIMEOUT_MS` ends the run `abort`: a navigation with no effect. The budget was 1500 ms, sized for a
+  desktop's 100-300 ms. Measured on a 4x-throttled phone profile, hub to `/games`: ~1.6 s of settling, then a
+  capture of 3.2-4.3 s inside a run (Long Animation Frames: the clone, the route's new images turned into data URLs,
+  the SVG's decode and paint, beside the route's own render; the hub globe is not a factor). Every run timed out and
+  navigated without the effect.
+- **Change.** `AFTER_CAPTURE_TIMEOUT_MS` = 6000, with or without "Always evert globe" (never shorter than
+  `BACKGROUND_CAPTURE_TIMEOUT_MS`). A ceiling, not a wait: a fast device starts as soon as its capture is done.
+  Capturing the destination at 1x was tried and dropped: the raster stage stayed ~1 s, it is the DOM's layout and
+  paint, not the pixel count.
+
 ## 0. The effect in one paragraph
 
 You confirm a destination on the liquid globe. The globe **swells** to fill most
@@ -1350,7 +1365,7 @@ export const MAX_DT_MS = 50;
 export const BEFORE_GRACE_MS = 250;
 export const CAPTURE_TIMEOUT_MS = 600;
 export const AFTER_SETTLE_CAP_MS = 1200;
-export const AFTER_CAPTURE_TIMEOUT_MS = 1500;
+export const AFTER_CAPTURE_TIMEOUT_MS = 6000; // amended 2026-10-19 (c): was 1500
 export const BEFORE_STALE_MS = 30_000;
 export const LUT_SIZE = [1024, 512] as const;
 ```

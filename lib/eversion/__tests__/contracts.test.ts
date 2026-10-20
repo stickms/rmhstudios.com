@@ -408,7 +408,7 @@ describe('constants (S§12, S§8.2, S§6.2)', () => {
       AFTER_QUIET_CAP_MS: 800,
       AFTER_RENDER_GRACE_MS: 100,
       AFTER_CAPTURE_RESERVE_MS: 300,
-      AFTER_CAPTURE_TIMEOUT_MS: 1500,
+      AFTER_CAPTURE_TIMEOUT_MS: 6000, // amended 2026-10-19 (c): sized for a phone
       BEFORE_STALE_MS: 30_000,
     });
     expect([...constants.LUT_SIZE]).toEqual([1024, 512]);
