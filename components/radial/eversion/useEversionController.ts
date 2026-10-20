@@ -296,22 +296,6 @@ function createPagePort(): PagePort {
       };
     },
     nextFrame,
-    onInput(cb) {
-      const onKey = (e: KeyboardEvent) => {
-        if (e.repeat || ['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) return;
-        cb();
-      };
-      const onPointer = () => cb();
-      // Capture phase on `window`: the fading hub above the overlay sees the press first otherwise.
-      // Not `wheel`: a scroll is not a skip request, and the inertial tail of a
-      // trackpad flick made just before releasing would fast-forward the run at once.
-      window.addEventListener('pointerdown', onPointer, { capture: true, passive: true });
-      window.addEventListener('keydown', onKey, { capture: true });
-      return () => {
-        window.removeEventListener('pointerdown', onPointer, { capture: true });
-        window.removeEventListener('keydown', onKey, { capture: true });
-      };
-    },
     currentHref: () => window.location.pathname + window.location.search + window.location.hash,
   };
 }
@@ -532,7 +516,7 @@ export interface EversionControllerHandle extends EversionController {
     node: EversionNode,
     state: GlobeStartState,
     entry?: EntryPoint,
-    options?: Pick<RunOptions, 'onCommit' | 'globe'>,
+    options?: Pick<RunOptions, 'onCommit' | 'onFirstFrame' | 'globe'>,
   ): Promise<EversionOutcome>;
   /** Hurry the run in flight: back/forward (T33). */
   abort(): void;

@@ -44,7 +44,11 @@ export interface HandOffController<N> {
     node: N,
     state: GlobeStartState,
     entry: Exclude<EntryPoint, 'preview'>,
-    options: { onCommit: (handover?: EversionHandover) => void; globe?: () => GlobeStartState },
+    options: {
+      onCommit: (handover?: EversionHandover) => void;
+      onFirstFrame?: () => void;
+      globe?: () => GlobeStartState;
+    },
   ): Promise<EversionOutcome>;
 }
 
@@ -57,6 +61,8 @@ export interface HandOffUi<N> {
    * far it swells and travels, and when) when the run gives one.
    */
   everting(handover?: EversionHandover): void;
+  /** The effect's sphere has started to move: swell the glass globe with it, from now. */
+  swelling(): void;
   /** The run is over (or never was): close the hub. */
   closed(): void;
   /** Close the menu the ordinary animated way, without navigating. */
@@ -108,7 +114,8 @@ export function createHandOff<N>(ui: HandOffUi<N>): HandOff<N> {
     }
     busy = true;
     const onCommit = (handover?: EversionHandover) => ui.everting(handover);
-    const options = live ? { onCommit, globe: live } : { onCommit };
+    const onFirstFrame = () => ui.swelling();
+    const options = live ? { onCommit, onFirstFrame, globe: live } : { onCommit, onFirstFrame };
     controller.start(node, state, entry, options).then(
       (outcome) => {
         busy = false;

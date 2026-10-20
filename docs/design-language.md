@@ -1240,9 +1240,9 @@ view()`), falling back to a rAF window-scroll pass with cached offsets where
   ambient layer; it writes **no per-frame custom property to `<html>`** (the
   renderer draws into its own canvas, in a worker where it can); it **does not
   track the cursor** (§5.1.1); **reduced motion** (OS or the account toggle)
-  never runs it and gets the ordinary fade; a click, tap or key
-  **fast-forwards** it smoothly rather than blocking, and back/forward never
-  animates; and it follows the **degradation tiers** (the minimum tier on
+  never runs it and gets the ordinary fade; it **always plays in full**
+  (4.6 s, under WCAG 2.2.2's five seconds; no input speeds it up, amended
+  2026-10-20), and back/forward never animates; and it follows the **degradation tiers** (the minimum tier on
   `perf-lite`, today's navigation when WebGL2 or the capture is unavailable). It
   is dark behind `isEversionEnabled()` until the device lab signs off. A second
   long navigation effect is not covered by this exception.

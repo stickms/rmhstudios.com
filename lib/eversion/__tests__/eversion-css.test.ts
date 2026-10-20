@@ -117,16 +117,19 @@ describe("radial.css `data-phase='everting'`: the hub hands over by motion, noth
   });
 
   it('the glass globe swells and travels with the effect from the start of WRAP, and dissolves into the planet', () => {
-    const globe = rule('radial-globe');
     // Keyframes, not transitions: the open globe is held by `globe-in`, and an animated property does not
     // transition when its animation goes (the globe jumped to its end state in one frame).
-    expect(globe).not.toMatch(/transition/);
-    expect(globe).toMatch(
-      /globe-swell var\(--eversion-wrap, 700ms\) cubic-bezier\([^)]*\) var\(--eversion-delay, 250ms\) both/,
-    );
-    // The dissolve is in the second half of WRAP, never before WRAP starts.
-    expect(globe).toMatch(
-      /globe-dissolve calc\(var\(--eversion-wrap, 700ms\) \* 0\.45\) cubic-bezier\([^)]*\) calc\(var\(--eversion-delay, 250ms\) \+ var\(--eversion-wrap, 700ms\) \* 0\.45\) both/,
+    const still = rule('radial-globe');
+    expect(still).not.toMatch(/transition|animation/);
+    // It moves from the sphere's first frame (`data-eversion-swell`), never on a delay from the commit: the
+    // sphere starts after the focus pull and its own first frame, and a delayed swell ran ahead of it.
+    const swelling =
+      /\[data-phase='everting'\]\[data-eversion-swell\] \.radial-globe \{[^}]*\}/.exec(block)?.[0] ?? '';
+    expect(swelling).not.toMatch(/eversion-delay/);
+    expect(swelling).toMatch(/globe-swell var\(--eversion-wrap, 700ms\) var\(--eversion-ease-wrap\) both/);
+    // The dissolve is the second half of WRAP.
+    expect(swelling).toMatch(
+      /globe-dissolve calc\(var\(--eversion-wrap, 700ms\) \* 0\.45\) cubic-bezier\([^)]*\) calc\(var\(--eversion-wrap, 700ms\) \* 0\.45\) both/,
     );
     const swell = /@keyframes globe-swell \{.*?\n\}/s.exec(radial)?.[0] ?? '';
     expect(swell).toMatch(/from \{\s*transform: scale\(1\);/);
@@ -134,6 +137,21 @@ describe("radial.css `data-phase='everting'`: the hub hands over by motion, noth
       'transform: translate(var(--eversion-dx, 0px), var(--eversion-dy, 0px)) scale(var(--eversion-swell, 1));',
     );
     expect(/@keyframes globe-in \{.*?to \{\s*opacity: 1;\s*transform: scale\(1\);/s.test(radial)).toBe(true);
+    // RadialHub sets the attribute on the sphere's first frame and clears it with the hand-over.
+    expect(hub).toMatch(/swelling: \(\) => \{\s*markSwelling\(hubRef\.current\);/);
+    expect(hub).toMatch(/setAttribute\('data-eversion-swell', ''\)/);
+    expect(hub).toMatch(/removeAttribute\('data-eversion-swell'\)/);
+  });
+
+  it('the swell is the timeline’s own WRAP curve: smootherstep, as linear() stops', () => {
+    const m = /--eversion-ease-wrap:\s*linear\(([^)]*)\)/.exec(eversion);
+    expect(m).not.toBeNull();
+    const stops = m![1]!.split(',').map(Number);
+    expect(stops).toHaveLength(33);
+    stops.forEach((v, i) => {
+      const u = i / 32;
+      expect(v, `stop ${i}`).toBeCloseTo(u * u * u * (u * (u * 6 - 15) + 10), 4);
+    });
   });
 
   it('the foot drops off the bottom edge, opaque', () => {

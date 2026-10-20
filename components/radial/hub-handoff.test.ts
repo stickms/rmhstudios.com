@@ -18,7 +18,7 @@ function rig(opts: { eligible?: () => boolean } = {}) {
   const log: string[] = [];
   let settle!: (o: EversionOutcome) => void;
   let reject!: (e: unknown) => void;
-  let hooks!: { onCommit(): void; globe?: () => GlobeStartState };
+  let hooks!: { onCommit(): void; onFirstFrame?: () => void; globe?: () => GlobeStartState };
   const controller: HandOffController<typeof NODE> = {
     isEligible: opts.eligible ?? (() => true),
     start: (_node, _state, _entry, options) => {
@@ -33,6 +33,7 @@ function rig(opts: { eligible?: () => boolean } = {}) {
   const machine = createHandOff<typeof NODE>({
     navigateToday: (n) => log.push(`today:${n.href}`),
     everting: () => log.push('everting'),
+    swelling: () => log.push('swelling'),
     closed: () => log.push('closed'),
     dismiss: () => log.push('dismiss'),
   });
@@ -54,6 +55,15 @@ const flush = async () => {
 };
 
 describe('hub hand-off', () => {
+  it("the effect's first frame swells the glass globe, after the commit", async () => {
+    const r = rig();
+    r.confirm();
+    await flush();
+    r.commit();
+    r.hooks().onFirstFrame?.();
+    expect(r.log).toEqual(['start', 'everting', 'swelling']);
+  });
+
   it('no controller, or an ineligible one, is today and nothing else', () => {
     const none = rig();
     none.confirm(null);

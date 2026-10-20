@@ -130,7 +130,7 @@ ports); `testing/e2e/eversion-edge.mjs` has one scripted check per row.
 | Resize / rotation                | `PagePort.onResize`: one `resize` per frame, only if the viewport changed.                                                                                                                                                                     |
 | Context lost / fatal after start | `eversion-cover` off, overlay `--fading` (200 ms), run ends `context-lost`. Before the navigation it is a clean `host-error` fallback; between the navigation and `start` the run ends `abort`, unanimated.                                    |
 | Hidden tab                       | `host.ts` posts `visibility`; the core pauses its loop (`debug` op `loop` shows it).                                                                                                                                                           |
-| Input during the reveal fade     | Ignored from `uncover` on (no `fast-forward` is posted).                                                                                                                                                                                       |
+| Input during a run               | Ignored: the run always plays in full (amended 2026-10-20). Only `abort` (back/forward) posts a fast-forward.                                                                                                                                  |
 
 ### It plays on every hub navigation (amended 2026-10-18)
 
@@ -413,8 +413,8 @@ It is bounded from the navigation (amended 2026-10-19: the destination is captur
 above): **soft** = navigation + `DESTINATION_SETTLE_SOFT_MS`, **hard** = navigation + `DESTINATION_SETTLE_HARD_MS`. Before
 soft all conditions apply; between soft and hard only ACTIVITY (a fetch, an image, a font)
 holds the capture, plus `AFTER_RENDER_GRACE_MS` for its result to render (a permanent skeleton with nothing loading is
-a page at rest and must not stretch every navigation); past hard the page is captured as it is. A press while waiting
-(queued as the run's fast-forward) or back/forward skips the wait. An already-settled page costs the two frames it replaces: no added latency. Late content that
+a page at rest and must not stretch every navigation); past hard the page is captured as it is. Back/forward skips the wait; a press does not (it is
+not a skip, amended 2026-10-20). An already-settled page costs the two frames it replaces: no added latency. Late content that
 misses even the hard bound is shown as the page it was and carried onto what it became by the final dissolve (a
 smooth, eased dissolve, not a cut); a second capture swapped in mid-animation would itself be a visible pop, so it is
 deliberately not done. `testing/e2e/eversion-late-content.mjs` is the test that failed before the gate existed.

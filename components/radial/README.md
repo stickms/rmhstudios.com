@@ -332,10 +332,10 @@ with the task plan beside it. The components here are in `eversion/`
   There is no fallback that adds a visible delay: no controller, no WebGL2,
   reduced motion, a render host or BEFORE capture that is not ready yet all
   answer immediately with the ordinary dismiss-and-navigate.
-- **Fast-forward on input.** Once committed, a tap, key press or navigation
-  gesture does not abort: the timeline re-plans (quintic, from the channel's
-  current state) and runs the rest of the effect quickly. Input once the page is being uncovered
-  (the final dissolve, which overlaps UNWRAP's tail) is ignored. While a run is `busy`, the hub's close / toggle / Escape do nothing.
+- **It always plays in full** (amended 2026-10-20; it used to fast-forward on
+  input). No tap, click or key speeds it up, before `start` or after it: a tap
+  while the destination rendered was queued and ran the whole animation in
+  650 ms. While a run is `busy`, the hub's close / toggle / Escape do nothing.
 - **Back/forward never animates.** A traversal during priming reports
   `traversal` and the hub just closes; mid-run it aborts with a crossfade onto
   the live page. A run always ends: a stall watchdog force-ends it with a fade.

@@ -231,6 +231,28 @@ is replaced by `AFTER_STABLE_FRAMES`, `AFTER_QUIET_MS`, `AFTER_QUIET_CAP_MS`, `A
   Capturing the destination at 1x was tried and dropped: the raster stage stayed ~1 s, it is the DOM's layout and
   paint, not the pixel count.
 
+### Amendment 2026-10-20 (d) - it always plays in full, and the hand-over starts with the sphere
+
+> Owner, verbatim: "Ensure the animation always plays in full, don't speed it up too much. Also ensure animations
+> begin smoothly enough and end smoothly. I notice a lot of jittering when the animation begins." Where Q4 or §7.6
+> say input fast-forwards the run, **this amendment wins.**
+
+- **No input speeds it up.** Any `pointerdown` or key fast-forwarded the run, compressing everything left into
+  `FF_REMAINING_MS` (650 ms); one made while the destination rendered (up to several seconds on a phone, a natural
+  moment to tap again) was queued and fired at `start`, so the whole animation ran in 650 ms. The runner no longer
+  listens for input at all (`PagePort.onInput` is gone), and nothing hurries the readiness gate. 4.6 s is under
+  WCAG 2.2.2's five seconds, and reduced motion never runs it. The timeline keeps fast-forward for `abort`
+  (back/forward mid-run), where the visitor has already left.
+- **The hand-over starts with the sphere.** The hub's glass globe swelled on a fixed delay (`HOLD_FADE_MS`) from
+  the commit, on a CSS cubic-bezier, while the effect's sphere starts after the focus pull's frames and its own
+  first frame, on the timeline's quintic. A commit that cost the main thread anything (measured on a throttled
+  phone: a 316 ms frame of React re-render and the controller's frame callback) put the glass globe ahead of the
+  sphere it dissolves into, the two disagreeing about their size and position for the length of the dissolve.
+  Now the runner reports the sphere's first frame (`RunOptions.onFirstFrame`, on `cover`), RadialHub sets
+  `data-eversion-swell` then (on the element: no render lands in that frame), and the swell runs on
+  `--eversion-ease-wrap`, the radius and centre channels' own curve (a quintic from rest to rest over WRAP:
+  smootherstep, as `linear()` stops). Measured: the attribute lands 2 ms after `cover`, the globe still at scale 1.
+
 ## 0. The effect in one paragraph
 
 You confirm a destination on the liquid globe. The globe **swells** to fill most
@@ -258,7 +280,7 @@ question list in that conversation.
 | 1   | Entry points                | **All** of them: hold-and-release on the reticle, pin click, keyboard Enter on a focused pin. External links keep today's hard navigation.                                                                                                                                                                                                |
 | 2   | Which globes                | **Only the hub navigator.**                                                                                                                                                                                                                                                                                                               |
 | 3   | Frequency                   | **Every navigation.** No "first time only", no off switch in Settings (but see §1.1 for the accessibility fallback).                                                                                                                                                                                                                      |
-| 4   | Skipping                    | **Click/tap/key fast-forwards smoothly.** No hard cuts, ever.                                                                                                                                                                                                                                                                             |
+| 4   | Skipping                    | **Click/tap/key fast-forwards smoothly.** No hard cuts, ever. _Amended 2026-10-20 (d): reversed, nothing skips; the run always plays in full._                                                                                                                                                                                             |
 | 5   | "Before" page               | The page **as it was before the menu opened** — no veil, no globe.                                                                                                                                                                                                                                                                        |
 | 6   | Extent                      | **Viewport only** at the current scroll position.                                                                                                                                                                                                                                                                                         |
 | 7   | Capture fidelity            | **Fastest viable**, performance-first, but accuracy matters.                                                                                                                                                                                                                                                                              |
@@ -839,6 +861,8 @@ more than 1.5 turns.
   an error page). That is a crossfade, not a cut.
 
 ### 7.6 Fast-forward (Q4)
+
+_Amended 2026-10-20 (d): no input fast-forwards a run any more; only `abort` (back/forward) uses the mechanism below._
 
 Any `pointerdown` on the overlay, any key (including Escape), or a wheel
 gesture sends `fast-forward`. Every channel is re-planned (§7.2) so that the

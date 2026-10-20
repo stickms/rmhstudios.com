@@ -1976,14 +1976,27 @@ html.ios-webkit .radial-hub__veil {
    does not transition when that animation is taken away. Measured in Chromium:
    with a transition here the globe jumped to its swollen, invisible end state in
    the commit's first frame. The `from` frames are `globe-in`'s end, so the
-   change of animation is seamless. */
+   change of animation is seamless.
+
+   It starts when the effect's sphere starts, and moves as that sphere moves
+   (amended 2026-10-20, the owner: "a lot of jittering when the animation
+   begins"). It used to start on a fixed `--eversion-delay` from the commit, while
+   the sphere starts after the focus pull's frames and its own first frame, so a
+   commit that cost the main thread anything put the glass globe ahead of the
+   sphere it was dissolving into, on a different curve: two spheres disagreeing
+   about their size for the length of the dissolve. Now the runner reports the
+   sphere's first frame (`onFirstFrame`, `cover`) and RadialHub sets
+   `data-eversion-swell` then; the curve is the timeline's own radius and centre
+   channels, a quintic from rest to rest over WRAP, i.e. smootherstep
+   (`--eversion-ease-wrap`). Until then the globe holds still where the bloom left it. */
 .radial-hub[data-phase='everting'] .radial-globe {
   transform-origin: 50% calc(var(--globe-size) / 2);
+}
+.radial-hub[data-phase='everting'][data-eversion-swell] .radial-globe {
   animation:
-    globe-swell var(--eversion-wrap, 700ms) cubic-bezier(0.7, 0, 0.3, 1) var(--eversion-delay, 250ms)
-      both,
+    globe-swell var(--eversion-wrap, 700ms) var(--eversion-ease-wrap) both,
     globe-dissolve calc(var(--eversion-wrap, 700ms) * 0.45) cubic-bezier(0.4, 0, 1, 1)
-      calc(var(--eversion-delay, 250ms) + var(--eversion-wrap, 700ms) * 0.45) both;
+      calc(var(--eversion-wrap, 700ms) * 0.45) both;
 }
 @keyframes globe-swell {
   from {
