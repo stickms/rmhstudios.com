@@ -278,7 +278,7 @@ async function hubRun(app, { entry, href, ff = false, record = false, screenshot
     // After `cover`, not straight after `start`: a fast-forward before the first frame
     // lets the stage events outrun the cover message, so the marks arrive out of order.
     await s.waitForMark(EVERSION_MARKS.cover, { timeout: RUN_MS }).catch(() => {});
-    await page.keyboard.press('Escape');
+    await s.hurry();
   }
   const marks = await app.waitDone();
   const frames = record ? await s.stopRecording() : [];
@@ -886,7 +886,7 @@ async function midEffectScenario(ctx) {
       await app.page.setViewportSize({ width: vp.height, height: vp.width });
       await app.s.waitForMark(EVERSION_MARKS.evert, { timeout: RUN_MS });
       await app.page.setViewportSize(vp);
-      await app.page.keyboard.press('Escape'); // hurry it: the claim is "completes"
+      await app.s.hurry(); // the claim is "completes"
       const marks = await app.waitDone();
       const done = marks.find((x) => x.name === EVERSION_MARKS.done)?.detail;
       check(
@@ -982,7 +982,7 @@ async function previewOnce(app) {
       )
       .then((h) => h.jsonValue());
     if (hit.name === EVERSION_MARKS.start) {
-      await page.keyboard.press('Escape');
+      await app.s.hurry();
       await app.waitDone();
       return hit.detail;
     }

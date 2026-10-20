@@ -716,6 +716,17 @@ export function createEversionController(
     },
     ...overrides,
   });
+  // The e2e harness hurries runs on a software GPU through this; nothing a visitor does reaches it. Behind the
+  // debug flag, and on a page the harness marked (`__EVERSION_E2E`, set beside `__EVERSION_MAX_RUN_MS` by
+  // testing/e2e/lib/eversion-session.mjs) for the suites that run without the flag's overlay.
+  const hurry = { fastForward: () => runner.fastForward() };
+  const unregisterDebugRun = registerDebug('run', hurry);
+  const e2e = window as unknown as { __EVERSION_E2E?: unknown; __eversionRun?: typeof hurry };
+  if (e2e.__EVERSION_E2E === true) e2e.__eversionRun = hurry;
+  const unregisterRun = () => {
+    unregisterDebugRun();
+    if (e2e.__eversionRun === hurry) delete e2e.__eversionRun;
+  };
 
   function cancelPrep() {
     if (timer) clearTimeout(timer);
@@ -825,6 +836,7 @@ export function createEversionController(
     state: () => runner.state(),
     dispose() {
       cancelPrep();
+      unregisterRun();
       // Ends a run in flight outright (cover class, settle attribute, overlay) and
       // makes one still priming fall back: nothing is left to finish it.
       runner.dispose();

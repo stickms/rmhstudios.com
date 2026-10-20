@@ -302,6 +302,7 @@ export class EversionRunner {
   private afterReady = false;
   /** Posts to the host of the run in flight; `null` between runs. */
   private abortRun: (() => void) | null = null;
+  private fastForwardRun: (() => void) | null = null;
   /** Ends the run in flight at once, whatever it is doing; `null` between runs. */
   private forceEnd: ((fade?: boolean) => void) | null = null;
   /** `dispose()` was called: a run still priming falls back instead of starting. */
@@ -324,6 +325,15 @@ export class EversionRunner {
   /** Hurry the run in flight (back/forward, T33): fast-forward with the gate skipped. */
   abort(): void {
     this.abortRun?.();
+  }
+
+  /**
+   * Compress the rest of the run in flight (the timeline's fast-forward, spec §7.6). For the test harness alone
+   * (the `run` debug slot, behind `?eversion-debug`): no visitor input reaches it, the run always plays in full
+   * (amended 2026-10-20). Once, never during the final dissolve.
+   */
+  fastForward(): void {
+    this.fastForwardRun?.();
   }
 
   /**
@@ -512,6 +522,7 @@ export class EversionRunner {
       if (watchdog) clearTimeout(watchdog);
       watchdog = null;
       this.abortRun = null;
+      this.fastForwardRun = null;
       this.forceEnd = null;
       for (const off of listeners.splice(0)) off();
       this.setCover(false);
@@ -848,6 +859,12 @@ export class EversionRunner {
       aborted = true;
       gateReason = 'abort';
       post({ type: 'abort' });
+    };
+    let fastForwarded = false;
+    this.fastForwardRun = () => {
+      if (ended || aborted || fastForwarded || revealing) return;
+      fastForwarded = true;
+      post({ type: 'fast-forward' });
     };
     this.forceEnd = (fade = false) => {
       if (ended) return;

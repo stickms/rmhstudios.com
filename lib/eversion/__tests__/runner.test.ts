@@ -927,6 +927,29 @@ describe('eversion runner: input, abort and faults after start', () => {
     await p;
   });
 
+  it('the test harness can still hurry a run: once, and never during the final dissolve', async () => {
+    const r = rig();
+    const p = (await toStart(r)).run;
+    r.emit({ type: 'cover' });
+    r.runner.fastForward();
+    r.runner.fastForward();
+    expect(r.posted.filter((m) => m.type === 'fast-forward')).toHaveLength(1);
+    r.emit(DONE);
+    await p;
+    r.runner.fastForward(); // nothing in flight
+    expect(r.posted.filter((m) => m.type === 'fast-forward')).toHaveLength(1);
+
+    const q = rig();
+    const pq = (await toStart(q)).run;
+    q.emit({ type: 'cover' });
+    q.emit({ type: 'uncover' });
+    await flush();
+    q.runner.fastForward();
+    expect(q.posted.some((m) => m.type === 'fast-forward')).toBe(false);
+    q.emit(DONE);
+    await pq;
+  });
+
   it('the run always plays in full: the page has no input that could speed it up', async () => {
     // Owner, 2026-10-20: "Ensure the animation always plays in full, don't speed it up too much." A tap used to
     // fast-forward everything left into 650 ms, and one made while the destination rendered was queued for start.

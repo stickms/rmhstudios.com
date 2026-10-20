@@ -198,9 +198,12 @@ try {
       run.pathAfter,
     );
 
-    // The frozen picture: up before the navigation, fading only once the first frame is on screen.
+    // The frozen picture: up before the navigation, dropped only once the first frame is on screen (it is
+    // replaced by that frame, the same page: amended 2026-10-19, it used to fade with `--out`).
     const holdOn = run.trace.find((x) => x.what === 'hold-on');
-    const holdOut = run.trace.find((x) => x.what === 'hold-out');
+    const holdOut = run.trace.find(
+      (x) => x.what === 'hold-none' && x.at >= (run.trace.find((y) => y.what === 'hold-up')?.at ?? Infinity),
+    );
     check(
       `${label}: the frozen picture is up before the navigation`,
       Boolean(holdOn) && holdOn.at <= nav.at,
@@ -212,7 +215,7 @@ try {
       `${holdUp ? (startAt - holdUp.at).toFixed(1) : '-'} ms before start`,
     );
     check(
-      `${label}: ...and fades only after the first frame (the cover mark)`,
+      `${label}: ...and is dropped only once the first frame is on screen (the cover mark)`,
       Boolean(holdOut) && holdOut.at >= at(run, 'eversion:cover') - 1,
       `${holdOut ? (holdOut.at - at(run, 'eversion:cover')).toFixed(1) : '-'} ms`,
     );
@@ -262,7 +265,7 @@ try {
       const bound = (FF_REMAINING_MS + REVEAL_MS + FF_SLACK_MS) * slow;
       const took = at(run, 'eversion:done') - run.ffAt;
       check(
-        `${label}: fast-forward finished ${took.toFixed(0)} ms after the key (bound ${bound.toFixed(0)} = (650 + reveal + slack) x ${slow.toFixed(1)} frame-time factor)`,
+        `${label}: fast-forward finished ${took.toFixed(0)} ms after the harness hurry (bound ${bound.toFixed(0)} = (650 + reveal + slack) x ${slow.toFixed(1)} frame-time factor)`,
         took <= bound,
       );
     }

@@ -132,7 +132,8 @@ new MutationObserver(() => {
   if (document.querySelector('.eversion-overlay')) overlaySeen++;
 }).observe(document.body, { childList: true, subtree: true });
 
-// The frozen picture the run shows while the destination renders: on, raised over the canvas, fading out, gone.
+// The frozen picture the run shows while the destination renders: on, raised over the canvas, gone (dropped on the
+// first frame since 2026-10-19; `out` is the retired fade and should never appear).
 let holdState: 'none' | 'on' | 'up' | 'out' = 'none';
 new MutationObserver(() => {
   const el = document.querySelector('.eversion-hold');
@@ -199,7 +200,7 @@ const api = {
   },
 
   /**
-   * One run toward `href`. `ffAfterCoverMs` presses a key that long after the
+   * One run toward `href`. `ffAfterCoverMs` fast-forwards it through the harness hook that long after the
    * cover mark. Resolves with the outcome and the whole trace.
    */
   async run(href: string, opts: { ffAfterCoverMs?: number } = {}) {
@@ -213,7 +214,10 @@ const api = {
         if (e.name === 'eversion:cover' && opts.ffAfterCoverMs != null) {
           setTimeout(() => {
             ffAt = performance.now();
+            // A key first: it must do nothing (the run always plays in full). Then the harness's own hurry, which
+            // is what the bound in eversion-controller.mjs measures.
             window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
+            window.__eversion?.run?.fastForward();
           }, opts.ffAfterCoverMs);
         }
       }
