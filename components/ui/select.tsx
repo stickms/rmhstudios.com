@@ -191,7 +191,7 @@ const TIER_CLASSES = {
     content: 'glass-overlay rounded-[var(--site-radius)] text-site-text',
     // Rows match the trigger, so the value you pick looks like the value you
     // then see sitting in the control.
-    item: 'rounded-[var(--site-radius-sm)] text-sm text-site-text data-[highlighted]:bg-site-surface-hover data-[state=checked]:text-site-accent',
+    item: 'rounded-[var(--site-radius-sm)] text-sm text-site-text data-[state=checked]:text-site-accent',
     label: 'text-site-text-dim',
     scrollButton: 'text-site-text-dim',
     chevron: 'text-site-text-dim',
@@ -205,7 +205,7 @@ const TIER_CLASSES = {
     // outward pair — the mirror of the trigger it came out of.
     content:
       'rounded-2xl border-0 bg-(--slice-bg) text-(--slice-text) shadow-[6px_6px_14px_var(--slice-shadow-dark),-6px_-6px_14px_var(--slice-shadow-light)]',
-    item: 'rounded-lg text-sm text-(--slice-text) data-[highlighted]:bg-(--slice-shadow-dark)/30 data-[state=checked]:text-(--slice-primary) data-[state=checked]:font-bold',
+    item: 'rounded-lg text-sm text-(--slice-text) [--evert-tint:color-mix(in_srgb,var(--slice-shadow-dark)_30%,transparent)] data-[state=checked]:text-(--slice-primary) data-[state=checked]:font-bold',
     label: 'text-(--slice-text-light)',
     scrollButton: 'text-(--slice-text-muted)',
     chevron: 'text-(--slice-text-muted)',
@@ -215,7 +215,7 @@ const TIER_CLASSES = {
       'rounded-[var(--app-radius-sm)] border border-(--app-border) bg-(--app-surface) text-(--app-text) text-sm hover:border-(--app-border-bright) focus-visible:border-(--app-accent) focus-visible:ring-2 focus-visible:ring-(--app-accent)',
     content:
       'rounded-[var(--app-radius-sm)] border border-(--app-border) bg-(--app-surface) text-(--app-text) shadow-[var(--app-shadow)]',
-    item: 'rounded-[var(--app-radius-sm)] text-sm text-(--app-text) data-[highlighted]:bg-(--app-surface-hover) data-[state=checked]:text-(--app-accent)',
+    item: 'rounded-[var(--app-radius-sm)] text-sm text-(--app-text) [--evert-tint:var(--app-surface-hover)] [--evert-rest-opacity:1] data-[state=checked]:text-(--app-accent)',
     label: 'text-(--app-text-dim)',
     scrollButton: 'text-(--app-text-dim)',
     chevron: 'text-(--app-text-dim)',
@@ -273,6 +273,8 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
         value={toItemValue(option.value)}
         disabled={option.disabled}
         data-slot="select-item"
+        // Radix's roving highlight (`data-highlighted`) turns the row's eversion layer out (globals.css §7.3).
+        data-evert=""
         className={cn(
           // The same row metrics as `MenuItem` (components/ui/menu.tsx), because
           // a select's list and an overflow menu are the same object to whoever

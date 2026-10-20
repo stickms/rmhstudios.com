@@ -428,6 +428,8 @@ export function LiquidTabs({
           key={tab.id}
           data-has-icon={tab.icon ? '' : undefined}
           data-tab-active={active ? 'true' : 'false'}
+          // The eversion layer sits on the wrapper so it stays under the thumb (globals.css §7.3).
+          data-evert=""
           className="relative flex min-w-max shrink-0"
         >
           {capsule(active)}
@@ -459,6 +461,8 @@ export function LiquidTabs({
         title={tab.icon ? tab.label : undefined}
         data-has-icon={tab.icon ? '' : undefined}
         data-tab-active={active ? 'true' : 'false'}
+        // Hover and press turn a tint out of the tab, under the thumb (globals.css §7.3).
+        data-evert=""
         className={itemClass(active)}
       >
         {capsule(active)}

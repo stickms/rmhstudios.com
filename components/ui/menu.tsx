@@ -97,8 +97,9 @@ const ROW_BASE = cn(
   // Focus is the highlight here. The menu moves real DOM focus between rows
   // (that is what `role="menu"` requires), so the focused row must read as the
   // highlighted one — otherwise a keyboard user is navigating an invisible
-  // cursor. The global focus ring still lands on top of it; this is the fill.
-  'hover:bg-site-surface-hover focus-visible:bg-site-surface-hover',
+  // cursor. The global focus ring still lands on top of it. The fill is the row's
+  // eversion layer (`data-evert`, globals.css §7.3): hover, press and keyboard
+  // focus turn it out of the row.
   'disabled:pointer-events-none disabled:opacity-50',
   // A disabled <a> is not a thing, so links opt out through the attribute the
   // menu's roving focus and the pointer both read.
@@ -107,7 +108,7 @@ const ROW_BASE = cn(
 
 const TONE: Record<MenuItemTone, string> = {
   default: 'text-site-text',
-  danger: 'text-site-danger hover:bg-site-danger/10 focus-visible:bg-site-danger/10',
+  danger: 'text-site-danger',
 };
 
 /** Icon ink follows the row's tone, so a destructive row's glyph is not dim grey. */
@@ -161,6 +162,8 @@ export const MenuItem = React.forwardRef<HTMLElement, MenuItemProps>(function Me
   const shared = {
     [MENU_ITEM_ATTR]: '',
     'data-slot': 'menu-item',
+    'data-evert': '',
+    'data-tone': tone,
     role: checked === undefined ? 'menuitem' : 'menuitemradio',
     ...(checked === undefined ? {} : { 'aria-checked': checked }),
     className: cn(ROW_BASE, TONE[tone], className),

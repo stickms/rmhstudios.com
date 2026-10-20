@@ -1135,6 +1135,46 @@ view()`), falling back to a rAF window-scroll pass with cached offsets where
   twelve of them and the other forty opened differently. The hook is **deleted**;
   its consumers take `data-motion="pop"` + `usePopPresence`, which is two lines
   and no portal.
+- **Eversion: a control's state turns inside out** (globals.css §7.3,
+  2026-10-20). The globe ends a navigation by turning itself inside out, and every
+  control changes state the same way at its own scale. The new state is never
+  faded in over the old one: a tint emerges from INSIDE the control through a
+  circular edge that sweeps out to the far corner on a spring, and goes back the
+  same way.
+  - **Opt in with `data-evert`.** The layer is the control's `::before`, painted
+    in `--evert-tint`, behind the label. Nothing else on the control moves, so a
+    label never rotates or scales. `Button` (every variant but `link`, in its
+    own hover colour), `LiquidTabs` tabs, `MenuItem` rows and `Select` items
+    carry it; their `hover:bg-*` classes are gone, because the hover colour
+    arrives by eversion now. The layer turns out on a fine pointer's hover, a
+    press (`data-pressed`), a menu's roving highlight (`data-highlighted`) and
+    keyboard focus.
+  - **Controls with a mark** evert in their own form. `Switch`: the "on" colour
+    pours out of the knob as the knob travels on the landing spring. Native
+    checkboxes and radios (drawn site-wide, except on Gecko and under forced
+    colors, which keep the native control): the accent everts from the centre,
+    then the tick or dot springs in.
+  - **The point is where you are.** `hooks/useEvertPoint.ts` is one delegated,
+    passive listener, mounted in `Providers.tsx`. It writes `--evert-x/-y/-r`
+    on the control (never on `<html>`), once per event: the pointer's entry for
+    a hover, the finger for a press, the exit as a hover leaves, the centre for
+    keyboard focus. It never tracks the cursor (§5.1.1). A tap is held for
+    `EVERT_MIN_PRESS_MS` so a quick one is still seen.
+  - **Springs as transitions.** `--evert-ease` (`spring(0.3, 0.15)`) and
+    `--evert-ease-pop` (`spring(0.32, 0.3)`, for marks that land) are `linear()`
+    easings sampled from `lib/fluid.ts` (`springLinearEasing`), and
+    `lib/__tests__/evert-spring.test.ts` re-derives them. A transition never
+    plays on mount (a page that loads with boxes ticked does not animate them)
+    and retargets from where it is when interrupted.
+  - **Cost.** Only `clip-path` on control-sized layers, `transform`/`translate`
+    on marks and knobs, and `opacity` for the press deepening: no shadow, layout
+    property, filter or per-frame script. Measured on a 4×-throttled phone
+    profile: one control everting keeps 60 fps at the 95th percentile; twelve at
+    once drop about one frame in twenty under software raster.
+  - **Degradation is central.** Hover only exists under
+    `(hover: hover) and (pointer: fine)`, so a phone never shows a sticky hover.
+    Reduced motion collapses it (the state still shows, at once). `perf-lite`
+    swaps the springs for one short tween. Forced colors drop the layer.
 - **Never `transition-all`, and never animate a layout property.** `all` makes
   the engine watch every animatable property on the element, so a class change
   that happens to touch `width`/`padding`/`gap` animates a reflow nobody asked
@@ -1216,9 +1256,12 @@ Global (in `globals.css`):
 
 - Keyboard focus: `:focus-visible { outline: 2px solid var(--site-accent); outline-offset: 2px }`
   covers every interactive element (links, buttons, `[role]`, `[tabindex]`).
-  Text inputs opt out (border + caret instead); `Button` opts out too (via its
-  `data-slot="button"`) and draws its own softer
-  `focus-visible:ring-site-accent/50 ring-2 ring-offset-2`. **Don't add another
+  Text inputs opt out (border + caret instead). `Button` takes the global ring
+  too (since 2026-10-20; it drew its own softer box-shadow ring, which could not
+  evert with everything else's, §7 _Eversion_). The ring **turns out from inside
+  the control**: its offset springs from within the border to where it rests
+  (`@keyframes evert-focus`, from-only, so it lands on each element's own
+  offset); colour and width never animate. **Don't add another
   `focus-visible:ring` to an element the global outline already covers — you'll
   get a doubled indicator.** Reach for a self-drawn ring only when the element
   is excluded from (or not matched by) the global rule.
