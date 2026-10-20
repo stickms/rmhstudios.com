@@ -76,6 +76,7 @@ describe('§7.3 — the layer costs what the design language allows', () => {
       'opacity',
       'transform',
       'translate',
+      'scale',
       'border-color',
       'background-color',
     ]);
@@ -88,6 +89,23 @@ describe('§7.3 — the layer costs what the design language allows', () => {
       }
     }
     expect(SECTION).not.toMatch(/transition[^;]*\b(box-shadow|width|height|filter|background-position|all)\b/);
+  });
+
+  it('the layers on controls that can navigate run on the compositor, not the main thread', () => {
+    // A press that navigates starts the route's render on the main thread; a main-thread animation (clip-path)
+    // stood still for ~630 ms after the click, until the new page had painted. `scale` keeps moving through it.
+    const rule = (sel: string) => {
+      const i = SECTION.indexOf(`${sel} {`);
+      expect(i, sel).toBeGreaterThan(-1);
+      return SECTION.slice(i, SECTION.indexOf('}', i));
+    };
+    for (const sel of ['[data-evert]::before', "[data-evert~='select']::after"]) {
+      const body = rule(sel);
+      expect(body, sel).toMatch(/scale: 0;/);
+      expect(body, sel).toMatch(/transform-origin: var\(--evert-x, 50%\) var\(--evert-y, 50%\)/);
+      expect(body, sel).toMatch(/transition:\s*scale var\(--evert-in\)/);
+      expect(body, sel).not.toMatch(/clip-path/);
+    }
   });
 
   it('hover only ever comes from a fine pointer', () => {
@@ -119,6 +137,14 @@ describe('§7.3 — the shared controls carry the layer', () => {
     ['components/ui/menu.tsx', "'data-evert'"],
     ['components/ui/select.tsx', 'data-evert'],
     ['components/ui/switch.tsx', 'data-switch-knob'],
+    // The navigation chrome, and the cards you press to go somewhere (owner, 2026-10-20: "I don't see any
+    // animations when I press non globe buttons to navigate").
+    ['components/radial/RadialNavRail.tsx', 'data-evert="select"'],
+    ['components/radial/RadialShell.tsx', 'data-evert'],
+    ['components/radial/RadialFeed.tsx', 'data-evert'],
+    ['components/radial/WheelCard.tsx', 'data-evert'],
+    ['components/creator-studio/storefront.tsx', "'data-evert': 'over'"],
+    ['components/creator-studio/RankedSummary.tsx', 'data-evert'],
   ])('%s', (file, hook) => {
     expect(read(file)).toContain(hook);
   });

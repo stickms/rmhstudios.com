@@ -154,17 +154,14 @@
   border: 1px solid var(--site-border, #232328);
 }
 .cstudio-ranked__toggle:hover {
+  /* The surface everts in (`data-evert`, globals.css §7.3). */
   color: var(--site-text, #f5f5f7);
-  background: var(--site-surface, #18181b);
 }
 
 .cstudio-ranked__link {
   color: var(--site-accent, #6c5cff);
   background: var(--site-accent-dim, rgba(108, 92, 255, 0.14));
   border: 1px solid color-mix(in srgb, var(--site-accent, #6c5cff) 30%, transparent);
-}
-.cstudio-ranked__link:hover {
-  background: color-mix(in srgb, var(--site-accent, #6c5cff) 22%, transparent);
 }
 
 .cstudio-ranked__chev {

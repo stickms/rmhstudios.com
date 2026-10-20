@@ -378,7 +378,7 @@ body:has(.radial-shell) .call-banner {
   box-shadow: 0 0 0 2px var(--site-bg);
 }
 .radial-topbar__btn:hover {
-  background: var(--site-surface-hover);
+  /* The hover tint everts in (`data-evert`, globals.css §7.3). */
   transform: translateY(-1px);
 }
 .radial-topbar__btn svg {
@@ -428,7 +428,7 @@ body:has(.radial-shell) .call-banner {
     color 0.18s ease;
 }
 .radial-topbar__signin:hover {
-  background: var(--site-accent);
+  /* The accent everts in behind the label (`data-evert`, globals.css §7.3). */
   color: var(--site-accent-fg);
   transform: translateY(-1px);
 }
@@ -598,15 +598,16 @@ body:has(.radial-shell) .call-banner {
   font-size: 0.92rem;
   font-weight: 600;
   transition:
-    background-color 0.18s ease,
+    color var(--evert-in) var(--evert-ease),
     transform 0.18s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
 }
+/* The hover tint and the current page's accent are the item's eversion layers
+   (`data-evert="select"`, globals.css §7.3): navigating pours the accent out of the
+   item you pressed and drains it out of the one you left. */
 .rad-rail__item:hover {
-  background: var(--site-surface-hover);
   transform: translateX(2px);
 }
 .rad-rail__item.is-active {
-  background: var(--site-accent);
   color: var(--site-accent-fg);
 }
 .rad-rail__item svg {

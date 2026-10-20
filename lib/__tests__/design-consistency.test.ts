@@ -728,7 +728,7 @@ function cssViolations(src: string): { hex: number; radius: number } {
  */
 const CSS_DEBT: Record<string, { hex: number; radius: number }> = {
   'components/library/library.css': { hex: 31, radius: 33 },
-  'components/creator-studio/creator-studio.css': { hex: 27, radius: 5 },
+  'components/creator-studio/creator-studio.css': { hex: 25, radius: 5 },
   'components/rmhtech/rmhtech.css': { hex: 16, radius: 5 },
   'components/library/album-admin.css': { hex: 6, radius: 4 },
   'components/library/album-viewer.css': { hex: 7, radius: 3 },

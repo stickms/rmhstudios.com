@@ -1138,24 +1138,36 @@ view()`), falling back to a rAF window-scroll pass with cached offsets where
 - **Eversion: a control's state turns inside out** (globals.css §7.3,
   2026-10-20). The globe ends a navigation by turning itself inside out, and every
   control changes state the same way at its own scale. The new state is never
-  faded in over the old one: a tint emerges from INSIDE the control through a
-  circular edge that sweeps out to the far corner on a spring, and goes back the
-  same way.
+  faded in over the old one: a tint emerges from INSIDE the control, swelling out
+  of one point into the control's whole shape on a spring, and goes back into
+  that point the same way.
   - **Opt in with `data-evert`.** The layer is the control's `::before`, painted
-    in `--evert-tint`, behind the label. Nothing else on the control moves, so a
-    label never rotates or scales. `Button` (every variant but `link`, in its
-    own hover colour), `LiquidTabs` tabs, `MenuItem` rows and `Select` items
-    carry it; their `hover:bg-*` classes are gone, because the hover colour
-    arrives by eversion now. The layer turns out on a fine pointer's hover, a
-    press (`data-pressed`), a menu's roving highlight (`data-highlighted`) and
-    keyboard focus.
+    in `--evert-tint`, behind the label: the control's own shape scaled 0 → 1
+    about the point. Nothing else on the control moves, so a label never
+    rotates or scales. `Button` (every variant but `link`, in its own hover
+    colour), `LiquidTabs` tabs, `MenuItem` rows, `Select` (trigger and items),
+    the nav rail, the top bar's buttons and sign-in, the compose button, the
+    feed's post cards and the store's cards carry it; their hover background
+    rules are gone, because the hover colour arrives by eversion now. The layer
+    turns out on a fine pointer's hover, a press (`data-pressed`), a menu's
+    roving highlight (`data-highlighted`) and keyboard focus.
+  - **Two variants.** `data-evert="select"` adds a second layer (`::after`) for
+    a selected state: the nav rail's current page pours out of the item you
+    pressed and drains out of the one you left, because the rail stays on
+    screen across the navigation. `data-evert="over"` lifts a translucent tint
+    above the content, for cards whose art covers the whole box.
+  - **It is a transform, so it survives a navigation.** It was a `clip-path`
+    circle, which the main thread animates. Pressing something that navigates
+    starts the route's render on that thread, and a probe showed no frame for
+    ~630 ms after the click, so the tint stood still until the new page had
+    painted. `scale` runs on the compositor and keeps moving through it.
   - **Controls with a mark** evert in their own form. `Switch`: the "on" colour
     pours out of the knob as the knob travels on the landing spring. Native
     checkboxes and radios (drawn site-wide, except on Gecko and under forced
     colors, which keep the native control): the accent everts from the centre,
     then the tick or dot springs in.
   - **The point is where you are.** `hooks/useEvertPoint.ts` is one delegated,
-    passive listener, mounted in `Providers.tsx`. It writes `--evert-x/-y/-r`
+    passive listener, mounted in `Providers.tsx`. It writes `--evert-x/-y`
     on the control (never on `<html>`), once per event: the pointer's entry for
     a hover, the finger for a press, the exit as a hover leaves, the centre for
     keyboard focus. It never tracks the cursor (§5.1.1). A tap is held for
@@ -1166,9 +1178,10 @@ view()`), falling back to a rAF window-scroll pass with cached offsets where
     `lib/__tests__/evert-spring.test.ts` re-derives them. A transition never
     plays on mount (a page that loads with boxes ticked does not animate them)
     and retargets from where it is when interrupted.
-  - **Cost.** Only `clip-path` on control-sized layers, `transform`/`translate`
-    on marks and knobs, and `opacity` for the press deepening: no shadow, layout
-    property, filter or per-frame script. Measured on a 4×-throttled phone
+  - **Cost.** `scale` on control-sized layers, `transform`/`translate` on marks
+    and knobs, and `opacity` for the press deepening, all composited, plus
+    `clip-path` on the 16–40 px fills of checkboxes, radios and switches. No
+    shadow, layout property, filter or per-frame script. Measured on a 4×-throttled phone
     profile: one control everting keeps 60 fps at the 95th percentile; twelve at
     once drop about one frame in twenty under software raster.
   - **Degradation is central.** Hover only exists under

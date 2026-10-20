@@ -311,6 +311,7 @@ export function RadialFeed({ initialFeed }: { initialFeed?: Promise<InitialFeed>
         ref={composeRef}
         type="button"
         className="radial-feed__compose"
+        data-evert=""
         onClick={openCompose}
         aria-label={t('compose', { defaultValue: 'Compose' })}
         aria-haspopup="dialog"

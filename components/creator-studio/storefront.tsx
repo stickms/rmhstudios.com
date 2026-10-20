@@ -131,6 +131,8 @@ function PrimaryWrapper({
   const shared = {
     className,
     'aria-label': ariaLabel,
+    // A press turns light out of the card from the finger, over its art (globals.css §7.3).
+    'data-evert': 'over',
     style: { '--card-hue': String(item.hue ?? 220) } as React.CSSProperties,
   };
   if (item.to) {
