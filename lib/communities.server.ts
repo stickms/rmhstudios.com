@@ -28,8 +28,14 @@ export async function listCommunities(opts: {
   q?: string | null;
 }): Promise<CommunityListItem[]> {
   const q = opts.q?.trim();
+  // A private community is members-only: it is listed for its members (so "my
+  // communities" still shows it) and for nobody else - the same rule search and
+  // the sitemap apply (`isPrivate: false`).
+  const visible = opts.userId
+    ? { OR: [{ isPrivate: false }, { members: { some: { userId: opts.userId } } }] }
+    : { isPrivate: false };
   const communities = await prisma.community.findMany({
-    where: q ? { name: { contains: q, mode: 'insensitive' } } : {},
+    where: q ? { AND: [visible, { name: { contains: q, mode: 'insensitive' } }] } : visible,
     orderBy: { memberCount: 'desc' },
     take: 50,
     select: {

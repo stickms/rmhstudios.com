@@ -13,9 +13,15 @@ const createSchema = z.object({ body: z.string().trim().min(1).max(2000) });
 export const Route = createFileRoute('/api/communities/$slug/announcements')({
   server: {
     handlers: {
-      GET: async ({ params }) => {
+      GET: defineHandler({ auth: 'optional' }, async ({ params, session }) => {
         const community = await getCommunityBySlug(params.slug);
         if (!community) return Response.json({ error: 'Not found' }, { status: 404 });
+        // Members-only: a private community's announcements are invisible to
+        // non-members (404, as for a missing community).
+        if (community.isPrivate) {
+          const role = session ? await getRole(community.id, session.user.id) : null;
+          if (!role) return Response.json({ error: 'Not found' }, { status: 404 });
+        }
         const announcements = await prisma.communityAnnouncement.findMany({
           where: { communityId: community.id },
           orderBy: { createdAt: 'desc' },
@@ -30,7 +36,7 @@ export const Route = createFileRoute('/api/communities/$slug/announcements')({
         return Response.json({
           announcements: announcements.map((a) => ({ ...a, createdAt: a.createdAt.toISOString() })),
         });
-      },
+      }),
       POST: defineHandler(
         {
           rateLimit: {

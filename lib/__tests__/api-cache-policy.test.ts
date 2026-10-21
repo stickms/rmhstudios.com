@@ -95,8 +95,6 @@ const PUBLIC_BUT_NOT_CACHED: Record<string, string> = {
   '/api/spaces/$id': 'raw handler; live room state and chat transcript',
   '/api/discord/embed': 'raw handler; Discord Activity lobby state, polled for freshness',
   '/api/discord/race': 'raw handler; race lobby state, polled for freshness',
-  '/api/communities/$slug/announcements':
-    'raw handler; moderator-posted content that can be deleted',
   '/api/gift-sub':
     'raw handler; constant price table, cacheable once adopted onto defineHandler (body edit, WS4)',
   '/api/versecraft/world': 'raw handler; GET also writes',
@@ -111,8 +109,6 @@ const PUBLIC_BUT_NOT_CACHED: Record<string, string> = {
   '/api/slice-it/replay': 'replays have a visibility flag; a flip to private must not be stale',
   '/api/slice-it/replay/$id': 'replays have a visibility flag; a flip to private must not be stale',
   '/api/user-builds/$id/comments': 'user comments; deletion and moderation must not be stale',
-  '/api/community-pages/$id/revisions':
-    'wiki history shown to moderators while reverting vandalism',
   '/api/feedback': 'user-submitted text, and an unbounded read (WS4)',
   '/api/handles/history': 'impersonation signal that changes at a rename; low traffic',
 };
