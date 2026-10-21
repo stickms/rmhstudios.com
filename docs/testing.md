@@ -27,6 +27,7 @@ pnpm test lib/slice-it        # one file or directory
 pnpm test:watch               # watch mode
 pnpm test:coverage            # V8 coverage → text + coverage/index.html + lcov
 pnpm test:epic                # epic content-build suite (needs Chromium)
+pnpm test:integration         # real flows against a running app + throwaway Postgres (see §8)
 make test                     # Go (Bazel) + the frontend vitest suite
 ```
 
@@ -367,6 +368,52 @@ blocking, which hides a red job from the PR's checks, so each script's verdict i
 also written to the job summary (`GITHUB_STEP_SUMMARY`) and every failure is an
 `::error::` annotation. Open the job summary after a nightly.
 
+### 8. Integration suite (`vitest.integration.config.ts`, `testing/integration/`)
+
+`pnpm test:integration`. Black-box tests of real user flows against a **running,
+built** app and a **real** Postgres — the layer the main suite deliberately never
+touches. Blocking on every PR (the `integration` job in `web-ci.yml`).
+
+| File | Covers |
+| --- | --- |
+| `auth.test.ts` | email sign-up → session → handle assigned; sign-out revokes the session; wrong password sets no session; writes need a session |
+| `posts.test.ts` | create + read back; invalid body → 400 and nothing written; another user's like (toggle) and comment; only the author can delete (soft delete → tombstone) |
+| `coins.test.ts` | a tip moves exactly the amount and writes one ledger row; overdraft and self-tip are refused with every balance unchanged |
+| `developer-api.test.ts` | free accounts cannot mint keys; a paid key authenticates `/api/v1/me`; revoked and made-up keys → 401; scopes (read-only key cannot post, `write:posts` can) |
+| `public.test.ts` | `/api/ready`, the OpenAPI 3.1 spec, `/` SSR and the sitemap — the deploy smoke probes, run before merge |
+
+How it works: `global-setup.ts` waits for `/api/ready`, then signs up the shared
+cast (`alice`, `bob`, `carol`) once and hands their cookies to the files via
+`inject()`. `lib/client.ts` is a cookie-jar `fetch` client (it sends the
+`Origin` Better Auth's CSRF check wants) plus a `pg` pool on the **same**
+database, used only to seed what no endpoint can (a paid subscription, a starting
+coin balance) and to assert on what a response cannot prove (the ledger row, the
+`deletedAt` stamp). Files run one at a time and the app's per-IP rate limits stay
+on (10 sign-ups / posts per minute); the suite budgets its requests under them.
+
+Locally — never against a database you care about:
+
+```bash
+pnpm build:frontend
+DATABASE_URL=postgresql://…/scratch pnpm exec prisma migrate deploy
+DATABASE_URL=… BETTER_AUTH_SECRET=local-secret-at-least-32-chars-long BETTER_AUTH_URL=http://localhost:7005 PORT=7005 \
+  node .output/server/index.mjs &
+INTEGRATION_BASE_URL=http://localhost:7005 DATABASE_URL=… pnpm test:integration
+```
+
+(`INTEGRATION_BASE_URL`, not `BASE_URL`: Vite reserves that name and vitest
+overwrites it.) Restart the server between back-to-back runs — the rate-limit
+counters are in memory.
+
+**Known bug, pinned with `it.fails`:** a session's cookies copied before sign-out
+keep writing for up to 5 minutes, because `session.cookieCache` (lib/auth.ts,
+`maxAge: 300`) lets `getSession` trust the signed `session_data` cookie without
+reading the (deleted) session row. When that is fixed the `it.fails` test turns
+red — flip it to `it`.
+
+Out of scope (each needs external services): Stripe checkout/webhooks, OAuth
+providers, the Socket.IO hubs, email delivery.
+
 ### Coverage
 
 ```bash
@@ -390,6 +437,7 @@ Ten workflows live in `.github/workflows/`. The ones that touch tests/quality:
 | `web-ci.yml` (`check` job)    | `tsc --noEmit` → `eslint` → docs freshness → `pnpm test`                                | **all block**, tests included (as of 2026-08-08)                                         |
 | `web-ci.yml` (`build` job)    | `build:frontend:sourcemap` → bundle budget → entry composition                          | build + both size gates block                                                            |
 | `web-ci.yml` (`audit` job)    | `pnpm audit --prod --audit-level=high`                                                  | blocks on high-severity prod advisories                                                  |
+| `web-ci.yml` (`integration`)  | build → Postgres service → migrate → boot `.output/server` → `pnpm test:integration`    | **blocks**; see §8                                                                       |
 | `epic-tests.yml`              | `playwright install chromium` → `pnpm test:epic`                                        | blocks; **path-filtered** to `scripts/epic/**`                                           |
 | `deploy.yml` (`ci` job)       | `tsc --noEmit` → `eslint` → `pnpm test`                                                 | blocks — typecheck, lint and test all gate the deploy; see below                         |
 | `web-ci.yml` (`eversion-e2e`) | build with sourcemaps → serve → every `eversion-*.mjs` (hub per profile x theme)        | non-blocking until T37; **nightly + manual dispatch only** (not on PRs); see §7          |

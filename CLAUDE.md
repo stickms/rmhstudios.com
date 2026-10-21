@@ -54,6 +54,7 @@ pnpm lint                    # eslint (jsx-a11y at warn — add no new warnings)
 pnpm format                  # prettier
 pnpm test                    # main test suite (~20s; mission-critical scope — docs/testing.md)
 pnpm test:epic               # epic content-build suite (needs Chromium)
+pnpm test:integration        # real flows vs a running app + throwaway Postgres (docs/testing.md §8)
 pnpm build                   # vibe-packages → vite build → esbuild 6 server bundles
 pnpm i18n:extract            # after adding t() strings
 pnpm check:consistency       # THE COMMIT GATE — run before every commit (see below)
@@ -203,7 +204,7 @@ webhook listener (`webhook-server.cjs`) → `./deploy.sh production <sha>` pulls
 those images → prisma migrate → blue/green web hotswap (port 7005/7015 flip).
 
 CI is 11 workflows: `web-ci.yml` (typecheck, lint, tests, build, production
-dependency audit — **all blocking**), `epic-tests.yml` (the epic content-build
+dependency audit, integration suite — **all blocking**), `epic-tests.yml` (the epic content-build
 suite, path-filtered to `scripts/epic/**`), `go-microservices.yml` (Bazel test),
 `senior-review.yml` (LLM review gate), `deploy.yml`, `synthetic-perf.yml`,
 `i18n-translate.yml`, and the build/deploy guards `build-vibe-packages`,

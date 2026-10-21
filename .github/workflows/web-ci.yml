@@ -258,6 +258,82 @@ jobs:
       - name: Production dependency audit
         run: pnpm audit --prod --audit-level=high
 
+  # Integration suite (`pnpm test:integration`, testing/integration/): real user
+  # flows — sign-up/sign-in/sign-out, posting, likes/comments/deletes, coin
+  # tips, the developer API's paywall/auth/revocation/scopes — against the BUILT
+  # app on a throwaway Postgres. BLOCKING: this is the layer `pnpm test` never
+  # touches (its files are environment-agnostic by design), and the one that
+  # proves the pieces work together before a change reaches production.
+  #
+  # It builds for itself rather than waiting on `build`: an artefact round-trip
+  # of .output costs about what a rebuild does, and running in parallel keeps
+  # the PR's wall-clock at max(job), not build + integration. No sourcemaps —
+  # nothing here reads them. Rate limits stay ON (see vitest.integration.config.ts).
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rmh
+      BETTER_AUTH_SECRET: ci-integration-not-a-real-secret-00000000000
+      BETTER_AUTH_URL: http://localhost:7005
+      PORT: '7005'
+      INTEGRATION_BASE_URL: http://localhost:7005
+    services:
+      postgres:
+        # pgvector's image: the migration history needs the extension to replay
+        # (same as prisma-migrate-status.yml and eversion-e2e).
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: rmh
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 10
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.21.0
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Restore image variants
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: public/images/_variants
+          key: image-variants-${{ runner.os }}-${{ hashFiles('public/images/**', 'scripts/gen-image-variants.ts', 'pnpm-lock.yaml') }}
+          restore-keys: |
+            image-variants-${{ runner.os }}-
+      - name: Build
+        run: pnpm run build:frontend
+      - name: Migrate database
+        run: pnpm exec prisma migrate deploy
+      - name: Start the built server
+        run: |
+          nohup node .output/server/index.mjs > "$RUNNER_TEMP/server.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/server.pid"
+          for i in $(seq 1 60); do
+            if curl -fsS -o /dev/null "$INTEGRATION_BASE_URL/api/ready"; then echo "server ready after ${i}s"; exit 0; fi
+            sleep 1
+          done
+          echo "server did not become ready"
+          tail -80 "$RUNNER_TEMP/server.log"
+          exit 1
+      - name: Integration tests
+        run: pnpm test:integration
+      - name: Server log (on failure)
+        if: failure()
+        run: tail -200 "$RUNNER_TEMP/server.log" || true
+      - name: Stop the server
+        if: always()
+        run: kill "$(cat "$RUNNER_TEMP/server.pid")" 2>/dev/null || true
+
   # ── eversion-e2e (globe eversion, spec §11.4; tasks T16) ──────────────────
   #
   # The rendering/integration/perf gates (S#25-S#46) run in a real browser
