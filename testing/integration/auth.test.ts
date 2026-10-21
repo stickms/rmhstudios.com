@@ -46,23 +46,23 @@ describe('auth', () => {
   });
 
   /**
-   * KNOWN BUG — `it.fails` until it is fixed, so this suite stays green AND the
-   * day it is fixed this turns red and must be flipped to a plain `it`.
-   *
-   * `session.cookieCache` (lib/auth.ts, maxAge 300) lets getSession trust the
-   * signed `session_data` cookie for 5 minutes without reading the session row.
-   * So a copy of a session's cookies taken before sign-out — a stolen cookie —
-   * keeps WRITING for up to 5 minutes after the row is deleted (found by this
-   * suite on 2026-10-21: sign-out → row gone → the copied cookie still got a 201
-   * from POST /api/rmharks). The same window applies to any server-side revoke.
+   * Regression test for the revocation hole this suite found on 2026-10-21:
+   * with `session.cookieCache` (lib/auth.ts, maxAge 300), a copy of a session's
+   * cookies taken before sign-out — a stolen cookie — kept WRITING for up to 5
+   * minutes after the session row was deleted. Writes now always read the
+   * session row (the getSession wrapper at the bottom of lib/auth.ts).
    */
-  it.fails('a revoked session cookie stops working immediately', async () => {
+  it('a revoked session cookie cannot write', async () => {
     const user = await signUp('revoke');
     const stolen = new Client(user.client.cookies);
     expect((await user.client.post('/api/auth/sign-out', {})).status).toBe(200);
 
+    // Both kinds of write route: one behind `defineHandler`, and one of the
+    // routes that calls auth.api.getSession itself (and moves coins).
     const write = await stolen.post('/api/rmharks', { content: 'posted with a revoked session' });
     expect(write.status).toBe(401);
+    const tip = await stolen.post('/api/coins/tip', { recipientId: inject('bob').id, amount: 1 });
+    expect(tip.status).toBe(401);
   });
 
   it('rejects a wrong password without setting a session', async () => {

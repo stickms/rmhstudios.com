@@ -288,3 +288,49 @@ export const auth = betterAuth({
     }),
   ],
 });
+
+/* ── Revocation-safe sessions on writes ────────────────────────────────────
+ *
+ * `session.cookieCache` (above) lets getSession trust the signed `session_data`
+ * cookie for `maxAge` seconds without reading the session row. That is what
+ * keeps the hottest auth path cheap — but it also means a session deleted
+ * server-side (sign-out, a revoke) keeps working for up to `maxAge` for anyone
+ * holding a copy of its cookies. The integration suite caught exactly that: a
+ * cookie copied before sign-out still got a 201 from POST /api/rmharks.
+ *
+ * So the cache is kept for reads and dropped for writes. Every server-side
+ * `auth.api.getSession` call — `defineHandler` and the ~100 routes that call it
+ * directly — goes through this wrapper; when the current request is not a safe
+ * method (GET/HEAD/OPTIONS) it forces `disableCookieCache`, i.e. one indexed
+ * session-row read per write, and a revoked session is refused immediately.
+ * Reads, SSR renders and Better Auth's own `/api/auth/get-session` endpoint
+ * (served by its router, not through this property) keep the cache — a revoked
+ * session can still READ for up to `maxAge`, which is the accepted trade.
+ *
+ * Fail-safe: if the request (and so its method) cannot be determined — code
+ * running outside a request, a worker — the cache is skipped. The request
+ * helper is imported lazily so this module stays importable outside the
+ * TanStack Start runtime.
+ */
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+async function currentRequestIsSafe(): Promise<boolean> {
+  try {
+    const { getRequest } = await import('@tanstack/react-start/server');
+    const method = (getRequest() as Request | undefined)?.method?.toUpperCase();
+    return method !== undefined && SAFE_METHODS.has(method);
+  } catch {
+    return false;
+  }
+}
+
+type GetSession = typeof auth.api.getSession;
+const getSessionWithCookieCache: GetSession = auth.api.getSession;
+
+auth.api.getSession = (async (ctx: Parameters<GetSession>[0]) => {
+  if (await currentRequestIsSafe()) return getSessionWithCookieCache(ctx);
+  return getSessionWithCookieCache({
+    ...ctx,
+    query: { ...(ctx as { query?: Record<string, unknown> }).query, disableCookieCache: true },
+  } as Parameters<GetSession>[0]);
+}) as GetSession;
