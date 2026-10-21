@@ -1,9 +1,8 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { ThreadView } from '@/components/feed/ThreadView';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { getThread } from '@/lib/feed/thread.server';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, ogCardPath, SITE_URL } from '@/lib/seo';
 import type { FeedItem } from '@/lib/feed-types';
@@ -11,8 +10,7 @@ import type { FeedItem } from '@/lib/feed-types';
 const fetchThread = createServerFn({ method: 'GET' })
   .validator((rootId: string) => rootId)
   .handler(async ({ data: rootId }) => {
-    const request = getRequest();
-    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    const session = await getRequestSession();
     return getThread(rootId, session?.user.id ?? null);
   });
 

@@ -1,9 +1,8 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, BadgeCheck, Music4, PenLine } from 'lucide-react';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { playerProfile, type PlayerProfile } from '@/lib/slice-it/player.server';
 import { gradeFor } from '@/lib/slice-it/scoring';
@@ -28,7 +27,7 @@ import type { Lamp } from '@/lib/slice-it/types';
 const fetchPlayer = createServerFn({ method: 'GET' })
   .validator((handle: string) => handle)
   .handler(async ({ data: handle }): Promise<PlayerProfile | null> => {
-    const session = await auth.api.getSession({ headers: getRequest().headers }).catch(() => null);
+    const session = await getRequestSession();
     return playerProfile(handle, session?.user?.id ?? null);
   });
 

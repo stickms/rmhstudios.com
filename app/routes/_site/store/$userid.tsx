@@ -1,9 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { StorefrontColumn } from '@/components/feed/StorefrontColumn';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { listStorefront } from '@/lib/storefront.server';
 
 // Prefetch the creator's storefront server-side so it's present at first paint
@@ -13,8 +12,7 @@ import { listStorefront } from '@/lib/storefront.server';
 const fetchStorefront = createServerFn({ method: 'GET' })
   .validator((userid: string) => userid)
   .handler(async ({ data: userid }) => {
-    const request = getRequest();
-    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    const session = await getRequestSession();
     return { data: await listStorefront(userid, session?.user?.id ?? null) };
   });
 

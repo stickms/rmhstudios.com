@@ -2,7 +2,6 @@ import { useCallback } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { useTranslation } from 'react-i18next';
 import { Users, CalendarDays, Radio } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
@@ -12,7 +11,7 @@ import { CommunitiesColumn } from '@/components/feed/CommunitiesColumn';
 import { CommunitiesSkeleton } from '@/components/feed/CommunitiesSkeleton';
 import { EventsColumn } from '@/components/events/EventsColumn';
 import { SpacesColumn } from '@/components/spaces/SpacesColumn';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { listCommunities } from '@/lib/communities.server';
 
 // `/communities` is the merged social-graph hub: the communities directory plus
@@ -26,8 +25,7 @@ type CommunitiesTab = (typeof COMMUNITIES_TABS)[number];
 // present at first paint (SSR) and prefetched on hover intent. Events/Spaces
 // fetch their own data client-side, so the loader stays a single dataset.
 const fetchCommunities = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+  const session = await getRequestSession();
   return { communities: await listCommunities({ userId: session?.user.id ?? null }) };
 });
 
