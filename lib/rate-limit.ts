@@ -61,6 +61,25 @@ export interface RateLimitResult {
   reset: number;
 }
 
+/**
+ * perf: amortized eviction. This used to scan ALL 10k entries for the
+ * soonest-expiring one on every new key once the store was full (O(n) per
+ * request under key churn / abuse). Now one pass drops every expired entry and,
+ * if that frees too little, evicts a batch of the soonest-expiring live ones
+ * (same victim choice as before, just 5% at a time), so the next ~500 inserts
+ * are O(1). A live, still-counting window is only ever dropped after every
+ * entry that ends sooner.
+ */
+const EVICT_BATCH = Math.ceil(MAX_STORE_SIZE * 0.05);
+function makeRoom(now: number): void {
+  for (const [k, e] of store) {
+    if (e.resetAt < now) store.delete(k);
+  }
+  if (store.size <= MAX_STORE_SIZE - EVICT_BATCH) return;
+  const byExpiry = [...store].sort((x, y) => x[1].resetAt - y[1].resetAt);
+  for (let i = 0; i < EVICT_BATCH && i < byExpiry.length; i++) store.delete(byExpiry[i][0]);
+}
+
 export function rateLimit(ip: string, opts: RateLimitOptions): RateLimitResult {
   const key = `${opts.prefix ?? 'rl'}:${ip}`;
   const limit = Math.ceil(opts.limit * RATE_LIMIT_MULTIPLIER);
@@ -68,21 +87,7 @@ export function rateLimit(ip: string, opts: RateLimitOptions): RateLimitResult {
   const entry = store.get(key);
 
   if (!entry || entry.resetAt < now) {
-    // Evict the entry whose window ends soonest (already-expired or
-    // expiring-first) rather than the oldest-INSERTED one. FIFO could drop a
-    // key with a live, still-counting window while keeping a long-since
-    // expired one, effectively resetting an active limiter under abuse.
-    if (store.size >= MAX_STORE_SIZE) {
-      let soonestKey: string | undefined;
-      let soonestResetAt = Infinity;
-      for (const [k, e] of store) {
-        if (e.resetAt < soonestResetAt) {
-          soonestResetAt = e.resetAt;
-          soonestKey = k;
-        }
-      }
-      if (soonestKey !== undefined) store.delete(soonestKey);
-    }
+    if (store.size >= MAX_STORE_SIZE) makeRoom(now);
     const reset = now + opts.windowMs;
     store.set(key, { count: 1, resetAt: reset });
     return { allowed: true, retryAfter: 0, limit, remaining: limit - 1, reset };
