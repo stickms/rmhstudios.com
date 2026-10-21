@@ -84,13 +84,13 @@ is sent to them.
 ## Deploys after the first
 
 `.github/workflows/oncall-watchdog.yml` tests every PR that touches this
-directory and deploys on merge to `main`. It needs, on the repo's
-`oncall-watchdog` **environment** (Settings → Environments; restrict it to the
-`main` branch, optionally add a required reviewer):
+directory and deploys on merge to `main`. It needs two repo (or
+`oncall-watchdog` environment) secrets — named apart from the site's own
+`CLOUDFLARE_API_TOKEN`, which belongs to a different account:
 
-- `CLOUDFLARE_API_TOKEN` — Cloudflare → My Profile → API Tokens → *Edit
-  Cloudflare Workers* template, scoped to this account + the `rmhstudios.com` zone.
-- `CLOUDFLARE_ACCOUNT_ID` — Cloudflare dashboard → Workers & Pages → Account ID.
+- `ONCALL_CLOUDFLARE_API_TOKEN` — Cloudflare → My Profile → API Tokens →
+  *Edit Cloudflare Workers* template, scoped to the watchdog's account.
+- `ONCALL_CLOUDFLARE_ACCOUNT_ID` — Workers & Pages → Account details → Account ID.
 
 CI never sets Worker secrets; those stay as put by hand in step 4.
 

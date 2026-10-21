@@ -8,9 +8,10 @@
 #   - The deploy job runs only on push to main (or a manual run on main) and
 #     never on pull_request, so PR code — including from forks — can't reach
 #     the token. The `oncall-watchdog` environment can add a required reviewer.
-#   - CLOUDFLARE_API_TOKEN should be the "Edit Cloudflare Workers" template,
-#     scoped to this one account and the rmhstudios.com zone. It cannot touch
-#     DNS records, R2 or anything else.
+#   - ONCALL_CLOUDFLARE_API_TOKEN is the "Edit Cloudflare Workers" template,
+#     scoped to the watchdog's own account (not the one that owns the
+#     rmhstudios.com zone). Its own name on purpose: synthetic-perf.yml reads
+#     CLOUDFLARE_API_TOKEN for the site's zone, and one name can't hold both.
 #   - `wrangler deploy` never sets or prints Worker secrets: DISCORD_BOT_TOKEN,
 #     ONCALL_SIGNING_SECRET and ONCALL_WEBHOOK_URL stay as set by hand.
 #   - wrangler is pinned to an exact version, and actions are pinned by SHA,
@@ -78,12 +79,12 @@ jobs:
       - name: Deploy
         working-directory: deploy/oncall-watchdog
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.ONCALL_CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.ONCALL_CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
           if [ -z "${CLOUDFLARE_API_TOKEN:-}" ] || [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
-            echo "::error::CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID not set on the oncall-watchdog environment"
+            echo "::error::ONCALL_CLOUDFLARE_API_TOKEN / ONCALL_CLOUDFLARE_ACCOUNT_ID secrets are not set"
             exit 1
           fi
           npx --yes "wrangler@${WRANGLER_VERSION}" deploy
