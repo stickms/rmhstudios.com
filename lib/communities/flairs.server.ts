@@ -9,7 +9,7 @@ import {
   isFlairColor,
   type FlairColor,
   type FlairDTO,
-} from '@/lib/communities/plus-schema';
+} from '@/lib/communities/plus';
 
 const TTL_MS = 60_000;
 const key = (communityId: string) => `community:flairs:${communityId}`;

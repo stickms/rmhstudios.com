@@ -1,10 +1,12 @@
 /**
- * P6 — webring limits and schemas (client-safe). The ring-order and hop maths
- * are in `lib/profile/webring.ts` (the template); this file is only the rules
- * around creating and joining a ring.
+ * P6 — webring limits and view types (client-safe, zod-free). The ring-order
+ * and hop maths are in `lib/profile/webring.ts` (the template); this file is
+ * only the rules around creating and joining a ring. The API input schemas are
+ * in `./webrings-schema`.
  */
-import { z } from 'zod';
 import type { ResolvedUser } from '@/lib/user-display';
+
+export type { CreateRingInput } from './webrings-schema';
 
 export const RING_NAME_MAX = 60;
 export const RING_DESCRIPTION_MAX = 280;
@@ -15,12 +17,6 @@ export const RING_MAX_JOINED = 6;
 export const RING_MAX_MEMBERS = 500;
 /** Rings shown on a profile strip. */
 export const RING_STRIP_MAX = 3;
-
-export const createRingSchema = z.object({
-  name: z.string().trim().min(3).max(RING_NAME_MAX),
-  description: z.string().trim().max(RING_DESCRIPTION_MAX).optional(),
-});
-export type CreateRingInput = z.infer<typeof createRingSchema>;
 
 /** A URL slug from a ring name: lowercase ascii words joined by `-`. */
 export function ringSlugBase(name: string): string {
@@ -33,12 +29,6 @@ export function ringSlugBase(name: string): string {
     .slice(0, 48);
   return slug || 'ring';
 }
-
-export const ringSlugSchema = z
-  .string()
-  .min(1)
-  .max(64)
-  .regex(/^[a-z0-9-]+$/);
 
 export interface RingSummary {
   slug: string;

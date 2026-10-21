@@ -7,7 +7,7 @@ import { getEquippedCosmetics } from '@/lib/shop/equipped.server';
 import { profileLinkSchema, type ProfileLink } from '@/lib/profile-schema';
 import { getMembershipStatus } from '@/lib/memberships.server';
 import { resolveStatus, type UserStatus } from '@/lib/profile/status';
-import { parseLayout, type ProfileModule } from '@/lib/profile/modules';
+import { parseLayout, type ProfileModule } from '@/lib/profile/modules-schema';
 import { pronunciationUrl } from '@/lib/profile/plus';
 import { isBirthdayOn } from '@/lib/gifting/birthday';
 import { filterOnlineUsers } from '@/lib/hot-counters.server';

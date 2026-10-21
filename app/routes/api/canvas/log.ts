@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { getCanvasLog } from '@/lib/canvas/canvas.server';
-import { canvasLogQuery } from '@/lib/canvas/shared';
+import { canvasLogQuery } from '@/lib/canvas/schema';
 
 /** GET /api/canvas/log?id=&after= — placement history of a finished canvas, for the timelapse. */
 export const Route = createFileRoute('/api/canvas/log')({

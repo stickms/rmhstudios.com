@@ -15,7 +15,7 @@ import { getHiddenAuthorIds } from '@/lib/moderation.server';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import { getCommunitySettings } from '@/lib/communities/settings.server';
 import { loadFlairsForPosts } from '@/lib/communities/flairs.server';
-import { STAR_EMOJI } from '@/lib/communities/plus-schema';
+import { STAR_EMOJI } from '@/lib/communities/plus';
 import type { FeedItem } from '@/lib/feed-types';
 
 const STAR_VS16 = `${STAR_EMOJI}️`;

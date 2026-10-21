@@ -11,7 +11,7 @@ import { getSisters } from '@/lib/communities/sisters.server';
 import { getUnansweredQuestions } from '@/lib/communities/onboarding.server';
 import { getCommunitySettings } from '@/lib/communities/settings.server';
 import { checkVerification } from '@/lib/communities/verification';
-import type { CommunityExtrasDTO, PostingStatusDTO } from '@/lib/communities/plus-schema';
+import type { CommunityExtrasDTO, PostingStatusDTO } from '@/lib/communities/plus';
 
 export async function getCommunityExtras(
   slug: string,

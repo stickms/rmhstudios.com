@@ -1,6 +1,6 @@
-import { z } from 'zod';
-
 /** Games a community pack can target. Prompt format = one plain-text prompt per line. */
+
+export type { CreatePackInput } from './packs-schema';
 export const PACK_GAMES = ['wit-war'] as const;
 export const PACK_MIN_PROMPTS = 12;
 export const PACK_MAX_PROMPTS = 60;
@@ -10,19 +10,6 @@ export const PACK_AUTOHIDE_REPORTS = 3;
 export const MAX_PACKS_PER_MEMBER = 10;
 /** No 0/O/1/I so a code read off a screen is unambiguous. */
 export const PACK_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-
-export const createPackSchema = z.object({
-  name: z.string().trim().min(3).max(60),
-  game: z.enum(PACK_GAMES).default('wit-war'),
-  prompts: z.array(z.string().trim().min(8).max(120)).min(PACK_MIN_PROMPTS).max(PACK_MAX_PROMPTS),
-});
-export type CreatePackInput = z.infer<typeof createPackSchema>;
-
-export const reportPackSchema = z.object({ reason: z.string().trim().min(3).max(200) });
-export const adminPackSchema = z.object({
-  featured: z.boolean().optional(),
-  hidden: z.boolean().optional(),
-});
 
 /** Case-insensitive de-duplication; returns null when fewer than the minimum remain. */
 export function normalizePrompts(prompts: string[]): string[] | null {

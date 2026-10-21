@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
-import { TOP_FOUR_SIZE, topFourItemSchema } from '@/lib/profile/modules';
+import { TOP_FOUR_SIZE } from '@/lib/profile/modules';
+import { topFourItemSchema } from '@/lib/profile/modules-schema';
 import { getTopFour, setTopFour } from '@/lib/profile/top-four.server';
 
 /**

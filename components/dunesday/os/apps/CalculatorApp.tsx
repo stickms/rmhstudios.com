@@ -22,6 +22,7 @@ import { openApp } from '../actions';
 import type { AppProps } from '../apps';
 import { PopupMenu, type MenuItem } from '../Menu';
 import { useOs } from '../store';
+import './utilities.css';
 
 type Op = '+' | '-' | '*' | '/';
 type Err = 'div0' | 'undefined' | 'invalid' | 'overflow';

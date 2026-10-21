@@ -8,8 +8,8 @@
  * client-asserted) and lives in the ephemeral presence store (expires with the
  * heartbeat) — so it self-clears on disconnect/crash with no new table.
  */
-import { z } from 'zod';
 
+export type { PresencePrivacyInput } from './presence-types-schema';
 /** What a friend is doing right now, if anything. `label` is precomputed for display. */
 export type PresenceActivity =
   | { kind: 'game'; gameId: string; label: string }
@@ -68,13 +68,6 @@ export function sameActiveFriend(a: ActiveFriend, b: ActiveFriend): boolean {
     (a.joinable?.href ?? null) === (b.joinable?.href ?? null)
   );
 }
-
-/** zod for the presence-privacy PUT (settings → privacy). */
-export const presencePrivacySchema = z.object({
-  presenceVisibility: z.enum(PRESENCE_VISIBILITIES).optional(),
-  presenceDetail: z.boolean().optional(),
-});
-export type PresencePrivacyInput = z.infer<typeof presencePrivacySchema>;
 
 /** Resolve the joinable href for an activity, or null when it isn't joinable. */
 export function joinTargetFor(activity: PresenceActivity | null): JoinTarget | null {

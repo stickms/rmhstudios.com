@@ -11,7 +11,8 @@ import { prisma } from '@/lib/prisma.server';
 import { utcDayString, visitorHash } from '@/lib/profile/visitor-hash.server';
 import { getObject, putObject, deleteObject } from '@/lib/storage/s3.server';
 import { isSafeFilename } from '@/lib/storage/keys';
-import { parseLayout, withModule, type ModuleKind } from '@/lib/profile/modules';
+import type { ModuleKind } from '@/lib/profile/modules';
+import { parseLayout, withModule } from '@/lib/profile/modules-schema';
 import {
   PRONUNCIATION_ACCEPT_MS,
   PRONUNCIATION_MAX_BYTES,

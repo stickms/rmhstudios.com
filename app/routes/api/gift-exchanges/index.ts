@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { createExchangeSchema } from '@/lib/gifting/exchange';
+import { createExchangeSchema } from '@/lib/gifting/exchange-schema';
 import { createExchange, listMyExchanges } from '@/lib/gifting/exchange.server';
 
 /** Gift / mixtape exchanges (G3, F2): the caller's list, and create. */

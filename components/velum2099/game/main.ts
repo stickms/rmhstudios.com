@@ -1,12 +1,11 @@
 // @ts-nocheck
 /* ═══════════════════════════════════════════
-import { getAudioContext, resumeAudioContext } from '@/lib/shared/platform';
-
    NEURODRIVE — Main Entry Point
    Orchestrates terminal → simulation →
    data collection flow
    ═══════════════════════════════════════════ */
 
+import { getAudioContext, resumeAudioContext } from '@/lib/shared/platform';
 import { Terminal } from './terminal/Terminal';
 import { GameSettings } from './settings/GameSettings';
 import { GameHud } from './ui/GameHud';

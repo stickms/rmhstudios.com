@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { layoutSchema, parseLayout } from '@/lib/profile/modules';
+import { layoutSchema, parseLayout } from '@/lib/profile/modules-schema';
 
 /**
  * GET /api/profile/layout — the caller's profile showcase modules.

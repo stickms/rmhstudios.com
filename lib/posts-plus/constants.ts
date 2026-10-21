@@ -1,9 +1,10 @@
 /**
- * posts-plus (X4 X5 X8 X9 X11 Z7) — client-safe constants, schemas and helpers.
+ * posts-plus (X4 X5 X8 X9 X11 Z7) — client-safe constants and helpers.
  * Nothing here touches Prisma, so components and route modules may import it.
+ *
+ * Deliberately zod-free: this module is on the home feed's import graph
+ * (`lib/feed/timeline.ts`). The API input schemas live in `./schema`.
  */
-
-import { z } from 'zod';
 
 export const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -14,8 +15,6 @@ export const MAX_QOTD_LENGTH = 280;
 export const MAX_QOTD_ANSWERS_PER_DAY = 5;
 /** How many past prompts the /qotd archive lists. */
 export const QOTD_ARCHIVE_DAYS = 30;
-
-export const dayKeySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected YYYY-MM-DD');
 
 /** YYYY-MM-DD in UTC. */
 export function utcDayKey(d: Date = new Date()): string {
@@ -29,29 +28,12 @@ export function isValidDayKey(key: string): boolean {
   return !Number.isNaN(d.getTime()) && utcDayKey(d) === key;
 }
 
-export const qotdAddSchema = z.object({
-  text: z.string().trim().min(8).max(MAX_QOTD_LENGTH),
-  /** Optional UTC day to pin the prompt to; omitted = join the queue. */
-  dayKey: dayKeySchema.optional(),
-});
-
 /* ------------------------------ X5 · series ----------------------------- */
 
 export const MAX_SERIES_TITLE = 80;
 export const MAX_SERIES_DESCRIPTION = 280;
 export const MAX_SERIES_PER_USER = 50;
 export const MAX_SERIES_POSTS = 200;
-
-export const seriesCreateSchema = z.object({
-  title: z.string().trim().min(2).max(MAX_SERIES_TITLE),
-  description: z.string().trim().max(MAX_SERIES_DESCRIPTION).optional(),
-});
-export const seriesUpdateSchema = seriesCreateSchema.partial();
-export const seriesAddPostSchema = z.object({ postId: z.string().min(1).max(64) });
-export const seriesMoveSchema = z.object({
-  postId: z.string().min(1).max(64),
-  direction: z.enum(['up', 'down']),
-});
 
 /** What the "Part k of N" chip needs for one post. */
 export interface SeriesNav {
@@ -65,7 +47,6 @@ export interface SeriesNav {
 
 export const POST_TTLS = ['1h', '24h', '7d'] as const;
 export type PostTtl = (typeof POST_TTLS)[number];
-export const postTtlSchema = z.enum(POST_TTLS);
 
 const TTL_MS: Record<PostTtl, number> = { '1h': 3_600_000, '24h': DAY_MS, '7d': 7 * DAY_MS };
 export function ttlToExpiry(ttl: PostTtl, now: Date = new Date()): Date {
@@ -81,18 +62,10 @@ export function isExpired(expiresAt: string | Date | null | undefined, now: numb
 
 export const AUTO_DELETE_MONTHS = [3, 6, 12, 24] as const;
 export type AutoDeleteMonths = (typeof AUTO_DELETE_MONTHS)[number];
-export const autoDeleteSchema = z.object({
-  months: z.union([z.literal(3), z.literal(6), z.literal(12), z.literal(24)]).nullable(),
-});
 
 /* ------------------------------ X9 · notes ------------------------------ */
 
 export const MAX_SAVE_NOTE = 500;
-export const saveNoteSchema = z.object({
-  entityType: z.string().min(1).max(24),
-  entityId: z.string().min(1).max(64),
-  note: z.string().trim().max(MAX_SAVE_NOTE).nullable(),
-});
 
 /* --------------------------- Z7 · time capsules -------------------------- */
 
@@ -120,12 +93,3 @@ export function formatCountdown(openAt: string | Date, now: number = Date.now())
   if (hours > 0) return `${hours}h ${minutes}m`;
   return `${Math.max(minutes, ms > 0 ? 1 : 0)}m`;
 }
-
-/* ------------------------ X4/X5/X8 · compose payload --------------------- */
-
-/** Fields the composer adds to POST /api/rmharks. */
-export const postsPlusComposeFields = {
-  ttl: postTtlSchema.optional(),
-  seriesId: z.string().max(64).optional(),
-  qotdDay: dayKeySchema.optional(),
-};

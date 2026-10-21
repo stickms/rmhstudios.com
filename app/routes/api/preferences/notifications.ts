@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { invalidateNotificationPrefs } from '@/lib/notifications.server';
-import { notifPrefsSchema } from '@/lib/notify/categories';
+import { notifPrefsSchema } from '@/lib/notify/categories-schema';
 
 /**
  * GET /api/preferences/notifications — the caller's category×channel matrix +

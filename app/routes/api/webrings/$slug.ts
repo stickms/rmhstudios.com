@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { ringSlugSchema } from '@/lib/profile/webrings';
+import { ringSlugSchema } from '@/lib/profile/webrings-schema';
 import { deleteOwnRing, getRingDetail } from '@/lib/profile/webrings.server';
 
 /**

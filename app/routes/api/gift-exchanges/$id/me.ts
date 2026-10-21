@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { updateMemberSchema } from '@/lib/gifting/exchange';
+import { updateMemberSchema } from '@/lib/gifting/exchange-schema';
 import { updateMember } from '@/lib/gifting/exchange.server';
 
 /** PUT the caller's own exclusions and (mixtape) tracks, while sign-ups are open. */

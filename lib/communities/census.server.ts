@@ -16,7 +16,7 @@ import {
   type censusCreateSchema,
 } from '@/lib/communities/census';
 import type { Prisma } from '@prisma/client';
-import type { CensusDTO } from '@/lib/communities/plus-schema';
+import type { CensusDTO } from '@/lib/communities/plus';
 import type { z } from 'zod';
 
 export class CensusError extends Error {

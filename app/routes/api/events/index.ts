@@ -3,7 +3,7 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { httpUrl } from '@/lib/url-safety';
+import { httpUrl } from '@/lib/url-schema';
 import { createEvent, listEvents, EventError, type EventScope } from '@/lib/events.server';
 import { eventRecurrenceSchema } from '@/lib/calendar/schema';
 

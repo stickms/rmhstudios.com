@@ -1,6 +1,6 @@
 /**
- * Home dashboard & sidebar customization (§15) — client-safe catalog, parsing,
- * and zod. Shared by the layout store, the settings editor, the home rail
+ * Home dashboard & sidebar customization (§15) — client-safe catalog and
+ * parsing (the sync API's zod schema is `lib/home-widgets-schema.ts`). Shared by the layout store, the settings editor, the home rail
  * render, and the sync API. No server imports so the settings UI + the parse
  * helpers can run anywhere.
  *
@@ -8,8 +8,8 @@
  * unknown sidebar ids are dropped at read time, so a stored layout survives an
  * app/widget being removed later (forward-safe — an acceptance criterion).
  */
-import { z } from 'zod';
 
+export type { LayoutPrefsInput } from './home-widgets-schema';
 // ─── Home widgets ──────────────────────────────────────────────────────────
 
 /** Every home-rail / pre-feed widget the user can order. */
@@ -66,7 +66,7 @@ export const DEFAULT_MOBILE_STACK: HomeStackItem[] = WIDGET_KINDS.filter(
   (k) => WIDGET_CATALOG[k].defaultMobile,
 ).map((kind) => ({ kind }));
 
-const MAX_STACK = WIDGET_KINDS.length;
+export const MAX_STACK = WIDGET_KINDS.length;
 
 /**
  * Normalize a stored home stack: keep only known kinds, dedupe (first wins),
@@ -192,26 +192,6 @@ export function parseLayoutPref(input: { sidebar?: unknown; homeStack?: unknown 
     homeStack: parseHomeStack(input?.homeStack),
   };
 }
-
-// ─── zod (API) ─────────────────────────────────────────────────────────────
-
-const homeStackItemSchema = z.object({
-  kind: z.enum(WIDGET_KINDS),
-  collapsed: z.boolean().optional(),
-});
-
-export const layoutPrefsSchema = z.object({
-  sidebar: z
-    .object({
-      pinned: z.array(z.enum(SIDEBAR_NAV_IDS)).max(SIDEBAR_NAV_IDS.length).optional(),
-      hidden: z.array(z.enum(SIDEBAR_HIDEABLE_IDS)).max(SIDEBAR_HIDEABLE_IDS.length).optional(),
-      order: z.array(z.enum(SIDEBAR_NAV_IDS)).max(SIDEBAR_NAV_IDS.length).optional(),
-    })
-    .optional(),
-  homeStack: z.array(homeStackItemSchema).max(MAX_STACK).optional(),
-});
-
-export type LayoutPrefsInput = z.infer<typeof layoutPrefsSchema>;
 
 /** localStorage mirror keys (flash-free first paint, appearance pattern). */
 export const LAYOUT_SIDEBAR_KEY = 'rmh-layout-sidebar';

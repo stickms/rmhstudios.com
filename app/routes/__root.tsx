@@ -1,9 +1,9 @@
 /// <reference types="vite/client" />
 import {
-  HeadContent,
   Outlet,
   Scripts,
   createRootRoute,
+  useRouter,
   useRouterState,
   useNavigate,
 } from '@tanstack/react-router';
@@ -19,12 +19,13 @@ import {
   THEME_EXCLUDED_EXCEPTIONS,
 } from '@/components/Providers';
 import { GlassFilter } from '@/components/ui/liquid-glass';
+import { SiteHeadContent } from '@/components/SiteHeadContent';
 import { TwemojiProvider } from '@/components/ui/TwemojiProvider';
 import { NavigationProgress } from '@/components/ui/NavigationProgress';
 import { BackNavAnimation } from '@/components/ui/BackNavAnimation';
 import { EversionRoot } from '@/components/radial/eversion/EversionRoot';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
-import { markDocumentHydrated } from '@/components/ui/defer-on-navigate';
+import { markDocumentHydrated, trackHistoryActions } from '@/components/ui/defer-on-navigate';
 import { RouteErrorFallback } from '@/components/errors/RouteErrorFallback';
 import { NotFound } from '@/components/errors/NotFound';
 import { installGlobalErrorHandlers } from '@/lib/client-errors';
@@ -650,7 +651,7 @@ function RootDocument({ children }: { children: ReactNode }) {
   return (
     <html lang={locale} dir={dirFor(locale)} suppressHydrationWarning>
       <head>
-        <HeadContent />
+        <SiteHeadContent />
         {/* Reveals are now pure CSS (`animation-timeline: view()`), and their
             hidden start state lives only inside `@supports` + `@media not
             (prefers-reduced-motion)` — so a no-JS render was never hiding
@@ -701,6 +702,7 @@ function RootDocument({ children }: { children: ReactNode }) {
 function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
+  const router = useRouter();
   const { user: initialUser, sessionResolved, locale, i18nResources } = Route.useLoaderData();
 
   // Restore the exact feed position on back/forward (and cover the mobile scroll
@@ -718,6 +720,11 @@ function RootComponent() {
     // which `DeferOnNavigate` may split a page's first render.
     markDocumentHydrated();
   }, []);
+
+  // Tells `DeferOnNavigate` a back/forward arrival from a link click — read from
+  // the history itself, because `popstate` listeners registered after the
+  // router run only once React has already rendered the restored page.
+  useEffect(() => trackHistoryActions(router.history), [router]);
 
   // Inside a Discord Activity iframe, all routes must stay within /discord/*.
   // Redirect any non-discord path back to /discord/rmhbox, preserving the SDK

@@ -29,7 +29,7 @@ import {
   MAX_PROFILE_LINKS,
   linkDisplayLabel,
   type ProfileLinkDTO,
-} from '@/lib/profile-links/schema';
+} from '@/lib/profile-links/shared';
 
 interface ProfileLinksPanelProps {
   /** The signed-in user's handle, used to show the exact back-link to copy. */

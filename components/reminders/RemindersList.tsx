@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { IconButton } from '@/components/ui/icon-button';
 import { Spinner } from '@/components/ui/spinner';
-import type { ReminderView } from '@/lib/reminders/schema';
+import type { ReminderView } from '@/lib/reminders/shared';
 
 /**
  * Pending reminders, soonest first (plan U7). Rendered by the Saves hub.

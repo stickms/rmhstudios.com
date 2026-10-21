@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
-import { handleSchema } from '@/lib/handle';
+import { handleSchema } from '@/lib/handle-schema';
 import { logAdminAction } from '@/lib/admin-audit.server';
 
 export const Route = createFileRoute('/api/admin/users')({

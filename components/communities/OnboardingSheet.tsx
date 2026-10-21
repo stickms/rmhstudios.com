@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
-import type { OnboardingQuestionDTO } from '@/lib/communities/plus-schema';
+import type { OnboardingQuestionDTO } from '@/lib/communities/plus';
 
 export function OnboardingSheet({
   slug,

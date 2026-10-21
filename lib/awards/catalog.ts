@@ -6,8 +6,8 @@
  * recipient gets `recipientShareBps` of it (basis points), and the remainder is
  * the platform cut (net burn). No new CoinTxnType — see lib/awards/awards.server.ts.
  */
-import { z } from 'zod';
 
+export type { GiveAwardInput } from './catalog-schema';
 export interface AwardDef {
   id: string;
   name: string;
@@ -33,15 +33,6 @@ export function getAward(id: string): AwardDef | null {
 
 export const AWARD_ENTITY_TYPES = ['rmhark', 'comment', 'build', 'guide'] as const;
 export type AwardEntityType = (typeof AWARD_ENTITY_TYPES)[number];
-
-export const giveAwardSchema = z.object({
-  awardId: z.string().min(1).max(32),
-  entityType: z.enum(AWARD_ENTITY_TYPES),
-  entityId: z.string().min(1).max(64),
-  anonymous: z.boolean().optional(),
-});
-
-export type GiveAwardInput = z.infer<typeof giveAwardSchema>;
 
 /** Recipient share (floored) for an award price. */
 export function recipientShare(def: AwardDef): number {

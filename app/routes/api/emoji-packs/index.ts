@@ -7,7 +7,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { defineHandler, apiError } from '@/lib/api/handler.server';
-import { createPackSchema } from '@/lib/emoji/packs';
+import { createPackSchema } from '@/lib/emoji/packs-schema';
 import { browsePacks, createPack, PackError } from '@/lib/emoji/packs.server';
 
 export const Route = createFileRoute('/api/emoji-packs/')({

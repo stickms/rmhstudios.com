@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { historyBeatSchema } from '@/lib/history/constants';
+import { historyBeatSchema } from '@/lib/history/schema';
 import { recordBeat } from '@/lib/history/history.server';
 
 /**

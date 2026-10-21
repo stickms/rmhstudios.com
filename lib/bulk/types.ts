@@ -1,8 +1,9 @@
 /**
  * Bulk content management — the pure half (plan I2).
  *
- * A filter description, the zod schema that validates one off the wire, and the
- * translation from a filter into a Prisma `where`. Kept free of Prisma imports
+ * A filter description and the translation from a filter into a Prisma
+ * `where` (the zod schema that validates one off the wire is `./schema`, kept
+ * apart so the /trash page stays zod-free). Kept free of Prisma imports
  * so the filter→predicate mapping — the part with the actual blast radius — is
  * unit-testable without a database, and so the client can share the vocabulary.
  *
@@ -13,7 +14,9 @@
  * predicate, used identically by the preview count, the sample and the run.
  */
 
-import { z } from 'zod';
+import type { BulkFilter } from './schema';
+
+export type { BulkFilter };
 
 /* -------------------------------------------------------------------------- */
 /* Kinds                                                                      */
@@ -58,28 +61,6 @@ export const BULK_SAMPLE_SIZE = 10;
 
 /** Hard ceiling on `olderThanDays`, ~10 years. Guards a nonsense filter. */
 export const MAX_OLDER_THAN_DAYS = 3650;
-
-export const bulkFilterSchema = z
-  .object({
-    /** Only rows older than N days. */
-    olderThanDays: z.number().int().min(0).max(MAX_OLDER_THAN_DAYS).optional(),
-    /** Only rows created strictly before this instant. */
-    before: z.string().datetime().optional(),
-    /** Posts/comments with at most this many likes. */
-    maxLikes: z.number().int().min(0).max(1_000_000).optional(),
-    /** Replies only — see `buildPostWhere` / `buildCommentWhere` for what that means. */
-    onlyReplies: z.boolean().optional(),
-    /** Posts carrying this hashtag (without the `#`). */
-    tag: z
-      .string()
-      .min(1)
-      .max(64)
-      .regex(/^[\p{L}\p{N}_]+$/u)
-      .optional(),
-  })
-  .strict();
-
-export type BulkFilter = z.infer<typeof bulkFilterSchema>;
 
 /** Which filter fields each kind actually understands. */
 export const FILTER_SUPPORT: Record<BulkKind, readonly (keyof BulkFilter)[]> = {
