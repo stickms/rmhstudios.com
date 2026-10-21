@@ -71,7 +71,7 @@ export const Route = createFileRoute('/api/slice-it/replay')({
        * somebody opens a leaderboard.
        */
       GET: defineHandler(
-        { auth: 'optional', rateLimit: 'read', query: ReplayLookupZ },
+        { auth: 'none', rateLimit: 'read', query: ReplayLookupZ },
         async ({ query }) => {
           const userIds = query.userIds
             .split(',')
