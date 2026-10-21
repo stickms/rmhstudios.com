@@ -65,19 +65,11 @@ func fixtureProber(t *testing.T) (*Prober, Snapshot) {
 	return p, p.Snapshot()
 }
 
-// fixtureSLO is the burn-rate report these render tests pass to renderHTML.
-//
-// Empty on purpose. `renderHTML` grew a third parameter with the SLO work
-// (E14) and these call sites were never updated, so the package's tests have
-// not compiled since. This restores exactly what they asserted before that
-// change: a populated report renders a per-service burn-rate row that the
-// "one card per service" count also matches, which would turn a compile error
-// into a wrong assertion.
-//
-// The SLO section's own rendering is therefore still uncovered. That test
-// belongs with the SLO feature rather than being invented here.
-func fixtureSLO(_ *Prober) SLOReport {
-	return SLOReport{}
+// renderFixture renders the dashboard for a prober the way the handler does,
+// through BuildView, with no incident store.
+func renderFixture(p *Prober) string {
+	now := time.Now()
+	return renderHTML(BuildView(p, nil, SLOConfig{}, now, now))
 }
 
 // TestRenderHTMLStructure covers the shape of the page every other assertion
@@ -87,7 +79,7 @@ func fixtureSLO(_ *Prober) SLOReport {
 // every later pin to the wrong place on the sphere).
 func TestRenderHTMLStructure(t *testing.T) {
 	p, snap := fixtureProber(t)
-	out := renderHTML(snap, p, fixtureSLO(p))
+	out := renderFixture(p)
 
 	if !strings.HasPrefix(out, "<!doctype html>") {
 		t.Fatal("render must be a complete document")
@@ -121,15 +113,18 @@ func TestRenderHTMLStructure(t *testing.T) {
 	for _, c := range []struct{ name, state string }{
 		{"Website", "up"}, {"Content feed", "degraded"}, {"RMHtube", "down"},
 	} {
-		i := strings.Index(out, ">"+c.name+"</h3>")
+		i := strings.Index(out, ">"+c.name+"</a></h3>")
 		if i < 0 {
 			t.Fatalf("missing card for %q", c.name)
 		}
-		start := i - 400
+		// The state lives on the card's own <li>: find the opening tag that
+		// encloses this heading and read it, not whatever precedes it.
+		start := strings.LastIndex(out[:i], `<li class="svc glass-fill"`)
 		if start < 0 {
-			start = 0
+			t.Fatalf("card %q has no enclosing <li>", c.name)
 		}
-		if !strings.Contains(out[start:i], `data-status="`+c.state+`"`) {
+		tag := out[start : start+strings.Index(out[start:], ">")]
+		if !strings.Contains(tag, `data-status="`+c.state+`"`) {
 			t.Errorf("card %q is not marked data-status=%q", c.name, c.state)
 		}
 	}
@@ -148,8 +143,8 @@ func TestRenderHTMLStructure(t *testing.T) {
 // fetched — everything is inline. (The footer's link back to the site is a
 // destination, not a dependency, and nothing loads from it.)
 func TestRenderHTMLIsSelfContained(t *testing.T) {
-	p, snap := fixtureProber(t)
-	out := renderHTML(snap, p, fixtureSLO(p))
+	p, _ := fixtureProber(t)
+	out := renderFixture(p)
 
 	for _, forbidden := range []string{
 		"fonts.googleapis.com", "fonts.gstatic.com", "<script src", "unpkg.com", "jsdelivr",
@@ -158,11 +153,19 @@ func TestRenderHTMLIsSelfContained(t *testing.T) {
 			t.Errorf("page reaches off-origin for %q — a status page must load nothing but itself", forbidden)
 		}
 	}
-	// Any <link> must be a data: URI (the inline favicon) — a stylesheet or an
-	// icon file would be a network dependency.
-	for _, m := range regexp.MustCompile(`<link[^>]*href="([^"]*)"`).FindAllStringSubmatch(out, -1) {
-		if !strings.HasPrefix(m[1], "data:") {
-			t.Errorf("<link> to %q is a network dependency", m[1])
+	// A <link> the page needs to RENDER (stylesheet, icon, preload) must be a
+	// data: URI — a file would be a network dependency. Links that only
+	// advertise something (the feeds, the web-app manifest) may point at this
+	// page's own origin, which is by definition up when the page is; never at
+	// another one.
+	for _, m := range regexp.MustCompile(`<link([^>]*)href="([^"]*)"`).FindAllStringSubmatch(out, -1) {
+		attrs, href := m[1], m[2]
+		renders := !strings.Contains(attrs, `rel="alternate"`) && !strings.Contains(attrs, `rel="manifest"`)
+		switch {
+		case renders && !strings.HasPrefix(href, "data:"):
+			t.Errorf("<link%s> to %q is a network dependency", attrs, href)
+		case !renders && !(strings.HasPrefix(href, "/") && !strings.HasPrefix(href, "//")):
+			t.Errorf("<link%s> to %q leaves this origin", attrs, href)
 		}
 	}
 }
@@ -207,7 +210,7 @@ func TestRenderHTMLEscapesServiceText(t *testing.T) {
 		Detail:      `<img src=x onerror=alert(3)>`,
 		CheckedAt:   "2026-08-01T00:00:00.000Z",
 	}
-	out := renderHTML(p.Snapshot(), p, fixtureSLO(p))
+	out := renderFixture(p)
 
 	for _, injected := range []string{"<script>alert(1)", `onload="alert(2)`, "<img src=x onerror"} {
 		if strings.Contains(out, injected) {
@@ -224,7 +227,7 @@ func TestRenderHTMLEscapesServiceText(t *testing.T) {
 // serves for the first few seconds of every restart.
 func TestRenderHTMLNeverChecked(t *testing.T) {
 	p := NewProber([]Target{{Name: "Website", Group: "Core"}})
-	out := renderHTML(p.Snapshot(), p, fixtureSLO(p))
+	out := renderFixture(p)
 
 	if strings.Contains(out, "1970") {
 		t.Error("the epoch sentinel leaked into the page as a date")
@@ -243,8 +246,8 @@ func TestDumpDashboard(t *testing.T) {
 	if path == "" {
 		t.Skip("set STATUS_RENDER_DUMP=<file> to dump the rendered dashboard")
 	}
-	p, snap := fixtureProber(t)
-	if err := os.WriteFile(path, []byte(renderHTML(snap, p, fixtureSLO(p))), 0o600); err != nil {
+	p, _ := fixtureProber(t)
+	if err := os.WriteFile(path, []byte(renderFixture(p)), 0o600); err != nil {
 		t.Fatal(err)
 	}
 }

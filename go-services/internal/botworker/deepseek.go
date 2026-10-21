@@ -23,6 +23,10 @@ import (
 
 const deepSeekBaseURL = "https://api.deepseek.com"
 
+// defaultModel is the DeepSeek model the bots use unless BOT_AI_MODEL says
+// otherwise.
+const defaultModel = "deepseek-flash"
+
 // dsMessage mirrors OpenAI's chat message schema.
 type dsMessage struct {
 	Role    string `json:"role"`
@@ -62,10 +66,10 @@ type DSClient struct {
 	http   *http.Client
 }
 
-// newDSClient builds a client from an API key. Model defaults to "deepseek-chat".
+// newDSClient builds a client from an API key. Model defaults to defaultModel.
 func newDSClient(apiKey, model string) *DSClient {
 	if model == "" {
-		model = "deepseek-chat"
+		model = defaultModel
 	}
 	return &DSClient{
 		apiKey: apiKey,
@@ -157,17 +161,27 @@ Do NOT add any commentary outside the JSON object.`
 	return BotProfile{Name: out.Name, Handle: out.Handle, Bio: out.Bio}, nil
 }
 
-// GeneratePost produces an in-voice feed post from a persona string.
+// GeneratePost produces an in-voice feed post from a persona string. shape is
+// the genre to write this time (a POST_SHAPES entry) so a bot rotates between
+// updates, questions, gripes and tips rather than repeating itself.
 // The prompt explicitly forbids bot/AI disclosure, matching the Node rule.
-func (c *DSClient) GeneratePost(ctx context.Context, persona string) (string, error) {
+func (c *DSClient) GeneratePost(ctx context.Context, persona, shape string) (string, error) {
 	system := `You are a real person posting on a social feed called RMHark.
 Write a short, authentic post in your own voice (1-4 sentences, under 280 chars).
 Do NOT reveal you are an AI, a bot, or a language model under any circumstances.
 Do NOT use hashtags or emojis unless they suit your voice naturally.
 Return ONLY the post text with no extra commentary.`
 
-	prompt := fmt.Sprintf("Your persona:\n%s\n\nWrite one post now.", persona)
+	prompt := postUserPrompt(persona, shape)
 	return c.complete(ctx, system, prompt)
+}
+
+// postUserPrompt assembles GeneratePost's user message. Pure, for tests.
+func postUserPrompt(persona, shape string) string {
+	if strings.TrimSpace(shape) == "" {
+		return fmt.Sprintf("Your persona:\n%s\n\nWrite one post now.", persona)
+	}
+	return fmt.Sprintf("Your persona:\n%s\n\nThis time, write %s. Write one post now.", persona, shape)
 }
 
 // replySystemPrompt builds the in-character reply system prompt. The

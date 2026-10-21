@@ -316,6 +316,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/admin/blog/new': 'admin',
   '/admin/economy': 'admin',
   '/admin/delight': 'admin',
+  '/admin/bots': 'admin',
   '/admin/canvas': 'admin', // P19 Z5/X3
   '/admin/studio-challenges': 'admin', // P23 F12
   '/admin/library': 'admin',

@@ -7,7 +7,7 @@ import { receiptsHiddenFor } from '@/lib/chat-plus/receipts.server';
 
 export interface ConversationListItem {
   id: string;
-  otherUser: { id: string; name: string | null; image: string | null; username: string | null };
+  otherUser: { id: string; name: string | null; image: string | null; username: string | null; isBot: boolean };
   lastMessage: {
     id: string;
     content: string;
@@ -63,13 +63,13 @@ export async function listConversations(
     include: {
       participantOne: {
         select: {
-          id: true, name: true, image: true, username: true,
+          id: true, name: true, image: true, username: true, isBot: true,
           profile: { select: { displayName: true, customImage: true } },
         },
       },
       participantTwo: {
         select: {
-          id: true, name: true, image: true, username: true,
+          id: true, name: true, image: true, username: true, isBot: true,
           profile: { select: { displayName: true, customImage: true } },
         },
       },
@@ -108,7 +108,13 @@ export async function listConversations(
     const lastMessage = conv.messages[0] ?? null;
     return {
       id: conv.id,
-      otherUser: { id: otherUser.id, name: resolved.name, image: resolved.image, username: otherUser.username },
+      otherUser: {
+        id: otherUser.id,
+        name: resolved.name,
+        image: resolved.image,
+        username: otherUser.username,
+        isBot: otherUser.isBot,
+      },
       lastMessage: lastMessage
         ? {
             id: lastMessage.id,
