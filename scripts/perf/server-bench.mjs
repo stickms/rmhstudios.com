@@ -250,19 +250,6 @@ const dataset = loadJson(datasetFile);
 const routeDoc = loadJson(routesFile);
 
 const lookup = (path) => path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), dataset);
-function fill(str) {
-  return str.replace(/\{([A-Za-z0-9_.]+)\}/g, (_, p) => {
-    const v = lookup(p);
-    if (v === undefined || v === null) throw new Error(`dataset has no "${p}" (needed by ${str})`);
-    return encodeURIComponent(String(v));
-  });
-}
-function fillDeep(v) {
-  if (typeof v === 'string') return fill(v).replace(/%7B|%7D/g, (m) => m);
-  if (Array.isArray(v)) return v.map(fillDeep);
-  if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, fillDeep(x)]));
-  return v;
-}
 // Path placeholders must not be percent-encoded twice, and body strings are raw.
 function fillRaw(str) {
   return str.replace(/\{([A-Za-z0-9_.]+)\}/g, (_, p) => {
@@ -277,7 +264,7 @@ const fillBody = (v) =>
 const globToRe = (g) => new RegExp('^' + g.split('*').map((s) => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$');
 const onlyRes = args.only && args.only !== true ? String(args.only).split(',').map((s) => globToRe(s.trim())) : null;
 
-let routes = routeDoc.routes.filter((r) => !onlyRes || onlyRes.some((re) => re.test(r.id) || re.test(r.path)));
+const routes = routeDoc.routes.filter((r) => !onlyRes || onlyRes.some((re) => re.test(r.id) || re.test(r.path)));
 if (routes.length === 0) {
   console.error('no routes match --only');
   process.exit(2);
