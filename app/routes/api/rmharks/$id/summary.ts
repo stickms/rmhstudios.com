@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { summarizeThread, isSummarizerConfigured } from '@/lib/ai/summarize.server';
-import { canViewPost } from '@/lib/feed/audience.server';
+import { canReadThread } from '@/lib/feed/audience.server';
 import { isLocked } from '@/lib/feed/map-feed-item.server';
 
 type AuthorShape = {
@@ -51,13 +51,14 @@ export const Route = createFileRoute('/api/rmharks/$id/summary')({
             content: true,
             userId: true,
             audience: true,
+            deletedAt: true,
             unlockPrice: true,
             unlocks: { where: { userId: viewerId ?? '' }, select: { id: true } },
             user: { select: authorSelect },
           },
         });
         if (!post) return Response.json({ error: 'Post not found' }, { status: 404 });
-        if (!(await canViewPost({ userId: post.userId, audience: post.audience }, viewerId))) {
+        if (!(await canReadThread({ userId: post.userId, audience: post.audience, deletedAt: post.deletedAt }, viewerId))) {
           return Response.json({ error: 'Post not found' }, { status: 404 });
         }
         if (isLocked(post, viewerId)) {

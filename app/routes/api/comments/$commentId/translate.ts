@@ -3,7 +3,7 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { translateText, isAITextConfigured } from '@/lib/ai/text.server';
-import { canViewPost } from '@/lib/feed/audience.server';
+import { canReadThread } from '@/lib/feed/audience.server';
 import { createHash } from 'node:crypto';
 
 const cache = new Map<string, { text: string; at: number }>();
@@ -82,9 +82,9 @@ export const Route = createFileRoute('/api/comments/$commentId/translate')({
             rmhark: { select: { userId: true, audience: true, deletedAt: true } },
           },
         });
-        if (!comment || comment.deletedAt || !comment.rmhark || comment.rmhark.deletedAt)
+        if (!comment || comment.deletedAt || !comment.rmhark)
           return Response.json({ error: 'Comment not found' }, { status: 404 });
-        if (!(await canViewPost(comment.rmhark, userId)))
+        if (!(await canReadThread(comment.rmhark, userId)))
           return Response.json({ error: 'Comment not found' }, { status: 404 });
 
         // Keyed by a hash of the text as well: an edited comment must not be served
