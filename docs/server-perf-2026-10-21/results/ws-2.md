@@ -13,6 +13,7 @@ Stage A only (WS0_READY never appeared). Seeded scratch DB (3k users, 60k posts,
 | 6 | Circle edits drop affected members' cached feed pages; documented that removal is immediate via reconcile | `lib/circle.server.ts` | invalidations on circle change | 0 | old+new members | circle commit | lib/feed/__tests__/circle-invalidation.test.ts |
 | 7 | DM unread badge: read / read-all drop `dm:unread:<uid>`; read-all 2 statements -> 1 | `POST /api/messages/:id/read`, `/read-all` | badge stale after mark-read; statements | up to 60s; 2 | 0s; 1 | dm commit | lib/feed/__tests__/dm-unread-counter.test.ts — exact |
 | 8 | SECURITY: every comment read applies the parent post's visibility (not deleted, audience, hidden author) via `canReadThread`; 404 otherwise. Covers thread GET, comment likers GET, comment reposters GET, thread summary, comment translate | `GET /api/rmharks/:id/comment`, `/comment/:cid/like`, `/comment/:cid/repost`, `/rmharks/:id/summary`, `/api/comments/:cid/translate` | non-visible threads served; ops on public post thread GET | any post's thread readable by id | 404; +1 read (post row) on thread GET, +1 on FOLLOWERS/CIRCLE/SUPPORTERS (targeted follow/circle read), 0 extra on summary/translate | circle-of-round-3 commit | lib/feed/__tests__/comment-thread-visibility.test.ts (19 of 25 fail on parent) — exact |
+| 9 | SECURITY: comment writes (create/reply incl. dev-API `createComment`, like, repost, react, view), post likers/reposters GET and `/api/v1/posts/:id/comments` GET apply `canReadThread`. Adding needs a readable thread; undo (unlike, un-repost, un-react) stays allowed, un-react returns no roster; `hide` exempt (post-author-only, reveals nothing) | `POST /rmharks/:id/comment`, `/comment/:cid/{like,repost,view}`, `/comments/:cid/react`, `GET /rmharks/:id/{like,repost}`, `GET /v1/posts/:id/comments` | invisible threads writable/readable | writable | 404, 0 writes; ops: comment POST +0 public (+1 targeted non-public), comment like/repost/view +1 (comment->post, adds only), react +0 public, post likers/reposters +1, v1 GET +0 public (+1 targeted) | round-4 commit | lib/feed/__tests__/comment-write-visibility.test.ts (43 of 58 fail on parent) — exact |
 
 ## Rejected (measured, no win)
 none
@@ -37,7 +38,7 @@ Not measured (no harness). Cold For-You assemble, heavy user: 14 Prisma ops (0 w
 
 ## Notes
 - Anonymous first page (`timeline:anon:v2`, 30s + 120s SWR) is not reconciled: a removed public post can be served up to 150s from the origin (edge cache likely dominates). Not changed.
-- Comment WRITES (`POST /rmharks/:id/comment`, comment like/react/view/hide/repost POSTs) still do not check the post's visibility; comment reads and the `/api/v1/posts/:id/comments` GET (own audience gate, no deleted-post check, not WS2) are noted for follow-up. `GET /rmharks/:id/like|repost` (post likers/reposters) are also ungated.
+- Remaining ungated: post-level writes (post like/react/bookmark/vote) were not in scope.
 - Scratch probe files deleted; scratch DB rmh_ws2_a left in place.
 
 ## Rule objections

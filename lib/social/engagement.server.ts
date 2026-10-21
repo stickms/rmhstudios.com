@@ -17,6 +17,7 @@ import { progressAchievement } from '@/lib/achievements/engine.server';
 import { enqueueProgression } from '@/lib/social/engagement-effects.server';
 import { resolveMediaForPost } from '@/lib/media/attach.server';
 import { userDisplaySelect } from '@/lib/user-display';
+import { canReadThread } from '@/lib/feed/audience.server';
 import { invalidateFollowingIds } from '@/lib/social/follow-graph.server';
 import type { RMHarkAudience } from '@prisma/client';
 
@@ -168,9 +169,16 @@ export async function createComment(args: {
   // comment: an existence check, a redundant count re-read, and this author read.
   const post = await prisma.rMHark.findUnique({
     where: { id: postId },
-    select: { id: true, userId: true, user: { select: { handle: true } } },
+    select: {
+      id: true,
+      userId: true,
+      audience: true,
+      deletedAt: true,
+      user: { select: { handle: true } },
+    },
   });
-  if (!post) return { ok: false, found: false };
+  // A thread the author cannot read cannot be written to either (404, same as missing).
+  if (!post || !(await canReadThread(post, userId))) return { ok: false, found: false };
 
   // The transaction's update already returns the incremented count — capture it
   // instead of issuing a separate findUnique afterward.

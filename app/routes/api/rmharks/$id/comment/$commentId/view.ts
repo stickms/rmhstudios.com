@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { getClientIp } from '@/lib/rate-limit';
 import crypto from 'crypto';
+import { canReadCommentThread } from '@/lib/feed/audience.server';
 
 export const Route = createFileRoute('/api/rmharks/$id/comment/$commentId/view')({
   server: {
@@ -17,6 +18,10 @@ export const Route = createFileRoute('/api/rmharks/$id/comment/$commentId/view')
           userId = session?.user?.id ?? null;
         } catch {
           // Not logged in
+        }
+
+        if (!(await canReadCommentThread(commentId, userId))) {
+          return Response.json({ error: 'Not found' }, { status: 404 });
         }
 
         // Derive the client IP at the trusted proxy boundary (Cloudflare / right
