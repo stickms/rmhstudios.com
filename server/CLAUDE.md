@@ -16,7 +16,7 @@ Current production (Docker Compose on the VPS):
 
 | Service                             | Runtime  | Port                          | Entry                                        |
 | ----------------------------------- | -------- | ----------------------------- | -------------------------------------------- |
-| `web` (Nitro SSR)                   | **Node** | 7005 (blue/green spare: 7015) | `.output/server/index.mjs`                   |
+| `web` (Nitro SSR)                   | **Node** | 7005 (blue/green spare: 7015) | `server/web-cluster.mjs` → `.output/server/worker.mjs` |
 | `socket` (games hub)                | **Node** | 7001                          | `dist-server/server/socket-server/index.cjs` |
 | `rmhbox` (party games)              | **Node** | 7676                          | `dist-server/server/rmhbox/index.cjs`        |
 | `rmhtube` (watch together)          | **Node** | 7003                          | `dist-server/server/rmhtube/index.cjs`       |
@@ -114,6 +114,13 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
   (`process-metrics.ts`); each hub serves `GET /internal/metrics` (compose-network
   only, optional `INTERNAL_METRICS_TOKEN`), web workers and `jobs` publish to Redis.
   Read at `/admin/performance`; see `docs/runbooks/performance-metrics.md`.
+- **`web-cluster.mjs`** — the web container's PID 1 (Dockerfile `CMD`). A
+  cluster primary that runs Nitro's `.output/server/worker.mjs` × `WEB_WORKERS`,
+  REPLACES a worker that exits (logging its exit code or signal; `SIGKILL` is
+  the OOM killer) and forwards SIGTERM so the workers drain. It exists because
+  Nitro's own node-cluster primary forks once and never replaces a worker: two
+  deaths took the whole container down (2026-10-21). Tested by
+  `server/__tests__/web-cluster.test.ts`.
 - **`shared/`** — `createLogger(service)` (structured JSON lines),
   `createServerPrismaClient(logger)` (`@prisma/adapter-pg`, pool
   `SERVER_DB_POOL_SIZE` default 5), `createRateLimiter(rules)` (per
