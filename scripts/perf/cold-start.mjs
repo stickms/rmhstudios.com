@@ -65,7 +65,7 @@ async function once(mode) {
     const first = await get('/', mode === 'signed' ? dataset.cookies.heavy : undefined);
     return { bootMs: Math.round(bootMs), firstStatus: first.status, firstTtfbMs: Math.round(first.ttfb), firstTotalMs: Math.round(first.total) };
   } finally {
-    child.kill('SIGTERM');
+    child.kill('SIGKILL'); // the drain plugin makes SIGTERM slow; the next run only needs the port back
     await new Promise((r) => child.once('exit', r));
   }
 }

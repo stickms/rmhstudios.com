@@ -378,7 +378,8 @@
    "id": "api-session",
    "path": "/api/auth/get-session",
    "class": "api",
-   "auth": "both"
+   "auth": "both",
+   "load": false
   },
   {
    "id": "api-notifications",

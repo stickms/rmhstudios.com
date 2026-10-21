@@ -286,6 +286,12 @@ if (routes.length === 0) {
 const agent = new (BASE.protocol === 'https:' ? https : http).Agent({ keepAlive: true, maxSockets: Math.max(CONCURRENCY, 4) });
 const lib = BASE.protocol === 'https:' ? https : http;
 
+let ipCounter = (Date.now() % 200) * 65536;
+function nextIp() {
+  const n = ipCounter++;
+  return `10.${(n >> 16) & 255}.${(n >> 8) & 255}.${n & 255}`;
+}
+
 /** One request. Resolves with timing + facts; never rejects. */
 function request(route, path, cookie) {
   return new Promise((resolveReq) => {
@@ -297,6 +303,18 @@ function request(route, path, cookie) {
       'user-agent': 'rmh-server-bench/1',
       ...(route.headers ?? {}),
     };
+    // A fresh client IP per request. The in-app limiter is per-IP (lib/rate-limit.ts)
+    // and a harness at hundreds of rps from one address would measure the 429
+    // path instead of the route. The limiter's own work (store round-trip) is
+    // still paid on every request, which is what we want to see.
+    const ip = nextIp();
+    // cf-connecting-ip only: lib/rate-limit.ts reads it first. NOT x-forwarded-for -
+    // on the production build Better Auth's isIPv4 is `undefined` (node:net
+    // stubbed by the bundler) and any /api/auth/* request carrying that header
+    // 500s; see results/ws-0.md Handoffs. Better Auth's own limiter therefore
+    // keeps one shared bucket per path (200/min), so routes under /api/auth set
+    // `load: false` in server-routes.json.
+    headers['cf-connecting-ip'] = ip;
     if (cookie) headers.cookie = cookie;
     if (path.startsWith('/_serverFn/')) {
       // TanStack Start server functions refuse requests without the marker header
