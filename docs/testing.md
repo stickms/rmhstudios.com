@@ -455,6 +455,7 @@ Ten workflows live in `.github/workflows/`. The ones that touch tests/quality:
 | `web-ci.yml` (`integration`)  | build → Postgres service → migrate → boot `.output/server` → `pnpm test:integration`    | **blocks**; see §8                                                                       |
 | `epic-tests.yml`              | `playwright install chromium` → `pnpm test:epic`                                        | blocks; **path-filtered** to `scripts/epic/**`                                           |
 | `deploy.yml` (`ci` job)       | `tsc --noEmit` → `eslint` → `pnpm test`                                                 | blocks — typecheck, lint and test all gate the deploy; see below                         |
+| `deploy.yml` (`integration`)  | same as web-ci's `integration`, on the **merged** commit                                | **blocks the deploy**; runs in parallel with the image build                             |
 | `web-ci.yml` (`eversion-e2e`) | build with sourcemaps → serve → every `eversion-*.mjs` (hub per profile x theme)        | non-blocking until T37; **nightly + manual dispatch only** (not on PRs); see §7          |
 | `go-microservices.yml`        | `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**` | blocks                                                                                   |
 
