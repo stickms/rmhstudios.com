@@ -107,3 +107,9 @@ MODULE.bazel.lock
 
 # Compiled gettext catalogs — built from the .po files by Sphinx
 docs/locale/**/*.mo
+
+# Server-perf harness outputs (docs/server-perf-2026-10-21) — the seeded
+# dataset manifest carries signed session cookies; bench scratch stays local.
+scripts/perf/.dataset.json
+scripts/perf/.*.tmp.*
+scripts/perf/out/

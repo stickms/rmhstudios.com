@@ -1,6 +1,7 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { AsyncLocalStorage } from 'node:async_hooks';
+import { measure } from './otel/timing';
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient; prismaRead: PrismaClient };
 
@@ -48,7 +49,14 @@ export const DEFAULT_QUERY_BUDGET = 40;
 /** How many offending operations to name in a breach line. */
 const BREACH_TOP_N = 5;
 
-const budgetStorage = new AsyncLocalStorage<QueryBudget>();
+// One store per process, not per bundled copy of this module: the production
+// build holds a copy in the Nitro bundle (the plugin that opens the budget) and
+// another in the app's `_ssr` bundle (where the queries run), and two stores
+// meant every request reported zero queries. Same reasoning, and the same fix,
+// as the trace scope in lib/otel/trace.ts.
+const BUDGET_STORAGE_KEY = Symbol.for('rmh.prisma.queryBudgetStorage');
+const globalBudget = globalThis as unknown as Record<symbol, AsyncLocalStorage<QueryBudget>>;
+const budgetStorage = (globalBudget[BUDGET_STORAGE_KEY] ??= new AsyncLocalStorage<QueryBudget>());
 
 function budgetMax(): number {
   const raw = parseInt(process.env.DATABASE_QUERY_BUDGET || '', 10);
@@ -188,7 +196,11 @@ const queryBudgetExtension = Prisma.defineExtension({
   query: {
     async $allOperations({ model, operation, args, query }) {
       recordQuery(model, operation);
-      return query(args);
+      // `db` Server-Timing phase: cumulative query time for the request. Summed
+      // across concurrent queries (a `Promise.all` of three 10 ms reads reports
+      // 30 ms), so it can exceed `total` — it is "DB work", not "DB wait".
+      // A no-op outside a traced request scope (workers, scripts).
+      return measure('db', () => query(args));
     },
   },
 });

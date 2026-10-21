@@ -18,13 +18,12 @@
 //   5. Tags the 500-path log line with the trace id.
 //
 // WHICH PHASES ARE LIVE: `total` (request hook → response hook) is marked here
-// and needs nothing from anyone. `sess` / `loader` / `cache` / `db` / `render`
-// cannot be seen from a Nitro plugin — this Nitro exposes exactly four runtime
-// hooks (`close`, `error`, `request`, `response`; see `NitroRuntimeHooks`), so
-// there is no seam here around a loader or a render. Each of those is one
-// `mark()` call inside the layer that owns it; until those land, the header
-// carries `trace` + `total` and nothing is silently wrong — an absent phase is
-// absent, not zero. The call sites are listed in `lib/otel/timing.ts`.
+// and needs nothing from anyone. `sess` / `cache` / `db` are live too, each one
+// `mark()`/`measure()` call inside the layer that owns it (see the list in
+// `lib/otel/timing.ts`). `loader` / `render` cannot be seen from a Nitro plugin —
+// this Nitro exposes exactly four runtime hooks (`close`, `error`, `request`,
+// `response`; see `NitroRuntimeHooks`) — and have no single choke point
+// elsewhere either; an absent phase is absent, not zero.
 //
 // WHAT IT IS NOT: the OpenTelemetry SDK. `@opentelemetry/*` is not in
 // package.json and adding ~40 transitive packages plus a collector to get a
@@ -106,6 +105,22 @@ function routeLabel(rawUrl: string | undefined, method: string | undefined): str
   return `${method ?? 'GET'} /${segments.join('/')}`;
 }
 
+/**
+ * Bench-only response headers (docs/server-perf-2026-10-21/01-method.md §1.3).
+ *
+ * `x-rmh-queries: <n>` carries the request's Prisma operation count so the perf
+ * harness can read it without a log scrape. It is OFF unless
+ * `RMH_PERF_HEADERS=1`, read per response so a test can flip it; production
+ * never sets it. The value is a bare integer — no model names, no SQL, no ids.
+ *
+ * Caveat for readers of the number: the header is written when the `response`
+ * hook fires (headers ready), so queries issued by work that streams AFTER the
+ * shell — e.g. the home page's unawaited first feed page — are not in it.
+ */
+export function perfHeadersEnabled(): boolean {
+  return process.env.RMH_PERF_HEADERS === '1';
+}
+
 export default function otelPlugin(nitroApp: NitroAppLike): void {
   void import('../../lib/prisma.server')
     .then((mod) => {
@@ -170,6 +185,9 @@ export default function otelPlugin(nitroApp: NitroAppLike): void {
       }
 
       const budget = budgets.get(event as object);
+      if (budget && perfHeadersEnabled()) {
+        responseHeaders(_res, event)?.set?.('x-rmh-queries', String(budget.count));
+      }
       if (budget && budgetApi) budgetApi.reportQueryBudget(budget);
     } catch {
       // Never let correlation break a response.
