@@ -1,9 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { DeckStudyColumn } from '@/components/feed/DeckStudyColumn';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { getDeck, type DeckDetail } from '@/lib/study.server';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 
@@ -13,8 +12,7 @@ import { buildCanonical, buildMeta } from '@/lib/seo';
 const fetchDeck = createServerFn({ method: 'GET' })
   .validator((deckId: string) => deckId)
   .handler(async ({ data: deckId }) => {
-    const request = getRequest();
-    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    const session = await getRequestSession();
     return { deck: await getDeck(deckId, { id: session?.user?.id ?? null }) };
   });
 

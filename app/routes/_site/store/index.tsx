@@ -19,9 +19,8 @@ import { useTranslation } from 'react-i18next';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { CalendarClock, Sparkles, ShoppingBag, Store as StoreIcon } from 'lucide-react';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { getUserTier, type Tier } from '@/lib/entitlements';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { MembershipPanel } from '@/components/membership/MembershipPanel';
@@ -42,8 +41,7 @@ type StoreTab = (typeof STORE_TABS)[number];
 // tab is present at first paint / prefetched on intent instead of fetching on
 // mount.
 const fetchStore = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+  const session = await getRequestSession();
   const userId = session?.user?.id ?? null;
   const [tier, shop, listings] = await Promise.all([
     userId ? getUserTier(userId) : Promise.resolve('free' as Tier),
