@@ -6,6 +6,8 @@ export interface ConversationOtherUser {
   name: string | null;
   image: string | null;
   username: string | null;
+  /** Bot-worker account — the DM header marks it so nobody mistakes it for a person. */
+  isBot: boolean;
 }
 
 const participantSelect = {
@@ -13,6 +15,7 @@ const participantSelect = {
   name: true,
   image: true,
   username: true,
+  isBot: true,
   profile: { select: { displayName: true, customImage: true } },
 } as const;
 
@@ -42,5 +45,11 @@ export async function getConversationOtherUser(
 
   const other = conv.participantOneId === viewerId ? conv.participantTwo : conv.participantOne;
   const resolved = resolveUserDisplay(other);
-  return { id: other.id, name: resolved.name, image: resolved.image, username: other.username };
+  return {
+    id: other.id,
+    name: resolved.name,
+    image: resolved.image,
+    username: other.username,
+    isBot: other.isBot,
+  };
 }

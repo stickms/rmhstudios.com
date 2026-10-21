@@ -230,6 +230,7 @@ import { Route as SiteAdminAnalyticsRouteImport } from './routes/_site/admin/ana
 import { Route as SiteAdminAnnouncementsRouteImport } from './routes/_site/admin/announcements'
 import { Route as SiteAdminAppealsRouteImport } from './routes/_site/admin/appeals'
 import { Route as SiteAdminAuditRouteImport } from './routes/_site/admin/audit'
+import { Route as SiteAdminBotsRouteImport } from './routes/_site/admin/bots'
 import { Route as SiteAdminCanvasRouteImport } from './routes/_site/admin/canvas'
 import { Route as SiteAdminDelightRouteImport } from './routes/_site/admin/delight'
 import { Route as SiteAdminEconomyRouteImport } from './routes/_site/admin/economy'
@@ -808,6 +809,7 @@ import { Route as ApiAdminAlbumsIdRouteImport } from './routes/api/admin/albums/
 import { Route as ApiAdminAlbumsReorderRouteImport } from './routes/api/admin/albums/reorder'
 import { Route as ApiAdminAnnouncementsIdRouteImport } from './routes/api/admin/announcements/$id'
 import { Route as ApiAdminAppealsIdRouteImport } from './routes/api/admin/appeals/$id'
+import { Route as ApiAdminBotsIndexRouteImport } from './routes/api/admin/bots/index'
 import { Route as ApiAdminCanvasIndexRouteImport } from './routes/api/admin/canvas/index'
 import { Route as ApiAdminCanvasIdRouteImport } from './routes/api/admin/canvas/$id'
 import { Route as ApiAdminContextNotesIndexRouteImport } from './routes/api/admin/context-notes/index'
@@ -2356,6 +2358,11 @@ const SiteAdminAppealsRoute = SiteAdminAppealsRouteImport.update({
 const SiteAdminAuditRoute = SiteAdminAuditRouteImport.update({
   id: '/audit',
   path: '/audit',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
+const SiteAdminBotsRoute = SiteAdminBotsRouteImport.update({
+  id: '/bots',
+  path: '/bots',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
 const SiteAdminCanvasRoute = SiteAdminCanvasRouteImport.update({
@@ -5291,6 +5298,11 @@ const ApiAdminAppealsIdRoute = ApiAdminAppealsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiAdminAppealsRoute,
 } as any)
+const ApiAdminBotsIndexRoute = ApiAdminBotsIndexRouteImport.update({
+  id: '/api/admin/bots/',
+  path: '/api/admin/bots/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminCanvasIndexRoute = ApiAdminCanvasIndexRouteImport.update({
   id: '/api/admin/canvas/',
   path: '/api/admin/canvas/',
@@ -7907,6 +7919,7 @@ export interface FileRoutesByFullPath {
   '/admin/announcements': typeof SiteAdminAnnouncementsRoute
   '/admin/appeals': typeof SiteAdminAppealsRoute
   '/admin/audit': typeof SiteAdminAuditRoute
+  '/admin/bots': typeof SiteAdminBotsRoute
   '/admin/canvas': typeof SiteAdminCanvasRoute
   '/admin/delight': typeof SiteAdminDelightRoute
   '/admin/economy': typeof SiteAdminEconomyRoute
@@ -8744,6 +8757,7 @@ export interface FileRoutesByFullPath {
   '/admin/blog/': typeof SiteAdminBlogIndexRoute
   '/u/$userid/': typeof SiteUUseridIndexRoute
   '/api/admin/albums/': typeof ApiAdminAlbumsIndexRoute
+  '/api/admin/bots/': typeof ApiAdminBotsIndexRoute
   '/api/admin/canvas/': typeof ApiAdminCanvasIndexRoute
   '/api/admin/context-notes/': typeof ApiAdminContextNotesIndexRoute
   '/api/admin/library/': typeof ApiAdminLibraryIndexRoute
@@ -9124,6 +9138,7 @@ export interface FileRoutesByTo {
   '/admin/announcements': typeof SiteAdminAnnouncementsRoute
   '/admin/appeals': typeof SiteAdminAppealsRoute
   '/admin/audit': typeof SiteAdminAuditRoute
+  '/admin/bots': typeof SiteAdminBotsRoute
   '/admin/canvas': typeof SiteAdminCanvasRoute
   '/admin/delight': typeof SiteAdminDelightRoute
   '/admin/economy': typeof SiteAdminEconomyRoute
@@ -9961,6 +9976,7 @@ export interface FileRoutesByTo {
   '/admin/blog': typeof SiteAdminBlogIndexRoute
   '/u/$userid': typeof SiteUUseridIndexRoute
   '/api/admin/albums': typeof ApiAdminAlbumsIndexRoute
+  '/api/admin/bots': typeof ApiAdminBotsIndexRoute
   '/api/admin/canvas': typeof ApiAdminCanvasIndexRoute
   '/api/admin/context-notes': typeof ApiAdminContextNotesIndexRoute
   '/api/admin/library': typeof ApiAdminLibraryIndexRoute
@@ -10369,6 +10385,7 @@ export interface FileRoutesById {
   '/_site/admin/announcements': typeof SiteAdminAnnouncementsRoute
   '/_site/admin/appeals': typeof SiteAdminAppealsRoute
   '/_site/admin/audit': typeof SiteAdminAuditRoute
+  '/_site/admin/bots': typeof SiteAdminBotsRoute
   '/_site/admin/canvas': typeof SiteAdminCanvasRoute
   '/_site/admin/delight': typeof SiteAdminDelightRoute
   '/_site/admin/economy': typeof SiteAdminEconomyRoute
@@ -11206,6 +11223,7 @@ export interface FileRoutesById {
   '/_site/admin/blog/': typeof SiteAdminBlogIndexRoute
   '/_site/u/$userid/': typeof SiteUUseridIndexRoute
   '/api/admin/albums/': typeof ApiAdminAlbumsIndexRoute
+  '/api/admin/bots/': typeof ApiAdminBotsIndexRoute
   '/api/admin/canvas/': typeof ApiAdminCanvasIndexRoute
   '/api/admin/context-notes/': typeof ApiAdminContextNotesIndexRoute
   '/api/admin/library/': typeof ApiAdminLibraryIndexRoute
@@ -11614,6 +11632,7 @@ export interface FileRouteTypes {
     | '/admin/announcements'
     | '/admin/appeals'
     | '/admin/audit'
+    | '/admin/bots'
     | '/admin/canvas'
     | '/admin/delight'
     | '/admin/economy'
@@ -12451,6 +12470,7 @@ export interface FileRouteTypes {
     | '/admin/blog/'
     | '/u/$userid/'
     | '/api/admin/albums/'
+    | '/api/admin/bots/'
     | '/api/admin/canvas/'
     | '/api/admin/context-notes/'
     | '/api/admin/library/'
@@ -12831,6 +12851,7 @@ export interface FileRouteTypes {
     | '/admin/announcements'
     | '/admin/appeals'
     | '/admin/audit'
+    | '/admin/bots'
     | '/admin/canvas'
     | '/admin/delight'
     | '/admin/economy'
@@ -13668,6 +13689,7 @@ export interface FileRouteTypes {
     | '/admin/blog'
     | '/u/$userid'
     | '/api/admin/albums'
+    | '/api/admin/bots'
     | '/api/admin/canvas'
     | '/api/admin/context-notes'
     | '/api/admin/library'
@@ -14075,6 +14097,7 @@ export interface FileRouteTypes {
     | '/_site/admin/announcements'
     | '/_site/admin/appeals'
     | '/_site/admin/audit'
+    | '/_site/admin/bots'
     | '/_site/admin/canvas'
     | '/_site/admin/delight'
     | '/_site/admin/economy'
@@ -14912,6 +14935,7 @@ export interface FileRouteTypes {
     | '/_site/admin/blog/'
     | '/_site/u/$userid/'
     | '/api/admin/albums/'
+    | '/api/admin/bots/'
     | '/api/admin/canvas/'
     | '/api/admin/context-notes/'
     | '/api/admin/library/'
@@ -15752,6 +15776,7 @@ export interface RootRouteChildren {
   ApiWhenIdRespondRoute: typeof ApiWhenIdRespondRoute
   ApiWorldsVisitCodeRoute: typeof ApiWorldsVisitCodeRouteWithChildren
   ApiAdminAlbumsIndexRoute: typeof ApiAdminAlbumsIndexRoute
+  ApiAdminBotsIndexRoute: typeof ApiAdminBotsIndexRoute
   ApiAdminCanvasIndexRoute: typeof ApiAdminCanvasIndexRoute
   ApiAdminContextNotesIndexRoute: typeof ApiAdminContextNotesIndexRoute
   ApiAdminLibraryIndexRoute: typeof ApiAdminLibraryIndexRoute
@@ -17413,6 +17438,13 @@ declare module '@tanstack/react-router' {
       path: '/audit'
       fullPath: '/admin/audit'
       preLoaderRoute: typeof SiteAdminAuditRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
+    '/_site/admin/bots': {
+      id: '/_site/admin/bots'
+      path: '/bots'
+      fullPath: '/admin/bots'
+      preLoaderRoute: typeof SiteAdminBotsRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
     '/_site/admin/canvas': {
@@ -21461,6 +21493,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminAppealsIdRouteImport
       parentRoute: typeof ApiAdminAppealsRoute
     }
+    '/api/admin/bots/': {
+      id: '/api/admin/bots/'
+      path: '/api/admin/bots'
+      fullPath: '/api/admin/bots/'
+      preLoaderRoute: typeof ApiAdminBotsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/canvas/': {
       id: '/api/admin/canvas/'
       path: '/api/admin/canvas'
@@ -24570,6 +24609,7 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminAnnouncementsRoute: typeof SiteAdminAnnouncementsRoute
   SiteAdminAppealsRoute: typeof SiteAdminAppealsRoute
   SiteAdminAuditRoute: typeof SiteAdminAuditRoute
+  SiteAdminBotsRoute: typeof SiteAdminBotsRoute
   SiteAdminCanvasRoute: typeof SiteAdminCanvasRoute
   SiteAdminDelightRoute: typeof SiteAdminDelightRoute
   SiteAdminEconomyRoute: typeof SiteAdminEconomyRoute
@@ -24605,6 +24645,7 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminAnnouncementsRoute: SiteAdminAnnouncementsRoute,
   SiteAdminAppealsRoute: SiteAdminAppealsRoute,
   SiteAdminAuditRoute: SiteAdminAuditRoute,
+  SiteAdminBotsRoute: SiteAdminBotsRoute,
   SiteAdminCanvasRoute: SiteAdminCanvasRoute,
   SiteAdminDelightRoute: SiteAdminDelightRoute,
   SiteAdminEconomyRoute: SiteAdminEconomyRoute,
@@ -27331,6 +27372,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWhenIdRespondRoute: ApiWhenIdRespondRoute,
   ApiWorldsVisitCodeRoute: ApiWorldsVisitCodeRouteWithChildren,
   ApiAdminAlbumsIndexRoute: ApiAdminAlbumsIndexRoute,
+  ApiAdminBotsIndexRoute: ApiAdminBotsIndexRoute,
   ApiAdminCanvasIndexRoute: ApiAdminCanvasIndexRoute,
   ApiAdminContextNotesIndexRoute: ApiAdminContextNotesIndexRoute,
   ApiAdminLibraryIndexRoute: ApiAdminLibraryIndexRoute,
