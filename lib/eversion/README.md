@@ -172,6 +172,18 @@ The switch reaches the code in three places: the runner's priming section
 (`alwaysEvert()` reads `useThemeStore`), and the hub's controller wait. The limits
 live in `constants.ts` (the hub's two in `RadialHub.tsx`, which may not import it).
 
+### The eversion level: which navigations run at all (2026-10-21)
+
+`themeStore.eversionLevel` (`all` default | `globe`; `EVERSION_LEVELS` in `lib/appearance/prefs.ts`; Settings >
+Appearance > Comfort > "Globe eversion"; account column `eversionLevel`, signed-out cache `rmh-eversion-level`). It
+decides which _page navigations_ the effect carries, not how a run plays: at `all` every pathname-changing
+navigation everts (history blocker + pop-up globe); at `globe` only hub-confirmed ones do, and the blocker in
+`components/radial/eversion/eversion-nav.ts` returns `false` for everything else before holding, queueing or timing
+anything (`carriesNavigation`). `EversionRoot` passes the level in as a function over the store, so it is read per
+navigation and a change applies to the next one. It lives in `lib/appearance/prefs.ts`, not here, so the shell's
+static closure gains a string union and nothing of the runtime (`bundle-leaks.test.ts` / `check:bundle-budget`). It
+does not touch the per-control state animation (`lib/evert-auto.ts`).
+
 ### A committed run always ends
 
 - Back/forward during priming is honoured: the runner listens from the start of
