@@ -17,17 +17,28 @@
  *
  * One delegated set of capture-phase, passive listeners for the whole document, like `useFluidPress`: a hook per
  * component reaches the components somebody remembered. It schedules no frames.
+ *
+ * It also reaches the components nobody remembered (amended 2026-10-21): a button, link, tab or field without
+ * `data-evert` is adopted on first contact (`lib/evert-auto.ts`) - tagged for the same layer, or, where it cannot
+ * hold one (a text field, a select, a control whose `::before` is taken), given a ghost of the layer over it.
  */
 
 import { useEffect } from 'react';
+import {
+  adopt,
+  controlAt,
+  disposeGhosts,
+  ghostTarget,
+  hideGhost,
+  pressGhost,
+  showGhost,
+} from '@/lib/evert-auto';
 
 /** A tap held for less than this still shows its eversion for this long, or a quick tap would never be seen. */
 export const EVERT_MIN_PRESS_MS = 180;
 
 /** Pointer travel (px) past which a press is a scroll and lets go — the press layer's own slop. */
 const SCROLL_SLOP = 10;
-
-const SELECTOR = '[data-evert]';
 
 /** Write the eversion point for `el` at client position (x, y). */
 export function placeEvert(el: HTMLElement, x: number, y: number): void {
@@ -60,6 +71,9 @@ function disabled(el: HTMLElement): boolean {
 
 interface Press {
   el: HTMLElement;
+  /** The control everts through a ghost (`lib/evert-auto.ts`), not its own layer. */
+  ghost: boolean;
+  touch: boolean;
   at: number;
   x: number;
   y: number;
@@ -70,8 +84,15 @@ export function useEvertPointLayer(): void {
   useEffect(() => {
     const presses = new Map<number, Press>();
 
-    const evertOf = (target: EventTarget | null): HTMLElement | null =>
-      (target as Element | null)?.closest?.<HTMLElement>(SELECTOR) ?? null;
+    /** The control under `target` and how it everts; adopting it on first contact. */
+    const evertOf = (target: EventTarget | null): { el: HTMLElement; ghost: boolean } | null => {
+      const el = controlAt(target);
+      if (!el) return null;
+      const mode = adopt(el);
+      return mode ? { el, ghost: mode === 'ghost' } : null;
+    };
+    /** The last press, so a field focused by it turns its focus out of the finger. */
+    let lastPress: { el: HTMLElement; x: number; y: number; at: number } | null = null;
 
     /** The same control is still under the pointer: entering or leaving one of its children is not a hover change. */
     const within = (el: HTMLElement, other: EventTarget | null): boolean =>
@@ -80,21 +101,29 @@ export function useEvertPointLayer(): void {
     const onOver = (e: PointerEvent) => {
       // Hover is a fine pointer's; a touch's "over" is its press, handled below.
       if (e.pointerType === 'touch') return;
-      const el = evertOf(e.target);
-      if (!el || within(el, e.relatedTarget) || disabled(el)) return;
-      placeEvert(el, e.clientX, e.clientY);
+      const hit = evertOf(e.target);
+      if (!hit || within(hit.el, e.relatedTarget) || disabled(hit.el)) return;
+      if (hit.ghost) showGhost('hover', hit.el, e.clientX, e.clientY);
+      else placeEvert(hit.el, e.clientX, e.clientY);
     };
 
     const onOut = (e: PointerEvent) => {
       if (e.pointerType === 'touch') return;
-      const el = evertOf(e.target);
-      if (!el || within(el, e.relatedTarget)) return;
-      placeEvert(el, e.clientX, e.clientY);
+      const hit = evertOf(e.target);
+      if (!hit || within(hit.el, e.relatedTarget)) return;
+      if (hit.ghost) hideGhost('hover', hit.el, e.clientX, e.clientY);
+      else placeEvert(hit.el, e.clientX, e.clientY);
     };
 
     const lift = (press: Press) => {
       if (press.timer) clearTimeout(press.timer);
-      press.el.removeAttribute('data-pressed');
+      if (!press.ghost) {
+        press.el.removeAttribute('data-pressed');
+        return;
+      }
+      pressGhost(press.el, false);
+      // A finger has no hover to keep the ghost up once it lifts.
+      if (press.touch) hideGhost('hover', press.el);
     };
 
     const release = (pointerId: number, immediate: boolean) => {
@@ -108,12 +137,21 @@ export function useEvertPointLayer(): void {
 
     const onDown = (e: PointerEvent) => {
       if (e.button > 0) return;
-      const el = evertOf(e.target);
-      if (!el || disabled(el)) return;
-      placeEvert(el, e.clientX, e.clientY);
-      el.setAttribute('data-pressed', '');
+      const hit = evertOf(e.target);
+      if (!hit || disabled(hit.el)) return;
+      const { el, ghost } = hit;
+      lastPress = { el, x: e.clientX, y: e.clientY, at: performance.now() };
+      if (ghost) {
+        showGhost('hover', el, e.clientX, e.clientY);
+        pressGhost(el, true);
+      } else {
+        placeEvert(el, e.clientX, e.clientY);
+        el.setAttribute('data-pressed', '');
+      }
       presses.set(e.pointerId, {
         el,
+        ghost,
+        touch: e.pointerType === 'touch',
         at: performance.now(),
         x: e.clientX,
         y: e.clientY,
@@ -136,16 +174,32 @@ export function useEvertPointLayer(): void {
       for (const id of [...presses.keys()]) release(id, true);
     };
 
-    // Keyboard focus turns the layer out from the centre.
+    // Keyboard focus turns the layer out from the centre. A field's focus is shown however it came (a click into a
+    // text field is the field's state changing), out of the press that focused it.
     const onFocusIn = (e: FocusEvent) => {
-      const el = evertOf(e.target);
-      if (!el) return;
+      const hit = evertOf(e.target);
+      if (!hit) return;
+      let visible: boolean;
       try {
-        if (!(e.target as Element).matches(':focus-visible')) return;
+        visible = (e.target as Element).matches(':focus-visible');
       } catch {
         return;
       }
-      centreEvert(el);
+      if (!hit.ghost) {
+        if (visible) centreEvert(hit.el);
+        return;
+      }
+      const field = /^(INPUT|TEXTAREA|SELECT)$/.test(hit.el.tagName);
+      if (!visible && !field) return;
+      const press =
+        lastPress && lastPress.el === hit.el && performance.now() - lastPress.at < 1000
+          ? lastPress
+          : null;
+      showGhost('focus', hit.el, press?.x ?? null, press?.y ?? null);
+    };
+    const onFocusOut = (e: FocusEvent) => {
+      const el = ghostTarget('focus');
+      if (el && (e.target === el || el.contains(e.target as Node))) hideGhost('focus', el);
     };
 
     const opts = { capture: true, passive: true } as const;
@@ -156,6 +210,7 @@ export function useEvertPointLayer(): void {
     document.addEventListener('pointerup', onUp, opts);
     document.addEventListener('pointercancel', onCancel, opts);
     document.addEventListener('focusin', onFocusIn, opts);
+    document.addEventListener('focusout', onFocusOut, opts);
     window.addEventListener('blur', releaseAll);
     document.addEventListener('visibilitychange', releaseAll);
     return () => {
@@ -166,10 +221,12 @@ export function useEvertPointLayer(): void {
       document.removeEventListener('pointerup', onUp, opts);
       document.removeEventListener('pointercancel', onCancel, opts);
       document.removeEventListener('focusin', onFocusIn, opts);
+      document.removeEventListener('focusout', onFocusOut, opts);
       window.removeEventListener('blur', releaseAll);
       document.removeEventListener('visibilitychange', releaseAll);
       for (const press of presses.values()) lift(press);
       presses.clear();
+      disposeGhosts();
     };
   }, []);
 }
