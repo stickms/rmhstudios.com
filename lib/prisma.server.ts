@@ -1,6 +1,7 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { AsyncLocalStorage } from 'node:async_hooks';
+import { measure } from './otel/timing';
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient; prismaRead: PrismaClient };
 
@@ -188,7 +189,11 @@ const queryBudgetExtension = Prisma.defineExtension({
   query: {
     async $allOperations({ model, operation, args, query }) {
       recordQuery(model, operation);
-      return query(args);
+      // `db` Server-Timing phase: cumulative query time for the request. Summed
+      // across concurrent queries (a `Promise.all` of three 10 ms reads reports
+      // 30 ms), so it can exceed `total` — it is "DB work", not "DB wait".
+      // A no-op outside a traced request scope (workers, scripts).
+      return measure('db', () => query(args));
     },
   },
 });

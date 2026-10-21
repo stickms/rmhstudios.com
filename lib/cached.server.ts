@@ -24,6 +24,7 @@
  */
 
 import { apiCache } from '@/lib/cache';
+import { measure } from '@/lib/otel/timing';
 import {
   redisCacheMGet,
   redisEnabled,
@@ -188,11 +189,24 @@ export interface CachedOptions {
  * on a miss. Concurrent callers within a process share one loader invocation
  * via an in-flight promise map (prevents a local stampede).
  */
-export async function cached<T>(
+export function cached<T>(
   key: string,
   ttlMs: number,
   loader: () => Promise<T>,
   opts: CachedOptions = {},
+): Promise<T> {
+  // `cache` Server-Timing phase: the whole call, so an L1 hit reports its ~0 ms
+  // and a miss carries the loader (and therefore overlaps `db`). Nested
+  // `cached()` calls inside a loader are counted again by design — the phase is
+  // "time spent behind the cache layer", not an exclusive slice of `total`.
+  return measure('cache', () => cachedUntimed(key, ttlMs, loader, opts));
+}
+
+async function cachedUntimed<T>(
+  key: string,
+  ttlMs: number,
+  loader: () => Promise<T>,
+  opts: CachedOptions,
 ): Promise<T> {
   ensureSubscribed();
   const useL2 = opts.l2 !== false;
@@ -314,10 +328,18 @@ export async function cachedNullable<T>(
  *
  * The same create-path rule applies — see `cachedNullable`.
  */
-export async function cachedMiss<T>(
+export function cachedMiss<T>(
   key: string,
   loader: () => Promise<T | null | undefined>,
   opts: { l2?: boolean; negativeTtlMs?: number } = {},
+): Promise<T | null> {
+  return measure('cache', () => cachedMissUntimed(key, loader, opts));
+}
+
+async function cachedMissUntimed<T>(
+  key: string,
+  loader: () => Promise<T | null | undefined>,
+  opts: { l2?: boolean; negativeTtlMs?: number },
 ): Promise<T | null> {
   ensureSubscribed();
   const useL2 = opts.l2 !== false;
@@ -372,11 +394,20 @@ export interface CachedManyOptions {
  * not written back afterwards. Keys already claimed by a concurrent `cached()`
  * are still returned to this caller but left for that caller to write.
  */
-export async function cachedMany<T>(
+export function cachedMany<T>(
   keys: string[],
   ttlMs: number,
   loadMissing: (missing: string[]) => Promise<Map<string, T | null | undefined>>,
   opts: CachedManyOptions = {},
+): Promise<Map<string, T>> {
+  return measure('cache', () => cachedManyUntimed(keys, ttlMs, loadMissing, opts));
+}
+
+async function cachedManyUntimed<T>(
+  keys: string[],
+  ttlMs: number,
+  loadMissing: (missing: string[]) => Promise<Map<string, T | null | undefined>>,
+  opts: CachedManyOptions,
 ): Promise<Map<string, T>> {
   ensureSubscribed();
   const useL2 = opts.l2 !== false;
@@ -518,7 +549,15 @@ function swrRefresh<T>(
   return promise;
 }
 
-export async function cachedSWR<T>(
+export function cachedSWR<T>(
+  key: string,
+  opts: CachedSWROptions,
+  loader: () => Promise<T>,
+): Promise<T> {
+  return measure('cache', () => cachedSWRUntimed(key, opts, loader));
+}
+
+async function cachedSWRUntimed<T>(
   key: string,
   opts: CachedSWROptions,
   loader: () => Promise<T>,

@@ -216,3 +216,45 @@ describe('the widened trace scope keeps the correlation id working', () => {
     expect(traceFields()).toEqual({});
   });
 });
+
+describe('the call sites mark their phases', () => {
+  it('cached() marks `cache` — an L1 hit as ~0 ms, a miss with the loader inside it', async () => {
+    const { cached } = await import('@/lib/cached.server');
+    await withTrace(async () => {
+      const key = `timing-test:${Math.random()}`;
+      await cached(key, 5_000, async () => {
+        await new Promise((r) => setTimeout(r, 15));
+        return 1;
+      });
+      const afterMiss = currentScope()?.timings.get('cache') ?? -1;
+      expect(afterMiss).toBeGreaterThan(8);
+
+      await cached(key, 5_000, async () => 2); // L1 hit
+      const afterHit = currentScope()?.timings.get('cache') ?? -1;
+      expect(afterHit - afterMiss).toBeLessThan(5);
+    });
+  });
+
+  it('cached() still returns the loader value outside a traced scope', async () => {
+    const { cached } = await import('@/lib/cached.server');
+    await expect(cached(`timing-test:${Math.random()}`, 1_000, async () => 'v')).resolves.toBe('v');
+  });
+
+  it('the Prisma query hook marks `db`, including when the query fails', async () => {
+    process.env.DATABASE_URL ||= 'postgresql://timing:timing@127.0.0.1:1/timing';
+    const { prisma } = await import('@/lib/prisma.server');
+    await withTrace(async () => {
+      // Port 1 refuses immediately; the failed query is still a measured one.
+      await prisma.user.findFirst({ select: { id: true } }).catch(() => undefined);
+      expect(currentScope()?.timings.has('db')).toBe(true);
+    });
+  });
+
+  it('loader and render stay unmarked: no single choke point exists (see timing.ts)', () => {
+    const s = scope();
+    markScope(s, 'db', 1);
+    const names = serverTimingPhases(s).map((e) => e.split(';')[0]);
+    expect(names).not.toContain('loader');
+    expect(names).not.toContain('render');
+  });
+});
