@@ -21,23 +21,41 @@ interface CacheEntry<T> {
   bytes: number;
 }
 
-/** Nodes visited by the size estimator before it stops and extrapolates. */
-const ESTIMATE_NODE_BUDGET = 400;
-/** Flat per-node overhead (object header / pointer / number slot), bytes. */
-const NODE_OVERHEAD = 16;
+/**
+ * Nodes visited by the size estimator before it stops and extrapolates. A signed-in feed page (20 posts with their
+ * authors and media) is ~900 nodes; the old budget of 400 stopped half-way and extrapolated only over the entries
+ * still on the stack, not their subtrees, so feed pages were undercounted ~1.8× (measured 2026-10-21: 29 KB real,
+ * 16 KB estimated). 5000 walks every realistic cached value in full; the walk runs on a cache MISS only.
+ */
+const ESTIMATE_NODE_BUDGET = 5000;
+
+/*
+ * V8's layout on 64-bit Node (no pointer compression), the costs the estimate is built from. Calibrated against
+ * `process.memoryUsage().heapUsed` with --expose-gc on representative values (a feed page, a user list, one user):
+ * the estimate lands within ~20% of the retained heap for each.
+ *   - an object: a header (map, properties, elements) plus one 8-byte slot per own property. Keys live in the
+ *     hidden class and are shared by every object of the same shape, so they cost nothing per instance;
+ *   - an array: a header plus one slot per element;
+ *   - a string: a header plus one byte per char (V8 stores Latin-1 text one byte wide);
+ *   - a number: free in its slot when it is a small integer (Smi), else a 16-byte heap number;
+ *   - a Date: a small object of its own.
+ */
+const OBJECT_HEADER = 40;
+const ARRAY_HEADER = 40;
+const SLOT = 8;
+const STRING_HEADER = 20;
+const HEAP_NUMBER = 16;
+const DATE_BYTES = 48;
+const SMI_MAX = 2 ** 30;
 
 /**
- * perf: approximate retained size of a cached value WITHOUT JSON.stringify
- * (which would serialize every page on the hot `set` path). Strings count
- * 2 bytes/char; objects/arrays are walked breadth-limited to
- * ESTIMATE_NODE_BUDGET nodes and, if the budget runs out, the remainder is
- * extrapolated from the average node cost so far. Cheap (bounded), and only
- * needs to be right within a small factor — it guards the heap, not billing.
- * Callers that already hold a serialized length can pass it to `set`.
+ * perf: approximate retained heap size of a cached value WITHOUT JSON.stringify (which would serialize every page
+ * on the hot `set` path). Walks up to ESTIMATE_NODE_BUDGET nodes; past that the remainder is extrapolated from the
+ * average cost per node so far, scaled by how much of the value is still unvisited. It guards the HEAP (the caches'
+ * budgets are a share of the worker's heap limit, see `heapShare`), so it is calibrated to retained bytes, not to
+ * serialized size. Callers that already hold a serialized length can pass it to `set`.
  */
 export function estimateBytes(value: unknown): number {
-  if (typeof value === 'string') return value.length * 2 + NODE_OVERHEAD;
-  if (value === null || typeof value !== 'object') return NODE_OVERHEAD;
   let bytes = 0;
   let visited = 0;
   const stack: unknown[] = [value];
@@ -45,25 +63,27 @@ export function estimateBytes(value: unknown): number {
     const v = stack.pop();
     visited++;
     if (typeof v === 'string') {
-      bytes += v.length * 2 + NODE_OVERHEAD;
+      bytes += STRING_HEADER + v.length;
+    } else if (typeof v === 'number') {
+      if (!Number.isInteger(v) || Math.abs(v) >= SMI_MAX) bytes += HEAP_NUMBER;
     } else if (v !== null && typeof v === 'object') {
-      bytes += NODE_OVERHEAD;
       if (visited >= ESTIMATE_NODE_BUDGET) {
-        // Unvisited children remain on the stack; extrapolate from the average.
-        bytes += (bytes / visited) * stack.length;
+        // Each node still on the stack heads a subtree we have not seen; assume they are like the ones we have.
+        bytes += (bytes / visited) * stack.length * 2;
         break;
       }
-      if (v instanceof Date) continue;
-      if (Array.isArray(v)) {
+      if (v instanceof Date) {
+        bytes += DATE_BYTES;
+      } else if (Array.isArray(v)) {
+        bytes += ARRAY_HEADER + SLOT * v.length;
         for (let i = 0; i < v.length; i++) stack.push(v[i]);
       } else {
+        bytes += OBJECT_HEADER;
         for (const k in v as Record<string, unknown>) {
-          bytes += k.length * 2;
+          bytes += SLOT;
           stack.push((v as Record<string, unknown>)[k]);
         }
       }
-    } else {
-      bytes += NODE_OVERHEAD;
     }
   }
   return Math.ceil(bytes);
@@ -172,17 +192,57 @@ export class ApiCache {
 }
 
 /**
+ * The worker's V8 heap limit (`--max-old-space-size` plus the young generation), or `null` outside Node.
+ * `getBuiltinModule` rather than an import, so this module stays importable anywhere.
+ */
+function heapLimitBytes(): number | null {
+  try {
+    const proc = (globalThis as { process?: { getBuiltinModule?: (id: string) => unknown } }).process;
+    const v8 = proc?.getBuiltinModule?.('node:v8') as
+      | { getHeapStatistics(): { heap_size_limit: number } }
+      | undefined;
+    return v8?.getHeapStatistics().heap_size_limit ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * A cache budget as a SHARE of the worker's heap, capped at `capBytes` (the budget a large heap gets).
+ *
+ * Why (2026-10-21): the caches had fixed budgets of 64 MB + 24 MB, sized without reference to the heap they live
+ * in. Production runs each Nitro worker with --max-old-space-size=384, and the estimator undercounted feed pages
+ * ~1.8×, so the two caches could legitimately retain ~160 MB of a 384 MB heap. Workers died with "FATAL ERROR:
+ * Reached heap limit Allocation failed - JavaScript heap out of memory" (19 container restarts in ~1.5 h, heap at
+ * 78% on /admin/performance). A share scales with whatever heap the deploy gives a worker.
+ */
+export function heapShare(fraction: number, capBytes: number, limit = heapLimitBytes()): number {
+  if (!limit) return capBytes;
+  return Math.max(2 * 1024 * 1024, Math.min(capBytes, Math.floor(limit * fraction)));
+}
+
+/** Shares of the heap the two caches may fill; together 12%, leaving the rest to rendering and requests. */
+export const MAIN_CACHE_HEAP_SHARE = 0.08;
+export const VIEWER_FEED_CACHE_HEAP_SHARE = 0.04;
+
+/**
  * perf: per-viewer signed-in feed pages (`feed:v2:*`, one per user x surface x
  * filter, tens of KB each) get their own small cache so a burst of distinct
  * viewers can never evict the global hot keys (anon SWR feed, sidebar:*) from
  * the main cache. Routed by key prefix inside `apiCache` so cachedSWR and every
  * other caller keep using the single `apiCache` API unchanged.
  */
-export const viewerFeedCache = new ApiCache({ maxEntries: 1000, maxBytes: 24 * 1024 * 1024 });
+export const viewerFeedCache = new ApiCache({
+  maxEntries: 1000,
+  maxBytes: heapShare(VIEWER_FEED_CACHE_HEAP_SHARE, 24 * 1024 * 1024),
+});
 const VIEWER_FEED_PREFIX = 'feed:v2:';
 
-/** Main process cache (global keys + everything else): 5000 entries / 64 MB. */
-const mainCache = new ApiCache({ maxEntries: 5000, maxBytes: 64 * 1024 * 1024 });
+/** Main process cache (global keys + everything else): 5000 entries, 8% of the heap (at most 64 MB). */
+const mainCache = new ApiCache({
+  maxEntries: 5000,
+  maxBytes: heapShare(MAIN_CACHE_HEAP_SHARE, 64 * 1024 * 1024),
+});
 
 const pick = (key: string) => (key.startsWith(VIEWER_FEED_PREFIX) ? viewerFeedCache : mainCache);
 
