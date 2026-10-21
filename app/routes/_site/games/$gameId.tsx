@@ -1,9 +1,8 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { GameHub } from '@/components/games/GameHub';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { games } from '@/lib/games';
 import { buildMeta, buildCanonical, ogCardPath } from '@/lib/seo';
 import { jsonLdScript, videoGameSchema, breadcrumbSchema } from '@/lib/schema';
@@ -36,8 +35,7 @@ const fetchHub = createServerFn({ method: 'GET' })
   .handler(async ({ data: gameId }): Promise<HubPayload> => {
     const game = games.find((g) => g.id === gameId);
     if (!game) throw notFound();
-    const request = getRequest();
-    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    const session = await getRequestSession();
     const viewerId = session?.user.id ?? null;
     const [reviews, agg, guides, trickOfTheWeek] = await Promise.all([
       listReviews(gameId, viewerId),

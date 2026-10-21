@@ -1,9 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { HistoryList } from '@/components/history/HistoryList';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { prisma } from '@/lib/prisma.server';
 import { listHistory, type HistoryView } from '@/lib/history/history.server';
 
@@ -14,8 +13,7 @@ interface HistoryData {
 }
 
 const fetchHistory = createServerFn({ method: 'GET' }).handler(async (): Promise<HistoryData> => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+  const session = await getRequestSession();
   if (!session) return { items: [], nextCursor: null, paused: false };
   const [result, profile] = await Promise.all([
     listHistory(session.user.id, {}),

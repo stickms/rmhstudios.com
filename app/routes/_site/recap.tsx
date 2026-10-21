@@ -1,17 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { RecapColumn } from '@/components/feed/RecapColumn';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { getWeeklyRecap } from '@/lib/recap.server';
 
 // Generate the recap server-side so it's present at first paint / prefetched on
 // intent instead of fetched on mount. Signed-out visitors get `null` and the
 // column falls back to its client path (which 401s into the error state).
 const fetchRecap = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+  const session = await getRequestSession();
   if (!session) return { recap: null };
   return { recap: await getWeeklyRecap(session.user.id) };
 });
