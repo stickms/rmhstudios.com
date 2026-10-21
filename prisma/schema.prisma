@@ -2919,6 +2919,8 @@ model RMHarkLike {
   // The interest-profile builder samples a viewer's most recent likes
   // (where userId, order by createdAt desc, take 80) — this backs that scan.
   @@index([userId, createdAt(sort: Desc)])
+  // Per-post "recent likers" scans (where rmheetId, order by createdAt desc).
+  @@index([rmheetId, createdAt(sort: Desc)])
   @@map("rmheet_like")
 }
 
@@ -3735,6 +3737,8 @@ model DirectMessage {
   @@index([senderId])
   @@index([conversationId, attachFlags, createdAt])
   @@index([expiresAt])
+  // Unread-badge counts: conversationId IN (...) AND read = false AND senderId <> me.
+  @@index([conversationId, read, senderId])
   @@map("direct_message")
 }
 
@@ -5860,6 +5864,7 @@ model UserInventory {
 
   @@unique([userId, itemId])
   @@index([userId, kind])
+  @@index([userId, equipped])
   @@map("user_inventory")
 }
 

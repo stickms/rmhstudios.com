@@ -104,20 +104,25 @@ export const Route = createFileRoute('/api/messages/$conversationId')({
         // added a write round-trip to every conversation open / scroll-back. We do
         // read `count` off the batch payload (still non-blocking) to decrement the
         // viewer's denormalized DM-unread counter by exactly the number marked read.
-        void prisma.directMessage
-          .updateMany({
-            where: {
-              conversationId,
-              senderId: { not: userId },
-              read: false,
-              id: { in: items.map((m) => m.id) },
-            },
-            data: { read: true },
-          })
-          .then((res) => {
-            if (res.count > 0) void adjustDmUnread(userId, -res.count);
-          })
-          .catch((e) => console.error('mark-as-read failed:', e));
+        // perf: skip the write entirely when nothing on this page is an unread
+        // message from the other participant (the common case when scrolling back
+        // or re-opening a read thread). Same predicate as the updateMany below.
+        const hasUnreadFromOther = items.some((m) => !m.read && m.senderId !== userId);
+        if (hasUnreadFromOther)
+          void prisma.directMessage
+            .updateMany({
+              where: {
+                conversationId,
+                senderId: { not: userId },
+                read: false,
+                id: { in: items.map((m) => m.id) },
+              },
+              data: { read: true },
+            })
+            .then((res) => {
+              if (res.count > 0) void adjustDmUnread(userId, -res.count);
+            })
+            .catch((e) => console.error('mark-as-read failed:', e));
 
         const privacy = await getPairPrivacy(conversationId, [
           conversation.participantOneId,

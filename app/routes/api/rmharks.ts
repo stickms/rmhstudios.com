@@ -542,27 +542,24 @@ export const Route = createFileRoute('/api/rmharks')({
           });
 
           // Notify mentioned users (persisted MENTION notification + live SSE toast).
-          // Best-effort: never let notification fan-out fail the post creation.
-          try {
-            const author = item.user;
-            if (author) {
-              await notifyMentions({
-                content: rmhark.content,
-                author: {
-                  id: author.id,
-                  name: author.name ?? null,
-                  image: author.image ?? null,
-                  handle: author.handle ?? null,
-                },
-                postId: item.id,
-                entityType: 'rmhark',
-                entityId: item.id,
-                link: `/u/${author.handle ?? author.id}/post/${item.id}`,
-                timestamp: item.createdAt,
-              });
-            }
-          } catch (err) {
-            console.error('Mention notification error:', err);
+          // Best-effort and nothing downstream uses its result, so fire-and-forget:
+          // awaiting it put a user lookup + N notification inserts on the 201's path.
+          const mentionAuthor = item.user;
+          if (mentionAuthor) {
+            void notifyMentions({
+              content: rmhark.content,
+              author: {
+                id: mentionAuthor.id,
+                name: mentionAuthor.name ?? null,
+                image: mentionAuthor.image ?? null,
+                handle: mentionAuthor.handle ?? null,
+              },
+              postId: item.id,
+              entityType: 'rmhark',
+              entityId: item.id,
+              link: `/u/${mentionAuthor.handle ?? mentionAuthor.id}/post/${item.id}`,
+              timestamp: item.createdAt,
+            }).catch((err) => console.error('Mention notification error:', err));
           }
 
           // Achievements + progression (posting milestones, night-owl easter egg, XP,
