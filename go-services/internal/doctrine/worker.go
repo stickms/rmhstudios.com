@@ -28,6 +28,50 @@ type Worker struct {
 	wg   sync.WaitGroup
 	stop chan struct{}
 	once sync.Once
+
+	// tz caches the distinct user timezones for tzListTTL (see timezones).
+	tzMu    sync.Mutex
+	tzList  []string
+	tzAt    time.Time
+	fetchTZ func(context.Context) ([]string, error) // nil = distinctTimezones; tests inject
+	nowFn   func() time.Time                        // nil = time.Now; tests inject
+}
+
+// tzListTTL bounds how stale the distinct-timezone list may be. The list feeds
+// the per-minute Sahur check, and the underlying query is a DISTINCT scan of the
+// whole "user" table (20k rows read per call at the seeded scale, 1,440 calls a
+// day). A timezone first appearing inside the cache window is picked up at most
+// tzListTTL later; Sahur's activation window for a timezone is a full local
+// hour, so the worst case is a late start of ten minutes for the first user ever
+// to set that timezone during its 03:00 hour, and no effect otherwise.
+const tzListTTL = 10 * time.Minute
+
+// timezones returns the distinct user timezones, refreshed at most every
+// tzListTTL. A failed refresh returns its error and keeps the previous list for
+// the next attempt.
+func (w *Worker) timezones(ctx context.Context) ([]string, error) {
+	now := time.Now()
+	if w.nowFn != nil {
+		now = w.nowFn()
+	}
+	w.tzMu.Lock()
+	defer w.tzMu.Unlock()
+	if w.tzList != nil && now.Sub(w.tzAt) < tzListTTL {
+		return w.tzList, nil
+	}
+	fetch := w.distinctTimezones
+	if w.fetchTZ != nil {
+		fetch = w.fetchTZ
+	}
+	list, err := fetch(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if list == nil {
+		list = []string{}
+	}
+	w.tzList, w.tzAt = list, now
+	return list, nil
 }
 
 // New builds a doctrine Worker. Matches the FOUNDATION worker skeleton:
@@ -241,7 +285,7 @@ func (w *Worker) insertPuzzle(ctx context.Context, mode string, date time.Time, 
 // is 3 and creates a doctrine_sahur_session for (today, timezone) if one does
 // not already exist. Faithful to the Node checkSahurActivation.
 func (w *Worker) checkSahurActivation(ctx context.Context) error {
-	timezones, err := w.distinctTimezones(ctx)
+	timezones, err := w.timezones(ctx)
 	if err != nil {
 		return err
 	}

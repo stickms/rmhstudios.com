@@ -25,6 +25,7 @@ go_test(
     srcs = [
         "run_test.go",
         "seed_test.go",
+        "timezones_test.go",
     ],
     embed = [":doctrine"],
     deps = [
