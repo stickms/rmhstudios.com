@@ -315,6 +315,11 @@ fi
 # web must tolerate the new schema (expand/contract — never drop in the same
 # release that stops using a column); the other services are not rolled back.
 SMOKE="${SCRIPT_DIR}/smoke-test.sh"
+# Progress markers for deploy.sh's Discord checklist (it strips them from the
+# log); harmless noise when this script is run by hand.
+progress_stage() { echo "::deploy-stage::$1"; }
+progress_note() { echo "::deploy-note::$1"; }
+fmt_dur() { if [ "$1" -ge 60 ]; then printf '%dm %02ds' $(($1 / 60)) $(($1 % 60)); else printf '%ds' "$1"; fi; }
 smoke() { ORIGIN_HOST="$ORIGIN_HOST" bash "$SMOKE"; }
 
 reload_apache() {
@@ -332,6 +337,7 @@ reload_apache() {
 rollback() {
     local reason="$1" _i
     log "ROLLBACK: ${reason}"
+    progress_note "rolling back — ${reason}"
     "$DOCKER_BIN" logs --tail=50 "$new_container" 2>&1 | sed 's/^/[hotswap]   new> /' || true
     if ! "$DOCKER_BIN" inspect "$old_container" >/dev/null 2>&1; then
         log "  no ${old_container} to roll back to (first deploy?) — leaving ${target_color} live."
@@ -359,6 +365,8 @@ rollback() {
     exit "$EXIT_ROLLED_BACK"
 }
 
+progress_stage bake
+progress_note "smoke gate"
 # One-shot gate. A few retries absorb cold caches on the first requests.
 gate_ok=false
 for _ in 1 2 3; do
@@ -373,6 +381,9 @@ if [ "$BAKE_SECONDS" -gt 0 ] && "$DOCKER_BIN" inspect "$old_container" >/dev/nul
     restarts0=$("$DOCKER_BIN" inspect -f '{{.RestartCount}}' "$new_container" 2>/dev/null || echo 0)
     bake_end=$(( $(date +%s) + BAKE_SECONDS ))
     consecutive=0
+    bake_start=$(date +%s)
+    probes=0
+    probes_ok=0
     while [ "$(date +%s)" -lt "$bake_end" ]; do
         sleep "$BAKE_INTERVAL"
         running=$("$DOCKER_BIN" inspect -f '{{.State.Running}}' "$new_container" 2>/dev/null || echo false)
@@ -380,13 +391,16 @@ if [ "$BAKE_SECONDS" -gt 0 ] && "$DOCKER_BIN" inspect "$old_container" >/dev/nul
         if [ "$running" != "true" ] || [ "$restarts" != "$restarts0" ]; then
             rollback "${new_container} died or restarted during the bake (running=${running}, restarts ${restarts0}→${restarts})"
         fi
+        probes=$((probes + 1))
         if QUIET=1 smoke; then
             consecutive=0
+            probes_ok=$((probes_ok + 1))
         else
             consecutive=$((consecutive + 1))
             log "  bake probe failed (${consecutive}/${BAKE_FAIL_THRESHOLD})"
             [ "$consecutive" -ge "$BAKE_FAIL_THRESHOLD" ] && rollback "${consecutive} consecutive smoke failures during the bake"
         fi
+        progress_note "$(fmt_dur $(( $(date +%s) - bake_start )))/$(fmt_dur "$BAKE_SECONDS") · ${probes_ok}/${probes} probes ok"
     done
     log "Bake passed."
 fi

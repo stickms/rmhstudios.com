@@ -203,15 +203,18 @@ send_deploy_started() {
     fi
 
     set_github_status "pending" "Deploy started ($DEPLOY_SHORT_HASH)"
+    DEPLOY_ANNOUNCED=1
 }
 
 update_deploy_status() {
-    local status="$1"  # "success" or "fail"
+    local status="$1"  # "success", "fail", or "rolledback" (web auto-rolled back)
     local reason="${2:-}"  # optional failure reason
 
     if [ -z "$DISCORD_WEBHOOK" ]; then
         if [ "$status" = "success" ]; then
             set_github_status "success" "Deploy succeeded"
+        elif [ "$status" = "rolledback" ]; then
+            set_github_status "failure" "Auto-rolled back: $reason"
         else
             set_github_status "failure" "Deploy failed: $reason"
         fi
@@ -231,6 +234,10 @@ update_deploy_status() {
         color=65280    # green
         title=$(printf '[%s] Commit %s - deploy succeeded in %02d:%02d' "$env_label" "$DEPLOY_SHORT_HASH" "$mins" "$secs")
         set_github_status "success" "Deploy succeeded in ${mins}m${secs}s"
+    elif [ "$status" = "rolledback" ]; then
+        color=15105570 # orange — shipped, failed the bake, previous release restored
+        title="[$env_label] Commit $DEPLOY_SHORT_HASH - ↩️ auto-rolled back to previous release"
+        set_github_status "failure" "Auto-rolled back: $reason"
     else
         color=16711680 # red
         title="[$env_label] Commit $DEPLOY_SHORT_HASH - deploy failed: $reason"
@@ -238,8 +245,8 @@ update_deploy_status() {
     fi
 
     local payload
-    payload=$(printf '{"embeds":[{"title":"%s","description":"%s","color":%d,"footer":{"text":"%s"}}]}' \
-        "$title" "$DEPLOY_COMMIT_MSG" "$color" "$DEPLOY_AUTHOR")
+    payload=$(printf '{"embeds":[{"title":"%s","description":"%s","color":%d,"fields":%s,"footer":{"text":"%s"}}]}' \
+        "$title" "$DEPLOY_COMMIT_MSG" "$color" "$(stage_fields_json "$status")" "$DEPLOY_AUTHOR")
 
     if [ -n "$DEPLOY_MSG_ID" ]; then
         local edited=false
@@ -341,6 +348,83 @@ step_done() {
     log "  └─ done in ${elapsed}s"
 }
 
+# ── Discord pipeline checklist ──────────────────────────────────────────────
+# The deploy's Discord embed carries a live checklist of these stages, edited in
+# place as each one starts (`stage <key>`), so the channel shows WHERE a deploy
+# is — not just "deploying…" for six minutes. Coarser than step_start on
+# purpose: these are the phases a human cares about. `stage_note` adds detail to
+# the current line (the bake countdown, a rollback reason). Progress edits are
+# ONE short best-effort request each — never curl_retry — so a slow or down
+# Discord can't stretch a deploy; the final update_deploy_status keeps retries.
+STAGE_KEYS=(fetch pull migrate services swap bake health)
+STAGE_LABELS=("Fetch code" "Pull images" "Migrate database" "Start services" "Swap web (blue/green)" "Smoke test + bake" "Health checks")
+STAGE_CUR=-1
+STAGE_T0=0
+STAGE_DUR=()
+STAGE_NOTE=""
+# Progress edits wait until send_deploy_started has announced THIS commit — the
+# fetch stage runs before the reset, when HEAD is still the previous release.
+DEPLOY_ANNOUNCED=0
+
+fmt_dur() {
+    if [ "$1" -ge 60 ]; then printf '%dm %02ds' $(($1 / 60)) $(($1 % 60)); else printf '%ds' "$1"; fi
+}
+
+# stage_fields_json <running|success|fail|rolledback> — the embed's Pipeline field.
+stage_fields_json() {
+    local state="$1" i icon line lines="" now
+    now=$(date +%s)
+    for i in "${!STAGE_KEYS[@]}"; do
+        if [ "$STAGE_CUR" -lt 0 ] || [ "$i" -gt "$STAGE_CUR" ]; then
+            line="⬜ ${STAGE_LABELS[$i]}"
+        elif [ "$i" -lt "$STAGE_CUR" ]; then
+            line="✅ ${STAGE_LABELS[$i]} · $(fmt_dur "${STAGE_DUR[$i]:-0}")"
+        else
+            case "$state" in
+                success) icon="✅" ;; fail) icon="❌" ;; rolledback) icon="↩️" ;; *) icon="🔄" ;;
+            esac
+            line="${icon} ${STAGE_LABELS[$i]}"
+            [ "$state" != "running" ] && line="${line} · $(fmt_dur $((now - STAGE_T0)))"
+            [ -n "$STAGE_NOTE" ] && line="${line} · ${STAGE_NOTE}"
+        fi
+        lines="${lines}${lines:+\\n}${line}"
+    done
+    printf '[{"name":"Pipeline","value":"%s"}]' "$lines"
+}
+
+discord_progress() {
+    [ -n "$DISCORD_WEBHOOK" ] && [ -n "$DEPLOY_MSG_ID" ] && [ "$DEPLOY_ANNOUNCED" = 1 ] || return 0
+    [ "$STAGE_CUR" -ge 0 ] || return 0
+    local env_label payload
+    env_label=$(echo "$ENVIRONMENT" | tr '[:lower:]' '[:upper:]')
+    payload=$(printf '{"embeds":[{"title":"%s","description":"%s","color":%d,"fields":%s,"footer":{"text":"%s · elapsed %s"}}]}' \
+        "[$env_label] Commit $DEPLOY_SHORT_HASH - deploying · $((STAGE_CUR + 1))/${#STAGE_KEYS[@]} ${STAGE_LABELS[$STAGE_CUR]}" \
+        "$DEPLOY_COMMIT_MSG" 10181046 "$(stage_fields_json running)" "$DEPLOY_AUTHOR" \
+        "$(fmt_dur $(( $(date +%s) - DEPLOY_START_TIME )))")
+    curl -s -o /dev/null --max-time 5 -X PATCH -H "Content-Type: application/json" \
+        -d "$payload" "${DISCORD_WEBHOOK}/messages/${DEPLOY_MSG_ID}" 2>/dev/null || true
+}
+
+stage() {
+    local i now
+    now=$(date +%s)
+    for i in "${!STAGE_KEYS[@]}"; do
+        [ "${STAGE_KEYS[$i]}" = "$1" ] || continue
+        [ "$STAGE_CUR" -ge 0 ] && STAGE_DUR[STAGE_CUR]=$((now - STAGE_T0))
+        STAGE_CUR=$i
+        STAGE_T0=$now
+        STAGE_NOTE=""
+        discord_progress
+        return 0
+    done
+}
+
+# Stripped of JSON metacharacters: the note is spliced into the payload raw.
+stage_note() {
+    STAGE_NOTE=$(printf '%s' "$1" | tr -d '"\\')
+    discord_progress
+}
+
 # ── Helper: wait for a service port to be published on the host ──────────────
 # All four probed services publish on 127.0.0.1 (docker-compose.yml), so a
 # listening socket is the signal. Two things this has to get right:
@@ -431,6 +515,7 @@ if [ -z "${DEPLOY_SELF_RESTARTED:-}" ]; then
 fi
 
 # ── Step 1: Pull latest code ────────────────────────────────────────────────
+stage fetch
 step_start "Fetching latest code..."
 
 # Snapshot deploy.sh hash before pulling so we can detect self-updates.
@@ -524,6 +609,7 @@ send_deploy_started
 # enough free space to pull. Thresholds are env-overridable.
 #   DEPLOY_HEADROOM_GB     — free space the deploy must always leave (default 2)
 #   DEPLOY_PULL_RESERVE_GB — transient space the incoming image layers need (default 6)
+stage pull
 step_start "Pre-pull disk cleanup..."
 "$DOCKER_BIN" container prune -f > /dev/null 2>&1 || true
 "$DOCKER_BIN" image prune -f > /dev/null 2>&1 || true
@@ -769,6 +855,7 @@ if [ "$ENVIRONMENT" = "staging" ]; then
 fi
 
 # ── Step 3: Run database migrations ───────────────────────────────────────────
+stage migrate
 step_start "Running database migrations..."
 
 # Extract DB host and port from DATABASE_URL for diagnostics
@@ -943,6 +1030,7 @@ step_done
 #   All the OTHER services (socket, rmhbox, rmhtube, workers, minio, bot) start
 #   here in parallel as before — a brief blip on a websocket/worker reconnect is
 #   invisible, the user-facing 520 only ever came from the web port.
+stage services
 step_start "Starting containers (all services except web)..."
 if ! dc up -d --no-build --remove-orphans --scale web=0; then
     log "ERROR: docker compose up failed."
@@ -963,9 +1051,26 @@ step_done
 # failure flips traffic back automatically. Its exit code says which way it went
 # (see EXIT_* in hotswap-web.sh), so the report below names a rollback as one.
 # The deploy flock is held through the bake, so a newer push queues behind it.
+stage swap
 step_start "Hotswapping web container (blue/green, smoke + bake)..."
-hotswap_rc=0
-PROJECT_NAME="$PROJECT_NAME" \
+# hotswap-web.sh reports progress as `::deploy-stage::<key>` / `::deploy-note::<text>`
+# lines on its stdout; this loop turns them into checklist edits and passes every
+# other line through to the deploy log. Process substitution (not a pipe) so the
+# loop runs in THIS shell and its stage state survives; fd 200 is closed inside
+# for the same flock reason as the log tee above. The exit code rides out on the
+# last line because a process substitution's status is not otherwise visible.
+hotswap_rc=1
+while IFS= read -r line; do
+    case "$line" in
+        ::deploy-stage::*) stage "${line#::deploy-stage::}" ;;
+        ::deploy-note::*)  stage_note "${line#::deploy-note::}" ;;
+        ::deploy-rc::*)    hotswap_rc="${line#::deploy-rc::}" ;;
+        *)                 printf '%s\n' "$line" ;;
+    esac
+done < <(
+    exec 200>&-
+    rc=0  # `|| rc=$?` keeps errexit (inherited here) from eating the exit code
+    PROJECT_NAME="$PROJECT_NAME" \
      ENV_FILE="$ENV_FILE" \
      IMAGE_NAME="$IMAGE_NAME" \
      IMAGE_TAG="latest" \
@@ -973,12 +1078,14 @@ PROJECT_NAME="$PROJECT_NAME" \
      GREEN_PORT="${PORT_WEB_GREEN:-$((PORT_WEB + 10))}" \
      NETWORK="${PROJECT_NAME}_default" \
      DOCKER_BIN="$DOCKER_BIN" \
-     bash "${REPO_DIR}/deploy/hotswap-web.sh" || hotswap_rc=$?
+     bash "${REPO_DIR}/deploy/hotswap-web.sh" 2>&1 || rc=$?
+    echo "::deploy-rc::$rc"
+)
 case "$hotswap_rc" in
     0) ;;
     3)
         log "ERROR: new web failed its smoke test / bake — AUTO-ROLLED BACK to the previous container."
-        update_deploy_status fail "web failed smoke/bake — auto-rolled back to previous release"
+        update_deploy_status rolledback "web failed smoke/bake — previous release restored"
         exit 1
         ;;
     4)
@@ -1018,6 +1125,7 @@ check_supervisor() {
     return 1
 }
 
+stage health
 step_start "Running health checks (ports + supervisor, parallel)..."
 port_ok=0
 sup_ok=0
