@@ -77,12 +77,13 @@ see it. Concretely, in priority order:
 **In:** the Nitro web tier (SSR loaders, server functions, API routes, Nitro
 plugins), `lib/**/*.server.ts`, Prisma schema/indexes/queries, caching (L1/L2,
 HTTP cache headers), the Node realtime hubs and workers under `server/`, and
-CPU-bound endpoints (OG/image/sitemap/RSS).
+CPU-bound endpoints (OG/image/sitemap/RSS), and the Go fleet under
+`go-services/` (the `supervisor`'s six workers, `status`, `assets`). The Go
+services share the production Postgres with the web tier, so a worker's polling
+or per-item queries are user-facing latency, not a separate system's problem.
 
 **Out:** client bundles, CSS, rendering performance in the browser (covered by
-the 10-08/10-09 passes); the Go fleet (`go-services/` — it runs background
-workers, not request paths, and Bazel is not available to the implementing
-agents; a follow-up pass if the baseline shows it matters); infrastructure
+the 10-08/10-09 passes); infrastructure
 changes on the VPS (PgBouncer, Postgres tuning, Apache/Cloudflare — proposals
 go in the report, changes go through `deploy/` and an operator).
 
@@ -91,7 +92,7 @@ libraries (Prisma, Better Auth, TanStack Start) — the rules say why.
 
 ## 4. Phases
 
-P0 and P1 **overlap**: WS0–WS6 start together, each in its own git worktree, so
+P0 and P1 **overlap**: WS0–WS7 start together, each in its own git worktree, so
 no agent waits for another. What WS0 gates is not the start of a workstream but
 the kind of evidence it may produce, in two stages:
 
@@ -107,7 +108,7 @@ the kind of evidence it may produce, in two stages:
 | Phase | Who | Output | Gate to next phase |
 | --- | --- | --- | --- |
 | **P0 — Instrument & baseline** | one agent (WS0), concurrent with Stage A of P1 | the harness, the seeded perf dataset, the wired `Server-Timing` phases, `results/baseline.json` + `results/ws-0.md` | baseline exists for every route in the route list, both auth modes; coordinator ratifies the budgets in `02-budgets.md` §4 against it, merges WS0 and sets the ready marker |
-| **P1 — Parallel workstreams** | one agent per workstream (WS1–WS6): Stage A from the start, Stage B after the marker | commits on a workstream branch + `results/ws-N.md`, each Shipped row tagged `exact` or `latency` | each workstream meets its exit criteria or closes with "measured, no win" |
+| **P1 — Parallel workstreams** | one agent per workstream (WS1–WS7): Stage A from the start, Stage B after the marker | commits on a workstream branch + `results/ws-N.md`, each Shipped row tagged `exact` or `latency` | each workstream meets its exit criteria or closes with "measured, no win" |
 | **P2 — Integration** | coordinator | workstreams merged in the order in `04-workstreams.md` §Merge order; full commit gate on the merged tree; full harness re-run; `06-report.md` | merged tree green; no route regressed past tolerance (`02-budgets.md` §3) |
 | **P3 — Production verification** | operator, after deploy | RUM/synthetic windows per [`performance-slo.md`](../performance-slo.md) | the rollback policy there applies unchanged |
 

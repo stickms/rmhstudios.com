@@ -29,8 +29,10 @@ shipped row, evidence class (`exact` / `latency`), and the link.
 | WS | Shipped | Rejected | Deferred | Headline | Ledger |
 |---|---:|---:|---:|---|---|
 | 0 | | | | | [`results/ws-0.md`](results/ws-0.md) |
-| … | | | | | `results/ws-N.md` |
+| 1–7 | | | | | `results/ws-N.md` (WS7: Go services) |
 
+Rows run WS0 to WS7; WS7 (Go services) reports `go test -bench` and
+`pg_stat_statements` evidence (`01-method.md` §1.7) and its `make test` result.
 Stage A changes that failed re-measurement in Stage B are counted as rejected.
 
 ## 3. Regressions checked
