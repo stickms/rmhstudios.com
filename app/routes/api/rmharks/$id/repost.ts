@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { feedEventBus } from '@/lib/feed-sse';
 import { createNotification, removeNotification } from '@/lib/notifications.server';
+import { viewerVisiblePostWhere } from '@/lib/feed/audience.server';
 
 export const Route = createFileRoute('/api/rmharks/$id/repost')({
   server: {
@@ -64,6 +65,16 @@ export const Route = createFileRoute('/api/rmharks/$id/repost')({
 
             return Response.json({ success: true, reposted: false });
           } else {
+            // Reposting republishes a post to the reposter's followers, so the
+            // reposter must be able to see it: not deleted, audience, blocks. A
+            // post they cannot see answers 404, the same as one that does not exist
+            // (un-reposting above stays allowed so an old repost can always be undone).
+            const visible = await prisma.rMHark.findFirst({
+              where: { id, ...(await viewerVisiblePostWhere(userId)) },
+              select: { id: true },
+            });
+            if (!visible) return Response.json({ error: 'Not found' }, { status: 404 });
+
             const [, updated] = await prisma.$transaction([
               prisma.rMHarkRepost.create({ data: { rmheetId: id, userId } }),
               prisma.rMHark.update({
