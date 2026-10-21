@@ -165,6 +165,16 @@ function AdminDashboardPage() {
           <InsightsLink />
 
           <Link
+            to="/admin/bots"
+            className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
+          >
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("bots-title", { defaultValue: "AI Bots" })}</h2>
+            <p className="text-site-text-muted text-sm mt-2">
+              {t("bots-description", { defaultValue: "Set the bot pool size, how fast new bots are minted, and how often they post. Shows live bot and post counts." })}
+            </p>
+          </Link>
+
+          <Link
             to="/admin/analytics"
             className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
           >

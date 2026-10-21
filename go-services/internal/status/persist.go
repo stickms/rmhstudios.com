@@ -4,11 +4,28 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 // HistoryFileName is the on-disk file the uptime history is persisted to,
 // matching the Node service (server/status/index.ts).
 const HistoryFileName = "status-history.json"
+
+// ExtendedFileName holds everything the Node format has no room for: the daily
+// rollups, the recent-sample ring and the running counters. It sits beside the
+// history file so the Node-compatible file stays exactly that.
+const ExtendedFileName = "status-extended.json"
+
+// IncidentsFileName holds incidents, maintenance windows and announcements.
+const IncidentsFileName = "status-incidents.json"
+
+// extendedState is the on-disk shape of ExtendedFileName.
+type extendedState struct {
+	Version  int                  `json:"version"`
+	Daily    map[string][]Bucket  `json:"daily"`
+	Recent   map[string][]Sample  `json:"recent"`
+	Counters map[string]*Counters `json:"counters"`
+}
 
 // ResolveHistoryPath resolves the uptime-history file path exactly as the Node
 // service does:
@@ -35,9 +52,127 @@ func ResolveHistoryPath(dataDirEnv string) string {
 func (p *Prober) EnableHistoryPersistence(path string, logger Warner) {
 	p.mu.Lock()
 	p.historyPath = path
+	p.extPath = filepath.Join(filepath.Dir(path), ExtendedFileName)
 	p.logger = logger
 	p.mu.Unlock()
 	p.LoadHistory()
+	p.loadExtended()
+}
+
+// loadExtended reads the extended-state file. Like LoadHistory it tolerates a
+// missing or corrupt file. A service with hourly history but no daily rollup —
+// the first boot after this file was introduced — has its daily series rebuilt
+// from the hourly one, so the long view starts with what is already known.
+func (p *Prober) loadExtended() {
+	p.mu.RLock()
+	path := p.extPath
+	p.mu.RUnlock()
+	if path == "" {
+		return
+	}
+
+	var st extendedState
+	data, err := os.ReadFile(path)
+	if err == nil {
+		if jerr := json.Unmarshal(data, &st); jerr != nil {
+			p.warn("status: extended history corrupt — rebuilding", "path", path, "error", jerr)
+			st = extendedState{}
+		}
+	} else if !os.IsNotExist(err) {
+		p.warn("status: could not read extended history", "path", path, "error", err)
+	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	for name, h := range p.hist {
+		h.mu.Lock()
+		if d, ok := st.Daily[name]; ok && len(d) > 0 {
+			if len(d) > p.maxDays {
+				d = d[len(d)-p.maxDays:]
+			}
+			h.daily = d
+		} else if len(h.buckets) > 0 {
+			h.daily = rollupDaily(h.buckets)
+		}
+		if r, ok := st.Recent[name]; ok {
+			if p.recentCap > 0 && len(r) > p.recentCap {
+				r = r[len(r)-p.recentCap:]
+			}
+			h.recent = r
+		}
+		if c, ok := st.Counters[name]; ok && c != nil {
+			if c.Codes == nil {
+				c.Codes = map[string]int{}
+			}
+			if c.Errors == nil {
+				c.Errors = map[string]int{}
+			}
+			h.ctr = c
+		}
+		h.mu.Unlock()
+	}
+}
+
+// saveExtendedLocked writes the extended state atomically. Caller holds p.mu.
+func (p *Prober) saveExtendedLocked() {
+	if p.extPath == "" {
+		return
+	}
+	st := extendedState{
+		Version:  1,
+		Daily:    make(map[string][]Bucket, len(p.hist)),
+		Recent:   make(map[string][]Sample, len(p.hist)),
+		Counters: make(map[string]*Counters, len(p.hist)),
+	}
+	for _, t := range p.targets {
+		h := p.hist[t.Name]
+		if h == nil {
+			continue
+		}
+		h.mu.Lock()
+		st.Daily[t.Name] = append([]Bucket(nil), h.daily...)
+		st.Recent[t.Name] = append([]Sample(nil), h.recent...)
+		if h.ctr != nil {
+			cp := *h.ctr
+			cp.Codes = copyCounts(h.ctr.Codes)
+			cp.Errors = copyCounts(h.ctr.Errors)
+			cp.Changes = append([]int64(nil), h.ctr.Changes...)
+			st.Counters[t.Name] = &cp
+		}
+		h.mu.Unlock()
+	}
+	data, err := json.Marshal(st)
+	if err != nil {
+		p.warn("status: could not encode extended history", "error", err)
+		return
+	}
+	if err := writeFileAtomic(p.extPath, data); err != nil {
+		p.lastSaveErr = err.Error()
+		p.warn("status: could not persist extended history", "path", p.extPath, "error", err)
+	}
+}
+
+func copyCounts(m map[string]int) map[string]int {
+	out := make(map[string]int, len(m))
+	for k, v := range m {
+		out[k] = v
+	}
+	return out
+}
+
+// writeFileAtomic writes data to path via a tmp file and a rename, creating the
+// directory if needed, so a crash mid-write never leaves a truncated file.
+func writeFileAtomic(path string, data []byte) error {
+	if dir := filepath.Dir(path); dir != "" {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return err
+		}
+	}
+	tmp := path + ".tmp"
+	if err := os.WriteFile(tmp, data, 0o644); err != nil {
+		return err
+	}
+	return os.Rename(tmp, path)
 }
 
 // LoadHistory reads the persisted history file (if present) and seeds each
@@ -99,17 +234,20 @@ func (p *Prober) LoadHistory() {
 // when persistence is disabled (historyPath empty). Best-effort: errors are
 // logged, never returned.
 func (p *Prober) SaveHistory() {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
+	// The full lock, not the read lock: a save records its own outcome
+	// (lastSaveAt / lastSaveErr) for the prober-health panel.
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	if p.historyPath == "" {
 		return
 	}
 	p.saveHistoryLocked()
+	p.saveExtendedLocked()
 }
 
 // saveHistoryLocked writes the rolling history to historyPath atomically
 // (tmp file + rename), mirroring Node's saveHistory(). The caller MUST hold
-// p.mu (read or write). Best-effort: failures are logged, never returned.
+// p.mu for writing. Best-effort: failures are logged, never returned.
 func (p *Prober) saveHistoryLocked() {
 	obj := make(map[string][]Bucket, len(p.targets))
 	for _, t := range p.targets {
@@ -141,12 +279,17 @@ func (p *Prober) saveHistoryLocked() {
 
 	tmp := p.historyPath + ".tmp"
 	if err := os.WriteFile(tmp, data, 0o644); err != nil {
+		p.lastSaveErr = err.Error()
 		p.warn("status: could not write history tmp", "path", tmp, "error", err)
 		return
 	}
 	if err := os.Rename(tmp, p.historyPath); err != nil {
+		p.lastSaveErr = err.Error()
 		p.warn("status: could not persist history", "path", p.historyPath, "error", err)
+		return
 	}
+	p.lastSaveAt = time.Now()
+	p.lastSaveErr = ""
 }
 
 func (p *Prober) warn(msg string, args ...any) {

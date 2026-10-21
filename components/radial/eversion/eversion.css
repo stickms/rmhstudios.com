@@ -9,9 +9,10 @@
    canvas animates continuously and a viewport-sized backdrop-filter under an
    animating layer re-blurs in full every frame (components/radial/README.md).
 
-   Loaded by `@import` at the top of radial.css, which `SiteShell` already
-   imports — the overlay (T31) lives inside the shell's hub, so this file needs
-   no import of its own and `EversionOverlay.tsx` must not add one.
+   Imported by `EversionRoot.tsx`, which `__root.tsx` mounts on every page
+   (amended 2026-10-21: it used to be radial.css's, and so only the shell's): a
+   transition that leaves or enters a full-screen route draws its layers at the
+   top of <body>, where the shell's stylesheet is not loaded.
    ========================================================================== */
 
 /* The timeline's WRAP curve for the sphere's radius and centre: a quintic from rest
@@ -195,12 +196,138 @@ html.eversion-live .radial-shell:has(.radial-hub[data-phase='everting']) .radial
    the universal selector is paid for only for the length of a capture.
 
    The hub is spared: the destination is captured while it is still open and
-   moving on screen (amended 2026-10-19), and it is not part of the picture. */
-html[data-eversion-settle] *:not(.radial-hub, .radial-hub *),
-html[data-eversion-settle] *:not(.radial-hub, .radial-hub *)::before,
-html[data-eversion-settle] *:not(.radial-hub, .radial-hub *)::after {
+   moving on screen (amended 2026-10-19), and it is not part of the picture. So
+   is the globe that pops up out of a pressed link (amended 2026-10-21), for the
+   same reason. */
+html[data-eversion-settle] *:not(.radial-hub, .radial-hub *, .evert-popup, .evert-popup *),
+html[data-eversion-settle] *:not(.radial-hub, .radial-hub *, .evert-popup, .evert-popup *)::before,
+html[data-eversion-settle] *:not(.radial-hub, .radial-hub *, .evert-popup, .evert-popup *)::after {
   animation-duration: 0.001ms !important;
   animation-delay: 0s !important;
   transition-duration: 0.001ms !important;
   transition-delay: 0s !important;
+}
+
+/* ── The pop-up globe (amended 2026-10-21) ─────────────────────────────────
+   Every page transition runs the effect, and one that did not start on the
+   hub's globe gets this one (`popup.ts`): it blooms out of the press point,
+   turns while the destination renders behind the frozen page, and is handed
+   over exactly as the hub's globe is - from the effect's first frame it swells
+   and travels onto the sphere on WRAP's own curve and dissolves into it.
+
+   Body-level and one z-step over the run's body-level layers (`.eversion-overlay`
+   at `--z-hub-overlay` - 1). Only `scale`, `transform`, `rotate` and `opacity`
+   move, all on the compositor; nothing on it is focusable or announced. The
+   meridians turn by squashing (`scale` on x), the cheapest honest way to show a
+   sphere spinning. Colours are the theme's. */
+.evert-popup {
+  position: fixed;
+  left: var(--popup-x);
+  top: var(--popup-y);
+  z-index: calc(var(--z-hub-overlay) + 1);
+  width: var(--popup-size);
+  height: var(--popup-size);
+  border-radius: 50%;
+  overflow: hidden;
+  pointer-events: none;
+  contain: layout paint style;
+  /* The page's own surface, lit from the top left and shaded toward the accent at the limb: the sphere it
+     dissolves into is the page wrapped onto a globe, so it is the page's colour, not a coloured marble. */
+  background: radial-gradient(
+    circle at 32% 28%,
+    var(--site-surface) 0%,
+    color-mix(in oklab, var(--site-accent) 10%, var(--site-surface)) 42%,
+    color-mix(in oklab, var(--site-accent) 30%, var(--site-surface)) 82%,
+    color-mix(in oklab, var(--site-accent) 48%, var(--site-surface)) 100%
+  );
+  border: var(--site-border-width, 1px) solid var(--site-border-bright, var(--site-border));
+  box-shadow: var(--site-shadow-sm, none);
+  transform-origin: var(--popup-ox) var(--popup-oy);
+  animation: evert-popup-in var(--evert-pop-in, 0.52s) var(--evert-ease-pop, ease-out) both;
+  will-change: transform, opacity;
+}
+.evert-popup__meridian,
+.evert-popup__equator {
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in oklab, var(--site-accent) 32%, transparent);
+}
+.evert-popup__meridian {
+  animation: evert-popup-turn 2.4s linear infinite;
+}
+.evert-popup__meridian:nth-child(2) {
+  animation-delay: -0.8s;
+}
+.evert-popup__meridian:nth-child(3) {
+  animation-delay: -1.6s;
+}
+.evert-popup__equator {
+  inset: 42% 6%;
+}
+@keyframes evert-popup-in {
+  from {
+    scale: 0;
+  }
+  to {
+    scale: 1;
+  }
+}
+@keyframes evert-popup-turn {
+  0% {
+    scale: 1 1;
+    opacity: 0.2;
+  }
+  50% {
+    scale: 0.04 1;
+    opacity: 1;
+  }
+  100% {
+    scale: 1 1;
+    opacity: 0.2;
+  }
+}
+/* The hand-over: the hub globe's `globe-swell` / `globe-dissolve`, about the globe's own centre. */
+.evert-popup[data-eversion-swell] {
+  transform-origin: 50% 50%;
+  animation:
+    evert-popup-swell var(--eversion-wrap, 700ms) var(--eversion-ease-wrap) both,
+    evert-popup-dissolve calc(var(--eversion-wrap, 700ms) * 0.45) cubic-bezier(0.4, 0, 1, 1)
+      calc(var(--eversion-wrap, 700ms) * 0.45) both;
+}
+@keyframes evert-popup-swell {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translate(var(--eversion-dx, 0px), var(--eversion-dy, 0px))
+      scale(var(--eversion-swell, 1));
+  }
+}
+@keyframes evert-popup-dissolve {
+  to {
+    opacity: 0;
+  }
+}
+/* No run after all: back into the press point it came out of. */
+.evert-popup[data-leaving] {
+  animation: evert-popup-out 0.32s cubic-bezier(0.4, 0, 1, 1) both;
+}
+@keyframes evert-popup-out {
+  from {
+    scale: 1;
+  }
+  to {
+    scale: 0;
+  }
+}
+/* The site's own Reduce motion switch: no globe at all (the run is not eligible either). */
+html.reduce-motion .evert-popup {
+  display: none;
+}
+@media (forced-colors: active) {
+  .evert-popup {
+    border-color: CanvasText;
+    background: Canvas;
+  }
 }

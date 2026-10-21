@@ -3,6 +3,8 @@ package status
 import (
 	"context"
 	"net/http"
+	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -13,9 +15,19 @@ type Config struct {
 	ProbeTimeout  time.Duration
 	BucketDur     time.Duration
 	MaxBuckets    int
+	// MaxDays is how many daily rollups are retained (default 90).
+	MaxDays int
+	// RecentSamples is the size of each service's raw-check ring (default 240).
+	RecentSamples int
+	// IncidentOpenAfter / IncidentCloseAfter debounce automatic incidents
+	// (defaults 2 and 2): a failure streak shorter than OpenAfter checks is a
+	// blip, and CloseAfter good checks in a row resolve an incident.
+	IncidentOpenAfter  int
+	IncidentCloseAfter int
 	// HistoryPath, when non-empty, enables persistence of the rolling uptime
 	// history to that file (Node's status-history.json) so percentages survive
-	// restarts. Existing history is loaded on New.
+	// restarts. Existing history is loaded on New. The extended history and the
+	// incident store are persisted beside it.
 	HistoryPath string
 	// Logger receives non-fatal warnings (e.g. history persistence problems).
 	// nil disables logging.
@@ -24,12 +36,30 @@ type Config struct {
 	// /api/slo and rendered on the dashboard. The zero value takes the defaults
 	// in SLOConfig.normalise (99.9% over 1h/6h windows, a 30-day budget).
 	SLO SLOConfig
+
+	// PageURL is the status page's own public URL (feeds, badges and webhooks
+	// link back to it). PageName is its display name.
+	PageURL  string
+	PageName string
+	// AdminToken enables the write API under /api/admin/ (incidents,
+	// maintenance, announcements). Empty disables it entirely.
+	AdminToken string
+	// WebhookURLs receive incident and maintenance notifications; Discord and
+	// Slack URLs get their native formats. WebhookSecret signs generic ones.
+	WebhookURLs   []string
+	WebhookSecret string
+	// Announcement is an optional static banner (STATUS_ANNOUNCEMENT).
+	Announcement      string
+	AnnouncementLevel string
+	AnnouncementLink  string
 }
 
 // Service orchestrates probing and HTTP serving.
 type Service struct {
 	cfg       Config
 	prober    *Prober
+	store     *Store
+	notifier  *WebhookNotifier
 	startedAt time.Time
 }
 
@@ -47,11 +77,32 @@ func New(cfg Config) *Service {
 	if cfg.MaxBuckets == 0 {
 		cfg.MaxBuckets = 90
 	}
+	if cfg.MaxDays <= 0 {
+		cfg.MaxDays = 90
+	}
+	if cfg.RecentSamples <= 0 {
+		cfg.RecentSamples = 240
+	}
+	if cfg.IncidentOpenAfter <= 0 {
+		cfg.IncidentOpenAfter = 2
+	}
+	if cfg.IncidentCloseAfter <= 0 {
+		cfg.IncidentCloseAfter = 2
+	}
+	if cfg.PageName == "" {
+		cfg.PageName = "RMH Studios"
+	}
+	cfg.PageURL = strings.TrimRight(cfg.PageURL, "/")
 
 	p := NewProber(cfg.Targets)
 	p.timeout = cfg.ProbeTimeout
 	p.bucketDur = cfg.BucketDur
 	p.maxBuckets = cfg.MaxBuckets
+	p.interval = cfg.ProbeInterval
+	p.maxDays = cfg.MaxDays
+	p.recentCap = cfg.RecentSamples
+	p.openAfter = cfg.IncidentOpenAfter
+	p.closeAfter = cfg.IncidentCloseAfter
 
 	// Enable history persistence (load existing buckets now) before any probe
 	// runs, so the first /api/status already reflects pre-restart uptime.
@@ -59,14 +110,39 @@ func New(cfg Config) *Service {
 		p.EnableHistoryPersistence(cfg.HistoryPath, cfg.Logger)
 	}
 
-	return &Service{cfg: cfg, prober: p, startedAt: time.Now()}
+	notifier := NewWebhookNotifier(cfg.WebhookURLs, cfg.WebhookSecret, cfg.PageURL, cfg.Logger)
+	storePath := ""
+	if cfg.HistoryPath != "" {
+		storePath = filepath.Join(filepath.Dir(cfg.HistoryPath), IncidentsFileName)
+	}
+	var n Notifier
+	if notifier != nil {
+		n = notifier
+	}
+	store := NewStore(cfg.Targets, storePath, cfg.Logger, n)
+	store.SetStaticAnnouncement(cfg.Announcement, cfg.AnnouncementLevel, cfg.AnnouncementLink)
+
+	p.inMaintenance = store.InMaintenance
+	p.onEvents = store.HandleEvents
+
+	return &Service{cfg: cfg, prober: p, store: store, notifier: notifier, startedAt: time.Now()}
 }
+
+// Store exposes the incident store (tests, cmd wiring).
+func (s *Service) Store() *Store { return s.store }
+
+// Prober exposes the prober (tests).
+func (s *Service) Prober() *Prober { return s.prober }
 
 // Start fires an initial probe immediately then probes on the configured interval
 // until ctx is cancelled. It runs in a goroutine and returns immediately.
 func (s *Service) Start(ctx context.Context) {
+	if s.notifier != nil {
+		go s.notifier.Run(ctx)
+	}
 	go func() {
 		s.prober.ProbeOnce(ctx)
+		s.store.Tick(time.Now())
 		ticker := time.NewTicker(s.cfg.ProbeInterval)
 		defer ticker.Stop()
 		for {
@@ -78,12 +154,23 @@ func (s *Service) Start(ctx context.Context) {
 				return
 			case <-ticker.C:
 				s.prober.ProbeOnce(ctx)
+				s.store.Tick(time.Now())
 			}
 		}
 	}()
 }
 
+// View computes the page model at now.
+func (s *Service) View(now time.Time) *View {
+	v := BuildView(s.prober, s.store, s.cfg.SLO, s.startedAt, now)
+	if s.notifier != nil {
+		v.Self.Notifiers = len(s.notifier.URLs)
+	}
+	v.Self.AdminEnabled = s.cfg.AdminToken != ""
+	return v
+}
+
 // Handler returns the HTTP mux for the status service.
 func (s *Service) Handler() http.Handler {
-	return newDashboard(s.prober, s.startedAt, s.cfg.SLO)
+	return withGzip(newDashboard(s))
 }

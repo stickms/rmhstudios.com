@@ -12631,3 +12631,20 @@ model NightrailTrickVote {
   @@index([userId])
   @@map("nightrail_trick_vote")
 }
+
+/// Admin-tunable bot-worker knobs (/admin/bots). A singleton: the only row is
+/// id = "default". The Go bot-worker re-reads it every tick, so a save applies
+/// within a minute; until a row exists the worker uses its BOT_* env defaults.
+/// Bounds are enforced in the admin API (zod) and again in the worker's clamp.
+model BotWorkerSettings {
+  id                 String   @id @default("default") @db.VarChar(20)
+  targetBotCount     Int      @default(20) // pool size the worker tops up to
+  createBatch        Int      @default(6) // bots minted per top-up pass
+  createIntervalMin  Int      @default(120) // minutes between top-up passes
+  postRateMultiplier Float    @default(1) // scales every bot's posts/day; 0 pauses posting
+  maxPostsPerTick    Int      @default(5) // cap on posts per 5-minute tick
+  updatedById        String?
+  updatedAt          DateTime @updatedAt
+
+  @@map("bot_worker_settings")
+}

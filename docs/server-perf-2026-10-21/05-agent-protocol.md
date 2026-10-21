@@ -8,9 +8,36 @@ dispatch prompt.
 
 Read, in this order: [`index.md`](index.md), [`03-rules.md`](03-rules.md), your
 section of [`04-workstreams.md`](04-workstreams.md), [`01-method.md`](01-method.md)
-§2–3, [`02-budgets.md`](02-budgets.md) §2–4, and `results/ws-0.md` (P1 only).
+§0 and §2–3, [`02-budgets.md`](02-budgets.md) §2–4, and, from Stage B,
+`results/ws-0.md`.
 Then the repo's `/CLAUDE.md` and the `CLAUDE.md` of every directory you will
 edit.
+
+## 0.1 The two stages
+
+You start at the same time as WS0, so you work in two stages
+(`index.md` §4):
+
+- **Stage A — now.** No harness yet. Read the code paths, find unbounded reads,
+  N+1s, sequential awaits, missing cache policies and per-event work; write the
+  scan scripts your workstream calls for; draft fixes with their correctness
+  tests. Commit a change only if its evidence is `exact` (`01-method.md` §0):
+  query counts from a vitest test that counts Prisma calls, or a `vite dev`
+  measurement; payload bytes; cache headers. No latency claims. Do not edit the
+  WS0-owned files (`04-workstreams.md` §Concurrency).
+- **Stage B — after the coordinator's ready marker.** Between leads, check for
+  the marker (the path is in your dispatch prompt). When it exists:
+  1. `git merge --no-edit <coordinator branch>` into your branch.
+     **Merge, never rebase.**
+  2. `pnpm install --frozen-lockfile --offline` if the lockfile changed.
+  3. Create your database from the template and copy `.dataset.json` (§1).
+  4. Read `results/ws-0.md` and `baseline-querylog.txt`; re-prioritise your
+     leads; re-baseline your routes; **re-measure every Stage A change** before
+     and after, and revert any that shows no win (§3 step 6).
+
+If Stage A is exhausted and the marker has not appeared, do not busy-poll: wait
+with `sleep 120` between checks, at most 30 checks, then finish with what you
+have and say so in your final message.
 
 ## 1. Workspace
 
@@ -34,13 +61,18 @@ database or the template.
 
 ## 2. Building and serving
 
-The box is shared by several agents. **Every `pnpm build` goes through the
-build lock**, or parallel builds starve each other and every latency number in
-the session is garbage:
+The box is shared by several agents. **Every heavy command goes through one
+lock** (`01-method.md` §2), or parallel builds, type-checks and commits starve
+each other and every latency number in the session is garbage:
 
 ```bash
 flock /tmp/rmh-perf-build.lock pnpm build
+flock /tmp/rmh-perf-build.lock pnpm exec tsc --noEmit
+flock /tmp/rmh-perf-build.lock git commit ...     # the hook runs the gate, which runs tsc
 ```
+
+Targeted `pnpm exec vitest run <paths>` and eslint on single files may run
+unlocked; the whole suite and `pnpm build` never do.
 
 Serve the build on your port, with bench headers on:
 
@@ -64,7 +96,8 @@ payload bytes and headers — never for latency.
 For each lead in your section, in the order you judge most valuable:
 
 1. **Baseline** the routes it touches (two interleaved runs once you have a
-   change to compare against — `01-method.md` §2).
+   change to compare against — `01-method.md` §2). In Stage A the baseline is
+   the exact count or byte figure on the unchanged tree.
 2. **Diagnose** with the instruments: phases, query counts, the query log,
    `EXPLAIN`, a `--cpu-prof` of the server process if time is in `render` or
    unaccounted.
@@ -74,13 +107,15 @@ For each lead in your section, in the order you judge most valuable:
 5. **Measure** after, same worktree, same session.
 6. **Decide:** a win inside the rules → commit (step 4 of this protocol) and add
    a results row. No win → `git checkout -- .` / revert, and add a **rejected**
-   row with the number. Both are progress.
+   row with the number. Both are progress. A Stage A commit is provisional: in
+   Stage B re-measure it for latency, and `git revert` it if it shows none.
 
 Stop a lead when its routes are inside budget. Don't polish a route that is
 already inside budget unless it is on every request (the shell, the wrapper).
 
 ## 4. Committing
 
+- Run the commit under the lock: `flock /tmp/rmh-perf-build.lock git commit ...`.
 - One idea per commit. The message: what changed, why, and the number
   (`/: signed p50 TTFB 182 → 121 ms, queries 19 → 11`).
 - The commit hook runs `pnpm check:consistency`. If it fails, fix the cause;
@@ -100,8 +135,8 @@ commit. Exactly this shape, so the coordinator can merge six of them:
 Worktree baseline taken <date/time>, commit <sha>. Environment deviations: <none | …>.
 
 ## Shipped
-| # | Change | Route(s) | Metric | Before | After | Commit | Correctness test |
-|---|---|---|---|---:|---:|---|---|
+| # | Change | Route(s) | Metric | Before | After | Evidence | Commit | Correctness test |
+|---|---|---|---|---:|---:|---|---|---|
 
 ## Rejected (measured, no win)
 | # | Idea | Route(s) | Metric | Before | After | Why it didn't help |
@@ -121,6 +156,10 @@ Worktree baseline taken <date/time>, commit <sha>. Environment deviations: <none
 ## Commands
 <the exact commands that produced the numbers above>
 ```
+
+`Evidence` is `exact` (counts, bytes, headers) or `latency` (`01-method.md` §0).
+A Stage A change later re-measured for latency is moved to Rejected if it showed
+no win.
 
 ## 6. Finishing
 

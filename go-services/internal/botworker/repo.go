@@ -29,8 +29,11 @@ import (
 	"context"
 	crand "crypto/rand"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 
 	"github.com/rmhstudios/rmh-go/pkg/db"
 	"github.com/rmhstudios/rmh-go/pkg/telemetry"
@@ -51,6 +54,11 @@ type Repo interface {
 	InsertPost(ctx context.Context, userID, content string, imageURLs []string) (string, error)
 	// UpdateBotLastPostAt sets botLastPostAt = now for the given user id.
 	UpdateBotLastPostAt(ctx context.Context, userID string) error
+	// BotPersona returns one bot's persona text.
+	BotPersona(ctx context.Context, botID string) (string, error)
+	// LoadSettings returns the admin-saved settings row, or nil when none
+	// has been saved.
+	LoadSettings(ctx context.Context) (*Settings, error)
 
 	// ─── Reply tick ──────────────────────────────────────────────────
 	RecentComments(ctx context.Context, since time.Time) ([]CommentRow, error)
@@ -237,3 +245,43 @@ func randSuffix() uint32 {
 	return binary.BigEndian.Uint32(b[:])
 }
 
+// botPersonaQuery reads one bot's persona.
+const botPersonaQuery = `SELECT COALESCE("botPersona", '') FROM "user" WHERE id = $1 AND "isBot" = true`
+
+// BotPersona returns one bot's persona text.
+func (r *PGRepo) BotPersona(ctx context.Context, botID string) (persona string, err error) {
+	defer func() { r.record(err) }()
+	if err = r.db.Pool.QueryRow(ctx, botPersonaQuery, botID).Scan(&persona); err != nil {
+		return "", fmt.Errorf("botworker: bot persona: %w", err)
+	}
+	return persona, nil
+}
+
+// loadSettingsQuery reads the singleton admin settings row (Prisma model
+// BotWorkerSettings @@map("bot_worker_settings"), written by /admin/bots).
+const loadSettingsQuery = `
+SELECT "targetBotCount", "createBatch", "createIntervalMin", "postRateMultiplier", "maxPostsPerTick", "updatedAt"
+  FROM "bot_worker_settings"
+ WHERE id = 'default'`
+
+// LoadSettings returns the admin-saved settings, or (nil, nil) when no admin
+// has saved any yet.
+func (r *PGRepo) LoadSettings(ctx context.Context) (s *Settings, err error) {
+	defer func() { r.record(err) }()
+	var (
+		out         Settings
+		intervalMin int
+	)
+	err = r.db.Pool.QueryRow(ctx, loadSettingsQuery).Scan(
+		&out.TargetBotCount, &out.CreateBatch, &intervalMin,
+		&out.PostRateMultiplier, &out.MaxPostsPerTick, &out.UpdatedAt,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("botworker: load settings: %w", err)
+	}
+	out.CreateInterval = time.Duration(intervalMin) * time.Minute
+	return &out, nil
+}

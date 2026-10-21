@@ -198,7 +198,7 @@ export function resolveThemeColours(): ThemeColours {
 
 /** The slice of TanStack's router a run needs (`useRouter()` satisfies it). */
 export interface RouterLike {
-  navigate(options: { to: string }): Promise<unknown>;
+  navigate(options: { to: string; ignoreBlocker?: boolean }): Promise<unknown>;
   readonly state: { readonly status: 'idle' | 'pending' };
   subscribe(event: 'onResolved', fn: () => void): () => void;
 }
@@ -303,9 +303,26 @@ function createPagePort(): PagePort {
 function createRouterPort(router: RouterLike): RouterPort {
   let last: Promise<unknown> = Promise.resolve();
   return {
-    navigate(href) {
-      // `navigate` pushes history synchronously and resolves when the route has loaded.
-      last = router.navigate({ to: href });
+    navigate(href, issue) {
+      if (!issue) {
+        // `navigate` pushes history synchronously and resolves when the route has loaded. Past the site's
+        // navigation interceptor (`eversion-nav.ts`), which would otherwise hold this very navigation back.
+        last = router.navigate({ to: href, ignoreBlocker: true });
+        return last;
+      }
+      // A replayed push or traversal: no router promise of its own, so settle on the router's next resolve.
+      last = new Promise<void>((resolve) => {
+        const off = router.subscribe('onResolved', () => {
+          off();
+          resolve();
+        });
+        try {
+          issue();
+        } catch {
+          off();
+          resolve();
+        }
+      });
       return last;
     },
     async whenIdle() {
@@ -510,13 +527,27 @@ function createHostPort(): HostPort & {
    The controller
    ═════════════════════════════════════════════════════════════════════════════ */
 
+/** What a caller may pass to `start`. */
+export interface StartOptions extends Pick<
+  RunOptions,
+  'onCommit' | 'onFirstFrame' | 'globe' | 'navigate' | 'traverses' | 'ready'
+> {
+  /**
+   * Where the run's layers go. `shell` (the default): inside the hub, under its globe, which is handed over on
+   * top of them. `body`: at the document's top level, for a run with no hub globe to hand over (the pop-up globe
+   * of an ordinary link, which sits over them) or one whose destination is outside the shell, which unmounts the
+   * hub, and the layers inside it, mid-run.
+   */
+  layer?: 'shell' | 'body';
+}
+
 export interface EversionControllerHandle extends EversionController {
   /** `start` with the entry point recorded on the `start` mark (S#25), and the hub's live pose (`globe`). */
   start(
     node: EversionNode,
     state: GlobeStartState,
     entry?: EntryPoint,
-    options?: Pick<RunOptions, 'onCommit' | 'onFirstFrame' | 'globe'>,
+    options?: StartOptions,
   ): Promise<EversionOutcome>;
   /** Hurry the run in flight: back/forward (T33). */
   abort(): void;
@@ -583,12 +614,13 @@ export function createEversionController(
 
   const setting = (): NavTransition => useThemeStore.getState().navTransition;
   /**
-   * "Always evert globe": read from the store the controller already reads (no
-   * new import, nothing added to the shell's static closure). It only lengthens
-   * the release's waits (the runner's `ALWAYS_EVERT_*` limits). Reduced motion is
-   * decided by the hub's eligibility BEFORE this is ever consulted.
+   * Every run takes the runner's generous `ALWAYS_EVERT_*` waits (amended 2026-10-21: "not a single page transition
+   * should be without eversion"). They were the "Always evert globe" preference's; a page transition that skipped
+   * the effect because the picture or the renderer was a moment late is exactly what the owner asked never to see,
+   * so the preference is now everybody's and its switch is gone from Settings. The site's Reduce motion switch is
+   * decided by eligibility BEFORE this is ever consulted.
    */
-  const alwaysEvert = (): boolean => useThemeStore.getState().alwaysEvertGlobe;
+  const alwaysEvert = (): boolean => true;
 
   const lutKey = (id: ProjectionId, v: Viewport) =>
     `${id}:${aspectBucket(Math.max(v.h, 1) / Math.max(v.w, 1))}`;
@@ -679,9 +711,23 @@ export function createEversionController(
   };
 
   const page = createPagePort();
+  // The run's layers: inside the hub (`storeOverlay`, rendered by `EversionOverlay`) or at the top of <body>. Chosen
+  // per run, only between runs, so a run in flight never has its layers moved under it.
+  const bodyOverlay = createDomOverlayPort();
+  let activeOverlay: OverlayPort = storeOverlay;
+  const shellOverlay = activeOverlay;
+  const overlay: OverlayPort = {
+    mount: () => activeOverlay.mount(),
+    hold: (b) => activeOverlay.hold(b),
+    raiseHold: () => activeOverlay.raiseHold(),
+    focusHold: () => activeOverlay.focusHold(),
+    releaseHold: () => activeOverlay.releaseHold(),
+    fade: () => activeOverlay.fade(),
+    unmount: () => activeOverlay.unmount(),
+  };
   const runner = new EversionRunner({
     host: hostPort,
-    overlay: storeOverlay,
+    overlay,
     page,
     router: createRouterPort(deps.router),
     ineligibleReason: () => ineligibleReason(),
@@ -816,7 +862,14 @@ export function createEversionController(
       }
     },
 
-    start: (node, state, entry, options) => runner.run(node, state, entry, options),
+    start: (node, state, entry, options = {}) => {
+      const { layer, ...run } = options;
+      const phase = runner.state().phase;
+      if (phase === 'idle' || phase === 'done') {
+        activeOverlay = layer === 'body' ? bodyOverlay : shellOverlay;
+      }
+      return runner.run(node, state, entry, run);
+    },
 
     warmHost: () => hostPort.whenReady(detectTier()),
 

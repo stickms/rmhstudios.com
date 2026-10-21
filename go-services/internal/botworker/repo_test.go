@@ -84,11 +84,9 @@ func TestShouldPostRespectMinGap(t *testing.T) {
 		BotPersona:    "ACTIVITY: very online, frequently posts",
 		BotLastPostAt: &recent,
 	}
-	// Run 20 trials; with a gap block the result must always be false.
-	for i := 0; i < 20; i++ {
-		if shouldPost(bot) {
-			t.Error("shouldPost returned true within minimum gap")
-			break
-		}
+	// Even a draw of 0 (which always passes the probability check) must be
+	// blocked by the gap.
+	if shouldPost(bot, 1, postTickInterval, now, 0) {
+		t.Error("shouldPost returned true within minimum gap")
 	}
 }
