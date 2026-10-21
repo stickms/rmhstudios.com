@@ -206,9 +206,45 @@ send_deploy_started() {
     DEPLOY_ANNOUNCED=1
 }
 
+# ── On-call (deploy/oncall-send.sh → the off-box watchdog) ──────────────────
+# The deploy channel is for everyone; only a deploy that leaves production
+# needing a human pages @oncall. Best effort: oncall-send.sh always exits 0
+# and skips quietly when ONCALL_URL / ONCALL_SIGNING_SECRET are unset.
+#   D01 Sev2  web rollback FAILED      — prod may be serving nothing good
+#   D02 Sev3  web auto-rolled back     — prod is fine (old release), the commit isn't
+#   D03 Sev3  deploy failed            — prod unchanged or partly updated
+#   D04 Sev3  deploy died unreported   — see cleanup()
+# A later successful deploy clears all of them.
+DEPLOY_REPORTED=0
+DEPLOY_IN_PROGRESS=0
+oncall_deploy() {
+    local status="$1" reason="$2" send="${REPO_DIR}/deploy/oncall-send.sh"
+    [ -f "$send" ] || return 0
+    local what="Commit ${DEPLOY_SHORT_HASH:-unknown} on ${ENVIRONMENT}"
+    case "$status" in
+        success)
+            local id
+            for id in D01 D02 D03 D04; do
+                bash "$send" alert resolved "$id" 3 "deploy recovered" "$what deployed successfully" || true
+            done ;;
+        rolledback)
+            bash "$send" alert firing D02 3 "Deploy auto-rolled back" "$what: $reason" || true ;;
+        fail)
+            case "$reason" in
+                *"ROLLBACK FAILED"*)
+                    bash "$send" alert firing D01 2 "Deploy rollback FAILED — production needs a human" "$what: $reason" || true ;;
+                *)
+                    bash "$send" alert firing D03 3 "Deploy failed" "$what: $reason" || true ;;
+            esac ;;
+    esac
+}
+
 update_deploy_status() {
     local status="$1"  # "success", "fail", or "rolledback" (web auto-rolled back)
     local reason="${2:-}"  # optional failure reason
+
+    DEPLOY_REPORTED=1
+    oncall_deploy "$status" "$reason"
 
     if [ -z "$DISCORD_WEBHOOK" ]; then
         if [ "$status" = "success" ]; then
@@ -333,6 +369,14 @@ total_disk_gb() {
 }
 
 cleanup() {
+    local rc=$?
+    # A deploy that announced itself but exits without a final status (an
+    # unexpected `set -e` failure, a kill) would otherwise sit at "deploying"
+    # forever with nobody told.
+    if [ "$DEPLOY_IN_PROGRESS" = 1 ] && [ "$DEPLOY_REPORTED" = 0 ] && [ -f "${REPO_DIR}/deploy/oncall-send.sh" ]; then
+        bash "${REPO_DIR}/deploy/oncall-send.sh" alert firing D04 3 "Deploy died without reporting a result" \
+            "Commit ${DEPLOY_SHORT_HASH:-unknown} on ${ENVIRONMENT}: deploy.sh exited $rc before a final status. Check webhook.log." || true
+    fi
     rm -f "$DEPLOY_LOG"
 }
 trap cleanup EXIT
@@ -601,6 +645,7 @@ GIT_SHA=$("$GIT_BIN" rev-parse --short HEAD 2>/dev/null || echo "unknown")
 GIT_SHA_FULL=$("$GIT_BIN" rev-parse HEAD 2>/dev/null || echo "")
 
 send_deploy_started
+DEPLOY_IN_PROGRESS=1  # from here on, exiting without update_deploy_status is a D04 (cleanup)
 
 # ── Step 1b: Pre-pull cleanup ─────────────────────────────────────────────────
 # The heavy build now runs in GitHub Actions, so the old BuildKit-cache headroom

@@ -1,0 +1,47 @@
+# On-call guide
+
+Alerts come from the **on-call watchdog** (`deploy/oncall-watchdog/`), a
+Cloudflare Worker that runs **off the VPS**, and post to Discord
+`#rmh-oncall`.
+
+## Who is on call
+
+Whoever holds the `@oncall` Discord role. Rotate by moving the role; no code
+or config changes. Set `#rmh-oncall` to **All Messages** notifications and
+allow notifications from the server, or a page can arrive silently.
+
+## Severity
+
+| Sev | Set by | What happens | Response |
+|---|---|---|---|
+| **Sev1** | A human only (🔺 Escalate) | `@oncall` (+ escalation role) re-pinged every 10 min until acked | All hands, now |
+| **Sev2** | Automated alarms: **the page** | `@oncall` pinged 24/7, re-pinged every 10 min until ✅ Acknowledge | Ack within 15 min, mitigate ASAP |
+| **Sev3** | Automated | Posted, no ping | Next business day |
+| **Sev4** | Automated | Posted, no ping | This sprint |
+| **Sev5** | Automated | Posted, no ping | Informational |
+
+## When you are paged
+
+1. **Acknowledge** (✅). Only `@oncall` members can, and it stops the re-pings.
+2. Open the **📖 Runbook** button on the alert and follow the first step.
+3. Bigger than you, or more than one person needed? **🔺 Escalate to Sev1**.
+   That pages everyone and clears your ack so it keeps paging until someone
+   takes it.
+4. Mitigate first (roll back, restart), investigate after.
+5. The alert resolves itself when its check recovers; the reply under it says
+   how long it lasted.
+
+## Alarms
+
+| ID | Sev | What |
+|---|---|---|
+| [A01](A01.md) | 2 | Site down (external check) |
+| [A02](A02.md) | 2 | `/api/ready` failing (database / Redis behind the site) |
+| [A03](A03.md) | 2 | Status service stale, or the VPS heartbeat lost |
+| [A04](A04.md) | 2 | Nightly database backup missed (26h) |
+| [STATUS](status-incident.md) | 2 / 3 | An automatic status-page incident (component down / degraded) |
+| [D01](D01.md) | 2 | Deploy rollback **failed** |
+| [D02](D02.md) | 3 | Deploy auto-rolled back |
+| [D03](D03.md) | 3 | Deploy failed |
+| [D04](D04.md) | 3 | Deploy died without reporting |
+| [BACKUP](BACKUP.md) | 3 | A backup run failed |

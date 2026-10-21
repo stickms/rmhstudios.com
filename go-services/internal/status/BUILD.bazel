@@ -11,6 +11,7 @@ go_library(
         "dashboard.go",
         "incidents.go",
         "notify.go",
+        "oncall.go",
         "pages.go",
         "persist.go",
         "probe.go",
@@ -21,6 +22,7 @@ go_library(
     ],
     importpath = "github.com/rmhstudios/rmh-go/internal/status",
     visibility = ["//go-services:__subpackages__"],
+    deps = ["//go-services/pkg/oncall"],
 )
 
 go_test(
@@ -29,9 +31,11 @@ go_test(
         "dashboard_test.go",
         "features_test.go",
         "fixture_test.go",
+        "oncall_test.go",
         "persist_test.go",
         "probe_test.go",
         "render_test.go",
     ],
     embed = [":status"],
+    deps = ["//go-services/pkg/oncall"],
 )

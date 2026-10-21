@@ -12,7 +12,9 @@
 #        R2_ACCESS_KEY_ID=…
 #        R2_SECRET_ACCESS_KEY=…
 #        R2_BACKUP_BUCKET=rmh-db-backups
-#   2. Edit WorkingDirectory below to where this repo lives on the VPS.
+#   2. Check WorkingDirectory below matches the repo path (deploy.sh REPO_DIR).
+#      For on-call check-ins, ONCALL_URL / ONCALL_SIGNING_SECRET are read from
+#      that checkout's .env.production (deploy/oncall-send.sh).
 #   3. sudo cp deploy/systemd/rmh-db-backup.{service,timer} /etc/systemd/system/
 #      sudo systemctl daemon-reload
 #      sudo systemctl enable --now rmh-db-backup.timer
@@ -27,8 +29,10 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-# EDIT: repo checkout path on the VPS (matches where deploy.sh runs from).
-WorkingDirectory=/opt/rmhstudios.com
+# Repo checkout path on the VPS — deploy.sh's REPO_DIR. (This said
+# /opt/rmhstudios.com, which is not where the repo lives: installed unedited,
+# the unit failed every night with nothing to notice it.)
+WorkingDirectory=/home/rmhstudios/rmhstudios.com
 EnvironmentFile=/etc/rmhstudios/db-backup.env
 ExecStart=/usr/bin/env bash deploy/backup/pg-backup.sh
 Nice=10
