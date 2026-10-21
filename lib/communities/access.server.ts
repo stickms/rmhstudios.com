@@ -14,13 +14,14 @@ export type CommunityRole = 'MEMBER' | 'MOD' | 'ADMIN';
 export type CommunityCtx = {
   id: string;
   createdById: string;
+  isPrivate: boolean;
 };
 
 /** Resolve a community by slug to the fields needed for permission checks. */
 export async function getCommunityBySlug(slug: string): Promise<CommunityCtx | null> {
   return prisma.community.findUnique({
     where: { slug },
-    select: { id: true, createdById: true },
+    select: { id: true, createdById: true, isPrivate: true },
   });
 }
 

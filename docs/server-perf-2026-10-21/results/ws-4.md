@@ -39,9 +39,18 @@ Worktree baseline taken 2026-10-21 (Stage A static analysis; DB checks on `rmh_w
 ## Handoffs
 | To | file:line | What | Evidence |
 |---|---|---|---|
-| coordinator / product | `lib/community.server.ts` `getCommunityFeed`, `listCommunities`, `app/routes/api/communities/$slug/feed.ts` | Neither the community feed nor the browse list checks `isPrivate`/membership, although `isPrivate` exists and `lib/search/posts.server.ts` and the sitemap exclude private communities. Possible content exposure; may be intended (private = invite-only to join), not verified | read of the handlers |
-| WS3 | `app/routes/api/user-builds.ts` GET | `search` + `cursor` + `sort=popular` overwrite each other's `where.OR` (existing bug, not perf) | read of the handler |
 | WS6 | `app/routes/api/albums/asset/$.ts`, `lib/media/ingest.server.ts` | See D3 | read of the code |
+| coordinator / WS2 | `lib/feed/audience.server.ts` (`viewerVisiblePostWhere`, `canViewPost`), `app/routes/api/rmharks/$id.ts`, profile post lists | Post-level reads do not consider `community.isPrivate`: a post in a private community is still reachable by id / profile list for a non-member. Out of the community read paths fixed below | read of the helpers |
+
+(The two handoffs from the first report, private-community exposure and the user-builds `where.OR` overwrite, are fixed; see below.)
+
+## Correctness fixes (round 2)
+Not performance work; both decided by the user.
+
+| # | Fix | Commit | Test |
+|---|---|---|---|
+| C1 | **Private communities are members-only on every community read path.** A non-member or anonymous viewer gets the codebase's existing outcome for a private resource (`requireReadable`): null / 404, indistinguishable from a missing community. Paths: `getCommunity` and `getCommunityFeed` (SSR `/c/$slug` loader, `/api/communities/$slug`, `/feed` incl. cursor pages, where the membership read previously ran only on page 1), `getCommunityExtras`, `/members`, `/announcements` (GET moved onto `defineHandler` to read the viewer), `/api/community-pages` (list and one page, by slug or id) and `/community-pages/$id/revisions`. `listCommunities` (the `/communities` loader and `/api/communities`) lists a private community only to its members, anonymous sees public ones, as search and the sitemap (`isPrivate: false`) do. `POST /join` no longer lets a non-member join a private community (there is no invite flow; members can still leave). No HTTP cache covered these (none declared public); the `apiCache` entries behind them are keyed by community id and only reached after the gate. Two `PUBLIC_BUT_NOT_CACHED` entries came out of `api-cache-policy.test.ts` because their handlers now read the viewer. | 2eb6725b | `lib/__tests__/private-community-access.test.ts`: 9 of 10 cases fail on the parent (10th is the public-community control) |
+| C2 | `GET /api/user-builds`: `search` + `cursor` + `sort=popular|views` no longer lets the cursor overwrite the search filter (`where.AND` of the two OR groups). | 46bbfb39 | `lib/__tests__/user-builds-search-cursor.test.ts` |
 
 ## Budget status (owned routes, after)
 Not measured: no harness. Query counts for touched routes are unchanged or lower (rows 3, 4, 5, 7, 8 remove queries from the primary; no route gained a query).

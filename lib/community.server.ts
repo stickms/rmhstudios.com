@@ -72,6 +72,9 @@ export async function getCommunity(
     });
     role = mem?.role ?? null;
   }
+  // Members-only: a non-member gets the same "not found" as a missing community
+  // (the codebase's convention, `requireReadable`), so existence does not leak.
+  if (community.isPrivate && !role) return null;
 
   // Post count is the denormalized `community.postCount` column (maintained on
   // post create/delete), so this no longer runs COUNT(*) over rmheet per read.
@@ -112,7 +115,10 @@ export async function getCommunityFeed(
   viewerId: string | null,
   opts: { cursor?: string | null; limit?: number; flairId?: string | null } = {},
 ): Promise<CommunityFeedResult | null> {
-  const community = await prisma.community.findUnique({ where: { slug }, select: { id: true } });
+  const community = await prisma.community.findUnique({
+    where: { slug },
+    select: { id: true, isPrivate: true },
+  });
   if (!community) return null;
 
   const limit = Math.min(opts.limit ?? 20, 50);
@@ -120,13 +126,17 @@ export async function getCommunityFeed(
   // lookup; it only supplies the followed flairs (N3) for the first page.
   const [hidden, member] = await Promise.all([
     getHiddenAuthorIds(viewerId),
-    viewerId && !opts.cursor && !opts.flairId
+    // Needed on every page of a private community (the membership gate), and
+    // for the followed flairs on the first page of any.
+    viewerId && (community.isPrivate || (!opts.cursor && !opts.flairId))
       ? prisma.communityMember.findUnique({
           where: { communityId_userId: { communityId: community.id, userId: viewerId } },
           select: { followedFlairIds: true },
         })
       : Promise.resolve(null),
   ]);
+  // Members-only: indistinguishable from a missing community for a non-member.
+  if (community.isPrivate && !member) return null;
 
   const rows = await prisma.rMHark.findMany({
     where: {
