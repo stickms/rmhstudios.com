@@ -957,8 +957,15 @@ step_done
 # graceful reload and retires the old one. If the new container never becomes
 # healthy, traffic is never moved and the old container keeps serving — so a
 # bad build degrades to "old version stays up", never to an outage.
-step_start "Hotswapping web container (blue/green)..."
-if ! PROJECT_NAME="$PROJECT_NAME" \
+#
+# After the flip it smoke-tests the real user path and BAKES (default 5 min,
+# BAKE_SECONDS) with the old container stopped as a rollback target; sustained
+# failure flips traffic back automatically. Its exit code says which way it went
+# (see EXIT_* in hotswap-web.sh), so the report below names a rollback as one.
+# The deploy flock is held through the bake, so a newer push queues behind it.
+step_start "Hotswapping web container (blue/green, smoke + bake)..."
+hotswap_rc=0
+PROJECT_NAME="$PROJECT_NAME" \
      ENV_FILE="$ENV_FILE" \
      IMAGE_NAME="$IMAGE_NAME" \
      IMAGE_TAG="latest" \
@@ -966,11 +973,25 @@ if ! PROJECT_NAME="$PROJECT_NAME" \
      GREEN_PORT="${PORT_WEB_GREEN:-$((PORT_WEB + 10))}" \
      NETWORK="${PROJECT_NAME}_default" \
      DOCKER_BIN="$DOCKER_BIN" \
-     bash "${REPO_DIR}/deploy/hotswap-web.sh"; then
-    log "ERROR: web hotswap failed."
-    update_deploy_status fail "web hotswap failed"
-    exit 1
-fi
+     bash "${REPO_DIR}/deploy/hotswap-web.sh" || hotswap_rc=$?
+case "$hotswap_rc" in
+    0) ;;
+    3)
+        log "ERROR: new web failed its smoke test / bake — AUTO-ROLLED BACK to the previous container."
+        update_deploy_status fail "web failed smoke/bake — auto-rolled back to previous release"
+        exit 1
+        ;;
+    4)
+        log "ERROR: new web failed its smoke test / bake and the rollback could not complete — NEW release still live. Investigate now."
+        update_deploy_status fail "web failed smoke/bake and ROLLBACK FAILED — needs a human"
+        exit 1
+        ;;
+    *)
+        log "ERROR: web hotswap failed."
+        update_deploy_status fail "web hotswap failed"
+        exit 1
+        ;;
+esac
 step_done
 
 # ── Step 5: Health checks (parallel) ────────────────────────────────────────
