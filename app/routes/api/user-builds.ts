@@ -103,11 +103,18 @@ export const Route = createFileRoute('/api/user-builds')({
           };
         }
 
+        // Independent OR groups (search match, popularity/views cursor) are
+        // AND-ed: assigning both to `where.OR` made the cursor silently replace
+        // the search filter, so page 2 of a search returned unrelated builds.
+        const and: Record<string, unknown>[] = [];
+
         if (search) {
-          where.OR = [
-            { title: { contains: search, mode: 'insensitive' } },
-            { description: { contains: search, mode: 'insensitive' } },
-          ];
+          and.push({
+            OR: [
+              { title: { contains: search, mode: 'insensitive' } },
+              { description: { contains: search, mode: 'insensitive' } },
+            ],
+          });
         }
 
         if (cursor) {
@@ -117,20 +124,26 @@ export const Route = createFileRoute('/api/user-builds')({
           });
           if (cursorBuild) {
             if (sort === 'popular') {
-              where.OR = [
-                { likeCount: { lt: cursorBuild.likeCount } },
-                { likeCount: cursorBuild.likeCount, id: { lt: cursor } },
-              ];
+              and.push({
+                OR: [
+                  { likeCount: { lt: cursorBuild.likeCount } },
+                  { likeCount: cursorBuild.likeCount, id: { lt: cursor } },
+                ],
+              });
             } else if (sort === 'views') {
-              where.OR = [
-                { viewCount: { lt: cursorBuild.viewCount } },
-                { viewCount: cursorBuild.viewCount, id: { lt: cursor } },
-              ];
+              and.push({
+                OR: [
+                  { viewCount: { lt: cursorBuild.viewCount } },
+                  { viewCount: cursorBuild.viewCount, id: { lt: cursor } },
+                ],
+              });
             } else {
               where.publishedAt = { lt: cursorBuild.publishedAt };
             }
           }
         }
+
+        if (and.length) where.AND = and;
 
         // Determine order by
         let orderBy: Record<string, string>[] = [{ publishedAt: 'desc' }];
