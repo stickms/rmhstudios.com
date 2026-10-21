@@ -158,8 +158,15 @@ export interface DebugSlots {
   renderer: RendererDebug;
   host: HostDebug;
   controller: ControllerDebug;
+  run: RunDebug;
 }
 export type DebugSlotName = keyof DebugSlots;
+
+/** The hub's own run in flight, for the e2e harness: no visitor input can hurry a run (amended 2026-10-20). */
+export interface RunDebug {
+  /** The timeline's fast-forward, once; a no-op outside a run or during its final dissolve. */
+  fastForward(): void;
+}
 
 /** `window.__eversion`: the registered slots plus a list of their names. */
 export type EversionDebugRegistry = Partial<DebugSlots> & { slots(): DebugSlotName[] };

@@ -172,11 +172,17 @@ export const WheelCard = memo(function WheelCard({ item }: { item: FeedItem }) {
   return (
     <article className="rmhark">
       {external ? (
-        <a href={href} className="rmhark__link" target="_blank" rel="noopener noreferrer">
+        <a
+          href={href}
+          className="rmhark__link"
+          data-evert=""
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           {body}
         </a>
       ) : (
-        <Link to={href} className="rmhark__link">
+        <Link to={href} className="rmhark__link" data-evert="">
           {body}
         </Link>
       )}

@@ -3,14 +3,10 @@
 /**
  * Where a control turns inside out from — the input half of the eversion state layer (globals.css §7.3).
  *
- * Every control carrying `data-evert` changes state by turning a tint out of itself: a circle clipped from one
- * point that sweeps to the far corner on a spring. CSS draws all of it; this tells the CSS which point, and when a
- * press is down:
+ * Every control carrying `data-evert` changes state by turning a tint out of itself: its own shape, swelling out of
+ * one point on a spring. CSS draws all of it; this tells the CSS which point, and when a press is down:
  *
- * - `--evert-x` / `--evert-y`: the point, in px from the control's top-left corner.
- * - `--evert-r`: the distance from that point to the farthest corner, so the circle just covers the control. A
- *   fixed percentage would either leave a corner uncovered from an off-centre point or spend most of the spring
- *   beyond the corners, where nothing is seen.
+ * - `--evert-x` / `--evert-y`: the point, in px from the control's top-left corner (the layer's `transform-origin`).
  * - `data-pressed`: present while a pointer is down on the control.
  *
  * The point is the pointer's ENTRY point for a hover, the finger for a press, and the EXIT point as a hover
@@ -39,16 +35,13 @@ export function placeEvert(el: HTMLElement, x: number, y: number): void {
   if (r.width === 0 || r.height === 0) return;
   const px = Math.min(Math.max(x - r.left, 0), r.width);
   const py = Math.min(Math.max(y - r.top, 0), r.height);
-  const far = Math.hypot(Math.max(px, r.width - px), Math.max(py, r.height - py));
   set(el, '--evert-x', `${px.toFixed(1)}px`);
   set(el, '--evert-y', `${py.toFixed(1)}px`);
-  // A pixel past the corner, so antialiasing never leaves a hairline of the old state there.
-  set(el, '--evert-r', `${(far + 1).toFixed(1)}px`);
 }
 
 /** Back to the centre (the stylesheet's default point and radius). */
 function centreEvert(el: HTMLElement): void {
-  for (const name of ['--evert-x', '--evert-y', '--evert-r']) {
+  for (const name of ['--evert-x', '--evert-y']) {
     if (el.style.getPropertyValue(name)) el.style.removeProperty(name);
   }
 }

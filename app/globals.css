@@ -4980,15 +4980,22 @@ html.nav-pop .page-root > * {
  * site changes state the same way, at the scale of a button (owner, 2026-10-20:
  * "an eversion animation on state change that smoothly and seamlessly plays …
  * for hover and focus and click"). The new state is not faded in over the old
- * one: it emerges from INSIDE it, through a circular edge that sweeps out from
- * one point to the far corner on a spring, and goes back the same way.
+ * one: it emerges from INSIDE it, swelling out of one point into the control's
+ * whole shape on a spring, and goes back into that point the same way.
  *
  * - One layer per control: `[data-evert]::before`, behind the label, painted in
- *   `--evert-tint` and clipped to `circle(r at x y)`. Off: r = 0. On: r reaches
- *   the farthest corner. Nothing else on the control moves, so a label never
- *   rotates, scales or leaves its pixel grid (§7.1: the retired menu cage).
+ *   `--evert-tint`, the control's own shape (`border-radius: inherit`) scaled
+ *   from 0 to 1 about the point (`scale` + `transform-origin`). It can never
+ *   leave the control's box. Nothing else on the control moves, so a label
+ *   never rotates, scales or leaves its pixel grid (§7.1: the retired menu cage).
+ * - It is a TRANSFORM so it runs on the compositor (amended 2026-10-20). It was a
+ *   `clip-path` circle, which the main thread animates; pressing something that
+ *   navigates starts the route's render on that same thread, and a probe showed
+ *   no frame at all for ~630 ms after the click, so the press tint stood still
+ *   until the new page had painted and the owner saw no animation. A compositor
+ *   transform keeps moving through that render.
  * - The point is where you are. `hooks/useEvertPoint.ts` writes `--evert-x/-y`
- *   and `--evert-r` on the control itself (never on <html>) once per event: the
+ *   on the control itself (never on <html>) once per event: the
  *   pointer's entry point for a hover, the finger for a press, the exit point as
  *   a hover leaves, so the state is swallowed back where the pointer went. No
  *   pointer (keyboard, a programmatic change): the centre. Nothing tracks the
@@ -4998,9 +5005,11 @@ html.nav-pop .page-root > * {
  *   `spring(0.32, 0.3)`). A transition never plays on mount, so a page that loads
  *   with boxes ticked does not animate them, and an interrupted one retargets
  *   from where it is. `lib/__tests__/evert-spring.test.ts` re-derives the stops.
- * - Cost: `clip-path` on a control-sized layer, `transform` on marks and knobs,
- *   `opacity` for the press deepening. No shadow, no layout property, no
- *   gradient position, no filter, no per-frame script.
+ * - Cost: `scale` on a control-sized layer, `transform` on marks and knobs,
+ *   `opacity` for the press deepening, all composited; `clip-path` only on the
+ *   16-40px fills of checkboxes, radios and switches, which never navigate. No
+ *   shadow, no layout property, no gradient position, no filter, no per-frame
+ *   script.
  * - Touch: hover is only ever a fine pointer's (`(hover: hover)`), so a phone
  *   never shows a sticky hover. A press everts from the finger and is held for
  *   at least `EVERT_MIN_PRESS_MS` so a quick tap is still seen.
@@ -5027,30 +5036,62 @@ html.nav-pop .page-root > * {
     z-index: -1;
     border-radius: inherit;
     background: var(--evert-tint, color-mix(in srgb, currentColor 10%, transparent));
-    clip-path: circle(0 at var(--evert-x, 50%) var(--evert-y, 50%));
+    scale: 0;
+    transform-origin: var(--evert-x, 50%) var(--evert-y, 50%);
     opacity: var(--evert-rest-opacity, 0.72);
     pointer-events: none;
     transition:
-      clip-path var(--evert-in) var(--evert-ease),
+      scale var(--evert-in) var(--evert-ease),
       opacity 0.12s ease-out;
   }
   /* On: pressed (pointer or touch), highlighted by a menu's roving focus, or keyboard-focused. */
   [data-evert]:is([data-pressed], [data-highlighted], :focus-visible, :has(> :focus-visible))::before {
-    clip-path: circle(var(--evert-r, 71%) at var(--evert-x, 50%) var(--evert-y, 50%));
+    scale: 1;
   }
   /* A press deepens what is already there (a hovered control is already everted). */
   [data-evert][data-pressed]::before {
     opacity: 1;
   }
   [data-evert]:is(:disabled, [aria-disabled='true'], [data-disabled])::before {
-    clip-path: circle(0 at var(--evert-x, 50%) var(--evert-y, 50%));
+    scale: 0;
   }
 }
 @media (hover: hover) and (pointer: fine) {
   @layer components {
     [data-evert]:hover:not(:disabled, [aria-disabled='true'], [data-disabled])::before {
-      clip-path: circle(var(--evert-r, 71%) at var(--evert-x, 50%) var(--evert-y, 50%));
+      scale: 1;
     }
+  }
+}
+
+/* Two variants of the layer, named in the attribute's value (`data-evert="select over"`):
+   - `select` adds a SECOND layer, `::after`, for a control's selected state - the nav
+     rail's current page, which changes as you navigate while the rail stays on screen.
+     It everts in `--evert-selected` out of wherever the control was pressed, and drains
+     out of the one that lost it, on the same spring. The control's own rule carries its
+     ink on the same curve (`.rad-rail__item`).
+   - `over` lifts the tint above the control's content, for cards whose art covers the
+     whole box (a tint under the art would never be seen). Translucent, so it reads as
+     light on the card rather than a cover over it. */
+@layer components {
+  [data-evert~='select']::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--evert-selected, var(--site-accent));
+    scale: 0;
+    transform-origin: var(--evert-x, 50%) var(--evert-y, 50%);
+    pointer-events: none;
+    transition: scale var(--evert-in) var(--evert-ease);
+  }
+  [data-evert~='select']:is([aria-current='page'], .is-active)::after {
+    scale: 1;
+  }
+  [data-evert~='over']::before {
+    z-index: 3;
+    --evert-tint: color-mix(in srgb, var(--site-text) 12%, transparent);
   }
 }
 
@@ -5064,10 +5105,37 @@ html.nav-pop .page-root > * {
   [data-slot='button']:is([data-variant='outline'], [data-variant='secondary'], [data-variant='ghost']),
   [data-slot='menu-item'],
   [data-slot='select-item'],
+  [data-slot='select'][data-evert],
   [role='tab'][data-evert],
-  [data-tab-active][data-evert] {
+  [data-tab-active][data-evert],
+  .rad-rail__item,
+  .radial-topbar__btn,
+  .cstudio-ranked__toggle,
+  .rmhark__link,
+  .store-spot__link {
     --evert-tint: var(--site-surface-hover);
     --evert-rest-opacity: 1;
+  }
+  .radial-topbar__signin,
+  .radial-feed__compose {
+    --evert-tint: var(--site-accent);
+    --evert-rest-opacity: 1;
+  }
+  .radial-feed__compose {
+    --evert-tint: var(--site-accent-hover);
+  }
+  .cstudio-ranked__link {
+    --evert-tint: color-mix(in srgb, var(--site-accent) 22%, transparent);
+    --evert-rest-opacity: 1;
+  }
+  /* A feed card's link sits inside the card's padding; its tint reaches the card's own
+     edges (top and sides) so the card, not a box inside it, turns over. */
+  .rmhark__link[data-evert]::before {
+    inset: calc(var(--rad-card-pad) * -1) calc(var(--rad-card-pad) * -1) 0;
+    border-radius: var(--site-radius, 22px) var(--site-radius, 22px) 0 0;
+    /* The point is measured on the link; this layer starts one padding further out. */
+    transform-origin: calc(var(--evert-x, calc(50% - var(--rad-card-pad))) + var(--rad-card-pad))
+      calc(var(--evert-y, calc(50% - var(--rad-card-pad))) + var(--rad-card-pad));
   }
   [data-slot='button']:is([data-variant='accent-outline'], [data-variant='accent-ghost']) {
     --evert-tint: var(--site-accent-dim);

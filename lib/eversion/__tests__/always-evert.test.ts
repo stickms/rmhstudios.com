@@ -170,7 +170,6 @@ function rig(patch: Partial<RunnerDeps>) {
         dispose() {},
       }),
       nextFrame: async () => {},
-      onInput: () => () => {},
       currentHref: () => '/here',
     },
     router: {

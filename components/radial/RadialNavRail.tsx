@@ -84,7 +84,7 @@ export function RadialNavRail() {
     );
     const className = 'rad-rail__item' + (active ? ' is-active' : '');
     return leaf.external ? (
-      <a key={leaf.id} href={leaf.href} className={className}>
+      <a key={leaf.id} href={leaf.href} className={className} data-evert="select">
         {body}
       </a>
     ) : (
@@ -93,6 +93,8 @@ export function RadialNavRail() {
         to={leaf.href}
         className={className}
         aria-current={active ? 'page' : undefined}
+        // Hover, press and the current page turn out of the item (globals.css §7.3).
+        data-evert="select"
       >
         {body}
       </Link>

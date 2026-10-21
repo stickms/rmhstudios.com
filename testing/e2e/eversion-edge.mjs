@@ -27,7 +27,7 @@
 //  - a spy on `Worker.prototype.postMessage` that logs every message the page
 //    sends the render side (`{type, at, …}` on the page clock, the marks' clock),
 //    which is how "abort was sent", "resize was forwarded once", "visibility was
-//    posted" and "no fast-forward during the reveal fade" are observed;
+//    posted" and "no input ever fast-forwards a run" are observed;
 //  - `unhandledrejection` / `error` collectors (Playwright's `pageerror` is the
 //    second net), so "no console errors or unhandled rejections in any row" is
 //    asserted for every scenario.
@@ -41,7 +41,7 @@
 //  resize             resize / rotation mid-effect             (one `resize` per frame, forwarded)
 //  context-lost       WebGL context lost mid-effect            (cover off, `--fading`, 200 ms, finishes)
 //  hidden-tab         tab hidden mid-effect                    (`visibility` posted; loop pauses/resumes; a long absence settles the run)
-//  reveal-input       input during the reveal fade             (ignored: no fast-forward after reveal)
+//  input-never-hurries keys and taps during a run                (ignored: it always plays in full)
 //  never-settles      a router that never settles              (waited on to DESTINATION_SETTLE_HARD_MS, then captured as it is)
 //  host-not-ready     a release before the host is ready       (synchronous: eligible, init started, then ready)
 //
@@ -215,8 +215,8 @@ async function waitMark(s, name, { timeout = RUN_MS } = {}) {
 }
 
 /** A key press on `window`, which is where the controller listens (capture phase). */
-const press = (s) =>
-  s.page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' })));
+/** Hurry the run through the harness hook: no key or tap speeds a run up (it always plays in full). */
+const press = (s) => s.hurry();
 
 /** Press once the effect has covered the screen (the run has real frames to hurry). */
 async function fastForwardAtCover(s) {
@@ -629,19 +629,28 @@ async function hiddenTab() {
   }
 }
 
-/** Input once the unwrap is done (the reveal fade) is ignored: no fast-forward is sent, and the run ends as it would. */
+/**
+ * No input hurries a run (amended 2026-10-20: it always plays in full). Keys and taps land on the effect from its
+ * first frame, through the eversion and into the final dissolve; no fast-forward is sent and the run ends as it would.
+ */
 async function revealInput() {
-  const name = 'reveal-input';
+  const name = 'input-never-hurries';
   const { s, errors } = await fresh({ path: '/' });
-  try {
-    await begin(s, '/games');
-    // No fast-forward before the reveal: the point is the first (and only) press lands in the fade.
-    const reveal = await waitMark(s, EVERSION_MARKS.reveal, { timeout: RUN_MS });
-    await s.page.evaluate(() => {
+  const keysAndTaps = () =>
+    s.page.evaluate(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
       window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
       window.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
     });
+  try {
+    await begin(s, '/games');
+    await waitMark(s, EVERSION_MARKS.cover, { timeout: RUN_MS });
+    await keysAndTaps();
+    await waitMark(s, EVERSION_MARKS.evert, { timeout: RUN_MS });
+    await keysAndTaps();
+    const reveal = await waitMark(s, EVERSION_MARKS.reveal, { timeout: RUN_MS });
+    await keysAndTaps();
     const run = await finish(s);
     await assertClean(name, s, errors, run);
     await assertFullSequence(name, s);
@@ -749,7 +758,7 @@ const scenarios = [
   ['resize', resize],
   ['context-lost', contextLost],
   ['hidden-tab', hiddenTab],
-  ['reveal-input', revealInput],
+  ['input-never-hurries', revealInput],
   ['never-settles', neverSettles],
   ['host-not-ready', hostNotReady],
 ].filter(([n]) => n.includes(ONLY));

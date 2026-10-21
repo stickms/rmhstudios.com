@@ -68,7 +68,6 @@ interface Rig {
   posted: ToWorker[];
   emit(message: FromWorker): void;
   routerIdle: { resolve(): void };
-  input(): void;
   traverse(): void;
   resize(viewport: Viewport): void;
   capture: { captureViewport: ReturnType<typeof vi.fn> };
@@ -112,7 +111,6 @@ function rig(patch: Partial<RunnerDeps> = {}, captureImpl?: () => Promise<unknow
   };
   let resolveIdle!: () => void;
   const idle = new Promise<void>((r) => (resolveIdle = r));
-  let inputCb: (() => void) | null = null;
   let traversalCb: (() => void) | null = null;
   let resizeCb: ((v: Viewport) => void) | null = null;
   const settleRequests: SettleRequest[] = [];
@@ -165,12 +163,6 @@ function rig(patch: Partial<RunnerDeps> = {}, captureImpl?: () => Promise<unknow
         dispose: () => void log.push('watch:dispose'),
       }),
       nextFrame: async () => void log.push('raf'),
-      onInput(cb) {
-        inputCb = cb;
-        return () => {
-          inputCb = null;
-        };
-      },
       currentHref: () => '/here',
     },
     router: {
@@ -207,7 +199,6 @@ function rig(patch: Partial<RunnerDeps> = {}, captureImpl?: () => Promise<unknow
       for (const l of [...listeners]) l(m);
     },
     routerIdle: { resolve: resolveIdle },
-    input: () => inputCb?.(),
     traverse: () => traversalCb?.(),
     resize: (v) => resizeCb?.(v),
     capture,
@@ -473,7 +464,6 @@ describe('eversion runner: the destination is rendered before the animation (ame
   it('the hub lets go first: commit with the hand-over, the picture pulled into focus, THEN the start', async () => {
     const handovers: EversionHandover[] = [];
     const r = rig();
-    r.deps.page.onInput = () => () => {};
     await toStart(r, NODE, GLOBE, 'release', {
       onCommit: (h) => {
         handovers.push(h);
@@ -758,7 +748,7 @@ describe('eversion runner: capturing the destination', () => {
     expect(DESTINATION_SETTLE_HARD_MS).toBeLessThanOrEqual(5000);
   });
 
-  it('a press while waiting hurries the gate; back/forward cancels it', async () => {
+  it('nothing hurries the wait for the destination; back/forward cancels it', async () => {
     const r = rig();
     r.settle.hold();
     void r.runner.run(NODE, GLOBE);
@@ -768,9 +758,8 @@ describe('eversion runner: capturing the destination', () => {
     const req = r.settle.requests[0]!;
     expect(req.hurried()).toBe(false);
     expect(req.cancelled()).toBe(false);
-    r.input();
-    expect(req.hurried()).toBe(true);
     r.traverse();
+    expect(req.hurried()).toBe(false);
     expect(req.cancelled()).toBe(true);
   });
 
@@ -927,17 +916,50 @@ describe('eversion runner: a destination that cannot be captured ends the run un
 });
 
 describe('eversion runner: input, abort and faults after start', () => {
-  it('input sends one fast-forward, however many presses follow', async () => {
+  it("the effect's first frame (cover) is reported once, so the hub swells its globe with the sphere", async () => {
+    const first = vi.fn();
+    const r = rig();
+    const p = (await toStart(r, NODE, GLOBE, 'release', { onFirstFrame: first })).run;
+    expect(first).not.toHaveBeenCalled();
+    r.emit({ type: 'cover' });
+    expect(first).toHaveBeenCalledTimes(1);
+    r.emit(DONE);
+    await p;
+  });
+
+  it('the test harness can still hurry a run: once, and never during the final dissolve', async () => {
     const r = rig();
     const p = (await toStart(r)).run;
-    r.input();
-    r.input();
-    r.input();
+    r.emit({ type: 'cover' });
+    r.runner.fastForward();
+    r.runner.fastForward();
     expect(r.posted.filter((m) => m.type === 'fast-forward')).toHaveLength(1);
     r.emit(DONE);
     await p;
-    r.input(); // listener removed with the run
+    r.runner.fastForward(); // nothing in flight
     expect(r.posted.filter((m) => m.type === 'fast-forward')).toHaveLength(1);
+
+    const q = rig();
+    const pq = (await toStart(q)).run;
+    q.emit({ type: 'cover' });
+    q.emit({ type: 'uncover' });
+    await flush();
+    q.runner.fastForward();
+    expect(q.posted.some((m) => m.type === 'fast-forward')).toBe(false);
+    q.emit(DONE);
+    await pq;
+  });
+
+  it('the run always plays in full: the page has no input that could speed it up', async () => {
+    // Owner, 2026-10-20: "Ensure the animation always plays in full, don't speed it up too much." A tap used to
+    // fast-forward everything left into 650 ms, and one made while the destination rendered was queued for start.
+    const r = rig();
+    expect('onInput' in r.deps.page).toBe(false);
+    const p = (await toStart(r)).run;
+    r.emit({ type: 'cover' });
+    r.emit(DONE);
+    await p;
+    expect(r.posted.some((m) => m.type === 'fast-forward')).toBe(false);
   });
 
   it('abort posts abort and tags the gate reason', async () => {
@@ -1041,18 +1063,6 @@ describe('eversion runner: router and viewport edge cases (spec 9.4)', () => {
     expect(r.posted.filter((m) => m.type === 'resize')).toHaveLength(1);
   });
 
-  it('input once the unwrap is done (the reveal fade) is ignored', async () => {
-    const r = rig();
-    const p = (await toStart(r)).run;
-    r.emit({ type: 'cover' });
-    r.emit({ type: 'uncover' });
-    await flush();
-    r.input();
-    expect(r.posted.some((m) => m.type === 'fast-forward')).toBe(false);
-    r.emit(DONE);
-    await p;
-  });
-
   it('a host that throws on post after start ends the run as a lost context, without throwing', async () => {
     const r = rig();
     const p = (await toStart(r)).run;
@@ -1102,24 +1112,9 @@ describe('eversion runner: commit point, queued input, teardown (review fixes)',
     expect(abandoned).not.toHaveBeenCalled();
   });
 
-  it('input while still priming is queued and becomes a fast-forward right after start', async () => {
-    const r = rig();
-    void r.runner.run(NODE, GLOBE);
-    await flush();
-    r.input();
-    r.input();
-    expect(r.posted.some((m) => m.type === 'fast-forward')).toBe(false);
-    r.routerIdle.resolve();
-    await flush();
-    const types = r.posted.map((m) => m.type);
-    expect(types.filter((t) => t === 'fast-forward')).toHaveLength(1);
-    expect(types.indexOf('fast-forward')).toBeGreaterThan(types.indexOf('start'));
-  });
-
-  it('input during a run that falls back is forgotten (no listener left behind)', async () => {
+  it('a run that falls back posts nothing', async () => {
     const r = rig({ awaitBefore: async () => null });
     await r.runner.run(NODE, GLOBE);
-    r.input();
     expect(r.posted).toEqual([]);
   });
 

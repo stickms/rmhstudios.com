@@ -206,6 +206,7 @@ function RadialTopBar() {
           type="button"
           ref={searchRef}
           className="radial-topbar__btn"
+          data-evert=""
           data-fluid-press=""
           onClick={() => toggle('search')}
           {...panelIntentProps}
@@ -225,6 +226,7 @@ function RadialTopBar() {
               type="button"
               ref={messagesRef}
               className="radial-topbar__btn max-sm:hidden"
+              data-evert=""
               data-fluid-press=""
               onClick={() => toggle('messages')}
               {...panelIntentProps}
@@ -243,6 +245,7 @@ function RadialTopBar() {
               type="button"
               ref={bellRef}
               className="radial-topbar__btn"
+              data-evert=""
               data-fluid-press=""
               onClick={() => toggle('notifications')}
               {...panelIntentProps}
@@ -299,6 +302,7 @@ function RadialTopBar() {
             to="/login"
             search={{ callbackURL: undefined }}
             className="radial-topbar__signin"
+            data-evert=""
             data-fluid-press=""
           >
             {t('sign-in', { defaultValue: 'Sign in' })}

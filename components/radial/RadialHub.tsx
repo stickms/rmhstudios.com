@@ -160,8 +160,15 @@ const HANDOVER_PROPS = [
   '--eversion-wrap',
 ] as const;
 
+/** The effect's sphere has started to move: the glass globe swells with it (radial.css, `data-eversion-swell`). */
+function markSwelling(hub: HTMLElement | null): void {
+  hub?.setAttribute('data-eversion-swell', '');
+}
+
 function clearHandover(hub: HTMLElement | null): void {
-  if (hub) for (const name of HANDOVER_PROPS) hub.style.removeProperty(name);
+  if (!hub) return;
+  for (const name of HANDOVER_PROPS) hub.style.removeProperty(name);
+  hub.removeAttribute('data-eversion-swell');
 }
 
 export function RadialHub() {
@@ -286,6 +293,11 @@ export function RadialHub() {
             hub.style.setProperty('--eversion-wrap', `${handover.wrapMs}ms`);
           }
           setPhase('everting');
+        },
+        // The effect's sphere moves from its first frame: the glass globe swells with it from now (radial.css).
+        // Written on the element, not through state, so no render lands in the frame the motion starts.
+        swelling: () => {
+          markSwelling(hubRef.current);
         },
         closed: () => {
           clearTimer();

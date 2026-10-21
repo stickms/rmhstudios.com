@@ -296,22 +296,6 @@ function createPagePort(): PagePort {
       };
     },
     nextFrame,
-    onInput(cb) {
-      const onKey = (e: KeyboardEvent) => {
-        if (e.repeat || ['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) return;
-        cb();
-      };
-      const onPointer = () => cb();
-      // Capture phase on `window`: the fading hub above the overlay sees the press first otherwise.
-      // Not `wheel`: a scroll is not a skip request, and the inertial tail of a
-      // trackpad flick made just before releasing would fast-forward the run at once.
-      window.addEventListener('pointerdown', onPointer, { capture: true, passive: true });
-      window.addEventListener('keydown', onKey, { capture: true });
-      return () => {
-        window.removeEventListener('pointerdown', onPointer, { capture: true });
-        window.removeEventListener('keydown', onKey, { capture: true });
-      };
-    },
     currentHref: () => window.location.pathname + window.location.search + window.location.hash,
   };
 }
@@ -532,7 +516,7 @@ export interface EversionControllerHandle extends EversionController {
     node: EversionNode,
     state: GlobeStartState,
     entry?: EntryPoint,
-    options?: Pick<RunOptions, 'onCommit' | 'globe'>,
+    options?: Pick<RunOptions, 'onCommit' | 'onFirstFrame' | 'globe'>,
   ): Promise<EversionOutcome>;
   /** Hurry the run in flight: back/forward (T33). */
   abort(): void;
@@ -732,6 +716,17 @@ export function createEversionController(
     },
     ...overrides,
   });
+  // The e2e harness hurries runs on a software GPU through this; nothing a visitor does reaches it. Behind the
+  // debug flag, and on a page the harness marked (`__EVERSION_E2E`, set beside `__EVERSION_MAX_RUN_MS` by
+  // testing/e2e/lib/eversion-session.mjs) for the suites that run without the flag's overlay.
+  const hurry = { fastForward: () => runner.fastForward() };
+  const unregisterDebugRun = registerDebug('run', hurry);
+  const e2e = window as unknown as { __EVERSION_E2E?: unknown; __eversionRun?: typeof hurry };
+  if (e2e.__EVERSION_E2E === true) e2e.__eversionRun = hurry;
+  const unregisterRun = () => {
+    unregisterDebugRun();
+    if (e2e.__eversionRun === hurry) delete e2e.__eversionRun;
+  };
 
   function cancelPrep() {
     if (timer) clearTimeout(timer);
@@ -841,6 +836,7 @@ export function createEversionController(
     state: () => runner.state(),
     dispose() {
       cancelPrep();
+      unregisterRun();
       // Ends a run in flight outright (cover class, settle attribute, overlay) and
       // makes one still priming fall back: nothing is left to finish it.
       runner.dispose();

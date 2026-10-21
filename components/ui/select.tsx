@@ -307,6 +307,7 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
           <SelectPrimitive.Trigger
             ref={ref}
             data-slot="select"
+            data-evert=""
             className={cn(
               // Radius and elevation come from the tier's control tokens, like
               // Button/Input/Badge, so a select squares off and swaps its

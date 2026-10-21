@@ -153,6 +153,9 @@ export async function openSession(options = {}) {
   // controller honours this override (RUN watchdog only; nothing else reads it).
   await context.addInitScript((ms) => {
     window.__EVERSION_MAX_RUN_MS = ms;
+    // No visitor input hurries a run (it always plays in full, amended 2026-10-20), but a software-GL run takes
+    // minutes: the controller exposes the timeline's fast-forward to a page marked as the harness (`hurry()`).
+    window.__EVERSION_E2E = true;
   }, Number(process.env.EVERSION_E2E_MAX_RUN_MS ?? 600_000));
   const page = await context.newPage();
 
@@ -274,6 +277,12 @@ export async function openSession(options = {}) {
     waitForMark,
     startRecording,
     stopRecording,
+    /**
+     * Fast-forward the hub's run in flight (the timeline's own fast-forward; a no-op outside a run or in its final
+     * dissolve). The harness's way to keep software-GL runs short: no key or tap does this for a visitor.
+     */
+    hurry: () =>
+      page.evaluate(() => (window.__eversion?.run ?? window.__eversionRun)?.fastForward()),
     /** A PNG screenshot of the viewport (not full page) — what S#29 compares the cover frame to. */
     screenshot: () => page.screenshot({ type: 'png', fullPage: false }),
     async close() {

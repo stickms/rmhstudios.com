@@ -14,6 +14,14 @@
    no import of its own and `EversionOverlay.tsx` must not add one.
    ========================================================================== */
 
+/* The timeline's WRAP curve for the sphere's radius and centre: a quintic from rest
+   to rest (smootherstep), as a CSS easing, so the hub's glass globe swells on the
+   sphere's own curve (radial.css, `data-eversion-swell`). 33 evenly spaced stops;
+   lib/eversion/__tests__/eversion-css.test.ts re-derives them. */
+:root {
+  --eversion-ease-wrap: linear(0, 0.0003, 0.0022, 0.0071, 0.0161, 0.0298, 0.0488, 0.0733, 0.1035, 0.1392, 0.18, 0.2255, 0.2752, 0.3283, 0.384, 0.4416, 0.5, 0.5584, 0.616, 0.6717, 0.7248, 0.7745, 0.82, 0.8608, 0.8965, 0.9267, 0.9512, 0.9702, 0.9839, 0.9929, 0.9978, 0.9997, 1);
+}
+
 /* ── The overlay ───────────────────────────────────────────────────────────
    One fixed layer holding the effect's canvas. It sits JUST UNDER the hub's own
    overlay, not over it: the hub fades out over `HUB_FADE_MS` (radial.css,
@@ -26,8 +34,8 @@
    the viewport, not by its content, and a contained subtree is never part of
    the page's layout or paint invalidation. It carries no `backdrop-filter` and
    never will. `touch-action: none` so a finger on it can neither scroll the
-   page beneath nor start a browser gesture — a touch is the fast-forward input
-   (spec §7.6), handled in script. */
+   page beneath nor start a browser gesture. A touch does nothing to the run: it
+   always plays in full (amended 2026-10-20; it used to fast-forward, spec §7.6). */
 .eversion-overlay {
   position: fixed;
   inset: 0;

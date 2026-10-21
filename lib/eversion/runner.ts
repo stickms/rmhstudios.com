@@ -8,9 +8,9 @@
  * Everything the run touches — the render host, the capture session, the router,
  * the document, the overlay, the clock — is reached through {@link RunnerDeps}.
  * `useEversionController.ts` builds the real set; `__tests__/runner.test.ts`
- * builds a scripted one and asserts the SEQUENCE (the URL changes at `start`,
- * the cover class lives only between `cover` and `uncover`, a fast-forward
- * is posted once, a failed capture becomes `after-failed`). A sequence bug in
+ * builds a scripted one and asserts the SEQUENCE (the URL changes before `start`,
+ * the cover class lives only between `cover` and `uncover`, no input ever
+ * fast-forwards the run, a failed capture ends it `abort`). A sequence bug in
  * a hook is only visible in a browser; here it is a unit test.
  *
  * ## The sequence
@@ -180,8 +180,6 @@ export interface PagePort {
   watchSettle(): SettleWatch;
   /** Resolves on the next animation frame. */
   nextFrame(): Promise<void>;
-  /** Run `cb` on the next input that should fast-forward; returns the remover. */
-  onInput(cb: () => void): () => void;
   /** Where a Preview run goes: the current route's href. */
   currentHref(): string;
 }
@@ -282,6 +280,13 @@ export interface RunOptions {
    */
   onCommit?: (handover: EversionHandover) => void;
   /**
+   * The effect's first frame is on screen (`cover`): its sphere starts to move NOW. The hub swells its glass globe
+   * from this moment, on the sphere's own curve, so the two are one sphere frame for frame (amended 2026-10-20: a
+   * swell started on a fixed delay from the commit ran ahead of the sphere by however long the commit's render and
+   * the first GL frame took, and the two spheres disagreed about their size while one dissolved into the other).
+   */
+  onFirstFrame?: () => void;
+  /**
    * The globe's pose NOW. The destination is rendered between the confirm and
    * `start`, and the hub's globe keeps turning meanwhile: the effect starts from
    * where it is at `start`, not where it was at the confirm. Absent, the pose
@@ -297,6 +302,7 @@ export class EversionRunner {
   private afterReady = false;
   /** Posts to the host of the run in flight; `null` between runs. */
   private abortRun: (() => void) | null = null;
+  private fastForwardRun: (() => void) | null = null;
   /** Ends the run in flight at once, whatever it is doing; `null` between runs. */
   private forceEnd: ((fade?: boolean) => void) | null = null;
   /** `dispose()` was called: a run still priming falls back instead of starting. */
@@ -319,6 +325,15 @@ export class EversionRunner {
   /** Hurry the run in flight (back/forward, T33): fast-forward with the gate skipped. */
   abort(): void {
     this.abortRun?.();
+  }
+
+  /**
+   * Compress the rest of the run in flight (the timeline's fast-forward, spec §7.6). For the test harness alone
+   * (the `run` debug slot, behind `?eversion-debug`): no visitor input reaches it, the run always plays in full
+   * (amended 2026-10-20). Once, never during the final dissolve.
+   */
+  fastForward(): void {
+    this.fastForwardRun?.();
   }
 
   /**
@@ -370,14 +385,9 @@ export class EversionRunner {
     this.afterReady = false;
     const href = node.href;
 
-    // Input before `start` is not dropped: a press while the run is still
-    // priming (waiting on BEFORE, the host, the destination) is a fast-forward
-    // the visitor asked for, so it is remembered and posted the moment the
-    // render side can take it.
-    let queuedInput = false;
-    let offEarlyInput: (() => void) | null = deps.page.onInput(() => {
-      queuedInput = true;
-    });
+    // No input speeds the run up, before `start` or after it (owner, 2026-10-20: "Ensure the animation always
+    // plays in full, don't speed it up too much"). A tap while the destination renders used to be queued as a
+    // fast-forward, and a phone's wait is long enough to invite one: the whole animation then ran in 650 ms.
     // Back/forward while priming (review R6 m2): the router has already moved, so
     // the run must not then push its own destination on top. It is cancelled and
     // reported as a `traversal` fallback, which the hub answers by just closing.
@@ -389,8 +399,6 @@ export class EversionRunner {
       onTraversalNow?.();
     });
     const dropEarlyInput = () => {
-      offEarlyInput?.();
-      offEarlyInput = null;
       offEarlyTraversal?.();
       offEarlyTraversal = null;
     };
@@ -472,7 +480,6 @@ export class EversionRunner {
 
     let started = false;
     let ended = false;
-    let fastForwarded = false;
     let gateReason: GateOpenReason = 'after-ready';
     let t0 = 0;
     let revealing = false;
@@ -515,6 +522,7 @@ export class EversionRunner {
       if (watchdog) clearTimeout(watchdog);
       watchdog = null;
       this.abortRun = null;
+      this.fastForwardRun = null;
       this.forceEnd = null;
       for (const off of listeners.splice(0)) off();
       this.setCover(false);
@@ -544,6 +552,11 @@ export class EversionRunner {
           // The first frame is on screen under the frozen picture, and it is the same page, as sharp as the picture
           // now is: let the picture go.
           releaseHold();
+          try {
+            options.onFirstFrame?.();
+          } catch {
+            /* the hub's look; never the run's problem */
+          }
           return;
         case 'stage':
           armWatchdog();
@@ -742,7 +755,7 @@ export class EversionRunner {
             soft: () => soft,
             hard: () => hard,
             cancelled: stop,
-            hurried: () => queuedInput,
+            hurried: () => false,
           });
         } else {
           await deps.page.nextFrame();
@@ -847,6 +860,12 @@ export class EversionRunner {
       gateReason = 'abort';
       post({ type: 'abort' });
     };
+    let fastForwarded = false;
+    this.fastForwardRun = () => {
+      if (ended || aborted || fastForwarded || revealing) return;
+      fastForwarded = true;
+      post({ type: 'fast-forward' });
+    };
     this.forceEnd = (fade = false) => {
       if (ended) return;
       try {
@@ -864,15 +883,7 @@ export class EversionRunner {
       }
       teardown('abort');
     };
-    const fastForward = () => {
-      // Once the unwrap has finished only the reveal fade is left, and a fast-forward
-      // during it is ignored (spec 7.6); so is a second one.
-      if (ended || fastForwarded || revealing) return;
-      fastForwarded = true;
-      post({ type: 'fast-forward' });
-    };
     dropEarlyInput();
-    listeners.push(deps.page.onInput(fastForward));
     // Browser back/forward and a resize or rotation belong to the visitor, not to
     // this run (spec 9.4): hurry the run, and tell the render side the new viewport.
     listeners.push(deps.router.onTraversal(() => this.abort()));
@@ -898,7 +909,6 @@ export class EversionRunner {
       entry,
     });
     post({ type: 'start', t0, refreshHz: deps.refreshHz?.(), ...(pose ? { globe: pose } : {}) });
-    if (queuedInput) fastForward();
 
     return outcome;
   }
