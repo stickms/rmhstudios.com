@@ -26,7 +26,7 @@ const STATUS_BY_CODE = {
 export const Route = createFileRoute('/api/community-pages/$id/revisions')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional', rateLimit: 'read' }, async ({ params }) =>
+      GET: defineHandler({ auth: 'none', rateLimit: 'read' }, async ({ params }) =>
         Response.json({ revisions: await listRevisions(params.id) }),
       ),
       POST: defineHandler(

@@ -7,7 +7,7 @@ import { getPreviouslyKnownAs } from '@/lib/handles/history.server';
 /**
  * GET /api/handles/history?handle=alice — "previously known as" for a profile.
  *
- * Public (auth `optional`): the whole value of the list is that a visitor
+ * Public (auth `none`; nothing here reads the viewer): the whole value of the list is that a visitor
  * deciding whether an account is who it says it is can see it. It carries only
  * handles this account itself released inside the 30-day window — never the
  * other direction ("who used to hold this handle"), which would hand a
@@ -25,7 +25,7 @@ export const Route = createFileRoute('/api/handles/history')({
   server: {
     handlers: {
       GET: defineHandler(
-        { auth: 'optional', rateLimit: 'read', query: querySchema },
+        { auth: 'none', rateLimit: 'read', query: querySchema },
         async ({ query }) => {
           if (!query.handle && !query.userId) return badRequest('handle or userId required');
 

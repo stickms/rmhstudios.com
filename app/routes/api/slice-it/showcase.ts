@@ -18,7 +18,7 @@ export const Route = createFileRoute('/api/slice-it/showcase')({
   server: {
     handlers: {
       GET: defineHandler(
-        { auth: 'optional', rateLimit: 'read', query: QueryZ },
+        { auth: 'none', rateLimit: 'read', query: QueryZ },
         async ({ query }) => {
           const stats = await sliceItShowcaseStats(query.userId);
           return Response.json({ stats });
