@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
-import { prisma } from '@/lib/prisma.server';
+import { prismaRead } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { gameName, isRankedGame } from '@/lib/ranked/elo';
 import { tierForRating } from '@/lib/ranked/tiers';
@@ -44,7 +44,7 @@ export const Route = createFileRoute('/api/ranked/$game/leaderboard')({
           if (!isRankedGame(game)) throw new AppError('NOT_FOUND');
 
           if (query.scope === 'lifetime') {
-            const rows = await prisma.eloRating.findMany({
+            const rows = await prismaRead.eloRating.findMany({
               where: { game },
               orderBy: { rating: 'desc' },
               take: 100,
@@ -70,7 +70,7 @@ export const Route = createFileRoute('/api/ranked/$game/leaderboard')({
           // Resolve display names in one query rather than per row: the ladder
           // is already sorted and sliced, so this is a single `in` over ≤100
           // ids instead of 100 joins done for rows most of which were dropped.
-          const users = await prisma.user.findMany({
+          const users = await prismaRead.user.findMany({
             where: { id: { in: ladder.entries.map((e) => e.userId) } },
             select: userDisplaySelect,
           });

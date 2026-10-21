@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { liveMessages } from '@/lib/chat-plus/expiry.server';
 import { resolveUserDisplay } from '@/lib/user-display';
@@ -92,17 +93,20 @@ export const Route = createFileRoute('/api/messages/search')({
 
           // Latest content-matching message per conversation, for a snippet.
           const ids = conversations.map((c) => c.id);
+          // DISTINCT ON in the database: at most one row per conversation (<= 30),
+          // instead of fetching every matching message in those conversations and
+          // de-duplicating in Node. Same ordering (newest match wins) and the same
+          // case-insensitive substring semantics as Prisma's `contains`, which does
+          // not escape LIKE metacharacters either (verified on the seeded dataset).
+          const like = `%${q}%`;
           const matches = ids.length
-            ? await prisma.directMessage.findMany({
-                where: {
-                  conversationId: { in: ids },
-                  content: { contains: q, mode: 'insensitive' },
-                  AND: [liveMessages()],
-                },
-                orderBy: { createdAt: 'desc' },
-                distinct: ['conversationId'],
-                select: { conversationId: true, content: true },
-              })
+            ? await prisma.$queryRaw<{ conversationId: string; content: string }[]>`
+                SELECT DISTINCT ON ("conversationId") "conversationId", "content"
+                FROM "direct_message"
+                WHERE "conversationId" IN (${Prisma.join(ids)})
+                  AND "content" ILIKE ${like}
+                  AND ("expiresAt" IS NULL OR "expiresAt" > ${new Date()})
+                ORDER BY "conversationId", "createdAt" DESC`
             : [];
           const snippetMap = new Map(matches.map((m) => [m.conversationId, m.content]));
 

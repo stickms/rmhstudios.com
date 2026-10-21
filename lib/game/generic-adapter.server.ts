@@ -24,7 +24,7 @@
  */
 
 import type { Prisma } from '@prisma/client';
-import { prisma } from '@/lib/prisma.server';
+import { prisma, prismaRead } from '@/lib/prisma.server';
 import { getGameScoreRules, type GameScoreRules } from '@/lib/game/registry';
 // Type-only on purpose: `adapters.server.ts` imports this module for its value,
 // so a value import back would be a runtime cycle. `import type` is erased at
@@ -158,7 +158,9 @@ export async function genericLeaderboardRows(
   const take = Math.min(Math.max(Math.trunc(opts.take), 0), MAX_SCAN);
   if (take === 0) return [];
 
-  const rows = await prisma.gameStat.findMany({
+  // Board reads are lag-tolerant (the public route caches them 60 s) and never
+  // feed a write; rank-after-submit (`rankOf`) stays on the primary.
+  const rows = await prismaRead.gameStat.findMany({
     where: { gameId, ...(opts.where ?? {}) },
     // `updatedAt asc` breaks ties: whoever reached the score first outranks
     // whoever matched it later. Without a second key the order is whatever the

@@ -33,6 +33,15 @@ const DOC_SELECT = {
   uploadedBy: { select: { handle: true, name: true } },
 } as const;
 
+/**
+ * The shelf (the /library loader) renders covers, titles and badges. It never
+ * opens a book, so it never reads `toc` — a per-book JSON outline that can run
+ * to hundreds of entries — and the reader routes load that through {@link getBook}.
+ * Dropping it keeps the outline out of the SSR payload. `mapDocToBook` yields
+ * `toc: []` for a row without one.
+ */
+const SHELF_SELECT = { ...DOC_SELECT, toc: false } as const;
+
 /** Set of static filenames already migrated into the LibraryDocument table. */
 async function migratedFilenames(): Promise<Set<string>> {
   const rows = await prisma.libraryDocument.findMany({
@@ -60,7 +69,7 @@ export async function listAllBooks(): Promise<LibraryBook[]> {
   const [docs, migrated] = await Promise.all([
     prisma.libraryDocument.findMany({
       where: { hidden: false },
-      select: DOC_SELECT,
+      select: SHELF_SELECT,
       orderBy: [{ position: 'asc' }, { createdAt: 'desc' }],
     }),
     migratedFilenames(),

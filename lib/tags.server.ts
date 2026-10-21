@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
+import { getFollowingIds } from '@/lib/social/follow-graph.server';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
 import { audienceWhere } from '@/lib/feed/audience.server';
@@ -35,15 +36,13 @@ export async function listTagFeed(
   const cursor = opts.cursor ?? null;
   const limit = Math.min(opts.limit ?? 20, 50);
 
-  const hidden = await getHiddenAuthorIds(viewerId);
-  const followingIds = viewerId
-    ? (
-        await prisma.follow.findMany({
-          where: { followerId: viewerId },
-          select: { followingId: true },
-        })
-      ).map((f) => f.followingId)
-    : [];
+  // The shared, capped, cached follow list (invalidated on follow/unfollow/block)
+  // — the same one the feed filters by — not an unbounded `follow.findMany`.
+  // Independent reads, issued together.
+  const [hidden, followingIds] = await Promise.all([
+    getHiddenAuthorIds(viewerId),
+    viewerId ? getFollowingIds(viewerId) : Promise.resolve<string[]>([]),
+  ]);
 
   // Read the normalized hashtag links (post_hashtag → hashtag) instead of
   // scanning rmheet.content with ILIKE '%#tag%'. The join is exact, so no
