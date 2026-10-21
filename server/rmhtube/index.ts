@@ -123,7 +123,7 @@ function shutdown(signal: string): void {
 
   httpServer.close(() => {
     logger.info({ event: 'http_server_closed' });
-    disconnectPrisma().finally(() => {
+    chatHandler.flushPersistence().finally(() => disconnectPrisma()).finally(() => {
       process.exit(0);
     });
   });
