@@ -202,20 +202,16 @@ async function getBlogPosts(): Promise<SidebarPost[]> {
   });
 }
 
-export async function getSidebarData(opts: { recommendedUsers?: boolean } = {}) {
-  const wantRecommended = opts.recommendedUsers !== false;
+export async function getSidebarData() {
   // Resolve the viewer so recommendations can exclude self / already-followed.
   // Request-scoped: reuses the session already resolved by the root/page loader
   // on the same render instead of issuing another Better Auth + entitlement read.
-  // A caller that does not render recommendations (the explore page puts the
-  // rail's own "Who to follow" in the shell) skips the session read and the
-  // follow-graph read it implies; `recommendedUsers` is then an empty list.
-  const session = wantRecommended ? await getRequestSession() : null;
+  const session = await getRequestSession();
   const viewerId: string | null = session?.user?.id ?? null;
 
   const [userBuilds, recommendedUsers, blogPosts] = await Promise.all([
     getUserBuilds(),
-    wantRecommended ? getRecommendedUsers(viewerId) : Promise.resolve([] as SidebarUser[]),
+    getRecommendedUsers(viewerId),
     getBlogPosts(),
   ]);
 
