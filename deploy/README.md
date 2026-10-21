@@ -17,7 +17,8 @@ Terraform DNS config.
 | Path                             | Purpose                                                              |
 | -------------------------------- | ------------------------------------------------------------------- |
 | `apache/`                        | vhosts (`rmhstudios.conf` — the front door + security headers/CSP) + the active-web-port include the hotswap flips |
-| `hotswap-web.sh`                 | blue/green web swap: start new container on the spare port (7005 ⇄ 7015), health-gate, flip Apache, stop the old one |
+| `hotswap-web.sh`                 | blue/green web swap: start new container on the spare port (7005 ⇄ 7015), health-gate, flip Apache, smoke-test + bake, auto-rollback on sustained failure, then remove the old one |
+| `smoke-test.sh`                  | post-deploy smoke test of the real user path through Apache (`/`, `/api/ready`, RSS, sitemap — content-asserted); run by the hotswap, or by hand |
 | `docker/`                        | Docker daemon config / helpers                                      |
 | `postgres/`                      | Postgres tuning + host setup (DB runs on the host, reached via `host.docker.internal`) |
 | `backup/`                        | DB backup scripts (driven by the systemd timer)                    |
@@ -110,7 +111,19 @@ old host-side cover-render step in `deploy.sh` was a no-op and has been removed.
 
 ## Rollback
 
-`deploy.sh` keeps the previous SHA-tagged images (one per env). To roll back,
+**Automatic (web):** after the flip, `hotswap-web.sh` bakes the new web container
+for `BAKE_SECONDS` (default 300) with the old one stopped beside it. Three
+consecutive failed `smoke-test.sh` rounds (`BAKE_FAIL_THRESHOLD`, every
+`BAKE_INTERVAL`=20s), or the new container dying/restarting, flips Apache back
+to the old container and fails the deploy as "auto-rolled back". It will not
+flip back to an old container that is not itself healthy (that points at a
+shared dependency — DB, Redis, disk — so the new one stays live and the deploy
+fails as "ROLLBACK FAILED"). It is web-only and runs after migrations: keep
+each release's schema change backward-compatible with the previous web
+(expand/contract). `BAKE_SECONDS=0` in the deploy env skips the bake (the
+one-shot smoke gate still runs).
+
+**Manual:** `deploy.sh` keeps the previous SHA-tagged images (one per env). To roll back,
 re-run `./deploy.sh <env> <previous-sha>` on the VPS — it pulls (or reuses) that
 SHA's images and blue/green-swaps back. Replaced Node workers can be revived by
 restoring their compose command blocks (see

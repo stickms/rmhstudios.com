@@ -6,6 +6,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { EVERSION_PLAYBACK_RATE } from '../constants';
 import { createEversionCore, HIDDEN_SETTLE_GRACE_MS } from '../gl/core';
 import type { CoreDeps } from '../gl/core';
 import { ScriptedTimeline } from '../gl/__fixtures__/scripted-timeline';
@@ -254,7 +255,20 @@ describe('createEversionCore', () => {
     // main thread says 5000 when the worker clock reads 1000: main = worker + 4000
     r.send({ type: 'start', t0: 5000 });
     const need = r.out.find((m) => m.type === 'need-after-by') as { deadline: number };
-    expect(need.deadline).toBe(1000 + 2500 + 4000);
+    // The scripted timeline's AFTER deadline is 2500 ms of TIMELINE time after the start; on the wall that is
+    // 2500 / EVERSION_PLAYBACK_RATE (the run plays faster than the clock), then shifted onto the main clock.
+    expect(need.deadline).toBeCloseTo(1000 + 2500 / EVERSION_PLAYBACK_RATE + 4000, 6);
+  });
+
+  it('plays the timeline EVERSION_PLAYBACK_RATE times faster than the wall clock (owner: no waiting)', () => {
+    expect(EVERSION_PLAYBACK_RATE).toBeGreaterThan(1);
+    const r = rig();
+    boot(r);
+    r.send({ type: 'start', t0: 0 });
+    // One 60 Hz frame of wall time after the start instant (env.now() was 1000); a single step stays under the
+    // timeline's MAX_DT_MS clamp, so the rate is all that scales it.
+    r.frame(1016);
+    expect(r.renderer.draws[0]!.t).toBeCloseTo(16 * EVERSION_PLAYBACK_RATE, 6);
   });
 
   it('feeds the timeline a monotonic clock even if a frame precedes the start instant', () => {
@@ -514,7 +528,7 @@ describe('createEversionCore: robustness', () => {
     // Main origin is 99 000 ms before the worker's 100 000: main = worker + 1000 whatever t0 says.
     r.send({ type: 'start', t0: 5000, origin: 99_000 });
     const need = r.out.find((m) => m.type === 'need-after-by') as { deadline: number };
-    expect(need.deadline).toBe(1000 + 2500 + 1000);
+    expect(need.deadline).toBeCloseTo(1000 + 2500 / EVERSION_PLAYBACK_RATE + 1000, 6);
   });
 
   it('answers a probe with the capabilities, without touching a renderer', () => {

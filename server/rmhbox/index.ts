@@ -11,6 +11,8 @@
  */
 
 import 'dotenv/config';
+import { installProcessGuards } from '../../lib/perf/process-guards';
+
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { Server } from 'socket.io';
 import { config } from './config';
@@ -25,8 +27,10 @@ import { StateSyncService } from './state-sync';
 import { cleanupRateLimits } from './rate-limit';
 import { disconnectPrisma } from './prisma-client';
 import { logger } from './logger';
-import { installProcessGuards } from '../shared/process-guards';
 import { instrumentHub, handleInternalMetrics } from '../../lib/perf/hub';
+
+// Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
+installProcessGuards({ service: 'rmhbox' });
 
 if (!config.CORS_ORIGIN) {
   logger.error({ event: 'fatal_missing_cors', message: 'CORS_ORIGIN must be set (RMHBOX_CORS_ORIGIN or SOCKET_CORS_ORIGIN)' });
@@ -153,7 +157,6 @@ function shutdown(signal: string): void {
   }, config.SHUTDOWN_TIMEOUT_MS);
 }
 
-installProcessGuards(logger);
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 

@@ -36,14 +36,42 @@ import './eversion.css';
  *   `EversionBridge`, which builds the page's one controller;
  * - installs the navigation interceptor (`eversion-nav.ts`), so (at the default eversion level, `all`; at `globe`
  *   it stands aside unless the hub is open) every page transition, wherever it starts and
- *   wherever it goes, runs the effect: from the open hub's globe if the hub is up, else from a globe that pops up
- *   out of the press (`popup.ts`);
+ *   wherever it goes, plays an eversion: the full-screen run from the open hub's globe if the hub is up, else
+ *   the button-sized one on the control that was pressed (`mini-globe.ts`), with the navigation never held;
+ *   the pop-up globe (`popup.ts`) remains only for a held navigation that finds no hub to hand over to;
  * - answers the Settings "Preview" button.
  *
  * Its static imports are the flag, the theme store and three small leaves; the runtime hangs off the lazy bridge
  * (`pnpm check:bundle-budget`, S#39).
  */
 const EversionBridge = lazy(() => import('./EversionBridge'));
+
+/**
+ * The button-sized eversion's renderer, its own lazy chunk (the root's static closure stays small, S#39). Warmed
+ * with the runtime, so it is normally in before the first press; a press that beats it still plays if the chunk
+ * lands within `MINI_LATE_MS`, else that one navigation plays nothing (it is never held either way).
+ */
+type MiniModule = typeof import('./mini-globe');
+let miniModule: MiniModule | null = null;
+let miniLoad: Promise<MiniModule> | null = null;
+const loadMini = () =>
+  (miniLoad ??= import('./mini-globe').then((m) => (miniModule = m)).catch((err) => {
+    miniLoad = null;
+    throw err;
+  }));
+const MINI_LATE_MS = 150;
+function playMini(control: Element): void {
+  if (miniModule) {
+    miniModule.playMiniEversion(control);
+    return;
+  }
+  const asked = performance.now();
+  void loadMini()
+    .then((m) => {
+      if (performance.now() - asked <= MINI_LATE_MS) m.playMiniEversion(control);
+    })
+    .catch(() => {});
+}
 
 /** The Settings "Preview" button's event (AppearancePanel.tsx; spec §9.3). */
 const EVERSION_PREVIEW_EVENT = 'rmh:eversion-preview';
@@ -85,6 +113,7 @@ export function EversionRoot() {
       if (ran) return;
       ran = true;
       void warmEversion();
+      void loadMini().catch(() => {});
     };
     const timer = setTimeout(warm, 800);
     const handle = w.requestIdleCallback?.(warm, { timeout: 800 });
@@ -94,7 +123,7 @@ export function EversionRoot() {
     };
   }, []);
 
-  // Every page transition runs the effect.
+  // Every page transition plays an eversion: the hub's full-screen run, or the pressed control's mini.
   useEffect(() => {
     if (!isEversionEnabled()) return;
     const navRouter = router as unknown as NavRouter;
@@ -155,6 +184,7 @@ export function EversionRoot() {
         return (phase !== undefined && phase !== 'idle' && phase !== 'done') || !!getHub()?.busy();
       },
       evert,
+      mini: playMini,
     });
   }, [router]);
 

@@ -16,6 +16,7 @@ import { PrismaClient, Prisma } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import { recordQuery, setGauge } from '../../lib/perf/process-metrics';
+import { guardPool } from '../../lib/perf/process-guards';
 import type { Logger } from './logger';
 
 /**
@@ -58,7 +59,7 @@ export function createServerPrismaClient(logger: Logger): PrismaClient {
   };
   // The pool is built here (PrismaPg 7 accepts a `pg.Pool`) so its counters can be
   // read as gauges; `disposeExternalPool` keeps `$disconnect` ending it as before.
-  const pool = new Pool(poolConfig);
+  const pool = guardPool(new Pool(poolConfig), { pool: 'prisma' });
   const adapter = new PrismaPg(pool, { disposeExternalPool: true });
   // PrismaPg only adopts the pool when `instanceof pg.Pool` held for its own copy
   // of `pg`; if not, fall back to the plain config (no gauges) rather than hand it

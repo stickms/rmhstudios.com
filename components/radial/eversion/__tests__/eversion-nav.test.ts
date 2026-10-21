@@ -1,7 +1,8 @@
 // @vitest-environment node
 /**
- * Every page transition runs the Globe Eversion (amended 2026-10-21): the interceptor's decision and its replay.
- * The browser e2e drives it end to end; this pins the rules — what is a page transition, how a held navigation is
+ * Every page transition plays an eversion (amended 2026-10-21): the interceptor's decision and its replay. The
+ * browser e2e drives it end to end; this pins the rules — what is a page transition, which carrier takes it (the
+ * hub's full-screen run, or the pressed control's button-sized one, never held), how a held navigation is
  * replayed, that a back/forward waits for the history's own revert before the run starts, and that a visitor who
  * cannot have the effect is never held back at all.
  */
@@ -11,7 +12,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   anchorToIntercept,
-  carriesNavigation,
+  navigationCarry,
   inShell,
   installNavigationEversion,
   isPageRoute,
@@ -31,9 +32,12 @@ g.window ??= new EventTarget();
 g.document ??= Object.assign(new EventTarget(), { activeElement: null, body: {} });
 g.location ??= { origin: 'https://rmh.test', pathname: '/' };
 
-/** A pointer event as the interceptor reads one. */
-const pointerDown = (x: number, y: number) =>
-  Object.assign(new Event('pointerdown'), { clientX: x, clientY: y });
+/** A pointer event as the interceptor reads one; `control` is what `closest()` finds from its target. */
+const pointerDown = (x: number, y: number, control: object | null = null) => {
+  const ev = Object.assign(new Event('pointerdown'), { clientX: x, clientY: y });
+  Object.defineProperty(ev, 'target', { value: { closest: () => control }, configurable: true });
+  return ev;
+};
 
 /** A fake anchor: what `anchorToIntercept` reads off the click's target. */
 function anchor(href: string, attrs: Record<string, string> = {}) {
@@ -139,7 +143,7 @@ function routerRig() {
   return { router, calls, block, blocked: () => blocker !== null };
 }
 
-describe('the interceptor', () => {
+describe('the interceptor, carrying through the hub (full)', () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
@@ -150,6 +154,7 @@ describe('the interceptor', () => {
       router: r.router,
       enabled: () => true,
       busy: () => false,
+      hubOpen: () => true,
       evert: (h) => held.push(h),
     });
     expect(await r.block(at('/', 0), at('/games', 1), 'PUSH')).toBe(true);
@@ -169,6 +174,7 @@ describe('the interceptor', () => {
       router: r.router,
       enabled: () => true,
       busy: () => false,
+      hubOpen: () => true,
       evert: (h) => held.push(h),
     });
     document.dispatchEvent(pointerDown(120, 340));
@@ -185,6 +191,7 @@ describe('the interceptor', () => {
       router: r.router,
       enabled: () => true,
       busy: () => false,
+      hubOpen: () => true,
       evert: (h) => held.push(h),
     });
     expect(await r.block(at('/games', 3), at('/', 2), 'BACK')).toBe(true);
@@ -209,6 +216,7 @@ describe('the interceptor', () => {
       router: r.router,
       enabled: () => s.enabled,
       busy: () => s.busy,
+      hubOpen: () => true,
       evert,
     });
     expect(await r.block(at('/'), at('/games', 1), 'PUSH')).toBe(false);
@@ -225,6 +233,7 @@ describe('the interceptor', () => {
       router: r.router,
       enabled: () => true,
       busy: () => false,
+      hubOpen: () => true,
       evert,
     });
     expect(await r.block(at('/'), at('/login'), 'REPLACE')).toBe(false);
@@ -267,26 +276,29 @@ describe('the eversion level (amended 2026-10-21)', () => {
   const rig = (level: () => 'all' | 'globe', hubOpen = () => false) => {
     const r = routerRig();
     const evert = vi.fn();
+    const mini = vi.fn();
     const off = installNavigationEversion({
       router: r.router,
       enabled: () => true,
       busy: () => false,
       evert,
+      mini,
       level,
       hubOpen,
     });
-    return { r, evert, off };
+    return { r, evert, mini, off };
   };
 
-  it('decides: all carries everything, globe only with the hub open', () => {
-    expect(carriesNavigation('all', false)).toBe(true);
-    expect(carriesNavigation('all', true)).toBe(true);
-    expect(carriesNavigation('globe', false)).toBe(false);
-    expect(carriesNavigation('globe', true)).toBe(true);
+  it('decides: the hub open is always the full run; off it, all = the mini, globe = nothing', () => {
+    expect(navigationCarry('all', true)).toBe('full');
+    expect(navigationCarry('globe', true)).toBe('full');
+    expect(navigationCarry('all', false)).toBe('mini');
+    expect(navigationCarry('globe', false)).toBe('none');
   });
 
   it('globe: never holds a push, a back or a forward off the hub, and starts nothing', async () => {
-    const { r, evert, off } = rig(() => 'globe');
+    const { r, evert, mini, off } = rig(() => 'globe');
+    document.dispatchEvent(pointerDown(10, 10, { tag: 'nav-item' }));
     expect(await r.block(at('/'), at('/games', 1), 'PUSH')).toBe(false);
     expect(await r.block(at('/games', 1), at('/', 0), 'BACK')).toBe(false);
     expect(await r.block(at('/', 0), at('/games', 1), 'FORWARD')).toBe(false);
@@ -294,6 +306,7 @@ describe('the eversion level (amended 2026-10-21)', () => {
     await Promise.resolve();
     vi.runAllTimers();
     expect(evert).not.toHaveBeenCalled();
+    expect(mini).not.toHaveBeenCalled();
     expect(r.calls).toEqual([]);
     off();
   });
@@ -307,11 +320,45 @@ describe('the eversion level (amended 2026-10-21)', () => {
     off();
   });
 
-  it('all: unchanged, holds the push and reroutes the anchor', async () => {
-    const { r, evert, off } = rig(() => 'all');
-    expect(await r.block(at('/'), at('/games', 1), 'PUSH')).toBe(true);
+  it('all, off the hub: never holds the push (no waiting) and plays the mini on the pressed control', async () => {
+    const { r, evert, mini, off } = rig(() => 'all');
+    const item = { tag: 'nav-item' };
+    document.dispatchEvent(pointerDown(40, 200, item));
+    expect(await r.block(at('/'), at('/games', 1), 'PUSH')).toBe(false);
     await Promise.resolve();
-    expect(evert).toHaveBeenCalledTimes(1);
+    vi.runAllTimers();
+    expect(evert).not.toHaveBeenCalled();
+    expect(mini).toHaveBeenCalledTimes(1);
+    expect(mini).toHaveBeenCalledWith(item);
+    // Not replayed either: the router's own navigation went through untouched.
+    expect(r.calls).toEqual([]);
+    off();
+  });
+
+  it('all, off the hub: the press is used once, and a back/forward or a press-less push plays nothing', async () => {
+    const { r, mini, off } = rig(() => 'all');
+    document.dispatchEvent(pointerDown(40, 200, { tag: 'nav-item' }));
+    await r.block(at('/'), at('/games', 1), 'PUSH');
+    expect(mini).toHaveBeenCalledTimes(1);
+    // The same press does not animate the destination's own follow-up navigation.
+    expect(await r.block(at('/games', 1), at('/games/x', 2), 'PUSH')).toBe(false);
+    expect(await r.block(at('/games/x', 2), at('/games', 1), 'BACK')).toBe(false);
+    vi.runAllTimers();
+    expect(mini).toHaveBeenCalledTimes(1);
+    off();
+  });
+
+  it('all, off the hub: a stale press (older than the origin window) is not the control', async () => {
+    const { r, mini, off } = rig(() => 'all');
+    document.dispatchEvent(pointerDown(40, 200, { tag: 'nav-item' }));
+    vi.advanceTimersByTime(2000);
+    expect(await r.block(at('/'), at('/games', 1), 'PUSH')).toBe(false);
+    expect(mini).not.toHaveBeenCalled();
+    off();
+  });
+
+  it('all: a plain anchor is still routed through the router (so it is an SPA navigation that can play)', () => {
+    const { r, off } = rig(() => 'all');
     const preventDefault = vi.fn();
     window.dispatchEvent(clickEvent(anchor('/games'), preventDefault));
     expect(preventDefault).toHaveBeenCalled();
@@ -319,33 +366,38 @@ describe('the eversion level (amended 2026-10-21)', () => {
     off();
   });
 
-  it('globe with the hub open: the hub’s globe still carries a navigation', async () => {
-    const { r, evert, off } = rig(
-      () => 'globe',
-      () => true,
-    );
-    expect(await r.block(at('/'), at('/games', 1), 'PUSH')).toBe(true);
-    await Promise.resolve();
-    expect(evert).toHaveBeenCalledTimes(1);
-    off();
+  it('either level with the hub open: the hub’s globe carries it, held for the full run', async () => {
+    for (const level of ['all', 'globe'] as const) {
+      const { r, evert, mini, off } = rig(
+        () => level,
+        () => true,
+      );
+      expect(await r.block(at('/'), at('/games', 1), 'PUSH')).toBe(true);
+      await Promise.resolve();
+      expect(evert).toHaveBeenCalledTimes(1);
+      expect(mini).not.toHaveBeenCalled();
+      off();
+    }
   });
 
   it('switching the level applies to the very next navigation, with no reinstall', async () => {
     let level: 'all' | 'globe' = 'all';
-    const { r, evert, off } = rig(() => level);
-    expect(await r.block(at('/'), at('/games', 1), 'PUSH')).toBe(true);
-    await Promise.resolve();
-    expect(evert).toHaveBeenCalledTimes(1);
+    const { r, mini, off } = rig(() => level);
+    document.dispatchEvent(pointerDown(1, 1, { tag: 'a' }));
+    await r.block(at('/'), at('/games', 1), 'PUSH');
+    expect(mini).toHaveBeenCalledTimes(1);
     level = 'globe';
-    expect(await r.block(at('/'), at('/games', 1), 'PUSH')).toBe(false);
-    await Promise.resolve();
-    expect(evert).toHaveBeenCalledTimes(1);
+    document.dispatchEvent(pointerDown(1, 1, { tag: 'b' }));
+    await r.block(at('/'), at('/games', 1), 'PUSH');
+    expect(mini).toHaveBeenCalledTimes(1);
     level = 'all';
-    expect(await r.block(at('/'), at('/games', 1), 'PUSH')).toBe(true);
+    document.dispatchEvent(pointerDown(1, 1, { tag: 'c' }));
+    await r.block(at('/'), at('/games', 1), 'PUSH');
+    expect(mini).toHaveBeenCalledTimes(2);
     off();
   });
 
-  it('with no level given, behaves as all (existing callers)', async () => {
+  it('with no level or hub given, behaves as all off the hub: nothing held', async () => {
     const r = routerRig();
     const off = installNavigationEversion({
       router: r.router,
@@ -353,7 +405,7 @@ describe('the eversion level (amended 2026-10-21)', () => {
       busy: () => false,
       evert: vi.fn(),
     });
-    expect(await r.block(at('/'), at('/games', 1), 'PUSH')).toBe(true);
+    expect(await r.block(at('/'), at('/games', 1), 'PUSH')).toBe(false);
     off();
   });
 

@@ -5,7 +5,6 @@ import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react';
 import { nitro } from 'nitro/vite';
-import { writeClusterEntry } from './server/nitro/cluster-primary';
 
 /**
  * Vite plugin that replaces *.server.{ts,tsx,js,jsx} imports with empty
@@ -389,16 +388,7 @@ export default defineConfig({
         //    10 s so the admin performance page sees every cluster worker.
         //    otel.ts feeds it requests and errors.
         fileURLToPath(new URL('./server/nitro/perf.ts', import.meta.url)),
-        fileURLToPath(new URL('./server/nitro/heap-guard.ts', import.meta.url)),
       ],
-      // Respawn dead cluster workers + graceful heap recycle (see cluster-primary.ts).
-      hooks: {
-        // A user `compiled` hook REPLACES the preset's own (node-cluster writes
-        // index.mjs in its hook), so this hook writes the supervised entry itself.
-        compiled(nitro: { options: { output: { serverDir: string } } }) {
-          writeClusterEntry(nitro.options.output.serverDir);
-        },
-      },
       rollupConfig: {
         checks: rolldownChecks,
         external: heavyExternals.map(

@@ -8,11 +8,12 @@
  */
 
 import 'dotenv/config';
+import { guardPool, installProcessGuards } from '../../lib/perf/process-guards';
+
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { Server } from 'socket.io';
 import { config } from './config';
 import { logger } from './logger';
-import { installProcessGuards } from '../shared/process-guards';
 import { disconnectPrisma } from './prisma-client';
 import { cleanupRateLimits } from './rate-limit';
 import { instrumentHub, handleInternalMetrics } from '../../lib/perf/hub';
@@ -89,6 +90,9 @@ import { registerMatchmakingHandlers, handleMatchmakingDisconnect } from './hand
 import { registerCallHandlers, handleCallDisconnect } from './handlers/call';
 import { registerControllerHandlers, handleControllerDisconnect } from './handlers/controller';
 
+// Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
+installProcessGuards({ service: 'socket-server' });
+
 // ─── Startup validation ─────────────────────────────────────────
 
 if (!config.CORS_ORIGIN) {
@@ -108,13 +112,17 @@ let authPool: Pool | null = null;
 function getAuthPool(): Pool | null {
   if (!config.DATABASE_URL) return null;
   if (!authPool) {
-    authPool = new Pool({
-      connectionString: config.DATABASE_URL,
-      // perf: one session lookup per connect, 4 is plenty; override with AUTH_DB_POOL_SIZE.
-      max: Number(process.env.AUTH_DB_POOL_SIZE) || 4,
-      idleTimeoutMillis: 30_000,
-      connectionTimeoutMillis: 5_000,
-    });
+    // guardPool: an idle client dropped by a Postgres restart must not crash the hub.
+    authPool = guardPool(
+      new Pool({
+        connectionString: config.DATABASE_URL,
+        // perf: one session lookup per connect, 4 is plenty; override with AUTH_DB_POOL_SIZE.
+        max: Number(process.env.AUTH_DB_POOL_SIZE) || 4,
+        idleTimeoutMillis: 30_000,
+        connectionTimeoutMillis: 5_000,
+      }),
+      { service: 'socket-server', pool: 'auth' },
+    );
   }
   return authPool;
 }
@@ -596,7 +604,6 @@ function shutdown(signal: string): void {
   }, config.SHUTDOWN_TIMEOUT_MS);
 }
 
-installProcessGuards(logger);
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 
