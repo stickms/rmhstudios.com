@@ -2,6 +2,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
+import { invalidateCached } from '@/lib/cached.server';
+import { appearanceSeedKey } from '@/lib/appearance/seed-cache.server';
 import { SITE_STYLES } from '@/stores/themeStore';
 import { ACCENT_PRESETS } from '@/lib/appearance';
 import { appearanceComfortSchema } from '@/lib/appearance/prefs-schema';
@@ -105,6 +107,9 @@ export const Route = createFileRoute('/api/preferences/appearance')({
             },
             update: { style, accent, reduceTransparency, ...comfort },
           });
+          // perf: the root loader caches the seed row (__root.tsx); drop it so the
+          // next render reflects this save on every instance.
+          await invalidateCached(appearanceSeedKey(session.user.id));
           return Response.json({
             style: row.style ?? null,
             accent: row.accent ?? null,

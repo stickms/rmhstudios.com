@@ -33,6 +33,8 @@ import { organizationSchema, websiteSchema, jsonLdScript } from '@/lib/schema';
 import { DEFAULT_OG_IMAGE, OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, absoluteUrl } from '@/lib/seo';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { prisma } from '@/lib/prisma.server';
+import { cachedNullable } from '@/lib/cached.server';
+import { appearanceSeedKey } from '@/lib/appearance/seed-cache.server';
 import {
   accountAppearanceSeed,
   accountSeedScript,
@@ -90,6 +92,8 @@ const SESSION_LOADER_TIMEOUT_MS = 800;
  * root loader's session wait (see SESSION_LOADER_TIMEOUT_MS). The timer is
  * cleared once `p` settles so a resolved promise can't leak a pending timeout.
  */
+const APPEARANCE_SEED_TIMEOUT_MS = 400;
+
 function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
   return new Promise<T>((resolve) => {
     const timer = setTimeout(() => resolve(fallback), ms);
@@ -124,22 +128,32 @@ const getInitialUser = createServerFn({ method: 'GET' }).handler(async () => {
     // lib/appearance/account-seed.ts. One indexed lookup on a session we have
     // already resolved; a failure here degrades to the idle sync rather than
     // taking the user lookup down with it.
-    const appearanceRow = await prisma.appearancePreference
-      .findUnique({
-        where: { userId: u.id },
-        select: {
-          style: true,
-          accent: true,
-          fontScale: true,
-          density: true,
-          readableFont: true,
-          customAccent: true,
-          reduceMotion: true,
-          glassLevel: true,
-          colorVision: true,
-        },
-      })
-      .catch(() => null);
+    // perf: this ran an uncached query on every signed-in render. Cache the row
+    // for 5 min (invalidated by the appearance PUT in
+    // app/routes/api/preferences/appearance.ts, so a save is never stale), and
+    // give it its OWN short timeout: a slow query drops only the seed, never the
+    // user (the loader keeps running and still warms the cache). The loader
+    // throws on DB failure so an error is not cached as "no row".
+    const appearanceRow = await withTimeout(
+      cachedNullable(appearanceSeedKey(u.id), 300_000, () =>
+        prisma.appearancePreference.findUnique({
+          where: { userId: u.id },
+          select: {
+            style: true,
+            accent: true,
+            fontScale: true,
+            density: true,
+            readableFont: true,
+            customAccent: true,
+            reduceMotion: true,
+            glassLevel: true,
+            colorVision: true,
+          },
+        }),
+      ).catch(() => null),
+      APPEARANCE_SEED_TIMEOUT_MS,
+      null,
+    );
     return {
       appearanceSeed: appearanceRow ? accountAppearanceSeed(appearanceRow) : null,
       user: {
