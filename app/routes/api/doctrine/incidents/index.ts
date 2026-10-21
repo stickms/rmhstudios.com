@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { CACHE_POLICY } from '@/lib/api/cache-policies';
 import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
 import { getRecentIncidents, createIncident, reportIncident } from '@/lib/doctrine/incidents';
@@ -10,7 +11,14 @@ export const Route = createFileRoute('/api/doctrine/incidents/')({
   server: {
     handlers: {
       GET: defineHandler(
-        { auth: 'none', rateLimit: { limit: 30, windowMs: 60_000, prefix: 'doctrine-incidents' } },
+        {
+          auth: 'none',
+          rateLimit: { limit: 30, windowMs: 60_000, prefix: 'doctrine-incidents' },
+          // Recent-incident list keyed by ?limit=. A report or reaction clears the
+          // in-process copy; the window is short enough that a live incident still
+          // shows up within seconds.
+          cache: CACHE_POLICY.liveList,
+        },
         async ({ request }) => {
           try {
             const url = new URL(request.url);

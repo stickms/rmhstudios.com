@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { CACHE_POLICY } from '@/lib/api/cache-policies';
 import { getArchivedSessions } from '@/lib/pf2ecal/sessions.server';
 import { archiveQuerySchema } from '@/lib/pf2ecal/types';
 
@@ -23,7 +24,13 @@ export const Route = createFileRoute('/api/pf2ecal/sessions/archive')({
   server: {
     handlers: {
       GET: defineHandler(
-        { auth: 'none', rateLimit: 'read', query: archiveQuerySchema },
+        {
+          auth: 'none',
+          rateLimit: 'read',
+          query: archiveQuerySchema,
+          // Older nights, keyed by the ?before= cursor and ?limit=.
+          cache: CACHE_POLICY.archive,
+        },
         async ({ query }) => {
           const { sessions, hasMore } = await getArchivedSessions(
             new Date(query.before),

@@ -10,6 +10,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
+import { CACHE_POLICY } from '@/lib/api/cache-policies';
 import { sliceItShowcaseStats } from '@/lib/slice-it/showcase.server';
 
 const QueryZ = z.object({ userId: z.string().min(1).max(64) });
@@ -18,7 +19,13 @@ export const Route = createFileRoute('/api/slice-it/showcase')({
   server: {
     handlers: {
       GET: defineHandler(
-        { auth: 'none', rateLimit: 'read', query: QueryZ },
+        {
+          auth: 'none',
+          rateLimit: 'read',
+          query: QueryZ,
+          // Leaderboard-grade numbers for the ?userId= player, which is in the key.
+          cache: CACHE_POLICY.leaderboard,
+        },
         async ({ query }) => {
           const stats = await sliceItShowcaseStats(query.userId);
           return Response.json({ stats });
