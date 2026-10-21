@@ -359,6 +359,11 @@ async function extendLedger(
   try {
     return await prisma.$transaction(
       async (tx) => {
+        // This transaction sits idle while the model call below runs (up to the
+        // 120s timeout). The web tier sets idle_in_transaction_session_timeout
+        // (docker-compose.yml) to reap STUCK transactions; this one is waiting by
+        // design, so exempt it or Postgres would kill it mid-generation.
+        await tx.$executeRaw`SET LOCAL idle_in_transaction_session_timeout = 0`;
         const [{ locked }] = await tx.$queryRaw<{ locked: boolean }[]>`
           SELECT pg_try_advisory_xact_lock(${GENERATION_LOCK_KEY}::bigint) AS locked
         `;

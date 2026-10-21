@@ -376,11 +376,30 @@ function createAdapter(
   // DATABASE_POOL_SIZE — see .env.example / deploy/postgres/postgresql.tuning.conf),
   // and the acquire timeout lowered from 10s→5s so overload FAILS FAST instead of
   // piling up multi-second waits behind an already-saturated pool.
+  //
+  // perf: server-side timeouts, so ONE slow query or a stuck transaction cannot
+  // hold a pool slot indefinitely (every other request then fails the 5s acquire
+  // above). pg sends these as startup parameters on each new connection.
+  //   DATABASE_STATEMENT_TIMEOUT_MS      cancel any single statement past N ms
+  //   DATABASE_IDLE_TX_TIMEOUT_MS        kill a session left idle inside a tx past N ms
+  // OFF by default (unset/0) so scripts, jobs and cron workers that import this
+  // module keep today's behaviour; docker-compose.yml turns them on for `web`
+  // only. Code that legitimately exceeds them opts out per transaction with
+  // `SET LOCAL statement_timeout = …` / `SET LOCAL idle_in_transaction_session_timeout = 0`
+  // (see lib/ops/cohorts.server.ts, lib/kaikai-debt/ledger.server.ts).
+  // NOTE: PgBouncer in transaction mode (compose `pgbouncer` profile) IGNORES
+  // startup parameters, so behind a pooler these have no effect; the equivalent
+  // there is `ALTER ROLE <app role> SET statement_timeout = …` (and likewise
+  // idle_in_transaction_session_timeout), which applies server-side regardless.
+  const statementTimeout = optionalMs('DATABASE_STATEMENT_TIMEOUT_MS');
+  const idleTxTimeout = optionalMs('DATABASE_IDLE_TX_TIMEOUT_MS');
   const poolConfig = {
     connectionString,
     max: poolSize,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 5_000,
+    ...(statementTimeout ? { statement_timeout: statementTimeout } : {}),
+    ...(idleTxTimeout ? { idle_in_transaction_session_timeout: idleTxTimeout } : {}),
   };
   const pool = new Pool(poolConfig);
   const adapter = new PrismaPg(pool, { disposeExternalPool: true });
@@ -394,6 +413,12 @@ function createAdapter(
   }
   trackedPools[role] = { pool, max: poolSize };
   return adapter;
+}
+
+/** A positive millisecond count from the environment, or undefined (= off). */
+function optionalMs(envVar: string): number | undefined {
+  const raw = parseInt(process.env[envVar] || '', 10);
+  return Number.isFinite(raw) && raw > 0 ? raw : undefined;
 }
 
 function poolSize(envVar: string, fallback: number): number {
