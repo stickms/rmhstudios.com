@@ -6,11 +6,11 @@
 //   POST /v1/heartbeat/:n → VPS check-ins; silence is the alarm
 //   GET  /v1/alarms       → current alarm records (debugging; feeds the alarms dashboard)
 //
-// /v1/* is behind a Cloudflare Access service token, verified again here
-// (access.ts). All state lives in one Durable Object so clicks and cron ticks
-// are serialised. See README.md for setup and the deploy order.
+// /v1/* requests are HMAC-signed by the VPS with a timestamp + one-time nonce
+// (signing.ts); the nonce is claimed inside the Durable Object so a captured
+// request can't be replayed. All state lives in that one Durable Object, so
+// clicks, alerts and cron ticks are serialised. See README.md for setup.
 
-import { verifyAccess } from './access';
 import {
   alertMessage,
   discordNotifier,
@@ -23,6 +23,7 @@ import {
 import { Engine, validateInput, type AlarmRecord } from './engine';
 import type { DurableObjectStateLike, Env, ExecutionContextLike } from './env';
 import { checkHeartbeats, recordHeartbeat, runProbes } from './probes';
+import { SIGNATURE_WINDOW_SECONDS, verifySignature } from './signing';
 
 const MAX_BODY_BYTES = 64 * 1024;
 
@@ -85,22 +86,19 @@ async function handleInteraction(request: Request, env: Env): Promise<Response> 
 }
 
 async function handleV1(request: Request, env: Env, url: URL): Promise<Response> {
-  const gate = await verifyAccess(request, {
-    teamDomain: env.ACCESS_TEAM_DOMAIN,
-    aud: env.ACCESS_AUD,
-    clientId: env.ACCESS_CLIENT_ID,
-  });
+  const raw = await readBody(request);
+  if (raw === null) return json({ error: 'payload too large' }, 413);
+  const gate = await verifySignature(request, url.pathname, raw, env.ONCALL_SIGNING_SECRET);
   if (!gate.ok) return json({ error: gate.reason }, gate.status);
+  const nonce = gate.nonce;
 
-  if (request.method === 'GET' && url.pathname === '/v1/alarms') return toDO(env, '/list');
+  if (request.method === 'GET' && url.pathname === '/v1/alarms') return toDO(env, '/list', { nonce });
   if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405);
 
   const hb = /^\/v1\/heartbeat\/([a-z0-9-]{1,40})$/.exec(url.pathname);
-  if (hb) return toDO(env, '/heartbeat', { name: hb[1] });
+  if (hb) return toDO(env, '/heartbeat', { nonce, name: hb[1] });
 
   if (url.pathname === '/v1/alert') {
-    const raw = await readBody(request);
-    if (raw === null) return json({ error: 'payload too large' }, 413);
     let body: unknown;
     try {
       body = JSON.parse(raw);
@@ -111,7 +109,7 @@ async function handleV1(request: Request, env: Env, url: URL): Promise<Response>
     if (state !== 'firing' && state !== 'resolved') return json({ error: 'state must be "firing" or "resolved"' }, 400);
     const input = validateInput(body);
     if (typeof input === 'string') return json({ error: input }, 400);
-    return toDO(env, '/alert', { state, input });
+    return toDO(env, '/alert', { nonce, state, input });
   }
   return json({ error: 'not found' }, 404);
 }
@@ -151,10 +149,32 @@ export class OncallState {
     );
   }
 
+  /** Check-and-set: true the first time a nonce is seen. Atomic because the DO is single-threaded. */
+  private async claimNonce(nonce: unknown, now: number): Promise<boolean> {
+    if (typeof nonce !== 'string' || !nonce) return false;
+    const key = `nonce:${nonce}`;
+    if ((await this.state.storage.get<number>(key)) !== undefined) return false;
+    await this.state.storage.put(key, now);
+    return true;
+  }
+
+  /** Nonces only need remembering while their timestamp could still pass the freshness check. */
+  private async pruneNonces(now: number): Promise<void> {
+    const keepMs = 2 * SIGNATURE_WINDOW_SECONDS * 1000;
+    for (const [key, seenAt] of await this.state.storage.list<number>({ prefix: 'nonce:' })) {
+      if (now - seenAt > keepMs) await this.state.storage.delete(key);
+    }
+  }
+
   async fetch(request: Request): Promise<Response> {
     const path = new URL(request.url).pathname;
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
     const now = Date.now();
+
+    // Every /v1 call carries a signed nonce; accept each one exactly once.
+    if ((path === '/alert' || path === '/heartbeat' || path === '/list') && !(await this.claimNonce(body.nonce, now))) {
+      return json({ error: 'replayed request' }, 401);
+    }
 
     switch (path) {
       case '/tick': {
@@ -163,6 +183,7 @@ export class OncallState {
           () => runProbes(this.engine, this.state.storage, this.env, fetch, now),
           () => checkHeartbeats(this.state.storage, this.engine, now),
           () => this.engine.tick(now),
+          () => this.pruneNonces(now),
         ];
         for (const step of steps) await step().catch((err) => console.error(`oncall: tick step failed ${String(err)}`));
         return json({ ok: true });

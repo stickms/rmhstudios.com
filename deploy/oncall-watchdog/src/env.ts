@@ -23,17 +23,12 @@ export interface Env {
   ONCALL_ROLE_ID: string;
   /** Optional: extra role mentioned on a Sev1 escalation. */
   ESCALATION_ROLE_ID?: string;
-  /** Cloudflare Access team domain, e.g. rmhstudios.cloudflareaccess.com */
-  ACCESS_TEAM_DOMAIN?: string;
-  /** Access application audience tag (AUD) for the /v1 path. */
-  ACCESS_AUD?: string;
-  /** Optional: only this service token's Client ID may call /v1. */
-  ACCESS_CLIENT_ID?: string;
-
   // ── secrets (`wrangler secret put`) ──
   DISCORD_BOT_TOKEN?: string;
   /** Fallback channel webhook: plain message, no buttons, if the bot post fails. */
   ONCALL_WEBHOOK_URL?: string;
+  /** HMAC key shared with the VPS for /v1 requests (signing.ts); ≥ 32 chars. */
+  ONCALL_SIGNING_SECRET?: string;
 }
 
 export interface DurableObjectNamespaceLike {
