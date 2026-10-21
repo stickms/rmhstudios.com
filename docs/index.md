@@ -56,6 +56,7 @@ codebase-overview
 architecture
 testing
 performance-slo
+status-page
 design-language
 page-consistency
 people

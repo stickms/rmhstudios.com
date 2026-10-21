@@ -2,8 +2,8 @@ package botworker
 
 import (
 	"context"
-	"os"
 
+	"github.com/rmhstudios/rmh-go/pkg/config"
 	"github.com/rmhstudios/rmh-go/pkg/worker"
 )
 
@@ -14,18 +14,18 @@ import (
 //
 // Run never calls log.Fatal, never binds a port, and never panics.
 func Run(ctx context.Context, d worker.Deps) error {
-	apiKey := os.Getenv("DEEPSEEK_API_KEY")
+	apiKey := config.GetString("DEEPSEEK_API_KEY", "")
 	if apiKey == "" {
 		d.Logger.Warn("bot-worker: DEEPSEEK_API_KEY not set — idling (no bots will be generated)")
 		<-ctx.Done()
 		return nil
 	}
 
-	model := os.Getenv("DEEPSEEK_MODEL")
-	if model == "" {
-		model = "deepseek-chat"
-	}
-	w := New(d, apiKey, model)
+	// The bots have their own model knob. DEEPSEEK_MODEL (the Discord bot's)
+	// and RMHARK_AI_MODEL (every web AI feature's) are deliberately not read,
+	// so retuning either of those never moves the bots off their model.
+	model := config.GetString("BOT_AI_MODEL", defaultModel)
+	w := New(d, apiKey, model, LoadConfig())
 	w.Start(ctx)
 	<-ctx.Done()
 	w.Stop()

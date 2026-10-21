@@ -6,31 +6,79 @@ import (
 	"html"
 	"math"
 	"net/http"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
 
 // dashboard is the HTTP handler for the status service.
 type dashboard struct {
-	prober    *Prober
-	startedAt time.Time
-	slo       SLOConfig
+	svc *Service
 }
 
-// newDashboard constructs the handler mux for the status service. startedAt is
-// the process/service start time, used to report /health uptime as Node does.
-func newDashboard(p *Prober, startedAt time.Time, slo SLOConfig) http.Handler {
-	d := &dashboard{prober: p, startedAt: startedAt, slo: slo}
+// newDashboard constructs the handler mux for the status service.
+func newDashboard(s *Service) http.Handler {
+	d := &dashboard{svc: s}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", d.handleRoot)
 	mux.HandleFunc("/api/status", d.handleAPIStatus)
 	// A SEPARATE endpoint, not extra keys on /api/status: that payload is
 	// byte-compatible with the Node original this service replaced, and staying
-	// that way is the reason nothing downstream had to change when it did.
+	// that way is the reason nothing downstream had to change when it did. Every
+	// endpoint added since follows the same rule.
 	mux.HandleFunc("/api/slo", d.handleAPISLO)
 	mux.HandleFunc("/health", d.handleHealth)
+
+	get := func(pattern string, h http.HandlerFunc) {
+		mux.HandleFunc("GET "+pattern, h)
+		mux.HandleFunc("OPTIONS "+pattern, func(w http.ResponseWriter, r *http.Request) {
+			cors(w)
+			w.WriteHeader(http.StatusNoContent)
+		})
+	}
+	get("/api/dashboard", d.handleAPIDashboard)
+	get("/api/services", d.handleAPIServices)
+	get("/api/services/{slug}", d.handleAPIService)
+	get("/api/uptime", d.handleAPIUptime)
+	get("/api/history", d.handleAPIHistory)
+	get("/api/history.csv", d.handleHistoryCSV)
+	get("/api/incidents", d.handleAPIIncidents)
+	get("/api/incidents/{id}", d.handleAPIIncident)
+	get("/api/maintenance", d.handleAPIMaintenance)
+	get("/api/announcements", d.handleAPIAnnouncements)
+	get("/api/v2/{doc}", d.handleV2)
+	get("/api/v2/{kind}/{doc}", d.handleV2Sub)
+	get("/metrics", d.handleMetrics)
+	get("/badge.svg", d.handleBadge)
+	get("/badge/{file}", d.handleBadge)
+	get("/feed.rss", d.handleRSS)
+	get("/feed.atom", d.handleAtom)
+	get("/maintenance.ics", d.handleICS)
+	get("/history", d.handleHistoryPage)
+	get("/incidents/{id}", d.handleIncidentPage)
+	get("/report", d.handleReportPage)
+	get("/embed", d.handleEmbed)
+	get("/embed.js", d.handleEmbedJS)
+	get("/manifest.webmanifest", d.handleManifest)
+	get("/robots.txt", d.handleRobots)
+
+	mux.HandleFunc("POST /api/admin/incidents", d.admin(d.adminCreateIncident))
+	mux.HandleFunc("POST /api/admin/incidents/{id}/updates", d.admin(d.adminIncidentUpdate))
+	mux.HandleFunc("PATCH /api/admin/incidents/{id}", d.admin(d.adminPatchIncident))
+	mux.HandleFunc("DELETE /api/admin/incidents/{id}", d.admin(d.adminDeleteIncident))
+	mux.HandleFunc("POST /api/admin/maintenance", d.admin(d.adminCreateMaintenance))
+	mux.HandleFunc("PATCH /api/admin/maintenance/{id}", d.admin(d.adminPatchMaintenance))
+	mux.HandleFunc("POST /api/admin/maintenance/{id}/cancel", d.admin(d.adminCancelMaintenance))
+	mux.HandleFunc("DELETE /api/admin/maintenance/{id}", d.admin(d.adminDeleteMaintenance))
+	mux.HandleFunc("GET /api/admin/announcements", d.admin(d.adminListAnnouncements))
+	mux.HandleFunc("POST /api/admin/announcements", d.admin(d.adminCreateAnnouncement))
+	mux.HandleFunc("DELETE /api/admin/announcements/{id}", d.admin(d.adminDeleteAnnouncement))
+	mux.HandleFunc("POST /api/admin/test-webhook", d.admin(d.adminTestWebhook))
 	return mux
 }
+
+func (d *dashboard) view() *View { return d.svc.View(time.Now()) }
 
 // handleRoot serves the HTML dashboard at /.
 func (d *dashboard) handleRoot(w http.ResponseWriter, r *http.Request) {
@@ -38,12 +86,10 @@ func (d *dashboard) handleRoot(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	snap := d.prober.Snapshot()
-	slo := d.prober.SLO(d.slo, time.Now())
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, renderHTML(snap, d.prober, slo))
+	fmt.Fprint(w, renderHTML(d.view()))
 }
 
 // handleAPISLO serves the multi-window burn-rate report at /api/slo (E14).
@@ -53,7 +99,7 @@ func (d *dashboard) handleRoot(w http.ResponseWriter, r *http.Request) {
 // forcing function, and it is the same number the paging rule reads, so the
 // alert and the page can never disagree about how much is left.
 func (d *dashboard) handleAPISLO(w http.ResponseWriter, r *http.Request) {
-	report := d.prober.SLO(d.slo, time.Now())
+	report := d.svc.prober.SLO(d.svc.cfg.SLO, time.Now())
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
@@ -68,7 +114,7 @@ func (d *dashboard) handleAPISLO(w http.ResponseWriter, r *http.Request) {
 
 // handleAPIStatus serves the JSON API at /api/status.
 func (d *dashboard) handleAPIStatus(w http.ResponseWriter, r *http.Request) {
-	snap := d.prober.Snapshot()
+	snap := d.svc.prober.Snapshot()
 	overall := overallStatus(snap)
 	checkedAt := latestCheckedAt(snap)
 
@@ -112,7 +158,7 @@ func (d *dashboard) handleHealth(w http.ResponseWriter, r *http.Request) {
 		Uptime float64 `json:"uptime"`
 	}{
 		Status: "ok",
-		Uptime: time.Since(d.startedAt).Seconds(),
+		Uptime: time.Since(d.svc.startedAt).Seconds(),
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -173,8 +219,8 @@ func latestCheckedAt(snap Snapshot) string {
 //   • every colour, radius and shadow is a `--site-*` token, quoted from
 //     globals.css, in the site's two shipped monochrome palettes — Daylight
 //     (`.style-default`, the bare `:root`) and Midnight (`.style-graphite`).
-//     A standalone page cannot read the visitor's account theme, so the OS
-//     preference picks between them.
+//     The OS preference picks between them unless the visitor chose one with
+//     the theme switch.
 //   • the ground is the same layered scene: the fixed aurora canvas
 //     (`--site-canvas` + the two drift keyframes), the radial ring backdrop,
 //     and the faint blob field the glass floats on.
@@ -199,10 +245,13 @@ func latestCheckedAt(snap Snapshot) string {
 //
 // Everything is inline: one document, no external CSS, JS, font or image. A
 // status page is read precisely when the rest of the platform is unreachable,
-// so it must not depend on any origin but its own — which is also why the
-// Google Fonts link the old page carried is gone. The font stack is the
-// `--site-font-display` / `--site-font-body` token value minus the self-hosted
-// webfont the main site build supplies.
+// so it must not depend on any origin but its own.
+//
+// The page is fully server-rendered — every chart is inline SVG computed in Go
+// — and the script only ENHANCES it: live refresh (it re-fetches this page and
+// swaps the `data-live` regions, so the globe never restarts), tooltips,
+// filters, preferences and notifications. With scripting off it is still the
+// whole page, refreshed by a meta tag.
 
 type statusMeta struct {
 	// label is the human word for the state, shown in the pill. Colour lives in
@@ -213,10 +262,11 @@ type statusMeta struct {
 }
 
 var statusMetaMap = map[Status]statusMeta{
-	StatusUp:       {label: "Operational", headline: "All systems operational"},
-	StatusDegraded: {label: "Degraded", headline: "Some systems degraded"},
-	StatusDown:     {label: "Down", headline: "Major outage"},
-	StatusUnknown:  {label: "Unknown", headline: "Status unknown"},
+	StatusUp:          {label: "Operational", headline: "All systems operational"},
+	StatusDegraded:    {label: "Degraded", headline: "Some systems degraded"},
+	StatusDown:        {label: "Down", headline: "Major outage"},
+	StatusUnknown:     {label: "Unknown", headline: "Status unknown"},
+	StatusMaintenance: {label: "Maintenance", headline: "Scheduled maintenance in progress"},
 }
 
 func formatSpan(bucketDur time.Duration, maxBuckets int) string {
@@ -228,85 +278,175 @@ func formatSpan(bucketDur time.Duration, maxBuckets int) string {
 	return fmt.Sprintf("%dd", int(math.Round(float64(h)/24)))
 }
 
-func bucketStatusStr(b Bucket) Status {
-	if b.Down > 0 {
-		return StatusDown
-	}
-	if b.Degraded > 0 {
-		return StatusDegraded
-	}
-	if b.Up > 0 {
-		return StatusUp
-	}
-	return StatusUnknown
+// severityLabel is the tooltip word for a bar severity.
+var severityLabel = map[string]string{
+	"up":       "No issues",
+	"blip":     "Brief blip",
+	"degraded": "Partial disruption",
+	"down":     "Major outage",
+	"maint":    "Maintenance",
+	"empty":    "No data",
 }
 
-// renderBars emits the rolling uptime strip for one service: one <span> per
-// bucket, oldest first, left-padded with empty slots so every service's strip
-// spans the same window and they line up down the page.
-func renderBars(p *Prober, name string) string {
-	p.mu.RLock()
-	h := p.hist[name]
-	p.mu.RUnlock()
+var esc = html.EscapeString
 
-	var buckets []Bucket
-	if h != nil {
-		h.mu.Lock()
-		buckets = make([]Bucket, len(h.buckets))
-		copy(buckets, h.buckets)
-		h.mu.Unlock()
+func fmtPct(p *float64) string {
+	if p == nil {
+		return "—"
 	}
+	if *p >= 100 {
+		return "100%"
+	}
+	// Never round a non-perfect record UP to 100: 99.996% is not 100%.
+	v := math.Floor(*p*100) / 100
+	return strconv.FormatFloat(v, 'f', 2, 64) + "%"
+}
 
-	maxBuckets := p.maxBuckets
-	pad := maxBuckets - len(buckets)
-	if pad < 0 {
-		pad = 0
+func fmtMs(p *float64) string {
+	if p == nil {
+		return "—"
 	}
+	if *p < 10 {
+		return strconv.FormatFloat(*p, 'f', 1, 64) + " ms"
+	}
+	return strconv.FormatFloat(math.Round(*p), 'f', 0, 64) + " ms"
+}
 
-	var sb strings.Builder
-	for i := 0; i < pad; i++ {
-		sb.WriteString(`<span class="bar" data-b="empty"></span>`)
+func fmtSecs(p *int64) string {
+	if p == nil {
+		return "—"
 	}
-	for _, b := range buckets {
-		st := bucketStatusStr(b)
-		m := statusMetaMap[st]
-		when := time.UnixMilli(b.T).UTC().Format("2006-01-02 15:04 UTC")
-		total := b.Up + b.Degraded + b.Down
-		pct := 0
-		if total > 0 {
-			pct = int(math.Round(float64(b.Up) / float64(total) * 100))
+	return HumanDuration(time.Duration(*p) * time.Second)
+}
+
+func fmtCount(n int) string {
+	s := strconv.Itoa(n)
+	if n < 10000 {
+		return s
+	}
+	var b strings.Builder
+	pre := len(s) % 3
+	if pre > 0 {
+		b.WriteString(s[:pre])
+	}
+	for i := pre; i < len(s); i += 3 {
+		if b.Len() > 0 {
+			b.WriteByte(',')
 		}
-		title := fmt.Sprintf("%s — %s (%d%% up, %d checks)", when, m.label, pct, total)
-		sb.WriteString(fmt.Sprintf(`<span class="bar" data-b="%s" title="%s"></span>`, st, html.EscapeString(title)))
+		b.WriteString(s[i : i+3])
+	}
+	return b.String()
+}
+
+func fmtBytes(n int64) string {
+	switch {
+	case n <= 0:
+		return "—"
+	case n < 1024:
+		return fmt.Sprintf("%d B", n)
+	case n < 1<<20:
+		return fmt.Sprintf("%.1f KB", float64(n)/1024)
+	}
+	return fmt.Sprintf("%.1f MB", float64(n)/(1<<20))
+}
+
+const (
+	layoutDateTime = "2 Jan 2006, 15:04 UTC"
+	layoutTime     = "15:04:05 UTC"
+	layoutDate     = "2 Jan 2006"
+)
+
+// timeTag renders a UTC timestamp the script can re-render in local time.
+func timeTag(ms int64, layout string) string {
+	if ms == 0 {
+		return "—"
+	}
+	kind := "datetime"
+	switch layout {
+	case layoutTime:
+		kind = "time"
+	case layoutDate:
+		kind = "date"
+	}
+	t := time.UnixMilli(ms).UTC()
+	return fmt.Sprintf(`<time datetime="%s" data-ts="%d" data-fmt="%s">%s</time>`,
+		t.Format(isoMillis), ms, kind, esc(t.Format(layout)))
+}
+
+// relAgo renders "3m ago" (the script keeps it ticking).
+func relAgo(ms, now int64) string {
+	if ms == 0 {
+		return "never"
+	}
+	return fmt.Sprintf(`<span data-ago="%d">%s ago</span>`, ms, HumanDuration(time.Duration(now-ms)*time.Millisecond))
+}
+
+// ── Strips ──────────────────────────────────────────────────────────────────
+
+// barTip is the tooltip text for one bucket.
+func barTip(b Bucket, start time.Time, layout string) string {
+	sev := BarSeverity(b)
+	parts := []string{start.Format(layout), severityLabel[sev]}
+	if t := b.Total(); t > 0 {
+		failed := b.Degraded + b.Down
+		parts = append(parts, fmt.Sprintf("%s up · %d of %d checks failed", fmtPct(fptr(float64(b.Up)/float64(t)*100)), failed, t))
+		if b.Down > 0 && b.Degraded > 0 {
+			parts = append(parts, fmt.Sprintf("%d down · %d degraded", b.Down, b.Degraded))
+		}
+	}
+	if b.Maint > 0 {
+		parts = append(parts, fmt.Sprintf("%d checks in maintenance", b.Maint))
+	}
+	if b.LatN > 0 {
+		parts = append(parts, fmt.Sprintf("avg %s · p95 ≈ %s", fmtMs(fptr(float64(b.LatSum)/float64(b.LatN))), fmtMs(fptr(histQuantile(b, 0.95)))))
+	}
+	return strings.Join(parts, " — ")
+}
+
+// renderStrip emits one uptime strip, aligned to wall-clock slots: slot i is
+// the bucket starting i steps before the current one, so every service's strip
+// lines up down the page AND a gap in the prober's own history (a restart, a
+// deploy) shows as an empty slot rather than silently compressing time.
+func renderStrip(buckets []Bucket, slots int, step time.Duration, now time.Time, class, layout string) string {
+	stepMs := step.Milliseconds()
+	if stepMs <= 0 || slots <= 0 {
+		return ""
+	}
+	bySlot := make(map[int64]Bucket, len(buckets))
+	for _, b := range buckets {
+		k := floorTo(b.T, stepMs)
+		cur := bySlot[k]
+		cur.T = k
+		cur.merge(b)
+		bySlot[k] = cur
+	}
+	current := floorTo(now.UnixMilli(), stepMs)
+	var sb strings.Builder
+	for i := slots - 1; i >= 0; i-- {
+		t := current - int64(i)*stepMs
+		b, ok := bySlot[t]
+		if !ok {
+			sb.WriteString(`<span class="` + class + `" data-b="empty"></span>`)
+			continue
+		}
+		sev := BarSeverity(b)
+		fmt.Fprintf(&sb, `<span class="%s" data-b="%s" title="%s"></span>`, class, sev, esc(barTip(b, time.UnixMilli(t).UTC(), layout)))
 	}
 	return sb.String()
 }
 
-// prettyCheckedAt turns the ISO checkedAt into the compact UTC stamp shown in
-// the lede, and reports whether anything has been checked at all. The epoch
-// sentinel means "not probed yet", which reads as a bogus 1970 date otherwise.
-func prettyCheckedAt(iso string) (string, bool) {
-	if iso == "" || iso == epochSentinel {
-		return "", false
-	}
-	t, err := time.Parse("2006-01-02T15:04:05.000Z07:00", iso)
-	if err != nil {
-		return iso, true
-	}
-	return t.UTC().Format("2 Jan 2006, 15:04 UTC"), true
-}
-
-// tally counts how many services are in each state — the numbers under the
-// headline, and the source of the "N of M responding" line.
-func tally(snap Snapshot) (up, degraded, down, unknown int) {
-	for _, ss := range snap.Services {
-		switch ss.Status {
+// tally counts how many services are in each display state.
+func tally(svcs []ServiceView) (up, degraded, down, maint, unknown int) {
+	for _, s := range svcs {
+		switch s.Display {
 		case StatusUp:
 			up++
 		case StatusDegraded:
 			degraded++
 		case StatusDown:
 			down++
+		case StatusMaintenance:
+			maint++
 		default:
 			unknown++
 		}
@@ -320,25 +460,24 @@ func tally(snap Snapshot) (up, degraded, down, unknown int) {
 // source of truth for where a pin sits. They are decorative — the cards below
 // carry the same information as text — so the list is aria-hidden and each pin
 // gets a native `title` for a hovering mouse.
-func renderPins(snap Snapshot) string {
+func renderPins(v *View) string {
 	var sb strings.Builder
-	for _, ss := range snap.Services {
-		m := statusMetaMap[ss.Status]
-		sb.WriteString(fmt.Sprintf(
-			`<li class="globe__pin" data-pin data-status="%s" title="%s — %s"><span class="globe__pin-dot"></span></li>`,
-			ss.Status,
-			html.EscapeString(ss.Name),
-			html.EscapeString(m.label),
-		))
+	for _, s := range v.Services {
+		m := statusMetaMap[s.Display]
+		fmt.Fprintf(&sb,
+			`<li class="globe__pin" data-pin data-svc="%s" data-status="%s" title="%s — %s"><span class="globe__pin-dot"></span></li>`,
+			esc(s.Slug), s.Display, esc(s.Name), esc(m.label))
 	}
 	return sb.String()
 }
+
+// ── Service cards ───────────────────────────────────────────────────────────
 
 // renderCards emits the grouped service list. A group heading is written
 // whenever the group changes; targets arrive in the order cmd/status built them,
 // which is already grouped, so this needs no sorting and preserves the author's
 // intended ordering within a tier.
-func renderCards(snap Snapshot, p *Prober, span string) string {
+func renderCards(v *View) string {
 	var sb strings.Builder
 	lastGroup := ""
 	open := false
@@ -350,64 +489,550 @@ func renderCards(snap Snapshot, p *Prober, span string) string {
 		}
 	}
 
-	for _, ss := range snap.Services {
-		if ss.Group != lastGroup || !open {
+	for i := range v.Services {
+		s := &v.Services[i]
+		if s.Group != lastGroup || !open {
 			closeSection()
-			lastGroup = ss.Group
-			sb.WriteString(`<section class="tier">`)
-			if ss.Group != "" {
-				sb.WriteString(fmt.Sprintf(`<h2 class="tier__label">%s</h2>`, html.EscapeString(ss.Group)))
+			lastGroup = s.Group
+			fmt.Fprintf(&sb, `<section class="tier" id="tier-%s" data-tier="%s">`, esc(Slugify(s.Group)), esc(Slugify(s.Group)))
+			if s.Group != "" {
+				fmt.Fprintf(&sb, `<h2 class="tier__label">%s</h2><button type="button" class="tier__toggle" data-collapse="%s" aria-expanded="true">Hide</button>`,
+					esc(s.Group), esc(Slugify(s.Group)))
 			}
 			sb.WriteString(`<ul class="tier__list">`)
 			open = true
 		}
+		sb.WriteString(renderServiceCard(v, s))
+	}
+	closeSection()
+	return sb.String()
+}
 
-		m := statusMetaMap[ss.Status]
-		latency := "—"
-		latencyTitle := ss.Detail
-		if ss.LatencyMs != nil {
-			latency = fmt.Sprintf("%d ms", *ss.LatencyMs)
-		}
-		if latencyTitle == "" {
-			latencyTitle = m.label
-		}
-		pctLabel := "no data"
-		if ss.UptimePct != nil {
-			pctLabel = fmt.Sprintf("%.2f%% uptime", *ss.UptimePct)
-		}
-		descHTML := ""
-		if ss.Description != "" {
-			descHTML = fmt.Sprintf(`<p class="svc__desc">%s</p>`, html.EscapeString(ss.Description))
-		}
+func renderServiceCard(v *View, s *ServiceView) string {
+	m := statusMetaMap[s.Display]
+	latency := "—"
+	latencyTitle := s.Detail
+	if s.LatencyMs != nil {
+		latency = fmt.Sprintf("%d ms", *s.LatencyMs)
+	}
+	if latencyTitle == "" {
+		latencyTitle = m.label
+	}
+	pctLabel := "no data"
+	if s.UptimePct != nil {
+		pctLabel = fmt.Sprintf("%s uptime · %s", fmtPct(s.UptimePct), v.Span)
+	}
+	dayPct := "no data"
+	if len(s.Windows) >= 5 && s.Windows[4].UptimePct != nil {
+		dayPct = fmt.Sprintf("%s uptime · %dd", fmtPct(s.Windows[4].UptimePct), v.MaxDays)
+	}
+	descHTML := ""
+	if s.Description != "" {
+		descHTML = fmt.Sprintf(`<p class="svc__desc">%s</p>`, esc(s.Description))
+	}
 
-		sb.WriteString(fmt.Sprintf(`<li class="svc glass-fill" data-status="%s">
+	// Chips: the facts worth surfacing without opening the card.
+	var chips []string
+	if s.InMaintenance {
+		chips = append(chips, `<span class="chip" data-status="maintenance">In maintenance</span>`)
+	}
+	if s.OpenIncident != "" {
+		chips = append(chips, fmt.Sprintf(`<a class="chip" data-status="degraded" href="/incidents/%s">Active incident</a>`, esc(s.OpenIncident)))
+	}
+	if s.Flapping {
+		chips = append(chips, fmt.Sprintf(`<span class="chip" data-status="degraded" title="%d state changes in the last hour">Flapping</span>`, s.Changes1h))
+	}
+	if s.TLSDaysLeft != nil && *s.TLSDaysLeft < 14 {
+		chips = append(chips, fmt.Sprintf(`<span class="chip" data-status="down">TLS expires in %dd</span>`, *s.TLSDaysLeft))
+	}
+	if s.Counters.ConsecFail > 0 && s.Display != StatusMaintenance && s.Status != StatusUp {
+		chips = append(chips, fmt.Sprintf(`<span class="chip" data-status="%s">Failing for %d checks</span>`, s.Status, s.Counters.ConsecFail))
+	}
+	chipHTML := ""
+	if len(chips) > 0 {
+		chipHTML = `<div class="svc__chips">` + strings.Join(chips, "") + `</div>`
+	}
+
+	uptimeNum := -1.0
+	if len(s.Windows) > 1 && s.Windows[1].UptimePct != nil {
+		uptimeNum = *s.Windows[1].UptimePct
+	}
+	latNum := -1.0
+	if s.Latency1h.Avg != nil {
+		latNum = *s.Latency1h.Avg
+	}
+
+	var sb strings.Builder
+	fmt.Fprintf(&sb, `<li class="svc glass-fill" data-status="%s" id="svc-%s" data-svc="%s" data-name="%s" data-group="%s" data-uptime="%.4f" data-latency="%.1f" data-issue="%t">
 <div class="svc__head">
 <span class="svc__dot" aria-hidden="true"></span>
 <div class="svc__id">
-<h3 class="svc__name">%s</h3>
+<h3 class="svc__name"><a class="svc__anchor" href="#svc-%s">%s</a></h3>
 %s
 </div>
 <div class="svc__meta">
+%s
 <span class="svc__latency" title="%s">%s</span>
 <span class="svc__pill">%s</span>
 </div>
 </div>
-<div class="svc__bars" role="img" aria-label="Uptime history for the last %s: %s">%s</div>
-<div class="svc__legend"><span>%s ago</span><span class="svc__uptime">%s</span><span>now</span></div>
-</li>`,
-			ss.Status,
-			html.EscapeString(ss.Name),
-			descHTML,
-			html.EscapeString(latencyTitle),
-			latency,
-			html.EscapeString(m.label),
-			span, pctLabel,
-			renderBars(p, ss.Name),
-			span,
-			pctLabel,
-		))
+%s
+<div class="svc__bars" data-range="hours" role="img" aria-label="Uptime history for the last %s: %s">%s</div>
+<div class="svc__bars" data-range="days" role="img" aria-label="Uptime history for the last %d days: %s">%s</div>
+<div class="svc__legend" data-range="hours"><span>%s ago</span><span class="svc__uptime">%s</span><span>now</span></div>
+<div class="svc__legend" data-range="days"><span>%dd ago</span><span class="svc__uptime">%s</span><span>today</span></div>
+`,
+		s.Display, esc(s.Slug), esc(s.Slug), esc(strings.ToLower(s.Name)), esc(s.Group), uptimeNum, latNum,
+		s.Display != StatusUp,
+		esc(s.Slug), esc(s.Name), descHTML,
+		renderSparkline(s.Recent, 60),
+		esc(latencyTitle), latency, esc(m.label),
+		chipHTML,
+		v.Span, esc(pctLabel), renderStrip(s.Hourly, v.MaxBuckets, v.BucketDur, v.GeneratedAt, "bar", "Mon 2 Jan 15:04 UTC"),
+		v.MaxDays, esc(dayPct), renderStrip(s.Daily, v.MaxDays, 24*time.Hour, v.GeneratedAt, "bar bar--day", "Mon 2 Jan 2006"),
+		v.Span, esc(pctLabel),
+		v.MaxDays, esc(dayPct),
+	)
+
+	// The at-a-glance row.
+	sb.WriteString(`<dl class="svc__stats">`)
+	if len(s.Windows) >= 4 {
+		for _, win := range s.Windows[1:4] {
+			fmt.Fprintf(&sb, `<div><dt>%s</dt><dd>%s</dd></div>`, esc(win.Label), fmtPct(win.UptimePct))
+		}
 	}
-	closeSection()
+	fmt.Fprintf(&sb, `<div><dt>p95 · 1h</dt><dd>%s</dd></div>`, fmtMs(s.Latency1h.P95))
+	apdex := "—"
+	if s.Apdex != nil {
+		apdex = strconv.FormatFloat(*s.Apdex, 'f', 2, 64)
+	}
+	fmt.Fprintf(&sb, `<div><dt title="Apdex, T = %d ms">Apdex</dt><dd>%s</dd></div>`, s.ApdexTMs, apdex)
+	trend := "—"
+	if s.LatencyTrendPct != nil {
+		trend = fmt.Sprintf("%+.0f%%", *s.LatencyTrendPct)
+	}
+	fmt.Fprintf(&sb, `<div><dt title="Last hour's mean latency against the 24h mean">Latency trend</dt><dd>%s</dd></div>`, trend)
+	sb.WriteString(`</dl>`)
+
+	sb.WriteString(renderServiceDetails(v, s))
+	sb.WriteString(`</li>`)
+	return sb.String()
+}
+
+// renderServiceDetails is the expandable panel: native <details>, so it opens
+// without a script and is announced as a disclosure by every screen reader.
+func renderServiceDetails(v *View, s *ServiceView) string {
+	now := v.GeneratedAt.UnixMilli()
+	var sb strings.Builder
+	fmt.Fprintf(&sb, `<details class="svc__more" data-detail="%s"><summary>Details, charts &amp; recent checks</summary><div class="detail">`, esc(s.Slug))
+
+	// Uptime by window.
+	sb.WriteString(`<section class="detail__block detail__block--wide"><h4>Uptime by window</h4><table class="dt"><thead><tr><th>Window</th><th>Uptime</th><th>Avail.</th><th>Checks</th><th>Failed</th><th>Downtime</th></tr></thead><tbody>`)
+	for _, win := range s.Windows {
+		partial := ""
+		if win.Partial && win.Checks > 0 {
+			partial = ` <span class="dim" title="Less history exists than this window covers">(partial)</span>`
+		}
+		fmt.Fprintf(&sb, `<tr><td>%s%s</td><td>%s</td><td>%s</td><td>%s</td><td>%d</td><td>%s</td></tr>`,
+			esc(win.Label), partial, fmtPct(win.UptimePct), fmtPct(win.AvailabilityPct), fmtCount(win.Checks), win.Failed,
+			HumanDuration(time.Duration(win.DowntimeSec)*time.Second))
+	}
+	sb.WriteString(`</tbody></table>`)
+	if s.UptimeDeltaPct != nil {
+		fmt.Fprintf(&sb, `<p class="dim">Last 24h vs the 24h before: %+.2f percentage points.</p>`, *s.UptimeDeltaPct)
+	}
+	sb.WriteString(`</section>`)
+
+	// Latency.
+	sb.WriteString(`<section class="detail__block detail__block--wide"><h4>Response time</h4><table class="dt"><thead><tr><th></th><th>avg</th><th>p50</th><th>p95</th><th>p99</th><th>min</th><th>max</th><th>n</th></tr></thead><tbody>`)
+	for _, ls := range []LatencyStats{s.Latency1h, s.Latency24h} {
+		label := ls.Window
+		if ls.Estimated {
+			label += ` <span class="dim" title="Percentiles estimated from histogram bins">≈</span>`
+		}
+		fmt.Fprintf(&sb, `<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>`,
+			label, fmtMs(ls.Avg), fmtMs(ls.P50), fmtMs(ls.P95), fmtMs(ls.P99), fmtMs(ls.Min), fmtMs(ls.Max), fmtCount(ls.Samples))
+	}
+	sb.WriteString(`</tbody></table>`)
+	budget := ""
+	if s.BudgetMs > 0 {
+		budget = fmt.Sprintf(" · degraded past %d ms", s.BudgetMs)
+	}
+	fmt.Fprintf(&sb, `<p class="dim">Apdex threshold T = %d ms%s.</p>`, s.ApdexTMs, budget)
+	sb.WriteString(renderLatencyChart(s.Hourly, v.BucketDur, v.GeneratedAt, 48, s.BudgetMs))
+	sb.WriteString(renderHistogram(s.Hourly, v.BucketDur, v.GeneratedAt))
+	sb.WriteString(`</section>`)
+
+	// Last request anatomy.
+	if s.Probe.Kind == "http" {
+		sb.WriteString(`<section class="detail__block"><h4>Last request</h4>`)
+		sb.WriteString(renderPhases(s.Probe.Phases))
+		sb.WriteString(`<dl class="kv">`)
+		kv := func(k, val string) { fmt.Fprintf(&sb, `<div><dt>%s</dt><dd>%s</dd></div>`, k, val) }
+		code := "—"
+		if s.Probe.Code > 0 {
+			code = strconv.Itoa(s.Probe.Code)
+		}
+		kv("Status code", esc(code))
+		kv("Protocol", esc(orDash(s.Probe.Proto)))
+		kv("Size", fmtBytes(s.Probe.Bytes))
+		kv("Content type", esc(orDash(s.Probe.ContentType)))
+		if t := s.Probe.TLS; t != nil {
+			kv("TLS", esc(orDash(t.Version)))
+			kv("Certificate", fmt.Sprintf("%s · %s", esc(orDash(t.Subject)), esc(orDash(t.Issuer))))
+			days := "—"
+			if s.TLSDaysLeft != nil {
+				days = fmt.Sprintf("%d days (%s)", *s.TLSDaysLeft, timeTag(t.NotAfter, layoutDate))
+			}
+			kv("Expires in", days)
+		}
+		sb.WriteString(`</dl></section>`)
+	}
+
+	// Reliability.
+	c := s.Counters
+	sb.WriteString(`<section class="detail__block"><h4>Reliability</h4><dl class="kv">`)
+	kv := func(k, val string) { fmt.Fprintf(&sb, `<div><dt>%s</dt><dd>%s</dd></div>`, k, val) }
+	streak := "—"
+	switch {
+	case c.ConsecUp > 0:
+		streak = fmt.Sprintf("%s good checks (since %s)", fmtCount(c.ConsecUp), timeTag(c.UpStreakStart, layoutDateTime))
+	case c.ConsecFail > 0:
+		streak = fmt.Sprintf("%d failed checks (since %s)", c.ConsecFail, timeTag(c.FailStreakStart, layoutDateTime))
+	}
+	kv("Current streak", streak)
+	kv("Last up", relAgo(c.LastUpAt, now))
+	lastFail := relAgo(c.LastFailAt, now)
+	if c.LastFailText != "" {
+		lastFail += ` <span class="dim">· ` + esc(c.LastFailText) + `</span>`
+	}
+	kv("Last failure", lastFail)
+	kv("Last state change", relAgo(c.LastChangeAt, now))
+	kv("State changes · 1h", strconv.Itoa(s.Changes1h))
+	kv("Incidents · 30d", strconv.Itoa(s.Incidents30d))
+	kv("MTTR · 30d", fmtSecs(s.MTTRSec))
+	kv("MTBF · 30d", fmtSecs(s.MTBFSec))
+	kv("Blips", fmtCount(c.Blips))
+	kv("Checks recorded", fmtCount(c.Checks))
+	if c.FirstSeenAt > 0 {
+		kv("Monitored since", timeTag(c.FirstSeenAt, layoutDate))
+	}
+	sb.WriteString(`</dl>`)
+	sb.WriteString(renderDistribution("Responses by status class", c.Codes, []string{"2xx", "3xx", "4xx", "5xx", "none"}))
+	sb.WriteString(renderCategories(c.Errors))
+	sb.WriteString(`</section>`)
+
+	// Recent checks.
+	sb.WriteString(`<section class="detail__block detail__block--wide"><h4>Recent checks</h4>`)
+	sb.WriteString(renderRecent(s.Recent, 20))
+	sb.WriteString(`</section>`)
+
+	fmt.Fprintf(&sb, `<p class="detail__links"><a href="/api/services/%[1]s">JSON</a> · <a href="/api/history?service=%[1]s&amp;range=daily">Daily history</a> · <a href="/badge/%[1]s.svg">Badge</a> · <a href="/api/incidents?component=%[1]s">Incidents</a> · <button type="button" class="linkish" data-copy-link="svc-%[1]s">Copy link</button></p>`, esc(s.Slug))
+	sb.WriteString(`</div></details>`)
+	return sb.String()
+}
+
+func orDash(s string) string {
+	if s == "" {
+		return "—"
+	}
+	return s
+}
+
+// renderRecent lists the newest raw checks.
+func renderRecent(samples []Sample, n int) string {
+	if len(samples) == 0 {
+		return `<p class="dim">No checks recorded yet.</p>`
+	}
+	var sb strings.Builder
+	sb.WriteString(`<ol class="checks">`)
+	for i := len(samples) - 1; i >= 0 && i >= len(samples)-n; i-- {
+		s := samples[i]
+		st := s.S
+		if s.M {
+			st = StatusMaintenance
+		}
+		lat := "—"
+		if s.L != nil {
+			lat = fmt.Sprintf("%d ms", *s.L)
+		}
+		var info []string
+		if s.C > 0 {
+			info = append(info, "HTTP "+strconv.Itoa(s.C))
+		}
+		if s.E != "" {
+			info = append(info, CategoryLabel(s.E))
+		}
+		if s.D != "" && !strings.HasPrefix(s.D, "HTTP ") {
+			info = append(info, s.D)
+		}
+		fmt.Fprintf(&sb, `<li data-status="%s"><span class="checks__dot" aria-hidden="true"></span>%s<span class="checks__st">%s</span><span class="checks__lat">%s</span><span class="checks__info">%s</span></li>`,
+			st, timeTag(s.T, layoutTime), esc(statusMetaMap[st].label), lat, esc(strings.Join(info, " · ")))
+	}
+	sb.WriteString(`</ol>`)
+	return sb.String()
+}
+
+// renderDistribution draws a stacked bar of counts by key.
+func renderDistribution(title string, counts map[string]int, order []string) string {
+	total := 0
+	for _, k := range order {
+		total += counts[k]
+	}
+	if total == 0 {
+		return ""
+	}
+	var sb strings.Builder
+	fmt.Fprintf(&sb, `<p class="dist__title">%s</p><div class="dist" role="img" aria-label="%s">`, esc(title), esc(title))
+	var legend strings.Builder
+	for _, k := range order {
+		n := counts[k]
+		if n == 0 {
+			continue
+		}
+		pct := float64(n) / float64(total) * 100
+		fmt.Fprintf(&sb, `<span class="dist__seg" data-k="%s" style="width:%.3f%%" title="%s: %s (%.2f%%)"></span>`, esc(k), pct, esc(k), fmtCount(n), pct)
+		fmt.Fprintf(&legend, `<li><span class="dist__key" data-k="%s"></span>%s <b>%s</b></li>`, esc(k), esc(k), fmtCount(n))
+	}
+	sb.WriteString(`</div><ul class="dist__legend">` + legend.String() + `</ul>`)
+	return sb.String()
+}
+
+// renderCategories lists failure categories, most frequent first.
+func renderCategories(errs map[string]int) string {
+	if len(errs) == 0 {
+		return `<p class="dim">No failures recorded.</p>`
+	}
+	keys := sortedKeys(errs)
+	sort.SliceStable(keys, func(i, j int) bool { return errs[keys[i]] > errs[keys[j]] })
+	top := errs[keys[0]]
+	var sb strings.Builder
+	sb.WriteString(`<p class="dist__title">Failures by cause</p><ul class="cats">`)
+	for _, k := range keys {
+		fmt.Fprintf(&sb, `<li><span class="cats__label">%s</span><span class="cats__bar"><span style="width:%.1f%%"></span></span><span class="cats__n">%s</span></li>`,
+			esc(CategoryLabel(k)), float64(errs[k])/float64(top)*100, fmtCount(errs[k]))
+	}
+	sb.WriteString(`</ul>`)
+	return sb.String()
+}
+
+// ── Page sections ───────────────────────────────────────────────────────────
+
+func renderAnnouncements(v *View) string {
+	var sb strings.Builder
+	for _, a := range v.Announcements {
+		link := ""
+		if a.Link != "" {
+			link = fmt.Sprintf(` <a href="%s">Learn more</a>`, esc(a.Link))
+		}
+		fmt.Fprintf(&sb, `<div class="banner" data-level="%s" role="status" data-announcement="%s"><p>%s%s</p><button type="button" class="banner__close" data-dismiss="%s" aria-label="Dismiss">×</button></div>`,
+			esc(a.Level), esc(a.ID), esc(a.Message), link, esc(a.ID))
+	}
+	for _, inc := range v.Ongoing {
+		latest := ""
+		if len(inc.Updates) > 0 {
+			latest = inc.Updates[len(inc.Updates)-1].Body
+		}
+		fmt.Fprintf(&sb, `<div class="banner" data-level="%s" role="alert"><p><b>%s</b> · %s · started %s — %s <a href="/incidents/%s">Follow this incident</a></p></div>`,
+			impactLevel(inc.Impact), esc(inc.Title), esc(titleCase(inc.State)), relAgo(inc.StartedAt, v.GeneratedAt.UnixMilli()), esc(truncate(latest, 220)), esc(inc.ID))
+	}
+	for _, m := range v.Maintenance {
+		if m.State(v.GeneratedAt) == MaintInProgress {
+			fmt.Fprintf(&sb, `<div class="banner" data-level="maintenance" role="status"><p><b>Maintenance in progress:</b> %s — until %s. <a href="#maintenance">Details</a></p></div>`,
+				esc(m.Title), timeTag(m.EndsAt, layoutDateTime))
+		}
+	}
+	return sb.String()
+}
+
+func impactLevel(impact string) string {
+	switch impact {
+	case ImpactCritical, ImpactMajor:
+		return "critical"
+	case ImpactMinor:
+		return "warning"
+	}
+	return "info"
+}
+
+// pctState colours an uptime figure against the SLO target.
+func pctState(p *float64, target float64) string {
+	switch {
+	case p == nil:
+		return "unknown"
+	case *p >= target*100:
+		return "up"
+	case *p >= 99:
+		return "degraded"
+	}
+	return "down"
+}
+
+func boolState(ok bool) string {
+	if ok {
+		return "up"
+	}
+	return "degraded"
+}
+
+func renderKPIs(v *View) string {
+	k := v.KPIs
+	var sb strings.Builder
+	sb.WriteString(`<section class="tier" aria-labelledby="kpi-h"><h2 class="tier__label" id="kpi-h">At a glance</h2><ul class="kpis">`)
+	tile := func(label, value, sub, state, tip string) {
+		stateAttr := ""
+		if state != "" {
+			stateAttr = ` data-status="` + state + `"`
+		}
+		fmt.Fprintf(&sb, `<li class="kpi glass-fill"%s title="%s"><span class="kpi__label">%s</span><span class="kpi__value">%s</span><span class="kpi__sub">%s</span></li>`,
+			stateAttr, esc(tip), esc(label), value, sub)
+	}
+	for _, w := range k.Windows[1:] {
+		tile("Uptime · "+w.Label, fmtPct(w.UptimePct), fmt.Sprintf("%s checks", fmtCount(w.Checks)), pctState(w.UptimePct, v.SLO.Target),
+			"Share of all checks across every service that were up over the last "+w.Label)
+	}
+	tile("Healthy services", fmt.Sprintf("%d / %d", k.Healthy, k.Total), fmt.Sprintf("%d flapping", k.Flapping), boolState(k.Healthy == k.Total), "Services currently operational")
+	tile("Response time · 1h", fmtMs(k.AvgLatency1h), "p95 "+fmtMs(k.P95Latency1h), "", "Mean and 95th percentile of every measured check in the last hour")
+	tile("Incidents · 30d", strconv.Itoa(k.Incidents30d), fmt.Sprintf("%d open · %d in 7d", k.OpenIncidents, k.Incidents7d), boolState(k.OpenIncidents == 0), "Automatic and declared incidents in the last 30 days")
+	tile("MTTR · 30d", fmtSecs(k.MTTRSec), "mean time to recovery", "", "Mean duration of resolved incidents in the last 30 days")
+	tile("Downtime · 30d", HumanDuration(time.Duration(k.Downtime30dSec)*time.Second), "failed checks × interval", "", "Estimated service-time spent failing, summed across all services")
+	tile("Error budget", fmtPct(fptr(v.SLO.WorstRemaining*100)), "lowest remaining · "+esc(v.SLO.BudgetWindow), pctBudgetState(v.SLO), "The least healthy service's unspent error budget")
+	tile("Checks recorded", fmtCount(k.ChecksTotal), fmt.Sprintf("%s in 24h", fmtCount(k.Checks24h)), "", "Every probe this page has recorded")
+	tile("Blips", fmtCount(k.Blips), "failures too short to be incidents", "", "Failure streaks shorter than the incident threshold")
+	if k.CertsExpiring > 0 {
+		tile("Certificates", strconv.Itoa(k.CertsExpiring), "expiring within 14 days", "down", "TLS certificates close to expiry")
+	}
+	sb.WriteString(`</ul></section>`)
+	return sb.String()
+}
+
+func pctBudgetState(r SLOReport) string {
+	switch {
+	case r.Page || r.WorstRemaining <= 0:
+		return "down"
+	case r.WorstRemaining < 0.25:
+		return "degraded"
+	}
+	return "up"
+}
+
+func renderGroups(v *View) string {
+	named := 0
+	for _, g := range v.Groups {
+		if g.Name != "" {
+			named++
+		}
+	}
+	if named == 0 {
+		return ""
+	}
+	var sb strings.Builder
+	sb.WriteString(`<ul class="groups" aria-label="Status by tier">`)
+	for _, g := range v.Groups {
+		if g.Name == "" {
+			continue
+		}
+		fmt.Fprintf(&sb, `<li><a class="group glass-fill" data-status="%s" href="#tier-%s"><span class="svc__dot" aria-hidden="true"></span><span class="group__name">%s</span><span class="group__n">%d/%d</span><span class="group__up">%s</span></a></li>`,
+			g.Display, esc(g.Slug), esc(g.Name), g.Healthy, g.Services, fmtPct(g.Uptime24h))
+	}
+	sb.WriteString(`</ul>`)
+	return sb.String()
+}
+
+func renderToolbar(v *View) string {
+	return `<div class="toolbar glass-fill" role="toolbar" aria-label="Filter and arrange services">
+<label class="toolbar__search"><span class="sr-only">Search services</span><input type="search" placeholder="Search services…" data-search autocomplete="off" /></label>
+<div class="seg" role="group" aria-label="Show">
+<button type="button" data-filter="all" aria-pressed="true">All</button>
+<button type="button" data-filter="issues" aria-pressed="false">Issues</button>
+</div>
+<div class="seg" role="group" aria-label="History range">
+<button type="button" data-range-btn="hours" aria-pressed="true">` + esc(v.Span) + `</button>
+<button type="button" data-range-btn="days" aria-pressed="false">` + strconv.Itoa(v.MaxDays) + `d</button>
+</div>
+<label class="toolbar__sort"><span class="sr-only">Sort</span><select data-sort>
+<option value="default">Default order</option>
+<option value="name">Name</option>
+<option value="uptime">Lowest uptime</option>
+<option value="latency">Slowest</option>
+<option value="status">Worst status</option>
+</select></label>
+<button type="button" class="btn" data-expand-all>Expand all</button>
+</div>`
+}
+
+func renderIncidents(v *View) string {
+	var sb strings.Builder
+	sb.WriteString(`<section class="tier" id="incidents" aria-labelledby="inc-h"><h2 class="tier__label" id="inc-h">Incidents</h2>`)
+	sb.WriteString(`<div class="seg seg--small" role="group" aria-label="Filter incidents"><button type="button" data-inc-filter="all" aria-pressed="true">All</button><button type="button" data-inc-filter="open" aria-pressed="false">Ongoing</button><button type="button" data-inc-filter="resolved" aria-pressed="false">Resolved</button><button type="button" data-inc-filter="auto" aria-pressed="false">Automatic</button><button type="button" data-inc-filter="manual" aria-pressed="false">Declared</button></div>`)
+	if len(v.Incidents) == 0 {
+		sb.WriteString(`<p class="empty glass-fill">No incidents recorded. Failure streaks shorter than the incident threshold are counted as blips on each service.</p>`)
+	} else {
+		sb.WriteString(`<ol class="incidents">`)
+		for i, inc := range v.Incidents {
+			if i >= 15 {
+				break
+			}
+			sb.WriteString(renderIncidentRow(inc, v.GeneratedAt))
+		}
+		sb.WriteString(`</ol>`)
+	}
+	sb.WriteString(`<p class="more"><a href="/history">Full incident history →</a> · <a href="/report">Monthly uptime report →</a></p></section>`)
+	return sb.String()
+}
+
+func renderIncidentRow(inc Incident, now time.Time) string {
+	state := "open"
+	sofar := " so far"
+	if inc.Resolved() {
+		state, sofar = "resolved", ""
+	}
+	latest := ""
+	if len(inc.Updates) > 0 {
+		latest = inc.Updates[len(inc.Updates)-1].Body
+	}
+	comps := ""
+	if len(inc.Components) > 0 {
+		comps = ` · <span class="inc__comps">` + esc(strings.Join(inc.Components, ", ")) + `</span>`
+	}
+	return fmt.Sprintf(`<li class="inc glass-fill" data-impact="%s" data-state="%s" data-kind="%s"><div class="inc__head"><span class="impact" data-impact="%s">%s</span><a class="inc__title" href="/incidents/%s">%s</a><span class="inc__state">%s</span></div><p class="inc__meta">%s · lasted %s%s%s</p><p class="inc__body">%s</p></li>`,
+		esc(inc.Impact), state, esc(inc.Kind), esc(inc.Impact), esc(titleCase(inc.Impact)), esc(inc.ID), esc(inc.Title), esc(titleCase(inc.State)),
+		timeTag(inc.StartedAt, layoutDateTime), HumanDuration(inc.Duration(now)), sofar,
+		comps, esc(truncate(latest, 300)))
+}
+
+func renderMaintenance(v *View) string {
+	var sb strings.Builder
+	sb.WriteString(`<section class="tier" id="maintenance" aria-labelledby="mt-h"><h2 class="tier__label" id="mt-h">Scheduled maintenance</h2>`)
+	if len(v.Maintenance) == 0 {
+		sb.WriteString(`<p class="empty glass-fill">No maintenance scheduled.</p>`)
+	} else {
+		sb.WriteString(`<ol class="incidents">`)
+		nowMs := v.GeneratedAt.UnixMilli()
+		for _, m := range v.Maintenance {
+			st := m.State(v.GeneratedAt)
+			comps := "All services"
+			if len(m.Components) > 0 {
+				comps = strings.Join(m.Components, ", ")
+			}
+			countdown := ""
+			switch st {
+			case MaintScheduled:
+				countdown = fmt.Sprintf(` · <span data-countdown="%d" data-prefix="starts in">starts in %s</span>`, m.StartsAt, HumanDuration(time.Duration(m.StartsAt-nowMs)*time.Millisecond))
+			case MaintInProgress:
+				countdown = fmt.Sprintf(` · <span data-countdown="%d" data-prefix="ends in">ends in %s</span>`, m.EndsAt, HumanDuration(time.Duration(m.EndsAt-nowMs)*time.Millisecond))
+			}
+			fmt.Fprintf(&sb, `<li class="inc glass-fill" data-status="maintenance"><div class="inc__head"><span class="impact" data-impact="maintenance">%s</span><span class="inc__title">%s</span></div><p class="inc__meta">%s → %s (%s)%s · %s</p>`,
+				esc(titleCase(strings.ReplaceAll(st, "_", " "))), esc(m.Title), timeTag(m.StartsAt, layoutDateTime), timeTag(m.EndsAt, layoutDateTime),
+				HumanDuration(time.Duration(m.EndsAt-m.StartsAt)*time.Millisecond), countdown, esc(comps))
+			if m.Description != "" {
+				fmt.Fprintf(&sb, `<p class="inc__body">%s</p>`, esc(m.Description))
+			}
+			sb.WriteString(`</li>`)
+		}
+		sb.WriteString(`</ol>`)
+	}
+	sb.WriteString(`<p class="more"><a href="/maintenance.ics">Add maintenance to your calendar (iCal) →</a></p></section>`)
 	return sb.String()
 }
 
@@ -432,7 +1057,7 @@ func budgetStatus(s ServiceSLO) Status {
 
 // renderBudget emits the error-budget section (E14): one row per service with
 // the fraction of its budget still unspent and the two burn-rate windows.
-func renderBudget(slo SLOReport) string {
+func renderBudget(slo SLOReport, interval time.Duration) string {
 	if len(slo.Services) == 0 {
 		return ""
 	}
@@ -442,8 +1067,8 @@ func renderBudget(slo SLOReport) string {
 		FastBurnThreshold, SlowBurnThreshold)
 
 	var sb strings.Builder
-	sb.WriteString(`<section class="tier"><h2 class="tier__label">Error budget</h2>`)
-	sb.WriteString(fmt.Sprintf(`<p class="tier__note">%s</p>`, html.EscapeString(headline)))
+	sb.WriteString(`<section class="tier" id="budget"><h2 class="tier__label">Error budget</h2>`)
+	sb.WriteString(fmt.Sprintf(`<p class="tier__note">%s</p>`, esc(headline)))
 	sb.WriteString(`<ul class="tier__list">`)
 
 	for _, s := range slo.Services {
@@ -459,6 +1084,14 @@ func renderBudget(slo SLOReport) string {
 			burn = fmt.Sprintf("%.1f× / %.1f×", s.BurnFast, s.BurnSlow)
 		}
 
+		// The budget in the unit people plan with: how much failure the
+		// remaining fraction still allows at the window's check count.
+		allowance := ""
+		if s.BudgetSamples > 0 {
+			allowed := float64(s.BudgetSamples) * slo.ErrorBudget * s.BudgetRemaining * interval.Seconds()
+			allowance = " · ≈" + HumanDuration(time.Duration(allowed)*time.Second) + " of failure left"
+		}
+
 		pill := "Within budget"
 		switch st {
 		case StatusDown:
@@ -471,27 +1104,30 @@ func renderBudget(slo SLOReport) string {
 			pill = "Running low"
 		}
 
-		sb.WriteString(fmt.Sprintf(`<li class="svc glass-fill" data-status="%s">
+		sb.WriteString(fmt.Sprintf(`<li class="svc svc--budget glass-fill" data-status="%s">
 <div class="svc__head">
 <span class="svc__dot" aria-hidden="true"></span>
 <div class="svc__id">
 <h3 class="svc__name">%s</h3>
-<p class="svc__desc">%s of the %s error budget remaining</p>
+<p class="svc__desc">%s of the %s error budget remaining%s</p>
 </div>
 <div class="svc__meta">
 <span class="svc__latency" title="Burn rate over %s / %s">%s</span>
 <span class="svc__pill">%s</span>
 </div>
 </div>
+<div class="meter" role="img" aria-label="%s remaining"><span style="width:%.1f%%"></span></div>
 </li>`,
 			st,
-			html.EscapeString(s.Name),
-			html.EscapeString(remaining),
-			html.EscapeString(slo.BudgetWindow),
-			html.EscapeString(slo.FastWindow),
-			html.EscapeString(slo.SlowWindow),
-			html.EscapeString(burn),
-			html.EscapeString(pill),
+			esc(s.Name),
+			esc(remaining),
+			esc(slo.BudgetWindow),
+			esc(allowance),
+			esc(slo.FastWindow),
+			esc(slo.SlowWindow),
+			esc(burn),
+			esc(pill),
+			esc(remaining), s.BudgetRemaining*100,
 		))
 	}
 
@@ -499,14 +1135,88 @@ func renderBudget(slo SLOReport) string {
 	return sb.String()
 }
 
-func renderHTML(snap Snapshot, p *Prober, slo SLOReport) string {
-	overall := overallStatus(snap)
-	meta := statusMetaMap[overall]
-	checkedAtISO := latestCheckedAt(snap)
-	checkedAt, hasChecked := prettyCheckedAt(checkedAtISO)
-	span := formatSpan(p.bucketDur, p.maxBuckets)
-	up, degraded, down, unknown := tally(snap)
-	total := len(snap.Services)
+func renderProber(v *View) string {
+	s := v.Self
+	var sb strings.Builder
+	sb.WriteString(`<section class="tier" id="prober" aria-labelledby="pr-h"><h2 class="tier__label" id="pr-h">Monitoring health</h2><p class="tier__note">The prober watching everything above — so a quiet page can be told apart from a stalled one.</p><dl class="kv kv--grid glass-fill">`)
+	kv := func(k, val string) { fmt.Fprintf(&sb, `<div><dt>%s</dt><dd>%s</dd></div>`, k, val) }
+	kv("Prober uptime", HumanDuration(time.Duration(s.UptimeSec)*time.Second))
+	kv("Probe cycles", fmtCount(int(s.Cycles)))
+	kv("Interval / timeout", fmt.Sprintf("%gs / %gs", s.IntervalSec, s.TimeoutSec))
+	kv("Last cycle", fmt.Sprintf("%.1f ms", s.LastCycleMs))
+	kv("Mean cycle", fmt.Sprintf("%.1f ms", s.AvgCycleMs))
+	kv("Targets", strconv.Itoa(s.Targets))
+	kv("Retention", fmt.Sprintf("%d × %gh · %dd · %d raw checks", s.MaxBuckets, s.BucketSec/3600, s.MaxDays, s.RecentCap))
+	persist := "off"
+	if s.Persistence {
+		persist = "on"
+		if s.LastSaveAt != "" {
+			if t, err := time.Parse(isoMillis, s.LastSaveAt); err == nil {
+				persist += " · saved " + relAgo(t.UnixMilli(), v.GeneratedAt.UnixMilli())
+			}
+		}
+	}
+	if s.LastSaveErr != "" {
+		persist += ` · <span class="warn">` + esc(s.LastSaveErr) + `</span>`
+	}
+	kv("Persistence", persist)
+	kv("Webhooks", strconv.Itoa(s.Notifiers))
+	kv("Heap / goroutines", fmt.Sprintf("%.1f MB / %d", s.HeapMB, s.Goroutines))
+	kv("Runtime", esc(s.GoVersion))
+	sb.WriteString(`</dl></section>`)
+	return sb.String()
+}
+
+func renderDevelopers(v *View) string {
+	base := "https://status.rmhstudios.com"
+	endpoints := []struct{ path, desc string }{
+		{"/api/status", "Node-compatible current status"},
+		{"/api/dashboard", "Everything on this page, as JSON"},
+		{"/api/services/{slug}", "One service: windows, latency, probe detail, history"},
+		{"/api/uptime", "Multi-window uptime for every service"},
+		{"/api/history?range=hourly|daily|recent", "Bucket history (add &service=slug)"},
+		{"/api/history.csv?range=daily", "History as CSV"},
+		{"/api/incidents", "Incidents (?status=open|resolved, ?component=)"},
+		{"/api/maintenance", "Maintenance windows"},
+		{"/api/slo", "Error budgets and burn rates"},
+		{"/api/v2/summary.json", "Statuspage-compatible summary (also status, components, incidents, scheduled-maintenances)"},
+		{"/metrics", "Prometheus exposition"},
+		{"/feed.rss", "Incident and maintenance feed (also /feed.atom)"},
+		{"/maintenance.ics", "Maintenance calendar"},
+	}
+	var sb strings.Builder
+	sb.WriteString(`<section class="tier" id="developers" aria-labelledby="dev-h"><h2 class="tier__label" id="dev-h">Subscribe &amp; integrate</h2><div class="dev glass-fill"><div class="dev__col"><h4>Endpoints</h4><ul class="endpoints">`)
+	for _, e := range endpoints {
+		link := strings.SplitN(e.path, "?", 2)[0]
+		if strings.Contains(link, "{") {
+			fmt.Fprintf(&sb, `<li><code>%s</code><span>%s</span></li>`, esc(e.path), esc(e.desc))
+			continue
+		}
+		fmt.Fprintf(&sb, `<li><a href="%s"><code>%s</code></a><span>%s</span></li>`, esc(link), esc(e.path), esc(e.desc))
+	}
+	sb.WriteString(`</ul></div><div class="dev__col"><h4>Badges</h4><p class="badges"><img src="/badge.svg" alt="Overall status badge" height="20" /> <img src="/badge.svg?style=uptime&amp;window=30d" alt="30-day uptime badge" height="20" /></p>`)
+	snippets := []struct{ label, code string }{
+		{"Markdown badge", fmt.Sprintf("[![Status](%s/badge.svg)](%s)", base, base)},
+		{"Per-service badge", fmt.Sprintf("%s/badge/website.svg?style=uptime&window=7d", base)},
+		{"Embed widget", fmt.Sprintf(`<iframe src="%s/embed" width="320" height="64" style="border:0" title="RMH Studios status"></iframe>`, base)},
+		{"Script embed", fmt.Sprintf(`<script src="%s/embed.js" async></script>`, base)},
+	}
+	for i, s := range snippets {
+		fmt.Fprintf(&sb, `<div class="snippet"><span>%s</span><code id="snip-%d">%s</code><button type="button" class="btn btn--small" data-copy="snip-%d">Copy</button></div>`, esc(s.label), i, esc(s.code), i)
+	}
+	sb.WriteString(`<h4>Get notified</h4><p class="dim">Subscribe to <a href="/feed.rss">RSS</a> or <a href="/feed.atom">Atom</a>, add <a href="/maintenance.ics">the maintenance calendar</a>, or turn on <button type="button" class="linkish" data-notify>browser notifications</button> for this tab.</p></div></div></section>`)
+	return sb.String()
+}
+
+// renderHTML renders the full dashboard document.
+func renderHTML(v *View) string {
+	headline := v.Headline
+	if headline == "" {
+		headline = statusMetaMap[v.Display].headline
+	}
+	checkedAt, hasChecked := prettyCheckedAt(v.CheckedAt)
+	up, degraded, down, maint, unknown := tally(v.Services)
+	total := len(v.Services)
 
 	lede := "No services are configured."
 	if total > 0 {
@@ -524,39 +1234,44 @@ func renderHTML(snap Snapshot, p *Prober, slo SLOReport) string {
 		state Status
 		n     int
 	}{
-		{StatusUp, up}, {StatusDegraded, degraded}, {StatusDown, down}, {StatusUnknown, unknown},
+		{StatusUp, up}, {StatusDegraded, degraded}, {StatusDown, down}, {StatusMaintenance, maint}, {StatusUnknown, unknown},
 	} {
 		if c.n == 0 {
 			continue
 		}
 		tallies.WriteString(fmt.Sprintf(
 			`<li class="tally" data-status="%s"><span class="tally__n">%d</span><span class="tally__label">%s</span></li>`,
-			c.state, c.n, html.EscapeString(statusMetaMap[c.state].label),
+			c.state, c.n, esc(statusMetaMap[c.state].label),
 		))
 	}
 
 	timeHTML := "never"
 	if hasChecked {
-		timeHTML = fmt.Sprintf(`<time datetime="%s">%s</time>`, html.EscapeString(checkedAtISO), html.EscapeString(checkedAt))
+		timeHTML = fmt.Sprintf(`<time datetime="%s">%s</time>`, esc(v.CheckedAt), esc(checkedAt))
 	}
 
 	var b strings.Builder
 	b.WriteString(`<!doctype html>
-<html lang="en" data-status="` + string(overall) + `">
+<html lang="en" data-status="` + string(v.Display) + `">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="robots" content="noindex" />
-<meta name="description" content="Live health of every RMH Studios service." />
+<meta name="description" content="Live health, uptime history, incidents and maintenance for every RMH Studios service." />
 <meta name="color-scheme" content="light dark" />
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
-<link rel="icon" href="` + faviconDataURI + `" />
-<title>` + html.EscapeString(meta.headline) + ` — RMH Studios status</title>
+<link rel="icon" href="` + faviconDataURI + `" data-favicon />
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="alternate" type="application/rss+xml" title="RMH Studios incident history (RSS)" href="/feed.rss" />
+<link rel="alternate" type="application/atom+xml" title="RMH Studios incident history (Atom)" href="/feed.atom" />
+<title>` + esc(headline) + ` — RMH Studios status</title>
 <noscript><meta http-equiv="refresh" content="30" /></noscript>
+<script>` + themeBootJS + `</script>
 <style>` + dashboardCSS + `</style>
 </head>
-<body>
+<body data-generated="` + strconv.FormatInt(v.GeneratedAt.UnixMilli(), 10) + `">
+<a class="skip" href="#services">Skip to services</a>
 <div class="site-aurora" aria-hidden="true"></div>
 <div class="backdrop" aria-hidden="true">
 <div class="backdrop__rings">`)
@@ -576,1049 +1291,98 @@ func renderHTML(snap Snapshot, p *Prober, slo SLOReport) string {
 <span class="topbar__mark">RMH</span><small>Studios</small>
 </a>
 <span class="topbar__tag">System status</span>
+<nav class="topbar__tools" aria-label="Page preferences">
+<span class="live" data-live-indicator title="Live updates" hidden><span class="live__dot" aria-hidden="true"></span><span class="live__text">Live</span></span>
+<button type="button" class="icon-btn" data-refresh title="Refresh now (r)" aria-label="Refresh now">↻</button>
+<button type="button" class="icon-btn" data-pause title="Pause live updates (p)" aria-label="Pause live updates" aria-pressed="false">❚❚</button>
+<button type="button" class="icon-btn" data-tz title="Toggle UTC / local time (z)" aria-label="Toggle time zone">UTC</button>
+<button type="button" class="icon-btn" data-density title="Compact layout (c)" aria-label="Toggle compact layout" aria-pressed="false">☰</button>
+<button type="button" class="icon-btn" data-theme-btn title="Theme (t)" aria-label="Change theme"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg></button>
+<button type="button" class="icon-btn" data-help title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">?</button>
+</nav>
 </header>
+
+<div class="banners" data-live="banners">` + renderAnnouncements(v) + `</div>
 
 <main class="shell" id="main-content">
 <section class="hero">
 <div class="globe" data-globe>
 <canvas class="globe__cage" data-cage aria-hidden="true"></canvas>
 <span class="globe__glass" aria-hidden="true"></span>
-<ul class="globe__pins" aria-hidden="true">` + renderPins(snap) + `</ul>
+<ul class="globe__pins" aria-hidden="true">` + renderPins(v) + `</ul>
 </div>
-<div class="hero__copy">
+<div class="hero__copy" data-live="hero">
 <p class="kicker">RMH Presents</p>
-<h1 class="hero__headline">` + html.EscapeString(meta.headline) + `</h1>
-<p class="hero__lede">` + html.EscapeString(lede) + `</p>
+<h1 class="hero__headline">` + esc(headline) + `</h1>
+<p class="hero__lede">` + esc(lede) + `</p>
 <ul class="hero__tallies">` + tallies.String() + `</ul>
 </div>
 </section>
+<p class="hero__live" aria-live="off"><span data-updated>Updated just now</span><span data-countdown-refresh></span> · <button type="button" class="linkish" data-copy-summary>Copy status summary</button></p>
 
-` + renderCards(snap, p, span) + renderBudget(slo) + `
+<div data-live="kpis">` + renderKPIs(v) + `</div>
+<div data-live="groups">` + renderGroups(v) + `</div>
+` + renderToolbar(v) + `
+<div id="services" data-live="services">` + renderCards(v) + `</div>
+<p class="empty glass-fill" data-no-results hidden>No services match.</p>
+<div data-live="incidents">` + renderIncidents(v) + `</div>
+<div data-live="maintenance">` + renderMaintenance(v) + `</div>
+<div data-live="calendar">` + renderCalendar(v) + `</div>
+<div data-live="heatmap">` + renderHeatmap(v) + `</div>
+<div data-live="leaderboard">` + renderLeaderboard(v) + `</div>
+<div data-live="budget">` + renderBudget(v.SLO, v.Interval) + `</div>
+<div data-live="prober">` + renderProber(v) + `</div>
+` + renderDevelopers(v) + `
 </main>
 
 <footer class="foot">
-<p>Last checked ` + timeHTML + ` · refreshes every 30s</p>
-<p><a href="/api/status">status.json</a> · <a href="/api/slo">slo.json</a> · <a href="https://rmhstudios.com/">rmhstudios.com</a></p>
+<p data-live="foot">Last checked ` + timeHTML + ` · refreshes every 30s</p>
+<p><a href="/history">History</a> · <a href="/report">Uptime report</a> · <a href="/api/status">status.json</a> · <a href="/api/slo">slo.json</a> · <a href="/api/v2/summary.json">summary.json</a> · <a href="/feed.rss">RSS</a> · <a href="https://rmhstudios.com/">rmhstudios.com</a></p>
 </footer>
+
+<div class="tip" role="tooltip" data-tip hidden></div>
+<div class="toast" role="status" aria-live="polite" data-toast hidden></div>
+<dialog class="help" data-help-dialog aria-labelledby="help-h">
+<h2 id="help-h">Keyboard shortcuts</h2>
+<dl class="kv">
+<div><dt><kbd>/</kbd></dt><dd>Search services</dd></div>
+<div><dt><kbd>i</kbd></dt><dd>Show only services with issues</dd></div>
+<div><dt><kbd>g</kbd></dt><dd>Toggle hourly / daily history</dd></div>
+<div><dt><kbd>e</kbd></dt><dd>Expand / collapse all details</dd></div>
+<div><dt><kbd>r</kbd></dt><dd>Refresh now</dd></div>
+<div><dt><kbd>p</kbd></dt><dd>Pause / resume live updates</dd></div>
+<div><dt><kbd>z</kbd></dt><dd>Toggle UTC / local time</dd></div>
+<div><dt><kbd>t</kbd></dt><dd>Cycle theme (auto, light, dark)</dd></div>
+<div><dt><kbd>c</kbd></dt><dd>Compact layout</dd></div>
+<div><dt><kbd>?</kbd></dt><dd>This help</dd></div>
+</dl>
+<form method="dialog"><button class="btn" type="submit">Close</button></form>
+</dialog>
 <script>` + dashboardJS + `</script>
+<script>` + enhanceJS + `</script>
 </body>
 </html>`)
 	return b.String()
+}
+
+// prettyCheckedAt turns the ISO checkedAt into the compact UTC stamp shown in
+// the lede, and reports whether anything has been checked at all. The epoch
+// sentinel means "not probed yet", which reads as a bogus 1970 date otherwise.
+func prettyCheckedAt(iso string) (string, bool) {
+	if iso == "" || iso == epochSentinel {
+		return "", false
+	}
+	t, err := time.Parse(isoMillis, iso)
+	if err != nil {
+		return iso, true
+	}
+	return t.UTC().Format("2 Jan 2006, 15:04 UTC"), true
 }
 
 // faviconDataURI is the globe, reduced to a mark: a ring, its equator, and the
 // pin at the front. Inline so the page fetches nothing — a status page that
 // 404s its own favicon through its own handler is a silly thing to ship, and a
 // status page that reaches out to another origin for one is a worse thing. `#`
-// is percent-encoded; a raw one would end the URL at the fragment.
+// is percent-encoded; a raw one would end the URL at the fragment. The script
+// swaps it for a copy whose pin carries the live verdict's colour.
 const faviconDataURI = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cg fill='none' stroke='%23888' stroke-width='2'%3E%3Ccircle cx='16' cy='16' r='13'/%3E%3Cellipse cx='16' cy='16' rx='13' ry='5'/%3E%3C/g%3E%3Ccircle cx='16' cy='16' r='4.5' fill='%23888'/%3E%3C/svg%3E"
-
-// ── Styles ───────────────────────────────────────────────────────────────────
-//
-// A raw string literal, so no `%` in this CSS needs doubling — the old renderer
-// passed the whole stylesheet through fmt.Sprintf, which is why every gradient
-// stop in it was written `62%%`.
-const dashboardCSS = `
-/* ═══ Tokens ══════════════════════════════════════════════════════════════
-   Quoted from app/globals.css. Daylight (:root there) is the base; Midnight
-   (.style-graphite) answers the OS preference, since a standalone page cannot
-   read the visitor's account theme. The site ships exactly these two monochrome
-   palettes plus High contrast, and prefers-contrast is handled further down.
-
-   The --cage-* inks are stated as literal rgba rather than the site's
-   color-mix(in srgb, var(--site-text) N%, transparent): the wireframe is
-   stroked onto a canvas, and a canvas needs a RESOLVED colour string. The
-   computed value of an unregistered custom property is its literal text, so the
-   site registers these with @property; this page authors both palettes by hand
-   and can simply say what they are. */
-:root {
-  color-scheme: light;
-  --site-bg: #ffffff;
-  --site-bg-subtle: rgba(0, 0, 0, 0.045);
-  --site-surface: rgba(255, 255, 255, 0.72);
-  --site-surface-opaque: #ffffff;
-  --site-border: rgba(0, 0, 0, 0.16);
-  --site-border-bright: #000000;
-  --site-text: #000000;
-  --site-text-muted: #565656;
-  --site-text-dim: #767676;
-  --site-accent: #000000;
-  --site-accent-fg: #ffffff;
-  --site-success: #167d3a;
-  --site-danger: #c40016;
-  --site-warning: #7a4a00;
-  --site-glass-tint: rgba(255, 255, 255, 0.78);
-  --site-glass-rim: rgba(0, 0, 0, 0.12);
-  --site-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 6px 20px -8px rgba(0, 0, 0, 0.06);
-  --site-canvas:
-    radial-gradient(70% 55% at 18% 4%, rgba(0, 0, 0, 0.055), transparent 62%),
-    radial-gradient(60% 50% at 88% 12%, rgba(0, 0, 0, 0.045), transparent 60%),
-    radial-gradient(90% 70% at 50% 42%, rgba(0, 0, 0, 0.05), transparent 62%),
-    linear-gradient(180deg, #ffffff 0%, #fbfbfb 55%, #ffffff 100%);
-  --site-aurora-far-1: rgba(0, 0, 0, 0.02);
-  --site-aurora-far-2: rgba(0, 0, 0, 0.03);
-  --cage-minor: rgba(0, 0, 0, 0.2);
-  --cage-parallel: rgba(0, 0, 0, 0.13);
-  --cage-major: rgba(0, 0, 0, 0.34);
-  --bar-empty: rgba(0, 0, 0, 0.07);
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-    --site-bg: #000000;
-    --site-bg-subtle: rgba(255, 255, 255, 0.05);
-    --site-surface: rgba(28, 28, 30, 0.72);
-    --site-surface-opaque: #1c1c1e;
-    --site-border: rgba(255, 255, 255, 0.12);
-    --site-border-bright: rgba(255, 255, 255, 0.26);
-    --site-text: #f5f5f7;
-    --site-text-muted: #a1a1a6;
-    --site-text-dim: #86868b;
-    --site-accent: #2997ff;
-    --site-accent-fg: #001227;
-    --site-success: #30d158;
-    --site-danger: #ff453a;
-    --site-warning: #ff9f0a;
-    --site-glass-tint: rgba(28, 28, 30, 0.62);
-    --site-glass-rim: rgba(255, 255, 255, 0.14);
-    --site-shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.5);
-    --site-canvas:
-      radial-gradient(120% 80% at 50% -10%, rgba(255, 255, 255, 0.035), transparent 60%),
-      linear-gradient(180deg, #000000 0%, #08080a 60%, #000000 100%);
-    --site-aurora-far-1: rgba(255, 255, 255, 0.02);
-    --site-aurora-far-2: rgba(255, 255, 255, 0.015);
-    --cage-minor: rgba(245, 245, 247, 0.2);
-    --cage-parallel: rgba(245, 245, 247, 0.13);
-    --cage-major: rgba(245, 245, 247, 0.34);
-    --bar-empty: rgba(255, 255, 255, 0.07);
-  }
-}
-:root {
-  /* Geometry + type, unchanged between the two palettes. */
-  --site-radius: 22px;
-  --site-radius-sm: 14px;
-  --site-border-width: 1px;
-  --site-font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter Variable', Inter, system-ui, sans-serif;
-  --site-font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter Variable', Inter, system-ui, sans-serif;
-  --site-display-3: clamp(1.9rem, 5.5vw, 4.5rem);
-  --site-display-3-leading: 1;
-  --site-display-3-tracking: -0.05em;
-  --site-display-weight: 500;
-  --site-kicker-size: 0.6875rem;
-  --site-kicker-tracking: 0.2em;
-  --site-kicker-weight: 700;
-  --site-letter-spacing: -0.022em;
-  --ease-glass: cubic-bezier(0.16, 1, 0.3, 1);
-  --gutter: clamp(0.9rem, 4vw, 2.25rem);
-  --col: 52rem;
-  --topbar-h: 3.5rem;
-  /* The one colour the WHOLE page keys off: the overall verdict. Set per state
-     below, read by the globe's rim, the headline mark and the browser tab dot. */
-  --signal: var(--site-text-dim);
-}
-html[data-status='up'] { --signal: var(--site-success); }
-html[data-status='degraded'] { --signal: var(--site-warning); }
-html[data-status='down'] { --signal: var(--site-danger); }
-
-/* Per-state colour for anything that carries a state: cards, pills, dots, pins,
-   bars, tallies. Declared ONCE, inherited by everything inside. */
-[data-status='up'] { --state: var(--site-success); }
-[data-status='degraded'] { --state: var(--site-warning); }
-[data-status='down'] { --state: var(--site-danger); }
-[data-status='unknown'] { --state: var(--site-text-dim); }
-
-* { box-sizing: border-box; }
-
-html {
-  /* THEME_BG's job: paint the ground synchronously so overscroll and the frames
-     before the aurora resolves are never a white flash on a black page. */
-  background: var(--site-bg);
-}
-
-body {
-  margin: 0;
-  min-height: 100dvh;
-  font-family: var(--site-font-body);
-  font-size: 1rem;
-  line-height: 1.5;
-  letter-spacing: var(--site-letter-spacing);
-  color: var(--site-text);
-  background: transparent;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-  /* viewport-fit=cover is set, so the page owes the notch its own inset. */
-  padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-}
-
-/* ═══ The ground ══════════════════════════════════════════════════════════
-   Two fixed layers, exactly as globals.css paints them: the near aurora on the
-   theme canvas, and a slower far field behind it, both oversized so the drift
-   never reveals an unpainted edge. Transform/opacity only — this layer is
-   composited and never re-laid-out, and nothing above it is blurred. */
-.site-aurora {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  contain: layout style;
-}
-.site-aurora::before,
-.site-aurora::after {
-  content: '';
-  position: absolute;
-  pointer-events: none;
-  transform-origin: center;
-}
-.site-aurora::before {
-  inset: -14%;
-  z-index: -1;
-  background-image: var(--site-canvas);
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-  animation: aurora-drift 34s ease-in-out infinite alternate;
-}
-.site-aurora::after {
-  inset: -18%;
-  z-index: -2;
-  background-image:
-    radial-gradient(60% 50% at 24% 30%, var(--site-aurora-far-1), transparent 70%),
-    radial-gradient(50% 45% at 78% 66%, var(--site-aurora-far-2), transparent 70%);
-  animation: aurora-drift-far 52s ease-in-out infinite alternate;
-}
-@keyframes aurora-drift {
-  0% { transform: scale(1.06) rotate(0deg) translate3d(0, 0, 0); }
-  25% { transform: scale(1.1) rotate(0.5deg) translate3d(1.2%, -0.6%, 0); }
-  50% { transform: scale(1.13) rotate(0.7deg) translate3d(1.6%, -1.4%, 0); }
-  75% { transform: scale(1.09) rotate(-0.3deg) translate3d(-0.6%, 0.4%, 0); }
-  100% { transform: scale(1.07) rotate(-0.7deg) translate3d(-1.5%, 1.2%, 0); }
-}
-@keyframes aurora-drift-far {
-  0% { transform: scale(1.1) rotate(0.4deg) translate3d(-1.2%, 0.8%, 0); }
-  50% { transform: scale(1.04) rotate(-0.5deg) translate3d(1.4%, -1%, 0); }
-  100% { transform: scale(1.12) rotate(0.3deg) translate3d(-0.8%, 1.2%, 0); }
-}
-
-/* The radial rings + the blob field the glass floats on (radial.css
-   §.radial-backdrop). Mobile keeps it cheap: the outer rings are display:none
-   and the field never appears, because a fixed full-screen layer with six
-   infinitely-animating circles is a continuous GPU cost on a phone. */
-.backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  overflow: hidden;
-  background: transparent;
-}
-.backdrop__rings {
-  position: absolute;
-  left: 50%;
-  top: 40%;
-  width: 0;
-  height: 0;
-}
-.backdrop__ring {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: calc(38vmin + var(--i) * 22vmin);
-  height: calc(38vmin + var(--i) * 22vmin);
-  transform: translate(-50%, -50%);
-  border: 1px solid var(--site-border);
-  border-radius: 50%;
-  opacity: calc(0.5 - var(--i) * 0.06);
-}
-.backdrop__ring:nth-child(n + 4) { display: none; }
-.backdrop__field { display: none; position: absolute; inset: -10%; z-index: -1; }
-.backdrop__blob {
-  position: absolute;
-  width: clamp(18rem, 34vw, 32rem);
-  height: clamp(18rem, 34vw, 32rem);
-  /* Soft-edged fields, not discs: at this opacity the fade IS the fusing. No
-     goo filter — see the cost note in components/radial/radial.css. */
-  background: radial-gradient(
-    closest-side circle at 50% 50%,
-    color-mix(in srgb, var(--site-text) 10%, transparent),
-    color-mix(in srgb, var(--site-text) 6%, transparent) 55%,
-    transparent 100%
-  );
-}
-.backdrop__blob:nth-child(1) { left: 6%; top: 12%; }
-.backdrop__blob:nth-child(2) { right: 8%; top: 4%; }
-.backdrop__blob:nth-child(3) { left: 22%; bottom: 2%; }
-.backdrop__blob:nth-child(4) { right: 16%; bottom: 10%; }
-@media (min-width: 768px) {
-  .backdrop__ring:nth-child(n + 4) { display: block; }
-  .backdrop__field { display: block; }
-}
-@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
-  .backdrop__ring {
-    animation: breathe 14s ease-in-out infinite;
-    animation-delay: calc(var(--i) * -1.6s);
-  }
-  .backdrop__blob {
-    animation: blob-drift 26s ease-in-out infinite alternate;
-    animation-delay: calc(var(--i) * -6s);
-  }
-}
-@keyframes breathe {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); }
-  50% { transform: translate(-50%, -50%) scale(1.035); }
-}
-@keyframes blob-drift {
-  0% { transform: translate3d(0, 0, 0) scale(1); }
-  50% { transform: translate3d(6vw, -4vh, 0) scale(1.18); }
-  100% { transform: translate3d(-5vw, 5vh, 0) scale(0.9); }
-}
-
-/* ═══ Top bar ═════════════════════════════════════════════════════════════
-   radial.css §.radial-topbar: opaque on phones (translucency with no blur just
-   ghosts what scrolls under it), frosted from 768px up where the blur is
-   affordable. Nothing moves above it, so the backdrop-filter is safe here. */
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  height: var(--topbar-h);
-  padding: 0 var(--gutter);
-  padding-top: env(safe-area-inset-top);
-  background: var(--site-bg);
-  border-bottom: 1px solid var(--site-border);
-}
-@media (min-width: 768px) {
-  .topbar {
-    background: color-mix(in srgb, var(--site-bg) 78%, transparent);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    backdrop-filter: blur(20px) saturate(180%);
-  }
-}
-.topbar__brand {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.4rem;
-  color: var(--site-text);
-  text-decoration: none;
-}
-.topbar__mark { font-weight: 800; letter-spacing: 0.14em; font-size: 1.05rem; }
-.topbar__brand small {
-  display: none;
-  color: var(--site-text-muted);
-  font-size: 0.6875rem;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-}
-@media (min-width: 640px) { .topbar__brand small { display: inline; } }
-.topbar__tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--site-text-muted);
-}
-.topbar__tag::before {
-  content: '';
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 999px;
-  background: var(--signal);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--signal) 18%, transparent);
-}
-
-/* ═══ Shell ═══════════════════════════════════════════════════════════════ */
-.shell {
-  width: 100%;
-  max-width: var(--col);
-  margin: 0 auto;
-  padding: clamp(1.75rem, 6vw, 4rem) var(--gutter) 0;
-}
-
-/* ═══ Hero — the liquid globe + the verdict ═══════════════════════════════ */
-.hero {
-  display: grid;
-  gap: clamp(1.5rem, 5vw, 2.75rem);
-  justify-items: center;
-  text-align: center;
-  margin-bottom: clamp(2.5rem, 8vw, 4.5rem);
-}
-@media (max-width: 719px) {
-  /* The copy is a centred grid item, but the tallies inside it are their own
-     flex row — which starts at the left edge of that item unless told not to. */
-  .hero__tallies { justify-content: center; }
-}
-@media (min-width: 720px) {
-  .hero {
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: center;
-    justify-items: start;
-    text-align: left;
-  }
-}
-.hero__copy { min-width: 0; }
-.kicker {
-  margin: 0 0 0.75rem;
-  font-size: var(--site-kicker-size);
-  font-weight: var(--site-kicker-weight);
-  letter-spacing: var(--site-kicker-tracking);
-  text-transform: uppercase;
-  color: var(--site-text-dim);
-}
-.hero__headline {
-  margin: 0;
-  font-family: var(--site-font-display);
-  font-weight: var(--site-display-weight);
-  font-size: var(--site-display-3);
-  line-height: var(--site-display-3-leading);
-  letter-spacing: var(--site-display-3-tracking);
-  overflow-wrap: anywhere;
-}
-.hero__lede {
-  margin: 0.9rem 0 0;
-  color: var(--site-text-muted);
-  font-size: clamp(0.9rem, 1.4vw, 1.05rem);
-  line-height: 1.55;
-}
-.hero__tallies {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1.5rem;
-  list-style: none;
-  margin: 1.4rem 0 0;
-  padding: 0;
-}
-.hero__tallies:empty { display: none; }
-.tally { display: flex; align-items: baseline; gap: 0.4rem; }
-.tally__n {
-  font-family: var(--site-font-display);
-  font-size: 1.5rem;
-  font-weight: 500;
-  letter-spacing: -0.04em;
-  font-variant-numeric: tabular-nums;
-  color: var(--state);
-}
-.tally__label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--site-text-dim);
-}
-
-/* ── The globe ────────────────────────────────────────────────────────────
-   The stage is square and the sphere is the circle inscribed in it. The CSS
-   perspective and the script's projection read the SAME number (--globe-persp
-   / PERSP in the script), because the glass body is a CSS element while the
-   cage and the pins are projected in JS — if the two disagreed, the pins would
-   slide off the surface they are stuck to. */
-.globe {
-  position: relative;
-  flex: none;
-  --globe-size: min(64vw, 32dvh, 15rem);
-  --globe-persp: 3.1;
-  width: var(--globe-size);
-  height: var(--globe-size);
-  perspective: calc(var(--globe-size) * var(--globe-persp));
-  touch-action: none;
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  cursor: grab;
-}
-@media (min-width: 720px) { .globe { --globe-size: min(34vw, 40dvh, 17rem); } }
-.globe[data-grabbing='true'] { cursor: grabbing; }
-/* The canvas hangs OUTSIDE the stage on every side. The sphere's limb already
-   reaches the stage edge, so a stroke at the rim would otherwise be clipped
-   square by the edge of the backing store. --cage-bleed is the one source of
-   truth; the script reads the same fraction to size and centre the buffer. */
-.globe__cage {
-  position: absolute;
-  --cage-bleed: 9%;
-  top: calc(var(--cage-bleed) * -1);
-  left: calc(var(--cage-bleed) * -1);
-  /* Sized EXPLICITLY: a <canvas> is a replaced element, so width:auto would
-     resolve to its width/height ATTRIBUTES (device pixels) and render at 2x on
-     a retina display, anchored to the top-left. */
-  width: calc(100% + 2 * var(--cage-bleed));
-  height: calc(100% + 2 * var(--cage-bleed));
-  pointer-events: none;
-}
-/* Liquid Glass, held still: a specular bloom up-left, a thickening toward the
-   limb where a sphere's glass is deepest, and a rim in the overall status
-   colour — the one place the verdict is carried by the material itself. */
-.globe__glass {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  pointer-events: none;
-  background:
-    radial-gradient(68% 68% at 30% 26%, color-mix(in srgb, var(--site-text) 9%, transparent) 0%, transparent 62%),
-    radial-gradient(circle closest-side at 50% 50%, transparent 52%,
-      color-mix(in srgb, var(--site-text) 8%, transparent) 88%,
-      color-mix(in srgb, var(--site-text) 17%, transparent) 100%);
-  box-shadow:
-    inset 0 0 0 var(--site-border-width) color-mix(in srgb, var(--signal) 42%, transparent),
-    inset 0 -14% 26% -18% color-mix(in srgb, var(--site-text) 16%, transparent),
-    0 30px 70px -34px color-mix(in srgb, var(--signal) 45%, transparent);
-}
-/* The travelling highlight — the one part of the material that moves by itself.
-   Transform-only on a small element, and nothing below it is blurred. */
-.globe__glass::after {
-  content: '';
-  position: absolute;
-  left: 12%;
-  top: 8%;
-  width: 44%;
-  height: 30%;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--site-text) 12%, transparent), transparent);
-}
-@media (prefers-reduced-motion: no-preference) {
-  .globe__glass::after { animation: globe-sheen 11s ease-in-out infinite alternate; }
-}
-@keyframes globe-sheen {
-  from { transform: translate3d(0, 0, 0) scale(1); }
-  to { transform: translate3d(22%, 16%, 0) scale(1.18); }
-}
-.globe__pins { position: absolute; inset: 0; list-style: none; margin: 0; padding: 0; }
-/* A ZERO-SIZE anchor the script moves, with the dot centred on it — so one
-   translate3d + scale per frame both positions the pin and foreshortens it. */
-.globe__pin {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 0;
-  height: 0;
-  will-change: transform;
-}
-.globe__pin-dot {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 0.6rem;
-  height: 0.6rem;
-  margin: -0.3rem 0 0 -0.3rem;
-  border-radius: 50%;
-  background: var(--state);
-  box-shadow:
-    0 0 0 0.14rem color-mix(in srgb, var(--state) 22%, transparent),
-    0 0 0.5rem color-mix(in srgb, var(--state) 60%, transparent);
-}
-
-/* ═══ Service tiers ═══════════════════════════════════════════════════════ */
-.tier { margin: 0 0 clamp(1.75rem, 5vw, 2.75rem); }
-.tier__label {
-  margin: 0 0 0.85rem;
-  padding-left: 0.15rem;
-  font-size: var(--site-kicker-size);
-  font-weight: var(--site-kicker-weight);
-  letter-spacing: var(--site-kicker-tracking);
-  text-transform: uppercase;
-  color: var(--site-text-dim);
-}
-.tier__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: clamp(0.6rem, 2vw, 0.85rem);
-}
-/* The error-budget section's subheading (E14) — states the target, the window
-   the remaining budget is measured over, and what would page. Sits between the
-   tier label and its list, so it inherits the label's left inset rather than
-   starting a second alignment. */
-.tier__note {
-  margin: -0.45rem 0 0.85rem;
-  padding-left: 0.15rem;
-  font-size: 0.85rem;
-  line-height: 1.5;
-  color: var(--site-text-dim);
-}
-
-/* L1 · the repeated glass tier (globals.css §.glass-fill): tint + hairline +
-   soft depth + an AMBIENT glint, so a card reads as a lit sheet rather than
-   flat paper. No blur — this is the tier the page is mostly made of, and blur
-   cost is a per-component decision. */
-.svc {
-  position: relative;
-  padding: clamp(0.95rem, 3vw, 1.35rem) clamp(1rem, 3vw, 1.5rem);
-  border: var(--site-border-width) solid var(--site-border);
-  border-radius: var(--site-radius);
-  background-color: var(--site-glass-tint);
-  background-image: radial-gradient(
-    320px circle at 50% -5%,
-    color-mix(in srgb, var(--site-glass-rim) 18%, transparent) 0%,
-    transparent 65%
-  );
-  background-clip: padding-box;
-  background-origin: padding-box;
-  box-shadow: var(--site-shadow-sm);
-  transition: border-color 0.2s var(--ease-glass), transform 0.2s var(--ease-glass);
-}
-@media (hover: hover) {
-  .svc:hover {
-    border-color: color-mix(in srgb, var(--state) 45%, var(--site-border));
-    transform: translateY(-1px);
-  }
-}
-/* A service in trouble is edged in its own state colour, so the eye finds it
-   without reading a word. Never the ONLY signal — the pill says it too. */
-.svc[data-status='degraded'],
-.svc[data-status='down'] {
-  border-color: color-mix(in srgb, var(--state) 38%, var(--site-border));
-}
-.svc__head { display: flex; align-items: center; gap: 0.85rem; }
-.svc__dot {
-  flex: none;
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  background: var(--state);
-  box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--state) 16%, transparent);
-}
-.svc__id { flex: 1 1 auto; min-width: 0; }
-.svc__name {
-  margin: 0;
-  font-family: var(--site-font-display);
-  font-size: 1rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  overflow-wrap: anywhere;
-}
-.svc__desc {
-  margin: 0.1rem 0 0;
-  color: var(--site-text-muted);
-  font-size: 0.8125rem;
-  line-height: 1.4;
-  overflow-wrap: anywhere;
-}
-.svc__meta { flex: none; display: flex; align-items: center; gap: 0.75rem; }
-.svc__latency {
-  color: var(--site-text-dim);
-  font-size: 0.78rem;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-.svc__pill {
-  white-space: nowrap;
-  padding: 0.22rem 0.7rem;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--state) 40%, transparent);
-  background: color-mix(in srgb, var(--state) 10%, transparent);
-  color: var(--state);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-}
-
-/* The rolling uptime strip. One flex row of equal bars, oldest left.
-   overflow:hidden is the structural guarantee, not a cosmetic one: the strip
-   holds one bar per bucket (90 of them at the default window), and a flex item
-   with a min-width cannot shrink past it — so on a phone the row's intrinsic
-   minimum exceeded the card and the last day of history hung off the right edge
-   of the page. The narrow-screen rule below thins the bars so they FIT; this
-   clips anything a future window length could still push past. */
-.svc__bars {
-  display: flex;
-  gap: 2px;
-  height: 1.9rem;
-  margin-top: 0.95rem;
-  align-items: stretch;
-  overflow: hidden;
-}
-.bar { flex: 1 1 0; min-width: 2px; border-radius: 2px; background: var(--bar-empty); }
-.bar[data-b='up'] { background: var(--site-success); }
-.bar[data-b='degraded'] { background: var(--site-warning); }
-.bar[data-b='down'] { background: var(--site-danger); }
-.bar[data-b='unknown'] { background: var(--site-bg-subtle); }
-@media (hover: hover) {
-  .bar:hover { filter: brightness(1.3); }
-}
-.svc__legend {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.55rem;
-  color: var(--site-text-dim);
-  font-size: 0.7rem;
-}
-.svc__uptime {
-  color: var(--site-text-muted);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-/* ── Phones ───────────────────────────────────────────────────────────────
-   The card head is four things competing for one row — dot, name, description,
-   and the latency + pill pair — which is comfortable on a laptop and impossible
-   at 360px, where it squeezed the description into a three-line ribbon beside a
-   pill. Below 560px it becomes two rows: the identity, then its readout on a
-   row of its own — the verdict indented to the dot's column so the card still
-   reads as one block, the latency out at the far edge. row-reverse rather than
-   two rewritten elements: the desktop order (latency, then pill) is the right
-   one there, and this is the same two children, turned around. */
-@media (max-width: 560px) {
-  .svc__head { flex-wrap: wrap; row-gap: 0.6rem; }
-  .svc__id { flex-basis: calc(100% - 1.35rem); }
-  .svc__meta {
-    width: 100%;
-    padding-left: 1.35rem;
-    flex-direction: row-reverse;
-    justify-content: space-between;
-  }
-}
-@media (max-width: 640px) {
-  /* Thin enough that the whole window fits the card's inner width. */
-  .svc__bars { gap: 1px; height: 2.1rem; }
-  .bar { min-width: 1px; border-radius: 1px; }
-}
-
-/* ═══ Foot ════════════════════════════════════════════════════════════════ */
-.foot {
-  max-width: var(--col);
-  margin: 0 auto;
-  padding: 0 var(--gutter) clamp(2.5rem, 8vw, 4rem);
-  color: var(--site-text-dim);
-  font-size: 0.75rem;
-  text-align: center;
-}
-.foot p { margin: 0.3rem 0; }
-.foot a { color: var(--site-text-muted); text-decoration: none; border-bottom: 1px solid var(--site-border); }
-.foot a:hover { color: var(--site-text); border-bottom-color: currentColor; }
-
-/* Focus rings are global on the site; they are global here too. */
-:focus-visible {
-  outline: 2px solid var(--site-accent);
-  outline-offset: 3px;
-  border-radius: 4px;
-}
-
-/* ═══ Preferences ═════════════════════════════════════════════════════════ */
-
-/* An unrequested, never-ending animation is exactly what this preference is
-   asking not to see. The globe still turns under a finger — that motion was
-   requested — but it stops drifting on its own. */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-/* Reduced transparency: the site swaps glass for its opaque fallback rather
-   than shipping a half-legible tint (globals.css §html.reduce-transparency). */
-@media (prefers-reduced-transparency: reduce) {
-  .svc { background-color: var(--site-surface-opaque); background-image: none; }
-  .topbar { background: var(--site-bg); -webkit-backdrop-filter: none; backdrop-filter: none; }
-  .site-aurora, .backdrop { display: none; }
-}
-/* High contrast is a shipped theme on the site (strict black, white ink, hard
-   borders). Here it is the same idea, applied to the tokens this page owns. */
-@media (prefers-contrast: more) {
-  :root {
-    --site-border: color-mix(in srgb, var(--site-text) 55%, transparent);
-    --site-text-muted: var(--site-text);
-    --site-text-dim: var(--site-text);
-    --site-glass-tint: var(--site-surface-opaque);
-  }
-  .svc { background-image: none; }
-  .site-aurora { display: none; }
-}
-`
-
-// ── The globe's frame loop ───────────────────────────────────────────────────
-//
-// A single rAF loop that projects the wireframe cage onto ONE canvas and moves
-// the pins, in the same coordinate system, from the same constants as
-// components/radial/LiquidGlobe.tsx. Deliberately small, and deliberately
-// NOT a port of that component: there is no navigation here, so there is no
-// reticle, no dwell ring, no magnetism, no ripple. What survives is the
-// geometry, the physics of a release, and the two performance rules the
-// original is built around — one canvas for the cage, and no write to the DOM
-// on a frame where the value did not change.
-const dashboardJS = `
-(function () {
-  'use strict';
-  var stage = document.querySelector('[data-globe]');
-  if (!stage) return;
-  var canvas = stage.querySelector('[data-cage]');
-  var pins = Array.prototype.slice.call(stage.querySelectorAll('[data-pin]'));
-  var ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
-
-  var DEG = Math.PI / 180;
-  /* Perspective, as a multiple of the stage width. The CSS reads the same
-     number (--globe-persp): the glass body is a CSS element and the cage/pins
-     are projected here, so a disagreement would slide the pins off the sphere. */
-  var PERSP = 3.1;
-  /* Latitude band the pins are spread over, as sin(lat) — capping it at 0.72
-     (+/-46 degrees) keeps every pin clear of the poles. */
-  var LAT_SPAN = 0.72;
-  var GOLDEN = 180 * (3 - Math.sqrt(5));
-  var MERIDIANS = [0, 30, 60, 90, 120, 150];
-  var PARALLELS = [-60, -40, -20, 0, 20, 40, 60];
-  /* A projected circle is a conic section, so each ring is a polyline. At 72
-     segments the chord error is a fraction of the 1px stroke. */
-  var SAMPLES = 72;
-  var BLEED = 0.09;
-  var MAX_DPR = 2;
-  var ROT_PER_PX = 0.45;
-  var IDLE_SPIN = 5.5;
-  var PITCH_LIMIT = 62;
-  var REST_PITCH = -14;
-  var FRICTION = 1.9;
-  var MAX_SPIN = 900;
-  var REFRESH_MS = 30000;
-
-  function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
-  function smoothstep(a, b, x) {
-    var t = clamp((x - a) / (b - a), 0, 1);
-    return t * t * (3 - 2 * t);
-  }
-
-  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  /* Fibonacci-sphere placement, squeezed into the usable latitude band — the
-     same function LiquidGlobe uses, so a pin's home is a pure function of its
-     index and the count and nothing has to be emitted with the markup. */
-  var n = pins.length;
-  var nodes = pins.map(function (el, i) {
-    var sinLat = n <= 1 ? 0 : (1 - (2 * (i + 0.5)) / n) * LAT_SPAN;
-    var lat = Math.asin(sinLat) / DEG;
-    var lon = ((i * GOLDEN) % 360) - 180;
-    var cl = Math.cos(lat * DEG);
-    return {
-      el: el,
-      /* Screen-handed: x right, y DOWN, z toward the viewer. */
-      bx: cl * Math.sin(lon * DEG),
-      by: -Math.sin(lat * DEG),
-      bz: cl * Math.cos(lon * DEG),
-      transform: '',
-      opacity: '',
-      z: -1
-    };
-  });
-
-  /* All thirteen rings are sampled at the same angles, so the pairs are built
-     once at load instead of ~1900 trig calls per frame. */
-  var COS = new Float64Array(SAMPLES + 1);
-  var SIN = new Float64Array(SAMPLES + 1);
-  for (var s = 0; s <= SAMPLES; s++) {
-    var th = (s / SAMPLES) * Math.PI * 2;
-    COS[s] = Math.cos(th);
-    SIN[s] = Math.sin(th);
-  }
-
-  var size = 240;
-  var span = 240;
-  var ink = { minor: 'rgba(0,0,0,.2)', parallel: 'rgba(0,0,0,.13)', major: 'rgba(0,0,0,.34)', width: 1 };
-  var dirty = true;
-
-  function measure() {
-    size = stage.offsetWidth || 240;
-    span = size * (1 + 2 * BLEED);
-    if (!ctx) return;
-    var dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
-    var px = Math.round(span * dpr);
-    /* Assigning width REALLOCATES and clears the backing store, so it happens
-       here — on mount and on a real resize — and never in the frame loop. */
-    if (canvas.width !== px) { canvas.width = px; canvas.height = px; }
-    ctx.setTransform(dpr, 0, 0, dpr, (span * dpr) / 2, (span * dpr) / 2);
-    ctx.lineJoin = 'round';
-    /* Reading a computed style is a style flush, so the theme ink is resolved
-       once per size change rather than per frame. */
-    var cs = getComputedStyle(canvas);
-    var read = function (name, fallback) {
-      var v = cs.getPropertyValue(name).trim();
-      return v ? v : fallback;
-    };
-    ink.minor = read('--cage-minor', ink.minor);
-    ink.parallel = read('--cage-parallel', ink.parallel);
-    ink.major = read('--cage-major', ink.major);
-    ink.width = parseFloat(read('--site-border-width', '1')) || 1;
-    dirty = true;
-  }
-
-  var yaw = 0;
-  var pitch = REST_PITCH;
-  var vYaw = 0;
-  var drag = null;
-
-  /* Seed the spin from the clock. The page reloads itself every 30s, and a
-     globe that snapped back to zero on each one would read as a stutter rather
-     than a turn. */
-  if (!reduced) yaw = ((Date.now() / 1000) * IDLE_SPIN) % 360;
-
-  function drawRing(stroke, width, ux, uy, uz, vx, vy, vz, oy, cy, sy, cp, sp, R) {
-    ctx.strokeStyle = stroke;
-    ctx.lineWidth = width;
-    ctx.beginPath();
-    for (var i = 0; i <= SAMPLES; i++) {
-      var ct = COS[i], st = SIN[i];
-      var bx = ux * ct + vx * st;
-      var by = uy * ct + vy * st + oy;
-      var bz = uz * ct + vz * st;
-      var x1 = bx * cy + bz * sy;
-      var z1 = -bx * sy + bz * cy;
-      var y2 = by * cp - z1 * sp;
-      var z2 = by * sp + z1 * cp;
-      var k = PERSP / (PERSP - z2 * 0.5);
-      if (i === 0) ctx.moveTo(x1 * R * k, y2 * R * k);
-      else ctx.lineTo(x1 * R * k, y2 * R * k);
-    }
-    ctx.stroke();
-  }
-
-  function render() {
-    var R = size / 2;
-    var cy = Math.cos(yaw * DEG), sy = Math.sin(yaw * DEG);
-    var cp = Math.cos(pitch * DEG), sp = Math.sin(pitch * DEG);
-
-    if (ctx) {
-      ctx.clearRect(-span / 2, -span / 2, span, span);
-      /* A CSS border is 1px in its ELEMENT's coordinates, so a ring turned away
-         from the viewer had its stroke foreshortened with everything else. That
-         is a real depth cue: |nz| is 1 face-on and 0 edge-on, and the floor
-         keeps an edge-on ring from thinning into nothing. */
-      var widthFor = function (nx, ny, nz) {
-        var z1 = -nx * sy + nz * cy;
-        var face = Math.abs(ny * sp + z1 * cp);
-        return ink.width * Math.max(0.42, (1 + face) / 2);
-      };
-      for (var m = 0; m < MERIDIANS.length; m++) {
-        var a = MERIDIANS[m] * DEG, ca = Math.cos(a), sa = Math.sin(a);
-        /* A meridian spans (cos a, 0, -sin a) and (0, 1, 0). */
-        drawRing(MERIDIANS[m] === 0 ? ink.major : ink.minor, widthFor(sa, 0, ca),
-          ca, 0, -sa, 0, 1, 0, 0, cy, sy, cp, sp, R);
-      }
-      /* Every parallel lies flat, so they share the polar axis and one width. */
-      var pw = widthFor(0, 1, 0);
-      for (var q = 0; q < PARALLELS.length; q++) {
-        var lat = PARALLELS[q] * DEG, cl = Math.cos(lat), yl = -Math.sin(lat);
-        drawRing(PARALLELS[q] === 0 ? ink.major : ink.parallel, pw,
-          cl, 0, 0, 0, 0, cl, yl, cy, sy, cp, sp, R);
-      }
-    }
-
-    for (var i = 0; i < nodes.length; i++) {
-      var nd = nodes[i];
-      var x1 = nd.bx * cy + nd.bz * sy;
-      var z1 = -nd.bx * sy + nd.bz * cy;
-      var y2 = nd.by * cp - z1 * sp;
-      var z2 = nd.by * sp + z1 * cp;
-      var k = PERSP / (PERSP - z2 * 0.5);
-      /* Compare before writing: an inline assignment invalidates style whether
-         or not the value differs, and only the transform changes every frame. */
-      var t = 'translate3d(' + (x1 * R * k).toFixed(2) + 'px,' + (y2 * R * k).toFixed(2) + 'px,0) scale(' + k.toFixed(3) + ')';
-      if (t !== nd.transform) { nd.transform = t; nd.el.style.transform = t; }
-      /* The far hemisphere stays faintly visible — it is what tells you there
-         is more globe behind the part you are looking at. */
-      var o = (0.14 + 0.86 * smoothstep(-0.5, 0.45, z2)).toFixed(3);
-      if (o !== nd.opacity) { nd.opacity = o; nd.el.style.opacity = o; }
-      var rank = z2 > 0 ? 2 : 1;
-      if (rank !== nd.z) { nd.z = rank; nd.el.style.zIndex = String(rank); }
-    }
-  }
-
-  /* The loop RETIRES ITSELF. Under reduced motion an idle globe has nothing to
-     animate, and a rAF that wakes 60 times a second to decide it has nothing to
-     do is exactly the unrequested continuous cost that preference is asking to
-     be spared — so the loop stops, and a drag (or a resize) wakes it again. */
-  var raf = 0;
-  var last = 0;
-  function wake() {
-    if (!raf) { last = 0; raf = requestAnimationFrame(step); }
-  }
-  function step(now) {
-    var dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
-    last = now;
-    var moving = !!drag;
-    if (!drag) {
-      if (Math.abs(vYaw) > 1) {
-        yaw += vYaw * dt;
-        vYaw -= vYaw * Math.min(1, FRICTION * dt);
-        moving = true;
-        dirty = true;
-      } else {
-        vYaw = 0;
-        if (!reduced) {
-          yaw += IDLE_SPIN * dt;
-          moving = true;
-          dirty = true;
-        }
-      }
-    }
-    /* A frame where nothing moved writes nothing at all. */
-    if (dirty) {
-      dirty = false;
-      render();
-    }
-    raf = moving ? requestAnimationFrame(step) : 0;
-  }
-
-  /* ── Drag ───────────────────────────────────────────────────────────────
-     Yaw from horizontal travel, pitch from vertical, tilt clamped so the poles
-     never come to the front. Velocity is windowed over the last move rather
-     than taken from the final frame, because a finger that pauses before
-     lifting has a last-frame velocity of zero. */
-  var track = { t: 0, x: 0 };
-  function onDown(e) {
-    if (e.button != null && e.button !== 0) return;
-    drag = { id: e.pointerId, x: e.clientX, y: e.clientY };
-    track.t = e.timeStamp;
-    track.x = e.clientX;
-    vYaw = 0;
-    stage.setAttribute('data-grabbing', 'true');
-    if (stage.setPointerCapture) { try { stage.setPointerCapture(e.pointerId); } catch (err) {} }
-    wake();
-  }
-  function onMove(e) {
-    if (!drag || e.pointerId !== drag.id) return;
-    yaw += (e.clientX - drag.x) * ROT_PER_PX;
-    pitch = clamp(pitch - (e.clientY - drag.y) * ROT_PER_PX * 0.6, -PITCH_LIMIT, PITCH_LIMIT);
-    drag.x = e.clientX;
-    drag.y = e.clientY;
-    var dt = (e.timeStamp - track.t) / 1000;
-    if (dt > 0.008) {
-      vYaw = clamp(((e.clientX - track.x) * ROT_PER_PX) / dt, -MAX_SPIN, MAX_SPIN);
-      track.t = e.timeStamp;
-      track.x = e.clientX;
-    }
-    dirty = true;
-  }
-  function onUp() {
-    if (!drag) return;
-    drag = null;
-    stage.removeAttribute('data-grabbing');
-    /* The release throw still has to coast, so the loop keeps running until the
-       friction has eaten it — wake() is a no-op while it already is. */
-    wake();
-  }
-  if (window.PointerEvent) {
-    stage.addEventListener('pointerdown', onDown);
-    stage.addEventListener('pointermove', onMove);
-    stage.addEventListener('pointerup', onUp);
-    stage.addEventListener('pointercancel', onUp);
-    /* A hold also ends when the window does: a pointer released over another
-       window never sends its pointerup, and the globe would coast forever on a
-       drag nobody is making. */
-    window.addEventListener('blur', onUp);
-  }
-
-  window.addEventListener('resize', function () { measure(); wake(); });
-  measure();
-  render();
-  wake();
-
-  /* The page refreshes itself rather than carrying a meta refresh, so a reload
-     never lands in the middle of a drag. (<noscript> keeps the meta refresh for
-     visitors without JS.) */
-  setInterval(function () {
-    if (!drag) window.location.reload();
-  }, REFRESH_MS);
-})();
-`

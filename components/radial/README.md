@@ -289,9 +289,33 @@ rises, falls back below rest, and settles — a ripple, not a shockwave. Retune 
 feel there, and it stays testable (`lib/__tests__/fluid.test.ts`) and available to
 anything else that ever needs to answer a touch this way.
 
-**Reduced motion stands it down completely** (OS preference or the account
-toggle). An unrequested full-surface animation is exactly what that preference is
-asking not to see; the press still turns the globe as it always did.
+**The site's Reduce motion switch stands it down completely** (since 2026-10-21
+the OS preference does not: the owner asked for the motion to play by default).
+The press still turns the globe as it always did.
+
+### The soft body
+
+Grab the globe and it gives (2026-10-21: "full soft-body physics … dragging it
+deforms it according to your pointer/finger … make it super optimized"). The
+surface under the finger leads the drag and the ball lags after it in a lobe, a
+press squeezes the jelly in around the finger, the whole ball stretches along the
+pull (volume-preserving), and letting go wobbles it back through rest.
+
+- **A modal soft body, not a mesh.** `lib/soft-body.ts` is three under-damped
+  springs (tug, pinch, stretch) and a closed-form displacement field — a gaussian
+  around the finger plus a 2×2 stretch — evaluated at the points the paint pass
+  already draws, after projection: every cage sample, the ripple crest, every pin,
+  and one affine `transform` on the glass disc. One `exp` and a dozen multiplies
+  per sample, one scratch `Float64Array(2)`, no allocation.
+- **Free at rest.** `step()` says whether the body is deformed; only then does the
+  loop repaint for it. Measured dragging at 4× CPU throttle: the same frame times
+  with and without it.
+- **Display only**, like the ripple and the wobble: `project()` never reads it, so
+  a squeeze cannot move a destination into or out of the reticle.
+- **The cage's bleed grew to 11%** to leave room for a full tug at the limb plus
+  the stretch plus a ripple's swell.
+- The stage's box is read once per press, never in the frame loop; the finger's
+  velocity is the drag's own (`VelocityTracker`), so nothing new listens.
 
 ## Globe Eversion (the hub's navigation transition)
 

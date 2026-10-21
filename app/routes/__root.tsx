@@ -22,6 +22,7 @@ import { GlassFilter } from '@/components/ui/liquid-glass';
 import { TwemojiProvider } from '@/components/ui/TwemojiProvider';
 import { NavigationProgress } from '@/components/ui/NavigationProgress';
 import { BackNavAnimation } from '@/components/ui/BackNavAnimation';
+import { EversionRoot } from '@/components/radial/eversion/EversionRoot';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { markDocumentHydrated } from '@/components/ui/defer-on-navigate';
 import { RouteErrorFallback } from '@/components/errors/RouteErrorFallback';
@@ -38,12 +39,7 @@ import {
   accountSeedScript,
   type AppearanceSeed,
 } from '@/lib/appearance/account-seed';
-import {
-  APP_ROUTE_THEME_BG,
-  APP_THEME_BG,
-  THEME_BG,
-  DEFAULT_STYLE,
-} from '@/stores/themeStore';
+import { APP_ROUTE_THEME_BG, APP_THEME_BG, THEME_BG, DEFAULT_STYLE } from '@/stores/themeStore';
 import { ACCENT_MAP } from '@/lib/appearance';
 import { GLASS_LEVEL_VARS, GLASS_LEVEL_KEY } from '@/lib/appearance/prefs';
 import { ACCESS_PREPAINT_SCRIPT } from '@/lib/access/prefs';
@@ -581,8 +577,8 @@ export const Route = createRootRoute({
         // with nothing saved. lib/appearance/account-seed.ts has the rules.
         ...(accountSeed ? [{ children: accountSeed }] : []),
         { children: globalNotFound ? notFoundThemeScript : themeScript },
-          { children: accessScript },
-          { children: DELIGHT_PREPAINT_SCRIPT },
+        { children: accessScript },
+        { children: DELIGHT_PREPAINT_SCRIPT },
         { children: localeScript },
         // Hides the server-rendered cookie notice before first paint for a
         // visitor who has already answered it — lib/cookie-consent.ts.
@@ -709,6 +705,7 @@ function RootComponent() {
     >
       <NavigationProgress />
       <BackNavAnimation />
+      <EversionRoot />
       <TwemojiProvider>
         <Outlet />
       </TwemojiProvider>

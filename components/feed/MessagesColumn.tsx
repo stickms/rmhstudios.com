@@ -18,6 +18,7 @@ import { toast } from'sonner';
 import { ChatFolderBar } from'@/components/chat-plus/ChatFolderBar';
 import { SavedMessagesRow } from'@/components/chat-plus/SavedMessagesRow';
 import { SavedMessagesLabel } from'@/components/chat-plus/MessageBadges';
+import { AutomatedBadge } from'@/components/feed/AutomatedBadge';
 
 export interface ConversationItem {
  id: string;
@@ -26,6 +27,7 @@ export interface ConversationItem {
  name: string | null;
  image: string | null;
  username: string | null;
+ isBot?: boolean;
  };
  lastMessage: {
  id: string;
@@ -499,6 +501,7 @@ function ConversationRow({
  @{conv.otherUser.username}
  </span>
  )}
+ {conv.otherUser.isBot && <AutomatedBadge />}
  </div>
  <div className="flex items-center gap-2 shrink-0">
  {conv.lastMessage && (

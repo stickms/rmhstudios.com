@@ -89,6 +89,26 @@ func GetDuration(key string, fallback time.Duration) time.Duration {
 	return fallback
 }
 
+// GetFloat returns the env var parsed as float64, or a fallback.
+func GetFloat(key string, fallback float64) float64 {
+	if v, ok := os.LookupEnv(key); ok && v != "" {
+		if f, err := strconv.ParseFloat(v, 64); err == nil {
+			return f
+		}
+	}
+	return fallback
+}
+
+// GetMillis reads an integer millisecond count (the Node services' `*_MS`
+// convention) as a duration, or returns fallback. Non-positive values are
+// ignored so a stray "0" can never produce a zero-interval ticker.
+func GetMillis(key string, fallback time.Duration) time.Duration {
+	if n := GetInt(key, 0); n > 0 {
+		return time.Duration(n) * time.Millisecond
+	}
+	return fallback
+}
+
 // GetCSV splits a comma-separated env var into trimmed, non-empty parts.
 func GetCSV(key string) []string {
 	raw := os.Getenv(key)
