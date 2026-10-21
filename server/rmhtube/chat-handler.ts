@@ -20,6 +20,7 @@ import { ChatSchema, ChatReactSchema, ChatPinSchema } from '../../lib/rmhtube/sc
 import { sanitizeString } from '../../lib/rmhtube/utils';
 import type { RoomManager } from './room-manager';
 import { RoomSlowMode } from '../shared/room-slow-mode';
+import { createBatchWriter } from '../shared/batch-writer';
 import { slowModeEvents } from '../../lib/safety/slow-mode-events';
 import type { ChatMessage } from './types';
 
@@ -27,7 +28,45 @@ const EmptySchema = z.object({}).optional();
 const SLOW = slowModeEvents('tube');
 const SlowSetSchema = z.object({ seconds: z.number().int().min(0).max(300) });
 
+interface ChatRow {
+  id: string;
+  roomId: string;
+  userId: string;
+  userName: string;
+  content: string;
+  createdAt: Date;
+}
+
 export class ChatHandler {
+  // Chat is the one per-event DB write on this hub. Rows are append-only and
+  // gameplay never waits on them, so they are written as one createMany per
+  // second instead of one INSERT per message. If a batch is rejected (e.g. one
+  // row's room insert has not landed yet) it is retried row by row, so a single
+  // bad row costs one message, exactly as before.
+  private chatWriter = createBatchWriter<ChatRow>({
+    flushMs: 1_000,
+    maxBatch: 200,
+    write: async (rows) => {
+      const prisma = getPrismaClient();
+      try {
+        await prisma.rmhTubeChatMessage.createMany({ data: rows, skipDuplicates: true });
+      } catch {
+        for (const data of rows) {
+          await prisma.rmhTubeChatMessage.create({ data }).catch((err: unknown) => {
+            logger.error({ event: 'db_chat_persist_failed', roomId: data.roomId, error: String(err) });
+          });
+        }
+      }
+    },
+    onError: (err, dropped) =>
+      logger.error({ event: 'db_chat_persist_failed', dropped, error: String(err) }),
+  });
+
+  /** Write any buffered chat rows now (graceful shutdown). */
+  flushPersistence(): Promise<void> {
+    return this.chatWriter.flush();
+  }
+
   // S3: host-set slow mode + raid protection, enforced before a message exists.
   private slowMode = new RoomSlowMode(async (userId) => {
     const row = await getPrismaClient().user.findUnique({
@@ -142,8 +181,13 @@ export class ChatHandler {
     this.roomManager.broadcastAction(room, 'CHAT_MESSAGE', message);
 
     // Persist to DB (fire-and-forget)
-    this.persistMessage(room.id, message).catch((err) => {
-      logger.error({ event: 'db_chat_persist_failed', roomId: room.id, error: String(err) });
+    this.chatWriter.add({
+      id: message.id,
+      roomId: room.id,
+      userId: message.userId,
+      userName: message.userName,
+      content: message.content,
+      createdAt: new Date(message.createdAt),
     });
   }
 
@@ -259,24 +303,5 @@ export class ChatHandler {
       room.pinnedMessage = message;
       this.roomManager.broadcastAction(room, 'MESSAGE_PINNED', { message });
     }
-  }
-
-  // ─── Database Persistence ──────────────────────────────────
-
-  private async persistMessage(
-    roomId: string,
-    message: ChatMessage,
-  ): Promise<void> {
-    const prisma = getPrismaClient();
-    await prisma.rmhTubeChatMessage.create({
-      data: {
-        id: message.id,
-        roomId,
-        userId: message.userId,
-        userName: message.userName,
-        content: message.content,
-        createdAt: new Date(message.createdAt),
-      },
-    });
   }
 }

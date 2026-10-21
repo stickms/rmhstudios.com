@@ -25,6 +25,7 @@ import { StateSyncService } from './state-sync';
 import { cleanupRateLimits } from './rate-limit';
 import { disconnectPrisma } from './prisma-client';
 import { logger } from './logger';
+import { handlePerfProbeRequest } from '../shared/perf-probe';
 
 if (!config.CORS_ORIGIN) {
   logger.error({ event: 'fatal_missing_cors', message: 'CORS_ORIGIN must be set (RMHBOX_CORS_ORIGIN or SOCKET_CORS_ORIGIN)' });
@@ -34,6 +35,8 @@ if (!config.CORS_ORIGIN) {
 // ─── Health-check HTTP handler ───────────────────────────────────
 
 function requestHandler(req: IncomingMessage, res: ServerResponse): void {
+  // Bench-only (RMH_PERF_HUB=1); a no-op that returns false otherwise.
+  if (handlePerfProbeRequest(req, res)) return;
   if (req.url === '/health' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ status: 'ok', uptime: process.uptime() }));

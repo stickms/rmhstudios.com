@@ -12,8 +12,10 @@ import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { Server } from 'socket.io';
 import { config } from './config';
 import { logger } from './logger';
-import { disconnectPrisma } from './prisma-client';
+import { disconnectPrisma, getPrismaClient } from './prisma-client';
+import { warmPrismaClient } from '../shared/prisma-client';
 import { cleanupRateLimits } from './rate-limit';
+import { handlePerfProbeRequest } from '../shared/perf-probe';
 
 // ─── Game Handlers ──────────────────────────────────────────────
 import { registerSliceItHandlers, handleSliceItDisconnect } from './handlers/slice-it';
@@ -426,6 +428,8 @@ async function softAuthMiddleware(
 // ─── Health-check HTTP handler ──────────────────────────────────
 
 function requestHandler(_req: IncomingMessage, res: ServerResponse): void {
+  // Bench-only (RMH_PERF_HUB=1); a no-op that returns false otherwise.
+  if (handlePerfProbeRequest(_req, res)) return;
   if (_req.url === '/health' && _req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ status: 'ok', uptime: process.uptime() }));
@@ -594,6 +598,7 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 httpServer.listen(config.PORT, () => {
   logger.info({ event: 'server_started', port: config.PORT, socketPath: config.SOCKET_PATH });
+  if (config.DATABASE_URL) void warmPrismaClient(getPrismaClient(), logger);
   initializeBlackjackPublicTable(io);
   initializeHoldem(io);
   initializeBaccarat(io);
