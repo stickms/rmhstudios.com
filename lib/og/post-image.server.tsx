@@ -35,7 +35,6 @@
 
 import React from 'react';
 import satori from 'satori';
-import { Resvg } from '@resvg/resvg-js';
 import {
   DIM,
   HAIRLINE_W,
@@ -43,8 +42,10 @@ import {
   MUTED,
   RADIUS_SM,
   SCALE,
+  createCardCache,
   fetchAvatarDataUri,
   loadFonts,
+  rasterizeSvg,
   satoriFonts,
   stripEmoji,
   truncate,
@@ -67,9 +68,7 @@ import {
 import { MAX_COLLAGE_TILES, collageTiles, type CollageBox, type TileBox } from '@/lib/og/collage';
 import { encodeOgImage, readImageSources, type OgImage } from '@/lib/og/media.server';
 
-const pngCache = new Map<string, { png: Buffer; ts: number }>();
-const PNG_TTL = 10 * 60 * 1000;
-const PNG_MAX = 100;
+const pngCache = createCardCache({ max: 100, ttlMs: 10 * 60 * 1000 });
 
 /* The pane's own geometry, named because every band's height is derived from
    it — see the arithmetic in `renderPostOgImage`. satori does not clip, so an
@@ -289,7 +288,7 @@ function quoteBlock(quote: PostOgQuote, width: number): React.ReactElement {
   });
 }
 
-export async function renderPostOgImage(data: PostOgData): Promise<Buffer> {
+export function renderPostOgImage(data: PostOgData): Promise<Buffer> {
   // Bucket engagement counts (per 10) so routine like/comment/repost churn
   // doesn't bust the rendered-PNG cache on every single interaction — the card
   // only visibly changes when a count crosses a bucket boundary anyway. The
@@ -297,9 +296,10 @@ export async function renderPostOgImage(data: PostOgData): Promise<Buffer> {
   // content warning that has just been applied.
   const bucket = (n: number) => Math.floor((n ?? 0) / 10);
   const cacheKey = `${data.id}:${data.revision ?? ''}:${bucket(data.likeCount)}:${bucket(data.commentCount)}:${bucket(data.repostCount)}`;
-  const cached = pngCache.get(cacheKey);
-  if (cached && Date.now() - cached.ts < PNG_TTL) return cached.png;
+  return pngCache.getOrRender(cacheKey, () => drawPostOgImage(data));
+}
 
+async function drawPostOgImage(data: PostOgData): Promise<Buffer> {
   await loadFonts();
 
   const avatar = await fetchAvatarDataUri(data.authorImage);
@@ -475,13 +475,5 @@ export async function renderPostOgImage(data: PostOgData): Promise<Buffer> {
     ...LANDSCAPE,
     fonts: satoriFonts(),
   });
-  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: LANDSCAPE.width } });
-  const png = Buffer.from(resvg.render().asPng());
-
-  if (pngCache.size >= PNG_MAX) {
-    const oldest = pngCache.keys().next().value;
-    if (oldest !== undefined) pngCache.delete(oldest);
-  }
-  pngCache.set(cacheKey, { png, ts: Date.now() });
-  return png;
+  return rasterizeSvg(svg, LANDSCAPE.width);
 }

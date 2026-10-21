@@ -13,13 +13,14 @@
 
 import React from 'react';
 import satori from 'satori';
-import { Resvg } from '@resvg/resvg-js';
 import {
   INK,
   MUTED,
   SCALE,
+  createCardCache,
   fetchAvatarDataUri,
   loadFonts,
+  rasterizeSvg,
   satoriFonts,
   stripEmoji,
   truncate as sharedTruncate,
@@ -40,9 +41,7 @@ function truncate(s: string, n: number): string {
   return sharedTruncate(stripEmoji(s), n);
 }
 
-const pngCache = new Map<string, { png: Buffer; ts: number }>();
-const PNG_TTL = 10 * 60 * 1000;
-const PNG_MAX = 60;
+const pngCache = createCardCache({ max: 60, ttlMs: 10 * 60 * 1000 });
 
 const PANE_PAD = 44 * SCALE;
 const AVATAR = 56 * SCALE;
@@ -56,11 +55,12 @@ export interface PostStoryData {
   authorImage: string | null;
 }
 
-export async function renderPostStoryImage(data: PostStoryData): Promise<Buffer> {
+export function renderPostStoryImage(data: PostStoryData): Promise<Buffer> {
   const cacheKey = data.id;
-  const cached = pngCache.get(cacheKey);
-  if (cached && Date.now() - cached.ts < PNG_TTL) return cached.png;
+  return pngCache.getOrRender(cacheKey, () => drawPostStoryImage(data));
+}
 
+async function drawPostStoryImage(data: PostStoryData): Promise<Buffer> {
   await loadFonts();
 
   const avatar = await fetchAvatarDataUri(data.authorImage);
@@ -122,13 +122,5 @@ export async function renderPostStoryImage(data: PostStoryData): Promise<Buffer>
   });
 
   const svg = await satori(element, { ...STORY, fonts: satoriFonts() });
-  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: STORY.width } });
-  const png = Buffer.from(resvg.render().asPng());
-
-  if (pngCache.size >= PNG_MAX) {
-    const oldest = pngCache.keys().next().value;
-    if (oldest !== undefined) pngCache.delete(oldest);
-  }
-  pngCache.set(cacheKey, { png, ts: Date.now() });
-  return png;
+  return rasterizeSvg(svg, STORY.width);
 }
