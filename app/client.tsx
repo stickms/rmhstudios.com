@@ -23,6 +23,11 @@ import { StrictMode, startTransition } from 'react';
 import { hydrateRoot } from 'react-dom/client';
 import { StartClient } from '@tanstack/react-start/client';
 import { reportClientError } from '@/lib/client-errors';
+import { installStaleBuildRecovery } from '@/lib/stale-build';
+
+// Before hydration, so a chunk deleted by a deploy that fails to load during the
+// first render already reloads instead of throwing (see lib/stale-build.ts).
+installStaleBuildRecovery();
 
 startTransition(() => {
   hydrateRoot(
