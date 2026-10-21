@@ -217,7 +217,7 @@ export async function getProfile(
       : Promise.resolve(null),
     getMembershipStatus(user.id, user.profile?.membershipPriceCoins ?? null, viewerId),
   ]);
-  const tipsThisMonth = tipAgg?._sum.amount ?? 0;
+  const tipsThisMonth = Number(tipAgg?._sum.amount ?? 0);
 
   const isOnline = !!user.lastSeenAt && Date.now() - user.lastSeenAt.getTime() < 2 * 60 * 1000;
 
@@ -258,7 +258,7 @@ export async function getProfile(
     pronouns: user.profilePlus?.pronouns ?? null,
     timezone: user.profilePlus?.timezone ?? null,
     pronunciationUrl: pronunciationUrl(user.id, user.profilePlus?.pronunciationKey),
-    coins: user.profile?.coins ?? 10,
+    coins: Number(user.profile?.coins ?? 10),
     followerCount: user.followerCount,
     followingCount: user.followingCount,
     rmharkCount: user.postCount,

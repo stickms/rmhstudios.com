@@ -95,6 +95,8 @@
   "audience-followers": "Follower",
   "audience-group-label": "Chi può vedere questo post",
   "audience-only-me": "Solo io",
+  "auto-reinvest": "Reinvestimento automatico",
+  "auto-reinvest-hint": "Gli interessi si capitalizzano nel tuo deposito ogni giorno",
   "avatar-alt": "Avatar",
   "avatar-change-hint": "Clicca per cambiare avatar (max {{maxMb}} MB)",
   "avatar-size-error": "",

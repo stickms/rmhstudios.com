@@ -104,6 +104,8 @@
   "audience-followers": "متابعون",
   "audience-group-label": "من يمكنه رؤية هذا المنشور",
   "audience-only-me": "فقط أنا",
+  "auto-reinvest": "إعادة الاستثمار التلقائي",
+  "auto-reinvest-hint": "تُضاف الفائدة إلى رصيدك المرهون يوميًا",
   "avatar-alt": "أفاتار",
   "avatar-change-hint": "انقر لتغيير الصورة الرمزية (الحد الأقصى {{maxMb}} ميجابايت)",
   "avatar-size-error": "Please provide the text you want me to translate.",

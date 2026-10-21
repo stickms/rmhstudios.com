@@ -71,7 +71,7 @@ export async function stakedToday(db: Db, userId: string, now: Date = new Date()
     },
     _sum: { amount: true },
   });
-  return agg._sum.amount ?? 0;
+  return Number(agg._sum.amount ?? 0);
 }
 
 /**

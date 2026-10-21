@@ -707,6 +707,7 @@ import { Route as ApiSpeedrunVerifyRouteImport } from './routes/api/speedrun/ver
 import { Route as ApiSpotifySearchRouteImport } from './routes/api/spotify/search'
 import { Route as ApiStakingIndexRouteImport } from './routes/api/staking/index'
 import { Route as ApiStakingDepositRouteImport } from './routes/api/staking/deposit'
+import { Route as ApiStakingSettingsRouteImport } from './routes/api/staking/settings'
 import { Route as ApiStakingWithdrawRouteImport } from './routes/api/staking/withdraw'
 import { Route as ApiStampsIndexRouteImport } from './routes/api/stamps/index'
 import { Route as ApiStampsIdRouteImport } from './routes/api/stamps/$id'
@@ -4776,6 +4777,11 @@ const ApiStakingDepositRoute = ApiStakingDepositRouteImport.update({
   path: '/api/staking/deposit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiStakingSettingsRoute = ApiStakingSettingsRouteImport.update({
+  id: '/api/staking/settings',
+  path: '/api/staking/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStakingWithdrawRoute = ApiStakingWithdrawRouteImport.update({
   id: '/api/staking/withdraw',
   path: '/api/staking/withdraw',
@@ -8301,6 +8307,7 @@ export interface FileRoutesByFullPath {
   '/api/speedrun/verify': typeof ApiSpeedrunVerifyRoute
   '/api/spotify/search': typeof ApiSpotifySearchRoute
   '/api/staking/deposit': typeof ApiStakingDepositRoute
+  '/api/staking/settings': typeof ApiStakingSettingsRoute
   '/api/staking/withdraw': typeof ApiStakingWithdrawRoute
   '/api/stamps/$id': typeof ApiStampsIdRouteWithChildren
   '/api/stamps/mine': typeof ApiStampsMineRoute
@@ -9520,6 +9527,7 @@ export interface FileRoutesByTo {
   '/api/speedrun/verify': typeof ApiSpeedrunVerifyRoute
   '/api/spotify/search': typeof ApiSpotifySearchRoute
   '/api/staking/deposit': typeof ApiStakingDepositRoute
+  '/api/staking/settings': typeof ApiStakingSettingsRoute
   '/api/staking/withdraw': typeof ApiStakingWithdrawRoute
   '/api/stamps/$id': typeof ApiStampsIdRouteWithChildren
   '/api/stamps/mine': typeof ApiStampsMineRoute
@@ -10767,6 +10775,7 @@ export interface FileRoutesById {
   '/api/speedrun/verify': typeof ApiSpeedrunVerifyRoute
   '/api/spotify/search': typeof ApiSpotifySearchRoute
   '/api/staking/deposit': typeof ApiStakingDepositRoute
+  '/api/staking/settings': typeof ApiStakingSettingsRoute
   '/api/staking/withdraw': typeof ApiStakingWithdrawRoute
   '/api/stamps/$id': typeof ApiStampsIdRouteWithChildren
   '/api/stamps/mine': typeof ApiStampsMineRoute
@@ -12014,6 +12023,7 @@ export interface FileRouteTypes {
     | '/api/speedrun/verify'
     | '/api/spotify/search'
     | '/api/staking/deposit'
+    | '/api/staking/settings'
     | '/api/staking/withdraw'
     | '/api/stamps/$id'
     | '/api/stamps/mine'
@@ -13233,6 +13243,7 @@ export interface FileRouteTypes {
     | '/api/speedrun/verify'
     | '/api/spotify/search'
     | '/api/staking/deposit'
+    | '/api/staking/settings'
     | '/api/staking/withdraw'
     | '/api/stamps/$id'
     | '/api/stamps/mine'
@@ -14479,6 +14490,7 @@ export interface FileRouteTypes {
     | '/api/speedrun/verify'
     | '/api/spotify/search'
     | '/api/staking/deposit'
+    | '/api/staking/settings'
     | '/api/staking/withdraw'
     | '/api/stamps/$id'
     | '/api/stamps/mine'
@@ -15495,6 +15507,7 @@ export interface RootRouteChildren {
   ApiSpeedrunVerifyRoute: typeof ApiSpeedrunVerifyRoute
   ApiSpotifySearchRoute: typeof ApiSpotifySearchRoute
   ApiStakingDepositRoute: typeof ApiStakingDepositRoute
+  ApiStakingSettingsRoute: typeof ApiStakingSettingsRoute
   ApiStakingWithdrawRoute: typeof ApiStakingWithdrawRoute
   ApiStampsIdRoute: typeof ApiStampsIdRouteWithChildren
   ApiStampsMineRoute: typeof ApiStampsMineRoute
@@ -20777,6 +20790,13 @@ declare module '@tanstack/react-router' {
       path: '/api/staking/deposit'
       fullPath: '/api/staking/deposit'
       preLoaderRoute: typeof ApiStakingDepositRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/staking/settings': {
+      id: '/api/staking/settings'
+      path: '/api/staking/settings'
+      fullPath: '/api/staking/settings'
+      preLoaderRoute: typeof ApiStakingSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/staking/withdraw': {
@@ -27089,6 +27109,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSpeedrunVerifyRoute: ApiSpeedrunVerifyRoute,
   ApiSpotifySearchRoute: ApiSpotifySearchRoute,
   ApiStakingDepositRoute: ApiStakingDepositRoute,
+  ApiStakingSettingsRoute: ApiStakingSettingsRoute,
   ApiStakingWithdrawRoute: ApiStakingWithdrawRoute,
   ApiStampsIdRoute: ApiStampsIdRouteWithChildren,
   ApiStampsMineRoute: ApiStampsMineRoute,

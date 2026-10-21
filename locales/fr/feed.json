@@ -95,6 +95,8 @@
   "audience-followers": "Abonnés",
   "audience-group-label": "Qui peut voir cette publication",
   "audience-only-me": "Moi uniquement",
+  "auto-reinvest": "Réinvestissement auto",
+  "auto-reinvest-hint": "Les intérêts sont ajoutés à votre dépôt chaque jour",
   "avatar-alt": "Avatar",
   "avatar-change-hint": "Cliquez pour changer d'avatar (max {{maxMb}} Mo)",
   "avatar-size-error": "",

@@ -89,6 +89,8 @@
   "audience-followers": "粉丝",
   "audience-group-label": "谁可以看到这篇帖子",
   "audience-only-me": "只有我",
+  "auto-reinvest": "自动复投",
+  "auto-reinvest-hint": "利息每天复利计入你的质押",
   "avatar-alt": "头像",
   "avatar-change-hint": "点击更换头像（最大{{maxMb}}MB）",
   "avatar-size-error": "您好，有什么我可以帮助您的吗？",
