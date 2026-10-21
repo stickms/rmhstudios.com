@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 333 routes. 194 render inside the standard site shell (sidebar, nav, context rail); 139 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 334 routes. 195 render inside the standard site shell (sidebar, nav, context rail); 139 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -39,6 +39,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/library-quota` | redirects to `/admin/library?tab=appeals` | admin | `app/routes/_site/admin/library-quota.tsx` |
 | `/admin/library-storage` | redirects to `/admin/library?tab=storage` | admin | `app/routes/_site/admin/library-storage.tsx` |
 | `/admin/patch-notes` | Patch Notes \| Admin | admin | `app/routes/_site/admin/patch-notes.tsx` |
+| `/admin/performance` | Performance | admin | `app/routes/_site/admin/performance.tsx` |
 | `/admin/predictions` | Prediction Markets \| Admin | admin | `app/routes/_site/admin/predictions.tsx` |
 | `/admin/qotd` | Question of the Day \| Admin | admin | `app/routes/_site/admin/qotd.tsx` |
 | `/admin/reading` | Reading tools \| Admin | admin | `app/routes/_site/admin/reading.tsx` |
