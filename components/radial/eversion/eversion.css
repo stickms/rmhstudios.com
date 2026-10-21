@@ -332,17 +332,78 @@ html.reduce-motion .evert-popup {
   }
 }
 
-/* ── The button-sized eversion (mini-globe.ts, amended 2026-10-21) ──────────────────────────────────────────────
-   Every navigation that does not come from the hub plays this on the control that was pressed, in place: one
-   canvas over the control's own rect plus the margin the surface swings into. It sits over the hub layer like the
-   pop-up globe did, and never takes a pointer. The control itself is hidden under it from the canvas's first frame
-   (which is the control's exact face) until the hand-back, so there is never two of it. */
-.evert-mini {
+/* ── The mini "puddle" response (mini-globe.ts, amended 2026-10-21) ──────────────────────────────────────────────
+   Non-hub navigations are no longer mini eversions on a control. Instead a ripple expands from the press point and
+   nearby UI responds by distance (WAAPI in mini-globe.ts). The layer itself is one fixed, pointer-inert element with
+   transform/opacity-only motion. */
+.evert-mini-ripple {
   position: fixed;
+  inset: 0;
   z-index: calc(var(--z-hub-overlay) + 1);
   pointer-events: none;
   contain: strict;
+  will-change: opacity;
+  animation: evert-mini-layer var(--evert-mini-ms, 460ms) ease-out both;
 }
-[data-evert-mini] {
-  visibility: hidden !important;
+.evert-mini-ripple::before,
+.evert-mini-ripple::after {
+  content: '';
+  position: absolute;
+  left: var(--evert-ripple-x, 50%);
+  top: var(--evert-ripple-y, 50%);
+  width: calc(var(--evert-ripple-r, 20px) * 2);
+  height: calc(var(--evert-ripple-r, 20px) * 2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0.04);
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+}
+.evert-mini-ripple::before {
+  border: 1px solid color-mix(in oklab, var(--site-accent) 42%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--site-text) 10%, transparent) inset,
+    0 0 30px -10px color-mix(in oklab, var(--site-accent) 34%, transparent);
+  opacity: 0;
+  animation: evert-mini-wave var(--evert-mini-ms, 460ms) cubic-bezier(0.12, 0.8, 0.24, 1) both;
+}
+.evert-mini-ripple::after {
+  background: radial-gradient(
+    circle,
+    color-mix(in oklab, var(--site-accent) 24%, transparent) 0%,
+    color-mix(in oklab, var(--site-text) 8%, transparent) 28%,
+    transparent 60%
+  );
+  opacity: 0;
+  animation: evert-mini-glow calc(var(--evert-mini-ms, 460ms) * 0.9) ease-out both;
+}
+@keyframes evert-mini-layer {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes evert-mini-wave {
+  0% {
+    transform: translate(-50%, -50%) scale(0.03);
+    opacity: 0.8;
+  }
+  48% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+@keyframes evert-mini-glow {
+  0% {
+    transform: translate(-50%, -50%) scale(0.02);
+    opacity: 0.22;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0.94);
+    opacity: 0;
+  }
 }
