@@ -868,7 +868,10 @@ import { Route as ApiCommunitiesSlugExtrasRouteImport } from './routes/api/commu
 import { Route as ApiCommunitiesSlugFeedRouteImport } from './routes/api/communities/$slug/feed'
 import { Route as ApiCommunitiesSlugFlairFollowsRouteImport } from './routes/api/communities/$slug/flair-follows'
 import { Route as ApiCommunitiesSlugFlairsRouteImport } from './routes/api/communities/$slug/flairs'
+import { Route as ApiCommunitiesSlugInvitesRouteImport } from './routes/api/communities/$slug/invites'
 import { Route as ApiCommunitiesSlugJoinRouteImport } from './routes/api/communities/$slug/join'
+import { Route as ApiCommunitiesSlugJoinRequestRouteImport } from './routes/api/communities/$slug/join-request'
+import { Route as ApiCommunitiesSlugJoinRequestsRouteImport } from './routes/api/communities/$slug/join-requests'
 import { Route as ApiCommunitiesSlugMacrosRouteImport } from './routes/api/communities/$slug/macros'
 import { Route as ApiCommunitiesSlugMembersRouteImport } from './routes/api/communities/$slug/members'
 import { Route as ApiCommunitiesSlugModqueueRouteImport } from './routes/api/communities/$slug/modqueue'
@@ -1162,6 +1165,8 @@ import { Route as ApiCommunitiesSlugAutomodRuleIdRouteImport } from './routes/ap
 import { Route as ApiCommunitiesSlugChallengeIdRouteImport } from './routes/api/communities/$slug/challenge/$id'
 import { Route as ApiCommunitiesSlugChallengeVoteRouteImport } from './routes/api/communities/$slug/challenge/vote'
 import { Route as ApiCommunitiesSlugFlairsFlairIdRouteImport } from './routes/api/communities/$slug/flairs/$flairId'
+import { Route as ApiCommunitiesSlugInvitesIdRouteImport } from './routes/api/communities/$slug/invites/$id'
+import { Route as ApiCommunitiesSlugJoinRequestsIdRouteImport } from './routes/api/communities/$slug/join-requests/$id'
 import { Route as ApiCommunitiesSlugMembersUserIdRouteImport } from './routes/api/communities/$slug/members/$userId'
 import { Route as ApiCommunitiesSlugModqueueItemIdRouteImport } from './routes/api/communities/$slug/modqueue/$itemId'
 import { Route as ApiConnectionsGridsIdGuessRouteImport } from './routes/api/connections/grids/$id.guess'
@@ -5618,11 +5623,29 @@ const ApiCommunitiesSlugFlairsRoute =
     path: '/api/communities/$slug/flairs',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiCommunitiesSlugInvitesRoute =
+  ApiCommunitiesSlugInvitesRouteImport.update({
+    id: '/api/communities/$slug/invites',
+    path: '/api/communities/$slug/invites',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiCommunitiesSlugJoinRoute = ApiCommunitiesSlugJoinRouteImport.update({
   id: '/api/communities/$slug/join',
   path: '/api/communities/$slug/join',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCommunitiesSlugJoinRequestRoute =
+  ApiCommunitiesSlugJoinRequestRouteImport.update({
+    id: '/api/communities/$slug/join-request',
+    path: '/api/communities/$slug/join-request',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiCommunitiesSlugJoinRequestsRoute =
+  ApiCommunitiesSlugJoinRequestsRouteImport.update({
+    id: '/api/communities/$slug/join-requests',
+    path: '/api/communities/$slug/join-requests',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiCommunitiesSlugMacrosRoute =
   ApiCommunitiesSlugMacrosRouteImport.update({
     id: '/api/communities/$slug/macros',
@@ -7178,6 +7201,18 @@ const ApiCommunitiesSlugFlairsFlairIdRoute =
     path: '/$flairId',
     getParentRoute: () => ApiCommunitiesSlugFlairsRoute,
   } as any)
+const ApiCommunitiesSlugInvitesIdRoute =
+  ApiCommunitiesSlugInvitesIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => ApiCommunitiesSlugInvitesRoute,
+  } as any)
+const ApiCommunitiesSlugJoinRequestsIdRoute =
+  ApiCommunitiesSlugJoinRequestsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => ApiCommunitiesSlugJoinRequestsRoute,
+  } as any)
 const ApiCommunitiesSlugMembersUserIdRoute =
   ApiCommunitiesSlugMembersUserIdRouteImport.update({
     id: '/$userId',
@@ -8538,7 +8573,10 @@ export interface FileRoutesByFullPath {
   '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
   '/api/communities/$slug/flair-follows': typeof ApiCommunitiesSlugFlairFollowsRoute
   '/api/communities/$slug/flairs': typeof ApiCommunitiesSlugFlairsRouteWithChildren
+  '/api/communities/$slug/invites': typeof ApiCommunitiesSlugInvitesRouteWithChildren
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
+  '/api/communities/$slug/join-request': typeof ApiCommunitiesSlugJoinRequestRoute
+  '/api/communities/$slug/join-requests': typeof ApiCommunitiesSlugJoinRequestsRouteWithChildren
   '/api/communities/$slug/macros': typeof ApiCommunitiesSlugMacrosRoute
   '/api/communities/$slug/members': typeof ApiCommunitiesSlugMembersRouteWithChildren
   '/api/communities/$slug/modqueue': typeof ApiCommunitiesSlugModqueueRouteWithChildren
@@ -8845,6 +8883,8 @@ export interface FileRoutesByFullPath {
   '/api/communities/$slug/challenge/$id': typeof ApiCommunitiesSlugChallengeIdRoute
   '/api/communities/$slug/challenge/vote': typeof ApiCommunitiesSlugChallengeVoteRoute
   '/api/communities/$slug/flairs/$flairId': typeof ApiCommunitiesSlugFlairsFlairIdRoute
+  '/api/communities/$slug/invites/$id': typeof ApiCommunitiesSlugInvitesIdRoute
+  '/api/communities/$slug/join-requests/$id': typeof ApiCommunitiesSlugJoinRequestsIdRoute
   '/api/communities/$slug/members/$userId': typeof ApiCommunitiesSlugMembersUserIdRoute
   '/api/communities/$slug/modqueue/$itemId': typeof ApiCommunitiesSlugModqueueItemIdRoute
   '/api/connections/grids/$id/guess': typeof ApiConnectionsGridsIdGuessRoute
@@ -9757,7 +9797,10 @@ export interface FileRoutesByTo {
   '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
   '/api/communities/$slug/flair-follows': typeof ApiCommunitiesSlugFlairFollowsRoute
   '/api/communities/$slug/flairs': typeof ApiCommunitiesSlugFlairsRouteWithChildren
+  '/api/communities/$slug/invites': typeof ApiCommunitiesSlugInvitesRouteWithChildren
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
+  '/api/communities/$slug/join-request': typeof ApiCommunitiesSlugJoinRequestRoute
+  '/api/communities/$slug/join-requests': typeof ApiCommunitiesSlugJoinRequestsRouteWithChildren
   '/api/communities/$slug/macros': typeof ApiCommunitiesSlugMacrosRoute
   '/api/communities/$slug/members': typeof ApiCommunitiesSlugMembersRouteWithChildren
   '/api/communities/$slug/modqueue': typeof ApiCommunitiesSlugModqueueRouteWithChildren
@@ -10064,6 +10107,8 @@ export interface FileRoutesByTo {
   '/api/communities/$slug/challenge/$id': typeof ApiCommunitiesSlugChallengeIdRoute
   '/api/communities/$slug/challenge/vote': typeof ApiCommunitiesSlugChallengeVoteRoute
   '/api/communities/$slug/flairs/$flairId': typeof ApiCommunitiesSlugFlairsFlairIdRoute
+  '/api/communities/$slug/invites/$id': typeof ApiCommunitiesSlugInvitesIdRoute
+  '/api/communities/$slug/join-requests/$id': typeof ApiCommunitiesSlugJoinRequestsIdRoute
   '/api/communities/$slug/members/$userId': typeof ApiCommunitiesSlugMembersUserIdRoute
   '/api/communities/$slug/modqueue/$itemId': typeof ApiCommunitiesSlugModqueueItemIdRoute
   '/api/connections/grids/$id/guess': typeof ApiConnectionsGridsIdGuessRoute
@@ -11004,7 +11049,10 @@ export interface FileRoutesById {
   '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
   '/api/communities/$slug/flair-follows': typeof ApiCommunitiesSlugFlairFollowsRoute
   '/api/communities/$slug/flairs': typeof ApiCommunitiesSlugFlairsRouteWithChildren
+  '/api/communities/$slug/invites': typeof ApiCommunitiesSlugInvitesRouteWithChildren
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
+  '/api/communities/$slug/join-request': typeof ApiCommunitiesSlugJoinRequestRoute
+  '/api/communities/$slug/join-requests': typeof ApiCommunitiesSlugJoinRequestsRouteWithChildren
   '/api/communities/$slug/macros': typeof ApiCommunitiesSlugMacrosRoute
   '/api/communities/$slug/members': typeof ApiCommunitiesSlugMembersRouteWithChildren
   '/api/communities/$slug/modqueue': typeof ApiCommunitiesSlugModqueueRouteWithChildren
@@ -11311,6 +11359,8 @@ export interface FileRoutesById {
   '/api/communities/$slug/challenge/$id': typeof ApiCommunitiesSlugChallengeIdRoute
   '/api/communities/$slug/challenge/vote': typeof ApiCommunitiesSlugChallengeVoteRoute
   '/api/communities/$slug/flairs/$flairId': typeof ApiCommunitiesSlugFlairsFlairIdRoute
+  '/api/communities/$slug/invites/$id': typeof ApiCommunitiesSlugInvitesIdRoute
+  '/api/communities/$slug/join-requests/$id': typeof ApiCommunitiesSlugJoinRequestsIdRoute
   '/api/communities/$slug/members/$userId': typeof ApiCommunitiesSlugMembersUserIdRoute
   '/api/communities/$slug/modqueue/$itemId': typeof ApiCommunitiesSlugModqueueItemIdRoute
   '/api/connections/grids/$id/guess': typeof ApiConnectionsGridsIdGuessRoute
@@ -12251,7 +12301,10 @@ export interface FileRouteTypes {
     | '/api/communities/$slug/feed'
     | '/api/communities/$slug/flair-follows'
     | '/api/communities/$slug/flairs'
+    | '/api/communities/$slug/invites'
     | '/api/communities/$slug/join'
+    | '/api/communities/$slug/join-request'
+    | '/api/communities/$slug/join-requests'
     | '/api/communities/$slug/macros'
     | '/api/communities/$slug/members'
     | '/api/communities/$slug/modqueue'
@@ -12558,6 +12611,8 @@ export interface FileRouteTypes {
     | '/api/communities/$slug/challenge/$id'
     | '/api/communities/$slug/challenge/vote'
     | '/api/communities/$slug/flairs/$flairId'
+    | '/api/communities/$slug/invites/$id'
+    | '/api/communities/$slug/join-requests/$id'
     | '/api/communities/$slug/members/$userId'
     | '/api/communities/$slug/modqueue/$itemId'
     | '/api/connections/grids/$id/guess'
@@ -13470,7 +13525,10 @@ export interface FileRouteTypes {
     | '/api/communities/$slug/feed'
     | '/api/communities/$slug/flair-follows'
     | '/api/communities/$slug/flairs'
+    | '/api/communities/$slug/invites'
     | '/api/communities/$slug/join'
+    | '/api/communities/$slug/join-request'
+    | '/api/communities/$slug/join-requests'
     | '/api/communities/$slug/macros'
     | '/api/communities/$slug/members'
     | '/api/communities/$slug/modqueue'
@@ -13777,6 +13835,8 @@ export interface FileRouteTypes {
     | '/api/communities/$slug/challenge/$id'
     | '/api/communities/$slug/challenge/vote'
     | '/api/communities/$slug/flairs/$flairId'
+    | '/api/communities/$slug/invites/$id'
+    | '/api/communities/$slug/join-requests/$id'
     | '/api/communities/$slug/members/$userId'
     | '/api/communities/$slug/modqueue/$itemId'
     | '/api/connections/grids/$id/guess'
@@ -14716,7 +14776,10 @@ export interface FileRouteTypes {
     | '/api/communities/$slug/feed'
     | '/api/communities/$slug/flair-follows'
     | '/api/communities/$slug/flairs'
+    | '/api/communities/$slug/invites'
     | '/api/communities/$slug/join'
+    | '/api/communities/$slug/join-request'
+    | '/api/communities/$slug/join-requests'
     | '/api/communities/$slug/macros'
     | '/api/communities/$slug/members'
     | '/api/communities/$slug/modqueue'
@@ -15023,6 +15086,8 @@ export interface FileRouteTypes {
     | '/api/communities/$slug/challenge/$id'
     | '/api/communities/$slug/challenge/vote'
     | '/api/communities/$slug/flairs/$flairId'
+    | '/api/communities/$slug/invites/$id'
+    | '/api/communities/$slug/join-requests/$id'
     | '/api/communities/$slug/members/$userId'
     | '/api/communities/$slug/modqueue/$itemId'
     | '/api/connections/grids/$id/guess'
@@ -15664,7 +15729,10 @@ export interface RootRouteChildren {
   ApiCommunitiesSlugFeedRoute: typeof ApiCommunitiesSlugFeedRoute
   ApiCommunitiesSlugFlairFollowsRoute: typeof ApiCommunitiesSlugFlairFollowsRoute
   ApiCommunitiesSlugFlairsRoute: typeof ApiCommunitiesSlugFlairsRouteWithChildren
+  ApiCommunitiesSlugInvitesRoute: typeof ApiCommunitiesSlugInvitesRouteWithChildren
   ApiCommunitiesSlugJoinRoute: typeof ApiCommunitiesSlugJoinRoute
+  ApiCommunitiesSlugJoinRequestRoute: typeof ApiCommunitiesSlugJoinRequestRoute
+  ApiCommunitiesSlugJoinRequestsRoute: typeof ApiCommunitiesSlugJoinRequestsRouteWithChildren
   ApiCommunitiesSlugMacrosRoute: typeof ApiCommunitiesSlugMacrosRoute
   ApiCommunitiesSlugMembersRoute: typeof ApiCommunitiesSlugMembersRouteWithChildren
   ApiCommunitiesSlugModqueueRoute: typeof ApiCommunitiesSlugModqueueRouteWithChildren
@@ -21906,11 +21974,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCommunitiesSlugFlairsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/communities/$slug/invites': {
+      id: '/api/communities/$slug/invites'
+      path: '/api/communities/$slug/invites'
+      fullPath: '/api/communities/$slug/invites'
+      preLoaderRoute: typeof ApiCommunitiesSlugInvitesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/communities/$slug/join': {
       id: '/api/communities/$slug/join'
       path: '/api/communities/$slug/join'
       fullPath: '/api/communities/$slug/join'
       preLoaderRoute: typeof ApiCommunitiesSlugJoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/communities/$slug/join-request': {
+      id: '/api/communities/$slug/join-request'
+      path: '/api/communities/$slug/join-request'
+      fullPath: '/api/communities/$slug/join-request'
+      preLoaderRoute: typeof ApiCommunitiesSlugJoinRequestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/communities/$slug/join-requests': {
+      id: '/api/communities/$slug/join-requests'
+      path: '/api/communities/$slug/join-requests'
+      fullPath: '/api/communities/$slug/join-requests'
+      preLoaderRoute: typeof ApiCommunitiesSlugJoinRequestsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/communities/$slug/macros': {
@@ -23963,6 +24052,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/communities/$slug/flairs/$flairId'
       preLoaderRoute: typeof ApiCommunitiesSlugFlairsFlairIdRouteImport
       parentRoute: typeof ApiCommunitiesSlugFlairsRoute
+    }
+    '/api/communities/$slug/invites/$id': {
+      id: '/api/communities/$slug/invites/$id'
+      path: '/$id'
+      fullPath: '/api/communities/$slug/invites/$id'
+      preLoaderRoute: typeof ApiCommunitiesSlugInvitesIdRouteImport
+      parentRoute: typeof ApiCommunitiesSlugInvitesRoute
+    }
+    '/api/communities/$slug/join-requests/$id': {
+      id: '/api/communities/$slug/join-requests/$id'
+      path: '/$id'
+      fullPath: '/api/communities/$slug/join-requests/$id'
+      preLoaderRoute: typeof ApiCommunitiesSlugJoinRequestsIdRouteImport
+      parentRoute: typeof ApiCommunitiesSlugJoinRequestsRoute
     }
     '/api/communities/$slug/members/$userId': {
       id: '/api/communities/$slug/members/$userId'
@@ -26551,6 +26654,35 @@ const ApiCommunitiesSlugFlairsRouteWithChildren =
     ApiCommunitiesSlugFlairsRouteChildren,
   )
 
+interface ApiCommunitiesSlugInvitesRouteChildren {
+  ApiCommunitiesSlugInvitesIdRoute: typeof ApiCommunitiesSlugInvitesIdRoute
+}
+
+const ApiCommunitiesSlugInvitesRouteChildren: ApiCommunitiesSlugInvitesRouteChildren =
+  {
+    ApiCommunitiesSlugInvitesIdRoute: ApiCommunitiesSlugInvitesIdRoute,
+  }
+
+const ApiCommunitiesSlugInvitesRouteWithChildren =
+  ApiCommunitiesSlugInvitesRoute._addFileChildren(
+    ApiCommunitiesSlugInvitesRouteChildren,
+  )
+
+interface ApiCommunitiesSlugJoinRequestsRouteChildren {
+  ApiCommunitiesSlugJoinRequestsIdRoute: typeof ApiCommunitiesSlugJoinRequestsIdRoute
+}
+
+const ApiCommunitiesSlugJoinRequestsRouteChildren: ApiCommunitiesSlugJoinRequestsRouteChildren =
+  {
+    ApiCommunitiesSlugJoinRequestsIdRoute:
+      ApiCommunitiesSlugJoinRequestsIdRoute,
+  }
+
+const ApiCommunitiesSlugJoinRequestsRouteWithChildren =
+  ApiCommunitiesSlugJoinRequestsRoute._addFileChildren(
+    ApiCommunitiesSlugJoinRequestsRouteChildren,
+  )
+
 interface ApiCommunitiesSlugMembersRouteChildren {
   ApiCommunitiesSlugMembersUserIdRoute: typeof ApiCommunitiesSlugMembersUserIdRoute
 }
@@ -27260,7 +27392,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCommunitiesSlugFeedRoute: ApiCommunitiesSlugFeedRoute,
   ApiCommunitiesSlugFlairFollowsRoute: ApiCommunitiesSlugFlairFollowsRoute,
   ApiCommunitiesSlugFlairsRoute: ApiCommunitiesSlugFlairsRouteWithChildren,
+  ApiCommunitiesSlugInvitesRoute: ApiCommunitiesSlugInvitesRouteWithChildren,
   ApiCommunitiesSlugJoinRoute: ApiCommunitiesSlugJoinRoute,
+  ApiCommunitiesSlugJoinRequestRoute: ApiCommunitiesSlugJoinRequestRoute,
+  ApiCommunitiesSlugJoinRequestsRoute:
+    ApiCommunitiesSlugJoinRequestsRouteWithChildren,
   ApiCommunitiesSlugMacrosRoute: ApiCommunitiesSlugMacrosRoute,
   ApiCommunitiesSlugMembersRoute: ApiCommunitiesSlugMembersRouteWithChildren,
   ApiCommunitiesSlugModqueueRoute: ApiCommunitiesSlugModqueueRouteWithChildren,
