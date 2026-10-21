@@ -273,21 +273,18 @@ jobs:
       BETTER_AUTH_URL: http://localhost:7005
       PORT: '7005'
       INTEGRATION_BASE_URL: http://localhost:7005
-    services:
-      postgres:
-        # pgvector's image: the migration history needs the extension to replay
-        # (same as prisma-migrate-status.yml and eversion-e2e).
-        image: pgvector/pgvector:pg16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: rmh
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Postgres boots IN THE BACKGROUND while deps restore and the app builds,
+      # instead of as a `services:` container — those start (pull + init, ~16 s)
+      # before the first step, on the job's critical path. pgvector's image: the
+      # migration history needs the extension to replay. Published on loopback
+      # only. "Wait for Postgres" below gates the first step that needs it.
+      - name: Start Postgres (background)
+        run: |
+          nohup sh -c 'docker run -d --name pg -p 127.0.0.1:5432:5432 \
+            -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=rmh \
+            pgvector/pgvector:pg16' > "$RUNNER_TEMP/pg-start.log" 2>&1 &
       # pnpm + Node + node_modules (cached by lockfile + schema) — see the action.
       - uses: ./.github/actions/setup-deps
       - name: Restore image variants
@@ -299,6 +296,14 @@ jobs:
             image-variants-${{ runner.os }}-
       - name: Build
         run: pnpm run build:frontend
+      - name: Wait for Postgres
+        run: |
+          for i in $(seq 1 60); do
+            if docker exec pg pg_isready -U postgres -h 127.0.0.1 >/dev/null 2>&1; then echo "postgres ready (${i}s into the wait)"; exit 0; fi
+            sleep 1
+          done
+          echo "postgres never became ready"; cat "$RUNNER_TEMP/pg-start.log"; docker logs pg 2>&1 | tail -40 || true
+          exit 1
       - name: Migrate database
         run: pnpm exec prisma migrate deploy
       - name: Start the built server

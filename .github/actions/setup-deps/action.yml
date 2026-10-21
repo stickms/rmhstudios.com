@@ -12,7 +12,10 @@
 # job saves the new tree for the next run.
 #
 # The key covers everything that decides what node_modules contains: the
-# lockfile, every workspace package.json, .npmrc / pnpm-workspace.yaml, the
+# lockfile, every workspace package.json (listed explicitly — a `**/package.json`
+# glob is re-evaluated by the cache's post step, AFTER node_modules exists, and
+# walking 1.9 GB of it cost ~10 s per job; keep this list in step with
+# pnpm-workspace.yaml), .npmrc / pnpm-workspace.yaml, the
 # Node version, the OS/arch — and the Prisma schema, because `prisma generate`
 # writes the client INTO node_modules (.prisma, hoisted by .npmrc). No
 # restore-keys: a partial match would be a stale tree, which is worse than a
@@ -40,7 +43,7 @@ runs:
           node_modules
           cli/node_modules
           docs/*/build/node_modules
-        key: node-modules-v1-${{ runner.os }}-${{ runner.arch }}-node24.21.0-${{ hashFiles('pnpm-lock.yaml', '**/package.json', '!**/node_modules/**', '.npmrc', 'pnpm-workspace.yaml', 'prisma/schema.prisma', 'prisma.config.ts') }}
+        key: node-modules-v1-${{ runner.os }}-${{ runner.arch }}-node24.21.0-${{ hashFiles('pnpm-lock.yaml', 'package.json', 'cli/package.json', 'docs/*/build/package.json', '.npmrc', 'pnpm-workspace.yaml', 'prisma/schema.prisma', 'prisma.config.ts') }}
     - name: Locate the pnpm store
       if: steps.nm.outputs.cache-hit != 'true'
       id: store
