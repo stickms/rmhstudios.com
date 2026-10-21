@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma.server';
 import type { FeedItem, FeedPoll } from '@/lib/feed-types';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { viewerVisiblePostWhere } from '@/lib/feed/audience.server';
 import { applyLock, loadBoundedReactionSummaries } from '@/lib/feed/map-feed-item.server';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -77,7 +78,10 @@ export async function listBookmarks(
   });
 
   const posts = await prisma.rMHark.findMany({
-    where: { id: { in: saves.map((s) => s.entityId) }, deletedAt: null },
+    // A bookmark is not a standing right to read: a post that became PRIVATE, was
+    // deleted, belongs to a private community the viewer left, or is by an author the
+    // viewer blocked is dropped here (viewerVisiblePostWhere includes deletedAt).
+    where: { id: { in: saves.map((s) => s.entityId) }, ...(await viewerVisiblePostWhere(viewerId)) },
     include: rmharkInclude(viewerId),
   });
   const byId = new Map(posts.map((p) => [p.id, p]));

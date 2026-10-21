@@ -15,6 +15,7 @@ import { prisma } from "@/lib/prisma.server";
 import { feedEventBus } from "@/lib/feed-sse";
 import { createNotification } from "@/lib/notifications.server";
 import { parseHandles } from "@/lib/feed/mentions";
+import { canViewPost } from "@/lib/feed/audience.server";
 
 export interface MentionAuthor {
   id: string;
@@ -46,6 +47,24 @@ export async function notifyMentions(input: NotifyMentionsInput): Promise<void> 
   });
   if (mentioned.length === 0) return;
 
+  // A mention must not carry a post's text (preview + link) to someone who may not
+  // read the post: followers-only / circle / private posts and private-community
+  // posts previously notified every @mentioned user regardless.
+  const post = await prisma.rMHark.findUnique({
+    where: { id: input.postId },
+    select: { userId: true, audience: true, communityId: true },
+  });
+  if (!post) return;
+  const recipients =
+    post.audience === "PUBLIC" && !post.communityId
+      ? mentioned
+      : (
+          await Promise.all(
+            mentioned.map(async (m) => ((await canViewPost(post, m.id)) ? m : null)),
+          )
+        ).filter((m): m is { id: string } => m !== null);
+  if (recipients.length === 0) return;
+
   // Live toast for any mentioned user with an open stream.
   feedEventBus.publish({
     type: "notification.mention",
@@ -53,7 +72,7 @@ export async function notifyMentions(input: NotifyMentionsInput): Promise<void> 
     payload: { id: input.postId },
     timestamp: input.timestamp,
     authorId: input.author.id,
-    targetUserIds: mentioned.map((m) => m.id),
+    targetUserIds: recipients.map((m) => m.id),
     notification: {
       rmharkId: input.postId,
       preview: input.content.slice(0, 120),
@@ -69,7 +88,7 @@ export async function notifyMentions(input: NotifyMentionsInput): Promise<void> 
   // Persist so it appears in the notification center — and, for bot recipients,
   // becomes the bot-worker's mention work queue.
   await Promise.all(
-    mentioned.map((m) =>
+    recipients.map((m) =>
       createNotification({
         userId: m.id,
         actorId: input.author.id,

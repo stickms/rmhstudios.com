@@ -129,7 +129,7 @@ async function catalogCandidates(slot: 'games' | 'apps', opts: RecommendOptions)
 
 async function postCandidates(opts: RecommendOptions): Promise<Candidate[]> {
   const rows = await prisma.rMHark.findMany({
-    where: { deletedAt: null, audience: 'PUBLIC', unlockPrice: null },
+    where: { deletedAt: null, audience: 'PUBLIC', communityId: null, unlockPrice: null },
     orderBy: { createdAt: 'desc' },
     take: POOL,
     select: { id: true, userId: true, likeCount: true, createdAt: true },

@@ -49,7 +49,15 @@ export async function setPostLike(
   const [post, existing] = await Promise.all([
     prisma.rMHark.findUnique({
       where: { id: postId },
-      select: { userId: true, content: true, likeCount: true, user: { select: { handle: true } } },
+      select: {
+        userId: true,
+        content: true,
+        likeCount: true,
+        audience: true,
+        communityId: true,
+        deletedAt: true,
+        user: { select: { handle: true } },
+      },
     }),
     prisma.rMHarkLike.findUnique({ where: { rmheetId_userId: { rmheetId: postId, userId } } }),
   ]);
@@ -61,6 +69,11 @@ export async function setPostLike(
     return { ok: true, found: true, liked: false, likeCount: post.likeCount };
 
   if (liked) {
+    // Liking needs a readable post (unliking, below, stays allowed so an old like can
+    // always be removed). 404, same as a missing post.
+    if (!(await canReadThread(post, userId))) {
+      return { ok: false, found: false, liked: false, likeCount: 0 };
+    }
     const [, updated] = await prisma.$transaction([
       prisma.rMHarkLike.create({ data: { rmheetId: postId, userId } }),
       prisma.rMHark.update({
@@ -301,8 +314,14 @@ export async function setBookmark(
   if (!bookmarked && !existing) return { ok: true, found: true, bookmarked: false };
 
   if (bookmarked) {
-    const post = await prisma.rMHark.findUnique({ where: { id: postId }, select: { id: true } });
-    if (!post) return { ok: false, found: false, bookmarked: false };
+    const post = await prisma.rMHark.findUnique({
+      where: { id: postId },
+      select: { userId: true, audience: true, communityId: true, deletedAt: true },
+    });
+    // Saving needs a readable post; removing a bookmark (below) stays allowed.
+    if (!post || !(await canReadThread(post, userId))) {
+      return { ok: false, found: false, bookmarked: false };
+    }
     // Not `addSave`: that upsert would move an already-saved post out of the
     // folder its owner filed it in. A bookmark press must never re-file.
     await prisma.savedItem.create({
