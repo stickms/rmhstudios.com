@@ -13,7 +13,7 @@
  *   POST /__perf/reset    → snapshot, then reset the window
  */
 
-import { monitorEventLoopDelay, type IntervalHistogram } from 'node:perf_hooks';
+import { monitorEventLoopDelay } from 'node:perf_hooks';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
 export interface PerfSnapshot {
@@ -42,7 +42,7 @@ export function perfProbeEnabled(env: NodeJS.ProcessEnv = process.env): boolean 
 const NS_PER_MS = 1e6;
 
 export class PerfProbe {
-  private readonly histogram: IntervalHistogram;
+  private readonly histogram: ReturnType<typeof monitorEventLoopDelay>;
   private windowStart = performance.now();
   private cpuStart = process.cpuUsage();
 
