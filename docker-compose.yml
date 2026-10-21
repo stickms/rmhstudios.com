@@ -201,8 +201,8 @@ services:
     # during the blue/green hotswap, so the box must fit ~2× this (≈3 GB / 4
     # cores for web during a deploy). Lower WEB_WORKERS + cpus/mem together if the
     # host is smaller.
-    mem_limit: 1536m
-    mem_reservation: 768m
+    mem_limit: 2304m
+    mem_reservation: 1280m
     cpus: 2.0
     # CPU PRIORITY, not just a cap. `cpus:` hard-caps each service but leaves
     # every container at the SAME scheduler weight (1024), so on this
@@ -256,7 +256,13 @@ services:
       # this is per-process: 2 × 384m heap + master + native (sharp/resvg) fits
       # under the 1.5g cgroup. Kept below the limit because V8 does not reliably
       # size its heap to a container limit (OOM-flap or GC-thrash otherwise).
-      - NODE_OPTIONS=--max-old-space-size=384
+      # MEASURED (local production-like load test, 2026-10-21): after warm-up a web worker's LIVE heap is
+      # ~400 MB (Prisma query-compiler schema ~100 MB, 739-route tree ~30 MB, Better Auth,
+      # caches) — ABOVE the old 384 cap, so workers died with "Ineffective mark-compacts
+      # near heap limit" within ~40 s of real traffic (stock Nitro never respawned them:
+      # see server/nitro/cluster-primary.ts). 640 leaves ~240 MB for request transients;
+      # RSS peaks ~850 MB/worker at c=150, hence mem_limit 2304m for 2 workers.
+      - NODE_OPTIONS=--max-old-space-size=640
       # libuv threadpool (default 4) is shared by fs, dns.lookup, crypto, zlib AND
       # now resvg `renderAsync` (OG cards). Four concurrent OG rasterizations (a
       # Discord/crawler unfurl burst) would occupy every thread and stall DNS
