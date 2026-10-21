@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { statusUpdateSchema, statusExpiresAt, resolveStatus } from '@/lib/profile/status';
+import { statusExpiresAt, resolveStatus } from '@/lib/profile/status';
+import { statusUpdateSchema } from '@/lib/profile/status-schema';
 
 /**
  * PUT    /api/profile/status — set the caller's custom status (full replace).

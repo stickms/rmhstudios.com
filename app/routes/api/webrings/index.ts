@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { createRingSchema } from '@/lib/profile/webrings';
+import { createRingSchema } from '@/lib/profile/webrings-schema';
 import { createRing, listRings } from '@/lib/profile/webrings.server';
 
 /**

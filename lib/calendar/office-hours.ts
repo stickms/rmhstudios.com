@@ -8,6 +8,9 @@
  */
 import { addDays, parseDay, wallTimeOf, wallToUtcMs, dayOf } from './tz';
 
+/** Bookable slot lengths, minutes. Also enforced by `officeHoursConfigSchema`. */
+export const OFFICE_HOURS_SLOT_LENGTHS = [15, 30, 45, 60] as const;
+
 export const OFFICE_HOURS_HORIZON_DAYS = 28;
 /** A slot must start at least this far ahead to be bookable. */
 export const OFFICE_HOURS_LEAD_MS = 15 * 60_000;

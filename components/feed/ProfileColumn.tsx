@@ -5,7 +5,6 @@ import { useTranslation } from'react-i18next';
 import { toast } from'sonner';
 import { BadgeCheck, ShieldCheck } from'lucide-react';
 import { Spinner } from'@/components/ui/spinner';
-import { TipDialog } from'@/components/economy/TipDialog';
 import { GiftSubDialog } from'@/components/economy/GiftSubDialog';
 import { useNavigate } from'@tanstack/react-router';
 import { Button } from'@/components/ui/button';
@@ -38,6 +37,12 @@ const BirthdayBadge = lazy(() => import('@/components/gifting/BirthdayBadge'));
 const ProfileShelvesPanel = lazy(() => import('@/components/reading/ProfileShelves'));
 // P7 — only fetched when a visitor taps a song that has no preview clip.
 const ProfileSongEmbed = lazy(() => import('@/components/profile/plus/ProfileSongEmbed'));
+// Lazy and mounted on first open, as in RMHarkOverflowMenu: the dialog
+// validates with the API's zod schema, which would otherwise put zod on every
+// profile page for a button most visitors never press.
+const TipDialog = lazy(() =>
+ import('@/components/economy/TipDialog').then((m) => ({ default: m.TipDialog })),
+);
 
 export function ProfileColumn({
  userId,
@@ -59,6 +64,7 @@ export function ProfileColumn({
  const [notFound, setNotFound] = useState(initialProfile === null);
  const [showEdit, setShowEdit] = useState(false);
  const [tipOpen, setTipOpen] = useState(false);
+ const [tipMounted, setTipMounted] = useState(false);
  const [giftOpen, setGiftOpen] = useState(false);
  const [membershipBusy, setMembershipBusy] = useState(false);
  const [tab, setTab] = useState<ProfileTab>('rmharks');
@@ -449,7 +455,10 @@ export function ProfileColumn({
  onEdit={() => setShowEdit(true)}
  onFollow={handleFollowToggle}
  onMessage={handleMessage}
- onTip={() => setTipOpen(true)}
+ onTip={() => {
+ setTipMounted(true);
+ setTipOpen(true);
+ }}
  onGift={() => setGiftOpen(true)}
  onJoinMembership={handleJoinMembership}
  onShowSocial={setSocialModal}
@@ -632,7 +641,8 @@ export function ProfileColumn({
  )}
 
  {/* Tip dialog (non-owner) */}
- {profile && !profile.isOwnProfile && (
+ {profile && !profile.isOwnProfile && tipMounted && (
+ <Suspense fallback={null}>
  <TipDialog
  open={tipOpen}
  onOpenChange={setTipOpen}
@@ -641,6 +651,7 @@ export function ProfileColumn({
  entityType="profile"
  entityId={profile.id}
  />
+ </Suspense>
  )}
 
  {/* Gift membership dialog (non-owner) */}

@@ -5,10 +5,9 @@
  * what `/u/<handle>` routes on. This module holds the *rules* only (charset,
  * length, reserved words, the cooldown) so it can be imported from client
  * components. Anything that needs the database to pick a free handle lives in
- * `lib/handle.server.ts`.
+ * `lib/handle.server.ts`; the zod schema (and `isValidHandle`, which runs it)
+ * is in `lib/handle-schema.ts`, so this module stays zod-free.
  */
-
-import { z } from 'zod';
 
 /** Handle rules: 3-20 chars, lowercase alphanumeric + underscores, must start with a letter */
 export const HANDLE_REGEX = /^[a-z][a-z0-9_]{2,19}$/;
@@ -61,21 +60,6 @@ export const RESERVED_HANDLES: ReadonlySet<string> = new Set([
   'research',
   'news',
 ]);
-
-export const handleSchema = z
-  .string()
-  .min(HANDLE_MIN_LENGTH, 'Handle must be at least 3 characters')
-  .max(HANDLE_MAX_LENGTH, 'Handle must be at most 20 characters')
-  .regex(
-    HANDLE_REGEX,
-    'Handle must start with a letter and contain only lowercase letters, numbers, and underscores',
-  )
-  .refine((h) => !RESERVED_HANDLES.has(h), 'This handle is reserved');
-
-/** True when `handle` satisfies every rule and is not reserved. */
-export function isValidHandle(handle: string): boolean {
-  return handleSchema.safeParse(handle).success;
-}
 
 /**
  * Common Latin-1 accents folded to ASCII so "José" derives `jose` rather than

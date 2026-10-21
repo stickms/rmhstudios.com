@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { deleteSeries, getSeriesView, updateSeries } from '@/lib/posts-plus/series.server';
-import { seriesUpdateSchema } from '@/lib/posts-plus/constants';
+import { seriesUpdateSchema } from '@/lib/posts-plus/schema';
 
 /**
  * GET    /api/series/$id - the series page payload: header + its live parts, in order (X5).

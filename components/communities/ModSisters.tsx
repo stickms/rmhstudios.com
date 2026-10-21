@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
-import { SISTERS_MAX, type SisterDTO } from '@/lib/communities/plus-schema';
+import { SISTERS_MAX, type SisterDTO } from '@/lib/communities/plus';
 
 export function ModSisters({
   slug,

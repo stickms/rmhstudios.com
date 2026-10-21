@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { createSeries, listFollowed, listMine } from '@/lib/posts-plus/series.server';
-import { seriesCreateSchema } from '@/lib/posts-plus/constants';
+import { seriesCreateSchema } from '@/lib/posts-plus/schema';
 
 /**
  * GET  /api/series - the caller's series and the series they follow (X5).

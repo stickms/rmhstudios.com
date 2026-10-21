@@ -5,11 +5,10 @@ import {
   formatCountdown,
   isExpired,
   isValidDayKey,
-  qotdAddSchema,
-  saveNoteSchema,
   ttlToExpiry,
   utcDayKey,
 } from '../constants';
+import { qotdAddSchema, saveNoteSchema } from '../schema';
 import { BUILTIN_QOTD_PROMPTS, builtinPromptFor } from '../qotd-builtin';
 import { classifyStatus, parseWaybackResponse, waybackTimestampToIso } from '../wayback';
 

@@ -246,6 +246,21 @@ Its commit-time half is `lib/__tests__/static-backdrop.test.ts` (in
 `GATE_TESTS`). Findings and the measured before/after:
 [`performance-audit-2026-10-08.md`](./performance-audit-2026-10-08.md).
 
+**Page switches.** Its sibling `testing/e2e/page-switch.mjs` times the other
+half of "does it feel fast": a click in the shell's nav rail, from a settled
+page, to the destination painted — plus the longest frame, summed blocking
+time, style+layout and layout shift over the switch (Long Animation Frames
+API), under CPU throttling and added latency. `--mode hover` lets the router's
+intent preload run first; `a>b:c` starts from a page reached within the visit.
+
+```bash
+BASE_URL=http://localhost:7005 node testing/e2e/page-switch.mjs                # default switches, 4× CPU, tap
+BASE_URL=http://localhost:7005 node testing/e2e/page-switch.mjs --mode hover --cpu 1 --rtt 0
+```
+
+Findings and the measured before/after:
+[`performance-audit-2026-10-21.md`](./performance-audit-2026-10-21.md) §Navigation commit.
+
 ### 7. Globe eversion suites (`lib/eversion/`, `testing/e2e/eversion-*.mjs`)
 
 The hub navigation effect (spec: [`plans/2026-10-17-globe-eversion.md`](./plans/2026-10-17-globe-eversion.md)

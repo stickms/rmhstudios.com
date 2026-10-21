@@ -41,6 +41,7 @@ import { openApp, openNode, showMessage } from '../actions';
 import { RUN_ALIASES } from '../apps';
 import type { AppProps } from '../apps';
 import { useOs, type AppId, type Win } from '../store';
+import './utilities.css';
 
 /** The 16 classic console colours, indexed by the `color` attribute digit. */
 const PALETTE = [

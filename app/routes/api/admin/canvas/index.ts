@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { createCanvasEvent, listCanvasEvents } from '@/lib/canvas/canvas.server';
-import { createCanvasEventSchema } from '@/lib/canvas/shared';
+import { createCanvasEventSchema } from '@/lib/canvas/schema';
 
 /** GET/POST /api/admin/canvas — list and start pixel-canvas events (Z5). */
 export const Route = createFileRoute('/api/admin/canvas/')({

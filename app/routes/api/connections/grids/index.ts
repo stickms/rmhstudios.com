@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { createGridSchema } from '@/lib/party/connections';
+import { createGridSchema } from '@/lib/party/connections-schema';
 import { createGrid, listGrids } from '@/lib/party/connections.server';
 
 /**

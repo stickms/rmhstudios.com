@@ -12,7 +12,7 @@ import {
 } from'@/components/ui/dialog';
 import { Button } from'@/components/ui/button';
 import { toast } from'sonner';
-import { MAX_RMHARK_LENGTH } from'@/lib/rmhark-schema';
+import { MAX_RMHARK_LENGTH } from'@/lib/rmhark-limits';
 import { GifPicker } from'./GifPicker';
 import { GifEmbed } from'./GifEmbed';
 import { EmojiPickerButton } from'@/components/shared/EmojiPickerButton';

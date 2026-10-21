@@ -1,22 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  BULK_KINDS,
-  buildBookmarkWhere,
-  buildCommentWhere,
-  buildFollowWhere,
-  buildHistoryWhere,
-  buildPostWhere,
-  buildWhere,
-  bulkFilterSchema,
-  bulkProgress,
-  createdBefore,
-  droppedFilters,
-  isBulkKind,
-  isTerminal,
-  normalizeFilter,
-  supportsFilter,
-  type BulkFilter,
-} from '@/lib/bulk/types';
+import { BULK_KINDS, buildBookmarkWhere, buildCommentWhere, buildFollowWhere, buildHistoryWhere, buildPostWhere, buildWhere, bulkProgress, createdBefore, droppedFilters, isBulkKind, isTerminal, normalizeFilter, supportsFilter, type BulkFilter } from '@/lib/bulk/types';
+import { bulkFilterSchema } from '@/lib/bulk/schema';
 
 /**
  * Bulk content management (plan I2) — the filter→predicate mapping.

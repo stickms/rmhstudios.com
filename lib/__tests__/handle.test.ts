@@ -5,9 +5,9 @@ import {
   HANDLE_REGEX,
   RESERVED_HANDLES,
   deriveHandleBase,
-  isValidHandle,
   suffixHandle,
 } from '@/lib/handle';
+import { isValidHandle } from '@/lib/handle-schema';
 
 /**
  * The handle rules underpin two things that must never disagree: the signup

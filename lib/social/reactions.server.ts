@@ -1,7 +1,7 @@
 // lib/social/reactions.server.ts
 import { prisma } from '@/lib/prisma.server';
 import type { ReactionRow, ReactionSummary } from '@/lib/social/reactions';
-import { isStarEmoji } from '@/lib/communities/plus-schema';
+import { isStarEmoji } from '@/lib/communities/plus';
 import { recordStarToggle } from '@/lib/communities/starboard.server';
 
 interface ToggleResult {

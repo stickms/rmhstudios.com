@@ -1,10 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import {
-  resolveChannels,
-  inQuietHours,
-  CATEGORY_DEFAULTS,
-  notifPrefsSchema,
-} from '@/lib/notify/categories';
+import { resolveChannels, inQuietHours, CATEGORY_DEFAULTS } from '@/lib/notify/categories';
+import { notifPrefsSchema } from '@/lib/notify/categories-schema';
 
 describe('resolveChannels', () => {
   it('falls back to category defaults when unset', () => {

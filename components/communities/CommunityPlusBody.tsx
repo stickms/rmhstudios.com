@@ -22,7 +22,7 @@ import { FlairChip } from '@/components/communities/FlairChip';
 import { RelatedRail } from '@/components/communities/RelatedRail';
 import { OnboardingSheet } from '@/components/communities/OnboardingSheet';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
-import type { CommunityExtrasDTO } from '@/lib/communities/plus-schema';
+import type { CommunityExtrasDTO } from '@/lib/communities/plus';
 import type { FeedItem } from '@/lib/feed-types';
 
 const HallOfFamePanel = lazy(() => import('@/components/communities/HallOfFamePanel'));

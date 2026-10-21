@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
-export const MAX_FEED_TAGS = 5;
-export const MAX_FEED_PEOPLE = 10;
-export const MAX_FEED_KEYWORDS = 5;
-export const MAX_FEEDS_PER_USER = 10;
+import { MAX_FEED_KEYWORDS, MAX_FEED_PEOPLE, MAX_FEED_TAGS, MAX_FEEDS_PER_USER } from './limits';
+
+// Re-exported for the API routes; client code imports `./limits` directly.
+export { MAX_FEED_KEYWORDS, MAX_FEED_PEOPLE, MAX_FEED_TAGS, MAX_FEEDS_PER_USER };
 
 const tagSchema = z
   .string()

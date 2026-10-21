@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Flag, MessagesSquare } from 'lucide-react';
@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
-import { ReportDialog } from '@/components/moderation/ReportDialog';
 import {
   OUTCOMES,
   QUESTION_TYPES,
@@ -18,6 +17,12 @@ import {
   type QuestionType,
 } from '@/lib/rmhladder/community';
 import { apiJson } from '@/lib/rmhladder/community-client';
+
+// Lazy, as everywhere else it mounts: the dialog validates with the report
+// route's zod schema, which would otherwise load with every ladder job page.
+const ReportDialog = lazy(() =>
+  import('@/components/moderation/ReportDialog').then((m) => ({ default: m.ReportDialog })),
+);
 
 interface ReportRow {
   id: string;
@@ -178,12 +183,14 @@ export function InterviewReports({
       )}
 
       {reporting && (
-        <ReportDialog
-          open
-          onOpenChange={(open) => !open && setReporting(null)}
-          entityType="ladder-interview"
-          entityId={reporting}
-        />
+        <Suspense fallback={null}>
+          <ReportDialog
+            open
+            onOpenChange={(open) => !open && setReporting(null)}
+            entityType="ladder-interview"
+            entityId={reporting}
+          />
+        </Suspense>
       )}
     </section>
   );

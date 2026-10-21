@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { scheduleSchema } from '@/lib/party/connections';
+import { scheduleSchema } from '@/lib/party/connections-schema';
 import { scheduleGrid } from '@/lib/party/connections.server';
 
 /** POST /api/connections/grids/:id/schedule — admin: make this grid the daily for a UTC date. */

@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { addPost } from '@/lib/posts-plus/series.server';
-import { seriesAddPostSchema } from '@/lib/posts-plus/constants';
+import { seriesAddPostSchema } from '@/lib/posts-plus/schema';
 
 /** POST /api/series/$id/posts { postId } - append one of your own public posts as the next part (X5). */
 export const Route = createFileRoute('/api/series/$id/posts')({

@@ -13,10 +13,10 @@ import {
   FOLDER_NAME_MAX,
   MAX_FOLDERS,
   MAX_FOLDER_CHATS,
-  chatRefSchema,
   parseScopeKey,
   scopeKeyOf,
 } from '@/lib/chat-plus/types';
+import { chatRefSchema } from '@/lib/chat-plus/types-schema';
 
 export const folderNameSchema = z.object({ name: z.string().trim().min(1).max(FOLDER_NAME_MAX) });
 export const folderItemSchema = z.object({ chat: chatRefSchema, member: z.boolean() });

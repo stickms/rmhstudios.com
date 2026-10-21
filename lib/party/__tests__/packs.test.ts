@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createPackSchema, normalizePrompts, PACK_MIN_PROMPTS } from '../packs';
+import { normalizePrompts, PACK_MIN_PROMPTS } from '../packs';
+import { createPackSchema } from '../packs-schema';
 import { validateGameSettings } from '@/lib/rmhbox/game-settings';
 import { WIT_WAR_SETTINGS } from '@/lib/rmhbox/minigame-registry';
 

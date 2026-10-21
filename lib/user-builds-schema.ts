@@ -3,7 +3,7 @@
  */
 
 import { z } from 'zod';
-import { httpUrl } from '@/lib/url-safety';
+import { httpUrl } from '@/lib/url-schema';
 
 export const MAX_TITLE_LENGTH = 100;
 export const MAX_DESCRIPTION_LENGTH = 500;

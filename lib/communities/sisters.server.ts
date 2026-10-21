@@ -5,7 +5,7 @@
  */
 import { prisma } from '@/lib/prisma.server';
 import { apiCache } from '@/lib/cache';
-import { SISTERS_MAX, type SisterDTO } from '@/lib/communities/plus-schema';
+import { SISTERS_MAX, type SisterDTO } from '@/lib/communities/plus';
 
 export class SisterError extends Error {
   constructor(

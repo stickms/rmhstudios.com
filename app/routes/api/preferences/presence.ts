@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { presencePrivacySchema, DEFAULT_PRESENCE_VISIBILITY } from '@/lib/presence-types';
+import { DEFAULT_PRESENCE_VISIBILITY } from '@/lib/presence-types';
+import { presencePrivacySchema } from '@/lib/presence-types-schema';
 
 /**
  * GET /api/preferences/presence — the caller's presence visibility + detail.
