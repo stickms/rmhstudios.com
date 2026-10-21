@@ -46,7 +46,7 @@ function liked(id: string, over: Row): Row {
 
 async function visibleIds(viewerId: string | null, rows: Row[]): Promise<string[]> {
   const where = { rmhark: await viewerVisiblePostWhere(viewerId) };
-  return rows.filter((r) => evalWhere(r, where)).map((r) => (r.rmhark as Row).id as string);
+  return rows.filter((r) => evalWhere(r, where)).map((r) => (r.rmhark as { id: string }).id);
 }
 
 const rows = [

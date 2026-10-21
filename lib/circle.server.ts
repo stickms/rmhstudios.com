@@ -4,6 +4,7 @@
  */
 import { prisma } from '@/lib/prisma.server';
 import { getFollowingIds } from '@/lib/social/follow-graph.server';
+import { invalidateViewerFeedPages } from '@/lib/feed/timeline';
 import { resolveUser, userDisplaySelect, type ResolvedUser } from '@/lib/user-display';
 
 export const MAX_CIRCLE = 150;
@@ -64,6 +65,9 @@ export async function setCircle(ownerId: string, userIds: string[]): Promise<voi
     if (unique.some((id) => !valid.has(id))) throw new CircleError('NOT_IN_GRAPH');
   }
 
+  // Members before the edit, to know whose cached feed pages this touches.
+  const before = await getCircleMemberIds(ownerId);
+
   await prisma.$transaction([
     prisma.closeFriend.deleteMany({ where: { ownerId } }),
     ...(unique.length
@@ -75,4 +79,16 @@ export async function setCircle(ownerId: string, userIds: string[]): Promise<voi
         ]
       : []),
   ]);
+
+  // What depends on circle membership, and how each stays correct:
+  //  - `circleOwnerIds` (For-You / Following / lists / quotes) is NOT cached: it is
+  //    read fresh on every assembly, so it needs nothing.
+  //  - the cached signed-in first page is re-checked against the circle on every
+  //    serve (lib/feed/page-reconcile.server.ts), so a member REMOVED from the
+  //    circle stops seeing its posts immediately, with no invalidation.
+  //  - a member ADDED would otherwise wait out the page's <=60s TTL before the
+  //    circle's posts appear. Drop their cached pages (L1 + L2, every instance) so
+  //    the change shows on their next load. Best-effort UX freshness only.
+  const touched = new Set([...before, ...unique]);
+  void Promise.all([...touched].map((id) => invalidateViewerFeedPages(id))).catch(() => {});
 }

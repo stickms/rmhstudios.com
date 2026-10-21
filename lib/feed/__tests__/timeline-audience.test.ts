@@ -40,9 +40,9 @@ const db = vi.hoisted(() => ({
 function fakeFindMany(rows: () => Row[]) {
   return async (args: { where?: Row; take?: number }) => {
     const hits = rows().filter((r) => evalWhere(r, args.where));
-    const ts = (r: Row) => (r.createdAt as Date).getTime();
+    const at = (r: Row) => (r.createdAt as Date).getTime();
     const id = (r: Row) => r.id as string;
-    hits.sort((a, b) => ts(b) - ts(a) || (id(a) < id(b) ? 1 : id(a) > id(b) ? -1 : 0));
+    hits.sort((a, b) => at(b) - at(a) || (id(a) < id(b) ? 1 : id(a) > id(b) ? -1 : 0));
     return hits.slice(0, args.take ?? hits.length);
   };
 }
