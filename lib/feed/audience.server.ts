@@ -115,3 +115,52 @@ export async function canViewPost(
   });
   return !!follow;
 }
+
+/** The post fields that decide whether its comments may be read. */
+export interface ThreadPost {
+  userId: string;
+  audience: 'PUBLIC' | 'FOLLOWERS' | 'PRIVATE' | 'SUPPORTERS' | 'CIRCLE';
+  deletedAt: Date | null;
+}
+
+/**
+ * May `viewerId` read the comments of this post? Same rule as the timeline,
+ * reposts and the profile tabs (not deleted, audience, not by a hidden author),
+ * evaluated per post so SUPPORTERS-only posts keep working for their supporters.
+ * Every comment read goes through here: a comment endpoint reached by post or
+ * comment id used to answer for any post, so a PRIVATE post's thread, commenter
+ * identities and likers were readable by anyone who had (or guessed) an id.
+ *
+ * Costs nothing extra for a PUBLIC post (the hidden-author set is an in-process
+ * cache hit); one targeted read for FOLLOWERS / CIRCLE / SUPPORTERS.
+ */
+export async function canReadThread(post: ThreadPost | null, viewerId: string | null): Promise<boolean> {
+  if (!post || post.deletedAt) return false;
+  if (viewerId && viewerId !== post.userId) {
+    const hidden = await getHiddenAuthorIds(viewerId);
+    if (hidden.includes(post.userId)) return false;
+  }
+  return canViewPost(post, viewerId);
+}
+
+/** `canReadThread` for a post id (one extra primary-key read). */
+export async function canReadPostThread(postId: string, viewerId: string | null): Promise<boolean> {
+  const post = await prisma.rMHark.findUnique({
+    where: { id: postId },
+    select: { userId: true, audience: true, deletedAt: true },
+  });
+  return canReadThread(post, viewerId);
+}
+
+/**
+ * `canReadThread` for the post a COMMENT belongs to. The post is derived from the
+ * comment, never from a post id in the URL: routes like
+ * `/rmharks/:id/comment/:commentId/like` carry both, and nothing ties them.
+ */
+export async function canReadCommentThread(commentId: string, viewerId: string | null): Promise<boolean> {
+  const c = await prisma.rMHarkComment.findUnique({
+    where: { id: commentId },
+    select: { rmhark: { select: { userId: true, audience: true, deletedAt: true } } },
+  });
+  return canReadThread(c?.rmhark ?? null, viewerId);
+}

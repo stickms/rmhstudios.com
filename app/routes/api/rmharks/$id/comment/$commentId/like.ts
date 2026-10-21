@@ -1,13 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
+import { canReadCommentThread } from '@/lib/feed/audience.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 
 export const Route = createFileRoute('/api/rmharks/$id/comment/$commentId/like')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none' }, async ({ params }) => {
+      GET: defineHandler({ auth: 'optional' }, async ({ params, userId: viewerId }) => {
         const { commentId } = params;
+        // Gate on the post the COMMENT belongs to (not the `:id` in the URL).
+        if (!(await canReadCommentThread(commentId, viewerId))) {
+          return Response.json({ error: 'Not found' }, { status: 404 });
+        }
         const likes = await prisma.rMHarkCommentLike.findMany({
           where: { commentId },
           orderBy: { createdAt: 'desc' },
