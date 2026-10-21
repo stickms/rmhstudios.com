@@ -208,8 +208,6 @@ const KNOWN_UNWRAPPED: readonly string[] = [
   'app/routes/api/spaces/$id/start.ts',
   'app/routes/api/spaces/index.ts',
   'app/routes/api/spaces/live.ts',
-  'app/routes/api/staking/deposit.ts',
-  'app/routes/api/staking/withdraw.ts',
   'app/routes/api/storefront/products/$id/buy.ts',
   'app/routes/api/streak.freeze.ts',
   'app/routes/api/tips/leaderboard.ts',

@@ -104,5 +104,5 @@ export async function sendChatTip(
     where: { userId: access.viewerId },
     select: { coins: true },
   });
-  return { ok: true, message, newBalance: profile?.coins ?? 0 };
+  return { ok: true, message, newBalance: Number(profile?.coins ?? 0) };
 }

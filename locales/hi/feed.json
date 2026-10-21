@@ -92,6 +92,8 @@
   "audience-followers": "फ़ॉलोअर्स",
   "audience-group-label": "इस पोस्ट को कौन देख सकता है",
   "audience-only-me": "केवल मैं",
+  "auto-reinvest": "स्वतः पुनर्निवेश",
+  "auto-reinvest-hint": "ब्याज हर दिन आपके स्टेक में चक्रवृद्धि होता है",
   "avatar-alt": "अवतार",
   "avatar-change-hint": "अवतार बदलने के लिए क्लिक करें (अधिकतम {{maxMb}} MB)",
   "avatar-size-error": "",

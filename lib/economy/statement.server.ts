@@ -70,19 +70,19 @@ export async function getStatementSummary(
     ...credits.map((g) => ({
       type: g.type as string,
       direction: 'in' as const,
-      total: g._sum.amount ?? 0,
+      total: Number(g._sum.amount ?? 0),
       count: g._count._all,
     })),
     ...debits.map((g) => ({
       type: g.type as string,
       direction: 'out' as const,
-      total: g._sum.amount ?? 0,
+      total: Number(g._sum.amount ?? 0),
       count: g._count._all,
     })),
   ];
 
-  const balanceNow = profile?.coins ?? 0;
-  const closing = balanceNow - ((creditsAfter._sum.amount ?? 0) - (debitsAfter._sum.amount ?? 0));
+  const balanceNow = Number(profile?.coins ?? 0);
+  const closing = balanceNow - (Number(creditsAfter._sum.amount ?? 0) - Number(debitsAfter._sum.amount ?? 0));
   const summary = summarize(month, groups, closing);
 
   apiCache.set(key, summary, SUMMARY_TTL_MS);
@@ -144,7 +144,7 @@ export async function getStatementCsvRows(
         createdAt: r.createdAt,
         type: r.type,
         direction,
-        amount: r.amount,
+        amount: Number(r.amount),
         counterparty: other ? (handles.get(other) ?? 'deleted user') : 'RMH Studios',
         note: r.note,
         reference: r.id,

@@ -2,6 +2,23 @@ import { PrismaClient, Prisma } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { AsyncLocalStorage } from 'node:async_hooks';
 
+/* ─── BIGINT columns ─────────────────────────────────────────────────────────
+ *
+ * Coin balances, ledger amounts and vault stakes are BIGINT, which Prisma reads
+ * as a JS `bigint` — and `JSON.stringify` THROWS on a bigint. Call sites convert
+ * with `Number()` where the type checker sees them, but an aggregate spread into
+ * `Response.json` is invisible to it. So teach bigint to serialize, once, in the
+ * module every database-reading process loads: as a number while it is exact
+ * (every coin amount — MAX_TRANSACTION is 1e13), as a string past 2^53 so a
+ * value is never silently rounded.
+ */
+const bigintProto = BigInt.prototype as unknown as { toJSON?: () => number | string };
+bigintProto.toJSON ??= function (this: bigint) {
+  return this <= BigInt(Number.MAX_SAFE_INTEGER) && this >= BigInt(Number.MIN_SAFE_INTEGER)
+    ? Number(this)
+    : this.toString();
+};
+
 const globalForPrisma = global as unknown as { prisma: PrismaClient; prismaRead: PrismaClient };
 
 /* ─── Query budget (E3) ─────────────────────────────────────────────────────

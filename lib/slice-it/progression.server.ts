@@ -64,7 +64,7 @@ async function coinsEarnedToday(userId: string): Promise<number> {
     },
     _sum: { amount: true },
   });
-  return result._sum.amount ?? 0;
+  return Number(result._sum.amount ?? 0);
 }
 
 export interface SliceItRunResult extends SliceItRunFacts {

@@ -84,7 +84,7 @@ export async function giveAward(
       },
     });
 
-    return { balance: giver?.coins ?? 0 };
+    return { balance: Number(giver?.coins ?? 0) };
   });
 
   // §16: awards notify through the dispatch gateway (economy category).

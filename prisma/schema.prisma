@@ -3160,7 +3160,7 @@ model UserProfile {
   wishlistPublic Boolean @default(true)
 
   // RMH Coins
-  coins          Int     @default(10)
+  coins          BigInt  @default(10)
   hasProfilePet  Boolean @default(false)
   showProfilePet Boolean @default(true)
 
@@ -5896,7 +5896,7 @@ model CoinTransaction {
   id          String      @id @default(cuid())
   senderId    String? // null for system faucets (rewards, quests, refunds)
   recipientId String? // null for sinks (coins destroyed: shop, unlocks, fees)
-  amount      Int
+  amount      BigInt
   type        CoinTxnType
   note        String?     @db.VarChar(280)
   entityType  String?     @db.VarChar(32) // e.g. "rmhark", "profile"
@@ -6281,13 +6281,15 @@ model DailyWheelSpin {
 /// each deposit/withdraw first rolls elapsed time into `accrued` so we never
 /// need a background job. `lastAccrued` marks the last roll-up time.
 model CoinStake {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  principal   Int      @default(0)
-  accrued     Int      @default(0)
-  lastAccrued DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  principal    BigInt   @default(0)
+  accrued      BigInt   @default(0)
+  /// Compound interest into principal instead of holding it for a claim.
+  autoReinvest Boolean  @default(false)
+  lastAccrued  DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
