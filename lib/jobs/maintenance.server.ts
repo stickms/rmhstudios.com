@@ -21,6 +21,7 @@ import { runIndexSweep } from '@/lib/search/indexer.server';
 import { fireDueReminders } from '@/lib/reminders/reminders.server';
 import { computeCohortRetention } from '@/lib/ops/cohorts.server';
 import { revertExpiredPileOnGuards } from '@/lib/safety/pile-on.server';
+import { runDeepseekBalanceJob } from '@/lib/deepseek/balance.server';
 
 export const OUTBOX_DRAIN_QUEUE = 'outbox.drain';
 export const MAINTENANCE_QUEUE = 'platform.maintenance';
@@ -32,6 +33,10 @@ export const REMINDER_FIRE_QUEUE = 'reminders.fire';
 export const COHORT_RETENTION_QUEUE = 'ops.cohort-retention';
 /** Daily at 05:10 UTC — a few grouped scans over session/activity, quiet window. */
 export const COHORT_RETENTION_CRON = '10 5 * * *';
+
+export const DEEPSEEK_BALANCE_QUEUE = 'ops.deepseek-balance';
+/** Hourly at :05 UTC — one balance sample per hour for /admin/deepseek. */
+export const DEEPSEEK_BALANCE_CRON = '5 * * * *';
 
 /**
  * Every minute. The outbox is the delivery path for webhooks and
@@ -139,6 +144,7 @@ export async function registerMaintenanceCrons(boss: PgBoss): Promise<void> {
   await boss.createQueue(EMBEDDING_SWEEP_QUEUE);
   await boss.createQueue(REMINDER_FIRE_QUEUE);
   await boss.createQueue(COHORT_RETENTION_QUEUE);
+  await boss.createQueue(DEEPSEEK_BALANCE_QUEUE);
 
   await boss.schedule(OUTBOX_DRAIN_QUEUE, OUTBOX_DRAIN_CRON, {}, { tz: 'UTC' });
   await boss.schedule(MAINTENANCE_QUEUE, MAINTENANCE_CRON, {}, { tz: 'UTC' });
@@ -148,6 +154,7 @@ export async function registerMaintenanceCrons(boss: PgBoss): Promise<void> {
   await boss.schedule(EMBEDDING_SWEEP_QUEUE, EMBEDDING_SWEEP_CRON, {}, { tz: 'UTC' });
   await boss.schedule(REMINDER_FIRE_QUEUE, REMINDER_FIRE_CRON, {}, { tz: 'UTC' });
   await boss.schedule(COHORT_RETENTION_QUEUE, COHORT_RETENTION_CRON, {}, { tz: 'UTC' });
+  await boss.schedule(DEEPSEEK_BALANCE_QUEUE, DEEPSEEK_BALANCE_CRON, {}, { tz: 'UTC' });
 
   await boss.work(QUIET_HOURS_FLUSH_QUEUE, async () => {
     await flushDueHeldNotifications();
@@ -163,6 +170,10 @@ export async function registerMaintenanceCrons(boss: PgBoss): Promise<void> {
 
   await boss.work(COHORT_RETENTION_QUEUE, async () => {
     await computeCohortRetention();
+  });
+
+  await boss.work(DEEPSEEK_BALANCE_QUEUE, async () => {
+    await runDeepseekBalanceJob();
   });
 
   await boss.work(REMINDER_FIRE_QUEUE, async () => {

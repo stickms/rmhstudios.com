@@ -12659,3 +12659,25 @@ model BotWorkerSettings {
 
   @@map("bot_worker_settings")
 }
+
+/// Hourly samples of the DeepSeek account balance (/admin/deepseek). The jobs
+/// worker upserts one 'cron' row per currency per UTC hour (idempotent under
+/// pg-boss at-least-once delivery); a manual "Refresh now" upserts the 'manual'
+/// row for its hour, so the two sources never overwrite each other. Rows older
+/// than 400 days are pruned by the same job.
+model DeepseekBalanceSnapshot {
+  id              String   @id @default(cuid())
+  createdAt       DateTime @default(now())
+  hourBucket      DateTime // createdAt truncated to the UTC hour
+  currency        String // "CNY" | "USD"
+  isAvailable     Boolean
+  totalBalance    Decimal  @db.Decimal(14, 4)
+  grantedBalance  Decimal  @db.Decimal(14, 4)
+  toppedUpBalance Decimal  @db.Decimal(14, 4)
+  source          String // "cron" | "manual"
+
+  @@unique([currency, hourBucket, source])
+  @@index([currency, createdAt])
+  @@index([createdAt])
+  @@map("deepseek_balance_snapshot")
+}

@@ -232,6 +232,7 @@ import { Route as SiteAdminAppealsRouteImport } from './routes/_site/admin/appea
 import { Route as SiteAdminAuditRouteImport } from './routes/_site/admin/audit'
 import { Route as SiteAdminBotsRouteImport } from './routes/_site/admin/bots'
 import { Route as SiteAdminCanvasRouteImport } from './routes/_site/admin/canvas'
+import { Route as SiteAdminDeepseekRouteImport } from './routes/_site/admin/deepseek'
 import { Route as SiteAdminDelightRouteImport } from './routes/_site/admin/delight'
 import { Route as SiteAdminEconomyRouteImport } from './routes/_site/admin/economy'
 import { Route as SiteAdminInsightsRouteImport } from './routes/_site/admin/insights'
@@ -817,6 +818,9 @@ import { Route as ApiAdminCanvasIdRouteImport } from './routes/api/admin/canvas/
 import { Route as ApiAdminContextNotesIndexRouteImport } from './routes/api/admin/context-notes/index'
 import { Route as ApiAdminContextNotesIdRouteImport } from './routes/api/admin/context-notes/$id'
 import { Route as ApiAdminCuratedBuildsImageRouteImport } from './routes/api/admin/curated-builds/image'
+import { Route as ApiAdminDeepseekBalanceRouteImport } from './routes/api/admin/deepseek/balance'
+import { Route as ApiAdminDeepseekHistoryRouteImport } from './routes/api/admin/deepseek/history'
+import { Route as ApiAdminDeepseekRefreshRouteImport } from './routes/api/admin/deepseek/refresh'
 import { Route as ApiAdminForecastingSeasonsRouteImport } from './routes/api/admin/forecasting/seasons'
 import { Route as ApiAdminInsightsCohortsRouteImport } from './routes/api/admin/insights/cohorts'
 import { Route as ApiAdminInsightsErrorsRouteImport } from './routes/api/admin/insights/errors'
@@ -2374,6 +2378,11 @@ const SiteAdminBotsRoute = SiteAdminBotsRouteImport.update({
 const SiteAdminCanvasRoute = SiteAdminCanvasRouteImport.update({
   id: '/canvas',
   path: '/canvas',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
+const SiteAdminDeepseekRoute = SiteAdminDeepseekRouteImport.update({
+  id: '/deepseek',
+  path: '/deepseek',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
 const SiteAdminDelightRoute = SiteAdminDelightRouteImport.update({
@@ -5346,6 +5355,21 @@ const ApiAdminCuratedBuildsImageRoute =
     path: '/api/admin/curated-builds/image',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAdminDeepseekBalanceRoute = ApiAdminDeepseekBalanceRouteImport.update({
+  id: '/api/admin/deepseek/balance',
+  path: '/api/admin/deepseek/balance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminDeepseekHistoryRoute = ApiAdminDeepseekHistoryRouteImport.update({
+  id: '/api/admin/deepseek/history',
+  path: '/api/admin/deepseek/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminDeepseekRefreshRoute = ApiAdminDeepseekRefreshRouteImport.update({
+  id: '/api/admin/deepseek/refresh',
+  path: '/api/admin/deepseek/refresh',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminForecastingSeasonsRoute =
   ApiAdminForecastingSeasonsRouteImport.update({
     id: '/api/admin/forecasting/seasons',
@@ -7957,6 +7981,7 @@ export interface FileRoutesByFullPath {
   '/admin/audit': typeof SiteAdminAuditRoute
   '/admin/bots': typeof SiteAdminBotsRoute
   '/admin/canvas': typeof SiteAdminCanvasRoute
+  '/admin/deepseek': typeof SiteAdminDeepseekRoute
   '/admin/delight': typeof SiteAdminDelightRoute
   '/admin/economy': typeof SiteAdminEconomyRoute
   '/admin/insights': typeof SiteAdminInsightsRoute
@@ -8536,6 +8561,9 @@ export interface FileRoutesByFullPath {
   '/api/admin/canvas/$id': typeof ApiAdminCanvasIdRoute
   '/api/admin/context-notes/$id': typeof ApiAdminContextNotesIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
+  '/api/admin/deepseek/balance': typeof ApiAdminDeepseekBalanceRoute
+  '/api/admin/deepseek/history': typeof ApiAdminDeepseekHistoryRoute
+  '/api/admin/deepseek/refresh': typeof ApiAdminDeepseekRefreshRoute
   '/api/admin/forecasting/seasons': typeof ApiAdminForecastingSeasonsRoute
   '/api/admin/insights/cohorts': typeof ApiAdminInsightsCohortsRoute
   '/api/admin/insights/errors': typeof ApiAdminInsightsErrorsRoute
@@ -9182,6 +9210,7 @@ export interface FileRoutesByTo {
   '/admin/audit': typeof SiteAdminAuditRoute
   '/admin/bots': typeof SiteAdminBotsRoute
   '/admin/canvas': typeof SiteAdminCanvasRoute
+  '/admin/deepseek': typeof SiteAdminDeepseekRoute
   '/admin/delight': typeof SiteAdminDelightRoute
   '/admin/economy': typeof SiteAdminEconomyRoute
   '/admin/insights': typeof SiteAdminInsightsRoute
@@ -9761,6 +9790,9 @@ export interface FileRoutesByTo {
   '/api/admin/canvas/$id': typeof ApiAdminCanvasIdRoute
   '/api/admin/context-notes/$id': typeof ApiAdminContextNotesIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
+  '/api/admin/deepseek/balance': typeof ApiAdminDeepseekBalanceRoute
+  '/api/admin/deepseek/history': typeof ApiAdminDeepseekHistoryRoute
+  '/api/admin/deepseek/refresh': typeof ApiAdminDeepseekRefreshRoute
   '/api/admin/forecasting/seasons': typeof ApiAdminForecastingSeasonsRoute
   '/api/admin/insights/cohorts': typeof ApiAdminInsightsCohortsRoute
   '/api/admin/insights/errors': typeof ApiAdminInsightsErrorsRoute
@@ -10435,6 +10467,7 @@ export interface FileRoutesById {
   '/_site/admin/audit': typeof SiteAdminAuditRoute
   '/_site/admin/bots': typeof SiteAdminBotsRoute
   '/_site/admin/canvas': typeof SiteAdminCanvasRoute
+  '/_site/admin/deepseek': typeof SiteAdminDeepseekRoute
   '/_site/admin/delight': typeof SiteAdminDelightRoute
   '/_site/admin/economy': typeof SiteAdminEconomyRoute
   '/_site/admin/insights': typeof SiteAdminInsightsRoute
@@ -11014,6 +11047,9 @@ export interface FileRoutesById {
   '/api/admin/canvas/$id': typeof ApiAdminCanvasIdRoute
   '/api/admin/context-notes/$id': typeof ApiAdminContextNotesIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
+  '/api/admin/deepseek/balance': typeof ApiAdminDeepseekBalanceRoute
+  '/api/admin/deepseek/history': typeof ApiAdminDeepseekHistoryRoute
+  '/api/admin/deepseek/refresh': typeof ApiAdminDeepseekRefreshRoute
   '/api/admin/forecasting/seasons': typeof ApiAdminForecastingSeasonsRoute
   '/api/admin/insights/cohorts': typeof ApiAdminInsightsCohortsRoute
   '/api/admin/insights/errors': typeof ApiAdminInsightsErrorsRoute
@@ -11688,6 +11724,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/bots'
     | '/admin/canvas'
+    | '/admin/deepseek'
     | '/admin/delight'
     | '/admin/economy'
     | '/admin/insights'
@@ -12267,6 +12304,9 @@ export interface FileRouteTypes {
     | '/api/admin/canvas/$id'
     | '/api/admin/context-notes/$id'
     | '/api/admin/curated-builds/image'
+    | '/api/admin/deepseek/balance'
+    | '/api/admin/deepseek/history'
+    | '/api/admin/deepseek/refresh'
     | '/api/admin/forecasting/seasons'
     | '/api/admin/insights/cohorts'
     | '/api/admin/insights/errors'
@@ -12913,6 +12953,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/bots'
     | '/admin/canvas'
+    | '/admin/deepseek'
     | '/admin/delight'
     | '/admin/economy'
     | '/admin/insights'
@@ -13492,6 +13533,9 @@ export interface FileRouteTypes {
     | '/api/admin/canvas/$id'
     | '/api/admin/context-notes/$id'
     | '/api/admin/curated-builds/image'
+    | '/api/admin/deepseek/balance'
+    | '/api/admin/deepseek/history'
+    | '/api/admin/deepseek/refresh'
     | '/api/admin/forecasting/seasons'
     | '/api/admin/insights/cohorts'
     | '/api/admin/insights/errors'
@@ -14165,6 +14209,7 @@ export interface FileRouteTypes {
     | '/_site/admin/audit'
     | '/_site/admin/bots'
     | '/_site/admin/canvas'
+    | '/_site/admin/deepseek'
     | '/_site/admin/delight'
     | '/_site/admin/economy'
     | '/_site/admin/insights'
@@ -14744,6 +14789,9 @@ export interface FileRouteTypes {
     | '/api/admin/canvas/$id'
     | '/api/admin/context-notes/$id'
     | '/api/admin/curated-builds/image'
+    | '/api/admin/deepseek/balance'
+    | '/api/admin/deepseek/history'
+    | '/api/admin/deepseek/refresh'
     | '/api/admin/forecasting/seasons'
     | '/api/admin/insights/cohorts'
     | '/api/admin/insights/errors'
@@ -15700,6 +15748,9 @@ export interface RootRouteChildren {
   ApiAdminCanvasIdRoute: typeof ApiAdminCanvasIdRoute
   ApiAdminContextNotesIdRoute: typeof ApiAdminContextNotesIdRoute
   ApiAdminCuratedBuildsImageRoute: typeof ApiAdminCuratedBuildsImageRouteWithChildren
+  ApiAdminDeepseekBalanceRoute: typeof ApiAdminDeepseekBalanceRoute
+  ApiAdminDeepseekHistoryRoute: typeof ApiAdminDeepseekHistoryRoute
+  ApiAdminDeepseekRefreshRoute: typeof ApiAdminDeepseekRefreshRoute
   ApiAdminForecastingSeasonsRoute: typeof ApiAdminForecastingSeasonsRoute
   ApiAdminInsightsCohortsRoute: typeof ApiAdminInsightsCohortsRoute
   ApiAdminInsightsErrorsRoute: typeof ApiAdminInsightsErrorsRoute
@@ -17529,6 +17580,13 @@ declare module '@tanstack/react-router' {
       path: '/canvas'
       fullPath: '/admin/canvas'
       preLoaderRoute: typeof SiteAdminCanvasRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
+    '/_site/admin/deepseek': {
+      id: '/_site/admin/deepseek'
+      path: '/deepseek'
+      fullPath: '/admin/deepseek'
+      preLoaderRoute: typeof SiteAdminDeepseekRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
     '/_site/admin/delight': {
@@ -21626,6 +21684,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminCuratedBuildsImageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/deepseek/balance': {
+      id: '/api/admin/deepseek/balance'
+      path: '/api/admin/deepseek/balance'
+      fullPath: '/api/admin/deepseek/balance'
+      preLoaderRoute: typeof ApiAdminDeepseekBalanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/deepseek/history': {
+      id: '/api/admin/deepseek/history'
+      path: '/api/admin/deepseek/history'
+      fullPath: '/api/admin/deepseek/history'
+      preLoaderRoute: typeof ApiAdminDeepseekHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/deepseek/refresh': {
+      id: '/api/admin/deepseek/refresh'
+      path: '/api/admin/deepseek/refresh'
+      fullPath: '/api/admin/deepseek/refresh'
+      preLoaderRoute: typeof ApiAdminDeepseekRefreshRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/forecasting/seasons': {
       id: '/api/admin/forecasting/seasons'
       path: '/api/admin/forecasting/seasons'
@@ -24730,6 +24809,7 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminAuditRoute: typeof SiteAdminAuditRoute
   SiteAdminBotsRoute: typeof SiteAdminBotsRoute
   SiteAdminCanvasRoute: typeof SiteAdminCanvasRoute
+  SiteAdminDeepseekRoute: typeof SiteAdminDeepseekRoute
   SiteAdminDelightRoute: typeof SiteAdminDelightRoute
   SiteAdminEconomyRoute: typeof SiteAdminEconomyRoute
   SiteAdminInsightsRoute: typeof SiteAdminInsightsRoute
@@ -24767,6 +24847,7 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminAuditRoute: SiteAdminAuditRoute,
   SiteAdminBotsRoute: SiteAdminBotsRoute,
   SiteAdminCanvasRoute: SiteAdminCanvasRoute,
+  SiteAdminDeepseekRoute: SiteAdminDeepseekRoute,
   SiteAdminDelightRoute: SiteAdminDelightRoute,
   SiteAdminEconomyRoute: SiteAdminEconomyRoute,
   SiteAdminInsightsRoute: SiteAdminInsightsRoute,
@@ -27343,6 +27424,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminCanvasIdRoute: ApiAdminCanvasIdRoute,
   ApiAdminContextNotesIdRoute: ApiAdminContextNotesIdRoute,
   ApiAdminCuratedBuildsImageRoute: ApiAdminCuratedBuildsImageRouteWithChildren,
+  ApiAdminDeepseekBalanceRoute: ApiAdminDeepseekBalanceRoute,
+  ApiAdminDeepseekHistoryRoute: ApiAdminDeepseekHistoryRoute,
+  ApiAdminDeepseekRefreshRoute: ApiAdminDeepseekRefreshRoute,
   ApiAdminForecastingSeasonsRoute: ApiAdminForecastingSeasonsRoute,
   ApiAdminInsightsCohortsRoute: ApiAdminInsightsCohortsRoute,
   ApiAdminInsightsErrorsRoute: ApiAdminInsightsErrorsRoute,

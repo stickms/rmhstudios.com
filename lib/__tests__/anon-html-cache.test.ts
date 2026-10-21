@@ -30,6 +30,7 @@ import anonHtmlCachePlugin, {
   CACHEABLE_ANON_PREFIXES,
   anonCachePolicy,
   decideCacheControl,
+  isUncacheableAssetError,
 } from '@/server/nitro/anon-html-cache';
 
 /** Cookie shapes Better Auth actually emits, plus the bare dev-mode name. */
@@ -604,5 +605,52 @@ describe('no static-asset cache rule may capture an HTML route', () => {
       'A TTL override ignores the origin Cache-Control, including the `private, no-cache` ' +
         'that keeps authenticated HTML out of the shared cache.',
     ).toEqual([]);
+  });
+});
+
+describe('failed /assets lookups are never cacheable', () => {
+  /** Run the real response hook over a fake `Response`-shaped object with a status. */
+  function run(path: string, status: number, cacheControl: string, contentType = 'text/html') {
+    const headers = new Headers({ 'content-type': contentType, 'cache-control': cacheControl });
+    let handler: ((res: unknown, event: unknown) => void) | null = null;
+    anonHtmlCachePlugin({
+      hooks: {
+        hook: (name, fn) => {
+          if (name === 'response') handler = fn;
+        },
+      },
+    });
+    handler!(
+      { headers, status },
+      { req: { url: `http://rmhstudios.com${path}`, method: 'GET', headers: new Headers() } },
+    );
+    return headers;
+  }
+
+  const IMMUTABLE = 'public, max-age=31536000, immutable';
+
+  it('replaces the route rule\'s immutable year with no-store on a 404 chunk', () => {
+    // Observed in production: a deleted chunk answered 404 text/html with this
+    // header and Cloudflare cached it (MISS then HIT, rising Age).
+    const h = run('/assets/GameErrorBoundary-x86ofMTg.js', 404, IMMUTABLE);
+    expect(h.get('cache-control')).toBe('no-store');
+  });
+
+  it('also covers 5xx under /assets/', () => {
+    expect(run('/assets/index-abc.js', 500, IMMUTABLE, 'application/json').get('cache-control')).toBe(
+      'no-store',
+    );
+  });
+
+  it('leaves a successful chunk immutable', () => {
+    expect(run('/assets/index-abc.js', 200, IMMUTABLE, 'text/javascript').get('cache-control')).toBe(
+      IMMUTABLE,
+    );
+  });
+
+  it('leaves non-asset 404s alone', () => {
+    expect(isUncacheableAssetError('/nope', 404)).toBe(false);
+    expect(isUncacheableAssetError('/assets/x.js', undefined)).toBe(false);
+    expect(isUncacheableAssetError('/assets/x.js', 404)).toBe(true);
   });
 });

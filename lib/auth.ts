@@ -84,6 +84,13 @@ export const auth = betterAuth({
     // Kept tighter than the rest (these guard against credential brute-force),
     // but loosened enough that legitimate retries/typos aren't blocked.
     customRules: {
+      // Reading the current session is not an attack surface (no credentials are
+      // checked) but IS the hottest auth call: every page load and every window-focus
+      // refetch makes one or two. Under the 200/min per-IP default, a campus/office
+      // NAT or a busy tab-switcher got 429 {"message":"Too many requests"} -> the
+      // client read it as "signed out" (reproduced: 281/397 get-session calls 429'd at
+      // 50 concurrent users from 10 accounts). `false` disables the limit for this path.
+      '/get-session': false,
       '/sign-in/email': { window: 60, max: 10 },
       '/sign-up/email': { window: 60, max: 10 },
       '/forget-password': { window: 60, max: 6 },
