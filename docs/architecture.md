@@ -91,7 +91,7 @@ what each one gates:
 
 | Workflow                 | Gates                                                                                                                                                                                                          |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `deploy.yml`             | CD — push to `main` → build + push images to GHCR → trigger VPS listener (above). Its in-workflow `ci` job re-runs typecheck/lint/tests; the test step is advisory there because the PR already gated it.       |
+| `deploy.yml`             | CD — push to `main` → build + push images to GHCR → trigger VPS listener (above). Its in-workflow `ci` job re-runs typecheck/lint/tests on the merge result — all three block the deploy.                        |
 | `web-ci.yml`             | Frontend gate on PRs: `tsc --noEmit` + `eslint` + docs freshness + `pnpm test` (check job — **all blocking**), `build:frontend:sourcemap` + the two size gates (build job), `pnpm audit --prod` (audit job)     |
 | `epic-tests.yml`         | The epic content-build suite (`pnpm test:epic`) with a Chromium install; path-filtered to `scripts/epic/**`                                                                                                     |
 | `go-microservices.yml`   | Go fleet: `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**`. (The Postgres-backed e2e + `helm lint` jobs were removed with the Go realtime/Helm topology — design §5.2.) |

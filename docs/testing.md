@@ -352,7 +352,11 @@ deliberate change moves the numbers (a Chromium bump, a slower-but-better effect
 **CI.** The `eversion-e2e` job in `web-ci.yml` builds WITH sourcemaps (the
 attribution checks read them), serves `.output`, and runs every
 `testing/e2e/eversion-*.mjs` except `eversion-lab.mjs` and `eversion-smoothness*.mjs` (own step, above); `eversion-hub.mjs` runs
-once per profile x theme (desktop/mobile x dark/light/high-contrast). The job is
+once per profile x theme (desktop/mobile x dark/light/high-contrast). It does
+**not run on PRs** for now: the suite does not finish inside its timeout (22 of 23
+PR runs were cancelled in `eversion-behaviour.mjs`), so on PRs it held a runner
+for ~40 min and reported nothing. Run it on a branch with
+`gh workflow run web-ci.yml --ref <branch>`. When re-enabled on PRs, the job is
 path-filtered by `eversion-changes` to what the effect depends on: `lib/eversion`,
 `components/radial`, the settings row and its preference API/schema, the theme
 store, `lib/perf-tier*` and `lib/render`, the glass layer, the two English
@@ -387,14 +391,16 @@ Ten workflows live in `.github/workflows/`. The ones that touch tests/quality:
 | `web-ci.yml` (`build` job)    | `build:frontend:sourcemap` → bundle budget → entry composition                          | build + both size gates block                                                            |
 | `web-ci.yml` (`audit` job)    | `pnpm audit --prod --audit-level=high`                                                  | blocks on high-severity prod advisories                                                  |
 | `epic-tests.yml`              | `playwright install chromium` → `pnpm test:epic`                                        | blocks; **path-filtered** to `scripts/epic/**`                                           |
-| `deploy.yml` (`ci` job)       | `tsc --noEmit` → `eslint` → `pnpm test`                                                 | typecheck + lint block; the **test step is advisory** here by owner decision — see below |
-| `web-ci.yml` (`eversion-e2e`) | build with sourcemaps → serve → every `eversion-*.mjs` (hub per profile x theme)        | non-blocking until T37; path-filtered + nightly; see §7                                  |
+| `deploy.yml` (`ci` job)       | `tsc --noEmit` → `eslint` → `pnpm test`                                                 | blocks — typecheck, lint and test all gate the deploy; see below                         |
+| `web-ci.yml` (`eversion-e2e`) | build with sourcemaps → serve → every `eversion-*.mjs` (hub per profile x theme)        | non-blocking until T37; **nightly + manual dispatch only** (not on PRs); see §7          |
 | `go-microservices.yml`        | `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**` | blocks                                                                                   |
 
-**Where enforcement lives.** `main` is reached only through a pull request, and
-web-ci's Test step is a hard gate, so a red test stops the change before it
-merges. The deploy's own `ci` job re-runs the suite as a second look and stays
-advisory by owner decision, so a flake cannot wedge a release.
+**Where enforcement lives.** web-ci's Test step is a hard gate on the PR, and
+the deploy's own `ci` job re-runs the suite on the merge result as a hard gate
+too. It used to be advisory on the premise that `main` is reached only through a
+PR — but nothing enforced that (no branch protection), so a direct push or a
+merge over a red PR could ship untested code. It costs no wall-clock: `ci` runs
+in parallel with the image build.
 
 The web-ci test step was advisory for a long stretch, for a reason that no
 longer holds: `i18n-catalogs` was permanently red, and the Test step used to sit
