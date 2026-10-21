@@ -11,7 +11,7 @@
 
 import React from 'react';
 import satori from 'satori';
-import { Resvg } from '@resvg/resvg-js';
+import { dedupeOgRender, svgToPng } from './render.server';
 import {
   INK,
   MUTED,
@@ -62,7 +62,7 @@ function formatCount(n: number): string {
   return String(n);
 }
 
-export async function renderProfileOgImage(data: ProfileOgData): Promise<Buffer> {
+async function renderProfileOgImageUncached(data: ProfileOgData): Promise<Buffer> {
   // Bucket follower/post counts (per 10) so ordinary count churn doesn't bust
   // the rendered-PNG cache on every follow/post — the displayed figure is
   // K/M-abbreviated anyway, so small deltas don't change the card.
@@ -150,8 +150,7 @@ export async function renderProfileOgImage(data: ProfileOgData): Promise<Buffer>
     ...LANDSCAPE,
     fonts: satoriFonts(),
   });
-  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: LANDSCAPE.width } });
-  const png = Buffer.from(resvg.render().asPng());
+  const png = await svgToPng(svg, LANDSCAPE.width);
 
   if (pngCache.size >= PNG_MAX) {
     const oldest = pngCache.keys().next().value;
@@ -159,4 +158,9 @@ export async function renderProfileOgImage(data: ProfileOgData): Promise<Buffer>
   }
   pngCache.set(cacheKey, { png, ts: Date.now() });
   return png;
+}
+
+// perf: in-flight dedupe - concurrent requests for one card share a single render.
+export function renderProfileOgImage(data: ProfileOgData): Promise<Buffer> {
+  return dedupeOgRender(`profile:${data.id}:${Math.floor((data.followerCount ?? 0) / 10)}:${Math.floor((data.postCount ?? 0) / 10)}`, () => renderProfileOgImageUncached(data));
 }
