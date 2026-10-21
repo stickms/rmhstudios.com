@@ -77,6 +77,19 @@ is sent to them.
    deploy/oncall-watchdog/scripts/test-alert.sh resolved
    ```
 
+## Deploys after the first
+
+`.github/workflows/oncall-watchdog.yml` tests every PR that touches this
+directory and deploys on merge to `main`. It needs, on the repo's
+`oncall-watchdog` **environment** (Settings → Environments; restrict it to the
+`main` branch, optionally add a required reviewer):
+
+- `CLOUDFLARE_API_TOKEN` — Cloudflare → My Profile → API Tokens → *Edit
+  Cloudflare Workers* template, scoped to this account + the `rmhstudios.com` zone.
+- `CLOUDFLARE_ACCOUNT_ID` — Cloudflare dashboard → Workers & Pages → Account ID.
+
+CI never sets Worker secrets; those stay as put by hand in step 4.
+
 ## Operating notes
 
 - Logs: `npx wrangler@4 tail --config deploy/oncall-watchdog/wrangler.toml`.
