@@ -250,6 +250,36 @@ describe('the call sites mark their phases', () => {
     });
   });
 
+  it('two bundled copies of the module share one scope (Nitro bundle vs the _ssr app bundle)', async () => {
+    // The production build holds a copy of trace.ts in the Nitro bundle (the
+    // plugin opens the scope) and another in the app bundle (call sites mark
+    // into it). A per-copy AsyncLocalStorage made Server-Timing `total`-only.
+    const { vi } = await import('vitest');
+    vi.resetModules();
+    const copyA = await import('@/lib/otel/trace');
+    vi.resetModules();
+    const copyB = await import('@/lib/otel/trace');
+    expect(copyA).not.toBe(copyB);
+    const timingB = await import('@/lib/otel/timing');
+    copyA.withTrace(() => {
+      timingB.mark('db', 4);
+      expect(copyB.currentScope()?.timings.get('db')).toBe(4);
+    });
+  });
+
+  it('a second copy of prisma.server shares the query budget store', async () => {
+    const { vi } = await import('vitest');
+    process.env.DATABASE_URL ||= 'postgresql://timing:timing@127.0.0.1:1/timing';
+    vi.resetModules();
+    const a = await import('@/lib/prisma.server');
+    vi.resetModules();
+    const b = await import('@/lib/prisma.server');
+    a.withQueryBudget('x', () => {
+      b.recordQuery('User', 'findFirst');
+      expect(a.currentQueryBudget()?.count).toBe(1);
+    });
+  });
+
   it('loader and render stay unmarked: no single choke point exists (see timing.ts)', () => {
     const s = scope();
     markScope(s, 'db', 1);
