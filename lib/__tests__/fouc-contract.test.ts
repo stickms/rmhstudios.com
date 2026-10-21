@@ -598,8 +598,14 @@ function grepRepoMatching(pattern: RegExp): string[] {
  * wherever it runs — the commit hook, CI and a contributor's machine — and does
  * not depend on a binary being on PATH.
  */
-function grepRepo(needle: string): string[] {
-  const hits: string[] = [];
+// The tree is read ONCE and shared by every grepRepo call. Re-walking it per
+// needle (one full read of every .ts/.tsx file per APP_ROUTE_THEME_BG key) put
+// that test past vitest's 5 s timeout on slower machines — a flake that, with
+// the deploy's test step a hard gate, can block a release.
+let sourceCache: { path: string; text: string }[] | null = null;
+function repoSources(): { path: string; text: string }[] {
+  if (sourceCache) return sourceCache;
+  const files: { path: string; text: string }[] = [];
   const walk = (dir: string) => {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
@@ -607,12 +613,17 @@ function grepRepo(needle: string): string[] {
       if (entry.isDirectory()) {
         walk(full);
       } else if (/\.tsx?$/.test(entry.name)) {
-        if (readFileSync(full, 'utf8').includes(needle)) {
-          hits.push(full.slice(REPO.length + 1));
-        }
+        files.push({ path: full.slice(REPO.length + 1), text: readFileSync(full, 'utf8') });
       }
     }
   };
   for (const root of ['lib', 'components', 'app', 'stores']) walk(join(REPO, root));
-  return hits;
+  sourceCache = files;
+  return files;
+}
+
+function grepRepo(needle: string): string[] {
+  return repoSources()
+    .filter((f) => f.text.includes(needle))
+    .map((f) => f.path);
 }
