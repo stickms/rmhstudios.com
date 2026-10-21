@@ -208,8 +208,8 @@ suite, path-filtered to `scripts/epic/**`), `go-microservices.yml` (Bazel test),
 `senior-review.yml` (LLM review gate), `deploy.yml`, `synthetic-perf.yml`,
 `i18n-translate.yml`, and the build/deploy guards `build-vibe-packages`,
 `compose-validate`, `prisma-validate`, `prisma-migrate-status`. Run the core
-checks locally before opening a pull request. Which suite runs where, and why
-the deploy's own test step is advisory while the PR's is not:
+checks locally before opening a pull request. Which suite runs where, and what
+gates a deploy:
 [`docs/testing.md`](docs/testing.md) §CI.
 
 ## Trust order for conflicting information

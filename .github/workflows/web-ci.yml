@@ -275,7 +275,16 @@ jobs:
   # NON-BLOCKING for now (`continue-on-error`): a brand-new browser gate on
   # SwiftShader needs a few weeks of runs before its thresholds are trusted.
   # T37 removes that line and makes it blocking.
+  #
+  # NIGHTLY + MANUAL ONLY — not on PRs. On PRs it never once produced a verdict:
+  # 22 of 23 runs hit the timeout inside `eversion-behaviour.mjs` (every S#25
+  # profile/theme case fails after 1.5–3 min), each holding a runner for ~40 min
+  # under the account-wide concurrency cap to report nothing. The nightly gets a
+  # longer timeout so it can actually finish and say what is red. To run it
+  # against a branch: `gh workflow run web-ci.yml --ref <branch>`. Restore the
+  # PR trigger (drop the `if:` below) once the suite finishes inside ~15 min.
   eversion-changes:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -319,7 +328,7 @@ jobs:
     needs: [build, eversion-changes]
     if: needs.eversion-changes.outputs.run == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 75
     continue-on-error: true
     env:
       NODE_OPTIONS: --max-old-space-size=8192

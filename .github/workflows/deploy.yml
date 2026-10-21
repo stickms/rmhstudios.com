@@ -176,19 +176,15 @@ jobs:
           mkdir -p .cache/eslint
           pnpm exec eslint --cache --cache-location .cache/eslint/eslintcache --cache-strategy content
 
-      # Advisory (warn, don't block) by owner decision: a failing test does not
-      # gate the deploy — typecheck + lint above stay hard gates, and the image
-      # build in `build` still blocks on any build-time breakage. A red test
-      # turns this step's annotation red and shows in the run summary, but `ci`
-      # still succeeds so `deploy-gate` proceeds.
-      #
-      # This is coherent because ENFORCEMENT LIVES ON THE PR: `main` is reached
-      # only through a pull request, and web-ci's Test step is a hard gate as of
-      # the 2026-08-08 testing audit. So a red test stops the change before it
-      # merges; this run is a second look at the merge result, not the gate.
+      # A HARD GATE. This used to be advisory on the premise that `main` is
+      # reached only through a PR whose web-ci Test step already gated it — but
+      # nothing enforced that premise (no branch protection on `main`), so a
+      # direct push or a merge over a red PR shipped untested code. It is also
+      # free in wall-clock: `ci` runs in parallel with the ~3 min image build, and
+      # the suite takes ~2 min, so blocking on it does not delay a green deploy.
+      # A red test here means the merge result is broken — fix it, don't ship it.
       - name: Test
         run: pnpm test
-        continue-on-error: true
 
   build:
     # NO `needs:` — runs concurrently with `ci`; `deploy-gate` waits on both.
