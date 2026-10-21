@@ -32,7 +32,8 @@ import { applyLock } from './map-feed-item.server';
 import { deduplicateReposts } from './dedupe';
 import type { ReactionSummary } from '../social/reactions';
 import { apiCache } from '../cache';
-import { cachedSWR } from '../cached.server';
+import { cachedSWR, invalidateCached } from '../cached.server';
+import { reconcileCachedPage } from './page-reconcile.server';
 import { isExpired } from '../posts-plus/constants';
 
 export { deduplicateReposts };
@@ -862,6 +863,54 @@ async function assembleTimeline(params: GetTimelineParams): Promise<TimelineResu
     : { ...result, mutedWords: muted };
 }
 
+/** Cache key of a viewer's first page. `v3`: the value is the page BEFORE the
+ *  muted-word filter (applied at serve time), unlike `v2`. */
+const feedPageKey = (p: { surface: FeedSurface; filter: FeedFilter; limit: number }, userId: string) =>
+  `feed:v3:${p.surface}:${p.filter}:${userId}:${p.limit}`;
+
+/** Drop a viewer's cached first pages for the sizes the app requests (homepage 15,
+ *  feed column 20). Only needed for UX freshness (e.g. just added to a circle):
+ *  anything permission-shaped is reconciled at serve time and never depends on it. */
+export async function invalidateViewerFeedPages(userId: string): Promise<void> {
+  const keys: string[] = [];
+  for (const surface of ['foryou', 'following'] as const)
+    for (const limit of [15, 20]) keys.push(feedPageKey({ surface, filter: 'all', limit }, userId));
+  await Promise.all(keys.map((k) => invalidateCached(k)));
+}
+
+async function serveSignedInFirstPage(
+  params: GetTimelineParams,
+  userId: string,
+  retried: boolean,
+): Promise<TimelineResult> {
+  const key = feedPageKey(params, userId);
+  let assembledNow = false;
+  const page = await cachedSWR(
+    key,
+    { ttlMs: SIGNED_IN_FIRST_PAGE_TTL_MS, swrMs: SIGNED_IN_FIRST_PAGE_SWR_MS },
+    async () => {
+      const fresh = await (params.surface === 'following'
+        ? getFollowingTimeline(params)
+        : getForYouTimeline(params));
+      assembledNow = true;
+      return fresh;
+    },
+  );
+  // A page assembled by THIS call is already current; only a cached one needs the check.
+  const [reconciled, muted] = await Promise.all([
+    assembledNow
+      ? Promise.resolve({ items: page.items, needsRefresh: false })
+      : reconcileCachedPage(page.items, userId, params.surface),
+    getMutedWords(userId),
+  ]);
+  if (reconciled.needsRefresh && !retried) {
+    await invalidateCached(key);
+    return serveSignedInFirstPage(params, userId, true);
+  }
+  const items = muted.length ? applyMutedWords(reconciled.items, muted) : reconciled.items;
+  return { ...page, items, mutedWords: muted };
+}
+
 export async function getTimeline(params: GetTimelineParams): Promise<TimelineResult> {
   // posts-plus X8: a post past its TTL is hidden at read time - on cache hits
   // too, since a cached first page can be minutes old - whether or not the sweep
@@ -897,25 +946,17 @@ async function getTimelineUnfiltered(params: GetTimelineParams): Promise<Timelin
 
   // Signed-in first page (no cursor / no search): a short Redis-backed
   // stale-while-revalidate cache per (surface, filter, viewer) so the common
-  // "open the app" request returns instantly. The whole result — including this
-  // viewer's liked/reposted/bookmarked/myVotes bits — is safe to cache under a
-  // viewer-keyed key because it is computed for exactly this viewer. Subsequent
-  // (cursored) pages are never cached. `cachedSWR` degrades to pure in-process
-  // caching when Redis is unset, so local/single-instance dev is unaffected.
-  // With SWR, once warm the viewer never blocks on the ~32-query assemble — the
-  // last page serves in ~1ms while a deduped background refresh runs. NOTE:
-  // there is no write-through invalidation here (the post / follow write paths
-  // live in modules outside this change's scope), so the TTL+SWR window is the
-  // sole freshness bound — the client's optimistic updates + SSE cover the
-  // viewer's own actions within it.
+  // "open the app" request returns instantly. The page carries this viewer's
+  // liked/reposted/bookmarked/myVotes bits, which is why the key is the viewer.
+  //
+  // Staleness, stated: counts, like/repost/bookmark bits, new posts and rank order
+  // may lag by up to TTL + SWR = 60s (the SSE stream and optimistic client updates
+  // cover the gap). PERMISSIONS and MODERATION may not lag at all (03-rules 1.3),
+  // and no single writer owns them, so every serve re-checks the cached page
+  // against the database - see page-reconcile.server.ts. The muted-word filter is
+  // likewise applied at serve time, so the cached value is the unfiltered page.
   const signedInFirstPage = !!params.userId && !params.cursor && !params.search;
-  if (signedInFirstPage) {
-    return cachedSWR(
-      `feed:v2:${params.surface}:${params.filter}:${params.userId}:${params.limit}`,
-      { ttlMs: SIGNED_IN_FIRST_PAGE_TTL_MS, swrMs: SIGNED_IN_FIRST_PAGE_SWR_MS },
-      () => assembleTimeline(params),
-    );
-  }
+  if (signedInFirstPage) return serveSignedInFirstPage(params, params.userId!, false);
 
   return assembleTimeline(params);
 }
