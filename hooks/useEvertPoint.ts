@@ -179,7 +179,7 @@ export function useEvertPointLayer(): void {
     const onFocusIn = (e: FocusEvent) => {
       const hit = evertOf(e.target);
       if (!hit) return;
-      let visible = false;
+      let visible: boolean;
       try {
         visible = (e.target as Element).matches(':focus-visible');
       } catch {

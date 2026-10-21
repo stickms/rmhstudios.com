@@ -1537,7 +1537,7 @@ html.ios-webkit .radial-hub__veil {
      reads the SAME fraction (`CAGE_BLEED`) to size the backing store and to put
      the drawing origin at the middle of this box, so the two stay concentric and
      the globe's drawn radius is unchanged. Change one and change the other. */
-  --cage-bleed: 9%;
+  --cage-bleed: 11%;
   top: calc(var(--cage-bleed) * -1);
   left: calc(var(--cage-bleed) * -1);
   /* Sized EXPLICITLY, never by `width: auto` against four insets. A `<canvas>`
