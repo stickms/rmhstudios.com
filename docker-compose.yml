@@ -233,6 +233,24 @@ services:
       - PORT=${PORT_WEB:-7005}
       - HOSTNAME=0.0.0.0
       - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      # Postgres connection budget (max_connections = 200, deploy/postgres/
+      # postgresql.tuning.conf). Each Nitro worker owns a lib/prisma.server pool of
+      # DATABASE_POOL_SIZE (default 20), so one web container = WEB_WORKERS(2) x 20
+      # = 40, and the blue/green hotswap runs TWO web containers at once = 80.
+      # Everything else, worst case: socket/rmhbox/rmhtube hubs 3 x SERVER_DB_POOL_SIZE
+      # (5) = 15, jobs 16 + pg-boss 8 = 24, ladder-worker 3 (own client) + 3 (alerts
+      # pool) = 6, homes-worker 3, Go supervisor/status/assets ~20, admin/psql/migrate
+      # ~10: ~80 + 15 + 24 + 6 + 3 + 20 + 10 = ~158 < 200 with the superuser reserve.
+      # Raising web's pool or WEB_WORKERS means re-doing this sum.
+      #
+      # Server-side timeouts (lib/prisma.server.ts): code default is OFF so workers
+      # and scripts are unchanged; web turns them on so one slow query or a stuck
+      # transaction cannot hold a pool slot forever. Statements that legitimately
+      # run longer opt out with `SET LOCAL statement_timeout` (cohort recompute,
+      # kaikai ledger extension). Ignored by PgBouncer in transaction mode (the
+      # `pgbouncer` profile) — there use `ALTER ROLE ... SET statement_timeout`.
+      - DATABASE_STATEMENT_TIMEOUT_MS=${DATABASE_STATEMENT_TIMEOUT_MS:-20000}
+      - DATABASE_IDLE_TX_TIMEOUT_MS=${DATABASE_IDLE_TX_TIMEOUT_MS:-30000}
       # Per-WORKER V8 old-space cap (perf audit §1.5). With node-cluster the
       # master forks NITRO_CLUSTER_WORKERS workers, each with its OWN heap, so
       # this is per-process: 2 × 384m heap + master + native (sharp/resvg) fits
@@ -251,6 +269,13 @@ services:
       # socket needs a session token. Compose-network name, never reachable
       # from a browser.
       - SOCKET_INTERNAL_URL=http://socket:${PORT_SOCKET:-7001}
+      # Same idea for the other two hubs: /api/admin/perf reads each hub's
+      # `/internal/metrics` over the compose network (never proxied by Apache).
+      # INTERNAL_METRICS_TOKEN is optional and needs no line here: every service
+      # shares `env_file`, so setting it there makes the hubs require an
+      # `x-internal-token` header and the web tier send it.
+      - RMHBOX_INTERNAL_URL=http://rmhbox:${PORT_RMHBOX:-7676}
+      - RMHTUBE_INTERNAL_URL=http://rmhtube:${PORT_RMHTUBE:-7003}
     healthcheck:
       # Hit the cheap liveness endpoint, not `/` — curling `/` every 30s renders
       # the full homepage through SSR on the single web event loop (perf audit
@@ -351,6 +376,12 @@ services:
     # (initial-load audit). 256 = ¼ of default weight; it still runs, just yields.
     cpu_shares: 256
     env_file: ${ENV_FILE:-.env.production}
+    environment:
+      # The worker builds its own PrismaClient (max 3), but its alerts module
+      # (lib/rmhladder/alerts/dispatch.server) imports lib/prisma.server, which
+      # silently opened a SECOND 20-connection pool. Alerts run a few queries per
+      # cycle, so 3 is plenty. Set after env_file so it wins over a shared value.
+      - DATABASE_POOL_SIZE=3
     command: ['node', 'dist-server/server/ladder-worker/index.cjs']
 
   # ─── Homes Worker (RMHHomes external-listing scraper cron) ─────────────────
@@ -384,6 +415,15 @@ services:
     # starved (never a correctness dependency), so it yields to web too.
     cpu_shares: 512
     env_file: ${ENV_FILE:-.env.production}
+    environment:
+      # lib/prisma.server pool for this process (default 20, plus pg-boss's own 8).
+      # pg-boss runs each queue's handler at localConcurrency 1 and ~37 queues are
+      # registered, but they are cron-driven: at an hour boundary the per-minute,
+      # */2, */5 and */10 ticks coincide (~14 handlers), each holding a Prisma
+      # connection only while it queries. 16 = that worst case + 2 headroom
+      # (max(concurrency + 2, 8)); handlers past it wait on the pool rather than
+      # run wider. pg-boss's pool is separate (lib/jobs/boss.server.ts, 8).
+      - DATABASE_POOL_SIZE=16
     command: ['node', 'dist-server/server/jobs/index.cjs']
 
   # ─── Go Supervisor (discord-bot + recap + doctrine-worker + vibe-worker + bot-worker) ─

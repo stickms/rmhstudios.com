@@ -11,6 +11,7 @@ import { prisma } from '@/lib/prisma.server';
 import { sendPushToUser, pushTitleFor, pushActionsFor } from '@/lib/push/send.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { redisEnabled, redisGetJSON, redisSetJSON, redisIncrBy } from '@/lib/redis.server';
+import { cachedNullable, invalidateCached } from '@/lib/cached.server';
 import type { NotificationType } from '@prisma/client';
 
 /**
@@ -159,16 +160,37 @@ const UNMUTABLE_ENTITY_TYPES: ReadonlySet<string> = new Set([
   'reminder',
 ]);
 
+const PREF_TTL_MS = 60_000;
+const prefKey = (userId: string) => `notif-pref:${userId}`;
+
 /** True when the recipient has this notification type turned off. */
 async function isMuted(input: CreateNotificationInput): Promise<boolean> {
   if (input.type === 'SYSTEM' && input.entityType && UNMUTABLE_ENTITY_TYPES.has(input.entityType)) {
     return false;
   }
-  const prefs = await prisma.notificationPreference.findUnique({
-    where: { userId: input.userId },
-  });
+  // perf: this ran an uncached SELECT for EVERY notification created (likes and
+  // comments fan out heavily). 60s L1/L2 cache; every preference writer calls
+  // invalidateNotificationPrefs() so a toggle takes effect immediately.
+  const prefs = await cachedNullable(prefKey(input.userId), PREF_TTL_MS, () =>
+    prisma.notificationPreference.findUnique({
+      where: { userId: input.userId },
+      select: {
+        likes: true,
+        comments: true,
+        follows: true,
+        mentions: true,
+        reposts: true,
+        system: true,
+      },
+    }),
+  );
   if (!prefs) return false; // no row = defaults = everything on
   return !prefs[PREF_FIELD[input.type]];
+}
+
+/** Drop the cached mute preferences — call after ANY write to notificationPreference. */
+export function invalidateNotificationPrefs(userId: string): void {
+  void invalidateCached(prefKey(userId));
 }
 
 export async function createNotification(input: CreateNotificationInput): Promise<void> {

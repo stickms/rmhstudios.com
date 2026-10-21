@@ -27,7 +27,7 @@
 
 import React from 'react';
 import satori from 'satori';
-import { Resvg } from '@resvg/resvg-js';
+import { dedupeOgRender, svgToPng } from './render.server';
 import {
   DIM,
   HAIRLINE_W,
@@ -113,7 +113,7 @@ function clean(s: string | null | undefined, n: number): string {
   return truncate(stripEmoji(s ?? ''), n);
 }
 
-export async function renderPageCard(data: PageCardData): Promise<Buffer> {
+async function renderPageCardUncached(data: PageCardData): Promise<Buffer> {
   const variant: PageCardVariant = data.variant === 'story' ? 'story' : 'landscape';
   const size = variant === 'story' ? STORY : LANDSCAPE;
   const ttl = data.ttlMs ?? 30 * 60 * 1000;
@@ -321,8 +321,7 @@ export async function renderPageCard(data: PageCardData): Promise<Buffer> {
   });
 
   const svg = await satori(element, { ...size, fonts: satoriFonts() });
-  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: size.width } });
-  const png = Buffer.from(resvg.render().asPng());
+  const png = await svgToPng(svg, size.width);
 
   if (pngCache.size >= PNG_MAX) {
     const oldest = pngCache.keys().next().value;
@@ -330,4 +329,9 @@ export async function renderPageCard(data: PageCardData): Promise<Buffer> {
   }
   pngCache.set(cacheKey, { png, ts: Date.now() });
   return png;
+}
+
+// perf: in-flight dedupe - concurrent requests for one card share a single render.
+export function renderPageCard(data: PageCardData): Promise<Buffer> {
+  return dedupeOgRender(`page:${data.variant === 'story' ? 'story' : 'landscape'}:${data.cacheKey}:${data.art ?? ''}`, () => renderPageCardUncached(data));
 }

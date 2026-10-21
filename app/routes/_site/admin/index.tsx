@@ -14,6 +14,7 @@ import { AdminCanvasLink } from '@/components/canvas/admin/AdminCanvasLink';
 import { AdminChallengeLink } from '@/components/admin/studio-challenges/AdminChallengeLink';
 import { AdminReadingLink } from '@/components/reading/admin/AdminReadingLink';
 import { InsightsLink } from '@/components/admin/InsightsLink';
+import { PerformanceLink } from '@/components/admin/PerformanceLink';
 
 export const Route = createFileRoute('/_site/admin/')({
   head: () => ({
@@ -163,6 +164,8 @@ function AdminDashboardPage() {
           </Link>
 
           <InsightsLink />
+
+          <PerformanceLink />
 
           <Link
             to="/admin/bots"

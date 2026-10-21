@@ -38,7 +38,12 @@ const put = (body: unknown) =>
     params: {},
     request: new Request('https://rmhstudios.com/api/preferences/appearance', {
       method: 'PUT',
-      headers: { 'content-type': 'application/json', 'cf-connecting-ip': `${Math.random()}` },
+      headers: {
+        'content-type': 'application/json',
+        'cf-connecting-ip': `${Math.random()}`,
+        // defineHandler skips Better Auth for cookie-less callers.
+        cookie: 'better-auth.session_token=abc',
+      },
       body: JSON.stringify(body),
     }),
   });
@@ -95,7 +100,9 @@ describe('PUT /api/preferences/appearance eversionLevel', () => {
     const get = () =>
       handlers.GET({
         params: {},
-        request: new Request('https://rmhstudios.com/api/preferences/appearance'),
+        request: new Request('https://rmhstudios.com/api/preferences/appearance', {
+          headers: { cookie: 'better-auth.session_token=abc' },
+        }),
       });
     findUnique.mockResolvedValue(null);
     await expect((await get()).json()).resolves.toMatchObject({ eversionLevel: null });

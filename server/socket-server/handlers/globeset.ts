@@ -484,7 +484,8 @@ function broadcastStandings(io: Server, lobby: Lobby): void {
     misses: seat.run?.misses ?? 0,
     done: seat.forfeited || seat.finishedAtMs !== null,
   }));
-  io.to(roomName(lobby.code)).emit(S2C.STANDINGS, { standings });
+  // perf: volatile — full standings each tick, superseded by the next.
+  io.to(roomName(lobby.code)).volatile.emit(S2C.STANDINGS, { standings });
 }
 
 /**

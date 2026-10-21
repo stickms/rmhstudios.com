@@ -23,7 +23,7 @@ import { mapWithConcurrency } from '@/lib/async-pool';
 import {
   redisEnabled,
   redisIncrBy,
-  redisSadd,
+  redisIncrByAndSadd,
   redisSpop,
   redisGetDel,
   redisPresenceMark,
@@ -58,20 +58,72 @@ function ensureFlusher(): void {
 
 /**
  * Record a post view. Buffered in Redis (flushed later) when available; falls
- * back to a direct atomic increment otherwise. Never throws.
+ * back to an in-process buffer (one batched UPDATE per flush) otherwise. Never throws.
  */
 export async function bufferPostView(postId: string): Promise<void> {
   if (redisEnabled()) {
-    const n = await redisIncrBy(VIEW_BUF_PREFIX + postId, 1, VIEW_TTL_MS);
+    // perf: counter bump + dirty-set mark in one round trip (was two sequential).
+    const n = await redisIncrByAndSadd(
+      VIEW_BUF_PREFIX + postId,
+      1,
+      VIEW_TTL_MS,
+      VIEW_DIRTY_SET,
+      postId,
+    );
     if (n !== null) {
-      await redisSadd(VIEW_DIRTY_SET, postId);
       ensureFlusher();
       return;
     }
   }
-  await prisma.rMHark
-    .update({ where: { id: postId }, data: { viewCount: { increment: 1 } } })
-    .catch(() => {});
+  // perf: no Redis (or Redis write failed) used to mean one row-locked UPDATE
+  // per impression. Coalesce in-process and flush as a single unnest UPDATE.
+  bufferViewLocally(postId);
+}
+
+// ─── In-process fallback buffer (no Redis) ──────────────────────────────────
+
+/** Distinct posts held in memory before we fall back to a direct write. */
+const LOCAL_MAX_KEYS = 5_000;
+const localViewBuf = new Map<string, number>();
+let localTimer: ReturnType<typeof setInterval> | null = null;
+
+function bufferViewLocally(postId: string): void {
+  if (localViewBuf.size >= LOCAL_MAX_KEYS && !localViewBuf.has(postId)) {
+    void prisma.rMHark
+      .update({ where: { id: postId }, data: { viewCount: { increment: 1 } } })
+      .catch(() => {});
+    return;
+  }
+  localViewBuf.set(postId, (localViewBuf.get(postId) ?? 0) + 1);
+  if (!localTimer) {
+    localTimer = setInterval(() => {
+      void flushLocalViews().catch((e) =>
+        console.error('[hot-counters] local view flush failed:', (e as Error)?.message),
+      );
+    }, FLUSH_INTERVAL_MS);
+    localTimer.unref?.();
+  }
+}
+
+/**
+ * Write the in-process view buffer with ONE statement. Also called on shutdown
+ * (server/nitro/drain.ts). On failure the deltas are put back so the next tick
+ * retries; a post deleted meanwhile simply matches no row. Returns rows sent.
+ */
+export async function flushLocalViews(): Promise<number> {
+  if (localViewBuf.size === 0) return 0;
+  const batch = [...localViewBuf.entries()];
+  localViewBuf.clear();
+  try {
+    await prisma.$executeRaw`
+      UPDATE "rmheet" r SET "viewCount" = r."viewCount" + t."inc"
+      FROM unnest(${batch.map(([id]) => id)}::text[], ${batch.map(([, n]) => n)}::int[]) AS t("id", "inc")
+      WHERE r."id" = t."id"`;
+    return batch.length;
+  } catch (e) {
+    for (const [id, n] of batch) localViewBuf.set(id, (localViewBuf.get(id) ?? 0) + n);
+    throw e;
+  }
 }
 
 /**
@@ -80,8 +132,8 @@ export async function bufferPostView(postId: string): Promise<void> {
  * claimed by exactly one flusher. Returns the number of posts updated.
  */
 export async function flushBufferedViews(batch = 500): Promise<number> {
-  if (!redisEnabled()) return 0;
-  let flushed = 0;
+  let flushed = await flushLocalViews().catch(() => 0);
+  if (!redisEnabled()) return flushed;
   for (;;) {
     const ids = await redisSpop(VIEW_DIRTY_SET, batch);
     if (ids.length === 0) break;
@@ -130,8 +182,11 @@ function presenceBucket(tsMs: number): string {
 export async function markPresence(userId: string): Promise<void> {
   const now = Date.now();
   if (redisEnabled()) {
-    await redisPresenceMark(userId, presenceBucket(now), PRESENCE_TTL_MS);
-    const first = await redisIncrBy(`presence:dbwrote:${userId}`, 1, PRESENCE_DB_THROTTLE_MS);
+    // perf: the two Redis writes are independent — run them concurrently.
+    const [, first] = await Promise.all([
+      redisPresenceMark(userId, presenceBucket(now), PRESENCE_TTL_MS),
+      redisIncrBy(`presence:dbwrote:${userId}`, 1, PRESENCE_DB_THROTTLE_MS),
+    ]);
     if (first === 1) {
       await prisma.user
         .update({ where: { id: userId }, data: { lastSeenAt: new Date() } })

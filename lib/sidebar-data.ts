@@ -203,6 +203,15 @@ async function getBlogPosts(): Promise<SidebarPost[]> {
 }
 
 export async function getSidebarData() {
+  // perf: the session-independent global reads start NOW, concurrently with the
+  // session resolution, instead of queuing behind it. The no-op catch only stops
+  // an early rejection being reported as unhandled while we await the session;
+  // the Promise.all below still surfaces it exactly as before.
+  const userBuildsP = getUserBuilds();
+  const blogPostsP = getBlogPosts();
+  userBuildsP.catch(() => {});
+  blogPostsP.catch(() => {});
+
   // Resolve the viewer so recommendations can exclude self / already-followed.
   // Request-scoped: reuses the session already resolved by the root/page loader
   // on the same render instead of issuing another Better Auth + entitlement read.
@@ -210,9 +219,9 @@ export async function getSidebarData() {
   const viewerId: string | null = session?.user?.id ?? null;
 
   const [userBuilds, recommendedUsers, blogPosts] = await Promise.all([
-    getUserBuilds(),
+    userBuildsP,
     getRecommendedUsers(viewerId),
-    getBlogPosts(),
+    blogPostsP,
   ]);
 
   return {

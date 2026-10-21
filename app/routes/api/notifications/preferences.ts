@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
+import { invalidateNotificationPrefs } from '@/lib/notifications.server';
 
 /**
  * GET /api/notifications/preferences — the caller's per-type toggles
@@ -43,6 +44,8 @@ export const Route = createFileRoute('/api/notifications/preferences')({
           create: { userId: session.user.id, ...body },
           update: body,
         });
+        // perf: createNotification() caches mute prefs for 60s; drop it so the toggle is instant.
+        invalidateNotificationPrefs(session.user.id);
         const { likes, comments, follows, mentions, reposts, system } = prefs;
         return Response.json({ likes, comments, follows, mentions, reposts, system });
       }),

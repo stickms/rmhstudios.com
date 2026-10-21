@@ -7,8 +7,7 @@
 import { Suspense } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
-import { getRequest } from '@tanstack/react-start/server'
-import { auth } from '@/lib/auth'
+import { getRequestSession } from '@/lib/auth-session.server'
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
 
@@ -20,8 +19,7 @@ import { VersecraftClient } from '@/components/versecraft/VersecraftClient'
 
 const checkLoginStatus = createServerFn({ method: 'GET' }).handler(async () => {
   try {
-    const request = getRequest()
-    const session = await auth.api.getSession({ headers: request.headers })
+    const session = await getRequestSession()
     return { isLoggedIn: !!session?.user?.id }
   } catch {
     return { isLoggedIn: false }

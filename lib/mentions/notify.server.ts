@@ -28,6 +28,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { findUsersByHandles } from '@/lib/handles/lookup.server';
 import { dispatch } from '@/lib/notify/dispatch.server';
 import { mentionedHandles, MAX_MENTIONS } from '@/lib/mentions/parse';
 
@@ -152,10 +153,8 @@ export interface ResolvedMention {
  */
 export async function resolveHandles(handles: readonly string[]): Promise<ResolvedMention[]> {
   if (handles.length === 0) return [];
-  const rows = await prisma.user.findMany({
-    where: { OR: handles.map((h) => ({ handle: { equals: h, mode: 'insensitive' as const } })) },
-    select: { id: true, handle: true },
-  });
+  // perf: index-backed lower(handle) match instead of per-handle ILIKE (seq scan).
+  const rows = await findUsersByHandles(handles);
   return rows
     .filter((r): r is { id: string; handle: string } => typeof r.handle === 'string')
     .map((r) => ({ id: r.id, handle: r.handle.toLowerCase() }));

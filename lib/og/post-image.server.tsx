@@ -35,7 +35,7 @@
 
 import React from 'react';
 import satori from 'satori';
-import { Resvg } from '@resvg/resvg-js';
+import { dedupeOgRender, svgToPng } from './render.server';
 import {
   DIM,
   HAIRLINE_W,
@@ -289,7 +289,7 @@ function quoteBlock(quote: PostOgQuote, width: number): React.ReactElement {
   });
 }
 
-export async function renderPostOgImage(data: PostOgData): Promise<Buffer> {
+async function renderPostOgImageUncached(data: PostOgData): Promise<Buffer> {
   // Bucket engagement counts (per 10) so routine like/comment/repost churn
   // doesn't bust the rendered-PNG cache on every single interaction — the card
   // only visibly changes when a count crosses a bucket boundary anyway. The
@@ -475,8 +475,7 @@ export async function renderPostOgImage(data: PostOgData): Promise<Buffer> {
     ...LANDSCAPE,
     fonts: satoriFonts(),
   });
-  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: LANDSCAPE.width } });
-  const png = Buffer.from(resvg.render().asPng());
+  const png = await svgToPng(svg, LANDSCAPE.width);
 
   if (pngCache.size >= PNG_MAX) {
     const oldest = pngCache.keys().next().value;
@@ -484,4 +483,9 @@ export async function renderPostOgImage(data: PostOgData): Promise<Buffer> {
   }
   pngCache.set(cacheKey, { png, ts: Date.now() });
   return png;
+}
+
+// perf: in-flight dedupe - concurrent requests for one card share a single render.
+export function renderPostOgImage(data: PostOgData): Promise<Buffer> {
+  return dedupeOgRender(`post:${data.id}:${data.revision ?? ''}:${Math.floor((data.likeCount ?? 0) / 10)}:${Math.floor((data.commentCount ?? 0) / 10)}:${Math.floor((data.repostCount ?? 0) / 10)}`, () => renderPostOgImageUncached(data));
 }

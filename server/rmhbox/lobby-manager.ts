@@ -42,6 +42,16 @@ const MAX_CODE_ATTEMPTS = 10;
 /** Delay before a disbanded lobby is fully cleaned up after session results */
 const SESSION_RESULTS_DISBAND_DELAY_MS = 15_000;
 
+/** Recipient-independent slice of a client snapshot (see buildSharedClientParts). */
+export interface SharedClientParts {
+  players: ClientPlayerInfo[];
+  spectators: ClientSpectatorInfo[];
+  matchHistory: MatchSummary[];
+  seq: number;
+  /** Lazily filled: the spectator view of the running minigame, computed at most once. */
+  spectatorGame?: { state: unknown };
+}
+
 export class LobbyManager {
   private readonly io: Server;
   private readonly lobbies = new Map<string, RMHboxLobby>();
@@ -1337,26 +1347,11 @@ export class LobbyManager {
    * Strips internal fields (socketId, timer refs, Maps) and scopes
    * minigame state per player/spectator role.
    */
-  buildClientState(lobby: RMHboxLobby, userId: string): ClientLobbyState {
-    const players: ClientPlayerInfo[] = Array.from(lobby.players.values()).map((p) => ({
-      userId: p.userId,
-      userName: p.userName,
-      avatarUrl: p.avatarUrl,
-      isConnected: p.isConnected,
-      isReady: p.isReady,
-      isAway: p.isAway,
-      score: p.score,
-      roundScore: p.roundScore,
-      isHost: p.userId === lobby.hostUserId,
-    }));
-
-    const spectators: ClientSpectatorInfo[] = Array.from(lobby.spectators.values()).map((s) => ({
-      userId: s.userId,
-      userName: s.userName,
-      avatarUrl: s.avatarUrl,
-      isConnected: s.isConnected,
-    }));
-
+  buildClientState(
+    lobby: RMHboxLobby,
+    userId: string,
+    shared: SharedClientParts = this.buildSharedClientParts(lobby),
+  ): ClientLobbyState {
     const myRole: 'player' | 'spectator' = lobby.players.has(userId) ? 'player' : 'spectator';
 
     let currentGame: ClientGameInfo | null = null;
@@ -1366,9 +1361,14 @@ export class LobbyManager {
 
       // Handler may be null during pre-game phases (INSTRUCTIONS, PRELOADING, COUNTDOWN)
       if (handler) {
-        gameState = myRole === 'player'
-          ? handler.getStateForPlayer(userId)
-          : handler.getStateForSpectator();
+        if (myRole === 'player') {
+          gameState = handler.getStateForPlayer(userId);
+        } else {
+          // perf: the spectator view does not depend on who is asking, so the
+          // heartbeat computes it once per tick and shares it across spectators.
+          if (!shared.spectatorGame) shared.spectatorGame = { state: handler.getStateForSpectator() };
+          gameState = shared.spectatorGame.state;
+        }
       }
 
       // Determine client-visible phase from lobby state
@@ -1389,7 +1389,49 @@ export class LobbyManager {
       };
     }
 
-    const seq = this.seqCounters.get(lobby.id) ?? 0;
+    return {
+      lobbyId: lobby.id,
+      hostUserId: lobby.hostUserId,
+      state: lobby.state,
+      settings: { ...lobby.settings },
+      players: shared.players,
+      spectators: shared.spectators,
+      currentGame,
+      selectedGame: lobby.selectedGame ?? null,
+      roundNumber: lobby.roundNumber,
+      chat: [...lobby.chat],
+      myRole,
+      myUserId: userId,
+      seq: shared.seq,
+      matchHistory: shared.matchHistory,
+    };
+  }
+
+  /**
+   * perf: the recipient-independent parts of a ClientLobbyState (roster,
+   * spectators, match history, seq). The 10s heartbeat builds this once per
+   * lobby and reuses it for every player and spectator instead of rebuilding
+   * it per recipient. Treat the result as read-only.
+   */
+  buildSharedClientParts(lobby: RMHboxLobby): SharedClientParts {
+    const players: ClientPlayerInfo[] = Array.from(lobby.players.values()).map((p) => ({
+      userId: p.userId,
+      userName: p.userName,
+      avatarUrl: p.avatarUrl,
+      isConnected: p.isConnected,
+      isReady: p.isReady,
+      isAway: p.isAway,
+      score: p.score,
+      roundScore: p.roundScore,
+      isHost: p.userId === lobby.hostUserId,
+    }));
+
+    const spectators: ClientSpectatorInfo[] = Array.from(lobby.spectators.values()).map((s) => ({
+      userId: s.userId,
+      userName: s.userName,
+      avatarUrl: s.avatarUrl,
+      isConnected: s.isConnected,
+    }));
 
     const matchHistory: MatchSummary[] = lobby.matchHistory.map((m) => ({
       matchId: `${m.minigameId}-${m.roundNumber}`,
@@ -1402,22 +1444,7 @@ export class LobbyManager {
       playedAt: m.startedAt,
     }));
 
-    return {
-      lobbyId: lobby.id,
-      hostUserId: lobby.hostUserId,
-      state: lobby.state,
-      settings: { ...lobby.settings },
-      players,
-      spectators,
-      currentGame,
-      selectedGame: lobby.selectedGame ?? null,
-      roundNumber: lobby.roundNumber,
-      chat: [...lobby.chat],
-      myRole,
-      myUserId: userId,
-      seq,
-      matchHistory,
-    };
+    return { players, spectators, matchHistory, seq: this.seqCounters.get(lobby.id) ?? 0 };
   }
 
   // ─── Garbage collector (§11) ───────────────────────────────

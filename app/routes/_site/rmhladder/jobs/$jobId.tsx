@@ -7,6 +7,7 @@ import {
 } from '@/lib/rmhladder/server-fn-schemas.server';
 import { JobDetail } from '@/components/rmhladder/JobDetail';
 import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { prisma } from '@/lib/prisma.server';
 import { getJobDetail, type QueriesPrisma } from '@/lib/rmhladder/server/queries';
 import { setJobAction, type ActionsPrisma } from '@/lib/rmhladder/server/actions';
@@ -20,7 +21,7 @@ const actionsPrisma = prisma as unknown as ActionsPrisma;
 const fetchJob = createServerFn({ method: 'GET' })
   .validator((input: unknown) => jobIdSchema.parse(input))
   .handler(async ({ data }) => {
-    const session = await auth.api.getSession({ headers: getRequest().headers }).catch(() => null);
+    const session = await getRequestSession();
     const job = await getJobDetail(queriesPrisma, session?.user?.id ?? null, data.jobId);
     if (!job) throw notFound();
     return { job, isAuthenticated: Boolean(session?.user) };
