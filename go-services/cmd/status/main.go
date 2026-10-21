@@ -112,9 +112,28 @@ func main() {
 		ProbeTimeout:  probeTimeout,
 		BucketDur:     bucketDur,
 		MaxBuckets:    maxBuckets,
-		HistoryPath:   status.ResolveHistoryPath(config.GetString("STATUS_DATA_DIR", "")),
-		Logger:        logger,
-		SLO:           sloCfg,
+		MaxDays:       config.GetInt("STATUS_MAX_DAYS", 90),
+		RecentSamples: config.GetInt("STATUS_RECENT_SAMPLES", 240),
+		// A failure streak must reach this many consecutive checks (30s at the
+		// default cadence) before it is an incident; anything shorter is
+		// counted as a blip on the service instead of paging a timeline.
+		IncidentOpenAfter:  config.GetInt("STATUS_INCIDENT_OPEN_AFTER", 2),
+		IncidentCloseAfter: config.GetInt("STATUS_INCIDENT_CLOSE_AFTER", 2),
+		HistoryPath:        status.ResolveHistoryPath(config.GetString("STATUS_DATA_DIR", "")),
+		Logger:             logger,
+		SLO:                sloCfg,
+		PageURL:            config.GetString("STATUS_PAGE_URL", "https://status.rmhstudios.com"),
+		PageName:           config.GetString("STATUS_PAGE_NAME", "RMH Studios"),
+		// Empty disables the write API (incidents, maintenance, announcements)
+		// entirely — its routes then 404.
+		AdminToken: config.GetString("STATUS_ADMIN_TOKEN", ""),
+		// Discord / Slack incoming-webhook URLs get native messages; anything
+		// else gets JSON signed with STATUS_WEBHOOK_SECRET.
+		WebhookURLs:       config.GetCSV("STATUS_WEBHOOK_URLS"),
+		WebhookSecret:     config.GetString("STATUS_WEBHOOK_SECRET", ""),
+		Announcement:      config.GetString("STATUS_ANNOUNCEMENT", ""),
+		AnnouncementLevel: config.GetString("STATUS_ANNOUNCEMENT_LEVEL", "info"),
+		AnnouncementLink:  config.GetString("STATUS_ANNOUNCEMENT_LINK", ""),
 	}
 
 	svc := status.New(cfg)
@@ -261,11 +280,17 @@ func buildTargets(u probeURLs, probeTimeout time.Duration) []status.Target {
 			DegradedAfter: apiBudget,
 		},
 		status.Target{
-			Name:          "Sitemap",
-			Description:   "Generated sitemap.xml — the discovery surface search engines read",
-			Group:         "Content",
-			URL:           u.Sitemap,
-			Expect:        "<urlset",
+			Name:        "Sitemap",
+			Description: "Generated sitemap.xml — the discovery surface search engines read",
+			Group:       "Content",
+			URL:         u.Sitemap,
+			// /sitemap.xml is a sitemap INDEX (app/routes/sitemap[.]xml.ts) — it
+			// outgrew one <urlset> and now points at /sitemaps/{section}.xml. The
+			// probe asserted `<urlset` long after that change, so every answer
+			// failed the content check: a permanently degraded tile and 0.00%
+			// uptime for a sitemap that was being served correctly the whole
+			// time. Either root element is a working sitemap.
+			ExpectAny:     []string{"<sitemapindex", "<urlset"},
 			DegradedAfter: apiBudget,
 		},
 
