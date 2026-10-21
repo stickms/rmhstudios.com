@@ -1,14 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { getObject } from "@/lib/storage/s3.server";
 import { feedImageKey, isSafeFilename, contentTypeForFilename } from "@/lib/storage/keys";
-import {
-  optimizeImage,
-  parseFormat,
-  negotiateFormat,
-  getCachedVariant,
-  setCachedVariant,
-  variantCacheKey,
-} from "@/lib/image-optimize";
+import { parseFormat, negotiateFormat, variantCacheKey } from "@/lib/image-optimize";
+import { snapDimension, snapQuality } from "@/lib/images/variant-params";
+import { busyResponse, CpuGateFullError, getOrEncodeVariant } from "@/lib/images/variants.server";
 
 export const Route = createFileRoute('/api/feed/image/$filename')({
   server: {
@@ -33,52 +28,47 @@ export const Route = createFileRoute('/api/feed/image/$filename')({
           const fParam = url.searchParams.get('f');
 
           if (wParam || hParam || qParam || fParam) {
-            const width = wParam ? Math.min(parseInt(wParam, 10), 2048) : undefined;
-            const height = hParam ? Math.min(parseInt(hParam, 10), 2048) : undefined;
-            const quality = qParam ? Math.min(Math.max(parseInt(qParam, 10), 1), 100) : 80;
+            // Snapped to the shared ladder, not used as sent: every distinct
+            // (w, h, q) is its own cache entry and its own encode, and this
+            // route is unauthenticated and unthrottled. See variant-params.ts.
+            const width = snapDimension(wParam);
+            const height = snapDimension(hParam);
+            const quality = snapQuality(qParam);
             const format = parseFormat(fParam) ?? negotiateFormat(request.headers.get('accept'));
 
-            // Checked BEFORE the storage read: a hit skips both the R2 GET and
-            // the sharp encode. Feed image filenames are content-addressed and
-            // the response is `immutable`, so a cached variant can't go stale.
+            // A cache hit skips both the object-store GET and the sharp encode;
+            // concurrent misses for one key share a single GET + encode. Feed
+            // image filenames are content-addressed and the response is
+            // `immutable`, so a cached variant can't go stale.
             const key = feedImageKey(filename);
-            const cacheKey = variantCacheKey('feed', key, { width, height, quality, format });
-            const cached = getCachedVariant(cacheKey);
-            if (cached) {
-              return new Response(cached.buffer as unknown as BodyInit, {
-                headers: {
-                  "Content-Type": cached.contentType,
-                  "Cache-Control": "public, max-age=31536000, immutable",
-                  "Access-Control-Allow-Origin": "*",
-                  // Required: the format above was negotiated from Accept, so a
-                  // shared cache must key on it or it serves AVIF to Safari 15.
-                  "Vary": "Accept",
+            let variant;
+            try {
+              variant = await getOrEncodeVariant({
+                cacheKey: variantCacheKey('feed', key, { width, height, quality, format }),
+                width,
+                height,
+                quality,
+                format,
+                load: async () => {
+                  const object = await getObject(key);
+                  return object ? { bytes: object.body } : null;
                 },
               });
+            } catch (e) {
+              if (e instanceof CpuGateFullError) return busyResponse();
+              throw e;
             }
-
-            const object = await getObject(key);
-            if (!object) {
+            if (!variant || !variant.ok) {
               return new Response("Not Found", { status: 404 });
             }
 
-            const result = await optimizeImage(object.body, {
-              width,
-              height,
-              quality,
-              format,
-            });
-
-            setCachedVariant(cacheKey, {
-              buffer: result.buffer,
-              contentType: result.contentType,
-            });
-
-            return new Response(result.buffer as unknown as BodyInit, {
+            return new Response(variant.image.buffer as unknown as BodyInit, {
               headers: {
-                "Content-Type": result.contentType,
+                "Content-Type": variant.image.contentType,
                 "Cache-Control": "public, max-age=31536000, immutable",
                 "Access-Control-Allow-Origin": "*",
+                // Required: the format above was negotiated from Accept, so a
+                // shared cache must key on it or it serves AVIF to Safari 15.
                 "Vary": "Accept",
               },
             });

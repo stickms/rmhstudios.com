@@ -12,14 +12,15 @@
 
 import React from 'react';
 import satori from 'satori';
-import { Resvg } from '@resvg/resvg-js';
 import {
   DIM,
   INK,
   MUTED,
   SCALE,
+  createCardCache,
   fetchAvatarDataUri,
   loadFonts,
+  rasterizeSvg,
   satoriFonts,
   stripEmoji,
   truncate as sharedTruncate,
@@ -37,9 +38,7 @@ import { qrSvgDataUri } from '@/lib/profile/qr';
 
 const truncate = (s: string, n: number) => sharedTruncate(stripEmoji(s), n);
 
-const cache = new Map<string, { png: Buffer; ts: number }>();
-const TTL = 10 * 60 * 1000;
-const MAX = 60;
+const cache = createCardCache({ max: 60, ttlMs: 10 * 60 * 1000 });
 
 const PANE_PAD = 26 * SCALE;
 const AVATAR = 64 * SCALE;
@@ -56,11 +55,12 @@ export interface ProfileCardData {
   url: string;
 }
 
-export async function renderProfileCard(data: ProfileCardData): Promise<Buffer> {
+export function renderProfileCard(data: ProfileCardData): Promise<Buffer> {
   const key = `${data.id}|${data.url}|${data.name}|${data.bio ?? ''}|${data.image ?? ''}`;
-  const hit = cache.get(key);
-  if (hit && Date.now() - hit.ts < TTL) return hit.png;
+  return cache.getOrRender(key, () => drawProfileCard(data));
+}
 
+async function drawProfileCard(data: ProfileCardData): Promise<Buffer> {
   await loadFonts();
   const avatar = await fetchAvatarDataUri(data.image);
   const name = truncate(data.name || data.handle || 'RMH Studios', 28);
@@ -163,14 +163,5 @@ export async function renderProfileCard(data: ProfileCardData): Promise<Buffer> 
   });
 
   const svg = await satori(element, { ...LANDSCAPE, fonts: satoriFonts() });
-  const png = Buffer.from(
-    new Resvg(svg, { fitTo: { mode: 'width', value: LANDSCAPE.width } }).render().asPng(),
-  );
-
-  if (cache.size >= MAX) {
-    const oldest = cache.keys().next().value;
-    if (oldest !== undefined) cache.delete(oldest);
-  }
-  cache.set(key, { png, ts: Date.now() });
-  return png;
+  return rasterizeSvg(svg, LANDSCAPE.width);
 }
