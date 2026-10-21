@@ -2540,11 +2540,17 @@ html.ios-webkit .glass-liquid::after {
 /* Respect the OS "reduce motion" preference site-wide: neutralize enter
    animations, transitions and smooth scrolling that can trigger vestibular
    discomfort, while preserving essential loading feedback (spinners, skeleton
-   pulse). Games render motion via canvas/WebGL, so gameplay is unaffected. */
+   pulse). Games render motion via canvas/WebGL, so gameplay is unaffected.
+
+   The eversion is exempt (owner, 2026-10-21: "it should always play by
+   default"): the controls' state layer (§7.3: `[data-evert]`, `.evert-ghost`),
+   the globe that pops up for a navigation (`.evert-popup`), the hub that hands
+   its globe over and the effect's own overlay. Only the site's own Reduce
+   motion switch (`html.reduce-motion`, below) stands those down. */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  :not(:is([data-evert], .evert-ghost, .evert-popup, .evert-popup *, .eversion-overlay, .eversion-overlay *, .radial-hub, .radial-hub *)),
+  :not(:is([data-evert], .evert-ghost, .evert-popup, .evert-popup *, .eversion-overlay, .eversion-overlay *, .radial-hub, .radial-hub *))::before,
+  :not(:is([data-evert], .evert-ghost, .evert-popup, .evert-popup *, .eversion-overlay, .eversion-overlay *, .radial-hub, .radial-hub *))::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

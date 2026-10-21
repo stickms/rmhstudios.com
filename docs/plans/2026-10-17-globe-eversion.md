@@ -253,6 +253,37 @@ is replaced by `AFTER_STABLE_FRAMES`, `AFTER_QUIET_MS`, `AFTER_QUIET_CAP_MS`, `A
   `--eversion-ease-wrap`, the radius and centre channels' own curve (a quintic from rest to rest over WRAP:
   smootherstep, as `linear()` stops). Measured: the attribute lands 2 ms after `cover`, the globe still at scale 1.
 
+### Amendment 2026-10-21 (e) - every page transition runs it, and it plays by default
+
+> Owner, verbatim: "ensure the eversion ALWAYS PLAYS ON EVERY BUTTON, INPUT BOX, ETC, AND ALSO ON EVERY NAVIGATION
+> WITH THE GLOBE AND EVEN ON NON GLOBE EVERSION (HAVE THE GLOBE POP UP SMOOTHLY AND SEAMLESSLY) NOT A SINGLE PAGE
+> TRANSITION SHOULD BE WITHOUT EVERSION", and "i think the 'reduce motion' is incorrect or something cause it should
+> always play by default". Where §1.1, §9.2 or the 2026-10-18 "Always evert globe" amendment say otherwise, **this
+> amendment wins.**
+
+- **Every page transition.** `components/radial/eversion/eversion-nav.ts` installs a blocker on the router's history:
+  every `<Link>`, `navigate()` and back/forward that changes the pathname is held there and handed to the effect,
+  which replays it exactly as asked (`RunOptions.navigate`: the same push with its history state, or the same
+  traversal, `traverses` marking its own `popstate` as not the visitor's) once the frozen page is up. A plain
+  `<a href>` to one of the site's pages, which would have been a full page load, goes through the router instead.
+  Replaces, search- or hash-only changes and anything asked for while a run is on screen pass untouched.
+- **A globe pops up.** A transition that does not start on the hub's globe gets one (`popup.ts`): it blooms out of
+  the press point (or the focused control, or the centre for back/forward) the moment the navigation is asked for,
+  turns while the destination renders, and is handed over exactly as the hub's globe is, swelling and dissolving
+  into the sphere from its first frame. The sphere starts at its pose; the run waits for the bloom to land
+  (`RunOptions.ready`, at most `READY_WAIT_MS`) before it commits. With the hub open, the navigation goes to the
+  hub's globe instead.
+- **The controller is the page's, not the hub's.** The warm-up, the bridge and the controller moved to the page
+  root (`EversionRoot`, `eversion-root.ts`): a transition into a full-screen route unmounts the shell, and the hub
+  with it, mid-run. Those runs draw at the top of `<body>` (`StartOptions.layer: 'body'`); hub runs inside the
+  shell keep their layers under the hub's globe. `eversion.css` is loaded by the root. The ahead-of-time BEFORE
+  capture runs only under the shell (a game's page is cloned on demand instead).
+- **It plays by default.** Eligibility reads the site's own Reduce motion switch (Settings, `html.reduce-motion`) and
+  no longer the OS `prefers-reduced-motion` query, which had turned the effect off, and greyed out its Settings row,
+  for every visitor whose system trims animations. The OS-wide CSS reset spares the eversion's layers. Every run
+  takes the `ALWAYS_EVERT_*` waits, so the "Always evert globe" switch is gone from Settings (the stored field is
+  kept, and ignored).
+
 ## 0. The effect in one paragraph
 
 You confirm a destination on the liquid globe. The globe **swells** to fill most

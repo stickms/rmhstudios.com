@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from 'react';
 import { useRouter } from '@tanstack/react-router';
-import { EversionOverlay } from './EversionOverlay';
 import {
   createEversionController,
   type EversionControllerHandle,
@@ -27,11 +26,11 @@ import { whenQuiet } from '../quiet';
  * the hub renders through `React.lazy` keeps the hub's own static imports down to
  * the flag and nothing else.
  *
- * It is mounted only when the effect is wanted (flag on, after the same idle
- * window that warms the runtime), renders nothing but the overlay, and hands the
- * controller UP through `onController` — the hub's `onNavigate` and the Settings
- * preview event call it from outside React. Until it has done so the hub has no
- * controller, which the hub reads as "ineligible": today's navigation, unchanged.
+ * It is mounted by `EversionRoot` (amended 2026-10-21: at the root of every page,
+ * no longer inside the hub) once the effect is wanted, renders nothing, and hands
+ * the controller UP through `onController` into `eversion-root.ts`, where the hub,
+ * the navigation interceptor and the Settings preview reach it. Until it has done
+ * so there is no controller, and an action waits for one (bounded).
  *
  * ## What it does while mounted
  *
@@ -49,6 +48,12 @@ export interface EversionBridgeProps {
   open: boolean;
   /** The hub's open-morph length, so the capture never lands inside it. */
   motionMs: number;
+  /**
+   * Take the BEFORE capture AHEAD of the next navigation while the page is still (`useBeforeCapture`). Only under
+   * the shell: a full-screen game's page is never still in the way that matters, and a capture is a main-thread
+   * clone of it every few seconds. Off it, a navigation captures on demand, inside its own budget.
+   */
+  ahead: boolean;
   /** The controller once built; `null` when the bridge unmounts. */
   onController: (controller: EversionControllerHandle | null) => void;
 }
@@ -65,9 +70,14 @@ const QUIET_MS = 800;
  * `displayName` is also this module's build fingerprint: `check-bundle-budget`
  * looks for it in the shell's static closure on builds without sourcemaps.
  */
-export default function EversionBridge({ open, motionMs, onController }: EversionBridgeProps) {
+export default function EversionBridge({
+  open,
+  motionMs,
+  ahead,
+  onController,
+}: EversionBridgeProps) {
   const router = useRouter();
-  const beforeCapture = useBeforeCapture({ open, motionMs });
+  const beforeCapture = useBeforeCapture({ open, motionMs, ahead });
   const controllerRef = useRef<EversionControllerHandle | null>(null);
   const openRef = useRef(open);
   openRef.current = open;
@@ -141,7 +151,9 @@ export default function EversionBridge({ open, motionMs, onController }: Eversio
     );
   }, [open]);
 
-  return <EversionOverlay />;
+  // The run's layers are not drawn here: inside the hub (`EversionOverlay`, which the hub renders, so they share
+  // its stacking context under its globe) or at the top of <body> (the controller's DOM port), per run.
+  return null;
 }
 
 EversionBridge.displayName = 'rmh-eversion-bridge';

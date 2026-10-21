@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { useRouterState } from '@tanstack/react-router';
-import { prefersReducedMotion } from '@/hooks/useReducedMotion';
 import { BeforeCaptureScheduler } from '@/lib/eversion/before-capture';
 import { BEFORE_STALE_MS } from '@/lib/eversion/constants';
 import { createCapture } from '@/lib/eversion/capture';
@@ -12,6 +11,7 @@ import type { EligibilityInputs } from '@/lib/eversion/eligibility';
 import { isEversionEnabled } from '@/lib/eversion/flags';
 import { detectHostMode } from '@/lib/eversion/gl/host';
 import { isEversionReady } from '@/lib/eversion/prefetch';
+import { useThemeStore } from '@/stores/themeStore';
 import type { CaptureApi, FallbackReason } from '@/lib/eversion/types';
 import { detectTier } from './detect-tier';
 import { overlayStore } from './overlay-store';
@@ -31,10 +31,20 @@ const AHEAD_MIN_GAP_MS = 5000;
  * reader that throws (T25's detection before it lands, a sandboxed frame) is an
  * UNKNOWN, and unknown is ineligible (see `eligibility.ts`).
  *
- * Reduced motion uses the non-hook reader so this can be called from event
- * handlers and timers; it consults BOTH sources `useReducedMotion` does (the OS
- * media query and the account toggle in the theme store).
+ * Reduced motion is the site's own switch (Settings › Appearance › Reduce motion, `html.reduce-motion`) and
+ * nothing else (owner, 2026-10-21: "it should always play by default"). The OS `prefers-reduced-motion` query
+ * used to count too, which turned the effect off for every visitor whose system has animations trimmed (Windows'
+ * "Animation effects" off, iOS Reduce Motion, many corporate images) without their ever choosing it here.
  */
+/** The site's Reduce motion switch (never the OS query; see `readEligibilityInputs`). */
+export function siteReducedMotion(): boolean {
+  try {
+    return useThemeStore.getState().reduceMotion;
+  } catch {
+    return false;
+  }
+}
+
 export function readEligibilityInputs(): EligibilityInputs {
   const guard = <T>(read: () => T, unknown: T): T => {
     try {
@@ -45,7 +55,7 @@ export function readEligibilityInputs(): EligibilityInputs {
   };
   return {
     flagEnabled: isEversionEnabled(),
-    reducedMotion: prefersReducedMotion(),
+    reducedMotion: siteReducedMotion(),
     // Any mode ('worker' or 'main') means WebGL2 is there; the host throws when
     // it cannot say.
     webgl2: guard<boolean | null>(() => detectHostMode() != null, null),
@@ -91,9 +101,12 @@ export interface UseBeforeCapture {
 export function useBeforeCapture({
   open,
   motionMs,
+  ahead = true,
 }: {
   open: boolean;
   motionMs: number;
+  /** Take the capture ahead of the next navigation while the page is still (see below). */
+  ahead?: boolean;
 }): UseBeforeCapture {
   const schedulerRef = useRef<BeforeCaptureScheduler | null>(null);
 
@@ -145,6 +158,9 @@ export function useBeforeCapture({
     const scheduler = schedulerRef.current;
     if (!scheduler || open || !isEversionEnabled()) return;
     scheduler.invalidate();
+    // Off the shell nothing is taken ahead, but the page's last picture is still dropped above: it is the page
+    // that was left.
+    if (!ahead) return;
     let lastAt = -Infinity;
     let cancel: () => void = () => {};
     let gap: ReturnType<typeof setTimeout> | null = null;
@@ -194,7 +210,7 @@ export function useBeforeCapture({
       theme.disconnect();
       offOverlay();
     };
-  }, [open, pathname]);
+  }, [open, ahead, pathname]);
 
   const awaitBefore = useCallback(
     (graceMs: number) => schedulerRef.current?.awaitBefore(graceMs) ?? Promise.resolve(null),

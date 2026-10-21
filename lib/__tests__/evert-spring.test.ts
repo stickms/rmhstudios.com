@@ -15,7 +15,13 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { spring, springLinearEasing, springResponse, springSettleTime, springStep } from '@/lib/fluid';
+import {
+  spring,
+  springLinearEasing,
+  springResponse,
+  springSettleTime,
+  springStep,
+} from '@/lib/fluid';
 
 const ROOT = join(__dirname, '..', '..');
 const CSS = readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8');
@@ -88,7 +94,9 @@ describe('§7.3 — the layer costs what the design language allows', () => {
         expect(allowed.has(prop), `${decl.trim()} animates ${prop}`).toBe(true);
       }
     }
-    expect(SECTION).not.toMatch(/transition[^;]*\b(box-shadow|width|height|filter|background-position|all)\b/);
+    expect(SECTION).not.toMatch(
+      /transition[^;]*\b(box-shadow|width|height|filter|background-position|all)\b/,
+    );
   });
 
   it('the layers on controls that can navigate run on the compositor, not the main thread', () => {
@@ -121,10 +129,23 @@ describe('§7.3 — the layer costs what the design language allows', () => {
     expect(SECTION).toMatch(/@media \(forced-colors: active\)\s*\{[^}]*\[data-evert\]::before/);
   });
 
-  it('the site-wide reduced-motion reset still reaches the layer’s pseudo-elements', () => {
+  it('only the site’s own Reduce motion switch stands the layer down; the OS preference does not', () => {
+    // Owner, 2026-10-21: "it should always play by default". The account switch's reset reaches every pseudo-element…
     expect(CSS).toMatch(
-      /prefers-reduced-motion: reduce\)\s*\{\s*\*,\s*\*::before,\s*\*::after\s*\{[^}]*transition-duration: 0\.01ms !important/,
+      /html\.reduce-motion \*,\s*html\.reduce-motion \*::before,\s*html\.reduce-motion \*::after\s*\{[^}]*transition-duration: 0\.01ms !important/,
     );
+    // …and the OS-wide reset spares the eversion's layers, the pop-up globe, the hub and the run's overlay.
+    const os = CSS.slice(CSS.indexOf('@media (prefers-reduced-motion: reduce) {\n  :not('));
+    const head = os.slice(0, os.indexOf('{', os.indexOf(')::after')));
+    for (const spared of [
+      '[data-evert]',
+      '.evert-ghost',
+      '.evert-popup',
+      '.eversion-overlay',
+      '.radial-hub',
+    ]) {
+      expect(head, spared).toContain(spared);
+    }
   });
 });
 

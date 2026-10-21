@@ -5,10 +5,9 @@
    Mobile-first: base rules target phones; @media (min-width) layers on space.
    ========================================================================== */
 
-/* The Globe Eversion's page-side CSS (overlay, cover, settle). Imported here
-   because this file is the one `SiteShell` loads and the overlay lives inside the
-   shell's hub; `@import` must precede every rule, so it sits at the top. */
-@import './eversion/eversion.css';
+/* The Globe Eversion's page-side CSS (overlay, cover, settle, the pop-up globe)
+   is imported by `eversion/EversionRoot.tsx`, which every page mounts (amended
+   2026-10-21): a transition that starts or ends off the shell needs it too. */
 
 .radial-shell {
   position: relative;

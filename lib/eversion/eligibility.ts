@@ -5,8 +5,7 @@
  * ## Why this is a plain module
  *
  * The four things that make a visitor ineligible live in four different places —
- * the rollout flag, two reduced-motion sources (OS media query and the account
- * toggle), the WebGL2 detection that T25 caches, and whether the eversion chunk
+ * the rollout flag, the site's Reduce motion switch, the WebGL2 detection that T25 caches, and whether the eversion chunk
  * has finished loading. Reading them needs a `window`, a Zustand store and a
  * lazily-loaded host. Deciding what they MEAN needs none of that, and it is the
  * part with the order-of-precedence rules worth testing: so the readers are
@@ -43,7 +42,10 @@ import type { FallbackReason } from './types';
 export interface EligibilityInputs {
   /** `isEversionEnabled()`. */
   flagEnabled: boolean;
-  /** OS `prefers-reduced-motion` OR the account toggle. */
+  /**
+   * The site's Reduce motion switch (Settings › Appearance). NOT the OS `prefers-reduced-motion` query (amended
+   * 2026-10-21): the effect plays by default, and is turned off only where the visitor turned it off here.
+   */
   reducedMotion: boolean;
   /** Cached WebGL2 detection; `null` when it could not be determined. */
   webgl2: boolean | null;
