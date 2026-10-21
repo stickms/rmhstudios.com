@@ -1,13 +1,12 @@
 import { createFileRoute, stripSearchParams } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { ExploreColumn } from '@/components/feed/ExploreColumn';
 import { SurpriseButton } from '@/components/discovery/SurpriseButton';
 import { SavedSearches } from '@/components/search/SavedSearches';
 import { buildCanonical, buildMeta } from '@/lib/seo';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { listExplore } from '@/lib/explore.server';
 import { getSidebarData } from '@/lib/sidebar-data';
 import { isSearchTab, type SearchTab } from '@/lib/search/types';
@@ -28,8 +27,7 @@ import { isSearchTab, type SearchTab } from '@/lib/search/types';
 // leaderboard stays client-fetched — it is below the fold and shouldn't hold up
 // a blocking loader.
 const fetchExplore = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+  const session = await getRequestSession();
   const [discovery, sidebar] = await Promise.all([
     listExplore(session?.user?.id ?? null),
     getSidebarData(),

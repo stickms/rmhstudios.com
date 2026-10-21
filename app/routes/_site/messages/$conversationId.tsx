@@ -5,10 +5,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { MessagesRightSidebar } from '@/components/feed/MessagesRightSidebar';
 import { ConversationView } from '@/components/feed/ConversationView';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { getConversationOtherUser, type ConversationOtherUser } from '@/lib/conversation.server';
 
 // Prefetch just the other participant (name/avatar) server-side so the header
@@ -16,8 +15,7 @@ import { getConversationOtherUser, type ConversationOtherUser } from '@/lib/conv
 const fetchConversation = createServerFn({ method: 'GET' })
   .validator((conversationId: string) => conversationId)
   .handler(async ({ data: conversationId }): Promise<{ otherUser: ConversationOtherUser | null }> => {
-    const request = getRequest();
-    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    const session = await getRequestSession();
     if (!session) return { otherUser: null };
     return { otherUser: await getConversationOtherUser(conversationId, session.user.id) };
   });
