@@ -17,5 +17,7 @@
   "quiet-end": "Quiet hours end",
   "quiet-hours": "Quiet hours",
   "quiet-start": "Quiet hours start",
+  "tab-badge": "Recuento de no leídos en la pestaña del navegador",
+  "tab-badge-desc": "Muestra el número de mensajes y notificaciones no leídos en el título y el icono de la pestaña en este dispositivo.",
   "to": "To"
 }

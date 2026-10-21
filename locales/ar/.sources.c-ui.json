@@ -1,3 +1,23 @@
 {
-  "close": "Close"
+  "cancel-scheduling": "Cancel scheduling",
+  "clear-selection": "Clear selection",
+  "close": "Close",
+  "doc-body-label": "Page content",
+  "doc-body-placeholder": "Write in Markdown…",
+  "doc-cancel": "Cancel",
+  "doc-preview": "Preview",
+  "doc-save": "Save",
+  "doc-summary-label": "Edit summary",
+  "doc-summary-placeholder": "What changed? (shown in the history)",
+  "doc-title-label": "Page title",
+  "doc-title-placeholder": "Page title",
+  "doc-write": "Write",
+  "schedule-button": "Schedule",
+  "schedule-past-error": "Pick a time in the future.",
+  "schedule-publish-at": "Publish at",
+  "schedule-timezone": "Times in {{zone}}",
+  "select-all": "Select all",
+  "selection-actions": "Selection actions",
+  "selection-count_one": "{{count}} selected",
+  "selection-count_other": "{{count}} selected"
 }
