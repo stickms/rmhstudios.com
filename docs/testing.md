@@ -445,11 +445,12 @@ a target to farm.
 
 ## CI
 
-Ten workflows live in `.github/workflows/`. The ones that touch tests/quality:
+Ten workflows live in `.github/workflows/`. The ones that touch tests/quality (every web job sets up through `.github/actions/setup-deps`, which restores `node_modules` from a cache keyed on the lockfile + Prisma schema and only installs on a miss):
 
 | Workflow                      | Runs                                                                                    | Gate?                                                                                    |
 | ----------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `web-ci.yml` (`check` job)    | `tsc --noEmit` → `eslint` → docs freshness → `pnpm test`                                | **all block**, tests included (as of 2026-08-08)                                         |
+| `web-ci.yml` (`typecheck`)    | `tsc --noEmit` → `eslint` → docs freshness                                              | **all block**                                                                            |
+| `web-ci.yml` (`test (1/2)`, `test (2/2)`) | `pnpm test --shard=N/2` — the unit suite split across two parallel jobs     | **blocks**, tests included (as of 2026-08-08)                                            |
 | `web-ci.yml` (`build` job)    | `build:frontend:sourcemap` → bundle budget → entry composition                          | build + both size gates block                                                            |
 | `web-ci.yml` (`audit` job)    | `pnpm audit --prod --audit-level=high`                                                  | blocks on high-severity prod advisories                                                  |
 | `web-ci.yml` (`integration`)  | build → Postgres service → migrate → boot `.output/server` → `pnpm test:integration`    | **blocks**; see §8                                                                       |

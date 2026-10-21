@@ -33,6 +33,22 @@ on:
       - 'deploy/**'
       - 'docs/**'
       - '**/*.md'
+      # Nothing web-ci runs reads these. Other workflows' files are linted by
+      # actionlint locally and exercised by their own triggers; web-ci.yml itself
+      # and .github/actions/** (its setup) are deliberately NOT listed.
+      - '.claude/**'
+      - '.vscode/**'
+      - '.github/dependabot.yml'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/workflows/build-vibe-packages.yml'
+      - '.github/workflows/compose-validate.yml'
+      - '.github/workflows/epic-tests.yml'
+      - '.github/workflows/go-microservices.yml'
+      - '.github/workflows/i18n-translate.yml'
+      - '.github/workflows/prisma-migrate-status.yml'
+      - '.github/workflows/prisma-validate.yml'
+      - '.github/workflows/senior-review.yml'
+      - '.github/workflows/synthetic-perf.yml'
   # NOTE: intentionally NO `push:` trigger. On a push to main, deploy.yml already
   # runs the SAME typecheck/lint/test as its in-workflow `ci` job AND builds the
   # real Docker image (which catches any build-time breakage) — so a push-run of
@@ -71,8 +87,8 @@ permissions:
   contents: read
 
 jobs:
-  # Typecheck, alone. tsc exceeds Node's default ~4 GB heap, so the larger heap
-  # is set job-wide.
+  # Typecheck + lint + docs freshness. tsc exceeds Node's default ~4 GB heap, so
+  # the larger heap is set job-wide.
   typecheck:
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -80,19 +96,8 @@ jobs:
       NODE_OPTIONS: --max-old-space-size=8192
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-        with:
-          version: 10
-      # Node 24.21.0 to match the production Dockerfile. Node < 21
-      # lacks the global `navigator`, which build-vibe-packages needs to import
-      # browser-only libs (pixi.js, p5) for their export names.
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 24.21.0
-          cache: pnpm
-      # postinstall runs `prisma generate` (schema-only, no DB needed).
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      # pnpm + Node + node_modules (cached by lockfile + schema) — see the action.
+      - uses: ./.github/actions/setup-deps
       # Persist tsc's incremental program graph (.tsbuildinfo) across runs so warm
       # runs only re-check files that actually changed. Keyed per-commit with a
       # prefix restore-key, so each run restores the most recent cache and saves a
@@ -127,26 +132,8 @@ jobs:
         run: |
           mkdir -p .cache/tsc
           pnpm run typecheck
-
-  # Lint + generated-docs freshness + the unit suite. Split from `typecheck`
-  # (2026-08-08) so the two run concurrently instead of serially; together they
-  # were the PR gate's long pole. vitest also wants the larger heap.
-  test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    env:
-      NODE_OPTIONS: --max-old-space-size=8192
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-        with:
-          version: 10
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 24.21.0
-          cache: pnpm
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      # Lint + docs freshness live here (moved from `test` when the unit suite was
+      # sharded): this job's own work is seconds, so they ride along for free.
       # eslint's result cache — its own entry, see the note in `typecheck`.
       # `--cache-strategy content` means a restored cache invalidates by file
       # content, so it can only make the run faster, never wrong.
@@ -170,6 +157,27 @@ jobs:
           pnpm run docs:api:check
           pnpm run docs:site:check
           pnpm run sdk:check
+
+  # The unit suite, SHARDED across two parallel jobs (vitest --shard) — it was
+  # the single biggest step on the PR path (~55 s), and each shard runs about
+  # half the files. Lint and docs freshness moved to `typecheck` (2026-10-21),
+  # whose own work is seconds, so the shards run nothing but tests. vitest
+  # also wants the larger heap. Required-check names are `test (1/2)` and
+  # `test (2/2)`.
+  test:
+    name: test (${{ matrix.shard }}/2)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # pnpm + Node + node_modules (cached by lockfile + schema) — see the action.
+      - uses: ./.github/actions/setup-deps
       # A HARD GATE again, as of the 2026-08-08 testing audit.
       #
       # This step was `continue-on-error: true` because `i18n-catalogs` was
@@ -181,7 +189,7 @@ jobs:
       # a suite nobody has to keep green — which is how the permanently-red
       # test got to stay permanently red. If this goes red, fix the test.
       - name: Test
-        run: pnpm test
+        run: pnpm test --shard=${{ matrix.shard }}/2
 
   # Full frontend build (vibe packages → vite). Catches build-time breakage that
   # typecheck alone misses. Runs independently of `check` so a red test never
@@ -197,15 +205,8 @@ jobs:
       NODE_OPTIONS: --max-old-space-size=8192
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-        with:
-          version: 10
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 24.21.0
-          cache: pnpm
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      # pnpm + Node + node_modules (cached by lockfile + schema) — see the action.
+      - uses: ./.github/actions/setup-deps
       # The responsive image variants `build:frontend:sourcemap` generates are
       # gitignored, so every run used to re-encode all ~290 AVIF/WebP files from
       # scratch before Vite could start. Their filenames carry a hash of the
@@ -246,15 +247,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-        with:
-          version: 10
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 24.21.0
-          cache: pnpm
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      # pnpm + Node + node_modules (cached by lockfile + schema) — see the action.
+      - uses: ./.github/actions/setup-deps
       - name: Production dependency audit
         run: pnpm audit --prod --audit-level=high
 
@@ -294,15 +288,8 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-        with:
-          version: 10
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 24.21.0
-          cache: pnpm
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      # pnpm + Node + node_modules (cached by lockfile + schema) — see the action.
+      - uses: ./.github/actions/setup-deps
       - name: Restore image variants
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
@@ -433,15 +420,8 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-        with:
-          version: 10
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 24.21.0
-          cache: pnpm
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      # pnpm + Node + node_modules (cached by lockfile + schema) — see the action.
+      - uses: ./.github/actions/setup-deps
       # `needs: build` orders and short-circuits (a broken build skips this) but
       # does not hand over its output — the build job uploads nothing, and an
       # artefact round-trip of .output would tax EVERY PR to benefit the few that

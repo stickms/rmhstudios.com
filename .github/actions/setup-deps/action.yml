@@ -1,0 +1,61 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# pnpm + Node + dependencies, from a node_modules cache when the lockfile is
+# unchanged. Shared by every web job in web-ci.yml and deploy.yml (run after
+# actions/checkout).
+#
+# Why cache node_modules itself, not just pnpm's store: `setup-node`'s
+# `cache: pnpm` restores the STORE, and `pnpm install` then still spends
+# 22–35 s per job linking ~1.9 GB into node_modules and running postinstall
+# (`prisma generate`) — on every job of every PR, ~40% of each job's runtime.
+# Restoring the finished tree skips both. On a miss (new lockfile, schema
+# change) it falls back to the store cache + a normal frozen install, and the
+# job saves the new tree for the next run.
+#
+# The key covers everything that decides what node_modules contains: the
+# lockfile, every workspace package.json, .npmrc / pnpm-workspace.yaml, the
+# Node version, the OS/arch — and the Prisma schema, because `prisma generate`
+# writes the client INTO node_modules (.prisma, hoisted by .npmrc). No
+# restore-keys: a partial match would be a stale tree, which is worse than a
+# clean install.
+# ─────────────────────────────────────────────────────────────────────────────
+name: Set up Node + dependencies
+description: pnpm, Node 24.21.0, and node_modules (cached by lockfile + schema)
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      with:
+        version: 10
+    # Node 24.21.0 to match the production Dockerfile. No `cache: pnpm` here:
+    # the store is only needed on a node_modules miss, restored below.
+    - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      with:
+        node-version: 24.21.0
+    - name: Restore node_modules
+      id: nm
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+      with:
+        path: |
+          node_modules
+          cli/node_modules
+          docs/*/build/node_modules
+        key: node-modules-v1-${{ runner.os }}-${{ runner.arch }}-node24.21.0-${{ hashFiles('pnpm-lock.yaml', '**/package.json', '!**/node_modules/**', '.npmrc', 'pnpm-workspace.yaml', 'prisma/schema.prisma', 'prisma.config.ts') }}
+    - name: Locate the pnpm store
+      if: steps.nm.outputs.cache-hit != 'true'
+      id: store
+      shell: bash
+      run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+    - name: Restore the pnpm store
+      if: steps.nm.outputs.cache-hit != 'true'
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+      with:
+        path: ${{ steps.store.outputs.path }}
+        key: pnpm-store-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
+        restore-keys: |
+          pnpm-store-v1-${{ runner.os }}-${{ runner.arch }}-
+    # postinstall runs `prisma generate` (schema-only, no DB needed).
+    - name: Install dependencies
+      if: steps.nm.outputs.cache-hit != 'true'
+      shell: bash
+      run: pnpm install --frozen-lockfile
