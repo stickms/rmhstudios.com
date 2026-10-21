@@ -83,6 +83,12 @@ opti/**
 :maxdepth: 1
 :hidden:
 
+server-perf-2026-10-21/index
+server-perf-2026-10-21/01-method
+server-perf-2026-10-21/02-budgets
+server-perf-2026-10-21/03-rules
+server-perf-2026-10-21/04-workstreams
+server-perf-2026-10-21/05-agent-protocol
 loading-audit-2026-08-11/index
 loading-audit-2026-08-11/01-measurements
 loading-audit-2026-08-11/02-critical-path
