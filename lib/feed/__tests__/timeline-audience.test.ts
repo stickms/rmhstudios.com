@@ -21,69 +21,32 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-type Row = Record<string, any>;
-
 const store = vi.hoisted(() => ({
-  posts: [] as Row[],
-  reposts: [] as Row[],
+  posts: [] as Record<string, any>[],
+  reposts: [] as Record<string, any>[],
   following: [] as string[],
   circleOwners: [] as string[],
 }));
 
-/** Minimal Prisma `where` evaluator for the operators the timeline uses. */
-function matches(row: Row, where: Row | undefined): boolean {
-  if (!where) return true;
-  for (const [key, cond] of Object.entries(where)) {
-    if (key === 'AND') {
-      const list = Array.isArray(cond) ? cond : [cond];
-      if (!list.every((c) => matches(row, c))) return false;
-    } else if (key === 'OR') {
-      if (!(cond as Row[]).some((c) => matches(row, c))) return false;
-    } else if (key === 'NOT') {
-      if (matches(row, cond as Row)) return false;
-    } else if (key === 'rmhark') {
-      if (!matches(row.rmhark, cond as Row)) return false;
-    } else if (!matchesField(row[key], cond)) {
-      return false;
-    }
-  }
-  return true;
-}
+const db = vi.hoisted(() => ({
+  rMHark: { findMany: vi.fn() },
+  rMHarkRepost: { findMany: vi.fn() },
+  rMHarkReaction: { groupBy: vi.fn(async () => []), findMany: vi.fn(async () => []) },
+  userProfile: { findUnique: vi.fn(async () => ({ mutedWords: [] })) },
+  $queryRaw: vi.fn(async () => []),
+}));
 
-function matchesField(value: any, cond: any): boolean {
-  if (cond === null || typeof cond !== 'object' || cond instanceof Date) {
-    if (cond instanceof Date) return value instanceof Date && value.getTime() === cond.getTime();
-    return value === cond;
-  }
-  for (const [op, arg] of Object.entries(cond)) {
-    if (op === 'in' && !(arg as any[]).includes(value)) return false;
-    if (op === 'notIn' && (arg as any[]).includes(value)) return false;
-    if (op === 'not' && matchesField(value, arg)) return false;
-    if (op === 'lt' && !(value < (arg as any))) return false;
-    if (op === 'gt' && !(value > (arg as any))) return false;
-  }
-  return true;
-}
-
-const db = vi.hoisted(() => {
-  const find = (rows: () => Row[]) =>
-    vi.fn(async (args: { where?: Row; take?: number }) => {
-      const hits = rows().filter((r) => (globalThis as any).__matches(r, args.where));
-      hits.sort(
-        (a, b) =>
-          b.createdAt.getTime() - a.createdAt.getTime() || (a.id < b.id ? 1 : a.id > b.id ? -1 : 0),
-      );
-      return hits.slice(0, args.take ?? hits.length);
-    });
-  return {
-    rMHark: { findMany: find(() => store.posts) },
-    rMHarkRepost: { findMany: find(() => store.reposts) },
-    rMHarkReaction: { groupBy: vi.fn(async () => []), findMany: vi.fn(async () => []) },
-    userProfile: { findUnique: vi.fn(async () => ({ mutedWords: [] })) },
-    $queryRaw: vi.fn(async () => []),
+/** `findMany` over fixture rows: filter by `where`, order newest-first, `take`. */
+function fakeFindMany(rows: () => Row[]) {
+  return async (args: { where?: Row; take?: number }) => {
+    const hits = rows().filter((r) => evalWhere(r, args.where));
+    hits.sort(
+      (a, b) =>
+        b.createdAt.getTime() - a.createdAt.getTime() || (a.id < b.id ? 1 : a.id > b.id ? -1 : 0),
+    );
+    return hits.slice(0, args.take ?? hits.length);
   };
-});
-(globalThis as any).__matches = matches;
+}
 
 vi.mock('@/lib/prisma.server', () => ({ prisma: db }));
 vi.mock('../../prisma.server', () => ({ prisma: db }));
@@ -105,6 +68,7 @@ vi.mock('../audience.server', async () => {
 import { getTimeline } from '../timeline';
 import { encodeCursor } from '../cursor';
 import { apiCache } from '../../cache';
+import { evalWhere, type Row } from './where-eval';
 
 const NOW = Date.now();
 let seq = 0;
@@ -140,6 +104,8 @@ const VIEWER = 'viewer';
 beforeEach(() => {
   // The signed-in first page is cached per viewer; start every case cold.
   apiCache.invalidatePrefix('');
+  db.rMHark.findMany.mockImplementation(fakeFindMany(() => store.posts));
+  db.rMHarkRepost.findMany.mockImplementation(fakeFindMany(() => store.reposts));
   seq = 0;
   store.posts = [];
   store.reposts = [];
