@@ -251,6 +251,13 @@ services:
       # socket needs a session token. Compose-network name, never reachable
       # from a browser.
       - SOCKET_INTERNAL_URL=http://socket:${PORT_SOCKET:-7001}
+      # Same idea for the other two hubs: /api/admin/perf reads each hub's
+      # `/internal/metrics` over the compose network (never proxied by Apache).
+      # INTERNAL_METRICS_TOKEN is optional and needs no line here: every service
+      # shares `env_file`, so setting it there makes the hubs require an
+      # `x-internal-token` header and the web tier send it.
+      - RMHBOX_INTERNAL_URL=http://rmhbox:${PORT_RMHBOX:-7676}
+      - RMHTUBE_INTERNAL_URL=http://rmhtube:${PORT_RMHTUBE:-7003}
     healthcheck:
       # Hit the cheap liveness endpoint, not `/` — curling `/` every 30s renders
       # the full homepage through SSR on the single web event loop (perf audit

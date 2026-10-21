@@ -48,6 +48,9 @@ import type { RateLimitPolicy, WithRateLimitOptions } from '@/lib/rate-limit';
 import { withRateLimitAsync } from '@/lib/rate-limit.server';
 import { canUse, upgradeRequiredBody, type MemberFeature } from '@/lib/entitlements/features';
 import { isAppError } from '@/lib/errors/codes';
+import { currentTraceId } from '@/lib/otel/trace';
+import { recordCounter, recordError } from '@/lib/perf/process-metrics';
+import { normalizeRoute } from '@/lib/perf/route-label';
 
 /* -------------------------------------------------------------------------- */
 /* Session                                                                    */
@@ -603,7 +606,10 @@ export function defineHandler<
       /* 2. Rate limit ---------------------------------------------------- */
       if (options.rateLimit) {
         const limited = await resolveRateLimit(request, options.rateLimit, userId);
-        if (limited) return limited;
+        if (limited) {
+          recordCounter('ratelimit.rejected');
+          return limited;
+        }
       }
 
       /* 3. Validation ---------------------------------------------------- */
@@ -748,6 +754,15 @@ export function defineHandler<
       }
       const label = options.label ?? `${request.method} ${new URL(request.url).pathname}`;
       console.error(`[api] ${label} failed:`, error);
+      // Mirror it into the admin performance page's error feed. The explicit
+      // `label` wins; otherwise the BOUNDED route label, not the raw pathname,
+      // so the feed groups by route instead of by record id.
+      recordError({
+        route: options.label ?? `${request.method} ${normalizeRoute(request.url)}`,
+        status: 500,
+        message: error instanceof Error ? error.message : String(error),
+        traceId: currentTraceId(),
+      });
       return apiError('Internal Server Error', 500);
     }
   };

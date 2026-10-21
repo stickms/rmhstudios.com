@@ -469,3 +469,138 @@ export async function redisGetDel(key: string): Promise<string | null> {
     return null;
   }
 }
+
+/* ─── Admin-time diagnostics (the performance page) ──────────────────────────
+ *
+ * Nothing below is on a request path: the admin performance endpoint calls these
+ * once per refresh. They share the existing connections and, like the helpers
+ * above, answer null / [] rather than throw when Redis is off or unreachable.
+ */
+
+/** Which connection to ask: the evictable cache plane or the durable state plane. */
+export type RedisPlane = 'cache' | 'state';
+
+/** True when `REDIS_STATE_URL` points at a different Redis than the cache plane. */
+export function redisPlanesDistinct(): boolean {
+  init();
+  return !!statePublisher && !!publisher && statePublisher !== publisher;
+}
+
+function planeClient(plane: RedisPlane): Redis | null {
+  init();
+  return plane === 'state' ? statePublisher : publisher;
+}
+
+/** Round-trip latency of one PING in milliseconds, or null when unreachable. */
+export async function redisPing(plane: RedisPlane = 'cache'): Promise<number | null> {
+  const client = planeClient(plane);
+  if (!client) return null;
+  try {
+    const started = performance.now();
+    await client.ping();
+    return Math.round((performance.now() - started) * 100) / 100;
+  } catch {
+    return null;
+  }
+}
+
+/** The INFO fields worth showing; everything else in INFO is noise for this page. */
+const INFO_FIELDS = [
+  'redis_version',
+  'uptime_in_seconds',
+  'connected_clients',
+  'blocked_clients',
+  'used_memory',
+  'used_memory_human',
+  'used_memory_peak_human',
+  'maxmemory',
+  'maxmemory_human',
+  'maxmemory_policy',
+  'mem_fragmentation_ratio',
+  'evicted_keys',
+  'expired_keys',
+  'keyspace_hits',
+  'keyspace_misses',
+  'instantaneous_ops_per_sec',
+  'total_commands_processed',
+  'rejected_connections',
+] as const;
+
+/**
+ * Parsed subset of `INFO` for one plane, plus the total key count across
+ * databases (summed from the `# Keyspace` section). Null when unreachable.
+ */
+export async function redisInfo(
+  plane: RedisPlane = 'cache',
+): Promise<Record<string, string | number> | null> {
+  const client = planeClient(plane);
+  if (!client) return null;
+  try {
+    const text = await client.info();
+    const wanted = new Set<string>(INFO_FIELDS);
+    const out: Record<string, string | number> = {};
+    let keys = 0;
+    for (const line of text.split('\r\n')) {
+      const sep = line.indexOf(':');
+      if (sep < 0) continue;
+      const name = line.slice(0, sep);
+      const value = line.slice(sep + 1);
+      if (wanted.has(name)) {
+        const n = Number(value);
+        out[name] = value !== '' && Number.isFinite(n) ? n : value;
+      } else if (/^db\d+$/.test(name)) {
+        keys += Number(/keys=(\d+)/.exec(value)?.[1] ?? 0);
+      }
+    }
+    out.keys = keys;
+    return out;
+  } catch {
+    return null;
+  }
+}
+
+/** Hard ceiling on keys one scan returns, whatever the caller asks for. */
+const SCAN_MAX_KEYS = 200;
+
+/**
+ * `SCAN MATCH <prefix>*` then one `MGET`, returning the parsed JSON values with
+ * their keys. Bounded to 200 keys (and a fixed number of SCAN round trips) so a
+ * large keyspace cannot turn an admin refresh into a long Redis command. This is
+ * how the performance endpoint collects the per-process snapshots every web
+ * worker publishes (`perf:proc:*`).
+ */
+export async function redisScanJSON<T>(
+  prefix: string,
+  limit = SCAN_MAX_KEYS,
+): Promise<Array<{ key: string; value: T }>> {
+  init();
+  if (!publisher) return [];
+  const cap = Math.min(limit, SCAN_MAX_KEYS);
+  try {
+    // Escape glob metacharacters so the prefix is matched literally.
+    const pattern = `${prefix.replace(/[\\*?[\]]/g, '\\$&')}*`;
+    const keys = new Set<string>();
+    let cursor = '0';
+    for (let i = 0; i < 50 && keys.size < cap; i++) {
+      const [next, batch] = await publisher.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+      for (const k of batch) if (keys.size < cap) keys.add(k);
+      cursor = next;
+      if (cursor === '0') break;
+    }
+    if (keys.size === 0) return [];
+    const list = [...keys];
+    const raws = await publisher.mget(...list);
+    const out: Array<{ key: string; value: T }> = [];
+    raws.forEach((raw, i) => {
+      if (!raw) return;
+      try {
+        out.push({ key: list[i], value: JSON.parse(raw) as T });
+      } catch {
+        /* a half-written or foreign value is skipped */
+      }
+    });
+    return out;
+  } catch {
+    return [];
+  }
+}

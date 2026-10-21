@@ -14,6 +14,7 @@ import { config } from './config';
 import { logger } from './logger';
 import { disconnectPrisma } from './prisma-client';
 import { cleanupRateLimits } from './rate-limit';
+import { instrumentHub, handleInternalMetrics } from '../../lib/perf/hub';
 
 // ─── Game Handlers ──────────────────────────────────────────────
 import { registerSliceItHandlers, handleSliceItDisconnect } from './handlers/slice-it';
@@ -426,6 +427,9 @@ async function softAuthMiddleware(
 // ─── Health-check HTTP handler ──────────────────────────────────
 
 function requestHandler(_req: IncomingMessage, res: ServerResponse): void {
+  // Process metrics for the admin performance page (compose-network only; see
+  // lib/perf/hub.ts).
+  if (handleInternalMetrics(_req, res)) return;
   if (_req.url === '/health' && _req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ status: 'ok', uptime: process.uptime() }));
@@ -481,6 +485,9 @@ const io = new Server(httpServer, {
   // did not, so every blip forced a fresh connection + auth round-trip.
   connectionStateRecovery: {},
 });
+
+// Metrics: connection/room gauges + inbound-event counters (lib/perf/hub.ts).
+instrumentHub(io, 'socket');
 
 // ─── Auth middleware ────────────────────────────────────────────
 

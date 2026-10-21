@@ -110,6 +110,10 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
   (per-worker cold-start warmup: opens the Prisma pool + primes the anon
   homepage feed/sidebar caches so the first request after a deploy/restart
   isn't cold).
+- **Metrics** — every Node process runs the `lib/perf/` collector
+  (`process-metrics.ts`); each hub serves `GET /internal/metrics` (compose-network
+  only, optional `INTERNAL_METRICS_TOKEN`), web workers and `jobs` publish to Redis.
+  Read at `/admin/performance`; see `docs/runbooks/performance-metrics.md`.
 - **`shared/`** — `createLogger(service)` (structured JSON lines),
   `createServerPrismaClient(logger)` (`@prisma/adapter-pg`, pool
   `SERVER_DB_POOL_SIZE` default 5), `createRateLimiter(rules)` (per

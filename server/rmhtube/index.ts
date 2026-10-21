@@ -22,6 +22,7 @@ import { ReconnectionHandler } from './reconnection';
 import { cleanupRateLimits } from './rate-limit';
 import { disconnectPrisma } from './prisma-client';
 import { logger } from './logger';
+import { instrumentHub, handleInternalMetrics } from '../../lib/perf/hub';
 
 if (!config.CORS_ORIGIN) {
   logger.error({ event: 'fatal_missing_cors', message: 'CORS_ORIGIN must be set (RMHTUBE_CORS_ORIGIN or SOCKET_CORS_ORIGIN)' });
@@ -31,6 +32,9 @@ if (!config.CORS_ORIGIN) {
 // ─── Health-check HTTP handler ───────────────────────────────────
 
 function requestHandler(req: IncomingMessage, res: ServerResponse): void {
+  // Process metrics for the admin performance page (compose-network only; see
+  // lib/perf/hub.ts).
+  if (handleInternalMetrics(req, res)) return;
   if (req.url === '/health' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ status: 'ok', uptime: process.uptime() }));
@@ -59,6 +63,9 @@ const io = new Server(httpServer, {
     skipMiddlewares: false,
   },
 });
+
+// Metrics: connection/room gauges + inbound-event counters (lib/perf/hub.ts).
+instrumentHub(io, 'rmhtube');
 
 // ─── Auth middleware ──────────────────────────────────────────────
 
