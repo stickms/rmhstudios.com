@@ -11,7 +11,7 @@ export const Route = createFileRoute('/api/communities/$slug/join')({
         async ({ params, session }) => {
           const community = await prisma.community.findUnique({
             where: { slug: params.slug },
-            select: { id: true, createdById: true },
+            select: { id: true, createdById: true, isPrivate: true },
           });
           if (!community) return Response.json({ error: 'Not found' }, { status: 404 });
 
@@ -20,6 +20,13 @@ export const Route = createFileRoute('/api/communities/$slug/join')({
             where: { communityId_userId: { communityId: community.id, userId } },
             select: { id: true },
           });
+
+          // A private community has no invite flow, so it is not joinable by
+          // anyone who is not already a member (existing members can still
+          // leave): open joining would make "members-only" a guessable slug.
+          if (community.isPrivate && !existing) {
+            return Response.json({ error: 'Not found' }, { status: 404 });
+          }
 
           if (existing) {
             // The creator can't leave their own community.
