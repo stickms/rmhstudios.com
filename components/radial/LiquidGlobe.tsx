@@ -1752,7 +1752,7 @@ export function LiquidGlobe({
       live.push(impact);
       dirty.current = true;
     },
-    [reduced],
+    [reduced, jelly],
   );
 
   /** Take hold of the globe. Shared by every surface that can start a drag. */

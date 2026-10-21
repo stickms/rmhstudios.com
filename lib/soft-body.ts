@@ -29,9 +29,9 @@
 import { spring, springStep, type Spring } from './fluid';
 
 /** The tug and the stretch: bouncy, so a release visibly wobbles a couple of times. */
-export const JELLY_SPRING: Spring = spring(0.58, 0.62);
+export const JELLY_SPRING: Spring = spring(0.5, 0.6);
 /** The pinch: a little quicker, so a tap reads as a squeeze. */
-export const PINCH_SPRING: Spring = spring(0.4, 0.5);
+export const PINCH_SPRING: Spring = spring(0.36, 0.5);
 /** Seconds of finger velocity the grabbed region leads the body by. */
 export const TUG_LAG = 0.11;
 /** The furthest the grabbed region is pulled, in radii. */
@@ -39,7 +39,7 @@ export const TUG_MAX = 0.17;
 /** How far toward the finger a held press squeezes the surface around it (a fraction). */
 export const PINCH_DEPTH = 0.16;
 /** Gaussian falloff of the tug and the pinch around the finger, in radii (σ). */
-export const FALLOFF = 0.7;
+export const FALLOFF = 0.62;
 /** Stretch along the tug per radius of tug. */
 export const STRETCH = 1.15;
 /** Below this (radii, radii/s) every mode is at rest. */
