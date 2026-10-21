@@ -34,7 +34,8 @@ import './eversion.css';
  *
  * - warms the runtime after `load` and an idle slot (it used to be the hub's warm-up) and mounts the lazy
  *   `EversionBridge`, which builds the page's one controller;
- * - installs the navigation interceptor (`eversion-nav.ts`), so every page transition, wherever it starts and
+ * - installs the navigation interceptor (`eversion-nav.ts`), so (at the default eversion level, `all`; at `globe`
+ *   it stands aside unless the hub is open) every page transition, wherever it starts and
  *   wherever it goes, runs the effect: from the open hub's globe if the hub is up, else from a globe that pops up
  *   out of the press (`popup.ts`);
  * - answers the Settings "Preview" button.
@@ -146,6 +147,9 @@ export function EversionRoot() {
         !useThemeStore.getState().reduceMotion &&
         !hasNoEffect() &&
         document.visibilityState === 'visible',
+      // Read from the store on each navigation (not captured here): a change in Settings applies to the next one.
+      level: () => useThemeStore.getState().eversionLevel,
+      hubOpen: () => !!getHub()?.isOpen(),
       busy: () => {
         const phase = getController()?.state().phase;
         return (phase !== undefined && phase !== 'idle' && phase !== 'done') || !!getHub()?.busy();

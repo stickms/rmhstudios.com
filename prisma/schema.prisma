@@ -663,6 +663,10 @@ model AppearancePreference {
   /// "Always evert globe" (spec amendment 2026-10-18): run the eversion even
   /// where it is skipped for performance. Never overrides reduced motion.
   alwaysEvertGlobe   Boolean @default(false)
+  /// Eversion level (spec amendment 2026-10-21): 'all' | 'globe' (see
+  /// EVERSION_LEVELS in lib/appearance/prefs.ts); null -> 'all'. Nullable with
+  /// no backfill so the old image never names it.
+  eversionLevel      String? @db.VarChar(8)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

@@ -11,6 +11,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   anchorToIntercept,
+  carriesNavigation,
   inShell,
   installNavigationEversion,
   isPageRoute,
@@ -247,6 +248,121 @@ describe('the interceptor', () => {
     const { router } = routerRig();
     expect(isPageRoute(router, '/games')).toBe(true);
     expect(isPageRoute(router, '/api/thing')).toBe(false);
+  });
+});
+
+/** A click as the window listener sees one (Event's own `defaultPrevented` is read-only, so redefine it). */
+function clickEvent(a: ReturnType<typeof anchor>, preventDefault: () => void): Event {
+  const ev = new Event('click');
+  for (const [k, v] of Object.entries({ ...clickOn(a), preventDefault })) {
+    Object.defineProperty(ev, k, { value: v, configurable: true });
+  }
+  return ev;
+}
+
+describe('the eversion level (amended 2026-10-21)', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  const rig = (level: () => 'all' | 'globe', hubOpen = () => false) => {
+    const r = routerRig();
+    const evert = vi.fn();
+    const off = installNavigationEversion({
+      router: r.router,
+      enabled: () => true,
+      busy: () => false,
+      evert,
+      level,
+      hubOpen,
+    });
+    return { r, evert, off };
+  };
+
+  it('decides: all carries everything, globe only with the hub open', () => {
+    expect(carriesNavigation('all', false)).toBe(true);
+    expect(carriesNavigation('all', true)).toBe(true);
+    expect(carriesNavigation('globe', false)).toBe(false);
+    expect(carriesNavigation('globe', true)).toBe(true);
+  });
+
+  it('globe: never holds a push, a back or a forward off the hub, and starts nothing', async () => {
+    const { r, evert, off } = rig(() => 'globe');
+    expect(await r.block(at('/'), at('/games', 1), 'PUSH')).toBe(false);
+    expect(await r.block(at('/games', 1), at('/', 0), 'BACK')).toBe(false);
+    expect(await r.block(at('/', 0), at('/games', 1), 'FORWARD')).toBe(false);
+    expect(await r.block(at('/', 0), at('/games', 1), 'GO')).toBe(false);
+    await Promise.resolve();
+    vi.runAllTimers();
+    expect(evert).not.toHaveBeenCalled();
+    expect(r.calls).toEqual([]);
+    off();
+  });
+
+  it('globe: a plain anchor click is left to the browser, not rerouted', () => {
+    const { r, off } = rig(() => 'globe');
+    const preventDefault = vi.fn();
+    window.dispatchEvent(clickEvent(anchor('/games'), preventDefault));
+    expect(preventDefault).not.toHaveBeenCalled();
+    expect(r.calls).toEqual([]);
+    off();
+  });
+
+  it('all: unchanged, holds the push and reroutes the anchor', async () => {
+    const { r, evert, off } = rig(() => 'all');
+    expect(await r.block(at('/'), at('/games', 1), 'PUSH')).toBe(true);
+    await Promise.resolve();
+    expect(evert).toHaveBeenCalledTimes(1);
+    const preventDefault = vi.fn();
+    window.dispatchEvent(clickEvent(anchor('/games'), preventDefault));
+    expect(preventDefault).toHaveBeenCalled();
+    expect(r.calls).toEqual(['navigate:/games']);
+    off();
+  });
+
+  it('globe with the hub open: the hub’s globe still carries a navigation', async () => {
+    const { r, evert, off } = rig(
+      () => 'globe',
+      () => true,
+    );
+    expect(await r.block(at('/'), at('/games', 1), 'PUSH')).toBe(true);
+    await Promise.resolve();
+    expect(evert).toHaveBeenCalledTimes(1);
+    off();
+  });
+
+  it('switching the level applies to the very next navigation, with no reinstall', async () => {
+    let level: 'all' | 'globe' = 'all';
+    const { r, evert, off } = rig(() => level);
+    expect(await r.block(at('/'), at('/games', 1), 'PUSH')).toBe(true);
+    await Promise.resolve();
+    expect(evert).toHaveBeenCalledTimes(1);
+    level = 'globe';
+    expect(await r.block(at('/'), at('/games', 1), 'PUSH')).toBe(false);
+    await Promise.resolve();
+    expect(evert).toHaveBeenCalledTimes(1);
+    level = 'all';
+    expect(await r.block(at('/'), at('/games', 1), 'PUSH')).toBe(true);
+    off();
+  });
+
+  it('with no level given, behaves as all (existing callers)', async () => {
+    const r = routerRig();
+    const off = installNavigationEversion({
+      router: r.router,
+      enabled: () => true,
+      busy: () => false,
+      evert: vi.fn(),
+    });
+    expect(await r.block(at('/'), at('/games', 1), 'PUSH')).toBe(true);
+    off();
+  });
+
+  it('the root reads the level from the store at navigation time', () => {
+    const src = readFileSync(
+      join(process.cwd(), 'components/radial/eversion/EversionRoot.tsx'),
+      'utf8',
+    );
+    expect(src).toMatch(/level: \(\) => useThemeStore\.getState\(\)\.eversionLevel/);
   });
 });
 

@@ -5,6 +5,8 @@ import {
   DEFAULT_NAV_TRANSITION,
   type ColorVisionMode,
   type NavTransition,
+  type EversionLevel,
+  DEFAULT_EVERSION_LEVEL,
 } from '@/lib/appearance/prefs';
 import { colorSchemeForBackground } from '@/lib/appearance/contrast';
 
@@ -340,6 +342,13 @@ interface ThemeStore {
    */
   alwaysEvertGlobe: boolean;
   setAlwaysEvertGlobe: (value: boolean) => void;
+  /**
+   * Eversion level (2026-10-21): `all` (default) everts every page transition; `globe` only the ones confirmed
+   * through the liquid-globe hub. Read at navigation time by the interceptor, so a change takes effect on the
+   * next navigation. Cached in localStorage and synced to the account like `navTransition`.
+   */
+  eversionLevel: EversionLevel;
+  setEversionLevel: (value: EversionLevel) => void;
 
   // ── Marketplace user themes (§14) ────────────────────────────────────────
   /**
@@ -388,6 +397,8 @@ export const useThemeStore = create<ThemeStore>((set) => ({
   setNavTransition: (navTransition) => set({ navTransition }),
   alwaysEvertGlobe: false,
   setAlwaysEvertGlobe: (alwaysEvertGlobe) => set({ alwaysEvertGlobe }),
+  eversionLevel: DEFAULT_EVERSION_LEVEL,
+  setEversionLevel: (eversionLevel) => set({ eversionLevel }),
   userTheme: null,
   // Applying/removing an owned theme also clears any transient preview.
   setUserTheme: (userTheme) => set({ userTheme, userThemePreview: null }),

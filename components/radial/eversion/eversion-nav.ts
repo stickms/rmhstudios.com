@@ -73,6 +73,23 @@ export function anchorToIntercept(event: MouseEvent, origin: string): HTMLAnchor
   return a;
 }
 
+/**
+ * The eversion level setting (amended 2026-10-21; the full definition is `EVERSION_LEVELS` in
+ * `lib/appearance/prefs.ts`, redeclared as a type here so this module stays import-free): `all` carries every
+ * page transition, `globe` only those confirmed through the liquid-globe hub.
+ */
+export type NavLevel = 'all' | 'globe';
+
+/**
+ * Does the interceptor take this navigation at all? At `all`, always. At `globe`, only while the hub is open
+ * (then it is the hub's own globe that carries it); otherwise it is not touched: not held, not delayed, no pop-up
+ * globe. The hub's confirmed navigations (hold-release, pin click, Enter) never reach the interceptor either way:
+ * they issue their own history push with `ignoreBlocker`.
+ */
+export function carriesNavigation(level: NavLevel, hubOpen: boolean): boolean {
+  return level === 'all' || hubOpen;
+}
+
 /** The slice of the router the interceptor needs. */
 export interface NavRouter {
   history: {
@@ -117,6 +134,10 @@ export interface NavigatorDeps {
   busy(): boolean;
   /** Carry `held` through the effect. Must end in `held.go()` one way or another. */
   evert(held: HeldNavigation): void;
+  /** The eversion level, read on every navigation so a change in Settings applies to the next one. Default `all`. */
+  level?(): NavLevel;
+  /** The hub's menu is up. Only consulted at the `globe` level. Default false. */
+  hubOpen?(): boolean;
 }
 
 /** How recent a press has to be to count as where a navigation came from. */
@@ -171,6 +192,9 @@ export function installNavigationEversion(deps: NavigatorDeps): () => void {
     return p ? { x: p.x, y: p.y } : null;
   };
 
+  // Read per navigation, never cached: switching the setting applies to the very next one, without a reload.
+  const carries = () => carriesNavigation(deps.level?.() ?? 'all', deps.hubOpen?.() ?? false);
+
   const hold = (held: HeldNavigation) => {
     press = null;
     key = null;
@@ -181,6 +205,9 @@ export function installNavigationEversion(deps: NavigatorDeps): () => void {
     enableBeforeUnload: false,
     blockerFn: ({ currentLocation, nextLocation, action }) => {
       if (!isPageTransition(currentLocation, nextLocation, action)) return false;
+      // At the `globe` level this is the first thing checked after the pure shape test: nothing is held, queued or
+      // timed, so a navigation off the hub is exactly the router's own.
+      if (!carries()) return false;
       if (!deps.enabled() || deps.busy()) return false;
       if (action === 'PUSH') {
         const at = origin();
@@ -228,6 +255,7 @@ export function installNavigationEversion(deps: NavigatorDeps): () => void {
   });
 
   const onClick = (e: MouseEvent) => {
+    if (!carries()) return;
     const a = anchorToIntercept(e, location.origin);
     if (!a) return;
     const url = new URL(a.href, location.origin);
