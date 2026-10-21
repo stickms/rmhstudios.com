@@ -283,6 +283,13 @@ type Prober struct {
 	lastCycleAt   time.Time
 }
 
+// Cycles is the number of completed probe cycles.
+func (p *Prober) Cycles() int64 {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.cycles
+}
+
 // NewProber constructs a Prober for the given targets. Timeout defaults to 4s.
 func NewProber(targets []Target) *Prober {
 	p := &Prober{

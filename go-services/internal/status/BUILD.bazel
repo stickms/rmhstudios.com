@@ -6,6 +6,7 @@ go_library(
         "api.go",
         "assets.go",
         "assets_extra.go",
+        "cache.go",
         "charts.go",
         "compress.go",
         "dashboard.go",
@@ -26,6 +27,8 @@ go_library(
 go_test(
     name = "status_test",
     srcs = [
+        "bench_test.go",
+        "cache_test.go",
         "dashboard_test.go",
         "features_test.go",
         "fixture_test.go",

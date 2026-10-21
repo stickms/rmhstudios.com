@@ -122,8 +122,10 @@ func main() {
 		HistoryPath:        status.ResolveHistoryPath(config.GetString("STATUS_DATA_DIR", "")),
 		Logger:             logger,
 		SLO:                sloCfg,
-		PageURL:            config.GetString("STATUS_PAGE_URL", "https://status.rmhstudios.com"),
-		PageName:           config.GetString("STATUS_PAGE_NAME", "RMH Studios"),
+		// 2 s default; STATUS_RESPONSE_CACHE_TTL=0s disables (see internal/status/cache.go).
+		ResponseCacheTTL: config.GetDuration("STATUS_RESPONSE_CACHE_TTL", 2*time.Second),
+		PageURL:          config.GetString("STATUS_PAGE_URL", "https://status.rmhstudios.com"),
+		PageName:         config.GetString("STATUS_PAGE_NAME", "RMH Studios"),
 		// Empty disables the write API (incidents, maintenance, announcements)
 		// entirely — its routes then 404.
 		AdminToken: config.GetString("STATUS_ADMIN_TOKEN", ""),

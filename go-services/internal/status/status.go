@@ -37,6 +37,10 @@ type Config struct {
 	// in SLOConfig.normalise (99.9% over 1h/6h windows, a 30-day budget).
 	SLO SLOConfig
 
+	// ResponseCacheTTL bounds how long a rendered GET response is reused (see
+	// cache.go). Zero disables the cache; cmd/status sets the production default.
+	ResponseCacheTTL time.Duration
+
 	// PageURL is the status page's own public URL (feeds, badges and webhooks
 	// link back to it). PageName is its display name.
 	PageURL  string
@@ -172,5 +176,5 @@ func (s *Service) View(now time.Time) *View {
 
 // Handler returns the HTTP mux for the status service.
 func (s *Service) Handler() http.Handler {
-	return withGzip(newDashboard(s))
+	return withResponseCache(s, s.cfg.ResponseCacheTTL, withGzip(newDashboard(s)))
 }
