@@ -126,6 +126,34 @@ p50/p95, and RSS. WS5 builds it in Stage A (it needs no WS0 file); its latency
 figures are Stage B evidence like any other, its handler and per-event
 allocation counts are `exact`.
 
+### 1.7 Go evidence (WS7)
+
+The Go services have no `Server-Timing` and are not in `server-routes.json`, so
+the two classes of evidence (§0) look like this:
+
+- **Exact:** query counts per worker tick or per request from
+  `pg_stat_statements` (`calls` before/after, reset between runs); `allocs/op`
+  and `B/op` from `go test -bench -benchmem`; response bytes and headers
+  (`cache-control`, `etag`, `content-encoding`, status on a conditional or range
+  request) from `curl -i`.
+- **Latency:** `go test -bench` ns/op, or an HTTP bench of `assets`/`status`
+  (same method as §1.1: sequential TTFB, then concurrent). Run it under the
+  shared lock (§2) with before and after in the same session, A B A B.
+
+Toolchain notes for the agent container:
+
+```bash
+export GOTOOLCHAIN=go1.26.8
+export BAZELISK_BASE_URL=https://github.com/bazelbuild/bazel/releases/download   # releases.bazel.build is blocked by the proxy
+/opt/bazel/bazel --version                # bazelisk
+make gazelle && make test                 # from the repo root
+go test ./...                             # fallback (in go-services/) if Bazel module fetch is blocked
+```
+
+`go test ./...` proves correctness only; the Bazel run is what CI runs, so say
+in the results row which one you used. The box is shared, so Bazel runs under
+the lock with limits, e.g. `--jobs=2 --local_ram_resources=2048`.
+
 ## 2. The environment
 
 - **Node 24.18** (`/opt/node24/bin` in the agent container — put it first on

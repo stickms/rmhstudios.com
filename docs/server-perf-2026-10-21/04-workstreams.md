@@ -13,7 +13,7 @@ marker appears, re-baselines its own routes in its own worktree
 
 ### Concurrency
 
-WS0–WS6 run at the same time. Until Stage B (the ready marker, WS0 merged into
+WS0–WS7 run at the same time. Until Stage B (the ready marker, WS0 merged into
 your branch) these files are **WS0-owned and no one else edits them**:
 `lib/otel/**`, `server/nitro/otel.ts`, `scripts/perf/**` (WS5's
 `socket-bench.mjs` excepted), `lib/auth-session.server.ts`,
@@ -218,11 +218,45 @@ request on the web process; repeat requests served from cache.
 
 ---
 
+## WS7 — Go services
+
+**Owns:** `go-services/**`, including the BUILD files that `make gazelle`
+regenerates. Nothing outside `go-services/` is edited. Index migrations are
+Prisma files owned by WS4, so WS7 does not write them: it hands them off as a
+row with `EXPLAIN` evidence (before plan, proposed index, after plan).
+
+**Leads:**
+
+- Per-worker DB access patterns across the `supervisor`'s six workers
+  (`doctrine-worker`, `vibe-worker`, `recap`, `discord-bot`, `bot-worker`,
+  `streak-saver`): polling intervals, unbounded scans, queries in loops (one
+  query per item where one `ANY($1)` would do), transactions held open across
+  network calls (Discord, LLM, HTTP), and pool size versus concurrency in
+  `pkg/config`.
+- `pkg/auth` session validation: queries per call, whether the result is cached,
+  and what invalidates it.
+- `assets`: cache headers, compression, conditional (`ETag`/`If-None-Match`)
+  and range requests, per-request allocations.
+- `status`: whether a request triggers the checks or a timer does and requests
+  read the last result.
+- CPU and allocations on the hot paths via `go test -bench -benchmem` and
+  pprof.
+
+**Exit:** no worker issues unbounded or per-item queries on a timer;
+`assets`/`status` inside the `api` budget (`02-budgets.md` §2); `make test`
+green.
+
+---
+
 ## Merge order (P2)
 
-`WS0` (merged first, at the ready marker) → `WS4` (schema/migrations first) → `WS2` →
-`WS1` → `WS3` → `WS6` → `WS5`. The coordinator re-runs `pnpm check:consistency`
-after each merge and the full harness after the last one.
+Merges happen as each agent finishes (the user's instruction), not in a fixed
+order. The coordinator still prefers `WS0` (at the ready marker) and `WS4`
+(schema/migrations) early, so later branches rebase onto them, and merges the
+rest in finishing order: `WS2`, `WS1`, `WS3`, `WS6`, `WS5`, `WS7` are
+independent of each other by ownership. The coordinator re-runs
+`pnpm check:consistency` after each merge and the full harness after the last
+one; WS7 also needs `make test` after its merge.
 
 ## Handoffs
 
