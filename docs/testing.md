@@ -363,6 +363,29 @@ blocking, which hides a red job from the PR's checks, so each script's verdict i
 also written to the job summary (`GITHUB_STEP_SUMMARY`) and every failure is an
 `::error::` annotation. Open the job summary after a nightly.
 
+### Server perf harness (not in CI)
+
+The server-side performance program ([`docs/server-perf-2026-10-21/`](server-perf-2026-10-21/index.md))
+measures the production build against a seeded dataset. Method, budgets and the
+agent procedure are in that folder; the instruments live in `scripts/perf/`:
+
+```bash
+pnpm tsx scripts/perf/seed-perf-db.ts --db rmh_perf_build   # ~2 min: 20k users, 200k posts, 1.2M likes, ...
+createdb -T rmh_perf_template rmh_ws<N>                     # a private copy of the seeded database
+flock /tmp/rmh-perf-build.lock pnpm build                   # latency is only ever measured on the prod build
+NODE_ENV=production PORT=71<N>5 RMH_PERF_HEADERS=1 node .output/server/index.mjs &
+node scripts/perf/server-bench.mjs --base http://localhost:71<N>5 --auth both --out out.json
+node scripts/perf/server-bench.mjs --compare before.json after.json    # markdown diff, flags regressions
+node scripts/perf/server-bench.mjs --summary baseline.json             # the P0 summary tables
+node scripts/perf/cold-start.mjs --port 71<N>5                          # restart + first request to /
+```
+
+`RMH_PERF_HEADERS=1` adds `x-rmh-queries: <n>` to every response (off by
+default; `lib/__tests__/perf-headers.test.ts` pins that). `Server-Timing` is
+always on and carries `dur`-only `sess` / `cache` / `db` / `total` phases. The
+tests for the instrumentation itself are `lib/__tests__/otel-server-timing.test.ts`
+and `perf-headers.test.ts`, and they run in the main suite; the harness does not.
+
 ### Coverage
 
 ```bash
