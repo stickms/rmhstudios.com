@@ -41,11 +41,13 @@ import arCProfileModules from "@/locales/ar/c-profile-modules.json";
 import arCRebarRutabaga from "@/locales/ar/c-rebar-rutabaga.json";
 import arCRideshare from "@/locales/ar/c-rideshare.json";
 import arCRmhCapital from "@/locales/ar/c-rmh-capital.json";
+import arCRmhDatacenter from "@/locales/ar/c-rmh-datacenter.json";
 import arCRmhPmc from "@/locales/ar/c-rmh-pmc.json";
 import arCRmhbox from "@/locales/ar/c-rmhbox.json";
 import arCRmhcalculator from "@/locales/ar/c-rmhcalculator.json";
 import arCRmhcode from "@/locales/ar/c-rmhcode.json";
 import arCRmhcoins from "@/locales/ar/c-rmhcoins.json";
+import arCRmhfashion from "@/locales/ar/c-rmhfashion.json";
 import arCRmhmusic from "@/locales/ar/c-rmhmusic.json";
 import arCRmhstudy from "@/locales/ar/c-rmhstudy.json";
 import arCRmhtech from "@/locales/ar/c-rmhtech.json";
@@ -69,6 +71,36 @@ import arCVoidBreaker from "@/locales/ar/c-void-breaker.json";
 import arCWager from "@/locales/ar/c-wager.json";
 import arCWishlist from "@/locales/ar/c-wishlist.json";
 import arCommon from "@/locales/ar/common.json";
+import arErrors from "@/locales/ar/errors.json";
+import arFAccess from "@/locales/ar/f-access.json";
+import arFAction from "@/locales/ar/f-action.json";
+import arFArcade from "@/locales/ar/f-arcade.json";
+import arFAsyncGames from "@/locales/ar/f-async-games.json";
+import arFCalendar from "@/locales/ar/f-calendar.json";
+import arFCanvas from "@/locales/ar/f-canvas.json";
+import arFCommunitiesPlus from "@/locales/ar/f-communities-plus.json";
+import arFCompetitive from "@/locales/ar/f-competitive.json";
+import arFCreative from "@/locales/ar/f-creative.json";
+import arFDeepseek from "@/locales/ar/f-deepseek.json";
+import arFDelight from "@/locales/ar/f-delight.json";
+import arFDevplatform from "@/locales/ar/f-devplatform.json";
+import arFDiscovery from "@/locales/ar/f-discovery.json";
+import arFEconomyPlus from "@/locales/ar/f-economy-plus.json";
+import arFFeedPlus from "@/locales/ar/f-feed-plus.json";
+import arFForecasting from "@/locales/ar/f-forecasting.json";
+import arFGifting from "@/locales/ar/f-gifting.json";
+import arFLadderHomes from "@/locales/ar/f-ladder-homes.json";
+import arFMessaging from "@/locales/ar/f-messaging.json";
+import arFOps from "@/locales/ar/f-ops.json";
+import arFParty from "@/locales/ar/f-party.json";
+import arFPerf from "@/locales/ar/f-perf.json";
+import arFPostsPlus from "@/locales/ar/f-posts-plus.json";
+import arFProfilePlus from "@/locales/ar/f-profile-plus.json";
+import arFReading from "@/locales/ar/f-reading.json";
+import arFSafety from "@/locales/ar/f-safety.json";
+import arFTools from "@/locales/ar/f-tools.json";
+import arFWatch from "@/locales/ar/f-watch.json";
+import arFWorlds from "@/locales/ar/f-worlds.json";
 import arFeed from "@/locales/ar/feed.json";
 import arGamesHub from "@/locales/ar/games-hub.json";
 import arGroups from "@/locales/ar/groups.json";
@@ -140,11 +172,13 @@ const arResources = {
   "c-rebar-rutabaga": arCRebarRutabaga,
   "c-rideshare": arCRideshare,
   "c-rmh-capital": arCRmhCapital,
+  "c-rmh-datacenter": arCRmhDatacenter,
   "c-rmh-pmc": arCRmhPmc,
   "c-rmhbox": arCRmhbox,
   "c-rmhcalculator": arCRmhcalculator,
   "c-rmhcode": arCRmhcode,
   "c-rmhcoins": arCRmhcoins,
+  "c-rmhfashion": arCRmhfashion,
   "c-rmhmusic": arCRmhmusic,
   "c-rmhstudy": arCRmhstudy,
   "c-rmhtech": arCRmhtech,
@@ -168,6 +202,36 @@ const arResources = {
   "c-wager": arCWager,
   "c-wishlist": arCWishlist,
   "common": arCommon,
+  "errors": arErrors,
+  "f-access": arFAccess,
+  "f-action": arFAction,
+  "f-arcade": arFArcade,
+  "f-async-games": arFAsyncGames,
+  "f-calendar": arFCalendar,
+  "f-canvas": arFCanvas,
+  "f-communities-plus": arFCommunitiesPlus,
+  "f-competitive": arFCompetitive,
+  "f-creative": arFCreative,
+  "f-deepseek": arFDeepseek,
+  "f-delight": arFDelight,
+  "f-devplatform": arFDevplatform,
+  "f-discovery": arFDiscovery,
+  "f-economy-plus": arFEconomyPlus,
+  "f-feed-plus": arFFeedPlus,
+  "f-forecasting": arFForecasting,
+  "f-gifting": arFGifting,
+  "f-ladder-homes": arFLadderHomes,
+  "f-messaging": arFMessaging,
+  "f-ops": arFOps,
+  "f-party": arFParty,
+  "f-perf": arFPerf,
+  "f-posts-plus": arFPostsPlus,
+  "f-profile-plus": arFProfilePlus,
+  "f-reading": arFReading,
+  "f-safety": arFSafety,
+  "f-tools": arFTools,
+  "f-watch": arFWatch,
+  "f-worlds": arFWorlds,
   "feed": arFeed,
   "games-hub": arGamesHub,
   "groups": arGroups,

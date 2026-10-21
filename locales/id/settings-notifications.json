@@ -17,5 +17,7 @@
   "quiet-end": "Quiet hours end",
   "quiet-hours": "Quiet hours",
   "quiet-start": "Quiet hours start",
+  "tab-badge": "Jumlah belum dibaca di tab browser",
+  "tab-badge-desc": "Menampilkan jumlah pesan dan notifikasi yang belum dibaca pada judul dan ikon tab di perangkat ini.",
   "to": "To"
 }

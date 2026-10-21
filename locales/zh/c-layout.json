@@ -5,6 +5,7 @@
   "edit-layout-desc": "Reorder, add, or remove the widgets on your home page.",
   "expand-widget": "Expand {{name}}",
   "for-you": "For you",
+  "hide": "隐藏 {{name}}",
   "home-widgets": "Home widgets",
   "home-widgets-desc": "Choose which widgets appear on your home page and in what order.",
   "layout": "Layout",
@@ -15,5 +16,7 @@
   "reset": "Reset to default",
   "sidebar": "Sidebar",
   "sidebar-desc": "Drag the tabs into the order you want, or hide the ones you don’t use. Hidden tabs stay reachable from search and their link.",
+  "sidebar-reorder-hint": "拖动以重新排序。用眼睛图标隐藏标签页——隐藏的标签页仍保留在搜索中。",
+  "unhide": "显示 {{name}}",
   "your-widgets": "Your widgets"
 }
