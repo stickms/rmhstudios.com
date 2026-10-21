@@ -284,8 +284,9 @@ func (w *Worker) answerDirectMessages(ctx context.Context) {
 		if c.OneIsBot {
 			botID, humanID = c.ParticipantOneID, c.ParticipantTwoID
 		}
-		lastSender, err := w.repo.LastMessageSender(ctx, c.ID)
-		if err != nil || lastSender == "" || lastSender == botID {
+		// LastSenderID rides along on the conversations query ("" when the
+		// conversation has no messages), so there is no per-conversation lookup.
+		if lastSender := c.LastSenderID; lastSender == "" || lastSender == botID {
 			continue // nothing new from the human
 		}
 		candidates = append(candidates, cand{c.ID, botID, humanID})

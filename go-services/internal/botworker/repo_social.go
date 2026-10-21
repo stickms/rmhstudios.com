@@ -93,19 +93,19 @@ SELECT DISTINCT "userId" FROM "rmheet_comment" WHERE "rmheetId" = $1`
 
 const recentBotConversationsQuery = `
 SELECT c.id, c."participantOneId", c."participantTwoId",
-       p1."isBot" AS one_is_bot, p2."isBot" AS two_is_bot
+       p1."isBot" AS one_is_bot, p2."isBot" AS two_is_bot,
+       COALESCE(lm."senderId", '') AS last_sender_id
   FROM "conversation" c
   JOIN "user" p1 ON p1.id = c."participantOneId"
   JOIN "user" p2 ON p2.id = c."participantTwoId"
+  LEFT JOIN LATERAL (
+        SELECT dm."senderId" FROM "direct_message" dm
+         WHERE dm."conversationId" = c.id
+         ORDER BY dm."createdAt" DESC LIMIT 1
+       ) lm ON true
  WHERE c."lastMessageAt" >= $1 AND (p1."isBot" = true OR p2."isBot" = true)
  ORDER BY c."lastMessageAt" DESC
  LIMIT 60`
-
-// lastMessageSenderQuery returns the sender id of the latest message in a convo.
-const lastMessageSenderQuery = `
-SELECT "senderId" FROM "direct_message"
- WHERE "conversationId" = $1
- ORDER BY "createdAt" DESC LIMIT 1`
 
 // recentDMHistoryQuery returns the last 20 messages of a conversation, newest first.
 const recentDMHistoryQuery = `
@@ -181,15 +181,15 @@ RETURNING count`
 // CommentRow is a recent comment with the bot-ness of the author and the
 // reply target (parent comment author, or post author when top-level).
 type CommentRow struct {
-	ID             string
-	UserID         string
-	ParentID       *string
-	RmheetID       string
-	AuthorIsBot    bool
-	PostUserID     string
-	PostDeletedAt  *time.Time
-	PostUserIsBot  bool
-	ParentUserID   *string
+	ID              string
+	UserID          string
+	ParentID        *string
+	RmheetID        string
+	AuthorIsBot     bool
+	PostUserID      string
+	PostDeletedAt   *time.Time
+	PostUserIsBot   bool
+	ParentUserID    *string
 	ParentUserIsBot *bool
 }
 
@@ -215,6 +215,8 @@ type ConversationRow struct {
 	ParticipantTwoID string
 	OneIsBot         bool
 	TwoIsBot         bool
+	// LastSenderID is the sender of the conversation's newest message ("" if none).
+	LastSenderID string
 }
 
 // ─── Reply-tick repo methods ───────────────────────────────────────────
@@ -377,21 +379,12 @@ func (r *PGRepo) RecentBotConversations(ctx context.Context, since time.Time) (r
 	defer qrows.Close()
 	for qrows.Next() {
 		var c ConversationRow
-		if err = qrows.Scan(&c.ID, &c.ParticipantOneID, &c.ParticipantTwoID, &c.OneIsBot, &c.TwoIsBot); err != nil {
+		if err = qrows.Scan(&c.ID, &c.ParticipantOneID, &c.ParticipantTwoID, &c.OneIsBot, &c.TwoIsBot, &c.LastSenderID); err != nil {
 			return nil, fmt.Errorf("botworker: scan conversation: %w", err)
 		}
 		rows = append(rows, c)
 	}
 	return rows, qrows.Err()
-}
-
-// LastMessageSender returns the sender id of the latest message in a conversation.
-func (r *PGRepo) LastMessageSender(ctx context.Context, conversationID string) (senderID string, err error) {
-	defer func() { r.record(err) }()
-	if scanErr := r.db.Pool.QueryRow(ctx, lastMessageSenderQuery, conversationID).Scan(&senderID); scanErr != nil {
-		return "", nil // no messages
-	}
-	return senderID, nil
 }
 
 // RecentDMHistory returns the last 20 messages (newest first) of a conversation.

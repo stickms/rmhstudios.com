@@ -36,6 +36,7 @@ go_test(
     name = "botworker_test",
     srcs = [
         "bench_test.go",
+        "dm_queries_test.go",
         "dmpolicy_test.go",
         "image_test.go",
         "notify_test.go",
