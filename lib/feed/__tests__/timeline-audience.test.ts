@@ -22,8 +22,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 const store = vi.hoisted(() => ({
-  posts: [] as Record<string, any>[],
-  reposts: [] as Record<string, any>[],
+  posts: [] as Record<string, unknown>[],
+  reposts: [] as Record<string, unknown>[],
   following: [] as string[],
   circleOwners: [] as string[],
 }));
