@@ -26,6 +26,7 @@ const fetchEmbed = createServerFn({ method: 'GET' })
         deletedAt: true,
         audience: true,
         unlockPrice: true,
+        community: { select: { isPrivate: true } },
         likeCount: true,
         commentCount: true,
         repostCount: true,
@@ -35,7 +36,12 @@ const fetchEmbed = createServerFn({ method: 'GET' })
       },
     });
 
-    if (!post || post.deletedAt || post.audience !== 'PUBLIC' || (post.unlockPrice ?? 0) > 0) {
+    if (
+      !post ||
+      post.deletedAt || post.audience !== 'PUBLIC' ||
+      post.community?.isPrivate ||
+      (post.unlockPrice ?? 0) > 0
+    ) {
       return null;
     }
     const user = resolveUser(post.user as any);

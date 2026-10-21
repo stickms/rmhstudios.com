@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { prisma } from '@/lib/prisma.server';
+import { viewerVisiblePostWhere } from '@/lib/feed/audience.server';
 import { withDeveloperApi, apiOptions } from '@/lib/api/with-developer-api.server';
 import { apiAuthorSelect, serializePublicPost, parsePage } from '@/lib/api/serializers.server';
 
@@ -28,7 +29,9 @@ export const Route = createFileRoute('/api/v1/me/bookmarks')({
               select: { createdAt: true, entityId: true },
             });
             const posts = await prisma.rMHark.findMany({
-              where: { id: { in: rows.map((r) => r.entityId) }, deletedAt: null },
+              // A bookmark is not a standing right to read (private now, deleted, blocked author,
+              // private community): same visibility rule as the web bookmarks list.
+              where: { id: { in: rows.map((r) => r.entityId) }, ...(await viewerVisiblePostWhere(userId)) },
               select: {
                 id: true, content: true, createdAt: true, deletedAt: true, likeCount: true, commentCount: true,
                 repostCount: true, viewCount: true, imageUrls: true, user: { select: apiAuthorSelect },

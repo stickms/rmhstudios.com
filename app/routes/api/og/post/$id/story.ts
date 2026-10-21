@@ -22,6 +22,7 @@ export const Route = createFileRoute('/api/og/post/$id/story')({
             audience: true,
             unlockPrice: true,
             isSensitive: true,
+            community: { select: { isPrivate: true } },
             // The display shape, so the story card names the author the same
             // way every other surface does (see @/lib/user-display).
             user: { select: userDisplaySelect },

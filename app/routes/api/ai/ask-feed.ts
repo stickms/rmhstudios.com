@@ -54,6 +54,8 @@ export const Route = createFileRoute('/api/ai/ask-feed')({
           const where = {
             deletedAt: null,
             audience: 'PUBLIC' as const,
+            // Members-only community posts never feed an AI answer shown to anyone.
+            communityId: null,
             unlockPrice: null,
             ...(hidden.length ? { userId: { notIn: hidden } } : {}),
             ...(terms.length
@@ -77,6 +79,7 @@ export const Route = createFileRoute('/api/ai/ask-feed')({
               where: {
                 deletedAt: null,
                 audience: 'PUBLIC',
+                communityId: null,
                 unlockPrice: null,
                 ...(hidden.length ? { userId: { notIn: hidden } } : {}),
               },

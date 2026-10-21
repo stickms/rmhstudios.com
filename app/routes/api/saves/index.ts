@@ -40,6 +40,9 @@ export const Route = createFileRoute('/api/saves/')({
           try {
             await addSave(session.user.id, body);
           } catch (e) {
+            if (e instanceof Error && e.message === 'not-found') {
+              return Response.json({ error: 'Not found' }, { status: 404 });
+            }
             if (e instanceof Error && e.message === 'folder-not-found') {
               return Response.json({ error: 'Folder not found' }, { status: 404 });
             }
