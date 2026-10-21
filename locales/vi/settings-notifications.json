@@ -17,5 +17,7 @@
   "quiet-end": "Quiet hours end",
   "quiet-hours": "Quiet hours",
   "quiet-start": "Quiet hours start",
+  "tab-badge": "Số lượng chưa đọc trong tab trình duyệt",
+  "tab-badge-desc": "Hiển thị số tin nhắn và thông báo chưa đọc trong tiêu đề và biểu tượng tab trên thiết bị này.",
   "to": "To"
 }

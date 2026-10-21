@@ -41,11 +41,13 @@ import ruCProfileModules from "@/locales/ru/c-profile-modules.json";
 import ruCRebarRutabaga from "@/locales/ru/c-rebar-rutabaga.json";
 import ruCRideshare from "@/locales/ru/c-rideshare.json";
 import ruCRmhCapital from "@/locales/ru/c-rmh-capital.json";
+import ruCRmhDatacenter from "@/locales/ru/c-rmh-datacenter.json";
 import ruCRmhPmc from "@/locales/ru/c-rmh-pmc.json";
 import ruCRmhbox from "@/locales/ru/c-rmhbox.json";
 import ruCRmhcalculator from "@/locales/ru/c-rmhcalculator.json";
 import ruCRmhcode from "@/locales/ru/c-rmhcode.json";
 import ruCRmhcoins from "@/locales/ru/c-rmhcoins.json";
+import ruCRmhfashion from "@/locales/ru/c-rmhfashion.json";
 import ruCRmhmusic from "@/locales/ru/c-rmhmusic.json";
 import ruCRmhstudy from "@/locales/ru/c-rmhstudy.json";
 import ruCRmhtech from "@/locales/ru/c-rmhtech.json";
@@ -68,6 +70,35 @@ import ruCVoidBreaker from "@/locales/ru/c-void-breaker.json";
 import ruCWager from "@/locales/ru/c-wager.json";
 import ruCWishlist from "@/locales/ru/c-wishlist.json";
 import ruCommon from "@/locales/ru/common.json";
+import ruErrors from "@/locales/ru/errors.json";
+import ruFAccess from "@/locales/ru/f-access.json";
+import ruFAction from "@/locales/ru/f-action.json";
+import ruFArcade from "@/locales/ru/f-arcade.json";
+import ruFAsyncGames from "@/locales/ru/f-async-games.json";
+import ruFCalendar from "@/locales/ru/f-calendar.json";
+import ruFCanvas from "@/locales/ru/f-canvas.json";
+import ruFCommunitiesPlus from "@/locales/ru/f-communities-plus.json";
+import ruFCompetitive from "@/locales/ru/f-competitive.json";
+import ruFCreative from "@/locales/ru/f-creative.json";
+import ruFDelight from "@/locales/ru/f-delight.json";
+import ruFDevplatform from "@/locales/ru/f-devplatform.json";
+import ruFDiscovery from "@/locales/ru/f-discovery.json";
+import ruFEconomyPlus from "@/locales/ru/f-economy-plus.json";
+import ruFFeedPlus from "@/locales/ru/f-feed-plus.json";
+import ruFForecasting from "@/locales/ru/f-forecasting.json";
+import ruFGifting from "@/locales/ru/f-gifting.json";
+import ruFLadderHomes from "@/locales/ru/f-ladder-homes.json";
+import ruFMessaging from "@/locales/ru/f-messaging.json";
+import ruFOps from "@/locales/ru/f-ops.json";
+import ruFParty from "@/locales/ru/f-party.json";
+import ruFPerf from "@/locales/ru/f-perf.json";
+import ruFPostsPlus from "@/locales/ru/f-posts-plus.json";
+import ruFProfilePlus from "@/locales/ru/f-profile-plus.json";
+import ruFReading from "@/locales/ru/f-reading.json";
+import ruFSafety from "@/locales/ru/f-safety.json";
+import ruFTools from "@/locales/ru/f-tools.json";
+import ruFWatch from "@/locales/ru/f-watch.json";
+import ruFWorlds from "@/locales/ru/f-worlds.json";
 import ruFeed from "@/locales/ru/feed.json";
 import ruGamesHub from "@/locales/ru/games-hub.json";
 import ruGroups from "@/locales/ru/groups.json";
@@ -138,11 +169,13 @@ const ruResources = {
   "c-rebar-rutabaga": ruCRebarRutabaga,
   "c-rideshare": ruCRideshare,
   "c-rmh-capital": ruCRmhCapital,
+  "c-rmh-datacenter": ruCRmhDatacenter,
   "c-rmh-pmc": ruCRmhPmc,
   "c-rmhbox": ruCRmhbox,
   "c-rmhcalculator": ruCRmhcalculator,
   "c-rmhcode": ruCRmhcode,
   "c-rmhcoins": ruCRmhcoins,
+  "c-rmhfashion": ruCRmhfashion,
   "c-rmhmusic": ruCRmhmusic,
   "c-rmhstudy": ruCRmhstudy,
   "c-rmhtech": ruCRmhtech,
@@ -165,6 +198,35 @@ const ruResources = {
   "c-wager": ruCWager,
   "c-wishlist": ruCWishlist,
   "common": ruCommon,
+  "errors": ruErrors,
+  "f-access": ruFAccess,
+  "f-action": ruFAction,
+  "f-arcade": ruFArcade,
+  "f-async-games": ruFAsyncGames,
+  "f-calendar": ruFCalendar,
+  "f-canvas": ruFCanvas,
+  "f-communities-plus": ruFCommunitiesPlus,
+  "f-competitive": ruFCompetitive,
+  "f-creative": ruFCreative,
+  "f-delight": ruFDelight,
+  "f-devplatform": ruFDevplatform,
+  "f-discovery": ruFDiscovery,
+  "f-economy-plus": ruFEconomyPlus,
+  "f-feed-plus": ruFFeedPlus,
+  "f-forecasting": ruFForecasting,
+  "f-gifting": ruFGifting,
+  "f-ladder-homes": ruFLadderHomes,
+  "f-messaging": ruFMessaging,
+  "f-ops": ruFOps,
+  "f-party": ruFParty,
+  "f-perf": ruFPerf,
+  "f-posts-plus": ruFPostsPlus,
+  "f-profile-plus": ruFProfilePlus,
+  "f-reading": ruFReading,
+  "f-safety": ruFSafety,
+  "f-tools": ruFTools,
+  "f-watch": ruFWatch,
+  "f-worlds": ruFWorlds,
   "feed": ruFeed,
   "games-hub": ruGamesHub,
   "groups": ruGroups,
