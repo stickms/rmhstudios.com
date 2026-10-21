@@ -413,7 +413,8 @@ function startMatch(io: Server, lobby: Lobby): void {
       missed: s.report.missed,
       done: s.done,
     }));
-    io.to(roomName(lobby.code)).emit(S2C.SCORES, scores);
+    // perf: volatile — full snapshot each tick, superseded by the next (see slice-it).
+    io.to(roomName(lobby.code)).volatile.emit(S2C.SCORES, scores);
   }, SCORE_TICK_MS);
 
   lobby.deadlineTimer = setTimeout(() => {

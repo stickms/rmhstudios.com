@@ -567,14 +567,13 @@ export class MediaQueue {
   private async persistQueuePositions(queue: QueueItem[]): Promise<void> {
     if (queue.length === 0) return;
     const prisma = getPrismaClient();
-    await prisma.$transaction(
-      queue.map((q) =>
-        prisma.rmhTubeQueueItem.update({
-          where: { id: q.id },
-          data: { position: q.position },
-        }),
-      ),
-    );
+    // perf: one UPDATE ... FROM unnest statement instead of a transaction of N
+    // single-row updates. `IS DISTINCT FROM` leaves already-correct rows
+    // untouched (no write, no new row version). Still awaited by callers, so
+    // order is durable as soon as the promise resolves.
+    await prisma.$executeRaw`UPDATE "rmhtube_queue_item" AS q SET "position" = v.pos
+      FROM unnest(${queue.map((q) => q.id)}::text[], ${queue.map((q) => q.position)}::int[]) AS v(id, pos)
+      WHERE q."id" = v.id AND q."position" IS DISTINCT FROM v.pos`;
   }
 }
 
