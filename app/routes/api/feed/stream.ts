@@ -12,6 +12,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { getFollowingIds } from '@/lib/social/follow-graph.server';
 import { feedEventBus, type FeedSSEEvent } from '@/lib/feed-sse';
+import { serializeWithDelivery } from '@/lib/feed-sse-serialize';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit.server';
 
 export const Route = createFileRoute('/api/feed/stream')({
@@ -63,12 +64,48 @@ export const Route = createFileRoute('/api/feed/stream')({
           }
         }
 
+        // Idempotent teardown shared by every exit path: client cancel, request
+        // abort, a failed write, and the max-lifetime timer. `cleanup` is assigned
+        // in start(); `cancel()`/abort can only fire after it exists.
+        let cleanup: (() => void) | null = null;
+
         const stream = new ReadableStream({
           start(controller) {
-            // Helper to send an SSE message
-            const send = (event: string, data: string) => {
-              controller.enqueue(encoder.encode(`event: ${event}\ndata: ${data}\n\n`));
+            let closed = false;
+            let unsubCreated = () => {};
+            let unsubUser = () => {};
+            let pingInterval: ReturnType<typeof setInterval> | null = null;
+            let lifetimeTimer: ReturnType<typeof setTimeout> | null = null;
+
+            const teardown = () => {
+              if (closed) return;
+              closed = true;
+              unsubCreated();
+              unsubUser();
+              if (pingInterval) clearInterval(pingInterval);
+              if (lifetimeTimer) clearTimeout(lifetimeTimer);
+              request.signal.removeEventListener('abort', teardown);
             };
+            cleanup = teardown;
+
+            // Helper to send an SSE message. A failed enqueue means the client is
+            // gone: tear down immediately so the bus listener and timers don't leak
+            // until a cancel() that may never arrive.
+            const send = (event: string, data: string) => {
+              if (closed) return;
+              try {
+                controller.enqueue(encoder.encode(`event: ${event}\ndata: ${data}\n\n`));
+              } catch {
+                teardown();
+              }
+            };
+
+            // Behind a proxy the request abort is the reliable disconnect signal.
+            if (request.signal.aborted) {
+              teardown();
+              return;
+            }
+            request.signal.addEventListener('abort', teardown, { once: true });
 
             // Send initial connection confirmation
             send('connected', JSON.stringify({ ok: true }));
@@ -77,29 +114,28 @@ export const Route = createFileRoute('/api/feed/stream')({
             // client can route the post into Following (auto-prepend) vs For You
             // ("N new" pill). The event payload shape is unchanged — only `delivery`
             // is added, exactly as before.
-            const unsubCreated = feedEventBus.subscribeCreated((event: FeedSSEEvent) => {
+            unsubCreated = feedEventBus.subscribeCreated((event: FeedSSEEvent) => {
               try {
                 const authorId = event.authorId;
                 const delivery = {
                   followed: !!authorId && followingIds.has(authorId),
                   own: !!authorId && authorId === viewerId,
                 };
-                send(event.type, JSON.stringify({ ...event, delivery }));
+                send(event.type, serializeWithDelivery(event, delivery));
               } catch {
-                // Client disconnected — will be cleaned up by cancel()
+                // Serialization failure for one event must not kill the stream.
               }
             });
 
             // Targeted events (e.g. mention notifications): only this viewer's own
             // per-user channel, never the global firehose. Anonymous viewers have no
             // per-user channel.
-            let unsubUser = () => {};
             if (viewerId) {
               unsubUser = feedEventBus.subscribeUser(viewerId, (event: FeedSSEEvent) => {
                 try {
                   send(event.type, JSON.stringify(event));
                 } catch {
-                  // Client disconnected — cleaned up by cancel()
+                  // Serialization failure for one event must not kill the stream.
                 }
               });
             }
@@ -116,23 +152,28 @@ export const Route = createFileRoute('/api/feed/stream')({
             // those — see the client follow-up flagged in the change notes.
 
             // Keepalive ping every 20s to prevent proxy/CDN timeouts
-            const pingInterval = setInterval(() => {
-              try {
-                send('ping', JSON.stringify({ t: Date.now() }));
-              } catch {
-                clearInterval(pingInterval);
-              }
+            pingInterval = setInterval(() => {
+              send('ping', JSON.stringify({ t: Date.now() }));
             }, 20_000);
 
-            // Store cleanup refs on the controller for cancel()
-            (controller as any).__feedCleanup = () => {
-              unsubCreated();
-              unsubUser();
-              clearInterval(pingInterval);
-            };
+            // perf: cap connection lifetime (~30 min + jitter, as in
+            // api/messages/stream.ts) so a half-dead connection that never errors
+            // can't pin a bus listener + timers forever. The client's EventSource
+            // handler (hooks/useFeedSSE.ts onerror) reconnects automatically with
+            // backoff, re-resolving the session and follow graph; jitter spreads
+            // the reconnects so long-lived tabs don't re-handshake together.
+            const closeAfterMs = 30 * 60_000 + Math.floor(Math.random() * 5 * 60_000);
+            lifetimeTimer = setTimeout(() => {
+              teardown();
+              try {
+                controller.close();
+              } catch {
+                // Already closed
+              }
+            }, closeAfterMs);
           },
-          cancel(controller) {
-            (controller as any)?.__feedCleanup?.();
+          cancel() {
+            cleanup?.();
           },
         });
 
