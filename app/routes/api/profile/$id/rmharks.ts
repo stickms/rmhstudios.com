@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import type { FeedItem, FeedPoll } from '@/lib/feed-types';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
-import { audienceWhere } from '@/lib/feed/audience.server';
+import { audienceWhere, viewerVisiblePostWhere } from '@/lib/feed/audience.server';
 import { applyLock, loadBoundedReactionSummaries } from '@/lib/feed/map-feed-item.server';
 import { isExpired } from '@/lib/posts-plus/constants';
 
@@ -133,6 +133,11 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
           }));
         }
         const aud = audienceWhere(viewerId, viewerFollowsOwner ? [userId] : []);
+        // A repost shows someone else's post, so that post gets the full
+        // visibility check (deleted, audience, blocks). Only deletedAt was
+        // checked before, which let a profile's reposts reveal PRIVATE,
+        // FOLLOWERS and CIRCLE posts to anyone who opened the tab.
+        const repostedVisible = await viewerVisiblePostWhere(viewerId);
 
         // Fetch user's own RMHarks and their reposts in parallel (exclude deleted)
         const [rmharksRaw, repostsRaw] = await Promise.all([
@@ -150,7 +155,7 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
           prisma.rMHarkRepost.findMany({
             where: {
               userId,
-              rmhark: { deletedAt: null },
+              rmhark: repostedVisible,
               ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
             },
             orderBy: { createdAt: 'desc' },

@@ -1,12 +1,11 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { ReferralBoard } from '@/components/rmhladder/ReferralBoard';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 
 const requireMember = createServerFn({ method: 'GET' }).handler(async () => {
-  const session = await auth.api.getSession({ headers: getRequest().headers }).catch(() => null);
+  const session = await getRequestSession();
   if (!session?.user)
     throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/referrals' } });
   return { ok: true as const };

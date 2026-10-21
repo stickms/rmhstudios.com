@@ -1,9 +1,8 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { GuideView, type GuideData } from '@/components/games/GuideView';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { games } from '@/lib/games';
 import { getGuide } from '@/lib/games/meta.server';
 import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
@@ -20,8 +19,7 @@ const fetchGuide = createServerFn({ method: 'GET' })
   .handler(async ({ data }): Promise<GuidePayload> => {
     const game = games.find((g) => g.id === data.gameId);
     if (!game) throw notFound();
-    const request = getRequest();
-    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    const session = await getRequestSession();
     if (data.guideId === 'new') {
       if (!session) throw notFound();
       return { gameId: data.gameId, guide: null };

@@ -20,7 +20,6 @@
 import { useCallback } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { useTranslation } from 'react-i18next';
 import { Bookmark, ListOrdered, Gift } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
@@ -29,7 +28,7 @@ import { type LiquidTab } from '@/components/ui/liquid-tabs';
 import { SavesHub } from '@/components/saves/SavesHub';
 import { ListsManager } from '@/components/lists/ListsManager';
 import { WishlistView } from '@/components/wishlist/WishlistView';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { listSaves, listFolders } from '@/lib/saves/saves.server';
 import { getUserLists } from '@/lib/lists/lists.server';
 import { listWishlist } from '@/lib/wishlist/wishlist.server';
@@ -51,8 +50,7 @@ interface HubData {
 const EMPTY: HubData = { items: [], nextCursor: null, folders: [], lists: [], wishlist: [] };
 
 const fetchSaves = createServerFn({ method: 'GET' }).handler(async (): Promise<HubData> => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+  const session = await getRequestSession();
   if (!session) return EMPTY;
   const userId = session.user.id;
   // All three shelves load together: they are one page, and switching tabs

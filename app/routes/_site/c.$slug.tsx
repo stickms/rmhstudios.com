@@ -1,9 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { CommunityColumn } from '@/components/feed/CommunityColumn';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import {
   getCommunity,
@@ -23,8 +22,7 @@ const fetchCommunityPage = createServerFn({ method: 'GET' })
     async ({
       data: slug,
     }): Promise<{ community: CommunityDetail | null; feed: CommunityFeedResult | null }> => {
-      const request = getRequest();
-      const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+      const session = await getRequestSession();
       const viewerId = session?.user?.id ?? null;
       const [community, feed] = await Promise.all([
         getCommunity(slug, viewerId),

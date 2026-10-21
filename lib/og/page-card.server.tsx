@@ -27,7 +27,6 @@
 
 import React from 'react';
 import satori from 'satori';
-import { Resvg } from '@resvg/resvg-js';
 import {
   DIM,
   HAIRLINE_W,
@@ -35,8 +34,10 @@ import {
   MUTED,
   RADIUS_SM,
   SCALE,
+  createCardCache,
   fetchAvatarDataUri,
   loadFonts,
+  rasterizeSvg,
   satoriFonts,
   stripEmoji,
   truncate,
@@ -58,8 +59,9 @@ import {
 } from '@/lib/og/chrome.server';
 import { loadOgImage } from '@/lib/og/media.server';
 
-const pngCache = new Map<string, { png: Buffer; ts: number }>();
-const PNG_MAX = 160;
+// TTL is applied per call (`PageCardData.ttlMs`), so the cache-wide one is only
+// the ceiling for callers that don't set it.
+const pngCache = createCardCache({ max: 160, ttlMs: 30 * 60 * 1000 });
 
 const PANE_PAD = 30 * SCALE;
 const PANE_PAD_STORY = 44 * SCALE;
@@ -113,16 +115,18 @@ function clean(s: string | null | undefined, n: number): string {
   return truncate(stripEmoji(s ?? ''), n);
 }
 
-export async function renderPageCard(data: PageCardData): Promise<Buffer> {
+export function renderPageCard(data: PageCardData): Promise<Buffer> {
   const variant: PageCardVariant = data.variant === 'story' ? 'story' : 'landscape';
-  const size = variant === 'story' ? STORY : LANDSCAPE;
   const ttl = data.ttlMs ?? 30 * 60 * 1000;
 
   // The art is part of the key rather than trusted to the caller's: it is drawn,
   // and the rule for this cache is that everything drawn is in the key.
   const cacheKey = `${variant}:${data.cacheKey}:${data.art ?? ''}`;
-  const cached = pngCache.get(cacheKey);
-  if (cached && Date.now() - cached.ts < ttl) return cached.png;
+  return pngCache.getOrRender(cacheKey, () => drawPageCard(data, variant), ttl);
+}
+
+async function drawPageCard(data: PageCardData, variant: PageCardVariant): Promise<Buffer> {
+  const size = variant === 'story' ? STORY : LANDSCAPE;
 
   await loadFonts();
 
@@ -321,13 +325,5 @@ export async function renderPageCard(data: PageCardData): Promise<Buffer> {
   });
 
   const svg = await satori(element, { ...size, fonts: satoriFonts() });
-  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: size.width } });
-  const png = Buffer.from(resvg.render().asPng());
-
-  if (pngCache.size >= PNG_MAX) {
-    const oldest = pngCache.keys().next().value;
-    if (oldest !== undefined) pngCache.delete(oldest);
-  }
-  pngCache.set(cacheKey, { png, ts: Date.now() });
-  return png;
+  return rasterizeSvg(svg, size.width);
 }

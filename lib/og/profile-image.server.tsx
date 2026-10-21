@@ -11,13 +11,14 @@
 
 import React from 'react';
 import satori from 'satori';
-import { Resvg } from '@resvg/resvg-js';
 import {
   INK,
   MUTED,
   SCALE,
+  createCardCache,
   fetchAvatarDataUri,
   loadFonts,
+  rasterizeSvg,
   satoriFonts,
   stripEmoji,
   truncate as sharedTruncate,
@@ -39,9 +40,7 @@ function truncate(s: string, n: number): string {
   return sharedTruncate(stripEmoji(s), n);
 }
 
-const pngCache = new Map<string, { png: Buffer; ts: number }>();
-const PNG_TTL = 10 * 60 * 1000;
-const PNG_MAX = 100;
+const pngCache = createCardCache({ max: 100, ttlMs: 10 * 60 * 1000 });
 
 const PANE_PAD = 26 * SCALE;
 const AVATAR = 52 * SCALE;
@@ -62,15 +61,16 @@ function formatCount(n: number): string {
   return String(n);
 }
 
-export async function renderProfileOgImage(data: ProfileOgData): Promise<Buffer> {
+export function renderProfileOgImage(data: ProfileOgData): Promise<Buffer> {
   // Bucket follower/post counts (per 10) so ordinary count churn doesn't bust
   // the rendered-PNG cache on every follow/post — the displayed figure is
   // K/M-abbreviated anyway, so small deltas don't change the card.
   const bucket = (n: number) => Math.floor((n ?? 0) / 10);
   const cacheKey = `${data.id}:${bucket(data.followerCount)}:${bucket(data.postCount)}`;
-  const cached = pngCache.get(cacheKey);
-  if (cached && Date.now() - cached.ts < PNG_TTL) return cached.png;
+  return pngCache.getOrRender(cacheKey, () => drawProfileOgImage(data));
+}
 
+async function drawProfileOgImage(data: ProfileOgData): Promise<Buffer> {
   await loadFonts();
 
   const avatar = await fetchAvatarDataUri(data.image);
@@ -150,13 +150,5 @@ export async function renderProfileOgImage(data: ProfileOgData): Promise<Buffer>
     ...LANDSCAPE,
     fonts: satoriFonts(),
   });
-  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: LANDSCAPE.width } });
-  const png = Buffer.from(resvg.render().asPng());
-
-  if (pngCache.size >= PNG_MAX) {
-    const oldest = pngCache.keys().next().value;
-    if (oldest !== undefined) pngCache.delete(oldest);
-  }
-  pngCache.set(cacheKey, { png, ts: Date.now() });
-  return png;
+  return rasterizeSvg(svg, LANDSCAPE.width);
 }

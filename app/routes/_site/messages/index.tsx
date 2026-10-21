@@ -9,18 +9,16 @@
 import { useCallback } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { useTranslation } from 'react-i18next';
 import { InboxColumn, type InboxTab } from '@/components/feed/InboxColumn';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { listConversations } from '@/lib/messages.server';
 
 // Prefetch the Messages tab's first page of conversations server-side (the
 // default tab), so the inbox is present at first paint / prefetched on intent.
 const fetchInbox = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+  const session = await getRequestSession();
   if (!session) return { messages: null };
   return { messages: await listConversations(session.user.id) };
 });

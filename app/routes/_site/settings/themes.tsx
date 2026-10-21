@@ -11,11 +11,10 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { ThemeStudio } from '@/components/themes/ThemeStudio';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { getUserTier } from '@/lib/entitlements';
 import { listMyThemes, listShop, listOwnedThemes } from '@/lib/themes/themes.server';
 import type { UserThemeView } from '@/lib/themes/tokens';
@@ -29,8 +28,7 @@ interface StudioData {
 }
 
 const fetchStudio = createServerFn({ method: 'GET' }).handler(async (): Promise<StudioData> => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+  const session = await getRequestSession();
   const userId = session?.user.id ?? null;
   const [mine, shop, owned, tier] = await Promise.all([
     userId ? listMyThemes(userId) : Promise.resolve([]),
