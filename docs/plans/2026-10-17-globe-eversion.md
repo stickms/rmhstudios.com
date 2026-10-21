@@ -283,6 +283,8 @@ is replaced by `AFTER_STABLE_FRAMES`, `AFTER_QUIET_MS`, `AFTER_QUIET_CAP_MS`, `A
   for every visitor whose system trims animations. The OS-wide CSS reset spares the eversion's layers. Every run
   takes the `ALWAYS_EVERT_*` waits, so the "Always evert globe" switch is gone from Settings (the stored field is
   kept, and ignored).
+- **Every control everts.** See design-language §7 _Eversion_: a control nobody tagged gets the state layer on first
+  contact (`lib/evert-auto.ts`), or a ghost of it where it cannot hold one (text fields, selects).
 
 ## 0. The effect in one paragraph
 
