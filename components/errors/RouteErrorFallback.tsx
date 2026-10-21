@@ -2,6 +2,7 @@ import { useEffect } from'react';
 import { Link } from'@tanstack/react-router';
 import { AlertTriangle, Home, RotateCw } from'lucide-react';
 import { reportClientError } from'@/lib/client-errors';
+import { isStaleBuildError, reloadForStaleBuild } from'@/lib/stale-build';
 
 interface RouteErrorFallbackProps {
  error?: unknown;
@@ -19,6 +20,11 @@ interface RouteErrorFallbackProps {
 export function RouteErrorFallback({ error, reset, info }: RouteErrorFallbackProps) {
  useEffect(() => {
  reportClientError(error, { source:'route-error', componentStack: info?.componentStack });
+ // A chunk deleted by a deploy (React.lazy, a split loader) lands here, where
+ // "Try again" would only refetch the same dead URL. Reload onto the current
+ // build instead; the guard lets a genuinely broken chunk fall through to this
+ // page rather than looping.
+ if (isStaleBuildError(error)) reloadForStaleBuild();
  }, [error, info]);
 
  // Raw error text is a developer artefact — the profile route's boundary was
