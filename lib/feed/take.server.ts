@@ -13,6 +13,7 @@ const postSelect = {
   userId: true,
   isTake: true,
   audience: true,
+  communityId: true,
   deletedAt: true,
   takeAgreeCount: true,
   takeDisagreeCount: true,

@@ -72,12 +72,16 @@ export const Route = createFileRoute('/api/rmharks/$id/translate')({
             content: true,
             userId: true,
             audience: true,
+            communityId: true,
             unlockPrice: true,
             unlocks: { where: { userId: viewerId ?? '' }, select: { id: true } },
           },
         });
         if (!post) return Response.json({ error: 'Post not found' }, { status: 404 });
-        if (!(await canViewPost({ userId: post.userId, audience: post.audience }, viewerId))) {
+        if (!(await canViewPost(
+            { userId: post.userId, audience: post.audience, communityId: post.communityId },
+            viewerId,
+          ))) {
           return Response.json({ error: 'Post not found' }, { status: 404 });
         }
         if (isLocked(post, viewerId)) {

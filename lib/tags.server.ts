@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma.server';
 import { getFollowingIds } from '@/lib/social/follow-graph.server';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
-import { audienceWhere } from '@/lib/feed/audience.server';
+import { audienceWhere, communityVisibleWhere } from '@/lib/feed/audience.server';
 import type { FeedItem } from '@/lib/feed-types';
 
 export interface TagFeedResult {
@@ -53,6 +53,7 @@ export async function listTagFeed(
       hashtags: { some: { hashtag: { tag } } },
       ...(hidden.length ? { userId: { notIn: hidden } } : {}),
       ...audienceWhere(viewerId, followingIds),
+      ...communityVisibleWhere(viewerId),
     },
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: limit + 1,

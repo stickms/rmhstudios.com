@@ -4,13 +4,16 @@ import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { feedEventBus } from '@/lib/feed-sse';
 import { createNotification, removeNotification } from '@/lib/notifications.server';
-import { viewerVisiblePostWhere } from '@/lib/feed/audience.server';
+import { canReadPostThread, viewerVisiblePostWhere } from '@/lib/feed/audience.server';
 
 export const Route = createFileRoute('/api/rmharks/$id/repost')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none' }, async ({ params }) => {
+      GET: defineHandler({ auth: 'optional' }, async ({ params, userId: viewerId }) => {
         const { id } = params;
+        if (!(await canReadPostThread(id, viewerId))) {
+          return Response.json({ error: 'Not found' }, { status: 404 });
+        }
         const reposts = await prisma.rMHarkRepost.findMany({
           where: { rmheetId: id },
           orderBy: { createdAt: 'desc' },

@@ -17,6 +17,13 @@ export function evalWhere(row: Row, where: Row | undefined): boolean {
       if (!(cond as Row[]).some((c) => evalWhere(row, c))) return false;
     } else if (key === 'NOT') {
       if (evalWhere(row, cond as Row)) return false;
+    } else if (cond && typeof cond === 'object' && 'isNot' in cond) {
+      // Optional to-one relation: `isNot` also matches rows with no related record.
+      const rel = row[key] as Row | null | undefined;
+      if (rel && evalWhere(rel, (cond as { isNot: Row }).isNot)) return false;
+    } else if (cond && typeof cond === 'object' && 'none' in cond) {
+      const list = (row[key] as Row[] | undefined) ?? [];
+      if (list.some((r) => evalWhere(r, (cond as { none: Row }).none))) return false;
     } else if (key === 'rmhark') {
       if (!evalWhere(row.rmhark as Row, cond as Row)) return false;
     } else if (!matchesField(row[key], cond)) {

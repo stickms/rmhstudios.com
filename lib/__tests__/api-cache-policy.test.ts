@@ -111,8 +111,6 @@ const PUBLIC_BUT_NOT_CACHED: Record<string, string> = {
   '/api/user-builds/$id/comments': 'user comments; deletion and moderation must not be stale',
   '/api/feedback': 'user-submitted text, and an unbounded read (WS4)',
   '/api/handles/history': 'impersonation signal that changes at a rename; low traffic',
-  '/api/rmharks/$id/like': 'WS2 file; likes list the actor looks at right after liking',
-  '/api/rmharks/$id/repost': 'WS2 file; reposts list the actor looks at right after reposting',
 };
 
 describe('public cache declarations are anonymous-invariant (static)', () => {

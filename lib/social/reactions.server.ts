@@ -1,4 +1,5 @@
 // lib/social/reactions.server.ts
+import { canReadThread } from '@/lib/feed/audience.server';
 import { prisma } from '@/lib/prisma.server';
 import type { ReactionRow, ReactionSummary } from '@/lib/social/reactions';
 import { isStarEmoji } from '@/lib/communities/plus-schema';
@@ -86,13 +87,24 @@ export async function toggleCommentReaction(
   const [comment, existing] = await Promise.all([
     prisma.rMHarkComment.findUnique({
       where: { id: commentId },
-      select: { id: true, deletedAt: true },
+      select: {
+        id: true,
+        deletedAt: true,
+        rmhark: { select: { userId: true, audience: true, deletedAt: true, communityId: true } },
+      },
     }),
     prisma.rMHarkCommentReaction.findUnique({
       where: { commentId_userId_emoji: { commentId, userId, emoji } },
     }),
   ]);
   if (!comment || comment.deletedAt) return { found: false, reacted: false, rows: [] };
+  if (!(await canReadThread(comment.rmhark, userId))) {
+    // Adding a reaction needs a readable thread; removing one stays allowed, but the
+    // answer must not reveal the (now hidden) thread's reactor roster.
+    if (!existing) return { found: false, reacted: false, rows: [] };
+    await prisma.rMHarkCommentReaction.delete({ where: { id: existing.id } });
+    return { found: true, reacted: false, rows: [] };
+  }
   if (existing) {
     await prisma.rMHarkCommentReaction.delete({ where: { id: existing.id } });
   } else {

@@ -37,6 +37,10 @@ export const Route = createFileRoute('/api/rmharks/$id/comment/$commentId/repost
             await prisma.rMHarkCommentRepost.delete({ where: { id: existing.id } });
             return Response.json({ success: true, reposted: false });
           } else {
+            // Adding needs a readable thread; undoing (above) stays allowed.
+            if (!(await canReadCommentThread(commentId, userId))) {
+              return Response.json({ error: 'Not found' }, { status: 404 });
+            }
             await prisma.rMHarkCommentRepost.create({ data: { commentId, userId } });
             return Response.json({ success: true, reposted: true });
           }

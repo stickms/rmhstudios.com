@@ -43,6 +43,11 @@ export const Route = createFileRoute('/api/rmharks/$id/comment/$commentId/like')
             ]);
             return Response.json({ success: true, liked: false });
           } else {
+            // Adding needs a readable thread; undoing (above) stays allowed so an old
+            // like can always be removed even after the post became private.
+            if (!(await canReadCommentThread(commentId, userId))) {
+              return Response.json({ error: 'Not found' }, { status: 404 });
+            }
             // Add the like and bump the comment's denormalized tally atomically.
             await prisma.$transaction([
               prisma.rMHarkCommentLike.create({ data: { commentId, userId } }),

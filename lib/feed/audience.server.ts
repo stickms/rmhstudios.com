@@ -37,6 +37,43 @@ export function audienceWhere(
   };
 }
 
+/**
+ * Posts in a PRIVATE community are members-only (WS4's rule, `requireReadable`:
+ * any role in `community_member`). This is the `where` fragment for "not a post
+ * the viewer is locked out of": posts outside any community and posts in a public
+ * community pass; a private community's posts pass only for its members.
+ * `isNot` on the optional relation also matches posts with no community, so no
+ * `communityId IS NULL OR ...` is needed (and no `OR` key to collide with the
+ * audience / keyset `OR`). Anonymous viewers are members of nothing.
+ *
+ * Feeds that already require `communityId: null` (the timeline, lists) do not
+ * need it; every read that can reach a community post does.
+ */
+export function communityVisibleWhere(viewerId: string | null) {
+  return {
+    community: {
+      isNot: {
+        isPrivate: true,
+        ...(viewerId ? { members: { none: { userId: viewerId } } } : {}),
+      },
+    },
+  };
+}
+
+/** Whether `viewerId` may see posts of this community (membership of a private one). */
+async function communityReadable(communityId: string | null, viewerId: string | null): Promise<boolean> {
+  if (!communityId) return true;
+  const c = await prisma.community.findUnique({
+    where: { id: communityId },
+    select: {
+      isPrivate: true,
+      members: viewerId ? { where: { userId: viewerId }, select: { id: true }, take: 1 } : false,
+    },
+  });
+  if (!c) return false;
+  return !c.isPrivate || (c.members?.length ?? 0) > 0;
+}
+
 /** Active-creator ids the viewer currently supports (for `audienceWhere`). */
 export async function supportedCreatorIds(viewerId: string | null): Promise<string[]> {
   if (!viewerId) return [];
@@ -71,7 +108,9 @@ export async function circleOwnerIds(viewerId: string | null): Promise<string[]>
  * hits when warm) and one circle read; anonymous viewers cost nothing.
  */
 export async function viewerVisiblePostWhere(viewerId: string | null): Promise<Record<string, unknown>> {
-  if (!viewerId) return { deletedAt: null, audience: 'PUBLIC' as const };
+  if (!viewerId) {
+    return { deletedAt: null, audience: 'PUBLIC' as const, ...communityVisibleWhere(null) };
+  }
   const [following, circles, hidden] = await Promise.all([
     getFollowingIds(viewerId),
     circleOwnerIds(viewerId),
@@ -80,15 +119,24 @@ export async function viewerVisiblePostWhere(viewerId: string | null): Promise<R
   return {
     deletedAt: null,
     ...audienceWhere(viewerId, following, [], circles),
+    ...communityVisibleWhere(viewerId),
     ...(hidden.length ? { userId: { notIn: hidden } } : {}),
   };
 }
 
 /** Whether a single post is visible to a viewer (used on the post-detail route). */
 export async function canViewPost(
-  post: { userId: string; audience: 'PUBLIC' | 'FOLLOWERS' | 'PRIVATE' | 'SUPPORTERS' | 'CIRCLE' },
+  post: {
+    userId: string;
+    audience: 'PUBLIC' | 'FOLLOWERS' | 'PRIVATE' | 'SUPPORTERS' | 'CIRCLE';
+    /** Required so no caller can forget the private-community rule. */
+    communityId: string | null;
+  },
   viewerId: string | null,
 ): Promise<boolean> {
+  // Private-community posts are members-only, whatever the post's own audience.
+  // (Zero cost for the ordinary post: communityId is null.)
+  if (!(await communityReadable(post.communityId, viewerId))) return false;
   if (post.audience === 'PUBLIC') return true;
   if (!viewerId) return false;
   if (post.userId === viewerId) return true;
@@ -121,6 +169,7 @@ export interface ThreadPost {
   userId: string;
   audience: 'PUBLIC' | 'FOLLOWERS' | 'PRIVATE' | 'SUPPORTERS' | 'CIRCLE';
   deletedAt: Date | null;
+  communityId: string | null;
 }
 
 /**
@@ -147,7 +196,7 @@ export async function canReadThread(post: ThreadPost | null, viewerId: string | 
 export async function canReadPostThread(postId: string, viewerId: string | null): Promise<boolean> {
   const post = await prisma.rMHark.findUnique({
     where: { id: postId },
-    select: { userId: true, audience: true, deletedAt: true },
+    select: { userId: true, audience: true, deletedAt: true, communityId: true },
   });
   return canReadThread(post, viewerId);
 }
@@ -160,7 +209,9 @@ export async function canReadPostThread(postId: string, viewerId: string | null)
 export async function canReadCommentThread(commentId: string, viewerId: string | null): Promise<boolean> {
   const c = await prisma.rMHarkComment.findUnique({
     where: { id: commentId },
-    select: { rmhark: { select: { userId: true, audience: true, deletedAt: true } } },
+    select: {
+      rmhark: { select: { userId: true, audience: true, deletedAt: true, communityId: true } },
+    },
   });
   return canReadThread(c?.rmhark ?? null, viewerId);
 }

@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { prisma } from '@/lib/prisma.server';
+import { canReadThread } from '@/lib/feed/audience.server';
 import { z } from 'zod';
 import { withDeveloperApi, apiOptions } from '@/lib/api/with-developer-api.server';
 import { apiAuthorSelect, serializeAuthor, parsePage, page } from '@/lib/api/serializers.server';
@@ -30,9 +31,10 @@ export const Route = createFileRoute('/api/v1/posts/$id/comments')({
             // FOLLOWERS/PRIVATE posts.
             const parent = await prisma.rMHark.findUnique({
               where: { id: params.id },
-              select: { audience: true, userId: true },
+              select: { audience: true, userId: true, deletedAt: true, communityId: true },
             });
-            if (!parent || (parent.audience !== 'PUBLIC' && parent.userId !== userId)) {
+            // Same rule as every other comment read (deleted, audience, blocks).
+            if (!(await canReadThread(parent, userId))) {
               return error('not_found', 'Post not found.', 404);
             }
             const { limit, cursor } = parsePage(new URL(request.url));

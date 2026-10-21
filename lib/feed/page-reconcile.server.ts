@@ -40,6 +40,7 @@ interface PostRow {
   userId: string;
   audience: string;
   deletedAt: Date | null;
+  communityId: string | null;
   hashtags: { hashtag: { tag: string } }[];
   unlocks: { id: string }[];
 }
@@ -70,6 +71,7 @@ export async function reconcileCachedPage(
         userId: true,
         audience: true,
         deletedAt: true,
+        communityId: true,
         hashtags: { select: { hashtag: { select: { tag: true } } } },
         unlocks: { where: { userId: viewerId }, select: { id: true } },
       },
@@ -115,6 +117,10 @@ export async function reconcileCachedPage(
     if (item.type !== 'rmhark') return true;
     const row = byId.get(item.actualId ?? item.id);
     if (!row || row.deletedAt) return false;
+    // The feed only ever holds posts outside communities (the assembly query requires
+    // communityId null); one that has one now is never served from a cached page, so
+    // a private community's post cannot leak through the cache.
+    if (row.communityId) return false;
     if (hiddenSet.has(row.userId) || (item.repostedBy && hiddenSet.has(item.repostedBy.id))) {
       return false;
     }
