@@ -13,6 +13,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { createBuildSchema } from '@/lib/user-builds-schema';
+import { buildCardSelect } from '@/lib/user-builds-list';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { getAuthenticatedUser } from '@/lib/rmhcode-auth';
 
@@ -143,14 +144,7 @@ export const Route = createFileRoute('/api/user-builds')({
           where,
           orderBy,
           take: limit + 1,
-          include: {
-            user: { select: userDisplaySelect },
-            category: { select: { id: true, name: true, slug: true, color: true, iconName: true } },
-            tags: { select: { name: true } },
-            ...(currentUserId
-              ? { likes: { where: { userId: currentUserId }, select: { id: true } } }
-              : {}),
-          },
+          select: buildCardSelect(currentUserId),
         });
 
         const hasMore = builds.length > limit;
