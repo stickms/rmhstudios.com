@@ -117,8 +117,6 @@ const PUBLIC_BUT_NOT_CACHED: Record<string, string> = {
   '/api/handles/history': 'impersonation signal that changes at a rename; low traffic',
   '/api/rmharks/$id/like': 'WS2 file; likes list the actor looks at right after liking',
   '/api/rmharks/$id/repost': 'WS2 file; reposts list the actor looks at right after reposting',
-  '/api/rmharks/$id/comment/$commentId/like': 'WS2 file; same reasoning as the post like list',
-  '/api/rmharks/$id/comment/$commentId/repost': 'WS2 file; same reasoning as the post repost list',
 };
 
 describe('public cache declarations are anonymous-invariant (static)', () => {
