@@ -108,7 +108,8 @@ function getAuthPool(): Pool | null {
   if (!authPool) {
     authPool = new Pool({
       connectionString: config.DATABASE_URL,
-      max: 10,
+      // perf: one session lookup per connect, 4 is plenty; override with AUTH_DB_POOL_SIZE.
+      max: Number(process.env.AUTH_DB_POOL_SIZE) || 4,
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 5_000,
     });
