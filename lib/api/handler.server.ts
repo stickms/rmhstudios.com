@@ -44,6 +44,7 @@
 import { createHash } from 'node:crypto';
 import type { z } from 'zod';
 import { auth } from '@/lib/auth';
+import { measure } from '@/lib/otel/timing';
 import type { RateLimitPolicy, WithRateLimitOptions } from '@/lib/rate-limit';
 import { withRateLimitAsync } from '@/lib/rate-limit.server';
 import { canUse, upgradeRequiredBody, type MemberFeature } from '@/lib/entitlements/features';
@@ -569,10 +570,9 @@ export function defineHandler<
       if (mode !== 'none') {
         // A transport/DB hiccup in the session lookup must not 500 a route that
         // tolerates anonymous callers — it degrades to "signed out" instead.
-        session =
-          mode === 'optional'
-            ? await auth.api.getSession({ headers: request.headers }).catch(() => null)
-            : await auth.api.getSession({ headers: request.headers });
+        // Timed as the `sess` Server-Timing phase.
+        const lookup = () => measure('sess', () => auth.api.getSession({ headers: request.headers }));
+        session = mode === 'optional' ? await lookup().catch(() => null) : await lookup();
       }
 
       const user = (session?.user ?? null) as ApiUser | null;

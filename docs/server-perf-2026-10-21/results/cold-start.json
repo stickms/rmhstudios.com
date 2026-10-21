@@ -1,0 +1,57 @@
+{
+ "measuredAt": "2026-10-21T19:52:11.066Z",
+ "runs": {
+  "anon": [
+   {
+    "bootMs": 1359,
+    "firstStatus": 200,
+    "firstTtfbMs": 164,
+    "firstTotalMs": 236
+   },
+   {
+    "bootMs": 1337,
+    "firstStatus": 200,
+    "firstTtfbMs": 160,
+    "firstTotalMs": 253
+   },
+   {
+    "bootMs": 1402,
+    "firstStatus": 200,
+    "firstTtfbMs": 145,
+    "firstTotalMs": 299
+   }
+  ],
+  "signed": [
+   {
+    "bootMs": 1362,
+    "firstStatus": 200,
+    "firstTtfbMs": 248,
+    "firstTotalMs": 329
+   },
+   {
+    "bootMs": 1378,
+    "firstStatus": 200,
+    "firstTtfbMs": 263,
+    "firstTotalMs": 286
+   },
+   {
+    "bootMs": 1399,
+    "firstStatus": 200,
+    "firstTtfbMs": 300,
+    "firstTotalMs": 303
+   }
+  ]
+ },
+ "summary": {
+  "anon": {
+   "bootMsMedian": 1359,
+   "firstTtfbMsMedian": 160,
+   "firstTotalMsMedian": 253
+  },
+  "signed": {
+   "bootMsMedian": 1378,
+   "firstTtfbMsMedian": 263,
+   "firstTotalMsMedian": 303
+  }
+ }
+}
