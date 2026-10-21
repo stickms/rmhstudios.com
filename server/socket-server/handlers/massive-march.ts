@@ -352,8 +352,9 @@ function itemDescriptors(session: Session): ItemDescriptor[] {
   return out;
 }
 
-function pushWorld(io: Server, session: Session, now: number): void {
-  const ctx = context(session, now);
+function pushWorld(io: Server, session: Session, now: number, existing?: PuzzleContext): void {
+  // perf: the tick already built a context this frame; only rebuild when called elsewhere.
+  const ctx = existing ?? context(session, now);
   io.to(roomName(session.code)).emit(
     S2C.WORLD,
     snapshot(session.state, ctx, carriedOrbs(session), itemDescriptors(session)),
@@ -1672,10 +1673,14 @@ function tickSession(io: Server, session: Session, now: number): void {
   if (!sessions.has(session.code)) return;
 
   const ctx = context(session, now);
+  // The shared ctx is a snapshot (keys are copied); once puzzle state mutates it is
+  // stale for the world snapshot, so pushWorld rebuilds in that case.
+  let ctxStale = false;
   for (const site of PUZZLE_SITES) {
     const runtime = session.state.runtimes[site.id];
     if (!runtime) continue;
     const outcome = evaluate(site, runtime, ctx);
+    if (outcome.changed || outcome.solved) ctxStale = true;
     if (outcome.changed) {
       session.worldDirty = true;
       session.saveDirty = true;
@@ -1691,12 +1696,15 @@ function tickSession(io: Server, session: Session, now: number): void {
     const gate = TOWERS.find((t) => t.id === 'gate');
     if (gate && ctx.players.some((p) => Math.hypot(p.x - gate.x, p.z - gate.z) < 7)) {
       queue(session, finish(session.state));
+      ctxStale = true;
       session.worldDirty = true;
       session.saveDirty = true;
     }
   }
 
-  io.to(roomName(session.code)).emit(S2C.TICK, tickFrame(session, now));
+  // perf: volatile — each TICK is a full replacement frame, so a dropped one is superseded
+  // by the next, and the adapter must not retain 15Hz frames for connection-state recovery.
+  io.to(roomName(session.code)).volatile.emit(S2C.TICK, tickFrame(session, now));
   pushReveals(io, session, ctx);
 
   const events = pendingEvents.get(session.code);
@@ -1705,7 +1713,9 @@ function tickSession(io: Server, session: Session, now: number): void {
     emitEvents(io, session, events);
   }
 
-  if (session.worldDirty || now - session.lastWorldAt > WORLD_HEARTBEAT_MS) pushWorld(io, session, now);
+  if (session.worldDirty || now - session.lastWorldAt > WORLD_HEARTBEAT_MS) {
+    pushWorld(io, session, now, ctxStale ? undefined : ctx);
+  }
 
   if (session.saveDirty && now - session.lastSavedAt > 15_000) void persist(session);
 

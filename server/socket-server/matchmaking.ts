@@ -101,6 +101,22 @@ const queues = new Map<string, GameQueue>();
 /** Which queue a key is in, so LEAVE and disconnect do not have to search. */
 const keyToGame = new Map<string, string>();
 
+/**
+ * perf: socketId -> queue keys it was added under, so a disconnect looks up its
+ * own entries instead of scanning every entry of every queue. It may hold a key
+ * whose entry has since been matched or left; dropSocket re-checks the live
+ * entry, and the whole row is deleted when the socket disconnects.
+ */
+const socketToKeys = new Map<string, Set<string>>();
+
+function indexSockets(key: string, socketIds: Iterable<string>): void {
+  for (const id of socketIds) {
+    let keys = socketToKeys.get(id);
+    if (!keys) socketToKeys.set(id, (keys = new Set()));
+    keys.add(key);
+  }
+}
+
 function queueFor(game: string): GameQueue {
   let q = queues.get(game);
   if (!q) {
@@ -219,6 +235,7 @@ export function join(
     });
   }
   keyToGame.set(key, game);
+  indexSockets(key, socketIds);
   ensureTicking(game);
   return { ok: true };
 }
@@ -236,13 +253,18 @@ export function leave(key: string): void {
 
 /** Drop a socket from every entry; drop the entry when it has none left. */
 export function dropSocket(socketId: string): void {
-  for (const [game, q] of queues) {
-    for (const [key, entry] of q.entries) {
-      if (!entry.socketIds.delete(socketId)) continue;
-      if (entry.socketIds.size === 0) {
-        q.entries.delete(key);
-        keyToGame.delete(key);
-      }
+  const keys = socketToKeys.get(socketId);
+  if (!keys) return;
+  socketToKeys.delete(socketId);
+  for (const key of keys) {
+    const game = keyToGame.get(key);
+    const q = game ? queues.get(game) : undefined;
+    const entry = q?.entries.get(key);
+    if (!game || !q || !entry) continue;
+    if (!entry.socketIds.delete(socketId)) continue;
+    if (entry.socketIds.size === 0) {
+      q.entries.delete(key);
+      keyToGame.delete(key);
     }
     if (q.entries.size === 0) stopTicking(game);
   }
@@ -356,4 +378,5 @@ export function __resetMatchmaking(): void {
   for (const game of [...queues.keys()]) stopTicking(game);
   queues.clear();
   keyToGame.clear();
+  socketToKeys.clear();
 }
