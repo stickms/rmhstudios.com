@@ -17,6 +17,22 @@ Stage A only (WS0_READY never appeared). Seeded scratch DB (3k users, 60k posts,
 | 10 | SECURITY: private-community posts are members-only on every post-level read (WS4 rule: any `community_member` row). `canViewPost` now requires `communityId` (tsc forced all 9 callers), `communityVisibleWhere` (relation `isNot`, no `OR` key, verified on the seeded DB) applied in `viewerVisiblePostWhere`, profile lists, tags, explore, quotes; cached feed pages drop any post with a `communityId` | by id (`/rmharks/:id`, history, translate, take, embed, notes), profile posts, likes, reposts, comments (all gates), tags, explore, quotes, `feed:v3` | private-community posts readable by non-members | readable | 404 / not listed; ops: +0 for ordinary posts (communityId null), +1 `community` read per post-level check on a community post, query-side fragment is an anti-join in the same statement (0 extra ops); timeline unchanged (already `communityId: null`, anon partial index untouched); reconcile +0 | community commit | lib/feed/__tests__/private-community-posts.test.ts (8 of 12 fail on parent) + reconcile case |
 | 11 | SECURITY: post-level writes and remaining readers apply the thread rule (deleted, audience, hidden author, private community). Writes: like, react, bookmark, save, poll vote, unlock (it returned ANY post's text for free/unlocked posts and charged for unreadable ones), quote; @mention notifications no longer carry a post's text to users who can't read it. Readers: bookmarks list, saves hydrate, thread by id (had no check), v1 `/posts/:id` and `/me/bookmarks`, oEmbed/embed/OG/story/post-page meta (private community), `ask-feed`, recommend, digest, site-wide post search (SQL excludes private communities unless a communityId scope is given). Undo (unlike, un-react, un-bookmark, un-vote, unsave) stays allowed; un-react returns no roster. Left ungated on purpose: post view counter (see Notes), report | many | invisible posts writable/readable | writable/readable | 404 / tombstone / filtered; ops: like, react, bookmark +0 on public posts (columns added to the existing select), vote +1 on add (PK read), unlock +0, saves +1 on add, quote +0, mentions +1 read per fan-out, bookmarks/hydrateSaves/thread/v1-bookmarks +0 (anti-join in the same statement), v1 post +0, search +0 (extra predicate) | round-5 commit | lib/feed/__tests__/post-write-and-reader-visibility.test.ts (44 of 66 fail on parent) |
 
+## Stage B (partial: in-process probes on the seeded `rmh_ws2` database, not the production-build harness)
+
+Method: `tsx` script calling `getTimeline` as the heavy user (2,000 follows), warm Postgres and Redis, 60-200 iterations, per-request query count from `withQueryBudget`. Evidence type: `latency` (hardware-dependent, one process, no concurrency).
+
+| Path | Ops | p50 | p95 |
+|---|---:|---:|---:|
+| For-You first page, cache hit, **with** serve-time reconcile (feed:v3) | 1 | 1.07 ms | 2.8 ms |
+| Following first page, cache hit, with reconcile | 2 | 1.62 ms | 8.2 ms |
+| For-You, bench user, cache hit, with reconcile | 1 | 0.95 ms | 3.3 ms |
+| For-You cold assemble (page key dropped; per-user sub-caches warm) | 5 | 21.3 ms | 47.9 ms |
+| Following cold assemble | 5 | 25.2 ms | 66.5 ms |
+
+So the reconcile costs about 1 ms and 1-2 ops on a hit and keeps the cache about 20x cheaper than assembling; the pre-fix hit was 0 ops. `/tag/tag1` as the heavy user: 120 ms / 3 ops vs anonymous 77 ms / 2 ops.
+
+**Baseline lead: `rmheet LEFT JOIN LATERAL user/profile` (249 slow runs, avg 450 ms).** Not the timeline: the heavy user's For-You / Following queries run in about 5 ms each. The shape (rmheet + lateral author display, hashtag filter, audience `OR`) is the **tag feed** (`lib/tags.server.ts`, `/tag/:tag`): `EXPLAIN (ANALYZE, BUFFERS)` on `rmh_ws2` shows 3,993 posts for `tag1`, each fetched by primary key (16,013 buffer hits) and then top-N sorted, 14 ms anonymous and 41 ms with the heavy user's audience `OR` + the 2,000-id `IN` list, which grows to the observed hundreds of ms under c=16 on 4 shared cores. The fix is a query-shape/index change on `post_hashtag` (keyset by `(hashtagId, createdAt desc)` so the scan stops at 21 rows), which is WS8's (tag-feed ownership), not changed here.
+
 ## Rejected (measured, no win)
 none
 
