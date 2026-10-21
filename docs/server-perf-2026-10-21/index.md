@@ -17,6 +17,7 @@ and for the person reviewing it. Read it in order the first time; afterwards
 | [`04-workstreams.md`](04-workstreams.md) | The work, split into workstreams with **disjoint file ownership**, each with its leads and exit criteria |
 | [`05-agent-protocol.md`](05-agent-protocol.md) | The operating procedure for an implementing agent: setup, build lock, commits, reporting |
 | `results/ws-*.md` | One ledger per workstream, written by its agent. Every claimed win is a row with before/after numbers |
+| [`06-report-template.md`](06-report-template.md) | The skeleton `06-report.md` follows |
 | `06-report.md` | Written at integration: the merged before/after, what shipped, what was rejected |
 
 ---
@@ -90,10 +91,23 @@ libraries (Prisma, Better Auth, TanStack Start) — the rules say why.
 
 ## 4. Phases
 
+P0 and P1 **overlap**: WS0–WS6 start together, each in its own git worktree, so
+no agent waits for another. What WS0 gates is not the start of a workstream but
+the kind of evidence it may produce, in two stages:
+
+- **Stage A — before the harness exists.** Static analysis, diagnosis, scan
+  scripts, and fixes whose evidence is *exact* and hardware-independent (query
+  counts, payload bytes, cache headers — `01-method.md` §0). Latency claims
+  wait. WS0-owned files (`04-workstreams.md` §Concurrency) are not edited.
+- **Stage B — after the coordinator's ready marker.** The coordinator merges WS0
+  and sets the marker; each agent merges WS0 into its branch, re-baselines,
+  **re-measures every Stage A change** and reverts any that shows no win, then
+  continues the loop with latency evidence.
+
 | Phase | Who | Output | Gate to next phase |
 | --- | --- | --- | --- |
-| **P0 — Instrument & baseline** | one agent (WS0) | the harness, the seeded perf dataset, the wired `Server-Timing` phases, `results/baseline.json` + `results/ws-0.md` | baseline exists for every route in the route list, both auth modes; coordinator ratifies the budgets in `02-budgets.md` §4 against it |
-| **P1 — Parallel workstreams** | one agent per workstream (WS1–WS6), each in its own git worktree | commits on a workstream branch + `results/ws-N.md` | each workstream meets its exit criteria or closes with "measured, no win" |
+| **P0 — Instrument & baseline** | one agent (WS0), concurrent with Stage A of P1 | the harness, the seeded perf dataset, the wired `Server-Timing` phases, `results/baseline.json` + `results/ws-0.md` | baseline exists for every route in the route list, both auth modes; coordinator ratifies the budgets in `02-budgets.md` §4 against it, merges WS0 and sets the ready marker |
+| **P1 — Parallel workstreams** | one agent per workstream (WS1–WS6): Stage A from the start, Stage B after the marker | commits on a workstream branch + `results/ws-N.md`, each Shipped row tagged `exact` or `latency` | each workstream meets its exit criteria or closes with "measured, no win" |
 | **P2 — Integration** | coordinator | workstreams merged in the order in `04-workstreams.md` §Merge order; full commit gate on the merged tree; full harness re-run; `06-report.md` | merged tree green; no route regressed past tolerance (`02-budgets.md` §3) |
 | **P3 — Production verification** | operator, after deploy | RUM/synthetic windows per [`performance-slo.md`](../performance-slo.md) | the rollback policy there applies unchanged |
 
@@ -109,3 +123,7 @@ libraries (Prisma, Better Auth, TanStack Start) — the rules say why.
   good outcome; a merged change with no number is not.
 - **Disagreement with a rule** goes in the agent's results file under
   "Rule objections", with evidence. The agent follows the rule meanwhile.
+- **The documentation is written by an agent.** A documentation agent revises
+  this folder as the process changes and drafts `06-report.md` from
+  [`06-report-template.md`](06-report-template.md) and the `results/` files; the
+  coordinator reviews and owns the result.

@@ -7,12 +7,27 @@ criteria**. Paths are globs from the repo root. When ownership is ambiguous,
 the more specific glob wins; when still ambiguous, ask the coordinator via a
 handoff row and do not edit.
 
-Every workstream starts by re-baselining its own routes in its own worktree
-(`01-method.md` §4) and reading `results/ws-0.md`.
+Every workstream starts Stage A at once and, once the coordinator's ready
+marker appears, re-baselines its own routes in its own worktree
+(`01-method.md` §4) and reads `results/ws-0.md` (`05-agent-protocol.md` §0.1).
+
+### Concurrency
+
+WS0–WS6 run at the same time. Until Stage B (the ready marker, WS0 merged into
+your branch) these files are **WS0-owned and no one else edits them**:
+`lib/otel/**`, `server/nitro/otel.ts`, `scripts/perf/**` (WS5's
+`socket-bench.mjs` excepted), `lib/auth-session.server.ts`,
+`lib/api/handler.server.ts`, `lib/cached.server.ts`, `lib/prisma.server.ts`. A
+Stage A lead that needs one of them is a handoff row, or waits for Stage B.
+
+Inside `app/routes/api/**` the split is by line, so two agents can edit one
+file without conflicting: **WS3 owns the `defineHandler` options object**
+(`cache`, `etag`, `rateLimit`, `auth`), **WS4 owns the handler body**. Keep the
+two edits in separate hunks; do not reformat the surrounding code.
 
 ---
 
-## WS0 — Instrumentation, harness, dataset, baseline (P0, runs alone)
+## WS0 — Instrumentation, harness, dataset, baseline (P0, concurrent with Stage A)
 
 **Owns:** `scripts/perf/**`, `lib/otel/**`, `server/nitro/otel.ts`, and the
 `mark()`/`measure()` call sites in `lib/auth-session.server.ts`,
@@ -205,7 +220,7 @@ request on the web process; repeat requests served from cache.
 
 ## Merge order (P2)
 
-`WS0` (already merged before P1) → `WS4` (schema/migrations first) → `WS2` →
+`WS0` (merged first, at the ready marker) → `WS4` (schema/migrations first) → `WS2` →
 `WS1` → `WS3` → `WS6` → `WS5`. The coordinator re-runs `pnpm check:consistency`
 after each merge and the full harness after the last one.
 
