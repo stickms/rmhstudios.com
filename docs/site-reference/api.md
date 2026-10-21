@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 882 files across 192 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 883 files across 192 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -46,7 +46,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/admin`
 
-77 routes.
+78 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -63,6 +63,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/admin/appeals/:id` | `POST` | `app/routes/api/admin/appeals/$id.ts` |
 | `/api/admin/audit-log` | `GET` | `app/routes/api/admin/audit-log.ts` |
 | `/api/admin/blog` | `DELETE` `POST` | `app/routes/api/admin/blog.ts` |
+| `/api/admin/bots` | `GET` `PUT` | `app/routes/api/admin/bots/index.ts` |
 | `/api/admin/canvas` | `GET` `POST` | `app/routes/api/admin/canvas/index.ts` |
 | `/api/admin/canvas/:id` | `DELETE` | `app/routes/api/admin/canvas/$id.ts` |
 | `/api/admin/context-notes` | `GET` | `app/routes/api/admin/context-notes/index.ts` |

@@ -200,6 +200,8 @@ export const CAPTURE_EXCLUDE_SELECTORS: readonly string[] = [
   '.radial-hub',
   '.eversion-overlay',
   '.eversion-hold-layer',
+  // The globe that pops up out of a pressed link (amended 2026-10-21): it is the effect's, not the page's.
+  '.evert-popup',
   '[data-sonner-toaster]',
   // Dev only: Vite's error overlay is a custom element whose constructor throws
   // when the capture clones it (`new ErrorOverlay()` with no error), and the

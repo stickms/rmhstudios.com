@@ -41,8 +41,10 @@ describe('eversion.css', () => {
     expect([...restored].sort()).toEqual([...covered].sort());
   });
 
-  it('is reached through radial.css, which SiteShell imports', () => {
-    expect(radial).toMatch(/^@import '\.\/eversion\/eversion\.css';$/m);
+  it('is loaded on every page by EversionRoot, not only under the shell (amended 2026-10-21)', () => {
+    const root = read('components/radial/eversion/EversionRoot.tsx');
+    expect(root).toMatch(/^import '\.\/eversion\.css';$/m);
+    expect(radial).not.toMatch(/@import '\.\/eversion\/eversion\.css'/);
   });
 
   it('never uses transition-all or a backdrop-filter', () => {
@@ -124,9 +126,13 @@ describe("radial.css `data-phase='everting'`: the hub hands over by motion, noth
     // It moves from the sphere's first frame (`data-eversion-swell`), never on a delay from the commit: the
     // sphere starts after the focus pull and its own first frame, and a delayed swell ran ahead of it.
     const swelling =
-      /\[data-phase='everting'\]\[data-eversion-swell\] \.radial-globe \{[^}]*\}/.exec(block)?.[0] ?? '';
+      /\[data-phase='everting'\]\[data-eversion-swell\] \.radial-globe \{[^}]*\}/.exec(
+        block,
+      )?.[0] ?? '';
     expect(swelling).not.toMatch(/eversion-delay/);
-    expect(swelling).toMatch(/globe-swell var\(--eversion-wrap, 700ms\) var\(--eversion-ease-wrap\) both/);
+    expect(swelling).toMatch(
+      /globe-swell var\(--eversion-wrap, 700ms\) var\(--eversion-ease-wrap\) both/,
+    );
     // The dissolve is the second half of WRAP.
     expect(swelling).toMatch(
       /globe-dissolve calc\(var\(--eversion-wrap, 700ms\) \* 0\.45\) cubic-bezier\([^)]*\) calc\(var\(--eversion-wrap, 700ms\) \* 0\.45\) both/,
@@ -136,7 +142,9 @@ describe("radial.css `data-phase='everting'`: the hub hands over by motion, noth
     expect(swell.replace(/\s+/g, ' ')).toContain(
       'transform: translate(var(--eversion-dx, 0px), var(--eversion-dy, 0px)) scale(var(--eversion-swell, 1));',
     );
-    expect(/@keyframes globe-in \{.*?to \{\s*opacity: 1;\s*transform: scale\(1\);/s.test(radial)).toBe(true);
+    expect(
+      /@keyframes globe-in \{.*?to \{\s*opacity: 1;\s*transform: scale\(1\);/s.test(radial),
+    ).toBe(true);
     // RadialHub sets the attribute on the sphere's first frame and clears it with the hand-over.
     expect(hub).toMatch(/swelling: \(\) => \{\s*markSwelling\(hubRef\.current\);/);
     expect(hub).toMatch(/setAttribute\('data-eversion-swell', ''\)/);
@@ -275,10 +283,9 @@ describe('the frozen picture (the destination is rendered before the animation, 
     expect(block.slice(0, block.indexOf('}'))).toMatch(/filter: none;[^}]*transition: none;/);
   });
 
-  it('collapsing animations for the capture spares the hub, which is open and on screen then', () => {
-    expect(eversion).toContain(`html[${SETTLE_ATTRIBUTE}] *:not(.radial-hub, .radial-hub *),`);
-    expect(eversion).toContain(
-      `html[${SETTLE_ATTRIBUTE}] *:not(.radial-hub, .radial-hub *)::before,`,
-    );
+  it('collapsing animations for the capture spares the hub and the pop-up globe, which are on screen then', () => {
+    const spared = '*:not(.radial-hub, .radial-hub *, .evert-popup, .evert-popup *)';
+    expect(eversion).toContain(`html[${SETTLE_ATTRIBUTE}] ${spared},`);
+    expect(eversion.replace(/\s+/g, ' ')).toContain(`html[${SETTLE_ATTRIBUTE}] ${spared}::before,`);
   });
 });
