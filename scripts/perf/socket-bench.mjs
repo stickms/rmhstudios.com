@@ -139,6 +139,20 @@ async function withPg(fn) {
 
 const USER_PREFIX = 'perfhub-';
 
+// Exact, hardware-independent DB pressure over the window: committed
+// transactions and inserted tuples in the hub database (pg_stat_database), plus
+// the chat-table row count. Stats are flushed by Postgres about once a second,
+// so a short settle precedes each read.
+async function dbCounters() {
+  await sleep(1500);
+  return withPg(async (db) => {
+    const r = await db.query(
+      `SELECT xact_commit::bigint AS commits, tup_inserted::bigint AS inserted FROM pg_stat_database WHERE datname = current_database()`,
+    );
+    return { commits: Number(r.rows[0].commits), inserted: Number(r.rows[0].inserted) };
+  });
+}
+
 async function seedUsers(count) {
   await withPg(async (db) => {
     const have = await db.query(`SELECT count(*)::int AS n FROM "user" WHERE id LIKE $1`, [`${USER_PREFIX}%`]);
@@ -497,6 +511,56 @@ async function runStorm(users) {
   return out;
 }
 
+
+// ── micro: fan-out strategy. In-process socket.io server + real clients; times
+// the server CPU of emitting one payload to R recipients N times, per-socket
+// `socket.emit` loop vs one `io.to(ids).emit`. Used by WS5 to justify replacing
+// per-recipient emit loops (docs/server-perf-2026-10-21/results/ws-5.md).
+//   node scripts/perf/socket-bench.mjs --micro-emit --recipients 6 --iters 20000
+async function microEmit() {
+  const { Server } = await import('socket.io');
+  const { createServer } = await import('node:http');
+  const R = num('recipients', 6);
+  const iters = num('iters', 20000);
+  const kind = String(flag('payload', 'farm'));
+  const payload =
+    kind === 'presence'
+      ? { players: Array.from({ length: R }, (_, i) => ({ userId: `u${i}`, name: `Player ${i}`, x: 1.5 * i, z: 3.25, dir: 1, energy: 80 })) }
+      : { id: 'f', grid: 24, tiles: Array.from({ length: 576 }, (_, i) => ({ t: 'soil', c: i % 3 ? null : { id: 'wheat', stage: i % 5 } })), seeds: {}, inventory: {}, tools: {} };
+  const httpServer = createServer();
+  const io = new Server(httpServer, { transports: ['websocket'] });
+  await new Promise((r) => httpServer.listen(0, r));
+  const port = httpServer.address().port;
+  const clients = [];
+  let received = 0;
+  for (let i = 0; i < R; i++) {
+    const c = (await import('socket.io-client')).io(`http://127.0.0.1:${port}`, { transports: ['websocket'] });
+    c.on('x', () => received++);
+    await new Promise((r) => c.on('connect', r));
+    clients.push(c);
+  }
+  await sleep(100);
+  const ids = [...io.sockets.sockets.keys()];
+  const sockets = ids.map((id) => io.sockets.sockets.get(id));
+  const run = async (label, fn) => {
+    for (let i = 0; i < 500; i++) fn();
+    await sleep(200);
+    const t0 = process.cpuUsage();
+    for (let i = 0; i < iters; i++) fn();
+    const cpu = process.cpuUsage(t0);
+    await sleep(500);
+    return { label, serverCpuUsPerEmit: Math.round(((cpu.user + cpu.system) / iters) * 100) / 100 };
+  };
+  const a1 = await run('per-socket loop', () => { for (const s of sockets) s.emit('x', payload); });
+  const b1 = await run('io.to(ids)', () => { io.to(ids).emit('x', payload); });
+  const a2 = await run('per-socket loop', () => { for (const s of sockets) s.emit('x', payload); });
+  const b2 = await run('io.to(ids)', () => { io.to(ids).emit('x', payload); });
+  console.log(`payload=${kind} recipients=${R} iters=${iters} (server CPU us per fan-out, A B A B)`);
+  for (const r of [a1, b1, a2, b2]) console.log(`  ${r.label.padEnd(16)} ${r.serverCpuUsPerEmit}`);
+  clients.forEach((c) => c.disconnect());
+  io.close();
+}
+
 const SCENARIOS = {
   tube: { url: () => opts.tubeUrl, need: () => opts.rooms * opts.members, setup: setupTube },
   music: { url: () => opts.socketUrl, need: () => opts.rooms * opts.members, setup: setupMusic },
@@ -507,6 +571,7 @@ const SCENARIOS = {
 // ─── Main ────────────────────────────────────────────────────────
 
 async function main() {
+  if (flag('micro-emit', false)) return microEmit();
   const seed = flag('seed', false);
   if (seed) {
     const n = Number(seed) || 400;
@@ -554,11 +619,15 @@ async function main() {
 
   const urls = [...new Set(Object.values(hubUrls))];
   await Promise.all(urls.map((u) => probe(u, true)));
+  const db0 = await dbCounters();
+  await Promise.all(urls.map((u) => probe(u, true)));
   metrics.setRecording(true);
   const t0 = now();
   await sleep(opts.duration * 1000);
   const elapsedS = (now() - t0) / 1000;
   metrics.setRecording(false);
+  await sleep(1500); // let the hubs' batch writers flush into the window
+  const db1 = await dbCounters();
   const probes = {};
   for (const u of urls) probes[u] = await probe(u, false);
 
@@ -571,6 +640,10 @@ async function main() {
     results.hubs[hub] = h;
   }
   results.elapsedS = Math.round(elapsedS * 10) / 10;
+  results.db = {
+    commitsPerS: Math.round(((db1.commits - db0.commits) / elapsedS) * 10) / 10,
+    insertedPerS: Math.round(((db1.inserted - db0.inserted) / elapsedS) * 10) / 10,
+  };
 
   for (const t of timers) (clearInterval(t), clearTimeout(t));
   for (const s of allSockets) s.disconnect();
@@ -582,6 +655,7 @@ async function main() {
 function print(r) {
   for (const [k, n] of errorSamples) console.log(`  error ${k} x${n}`);
   console.log(`\n== ${r.label} (${r.elapsedS}s window) ==`);
+  if (r.db) console.log(`  db (hub database): ${r.db.commitsPerS} commits/s, ${r.db.insertedPerS} tuples inserted/s`);
   for (const [hub, h] of Object.entries(r.hubs)) {
     const e = h.eld;
     console.log(`\n[${hub}]`);
@@ -597,6 +671,10 @@ function print(r) {
 
 function compare(a, b) {
   const rows = [['hub', 'metric', a.label, b.label, 'delta']];
+  if (a.db && b.db) {
+    rows.push(['db', 'commits/s', a.db.commitsPerS, b.db.commitsPerS, `${(((b.db.commitsPerS - a.db.commitsPerS) / a.db.commitsPerS) * 100).toFixed(0)}%`]);
+    rows.push(['db', 'tuples inserted/s', a.db.insertedPerS, b.db.insertedPerS, `${(((b.db.insertedPerS - a.db.insertedPerS) / a.db.insertedPerS) * 100).toFixed(0)}%`]);
+  }
   const fmt = (x) => (x === null || x === undefined ? 'n/a' : String(Math.round(x * 100) / 100));
   const d = (x, y) => (x && y !== undefined && y !== null ? `${(((y - x) / x) * 100).toFixed(0)}%` : '');
   for (const hub of Object.keys(b.hubs)) {
