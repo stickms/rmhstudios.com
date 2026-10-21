@@ -149,8 +149,10 @@ export function resolveNavTransition(v: unknown): NavTransition {
 
 // ── Eversion level (amended 2026-10-21) ─────────────────────────────────────
 // How much of the site the Globe Eversion carries: `all` (default) = every
-// page transition; `globe` = only a navigation confirmed through the liquid-globe
-// hub (hold-release, pin click, Enter). Page navigations only: the per-control
+// page transition (full-screen from the liquid-globe hub; anywhere else the
+// pressed control plays a button-sized eversion and the navigation is never
+// held); `globe` = only a navigation confirmed through the liquid-globe hub
+// (hold-release, pin click, Enter). Page navigations only: the per-control
 // "evert every button/input" state animation is a different thing and not
 // governed by this. Defined here (not in lib/eversion) so the root's static
 // closure and the settings panel get it without touching the effect's runtime.
