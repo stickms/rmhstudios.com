@@ -1,18 +1,21 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import type { FeedItem, FeedPoll } from '@/lib/feed-types';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
-import { groupReactions } from '@/lib/social/reactions';
+import { loadBoundedReactionSummaries } from '@/lib/feed/map-feed-item.server';
 
 function pollInclude(userId: string | null) {
   return {
     include: {
       options: {
         orderBy: { position: 'asc' as const },
-        include: {
-          _count: { select: { votes: true } },
+        select: {
+          id: true,
+          text: true,
+          // perf: denormalized tally (maintained by the vote route) instead of a
+          // correlated COUNT per option.
+          voteCount: true,
           ...(userId ? { votes: { where: { userId }, select: { id: true, optionId: true } } } : {}),
         },
       },
@@ -22,7 +25,7 @@ function pollInclude(userId: string | null) {
 
 function mapPoll(poll: any): FeedPoll | undefined {
   if (!poll) return undefined;
-  const totalVotes = poll.options.reduce((sum: number, o: any) => sum + (o._count?.votes ?? 0), 0);
+  const totalVotes = poll.options.reduce((sum: number, o: any) => sum + (o.voteCount ?? 0), 0);
   return {
     id: poll.id,
     question: poll.question,
@@ -31,7 +34,7 @@ function mapPoll(poll: any): FeedPoll | undefined {
     options: poll.options.map((o: any) => ({
       id: o.id,
       text: o.text,
-      voteCount: o._count?.votes ?? 0,
+      voteCount: o.voteCount ?? 0,
     })),
     myVotes: poll.options.filter((o: any) => o.votes?.length > 0).map((o: any) => o.id),
   };
@@ -40,7 +43,7 @@ function mapPoll(poll: any): FeedPoll | undefined {
 export const Route = createFileRoute('/api/profile/$id/likes')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none' }, async ({ request, params }) => {
+      GET: defineHandler({ auth: 'optional' }, async ({ request, params, userId: viewerId }) => {
         const { id: idOrHandle } = params;
         const resolvedUser = await prisma.user.findUnique({
           where: { handle: idOrHandle },
@@ -51,29 +54,9 @@ export const Route = createFileRoute('/api/profile/$id/likes')({
         const cursor = searchParams.get('cursor');
         const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50);
 
-        // Get viewer session
-        let viewerId: string | null = null;
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          viewerId = session?.user?.id ?? null;
-        } catch {
-          // Not logged in
-        }
-
-        // Check visibility: allow if own profile or showLikes is true
-        const isOwnProfile = viewerId === profileUserId;
-        if (!isOwnProfile) {
-          const profile = await prisma.userProfile.findUnique({
-            where: { userId: profileUserId },
-            select: { showLikes: true },
-          });
-          if (!profile?.showLikes) {
-            return Response.json({ items: [], nextCursor: null, hasMore: false });
-          }
-        }
-
-        // Fetch liked posts via RMHarkLike join
-        const likes = await prisma.rMHarkLike.findMany({
+        // Fetch liked posts via RMHarkLike join.
+        // perf: started before the visibility check so the two round trips overlap.
+        const likesPromise = prisma.rMHarkLike.findMany({
           where: {
             userId: profileUserId,
             ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}),
@@ -84,8 +67,6 @@ export const Route = createFileRoute('/api/profile/$id/likes')({
             rmhark: {
               include: {
                 user: { select: userDisplaySelect },
-                _count: { select: { likes: true, comments: true, reposts: true, views: true } },
-                reactions: { select: { emoji: true, userId: true } },
                 ...(viewerId
                   ? {
                       likes: { where: { userId: viewerId }, select: { id: true } },
@@ -96,13 +77,33 @@ export const Route = createFileRoute('/api/profile/$id/likes')({
                 original: {
                   include: {
                     user: { select: userDisplaySelect },
-                    _count: { select: { likes: true, comments: true, reposts: true, views: true } },
                   },
                 },
               },
             },
           },
         });
+
+        // Check visibility: allow if own profile or showLikes is true. The page
+        // above is discarded if the profile hides its likes.
+        const isOwnProfile = viewerId === profileUserId;
+        if (!isOwnProfile) {
+          const profile = await prisma.userProfile.findUnique({
+            where: { userId: profileUserId },
+            select: { showLikes: true },
+          });
+          if (!profile?.showLikes) {
+            likesPromise.catch(() => {});
+            return Response.json({ items: [], nextCursor: null, hasMore: false });
+          }
+        }
+
+        const likes = await likesPromise;
+        // perf: bounded groupBy summaries instead of including every reaction row.
+        const reactionSummaries = await loadBoundedReactionSummaries(
+          likes.map((l: any) => l.rmhark.id),
+          viewerId,
+        );
 
         const items: FeedItem[] = likes.map((l: any) => {
           const r = l.rmhark;
@@ -112,10 +113,10 @@ export const Route = createFileRoute('/api/profile/$id/likes')({
             createdAt: l.createdAt.toISOString(),
             content: r.content,
             user: resolveUser(r.user),
-            likeCount: r._count.likes,
-            commentCount: r._count.comments,
-            repostCount: r._count.reposts,
-            viewCount: r._count.views,
+            likeCount: r.likeCount,
+            commentCount: r.commentCount,
+            repostCount: r.repostCount,
+            viewCount: r.viewCount,
             liked: viewerId ? r.likes.length > 0 : false,
             reposted: viewerId ? r.reposts.length > 0 : false,
             edited: !!r.editedAt,
@@ -124,7 +125,7 @@ export const Route = createFileRoute('/api/profile/$id/likes')({
             imageUrls: r.imageUrls ?? undefined,
             imageAlts: r.imageAlts ?? undefined,
             isSensitive: r.isSensitive ?? false,
-            reactions: groupReactions(r.reactions ?? [], viewerId),
+            reactions: reactionSummaries.get(r.id) ?? [],
             original: r.original
               ? {
                   id: r.original.id,
@@ -132,10 +133,10 @@ export const Route = createFileRoute('/api/profile/$id/likes')({
                   createdAt: r.original.createdAt.toISOString(),
                   content: r.original.content,
                   user: resolveUser(r.original.user),
-                  likeCount: r.original._count.likes,
-                  commentCount: r.original._count.comments,
-                  repostCount: r.original._count.reposts,
-                  viewCount: r.original._count.views,
+                  likeCount: r.original.likeCount,
+                  commentCount: r.original.commentCount,
+                  repostCount: r.original.repostCount,
+                  viewCount: r.original.viewCount,
                 }
               : undefined,
           };
