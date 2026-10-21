@@ -31,7 +31,7 @@ import { viewerVisiblePostWhere } from '../audience.server';
 // `circleOwnerIds` lives in the module under test and reads Prisma; give it the
 // one table it touches.
 import { prisma } from '@/lib/prisma.server';
-(prisma as any).closeFriend = {
+(prisma as unknown as Record<string, unknown>).closeFriend = {
   findMany: vi.fn(async () => state.circles.map((ownerId) => ({ ownerId }))),
 };
 

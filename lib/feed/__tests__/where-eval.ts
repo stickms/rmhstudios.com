@@ -4,7 +4,7 @@
  * It lets a test assert on the ROWS a query would return rather than on the
  * shape of the query - which is what a visibility rule is actually about.
  */
-export type Row = Record<string, any>;
+export type Row = Record<string, unknown>;
 
 /** Minimal Prisma `where` evaluator for the operators the timeline uses. */
 export function evalWhere(row: Row, where: Row | undefined): boolean {
@@ -18,7 +18,7 @@ export function evalWhere(row: Row, where: Row | undefined): boolean {
     } else if (key === 'NOT') {
       if (evalWhere(row, cond as Row)) return false;
     } else if (key === 'rmhark') {
-      if (!evalWhere(row.rmhark, cond as Row)) return false;
+      if (!evalWhere(row.rmhark as Row, cond as Row)) return false;
     } else if (!matchesField(row[key], cond)) {
       return false;
     }
@@ -26,17 +26,17 @@ export function evalWhere(row: Row, where: Row | undefined): boolean {
   return true;
 }
 
-function matchesField(value: any, cond: any): boolean {
+function matchesField(value: unknown, cond: unknown): boolean {
   if (cond === null || typeof cond !== 'object' || cond instanceof Date) {
     if (cond instanceof Date) return value instanceof Date && value.getTime() === cond.getTime();
     return value === cond;
   }
   for (const [op, arg] of Object.entries(cond)) {
-    if (op === 'in' && !(arg as any[]).includes(value)) return false;
-    if (op === 'notIn' && (arg as any[]).includes(value)) return false;
+    if (op === 'in' && !(arg as unknown[]).includes(value)) return false;
+    if (op === 'notIn' && (arg as unknown[]).includes(value)) return false;
     if (op === 'not' && matchesField(value, arg)) return false;
-    if (op === 'lt' && !(value < (arg as any))) return false;
-    if (op === 'gt' && !(value > (arg as any))) return false;
+    if (op === 'lt' && !((value as number) < (arg as number))) return false;
+    if (op === 'gt' && !((value as number) > (arg as number))) return false;
   }
   return true;
 }
