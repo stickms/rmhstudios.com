@@ -6,7 +6,7 @@
  * how an admin retunes the pool and posting rate without a deploy.
  */
 
-import { prisma } from '@/lib/prisma.server';
+import { prisma, prismaRead } from '@/lib/prisma.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import {
   DEFAULT_BOT_SETTINGS,
@@ -85,6 +85,8 @@ export async function getBotActivityStats(settings: BotWorkerSettingsInput): Pro
   const since24h = new Date(now - DAY_MS);
   const since7d = new Date(now - 7 * DAY_MS);
   const botPost = { deletedAt: null, user: { isBot: true } } as const;
+  // Counts for an admin dashboard: lag-tolerant, so they read the replica when one
+  // is configured. Settings (getBotWorkerSettings) stay on the primary: they echo a save.
 
   const [
     bots,
@@ -96,14 +98,14 @@ export async function getBotActivityStats(settings: BotWorkerSettingsInput): Pro
     botComments24h,
     botDms24h,
   ] = await Promise.all([
-    prisma.user.findMany({ where: { isBot: true }, select: { botPersona: true, botLastPostAt: true } }),
-    prisma.user.count({ where: { isBot: true, createdAt: { gte: since24h } } }),
-    prisma.rMHark.count({ where: { ...botPost, createdAt: { gte: since24h } } }),
-    prisma.rMHark.count({ where: { ...botPost, createdAt: { gte: since7d } } }),
-    prisma.rMHark.count({ where: botPost }),
-    prisma.rMHark.count({ where: { deletedAt: null, user: { isBot: false }, createdAt: { gte: since24h } } }),
-    prisma.rMHarkComment.count({ where: { deletedAt: null, user: { isBot: true }, createdAt: { gte: since24h } } }),
-    prisma.directMessage.count({ where: { sender: { isBot: true }, createdAt: { gte: since24h } } }),
+    prismaRead.user.findMany({ where: { isBot: true }, select: { botPersona: true, botLastPostAt: true } }),
+    prismaRead.user.count({ where: { isBot: true, createdAt: { gte: since24h } } }),
+    prismaRead.rMHark.count({ where: { ...botPost, createdAt: { gte: since24h } } }),
+    prismaRead.rMHark.count({ where: { ...botPost, createdAt: { gte: since7d } } }),
+    prismaRead.rMHark.count({ where: botPost }),
+    prismaRead.rMHark.count({ where: { deletedAt: null, user: { isBot: false }, createdAt: { gte: since24h } } }),
+    prismaRead.rMHarkComment.count({ where: { deletedAt: null, user: { isBot: true }, createdAt: { gte: since24h } } }),
+    prismaRead.directMessage.count({ where: { sender: { isBot: true }, createdAt: { gte: since24h } } }),
   ]);
 
   const basePerDay = basePostsPerDay(bots.map((b) => b.botPersona));
