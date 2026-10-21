@@ -23,7 +23,7 @@
  * lib/feed/personalize.server.ts — migrate coherence-sensitive caches onto it.
  */
 
-import { apiCache } from '@/lib/cache';
+import { apiCache, CACHE_PROCESS_ID } from '@/lib/cache';
 import {
   redisCacheMGet,
   redisEnabled,
@@ -37,7 +37,15 @@ import {
 /** Pub/sub channel carrying "drop this key / prefix everywhere" messages. */
 const INVALIDATION_CHANNEL = 'cache:invalidate';
 
-type InvalidationMessage = { type: 'key'; key: string } | { type: 'prefix'; prefix: string };
+/**
+ * `origin` is the sender's process id, so a process ignores its own echo (it has
+ * already dropped the key locally, and dropping again could discard a value it
+ * reloaded in between). Messages without one (older deploys during a blue/green
+ * swap) are applied by everyone.
+ */
+type InvalidationMessage = ({ type: 'key'; key: string } | { type: 'prefix'; prefix: string }) & {
+  origin?: string;
+};
 
 type InflightRecord = {
   promise: Promise<unknown> | null;
@@ -78,13 +86,15 @@ function detachFlightsWithPrefix(flights: Map<string, InflightRecord>, prefix: s
 function invalidateLocalKey(key: string): void {
   detachFlight(inflight, key);
   detachFlight(swrInflight, key);
-  apiCache.invalidate(key);
+  // dropLocal, not invalidate: this runs both on the writer and on a remote
+  // receipt, and `invalidate` would re-publish (an echo loop between processes).
+  apiCache.dropLocal(key);
 }
 
 function invalidateLocalPrefix(prefix: string): void {
   detachFlightsWithPrefix(inflight, prefix);
   detachFlightsWithPrefix(swrInflight, prefix);
-  apiCache.invalidatePrefix(prefix);
+  apiCache.dropLocalPrefix(prefix);
 }
 
 let subscribed = false;
@@ -97,9 +107,28 @@ function ensureSubscribed(): void {
   if (subscribed) return;
   subscribed = true;
   if (!redisEnabled()) return;
+  // Bridge for the ~25 call sites that use `apiCache.invalidate*` directly: a
+  // local invalidation is also published, so the other web worker (and the second
+  // container during a blue/green swap) drops its copy instead of serving it until
+  // the TTL. Installed only when Redis is configured; otherwise local-only.
+  apiCache.setInvalidationHook({
+    key: (key) =>
+      void redisPublish(INVALIDATION_CHANNEL, {
+        type: 'key',
+        key,
+        origin: CACHE_PROCESS_ID,
+      } satisfies InvalidationMessage),
+    prefix: (prefix) =>
+      void redisPublish(INVALIDATION_CHANNEL, {
+        type: 'prefix',
+        prefix,
+        origin: CACHE_PROCESS_ID,
+      } satisfies InvalidationMessage),
+  });
   redisSubscribe(INVALIDATION_CHANNEL, (data) => {
     const msg = data as InvalidationMessage;
     if (!msg || typeof msg !== 'object') return;
+    if (msg.origin === CACHE_PROCESS_ID) return;
     if (msg.type === 'key' && typeof msg.key === 'string') {
       invalidateLocalKey(msg.key);
     } else if (msg.type === 'prefix' && typeof msg.prefix === 'string') {
@@ -583,7 +612,11 @@ export async function invalidateCached(key: string): Promise<void> {
   invalidateLocalKey(key);
   if (redisEnabled()) {
     await redisDel(key);
-    redisPublish(INVALIDATION_CHANNEL, { type: 'key', key } satisfies InvalidationMessage);
+    redisPublish(INVALIDATION_CHANNEL, {
+      type: 'key',
+      key,
+      origin: CACHE_PROCESS_ID,
+    } satisfies InvalidationMessage);
   }
 }
 
@@ -596,6 +629,15 @@ export async function invalidateCached(key: string): Promise<void> {
 export async function invalidateCachedPrefix(prefix: string): Promise<void> {
   invalidateLocalPrefix(prefix);
   if (redisEnabled()) {
-    redisPublish(INVALIDATION_CHANNEL, { type: 'prefix', prefix } satisfies InvalidationMessage);
+    redisPublish(INVALIDATION_CHANNEL, {
+      type: 'prefix',
+      prefix,
+      origin: CACHE_PROCESS_ID,
+    } satisfies InvalidationMessage);
   }
 }
+
+// Subscribe and install the `apiCache` bridge as soon as the module loads, not on
+// the first `cached()` call: a process that only ever uses `apiCache` directly
+// must still receive (and publish) invalidations. No-op without Redis.
+ensureSubscribed();

@@ -458,6 +458,9 @@ function followCall(
     if (local) found = { fn: local, file };
   }
   if (!found || found === 'unresolved') return;
+  // The cache layer itself publishes invalidations and memoises; that is not a
+  // viewer-visible side effect of the GET that reads through it.
+  if (/lib\/(cache|cached\.server)\.ts$/.test(found.file)) return;
   const key = `${found.file}#${name}`;
   if (visited.has(key)) return;
   visited.add(key);
