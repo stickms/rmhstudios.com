@@ -1,10 +1,15 @@
 import { generateKeyPairSync, sign } from 'node:crypto';
-import { afterEach, describe, expect, it } from 'vitest';
-import { resetAccessCertCache, verifyAccess } from '../access';
+import { describe, expect, it } from 'vitest';
 import { verifyDiscordSignature } from '../discord';
+import type { Env } from '../env';
+import worker, { OncallState } from '../index';
+import { signRequest, verifySignature } from '../signing';
+import { memoryStorage } from './helpers';
 
 // Both doors into the watchdog: Discord's signed button clicks, and the VPS's
-// Access-gated /v1 calls. Each must reject anything it cannot verify.
+// HMAC-signed /v1 calls. Each must reject anything it cannot verify, and a
+// captured /v1 request must not work twice (a replayed heartbeat would make a
+// dead VPS look alive).
 
 describe('verifyDiscordSignature', () => {
   const { publicKey, privateKey } = generateKeyPairSync('ed25519');
@@ -24,45 +29,87 @@ describe('verifyDiscordSignature', () => {
   });
 });
 
-describe('verifyAccess', () => {
-  const team = 'rmh.cloudflareaccess.com';
-  const aud = 'AUD123';
-  const { publicKey, privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
-  const jwk = { ...(publicKey.export({ format: 'jwk' }) as Record<string, string>), kid: 'k1' };
-  const certs: typeof fetch = async () => new Response(JSON.stringify({ keys: [jwk] }));
-  const now = 1_800_000_000_000;
+const SECRET = 'x'.repeat(40);
+const NONCE = 'n0nce-0123456789abcdef';
 
-  const b64 = (v: unknown) => Buffer.from(JSON.stringify(v)).toString('base64url');
-  function token(claims: Record<string, unknown>, kid = 'k1') {
-    const h = b64({ alg: 'RS256', kid });
-    const p = b64({ aud: [aud], iss: `https://${team}`, exp: now / 1000 + 300, common_name: 'client.access', ...claims });
-    return `${h}.${p}.${sign('sha256', Buffer.from(`${h}.${p}`), privateKey).toString('base64url')}`;
+async function signed(path: string, body: string, opts: { ts?: number; nonce?: string; secret?: string; method?: string } = {}) {
+  const method = opts.method ?? 'POST';
+  const ts = String(opts.ts ?? Math.floor(Date.now() / 1000));
+  const headers = await signRequest(opts.secret ?? SECRET, method, path, body, ts, opts.nonce ?? NONCE);
+  return new Request(`https://oncall.test${path}`, {
+    method,
+    headers: { ...headers, 'content-type': 'application/json' },
+    ...(method === 'GET' ? {} : { body }),
+  });
+}
+
+describe('verifySignature', () => {
+  const now = 1_800_000_000;
+  const body = '{"a":1}';
+
+  it('fails closed without a (long enough) secret', async () => {
+    const req = await signed('/v1/alert', body, { ts: now });
+    expect(await verifySignature(req, '/v1/alert', body, undefined, now)).toMatchObject({ ok: false, status: 503 });
+    expect(await verifySignature(req, '/v1/alert', body, 'short', now)).toMatchObject({ ok: false, status: 503 });
+  });
+
+  it('accepts a valid request and rejects every kind of tampering', async () => {
+    const req = await signed('/v1/alert', body, { ts: now });
+    expect(await verifySignature(req, '/v1/alert', body, SECRET, now)).toEqual({ ok: true, nonce: NONCE });
+    // body, path, secret, staleness
+    expect(await verifySignature(req, '/v1/alert', '{"a":2}', SECRET, now)).toMatchObject({ reason: 'bad signature' });
+    expect(await verifySignature(req, '/v1/heartbeat/status', body, SECRET, now)).toMatchObject({ reason: 'bad signature' });
+    expect(await verifySignature(req, '/v1/alert', body, 'y'.repeat(40), now)).toMatchObject({ reason: 'bad signature' });
+    expect(await verifySignature(req, '/v1/alert', body, SECRET, now + 3600)).toMatchObject({ reason: 'stale timestamp' });
+    expect(await verifySignature(new Request('https://oncall.test/v1/alert'), '/v1/alert', '', SECRET, now)).toMatchObject({
+      status: 401,
+    });
+  });
+});
+
+describe('Worker /v1 end to end', () => {
+  function harness() {
+    const env = {
+      SITE_URL: 'https://site.test',
+      STATUS_URL: 'https://status.test',
+      RUNBOOK_BASE: '',
+      DISCORD_APPLICATION_ID: '',
+      DISCORD_PUBLIC_KEY: '',
+      ONCALL_CHANNEL_ID: 'C',
+      ONCALL_ROLE_ID: 'R',
+      ONCALL_SIGNING_SECRET: SECRET,
+    } as Env;
+    const state = new OncallState({ storage: memoryStorage() }, env);
+    env.ONCALL_STATE = { idFromName: () => 'id', get: () => ({ fetch: (i, init) => state.fetch(new Request(i, init)) }) };
+    return env;
   }
-  const req = (t?: string) => new Request('https://oncall.test/v1/alert', { headers: t ? { 'cf-access-jwt-assertion': t } : {} });
-  const cfg = { teamDomain: team, aud };
 
-  afterEach(() => resetAccessCertCache());
-
-  it('fails closed when unconfigured', async () => {
-    expect(await verifyAccess(req(token({})), {}, certs, now)).toMatchObject({ ok: false, status: 503 });
+  it('accepts a signed heartbeat once and rejects the replay', async () => {
+    const env = harness();
+    const first = await worker.fetch(await signed('/v1/heartbeat/status', ''), env);
+    expect(first.status).toBe(200);
+    const replay = await worker.fetch(await signed('/v1/heartbeat/status', ''), env);
+    expect(replay.status).toBe(401);
+    expect(await replay.json()).toEqual({ error: 'replayed request' });
   });
 
-  it('accepts a valid service token', async () => {
-    expect(await verifyAccess(req(token({})), cfg, certs, now)).toEqual({ ok: true, subject: 'client.access' });
+  it('rejects unsigned and wrongly-signed requests before touching state', async () => {
+    const env = harness();
+    expect((await worker.fetch(new Request('https://oncall.test/v1/alert', { method: 'POST', body: '{}' }), env)).status).toBe(401);
+    expect((await worker.fetch(await signed('/v1/heartbeat/status', '', { secret: 'z'.repeat(40) }), env)).status).toBe(401);
   });
 
-  it('rejects missing, forged, expired, wrong-audience and human tokens', async () => {
-    expect(await verifyAccess(req(), cfg, certs, now)).toMatchObject({ ok: false, status: 401 });
-    const forged = token({}).replace(/\.[^.]+$/, '.AAAA');
-    expect(await verifyAccess(req(forged), cfg, certs, now)).toMatchObject({ ok: false, reason: 'bad signature' });
-    expect(await verifyAccess(req(token({ exp: now / 1000 - 3600 })), cfg, certs, now)).toMatchObject({ reason: 'expired' });
-    expect(await verifyAccess(req(token({ aud: ['other'] })), cfg, certs, now)).toMatchObject({ reason: 'wrong audience' });
-    expect(await verifyAccess(req(token({ common_name: undefined })), cfg, certs, now)).toMatchObject({ reason: 'not a service token' });
-    expect(await verifyAccess(req(token({}, 'k9')), cfg, certs, now)).toMatchObject({ reason: 'unknown signing key' });
+  it('fails closed when the secret is not configured', async () => {
+    const env = harness();
+    env.ONCALL_SIGNING_SECRET = undefined;
+    expect((await worker.fetch(await signed('/v1/heartbeat/status', ''), env)).status).toBe(503);
   });
 
-  it('pins to one service token when ACCESS_CLIENT_ID is set', async () => {
-    const pinned = { ...cfg, clientId: 'someone-else.access' };
-    expect(await verifyAccess(req(token({})), pinned, certs, now)).toMatchObject({ reason: 'service token not allowed' });
+  it('a signed alert opens an alarm', async () => {
+    const env = harness();
+    const body = JSON.stringify({ state: 'firing', id: 'T00', sev: 2, title: 'test', source: 'test' });
+    const res = await worker.fetch(await signed('/v1/alert', body, { nonce: 'another-nonce-0123456' }), env);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ ok: true, alarm: { key: 'T00', state: 'firing' } });
   });
 });

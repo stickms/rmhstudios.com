@@ -1,13 +1,12 @@
 # rmh on-call watchdog — deploy with:
 #   npx wrangler@4 deploy --config deploy/oncall-watchdog/wrangler.toml
-# Setup order (Access gate BEFORE the VPS sends anything): see README.md.
+# Setup order (prove the gates reject unsigned requests first): see README.md.
 
 name = "rmh-oncall-watchdog"
 main = "src/index.ts"
 compatibility_date = "2026-10-01"
 
-# Reachable ONLY through the custom domain, where the Access policy on /v1/*
-# applies. No *.workers.dev URL, no preview URLs.
+# Reachable ONLY through the custom domain. No *.workers.dev URL, no preview URLs.
 workers_dev = false
 preview_urls = false
 routes = [{ pattern = "oncall.rmhstudios.com", custom_domain = true }]
@@ -26,7 +25,7 @@ new_sqlite_classes = ["OncallState"]
 [observability]
 enabled = true
 
-# Not secret. Secrets (DISCORD_BOT_TOKEN, ONCALL_WEBHOOK_URL) go in via
+# Not secret. Secrets (DISCORD_BOT_TOKEN, ONCALL_SIGNING_SECRET, ONCALL_WEBHOOK_URL) go in via
 # `wrangler secret put`, never in this file.
 [vars]
 SITE_URL = "https://rmhstudios.com"
@@ -34,11 +33,7 @@ STATUS_URL = "https://status.rmhstudios.com"
 RUNBOOK_BASE = "https://github.com/stickms/rmhstudios.com/blob/main/docs/runbooks/oncall"
 ONCALL_ROLE_ID = "1562519841837949010"
 # Fill in from the Discord developer portal / channel (Developer Mode → Copy ID):
-DISCORD_APPLICATION_ID = ""
-DISCORD_PUBLIC_KEY = ""
-ONCALL_CHANNEL_ID = ""
+DISCORD_APPLICATION_ID = "1562545025034756127"
+DISCORD_PUBLIC_KEY = "6fe9bb3d38594a3f7b3677c0ca442c71cfeb8562fa7ad56da65b80b65c2cf6dd"
+ONCALL_CHANNEL_ID = "1562519217587363861"
 ESCALATION_ROLE_ID = ""
-# Cloudflare Zero Trust → Access → the "rmh oncall /v1" application:
-ACCESS_TEAM_DOMAIN = ""
-ACCESS_AUD = ""
-ACCESS_CLIENT_ID = ""

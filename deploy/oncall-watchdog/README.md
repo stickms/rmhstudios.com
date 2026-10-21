@@ -8,7 +8,7 @@ monitors, so the box dying was the one outage nothing would report.
 |---|---|---|
 | cron, every minute | Cloudflare | — (probes `/`, `/api/ready`, status freshness; heartbeats; re-pages) |
 | `POST /interactions` | Discord (Ack / Escalate buttons) | Discord Ed25519 signature; click allowed only for `@oncall` members in the on-call channel |
-| `POST /v1/alert`, `POST /v1/heartbeat/<name>`, `GET /v1/alarms` | the VPS | Cloudflare Access **service token**, and the Access JWT re-verified in the Worker (fails closed if unconfigured) |
+| `POST /v1/alert`, `POST /v1/heartbeat/<name>`, `GET /v1/alarms` | the VPS | HMAC-SHA256 signature over timestamp + nonce + method + path + body with `ONCALL_SIGNING_SECRET`; ±5 min window; each nonce accepted once (replay-proof). Fails closed if the secret is unset — see `src/signing.ts` |
 
 Severity follows the Sev1–5 policy: **Sev2 is the page** (mentions `@oncall`,
 re-mentions every 10 min until someone presses ✅ Acknowledge). Sev1 is only
@@ -32,8 +32,8 @@ their first check-in, so silence can't page before the sender exists.
 
 ## One-time setup
 
-Do these **in this order** — the gate is proven closed before anything real
-is sent to it.
+Do these **in this order** — the gates are proven closed before anything real
+is sent to them.
 
 1. **Discord app** (developer portal → New Application `RMH Oncall`): note the
    Application ID and Public Key (not secret); Bot → Reset Token (**secret** —
@@ -43,39 +43,35 @@ is sent to it.
 2. **Fill the vars** in `wrangler.toml`: `DISCORD_APPLICATION_ID`,
    `DISCORD_PUBLIC_KEY`, `ONCALL_CHANNEL_ID` (Developer Mode → right-click the
    channel → Copy ID), optionally `ESCALATION_ROLE_ID`.
-3. **Cloudflare Access** (Zero Trust → Access):
-   - Service Auth → Service Tokens → create `rmh-oncall-vps`. The Client
-     Secret is shown once: it goes only into the VPS `.env.production`
-     (`ONCALL_ACCESS_CLIENT_ID` / `ONCALL_ACCESS_CLIENT_SECRET`).
-   - Applications → Self-hosted → domain `oncall.rmhstudios.com`, **path
-     `v1`** (NOT the whole host — Discord must reach `/interactions`). Policy:
-     action **Service Auth**, include → Service Token `rmh-oncall-vps`.
-   - Copy the application's **AUD** tag and your team domain
-     (`<team>.cloudflareaccess.com`) into `ACCESS_AUD` / `ACCESS_TEAM_DOMAIN`;
-     the token's Client ID into `ACCESS_CLIENT_ID`.
+3. **Signing secret** — one random value shared by the Worker and the VPS:
+   ```bash
+   openssl rand -hex 32    # store it in a password manager; never in git or chat
+   ```
+   It goes into `wrangler secret put ONCALL_SIGNING_SECRET` (step 4) and the
+   VPS `.env.production` as `ONCALL_SIGNING_SECRET=…`.
 4. **Deploy + secrets** (from the repo root):
    ```bash
    npx wrangler@4 login
    npx wrangler@4 deploy --config deploy/oncall-watchdog/wrangler.toml
-   npx wrangler@4 secret put DISCORD_BOT_TOKEN  --config deploy/oncall-watchdog/wrangler.toml
-   npx wrangler@4 secret put ONCALL_WEBHOOK_URL --config deploy/oncall-watchdog/wrangler.toml   # fallback
+   npx wrangler@4 secret put DISCORD_BOT_TOKEN     --config deploy/oncall-watchdog/wrangler.toml
+   npx wrangler@4 secret put ONCALL_SIGNING_SECRET --config deploy/oncall-watchdog/wrangler.toml
+   npx wrangler@4 secret put ONCALL_WEBHOOK_URL    --config deploy/oncall-watchdog/wrangler.toml   # fallback
    ```
-5. **Verify the gate denies anonymous callers — before anything else:**
+5. **Verify the gates reject unsigned callers — before anything else:**
    ```bash
-   # Must be a 302 to *.cloudflareaccess.com or a 403 from Access — NOT a 200/4xx from the Worker.
-   curl -si -X POST https://oncall.rmhstudios.com/v1/alert | head -5
+   # Must be 401 {"error":"missing or malformed signature headers"}
+   # (a 503 "signing secret not configured" means step 4's secret is missing).
+   curl -si -X POST https://oncall.rmhstudios.com/v1/alert -d '{}' | head -1
    # Must be 401 "invalid request signature".
    curl -si -X POST https://oncall.rmhstudios.com/interactions -d '{}' | head -1
-   # Must 404 (no workers.dev URL exists).
+   # Must not resolve or must 404 (no workers.dev URL exists).
    curl -si https://rmh-oncall-watchdog.<account>.workers.dev/ | head -1
    ```
-   If the first command reaches the Worker (JSON `{"error": ...}`), the Access
-   application isn't covering `/v1` — fix that before continuing.
 6. **Point Discord at it:** developer portal → General Information →
    Interactions Endpoint URL = `https://oncall.rmhstudios.com/interactions` →
    Save (Discord verifies the signature check live; it refuses to save if it
    fails).
-7. **Send a test page** with the service token:
+7. **Send a test page** (reads `ONCALL_SIGNING_SECRET` from the env or `.env.production`):
    ```bash
    deploy/oncall-watchdog/scripts/test-alert.sh firing   # pages @oncall with Ack/Escalate buttons
    deploy/oncall-watchdog/scripts/test-alert.sh resolved
@@ -84,7 +80,9 @@ is sent to it.
 ## Operating notes
 
 - Logs: `npx wrangler@4 tail --config deploy/oncall-watchdog/wrangler.toml`.
-- Current alarms: `GET /v1/alarms` with the service token.
+- Current alarms: `GET /v1/alarms` (signed, like every /v1 call).
+- Rotating the signing secret: `wrangler secret put` the new value and update
+  `.env.production` together; requests signed with the old one fail until both match.
 - If the bot token breaks, alerts still arrive through the fallback webhook
   (plain message, no buttons) — ack in the dashboard instead.
 - Who's on call is just who holds the `@oncall` role — rotate by moving it.
