@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-console -- CLI bench intentionally writes its report to stdout */
 /**
  * socket-bench — hub load harness (docs/server-perf-2026-10-21/01-method.md §1.6).
  *
@@ -645,7 +646,10 @@ async function main() {
     insertedPerS: Math.round(((db1.inserted - db0.inserted) / elapsedS) * 10) / 10,
   };
 
-  for (const t of timers) (clearInterval(t), clearTimeout(t));
+  for (const t of timers) {
+    clearInterval(t);
+    clearTimeout(t);
+  }
   for (const s of allSockets) s.disconnect();
 
   print(results);
