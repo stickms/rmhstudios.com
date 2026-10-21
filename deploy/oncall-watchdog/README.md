@@ -10,6 +10,10 @@ monitors, so the box dying was the one outage nothing would report.
 | `POST /interactions` | Discord (Ack / Escalate buttons) | Discord Ed25519 signature; click allowed only for `@oncall` members in the on-call channel |
 | `POST /v1/alert`, `POST /v1/heartbeat/<name>`, `GET /v1/alarms` | the VPS | HMAC-SHA256 signature over timestamp + nonce + method + path + body with `ONCALL_SIGNING_SECRET`; ±5 min window; each nonce accepted once (replay-proof). Fails closed if the secret is unset — see `src/signing.ts` |
 
+It is deployed to its own Cloudflare account on a `workers.dev` URL, not on
+the `rmhstudios.com` zone — on-call only needs it to be off the VPS. Set
+`ONCALL_URL` to that URL wherever a sender needs it.
+
 Severity follows the Sev1–5 policy: **Sev2 is the page** (mentions `@oncall`,
 re-mentions every 10 min until someone presses ✅ Acknowledge). Sev1 is only
 ever a human pressing 🔺 Escalate. Sev3–5 post without a mention.
@@ -61,14 +65,14 @@ is sent to them.
    ```bash
    # Must be 401 {"error":"missing or malformed signature headers"}
    # (a 503 "signing secret not configured" means step 4's secret is missing).
-   curl -si -X POST https://oncall.rmhstudios.com/v1/alert -d '{}' | head -1
+   curl -si -X POST https://rmh-oncall-watchdog.<subdomain>.workers.dev/v1/alert -d '{}' | head -1
    # Must be 401 "invalid request signature".
-   curl -si -X POST https://oncall.rmhstudios.com/interactions -d '{}' | head -1
-   # Must not resolve or must 404 (no workers.dev URL exists).
-   curl -si https://rmh-oncall-watchdog.<account>.workers.dev/ | head -1
+   curl -si -X POST https://rmh-oncall-watchdog.<subdomain>.workers.dev/interactions -d '{}' | head -1
+   # Anything else must 404.
+   curl -si https://rmh-oncall-watchdog.<subdomain>.workers.dev/ | head -1
    ```
 6. **Point Discord at it:** developer portal → General Information →
-   Interactions Endpoint URL = `https://oncall.rmhstudios.com/interactions` →
+   Interactions Endpoint URL = `https://rmh-oncall-watchdog.<subdomain>.workers.dev/interactions` →
    Save (Discord verifies the signature check live; it refuses to save if it
    fails).
 7. **Send a test page** (reads `ONCALL_SIGNING_SECRET` from the env or `.env.production`):
@@ -76,6 +80,19 @@ is sent to them.
    deploy/oncall-watchdog/scripts/test-alert.sh firing   # pages @oncall with Ack/Escalate buttons
    deploy/oncall-watchdog/scripts/test-alert.sh resolved
    ```
+
+## Deploys after the first
+
+`.github/workflows/oncall-watchdog.yml` tests every PR that touches this
+directory and deploys on merge to `main`. It needs two repo (or
+`oncall-watchdog` environment) secrets — named apart from the site's own
+`CLOUDFLARE_API_TOKEN`, which belongs to a different account:
+
+- `ONCALL_CLOUDFLARE_API_TOKEN` — Cloudflare → My Profile → API Tokens →
+  *Edit Cloudflare Workers* template, scoped to the watchdog's account.
+- `ONCALL_CLOUDFLARE_ACCOUNT_ID` — Workers & Pages → Account details → Account ID.
+
+CI never sets Worker secrets; those stay as put by hand in step 4.
 
 ## Operating notes
 

@@ -18,10 +18,11 @@ if [[ -z "${ONCALL_SIGNING_SECRET:-}" && -f "$root/.env.production" ]]; then
   ONCALL_SIGNING_SECRET="$(grep -E '^ONCALL_SIGNING_SECRET=' "$root/.env.production" | cut -d= -f2-)"
 fi
 : "${ONCALL_SIGNING_SECRET:?set ONCALL_SIGNING_SECRET}"
-url="${ONCALL_URL:-https://oncall.rmhstudios.com}"
+url="${ONCALL_URL:?set ONCALL_URL to the watchdog URL, e.g. https://rmh-oncall-watchdog.<subdomain>.workers.dev}"
 path="/v1/alert"
 
-body="{\"state\":\"$state\",\"id\":\"T00\",\"sev\":2,\"title\":\"Test page — please Acknowledge\",\"detail\":\"Sent by test-alert.sh from $(hostname). Safe to ack.\",\"source\":\"test-alert.sh\",\"runbook\":\"https://github.com/stickms/rmhstudios.com/blob/main/deploy/oncall-watchdog/README.md\"}"
+if [[ "$state" == firing ]]; then detail="Sent by test-alert.sh from $(hostname). Safe to ack."; else detail="test cleared by test-alert.sh"; fi
+body="{\"state\":\"$state\",\"id\":\"T00\",\"sev\":2,\"title\":\"Test page — please Acknowledge\",\"detail\":\"$detail\",\"source\":\"test-alert.sh\",\"runbook\":\"https://github.com/stickms/rmhstudios.com/blob/main/deploy/oncall-watchdog/README.md\"}"
 ts="$(date +%s)"
 nonce="$(openssl rand -hex 16)"
 # Note: `-hmac` puts the key in openssl's argv for the instant it runs (visible
