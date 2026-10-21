@@ -18,7 +18,12 @@ import {
   UPLOAD_SETTLE_FRAMES,
   WRAP_MS,
 } from '../constants';
-import { EversionRunner, HOST_READY_TIMEOUT_MS, OVERLAY_MOUNT_TIMEOUT_MS } from '../runner';
+import {
+  EversionRunner,
+  HOST_READY_TIMEOUT_MS,
+  OVERLAY_MOUNT_TIMEOUT_MS,
+  READY_WAIT_MS,
+} from '../runner';
 import type { RunnerDeps } from '../runner';
 import type { SettleReport, SettleRequest } from '../settle';
 import type {
@@ -1302,5 +1307,67 @@ describe('eversion runner: watchdog, pageshow, traversal while priming (Fix E1)'
     expect(r.runner.state().phase).toBe('revealing');
     r.emit(DONE);
     await p;
+  });
+});
+
+describe('eversion runner: every page transition (amended 2026-10-21)', () => {
+  /** A rig whose router records how it was asked to navigate, and runs the replay it is handed. */
+  const replayRig = () => {
+    const r = rig();
+    r.deps.router.navigate = (href, issue) => {
+      r.log.push(`navigate:${href}${issue ? ':replay' : ''}`);
+      issue?.();
+    };
+    return r;
+  };
+
+  it('a held navigation is replayed as it was asked for, not re-pushed to the href', async () => {
+    const r = replayRig();
+    const navigate = vi.fn(() => void r.log.push('replayed'));
+    await toStart(r, NODE, GLOBE, 'click', { navigate });
+    expect(navigate).toHaveBeenCalledOnce();
+    expect(r.log).toContain(`navigate:${NODE.href}:replay`);
+    expect(r.log.indexOf('replayed')).toBeGreaterThan(r.log.indexOf('cover:on'));
+    expect(hasStart(r)).toBe(true);
+  });
+
+  it("a replayed back/forward's own popstate is not the visitor traversing again", async () => {
+    const r = replayRig();
+    const p = r.runner.run(NODE, GLOBE, 'click', { navigate: () => r.traverse(), traverses: true });
+    await flush();
+    r.routerIdle.resolve();
+    await flush();
+    expect(hasStart(r)).toBe(true);
+    // The visitor's own back/forward after that still hurries the run, as always.
+    r.traverse();
+    expect(r.posted.filter((m) => m.type === 'abort')).toHaveLength(1);
+    r.emit(DONE);
+    expect(await p).toMatchObject({ fallback: null, end: 'done' });
+  });
+
+  it('commits only once the caller says its globe is ready (the pop-up has landed)', async () => {
+    const r = replayRig();
+    let land!: () => void;
+    const ready = () => new Promise<void>((resolve) => (land = resolve));
+    const onCommit = vi.fn();
+    await toStart(r, NODE, GLOBE, 'click', { ready, onCommit });
+    expect(r.log).toContain('capture');
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(hasStart(r)).toBe(false);
+    land();
+    await flush();
+    expect(onCommit).toHaveBeenCalledOnce();
+    expect(hasStart(r)).toBe(true);
+  });
+
+  it(`a globe that never says it is ready is waited for READY_WAIT_MS, then handed over regardless`, async () => {
+    const r = replayRig();
+    const onCommit = vi.fn();
+    await toStart(r, NODE, GLOBE, 'click', { ready: () => new Promise<void>(() => {}), onCommit });
+    expect(onCommit).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(READY_WAIT_MS);
+    await flush();
+    expect(onCommit).toHaveBeenCalledOnce();
+    expect(hasStart(r)).toBe(true);
   });
 });
