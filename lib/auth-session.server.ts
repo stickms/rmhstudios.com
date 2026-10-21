@@ -18,22 +18,11 @@
  */
 import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
+import { hasSessionCookie } from '@/lib/session-cookie';
 
 type SessionResult = Awaited<ReturnType<typeof auth.api.getSession>>;
 
 const sessionByRequest = new WeakMap<object, Promise<SessionResult>>();
-
-/**
- * Better Auth names its session cookies `*session_token` / `*session_data` (plus
- * `__Secure-`/`__Host-` prefixes under HTTPS — see server/nitro/anon-html-cache.ts,
- * which keys the edge cache on the same signal). A request that carries neither
- * cannot be authenticated, so we can skip Better Auth entirely for it.
- */
-function hasSessionCookie(headers: Headers): boolean {
-  const cookie = headers.get('cookie');
-  if (!cookie) return false;
-  return cookie.includes('session_token') || cookie.includes('session_data');
-}
 
 /** Resolve the current request's session once, memoized for that request. */
 export function getRequestSession(): Promise<SessionResult> {

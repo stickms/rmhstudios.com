@@ -44,6 +44,7 @@
 import { createHash } from 'node:crypto';
 import type { z } from 'zod';
 import { auth } from '@/lib/auth';
+import { hasSessionCookie } from '@/lib/session-cookie';
 import type { RateLimitPolicy, WithRateLimitOptions } from '@/lib/rate-limit';
 import { withRateLimitAsync } from '@/lib/rate-limit.server';
 import { canUse, upgradeRequiredBody, type MemberFeature } from '@/lib/entitlements/features';
@@ -569,7 +570,11 @@ export function defineHandler<
     try {
       /* 1. Session ------------------------------------------------------- */
       let session: ApiSession = null;
-      if (mode !== 'none') {
+      // perf: no session cookie (and Better Auth reads no other credential — see
+      // lib/session-cookie.ts) means definitely signed out, so skip the session +
+      // user lookup and customSession tier resolution. 'required'/'admin' then fall
+      // through to the same 401 below; 'optional' gets null as before.
+      if (mode !== 'none' && hasSessionCookie(request.headers)) {
         // A transport/DB hiccup in the session lookup must not 500 a route that
         // tolerates anonymous callers — it degrades to "signed out" instead.
         session =

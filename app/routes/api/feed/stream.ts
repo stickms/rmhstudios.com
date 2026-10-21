@@ -10,6 +10,7 @@ import { createFileRoute } from '@tanstack/react-router';
  */
 
 import { auth } from '@/lib/auth';
+import { hasSessionCookie } from '@/lib/session-cookie';
 import { getFollowingIds } from '@/lib/social/follow-graph.server';
 import { feedEventBus, type FeedSSEEvent } from '@/lib/feed-sse';
 import { serializeWithDelivery } from '@/lib/feed-sse-serialize';
@@ -26,8 +27,11 @@ export const Route = createFileRoute('/api/feed/stream')({
         // stranger's post to everyone (Phase 3 of docs/feed/plan.md).
         let viewerId: string | null = null;
         try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          viewerId = session?.user?.id ?? null;
+          // perf: anonymous streams (no session cookie) skip Better Auth entirely.
+          if (hasSessionCookie(request.headers)) {
+            const session = await auth.api.getSession({ headers: request.headers });
+            viewerId = session?.user?.id ?? null;
+          }
         } catch {
           // Anonymous viewer — only the broadcast `feed:created` channel applies.
         }
