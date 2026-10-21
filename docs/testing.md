@@ -405,11 +405,11 @@ INTEGRATION_BASE_URL=http://localhost:7005 DATABASE_URL=… pnpm test:integratio
 overwrites it.) Restart the server between back-to-back runs — the rate-limit
 counters are in memory.
 
-**Known bug, pinned with `it.fails`:** a session's cookies copied before sign-out
-keep writing for up to 5 minutes, because `session.cookieCache` (lib/auth.ts,
-`maxAge: 300`) lets `getSession` trust the signed `session_data` cookie without
-reading the (deleted) session row. When that is fixed the `it.fails` test turns
-red — flip it to `it`.
+**Found by this suite:** a session's cookies copied before sign-out kept writing
+for up to 5 minutes, because `session.cookieCache` let `getSession` trust the
+signed cookie without reading the (deleted) session row. Fixed by forcing
+`disableCookieCache` on non-GET requests (the wrapper at the bottom of
+`lib/auth.ts`); `auth.test.ts` › *a revoked session cookie cannot write* pins it.
 
 Out of scope (each needs external services): Stripe checkout/webhooks, OAuth
 providers, the Socket.IO hubs, email delivery.
