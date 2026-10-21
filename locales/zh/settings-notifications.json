@@ -17,5 +17,7 @@
   "quiet-end": "Quiet hours end",
   "quiet-hours": "Quiet hours",
   "quiet-start": "Quiet hours start",
+  "tab-badge": "浏览器标签页中的未读计数",
+  "tab-badge-desc": "在此设备的标签页标题和图标上显示未读消息和通知的数量。",
   "to": "To"
 }
