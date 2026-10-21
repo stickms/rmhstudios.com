@@ -97,7 +97,11 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
   consumer that drains queues and runs background work that used to block
   request handlers: `engagement.progression` (achievements/XP/quests/webhooks),
   `event.reminder` (T-24h/T-15m RSVP reminders), and the `email.weekly-digest`
-  cron. Owns pg-boss queue maintenance/scheduling (the web tier is send-only).
+  cron. Hourly `ops.deepseek-balance` (`:05` UTC, `lib/jobs/maintenance.server.ts`)
+  samples the DeepSeek account balance into `deepseek_balance_snapshot` for
+  `/admin/deepseek` and prunes rows older than 400 days; it skips silently when
+  `DEEPSEEK_API_KEY` is unset.
+  Owns pg-boss queue maintenance/scheduling (the web tier is send-only).
   Degrades safely: with no `DATABASE_URL` it exits and the web tier runs the
   work inline. Logic lives in `lib/jobs/` + `lib/social/engagement-effects.server.ts`.
 - **`nitro/`** — not a service: Nitro startup plugins for the web tier,

@@ -103,6 +103,7 @@ export const NAMESPACES = [
   "f-ladder-homes",
   "f-delight",
   "f-perf",
+  "f-deepseek",
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 
