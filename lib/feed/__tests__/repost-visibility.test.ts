@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { evalWhere, type Row } from './where-eval';
 
 const h = vi.hoisted(() => ({
-  posts: [] as Record<string, any>[],
+  posts: [] as Record<string, unknown>[],
   following: [] as string[],
   hidden: [] as string[],
   created: [] as unknown[],
@@ -25,7 +25,7 @@ vi.mock('@/lib/notifications.server', () => ({
 vi.mock('@/lib/social/follow-graph.server', () => ({ getFollowingIds: async () => h.following }));
 vi.mock('@/lib/moderation.server', () => ({ getHiddenAuthorIds: async () => h.hidden }));
 vi.mock('@/lib/prisma.server', () => {
-  const prisma: any = {
+  const prisma: Record<string, unknown> = {
     closeFriend: { findMany: async () => [] },
     rMHark: {
       findFirst: async (a: { where: Row }) => h.posts.find((p) => evalWhere(p, a.where)) ?? null,

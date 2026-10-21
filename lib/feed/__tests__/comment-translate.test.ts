@@ -5,7 +5,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const h = vi.hoisted(() => ({
-  comment: null as null | Record<string, any>,
+  comment: null as null | Record<string, unknown>,
   translate: vi.fn(async (text: string, to: string) => `[${to}] ${text}`),
 }));
 
@@ -43,7 +43,7 @@ const get = () =>
     params: { commentId: 'c1' },
   });
 
-const live = (over: Record<string, any> = {}) => ({
+const live = (over: Record<string, unknown> = {}) => ({
   content: 'hello',
   deletedAt: null,
   rmhark: { userId: 'author', audience: 'PUBLIC', deletedAt: null },

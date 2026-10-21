@@ -40,10 +40,9 @@ const db = vi.hoisted(() => ({
 function fakeFindMany(rows: () => Row[]) {
   return async (args: { where?: Row; take?: number }) => {
     const hits = rows().filter((r) => evalWhere(r, args.where));
-    hits.sort(
-      (a, b) =>
-        b.createdAt.getTime() - a.createdAt.getTime() || (a.id < b.id ? 1 : a.id > b.id ? -1 : 0),
-    );
+    const at = (r: Row) => (r.createdAt as Date).getTime();
+    const id = (r: Row) => r.id as string;
+    hits.sort((a, b) => at(b) - at(a) || (id(a) < id(b) ? 1 : id(a) > id(b) ? -1 : 0));
     return hits.slice(0, args.take ?? hits.length);
   };
 }
@@ -156,7 +155,10 @@ describe('For-You, cursored page (keyset OR must not replace the audience OR)', 
   });
 
   it('still pages: the keyset bound is applied', async () => {
-    const cursor = encodeCursor(store.posts[1].createdAt.toISOString(), store.posts[1].id);
+    const cursor = encodeCursor(
+      (store.posts[1].createdAt as Date).toISOString(),
+      store.posts[1].id as string,
+    );
     const rows = await contents({ surface: 'foryou', cursor });
     // Only rows strictly older than the cursor row survive (public is newer).
     expect(rows).not.toContain('public');

@@ -11,7 +11,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { evalWhere, type Row } from './where-eval';
 
 const w = vi.hoisted(() => ({
-  posts: [] as Record<string, any>[],
+  posts: [] as Record<string, unknown>[],
   following: [] as string[],
   circles: [] as string[],
   hidden: [] as string[],
@@ -77,7 +77,10 @@ function post(id: string, over: Row = {}): Row {
   };
 }
 
-const assemblies = () => db.rMHark.findMany.mock.calls.filter((c: any) => c[0].take !== undefined && !c[0].where.id).length;
+const assemblies = () => db.rMHark.findMany.mock.calls.filter((c: unknown[]) => {
+    const a = c[0] as { take?: number; where: { id?: unknown } };
+    return a.take !== undefined && !a.where.id;
+  }).length;
 
 async function read(surface: 'foryou' | 'following' = 'foryou', userId = VIEWER) {
   const page = await getTimeline({ userId, surface, filter: 'all', cursor: null, limit: 20, search: null });
@@ -92,15 +95,15 @@ beforeEach(() => {
   db.rMHark.findMany.mockReset();
   db.rMHark.findMany.mockImplementation(async (a: { where: Row; take?: number }) => {
     const hits = w.posts.filter((p) => evalWhere(p, a.where));
-    hits.sort((x, y) => y.createdAt.getTime() - x.createdAt.getTime());
+    hits.sort((x, y) => (y.createdAt as Date).getTime() - (x.createdAt as Date).getTime());
     return hits.slice(0, a.take ?? hits.length);
   });
   db.follow.findMany.mockReset();
-  db.follow.findMany.mockImplementation(async (a: any) =>
+  db.follow.findMany.mockImplementation(async (a: { where: { followingId: { in: string[] } } }) =>
     w.following.filter((id) => a.where.followingId.in.includes(id)).map((followingId) => ({ followingId })),
   );
   db.closeFriend.findMany.mockReset();
-  db.closeFriend.findMany.mockImplementation(async (a: any) =>
+  db.closeFriend.findMany.mockImplementation(async (a: { where: { ownerId: { in: string[] } } }) =>
     w.circles.filter((id) => a.where.ownerId.in.includes(id)).map((ownerId) => ({ ownerId })),
   );
   db.userProfile.findUnique.mockReset();
