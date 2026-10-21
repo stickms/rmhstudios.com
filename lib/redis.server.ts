@@ -33,6 +33,57 @@ let initialized = false;
 // channel -> local handlers fed by the shared subscriber connection.
 const channelHandlers = new Map<string, Set<(data: unknown) => void>>();
 
+/**
+ * Lua scripts registered once per state-plane connection with `defineCommand`.
+ * ioredis then sends EVALSHA (script body only on the first call / after a
+ * SCRIPT FLUSH, via automatic NOSCRIPT fallback) instead of shipping the full
+ * script text with EVAL on every call.
+ */
+type StateCommands = {
+  rmhRateLimit(key: string, windowMs: string): Promise<[number, number]>;
+  rmhIncrByTtl(key: string, by: string, ttlMs: string): Promise<number>;
+  rmhIncrBySadd(
+    counterKey: string,
+    setKey: string,
+    by: string,
+    ttlMs: string,
+    member: string,
+  ): Promise<number>;
+};
+
+/** INCRBY, stamping the TTL only on first touch (result == by) — one round trip. */
+const INCRBY_TTL_LUA = `
+local n = redis.call('INCRBY', KEYS[1], ARGV[1])
+if n == tonumber(ARGV[1]) and tonumber(ARGV[2]) > 0 then
+  redis.call('PEXPIRE', KEYS[1], tonumber(ARGV[2]))
+end
+return n
+`;
+
+/**
+ * INCRBY (+first-touch TTL) and SADD a member to a dirty set, atomically.
+ * Two keys, so on Redis Cluster they would need a shared hash tag (CROSSSLOT
+ * otherwise) — the call then fails and callers take their non-Redis fallback.
+ */
+const INCRBY_SADD_LUA = `
+local n = redis.call('INCRBY', KEYS[1], ARGV[1])
+if n == tonumber(ARGV[1]) and tonumber(ARGV[2]) > 0 then
+  redis.call('PEXPIRE', KEYS[1], tonumber(ARGV[2]))
+end
+redis.call('SADD', KEYS[2], ARGV[3])
+return n
+`;
+
+function defineStateCommands(client: Redis): void {
+  client.defineCommand('rmhRateLimit', { numberOfKeys: 1, lua: RATE_LIMIT_LUA });
+  client.defineCommand('rmhIncrByTtl', { numberOfKeys: 1, lua: INCRBY_TTL_LUA });
+  client.defineCommand('rmhIncrBySadd', { numberOfKeys: 2, lua: INCRBY_SADD_LUA });
+}
+
+function stateCommands(client: Redis): StateCommands {
+  return client as unknown as StateCommands;
+}
+
 function init(): void {
   if (initialized) return;
   initialized = true;
@@ -90,6 +141,8 @@ function init(): void {
     } else {
       statePublisher = publisher;
     }
+
+    defineStateCommands(statePublisher);
 
     publisher.on('error', (e) => console.error('[redis] publisher error:', e?.message));
     subscriber.on('error', (e) => console.error('[redis] subscriber error:', e?.message));
@@ -205,10 +258,8 @@ export async function redisRateLimit(
     // Single round-trip: INCR, set the window TTL on the first hit only, and
     // read the remaining TTL back — atomically, so concurrent requests can't
     // race between the INCR and the PEXPIRE and leave a key with no expiry.
-    const res = (await statePublisher.eval(RATE_LIMIT_LUA, 1, k, String(windowMs))) as [
-      number,
-      number,
-    ];
+    // perf: registered via defineCommand, so this is EVALSHA, not EVAL.
+    const res = await stateCommands(statePublisher).rmhRateLimit(k, String(windowMs));
     const count = Number(res[0]);
     const ttl = Number(res[1]);
     const reset = Date.now() + (ttl > 0 ? ttl : windowMs);
@@ -387,9 +438,10 @@ export async function redisIncrBy(key: string, by: number, ttlMs?: number): Prom
   init();
   if (!statePublisher) return null;
   try {
-    const next = await statePublisher.incrby(key, by);
-    if (ttlMs && next === by) await statePublisher.pexpire(key, ttlMs);
-    return next;
+    // perf: INCRBY + first-touch PEXPIRE in one round trip (was up to two).
+    return Number(
+      await stateCommands(statePublisher).rmhIncrByTtl(key, String(by), String(ttlMs || 0)),
+    );
   } catch {
     return null;
   }
@@ -408,11 +460,47 @@ export async function redisPresenceMark(
   init();
   if (!statePublisher) return false;
   try {
-    await statePublisher.sadd(bucketKey, member);
-    await statePublisher.pexpire(bucketKey, ttlMs);
+    // perf: one pipelined round trip. A pipeline's per-command failures come back
+    // in the results array rather than as a rejection, so check them.
+    const results = await statePublisher
+      .pipeline()
+      .sadd(bucketKey, member)
+      .pexpire(bucketKey, ttlMs)
+      .exec();
+    if (!results || results.some(([err]) => err)) return false;
     return true;
   } catch {
     return false;
+  }
+}
+
+/**
+ * INCRBY a counter (TTL on first touch) and SADD `member` to a dirty set in one
+ * atomic round trip. Returns the new counter value, or null when Redis is off /
+ * the call failed so the caller can fall back — the same contract as
+ * `redisIncrBy`.
+ */
+export async function redisIncrByAndSadd(
+  counterKey: string,
+  by: number,
+  ttlMs: number,
+  setKey: string,
+  member: string,
+): Promise<number | null> {
+  init();
+  if (!statePublisher) return null;
+  try {
+    return Number(
+      await stateCommands(statePublisher).rmhIncrBySadd(
+        counterKey,
+        setKey,
+        String(by),
+        String(ttlMs),
+        member,
+      ),
+    );
+  } catch {
+    return null;
   }
 }
 

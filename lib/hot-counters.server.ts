@@ -23,7 +23,7 @@ import { mapWithConcurrency } from '@/lib/async-pool';
 import {
   redisEnabled,
   redisIncrBy,
-  redisSadd,
+  redisIncrByAndSadd,
   redisSpop,
   redisGetDel,
   redisPresenceMark,
@@ -62,9 +62,15 @@ function ensureFlusher(): void {
  */
 export async function bufferPostView(postId: string): Promise<void> {
   if (redisEnabled()) {
-    const n = await redisIncrBy(VIEW_BUF_PREFIX + postId, 1, VIEW_TTL_MS);
+    // perf: counter bump + dirty-set mark in one round trip (was two sequential).
+    const n = await redisIncrByAndSadd(
+      VIEW_BUF_PREFIX + postId,
+      1,
+      VIEW_TTL_MS,
+      VIEW_DIRTY_SET,
+      postId,
+    );
     if (n !== null) {
-      await redisSadd(VIEW_DIRTY_SET, postId);
       ensureFlusher();
       return;
     }
@@ -176,8 +182,11 @@ function presenceBucket(tsMs: number): string {
 export async function markPresence(userId: string): Promise<void> {
   const now = Date.now();
   if (redisEnabled()) {
-    await redisPresenceMark(userId, presenceBucket(now), PRESENCE_TTL_MS);
-    const first = await redisIncrBy(`presence:dbwrote:${userId}`, 1, PRESENCE_DB_THROTTLE_MS);
+    // perf: the two Redis writes are independent — run them concurrently.
+    const [, first] = await Promise.all([
+      redisPresenceMark(userId, presenceBucket(now), PRESENCE_TTL_MS),
+      redisIncrBy(`presence:dbwrote:${userId}`, 1, PRESENCE_DB_THROTTLE_MS),
+    ]);
     if (first === 1) {
       await prisma.user
         .update({ where: { id: userId }, data: { lastSeenAt: new Date() } })
