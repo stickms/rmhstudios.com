@@ -90,7 +90,7 @@ export async function toggleCommentReaction(
       select: {
         id: true,
         deletedAt: true,
-        rmhark: { select: { userId: true, audience: true, deletedAt: true } },
+        rmhark: { select: { userId: true, audience: true, deletedAt: true, communityId: true } },
       },
     }),
     prisma.rMHarkCommentReaction.findUnique({

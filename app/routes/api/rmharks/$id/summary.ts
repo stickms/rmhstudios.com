@@ -51,6 +51,7 @@ export const Route = createFileRoute('/api/rmharks/$id/summary')({
             content: true,
             userId: true,
             audience: true,
+            communityId: true,
             deletedAt: true,
             unlockPrice: true,
             unlocks: { where: { userId: viewerId ?? '' }, select: { id: true } },
@@ -58,7 +59,7 @@ export const Route = createFileRoute('/api/rmharks/$id/summary')({
           },
         });
         if (!post) return Response.json({ error: 'Post not found' }, { status: 404 });
-        if (!(await canReadThread({ userId: post.userId, audience: post.audience, deletedAt: post.deletedAt }, viewerId))) {
+        if (!(await canReadThread({ userId: post.userId, audience: post.audience, deletedAt: post.deletedAt, communityId: post.communityId }, viewerId))) {
           return Response.json({ error: 'Post not found' }, { status: 404 });
         }
         if (isLocked(post, viewerId)) {

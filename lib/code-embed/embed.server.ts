@@ -9,7 +9,7 @@ export async function getPostEmbed(
 ): Promise<CodeEmbed | null> {
   const post = await prisma.rMHark.findUnique({
     where: { id: postId },
-    select: { id: true, userId: true, audience: true, deletedAt: true, codeEmbed: true },
+    select: { id: true, userId: true, audience: true, communityId: true, deletedAt: true, codeEmbed: true },
   });
   if (!post || post.deletedAt || !post.codeEmbed || !(await canViewPost(post, viewerId)))
     return null;

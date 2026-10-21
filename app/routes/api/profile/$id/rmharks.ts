@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import type { FeedItem, FeedPoll } from '@/lib/feed-types';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
-import { audienceWhere, viewerVisiblePostWhere } from '@/lib/feed/audience.server';
+import { audienceWhere, communityVisibleWhere, viewerVisiblePostWhere } from '@/lib/feed/audience.server';
 import { applyLock, loadBoundedReactionSummaries } from '@/lib/feed/map-feed-item.server';
 import { isExpired } from '@/lib/posts-plus/constants';
 
@@ -132,7 +132,11 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
             select: { id: true },
           }));
         }
-        const aud = audienceWhere(viewerId, viewerFollowsOwner ? [userId] : []);
+        // A private community's posts are members-only (profile lists reach them by author).
+        const aud = {
+          ...audienceWhere(viewerId, viewerFollowsOwner ? [userId] : []),
+          ...communityVisibleWhere(viewerId),
+        };
         // A repost shows someone else's post, so that post gets the full
         // visibility check (deleted, audience, blocks). Only deletedAt was
         // checked before, which let a profile's reposts reveal PRIVATE,

@@ -14,6 +14,7 @@ import { prisma } from '@/lib/prisma.server';
 import {
   canViewPost,
   audienceWhere,
+  communityVisibleWhere,
   supportedCreatorIds,
   circleOwnerIds,
 } from '@/lib/feed/audience.server';
@@ -35,7 +36,7 @@ export async function listQuotes(
 ): Promise<QuotesPage | null> {
   const post = await prisma.rMHark.findUnique({
     where: { id: postId },
-    select: { userId: true, audience: true, deletedAt: true },
+    select: { userId: true, audience: true, communityId: true, deletedAt: true },
   });
   if (!post || post.deletedAt || !(await canViewPost(post, viewerId))) return null;
 
@@ -49,6 +50,7 @@ export async function listQuotes(
   // combined under `AND` rather than spread into one object.
   const visible = {
     deletedAt: null,
+    ...communityVisibleWhere(viewerId),
     ...(hidden.length > 0 ? { userId: { notIn: hidden } } : {}),
     AND: [audienceWhere(viewerId, following, supported, circles)],
   };

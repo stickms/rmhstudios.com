@@ -173,6 +173,7 @@ export async function createComment(args: {
       id: true,
       userId: true,
       audience: true,
+      communityId: true,
       deletedAt: true,
       user: { select: { handle: true } },
     },

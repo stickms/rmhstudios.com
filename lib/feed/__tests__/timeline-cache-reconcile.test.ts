@@ -137,6 +137,12 @@ describe('signed-in first page cache: correctness against the live database', ()
     expect(await read()).toEqual(['p2', 'p3']);
   });
 
+  it('never serves a post that is in a (private) community from a cached page', async () => {
+    await read();
+    w.posts[0].communityId = 'private-community';
+    expect(await read()).toEqual(['p2', 'p3']);
+  });
+
   it('drops a post whose audience was tightened after caching', async () => {
     await read();
     w.posts[2].audience = 'PRIVATE';

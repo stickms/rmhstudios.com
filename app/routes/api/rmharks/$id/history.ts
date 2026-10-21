@@ -34,6 +34,7 @@ export const Route = createFileRoute('/api/rmharks/$id/history')({
               id: true,
               userId: true,
               audience: true,
+              communityId: true,
               content: true,
               createdAt: true,
               editedAt: true,
@@ -44,7 +45,10 @@ export const Route = createFileRoute('/api/rmharks/$id/history')({
           if (!post || post.deletedAt) {
             return Response.json({ error: 'Not found' }, { status: 404 });
           }
-          if (!(await canViewPost({ userId: post.userId, audience: post.audience }, userId))) {
+          if (!(await canViewPost(
+              { userId: post.userId, audience: post.audience, communityId: post.communityId },
+              userId,
+            ))) {
             return Response.json({ error: 'Not found' }, { status: 404 });
           }
 

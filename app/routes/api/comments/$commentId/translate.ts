@@ -79,7 +79,7 @@ export const Route = createFileRoute('/api/comments/$commentId/translate')({
           select: {
             content: true,
             deletedAt: true,
-            rmhark: { select: { userId: true, audience: true, deletedAt: true } },
+            rmhark: { select: { userId: true, audience: true, deletedAt: true, communityId: true } },
           },
         });
         if (!comment || comment.deletedAt || !comment.rmhark)

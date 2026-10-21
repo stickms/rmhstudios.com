@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma.server';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
-import { audienceWhere } from '@/lib/feed/audience.server';
+import { audienceWhere, communityVisibleWhere } from '@/lib/feed/audience.server';
 import { getMutedWords, applyMutedWords } from '@/lib/feed/timeline';
 import { cached } from '@/lib/cached.server';
 import { getFollowingIds } from '@/lib/social/follow-graph.server';
@@ -180,7 +180,7 @@ export async function listExplore(viewerId: string | null): Promise<ExploreResul
 
   const notHidden = hidden.length ? { userId: { notIn: hidden } } : {};
   const followingIds = following;
-  const aud = audienceWhere(viewerId, followingIds);
+  const aud = { ...audienceWhere(viewerId, followingIds), ...communityVisibleWhere(viewerId) };
 
   // Hydrate the shared candidate pool with this viewer's state (likes/reposts/
   // bookmarks via the include) and apply the viewer's hidden-author filter. The

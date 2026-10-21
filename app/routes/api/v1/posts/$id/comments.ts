@@ -31,7 +31,7 @@ export const Route = createFileRoute('/api/v1/posts/$id/comments')({
             // FOLLOWERS/PRIVATE posts.
             const parent = await prisma.rMHark.findUnique({
               where: { id: params.id },
-              select: { audience: true, userId: true, deletedAt: true },
+              select: { audience: true, userId: true, deletedAt: true, communityId: true },
             });
             // Same rule as every other comment read (deleted, audience, blocks).
             if (!(await canReadThread(parent, userId))) {
