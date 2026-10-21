@@ -44,7 +44,7 @@
 import { responseHeaders } from './security-headers';
 import { markScope, serverTimingHeader } from '../../lib/otel/timing';
 import { enterTrace, spanFromHeader, type TraceScope } from '../../lib/otel/trace';
-import { recordError, recordRequest } from '../../lib/perf/process-metrics';
+import { recordCounter, recordError, recordRequest } from '../../lib/perf/process-metrics';
 import { normalizeRoute } from '../../lib/perf/route-label';
 
 /** The subset of Nitro's HTTPEvent this plugin touches. */
@@ -197,7 +197,17 @@ export default function otelPlugin(nitroApp: NitroAppLike): void {
   // The 500 path. `lib/api/handler.server.ts` owns the API error envelope; this
   // is the tier below it — anything that escapes a route entirely — and is the
   // one place a trace id can be attached to it without touching that wrapper.
-  nitroApp.hooks.hook('error', ((error: unknown, ctx: { event?: TracedEvent }) => {
+  nitroApp.hooks.hook('error', ((error: unknown, ctx: { event?: TracedEvent; tags?: string[] }) => {
+    // Nitro traps process-level failures and reports them here tagged
+    // `unhandledRejection` / `uncaughtException` (no event). Count them under the
+    // same names the hubs and workers use (lib/perf/process-guards.ts) so one
+    // alarm covers every Node process.
+    try {
+      if (ctx?.tags?.includes('unhandledRejection')) recordCounter('process.unhandled_rejection');
+      if (ctx?.tags?.includes('uncaughtException')) recordCounter('process.uncaught_exception');
+    } catch {
+      // Telemetry must not become the error.
+    }
     // The admin performance page's error feed. Separate try so a failure here
     // cannot skip the log line below, and only 5xx: Nitro also reports 4xx
     // HTTPErrors (a 404 is not a server fault) through this hook.

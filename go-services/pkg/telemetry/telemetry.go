@@ -24,6 +24,9 @@ type Metrics struct {
 	DBQueries *prometheus.CounterVec
 	// JobRuns counts background job executions by name and outcome (workers).
 	JobRuns *prometheus.CounterVec
+	// WorkerPanics counts panics the supervisor recovered from a worker's Run
+	// (each one is followed by an in-place restart of that worker).
+	WorkerPanics prometheus.Counter
 }
 
 // New builds a Metrics bundle bound to a fresh registry labeled by service.
@@ -46,6 +49,9 @@ func New(service string) *Metrics {
 		JobRuns: factory.NewCounterVec(prometheus.CounterOpts{
 			Name: "rmh_job_runs_total", Help: "Background job executions.", ConstLabels: labels,
 		}, []string{"job", "outcome"}),
+		WorkerPanics: factory.NewCounter(prometheus.CounterOpts{
+			Name: "rmh_worker_panics_total", Help: "Worker panics recovered by the supervisor.", ConstLabels: labels,
+		}),
 	}
 }
 

@@ -4,6 +4,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { Pool } from 'pg';
 // Aliased: this module already exports a `recordQuery` (the budget counter below).
 import { recordQuery as recordQueryMetric } from './perf/process-metrics';
+import { guardPool } from './perf/process-guards';
 
 /* ─── BIGINT columns ─────────────────────────────────────────────────────────
  *
@@ -401,7 +402,7 @@ function createAdapter(
     ...(statementTimeout ? { statement_timeout: statementTimeout } : {}),
     ...(idleTxTimeout ? { idle_in_transaction_session_timeout: idleTxTimeout } : {}),
   };
-  const pool = new Pool(poolConfig);
+  const pool = guardPool(new Pool(poolConfig), { pool: `prisma:${role}` });
   const adapter = new PrismaPg(pool, { disposeExternalPool: true });
   // PrismaPg recognises a pool with `instanceof pg.Pool`; if a duplicate `pg`
   // copy ever made that fail it would treat our Pool as a config object. The

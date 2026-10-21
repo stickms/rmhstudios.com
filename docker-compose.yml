@@ -317,7 +317,9 @@ services:
       - NODE_OPTIONS=--max-old-space-size=576
     command: ['node', 'dist-server/server/socket-server/index.cjs']
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:${PORT_SOCKET:-7001}/']
+      # /health, not / — the hub answers 404 for every path but /health, /internal/*
+      # and its Socket.IO path, so probing / marked it permanently unhealthy.
+      test: ['CMD', 'curl', '-f', 'http://localhost:${PORT_SOCKET:-7001}/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -345,7 +347,8 @@ services:
       - NODE_OPTIONS=--max-old-space-size=384
     command: ['node', 'dist-server/server/rmhbox/index.cjs']
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:${PORT_RMHBOX:-7676}/']
+      # /health, not / (404) — see the socket service above.
+      test: ['CMD', 'curl', '-f', 'http://localhost:${PORT_RMHBOX:-7676}/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -373,7 +376,8 @@ services:
       - NODE_OPTIONS=--max-old-space-size=384
     command: ['node', 'dist-server/server/rmhtube/index.cjs']
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:${PORT_RMHTUBE:-7003}/']
+      # /health, not / (404) — see the socket service above.
+      test: ['CMD', 'curl', '-f', 'http://localhost:${PORT_RMHTUBE:-7003}/health']
       interval: 30s
       timeout: 10s
       retries: 3

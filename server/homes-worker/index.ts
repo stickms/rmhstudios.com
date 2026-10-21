@@ -11,6 +11,8 @@
  */
 
 import 'dotenv/config';
+import { installProcessGuards } from '../../lib/perf/process-guards';
+
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { schedule } from 'node-cron';
@@ -21,6 +23,9 @@ import {
   notifyWatchersOfExternalListing,
   type NotifyPrisma,
 } from '../../lib/homes/scrape/notify.server';
+
+// Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
+installProcessGuards({ service: 'homes-worker' });
 
 // ─── Prisma Client (standalone for worker process) ──────────────
 
