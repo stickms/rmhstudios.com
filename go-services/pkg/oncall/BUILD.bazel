@@ -1,0 +1,14 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "oncall",
+    srcs = ["oncall.go"],
+    importpath = "github.com/rmhstudios/rmh-go/pkg/oncall",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "oncall_test",
+    srcs = ["oncall_test.go"],
+    embed = [":oncall"],
+)

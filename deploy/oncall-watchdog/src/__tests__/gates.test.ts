@@ -43,6 +43,16 @@ async function signed(path: string, body: string, opts: { ts?: number; nonce?: s
   });
 }
 
+describe('signRequest', () => {
+  // The same vector is asserted in go-services/pkg/oncall (the status service's
+  // sender) and matches `openssl dgst -sha256 -hmac` in deploy/oncall-send.sh.
+  // All three signers must agree byte for byte, or the VPS can't page anyone.
+  it('matches the cross-language test vector', async () => {
+    const h = await signRequest(SECRET, 'POST', '/v1/alert', '{"x":1}', '1800000000', 'abcdefabcdef0123');
+    expect(h['x-oncall-signature']).toBe('v1=6028d8faef5cfa9d35313a8bc95430f32c6b7e3ded899c195d927522592095f2');
+  });
+});
+
 describe('verifySignature', () => {
   const now = 1_800_000_000;
   const body = '{"a":1}';

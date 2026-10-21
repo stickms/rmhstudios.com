@@ -17,6 +17,7 @@ import (
 	"github.com/rmhstudios/rmh-go/pkg/config"
 	"github.com/rmhstudios/rmh-go/pkg/httpx"
 	"github.com/rmhstudios/rmh-go/pkg/log"
+	"github.com/rmhstudios/rmh-go/pkg/oncall"
 )
 
 func main() {
@@ -129,8 +130,11 @@ func main() {
 		AdminToken: config.GetString("STATUS_ADMIN_TOKEN", ""),
 		// Discord / Slack incoming-webhook URLs get native messages; anything
 		// else gets JSON signed with STATUS_WEBHOOK_SECRET.
-		WebhookURLs:       config.GetCSV("STATUS_WEBHOOK_URLS"),
-		WebhookSecret:     config.GetString("STATUS_WEBHOOK_SECRET", ""),
+		WebhookURLs:   config.GetCSV("STATUS_WEBHOOK_URLS"),
+		WebhookSecret: config.GetString("STATUS_WEBHOOK_SECRET", ""),
+		// On-call watchdog (deploy/oncall-watchdog): heartbeat + incident
+		// alarms. Unset (or a secret under 32 chars) = disabled.
+		Oncall:            oncall.New(config.GetString("ONCALL_URL", ""), config.GetString("ONCALL_SIGNING_SECRET", "")),
 		Announcement:      config.GetString("STATUS_ANNOUNCEMENT", ""),
 		AnnouncementLevel: config.GetString("STATUS_ANNOUNCEMENT_LEVEL", "info"),
 		AnnouncementLink:  config.GetString("STATUS_ANNOUNCEMENT_LINK", ""),
