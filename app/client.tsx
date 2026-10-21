@@ -24,10 +24,16 @@ import { hydrateRoot } from 'react-dom/client';
 import { StartClient } from '@tanstack/react-start/client';
 import { reportClientError } from '@/lib/client-errors';
 import { installStaleBuildRecovery } from '@/lib/stale-build';
+import { installServerFnRetry } from '@/lib/server-fn-retry';
 
 // Before hydration, so a chunk deleted by a deploy that fails to load during the
 // first render already reloads instead of throwing (see lib/stale-build.ts).
 installStaleBuildRecovery();
+
+// One retry for a server-function GET that hit a gateway error or dropped
+// connection, so a deploy/network blip doesn't reject a route loader
+// (see lib/server-fn-retry.ts).
+installServerFnRetry();
 
 startTransition(() => {
   hydrateRoot(

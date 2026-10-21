@@ -14,6 +14,7 @@
 import 'dotenv/config';
 import { type Job } from 'pg-boss';
 import { createLogger } from '@/server/shared/logger';
+import { installProcessGuards } from '@/server/shared/process-guards';
 import { startProcessMetrics } from '../../lib/perf/process-metrics';
 import { registerPrismaPoolGauges, startPerfPublisher } from '../../lib/perf/publish.server';
 import { getBoss, PROGRESSION_QUEUE } from '@/lib/jobs/boss.server';
@@ -44,6 +45,7 @@ import {
 } from '@/lib/profile/visit-sweep.server';
 
 const log = createLogger('jobs');
+installProcessGuards(log);
 
 async function main() {
   // Process metrics for the admin performance page: sample this worker and publish

@@ -410,9 +410,31 @@ const getInitialI18n = createServerFn({ method: 'GET' }).handler(async () => {
   // hydration (perf audit §4.1; see lib/i18n/instances.ts). SSR renders from the
   // same core set, so hydration still matches.
   if (locale === DEFAULT_LOCALE) return { locale, resources: null };
-  await preloadLocale(locale);
-  return { locale, resources: localeCoreResources(locale) };
+  try {
+    await preloadLocale(locale);
+    return { locale, resources: localeCoreResources(locale) };
+  } catch {
+    // A failed locale chunk load must not take the whole document down with a
+    // 500 / "Something went wrong": render English (the always-available
+    // defaultValues) and let the client backfill the real locale.
+    return { locale: DEFAULT_LOCALE, resources: null };
+  }
 });
+
+/**
+ * Fallback for the i18n server function failing on the CLIENT (a network blip
+ * on a loader refetch, after the one retry in lib/server-fn-retry.ts). The
+ * tab already holds the active locale's resources, so keep `<html lang>`'s
+ * locale and send no new bundle rather than throwing the root loader.
+ */
+function i18nFallback(): { locale: Locale; resources: null } {
+  let locale: Locale = DEFAULT_LOCALE;
+  if (typeof document !== 'undefined') {
+    const lang = document.documentElement.lang as Locale;
+    if ((LOCALES as readonly string[]).includes(lang)) locale = lang;
+  }
+  return { locale, resources: null };
+}
 
 /** Check if a URL path is a Discord Activity route (embedded iframe) */
 function isDiscordRoute(pathname: string): boolean {
@@ -440,7 +462,7 @@ export const Route = createRootRoute({
         resolved: false,
         appearanceSeed: null,
       }),
-      getInitialI18n(),
+      getInitialI18n().catch(i18nFallback),
     ]);
     return {
       user: user.user,

@@ -22,6 +22,7 @@ import { ReconnectionHandler } from './reconnection';
 import { cleanupRateLimits } from './rate-limit';
 import { disconnectPrisma } from './prisma-client';
 import { logger } from './logger';
+import { installProcessGuards } from '../shared/process-guards';
 import { instrumentHub, handleInternalMetrics } from '../../lib/perf/hub';
 
 if (!config.CORS_ORIGIN) {
@@ -138,6 +139,7 @@ function shutdown(signal: string): void {
   }, config.SHUTDOWN_TIMEOUT_MS);
 }
 
+installProcessGuards(logger);
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 

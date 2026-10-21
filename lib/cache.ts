@@ -90,7 +90,7 @@ export class ApiCache {
   constructor(opts: ApiCacheOptions | number = {}) {
     const o = typeof opts === 'number' ? { maxEntries: opts } : opts;
     this.maxEntries = o.maxEntries ?? 5000;
-    this.maxBytes = o.maxBytes ?? 64 * 1024 * 1024;
+    this.maxBytes = o.maxBytes ?? 32 * 1024 * 1024;
     // Sweep expired entries every 60s
     this.gcTimer = setInterval(() => this.sweep(), 60_000);
     // Don't block process shutdown
@@ -178,11 +178,11 @@ export class ApiCache {
  * the main cache. Routed by key prefix inside `apiCache` so cachedSWR and every
  * other caller keep using the single `apiCache` API unchanged.
  */
-export const viewerFeedCache = new ApiCache({ maxEntries: 1000, maxBytes: 24 * 1024 * 1024 });
+export const viewerFeedCache = new ApiCache({ maxEntries: 1000, maxBytes: 12 * 1024 * 1024 });
 const VIEWER_FEED_PREFIX = 'feed:v2:';
 
-/** Main process cache (global keys + everything else): 5000 entries / 64 MB. */
-const mainCache = new ApiCache({ maxEntries: 5000, maxBytes: 64 * 1024 * 1024 });
+/** Main process cache (global keys + everything else): 5000 entries / 32 MB. Byte caps are ESTIMATES (see estimateBytes) and each web worker has a 384 MB V8 heap: 64+24 MB of estimate can retain 2-3x that, so the budget is kept well below the heap. */
+const mainCache = new ApiCache({ maxEntries: 5000, maxBytes: 32 * 1024 * 1024 });
 
 const pick = (key: string) => (key.startsWith(VIEWER_FEED_PREFIX) ? viewerFeedCache : mainCache);
 

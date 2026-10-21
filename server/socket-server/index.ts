@@ -12,6 +12,7 @@ import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { Server } from 'socket.io';
 import { config } from './config';
 import { logger } from './logger';
+import { installProcessGuards } from '../shared/process-guards';
 import { disconnectPrisma } from './prisma-client';
 import { cleanupRateLimits } from './rate-limit';
 import { instrumentHub, handleInternalMetrics } from '../../lib/perf/hub';
@@ -595,6 +596,7 @@ function shutdown(signal: string): void {
   }, config.SHUTDOWN_TIMEOUT_MS);
 }
 
+installProcessGuards(logger);
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 

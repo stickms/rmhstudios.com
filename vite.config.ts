@@ -375,6 +375,9 @@ export default defineConfig({
         fileURLToPath(new URL('./server/nitro/anon-html-cache.ts', import.meta.url)),
         fileURLToPath(new URL('./server/nitro/warmup.ts', import.meta.url)),
         fileURLToPath(new URL('./server/nitro/drain.ts', import.meta.url)),
+        //  - keepalive: raises Node's 5 s keep-alive timeout above Apache's pooled
+        //    upstream connection lifetime (stale-connection 502s).
+        fileURLToPath(new URL('./server/nitro/keepalive.ts', import.meta.url)),
         //  - otel: W3C trace context per request (E1) — adopts the inbound
         //    `traceparent`, binds it to the request's async context, echoes it
         //    back as `Server-Timing` (which is how lib/rum.ts stamps the RUM
