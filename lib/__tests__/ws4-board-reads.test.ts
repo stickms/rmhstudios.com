@@ -41,7 +41,9 @@ describe('board reads', () => {
   });
 
   it('rankOf (rank after your own submit) stays on the primary', async () => {
-    await genericAdapter(gameId).rankOf(10);
+    const { rankOf } = genericAdapter(gameId);
+    expect(rankOf).toBeDefined();
+    await rankOf!(10);
     expect(h.primaryCount).toHaveBeenCalledTimes(1);
   });
 
