@@ -6,10 +6,13 @@ name = "rmh-oncall-watchdog"
 main = "src/index.ts"
 compatibility_date = "2026-10-01"
 
-# Reachable ONLY through the custom domain. No *.workers.dev URL, no preview URLs.
-workers_dev = false
+# Served on its workers.dev URL (https://rmh-oncall-watchdog.<subdomain>.workers.dev).
+# It lives in a Cloudflare account separate from the one that owns
+# rmhstudios.com, so it can't take a route on that zone — and it doesn't need
+# to: every caller is gated by its own check (Discord's signature, the VPS's
+# HMAC), not by the hostname. No preview URLs.
+workers_dev = true
 preview_urls = false
-routes = [{ pattern = "oncall.rmhstudios.com", custom_domain = true }]
 
 [triggers]
 crons = ["* * * * *"]
