@@ -48,14 +48,28 @@ export interface HandOffController<N> {
       onCommit: (handover?: EversionHandover) => void;
       onFirstFrame?: () => void;
       globe?: () => GlobeStartState;
+      navigate?: () => void;
+      traverses?: boolean;
+      layer?: 'shell' | 'body';
     },
   ): Promise<EversionOutcome>;
 }
 
+/**
+ * How the navigation is issued (amended 2026-10-21): a navigation the site's interceptor held back for the effect
+ * (`eversion-nav.ts`: a foot-bar link pressed with the hub open, a back/forward) is REPLAYED exactly as it was asked
+ * for, rather than re-asked as a push to `node.href`. Absent: the hub's own destination, pushed.
+ */
+export interface HandOffHow {
+  navigate?: () => void;
+  traverses?: boolean;
+  layer?: 'shell' | 'body';
+}
+
 /** What the hand-off asks the hub to do. */
 export interface HandOffUi<N> {
-  /** Today's path: dismiss the hub for navigation and navigate. */
-  navigateToday(node: N): void;
+  /** Today's path: dismiss the hub for navigation and navigate (through `how.navigate` when there is one). */
+  navigateToday(node: N, how?: HandOffHow): void;
   /**
    * The run reached its point of no return: show the `everting` look, handing the globe over with `handover` (how
    * far it swells and travels, and when) when the run gives one.
@@ -82,6 +96,7 @@ export interface HandOff<N> {
     state: GlobeStartState,
     entry: Exclude<EntryPoint, 'preview'>,
     live?: () => GlobeStartState,
+    how?: HandOffHow,
   ): void;
   /**
    * The same confirm for a controller that is still loading: busy from now, and
@@ -94,6 +109,7 @@ export interface HandOff<N> {
     state: GlobeStartState,
     entry: Exclude<EntryPoint, 'preview'>,
     live?: () => GlobeStartState,
+    how?: HandOffHow,
   ): void;
 }
 
@@ -106,16 +122,19 @@ export function createHandOff<N>(ui: HandOffUi<N>): HandOff<N> {
     state: GlobeStartState,
     entry: Exclude<EntryPoint, 'preview'>,
     live?: () => GlobeStartState,
+    how: HandOffHow = {},
   ) => {
     if (!controller || !controller.isEligible()) {
       busy = false;
-      ui.navigateToday(node);
+      ui.navigateToday(node, how);
       return;
     }
     busy = true;
     const onCommit = (handover?: EversionHandover) => ui.everting(handover);
     const onFirstFrame = () => ui.swelling();
-    const options = live ? { onCommit, onFirstFrame, globe: live } : { onCommit, onFirstFrame };
+    const options = live
+      ? { onCommit, onFirstFrame, globe: live, ...how }
+      : { onCommit, onFirstFrame, ...how };
     controller.start(node, state, entry, options).then(
       (outcome) => {
         busy = false;
@@ -124,7 +143,7 @@ export function createHandOff<N>(ui: HandOffUi<N>): HandOff<N> {
           return;
         }
         if (outcome.fallback) {
-          ui.navigateToday(node);
+          ui.navigateToday(node, how);
           return;
         }
         ui.closed();
@@ -133,7 +152,7 @@ export function createHandOff<N>(ui: HandOffUi<N>): HandOff<N> {
         // `start` never rejects by contract; if it does, the visitor still
         // gets where they asked to go.
         busy = false;
-        ui.navigateToday(node);
+        ui.navigateToday(node, how);
       },
     );
   };
@@ -141,19 +160,19 @@ export function createHandOff<N>(ui: HandOffUi<N>): HandOff<N> {
   return {
     busy: () => busy,
 
-    confirm(controller, node, state, entry, live) {
+    confirm(controller, node, state, entry, live, how) {
       // First: a confirm while one is in flight is nothing. Eligibility may have
       // flipped meanwhile; acting on it here would navigate twice.
       if (busy) return;
-      run(controller, node, state, entry, live);
+      run(controller, node, state, entry, live, how);
     },
 
-    confirmWhenReady(controller, node, state, entry, live) {
+    confirmWhenReady(controller, node, state, entry, live, how) {
       if (busy) return;
       busy = true;
       controller.then(
-        (c) => run(c, node, state, entry, live),
-        () => run(null, node, state, entry, live),
+        (c) => run(c, node, state, entry, live, how),
+        () => run(null, node, state, entry, live, how),
       );
     },
   };

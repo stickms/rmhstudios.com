@@ -39,6 +39,12 @@ Plus, for every route:
   included).
 - **Hubs**: event-loop delay p99 ≤ 20 ms at the WS5 scripted load; broadcast
   p95 ≤ 50 ms.
+- **Go background workers** (`supervisor`'s six): DB queries per worker tick
+  are bounded (a constant, not a function of rows or items); no query takes
+  more than 50 ms on the seeded dataset; the pool size is declared in
+  `pkg/config` and is ≤ the worker's concurrency.
+- **Go HTTP services**: `assets` and `status` responses fall under the `api`
+  class and its `GET` budget above.
 
 **Ratification.** After P0 the coordinator replaces "provisional" with the
 ratified table, adjusting a number only when the baseline shows it is wrong for

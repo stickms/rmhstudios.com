@@ -2540,11 +2540,17 @@ html.ios-webkit .glass-liquid::after {
 /* Respect the OS "reduce motion" preference site-wide: neutralize enter
    animations, transitions and smooth scrolling that can trigger vestibular
    discomfort, while preserving essential loading feedback (spinners, skeleton
-   pulse). Games render motion via canvas/WebGL, so gameplay is unaffected. */
+   pulse). Games render motion via canvas/WebGL, so gameplay is unaffected.
+
+   The eversion is exempt (owner, 2026-10-21: "it should always play by
+   default"): the controls' state layer (§7.3: `[data-evert]`, `.evert-ghost`),
+   the globe that pops up for a navigation (`.evert-popup`), the hub that hands
+   its globe over and the effect's own overlay. Only the site's own Reduce
+   motion switch (`html.reduce-motion`, below) stands those down. */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  :not(:is([data-evert], .evert-ghost, .evert-popup, .evert-popup *, .eversion-overlay, .eversion-overlay *, .radial-hub, .radial-hub *)),
+  :not(:is([data-evert], .evert-ghost, .evert-popup, .evert-popup *, .eversion-overlay, .eversion-overlay *, .radial-hub, .radial-hub *))::before,
+  :not(:is([data-evert], .evert-ghost, .evert-popup, .evert-popup *, .eversion-overlay, .eversion-overlay *, .radial-hub, .radial-hub *))::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -5013,9 +5019,15 @@ html.nav-pop .page-root > * {
  * - Touch: hover is only ever a fine pointer's (`(hover: hover)`), so a phone
  *   never shows a sticky hover. A press everts from the finger and is held for
  *   at least `EVERT_MIN_PRESS_MS` so a quick tap is still seen.
- * - Degradation is here, not in components: reduced motion collapses every
- *   transition (the state still shows, it just arrives at once), `perf-lite`
- *   swaps the spring for one short tween, forced colors drop the layer.
+ * - Every control, tagged or not (amended 2026-10-21: "ensure the eversion
+ *   ALWAYS PLAYS ON EVERY BUTTON, INPUT BOX, ETC"): one nobody tagged is adopted
+ *   on first contact (lib/evert-auto.ts) - `data-evert="auto"`, or, where it
+ *   cannot hold the layer (fields, selects, a taken `::before`), the
+ *   `.evert-ghost` below.
+ * - Degradation is here, not in components: the site's own Reduce motion switch
+ *   collapses every transition (the state still shows, it just arrives at once;
+ *   the OS preference does not, since 2026-10-21), `perf-lite` swaps the spring
+ *   for one short tween, forced colors drop the layer.
  */
 :root {
   --evert-in: 0.419s;
@@ -5055,6 +5067,46 @@ html.nav-pop .page-root > * {
   [data-evert]:is(:disabled, [aria-disabled='true'], [data-disabled])::before {
     scale: 0;
   }
+  /* A control adopted on first contact (lib/evert-auto.ts) is held at rest for one style pass, so the hover or
+     focus that found it everts in rather than popping. */
+  [data-evert][data-evert-arming]::before {
+    scale: 0 !important;
+    transition: none !important;
+  }
+}
+
+/* The ghost of the layer, for a control that cannot hold its own (lib/evert-auto.ts, amended 2026-10-21): a text
+   field, a textarea or a select (no pseudo-elements), or a control whose `::before` the site already uses. One
+   body-level box laid over the control in its own shape, turned out of the same point on the same spring; a
+   translucent wash over the field rather than under its text, like the `over` variant. `translate` places it and
+   `scale` everts it, both on the compositor; it is re-placed only on scroll and resize while it is up. The `focus`
+   ghost stays on the focused field and carries the accent. */
+.evert-ghost {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: calc(var(--z-tooltip) - 1);
+  pointer-events: none;
+  contain: strict;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  color: var(--site-text);
+  scale: 0;
+  transform-origin: var(--evert-x, 50%) var(--evert-y, 50%);
+  opacity: 0.8;
+  transition:
+    scale var(--evert-in) var(--evert-ease),
+    opacity 0.12s ease-out;
+}
+.evert-ghost[data-on] {
+  scale: 1;
+}
+.evert-ghost[data-pressed] {
+  opacity: 1;
+}
+.evert-ghost[data-kind='focus'] {
+  background: color-mix(in srgb, var(--site-accent) 7%, transparent);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--site-accent) 45%, transparent);
+  opacity: 1;
 }
 @media (hover: hover) and (pointer: fine) {
   @layer components {
@@ -5296,7 +5348,8 @@ html.perf-lite :focus-visible {
 }
 @media (forced-colors: active) {
   [data-evert]::before,
-  [data-slot='switch']::before {
+  [data-slot='switch']::before,
+  .evert-ghost {
     display: none;
   }
 }
