@@ -55,9 +55,23 @@ export interface PostStoryData {
   authorImage: string | null;
 }
 
+/** Exported for the test that pins "everything drawn is in the key". */
+export function postStoryCacheKey(data: PostStoryData): string {
+  // Everything drawn is in the key (docs/open-graph.md). It used to be the id
+  // alone, so an edit — or a content warning that turned the body into the
+  // generic card — kept serving the old card from this process for up to the
+  // TTL. The body is cut at 320 characters when drawn, so 400 covers it.
+  return [
+    data.id,
+    data.authorName,
+    data.authorHandle ?? '',
+    data.authorImage ?? '',
+    (data.content ?? '').slice(0, 400),
+  ].join('\u0000');
+}
+
 export function renderPostStoryImage(data: PostStoryData): Promise<Buffer> {
-  const cacheKey = data.id;
-  return pngCache.getOrRender(cacheKey, () => drawPostStoryImage(data));
+  return pngCache.getOrRender(postStoryCacheKey(data), () => drawPostStoryImage(data));
 }
 
 async function drawPostStoryImage(data: PostStoryData): Promise<Buffer> {

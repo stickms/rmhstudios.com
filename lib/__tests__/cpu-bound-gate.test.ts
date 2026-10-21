@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { Resvg } from '@resvg/resvg-js';
 import { CpuGateFullError, createCpuGate } from '@/lib/images/cpu-gate.server';
 import { createCardCache, rasterizeSvg } from '@/lib/og/shared.server';
+import { postStoryCacheKey } from '@/lib/og/post-story.server';
 
 const tick = () => new Promise<void>((r) => setTimeout(r, 0));
 
@@ -96,5 +97,18 @@ describe('rasterizeSvg', () => {
     const sync = Buffer.from(new Resvg(svg, { fitTo: { mode: 'width', value: 120 } }).render().asPng());
     const async_ = await rasterizeSvg(svg, 120);
     expect(async_.equals(sync)).toBe(true);
+  });
+});
+
+describe('postStoryCacheKey', () => {
+  const base = { id: 'p1', content: 'hello', authorName: 'A', authorHandle: 'a', authorImage: null };
+
+  it('changes with every drawn field, so an edit or a hidden body is never served stale', () => {
+    const k = postStoryCacheKey(base);
+    expect(postStoryCacheKey({ ...base })).toBe(k);
+    expect(postStoryCacheKey({ ...base, content: '' })).not.toBe(k); // content warning applied
+    expect(postStoryCacheKey({ ...base, content: 'hello!' })).not.toBe(k); // edited
+    expect(postStoryCacheKey({ ...base, authorName: 'B' })).not.toBe(k);
+    expect(postStoryCacheKey({ ...base, authorImage: '/x.png' })).not.toBe(k);
   });
 });
