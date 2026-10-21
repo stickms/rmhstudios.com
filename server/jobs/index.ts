@@ -12,6 +12,8 @@
  * optimisation, never a correctness dependency.
  */
 import 'dotenv/config';
+import { installProcessGuards } from '../../lib/perf/process-guards';
+
 import { type Job } from 'pg-boss';
 import { createLogger } from '@/server/shared/logger';
 import { startProcessMetrics } from '../../lib/perf/process-metrics';
@@ -42,6 +44,9 @@ import {
   PROFILE_VISIT_SWEEP_QUEUE,
   registerProfileVisitSweepCron,
 } from '@/lib/profile/visit-sweep.server';
+
+// Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
+installProcessGuards({ service: 'jobs' });
 
 const log = createLogger('jobs');
 
