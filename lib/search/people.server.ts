@@ -13,7 +13,7 @@
  */
 
 import { Prisma } from '@prisma/client';
-import { prisma } from '@/lib/prisma.server';
+import { prismaRead } from '@/lib/prisma.server';
 import { resolveUser, userDisplaySelect, type ResolvedUser } from '@/lib/user-display';
 import { fuzzyAny, fuzzyTerms, sqlRank, type FuzzyTerms } from './db.server';
 import { confidenceOf, scoreRecord, withPopularity, MATCH_FLOOR } from './score';
@@ -87,7 +87,7 @@ export async function searchPeopleScored(
     ? Prisma.sql`AND u.id <> ${opts.excludeUserId}`
     : Prisma.empty;
 
-  const rows = await prisma.$queryRaw<CandidateRow[]>(Prisma.sql`
+  const rows = await prismaRead.$queryRaw<CandidateRow[]>(Prisma.sql`
     SELECT u.id,
            u."name",
            u."username",
@@ -125,7 +125,7 @@ export async function searchPeopleScored(
   // Hydrate through Prisma so results carry the same shape (profile overrides,
   // equipped cosmetics) as every other surface that renders a user.
   const ids = scored.map((s) => s.row.id);
-  const hydrated = await prisma.user.findMany({
+  const hydrated = await prismaRead.user.findMany({
     where: { id: { in: ids } },
     select: userDisplaySelect,
   });

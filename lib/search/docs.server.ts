@@ -10,7 +10,7 @@
  */
 
 import { Prisma } from '@prisma/client';
-import { prisma } from '@/lib/prisma.server';
+import { prismaRead } from '@/lib/prisma.server';
 import { fuzzyAny, type FuzzyTerms } from './db.server';
 import { confidenceOf, scoreRecord, withPopularity, withRecency, MATCH_FLOOR } from './score';
 import type { SearchHit, SearchKind } from './types';
@@ -174,7 +174,7 @@ export async function searchDocs(
   const floor = opts.floor ?? MATCH_FLOOR;
   const def = CORPORA[corpus];
 
-  const rows = await prisma.$queryRaw<DocRow[]>(def.query(terms));
+  const rows = await prismaRead.$queryRaw<DocRow[]>(def.query(terms));
   if (rows.length === 0) return [];
 
   const hits = rows
