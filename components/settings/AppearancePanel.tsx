@@ -495,9 +495,9 @@ function EversionLevelRow({
     globe: t('eversion-level-globe', { defaultValue: 'Only the liquid globe' }),
   };
   const descriptions: Record<EversionLevel, string> = {
-    all: t('eversion-level-all-desc', {
+    all: t('eversion-level-all-desc-mini', {
       defaultValue:
-        'Links, buttons, and back and forward all play the eversion, with a globe that pops up where you tapped. The per-control press animation is separate and not affected.',
+        'Pages opened from the liquid globe play the full eversion. Any other link or button turns into a small globe right where you tapped, while the page changes without waiting.',
     }),
     globe: t('eversion-level-globe-desc', {
       defaultValue:

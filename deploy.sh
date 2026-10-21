@@ -445,6 +445,26 @@ PRE_PULL_HASH=$(sha256sum "$DEPLOY_SCRIPT_PATH" | awk '{print $1}')
 
 "$GIT_BIN" checkout "$BRANCH" 2>/dev/null || "$GIT_BIN" checkout -b "$BRANCH" "$REMOTE_REPO/$BRANCH"
 
+# Never roll production back because a webhook arrived late. GitHub does not
+# deliver push events in order: on 2026-10-21 #914's run started 23 minutes after
+# its merge, AFTER #915's had deployed, and the flock below only serialises
+# deploys — so the older SHA went out last and silently reverted #915. HEAD here
+# is the commit the last deploy reset to. If the requested SHA is a strict
+# ancestor of it, it is already contained in what is live: skip. An intentional
+# rollback sets ALLOW_OLDER_DEPLOY=1.
+if [ -n "$DEPLOY_TARGET_SHA" ] && [ "${ALLOW_OLDER_DEPLOY:-0}" != "1" ]; then
+    LIVE_SHA=$("$GIT_BIN" rev-parse HEAD 2>/dev/null || true)
+    TARGET_FULL_SHA=$("$GIT_BIN" rev-parse --verify --quiet "${DEPLOY_TARGET_SHA}^{commit}" 2>/dev/null || true)
+    if [ -n "$LIVE_SHA" ] && [ -n "$TARGET_FULL_SHA" ] && [ "$TARGET_FULL_SHA" != "$LIVE_SHA" ] \
+        && "$GIT_BIN" merge-base --is-ancestor "$TARGET_FULL_SHA" "$LIVE_SHA" 2>/dev/null; then
+        log "Requested ${TARGET_FULL_SHA:0:12} is OLDER than the live ${LIVE_SHA:0:12} (an ancestor of it) — skipping so a late webhook cannot roll production back."
+        log "  For an intentional rollback re-run with ALLOW_OLDER_DEPLOY=1."
+        # No GitHub status: set_github_status posts to HEAD, which is the LIVE
+        # commit, and would overwrite its real deploy result.
+        exit 0
+    fi
+fi
+
 # Deploy target: the exact commit CI built + pushed to GHCR (passed as $2), so
 # the checked-out code and the pulled image are the same SHA even if
 # origin/$BRANCH has already advanced past it. Falls back to the branch tip for

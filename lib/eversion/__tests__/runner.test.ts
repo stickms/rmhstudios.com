@@ -17,6 +17,7 @@ import {
   MAX_RUN_MS,
   UPLOAD_SETTLE_FRAMES,
   WRAP_MS,
+  EVERSION_PLAYBACK_RATE,
 } from '../constants';
 import {
   EversionRunner,
@@ -486,7 +487,8 @@ describe('eversion runner: the destination is rendered before the animation (ame
         dx: 400 - GLOBE.centre[0],
         dy: 300 - GLOBE.centre[1],
         delayMs: HOLD_FADE_MS,
-        wrapMs: WRAP_MS,
+        // WRAP is timeline time; the hub's swell beside it is wall time, so it is the faster playback's length.
+        wrapMs: WRAP_MS / EVERSION_PLAYBACK_RATE,
       },
     ]);
   });

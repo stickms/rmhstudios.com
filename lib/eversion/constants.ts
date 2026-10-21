@@ -36,6 +36,16 @@ export const WRAP_MS = 700;
 export const EVERT_MS = 3200;
 export const UNWRAP_MS = 700;
 
+/**
+ * How fast the run plays its timeline against the wall clock (amended 2026-10-21; the owner: "make the nav
+ * animations faster so there isn't some waiting"). Every duration in this file, and every invariant the timeline
+ * suites prove (C² continuity, the gates, the spin landing), is in TIMELINE time; the render core alone maps
+ * wall → timeline (`gl/core.ts#tickClock`) and timeline deadlines back to wall, so the run is this much faster on
+ * screen without re-deriving a single tuned number. 1.6 turns the 4.6 s run into ≈ 2.9 s. Anything the main
+ * thread animates in step with a stage (the hub globe's swell during WRAP) divides by it too.
+ */
+export const EVERSION_PLAYBACK_RATE = 1.6;
+
 /** How far EVERSION starts before WRAP ends, so the boundary has no dead frame. */
 export const EVERT_OVERLAP_MS = 100;
 /** How far UNWRAP starts before EVERSION ends. */
@@ -130,13 +140,16 @@ export const BACKGROUND_CAPTURE_TIMEOUT_MS = 4000;
    animation. Nothing is rendered, cloned or uploaded while the globe moves. */
 
 /** Until this long after the navigation every readiness condition applies (a query, a skeleton, an image, quiet). */
-export const DESTINATION_SETTLE_SOFT_MS = 1500;
+// 1500 → 800 and 4000 → 2500 (amended 2026-10-21, "make the nav animations faster so there isn't some waiting"):
+// this wait is the frozen hub before anything moves. The hub preloads the route while the pin sits in the reticle,
+// so most destinations commit at once; a slower one is captured a little less settled rather than kept waiting.
+export const DESTINATION_SETTLE_SOFT_MS = 800;
 /**
  * From soft to this, only activity (a fetch, an image, a font) holds the capture; past it the page is taken as it is.
  * Generous on purpose: a capture of a page whose content was still arriving becomes a jump in content when the
  * final dissolve lands on the real page, and the hub is open and turning meanwhile, not frozen.
  */
-export const DESTINATION_SETTLE_HARD_MS = 4000;
+export const DESTINATION_SETTLE_HARD_MS = 2500;
 /** Frames between handing the render side its last texture and `start`, so the upload is done before the first frame. */
 export const UPLOAD_SETTLE_FRAMES = 2;
 /**

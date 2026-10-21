@@ -63,6 +63,7 @@ import {
   ALWAYS_EVERT_HOST_WAIT_MS,
   ALWAYS_EVERT_OVERLAY_MOUNT_MS,
   GLOBE_RADIUS_FRACTION,
+  EVERSION_PLAYBACK_RATE,
   HOLD_FADE_MS,
   BEFORE_WAIT_MS,
   CAPTURE_DPR_CAP,
@@ -885,7 +886,8 @@ export class EversionRunner {
         dx: now.w / 2 - committed.centre[0],
         dy: now.h / 2 - committed.centre[1],
         delayMs: HOLD_FADE_MS,
-        wrapMs: WRAP_MS,
+        // WRAP is timeline time; the hub's swell runs on the wall clock beside it.
+        wrapMs: WRAP_MS / EVERSION_PLAYBACK_RATE,
       });
     } catch {
       /* the caller's UI hook must never break the run */

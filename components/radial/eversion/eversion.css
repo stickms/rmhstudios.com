@@ -331,3 +331,18 @@ html.reduce-motion .evert-popup {
     background: Canvas;
   }
 }
+
+/* ── The button-sized eversion (mini-globe.ts, amended 2026-10-21) ──────────────────────────────────────────────
+   Every navigation that does not come from the hub plays this on the control that was pressed, in place: one
+   canvas over the control's own rect plus the margin the surface swings into. It sits over the hub layer like the
+   pop-up globe did, and never takes a pointer. The control itself is hidden under it from the canvas's first frame
+   (which is the control's exact face) until the hand-back, so there is never two of it. */
+.evert-mini {
+  position: fixed;
+  z-index: calc(var(--z-hub-overlay) + 1);
+  pointer-events: none;
+  contain: strict;
+}
+[data-evert-mini] {
+  visibility: hidden !important;
+}
