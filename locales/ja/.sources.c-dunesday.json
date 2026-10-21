@@ -1,0 +1,16 @@
+{
+  "behind_one": "At this pace you finish {{finish}}, {{count}} day late.",
+  "cal-gadget_one": "{{count}} days until Dunesday",
+  "calc-days-left_one": "days to go",
+  "cmd-copied_one": "        {{count}} file(s) copied.",
+  "confirm-empty_one": "Are you sure you want to permanently delete these {{count}} items?",
+  "confirm-purge_one": "Are you sure you want to permanently delete these {{count}} items?",
+  "flyout-countdown_one": "{{count}} days until Dunesday (18 December)",
+  "mix-skipped_one": "{{count}} title left out of the plan.",
+  "n-items_one": "{{count}} items",
+  "n-selected_one": "{{count}} items selected",
+  "on-track_one": "On track: you finish {{finish}}, {{count}} day to spare.",
+  "show-all_one": "Show all {{count}} days",
+  "streak-days_one": "{{count}} day",
+  "tb-running_one": "{{name}} ({{count}} open)"
+}

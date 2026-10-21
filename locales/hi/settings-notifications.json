@@ -17,5 +17,7 @@
   "quiet-end": "Quiet hours end",
   "quiet-hours": "Quiet hours",
   "quiet-start": "Quiet hours start",
+  "tab-badge": "ब्राउज़र टैब में अपठित गणना",
+  "tab-badge-desc": "इस डिवाइस पर टैब शीर्षक और आइकन में अपठित संदेशों और सूचनाओं की संख्या दिखाता है।",
   "to": "To"
 }
