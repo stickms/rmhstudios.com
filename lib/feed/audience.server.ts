@@ -7,6 +7,8 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { getFollowingIds } from '@/lib/social/follow-graph.server';
+import { getHiddenAuthorIds } from '@/lib/moderation.server';
 
 /**
  * A Prisma `where` fragment restricting rMHark queries to what `viewerId` may
@@ -53,6 +55,33 @@ export async function circleOwnerIds(viewerId: string | null): Promise<string[]>
     select: { ownerId: true },
   });
   return rows.map((r) => r.ownerId);
+}
+
+/**
+ * The `where` fragment for "the post behind this row, as `viewerId` may see it".
+ *
+ * For reads that reach a post through another row - a profile's reposts, a
+ * profile's likes - where the post's author is arbitrary, so visibility has to
+ * be checked in full: not deleted, audience rules (PUBLIC / own / FOLLOWERS the
+ * viewer follows / CIRCLE the viewer is in), and not by an author the viewer
+ * blocked, muted or was blocked by. Nest it under the relation:
+ * `{ rmhark: await viewerVisiblePostWhere(viewerId) }`.
+ *
+ * Costs the viewer's cached follow graph + hidden-author set (both in-process
+ * hits when warm) and one circle read; anonymous viewers cost nothing.
+ */
+export async function viewerVisiblePostWhere(viewerId: string | null): Promise<Record<string, unknown>> {
+  if (!viewerId) return { deletedAt: null, audience: 'PUBLIC' as const };
+  const [following, circles, hidden] = await Promise.all([
+    getFollowingIds(viewerId),
+    circleOwnerIds(viewerId),
+    getHiddenAuthorIds(viewerId),
+  ]);
+  return {
+    deletedAt: null,
+    ...audienceWhere(viewerId, following, [], circles),
+    ...(hidden.length ? { userId: { notIn: hidden } } : {}),
+  };
 }
 
 /** Whether a single post is visible to a viewer (used on the post-detail route). */

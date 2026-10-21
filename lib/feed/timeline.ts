@@ -65,6 +65,21 @@ export interface TimelineResult {
   mutedWords?: string[];
 }
 
+/**
+ * The keyset cursor as a `where` fragment that cannot collide with the others.
+ *
+ * `keysetWhere` returns `{ OR: [...] }`, and so does `audienceWhere` for a
+ * signed-in viewer. The queries below build their `where` by spreading both, so
+ * on every cursored page the keyset's `OR` silently REPLACED the audience `OR`
+ * and the audience filter vanished: page 2 and beyond of a signed-in For-You
+ * feed returned other people's PRIVATE, FOLLOWERS and CIRCLE posts. Wrapping the
+ * keyset in `AND` makes the two combine, whatever else the `where` carries.
+ */
+function keysetClause(cursor: ReturnType<typeof decodeCursor>): Record<string, unknown> {
+  const k = keysetWhere(cursor);
+  return Object.keys(k).length ? { AND: [k] } : {};
+}
+
 /* ------------------------------------------------------------------ */
 /*  Content search (FTS id resolution)                                  */
 /* ------------------------------------------------------------------ */
@@ -474,9 +489,10 @@ async function getFollowingTimeline(params: GetTimelineParams): Promise<Timeline
     return { items: [], nextCursor: null, hasMore: false, empty: true };
   }
 
-  const [followingAll, hiddenIds] = await Promise.all([
+  const [followingAll, hiddenIds, viewerCircleOwnerIds] = await Promise.all([
     getFollowingIds(userId),
     getHiddenAuthorIds(userId),
+    circleOwnerIds(userId),
   ]);
   // Exclude muted/blocked authors even if still followed.
   const hiddenSet = new Set(hiddenIds);
@@ -487,7 +503,7 @@ async function getFollowingTimeline(params: GetTimelineParams): Promise<Timeline
   }
 
   const decoded = decodeCursor(cursor);
-  const keyset = keysetWhere(decoded);
+  const keyset = keysetClause(decoded);
   // Content search now resolves matching ids via the FTS index (not a `content
   // ILIKE` scan); the resulting `id: { in: [...] }` filter combines with every
   // other WHERE clause below exactly as the old `contains` fragment did.
@@ -499,7 +515,17 @@ async function getFollowingTimeline(params: GetTimelineParams): Promise<Timeline
       where: {
         userId: { in: followingIds },
         deletedAt: null,
-        audience: { not: 'PRIVATE' },
+        // Every author here is followed, so PUBLIC and FOLLOWERS posts are
+        // visible by construction; CIRCLE (close friends) and SUPPORTERS posts
+        // are NOT - they need circle membership / a supporter membership, which
+        // following alone does not grant. `not: 'PRIVATE'` used to be the whole
+        // filter, which served followers' CIRCLE and SUPPORTERS posts to every
+        // follower. Supporter-only posts stay hidden here (the supporter set is
+        // not resolved on this surface - the safe default audience.server documents).
+        OR: [
+          { audience: { in: ['PUBLIC', 'FOLLOWERS'] } },
+          { audience: 'CIRCLE', userId: { in: viewerCircleOwnerIds } },
+        ],
         communityId: null,
         // Only thread roots + standalone posts in the feed; follow-up segments
         // (threadRootId set) are read on the thread page.
@@ -514,10 +540,15 @@ async function getFollowingTimeline(params: GetTimelineParams): Promise<Timeline
     prisma.rMHarkRepost.findMany({
       where: {
         userId: { in: followingIds },
+        // The reposted post's author is not necessarily followed, so its
+        // audience is checked in full (same fragment the For-You repost query
+        // uses). Previously only `deletedAt` was checked, so a repost of a
+        // FOLLOWERS / CIRCLE / PRIVATE post surfaced to the reposter's followers.
         rmhark: {
           deletedAt: null,
           ...contentWhere,
           ...(hiddenIds.length ? { userId: { notIn: hiddenIds } } : {}),
+          ...audienceWhere(userId, followingAll, [], viewerCircleOwnerIds),
         },
         ...keyset,
       },
@@ -566,7 +597,7 @@ async function getFollowingTimeline(params: GetTimelineParams): Promise<Timeline
 async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineResult> {
   const { userId, cursor, limit, search, filter } = params;
   const decoded = decodeCursor(cursor);
-  const keyset = keysetWhere(decoded);
+  const keyset = keysetClause(decoded);
   // Content search resolves matching ids via the FTS index (see
   // searchContentWhere) rather than a `content ILIKE` full scan; the resulting
   // `id: { in: [...] }` filter drops into the WHERE like the old fragment.
