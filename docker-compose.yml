@@ -458,6 +458,11 @@ services:
       # run wider. pg-boss's pool is separate (lib/jobs/boss.server.ts, 8).
       # deploy.sh may lower it on a host with a small max_connections (see web).
       - DATABASE_POOL_SIZE=${JOBS_DB_POOL_SIZE:-16}
+      # The on-call checks (lib/oncall/checks.server.ts) read each hub's
+      # /internal/metrics over the compose network, like the admin page on web.
+      - SOCKET_INTERNAL_URL=http://socket:${PORT_SOCKET:-7001}
+      - RMHBOX_INTERNAL_URL=http://rmhbox:${PORT_RMHBOX:-7676}
+      - RMHTUBE_INTERNAL_URL=http://rmhtube:${PORT_RMHTUBE:-7003}
     command: ['node', 'dist-server/server/jobs/index.cjs']
 
   # ─── Go Supervisor (discord-bot + recap + doctrine-worker + vibe-worker + bot-worker) ─

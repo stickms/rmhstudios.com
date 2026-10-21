@@ -18,6 +18,7 @@ import { type Job } from 'pg-boss';
 import { createLogger } from '@/server/shared/logger';
 import { startProcessMetrics } from '../../lib/perf/process-metrics';
 import { registerPrismaPoolGauges, startPerfPublisher } from '../../lib/perf/publish.server';
+import { startOncallChecks } from '../../lib/oncall/checks.server';
 import { getBoss, PROGRESSION_QUEUE } from '@/lib/jobs/boss.server';
 import { runProgression, type ProgressionJob } from '@/lib/social/engagement-effects.server';
 import { registerEventReminderWorker } from '@/lib/events.server';
@@ -290,8 +291,14 @@ async function main() {
     log.error({ event: 'jobs.register_failed', queue: 'devplatform.recipes', err: (e as Error)?.message });
   }
 
+  // On-call app alarms (lib/oncall/checks.server.ts): once a minute, read the
+  // fleet's own telemetry and page the watchdog. Also this worker's heartbeat —
+  // if the jobs container dies, the silence pages. No-op until ONCALL_* are set.
+  const stopOncall = startOncallChecks();
+
   const shutdown = async (sig: string) => {
     log.info({ event: 'jobs.stopping', signal: sig });
+    stopOncall();
     try {
       await boss.stop({ graceful: true });
     } catch {

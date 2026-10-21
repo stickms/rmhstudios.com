@@ -103,6 +103,10 @@ export const HEARTBEATS: Record<string, HeartbeatDef> = {
     maxAgeMs: 3 * 60 * 1000,
     alarm: { id: 'A03', instance: 'heartbeat', sev: 2, title: 'VPS heartbeat lost (status service silent)', source: 'oncall-watchdog' },
   },
+  jobs: {
+    maxAgeMs: 3 * 60 * 1000,
+    alarm: { id: 'A16', sev: 2, title: 'Jobs worker silent (app alarms + background jobs down)', source: 'oncall-watchdog' },
+  },
   'pg-backup': {
     maxAgeMs: 26 * 60 * 60 * 1000,
     alarm: { id: 'A04', sev: 2, title: 'Nightly database backup missed', source: 'oncall-watchdog' },
