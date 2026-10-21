@@ -15,7 +15,13 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { spring, springLinearEasing, springResponse, springSettleTime, springStep } from '@/lib/fluid';
+import {
+  spring,
+  springLinearEasing,
+  springResponse,
+  springSettleTime,
+  springStep,
+} from '@/lib/fluid';
 
 const ROOT = join(__dirname, '..', '..');
 const CSS = readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8');
@@ -79,6 +85,8 @@ describe('§7.3 — the layer costs what the design language allows', () => {
       'scale',
       'border-color',
       'background-color',
+      // `none` animates nothing: the arming hold of a control adopted on first contact.
+      'none',
     ]);
     const decls = SECTION.match(/transition:[^;]+;/g) ?? [];
     expect(decls.length).toBeGreaterThan(4);
@@ -88,7 +96,9 @@ describe('§7.3 — the layer costs what the design language allows', () => {
         expect(allowed.has(prop), `${decl.trim()} animates ${prop}`).toBe(true);
       }
     }
-    expect(SECTION).not.toMatch(/transition[^;]*\b(box-shadow|width|height|filter|background-position|all)\b/);
+    expect(SECTION).not.toMatch(
+      /transition[^;]*\b(box-shadow|width|height|filter|background-position|all)\b/,
+    );
   });
 
   it('the layers on controls that can navigate run on the compositor, not the main thread', () => {
@@ -121,10 +131,23 @@ describe('§7.3 — the layer costs what the design language allows', () => {
     expect(SECTION).toMatch(/@media \(forced-colors: active\)\s*\{[^}]*\[data-evert\]::before/);
   });
 
-  it('the site-wide reduced-motion reset still reaches the layer’s pseudo-elements', () => {
+  it('only the site’s own Reduce motion switch stands the layer down; the OS preference does not', () => {
+    // Owner, 2026-10-21: "it should always play by default". The account switch's reset reaches every pseudo-element…
     expect(CSS).toMatch(
-      /prefers-reduced-motion: reduce\)\s*\{\s*\*,\s*\*::before,\s*\*::after\s*\{[^}]*transition-duration: 0\.01ms !important/,
+      /html\.reduce-motion \*,\s*html\.reduce-motion \*::before,\s*html\.reduce-motion \*::after\s*\{[^}]*transition-duration: 0\.01ms !important/,
     );
+    // …and the OS-wide reset spares the eversion's layers, the pop-up globe, the hub and the run's overlay.
+    const os = CSS.slice(CSS.indexOf('@media (prefers-reduced-motion: reduce) {\n  :not('));
+    const head = os.slice(0, os.indexOf('{', os.indexOf(')::after')));
+    for (const spared of [
+      '[data-evert]',
+      '.evert-ghost',
+      '.evert-popup',
+      '.eversion-overlay',
+      '.radial-hub',
+    ]) {
+      expect(head, spared).toContain(spared);
+    }
   });
 });
 
@@ -153,6 +176,34 @@ describe('§7.3 — the shared controls carry the layer', () => {
     expect(read('components/ui/button.tsx')).not.toMatch(/hover:bg-|hover:opacity-/);
     expect(read('components/ui/menu.tsx')).not.toMatch(/hover:bg-|focus-visible:bg-/);
     expect(read('components/ui/select.tsx')).not.toMatch(/data-\[highlighted\]:bg-/);
+  });
+
+  it('a control nobody tagged is adopted on first contact (owner, 2026-10-21: "EVERY BUTTON, INPUT BOX")', () => {
+    const hook = read('hooks/useEvertPoint.ts');
+    expect(hook).toMatch(/const mode = adopt\(el\);/);
+    expect(hook).toMatch(/showGhost\('focus'/);
+    const auto = read('lib/evert-auto.ts');
+    // Buttons, links, tabs, menu items, options and every text-like field.
+    for (const sel of [
+      'button',
+      'a[href]',
+      'textarea',
+      'select',
+      '[role="tab"]',
+      '[role="option"]',
+    ]) {
+      expect(auto).toContain(`'${sel}'`);
+    }
+    expect(auto).toMatch(/input:not\(\[type="hidden"\]\)/);
+    // Adopted under the state already on it, it everts in instead of popping.
+    expect(auto).toMatch(/data-evert-arming[\s\S]*getComputedStyle\(el, '::before'\)\.scale/);
+    expect(SECTION).toMatch(
+      /\[data-evert\]\[data-evert-arming\]::before\s*\{[^}]*scale: 0 !important/,
+    );
+    // Fields and taken pseudo-elements get the ghost: placed by `translate`, everted by `scale`, no frame loop.
+    expect(SECTION).toMatch(/\.evert-ghost\s*\{[^}]*position: fixed;[^}]*scale: 0;/);
+    expect(auto).toMatch(/style\.translate = /);
+    expect(auto).not.toMatch(/requestAnimationFrame|documentElement\.style/);
   });
 
   it('the point is written by one delegated listener, mounted once', () => {

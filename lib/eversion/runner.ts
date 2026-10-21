@@ -194,8 +194,11 @@ export interface SettleWatch {
 
 /** The router, narrowed to what a run needs. */
 export interface RouterPort {
-  /** Issue the navigation. Returns the router's own promise; never awaited by the sequence. */
-  navigate(href: string): Promise<unknown> | void;
+  /**
+   * Issue the navigation. Returns the router's own promise; never awaited by the sequence. `issue`, when given,
+   * is how (a replayed history push, a back/forward traversal: `RunOptions.navigate`); `href` is then only where.
+   */
+  navigate(href: string, issue?: () => void): Promise<unknown> | void;
   /** Resolves when the router has no pending navigation (immediately if none). */
   whenIdle(): Promise<void>;
   /**
@@ -293,7 +296,28 @@ export interface RunOptions {
    * given to `run` stands.
    */
   globe?: () => GlobeStartState;
+  /**
+   * How the navigation is issued, in place of `router.navigate(node.href)` (amended 2026-10-21: every page
+   * transition runs the effect). A navigation the site's interceptor held back is REPLAYED exactly as it was asked
+   * for: the same history push with its state, or the same back/forward traversal, so the history stack is what it
+   * would have been without the effect.
+   */
+  navigate?: () => void;
+  /**
+   * `navigate` is a history traversal (back/forward): the one `popstate` it fires is this run's own, not the
+   * visitor traversing again, and must not cancel the run.
+   */
+  traverses?: boolean;
+  /**
+   * Awaited just before the commit, at most {@link READY_WAIT_MS}: the caller's globe is not ready to be handed
+   * over yet (the pop-up globe is still blooming out of the press point). The destination is already rendered and
+   * captured by then, so this costs nothing unless the destination was quicker than the bloom.
+   */
+  ready?: () => Promise<void>;
 }
+
+/** The longest a run waits on `RunOptions.ready` before it commits regardless. */
+export const READY_WAIT_MS = 1000;
 
 export class EversionRunner {
   private phase: Phase = 'idle';
@@ -394,7 +418,15 @@ export class EversionRunner {
     let traversed = false;
     /** Set while the run waits on the destination: back/forward ends that wait at once. */
     let onTraversalNow: (() => void) | null = null;
+    /** `popstate`s this run fires itself (a replayed back/forward), which are not the visitor traversing. */
+    let ownPops = 0;
+    const ownPop = (): boolean => {
+      if (ownPops <= 0) return false;
+      ownPops--;
+      return true;
+    };
     let offEarlyTraversal: (() => void) | null = deps.router.onTraversal(() => {
+      if (ownPop()) return;
       traversed = true;
       onTraversalNow?.();
     });
@@ -727,7 +759,8 @@ export class EversionRunner {
     };
     listeners.push(dropSettleWatch);
     try {
-      const navigated = deps.router.navigate(href);
+      if (options.navigate && options.traverses) ownPops = 1;
+      const navigated = deps.router.navigate(href, options.navigate);
       if (navigated) navigated.catch(() => {});
     } catch {
       // The router refused synchronously. AFTER captures whatever is live, and the visitor sees the effect over
@@ -824,6 +857,21 @@ export class EversionRunner {
     for (let i = 0; i < UPLOAD_SETTLE_FRAMES; i++) await deps.page.nextFrame();
     if (stop()) return abandon();
 
+    // The caller's globe may still be on its way in (the pop-up globe blooms out of the press point): it is handed
+    // over from rest, never from the middle of its own entrance.
+    if (options.ready) {
+      let waited: ReturnType<typeof setTimeout> | null = null;
+      await Promise.race([
+        options.ready().catch(() => {}),
+        new Promise<void>((resolve) => {
+          waited = setTimeout(resolve, READY_WAIT_MS);
+        }),
+        interrupted,
+      ]);
+      if (waited) clearTimeout(waited);
+      if (stop()) return abandon();
+    }
+
     /* ── The commit: the hub lets go and the page comes into focus ────────── */
 
     // The hub hands its globe over (it swells and travels exactly as the effect's sphere will) and the frozen
@@ -886,7 +934,11 @@ export class EversionRunner {
     dropEarlyInput();
     // Browser back/forward and a resize or rotation belong to the visitor, not to
     // this run (spec 9.4): hurry the run, and tell the render side the new viewport.
-    listeners.push(deps.router.onTraversal(() => this.abort()));
+    listeners.push(
+      deps.router.onTraversal(() => {
+        if (!ownPop()) this.abort();
+      }),
+    );
     listeners.push(deps.page.onResize((v) => post({ type: 'resize', viewport: v })));
     // The window changed while the destination rendered: the render side re-plans for it at `start`.
     const current = deps.page.viewport();

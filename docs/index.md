@@ -56,6 +56,7 @@ codebase-overview
 architecture
 testing
 performance-slo
+status-page
 design-language
 page-consistency
 people
@@ -89,6 +90,7 @@ server-perf-2026-10-21/02-budgets
 server-perf-2026-10-21/03-rules
 server-perf-2026-10-21/04-workstreams
 server-perf-2026-10-21/05-agent-protocol
+server-perf-2026-10-21/06-report-template
 loading-audit-2026-08-11/index
 loading-audit-2026-08-11/01-measurements
 loading-audit-2026-08-11/02-critical-path

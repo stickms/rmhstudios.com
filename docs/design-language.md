@@ -1151,6 +1151,19 @@ view()`), falling back to a rAF window-scroll pass with cached offsets where
     rules are gone, because the hover colour arrives by eversion now. The layer
     turns out on a fine pointer's hover, a press (`data-pressed`), a menu's
     roving highlight (`data-highlighted`) and keyboard focus.
+  - **Untagged controls are adopted** (2026-10-21: "ensure the eversion ALWAYS
+    PLAYS ON EVERY BUTTON, INPUT BOX, ETC"). The same listener finds the button,
+    link, tab, menu item, option or field under a first hover, press or focus
+    and, if nobody tagged it, adopts it (`lib/evert-auto.ts`): `data-evert="auto"`
+    when its `::before` is free (armed at rest for one style pass, so the state
+    already on it everts in), or the `.evert-ghost` — one body-level box in the
+    control's shape over it, `translate`d into place and `scale`d out of the same
+    point — for what cannot hold the layer: text fields, textareas and selects
+    (no pseudo-elements), and controls whose `::before` is taken. The `focus`
+    ghost stays on a focused field in the accent. Left alone: the switch, native
+    checkboxes and radios, the hub's orb and globe, anything under
+    `[data-evert-off]`, and anything half the viewport in size. Tag a control
+    yourself when it needs a tint of its own (`--evert-tint`).
   - **Two variants.** `data-evert="select"` adds a second layer (`::after`) for
     a selected state: the nav rail's current page pours out of the item you
     pressed and drains out of the one you left, because the rail stays on
@@ -1186,7 +1199,9 @@ view()`), falling back to a rAF window-scroll pass with cached offsets where
     once drop about one frame in twenty under software raster.
   - **Degradation is central.** Hover only exists under
     `(hover: hover) and (pointer: fine)`, so a phone never shows a sticky hover.
-    Reduced motion collapses it (the state still shows, at once). `perf-lite`
+    The site's Reduce motion switch collapses it (the state still shows, at
+    once); the OS preference does not (2026-10-21: "it should always play by
+    default"). `perf-lite`
     swaps the springs for one short tween. Forced colors drop the layer.
 - **Never `transition-all`, and never animate a layout property.** `all` makes
   the engine watch every animatable property on the element, so a class change

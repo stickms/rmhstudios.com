@@ -15,7 +15,7 @@ import {
 import { Link, useNavigate, useRouter } from '@tanstack/react-router';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useThemeStore } from '@/stores/themeStore';
 import { vibrate } from '@/lib/shared/platform';
 import { prefersLessData } from '@/lib/viewport-prefetch';
 import {
@@ -35,6 +35,7 @@ import {
   unrotateSphere,
 } from '@/lib/fluid';
 import { isNavLeafActive, type NavLeaf } from '@/lib/sidebar-nav';
+import { SoftBody } from '@/lib/soft-body';
 import type { GlobeStartState } from '@/lib/eversion/types';
 import type { EntryPoint } from '@/lib/eversion/marks';
 
@@ -280,7 +281,21 @@ const CAGE_MAX_DPR = 2;
  * scales with the square of it — so it is only just larger than the worst case
  * (~5.5% swell + a ~2px capped stroke on a ~320px stage), not a round 25%.
  */
-const CAGE_BLEED = 0.09;
+const CAGE_BLEED = 0.11;
+
+/* ── The soft body ───────────────────────────────────────────────────────────
+   Grab the globe and it gives (owner, 2026-10-21: "full soft-body physics … as you drag it around and click it …
+   dragging it deforms it according to your pointer/finger"): the surface under the finger leads the drag and the
+   ball lags after it, a press squeezes the jelly in around the finger, and letting go wobbles it back. The model is
+   `lib/soft-body.ts`: three springs and a closed-form displacement field, evaluated at the points the paint pass
+   already draws (every cage sample, every pin) after they are projected, plus one affine transform on the glass
+   disc. Nothing is allocated (`DEFORM_OUT` is the one scratch pair), and at rest it costs nothing at all: `step`
+   says when the body is deformed, and only then does the frame loop repaint for it.
+
+   It is DISPLAY ONLY, like the ripple and the wobble: the lock, the magnetism and the dwell keep reading the true
+   projection, so a squeeze can never move a destination into or out of the reticle. The cage's bleed above makes
+   room for it (a full tug at the limb plus the stretch plus a ripple's swell, ~0.2 of the radius). */
+const DEFORM_OUT = new Float64Array(2);
 
 /* ── The ripple ──────────────────────────────────────────────────────────────
    A press on the sphere sends a wave out across it. The shape of the wave — a
@@ -450,7 +465,8 @@ export function LiquidGlobe({
   const { t } = useTranslation('feed');
   const navigate = useNavigate();
   const router = useRouter();
-  const reduced = useReducedMotion();
+  // The site's own Reduce motion switch, never the OS query (2026-10-21: the hub's motion plays by default).
+  const reduced = useThemeStore((s) => s.reduceMotion);
 
   const nodes = useMemo(() => place(items), [items]);
 
@@ -610,6 +626,11 @@ export function LiquidGlobe({
    * feature.
    */
   const wobble = useRef<{ yaw: number; vYaw: number; pitch: number; vPitch: number } | null>(null);
+  /** The soft body (see the note above `DEFORM_OUT`), and where the finger holding it is, in radii. */
+  const [jelly] = useState(() => new SoftBody());
+  const grabAt = useRef({ x: 0, y: 0, left: 0, top: 0, r: 1 });
+  const glassRef = useRef<HTMLSpanElement | null>(null);
+  const paintedGlass = useRef('');
 
   // Only these three reach the render: the caption, the ring's state classes.
   const [lock, setLock] = useState(-1);
@@ -1058,6 +1079,7 @@ export function LiquidGlobe({
       const cp = Math.cos(draw.pitch * DEG);
       const sp = Math.sin(draw.pitch * DEG);
       const paint = cagePaint.current;
+      const soft = jelly.active();
 
       // Clear the whole BLED canvas, not the globe's box: a ripple's swell (and
       // the crest's capped stroke) is drawn out there, so anything short of this
@@ -1135,8 +1157,15 @@ export function LiquidGlobe({
           const y2 = by2 * cp - z1 * sp;
           const z2 = by2 * sp + z1 * cp;
           const k = kAt(z2);
-          if (s === 0) ctx.moveTo(x1 * R * k, y2 * R * k);
-          else ctx.lineTo(x1 * R * k, y2 * R * k);
+          let sx = x1 * k;
+          let sy2 = y2 * k;
+          if (soft) {
+            jelly.deform(sx, sy2, DEFORM_OUT);
+            sx = DEFORM_OUT[0]!;
+            sy2 = DEFORM_OUT[1]!;
+          }
+          if (s === 0) ctx.moveTo(sx * R, sy2 * R);
+          else ctx.lineTo(sx * R, sy2 * R);
         }
         ctx.stroke();
       };
@@ -1229,8 +1258,15 @@ export function LiquidGlobe({
               continue;
             }
             const k = kAt(z2);
-            if (drawing) ctx.lineTo(x1 * R * k, y2 * R * k);
-            else ctx.moveTo(x1 * R * k, y2 * R * k);
+            let cx = x1 * k;
+            let cy2 = y2 * k;
+            if (soft) {
+              jelly.deform(cx, cy2, DEFORM_OUT);
+              cx = DEFORM_OUT[0]!;
+              cy2 = DEFORM_OUT[1]!;
+            }
+            if (drawing) ctx.lineTo(cx * R, cy2 * R);
+            else ctx.moveTo(cx * R, cy2 * R);
             drawing = true;
           }
           ctx.stroke();
@@ -1275,6 +1311,21 @@ export function LiquidGlobe({
       // cage after them must sample the same instant, or the wave that lifts a
       // pin is not the wave drawn under it.
       primeWaves(now);
+      const soft = jelly.active();
+
+      // The glass disc takes the body's stretch and where its centre is carried: one affine transform, the
+      // compositor's. The skin's local lobe is the cage's and the pins' to show.
+      let glass = 'none';
+      if (soft) {
+        jelly.deform(0, 0, DEFORM_OUT);
+        glass =
+          `matrix(${jelly.m00.toFixed(4)}, ${jelly.m10.toFixed(4)}, ${jelly.m01.toFixed(4)}, ` +
+          `${jelly.m11.toFixed(4)}, ${(DEFORM_OUT[0]! * R).toFixed(2)}, ${(DEFORM_OUT[1]! * R).toFixed(2)})`;
+      }
+      if (glass !== paintedGlass.current && glassRef.current) {
+        paintedGlass.current = glass;
+        glassRef.current.style.transform = glass === 'none' ? '' : glass;
+      }
 
       for (let rank = 0; rank < count; rank++) {
         const i = order[rank];
@@ -1294,8 +1345,15 @@ export function LiquidGlobe({
         const n = nodes[i];
         const swell = 1 + waveAt(n.bx, n.by, n.bz);
 
+        let sx = px[i] * k * swell;
+        let sy = py[i] * k * swell;
+        if (soft) {
+          jelly.deform(sx, sy, DEFORM_OUT);
+          sx = DEFORM_OUT[0]!;
+          sy = DEFORM_OUT[1]!;
+        }
         const transform =
-          `translate3d(${(px[i] * R * k * swell).toFixed(2)}px, ${(py[i] * R * k * swell).toFixed(2)}px, 0)` +
+          `translate3d(${(sx * R).toFixed(2)}px, ${(sy * R).toFixed(2)}px, 0)` +
           ` scale(${k.toFixed(3)})`;
         if (transform !== last.transform) {
           last.transform = transform;
@@ -1411,6 +1469,19 @@ export function LiquidGlobe({
           wobble.current = null;
         }
         dirty.current = true;
+      }
+
+      // 0c. The soft body. While held, the grabbed region chases the finger's velocity (zero once it holds still);
+      //     after, every mode springs back. Repaints only while something is deformed.
+      if (!reduced) {
+        if (drag.current.active) {
+          const R = Math.max(1, sizeRef.current / 2);
+          const at = grabAt.current;
+          const vx = stationary ? 0 : yawV.current.get() / ROT_PER_PX / R;
+          const vy = stationary ? 0 : -pitchV.current.get() / ROT_PER_PX / R;
+          jelly.drag(at.x, at.y, vx, vy);
+        }
+        if (jelly.step(dt)) dirty.current = true;
       }
 
       // 1. Motion. Dragging writes the rotation directly (in the pointer handler);
@@ -1574,7 +1645,7 @@ export function LiquidGlobe({
 
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [nodes, reduced]);
+  }, [nodes, reduced, jelly]);
 
   /* ── Pointer ──────────────────────────────────────────────────────────────
      `pointerdown` is taken on the stage (so a press that lands on a pin still
@@ -1672,6 +1743,20 @@ export function LiquidGlobe({
     (e: PointerEvent | ReactPointerEvent<HTMLElement>) => {
       if (e.button > 0) return;
       strike(e.clientX, e.clientY);
+      // Where the finger took hold, for the soft body: the stage's box once per press (never in the frame loop),
+      // and the finger in radii of the sphere from then on.
+      const stage = stageRef.current;
+      if (stage && !reduced) {
+        const rect = stage.getBoundingClientRect();
+        const r = Math.max(1, rect.width / 2);
+        const at = grabAt.current;
+        at.left = rect.left;
+        at.top = rect.top;
+        at.r = r;
+        at.x = (e.clientX - rect.left - r) / r;
+        at.y = (e.clientY - rect.top - r) / r;
+        jelly.grab(at.x, at.y);
+      }
       drag.current = {
         active: true,
         id: e.pointerId,
@@ -1700,7 +1785,7 @@ export function LiquidGlobe({
       pitchV.current.add(rot.current.pitch, now);
       setGrabbing(true);
     },
-    [strike],
+    [strike, reduced, jelly],
   );
 
   const onPointerDown = useCallback(
@@ -1770,6 +1855,9 @@ export function LiquidGlobe({
 
       const now = performance.now();
       lastMoveAt.current = now;
+      const at = grabAt.current;
+      at.x = (e.clientX - at.left - at.r) / at.r;
+      at.y = (e.clientY - at.top - at.r) / at.r;
 
       const r = rot.current;
       r.yaw += dx * ROT_PER_PX;
@@ -1793,6 +1881,7 @@ export function LiquidGlobe({
       if (!d.active || e.pointerId !== d.id) return;
       d.active = false;
       d.held = false;
+      jelly.release();
       setGrabbing(false);
       // The whole gesture, in one line: a full ring at the moment you let go is
       // the navigation. Anything else just leaves the globe where you put it.
@@ -1864,6 +1953,7 @@ export function LiquidGlobe({
       d.active = false;
       d.held = false;
       d.id = -1;
+      jelly.release();
       // The release this drag armed a swallow for is not coming either, so
       // clearing it here stops it eating the next real tap on the way back in.
       swallowClick.current = false;
@@ -1880,7 +1970,7 @@ export function LiquidGlobe({
       window.removeEventListener('pointercancel', onCancel);
       window.removeEventListener('blur', onLeave);
     };
-  }, [go, nodes]);
+  }, [go, nodes, jelly]);
 
   /**
    * A release that has already been spent — on a drag, or on a completed dwell —
@@ -2035,7 +2125,7 @@ export function LiquidGlobe({
         {/* The glass body itself: a flat disc of shading over the cage, so the
             wireframe reads as structure suspended INSIDE a liquid ball rather
             than as a drawing on top of one. */}
-        <span className="radial-globe__glass" aria-hidden />
+        <span ref={glassRef} className="radial-globe__glass" aria-hidden />
 
         {/* PINS — projected here rather than placed in the 3D cage, so their type
             stays flat, crisp and billboarded instead of skewing with the sphere. */}

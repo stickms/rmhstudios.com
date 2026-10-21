@@ -59,6 +59,7 @@ export const Route = createFileRoute('/api/messages/search')({
                   name: true,
                   image: true,
                   username: true,
+                  isBot: true,
                   profile: { select: { displayName: true, customImage: true } },
                 },
               },
@@ -68,6 +69,7 @@ export const Route = createFileRoute('/api/messages/search')({
                   name: true,
                   image: true,
                   username: true,
+                  isBot: true,
                   profile: { select: { displayName: true, customImage: true } },
                 },
               },
@@ -116,6 +118,7 @@ export const Route = createFileRoute('/api/messages/search')({
                 name: resolved.name,
                 image: resolved.image,
                 username: otherUser.username,
+                isBot: otherUser.isBot,
               },
               lastMessage: lastMessage
                 ? {

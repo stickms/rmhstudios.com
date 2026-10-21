@@ -4,7 +4,20 @@ A number in this program is evidence only if someone else can reproduce it with
 a command written next to it. This page defines the instruments, the dataset,
 the environment, and what may be compared with what.
 
-## 1. The instruments (built in P0 by WS0)
+## 0. Two classes of evidence
+
+Every results row is tagged with the class of its evidence:
+
+| Class | What | Available | How it may be produced |
+| --- | --- | --- | --- |
+| `exact` | counts, bytes, headers: queries per request, payload bytes, `cache-control`/`etag`, event-loop block count. Identical on any machine. | Stage A and B | a vitest test that counts Prisma calls, or the dev server (`vite dev`); the harness once it exists |
+| `latency` | TTFB, total time, rps, p95 under load: anything a clock or a contended CPU can move. | **Stage B only** | the harness against a production build, per §2 |
+
+A Stage A change ships on `exact` evidence alone. It is re-measured for latency
+in Stage B and reverted if it shows no win there (`05-agent-protocol.md` §3). A
+row never claims latency from an `exact` measurement.
+
+## 1. The instruments (built by WS0)
 
 All live under `scripts/perf/`. Agents use them; only WS0 (and later the
 coordinator) changes them. If an instrument is wrong, report it in your results
@@ -109,7 +122,37 @@ share mutable state.
 Opens N Socket.IO clients against a hub, drives a scripted event mix, and
 records server event-loop delay (`perf_hooks.monitorEventLoopDelay`, exposed by
 the hub behind the same `RMH_PERF_HEADERS`-style env flag), broadcast latency
-p50/p95, and RSS.
+p50/p95, and RSS. WS5 builds it in Stage A (it needs no WS0 file); its latency
+figures are Stage B evidence like any other, its handler and per-event
+allocation counts are `exact`.
+
+### 1.7 Go evidence (WS7)
+
+The Go services have no `Server-Timing` and are not in `server-routes.json`, so
+the two classes of evidence (§0) look like this:
+
+- **Exact:** query counts per worker tick or per request from
+  `pg_stat_statements` (`calls` before/after, reset between runs); `allocs/op`
+  and `B/op` from `go test -bench -benchmem`; response bytes and headers
+  (`cache-control`, `etag`, `content-encoding`, status on a conditional or range
+  request) from `curl -i`.
+- **Latency:** `go test -bench` ns/op, or an HTTP bench of `assets`/`status`
+  (same method as §1.1: sequential TTFB, then concurrent). Run it under the
+  shared lock (§2) with before and after in the same session, A B A B.
+
+Toolchain notes for the agent container:
+
+```bash
+export GOTOOLCHAIN=go1.26.8
+export BAZELISK_BASE_URL=https://github.com/bazelbuild/bazel/releases/download   # releases.bazel.build is blocked by the proxy
+/opt/bazel/bazel --version                # bazelisk
+make gazelle && make test                 # from the repo root
+go test ./...                             # fallback (in go-services/) if Bazel module fetch is blocked
+```
+
+`go test ./...` proves correctness only; the Bazel run is what CI runs, so say
+in the results row which one you used. The box is shared, so Bazel runs under
+the lock with limits, e.g. `--jobs=2 --local_ram_resources=2048`.
 
 ## 2. The environment
 
@@ -130,6 +173,16 @@ p50/p95, and RSS.
 - Warm vs cold: the harness's warmup samples make every reported number
   **warm**. Cold-start (first request after boot) is measured separately by
   restarting the server and timing the first request to `/`, three times.
+
+**The heavy-command lock.** The container shares 4 cores between about eight
+parallel agents, so every heavy command runs under **one** lock:
+`flock /tmp/rmh-perf-build.lock <cmd>`. It covers `pnpm build`, the bench,
+`pnpm exec tsc --noEmit`, and `git commit` (the commit hook runs the gate, which
+runs `tsc`). A latency number measured while another agent builds, type-checks
+or commits is not comparable with one measured while it doesn't, which is why the
+bench holds the same lock. Targeted `vitest run <paths>` and eslint on single
+files are light and run unlocked; the whole suite does not. Hold the lock
+briefly.
 
 **Container caveats.** The agent container shares 4 cores between parallel
 agents; absolute numbers are pessimistic and noisy. Therefore:
@@ -157,15 +210,16 @@ Not evidence: "should be faster", a microbenchmark of a function no route calls
 at that rate, a number from `vite dev`, a single sample, a number from a
 different machine than its baseline.
 
-## 4. The P0 baseline
+## 4. The baseline
 
 WS0 produces `results/baseline.json` (both auth modes, every route) on the
 merged-to-date tree with the instrumentation in place, plus `ws-0.md`
 summarising: top 15 routes by signed-in p95 TTFB, top 15 by query count, every
 route over its query budget, every `GET` without a cache policy that the
 harness shows is anonymous-invariant, cold-start time, and the phase breakdown
-of the five slowest pages. That summary is what the P1 agents start from.
+of the five slowest pages. That summary is what the workstreams re-prioritise by in Stage B.
 
-Because P1 agents run in parallel on a loaded box, each **re-baselines its own
-subset** in its own worktree before changing anything (§2.1). The P0 baseline
-picks the targets; the per-worktree baseline proves the win.
+Because the workstreams run in parallel on a loaded box, each **re-baselines its
+own subset** in its own worktree before any Stage B measurement (§2.1). The WS0
+baseline picks the targets; the per-worktree baseline proves the win. Stage A
+leads come from reading the code; Stage B re-prioritises them by the baseline.

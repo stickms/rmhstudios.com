@@ -1,22 +1,40 @@
 'use client';
 
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate } from '@tanstack/react-router';
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
+import { Link, useLocation, useNavigate, useRouter } from '@tanstack/react-router';
 import { LogOut, Settings, X } from 'lucide-react';
-import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser, useSession } from '@/components/Providers';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useThemeStore } from '@/stores/themeStore';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { SIDEBAR_NAV, isNavGroup, type NavLeaf } from '@/lib/sidebar-nav';
 import { isEversionEnabled } from '@/lib/eversion/flags';
 import type { EntryPoint } from '@/lib/eversion/marks';
-import type { PrefetchResult } from '@/lib/eversion/prefetch';
-import type { GlobeStartState } from '@/lib/eversion/types';
-import type { EversionControllerHandle } from './eversion/useEversionController';
-import { createHandOff } from './hub-handoff';
+import type { EversionNode, GlobeStartState } from '@/lib/eversion/types';
+import EversionOverlay from './eversion/EversionOverlay';
+import {
+  awaitController,
+  eversionRoot,
+  getController,
+  hasNoEffect,
+  registerHub,
+  setHubOpen,
+  shellMounted,
+  wantBridge,
+  type NavigationReplay,
+} from './eversion/eversion-root';
+import { inShell } from './eversion/eversion-nav';
+import { createHandOff, type HandOffHow } from './hub-handoff';
 import { whenQuiet } from './quiet';
 import { RmhLogo } from './RmhLogo';
 
@@ -38,74 +56,12 @@ import { RmhLogo } from './RmhLogo';
 const LiquidGlobe = lazy(() => import('./LiquidGlobe').then((m) => ({ default: m.LiquidGlobe })));
 
 /**
- * The Globe Eversion's hub-side half (spec §9.2, tasks T32): the BEFORE capture
- * hook, the run controller and the overlay it draws into, all behind one lazy
- * boundary. Nothing about it may join this file's static imports — the capture
- * library, render host and renderer hang off it, and the shell's critical path
- * (`pnpm check:bundle-budget`, S#39) must not grow by any of them. The only
- * statics above are the flag and TYPES, which erase. It is rendered only once
- * the flag is on and the idle warm-up has run, so a visitor without the effect
- * never fetches it.
+ * The Globe Eversion lives at the root of the page (`eversion/EversionRoot.tsx`, amended 2026-10-21): the warm-up,
+ * the lazy bridge and the controller are no longer the hub's, so the effect also runs for transitions that start
+ * or end outside the shell. The hub reaches the controller through `eversion/eversion-root.ts` (a types-only leaf),
+ * draws the run's layers in its own stacking context (`EversionOverlay`, under its globe) and registers itself so
+ * a navigation asked for while it is open is handed to its globe.
  */
-const EversionBridge = lazy(() => import('./eversion/EversionBridge'));
-
-/** The Settings "Preview" button's event (AppearancePanel.tsx; spec §9.3). */
-const EVERSION_PREVIEW_EVENT = 'rmh:eversion-preview';
-
-/**
- * Start the Globe Eversion's warm-up, once per page load, and NOT before the page
- * has finished loading (spec §8.1 / S#40; review R6 M1). The import() of the
- * prefetch module is itself a network request for its own chunk, so it is the
- * import that waits for `window` `load` (then one more task, then an idle slot) -
- * not just the work inside it. A page whose `load` is still pending because of a
- * slow subresource therefore requests nothing of the effect's. `prefetch.ts`
- * waits for `load` again itself as defence in depth.
- *
- * `urgent` is the visitor's own intent (the hub is open, or a destination was
- * picked): it skips the remaining wait, since the effect is about to be needed
- * and a page whose `load` is held up by one slow image would otherwise never
- * play it. Nothing ever passes it for a visitor who has not touched the hub, so
- * the "nothing before `load`" rule still holds for the page-load itself.
- */
-const NO_PREFETCH: PrefetchResult = { webgl2: false, tier: 'low', host: 'main' };
-let eversionStart: Promise<PrefetchResult> | null = null;
-let hurryEversion: (() => void) | null = null;
-function startEversion(urgent = false): Promise<PrefetchResult> {
-  eversionStart ??= new Promise<PrefetchResult>((resolve) => {
-    let ran = false;
-    let hurried = false;
-    const go = () => {
-      const idle = (window as typeof window & { requestIdleCallback?: typeof requestIdleCallback })
-        .requestIdleCallback;
-      // After the load event has finished dispatching, then when the browser is idle.
-      setTimeout(() => (idle ? idle(run, { timeout: 2000 }) : setTimeout(run, 200)), 0);
-    };
-    const run = () => {
-      if (ran) return;
-      ran = true;
-      hurryEversion = null;
-      void import('@/lib/eversion/prefetch')
-        .then((m) => m.prefetchEversion({ urgent: hurried }))
-        .then(resolve, () => resolve(NO_PREFETCH));
-    };
-    hurryEversion = () => {
-      hurried = true;
-      run();
-    };
-    if (document.readyState === 'complete') go();
-    else window.addEventListener('load', go, { once: true });
-  });
-  if (urgent) hurryEversion?.();
-  return eversionStart;
-}
-
-/**
- * How long a confirm waits for the bridge to hand its controller up when the
- * visitor got there first (the first seconds of a page-load), before it navigates
- * the ordinary way. "Always evert globe" waits longer, like its other waits.
- */
-const CONTROLLER_WAIT_MS = 2500;
-const ALWAYS_CONTROLLER_WAIT_MS = 8000;
 
 let globePreloaded = false;
 let globeModule: Promise<unknown> | null = null;
@@ -175,7 +131,10 @@ export function RadialHub() {
   const { t } = useTranslation('feed');
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const reduced = useReducedMotion();
+  const router = useRouter();
+  // The site's own Reduce motion switch, never the OS query (amended 2026-10-21): the hub's motion is the globe's
+  // hand-over too, and it plays by default.
+  const reduced = useThemeStore((s) => s.reduceMotion);
   const { data: session } = useSession();
   const { resolved } = useResolvedUser();
   const user = session?.user as HubUser | undefined;
@@ -209,25 +168,16 @@ export function RadialHub() {
   // canvas, and unmounting it would cut that fade to a pop.
   const menuVisible = phase === 'open' || phase === 'closing' || phase === 'everting';
   /**
-   * Globe Eversion (flag-gated; see `EversionBridge`). `eversionOn` is resolved
-   * after mount because the flag reads `location`, which the server render does
-   * not have — it is what decides whether LiquidGlobe is handed `onNavigate` at
-   * all, so with the flag off the globe is wired exactly as before. `bridgeWanted`
-   * mounts the lazy half, after the idle warm-up or on the first Settings preview.
-   * `controllerRef` is what the bridge hands up; `null` until it has loaded, and
-   * `null` means "ineligible" — today's navigation.
+   * Globe Eversion (flag-gated). `eversionOn` is resolved after mount because the flag reads `location`, which the
+   * server render does not have - it is what decides whether LiquidGlobe is handed `onNavigate` at all, so with the
+   * flag off the globe is wired exactly as before. The controller is the root's (`eversion-root.ts`).
    */
   const [eversionOn, setEversionOn] = useState(false);
-  const [bridgeWanted, setBridgeWanted] = useState(false);
-  const controllerRef = useRef<EversionControllerHandle | null>(null);
-  const pendingPreview = useRef(false);
-  const pendingPreviewRun = useRef<((controller: EversionControllerHandle) => void) | null>(null);
-  /** Confirms waiting for the bridge's controller (`awaitController`). */
-  const controllerWaiters = useRef(new Set<(c: EversionControllerHandle | null) => void>());
-  /** The warm-up said this device cannot run the effect: never wait for a bridge. */
-  const noEffect = useRef(false);
-  const tRef = useRef(t);
-  tRef.current = t;
+  const { bridgeWanted } = useSyncExternalStore(
+    eversionRoot.subscribe,
+    eversionRoot.getSnapshot,
+    eversionRoot.getServerSnapshot,
+  );
   /**
    * The first-open rehearsal (2026-10-09).
    *
@@ -269,14 +219,14 @@ export function RadialHub() {
    * into the hub through `live`, which always holds this render's callbacks, so
    * the machine itself is built once.
    */
-  const live = useRef<{ today(node: NavLeaf): void; dismiss(): void }>({
+  const live = useRef<{ today(node: NavLeaf, how?: HandOffHow): void; dismiss(): void }>({
     today: noop,
     dismiss: noop,
   });
   const handOffMachine = useMemo(
     () =>
       createHandOff<NavLeaf>({
-        navigateToday: (node) => live.current.today(node),
+        navigateToday: (node, how) => live.current.today(node, how),
         everting: (handover) => {
           // The hub stays exactly as it is (`open`) until the run reaches its point
           // of no return; from here the run owns the screen. The globe is handed
@@ -378,31 +328,16 @@ export function RadialHub() {
     // enough to stay behind the page's own first paint.
     // Once the chunk is in, rehearse the open — see `rehearsing` below.
     const warm = () => {
-      // Globe eversion: warm its runtime, behind a dynamic import so none of it
-      // joins the shell's static closure (spec §8.1). The flag is a tiny leaf read
-      // statically, so a visitor without the effect fetches nothing at all. This
-      // timer can fire BEFORE `load` on a slow page, so nothing eversion-related is
-      // requested from here until `startEversion` has seen `load` (R6 M1): not the
-      // prefetch chunk, not the bridge. A device that reports no WebGL2 never
-      // mounts the bridge at all (R6 m5).
-      if (isEversionEnabled()) {
-        void startEversion().then((result) => {
-          if (unmounted) return;
-          if (result.webgl2) setBridgeWanted(true);
-          else noEffect.current = true;
-        });
-      }
+      // The globe eversion's warm-up is the root's now (`EversionRoot`).
       void preloadGlobe()?.then(() => {
         if (rehearsed || phaseRef.current !== 'closed') return;
         rehearsed = true;
         setRehearsing(true);
       });
     };
-    let unmounted = false;
     const timer = setTimeout(warm, 800);
     const handle = w.requestIdleCallback?.(warm, { timeout: 800 });
     return () => {
-      unmounted = true;
       clearTimeout(timer);
       if (handle !== undefined) w.cancelIdleCallback?.(handle);
     };
@@ -493,110 +428,34 @@ export function RadialHub() {
 
   useEffect(() => () => clearTimer(), []);
 
-  // Globe Eversion wiring. With the flag off this effect does one cheap read and
-  // returns: no listener, no fetch, no state change.
+  // Globe Eversion wiring. With the flag off this effect does one cheap read and returns.
   useEffect(() => {
     if (!isEversionEnabled()) return;
     setEversionOn(true);
-    let alive = true;
-    const unavailable = () =>
-      toast.info(
-        tRef.current('eversion-preview-unavailable', {
-          defaultValue: 'This transition cannot play here, so pages change as usual.',
-        }),
-      );
-    const preview = (controller: EversionControllerHandle) => {
-      void controller.preview().then((outcome) => {
-        // `busy` is a preview already running; `traversal` cannot happen here.
-        if (alive && outcome.fallback && outcome.fallback !== 'busy') unavailable();
-      });
-    };
-    const onPreview = () => {
-      const controller = controllerRef.current;
-      if (controller) {
-        preview(controller);
-        return;
-      }
-      // The bridge has not loaded yet: ask for it (after `load`, like everything
-      // else) and run the preview the moment it hands the controller up. A device
-      // that cannot run the effect says so instead of doing nothing.
-      pendingPreview.current = true;
-      void startEversion().then((result) => {
-        if (!alive) return;
-        if (result.webgl2) {
-          setBridgeWanted(true);
-        } else {
-          pendingPreview.current = false;
-          unavailable();
-        }
-      });
-    };
-    pendingPreviewRun.current = preview;
-    window.addEventListener(EVERSION_PREVIEW_EVENT, onPreview);
-    return () => {
-      alive = false;
-      window.removeEventListener(EVERSION_PREVIEW_EVENT, onPreview);
-    };
   }, []);
 
-  const onController = useCallback((controller: EversionControllerHandle | null) => {
-    controllerRef.current = controller;
-    if (controller && pendingPreview.current) {
-      pendingPreview.current = false;
-      pendingPreviewRun.current?.(controller);
-    }
-    if (controller) for (const waiter of [...controllerWaiters.current]) waiter(controller);
-  }, []);
-
-  /**
-   * Ask for the bridge now (the visitor's intent: skip the idle wait). A device
-   * the warm-up says cannot run the effect releases every waiting confirm to the
-   * ordinary navigation.
-   */
-  const wantBridge = useCallback(() => {
-    void startEversion(true).then((result) => {
-      if (result.webgl2) {
-        setBridgeWanted(true);
-        return;
-      }
-      noEffect.current = true;
-      for (const waiter of [...controllerWaiters.current]) waiter(null);
-    });
-  }, []);
-
-  /** The controller, as soon as the bridge hands it up; `null` after `ms` or on a no-effect device. */
-  const awaitController = useCallback(
-    (ms: number) =>
-      new Promise<EversionControllerHandle | null>((resolve) => {
-        if (controllerRef.current) return resolve(controllerRef.current);
-        if (noEffect.current) return resolve(null);
-        const done = (controller: EversionControllerHandle | null) => {
-          clearTimeout(timer);
-          controllerWaiters.current.delete(done);
-          resolve(controller);
-        };
-        const timer = setTimeout(() => done(null), ms);
-        controllerWaiters.current.add(done);
-        wantBridge();
-      }),
-    [wantBridge],
-  );
+  // The shell is here (the BEFORE capture runs ahead only under one), and the bridge's capture cue: the hub is open.
+  useEffect(() => shellMounted(), []);
+  useEffect(() => {
+    setHubOpen(phase === 'open' || phase === 'everting');
+  }, [phase]);
+  useEffect(() => () => setHubOpen(false), []);
 
   // The hub is open: the visitor is about to pick a destination, so the effect's
   // warm-up stops waiting for `load` and idle. Held back until the open morph is
   // over AND the visitor is not dragging the globe (`quiet.ts`), so its chunk
   // parsing never lands inside either motion. A confirm before then asks at once.
   useEffect(() => {
-    if (phase !== 'open' || !eversionOn || controllerRef.current || noEffect.current) return;
+    if (phase !== 'open' || !eversionOn || getController() || hasNoEffect()) return;
     let cancelQuiet: (() => void) | null = null;
     const timer = setTimeout(() => {
-      cancelQuiet = whenQuiet(wantBridge, { quietMs: 250, idleTimeoutMs: 1000 });
+      cancelQuiet = whenQuiet(() => void wantBridge(), { quietMs: 250, idleTimeoutMs: 1000 });
     }, MOTION_MS);
     return () => {
       clearTimeout(timer);
       cancelQuiet?.();
     };
-  }, [phase, eversionOn, wantBridge]);
+  }, [phase, eversionOn]);
 
   /**
    * LiquidGlobe's confirm hand-off (hold-release, pin click, Enter). Ineligible -
@@ -609,9 +468,12 @@ export function RadialHub() {
    * Focus is left to the router either way.
    */
   live.current = {
-    today: (node) => {
+    today: (node, how) => {
       dismissForNavigation();
-      void navigate({ to: node.href } as never);
+      // Past the site's navigation interceptor (`eversion-nav.ts`): this IS the fallback, it must not be held back
+      // for the effect a second time.
+      if (how?.navigate) how.navigate();
+      else void navigate({ to: node.href, ignoreBlocker: true } as never);
     },
     dismiss,
   };
@@ -621,18 +483,51 @@ export function RadialHub() {
       state: GlobeStartState,
       entry: Exclude<EntryPoint, 'preview'>,
       live?: () => GlobeStartState,
+      how?: HandOffHow,
     ) => {
-      const controller = controllerRef.current;
-      if (controller || noEffect.current) {
-        handOffMachine.confirm(controller, node, state, entry, live);
+      // A destination outside the shell unmounts the hub mid-run, and the layers inside it: those runs draw at
+      // the top of <body> instead (the hub's globe then hands over beneath them, which the sphere still starts from).
+      const layer =
+        how?.layer ?? (inShell(router as never, node.href.split(/[?#]/)[0]!) ? 'shell' : 'body');
+      const withLayer: HandOffHow = { ...how, layer };
+      const controller = getController();
+      if (controller || hasNoEffect()) {
+        handOffMachine.confirm(controller, node, state, entry, live, withLayer);
         return;
       }
-      const ms = useThemeStore.getState().alwaysEvertGlobe
-        ? ALWAYS_CONTROLLER_WAIT_MS
-        : CONTROLLER_WAIT_MS;
-      handOffMachine.confirmWhenReady(awaitController(ms), node, state, entry, live);
+      handOffMachine.confirmWhenReady(awaitController(), node, state, entry, live, withLayer);
     },
-    [handOffMachine, awaitController],
+    [handOffMachine, router],
+  );
+
+  // A navigation asked for while the hub is open (a foot-bar link, a key) is handed to its globe, from where the
+  // globe is on screen, instead of a globe popping up beside it.
+  useEffect(
+    () =>
+      registerHub({
+        isOpen: () => phaseRef.current === 'open',
+        busy: () => handOffMachine.busy(),
+        navigate: (node: EversionNode, replay: NavigationReplay) => {
+          const globe = globeRef.current?.getBoundingClientRect();
+          const v = { w: window.innerWidth, h: window.innerHeight };
+          const pose: GlobeStartState = {
+            yaw: 0,
+            pitch: 0,
+            yawVel: 0,
+            pitchVel: 0,
+            centre: globe
+              ? [globe.left + globe.width / 2, globe.top + globe.height / 2]
+              : [v.w / 2, v.h / 2],
+            radius: globe ? Math.min(globe.width, globe.height) / 2 : Math.min(v.w, v.h) * 0.3,
+          };
+          handOff(node as NavLeaf, pose, 'click', undefined, {
+            navigate: replay.go,
+            traverses: replay.traverses,
+            layer: replay.layer,
+          });
+        },
+      }),
+    [handOffMachine, handOff],
   );
 
   const signOut = useCallback(async () => {
@@ -789,15 +684,9 @@ export function RadialHub() {
         </div>
       </div>
 
-      {bridgeWanted && (
-        <Suspense fallback={null}>
-          <EversionBridge
-            open={phase === 'open' || phase === 'everting'}
-            motionMs={MOTION_MS}
-            onController={onController}
-          />
-        </Suspense>
-      )}
+      {/* The run's layers, in the shell's stacking context and under the globe, which is handed over on top of
+          them. The controller itself is the root's (`EversionRoot`). */}
+      {bridgeWanted && <EversionOverlay />}
 
       {/* Outside the overlay on purpose: the overlay is `visibility: hidden`
           while the hub is closed, and a rehearsal that never paints warms
