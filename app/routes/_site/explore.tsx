@@ -30,7 +30,9 @@ const fetchExplore = createServerFn({ method: 'GET' }).handler(async () => {
   const session = await getRequestSession();
   const [discovery, sidebar] = await Promise.all([
     listExplore(session?.user?.id ?? null),
-    getSidebarData(),
+    // The page never renders `recommendedUsers` (see ExplorePage), so don't pay for
+    // the follow-graph read that builds them.
+    getSidebarData({ recommendedUsers: false }),
   ]);
   return { discovery, sidebar };
 });
