@@ -881,6 +881,38 @@ else
 fi
 step_done
 
+# ── Step 3b: Fit the DB pools to the live max_connections ────────────────────
+# The fleet's pool sizes assume the tuned host (max_connections = 200), but that
+# tuning is a root action this sandboxed deploy cannot apply (see the host
+# tuning preflight at the end). On a stock host (100) the fleet's peak — two web
+# containers during the hotswap — exceeds the limit, and Postgres then refuses
+# connections to EVERY service at once. scripts/db-connection-budget.mjs reads
+# the real limit and, only when the configured pools do not fit, prints smaller
+# sizes; they are exported here so `dc up` and hotswap-web.sh interpolate them
+# (docker-compose.yml `${…_POOL_SIZE:-default}`). Non-fatal by design: if the
+# server cannot be read, nothing is exported and pools stay as configured.
+step_start "Fitting DB pools to the live max_connections..."
+set +e
+POOL_PLAN=$(dc run --rm --no-deps -T web node scripts/db-connection-budget.mjs 2>&1)
+POOL_PLAN_EXIT=$?
+set -e
+while IFS= read -r line; do
+    case "$line" in
+        POOL:*)
+            # Only the four known variables, only integers — never eval output.
+            kv="${line#POOL:}"
+            if [[ "$kv" =~ ^(DATABASE_POOL_SIZE|SERVER_DB_POOL_SIZE|AUTH_DB_POOL_SIZE|JOBS_DB_POOL_SIZE)=[0-9]+$ ]]; then
+                export "$kv"
+            fi
+            ;;
+        db-budget:*) log "  ${line}" ;;
+    esac
+done <<< "$POOL_PLAN"
+if [ "$POOL_PLAN_EXIT" -ne 0 ]; then
+    log "  WARNING: pool sizing check failed (exit ${POOL_PLAN_EXIT}) — pools left as configured."
+fi
+step_done
+
 # ── Step 4: Bring up containers (everything EXCEPT web) ─────────────────────
 # --no-build: image is already built in step 2, skip the build check.
 # --scale web=0: the web service is NOT managed by compose anymore — compose

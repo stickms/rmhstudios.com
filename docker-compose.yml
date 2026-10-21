@@ -235,13 +235,22 @@ services:
       - REDIS_URL=${REDIS_URL:-redis://redis:6379}
       # Postgres connection budget (max_connections = 200, deploy/postgres/
       # postgresql.tuning.conf). Each Nitro worker owns a lib/prisma.server pool of
-      # DATABASE_POOL_SIZE (default 20), so one web container = WEB_WORKERS(2) x 20
-      # = 40, and the blue/green hotswap runs TWO web containers at once = 80.
-      # Everything else, worst case: socket/rmhbox/rmhtube hubs 3 x SERVER_DB_POOL_SIZE
-      # (5) = 15, jobs 16 + pg-boss 8 = 24, ladder-worker 3 (own client) + 3 (alerts
-      # pool) = 6, homes-worker 3, Go supervisor/status/assets ~20, admin/psql/migrate
-      # ~10: ~80 + 15 + 24 + 6 + 3 + 20 + 10 = ~158 < 200 with the superuser reserve.
-      # Raising web's pool or WEB_WORKERS means re-doing this sum.
+      # DATABASE_POOL_SIZE (default 20) plus a pg-boss producer pool (2), so one web
+      # container = WEB_WORKERS(2) x 22 = 44, and the blue/green hotswap runs TWO web
+      # containers at once = 88. Everything else, worst case: socket/rmhbox/rmhtube
+      # hubs 3 x (SERVER_DB_POOL_SIZE 5 + AUTH_DB_POOL_SIZE 4) = 27, jobs 16 + pg-boss
+      # 8 = 24, ladder-worker 3 (own client) + 3 (alerts pool) = 6, homes-worker 3, Go
+      # supervisor 1 + status probe 2 (+2 slack), admin/psql/migrate ~10:
+      # 88 + 27 + 24 + 6 + 3 + 5 + 10 = 163 < 197 usable at 200.
+      #
+      # A STOCK host (100) cannot hold that, and applying the tuning is a root
+      # action the sandboxed deploy cannot take. So deploy.sh runs
+      # scripts/db-connection-budget.mjs before starting anything: it reads the LIVE
+      # max_connections and, only when this sum does not fit, exports smaller values
+      # for the four pool variables below (interpolated here, defaults = today's
+      # sizes; lib/__tests__/db-connection-budget.test.ts keeps them in step). The
+      # arithmetic above lives in that script — change both together.
+      - DATABASE_POOL_SIZE=${DATABASE_POOL_SIZE:-20}
       #
       # Server-side timeouts (lib/prisma.server.ts): code default is OFF so workers
       # and scripts are unchanged; web turns them on so one slow query or a stuck
@@ -301,6 +310,9 @@ services:
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - SOCKET_PORT=${PORT_SOCKET:-7001}
+      # Pool sizes: see the connection budget on the web service.
+      - SERVER_DB_POOL_SIZE=${SERVER_DB_POOL_SIZE:-5}
+      - AUTH_DB_POOL_SIZE=${AUTH_DB_POOL_SIZE:-4}
       # Cap V8 old-space below the 768m cgroup (perf audit §1.5).
       - NODE_OPTIONS=--max-old-space-size=576
     command: ['node', 'dist-server/server/socket-server/index.cjs']
@@ -326,6 +338,9 @@ services:
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - RMHBOX_PORT=${PORT_RMHBOX:-7676}
+      # Pool sizes: see the connection budget on the web service.
+      - SERVER_DB_POOL_SIZE=${SERVER_DB_POOL_SIZE:-5}
+      - AUTH_DB_POOL_SIZE=${AUTH_DB_POOL_SIZE:-4}
       # Cap V8 old-space below the 512m cgroup (perf audit §1.5).
       - NODE_OPTIONS=--max-old-space-size=384
     command: ['node', 'dist-server/server/rmhbox/index.cjs']
@@ -351,6 +366,9 @@ services:
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - RMHTUBE_PORT=${PORT_RMHTUBE:-7003}
+      # Pool sizes: see the connection budget on the web service.
+      - SERVER_DB_POOL_SIZE=${SERVER_DB_POOL_SIZE:-5}
+      - AUTH_DB_POOL_SIZE=${AUTH_DB_POOL_SIZE:-4}
       # Cap V8 old-space below the 512m cgroup (perf audit §1.5).
       - NODE_OPTIONS=--max-old-space-size=384
     command: ['node', 'dist-server/server/rmhtube/index.cjs']
@@ -423,7 +441,8 @@ services:
       # connection only while it queries. 16 = that worst case + 2 headroom
       # (max(concurrency + 2, 8)); handlers past it wait on the pool rather than
       # run wider. pg-boss's pool is separate (lib/jobs/boss.server.ts, 8).
-      - DATABASE_POOL_SIZE=16
+      # deploy.sh may lower it on a host with a small max_connections (see web).
+      - DATABASE_POOL_SIZE=${JOBS_DB_POOL_SIZE:-16}
     command: ['node', 'dist-server/server/jobs/index.cjs']
 
   # ─── Go Supervisor (discord-bot + recap + doctrine-worker + vibe-worker + bot-worker) ─
