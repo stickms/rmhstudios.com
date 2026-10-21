@@ -58,6 +58,7 @@ import {
 } from '@/components/chat-plus/hooks';
 import { applyChatUpdate } from '@/lib/chat-plus/apply-update';
 import { isCardKind, isLineKind, type PollView } from '@/lib/chat-plus/types';
+import { AutomatedBadge } from '@/components/feed/AutomatedBadge';
 
 // P4 — "It's 2:14 AM for Ana": a tiny lazy chunk, fetched after the header is idle.
 const DmLocalTime = lazy(() => import('@/components/profile/plus/LocalTime'));
@@ -116,6 +117,7 @@ interface OtherUser {
   name: string | null;
   image: string | null;
   username: string | null;
+  isBot?: boolean;
 }
 
 export function ConversationView({
@@ -1068,8 +1070,9 @@ export function ConversationView({
                 className="ring-2 ring-site-bg"
               />
               <div>
-                <p className="font-display font-bold text-sm text-site-text">
+                <p className="flex items-center gap-1.5 font-display font-bold text-sm text-site-text">
                   {otherUser.name || 'Unknown'}
+                  {otherUser.isBot && <AutomatedBadge />}
                 </p>
                 {otherUser.username && (
                   <p className="text-xs text-site-text-dim">@{otherUser.username}</p>

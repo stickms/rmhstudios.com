@@ -8,6 +8,7 @@ package botworker
 
 import (
 	"context"
+	"math"
 	"math/rand"
 	"strings"
 	"time"
@@ -47,7 +48,7 @@ func (w *Worker) safeReplyTick(ctx context.Context) {
 // reactToComments makes bots reply to recent comments aimed at them. Humans get
 // answered readily; bot→bot is rarer and depth-capped. Mirrors Node reactToComments().
 func (w *Worker) reactToComments(ctx context.Context) {
-	since := time.Now().Add(-replyLookbackDuration)
+	since := time.Now().Add(-w.cfg.ReplyLookback)
 	comments, err := w.repo.RecentComments(ctx, since)
 	if err != nil {
 		w.logger.Error("bot-worker: recent comments failed", "error", err)
@@ -83,14 +84,19 @@ func (w *Worker) reactToComments(ctx context.Context) {
 		candidates = append(candidates, candidate{comment: c, targetID: targetID, authorIsBot: c.AuthorIsBot})
 	}
 
+	// Replies scale up with the posting-rate multiplier so a busier feed
+	// doesn't leave bots ignoring their threads; they never scale below the
+	// configured cap, so humans are still answered when posting is slowed.
+	s := w.currentSettings(ctx)
+	maxReplies := int(math.Ceil(float64(w.cfg.MaxRepliesPerTick) * math.Max(1, s.PostRateMultiplier)))
 	made := 0
 	for _, cand := range shuffleCandidates(candidates) {
-		if made >= maxRepliesPerTick || ctx.Err() != nil {
+		if made >= maxReplies || ctx.Err() != nil {
 			break
 		}
-		prob := reactiveHumanProb
+		prob := w.cfg.ReactiveHumanProb
 		if cand.authorIsBot {
-			prob = botToBotProb
+			prob = w.cfg.BotToBotProb
 		}
 		if rand.Float64() > prob {
 			continue
@@ -122,7 +128,7 @@ func (w *Worker) replyToComment(ctx context.Context, botID, commentID, rmheetID 
 	if err != nil || rc == nil {
 		return false
 	}
-	if len(rc.Thread) >= maxReplyDepth {
+	if len(rc.Thread) >= w.cfg.MaxReplyDepth {
 		return false
 	}
 	persona := w.personaFor(ctx, botID)
@@ -148,13 +154,17 @@ func (w *Worker) replyToComment(ctx context.Context, botID, commentID, rmheetID 
 	return true
 }
 
-// seedBotConversation occasionally makes a bot reply to another bot's recent
-// post (proactive chatter). Mirrors Node seedBotConversation().
+// seedBotConversation makes bots reply to other bots' recent posts (proactive
+// chatter). Mirrors Node seedBotConversation(), where a tick started at most
+// one thread with probability ProactiveProb; that expectation now scales with
+// the posting-rate multiplier so chatter keeps pace with post volume.
 func (w *Worker) seedBotConversation(ctx context.Context) {
-	if rand.Float64() > proactiveProb {
+	s := w.currentSettings(ctx)
+	n := scaledCount(w.cfg.ProactiveProb*s.PostRateMultiplier, rand.Float64())
+	if n == 0 {
 		return
 	}
-	since := time.Now().Add(-proactiveLookbackDuration)
+	since := time.Now().Add(-w.cfg.ProactiveLookback)
 	posts, err := w.repo.RecentBotPosts(ctx, since)
 	if err != nil {
 		w.logger.Error("bot-worker: recent bot posts failed", "error", err)
@@ -164,8 +174,14 @@ func (w *Worker) seedBotConversation(ctx context.Context) {
 	if len(posts) == 0 {
 		return
 	}
-	post := posts[rand.Intn(len(posts))]
+	for i := 0; i < n && ctx.Err() == nil; i++ {
+		w.seedOnPost(ctx, posts[rand.Intn(len(posts))])
+	}
+}
 
+// seedOnPost has one bot that hasn't yet commented leave a top-level comment
+// on a bot post.
+func (w *Worker) seedOnPost(ctx context.Context, post BotPostRow) {
 	commenters, err := w.repo.CommentersOnPost(ctx, post.ID)
 	if err != nil {
 		w.recordJob(jobReply, "error")
@@ -250,7 +266,7 @@ func (w *Worker) safeDmTick(ctx context.Context) {
 // answerDirectMessages makes bots reply when a human spoke last in a 1:1 convo
 // with exactly one bot participant. Mirrors Node answerDirectMessages().
 func (w *Worker) answerDirectMessages(ctx context.Context) {
-	since := time.Now().Add(-dmLookbackDuration)
+	since := time.Now().Add(-w.cfg.DMLookback)
 	convos, err := w.repo.RecentBotConversations(ctx, since)
 	if err != nil {
 		w.logger.Error("bot-worker: recent bot conversations failed", "error", err)
@@ -278,10 +294,10 @@ func (w *Worker) answerDirectMessages(ctx context.Context) {
 	made := 0
 	for _, idx := range rand.Perm(len(candidates)) {
 		c := candidates[idx]
-		if made >= maxDMRepliesPerTick || ctx.Err() != nil {
+		if made >= w.cfg.MaxDMRepliesPerTick || ctx.Err() != nil {
 			break
 		}
-		if rand.Float64() > reactiveDMProb {
+		if rand.Float64() > w.cfg.ReactiveDMProb {
 			continue
 		}
 		func(c cand) {
@@ -334,10 +350,10 @@ func (w *Worker) answerDirectMessages(ctx context.Context) {
 // recently-active human, respecting privacy + anti-pester rules. Mirrors Node
 // initiateDirectMessages().
 func (w *Worker) initiateDirectMessages(ctx context.Context) {
-	if rand.Float64() > dmInitiateProb {
+	if rand.Float64() > w.cfg.DMInitiateProb {
 		return
 	}
-	since := time.Now().Add(-dmActiveHumanLookbackDuration)
+	since := time.Now().Add(-w.cfg.DMActiveHumanLookback)
 	humanIDs, err := w.repo.RecentActiveHumans(ctx, since)
 	if err != nil {
 		w.logger.Error("bot-worker: recent active humans failed", "error", err)
@@ -355,7 +371,7 @@ func (w *Worker) initiateDirectMessages(ctx context.Context) {
 	opened := 0
 	for _, idx := range rand.Perm(len(humanIDs)) {
 		humanID := humanIDs[idx]
-		if opened >= maxDMOpenersPerTick || ctx.Err() != nil {
+		if opened >= w.cfg.MaxDMOpenersPerTick || ctx.Err() != nil {
 			break
 		}
 		bot := bots[rand.Intn(len(bots))]
@@ -389,7 +405,7 @@ func (w *Worker) initiateDirectMessages(ctx context.Context) {
 				w.recordJob(jobDM, "error")
 				return
 			}
-			decision := decideInitiation(bot.ID, time.Now(), dmFollowupSilenceDuration, msgs)
+			decision := decideInitiation(bot.ID, time.Now(), w.cfg.DMFollowupSilence, msgs)
 			if decision == "skip" {
 				return
 			}
@@ -422,17 +438,13 @@ func (w *Worker) initiateDirectMessages(ctx context.Context) {
 
 // personaFor loads a bot's persona text, used by reply/DM ticks. Falls back to
 // empty on any error (the caller treats empty persona as "skip" where relevant).
+// A single-row lookup: the old version loaded every bot to find one.
 func (w *Worker) personaFor(ctx context.Context, botID string) string {
-	bots, err := w.repo.BotsExcept(ctx, "") // all bots
+	persona, err := w.repo.BotPersona(ctx, botID)
 	if err != nil {
 		return ""
 	}
-	for _, b := range bots {
-		if b.ID == botID {
-			return b.BotPersona
-		}
-	}
-	return ""
+	return persona
 }
 
 // reverseMessages reverses a slice of dmMessage in place.

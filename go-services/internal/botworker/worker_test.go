@@ -29,64 +29,57 @@ func TestRunIdlesWithoutDeepSeekKey(t *testing.T) {
 }
 func TestPersonaStringNeverRevealsBot(t *testing.T) {
 	// The persona string is the LLM system prompt seed. It must never hint that
-	// the persona is synthetic. (Replaces the original TestPostTextNeverRevealsBot
-	// which referenced assemblePost — a function that was never defined.)
-	got := buildPersonaString("coffee", "wry", "posts a few times a day about their day and interests")
-	for _, banned := range []string{"as an ai", "i am a bot", "language model", "chatbot"} {
-		if strings.Contains(strings.ToLower(got), banned) {
-			t.Fatalf("persona string leaked bot disclosure %q: %q", banned, got)
+	// the persona is synthetic, whatever axes are rolled.
+	for i := 0; i < 200; i++ {
+		got := strings.ToLower(composePersona(rollPersona()))
+		for _, banned := range []string{"as an ai", "i am a bot", "language model", "chatbot"} {
+			if strings.Contains(got, banned) {
+				t.Fatalf("persona string leaked bot disclosure %q: %q", banned, got)
+			}
 		}
 	}
 }
 
-// TestBuildPersonaStringEmitsHabitLabel ensures buildPersonaString produces
-// an ACTIVITY line that shouldPost()'s regex can match. Previously it always
-// emitted "posts regularly throughout the day", which matched no branch and
-// caused every bot to default to perDay=5.
-func TestBuildPersonaStringEmitsHabitLabel(t *testing.T) {
+// TestComposePersonaPacesEveryHabit ensures each habit's ACTIVITY line drives
+// shouldPost()'s rate. A persona that matched no branch would silently fall
+// back to 5/day.
+func TestComposePersonaPacesEveryHabit(t *testing.T) {
 	for _, h := range postingHabits {
-		persona := buildPersonaString("coffee", "wry", h.label)
-		if !strings.Contains(persona, h.label) {
-			t.Errorf("habit %q: label not present in persona string %q", h.id, persona)
+		spec := rollPersona()
+		spec.habit = h
+		if got := habitPostsPerDay(composePersona(spec)); got != float64(h.postsPerDay) {
+			t.Errorf("habit %q: habitPostsPerDay = %v, want %d", h.id, got, h.postsPerDay)
 		}
 	}
 }
 
-// TestShouldPostPacingVaried verifies that the four POSTING_HABITS produce
-// distinct perDay rates in shouldPost(). We check this indirectly by feeding
-// each habit label into BotUser.BotPersona and checking the regex branch fires.
-// Bots with no recent post are used so the gap check doesn't interfere.
-func TestShouldPostPacingVaried(t *testing.T) {
-	// Map each habit id → expected perDay from shouldPost's switch.
-	tests := []struct {
-		habitID    string
-		habitLabel string
-		wantPerDay float64
-	}{
-		{"chatty",  "very online, posts frequently with quick thoughts",          9},
-		{"lurker",  "rare poster — only chimes in when something matters",        2},
-		{"bursty",  "goes quiet then posts a flurry when inspired",               6},
-		{"steady",  "posts a few times a day about their day and interests",      5},
+// TestHabitPostsPerDayIgnoresOtherLines pins that only the ACTIVITY line sets
+// the pace, so a voice rule mentioning "frequently" can't speed a lurker up.
+func TestHabitPostsPerDayIgnoresOtherLines(t *testing.T) {
+	persona := "VOICE (x): posts frequently with flair\nACTIVITY: rare poster — only chimes in when something matters."
+	if got := habitPostsPerDay(persona); got != 2 {
+		t.Errorf("habitPostsPerDay = %v, want 2", got)
 	}
+	// Legacy personas without an ACTIVITY prefix still match on the whole text.
+	if got := habitPostsPerDay("very online"); got != 9 {
+		t.Errorf("legacy habitPostsPerDay = %v, want 9", got)
+	}
+}
 
-	for _, tt := range tests {
-		persona := buildPersonaString("coffee", "wry", tt.habitLabel)
-		// Verify the regex matches are consistent with the expected perDay.
-		// We replicate shouldPost's switch logic directly (without randomness).
-		var gotPerDay float64
-		switch {
-		case matchPersona(persona, `very online|frequently`):
-			gotPerDay = 9
-		case matchPersona(persona, `rare poster|only chimes in`):
-			gotPerDay = 2
-		case matchPersona(persona, `flurry|goes quiet`):
-			gotPerDay = 6
-		default:
-			gotPerDay = 5
-		}
-		if gotPerDay != tt.wantPerDay {
-			t.Errorf("habit %q: want perDay=%.0f, got perDay=%.0f (persona=%q)",
-				tt.habitID, tt.wantPerDay, gotPerDay, persona)
-		}
+// TestShouldPostMultiplier checks the admin multiplier scales the per-tick
+// probability and that 0 pauses posting outright.
+func TestShouldPostMultiplier(t *testing.T) {
+	now := time.Now()
+	bot := BotUser{ID: "b", BotPersona: "ACTIVITY: posts a few times a day about their day and interests."}
+	// steady = 5/day over 288 five-minute ticks → p ≈ 0.01736 at ×1.
+	if !shouldPost(bot, 1, postTickInterval, now, 0.017) || shouldPost(bot, 1, postTickInterval, now, 0.018) {
+		t.Error("×1 threshold should sit at 5/288")
+	}
+	// ×3 → p ≈ 0.052.
+	if !shouldPost(bot, 3, postTickInterval, now, 0.05) || shouldPost(bot, 3, postTickInterval, now, 0.053) {
+		t.Error("×3 threshold should sit at 15/288")
+	}
+	if shouldPost(bot, 0, postTickInterval, now, 0) {
+		t.Error("multiplier 0 must pause posting")
 	}
 }
