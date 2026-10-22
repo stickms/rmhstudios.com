@@ -11,7 +11,7 @@
  */
 import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
-import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { viewerVisiblePostWhere } from '@/lib/feed/audience.server';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import { getCommunitySettings } from '@/lib/communities/settings.server';
 import { loadFlairsForPosts } from '@/lib/communities/flairs.server';
@@ -87,13 +87,15 @@ export async function getHallOfFame(
   const limit = Math.min(opts.limit ?? 20, 40);
   const settings = await getCommunitySettings(communityId);
   const threshold = settings?.starThreshold ?? 5;
-  const hidden = await getHiddenAuthorIds(viewerId);
+  const visible = await viewerVisiblePostWhere(viewerId);
 
   const rows = await prisma.communityStarPost.findMany({
     where: {
       communityId,
       starCount: { gte: threshold },
-      post: { deletedAt: null, ...(hidden.length ? { userId: { notIn: hidden } } : {}) },
+      // The post's own audience applies too (a FOLLOWERS/PRIVATE post that was
+      // starred is not on the wall for everyone).
+      post: visible,
     },
     orderBy: [{ starCount: 'desc' }, { postId: 'desc' }],
     take: limit + 1,

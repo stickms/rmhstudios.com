@@ -28,6 +28,7 @@ vi.mock('@/lib/prisma.server', () => ({
     communityPage: h.page,
     user: { findUnique: async () => null },
     rMHark: h.rmhark,
+    closeFriend: { findMany: async () => [] },
     $transaction: h.transaction,
   },
 }));
@@ -42,6 +43,7 @@ vi.mock('@/lib/feed/map-feed-item.server', () => ({
   rmharkIncludeLite: () => ({}),
   mapRmharksWithBoundedReactions: async () => [],
 }));
+vi.mock('@/lib/social/follow-graph.server', () => ({ getFollowingIds: async () => [] }));
 vi.mock('@/lib/moderation.server', () => ({ getHiddenAuthorIds: async () => [] }));
 vi.mock('@/lib/communities/flairs.server', () => ({
   loadFlairsForPosts: async () => new Map(),
