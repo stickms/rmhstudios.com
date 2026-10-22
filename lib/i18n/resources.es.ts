@@ -41,11 +41,13 @@ import esCProfileModules from "@/locales/es/c-profile-modules.json";
 import esCRebarRutabaga from "@/locales/es/c-rebar-rutabaga.json";
 import esCRideshare from "@/locales/es/c-rideshare.json";
 import esCRmhCapital from "@/locales/es/c-rmh-capital.json";
+import esCRmhDatacenter from "@/locales/es/c-rmh-datacenter.json";
 import esCRmhPmc from "@/locales/es/c-rmh-pmc.json";
 import esCRmhbox from "@/locales/es/c-rmhbox.json";
 import esCRmhcalculator from "@/locales/es/c-rmhcalculator.json";
 import esCRmhcode from "@/locales/es/c-rmhcode.json";
 import esCRmhcoins from "@/locales/es/c-rmhcoins.json";
+import esCRmhfashion from "@/locales/es/c-rmhfashion.json";
 import esCRmhmusic from "@/locales/es/c-rmhmusic.json";
 import esCRmhstudy from "@/locales/es/c-rmhstudy.json";
 import esCRmhtech from "@/locales/es/c-rmhtech.json";
@@ -68,6 +70,37 @@ import esCVoidBreaker from "@/locales/es/c-void-breaker.json";
 import esCWager from "@/locales/es/c-wager.json";
 import esCWishlist from "@/locales/es/c-wishlist.json";
 import esCommon from "@/locales/es/common.json";
+import esErrors from "@/locales/es/errors.json";
+import esFAccess from "@/locales/es/f-access.json";
+import esFAction from "@/locales/es/f-action.json";
+import esFArcade from "@/locales/es/f-arcade.json";
+import esFAsyncGames from "@/locales/es/f-async-games.json";
+import esFCalendar from "@/locales/es/f-calendar.json";
+import esFCanvas from "@/locales/es/f-canvas.json";
+import esFCommunitiesPlus from "@/locales/es/f-communities-plus.json";
+import esFCompetitive from "@/locales/es/f-competitive.json";
+import esFCreative from "@/locales/es/f-creative.json";
+import esFDeepseek from "@/locales/es/f-deepseek.json";
+import esFDelight from "@/locales/es/f-delight.json";
+import esFDevplatform from "@/locales/es/f-devplatform.json";
+import esFDiscovery from "@/locales/es/f-discovery.json";
+import esFEconomyPlus from "@/locales/es/f-economy-plus.json";
+import esFFeedPlus from "@/locales/es/f-feed-plus.json";
+import esFForecasting from "@/locales/es/f-forecasting.json";
+import esFGifting from "@/locales/es/f-gifting.json";
+import esFLadderHomes from "@/locales/es/f-ladder-homes.json";
+import esFMessaging from "@/locales/es/f-messaging.json";
+import esFOncall from "@/locales/es/f-oncall.json";
+import esFOps from "@/locales/es/f-ops.json";
+import esFParty from "@/locales/es/f-party.json";
+import esFPerf from "@/locales/es/f-perf.json";
+import esFPostsPlus from "@/locales/es/f-posts-plus.json";
+import esFProfilePlus from "@/locales/es/f-profile-plus.json";
+import esFReading from "@/locales/es/f-reading.json";
+import esFSafety from "@/locales/es/f-safety.json";
+import esFTools from "@/locales/es/f-tools.json";
+import esFWatch from "@/locales/es/f-watch.json";
+import esFWorlds from "@/locales/es/f-worlds.json";
 import esFeed from "@/locales/es/feed.json";
 import esGamesHub from "@/locales/es/games-hub.json";
 import esGroups from "@/locales/es/groups.json";
@@ -138,11 +171,13 @@ const esResources = {
   "c-rebar-rutabaga": esCRebarRutabaga,
   "c-rideshare": esCRideshare,
   "c-rmh-capital": esCRmhCapital,
+  "c-rmh-datacenter": esCRmhDatacenter,
   "c-rmh-pmc": esCRmhPmc,
   "c-rmhbox": esCRmhbox,
   "c-rmhcalculator": esCRmhcalculator,
   "c-rmhcode": esCRmhcode,
   "c-rmhcoins": esCRmhcoins,
+  "c-rmhfashion": esCRmhfashion,
   "c-rmhmusic": esCRmhmusic,
   "c-rmhstudy": esCRmhstudy,
   "c-rmhtech": esCRmhtech,
@@ -165,6 +200,37 @@ const esResources = {
   "c-wager": esCWager,
   "c-wishlist": esCWishlist,
   "common": esCommon,
+  "errors": esErrors,
+  "f-access": esFAccess,
+  "f-action": esFAction,
+  "f-arcade": esFArcade,
+  "f-async-games": esFAsyncGames,
+  "f-calendar": esFCalendar,
+  "f-canvas": esFCanvas,
+  "f-communities-plus": esFCommunitiesPlus,
+  "f-competitive": esFCompetitive,
+  "f-creative": esFCreative,
+  "f-deepseek": esFDeepseek,
+  "f-delight": esFDelight,
+  "f-devplatform": esFDevplatform,
+  "f-discovery": esFDiscovery,
+  "f-economy-plus": esFEconomyPlus,
+  "f-feed-plus": esFFeedPlus,
+  "f-forecasting": esFForecasting,
+  "f-gifting": esFGifting,
+  "f-ladder-homes": esFLadderHomes,
+  "f-messaging": esFMessaging,
+  "f-oncall": esFOncall,
+  "f-ops": esFOps,
+  "f-party": esFParty,
+  "f-perf": esFPerf,
+  "f-posts-plus": esFPostsPlus,
+  "f-profile-plus": esFProfilePlus,
+  "f-reading": esFReading,
+  "f-safety": esFSafety,
+  "f-tools": esFTools,
+  "f-watch": esFWatch,
+  "f-worlds": esFWorlds,
   "feed": esFeed,
   "games-hub": esGamesHub,
   "groups": esGroups,

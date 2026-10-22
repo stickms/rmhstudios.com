@@ -75,6 +75,7 @@
   "version-history": "Sürüm Geçmişi",
   "view-demo": "Demoyu görüntüle",
   "view-source": "Kaynağı Görüntüle",
+  "view-source-build-card": "Kaynağı görüntüle",
   "views-count_one": "{{count}} görüntülenme",
   "views-count_other": "{{count}} görüntülenme",
   "write-comment": "Bir yorum yazın...",

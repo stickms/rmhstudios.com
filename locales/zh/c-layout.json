@@ -5,6 +5,7 @@
   "edit-layout-desc": "Reorder, add, or remove the widgets on your home page.",
   "expand-widget": "Expand {{name}}",
   "for-you": "For you",
+  "hide": "Hide {{name}}",
   "home-widgets": "Home widgets",
   "home-widgets-desc": "Choose which widgets appear on your home page and in what order.",
   "layout": "Layout",
@@ -15,5 +16,7 @@
   "reset": "Reset to default",
   "sidebar": "Sidebar",
   "sidebar-desc": "Drag the tabs into the order you want, or hide the ones you don’t use. Hidden tabs stay reachable from search and their link.",
+  "sidebar-reorder-hint": "Drag to reorder. Hide a tab with the eye — hidden tabs stay in search.",
+  "unhide": "Show {{name}}",
   "your-widgets": "Your widgets"
 }

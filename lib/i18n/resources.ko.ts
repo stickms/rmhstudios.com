@@ -41,11 +41,13 @@ import koCProfileModules from "@/locales/ko/c-profile-modules.json";
 import koCRebarRutabaga from "@/locales/ko/c-rebar-rutabaga.json";
 import koCRideshare from "@/locales/ko/c-rideshare.json";
 import koCRmhCapital from "@/locales/ko/c-rmh-capital.json";
+import koCRmhDatacenter from "@/locales/ko/c-rmh-datacenter.json";
 import koCRmhPmc from "@/locales/ko/c-rmh-pmc.json";
 import koCRmhbox from "@/locales/ko/c-rmhbox.json";
 import koCRmhcalculator from "@/locales/ko/c-rmhcalculator.json";
 import koCRmhcode from "@/locales/ko/c-rmhcode.json";
 import koCRmhcoins from "@/locales/ko/c-rmhcoins.json";
+import koCRmhfashion from "@/locales/ko/c-rmhfashion.json";
 import koCRmhmusic from "@/locales/ko/c-rmhmusic.json";
 import koCRmhstudy from "@/locales/ko/c-rmhstudy.json";
 import koCRmhtech from "@/locales/ko/c-rmhtech.json";
@@ -68,6 +70,37 @@ import koCVoidBreaker from "@/locales/ko/c-void-breaker.json";
 import koCWager from "@/locales/ko/c-wager.json";
 import koCWishlist from "@/locales/ko/c-wishlist.json";
 import koCommon from "@/locales/ko/common.json";
+import koErrors from "@/locales/ko/errors.json";
+import koFAccess from "@/locales/ko/f-access.json";
+import koFAction from "@/locales/ko/f-action.json";
+import koFArcade from "@/locales/ko/f-arcade.json";
+import koFAsyncGames from "@/locales/ko/f-async-games.json";
+import koFCalendar from "@/locales/ko/f-calendar.json";
+import koFCanvas from "@/locales/ko/f-canvas.json";
+import koFCommunitiesPlus from "@/locales/ko/f-communities-plus.json";
+import koFCompetitive from "@/locales/ko/f-competitive.json";
+import koFCreative from "@/locales/ko/f-creative.json";
+import koFDeepseek from "@/locales/ko/f-deepseek.json";
+import koFDelight from "@/locales/ko/f-delight.json";
+import koFDevplatform from "@/locales/ko/f-devplatform.json";
+import koFDiscovery from "@/locales/ko/f-discovery.json";
+import koFEconomyPlus from "@/locales/ko/f-economy-plus.json";
+import koFFeedPlus from "@/locales/ko/f-feed-plus.json";
+import koFForecasting from "@/locales/ko/f-forecasting.json";
+import koFGifting from "@/locales/ko/f-gifting.json";
+import koFLadderHomes from "@/locales/ko/f-ladder-homes.json";
+import koFMessaging from "@/locales/ko/f-messaging.json";
+import koFOncall from "@/locales/ko/f-oncall.json";
+import koFOps from "@/locales/ko/f-ops.json";
+import koFParty from "@/locales/ko/f-party.json";
+import koFPerf from "@/locales/ko/f-perf.json";
+import koFPostsPlus from "@/locales/ko/f-posts-plus.json";
+import koFProfilePlus from "@/locales/ko/f-profile-plus.json";
+import koFReading from "@/locales/ko/f-reading.json";
+import koFSafety from "@/locales/ko/f-safety.json";
+import koFTools from "@/locales/ko/f-tools.json";
+import koFWatch from "@/locales/ko/f-watch.json";
+import koFWorlds from "@/locales/ko/f-worlds.json";
 import koFeed from "@/locales/ko/feed.json";
 import koGamesHub from "@/locales/ko/games-hub.json";
 import koGroups from "@/locales/ko/groups.json";
@@ -138,11 +171,13 @@ const koResources = {
   "c-rebar-rutabaga": koCRebarRutabaga,
   "c-rideshare": koCRideshare,
   "c-rmh-capital": koCRmhCapital,
+  "c-rmh-datacenter": koCRmhDatacenter,
   "c-rmh-pmc": koCRmhPmc,
   "c-rmhbox": koCRmhbox,
   "c-rmhcalculator": koCRmhcalculator,
   "c-rmhcode": koCRmhcode,
   "c-rmhcoins": koCRmhcoins,
+  "c-rmhfashion": koCRmhfashion,
   "c-rmhmusic": koCRmhmusic,
   "c-rmhstudy": koCRmhstudy,
   "c-rmhtech": koCRmhtech,
@@ -165,6 +200,37 @@ const koResources = {
   "c-wager": koCWager,
   "c-wishlist": koCWishlist,
   "common": koCommon,
+  "errors": koErrors,
+  "f-access": koFAccess,
+  "f-action": koFAction,
+  "f-arcade": koFArcade,
+  "f-async-games": koFAsyncGames,
+  "f-calendar": koFCalendar,
+  "f-canvas": koFCanvas,
+  "f-communities-plus": koFCommunitiesPlus,
+  "f-competitive": koFCompetitive,
+  "f-creative": koFCreative,
+  "f-deepseek": koFDeepseek,
+  "f-delight": koFDelight,
+  "f-devplatform": koFDevplatform,
+  "f-discovery": koFDiscovery,
+  "f-economy-plus": koFEconomyPlus,
+  "f-feed-plus": koFFeedPlus,
+  "f-forecasting": koFForecasting,
+  "f-gifting": koFGifting,
+  "f-ladder-homes": koFLadderHomes,
+  "f-messaging": koFMessaging,
+  "f-oncall": koFOncall,
+  "f-ops": koFOps,
+  "f-party": koFParty,
+  "f-perf": koFPerf,
+  "f-posts-plus": koFPostsPlus,
+  "f-profile-plus": koFProfilePlus,
+  "f-reading": koFReading,
+  "f-safety": koFSafety,
+  "f-tools": koFTools,
+  "f-watch": koFWatch,
+  "f-worlds": koFWorlds,
   "feed": koFeed,
   "games-hub": koGamesHub,
   "groups": koGroups,
