@@ -35,6 +35,7 @@ go_test(
         "persist_test.go",
         "probe_test.go",
         "render_test.go",
+        "reuse_test.go",
     ],
     embed = [":status"],
 )
