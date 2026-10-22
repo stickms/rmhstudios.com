@@ -1,5 +1,7 @@
 # WS2 — Feed, social graph, notifications, messages — results
 
+> Point-in-time ledger as of `c4c8d6091` (#925). Figures are from the seeded perf dataset or in-process runs, not production; SHAs and branch names refer to that program's worktrees.
+
 Stage A only (WS0_READY never appeared). Seeded scratch DB (3k users, 60k posts, heavy user following 2,000), commit e97b5192 + merge of upstream 796295bd. Environment deviations: no WS0 harness; tsc native only completes with `GOMAXPROCS=2 GOMEMLIMIT=3GiB ... --singleThreaded` (default run is OOM-killed, exit 137, on this box).
 
 ## Shipped

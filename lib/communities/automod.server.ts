@@ -13,7 +13,7 @@ import { prisma } from '@/lib/prisma.server';
 import { apiCache } from '@/lib/cache';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { createComment } from '@/lib/social/engagement.server';
-import { linkPostHashtags, unlinkPostHashtags } from '@/lib/tags-extract.server';
+import { linkPostHashtagsIfPublic, unlinkPostHashtags } from '@/lib/tags-extract.server';
 import {
   AUTOMOD_MAX_RULES,
   automodConditionsSchema,
@@ -240,7 +240,15 @@ async function resolvePost(
 ): Promise<void> {
   const post = await prisma.rMHark.findUnique({
     where: { id: postId },
-    select: { id: true, userId: true, content: true, deletedAt: true, deletedBy: true },
+    select: {
+      id: true,
+      userId: true,
+      content: true,
+      audience: true,
+      communityId: true,
+      deletedAt: true,
+      deletedBy: true,
+    },
   });
   if (!post) return; // already purged — nothing to do
   if (action === 'hold') {
@@ -250,7 +258,7 @@ async function resolvePost(
           where: { id: postId },
           data: { deletedAt: null, deletedBy: null },
         });
-        await linkPostHashtags(tx, postId, post.content);
+        await linkPostHashtagsIfPublic(tx, { ...post, id: postId });
         await tx.user.update({ where: { id: post.userId }, data: { postCount: { increment: 1 } } });
         await tx.community.update({
           where: { id: communityId },

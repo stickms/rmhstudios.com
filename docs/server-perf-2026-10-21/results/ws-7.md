@@ -1,5 +1,7 @@
 # WS7 — Go services — results
 
+> Point-in-time ledger as of `c4c8d6091` (#925). Figures are from the seeded perf dataset or in-process runs, not production; SHAs and branch names refer to that program's worktrees.
+
 Worktree baseline taken 2026-10-21, commit `796295bd` (integration branch with the
 status rewrite and the bot-worker settings merged); `rmh_ws7` is a clone of
 `rmh_perf_template` (20k users, 200k posts, 500k notifications, 150k comments).

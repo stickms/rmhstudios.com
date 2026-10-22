@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { canViewPost } from '@/lib/feed/audience.server';
+import { isPostLockedFor } from '@/lib/feed/map-feed-item.server';
 import { buildVersions } from '@/lib/feed/word-diff';
 
 /**
@@ -39,6 +40,7 @@ export const Route = createFileRoute('/api/rmharks/$id/history')({
               createdAt: true,
               editedAt: true,
               deletedAt: true,
+              expiresAt: true,
             },
           });
 
@@ -46,9 +48,20 @@ export const Route = createFileRoute('/api/rmharks/$id/history')({
             return Response.json({ error: 'Not found' }, { status: 404 });
           }
           if (!(await canViewPost(
-              { userId: post.userId, audience: post.audience, communityId: post.communityId },
+              {
+                userId: post.userId,
+                audience: post.audience,
+                communityId: post.communityId,
+                deletedAt: post.deletedAt,
+                expiresAt: post.expiresAt,
+              },
               userId,
             ))) {
+            return Response.json({ error: 'Not found' }, { status: 404 });
+          }
+
+          // Every version of a priced post is paid content, not just the current one.
+          if (await isPostLockedFor(post.id, userId)) {
             return Response.json({ error: 'Not found' }, { status: 404 });
           }
 

@@ -167,3 +167,38 @@ describe('safeFetch — redirect re-validation', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('safeFetch — bodyTimeoutMs', () => {
+  // A server that sends headers and then drips: the per-request timeout stops
+  // applying once headers arrive, so only bodyTimeoutMs can end the read. Like
+  // undici, the mock errors the body when the fetch signal aborts.
+  const dripping = (signal: AbortSignal) =>
+    new ReadableStream<Uint8Array>({
+      start(controller) {
+        signal.addEventListener('abort', () => controller.error(new Error('aborted')), {
+          once: true,
+        });
+      },
+    });
+
+  it('aborts a body that never completes', async () => {
+    lookupMock.mockResolvedValue([{ address: '93.184.216.34', family: 4 }]);
+    fetchMock.mockImplementation(async (_u: string, init: { signal: AbortSignal }) =>
+      res({ status: 200, body: dripping(init.signal) }),
+    );
+    const out = await safeFetch('https://ok.example/', { timeoutMs: 5000, bodyTimeoutMs: 50 });
+    await expect(out.arrayBuffer()).rejects.toThrow();
+  });
+
+  it('without bodyTimeoutMs the body is not cut off', async () => {
+    lookupMock.mockResolvedValue([{ address: '93.184.216.34', family: 4 }]);
+    let aborted = false;
+    fetchMock.mockImplementation(async (_u: string, init: { signal: AbortSignal }) => {
+      init.signal.addEventListener('abort', () => (aborted = true));
+      return res({ status: 200, body: dripping(init.signal) });
+    });
+    await safeFetch('https://ok.example/', { timeoutMs: 5000 });
+    await new Promise((r) => setTimeout(r, 120));
+    expect(aborted).toBe(false);
+  });
+});

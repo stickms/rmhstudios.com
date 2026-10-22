@@ -18,7 +18,9 @@ export const Route = createFileRoute('/api/tournaments/')({
       GET: defineHandler(
         {
           auth: 'none',
-          // Opt out of the 30 s micro-cache: creating/registering must show in the list.
+          // Opt out of the in-process micro-cache so the ORIGIN is never stale after a
+          // create/register; the liveList HTTP window (15 s browser, 30 s shared) still
+          // applies, which is the staleness this display-only list accepts.
           microCache: false,
           cache: CACHE_POLICY.liveList,
         },

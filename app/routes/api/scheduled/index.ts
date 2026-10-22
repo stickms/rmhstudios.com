@@ -15,6 +15,10 @@ import { ownsFeedImageUrl } from '@/lib/storage/keys';
 import { listScheduled } from '@/lib/scheduled/list.server';
 import { altTextViolation } from '@/lib/feed/alt-text.server';
 import { capsuleDateError } from '@/lib/posts-plus/constants';
+import {
+  checkScheduledCommunityPost,
+  logScheduledRemoval,
+} from '@/lib/scheduled/community-gate.server';
 
 const pollSchema = z.object({
   question: z.string().min(1).max(MAX_POLL_QUESTION_LENGTH),
@@ -101,6 +105,31 @@ export const Route = createFileRoute('/api/scheduled/')({
             }
             const capsuleError = capsuleDateError(scheduledAt);
             if (capsuleError) return Response.json({ error: capsuleError }, { status: 400 });
+          }
+
+          // Same membership + community gate (verification, AutoMod, flair) the
+          // direct post path applies; it runs again when the post is published.
+          if (d.communityId) {
+            const verdict = await checkScheduledCommunityPost({
+              userId,
+              communityId: d.communityId,
+              content: d.content,
+              gifUrl: d.gifUrl,
+              imageUrls: d.imageUrls,
+              hasPoll: !!d.poll,
+            });
+            if (!verdict.ok) {
+              if (verdict.removedBy) {
+                await logScheduledRemoval(
+                  { userId, communityId: d.communityId, content: d.content },
+                  verdict.removedBy,
+                ).catch(() => {});
+              }
+              return Response.json(
+                { error: verdict.error, code: verdict.code },
+                { status: verdict.status },
+              );
+            }
           }
 
           const pending = await prisma.scheduledPost.count({

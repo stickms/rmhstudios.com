@@ -2,7 +2,7 @@
  * Private-community invite links and join requests: the privacy/auth contract.
  *
  * Prisma is stood in for here; the atomicity of `acceptInvite` under real
- * concurrency is covered by `invites-concurrency.test.ts` (opt-in, needs a DB).
+ * concurrency is covered by `testing/integration/communities-invites.test.ts` (real Postgres, in CI).
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -19,6 +19,7 @@ const h = vi.hoisted(() => ({
     deleteMany: vi.fn(),
   },
   executeRaw: vi.fn(),
+  queryRaw: vi.fn(),
   notify: vi.fn(),
 }));
 
@@ -30,6 +31,7 @@ vi.mock('@/lib/prisma.server', () => {
     community: h.community,
     communityJoinRequest: h.request,
     $executeRaw: h.executeRaw,
+    $queryRaw: h.queryRaw,
   });
   return {
     prisma: {
@@ -51,12 +53,16 @@ import {
   acceptInvite,
   createInvite,
   generateInviteCode,
+  isInviteUsable,
+  listInvites,
+  revokeInvite,
 } from '@/lib/communities/invites.server';
 import {
   CANCELLED_COOLDOWN_MS,
   DENIED_COOLDOWN_MS,
   cancelRequest,
   decideRequest,
+  listPendingRequests,
   markRemoved,
   requestToJoin,
 } from '@/lib/communities/join-requests.server';
@@ -68,6 +74,7 @@ beforeEach(() => {
     for (const fn of Object.values(group)) (fn as ReturnType<typeof vi.fn>).mockReset();
   }
   h.executeRaw.mockReset();
+  h.queryRaw.mockReset().mockResolvedValue([]);
   h.notify.mockReset().mockResolvedValue(undefined);
   h.member.findUnique.mockResolvedValue(null);
 });
@@ -84,7 +91,52 @@ describe('invite codes', () => {
     expect(await createInvite('c1', 'u1', {})).toEqual({ ok: false, reason: 'limit' });
     expect(h.invite.create).not.toHaveBeenCalled();
   });
+
+  it('the cap counts only live links: revoked and expired ones do not use a slot', async () => {
+    h.invite.count.mockResolvedValue(0);
+    h.invite.create.mockResolvedValue(INVITE_ROW);
+    await createInvite('c1', 'u1', {});
+    expect(h.invite.count.mock.calls[0][0].where).toMatchObject({
+      communityId: 'c1',
+      revokedAt: null,
+      OR: [{ expiresAt: null }, { expiresAt: { gt: expect.any(Date) } }],
+    });
+  });
+
+  it('the cap check and the insert run under the community row lock (no check-then-insert race)', async () => {
+    h.invite.count.mockResolvedValue(INVITE_LIMITS.activePerCommunity - 1);
+    h.invite.create.mockResolvedValue(INVITE_ROW);
+    const order: string[] = [];
+    h.queryRaw.mockImplementation(async () => void order.push('lock'));
+    h.invite.count.mockImplementation(async () => {
+      order.push('count');
+      return INVITE_LIMITS.activePerCommunity - 1;
+    });
+    h.invite.create.mockImplementation(async () => {
+      order.push('create');
+      return INVITE_ROW;
+    });
+    expect((await createInvite('c1', 'u1', { maxUses: 3, expiresInDays: 7 })).ok).toBe(true);
+    expect(order).toEqual(['lock', 'count', 'create']);
+    const sql = (h.queryRaw.mock.calls[0][0] as string[]).join('?');
+    expect(sql).toContain('FROM "community"');
+    expect(sql).toContain('FOR UPDATE');
+    expect(h.queryRaw.mock.calls[0][1]).toBe('c1');
+    const data = h.invite.create.mock.calls[0][0].data;
+    expect(data).toMatchObject({ communityId: 'c1', createdById: 'u1', maxUses: 3 });
+    expect(data.expiresAt).toBeInstanceOf(Date);
+  });
 });
+
+const INVITE_ROW = {
+  id: 1n,
+  code: 'x'.repeat(32),
+  maxUses: null,
+  uses: 0,
+  expiresAt: null,
+  createdAt: new Date(),
+  createdBy: { id: 'u1', name: null, handle: null },
+};
 
 describe('acceptInvite', () => {
   it('consumes the code with ONE conditional UPDATE that checks revoked, expiry and uses', async () => {
@@ -101,7 +153,17 @@ describe('acceptInvite', () => {
     expect(sql).toContain('"expiresAt" > now()');
     expect(sql).toContain('"uses" < "maxUses"');
     // the code and the community are both bound parameters
-    expect(h.executeRaw.mock.calls[0].slice(1)).toEqual(['CODE', 'c1']);
+    // The removal check is part of the SAME statement (no separate read to race).
+    expect(sql).toContain('NOT EXISTS');
+    expect(sql).toContain('"community_join_request"');
+    expect(sql).toContain(`"status" = 'REMOVED'`);
+    expect(h.executeRaw.mock.calls[0].slice(1)).toEqual(['CODE', 'c1', 'c1', 'u1']);
+    expect(h.request.findFirst).not.toHaveBeenCalled();
+    // A pending request is answered by being let in.
+    expect(h.request.updateMany).toHaveBeenCalledWith({
+      where: { communityId: 'c1', userId: 'u1', status: 'PENDING' },
+      data: { status: 'APPROVED', decidedAt: expect.any(Date) },
+    });
     expect(h.community.update).toHaveBeenCalledWith({
       where: { id: 'c1' },
       data: { memberCount: { increment: 1 } },
@@ -193,12 +255,12 @@ describe('join requests', () => {
 });
 
 describe('removal and cancellation are remembered', () => {
-  it('a removed member holding a live invite is refused (generic invalid), nothing consumed', async () => {
-    h.request.findFirst.mockResolvedValue({ id: 1n }); // a REMOVED row
+  it('a removed member holding a live invite is refused (generic invalid): the UPDATE matches nothing', async () => {
+    h.executeRaw.mockResolvedValue(0); // NOT EXISTS (REMOVED row) is false -> no row consumed
     expect(await acceptInvite('c1', 'u1', 'LIVE-MULTI-USE-CODE')).toEqual({ ok: false, reason: 'invalid' });
-    expect(h.request.findFirst.mock.calls[0][0].where).toMatchObject({ status: 'REMOVED', userId: 'u1' });
-    expect(h.executeRaw).not.toHaveBeenCalled();
+    expect(h.executeRaw.mock.calls[0].slice(1)).toEqual(['LIVE-MULTI-USE-CODE', 'c1', 'c1', 'u1']);
     expect(h.member.createMany).not.toHaveBeenCalled();
+    expect(h.community.update).not.toHaveBeenCalled();
   });
 
   it('markRemoved upserts a REMOVED row carrying the deciding moderator', async () => {
@@ -388,5 +450,88 @@ describe('join route', () => {
     expect(await res.json()).toMatchObject({ joined: true });
     expect(h.executeRaw).not.toHaveBeenCalled();
     expect(h.community.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('invite lifecycle', () => {
+  it('revokeInvite revokes a live link once; a second call or another community changes nothing', async () => {
+    h.invite.updateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
+    expect(await revokeInvite('c1', 5n)).toBe(true);
+    expect(await revokeInvite('c1', 5n)).toBe(false);
+    expect(h.invite.updateMany.mock.calls[0][0]).toMatchObject({
+      where: { id: 5n, communityId: 'c1', revokedAt: null },
+      data: { revokedAt: expect.any(Date) },
+    });
+  });
+
+  it('isInviteUsable: active, expired, exhausted, revoked/unknown', async () => {
+    h.invite.findFirst.mockResolvedValue({ maxUses: null, uses: 9 });
+    expect(await isInviteUsable('c1', 'CODE')).toBe(true);
+    h.invite.findFirst.mockResolvedValue({ maxUses: 3, uses: 2 });
+    expect(await isInviteUsable('c1', 'CODE')).toBe(true);
+    h.invite.findFirst.mockResolvedValue({ maxUses: 3, uses: 3 }); // exhausted
+    expect(await isInviteUsable('c1', 'CODE')).toBe(false);
+    h.invite.findFirst.mockResolvedValue(null); // revoked / expired / unknown / other community
+    expect(await isInviteUsable('c1', 'CODE')).toBe(false);
+    // revoked and expired are excluded in the query itself
+    expect(h.invite.findFirst.mock.calls[0][0].where).toMatchObject({
+      code: 'CODE',
+      communityId: 'c1',
+      revokedAt: null,
+      OR: [{ expiresAt: null }, { expiresAt: { gt: expect.any(Date) } }],
+    });
+  });
+
+  it('listInvites labels active / expired / exhausted and hides revoked links', async () => {
+    const past = new Date(Date.now() - 1000);
+    const future = new Date(Date.now() + 3600_000);
+    h.invite.findMany.mockResolvedValue([
+      { ...INVITE_ROW, id: 3n },
+      { ...INVITE_ROW, id: 2n, expiresAt: past },
+      { ...INVITE_ROW, id: 1n, expiresAt: future, maxUses: 2, uses: 2 },
+    ]);
+    const out = await listInvites('c1');
+    expect(out.map((i) => [i.id, i.state])).toEqual([
+      ['3', 'active'],
+      ['2', 'expired'],
+      ['1', 'exhausted'],
+    ]);
+    expect(h.invite.findMany.mock.calls[0][0].where).toEqual({ communityId: 'c1', revokedAt: null });
+  });
+});
+
+describe('join-request state machine, more', () => {
+  it('a REMOVED row with no decidedAt carries no cooldown (nothing to compute it from)', async () => {
+    h.request.findUnique.mockResolvedValue({ status: 'REMOVED', decidedAt: null });
+    h.member.findMany.mockResolvedValue([]);
+    expect(await requestToJoin(COMMUNITY, 'u', 'U', null)).toEqual({ ok: true, status: 'PENDING' });
+    expect(h.request.upsert).toHaveBeenCalledTimes(1);
+  });
+
+  it('approving a requester who is already a member does not count them twice', async () => {
+    h.request.findFirst.mockResolvedValue({ userId: 'req' });
+    h.request.updateMany.mockResolvedValue({ count: 1 });
+    h.member.createMany.mockResolvedValue({ count: 0 }); // skipDuplicates: already in
+    expect(await decideRequest(COMMUNITY, 7n, 'mod', 'approve')).toEqual({ ok: true, decision: 'approve' });
+    expect(h.community.update).not.toHaveBeenCalled();
+  });
+
+  it('listPendingRequests: pending only, oldest first, bounded, ids as strings', async () => {
+    h.request.findMany.mockResolvedValue([
+      {
+        id: 12n,
+        message: 'hi',
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+        user: { id: 'u', name: 'U', handle: 'u', image: null },
+      },
+    ]);
+    const out = await listPendingRequests('c1');
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({ id: '12', message: 'hi', createdAt: '2026-01-01T00:00:00.000Z' });
+    expect(h.request.findMany.mock.calls[0][0]).toMatchObject({
+      where: { communityId: 'c1', status: 'PENDING' },
+      orderBy: { id: 'asc' },
+      take: 100,
+    });
   });
 });

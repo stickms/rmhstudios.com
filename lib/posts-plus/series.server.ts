@@ -19,6 +19,7 @@ import {
   type ResolvedUser,
 } from '@/lib/user-display';
 import { mapRmharksWithBoundedReactions, rmharkIncludeLite } from '@/lib/feed/map-feed-item.server';
+import { viewerVisiblePostWhere } from '@/lib/feed/audience.server';
 import type { FeedItem } from '@/lib/feed-types';
 import { DAY_MS, MAX_SERIES_PER_USER, MAX_SERIES_POSTS, type SeriesNav } from './constants';
 
@@ -31,11 +32,20 @@ const NOTIFY_CAP = 500;
 /** Adding an old post to a series is housekeeping, not a "new part". */
 const NEW_PART_WINDOW_MS = 7 * DAY_MS;
 
-function liveItemWhere(now: Date) {
+/**
+ * Live (not deleted, not expired) AND readable by `viewerId`. The series page and
+ * the "Part k of N" nav are public reads, so a part the viewer could not open
+ * directly (private community, FOLLOWERS/CIRCLE/PRIVATE audience the viewer is
+ * outside, blocked author) must not show up here either - nor leak its id/handle
+ * as a neighbour.
+ */
+async function liveItemWhere(now: Date, viewerId: string | null) {
   return {
     post: {
-      deletedAt: null,
-      OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+      AND: [
+        { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
+        await viewerVisiblePostWhere(viewerId),
+      ],
     },
   };
 }
@@ -161,11 +171,13 @@ async function addPostError(
     audience: string;
     deletedAt: Date | null;
     seriesId: string | null;
+    communityId?: string | null;
   } | null,
   seriesId: string,
 ): Promise<string | null> {
   if (!post || post.userId !== userId || post.deletedAt) return 'Post not found';
   if (post.audience !== 'PUBLIC') return 'Only public posts can be part of a series';
+  if (post.communityId) return 'Community posts cannot be part of a series';
   if (post.seriesId && post.seriesId !== seriesId) return 'That post is already in another series';
   return null;
 }
@@ -178,7 +190,11 @@ export async function seriesComposeError(
   userId: string,
   seriesId: string,
   audience: string | undefined,
+  communityId?: string | null,
 ): Promise<string | null> {
+  // Same rule as addPostError: a series page is public, a community post is not
+  // (a private community's posts are members-only).
+  if (communityId) return 'Community posts cannot be part of a series';
   const series = await prisma.postSeries.findFirst({
     where: { id: seriesId, userId },
     select: { postCount: true },
@@ -218,7 +234,14 @@ export async function addPost(
     }),
     prisma.rMHark.findUnique({
       where: { id: postId },
-      select: { userId: true, audience: true, deletedAt: true, seriesId: true, createdAt: true },
+      select: {
+        userId: true,
+        audience: true,
+        deletedAt: true,
+        seriesId: true,
+        communityId: true,
+        createdAt: true,
+      },
     }),
   ]);
   if (!series) return { ok: false, status: 404, error: 'Series not found' };
@@ -393,12 +416,14 @@ export async function notifySeriesFollowers(
 
 type LiveItem = { postId: string; position: number; handle: string | null };
 
-async function liveItems(seriesId: string): Promise<LiveItem[]> {
-  const key = `series:nav:${seriesId}`;
+async function liveItems(seriesId: string, viewerId: string | null): Promise<LiveItem[]> {
+  // Per-viewer key: the visible set differs by viewer. `bustNav` clears by the
+  // `series:nav:<id>` prefix, so every viewer's entry still goes together.
+  const key = `series:nav:${seriesId}:${viewerId ?? 'anon'}`;
   const cached = apiCache.get<LiveItem[]>(key);
   if (cached) return cached;
   const rows = await prisma.postSeriesItem.findMany({
-    where: { seriesId, ...liveItemWhere(new Date()) },
+    where: { seriesId, ...(await liveItemWhere(new Date(), viewerId)) },
     orderBy: { position: 'asc' },
     take: MAX_SERIES_POSTS,
     select: {
@@ -429,7 +454,7 @@ export async function navForPost(
     },
   });
   if (!item) return null;
-  const items = await liveItems(item.seriesId);
+  const items = await liveItems(item.seriesId, viewerId);
   const index = items.findIndex((i) => i.postId === postId);
   if (index === -1) return null;
   const following = viewerId
@@ -478,7 +503,7 @@ export async function getSeriesView(
   });
   if (!series) return null;
   const rows = await prisma.postSeriesItem.findMany({
-    where: { seriesId, ...liveItemWhere(new Date()) },
+    where: { seriesId, ...(await liveItemWhere(new Date(), viewerId)) },
     orderBy: { position: 'asc' },
     take: MAX_SERIES_POSTS,
     select: { post: { include: rmharkIncludeLite(viewerId) } },

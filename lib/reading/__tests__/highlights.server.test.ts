@@ -103,7 +103,10 @@ vi.mock('@/lib/prisma.server', () => {
   };
   return { prisma };
 });
-vi.mock('@/lib/moderation.server', () => ({ getHiddenAuthorIds: async () => [] }));
+vi.mock('@/lib/moderation.server', () => ({
+  getHiddenAuthorIds: async () => [],
+  getHiddenAuthorIdsStrict: async () => [],
+}));
 vi.mock('@/lib/library/library.server', () => ({ getBook: async () => undefined }));
 vi.mock('../glossary.server', () => ({ listGlossary: async () => [] }));
 

@@ -6,6 +6,8 @@ import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 
 /** Newest follow edges read per direction for the empty-query default suggestions. */
 const DEFAULT_SUGGESTION_EDGES = 50;
+/** Newest follow edges per direction the typed-query candidate search considers. */
+const MENTION_EDGE_CAP = 2000;
 
 export async function searchMentionUsers(q: string, viewerId: string | undefined) {
   // perf: ranking only needs the viewer's relation to the <=50 candidates, so it is read for exactly those ids
@@ -17,25 +19,39 @@ export async function searchMentionUsers(q: string, viewerId: string | undefined
     // *_norm_trgm_idx GIN indexes serve the substring predicate.
     const needle = `%${normalizeQuery(q).replace(/[\\%_]/g, '\\$&')}%`;
     const viewerClause = viewerId ? Prisma.sql`AND "id" <> ${viewerId}` : Prisma.empty;
-    // The LIMIT must keep the best candidates, not an arbitrary 50: order by the same signals the ranker
-    // below uses (exact handle, then mutual > following > follower), with handle/id as a total-order tie-break.
-    const viewerFollowScore = viewerId
-      ? Prisma.sql`(
-          (CASE WHEN EXISTS (SELECT 1 FROM "follow" f WHERE f."followerId" = ${viewerId} AND f."followingId" = "user"."id") THEN 2 ELSE 0 END)
-          + (CASE WHEN EXISTS (SELECT 1 FROM "follow" f WHERE f."followingId" = ${viewerId} AND f."followerId" = "user"."id") THEN 1 ELSE 0 END)
-        ) DESC,`
-      : Prisma.empty;
-    const rows = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
-      SELECT "id" FROM "user"
-      WHERE "handle" IS NOT NULL ${viewerClause}
+    // The LIMIT must keep the best candidates, not an arbitrary 50. The old query ORDERed BY two correlated EXISTS
+    // per matching row before LIMIT, which for a 1-3 char needle (matches nearly everyone) ran ~40k probes (86 ms
+    // vs 40 ms here at 20k users, and growing with the table). Instead: the best 50 by the cheap keys (exact
+    // handle, then handle/id), UNION the best 50 of the viewer's own follow edges that match (mutual > following >
+    // follower). The edges are read once per direction, newest MENTION_EDGE_CAP each, never per matching row. The
+    // ranker below re-sorts the union with the same signals, so the final 15 are unchanged.
+    const match = Prisma.sql`"handle" IS NOT NULL ${viewerClause}
         AND (${norm(Prisma.raw('"handle"'))} LIKE ${needle}
           OR ${norm(Prisma.raw('"username"'))} LIKE ${needle}
-          OR ${norm(Prisma.raw('"name"'))} LIKE ${needle})
-      ORDER BY
-        (lower("handle") = ${q.toLowerCase()}) DESC,
-        ${viewerFollowScore}
-        "handle" ASC, "id" ASC
-      LIMIT 50`);
+          OR ${norm(Prisma.raw('"name"'))} LIKE ${needle})`;
+    const exactKey = q.toLowerCase();
+    const related = viewerId
+      ? Prisma.sql`, rel AS (
+          SELECT m."id" FROM m JOIN (
+            SELECT "id", SUM(s) AS score FROM (
+              (SELECT "followingId" AS "id", 2 AS s FROM "follow" WHERE "followerId" = ${viewerId}
+                ORDER BY "createdAt" DESC LIMIT ${MENTION_EDGE_CAP})
+              UNION ALL
+              (SELECT "followerId" AS "id", 1 AS s FROM "follow" WHERE "followingId" = ${viewerId}
+                ORDER BY "createdAt" DESC LIMIT ${MENTION_EDGE_CAP})
+            ) e GROUP BY "id"
+          ) edges ON edges."id" = m."id"
+          ORDER BY (lower(m."handle") = ${exactKey}) DESC, edges.score DESC, m."handle" ASC, m."id" ASC
+          LIMIT 50)`
+      : Prisma.empty;
+    const rows = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+      WITH m AS (SELECT "id", "handle" FROM "user" WHERE ${match}),
+      top AS (
+        SELECT "id" FROM m
+        ORDER BY (lower("handle") = ${exactKey}) DESC, "handle" ASC, "id" ASC
+        LIMIT 50)
+      ${related}
+      SELECT "id" FROM top ${viewerId ? Prisma.sql`UNION SELECT "id" FROM rel` : Prisma.empty}`);
     candidates = rows.length
       ? await prisma.user.findMany({
           where: { id: { in: rows.map((r) => r.id) } },

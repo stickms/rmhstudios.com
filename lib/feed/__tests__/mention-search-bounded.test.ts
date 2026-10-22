@@ -37,6 +37,19 @@ describe('searchMentionUsers', () => {
     expect(where).toContain('"in":["a","b","c","d"]');
   });
 
+  it('candidate SQL never ORDERs BY a per-row correlated EXISTS (broad needles matched every row)', async () => {
+    db.$queryRaw.mockResolvedValue([]);
+    await searchMentionUsers('us', 'v');
+    const sql = (db.$queryRaw.mock.calls[0][0] as { strings: string[] }).strings.join('?');
+    expect(sql).not.toMatch(/EXISTS/i);
+    expect(sql).toMatch(/UNION SELECT "id" FROM rel/);
+    // Anonymous viewer: no edge lookups at all.
+    db.$queryRaw.mockClear();
+    await searchMentionUsers('us', undefined);
+    const anon = (db.$queryRaw.mock.calls[0][0] as { strings: string[] }).strings.join('?');
+    expect(anon).not.toMatch(/follow/i);
+  });
+
   it('empty query reads only the newest 50 edges per direction', async () => {
     db.follow.findMany.mockResolvedValue([]);
     db.user.findMany.mockResolvedValue([]);

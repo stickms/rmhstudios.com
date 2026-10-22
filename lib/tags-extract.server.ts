@@ -115,6 +115,35 @@ export async function linkPostHashtags(
 }
 
 /**
+ * The hashtag registry (typeahead, trending, counts) is GLOBAL and cached for
+ * everyone, so it may only learn tags from posts anyone can read: PUBLIC audience
+ * and not in a private community. A FOLLOWERS / CIRCLE / SUPPORTERS / PRIVATE
+ * post's tags would otherwise surface in a stranger's typeahead and trending
+ * (the tag FEED is per-viewer and already filters; the counts and suggestions are
+ * not). Use this instead of `linkPostHashtags` wherever a post becomes live.
+ */
+export async function linkPostHashtagsIfPublic(
+  tx: Tx,
+  post: {
+    id: string;
+    content: string;
+    createdAt?: Date;
+    audience: string;
+    communityId: string | null;
+  },
+): Promise<void> {
+  if (post.audience !== 'PUBLIC') return;
+  if (post.communityId) {
+    const community = await tx.community.findUnique({
+      where: { id: post.communityId },
+      select: { isPrivate: true },
+    });
+    if (!community || community.isPrivate) return;
+  }
+  await linkPostHashtags(tx, post.id, post.content, post.createdAt);
+}
+
+/**
  * Remove a post's hashtag links and decrement the affected tags' postCount.
  * Call on hard delete; on soft delete it's optional (the read paths filter
  * deletedAt), but calling it keeps trending accurate.

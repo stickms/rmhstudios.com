@@ -41,8 +41,10 @@ export class ChatHandler {
   // Chat is the one per-event DB write on this hub. Rows are append-only and
   // gameplay never waits on them, so they are written as one createMany per
   // second instead of one INSERT per message. If a batch is rejected (e.g. one
-  // row's room insert has not landed yet) it is retried row by row, so a single
-  // bad row costs one message, exactly as before.
+  // row's room insert has not landed yet) it is retried row by row inside
+  // `write`, so a single bad row costs one message, exactly as before. The writer
+  // itself never re-queues a failed batch and caps how many batches wait behind a
+  // stalled database (rows past the cap are dropped and logged).
   private chatWriter = createBatchWriter<ChatRow>({
     flushMs: 1_000,
     maxBatch: 200,

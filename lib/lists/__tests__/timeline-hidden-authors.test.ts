@@ -20,8 +20,12 @@ vi.mock('@/lib/prisma.server', () => ({
   },
 }));
 vi.mock('@/lib/social/follow-graph.server', () => ({ getFollowingIds: async () => [] }));
-// Blocks also ride the throwing getBlockedAuthorIds (unioned in); h.hidden already holds them here.
-vi.mock('@/lib/moderation.server', () => ({ getHiddenAuthorIds: h.hidden, getBlockedAuthorIds: async () => [] }));
+// listTimeline reads the strict set (blocks via the throwing lookup); h.hidden stands in for it.
+vi.mock('@/lib/moderation.server', () => ({
+  getHiddenAuthorIds: h.hidden,
+  getHiddenAuthorIdsStrict: h.hidden,
+  getBlockedAuthorIds: async () => [],
+}));
 
 import { listTimeline } from '@/lib/lists/lists.server';
 

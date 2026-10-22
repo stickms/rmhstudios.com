@@ -49,8 +49,13 @@ describe('x-rmh-queries', () => {
     delete process.env.RMH_PERF_HEADERS;
     const headers = await runRequest(3);
     expect(headers.has('x-rmh-queries')).toBe(false);
-    // The always-on header is unaffected.
-    expect(headers.get('server-timing')).toContain('total;dur=');
+    // Server-Timing carries only the trace id (lib/rum.ts) — no phase durations.
+    expect(headers.get('server-timing')).toMatch(/^trace;desc="[0-9a-f]+"$/);
+  });
+
+  it('phase durations (a cache hit/miss oracle) ride on Server-Timing only when enabled', async () => {
+    process.env.RMH_PERF_HEADERS = '1';
+    expect((await runRequest(1)).get('server-timing')).toContain('total;dur=');
   });
 
   it('is absent for any value other than "1"', async () => {

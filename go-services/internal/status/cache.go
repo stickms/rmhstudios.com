@@ -54,6 +54,11 @@ type responseCache struct {
 	flying  map[string]*inflight
 	hits    atomic.Uint64
 	misses  atomic.Uint64
+
+	// onWait, when set (tests only), runs just before a request blocks on an
+	// in-flight leader, so a test can synchronise on "the waiter is parked"
+	// instead of sleeping.
+	onWait func()
 }
 
 // stateVersion changes whenever the probe results or the incident store do.
@@ -97,6 +102,9 @@ func (c *responseCache) wrap(next http.Handler) http.Handler {
 		}
 		if f := c.flying[key]; f != nil {
 			c.mu.Unlock()
+			if c.onWait != nil {
+				c.onWait()
+			}
 			select {
 			case <-f.done:
 			case <-r.Context().Done():

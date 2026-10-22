@@ -8,7 +8,7 @@ import { createRMHarkSchema } from '@/lib/rmhark-schema';
 import type { FeedItem, FeedFilter } from '@/lib/feed-types';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { feedEventBus } from '@/lib/feed-sse';
-import { linkPostHashtags } from '@/lib/tags-extract.server';
+import { linkPostHashtagsIfPublic } from '@/lib/tags-extract.server';
 import { notifyMentions } from '@/lib/feed/notify-mentions.server';
 import { createNotification } from '@/lib/notifications.server';
 import { grantAchievement, progressAchievement } from '@/lib/achievements/engine.server';
@@ -334,9 +334,10 @@ export const Route = createFileRoute('/api/rmharks')({
             // Extract @hashtags once at write time into the normalized hashtag /
             // post_hashtag tables (indexed lookups for trending + tag feeds) instead
             // of scanning `content` with ILIKE on read. Same tx as the post insert.
-            // A held post is counted and hashtag-linked when a mod approves it.
+            // A held post is counted and hashtag-linked when a mod approves it. Only
+            // public, non-private-community posts feed the global tag registry.
             if (!held) {
-              await linkPostHashtags(tx, created.id, created.content, created.createdAt);
+              await linkPostHashtagsIfPublic(tx, created);
 
               // Maintain the author's denormalized post count atomically with the
               // insert (profile pages read this column instead of COUNT(*)).

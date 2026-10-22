@@ -19,6 +19,7 @@ import { getRole, canModerate } from '@/lib/communities/access.server';
 import { createNotification } from '@/lib/notifications.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { isPrivateIp } from '@/lib/ssrf-guard.server';
+import { eventCommunityVisibleWhere } from '@/lib/events-visibility';
 import {
   OccurrenceError,
   activeSeriesWhere,
@@ -261,9 +262,13 @@ export async function runEventReminder(job: EventReminderJob): Promise<void> {
       recurTz: true,
       rotatingHostIds: true,
       capacity: true,
+      communityId: true,
     },
   });
   if (!event || event.canceledAt) return;
+  // The RSVP (and its queued job) outlives membership: an ex-member of a private
+  // community must not get the event's title pushed to them.
+  if (!(await canViewCommunityEvents(event.communityId, job.userId))) return;
 
   if (event.recurrence) {
     // K4 — a repeating event: the reminder belongs to one occurrence, and an
@@ -485,17 +490,6 @@ export async function canViewCommunityEvents(
   });
   if (!c) return false;
   return !c.isPrivate || !!c.members?.length;
-}
-
-/** Prisma filter: events outside private communities, or in ones the viewer belongs to. */
-function eventCommunityVisibleWhere(viewerId: string | null) {
-  return {
-    OR: [
-      { communityId: null },
-      { community: { isPrivate: false } },
-      ...(viewerId ? [{ community: { members: { some: { userId: viewerId } } } }] : []),
-    ],
-  };
 }
 
 /** A single event with counts, an attendee sample, and the viewer's RSVP. */
@@ -851,6 +845,7 @@ export async function unrsvp(
     where: { id: eventId },
     select: {
       id: true,
+      communityId: true,
       hostId: true,
       startsAt: true,
       endsAt: true,
@@ -861,7 +856,16 @@ export async function unrsvp(
       rotatingHostIds: true,
     },
   });
-  if (series?.recurrence) {
+  // Same gate as rsvp(): no counts for an unknown event or a private
+  // community's event the caller can't see (existence oracle). A caller who has
+  // lost access may still retract their own leftover RSVP, but learns nothing.
+  if (!series) throw new EventError('NOT_FOUND');
+  if (!(await canViewCommunityEvents(series.communityId, userId))) {
+    await prisma.eventRsvp.deleteMany({ where: { eventId, userId } });
+    await cancelEventReminders(eventId, userId);
+    throw new EventError('NOT_FOUND');
+  }
+  if (series.recurrence) {
     try {
       const done = await unrsvpRecurring(series, userId, opts.scope ?? 'occurrence', opts.occurrenceAt);
       await cancelEventReminders(eventId, userId, done.at);

@@ -3,6 +3,7 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { getCommunityBySlug, getRole, canModerate } from '@/lib/communities/access.server';
 import { markRemoved } from '@/lib/communities/join-requests.server';
+import { dropCommunityWatch } from '@/lib/discovery/watch.server';
 import { z } from 'zod';
 
 /**
@@ -76,6 +77,8 @@ export const Route = createFileRoute('/api/communities/$slug/members/$userId')({
           }),
           // Remember the removal so a live invite link / instant re-request can't undo it.
           markRemoved(prisma, community.id, params.userId, session.user.id),
+          // ...and end their community watch so private previews stop flowing.
+          dropCommunityWatch(community.id, params.userId),
         ]);
         return Response.json({ success: true });
       }),

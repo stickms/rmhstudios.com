@@ -489,13 +489,16 @@ async function getFollowingTimeline(params: GetTimelineParams): Promise<Timeline
     return { items: [], nextCursor: null, hasMore: false, empty: true };
   }
 
-  const [followingAll, hiddenIds, viewerCircleOwnerIds, blockedIds] = await Promise.all([
+  const [followingAll, laxHiddenIds, viewerCircleOwnerIds, blockedIds] = await Promise.all([
     getFollowingIds(userId),
     getHiddenAuthorIds(userId),
     circleOwnerIds(userId),
     getBlockedAuthorIds(userId),
   ]);
   const qv: QuoteViewer = { viewerId: userId, blocked: blockedIds };
+  // getHiddenAuthorIds fails open ([]) on a lookup error; blocks come from the
+  // throwing block set so a failed lookup can never drop block filtering.
+  const hiddenIds = [...new Set([...laxHiddenIds, ...blockedIds])];
   // Exclude muted/blocked authors even if still followed.
   const hiddenSet = new Set(hiddenIds);
   const followingIds = followingAll.filter((id) => !hiddenSet.has(id));
@@ -619,7 +622,7 @@ async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineRes
   // start. Everything else is NOT an input to the query — the interest profile
   // only reorders the returned page, and announcements are interleaved afterward
   // — so those stay off this batch and run alongside the query instead.
-  const [hiddenIds, viewerFollowingIds, viewerCircleOwnerIds, viewerSignals, blockedIds] = await Promise.all([
+  const [laxHiddenIds, viewerFollowingIds, viewerCircleOwnerIds, viewerSignals, blockedIds] = await Promise.all([
     getHiddenAuthorIds(userId),
     userId ? getFollowingIds(userId) : Promise.resolve([] as string[]),
     circleOwnerIds(userId),
@@ -627,6 +630,8 @@ async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineRes
     getBlockedAuthorIds(userId),
   ]);
   const qv: QuoteViewer = { viewerId: userId, blocked: blockedIds };
+  // Blocks via the throwing block set: the lax hidden set fails open ([]) on error.
+  const hiddenIds = [...new Set([...laxHiddenIds, ...blockedIds])];
 
   // In-flight alongside the main query below (neither gates it).
   const interestPromise =

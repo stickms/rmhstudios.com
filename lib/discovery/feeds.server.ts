@@ -7,7 +7,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
-import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { getHiddenAuthorIdsStrict } from '@/lib/moderation.server';
 import { getMutedWords, applyMutedWords } from '@/lib/feed/timeline';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import type { FeedItem } from '@/lib/feed-types';
@@ -186,7 +186,7 @@ export async function getFeedView(feedId: string, viewerId: string | null, curso
   });
   if (!feed || (!feed.isPublic && feed.ownerId !== viewerId)) return null;
 
-  const hidden = await getHiddenAuthorIds(viewerId);
+  const hidden = await getHiddenAuthorIdsStrict(viewerId);
   const cur = parseCursor(cursor);
   const base: Prisma.RMHarkWhereInput = {
     deletedAt: null,

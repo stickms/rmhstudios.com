@@ -24,6 +24,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { useSession } from '@/components/Providers';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
@@ -62,7 +63,11 @@ export function LockedCommunityHeader({
     <div className="flex items-start gap-4">
       <div
         className="flex h-14 w-14 shrink-0 items-center justify-center rounded-site text-3xl"
-        style={{ background: (community.color || 'var(--site-accent)') + '22' }}
+        // ~13% tint of the community colour. `color-mix` works for any CSS colour
+        // (hex, var(), named); string-appending "22" was invalid for a null colour.
+        style={{
+          background: `color-mix(in srgb, ${community.color || 'var(--site-accent)'} 13%, transparent)`,
+        }}
         aria-hidden
       >
         {community.icon || '👥'}
@@ -150,7 +155,7 @@ export function RequestToJoin({
   className?: string;
 }) {
   const { t } = useTranslation('f-communities-plus');
-  const { data: session } = useSession();
+  const { data: session, isPending } = useSession();
   const [state, setState] = useState<'PENDING' | 'DENIED' | null>(initialState);
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
@@ -159,12 +164,32 @@ export function RequestToJoin({
   // state, which would drop focus to <body>; hand it to the control that replaced it.
   const cancelRef = useRef<HTMLButtonElement>(null);
   const sentHere = useRef(false);
+  // Cancelling does the reverse: the focused "Cancel request" unmounts, so hand
+  // focus to the "Request to join" trigger that replaces it.
+  const requestRef = useRef<HTMLButtonElement>(null);
+  const cancelledHere = useRef(false);
   useEffect(() => {
     if (state === 'PENDING' && sentHere.current) {
       sentHere.current = false;
       cancelRef.current?.focus();
+    } else if (state !== 'PENDING' && cancelledHere.current) {
+      cancelledHere.current = false;
+      requestRef.current?.focus();
     }
   }, [state]);
+
+  // While the session is still resolving a signed-in visitor would briefly be
+  // offered "Sign in to request to join": show a neutral placeholder instead.
+  if (!session && isPending) {
+    return (
+      <Skeleton
+        className={cn(size === 'sm' ? 'h-8 w-36' : 'h-9 w-40', className)}
+        role="status"
+        aria-busy="true"
+        aria-label={t('request-loading', { defaultValue: 'Loading' })}
+      />
+    );
+  }
 
   if (!session) {
     return (
@@ -208,8 +233,11 @@ export function RequestToJoin({
     setBusy(true);
     const res = await plusFetch(communityApi(slug, '/join-request'), 'DELETE');
     setBusy(false);
-    if (res.ok) setState(null);
-    else toast.error(t('request-cancel-error', { defaultValue: "Couldn't cancel your request" }));
+    if (res.ok) {
+      cancelledHere.current = true;
+      setState(null);
+      toast.success(t('request-cancelled-toast', { defaultValue: 'Request cancelled' }));
+    } else toast.error(t('request-cancel-error', { defaultValue: "Couldn't cancel your request" }));
   };
 
   if (state === 'PENDING') {
@@ -235,7 +263,7 @@ export function RequestToJoin({
         )}
         {/* A real DialogTrigger so Radix returns focus to it when the dialog closes. */}
         <DialogTrigger asChild>
-          <Button size={size} variant={variant}>
+          <Button ref={requestRef} size={size} variant={variant}>
             {t('request-button', { defaultValue: 'Request to join' })}
           </Button>
         </DialogTrigger>

@@ -11,11 +11,16 @@
  * and 1.4-2.4 s during the encodes (results/ws-6.md).
  *
  * The gate keeps at most `limit` jobs in flight (default: the pool size minus
- * one, so 3 of the 4 threads) and queues the rest in arrival order. It does not shed: a queued request gets the
- * same bytes it always did, just without starving the rest of the process. The
- * queue is bounded so a flood of distinct cache keys cannot pin an unbounded
- * number of source buffers in memory; past the bound `run` rejects with
- * {@link CpuGateFullError} and the route answers 503 + Retry-After.
+ * one) and queues the rest in arrival order. It does not shed: a queued request
+ * gets the same bytes it always did, just without starving the rest of the
+ * process. The queue is bounded; past the bound `run` rejects with
+ * {@link CpuGateFullError} and the route answers 429 + Retry-After (not 5xx:
+ * saturation must not trip the post-deploy 5xx guard).
+ *
+ * Only the ENCODE runs in {@link cpuGate}. Source loading (network / object
+ * store, unbounded in time) runs in the separate {@link loadGate}, which bounds
+ * how many source buffers (up to 10 MB each) are alive, so a slow upstream can
+ * never hold a CPU slot.
  */
 
 export class CpuGateFullError extends Error {
@@ -79,7 +84,9 @@ function envInt(name: string, fallback: number, min: number, max: number): numbe
  * (the threadpool) is shared: OG rasterisation and image-variant encoding must
  * not each take half of the pool on top of each other.
  *
- * `RMH_CPU_GATE_LIMIT` (default: `UV_THREADPOOL_SIZE` - 1, i.e. 3) and
+ * `RMH_CPU_GATE_LIMIT` (default: `UV_THREADPOOL_SIZE` - 1: 3 with libuv's
+ * default pool of 4, but 15 where docker-compose sets UV_THREADPOOL_SIZE=16,
+ * which is why compose also pins RMH_CPU_GATE_LIMIT explicitly) and
  * `RMH_CPU_GATE_QUEUE` (default 64) tune it. Measured with 8 concurrent AVIF
  * encodes: limit 3 keeps a `dns.lookup` + `fs.stat` pair at <= 5.5 ms (ungated:
  * up to 2.4 s) and finishes the burst 1.45x sooner than limit 2.
@@ -87,4 +94,15 @@ function envInt(name: string, fallback: number, min: number, max: number): numbe
 export const cpuGate: CpuGate = createCpuGate(
   envInt('RMH_CPU_GATE_LIMIT', Math.max(1, threadpoolSize() - 1), 1, 16),
   envInt('RMH_CPU_GATE_QUEUE', 64, 1, 4096),
+);
+
+/**
+ * Bounds concurrent source loads (and so source buffers alive). Not CPU work, so
+ * deliberately separate from {@link cpuGate}: a dripping upstream holds a load
+ * slot (for at most the loader's own deadline), never an encode slot.
+ * `RMH_IMAGE_LOAD_LIMIT` (default 8) / `RMH_IMAGE_LOAD_QUEUE` (default 64).
+ */
+export const loadGate: CpuGate = createCpuGate(
+  envInt('RMH_IMAGE_LOAD_LIMIT', 8, 1, 64),
+  envInt('RMH_IMAGE_LOAD_QUEUE', 64, 1, 4096),
 );

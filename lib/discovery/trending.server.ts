@@ -41,6 +41,7 @@ async function compute(tag: string): Promise<TrendingWhy | null> {
           deletedAt: null,
           audience: 'PUBLIC',
           communityId: null,
+          unlockPrice: null, // priced posts' text is paid content
         },
         orderBy: { createdAt: 'asc' },
         take: 3,

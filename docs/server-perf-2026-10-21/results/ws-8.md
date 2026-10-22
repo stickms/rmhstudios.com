@@ -1,5 +1,7 @@
 # WS8 - Search and tag feeds - results
 
+> Point-in-time ledger as of `c4c8d6091` (#925). Figures are from the seeded perf dataset or in-process runs, not production; SHAs and branch names refer to that program's worktrees.
+
 Branch `perf/ws-8`. Measured in-process (`tsx`, one Node process, warm Postgres) against the seeded `rmh_ws8` (20k users, 200k posts, 80k post_hashtag; heavy user follows 2,000), A and B alternating call-by-call, 25 pairs, on a shared 4-core box (absolute numbers are noisy; the ratio is the claim). No production-build HTTP run: the build was lost to container restarts and a disk-full event, and the route handlers add only session/serialization on top of these functions. Evidence type: `latency` (EXPLAIN buffers for the tag feed are `exact`).
 
 ## Shipped

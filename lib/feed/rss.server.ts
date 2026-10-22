@@ -17,6 +17,7 @@
  *   - Not deleted.
  *   - No paid unlock. A gated post's teaser is not the post; syndicating it
  *     would give away the thing somebody paid for.
+ *   - No content-warning (`isSensitive`) posts, and none past their TTL.
  *   - No community posts. Community visibility depends on membership, which
  *     again there is no viewer to evaluate.
  */
@@ -37,7 +38,17 @@ export const PUBLIC_POST_WHERE: Prisma.RMHarkWhereInput = {
   audience: 'PUBLIC',
   deletedAt: null,
   communityId: null,
-  OR: [{ unlockPrice: null }, { unlockPrice: 0 }],
+  // Content-warning posts are not syndicated (the warning gates exactly this kind
+  // of surface), and a post past its TTL is gone at read time (posts-plus X8).
+  // The two ORs live under AND so they cannot collide. A getter, so "now" is read
+  // when a feed is built, not when this module loaded (spread evaluates it).
+  isSensitive: false,
+  get AND() {
+    return [
+      { OR: [{ unlockPrice: null }, { unlockPrice: 0 }] },
+      { OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
+    ];
+  },
 };
 
 /** Collapse a post body into a one-line plain-text summary. */

@@ -12,6 +12,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { useTranslation } from 'react-i18next';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { postCardShowsContent } from '@/lib/og/post-visibility';
 import { Heart, MessageCircle, Repeat } from 'lucide-react';
 
 const fetchEmbed = createServerFn({ method: 'GET' })
@@ -26,6 +27,8 @@ const fetchEmbed = createServerFn({ method: 'GET' })
         deletedAt: true,
         audience: true,
         unlockPrice: true,
+        isSensitive: true,
+        expiresAt: true,
         community: { select: { isPrivate: true } },
         likeCount: true,
         commentCount: true,
@@ -36,14 +39,8 @@ const fetchEmbed = createServerFn({ method: 'GET' })
       },
     });
 
-    if (
-      !post ||
-      post.deletedAt || post.audience !== 'PUBLIC' ||
-      post.community?.isPrivate ||
-      (post.unlockPrice ?? 0) > 0
-    ) {
-      return null;
-    }
+    // The one rule (deleted, non-public, paid, private community, sensitive, expired).
+    if (!post || !postCardShowsContent(post)) return null;
     const user = resolveUser(post.user as any);
     return {
       id: post.id,

@@ -6,7 +6,8 @@
  */
 import { prisma } from '@/lib/prisma.server';
 import { viewerVisiblePostWhere } from '@/lib/feed/audience.server';
-import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { isLocked } from '@/lib/feed/map-feed-item.server';
+import { getHiddenAuthorIdsStrict } from '@/lib/moderation.server';
 import { resolveUser, userDisplaySelect, type ResolvedUser } from '@/lib/user-display';
 import { MAX_LISTS, MAX_MEMBERS, MAX_PINNED, type ListView } from '@/lib/lists/constants';
 
@@ -151,6 +152,8 @@ export interface ListTimelinePost {
   content: string;
   createdAt: string;
   author: ResolvedUser;
+  /** Priced post the viewer hasn't unlocked: `content` is blanked. */
+  locked?: boolean;
 }
 
 /** Lightweight chronological timeline of the list's members' posts. */
@@ -169,7 +172,7 @@ export async function listTimeline(
   // nested under AND because it owns the `userId` key too.
   const [visible, hidden] = await Promise.all([
     viewerVisiblePostWhere(viewerId, { hideMuted: true }),
-    getHiddenAuthorIds(viewerId),
+    getHiddenAuthorIdsStrict(viewerId),
   ]);
   const shownIds = hidden.length ? memberIds.filter((id) => !hidden.includes(id)) : memberIds;
   if (shownIds.length === 0) return { items: [], nextCursor: null };
@@ -185,17 +188,30 @@ export async function listTimeline(
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: PAGE + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-    select: { id: true, content: true, createdAt: true, user: { select: userDisplaySelect } },
+    select: {
+      id: true,
+      userId: true,
+      content: true,
+      createdAt: true,
+      unlockPrice: true,
+      ...(viewerId ? { unlocks: { where: { userId: viewerId }, select: { id: true } } } : {}),
+      user: { select: userDisplaySelect },
+    },
   });
   const hasMore = rows.length > PAGE;
   const page = hasMore ? rows.slice(0, PAGE) : rows;
   return {
-    items: page.map((r) => ({
-      id: r.id,
-      content: r.content,
-      createdAt: r.createdAt.toISOString(),
-      author: resolveUser(r.user),
-    })),
+    items: page.map((r) => {
+      // Paywall: a priced post's body is for its author and its unlockers only.
+      const locked = isLocked(r, viewerId);
+      return {
+        id: r.id,
+        content: locked ? '' : r.content,
+        createdAt: r.createdAt.toISOString(),
+        author: resolveUser(r.user),
+        ...(locked ? { locked: true } : {}),
+      };
+    }),
     nextCursor: hasMore ? page[page.length - 1].id : null,
   };
 }

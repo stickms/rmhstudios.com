@@ -1,5 +1,7 @@
 # WS9 — Go bot/vibe worker index follow-ups
 
+> Point-in-time ledger as of `c4c8d6091` (#925). Figures are from the seeded perf dataset or in-process runs, not production; SHAs and branch names refer to that program's worktrees.
+
 Database: `rmh_ws9` (from `rmh_perf_template`; 150k `rmheet_comment`, 5k `conversation`,
 `vibe_page` seeded to 20k rows with 20 stale). Queries are the exact strings from
 `go-services/internal/{vibeworker/repo.go,botworker/repo_social.go}`, run with

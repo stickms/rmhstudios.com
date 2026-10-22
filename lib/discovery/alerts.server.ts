@@ -4,7 +4,7 @@
  */
 import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
-import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { getHiddenAuthorIdsStrict } from '@/lib/moderation.server';
 import { getMutedWords } from '@/lib/feed/timeline';
 import { MAX_ALERTS, alertAnchor, compileAlert, fold, matches } from '@/lib/search/keyword-alerts';
 
@@ -67,7 +67,7 @@ export async function fanOutKeywordAlerts(post: {
   const folded = fold(post.content);
   const allowed: string[] = [];
   for (const userId of hits.keys()) {
-    const [hidden, muted] = await Promise.all([getHiddenAuthorIds(userId), getMutedWords(userId)]);
+    const [hidden, muted] = await Promise.all([getHiddenAuthorIdsStrict(userId), getMutedWords(userId)]);
     if (hidden.includes(post.userId)) continue;
     if (muted.some((w) => w.trim() && folded.includes(fold(w)))) continue;
     allowed.push(userId);

@@ -10,7 +10,7 @@
 
 import { prisma } from '@/lib/prisma.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
-import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { getHiddenAuthorIdsStrict } from '@/lib/moderation.server';
 import { createNotification } from '@/lib/notifications.server';
 import {
   GUESTBOOK_PAGE,
@@ -73,7 +73,7 @@ export async function readGuestbook(
     return { mode, isOwner, canSign: false, entries: [], nextCursor: null };
   }
 
-  const hiddenAuthors = await getHiddenAuthorIds(viewerId);
+  const hiddenAuthors = await getHiddenAuthorIdsStrict(viewerId);
   const rows = await prisma.guestbookEntry.findMany({
     where: {
       ownerId,

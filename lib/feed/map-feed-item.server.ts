@@ -102,6 +102,43 @@ export function isLocked(raw: any, viewerId: string | null): boolean {
 }
 
 /**
+ * Prisma `where` fragment matching posts that are NOT locked for `viewerId`
+ * (free, own, or unlocked by the viewer). Use it to EXCLUDE priced posts from
+ * lists of other people's posts that carry content (developer API, previews).
+ */
+export function notLockedWhere(viewerId: string | null) {
+  return {
+    OR: [
+      { unlockPrice: null },
+      { unlockPrice: { lte: 0 } },
+      ...(viewerId ? [{ userId: viewerId }, { unlocks: { some: { userId: viewerId } } }] : []),
+    ],
+  };
+}
+
+/**
+ * Which of `postIds` are locked for `viewerId`, from the DB. For call sites that
+ * hold only ids / unscoped rows (notifications, digests, embeds, history): the
+ * viewer there is the RECIPIENT, so pass their id, not the actor's.
+ */
+export async function lockedPostIdsFor(
+  postIds: readonly string[],
+  viewerId: string | null,
+): Promise<Set<string>> {
+  if (postIds.length === 0) return new Set();
+  const rows = await prisma.rMHark.findMany({
+    where: { id: { in: [...postIds] }, NOT: notLockedWhere(viewerId) },
+    select: { id: true },
+  });
+  return new Set(rows.map((r) => r.id));
+}
+
+/** Single-post form of {@link lockedPostIdsFor}. */
+export async function isPostLockedFor(postId: string, viewerId: string | null): Promise<boolean> {
+  return (await lockedPostIdsFor([postId], viewerId)).has(postId);
+}
+
+/**
  * Strip content/media from a FeedItem when it's locked, leaving only the
  * teaser fields. The single source of truth for paywall blanking — every read
  * path routes through here so locked content can never leak.

@@ -1,5 +1,7 @@
 # WS3 — API layer: cache-policy adoption and handler overhead — results
 
+> Point-in-time ledger as of `c4c8d6091` (#925). Figures are from the seeded perf dataset or in-process runs, not production; SHAs and branch names refer to that program's worktrees.
+
 Worktree baseline taken 2026-10-21, commit e97b5192 (then merged with `claude/focused-darwin-bmii1v` @ 796295bd for the upstream routes). Environment deviations: **Stage A only** — `WS0_READY` never appeared, so nothing here is a latency claim. Every Shipped row is `exact` (call counts or response headers), measured by vitest, not by the HTTP harness.
 
 ## Shipped

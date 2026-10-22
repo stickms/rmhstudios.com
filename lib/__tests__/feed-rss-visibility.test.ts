@@ -54,7 +54,26 @@ describe('public post feed visibility', () => {
 
   it('excludes paywalled posts', () => {
     // Syndicating a gated post would hand out the thing somebody paid for.
-    expect(PUBLIC_POST_WHERE.OR).toEqual([{ unlockPrice: null }, { unlockPrice: 0 }]);
+    expect(PUBLIC_POST_WHERE.AND).toContainEqual({ OR: [{ unlockPrice: null }, { unlockPrice: 0 }] });
+  });
+
+  it('excludes content-warning (sensitive) posts', () => {
+    expect(PUBLIC_POST_WHERE.isSensitive).toBe(false);
+  });
+
+  it('excludes posts past their TTL, judged at read time (not at module load)', () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
+      const early = JSON.stringify(PUBLIC_POST_WHERE.AND);
+      vi.setSystemTime(new Date('2026-06-01T00:00:00Z'));
+      const late = JSON.stringify(PUBLIC_POST_WHERE.AND);
+      expect(early).toContain('"expiresAt":null');
+      expect(early).toContain('2026-01-01T00:00:00.000Z');
+      expect(late).toContain('2026-06-01T00:00:00.000Z');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('applies the shared predicate to the tag feed', async () => {

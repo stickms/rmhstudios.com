@@ -1,5 +1,7 @@
 # WS5 — Realtime hubs and workers — results
 
+> Point-in-time ledger as of `c4c8d6091` (#925). Figures are from the seeded perf dataset or in-process runs, not production; SHAs and branch names refer to that program's worktrees.
+
 Worktree baseline taken 2026-10-21, base commit e97b5192 (plus merge of 796295bd, no `server/` changes).
 Environment deviations: hubs run from source under `node --import tsx` (not the esbuild bundle), NODE_ENV=production,
 Redis db 5, DB `rmh_ws5` (own migrated DB; WS0 template not used, hub load needs only `user`/`session`/`user_profile`).

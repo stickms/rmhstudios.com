@@ -213,7 +213,15 @@ export function serverTimingPhases(scope: TraceScope | undefined): string[] {
  * `lib/rum.ts` looks it up by name on every navigation and a header that starts
  * with the thing everyone reads is cheaper to reason about in DevTools.
  */
-export function serverTimingHeader(scope: TraceScope | undefined): string {
+export function serverTimingHeader(
+  scope: TraceScope | undefined,
+  /**
+   * Include the phase breakdown (sess/cache/db/total). Callers gate this behind
+   * `RMH_PERF_HEADERS`: the durations are readable by any client, and a cache hit
+   * vs miss is visible in them. The `trace` entry is always sent (lib/rum.ts).
+   */
+  withPhases = true,
+): string {
   if (!scope) return '';
-  return [serverTimingTrace(scope.span), ...serverTimingPhases(scope)].join(', ');
+  return [serverTimingTrace(scope.span), ...(withPhases ? serverTimingPhases(scope) : [])].join(', ');
 }

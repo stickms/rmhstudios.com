@@ -4,6 +4,13 @@
  * A post is visible to a viewer when it's PUBLIC, the viewer is the author,
  * it's FOLLOWERS-only and the viewer follows the author, or it's SUPPORTERS-only
  * (Creator Studio, §3) and the viewer holds an active membership of the author.
+ *
+ * ONE rule, three spellings that must agree (table-tested in
+ * `lib/feed/__tests__/visibility-agreement.test.ts`): `canViewPost` (one post in
+ * hand), `canReadThread` (= `canViewPost` for a possibly-missing post) and
+ * `viewerVisiblePostWhere` (the relation predicate). All deny: deleted, past TTL
+ * (`expiresAt`), an author the viewer blocked or was blocked by, a private
+ * community the viewer is not in, and any audience the viewer is outside of.
  */
 
 import { prisma } from '@/lib/prisma.server';
@@ -148,7 +155,12 @@ export async function viewerVisiblePostWhere(
   opts: { hideMuted?: boolean } = {},
 ): Promise<Record<string, unknown>> {
   if (!viewerId) {
-    return { deletedAt: null, audience: 'PUBLIC' as const, ...communityVisibleWhere(null) };
+    return {
+      deletedAt: null,
+      audience: 'PUBLIC' as const,
+      ...communityVisibleWhere(null),
+      ...notExpiredWhere(),
+    };
   }
   // getHiddenAuthorIds fails open ([]) on a lookup error: fine for mutes (a feed
   // preference), not for blocks. Union in the throwing block set so a failed block
@@ -164,20 +176,47 @@ export async function viewerVisiblePostWhere(
     deletedAt: null,
     ...audienceWhereExact(viewerId),
     ...communityVisibleWhere(viewerId),
+    ...notExpiredWhere(),
     ...(excluded.length ? { userId: { notIn: excluded } } : {}),
   };
 }
 
-/** Whether a single post is visible to a viewer (used on the post-detail route). */
+/**
+ * A post past its TTL (posts-plus X8) is gone at read time, before the sweep
+ * deletes it. Under `AND` because `audienceWhereExact` owns the top-level `OR`.
+ */
+function notExpiredWhere() {
+  return { AND: [{ OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] }] };
+}
+
+/**
+ * Whether a single post is visible to a viewer: the post-level spelling of the
+ * rule `viewerVisiblePostWhere` states as a predicate (see the header).
+ *
+ * `deletedAt` / `expiresAt` are optional only so a caller that deliberately
+ * renders a tombstone for a deleted post (the post-detail route) can omit
+ * `deletedAt`; pass whatever the row has otherwise. The block check needs only
+ * `userId`, so it applies to every caller. A failed block lookup throws
+ * (access control fails closed).
+ */
 export async function canViewPost(
   post: {
     userId: string;
     audience: 'PUBLIC' | 'FOLLOWERS' | 'PRIVATE' | 'SUPPORTERS' | 'CIRCLE';
     /** Required so no caller can forget the private-community rule. */
     communityId: string | null;
+    deletedAt?: Date | null;
+    expiresAt?: Date | null;
   },
   viewerId: string | null,
 ): Promise<boolean> {
+  if (post.deletedAt) return false;
+  if (post.expiresAt && post.expiresAt.getTime() <= Date.now()) return false;
+  if (viewerId && viewerId !== post.userId) {
+    // Blocks deny reads; a mute only filters feeds (getBlockedAuthorIds, not the hidden set).
+    const blocked = await getBlockedAuthorIds(viewerId);
+    if (blocked.includes(post.userId)) return false;
+  }
   // Private-community posts are members-only, whatever the post's own audience.
   // (Zero cost for the ordinary post: communityId is null.)
   if (!(await communityReadable(post.communityId, viewerId))) return false;
@@ -213,6 +252,7 @@ export interface ThreadPost {
   userId: string;
   audience: 'PUBLIC' | 'FOLLOWERS' | 'PRIVATE' | 'SUPPORTERS' | 'CIRCLE';
   deletedAt: Date | null;
+  expiresAt?: Date | null;
   communityId: string | null;
 }
 
@@ -228,12 +268,7 @@ export interface ThreadPost {
  * cache hit); one targeted read for FOLLOWERS / CIRCLE / SUPPORTERS.
  */
 export async function canReadThread(post: ThreadPost | null, viewerId: string | null): Promise<boolean> {
-  if (!post || post.deletedAt) return false;
-  if (viewerId && viewerId !== post.userId) {
-    // Blocks deny reads; a mute only filters feeds (getBlockedAuthorIds, not the hidden set).
-    const blocked = await getBlockedAuthorIds(viewerId);
-    if (blocked.includes(post.userId)) return false;
-  }
+  if (!post) return false;
   return canViewPost(post, viewerId);
 }
 
@@ -241,7 +276,7 @@ export async function canReadThread(post: ThreadPost | null, viewerId: string | 
 export async function canReadPostThread(postId: string, viewerId: string | null): Promise<boolean> {
   const post = await prisma.rMHark.findUnique({
     where: { id: postId },
-    select: { userId: true, audience: true, deletedAt: true, communityId: true },
+    select: { userId: true, audience: true, deletedAt: true, expiresAt: true, communityId: true },
   });
   return canReadThread(post, viewerId);
 }
@@ -255,7 +290,9 @@ export async function canReadCommentThread(commentId: string, viewerId: string |
   const c = await prisma.rMHarkComment.findUnique({
     where: { id: commentId },
     select: {
-      rmhark: { select: { userId: true, audience: true, deletedAt: true, communityId: true } },
+      rmhark: {
+        select: { userId: true, audience: true, deletedAt: true, expiresAt: true, communityId: true },
+      },
     },
   });
   return canReadThread(c?.rmhark ?? null, viewerId);

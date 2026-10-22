@@ -78,8 +78,9 @@ The per-request query budget (`lib/prisma.server.ts` `QueryBudget`) already
 counts every Prisma operation per request. WS0 exposes the count to the harness
 through a response header **gated by an env flag that is off by default**
 (`RMH_PERF_HEADERS=1` → `x-rmh-queries: <n>`), with a test asserting the header
-is absent when the flag is unset. `Server-Timing` stays `dur`-only — see the
-security note in `lib/otel/timing.ts`.
+is absent when the flag is unset. `Server-Timing` is `dur`-only, and its phase
+entries are behind the same flag (the `trace` id is always sent for `lib/rum.ts`) —
+see the security note in `lib/otel/timing.ts`.
 
 ### 1.4 `Server-Timing` phases
 

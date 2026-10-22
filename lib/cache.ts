@@ -279,6 +279,16 @@ function installBridge(): void {
   fn?.();
 }
 
+/**
+ * Bumped by every `apiCache` invalidation (key or prefix, local or applied from
+ * another process). Caches that sit OUTSIDE apiCache (the per-worker response
+ * micro-cache, keyed by URL) tag their entries with it and treat any change as
+ * "something was written somewhere": coarse, but it is correct without anyone
+ * having to remember to opt a route out.
+ */
+let invalidationGeneration = 0;
+export const cacheGeneration = (): number => invalidationGeneration;
+
 /** Singleton cache shared across all API routes in a process (same API as ApiCache). */
 export const apiCache = {
   get: <T>(key: string): T | undefined => pick(key).get<T>(key),
@@ -286,6 +296,7 @@ export const apiCache = {
     pick(key).set(key, value, ttlMs, sizeBytes),
   /** Delete a key here AND in every other process (via the registered hook). */
   invalidate: (key: string): void => {
+    invalidationGeneration++;
     pick(key).invalidate(key);
     installBridge();
     invalidationHook?.key(key);
@@ -297,8 +308,12 @@ export const apiCache = {
     invalidationHook?.prefix(prefix);
   },
   /** Drop a key in THIS process only. Used when applying a remote invalidation (no echo). */
-  dropLocal: (key: string): void => pick(key).invalidate(key),
+  dropLocal: (key: string): void => {
+    invalidationGeneration++;
+    pick(key).invalidate(key);
+  },
   dropLocalPrefix: (prefix: string): void => {
+    invalidationGeneration++;
     mainCache.invalidatePrefix(prefix);
     viewerFeedCache.invalidatePrefix(prefix);
   },

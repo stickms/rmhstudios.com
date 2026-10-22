@@ -19,7 +19,10 @@ vi.mock('@/lib/prisma.server', () => ({
   },
 }));
 vi.mock('@/lib/social/follow-graph.server', () => ({ getFollowingIds: async () => [] }));
-vi.mock('@/lib/moderation.server', () => ({ getHiddenAuthorIds: async () => [] }));
+vi.mock('@/lib/moderation.server', () => ({
+  getHiddenAuthorIds: async () => [],
+  getHiddenAuthorIdsStrict: async () => [],
+}));
 vi.mock('@/lib/streak.server', () => ({ getStreak: vi.fn() }));
 vi.mock('@/lib/quests/engine.server', () => ({ getActiveQuests: vi.fn() }));
 vi.mock('@/lib/email/unsubscribe', () => ({ signUnsubToken: vi.fn() }));

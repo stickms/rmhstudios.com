@@ -18,7 +18,7 @@
  */
 
 import { prismaRead } from '@/lib/prisma.server';
-import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { getHiddenAuthorIdsStrict } from '@/lib/moderation.server';
 import { parseQuery } from './parse';
 import { fuzzyTerms, type FuzzyTerms } from './db.server';
 import { searchPeopleScored, personToHit, type ScoredPerson } from './people.server';
@@ -300,7 +300,7 @@ export async function universalSearch(input: UniversalSearchInput): Promise<Sear
   const wantsPosts = kinds.has('post');
   const [hiddenAuthorIds, authorId, communityId] = await Promise.all([
     wantsPosts && input.viewerId
-      ? getHiddenAuthorIds(input.viewerId).catch(() => [])
+      ? getHiddenAuthorIdsStrict(input.viewerId)
       : Promise.resolve([]),
     parsed.from
       ? prismaRead.user

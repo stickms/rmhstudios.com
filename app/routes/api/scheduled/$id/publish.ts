@@ -3,7 +3,7 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { getActiveBan } from '@/lib/admin-audit.server';
-import { publishScheduledPost } from '@/lib/scheduled/publish.server';
+import { publishScheduledPostDetailed } from '@/lib/scheduled/publish.server';
 
 /** POST /api/scheduled/$id/publish — publish a draft/scheduled post right now. */
 export const Route = createFileRoute('/api/scheduled/$id/publish')({
@@ -39,7 +39,11 @@ export const Route = createFileRoute('/api/scheduled/$id/publish')({
           return Response.json({ error: 'A time capsule is sealed until its date' }, { status: 409 });
         }
 
-        const postId = await publishScheduledPost(sp);
+        const { postId, refused } = await publishScheduledPostDetailed(sp);
+        if (refused) {
+          // Refused by the community gate: the post is kept as a draft.
+          return Response.json({ error: refused.error, code: refused.code }, { status: refused.status });
+        }
         return Response.json({ success: true, postId });
       }),
     },

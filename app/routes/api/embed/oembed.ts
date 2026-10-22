@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { postCardShowsContent } from '@/lib/og/post-visibility';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, ogCardPath, SITE_URL } from '@/lib/seo';
 
 /**
@@ -76,19 +77,16 @@ export const Route = createFileRoute('/api/embed/oembed')({
                 deletedAt: true,
                 audience: true,
                 unlockPrice: true,
+                isSensitive: true,
+                expiresAt: true,
                 community: { select: { isPrivate: true } },
                 user: { select: userDisplaySelect },
               },
             });
 
-            // Mirror the embed widget's rules: only free, public, live posts.
-            if (
-              !post ||
-              post.deletedAt ||
-              post.audience !== 'PUBLIC' ||
-              post.community?.isPrivate ||
-              (post.unlockPrice ?? 0) > 0
-            ) {
+            // Mirror the embed widget's rules: only free, public, live posts that are
+            // neither sensitive nor expired (`postCardShowsContent`, the one rule).
+            if (!post || !postCardShowsContent(post)) {
               return Response.json({ error: 'Post not embeddable' }, { status: 404 });
             }
 

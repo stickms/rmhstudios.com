@@ -33,8 +33,10 @@ export const Route = createFileRoute('/api/spaces/')({
         if (live !== '1') {
           return Response.json({ error: 'Pass ?live=1 to list live spaces' }, { status: 400 });
         }
-        const spaces = await listLiveSpaces();
-        return Response.json({ spaces });
+        const session = await auth.api.getSession({ headers: request.headers });
+        const spaces = await listLiveSpaces(20, session?.user?.id ?? null);
+        // Viewer-dependent (private-community Spaces) — never shared-cached.
+        return Response.json({ spaces }, { headers: { 'Cache-Control': 'private, no-store' } });
       },
       POST: async ({ request }) => {
         try {

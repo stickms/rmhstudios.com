@@ -3,6 +3,7 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 import { acceptInvite } from '@/lib/communities/invites.server';
+import { dropCommunityWatch } from '@/lib/discovery/watch.server';
 
 /**
  * POST /api/communities/$slug/join — toggle membership (join-only with an invite).
@@ -64,6 +65,8 @@ export const Route = createFileRoute('/api/communities/$slug/join')({
                 where: { id: community.id },
                 data: { memberCount: { decrement: 1 } },
               }),
+              // Leaving ends the community watch (private previews stop flowing).
+              dropCommunityWatch(community.id, userId),
             ]);
             return Response.json({ success: true, joined: false });
           }

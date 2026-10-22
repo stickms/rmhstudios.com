@@ -14,7 +14,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { apiCache } from '@/lib/cache';
 import { checkIn } from '@/lib/streak.server';
-import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { getHiddenAuthorIdsStrict } from '@/lib/moderation.server';
 import { mapRmharksWithBoundedReactions, rmharkIncludeLite } from '@/lib/feed/map-feed-item.server';
 import type { FeedItem } from '@/lib/feed-types';
 import { builtinPromptFor } from './qotd-builtin';
@@ -156,7 +156,7 @@ export async function listAnswers(
   opts: { cursor?: string | null; limit?: number } = {},
 ): Promise<QotdAnswersPage> {
   const limit = Math.min(Math.max(opts.limit ?? 20, 1), 30);
-  const hidden = await getHiddenAuthorIds(viewerId);
+  const hidden = await getHiddenAuthorIdsStrict(viewerId);
   const now = new Date();
   const links = await prisma.qotdAnswer.findMany({
     where: {

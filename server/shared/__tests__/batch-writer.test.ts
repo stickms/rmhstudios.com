@@ -69,3 +69,33 @@ describe('createBatchWriter', () => {
     expect(maxActive).toBe(1);
   });
 });
+
+describe('createBatchWriter bounded queue', () => {
+  it('drops (and reports) batches past maxQueuedBatches while the database stalls', async () => {
+    let release!: () => void;
+    const stall = new Promise<void>((r) => (release = r));
+    const write = vi.fn().mockReturnValue(stall);
+    const onError = vi.fn();
+    const w = createBatchWriter<number>({
+      write,
+      onError,
+      flushMs: 10_000,
+      maxBatch: 2,
+      maxQueuedBatches: 2,
+    });
+    for (let i = 0; i < 12; i++) w.add(i); // 6 batches of 2: 2 queue, 4 dropped
+    await vi.advanceTimersByTimeAsync(0);
+    expect(w.dropped).toBe(8);
+    expect(onError).toHaveBeenCalledTimes(4);
+    expect(onError.mock.calls[0][0].name).toBe('BatchQueueFullError');
+    expect(onError.mock.calls[0][1]).toBe(2);
+    release();
+    await w.flush();
+    expect(write).toHaveBeenCalledTimes(2); // only the queued ones were ever written
+    // Capacity returns once the chain drains.
+    w.add(100);
+    w.add(101);
+    await w.flush();
+    expect(write).toHaveBeenCalledTimes(3);
+  });
+});

@@ -3,7 +3,7 @@
  *
  * A card route is public and uncredentialed: whatever it draws is readable by
  * anyone holding the post's id, with no session, no follow, and no unlock. That
- * makes it the widest surface the post has, and the four conditions below are
+ * makes it the widest surface the post has, and the conditions below are
  * the ones under which it must show nothing but the author and the counts:
  *
  * - **deleted** — the post is gone; an unfurl is not where it comes back;
@@ -12,6 +12,8 @@
  * - **priced** — a paid unlock that a crawler can read for free is not a paid
  *   unlock;
  * - **in a private community** — members-only content has no public unfurl;
+ * - **expired** — a post past its TTL (`expiresAt`, posts-plus X8) is gone at
+ *   read time, before the sweep deletes the row;
  * - **sensitive** — a content warning exists precisely to gate the surface that
  *   shows content without being asked, which is exactly what an unfurl is.
  *
@@ -29,6 +31,8 @@ export interface PostCardSubject {
   audience?: string | null;
   unlockPrice?: number | null;
   isSensitive?: boolean | null;
+  /** posts-plus TTL: past this instant the post no longer exists to readers. */
+  expiresAt?: Date | string | null;
   /** The post's community, when it has one (select `isPrivate`). */
   community?: { isPrivate?: boolean | null } | null;
 }
@@ -48,6 +52,7 @@ export function postCardShowsContent(post: PostCardSubject | null | undefined): 
   if ((post.unlockPrice ?? 0) > 0) return false;
   if (post.community?.isPrivate) return false;
   if (post.isSensitive) return false;
+  if (post.expiresAt && new Date(post.expiresAt).getTime() <= Date.now()) return false;
   return true;
 }
 

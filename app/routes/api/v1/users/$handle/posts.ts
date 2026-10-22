@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { prisma } from '@/lib/prisma.server';
 import { withDeveloperApi, apiOptions } from '@/lib/api/with-developer-api.server';
+import { notLockedWhere } from '@/lib/feed/map-feed-item.server';
 import { apiAuthorSelect, parsePage, page, serializePublicPost } from '@/lib/api/serializers.server';
 
 /** GET /api/v1/users/{handle}/posts — a user's public posts, newest first. */
@@ -12,14 +13,14 @@ export const Route = createFileRoute('/api/v1/users/$handle/posts')({
       GET: ({ request, params }) =>
         withDeveloperApi(
           request,
-          async ({ json, error }) => {
+          async ({ json, error, userId: viewerId }) => {
             const handle = params.handle.replace(/^@/, '');
             const user = await prisma.user.findUnique({ where: { handle }, select: { id: true } });
             if (!user) return error('not_found', 'User not found.', 404);
 
             const { limit, cursor } = parsePage(new URL(request.url));
             const posts = await prisma.rMHark.findMany({
-              where: { userId: user.id, deletedAt: null, audience: 'PUBLIC', communityId: null, ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}) },
+              where: { userId: user.id, deletedAt: null, audience: 'PUBLIC', communityId: null, ...notLockedWhere(viewerId), ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}) },
               orderBy: { createdAt: 'desc' },
               take: limit,
               select: {

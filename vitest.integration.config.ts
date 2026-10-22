@@ -3,6 +3,8 @@
  *
  * Black-box tests of real user flows (auth, posting, social writes, coin
  * transfers, the developer API) against a RUNNING app and a real Postgres —
+ * plus a few files that drive a server module's SQL/transactions directly on the
+ * same database (communities-invites, tag-feed, migrations) —
  * the layer `pnpm test` deliberately never touches (its files are
  * environment-agnostic by design; see vitest.config.ts). Gated on every PR by
  * the `integration` job in .github/workflows/web-ci.yml, which builds the app,

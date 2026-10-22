@@ -277,6 +277,10 @@ services:
       # Discord/crawler unfurl burst) would occupy every thread and stall DNS
       # lookups + file reads for ordinary requests. 16 keeps headroom.
       - UV_THREADPOOL_SIZE=16
+      # The CPU gate defaults to UV_THREADPOOL_SIZE - 1 = 15 concurrent sharp/resvg
+      # jobs per worker, far more than the cores they run on. Pin it: 4 encodes at
+      # once leaves the rest of the pool free for dns/fs/crypto.
+      - RMH_CPU_GATE_LIMIT=4
       # Multi-core web serving (perf audit §1.1). The production image is built
       # with NITRO_PRESET=node-cluster (docker-bake.hcl), so these workers run on
       # separate cores instead of one shared event loop. Default 2; set

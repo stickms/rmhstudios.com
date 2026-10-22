@@ -12,7 +12,7 @@
 import type { FeedItem } from '@/lib/feed-types';
 import { prisma } from '@/lib/prisma.server';
 import { canViewPost, audienceWhereExact, communityVisibleWhere } from '@/lib/feed/audience.server';
-import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { getHiddenAuthorIdsStrict } from '@/lib/moderation.server';
 import { decodeCursor, encodeCursor, keysetWhere } from '@/lib/feed/cursor';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import {
@@ -29,11 +29,11 @@ export async function listQuotes(
 ): Promise<QuotesPage | null> {
   const post = await prisma.rMHark.findUnique({
     where: { id: postId },
-    select: { userId: true, audience: true, communityId: true, deletedAt: true },
+    select: { userId: true, audience: true, communityId: true, deletedAt: true, expiresAt: true },
   });
   if (!post || post.deletedAt || !(await canViewPost(post, viewerId))) return null;
 
-  const hidden = await getHiddenAuthorIds(viewerId);
+  const hidden = await getHiddenAuthorIdsStrict(viewerId);
   // The exact audience rule (no capped follow list). `audienceWhereExact` and the
   // keyset both use a top-level `OR`, so they are combined under `AND` rather
   // than spread into one object.

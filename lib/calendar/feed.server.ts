@@ -13,6 +13,7 @@
  */
 import { randomBytes } from 'node:crypto';
 import { prisma } from '@/lib/prisma.server';
+import { eventCommunityVisibleWhere } from '@/lib/events-visibility';
 import { apiCache } from '@/lib/cache';
 import { SITE_URL } from '@/lib/seo';
 import { calendarFeedICS, type ICSEvent } from '@/lib/events-ics';
@@ -154,12 +155,19 @@ async function buildFeed(userId: string): Promise<string> {
       where: {
         userId,
         event: {
-          OR: [
-            { startsAt: { gte: from, lte: to } },
+          AND: [
             {
-              recurrence: { not: null },
-              OR: [{ recurUntil: null }, { recurUntil: { gte: from } }],
+              OR: [
+                { startsAt: { gte: from, lte: to } },
+                {
+                  recurrence: { not: null },
+                  OR: [{ recurUntil: null }, { recurUntil: { gte: from } }],
+                },
+              ],
             },
+            // An RSVP outlives membership: drop private-community events the
+            // user has since left (title/venue must not keep flowing to the feed).
+            eventCommunityVisibleWhere(userId),
           ],
         },
       },
@@ -172,7 +180,11 @@ async function buildFeed(userId: string): Promise<string> {
       },
     }),
     prisma.eventOccurrenceRsvp.findMany({
-      where: { userId, occurrenceAt: { gte: from, lte: to } },
+      where: {
+        userId,
+        occurrenceAt: { gte: from, lte: to },
+        event: eventCommunityVisibleWhere(userId),
+      },
       take: 300,
       select: {
         occurrenceAt: true,

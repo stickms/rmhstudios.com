@@ -66,12 +66,14 @@ vi.mock('@/lib/quests/engine.server', () => ({ progressQuests: async () => {} })
 vi.mock('@/lib/economy/ledger.server', () => ({ transferCoins: async () => {} }));
 vi.mock('@/lib/feed/map-feed-item.server', () => ({
   applyLock: (i: unknown) => i,
+  isPostLockedFor: async () => false,
   isLocked: (r: { unlockPrice?: number | null; userId: string; unlocks?: unknown[] }, viewer: string | null) =>
     !!r.unlockPrice && r.unlockPrice > 0 && r.userId !== viewer && !(r.unlocks && r.unlocks.length > 0),
   loadBoundedReactionSummaries: async () => new Map(),
   rmharkIncludeLite: () => ({}),
   mapRmharksWithBoundedReactions: async (rows: { id: string }[]) => rows.map((r) => ({ id: r.id })),
 }));
+vi.mock('@/lib/mentions/notify.server', () => ({ blockedPairs: async () => new Set() }));
 vi.mock('@/lib/communities/starboard.server', () => ({
   isStarEmoji: () => false,
   recordStarToggle: async () => {},
@@ -87,6 +89,7 @@ vi.mock('@/lib/prisma.server', () => {
     rMHark: {
       findUnique: async (a: { where: { id: string } }) => byId(a.where.id),
       findMany: find(() => h.posts as Row[]),
+      count: async () => 0,
       update: write('post.update'),
     },
     community: {

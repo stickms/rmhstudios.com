@@ -57,6 +57,8 @@ interface LiveSpace {
   hostId: string;
   status: 'SCHEDULED' | 'LIVE' | 'ENDED';
   recordChat: boolean;
+  /** Set when hosted by a PRIVATE community — only its members may join. */
+  privateCommunityId: string | null;
   pinned: SpacePinned | null;
   /** keyed by userId — audience members with a live socket */
   members: Map<string, SpaceMember>;
@@ -108,7 +110,15 @@ async function ensureSpace(spaceId: string): Promise<LiveSpace | null> {
   const row = await prisma.space
     .findUnique({
       where: { id: spaceId },
-      select: { id: true, hostId: true, status: true, recordChat: true, pinned: true },
+      select: {
+        id: true,
+        hostId: true,
+        status: true,
+        recordChat: true,
+        pinned: true,
+        communityId: true,
+        community: { select: { isPrivate: true } },
+      },
     })
     .catch((err: Error) => {
       logger.warn({ event: 'space_load_failed', spaceId, error: err.message });
@@ -122,6 +132,7 @@ async function ensureSpace(spaceId: string): Promise<LiveSpace | null> {
     hostId: row.hostId,
     status: row.status as LiveSpace['status'],
     recordChat: row.recordChat,
+    privateCommunityId: row.community?.isPrivate ? row.communityId : null,
     pinned: isPinned(row.pinned) ? (row.pinned as SpacePinned) : null,
     members: new Map(),
   };
@@ -168,6 +179,24 @@ export function registerSpacesHandlers(io: Server, socket: Socket, _ctx?: unknow
     if (!space) {
       socket.emit(SPACE_S2C.ERROR, { message: 'Space is not live' });
       return;
+    }
+
+    // A private community's Space is members-only: anonymous sockets and
+    // non-members get the same reply as a missing Space (no existence oracle).
+    if (space.privateCommunityId) {
+      const uid = typeof socket.data.userId === 'string' ? socket.data.userId : '';
+      const member = uid
+        ? await getPrismaClient()
+            .communityMember.findUnique({
+              where: { communityId_userId: { communityId: space.privateCommunityId, userId: uid } },
+              select: { userId: true },
+            })
+            .catch(() => null)
+        : null;
+      if (!member) {
+        socket.emit(SPACE_S2C.ERROR, { message: 'Space is not live' });
+        return;
+      }
     }
 
     // Leave any previous space this socket was in.

@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
+import { focusAfterRemoval } from '@/components/communities/focus-after-removal';
 import type { InviteDTO } from '@/lib/communities/invites.server';
 
 /** Expiry choices, in days; `''` = never. Mirrors INVITE_LIMITS.maxExpiryDays (90). */
@@ -32,6 +33,7 @@ export function ModInvites({ slug }: { slug: string }) {
   const [expiry, setExpiry] = useState('7');
   const [busy, setBusy] = useState(false);
   const listRef = useRef<HTMLUListElement>(null);
+  const emptyRef = useRef<HTMLSpanElement>(null);
 
   const load = useCallback(async () => {
     const res = await plusFetch<{ invites: InviteDTO[] }>(communityApi(slug, '/invites'));
@@ -57,6 +59,8 @@ export function ModInvites({ slug }: { slug: string }) {
       return;
     }
     setInvites((cur) => [res.data!.invite, ...(cur ?? [])]);
+    // Announced via sonner's live region: the new row appears silently otherwise.
+    toast.success(t('invite-created-toast', { defaultValue: 'Invite link created' }));
   };
 
   const revoke = async (invite: InviteDTO) => {
@@ -74,21 +78,23 @@ export function ModInvites({ slug }: { slug: string }) {
       toast.error(t('invite-revoke-error', { defaultValue: "Couldn't revoke the link" }));
       return;
     }
-    // The revoked row is gone and its button with it: commit the removal now, then
-    // keep keyboard focus in the list.
+    toast.success(t('invite-revoked-toast', { defaultValue: 'Invite link revoked' }));
+    const target = focusAfterRemoval(
+      (invites ?? []).map((i) => i.id),
+      invite.id,
+    );
+    // The revoked row and its button are gone: commit the removal now so the next
+    // row (or the empty state) exists to take focus.
     flushSync(() => setInvites((cur) => cur?.filter((i) => i.id !== invite.id) ?? null));
-    listRef.current?.querySelector<HTMLElement>('button:not(:disabled)')?.focus();
+    if (target.kind === 'empty') {
+      emptyRef.current?.focus();
+      return;
+    }
+    const row = Array.from(
+      listRef.current?.querySelectorAll<HTMLElement>('[data-invite-id]') ?? [],
+    ).find((el) => el.dataset.inviteId === target.id);
+    row?.querySelector<HTMLElement>('button:not(:disabled)')?.focus();
   };
-
-  const linkFor = (code: string) =>
-    `${typeof window === 'undefined' ? '' : window.location.origin}/c/${encodeURIComponent(slug)}/invite/${code}`;
-
-  const stateLabel = (i: InviteDTO) =>
-    i.state === 'expired'
-      ? t('invite-state-expired', { defaultValue: 'Expired' })
-      : i.state === 'exhausted'
-        ? t('invite-state-exhausted', { defaultValue: 'Used up' })
-        : null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -138,84 +144,112 @@ export function ModInvites({ slug }: { slug: string }) {
       ) : invites.length === 0 ? (
         <EmptyState
           icon={Link2}
-          title={t('invite-empty', { defaultValue: 'No invite links yet' })}
+          // The last row's button unmounted: focus lands on this heading (tabIndex -1).
+          title={
+            <span ref={emptyRef} tabIndex={-1} className="outline-none">
+              {t('invite-empty', { defaultValue: 'No invite links yet' })}
+            </span>
+          }
           description={t('invite-empty-hint', {
             defaultValue: 'Create a link to let people join without asking.',
           })}
         />
       ) : (
         <ul ref={listRef} className="flex flex-col gap-2">
-          {invites.map((i) => {
-            const label = stateLabel(i);
-            return (
-              <li key={i.id} className="glass-fill flex flex-col gap-2 p-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <code className="min-w-0 flex-1 truncate rounded-site-sm glass-inset px-2 py-1 text-xs text-site-text">
-                    {linkFor(i.code)}
-                  </code>
-                  <CopyButton
-                    value={linkFor(i.code)}
-                    label={t('invite-copy', { defaultValue: 'Copy invite link' })}
-                    disabled={i.state !== 'active'}
-                  />
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => revoke(i)}
-                    aria-label={t('invite-revoke-named', {
-                      code: i.code.slice(0, 6),
-                      defaultValue: 'Revoke invite link starting {{code}}',
-                    })}
-                  >
-                    {t('invite-revoke', { defaultValue: 'Revoke' })}
-                  </Button>
-                </div>
-                <p className="flex flex-wrap gap-x-2 text-xs text-site-text-muted">
-                  <span>
-                    {i.maxUses === null
-                      ? t('invite-uses-unlimited', {
-                          count: i.uses,
-                          defaultValue_one: '{{count}} use',
-                          defaultValue: '{{count}} uses',
-                        })
-                      : t('invite-uses-limited', {
-                          uses: i.uses,
-                          max: i.maxUses,
-                          defaultValue: '{{uses}} of {{max}} uses',
-                        })}
-                  </span>
-                  <span>·</span>
-                  <span>
-                    {i.expiresAt
-                      ? t('invite-expires-on', {
-                          date: format(new Date(i.expiresAt), 'PP'),
-                          defaultValue: 'Expires {{date}}',
-                        })
-                      : t('invite-never-expires', { defaultValue: 'Never expires' })}
-                  </span>
-                  <span>·</span>
-                  <span>
-                    {t('invite-created-by', {
-                      name:
-                        i.createdBy.name ||
-                        i.createdBy.handle ||
-                        t('someone', { defaultValue: 'Someone' }),
-                      when: formatDistanceToNow(new Date(i.createdAt), { addSuffix: true }),
-                      defaultValue: 'Created by {{name}} {{when}}',
-                    })}
-                  </span>
-                  {label && (
-                    <>
-                      <span>·</span>
-                      <span className="font-medium text-site-text">{label}</span>
-                    </>
-                  )}
-                </p>
-              </li>
-            );
-          })}
+          {invites.map((i) => (
+            <InviteRow key={i.id} invite={i} slug={slug} onRevoke={() => revoke(i)} />
+          ))}
         </ul>
       )}
     </div>
+  );
+}
+
+/** One invite link. Exported so its markup can be tested without a fetch. */
+export function InviteRow({
+  invite: i,
+  slug,
+  onRevoke,
+}: {
+  invite: InviteDTO;
+  slug: string;
+  onRevoke: () => void;
+}) {
+  const { t } = useTranslation('f-communities-plus');
+  const link = `${typeof window === 'undefined' ? '' : window.location.origin}/c/${encodeURIComponent(slug)}/invite/${i.code}`;
+  const prefix = i.code.slice(0, 6);
+  const label =
+    i.state === 'expired'
+      ? t('invite-state-expired', { defaultValue: 'Expired' })
+      : i.state === 'exhausted'
+        ? t('invite-state-exhausted', { defaultValue: 'Used up' })
+        : null;
+  return (
+    <li data-invite-id={i.id} className="glass-fill flex flex-col gap-2 p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <code className="min-w-0 flex-1 truncate rounded-site-sm glass-inset px-2 py-1 text-xs text-site-text">
+          {link}
+        </code>
+        <CopyButton
+          value={link}
+          // Named like the revoke button: every row would otherwise read "Copy invite link".
+          label={t('invite-copy-named', {
+            code: prefix,
+            defaultValue: 'Copy invite link starting {{code}}',
+          })}
+          disabled={i.state !== 'active'}
+        />
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onRevoke}
+          aria-label={t('invite-revoke-named', {
+            code: prefix,
+            defaultValue: 'Revoke invite link starting {{code}}',
+          })}
+        >
+          {t('invite-revoke', { defaultValue: 'Revoke' })}
+        </Button>
+      </div>
+      <p className="flex flex-wrap gap-x-2 text-xs text-site-text-muted">
+        <span>
+          {i.maxUses === null
+            ? t('invite-uses-unlimited', {
+                count: i.uses,
+                defaultValue_one: '{{count}} use',
+                defaultValue: '{{count}} uses',
+              })
+            : t('invite-uses-limited', {
+                uses: i.uses,
+                max: i.maxUses,
+                defaultValue: '{{uses}} of {{max}} uses',
+              })}
+        </span>
+        <span aria-hidden>·</span>
+        <span>
+          {i.expiresAt
+            ? t('invite-expires-on', {
+                date: format(new Date(i.expiresAt), 'PP'),
+                defaultValue: 'Expires {{date}}',
+              })
+            : t('invite-never-expires', { defaultValue: 'Never expires' })}
+        </span>
+        <span aria-hidden>·</span>
+        <span>
+          {t('invite-created-by', {
+            name:
+              i.createdBy.name || i.createdBy.handle || t('someone', { defaultValue: 'Someone' }),
+            when: formatDistanceToNow(new Date(i.createdAt), { addSuffix: true }),
+            defaultValue: 'Created by {{name}} {{when}}',
+          })}
+        </span>
+        {label && (
+          <>
+            <span aria-hidden>·</span>
+            <span className="font-medium text-site-text">{label}</span>
+          </>
+        )}
+      </p>
+    </li>
   );
 }

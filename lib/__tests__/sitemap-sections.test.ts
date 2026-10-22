@@ -203,14 +203,26 @@ describe('visibility predicates', () => {
   it('reuses the shared public-post predicate, and excludes reposts', async () => {
     const { SITEMAP_SECTIONS } = await import('@/lib/sitemap.server');
     const { PUBLIC_POST_WHERE } = await import('@/lib/feed/rss.server');
-    await SITEMAP_SECTIONS.posts.page(0, 10);
+    // The predicate reads "now" when built; pin it so the two builds are equal.
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-01-01T00:00:00Z') });
+    try {
+      await SITEMAP_SECTIONS.posts.page(0, 10);
+    } finally {
+      vi.useRealTimers();
+    }
 
     const where = prismaMock.rMHark.findMany.mock.calls[0][0].where;
     // The RSS feeds and the sitemap must agree on what "public" means; this is
     // the one place that rule is written down.
-    for (const [key, value] of Object.entries(PUBLIC_POST_WHERE)) {
-      expect(where[key]).toEqual(value);
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-01-01T00:00:00Z') });
+    try {
+      for (const [key, value] of Object.entries(PUBLIC_POST_WHERE)) {
+        expect(where[key]).toEqual(value);
+      }
+    } finally {
+      vi.useRealTimers();
     }
+    expect(where.isSensitive).toBe(false);
     expect(where.originalId).toBeNull();
     expect(where.user).toEqual({ handle: { not: null }, isBot: false });
   });

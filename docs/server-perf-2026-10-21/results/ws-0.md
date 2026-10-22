@@ -1,5 +1,7 @@
 # WS0 — Instrumentation, harness, dataset, baseline — results
 
+> Point-in-time ledger as of `c4c8d6091` (#925). Figures are from the seeded perf dataset or in-process runs, not production; SHAs and branch names refer to that program's worktrees.
+
 Worktree baseline taken 2026-10-21 19:20–19:38 UTC, commit `8e107956` plus the bench-IP change committed
 with this file (see Commands). Environment deviations: see "Environment notes" — all benign, all
 documented. Dataset: full scale, seed 126 s.

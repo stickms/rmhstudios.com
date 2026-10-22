@@ -32,7 +32,7 @@ export async function planPostsPlus(
   if (!input.ttl && !input.seriesId && !input.qotdDay) return { plan: EMPTY_PLAN, error: null };
 
   if (input.seriesId) {
-    const err = await seriesComposeError(userId, input.seriesId, input.audience);
+    const err = await seriesComposeError(userId, input.seriesId, input.audience, input.communityId);
     if (err) return { plan: null, error: err };
   }
   if (input.qotdDay) {

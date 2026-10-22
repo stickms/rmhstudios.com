@@ -12,7 +12,9 @@
  * Server-only: touches Prisma and reads server helpers.
  */
 
+import { notLockedWhere } from '@/lib/feed/map-feed-item.server';
 import { prisma } from '@/lib/prisma.server';
+import { eventCommunityVisibleWhere } from '@/lib/events-visibility';
 import { communityVisibleWhere } from '@/lib/feed/audience.server';
 import { SITE_URL } from '@/lib/seo';
 import { signUnsubToken } from '@/lib/email/unsubscribe';
@@ -98,6 +100,8 @@ export async function topPostsFromFollows(userId: string, since: Date): Promise<
       // A digest must not carry members-only content: public-community posts are
       // fine, a private community's only for its own members (the recipient).
       ...communityVisibleWhere(userId),
+      // Priced posts: the digest preview is the post text, which is paid content.
+      AND: [notLockedWhere(userId)],
       originalId: null, // skip bare reposts; surface original authored posts
     },
     orderBy: { createdAt: 'desc' },
@@ -198,7 +202,13 @@ async function upcomingEvents(userId: string): Promise<UpcomingEvent[]> {
       where: {
         userId,
         status: 'going',
-        event: { startsAt: { gte: new Date() }, canceledAt: null },
+        // An RSVP outlives membership: never email a private community's
+        // event title to someone who has since left it.
+        event: {
+          startsAt: { gte: new Date() },
+          canceledAt: null,
+          ...eventCommunityVisibleWhere(userId),
+        },
       },
       orderBy: { event: { startsAt: 'asc' } },
       take: 3,

@@ -17,6 +17,12 @@ import { awardXp } from '@/lib/xp/engine.server';
 import { progressQuests } from '@/lib/quests/engine.server';
 import { grantAchievement, progressAchievement } from '@/lib/achievements/engine.server';
 import { createNotification } from '@/lib/notifications.server';
+import { HELD_BY, recordModItem } from '@/lib/communities/automod.server';
+import {
+  checkScheduledCommunityPost,
+  logScheduledRemoval,
+  type ScheduledCommunityVerdict,
+} from '@/lib/scheduled/community-gate.server';
 
 interface PollPayload {
   question: string;
@@ -25,11 +31,87 @@ interface PollPayload {
   durationHours?: number;
 }
 
-/** Materialize one scheduled post into a real RMHark. Returns the new post id. */
+/**
+ * A community post that no longer passes the community checks (membership ended,
+ * the author was removed, AutoMod/verification rules changed) is NOT published.
+ * It is demoted to a plain draft - never left due, or the publish job would
+ * re-read the same poison row every run and starve later ones - and the author is
+ * told why.
+ */
+async function refuseCommunityPublish(
+  sp: ScheduledPost,
+  verdict: RefusedVerdict,
+): Promise<void> {
+  await prisma.scheduledPost.updateMany({
+    where: { id: sp.id, publishedId: null },
+    data: { scheduledAt: null, isCapsule: false },
+  });
+  if (verdict.removedBy && sp.communityId) {
+    await logScheduledRemoval(
+      { userId: sp.userId, communityId: sp.communityId, content: sp.content },
+      verdict.removedBy,
+    ).catch(() => {});
+  }
+  await createNotification({
+    userId: sp.userId,
+    type: 'SYSTEM',
+    entityType: 'scheduled-post',
+    entityId: sp.id,
+    preview: `Your scheduled community post wasn't published: ${verdict.error}`,
+    link: '/drafts',
+  }).catch(() => {});
+}
+
+/**
+ * Materialize one scheduled post into a real RMHark. Returns the new post id, or
+ * null when it was not published (lost a race, or refused by the community gate).
+ */
 export async function publishScheduledPost(sp: ScheduledPost): Promise<string | null> {
+  return (await publishScheduledPostDetailed(sp)).postId;
+}
+
+export type RefusedVerdict = Extract<ScheduledCommunityVerdict, { ok: false }>;
+
+/** Like {@link publishScheduledPost}, but says why a community post was refused. */
+export async function publishScheduledPostDetailed(
+  sp: ScheduledPost,
+): Promise<{ postId: string | null; refused?: RefusedVerdict }> {
+  const out: { refused?: RefusedVerdict } = {};
+  const postId = await publishInner(sp, out);
+  return { postId, ...out };
+}
+
+async function publishInner(
+  sp: ScheduledPost,
+  out: { refused?: RefusedVerdict },
+): Promise<string | null> {
   if (sp.publishedId) return sp.publishedId;
 
   const poll = (sp.poll as PollPayload | null) ?? null;
+
+  // Re-run the direct path's community checks NOW: membership, verification and
+  // AutoMod rules can all have changed since the post was scheduled.
+  let held = false;
+  let queueRule: string | null = null;
+  let queueAction: 'hold' | 'flag' | null = null;
+  if (sp.communityId) {
+    const verdict = await checkScheduledCommunityPost({
+      userId: sp.userId,
+      communityId: sp.communityId,
+      content: sp.content,
+      gifUrl: sp.gifUrl,
+      imageUrls: sp.imageUrls,
+      hasPoll: !!poll,
+    });
+    if (!verdict.ok) {
+      out.refused = verdict;
+      await refuseCommunityPublish(sp, verdict);
+      return null;
+    }
+    held = verdict.held;
+    queueRule = verdict.ruleName;
+    queueAction = verdict.held ? 'hold' : verdict.flagged ? 'flag' : null;
+  }
 
   const created = await prisma.$transaction(async (tx) => {
     // Claim the row. The lazy path and the publish job can pick up the same due
@@ -52,6 +134,9 @@ export async function publishScheduledPost(sp: ScheduledPost): Promise<string | 
         replyControl: sp.replyControl,
         unlockPrice: sp.unlockPrice && sp.unlockPrice > 0 ? sp.unlockPrice : null,
         communityId: sp.communityId ?? null,
+        // An AutoMod hold is a soft-delete marker: invisible everywhere until a
+        // mod approves it (see automod.server.ts resolveModItem).
+        ...(held ? { deletedAt: new Date(), deletedBy: HELD_BY } : {}),
       },
       select: { id: true },
     });
@@ -60,15 +145,18 @@ export async function publishScheduledPost(sp: ScheduledPost): Promise<string | 
     // (app/routes/api/rmharks.ts): the author's post total and, when the post
     // targets a community, that community's post count. The RMHark.create above
     // succeeds only if the community FK resolves, so the update is safe.
-    await tx.user.update({
-      where: { id: sp.userId },
-      data: { postCount: { increment: 1 } },
-    });
-    if (sp.communityId) {
-      await tx.community.update({
-        where: { id: sp.communityId },
+    // A held post is counted when a mod approves it, as on the direct path.
+    if (!held) {
+      await tx.user.update({
+        where: { id: sp.userId },
         data: { postCount: { increment: 1 } },
       });
+      if (sp.communityId) {
+        await tx.community.update({
+          where: { id: sp.communityId },
+          data: { postCount: { increment: 1 } },
+        });
+      }
     }
 
     if (poll && poll.question && Array.isArray(poll.options) && poll.options.length >= 2) {
@@ -105,6 +193,22 @@ export async function publishScheduledPost(sp: ScheduledPost): Promise<string | 
     });
     return row?.publishedId ?? null;
   }
+
+  // AutoMod hold / flag: file the mod-queue entry (best-effort, as on the direct path).
+  if (sp.communityId && queueAction) {
+    await recordModItem({
+      communityId: sp.communityId,
+      entityType: 'rmhark',
+      entityId: created.id,
+      postId: created.id,
+      authorId: sp.userId,
+      action: queueAction,
+      ruleName: queueRule ?? 'AutoMod',
+      snapshot: sp.content.trim() || '(media post)',
+    }).catch((e) => console.error('[scheduled] automod queue error:', e));
+  }
+  // A held post stops here: no capsule notice, progression or XP until approved.
+  if (held) return created.id;
 
   // Z7: tell the author their time capsule has opened (best-effort).
   if (sp.isCapsule) {

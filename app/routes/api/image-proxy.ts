@@ -22,8 +22,9 @@ const MAX_UPSTREAM_BYTES = 10 * 1024 * 1024; // 10 MB
 // replace — the recommended Cloudflare cache rule.
 //
 // Misses go through `getOrEncodeVariant` (lib/images/variants.server.ts):
-// concurrent requests for one key share one upstream fetch + encode, and the
-// encode itself is admitted through the CPU gate.
+// concurrent requests for one key share one upstream fetch + encode. The fetch
+// runs in the load gate (bounded buffers, hard body deadline below); only the
+// encode is admitted through the CPU gate.
 
 export const Route = createFileRoute('/api/image-proxy')({
   server: {
@@ -62,8 +63,8 @@ export const Route = createFileRoute('/api/image-proxy')({
               height,
               quality,
               format,
-              // Runs once per key however many requests are waiting on it, and
-              // outside the CPU gate: it is a network fetch.
+              // Runs once per key however many requests are waiting on it, in
+              // the load gate (not the CPU gate): it is a network fetch.
               load: async () => {
                 // Fetch the upstream image (SSRF-guarded: https only, blocks private IPs)
                 let upstream: Response;
@@ -71,6 +72,9 @@ export const Route = createFileRoute('/api/image-proxy')({
                   upstream = await safeFetch(src, {
                     headers: { 'User-Agent': 'RMHStudios-ImageProxy/1.0' },
                     timeoutMs: 10_000,
+                    // Covers the BODY too: without it a dripping server holds a
+                    // load slot for undici's 300 s bodyTimeout.
+                    bodyTimeoutMs: 15_000,
                   });
                 } catch (e) {
                   if (e instanceof SsrfError) {

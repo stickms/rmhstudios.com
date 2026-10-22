@@ -176,13 +176,31 @@ export async function endSpace(id: string, hostId: string): Promise<SpaceView> {
 }
 
 /**
+ * A Space hosted by a PRIVATE community is only visible to that community's
+ * members — the list, the room page, the transcript and the socket all apply it.
+ * Profile-hosted and public-community Spaces stay public.
+ */
+export function viewableSpaceWhere(viewerId: string | null): Prisma.SpaceWhereInput {
+  return {
+    OR: [
+      { communityId: null },
+      { community: { isPrivate: false } },
+      ...(viewerId ? [{ community: { members: { some: { userId: viewerId } } } }] : []),
+    ],
+  };
+}
+
+/**
  * Live spaces, newest-started first — powers the "Live now" rail. Audience
  * count is left null: it is ephemeral in the socket hub (a separate process),
  * so the rail shows a live dot without a DB-derived count.
  */
-export async function listLiveSpaces(limit = 20): Promise<LiveSpaceSummary[]> {
+export async function listLiveSpaces(
+  limit = 20,
+  viewerId: string | null = null,
+): Promise<LiveSpaceSummary[]> {
   const rows = await prisma.space.findMany({
-    where: { status: 'LIVE' },
+    where: { status: 'LIVE', ...viewableSpaceWhere(viewerId) },
     orderBy: { startedAt: 'desc' },
     take: Math.min(Math.max(limit, 1), 50),
     select: spaceSelect,
@@ -194,8 +212,16 @@ export async function listLiveSpaces(limit = 20): Promise<LiveSpaceSummary[]> {
  * Fetch one space for SSR. For an ENDED space with `recordChat`, includes the
  * persisted chat transcript (oldest first).
  */
-export async function getSpace(id: string): Promise<SpaceView | null> {
-  const row = await prisma.space.findUnique({ where: { id }, select: spaceSelect });
+export async function getSpace(
+  id: string,
+  viewerId: string | null = null,
+): Promise<SpaceView | null> {
+  // `findFirst` + the visibility filter: a private-community Space the viewer
+  // can't see is indistinguishable from a missing one (404, no existence oracle).
+  const row = await prisma.space.findFirst({
+    where: { id, ...viewableSpaceWhere(viewerId) },
+    select: spaceSelect,
+  });
   if (!row) return null;
 
   const view = shapeSpace(row);

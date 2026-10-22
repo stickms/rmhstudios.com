@@ -101,7 +101,7 @@ Every new or changed cache — L1, L2, HTTP — answers all of these in its comm
 
 ## 6. Observability is public
 
-`Server-Timing` is readable by any page script: phase entries carry `dur` only,
+`Server-Timing` is readable by any page script: phase entries (sent only under `RMH_PERF_HEADERS=1`, since cache hit vs miss shows in them) carry `dur` only,
 from the fixed vocabulary in `lib/otel/timing.ts`. Bench-only data (query
 counts, event-loop delay) is behind an env flag that is **off by default**, with
 a test asserting it is off. No ids, keys, SQL, or hostnames in any header.

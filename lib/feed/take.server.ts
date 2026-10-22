@@ -15,6 +15,7 @@ const postSelect = {
   audience: true,
   communityId: true,
   deletedAt: true,
+  expiresAt: true,
   takeAgreeCount: true,
   takeDisagreeCount: true,
 } as const;

@@ -17,7 +17,9 @@ export const Route = createFileRoute('/api/achievements/$userId')({
       GET: defineHandler(
         {
           auth: 'none',
-          // Opt out of the 30 s micro-cache: an unlock must show for its owner.
+          // Opt out of the in-process micro-cache so the ORIGIN is never stale after an
+          // unlock; the liveList HTTP window (15 s browser, 30 s shared) still applies,
+          // so the owner sees it within that window.
           microCache: false,
           cache: CACHE_POLICY.liveList,
         },

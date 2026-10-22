@@ -8,7 +8,7 @@
  */
 import { prisma } from '@/lib/prisma.server';
 import { cached } from '@/lib/cached.server';
-import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { getHiddenAuthorIdsStrict } from '@/lib/moderation.server';
 import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
 
@@ -137,11 +137,12 @@ async function postItem(viewerId: string | null, not?: string): Promise<Surprise
     return [a?.createdAt ?? null, z?.createdAt ?? null];
   });
   if (!b) return null;
-  const hidden = await getHiddenAuthorIds(viewerId);
+  const hidden = await getHiddenAuthorIdsStrict(viewerId);
   const where = {
     deletedAt: null,
     audience: 'PUBLIC' as const,
     communityId: null,
+    unlockPrice: null, // priced posts' text is paid content
     content: { not: '' },
     ...(hidden.length ? { userId: { notIn: hidden } } : {}),
     ...(not ? { id: { not } } : {}),

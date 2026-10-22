@@ -28,22 +28,33 @@
  *    cache. At 500 entries and a typical 2-10 KB body that is 1-5 MB per worker;
  *    the hard ceiling is 500 x 64 KB = 32 MB.
  *  - **Stampede.** Concurrent misses for one key share one handler run.
- *  - **Invalidation.** TTL only, which the 30 s cap states: `apiCache.invalidate*`
- *    does not reach this cache (it is keyed by URL, not by apiCache key). A public
- *    route whose data has a write path that invalidates, or whose visibility can be
- *    flipped (a private wishlist), must pass `microCache: false` to `defineHandler`;
- *    `lib/__tests__/api-micro-cache-optout.test.ts` pins the set.
- *  - **Key abuse.** Sorted query params; more than 8 params or a 300-char key is not
- *    cached, so a `?x=1..N` sweep cannot flush the LRU. The byte budget is a share
- *    of the heap (`heapShare`), like the other caches.
+ *  - **Invalidation.** TTL, plus a generation: every entry records
+ *    `cacheGeneration()` (lib/cache.ts) from before its handler ran, and any
+ *    `apiCache.invalidate*` / `dropLocal*` in this process (including one applied
+ *    from another process) bumps it, so an entry from an older generation is a
+ *    miss, and a response produced across a bump is not stored. Coarse (any
+ *    invalidation anywhere drops every entry) but correct without each route
+ *    having to remember to opt out. It cannot see a write that never touches
+ *    apiCache (a visibility flip read straight from the DB): those routes still
+ *    pass `microCache: false` to `defineHandler`, pinned by
+ *    `lib/__tests__/api-micro-cache-optout.test.ts`.
+ *  - **Key abuse.** Params sorted by name (stable, so repeated params keep their
+ *    order: handlers read the first); more than 8 params or a 300-char key is not
+ *    cached, and one path holds at most MAX_KEYS_PER_PATH entries, so a `?x=1..N`
+ *    sweep of short keys cannot flush the LRU. The byte budget is a share of the
+ *    heap (`heapShare`), like the other caches.
  */
-import { ApiCache, heapShare } from '@/lib/cache';
+import { ApiCache, cacheGeneration, heapShare } from '@/lib/cache';
 
 const MAX_BODY_BYTES = 64 * 1024;
 const MAX_TTL_MS = 30_000;
 /** A key's query part beyond these is not a real client; skip the cache rather than let a sweep flush the LRU. */
 const MAX_QUERY_PARAMS = 8;
 const MAX_KEY_CHARS = 300;
+/** Distinct cached query variants per method+path; beyond it new variants are served uncached. */
+const MAX_KEYS_PER_PATH = 20;
+/** Tracked paths beyond this trigger a prune of expired entries from the bookkeeping. */
+const MAX_TRACKED_PATHS = 2_000;
 /** Share of the worker heap the micro-cache may hold (the other caches use 8% and 4%). */
 const RESPONSE_CACHE_HEAP_SHARE = 0.02;
 
@@ -63,6 +74,8 @@ const SKIP_HEADERS = new Set([
 ]);
 
 interface Stored {
+  /** `cacheGeneration()` observed before the handler ran. */
+  gen: number;
   status: number;
   headers: [string, string][];
   body: Uint8Array;
@@ -85,6 +98,39 @@ const store =
       })
     : null;
 const inflight = new Map<string, Promise<Stored | null>>();
+/** method+path -> (key -> expiresAt), for the per-path cap. LRU evictions linger here until their TTL. */
+const pathKeys = new Map<string, Map<string, number>>();
+
+const pathOf = (key: string): string => {
+  const q = key.indexOf('?');
+  return q === -1 ? key : key.slice(0, q);
+};
+
+function pruneExpired(now: number): void {
+  for (const [path, keys] of pathKeys) {
+    for (const [k, exp] of keys) if (exp <= now) keys.delete(k);
+    if (keys.size === 0) pathKeys.delete(path);
+  }
+}
+
+/** Reserve a slot for `key` under its path; false when the path is full. */
+function reserveKey(key: string, ttlMs: number): boolean {
+  const now = Date.now();
+  const path = pathOf(key);
+  let keys = pathKeys.get(path);
+  if (!keys) {
+    if (pathKeys.size >= MAX_TRACKED_PATHS) pruneExpired(now);
+    if (pathKeys.size >= MAX_TRACKED_PATHS) return false;
+    keys = new Map();
+    pathKeys.set(path, keys);
+  }
+  if (!keys.has(key) && keys.size >= MAX_KEYS_PER_PATH) {
+    for (const [k, exp] of keys) if (exp <= now) keys.delete(k);
+    if (keys.size >= MAX_KEYS_PER_PATH) return false;
+  }
+  keys.set(key, now + ttlMs);
+  return true;
+}
 
 /** Whether this process runs the micro-cache at all. */
 export const responseCacheEnabled = store !== null;
@@ -105,7 +151,10 @@ export function responseCacheKey(request: Request): string | null {
   const u = new URL(request.url);
   const params = [...u.searchParams.entries()];
   if (params.length > MAX_QUERY_PARAMS) return null;
-  params.sort(([a, av], [b, bv]) => (a === b ? (av < bv ? -1 : av > bv ? 1 : 0) : a < b ? -1 : 1));
+  // By NAME only (Array#sort is stable): repeated params keep their relative
+  // order, because handlers read the first, so `?d=hard&d=easy` and
+  // `?d=easy&d=hard` are different requests and must not share an entry.
+  params.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
   const query = new URLSearchParams(params).toString();
   const key = `${request.method}:${u.pathname}${query ? `?${query}` : ''}`;
   return key.length > MAX_KEY_CHARS ? null : key;
@@ -117,7 +166,7 @@ function rebuild(s: Stored): Response {
   return new Response(s.body.slice(), { status: s.status, headers: s.headers });
 }
 
-async function capture(response: Response): Promise<Stored | null> {
+async function capture(response: Response, gen: number): Promise<Stored | null> {
   if (response.status !== 200) return null;
   const headers = response.headers;
   if (headers.get('set-cookie') || headers.get('content-encoding')) return null;
@@ -132,7 +181,7 @@ async function capture(response: Response): Promise<Stored | null> {
   headers.forEach((value, name) => {
     if (!SKIP_HEADERS.has(name.toLowerCase())) kept.push([name, value]);
   });
-  return { status: 200, headers: kept, body };
+  return { gen, status: 200, headers: kept, body };
 }
 
 /**
@@ -148,24 +197,29 @@ export async function withResponseCache(
   if (!store || ttlMs <= 0 || key === null) return produce();
 
   const hit = store.get<Stored>(key);
-  if (hit) return rebuild(hit);
+  if (hit && hit.gen === cacheGeneration()) return rebuild(hit);
 
   const pending = inflight.get(key);
   if (pending) {
     const shared = await pending.catch(() => null);
-    if (shared) return rebuild(shared);
+    if (shared && shared.gen === cacheGeneration()) return rebuild(shared);
     return produce(); // the leader's result was not cacheable: run our own
   }
 
   let response!: Response;
+  // Read BEFORE the handler: an invalidation that lands while it runs means the
+  // body may predate the write, so it is not stored (and not shared).
+  const gen = cacheGeneration();
   const leader = (async (): Promise<Stored | null> => {
     response = await produce();
-    return capture(response);
+    return capture(response, gen);
   })();
   inflight.set(key, leader);
   try {
     const stored = await leader;
-    if (stored) store.set(key, stored, ttlMs, stored.body.byteLength + 512);
+    if (stored && stored.gen === cacheGeneration() && reserveKey(key, ttlMs)) {
+      store.set(key, stored, ttlMs, stored.body.byteLength + 512);
+    }
     // The leader returns the response it produced, untouched.
     return response;
   } finally {
@@ -177,4 +231,5 @@ export async function withResponseCache(
 export function clearResponseCache(): void {
   store?.invalidatePrefix('');
   inflight.clear();
+  pathKeys.clear();
 }

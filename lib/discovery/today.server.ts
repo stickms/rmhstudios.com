@@ -24,6 +24,7 @@ export async function buildDigest(now = new Date()): Promise<DigestPayload> {
         deletedAt: null,
         audience: 'PUBLIC',
         communityId: null,
+        unlockPrice: null, // priced posts' text is paid content
         createdAt: { gte: since },
         likeCount: { gt: 0 },
         content: { not: '' },

@@ -70,6 +70,8 @@ export const Route = createFileRoute('/api/rmharks/$id/translate')({
           where: { id: params.id },
           select: {
             content: true,
+            deletedAt: true,
+            expiresAt: true,
             userId: true,
             audience: true,
             communityId: true,
@@ -78,8 +80,16 @@ export const Route = createFileRoute('/api/rmharks/$id/translate')({
           },
         });
         if (!post) return Response.json({ error: 'Post not found' }, { status: 404 });
+        // Deleted / admin-removed / expired posts are gone, not translatable: canViewPost
+        // applies the same rule as the post page (deleted, TTL, blocks, audience).
         if (!(await canViewPost(
-            { userId: post.userId, audience: post.audience, communityId: post.communityId },
+            {
+              userId: post.userId,
+              audience: post.audience,
+              communityId: post.communityId,
+              deletedAt: post.deletedAt,
+              expiresAt: post.expiresAt,
+            },
             viewerId,
           ))) {
           return Response.json({ error: 'Post not found' }, { status: 404 });

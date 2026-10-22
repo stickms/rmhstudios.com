@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma.server';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
-import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { getHiddenAuthorIdsStrict } from '@/lib/moderation.server';
 import { audienceWhereExact, communityVisibleWhere } from '@/lib/feed/audience.server';
 import { getMutedWords, applyMutedWords } from '@/lib/feed/timeline';
 import { cached } from '@/lib/cached.server';
@@ -170,7 +170,7 @@ export async function listExplore(viewerId: string | null): Promise<ExploreResul
   // Per-viewer inputs for hot posts (audience/mute) and the suggested-user
   // exclude set. These are cheap indexed reads.
   const [hidden, muted] = await Promise.all([
-    getHiddenAuthorIds(viewerId),
+    getHiddenAuthorIdsStrict(viewerId),
     viewerId ? getMutedWords(viewerId) : Promise.resolve([] as string[]),
   ]);
 

@@ -8,7 +8,7 @@
 import { randomBytes } from 'node:crypto';
 import { prisma } from '@/lib/prisma.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
-import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { getHiddenAuthorIdsStrict } from '@/lib/moderation.server';
 import { createNotification } from '@/lib/notifications.server';
 import { screenNewContent } from '@/lib/moderation/auto-moderate.server';
 import {
@@ -190,7 +190,7 @@ export async function viewSnapshot(
   });
   if (!snap) return null;
   const isOwner = viewerId === snap.userId;
-  const hidden = isOwner ? [] : await getHiddenAuthorIds(viewerId);
+  const hidden = isOwner ? [] : await getHiddenAuthorIdsStrict(viewerId);
   // A block in either direction makes the world unreachable, same as a missing one.
   if (!isOwner && hidden.includes(snap.userId)) return null;
 
@@ -243,7 +243,7 @@ async function gateVisitor(code: string, visitorId: string): Promise<Gate> {
   });
   if (!snap) return { ok: false, status: 404, error: 'Not found' };
   if (snap.userId === visitorId) return { ok: false, status: 400, error: 'This one is yours' };
-  const hidden = await getHiddenAuthorIds(visitorId);
+  const hidden = await getHiddenAuthorIdsStrict(visitorId);
   if (hidden.includes(snap.userId)) return { ok: false, status: 404, error: 'Not found' };
   return { ok: true, snap };
 }

@@ -48,7 +48,10 @@ vi.mock('@/lib/posts-plus/compose.server', () => ({
   recordPostsPlusTx: async () => {},
   afterPostsPlus: () => {},
 }));
-vi.mock('@/lib/tags-extract.server', () => ({ linkPostHashtags: async () => {} }));
+vi.mock('@/lib/tags-extract.server', () => ({
+  linkPostHashtags: async () => {},
+  linkPostHashtagsIfPublic: async () => {},
+}));
 vi.mock('@/lib/safety/link-risk.server', () => ({ recordLinkDomains: async () => {} }));
 vi.mock('@/lib/moderation/auto-moderate.server', () => ({ screenNewContent: async () => {} }));
 vi.mock('@/lib/feed/notify-mentions.server', () => ({ notifyMentions: async () => {} }));

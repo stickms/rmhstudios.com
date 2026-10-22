@@ -1,5 +1,7 @@
 # WS4 — Database: queries, indexes, read-replica adoption, search — results
 
+> Point-in-time ledger as of `c4c8d6091` (#925). Figures are from the seeded perf dataset or in-process runs, not production; SHAs and branch names refer to that program's worktrees.
+
 Worktree baseline taken 2026-10-21 (Stage A static analysis; DB checks on `rmh_ws4`, a copy of `rmh_perf_template`), base commit e97b5192. Environment deviations: **WS0's `WS0_READY` marker never appeared**, so the harness (`server-bench.mjs`, `Server-Timing`, `x-rmh-queries`) was not used. Every Shipped row is therefore `exact` evidence (query counts, columns, cache keys, which client a query uses) except the messages/search row, whose latency is a single indicative run. No migration or index was added (see Rejected).
 
 ## Shipped

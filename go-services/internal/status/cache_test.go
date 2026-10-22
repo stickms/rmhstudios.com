@@ -144,7 +144,10 @@ func TestResponseCachePanicDoesNotWedgeKey(t *testing.T) {
 	started := make(chan struct{})
 	release := make(chan struct{})
 	var calls atomic.Int32
-	h := withResponseCache(svc, time.Hour, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	parked := make(chan struct{}, 1)
+	rc := newResponseCache(svc, time.Hour)
+	rc.onWait = func() { parked <- struct{}{} }
+	h := rc.wrap(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if calls.Add(1) == 1 {
 			close(started)
 			<-release
@@ -161,7 +164,7 @@ func TestResponseCachePanicDoesNotWedgeKey(t *testing.T) {
 	<-started
 	waiter := make(chan *httptest.ResponseRecorder, 1)
 	go func() { waiter <- doGet(h, "/api/uptime") }()
-	time.Sleep(50 * time.Millisecond) // let the waiter park on the flight
+	<-parked // the waiter is about to block on the leader's flight (no sleep)
 	close(release)
 
 	if r := <-leaderDone; r == nil {

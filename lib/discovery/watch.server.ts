@@ -63,6 +63,16 @@ export async function setWatchLevel(
   return { ok: true as const };
 }
 
+/**
+ * Membership ended (left or removed): drop the user's watch on the community.
+ * A watch is only permitted to a member of a private community at creation, so
+ * without this an ex-member keeps receiving post previews. Returns the
+ * (unawaited) Prisma promise so callers can put it in a `$transaction([...])`.
+ */
+export function dropCommunityWatch(communityId: string, userId: string) {
+  return prisma.watch.deleteMany({ where: { userId, kind: 'community', targetId: communityId } });
+}
+
 export interface WatchEvent {
   kind: WatchKind;
   targetId: string;
@@ -90,6 +100,25 @@ export async function notifyWatchers(ev: WatchEvent): Promise<number> {
     .filter((w) => w.level === 'all' || (important && w.level === 'important'))
     .map((w) => w.userId);
   if (!ids.length) return 0;
+  // Send-time membership check: a private community's previews only reach
+  // CURRENT members, whatever a stale watch row says (defence in depth beside
+  // `dropCommunityWatch` on leave/removal).
+  if (ev.kind === 'community') {
+    const c = await prisma.community.findUnique({
+      where: { id: ev.targetId },
+      select: { isPrivate: true },
+    });
+    if (!c) return 0;
+    if (c.isPrivate) {
+      const members = await prisma.communityMember.findMany({
+        where: { communityId: ev.targetId, userId: { in: ids } },
+        select: { userId: true },
+      });
+      const current = new Set(members.map((m) => m.userId));
+      ids = ids.filter((id) => current.has(id));
+      if (!ids.length) return 0;
+    }
+  }
   if (ev.actorId) {
     const [blocks, mutes] = await Promise.all([
       prisma.userBlock.findMany({

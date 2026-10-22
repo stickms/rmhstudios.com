@@ -1,9 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
-import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
+import { rmharkIncludeLite, mapRmharksWithBoundedReactions, isLocked } from '@/lib/feed/map-feed-item.server';
+import { canReadThread } from '@/lib/feed/audience.server';
 import { rankSimilar } from '@/lib/feed/similarity';
-import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { getHiddenAuthorIdsStrict } from '@/lib/moderation.server';
 import { tokenize } from '@/lib/feed/similarity';
 
 /**
@@ -20,13 +21,24 @@ export const Route = createFileRoute('/api/rmharks/$id/similar')({
 
           const source = await prisma.rMHark.findUnique({
             where: { id: params.id },
-            select: { content: true, deletedAt: true },
+            select: {
+              content: true,
+              deletedAt: true,
+              userId: true,
+              audience: true,
+              communityId: true,
+              unlockPrice: true,
+              ...(viewerId ? { unlocks: { where: { userId: viewerId }, select: { id: true } } } : {}),
+            },
           });
-          if (!source || source.deletedAt || !source.content.trim()) {
-            return Response.json({ items: [] });
+          // The source's text drives the ranking, so "similar to X" is a topic oracle
+          // for X: gate it like reading X (private / blocked / priced-and-locked all 404).
+          if (!source || !(await canReadThread(source, viewerId)) || isLocked(source, viewerId)) {
+            return Response.json({ error: 'Not found' }, { status: 404 });
           }
+          if (!source.content.trim()) return Response.json({ items: [] });
 
-          const hidden = await getHiddenAuthorIds(viewerId);
+          const hidden = await getHiddenAuthorIdsStrict(viewerId);
           // Pull a candidate pool that shares at least one salient term, then
           // rank precisely in-memory. Cheap and good enough for short posts.
           const terms = tokenize(source.content).slice(0, 8);

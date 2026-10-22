@@ -194,6 +194,17 @@ next to their packages (`go-services/cmd/status/main_test.go`,
 `internal/doctrine/*_test.go`, …). Add or move `.go` files → run `make gazelle`
 first so BUILD files pick them up.
 
+**Database-backed Go tests in CI.** `internal/doctrine/decay_test.go`,
+`internal/streaksaver/run_test.go` and `pkg/db/db_test.go` skip themselves unless
+`RMH_PERF_DSN` points at a migrated database (the first two also need at least
+two `user` rows, and `streaksaver` fails without one). `go-microservices.yml`
+runs a `postgres:16` service, replays the migration SQL with `psql`, seeds two
+users and forwards the DSN with `--test_env=RMH_PERF_DSN`, so the decay and
+reminder SQL is checked against the real schema on every Go or migration change.
+`RMH_POOL_LOAD` (the `cmd/supervisor` pool load harness) stays off: it is a load
+generator. Locally: `RMH_PERF_DSN=postgres://… go test ./internal/doctrine/
+./internal/streaksaver/ ./pkg/db/` from `go-services/`.
+
 ### 4. Browser smoke (not in CI)
 
 `testing/e2e/smoke.mjs` drives the **built** app with the pre-installed Chromium
@@ -409,6 +420,17 @@ touches. Blocking on every PR (the `integration` job in `web-ci.yml`).
 | `coins.test.ts` | a tip moves exactly the amount and writes one ledger row; overdraft and self-tip are refused with every balance unchanged |
 | `developer-api.test.ts` | free accounts cannot mint keys; a paid key authenticates `/api/v1/me`; revoked and made-up keys → 401; scopes (read-only key cannot post, `write:posts` can) |
 | `public.test.ts` | `/api/ready`, the OpenAPI 3.1 spec, `/` SSR and the sitemap — the deploy smoke probes, run before merge |
+| `communities-invites.test.ts` | `acceptInvite` under real concurrency (40 racers on a `maxUses=5` link, double-accept), the consumed use rolled back when the membership insert fails (a trigger raises), accept racing approve of a pending request, a removal racing the removed member's accept |
+| `tag-feed.test.ts` | `listTagFeed`'s raw-SQL privacy rules executed for real: every audience (PUBLIC / FOLLOWERS / SUPPORTERS active vs lapsed / CIRCLE / PRIVATE), a private community, deleted posts, blocks both ways, and keyset pagination returning each visible post exactly once |
+| `migrations.test.ts` | what `migrate deploy` left behind: `community_join_request` accepts `REMOVED`/`CANCELLED`, the `CREATE INDEX CONCURRENTLY` indexes are `indisvalid`, nothing in the schema is invalid |
+
+Files that test a server module rather than an endpoint (`communities-invites`,
+`tag-feed`, `migrations`) import it directly (`@/lib/prisma.server`, the
+`*.server.ts` module) and seed through `lib/seed.ts`: users are `createMany`'d
+(no sign-up, so the 10/min limit is untouched), everything hangs off them, and
+`afterAll` deletes the users (cascade). Use this shape when the thing under test
+is SQL or a transaction that only a real database can judge, and mutation-check
+it: break the clause and see the test go red.
 
 How it works: `global-setup.ts` waits for `/api/ready`, then signs up the shared
 cast (`alice`, `bob`, `carol`) once and hands their cookies to the files via
@@ -465,7 +487,9 @@ own raw runs are in git history at `1b437552d` (`docs/server-perf-2026-10-21/res
 
 `RMH_PERF_HEADERS=1` adds `x-rmh-queries: <n>` to every response (off by
 default; `lib/__tests__/perf-headers.test.ts` pins that). `Server-Timing` is
-always on and carries `dur`-only `sess` / `cache` / `db` / `total` phases. The
+always on but carries only the `trace` id (what `lib/rum.ts` reads); the `dur`-only
+`sess` / `cache` / `db` / `total` phases are added under the same flag, because
+anonymous clients could otherwise read cache hit vs miss from them. The
 tests for the instrumentation itself are `lib/__tests__/otel-server-timing.test.ts`
 and `perf-headers.test.ts`, and they run in the main suite; the harness does not.
 
@@ -498,7 +522,7 @@ Ten workflows live in `.github/workflows/`. The ones that touch tests/quality (e
 | `deploy.yml` (`ci` job)       | `tsc --noEmit` → `eslint` → `pnpm test`                                                 | blocks — typecheck, lint and test all gate the deploy; see below                         |
 | `deploy.yml` (`integration`)  | same as web-ci's `integration`, on the **merged** commit                                | **blocks the deploy**; runs in parallel with the image build                             |
 | `web-ci.yml` (`eversion-e2e`) | build with sourcemaps → serve → every `eversion-*.mjs` (hub per profile x theme)        | non-blocking until T37; **nightly + manual dispatch only** (not on PRs); see §7          |
-| `go-microservices.yml`        | `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**` | blocks                                                                                   |
+| `go-microservices.yml`        | Postgres service + every `prisma/migrations/*/migration.sql` replayed + two seeded users, then `bazelisk test --build_tests_only --test_env=RMH_PERF_DSN //go-services/...`; path-filtered to `go-services/**` and `prisma/{migrations,schema.prisma}` | blocks                                                                                   |
 
 **Where enforcement lives.** web-ci's Test step is a hard gate on the PR, and
 the deploy's own `ci` job re-runs the suite on the merge result as a hard gate

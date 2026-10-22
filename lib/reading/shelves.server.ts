@@ -10,7 +10,7 @@
 
 import { prisma } from '@/lib/prisma.server';
 import { getBook } from '@/lib/library/library.server';
-import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { getHiddenAuthorIdsStrict } from '@/lib/moderation.server';
 import type { GoalProgress, ShelfEntryView, ShelfId, ShelfPrefs, ShelfPublicView } from './schema';
 
 const MAX_ENTRIES = 500;
@@ -121,7 +121,7 @@ export async function getPublicShelves(
 ): Promise<ShelfPublicView | null> {
   const isOwner = viewerId === ownerId;
   if (!isOwner && viewerId) {
-    const hidden = await getHiddenAuthorIds(viewerId);
+    const hidden = await getHiddenAuthorIdsStrict(viewerId);
     if (hidden.includes(ownerId)) return null;
   }
   const prefs = await getPrefs(ownerId);

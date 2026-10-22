@@ -1,5 +1,7 @@
 # WS1 — SSR shell and page loaders — results
 
+> Point-in-time ledger as of `c4c8d6091` (#925). Figures are from the seeded perf dataset or in-process runs, not production; SHAs and branch names refer to that program's worktrees.
+
 Stage A only (static analysis + dev-server query/byte counts). Stage B (production-build latency, cold start, heavy-user runs) has NOT been done: the WS0 harness marker had not appeared when this was written. Worktree baseline taken 2026-10-21 on commit e97b5192, DB `rmh_ws1_a` (migrated, not the seeded template; 1 user, 80 synthetic news articles). Environment deviations: `vite dev` for counts/bytes only; commits taken while holding the shared lock via a holder script (the sandbox refuses `flock … git`).
 
 ## Shipped

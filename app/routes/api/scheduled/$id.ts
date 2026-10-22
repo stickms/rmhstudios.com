@@ -3,6 +3,10 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
 import { MAX_RMHARK_LENGTH } from '@/lib/rmhark-schema';
+import {
+  checkScheduledCommunityPost,
+  logScheduledRemoval,
+} from '@/lib/scheduled/community-gate.server';
 
 const patchSchema = z.object({
   content: z.string().max(MAX_RMHARK_LENGTH).optional(),
@@ -45,6 +49,33 @@ export const Route = createFileRoute('/api/scheduled/$id')({
                   { status: 400 },
                 );
               }
+            }
+          }
+
+          // Editing the text of (or scheduling) a community draft re-runs the
+          // community gate, so a clean draft can't be edited into something
+          // AutoMod would have refused.
+          if (existing.communityId && (d.content !== undefined || scheduledAt)) {
+            const content = d.content !== undefined ? d.content.trim() : existing.content;
+            const verdict = await checkScheduledCommunityPost({
+              userId: session.user.id,
+              communityId: existing.communityId,
+              content,
+              gifUrl: existing.gifUrl,
+              imageUrls: existing.imageUrls,
+              hasPoll: !!existing.poll,
+            });
+            if (!verdict.ok) {
+              if (verdict.removedBy) {
+                await logScheduledRemoval(
+                  { userId: session.user.id, communityId: existing.communityId, content },
+                  verdict.removedBy,
+                ).catch(() => {});
+              }
+              return Response.json(
+                { error: verdict.error, code: verdict.code },
+                { status: verdict.status },
+              );
             }
           }
 

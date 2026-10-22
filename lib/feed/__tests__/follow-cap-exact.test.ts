@@ -37,6 +37,7 @@ vi.mock('@/lib/cached.server', () => ({
 }));
 vi.mock('@/lib/moderation.server', () => ({
   getHiddenAuthorIds: async () => [],
+  getHiddenAuthorIdsStrict: async () => [],
   getBlockedAuthorIds: async () => [],
 }));
 // The capped list knows nothing: the old code would have suggested everybody.

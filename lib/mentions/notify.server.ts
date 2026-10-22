@@ -202,6 +202,10 @@ export function canSee(userId: string, audience: MentionAudience): boolean {
 /**
  * Parse, filter and deliver the mentions in `text`.
  *
+ * (Named `dispatchMentions` so it cannot be confused with the feed's
+ * `notifyMentions` in `lib/feed/notify-mentions.server.ts`, which shares this
+ * module's `blockedPairs`.)
+ *
  * The order of the filters is the order of their cost: cap (free) → resolve (one
  * query) → self (free) → blocks (one query) → visibility (in memory). Running
  * visibility before blocks would be equally correct and strictly more expensive,
@@ -213,7 +217,7 @@ export function canSee(userId: string, audience: MentionAudience): boolean {
  * 'critical'` exists for account security, and a notifier that claims it for
  * social traffic is why every app's "important" flag eventually means nothing.
  */
-export async function notifyMentions(text: string, ctx: MentionContext): Promise<MentionResult> {
+export async function dispatchMentions(text: string, ctx: MentionContext): Promise<MentionResult> {
   const result: MentionResult = { handles: [], notified: [], dropped: { ...EMPTY_DROPS } };
   try {
     const all = mentionedHandles(text, Number.POSITIVE_INFINITY);
@@ -265,7 +269,7 @@ export async function notifyMentions(text: string, ctx: MentionContext): Promise
     result.notified = visible.map((u) => u.id);
     return result;
   } catch (err) {
-    console.error('[mentions] notifyMentions failed:', err);
+    console.error('[mentions] dispatchMentions failed:', err);
     return result;
   }
 }

@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
-import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { getHiddenAuthorIdsStrict } from '@/lib/moderation.server';
 import type { FeedItem } from '@/lib/feed-types';
 
 export interface TagFeedResult {
@@ -35,7 +35,7 @@ export async function listTagFeed(
   const cursor = opts.cursor ?? null;
   const limit = Math.min(opts.limit ?? 20, 50);
 
-  const hidden = await getHiddenAuthorIds(viewerId);
+  const hidden = await getHiddenAuthorIdsStrict(viewerId);
 
   // Two steps, on purpose (WS8). Step 1 picks the page's ids as a keyset scan of
   // the tag's own post_hashtag rows, newest first, via

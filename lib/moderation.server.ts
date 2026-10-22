@@ -40,6 +40,18 @@ export async function getHiddenAuthorIds(userId: string | null): Promise<string[
 }
 
 /**
+ * `getHiddenAuthorIds` for readers of OTHER PEOPLE'S POSTS: mutes may still fail
+ * open (a feed preference), but blocks come from the throwing
+ * `getBlockedAuthorIds`, so a failed block lookup rejects the read instead of
+ * silently dropping the block filter. Union of the two. [] for anonymous users.
+ */
+export async function getHiddenAuthorIdsStrict(userId: string | null): Promise<string[]> {
+  if (!userId) return [];
+  const [hidden, blocked] = await Promise.all([getHiddenAuthorIds(userId), getBlockedAuthorIds(userId)]);
+  return [...new Set([...hidden, ...blocked])];
+}
+
+/**
  * Author ids `userId` may not READ at all: people they blocked and people who
  * blocked them. This is the access-control subset of `getHiddenAuthorIds` (which
  * also holds mutes): a mute only filters feeds, it never makes a post unreadable

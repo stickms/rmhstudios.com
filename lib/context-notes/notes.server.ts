@@ -6,7 +6,7 @@ const MAX_NOTES_PER_POST = 10;
 const HELPFUL_SAMPLE = 40;
 const HISTORY_ROWS = 4000;
 
-const postGate = { id: true, userId: true, audience: true, communityId: true, deletedAt: true } as const;
+const postGate = { id: true, userId: true, audience: true, communityId: true, deletedAt: true, expiresAt: true } as const;
 
 async function viewablePost(postId: string, viewerId: string | null) {
   const post = await prisma.rMHark.findUnique({ where: { id: postId }, select: postGate });

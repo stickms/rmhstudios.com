@@ -183,7 +183,11 @@ export default function otelPlugin(nitroApp: NitroAppLike): void {
         // `append`, not `set`: Server-Timing is a list header and a route may
         // already have added its own timing entries. One append rather than one
         // per phase — `serverTimingHeader` composes the whole list value.
-        headers?.append?.('Server-Timing', serverTimingHeader(scope));
+        // The phase breakdown (sess/cache/db/total) is bench-only, like
+        // x-rmh-queries: any anonymous client could read it, and a cache hit vs
+        // miss shows in the numbers. The `trace` entry (all lib/rum.ts reads) is
+        // always sent.
+        headers?.append?.('Server-Timing', serverTimingHeader(scope, perfHeadersEnabled()));
       }
 
       const budget = budgets.get(event as object);

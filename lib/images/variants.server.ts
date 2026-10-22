@@ -16,11 +16,12 @@
  *    takes 0.13 ms idle took up to 2.4 s (results/ws-6.md). Encodes now go
  *    through {@link cpuGate}.
  *
- * Source loading (object-store GET / upstream fetch) happens **inside** the
- * gate, with the encode. The queue is what bounds how many source buffers (up
- * to 10 MB each) are alive at once; loading before queueing would let a flood
- * of distinct keys each pin a buffer while waiting for a slot. The cost is that
- * a slow load holds a slot, which is bounded by the loaders' own timeouts.
+ * Source loading (object-store GET / upstream fetch) runs in {@link loadGate},
+ * and only the encode runs in {@link cpuGate}. The load gate bounds how many
+ * source buffers (up to 10 MB each) are alive at once, including while they wait
+ * for an encode slot; keeping loads out of the CPU gate means a slow or dripping
+ * upstream can occupy at most a load slot, for at most the loader's own
+ * deadline, and never starves the encodes other routes need.
  */
 
 import {
@@ -30,7 +31,7 @@ import {
   type CachedImage,
   type ImageFormat,
 } from '@/lib/image-optimize';
-import { cpuGate, CpuGateFullError } from '@/lib/images/cpu-gate.server';
+import { cpuGate, CpuGateFullError, loadGate } from '@/lib/images/cpu-gate.server';
 
 export { CpuGateFullError };
 
@@ -68,16 +69,18 @@ export async function getOrEncodeVariant(req: VariantRequest): Promise<VariantRe
   if (running) return running;
 
   const p = (async (): Promise<VariantResult | null> => {
-    return cpuGate.run(async (): Promise<VariantResult | null> => {
+    return loadGate.run(async (): Promise<VariantResult | null> => {
       const source = await req.load();
       if (!source) return null;
       if ('fail' in source) return { ok: false, ...source.fail };
-      const result = await optimizeImage(source.bytes, {
-        width: req.width,
-        height: req.height,
-        quality: req.quality,
-        format: req.format,
-      });
+      const result = await cpuGate.run(() =>
+        optimizeImage(source.bytes, {
+          width: req.width,
+          height: req.height,
+          quality: req.quality,
+          format: req.format,
+        }),
+      );
       const image: CachedImage = { buffer: result.buffer, contentType: result.contentType };
       setCachedVariant(req.cacheKey, image);
       return { ok: true, image, hit: false };
@@ -92,10 +95,15 @@ export async function getOrEncodeVariant(req: VariantRequest): Promise<VariantRe
   }
 }
 
-/** The 503 a route answers when the gate's queue is full. */
+/**
+ * What a route answers when a gate's queue is full: 429 + Retry-After, not 5xx.
+ * Saturation (an attack, or a cold-cache burst right after a deploy swap) is
+ * backpressure, and a 5xx here would count toward the post-deploy guard's
+ * http.5xx_pct alarm and could roll back a healthy release.
+ */
 export function busyResponse(): Response {
   return Response.json(
     { error: 'Image service busy, retry shortly' },
-    { status: 503, headers: { 'Retry-After': '2', 'Cache-Control': 'no-store' } },
+    { status: 429, headers: { 'Retry-After': '2', 'Cache-Control': 'no-store' } },
   );
 }

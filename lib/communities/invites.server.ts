@@ -43,9 +43,7 @@ export interface InviteDTO {
   state: 'active' | 'expired' | 'exhausted';
 }
 
-export type CreateInviteResult =
-  | { ok: true; invite: InviteDTO }
-  | { ok: false; reason: 'limit' };
+export type CreateInviteResult = { ok: true; invite: InviteDTO } | { ok: false; reason: 'limit' };
 
 function stateOf(row: { maxUses: number | null; uses: number; expiresAt: Date | null }, now: Date) {
   if (row.expiresAt && row.expiresAt <= now) return 'expired' as const;
@@ -93,25 +91,33 @@ export async function createInvite(
   opts: { maxUses?: number | null; expiresInDays?: number | null },
 ): Promise<CreateInviteResult> {
   const now = new Date();
-  const active = await prisma.communityInvite.count({
-    where: {
-      communityId,
-      revokedAt: null,
-      OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
-    },
+  // The cap is count-then-insert, so two moderators racing at 49 links would both
+  // pass it. Serialise creators of ONE community on that community's row lock; the
+  // count and the insert then run under it (a different community is not blocked).
+  const row = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT "id" FROM "community" WHERE "id" = ${communityId} FOR UPDATE`;
+    const active = await tx.communityInvite.count({
+      where: {
+        communityId,
+        revokedAt: null,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+      },
+    });
+    if (active >= INVITE_LIMITS.activePerCommunity) return null;
+    return tx.communityInvite.create({
+      data: {
+        communityId,
+        createdById,
+        code: generateInviteCode(),
+        maxUses: opts.maxUses ?? null,
+        expiresAt: opts.expiresInDays
+          ? new Date(now.getTime() + opts.expiresInDays * DAY_MS)
+          : null,
+      },
+      select: SELECT,
+    });
   });
-  if (active >= INVITE_LIMITS.activePerCommunity) return { ok: false, reason: 'limit' };
-
-  const row = await prisma.communityInvite.create({
-    data: {
-      communityId,
-      createdById,
-      code: generateInviteCode(),
-      maxUses: opts.maxUses ?? null,
-      expiresAt: opts.expiresInDays ? new Date(now.getTime() + opts.expiresInDays * DAY_MS) : null,
-    },
-    select: SELECT,
-  });
+  if (!row) return { ok: false, reason: 'limit' };
   return { ok: true, invite: toDTO(row, now) };
 }
 
@@ -158,19 +164,16 @@ export async function acceptInvite(
   });
   if (existing) return { ok: true, alreadyMember: true };
 
-  // A member a moderator removed does not walk back in on a live link (a
-  // multi-use code can outlive the removal by months); they ask again instead.
-  // Same generic result as any other unusable code.
-  const removed = await prisma.communityJoinRequest.findFirst({
-    where: { communityId, userId, status: 'REMOVED' },
-    select: { id: true },
-  });
-  if (removed) return { ok: false, reason: 'invalid' };
-
   try {
     return await prisma.$transaction(async (tx) => {
       // Validate AND consume in one statement; the row lock this takes is what
       // serialises concurrent accepts of the same code.
+      //
+      // A member a moderator removed does not walk back in on a live link (a
+      // multi-use code can outlive the removal by months); they ask again
+      // instead. That check lives IN this statement (NOT EXISTS a REMOVED row) so
+      // a removal committing a moment earlier cannot slip between a separate
+      // check and the insert. Same generic result as any other unusable code.
       const consumed = await tx.$executeRaw`
         UPDATE "community_invite"
         SET "uses" = "uses" + 1
@@ -178,7 +181,13 @@ export async function acceptInvite(
           AND "communityId" = ${communityId}
           AND "revokedAt" IS NULL
           AND ("expiresAt" IS NULL OR "expiresAt" > now())
-          AND ("maxUses" IS NULL OR "uses" < "maxUses")`;
+          AND ("maxUses" IS NULL OR "uses" < "maxUses")
+          AND NOT EXISTS (
+            SELECT 1 FROM "community_join_request" r
+            WHERE r."communityId" = ${communityId}
+              AND r."userId" = ${userId}
+              AND r."status" = 'REMOVED'
+          )`;
       if (consumed === 0) return { ok: false as const, reason: 'invalid' as const };
 
       const created = await tx.communityMember.createMany({

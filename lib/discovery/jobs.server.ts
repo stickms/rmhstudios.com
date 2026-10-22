@@ -47,13 +47,17 @@ async function handlePostCreated(postId: string): Promise<void> {
       audience: true,
       deletedAt: true,
       communityId: true,
+      unlockPrice: true,
       community: { select: { isPrivate: true } },
       user: { select: { handle: true } },
     },
   });
   if (!post || post.deletedAt || post.audience !== 'PUBLIC') return;
   const handle = post.user.handle;
-  if (post.content.trim() && !post.community?.isPrivate) {
+  // A priced post's text is paid content: no keyword-alert match (it would
+  // confirm the post contains the term) and a neutral community-watch preview.
+  const priced = !!post.unlockPrice && post.unlockPrice > 0;
+  if (!priced && post.content.trim() && !post.community?.isPrivate) {
     await fanOutKeywordAlerts({ id: post.id, userId: post.userId, content: post.content, handle });
   }
   if (post.communityId) {
@@ -61,7 +65,7 @@ async function handlePostCreated(postId: string): Promise<void> {
       id: post.id,
       userId: post.userId,
       communityId: post.communityId,
-      content: post.content,
+      content: priced ? '' : post.content,
       handle,
     });
   }

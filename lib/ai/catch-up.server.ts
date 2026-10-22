@@ -152,8 +152,8 @@ async function gatherGroupChat(id: string, userId: string, since: Date | null): 
   return { ok: true, lines };
 }
 
-async function gatherSpace(id: string, since: Date | null): Promise<Gathered> {
-  const space = await getSpace(id);
+async function gatherSpace(id: string, userId: string, since: Date | null): Promise<Gathered> {
+  const space = await getSpace(id, userId);
   if (!space) return { ok: false, reason: 'no-access' };
   // Not a permission decision — `recordChat: false` means the socket handler
   // never wrote a row, so there is genuinely nothing to summarize.
@@ -205,7 +205,7 @@ export async function catchUp(args: CatchUpArgs): Promise<CatchUpResult> {
       ? await gatherThread(args.id, args.userId, since)
       : args.kind === 'group-chat'
         ? await gatherGroupChat(args.id, args.userId, since)
-        : await gatherSpace(args.id, since);
+        : await gatherSpace(args.id, args.userId, since);
 
   if (!gathered.ok) return { summary: null, reason: gathered.reason, items: 0, cached: false };
 

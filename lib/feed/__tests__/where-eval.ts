@@ -39,7 +39,7 @@ export function evalWhere(row: Row, where: Row | undefined): boolean {
 function matchesField(value: unknown, cond: unknown): boolean {
   if (cond === null || typeof cond !== 'object' || cond instanceof Date) {
     if (cond instanceof Date) return value instanceof Date && value.getTime() === cond.getTime();
-    return value === cond;
+    return (value ?? null) === cond; // an absent field reads as NULL, as in SQL
   }
   for (const [op, arg] of Object.entries(cond)) {
     if (op === 'in' && !(arg as unknown[]).includes(value)) return false;

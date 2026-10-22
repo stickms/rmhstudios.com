@@ -38,7 +38,10 @@ vi.mock('@/lib/social/follow-graph.server', () => ({
   getFollowingIds: h.getFollowingIds,
   friendsLeaderboardKey: (id: string) => `leaderboard:friends:${id}`,
 }));
-vi.mock('@/lib/moderation.server', () => ({ getHiddenAuthorIds: h.getHiddenAuthorIds }));
+vi.mock('@/lib/moderation.server', () => ({
+  getHiddenAuthorIds: h.getHiddenAuthorIds,
+  getHiddenAuthorIdsStrict: h.getHiddenAuthorIds,
+}));
 vi.mock('@/lib/feed/map-feed-item.server', () => ({
   rmharkIncludeLite: () => ({}),
   mapRmharksWithBoundedReactions: async () => [],
@@ -110,6 +113,8 @@ describe('tag feed', () => {
     expect(sql).toContain(
       `r.audience = 'SUPPORTERS' AND EXISTS (SELECT 1 FROM creator_membership cm WHERE cm."supporterId" = ? AND cm."creatorId" = r."userId"`,
     );
+    // A lapsed membership must not unlock SUPPORTERS posts: the expiry clause is part of the rule.
+    expect(sql).toContain('cm."expiresAt" > now()');
     expect(sql).toContain(
       `r.audience = 'CIRCLE' AND EXISTS (SELECT 1 FROM close_friend cf WHERE cf."memberId" = ? AND cf."ownerId" = r."userId")`,
     );

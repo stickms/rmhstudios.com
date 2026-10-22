@@ -11,7 +11,7 @@ import {
   snapQuality,
 } from '@/lib/images/variant-params';
 import { getOrEncodeVariant } from '@/lib/images/variants.server';
-import { cpuGate } from '@/lib/images/cpu-gate.server';
+import { cpuGate, loadGate } from '@/lib/images/cpu-gate.server';
 import { variantCacheKey } from '@/lib/image-optimize';
 
 describe('snapDimension', () => {
@@ -129,13 +129,14 @@ describe('getOrEncodeVariant', () => {
     expect(calls).toBe(2); // a failure is retried, not remembered
   });
 
-  it('loads the source inside the CPU gate so the queue bounds source buffers', async () => {
+  it('loads the source in the load gate, not the CPU gate, so a slow upstream cannot starve encodes', async () => {
     const png = await sharp({
       create: { width: 40, height: 40, channels: 3, background: '#123456' },
     })
       .png()
       .toBuffer();
     let activeDuringLoad = -1;
+    let loadsDuringLoad = -1;
     await getOrEncodeVariant({
       cacheKey: variantCacheKey('test', 'gate-load', { width: 16, quality: 80, format: 'webp' }),
       width: 16,
@@ -143,9 +144,11 @@ describe('getOrEncodeVariant', () => {
       format: 'webp',
       load: async () => {
         activeDuringLoad = cpuGate.stats.active;
+        loadsDuringLoad = loadGate.stats.active;
         return { bytes: png };
       },
     });
-    expect(activeDuringLoad).toBeGreaterThanOrEqual(1);
+    expect(activeDuringLoad).toBe(0);
+    expect(loadsDuringLoad).toBeGreaterThanOrEqual(1);
   });
 });

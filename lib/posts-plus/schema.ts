@@ -10,7 +10,13 @@
 
 import { z } from 'zod';
 
-import { MAX_QOTD_LENGTH, MAX_SAVE_NOTE, MAX_SERIES_DESCRIPTION, MAX_SERIES_TITLE, POST_TTLS } from './constants';
+import {
+  MAX_QOTD_LENGTH,
+  MAX_SAVE_NOTE,
+  MAX_SERIES_DESCRIPTION,
+  MAX_SERIES_TITLE,
+  POST_TTLS,
+} from './constants';
 
 /* ------------------------------ X4 · QOTD ------------------------------- */
 

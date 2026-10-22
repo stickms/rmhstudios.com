@@ -5,6 +5,7 @@
  */
 import { prisma } from '@/lib/prisma.server';
 import { transferCoins, InsufficientFundsError } from '@/lib/economy/ledger.server';
+import { canReadPostThread, canReadCommentThread } from '@/lib/feed/audience.server';
 import { dispatch } from '@/lib/notify/dispatch.server';
 import {
   getAward,
@@ -52,6 +53,15 @@ export async function giveAward(
   const recipientId = await resolveRecipient(input.entityType, input.entityId);
   if (!recipientId) throw new AwardError('ENTITY_NOT_FOUND');
   if (recipientId === giverId) throw new AwardError('SELF_AWARD');
+
+  // The giver must be able to read what they award: a blocked user (or anyone
+  // outside a private audience) cannot pay to notify the author about it.
+  if (input.entityType === 'rmhark' && !(await canReadPostThread(input.entityId, giverId))) {
+    throw new AwardError('ENTITY_NOT_FOUND');
+  }
+  if (input.entityType === 'comment' && !(await canReadCommentThread(input.entityId, giverId))) {
+    throw new AwardError('ENTITY_NOT_FOUND');
+  }
 
   const share = recipientShare(def);
 

@@ -100,8 +100,6 @@ const PUBLIC_DESPITE_SCAN: Record<string, string> = {
  * decision, not a to-do.
  */
 const PUBLIC_BUT_NOT_CACHED: Record<string, string> = {
-  '/api/spaces': 'raw handler (no defineHandler options to declare on); live room list',
-  '/api/spaces/$id': 'raw handler; live room state and chat transcript',
   '/api/discord/embed': 'raw handler; Discord Activity lobby state, polled for freshness',
   '/api/discord/race': 'raw handler; race lobby state, polled for freshness',
   '/api/gift-sub':

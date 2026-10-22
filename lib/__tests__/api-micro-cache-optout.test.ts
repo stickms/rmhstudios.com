@@ -1,4 +1,8 @@
 /**
+ * Belt and braces next to the generation counter (api-micro-cache.test.ts), which
+ * already drops the micro-cache on any `apiCache` invalidation. This scan covers
+ * what that cannot see: a write that never touches apiCache.
+ *
  * A public `auth: 'none'` route whose data has a write path that invalidates an
  * in-process cache (or can flip visibility) must opt out of the per-worker
  * response micro-cache with `microCache: false`: `apiCache.invalidate*` does not

@@ -17,7 +17,7 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { apiCache } from '@/lib/cache';
-import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { getHiddenAuthorIdsStrict } from '@/lib/moderation.server';
 import { getBook } from '@/lib/library/library.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import { MIN_READERS_TO_SHOW, type PassageRef } from './passages';
@@ -158,7 +158,7 @@ export async function getDocBundle(
   const [glossary, popular, hidden] = await Promise.all([
     listGlossary(),
     popularFor(kind, key),
-    getHiddenAuthorIds(userId),
+    getHiddenAuthorIdsStrict(userId),
   ]);
 
   const [mine, publicNotes] = await Promise.all([

@@ -42,6 +42,13 @@ export interface SafeFetchOptions extends RequestInit {
   maxRedirects?: number;
   /** Per-request timeout in ms. Default 5000. */
   timeoutMs?: number;
+  /**
+   * Optional deadline (ms from the start of the request) for the whole response
+   * INCLUDING the body. `timeoutMs` stops applying once headers arrive; set this
+   * where the caller reads the body into memory so a server that drips bytes
+   * cannot hold the caller indefinitely. The body read then rejects (abort).
+   */
+  bodyTimeoutMs?: number;
 }
 
 /** A validated destination address, used to pin undici's connection (see `safeFetch`). */
@@ -153,8 +160,13 @@ type PinnedResponse = Awaited<ReturnType<typeof undiciFetch>>;
  * down the per-request dispatcher once the body is fully read, canceled, or
  * errors — so the pinned connection is never leaked.
  */
-function finalizePinnedResponse(res: PinnedResponse, dispatcher: Agent): Response {
+function finalizePinnedResponse(
+  res: PinnedResponse,
+  dispatcher: Agent,
+  onSettled?: () => void,
+): Response {
   const teardown = () => {
+    onSettled?.();
     void dispatcher.destroy();
   };
   const headers = new Headers();
@@ -185,7 +197,7 @@ export async function safeFetch(urlStr: string, opts: SafeFetchOptions = {}): Pr
   const timeoutMs = opts.timeoutMs ?? 5000;
 
   // Strip our own non-fetch options before passing to fetch().
-  const { allowedProtocols, allowedHosts, maxRedirects: _mr, timeoutMs: _t, signal, ...init } = opts;
+  const { allowedProtocols, allowedHosts, maxRedirects: _mr, timeoutMs: _t, bodyTimeoutMs, signal, ...init } = opts;
   void allowedProtocols;
   void allowedHosts;
   void _mr;
@@ -195,6 +207,11 @@ export async function safeFetch(urlStr: string, opts: SafeFetchOptions = {}): Pr
   // hop validates its URL with assertSafeUrl and records the resolved address
   // here, so undici connects to that exact IP instead of re-resolving DNS on its
   // own (which would reopen the rebinding TOCTOU this guard exists to close).
+  const deadline = new AbortController();
+  let bodyTimer: ReturnType<typeof setTimeout> | undefined;
+  const clearBodyTimer = () => {
+    if (bodyTimer) clearTimeout(bodyTimer);
+  };
   const pinnedHosts = new Map<string, PinnedTarget>();
   const dispatcher = new Agent({
     connect: {
@@ -218,6 +235,11 @@ export async function safeFetch(urlStr: string, opts: SafeFetchOptions = {}): Pr
       pinnedHosts.set(new URL(current).hostname.toLowerCase(), target);
 
       const controller = new AbortController();
+      if (bodyTimeoutMs) {
+        // One deadline across all hops; it stays armed until the body settles.
+        if (!bodyTimer) bodyTimer = setTimeout(() => deadline.abort(), bodyTimeoutMs);
+        deadline.signal.addEventListener('abort', () => controller.abort(), { once: true });
+      }
       const timer = setTimeout(() => controller.abort(), timeoutMs);
       // Honor a caller-provided signal in addition to our timeout.
       if (signal) signal.addEventListener('abort', () => controller.abort(), { once: true });
@@ -237,15 +259,16 @@ export async function safeFetch(urlStr: string, opts: SafeFetchOptions = {}): Pr
       // Manually follow redirects so we can re-validate (and re-pin) each Location.
       if (res.status >= 300 && res.status < 400) {
         const location = res.headers.get('location');
-        if (!location) return finalizePinnedResponse(res, dispatcher);
+        if (!location) return finalizePinnedResponse(res, dispatcher, clearBodyTimer);
         await res.body?.cancel().catch(() => {}); // release the socket before the next hop
         current = new URL(location, current).toString();
         continue;
       }
-      return finalizePinnedResponse(res, dispatcher);
+      return finalizePinnedResponse(res, dispatcher, clearBodyTimer);
     }
     throw new SsrfError('Too many redirects');
   } catch (err) {
+    clearBodyTimer();
     void dispatcher.destroy();
     throw err;
   }

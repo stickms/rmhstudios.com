@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
 import { askFeed, isAITextConfigured } from '@/lib/ai/text.server';
-import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { getHiddenAuthorIdsStrict } from '@/lib/moderation.server';
 import { communityVisibleWhere } from '@/lib/feed/audience.server';
 
 /** POST /api/ai/ask-feed — answer a question grounded in recent feed posts. */
@@ -44,7 +44,7 @@ export const Route = createFileRoute('/api/ai/ask-feed')({
           const { allowed } = rateLimit(ip, { limit: 10, windowMs: 60_000, prefix: 'ask-feed' });
           if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
-          const hidden = await getHiddenAuthorIds(session.user.id);
+          const hidden = await getHiddenAuthorIdsStrict(session.user.id);
           const terms = body.question
             .toLowerCase()
             .replace(/[^\w\s]/g, ' ')

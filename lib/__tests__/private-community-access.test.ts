@@ -18,6 +18,7 @@ const h = vi.hoisted(() => ({
   rmhark: { findMany: vi.fn() },
   event: { findUnique: vi.fn(), findMany: vi.fn() },
   rsvp: { groupBy: vi.fn(), findMany: vi.fn() },
+  watch: { deleteMany: vi.fn() },
   getSession: vi.fn(),
   transaction: vi.fn(),
 }));
@@ -34,6 +35,7 @@ vi.mock('@/lib/prisma.server', () => ({
     communityEvent: h.event,
     eventRsvp: h.rsvp,
     closeFriend: { findMany: async () => [] },
+    watch: h.watch,
     $transaction: h.transaction,
   },
 }));
@@ -232,6 +234,10 @@ describe('members / announcements / join / pages routes', () => {
     const res = await POST({ params: { slug: 's' }, ...session('me') });
     expect(res.status).toBe(200);
     expect(h.transaction).toHaveBeenCalledTimes(1);
+    // Leaving also ends the member's community watch (previews must stop).
+    expect(h.watch.deleteMany).toHaveBeenCalledWith({
+      where: { userId: 'me', kind: 'community', targetId: 'c1' },
+    });
   });
 
   it('pages index + revisions: 404 for a non-member of a private community', async () => {
