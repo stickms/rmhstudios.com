@@ -1,4 +1,4 @@
-load("@rules_go//go:def.bzl", "go_library")
+load("@rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "db",
@@ -9,4 +9,11 @@ go_library(
     importpath = "github.com/rmhstudios/rmh-go/pkg/db",
     visibility = ["//visibility:public"],
     deps = ["@com_github_jackc_pgx_v5//pgxpool"],
+)
+
+go_test(
+    name = "db_test",
+    srcs = ["db_test.go"],
+    embed = [":db"],
+    deps = ["//go-services/pkg/config"],
 )

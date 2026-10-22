@@ -1,6 +1,6 @@
 // Package config centralizes environment-driven configuration for every
 // rmhstudios Go service. It mirrors the conventions used by the legacy Node
-// services (DATABASE_URL, SERVER_DB_POOL_SIZE, the PORT_* family) so the Go
+// services (DATABASE_URL, the PORT_* family) so the Go
 // fleet is a drop-in replacement that reads the SAME .env.production file the
 // Helm chart from PR #121 already mounts as a Kubernetes Secret.
 package config
@@ -22,7 +22,9 @@ type Common struct {
 	// DatabaseURL is the single Postgres DSN used across the whole platform,
 	// identical to the Node services' DATABASE_URL.
 	DatabaseURL string
-	// DBPoolSize mirrors SERVER_DB_POOL_SIZE (Node default 5).
+	// DBPoolSize is the Postgres pool a Go process opens (GO_DB_POOL_SIZE),
+	// default DefaultGoDBPoolSize, never above MaxGoDBPoolSize. It is NOT the
+	// Node hubs' SERVER_DB_POOL_SIZE: that knob belongs to a different fleet.
 	DBPoolSize int32
 	// RedisURL, when set, enables the cross-instance pub/sub backplane that
 	// lets the realtime services scale horizontally (the Stage-1 work called
@@ -34,13 +36,42 @@ type Common struct {
 	LogLevel string
 }
 
+// Go DB pool sizing.
+//
+// MaxGoDBPoolSize is the cap: the supervisor runs six workers (doctrine, vibe,
+// recap, discord-bot, bot-worker, streak-saver), each with at least one
+// goroutine that can be mid-query at the same moment, so six is the most
+// connections that can ever be busy at once for the work done today; a pool
+// larger than the concurrency only parks idle connections on the shared server.
+//
+// DefaultGoDBPoolSize is what runs unless GO_DB_POOL_SIZE says otherwise. It is
+// the budget the Postgres connection plan already reserves for Go: the fleet
+// arithmetic in scripts/db-connection-budget.mjs sets aside 5 connections for
+// "Go supervisor + status probe" (the status probe pool is 2), i.e. a supervisor
+// pool of 3. Raising the default means raising that reservation too.
+const (
+	DefaultGoDBPoolSize = 3
+	MaxGoDBPoolSize     = 6
+)
+
+// ClampDBPoolSize forces a configured pool size into [1, MaxGoDBPoolSize].
+func ClampDBPoolSize(n int) int32 {
+	if n < 1 {
+		return 1
+	}
+	if n > MaxGoDBPoolSize {
+		return MaxGoDBPoolSize
+	}
+	return int32(n)
+}
+
 // LoadCommon reads the shared configuration for a service.
 func LoadCommon(serviceName string) (Common, error) {
 	c := Common{
 		ServiceName: serviceName,
 		Env:         GetString("NODE_ENV", "production"),
 		DatabaseURL: os.Getenv("DATABASE_URL"),
-		DBPoolSize:  int32(GetInt("SERVER_DB_POOL_SIZE", 5)),
+		DBPoolSize:  ClampDBPoolSize(GetInt("GO_DB_POOL_SIZE", DefaultGoDBPoolSize)),
 		RedisURL:    os.Getenv("REDIS_URL"),
 		MetricsAddr: GetString("METRICS_ADDR", ":9090"),
 		LogLevel:    GetString("LOG_LEVEL", "info"),

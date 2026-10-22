@@ -72,9 +72,9 @@ RMHLadder job cron, not ported).
 
 | pkg | Provides |
 |---|---|
-| `config` | env config: `LoadCommon(service)` → `{ServiceName, Env, DatabaseURL, DBPoolSize, RedisURL, MetricsAddr, LogLevel}`; `GetString/Int/Bool/Duration/CSV`. Never read env ad-hoc. |
+| `config` | env config: `LoadCommon(service)` → `{ServiceName, Env, DatabaseURL, DBPoolSize (`GO_DB_POOL_SIZE`, default 3, max 6), RedisURL, MetricsAddr, LogLevel}`; `GetString/Int/Bool/Duration/CSV`. Never read env ad-hoc. |
 | `log` | slog JSON wrapper matching the Node logger's field names (`timestamp`); `New(service, level)`, `.Fatal()` only at boot |
-| `db` | pgxpool: `Open(ctx, dsn, poolSize)`, `WaitForReachable(ctx, dsn, 10, 5s)`; typed models in `models.go` (column casing verbatim from Prisma) |
+| `db` | pgxpool: `Open(ctx, dsn, poolSize)`, `WaitForReachable(ctx, dsn, poolSize, 10, 5s)`; typed models in `models.go` (column casing verbatim from Prisma) |
 | `auth` | Better Auth **session validation** (see below); `NewValidator(pool)`, `ValidateSession`, `ResolveDiscordAccount`, `ErrUnauthenticated` |
 | `httpx` | `Health`, `WriteJSON`, `SessionToken` extraction, graceful `Server.Run`, `SignalContext`, `ServeMetrics` |
 | `ratelimit` | in-memory sliding window keyed `(conn, event)`, bounded + GC'd |
