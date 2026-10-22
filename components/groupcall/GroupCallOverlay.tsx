@@ -350,7 +350,7 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
 
   return createPortal(
     <div
-      className="pointer-events-none fixed inset-x-0 top-0 z-[120] flex justify-center px-2"
+      className="call-banner pointer-events-none fixed inset-x-0 top-0 z-[120] flex justify-center px-2"
       style={{ paddingTop: 'max(0.5rem, var(--safe-top, 0px))' }}
     >
       <div className="pointer-events-auto w-full max-w-lg">

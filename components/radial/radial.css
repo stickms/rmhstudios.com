@@ -290,9 +290,11 @@
   min-height: 0;
 }
 
-/* CallOverlay's persistent banner (components/call/CallOverlay.tsx). It is
-   body-level chrome, so it clears the bar by moving rather than by out-ranking
-   it — and only where there IS a bar. */
+/* The persistent call banners — 1:1 (components/call/CallOverlay.tsx) and
+   group (components/groupcall/GroupCallOverlay.tsx). They are body-level
+   chrome, so they clear the bar by moving rather than by out-ranking it — and
+   only where there IS a bar. Without this the banner sits on the top bar and
+   its icons show through the glass on a phone. */
 body:has(.radial-shell) .call-banner {
   top: var(--rad-topbar-h);
 }
