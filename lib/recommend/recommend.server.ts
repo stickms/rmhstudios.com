@@ -11,6 +11,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { communityVisibleWhere } from '@/lib/feed/audience.server';
 import { fuse } from '@/lib/search/hybrid';
 import { isEmbeddingAvailable, similarTo } from '@/lib/search/embeddings.server';
 import { buildTasteProfile } from '@/lib/recommend/profile.server';
@@ -60,7 +61,7 @@ export async function recommend(
 ): Promise<Recommendation[]> {
   const limit = Math.min(Math.max(1, opts.limit ?? 12), 60);
   const profile = await buildTasteProfile(userId, { now: opts.now });
-  const candidates = await generate(slot, profile, opts);
+  const candidates = await generate(slot, profile, opts, userId);
 
   const scored = scoreCandidates(candidates, profile, { now: opts.now?.getTime() });
   return diversify(scored, limit, opts.maxPerFacet ?? 2).map((c) => ({
@@ -81,13 +82,14 @@ async function generate(
   slot: Slot,
   profile: TasteProfile,
   opts: RecommendOptions,
+  userId: string | null,
 ): Promise<Candidate[]> {
   switch (slot) {
     case 'games':
     case 'apps':
       return catalogCandidates(slot, opts);
     case 'posts':
-      return postCandidates(opts);
+      return postCandidates(opts, userId);
     case 'library':
       return libraryCandidates(opts);
     case 'builds':
@@ -127,9 +129,13 @@ async function catalogCandidates(slot: 'games' | 'apps', opts: RecommendOptions)
   return withSimilarity(slot === 'games' ? 'game' : 'app', base, opts);
 }
 
-async function postCandidates(opts: RecommendOptions): Promise<Candidate[]> {
+export async function postCandidates(
+  opts: RecommendOptions,
+  userId: string | null = null,
+): Promise<Candidate[]> {
   const rows = await prisma.rMHark.findMany({
-    where: { deletedAt: null, audience: 'PUBLIC', communityId: null, unlockPrice: null },
+    // Public-community posts are candidates; a private community's only for its members.
+    where: { deletedAt: null, audience: 'PUBLIC', unlockPrice: null, ...communityVisibleWhere(userId) },
     orderBy: { createdAt: 'desc' },
     take: POOL,
     select: { id: true, userId: true, likeCount: true, createdAt: true },
