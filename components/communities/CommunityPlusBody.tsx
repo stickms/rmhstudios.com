@@ -46,7 +46,14 @@ export function CommunityPlusBody({
   items,
   setItems,
 }: {
-  community: { id: string; slug: string; name: string; joined: boolean; role: string | null };
+  community: {
+    id: string;
+    slug: string;
+    name: string;
+    joined: boolean;
+    role: string | null;
+    isPrivate?: boolean;
+  };
   items: FeedItem[];
   setItems: Dispatch<SetStateAction<FeedItem[]>>;
 }) {
@@ -224,7 +231,12 @@ export function CommunityPlusBody({
         {tab === 'census' && <CensusPanel slug={slug} joined={community.joined} isMod={isMod} />}
         {tab === 'top' && <TopContributorsPanel slug={slug} />}
         {tab === 'mod' && isMod && (
-          <ModPanel slug={slug} extras={extras} onExtrasChange={() => void loadExtras()} />
+          <ModPanel
+            slug={slug}
+            isPrivate={community.isPrivate}
+            extras={extras}
+            onExtrasChange={() => void loadExtras()}
+          />
         )}
       </Suspense>
 
