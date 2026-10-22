@@ -1,6 +1,7 @@
 {
   "access-required": "{{tierName}} 접근 필요",
   "active": "활성",
+  "attempt-count_one": "{{count}}회 시도",
   "attempt-count_other": "{{count}}회 시도",
   "attempts": "시도",
   "best-streak": "최고: {{longestStreak}}",

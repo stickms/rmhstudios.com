@@ -20,6 +20,7 @@ import ptCEconomy from "@/locales/pt/c-economy.json";
 import ptCForestExplorer from "@/locales/pt/c-forest-explorer.json";
 import ptCGabrielsHorn from "@/locales/pt/c-gabriels-horn.json";
 import ptCGame from "@/locales/pt/c-game.json";
+import ptCGroupcall from "@/locales/pt/c-groupcall.json";
 import ptCHistory from "@/locales/pt/c-history.json";
 import ptCHouseAlwaysWins from "@/locales/pt/c-house-always-wins.json";
 import ptCIsleworks from "@/locales/pt/c-isleworks.json";
@@ -41,11 +42,13 @@ import ptCProfileModules from "@/locales/pt/c-profile-modules.json";
 import ptCRebarRutabaga from "@/locales/pt/c-rebar-rutabaga.json";
 import ptCRideshare from "@/locales/pt/c-rideshare.json";
 import ptCRmhCapital from "@/locales/pt/c-rmh-capital.json";
+import ptCRmhDatacenter from "@/locales/pt/c-rmh-datacenter.json";
 import ptCRmhPmc from "@/locales/pt/c-rmh-pmc.json";
 import ptCRmhbox from "@/locales/pt/c-rmhbox.json";
 import ptCRmhcalculator from "@/locales/pt/c-rmhcalculator.json";
 import ptCRmhcode from "@/locales/pt/c-rmhcode.json";
 import ptCRmhcoins from "@/locales/pt/c-rmhcoins.json";
+import ptCRmhfashion from "@/locales/pt/c-rmhfashion.json";
 import ptCRmhmusic from "@/locales/pt/c-rmhmusic.json";
 import ptCRmhstudy from "@/locales/pt/c-rmhstudy.json";
 import ptCRmhtech from "@/locales/pt/c-rmhtech.json";
@@ -68,6 +71,38 @@ import ptCVoidBreaker from "@/locales/pt/c-void-breaker.json";
 import ptCWager from "@/locales/pt/c-wager.json";
 import ptCWishlist from "@/locales/pt/c-wishlist.json";
 import ptCommon from "@/locales/pt/common.json";
+import ptErrors from "@/locales/pt/errors.json";
+import ptFAccess from "@/locales/pt/f-access.json";
+import ptFAction from "@/locales/pt/f-action.json";
+import ptFArcade from "@/locales/pt/f-arcade.json";
+import ptFAsyncGames from "@/locales/pt/f-async-games.json";
+import ptFCalendar from "@/locales/pt/f-calendar.json";
+import ptFCanvas from "@/locales/pt/f-canvas.json";
+import ptFCommunitiesPlus from "@/locales/pt/f-communities-plus.json";
+import ptFCompetitive from "@/locales/pt/f-competitive.json";
+import ptFCreative from "@/locales/pt/f-creative.json";
+import ptFDeepseek from "@/locales/pt/f-deepseek.json";
+import ptFDelight from "@/locales/pt/f-delight.json";
+import ptFDevAi from "@/locales/pt/f-dev-ai.json";
+import ptFDevplatform from "@/locales/pt/f-devplatform.json";
+import ptFDiscovery from "@/locales/pt/f-discovery.json";
+import ptFEconomyPlus from "@/locales/pt/f-economy-plus.json";
+import ptFFeedPlus from "@/locales/pt/f-feed-plus.json";
+import ptFForecasting from "@/locales/pt/f-forecasting.json";
+import ptFGifting from "@/locales/pt/f-gifting.json";
+import ptFLadderHomes from "@/locales/pt/f-ladder-homes.json";
+import ptFMessaging from "@/locales/pt/f-messaging.json";
+import ptFOncall from "@/locales/pt/f-oncall.json";
+import ptFOps from "@/locales/pt/f-ops.json";
+import ptFParty from "@/locales/pt/f-party.json";
+import ptFPerf from "@/locales/pt/f-perf.json";
+import ptFPostsPlus from "@/locales/pt/f-posts-plus.json";
+import ptFProfilePlus from "@/locales/pt/f-profile-plus.json";
+import ptFReading from "@/locales/pt/f-reading.json";
+import ptFSafety from "@/locales/pt/f-safety.json";
+import ptFTools from "@/locales/pt/f-tools.json";
+import ptFWatch from "@/locales/pt/f-watch.json";
+import ptFWorlds from "@/locales/pt/f-worlds.json";
 import ptFeed from "@/locales/pt/feed.json";
 import ptGamesHub from "@/locales/pt/games-hub.json";
 import ptGroups from "@/locales/pt/groups.json";
@@ -117,6 +152,7 @@ const ptResources = {
   "c-forest-explorer": ptCForestExplorer,
   "c-gabriels-horn": ptCGabrielsHorn,
   "c-game": ptCGame,
+  "c-groupcall": ptCGroupcall,
   "c-history": ptCHistory,
   "c-house-always-wins": ptCHouseAlwaysWins,
   "c-isleworks": ptCIsleworks,
@@ -138,11 +174,13 @@ const ptResources = {
   "c-rebar-rutabaga": ptCRebarRutabaga,
   "c-rideshare": ptCRideshare,
   "c-rmh-capital": ptCRmhCapital,
+  "c-rmh-datacenter": ptCRmhDatacenter,
   "c-rmh-pmc": ptCRmhPmc,
   "c-rmhbox": ptCRmhbox,
   "c-rmhcalculator": ptCRmhcalculator,
   "c-rmhcode": ptCRmhcode,
   "c-rmhcoins": ptCRmhcoins,
+  "c-rmhfashion": ptCRmhfashion,
   "c-rmhmusic": ptCRmhmusic,
   "c-rmhstudy": ptCRmhstudy,
   "c-rmhtech": ptCRmhtech,
@@ -165,6 +203,38 @@ const ptResources = {
   "c-wager": ptCWager,
   "c-wishlist": ptCWishlist,
   "common": ptCommon,
+  "errors": ptErrors,
+  "f-access": ptFAccess,
+  "f-action": ptFAction,
+  "f-arcade": ptFArcade,
+  "f-async-games": ptFAsyncGames,
+  "f-calendar": ptFCalendar,
+  "f-canvas": ptFCanvas,
+  "f-communities-plus": ptFCommunitiesPlus,
+  "f-competitive": ptFCompetitive,
+  "f-creative": ptFCreative,
+  "f-deepseek": ptFDeepseek,
+  "f-delight": ptFDelight,
+  "f-dev-ai": ptFDevAi,
+  "f-devplatform": ptFDevplatform,
+  "f-discovery": ptFDiscovery,
+  "f-economy-plus": ptFEconomyPlus,
+  "f-feed-plus": ptFFeedPlus,
+  "f-forecasting": ptFForecasting,
+  "f-gifting": ptFGifting,
+  "f-ladder-homes": ptFLadderHomes,
+  "f-messaging": ptFMessaging,
+  "f-oncall": ptFOncall,
+  "f-ops": ptFOps,
+  "f-party": ptFParty,
+  "f-perf": ptFPerf,
+  "f-posts-plus": ptFPostsPlus,
+  "f-profile-plus": ptFProfilePlus,
+  "f-reading": ptFReading,
+  "f-safety": ptFSafety,
+  "f-tools": ptFTools,
+  "f-watch": ptFWatch,
+  "f-worlds": ptFWorlds,
   "feed": ptFeed,
   "games-hub": ptGamesHub,
   "groups": ptGroups,
