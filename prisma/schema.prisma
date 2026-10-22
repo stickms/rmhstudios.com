@@ -3365,8 +3365,9 @@ model PostHashtag {
   rmhark  RMHark  @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
 
   @@unique([hashtagId, rmheetId])
-  // Keyset scan of a tag's recent posts.
-  @@index([hashtagId, createdAt(sort: Desc)])
+  // Keyset scan of a tag's recent posts (createdAt mirrors the post's createdAt;
+  // rmheetId is the ORDER BY tie-break). WS8.
+  @@index([hashtagId, createdAt(sort: Desc), rmheetId(sort: Desc)])
   @@index([rmheetId])
   @@map("post_hashtag")
 }
