@@ -26,6 +26,16 @@ var ErrNotFound = errors.New("objectstore: not found")
 // ErrRangeNotSatisfiable is returned when the requested Range cannot be served.
 var ErrRangeNotSatisfiable = errors.New("objectstore: range not satisfiable")
 
+// ErrNotModified is returned when a conditional Get matched (S3 answered 304).
+var ErrNotModified = errors.New("objectstore: not modified")
+
+// GetOptions are the optional request headers relayed to the bucket.
+type GetOptions struct {
+	Range           string // "bytes=0-1023"
+	IfNoneMatch     string // an ETag, as the client sent it
+	IfModifiedSince string // an HTTP date, as the client sent it
+}
+
 // Object is a streamable object plus the metadata needed to relay it to a client.
 type Object struct {
 	Body            io.ReadCloser
@@ -96,16 +106,29 @@ func New(ctx context.Context) (*S3, error) {
 	return &S3{client: client, bucket: c.bucket}, nil
 }
 
-// Get streams the object at key. If rangeHeader is non-empty it is forwarded to
-// S3 and a 206 partial may be returned. Missing keys yield ErrNotFound; an
+// Get streams the object at key. opts.Range is forwarded to S3 and a 206
+// partial may be returned; opts.IfNoneMatch/IfModifiedSince make it a
+// conditional GET that yields ErrNotModified instead of the body. Missing keys yield ErrNotFound; an
 // unsatisfiable range yields ErrRangeNotSatisfiable.
-func (s *S3) Get(ctx context.Context, key, rangeHeader string) (*Object, error) {
+func (s *S3) Get(ctx context.Context, key string, opts GetOptions) (*Object, error) {
 	in := &s3.GetObjectInput{Bucket: aws.String(s.bucket), Key: aws.String(key)}
-	if rangeHeader != "" {
-		in.Range = aws.String(rangeHeader)
+	if opts.Range != "" {
+		in.Range = aws.String(opts.Range)
+	}
+	if opts.IfNoneMatch != "" {
+		in.IfNoneMatch = aws.String(opts.IfNoneMatch)
+	}
+	if opts.IfModifiedSince != "" {
+		if t, perr := http.ParseTime(opts.IfModifiedSince); perr == nil {
+			in.IfModifiedSince = aws.Time(t)
+		}
 	}
 	out, err := s.client.GetObject(ctx, in)
 	if err != nil {
+		var statusErr interface{ HTTPStatusCode() int }
+		if errors.As(err, &statusErr) && statusErr.HTTPStatusCode() == http.StatusNotModified {
+			return nil, ErrNotModified
+		}
 		var nsk *types.NoSuchKey
 		if errors.As(err, &nsk) {
 			return nil, ErrNotFound

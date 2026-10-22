@@ -28,6 +28,50 @@ type Worker struct {
 	wg   sync.WaitGroup
 	stop chan struct{}
 	once sync.Once
+
+	// tz caches the distinct user timezones for tzListTTL (see timezones).
+	tzMu    sync.Mutex
+	tzList  []string
+	tzAt    time.Time
+	fetchTZ func(context.Context) ([]string, error) // nil = distinctTimezones; tests inject
+	nowFn   func() time.Time                        // nil = time.Now; tests inject
+}
+
+// tzListTTL bounds how stale the distinct-timezone list may be. The list feeds
+// the per-minute Sahur check, and the underlying query is a DISTINCT scan of the
+// whole "user" table (20k rows read per call at the seeded scale, 1,440 calls a
+// day). A timezone first appearing inside the cache window is picked up at most
+// tzListTTL later; Sahur's activation window for a timezone is a full local
+// hour, so the worst case is a late start of ten minutes for the first user ever
+// to set that timezone during its 03:00 hour, and no effect otherwise.
+const tzListTTL = 10 * time.Minute
+
+// timezones returns the distinct user timezones, refreshed at most every
+// tzListTTL. A failed refresh returns its error and keeps the previous list for
+// the next attempt.
+func (w *Worker) timezones(ctx context.Context) ([]string, error) {
+	now := time.Now()
+	if w.nowFn != nil {
+		now = w.nowFn()
+	}
+	w.tzMu.Lock()
+	defer w.tzMu.Unlock()
+	if w.tzList != nil && now.Sub(w.tzAt) < tzListTTL {
+		return w.tzList, nil
+	}
+	fetch := w.distinctTimezones
+	if w.fetchTZ != nil {
+		fetch = w.fetchTZ
+	}
+	list, err := fetch(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if list == nil {
+		list = []string{}
+	}
+	w.tzList, w.tzAt = list, now
+	return list, nil
 }
 
 // New builds a doctrine Worker. Matches the FOUNDATION worker skeleton:
@@ -241,7 +285,7 @@ func (w *Worker) insertPuzzle(ctx context.Context, mode string, date time.Time, 
 // is 3 and creates a doctrine_sahur_session for (today, timezone) if one does
 // not already exist. Faithful to the Node checkSahurActivation.
 func (w *Worker) checkSahurActivation(ctx context.Context) error {
-	timezones, err := w.distinctTimezones(ctx)
+	timezones, err := w.timezones(ctx)
 	if err != nil {
 		return err
 	}
@@ -354,21 +398,21 @@ func (w *Worker) applyReputationDecay(ctx context.Context) error {
 		return err
 	}
 
-	decayed := 0
 	reason := "Weekly inactivity decay (-5%)"
+	ids := make([]string, 0, len(reps))
+	newXps := make([]int32, 0, len(reps))
 	for _, rep := range reps {
 		// newXp = floor(totalXp * (1 - rate)); delta = newXp - totalXp.
 		newXp := int(float64(rep.totalXp) * (1 - weeklyDecayRate)) // truncation == Math.floor for non-negative.
-		delta := newXp - rep.totalXp
-
-		if err := w.updateReputationXp(ctx, rep.id, newXp); err != nil {
-			return err
-		}
-		if err := w.insertLedger(ctx, rep.id, "WEEKLY_DECAY", delta, reason); err != nil {
-			return err
-		}
-		decayed++
+		ids = append(ids, rep.id)
+		newXps = append(newXps, int32(newXp))
 	}
+	// Two statements for the whole pass instead of two per user: the loop used
+	// to issue 2N round trips (N = inactive players) on the shared pool.
+	if err := w.applyDecayBatch(ctx, reps, ids, newXps, reason); err != nil {
+		return err
+	}
+	decayed := len(reps)
 
 	if decayed > 0 {
 		w.log.Info("applied reputation decay", "users", decayed)
@@ -405,32 +449,47 @@ func (w *Worker) inactiveReputations(ctx context.Context, cutoff time.Time) ([]i
 	return out, nil
 }
 
-func (w *Worker) updateReputationXp(ctx context.Context, id string, newXp int) error {
-	_, err := w.db.Pool.Exec(ctx,
-		`UPDATE "doctrine_reputation" SET "totalXp" = $1 WHERE "id" = $2`,
-		newXp, id,
-	)
-	if err != nil {
-		w.metrics.DBQueries.WithLabelValues("error").Inc()
-		return err
-	}
-	w.metrics.DBQueries.WithLabelValues("ok").Inc()
-	return nil
-}
+// decayUpdateSQL / decayLedgerSQL write a whole decay pass at once; the ledger
+// delta is computed in SQL from the old total so it cannot drift from the update.
+const decayUpdateSQL = `UPDATE "doctrine_reputation" r SET "totalXp" = t.xp
+	FROM unnest($1::text[], $2::int[]) AS t(id, xp) WHERE r."id" = t.id`
 
-// insertLedger writes a doctrine_reputation_ledger row. metadata is left NULL
-// and createdAt takes its default, matching the Node ledger create.
-func (w *Worker) insertLedger(ctx context.Context, reputationID, action string, xpDelta int, reason string) error {
-	_, err := w.db.Pool.Exec(ctx,
-		`INSERT INTO "doctrine_reputation_ledger"
-		   ("id", "reputationId", "action", "xpDelta", "reason", "metadata", "createdAt")
-		 VALUES ($1, $2, $3, $4, $5, NULL, now())`,
-		uuid.NewString(), reputationID, action, xpDelta, reason,
-	)
+const decayLedgerSQL = `INSERT INTO "doctrine_reputation_ledger"
+	  ("id", "reputationId", "action", "xpDelta", "reason", "metadata", "createdAt")
+	SELECT t.lid, t.rid, 'WEEKLY_DECAY', t.xp - t.old, $5, NULL, now()
+	FROM unnest($1::text[], $2::text[], $3::int[], $4::int[]) AS t(lid, rid, xp, old)`
+
+// applyDecayBatch applies newXps to reps[i] and logs the ledger rows in ONE
+// transaction, so a failure leaves no half-decayed pass (previously a mid-loop
+// error left earlier users decayed and unlogged-or-logged inconsistently).
+func (w *Worker) applyDecayBatch(ctx context.Context, reps []inactiveRep, ids []string, newXps []int32, reason string) error {
+	if len(reps) == 0 {
+		return nil
+	}
+	lids := make([]string, len(reps))
+	olds := make([]int32, len(reps))
+	for i, r := range reps {
+		lids[i] = uuid.NewString()
+		olds[i] = int32(r.totalXp)
+	}
+	tx, err := w.db.Pool.Begin(ctx)
 	if err != nil {
 		w.metrics.DBQueries.WithLabelValues("error").Inc()
 		return err
 	}
-	w.metrics.DBQueries.WithLabelValues("ok").Inc()
+	defer func() { _ = tx.Rollback(ctx) }()
+	if _, err := tx.Exec(ctx, decayUpdateSQL, ids, newXps); err != nil {
+		w.metrics.DBQueries.WithLabelValues("error").Inc()
+		return err
+	}
+	if _, err := tx.Exec(ctx, decayLedgerSQL, lids, ids, newXps, olds, reason); err != nil {
+		w.metrics.DBQueries.WithLabelValues("error").Inc()
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		w.metrics.DBQueries.WithLabelValues("error").Inc()
+		return err
+	}
+	w.metrics.DBQueries.WithLabelValues("ok").Add(2)
 	return nil
 }

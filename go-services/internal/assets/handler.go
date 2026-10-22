@@ -12,6 +12,7 @@ import (
 	"io"
 	"net/http"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/rmhstudios/rmh-go/pkg/log"
@@ -28,7 +29,7 @@ var allowedPrefixes = map[string]struct{}{
 
 // Store is the read dependency (satisfied by *objectstore.S3).
 type Store interface {
-	Get(ctx context.Context, key, rangeHeader string) (*objectstore.Object, error)
+	Get(ctx context.Context, key string, opts objectstore.GetOptions) (*objectstore.Object, error)
 }
 
 type handler struct {
@@ -73,9 +74,21 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	obj, err := h.store.Get(r.Context(), key, r.Header.Get("Range"))
+	obj, err := h.store.Get(r.Context(), key, objectstore.GetOptions{
+		Range:           r.Header.Get("Range"),
+		IfNoneMatch:     r.Header.Get("If-None-Match"),
+		IfModifiedSince: r.Header.Get("If-Modified-Since"),
+	})
 	if err != nil {
 		switch {
+		case errors.Is(err, objectstore.ErrNotModified):
+			// Revalidation hit: no body leaves the bucket or this process.
+			hdr := w.Header()
+			hdr.Set("Cache-Control", cacheControl)
+			if inm := r.Header.Get("If-None-Match"); inm != "" && !strings.Contains(inm, ",") {
+				hdr.Set("ETag", inm)
+			}
+			w.WriteHeader(http.StatusNotModified)
 		case errors.Is(err, objectstore.ErrNotFound):
 			http.NotFound(w, r)
 		case errors.Is(err, objectstore.ErrRangeNotSatisfiable):
@@ -109,6 +122,12 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if obj.ContentRange != "" {
 		hdr.Set("Content-Range", obj.ContentRange)
+	}
+	// Without this every response is chunked, and HEAD (and download progress)
+	// has no length. ContentLength is the byte count actually sent: the stored
+	// size for a 200 (gzip-encoded objects included), the part for a 206.
+	if obj.ContentLength > 0 {
+		hdr.Set("Content-Length", strconv.FormatInt(obj.ContentLength, 10))
 	}
 	w.WriteHeader(obj.Status)
 	if r.Method == http.MethodHead {
