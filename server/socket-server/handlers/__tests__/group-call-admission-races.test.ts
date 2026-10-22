@@ -1,8 +1,14 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Server, Socket } from 'socket.io';
 import { GCALL_C2S, GCALL_S2C } from '../../../../lib/groupcall/events';
 import { claimBusy, getBusy, releaseBusy } from '../../busy-registry';
-import { __liveGroupCallCount, registerGroupCallHandlers } from '../group-call';
+import {
+  GROUP_CALL_SEAT_GRACE_MS,
+  __liveGroupCallCount,
+  evictOriginMember,
+  handleGroupCallDisconnect,
+  registerGroupCallHandlers,
+} from '../group-call';
 
 const mocks = vi.hoisted(() => ({
   prisma: {
@@ -30,6 +36,7 @@ vi.mock('../../rate-limit', () => ({
 
 vi.mock('../party', () => ({
   isPartyMember: vi.fn(),
+  onPartyMemberRemoved: vi.fn(),
 }));
 
 type Handler = (payload: Record<string, unknown>) => Promise<void> | void;
@@ -227,6 +234,91 @@ describe('group-call admission races', () => {
     });
 
     await tabB.send(GCALL_C2S.LEAVE, { callId });
+    expect(__liveGroupCallCount()).toBe(0);
+  });
+
+  describe('a dropped media socket', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    /** A two-person ad-hoc room, both in. */
+    async function twoPersonRoom(prefix: string) {
+      holdPeerRows(new Map());
+      const host = connect(`${prefix}-host`);
+      const guest = connect(`${prefix}-guest`);
+      await host.send(GCALL_C2S.START, { origin: 'adhoc', inviteeIds: [`${prefix}-guest`] });
+      const callId = joinedCallId(host) as string;
+      await guest.send(GCALL_C2S.JOIN, { callId });
+      expect(joinedCallId(guest)).toBe(callId);
+      return { host, guest, callId };
+    }
+
+    it('keeps the seat while the user reconnects', async () => {
+      const { host, guest, callId } = await twoPersonRoom('blip');
+      vi.useFakeTimers();
+
+      (guest.socket as unknown as { disconnected: boolean }).disconnected = true;
+      await handleGroupCallDisconnect(io, guest.socket);
+      expect(__liveGroupCallCount()).toBe(1);
+
+      const back = connect('blip-guest', 'blip-guest-reconnected');
+      await back.send(GCALL_C2S.JOIN, { callId });
+      expect(joinedCallId(back)).toBe(callId);
+
+      await vi.advanceTimersByTimeAsync(GROUP_CALL_SEAT_GRACE_MS + 1_000);
+      expect(__liveGroupCallCount()).toBe(1);
+      expect(getBusy('blip-guest')).toEqual({ kind: 'gcall', id: callId });
+
+      await host.send(GCALL_C2S.END, { callId });
+      expect(__liveGroupCallCount()).toBe(0);
+    });
+
+    it('lets the seat go when nobody claims it', async () => {
+      const { guest } = await twoPersonRoom('gone');
+      vi.useFakeTimers();
+
+      await handleGroupCallDisconnect(io, guest.socket);
+      await vi.advanceTimersByTimeAsync(GROUP_CALL_SEAT_GRACE_MS + 1_000);
+
+      // Two-person ad-hoc: one left, so the room closed itself.
+      expect(__liveGroupCallCount()).toBe(0);
+      expect(getBusy('gone-guest')).toBeNull();
+      expect(getBusy('gone-host')).toBeNull();
+    });
+  });
+
+  it('cancels the ring when the host leaves before anyone answers', async () => {
+    holdPeerRows(new Map());
+    const host = connect('cancel-host');
+    await host.send(GCALL_C2S.START, {
+      origin: 'adhoc',
+      inviteeIds: ['cancel-one', 'cancel-two'],
+    });
+    const callId = joinedCallId(host);
+    expect(getBusy('cancel-one')).toEqual({ kind: 'gcall', id: callId });
+
+    await host.send(GCALL_C2S.LEAVE, { callId });
+
+    expect(__liveGroupCallCount()).toBe(0);
+    expect(getBusy('cancel-one')).toBeNull();
+    expect(getBusy('cancel-two')).toBeNull();
+  });
+
+  it('removes someone from an open room when they stop being a member', async () => {
+    holdPeerRows(new Map());
+    const stays = connect('evict-stays');
+    const goes = connect('evict-goes');
+    await stays.send(GCALL_C2S.START, { origin: 'community', originId: 'community-e' });
+    const callId = joinedCallId(stays) as string;
+    await goes.send(GCALL_C2S.JOIN, { callId });
+    expect(getBusy('evict-goes')).toEqual({ kind: 'gcall', id: callId });
+
+    evictOriginMember(io, 'community', 'community-e', 'evict-goes');
+
+    expect(getBusy('evict-goes')).toBeNull();
+    expect(__liveGroupCallCount()).toBe(1);
+    await stays.send(GCALL_C2S.LEAVE, { callId });
     expect(__liveGroupCallCount()).toBe(0);
   });
 });

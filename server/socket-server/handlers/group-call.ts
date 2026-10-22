@@ -63,7 +63,7 @@ import { getPrismaClient } from '../prisma-client';
 import { logger } from '../logger';
 import { checkRateLimit } from '../rate-limit';
 import { claimBusy, getBusy, releaseBusy } from '../busy-registry';
-import { isPartyMember } from './party';
+import { isPartyMember, onPartyMemberRemoved } from './party';
 import {
   GCALL_C2S,
   GCALL_S2C,
@@ -95,6 +95,7 @@ import {
 } from '../../../lib/groupcall/state';
 import { isCallPrivacy, type CallPrivacy } from '../../../lib/call/state';
 import { userChipSelect } from '../../../lib/user-display';
+import { PEER_GRACE_MS } from '../../../lib/shared/realtime/types';
 
 /** cuid is 25 chars, uuidv7 36, `GroupCall.partyId` is VarChar(64). */
 const MAX_ID_LENGTH = 64;
@@ -178,6 +179,13 @@ interface LiveGroupCall {
   invited: Set<string>;
   /** Ring timers, keyed by the invitee they will give up on. */
   ringTimers: Map<string, ReturnType<typeof setTimeout>>;
+  /**
+   * Seats held for joined participants whose media socket dropped, keyed by
+   * userId. Media is peer-to-peer and usually outlives a signalling blip, and
+   * the client re-sends `JOIN` on reconnect; dropping them at once would end
+   * every two-person ad-hoc room on the first network hiccup.
+   */
+  graceTimers: Map<string, ReturnType<typeof setTimeout>>;
   createdAt: number;
   /** The host's own join, which is when the room opened. Drives the call timer. */
   startedAt: number;
@@ -199,6 +207,12 @@ interface LiveGroupCall {
    */
   persistChain: Promise<void>;
 }
+
+/**
+ * How long a joined participant's seat survives their media socket dropping.
+ * The same window the game hubs give a dropped player (`PEER_GRACE_MS`).
+ */
+export const GROUP_CALL_SEAT_GRACE_MS = PEER_GRACE_MS;
 
 const calls = new Map<string, LiveGroupCall>();
 /** userId → callId, so a disconnect can find the room in O(1). */
@@ -856,6 +870,7 @@ function dropParticipant(
     clearTimeout(timer);
     call.ringTimers.delete(userId);
   }
+  clearGrace(call, userId);
   if (byUser.get(userId) === call.id) byUser.delete(userId);
   releaseBusy(userId, call.id);
   if (p.socketId) io.sockets.sockets.get(p.socketId)?.leave(callRoom(call.id));
@@ -867,6 +882,14 @@ function dropParticipant(
   broadcast(io, call, GCALL_S2C.PEER_LEFT, { callId: call.id, userId, reason });
   emitRoster(io, call);
   pushActive(io, call, true);
+}
+
+/** Cancel a held seat, if there is one. */
+function clearGrace(call: LiveGroupCall, userId: string): void {
+  const timer = call.graceTimers.get(userId);
+  if (!timer) return;
+  clearTimeout(timer);
+  call.graceTimers.delete(userId);
 }
 
 /**
@@ -887,8 +910,14 @@ function settle(io: Server, call: LiveGroupCall): void {
   }
 
   if (joined >= 2) return;
-  // Somebody is still ringing: the host is waiting for an answer, not sitting
-  // in a dead room.
+  // Nobody left in it. Anyone still ringing would be answering into an empty
+  // room — the host cancelled — so their cards go too.
+  if (joined === 0) {
+    endRoom(io, call, call.othersJoined ? 'empty' : 'unanswered');
+    return;
+  }
+  // Somebody is still ringing: the one person here is waiting for an answer,
+  // not sitting in a dead room.
   if (call.participants.size > joined) return;
 
   if (call.othersJoined) {
@@ -906,6 +935,8 @@ function endRoom(io: Server, call: LiveGroupCall, reason: GroupCallEndReason): v
   calls.delete(call.id);
 
   for (const timer of call.ringTimers.values()) clearTimeout(timer);
+  for (const timer of call.graceTimers.values()) clearTimeout(timer);
+  call.graceTimers.clear();
   call.ringTimers.clear();
 
   if (call.origin !== 'adhoc' && call.originId) {
@@ -991,6 +1022,9 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     // is exactly what they need in order to tear down a peer connection whose
     // far end no longer exists and negotiate against the new tab.
     if (existing && existing.joinedAt !== null && existing.socketId !== socket.id) {
+      // Also the way back from a dropped socket: the seat was held (socketId
+      // null) and this is the reconnect claiming it.
+      clearGrace(call, userId);
       const previous = existing.socketId ? io.sockets.sockets.get(existing.socketId) : undefined;
       previous?.leave(callRoom(call.id));
       // The old tab is told it is out, or it keeps an open microphone and an
@@ -1543,6 +1577,7 @@ function openRoom(
     ]),
     invited: new Set([args.host.id]),
     ringTimers: new Map(),
+    graceTimers: new Map(),
     createdAt: at,
     startedAt: at,
     peakParticipants: 1,
@@ -1568,6 +1603,34 @@ function openRoom(
 }
 
 /**
+ * Someone stopped being a member of an open room's origin: take them out of its
+ * voice room and stop telling their sockets who is in it. Membership is the
+ * whole of an open room's admission rule, so it has to keep holding after
+ * they are in, not just at the door.
+ *
+ * Wired for parties, whose membership lives in this process. A community
+ * membership is removed by the web tier, which has no channel to this hub yet;
+ * those are re-checked only at the next `JOIN`/`LOOKUP`.
+ */
+export function evictOriginMember(
+  io: Server,
+  origin: OpenRoomOrigin,
+  originId: string,
+  userId: string,
+): void {
+  io.in(userRoom(userId)).socketsLeave(originPresenceRoom(origin, originId));
+  const callId = byOrigin.get(originKey(origin, originId));
+  const call = callId ? calls.get(callId) : undefined;
+  if (!call || !call.participants.has(userId)) return;
+  const durationSec = Math.max(0, Math.round((Date.now() - call.startedAt) / 1000));
+  dropParticipant(io, call, userId, 'left');
+  io.to(userRoom(userId)).emit(GCALL_S2C.ENDED, { callId: call.id, reason: 'left', durationSec });
+  settle(io, call);
+}
+
+onPartyMemberRemoved((io, partyId, userId) => evictOriginMember(io, 'party', partyId, userId));
+
+/**
  * A dropped socket.
  *
  * Two different rules, because a media socket and a ringing device are not the
@@ -1575,9 +1638,11 @@ function openRoom(
  *
  * - **In the mesh.** Only the *bound* socket matters. A second tab closing does
  *   not touch the leg the first one is holding. When the bound socket goes, the
- *   user's peer connections went with it, so they leave the room even if they
- *   still have other tabs open — their busy claim is released, which makes them
- *   reachable again rather than stuck in a call they cannot hear.
+ *   seat is held for {@link GROUP_CALL_SEAT_GRACE_MS}: a signalling blip is
+ *   usually not a media one, and the reconnecting client re-sends `JOIN`. If
+ *   nothing claims it, they leave the room even with other tabs open — their
+ *   busy claim is released, so they are reachable again rather than stuck in a
+ *   call they cannot hear. A closed tab sends its own `LEAVE` and skips this.
  * - **Still ringing.** Give up only when the *last* device is gone, exactly as
  *   `call.ts` does: someone with the site open in two tabs is still reachable,
  *   and closing one of them should not answer for them.
@@ -1594,10 +1659,23 @@ export async function handleGroupCallDisconnect(io: Server, socket: Socket): Pro
 
   if (p.joinedAt !== null) {
     if (p.socketId !== socket.id) return;
-    const durationSec = Math.max(0, Math.round((Date.now() - call.startedAt) / 1000));
-    dropParticipant(io, call, userId, 'left');
-    io.to(userRoom(userId)).emit(GCALL_S2C.ENDED, { callId: call.id, reason: 'left', durationSec });
-    settle(io, call);
+    // Hold the seat. A `JOIN` from the user's reconnecting socket inside the
+    // window takes it back through `enterRoom`'s move-the-leg path; otherwise
+    // they leave exactly as an explicit `LEAVE` would.
+    p.socketId = null;
+    clearGrace(call, userId);
+    call.graceTimers.set(
+      userId,
+      setTimeout(() => {
+        call.graceTimers.delete(userId);
+        if (calls.get(call.id) !== call || call.participants.get(userId) !== p) return;
+        if (p.socketId !== null) return;
+        const durationSec = Math.max(0, Math.round((Date.now() - call.startedAt) / 1000));
+        dropParticipant(io, call, userId, 'left');
+        io.to(userRoom(userId)).emit(GCALL_S2C.ENDED, { callId: call.id, reason: 'left', durationSec });
+        settle(io, call);
+      }, GROUP_CALL_SEAT_GRACE_MS),
+    );
     return;
   }
 

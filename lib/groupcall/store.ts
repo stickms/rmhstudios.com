@@ -330,6 +330,8 @@ let mediaAttempt = 0;
  * a `not-participant` error that would kill a quick re-join of the same room.
  */
 let joinSentFor: string | null = null;
+/** Whether our in-progress `START` has actually been emitted (it has no id yet). */
+let startSent = false;
 let incomingExpiryTimer: ReturnType<typeof setTimeout> | null = null;
 /**
  * Our own userId, cached from the session.
@@ -508,6 +510,7 @@ async function openLocalMedia(attempt: number): Promise<boolean> {
 function finish(reason: GroupCallEndReason, notify: 'decline' | 'leave' | 'end' | 'none'): void {
   mediaAttempt += 1;
   joinSentFor = null;
+  startSent = false;
   clearIncomingExpiry();
   const s = store();
   s.setLastInviteRejection(null);
@@ -601,7 +604,10 @@ function rejoinAfterReconnect(): void {
   // with, and the room it may have opened lost its only participant on the
   // disconnect. Saying so beats a spinner that resolves to nothing.
   if (s.phase === 'joining' && !s.callId) {
-    finish('failed', 'none');
+    // Still on the mic prompt: nothing was sent, and the START that follows
+    // goes out on the new socket. Failing here would cancel a call the user
+    // has not finished starting.
+    if (startSent) finish('failed', 'none');
     return;
   }
   // Re-send only a JOIN that had already gone out. One still waiting on the
@@ -876,6 +882,7 @@ export async function startGroupCall(args: {
     return;
   }
 
+  startSent = true;
   const sent =
     client?.emit(GCALL_C2S.START, {
       origin: args.origin,

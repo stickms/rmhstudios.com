@@ -453,7 +453,7 @@ export class GroupCallMesh {
     // than pushing an offer into a connection that has already given up: this
     // is the one path by which a `failed` leg comes back without the person
     // leaving and rejoining the room.
-    if (leg && description.type === 'offer' && this.isSpent(leg)) {
+    if (leg && description.type === 'offer' && this.isSpent(leg, description)) {
       this.teardownLeg(leg, false);
       this.legs.delete(fromUserId);
       leg = undefined;
@@ -701,14 +701,27 @@ export class GroupCallMesh {
     void this.offer(leg, { iceRestart: true });
   }
 
-  /** True when a leg is past saving and only a fresh negotiation will do. */
-  private isSpent(leg: MeshLeg): boolean {
-    return (
-      leg.status === 'failed' ||
-      leg.status === 'closed' ||
-      leg.pc.signalingState === 'closed' ||
-      leg.pc.connectionState === 'closed'
-    );
+  /**
+   * True when an inbound offer cannot be applied to this leg's connection and
+   * only a fresh one will do.
+   *
+   * Decided from the connection itself, never from `leg.status` alone: the
+   * stall deadline marks a leg `failed` while its connection is still alive,
+   * and the offerer's ICE restart for that very connection has to land on it —
+   * answering a restart from a brand-new connection breaks DTLS for good. What
+   * does need a rebuild is a far side that started over: its new connection
+   * carries a new DTLS fingerprint, which no existing session can adopt.
+   */
+  private isSpent(leg: MeshLeg, offer: RTCSessionDescriptionInit): boolean {
+    if (leg.closed || leg.pc.signalingState === 'closed' || leg.pc.connectionState === 'closed') {
+      return true;
+    }
+    const current = dtlsFingerprint(leg.pc.remoteDescription?.sdp);
+    const incoming = dtlsFingerprint(offer.sdp);
+    if (current && incoming && current !== incoming) return true;
+    // A negotiation of ours that failed before anything remote was applied has
+    // no session to preserve; starting clean is the safe answer.
+    return leg.status === 'failed' && !leg.pc.remoteDescription;
   }
 
   private setStatus(leg: MeshLeg, status: GroupCallPeerStatus): void {
@@ -952,12 +965,24 @@ export class GroupCallMesh {
       if (leg.closed) continue;
       const age = now - leg.changedAt;
       if ((leg.status === 'new' || leg.status === 'connecting') && age > NEGOTIATION_TIMEOUT_MS) {
-        this.setStatus(leg, 'failed');
+        // An offer can be lost in transit (relayed while the far side was
+        // re-binding its socket) and the connection then never reaches
+        // `failed` on its own, so the offerer re-offers from here; `recover`
+        // gives up once the restart budget is spent.
+        if (leg.offerer) this.recover(leg);
+        else this.setStatus(leg, 'failed');
       } else if (leg.status === 'reconnecting' && age > RECONNECT_TIMEOUT_MS) {
         this.setStatus(leg, 'failed');
       }
     }
   }
+}
+
+/** The `a=fingerprint` line of an SDP, which identifies the DTLS session's peer. */
+function dtlsFingerprint(sdp: string | undefined): string | null {
+  if (!sdp) return null;
+  const match = /^a=fingerprint:(.+)$/m.exec(sdp);
+  return match ? match[1].trim().toLowerCase() : null;
 }
 
 /** Instant attack, eased release — the shape a level meter has to have. */

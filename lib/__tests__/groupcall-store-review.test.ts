@@ -311,4 +311,28 @@ describe('group-call review regressions', () => {
     expect(groupCall.useGroupCallStore.getState().phase).toBe('ended');
     expect(mocks.emits.some(({ event }) => event === 'gcall:leave')).toBe(false);
   });
+
+  it('does not fail a START still waiting on the microphone when the socket reconnects', async () => {
+    let grantMicrophone!: () => void;
+    mocks.openMicrophone.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          grantMicrophone = resolve;
+        }),
+    );
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: true, json: async () => ({ iceServers: [] }) })),
+    );
+    const groupCall = await import('@/lib/groupcall/store');
+    const starting = groupCall.startGroupCall({ origin: 'community', originId: 'c' });
+    await vi.waitFor(() => expect(mocks.meshes).toHaveLength(1));
+
+    mocks.options?.onConnect?.({}, { isReconnect: true });
+    expect(groupCall.useGroupCallStore.getState().phase).toBe('joining');
+
+    grantMicrophone();
+    await starting;
+    expect(mocks.emits.filter(({ event }) => event === 'gcall:start')).toHaveLength(1);
+  });
 });

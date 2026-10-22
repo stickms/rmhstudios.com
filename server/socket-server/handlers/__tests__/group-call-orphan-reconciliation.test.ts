@@ -24,6 +24,7 @@ vi.mock('../../rate-limit', () => ({
 
 vi.mock('../party', () => ({
   isPartyMember: vi.fn(),
+  onPartyMemberRemoved: vi.fn(),
 }));
 
 describe('orphaned group-call reconciliation', () => {
