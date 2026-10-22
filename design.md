@@ -51,15 +51,18 @@ inert.
 
 ### Avant-garde glass — surfaces are a material, not a colour
 
-The material is Apple's Liquid Glass, used _theatrically_ rather than literally:
-layered translucent glass with **live optics** — a specular rim glint on every
-tier, frosted edge bevels, micro-noise, a shared aurora canvas, and sheens that
-sweep once on arrival or on hover — never in a loop.
+The material uses translucent tint, a directional rim and a clear coat.
+Singular panes, chrome and overlays sample live content with native backdrop
+frost. Repeated cards use tint and reflection without adding blur samplers.
+A bounded shared runtime supplies nearby tap waves and surface-local cursor
+lighting. The globe has a dielectric coat and local soft-body indentation.
 
-The distinction that matters: a surface here is **translucent over a shared
-scene**, not an opaque card with a shadow. Every pane samples the same
-aurora, so panes at different depths relate to each other automatically, and a
-theme change is a change of _light_, not a repaint of a thousand components.
+These are different optical capabilities behind one material language. Native
+HTML panels preserve live content and accessibility with an approximate clear
+coat; the globe models dielectric reflection/transmission, and eversion can
+refract its captured page textures. The [implementation contract](docs/liquid-glass-system.md)
+records those limits, ownership, fallbacks and budgets. Themes change the
+material's palette through the same tokens throughout the site.
 
 The default palette is strict **high-contrast monochrome** — white canvas, ink
 text, ink accent, hairline black borders — rendered as glass. Restraint in the
@@ -126,18 +129,12 @@ in its own border ring. This includes L1: the tier the site is mostly _made_ of
 rests at an ambient glint strength that hover raises to full. Glass that does not
 answer the light is just tinted paper.
 
-**The light does not follow the cursor, and neither does anything else.** Every
-pointer-tracked effect the site once had — the diffuse hotspot on hovered glass,
-the aurora's pointer parallax, the ring backdrop's, the per-card sheens and
-tilts — was retired in one pass, because gradient position and background
-position are _paint_ properties: moving them repaints the whole element, at
-pointer rate, during exactly the gestures with a frame budget to defend. Hover is
-now a **state**, not a coordinate. If a cursor-tracked specular is ever wanted
-back it belongs on a compositor-friendly carrier (a transform-translated child
-layer), behind the same tier switches as the rest of the optics. Two things
-survive, because neither is a cursor: the opt-in device-tilt aurora on touch, and
-the device-attitude "inspect this object" control, which also has a drag and
-keyboard path.
+**Light and pressure belong to the material.** The shared runtime carries a
+small cursor light on a transform-only leaf and sends attenuated tap waves into
+at most eight nearby surfaces. It never paints a replacement cursor, moves a
+gradient centre, or animates a root variable. The background remains still.
+Reduced motion, reduced transparency and high contrast remove decorative
+responses live. See [the implementation contract](docs/liquid-glass-system.md).
 
 **A tier class is not decoration you can inline.** `bg-site-surface border
 border-site-border rounded-site shadow-site-sm` renders the same _box_ as
@@ -395,8 +392,8 @@ If you remember six things:
    continuously animating may sit above a full-viewport blur.
 4. **Motion is shared physics, and it composites.** Springs with velocity,
    intent read from projection, response on pointer-down; the formulas live in
-   one file. `transform`/`opacity` only — nothing tracks the pointer, and
-   nothing writes a custom property to `<html>` per frame.
+   one file. `transform`/`opacity` and independent transforms only; the shared light
+   carrier may track input, but nothing writes root variables per frame.
 5. **Degrade centrally.** High contrast, reduced motion, reduced transparency and
    `perf-lite` are the token layer's job — and legibility may never depend on an
    optic.

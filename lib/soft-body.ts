@@ -42,6 +42,8 @@ export const PINCH_DEPTH = 0.16;
 export const FALLOFF = 0.62;
 /** Stretch along the tug per radius of tug. */
 export const STRETCH = 1.15;
+/** Local finger footprint; the surrounding shoulder balances the indentation. */
+export const CONTACT_RADIUS = 0.36;
 /** Below this (radii, radii/s) every mode is at rest. */
 const REST = 1e-4;
 
@@ -160,15 +162,32 @@ export class SoftBody {
    * Where the surface point drawn at (x, y) is drawn now, into `out[0]`, `out[1]`. No allocation: called for every
    * sample of every ring, every frame the body is deformed.
    */
-  deform(x: number, y: number, out: Float64Array): void {
+  deform(x: number, y: number, out: Float64Array, frontDepth?: number): void {
     const ex = x - this.gx;
     const ey = y - this.gy;
     const w = Math.exp(-(ex * ex + ey * ey) * this.inv2s2);
     const pw = this.pinch * w;
     const x2 = x + this.dx * w - ex * pw;
     const y2 = y + this.dy * w - ey * pw;
-    out[0] = this.m00 * x2 + this.m01 * y2;
-    out[1] = this.m10 * x2 + this.m11 * y2;
+    // Perspective projection of the local depth displacement, front hemisphere
+    // only. The grab/selection coordinates remain undeformed in the navigator.
+    const depth = frontDepth === undefined ? 0 : this.depth(x, y) * Math.max(0, frontDepth);
+    const perspective = 1 / (1 - depth * 0.22);
+    out[0] = (this.m00 * x2 + this.m01 * y2) * perspective;
+    out[1] = (this.m10 * x2 + this.m11 * y2) * perspective;
+  }
+
+  /**
+   * Normal displacement in radii: a finger dents the centre and raises a soft
+   * annular shoulder. This Gaussian Laplacian integrates to zero over the
+   * tangent plane, so the displaced material returns around the contact rather
+   * than simply vanishing. The existing global stretch separately conserves
+   * volume. This is an analytic approximation, not a finite-element solver.
+   */
+  depth(x: number, y: number): number {
+    if (this.pinch === 0) return 0;
+    const q = ((x - this.gx) ** 2 + (y - this.gy) ** 2) / CONTACT_RADIUS ** 2;
+    return -this.pinch * (1 - q * 0.5) * Math.exp(-q * 0.5);
   }
 
   private at(x: number, y: number): void {

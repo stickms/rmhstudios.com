@@ -15,7 +15,6 @@ import {
 import { Link, useNavigate, useRouter } from '@tanstack/react-router';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useThemeStore } from '@/stores/themeStore';
 import { supportsWebGL, vibrate } from '@/lib/shared/platform';
 import { prefersLessData } from '@/lib/viewport-prefetch';
 import {
@@ -36,6 +35,7 @@ import {
 } from '@/lib/fluid';
 import { isNavLeafActive, type NavLeaf } from '@/lib/sidebar-nav';
 import { SoftBody } from '@/lib/soft-body';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import type { GlobeStartState } from '@/lib/eversion/types';
 import type { EntryPoint } from '@/lib/eversion/marks';
 import type { JellyFrame, JellyGlass } from './jelly-glass';
@@ -517,8 +517,8 @@ export function LiquidGlobe({
   const { t } = useTranslation('feed');
   const navigate = useNavigate();
   const router = useRouter();
-  // The site's own Reduce motion switch, never the OS query (2026-10-21: the hub's motion plays by default).
-  const reduced = useThemeStore((s) => s.reduceMotion);
+  // Honour both the account preference and the OS motion setting.
+  const reduced = useReducedMotion();
 
   const nodes = useMemo(() => place(items), [items]);
 
@@ -684,6 +684,7 @@ export function LiquidGlobe({
   const everting = useRef(false);
   const nextEvertPulse = useRef(0);
   const glassRef = useRef<HTMLSpanElement | null>(null);
+  const contactRef = useRef<HTMLSpanElement | null>(null);
   const paintedGlass = useRef('');
   /**
    * The shader material (`./jelly-glass`), once its chunk has loaded — null for
@@ -833,65 +834,90 @@ export function LiquidGlobe({
      (`data-jelly="on"`) once the material has drawn its first frame, so the swap
      happens inside one frame and there is never a frame with neither. */
   useEffect(() => {
-    if (!jellyEligible()) return;
     let cancelled = false;
+    let loading = false;
     let glass: JellyGlass | null = null;
+    let factory: typeof import('./jelly-glass') | null = null;
     const stage = stageRef.current;
     const host = glassRef.current;
-    void import('./jelly-glass').then((m) => {
+    const root = document.documentElement;
+    const preferences = [
+      matchMedia('(prefers-reduced-transparency: reduce)'),
+      matchMedia('(prefers-contrast: more)'),
+      matchMedia('(forced-colors: active)'),
+    ];
+    const sync = () => {
       if (cancelled || !host || !stage) return;
-      glass = m.acquireJellyGlass();
+      if (reduced || !jellyEligible() || preferences.some((q) => q.matches)) {
+        if (glass?.canvas.parentElement === host) glass.canvas.remove();
+        jellyGlass.current = null;
+        delete stage.dataset.jelly;
+        return;
+      }
+      if (!factory) {
+        if (!loading) {
+          loading = true;
+          void import('./jelly-glass')
+            .then((m) => {
+              if (cancelled) return;
+              factory = m;
+              sync();
+            })
+            .catch(() => {
+              /* Keep the CSS fallback if the optional chunk fails. */
+            });
+        }
+        return;
+      }
+      glass = factory.acquireJellyGlass();
       if (!glass) return;
       const g = glass;
-      const attach = () => {
-        if (!g.ready) {
-          jellyGlass.current = null;
-          delete stage.dataset.jelly;
-          return;
-        }
-        // Theme colours, resolved once per mount: a computed style is a style
-        // flush, and the globe is mounted afresh each time the menu opens.
-        const probe = document.createElement('span');
-        probe.style.color = 'var(--site-accent)';
-        probe.style.backgroundColor = 'var(--site-bg)';
-        host.appendChild(probe);
-        const ps = getComputedStyle(probe);
-        const accentCss = ps.color;
-        const bgCss = ps.backgroundColor;
-        probe.remove();
-        const ink = m.resolveColor(getComputedStyle(host).color || 'rgb(0 0 0)', [0, 0, 0]);
-        const accent = m.resolveColor(accentCss, [0.4, 0.5, 1]);
-        const bg = m.resolveColor(bgCss, [1, 1, 1]);
-        const lum = 0.2126 * bg[0] + 0.7152 * bg[1] + 0.0722 * bg[2];
-        g.resize(sizeRef.current, window.devicePixelRatio || 1);
-        g.palette({ ink, accent, light: lum > 0.5 ? 1 : 0 }, RIPPLE);
-        const f = jellyFrame;
-        f.ripples.fill(0);
-        for (let i = 3; i < 12; i += 4) f.ripples[i] = -1;
-        f.gx = f.gy = f.dx = f.dy = f.pinch = 0;
-        g.render(f);
-        jellyGlass.current = g;
-        jellyDirty.current = true;
-        dirty.current = true;
-        stage.dataset.jelly = 'on';
-      };
+      g.onChange = sync;
+      if (!g.ready) {
+        jellyGlass.current = null;
+        delete stage.dataset.jelly;
+        return;
+      }
+      const probe = document.createElement('span');
+      probe.style.color = 'var(--site-accent)';
+      probe.style.backgroundColor = 'var(--site-bg)';
+      host.appendChild(probe);
+      const ps = getComputedStyle(probe);
+      const accentCss = ps.color;
+      const bgCss = ps.backgroundColor;
+      probe.remove();
+      const ink = factory.resolveColor(getComputedStyle(host).color || 'rgb(0 0 0)', [0, 0, 0]);
+      const accent = factory.resolveColor(accentCss, [0.4, 0.5, 1]);
+      const bg = factory.resolveColor(bgCss, [1, 1, 1]);
+      const lum = 0.2126 * bg[0] + 0.7152 * bg[1] + 0.0722 * bg[2];
+      g.resize(sizeRef.current, window.devicePixelRatio || 1);
+      g.palette({ ink, accent, light: lum > 0.5 ? 1 : 0 }, RIPPLE);
+      const f = jellyFrame;
+      f.ripples.fill(0);
+      for (let i = 3; i < 12; i += 4) f.ripples[i] = -1;
+      f.gx = f.gy = f.dx = f.dy = f.pinch = 0;
       host.appendChild(g.canvas);
-      g.onChange = attach;
-      attach();
-    });
+      g.render(f);
+      jellyGlass.current = g;
+      jellyDirty.current = true;
+      dirty.current = true;
+      stage.dataset.jelly = 'on';
+    };
+    const observer = new MutationObserver(sync);
+    observer.observe(root, { attributes: true, attributeFilter: ['class', 'style'] });
+    preferences.forEach((q) => q.addEventListener('change', sync));
+    sync();
     return () => {
       cancelled = true;
-      // The canvas is shared by every mount, so only take it back if this mount
-      // still holds it — a newer globe (the real open after the rehearsal) may
-      // already have moved it into its own disc.
-      if (glass && glass.canvas.parentElement === host) {
-        glass.onChange = null;
-        glass.canvas.remove();
-      }
+      observer.disconnect();
+      preferences.forEach((q) => q.removeEventListener('change', sync));
+      // The single cached canvas may already belong to a newer mount.
+      if (glass?.onChange === sync) glass.onChange = null;
+      if (glass?.canvas.parentElement === host) glass.canvas.remove();
       jellyGlass.current = null;
       if (stage) delete stage.dataset.jelly;
     };
-  }, [jellyFrame]);
+  }, [jellyFrame, reduced]);
 
   /* ── Where the globe is on screen, for the eversion hand-off ──────────────
      The WebGL sphere has to start on top of this one, so the hand-off needs the
@@ -1317,7 +1343,7 @@ export function LiquidGlobe({
             sy2 *= m;
           }
           if (soft) {
-            jelly.deform(sx, sy2, DEFORM_OUT);
+            jelly.deform(sx, sy2, DEFORM_OUT, z2);
             sx = DEFORM_OUT[0]!;
             sy2 = DEFORM_OUT[1]!;
           }
@@ -1423,7 +1449,7 @@ export function LiquidGlobe({
               cy2 *= m;
             }
             if (soft) {
-              jelly.deform(cx, cy2, DEFORM_OUT);
+              jelly.deform(cx, cy2, DEFORM_OUT, z2);
               cx = DEFORM_OUT[0]!;
               cy2 = DEFORM_OUT[1]!;
             }
@@ -1488,7 +1514,15 @@ export function LiquidGlobe({
         paintedGlass.current = glass;
         glassRef.current.style.transform = glass === 'none' ? '' : glass;
       }
-
+      // A small shaded contact footprint explains the depth change even at the
+      // centre of the disc, where a symmetric indentation has no 2D translation.
+      // Only a leaf transform/opacity changes; never the body's gradient centre.
+      if (contactRef.current) {
+        const depth = Math.min(1, Math.abs(jelly.pinch) / 0.16);
+        contactRef.current.style.opacity = soft ? depth.toFixed(3) : '0';
+        if (soft)
+          contactRef.current.style.transform = `translate3d(${(jelly.gx * R).toFixed(2)}px,${(jelly.gy * R).toFixed(2)}px,0) scale(${(0.85 + depth * 0.15).toFixed(3)})`;
+      }
       // The material redraws only while the SURFACE is moving (a ripple, the
       // soft body), plus the one frame it comes to rest on. A turn alone does
       // not touch it: a uniform glass ball looks the same at any rotation. It is
@@ -1557,7 +1591,7 @@ export function LiquidGlobe({
           sy *= m;
         }
         if (soft) {
-          jelly.deform(sx, sy, DEFORM_OUT);
+          jelly.deform(sx, sy, DEFORM_OUT, z);
           sx = DEFORM_OUT[0]!;
           sy = DEFORM_OUT[1]!;
         }
@@ -2362,7 +2396,9 @@ export function LiquidGlobe({
         {/* The glass body itself: a flat disc of shading over the cage, so the
             wireframe reads as structure suspended INSIDE a liquid ball rather
             than as a drawing on top of one. */}
-        <span ref={glassRef} className="radial-globe__glass" aria-hidden />
+        <span ref={glassRef} className="radial-globe__glass" aria-hidden>
+          <span ref={contactRef} className="radial-globe__contact" />
+        </span>
 
         {/* PINS — projected here rather than placed in the 3D cage, so their type
             stays flat, crisp and billboarded instead of skewing with the sphere. */}

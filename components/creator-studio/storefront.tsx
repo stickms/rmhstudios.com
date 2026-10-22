@@ -335,7 +335,7 @@ function MosaicCard({ item, wide, index }: { item: StoreItem; wide: boolean; ind
       className={`store-card ${wide ? 'is-wide' : ''}`}
       style={{ animationDelay: `${(index % 10) * 45}ms` }}
     >
-      <PrimaryWrapper item={item} className="store-card__link" ariaLabel={item.title}>
+      <PrimaryWrapper item={item} className="store-card__link glass-fill" ariaLabel={item.title}>
         <div className="store-art store-card__art">
           <Art item={item} {...coverFor(item)} />
           {item.badge && <span className="store-art__badge">{item.badge}</span>}

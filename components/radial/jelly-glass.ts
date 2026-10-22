@@ -35,6 +35,8 @@
  * mount of the globe, so opening the menu never compiles a shader twice.
  */
 
+import { CONTACT_RADIUS, FALLOFF } from '@/lib/soft-body';
+
 /** Everything the material needs for one frame. All coordinates are in radii of the sphere, y DOWN. */
 export interface JellyFrame {
   /**
@@ -102,7 +104,9 @@ uniform vec4 uShape;
 uniform vec4 uSoft;
 uniform float uPinch;
 
-const float INV2S2 = ${(1 / (2 * 0.62 * 0.62)).toFixed(6)};
+const float INV2S2 = ${(1 / (2 * FALLOFF * FALLOFF)).toFixed(6)};
+
+const float CONTACT_S2 = ${(CONTACT_RADIUS * CONTACT_RADIUS).toFixed(6)};
 
 float wave(float age, float dist) {
   if (age < 0.0 || age >= uShape.w) return 0.0;
@@ -152,6 +156,11 @@ void main() {
     if (tl > 1e-4) n = normalize(n + (t / tl) * slope * 2.2);
     crest += max(h, 0.0);
   }
+  // Same normal indentation + compensating shoulder as SoftBody.depth.
+  // Its analytic gradient bends the highlight inward around the finger.
+  float contact2 = dot(g, g) / CONTACT_S2;
+  vec2 contactSlope = uPinch * g / CONTACT_S2 * (2.0 - 0.5 * contact2) * exp(-0.5 * contact2);
+  n = normalize(n - vec3(contactSlope, 0.0));
   // A tug leans the surface toward the pull; the jelly's sheen follows it.
   n = normalize(n + vec3(uSoft.zw * w * 1.4, 0.0));
 
@@ -163,8 +172,8 @@ void main() {
   // ── Reflection: the studio, mirrored, weighted by Fresnel ──
   // The softbox is placed in REFLECTION space, so on the ball it lands as a
   // curved window up-left that bends with every ripple and squeeze.
-  float fres = 0.04 + 0.96 * pow(rim, 3.0);
-  float sky = smoothstep(0.3, -0.9, rf.y);
+  float fres = 0.033736 + 0.966264 * pow(rim, 5.0); // IOR 1.45
+  float sky = 1.0 - smoothstep(-0.9, 0.3, rf.y);
   // Centred just up-left of the key glint (the glint is the window's hot spot),
   // and small: on a sphere a reflection is compressed toward the limb, so a big
   // box smears into a comma.
@@ -187,7 +196,10 @@ void main() {
   // ── Transmission: the room behind, upside-down, and the key light focused
   //    into a crescent hugging the far inner rim ──
   float thick = nz;
-  float tband = smoothstep(0.25, 0.95, p.y) * (1.0 - smoothstep(0.8, 0.97, r)) * 0.16;
+  vec3 entryRay = refract(-v, n, 1.0 / 1.45);
+  vec3 exitNormal = normalize(vec3(p + entryRay.xy * 2.0 * nz, -nz));
+  vec3 throughRay = refract(entryRay, -exitNormal, 1.45);
+  float tband = smoothstep(0.15, 0.85, throughRay.y) * (1.0 - smoothstep(0.8, 0.97, r)) * 0.16;
   vec2 cdir = normalize(vec2(0.62, 0.78) - uSoft.zw * 1.2);
   float along = max(dot(r > 1e-4 ? p / r : vec2(0.0), cdir), 0.0);
   float crescent = exp(-pow((r - 0.8) / 0.085, 2.0)) * pow(along, 7.0);
@@ -380,7 +392,10 @@ export function acquireJellyGlass(): JellyGlass | null {
  * computed) to 0–1 sRGB by letting the canvas parse it. One 1×1 2D context, used
  * once per mount.
  */
-export function resolveColor(css: string, fallback: [number, number, number]): [number, number, number] {
+export function resolveColor(
+  css: string,
+  fallback: [number, number, number],
+): [number, number, number] {
   try {
     const c = document.createElement('canvas');
     c.width = c.height = 1;

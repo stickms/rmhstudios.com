@@ -691,9 +691,7 @@ function RootDocument({ children }: { children: ReactNode }) {
             So it must stay a leaf: never render children into it. */}
         <div className="site-aurora" aria-hidden />
         {children}
-        {/* The Liquid Glass lens filters (#glass-lens / -press / -prism, plus the
-            #glass-goo metaball filter). One hidden SVG host for the whole
-            document — every `.glass-refract` surface samples it by url(). */}
+        {/* The tab capsule's #glass-goo host. Glass optics do not use SVG lenses. */}
         <GlassFilter />
         <Scripts />
       </body>

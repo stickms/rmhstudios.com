@@ -237,7 +237,7 @@ export function RadialLiveRailContent({
       <TodayWidget onSettled={settle.today} />
 
       {tags.length > 0 && (
-        <section className="rad-live__card">
+        <section className="rad-live__card glass-fill">
           <h2>
             <Hash aria-hidden />
             {t('trending', { defaultValue: 'Trending' })}
@@ -256,7 +256,7 @@ export function RadialLiveRailContent({
       )}
 
       {people.length > 0 && (
-        <section className="rad-live__card">
+        <section className="rad-live__card glass-fill">
           <h2>
             <UserPlus aria-hidden />
             {t('who-to-follow', { defaultValue: 'Who to follow' })}
