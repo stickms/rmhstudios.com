@@ -378,6 +378,7 @@ import { Route as ApiAdminEconomyRouteImport } from './routes/api/admin/economy'
 import { Route as ApiAdminLinkRulesRouteImport } from './routes/api/admin/link-rules'
 import { Route as ApiAdminModMacrosRouteImport } from './routes/api/admin/mod-macros'
 import { Route as ApiAdminOncallRouteImport } from './routes/api/admin/oncall'
+import { Route as ApiAdminOncallRulesRouteImport } from './routes/api/admin/oncall-rules'
 import { Route as ApiAdminReportsRouteImport } from './routes/api/admin/reports'
 import { Route as ApiAdminReviewCountsRouteImport } from './routes/api/admin/review-counts'
 import { Route as ApiAdminUsersRouteImport } from './routes/api/admin/users'
@@ -3120,6 +3121,11 @@ const ApiAdminModMacrosRoute = ApiAdminModMacrosRouteImport.update({
 const ApiAdminOncallRoute = ApiAdminOncallRouteImport.update({
   id: '/api/admin/oncall',
   path: '/api/admin/oncall',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminOncallRulesRoute = ApiAdminOncallRulesRouteImport.update({
+  id: '/api/admin/oncall-rules',
+  path: '/api/admin/oncall-rules',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAdminReportsRoute = ApiAdminReportsRouteImport.update({
@@ -8101,6 +8107,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/link-rules': typeof ApiAdminLinkRulesRoute
   '/api/admin/mod-macros': typeof ApiAdminModMacrosRoute
   '/api/admin/oncall': typeof ApiAdminOncallRoute
+  '/api/admin/oncall-rules': typeof ApiAdminOncallRulesRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
   '/api/admin/review-counts': typeof ApiAdminReviewCountsRoute
   '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
@@ -9332,6 +9339,7 @@ export interface FileRoutesByTo {
   '/api/admin/link-rules': typeof ApiAdminLinkRulesRoute
   '/api/admin/mod-macros': typeof ApiAdminModMacrosRoute
   '/api/admin/oncall': typeof ApiAdminOncallRoute
+  '/api/admin/oncall-rules': typeof ApiAdminOncallRulesRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
   '/api/admin/review-counts': typeof ApiAdminReviewCountsRoute
   '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
@@ -10591,6 +10599,7 @@ export interface FileRoutesById {
   '/api/admin/link-rules': typeof ApiAdminLinkRulesRoute
   '/api/admin/mod-macros': typeof ApiAdminModMacrosRoute
   '/api/admin/oncall': typeof ApiAdminOncallRoute
+  '/api/admin/oncall-rules': typeof ApiAdminOncallRulesRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
   '/api/admin/review-counts': typeof ApiAdminReviewCountsRoute
   '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
@@ -11850,6 +11859,7 @@ export interface FileRouteTypes {
     | '/api/admin/link-rules'
     | '/api/admin/mod-macros'
     | '/api/admin/oncall'
+    | '/api/admin/oncall-rules'
     | '/api/admin/reports'
     | '/api/admin/review-counts'
     | '/api/admin/users'
@@ -13081,6 +13091,7 @@ export interface FileRouteTypes {
     | '/api/admin/link-rules'
     | '/api/admin/mod-macros'
     | '/api/admin/oncall'
+    | '/api/admin/oncall-rules'
     | '/api/admin/reports'
     | '/api/admin/review-counts'
     | '/api/admin/users'
@@ -14339,6 +14350,7 @@ export interface FileRouteTypes {
     | '/api/admin/link-rules'
     | '/api/admin/mod-macros'
     | '/api/admin/oncall'
+    | '/api/admin/oncall-rules'
     | '/api/admin/reports'
     | '/api/admin/review-counts'
     | '/api/admin/users'
@@ -15387,6 +15399,7 @@ export interface RootRouteChildren {
   ApiAdminLinkRulesRoute: typeof ApiAdminLinkRulesRoute
   ApiAdminModMacrosRoute: typeof ApiAdminModMacrosRoute
   ApiAdminOncallRoute: typeof ApiAdminOncallRoute
+  ApiAdminOncallRulesRoute: typeof ApiAdminOncallRulesRoute
   ApiAdminReportsRoute: typeof ApiAdminReportsRouteWithChildren
   ApiAdminReviewCountsRoute: typeof ApiAdminReviewCountsRoute
   ApiAdminUsersRoute: typeof ApiAdminUsersRouteWithChildren
@@ -18627,6 +18640,13 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/oncall'
       fullPath: '/api/admin/oncall'
       preLoaderRoute: typeof ApiAdminOncallRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/oncall-rules': {
+      id: '/api/admin/oncall-rules'
+      path: '/api/admin/oncall-rules'
+      fullPath: '/api/admin/oncall-rules'
+      preLoaderRoute: typeof ApiAdminOncallRulesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/reports': {
@@ -27080,6 +27100,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminLinkRulesRoute: ApiAdminLinkRulesRoute,
   ApiAdminModMacrosRoute: ApiAdminModMacrosRoute,
   ApiAdminOncallRoute: ApiAdminOncallRoute,
+  ApiAdminOncallRulesRoute: ApiAdminOncallRulesRoute,
   ApiAdminReportsRoute: ApiAdminReportsRouteWithChildren,
   ApiAdminReviewCountsRoute: ApiAdminReviewCountsRoute,
   ApiAdminUsersRoute: ApiAdminUsersRouteWithChildren,
