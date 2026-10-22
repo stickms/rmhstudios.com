@@ -31,6 +31,8 @@ export interface GlassDraw {
   lightY: number;
   lightZ: number;
   lightOn: number;
+  /** Optical tilt on a unit disc. Only the glass normal changes; content stays in normal flow. */
+  tilt?: [number, number];
   /** Up to GLASS_RIPPLES × (x, y, age, amplitude); age < 0 = empty. */
   ripples: Float32Array;
   press: number;
@@ -74,6 +76,7 @@ const NAMES = [
   'uDark',
   'uLight',
   'uLightOn',
+  'uTilt',
   'uRip',
   'uRipShape',
   'uPress',
@@ -184,9 +187,11 @@ export class GlassRenderer {
     if (!gl || this.lost) return false;
     const pw = Math.max(1, Math.round(o.width * o.dpr));
     const ph = Math.max(1, Math.round(o.height * o.dpr));
-    if (pw !== this.cw || ph !== this.ch) {
-      this.canvas.width = this.cw = pw;
-      this.canvas.height = this.ch = ph;
+    // Retain a high-water backing store. Resizing this shared canvas to EVERY
+    // surface reallocated the GPU buffer repeatedly within a single frame.
+    if (pw > this.cw || ph > this.ch) {
+      this.canvas.width = this.cw = Math.max(pw, this.cw);
+      this.canvas.height = this.ch = Math.max(ph, this.ch);
     }
     if (target.width !== pw || target.height !== ph) {
       target.width = pw;
@@ -215,6 +220,7 @@ export class GlassRenderer {
     gl.uniform1f(u.uDark, o.dark);
     gl.uniform3f(u.uLight, o.lightX, o.lightY, o.lightZ);
     gl.uniform1f(u.uLightOn, o.lightOn);
+    gl.uniform2f(u.uTilt, o.tilt?.[0] ?? 0, o.tilt?.[1] ?? 0);
     gl.uniform4fv(u.uRip, o.ripples);
     gl.uniform4f(
       u.uRipShape,
@@ -229,7 +235,9 @@ export class GlassRenderer {
     const ctx = target.getContext('2d');
     if (!ctx) return false;
     ctx.clearRect(0, 0, pw, ph);
-    ctx.drawImage(this.canvas, 0, 0);
+    // The GL viewport starts at the bottom-left; Canvas2D's source rect starts
+    // at the top-left. Copy just the current surface from the retained buffer.
+    ctx.drawImage(this.canvas, 0, this.ch - ph, pw, ph, 0, 0, pw, ph);
     return true;
   }
 

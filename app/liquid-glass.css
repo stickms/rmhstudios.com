@@ -81,15 +81,6 @@
       background-color 160ms ease,
       box-shadow 160ms ease;
   }
-  /* A hover on clear glass is light, not a colour swap: a wash of the theme's ink over the live tint, so the slab still
-     reads through it. (`--site-surface-hover` is a near-opaque fill and would turn the glass back into a card.) */
-  .glass-interactive:hover {
-    background-color: color-mix(
-      in srgb,
-      var(--site-text) 7%,
-      color-mix(in srgb, var(--site-bg) 14%, transparent)
-    );
-  }
   /* The eversion hover/press layer (`[data-evert]::before`, globals.css §7.3) pours out of the pointer INSIDE the host.
      Over glass the NEUTRAL hover must be translucent so the slab still reads through it, and it must reach the whole
      face: see the canvas order below. That is done by redefining the neutral hover/press tokens for everything inside a
@@ -103,9 +94,6 @@
     ) {
     --site-surface-hover: color-mix(in srgb, var(--site-text) 9%, transparent);
     --site-surface-active: color-mix(in srgb, var(--site-text) 14%, transparent);
-  }
-  .glass-interactive:active {
-    scale: 0.97;
   }
   .glass-scrim {
     background: color-mix(in srgb, var(--site-bg) 60%, transparent);
@@ -176,6 +164,14 @@
     /* The slab draws the bevel and the lit edge, so the static coat steps aside. */
     background-image: none;
     box-shadow: none;
+  }
+
+  /* The shader's tilt/light is the hover state on every admitted control. */
+  [data-liquid-canvas='on'][data-evert]::before {
+    background: none;
+  }
+  .evert-ghost[data-kind='hover'][data-liquid-canvas='on'] {
+    background: none;
   }
 
   /* Controls (buttons, fields) the engine draws: the slab replaces the static coat. Their border and fill stay theirs. */
