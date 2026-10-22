@@ -145,8 +145,8 @@ _why_.
    `bg-site-surface border rounded-site` box — the class is what carries the
    material and what the degradation tiers switch off. **Liquid glass** is shader-drawn: `lib/liquid/glass/engine.ts` paints
    `glass-pane/chrome/overlay` (and `app-glass`) as clear slabs with a refracting,
-   lit rim and a cursor that is a light; `lib/liquid/runtime.ts` is the
-   translate-only neighbour push; the globe is a dough simulation (`lib/dough.ts`).
+   lit rim and a cursor that is a light; `lib/liquid/runtime.ts` provides fallback
+   cursor lighting. Clicks never push or bounce neighbouring surfaces; the globe is a dough simulation (`lib/dough.ts`).
    **No `backdrop-filter` in any glass role.** Never add per-component pointer
    loops or animated root custom properties. See `docs/liquid-glass-system.md`. The statement of the language is
    [`design.md`](design.md) at the root; **before any UI commit** read

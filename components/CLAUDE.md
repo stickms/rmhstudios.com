@@ -55,7 +55,7 @@ rounded-site shadow-site-sm` renders the same _box_ and none of the
   `:last-child` rules on the direct children of a glass role (the canvas is one).
   Never add per-card pointer listeners, animate gradient positions, or write
   inherited root variables in frames. `app/liquid-glass.css` is the complete
-  fallback tier. `lib/liquid/runtime.ts` is the translate-only neighbour push. See
+  fallback tier. `lib/liquid/runtime.ts` provides fallback cursor lighting; clicks never push or bounce neighbouring surfaces. See
   [`docs/liquid-glass-system.md`](../docs/liquid-glass-system.md).
 - **Variants:** use `class-variance-authority` for components with variant
   APIs (see `ui/button.tsx`, `ui/badge.tsx`). Set a `data-slot="..."`
