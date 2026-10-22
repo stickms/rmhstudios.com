@@ -2,7 +2,7 @@
  * The liquid glass engine: one document service that turns the site's glass roles into shader-drawn slabs.
  *
  * Eligible surfaces (`.glass-pane`, `.glass-chrome`, `.glass-overlay`, the app tier's `.app-glass`, `[data-liquid-glass]`) get a canvas as their
- * LAST child, painted behind their content (`z-index: -1` inside an isolated stacking context, `app/liquid-glass.css`).
+ * LAST child, painted behind their content (`z-index: -2` inside an isolated stacking context, `app/liquid-glass.css`).
  * One shared `GlassRenderer` draws every surface into its own canvas. The canvas is transparent inside the bevel and
  * opaque (the refracted page) on it, so the live DOM is what you see through the middle and the glass is what you see
  * at the edge. See `shader.ts` for the optics and `scene.ts` for the picture the rim refracts.

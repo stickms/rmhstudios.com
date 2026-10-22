@@ -18,9 +18,14 @@
       rgb(255 255 255 / 0.025) 76%,
       rgb(255 255 255 / 0.08)
     );
+    /* The CSS bevel, for every surface the shader does not draw (repeated cards, fields, buttons) and for the whole
+       fallback tier: a bright edge facing the light, a thin dark refraction line on the far side, an inner glow where
+       the glass thickens toward the rim, and a denser lower lip. It is the same lighting the shader computes. */
     --liquid-edge:
-      inset 0 1px 0 var(--liquid-rim),
-      inset 0 -1px 0 color-mix(in srgb, var(--site-text) 7%, transparent);
+      inset 1px 1.5px 0 var(--liquid-rim),
+      inset -1px -1px 0 color-mix(in srgb, var(--site-text) 12%, transparent),
+      inset 0 0 12px -2px color-mix(in srgb, var(--site-glass-light, white) 70%, transparent),
+      inset 0 -14px 16px -14px color-mix(in srgb, var(--site-text) 14%, transparent);
   }
 
   /* Clear-coat reflection has no backdrop cost on repeated content. */
@@ -33,18 +38,21 @@
     border: var(--site-border-width, 1px) solid color-mix(in srgb, var(--site-border) 75%, white);
     border-radius: var(--site-radius);
   }
+  /* The tints are LOW on purpose. Liquid glass is clear: the page has to read through it, bent at the rim. Each role
+     carries only as much body as it needs to stay legible with no blur behind it (a blur is exactly what is not wanted),
+     and the shader's shaded bevel and lit edge, not an opaque fill, are what make the surface visible. */
   .glass-pane:not([data-liquid-material='off']) {
     background-color: color-mix(
       in srgb,
-      var(--site-bg) clamp(48%, calc(60% * var(--glass-user-tint, 1)), 100%),
+      var(--site-bg) clamp(10%, calc(18% * var(--glass-user-tint, 1)), 100%),
       transparent
     );
   }
-  /* Sticky chrome floats over scrolling text with no blur to soften it, so it is denser than a pane. */
+  /* Sticky chrome floats over scrolling text with no blur to soften it, so it is a little denser than a pane. */
   .glass-chrome:not([data-liquid-material='off']) {
     background-color: color-mix(
       in srgb,
-      var(--site-bg) clamp(74%, calc(86% * var(--glass-user-tint, 1)), 100%),
+      var(--site-bg) clamp(30%, calc(42% * var(--glass-user-tint, 1)), 100%),
       transparent
     );
   }
@@ -52,10 +60,10 @@
     position: relative;
     background-color: color-mix(
       in srgb,
-      var(--site-surface) clamp(68%, calc(88% * var(--glass-user-tint, 1)), 100%),
+      var(--site-bg) clamp(8%, calc(14% * var(--glass-user-tint, 1)), 100%),
       transparent
     );
-    border-color: color-mix(in srgb, var(--site-border) 78%, var(--site-glass-light));
+    border-color: color-mix(in srgb, var(--site-border) 60%, var(--site-glass-light));
   }
   .glass-pane:not([data-liquid-material='off']) {
     box-shadow: var(--liquid-edge), var(--site-shadow);
@@ -65,7 +73,7 @@
     max-inline-size: calc(100dvw - var(--safe-left, 0px) - var(--safe-right, 0px) - 1rem);
     background-color: color-mix(
       in srgb,
-      var(--site-bg) clamp(90%, calc(94% * var(--glass-user-tint, 1)), 100%),
+      var(--site-bg) clamp(76%, calc(86% * var(--glass-user-tint, 1)), 100%),
       transparent
     );
     box-shadow: var(--liquid-edge), var(--site-shadow);
@@ -73,7 +81,7 @@
   :is(.glass-inset, [data-slot='input'], [data-slot='textarea']):not([data-liquid-material='off']) {
     border-color: color-mix(in srgb, var(--site-border) 85%, var(--site-glass-light));
     box-shadow: inset 0 1px 0 color-mix(in srgb, var(--site-glass-light) 35%, transparent);
-    background-color: color-mix(in srgb, var(--site-text) 4%, var(--site-bg));
+    background-color: color-mix(in srgb, var(--site-text) 3%, transparent);
     border-radius: var(--site-radius-sm);
   }
   .glass-interactive {
@@ -82,8 +90,28 @@
       background-color 160ms ease,
       box-shadow 160ms ease;
   }
+  /* A hover on clear glass is light, not a colour swap: a wash of the theme's ink over the live tint, so the slab still
+     reads through it. (`--site-surface-hover` is a near-opaque fill and would turn the glass back into a card.) */
   .glass-interactive:hover {
-    background-color: var(--site-surface-hover);
+    background-color: color-mix(
+      in srgb,
+      var(--site-text) 7%,
+      color-mix(in srgb, var(--site-bg) 14%, transparent)
+    );
+  }
+  /* The eversion hover/press layer (`[data-evert]::before`, globals.css §7.3) pours out of the pointer INSIDE the host.
+     Over glass the NEUTRAL hover must be translucent so the slab still reads through it, and it must reach the whole
+     face: see the canvas order below. That is done by redefining the neutral hover/press tokens for everything inside a
+     glass role, NOT by overriding `--evert-tint` itself: accent, danger and sign-in controls set their own tint (and swap
+     their label to the matching foreground on hover), and a blanket `--evert-tint` here would leave their white label on a
+     faint wash. The neutral controls reference `--site-surface-hover`, so they pick this up through inheritance. High
+     contrast, reduced transparency and the app/game tier keep their opaque hover tokens. */
+  html:not(.app-route):not(.style-high-contrast):not(.reduce-transparency)
+    :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, .glass-inset):not(
+      [data-liquid-material='off']
+    ) {
+    --site-surface-hover: color-mix(in srgb, var(--site-text) 9%, transparent);
+    --site-surface-active: color-mix(in srgb, var(--site-text) 14%, transparent);
   }
   .glass-interactive:active {
     scale: 0.97;
@@ -97,7 +125,7 @@
   /* Fixed descendants keep the viewport as their containing block. */
   .glass-chrome--aside {
     position: relative;
-    background: var(--site-bg);
+    background: color-mix(in srgb, var(--site-bg) 30%, transparent);
     border-color: var(--site-border);
     box-shadow: var(--liquid-edge);
   }
@@ -108,7 +136,7 @@
   }
   @media (max-width: 767.98px) {
     :is(.glass-fill, .glass-pane, .glass-chrome) {
-      background-color: color-mix(in srgb, var(--site-bg) 88%, transparent);
+      background-color: color-mix(in srgb, var(--site-bg) 26%, transparent);
     }
   }
   [data-slot='button']:not([data-variant='link']):not([data-liquid-material='off']) {
@@ -119,6 +147,9 @@
     background-image: none;
     box-shadow: none;
   }
+  /* Secondary and outline buttons get no rule here on purpose: their `bg-site-surface` / `bg-transparent` utilities live in
+     Tailwind's utilities layer, which outranks this components layer whatever the selector, and `--site-surface` is itself
+     translucent now (globals.css), so they are already clear glass. Only the prominent variants keep a solid colour. */
   /* Standalone game menus use the same viewport contract without AppShell.
      Apply the coat to menu controls, leaving live canvas/HUD gameplay alone. */
   :is(.app-page, .app-screen)
@@ -136,7 +167,9 @@
     top: 0;
     width: 100%;
     height: 100%;
-    z-index: -1;
+    /* -2, not -1: the eversion hover layer (`::before`, z-index -1) must paint OVER the slab. At -1 the canvas, being the
+       last child, painted over it and the opaque bevel band hid the outer ring of every hover: it looked cut off. */
+    z-index: -2;
     pointer-events: none;
     user-select: none;
   }
