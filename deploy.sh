@@ -563,6 +563,10 @@ fi
 stage fetch
 step_start "Fetching latest code..."
 
+# The release live before this deploy — the post-deploy guard's rollback
+# target. Exported so the self-restart below (HEAD already moved) keeps it.
+export PREV_DEPLOYED_SHA="${PREV_DEPLOYED_SHA:-$("$GIT_BIN" rev-parse HEAD 2>/dev/null || true)}"
+
 # Snapshot deploy.sh hash before pulling so we can detect self-updates.
 DEPLOY_SCRIPT_PATH="${REPO_DIR}/deploy.sh"
 PRE_PULL_HASH=$(sha256sum "$DEPLOY_SCRIPT_PATH" | awk '{print $1}')
@@ -1328,4 +1332,16 @@ fi
 
 # ── Done ─────────────────────────────────────────────────────────────────────
 update_deploy_status success
+
+# Watch the new release for 15 min and roll it back if the page/API 5xx or
+# latency alarms fire on its traffic (deploy/post-deploy-guard.sh). Detached,
+# so the deploy lock is released now; the guard stands down on a newer deploy.
+# Off for the redeploy the guard itself starts (POST_DEPLOY_GUARD=0).
+if [ "${POST_DEPLOY_GUARD:-1}" = 1 ] && [ -x "${REPO_DIR}/deploy/post-deploy-guard.sh" ] \
+   && [ -n "${PREV_DEPLOYED_SHA:-}" ] && [ "${PREV_DEPLOYED_SHA:0:7}" != "${DEPLOY_SHORT_HASH:0:7}" ]; then
+    setsid nohup bash "${REPO_DIR}/deploy/post-deploy-guard.sh" "$DEPLOY_SHORT_HASH" "$PREV_DEPLOYED_SHA" "$(date +%s)" \
+        >> "${GUARD_LOG:-/home/rmhstudios/post-deploy-guard.log}" 2>&1 < /dev/null &
+    log "Post-deploy guard started (15 min, rollback target ${PREV_DEPLOYED_SHA:0:12})."
+fi
+
 log "=== Deployment complete ($ENVIRONMENT: web=$PORT_WEB, socket=$PORT_SOCKET, rmhbox=$PORT_RMHBOX, rmhtube=$PORT_RMHTUBE, status=$PORT_STATUS) ==="
