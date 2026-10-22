@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- CLI bench intentionally writes its report to stdout */
 // loadSystemFonts:false vs default in svgToPng's renderAsync: wall time per render, byte equality.
 import { performance } from 'node:perf_hooks';
 import { createHash } from 'node:crypto';
@@ -54,7 +55,12 @@ for (const [name, w, h] of [
   ['landscape', 1200, 630],
   ['story', 1080, 1920],
 ] as const) {
-  const svg = await satori(el(w, h) as any, { width: w, height: h, fonts: satoriFonts() as any });
+  type SatoriArgs = Parameters<typeof satori>;
+  const svg = await satori(el(w, h) as unknown as SatoriArgs[0], {
+    width: w,
+    height: h,
+    fonts: satoriFonts() as unknown as SatoriArgs[1]['fonts'],
+  });
   console.log(name, 'svg bytes', svg.length, '<text:', /<text/.test(svg));
   const variants = { default: undefined, noSys: { loadSystemFonts: false } } as const;
   const times: Record<string, number[]> = { default: [], noSys: [] };
