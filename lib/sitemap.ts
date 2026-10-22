@@ -475,6 +475,7 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/u/$userid': 'users',
   '/u/$userid/post/$postid': 'posts',
   '/c/$slug': 'community',
+  '/c/$slug/invite/$code': null, // private-community invite: a capability URL, never listed (the page sets noindex, nofollow)
   '/personas/$id': 'community',
   '/study/$deckId': 'community',
   '/tournaments/$id': 'community',

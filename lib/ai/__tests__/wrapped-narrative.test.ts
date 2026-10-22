@@ -22,6 +22,9 @@ vi.mock('@/lib/redis.server', () => ({
   redisGetJSON: vi.fn(async () => null),
   redisSetJSON: vi.fn(async () => undefined),
   redisDel: vi.fn(async () => undefined),
+  // cached.server.ts (reached through the cache layer) checks this at load to decide
+  // whether to install the cross-process invalidation bridge.
+  redisEnabled: () => false,
 }));
 
 import {
