@@ -11,11 +11,10 @@
 // never pages. A firing alarm is re-sent every REFRESH_MS so the watchdog's
 // copy survives a lost request.
 //
-// Pure and client-safe (type imports + the pure histogram module only).
+// Pure and client-safe (type imports only).
 
-import { fromCounts, mergeHistograms, newHistogram, percentile } from '../perf/histogram';
 import type { PerfOverview } from '../perf/admin-types';
-import type { MinuteBucket, ProcessSnapshot } from '../perf/process-metrics';
+import type { ProcessSnapshot } from '../perf/process-metrics';
 
 export const REFRESH_MS = 10 * 60 * 1000;
 export const STRIPE_WEBHOOK_ROUTE = '/api/auth/stripe/webhook';
@@ -90,48 +89,13 @@ function counterDelta(
   return total;
 }
 
-/** Complete one-minute buckets in the last `minutes`. */
-function lastMinutes(series: MinuteBucket[], now: number, minutes: number): MinuteBucket[] {
-  return series
-    .filter((b) => b.t + 60_000 <= now && b.t >= now - (minutes + 1) * 60_000)
-    .slice(-minutes);
-}
-
-function windowStats(buckets: MinuteBucket[]) {
-  const requests = buckets.reduce((n, b) => n + b.requests, 0);
-  const s5xx = buckets.reduce((n, b) => n + b.s5xx, 0);
-  const hist = buckets.reduce((acc, b) => mergeHistograms(acc, fromCounts(b.lat)), newHistogram());
-  return { requests, s5xx, p95: hist.count ? percentile(hist, 95) : 0 };
-}
-
 export function evaluate(input: CheckInputs, mem: RuleMemory): Condition[] {
   const out: Condition[] = [];
   const o = input.overview;
 
   if (o) {
-    // ── Web 5xx and latency (cluster of web workers) ──────────────────────────
-    const short = windowStats(lastMinutes(o.cluster.timeseries, input.now, 3));
-    const long = windowStats(lastMinutes(o.cluster.timeseries, input.now, 10));
-    const shortBad = short.requests >= 50 && pct(short.s5xx, short.requests) > 5;
-    const longBad = long.requests >= 200 && pct(long.s5xx, long.requests) > 2;
-    out.push({
-      id: 'A08',
-      sev: 2,
-      title: 'Web 5xx error rate high',
-      active: shortBad || longBad,
-      detail: `5xx: ${round(pct(short.s5xx, short.requests))}% of ${short.requests} requests (last 3m), ${round(pct(long.s5xx, long.requests))}% of ${long.requests} (last 10m). Thresholds: >5% / 3m, >2% / 10m.`,
-      forChecks: 1, // the 3- and 10-minute windows already smooth it
-      clearChecks: 3,
-    });
-    out.push({
-      id: 'A09',
-      sev: 2,
-      title: 'Web latency high (p95)',
-      active: long.requests >= 100 && long.p95 > 2500,
-      detail: `p95 ${Math.round(long.p95)}ms over the last 10m (${long.requests} requests). Threshold: 2500ms.`,
-      forChecks: 1,
-      clearChecks: 3,
-    });
+    // Web 5xx, latency, heap and event-loop alarms live in lib/ops/alarm-rules.ts
+    // now (thresholds editable from /admin/alarms), over the one-minute history.
 
     // ── Per-service process health (web, jobs, hubs) ──────────────────────────
     const snaps = [...o.processes, ...o.hubs.filter((h): h is ProcessSnapshot => !('error' in h))];
@@ -139,34 +103,6 @@ export function evaluate(input: CheckInputs, mem: RuleMemory): Condition[] {
     const present = new Set(snaps.map((s) => `${s.service}:${s.hostname}:${s.pid}`));
     for (const key of Object.keys(mem.lastCounters))
       if (!present.has(key)) delete mem.lastCounters[key];
-    const byService = new Map<string, ProcessSnapshot[]>();
-    for (const s of snaps) byService.set(s.service, [...(byService.get(s.service) ?? []), s]);
-    for (const [service, list] of byService) {
-      const heap = Math.max(
-        ...list.map((s) => (s.memory.heapLimit ? pct(s.memory.heapUsed, s.memory.heapLimit) : 0)),
-      );
-      out.push({
-        id: 'B02',
-        instance: service,
-        sev: 3,
-        title: `Heap pressure on ${service}`,
-        active: heap > 85,
-        detail: `Highest heap use ${round(heap)}% of the V8 limit across ${list.length} process(es). Threshold: >85% for 10m (OOM risk).`,
-        forChecks: 10,
-        clearChecks: 3,
-      });
-      const lag = Math.max(...list.map((s) => s.eventLoop.current.p99));
-      out.push({
-        id: 'B03',
-        instance: service,
-        sev: 3,
-        title: `Event loop lag on ${service}`,
-        active: lag > 500,
-        detail: `Event-loop delay p99 ${Math.round(lag)}ms. Threshold: >500ms for 5m.`,
-        forChecks: 5,
-        clearChecks: 3,
-      });
-    }
 
     // ── Process-level errors (lib/perf/process-guards.ts counters) ────────────
     const rejections = pushWindow(

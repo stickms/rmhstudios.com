@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Kpi } from '@/components/admin/perf/Kpi';
+import { AlarmRules } from './AlarmRules';
 import {
   heartbeatHealth,
   phaseOf,
@@ -251,6 +252,8 @@ export function AlarmsPanel() {
           })}
         </ul>
       </section>
+
+      <AlarmRules />
 
       <section>
         <h2 className="mb-3 text-lg font-semibold text-site-text">
